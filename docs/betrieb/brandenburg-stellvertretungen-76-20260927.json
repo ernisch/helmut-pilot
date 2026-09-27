@@ -1,0 +1,1471 @@
+{
+  "status": "Vom Orchestrator geprueffte Stellvertretungs-Ergaenzungsquittung, KEINE fachliche Importfreigabe",
+  "vertragsformat": "brandenburg-stellvertretungen-1",
+  "version": 1,
+  "datum": "2026-09-27",
+  "zweck": "Belegter Verlust stellvertretender Brandenburger Ausschussmitgliedschaften: 76 bislang fehlende Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile, ausschliesslich aus dem amtlichen Fachausschussindex 25220 und seinen 14 verlinkten Ausschussseiten.",
+  "pruefung": "Index und vollstaendige Menge der 14 Quellen an URL/finalUrl/HTTP/Abrufzeit/Hash/Bytes/Datei (Original UND Metadaten); echte eindeutige H1, eigene geschlossene Stellvertretungsspalte (col-12 col-md-6 col-lg-12 col-xl-6 my-4 my-md-0 als direktes Kind der row) mit h5/h6/ul/li/a.profile; nur die 50 kanonischen Brandenburger Personen-URLs; Person/Profilhash/Name/Fraktion separat an die kanonischen Detailseiten; Unterausschuss 23893 ist der belegte Nullfall ohne Spalte.",
+  "index": {
+    "url": "https://www.landtag.brandenburg.de/de/parlament/ausschuesse_gremien_europa/fachausschuesse/25220",
+    "finalUrl": "https://www.landtag.brandenburg.de/de/parlament/ausschuesse_gremien_europa/fachausschuesse/25220",
+    "http": 200,
+    "abgerufenAm": "2026-09-27T21:25:44.826825+00:00",
+    "sha256": "e38a080df89fb5aa5f6819cdf30a0c84d1133402fb58c13035b4585c76949551",
+    "bytes": 102254,
+    "datei": "bb-fachausschuss-index-20260927.html",
+    "abrufStatus": "abgerufen"
+  },
+  "quellen": [
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/hauptausschuss/23873",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/hauptausschuss/23873",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:04.602383+00:00",
+      "sha256": "5454e63ac5d383b0afefcc54666e33f396bd607ed9f0b9460e56d354706cc1a6",
+      "bytes": 102232,
+      "datei": "bb-ausschuss-23873-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Hauptausschuss",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_inneres_und_kommunales/25462",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_inneres_und_kommunales/25462",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:04.546273+00:00",
+      "sha256": "cc5e63ab7be903f3cadfa4a51cf6dd2a87f2ac54aaa2dd2710029b6103aa88e8",
+      "bytes": 104757,
+      "datei": "bb-ausschuss-25462-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Inneres und Kommunales",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_recht_und_digitalisierung/23875",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_recht_und_digitalisierung/23875",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:05.215558+00:00",
+      "sha256": "f0ded120b0ad2f117e63876fe15c499b169000978edd90efdcb854e349735666",
+      "bytes": 99142,
+      "datei": "bb-ausschuss-23875-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Recht und Digitalisierung",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_bildung_jugend_und_sport/23874",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_bildung_jugend_und_sport/23874",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:05.248916+00:00",
+      "sha256": "c19b287e32b9eeeb3f0ecefe066e32ad984bf7b76a25e203c174eeb687a6446e",
+      "bytes": 104772,
+      "datei": "bb-ausschuss-23874-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Bildung, Jugend und Sport",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:05.951836+00:00",
+      "sha256": "740223903fe68f3973efdbfac51b9f772f79b416e90a718074999edcb3465f50",
+      "bytes": 104016,
+      "datei": "bb-ausschuss-23883-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Wissenschaft, Forschung und Kultur",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:05.987624+00:00",
+      "sha256": "979acb4c47c5af655fca94217b27bab30fc0c0ab2fa3bd6d57a6a0e85cfc569c",
+      "bytes": 106074,
+      "datei": "bb-ausschuss-23905-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wirtschaft_energie_und_klimaschutz/23884",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wirtschaft_energie_und_klimaschutz/23884",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:06.626359+00:00",
+      "sha256": "80b37be41fd88e15a66b732f8cb509de3fa6e7aac2c256885215e9c4b16c712c",
+      "bytes": 103523,
+      "datei": "bb-ausschuss-23884-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Wirtschaft, Energie und Klimaschutz",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:06.649490+00:00",
+      "sha256": "d02c009349db06b94971753d542697228a26f4e8d79b036366ef4131b9e73405",
+      "bytes": 106424,
+      "datei": "bb-ausschuss-23885-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_infrastruktur_und_landesentwicklung/23886",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_infrastruktur_und_landesentwicklung/23886",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:17:18.063093+00:00",
+      "sha256": "2b6d37980b54e2143f1b3261edf330f45952d9bc3e41b5178fec40b65d440e18",
+      "bytes": 100303,
+      "datei": "bb-ail-mitglieder-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Infrastruktur und Landesplanung",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushalt_und_finanzen/24131",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushalt_und_finanzen/24131",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:07.330427+00:00",
+      "sha256": "9c84fbda76ebc39f0a317b6e0f7b7477dc365ab01f74eb741b91164e54ce3847",
+      "bytes": 104814,
+      "datei": "bb-ausschuss-24131-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Haushalt und Finanzen",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushaltskontrolle/25331",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushaltskontrolle/25331",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:07.352976+00:00",
+      "sha256": "fd02e8ed94739df173ee9bd9a95c7774a64b816be91e40c20ef2cd23288d9531",
+      "bytes": 97206,
+      "datei": "bb-ausschuss-25331-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Haushaltskontrolle",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/unterausschuss_des_ausschusses_fuer_haushaltskontrolle/23893",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/unterausschuss_des_ausschusses_fuer_haushaltskontrolle/23893",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:07.996131+00:00",
+      "sha256": "e2b0f6a4726e34f8064c76e37bf1080e41e699b638c7fcbece75e190b532b4e2",
+      "bytes": 92988,
+      "datei": "bb-ausschuss-23893-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Unterausschuss des Ausschusses für Haushaltskontrolle",
+      "stellvertretendeSpalten": 0
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_europaangelegenheiten_und_entwicklungspolitik/13891",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_europaangelegenheiten_und_entwicklungspolitik/13891",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:08.054776+00:00",
+      "sha256": "cbc32184ed232c32e0984e3e31c1bae1a527b775b38b4b089f536f4dd87702f4",
+      "bytes": 99254,
+      "datei": "bb-ausschuss-13891-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Ausschuss für Europaangelegenheiten und Entwicklungspolitik",
+      "stellvertretendeSpalten": 1
+    },
+    {
+      "url": "https://www.landtag.brandenburg.de/de/fachausschuss/wahlpruefungsausschuss/23906",
+      "finalUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/wahlpruefungsausschuss/23906",
+      "http": 200,
+      "abgerufenAm": "2026-09-27T21:26:08.724619+00:00",
+      "sha256": "d7bb7d43a501891d9a3bf413778bbd52ce47b060fa6db1904bc1d397df8c055a",
+      "bytes": 95697,
+      "datei": "bb-ausschuss-23906-20260927.html",
+      "abrufStatus": "abgerufen",
+      "h1": "Wahlprüfungsausschuss",
+      "stellvertretendeSpalten": 1
+    }
+  ],
+  "bilanz": {
+    "gesamt": 76,
+    "zielprofile": 35,
+    "quellen": 14,
+    "mitStellvertretungsspalte": 13,
+    "ohneStellvertretungsspalte": 1,
+    "Brandenburg": 76
+  },
+  "ergebnisse": [
+    {
+      "kennung": "landtag-brandenburg-11245",
+      "amtlicheKennung": "11245",
+      "parlament": "landtag-brandenburg",
+      "person": "Rainer Genilke",
+      "gruppe": "CDU-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/genilke_rainer/11245",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/genilke_rainer/11245",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:11.190913+00:00",
+        "sha256": "1598c9f0bb7984c70b84fe5195701abde58b9fca70bd35e1b1a7c4b787eed8ed",
+        "bytes": 93112,
+        "datei": "landtag-brandenburg-11245.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Europaangelegenheiten und Entwicklungspolitik",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/genilke_rainer/11245",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_europaangelegenheiten_und_entwicklungspolitik/13891",
+          "quelleDatei": "bb-ausschuss-13891-20260927.html",
+          "quelleSha256": "cbc32184ed232c32e0984e3e31c1bae1a527b775b38b4b089f536f4dd87702f4"
+        },
+        {
+          "ausschuss": "Ausschuss für Haushalt und Finanzen",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/genilke_rainer/11245",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushalt_und_finanzen/24131",
+          "quelleDatei": "bb-ausschuss-24131-20260927.html",
+          "quelleSha256": "9c84fbda76ebc39f0a317b6e0f7b7477dc365ab01f74eb741b91164e54ce3847"
+        },
+        {
+          "ausschuss": "Wahlprüfungsausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/genilke_rainer/11245",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/wahlpruefungsausschuss/23906",
+          "quelleDatei": "bb-ausschuss-23906-20260927.html",
+          "quelleSha256": "d7bb7d43a501891d9a3bf413778bbd52ce47b060fa6db1904bc1d397df8c055a"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-11250",
+      "amtlicheKennung": "11250",
+      "parlament": "landtag-brandenburg",
+      "person": "Prof. Dr. Michael Schierack",
+      "gruppe": "CDU-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/schierack_michael_(prof._dr.)/11250",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/schierack_michael_(prof._dr.)/11250",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:11.992524+00:00",
+        "sha256": "bbdb5a262c111647341badfacf091f1d923a48522baa9f002ad235530f8f4532",
+        "bytes": 96619,
+        "datei": "landtag-brandenburg-11250.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Bildung, Jugend und Sport",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/schierack_michael_(prof._dr.)/11250",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_bildung_jugend_und_sport/23874",
+          "quelleDatei": "bb-ausschuss-23874-20260927.html",
+          "quelleSha256": "c19b287e32b9eeeb3f0ecefe066e32ad984bf7b76a25e203c174eeb687a6446e"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-13478",
+      "amtlicheKennung": "13478",
+      "parlament": "landtag-brandenburg",
+      "person": "Danny Eichelbaum",
+      "gruppe": "CDU-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/eichelbaum_danny/13478",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/eichelbaum_danny/13478",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:12.931198+00:00",
+        "sha256": "160ad6e6fcc4e87af213720586152e01e119c281e556092cb8c14828aa174804",
+        "bytes": 96177,
+        "datei": "landtag-brandenburg-13478.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Inneres und Kommunales",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/eichelbaum_danny/13478",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_inneres_und_kommunales/25462",
+          "quelleDatei": "bb-ausschuss-25462-20260927.html",
+          "quelleSha256": "cc5e63ab7be903f3cadfa4a51cf6dd2a87f2ac54aaa2dd2710029b6103aa88e8"
+        },
+        {
+          "ausschuss": "Hauptausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/eichelbaum_danny/13478",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/hauptausschuss/23873",
+          "quelleDatei": "bb-ausschuss-23873-20260927.html",
+          "quelleSha256": "5454e63ac5d383b0afefcc54666e33f396bd607ed9f0b9460e56d354706cc1a6"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-13479",
+      "amtlicheKennung": "13479",
+      "parlament": "landtag-brandenburg",
+      "person": "Frank Bommert",
+      "gruppe": "CDU-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/bommert_frank/13479",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/bommert_frank/13479",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:13.562144+00:00",
+        "sha256": "71d1c4c756aa48c1ff25bd49ef9cb990d77423f603409a2386a39d6a609b930e",
+        "bytes": 105438,
+        "datei": "landtag-brandenburg-13479.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/bommert_frank/13479",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+          "quelleDatei": "bb-ausschuss-23905-20260927.html",
+          "quelleSha256": "979acb4c47c5af655fca94217b27bab30fc0c0ab2fa3bd6d57a6a0e85cfc569c"
+        },
+        {
+          "ausschuss": "Ausschuss für Infrastruktur und Landesplanung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/bommert_frank/13479",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_infrastruktur_und_landesentwicklung/23886",
+          "quelleDatei": "bb-ail-mitglieder-20260927.html",
+          "quelleSha256": "2b6d37980b54e2143f1b3261edf330f45952d9bc3e41b5178fec40b65d440e18"
+        },
+        {
+          "ausschuss": "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/bommert_frank/13479",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+          "quelleDatei": "bb-ausschuss-23885-20260927.html",
+          "quelleSha256": "d02c009349db06b94971753d542697228a26f4e8d79b036366ef4131b9e73405"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-13480",
+      "amtlicheKennung": "13480",
+      "parlament": "landtag-brandenburg",
+      "person": "Kristy Augustin",
+      "gruppe": "CDU-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:13.824958+00:00",
+        "sha256": "5e13bbc8c0c8f8cfd3ec5a884ea9d516acf37bf35a84efd0757efafc6986f8f9",
+        "bytes": 95317,
+        "datei": "landtag-brandenburg-13480.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+          "quelleDatei": "bb-ausschuss-23905-20260927.html",
+          "quelleSha256": "979acb4c47c5af655fca94217b27bab30fc0c0ab2fa3bd6d57a6a0e85cfc569c"
+        },
+        {
+          "ausschuss": "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+          "quelleDatei": "bb-ausschuss-23885-20260927.html",
+          "quelleSha256": "d02c009349db06b94971753d542697228a26f4e8d79b036366ef4131b9e73405"
+        },
+        {
+          "ausschuss": "Ausschuss für Wissenschaft, Forschung und Kultur",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
+          "quelleDatei": "bb-ausschuss-23883-20260927.html",
+          "quelleSha256": "740223903fe68f3973efdbfac51b9f772f79b416e90a718074999edcb3465f50"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-13909",
+      "amtlicheKennung": "13909",
+      "parlament": "landtag-brandenburg",
+      "person": "Nicole Walter-Mundt",
+      "gruppe": "CDU-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/walter-mundt_nicole/13909",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/walter-mundt_nicole/13909",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:14.414259+00:00",
+        "sha256": "b560eb7c34b735e139332ae85a8d6a1c2ce4c9362b1d929e5f4211b5d2a4428c",
+        "bytes": 94194,
+        "datei": "landtag-brandenburg-13909.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Recht und Digitalisierung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/walter-mundt_nicole/13909",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_recht_und_digitalisierung/23875",
+          "quelleDatei": "bb-ausschuss-23875-20260927.html",
+          "quelleSha256": "f0ded120b0ad2f117e63876fe15c499b169000978edd90efdcb854e349735666"
+        },
+        {
+          "ausschuss": "Ausschuss für Wirtschaft, Energie und Klimaschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/walter-mundt_nicole/13909",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wirtschaft_energie_und_klimaschutz/23884",
+          "quelleDatei": "bb-ausschuss-23884-20260927.html",
+          "quelleSha256": "80b37be41fd88e15a66b732f8cb509de3fa6e7aac2c256885215e9c4b16c712c"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-23854",
+      "amtlicheKennung": "23854",
+      "parlament": "landtag-brandenburg",
+      "person": "Julian Brüning",
+      "gruppe": "CDU-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/bruening_julian/23854",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/bruening_julian/23854",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:14.692926+00:00",
+        "sha256": "2c903de2fb175bf35453941bc693febd4b2de870cc1ca1b6abb43d713b81b93d",
+        "bytes": 94264,
+        "datei": "landtag-brandenburg-23854.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Bildung, Jugend und Sport",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/bruening_julian/23854",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_bildung_jugend_und_sport/23874",
+          "quelleDatei": "bb-ausschuss-23874-20260927.html",
+          "quelleSha256": "c19b287e32b9eeeb3f0ecefe066e32ad984bf7b76a25e203c174eeb687a6446e"
+        },
+        {
+          "ausschuss": "Ausschuss für Haushaltskontrolle",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/bruening_julian/23854",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushaltskontrolle/25331",
+          "quelleDatei": "bb-ausschuss-25331-20260927.html",
+          "quelleSha256": "fd02e8ed94739df173ee9bd9a95c7774a64b816be91e40c20ef2cd23288d9531"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24171",
+      "amtlicheKennung": "24171",
+      "parlament": "landtag-brandenburg",
+      "person": "Uwe Adler",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/adler_uwe/24171",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/adler_uwe/24171",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:16.769968+00:00",
+        "sha256": "bd3492481d10dc5623c3cd5675779d4db413d8cd020c46fa3f68b25cd8550012",
+        "bytes": 94385,
+        "datei": "landtag-brandenburg-24171.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Europaangelegenheiten und Entwicklungspolitik",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/adler_uwe/24171",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_europaangelegenheiten_und_entwicklungspolitik/13891",
+          "quelleDatei": "bb-ausschuss-13891-20260927.html",
+          "quelleSha256": "cbc32184ed232c32e0984e3e31c1bae1a527b775b38b4b089f536f4dd87702f4"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24176",
+      "amtlicheKennung": "24176",
+      "parlament": "landtag-brandenburg",
+      "person": "Johannes Funke",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/funke_johannes/24176",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/funke_johannes/24176",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:18.085676+00:00",
+        "sha256": "f8c6d09a36c3a3de18b7f6addc18dc47e81b0c6d4e1e80f63472121854d1b7e7",
+        "bytes": 94728,
+        "datei": "landtag-brandenburg-24176.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Bildung, Jugend und Sport",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/funke_johannes/24176",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_bildung_jugend_und_sport/23874",
+          "quelleDatei": "bb-ausschuss-23874-20260927.html",
+          "quelleSha256": "c19b287e32b9eeeb3f0ecefe066e32ad984bf7b76a25e203c174eeb687a6446e"
+        },
+        {
+          "ausschuss": "Ausschuss für Wissenschaft, Forschung und Kultur",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/funke_johannes/24176",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
+          "quelleDatei": "bb-ausschuss-23883-20260927.html",
+          "quelleSha256": "740223903fe68f3973efdbfac51b9f772f79b416e90a718074999edcb3465f50"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24178",
+      "amtlicheKennung": "24178",
+      "parlament": "landtag-brandenburg",
+      "person": "Elske Hildebrandt",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/hildebrandt_elske/24178",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/hildebrandt_elske/24178",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:18.402056+00:00",
+        "sha256": "05321cf97f2eb64a5455bf0d5edbdb3234b630fa728982479c7328da467e40a2",
+        "bytes": 96103,
+        "datei": "landtag-brandenburg-24178.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/hildebrandt_elske/24178",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+          "quelleDatei": "bb-ausschuss-23905-20260927.html",
+          "quelleSha256": "979acb4c47c5af655fca94217b27bab30fc0c0ab2fa3bd6d57a6a0e85cfc569c"
+        },
+        {
+          "ausschuss": "Ausschuss für Europaangelegenheiten und Entwicklungspolitik",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/hildebrandt_elske/24178",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_europaangelegenheiten_und_entwicklungspolitik/13891",
+          "quelleDatei": "bb-ausschuss-13891-20260927.html",
+          "quelleSha256": "cbc32184ed232c32e0984e3e31c1bae1a527b775b38b4b089f536f4dd87702f4"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24180",
+      "amtlicheKennung": "24180",
+      "parlament": "landtag-brandenburg",
+      "person": "Britta Kornmesser",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/kornmesser_britta/24180",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/kornmesser_britta/24180",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:18.850531+00:00",
+        "sha256": "82828498420fbed4e662817d6382088d0a2f4fe4e621bfdab5fbb8c23c2f553e",
+        "bytes": 95206,
+        "datei": "landtag-brandenburg-24180.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Infrastruktur und Landesplanung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/kornmesser_britta/24180",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_infrastruktur_und_landesentwicklung/23886",
+          "quelleDatei": "bb-ail-mitglieder-20260927.html",
+          "quelleSha256": "2b6d37980b54e2143f1b3261edf330f45952d9bc3e41b5178fec40b65d440e18"
+        },
+        {
+          "ausschuss": "Ausschuss für Recht und Digitalisierung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/kornmesser_britta/24180",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_recht_und_digitalisierung/23875",
+          "quelleDatei": "bb-ausschuss-23875-20260927.html",
+          "quelleSha256": "f0ded120b0ad2f117e63876fe15c499b169000978edd90efdcb854e349735666"
+        },
+        {
+          "ausschuss": "Wahlprüfungsausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/kornmesser_britta/24180",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/wahlpruefungsausschuss/23906",
+          "quelleDatei": "bb-ausschuss-23906-20260927.html",
+          "quelleSha256": "d7bb7d43a501891d9a3bf413778bbd52ce47b060fa6db1904bc1d397df8c055a"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24181",
+      "amtlicheKennung": "24181",
+      "parlament": "landtag-brandenburg",
+      "person": "Tina Fischer",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/fischer_tina/24181",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/fischer_tina/24181",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:19.230611+00:00",
+        "sha256": "89d0209fb1124aa244f02729265f3def05a2e72d456b72aced23fdc4d7ce302d",
+        "bytes": 94444,
+        "datei": "landtag-brandenburg-24181.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Haushaltskontrolle",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/fischer_tina/24181",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushaltskontrolle/25331",
+          "quelleDatei": "bb-ausschuss-25331-20260927.html",
+          "quelleSha256": "fd02e8ed94739df173ee9bd9a95c7774a64b816be91e40c20ef2cd23288d9531"
+        },
+        {
+          "ausschuss": "Ausschuss für Inneres und Kommunales",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/fischer_tina/24181",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_inneres_und_kommunales/25462",
+          "quelleDatei": "bb-ausschuss-25462-20260927.html",
+          "quelleSha256": "cc5e63ab7be903f3cadfa4a51cf6dd2a87f2ac54aaa2dd2710029b6103aa88e8"
+        },
+        {
+          "ausschuss": "Ausschuss für Wissenschaft, Forschung und Kultur",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/fischer_tina/24181",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
+          "quelleDatei": "bb-ausschuss-23883-20260927.html",
+          "quelleSha256": "740223903fe68f3973efdbfac51b9f772f79b416e90a718074999edcb3465f50"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24183",
+      "amtlicheKennung": "24183",
+      "parlament": "landtag-brandenburg",
+      "person": "Björn Lüttmann",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/luettmann_bjoern/24183",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/luettmann_bjoern/24183",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:19.720211+00:00",
+        "sha256": "d8aae5dda0d687a4f412d524cf7e25f13e09816990e2215316c5fb36640d833f",
+        "bytes": 95473,
+        "datei": "landtag-brandenburg-24183.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/luettmann_bjoern/24183",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+          "quelleDatei": "bb-ausschuss-23905-20260927.html",
+          "quelleSha256": "979acb4c47c5af655fca94217b27bab30fc0c0ab2fa3bd6d57a6a0e85cfc569c"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24185",
+      "amtlicheKennung": "24185",
+      "parlament": "landtag-brandenburg",
+      "person": "Wolfgang Roick",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/roick_wolfgang/24185",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/roick_wolfgang/24185",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:20.056574+00:00",
+        "sha256": "566dc21fbf6094f03baa04003eef3447b2be5d26cbb6ae577df246da7ada8373",
+        "bytes": 96067,
+        "datei": "landtag-brandenburg-24185.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Haushalt und Finanzen",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/roick_wolfgang/24185",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushalt_und_finanzen/24131",
+          "quelleDatei": "bb-ausschuss-24131-20260927.html",
+          "quelleSha256": "9c84fbda76ebc39f0a317b6e0f7b7477dc365ab01f74eb741b91164e54ce3847"
+        },
+        {
+          "ausschuss": "Hauptausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/roick_wolfgang/24185",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/hauptausschuss/23873",
+          "quelleDatei": "bb-ausschuss-23873-20260927.html",
+          "quelleSha256": "5454e63ac5d383b0afefcc54666e33f396bd607ed9f0b9460e56d354706cc1a6"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24188",
+      "amtlicheKennung": "24188",
+      "parlament": "landtag-brandenburg",
+      "person": "Katja Poschmann",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/poschmann_katja/24188",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/poschmann_katja/24188",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:20.993121+00:00",
+        "sha256": "8160525c13cc5f2b2421100d2ec7756dcea709248082f0d96efb02f079c92e8b",
+        "bytes": 95276,
+        "datei": "landtag-brandenburg-24188.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/poschmann_katja/24188",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+          "quelleDatei": "bb-ausschuss-23905-20260927.html",
+          "quelleSha256": "979acb4c47c5af655fca94217b27bab30fc0c0ab2fa3bd6d57a6a0e85cfc569c"
+        },
+        {
+          "ausschuss": "Ausschuss für Haushaltskontrolle",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/poschmann_katja/24188",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushaltskontrolle/25331",
+          "quelleDatei": "bb-ausschuss-25331-20260927.html",
+          "quelleSha256": "fd02e8ed94739df173ee9bd9a95c7774a64b816be91e40c20ef2cd23288d9531"
+        },
+        {
+          "ausschuss": "Hauptausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/poschmann_katja/24188",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/hauptausschuss/23873",
+          "quelleDatei": "bb-ausschuss-23873-20260927.html",
+          "quelleSha256": "5454e63ac5d383b0afefcc54666e33f396bd607ed9f0b9460e56d354706cc1a6"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24191",
+      "amtlicheKennung": "24191",
+      "parlament": "landtag-brandenburg",
+      "person": "Ludwig Scheetz",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:21.412266+00:00",
+        "sha256": "73ae53b09c106b293fee38c2841cb2793dd33d30b65a24212e15b92f0b945d01",
+        "bytes": 98250,
+        "datei": "landtag-brandenburg-24191.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Bildung, Jugend und Sport",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_bildung_jugend_und_sport/23874",
+          "quelleDatei": "bb-ausschuss-23874-20260927.html",
+          "quelleSha256": "c19b287e32b9eeeb3f0ecefe066e32ad984bf7b76a25e203c174eeb687a6446e"
+        },
+        {
+          "ausschuss": "Ausschuss für Haushalt und Finanzen",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushalt_und_finanzen/24131",
+          "quelleDatei": "bb-ausschuss-24131-20260927.html",
+          "quelleSha256": "9c84fbda76ebc39f0a317b6e0f7b7477dc365ab01f74eb741b91164e54ce3847"
+        },
+        {
+          "ausschuss": "Ausschuss für Haushaltskontrolle",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushaltskontrolle/25331",
+          "quelleDatei": "bb-ausschuss-25331-20260927.html",
+          "quelleSha256": "fd02e8ed94739df173ee9bd9a95c7774a64b816be91e40c20ef2cd23288d9531"
+        },
+        {
+          "ausschuss": "Ausschuss für Infrastruktur und Landesplanung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_infrastruktur_und_landesentwicklung/23886",
+          "quelleDatei": "bb-ail-mitglieder-20260927.html",
+          "quelleSha256": "2b6d37980b54e2143f1b3261edf330f45952d9bc3e41b5178fec40b65d440e18"
+        },
+        {
+          "ausschuss": "Ausschuss für Inneres und Kommunales",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_inneres_und_kommunales/25462",
+          "quelleDatei": "bb-ausschuss-25462-20260927.html",
+          "quelleSha256": "cc5e63ab7be903f3cadfa4a51cf6dd2a87f2ac54aaa2dd2710029b6103aa88e8"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24195",
+      "amtlicheKennung": "24195",
+      "parlament": "landtag-brandenburg",
+      "person": "Jörg Vogelsänger",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/vogelsaenger_joerg/24195",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/vogelsaenger_joerg/24195",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:21.926428+00:00",
+        "sha256": "a707233acc6e9002e9baea9d8f202e3bbd83c5eec571bdf0fffee66e597543f9",
+        "bytes": 95727,
+        "datei": "landtag-brandenburg-24195.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Inneres und Kommunales",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/vogelsaenger_joerg/24195",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_inneres_und_kommunales/25462",
+          "quelleDatei": "bb-ausschuss-25462-20260927.html",
+          "quelleSha256": "cc5e63ab7be903f3cadfa4a51cf6dd2a87f2ac54aaa2dd2710029b6103aa88e8"
+        },
+        {
+          "ausschuss": "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/vogelsaenger_joerg/24195",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+          "quelleDatei": "bb-ausschuss-23885-20260927.html",
+          "quelleSha256": "d02c009349db06b94971753d542697228a26f4e8d79b036366ef4131b9e73405"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-24198",
+      "amtlicheKennung": "24198",
+      "parlament": "landtag-brandenburg",
+      "person": "Erik Stohn",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/stohn_erik/24198",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/stohn_erik/24198",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:22.303815+00:00",
+        "sha256": "af397fd945d1a691c073d9f46fa8ee825faff77c2e028f69c60e441c2fc1582f",
+        "bytes": 96438,
+        "datei": "landtag-brandenburg-24198.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/stohn_erik/24198",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+          "quelleDatei": "bb-ausschuss-23885-20260927.html",
+          "quelleSha256": "d02c009349db06b94971753d542697228a26f4e8d79b036366ef4131b9e73405"
+        },
+        {
+          "ausschuss": "Wahlprüfungsausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/stohn_erik/24198",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/wahlpruefungsausschuss/23906",
+          "quelleDatei": "bb-ausschuss-23906-20260927.html",
+          "quelleSha256": "d7bb7d43a501891d9a3bf413778bbd52ce47b060fa6db1904bc1d397df8c055a"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-25782",
+      "amtlicheKennung": "25782",
+      "parlament": "landtag-brandenburg",
+      "person": "Udo Wernitz",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/wernitz_udo/25782",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/wernitz_udo/25782",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:22.817827+00:00",
+        "sha256": "031637377c6af97adaabe44da4280cb7cd678bd284a60c9276e6641620cc4b43",
+        "bytes": 94763,
+        "datei": "landtag-brandenburg-25782.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Haushalt und Finanzen",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/wernitz_udo/25782",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushalt_und_finanzen/24131",
+          "quelleDatei": "bb-ausschuss-24131-20260927.html",
+          "quelleSha256": "9c84fbda76ebc39f0a317b6e0f7b7477dc365ab01f74eb741b91164e54ce3847"
+        },
+        {
+          "ausschuss": "Ausschuss für Haushaltskontrolle",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/wernitz_udo/25782",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushaltskontrolle/25331",
+          "quelleDatei": "bb-ausschuss-25331-20260927.html",
+          "quelleSha256": "fd02e8ed94739df173ee9bd9a95c7774a64b816be91e40c20ef2cd23288d9531"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40587",
+      "amtlicheKennung": "40587",
+      "parlament": "landtag-brandenburg",
+      "person": "Melanie Balzer",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/balzer_melanie/40587",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/balzer_melanie/40587",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:23.656755+00:00",
+        "sha256": "c51a632581449133f1360518485bbbe92d321cddeeac4d1f0af8248c8398fa7b",
+        "bytes": 95227,
+        "datei": "landtag-brandenburg-40587.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Wirtschaft, Energie und Klimaschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/balzer_melanie/40587",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wirtschaft_energie_und_klimaschutz/23884",
+          "quelleDatei": "bb-ausschuss-23884-20260927.html",
+          "quelleSha256": "80b37be41fd88e15a66b732f8cb509de3fa6e7aac2c256885215e9c4b16c712c"
+        },
+        {
+          "ausschuss": "Ausschuss für Wissenschaft, Forschung und Kultur",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/balzer_melanie/40587",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
+          "quelleDatei": "bb-ausschuss-23883-20260927.html",
+          "quelleSha256": "740223903fe68f3973efdbfac51b9f772f79b416e90a718074999edcb3465f50"
+        },
+        {
+          "ausschuss": "Wahlprüfungsausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/balzer_melanie/40587",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/wahlpruefungsausschuss/23906",
+          "quelleDatei": "bb-ausschuss-23906-20260927.html",
+          "quelleSha256": "d7bb7d43a501891d9a3bf413778bbd52ce47b060fa6db1904bc1d397df8c055a"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40588",
+      "amtlicheKennung": "40588",
+      "parlament": "landtag-brandenburg",
+      "person": "Kurt Fischer",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/fischer_kurt/40588",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/fischer_kurt/40588",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:23.978270+00:00",
+        "sha256": "ebfd4917d611c96bb0eb037167fb43d084e0d1a64c7f824376d213188c7eee60",
+        "bytes": 96405,
+        "datei": "landtag-brandenburg-40588.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/fischer_kurt/40588",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+          "quelleDatei": "bb-ausschuss-23905-20260927.html",
+          "quelleSha256": "979acb4c47c5af655fca94217b27bab30fc0c0ab2fa3bd6d57a6a0e85cfc569c"
+        },
+        {
+          "ausschuss": "Ausschuss für Haushalt und Finanzen",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/fischer_kurt/40588",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushalt_und_finanzen/24131",
+          "quelleDatei": "bb-ausschuss-24131-20260927.html",
+          "quelleSha256": "9c84fbda76ebc39f0a317b6e0f7b7477dc365ab01f74eb741b91164e54ce3847"
+        },
+        {
+          "ausschuss": "Ausschuss für Inneres und Kommunales",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/fischer_kurt/40588",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_inneres_und_kommunales/25462",
+          "quelleDatei": "bb-ausschuss-25462-20260927.html",
+          "quelleSha256": "cc5e63ab7be903f3cadfa4a51cf6dd2a87f2ac54aaa2dd2710029b6103aa88e8"
+        },
+        {
+          "ausschuss": "Ausschuss für Wirtschaft, Energie und Klimaschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/fischer_kurt/40588",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wirtschaft_energie_und_klimaschutz/23884",
+          "quelleDatei": "bb-ausschuss-23884-20260927.html",
+          "quelleSha256": "80b37be41fd88e15a66b732f8cb509de3fa6e7aac2c256885215e9c4b16c712c"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40589",
+      "amtlicheKennung": "40589",
+      "parlament": "landtag-brandenburg",
+      "person": "Nadine Graßmel",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/graszmel_nadine/40589",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/graszmel_nadine/40589",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:24.571767+00:00",
+        "sha256": "d12ee8810c938363c63ed87978237a71c20ca740de83c33a16fd61cab6e467b8",
+        "bytes": 95423,
+        "datei": "landtag-brandenburg-40589.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Bildung, Jugend und Sport",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/graszmel_nadine/40589",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_bildung_jugend_und_sport/23874",
+          "quelleDatei": "bb-ausschuss-23874-20260927.html",
+          "quelleSha256": "c19b287e32b9eeeb3f0ecefe066e32ad984bf7b76a25e203c174eeb687a6446e"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40592",
+      "amtlicheKennung": "40592",
+      "parlament": "landtag-brandenburg",
+      "person": "Lars Katzmarek",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/katzmarek_lars/40592",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/katzmarek_lars/40592",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:25.497180+00:00",
+        "sha256": "7fae5a9df01f97de22bb7b4ba9caee6c20140c9fedba2a15a7a48608846554dd",
+        "bytes": 95109,
+        "datei": "landtag-brandenburg-40592.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Infrastruktur und Landesplanung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/katzmarek_lars/40592",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_infrastruktur_und_landesentwicklung/23886",
+          "quelleDatei": "bb-ail-mitglieder-20260927.html",
+          "quelleSha256": "2b6d37980b54e2143f1b3261edf330f45952d9bc3e41b5178fec40b65d440e18"
+        },
+        {
+          "ausschuss": "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/katzmarek_lars/40592",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+          "quelleDatei": "bb-ausschuss-23885-20260927.html",
+          "quelleSha256": "d02c009349db06b94971753d542697228a26f4e8d79b036366ef4131b9e73405"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40593",
+      "amtlicheKennung": "40593",
+      "parlament": "landtag-brandenburg",
+      "person": "Marcel Penquitt",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/penquitt_marcel/40593",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/penquitt_marcel/40593",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:25.667893+00:00",
+        "sha256": "f3e7c4af0a32c92bb25912d8ab37a25028e5a4bb9cda55f6a0b36a38784e1200",
+        "bytes": 94214,
+        "datei": "landtag-brandenburg-40593.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Infrastruktur und Landesplanung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/penquitt_marcel/40593",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_infrastruktur_und_landesentwicklung/23886",
+          "quelleDatei": "bb-ail-mitglieder-20260927.html",
+          "quelleSha256": "2b6d37980b54e2143f1b3261edf330f45952d9bc3e41b5178fec40b65d440e18"
+        },
+        {
+          "ausschuss": "Ausschuss für Recht und Digitalisierung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/penquitt_marcel/40593",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_recht_und_digitalisierung/23875",
+          "quelleDatei": "bb-ausschuss-23875-20260927.html",
+          "quelleSha256": "f0ded120b0ad2f117e63876fe15c499b169000978edd90efdcb854e349735666"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40594",
+      "amtlicheKennung": "40594",
+      "parlament": "landtag-brandenburg",
+      "person": "Julia Sahi",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/sahi_julia/40594",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/sahi_julia/40594",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:26.340624+00:00",
+        "sha256": "bb8120df254886c64d3996fbb7846708cf44761f378d0e0cb6a09f22b6092de1",
+        "bytes": 95237,
+        "datei": "landtag-brandenburg-40594.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/sahi_julia/40594",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+          "quelleDatei": "bb-ausschuss-23905-20260927.html",
+          "quelleSha256": "979acb4c47c5af655fca94217b27bab30fc0c0ab2fa3bd6d57a6a0e85cfc569c"
+        },
+        {
+          "ausschuss": "Ausschuss für Bildung, Jugend und Sport",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/sahi_julia/40594",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_bildung_jugend_und_sport/23874",
+          "quelleDatei": "bb-ausschuss-23874-20260927.html",
+          "quelleSha256": "c19b287e32b9eeeb3f0ecefe066e32ad984bf7b76a25e203c174eeb687a6446e"
+        },
+        {
+          "ausschuss": "Ausschuss für Europaangelegenheiten und Entwicklungspolitik",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/sahi_julia/40594",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_europaangelegenheiten_und_entwicklungspolitik/13891",
+          "quelleDatei": "bb-ausschuss-13891-20260927.html",
+          "quelleSha256": "cbc32184ed232c32e0984e3e31c1bae1a527b775b38b4b089f536f4dd87702f4"
+        },
+        {
+          "ausschuss": "Ausschuss für Wirtschaft, Energie und Klimaschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/sahi_julia/40594",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wirtschaft_energie_und_klimaschutz/23884",
+          "quelleDatei": "bb-ausschuss-23884-20260927.html",
+          "quelleSha256": "80b37be41fd88e15a66b732f8cb509de3fa6e7aac2c256885215e9c4b16c712c"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40595",
+      "amtlicheKennung": "40595",
+      "parlament": "landtag-brandenburg",
+      "person": "Martina Maxi Schmidt",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/schmidt_martina_maxi/40595",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/schmidt_martina_maxi/40595",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:26.508818+00:00",
+        "sha256": "7ce335d3929bcd025c328a76295e3d259e5cbfe7b53b3d537ebc9843b16f3296",
+        "bytes": 96100,
+        "datei": "landtag-brandenburg-40595.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/schmidt_martina_maxi/40595",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+          "quelleDatei": "bb-ausschuss-23885-20260927.html",
+          "quelleSha256": "d02c009349db06b94971753d542697228a26f4e8d79b036366ef4131b9e73405"
+        },
+        {
+          "ausschuss": "Ausschuss für Recht und Digitalisierung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/schmidt_martina_maxi/40595",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_recht_und_digitalisierung/23875",
+          "quelleDatei": "bb-ausschuss-23875-20260927.html",
+          "quelleSha256": "f0ded120b0ad2f117e63876fe15c499b169000978edd90efdcb854e349735666"
+        },
+        {
+          "ausschuss": "Hauptausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/schmidt_martina_maxi/40595",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/hauptausschuss/23873",
+          "quelleDatei": "bb-ausschuss-23873-20260927.html",
+          "quelleSha256": "5454e63ac5d383b0afefcc54666e33f396bd607ed9f0b9460e56d354706cc1a6"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40596",
+      "amtlicheKennung": "40596",
+      "parlament": "landtag-brandenburg",
+      "person": "Sina Schönbrunn",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/schoenbrunn_sina/40596",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/schoenbrunn_sina/40596",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:27.148080+00:00",
+        "sha256": "493a38f462a205b417d0180b11cf9379fdcd617f04da12c034f8839fd0169df0",
+        "bytes": 94688,
+        "datei": "landtag-brandenburg-40596.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Wissenschaft, Forschung und Kultur",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/schoenbrunn_sina/40596",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
+          "quelleDatei": "bb-ausschuss-23883-20260927.html",
+          "quelleSha256": "740223903fe68f3973efdbfac51b9f772f79b416e90a718074999edcb3465f50"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40618",
+      "amtlicheKennung": "40618",
+      "parlament": "landtag-brandenburg",
+      "person": "Christian Dorst",
+      "gruppe": "BSW-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/dorst_christian/40618",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/dorst_christian/40618",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:08.180468+00:00",
+        "sha256": "1db657a232964ae5ba6cd405861b5cec7e033aae77bcde9f34f6b456faa3505e",
+        "bytes": 94145,
+        "datei": "landtag-brandenburg-40618.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Europaangelegenheiten und Entwicklungspolitik",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/dorst_christian/40618",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_europaangelegenheiten_und_entwicklungspolitik/13891",
+          "quelleDatei": "bb-ausschuss-13891-20260927.html",
+          "quelleSha256": "cbc32184ed232c32e0984e3e31c1bae1a527b775b38b4b089f536f4dd87702f4"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40620",
+      "amtlicheKennung": "40620",
+      "parlament": "landtag-brandenburg",
+      "person": "Sven Hornauf",
+      "gruppe": "BSW-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/hornauf_sven/40620",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/hornauf_sven/40620",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:08.829677+00:00",
+        "sha256": "02a086d5eacd63a914daf367a2e6ea5ed88c1680f5dc1c849f08530a189ce588",
+        "bytes": 94999,
+        "datei": "landtag-brandenburg-40620.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Inneres und Kommunales",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/hornauf_sven/40620",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_inneres_und_kommunales/25462",
+          "quelleDatei": "bb-ausschuss-25462-20260927.html",
+          "quelleSha256": "cc5e63ab7be903f3cadfa4a51cf6dd2a87f2ac54aaa2dd2710029b6103aa88e8"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40621",
+      "amtlicheKennung": "40621",
+      "parlament": "landtag-brandenburg",
+      "person": "Andreas Kutsche",
+      "gruppe": "BSW-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/kutsche_andreas/40621",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/kutsche_andreas/40621",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:09.081253+00:00",
+        "sha256": "7be0a5ebd454eda27237cbed5df1ff58d1ea22313fb0751e200e265ccfd02757",
+        "bytes": 96531,
+        "datei": "landtag-brandenburg-40621.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Wahlprüfungsausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/kutsche_andreas/40621",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/wahlpruefungsausschuss/23906",
+          "quelleDatei": "bb-ausschuss-23906-20260927.html",
+          "quelleSha256": "d7bb7d43a501891d9a3bf413778bbd52ce47b060fa6db1904bc1d397df8c055a"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40622",
+      "amtlicheKennung": "40622",
+      "parlament": "landtag-brandenburg",
+      "person": "Gunnar Lehmann",
+      "gruppe": "BSW-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/lehmann_gunnar/40622",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/lehmann_gunnar/40622",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:09.663366+00:00",
+        "sha256": "2d2ef242368a41487750458989a8701fd997d78809a8ba93668e6c681a73113a",
+        "bytes": 94026,
+        "datei": "landtag-brandenburg-40622.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Haushalt und Finanzen",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/lehmann_gunnar/40622",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushalt_und_finanzen/24131",
+          "quelleDatei": "bb-ausschuss-24131-20260927.html",
+          "quelleSha256": "9c84fbda76ebc39f0a317b6e0f7b7477dc365ab01f74eb741b91164e54ce3847"
+        },
+        {
+          "ausschuss": "Wahlprüfungsausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/lehmann_gunnar/40622",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/wahlpruefungsausschuss/23906",
+          "quelleDatei": "bb-ausschuss-23906-20260927.html",
+          "quelleSha256": "d7bb7d43a501891d9a3bf413778bbd52ce47b060fa6db1904bc1d397df8c055a"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40623",
+      "amtlicheKennung": "40623",
+      "parlament": "landtag-brandenburg",
+      "person": "Niels-Olaf Lüders",
+      "gruppe": "BSW-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/lueders_niels-olaf/40623",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/lueders_niels-olaf/40623",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:09.840853+00:00",
+        "sha256": "8b2029aba6b4858d79661752832d14a1bb4287498e13105d68cf7ed114281b8c",
+        "bytes": 94543,
+        "datei": "landtag-brandenburg-40623.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Recht und Digitalisierung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/lueders_niels-olaf/40623",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_recht_und_digitalisierung/23875",
+          "quelleDatei": "bb-ausschuss-23875-20260927.html",
+          "quelleSha256": "f0ded120b0ad2f117e63876fe15c499b169000978edd90efdcb854e349735666"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40625",
+      "amtlicheKennung": "40625",
+      "parlament": "landtag-brandenburg",
+      "person": "Jenny Meyer",
+      "gruppe": "BSW-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/meyer_jenny/40625",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/meyer_jenny/40625",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:10.427923+00:00",
+        "sha256": "4799089eade60abb81db40feb5ef5121a127d5ef9aaaec884ee0418027437278",
+        "bytes": 93945,
+        "datei": "landtag-brandenburg-40625.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Haushaltskontrolle",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/meyer_jenny/40625",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_haushaltskontrolle/25331",
+          "quelleDatei": "bb-ausschuss-25331-20260927.html",
+          "quelleSha256": "fd02e8ed94739df173ee9bd9a95c7774a64b816be91e40c20ef2cd23288d9531"
+        },
+        {
+          "ausschuss": "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/meyer_jenny/40625",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+          "quelleDatei": "bb-ausschuss-23885-20260927.html",
+          "quelleSha256": "d02c009349db06b94971753d542697228a26f4e8d79b036366ef4131b9e73405"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40626",
+      "amtlicheKennung": "40626",
+      "parlament": "landtag-brandenburg",
+      "person": "Falk Peschel",
+      "gruppe": "BSW-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/peschel_falk/40626",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/peschel_falk/40626",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:10.630817+00:00",
+        "sha256": "0b94e765a180a8840f1be5ed427cf687926729f303f73530f1ea52e5e72f3433",
+        "bytes": 95876,
+        "datei": "landtag-brandenburg-40626.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/peschel_falk/40626",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_arbeit_soziales_gesundheit_und_gesellschaftlichen_zusammenhalt/23905",
+          "quelleDatei": "bb-ausschuss-23905-20260927.html",
+          "quelleSha256": "979acb4c47c5af655fca94217b27bab30fc0c0ab2fa3bd6d57a6a0e85cfc569c"
+        },
+        {
+          "ausschuss": "Hauptausschuss",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/peschel_falk/40626",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/hauptausschuss/23873",
+          "quelleDatei": "bb-ausschuss-23873-20260927.html",
+          "quelleSha256": "5454e63ac5d383b0afefcc54666e33f396bd607ed9f0b9460e56d354706cc1a6"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40629",
+      "amtlicheKennung": "40629",
+      "parlament": "landtag-brandenburg",
+      "person": "Oliver Skopec",
+      "gruppe": "fraktionslos",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/skopec_oliver/40629",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/skopec_oliver/40629",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:30.018023+00:00",
+        "sha256": "1dfed61452816f1460da49b55885dfeeb44df88c79c687b109d236100d42d4a0",
+        "bytes": 95070,
+        "datei": "landtag-brandenburg-40629.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Infrastruktur und Landesplanung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/skopec_oliver/40629",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_infrastruktur_und_landesentwicklung/23886",
+          "quelleDatei": "bb-ail-mitglieder-20260927.html",
+          "quelleSha256": "2b6d37980b54e2143f1b3261edf330f45952d9bc3e41b5178fec40b65d440e18"
+        },
+        {
+          "ausschuss": "Ausschuss für Wissenschaft, Forschung und Kultur",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/skopec_oliver/40629",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
+          "quelleDatei": "bb-ausschuss-23883-20260927.html",
+          "quelleSha256": "740223903fe68f3973efdbfac51b9f772f79b416e90a718074999edcb3465f50"
+        }
+      ]
+    }
+  ]
+}

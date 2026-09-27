@@ -631,6 +631,51 @@ def _pruefe_kloeckner(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator geprueffte Ergaenzungsquittung fuer den belegten
+# Verlust stellvertretender Brandenburger Ausschussmitgliedschaften. Die
+# fail-closed-Validierung liegt im getrennten Modul
+# ``profil-feldbelege-500-stellvertretungen.py`` (das die sicheren Helfer des
+# Zusatzaufgabenmoduls wiederverwendet); hier wird nur der geprueffte Index
+# angewendet. 76 Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile,
+# ausschliesslich aus dem amtlichen Fachausschussindex 25220 und seinen 14
+# verlinkten Ausschussseiten. Nur die eigene geschlossene Stellvertretungsspalte
+# zaehlt; ordentliche Ausschuesse, Partei, Fraktion, Funktionen, Themen und
+# Mandatsart bleiben unveraendert, keine Aufwertung zu ordentlichem Sitz/Vorsitz.
+STELLVERTRETUNGEN = REPO_ROOT / "docs" / "betrieb" / "brandenburg-stellvertretungen-76-20260927.json"
+STELLVERTRETUNGEN_RESSOURCE = "docs/betrieb/brandenburg-stellvertretungen-76-20260927.json"
+
+
+def _lade_stellvertretungenmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-stellvertretungen.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_stellvertretungen", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+STELLVERTRETUNGENMODUL = _lade_stellvertretungenmodul()
+
+
+def _pruefe_stellvertretungen(eingang) -> dict:
+    """Prueft die versionierte Stellvertretungsquittung ueber das getrennte Modul."""
+    try:
+        index = STELLVERTRETUNGENMODUL.pruefe_stellvertretungen(
+            eingang,
+            quittung=getattr(eingang, "stellvertretungen", None),
+            kennung_zu_abruf=getattr(eingang, "kennung_zu_abruf", None) or {},
+        )
+    except STELLVERTRETUNGENMODUL.StellvertretungenFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.stellvertretungen_by_kennung = index
+    eingang.stellvertretungen_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -2194,6 +2239,27 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         for gremium in zusaetzliche:
             if gremium not in weitere_gremien:
                 weitere_gremien.append(gremium)
+    # Versionierte Stellvertretungsquittung: nur die amtlich belegten
+    # stellvertretenden Brandenburger Ausschussmitgliedschaften werden ergaenzt.
+    # Sie tragen die fachliche Achse, bleiben aber strikt von ordentlichen
+    # Ausschuessen getrennt (keine Aufwertung zu ordentlichem Sitz/Vorsitz).
+    stellvertretungen_eintrag = (getattr(eingang, "stellvertretungen_by_kennung", None) or {}).get(mandatsId)
+    stellvertretungen_quellen = []
+    if stellvertretungen_eintrag is not None:
+        verwendet = getattr(eingang, "stellvertretungen_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        for mitgliedschaft in stellvertretungen_eintrag["ausschuesse"]:
+            if mitgliedschaft["ausschuss"] not in stellvertretende:
+                stellvertretende.append(mitgliedschaft["ausschuss"])
+            if mitgliedschaft["quelle"] not in stellvertretungen_quellen:
+                stellvertretungen_quellen.append(mitgliedschaft["quelle"])
+    if ordentliche and stellvertretende:
+        kollision = sorted(set(ordentliche) & set(stellvertretende))
+        if kollision:
+            raise AssemblerFehler(
+                f"Stellvertretung kollidiert mit ordentlichem Ausschuss ({mandatsId}): {kollision}."
+            )
     if ordentliche:
         profil["ausschuesse"] = ordentliche
     if stellvertretende:
@@ -2247,6 +2313,49 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             "sha256": abruf["sha256"],
         }
     ]
+
+    # Versionierte Stellvertretungsquittung: die amtliche Quelle jeder ergaenzten
+    # stellvertretenden Ausschussmitgliedschaft wird an profil.offizielleQuellen
+    # angefuegt; alle anderen Felder bleiben unveraendert.
+    stellvertretungen_beleg = None
+    if stellvertretungen_eintrag is not None:
+        for quelle in stellvertretungen_quellen:
+            profil["offizielleQuellen"].append({
+                "art": "stellvertretende-ausschussmitgliedschaft",
+                "url": quelle["url"],
+                "abgerufenAm": quelle.get("abgerufenAm"),
+                "sha256": quelle["sha256"],
+            })
+        stellvertretungen_beleg = {
+            "datei": STELLVERTRETUNGEN_RESSOURCE,
+            "kennung": stellvertretungen_eintrag["kennung"],
+            "person": stellvertretungen_eintrag["person"],
+            "gruppe": stellvertretungen_eintrag["gruppe"],
+            "personenquelle": {
+                "datei": stellvertretungen_eintrag["personenquelle"].get("datei"),
+                "url": stellvertretungen_eintrag["personenquelle"].get("url"),
+                "finalUrl": stellvertretungen_eintrag["personenquelle"].get("finalUrl"),
+                "abgerufenAm": stellvertretungen_eintrag["personenquelle"].get("abgerufenAm"),
+                "sha256": stellvertretungen_eintrag["personenquelle"].get("sha256"),
+                "bytes": stellvertretungen_eintrag["personenquelle"].get("bytes"),
+            },
+            "mitgliedschaften": [
+                {
+                    "ausschuss": mitgliedschaft["ausschuss"],
+                    "rolle": mitgliedschaft["rolle"],
+                    "personenlink": mitgliedschaft["personenlink"],
+                    "quelle": {
+                        "datei": mitgliedschaft["quelle"].get("datei"),
+                        "url": mitgliedschaft["quelle"].get("url"),
+                        "finalUrl": mitgliedschaft["quelle"].get("finalUrl"),
+                        "abgerufenAm": mitgliedschaft["quelle"].get("abgerufenAm"),
+                        "sha256": mitgliedschaft["quelle"].get("sha256"),
+                        "bytes": mitgliedschaft["quelle"].get("bytes"),
+                    },
+                }
+                for mitgliedschaft in stellvertretungen_eintrag["ausschuesse"]
+            ],
+        }
 
     # Versionierte Ressortquittung: fuer die 19 freigegebenen Fachachsen wird aus
     # dem amtlich belegten aktuellen Ressort die ausdruecklichen Ressortbegriffe als Themen gesetzt und
@@ -2994,6 +3103,20 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         )
         feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
 
+    if stellvertretungen_beleg is not None:
+        feldbelege["stellvertretendeAusschuesse"] = (
+            f"vom Orchestrator gepruefte Stellvertretungsquittung {STELLVERTRETUNGEN_RESSOURCE}: "
+            f"nur die amtlich belegten stellvertretenden Brandenburger Ausschussmitgliedschaften aus der "
+            f"eigenen geschlossenen Stellvertretungsspalte (h5 {STELLVERTRETUNGENMODUL.SPALTE!r}; exakte "
+            f"Klassen col-12 col-md-6 col-lg-12 col-xl-6 my-4 my-md-0 als direktes Kind der row; "
+            f"h6-Fraktionsueberschrift mit unmittelbar folgender eigener ul/li/a.profile; exakter "
+            f"kanonischer Personenlink, STRONG-Name und organization-name); Person, Profilhash, Name und "
+            f"Fraktion bzw. Fraktionslosigkeit sind separat an die kanonischen Detailseiten gebunden. "
+            f"Ordentliche Ausschuesse, Partei, Fraktion, Funktionen, Themen und Mandatsart bleiben "
+            f"unveraendert, keine Aufwertung zu ordentlichem Sitz/Vorsitz, keine erfundenen Themen "
+            f"(URL + finalUrl + HTTP + Abrufzeit + sha256 + Bytezahl + Datei, Original UND Metadaten, gebunden)"
+        )
+
     # ── Offene Punkte explizit zusammentragen ─────────────────────────────────
     offene_punkte = []
     offene_felder = []
@@ -3042,9 +3165,10 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             continue
         feld = roh_zu_feld.get(punkt)
         # Ein alter roher Extraktionspunkt "fachliche Achse offen" ist kein offener
-        # Punkt mehr, wenn die Achse ueber ein amtlich belegtes Ressort geschlossen
+        # Punkt mehr, wenn die Achse ueber ein amtlich belegtes Ressort oder eine
+        # amtlich belegte stellvertretende Ausschussmitgliedschaft geschlossen
         # wurde. Der Rohpunkt bleibt als historischer ``extraktionOffen`` erhalten.
-        if feld == "fachlicheAchse" and achsen_geschlossen:
+        if feld == "fachlicheAchse" and (achsen_geschlossen or stellvertretungen_eintrag is not None):
             continue
         _merke(feld, punkt)
 
@@ -3153,6 +3277,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["jarzombekQuittung"] = jarzombek_beleg
     if kloeckner_beleg is not None:
         datensatz["kloecknerQuittung"] = kloeckner_beleg
+    if stellvertretungen_beleg is not None:
+        datensatz["stellvertretungenQuittung"] = stellvertretungen_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -3176,6 +3302,7 @@ def assembliere(eingang: Eingang) -> dict:
     wahlausschuss = _pruefe_wahlausschuss(eingang)
     jarzombek = _pruefe_jarzombek(eingang)
     kloeckner = _pruefe_kloeckner(eingang)
+    stellvertretungen = _pruefe_stellvertretungen(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -3257,6 +3384,11 @@ def assembliere(eingang: Eingang) -> dict:
     if ungenutzte_kloeckner:
         raise AssemblerFehler(
             f"Kloeckner-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_kloeckner)}."
+        )
+    ungenutzte_stellvertretungen = set(stellvertretungen) - eingang.stellvertretungen_verwendet
+    if ungenutzte_stellvertretungen:
+        raise AssemblerFehler(
+            f"Stellvertretungsquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_stellvertretungen)}."
         )
     ressort_geschlossen = set(eingang.ressortachsen_verwendet)
     if ressort_geschlossen != set(ressortachsen):
@@ -3406,6 +3538,15 @@ def assembliere(eingang: Eingang) -> dict:
                            | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen
                            | amthor_geschlossen | wahlausschuss_geschlossen | jarzombek_geschlossen
                            | kloeckner_geschlossen)
+    # Die Stellvertretungsquittung schliesst die fachliche Achse ueber eine belegte
+    # stellvertretende (nicht ordentliche) Ausschussmitgliedschaft. Nur Profile,
+    # deren Achse zuvor in der 54er Rollenquittung offen war, gehoeren in die
+    # Deckungsgleichheit der 54 Achsen (Skopec); die uebrigen 34 waren bereits
+    # ueber ordentliche Ausschuesse geschlossen.
+    stellvertretungen_achsen = (
+        {d["kanonischeKennung"] for d in datensaetze if d.get("stellvertretungenQuittung")}
+        & set(profilrollen)
+    )
     if not geschlossene_achsen <= set(profilrollen):
         raise AssemblerFehler(
             "Geschlossene Achsen enthalten Kennungen ausserhalb der 54er Rollenquittung: "
@@ -3416,7 +3557,16 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Fachachse gleichzeitig offen und geschlossen: {sorted(geschlossene_achsen & offene_achsen)}."
         )
-    vereinigung = offene_achsen | geschlossene_achsen
+    if stellvertretungen_achsen & geschlossene_achsen:
+        raise AssemblerFehler(
+            "Stellvertretungs- und Themenachse gleichzeitig belegt: "
+            f"{sorted(stellvertretungen_achsen & geschlossene_achsen)}."
+        )
+    if stellvertretungen_achsen & offene_achsen:
+        raise AssemblerFehler(
+            f"Stellvertretungsachse bleibt offen: {sorted(stellvertretungen_achsen & offene_achsen)}."
+        )
+    vereinigung = offene_achsen | geschlossene_achsen | stellvertretungen_achsen
     if vereinigung != set(profilrollen):
         fehlend = sorted(set(profilrollen) - vereinigung)
         fremd = sorted(vereinigung - set(profilrollen))
@@ -3438,7 +3588,7 @@ def assembliere(eingang: Eingang) -> dict:
                 or datensatz.get("beratendeachsenQuittung") or datensatz.get("zusaetzlicheaufgabenQuittung")
                 or datensatz.get("bmwsbQuittung") or datensatz.get("amthorQuittung")
                 or datensatz.get("wahlausschussQuittung") or datensatz.get("jarzombekQuittung")
-                or datensatz.get("kloecknerQuittung")):
+                or datensatz.get("kloecknerQuittung") or datensatz.get("stellvertretungenQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
                     f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
@@ -3565,6 +3715,15 @@ def assembliere(eingang: Eingang) -> dict:
                 f"explizite Liste mit {len(SONSTIGE_GREMIEN)} amtlich belegten sonstigen Gremien des "
                 "Bundestages (JSON-LD memberOf mit Original-Rolle und Original-URL); Sollmenge der "
                 "staendigen Ausschuesse unveraendert aus lib/helmut/profile-readiness.resolveBundestagsausschuss"
+            ),
+            "stellvertretungenQuittung": (
+                f"{STELLVERTRETUNGEN_RESSOURCE} (vom Orchestrator geprueft; belegter Verlust "
+                "stellvertretender Brandenburger Ausschussmitgliedschaften: 76 bislang fehlende "
+                "Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile aus dem amtlichen "
+                "Fachausschussindex 25220 und seinen 14 verlinkten Ausschussseiten; Validierung im "
+                "getrennten Modul scripts/profil-feldbelege-500-stellvertretungen.py; echte H1, eigene "
+                "geschlossene Stellvertretungsspalte, exakter kanonischer Personenlink; Person/Profilhash/"
+                "Name/Fraktion bzw. Fraktionslosigkeit separat an die kanonischen Detailseiten gebunden)"
             ),
             "eingangsverzeichnis": str(eingang.verzeichnis),
             "hinweis": (
@@ -3741,6 +3900,21 @@ def assembliere(eingang: Eingang) -> dict:
                 "Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB- und 1 Amthor-Achse; die disjunkte "
                 "Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 18 Achsen offen."
             ),
+            (
+                "Der belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften wird "
+                f"ueber die vom Orchestrator geprueffte Ergaenzungsquittung {STELLVERTRETUNGEN_RESSOURCE} "
+                "behoben: 76 bislang fehlende Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile "
+                "werden ausschliesslich aus der eigenen geschlossenen Stellvertretungsspalte der 13 von 14 "
+                "amtlichen Fachausschussseiten ergaenzt (Index 25220; Unterausschuss 23893 ist der belegte "
+                "Nullfall ohne Spalte). Nur die 50 kanonischen Brandenburger Personen-URLs bilden die "
+                "Auswahlgrenze; andere Personen auf den amtlichen Seiten sind keine Kundenprofile, es "
+                "entstehen keine AfD-Profile. Ordentliche Ausschuesse, Partei, Fraktion, Funktionen, Themen "
+                "und Mandatsart bleiben unveraendert, keine Aufwertung zu ordentlichem Sitz oder Vorsitz, "
+                "keine erfundenen Themen. Die belegte Stellvertretung traegt die fachliche Achse und "
+                "schliesst genau die eine zuvor offene Achse (Oliver Skopec); die uebrigen 34 Profile "
+                "werden nur vollstaendiger. Index und vollstaendige Menge der 14 Quellen sind an "
+                "URL/finalUrl/HTTP/Abrufzeit/Hash/Bytes/Datei (Original UND Metadaten) gebunden."
+            ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
         ],
@@ -3864,6 +4038,16 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("kloecknerQuittung")),
                 "deckungsgleichVerwendet": len(eingang.kloeckner_verwendet),
                 "geschlosseneAchsen": len(kloeckner_geschlossen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
+            },
+            "stellvertretungenQuittung": {
+                "datei": STELLVERTRETUNGEN_RESSOURCE,
+                "geprueftGesamt": len(stellvertretungen),
+                "zielprofile": len(stellvertretungen),
+                "mitgliedschaften": sum(len(v["ausschuesse"]) for v in stellvertretungen.values()),
+                "quellen": STELLVERTRETUNGENMODUL.ERWARTUNG["quellen"],
+                "deckungsgleichVerwendet": len(eingang.stellvertretungen_verwendet),
+                "geschlosseneAchsen": len(stellvertretungen_achsen),
                 "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "offeneFelder": offene_felder,

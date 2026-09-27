@@ -4,21 +4,22 @@
 Zielprofile. **Keine fachliche Freigabe, kein Importmanifest, keine Production-
 Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
-**Aktuelle Fortschreibung nach dem Kloeckner-Einzelfall:** 483 technisch akzeptiert,
-17 unvollstaendig; 317/330 Bundestagsprofile technisch bereit. 16 fachliche Achsen,
-74 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor offene
-Fachachsenfall Julia Klöckner (Bundestagspraesidentin) ist ueber die amtlich belegten
-Aufgaben (Bundestagsverwaltung, Parteienfinanzierung) geschlossen: die kanonische
-Person wird separat ueber ihre echte H1 und den eigenen aktuellen Funktionstext
-(`div.m-biography__function`) neu gebunden, die Aufgaben stammen ausschliesslich aus
-dem ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts "An der Spitze der
-Bundestagsverwaltung" der amtlichen Praesidiumsseite (der `--hidden`-Linkhilfetext
-zaehlt nicht als Aufgabenprosa, der erste Absatz und angrenzende Abschnitte sind keine
-Personenaufgaben, sonstige Praesidiums-/Aeltestenratsarbeit wird nicht uebernommen);
-die 54er Rolle `Bundestagspräsidentin` bleibt byte-identisch erhalten, die Partei
-bleibt offen, nur ein Datensatz aendert sich (499 unveraendert). Die nachfolgenden
-bisherigen Teilberichte enthalten ihre damaligen Zwischenstaende; massgeblich fuer
-die aktuelle Bilanz ist das [Feldbeleg-JSON](500-profilfeldbelege-20260927.json).
+**Aktuelle Fortschreibung nach dem Stellvertretungs-Schritt (Brandenburg):** 484
+technisch akzeptiert, 16 unvollstaendig; 317/330 Bundestagsprofile technisch bereit.
+15 fachliche Achsen, 74 Parteifelder und eine Berliner Mandatsart bleiben offen. Der
+belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften ist ueber die
+versionierte [Stellvertretungsquittung](brandenburg-stellvertretungen-76-20260927.json)
+behoben: 76 bislang fehlende Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile,
+35 Datensaetze geaendert und 465 identisch. Genau eine zuvor offene 54er-Fachachse
+(Oliver Skopec) schliesst sich darueber ueber eine belegte STELLVERTRETENDE
+Ausschussmitgliedschaft; die 54er Rollenquittung bleibt 48/6. Vorher war der offene
+Fachachsenfall Julia Klöckner (Bundestagspraesidentin) ueber ihre amtlich belegten
+Aufgaben geschlossen worden (kanonische Person separat neu gebunden, 54er-Rolle
+unveraendert). Die nachfolgenden bisherigen Teilberichte enthalten ihre damaligen
+Zwischenstaende; massgeblich fuer die aktuelle Bilanz ist das
+[Feldbeleg-JSON](500-profilfeldbelege-20260927.json).
+
+Die eigene Indexkarte bindet Ausschuss-URL und H6-Namen an die echte H1 der jeweiligen Seite. Versteckte Inhalte, fremde URL-Parameter und aus dem Inhaltsbereich verschobene Karten werden auch bei konsistent erneuerten Quellenhashes gesperrt.
 
 Die 335 zuvor offenen Parteifelder sind ueber die von Sol gepruefte, versionierte
 Ergaenzungsquittung an URL UND Quellhash gebunden: 261 Parteien sind belegt
@@ -947,3 +948,69 @@ Eigene Abschlussgegenproben binden auch manipulierte Originale samt Metadaten un
 Hash konsistent neu: falsche oder versteckte H2, Absatz ausserhalb des
 Elternabschnitts und Funktionstext nach dessen Ende werden gesperrt. Die
 amtlichen Originale bleiben akzeptiert; Neuerzeugung byte-identisch.
+
+## Stellvertretungen Brandenburg: 76 belegte stellvertretende Ausschussmitgliedschaften
+
+Die versionierte [Stellvertretungsquittung](brandenburg-stellvertretungen-76-20260927.json)
+behebt den belegten Verlust: Alle 50 gespeicherten Brandenburger Personenseiten
+tragen keinen eigenen Abschnitt fuer Stellvertretungen. Die amtlichen
+Fachausschussseiten fuehren sie jedoch in einer eigenen geschlossenen
+Mitgliederspalte. Aus dem amtlichen Fachausschussindex 25220 und seinen 14
+verlinkten Ausschussseiten stammen genau 76 bislang fehlende Stellvertretungen bei
+35 der 50 kanonischen Landtagsprofile. Genau 13 der 14 Seiten tragen eine eigene
+Spalte "Stellvertretende Mitglieder"; der Unterausschuss 23893 ist der eigens
+belegte Nullfall ohne Stellvertretungsspalte (keine implizite Fehlertoleranz fuer
+die anderen 13 Seiten).
+
+Die Pruefung laeuft fail closed im getrennten Modul
+`scripts/profil-feldbelege-500-stellvertretungen.py`, das die sicheren
+Quellen-/Metadaten-/HTML-Helfer des Zusatzaufgabenmoduls wiederverwendet:
+
+* Index und die vollstaendige Menge der 14 Quellen sind an URL, finalUrl, HTTP,
+  Abrufzeit, sha256, Bytezahl und Datei gebunden (Original UND `*.meta.json`);
+* die Indexlinks stammen ausschliesslich aus dem Inhaltsbereich unter der echten
+  H1 "Fachausschuesse" (nicht aus Navigation oder Breadcrumb);
+* der Ausschussname stammt aus der echten eindeutigen H1 der Seite; der
+  Infrastruktur-Slug "landesentwicklung" wird NICHT zur Umbenennung genutzt,
+  uebernommen wird der belegte H1 "Ausschuss fuer Infrastruktur und Landesplanung";
+* die Stellvertretung ist exakt die eigene `div` mit den Klassen
+  `col-12 col-md-6 col-lg-12 col-xl-6 my-4 my-md-0` als direktes Kind der
+  `div.row`; Vorsitz und stellvertretender Vorsitz stehen ausserhalb und zaehlen
+  nicht;
+* je Fraktionsueberschrift (`h6`) folgt unmittelbar die eigene
+  `ul.list-unstyled` mit eigenen `li` > `a.profile` (exakter kanonischer
+  Personenlink, STRONG-Name und `organization-name`); es gibt keine Bindung aus
+  Nachbarspalte, Navigation, Kommentaren, Skripten, Vorlagen oder Text nach einem
+  geschlossenen Abschnitt, und eine fehlende Liste laesst die vorige Gruppe nicht
+  ueber einen Abschnittswechsel fortleben;
+* nur die 50 kanonischen Brandenburger Personen-URLs bilden die Auswahlgrenze;
+  andere Personen auf den amtlichen Seiten sind keine Kundenprofile, es
+  entstehen keine AfD-Profile;
+* Person, Profilhash, Name und Fraktion bzw. Fraktionslosigkeit werden separat an
+  die kanonischen Detailseiten gebunden (echte H1 und amtliche `doc-subtitle`).
+
+Positiv geprueft: genau 76 eindeutige (Profil, Ausschuss)-Paare bei genau 35
+Zielprofilen. Der Ankerfall Oliver Skopec traegt zwei belegte Stellvertretungen
+(Wissenschaft/Forschung/Kultur sowie Infrastruktur/Landesplanung); er bleibt
+fraktionslos (keine alte BSW-Sprecherrolle uebernommen) und ist der einzige
+Schnitt mit den urspruenglich offenen 54er-Fachachsen, sodass genau eine zuvor
+offene Achse ueber die STELLVERTRETENDE (nicht ordentliche) Mitgliedschaft
+schliesst. Die uebrigen 34 Profile werden nur vollstaendiger. Ordentliche
+Ausschuesse, Partei, Fraktion, Funktionen, Themen und Mandatsart bleiben
+unveraendert, es entsteht keine Aufwertung zu ordentlichem Sitz oder Vorsitz und
+keine erfundenen Themen.
+
+Synthetische Gegenproben (ohne `/private/tmp`-Abhaengigkeit) sperren fail closed:
+falscher Ausschuss, vertauschte Rolle/Gruppe, fremder Name/Link, inerte Inhalte
+(Spalte in Vorlage, H1 nur im Kommentar), Abschnittsausbruch (`ul` nicht
+unmittelbar nach `h6`), doppelte Spalte, doppelte Person bzw. doppeltes Paar,
+fehlende Mitgliedschaftsliste, fehlender Nullfall, Quellen-/Personen-/
+Metadatum-Drift, vertauschte Quellenpakete mit konsistent nachgefuehrten Hashes
+sowie konsistent neu gebundene fremde H1/Fraktion. Die echten Originale und der
+echte Import-/Storage-/Paketpfad (`zuHelmutProfil` -> `toMandateProfileRow` ->
+`fromMandateProfileRow` -> `resolveProfilePackages`) bleiben verlustfrei und
+inaktiv (bund-basis und brandenburg-basis); die Feldbeleg-JSON wird byte-identisch
+neu erzeugt, die Auswahl und alle bisherigen Quittungen bleiben byte-identisch.
+Genau 35 Datensaetze aendern sich, 465 bleiben identisch; alle 500 bleiben
+`aktiv: false` und `importfreigegeben: false`. Keine Production-Aenderung, keine
+Aktivierung und kein 500er Test.
