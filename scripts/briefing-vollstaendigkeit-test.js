@@ -271,6 +271,29 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     assert.equal(B.lageAusgabe(row.payload.lage).paragraphs[0].sources[0].url, "https://example.org/kita");
     await B.materialisiere({ profile, userId: profile.id, now, storage, briefing }); assert.equal(replacements, 1);
   });
+  await test("Gespeicherte Lage zeigt gepruefte Absaetze mit genau ihren Quellen in den echten App-Details", () => {
+    const quellen = clone(docs);
+    quellen[0].quellenbelege.push({ quelle_id: "q-unbenutzt", titel: "Nicht zitierte Meldung",
+      url: "https://example.org/unbenutzt" });
+    const payload = { paragraphs: Q.pruefe(paragraphs, docs, review).paragraphs,
+      qualitaet: { version: Q.VERSION }, quellen, quellenVersion: E.VERSION,
+      quellenHash: E.hashEingabe(quellen), koSetHash: "a".repeat(32), generatedAt: "2026-09-09T10:00:00Z" };
+    assert.equal(E.gespeicherterTextGueltig(payload), true);
+    const before = clone(payload), ausgabe = B.lageAusgabe(payload);
+    assert.equal(ausgabe.vorgaenge.length, 1);
+    assert.equal(ausgabe.vorgaenge[0].displaySummary, payload.paragraphs.map(p => p.text).join("\n\n"));
+    assert.deepEqual(ausgabe.vorgaenge[0].sources.map(q => q.quelleId), ["q-1", "q-2"]);
+    assert.equal(ausgabe.vorgaenge[0].displayTitle, docs[0].quellenbelege[0].titel);
+    const rendered = require("./lib/briefing-ansichten")({ lageBriefing: ausgabe }, payload.generatedAt);
+    assert.equal(rendered.fachinhalt.lage, true);
+    for (const p of payload.paragraphs) assert(rendered.html.lage.includes(p.text));
+    for (const q of docs[0].quellenbelege) assert(rendered.html.lage.includes(q.url));
+    assert(!rendered.html.lage.includes("https://example.org/unbenutzt"));
+    assert.deepEqual(payload, before);
+    assert.equal(B.lageAusgabe({ ...payload, quellenHash: "f".repeat(64) }).vorgaenge.length, 0);
+    assert.equal(B.lageAusgabe({ ...payload, quellenVersion: 0 }).vorgaenge.length, 0);
+    assert.equal(B.lageAusgabe(null), null);
+  });
   await test("Mandatsergebnisse ueberleben den relationalen Speicherweg ohne Texte oder Identitaeten", () => {
     const r = S.sanitizeProcessRun({ runId: "test-1", process: "test", mandatsErgebnisse: [{ mandatHash: T.hash("test-kohorte-a-001"),
       gestartet: true, lageGespeichert: false, briefingGespeichert: false, grund: "ai-text-source-support", text: "Darf nicht gespeichert werden" }] });
