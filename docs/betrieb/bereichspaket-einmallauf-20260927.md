@@ -298,3 +298,36 @@ abnehmen. Lokale Abnahme:15 Ablaufgruppen einschliesslich falschem Vorgänger,
 Urteilsdrift, fehlendem/gesperrtem Bestand und0 erneuten Importen; anonymisierter
 Namensbeleg bleibt bei negativem Mandatsurteil abgelehnt. Kein Modellbeweis durch
 synthetische Tests.
+
+## Folgeauftrag b: vollstaendiges Paket, Anzeigeadapter korrigiert
+
+PR650 ist als `4a83b3875965b4aeaab9126fb8c903cce1bfa208` ausgerollt
+(Vercel `dpl_4X6tqDoWtQb1KSgPzZq8XWb33cYD` READY). Rein lesender Plan
+[36312750954](https://github.com/ernisch/helmut-pilot/actions/runs/36312750954)
+und begrenzter Folgelauf
+[36312820431](https://github.com/ernisch/helmut-pilot/actions/runs/36312820431)
+erfolgreich:2 Modellaufrufe,0,022990USD, vollstaendiges Paket gespeichert und
+zurueckgelesen, Quittung b geschlossen. Drei gepruefte Lageabsaetze aus drei
+Quellen zu zwei Vorgaengen; der reine Namensbeleg bleibt im Radar.
+Das ist zunaechst ein technischer Paketnachweis, keine fachliche Bereichsabnahme.
+
+SQL10:34:24UTC:500 Profile inaktiv/501 Identitaeten und Bestandshashes
+unveraendert,0 Jobs/Locks/Leases/offene Productionkosten. Alte Quittung a und
+importiertes Fachurteil vollstaendig hashgleich. Tagesverbrauch0,064081USD;
+6,430503USD einschliesslich externer Reservierungen gebunden,0,569497USD frei.
+Die beiden heutigen Bereichslaeufe zusammen kosten0,042911USD.
+
+Die erste lokale Aufnahme mit dem echten Client-Renderer zeigte einen
+Produktfehler: `lageAusgabe` lieferte Absaetze, aber keine Vorgangskarten.
+Der gespeicherte App-Lesepfad benutzt denselben Adapter; die Lage blieb deshalb
+sichtbar leer. Die Korrektur uebertraegt nur nach dem bestehenden Quellenvertrag
+gueltige gespeicherte Absaetze in Karten und vollstaendige Detailtexte. Gruppiert
+wird nach Vorgang, Quellen kommen ausschliesslich aus den zitierten Absatzbelegen.
+Keine neuen Fakten, Empfehlungen, Modellaufrufe oder Datenbankaenderungen.
+Alte/ungueltige Quellenvertraege ergeben keine neuen sichtbaren Karten.
+
+Gezielte lokale Abnahme:24/24 Vollstaendigkeitsgruppen, einschliesslich echtem
+Client-Renderer, vollstaendigen Detailtexten, exakten Links, ausgeschlossener
+unbenutzter Quelle, unveraendertem Payload und negativen Quellenhash-/Versionsfaellen.
+Nach Merge und Deployment dasselbe gespeicherte Paket erneut aufnehmen und
+alle drei sichtbaren Bereichspaare beurteilen. Kein weiterer bezahlter Lauf.
