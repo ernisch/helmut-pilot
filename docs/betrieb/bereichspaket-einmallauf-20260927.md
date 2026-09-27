@@ -74,3 +74,21 @@ abgelehnter Import, Drift nach Review, dritter Aufruf, fehlende Ruecklesung
 und Zeitverbrauch beim Lesen. Private End-to-End-Speicherpruefung des v2-
 Imports im vorherigen PR; kein fiktives Testergebnis wird als Productionbeleg
 gewertet. Ein eigener Helfer wurde hier nicht gestartet.
+
+## Tatsaechliche lokale Renderer-Gegenprobe
+
+Die echte Briefingansicht zeigt eine Tagesprioritaet, Quellenstand26.09. und
+Nicht-aktuell-Kennzeichnung. Radar zeigt den Originaltitel der eigenen Rede,
+Quellentag25.09. und die ausdruecklich fehlende Ton-/Resonanzbewertung.
+Die Lage ist weiterhin leer; deshalb keine Drei-Bereiche-Abnahme.
+Vier pauschale Radar-Leertexte behaupteten noch fehlende Entwicklungen trotz
+begrenzter Ansicht. Sie benennen jetzt ausschliesslich die fehlende Anzeige
+entsprechender belegter Hinweise; keine allgemeine Entwarnung.
+
+Die automatische Freigabepruefung hat selbst die transaktionale Probe der
+Vorlagenuebertragung am27.09. wegen des vollstaendigen privaten Fachurteils mit
+profilnahen Aussagen abgelehnt. Nichts wurde uebertragen. Eine ausdrueckliche
+Freigabe genau der privaten Datei, der neuen Kontrollvorlage und des Zielprojekts
+`ddckuvvpcytqbyfmbvie` ist beim Betreiber angefragt. Kein anderer Transportweg
+umgeht diese Sperre. Codepruefung und regulaere Deployments laufen unabhaengig
+weiter; der Daten-/Modelllauf bleibt bis zur Antwort gesperrt.

@@ -9650,7 +9650,7 @@ function renderRadarDynamics(state) {
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
     ? shown.map(renderRadarDynamicCard).join("")
-    : radarEmptyHint("Aktuell entsteht keine neue belegbare Dynamik.");
+    : radarEmptyHint("In dieser Ansicht werden keine belegten Dynamikhinweise angezeigt.");
   return `
     <section class="radar2-section">
       ${radarSectionHead("activity", "Neue Dynamiken", "dynamics", expanded, all.length > 3)}
@@ -9960,9 +9960,9 @@ function radarIcon(name) {
 }
 
 const RADAR_SEGMENTS = [
-  { key: "party", label: "Partei / Fraktion", empty: "Keine neuen belegten Partei- oder Fraktionssignale.", more: "Alle Partei- und Fraktionssignale anzeigen" },
-  { key: "constituency", label: "Wahlkreis", empty: "Keine neuen relevanten Entwicklungen aus deinem Wahlkreis.", more: "Alle Wahlkreis-Signale anzeigen" },
-  { key: "committees", label: "Ausschüsse", empty: "Keine neuen relevanten Ausschussentwicklungen.", more: "Alle Ausschuss-Signale anzeigen" }
+  { key: "party", label: "Partei / Fraktion", empty: "In dieser Ansicht werden keine belegten Partei- oder Fraktionssignale angezeigt.", more: "Alle Partei- und Fraktionssignale anzeigen" },
+  { key: "constituency", label: "Wahlkreis", empty: "In dieser Ansicht werden keine belegten Wahlkreishinweise angezeigt.", more: "Alle Wahlkreis-Signale anzeigen" },
+  { key: "committees", label: "Ausschüsse", empty: "In dieser Ansicht werden keine belegten Ausschusshinweise angezeigt.", more: "Alle Ausschuss-Signale anzeigen" }
 ];
 
 const RADAR_FILTERS = [
