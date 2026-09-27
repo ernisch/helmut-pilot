@@ -127,7 +127,7 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 74 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;481 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;485 technische Erfolge sind keine fachliche Importfreigabe.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
 Zwei bislang offene Berliner Mandatsarten sind ueber die amtliche
@@ -171,8 +171,14 @@ Richter des Bundesverfassungsgerichts aus dem geschlossenen aktuellen
 Gremienaufgabenabsatz mit 21. Wahlperiode; das sonstige Gremium und die bestehenden
 Funktionen unveraendert, kein regulaerer Ausschuss, keine Umdeklarierung,
 Haßelmann/Miersch bleiben in der 54er Quittung offen); die54er
-Rollenquittung bleibt deckungsgleich,18 Achsen
-bleiben offen. Stand:481/19.
+Rollenquittung bleibt deckungsgleich. Das war der Zwischenstand nach PR670:481/19.
+Danach schlossen die eng belegten [Jarzombek-Abteilungen](betrieb/jarzombek-bmds-abteilungen-1-20260927.json),
+[Klöckners Bundestagsverwaltungsaufgabe](betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json),
+[Brandenburger Ausschussstellvertretungen](betrieb/brandenburg-stellvertretungen-76-20260927.json)
+(nur Skopec als neue Fachachse) und die lokal geprüfte
+[Rohde-Bundeshaushaltsaufgabe](betrieb/rohde-bundeshaushalt-1-20260927.json)
+je eine weitere Achse. Aktueller lokaler Entwurf:485/15 technisch akzeptiert;
+14 Fachachsen,74 aktuelle Parteifelder und eine Berliner Mandatsart bleiben offen.
 Naechster Fachschritt: verbleibende aktuelle Parteibelege, die letzte offene
 Berliner Mandatsart (Claudia Engelmann) und die restlichen Fachachsen.
 

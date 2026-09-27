@@ -3724,3 +3724,306 @@ print('PASS: Stellvertretungsquittung — fehlende Quittung/falsche Bilanz/Fremd
       'gebundene fremde H1 und Fraktion sowie versteckte/inerte Belege, fremde URL-Parameter, '
       'Index-Ausbruch und vertauschte Quellseiten sperren fail closed; das gueltige synthetische Paket '
       '(Fixture ohne /private/tmp) wird akzeptiert.')
+
+
+# ── 19 · Rohde-Einzelfallquittung (BMF-Aufgabe Bundeshaushalt, ein zuvor offener Fachachsenfall) ──
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Das eng fixierte
+# Fachurteil wird ueber den injizierbaren ``erwartung``-Parameter ersetzt; so bleibt der
+# Test auch ohne die lokalen Originale lauffaehig. Das Modul bindet die kanonische Person
+# ueber echte H1 + eigenen Funktionstext (ohne Amtszeit) + JSON-LD-Gegenprobe, das Thema
+# ausschliesslich aus Rohdes eigenem Kasten (Originalbytes nur ueber Hash/Bytezahl/Stand/
+# Seite, KEIN PDF-Parser) und die amtliche Landingpage ueber den datierten v=32-Link.
+ro_spec = importlib.util.spec_from_file_location(
+    'rohde', Path(__file__).with_name('profil-feldbelege-500-rohde.py'))
+ro = importlib.util.module_from_spec(ro_spec)
+ro_spec.loader.exec_module(ro)
+
+
+def _erwarte_ro_fehler(fn, was, meldung=None):
+    try:
+        fn()
+    except ro.RohdeFehler as fehler:
+        if meldung is not None:
+            assert meldung in str(fehler), f"Falscher Sperrgrund: {fehler}"
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    HOST_BMF = 'https://www.bundesfinanzministerium.de'
+    ABRUF_PERSON = '2026-09-27T13:02:10+00:00'
+    ABRUF_PDF = '2026-09-27T21:59:46+00:00'
+    ABRUF_LAND = '2026-09-27T21:59:24+00:00'
+    K = 'bundestag-test-rohde-1'
+    person = 'Testperson Rohde'
+    funktion = 'Teststaatssekretaer'
+    amt = 'Parlamentarischer Staatssekretär beim Testministerium'
+    aufgabenbindung = f'{amt}; Unterstützung in Angelegenheiten des Testhaushalts'
+    thema = 'Testhaushalt'
+    rolle_wortlaut = 'Parlamentarischer Staatssekretär Testperson Rohde'
+    aufgabe_wortlaut = ('Unterstützung des Ministers bei der Erfüllung seiner Regierungsaufgaben, '
+                        'insbesondere in Angelegenheiten des Testhaushalts')
+    stand = '2026-08-03'
+    person_url = 'https://www.bundestag.de/abgeordnete/biografien/T/test-rohde-1'
+    person_datei = f'{K}.html'
+    pdf_datei = 'test-organigramm.pdf'
+    land_datei = 'test-abteilungen.html'
+    pdf_url = f'{HOST_BMF}/Content/DE/Downloads/Ministerium/testorganigramm.pdf?__blob=publicationFile&v=32'
+    land_url = f'{HOST_BMF}/Web/DE/Testministerium/abteilungen.html'
+    pdf_href = '/Content/DE/Downloads/Ministerium/testorganigramm.pdf?__blob=publicationFile&v=32'
+    linktext = 'Testorganisationsplan (Stand: 3. August 2026)'
+
+    def _meta(datei, url, abruf):
+        pfad = zusatz / datei
+        meta = dict(url=url, finalUrl=url, abgerufenAm=abruf, sha256=ro.ZU._sha256(pfad),
+                    bytes=pfad.stat().st_size, datei=datei, http=200)
+        (zusatz / datei).with_suffix('.meta.json').write_text(
+            json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+        return dict(meta, abrufStatus='abgerufen')
+
+    def _person_html(h1=person, funktion_wert=funktion, rollen=None, script=True):
+        rollen = rollen if rollen is not None else [
+            {"@type": "Role", "roleName": "Mitglied des Bundestages", "startDate": "2025-03-25"}]
+        jsonld = json.dumps({
+            "@context": "https://schema.org", "@type": "ProfilePage",
+            "mainEntity": {"@type": "Person", "@id": "#mdb", "name": person, "memberOf": rollen},
+        }, ensure_ascii=False)
+        h1_markup = f'<h1>{h1}</h1>' if h1 is not None else ''
+        funktion_markup = (f'<div class="m-biography__function"><div><p>{funktion_wert}</p></div></div>'
+                           if funktion_wert is not None else '')
+        script_markup = (f'<script type="application/ld+json">{jsonld}</script>' if script else '')
+        return f'<html><body>{h1_markup}{funktion_markup}{script_markup}</body></html>'
+
+    def _landing_html(href=pdf_href, text=linktext, als_text=False, version=None):
+        ziel = href
+        if version is not None:
+            ziel = href.replace('v=32', f'v={version}')
+        if als_text:
+            return f'<html><body><p>{_html_escape(ziel)} {text}</p></body></html>'
+        return (f'<html><body><a href="{_html_escape(ziel)}" class="bmf-linkButton">'
+                f'{text}</a></body></html>')
+
+    def _html_escape(wert):
+        return str(wert).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+    def _schreibe_person(dokument, abruf=ABRUF_PERSON):
+        (detail / person_datei).write_text(dokument, encoding='utf-8')
+        return dict(url=person_url, finalUrl=person_url, abgerufenAm=abruf,
+                    sha256=ro.ZU._sha256(detail / person_datei),
+                    bytes=(detail / person_datei).stat().st_size, datei=person_datei,
+                    http=200, abrufStatus='abgerufen')
+
+    def _schreibe_pdf(inhalt=b'%PDF-1.4 test', abruf=ABRUF_PDF):
+        (zusatz / pdf_datei).write_bytes(inhalt)
+        return dict(_meta(pdf_datei, pdf_url, abruf), stand=stand, seite=1)
+
+    def _schreibe_landing(dokument, abruf=ABRUF_LAND):
+        (zusatz / land_datei).write_text(dokument, encoding='utf-8')
+        return dict(_meta(land_datei, land_url, abruf), linktext=linktext, href=pdf_href)
+
+    def _fachurteil():
+        return dict(methode='Manuelle Sichtprüfung des gerenderten Originals, kein automatischer PDF-Parservertrag',
+                    seite=1, position='Oberste Amtsreihe, eigener Testkasten',
+                    rolleWortlaut=rolle_wortlaut, aufgabeWortlaut=aufgabe_wortlaut,
+                    ausschluss='Keine Nachbarkaesten (Steuerpolitik, Ostdeutschland), keine ganzen Abteilungen.')
+
+    personenquelle = _schreibe_person(_person_html())
+    pdf_quelle = _schreibe_pdf()
+    land_quelle = _schreibe_landing(_landing_html())
+    rollen_ref = dict(url=person_url, sha256=personenquelle['sha256'], abgerufenAm=ABRUF_PERSON)
+    kennung_zu_abruf = {K: dict(personenquelle, amtlicheKennung=K, parlament='bundestag')}
+    profilrollen = {K: dict(status='belegt', funktionen=[dict(wortlaut=funktion)], quelle=dict(rollen_ref))}
+    mdB_rollen = [dict(roleName='Mitglied des Bundestages', startDate='2025-03-25', endDate=None)]
+    erwartung = {
+        K: dict(region='Bund', bindungsart='amtsaufgabe', person=person, funktion=funktion,
+                funktionstext=funktion, amt=amt, aufgabenbindung=aufgabenbindung, themen=[thema],
+                mdBRollen=[dict(rolle) for rolle in mdB_rollen], fachurteil=_fachurteil(),
+                personenquelle=dict(personenquelle), quelle=dict(pdf_quelle),
+                aktuelleVerlinkung=dict(land_quelle), rollenquelle=dict(rollen_ref)),
+    }
+    eintrag = dict(
+        kennung=K, region='Bund', parlament='bundestag', status='belegt', bindungsart='amtsaufgabe',
+        person=person, funktion=funktion, funktionstext=funktion, amt=amt,
+        aufgabenbindung=aufgabenbindung, themen=[thema],
+        ableitungsHinweis=ro.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=aufgabenbindung),
+        amtsbeginn=None, amtsende=None, fachurteil=_fachurteil(),
+        personenquelle=dict(personenquelle), quelle=dict(pdf_quelle),
+        aktuelleVerlinkung=dict(land_quelle), rollenquelle=dict(rollen_ref), importfreigegeben=False,
+    )
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=1, Bund=1, Berlin=0, Brandenburg=0),
+                             ergebnisse=[eintrag])
+
+    def _ro_eingang(quittung, rollen=None, abruf=None, ressort=None, aufgaben=None, beratende=None,
+                    zusatz_kennungen=None, bmwsb=None, amthor=None, wahlausschuss=None, jarzombek=None,
+                    kloeckner=None, stellvertretungen=None):
+        return SimpleNamespace(
+            verzeichnis=root, detailseiten=detail, rohde=quittung,
+            profilrollen_by_kennung=rollen or profilrollen,
+            kennung_zu_abruf=kennung_zu_abruf if abruf is None else abruf,
+            ressortachsen_by_kennung={k: {} for k in (ressort or [])},
+            aufgabenachsen_by_kennung={k: {} for k in (aufgaben or [])},
+            beratendeachsen_by_kennung={k: {} for k in (beratende or [])},
+            zusaetzlicheaufgaben_by_kennung={k: {} for k in (zusatz_kennungen or [])},
+            bmwsb_by_kennung={k: {} for k in (bmwsb or [])},
+            amthor_by_kennung={k: {} for k in (amthor or [])},
+            wahlausschuss_by_kennung={k: {} for k in (wahlausschuss or [])},
+            jarzombek_by_kennung={k: {} for k in (jarzombek or [])},
+            kloeckner_by_kennung={k: {} for k in (kloeckner or [])},
+            stellvertretungen_by_kennung={k: {} for k in (stellvertretungen or [])})
+
+    index = ro.pruefe_rohde(_ro_eingang(gueltige_quittung), erwartung=erwartung)
+    assert len(index) == 1
+    assert index[K]['themen'] == [thema]
+    assert index[K]['ableitungsHinweis'] == ro.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=aufgabenbindung)
+    assert index[K]['funktionstext'] == funktion
+
+    def _mit(mutation, erwartung_override=None):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return ro.pruefe_rohde(_ro_eingang(neu), erwartung=erwartung_override or erwartung)
+
+    # Fehlende Quittung, falsche Bilanz, Duplikat/Fremdkennung.
+    echter_pfad = ro.ROHDE
+    ro.ROHDE = root / 'fehlt.json'
+    try:
+        _erwarte_ro_fehler(lambda: ro.pruefe_rohde(
+            SimpleNamespace(verzeichnis=root, detailseiten=detail, profilrollen_by_kennung=profilrollen,
+                            kennung_zu_abruf=kennung_zu_abruf), erwartung=erwartung), 'fehlende Quittung')
+    finally:
+        ro.ROHDE = echter_pfad
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['bilanz'].__setitem__('Bund', 0)), 'falsche Bilanz')
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('kennung', 'bundestag-fremd-9')),
+                       'unbekannte/Fremdkennung')
+    # Disjunktion zu allen bisherigen Achsen.
+    for feld in ('ressort', 'aufgaben', 'beratende', 'zusatz_kennungen', 'bmwsb', 'amthor',
+                 'wahlausschuss', 'jarzombek', 'kloeckner', 'stellvertretungen'):
+        _erwarte_ro_fehler(lambda f=feld: ro.pruefe_rohde(
+            _ro_eingang(gueltige_quittung, **{f: [K]}), erwartung=erwartung), f'Kennung bereits {feld}-Achse')
+    # Status/Region/Parlament/Bindungsart/Person/Importfreigabe/Amtszeit.
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('status', 'offen')), 'unerwarteter Status')
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('region', 'Berlin')), 'falsche Region')
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('parlament', 'landtag-berlin')), 'falsches Parlament')
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('bindungsart', 'ressort')), 'falsche Bindungsart')
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('person', 'Fremde Person')), 'fremde Person')
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('importfreigegeben', True)), 'Importfreigabe gesetzt')
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('amtsbeginn', '2025-03-25')),
+                       'falscher PSts-Amtsbeginn aus der MdB-Role')
+    _erwarte_ro_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('amtsende', '2026-09-27')),
+                       'falsches PSts-Amtsende')
+    # Felddrift (Funktion/Funktionstext/Amt/Aufgabenbindung/Themen/Hinweis/Fachurteil).
+    for feld, wert in (('funktion', 'Fremdrolle'), ('funktionstext', 'Fremdrolle'), ('amt', 'Fremdamt'),
+                       ('aufgabenbindung', 'Fremde Aufgabenbindung'), ('themen', ['Fremdthema']),
+                       ('ableitungsHinweis', 'Fremder Hinweis'), ('fachurteil', {'seite': 1})):
+        _erwarte_ro_fehler(lambda f=feld, w=wert: _mit(lambda q: q['ergebnisse'][0].__setitem__(f, w)), f'Feld {feld} Drift')
+    # Nur das eine freigegebene Thema; Nachbarkaesten und Generalisierungen sind gesperrt.
+    _erwarte_ro_fehler(lambda: ro._pruefe_themen(
+        dict(themen=['Steuerpolitik']), dict(aufgabeWortlaut='Steuerpolitik fuer alle.'), K),
+        'Steuerpolitik aus Schrodis Kasten gesperrt')
+    _erwarte_ro_fehler(lambda: ro._pruefe_themen(
+        dict(themen=['Ostdeutschland']), dict(aufgabeWortlaut='Ostdeutschland foerdern.'), K),
+        'Ostdeutschland aus Kaisers Kasten gesperrt')
+    _erwarte_ro_fehler(lambda: ro._pruefe_themen(
+        dict(themen=['Finanzpolitik']), dict(aufgabeWortlaut='Insbesondere Finanzpolitik.'), K),
+        'generalisiertes Fremdthema gesperrt')
+    # Quellen-/Metadatendrift (PDF).
+    for feld, wert in (('url', f'{HOST_BMF}/Content/DE/Downloads/Ministerium/fremd.pdf?__blob=publicationFile&v=32'),
+                       ('finalUrl', f'{HOST_BMF}/Content/DE/Downloads/Ministerium/fremd.pdf?__blob=publicationFile&v=32'),
+                       ('sha256', '0' * 64), ('bytes', 1), ('abgerufenAm', '2026-01-01T00:00:00+00:00'),
+                       ('datei', 'fremd.pdf'), ('stand', '2026-01-01'), ('seite', 2)):
+        _erwarte_ro_fehler(lambda f=feld, w=wert: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(f, w)),
+                           f'PDF-Quelldrift {feld}')
+    # Die Suchtreffer-Fassung v=41 ist nicht die verlinkte v=32-Adresse.
+    echter_pdf = ro.ERWARTUNG['bundestag-rohde-dennis-1046814']['quelle']['url']
+    assert ro._organigramm_version(echter_pdf, echter_pdf) == '32'
+    assert ro._organigramm_version(echter_pdf.replace('v=32', 'v=41'), echter_pdf) == '41'
+    _erwarte_ro_fehler(lambda: _mit(lambda q: (
+        q['ergebnisse'][0]['quelle'].__setitem__('url', pdf_url.replace('v=32', 'v=41')),
+        q['ergebnisse'][0]['quelle'].__setitem__('finalUrl', pdf_url.replace('v=32', 'v=41')))),
+        'nicht massgebliche v=41-Adresse')
+    # Landingpage: falsche Linkversion, falscher Stand/Linktext, nur Textvorkommen.
+    for dokument, grund in (
+        (_landing_html(version=41), 'v=41'),
+        (_landing_html(text='Testorganisationsplan (Stand: 1. Januar 2020)'), 'datierte Linktext'),
+        (_landing_html(als_text=True), 'verlinkt'),
+        (_landing_html().replace('<a ', '<a hidden '), 'unsichtbarer Organigramm-Link'),
+        (_landing_html().replace('<a ', '<a inert '), 'inerter Organigramm-Link'),
+    ):
+        neu_land = _schreibe_landing(dokument)
+        neu_erwartung = json.loads(json.dumps(erwartung))
+        neu_erwartung[K]['aktuelleVerlinkung'] = dict(neu_land)
+        _erwarte_ro_fehler(lambda: ro.pruefe_rohde(_ro_eingang(dict(
+            gueltige_quittung, ergebnisse=[dict(eintrag, aktuelleVerlinkung=dict(neu_land))])),
+            erwartung=neu_erwartung), f'Landingpage {grund} gesperrt')
+    _schreibe_landing(_landing_html())
+    # PDF-Hash-/Metadrift gegen die fixierte Erwartung.
+    fremd_pdf = _schreibe_pdf(b'%PDF-1.4 fremd')
+    _erwarte_ro_fehler(lambda: ro.pruefe_rohde(_ro_eingang(dict(
+        gueltige_quittung, ergebnisse=[dict(eintrag, quelle=dict(fremd_pdf))])), erwartung=erwartung),
+        'konsistent neu gehashtes Fremd-PDF')
+    _schreibe_pdf()
+    # Vertauschte Quellenpakete: die PDF-Metadaten auf die Landingpage (und umgekehrt).
+    _erwarte_ro_fehler(lambda: ro.pruefe_rohde(_ro_eingang(dict(
+        gueltige_quittung, ergebnisse=[dict(eintrag, quelle=dict(land_quelle))])), erwartung=erwartung),
+        'vertauschte Quellenpakete (PDF<->Landingpage)')
+    # Inerte Personen-/Funktionsbelege und fremde Person/Rolle bei konsistenten Hashes.
+    for dokument, was in (
+        (_person_html(h1=None), 'Person ohne H1'),
+        (_person_html(funktion_wert=None), 'Person ohne eigenen Funktionstext'),
+        (_person_html(funktion_wert='Fremdrolle'), 'fremder Funktionstext bei konsistentem Hash'),
+        (_person_html(h1='Fremde Person'), 'fremde H1 bei konsistentem Hash'),
+        (_person_html().replace('<h1>', '<h1 hidden>'), 'unsichtbare H1 bei konsistentem Hash'),
+        (_person_html().replace('<h1>', '<h1 style="display:none">'), 'per Stil unsichtbare H1'),
+        (_person_html().replace('<body>', '<body><main inert>').replace('</body>', '</main></body>'),
+         'inerter Vorfahr der Personenbelege'),
+        (_person_html().replace('class="m-biography__function"',
+                                'class="m-biography__function" hidden'), 'unsichtbarer Funktionstext'),
+        (_person_html().replace('class="m-biography__function"',
+                                'class="m-biography__function" aria-hidden="true"'),
+         'aria-versteckter Funktionstext'),
+        (_person_html().replace('"name": "Testperson Rohde"', '"name": "Fremde Person"'),
+         'fremde JSON-LD-Person trotz korrekter H1'),
+        (_person_html().replace('"@id": "#mdb"', '"@id": "#fremd"'),
+         'fremde JSON-LD-Personenkennung'),
+        (_person_html(rollen=[{"@type": "Role", "roleName": funktion, "startDate": "2025-03-25"}]),
+         'PSts-Funktion darf keine JSON-LD-Amtsrolle mit Datum sein'),
+    ):
+        pq = _schreibe_person(dokument)
+        rollen = {K: dict(status='belegt', funktionen=[dict(wortlaut=funktion)],
+                          quelle=dict(url=person_url, sha256=pq['sha256'], abgerufenAm=ABRUF_PERSON))}
+        abr = {K: dict(pq, amtlicheKennung=K, parlament='bundestag')}
+        neu_erwartung = json.loads(json.dumps(erwartung))
+        neu_erwartung[K]['personenquelle'] = dict(pq)
+        _erwarte_ro_fehler(lambda: ro.pruefe_rohde(_ro_eingang(dict(
+            gueltige_quittung, ergebnisse=[dict(eintrag, personenquelle=dict(pq))]),
+            rollen=rollen, abruf=abr), erwartung=neu_erwartung), was)
+    _schreibe_person(_person_html())
+    # Vollstaendig vertauschte Quellen (PDF-Metadatum traegt den Landingpage-Hash) sperren.
+    _erwarte_ro_fehler(lambda: ro.pruefe_rohde(_ro_eingang(dict(
+        gueltige_quittung, ergebnisse=[dict(eintrag, quelle=dict(pdf_quelle, sha256=land_quelle['sha256']))])),
+        erwartung=erwartung), 'PDF-Metadatum mit Landingpage-Hash')
+    # Ungueltige/fehlende 54er-Rolle.
+    _erwarte_ro_fehler(lambda: ro.pruefe_rohde(_ro_eingang(
+        gueltige_quittung, rollen={K: dict(status='offen', funktionen=[], quelle=dict(rollen_ref))}),
+        erwartung=erwartung), 'nicht belegte 54er-Rolle')
+    _erwarte_ro_fehler(lambda: ro.pruefe_rohde(_ro_eingang(
+        gueltige_quittung, rollen={K: dict(status='belegt', funktionen=[], quelle=dict(rollen_ref))}),
+        erwartung=erwartung), '54er-Rolle ohne Wortlaut')
+    # Das gueltige synthetische Paket wird akzeptiert.
+    assert len(ro.pruefe_rohde(_ro_eingang(gueltige_quittung), erwartung=erwartung)) == 1
+
+print('PASS: Rohde-Einzelfallquittung — fehlende Quittung/falsche Bilanz/Fremdkennung/Disjunktion zu '
+      'Ressort-/Aufgaben-/beratender-/Zusatzaufgaben-/BMWSB-/Amthor-/Wahlausschuss-/Jarzombek-/'
+      'Kloeckner-/Stellvertretungs-Achse/Status/Region/Parlament/Bindungsart/Person/Importfreigabe/'
+      'falscher PSts-Amtsbeginn oder endDate/Felddrift (Funktion/Funktionstext/Amt/Aufgabenbindung/'
+      'Themen/Hinweis/Fachurteil)/PDF-Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/Datei/Stand/'
+      'Seite)/nicht massgebliche v=41-Fassung/Landingpage-Linkversion/-Stand/-Textvorkommen ohne Anker/'
+      'konsistent neu gehashtes Fremd-PDF/vertauschte Quellenpakete/inerte Personen- und Funktionsbelege/'
+      'fremde H1 oder fremder Funktionstext bei konsistenten Hashes/PSts-Rolle mit Datum im JSON-LD/'
+      'nicht belegte oder wortlautlose 54er-Rolle/Nachbarkaesten Steuerpolitik und Ostdeutschland sowie '
+      'generalisierte Fremdthemen sperren fail closed; das gueltige synthetische Paket (Fixture ohne '
+      '/private/tmp) wird akzeptiert.')

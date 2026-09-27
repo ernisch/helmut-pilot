@@ -631,6 +631,57 @@ def _pruefe_kloeckner(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator eng gepruefte Einzelfallquittung fuer den zuvor
+# offenen Fachachsenfall Dennis Rohde (BMF-Aufgabe Bundeshaushalt). Die
+# fail-closed-Validierung liegt im getrennten Modul
+# ``profil-feldbelege-500-rohde.py`` (das die sicheren Helfer des
+# Zusatzaufgabenmoduls wiederverwendet); hier wird nur der geprueffte Index
+# angewendet. Das Thema stammt ausschliesslich aus Rohdes eigenem Kasten auf
+# Seite 1 des amtlich von der Landingpage verlinkten v=32-Organisationsplans
+# (Originalbytes nur ueber Hash/Bytezahl/Stand/Seite, KEIN PDF-Parser).
+ROHDE = REPO_ROOT / "docs" / "betrieb" / "rohde-bundeshaushalt-1-20260927.json"
+ROHDE_RESSOURCE = "docs/betrieb/rohde-bundeshaushalt-1-20260927.json"
+
+
+def _lade_rohdemodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-rohde.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_rohde", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+ROHDEMODUL = _lade_rohdemodul()
+
+
+def _pruefe_rohde(eingang) -> dict:
+    """Prueft die versionierte Rohde-Einzelfallquittung ueber das getrennte Modul."""
+    try:
+        index = ROHDEMODUL.pruefe_rohde(
+            eingang,
+            quittung=getattr(eingang, "rohde", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+            aufgabenachsen_kennungen=set(getattr(eingang, "aufgabenachsen_by_kennung", None) or {}),
+            beratendeachsen_kennungen=set(getattr(eingang, "beratendeachsen_by_kennung", None) or {}),
+            zusatzaufgaben_kennungen=set(getattr(eingang, "zusaetzlicheaufgaben_by_kennung", None) or {}),
+            bmwsb_kennungen=set(getattr(eingang, "bmwsb_by_kennung", None) or {}),
+            amthor_kennungen=set(getattr(eingang, "amthor_by_kennung", None) or {}),
+            wahlausschuss_kennungen=set(getattr(eingang, "wahlausschuss_by_kennung", None) or {}),
+            jarzombek_kennungen=set(getattr(eingang, "jarzombek_by_kennung", None) or {}),
+            kloeckner_kennungen=set(getattr(eingang, "kloeckner_by_kennung", None) or {}),
+        )
+    except ROHDEMODUL.RohdeFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.rohde_by_kennung = index
+    eingang.rohde_verwendet = set()
+    return index
+
+
 # Versionierte, vom Orchestrator geprueffte Ergaenzungsquittung fuer den belegten
 # Verlust stellvertretender Brandenburger Ausschussmitgliedschaften. Die
 # fail-closed-Validierung liegt im getrennten Modul
@@ -1656,6 +1707,10 @@ class Eingang:
             self.kloeckner = _lies_json(KLOECKNER)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Kloeckner-Einzelfallquittung fehlt: {KLOECKNER_RESSOURCE}") from fehler
+        try:
+            self.rohde = _lies_json(ROHDE)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Rohde-Einzelfallquittung fehlt: {ROHDE_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -2892,6 +2947,79 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
         achsen_geschlossen = True
 
+    # Versionierte Rohde-Einzelfallquittung: fuer den zuvor offenen Fachachsenfall
+    # Dennis Rohde entstehen ausschliesslich das eine amtlich abgeleitete Thema
+    # (Bundeshaushalt), der getrennte Herkunftshinweis und die amtliche
+    # BMF-Organisationsplan-Quelle. Die bestehende aktuelle PSts-Rolle aus der
+    # 54er Rollenquittung und alle bestehenden offiziellen Quellen bleiben
+    # unveraendert erhalten; es entsteht KEINE neue Funktionsrolle, kein
+    # Scheinausschuss und keine Partei-/Mandatsartaenderung. Das Thema stammt
+    # ausschliesslich aus Rohdes eigenem Kasten auf Seite 1 des amtlich von der
+    # Landingpage verlinkten v=32-Organisationsplans (Originalbytes nur ueber
+    # Hash/Bytezahl/Stand/Seite, KEIN PDF-Parser).
+    rohde_eintrag = (getattr(eingang, "rohde_by_kennung", None) or {}).get(mandatsId)
+    rohde_beleg = None
+    if rohde_eintrag is not None:
+        verwendet = getattr(eingang, "rohde_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        rohde_quelle = rohde_eintrag["quelle"]
+        rohde_verlinkung = rohde_eintrag["aktuelleVerlinkung"]
+        profil["themen"] = list(rohde_eintrag["themen"])
+        hinweis = rohde_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "bmf-aufgabenbindung",
+            "url": rohde_quelle["url"],
+            "abgerufenAm": rohde_quelle["abgerufenAm"],
+            "sha256": rohde_quelle["sha256"],
+        })
+        rohde_beleg = {
+            "datei": ROHDE_RESSOURCE,
+            "kennung": rohde_eintrag["kennung"],
+            "region": rohde_eintrag["region"],
+            "bindungsart": rohde_eintrag["bindungsart"],
+            "person": rohde_eintrag["person"],
+            "funktion": rohde_eintrag["funktion"],
+            "funktionstext": rohde_eintrag["funktionstext"],
+            "amt": rohde_eintrag["amt"],
+            "aufgabenbindung": rohde_eintrag["aufgabenbindung"],
+            "fachurteil": dict(rohde_eintrag["fachurteil"]),
+            "personenquelle": {
+                "datei": rohde_eintrag["personenquelle"].get("datei"),
+                "url": rohde_eintrag["personenquelle"].get("url"),
+                "finalUrl": rohde_eintrag["personenquelle"].get("finalUrl"),
+                "abgerufenAm": rohde_eintrag["personenquelle"].get("abgerufenAm"),
+                "sha256": rohde_eintrag["personenquelle"].get("sha256"),
+                "bytes": rohde_eintrag["personenquelle"].get("bytes"),
+            },
+            "quelle": {
+                "datei": rohde_quelle.get("datei"),
+                "url": rohde_quelle.get("url"),
+                "finalUrl": rohde_quelle.get("finalUrl"),
+                "abgerufenAm": rohde_quelle.get("abgerufenAm"),
+                "sha256": rohde_quelle.get("sha256"),
+                "bytes": rohde_quelle.get("bytes"),
+                "stand": rohde_quelle.get("stand"),
+                "seite": rohde_quelle.get("seite"),
+            },
+            "aktuelleVerlinkung": {
+                "datei": rohde_verlinkung.get("datei"),
+                "url": rohde_verlinkung.get("url"),
+                "finalUrl": rohde_verlinkung.get("finalUrl"),
+                "abgerufenAm": rohde_verlinkung.get("abgerufenAm"),
+                "sha256": rohde_verlinkung.get("sha256"),
+                "bytes": rohde_verlinkung.get("bytes"),
+                "linktext": rohde_verlinkung.get("linktext"),
+                "href": rohde_verlinkung.get("href"),
+            },
+            "themen": list(rohde_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -2980,6 +3108,17 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"keine Personenaufgaben, keine allgemeine Polizei-/Innenpolitik, keine persoenliche politische "
             f"Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der amtlichen Quelle, "
             f"Original UND Metadaten, gebunden)"
+        )
+    elif rohde_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Rohde-Einzelfallquittung {ROHDE_RESSOURCE}: das eine amtlich "
+            f"abgeleitete Thema (Bundeshaushalt) stammt ausschliesslich aus Rohdes eigenem, klar umrandetem "
+            f"Kasten auf Seite 1 des amtlich von der Landingpage verlinkten v=32-BMF-Organisationsplans "
+            f"(Stand {rohde_beleg['quelle']['stand']}); die Originalbytes werden NUR ueber URL + finalUrl + "
+            f"sha256 + Bytezahl + Abrufzeit + HTTP + Datei (Original UND Metadaten) gebunden, es gibt KEINEN "
+            f"automatischen PDF-Parser und keine erfundene Textextraktionsquelle; keine Nachbarkaesten "
+            f"(Schrodi Steuerpolitik, Kaiser Ostdeutschland), keine beamteten Staatssekretaere, keine ganzen "
+            f"Abteilungen, keine Kanzleramtsfunktion, keine persoenliche politische Position"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -3100,6 +3239,22 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"Polizei-/Innenpolitik, keine persoenliche politische Position "
             f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der amtlichen Quelle, "
             f"Original UND Metadaten, gebunden)"
+        )
+        feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
+
+    if rohde_beleg is not None:
+        vorher = feldbelege.get("funktionen")
+        zusatz = (
+            f"vom Orchestrator gepruefte Rohde-Einzelfallquittung {ROHDE_RESSOURCE}: die bestehende "
+            f"aktuelle PSts-Rolle aus der 54er Rollenquittung und alle bestehenden Funktionen bleiben "
+            f"unveraendert erhalten (KEINE neue Funktionsrolle, kein Scheinausschuss); die PSts-Funktion hat "
+            f"im eigenen Funktionsabschnitt KEINE Datumsangabe, ein Amtsbeginn wird nicht (auch nicht aus "
+            f"der MdB-Role 2025-03-25) abgeleitet; die kanonische Bundestags-Person wird separat ueber ihre "
+            f"echte H1 und den eigenen aktuellen Funktionstext (div.m-biography__function) neu gebunden; "
+            f"zusaetzlich nur der getrennte Herkunftshinweis zur amtlichen BMF-Aufgabenbindung "
+            f"(Bundeshaushalt) aus Rohdes eigenem Kasten auf Seite 1 des verlinkten v=32-Organisationsplans, "
+            f"keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP "
+            f"+ Datei der amtlichen Quelle, Original UND Metadaten, gebunden)"
         )
         feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
 
@@ -3277,6 +3432,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["jarzombekQuittung"] = jarzombek_beleg
     if kloeckner_beleg is not None:
         datensatz["kloecknerQuittung"] = kloeckner_beleg
+    if rohde_beleg is not None:
+        datensatz["rohdeQuittung"] = rohde_beleg
     if stellvertretungen_beleg is not None:
         datensatz["stellvertretungenQuittung"] = stellvertretungen_beleg
     if "status" in extraktion:
@@ -3302,6 +3459,7 @@ def assembliere(eingang: Eingang) -> dict:
     wahlausschuss = _pruefe_wahlausschuss(eingang)
     jarzombek = _pruefe_jarzombek(eingang)
     kloeckner = _pruefe_kloeckner(eingang)
+    rohde = _pruefe_rohde(eingang)
     stellvertretungen = _pruefe_stellvertretungen(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
@@ -3385,6 +3543,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Kloeckner-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_kloeckner)}."
         )
+    ungenutzte_rohde = set(rohde) - eingang.rohde_verwendet
+    if ungenutzte_rohde:
+        raise AssemblerFehler(
+            f"Rohde-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_rohde)}."
+        )
     ungenutzte_stellvertretungen = set(stellvertretungen) - eingang.stellvertretungen_verwendet
     if ungenutzte_stellvertretungen:
         raise AssemblerFehler(
@@ -3443,6 +3606,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Kloeckner-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
             f"{sorted(set(kloeckner) ^ kloeckner_geschlossen)}."
+        )
+    rohde_geschlossen = set(eingang.rohde_verwendet)
+    if rohde_geschlossen != set(rohde):
+        raise AssemblerFehler(
+            f"Rohde-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
+            f"{sorted(set(rohde) ^ rohde_geschlossen)}."
         )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
@@ -3534,10 +3703,26 @@ def assembliere(eingang: Eingang) -> dict:
                 f"Kloeckner-Einzelfall- und {name}achse gleichzeitig belegt: "
                 f"{sorted(kloeckner_geschlossen & andere)}."
             )
+    for andere, name in (
+        (ressort_geschlossen, "Ressort"),
+        (aufgaben_geschlossen, "Aufgaben"),
+        (beratende_geschlossen, "Beratende"),
+        (zusatz_geschlossen, "Zusatzaufgaben"),
+        (bmwsb_geschlossen, "BMWSB-Aufgaben"),
+        (amthor_geschlossen, "Amthor-Einzelfall"),
+        (wahlausschuss_geschlossen, "Wahlausschuss-Aufgaben"),
+        (jarzombek_geschlossen, "Jarzombek-Einzelfall"),
+        (kloeckner_geschlossen, "Kloeckner-Einzelfall"),
+    ):
+        if rohde_geschlossen & andere:
+            raise AssemblerFehler(
+                f"Rohde-Einzelfall- und {name}achse gleichzeitig belegt: "
+                f"{sorted(rohde_geschlossen & andere)}."
+            )
     geschlossene_achsen = (ressort_geschlossen | aufgaben_geschlossen
                            | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen
                            | amthor_geschlossen | wahlausschuss_geschlossen | jarzombek_geschlossen
-                           | kloeckner_geschlossen)
+                           | kloeckner_geschlossen | rohde_geschlossen)
     # Die Stellvertretungsquittung schliesst die fachliche Achse ueber eine belegte
     # stellvertretende (nicht ordentliche) Ausschussmitgliedschaft. Nur Profile,
     # deren Achse zuvor in der 54er Rollenquittung offen war, gehoeren in die
@@ -3588,7 +3773,8 @@ def assembliere(eingang: Eingang) -> dict:
                 or datensatz.get("beratendeachsenQuittung") or datensatz.get("zusaetzlicheaufgabenQuittung")
                 or datensatz.get("bmwsbQuittung") or datensatz.get("amthorQuittung")
                 or datensatz.get("wahlausschussQuittung") or datensatz.get("jarzombekQuittung")
-                or datensatz.get("kloecknerQuittung") or datensatz.get("stellvertretungenQuittung")):
+                or datensatz.get("kloecknerQuittung") or datensatz.get("rohdeQuittung")
+                or datensatz.get("stellvertretungenQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
                     f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
@@ -3901,6 +4087,31 @@ def assembliere(eingang: Eingang) -> dict:
                 "Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 18 Achsen offen."
             ),
             (
+                "Fuer den einzeln offenen Fachachsenfall Dennis Rohde wird ueber die vom Orchestrator eng "
+                f"gepruefte Einzelfallquittung {ROHDE_RESSOURCE} das eine amtlich abgeleitete Thema "
+                "'Bundeshaushalt' gesetzt (getrennter Herkunftshinweis in funktionen) und damit die fachliche "
+                "Achse geschlossen. Die Validierung laeuft im getrennten Modul "
+                "scripts/profil-feldbelege-500-rohde.py, das die sicheren Helfer des Zusatzaufgabenmoduls "
+                "wiederverwendet: die bestehende Amtsfunktion 'Parlamentarischer Staatssekretaer fuer Finanzen' "
+                "aus der belegten 54er Rollenquittung bleibt unveraendert und traegt im eigenen "
+                "Funktionsabschnitt KEINE Datumsangabe, ein Amtsbeginn wird nicht (auch nicht aus der "
+                "MdB-Role 2025-03-25 des JSON-LD) abgeleitet; die kanonische Person wird separat ueber echte "
+                "H1, eigenen aktuellen Funktionstext (div.m-biography__function) und die JSON-LD-Gegenprobe "
+                "(genau eine echte Role 'Mitglied des Bundestages' ohne endDate) neu gebunden. Das Thema "
+                "stammt ausschliesslich aus Rohdes eigenem, klar umrandetem Kasten auf Seite 1 des amtlich "
+                "von der Landingpage verlinkten v=32-Organisationsplans (Stand 3. August 2026); die "
+                "PDF-Originalbytes werden NUR ueber URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + "
+                "Datei (Original UND Metadaten) gebunden, es gibt KEINEN automatischen PDF-Parser und keine "
+                "erfundene Textextraktionsquelle. Die Landingpage muss genau diesen v=32-Link mit dem "
+                "datierten Linktext tragen; die Suchtreffer-Fassung v=41 ist kein Beleg. Keine "
+                "Nachbarkaesten (Schrodi Steuerpolitik, Kaiser Ostdeutschland), keine beamteten "
+                "Staatssekretaere, keine ganzen Abteilungen, keine Kanzleramtsfunktion, keine persoenliche "
+                "politische Position. Die Kennung ist disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, "
+                "3 Zusatzaufgaben-, 2 BMWSB-, 1 Amthor-, 3 Wahlausschuss-, 1 Jarzombek- und 1 "
+                "Kloeckner-Achse; die disjunkte Vereinigung ergibt weiter genau die 54er Rollenquittung, es "
+                "bleiben 14 Achsen offen."
+            ),
+            (
                 "Der belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften wird "
                 f"ueber die vom Orchestrator geprueffte Ergaenzungsquittung {STELLVERTRETUNGEN_RESSOURCE} "
                 "behoben: 76 bislang fehlende Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile "
@@ -4038,6 +4249,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("kloecknerQuittung")),
                 "deckungsgleichVerwendet": len(eingang.kloeckner_verwendet),
                 "geschlosseneAchsen": len(kloeckner_geschlossen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
+            },
+            "rohdeQuittung": {
+                "datei": ROHDE_RESSOURCE,
+                "geprueftGesamt": len(rohde),
+                "nachRegion": {"Bund": len(rohde)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("rohdeQuittung")),
+                "deckungsgleichVerwendet": len(eingang.rohde_verwendet),
+                "geschlosseneAchsen": len(rohde_geschlossen),
                 "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "stellvertretungenQuittung": {

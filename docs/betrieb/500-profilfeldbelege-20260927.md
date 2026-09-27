@@ -4,20 +4,29 @@
 Zielprofile. **Keine fachliche Freigabe, kein Importmanifest, keine Production-
 Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
-**Aktuelle Fortschreibung nach dem Stellvertretungs-Schritt (Brandenburg):** 484
-technisch akzeptiert, 16 unvollstaendig; 317/330 Bundestagsprofile technisch bereit.
-15 fachliche Achsen, 74 Parteifelder und eine Berliner Mandatsart bleiben offen. Der
-belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften ist ueber die
-versionierte [Stellvertretungsquittung](brandenburg-stellvertretungen-76-20260927.json)
+**Aktuelle Fortschreibung nach dem Rohde-Schritt (Bundestag, BMF-Aufgabe Bundeshaushalt):**
+485 technisch akzeptiert, 15 unvollstaendig; 318/330 Bundestagsprofile technisch bereit.
+14 fachliche Achsen, 74 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor
+einzeln offene Fachachsenfall Dennis Rohde ist ueber die amtlich belegte aktuelle
+BMF-Aufgabe "Bundeshaushalt" geschlossen (versionierte
+[Rohde-Einzelfallquittung](rohde-bundeshaushalt-1-20260927.json)): die bestehende PSts-Rolle
+bleibt unveraendert und traegt im eigenen Funktionsabschnitt keine Amtszeit; die kanonische
+Person ist ueber echte H1, eigenen aktuellen Funktionstext und eine JSON-LD-Gegenprobe (genau
+eine echte MdB-Role ohne endDate) gebunden; das Thema stammt ausschliesslich aus Rohdes
+eigenem Kasten auf Seite 1 des amtlich von der Landingpage verlinkten v=32-Organisationsplans
+(Stand 3. August 2026, Originalbytes nur ueber Hash/Bytezahl/Stand/Seite, kein PDF-Parser);
+getrennter Herkunftshinweis und amtliche BMF-Quelle. Genau ein Datensatz geaendert, 499
+byte-identisch, 54er Rollenquittung 48/6 unveraendert. Vorher war der belegte Verlust
+stellvertretender Brandenburger Ausschussmitgliedschaften ueber die versionierte
+[Stellvertretungsquittung](brandenburg-stellvertretungen-76-20260927.json)
 behoben: 76 bislang fehlende Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile,
 35 Datensaetze geaendert und 465 identisch. Genau eine zuvor offene 54er-Fachachse
 (Oliver Skopec) schliesst sich darueber ueber eine belegte STELLVERTRETENDE
-Ausschussmitgliedschaft; die 54er Rollenquittung bleibt 48/6. Vorher war der offene
-Fachachsenfall Julia Klöckner (Bundestagspraesidentin) ueber ihre amtlich belegten
-Aufgaben geschlossen worden (kanonische Person separat neu gebunden, 54er-Rolle
-unveraendert). Die nachfolgenden bisherigen Teilberichte enthalten ihre damaligen
-Zwischenstaende; massgeblich fuer die aktuelle Bilanz ist das
-[Feldbeleg-JSON](500-profilfeldbelege-20260927.json).
+Ausschussmitgliedschaft. Vorher war der offene Fachachsenfall Julia Klöckner
+(Bundestagspraesidentin) ueber ihre amtlich belegten Aufgaben geschlossen worden (kanonische
+Person separat neu gebunden, 54er-Rolle unveraendert). Die nachfolgenden bisherigen
+Teilberichte enthalten ihre damaligen Zwischenstaende; massgeblich fuer die aktuelle Bilanz
+ist das [Feldbeleg-JSON](500-profilfeldbelege-20260927.json).
 
 Die eigene Indexkarte bindet Ausschuss-URL und H6-Namen an die echte H1 der jeweiligen Seite. Versteckte Inhalte, fremde URL-Parameter und aus dem Inhaltsbereich verschobene Karten werden auch bei konsistent erneuerten Quellenhashes gesperrt.
 
@@ -74,7 +83,7 @@ eigenen Absatz des geschlossenen H2-Abschnitts, kanonische Person separat neu ge
 Zwei bislang offene Berliner Mandatsarten sind ueber eine versionierte lokale
 Quittung belegt (Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux
 Landesliste); Claudia Engelmann bleibt offen.
-483 Profile sind technisch importierbar.
+485 Profile sind technisch importierbar.
 
 ## Artefakte
 
@@ -100,6 +109,8 @@ Landesliste); Claudia Engelmann bleibt offen.
 | [`scripts/profil-feldbelege-500-wahlausschuss.py`](../../scripts/profil-feldbelege-500-wahlausschuss.py) | getrenntes, fail-closed Pruefmodul der 3 Wahlausschuss-Aufgabenachsen; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die aktuelle Wahlausschuss-Rolle eigenstaendig aus ProfilePage.mainEntity, injizierbare Testfixtures |
 | [`docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json`](kloeckner-praesidentinnen-aufgaben-1-20260927.json) | vom Orchestrator eng gepruefte Einzelfallquittung Julia Klöckner: die zwei Themen Bundestagsverwaltung/Parteienfinanzierung stammen aus dem zweiten eigenen Absatz des geschlossenen H2-Abschnitts der amtlichen Praesidiumsseite, die kanonische Person wird separat ueber echte H1 + eigenen aktuellen Funktionstext neu gebunden; 54er-Rolle bleibt erhalten; keine Importfreigabe |
 | [`scripts/profil-feldbelege-500-kloeckner.py`](../../scripts/profil-feldbelege-500-kloeckner.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Klöckner; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die zuvor offene Rolle separiert neu (echte H1 + eigener Funktionstext), injizierbare Testfixtures |
+| [`docs/betrieb/rohde-bundeshaushalt-1-20260927.json`](rohde-bundeshaushalt-1-20260927.json) | vom Orchestrator eng gepruefte Einzelfallquittung Dennis Rohde: das eine Thema Bundeshaushalt stammt aus Rohdes eigenem Kasten auf Seite 1 des amtlich verlinkten v=32-BMF-Organisationsplans (Stand 3. August 2026), kanonische Person ueber echte H1 + eigenen Funktionstext + JSON-LD-Gegenprobe neu gebunden, bestehende PSts-Rolle ohne Amtszeit erhalten; keine Importfreigabe |
+| [`scripts/profil-feldbelege-500-rohde.py`](../../scripts/profil-feldbelege-500-rohde.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Rohde; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die kanonische Person (echte H1 + eigener Funktionstext + JSON-LD-Gegenprobe), die PDF-Originalbytes nur ueber Hash/Bytezahl/Stand/Seite und die datierte v=32-Landingpage, injizierbare Testfixtures, kein PDF-Parser |
 | [`scripts/profil-feldbelege-500-test.js`](../../scripts/profil-feldbelege-500-test.js) | gezielter Offline-Test (kein Netz, keine DB, kein Modell) |
 | [`scripts/profil-feldbelege-500-unit.py`](../../scripts/profil-feldbelege-500-unit.py) | gezielte Gegenproben (Quelldrift, Fraktion-keine-Partei, Gremienrollen, unbekannter Ausschuss, Mandatsartenquittung, offen-bleibt-offen) |
 
