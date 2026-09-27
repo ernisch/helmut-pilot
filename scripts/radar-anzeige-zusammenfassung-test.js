@@ -33,7 +33,8 @@ const mentionArgs = { ...args, knowledgeObjects: [mentioned], kosById: { k0: men
     summary: "Alex Muster spricht zu dem internationalen Bericht." }] } };
 const own = R.buildCurrentRadarState(mentionArgs);
 assert.equal(own.anzeige.mentions.length, 1);
-assert.match(own.anzeige.summary.line1, /eine direkte Erwähnung/);
+assert.equal(own.anzeige.summary.line1, "Eine angezeigte Quelle nennt deinen Namen. Neuester Quellenstand: 2026-09-11.");
+assert.doesNotMatch(own.anzeige.summary.line1, /Aktuell|Heute/);
 assert.doesNotMatch(own.anzeige.summary.text, /keine zugeordneten Signale/);
 const other = R.buildCurrentRadarState({ ...mentionArgs, profile: { ...profile, id: "radar-test-zwei", fullName: "Robin Beispiel" } });
 assert.equal(other.mentions.length, 0, "Fremde Erwähnung wird nicht dem anderen Profil zugeschrieben");
@@ -44,4 +45,4 @@ assert.match(R.buildSummary([], emptyEnv, [], now).text, /Im vorliegenden Datenb
 const visibleSignal = R.buildSummary([], emptyEnv, [{}], now, { nurAnzeige: true });
 assert.equal(visibleSignal.line1, "In dieser Radaransicht werden derzeit keine direkten Erwähnungen angezeigt.");
 assert.match(visibleSignal.line2, /ein neues Signal/);
-console.log("17/17 Radar Zusammenfassungsprüfungen bestanden");
+console.log("18/18 Radar Zusammenfassungsprüfungen bestanden");
