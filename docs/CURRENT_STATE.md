@@ -5,7 +5,7 @@
 ## 1 · Aktueller Stand
 
 
-* **Roadmap27.09.,06:20UTC: feste Themenbasis lokal vorbereitet und vollstaendig gegengeprueft.** [Plan und Beleg](betrieb/500-themenplan-20260927.md):495 realistische lokale Themenlisten aus vorhandenen Rollen,5 reale Profile unveraendert;22 Politikfelder,123 sichtbar unzugeordnete Rollenpositionen. Echte Builder-Gegenprobe mit identischer00:06-Datenbasis: weiterhin4/500 Tagesprioritaeten,496 ohne; kein Profilimport und kein frischer Production-Funktionsnachweis. Frische Bestandslesung:500 inaktiv/501 Identitaeten und Vollhashes unveraendert,0 Jobs/Locks/Leases. Offen: frische Quellen, Themenzuordnung und Bereichsabnahme. Keine Aktivierung/500er Test.
+* **Betreiberklarstellung27.09.: Bundestag UND Landtage verbindlich.** [Testvertrag](betrieb/bundestag-landtage-testvertrag-20260927.md): gemischter500er Nachweis mit individuell belegten realen Mandatsdaten; reine Bundestagsabnahme unzureichend. Naechster Schritt: Auswahlmatrix/Profilbelege und Landespfade pruefen, dann Versorgung. Bisher495 Testparteien/-themen; [lokaler Themenplan](betrieb/500-themenplan-20260927.md) ohne Versorgungsgewinn, kein Profilimport. Landtags-Gesamtnachweis fehlt; diese Regel aendert keine Productiondaten.
 
 * **Quellenstand vor der Themengegenprobe:** PR638/`46a2bb7d` READY; [Rest3-Lauf](betrieb/verstehen-frische3-rest-20260926.md)36281285571 mit3 Aufrufen/0,021170USD:2 Ergebnisse fachlich abgenommen, Aegypten gesichert gesperrt. Wadephul-Fehlbindung und Hormus-Sperre bleiben erhalten. Keine Wiederholung. [Vollauswertung00:12UTC](betrieb/versorgung-500-20260927.md):4/500 Tagesprioritaeten. Der [begrenzte Lage-Generatornachweis](betrieb/lage-fachkorrektur-20260926.md) ersetzt kein zusammenhaengendes Bereichspaket.
 

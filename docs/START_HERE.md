@@ -4,14 +4,16 @@
 Historie. Für den aktuellen Stand → [`CURRENT_STATE.md`](CURRENT_STATE.md), für die
 Systemkarte → [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-**Letzte Aktualisierung:** 2026-09-23 (aktuelle Priorität: 500er Production-Nachweis; laufender Betriebszustand nur in `CURRENT_STATE.md`)
+**Letzte Aktualisierung:** 2026-09-27 (aktuelle Priorität: 500er Production-Nachweis; laufender Betriebszustand nur in `CURRENT_STATE.md`)
 
 ---
 
 ## 1 · Was Helmut ist
 
-Helmut ist ein **politischer KI-Stabschef** für Mandatsträgerinnen und Mandatsträger
-(aktuell Bundestag; Landtagsebene vorbereitet, nicht aktiv).
+Helmut ist ein **politischer KI-Stabschef für Bundestagsabgeordnete und
+Landtagsabgeordnete**, einschließlich der Landesparlamente der Stadtstaaten.
+Beide Ebenen gehören verbindlich zum Produktziel. Der tatsächlich belegte
+Unterstützungsstand steht ausschließlich in `CURRENT_STATE.md`.
 
 Helmut ist **kein** Medienmonitoring-Tool, kein News-Reader und kein Dashboard.
 Helmut beantwortet morgens und im Tagesverlauf:
@@ -29,7 +31,8 @@ Kommunikation und Aufgaben.*
 ## 2 · Aktuelles Projektziel
 
 **Oberstes Projektziel ist der belastbare Production-Nachweis mit exakt 500
-gleichzeitig aktiven Profilen.** Die Stufen und den aktuellen Stand führt ausschließlich
+gleichzeitig aktiven Profilen beider Mandatsebenen.** Ein reiner Bundestagstest
+belegt dieses Gesamtziel nicht. Die Stufen und den aktuellen Stand führt ausschließlich
 [`CURRENT_STATE.md`](CURRENT_STATE.md).
 
 Danach ist die **Verkaufsbereitschaft für den ersten zahlenden Zweitmandanten** das
@@ -41,8 +44,10 @@ Neue Funktionen sind nachrangig, solange der 500er-Nachweis und die P0-Punkte of
 
 ## 3 · Zielgruppe und Pilotlogik
 
-- **Zielgruppe:** Abgeordnete und deren Büros — Menschen mit zu vielen Quellen und
-  zu wenig Zeit für Entscheidungen.
+- **Zielgruppe:** Bundestags- und Landtagsabgeordnete und ihre Büros — Menschen
+  mit zu vielen Quellen und zu wenig Zeit für Entscheidungen. Individuelle
+  Versorgung berücksichtigt die belegte Partei/Fraktion, Region, Themen und
+  Zuständigkeiten der jeweiligen Mandatsebene.
 - **Erster Tester:** ein einzelner realer Pilotmandant (sitzendes Bundestagsmandat).
   Seine Identität wird in Code und Doku bewusst **nicht** geführt — siehe §5,
   Prinzip „Mandantenneutralität". Historische Altdokumente und Testfixtures
