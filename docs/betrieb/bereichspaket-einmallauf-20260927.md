@@ -121,3 +121,50 @@ nennt ausschliesslich feste Leseschritte, bekannte Fachfehler und Zeitabbrueche;
 keine freie Fehlermeldung, URL, Profilkennung oder Payload.12/12 gezielte
 Gruppen bestanden, darunter Datenschutz der Diagnose und unveraenderte
 negative Fachablehnung. Keine Grenzerhoehung, keine automatische Wiederholung.
+
+
+## Belegte Ursache und neue Bindung der unveraenderten Inhalte
+
+[PR646](https://github.com/ernisch/helmut-pilot/pull/646) nach gruener Pflicht-CI
+[36307266025](https://github.com/ernisch/helmut-pilot/actions/runs/36307266025)
+gemergt als `f1a5f97616b15a3b0daf0775d626d92c53cfb089`,
+[Production READY](https://vercel.com/nohut/helmut-pilot/9ygiZ9FbLPPCsQNAaFUTBbzPJbk9).
+Der gezielte Plan [36307911426](https://github.com/ernisch/helmut-pilot/actions/runs/36307911426)
+belegt `briefing-korrektur-abweichend`, Phase `fachaufbau`. Kein bestaetigter
+Transportfehler. Die frische09:01-SQL-Pruefung bestaetigt den unveraenderten
+500er Quellen-/Wissenssnapshot
+`8b4e164866f72f5918a272a97cf4ab2029ec3ae6fb08ee46a5d531ed4a7ce276`.
+
+Der lokale Vergleich belegt die Abweichungen des vorbereitenden Lesemodells:
+Quellen waren lokal nach Kennung statt wie im echten Leser nach Publikationszeit
+sortiert. Bei20 gleichen Updatezeiten standen22 Wissensobjekte ohne eindeutigen
+Sortierzusatz anders. Der Profilzeitpunkt war derselbe, lokal aber als SQL-Text
+statt JSON-Zeitwert dargestellt; die gesamte fachliche Profilbindung ist gleich.
+Mittlerweile gilt seit11Uhr Berlin der Mittagsslot. Diese Unterschiede duerfen
+nicht durch Abschwaechen der Hashpruefung oder einen eingefrorenen Morgenslot
+uebergangen werden.
+
+Korrektur: Wissensobjekte werden bei gleichen Updatezeiten VOR dem Limit nach ID
+geordnet, Quellen mit festem ID-Zusatz und danach wie bisher neueste zuerst.
+Die Vorpruefung verwendet dieselbe Reihenfolge und den frisch nachgelesenen
+Profilkontext. Echte Storage-Leser gegen lokalen HTTP-Transport pruefen den
+Gleichstand am Limit und Quellenreihenfolge;6 bestehende Quellenlesepfade gruen.
+Alle98 Aussagepfade,4 Quellen und sichtbaren Texte bleiben vollstaendig gleich.
+Die Darstellung unterscheidet sich nur im internen `briefingType` (midday).
+Alle strengen Einzel-/Gesamturteile wurden gegen die neue Bindung validiert.
+
+Neue private Datei `/private/tmp/helmut-budget7/fachurteil-mittag.json`, neuer
+Kontrollschluessel `bereichsurteil-vorlage-20260927-b`. Die erste Vorlage bleibt
+unveraendert.15 Aenderungen betreffen ausschliesslich Hashbindungen, keine
+Urteile, Begruendungen, Quellentexte oder Profilinhalte:
+
+- Ursprung: `82f896677b385397f49436794acd3732ea49757205c0288a8755582a6f2fb871`
+- Eingabe: `646504e262054afd1e6dc72551e303ea2bf8b3ab9865ded0e4b06ea8b72b6b82`
+- Gesamte Vorlage: `9005bfdee5e9fe38f83083d89c7b580b31c56fc6ddcb4f3e3c2f9fdbc3b529fe`
+
+Die automatische Freigabepruefung hat auch die zurueckgerollte Probe dieser
+neuen Vorlage abgelehnt: neuer Schluessel und geaenderte Bindungen seien nicht
+von der konkreten Freigabe fuer Vorlage a umfasst. Neue konkrete Freigabe beim
+Betreiber angefragt; b wurde nicht uebertragen. Codekorrektur laeuft unabhaengig
+weiter. Laufquittung bleibt unbenutzt, Grenzen2 Aufrufe/240s/0,436USD sowie
+7USD insgesamt/6USD taeglich unveraendert. Kein Modell- oder500er Nachweis.

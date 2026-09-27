@@ -211,7 +211,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
     fordere(Array.isArray(rows), "leseformat"); return rows;
   });
   const I = require("../lib/helmut/briefing-urteilsimport");
-  const stage = await read("helmut_store", "select=data&id=eq.bereichsurteil-vorlage-20260927-a&limit=2");
+  // Neue, getrennt gepruefte Vorlage nach Abgleich der echten Lesereihenfolge.
+  // Die erste Kontrollvorlage bleibt unveraendert; die Laufquittung ist unbenutzt.
+  const stage = await read("helmut_store", "select=data&id=eq.bereichsurteil-vorlage-20260927-b&limit=2");
   fordere(stage.length === 1 && hash(stage[0].data) === cfg.urteilHash, "urteilsvorlage");
   const urteil = stage[0].data;
   const fachlicheEingabe = async p => leseSchritt("fachaufbau", async () => {
