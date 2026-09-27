@@ -331,3 +331,46 @@ Client-Renderer, vollstaendigen Detailtexten, exakten Links, ausgeschlossener
 unbenutzter Quelle, unveraendertem Payload und negativen Quellenhash-/Versionsfaellen.
 Nach Merge und Deployment dasselbe gespeicherte Paket erneut aufnehmen und
 alle drei sichtbaren Bereichspaare beurteilen. Kein weiterer bezahlter Lauf.
+
+## Ausrollung und gemeinsame semantische Abnahme
+
+[PR651](https://github.com/ernisch/helmut-pilot/pull/651), Kopf61b357d2:
+beide Pflichtpruefungen in
+[CI36313317750](https://github.com/ernisch/helmut-pilot/actions/runs/36313317750)
+erfolgreich. Merge `a6817214ee8bb52e4eb18f778206670b55fff134` um10:48:10UTC;
+[Production-Deployment](https://vercel.com/nohut/helmut-pilot/HNHoWWbtbmp3KtqpcjVguPhhLtAY)
+`dpl_HNHoWWbtbmp3KtqpcjVguPhhLtAY` READY am selben Commit. Fehler-/Fatal-Logs
+im begrenzten Fenster10:48:10–10:49:11UTC ohne Treffer.
+
+Das gespeicherte Paket wurde nach dem Merge erneut unabhaengig aus Production
+gelesen: gesamter Inhalt unveraendert, beide Zeitwerte bei unterschiedlicher
+SQL-Darstellung derselbe Zeitpunkt. Der aktuelle Client und der ausgerollte
+Speicheradapter liefern lokal nun2 Karten und alle3 geprueften Detailabsaetze.
+Alle drei vollstaendigen Ansichtstexte und HTML-Hashes wurden verglichen und
+das separate semantische Urteil an genau diesen Stand gebunden.
+[Ergebnisbericht](bereichsabnahme-20260927.json):3/3 Paare getrennt.
+
+- Briefing/Lage: kurzer Berliner Anlass und Beobachtungsauftrag im Briefing;
+  die ausfuehrlichen Beschluesse samt Quellen und die Solidarprinzip-Beratung
+  ausschliesslich in Lage. Titel und wechselseitige Verweise bleiben erlaubt.
+- Briefing/Radar: priorisierter Berliner Anlass gegen den persoenlichen
+  amtlichen Redenbeleg; kein wiederholter Sachstand.
+- Lage/Radar: parlamentarische Sachverhalte gegen Namensnennung; kein Inhalt
+  der Rede und keine Resonanz aus dem Mediathektitel erfunden.
+
+Pruefeingabe `f34fbc78ffeb4cdb91ad21092f0d854d4c7fe94c6903d19b26330d17e674a788`,
+Urteil `972a6e926b1dcb886a36af6cbd9753e5de79625cbaeb4b77ff51f74b9e75ada9`.
+Private Volltexte/HTML/Urteil unter `/private/tmp/helmut-budget7/`:
+`ansichten-prod651-geprueft.json`, `urteil-prod651.json` und
+`paket-nach-pr651.json`. Keine Texte entfernt, keine erneute Modellbewertung.
+Das Urteil der fuehrenden Codex-Sitzung ueber das gpt-5-mini-Paket bleibt
+fehlbar; es ist kein unabhaengiger Bedeutungsbeweis, keine Faktenvollpruefung,
+kein frischer Live-App-Mitschnitt und kein500er Nachweis. Die Anzeigenhinweise
+auf teilweise Vollstaendigkeit und fehlenden heutigen Morgenlauf bleiben ehrlich.
+
+SQL10:49:09UTC:500 inaktive Profile und501 Identitaeten mit unveraenderten
+Vollhashes,0 Jobs/Locks/Leases/offene Productionreservierungen. Tageskosten und
+Gesamtbindung unveraendert. Kein neuer Helfer-/Production-Modelllauf fuer die
+Adapterkorrektur oder Bereichsabnahme. Genaue Variante/Denkstufe der fuehrenden
+Codex-Sitzung nicht auslesbar; kein Astra-Uebergang. Das Production-Paket stammt
+von gpt-5-mini: Entwurf low, separate Quellenpruefung medium.
