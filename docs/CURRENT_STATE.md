@@ -5,7 +5,7 @@
 ## 1 · Aktueller Stand
 
 
-* **Betreiberklarstellung27.09.: Bundestag UND Landtage verbindlich.** [Testvertrag](betrieb/bundestag-landtage-testvertrag-20260927.md): gemischter500er Nachweis mit individuell belegten realen Mandatsdaten; reine Bundestagsabnahme unzureichend. Naechster Schritt: Auswahlmatrix/Profilbelege und Landespfade pruefen, dann Versorgung. Bisher495 Testparteien/-themen; [lokaler Themenplan](betrieb/500-themenplan-20260927.md) ohne Versorgungsgewinn, kein Profilimport. Landtags-Gesamtnachweis fehlt; diese Regel aendert keine Productiondaten.
+* **27.09.: Berlin/Brandenburg zuerst, weitere14 Laender danach.** [Startplan](betrieb/berlin-brandenburg-startplan-20260927.md): Zielmatrix300 Bundestag/120 Berlin/80 Brandenburg, fuenf Bestandsprofile erhalten.3 amtlich belegte Landesproben lokal importierbar/richtig zugeordnet; keine Vollkohorte. [Beleg12:15UTC](betrieb/berlin-brandenburg-startbeleg-20260927.json):500 inaktiv/alle Bundestag;18 Landeswege ungeprueft. PARDOK nur Shadow, Probe nicht frisch. Importabbildung korrigiert,74/74 lokal gruen. Naechster Schritt: reale Auswahl, dann sichtbare Landesversorgung.0,448719USD frei um12:15UTC; vor Kostenlauf neu pruefen.
 
 * **Quellenstand vor der Themengegenprobe:** PR638/`46a2bb7d` READY; [Rest3-Lauf](betrieb/verstehen-frische3-rest-20260926.md)36281285571 mit3 Aufrufen/0,021170USD:2 Ergebnisse fachlich abgenommen, Aegypten gesichert gesperrt. Wadephul-Fehlbindung und Hormus-Sperre bleiben erhalten. Keine Wiederholung. [Vollauswertung00:12UTC](betrieb/versorgung-500-20260927.md):4/500 Tagesprioritaeten. Der [begrenzte Lage-Generatornachweis](betrieb/lage-fachkorrektur-20260926.md) ersetzt kein zusammenhaengendes Bereichspaket.
 

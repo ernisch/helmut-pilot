@@ -1,0 +1,73 @@
+{
+  "version": "helmut-mandatsprofil/1",
+  "quelleDerRecherche": "Drei amtlich belegte Rechercheproben vom 27.09.2026; keine Kunden, kein Productionimport, keine finale 500er Auswahl. Kennungen sind lokal. Keine persönlichen Positionen oder Themen aus Parteizugehörigkeit abgeleitet.",
+  "profile": [
+    {
+      "mandatsId": "recherche-be-frank-balzer",
+      "vollname": "Frank Balzer",
+      "parlament": "landtag-berlin",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Berlin",
+      "wahlkreis": "Reinickendorf, Wahlkreis 6",
+      "ausschuesse": [
+        "Ausschuss für Integration, Frauen und Gleichstellung, Vielfalt und Antidiskriminierung",
+        "Unterausschuss Bezirke, Personal und Verwaltung sowie Produkthaushalt und Personalwirtschaft",
+        "Ausschuss für Sport"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/frank-balzer?groupStrategy=nachnamen",
+          "geprueftAm": "2026-09-27"
+        }
+      ],
+      "aktiv": false
+    },
+    {
+      "mandatsId": "recherche-bb-uwe-adler",
+      "vollname": "Uwe Adler",
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "19 — Potsdam-Mittelmark III / Potsdam III",
+      "ausschuesse": [
+        "Ausschuss für Inneres und Kommunales",
+        "Ausschuss für Recht und Digitalisierung",
+        "Ausschuss für Haushaltskontrolle"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/adler_uwe/24171",
+          "geprueftAm": "2026-09-27"
+        }
+      ],
+      "aktiv": false
+    },
+    {
+      "mandatsId": "recherche-bb-kristy-augustin",
+      "vollname": "Kristy Augustin",
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Märkisch-Oderland / Letschin — belegte politische Funktionen, kein Direktwahlkreis",
+      "ausschuesse": [
+        "Untersuchungsausschuss 8/1 - UA OPR",
+        "Ausschuss für Recht und Digitalisierung",
+        "Ausschuss für Bildung, Jugend und Sport"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480",
+          "geprueftAm": "2026-09-27"
+        }
+      ],
+      "aktiv": false
+    }
+  ]
+}

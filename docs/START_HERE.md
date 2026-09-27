@@ -14,6 +14,8 @@ Helmut ist ein **politischer KI-Stabschef für Bundestagsabgeordnete und
 Landtagsabgeordnete**, einschließlich der Landesparlamente der Stadtstaaten.
 Beide Ebenen gehören verbindlich zum Produktziel. Der tatsächlich belegte
 Unterstützungsstand steht ausschließlich in `CURRENT_STATE.md`.
+Die Markteinführung priorisiert Berlin und Brandenburg zusammen mit dem
+Bundestag; weitere Landesparlamente folgen danach. Deutschlandweit bleibt das Ziel.
 
 Helmut ist **kein** Medienmonitoring-Tool, kein News-Reader und kein Dashboard.
 Helmut beantwortet morgens und im Tagesverlauf:

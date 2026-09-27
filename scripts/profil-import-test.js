@@ -24,6 +24,8 @@ const IMPORT = require(path.join(ROOT, "lib/helmut/profil-import.js"));
 const validation = require(path.join(ROOT, "lib/helmut/profile-validation.js"));
 const config = require(path.join(ROOT, "lib/helmut/config.js"));
 const sched = require(path.join(ROOT, "lib/helmut/scheduler.js"));
+const storage = require(path.join(ROOT, "lib/helmut/storage.js"));
+const packages = require(path.join(ROOT, "lib/helmut/quellenarchitektur/profile-packages.js"));
 
 const SCHEMA_PFAD = path.join(ROOT, "schemas/mandatsprofil-import.schema.json");
 const BEISPIEL_PFAD = path.join(ROOT, "docs/beispiele/mandatsprofile-beispiel.json");
@@ -91,6 +93,48 @@ function main() {
     check("1.7 Der Produktionscode stuft es folgerichtig als `deaktiviert` ein",
       validation.validateProfile(roh).state === validation.STATES.DISABLED,
       validation.validateProfile(roh).state);
+  }
+
+  abschnitt("1b · Import bleibt nach dem echten Speicher-Roundtrip ein Mandat der richtigen Ebene");
+  {
+    // Reine Serialisierung; kein Datenbankzugriff und keine Aktivierung.
+    const landesprobe = JSON.parse(fs.readFileSync(path.join(ROOT,
+      "docs/betrieb/berlin-brandenburg-profilprobe-20260927.json"), "utf8"));
+    check("1b.1 Amtliche Rechercheproben erfuellen den Importvertrag", IMPORT.pruefeImport(landesprobe).ok);
+    for (const p of [gutesProfil(), ...landesprobe.profile]) {
+      const zeile = storage.toMandateProfileRow(IMPORT.zuHelmutProfil(p));
+      const gelesen = storage.fromMandateProfileRow({ id: p.mandatsId, name: p.vollname }, zeile);
+      const erwartet = p.parlament === "bundestag" ? "bundestag" : "landtag";
+      check(`1b Ebene gespeichert: ${p.mandatsId}`, zeile.politische_ebene === erwartet);
+      check(`1b Kein Aktivierungsnebeneffekt: ${p.mandatsId}`, zeile.aktiv === false && gelesen.profileActive === false);
+      const pflicht = packages.resolveProfilePackages(gelesen).required;
+      const erwartetPakete = erwartet === "bundestag" ? ["bund-basis"]
+        : ["bund-basis", `${p.bundesland.toLowerCase()}-basis`];
+      check(`1b Richtige Versorgung nach Wiederlesen: ${p.mandatsId}`,
+        JSON.stringify(pflicht) === JSON.stringify(erwartetPakete));
+    }
+    const rollen = gutesProfil({
+      namensvarianten: ["Erika Zweitname"],
+      stellvertretendeAusschuesse: ["Haushaltsausschuss"],
+      berichterstatterThemen: ["Berufliche Weiterbildung"],
+      funktionen: ["Obfrau", "Stellvertretende Fraktionsvorsitzende"],
+      regierungsrolle: "opposition",
+      regionaleThemen: ["Hafen Beispielstadt"],
+      wahlkreis: "", listenmandat: true, regionHinweis: "Beispielstadt"
+    });
+    const zeile = storage.toMandateProfileRow(IMPORT.zuHelmutProfil(rollen));
+    const gelesen = storage.fromMandateProfileRow({ id: rollen.mandatsId, name: rollen.vollname }, zeile);
+    check("1b Belegte Zusatzrollen erreichen die Datenbankspalten",
+      zeile.rolle === "Obfrau; Stellvertretende Fraktionsvorsitzende"
+      && zeile.regierungsrolle === "opposition"
+      && zeile.stellvertretende_ausschuesse[0] === "Haushaltsausschuss"
+      && zeile.berichterstatter_themen[0] === "Berufliche Weiterbildung");
+    check("1b Region und Namen bleiben fuer die Personalisierung erhalten",
+      gelesen.nameVariants[0] === "Erika Zweitname"
+      && gelesen.regionalTopics[0] === "Hafen Beispielstadt"
+      && gelesen.reportingTopics[0] === "Berufliche Weiterbildung");
+    check("1b Listenmandat behaelt Region ohne erfundenen Direktwahlkreis",
+      gelesen.listenmandat === true && gelesen.regionNote === "Beispielstadt" && !gelesen.constituency);
   }
 
   abschnitt("2 · Aus dem Profil entstehen echte, nutzbare Quellen");

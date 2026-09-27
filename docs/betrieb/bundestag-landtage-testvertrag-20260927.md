@@ -13,6 +13,13 @@ beschraenken, ist durch die ausdrueckliche Betreiberklarstellung ueberholt.
 Fehlende Unterstuetzung eines Landes wird als Luecke ausgewiesen; ein Nachweis
 fuer einzelne Laender darf nicht als Abnahme aller16 Landesparlamente gelten.
 
+Nachfolgende Betreiberpriorisierung desselben Tages: zuerst Berlin und Brandenburg,
+danach die restlichen Laender. Fuer die erste gemischte500er Etappe gelten deshalb
+Bundestag/Berlin/Brandenburg als konkreter Umfang. Die vorherige Chat-Zusage,
+schon diesen ersten Lauf mit allen16 Landesparlamenten zu besetzen, ist ueberholt.
+Alle fachlichen Kriterien gelten in der ersten Etappe vollstaendig; sie ersetzt
+keine spaetere Abnahme weiterer Laender. [Startplan](berlin-brandenburg-startplan-20260927.md).
+
 ## Realistischer Profilbestand
 
 - Die fuenf Bestandsprofile bleiben erhalten und technisch geschuetzt.

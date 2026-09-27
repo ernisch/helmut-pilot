@@ -13,6 +13,15 @@ keine optionale spaetere Erweiterung. Ein reiner Bundestagsnachweis ist kein
 vollstaendiger Helmut-Nachweis. Fehlende Landtagsunterstuetzung ist ein Blocker,
 kein Grund, Landtagsprofile zu Bundestagsprofilen umzudeklarieren.
 
+Markteinfuehrungsprioritaet laut Betreiber am27.09.2026: zuerst Berlin und
+Brandenburg zusammen mit dem Bundestag, danach die weiteren14 Landesparlamente.
+Der erste gemischte500er Nachweis wird auf Bundestag/Berlin/Brandenburg begrenzt
+und genau so bezeichnet. Er ist keine deutschlandweite Landesabnahme. Fehlende
+Unterstuetzung anderer Laender blockiert diese erste Etappe nicht; innerhalb
+der Etappe gelten alle fachlichen Nachweise unveraendert. Deutschlandweit bleibt
+das Gesamtziel. Details und naechste Arbeit:
+[docs/betrieb/berlin-brandenburg-startplan-20260927.md](docs/betrieb/berlin-brandenburg-startplan-20260927.md).
+
 Der Betreiber hat dies am 27.09.2026 ausdruecklich klargestellt. Fuer den
 realistischen Test werden oeffentlich belegte Mandatsprofile realer Abgeordneter
 beider Ebenen als gekennzeichnete Testabbilder vorbereitet. Partei und Fraktion,
