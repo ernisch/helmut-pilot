@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "datum": "2026-09-27",
+  "umfang": 2,
+  "pruefung": "Orchestrator hat zwei heutige amtliche Profilabrufe anhand ihrer SHA256 und der aktuellen strukturierten Role-Zuordnung geprueft. Ableitung der Sachgebiete aus dem ausdruecklichen Ausschussnamen; Haushaltsausschuss -> Haushalt ist eine gekennzeichnete sprachliche Ableitung. Beratendes Mitglied bleibt unveraendert in funktionen. Keine Ausschussmitgliedschaft in den Feldern fuer ordentliche/stellvertretende Mitgliedschaft vortaeuschen. Keine Parteiaussage: Knodel bleibt parteiseitig ungeklaert und nicht importfreigegeben. Technische Quellen-/Personen-/Rollenbindung und echter Speicher-/Themengegencheck sind integriert; getrennte Ableitungshinweise bleiben erhalten. Fehlende mainEntity.url wird nicht erfunden: gebundene Abrufadresse, identischer H1/Personenname und #mdb tragen die Bindung.",
+  "bilanz": {
+    "gesamt": 2,
+    "Bund": 2,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-knodel-sieghard-1045460",
+      "status": "belegt",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "person": "Sieghard Knodel",
+      "jsonLdPfad": "ProfilePage.mainEntity.memberOf",
+      "amtlicherAusschuss": "Ausschuss für Landwirtschaft, Ernährung und Heimat",
+      "amtlicherRollenbeleg": {
+        "@type": "Role",
+        "memberOf": {
+          "@type": "Organization",
+          "description": "Ausschuss für Landwirtschaft, Ernährung und Heimat des Deutschen Bundestages",
+          "name": "Ausschuss für Landwirtschaft, Ernährung und Heimat",
+          "url": "https://www.bundestag.de/ausschuesse/Landwirtschaft"
+        },
+        "roleName": "Beratendes Mitglied",
+        "startDate": "2025-03-25"
+      },
+      "originalrollen": [
+        {
+          "@type": "Role",
+          "memberOf": {
+            "@type": "Organization",
+            "description": "Ausschuss für Landwirtschaft, Ernährung und Heimat des Deutschen Bundestages",
+            "name": "Ausschuss für Landwirtschaft, Ernährung und Heimat",
+            "url": "https://www.bundestag.de/ausschuesse/Landwirtschaft"
+          },
+          "roleName": "Beratendes Mitglied",
+          "startDate": "2025-03-25"
+        }
+      ],
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/knodel_sieghard-1045460",
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/K/knodel_sieghard-1045460",
+        "abgerufenAm": "2026-09-27T13:02:11.977166+00:00",
+        "sha256": "42a96cb4530a81c3400811b1f64303d2facb55546b156f7bacac6655f59ed5cf",
+        "bytes": 268720,
+        "datei": "bundestag-knodel_sieghard-1045460.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "themen": [
+        "Landwirtschaft",
+        "Ernährung",
+        "Heimat"
+      ],
+      "ableitungsHinweis": "Beratende Ausschussarbeit Bund (amtlich abgeleitet): Ausschuss für Landwirtschaft, Ernährung und Heimat; keine ordentliche oder stellvertretende Mitgliedschaft, keine persönliche politische Position",
+      "bestehendeFunktionen": [
+        "Beratendes Mitglied: Ausschuss für Landwirtschaft, Ernährung und Heimat"
+      ],
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-seidler-stefan-1047378",
+      "status": "belegt",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "person": "Stefan Seidler",
+      "jsonLdPfad": "ProfilePage.mainEntity.memberOf",
+      "amtlicherAusschuss": "Haushaltsausschuss",
+      "amtlicherRollenbeleg": {
+        "@type": "Role",
+        "memberOf": {
+          "@type": "Organization",
+          "description": "Haushaltsausschuss des Deutschen Bundestages",
+          "name": "Haushaltsausschuss",
+          "url": "https://www.bundestag.de/ausschuesse/a08_haushalt"
+        },
+        "roleName": "Beratendes Mitglied",
+        "startDate": "2025-03-25"
+      },
+      "originalrollen": [
+        {
+          "@type": "Role",
+          "memberOf": {
+            "@type": "Organization",
+            "description": "Haushaltsausschuss des Deutschen Bundestages",
+            "name": "Haushaltsausschuss",
+            "url": "https://www.bundestag.de/ausschuesse/a08_haushalt"
+          },
+          "roleName": "Beratendes Mitglied",
+          "startDate": "2025-03-25"
+        }
+      ],
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/S/seidler_stefan-1047378",
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/S/seidler_stefan-1047378",
+        "abgerufenAm": "2026-09-27T13:02:13.803330+00:00",
+        "sha256": "3ba866eab208e143651efc2c4fc72b0ab0e8508ef612db0f1b208bf9ad40c420",
+        "bytes": 273955,
+        "datei": "bundestag-seidler_stefan-1047378.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "themen": [
+        "Haushalt"
+      ],
+      "ableitungsHinweis": "Beratende Ausschussarbeit Bund (amtlich abgeleitet): Haushaltsausschuss; keine ordentliche oder stellvertretende Mitgliedschaft, keine persönliche politische Position",
+      "bestehendeFunktionen": [
+        "Beratendes Mitglied: Haushaltsausschuss"
+      ],
+      "importfreigegeben": false
+    }
+  ]
+}

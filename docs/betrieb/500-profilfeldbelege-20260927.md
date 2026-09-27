@@ -16,8 +16,8 @@ Quittung als Landesliste belegt. 19 zuvor offene fachliche Achsen sind ueber die
 gepruefte Ressortquittung mit ausdruecklichen amtlich abgeleiteten Ressortthemen
 geschlossen (9 Bund / 4 Berlin / 6 Brandenburg); 6 weitere ueber die gepruefte
 Aufgabenquittung mit personengebundenen amtlichen Aufgabenbereichen
-(Beauftragtenaufgaben + explizite BMAS-Abteilungen). 29 Achsen bleiben offen;
-468 Profile sind technisch importierbar.
+(Beauftragtenaufgaben + explizite BMAS-Abteilungen) sowie zwei beratende Ausschussachsen. 27 Achsen bleiben offen;
+470 Profile sind technisch importierbar.
 
 ## Artefakte
 
@@ -113,10 +113,10 @@ bleibt als historischer Lauf unveraendert. Keine Ableitung aus Fraktionslosigkei
 
 | Parlament | Datensaetze | Partei belegt | Partei offen | fachliche Achse offen | Mandatsart offen |
 |---|---:|---:|---:|---:|---:|
-| Bundestag | 330 | 259 | 71 | 26 | 0 |
+| Bundestag | 330 | 259 | 71 | 24 | 0 |
 | Landtag Berlin | 120 | 119 | 1 | 1 | 3 |
 | Landtag Brandenburg | 50 | 46 (+2 parteilos) | 2 | 2 | 0 |
-| **Gesamt** | **500** | **424 (+2 parteilos)** | **74** | **29** | **3** |
+| **Gesamt** | **500** | **424 (+2 parteilos)** | **74** | **27** | **3** |
 
 Mathematik der Parteibilanz: 424 belegt + 2 parteilos + 74 offen = 500. Die
 Parteiaenderung laesst die uebrigen Achsen unveraendert. Die Gremien-Trennung und
@@ -125,8 +125,9 @@ fachliche Achse offen 50 -> 54 (vier Bundestagsprofile verlieren eine
 Scheinausschussachse), Mandatsart offen 7 -> 3 (vier Brandenburg-Mandate belegt).
 Die gepruefte Ressortquittung schliesst 19 dieser 54 Achsen ueber ein amtlich
 abgeleitetes Ressortthema und die gepruefte Aufgabenquittung 6 weitere ueber einen
-personengebundenen amtlichen Aufgabenbereich: fachliche Achse offen 54 -> 29.
-Technischer Importvertrag: 468 akzeptiert / 32 offen.
+personengebundenen amtlichen Aufgabenbereich. Zwei beratende Ausschussachsen schliessen
+weitere Themenluecken: fachliche Achse offen 54 -> 27.
+Technischer Importvertrag: 470 akzeptiert / 30 offen.
 
 Die fachliche Achse gilt nur dann als offen, wenn WEDER eine ordentliche NOCH eine
 stellvertretende belegte Ausschusszuordnung vorliegt. 22 Bundestagsprofile tragen
@@ -196,18 +197,18 @@ Geprueft mit `zuHelmutProfil` (`lib/helmut/profil-import.js`) und
 `bewerteBundestagsprofil` (`lib/helmut/profile-readiness.js`) fuer alle 330
 Bundestagsprofile:
 
-| Zustand | vor der Gremien-Trennung | danach (mit Ressort- und Aufgabenquittung) |
+| Zustand | vor der Gremien-Trennung | danach (mit Ressort-, Aufgaben- und beratender Quittung) |
 |---|---:|---:|
-| bereit | 179 | **304** |
-| nicht bereit | 151 | **26** |
+| bereit | 179 | **306** |
+| nicht bereit | 151 | **24** |
 | davon ungueltiger Ausschuss | 141 Eintraege (114 Profile) | **0** |
-| davon offene fachliche Achse | 37 | 26 |
+| davon offene fachliche Achse | 37 | 24 |
 | davon Partei/Fraktions-Widerspruch | 1 | 0 (Prueffehler behoben) |
 
 Die 110 zusaetzlich bereiten Profile entstehen allein dadurch, dass falsche
 Ausschussangaben verschwinden; vier Profile werden dafuer ehrlich wieder offen.
 Die gepruefte Ressortquittung schliesst zusaetzlich neun, die gepruefte
-Aufgabenquittung sechs Bundestagsachsen, daher 289 -> 304 bereit. Kein Resolver,
+Aufgabenquittung sechs und die beratende Quittung zwei Bundestagsachsen, daher 289 -> 306 bereit. Kein Resolver,
 keine Schwelle und kein Produktcode wurde geaendert.
 
 ## Importpruefung (echter Importvertrag)
@@ -216,19 +217,19 @@ Geprueft mit `pruefeImport`/`pruefeProfil` aus `lib/helmut/profil-import.js`,
 rein lokal, **ohne DB- oder Netzwerkzugriff**:
 
 ```
-Profile: 500 · gültig: 468 · ungültig: 32
+Profile: 500 · gültig: 470 · ungültig: 30
 Nach Parlament: bundestag=330 · landtag-berlin=120 · landtag-brandenburg=50
 Alle Datensaetze sind inaktiv: ja
 Globale Fehler: 0 · Warnungen: 0
-Fehlercodes: schwerpunkt-fehlt 29 · region-fehlt 3
-gültig je Parlament: Bundestag 304/330 · Berlin 116/120 · Brandenburg 48/50
+Fehlercodes: schwerpunkt-fehlt 27 · region-fehlt 3
+gültig je Parlament: Bundestag 306/330 · Berlin 116/120 · Brandenburg 48/50
 ERGEBNIS: NICHT importierbar (nur wegen der offen ausgewiesenen Felder)
 ```
 
 Das technische Ergebnis ist **keine** fachliche Freigabe. Nach der Gremien-Trennung
-und der Mandatsarten-/Ressort-/Aufgabenquittung sind 468 Profile ohne offene
-Achse/Mandatsart technisch importierbar; 32 bleiben es bewusst nicht, bis die offenen
-Felder fachlich belegt sind. Die 25 geschlossenen Achsen schliessen die fachliche Freigabe NICHT:
+und der Mandatsarten-/Ressort-/Aufgaben-/beratenden Quittung sind 470 Profile ohne offene
+Achse/Mandatsart technisch importierbar; 30 bleiben es bewusst nicht, bis die offenen
+Felder fachlich belegt sind. Die 27 geschlossenen Achsen schliessen die fachliche Freigabe NICHT:
 alle 500 bleiben `importfreigegeben: false` (74 Parteifelder und alle fachlich
 offenen Achsen bestehen weiter).
 
@@ -264,14 +265,14 @@ Ergebnis des gezielten Tests:
 
 ```
 PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder,
-echter Importvertrag (468 technisch importierbar, 32 offen), Gremien-Trennung
+echter Importvertrag (470 technisch importierbar, 30 offen), Gremien-Trennung
 (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4
 Scheinausschussachsen offen), Mandatsartenquittung (4 Brandenburg-Landeslisten),
 Rollenquittung (48 Amtsrollen, 6 offen), Ressortquittung (19 Fachachsen: 9 Bund/4
 Berlin/6 Brandenburg; Themen und Herkunftshinweis verlustfrei), Aufgabenquittung
 (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14
-Themenbegriffe und Herkunftshinweise verlustfrei, Mast disjunkt zu Griese; 29
-Achsen offen), Bundestags-Readiness (304/330 bereit), Reproduzierbarkeit:
+Themenbegriffe und Herkunftshinweise verlustfrei, Mast disjunkt zu Griese),
+beratende Quittung (2 Profile, 4 Themen, 27 Achsen offen), Bundestags-Readiness (306/330 bereit), Reproduzierbarkeit:
 byte-identisch neu erzeugt
 ```
 
@@ -317,7 +318,7 @@ kein bezahlter Modellaufruf, keine Production-Aktion, keine DB-Aenderung.
    die versionierte Ergaenzungsquittung an URL UND Quellhash gebunden; 424 sind
    belegt, 2 parteilos, 74 bleiben offen. Bundestagspartei wird weiterhin **nicht**
    aus `PoliticalParty`/Fraktion abgeleitet.
-2. **35 Profile ohne belegte fachliche Achse** (32 Bundestag, 1 Berlin,
+2. **27 Profile ohne belegte fachliche Achse** (24 Bundestag, 1 Berlin,
    2 Brandenburg) — weder ordentlicher noch stellvertretender Ausschuss noch
    belegtes Thema; nicht durch Themen erfinden schliessen. 19 der urspruenglich 54
    Achsen sind ueber die gepruefte Ressortquittung mit ausdruecklichen amtlich
@@ -446,10 +447,10 @@ personengebundenen Abschnitt begrenzt.
 **Kein `regierungsrolle`-Schema, keine Themen, Schwerpunkte, Positionen oder
 Ausschussmitgliedschaften aus der Rolle abgeleitet.** Die Rolle selbst ist eine
 Amtsrolle, keine fachliche Achse: die 54 Fachachsen waren damit weiter offen. Die
-spaeter ergaenzten, separat geprueften Ressort- (19) und Aufgabenquittungen (6)
-schliessen 25 davon ueber ein amtlich abgeleitetes Thema (siehe unten), daher
-bleiben jetzt **29 Fachachsen offen** und der technische Importvertrag steht bei
-**468 akzeptiert / 32 offen**.
+spaeter ergaenzten, separat geprueften Ressort- (19) und Aufgabenquittungen (6) sowie beratenden Quittungen (2)
+schliessen 27 davon ueber ein amtlich abgeleitetes Thema (siehe unten), daher
+bleiben jetzt **27 Fachachsen offen** und der technische Importvertrag steht bei
+**470 akzeptiert / 30 offen**.
 Alle 500 bleiben `aktiv: false` / `importfreigegeben: false`. Je Datensatz steht der Rollenbeleg in
 `profilrollenQuittung` (Datei, URL, sha256, Status, Zitat und Abschnitt).
 Assembler und Belegdatei wurden deterministisch neu erzeugt (byte-identisch).
@@ -533,9 +534,29 @@ falsche Bytezahlen, fremde Aufgabenabschnitte, zusammengesetzte Scheinzitate und
 fail closed ab. Kein Produktfilter oder Schwellenwert wurde geaendert.
 
 Die 54 urspruenglich offenen Achsen bleiben vollstaendig bilanziert: 19 Ressort- und
-6 Aufgabenachsen geschlossen, 29 offen. Technischer Importvertrag:468 akzeptiert/32
-offen; Bundestags-Readiness 304/330. Parteien, Mandatsarten, Auswahl und Gremien
+6 Aufgaben- und 2 beratende Achsen geschlossen, 27 offen. Technischer Importvertrag:470 akzeptiert/30
+offen; Bundestags-Readiness 306/330. Parteien, Mandatsarten, Auswahl und Gremien
 bleiben unveraendert. Alle500 bleiben inaktiv und ohne fachliche Importfreigabe;
 74 Parteifelder und3 Berliner Mandatsarten sind weiterhin offen. Die drei separat
 belegten Zusatzrollen sind noch nicht integriert. Keine Production-Datenaenderung
 und kein500er Test.
+
+## Beratende Ausschussachsen: zwei Profile
+
+Die [gepruefte Quittung](beratende-achsen-2-20260927.json) ergaenzt bei Knodel
+Landwirtschaft/Ernaehrung/Heimat und bei Seidler Haushalt. Die bestehenden
+beratenden Funktionen bleiben erhalten; keine ordentliche oder stellvertretende
+Mitgliedschaft wird erzeugt. Die 54er Amtsrollenquittung bleibt48 belegt/6 offen.
+
+Der getrennte Pruefer bindet die amtlichen Abrufmetadaten und Originalhashes,
+eindeutige H1, die Person in genau einem ProfilePage-Block und die genaue
+JSON-LD-Rolle. Die Quellen enthalten keine mainEntity.url: Name und lokale
+Personenkennung #mdb werden mit der gebundenen Abrufadresse geprueft; eine
+vorhandene abweichende URL, fremde Kennung, zukuenftiger Rollenbeginn oder
+endDate sperrt. Die Neuerzeugung benoetigt keine implizite Zusatzdatei in /tmp.
+
+Vier kurze Themen und getrennte Ableitungshinweise ueberstehen den echten
+Import-/Speicher-Roundtrip samt positivem Themenabgleich und negativen
+Fremdthemen. Nur diese zwei Datensaetze aendern sich,498 bleiben vollstaendig
+unveraendert. Knodels aktuelles Parteifeld bleibt offen; keine fachliche
+Importfreigabe, Production-Aenderung, Aktivierung oder500er Ausfuehrung.
