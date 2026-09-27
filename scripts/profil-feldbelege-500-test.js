@@ -213,11 +213,12 @@ for (const e of ergebnis.ergebnisse) {
 }
 // Die fachliche Achse ist nur offen, wenn WEDER ein ordentlicher NOCH ein
 // stellvertretender belegter Ausschuss NOCH ein belegtes Thema vorliegt. Ueber die
-// geprueften Ressort- (19) und Aufgabenquittungen (6) erhalten 25 zuvor offene
-// Profile amtlich abgeleitete Themen; ihre Achse schliesst sich ehrlich (54 -> 29).
-// Vier Brandenburg-Mandate sind ueber die Mandatsartenquittung belegt (7 -> 3 region-fehlt).
-a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 29, "region-fehlt": 3 }, "offene Felder muessen genau die bekannten Luecken sein");
-a.equal(ergebnis.gueltig, 468, "468 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
+// geprueften Ressort- (19), Aufgaben- (6) und beratenden (2) Quittungen erhalten
+// 27 zuvor offene Profile amtlich abgeleitete Themen; ihre Achse schliesst sich
+// ehrlich (54 -> 27). Vier Brandenburg-Mandate sind ueber die Mandatsartenquittung
+// belegt (7 -> 3 region-fehlt).
+a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 27, "region-fehlt": 3 }, "offene Felder muessen genau die bekannten Luecken sein");
+a.equal(ergebnis.gueltig, 470, "470 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
 
 // Einzelpruefung (pruefeProfil) muss dieselbe Sprache sprechen wie die Mengenpruefung.
 for (let i = 0; i < datensaetze.length; i += 1) {
@@ -285,7 +286,7 @@ const landtagWeitere = datensaetze.filter((d) => d.parlament !== "bundestag" && 
 a.equal(landtagWeitere.length, 23, "Landtags-Gremien bleiben unveraendert erhalten");
 a.equal(landtagWeitere.every((d) => (d.weitereGremienBeleg || []).length === 0), true, "Landtagsgremien sind kein Bundestags-JSON-LD-Beleg");
 const btAchseOffen = btSonstige.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
-a.equal(btAchseOffen.length, 26, "41 Bundestagsprofile ohne belegte fachliche Achse, davon 9 ueber die Ressort- und 6 ueber die Aufgabenquittung geschlossen");
+a.equal(btAchseOffen.length, 24, "41 Bundestagsprofile ohne belegte fachliche Achse, davon 9 ueber die Ressort-, 6 ueber die Aufgaben- und 2 ueber die beratenden Quittungen geschlossen");
 const btNurSonstigeGremien = btSonstige.filter((d) => (d.weitereGremienBeleg || []).length
   && (d.profil.ausschuesse || []).length === 0
   && (d.profil.stellvertretendeAusschuesse || []).length === 0);
@@ -317,11 +318,11 @@ for (const d of btSonstige) {
   for (const f of r.fehlend) btReadinessGruende[`fehlend:${f.feld}`] = (btReadinessGruende[`fehlend:${f.feld}`] || 0) + 1;
   for (const w of r.widersprueche) btReadinessGruende[`widerspruch:${w.feld}`] = (btReadinessGruende[`widerspruch:${w.feld}`] || 0) + 1;
 }
-// Fuenfzehn Bundestagsprofile mit zuvor offener fachlicher Achse schliessen sie ueber
-// die geprueften Ressort- (9) und Aufgabenquittungen (6): 289 + 15 = 304 bereit,
-// 41 - 15 = 26 nicht bereit.
-a.equal(btBereit, 304, "304 von 330 Bundestagsprofilen sind bereit (vorher 179)");
-a.equal(btNichtBereit, 26, "26 Bundestagsprofile bleiben nicht bereit");
+// Siebzehn Bundestagsprofile mit zuvor offener fachlicher Achse schliessen sie ueber
+// die geprueften Ressort- (9), Aufgaben- (6) und beratenden (2) Quittungen: 289 + 17 = 306
+// bereit, 41 - 17 = 24 nicht bereit.
+a.equal(btBereit, 306, "306 von 330 Bundestagsprofilen sind bereit (vorher 179)");
+a.equal(btNichtBereit, 24, "24 Bundestagsprofile bleiben nicht bereit");
 // Stefan Seidler (SSW, fraktionslos) wurde zuvor faelschlich als
 // Partei/Fraktionswiderspruch gezaehlt. Fraktionslosigkeit schliesst eine
 // Parteimitgliedschaft nicht aus; der Fix in profile-readiness entfernt nur diesen
@@ -329,7 +330,7 @@ a.equal(btNichtBereit, 26, "26 Bundestagsprofile bleiben nicht bereit");
 // nicht-bereiten Profile entstehen ausschliesslich aus offenen fachlichen Achsen.
 a.deepEqual(
   btReadinessGruende,
-  { "fehlend:schwerpunkt_oder_ausschuss": 26 },
+  { "fehlend:schwerpunkt_oder_ausschuss": 24 },
   "nur noch die offene fachliche Achse; der falsche Partei/Fraktionswiderspruch ist weg",
 );
 
@@ -375,18 +376,36 @@ for (const e of aufgaben.ergebnisse) {
   a.equal(e.status, "belegt", "Aufgabenachse muss belegt sein");
   a.ok(!ressortByKennung.has(e.kennung), "Aufgabenachse muss disjunkt zur Ressortachse sein");
 }
+const beratende = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "beratende-achsen-2-20260927.json"), "utf8"));
+a.equal(beratende.umfang, 2, "Beratende Achsenquittung muss 2 Profile umfassen");
+a.equal(beratende.bilanz.gesamt, 2, "Beratende Achsenquittung: gesamt 2");
+a.equal(beratende.bilanz.Bund, 2, "beide beratenden Achsen sind Bundestag");
+a.equal(beratende.ergebnisse.length, 2, "Beratende Achsenquittung muss 2 Ergebnisse tragen");
+const beratendeByKennung = new Map(beratende.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(beratendeByKennung.size, 2, "Beratende Achsenquittungskennungen muessen eindeutig sein");
+for (const e of beratende.ergebnisse) {
+  // Diese zwei sind in der 54er Quittung ausdruecklich offen: die bestehende
+  // beratende Funktion war bereits belegt, das ist KEIN Fehler.
+  a.ok(rollenByKennung.has(e.kennung), "Beratende Achse muss eine der 54 offenen Fachachsen sein");
+  a.equal(rollenByKennung.get(e.kennung).status, "offen", "beratende Achse bleibt in der 54er Quittung offen");
+  a.equal(e.status, "belegt", "Beratende Achse muss belegt sein");
+  a.ok(!ressortByKennung.has(e.kennung), "Beratende Achse muss disjunkt zur Ressortachse sein");
+  a.ok(!aufgabenByKennung.has(e.kennung), "Beratende Achse muss disjunkt zur Aufgabenachse sein");
+}
 const ressortProfil = datensaetze.filter((d) => d.ressortachsenQuittung);
 const aufgabenProfil = datensaetze.filter((d) => d.aufgabenachsenQuittung);
+const beratendeProfil = datensaetze.filter((d) => d.beratendeachsenQuittung);
 const fachAchseOffen = datensaetze.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
 a.equal(ressortProfil.length, 19, "19 Profile tragen eine Ressortachse");
 a.equal(aufgabenProfil.length, 6, "6 Profile tragen eine Aufgabenachse");
-a.equal(fachAchseOffen.length, 29, "54 - 19 - 6 = 29 Fachachsen bleiben offen");
+a.equal(beratendeProfil.length, 2, "2 Profile tragen eine beratende Ausschussachse");
+a.equal(fachAchseOffen.length, 27, "54 - 19 - 6 - 2 = 27 Fachachsen bleiben offen");
 a.deepEqual(
-  new Set([...fachAchseOffen, ...ressortProfil, ...aufgabenProfil].map((d) => d.kanonischeKennung)),
+  new Set([...fachAchseOffen, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil].map((d) => d.kanonischeKennung)),
   new Set(rollenByKennung.keys()),
-  "disjunkte Vereinigung aus 29 offenen + 19 Ressort- + 6 Aufgabenachsen ergibt genau die 54er Quittung",
+  "disjunkte Vereinigung aus 27 offenen + 19 Ressort- + 6 Aufgaben- + 2 beratenden Achsen ergibt genau die 54er Quittung",
 );
-a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung), "offene Achse darf keine geschlossene Quittung tragen");
+a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung), "offene Achse darf keine geschlossene Quittung tragen");
 let rollenBelegt = 0;
 let rollenOffen = 0;
 const zuHelmutProfilRollen = zuHelmutProfil; // echter Import-/Storage-Pfad (bestehender Export)
@@ -404,7 +423,7 @@ for (const d of datensaetze) {
   a.equal(q.status, e.status, "Rollenstatus muss der Quittung entsprechen");
   // Eine Amtsrolle allein ist keine Ausschussachse. Die fachliche Achse ist genau dann
   // geschlossen, wenn die gepruefte Ressort- oder Aufgabenquittung belegte Themen setzt.
-  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung);
+  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung || d.beratendeachsenQuittung);
   a.equal(achseGeschlossen, !d.offeneFelder.includes("fachlicheAchse"),
     `Achse muss genau dann geschlossen sein, wenn die Ressortquittung greift (${d.kanonischeKennung})`);
   if (e.status === "offen") {
@@ -549,6 +568,78 @@ for (const d of aufgabenProfil) {
   a.equal(gelesen.profileActive, false, "Round-Trip bleibt aktiv=false");
 }
 
+// ── 6g · Beratende Ausschussachsen: Verlustfreier Round-Trip inkl. Kennzeichnung ──────────
+// Fuer die 2 beratenden Ausschussachsen (Knodel Landwirtschaft/Ernaehrung/Heimat, Seidler
+// Haushalt): ausdrueckliche Kurzthemen aus dem amtlichen Ausschussnamen, die bestehende
+// BERATENDE Funktion bleibt erhalten, es entsteht KEINE ordentliche/stellvertretende
+// Ausschussmitgliedschaft und keine politische Position. Die kanonische Quelle ist
+// vollstaendig gebunden; der echte Pfad zuHelmutProfil -> toMandateProfileRow ->
+// fromMandateProfileRow erhaelt die Themen UND den getrennten Ableitungshinweis und bleibt
+// aktiv=false. KEIN Netz, KEINE DB, KEIN Modell.
+a.equal(beratendeProfil.reduce((n, d) => n + d.profil.themen.length, 0), 4, "4 ausdrueckliche Kurzthemen");
+for (const d of beratendeProfil) {
+  const e = beratendeByKennung.get(d.kanonischeKennung);
+  a.ok(e, `Beratende Achsenquittung fehlt fuer ${d.kanonischeKennung}`);
+  const hinweis = `Beratende Ausschussarbeit Bund (amtlich abgeleitet): ${e.amtlicherAusschuss}; keine ordentliche oder stellvertretende Mitgliedschaft, keine persönliche politische Position`;
+  a.deepEqual(d.profil.themen, e.themen, "genau der freigegebene Kurzthemenwortlaut");
+  a.ok(!d.offeneFelder.includes("fachlicheAchse"), "beratende Achse schliesst die fachliche Achse");
+  a.equal(d.profil.aktiv, false, "beratendes Profil bleibt aktiv=false");
+  a.equal(d.importfreigegeben, false, "beratendes Profil bleibt importfreigegeben=false");
+  a.equal(d.beratendeachsenQuittung.datei, "docs/betrieb/beratende-achsen-2-20260927.json");
+  a.equal(d.beratendeachsenQuittung.region, e.region);
+  a.equal(d.beratendeachsenQuittung.person, e.person);
+  a.equal(d.beratendeachsenQuittung.ausschuss, e.amtlicherAusschuss);
+  a.equal(d.beratendeachsenQuittung.rolle, "Beratendes Mitglied");
+  a.deepEqual(d.beratendeachsenQuittung.amtlicherRollenbeleg, e.amtlicherRollenbeleg);
+  a.deepEqual(d.beratendeachsenQuittung.bestehendeFunktionen, e.bestehendeFunktionen);
+  a.equal(d.beratendeachsenQuittung.quelle.url, e.quelle.url);
+  a.equal(d.beratendeachsenQuittung.quelle.sha256, e.quelle.sha256);
+  a.equal(d.beratendeachsenQuittung.quelle.bytes, e.quelle.bytes);
+  // Die Rolle ist BERATEND — niemals ordentliche/stellvertretende Ausschussmitgliedschaft.
+  a.equal(d.beratendeachsenQuittung.amtlicherRollenbeleg.roleName, "Beratendes Mitglied", "nur beratende Rolle");
+  a.ok(!("endDate" in d.beratendeachsenQuittung.amtlicherRollenbeleg), "keine abgelaufene Rolle (kein endDate)");
+  for (const feld of ["ausschuesse", "stellvertretendeAusschuesse"]) {
+    a.ok(!(d.profil[feld] || []).includes(e.amtlicherAusschuss), `beratender Ausschuss darf nicht in ${feld} stehen`);
+  }
+  const funktionen = d.profil.funktionen || [];
+  a.equal(funktionen.filter((x) => x === `${"Beratendes Mitglied"}: ${e.amtlicherAusschuss}`).length, 1, "bestehende beratende Funktion genau einmal erhalten");
+  a.equal(funktionen.filter((x) => x === hinweis).length, 1, "Ableitungshinweis genau einmal in funktionen");
+  const zusatz = (d.profil.offizielleQuellen || []).find((x) => x.art === "beratende-ausschussarbeit");
+  a.ok(zusatz, "amtliche beratende Quittungsquelle fehlt in profil.offizielleQuellen");
+  a.equal(zusatz.url, e.quelle.url, "Quittungsquelle muss die kanonische URL binden");
+  a.equal(zusatz.sha256, e.quelle.sha256, "Quittungsquelle muss den Quellhash binden");
+  // Rollenquelle muss die kanonische Person der 54er Quittung sein (URL UND Hash).
+  const rollenEintrag = rollenByKennung.get(d.kanonischeKennung);
+  a.ok(rollenEintrag, "beratende Achse setzt eine 54er-Rolle voraus");
+  a.equal(d.beratendeachsenQuittung.rollenquelle.url, rollenEintrag.quelle.url, "Rollenquelle muss die kanonische Person sein");
+  a.equal(d.beratendeachsenQuittung.rollenquelle.sha256, rollenEintrag.quelle.sha256);
+  // Echter Verlustfreiheitspfad (keine DB, kein Netz): Themen inkl. Kennzeichnung.
+  const gespeichert = zuHelmutProfil(d.profil);
+  a.deepEqual(gespeichert.focusTopics, e.themen, "Importpfad muss den Kurzthemenwortlaut erhalten");
+  const zeile = storage.toMandateProfileRow(gespeichert);
+  a.equal(zeile.aktiv, false, "Storage-Zeile darf nicht aktivieren");
+  const gelesen = storage.fromMandateProfileRow({ id: d.kanonischeKennung, name: d.profil.vollname }, zeile);
+  a.deepEqual(gelesen.focusTopics, e.themen, "beratende Kurzthemen muessen verlustfrei erhalten bleiben");
+  a.ok(gelesen.function.includes(hinweis), "Ableitungshinweis muss im gespeicherten function erhalten bleiben");
+  a.ok(gelesen.function.includes("Beratendes Mitglied"), "bestehende beratende Funktion muss erhalten bleiben");
+  const { proximityScore } = require("../lib/helmut/scoring");
+  for (const thema of e.themen) {
+    a.ok(proximityScore({ tags: [thema] }, { focusTopics: gelesen.focusTopics }) > 0,
+      `Echter Themenabgleich muss nach Round-Trip greifen: ${thema}`);
+  }
+  a.equal(proximityScore({ tags: ["Unbelegtes Fremdthema"] }, { focusTopics: gelesen.focusTopics }), 0);
+  a.equal(gelesen.profileActive, false, "Round-Trip bleibt aktiv=false");
+}
+// Knodel/Seidler tragen genau ihre amtlich abgeleiteten Kurzthemen.
+a.deepEqual(beratendeByKennung.get("bundestag-knodel-sieghard-1045460").themen, ["Landwirtschaft", "Ernährung", "Heimat"]);
+a.deepEqual(beratendeByKennung.get("bundestag-seidler-stefan-1047378").themen, ["Haushalt"]);
+for (const d of beratendeProfil) {
+  const { proximityScore } = require("../lib/helmut/scoring");
+  for (const thema of ["Ausschuss", "Politik", "Fremdthema"]) {
+    a.equal(proximityScore({ tags: [thema] }, { focusTopics: d.profil.themen }), 0, `Fremdthema darf nicht treffen: ${thema}`);
+  }
+}
+
 // ── 7 · Reproduzierbarkeit (nur mit lokalen Arbeitsdateien + python3) ────────────────────
 let reproduzierbar = "uebersprungen (lokale Eingangsdateien oder python3 fehlen)";
 const eingangVorhanden = fs.existsSync(path.join(STANDARD_EINGANG, "bundestagsprofile-330-abruf.json"))
@@ -568,4 +659,4 @@ if (eingangVorhanden && python) {
   reproduzierbar = "byte-identisch neu erzeugt";
 }
 
-console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (468 technisch importierbar, 32 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung (4 Brandenburg-Landeslisten), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei), Aufgabenquittung (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14 Themenbegriffe und Herkunftshinweise verlustfrei, 14 exakte Themengegenproben, Mast disjunkt zu Griese, 29 Fachachsen bleiben offen), Bundestags-Readiness (304/330 bereit), Reproduzierbarkeit: " + reproduzierbar);
+console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (470 technisch importierbar, 30 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung (4 Brandenburg-Landeslisten), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei), Aufgabenquittung (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14 Themenbegriffe und Herkunftshinweise verlustfrei, 14 exakte Themengegenproben, Mast disjunkt zu Griese), Beratende Achsenquittung (2 beratende Ausschussachsen: Knodel Landwirtschaft/Ernaehrung/Heimat + Seidler Haushalt, 4 Kurzthemen und getrennte Ableitungshinweise verlustfrei, bestehende beratende Funktion erhalten, keine ordentliche/stellvertretende Mitgliedschaft, keine endDate-Rolle; 27 Fachachsen bleiben offen), Bundestags-Readiness (306/330 bereit), Reproduzierbarkeit: " + reproduzierbar);

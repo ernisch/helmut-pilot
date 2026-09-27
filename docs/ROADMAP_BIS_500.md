@@ -127,7 +127,7 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 74 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;468 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;470 technische Erfolge sind keine fachliche Importfreigabe.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
 Die 54 urspruenglich fachlich offenen Profile tragen ueber die gepruefte
@@ -138,8 +138,13 @@ sind 19 dieser Achsen mit amtlich abgeleiteten Ressortthemen geschlossen
 (9 Bund/4 Berlin/6 Brandenburg) und ueber die gepruefte
 [Aufgabenquittung](betrieb/aufgabenachsen-6-20260927.json) 6 weitere mit
 personengebundenen Aufgabenbereichen (Beauftragtenaufgaben + explizite
-BMAS-Abteilungen); die 54er Rollenquittung bleibt deckungsgleich, 29 Achsen
-bleiben offen. Stand:468/32. Die drei separat geprueften Zusatzrollen
+BMAS-Abteilungen) und ueber die gepruefte
+[beratende Achsenquittung](betrieb/beratende-achsen-2-20260927.json) 2 weitere
+mit amtlich belegten beratenden Ausschussrollen (Knodel Landwirtschaft/
+Ernaehrung/Heimat, Seidler Haushalt; bestehende beratende Funktion erhalten,
+keine ordentliche/stellvertretende Mitgliedschaft); die 54er Rollenquittung
+bleibt deckungsgleich, 27 Achsen
+bleiben offen. Stand:470/30. Die drei separat geprueften Zusatzrollen
 bleiben weiter offen und sind nicht integriert.
 Naechster Fachschritt: verbleibende aktuelle Parteibelege, Mandatsarten und Fachachsen.
 

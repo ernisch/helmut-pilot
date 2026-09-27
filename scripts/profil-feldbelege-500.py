@@ -206,6 +206,51 @@ def _pruefe_aufgabenachsen(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator gepruefte Quittung der 2 BERATENDEN
+# Ausschussachsen (beide Bundestag: Knodel Landwirtschaft/Ernaehrung/Heimat,
+# Seidler Haushalt). Die fail-closed-Validierung liegt bewusst im getrennten
+# Modul ``profil-feldbelege-500-beratende.py``; hier wird nur der gepruefte Index
+# angewendet. Die beratende Rolle bleibt eine beratende Funktion, es entsteht
+# KEINE ordentliche/stellvertretende Ausschussmitgliedschaft und keine politische
+# Position. Die 54er Amtsrollenquittung bleibt unveraendert 48 belegt / 6 offen
+# (diese 2 sind dort ausdruecklich offen — kein Fehler).
+BERATENDEACHSEN = REPO_ROOT / "docs" / "betrieb" / "beratende-achsen-2-20260927.json"
+BERATENDEACHSEN_RESSOURCE = "docs/betrieb/beratende-achsen-2-20260927.json"
+BERATENDEACHSEN_GESAMT = 2
+
+
+def _lade_beratendemodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-beratende.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_beratende", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+BERATENDEMODUL = _lade_beratendemodul()
+
+
+def _pruefe_beratendeachsen(eingang) -> dict:
+    """Prueft die versionierte beratende Achsenquittung ueber das getrennte Modul."""
+    try:
+        index = BERATENDEMODUL.pruefe_beratendeachsen(
+            eingang,
+            quittung=getattr(eingang, "beratendeachsen", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+            aufgabenachsen_kennungen=set(getattr(eingang, "aufgabenachsen_by_kennung", None) or {}),
+        )
+    except BERATENDEMODUL.BeratendeachsenFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.beratendeachsen_by_kennung = index
+    eingang.beratendeachsen_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -963,6 +1008,10 @@ class Eingang:
             self.aufgabenachsen = _lies_json(AUFGABENACHSEN)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Aufgabenquittung fehlt: {AUFGABENACHSEN_RESSOURCE}") from fehler
+        try:
+            self.beratendeachsen = _lies_json(BERATENDEACHSEN)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Beratende Achsenquittung fehlt: {BERATENDEACHSEN_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -1671,6 +1720,67 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
         achsen_geschlossen = True
 
+    # Versionierte beratende Achsenquittung: fuer die 2 freigegebenen beratenden
+    # Ausschussachsen (Knodel Landwirtschaft/Ernaehrung/Heimat, Seidler Haushalt)
+    # werden die ausdruecklichen Kurzthemen gesetzt und damit die fachliche Achse
+    # geschlossen (Ausschuss ODER Thema). Die BERATENDE Funktion bleibt unveraendert
+    # erhalten; es entsteht KEINE ordentliche/stellvertretende Ausschussmitgliedschaft
+    # und keine politische Position. Bestehende Amtsrollen, Partei, Mandatsart,
+    # Gremien und alle anderen Felder bleiben unveraendert; funktionen erhaelt nur
+    # den getrennten Ableitungshinweis. Die Quittung bindet dieselbe amtliche
+    # Profilquelle (URL + sha256 + Bytezahl) wie das Profil selbst.
+    beratende_eintrag = (getattr(eingang, "beratendeachsen_by_kennung", None) or {}).get(mandatsId)
+    beratende_beleg = None
+    if beratende_eintrag is not None:
+        verwendet = getattr(eingang, "beratendeachsen_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        beratende_quelle = beratende_eintrag["quelle"]
+        profil["themen"] = list(beratende_eintrag["themen"])
+        hinweis = beratende_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        # Die bestehende beratende Funktion war bereits belegt und MUSS erhalten
+        # bleiben — die Achse schliesst nur ueber die Themen, nicht ueber eine
+        # neue Ausschussmitgliedschaft.
+        for bestehend in beratende_eintrag["bestehendeFunktionen"]:
+            if bestehend not in profil["funktionen"]:
+                raise AssemblerFehler(
+                    f"Beratende Achse setzt eine bereits belegte Funktion voraus, die fehlt: {bestehend!r} ({mandatsId})."
+                )
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "beratende-ausschussarbeit",
+            "url": beratende_quelle["url"],
+            "abgerufenAm": beratende_quelle["abgerufenAm"],
+            "sha256": beratende_quelle["sha256"],
+        })
+        beratende_beleg = {
+            "datei": BERATENDEACHSEN_RESSOURCE,
+            "kennung": beratende_eintrag["kennung"],
+            "region": beratende_eintrag["region"],
+            "person": beratende_eintrag["person"],
+            "ausschuss": beratende_eintrag["ausschuss"],
+            "rolle": beratende_eintrag["rolle"],
+            "amtlicherRollenbeleg": beratende_eintrag["amtlicherRollenbeleg"],
+            "bestehendeFunktionen": list(beratende_eintrag["bestehendeFunktionen"]),
+            "rollenquelle": {
+                "url": beratende_eintrag["rollenquelle"].get("url"),
+                "sha256": beratende_eintrag["rollenquelle"].get("sha256"),
+            },
+            "quelle": {
+                "datei": beratende_quelle.get("datei"),
+                "url": beratende_quelle.get("url"),
+                "finalUrl": beratende_quelle.get("finalUrl"),
+                "abgerufenAm": beratende_quelle.get("abgerufenAm"),
+                "sha256": beratende_quelle.get("sha256"),
+                "bytes": beratende_quelle.get("bytes"),
+            },
+            "themen": list(beratende_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -1687,6 +1797,14 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"Aufgabenbegriffe mit Herkunft aus {aufgaben_beleg['bindungsart']} der kanonischen Person "
             f"{aufgaben_beleg['person']} + Ableitungskennzeichnung; Themen nur im personengebundenen "
             f"amtlichen Aufgabenabschnitt belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)"
+        )
+    elif beratende_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte beratende Achsenquittung {BERATENDEACHSEN_RESSOURCE}: "
+            f"Kurzthemen aus dem ausdruecklichen Ausschussnamen {beratende_beleg['ausschuss']} "
+            f"(amtlich abgeleitet) + Ableitungskennzeichnung; die beratende Rolle "
+            f"({beratende_beleg['rolle']}) bleibt in funktionen, KEINE ordentliche/stellvertretende "
+            f"Ausschussmitgliedschaft (URL + sha256 + Bytezahl + Abrufzeit der amtlichen Profilquelle gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -1746,6 +1864,15 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         feldbelege["funktionen"] += (
             "; zusaetzlich gekennzeichneter Ableitungshinweis zur amtlichen Aufgabenbindung "
             "(konkrete Aufgabenbindung, keine persoenliche Position)"
+        )
+    if beratende_beleg is not None:
+        if "funktionen" not in feldbelege:
+            feldbelege["funktionen"] = (
+                "bestehende belegte Funktionen bleiben unveraendert; kein regierungsrolle-Schema"
+            )
+        feldbelege["funktionen"] += (
+            "; zusaetzlich gekennzeichneter Ableitungshinweis zur beratenden Ausschussarbeit "
+            "(keine ordentliche/stellvertretende Mitgliedschaft, keine persoenliche Position)"
         )
 
     # ── Offene Punkte explizit zusammentragen ─────────────────────────────────
@@ -1886,6 +2013,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["ressortachsenQuittung"] = ressort_beleg
     if aufgaben_beleg is not None:
         datensatz["aufgabenachsenQuittung"] = aufgaben_beleg
+    if beratende_beleg is not None:
+        datensatz["beratendeachsenQuittung"] = beratende_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -1900,6 +2029,7 @@ def assembliere(eingang: Eingang) -> dict:
     profilrollen = _pruefe_profilrollen(eingang)
     ressortachsen = _pruefe_ressortachsen(eingang)
     aufgabenachsen = _pruefe_aufgabenachsen(eingang)
+    beratendeachsen = _pruefe_beratendeachsen(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -1939,6 +2069,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Aufgabenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_aufgaben)}."
         )
+    ungenutzte_beratende = set(beratendeachsen) - eingang.beratendeachsen_verwendet
+    if ungenutzte_beratende:
+        raise AssemblerFehler(
+            f"Beratende Achsenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_beratende)}."
+        )
     ressort_geschlossen = set(eingang.ressortachsen_verwendet)
     if ressort_geschlossen != set(ressortachsen):
         raise AssemblerFehler(
@@ -1951,12 +2086,28 @@ def assembliere(eingang: Eingang) -> dict:
             f"Aufgabenquittung deckt nicht genau ihre 6 Kennungen ab: "
             f"{sorted(set(aufgabenachsen) ^ aufgaben_geschlossen)}."
         )
+    beratende_geschlossen = set(eingang.beratendeachsen_verwendet)
+    if beratende_geschlossen != set(beratendeachsen):
+        raise AssemblerFehler(
+            f"Beratende Achsenquittung deckt nicht genau ihre 2 Kennungen ab: "
+            f"{sorted(set(beratendeachsen) ^ beratende_geschlossen)}."
+        )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
             "Ressort- und Aufgabenachse gleichzeitig belegt: "
             f"{sorted(ressort_geschlossen & aufgaben_geschlossen)}."
         )
-    geschlossene_achsen = ressort_geschlossen | aufgaben_geschlossen
+    if beratende_geschlossen & ressort_geschlossen:
+        raise AssemblerFehler(
+            "Ressort- und beratende Achse gleichzeitig belegt: "
+            f"{sorted(beratende_geschlossen & ressort_geschlossen)}."
+        )
+    if beratende_geschlossen & aufgaben_geschlossen:
+        raise AssemblerFehler(
+            "Aufgaben- und beratende Achse gleichzeitig belegt: "
+            f"{sorted(beratende_geschlossen & aufgaben_geschlossen)}."
+        )
+    geschlossene_achsen = ressort_geschlossen | aufgaben_geschlossen | beratende_geschlossen
     if not geschlossene_achsen <= set(profilrollen):
         raise AssemblerFehler(
             "Geschlossene Achsen enthalten Kennungen ausserhalb der 54er Rollenquittung: "
@@ -1976,16 +2127,17 @@ def assembliere(eingang: Eingang) -> dict:
             f"(ohne Abdeckung: {fehlend[:5]}, nicht in der Quittung: {fremd[:5]})."
         )
 
-    # Genau die geschlossenen Achsen (19 Ressort + 6 Aufgaben) tragen amtlich
-    # abgeleitete Themen, ihre fachliche Achse ist geschlossen; kein anderes Profil
-    # erhaelt erfundene Themen.
+    # Genau die geschlossenen Achsen (19 Ressort + 6 Aufgaben + 2 beratende) tragen
+    # amtlich abgeleitete Themen, ihre fachliche Achse ist geschlossen; kein anderes
+    # Profil erhaelt erfundene Themen.
     mit_themen = {d["kanonischeKennung"] for d in datensaetze if d["profil"].get("themen")}
     if mit_themen != geschlossene_achsen:
         raise AssemblerFehler(
             f"Themen duerfen nur aus der Ressort-/Aufgabenquittung stammen: {sorted(mit_themen ^ geschlossene_achsen)}."
         )
     for datensatz in datensaetze:
-        if datensatz.get("ressortachsenQuittung") or datensatz.get("aufgabenachsenQuittung"):
+        if (datensatz.get("ressortachsenQuittung") or datensatz.get("aufgabenachsenQuittung")
+                or datensatz.get("beratendeachsenQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
                     f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
@@ -2093,6 +2245,16 @@ def assembliere(eingang: Eingang) -> dict:
                 "der amtlichen Zusatzquelle und woertliche Zitate im personengebundenen Aufgabenabschnitt "
                 "gebunden)"
             ),
+            "beratendeachsenquittung": (
+                f"{BERATENDEACHSEN_RESSOURCE} (vom Orchestrator geprueft; 2 weitere zuvor offene "
+                "Fachachsen aus amtlich belegten BERATENDEN Ausschussrollen geschlossen: Knodel "
+                "Landwirtschaft/Ernaehrung/Heimat, Seidler Haushalt; Validierung im getrennten Modul "
+                "scripts/profil-feldbelege-500-beratende.py; kanonische Quelle an URL + finalUrl + "
+                "sha256 + Bytezahl + Abrufzeit + Datei gebunden, echtes Original mit eindeutiger H1 und "
+                "exakter Role 'Beratendes Mitglied' ohne endDate in ProfilePage.mainEntity.memberOf; "
+                "die bestehende beratende Funktion bleibt erhalten, keine ordentliche/stellvertretende "
+                "Ausschussmitgliedschaft)"
+            ),
             "sonstigeGremien": (
                 f"explizite Liste mit {len(SONSTIGE_GREMIEN)} amtlich belegten sonstigen Gremien des "
                 "Bundestages (JSON-LD memberOf mit Original-Rolle und Original-URL); Sollmenge der "
@@ -2167,6 +2329,21 @@ def assembliere(eingang: Eingang) -> dict:
                 "erfundenen Themen; die disjunkte Vereinigung der 19 Ressort- mit den 6 Aufgabenachsen und "
                 "den 29 verbleibend offenen ergibt weiter genau die 54er Rollenquittung."
             ),
+            (
+                "Fuer 2 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte beratende "
+                f"Achsenquittung {BERATENDEACHSEN_RESSOURCE} die ausdrueckliche beratende Ausschussarbeit "
+                "mit ihren Kurzthemen gesetzt (getrennter Ableitungshinweis in funktionen) und damit die "
+                "fachliche Achse geschlossen. Die bestehende beratende Funktion bleibt erhalten; es entsteht "
+                "NIE eine ordentliche/stellvertretende Ausschussmitgliedschaft und keine politische Position. "
+                "Nur die zwei genehmigten Ausschuesse (Ausschuss fuer Landwirtschaft, Ernaehrung und Heimat; "
+                "Haushaltsausschuss) sind erlaubt; jede Kennung ist an die kanonische Quelle "
+                "(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei), an das echte Original mit "
+                "eindeutiger H1 und an die exakte Role 'Beratendes Mitglied' ohne endDate in "
+                "ProfilePage.mainEntity.memberOf gebunden. Die disjunkte Vereinigung der 19 Ressort-, 6 "
+                "Aufgaben- und 2 beratenden Achsen mit den 27 verbleibend offenen ergibt weiter genau die "
+                "54er Rollenquittung; diese 2 bleiben dort ausdruecklich offen (die beratende Funktion war "
+                "bereits belegt, das ist KEIN Fehler)."
+            ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
         ],
@@ -2226,6 +2403,14 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("aufgabenachsenQuittung")),
                 "deckungsgleichVerwendet": len(eingang.aufgabenachsen_verwendet),
                 "geschlosseneAchsen": len(aufgaben_geschlossen),
+            },
+            "beratendeachsenQuittung": {
+                "datei": BERATENDEACHSEN_RESSOURCE,
+                "geprueftGesamt": len(beratendeachsen),
+                "nachRegion": {"Bund": len(beratendeachsen)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("beratendeachsenQuittung")),
+                "deckungsgleichVerwendet": len(eingang.beratendeachsen_verwendet),
+                "geschlosseneAchsen": len(beratende_geschlossen),
             },
             "offeneFelder": offene_felder,
         },

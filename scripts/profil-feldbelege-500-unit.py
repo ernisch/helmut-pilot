@@ -849,3 +849,308 @@ print('PASS: Aufgabenquittung — fehlende Quittung/falsche Bilanz/Duplikat/Frem
       'Bildunterschrift/Abteilung nicht in der Personenzeile (Mast-Griese-Tausch)/Mast erhaelt Griese-Thema/'
       'zusammengesetztes Scheinzitat/fehlender Herkunftshinweis/Importfreigabe/Originalzitat-Konjunktion '
       'sperren fail closed; die gueltige synthetische 6er-Quittung wird akzeptiert.')
+
+
+# ── 12 · Beratende Achsen der 2 geschlossenen Fachachsen (getrenntes Modul): fail closed ──
+ba_spec = importlib.util.spec_from_file_location(
+    'beratende', Path(__file__).with_name('profil-feldbelege-500-beratende.py'))
+ba = importlib.util.module_from_spec(ba_spec)
+ba_spec.loader.exec_module(ba)
+
+
+def _erwarte_beratende_fehler(fn, was):
+    try:
+        fn()
+    except ba.BeratendeachsenFehler:
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+
+    def _ld_json(person, ausschuss, url, rolle='Beratendes Mitglied', enddate=None, name=None):
+        rolle_dict = {
+            '@type': 'Role',
+            'memberOf': {'@type': 'Organization', 'name': ausschuss, 'url': url},
+            'roleName': rolle,
+            'startDate': '2025-03-25',
+        }
+        if enddate is not None:
+            rolle_dict['endDate'] = enddate
+        return {
+            '@context': 'https://schema.org',
+            '@type': 'ProfilePage',
+            'mainEntity': {
+                '@type': 'Person',
+                '@id': '#mdb',
+                'name': name if name is not None else person,
+                'memberOf': [rolle_dict],
+            },
+        }, rolle_dict
+
+    def _profil(i, person, ausschuss, aurl, themen):
+        ak = f'test_{i}-{3000 + i}'
+        kennung = m._slug('bundestag', ak)
+        url = f'https://www.bundestag.de/abgeordnete/biografien/T/{ak}'
+        datei = f'bundestag-{ak}.html'
+        ld, rolle = _ld_json(person, ausschuss, aurl)
+        (detail / datei).write_text(
+            f'<h1>{person}</h1><script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>',
+            encoding='utf-8')
+        quelle = dict(url=url, finalUrl=url, abgerufenAm='2026-09-27T13:02:11+00:00',
+                      sha256=ba._sha256(detail / datei), bytes=(detail / datei).stat().st_size,
+                      datei=datei, http=200, abrufStatus='abgerufen')
+        abruf = dict(quelle, amtlicheKennung=ak, parlament='bundestag')
+        hinweis = (f'Beratende Ausschussarbeit Bund (amtlich abgeleitet): {ausschuss}; '
+                   'keine ordentliche oder stellvertretende Mitgliedschaft, keine persönliche politische Position')
+        eintrag = dict(kennung=kennung, status='belegt', region='Bund', parlament='bundestag',
+                       person=person, jsonLdPfad='ProfilePage.mainEntity.memberOf',
+                       amtlicherAusschuss=ausschuss, amtlicherRollenbeleg=rolle,
+                       originalrollen=[rolle], quelle=quelle, themen=list(themen),
+                       ableitungsHinweis=hinweis,
+                       bestehendeFunktionen=[f'Beratendes Mitglied: {ausschuss}'],
+                       importfreigegeben=False)
+        return kennung, abruf, eintrag
+
+    AUSSCHUSS_A = 'Ausschuss für Landwirtschaft, Ernährung und Heimat'
+    AUSSCHUSS_B = 'Haushaltsausschuss'
+    URL_A = 'https://www.bundestag.de/ausschuesse/Landwirtschaft'
+    URL_B = 'https://www.bundestag.de/ausschuesse/a08_haushalt'
+    k_a, abruf_a, eintrag_a = _profil(1, 'Person Alpha', AUSSCHUSS_A, URL_A,
+                                      ['Landwirtschaft', 'Ernährung', 'Heimat'])
+    k_b, abruf_b, eintrag_b = _profil(2, 'Person Beta', AUSSCHUSS_B, URL_B, ['Haushalt'])
+    kennung_zu_abruf = {k_a: abruf_a, k_b: abruf_b}
+    profilrollen = {
+        k_a: dict(status='offen', quelle=dict(url=abruf_a['url'], sha256=abruf_a['sha256'],
+                                             abgerufenAm=abruf_a['abgerufenAm']), funktionen=[]),
+        k_b: dict(status='offen', quelle=dict(url=abruf_b['url'], sha256=abruf_b['sha256'],
+                                             abgerufenAm=abruf_b['abgerufenAm']), funktionen=[]),
+    }
+    originalbelege = [
+        dict(kennung=k_a, quelle=eintrag_a['quelle'], amtlichesJsonLd=[eintrag_a['amtlicherRollenbeleg']],
+             bestehendeFunktionen=eintrag_a['bestehendeFunktionen']),
+        dict(kennung=k_b, quelle=eintrag_b['quelle'], amtlichesJsonLd=[eintrag_b['amtlicherRollenbeleg']],
+             bestehendeFunktionen=eintrag_b['bestehendeFunktionen']),
+    ]
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=2, Bund=2, Berlin=0, Brandenburg=0),
+                             ergebnisse=[eintrag_a, eintrag_b])
+
+    def _beratende_eingang(quittung, original=None, ressort=None, aufgaben=None):
+        return SimpleNamespace(verzeichnis=root, detailseiten=detail, beratendeachsen=quittung,
+                               beratende_originalbelege=originalbelege if original is None else original,
+                               profilrollen_by_kennung=profilrollen, kennung_zu_abruf=kennung_zu_abruf,
+                               ressortachsen_by_kennung={k: {} for k in (ressort or [])},
+                               aufgabenachsen_by_kennung={k: {} for k in (aufgaben or [])})
+
+    index = ba.pruefe_beratendeachsen(_beratende_eingang(gueltige_quittung))
+    assert len(index) == 2, len(index)
+    assert {v['themen'][0] for v in index.values()} == {'Landwirtschaft', 'Haushalt'}
+    assert all(v['rolle'] == 'Beratendes Mitglied' for v in index.values())
+    assert sum(len(v['themen']) for v in index.values()) == 4
+
+    def _mit(mutation):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return ba.pruefe_beratendeachsen(_beratende_eingang(neu))
+
+    # Fehlende Quittung (Datei fehlt) und falsche Bilanz.
+    _echter_pfad = ba.BERATENDEACHSEN
+    ba.BERATENDEACHSEN = root / 'fehlt.json'
+    try:
+        _erwarte_beratende_fehler(
+            lambda: ba.pruefe_beratendeachsen(SimpleNamespace(verzeichnis=root, detailseiten=detail,
+                                                              profilrollen_by_kennung=profilrollen,
+                                                              kennung_zu_abruf=kennung_zu_abruf)),
+            'fehlende Beratendequittung')
+    finally:
+        ba.BERATENDEACHSEN = _echter_pfad
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['bilanz'].__setitem__('Bund', 1)), 'falsche Beratendebilanz')
+    # Duplikat und Fremdkennung (nicht in den 500 Zielprofilen).
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][1].__setitem__(
+        'kennung', q['ergebnisse'][0]['kennung'])), 'doppelte Kennung')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'kennung', 'bundestag-fremd-9999')), 'Fremdkennung')
+    # Kennung ausserhalb der 54er Rollenquittung, Ressort- und Aufgabenachsen-Ueberschneidung.
+    fremd_kennung = 'bundestag-nichtind54-7'
+    kennung_zu_abruf[fremd_kennung] = dict(abruf_a, amtlicheKennung='test_9-3099', url='https://www.bundestag.de/abgeordnete/biografien/T/test_9-3099', datei='bundestag-test_9-3099.html')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'kennung', fremd_kennung)), 'Kennung ausserhalb der 54er Rollenquittung')
+    kennung_zu_abruf.pop(fremd_kennung, None)
+    _erwarte_beratende_fehler(lambda: ba.pruefe_beratendeachsen(
+        _beratende_eingang(gueltige_quittung, ressort=[k_a])), 'Kennung bereits Ressortachse')
+    _erwarte_beratende_fehler(lambda: ba.pruefe_beratendeachsen(
+        _beratende_eingang(gueltige_quittung, aufgaben=[k_b])), 'Kennung bereits Aufgabenachse')
+    # Quelldrift: URL, finalUrl, Hash, Bytezahl, Abrufzeit, Datei.
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'url', q['ergebnisse'][0]['quelle']['url'] + '-fremd')), 'Quell-URL-Drift')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'finalUrl', q['ergebnisse'][0]['quelle']['finalUrl'] + '-fremd')), 'finalUrl-Drift')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'sha256', '0' * 64)), 'Quellhash-Drift')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'bytes', 1)), 'Quell-Bytezahl-Drift')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'abgerufenAm', '2026-09-27T00:00:00+00:00')), 'Abrufzeit-Drift')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'datei', 'fehlt.html')), 'fehlende Detailseite')
+    # Vollstaendiger Quellenpakettausch der 2 Profilquellen (Kennungen bleiben).
+    def _pakettausch(q):
+        a, b = q['ergebnisse']
+        for feld in ['quelle', 'amtlicherRollenbeleg', 'originalrollen', 'person', 'amtlicherAusschuss', 'themen', 'ableitungsHinweis']:
+            a[feld], b[feld] = b[feld], a[feld]
+    _erwarte_beratende_fehler(lambda: _mit(_pakettausch), 'vollstaendiger Quellenpakettausch der 2')
+    # Reine Quellen-Tauschvariante (nur das quelle-Paket).
+    def _nur_quelle_tauschen(q):
+        a, b = q['ergebnisse']
+        a['quelle'], b['quelle'] = b['quelle'], a['quelle']
+    _erwarte_beratende_fehler(lambda: _mit(_nur_quelle_tauschen), 'Quellenpaket der 2 vertauscht')
+    # H1/Person- und Person-URL-Tausch.
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'person', q['ergebnisse'][1]['person'])), 'H1-Personentausch')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][1]['quelle'].__setitem__(
+        'url', q['ergebnisse'][0]['quelle']['url'])), 'Personen-URL-Tausch')
+    # Beratend -> ordentlich/stellvertretend, endDate, andere Role.
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['amtlicherRollenbeleg'].__setitem__(
+        'roleName', 'Ordentliches Mitglied')), 'Beratend -> ordentlich (amtlicher Beleg)')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['amtlicherRollenbeleg'].__setitem__(
+        'roleName', 'Stellvertretendes Mitglied')), 'Beratend -> stellvertretend (amtlicher Beleg)')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['amtlicherRollenbeleg'].__setitem__(
+        'endDate', '2026-01-01')), 'abgelaufene Rolle (endDate im Beleg)')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['amtlicherRollenbeleg'].__setitem__(
+        'startDate', '2000-01-01')), 'Rollenbeleg-Drift (startDate)')
+    # Echte HTML-Role geaendert: ordentliche Rolle bzw. endDate sperren fail closed.
+    eintrag_a_ordentlich = json.loads(json.dumps(eintrag_a))
+    ld_o, rolle_o = _ld_json('Person Alpha', AUSSCHUSS_A, URL_A, rolle='Ordentliches Mitglied')
+    (detail / eintrag_a['quelle']['datei']).write_text(
+        f'<h1>Person Alpha</h1><script type="application/ld+json">{json.dumps(ld_o, ensure_ascii=False)}</script>',
+        encoding='utf-8')
+    neu_quelle = dict(eintrag_a['quelle'], sha256=ba._sha256(detail / eintrag_a['quelle']['datei']),
+                      bytes=(detail / eintrag_a['quelle']['datei']).stat().st_size)
+    abruf_a.update(dict(sha256=neu_quelle['sha256'], bytes=neu_quelle['bytes']))
+    profilrollen[k_a]['quelle'] = dict(url=abruf_a['url'], sha256=abruf_a['sha256'], abgerufenAm=abruf_a['abgerufenAm'])
+    eintrag_a_ordentlich['quelle'] = neu_quelle
+    eintrag_a_ordentlich['amtlicherRollenbeleg'] = rolle_o
+    eintrag_a_ordentlich['originalrollen'] = [rolle_o]
+    q_ordentlich = dict(gueltige_quittung, ergebnisse=[eintrag_a_ordentlich, eintrag_b])
+    original_ordentlich = [dict(originalbelege[0], quelle=neu_quelle, amtlichesJsonLd=[rolle_o]), originalbelege[1]]
+    _erwarte_beratende_fehler(lambda: ba.pruefe_beratendeachsen(
+        _beratende_eingang(q_ordentlich, original=original_ordentlich)), 'echte ordentliche Rolle statt beratend')
+    # endDate in der echten HTML-Rolle.
+    ld_e, rolle_e = _ld_json('Person Alpha', AUSSCHUSS_A, URL_A, enddate='2026-01-01')
+    (detail / eintrag_a['quelle']['datei']).write_text(
+        f'<h1>Person Alpha</h1><script type="application/ld+json">{json.dumps(ld_e, ensure_ascii=False)}</script>',
+        encoding='utf-8')
+    neu_quelle_e = dict(eintrag_a['quelle'])
+    neu_quelle_e['sha256'] = ba._sha256(detail / eintrag_a['quelle']['datei'])
+    neu_quelle_e['bytes'] = (detail / eintrag_a['quelle']['datei']).stat().st_size
+    abruf_a.update(dict(sha256=neu_quelle_e['sha256'], bytes=neu_quelle_e['bytes']))
+    profilrollen[k_a]['quelle'] = dict(url=abruf_a['url'], sha256=abruf_a['sha256'], abgerufenAm=abruf_a['abgerufenAm'])
+    eintrag_a_ende = json.loads(json.dumps(eintrag_a))
+    eintrag_a_ende['quelle'] = neu_quelle_e
+    eintrag_a_ende['amtlicherRollenbeleg'] = rolle_e
+    eintrag_a_ende['originalrollen'] = [rolle_e]
+    q_ende = dict(gueltige_quittung, ergebnisse=[eintrag_a_ende, eintrag_b])
+    original_ende = [dict(originalbelege[0], quelle=neu_quelle_e, amtlichesJsonLd=[rolle_e]), originalbelege[1]]
+    _erwarte_beratende_fehler(lambda: ba.pruefe_beratendeachsen(
+        _beratende_eingang(q_ende, original=original_ende)), 'echte Rolle mit endDate')
+    # Original-HTML wiederherstellen (gueltig).
+    ld_g, rolle_g = _ld_json('Person Alpha', AUSSCHUSS_A, URL_A)
+    (detail / eintrag_a['quelle']['datei']).write_text(
+        f'<h1>Person Alpha</h1><script type="application/ld+json">{json.dumps(ld_g, ensure_ascii=False)}</script>',
+        encoding='utf-8')
+    neu_quelle_g = dict(eintrag_a['quelle'])
+    neu_quelle_g['sha256'] = ba._sha256(detail / eintrag_a['quelle']['datei'])
+    neu_quelle_g['bytes'] = (detail / eintrag_a['quelle']['datei']).stat().st_size
+    abruf_a.update(dict(sha256=neu_quelle_g['sha256'], bytes=neu_quelle_g['bytes']))
+    profilrollen[k_a]['quelle'] = dict(url=abruf_a['url'], sha256=abruf_a['sha256'], abgerufenAm=abruf_a['abgerufenAm'])
+    eintrag_a['quelle'] = neu_quelle_g
+    eintrag_a['amtlicherRollenbeleg'] = rolle_g
+    eintrag_a['originalrollen'] = [rolle_g]
+    originalbelege[0] = dict(originalbelege[0], quelle=neu_quelle_g, amtlichesJsonLd=[rolle_g])
+    gueltige_quittung = dict(gueltige_quittung, ergebnisse=[eintrag_a, eintrag_b])
+    assert len(ba.pruefe_beratendeachsen(_beratende_eingang(gueltige_quittung))) == 2
+    # Fremdthema, fehlender Hinweis, Importfreigabe, nicht genehmigter Ausschuss, H1-Mehrdeutigkeit.
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'themen', ['Unbelegtes Fremdthema'])), 'fremdes Thema')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['themen'].append('Digitales')),
+                              'zusaetzliches Fremdthema')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].pop('ableitungsHinweis')),
+                              'fehlender Ableitungshinweis')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'ableitungsHinweis', 'Beratende Ausschussarbeit Bund: irgendwas; keine persoenliche Position')),
+        'abweichender Ableitungshinweis')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'importfreigegeben', True)), 'Importfreigabe gesetzt')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'amtlicherAusschuss', 'Ausschuss für Digitales')), 'nicht genehmigter Ausschuss')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'bestehendeFunktionen', [])), 'bestehende beratende Funktion entfernt')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'jsonLdPfad', 'ProfilePage.mainEntity')), 'abweichender JSON-LD-Pfad')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'originalrollen', [])), 'fehlende Originalrollen')
+    _erwarte_beratende_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'region', 'Berlin')), 'falsche Region')
+    # Fremdes/abweichendes JSON-LD: zweite H1 bzw. zweiter ProfilePage-Block.
+    detail_datei = eintrag_a['quelle']['datei']
+    original_html = (detail / detail_datei).read_text(encoding='utf-8')
+
+    def _mit_variierter_html(html_variante):
+        (detail / detail_datei).write_text(html_variante, encoding='utf-8')
+        neu = dict(eintrag_a['quelle'])
+        neu['sha256'] = ba._sha256(detail / detail_datei)
+        neu['bytes'] = (detail / detail_datei).stat().st_size
+        abruf_a.update(dict(sha256=neu['sha256'], bytes=neu['bytes']))
+        profilrollen[k_a]['quelle'] = dict(url=abruf_a['url'], sha256=neu['sha256'],
+                                           abgerufenAm=abruf_a['abgerufenAm'])
+        originalbelege[0] = dict(originalbelege[0], quelle=neu, amtlichesJsonLd=[rolle_g])
+        variante = dict(gueltige_quittung, ergebnisse=[dict(eintrag_a, quelle=neu), eintrag_b])
+        return variante
+
+    q_h1 = _mit_variierter_html('<h1>Person Alpha</h1><h1>Fremd</h1>' + original_html)
+    _erwarte_beratende_fehler(lambda: ba.pruefe_beratendeachsen(_beratende_eingang(q_h1)), 'mehrdeutige H1')
+    ld_x, rolle_x = _ld_json('Fremd Person', AUSSCHUSS_A, URL_A)
+    q_ld = _mit_variierter_html(
+        original_html + f'<script type="application/ld+json">{json.dumps(ld_x, ensure_ascii=False)}</script>')
+    _erwarte_beratende_fehler(lambda: ba.pruefe_beratendeachsen(_beratende_eingang(q_ld)),
+                              'zweiter ProfilePage-Block (fremdes JSON-LD)')
+    (detail / detail_datei).write_text(original_html, encoding='utf-8')
+    abruf_a.update(dict(sha256=eintrag_a['quelle']['sha256'], bytes=eintrag_a['quelle']['bytes']))
+    profilrollen[k_a]['quelle'] = dict(url=abruf_a['url'], sha256=abruf_a['sha256'],
+                                       abgerufenAm=abruf_a['abgerufenAm'])
+    originalbelege[0] = dict(originalbelege[0], quelle=eintrag_a['quelle'], amtlichesJsonLd=[eintrag_a['amtlicherRollenbeleg']])
+    # Gueltige Quittung nach allen Mutationen weiter akzeptiert.
+    assert len(ba.pruefe_beratendeachsen(_beratende_eingang(gueltige_quittung))) == 2
+
+    # Auch bei konsistent angepasster Quittung muss die Rollenpruefung selbst
+    # fremde Personenkennungen und zeitlich ungueltige Rollen ablehnen.
+    def _direkte_rollenvariante(mutieren):
+        ld, rolle = _ld_json('Person Alpha', AUSSCHUSS_A, URL_A)
+        mutieren(ld, rolle)
+        e = dict(eintrag_a, amtlicherRollenbeleg=rolle, originalrollen=[rolle])
+        dokument = '<h1>Person Alpha</h1><script type="application/ld+json">' + json.dumps(ld) + '</script>'
+        return ba._pruefe_rollenbeleg(e, e['quelle'], dokument, k_a)
+
+    _erwarte_beratende_fehler(lambda: _direkte_rollenvariante(
+        lambda ld, r: ld['mainEntity'].__setitem__('@id', '#fremde-person')), 'fremde Fragmentkennung')
+    _erwarte_beratende_fehler(lambda: _direkte_rollenvariante(
+        lambda ld, r: ld['mainEntity'].__setitem__('url', eintrag_b['quelle']['url'])), 'fremde mainEntity.url')
+    for start in ('2099-01-01', '2026-13-01', ''):
+        _erwarte_beratende_fehler(lambda start=start: _direkte_rollenvariante(
+            lambda ld, r: r.__setitem__('startDate', start)), 'zukuenftiger/ungueltiger Rollenbeginn')
+    for ende in ('2026-01-01', '', None):
+        _erwarte_beratende_fehler(lambda ende=ende: _direkte_rollenvariante(
+            lambda ld, r: r.__setitem__('endDate', ende)), 'nicht freigegebenes endDate')
+    assert _direkte_rollenvariante(lambda ld, r: r.__setitem__('startDate', '2026-09-27'))
+
+print('PASS: Beratende Achsenquittung — fehlende Quittung/falsche Bilanz/Duplikat/Fremdkennung/'
+      'Kennung ausserhalb der 54er Rollenquittung/Ressort- und Aufgabenachsen-Ueberschneidung/'
+      'Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/Datei)/vollstaendiger Quellenpakettausch der 2/'
+      'H1- und Personen-URL-Tausch/Beratend->ordentlich bzw. stellvertretend/endDate/andere Role/'
+      'fremdes Thema/fehlender bzw. abweichender Herkunftshinweis/Importfreigabe/nicht genehmigter '
+      'Ausschuss/fehlende bestehende beratende Funktion/abweichender JSON-LD-Pfad/fehlende Originalrollen/'
+      'mehrdeutige H1/zweiter ProfilePage-Block sperren fail closed; die gueltige synthetische '
+      '2er-Quittung (4 Kurzthemen, bestehende beratende Funktion) wird akzeptiert.')
