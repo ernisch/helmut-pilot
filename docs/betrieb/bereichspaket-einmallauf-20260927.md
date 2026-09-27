@@ -234,3 +234,67 @@ Echter lokaler Einzel-/Stapelleservergleich enthaelt jetzt Umlautkennungen.
 Bekannte feste Stapelleser-Fehlercodes werden ohne private Inhalte sichtbar.
 Keine Wiederholung des bezahlten Auftrags, keine neue Kostenbindung oder
 Laufquittung; gezielte Vorpruefung erst nach Korrekturdeployment.
+
+
+## Einmallauf36311505665: fachlich abgelehnt, Kosten geschlossen
+
+[PR649](https://github.com/ernisch/helmut-pilot/pull/649), Pflicht-CI36310784711
+am Kopfe1d05c1c gruen, Merge `b3a7ffaf5ee48c57c590c090fec24ae7219ab12f`,
+[Production READY](https://vercel.com/nohut/helmut-pilot/HiDi9FZBgqN4XdJbnj1ao22r4xph).
+Vollvergleich aller500 lokal gesicherten Originaldatensaetze: beide echten
+Storage-Leser liefern dieselben967 Quellen, Vollhash
+`69b4972d93a755f910a72440d7dcb74991061006904890ed650816e5cb0e092c`.
+20 statt500 HTTP-Anfragen; kein neuer Productionabruf fuer diesen lokalen Test.
+
+[Plan36311432521](https://github.com/ernisch/helmut-pilot/actions/runs/36311432521)
+bestanden: gleicher Eingabehash646504e2,4 Quellen/3 Vorgaenge, reiner Leseschritt
+10:05:55 bis10:06:06UTC statt zuvor32s. Nachkontrolle10:05:32UTC ohne Drift.
+
+[Einmallauf36311505665](https://github.com/ernisch/helmut-pilot/actions/runs/36311505665)
+10:07:18–10:09:15UTC:2 freigegebene Modellaufrufe,0,019921USD,0 offene Kosten,
+keine automatische Wiederholung. Quittung `bereichspaket-20260927-a` gestoppt
+und verbraucht. Das freigegebene Briefing-/Radar-Urteil wurde neu importiert und
+zurueckgelesen; Entwurf und Modellpruefung sind als nicht auslieferbare
+`lage-pruefentwurf`-Belege gespeichert. Keine Lage und kein Gesamtpaket.
+
+Die Quellenpruefung lehnt Absatzindex1 (den zweiten Absatz) korrekt ab:
+`profilbezug-fehlt`. Der Mediathek-Titel belegt Sitzung, Tagesordnung und den
+Namen des Redners, aber keinen fachlichen Inhalt und keine Zustaendigkeit des
+gewaehlten Ausschusses. Die private Auswahlnotiz hatte diese Verbindung
+hinzuerfunden. Das Quellenurteil wurde weder positiv umgedeutet noch der
+beanstandete Absatz nachtraeglich aus dem bezahlten Ergebnis entfernt.
+Private Vollbelege: `/private/tmp/helmut-budget7/entwurfsbelege-36311505665.json`.
+
+SQL10:10:46UTC:500 Profile inaktiv,501 Identitaeten, volle Bestandshashes
+unveraendert,0 Jobs/Locks/Leases. Tagesverbrauch27.09.0,041091USD, insgesamt
+6,407513USD gebunden,0,592487USD frei. Keine offene Productionreservierung.
+
+## Begruendeter Folgeauftrag nach der Namensfehlbindung
+
+Innerhalb der erneuerten Dauerfreigabe vom27.09.: neue Quittung
+`bereichspaket-20260927-b`, derselbe feste Tag, dasselbe einzelne inaktive
+Profil und dieselbe bereits gepruefte Eingabe/Vorlage b. Der Vorgänger wird
+exakt auf Run36311505665, dessen Commit, geschlossene Kosten, unveraenderten
+Profilbestand und den konkreten fachlichen Ablehnungsgrund gebunden. Kein
+allgemeiner Retryparameter; a bleibt unveraendert und verbraucht.
+
+Sachliche Korrektur: Entwurf UND separater Quellenpruefer erhalten dieselbe
+Regel: ein blosser Namens-/Mediathekbeleg ohne fachlichen Inhalt gehoert in
+Radar, nicht als erfundene Ausschussmeldung in Lage. Ein Titel mit eigener
+konkreter Fachaussage bleibt nach den bestehenden Regeln zulaessig. Keine
+Quelle, Tatsache, Profilangabe, Absatzgrenze oder Qualitaetssperre wird veraendert.
+Die erwartete Verbesserung bleibt bis zum echten Folgelauf unbewiesen.
+
+Der Folgeauftrag prueft das vorhandene importierte Urteil vollstaendig und
+frisch vor Modellen/Speichern. Kein erneuter Urteilsimport, keine Aenderung
+bestehender Urteilszeilen. Vorhandene Lage/Briefingausgabe sperrt. Nur neue Lage
+und neues Gesamtpaket koennen nach erfolgreicher Pruefung entstehen. Plan bleibt
+rein lesend, Ausfuehrung separat gebunden. Maximal2 Aufrufe,0,436USD,240s; alte
+Kosten zaehlen weiter,7USD insgesamt/6USD taeglich unveraendert. Rueckweg:
+bei Ablehnung keine auslieferbare Ausgabe, neue Quittung beenden, Sperren
+freigeben und Kosten bilanziert halten; kein Loeschen oder Ueberschreiben.
+Nachkontrolle wie beim ersten Lauf, danach die drei echten Ansichten fachlich
+abnehmen. Lokale Abnahme:15 Ablaufgruppen einschliesslich falschem Vorgänger,
+Urteilsdrift, fehlendem/gesperrtem Bestand und0 erneuten Importen; anonymisierter
+Namensbeleg bleibt bei negativem Mandatsurteil abgelehnt. Kein Modellbeweis durch
+synthetische Tests.

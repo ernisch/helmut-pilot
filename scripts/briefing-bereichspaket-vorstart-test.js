@@ -66,5 +66,27 @@ function harness(){
  await test('Lange Vorlesung verliert ihre fruehere Transportfreigabe',async()=>{
   const h=harness();let reads=0;h.hooks.read=()=>{if(++reads===2)h.time(now+110000)};await A.rejects(M.einmallauf(h.cfg,h.d));A.equal(h.counts.calls,0);
  });
+ await test('Nacharbeit bindet genau den abgeschlossenen fachlichen Fehlversuch',()=>{
+  const cfg=M.konfiguration(env,commit,now);
+  const v={quittungsschluessel:M.QUITTUNG,runId:'nachlauf500-36311505665',runtimeCommit:'b3a7ffaf5ee48c57c590c090fec24ae7219ab12f',status:'gestoppt',ok:false,fachlichPositiv:false,paketVollstaendig:false,lageHash:null,grund:'kein-vollstaendiges-paket',ergebnisGrund:'ai-text-source-support',diagnose:{absatz:1,fehler:['profilbezug-fehlt']},freigegebeneAufrufe:2,laufkostenUsd:0.019921,offeneKosten:0,profileUnveraendert:true,tag:cfg.tag,idHash:cfg.profilHash,eingabeHash:cfg.eingabeBindung,urteilHash:cfg.urteilHash};
+  M.pruefeNacharbeit(v,cfg);
+  for(const patch of [{status:'laeuft'},{ok:true},{offeneKosten:1},{laufkostenUsd:0.436},{idHash:'fremd'},{eingabeHash:'fremd'},{urteilHash:'fremd'},{diagnose:{absatz:0,fehler:['profilbezug-fehlt']}},{runId:'nachlauf500-99999'},{runtimeCommit:commit},{profileUnveraendert:false}])A.throws(()=>M.pruefeNacharbeit({...v,...patch},cfg));
+  A.notEqual(M.NACHARBEIT_QUITTUNG,M.QUITTUNG);A.notEqual(M.NACHARBEIT_FREIGABE,M.FREIGABE);
+ });
+ await test('Nacharbeit prueft das vorhandene Urteil frisch und importiert nichts erneut',async()=>{
+  const h=harness();h.cfg.nacharbeit=true;h.d.tagessatz=async()=>({urteil:{}});let checks=0;
+  h.d.pruefeVorhandenesUrteil=async()=>{checks++};h.d.importiere=()=>{throw Error('erneuter Import')};
+  A.equal((await M.einmallauf(h.cfg,h.d)).ok,true);A.equal(h.counts.imports,0);A.equal(h.counts.calls,2);A(checks>=5);
+  A.equal(h.receipt().quittungsschluessel,M.NACHARBEIT_QUITTUNG);
+ });
+ await test('Nacharbeit ohne passenden Bestand oder mit Urteilsdrift bleibt gesperrt',async()=>{
+  for(const vorhandenes of [{},{urteil:{},lage:{}},{urteil:{},briefing:{}}]){
+   const h=harness();h.cfg.nacharbeit=true;h.d.tagessatz=async()=>vorhandenes;
+   await A.rejects(M.einmallauf(h.cfg,h.d));A.equal(h.counts.claims,0);
+  }
+  const h=harness();h.cfg.nacharbeit=true;h.d.tagessatz=async()=>({urteil:{}});let checks=0;
+  h.d.pruefeVorhandenesUrteil=async()=>{if(++checks===4)throw Error('bereichspaket-nacharbeit-urteil')};
+  const r=await M.einmallauf(h.cfg,h.d);A.equal(r.ok,false);A.equal(h.counts.calls,0);A.equal(h.counts.imports,0);A.equal(h.counts.releases,1);
+ });
  console.log(`${n}/${n} Einmallaufgruppen bestanden; keine Production und keine Modellaufrufe.`);
 })().catch(e=>{console.error(e);process.exitCode=1});
