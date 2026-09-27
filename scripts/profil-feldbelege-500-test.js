@@ -331,6 +331,68 @@ a.deepEqual(
   "nur noch die offene fachliche Achse; der falsche Partei/Fraktionswiderspruch ist weg",
 );
 
+// ── 6d · Rollenquittung der 54 offenen Fachachsen (48 belegt / 6 offen) ──────────────────
+// Die vom Orchestrator gepruefte Quittung haengt nur die freigegebenen wortlaut-Strings
+// dedupliziert an bestehende funktionen. Sie erzeugt KEINE fachliche Achse und KEIN
+// regierungsrolle-Schema: bestehende Gremienrollen bleiben, die 54 Achsen bleiben offen.
+const rollen = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "profilrollen-54-20260927.json"), "utf8"));
+a.equal(rollen.bilanz.gesamt, 54, "Quittung muss 54 Profile umfassen");
+a.equal(rollen.bilanz.rollenbelegt, 48, "48 Rollen sind belegt");
+a.equal(rollen.bilanz.offen, 6, "6 Eintraege bleiben offen");
+a.equal(rollen.ergebnisse.length, 54, "Quittung muss 54 Ergebnisse tragen");
+const rollenByKennung = new Map(rollen.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(rollenByKennung.size, 54, "Quittungskennungen muessen eindeutig sein");
+for (const e of rollen.ergebnisse) {
+  if (e.status === "offen") a.deepEqual(e.funktionen, [], "offener Eintrag darf keine Rolle tragen");
+  else a.ok(e.funktionen.length > 0, "belegter Eintrag braucht eine Rolle");
+}
+const fachAchseOffen = datensaetze.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
+a.equal(fachAchseOffen.length, 54, "54 Profile bleiben ohne belegte fachliche Achse");
+a.deepEqual(
+  new Set(fachAchseOffen.map((d) => d.kanonischeKennung)),
+  new Set(rollenByKennung.keys()),
+  "die Quittung muss genau die 54 offenen Fachachsen abdecken",
+);
+let rollenBelegt = 0;
+let rollenOffen = 0;
+const zuHelmutProfilRollen = zuHelmutProfil; // echter Import-/Storage-Pfad (bestehender Export)
+for (const d of datensaetze) {
+  const e = rollenByKennung.get(d.kanonischeKennung);
+  const q = d.profilrollenQuittung;
+  if (!e) {
+    a.equal(q, undefined, "ohne Quittungseintrag darf kein Rollenbeleg gesetzt sein");
+    continue;
+  }
+  a.ok(q, `Rollenbeleg fehlt fuer ${d.kanonischeKennung}`);
+  a.equal(q.datei, "docs/betrieb/profilrollen-54-20260927.json");
+  a.equal(q.url, d.quelle.url, "Rollenbeleg muss an die amtliche Quell-URL gebunden sein");
+  a.equal(q.sha256, d.quelle.sha256, "Rollenbeleg muss denselben Quellhash binden");
+  a.equal(q.status, e.status, "Rollenstatus muss der Quittung entsprechen");
+  // Die fachliche Achse bleibt in JEDEM Fall offen: eine Amtsrolle ist keine Ausschussachse.
+  a.ok(d.offeneFelder.includes("fachlicheAchse"), `Achse darf nicht geschlossen werden (${d.kanonischeKennung})`);
+  if (e.status === "offen") {
+    rollenOffen += 1;
+    a.deepEqual(q.funktionen, [], "ein offener Eintrag haengt keine Rolle an");
+    continue;
+  }
+  rollenBelegt += 1;
+  a.equal(q.funktionen.length, e.funktionen.length, "Rollenbeleg muss die freigegebenen Rollen abbilden");
+  const gespeichert = zuHelmutProfilRollen(d.profil);
+  for (const f of e.funktionen) {
+    a.ok(f.wortlaut && f.zitat && f.abschnitt, "Rolle braucht wortlaut/zitat/abschnitt");
+    a.ok(f.zitat.includes(f.wortlaut), "Wortlaut muss im belegten Zitat stehen (kein erfundener Wortlaut)");
+    const funktionen = d.profil.funktionen || [];
+    a.equal(funktionen.filter((x) => x === f.wortlaut).length, 1, `Wortlaut genau einmal angehaengt (${f.wortlaut})`);
+    a.ok(gespeichert.function.includes(f.wortlaut), "Wortlaut muss den echten Import-/Storage-Funktionspfad erreichen");
+  }
+  // Bestehende Gremienrollen bleiben unveraendert erhalten.
+  for (const beleg of d.weitereGremienBeleg || []) {
+    a.ok((d.profil.funktionen || []).includes(`${beleg.rolle}: ${beleg.gremium}`), "Gremienrolle muss erhalten bleiben");
+  }
+}
+a.equal(rollenBelegt, 48, "48 Profile tragen eine belegte Amtsrolle");
+a.equal(rollenOffen, 6, "6 Profile bleiben ohne neue Rolle offen");
+
 // ── 7 · Reproduzierbarkeit (nur mit lokalen Arbeitsdateien + python3) ────────────────────
 let reproduzierbar = "uebersprungen (lokale Eingangsdateien oder python3 fehlen)";
 const eingangVorhanden = fs.existsSync(path.join(STANDARD_EINGANG, "bundestagsprofile-330-abruf.json"))
@@ -350,4 +412,4 @@ if (eingangVorhanden && python) {
   reproduzierbar = "byte-identisch neu erzeugt";
 }
 
-console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (443 technisch importierbar, 57 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung (4 Brandenburg-Landeslisten), Bundestags-Readiness (289/330 bereit), Reproduzierbarkeit: " + reproduzierbar);
+console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (443 technisch importierbar, 57 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung (4 Brandenburg-Landeslisten), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen, 54 Fachachsen unveraendert offen), Bundestags-Readiness (289/330 bereit), Reproduzierbarkeit: " + reproduzierbar);

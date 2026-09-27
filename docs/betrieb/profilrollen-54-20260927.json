@@ -1,0 +1,1055 @@
+{
+  "version": 1,
+  "datum": "2026-09-27",
+  "zweck": "Gepruefte Rollenquittung fuer die 54 fachlich noch offenen Profile; keine Freigabe fachlicher Achsen oder eines Imports. Die anderen 446 Profile sind nicht erneut geprueft.",
+  "pruefung": {
+    "modell": "DeepSeek Flash High, rein lesend; Orchestratorpruefung",
+    "quelle": "54 Originalseiten, URL und SHA256 nachgerechnet; akzeptierte Zitate woertlich. Keine Helferbehauptung als alleiniger Beleg.",
+    "verworfen": "Nebenaemter mit unklarem Zeitbezug, widerspruechliche Rollen, alte Fraktionszustaendigkeiten, nichtwoertliche zusammengesetzte Zitate und Fachthemen-Ableitungen nicht uebernommen."
+  },
+  "bilanz": {
+    "gesamt": 54,
+    "rollenbelegt": 48,
+    "offen": 6
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-droege-katharina-1044100",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/D/droege_katharina-1044100",
+        "sha256": "dc1ef5c59e46f64d1b0cc5416f27b7ed216ae5f6ec9d16a85e96d663a8785385",
+        "abgerufenAm": "2026-09-27T12:59:29.625525+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Vorsitzende der Bundestagsfraktion Bündnis90/Die Grünen",
+          "zitat": "seit Dezember 2021 Vorsitzende der Bundestagsfraktion Bündnis90/Die Grünen",
+          "abschnitt": "Biografie",
+          "zeitbeleg": "seit Dezember 2021"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-hasselmann-britta-1044778",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778",
+        "sha256": "0750ba10353c7db1b54d6bf3d7d35161d526ee8f96a5c3159398d4674e7cfbea",
+        "abgerufenAm": "2026-09-27T12:59:36.772613+00:00"
+      },
+      "status": "offen",
+      "funktionen": [],
+      "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-amthor-philipp-1043428",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/A/amthor_philipp-1043428",
+        "sha256": "e3e39200cca9a130552093ca0a8571574da491e2e777927da643a8bba210696c",
+        "abgerufenAm": "2026-09-27T12:59:55.092561+00:00"
+      },
+      "status": "offen",
+      "funktionen": [],
+      "begruendung": "Amtlicher Funktionsabschnitt und Biografie nennen unterschiedliche Regierungsrollen. Vor einer Uebernahme aktuelle Zustaendigkeit gesondert klaeren.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-baer-dorothee-1043526",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/baer_dorothee-1043526",
+        "sha256": "597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519",
+        "abgerufenAm": "2026-09-27T12:59:57.956556+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundesministerin für Forschung, Technologie und Raumfahrt",
+          "zitat": "Bundesministerin für Forschung, Technologie und Raumfahrt",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-bilger-steffen-1048434",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/bilger_steffen-1048434",
+        "sha256": "8cfd7dd1d6347c6fdb6ecbf9419e9ceca2058a47323ac7ca56adf5a6ed0ba969",
+        "abgerufenAm": "2026-09-27T13:00:01.066704+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundesminister für Verkehr",
+          "zitat": "Bundesminister für Verkehr",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-brand-michael-1043790",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/brand_michael-1043790",
+        "sha256": "89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0",
+        "abgerufenAm": "2026-09-27T13:00:04.095968+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarischer Staatssekretär für Bildung, Familie, Senioren, Frauen und Jugend",
+          "zitat": "Parlamentarischer Staatssekretär für Bildung, Familie, Senioren, Frauen und Jugend",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-breher-silvia-1043814",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/breher_silvia-1043814",
+        "sha256": "204b7a1ed518270a4f6221955df35d6a110534b42fe7b2caa93fb236f469dbaa",
+        "abgerufenAm": "2026-09-27T13:00:04.915794+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat",
+          "zitat": "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-connemann-gitta-1043962",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/C/connemann_gitta-1043962",
+        "sha256": "1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3",
+        "abgerufenAm": "2026-09-27T13:00:09.094300+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarische Staatssekretärin für Digitales und Staatsmodernisierung",
+          "zitat": "Parlamentarische Staatssekretärin für Digitales und Staatsmodernisierung",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-dobrindt-alexander-1044072",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/D/dobrindt_alexander-1044072",
+        "sha256": "4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb",
+        "abgerufenAm": "2026-09-27T13:00:10.703288+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundesminister des Innern",
+          "zitat": "Bundesminister des Innern",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-englhardt-kopf-martina-1044208",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/E/englhardt_kopf_martina-1044208",
+        "sha256": "1bc3695dfcb87dba1909c02e0d29d8b0e21ab6477df9c9f5694feb5c77b9c88b",
+        "abgerufenAm": "2026-09-27T13:00:14.885963+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat",
+          "zitat": "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-frei-thorsten-1044370",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/F/frei_thorsten-1044370",
+        "sha256": "098af37b685e3f841f3a2b9931ded3682dd7faab254e50334724a5be554c2ac3",
+        "abgerufenAm": "2026-09-27T13:00:17.579040+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Vorsitzender der CDU/CSU-Bundestagsfraktion",
+          "zitat": "Seit Juli 2026 Vorsitzender der CDU/CSU-Bundestagsfraktion.",
+          "abschnitt": "Biografie",
+          "zeitbeleg": "seit Juli 2026"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-gueler-serap-1044642",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/G/gueler_serap-1044642",
+        "sha256": "84844e5064a140efc47e2a4648dbc47df341b774f6270038f91073cffe50e8cb",
+        "abgerufenAm": "2026-09-27T13:00:22.926951+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Staatsministerin im Auswärtigen Amt",
+          "zitat": "Staatsministerin im Auswärtigen Amt",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-hahn-florian-1044694",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hahn_florian-1044694",
+        "sha256": "6f3acbe390a7879d17ec3feee227b2764763ffde871b4201fe7ae28a77bc1b12",
+        "abgerufenAm": "2026-09-27T13:00:25.118341+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Staatsminister im Auswärtigen Amt",
+          "zitat": "Staatsminister im Auswärtigen Amt",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-hauer-matthias-1044780",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hauer_matthias-1044780",
+        "sha256": "180f4f76103434b8c5d287bc8d0b0142e9b0e5ba7332cb374a29b8e5e4ba70b3",
+        "abgerufenAm": "2026-09-27T13:00:26.717047+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarischer Staatssekretär für Forschung, Technologie und Raumfahrt",
+          "zitat": "Parlamentarischer Staatssekretär für Forschung, Technologie und Raumfahrt",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-hirte-christian-1045006",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hirte_christian-1045006",
+        "sha256": "2ee9d4b1244966598964b66483cd843dc47e07af05f78c94cb09b918baf86894",
+        "abgerufenAm": "2026-09-27T13:00:30.493939+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarischer Staatssekretär für Verkehr",
+          "zitat": "Parlamentarischer Staatssekretär für Verkehr",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-hoffmann-alexander-1048720",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hoffmann_alexander-1048720",
+        "sha256": "3c9b5716794f7a13785bbfa3ab32792d916a6dc3698f17d49927d4fb74fbddb1",
+        "abgerufenAm": "2026-09-27T13:00:30.701425+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Vorsitzender der CSU-Landesgruppe im Bundestag und 1. Stellvertretender Vorsitzender der CDU/CSU-Fraktion im Bundestag",
+          "zitat": "seit Mai 2025 Vorsitzender der CSU-Landesgruppe im Bundestag und 1. Stellvertretender Vorsitzender der CDU/CSU-Fraktion im Bundestag",
+          "abschnitt": "Biografie",
+          "zeitbeleg": "seit Mai 2025"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-jarzombek-thomas-1045202",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/J/jarzombek_thomas-1045202",
+        "sha256": "45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888",
+        "abgerufenAm": "2026-09-27T13:00:33.704698+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung",
+          "zitat": "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion; Biografie seit Mai 2025"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-kippels-georg-1045390",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kippels_georg-1045390",
+        "sha256": "3860c81df63e36dffd70931b890b919fd09d326400a571ee8b08e238b9bc186c",
+        "abgerufenAm": "2026-09-27T13:00:36.656209+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarischer Staatssekretär für Gesundheit",
+          "zitat": "Parlamentarischer Staatssekretär für Gesundheit",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-kloeckner-julia-1045434",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kloeckner_julia-1045434",
+        "sha256": "f89405b0fa87c453503b83a0e7d0f3e2b4a5e8a6df41c9544a4e9bd796f74329",
+        "abgerufenAm": "2026-09-27T13:00:37.494520+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundestagspräsidentin",
+          "zitat": "Bundestagspräsidentin",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-krichbaum-gunther-1048828",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/krichbaum_gunther-1048828",
+        "sha256": "5ebebff34fea0bfb60e0970f7fc41dc0a8fc2a9fe4cdf4a77e0392de0116d687",
+        "abgerufenAm": "2026-09-27T13:00:42.423556+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Staatsminister im Auswärtigen Amt",
+          "zitat": "Staatsminister im Auswärtigen Amt",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-lange-ulrich-1048862",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/L/lange_ulrich-1048862",
+        "sha256": "183b84105d6b28ae98ee11aa3dab3fd45b1c51f92925bc6a3ce6799c8f54575d",
+        "abgerufenAm": "2026-09-27T13:00:44.946587+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarischer Staatssekretär für Verkehr",
+          "zitat": "Parlamentarischer Staatssekretär für Verkehr",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-launert-silke-1045740",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/L/launert_silke-1045740",
+        "sha256": "838e601967cd0189942fbec3ded5bad02052811ea3866fb0a8f12664af2fd41e",
+        "abgerufenAm": "2026-09-27T13:00:45.913447+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarische Staatssekretärin für Forschung, Technologie und Raumfahrt",
+          "zitat": "Parlamentarische Staatssekretärin für Forschung, Technologie und Raumfahrt",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-linnemann-carsten-1048896",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/L/linnemann_carsten-1048896",
+        "sha256": "fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00",
+        "abgerufenAm": "2026-09-27T13:00:47.810312+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundesminister für Gesundheit",
+          "zitat": "Bundesminister für Gesundheit",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-ludwig-daniela-1045886",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/L/ludwig_daniela-1045886",
+        "sha256": "34c9c00134b1439fccd19a9c48242d9939dd8355623ce7691c7463da3fc8b9b7",
+        "abgerufenAm": "2026-09-27T13:00:49.408312+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarische Staatssekretärin des Innern",
+          "zitat": "Parlamentarische Staatssekretärin des Innern",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-merz-friedrich-1046080",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080",
+        "sha256": "533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7",
+        "abgerufenAm": "2026-09-27T13:00:52.405228+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundeskanzler",
+          "zitat": "Bundeskanzler",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-alabali-radovan-reem-1043386",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/A/alabali_radovan_reem-1043386",
+        "sha256": "d9d26417605ec59441ba35141afb225fe03a9141bb064d90cceeda862c349ab4",
+        "abgerufenAm": "2026-09-27T13:01:30.735187+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung",
+          "zitat": "Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-bartol-soeren-1043546",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/bartol_soeren-1043546",
+        "sha256": "db8d5edad55e7cce43a6ba83e795696f4c6437ef15280ec32bf5c40154f649d1",
+        "abgerufenAm": "2026-09-27T13:01:31.688122+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarischer Staatssekretär für Wohnen, Stadtentwicklung und Bauwesen",
+          "zitat": "Parlamentarischer Staatssekretär für Wohnen, Stadtentwicklung und Bauwesen",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-bas-baerbel-1043554",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/bas_baerbel-1043554",
+        "sha256": "8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92",
+        "abgerufenAm": "2026-09-27T13:01:32.582199+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundesministerin für Arbeit und Soziales",
+          "zitat": "Bundesministerin für Arbeit und Soziales",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-griese-kerstin-1044602",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/G/griese_kerstin-1044602",
+        "sha256": "93451fe964b7cbb9a223501b33c5405046b80be8605430cd462eea781a5ef2b3",
+        "abgerufenAm": "2026-09-27T13:01:44.645466+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+          "zitat": "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-hubertz-verena-1045124",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hubertz_verena-1045124",
+        "sha256": "5b7f34a4e7cd146e4fbdbee4da34828816f2cd48b29fe3c74c3d2255a6d2a85f",
+        "abgerufenAm": "2026-09-27T13:01:49.706971+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen",
+          "zitat": "Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-kaiser-elisabeth-1045268",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kaiser_elisabeth-1045268",
+        "sha256": "fbcd5c9040ac2592551f00af5a24d35061f2bd569ab6ad107003f1d3562db5a7",
+        "abgerufenAm": "2026-09-27T13:01:50.798008+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Beauftragte der Bundesregierung für Ostdeutschland",
+          "zitat": "Beauftragte der Bundesregierung für Ostdeutschland",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-klingbeil-lars-1045428",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/klingbeil_lars-1045428",
+        "sha256": "97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989",
+        "abgerufenAm": "2026-09-27T13:01:52.440771+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundesminister der Finanzen",
+          "zitat": "Bundesminister der Finanzen",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-kofler-baerbel-1045482",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kofler_baerbel-1045482",
+        "sha256": "74acc02af9dc035afbf55602502206aed11cd4cae01be90075440911a1398efb",
+        "abgerufenAm": "2026-09-27T13:01:53.579022+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarische Staatssekretärin für wirtschaftliche Zusammenarbeit und Entwicklung",
+          "zitat": "Parlamentarische Staatssekretärin für wirtschaftliche Zusammenarbeit und Entwicklung",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-mast-katja-1046000",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/mast_katja-1046000",
+        "sha256": "e35a4462ecd032bb24ed798c48f564f051bb065aa33262c6d58ee8c12b473714",
+        "abgerufenAm": "2026-09-27T13:02:00.435425+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+          "zitat": "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-miersch-matthias-1046120",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
+        "sha256": "1964d6f86f4c5ee9fdece19ece9483e17197c776db4c3e52f21b92d965d6b902",
+        "abgerufenAm": "2026-09-27T13:02:01.522263+00:00"
+      },
+      "status": "offen",
+      "funktionen": [],
+      "begruendung": "Biografie nennt seit 2024 kommissarischer Generalsekretaer; aktuelle Fraktions-/Amtsrolle nicht allein daraus ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-pawlik-natalie-1046500",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/pawlik_natalie-1046500",
+        "sha256": "ac90fb0243ac6c470d85d6452c999c72e363900f9fcb88f0579b5bf9d3b6c349",
+        "abgerufenAm": "2026-09-27T13:02:06.343104+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Staatsministerin und Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration",
+          "zitat": "Staatsministerin und Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-pistorius-boris-1046550",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/pistorius_boris-1046550",
+        "sha256": "6ebba8fb601a27acf5b549b2db1d947ca10fb3e6ec6d60068fe1ed8117327939",
+        "abgerufenAm": "2026-09-27T13:02:07.414867+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bundesminister der Verteidigung",
+          "zitat": "Bundesminister der Verteidigung",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-poschmann-sabine-1046592",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/poschmann_sabine-1046592",
+        "sha256": "8182a51ce2c15c0cd1e7e896843d9f4c4c99b455a45d0ae87b11ba4bea20da64",
+        "abgerufenAm": "2026-09-27T13:02:07.612232+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarische Staatssekretärin für Wohnen, Stadtentwicklung und Bauwesen",
+          "zitat": "Parlamentarische Staatssekretärin für Wohnen, Stadtentwicklung und Bauwesen",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-rohde-dennis-1046814",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rohde_dennis-1046814",
+        "sha256": "cb8e81edc22be280ea43c8df741db3dcd3c6ea03534c196c5bfeb6269c73b299",
+        "abgerufenAm": "2026-09-27T13:02:10.017842+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Parlamentarischer Staatssekretär für Finanzen",
+          "zitat": "Parlamentarischer Staatssekretär für Finanzen",
+          "abschnitt": "Funktion",
+          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-knodel-sieghard-1045460",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/knodel_sieghard-1045460",
+        "sha256": "42a96cb4530a81c3400811b1f64303d2facb55546b156f7bacac6655f59ed5cf",
+        "abgerufenAm": "2026-09-27T13:02:11.977166+00:00"
+      },
+      "status": "offen",
+      "funktionen": [],
+      "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-seidler-stefan-1047378",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/S/seidler_stefan-1047378",
+        "sha256": "3ba866eab208e143651efc2c4fc72b0ab0e8508ef612db0f1b208bf9ad40c420",
+        "abgerufenAm": "2026-09-27T13:02:13.803330+00:00"
+      },
+      "status": "offen",
+      "funktionen": [],
+      "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-berlin-kai-wegner",
+      "quelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/kai-wegner?groupStrategy=nachnamen",
+        "sha256": "435c232722686e07ff17e1a23e88d64f054f457544e523168058f10af6f6ca8e",
+        "abgerufenAm": "2026-09-27T12:35:42.293510+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Regierender Bürgermeister von Berlin",
+          "zitat": "Regierender Bürgermeister von Berlin",
+          "abschnitt": "Profilkopf (parlament-berlin.de)",
+          "zeitbeleg": "ohne Datumsangabe im Profilkopf"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-berlin-katharina-gunther-wunsch",
+      "quelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/katharina-gunther-wunsch?groupStrategy=nachnamen",
+        "sha256": "a13209a681959d95e2f42f6df8a4a153c6a85e3aaf6af7d4e31faa980bf908b9",
+        "abgerufenAm": "2026-09-27T12:35:42.630244+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Senatorin für Bildung, Jugend und Familie",
+          "zitat": "Senatorin für Bildung, Jugend und Familie seit 27. April 2023.",
+          "abschnitt": "Biografie (parlament-berlin.de)",
+          "zeitbeleg": "seit 27. April 2023"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-berlin-franziska-giffey",
+      "quelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/franziska-giffey?groupStrategy=nachnamen",
+        "sha256": "374c38ce87c4605a45d5a459d256678e793dd74b78c5d457a0f82fae0dcf3726",
+        "abgerufenAm": "2026-09-27T12:36:39.237645+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe",
+          "zitat": "Seit 27. April 2023 Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe.",
+          "abschnitt": "Biografie (parlament-berlin.de)",
+          "zeitbeleg": "seit 27. April 2023"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-berlin-ina-czyborra",
+      "quelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/ina-czyborra?groupStrategy=nachnamen",
+        "sha256": "caaf21738731d4ba766f06c7f809100bb74ba05cef0100341eb2a23ee5085cef",
+        "abgerufenAm": "2026-09-27T12:36:39.883102+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Senatorin für die Senatsverwaltung für Wissenschaft, Gesundheit und Pflege",
+          "zitat": "1 a) Senatorin für die Senatsverwaltung für Wissenschaft, Gesundheit und Pflege (Stufe 4)",
+          "abschnitt": "Angaben zu den Verhaltensregeln gem. § 5a Landesabgeordnetengesetz",
+          "zeitbeleg": "ohne Datumsangabe"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-berlin-iris-spranger",
+      "quelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/iris-spranger?groupStrategy=nachnamen",
+        "sha256": "2b62b9d5a48f5a2855df7985f063504d0e822c8f430b59d464f31b192cadf4c1",
+        "abgerufenAm": "2026-09-27T12:36:40.815709+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Senatorin für Inneres und Sport",
+          "zitat": "Seit Dezember 2021 Senatorin für Inneres, Digitalisierung und Sport, seit April 2023 Senatorin für Inneres und Sport.",
+          "abschnitt": "Biografie (parlament-berlin.de)",
+          "zeitbeleg": "seit April 2023"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-brandenburg-11249",
+      "quelle": {
+        "url": "https://www.landtag.brandenburg.de/de/redmann_jan_(dr.)/11249",
+        "sha256": "560bb72f57c3e32c8017832f899c2f7595154f7ef6ad80c99658340c95cac455",
+        "abgerufenAm": "2026-09-27T12:37:11.371894+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Stellvertretender Ministerpräsident und Minister für Inneres und Kommunales des Landes Brandenburg",
+          "zitat": "Seit März 2026 Stellvertretender Ministerpräsident und Minister für Inneres und Kommunales des Landes Brandenburg",
+          "abschnitt": "Politische Laufbahn",
+          "zeitbeleg": "seit März 2026"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-brandenburg-13035",
+      "quelle": {
+        "url": "https://www.landtag.brandenburg.de/de/hoffmann_gordon/13035",
+        "sha256": "d7f5d8185722c6de1277f805fe4ec1ed4bb4b78b52e03e18b7c096b6831e522e",
+        "abgerufenAm": "2026-09-27T12:37:12.193333+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Minister für Bildung, Jugend und Sport des Landes Brandenburg",
+          "zitat": "Seit März 2026 Minister für Bildung, Jugend und Sport des Landes Brandenburg",
+          "abschnitt": "Politische Laufbahn",
+          "zeitbeleg": "seit März 2026"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-brandenburg-11263",
+      "quelle": {
+        "url": "https://www.landtag.brandenburg.de/de/woidke_dietmar_(dr.)/11263",
+        "sha256": "86c879e54c79f873cffbf486c9ccc35ae6999b55a599046e79b371de2720fa36",
+        "abgerufenAm": "2026-09-27T12:37:15.982412+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Ministerpräsident des Landes Brandenburg",
+          "zitat": "Seit August 2013 Ministerpräsident des Landes Brandenburg",
+          "abschnitt": "Politische Laufbahn",
+          "zeitbeleg": "seit August 2013"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-brandenburg-24173",
+      "quelle": {
+        "url": "https://www.landtag.brandenburg.de/de/keller_daniel/24173",
+        "sha256": "86e4eb295c9fab83cf6d3f450d6155d9eb7d0c54a855bcc518d182889ee2d495",
+        "abgerufenAm": "2026-09-27T12:37:17.175322+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Minister der Finanzen des Landes Brandenburg",
+          "zitat": "Seit März 2026 Minister der Finanzen des Landes Brandenburg",
+          "abschnitt": "Politische Laufbahn",
+          "zeitbeleg": "seit März 2026"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-brandenburg-33745",
+      "quelle": {
+        "url": "https://www.landtag.brandenburg.de/de/mittelstaedt_hanka/33745",
+        "sha256": "084832a3db129b779ed737a6aeb1a4ca6efea356db10cea02cf25c4e97bc6625",
+        "abgerufenAm": "2026-09-27T12:37:23.205197+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz des Landes Brandenburg",
+          "zitat": "Seit Dezember 2024 Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz des Landes Brandenburg",
+          "abschnitt": "Politische Laufbahn",
+          "zeitbeleg": "seit Dezember 2024"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-brandenburg-40591",
+      "quelle": {
+        "url": "https://www.landtag.brandenburg.de/de/grimm_benjamin_(dr.)/40591",
+        "sha256": "6c1ae1fb8b3d8b6ba206cc3440e3fbbd80034410ddf03b7e1bfecae002b28c32",
+        "abgerufenAm": "2026-09-27T12:37:24.862053+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Minister der Justiz und für Digitalisierung des Landes Brandenburg",
+          "zitat": "Seit Dezember 2024 Minister der Justiz und für Digitalisierung des Landes Brandenburg",
+          "abschnitt": "Politische Laufbahn",
+          "zeitbeleg": "seit Dezember 2024"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-brandenburg-40597",
+      "quelle": {
+        "url": "https://www.landtag.brandenburg.de/de/schuele_manja_(dr.)/40597",
+        "sha256": "230cbb3c738eedb4c3f981c905d90e36b3ffaf489ae0895e525a6b619934e756",
+        "abgerufenAm": "2026-09-27T12:37:27.391139+00:00"
+      },
+      "status": "belegt",
+      "funktionen": [
+        {
+          "wortlaut": "Ministerin für Wissenschaft, Forschung und Kultur des Landes Brandenburg",
+          "zitat": "Seit 2019 Mitglied der Landesregierung Brandenburg, Ministerin für Wissenschaft, Forschung und Kultur des Landes Brandenburg",
+          "abschnitt": "Politische Laufbahn",
+          "zeitbeleg": "seit 2019"
+        }
+      ],
+      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "landtag-brandenburg-40629",
+      "quelle": {
+        "url": "https://www.landtag.brandenburg.de/de/skopec_oliver/40629",
+        "sha256": "1dfed61452816f1460da49b55885dfeeb44df88c79c687b109d236100d42d4a0",
+        "abgerufenAm": "2026-09-27T12:37:30.018023+00:00"
+      },
+      "status": "offen",
+      "funktionen": [],
+      "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
+      "fachachseFreigegeben": false,
+      "importfreigegeben": false
+    }
+  ]
+}

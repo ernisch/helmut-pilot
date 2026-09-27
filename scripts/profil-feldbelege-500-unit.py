@@ -289,6 +289,153 @@ with tempfile.TemporaryDirectory() as tmp:
     _erwarte_fehler(lambda: m._pruefe_mandatsarten_bb(eingang, pfad), 'fehlendes Wort Landesliste')
 
 
+# ── 9 · Rollenquittung der 54 offenen Fachachsen: Wortlaut anhaengen, fail closed ───────
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    bt_url = 'https://www.bundestag.de/abgeordnete/biografien/M/muster_erika-9'
+    bt_kennung = m._slug('bundestag', 'muster_erika-9')
+    FUNKTION = 'Bundesministerin für Forschung, Technologie und Raumfahrt'
+    html = (
+        '<h1>Erika Muster</h1>'
+        '<nav>Bundesministerin für Zauberei</nav>'
+        '<div class="m-biography__biography"><p>Mitgliedschaften und Ehrenämter: Mitglied der SPD</p></div>'
+        '<div class="m-biography__function"><div><p>' + FUNKTION + '</p></div></div>'
+    )
+    (detail / 'bt.html').write_text(html, encoding='utf-8')
+    bt_abruf = dict(url=bt_url, amtlicheKennung='muster_erika-9', parlament='bundestag',
+                    datei='bt.html', sha256=m._sha256(detail / 'bt.html'),
+                    bytes=(detail / 'bt.html').stat().st_size)
+
+    def _rollen_eintrag(**kw):
+        funktion = dict(wortlaut=FUNKTION, zitat=FUNKTION, abschnitt='Funktion', zeitbeleg='ohne Datumsangabe')
+        basis = dict(kennung=bt_kennung, status='belegt', funktionen=[funktion], begruendung='x',
+                     quelle=dict(url=bt_url, sha256=bt_abruf['sha256'], abgerufenAm='2026-09-27T14:00:00+00:00'))
+        basis.update(kw)
+        return basis
+
+    def _pruefe_eintrag(ergebnis=None, abruf=None, dokument=None):
+        return m._pruefe_rolleneintrag(bt_kennung, ergebnis or _rollen_eintrag(),
+                                       abruf or bt_abruf, dokument if dokument is not None else html)
+
+    assert _pruefe_eintrag() == 'belegt'
+    # Ein offener Eintrag ohne Rolle ist zulaessig, MIT Rolle nicht (Widerspruch).
+    assert _pruefe_eintrag(_rollen_eintrag(status='offen', funktionen=[])) == 'offen'
+    _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(status='offen')), 'offener Eintrag mit Rolle')
+    _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(funktionen=[])), 'belegt ohne Rolle')
+    _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(status='unklar')), 'unerwarteter Status')
+    # Quelldrift: URL oder Hash weichen von der amtlichen Detailseite ab.
+    _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(
+        quelle=dict(url=bt_url + '-fremd', sha256=bt_abruf['sha256']))), 'abweichende Quell-URL')
+    _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(
+        quelle=dict(url=bt_url, sha256='0' * 64))), 'abweichender Quellhash')
+    for quelle in (dict(url=bt_url + '-fremd', sha256=bt_abruf['sha256']),
+                   dict(url=bt_url, sha256='0' * 64)):
+        _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(
+            status='offen', funktionen=[], quelle=quelle)), 'Quelldrift auch bei offenem Status')
+    _erwarte_fehler(lambda: _pruefe_eintrag(dokument=
+        '<div class="m-biography__function">Andere Rolle</div><footer>' + FUNKTION + '</footer>'),
+        'Zitat im Footer nach geschlossenem Personenblock')
+    _erwarte_fehler(lambda: _pruefe_eintrag(dokument=
+        '<div class="m-biography__function">' + FUNKTION + '</div>'
+        '<div class="m-biography__function">Andere Rolle</div>'), 'mehrdeutiger Personenblock')
+    _erwarte_fehler(lambda: _pruefe_eintrag(dokument=
+        '<div class="m-biography__function">' + FUNKTION), 'unvollstaendiger Personenblock')
+    # Erfundener Wortlaut: nicht durch das Zitat gedeckt.
+    _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(funktionen=[
+        dict(wortlaut='Bundeskanzlerin', zitat=FUNKTION, abschnitt='Funktion')])), 'erfundener Wortlaut')
+    # Zitat nur in der Navigation/ausserhalb des personengebundenen Abschnitts.
+    _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(funktionen=[
+        dict(wortlaut='Bundesministerin für Zauberei', zitat='Bundesministerin für Zauberei',
+             abschnitt='Funktion')])), 'Zitat nur ausserhalb des Funktionsabschnitts')
+    # Fehlender Abschnitt im Original und unbekannter Abschnitt sperren fail closed.
+    _erwarte_fehler(lambda: _pruefe_eintrag(dokument='<h1>Erika Muster</h1><div class="m-biography__biography"></div>'),
+                    'fehlender m-biography__function-Abschnitt')
+    _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(funktionen=[
+        dict(wortlaut=FUNKTION, zitat=FUNKTION, abschnitt='Navigation')])), 'unbekannter Abschnitt')
+
+    # Synthetische, deckungsgleiche 54er-Quittung fuer die Mengenpruefung.
+    def _synthetische_profilrollen(n_belegt=48, n_offen=6):
+        datei = 'eintrag.html'
+        (detail / datei).write_text(html, encoding='utf-8')
+        sha = m._sha256(detail / datei)
+        auswahl = []
+        abruf_by_url = {}
+        ergebnisse = []
+        for i in range(n_belegt + n_offen):
+            ak = f'test_{i}-{2000 + i}'
+            url = f'https://www.bundestag.de/abgeordnete/biografien/T/test_{i}-{2000 + i}'
+            abruf_by_url[url] = dict(url=url, amtlicheKennung=ak, parlament='bundestag',
+                                     datei=datei, sha256=sha)
+            auswahl.append(dict(url=url, parlament='bundestag', amtlicheKennung=ak))
+            kennung = m._slug('bundestag', ak)
+            if i < n_belegt:
+                ergebnisse.append(_rollen_eintrag(
+                    kennung=kennung, quelle=dict(url=url, sha256=sha)))
+            else:
+                ergebnisse.append(_rollen_eintrag(
+                    kennung=kennung, status='offen', funktionen=[], quelle=dict(url=url, sha256=sha)))
+        quittung = dict(version=1, bilanz=dict(gesamt=n_belegt + n_offen, rollenbelegt=n_belegt, offen=n_offen),
+                        ergebnisse=ergebnisse)
+        eingang = SimpleNamespace(detailseiten=detail, auswahl={'auswahl': auswahl}, abruf_by_url=abruf_by_url)
+        return eingang, quittung
+
+    eingang, quittung = _synthetische_profilrollen()
+    index = m._pruefe_profilrollen(eingang, quittung)
+    assert len(index) == 54, len(index)
+    assert sum(1 for e in index.values() if e['status'] == 'belegt') == 48
+    assert sum(1 for e in index.values() if e['status'] == 'offen') == 6
+
+    # Fehlende Quittung, falsche Menge und falsche Bilanz sperren fail closed.
+    _erwarte_fehler(lambda: m._pruefe_profilrollen(SimpleNamespace(), None), 'fehlende Quittung')
+    _erwarte_fehler(lambda: m._pruefe_profilrollen(eingang, dict(quittung, ergebnisse=quittung['ergebnisse'][:53])),
+                    'fehlende 54er-Quittung')
+    _erwarte_fehler(lambda: m._pruefe_profilrollen(
+        eingang, dict(quittung, bilanz=dict(gesamt=54, rollenbelegt=47, offen=7))), 'falsche Bilanz')
+    # Doppelte Kennung und Fremdkennung ausserhalb der 500 Zielprofile.
+    doppelt = [dict(e) for e in quittung['ergebnisse']]
+    doppelt[1] = dict(doppelt[1], kennung=doppelt[0]['kennung'])
+    _erwarte_fehler(lambda: m._pruefe_profilrollen(eingang, dict(quittung, ergebnisse=doppelt)), 'doppelte Kennung')
+    fremd = [dict(e) for e in quittung['ergebnisse']]
+    fremd[0] = dict(fremd[0], kennung='bundestag-fremd-9999')
+    _erwarte_fehler(lambda: m._pruefe_profilrollen(eingang, dict(quittung, ergebnisse=fremd)), 'Fremdkennung')
+
+    # 9a · Wortlaut wird dedupliziert an BESTEHENDE funktionen angehaengt; Gremienrolle bleibt.
+    auswahl = dict(url=bt_url, text='Muster, Erika', fraktion='SPD',
+                   amtlicheKennung='muster_erika-9', parlament='bundestag')
+    bt_profil = dict(vollname='Erika Muster', bundesland='Berlin', fraktion='SPD',
+                     mandatsachsen=[dict(art='Wahlkreismandat', beleg='Wahlkreis 1: Berlin-Mitte, Berlin')],
+                     regionsangaben=['Berlin-Mitte'], ausschuesse=[],
+                     funktionen=[dict(rolle='Ordentliches Mitglied', gremium='Wahlausschuss')])
+
+    def _bt_rollen_datensatz(rollen_index):
+        quelle = dict(bt_abruf, finalUrl=bt_url, abgerufenAm='2026-09-27T14:00:00Z', http=200, abrufStatus='abgerufen')
+        extraktion = dict(profil=bt_profil, quelle=quelle, offen=[], feldbelege={})
+        parteiquittung = {bt_kennung: dict(kennung=bt_kennung, status='belegt', partei='SPD',
+                                           beleg='Mitglied der SPD',
+                                           abschnitt='Biografie / Mitgliedschaften und Ehrenämter',
+                                           quelle=dict(url=bt_url, sha256=quelle['sha256']))}
+        e = SimpleNamespace(detailseiten=detail, abruf_by_url={bt_url: quelle},
+                            extraktion_by_url={bt_url: extraktion}, ergaenzung_by_kennung=parteiquittung,
+                            ergaenzung_verwendet=set(),
+                            profilrollen_by_kennung=rollen_index, profilrollen_verwendet=set())
+        return m._baue_datensatz(e, auswahl)
+
+    datensatz = _bt_rollen_datensatz({bt_kennung: _rollen_eintrag()})
+    funktionen = datensatz['profil']['funktionen']
+    assert 'Ordentliches Mitglied: Wahlausschuss' in funktionen, funktionen
+    assert funktionen.count(FUNKTION) == 1, funktionen
+    assert datensatz['profilrollenQuittung']['funktionen'][0]['wortlaut'] == FUNKTION
+    assert datensatz['profilrollenQuittung']['sha256'] == bt_abruf['sha256']
+    assert datensatz['profil']['aktiv'] is False and datensatz['importfreigegeben'] is False
+    # Ein bereits vorhandener gleicher String wird NICHT doppelt angehaengt (Deduplikation).
+    zweimal = _bt_rollen_datensatz({bt_kennung: _rollen_eintrag(funktionen=[
+        dict(wortlaut=FUNKTION, zitat=FUNKTION, abschnitt='Funktion'),
+        dict(wortlaut=FUNKTION, zitat=FUNKTION, abschnitt='Funktion')])})
+    assert zweimal['profil']['funktionen'].count(FUNKTION) == 1, zweimal['profil']['funktionen']
+
+
 if BUNDESTAG_NOURIPOUR.exists():
     html = BUNDESTAG_NOURIPOUR.read_text(encoding='utf-8')
     ohne_kopf = m.FRAKTIONSKOPF_MUSTER.sub(' ', html)
@@ -310,3 +457,6 @@ print('PASS: sonstige Gremien rollengetreu aus den Ausschuessen geloest (Ordentl
       'bleiben in funktionen, nicht in committee); unbekannter Ausschuss bleibt gesperrt; '
       'JSON-LD-URL-Drift, falscher Brandenburger Profillink, Fremdkennung, Hashdrift und fehlendes '
       'Wort Landesliste sperren fail closed; leere Achse bleibt offen.')
+print('PASS: Rollenquittung — Fremdkennung/Duplikat/fehlende 54er-Quittung/falsche Bilanz/Quelldrift/'
+      'erfundener Wortlaut/Zitat ausserhalb des Abschnitts/offener Eintrag mit Rolle sperren fail closed; '
+      'nur der freigegebene Wortlaut wird dedupliziert an bestehende funktionen angehaengt, Gremienrolle bleibt.')
