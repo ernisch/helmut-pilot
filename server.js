@@ -3479,7 +3479,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // best_source_url auf genau diesen Leerpfaden weiterhin still.
   const emptyKeepMentions = async (reason, kandidaten = understood) => {
     const mentionSources = korrekturDaten ? korrekturDaten.sourcesByVorgang
-      : opts.aussagenEingabe ? await loadPruefSourcesByVorgang(kandidaten) : {};
+      : opts.aussagenEingabe ? await loadPruefSourcesByVorgang(kandidaten, opts) : {};
     if (!korrekturDaten) await loadMentionSourcesInto(profile, kandidaten, mentionSources);
     return ausgabe(briefingContract.toBriefingContractV3({
       profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType,
@@ -3518,7 +3518,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // der automatischen Vorauswahl beurteilen koennen. Nur bereits eingelesene,
   // verarbeitete KOs; keine neuen Kandidaten im normalen Appabruf.
   const sourcesByVorgang = korrekturDaten ? korrekturDaten.sourcesByVorgang
-    : opts.aussagenEingabe ? await loadPruefSourcesByVorgang(understood)
+    : opts.aussagenEingabe ? await loadPruefSourcesByVorgang(understood, opts)
       : await loadSourcesByVorgang(selected);
   // Radar-Erwähnungen belegen (Audit-Folgebranch): "Über dich" zeigt eine
   // Eigenerwähnung nur mit echter Quellen-URL. Quellen wurden aber bisher NUR für
@@ -3616,7 +3616,8 @@ async function loadSourcesByVorgang(kos) {
   return sources;
 }
 
-async function loadPruefSourcesByVorgang(kos) {
+async function loadPruefSourcesByVorgang(kos, opts = {}) {
+  if (opts.quellenGebundelt === true) return require("./lib/helmut/storage").getPruefSourcesByVorgaenge(kos);
   return loadSourcesByVorgang(kos);
 }
 

@@ -439,6 +439,27 @@ Nach der Nachkontrolle unmittelbar den naechsten offenen notwendigen Schritt der
 Roadmap waehlen, abgrenzen und ausfuehren. Diese Fortsetzung gilt ueber einzelne
 Antworten und Kontextwechsel hinweg, bis der Betreiber sie einschraenkt.
 
+Am27.09.2026 hat der Betreiber die Vorlage b ausdruecklich freigegeben und
+erneute Einzelrueckfragen fuer die autonome Fertigstellung untersagt. Diese
+Dauerfreigabe gilt fuer alle unmittelbar notwendigen Schritte des bestehenden
+Roadmap-Auftrags bis zum500er Starttor in der bestehenden Helmut-Production,
+einschliesslich gepruefter Datenimporte, Fachurteile und ihrer technischen
+Neubindung an aktuelle Eingaben, Slots, Hashes und neue Kontrollschluessel.
+Ein geaenderter Hash, Dateiname oder Kontrollschluessel allein verlangt kein
+neues Betreiber-GO. Vor jeder Anwendung den konkreten Inhalt und Umfang erneut
+pruefen, Wirkung, Risiko, Kosten, Nachkontrolle und Rueckweg festhalten und die
+bestehenden technischen Schutzpruefungen unveraendert durchlaufen. Verbrauchte
+Laufquittungen bleiben gesperrt; ein neuer Lauf braucht einen belegten sachlichen
+Grund und eine neue, eindeutig begrenzte Bindung.
+
+Diese Freigabe erweitert weder den Roadmap-Auftrag noch die Kostenlimits:
+7USD insgesamt und6USD je UTC-Tag einschliesslich offener Reservierungen bleiben
+verbindlich. Kein pauschales Abschalten von Schutzmechanismen, keine externen
+Nachrichten, neuen Abonnements oder dauerhaften kostenpflichtigen Ressourcen.
+Das gesonderte GO unmittelbar vor Aktivierung und500er Test bleibt erhalten.
+Erzwingt die uebergeordnete automatische Freigabepruefung dennoch eine konkrete
+Betreiberbestaetigung, ihre Ablehnung offen benennen und nicht umgehen.
+
 Die Freigabe umfasst alle unmittelbar erforderlichen Vorarbeiten bis zum500er
 Starttor, auch dafuer notwendige bislang einzeln freizugebende Production-
 Vorarbeiten. Konkreten Umfang, Wirkung, Risiko, Kosten, Nachkontrolle und Rueckweg

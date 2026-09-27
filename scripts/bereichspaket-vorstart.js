@@ -193,7 +193,8 @@ async function main(args = process.argv.slice(2), env = process.env) {
   fordere(!execute || env.HELMUT_BEREICHSPAKET_FREIGABE === FREIGABE, "freigabe");
   const S = require("../lib/helmut/storage"), A = require("../lib/helmut/briefing-aussagenbindung");
   const Sp = require("../lib/helmut/briefing-speicher"), Q = require("../lib/helmut/lage-quellenbeleg");
-  const buildV3 = require("../server").__buildV3Briefing;
+  const echterBuilder = require("../server").__buildV3Briefing;
+  const buildV3 = (p, id, opts) => echterBuilder(p, id, { ...opts, quellenGebundelt: true });
   const buildLage = require("../lib/helmut/lage").buildLageBriefing;
   fordere(S.v3StoreReady() && S.profileDbModeEnabled() && S.profileDbExclusiveEnabled(), "speicher");
   if (execute) {
