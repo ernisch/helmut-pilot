@@ -167,11 +167,11 @@ const BEREICHE = {
     suiten: [/^b055/i, /^github-b055/i]
   },
   "500-nachweis": {
-    quelle: [/(^|\/)lib\/helmut\/testkohorte/i, /(^|\/)lib\/helmut\/testfenster/i,
+    quelle: [/(^|\/)scripts\/500-themenplan(?:-test)?\.js$/, /(^|\/)lib\/helmut\/testkohorte/i, /(^|\/)lib\/helmut\/testfenster/i,
       /(^|\/)lib\/helmut\/testkosten/i, /(^|\/)lib\/helmut\/testnachweis/i,
       /(^|\/)lib\/helmut\/funktionstest/i, /(^|\/)lib\/helmut\/kapazitaet-500/i,
       /(^|\/)lib\/helmut\/verstehen-/i],
-    suiten: [/^testkohorte/i, /^test-kohorte/i, /^testfenster/i, /^testkosten/i, /^testnachweis/i,
+    suiten: [/^500-themenplan-test\.js$/, /^testkohorte/i, /^test-kohorte/i, /^testfenster/i, /^testkosten/i, /^testnachweis/i,
       /^funktionstest/i, /^kapazitaet-500/i, /^verstehen-/i, /^github-.*500/i,
       /^github-null500/i, /^github-testfenster/i, /^github-briefingnachweis/i,
       /^github-privater-inhaltsnachweis/i, /^github-quellenkontext/i, /^github-direkt500/i]
