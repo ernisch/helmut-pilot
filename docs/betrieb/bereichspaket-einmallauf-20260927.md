@@ -212,3 +212,25 @@ sperren.12 Ablaufgruppen und6 bestehende Quellenlesepfade bestanden. Keine
 lokalen Modellkosten; kein zusaetzlicher Helfer wegen der engen Kostenreserve.
 Die neue Lesestrategie muss nach Deployment denselben Production-Eingabehash in
 der rein lesenden Vorpruefung bestaetigen, bevor der Modelllauf startet.
+
+
+## Stapelleser: Production-Vorpruefung und Umlautkorrektur
+
+[PR648](https://github.com/ernisch/helmut-pilot/pull/648) am Kopf8caa42e3 mit
+beiden Pflichtpruefungen gruen (Run36309993159), Merge
+`a28d00dadd25bb06cd2a9232856604322c791c1a`,
+[Production READY](https://vercel.com/nohut/helmut-pilot/3CA1bBmfiqFyyXQb1NoY8wKYg6ZL).
+Nachkontrolle09:50:14UTC:500 inaktiv/501 Identitaeten, volle Bestands-/Authhashes
+unveraendert;2 Kontrollvorlagen, keine Laufquittung,0 Jobs/Locks/Leases.
+
+[Vorpruefung36310639711](https://github.com/ernisch/helmut-pilot/actions/runs/36310639711)
+stoppte in fachaufbau vor Modellen. Lokale Ursachenpruefung mit allen500
+Originalkennungen:86 enthalten ü/ä/ö/ß, keine ist zu lang, alle sind eindeutig
+und entsprechen der bestehenden ko-Vorgangsbindung. Die neue ASCII-Pruefung war
+zu eng; der bisherige Einzelleser erlaubt diese Kennungen bereits.
+Korrektur: Unicode-Buchstaben und Ziffern erlauben, Quotes, Klammern und
+Filteroperatoren weiterhin sperren; unveraenderte URL-Kodierung und Umfangsgrenzen.
+Echter lokaler Einzel-/Stapelleservergleich enthaelt jetzt Umlautkennungen.
+Bekannte feste Stapelleser-Fehlercodes werden ohne private Inhalte sichtbar.
+Keine Wiederholung des bezahlten Auftrags, keine neue Kostenbindung oder
+Laufquittung; gezielte Vorpruefung erst nach Korrekturdeployment.

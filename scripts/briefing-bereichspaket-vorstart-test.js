@@ -27,6 +27,7 @@ function harness(){
  await test('Bekannte Fachablehnung bleibt negativ und wird getrennt vom Transport benannt',async()=>{
   await A.rejects(M.leseSchritt('fachaufbau',async()=>{throw Error('briefing-korrektur-abweichend')}),e=>e.message==='briefing-korrektur-abweichend'&&e.lesephase==='fachaufbau');
   A.equal(await M.leseSchritt('auth',async()=>42),42);
+  await A.rejects(M.leseSchritt('fachaufbau',async()=>{throw Error('pruefquellen-eingabe')}),e=>e.message==='pruefquellen-eingabe'&&e.lesephase==='fachaufbau');
  });
  await test('Runtime, Auftragstag, Profil und beide Urteilsbindungen sind fest',()=>{
   A.equal(M.konfiguration(env,commit,now).tag,'2026-09-27');
