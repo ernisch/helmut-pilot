@@ -410,7 +410,7 @@ Die ausdrueckliche Freigabe zur autonomen Roadmap-Arbeit einschliesslich des
 konkret angefragten16er Production-Imports und begrenzter Modelltests ist in
 [docs/betrieb/autonom-bis-500-starttor-20260926.md](docs/betrieb/autonom-bis-500-starttor-20260926.md)
 festgehalten. Bis unmittelbar vor Aktivierung und500er Test autonom fortfahren;
-Kumulative Auftragskosten bis zu6USD, technische Tagesgrenze6USD ausdrücklich freigegeben. Dieser aktuelle Auftrag
+Kumulative Auftragskosten bis zu7USD, technische Tagesgrenze6USD ausdrücklich freigegeben. Dieser aktuelle Auftrag
 geht aelteren allgemeinen Rueckfrageforderungen innerhalb seines Umfangs vor.
 
 Am26.09.2026 hat der Betreiber abschliessend beide Grenzen ausdruecklich
@@ -420,6 +420,16 @@ auf **bis zu6USD** erhoeht: "Ändere den Tagesriegel auf 6 usd" und
 Gesamtfreigabe ist ersetzt. Bereits verbrauchte und offen reservierte Kosten
 zaehlen weiter; ein Tageswechsel setzt die Gesamtgrenze nicht zurueck.
 Profilschutz und das neue GO vor Aktivierung/500er Test bleiben erhalten.
+Diese6USD-Gesamtfreigabe vom26.09.2026 bleibt als Historie erhalten; sie ist
+durch die folgende7USD-Gesamtgrenze ersetzt.
+
+Am27.09.2026 hat der Betreiber mit ausdruecklichem neuen GO die kumulative
+Auftragsgrenze auf **bis zu7USD insgesamt** erhoeht. Der technische Tagesriegel
+bleibt unveraendert bei6USD je UTC-Tag; ein UTC-Tageswechsel setzt die
+Auftragsgrenze nicht zurueck und hebt den Tagesriegel nicht auf. Bereits
+verbrauchte und offen reservierte Kosten zaehlen weiter gegen die7USD-
+Gesamtgrenze. Profilschutz und das neue GO vor Aktivierung/500er Test bleiben
+unveraendert.
 
 Der Betreiber hat diesen Auftrag am26.09.2026 ausdruecklich dauerhaft
 bekraeftigt: vollautonom weiterarbeiten, auch nach jedem Merge; nicht erneut auf
@@ -434,7 +444,7 @@ Starttor, auch dafuer notwendige bislang einzeln freizugebende Production-
 Vorarbeiten. Konkreten Umfang, Wirkung, Risiko, Kosten, Nachkontrolle und Rueckweg
 vorher selbst festlegen und dokumentieren; innerhalb dieses Auftrags nicht
 nochmals fragen. Technische Schutzpruefungen, Quellenwahrheit, Profilschutz,
-ausdruecklich freigegebener6-USD-Tagesriegel und bis zu6USD kumulative Auftragskosten gelten
+ausdruecklich freigegebener6-USD-Tagesriegel und bis zu7USD kumulative Auftragskosten gelten
 weiter. Keine unbekannten Ergebnisse als Erfolg deklarieren, keine verbrauchten
 Auftraege wiederverwenden und keine Schutzmechanismen umgehen.
 

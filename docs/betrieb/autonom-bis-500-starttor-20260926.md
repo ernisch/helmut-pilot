@@ -28,18 +28,24 @@ regulaere Deployments und weitere unmittelbar notwendige Vorarbeiten sind autono
 fortzusetzen. Vor jeder kritischen Aktion Umfang, Wirkung, Grenzen, Nachkontrolle
 und Rueckweg festhalten; vorhandene Freigaben nicht erneut abfragen.
 
-Am26.09.2026 hat der Betreiber die Kostenfreigabe abschließend geändert:
+Am26.09.2026 hatte der Betreiber die Kostenfreigabe zunaechst auf **bis zu6USD
+je UTC-Tag und bis zu6USD insgesamt** geaendert:
 
 > Ändere den Tagesriegel auf 6 usd
 
 > Gesamte Grenze auch 6 USD. BITTE ÄNDERN
 
-Damit sind **bis zu6USD je UTC-Tag und bis zu6USD insgesamt** für diesen
-Auftrag ausdrücklich freigegeben. Die frühere4USD-Grenze und zwischenzeitliche
-5USD-Gesamtfreigabe sind ersetzt. Bereits verbrauchte Beträge und offene Reserven
-werden nicht zurückgesetzt. Alle auftragsbezogenen Anbieter-, API- und lokalen
-Helferkosten zählen gemeinsam. Ein Tageswechsel setzt die Gesamtgrenze nicht
-zurück. Die technischen Sicherungen müssen diese beiden6USD-Grenzen durchsetzen.
+Diese6USD-Gesamtfreigabe bleibt als Historie erhalten.
+
+Am27.09.2026 hat der Betreiber die kumulative Auftragsgrenze mit ausdruecklichem
+neuen GO auf **bis zu7USD insgesamt** erhoeht. Der technische Tagesriegel bleibt
+unveraendert bei6USD je UTC-Tag. Die7USD-Gesamtgrenze ersetzt die frueheren
+4USD-, zwischenzeitlichen5USD- und die6USD-Gesamtfreigabe; der6USD-Tagesriegel
+gilt weiter. Bereits verbrauchte Beträge und offene Reserven werden nicht
+zurückgesetzt. Alle auftragsbezogenen Anbieter-, API- und lokalen Helferkosten
+zählen gemeinsam. Ein Tageswechsel setzt die Gesamtgrenze nicht zurück und hebt
+den6USD-Tagesriegel nicht auf. Die technischen Sicherungen müssen diese
+7USD-Gesamtgrenze inklusive und den6USD-Tagesriegel je UTC-Tag durchsetzen.
 Vor jedem Modelllauf Kostenstand lesen und einen endlichen Einzelauftrag mit
 Abbruchbedingungen festlegen. Historische unbekannte Kosten oder verbrauchte
 Quittungen niemals als frei erklaeren oder still wiederverwenden.
