@@ -25,25 +25,27 @@ Die genauere Parteibelegung bleibt Teil der Einzelpruefung vor Import.
 
 Planungsentscheidung vor der Nachrichtenauswertung fuer diese Kohorte:
 
-| Parlament | Zielprofile | Davon neu zu belegende Testabbilder |
-|---|---:|---:|
-| Bundestag |330|325|
-| Abgeordnetenhaus Berlin |120|120|
-| Landtag Brandenburg |50|50|
-| Gesamt |500|495|
+| Parlament | Zielprofile |
+|---|---:|
+| Bundestag |330|
+| Abgeordnetenhaus Berlin |120|
+| Landtag Brandenburg |50|
+| Gesamt |500|
 
-Die fuenf bestehenden Bundestagsprofile bleiben erhalten. Die groessere Berliner
+Alle500 sind gleich behandelte Testprofile; keine gesonderte Bestandsgruppe.
+Brauchbare bestehende Datensaetze koennen weiterverwendet, unpassende innerhalb
+der500er Gesamtmenge kontrolliert ersetzt werden. Die groessere Berliner
 Landesgruppe beruecksichtigt das groessere Parlament;170 Landesprofile machen
 die erste Marktetappe zu einem wesentlichen Bestandteil der Abnahme. Dies ist
 eine Testverteilung, keine Aussage ueber Kunden oder den Productionbestand.
-Testkennungen werden erst nach Abgleich mit den bestehenden495 Kennungen
+Testkennungen werden erst nach Abgleich mit dem gesamten500er Bestand
 gebunden; keine zusaetzlichen Profile oberhalb500 und keine doppelten Personen.
 
 Auswahl innerhalb jedes Parlaments: aktuelles amtliches Verzeichnis einfrieren,
 Parteien, Fraktionen, Gruppen und Fraktionslose getrennt erfassen. Jede zulaessige
 Fraktion/Gruppe sowie Fraktionslose erhalten mindestens einen Platz; restliche
 Plaetze proportional zur verbleibenden Mandatszahl nach groessten Resten.
-Die fuenf Bestandsmandate zaehlen in ihren Gruppen bereits mit. Bei Gleichstand
+Alle ausgewaehlten Mandate zaehlen in ihren Gruppen gleich. Bei Gleichstand
 entscheidet die amtliche Profilkennung. Innerhalb der Gruppen nach amtlicher
 Kennung auswaehlen und vorab belegte Rollen-/Ausschussvielfalt durch dokumentierte
 Tausche innerhalb derselben Gruppe ergaenzen. Vertretene Parteien ebenfalls
@@ -52,8 +54,7 @@ Direkt-/Listenmandate und unterschiedliche Wahlkreise beruecksichtigen.
 Keine Auswahl nach Nachrichtentreffern oder spaeterem Ergebnis.
 
 Ein [erster Namensentwurf mit500 Eintraegen](500-namensauswahl-20260927.json)
-liegt jetzt vor:330 Bundestag/120 Berlin/50 Brandenburg, darunter die fuenf
-Bestandsprofile. Grundlage:630 aktuell gefuehrte Bundestagsmitglieder nach
+liegt jetzt vor:330 Bundestag/120 Berlin/50 Brandenburg. Grundlage:630 aktuell gefuehrte Bundestagsmitglieder nach
 Ausschluss von neun als ausgeschieden/verstorben markierten Eintraegen sowie
 159 Berliner und88 Brandenburger Verzeichniseintraege. Alle zulaessigen
 Fraktionen/Gruppen und Fraktionslose sind vertreten; AfD ist ausgeschlossen. Die Einzelprofil-Feldbelege
@@ -149,7 +150,7 @@ Metadaten und die sichtbare Weitergabe noch nachzuweisen.
    auswaehlen, korrekt an Berlin/Brandenburg binden und durch die bestehenden
    Qualitaetspruefungen fuehren. Nachweis vom Abruf bis zur sichtbaren Ausgabe;
    Bibliotheks-/Shadow-Erfolg allein reicht nicht. Keine alten Dokumente umdatieren.
-3. Vor Productionimport alle495 Testabbilder und fuenf Bestandsprofile auf
+3. Vor Productionimport alle500 Zielprofile gleichermassen auf
    Identitaet, Ebene, Fraktion/Partei, regionale und fachliche Zuständigkeit
    abgleichen. Hashgebundener Importplan, Rueckweg und rein lesende Nachkontrolle;
    keine Aktivierung. Bestehende Kommunikationssperren und Profilschutz erhalten.
@@ -177,3 +178,12 @@ Partei oder Fraktion, Profilbestand seit12:31UTC hashgleich. Keine Profile
 geloescht, umbenannt, importiert oder aktiviert. Das belegt den gespeicherten
 Stand; die tatsaechliche Parteizugehoerigkeit der neuen Kandidaten bleibt
 vor Import einzeln zu verifizieren.
+
+## Nachkontrolle PR654
+
+27.09.2026: Pflicht-CI36319927210 erfolgreich, Merge `bfb49dcd16112a92f854575db017ce826e0ef62c`;
+Vercel `dpl_Av6iTkrRPXnAgg9VwSnFs9FCnEid` READY fuer genau diesen Commit.
+Rein lesend12:53:00UTC:500 Profile,0 aktiv,0 AfD laut hinterlegter Partei/Fraktion;
+Profilhash `198f25ff81cf5ee4ad2645c1881a8191` unveraendert. Keine Fehler-/Fatal-Logs
+im geprueften Fenster12:52:23–12:53:01UTC. Das belegt die Ausrollung und den
+unveraenderten Bestand, keinen500er Funktionsnachweis.

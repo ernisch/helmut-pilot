@@ -53,7 +53,19 @@ unveraendert. Diese Anforderung ist noch kein Umsetzungs- oder Production-Beleg.
 
 Oberste technische Priorität ist der belastbare Production Nachweis mit exakt 500 gleichzeitig aktiven Profilen.
 
-Für Produktlogik und 500er Test werden exakt 500 Zielprofile funktional gleich behandelt. Fünf davon sind reale Bestandsprofile und bleiben technisch besonders vor versehentlichem Löschen oder Beschädigen geschützt; diese Schutzmarkierung darf keine andere Produktlogik, Priorisierung oder Ergebnisbehandlung erzeugen.
+Betreiberpraezisierung vom27.09.2026: Es existieren insgesamt exakt500 Zielprofile,
+keine zusaetzlichen Profile neben dieser Menge. Alle500 sind derzeit Testprofile und
+werden bei Auswahl, Aufbereitung, Versorgung, Priorisierung und vollstaendiger
+Ergebnispruefung gleich behandelt. Keine gesonderte Bestandsgruppe, keine bevorzugten
+Profile und keine gesonderte Erhaltungspflicht fuer frueher manuell angelegte
+Profile. Der Betreiber erlaubt ausdruecklich auch deren Ersatz oder Loeschung, falls
+das fuer den kuerzesten sicheren Weg zum belegten500er Bestand erforderlich ist.
+Gueltige Profile duerfen weiterverwendet werden; unnoetige Loeschungen sind kein
+Ziel. In Planung und Berichten ausschliesslich von500 Zielprofilen sprechen.
+Allgemeiner Schutz vor versehentlichen oder ungebundenen Datenaenderungen gilt fuer
+alle500 gleich. Historische personenbezogene Schutzbindungen vor einem notwendigen
+Import kontrolliert auf den belegten Gesamtbestand umstellen, niemals technische
+Pruefungen umgehen. Aktivierung und500er Test bleiben gesondert freizugeben.
 
 Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigkeit haben Vorrang vor neuen Funktionen.
 
@@ -614,7 +626,7 @@ Unbrauchbare Ergebnisse müssen vollständig ausgewiesen werden.
 
 Stichproben niemals als vollständige Prüfung darstellen.
 
-Die fünf realen Zielprofile dürfen durch Testbetrieb nicht beschädigt werden, werden fachlich und funktional aber wie alle anderen Zielprofile behandelt.
+Alle500 Zielprofile erhalten dieselben fachlichen Pruefungen und denselben technischen Schutz vor versehentlicher Beschaedigung; keine besondere Profilgruppe.
 
 ## Dokumentation
 
