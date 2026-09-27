@@ -413,8 +413,7 @@
       "text": "Klein, Dr. Ottilie",
       "fraktion": "CDU/CSU",
       "amtlicheKennung": "klein_ottilie-1045410",
-      "parlament": "bundestag",
-      "bestandsId": "ottilie-paola-klein-2"
+      "parlament": "bundestag"
     },
     {
       "url": "https://www.bundestag.de/abgeordnete/biografien/A/abraham_knut-1043342",
@@ -1408,8 +1407,7 @@
       "text": "Ince, Cem",
       "fraktion": "Die Linke",
       "amtlicheKennung": "ince_cem-1045160",
-      "parlament": "bundestag",
-      "bestandsId": "cem-ince"
+      "parlament": "bundestag"
     },
     {
       "url": "https://www.bundestag.de/abgeordnete/biografien/S/1047276-1047276",
@@ -1717,24 +1715,21 @@
       "text": "Kleebank, Helmut",
       "fraktion": "SPD",
       "amtlicheKennung": "kleebank_helmut-1045402",
-      "parlament": "bundestag",
-      "bestandsId": "helmut-kleebank"
+      "parlament": "bundestag"
     },
     {
       "url": "https://www.bundestag.de/abgeordnete/biografien/K/klose_annika-1045438",
       "text": "Klose, Annika",
       "fraktion": "SPD",
       "amtlicheKennung": "klose_annika-1045438",
-      "parlament": "bundestag",
-      "bestandsId": "annika-klose"
+      "parlament": "bundestag"
     },
     {
       "url": "https://www.bundestag.de/abgeordnete/biografien/S/stuewe_ruppert-1047638",
       "text": "Stüwe, Ruppert",
       "fraktion": "SPD",
       "amtlicheKennung": "stuewe_ruppert-1047638",
-      "parlament": "bundestag",
-      "bestandsId": "ruppert-st-we"
+      "parlament": "bundestag"
     },
     {
       "url": "https://www.bundestag.de/abgeordnete/biografien/A/abdi_sanae-1043330",
@@ -3513,96 +3508,81 @@
       {
         "fraktion": "Bündnis 90/Die Grünen",
         "verzeichnis": 85,
-        "ausgewaehlt": 58,
-        "davonBestand": 0
+        "ausgewaehlt": 58
       },
       {
         "fraktion": "CDU/CSU",
         "verzeichnis": 208,
-        "ausgewaehlt": 142,
-        "davonBestand": 1
+        "ausgewaehlt": 142
       },
       {
         "fraktion": "Die Linke",
         "verzeichnis": 64,
-        "ausgewaehlt": 44,
-        "davonBestand": 1
+        "ausgewaehlt": 44
       },
       {
         "fraktion": "SPD",
         "verzeichnis": 120,
-        "ausgewaehlt": 83,
-        "davonBestand": 3
+        "ausgewaehlt": 83
       },
       {
         "fraktion": "fraktionslos",
         "verzeichnis": 3,
-        "ausgewaehlt": 3,
-        "davonBestand": 0
+        "ausgewaehlt": 3
       }
     ],
     "be": [
       {
         "fraktion": "CDU-Fraktion",
         "verzeichnis": 52,
-        "ausgewaehlt": 43,
-        "davonBestand": 0
+        "ausgewaehlt": 43
       },
       {
         "fraktion": "Die Linke Fraktion",
         "verzeichnis": 20,
-        "ausgewaehlt": 17,
-        "davonBestand": 0
+        "ausgewaehlt": 17
       },
       {
         "fraktion": "Fraktion Bündnis 90/Die Grünen",
         "verzeichnis": 33,
-        "ausgewaehlt": 28,
-        "davonBestand": 0
+        "ausgewaehlt": 28
       },
       {
         "fraktion": "SPD-Fraktion",
         "verzeichnis": 36,
-        "ausgewaehlt": 30,
-        "davonBestand": 0
+        "ausgewaehlt": 30
       },
       {
         "fraktion": "fraktionslos",
         "verzeichnis": 2,
-        "ausgewaehlt": 2,
-        "davonBestand": 0
+        "ausgewaehlt": 2
       }
     ],
     "bb": [
       {
         "fraktion": "BSW-Fraktion",
         "verzeichnis": 8,
-        "ausgewaehlt": 7,
-        "davonBestand": 0
+        "ausgewaehlt": 7
       },
       {
         "fraktion": "CDU-Fraktion",
         "verzeichnis": 12,
-        "ausgewaehlt": 10,
-        "davonBestand": 0
+        "ausgewaehlt": 10
       },
       {
         "fraktion": "SPD-Fraktion",
         "verzeichnis": 34,
-        "ausgewaehlt": 29,
-        "davonBestand": 0
+        "ausgewaehlt": 29
       },
       {
         "fraktion": "WfB-Gruppe",
         "verzeichnis": 3,
-        "ausgewaehlt": 3,
-        "davonBestand": 0
+        "ausgewaehlt": 3
       },
       {
         "fraktion": "fraktionslos",
         "verzeichnis": 1,
-        "ausgewaehlt": 1,
-        "davonBestand": 0
+        "ausgewaehlt": 1
       }
     ]
   },
@@ -3684,6 +3664,7 @@
     "Partei, Ausschuesse, Mandatsart, Regionen und Funktionen einzeln amtlich belegen",
     "Parteien- und Rollenvielfalt vor Nachrichtenauswertung pruefen; Partei nicht aus Fraktion ableiten",
     "Keine AfD-Zugehoerigkeit, auch nicht bei fraktionslosen Abgeordneten; ungeklärte Faelle nicht importieren",
-    "Bestehende Testkennungen erst nach abgeschlossener Pruefung zuordnen; Bestandsprofile schuetzen; keine Aktivierung"
-  ]
+    "Bestehende Testkennungen erst nach abgeschlossener Pruefung zuordnen; alle500 gleich pruefen und vor versehentlichen Aenderungen schuetzen; keine Aktivierung"
+  ],
+  "gesamtbestandsregel": "Exakt500 gleich behandelte Testprofile, keine zusaetzliche oder bevorzugte Bestandsgruppe. Identitaetsabgleich und Bindung an bestehende Profilkennungen fuer alle500 vor dem Import."
 }

@@ -137,3 +137,6 @@ trennt Produktziel, ausgerollte Absicherung und noch offene fachliche Abnahme.
 > `freigabepunkte.md`, `readiness-verdict-2026-07.md`, `pilot-mandant.md`,
 > `helmut_datenmotor_thread2_handoff.md`, `audit/*`. Diese Dokumente tragen
 > Historisch-Banner und bleiben nur als Beleg erhalten.
+
+Betreiberpraezisierung27.09.: exakt500 Profile insgesamt, alle gleich behandeln.
+Keine gesonderte Bestandsgruppe; gleiche Auswahl-, Versorgungs- und Pruefregeln.

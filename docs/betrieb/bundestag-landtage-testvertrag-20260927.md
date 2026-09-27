@@ -30,9 +30,9 @@ Die Zielverteilung ist jetzt330 Bundestag/120 Berlin/50 Brandenburg.
 
 ## Realistischer Profilbestand
 
-- Die fuenf Bestandsprofile bleiben erhalten und technisch geschuetzt.
-  Die495 weiteren Profile werden als eindeutig gekennzeichnete Testabbilder
-  realer Abgeordneter vorbereitet, ohne diese als echte Kunden auszugeben.
+- Exakt500 Zielprofile insgesamt, alle als eindeutig gekennzeichnete Testabbilder
+  realer Abgeordneter, ohne diese als echte Kunden auszugeben. Keine gesonderte
+  Bestandsgruppe und keine Sonderbehandlung frueher manuell angelegter Profile.
 - Vor Nachrichtenauswahl und Lauf eine feste Auswahlmatrix beschliessen:
   Bundestag/Landtag, konkrete Landesparlamente, Parteien UND Fraktionen,
   Wahlkreis/Listeneinzug, Rollen und unterschiedliche Themen. Die genaue
@@ -87,7 +87,7 @@ Repositorystand00311d70 vor dieser Dokumentationsaenderung:
 - Die [4/500-Gegenprobe](versorgung-500-20260927.md) belegt die Auswahl auf dem
   bisherigen Bestand, keine realistische ebenenuebergreifende Abnahme.
 
-Naechster Sprint: Vorab-Auswahlmatrix und Feldbelegschema fuer die495 Testabbilder
+Naechster Sprint: Vorab-Auswahlmatrix und Feldbelegschema fuer alle500 Zielprofile
 festlegen; vorhandene Landespfade und offizielle Profilquellen rein lesend dagegen
 pruefen. Daraus die kleinsten notwendigen Code-/Importkorrekturen ableiten.
 Kein pauschaler Umbau und kein blinder500er Import. Recherche allein ist weder

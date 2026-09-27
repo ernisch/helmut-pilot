@@ -109,8 +109,8 @@ erzählen.
 **Aktueller vorgeschalteter Schritt:** Den bisherigen Platzhalterbestand durch
 einen vorab festgelegten, quellenbelegten Profil- und Pruefplan fuer Bundestag
 und die priorisierten Landesparlamente Berlin/Brandenburg ersetzen. Die anderen
-Laender in diesem Sprint nicht vorziehen. Fuenf Bestandsprofile erhalten, fuer die495 Testabbilder
-reale oeffentliche Mandatsdaten recherchieren. Vor einem Import die genaue
+Laender in diesem Sprint nicht vorziehen. Fuer alle500 Zielprofile reale oeffentliche Mandatsdaten recherchieren;
+keine gesonderte Bestandsgruppe. Vor einem Import die genaue
 Mischung, vertretenen Landesparlamente, Parteien/Fraktionen, Rollen und Themen
 sowie Erwartungen je Profil festhalten; fehlende Unterstuetzung offen bilanzieren.
 Die bisherige4/500-Auswahl ist kein Nachweis realistischer Personalisierung und
@@ -139,8 +139,8 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 5. Profilbestand auf exakt 500 Zielprofile bereinigen und finalen rein lesenden
    Startplan fuer beide Mandatsebenen belegen. Ergebnisse zusaetzlich je Ebene,
    vertretenem Landesparlament und Partei/Fraktion bilanzieren; ein Gesamtwert
-   darf keine unversorgte Teilgruppe verdecken. Alle 500 werden funktional gleich behandelt. Die fünf realen
-   Bestandsprofile bleiben nur technisch vor versehentlichem Löschen geschützt.
+   darf keine unversorgte Teilgruppe verdecken. Alle500 werden bei Auswahl, Versorgung und Pruefung gleich behandelt;
+   derselbe Schutz vor versehentlichem Loeschen gilt fuer den gesamten Bestand.
    Zusätzliche Nichtzielprofile zuerst eindeutig identifizieren und nur dann
    entfernen. Danach: 0 aktive Profile vor Aktivierung, richtiger Production
    Commit, keine störenden Jobs oder Sperren, Endwächter und Rückweg auf 0 aktive
