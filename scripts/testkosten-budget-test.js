@@ -59,6 +59,48 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
       await assert.rejects(B.reserviere(ARGS, g.deps), { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
     }
   });
+  await test("Auftrag Version3 erlaubt exakt7USD inklusive; 1 Mikro darueber und falsche Paare sperren ohne Mutation", async () => {
+    const v3 = externGebunden => ({ version: 3, id: "offline-auftrag", abTag: DAY,
+      limit: 7000000, externGebunden });
+    const h = fixture();
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = v3(6788000); });
+    await B.reserviere(ARGS, h.deps);
+    assert.equal(B.auftragsStand(h.read(), DAY).gebundenMicroUsd, 7000000, "exakt7USD inklusive akzeptiert");
+    assert.equal(B.auftragsStand(h.read(), DAY).grenzeInklusive, true);
+    const before = h.read();
+    await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-auftragsgrenze-erreicht", kiNichtGesendet: true });
+    assert.deepEqual(h.read(), before, "1 Mikro darueber ohne Mutation");
+    for (const bad of [v3(6788001), { ...v3(0), version: 1, limit: 7000000 },
+      { ...v3(0), version: 2, limit: 7000000 }, { ...v3(0), version: 3, limit: 6000000 },
+      { ...v3(0), version: 3, limit: 4000000 }, { ...v3(0), version: 3, limit: 7000001 },
+      { ...v3(0), version: 2, limit: 4000000 }, { ...v3(0), version: 1, limit: 6000000 }]) {
+      const g = fixture(); await g.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = bad; });
+      const start = g.read();
+      await assert.rejects(B.reserviere(ARGS, g.deps), { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
+      assert.deepEqual(g.read(), start);
+    }
+  });
+  await test("Auftrag Version3 hebt den6USD-Tagesriegel nicht auf; Tageswechsel erhaelt Buchung und Reserve", async () => {
+    const f = fixture();
+    await f.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { version: 3, id: "offline-auftrag", abTag: DAY,
+      limit: 7000000, externGebunden: 0 }; });
+    const results = await Promise.allSettled(Array.from({ length: 40 }, () => B.reserviere(ARGS, f.deps)));
+    assert.equal(results.filter(r => r.status === "fulfilled").length, 28, "Tagesriegel6USD bleibt wirksam");
+    assert.equal(f.day().limit, 6000000);
+    assert.equal(B.belegt(f.day()), 5936000);
+    const h = fixture();
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { version: 3, id: "offline-auftrag", abTag: DAY,
+      limit: 7000000, externGebunden: 6576000 }; });
+    const ticket = await B.reserviere(ARGS, h.deps);
+    await assert.rejects(B.abschliessen(ticket, null, h.deps));
+    const alt = h.day(); h.advance(86400000);
+    await B.reserviere(ARGS, h.deps);
+    const before = h.read();
+    await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-auftragsgrenze-erreicht", kiNichtGesendet: true });
+    assert.deepEqual(h.read(), before); assert.deepEqual(h.day(), alt);
+    assert.equal(B.auftragsStand(h.read(), "2026-09-10").gebundenMicroUsd, 7000000,
+      "Kein Reset ueber Mitternacht");
+  });
   await test("Altes Tagesbuch bleibt bei4USD; falsche Buchpaare bleiben gesperrt", async () => {
     const h=fixture(); await B.reserviere(ARGS,h.deps);
     await h.storage.mutateAuthStore(s=>{s[B.KEY][DAY].version=1;s[B.KEY][DAY].limit=4000000;});
