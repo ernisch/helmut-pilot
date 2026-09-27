@@ -287,12 +287,12 @@ for (const e of ergebnis.ergebnisse) {
 // geprueften Ressort- (19), Aufgaben- (6), beratenden (2), Zusatzaufgaben- (3),
 // BMWSB-Aufgaben- (2), die Amthor-Einzelfallquittung (1) und die neue
 // Wahlausschuss-Aufgabenquittung (3) sowie die neue Jarzombek-Abteilungsquittung (1)
-// erhalten 37 zuvor offene Profile amtlich
-// abgeleitete Themen; ihre Achse schliesst sich ehrlich (54 -> 17). Vier
+// und die neue Kloeckner-Einzelfallquittung (1) erhalten 38 zuvor offene Profile amtlich
+// abgeleitete Themen; ihre Achse schliesst sich ehrlich (54 -> 16). Vier
 // Brandenburg- und zwei Berliner Mandate sind ueber die Mandatsartenquittungen
 // belegt (7 -> 1 region-fehlt; offen bleibt nur Engelmann).
-a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 17, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
-a.equal(ergebnis.gueltig, 482, "482 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
+a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 16, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
+a.equal(ergebnis.gueltig, 483, "483 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
 
 // Einzelpruefung (pruefeProfil) muss dieselbe Sprache sprechen wie die Mengenpruefung.
 for (let i = 0; i < datensaetze.length; i += 1) {
@@ -360,7 +360,7 @@ const landtagWeitere = datensaetze.filter((d) => d.parlament !== "bundestag" && 
 a.equal(landtagWeitere.length, 23, "Landtags-Gremien bleiben unveraendert erhalten");
 a.equal(landtagWeitere.every((d) => (d.weitereGremienBeleg || []).length === 0), true, "Landtagsgremien sind kein Bundestags-JSON-LD-Beleg");
 const btAchseOffen = btSonstige.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
-a.equal(btAchseOffen.length, 14, "44 Bundestagsprofile urspruenglich ohne belegte fachliche Achse, davon 9 ueber die Ressort-, 6 ueber die Aufgaben-, 2 ueber die beratenden, 3 ueber die Zusatzaufgaben-, 2 ueber die BMWSB-Aufgaben-, 1 ueber die Amthor-Einzelfall-, 3 ueber die Wahlausschuss-Aufgaben- und 1 ueber die Jarzombek-Abteilungsquittung geschlossen");
+a.equal(btAchseOffen.length, 13, "44 Bundestagsprofile urspruenglich ohne belegte fachliche Achse, davon 9 ueber die Ressort-, 6 ueber die Aufgaben-, 2 ueber die beratenden, 3 ueber die Zusatzaufgaben-, 2 ueber die BMWSB-Aufgaben-, 1 ueber die Amthor-Einzelfall-, 3 ueber die Wahlausschuss-Aufgaben-, 1 ueber die Jarzombek-Abteilungs- und 1 ueber die Kloeckner-Einzelfallquittung geschlossen");
 const btNurSonstigeGremien = btSonstige.filter((d) => (d.weitereGremienBeleg || []).length
   && (d.profil.ausschuesse || []).length === 0
   && (d.profil.stellvertretendeAusschuesse || []).length === 0);
@@ -392,21 +392,22 @@ for (const d of btSonstige) {
   for (const f of r.fehlend) btReadinessGruende[`fehlend:${f.feld}`] = (btReadinessGruende[`fehlend:${f.feld}`] || 0) + 1;
   for (const w of r.widersprueche) btReadinessGruende[`widerspruch:${w.feld}`] = (btReadinessGruende[`widerspruch:${w.feld}`] || 0) + 1;
 }
-// Siebenundzwanzig Bundestagsprofile mit zuvor offener fachlicher Achse schliessen sie ueber
+// Achtundzwanzig Bundestagsprofile mit zuvor offener fachlicher Achse schliessen sie ueber
 // die geprueften Ressort- (9), Aufgaben- (6), beratenden (2), Zusatzaufgaben- (3),
 // BMWSB-Aufgaben- (2), die Amthor-Einzelfallquittung (1), die
-// Wahlausschuss-Aufgabenquittung (3) und die Jarzombek-Abteilungsquittung (1):
-// 316 von 330 bereit, 14 verbleiben ohne fachliche Achse.
-a.equal(btBereit, 316, "316 von 330 Bundestagsprofilen sind bereit (vorher 179)");
-a.equal(btNichtBereit, 14, "14 Bundestagsprofile bleiben nicht bereit");
+// Wahlausschuss-Aufgabenquittung (3), die Jarzombek-Abteilungsquittung (1) und die
+// Kloeckner-Einzelfallquittung (1):
+// 317 von 330 bereit, 13 verbleiben ohne fachliche Achse.
+a.equal(btBereit, 317, "317 von 330 Bundestagsprofilen sind bereit (vorher 179)");
+a.equal(btNichtBereit, 13, "13 Bundestagsprofile bleiben nicht bereit");
 // Stefan Seidler (SSW, fraktionslos) wurde zuvor faelschlich als
 // Partei/Fraktionswiderspruch gezaehlt. Fraktionslosigkeit schliesst eine
 // Parteimitgliedschaft nicht aus; der Fix in profile-readiness entfernt nur diesen
-// Prueffehler. Seine beratende Achse ist inzwischen belegt; die 14 nicht-bereiten
+// Prueffehler. Seine beratende Achse ist inzwischen belegt; die 13 nicht-bereiten
 // Bundestagsprofile entstehen ausschliesslich aus offenen fachlichen Achsen.
 a.deepEqual(
   btReadinessGruende,
-  { "fehlend:schwerpunkt_oder_ausschuss": 14 },
+  { "fehlend:schwerpunkt_oder_ausschuss": 13 },
   "nur noch die offene fachliche Achse; der falsche Partei/Fraktionswiderspruch ist weg",
 );
 
@@ -565,6 +566,30 @@ for (const e of jarzombek.ergebnisse) {
   a.ok(!amthorByKennung.has(e.kennung), "Jarzombek muss disjunkt zur Amthor-Achse sein");
   a.ok(!wahlausschussByKennung.has(e.kennung), "Jarzombek muss disjunkt zur Wahlausschuss-Achse sein");
 }
+const kloeckner = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "kloeckner-praesidentinnen-aufgaben-1-20260927.json"), "utf8"));
+a.equal(kloeckner.umfang, 1, "Kloeckner-Einzelfallquittung muss genau 1 Fall umfassen");
+a.equal(kloeckner.bilanz.gesamt, 1, "Kloeckner-Einzelfallquittung: gesamt 1");
+a.equal(kloeckner.bilanz.Bund, 1, "der Kloeckner-Fall ist Bundestag");
+a.equal(kloeckner.ergebnisse.length, 1, "Kloeckner-Einzelfallquittung muss 1 Ergebnis tragen");
+const kloecknerByKennung = new Map(kloeckner.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(kloecknerByKennung.size, 1, "Kloeckner-Einzelfallquittungskennung muss eindeutig sein");
+a.deepEqual(kloeckner.ergebnisse[0].themen, ["Bundestagsverwaltung", "Parteienfinanzierung"], "genau die zwei freigegebenen Themen");
+a.equal(kloeckner.ergebnisse[0].abschnitt, "An der Spitze der Bundestagsverwaltung");
+for (const e of kloeckner.ergebnisse) {
+  a.ok(rollenByKennung.has(e.kennung), "Kloeckner-Achse muss eine der 54 urspruenglich offenen Fachachsen sein");
+  // Ihre 54er-Rolle ist ausdruecklich belegt (Bundestagspräsidentin) und bleibt erhalten.
+  a.equal(rollenByKennung.get(e.kennung).status, "belegt", "Kloeckner bleibt in der 54er Quittung belegt");
+  a.equal(e.status, "belegt", "Kloeckner-Einzelfall muss belegt sein");
+  a.equal(e.importfreigegeben, false, "keine Importfreigabe");
+  a.ok(!ressortByKennung.has(e.kennung), "Kloeckner muss disjunkt zur Ressortachse sein");
+  a.ok(!aufgabenByKennung.has(e.kennung), "Kloeckner muss disjunkt zur Aufgabenachse sein");
+  a.ok(!beratendeByKennung.has(e.kennung), "Kloeckner muss disjunkt zur beratenden Achse sein");
+  a.ok(!zusatzByKennung.has(e.kennung), "Kloeckner muss disjunkt zur Zusatzaufgabenachse sein");
+  a.ok(!bmwsbByKennung.has(e.kennung), "Kloeckner muss disjunkt zur BMWSB-Achse sein");
+  a.ok(!amthorByKennung.has(e.kennung), "Kloeckner muss disjunkt zur Amthor-Achse sein");
+  a.ok(!wahlausschussByKennung.has(e.kennung), "Kloeckner muss disjunkt zur Wahlausschuss-Achse sein");
+  a.ok(!jarzombekByKennung.has(e.kennung), "Kloeckner muss disjunkt zur Jarzombek-Achse sein");
+}
 const ressortProfil = datensaetze.filter((d) => d.ressortachsenQuittung);
 const aufgabenProfil = datensaetze.filter((d) => d.aufgabenachsenQuittung);
 const beratendeProfil = datensaetze.filter((d) => d.beratendeachsenQuittung);
@@ -573,6 +598,7 @@ const bmwsbProfil = datensaetze.filter((d) => d.bmwsbQuittung);
 const amthorProfil = datensaetze.filter((d) => d.amthorQuittung);
 const wahlausschussProfil = datensaetze.filter((d) => d.wahlausschussQuittung);
 const jarzombekProfil = datensaetze.filter((d) => d.jarzombekQuittung);
+const kloecknerProfil = datensaetze.filter((d) => d.kloecknerQuittung);
 const fachAchseOffen = datensaetze.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
 a.equal(ressortProfil.length, 19, "19 Profile tragen eine Ressortachse");
 a.equal(aufgabenProfil.length, 6, "6 Profile tragen eine Aufgabenachse");
@@ -582,13 +608,14 @@ a.equal(bmwsbProfil.length, 2, "2 Profile tragen eine BMWSB-Aufgabenachse");
 a.equal(amthorProfil.length, 1, "1 Profil traegt die Amthor-Einzelfallquittung");
 a.equal(wahlausschussProfil.length, 3, "3 Profile tragen eine Wahlausschuss-Aufgabenachse");
 a.equal(jarzombekProfil.length, 1, "1 Profil traegt die Jarzombek-Abteilungsquittung");
-a.equal(fachAchseOffen.length, 17, "54 - 19 - 6 - 2 - 3 - 2 - 1 - 3 - 1 = 17 Fachachsen bleiben offen");
+a.equal(kloecknerProfil.length, 1, "1 Profil traegt die Kloeckner-Einzelfallquittung");
+a.equal(fachAchseOffen.length, 16, "54 - 19 - 6 - 2 - 3 - 2 - 1 - 3 - 1 - 1 = 16 Fachachsen bleiben offen");
 a.deepEqual(
-  new Set([...fachAchseOffen, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil, ...zusatzProfil, ...bmwsbProfil, ...amthorProfil, ...wahlausschussProfil, ...jarzombekProfil].map((d) => d.kanonischeKennung)),
+  new Set([...fachAchseOffen, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil, ...zusatzProfil, ...bmwsbProfil, ...amthorProfil, ...wahlausschussProfil, ...jarzombekProfil, ...kloecknerProfil].map((d) => d.kanonischeKennung)),
   new Set(rollenByKennung.keys()),
-  "disjunkte Vereinigung aus 17 offenen + 19 Ressort- + 6 Aufgaben- + 2 beratenden + 3 Zusatzaufgaben- + 2 BMWSB- + 1 Amthor- + 3 Wahlausschuss- + 1 Jarzombek-Achse ergibt genau die 54er Quittung",
+  "disjunkte Vereinigung aus 16 offenen + 19 Ressort- + 6 Aufgaben- + 2 beratenden + 3 Zusatzaufgaben- + 2 BMWSB- + 1 Amthor- + 3 Wahlausschuss- + 1 Jarzombek- + 1 Kloeckner-Achse ergibt genau die 54er Quittung",
 );
-a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung && !d.zusaetzlicheaufgabenQuittung && !d.bmwsbQuittung && !d.amthorQuittung && !d.wahlausschussQuittung && !d.jarzombekQuittung), "offene Achse darf keine geschlossene Quittung tragen");
+a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung && !d.zusaetzlicheaufgabenQuittung && !d.bmwsbQuittung && !d.amthorQuittung && !d.wahlausschussQuittung && !d.jarzombekQuittung && !d.kloecknerQuittung), "offene Achse darf keine geschlossene Quittung tragen");
 let rollenBelegt = 0;
 let rollenOffen = 0;
 const zuHelmutProfilRollen = zuHelmutProfil; // echter Import-/Storage-Pfad (bestehender Export)
@@ -606,7 +633,7 @@ for (const d of datensaetze) {
   a.equal(q.status, e.status, "Rollenstatus muss der Quittung entsprechen");
   // Eine Amtsrolle allein ist keine Ausschussachse. Die fachliche Achse ist genau dann
   // geschlossen, wenn die gepruefte Ressort- oder Aufgabenquittung belegte Themen setzt.
-  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung || d.beratendeachsenQuittung || d.zusaetzlicheaufgabenQuittung || d.bmwsbQuittung || d.amthorQuittung || d.wahlausschussQuittung || d.jarzombekQuittung);
+  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung || d.beratendeachsenQuittung || d.zusaetzlicheaufgabenQuittung || d.bmwsbQuittung || d.amthorQuittung || d.wahlausschussQuittung || d.jarzombekQuittung || d.kloecknerQuittung);
   a.equal(achseGeschlossen, !d.offeneFelder.includes("fachlicheAchse"),
     `Achse muss genau dann geschlossen sein, wenn eine gepruefte Quittung greift (${d.kanonischeKennung})`);
   if (e.status === "offen") {
@@ -1236,6 +1263,93 @@ a.equal(gelesenJarzombek.profileActive, false, "Round-Trip bleibt aktiv=false");
   }
 }
 
+// ── 6m · Kloeckner-Einzelfallquittung: zwei Themen/Hinweis/Quelle verlustfrei, Rolle erhalten ──
+// Der zuvor offene Fachachsenfall Julia Klöckner wird ueber ihre amtlich belegten
+// Bundestagspraesidentinnen-Aufgaben geschlossen. Die kanonische Bundestags-Person wird
+// separat ueber ihre echte H1 UND den eigenen aktuellen Funktionstext der amtlichen
+// Profilseite (genau ein geschlossener div.m-biography__function) neu gebunden; die
+// bestehende aktuelle Rolle aus der 54er Quittung und alle bestehenden Quellen bleiben
+// unveraendert. Die Aufgaben stammen ausschliesslich aus dem ZWEITEN eigenen Absatz des
+// geschlossenen H2-Abschnitts "An der Spitze der Bundestagsverwaltung" der amtlichen
+// Praesidiumsseite; der erste Absatz, sonstige Praesidiums-/Aeltestenratsarbeit,
+// angrenzende Abschnitte und der --hidden-Linkhilfetext sind keine Personenaufgaben. Der
+// echte Pfad zuHelmutProfil -> toMandateProfileRow -> fromMandateProfileRow erhaelt Themen,
+// Hinweis und Rolle und bleibt aktiv=false. Partei bleibt unveraendert offen. KEIN Netz,
+// KEINE DB, KEIN Modell.
+a.equal(kloecknerProfil.length, 1, "genau ein Profil traegt die Kloeckner-Einzelfallquittung");
+const kloecknerDatensatz = kloecknerProfil[0];
+const kloecknerEintrag = kloecknerByKennung.get("bundestag-kloeckner-julia-1045434");
+a.ok(kloecknerEintrag, "Kloeckner-Einzelfallquittung fehlt");
+const KLOECKNER_THEMEN = ["Bundestagsverwaltung", "Parteienfinanzierung"];
+const kloecknerHinweis = `Aufgabenbindung Bund (amtlich abgeleitet): ${kloecknerEintrag.aufgabenbindung}; keine persönliche politische Position`;
+a.equal(kloecknerDatensatz.kanonischeKennung, "bundestag-kloeckner-julia-1045434");
+a.equal(kloecknerDatensatz.profil.partei, undefined, "Partei bleibt unveraendert offen");
+a.equal(kloecknerDatensatz.parteiStatus, "offen", "Parteistatus bleibt offen");
+a.deepEqual(kloecknerDatensatz.profil.themen, KLOECKNER_THEMEN, "genau die zwei freigegebenen Themen");
+a.ok(!kloecknerDatensatz.offeneFelder.includes("fachlicheAchse"), "Kloeckner-Achse schliesst die fachliche Achse");
+a.equal(kloecknerDatensatz.profil.aktiv, false, "Kloeckner bleibt aktiv=false");
+a.equal(kloecknerDatensatz.importfreigegeben, false, "Kloeckner bleibt importfreigegeben=false");
+a.equal(kloecknerDatensatz.kloecknerQuittung.datei, "docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json");
+a.equal(kloecknerDatensatz.kloecknerQuittung.person, "Julia Klöckner");
+a.equal(kloecknerDatensatz.kloecknerQuittung.funktion, "Bundestagspräsidentin");
+a.equal(kloecknerDatensatz.kloecknerQuittung.funktionstext, "Bundestagspräsidentin", "eigener aktueller Funktionstext der Profilseite");
+a.equal(kloecknerDatensatz.kloecknerQuittung.abschnitt, "An der Spitze der Bundestagsverwaltung");
+a.equal(kloecknerDatensatz.kloecknerQuittung.absatz, kloecknerEintrag.absatz, "zweiter eigener Absatz gebunden");
+a.ok(kloecknerDatensatz.kloecknerQuittung.absatz.includes("Parteienfinanzierung"), "Aufgabenabsatz traegt die Parteienfinanzierung");
+a.ok(!kloecknerDatensatz.kloecknerQuittung.absatz.includes("(Interner Link)"), "der --hidden-Linkhilfetext zaehlt nicht als Aufgabenprosa");
+// Kanonische Person (54er Quittung) und die amtliche Praesidiums-Quelle sind gebunden.
+const kloecknerRollenEintrag = rollenByKennung.get("bundestag-kloeckner-julia-1045434");
+a.equal(kloecknerRollenEintrag.status, "belegt", "die 54er Rolle bleibt belegt");
+a.equal(kloecknerDatensatz.kloecknerQuittung.personenquelle.url, kloecknerRollenEintrag.quelle.url,
+  "Personenquelle ist die kanonische Bundestags-Person");
+a.equal(kloecknerDatensatz.kloecknerQuittung.personenquelle.sha256, kloecknerRollenEintrag.quelle.sha256);
+a.equal(kloecknerDatensatz.quelle.url, kloecknerRollenEintrag.quelle.url, "Quell-URL bleibt an die amtliche Personenquelle gebunden");
+a.equal(kloecknerDatensatz.kloecknerQuittung.quelle.url, "https://www.bundestag.de/parlament/praesidium/funktion_neu");
+a.equal(kloecknerDatensatz.kloecknerQuittung.quelle.sha256, "d63f72c87b88a2b7d174386fe33137d45280707e311d779ede39136627d7c9cd");
+a.equal(kloecknerDatensatz.kloecknerQuittung.quelle.bytes, 257178);
+// Die bestehende 54er-Amtsrolle bleibt unveraendert erhalten; der Hinweis steht genau einmal;
+// es entsteht KEINE neue Funktionsrolle (kein Scheinausschuss).
+for (const f of kloecknerRollenEintrag.funktionen) {
+  a.ok((kloecknerDatensatz.profil.funktionen || []).includes(f.wortlaut), `bestehende 54er-Rolle muss erhalten bleiben (${f.wortlaut})`);
+}
+a.equal((kloecknerDatensatz.profil.funktionen || []).filter((x) => x === kloecknerHinweis).length, 1,
+  "Kloeckner: Herkunftshinweis genau einmal");
+for (const feld of ["ausschuesse", "stellvertretendeAusschuesse"]) {
+  for (const wert of kloecknerDatensatz.profil[feld] || []) {
+    a.ok(!["Bundestagsverwaltung", "Parteienfinanzierung"].includes(String(wert)), `kein Scheinausschuss aus ${feld}: ${wert}`);
+  }
+}
+const kloecknerQuelle = (kloecknerDatensatz.profil.offizielleQuellen || []).find((x) => x.art === "praesidentinnen-aufgabe");
+a.ok(kloecknerQuelle, "amtliche Praesidiums-Quelle fehlt in profil.offizielleQuellen");
+a.equal(kloecknerQuelle.url, kloecknerDatensatz.kloecknerQuittung.quelle.url);
+a.equal(kloecknerQuelle.sha256, kloecknerDatensatz.kloecknerQuittung.quelle.sha256);
+// Echter Verlustfreiheitspfad (keine DB, kein Netz): Themen, Rolle und Kennzeichnung.
+const gespeichertKloeckner = zuHelmutProfil(kloecknerDatensatz.profil);
+a.deepEqual(gespeichertKloeckner.focusTopics, KLOECKNER_THEMEN, "Importpfad muss die zwei Themen erhalten");
+a.ok(gespeichertKloeckner.function.includes(kloecknerHinweis), "Herkunftshinweis muss den Importpfad erreichen");
+for (const f of kloecknerRollenEintrag.funktionen) {
+  a.ok(gespeichertKloeckner.function.includes(f.wortlaut), "bestehende Rolle bleibt im Importpfad");
+}
+const zeileKloeckner = storage.toMandateProfileRow(gespeichertKloeckner);
+a.equal(zeileKloeckner.aktiv, false, "Storage-Zeile darf nicht aktivieren");
+const gelesenKloeckner = storage.fromMandateProfileRow({ id: kloecknerDatensatz.kanonischeKennung, name: kloecknerDatensatz.profil.vollname }, zeileKloeckner);
+a.deepEqual(gelesenKloeckner.focusTopics, KLOECKNER_THEMEN, "Themen ueberstehen den Storage-Roundtrip");
+a.ok(gelesenKloeckner.function.includes(kloecknerHinweis), "Hinweis uebersteht den Storage-Roundtrip");
+a.equal(gelesenKloeckner.profileActive, false, "Round-Trip bleibt aktiv=false");
+{
+  const { proximityScore } = require("../lib/helmut/scoring");
+  for (const thema of KLOECKNER_THEMEN) {
+    a.ok(proximityScore({ tags: [thema] }, { focusTopics: gelesenKloeckner.focusTopics }) > 0,
+      `exaktes Praesidentinnen-Thema muss treffen: ${thema}`);
+  }
+  // Negative Gegenproben: allgemeine Polizei-/Innenpolitik, Praesidiums-/Aeltestenratsarbeit,
+  // angrenzende Abschnitte und die erste Erklaerung duerfen NICHT treffen.
+  for (const fremd of ["Polizeigewalt", "Hausrecht", "Innenpolitik", "Plenarsitzungen", "Ältestenrat", "Präsidium", "Staatsempfänge"]) {
+    a.equal(proximityScore({ tags: [fremd] }, { focusTopics: gelesenKloeckner.focusTopics }), 0,
+      `fremdes/allgemeines Thema darf nicht treffen: ${fremd}`);
+  }
+}
+
 // ── 7 · Reproduzierbarkeit (nur mit lokalen Arbeitsdateien + python3) ────────────────────
 let reproduzierbar = "uebersprungen (lokale Eingangsdateien oder python3 fehlen)";
 const eingangVorhanden = fs.existsSync(path.join(STANDARD_EINGANG, "bundestagsprofile-330-abruf.json"))
@@ -1255,4 +1369,4 @@ if (eingangVorhanden && python) {
   reproduzierbar = "byte-identisch neu erzeugt";
 }
 
-console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (482 technisch importierbar, 18 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung Brandenburg (4 Landeslisten) und Berlin (2 Profile: Martin Bezirksliste Marzahn-Hellersdorf, Lux Landesliste; Handbuch-PDF Seite 204 linke Spalte, wörtliche Transkription, exakter H2/H3/Personlink, echter Import-/Storage-Roundtrip, Engelmann bleibt offen), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei), Aufgabenquittung (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14 Themenbegriffe und Herkunftshinweise verlustfrei, 14 exakte Themengegenproben, Mast disjunkt zu Griese), Beratende Achsenquittung (2 beratende Ausschussachsen: Knodel Landwirtschaft/Ernaehrung/Heimat + Seidler Haushalt, 4 Kurzthemen und getrennte Ableitungshinweise verlustfrei, bestehende beratende Funktion erhalten, keine ordentliche/stellvertretende Mitgliedschaft, keine endDate-Rolle), Zusatzaufgabenquittung (3 Fachzustaendigkeiten: Breher Tierschutz mit genau einer neuen Funktionsrolle + erhaltener PSts-Rolle, Krichbaum Europa aus der aktuellen AA-Seitenkopf-H1, Kippels BMG-Abteilungen 1/4/5/6 mit 12 Kurzthemen aus visuell abgenommenem PDF-Fachurteil; 14 Kurzthemen und getrennte Herkunftshinweise verlustfrei, Fremdthemen ohne Treffer), BMWSB-Aufgabenquittung (2 personengebundene BMWSB-Unterbereichsachsen: Bartol Z I 3/W II/S I/B I/B II, Poschmann Z II/W I/S II/S III; 18 Kurzthemen und getrennte Herkunftshinweise verlustfrei, kanonische v10-Adresse 669957 Bytes, bestehende PSts-Rolle erhalten, keine Hochstufung auf ganze Abteilungen, keine Scheinausschuesse, Fremdthemen der anderen Person ohne Treffer), Amthor-Einzelfallquittung (1 zuvor offener Rollenfall: aktuelle Rolle Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler seit 29. Juli 2026 aus geschlossenem bpa-richtext-Lebenslauf, Thema Bund-Laender-Beziehungen aus genau einem echten li der Personalien-h2, historischer 54er-Eintrag bleibt offen, kein Digitalamt als aktuell, Fremdthema Digitalisierung ohne Treffer), Wahlausschuss-Aufgabenquittung (3 sonstige Gremien-Achsen: Haßelmann/Hoffmann/Miersch, aktuelle Wahlausschuss-Mitgliedschaft eigenstaendig aus genau einem ProfilePage.mainEntity in genau einer echten Role mit exaktem roleName/startDate ohne endDate, enges Thema Richter des Bundesverfassungsgerichts aus dem geschlossenen aktuellen Gremienaufgabenabsatz mit 21. Wahlperiode, sonstiges Gremium und bestehende Funktionen unveraendert, keine Scheinausschuesse, Fremdthemen ohne Treffer), Jarzombek-Abteilungsquittung (1 zuvor offener Fachachsenfall: BMDS-Abteilungen DS/DI/DW aus genau EINER echten geschlossenen HTML-Karte article#c5755 mit exaktem H2-Personenlink auf die kanonische Personen-URL und dem amtlichen Organigramm-JSON excludePersonalData=true Stand 2026-08-15, das JSON belegt nur Abteilungskennungen/-titel, NICHT die Person; vier Themen Deutschland-Stack/Digitale Infrastrukturen/Digitalpolitik/Wirtschaft und getrennter Herkunftshinweis verlustfrei, bestehende 54er-PSts-Rolle und Quellen erhalten, keine neue Funktionsrolle, keine Scheinausschuesse, Fremdabteilungen ohne Treffer), Bundestags-Readiness (316/330 bereit; 17 Fachachsen bleiben offen), Reproduzierbarkeit: " + reproduzierbar);
+console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (483 technisch importierbar, 17 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung Brandenburg (4 Landeslisten) und Berlin (2 Profile: Martin Bezirksliste Marzahn-Hellersdorf, Lux Landesliste; Handbuch-PDF Seite 204 linke Spalte, wörtliche Transkription, exakter H2/H3/Personlink, echter Import-/Storage-Roundtrip, Engelmann bleibt offen), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei), Aufgabenquittung (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14 Themenbegriffe und Herkunftshinweise verlustfrei, 14 exakte Themengegenproben, Mast disjunkt zu Griese), Beratende Achsenquittung (2 beratende Ausschussachsen: Knodel Landwirtschaft/Ernaehrung/Heimat + Seidler Haushalt, 4 Kurzthemen und getrennte Ableitungshinweise verlustfrei, bestehende beratende Funktion erhalten, keine ordentliche/stellvertretende Mitgliedschaft, keine endDate-Rolle), Zusatzaufgabenquittung (3 Fachzustaendigkeiten: Breher Tierschutz mit genau einer neuen Funktionsrolle + erhaltener PSts-Rolle, Krichbaum Europa aus der aktuellen AA-Seitenkopf-H1, Kippels BMG-Abteilungen 1/4/5/6 mit 12 Kurzthemen aus visuell abgenommenem PDF-Fachurteil; 14 Kurzthemen und getrennte Herkunftshinweise verlustfrei, Fremdthemen ohne Treffer), BMWSB-Aufgabenquittung (2 personengebundene BMWSB-Unterbereichsachsen: Bartol Z I 3/W II/S I/B I/B II, Poschmann Z II/W I/S II/S III; 18 Kurzthemen und getrennte Herkunftshinweise verlustfrei, kanonische v10-Adresse 669957 Bytes, bestehende PSts-Rolle erhalten, keine Hochstufung auf ganze Abteilungen, keine Scheinausschuesse, Fremdthemen der anderen Person ohne Treffer), Amthor-Einzelfallquittung (1 zuvor offener Rollenfall: aktuelle Rolle Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler seit 29. Juli 2026 aus geschlossenem bpa-richtext-Lebenslauf, Thema Bund-Laender-Beziehungen aus genau einem echten li der Personalien-h2, historischer 54er-Eintrag bleibt offen, kein Digitalamt als aktuell, Fremdthema Digitalisierung ohne Treffer), Wahlausschuss-Aufgabenquittung (3 sonstige Gremien-Achsen: Haßelmann/Hoffmann/Miersch, aktuelle Wahlausschuss-Mitgliedschaft eigenstaendig aus genau einem ProfilePage.mainEntity in genau einer echten Role mit exaktem roleName/startDate ohne endDate, enges Thema Richter des Bundesverfassungsgerichts aus dem geschlossenen aktuellen Gremienaufgabenabsatz mit 21. Wahlperiode, sonstiges Gremium und bestehende Funktionen unveraendert, keine Scheinausschuesse, Fremdthemen ohne Treffer), Jarzombek-Abteilungsquittung (1 zuvor offener Fachachsenfall: BMDS-Abteilungen DS/DI/DW aus genau EINER echten geschlossenen HTML-Karte article#c5755 mit exaktem H2-Personenlink auf die kanonische Personen-URL und dem amtlichen Organigramm-JSON excludePersonalData=true Stand 2026-08-15, das JSON belegt nur Abteilungskennungen/-titel, NICHT die Person; vier Themen Deutschland-Stack/Digitale Infrastrukturen/Digitalpolitik/Wirtschaft und getrennter Herkunftshinweis verlustfrei, bestehende 54er-PSts-Rolle und Quellen erhalten, keine neue Funktionsrolle, keine Scheinausschuesse, Fremdabteilungen ohne Treffer), Kloeckner-Einzelfallquittung (1 zuvor offener Fachachsenfall: Bundestagspräsidentin, kanonische Person separat ueber echte H1 + eigenen aktuellen Funktionstext div.m-biography__function neu gebunden, bestehende 54er-Rolle erhalten; die zwei Themen Bundestagsverwaltung/Parteienfinanzierung stammen aus dem ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts 'An der Spitze der Bundestagsverwaltung', der erste Absatz und angrenzende Abschnitte sind keine Personenaufgaben, der --hidden-Linkhilfetext zaehlt nicht, Partei bleibt offen, Fremdthemen ohne Treffer), Bundestags-Readiness (317/330 bereit; 16 Fachachsen bleiben offen), Reproduzierbarkeit: " + reproduzierbar);
