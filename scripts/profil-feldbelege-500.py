@@ -231,6 +231,14 @@ def _parteinachweis(eingang: Eingang, eintrag: dict, extraktion: dict) -> dict:
             raise AssemblerFehler(
                 f"Parteipruefung und Abruf haben unterschiedliche Quellhashes fuer {eintrag['url']}."
             )
+        if quelle.get("status") == "offen":
+            abruf = eingang.abruf_by_url[eintrag["url"]]
+            original = (eingang.detailseiten / abruf["datei"]).read_text(encoding="utf-8")
+            kopf = re.search(r"<h1\b[^>]*>.*?</h1>(.*?)<h2\b", original, re.S)
+            if kopf and re.search(r"<p>\s*parteilos\s*<br\s*/?>", kopf.group(1), re.I):
+                return {"status": "parteilos", "partei": None, "beleg": "parteilos",
+                        "grund": "ausdrueckliche aktuelle Angabe im amtlichen Profilkopf",
+                        "herkunft": "detailseiten-HTML zwischen h1 und erstem h2; p beginnt mit parteilos"}
         if quelle.get("status") == "belegt" and quelle.get("partei"):
             wert = str(quelle["partei"]).strip()
             # "parteilos" ist kein Parteiname, sondern ein belegter Status ohne Partei.

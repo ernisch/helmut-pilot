@@ -1,6 +1,6 @@
 {
   "status": "Offline-Feldbelege fuer exakt 500 Zielprofile (Bundestag/Berlin/Brandenburg); technische Zusammenstellung, KEINE fachliche Freigabe und kein Importmanifest",
-  "erstelltAm": "2026-09-27T14:04:13+00:00",
+  "erstelltAm": "2026-09-27T14:10:00+00:00",
   "vertragsformat": "helmut-mandatsprofil/1",
   "grundlage": {
     "namensauswahl": "docs/betrieb/500-namensauswahl-20260927.json",
@@ -38,12 +38,12 @@
     "aktivFalse": 500,
     "importfreigegebenFalse": 500,
     "parteiBelegt": 163,
-    "parteiParteilos": 1,
-    "parteiOffen": 336,
+    "parteiParteilos": 2,
+    "parteiOffen": 335,
     "mandatsartOffen": 7,
     "fachlicheAchseOffen": 72,
     "offeneFelder": {
-      "partei": 336,
+      "partei": 335,
       "fachlicheAchse": 72,
       "mandatsart": 7,
       "wahlbezirk": 1,
@@ -51916,12 +51916,12 @@
         ]
       },
       "mandatsartBelegt": null,
-      "parteiStatus": "offen",
+      "parteiStatus": "parteilos",
       "parteiBeleg": {
         "partei": null,
-        "beleg": "",
-        "grund": "Mitgliedschaft Mai 2024 bis November 2025 beendet",
-        "herkunft": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)"
+        "beleg": "parteilos",
+        "grund": "ausdrueckliche aktuelle Angabe im amtlichen Profilkopf",
+        "herkunft": "detailseiten-HTML zwischen h1 und erstem h2; p beginnt mit parteilos"
       },
       "feldbelege": {
         "vollname": "h1",
@@ -51930,7 +51930,8 @@
         "ausschuesse": "Ordentliche Ausschuss- und Gremienmitgliedschaften; nur Ausschusslinks, andere Gremien separat",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
-        "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)"
+        "partei": "detailseiten-HTML zwischen h1 und erstem h2; p beginnt mit parteilos",
+        "parteiStatus": "amtlich belegt parteilos, NICHT als Parteiname uebernommen: parteilos"
       },
       "weitereGremien": [],
       "h1Abgleich": true,
@@ -51939,11 +51940,9 @@
         "Mandatsart/Wahlkreis nicht extrahierbar"
       ],
       "offenePunkte": [
-        "Parteizugehoerigkeit nicht belegt: Mitgliedschaft Mai 2024 bis November 2025 beendet",
         "Mandatsart bleibt offen; amtlicher Profilkopf enthaelt keine Mandatsangabe"
       ],
       "offeneFelder": [
-        "partei",
         "mandatsart"
       ],
       "importfreigegeben": false,

@@ -66,14 +66,19 @@ Landesliste“; 6 Brandenburg aus „gewaehlt als Direktkandidat(in) im Wahlkrei
 (…)“). Die Rohangabe steht je Datensatz in `mandatsartBelegt` und in den
 `feldbelege`. Ohne ausdrueckliche Angabe bleibt die Mandatsart offen.
 
+Andre von Ossowski ist im amtlichen Profilkopf ausdruecklich als **parteilos**
+bezeichnet. Dieser vorhandene, hashgebundene Beleg schliesst einen der vier
+bislang offenen Brandenburger Parteifaelle; die fruehere Flash-Teilpruefung
+bleibt als historischer Lauf unveraendert. Keine Ableitung aus Fraktionslosigkeit.
+
 ## Bilanz 500 (aus dem Beleg-JSON)
 
 | Parlament | Datensaetze | Partei belegt | Partei offen | fachliche Achse offen | Mandatsart offen |
 |---|---:|---:|---:|---:|---:|
 | Bundestag | 330 | 0 | 330 | 59 | 0 |
 | Landtag Berlin | 120 | 118 | 2 | 5 | 3 |
-| Landtag Brandenburg | 50 | 45 (+1 parteilos) | 4 | 8 | 4 |
-| **Gesamt** | **500** | **163** | **336** | **72** | **7** |
+| Landtag Brandenburg | 50 | 45 (+2 parteilos) | 3 | 8 | 4 |
+| **Gesamt** | **500** | **163 (+2 parteilos)** | **335** | **72** | **7** |
 
 Weitere offene Felder: `wahlbezirk` 1 (Berlin: Wahlkreisnummer ohne Bezirksnamen),
 `regionbezug` 28 (Brandenburg: nur grober regionaler Bezug),

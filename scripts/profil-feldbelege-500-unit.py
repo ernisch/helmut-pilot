@@ -32,4 +32,8 @@ with tempfile.TemporaryDirectory() as tmp:
         pass
     else:
         raise AssertionError('Abweichende Partei wurde nicht gesperrt')
+    (root / 'profil.html').write_text('<h1>Erika Muster</h1><p>parteilos<br />Amt</p><h2>Lebenslauf</h2>')
+    eingang.partei_by_url = {url: dict(sha256=quelle['sha256'], status='offen')}
+    auswahl['parlament'] = 'landtag-brandenburg'
+    assert m._parteinachweis(eingang, auswahl, extraktion)['status'] == 'parteilos'
 print('PASS: Fraktionslosigkeit erhaelt belegte Partei; abweichender Parteienwert gesperrt.')

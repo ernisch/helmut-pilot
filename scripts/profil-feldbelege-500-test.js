@@ -105,15 +105,15 @@ for (const d of datensaetze) {
   }
   parteiStatus[d.parteiStatus] += 1;
 }
-a.equal(parteiStatus.offen, 336, "336 Profile ohne belegte Partei (330 Bundestag + 6 Fraktionslose)");
+a.equal(parteiStatus.offen, 335, "335 Profile ohne belegte Partei (330 Bundestag + 2 Berlin + 3 Brandenburg)");
 a.equal(parteiStatus.belegt, 163, "163 belegte Parteien (118 Berlin + 45 Brandenburg)");
-a.equal(parteiStatus.parteilos, 1, "genau ein amtlich belegtes 'parteilos'");
+a.equal(parteiStatus.parteilos, 2, "zwei amtlich belegte parteilose Profile");
 
-// Brandenburg kommt aus der Parteipruefung: 45 Parteien, 4 offen, 1 parteilos.
+// Brandenburg kommt aus der Parteipruefung: 45 Parteien, 3 offen, 2 parteilos.
 const bb = datensaetze.filter((d) => d.parlament === "landtag-brandenburg");
 const bbStatus = {};
 for (const d of bb) bbStatus[d.parteiStatus] = (bbStatus[d.parteiStatus] || 0) + 1;
-a.deepEqual(bbStatus, { belegt: 45, offen: 4, parteilos: 1 }, "Brandenburg: 46 belegt / 4 offen");
+a.deepEqual(bbStatus, { belegt: 45, offen: 3, parteilos: 2 }, "Brandenburg: 47 geklaert / 3 offen");
 
 // ── 5 · Mandatsachse: Wahlkreiskandidatur ist kein Direktmandat ───────────────────────────
 const btDirekt = datensaetze.filter((d) => d.parlament === "bundestag" && d.profil.wahlkreis).length;
