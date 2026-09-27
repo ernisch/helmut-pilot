@@ -7,6 +7,8 @@ const { berlinTagKey } = require("../lib/helmut/briefing-frische");
 const K = require("../lib/helmut/testkosten-budget");
 
 const QUITTUNG = "bereichspaket-20260927-a";
+const NACHARBEIT_QUITTUNG = "bereichspaket-20260927-b";
+const NACHARBEIT_FREIGABE = "EIN_BEREICHSPAKET_NACHARBEIT_MAX_ZWEI_AUFRUFE";
 // Fester Vollhash des ausgewaehlten Bestandsprofils. Der Klartextname steht
 // bewusst NICHT im Repository.
 const PROFIL_HASH = "0178727cc56dc0c9b8a0d17a655bfe434b0aecab80b92debed92e74175a4b869";
@@ -107,22 +109,39 @@ function lesebeweis(fach) {
     vorgaenge: Array.isArray(fach?.briefing?.items) ? fach.briefing.items.length : null });
 }
 
+// Ein einziger fachlich begruendeter Folgeauftrag; kein allgemeiner Retrypfad.
+// Die verbrauchte Quittung a und das bereits importierte Fachurteil bleiben stehen.
+function pruefeNacharbeit(v, cfg) {
+  fordere(v?.quittungsschluessel === QUITTUNG && v.runId === "nachlauf500-36311505665"
+    && v.runtimeCommit === "b3a7ffaf5ee48c57c590c090fec24ae7219ab12f"
+    && v.status === "gestoppt" && v.ok === false && v.fachlichPositiv === false
+    && v.paketVollstaendig === false && v.lageHash === null
+    && v.grund === "kein-vollstaendiges-paket" && v.ergebnisGrund === "ai-text-source-support"
+    && v.diagnose?.absatz === 1 && hash(v.diagnose.fehler) === hash(["profilbezug-fehlt"])
+    && v.freigegebeneAufrufe === 2 && v.laufkostenUsd === 0.019921 && v.offeneKosten === 0
+    && v.profileUnveraendert === true && v.tag === cfg.tag && v.idHash === cfg.profilHash
+    && v.eingabeHash === cfg.eingabeBindung && v.urteilHash === cfg.urteilHash, "nacharbeit-vorgaenger");
+}
+
 async function einmallauf(cfg, d) {
   const start = d.now(), grundlinie = await d.ruhe(), profile = await d.profile();
   fordere(profile?.id && bindung(profile) === cfg.profilHash && profile.profileActive === false, "profil");
   fordere(!(await d.quittung()), "quittung-verbraucht");
   const vorhanden = await d.tagessatz(profile.id);
-  fordere(!vorhanden?.lage && !vorhanden?.briefing && !vorhanden?.urteil, "bestehender-tagessatz");
+  fordere(!vorhanden?.lage && !vorhanden?.briefing
+    && (cfg.nacharbeit ? Boolean(vorhanden?.urteil) : !vorhanden?.urteil), "bestehender-tagessatz");
   const fach = await d.fachlicheEingabe(profile), beleg = lesebeweis(fach);
   fordere(beleg.eingabeHash === cfg.eingabeBindung, "eingabe-abweichend");
+  if (cfg.nacharbeit) await d.pruefeVorhandenesUrteil(profile, fach);
   let calls = 0;
   const pruefe = async (speichern = false) => {
     const [kosten, auftrag, laufkosten, bestand] = await Promise.all(
       [d.kosten(), d.auftrag(), d.laufkosten(), d.bestand()]);
     const stand = { calls, start, jetzt: d.now(), kosten, auftrag, laufkosten, bestand, grundlinie };
     (speichern ? pruefeSpeichern : pruefeAufruf)(stand);
-    const frisch = lesebeweis(await d.fachlicheEingabe(profile));
+    const fachFrisch = await d.fachlicheEingabe(profile), frisch = lesebeweis(fachFrisch);
     fordere(frisch.eingabeHash === beleg.eingabeHash, "eingabe-veraendert");
+    if (cfg.nacharbeit) await d.pruefeVorhandenesUrteil(profile, fachFrisch);
     // Auch die Reads duerfen das Zeitfenster nicht verbrauchen.
     (speichern ? pruefeSpeichern : pruefeAufruf)({ ...stand, jetzt: d.now() });
   };
@@ -133,7 +152,8 @@ async function einmallauf(cfg, d) {
   const lock = await d.acquire();
   fordere(lock?.granted === true && lock.active === true, "sperre");
   let claimed = false;
-  const receipt = { quittungsschluessel: QUITTUNG, runId: cfg.runId, idHash: cfg.profilHash,
+  const receipt = { quittungsschluessel: cfg.nacharbeit ? NACHARBEIT_QUITTUNG : QUITTUNG,
+    runId: cfg.runId, idHash: cfg.profilHash,
     runtimeCommit: cfg.commit, tag: cfg.tag, eingabeHash: cfg.eingabeBindung, urteilHash: cfg.urteilHash,
     maxUsd: MAX_USD, maxMs: MAX_MS, maxAufrufe: MAX_AUFRUFE,
     gestartetAm: new Date(start).toISOString() };
@@ -141,8 +161,10 @@ async function einmallauf(cfg, d) {
   try {
     fordere(await d.claim({ ...receipt, status: "laeuft" }), "verbraucht"); claimed = true;
     await pruefe();
-    const imported = await d.importiere(profile, () => pruefe());
-    fordere(imported?.verwendbar === true && imported.gespeichert === true, "urteilsimport");
+    if (!cfg.nacharbeit) {
+      const imported = await d.importiere(profile, () => pruefe());
+      fordere(imported?.verwendbar === true && imported.gespeichert === true, "urteilsimport");
+    }
     const basis = await d.eingabe(profile);
     fordere(basis?.bereit === true && basis.eingabeHash === cfg.eingabeBindung, "urteilleser");
     const lage = await d.lage(profile, { missingOnly: true, costRunId: cfg.costRunId,
@@ -186,12 +208,13 @@ async function einmallauf(cfg, d) {
 }
 
 async function main(args = process.argv.slice(2), env = process.env) {
-  fordere(args.length === 1 && ["--plan", "--execute"].includes(args[0]), "argumente");
-  const execute = args[0] === "--execute";
+  fordere(args.length === 1 && ["--plan", "--execute", "--nacharbeit-plan", "--nacharbeit-execute"].includes(args[0]), "argumente");
+  const nacharbeit = args[0].startsWith("--nacharbeit-");
+  const execute = args[0] === "--execute" || args[0] === "--nacharbeit-execute";
   const B = require("./verstehen-einmalig-169");
-  const cfg = konfiguration(env, B.echterCommit(), Date.now(),
-    env.HELMUT_BEREICHSPAKET_TAG || null, execute);
-  fordere(!execute || env.HELMUT_BEREICHSPAKET_FREIGABE === FREIGABE, "freigabe");
+  const cfg = Object.freeze({ ...konfiguration(env, B.echterCommit(), Date.now(),
+    env.HELMUT_BEREICHSPAKET_TAG || null, execute), nacharbeit });
+  fordere(!execute || env.HELMUT_BEREICHSPAKET_FREIGABE === (nacharbeit ? NACHARBEIT_FREIGABE : FREIGABE), "freigabe");
   const S = require("../lib/helmut/storage"), A = require("../lib/helmut/briefing-aussagenbindung");
   const Sp = require("../lib/helmut/briefing-speicher"), Q = require("../lib/helmut/lage-quellenbeleg");
   const echterBuilder = require("../server").__buildV3Briefing;
@@ -218,6 +241,11 @@ async function main(args = process.argv.slice(2), env = process.env) {
   const stage = await read("helmut_store", "select=data&id=eq.bereichsurteil-vorlage-20260927-b&limit=2");
   fordere(stage.length === 1 && hash(stage[0].data) === cfg.urteilHash, "urteilsvorlage");
   const urteil = stage[0].data;
+  if (nacharbeit) {
+    const v = await read("helmut_store", "select=data&id=eq." + QUITTUNG + "&limit=2");
+    fordere(v.length === 1, "nacharbeit-vorgaenger");
+    pruefeNacharbeit(v[0].data, cfg);
+  }
   const fachlicheEingabe = async p => leseSchritt("fachaufbau", async () => {
     const result = await buildV3(p, p.id, { aussagenEingabe: true, aussagenKorrektur: urteil.korrektur, now: new Date() });
     I.pruefeUrteil(result, urteil);
@@ -270,7 +298,8 @@ async function main(args = process.argv.slice(2), env = process.env) {
         const found = profiles.filter(p => bindung(p) === cfg.profilHash);
         fordere(found.length === 1, "auswahl"); return found[0];
       },
-      quittung: async () => (await read("helmut_store", "select=data&id=eq." + QUITTUNG + "&limit=1"))[0]?.data || null,
+      quittung: async () => (await read("helmut_store", "select=data&id=eq."
+        + (nacharbeit ? NACHARBEIT_QUITTUNG : QUITTUNG) + "&limit=1"))[0]?.data || null,
       tagessatz: async id => leseSchritt("tagessaetze", async () => ({
         lage: await S.getRenderedBriefingV3(id, LAGE_SLOT, cfg.tag, { strict: true }),
         briefing: await S.getRenderedBriefingV3(id, Sp.SLOT, cfg.tag, { strict: true }),
@@ -279,6 +308,12 @@ async function main(args = process.argv.slice(2), env = process.env) {
         await S.leseLlmTageszaehler(new Date().toISOString()))),
       laufkosten: () => (execute ? K.laufGebundenUsd(cfg.costRunId, { env }) : 0),
       fachlicheEingabe,
+      pruefeVorhandenesUrteil: async (p, fach) => {
+        const row = await S.getRenderedBriefingV3(p.id, A.SLOT, cfg.tag, { strict: true });
+        fordere(row?.payload?.importbeleg?.productionCommit === "b3a7ffaf5ee48c57c590c090fec24ae7219ab12f"
+          && hash(row.payload.urteil) === cfg.urteilHash, "nacharbeit-urteil");
+        I.pruefeZeile(row, fach, { gelesen: true });
+      },
       importiere: async (p, gate) => {
         const context = await leseKontext(p.id);
         return I.ausfuehren({ userId: p.id, urteil, storage: S, build: buildV3, leseKontext,
@@ -310,6 +345,6 @@ if (require.main === module) main().then(c => { process.exitCode = c; }).catch(e
   process.exitCode = 1;
 });
 
-module.exports = { QUITTUNG, PROFIL_HASH, FREIGABE, MAX_AUFRUFE, MAX_MS, MAX_USD,
+module.exports = { QUITTUNG, NACHARBEIT_QUITTUNG, NACHARBEIT_FREIGABE, pruefeNacharbeit, PROFIL_HASH, FREIGABE, MAX_AUFRUFE, MAX_MS, MAX_USD,
   ENTWURF_TOKENS, REVIEW_TOKENS, konfiguration, pruefeKosten, pruefeAufruf, volleReserveUsd,
   bindung, lesebeweis, pruefeSpeichern, einmallauf, main, leseSchritt };

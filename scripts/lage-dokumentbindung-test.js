@@ -303,4 +303,24 @@ const euSanktionReview = { pruefungen: [{ absatz: 0, quelle_id: "q-eu-sanktion",
 assert.equal(Q.pruefe([euSanktionAbsatz], euSanktionQuellen, euSanktionReview, aussenProfil).ok, true,
   "eine echte Ueberschrift mit konkretem EU-Sanktionsbeschluss bleibt zulaessig");
 
-console.log("Dokumentbindungsgruppen: Einzelquelle, Mandatsauswahl, fachliche Zustaendigkeit, Akteursbeleg, getrenntes Mandatsurteil sowie Titel- und Fülltextgrenze.");
+// Anonymisierte Regression des belegten Fehlers27.09.: ein Mediathektitel
+// belegt die Namensnennung, aber keinen erfundenen fachlichen Redeinhalt.
+const namensProfil = { committees: ["Arbeit und Soziales"] };
+const namensQuelle = [{ vorgang_id: "vg-namensbeleg", quellenbelege: [{
+  quelle_id: "q-namensbeleg", titel: "97. Sitzung, TOP37: Rede von Beispielperson",
+  auszug: "", url: "https://example.org/mediathek" }] }];
+const namensAbsatz = [{ text: "Die Mediathek listet eine Rede von Beispielperson in der97. Sitzung.",
+  vorgang_ids: ["vg-namensbeleg"], quelle_id: "q-namensbeleg",
+  mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } }];
+const namensReview = { pruefungen: [{ absatz: 0, quelle_id: "q-namensbeleg", belegfeld: "titel",
+  pruefbegruendung: "Der Titel nennt ausschliesslich Sitzung und Redner, keinen fachlichen Inhalt.",
+  vollstaendig_belegt: true, themenrein: true, profilbezug: false, textart: "fuelltext",
+  mandatsbegruendung: "Arbeit und Soziales: Ohne Redeinhalt ist kein sachlicher Ausschussbezug belegt." }], vergleiche: [] };
+const namensResult = Q.pruefe(namensAbsatz, namensQuelle, namensReview, namensProfil);
+assert.equal(namensResult.ok, false);
+assert(namensResult.diagnose.fehler.includes("profilbezug-fehlt"));
+for(const p of [ai.buildLageBriefingPrompt(namensQuelle,namensProfil), Q.prompt(namensAbsatz,namensQuelle,namensProfil)]) {
+  assert(p.includes(Q.NAMENSBELEG_REGEL));
+  assert(p.includes(namensQuelle[0].quellenbelege[0].titel), "Namensbeleg bleibt unveraendert erhalten, kein Quellenwegschneiden");
+}
+console.log("Dokumentbindungsgruppen: Einzelquelle, Mandatsauswahl, fachliche Zustaendigkeit, Akteursbeleg, getrenntes Mandatsurteil sowie Titel-, Namensbeleg- und Fülltextgrenze.");
