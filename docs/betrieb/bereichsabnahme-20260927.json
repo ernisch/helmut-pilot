@@ -1,0 +1,33 @@
+{
+  "bereit": true,
+  "grund": null,
+  "bereichstrennungBestanden": true,
+  "vollstaendigeFaktenpruefung": false,
+  "funktionsnachweis500": false,
+  "eingabeHash": "f34fbc78ffeb4cdb91ad21092f0d854d4c7fe94c6903d19b26330d17e674a788",
+  "urteilHash": "972a6e926b1dcb886a36af6cbd9753e5de79625cbaeb4b77ff51f74b9e75ada9",
+  "vergleiche": [
+    {
+      "paar": "briefing/lage",
+      "urteil": "getrennt"
+    },
+    {
+      "paar": "briefing/radar",
+      "urteil": "getrennt"
+    },
+    {
+      "paar": "lage/radar",
+      "urteil": "getrennt"
+    }
+  ],
+  "methode": "separates-semantisches-urteil-drei-gerenderte-ansichten",
+  "bedeutungUnabhaengigBewiesen": false,
+  "art": "Production-Paket mit ausgerolltem Client und Speicheradapter lokal gerendert",
+  "rendererCommit": "a6817214ee8bb52e4eb18f778206670b55fff134",
+  "deploymentId": "dpl_HNHoWWbtbmp3KtqpcjVguPhhLtAY",
+  "modellErzeugungRun": "36312820431",
+  "modellLaufkostenUsd": 0.02299,
+  "browserAbnahme": false,
+  "aktuelleProductionVersorgungBelegt": false,
+  "hinweis": "Alle drei vollstaendigen gerenderten Texte samt Lage-Details manuell semantisch beurteilt. Kein unabhaengiger Bedeutungsbeweis und kein aktueller Live-App-/500er Nachweis."
+}
