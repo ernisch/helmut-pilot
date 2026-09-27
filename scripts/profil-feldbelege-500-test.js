@@ -212,14 +212,12 @@ for (const e of ergebnis.ergebnisse) {
   a.equal(e.mandatsId, datensaetze[e.index].kanonischeKennung, "Kennung im Importvertrag weicht ab");
 }
 // Die fachliche Achse ist nur offen, wenn WEDER ein ordentlicher NOCH ein
-// stellvertretender belegter Ausschuss vorliegt: 22 Bundestagsprofile tragen
-// ausschliesslich stellvertretende Mitgliedschaften und sind daher nicht mehr
-// "schwerpunkt-fehlt". Vier Bundestagsprofile verlieren mit der Gremien-Trennung
-// eine Scheinausschussachse (Wahlausschuss ist kein staendiger Ausschuss) und
-// werden daher ehrlich wieder offen (50 -> 54). Vier Brandenburg-Mandate sind
-// ueber die Mandatsartenquittung belegt (7 -> 3 region-fehlt).
-a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 54, "region-fehlt": 3 }, "offene Felder muessen genau die bekannten Luecken sein");
-a.equal(ergebnis.gueltig, 443, "443 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
+// stellvertretender belegter Ausschuss NOCH ein belegtes Thema vorliegt. Ueber die
+// gepruefte Ressortquittung erhalten 19 zuvor offene Profile amtlich
+// abgeleitete Ressortthemen; ihre Achse schliesst sich ehrlich (54 -> 35). Vier
+// Brandenburg-Mandate sind ueber die Mandatsartenquittung belegt (7 -> 3 region-fehlt).
+a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 35, "region-fehlt": 3 }, "offene Felder muessen genau die bekannten Luecken sein");
+a.equal(ergebnis.gueltig, 462, "462 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
 
 // Einzelpruefung (pruefeProfil) muss dieselbe Sprache sprechen wie die Mengenpruefung.
 for (let i = 0; i < datensaetze.length; i += 1) {
@@ -287,7 +285,7 @@ const landtagWeitere = datensaetze.filter((d) => d.parlament !== "bundestag" && 
 a.equal(landtagWeitere.length, 23, "Landtags-Gremien bleiben unveraendert erhalten");
 a.equal(landtagWeitere.every((d) => (d.weitereGremienBeleg || []).length === 0), true, "Landtagsgremien sind kein Bundestags-JSON-LD-Beleg");
 const btAchseOffen = btSonstige.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
-a.equal(btAchseOffen.length, 41, "37 + 4 Bundestagsprofile ohne belegte fachliche Achse");
+a.equal(btAchseOffen.length, 32, "41 Bundestagsprofile ohne belegte fachliche Achse, davon 9 ueber die Ressortquittung geschlossen");
 const btNurSonstigeGremien = btSonstige.filter((d) => (d.weitereGremienBeleg || []).length
   && (d.profil.ausschuesse || []).length === 0
   && (d.profil.stellvertretendeAusschuesse || []).length === 0);
@@ -302,6 +300,7 @@ a.deepEqual(
 // Bundestagsprofilen, gespeist ueber den echten Importvertrag zuHelmutProfil.
 const { bewerteBundestagsprofil } = require("../lib/helmut/profile-readiness.js");
 const { zuHelmutProfil } = require("../lib/helmut/profil-import.js");
+const storage = require("../lib/helmut/storage.js");
 let btBereit = 0;
 let btNichtBereit = 0;
 const btReadinessGruende = {};
@@ -318,16 +317,18 @@ for (const d of btSonstige) {
   for (const f of r.fehlend) btReadinessGruende[`fehlend:${f.feld}`] = (btReadinessGruende[`fehlend:${f.feld}`] || 0) + 1;
   for (const w of r.widersprueche) btReadinessGruende[`widerspruch:${w.feld}`] = (btReadinessGruende[`widerspruch:${w.feld}`] || 0) + 1;
 }
-a.equal(btBereit, 289, "289 von 330 Bundestagsprofilen sind bereit (vorher 179)");
-a.equal(btNichtBereit, 41, "41 Bundestagsprofile bleiben nicht bereit");
+// Neun Bundestagsprofile mit zuvor offener fachlicher Achse schliessen sie ueber die
+// gepruefte Ressortquittung: 289 + 9 = 298 bereit, 41 - 9 = 32 nicht bereit.
+a.equal(btBereit, 298, "298 von 330 Bundestagsprofilen sind bereit (vorher 179)");
+a.equal(btNichtBereit, 32, "32 Bundestagsprofile bleiben nicht bereit");
 // Stefan Seidler (SSW, fraktionslos) wurde zuvor faelschlich als
 // Partei/Fraktionswiderspruch gezaehlt. Fraktionslosigkeit schliesst eine
 // Parteimitgliedschaft nicht aus; der Fix in profile-readiness entfernt nur diesen
-// Prueffehler. Seine fehlende fachliche Achse bleibt unabhaengig offen, deshalb
-// sinkt die Zahl der nicht-bereiten Profile NICHT (289/41 unveraendert).
+// Prueffehler. Seine fehlende fachliche Achse bleibt unabhaengig offen; die 32
+// nicht-bereiten Profile entstehen ausschliesslich aus offenen fachlichen Achsen.
 a.deepEqual(
   btReadinessGruende,
-  { "fehlend:schwerpunkt_oder_ausschuss": 41 },
+  { "fehlend:schwerpunkt_oder_ausschuss": 32 },
   "nur noch die offene fachliche Achse; der falsche Partei/Fraktionswiderspruch ist weg",
 );
 
@@ -346,13 +347,31 @@ for (const e of rollen.ergebnisse) {
   if (e.status === "offen") a.deepEqual(e.funktionen, [], "offener Eintrag darf keine Rolle tragen");
   else a.ok(e.funktionen.length > 0, "belegter Eintrag braucht eine Rolle");
 }
+// Die geprueften 19 Ressortachsen schliessen die fachliche Achse dieser Profile ueber
+// amtlich abgeleitete Ressortthemen. Die 54er Rollenquittung bleibt deckungsgleich:
+// disjunkte Vereinigung aus 35 verbleibend offenen + 19 geschlossenen = 54.
+const ressort = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "ressortachsen-19-20260927.json"), "utf8"));
+a.equal(ressort.bilanz.gesamt, 19, "Ressortquittung muss 19 Profile umfassen");
+a.equal(ressort.bilanz.Bund, 9, "9 Bund-Ressortachsen");
+a.equal(ressort.bilanz.Berlin, 4, "4 Berlin-Ressortachsen");
+a.equal(ressort.bilanz.Brandenburg, 6, "6 Brandenburg-Ressortachsen");
+a.equal(ressort.ergebnisse.length, 19, "Ressortquittung muss 19 Ergebnisse tragen");
+const ressortByKennung = new Map(ressort.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(ressortByKennung.size, 19, "Ressortquittungskennungen muessen eindeutig sein");
+for (const e of ressort.ergebnisse) {
+  a.ok(rollenByKennung.has(e.kennung), "Ressortachse muss eine der 54 offenen Fachachsen sein");
+  a.equal(e.status, "belegt", "Ressortachse muss belegt sein");
+}
+const ressortProfil = datensaetze.filter((d) => d.ressortachsenQuittung);
 const fachAchseOffen = datensaetze.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
-a.equal(fachAchseOffen.length, 54, "54 Profile bleiben ohne belegte fachliche Achse");
+a.equal(ressortProfil.length, 19, "19 Profile tragen eine Ressortachse");
+a.equal(fachAchseOffen.length, 35, "54 - 19 = 35 Fachachsen bleiben offen");
 a.deepEqual(
-  new Set(fachAchseOffen.map((d) => d.kanonischeKennung)),
+  new Set([...fachAchseOffen, ...ressortProfil].map((d) => d.kanonischeKennung)),
   new Set(rollenByKennung.keys()),
-  "die Quittung muss genau die 54 offenen Fachachsen abdecken",
+  "disjunkte Vereinigung aus 35 offenen + 19 geschlossenen Achsen ergibt genau die 54er Quittung",
 );
+a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung), "offene Achse darf keine Ressortquittung tragen");
 let rollenBelegt = 0;
 let rollenOffen = 0;
 const zuHelmutProfilRollen = zuHelmutProfil; // echter Import-/Storage-Pfad (bestehender Export)
@@ -368,8 +387,11 @@ for (const d of datensaetze) {
   a.equal(q.url, d.quelle.url, "Rollenbeleg muss an die amtliche Quell-URL gebunden sein");
   a.equal(q.sha256, d.quelle.sha256, "Rollenbeleg muss denselben Quellhash binden");
   a.equal(q.status, e.status, "Rollenstatus muss der Quittung entsprechen");
-  // Die fachliche Achse bleibt in JEDEM Fall offen: eine Amtsrolle ist keine Ausschussachse.
-  a.ok(d.offeneFelder.includes("fachlicheAchse"), `Achse darf nicht geschlossen werden (${d.kanonischeKennung})`);
+  // Eine Amtsrolle allein ist keine Ausschussachse. Die fachliche Achse ist genau dann
+  // geschlossen, wenn die gepruefte Ressortquittung belegte Ressortthemen setzt.
+  const achseGeschlossen = Boolean(d.ressortachsenQuittung);
+  a.equal(achseGeschlossen, !d.offeneFelder.includes("fachlicheAchse"),
+    `Achse muss genau dann geschlossen sein, wenn die Ressortquittung greift (${d.kanonischeKennung})`);
   if (e.status === "offen") {
     rollenOffen += 1;
     a.deepEqual(q.funktionen, [], "ein offener Eintrag haengt keine Rolle an");
@@ -393,6 +415,50 @@ for (const d of datensaetze) {
 a.equal(rollenBelegt, 48, "48 Profile tragen eine belegte Amtsrolle");
 a.equal(rollenOffen, 6, "6 Profile bleiben ohne neue Rolle offen");
 
+// ── 6e · Ressortachse: Verlustfreier Import-/Storage-Round-Trip inkl. Kennzeichnung ──────
+// Fuer ALLE 19 Profile: Ressortbegriffe und ein separater Herkunftshinweis aus dem
+// amtlichem Ressort; die zuvor offene fachliche Achse ist geschlossen; die Zusatzquelle ist
+// vollstaendig gebunden; der echte Pfad zuHelmutProfil -> toMandateProfileRow ->
+// fromMandateProfileRow erhaelt die Themen UND getrennte Ableitungskennzeichnung und bleibt
+// aktiv=false. KEIN Netz, KEINE DB, KEIN Modell.
+a.equal(ressortProfil.reduce((n, d) => n + d.profil.themen.length, 0), 39, "39 ausdrueckliche Ressortbegriffe");
+for (const d of ressortProfil) {
+  const e = ressortByKennung.get(d.kanonischeKennung);
+  a.ok(e, `Ressortquittung fehlt fuer ${d.kanonischeKennung}`);
+  const hinweis = `Ressortzuständigkeit ${e.region} (amtlich abgeleitet): ${e.ressort}; keine persönliche politische Position`;
+  a.deepEqual(d.profil.themen, e.themen, "genau der freigegebene Themenwortlaut");
+  a.ok(!d.offeneFelder.includes("fachlicheAchse"), "Ressortachse schliesst die fachliche Achse");
+  a.equal(d.profil.aktiv, false, "Ressortprofil bleibt aktiv=false");
+  a.equal(d.importfreigegeben, false, "Ressortprofil bleibt importfreigegeben=false");
+  a.equal(d.ressortachsenQuittung.datei, "docs/betrieb/ressortachsen-19-20260927.json");
+  a.equal(d.ressortachsenQuittung.region, e.region);
+  a.equal(d.ressortachsenQuittung.ressort, e.ressort);
+  a.equal(d.ressortachsenQuittung.zitat, e.zitat);
+  a.equal(d.ressortachsenQuittung.quelle.url, e.quelle.url);
+  a.equal(d.ressortachsenQuittung.quelle.sha256, e.quelle.sha256);
+  const zusatz = (d.profil.offizielleQuellen || []).find((x) => x.art === "ressort-zustaendigkeit");
+  a.ok(zusatz, "amtliche Zusatzquelle fehlt in profil.offizielleQuellen");
+  a.equal(zusatz.url, e.quelle.url, "Zusatzquelle muss die amtliche URL binden");
+  a.equal(zusatz.sha256, e.quelle.sha256, "Zusatzquelle muss den Quellhash binden");
+  // Echter Verlustfreiheitspfad (keine DB, kein Netz): Themen inkl. Kennzeichnung.
+  const gespeichert = zuHelmutProfil(d.profil);
+  a.deepEqual(gespeichert.focusTopics, e.themen, "Importpfad muss den Themenwortlaut erhalten");
+  const zeile = storage.toMandateProfileRow(gespeichert);
+  a.equal(zeile.aktiv, false, "Storage-Zeile darf nicht aktivieren");
+  const gelesen = storage.fromMandateProfileRow({ id: d.kanonischeKennung, name: d.profil.vollname }, zeile);
+  a.deepEqual(gelesen.focusTopics, e.themen, "Ressortthemen muessen verlustfrei erhalten bleiben");
+  a.ok(gelesen.function.includes(hinweis), "Ableitungskennzeichnung bleibt im Rollenkontext erhalten");
+  a.equal(d.profil.funktionen.filter(x => x === hinweis).length, 1);
+  const { proximityScore } = require("../lib/helmut/scoring");
+  // Isolierter Themenbezug: kein Name, keine Partei oder Region als Ersatztreffer.
+  for (const thema of e.themen) {
+    a.ok(proximityScore({ tags: [thema] }, { focusTopics: gelesen.focusTopics }) > 0,
+      `Echter Themenabgleich muss nach Round-Trip greifen: ${thema}`);
+  }
+  a.equal(proximityScore({ tags: ["Unbelegtes Fremdthema"] }, { focusTopics: gelesen.focusTopics }), 0);
+  a.equal(gelesen.profileActive, false, "Round-Trip bleibt aktiv=false");
+}
+
 // ── 7 · Reproduzierbarkeit (nur mit lokalen Arbeitsdateien + python3) ────────────────────
 let reproduzierbar = "uebersprungen (lokale Eingangsdateien oder python3 fehlen)";
 const eingangVorhanden = fs.existsSync(path.join(STANDARD_EINGANG, "bundestagsprofile-330-abruf.json"))
@@ -412,4 +478,4 @@ if (eingangVorhanden && python) {
   reproduzierbar = "byte-identisch neu erzeugt";
 }
 
-console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (443 technisch importierbar, 57 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung (4 Brandenburg-Landeslisten), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen, 54 Fachachsen unveraendert offen), Bundestags-Readiness (289/330 bereit), Reproduzierbarkeit: " + reproduzierbar);
+console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (462 technisch importierbar, 38 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung (4 Brandenburg-Landeslisten), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei, 39 exakte Themengegenproben durch zuHelmutProfil->toMandateProfileRow->fromMandateProfileRow, 35 Fachachsen bleiben offen), Bundestags-Readiness (298/330 bereit), Reproduzierbarkeit: " + reproduzierbar);

@@ -126,15 +126,19 @@ abgrenzen und korrigieren, dann die frische Versorgung unter Punkt3 nachweisen.
 Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
-Naechster offener Teilschritt:74 Parteifelder und die ausgewiesenen Mandats-/
-Fachachsen einzeln belegen;443 technische Erfolge sind keine fachliche Importfreigabe.
+Naechster offener Teilschritt:die 74 Parteifelder und die verbleibenden Mandats-/
+Fachachsen einzeln belegen;462 technische Erfolge sind keine fachliche Importfreigabe.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
-Die 54 fachlich offenen Profile tragen ueber die gepruefte
-[Rollenquittung](betrieb/profilrollen-54-20260927.json) jetzt 48 belegte Amtsrollen
+Die 54 urspruenglich fachlich offenen Profile tragen ueber die gepruefte
+[Rollenquittung](betrieb/profilrollen-54-20260927.json) 48 belegte Amtsrollen
 in `profil.funktionen` (dedupliziert angehaengt, 6 offen); das ist keine fachliche
-Achse, 443/57 und alle 54 offenen Achsen bleiben unveraendert.
-Naechster Fachschritt: verbleibende aktuelle Parteibelege, Mandatsarten und Themenachsen.
+Achse. Ueber die gepruefte [Ressortquittung](betrieb/ressortachsen-19-20260927.json)
+sind 19 dieser Achsen mit amtlich abgeleiteten Ressortthemen geschlossen
+(9 Bund/4 Berlin/6 Brandenburg); die 54er Rollenquittung bleibt deckungsgleich,
+35 Achsen bleiben offen. Stand:462/38. Die drei separat geprueften Zusatzrollen
+bleiben weiter offen und sind nicht integriert.
+Naechster Fachschritt: verbleibende aktuelle Parteibelege, Mandatsarten und Fachachsen.
 
 1. Die gemeinsame semantische Trennung der tatsächlich sichtbaren Texte aus
    Briefing, Lage und Radar technisch absichern und mit echten Helmut Ausgaben

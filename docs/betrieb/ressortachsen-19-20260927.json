@@ -1,0 +1,547 @@
+{
+  "version": 1,
+  "datum": "2026-09-27",
+  "zweck": "Roadmap §3: 19 fehlende fachliche Achsen aus aktuellen amtlichen Ressortzustaendigkeiten; begrenzte gepruefte Ableitung.",
+  "pruefung": "Orchestrator: 19 Rollen aus der geprueften 48er Quittung mit aktuellen amtlichen Kabinetts-/Senatslisten gegengeprueft. Zitat zusammenhaengend mit Name und Ressort; URL/Hash/Abrufzeit gesichert. Ableitungskennzeichnung bleibt im Themenwortlaut durch Import und Speicherung erhalten. Nachpruefung: Themen als ausdrueckliche Ressortbegriffe fuer exakten Abgleich; Ableitungskennzeichnung als zusaetzlicher Funktionenhinweis erhalten, nicht als Themenbestandteil. Kein Produktfilter geaendert.",
+  "bilanz": {
+    "gesamt": 19,
+    "Bund": 9,
+    "Berlin": 4,
+    "Brandenburg": 6
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-baer-dorothee-1043526",
+      "region": "Bund",
+      "status": "belegt",
+      "amtsrolle": "Bundesministerin für Forschung, Technologie und Raumfahrt",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/baer_dorothee-1043526",
+        "sha256": "597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519",
+        "abgerufenAm": "2026-09-27T12:59:57.956556+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+        "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+        "bytes": 157668,
+        "datei": "kabinett-breg-aktuell.html"
+      },
+      "zitat": "Dorothee Bär Lebenslauf Bundesministerin für Forschung, Technologie und Raumfahrt",
+      "ressort": "Forschung, Technologie und Raumfahrt",
+      "themen": [
+        "Forschung",
+        "Technologie",
+        "Raumfahrt"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Forschung, Technologie und Raumfahrt; keine persönliche politische Position"
+    },
+    {
+      "kennung": "bundestag-bilger-steffen-1048434",
+      "region": "Bund",
+      "status": "belegt",
+      "amtsrolle": "Bundesminister für Verkehr",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/bilger_steffen-1048434",
+        "sha256": "8cfd7dd1d6347c6fdb6ecbf9419e9ceca2058a47323ac7ca56adf5a6ed0ba969",
+        "abgerufenAm": "2026-09-27T13:00:01.066704+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+        "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+        "bytes": 157668,
+        "datei": "kabinett-breg-aktuell.html"
+      },
+      "zitat": "Steffen Bilger Lebenslauf Bundesminister für Verkehr",
+      "ressort": "Verkehr",
+      "themen": [
+        "Verkehr"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Verkehr; keine persönliche politische Position"
+    },
+    {
+      "kennung": "bundestag-dobrindt-alexander-1044072",
+      "region": "Bund",
+      "status": "belegt",
+      "amtsrolle": "Bundesminister des Innern",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/D/dobrindt_alexander-1044072",
+        "sha256": "4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb",
+        "abgerufenAm": "2026-09-27T13:00:10.703288+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+        "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+        "bytes": 157668,
+        "datei": "kabinett-breg-aktuell.html"
+      },
+      "zitat": "Alexander Dobrindt Lebenslauf Bundesminister des Innern",
+      "ressort": "Inneres",
+      "themen": [
+        "Inneres"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Inneres; keine persönliche politische Position"
+    },
+    {
+      "kennung": "bundestag-linnemann-carsten-1048896",
+      "region": "Bund",
+      "status": "belegt",
+      "amtsrolle": "Bundesminister für Gesundheit",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/L/linnemann_carsten-1048896",
+        "sha256": "fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00",
+        "abgerufenAm": "2026-09-27T13:00:47.810312+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+        "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+        "bytes": 157668,
+        "datei": "kabinett-breg-aktuell.html"
+      },
+      "zitat": "Dr. Carsten Linnemann Lebenslauf Bundesminister für Gesundheit",
+      "ressort": "Gesundheit",
+      "themen": [
+        "Gesundheit"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Gesundheit; keine persönliche politische Position"
+    },
+    {
+      "kennung": "bundestag-alabali-radovan-reem-1043386",
+      "region": "Bund",
+      "status": "belegt",
+      "amtsrolle": "Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/A/alabali_radovan_reem-1043386",
+        "sha256": "d9d26417605ec59441ba35141afb225fe03a9141bb064d90cceeda862c349ab4",
+        "abgerufenAm": "2026-09-27T13:01:30.735187+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+        "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+        "bytes": 157668,
+        "datei": "kabinett-breg-aktuell.html"
+      },
+      "zitat": "Reem Alabali Radovan Lebenslauf Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung",
+      "ressort": "wirtschaftliche Zusammenarbeit und Entwicklung",
+      "themen": [
+        "wirtschaftliche Zusammenarbeit und Entwicklung"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): wirtschaftliche Zusammenarbeit und Entwicklung; keine persönliche politische Position"
+    },
+    {
+      "kennung": "bundestag-bas-baerbel-1043554",
+      "region": "Bund",
+      "status": "belegt",
+      "amtsrolle": "Bundesministerin für Arbeit und Soziales",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/bas_baerbel-1043554",
+        "sha256": "8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92",
+        "abgerufenAm": "2026-09-27T13:01:32.582199+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+        "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+        "bytes": 157668,
+        "datei": "kabinett-breg-aktuell.html"
+      },
+      "zitat": "Bärbel Bas Lebenslauf Bundesministerin für Arbeit und Soziales",
+      "ressort": "Arbeit und Soziales",
+      "themen": [
+        "Arbeit",
+        "Soziales"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Arbeit und Soziales; keine persönliche politische Position"
+    },
+    {
+      "kennung": "bundestag-hubertz-verena-1045124",
+      "region": "Bund",
+      "status": "belegt",
+      "amtsrolle": "Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hubertz_verena-1045124",
+        "sha256": "5b7f34a4e7cd146e4fbdbee4da34828816f2cd48b29fe3c74c3d2255a6d2a85f",
+        "abgerufenAm": "2026-09-27T13:01:49.706971+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+        "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+        "bytes": 157668,
+        "datei": "kabinett-breg-aktuell.html"
+      },
+      "zitat": "Verena Hubertz Lebenslauf Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen",
+      "ressort": "Wohnen, Stadtentwicklung und Bauwesen",
+      "themen": [
+        "Wohnen",
+        "Stadtentwicklung",
+        "Bauwesen"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Wohnen, Stadtentwicklung und Bauwesen; keine persönliche politische Position"
+    },
+    {
+      "kennung": "bundestag-klingbeil-lars-1045428",
+      "region": "Bund",
+      "status": "belegt",
+      "amtsrolle": "Bundesminister der Finanzen",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/klingbeil_lars-1045428",
+        "sha256": "97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989",
+        "abgerufenAm": "2026-09-27T13:01:52.440771+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+        "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+        "bytes": 157668,
+        "datei": "kabinett-breg-aktuell.html"
+      },
+      "zitat": "Lars Klingbeil Lebenslauf Bundesminister der Finanzen",
+      "ressort": "Finanzen",
+      "themen": [
+        "Finanzen"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Finanzen; keine persönliche politische Position"
+    },
+    {
+      "kennung": "bundestag-pistorius-boris-1046550",
+      "region": "Bund",
+      "status": "belegt",
+      "amtsrolle": "Bundesminister der Verteidigung",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/pistorius_boris-1046550",
+        "sha256": "6ebba8fb601a27acf5b549b2db1d947ca10fb3e6ec6d60068fe1ed8117327939",
+        "abgerufenAm": "2026-09-27T13:02:07.414867+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+        "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+        "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+        "bytes": 157668,
+        "datei": "kabinett-breg-aktuell.html"
+      },
+      "zitat": "Boris Pistorius Lebenslauf Bundesminister der Verteidigung",
+      "ressort": "Verteidigung",
+      "themen": [
+        "Verteidigung"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Verteidigung; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-berlin-katharina-gunther-wunsch",
+      "region": "Berlin",
+      "status": "belegt",
+      "amtsrolle": "Senatorin für Bildung, Jugend und Familie",
+      "rollenquelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/katharina-gunther-wunsch?groupStrategy=nachnamen",
+        "sha256": "a13209a681959d95e2f42f6df8a4a153c6a85e3aaf6af7d4e31faa980bf908b9",
+        "abgerufenAm": "2026-09-27T12:35:42.630244+00:00"
+      },
+      "quelle": {
+        "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+        "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6",
+        "bytes": 59352,
+        "datei": "senat-berlin-aktuell.html"
+      },
+      "zitat": "Senatorin für Bildung, Jugend und Familie: Katharina Günther-Wünsch, CDU",
+      "ressort": "Bildung, Jugend und Familie",
+      "themen": [
+        "Bildung",
+        "Jugend",
+        "Familie"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Berlin (amtlich abgeleitet): Bildung, Jugend und Familie; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-berlin-franziska-giffey",
+      "region": "Berlin",
+      "status": "belegt",
+      "amtsrolle": "Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe",
+      "rollenquelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/franziska-giffey?groupStrategy=nachnamen",
+        "sha256": "374c38ce87c4605a45d5a459d256678e793dd74b78c5d457a0f82fae0dcf3726",
+        "abgerufenAm": "2026-09-27T12:36:39.237645+00:00"
+      },
+      "quelle": {
+        "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+        "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6",
+        "bytes": 59352,
+        "datei": "senat-berlin-aktuell.html"
+      },
+      "zitat": "Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe: Franziska Giffey, SPD",
+      "ressort": "Wirtschaft, Energie und Betriebe",
+      "themen": [
+        "Wirtschaft",
+        "Energie",
+        "Betriebe"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Berlin (amtlich abgeleitet): Wirtschaft, Energie und Betriebe; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-berlin-ina-czyborra",
+      "region": "Berlin",
+      "status": "belegt",
+      "amtsrolle": "Senatorin für die Senatsverwaltung für Wissenschaft, Gesundheit und Pflege",
+      "rollenquelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/ina-czyborra?groupStrategy=nachnamen",
+        "sha256": "caaf21738731d4ba766f06c7f809100bb74ba05cef0100341eb2a23ee5085cef",
+        "abgerufenAm": "2026-09-27T12:36:39.883102+00:00"
+      },
+      "quelle": {
+        "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+        "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6",
+        "bytes": 59352,
+        "datei": "senat-berlin-aktuell.html"
+      },
+      "zitat": "Senatorin für Wissenschaft, Gesundheit und Pflege: Dr. Ina Czyborra, SPD",
+      "ressort": "Wissenschaft, Gesundheit und Pflege",
+      "themen": [
+        "Wissenschaft",
+        "Gesundheit",
+        "Pflege"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Berlin (amtlich abgeleitet): Wissenschaft, Gesundheit und Pflege; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-berlin-iris-spranger",
+      "region": "Berlin",
+      "status": "belegt",
+      "amtsrolle": "Senatorin für Inneres und Sport",
+      "rollenquelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/iris-spranger?groupStrategy=nachnamen",
+        "sha256": "2b62b9d5a48f5a2855df7985f063504d0e822c8f430b59d464f31b192cadf4c1",
+        "abgerufenAm": "2026-09-27T12:36:40.815709+00:00"
+      },
+      "quelle": {
+        "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+        "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6",
+        "bytes": 59352,
+        "datei": "senat-berlin-aktuell.html"
+      },
+      "zitat": "Senatorin für Inneres und Sport: Iris Spranger, SPD",
+      "ressort": "Inneres und Sport",
+      "themen": [
+        "Inneres",
+        "Sport"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Berlin (amtlich abgeleitet): Inneres und Sport; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-brandenburg-11249",
+      "region": "Brandenburg",
+      "status": "belegt",
+      "amtsrolle": "Stellvertretender Ministerpräsident und Minister für Inneres und Kommunales des Landes Brandenburg",
+      "rollenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/redmann_jan_(dr.)/11249",
+        "sha256": "560bb72f57c3e32c8017832f899c2f7595154f7ef6ad80c99658340c95cac455",
+        "abgerufenAm": "2026-09-27T12:37:11.371894+00:00"
+      },
+      "quelle": {
+        "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+        "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+        "bytes": 17016,
+        "datei": "kabinett-brandenburg-aktuell.html"
+      },
+      "zitat": "Dr. Jan Redmann Stv. Ministerpräsident und Minister des Innern und für Kommunales (MIK)",
+      "ressort": "Inneres und Kommunales",
+      "themen": [
+        "Inneres",
+        "Kommunales"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Inneres und Kommunales; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-brandenburg-13035",
+      "region": "Brandenburg",
+      "status": "belegt",
+      "amtsrolle": "Minister für Bildung, Jugend und Sport des Landes Brandenburg",
+      "rollenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/hoffmann_gordon/13035",
+        "sha256": "d7f5d8185722c6de1277f805fe4ec1ed4bb4b78b52e03e18b7c096b6831e522e",
+        "abgerufenAm": "2026-09-27T12:37:12.193333+00:00"
+      },
+      "quelle": {
+        "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+        "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+        "bytes": 17016,
+        "datei": "kabinett-brandenburg-aktuell.html"
+      },
+      "zitat": "Gordon Hoffmann Minister für Bildung, Jugend und Sport (MBJS)",
+      "ressort": "Bildung, Jugend und Sport",
+      "themen": [
+        "Bildung",
+        "Jugend",
+        "Sport"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Bildung, Jugend und Sport; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-brandenburg-24173",
+      "region": "Brandenburg",
+      "status": "belegt",
+      "amtsrolle": "Minister der Finanzen des Landes Brandenburg",
+      "rollenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/keller_daniel/24173",
+        "sha256": "86e4eb295c9fab83cf6d3f450d6155d9eb7d0c54a855bcc518d182889ee2d495",
+        "abgerufenAm": "2026-09-27T12:37:17.175322+00:00"
+      },
+      "quelle": {
+        "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+        "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+        "bytes": 17016,
+        "datei": "kabinett-brandenburg-aktuell.html"
+      },
+      "zitat": "Daniel Keller Minister der Finanzen (MdF)",
+      "ressort": "Finanzen",
+      "themen": [
+        "Finanzen"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Finanzen; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-brandenburg-33745",
+      "region": "Brandenburg",
+      "status": "belegt",
+      "amtsrolle": "Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz des Landes Brandenburg",
+      "rollenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/mittelstaedt_hanka/33745",
+        "sha256": "084832a3db129b779ed737a6aeb1a4ca6efea356db10cea02cf25c4e97bc6625",
+        "abgerufenAm": "2026-09-27T12:37:23.205197+00:00"
+      },
+      "quelle": {
+        "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+        "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+        "bytes": 17016,
+        "datei": "kabinett-brandenburg-aktuell.html"
+      },
+      "zitat": "Hanka Mittelstädt Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz (MLEUV)",
+      "ressort": "Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+      "themen": [
+        "Land- und Ernährungswirtschaft",
+        "Umwelt",
+        "Verbraucherschutz"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-brandenburg-40591",
+      "region": "Brandenburg",
+      "status": "belegt",
+      "amtsrolle": "Minister der Justiz und für Digitalisierung des Landes Brandenburg",
+      "rollenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/grimm_benjamin_(dr.)/40591",
+        "sha256": "6c1ae1fb8b3d8b6ba206cc3440e3fbbd80034410ddf03b7e1bfecae002b28c32",
+        "abgerufenAm": "2026-09-27T12:37:24.862053+00:00"
+      },
+      "quelle": {
+        "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+        "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+        "bytes": 17016,
+        "datei": "kabinett-brandenburg-aktuell.html"
+      },
+      "zitat": "Dr. Benjamin Grimm Minister der Justiz und für Digitalisierung (MdJD)",
+      "ressort": "Justiz und Digitalisierung",
+      "themen": [
+        "Justiz",
+        "Digitalisierung"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Justiz und Digitalisierung; keine persönliche politische Position"
+    },
+    {
+      "kennung": "landtag-brandenburg-40597",
+      "region": "Brandenburg",
+      "status": "belegt",
+      "amtsrolle": "Ministerin für Wissenschaft, Forschung und Kultur des Landes Brandenburg",
+      "rollenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/schuele_manja_(dr.)/40597",
+        "sha256": "230cbb3c738eedb4c3f981c905d90e36b3ffaf489ae0895e525a6b619934e756",
+        "abgerufenAm": "2026-09-27T12:37:27.391139+00:00"
+      },
+      "quelle": {
+        "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+        "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+        "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+        "bytes": 17016,
+        "datei": "kabinett-brandenburg-aktuell.html"
+      },
+      "zitat": "Dr. Manja Schüle Ministerin für Wissenschaft, Forschung und Kultur (MWFK)",
+      "ressort": "Wissenschaft, Forschung und Kultur",
+      "themen": [
+        "Wissenschaft",
+        "Forschung",
+        "Kultur"
+      ],
+      "ableitung": "Ausschliesslich das ausdruecklich benannte aktuelle Ressort; keine persoenliche politische Position, kein Ausschussmandat und keine allgemeine Zustaendigkeit aus einem Vorsitz.",
+      "importfreigegeben": false,
+      "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Wissenschaft, Forschung und Kultur; keine persönliche politische Position"
+    }
+  ]
+}
