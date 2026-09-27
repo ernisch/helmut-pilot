@@ -572,8 +572,11 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             continue
         _merke(roh_zu_feld.get(punkt), punkt)
 
-    if not ordentliche:
-        _merke_feld("fachlicheAchse", "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden")
+    # Die fachliche Achse ist erst dann offen, wenn WEDER eine ordentliche NOCH eine
+    # stellvertretende belegte Ausschusszuordnung vorliegt (Import-/Validierungsvertrag
+    # in lib/helmut: beide Mitgliedschaftsarten tragen die Achse, bleiben aber getrennt).
+    if not ordentliche and not stellvertretende:
+        _merke_feld("fachlicheAchse", "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden")
     if parlament == "bundestag" and region["art"] == "offen":
         _merke_feld("mandatsart", region["offen"])
     if parlament == "bundestag" and region.get("offen") and region["art"] != "offen":

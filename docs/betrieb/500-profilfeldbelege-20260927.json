@@ -41,10 +41,10 @@
     "parteiParteilos": 2,
     "parteiOffen": 335,
     "mandatsartOffen": 7,
-    "fachlicheAchseOffen": 72,
+    "fachlicheAchseOffen": 50,
     "offeneFelder": {
       "partei": 335,
-      "fachlicheAchse": 72,
+      "fachlicheAchse": 50,
       "mandatsart": 7,
       "wahlbezirk": 1,
       "regionbezug": 28,
@@ -673,12 +673,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -1001,12 +999,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -1327,12 +1323,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -1988,7 +1982,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -4575,12 +4569,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -7019,7 +7011,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -7658,7 +7650,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -8891,12 +8883,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -8983,7 +8973,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -9078,12 +9068,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -9170,7 +9158,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -10118,7 +10106,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -10433,7 +10421,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -11389,7 +11377,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -12007,7 +11995,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -12624,12 +12612,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -13032,7 +13018,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -13536,7 +13522,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -13840,7 +13826,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -14571,7 +14557,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -15314,7 +15300,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -15917,7 +15903,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -16127,7 +16113,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -17041,7 +17027,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -17247,12 +17233,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -17446,7 +17430,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -17641,7 +17625,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -17963,12 +17947,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -18055,7 +18037,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -18150,12 +18132,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -18351,7 +18331,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -18557,12 +18537,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -19078,7 +19056,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -19280,12 +19258,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -19831,12 +19807,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -25740,12 +25714,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -26502,7 +26474,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -26697,7 +26669,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -26788,7 +26760,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -28411,12 +28383,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -29196,7 +29166,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -29299,12 +29269,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -29504,12 +29472,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -30264,7 +30230,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -30470,7 +30436,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -30910,7 +30876,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -31120,12 +31086,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -31218,7 +31182,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -31319,12 +31283,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -31742,12 +31704,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -32633,7 +32593,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -32851,12 +32811,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -33054,12 +33012,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false
@@ -33884,7 +33840,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -34080,7 +34036,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -34171,7 +34127,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -34596,7 +34552,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -35038,7 +34994,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",
@@ -35145,7 +35101,7 @@
       ],
       "offenePunkte": [
         "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion",
-        "Keine ordentliche Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
       ],
       "offeneFelder": [
         "partei",

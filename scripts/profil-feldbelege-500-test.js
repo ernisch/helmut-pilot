@@ -159,8 +159,12 @@ for (const e of ergebnis.ergebnisse) {
   for (const w of e.warnungen) a.ok(!["id-ungueltig", "quelle-falscher-host"].includes(w.code), "kritische Warnung");
   a.equal(e.mandatsId, datensaetze[e.index].kanonischeKennung, "Kennung im Importvertrag weicht ab");
 }
-a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 72, "region-fehlt": 7 }, "offene Felder muessen genau die bekannten Luecken sein");
-a.equal(ergebnis.gueltig, 422, "422 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
+// Die fachliche Achse ist nur offen, wenn WEDER ein ordentlicher NOCH ein
+// stellvertretender belegter Ausschuss vorliegt: 22 Bundestagsprofile tragen
+// ausschliesslich stellvertretende Mitgliedschaften und sind daher nicht mehr
+// "schwerpunkt-fehlt" (72 -> 50; gueltig 422 -> 444).
+a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 50, "region-fehlt": 7 }, "offene Felder muessen genau die bekannten Luecken sein");
+a.equal(ergebnis.gueltig, 444, "444 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
 
 // Einzelpruefung (pruefeProfil) muss dieselbe Sprache sprechen wie die Mengenpruefung.
 for (let i = 0; i < datensaetze.length; i += 1) {
@@ -189,4 +193,4 @@ if (eingangVorhanden && python) {
   reproduzierbar = "byte-identisch neu erzeugt";
 }
 
-console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (422 technisch importierbar, 78 offen), Reproduzierbarkeit: " + reproduzierbar);
+console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (444 technisch importierbar, 56 offen), Reproduzierbarkeit: " + reproduzierbar);
