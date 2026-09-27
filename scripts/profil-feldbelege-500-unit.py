@@ -2320,3 +2320,388 @@ print('PASS: Amthor-Einzelfallquittung — fehlende Quittung/falsche Bilanz/Dupl
       'Scheinbeleg in Kommentar, Skript oder Vorlage sperren fail closed; die 54er Rolle muss '
       'historisch offen bleiben; das gueltige synthetische Paket (Fixture ohne /private/tmp) wird '
       'akzeptiert.')
+
+
+# ── 15 · Wahlausschuss-Aufgabenquittung (3 sonstige Gremien-Achsen) ────────────────────────
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Das eng fixierte
+# Fachurteil wird ueber den injizierbaren ``erwartung``-Parameter ersetzt; das Modul
+# verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder und bindet die aktuelle
+# Wahlausschuss-Mitgliedschaft eigenstaendig aus genau EINEM ProfilePage.mainEntity neu.
+wa_spec = importlib.util.spec_from_file_location(
+    'wahlausschuss', Path(__file__).with_name('profil-feldbelege-500-wahlausschuss.py'))
+wa = importlib.util.module_from_spec(wa_spec)
+wa_spec.loader.exec_module(wa)
+
+
+def _erwarte_wa_fehler(fn, was, meldung=None):
+    try:
+        fn()
+    except wa.WahlausschussFehler as fehler:
+        if meldung is not None:
+            assert meldung in str(fehler), f"Falscher Sperrgrund: {fehler}"
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    ABRUF = '2026-09-27T20:00:00+00:00'
+    THEMA = 'Richter des Test-Verfassungsgerichts'
+    GEMEIN = 'Wahlausschuss'
+    GURL = 'https://www.bundestag.de/test/weitere_gremien/wahlausschuss'
+    BESCHR = 'Mitglied des 21. Deutschen Bundestages'
+    AUFBIND = 'Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Testrichter'
+    ABSATZ = (f'Die Testrichter des {THEMA.replace("Richter des ", "")} werden zur Hälfte von '
+              f'Bundestag und Bundesrat gewählt. Die vom Bundestag zu berufenden {THEMA} werden auf '
+              f'Vorschlag des Wahlausschusses gewählt. In der 21. Wahlperiode stellt die Testfraktion '
+              f'einen Abgeordneten.')
+    assert '21. Wahlperiode' in ABSATZ and THEMA in ABSATZ
+
+    def _wa_meta(datei, url):
+        pfad = zusatz / datei
+        meta = dict(url=url, finalUrl=url, abgerufenAm=ABRUF, sha256=wa.ZU._sha256(pfad),
+                    bytes=pfad.stat().st_size, datei=datei, http=200)
+        (zusatz / f'{datei}.meta.json').write_text(json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+        return dict(meta, abrufStatus='abgerufen')
+
+    quelle_datei = 'test-wahlausschuss.html'
+    quelle_url = 'https://www.bundestag.de/test/weitere_gremien/wahlausschuss'
+
+    def _wa_standard(absatz=ABSATZ, umhuellung=None, ziel=True, zweiter_block=False):
+        kern = f'<div><p><span>{absatz}</span></p></div>'
+        if umhuellung:
+            kern = umhuellung(kern)
+        block = f'<div class="col-xs-12 col-sm-6 bt-standard-content">{kern}</div>'
+        fremd = ('<div id="anderer-abschnitt" class="col-xs-12 col-sm-6 bt-standard-content">'
+                 f'<p>{absatz}</p></div>')
+        if ziel:
+            panel = f'<div role="tabpanel" class="tab-pane active" id="arbeit-und-aufgaben"><div class="row">{block}</div></div>'
+        else:
+            panel = ('<div role="tabpanel" class="tab-pane" id="anderer-abschnitt">'
+                     f'<div class="col-xs-12 col-sm-6 bt-standard-content"><p>Anderer Absatz.</p></div></div>')
+        if zweiter_block:
+            panel += fremd
+        return f'<div class="tab-content">{panel}</div>'
+
+    def _wa_quelle(dokument):
+        (zusatz / quelle_datei).write_text(dokument, encoding='utf-8')
+        return _wa_meta(quelle_datei, quelle_url)
+
+    quelle = _wa_quelle(_wa_standard())
+    gegen_datei = 'test-glossar.html'
+    gegen_url = 'https://www.bundestag.de/test/services/glossar/wahlausschuss'
+    (zusatz / gegen_datei).write_text('<p>Der Wahlausschuss schlägt die Testrichter vor.</p>', encoding='utf-8')
+    gegen = _wa_meta(gegen_datei, gegen_url)
+
+    KENNUNGEN = [
+        ('bundestag-test-wahl-1', 'Person Eins', 'Ordentliches Mitglied', 'offen'),
+        ('bundestag-test-wahl-2', 'Person Zwei', 'Ordentliches Mitglied', 'belegt'),
+        ('bundestag-test-wahl-3', 'Person Drei', 'Stellvertretendes Mitglied', 'offen'),
+    ]
+    profilrollen = {}
+    kennung_zu_abruf = {}
+    personen_erwartung = {}
+
+    def _wa_person(kennung, person, role, enddate=False, wp=BESCHR, desc_url=False):
+        rolle = dict(type='Role', org_name=GEMEIN, org_url=GURL, role=role, start='2025-03-25')
+        if enddate:
+            rolle['end'] = '2026-01-01'
+        person_json = {
+            '@type': 'Person', '@id': '#mdb', 'name': person,
+            'description': wp,
+            'memberOf': [
+                {'@type': 'Role',
+                 'memberOf': {'@type': 'Organization', 'name': 'Deutscher Bundestag',
+                              'url': 'https://www.bundestag.de'},
+                 'roleName': 'Mitglied des Bundestages', 'startDate': '2025-03-25'},
+                {'@type': 'Role',
+                 'memberOf': {'@type': 'Organization', 'name': rolle['org_name'], 'url': rolle['org_url']},
+                 'roleName': rolle['role'], 'startDate': rolle['start']},
+            ],
+        }
+        if rolle.get('end'):
+            person_json['memberOf'][1]['endDate'] = rolle['end']
+        if desc_url:
+            person_json['url'] = 'https://www.bundestag.de/fremde-url'
+        seite = {'@context': 'https://schema.org', '@type': 'ProfilePage', 'mainEntity': person_json}
+        return ('<h1>' + person + '</h1>'
+                '<script type="application/ld+json">' + json.dumps(seite, ensure_ascii=False) + '</script>')
+
+    def _wa_schreibe_detail(kennung, dokument):
+        (detail / f'{kennung}.html').write_text(dokument, encoding='utf-8')
+
+    for kennung, person, role, status in KENNUNGEN:
+        _wa_schreibe_detail(kennung, _wa_person(kennung, person, role))
+        pfad = detail / f'{kennung}.html'
+        rollen_ref = dict(url=f'https://www.bundestag.de/test/abgeordnete/{kennung}',
+                          sha256=wa.ZU._sha256(pfad), abgerufenAm=ABRUF)
+        profilrollen[kennung] = dict(status=status, funktionen=[], quelle=dict(rollen_ref))
+        kennung_zu_abruf[kennung] = dict(url=rollen_ref['url'], sha256=rollen_ref['sha256'], abgerufenAm=ABRUF,
+                                        datei=f'{kennung}.html', bytes=pfad.stat().st_size,
+                                        amtlicheKennung=kennung, parlament='bundestag',
+                                        abrufStatus='abgerufen', http=200)
+        personen_erwartung[kennung] = dict(region='Bund', person=person, roleName=role,
+                                           startDate='2025-03-25', rollenquelle=dict(rollen_ref))
+
+    erwartung = dict(themen=[THEMA], aufgabenbindung=AUFBIND, aufgabenAbsatz=ABSATZ,
+                     beschreibung=BESCHR, gremium=GEMEIN, gremienUrl=GURL,
+                     quelle=dict(quelle), gegenquelle=dict(gegen), personen=personen_erwartung)
+    eintraege = []
+    for kennung, person, role, _ in KENNUNGEN:
+        eintraege.append(dict(kennung=kennung, region='Bund', parlament='bundestag', status='belegt',
+                              person=person, gremium=GEMEIN, gremienUrl=GURL, roleName=role,
+                              startDate='2025-03-25', rollenquelle=dict(personen_erwartung[kennung]['rollenquelle']),
+                              importfreigegeben=False))
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=3, Bund=3, Berlin=0, Brandenburg=0),
+                             themen=[THEMA], aufgabenbindung=AUFBIND, aufgabenAbsatz=ABSATZ,
+                             beschreibung=BESCHR, gremium=GEMEIN, gremienUrl=GURL,
+                             quelle=dict(quelle), gegenquelle=dict(gegen),
+                             ergebnisse=eintraege, importfreigegeben=False)
+
+    def _wa_eingang(quittung, profilrollen_override=None, **mengen):
+        return SimpleNamespace(
+            verzeichnis=root, detailseiten=detail, wahlausschuss=quittung,
+            profilrollen_by_kennung=profilrollen_override or profilrollen,
+            kennung_zu_abruf=kennung_zu_abruf,
+            ressortachsen_by_kennung={k: {} for k in mengen.get('ressort', [])},
+            aufgabenachsen_by_kennung={k: {} for k in mengen.get('aufgaben', [])},
+            beratendeachsen_by_kennung={k: {} for k in mengen.get('beratende', [])},
+            zusaetzlicheaufgaben_by_kennung={k: {} for k in mengen.get('zusatz', [])},
+            bmwsb_by_kennung={k: {} for k in mengen.get('bmwsb', [])},
+            amthor_by_kennung={k: {} for k in mengen.get('amthor', [])})
+
+    index = wa.pruefe_wahlausschuss(_wa_eingang(gueltige_quittung), erwartung=erwartung)
+    assert len(index) == 3
+    assert index['bundestag-test-wahl-1']['themen'] == [THEMA]
+    assert index['bundestag-test-wahl-3']['roleName'] == 'Stellvertretendes Mitglied'
+    assert index['bundestag-test-wahl-2']['ableitungsHinweis'].startswith('Aufgabenbindung Bund')
+
+    def _wa_mit(mutation, erwartung_override=None, **mengen):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return wa.pruefe_wahlausschuss(_wa_eingang(neu, **mengen), erwartung=erwartung_override or erwartung)
+
+    # Fehlende Quittung, falsche Bilanz, Duplikat, Fremdkennung, Disjunktion.
+    _echter_pfad = wa.WAHLAUSSCHUSS
+    wa.WAHLAUSSCHUSS = root / 'fehlt.json'
+    try:
+        _erwarte_wa_fehler(lambda: wa.pruefe_wahlausschuss(
+            SimpleNamespace(verzeichnis=root, detailseiten=detail, profilrollen_by_kennung=profilrollen,
+                            kennung_zu_abruf=kennung_zu_abruf), erwartung=erwartung), 'fehlende Quittung')
+    finally:
+        wa.WAHLAUSSCHUSS = _echter_pfad
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['bilanz'].__setitem__('Bund', 0)), 'falsche Bilanz')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'].append(dict(q['ergebnisse'][0]))),
+                       'doppelte Kennung')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'kennung', 'bundestag-test-fremd-9')), 'Fremdkennung')
+    for feld, was in (('ressort', 'Kennung bereits eine Ressortachse'),
+                      ('aufgaben', 'Kennung bereits eine Aufgabenachse'),
+                      ('beratende', 'Kennung bereits eine beratende Achse'),
+                      ('zusatz', 'Kennung bereits eine Zusatzaufgabenachse'),
+                      ('bmwsb', 'Kennung bereits eine BMWSB-Achse'),
+                      ('amthor', 'Kennung bereits eine Amthor-Einzelfallachse')):
+        _erwarte_wa_fehler(lambda feld=feld: wa.pruefe_wahlausschuss(
+            _wa_eingang(gueltige_quittung, **{feld: ['bundestag-test-wahl-1']}), erwartung=erwartung), was)
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__('importfreigegeben', True)),
+                       'importfreigegeben true')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__('status', 'offen')),
+                       'unerwarteter Status')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__('region', 'Berlin')),
+                       'Region-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__('parlament', 'landtag-berlin')),
+                       'Parlament-Drift')
+    # Fixiertes Urteil: Person, Gremium, Gremien-URL, roleName, startDate, Thema, Hinweis.
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__('person', 'Fremdperson')),
+                       'Fremdperson')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__('gremium', 'Anderes Gremium')),
+                       'fremdes Gremium')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'gremienUrl', 'https://www.bundestag.de/fremd')), 'fremde Gremien-URL')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'roleName', 'Stellvertretendes Mitglied')), 'falscher roleName')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['ergebnisse'][0].__setitem__('startDate', '2025-03-26')),
+                       'startDate-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q.__setitem__('themen', [THEMA, 'Digitalisierung'])),
+                       'Themen-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q.__setitem__('themen', ['Digitalisierung'])),
+                       'fremdes Thema')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q.__setitem__('aufgabenbindung', 'anderes')),
+                       'Aufgabenbindungs-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q.__setitem__('aufgabenAbsatz', 'Anderer Absatz.')),
+                       'Aufgabenabsatz-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q.__setitem__('beschreibung', 'Mitglied des 20. Deutschen Bundestages')),
+                       'wrongWP-Drift')
+    # Quelldrift der Aufgabenquelle (URL/finalUrl/Hash/Bytezahl/Abrufzeit/HTTP/Datei).
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['quelle'].__setitem__('url', quelle_url + '-fremd')),
+                       'Quell-URL-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['quelle'].__setitem__(
+        'finalUrl', 'https://www.bundestag.de/x')), 'finalUrl-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['quelle'].__setitem__('sha256', '0' * 64)),
+                       'Quellhash-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['quelle'].__setitem__('bytes', 1)), 'Bytezahl-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['quelle'].__setitem__(
+        'abgerufenAm', '2026-09-27T00:00:00+00:00')), 'Abrufzeit-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['quelle'].__setitem__('http', 500)), 'HTTP-Drift')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: q['quelle'].__setitem__('datei', 'fehlt.html')),
+                       'fehlende Quelle')
+    # Metadatum-Abweichung der Aufgabenquelle.
+    original_meta = json.loads((zusatz / f'{quelle_datei}.meta.json').read_text(encoding='utf-8'))
+    meta_kaputt = dict(original_meta)
+    meta_kaputt['url'] = quelle_url + '-meta-fremd'
+    (zusatz / f'{quelle_datei}.meta.json').write_text(json.dumps(meta_kaputt, ensure_ascii=False), encoding='utf-8')
+    _erwarte_wa_fehler(lambda: _wa_mit(lambda q: None), 'Metadatenabweichung', 'Metadatum url weicht ab')
+    (zusatz / f'{quelle_datei}.meta.json').write_text(json.dumps(original_meta, ensure_ascii=False), encoding='utf-8')
+    # Fremdperson bei konsistent neu gebundenen Hashes/Bytes.
+    def _pruefe_mit_detail(kennung, dokument, grund, meldung=None):
+        original = (detail / f'{kennung}.html').read_text(encoding='utf-8')
+        try:
+            (detail / f'{kennung}.html').write_text(dokument, encoding='utf-8')
+            pfad = detail / f'{kennung}.html'
+            neu_sha = wa.ZU._sha256(pfad)
+            neu_bytes = pfad.stat().st_size
+            for eintrag in eintraege:
+                if eintrag['kennung'] == kennung:
+                    eintrag['rollenquelle']['sha256'] = neu_sha
+            profilrollen[kennung]['quelle']['sha256'] = neu_sha
+            kennung_zu_abruf[kennung]['sha256'] = neu_sha
+            kennung_zu_abruf[kennung]['bytes'] = neu_bytes
+            personen_erwartung[kennung]['rollenquelle']['sha256'] = neu_sha
+            _erwarte_wa_fehler(lambda: _wa_mit(lambda q: None), grund, meldung)
+        finally:
+            (detail / f'{kennung}.html').write_text(original, encoding='utf-8')
+            pfad = detail / f'{kennung}.html'
+            alt_sha = wa.ZU._sha256(pfad)
+            alt_bytes = pfad.stat().st_size
+            for eintrag in eintraege:
+                if eintrag['kennung'] == kennung:
+                    eintrag['rollenquelle']['sha256'] = alt_sha
+            profilrollen[kennung]['quelle']['sha256'] = alt_sha
+            kennung_zu_abruf[kennung]['sha256'] = alt_sha
+            kennung_zu_abruf[kennung]['bytes'] = alt_bytes
+            personen_erwartung[kennung]['rollenquelle']['sha256'] = alt_sha
+
+    K1, K2 = KENNUNGEN[0][0], KENNUNGEN[1][0]
+    _pruefe_mit_detail(K1, '<h1>Fremde Person</h1>', 'fremdePerson bei konsistenten Hashes',
+                       'Person passt nicht zur kanonischen Kennung')
+    # Negativer Tausch bei konsistenten Hashes: vertauschte Personenpakete.
+    original_k1 = (detail / f'{K1}.html').read_text(encoding='utf-8')
+    original_k2 = (detail / f'{K2}.html').read_text(encoding='utf-8')
+    try:
+        (detail / f'{K1}.html').write_text(original_k2, encoding='utf-8')
+        (detail / f'{K2}.html').write_text(original_k1, encoding='utf-8')
+        for kennung in (K1, K2):
+            pfad = detail / f'{kennung}.html'
+            neu_sha = wa.ZU._sha256(pfad)
+            neu_bytes = pfad.stat().st_size
+            for eintrag in eintraege:
+                if eintrag['kennung'] == kennung:
+                    eintrag['rollenquelle']['sha256'] = neu_sha
+            profilrollen[kennung]['quelle']['sha256'] = neu_sha
+            kennung_zu_abruf[kennung]['sha256'] = neu_sha
+            kennung_zu_abruf[kennung]['bytes'] = neu_bytes
+            personen_erwartung[kennung]['rollenquelle']['sha256'] = neu_sha
+        _erwarte_wa_fehler(lambda: _wa_mit(lambda q: None), 'vertauschte Personenpakete',
+                           'Person passt nicht zur kanonischen Kennung')
+    finally:
+        (detail / f'{K1}.html').write_text(original_k1, encoding='utf-8')
+        (detail / f'{K2}.html').write_text(original_k2, encoding='utf-8')
+        for kennung in (K1, K2):
+            pfad = detail / f'{kennung}.html'
+            alt_sha = wa.ZU._sha256(pfad)
+            alt_bytes = pfad.stat().st_size
+            for eintrag in eintraege:
+                if eintrag['kennung'] == kennung:
+                    eintrag['rollenquelle']['sha256'] = alt_sha
+            profilrollen[kennung]['quelle']['sha256'] = alt_sha
+            kennung_zu_abruf[kennung]['sha256'] = alt_sha
+            kennung_zu_abruf[kennung]['bytes'] = alt_bytes
+            personen_erwartung[kennung]['rollenquelle']['sha256'] = alt_sha
+    # endDate, Zukunft, fremde Gremien-URL, falscher roleName, wrongWP, doppelter ProfilePage.
+    _pruefe_mit_detail(K1, _wa_person(K1, KENNUNGEN[0][1], KENNUNGEN[0][2], enddate=True),
+                       'endDate einer aktuellen Rolle', 'darf kein endDate tragen')
+    zukunft = _wa_person(K1, KENNUNGEN[0][1], KENNUNGEN[0][2]).replace('"startDate": "2025-03-25"}',
+                                                                       '"startDate": "2026-12-01"}')
+    _pruefe_mit_detail(K1, zukunft, 'Zukunftsbeginn', 'startDate liegt nach der Abrufzeit')
+    _pruefe_mit_detail(K1, _wa_person(K1, KENNUNGEN[0][1], KENNUNGEN[0][2], wp='Mitglied des 20. Deutschen Bundestages'),
+                       'wrongWP', 'description ist nicht')
+    fremd_url_person = _wa_person(K1, KENNUNGEN[0][1], KENNUNGEN[0][2], desc_url=True)
+    _pruefe_mit_detail(K1, fremd_url_person, 'mainEntity.url-Drift', 'weicht von der Quell-URL ab')
+    doppelt = _wa_person(K1, KENNUNGEN[0][1], KENNUNGEN[0][2]).replace(
+        '<h1>', '<script type="application/ld+json">{"@type":"ProfilePage","mainEntity":{"@type":"Person","@id":"#mdb","name":"Person Eins","description":"Mitglied des 21. Deutschen Bundestages","memberOf":[]}}</script><h1>', 1)
+    _pruefe_mit_detail(K1, doppelt, 'doppelter ProfilePage', 'genau EIN ProfilePage.mainEntity')
+    # Fremdes Gremium / falsche Rolle direkt im JSON-LD (mit konsistenten Hashes).
+    fremd_gremium = _wa_person(K1, KENNUNGEN[0][1], KENNUNGEN[0][2]).replace(GURL, 'https://www.bundestag.de/fremd')
+    _pruefe_mit_detail(K1, fremd_gremium, 'fremde Gremien-URL im JSON-LD', 'fremde Gremien-URL')
+    falsche_rolle = _wa_person(K1, KENNUNGEN[0][1], 'Ordentliches Mitglied').replace(
+        '"roleName": "Ordentliches Mitglied", "startDate": "2025-03-25"}',
+        '"roleName": "Gast", "startDate": "2025-03-25"}')
+    _pruefe_mit_detail(K1, falsche_rolle, 'falscher roleName im JSON-LD', 'falscher roleName')
+    # Die Personenbindung akzeptiert nur echtes Markup, auch bei neu gebundenen Hashes.
+    person_html = _wa_person(K1, KENNUNGEN[0][1], KENNUNGEN[0][2])
+    h1, ld = person_html.split('<script', 1)
+    ld = '<script' + ld
+    for name, wrap in (
+        ('Kommentar', lambda x: '<!--' + x + '-->'),
+        ('Template', lambda x: '<template>' + x + '</template>'),
+        ('Navigation', lambda x: '<nav>' + x + '</nav>'),
+        ('Noscript', lambda x: '<noscript>' + x + '</noscript>'),
+    ):
+        _pruefe_mit_detail(K1, h1 + wrap(ld), 'ProfilePage nur in ' + name,
+                           'genau EIN ProfilePage.mainEntity')
+        _pruefe_mit_detail(K1, wrap(h1) + ld, 'H1 nur in ' + name,
+                           'Person passt nicht zur kanonischen Kennung')
+    for endwert in ('""', 'null'):
+        ende = person_html.replace('"roleName": "Ordentliches Mitglied",',
+                                  '"endDate": ' + endwert + ', "roleName": "Ordentliches Mitglied",')
+        _pruefe_mit_detail(K1, ende, 'leeres/null endDate', 'darf kein endDate tragen')
+    _pruefe_mit_detail(K1, person_html.replace('"@id": "#mdb",', '"@id": "#mdb", "url": null,'),
+                       'explizit ungeklaerte Personen-URL', 'weicht von der Quell-URL ab')
+    original_abruf = kennung_zu_abruf[K1]['abgerufenAm']
+    try:
+        kennung_zu_abruf[K1]['abgerufenAm'] = '2026-09-28T20:00:00+00:00'
+        _erwarte_wa_fehler(lambda: _wa_mit(lambda q: None), 'Personenabrufzeit-Drift',
+                           'Rollenquelle weicht vom Abruf ab')
+    finally:
+        kennung_zu_abruf[K1]['abgerufenAm'] = original_abruf
+    # Scheinbelege: Zitat nur in Navigation/Template/fremdem Absatz.
+    def _wa_quelle_gegenprobe(dokument, grund, meldung=None):
+        original = (zusatz / quelle_datei).read_text(encoding='utf-8')
+        try:
+            neu = _wa_quelle(dokument)
+            gueltige_quittung['quelle'] = dict(neu)
+            erwartung['quelle'] = dict(neu)
+            _erwarte_wa_fehler(lambda: _wa_mit(lambda q: None), grund, meldung)
+        finally:
+            (zusatz / quelle_datei).write_text(original, encoding='utf-8')
+            neu = _wa_meta(quelle_datei, quelle_url)
+            gueltige_quittung['quelle'] = dict(neu)
+            erwartung['quelle'] = dict(neu)
+
+    _wa_quelle_gegenprobe(_wa_standard(umhuellung=lambda kern: f'<nav>{kern}</nav>'),
+                          'Zitat nur in Navigation', 'genau EINEN eigenen p')
+    _wa_quelle_gegenprobe(f'<template>{_wa_standard()}</template>', 'Zitat nur im Template',
+                          'fehlt/ist mehrdeutig')
+    _wa_quelle_gegenprobe(_wa_standard(ziel=False, zweiter_block=True), 'Zitat nur in fremdem Absatz',
+                          'fehlt/ist mehrdeutig')
+    _wa_quelle_gegenprobe(_wa_standard(absatz=ABSATZ.replace('21. Wahlperiode', '20. Wahlperiode')),
+                          'falsche Wahlperiode', 'stimmt nicht mit dem vollstaendigen Wortlaut')
+    _wa_quelle_gegenprobe('<div id="arbeit-und-aufgaben"><div class="bt-standard-content">'
+                          '<p></div></div>' + ABSATZ + '</p>',
+                          'Absatztext ausserhalb des geschlossenen Abschnitts',
+                          'Aufgabenabsatz verlaesst seinen Abschnitt')
+    # Das gueltige synthetische Paket wird akzeptiert.
+    assert len(wa.pruefe_wahlausschuss(_wa_eingang(gueltige_quittung), erwartung=erwartung)) == 3
+
+print('PASS: Wahlausschuss-Aufgabenquittung — fehlende Quittung/falsche Bilanz/Duplikat/Fremdkennung/'
+      'Disjunktion zu Ressort-/Aufgaben-/beratender/Zusatzaufgaben-/BMWSB-/Amthor-Achse/importfreigegeben/'
+      'Status/Region/Parlament/Person/fremdes Gremium/fremde Gremien-URL/roleName/startDate/Thema/'
+      'Aufgabenbindung/Aufgabenabsatz/wrongWP/Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/HTTP/Datei/'
+      'Metadatum) und fremdePerson bei konsistenten Hashes/vertauschte Personenpakete/endDate/Zukunftsbeginn/'
+      'doppelter ProfilePage/Zitat nur in Navigation, Template oder fremdem Absatz/falsche Wahlperiode '
+      'sperren fail closed; die kontinuierliche Rolle wird rollengetreu gebunden; das gueltige synthetische '
+      'Paket (Fixture ohne /private/tmp) wird akzeptiert.')

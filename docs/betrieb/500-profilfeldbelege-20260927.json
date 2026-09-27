@@ -1,6 +1,6 @@
 {
   "status": "Offline-Feldbelege fuer exakt 500 Zielprofile (Bundestag/Berlin/Brandenburg); technische Zusammenstellung, KEINE fachliche Freigabe und kein Importmanifest",
-  "erstelltAm": "2026-09-27T20:10:00+00:00",
+  "erstelltAm": "2026-09-27T20:31:00+00:00",
   "vertragsformat": "helmut-mandatsprofil/1",
   "grundlage": {
     "namensauswahl": "docs/betrieb/500-namensauswahl-20260927.json",
@@ -39,7 +39,8 @@
     "Fuer 2 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte beratende Achsenquittung docs/betrieb/beratende-achsen-2-20260927.json die ausdrueckliche beratende Ausschussarbeit mit ihren Kurzthemen gesetzt (getrennter Ableitungshinweis in funktionen) und damit die fachliche Achse geschlossen. Die bestehende beratende Funktion bleibt erhalten; es entsteht NIE eine ordentliche/stellvertretende Ausschussmitgliedschaft und keine politische Position. Nur die zwei genehmigten Ausschuesse (Ausschuss fuer Landwirtschaft, Ernaehrung und Heimat; Haushaltsausschuss) sind erlaubt; jede Kennung ist an die kanonische Quelle (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei), an das echte Original mit eindeutiger H1 und an die exakte Role 'Beratendes Mitglied' ohne endDate in ProfilePage.mainEntity.memberOf gebunden. Die disjunkte Vereinigung der 19 Ressort-, 6 Aufgaben- und 2 beratenden Achsen mit den 27 verbleibend offenen ergibt weiter genau die 54er Rollenquittung; diese 2 bleiben dort ausdruecklich offen (die beratende Funktion war bereits belegt, das ist KEIN Fehler).",
     "Fuer 3 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte Zusatzaufgabenquittung docs/betrieb/zusaetzliche-aufgaben-3-20260927.json die ausdrueckliche amtliche Fachzustaendigkeit gesetzt (getrennter Ableitungshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-zusatzaufgaben.py: Breher nur die aktuelle 'seit'-Rolle 'Beauftragte der Bundesregierung fuer Tierschutz' aus dem geschlossenen Biografieblock vor der Redaktionsnotiz (neue Funktionsrolle genau einmal, bestehende PSts-Rolle bleibt); Krichbaum nur die aktuelle AA-Seitenkopf-H1 'Staatsminister fuer Europa' (nicht die alte Sprecherrolle 2022-2025); Kippels das manuell am amtlichen BMG-Organisationsplan visuell abgenommene PDF-Fachurteil (Stand 03. September 2026, Seite 1, Personenkasten Abt. 1/4/5/6, getrennte woertliche Abteilungstitel, 12 Kurzthemen; kein externer PDF-Parser). Jede Kennung ist an die kanonische 54er Rolle und den kanonischen Bundestags-Profilnamen/URL/Hash gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben- und 2 beratenden Achsen. Die disjunkte Vereinigung mit den 2 BMWSB- und den 22 verbleibend offenen Achsen ergibt weiter genau die 54er Rollenquittung.",
     "Fuer 2 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte BMWSB-Aufgabenquittung docs/betrieb/bmwsb-aufgaben-2-20260927.json die ausdrueckliche personengebundene BMWSB-Aufgabenzustaendigkeit gesetzt (getrennter Ableitungshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-bmwsb.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: nur die persoenlich zugewiesenen Unterbereiche (Bartol Z I 3/W II/S I/B I/B II, Poschmann Z II/W I/S II/S III) und deren woertliche Titel aus dem manuell am amtlichen BMWSB-Organigramm (Stand 1. Juli 2026, Seite 1) visuell abgenommenen PDF-Fachurteil, KEINE Hochstufung auf ganze Abteilungen und kein externer PDF-Parser. Die kanonische Quelle ist die tatsaechlich verlinkte v10-Adresse (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei, Original UND *.meta.json gebunden); die aktuelle Landingpage muss genau dieses PDF als echten aufgeloesten href tragen (kein Kommentar-/Skript-/Vorlagenanker und kein Textvorkommen). Jede Kennung ist an die kanonische 54er Rolle und den kanonischen Bundestags-Profilnamen/URL/Hash gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden und 3 Zusatzaufgabenachsen. Die disjunkte Vereinigung mit den damals 22 verbleibend offenen Achsen ergab weiter genau die 54er Rollenquittung.",
-    "Fuer den einzeln offenen Rollenfall Philipp Amthor wird ueber die vom Orchestrator gepruefte Einzelfallquittung docs/betrieb/amthor-aktuelles-amt-1-20260927.json die freigegebene aktuelle Funktionsrolle 'Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler' (seit 29. Juli 2026) genau einmal an bestehende funktionen angehaengt und das eine amtlich abgeleitete Thema 'Bund-Laender-Beziehungen' gesetzt (getrennter Herkunftshinweis in funktionen); damit ist die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-amthor.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: die aktuelle Rolle stammt ausschliesslich aus dem geschlossenen eigenen div.bpa-richtext-Lebenslauf-p der Bundesregierungs-Personenseite (nicht Meta/Bildunterschrift), der vorige PSts-Digitalabsatz (2025 bis 2026) bleibt ausdruecklich historisch, das Thema ausschliesslich aus genau einem echten li mit strong 'Staatsminister fuer die Bund-Laender-Beziehungen' und 'Philipp Amthor' unter der Personalien-h2 der Ankuendigung (24. Juli 2026; die Ankuendigung belegt den Amtsantritt NICHT). Der 54er-Eintrag bleibt historisch offen (separate Neubindung, KEINE Lockerung des alten Rollenvalidators); Partei, Mandatsart und Gremien bleiben unveraendert. Jede Kennung ist an den kanonischen Bundestags-Profilnamen/URL/Hash der 54er Quittung und beide Zusatzquellen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten) gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben- und 2 BMWSB-Achsen. Kein Digitalamt als aktuell, keine persoenliche Position; es bleiben 21 Achsen offen.",
+    "Fuer den einzeln offenen Rollenfall Philipp Amthor wird ueber die vom Orchestrator gepruefte Einzelfallquittung docs/betrieb/amthor-aktuelles-amt-1-20260927.json die freigegebene aktuelle Funktionsrolle 'Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler' (seit 29. Juli 2026) genau einmal an bestehende funktionen angehaengt und das eine amtlich abgeleitete Thema 'Bund-Laender-Beziehungen' gesetzt (getrennter Herkunftshinweis in funktionen); damit ist die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-amthor.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: die aktuelle Rolle stammt ausschliesslich aus dem geschlossenen eigenen div.bpa-richtext-Lebenslauf-p der Bundesregierungs-Personenseite (nicht Meta/Bildunterschrift), der vorige PSts-Digitalabsatz (2025 bis 2026) bleibt ausdruecklich historisch, das Thema ausschliesslich aus genau einem echten li mit strong 'Staatsminister fuer die Bund-Laender-Beziehungen' und 'Philipp Amthor' unter der Personalien-h2 der Ankuendigung (24. Juli 2026; die Ankuendigung belegt den Amtsantritt NICHT). Der 54er-Eintrag bleibt historisch offen (separate Neubindung, KEINE Lockerung des alten Rollenvalidators); Partei, Mandatsart und Gremien bleiben unveraendert. Jede Kennung ist an den kanonischen Bundestags-Profilnamen/URL/Hash der 54er Quittung und beide Zusatzquellen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten) gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben- und 2 BMWSB-Achsen. Kein Digitalamt als aktuell, keine persoenliche Position; damals blieben 21 Achsen offen.",
+    "Fuer 3 weitere dieser 54 Profile wird ueber die vom Orchestrator eng gepruefte Wahlausschuss-Aufgabenquittung docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json das enge amtlich abgeleitete Thema 'Richter des Bundesverfassungsgerichts' gesetzt (getrennter Herkunftshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-wahlausschuss.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: die kanonische Person (H1/URL/Hash/Bytezahl/Abruf/HTTP) stammt aus der unveraenderten 54er Rollenquittung; die aktuelle Mitgliedschaft wird eigenstaendig aus genau EINEM ProfilePage.mainEntity (Typ Person, '@id' #mdb, Name, falls url vorhanden exakt die Quell-URL, description 'Mitglied des 21. Deutschen Bundestages') in genau EINER echten Role auf exakt Organization/Wahlausschuss/kanonische Gremien-URL mit dem exakten roleName, startDate <= Abrufzeit und OHNE endDate geprueft. Das enge Thema stammt ausschliesslich aus dem geschlossenen aktuellen Gremienaufgabenabsatz unter #arbeit-und-aufgaben und .bt-standard-content (genau ein eigener p mit vollstaendigem Wortlaut und 21. Wahlperiode); Navigation, Template und fremde Absaetze sind kein Beleg. Das sonstige Gremium und die bestehenden ordentlichen/stellvertretenden Funktionen bleiben unveraendert, es wird NIE als regulaerer Ausschuss zurueckgeschrieben (PR660 bleibt richtig), keine Umdeklarierung, keine Fraktionsvorsitz-/Parteifeld-/Mandatsartaenderung, keine persoenliche politische Position. Die 54er Rollenquittung und alle bisherigen Quittungen bleiben unveraendert (Haßelmann/Miersch bleiben dort offen, kein Blocker dieser eigenstaendigen Mitgliedschaftsquelle). Jede Kennung ist disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB- und 1 Amthor-Achse; die disjunkte Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 18 Achsen offen.",
     "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
     "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe."
   ],
@@ -68,7 +69,7 @@
       "deckungsgleichVerwendet": 335
     },
     "mandatsartOffen": 1,
-    "fachlicheAchseOffen": 21,
+    "fachlicheAchseOffen": 18,
     "sonstigeGremien": {
       "expliziteListe": 15,
       "profileMitWeiterenGremien": 114,
@@ -103,7 +104,7 @@
       "themenGesetzt": 19,
       "deckungsgleichVerwendet": 19,
       "geschlosseneAchsen": 19,
-      "verbleibendOffeneAchsen": 21
+      "verbleibendOffeneAchsen": 18
     },
     "aufgabenachsenQuittung": {
       "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
@@ -154,12 +155,23 @@
       "themenGesetzt": 1,
       "deckungsgleichVerwendet": 1,
       "geschlosseneAchsen": 1,
-      "verbleibendOffeneAchsen": 21
+      "verbleibendOffeneAchsen": 18
+    },
+    "wahlausschussQuittung": {
+      "datei": "docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json",
+      "geprueftGesamt": 3,
+      "nachRegion": {
+        "Bund": 3
+      },
+      "themenGesetzt": 3,
+      "deckungsgleichVerwendet": 3,
+      "geschlosseneAchsen": 3,
+      "verbleibendOffeneAchsen": 18
     },
     "offeneFelder": {
       "weitereGremien": 137,
       "partei": 74,
-      "fachlicheAchse": 21,
+      "fachlicheAchse": 18,
       "wahlbezirk": 1,
       "mandatsart": 1,
       "regionbezug": 28
@@ -3794,7 +3806,8 @@
         "listenmandat": true,
         "regionHinweis": "Landesliste Nordrhein-Westfalen",
         "funktionen": [
-          "Ordentliches Mitglied: Wahlausschuss"
+          "Ordentliches Mitglied: Wahlausschuss",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -3803,7 +3816,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778",
             "abgerufenAm": "2026-09-27T12:59:36.772613+00:00",
             "sha256": "0750ba10353c7db1b54d6bf3d7d35161d526ee8f96a5c3159398d4674e7cfbea"
+          },
+          {
+            "art": "gremium-aufgabe",
+            "url": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+            "abgerufenAm": "2026-09-27T19:39:37.872399+00:00",
+            "sha256": "8e131046ee994e186873d8bbec7f84f90fd58057158a9080b06911826db26ed8"
           }
+        ],
+        "themen": [
+          "Richter des Bundesverfassungsgerichts"
         ]
       },
       "mandatsnachweis": {
@@ -3852,11 +3874,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Wahlausschuss-Aufgabenquittung docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json: das enge amtlich abgeleitete Thema aus dem geschlossenen aktuellen Gremienaufgabenabsatz unter #arbeit-und-aufgaben und .bt-standard-content (genau ein eigener p mit vollstaendigem Wortlaut und 21. Wahlperiode); die aktuelle Mitgliedschaft stammt aus genau EINEM ProfilePage.mainEntity in genau EINER echten Role zum Wahlausschuss (exakter roleName, startDate <= Abrufzeit, kein endDate); das sonstige Gremium und die bestehenden Funktionen bleiben unveraendert, keine Umdeklarierung, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 0750ba10353c7db1b54d6bf3d7d35161d526ee8f96a5c3159398d4674e7cfbea)",
         "parteiWert": "Seit 1989 für die Grünen aktiv, seit 1994 Mitglied der Partei.",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778 sha256 0750ba10353c7db1b54d6bf3d7d35161d526ee8f96a5c3159398d4674e7cfbea",
-        "funktionen": "memberOf-Rollen der Bundestagsseite, roh als belegte Strings; beratende Rollen sind keine ordentliche Mitgliedschaft; Mitgliedschaften in belegten sonstigen Gremien bleiben rollengetreu als Funktion erhalten",
+        "funktionen": "vom Orchestrator gepruefte Wahlausschuss-Aufgabenquittung docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json: das sonstige Gremium 'Wahlausschuss' und die bestehenden ordentlichen/stellvertretenden Funktionen bleiben unveraendert erhalten (NIE als regulaerer Ausschuss); zusaetzlich nur der getrennte Herkunftshinweis zur amtlichen Aufgabenbindung; die aktuelle Mitgliedschaft (Ordentliches Mitglied) stammt aus genau EINER echten Role in ProfilePage.mainEntity.memberOf, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)",
         "weitereGremien": "amtliches JSON-LD (ProfilePage.mainEntity.memberOf) mit Original-Rolle UND Original-URL; ausdruecklich NICHT als staendiger Ausschuss der laufenden Wahlperiode gefuehrt",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
@@ -3877,11 +3900,9 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden",
         "Weitere belegte Gremien sind nicht als ordentliche Ausschussmitgliedschaft zugeordnet"
       ],
       "offeneFelder": [
-        "fachlicheAchse",
         "weitereGremien"
       ],
       "importfreigegeben": false,
@@ -3894,6 +3915,34 @@
         "status": "offen",
         "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
         "funktionen": []
+      },
+      "wahlausschussQuittung": {
+        "datei": "docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json",
+        "kennung": "bundestag-hasselmann-britta-1044778",
+        "region": "Bund",
+        "person": "Britta Haßelmann",
+        "gremium": "Wahlausschuss",
+        "gremienUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+        "roleName": "Ordentliches Mitglied",
+        "startDate": "2025-03-25",
+        "aufgabenbindung": "Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778",
+          "sha256": "0750ba10353c7db1b54d6bf3d7d35161d526ee8f96a5c3159398d4674e7cfbea",
+          "abgerufenAm": "2026-09-27T12:59:36.772613+00:00"
+        },
+        "quelle": {
+          "datei": "wahlausschuss-aktuell.html",
+          "url": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+          "finalUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+          "abgerufenAm": "2026-09-27T19:39:37.872399+00:00",
+          "sha256": "8e131046ee994e186873d8bbec7f84f90fd58057158a9080b06911826db26ed8",
+          "bytes": 270972
+        },
+        "themen": [
+          "Richter des Bundesverfassungsgerichts"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
       }
     },
     {
@@ -16789,7 +16838,8 @@
         "wahlkreis": "Wahlkreis 248: Main-Spessart",
         "funktionen": [
           "Ordentliches Mitglied: Wahlausschuss",
-          "Vorsitzender der CSU-Landesgruppe im Bundestag und 1. Stellvertretender Vorsitzender der CDU/CSU-Fraktion im Bundestag"
+          "Vorsitzender der CSU-Landesgruppe im Bundestag und 1. Stellvertretender Vorsitzender der CDU/CSU-Fraktion im Bundestag",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -16798,7 +16848,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/H/hoffmann_alexander-1048720",
             "abgerufenAm": "2026-09-27T13:00:30.701425+00:00",
             "sha256": "3c9b5716794f7a13785bbfa3ab32792d916a6dc3698f17d49927d4fb74fbddb1"
+          },
+          {
+            "art": "gremium-aufgabe",
+            "url": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+            "abgerufenAm": "2026-09-27T19:39:37.872399+00:00",
+            "sha256": "8e131046ee994e186873d8bbec7f84f90fd58057158a9080b06911826db26ed8"
           }
+        ],
+        "themen": [
+          "Richter des Bundesverfassungsgerichts"
         ]
       },
       "mandatsnachweis": {
@@ -16843,11 +16902,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Wahlausschuss-Aufgabenquittung docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json: das enge amtlich abgeleitete Thema aus dem geschlossenen aktuellen Gremienaufgabenabsatz unter #arbeit-und-aufgaben und .bt-standard-content (genau ein eigener p mit vollstaendigem Wortlaut und 21. Wahlperiode); die aktuelle Mitgliedschaft stammt aus genau EINEM ProfilePage.mainEntity in genau EINER echten Role zum Wahlausschuss (exakter roleName, startDate <= Abrufzeit, kein endDate); das sonstige Gremium und die bestehenden Funktionen bleiben unveraendert, keine Umdeklarierung, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 3c9b5716794f7a13785bbfa3ab32792d916a6dc3698f17d49927d4fb74fbddb1)",
         "parteiWert": "seit 2006 CSU-Mitglied",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hoffmann_alexander-1048720 sha256 3c9b5716794f7a13785bbfa3ab32792d916a6dc3698f17d49927d4fb74fbddb1",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich memberOf-Rollen der Bundestagsseite bzw. Mitgliedschaften in belegten sonstigen Gremien rollengetreu als Funktion erhalten",
+        "funktionen": "vom Orchestrator gepruefte Wahlausschuss-Aufgabenquittung docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json: das sonstige Gremium 'Wahlausschuss' und die bestehenden ordentlichen/stellvertretenden Funktionen bleiben unveraendert erhalten (NIE als regulaerer Ausschuss); zusaetzlich nur der getrennte Herkunftshinweis zur amtlichen Aufgabenbindung; die aktuelle Mitgliedschaft (Ordentliches Mitglied) stammt aus genau EINER echten Role in ProfilePage.mainEntity.memberOf, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)",
         "weitereGremien": "amtliches JSON-LD (ProfilePage.mainEntity.memberOf) mit Original-Rolle UND Original-URL; ausdruecklich NICHT als staendiger Ausschuss der laufenden Wahlperiode gefuehrt"
       },
       "weitereGremien": [
@@ -16867,11 +16927,9 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden",
         "Weitere belegte Gremien sind nicht als ordentliche Ausschussmitgliedschaft zugeordnet"
       ],
       "offeneFelder": [
-        "fachlicheAchse",
         "weitereGremien"
       ],
       "importfreigegeben": false,
@@ -16891,6 +16949,34 @@
             "zeitbeleg": "seit Mai 2025"
           }
         ]
+      },
+      "wahlausschussQuittung": {
+        "datei": "docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json",
+        "kennung": "bundestag-hoffmann-alexander-1048720",
+        "region": "Bund",
+        "person": "Alexander Hoffmann",
+        "gremium": "Wahlausschuss",
+        "gremienUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+        "roleName": "Ordentliches Mitglied",
+        "startDate": "2025-03-25",
+        "aufgabenbindung": "Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/H/hoffmann_alexander-1048720",
+          "sha256": "3c9b5716794f7a13785bbfa3ab32792d916a6dc3698f17d49927d4fb74fbddb1",
+          "abgerufenAm": "2026-09-27T13:00:30.701425+00:00"
+        },
+        "quelle": {
+          "datei": "wahlausschuss-aktuell.html",
+          "url": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+          "finalUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+          "abgerufenAm": "2026-09-27T19:39:37.872399+00:00",
+          "sha256": "8e131046ee994e186873d8bbec7f84f90fd58057158a9080b06911826db26ed8",
+          "bytes": 270972
+        },
+        "themen": [
+          "Richter des Bundesverfassungsgerichts"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
       }
     },
     {
@@ -37842,7 +37928,8 @@
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 047: Hannover-Land II",
         "funktionen": [
-          "Stellvertretendes Mitglied: Wahlausschuss"
+          "Stellvertretendes Mitglied: Wahlausschuss",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -37851,7 +37938,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
             "abgerufenAm": "2026-09-27T13:02:01.522263+00:00",
             "sha256": "1964d6f86f4c5ee9fdece19ece9483e17197c776db4c3e52f21b92d965d6b902"
+          },
+          {
+            "art": "gremium-aufgabe",
+            "url": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+            "abgerufenAm": "2026-09-27T19:39:37.872399+00:00",
+            "sha256": "8e131046ee994e186873d8bbec7f84f90fd58057158a9080b06911826db26ed8"
           }
+        ],
+        "themen": [
+          "Richter des Bundesverfassungsgerichts"
         ]
       },
       "mandatsnachweis": {
@@ -37896,11 +37992,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Wahlausschuss-Aufgabenquittung docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json: das enge amtlich abgeleitete Thema aus dem geschlossenen aktuellen Gremienaufgabenabsatz unter #arbeit-und-aufgaben und .bt-standard-content (genau ein eigener p mit vollstaendigem Wortlaut und 21. Wahlperiode); die aktuelle Mitgliedschaft stammt aus genau EINEM ProfilePage.mainEntity in genau EINER echten Role zum Wahlausschuss (exakter roleName, startDate <= Abrufzeit, kein endDate); das sonstige Gremium und die bestehenden Funktionen bleiben unveraendert, keine Umdeklarierung, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 1964d6f86f4c5ee9fdece19ece9483e17197c776db4c3e52f21b92d965d6b902)",
         "parteiWert": "Seit 1990 Mitglied der SPD",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120 sha256 1964d6f86f4c5ee9fdece19ece9483e17197c776db4c3e52f21b92d965d6b902",
-        "funktionen": "memberOf-Rollen der Bundestagsseite, roh als belegte Strings; beratende Rollen sind keine ordentliche Mitgliedschaft; Mitgliedschaften in belegten sonstigen Gremien bleiben rollengetreu als Funktion erhalten",
+        "funktionen": "vom Orchestrator gepruefte Wahlausschuss-Aufgabenquittung docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json: das sonstige Gremium 'Wahlausschuss' und die bestehenden ordentlichen/stellvertretenden Funktionen bleiben unveraendert erhalten (NIE als regulaerer Ausschuss); zusaetzlich nur der getrennte Herkunftshinweis zur amtlichen Aufgabenbindung; die aktuelle Mitgliedschaft (Stellvertretendes Mitglied) stammt aus genau EINER echten Role in ProfilePage.mainEntity.memberOf, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)",
         "weitereGremien": "amtliches JSON-LD (ProfilePage.mainEntity.memberOf) mit Original-Rolle UND Original-URL; ausdruecklich NICHT als staendiger Ausschuss der laufenden Wahlperiode gefuehrt"
       },
       "weitereGremien": [
@@ -37920,11 +38017,9 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden",
         "Weitere belegte Gremien sind nicht als ordentliche Ausschussmitgliedschaft zugeordnet"
       ],
       "offeneFelder": [
-        "fachlicheAchse",
         "weitereGremien"
       ],
       "importfreigegeben": false,
@@ -37937,6 +38032,34 @@
         "status": "offen",
         "begruendung": "Biografie nennt seit 2024 kommissarischer Generalsekretaer; aktuelle Fraktions-/Amtsrolle nicht allein daraus ableiten.",
         "funktionen": []
+      },
+      "wahlausschussQuittung": {
+        "datei": "docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json",
+        "kennung": "bundestag-miersch-matthias-1046120",
+        "region": "Bund",
+        "person": "Dr. Matthias Miersch",
+        "gremium": "Wahlausschuss",
+        "gremienUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+        "roleName": "Stellvertretendes Mitglied",
+        "startDate": "2025-03-25",
+        "aufgabenbindung": "Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
+          "sha256": "1964d6f86f4c5ee9fdece19ece9483e17197c776db4c3e52f21b92d965d6b902",
+          "abgerufenAm": "2026-09-27T13:02:01.522263+00:00"
+        },
+        "quelle": {
+          "datei": "wahlausschuss-aktuell.html",
+          "url": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+          "finalUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+          "abgerufenAm": "2026-09-27T19:39:37.872399+00:00",
+          "sha256": "8e131046ee994e186873d8bbec7f84f90fd58057158a9080b06911826db26ed8",
+          "bytes": 270972
+        },
+        "themen": [
+          "Richter des Bundesverfassungsgerichts"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
       }
     },
     {
