@@ -1,0 +1,58 @@
+{
+  "vertragsformat": "helmut-mandatsartenbeleg/1",
+  "zweck": "Amtlicher Mandatsartenbeleg (Landesliste) fuer vier bislang offene Brandenburg-Zielprofile. Lokale Quittung: keine Importfreigabe, keine Aktivierung, keine Production-Aktion.",
+  "quelle": {
+    "url": "https://www.landtag.brandenburg.de/de/abgeordnete_fraktionen_-_gruppe/abgeordnete/abgeordnete_im_ueberblick/25777",
+    "datei": "roster-bb-mandatsarten-20260927.html",
+    "abgerufenAm": "2026-09-27T14:33:29.442060+00:00",
+    "sha256": "5c151150eab794686410d69491f339663c274bdf4e25d98a5871906af3a7988d",
+    "bytes": 191074
+  },
+  "regeln": [
+    "Uebernommen werden ausschliesslich die Mandatsart Landesliste und die Region Brandenburg.",
+    "Der Profillink der amtlichen Uebersicht muss exakt der amtlichen Profil-URL des Zielprofils entsprechen.",
+    "Die Zeile muss das Wort Landesliste woertlich tragen; fehlt es oder weicht der Link ab, bricht der Assembler fail closed ab.",
+    "Die Listenbeschriftung der Uebersicht (z. B. WfB-Gruppe oder fraktionslos) ist KEINE urspruengliche Wahlliste, KEINE Partei und KEIN Listenplatz.",
+    "Der angegebene Listenplatz 0 wird NICHT als Listenplatz uebernommen.",
+    "Diese lokale Quittung ist keine fachliche Freigabe und kein Importmanifest."
+  ],
+  "belege": [
+    {
+      "amtlicheKennung": "40624",
+      "vollname": "Matzies, Melanie",
+      "profilPfad": "/de/matzies_melanie/40624",
+      "mandatsart": "Landesliste",
+      "region": "Brandenburg",
+      "zeileWortlaut": "Matzies, Melanie WfB-Gruppe Landesliste WfB-Gruppe, Platz 0"
+    },
+    {
+      "amtlicheKennung": "40627",
+      "vollname": "Simon, Reinhard",
+      "profilPfad": "/de/simon_reinhard/40627",
+      "mandatsart": "Landesliste",
+      "region": "Brandenburg",
+      "zeileWortlaut": "Simon, Reinhard WfB-Gruppe Landesliste WfB-Gruppe, Platz 0"
+    },
+    {
+      "amtlicheKennung": "40629",
+      "vollname": "Skopec, Oliver",
+      "profilPfad": "/de/skopec_oliver/40629",
+      "mandatsart": "Landesliste",
+      "region": "Brandenburg",
+      "zeileWortlaut": "Skopec, Oliver fraktionslos Landesliste fraktionslos, Platz 0"
+    },
+    {
+      "amtlicheKennung": "40630",
+      "vollname": "von Ossowski, André",
+      "profilPfad": "/de/von_ossowski_andr/40630",
+      "mandatsart": "Landesliste",
+      "region": "Brandenburg",
+      "zeileWortlaut": "von Ossowski, André WfB-Gruppe Landesliste WfB-Gruppe, Platz 0"
+    }
+  ],
+  "nichtUebernommen": [
+    "WfB-Gruppe als urspruengliche Wahlliste oder Partei",
+    "fraktionslos als Wahlliste oder Partei",
+    "Landeslistenplatz 0"
+  ]
+}

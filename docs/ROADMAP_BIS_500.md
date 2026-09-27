@@ -127,7 +127,9 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:74 Parteifelder und die ausgewiesenen Mandats-/
-Fachachsen einzeln belegen;444 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;443 technische Erfolge sind keine fachliche Importfreigabe.
+Gremienrollen und vier BB-Listenmandate sind korrigiert. Naechster klarer Codefehler:
+SSW plus fraktionslos wird faelschlich als Partei-/Fraktionswiderspruch gewertet.
 
 1. Die gemeinsame semantische Trennung der tatsächlich sichtbaren Texte aus
    Briefing, Lage und Radar technisch absichern und mit echten Helmut Ausgaben

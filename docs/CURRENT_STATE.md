@@ -5,7 +5,7 @@
 ## 1 · Aktueller Stand
 
 
-* **27.09.: Bundestag/Berlin/Brandenburg zuerst; AfD ausgeschlossen.** [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md):330/120/50, alle gleich ausgewaehlt;500 amtliche Quellhashes geprueft.444 technisch akzeptiert,56 unvollstaendig (Stellvertretungen korrigiert);74 Parteifelder noch offen;426 belegt, keine Importfreigabe. Partei-/Rollenpruefung und sichtbare Landesversorgung folgen. Production14:27:21UTC unveraendert500/0, Hash198f25ff81cf5ee4ad2645c1881a8191; PR657/eaa67c7b READY. PARDOK nur Shadow;18 Landeswege ungeprueft. Production-Kosten vor bezahltem Lauf frisch pruefen.
+* **27.09.: Bundestag/Berlin/Brandenburg zuerst; AfD ausgeschlossen.** [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md):330/120/50, alle gleich ausgewaehlt;500 amtliche Quellhashes geprueft.443 technisch akzeptiert,57 unvollstaendig;141 Gremienrollen getrennt,4 BB-Listenmandate belegt.74 Parteifelder offen;426 belegt, keine Importfreigabe. SSW/fraktionslos-Prueffehler und Landesversorgung offen. Production14:58:06UTC500/0, Hash198f25ff81cf5ee4ad2645c1881a8191; PR659/204b3c46 READY. PARDOK nur Shadow;18 Landeswege ungeprueft. Production-Kosten vor bezahltem Lauf frisch pruefen.
 
 * **Quellenstand vor der Themengegenprobe:** PR638/`46a2bb7d` READY; [Rest3-Lauf](betrieb/verstehen-frische3-rest-20260926.md)36281285571 mit3 Aufrufen/0,021170USD:2 Ergebnisse fachlich abgenommen, Aegypten gesichert gesperrt. Wadephul-Fehlbindung und Hormus-Sperre bleiben erhalten. Keine Wiederholung. [Vollauswertung00:12UTC](betrieb/versorgung-500-20260927.md):4/500 Tagesprioritaeten. Der [begrenzte Lage-Generatornachweis](betrieb/lage-fachkorrektur-20260926.md) ersetzt kein zusammenhaengendes Bereichspaket.
 

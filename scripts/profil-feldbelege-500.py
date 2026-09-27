@@ -10,11 +10,26 @@ Belegdatensatz fuer exakt 500 Zielprofile erzeugen.
 
 Harte Grenzen dieses Werkzeugs:
 
-  * ausschliesslich lokal/offline und nur mit der Python-Standardbibliothek
-    (keine Netzwerk-, DB- oder Modellzugriffe, kein Import, kein Commit),
+  * ausschliesslich lokal/offline (keine Netzwerk-, DB- oder Modellzugriffe,
+    kein Import, kein Commit). Der Python-Code nutzt nur die Standardbibliothek;
+    fuer die EINE fachliche Frage "ist dieser Name ein staendiger Ausschuss?"
+    wird der vorhandene Produktcode
+    (``lib/helmut/profile-readiness.resolveBundestagsausschuss``) ueber den
+    Node-Helfer ``scripts/profil-gremien-resolver.js`` befragt, statt die
+    Sollmenge ein zweites Mal zu pflegen,
   * KEINE fachliche Freigabe: jeder Datensatz bleibt ``aktiv: false`` und
     ``importfreigegeben: false``; leere fachliche Achsen und ungeklaerte
     Parteizugehoerigkeiten bleiben sichtbar OFFEN (nichts wird "schoengerechnet"),
+  * belegte sonstige Gremien (Beirat/Unterausschuss/Kommission/Kontrollgremium/
+    Wahlausschuss/Rechnungspruefung) stehen nicht in den staendigen
+    Ausschussfeldern: sie bleiben als ``weitereGremien`` UND rollengetreu in
+    ``funktionen`` erhalten. Nur die explizite Liste mit amtlicher JSON-LD-URL
+    und Original-Rolle wird herausgeloest; unbekannte echte Ausschuesse bleiben
+    gesperrt (fail closed),
+  * vier bislang offene Brandenburg-Mandatsarten sind ueber die versionierte
+    lokale Quittung ``docs/betrieb/brandenburg-mandatsarten-20260927.json`` als
+    Landesliste belegt (URL + Hash + Abrufzeit); uebernommen werden nur
+    Mandatsart und Region — NICHT Listenbeschriftung oder Listenplatz,
   * keine erfundenen Positionen, Themen, Rollen oder Biografien; uebernommen
     wird nur, was in der amtlichen Quelle belegt ist,
   * keine AfD-Zielprofile (die Auswahl ist bereits ohne AfD; zusaetzlich wird
@@ -36,6 +51,8 @@ import hashlib
 import html as _html
 import json
 import re
+import shutil
+import subprocess
 import sys
 import unicodedata
 from pathlib import Path
@@ -54,11 +71,60 @@ PARTEIFELDPRUEFUNG = REPO_ROOT / "docs" / "betrieb" / "parteifeldpruefung-335-20
 PARTEIFELDPRUEFUNG_RESSOURCE = "docs/betrieb/parteifeldpruefung-335-20260927.json"
 ERGAENZUNG_STATUS = ("belegt", "parteilos", "offen")
 
+# Versionierte lokale Quittung zum amtlichen Mandatsartenbeleg vierer
+# Brandenburg-Profile (Landesliste). Nur Mandatsart "Landesliste" und die Region
+# Brandenburg sind belegt — NICHT die irrefuehrende Listenbeschriftung
+# (WfB-Gruppe/fraktionslos) und NICHT der Listenplatz 0.
+MANDATSARTEN_BB = REPO_ROOT / "docs" / "betrieb" / "brandenburg-mandatsarten-20260927.json"
+MANDATSARTEN_BB_RESSOURCE = "docs/betrieb/brandenburg-mandatsarten-20260927.json"
+MANDATSARTEN_BB_REGION = "Brandenburg"
+
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
 ABRUF_LANDESPARLAMENTE = "landesprofile-170-abruf.json"
 EXTRAKTION_BUNDESTAG = "bundestagsprofile-330-extraktion.json"
 EXTRAKTION_LANDESPARLAMENTE = "landesprofile-170-extraktion.json"
 DETAILSEITEN = "detailseiten"
+
+# Explizite, amtlich belegte Liste der "sonstigen Gremien" des Bundestages.
+# Schluessel ist der Name aus dem amtlichen JSON-LD (ProfilePage.mainEntity.memberOf),
+# Wert die amtliche URL desselben Objekts. Genau diese Gremien werden aus den
+# staendigen Ausschuessen herausgeloest und als ``weitereGremien`` + rollengetreue
+# ``funktionen`` weitergereicht. Alles andere bleibt unangetastet: ein unbekannter
+# echter Ausschuss bleibt weiter gesperrt (fail closed), er wird NICHT umgedeutet.
+SONSTIGE_GREMIEN = {
+    "Parlamentarischer Beirat für nachhaltige Entwicklung und Zukunftsfragen":
+        "https://www.bundestag.de/ausschuesse/weitere_gremien/pbnez",
+    "Wahlausschuss":
+        "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+    "Enquete-Kommission „Corona“":
+        "https://www.bundestag.de/ausschuesse/weitere_gremien/ee01",
+    "Gremium gemäß Artikel 13 Absatz 6 des Grundgesetzes":
+        "https://www.bundestag.de/ausschuesse/weitere_gremien/gremium-artikel13",
+    "Parlamentarisches Kontrollgremium (PKGr)":
+        "https://www.bundestag.de/ausschuesse/weitere_gremien/parlamentarisches-kontrollgremium",
+    "Unterausschuss Internationale Ordnung, Vereinte Nationen und internationale Organisationen":
+        "https://www.bundestag.de/ausschuesse/a03_auswaertiges/ua_vn",
+    "Unterausschuss Krisenprävention, strategische Vorausschau, Stabilisierung und Friedensförderung":
+        "https://www.bundestag.de/ausschuesse/a03_auswaertiges/ua_kvsf",
+    "Unterausschuss Rüstungs- und Proliferationskontrolle, Nichtverbreitung und internationale Abrüstung":
+        "https://www.bundestag.de/ausschuesse/a03_auswaertiges/ua_rna",
+    "Unterausschuss Europarecht":
+        "https://www.bundestag.de/ausschuesse/recht-verbraucherschutz/europarecht",
+    "Unterausschuss Auswärtige Kultur- und Bildungspolitik":
+        "https://www.bundestag.de/ausschuesse/a03_auswaertiges/ua_kb",
+    "Rechnungsprüfungsausschuss":
+        "https://www.bundestag.de/ausschuesse/a08_haushalt/a08_rpa",
+    "Bundesfinanzierungsgremium":
+        "https://www.bundestag.de/ausschuesse/a08_haushalt/bundesfinanzierungsgremium",
+    "Vertrauensgremium":
+        "https://www.bundestag.de/ausschuesse/a08_haushalt/vertrauensgremium",
+    "Kinderkommission - Kommission zur Wahrnehmung der Belange der Kinder":
+        "https://www.bundestag.de/ausschuesse/a13_Bildung-Familie-Senioren-Frauen-und-Jugend/kiko",
+    "Unterausschuss zu Fragen der Europäischen Union":
+        "https://www.bundestag.de/ausschuesse/a08_haushalt/a08_eu",
+}
+
+GREMIEN_RESOLVER = REPO_ROOT / "scripts" / "profil-gremien-resolver.js"
 
 # Erwartete Verteilung der ersten Nachweisetappe (Bundestag/Berlin/Brandenburg).
 ERWARTETE_VERTEILUNG = {"bundestag": 330, "landtag-berlin": 120, "landtag-brandenburg": 50}
@@ -130,6 +196,213 @@ def _normalisiere_liste(werte):
     return ergebnis
 
 
+# ── Amtliches JSON-LD der Bundestags-Detailseite ─────────────────────────────
+def _jsonld_member_rollen(detail_html: str) -> list:
+    """Mitgliedschaftsrollen aus dem amtlichen ProfilePage-JSON-LD.
+
+    Rueckgabe je Eintrag: ``{"gremium": Name, "url": amtliche URL, "rolle": roleName}``.
+    Nur Rollen mit Organisation-Objekt werden uebernommen; die reine
+    Bundestagsmitgliedschaft bleibt enthalten und wird vom Aufrufer nicht als
+    Gremium behandelt.
+    """
+    rollen = []
+    for block in re.findall(r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>', detail_html, re.S):
+        try:
+            daten = json.loads(block)
+        except json.JSONDecodeError:
+            continue
+        for eintrag in (daten if isinstance(daten, list) else [daten]):
+            if not isinstance(eintrag, dict):
+                continue
+            haupt = eintrag.get("mainEntity")
+            if not isinstance(haupt, dict):
+                continue
+            for mitglied in haupt.get("memberOf") or []:
+                if not isinstance(mitglied, dict) or mitglied.get("@type") != "Role":
+                    continue
+                organisation = mitglied.get("memberOf")
+                if not isinstance(organisation, dict):
+                    continue
+                name = str(organisation.get("name") or "").strip()
+                if not name:
+                    continue
+                rollen.append({
+                    "gremium": name,
+                    "url": str(organisation.get("url") or "").strip(),
+                    "rolle": str(mitglied.get("roleName") or "").strip(),
+                })
+    return rollen
+
+
+# Zwischenspeicher der Resolver-Antworten (eine Sollmenge, kein zweiter Katalog).
+_RESOLVER_CACHE: dict = {}
+
+
+def _rufe_gremien_resolver(namen):
+    """Befragt den vorhandenen Ausschuss-Resolver ueber den Node-Helfer.
+
+    Im Python-Code wird die Sollmenge der staendigen Ausschuesse bewusst nicht
+    nachgebildet: es gilt ausschliesslich ``lib/helmut/profile-readiness.js``
+    (``resolveBundestagsausschuss``). Fehlt Node oder schlaegt der Aufruf fehl,
+    bricht der Lauf fail closed ab.
+    """
+    node = shutil.which("node")
+    if not node:
+        raise AssemblerFehler("Node fehlt — der vorhandene Ausschuss-Resolver kann nicht befragt werden.")
+    lauf = subprocess.run(
+        [node, str(GREMIEN_RESOLVER)],
+        input=json.dumps({"gremien": list(namen)}, ensure_ascii=False),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if lauf.returncode != 0:
+        raise AssemblerFehler(f"Ausschuss-Resolver fehlgeschlagen: {lauf.stderr.strip()[:300]}")
+    try:
+        ergebnis = json.loads(lauf.stdout)
+    except json.JSONDecodeError as fehler:
+        raise AssemblerFehler(f"Ausschuss-Resolver lieferte kein gueltiges JSON: {fehler}")
+    if not isinstance(ergebnis, dict):
+        raise AssemblerFehler("Ausschuss-Resolver lieferte ein unerwartetes Format.")
+    return ergebnis
+
+
+def _loese_gremien(namen):
+    """Klassifiziert Gremiennamen ueber den vorhandenen Resolver (mit Zwischenspeicher)."""
+    gesucht = list(dict.fromkeys(namen))
+    offen = [n for n in gesucht if n not in _RESOLVER_CACHE]
+    if offen:
+        _RESOLVER_CACHE.update(_rufe_gremien_resolver(offen))
+    return {n: _RESOLVER_CACHE[n] for n in gesucht if n in _RESOLVER_CACHE}
+
+
+def _pruefe_gremienliste() -> None:
+    """Die explizite Gremienliste muss amtlich belegt und mit dem Resolver widerspruchsfrei sein."""
+    ohne_url = sorted(n for n, u in SONSTIGE_GREMIEN.items() if not str(u).startswith("https://"))
+    if ohne_url:
+        raise AssemblerFehler(f"Sonstige Gremien ohne amtliche https-URL: {ohne_url}")
+    ergebnis = _loese_gremien(sorted(SONSTIGE_GREMIEN))
+    kollision = sorted(n for n, e in ergebnis.items() if e.get("staendig"))
+    if kollision:
+        raise AssemblerFehler(
+            f"Explizite Gremienliste kollidiert mit dem Ausschuss-Resolver: {kollision}"
+        )
+
+
+def _trenne_sonstige_gremien(detail_html: str, ordentliche: list, stellvertretende: list):
+    """Loest belegte sonstige Gremien aus den staendigen Ausschusslisten heraus.
+
+    Fail closed:
+
+    * Ein Name, den der vorhandene Resolver als staendigen Ausschuss aufloest,
+      bleibt unveraendert in den Ausschusslisten.
+    * Ein Name der expliziten Gremienliste wird nur herausgeloest, wenn das
+      amtliche JSON-LD der Original-HTML denselben Namen mit derselben amtlichen
+      URL und genau der passenden Mitgliedschaftsrolle traegt.
+    * Jeder andere Name bleibt unangetastet in den Ausschusslisten; ein
+      unbekannter echter Ausschuss bleibt damit weiter gesperrt.
+
+    Rueckgabe: (ordentliche, stellvertretende, weitereGremien, funktionen, belege)
+    """
+    kandidaten = [n for n in list(ordentliche) + list(stellvertretende) if n in SONSTIGE_GREMIEN]
+    resolver = _loese_gremien(kandidaten)
+    rollen = _jsonld_member_rollen(detail_html)
+    behalten_ordentlich = []
+    behalten_stellvertretend = []
+    weitere = []
+    funktionen = []
+    belege = []
+    for feld, werte, behalten, erwartete_rolle in (
+        ("ausschuesse", ordentliche, behalten_ordentlich, "Ordentliches Mitglied"),
+        ("stellvertretendeAusschuesse", stellvertretende, behalten_stellvertretend, "Stellvertretendes Mitglied"),
+    ):
+        for wert in werte:
+            if wert not in SONSTIGE_GREMIEN:
+                behalten.append(wert)
+                continue
+            if resolver.get(wert, {}).get("staendig"):
+                raise AssemblerFehler(
+                    f"Gremienliste widerspricht dem Resolver: {wert!r} ist als staendiger Ausschuss aufloesbar."
+                )
+            url = SONSTIGE_GREMIEN[wert]
+            rolle = next(
+                (r["rolle"] for r in rollen
+                 if r["gremium"] == wert and r["url"] == url and r["rolle"] == erwartete_rolle),
+                None,
+            )
+            if rolle is None:
+                raise AssemblerFehler(
+                    f"Amtlicher JSON-LD-Beleg fuer sonstiges Gremium fehlt oder weicht ab: {wert!r} ({feld})."
+                )
+            if wert not in weitere:
+                weitere.append(wert)
+            eintrag = f"{rolle}: {wert}"
+            if eintrag not in funktionen:
+                funktionen.append(eintrag)
+            belege.append({"gremium": wert, "rolle": rolle, "url": url, "feld": feld})
+    return behalten_ordentlich, behalten_stellvertretend, weitere, funktionen, belege
+
+
+def _pruefe_mandatsarten_bb(eingang, quittung_pfad: Path = MANDATSARTEN_BB) -> dict:
+    """Prueft die versionierte Mandatsartenquittung gegen die amtliche Original-HTML.
+
+    Nur die ausdruecklich belegten Profillinks werden uebernommen; die Angabe
+    "Landesliste" wird woertlich in der Zeile der amtlichen Uebersicht geprueft.
+    Quelldrift (Hash/Groesse, fehlender oder falscher Profillink, fehlendes Wort
+    "Landesliste") und eine Fremdkennung ausserhalb der 500 Zielprofile brechen
+    den Lauf fail closed ab.
+    """
+    quittung = _lies_json(quittung_pfad)
+    quelle = quittung.get("quelle") or {}
+    datei = eingang.verzeichnis / str(quelle.get("datei") or "")
+    if not datei.exists():
+        raise AssemblerFehler(f"Mandatsartenquelle fehlt lokal: {datei}")
+    if _sha256(datei) != quelle.get("sha256") or datei.stat().st_size != quelle.get("bytes"):
+        raise AssemblerFehler("Mandatsartenquelle weicht von der versionierten Quittung ab (Hash/Groesse).")
+    html = datei.read_text(encoding="utf-8")
+    abruf_by_kennung = {
+        str(a["amtlicheKennung"]): a
+        for a in eingang.abruf
+        if a.get("parlament") == "landtag-brandenburg"
+    }
+    belege = {}
+    for eintrag in quittung.get("belege") or []:
+        kennung = str(eintrag.get("amtlicheKennung") or "").strip()
+        pfad = str(eintrag.get("profilPfad") or "").strip()
+        if not kennung or not pfad.endswith(f"/{kennung}"):
+            raise AssemblerFehler(f"Mandatsartenquittung: ungueltiger Profillink zu {kennung!r}.")
+        abruf = abruf_by_kennung.get(kennung)
+        if abruf is None:
+            raise AssemblerFehler(f"Mandatsartenquittung: Kennung {kennung} gehoert nicht zu den 500 Zielprofilen.")
+        if not str(abruf.get("url", "")).endswith(pfad):
+            raise AssemblerFehler(f"Mandatsartenquittung: Profillink weicht von der amtlichen URL ab ({kennung}).")
+        zeilen = [
+            zeile for zeile in re.findall(r"<tr\b[^>]*>.*?</tr>", html, re.S)
+            if f'href="{pfad}"' in zeile and 'class="profile"' in zeile
+        ]
+        if len(zeilen) != 1:
+            raise AssemblerFehler(f"Mandatsartenquelle: Profillink {pfad} nicht eindeutig belegt.")
+        zeile_wortlaut = _text(zeilen[0])
+        if "Landesliste" not in zeile_wortlaut:
+            raise AssemblerFehler(f"Mandatsartenquelle: Wort 'Landesliste' fehlt fuer {kennung}.")
+        erwartete_zeile = str(eintrag.get("zeileWortlaut") or "").strip()
+        if not erwartete_zeile or zeile_wortlaut != erwartete_zeile:
+            raise AssemblerFehler(
+                f"Mandatsartenquelle: Zeile weicht von der versionierten Quittung ab ({kennung})."
+            )
+        belege[kennung] = {
+            "datei": MANDATSARTEN_BB_RESSOURCE,
+            "url": quelle.get("url"),
+            "abgerufenAm": quelle.get("abgerufenAm"),
+            "sha256": quelle.get("sha256"),
+            "profilPfad": pfad,
+            "zeileWortlaut": zeile_wortlaut,
+        }
+    if not belege:
+        raise AssemblerFehler("Mandatsartenquittung enthaelt keinen Beleg.")
+    return belege
+
+
 # ── Eingang laden und binden ──────────────────────────────────────────────────
 class Eingang:
     def __init__(self, verzeichnis: Path):
@@ -148,6 +421,10 @@ class Eingang:
         self.abruf_by_url = {eintrag["url"]: eintrag for eintrag in self.abruf}
         self.extraktion_by_url = {eintrag["quelle"]["url"]: eintrag for eintrag in self.extraktion}
         self.partei_by_url = {eintrag["url"]: eintrag for eintrag in self.brandenburg_partei["ergebnisse"]}
+        # Versionierte Mandatsartenquittung fuer vier Brandenburg-Profile; wird von
+        # ``assembliere`` gegen die amtliche Original-HTML geprueft und gesetzt.
+        self.mandatsarten_bb = {}
+        self.mandatsarten_verwendet = set()
 
 
 def _pruefe_eingangsbindung(eingang: Eingang) -> dict:
@@ -616,6 +893,31 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
     if not bundesland:
         raise AssemblerFehler(f"Kein belegtes Bundesland fuer {eintrag['url']} — nicht auf NULL normalisieren.")
 
+    # Versionierte Mandatsartenquittung: nur die ausdruecklich belegte Landesliste
+    # eines bislang offenen Brandenburg-Mandats. Keine Partei-/Listenplatz-Ableitung
+    # aus der irrefuehrenden Listenbeschriftung.
+    mandatsart_quittung = None
+    if parlament == "landtag-brandenburg":
+        quittung = (getattr(eingang, "mandatsarten_bb", None) or {}).get(str(abruf["amtlicheKennung"]))
+        if quittung is not None:
+            if landtag_mandat is None or landtag_mandat["art"] != "offen":
+                raise AssemblerFehler(
+                    f"Mandatsartenquittung fuer {abruf['amtlicheKennung']} hat kein offenes Mandatsartenfeld."
+                )
+            landtag_mandat = {
+                "art": "liste",
+                "wahlkreis": None,
+                "listenmandat": True,
+                "regionHinweis": f"{MANDATSARTEN_BB_REGION} — Landesliste",
+                "offen": None,
+                "quelle": "mandatsartenquittung",
+                "beleg": quittung["zeileWortlaut"],
+            }
+            mandatsart_quittung = quittung
+            verwendet = getattr(eingang, "mandatsarten_verwendet", None)
+            if verwendet is not None:
+                verwendet.add(str(abruf["amtlicheKennung"]))
+
     parteinachweis = _parteinachweis(eingang, eintrag, extraktion)
     parteinachweis = _ergaenzung_partnachweis(
         eingang, parlament, abruf, detail_html, mandatsId, parteinachweis
@@ -647,11 +949,28 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
 
     ordentliche = _normalisiere_liste(profil_roh.get("ausschuesse"))
     stellvertretende = _normalisiere_liste(profil_roh.get("stellvertretendeAusschuesse"))
+    weitere_gremien = _normalisiere_liste(extraktion.get("weitereGremien"))
+    weitere_gremien_beleg = []
+    zusatz_funktionen = []
+    if parlament == "bundestag":
+        # Belegte sonstige Gremien (Beirat/Unterausschuss/Kommission/Kontrollgremium/
+        # Wahlausschuss/Rechnungspruefung) gehoeren nicht in die staendigen
+        # Ausschuesse; sie werden als weitereGremien UND rollengetreue funktionen
+        # weitergereicht. Unbekannte echte Ausschuesse bleiben unveraendert gesperrt.
+        ordentliche, stellvertretende, zusaetzliche, zusatz_funktionen, weitere_gremien_beleg = (
+            _trenne_sonstige_gremien(detail_html, ordentliche, stellvertretende)
+        )
+        for gremium in zusaetzliche:
+            if gremium not in weitere_gremien:
+                weitere_gremien.append(gremium)
     if ordentliche:
         profil["ausschuesse"] = ordentliche
     if stellvertretende:
         profil["stellvertretendeAusschuesse"] = stellvertretende
     funktionen = _funktionen_als_strings(profil_roh.get("funktionen"))
+    for eintrag_funktion in zusatz_funktionen:
+        if eintrag_funktion not in funktionen:
+            funktionen.append(eintrag_funktion)
     if funktionen:
         profil["funktionen"] = funktionen
     profil["aktiv"] = False
@@ -686,8 +1005,23 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         feldbelege["region"] = (
             f"amtlicher Profilkopf (HTML), ausdrueckliche Angabe: {landtag_mandat.get('beleg', '')}"
         )
+    if mandatsart_quittung is not None:
+        feldbelege["region"] = (
+            f"versionierte lokale Mandatsartenquittung {MANDATSARTEN_BB_RESSOURCE} "
+            f"(amtliche Uebersicht, URL UND sha256 gebunden); nur Mandatsart Landesliste "
+            f"und Region Brandenburg uebernommen — NICHT die Listenbeschriftung und NICHT der Listenplatz"
+        )
     if profil.get("funktionen"):
-        feldbelege["funktionen"] = "memberOf-Rollen der Bundestagsseite, roh als belegte Strings; beratende Rollen sind keine ordentliche Mitgliedschaft"
+        feldbelege["funktionen"] = (
+            "memberOf-Rollen der Bundestagsseite, roh als belegte Strings; beratende Rollen sind keine "
+            "ordentliche Mitgliedschaft; Mitgliedschaften in belegten sonstigen Gremien bleiben "
+            "rollengetreu als Funktion erhalten"
+        )
+    if weitere_gremien_beleg:
+        feldbelege["weitereGremien"] = (
+            "amtliches JSON-LD (ProfilePage.mainEntity.memberOf) mit Original-Rolle UND Original-URL; "
+            "ausdruecklich NICHT als staendiger Ausschuss der laufenden Wahlperiode gefuehrt"
+        )
 
     # ── Offene Punkte explizit zusammentragen ─────────────────────────────────
     offene_punkte = []
@@ -748,13 +1082,17 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         _merke_feld("mandatsart", region["offen"])
     if mandatsart_belegt:
         feldbelege["mandatsartBelegt"] = "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
+    if mandatsart_quittung is not None:
+        feldbelege["mandatsartQuelle"] = (
+            f"{MANDATSARTEN_BB_RESSOURCE}: {mandatsart_quittung['url']} "
+            f"sha256 {mandatsart_quittung['sha256']}"
+        )
     if landtag_mandat and landtag_mandat["art"] == "offen":
         _merke("mandatsart", landtag_mandat["offen"])
     if landtag_mandat and landtag_mandat.get("offen"):
         _merke("wahlbezirk" if landtag_mandat["art"] == "direkt" else "mandatsart", landtag_mandat["offen"])
     if parlament == "bundestag" and region["kandidaturen"]:
         feldbelege["wahlkreiskandidatur"] = "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
-    weitere_gremien = _normalisiere_liste(extraktion.get("weitereGremien"))
     if weitere_gremien:
         _merke("weitereGremien", "Weitere belegte Gremien sind nicht als ordentliche Ausschussmitgliedschaft zugeordnet")
 
@@ -801,6 +1139,7 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         "parteiBeleg": parteibeleg,
         "feldbelege": feldbelege,
         "weitereGremien": weitere_gremien,
+        "weitereGremienBeleg": weitere_gremien_beleg,
         "h1Abgleich": True,
         "extraktionOffen": rohe_offene,
         "offenePunkte": offene_punkte,
@@ -808,14 +1147,19 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         "importfreigegeben": False,
         "aktiv": False,
     }
+    if mandatsart_quittung is not None:
+        datensatz["mandatsartQuittung"] = mandatsart_quittung
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
 
 
 def assembliere(eingang: Eingang) -> dict:
+    _pruefe_gremienliste()
     bindung = _pruefe_eingangsbindung(eingang)
     ergaenzung = _pruefe_ergaenzung(eingang)
+    eingang.mandatsarten_bb = _pruefe_mandatsarten_bb(eingang)
+    eingang.mandatsarten_verwendet = set()
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -827,6 +1171,22 @@ def assembliere(eingang: Eingang) -> dict:
             f"Parteifeldpruefung nicht deckungsgleich verwendet: {len(ungenutzt)} Eintraege ohne "
             f"offenes Parteifeld (z. B. {sorted(ungenutzt)[:3]})."
         )
+
+    # Auch die Mandatsartenquittung muss deckungsgleich verwendet werden: kein Beleg
+    # ohne offenes Mandatsartenfeld und kein belegter Fall ohne Quittung.
+    ungenutzte_mandate = set(eingang.mandatsarten_bb) - eingang.mandatsarten_verwendet
+    if ungenutzte_mandate:
+        raise AssemblerFehler(
+            f"Mandatsartenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_mandate)}."
+        )
+
+    # Belegte sonstige Gremien duerfen NICHT in den Ausschussfeldern stehen: gegenprobe
+    # ueber alle Datensaetze (fail closed, falls die Trennung je umgangen wird).
+    for datensatz in datensaetze:
+        for feld in ("ausschuesse", "stellvertretendeAusschuesse"):
+            for wert in datensatz["profil"].get(feld) or []:
+                if wert in SONSTIGE_GREMIEN:
+                    raise AssemblerFehler(f"Belegtes sonstiges Gremium in {feld}: {wert!r}.")
 
     # ── Gesamtprueifungen (fail closed) ───────────────────────────────────────
     kennungen = [d["kanonischeKennung"] for d in datensaetze]
@@ -888,6 +1248,15 @@ def assembliere(eingang: Eingang) -> dict:
                 f"{PARTEIFELDPRUEFUNG_RESSOURCE} (335 gepruefte Parteifelder: "
                 f"{ergaenzung_belegt} belegt, {ergaenzung_offen} offen)"
             ),
+            "mandatsartenquittung": (
+                f"{MANDATSARTEN_BB_RESSOURCE} (amtliche Brandenburger Uebersicht; Landesliste fuer "
+                f"{len(eingang.mandatsarten_bb)} Profile, URL + sha256 + Abrufzeit gebunden)"
+            ),
+            "sonstigeGremien": (
+                f"explizite Liste mit {len(SONSTIGE_GREMIEN)} amtlich belegten sonstigen Gremien des "
+                "Bundestages (JSON-LD memberOf mit Original-Rolle und Original-URL); Sollmenge der "
+                "staendigen Ausschuesse unveraendert aus lib/helmut/profile-readiness.resolveBundestagsausschuss"
+            ),
             "eingangsverzeichnis": str(eingang.verzeichnis),
             "hinweis": (
                 "Detailseiten, Abrufe und Extraktionen sind lokale Arbeitsdateien ausserhalb des "
@@ -909,6 +1278,17 @@ def assembliere(eingang: Eingang) -> dict:
             "DIREKT nur bei belegtem Wahlkreismandat; eine Wahlkreiskandidatur ist kein Direktmandat.",
             "Landesliste wird als listenmandat + regionHinweis gefuehrt.",
             "Gremienrollen sind ordentlich/stellvertretend getrennt; beratende Rollen sind keine ordentliche Mitgliedschaft.",
+            (
+                "Belegte sonstige Gremien des Bundestages (Beirat, Unterausschuss, Kommission, "
+                "Kontrollgremium, Wahlausschuss, Rechnungspruefung) werden NICHT als staendige Ausschuesse "
+                "gefuehrt: sie stehen als weitereGremien UND rollengetreu in funktionen. Nur die explizite "
+                "Liste mit amtlicher JSON-LD-URL wird herausgeloest; unbekannte echte Ausschuesse bleiben gesperrt."
+            ),
+            (
+                "Vier bislang offene Brandenburg-Mandatsarten sind ueber die versionierte lokale Quittung "
+                f"{MANDATSARTEN_BB_RESSOURCE} als Landesliste belegt (URL + Hash + Abrufzeit). Uebernommen "
+                "werden NUR Mandatsart Landesliste und Region Brandenburg, NICHT Listenbeschriftung oder Listenplatz."
+            ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
         ],
@@ -934,6 +1314,16 @@ def assembliere(eingang: Eingang) -> dict:
             },
             "mandatsartOffen": mandatsart_offen,
             "fachlicheAchseOffen": achse_offen,
+            "sonstigeGremien": {
+                "expliziteListe": len(SONSTIGE_GREMIEN),
+                "profileMitWeiterenGremien": sum(1 for d in datensaetze if d["weitereGremienBeleg"]),
+                "mitgliedschaften": sum(len(d["weitereGremienBeleg"]) for d in datensaetze),
+            },
+            "mandatsartenquittung": {
+                "datei": MANDATSARTEN_BB_RESSOURCE,
+                "belege": len(eingang.mandatsarten_bb),
+                "verwendet": len(eingang.mandatsarten_verwendet),
+            },
             "offeneFelder": offene_felder,
         },
         "datensaetze": datensaetze,
