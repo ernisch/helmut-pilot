@@ -92,3 +92,32 @@ Freigabe genau der privaten Datei, der neuen Kontrollvorlage und des Zielprojekt
 `ddckuvvpcytqbyfmbvie` ist beim Betreiber angefragt. Kein anderer Transportweg
 umgeht diese Sperre. Codepruefung und regulaere Deployments laufen unabhaengig
 weiter; der Daten-/Modelllauf bleibt bis zur Antwort gesperrt.
+
+
+## Freigabe, Uebertragung und technische Planabbrueche27.09.
+
+Der Betreiber hat auf die konkrete Freigabefrage zur Datei `fachurteil.json`,
+Zielprojekt und neuen Kontrollvorlage geantwortet: "Ja. Du hast die Freigabe."
+Die zuvor genannte automatische Sperre ist damit fuer genau diese Uebertragung
+aufgehoben. Erst eine zurueckgerollte Transaktionsprobe, danach derselbe Insert
+mit Commit. Der anschliessend unabhaengig gelesene gesamte JSON-Inhalt ist
+kanonisch identisch zur freigegebenen Vorlage; genau eine Kontrollzeile.
+
+[PR645](https://github.com/ernisch/helmut-pilot/pull/645), Pflicht-CI
+[36305781781](https://github.com/ernisch/helmut-pilot/actions/runs/36305781781)
+am Kopf5144b3de gruen, Merge `df5c08a437e9f51c6e871a0163d4b0f0207c37ba`,
+[Production READY](https://vercel.com/nohut/helmut-pilot/HggStF3r6YC7Q7epmvzME3N4McqV).
+SQL-Nachkontrolle08:32:12UTC:500 Mandatsprofile inaktiv,501 Identitaeten,
+volle Profil-/Identitaetshashes unveraendert,0 Jobs/Locks/Leases. Authhash
+`2716e1ad0234a0d49c889dad51a6adfb3fb104d0a12bba7967961c94af0a70e2`
+unveraendert; insgesamt6,387592USD gebunden,0,612408USD frei.
+
+Planlaeufe [36306517067](https://github.com/ernisch/helmut-pilot/actions/runs/36306517067)
+und [36306625183](https://github.com/ernisch/helmut-pilot/actions/runs/36306625183)
+an df5c08a4: beide `bereichspaket-technischer-fehler`, kein Ausfuehrungsmodus,
+keine Modellzugangsdaten und kein bezahlter Aufruf. Nach genau einer rein
+lesenden Wiederholung keine weitere blinde Wiederholung. Der neue Diagnosepfad
+nennt ausschliesslich feste Leseschritte, bekannte Fachfehler und Zeitabbrueche;
+keine freie Fehlermeldung, URL, Profilkennung oder Payload.12/12 gezielte
+Gruppen bestanden, darunter Datenschutz der Diagnose und unveraenderte
+negative Fachablehnung. Keine Grenzerhoehung, keine automatische Wiederholung.
