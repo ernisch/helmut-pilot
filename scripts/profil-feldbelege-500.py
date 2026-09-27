@@ -45,6 +45,13 @@ Harte Grenzen dieses Werkzeugs:
     offenen Achsen bleiben ueber die disjunkte Vereinigung mit der 54er
     Rollenquittung deckungsgleich. Keine persoenliche Position, keine freie
     Themen-/Zitatzuordnung, keine Ableitung aus Kanzler-/Vorsitzrollen,
+  * fuer 6 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte
+    Aufgabenquittung ``docs/betrieb/aufgabenachsen-6-20260927.json`` der
+    ausdrueckliche Themenbegriff aus einem amtlich belegten personengebundenen
+    Aufgabenbereich gesetzt und damit die fachliche Achse geschlossen (Importvertrag:
+    Ausschuss ODER Thema). Die fail-closed-Pruefung liegt im getrennten Modul
+    ``scripts/profil-feldbelege-500-aufgaben.py``; der Assembler wendet nur den
+    geprueften Index an,
   * keine erfundenen Positionen, Themen, Rollen oder Biografien; uebernommen
     wird nur, was in der amtlichen Quelle belegt ist,
   * keine AfD-Zielprofile (die Auswahl ist bereits ohne AfD; zusaetzlich wird
@@ -70,6 +77,7 @@ import shutil
 import subprocess
 import sys
 import unicodedata
+import importlib.util as _importlib_util
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -153,6 +161,51 @@ RESSORTAKSEN_LEXIK = {"inneres": "innern"}
 # Amtliche Regierungs-/Ressortrollen tragen ein Ressort; reine Kanzler- oder
 # Vorsitzrollen tun das nicht und duerfen KEIN Ressort ableiten.
 RESSORTAKSEN_ROLLEN_VERBOTEN = ("kanzler", "vorsitz")
+
+# Versionierte, vom Orchestrator gepruefte Aufgabenquittung der 6 weiteren
+# Fachachsen (alle Bundestag): personengebundene Beauftragtenaufgaben
+# (Brand/Connemann/Pawlik/Kaiser) und ausdrueckliche BMAS-Abteilungszustaendigkeit
+# (Griese IV/V, Mast II/III). Die fail-closed-Validierung liegt bewusst in einem
+# kleinen, getrennten Modul, damit dieser Assembler nicht weiter anwaechst; hier
+# wird nur der gepruefte Index angewendet.
+AUFGABENACHSEN = REPO_ROOT / "docs" / "betrieb" / "aufgabenachsen-6-20260927.json"
+AUFGABENACHSEN_RESSOURCE = "docs/betrieb/aufgabenachsen-6-20260927.json"
+AUFGABENACHSEN_GESAMT = 6
+
+
+def _lade_aufgabenmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-aufgaben.py")
+    # Kein Bytecode-Cache: der Assembler laeuft als reines Offline-Werkzeug und soll
+    # beim Laden des getrennten Moduls keine __pycache__-Artefakte anlegen.
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_aufgaben", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+AUFGABENMODUL = _lade_aufgabenmodul()
+
+
+def _pruefe_aufgabenachsen(eingang) -> dict:
+    """Prueft die versionierte Aufgabenquittung ueber das getrennte Modul."""
+    try:
+        index = AUFGABENMODUL.pruefe_aufgabenachsen(
+            eingang,
+            quittung=getattr(eingang, "aufgabenachsen", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+        )
+    except AUFGABENMODUL.AufgabenachsenFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.aufgabenachsen_by_kennung = index
+    eingang.aufgabenachsen_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -906,6 +959,10 @@ class Eingang:
             self.ressortachsen = _lies_json(RESSORTAKSEN)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Ressortquittung fehlt: {RESSORTAKSEN_RESSOURCE}") from fehler
+        try:
+            self.aufgabenachsen = _lies_json(AUFGABENACHSEN)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Aufgabenquittung fehlt: {AUFGABENACHSEN_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -1561,6 +1618,59 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             "ableitungsHinweis": hinweis,
         }
 
+    # Versionierte Aufgabenquittung: fuer die 6 freigegebenen Fachachsen wird aus
+    # dem amtlich belegten personengebundenen Aufgabenbereich (Beauftragtenaufgabe
+    # bzw. explizite BMAS-Abteilungszustaendigkeit) der ausdrueckliche Themenbegriff
+    # gesetzt und damit die fachliche Achse geschlossen (Ausschuss ODER Thema).
+    # Getrennt von den 19 Ressortachsen; keine persoenliche Position, keine freie
+    # Themen-/Zitatzuordnung, bestehende Amtsrollen, Partei, Mandatsart, Gremien und
+    # alle anderen Felder bleiben unveraendert; funktionen erhaelt nur den
+    # Ableitungshinweis. Die Zusatzquelle steht in ``profil.offizielleQuellen`` und im
+    # Belegabschnitt ``aufgabenachsenQuittung``.
+    aufgaben_eintrag = (getattr(eingang, "aufgabenachsen_by_kennung", None) or {}).get(mandatsId)
+    aufgaben_beleg = None
+    if aufgaben_eintrag is not None:
+        verwendet = getattr(eingang, "aufgabenachsen_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        aufgaben_quelle = aufgaben_eintrag["quelle"]
+        profil["themen"] = list(aufgaben_eintrag["themen"])
+        hinweis = aufgaben_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "aufgaben-zustaendigkeit",
+            "url": aufgaben_quelle["url"],
+            "abgerufenAm": aufgaben_quelle["abgerufenAm"],
+            "sha256": aufgaben_quelle["sha256"],
+        })
+        aufgaben_beleg = {
+            "datei": AUFGABENACHSEN_RESSOURCE,
+            "kennung": aufgaben_eintrag["kennung"],
+            "region": aufgaben_eintrag["region"],
+            "bindungsart": aufgaben_eintrag["bindungsart"],
+            "person": aufgaben_eintrag["person"],
+            "aufgabenbindung": aufgaben_eintrag["aufgabenbindung"],
+            "zitate": list(aufgaben_eintrag["zitate"]),
+            "rollenquelle": {
+                "url": aufgaben_eintrag["rollenquelle"].get("url"),
+                "sha256": aufgaben_eintrag["rollenquelle"].get("sha256"),
+                "abgerufenAm": aufgaben_eintrag["rollenquelle"].get("abgerufenAm"),
+            },
+            "quelle": {
+                "datei": aufgaben_quelle.get("datei"),
+                "url": aufgaben_quelle.get("url"),
+                "finalUrl": aufgaben_quelle.get("finalUrl"),
+                "abgerufenAm": aufgaben_quelle.get("abgerufenAm"),
+                "sha256": aufgaben_quelle.get("sha256"),
+                "bytes": aufgaben_quelle.get("bytes"),
+            },
+            "themen": list(aufgaben_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -1570,6 +1680,13 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"Ressortbegriffe mit Herkunft aus Region {ressort_beleg['region']} + Ableitungskennzeichnung + "
             f"amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt "
             f"(URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)"
+        )
+    elif aufgaben_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Aufgabenquittung {AUFGABENACHSEN_RESSOURCE}: gepruefte "
+            f"Aufgabenbegriffe mit Herkunft aus {aufgaben_beleg['bindungsart']} der kanonischen Person "
+            f"{aufgaben_beleg['person']} + Ableitungskennzeichnung; Themen nur im personengebundenen "
+            f"amtlichen Aufgabenabschnitt belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -1621,6 +1738,15 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
 
     if ressort_beleg is not None:
         feldbelege["funktionen"] += "; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)"
+    if aufgaben_beleg is not None:
+        if "funktionen" not in feldbelege:
+            feldbelege["funktionen"] = (
+                "bestehende belegte Funktionen bleiben unveraendert; kein regierungsrolle-Schema"
+            )
+        feldbelege["funktionen"] += (
+            "; zusaetzlich gekennzeichneter Ableitungshinweis zur amtlichen Aufgabenbindung "
+            "(konkrete Aufgabenbindung, keine persoenliche Position)"
+        )
 
     # ── Offene Punkte explizit zusammentragen ─────────────────────────────────
     offene_punkte = []
@@ -1758,6 +1884,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["profilrollenQuittung"] = rollen_beleg
     if ressort_beleg is not None:
         datensatz["ressortachsenQuittung"] = ressort_beleg
+    if aufgaben_beleg is not None:
+        datensatz["aufgabenachsenQuittung"] = aufgaben_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -1771,6 +1899,7 @@ def assembliere(eingang: Eingang) -> dict:
     eingang.mandatsarten_verwendet = set()
     profilrollen = _pruefe_profilrollen(eingang)
     ressortachsen = _pruefe_ressortachsen(eingang)
+    aufgabenachsen = _pruefe_aufgabenachsen(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -1805,21 +1934,38 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Ressortquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_ressorten)}."
         )
-    geschlossene_achsen = set(eingang.ressortachsen_verwendet)
-    if geschlossene_achsen != set(ressortachsen):
+    ungenutzte_aufgaben = set(aufgabenachsen) - eingang.aufgabenachsen_verwendet
+    if ungenutzte_aufgaben:
+        raise AssemblerFehler(
+            f"Aufgabenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_aufgaben)}."
+        )
+    ressort_geschlossen = set(eingang.ressortachsen_verwendet)
+    if ressort_geschlossen != set(ressortachsen):
         raise AssemblerFehler(
             f"Ressortquittung deckt nicht genau ihre 19 Kennungen ab: "
-            f"{sorted(set(ressortachsen) ^ geschlossene_achsen)}."
+            f"{sorted(set(ressortachsen) ^ ressort_geschlossen)}."
         )
+    aufgaben_geschlossen = set(eingang.aufgabenachsen_verwendet)
+    if aufgaben_geschlossen != set(aufgabenachsen):
+        raise AssemblerFehler(
+            f"Aufgabenquittung deckt nicht genau ihre 6 Kennungen ab: "
+            f"{sorted(set(aufgabenachsen) ^ aufgaben_geschlossen)}."
+        )
+    if ressort_geschlossen & aufgaben_geschlossen:
+        raise AssemblerFehler(
+            "Ressort- und Aufgabenachse gleichzeitig belegt: "
+            f"{sorted(ressort_geschlossen & aufgaben_geschlossen)}."
+        )
+    geschlossene_achsen = ressort_geschlossen | aufgaben_geschlossen
     if not geschlossene_achsen <= set(profilrollen):
         raise AssemblerFehler(
-            "Ressortquittung enthaelt Kennungen ausserhalb der 54er Rollenquittung: "
+            "Geschlossene Achsen enthalten Kennungen ausserhalb der 54er Rollenquittung: "
             f"{sorted(geschlossene_achsen - set(profilrollen))}."
         )
     offene_achsen = {d["kanonischeKennung"] for d in datensaetze if "fachlicheAchse" in d["offeneFelder"]}
     if geschlossene_achsen & offene_achsen:
         raise AssemblerFehler(
-            f"Ressortachse gleichzeitig offen und geschlossen: {sorted(geschlossene_achsen & offene_achsen)}."
+            f"Fachachse gleichzeitig offen und geschlossen: {sorted(geschlossene_achsen & offene_achsen)}."
         )
     vereinigung = offene_achsen | geschlossene_achsen
     if vereinigung != set(profilrollen):
@@ -1830,22 +1976,23 @@ def assembliere(eingang: Eingang) -> dict:
             f"(ohne Abdeckung: {fehlend[:5]}, nicht in der Quittung: {fremd[:5]})."
         )
 
-    # Genau die 19 Ressortprofile tragen Ressortthemen, ihre fachliche Achse
-    # ist geschlossen; kein anderes Profil erhaelt erfundene Themen.
+    # Genau die geschlossenen Achsen (19 Ressort + 6 Aufgaben) tragen amtlich
+    # abgeleitete Themen, ihre fachliche Achse ist geschlossen; kein anderes Profil
+    # erhaelt erfundene Themen.
     mit_themen = {d["kanonischeKennung"] for d in datensaetze if d["profil"].get("themen")}
     if mit_themen != geschlossene_achsen:
         raise AssemblerFehler(
-            f"Themen duerfen nur aus der Ressortquittung stammen: {sorted(mit_themen ^ geschlossene_achsen)}."
+            f"Themen duerfen nur aus der Ressort-/Aufgabenquittung stammen: {sorted(mit_themen ^ geschlossene_achsen)}."
         )
     for datensatz in datensaetze:
-        if datensatz.get("ressortachsenQuittung"):
+        if datensatz.get("ressortachsenQuittung") or datensatz.get("aufgabenachsenQuittung"):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
-                    f"Geschlossene Ressortachse bleibt offen: {datensatz['kanonischeKennung']}."
+                    f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
                 )
             if datensatz["profil"]["aktiv"] is not False or datensatz["importfreigegeben"] is not False:
                 raise AssemblerFehler(
-                    f"Ressortprofil darf nicht aktiv/importfreigegeben sein: {datensatz['kanonischeKennung']}."
+                    f"Profil mit geschlossener Achse darf nicht aktiv/importfreigegeben sein: {datensatz['kanonischeKennung']}."
                 )
 
     # Belegte sonstige Gremien duerfen NICHT in den Ausschussfeldern stehen: gegenprobe
@@ -1937,6 +2084,15 @@ def assembliere(eingang: Eingang) -> dict:
                 f"{RESSORTAKSEN_REGIONEN['Brandenburg']} Brandenburg; URL + sha256 + Abrufzeit + Datei "
                 "der amtlichen Zusatzquelle und zusammenhaengendes Person/Ressort-Zitat gebunden)"
             ),
+            "aufgabenquittung": (
+                f"{AUFGABENACHSEN_RESSOURCE} (vom Orchestrator geprueft; 6 weitere zuvor offene "
+                "Fachachsen aus amtlich belegten personengebundenen Aufgabenbereichen geschlossen: "
+                "Beauftragtenaufgaben (Brand/Connemann/Pawlik/Kaiser) und explizite BMAS-"
+                "Abteilungszustaendigkeit (Griese IV/V, Mast II/III); Validierung im getrennten Modul "
+                "scripts/profil-feldbelege-500-aufgaben.py; URL + sha256 + Abrufzeit + Datei + Bytezahl "
+                "der amtlichen Zusatzquelle und woertliche Zitate im personengebundenen Aufgabenabschnitt "
+                "gebunden)"
+            ),
             "sonstigeGremien": (
                 f"explizite Liste mit {len(SONSTIGE_GREMIEN)} amtlich belegten sonstigen Gremien des "
                 "Bundestages (JSON-LD memberOf mit Original-Rolle und Original-URL); Sollmenge der "
@@ -1995,6 +2151,22 @@ def assembliere(eingang: Eingang) -> dict:
                 "geschlossenen mit den 35 verbleibend offenen Achsen ergibt weiter genau die 54er "
                 "Rollenquittung."
             ),
+            (
+                "Fuer 6 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte Aufgabenquittung "
+                f"{AUFGABENACHSEN_RESSOURCE} der ausdrueckliche Themenbegriff aus einem amtlich belegten "
+                "personengebundenen Aufgabenbereich gesetzt (getrennter Herkunftshinweis in funktionen) und "
+                "damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul "
+                "scripts/profil-feldbelege-500-aufgaben.py: Brand/Connemann/Pawlik nur Name UND ausdrueckliche "
+                "Beauftragtenaufgabe, Themen nur innerhalb dieser Aufgabe (Connemann: Digitales ist keine "
+                "Beauftragtenaufgabe); Kaiser ueber die belegte Amtsrolle und den ausdruecklichen "
+                "Aufgabenabsatz; BMAS Person -> explizit genannte Abteilungsnummern -> deren Aufgabenabschnitt "
+                "(Griese IV/V, Mast II/III; Mast erhaelt nie ein Griese-Thema). Jede Kennung ist eine bereits "
+                "belegte Rolle der 54er Quittung, an deren Rollenquelle, an die amtliche Zusatzquelle "
+                "(URL + sha256 + Abrufzeit + Datei + Bytezahl) und an woertliche Zitate im richtigen "
+                "personengebundenen Aufgabenabschnitt gebunden. Keine persoenliche politische Position, keine "
+                "erfundenen Themen; die disjunkte Vereinigung der 19 Ressort- mit den 6 Aufgabenachsen und "
+                "den 29 verbleibend offenen ergibt weiter genau die 54er Rollenquittung."
+            ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
         ],
@@ -2042,10 +2214,18 @@ def assembliere(eingang: Eingang) -> dict:
                 "datei": RESSORTAKSEN_RESSOURCE,
                 "geprueftGesamt": len(ressortachsen),
                 "nachRegion": dict(RESSORTAKSEN_REGIONEN),
-                "themenGesetzt": sum(1 for d in datensaetze if d["profil"].get("themen")),
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("ressortachsenQuittung")),
                 "deckungsgleichVerwendet": len(eingang.ressortachsen_verwendet),
-                "geschlosseneAchsen": len(geschlossene_achsen),
+                "geschlosseneAchsen": len(ressort_geschlossen),
                 "verbleibendOffeneAchsen": len(offene_achsen),
+            },
+            "aufgabenachsenQuittung": {
+                "datei": AUFGABENACHSEN_RESSOURCE,
+                "geprueftGesamt": len(aufgabenachsen),
+                "nachRegion": {"Bund": len(aufgabenachsen)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("aufgabenachsenQuittung")),
+                "deckungsgleichVerwendet": len(eingang.aufgabenachsen_verwendet),
+                "geschlosseneAchsen": len(aufgaben_geschlossen),
             },
             "offeneFelder": offene_felder,
         },
