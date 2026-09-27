@@ -103,6 +103,78 @@ MANDATSARTEN_BB = REPO_ROOT / "docs" / "betrieb" / "brandenburg-mandatsarten-202
 MANDATSARTEN_BB_RESSOURCE = "docs/betrieb/brandenburg-mandatsarten-20260927.json"
 MANDATSARTEN_BB_REGION = "Brandenburg"
 
+# Versionierte lokale Quittung zu zwei bislang offenen Berliner Mandatsarten
+# (Johannes Martin Bezirksliste, Benedikt Lux Landesliste). Quelle ist das am
+# Original visuell abgenommene amtliche Handbuch-PDF (Stand 8.10.2025, Seite 204,
+# linke Nachruecker-Spalte). Es gibt KEINEN automatischen PDF-Parser-Nachweis:
+# der genehmigte Beleg, die woertliche Transkription sowie Person/Datum/Mandatsart
+# sind im Validator bewusst eng festgelegt; jede Abweichung (PDF-Stand, Seite,
+# Spalte, Transkription, Mandatsart, Person, Datum, Hash) bricht fail closed ab.
+MANDATSARTEN_BE = REPO_ROOT / "docs" / "betrieb" / "berlin-mandatsarten-20260927.json"
+MANDATSARTEN_BE_RESSOURCE = "docs/betrieb/berlin-mandatsarten-20260927.json"
+MANDATSARTEN_BE_ERWARTUNG = {
+    "quelle": {
+        "url": "https://www.parlament-berlin.de/media/download/5468",
+        "finalUrl": "https://www.parlament-berlin.de/media/download/5468",
+        "datei": "berlin-handbuch-5468-20251008.pdf",
+        "abgerufenAm": "2026-09-27T17:50:02.091789+00:00",
+        "sha256": "3ccd91c80803046da57c2a398c9307dfadf938189cd4db99d9c15f256cf486d8",
+        "bytes": 6935446,
+        "stand": "2025-10-08",
+        "seite": 204,
+        "pdfSeiteIndex": 204,
+        "spalte": "links",
+        "http": 200,
+    },
+    "belege": {
+        "johannes-martin": {
+            "kennung": "landtag-berlin-johannes-martin",
+            "profilUrl": "https://www.parlament-berlin.de/Abgeordnete/johannes-martin?groupStrategy=nachnamen",
+            "profilDatei": "landtag-berlin-johannes-martin.html",
+            "profilSha256": "3d01e377b5fad72d67f6b19ba4365def26b61579655bb1b4f0c31113605a78b9",
+            "profilBytes": 107064,
+            "vollname": "Johannes Martin",
+            "nachgeruecktAm": "2025-09-27",
+            "profilblockWortlaut": "Nachgerückt am 27.09.2025 für Christian Gräff",
+            "mandatsart": "Bezirksliste",
+            "regionHinweis": "Berlin — Bezirksliste Marzahn-Hellersdorf",
+            "seite": 204,
+            "spalte": "links",
+            "zitat": "Martin, Johannes CDU nachgerückt am 27. September 2025 Marzahn-Hellersdorf, Bezirksliste",
+            "aktuelleAbschnittsbindung": {
+                "quelleUrl": "https://www.parlament-berlin.de/das-parlament/abgeordnete/suche-nach-wahlkreisen",
+                "quelleDatei": "berlin-wahlkreissuche-aktuell.html",
+                "quelleSha256": "dae4db3c10a525f2842582885f7c8ca5eb5cfef85b96eeb07f116f7e084a33ae",
+                "quelleBytes": 210373,
+                "finalUrl": "https://www.parlament-berlin.de/das-parlament/abgeordnete/suche-nach-wahlkreisen",
+                "abgerufenAm": "2026-09-27T17:49:28.438246+00:00",
+                "http": 200,
+                "oberabschnitt": "Wahlbezirk 10: Marzahn-Hellersdorf",
+                "unterabschnitt": "Bezirksliste:",
+                "href": "/Abgeordnete/johannes-martin?groupStrategy=constituency",
+                "linkText": "Martin, Johannes, CDU-Fraktion, Nachgerückt",
+            },
+        },
+        "benedikt-lux": {
+            "kennung": "landtag-berlin-benedikt-lux",
+            "profilUrl": "https://www.parlament-berlin.de/Abgeordnete/benedikt-lux?groupStrategy=nachnamen",
+            "profilDatei": "landtag-berlin-benedikt-lux.html",
+            "profilSha256": "4624c6df0fd0e76992766163a63ae91ead0cd2499b70f1a1b6aa8a3106b96302",
+            "profilBytes": 107475,
+            "vollname": "Benedikt Lux",
+            "nachgeruecktAm": "2025-05-14",
+            "profilblockWortlaut": "Nachgerückt am 14.05.2025 für Julia Schneider",
+            "mandatsart": "Landesliste",
+            "regionHinweis": "Berlin — Landesliste",
+            "seite": 204,
+            "spalte": "links",
+            "zitat": "Lux, Benedikt Bündnis 90/Die Grünen nachgerückt am 14. Mai 2025 Landesliste",
+            "aktuelleAbschnittsbindung": None,
+        },
+    },
+}
+MANDATSARTEN_BE_GESAMT = 2
+
 # Versionierte, vom Orchestrator gepruefte Rollenquittung fuer die 54 fachlich
 # noch offenen Profile (48 belegt, 6 offen). Nur die ausdruecklich freigegebenen
 # ``wortlaut``-Strings werden an bestehende ``profil.funktionen`` dedupliziert
@@ -577,6 +649,209 @@ def _pruefe_mandatsarten_bb(eingang, quittung_pfad: Path = MANDATSARTEN_BB) -> d
     return belege
 
 
+# ── Versionierte Berliner Mandatsartenquittung (fail closed, kein PDF-Parser) ─
+def _be_h2_abschnitte(dokument: str):
+    """Zerlegt die aktuelle Wahlkreissuche in (H2-Text, Restabschnitt)-Paare."""
+    teile = re.split(r"(<h2\b[^>]*>.*?</h2>)", dokument, flags=re.S)
+    abschnitte = []
+    for i in range(1, len(teile), 2):
+        rest = teile[i + 1] if i + 1 < len(teile) else ""
+        abschnitte.append((_text(teile[i]), rest))
+    return abschnitte
+
+
+def _be_abschnittsanker(dokument: str, bindung: dict) -> str:
+    """Exakter, abschnittsgebundener Personlink — niemals ein globales Wortvorkommen.
+
+    Fail closed: fehlender/doppelter H2-Abschnitt, fehlender/doppelter H3-Unterabschnitt
+    oder ein nicht genau einmal vorhandener Personlink im Unterabschnitt sperren den Lauf.
+    """
+    oberabschnitt = str(bindung.get("oberabschnitt") or "").strip()
+    unterabschnitt = str(bindung.get("unterabschnitt") or "").strip()
+    href = str(bindung.get("href") or "").strip()
+    if not oberabschnitt or not unterabschnitt or not href:
+        raise AssemblerFehler("Berliner Mandatsartenquittung: unvollstaendige Abschnittsbindung.")
+    rest_liste = [rest for text, rest in _be_h2_abschnitte(dokument) if text == oberabschnitt]
+    if len(rest_liste) != 1:
+        raise AssemblerFehler(
+            f"Berliner Mandatsartenquittung: H2-Abschnitt {oberabschnitt!r} nicht eindeutig belegt."
+        )
+    h3_teile = re.split(r"(<h3\b[^>]*>.*?</h3>)", rest_liste[0], flags=re.S)
+    unter_rest = None
+    for i in range(1, len(h3_teile), 2):
+        if _text(h3_teile[i]) == unterabschnitt:
+            if unter_rest is not None:
+                raise AssemblerFehler(
+                    f"Berliner Mandatsartenquittung: H3-Unterabschnitt {unterabschnitt!r} ist doppelt."
+                )
+            unter_rest = h3_teile[i + 1] if i + 1 < len(h3_teile) else ""
+    if unter_rest is None:
+        raise AssemblerFehler(
+            f"Berliner Mandatsartenquittung: H3-Unterabschnitt {unterabschnitt!r} fehlt im H2-Abschnitt."
+        )
+    anker = [
+        _text(m.group(2))
+        for m in re.finditer(r'<a\b[^>]*href="([^"]*)"[^>]*>(.*?)</a>', unter_rest, re.S)
+        if m.group(1) == href
+    ]
+    if len(anker) != 1:
+        raise AssemblerFehler(
+            f"Berliner Mandatsartenquittung: Personlink {href!r} nicht genau einmal im Abschnitt belegt."
+        )
+    return anker[0]
+
+
+def _be_profilblock(detail_html: str) -> str:
+    treffer = re.search(r'<dl\b[^>]*class="b-delegate-facts"[^>]*>(.*?)</dl>', detail_html, re.S)
+    if not treffer:
+        raise AssemblerFehler("Berliner Mandatsartenquittung: kein gebundener Profilblock (b-delegate-facts).")
+    return _text(treffer.group(1))
+
+
+def _be_nachrueckdatum(wortlaut: str) -> str:
+    treffer = re.search(r"Nachgerückt am (\d{2})\.(\d{2})\.(\d{4})", wortlaut)
+    if not treffer:
+        raise AssemblerFehler("Berliner Mandatsartenquittung: kein Nachrueckdatum im Profilblock.")
+    return f"{treffer.group(3)}-{treffer.group(2)}-{treffer.group(1)}"
+
+
+def _be_zusatzquelle(eingang, erwartet: dict, bezeichnung: str) -> dict:
+    """Prueft eine lokale Zusatzquelle (PDF/Wahlkreissuche) gegen Quittung UND Metadaten-JSON."""
+    datei_name = str(erwartet.get("datei") or erwartet.get("quelleDatei") or "").strip()
+    if not datei_name or Path(datei_name).name != datei_name:
+        raise AssemblerFehler(f"Berliner Mandatsartenquittung: ungueltiger Dateiname ({bezeichnung}).")
+    pfad = eingang.verzeichnis / ZUSATZQUELLEN / datei_name
+    if not pfad.is_file():
+        raise AssemblerFehler(f"Berliner Mandatsartenquittung: Zusatzquelle fehlt lokal: {datei_name!r}.")
+    sha = erwartet.get("sha256") or erwartet.get("quelleSha256")
+    groesse = erwartet.get("bytes") or erwartet.get("quelleBytes")
+    if _sha256(pfad) != sha or pfad.stat().st_size != groesse:
+        raise AssemblerFehler(
+            f"Berliner Mandatsartenquittung: Zusatzquelle weicht von der versionierten Quittung ab ({datei_name})."
+        )
+    meta_pfad = pfad.with_suffix(".json")
+    if not meta_pfad.is_file():
+        raise AssemblerFehler(f"Berliner Mandatsartenquittung: Quellmeta JSON fehlt: {meta_pfad.name!r}.")
+    meta = _lies_json(meta_pfad)
+    for feld, wert in (
+        ("url", erwartet.get("url") or erwartet.get("quelleUrl")),
+        ("finalUrl", erwartet.get("finalUrl")),
+        ("abgerufenAm", erwartet.get("abgerufenAm")),
+        ("http", erwartet.get("http")),
+        ("sha256", sha),
+        ("bytes", groesse),
+        ("datei", datei_name),
+    ):
+        if wert is None:
+            continue
+        if feld == "bytes":
+            if int(meta.get("bytes") or -1) != int(wert):
+                raise AssemblerFehler(f"Berliner Mandatsartenquittung: Quellmeta {feld} weicht ab ({datei_name}).")
+        elif str(meta.get(feld) or "") != str(wert):
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: Quellmeta {feld} weicht ab ({datei_name}).")
+    return {"datei": datei_name, "sha256": sha, "bytes": groesse, "meta": meta}
+
+
+def _pruefe_mandatsarten_be(eingang, quittung_pfad: Path = MANDATSARTEN_BE, erwartung: dict = None) -> dict:
+    """Prueft die versionierte Berliner Mandatsartenquittung fail closed.
+
+    Bindet das am Original visuell abgenommene Handbuch-PDF an URL/Hash/Bytezahl/Abruf,
+    Stand, Seite 204 und linke Spalte, prueft die woertliche Transkription sowie Person,
+    exaktes Nachrueckdatum und Profilhash am gebundenen aktuellen Profilblock und — fuer
+    Martin — den exakten H2/H3/Personlink-Abschnitt der aktuellen Wahlkreissuche. Nur die
+    zwei genehmigten Personen sind zulaessig; Duplikate, Fremdperson, falsches Datum,
+    vertauschtes Paket, Quelldrift und ein bereits geschlossenes Mandat sperren.
+    """
+    erwartung = MANDATSARTEN_BE_ERWARTUNG if erwartung is None else erwartung
+    quittung = _lies_json(quittung_pfad)
+    quelle = quittung.get("quelle") or {}
+    for feld, wert in erwartung["quelle"].items():
+        if quelle.get(feld) != wert:
+            raise AssemblerFehler(
+                f"Berliner Mandatsartenquittung: PDF-/Quittungsfeld {feld!r} weicht vom genehmigten "
+                "Fachurteil ab (Stand/Seite/Spalte/Beleg)."
+            )
+    _be_zusatzquelle(eingang, erwartung["quelle"], "Handbuch-PDF")
+
+    genehmigt = erwartung["belege"]
+    abruf_by_kennung = {
+        str(a.get("amtlicheKennung")): a
+        for a in eingang.abruf
+        if a.get("parlament") == "landtag-berlin"
+    }
+    belege = {}
+    for eintrag in quittung.get("belege") or []:
+        kennung = str(eintrag.get("amtlicheKennung") or "").strip()
+        if not kennung or kennung not in genehmigt:
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: Fremdkennung {kennung!r}.")
+        if kennung in belege:
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: doppelte Kennung {kennung!r}.")
+        soll = genehmigt[kennung]
+        for feld, wert in soll.items():
+            if eintrag.get(feld) != wert:
+                raise AssemblerFehler(
+                    f"Berliner Mandatsartenquittung: Feld {feld!r} weicht vom genehmigten Fachurteil ab ({kennung})."
+                )
+        abruf = abruf_by_kennung.get(kennung)
+        if abruf is None or abruf.get("url") != eintrag["profilUrl"]:
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: Fremdperson/-URL bei {kennung}.")
+        if abruf.get("sha256") != eintrag["profilSha256"] or abruf.get("bytes") != eintrag["profilBytes"]:
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: Profilquellhash weicht ab ({kennung}).")
+        profil_datei = eingang.detailseiten / eintrag["profilDatei"]
+        if not profil_datei.is_file():
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: Profilquelle fehlt lokal ({kennung}).")
+        if _sha256(profil_datei) != eintrag["profilSha256"] or profil_datei.stat().st_size != eintrag["profilBytes"]:
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: Profilquelle weicht von der Quittung ab ({kennung}).")
+        detail_html = profil_datei.read_text(encoding="utf-8")
+        h1_liste = _h1_ueberschriften(detail_html)
+        if len(h1_liste) != 1:
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: keine eindeutige h1 ({kennung}).")
+        amtlicher_name = h1_liste[0].rsplit(", ", 1)[0] if ", " in h1_liste[0] else h1_liste[0]
+        if amtlicher_name != eintrag["vollname"]:
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: Fremdperson im Profil ({kennung}).")
+        block = _be_profilblock(detail_html)
+        if block != eintrag["profilblockWortlaut"]:
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: Profilblock weicht ab ({kennung}).")
+        if _be_nachrueckdatum(block) != eintrag["nachgeruecktAm"]:
+            raise AssemblerFehler(f"Berliner Mandatsartenquittung: Nachrueckdatum weicht ab ({kennung}).")
+
+        abschnitt = eintrag.get("aktuelleAbschnittsbindung")
+        if abschnitt:
+            _be_zusatzquelle(eingang, abschnitt, f"Wahlkreissuche {kennung}")
+            wahlkreis_datei = (eingang.verzeichnis / ZUSATZQUELLEN / abschnitt["quelleDatei"]).read_text(encoding="utf-8")
+            link_text = _be_abschnittsanker(wahlkreis_datei, abschnitt)
+            if link_text != abschnitt["linkText"]:
+                raise AssemblerFehler(
+                    f"Berliner Mandatsartenquittung: Personlink-Text weicht ab ({kennung})."
+                )
+        belege[kennung] = {
+            "kennung": eintrag["kennung"],
+            "amtlicheKennung": kennung,
+            "profilUrl": eintrag["profilUrl"],
+            "profilSha256": eintrag["profilSha256"],
+            "profilBytes": eintrag["profilBytes"],
+            "vollname": eintrag["vollname"],
+            "nachgeruecktAm": eintrag["nachgeruecktAm"],
+            "profilblockWortlaut": block,
+            "mandatsart": eintrag["mandatsart"],
+            "regionHinweis": eintrag["regionHinweis"],
+            "seite": eintrag["seite"],
+            "spalte": eintrag["spalte"],
+            "zitat": eintrag["zitat"],
+            "url": quelle.get("url"),
+            "sha256": quelle.get("sha256"),
+            "abgerufenAm": quelle.get("abgerufenAm"),
+            "quellstand": quelle["stand"],
+            "pdfSeiteIndex": quelle["pdfSeiteIndex"],
+            "aktuelleAbschnittsbindung": abschnitt,
+        }
+    if set(belege) != set(genehmigt) or len(belege) != MANDATSARTEN_BE_GESAMT:
+        raise AssemblerFehler(
+            f"Berliner Mandatsartenquittung: erwartet genau die {MANDATSARTEN_BE_GESAMT} genehmigten Personen."
+        )
+    return belege
+
+
 # ── Versionierte Rollenquittung der 54 fachlich offenen Profile (fail closed) ─
 def _rollen_div(detail_html: str, klasse: str) -> str:
     """Genau einen vollstaendig geschlossenen Personenblock lesen, nie den Footer."""
@@ -1026,6 +1301,10 @@ class Eingang:
         # ``assembliere`` gegen die amtliche Original-HTML geprueft und gesetzt.
         self.mandatsarten_bb = {}
         self.mandatsarten_verwendet = set()
+        # Versionierte Berliner Mandatsartenquittung (zwei Profile); wird von
+        # ``assembliere`` gegen PDF-Beleg, Profilblock und Wahlkreissuche geprueft.
+        self.mandatsarten_be = {}
+        self.mandatsarten_be_verwendet = set()
 
 
 def _pruefe_eingangsbindung(eingang: Eingang) -> dict:
@@ -1519,6 +1798,33 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             if verwendet is not None:
                 verwendet.add(str(abruf["amtlicheKennung"]))
 
+    # Versionierte Berliner Mandatsartenquittung: nur die ausdruecklich belegte
+    # Bezirks-/Landesliste eines bislang offenen Berliner Mandats. Keine Partei-,
+    # Funktions- oder Themenableitung; ein bereits geschlossenes Mandat wird nicht
+    # ueberschrieben.
+    mandatsart_quittung_be = None
+    if parlament == "landtag-berlin":
+        quittung = (getattr(eingang, "mandatsarten_be", None) or {}).get(str(abruf["amtlicheKennung"]))
+        if quittung is not None:
+            if landtag_mandat is None or landtag_mandat["art"] != "offen":
+                raise AssemblerFehler(
+                    f"Berliner Mandatsartenquittung fuer {abruf['amtlicheKennung']} hat kein offenes "
+                    "Mandatsartenfeld (bereits geschlossenes Mandat wird nicht ueberschrieben)."
+                )
+            landtag_mandat = {
+                "art": "liste",
+                "wahlkreis": None,
+                "listenmandat": True,
+                "regionHinweis": quittung["regionHinweis"],
+                "offen": None,
+                "quelle": "mandatsartenquittung-be",
+                "beleg": quittung["zitat"],
+            }
+            mandatsart_quittung_be = quittung
+            verwendet = getattr(eingang, "mandatsarten_be_verwendet", None)
+            if verwendet is not None:
+                verwendet.add(str(abruf["amtlicheKennung"]))
+
     parteinachweis = _parteinachweis(eingang, eintrag, extraktion)
     parteinachweis = _ergaenzung_partnachweis(
         eingang, parlament, abruf, detail_html, mandatsId, parteinachweis
@@ -1831,6 +2137,13 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"(amtliche Uebersicht, URL UND sha256 gebunden); nur Mandatsart Landesliste "
             f"und Region Brandenburg uebernommen — NICHT die Listenbeschriftung und NICHT der Listenplatz"
         )
+    if mandatsart_quittung_be is not None:
+        feldbelege["region"] = (
+            f"versionierte lokale Berliner Mandatsartenquittung {MANDATSARTEN_BE_RESSOURCE} "
+            f"(amtliches Handbuch-PDF Stand 8.10.2025, Seite 204 linke Spalte, URL UND sha256 UND "
+            f"Bytezahl UND Abrufzeit gebunden, woertliche Transkription); nur Mandatsart und Region "
+            f"uebernommen — NICHT Partei/Fraktion des historischen Einzugs und kein Direktwahlkreis"
+        )
     if rollen_beleg and rollen_beleg["funktionen"]:
         feldbelege["funktionen"] = (
             f"vom Orchestrator gepruefte Rollenquittung {PROFILROLLEN_RESSOURCE} "
@@ -1945,6 +2258,11 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"{MANDATSARTEN_BB_RESSOURCE}: {mandatsart_quittung['url']} "
             f"sha256 {mandatsart_quittung['sha256']}"
         )
+    if mandatsart_quittung_be is not None:
+        feldbelege["mandatsartQuelle"] = (
+            f"{MANDATSARTEN_BE_RESSOURCE}: Seite 204 linke Spalte, {mandatsart_quittung_be['url']} "
+            f"sha256 {mandatsart_quittung_be['sha256']}; woertlich: {mandatsart_quittung_be['zitat']}"
+        )
     if landtag_mandat and landtag_mandat["art"] == "offen":
         _merke("mandatsart", landtag_mandat["offen"])
     if landtag_mandat and landtag_mandat.get("offen"):
@@ -2007,6 +2325,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
     }
     if mandatsart_quittung is not None:
         datensatz["mandatsartQuittung"] = mandatsart_quittung
+    if mandatsart_quittung_be is not None:
+        datensatz["mandatsartQuittungBe"] = mandatsart_quittung_be
     if rollen_beleg is not None:
         datensatz["profilrollenQuittung"] = rollen_beleg
     if ressort_beleg is not None:
@@ -2026,6 +2346,8 @@ def assembliere(eingang: Eingang) -> dict:
     ergaenzung = _pruefe_ergaenzung(eingang)
     eingang.mandatsarten_bb = _pruefe_mandatsarten_bb(eingang)
     eingang.mandatsarten_verwendet = set()
+    eingang.mandatsarten_be = _pruefe_mandatsarten_be(eingang)
+    eingang.mandatsarten_be_verwendet = set()
     profilrollen = _pruefe_profilrollen(eingang)
     ressortachsen = _pruefe_ressortachsen(eingang)
     aufgabenachsen = _pruefe_aufgabenachsen(eingang)
@@ -2048,6 +2370,14 @@ def assembliere(eingang: Eingang) -> dict:
     if ungenutzte_mandate:
         raise AssemblerFehler(
             f"Mandatsartenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_mandate)}."
+        )
+
+    # Auch die Berliner Mandatsartenquittung muss deckungsgleich verwendet werden:
+    # kein Beleg ohne offenes Mandatsartenfeld und kein belegter Fall ohne Quittung.
+    ungenutzte_mandate_be = set(eingang.mandatsarten_be) - eingang.mandatsarten_be_verwendet
+    if ungenutzte_mandate_be:
+        raise AssemblerFehler(
+            f"Berliner Mandatsartenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_mandate_be)}."
         )
 
     # Die 54er Rollenquittung muss die urspruenglich offenen Fachachsen weiter
@@ -2224,6 +2554,11 @@ def assembliere(eingang: Eingang) -> dict:
                 f"{MANDATSARTEN_BB_RESSOURCE} (amtliche Brandenburger Uebersicht; Landesliste fuer "
                 f"{len(eingang.mandatsarten_bb)} Profile, URL + sha256 + Abrufzeit gebunden)"
             ),
+            "mandatsartenquittungBerlin": (
+                f"{MANDATSARTEN_BE_RESSOURCE} (amtliches Handbuch-PDF Stand 8.10.2025, Seite 204 linke "
+                f"Spalte; Bezirks-/Landesliste fuer {len(eingang.mandatsarten_be)} Profile, URL + sha256 + "
+                "Bytezahl + Abrufzeit gebunden, woertliche Transkription; kein automatischer PDF-Parser-Nachweis)"
+            ),
             "profilrollenQuittung": (
                 f"{PROFILROLLEN_RESSOURCE} (vom Orchestrator geprueft; 48 Rollen fuer fachlich offene "
                 "Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches "
@@ -2291,6 +2626,18 @@ def assembliere(eingang: Eingang) -> dict:
                 "Vier bislang offene Brandenburg-Mandatsarten sind ueber die versionierte lokale Quittung "
                 f"{MANDATSARTEN_BB_RESSOURCE} als Landesliste belegt (URL + Hash + Abrufzeit). Uebernommen "
                 "werden NUR Mandatsart Landesliste und Region Brandenburg, NICHT Listenbeschriftung oder Listenplatz."
+            ),
+            (
+                "Zwei bislang offene Berliner Mandatsarten sind ueber die versionierte lokale Quittung "
+                f"{MANDATSARTEN_BE_RESSOURCE} als Bezirksliste (Johannes Martin, Marzahn-Hellersdorf) und "
+                "Landesliste (Benedikt Lux) belegt. Quelle ist das am Original visuell abgenommene amtliche "
+                "Handbuch-PDF (Stand 8.10.2025, Seite 204 linke Spalte) samt woertlicher Transkription; "
+                "URL + sha256 + Bytezahl + Abrufzeit und die Quellmeta-JSON sind gebunden, es gibt KEINEN "
+                "automatischen PDF-Parser-Nachweis. Person, exaktes Nachrueckdatum und Profilhash werden am "
+                "gebundenen aktuellen Profilblock geprueft; Martin zusaetzlich am exakten H2/H3/Personlink "
+                "der aktuellen Wahlkreissuche. Nur Mandatsart und Region werden uebernommen; ein Direktmandat "
+                "des Vorgaengers und die Partei/Fraktion des historischen Einzugs werden nie uebernommen. "
+                "Claudia Engelmann bleibt offen."
             ),
             (
                 "Fuer die 54 fachlich offenen Profile werden ueber die vom Orchestrator gepruefte "
@@ -2378,6 +2725,11 @@ def assembliere(eingang: Eingang) -> dict:
                 "datei": MANDATSARTEN_BB_RESSOURCE,
                 "belege": len(eingang.mandatsarten_bb),
                 "verwendet": len(eingang.mandatsarten_verwendet),
+            },
+            "mandatsartenquittungBerlin": {
+                "datei": MANDATSARTEN_BE_RESSOURCE,
+                "belege": len(eingang.mandatsarten_be),
+                "verwendet": len(eingang.mandatsarten_be_verwendet),
             },
             "profilrollenQuittung": {
                 "datei": PROFILROLLEN_RESSOURCE,

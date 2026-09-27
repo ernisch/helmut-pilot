@@ -16,8 +16,11 @@ Quittung als Landesliste belegt. 19 zuvor offene fachliche Achsen sind ueber die
 gepruefte Ressortquittung mit ausdruecklichen amtlich abgeleiteten Ressortthemen
 geschlossen (9 Bund / 4 Berlin / 6 Brandenburg); 6 weitere ueber die gepruefte
 Aufgabenquittung mit personengebundenen amtlichen Aufgabenbereichen
-(Beauftragtenaufgaben + explizite BMAS-Abteilungen) sowie zwei beratende Ausschussachsen. 27 Achsen bleiben offen;
-470 Profile sind technisch importierbar.
+(Beauftragtenaufgaben + explizite BMAS-Abteilungen) sowie zwei beratende Ausschussachsen. 27 Achsen bleiben offen.
+Zwei bislang offene Berliner Mandatsarten sind ueber eine versionierte lokale
+Quittung belegt (Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux
+Landesliste); Claudia Engelmann bleibt offen.
+472 Profile sind technisch importierbar.
 
 ## Artefakte
 
@@ -27,6 +30,7 @@ Aufgabenquittung mit personengebundenen amtlichen Aufgabenbereichen
 | [`docs/betrieb/500-profilfeldbelege-20260927.json`](500-profilfeldbelege-20260927.json) | erzeugte Feldbelege (500 Datensaetze) |
 | [`docs/betrieb/parteifeldpruefung-335-20260927.json`](parteifeldpruefung-335-20260927.json) | versionierte, gepruefte Ergaenzungsquittung der 335 zuvor offenen Parteifelder |
 | [`docs/betrieb/brandenburg-mandatsarten-20260927.json`](brandenburg-mandatsarten-20260927.json) | versionierte lokale Mandatsartenquittung (Landesliste) fuer vier Brandenburg-Profile; keine Importfreigabe |
+| [`docs/betrieb/berlin-mandatsarten-20260927.json`](berlin-mandatsarten-20260927.json) | versionierte lokale Berliner Mandatsartenquittung (Bezirks-/Landesliste) fuer zwei Profile; amtliches Handbuch-PDF Seite 204 linke Spalte, woertliche Transkription; keine Importfreigabe |
 | [`docs/betrieb/profilrollen-54-20260927.json`](profilrollen-54-20260927.json) | vom Orchestrator gepruefte Rollenquittung der 54 fachlich offenen Profile (48 Rollen belegt, 6 offen); keine Importfreigabe |
 | [`docs/betrieb/ressortachsen-19-20260927.json`](ressortachsen-19-20260927.json) | vom Orchestrator gepruefte Ressortquittung: 19 zuvor offene Fachachsen aus amtlich belegtem aktuellem Ressort geschlossen; keine Importfreigabe |
 | [`docs/betrieb/aufgabenachsen-6-20260927.json`](aufgabenachsen-6-20260927.json) | vom Orchestrator gepruefte Aufgabenquittung: 6 zuvor offene Fachachsen aus personengebundenen amtlichen Aufgabenbereichen geschlossen; keine Importfreigabe |
@@ -114,9 +118,9 @@ bleibt als historischer Lauf unveraendert. Keine Ableitung aus Fraktionslosigkei
 | Parlament | Datensaetze | Partei belegt | Partei offen | fachliche Achse offen | Mandatsart offen |
 |---|---:|---:|---:|---:|---:|
 | Bundestag | 330 | 259 | 71 | 24 | 0 |
-| Landtag Berlin | 120 | 119 | 1 | 1 | 3 |
+| Landtag Berlin | 120 | 119 | 1 | 1 | 1 |
 | Landtag Brandenburg | 50 | 46 (+2 parteilos) | 2 | 2 | 0 |
-| **Gesamt** | **500** | **424 (+2 parteilos)** | **74** | **27** | **3** |
+| **Gesamt** | **500** | **424 (+2 parteilos)** | **74** | **27** | **1** |
 
 Mathematik der Parteibilanz: 424 belegt + 2 parteilos + 74 offen = 500. Die
 Parteiaenderung laesst die uebrigen Achsen unveraendert. Die Gremien-Trennung und
@@ -126,8 +130,9 @@ Scheinausschussachse), Mandatsart offen 7 -> 3 (vier Brandenburg-Mandate belegt)
 Die gepruefte Ressortquittung schliesst 19 dieser 54 Achsen ueber ein amtlich
 abgeleitetes Ressortthema und die gepruefte Aufgabenquittung 6 weitere ueber einen
 personengebundenen amtlichen Aufgabenbereich. Zwei beratende Ausschussachsen schliessen
-weitere Themenluecken: fachliche Achse offen 54 -> 27.
-Technischer Importvertrag: 470 akzeptiert / 30 offen.
+weitere Themenluecken: fachliche Achse offen 54 -> 27. Die Berliner
+Mandatsartenquittung belegt zwei der drei offenen Berliner Mandate (Mandatsart
+offen 3 -> 1). Technischer Importvertrag: 472 akzeptiert / 28 offen.
 
 Die fachliche Achse gilt nur dann als offen, wenn WEDER eine ordentliche NOCH eine
 stellvertretende belegte Ausschusszuordnung vorliegt. 22 Bundestagsprofile tragen
@@ -560,3 +565,33 @@ Import-/Speicher-Roundtrip samt positivem Themenabgleich und negativen
 Fremdthemen. Nur diese zwei Datensaetze aendern sich,498 bleiben vollstaendig
 unveraendert. Knodels aktuelles Parteifeld bleibt offen; keine fachliche
 Importfreigabe, Production-Aenderung, Aktivierung oder500er Ausfuehrung.
+
+## Berliner Mandatsarten Martin und Lux
+
+Die [Zweierquittung](berlin-mandatsarten-20260927.json) schliesst die bislang
+fehlenden Mandatsarten von Johannes Martin (Bezirksliste Marzahn-Hellersdorf)
+und Benedikt Lux (Landesliste). Grundlage ist die am Original visuell gepruefte
+linke Nachrueckerspalte auf Seite204 des amtlichen Handbuchs vom8.10.2025,
+gebunden an Originalhash, URL, Abrufmetadaten und woertliche Transkription.
+Die aktuellen Personenprofile bestaetigen jeweils dasselbe Nachrueckdatum.
+Martins aktuelle Wahlkreissuche wird zusaetzlich am exakten H2-/H3-Abschnitt
+und Personenlink geprueft. Kein automatischer PDF-Parsernachweis; kein
+Direktmandat des Vorgaengers und keine Parteibestaetigung aus dem Jahr2025.
+
+Eigene Nachpruefung: nur diese2 Datensaetze geaendert, die uebrigen498 identisch;
+nur `listenmandat` und `regionHinweis` im Profil ergaenzt. Kanonische Auswahl
+sowie54er/19er/6er/2er Rollen- und Achsenquittungen byteidentisch. Echter
+Import-/Speicher-Roundtrip fuer beide erfolgreich, weiterhin ohne Wahlkreis
+und inaktiv. Feldtest samt Python-Gegenproben und byteidentischer Neuerzeugung
+erfolgreich; falsche Quellenpakete, Personen, Daten, Tabellenabschnitte und
+Quellmetadaten werden gesperrt. Statusdatei-Groessenpruefung4/4 erfolgreich.
+Bilanz472 technisch akzeptiert/28 unvollstaendig,27 Fachachsen und74 Parteifelder
+offen; letzte Berliner Mandatsart Claudia Engelmann weiterhin offen.
+Keine Profile importiert oder aktiviert, keine bezahlten Production-Laeufe.
+
+DeepSeek Flash High beendete die Umsetzung samt Feldtest; der folgende
+Anbieter-Timeout wurde nicht wiederholt. Der Orchestrator vervollstaendigte
+anschliessend die Metadatenbindung und pruefte selbst. Lokales Kostenbuch
+27.09.2026 nach Lauf:2,624574USD gebunden, darin1,175728USD offene Reservierungen
+(einschliesslich351845 Mikro-USD dieses Laufs). Diese Reservierungen bleiben
+unveraendert bis zu einem bestaetigten Verbrauchsbeleg.

@@ -1,0 +1,80 @@
+{
+  "vertragsformat": "helmut-mandatsartenbeleg/1",
+  "zweck": "Amtlicher Mandatsartenbeleg fuer zwei bislang offene Berliner Zielprofile (Johannes Martin Bezirksliste, Benedikt Lux Landesliste). Lokale Quittung: keine Importfreigabe, keine Aktivierung, keine Production-Aktion. Claudia Engelmann bleibt offen.",
+  "quelle": {
+    "url": "https://www.parlament-berlin.de/media/download/5468",
+    "finalUrl": "https://www.parlament-berlin.de/media/download/5468",
+    "datei": "berlin-handbuch-5468-20251008.pdf",
+    "abgerufenAm": "2026-09-27T17:50:02.091789+00:00",
+    "sha256": "3ccd91c80803046da57c2a398c9307dfadf938189cd4db99d9c15f256cf486d8",
+    "bytes": 6935446,
+    "stand": "2025-10-08",
+    "seite": 204,
+    "pdfSeiteIndex": 204,
+    "spalte": "links",
+    "pruefung": "Das amtliche Handbuch-PDF berlin-handbuch-5468-20251008.pdf (Stand 8.10.2025) wurde am Original visuell abgenommen: gedruckte Seite 204 = PDF-Seitenindex 204, linke Nachruecker-Spalte. Die Uebernahme stuetzt sich auf dieses abgenommene Fachurteil samt woertlicher Transkription je Person. Es gibt KEINEN automatischen PDF-Parser-Nachweis.",
+    "http": 200
+  },
+  "regeln": [
+    "Uebernommen werden ausschliesslich die Mandatsart (Bezirksliste bzw. Landesliste) und ein belegter Regionshinweis.",
+    "Der historische Einzug ist datiert und wird NICHT als 2026er Partei- oder Fraktionsbestaetigung ausgegeben.",
+    "Die linke Spalte beschreibt die Nachruecker; ein Direktwahlkreis des ausgeschiedenen Vorgaengers wird niemals uebernommen.",
+    "Person, Nachrueckdatum und Profilhash werden am gebundenen aktuellen Profilblock (dl.b-delegate-facts) geprueft; Fremdperson oder falsches Datum sperren den Lauf.",
+    "Fuer Martin bindet die aktuelle Wahlkreissuche den Abschnitt Wahlbezirk 10: Marzahn-Hellersdorf / Bezirksliste: ueber den exakten Personlink — kein globales Wortvorkommen.",
+    "Diese lokale Quittung ist keine fachliche Freigabe und kein Importmanifest."
+  ],
+  "belege": [
+    {
+      "kennung": "landtag-berlin-johannes-martin",
+      "amtlicheKennung": "johannes-martin",
+      "profilUrl": "https://www.parlament-berlin.de/Abgeordnete/johannes-martin?groupStrategy=nachnamen",
+      "profilDatei": "landtag-berlin-johannes-martin.html",
+      "profilSha256": "3d01e377b5fad72d67f6b19ba4365def26b61579655bb1b4f0c31113605a78b9",
+      "profilBytes": 107064,
+      "vollname": "Johannes Martin",
+      "nachgeruecktAm": "2025-09-27",
+      "profilblockWortlaut": "Nachgerückt am 27.09.2025 für Christian Gräff",
+      "mandatsart": "Bezirksliste",
+      "regionHinweis": "Berlin — Bezirksliste Marzahn-Hellersdorf",
+      "seite": 204,
+      "spalte": "links",
+      "zitat": "Martin, Johannes CDU nachgerückt am 27. September 2025 Marzahn-Hellersdorf, Bezirksliste",
+      "aktuelleAbschnittsbindung": {
+        "quelleUrl": "https://www.parlament-berlin.de/das-parlament/abgeordnete/suche-nach-wahlkreisen",
+        "quelleDatei": "berlin-wahlkreissuche-aktuell.html",
+        "quelleSha256": "dae4db3c10a525f2842582885f7c8ca5eb5cfef85b96eeb07f116f7e084a33ae",
+        "quelleBytes": 210373,
+        "oberabschnitt": "Wahlbezirk 10: Marzahn-Hellersdorf",
+        "unterabschnitt": "Bezirksliste:",
+        "href": "/Abgeordnete/johannes-martin?groupStrategy=constituency",
+        "linkText": "Martin, Johannes, CDU-Fraktion, Nachgerückt",
+        "finalUrl": "https://www.parlament-berlin.de/das-parlament/abgeordnete/suche-nach-wahlkreisen",
+        "abgerufenAm": "2026-09-27T17:49:28.438246+00:00",
+        "http": 200
+      }
+    },
+    {
+      "kennung": "landtag-berlin-benedikt-lux",
+      "amtlicheKennung": "benedikt-lux",
+      "profilUrl": "https://www.parlament-berlin.de/Abgeordnete/benedikt-lux?groupStrategy=nachnamen",
+      "profilDatei": "landtag-berlin-benedikt-lux.html",
+      "profilSha256": "4624c6df0fd0e76992766163a63ae91ead0cd2499b70f1a1b6aa8a3106b96302",
+      "profilBytes": 107475,
+      "vollname": "Benedikt Lux",
+      "nachgeruecktAm": "2025-05-14",
+      "profilblockWortlaut": "Nachgerückt am 14.05.2025 für Julia Schneider",
+      "mandatsart": "Landesliste",
+      "regionHinweis": "Berlin — Landesliste",
+      "seite": 204,
+      "spalte": "links",
+      "zitat": "Lux, Benedikt Bündnis 90/Die Grünen nachgerückt am 14. Mai 2025 Landesliste",
+      "aktuelleAbschnittsbindung": null
+    }
+  ],
+  "nichtUebernommen": [
+    "Direktwahlkreis des ausgeschiedenen Vorgaengers",
+    "Partei-/Fraktionsbestaetigung aus dem historischen Einzug fuer September 2026",
+    "Wahlkreisnummern und Listenplaetze aus dem Handbuch"
+  ],
+  "offen": "Claudia Engelmann (landtag-berlin-claudia-engelmann): Mandatsart bleibt offen; kein brauchbares amtliches Original gefunden."
+}

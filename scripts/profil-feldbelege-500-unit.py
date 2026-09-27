@@ -1154,3 +1154,219 @@ print('PASS: Beratende Achsenquittung — fehlende Quittung/falsche Bilanz/Dupli
       'Ausschuss/fehlende bestehende beratende Funktion/abweichender JSON-LD-Pfad/fehlende Originalrollen/'
       'mehrdeutige H1/zweiter ProfilePage-Block sperren fail closed; die gueltige synthetische '
       '2er-Quittung (4 Kurzthemen, bestehende beratende Funktion) wird akzeptiert.')
+
+
+# ── 11 · Berliner Mandatsartenquittung: PDF-Beleg + Profilblock, fail closed ─────────────
+def _be_paket(root):
+    """Synthetisches, quittungskonformes Quellenpaket (keine /private/tmp-Originale)."""
+    detail = root / 'detailseiten'
+    zusatz = root / 'zusatzquellen'
+    detail.mkdir(parents=True, exist_ok=True)
+    zusatz.mkdir(parents=True, exist_ok=True)
+
+    (zusatz / 'handbuch.pdf').write_bytes(b'%PDF-1.4 synthetisches Pruef-PDF fuer die Gegenprobe\n')
+    pdf_sha = m._sha256(zusatz / 'handbuch.pdf')
+    pdf_bytes = (zusatz / 'handbuch.pdf').stat().st_size
+    wahl_url = 'https://www.parlament-berlin.de/das-parlament/abgeordnete/suche-nach-wahlkreisen'
+    (zusatz / 'wahlkreise.html').write_text(
+        '<h2 class="t"><button> Wahlbezirk 10: Marzahn-Hellersdorf </button></h2>'
+        '<div class="c"><h3 class="h">Wahlkreis 1:</h3><ul><li>'
+        '<a href="/Abgeordnete/olga-gauks?groupStrategy=constituency">Gauks, Olga</a></li></ul>'
+        '<h3 class="h">Bezirksliste:</h3><ul><li>'
+        '<a href="/Abgeordnete/johannes-martin?groupStrategy=constituency">'
+        'Martin, Johannes, CDU-Fraktion, Nachgerückt</a></li></ul></div>'
+        '<h2 class="t"><button>Wahlbezirk 11: Lichtenberg</button></h2>'
+        '<div class="c"><h3 class="h">Bezirksliste:</h3><ul><li>'
+        '<a href="/Abgeordnete/johannes-martin?groupStrategy=constituency">'
+        'Martin, Johannes, CDU-Fraktion, Nachgerückt</a></li></ul></div>',
+        encoding='utf-8')
+    wahl_sha = m._sha256(zusatz / 'wahlkreise.html')
+    wahl_bytes = (zusatz / 'wahlkreise.html').stat().st_size
+
+    personen = [
+        dict(kennung='johannes-martin', name='Johannes Martin',
+             datei='landtag-berlin-johannes-martin.html',
+             url='https://www.parlament-berlin.de/Abgeordnete/johannes-martin?groupStrategy=nachnamen',
+             block='Nachgerückt am 27.09.2025 für Christian Gräff', datum='2025-09-27',
+             mandatsart='Bezirksliste', region='Berlin — Bezirksliste Marzahn-Hellersdorf',
+             zitat='Martin, Johannes CDU nachgerückt am 27. September 2025 Marzahn-Hellersdorf, Bezirksliste',
+             abschnitt=dict(oberabschnitt='Wahlbezirk 10: Marzahn-Hellersdorf', unterabschnitt='Bezirksliste:',
+                            href='/Abgeordnete/johannes-martin?groupStrategy=constituency',
+                            linkText='Martin, Johannes, CDU-Fraktion, Nachgerückt')),
+        dict(kennung='benedikt-lux', name='Benedikt Lux',
+             datei='landtag-berlin-benedikt-lux.html',
+             url='https://www.parlament-berlin.de/Abgeordnete/benedikt-lux?groupStrategy=nachnamen',
+             block='Nachgerückt am 14.05.2025 für Julia Schneider', datum='2025-05-14',
+             mandatsart='Landesliste', region='Berlin — Landesliste',
+             zitat='Lux, Benedikt Bündnis 90/Die Grünen nachgerückt am 14. Mai 2025 Landesliste',
+             abschnitt=None),
+    ]
+    abruf = []
+    for p in personen:
+        (detail / p['datei']).write_text(
+            f'<h1>{p["name"]}, TEST</h1><dl class="b-delegate-facts">'
+            f'<dt class="delegate-facts-title">{p["block"]}</dt></dl>', encoding='utf-8')
+        p['html_sha'] = m._sha256(detail / p['datei'])
+        p['html_bytes'] = (detail / p['datei']).stat().st_size
+        abruf.append(dict(url=p['url'], amtlicheKennung=p['kennung'], parlament='landtag-berlin',
+                          sha256=p['html_sha'], bytes=p['html_bytes']))
+
+    quelle = dict(url='https://www.parlament-berlin.de/media/download/5468',
+                  finalUrl='https://www.parlament-berlin.de/media/download/5468',
+                  datei='handbuch.pdf', abgerufenAm='2026-09-27T17:50:02.091789+00:00',
+                  sha256=pdf_sha, bytes=pdf_bytes, stand='2025-10-08', seite=204,
+                  pdfSeiteIndex=204, spalte='links', http=200)
+    erwartung = dict(quelle=dict(quelle), belege={})
+    for p in personen:
+        eintrag = dict(kennung=f'landtag-berlin-{p["kennung"]}', amtlicheKennung=p['kennung'], profilUrl=p['url'],
+                       profilDatei=p['datei'], profilSha256=p['html_sha'], profilBytes=p['html_bytes'],
+                       vollname=p['name'], nachgeruecktAm=p['datum'], profilblockWortlaut=p['block'],
+                       mandatsart=p['mandatsart'], regionHinweis=p['region'], seite=204, spalte='links',
+                       zitat=p['zitat'])
+        if p['abschnitt']:
+            eintrag['aktuelleAbschnittsbindung'] = dict(p['abschnitt'], quelleUrl=wahl_url,
+                                                        quelleDatei='wahlkreise.html', quelleSha256=wahl_sha,
+                                                        quelleBytes=wahl_bytes, finalUrl=wahl_url,
+                                                        abgerufenAm='2026-09-27T17:49:28.438246+00:00', http=200)
+        erwartung['belege'][p['kennung']] = eintrag
+    quittung = dict(vertragsformat='helmut-mandatsartenbeleg/1', quelle=dict(quelle),
+                    belege=[dict(e) for e in erwartung['belege'].values()])
+    return SimpleNamespace(detailseiten=detail, verzeichnis=root, abruf=abruf), erwartung, quittung, zusatz
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    eingang, erwartung, quittung, zusatz = _be_paket(root)
+
+    # Quellmeta-JSON: PDF und Wahlkreissuche werden gegen die Quittung geprueft.
+    (zusatz / 'handbuch.json').write_text(json.dumps(erwartung['quelle'], ensure_ascii=False), encoding='utf-8')
+    abschnitt = erwartung['belege']['johannes-martin']['aktuelleAbschnittsbindung']
+    (zusatz / 'wahlkreise.json').write_text(json.dumps(dict(
+        url=abschnitt['quelleUrl'], finalUrl=abschnitt['quelleUrl'],
+        abgerufenAm=abschnitt['abgerufenAm'], http=200, sha256=abschnitt['quelleSha256'],
+        bytes=abschnitt['quelleBytes'], datei=abschnitt['quelleDatei']), ensure_ascii=False), encoding='utf-8')
+
+    def _be_mit(mutieren=None, datei_aenderung=None):
+        neu = json.loads(json.dumps(quittung))
+        if mutieren:
+            mutieren(neu)
+        if datei_aenderung:
+            datei_aenderung()
+        pfad = root / 'be-quittung-aendern.json'
+        pfad.write_text(json.dumps(neu, ensure_ascii=False), encoding='utf-8')
+        return m._pruefe_mandatsarten_be(eingang, pfad, erwartung)
+
+    # Gueltiges synthetisches Paket wird akzeptiert (2 Belege).
+    pfad_gueltig = root / 'be-quittung.json'
+    pfad_gueltig.write_text(json.dumps(quittung, ensure_ascii=False), encoding='utf-8')
+    assert set(m._pruefe_mandatsarten_be(eingang, pfad_gueltig, erwartung)) == {'johannes-martin', 'benedikt-lux'}
+
+    # Das eingecheckte Original muss exakt der genehmigten Validator-Konstante entsprechen.
+    repo_quittung = json.loads((Path(m.__file__).resolve().parents[1]
+                                / 'docs' / 'betrieb' / 'berlin-mandatsarten-20260927.json').read_text(encoding='utf-8'))
+    for feld, wert in m.MANDATSARTEN_BE_ERWARTUNG['quelle'].items():
+        assert repo_quittung['quelle'][feld] == wert, feld
+    for amt, soll in m.MANDATSARTEN_BE_ERWARTUNG['belege'].items():
+        ist = next(e for e in repo_quittung['belege'] if e['amtlicheKennung'] == amt)
+        for feld, wert in soll.items():
+            assert ist[feld] == wert, (amt, feld)
+
+    # Negativfaelle: PDF-Beleg (Hash/Metadrift), Duplikat, Fremdperson/-URL/-Datum,
+    # vertauschtes Ganzpaket, PDF-Stand/Seite/Spalte, Transkription und Mandatsart.
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['quelle'].__setitem__('sha256', '0' * 64)), 'PDF-Hashdrift Quittung')
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['quelle'].__setitem__('stand', '2026-01-01')), 'PDF-Stand veraendert')
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['quelle'].__setitem__('seite', 205)), 'PDF-Seite veraendert')
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['quelle'].__setitem__('spalte', 'rechts')), 'PDF-Spalte veraendert')
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['belege'][0].__setitem__('zitat', 'Frei erfunden')), 'Transkription veraendert')
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['belege'][0].__setitem__('mandatsart', 'Direktmandat')), 'Mandatsart veraendert')
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['belege'].append(json.loads(json.dumps(q['belege'][0])))), 'doppelter Beleg')
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['belege'][0].__setitem__('vollname', 'Fremde Person')), 'Fremdperson')
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['belege'][0].__setitem__('profilUrl', q['belege'][1]['profilUrl'])), 'Fremd-URL')
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['belege'][0].__setitem__('nachgeruecktAm', '2025-05-14')), 'falsches Datum')
+    def _ganzpaket_tauschen(q):
+        a, b = q['belege'][0], q['belege'][1]
+        for feld in ('profilUrl', 'profilDatei', 'profilSha256', 'profilBytes', 'vollname',
+                     'nachgeruecktAm', 'profilblockWortlaut', 'mandatsart', 'regionHinweis',
+                     'zitat', 'aktuelleAbschnittsbindung'):
+            links, rechts = a.get(feld), b.get(feld)
+            if links is None and rechts is None:
+                continue
+            a[feld], b[feld] = rechts, links
+    _erwarte_fehler(lambda: _be_mit(_ganzpaket_tauschen), 'vertauschtes Ganzpaket (Inhalt)')
+    # Auch ein Tausch der beiden Originaldateien auf der Platte (Quellenpaket) sperrt.
+    martin_datei = eingang.detailseiten / 'landtag-berlin-johannes-martin.html'
+    lux_datei = eingang.detailseiten / 'landtag-berlin-benedikt-lux.html'
+    martin_inhalt, lux_inhalt = martin_datei.read_bytes(), lux_datei.read_bytes()
+    try:
+        martin_datei.write_bytes(lux_inhalt)
+        lux_datei.write_bytes(martin_inhalt)
+        _erwarte_fehler(lambda: _be_mit(), 'vertauschtes Quellenpaket auf der Platte')
+    finally:
+        martin_datei.write_bytes(martin_inhalt)
+        lux_datei.write_bytes(lux_inhalt)
+    _erwarte_fehler(lambda: _be_mit(lambda q: q['belege'].append(dict(
+        q['belege'][1], kennung='landtag-berlin-claudia-engelmann',
+        amtlicheKennung='claudia-engelmann'))), 'Engelmann als Fremdkennung')
+
+    # Quellmeta-JSON-Drift: nur der Metadaten-Hash weicht ab -> fail closed.
+    meta = json.loads((zusatz / 'wahlkreise.json').read_text(encoding='utf-8'))
+    (zusatz / 'wahlkreise.json').write_text(json.dumps(dict(meta, sha256='0' * 64), ensure_ascii=False), encoding='utf-8')
+    _erwarte_fehler(lambda: _be_mit(), 'Quellmeta-Drift')
+    (zusatz / 'wahlkreise.json').write_text(json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+
+    # Auch unveraenderte Originalbytes erlauben keine veraenderten Abrufmetadaten.
+    for filename in ('handbuch.json', 'wahlkreise.json'):
+        meta_path = zusatz / filename
+        original_meta = json.loads(meta_path.read_text(encoding='utf-8'))
+        for feld, falsch in (('finalUrl', 'https://example.org/fremd'),
+                             ('abgerufenAm', '2025-01-01T00:00:00Z'), ('http', 404)):
+            try:
+                meta_path.write_text(json.dumps(dict(original_meta, **{feld: falsch})), encoding='utf-8')
+                _erwarte_fehler(lambda: _be_mit(), f'{filename}: {feld}-Drift')
+            finally:
+                meta_path.write_text(json.dumps(original_meta, ensure_ascii=False), encoding='utf-8')
+
+    # Martin-Abschnittsbindung: fehlender/verschobener H2, fehlender H3 -> fail closed,
+    # obwohl derselbe Personlink an anderer Stelle im Dokument vorkommt (kein globales Wort).
+    original_wahl = (zusatz / 'wahlkreise.html').read_text(encoding='utf-8')
+
+    def _wahl(neu_text):
+        (zusatz / 'wahlkreise.html').write_text(neu_text, encoding='utf-8')
+        meta_neu = json.loads((zusatz / 'wahlkreise.json').read_text(encoding='utf-8'))
+        (zusatz / 'wahlkreise.json').write_text(json.dumps(dict(
+            meta_neu, sha256=m._sha256(zusatz / 'wahlkreise.html'),
+            bytes=(zusatz / 'wahlkreise.html').stat().st_size), ensure_ascii=False), encoding='utf-8')
+        neu = json.loads(json.dumps(quittung))
+        a = neu['belege'][0]['aktuelleAbschnittsbindung']
+        a['quelleSha256'] = m._sha256(zusatz / 'wahlkreise.html')
+        a['quelleBytes'] = (zusatz / 'wahlkreise.html').stat().st_size
+        erwartung['belege']['johannes-martin']['aktuelleAbschnittsbindung']['quelleSha256'] = a['quelleSha256']
+        erwartung['belege']['johannes-martin']['aktuelleAbschnittsbindung']['quelleBytes'] = a['quelleBytes']
+        pfad = root / 'be-quittung-wahl.json'
+        pfad.write_text(json.dumps(neu, ensure_ascii=False), encoding='utf-8')
+        return m._pruefe_mandatsarten_be(eingang, pfad, erwartung)
+
+    try:
+        _erwarte_fehler(lambda: _wahl(original_wahl.replace(
+            '<h2 class="t"><button> Wahlbezirk 10: Marzahn-Hellersdorf </button></h2>', '')), 'fehlender H2')
+        _erwarte_fehler(lambda: _wahl(original_wahl.replace(
+            'Wahlbezirk 10: Marzahn-Hellersdorf', 'Wahlbezirk 11: Lichtenberg')), 'verschobener H2')
+        _erwarte_fehler(lambda: _wahl(original_wahl.replace(
+            '<h3 class="h">Bezirksliste:</h3>', '<h3 class="h">Wahlkreis 9:</h3>', 1)), 'fehlender H3')
+    finally:
+        (zusatz / 'wahlkreise.html').write_text(original_wahl, encoding='utf-8')
+        meta_zurueck = json.loads((zusatz / 'wahlkreise.json').read_text(encoding='utf-8'))
+        (zusatz / 'wahlkreise.json').write_text(json.dumps(dict(
+            meta_zurueck, sha256=m._sha256(zusatz / 'wahlkreise.html'),
+            bytes=(zusatz / 'wahlkreise.html').stat().st_size), ensure_ascii=False), encoding='utf-8')
+        erwartung['belege']['johannes-martin']['aktuelleAbschnittsbindung']['quelleSha256'] = \
+            m._sha256(zusatz / 'wahlkreise.html')
+        erwartung['belege']['johannes-martin']['aktuelleAbschnittsbindung']['quelleBytes'] = \
+            (zusatz / 'wahlkreise.html').stat().st_size
+
+print('PASS: Berliner Mandatsartenquittung — PDF-Beleg an Stand/Seite 204/linke Spalte/URL/Hash/Bytezahl/'
+      'Abruf und Quellmeta gebunden, woertliche Transkription, Profilblock-Person/-Datum/-Hash und exakte '
+      'H2/H3/Personlink-Bindung (Martin, kein globales Wortvorkommen); PDF-Hash/Metadrift, PDF-Stand, Seite, '
+      'Spalte, Transkription, Mandatsart, Duplikat, Fremdperson/-URL/-Datum, vertauschtes Ganzpaket, fehlender/'
+      'verschobener H2 und fehlender H3 sowie Engelmann als Fremdkennung sperren fail closed; das gueltige '
+      'synthetische 2er-Paket wird akzeptiert und die eingecheckte Quittung entspricht der Validator-Konstante.')

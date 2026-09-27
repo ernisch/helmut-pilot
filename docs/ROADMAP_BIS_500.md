@@ -127,9 +127,14 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 74 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;470 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;472 technische Erfolge sind keine fachliche Importfreigabe.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
+Zwei bislang offene Berliner Mandatsarten sind ueber die amtliche
+[Berliner Mandatsartenquittung](betrieb/berlin-mandatsarten-20260927.json) belegt
+(Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux Landesliste;
+Handbuch-PDF vom8.10.2025, Seite204 linke Spalte, woertliche Transkription, kein
+automatischer PDF-Parser); Claudia Engelmann bleibt offen.
 Die 54 urspruenglich fachlich offenen Profile tragen ueber die gepruefte
 [Rollenquittung](betrieb/profilrollen-54-20260927.json) 48 belegte Amtsrollen
 in `profil.funktionen` (dedupliziert angehaengt, 6 offen); das ist keine fachliche
@@ -144,9 +149,10 @@ mit amtlich belegten beratenden Ausschussrollen (Knodel Landwirtschaft/
 Ernaehrung/Heimat, Seidler Haushalt; bestehende beratende Funktion erhalten,
 keine ordentliche/stellvertretende Mitgliedschaft); die 54er Rollenquittung
 bleibt deckungsgleich, 27 Achsen
-bleiben offen. Stand:470/30. Die drei separat geprueften Zusatzrollen
+bleiben offen. Stand:472/28. Die drei separat geprueften Zusatzrollen
 bleiben weiter offen und sind nicht integriert.
-Naechster Fachschritt: verbleibende aktuelle Parteibelege, Mandatsarten und Fachachsen.
+Naechster Fachschritt: verbleibende aktuelle Parteibelege, die letzte offene
+Berliner Mandatsart (Claudia Engelmann) und die restlichen Fachachsen.
 
 1. Die gemeinsame semantische Trennung der tatsächlich sichtbaren Texte aus
    Briefing, Lage und Radar technisch absichern und mit echten Helmut Ausgaben
