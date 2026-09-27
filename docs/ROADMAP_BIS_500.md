@@ -128,8 +128,9 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:74 Parteifelder und die ausgewiesenen Mandats-/
 Fachachsen einzeln belegen;443 technische Erfolge sind keine fachliche Importfreigabe.
-Gremienrollen und vier BB-Listenmandate sind korrigiert. Naechster klarer Codefehler:
-SSW plus fraktionslos wird faelschlich als Partei-/Fraktionswiderspruch gewertet.
+Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
+SSW/fraktionslos ist lokal behoben; Partei bleibt erhalten, AfD-Sperre unveraendert.
+Naechster Fachschritt: verbleibende aktuelle Parteibelege, Mandatsarten und Themenachsen.
 
 1. Die gemeinsame semantische Trennung der tatsächlich sichtbaren Texte aus
    Briefing, Lage und Radar technisch absichern und mit echten Helmut Ausgaben

@@ -374,6 +374,14 @@ einen Partei-/Fraktionswiderspruch. Das ist ein zu korrigierender Prueffehler:
 Fraktionslosigkeit schliesst eine Parteimitgliedschaft nicht aus. Seine fehlende
 fachliche Achse bleibt davon unabhaengig offen; keine Umdeklaration der Partei.
 
+**Lokal korrigiert (27.09.2026).** Der Prueffehler ist im Produktcode behoben:
+`lib/helmut/profile-readiness.js` wertet ausdrueckliche Fraktionslosigkeit nicht
+mehr als Partei-/Fraktionswiderspruch (allgemeine Regel, keine SSW-Sonderregel;
+exakte Fraktionsangabe „Fraktionslos", kein Teilstring-Treffer und keine
+Umgehung durch ein daneben gesetztes `fraktionslos`-Flag). Seidlers fehlende fachliche Achse bleibt offen, die
+Bilanz 289/330 bleibt daher unveraendert. Keine Partei umgedeutet, kein Rohdossier
+und kein Parteibeleg geaendert.
+
 Der frisch abgerufene amtliche [MdB-Stammdatensatz](https://www.bundestag.de/resource/blob/472878/MdB-Stammdaten.zip)
 hat Stand 29.04.2026 (Abruf 27.09.2026, SHA256
 `29ae4ba1f5d8b50915a164ce929453b615bb88874ee78e4240f6288268bde460`).
