@@ -166,12 +166,14 @@ a.equal(ausProfilkopf.filter((d) => d.parlament === "landtag-brandenburg").lengt
 for (const d of ausProfilkopf) {
   a.ok(d.mandatsartBelegt && (typeof d.mandatsartBelegt === "string" || Object.keys(d.mandatsartBelegt).length > 0));
 }
-// Genau 3 Berliner Landtagsmandate bleiben mangels belegter Angabe offen. Die vier
-// Brandenburg-Mandate sind ueber die versionierte Mandatsartenquittung als
-// Landesliste belegt (nur Mandatsart + Region, kein Listenplatz, keine Partei).
+// Genau 1 Berliner Landtagsmandat bleibt mangels belegter Angabe offen (Claudia
+// Engelmann). Zwei Berliner und vier Brandenburg-Mandate sind ueber versionierte
+// Mandatsartenquittungen belegt (nur Mandatsart + Region, kein Listenplatz, keine
+// Partei).
 const mandatsartOffen = datensaetze.filter((d) => d.offeneFelder.includes("mandatsart"));
-a.equal(mandatsartOffen.length, 3, "3 Berliner Mandatsarten bleiben ehrlich offen");
+a.equal(mandatsartOffen.length, 1, "1 Berliner Mandatsart bleibt ehrlich offen");
 a.ok(mandatsartOffen.every((d) => d.parlament === "landtag-berlin"), "nur Berlin bleibt offen");
+a.deepEqual(mandatsartOffen.map((d) => d.amtlicheKennung), ["claudia-engelmann"], "offen bleibt nur Engelmann");
 
 // 5a · Belegte Mandatsart Brandenburg: nur Landesliste + Region, kein Listenplatz.
 const ausQuittung = datensaetze.filter((d) => d.mandatsartQuittung);
@@ -195,6 +197,75 @@ for (const d of ausQuittung) {
   a.ok(!d.offeneFelder.includes("mandatsart"), "belegte Mandatsart darf nicht mehr offen sein");
 }
 
+// 5b · Belegte Mandatsart Berlin: Bezirks-/Landesliste + Region, kein Direktwahlkreis.
+// Die versionierte Quittung bindet das am Original visuell abgenommene Handbuch-PDF
+// (Stand 8.10.2025, Seite 204 linke Spalte) an URL + sha256 + Bytezahl + Abrufzeit,
+// die woertliche Transkription sowie Person/Nachrueckdatum/Profilhash. KEIN
+// automatischer PDF-Parser-Nachweis; Fremdperson, falsches Datum, vertauschtes Paket
+// und Quell-/Metadrift sperrt der Assembler (Python-Gegenproben).
+const beQuittung = datensaetze.filter((d) => d.mandatsartQuittungBe);
+a.equal(beQuittung.length, 2, "zwei Berliner Mandate stammen aus der Berliner Mandatsartenquittung");
+a.deepEqual(
+  beQuittung.map((d) => d.amtlicheKennung).sort(),
+  ["benedikt-lux", "johannes-martin"],
+  "genau Martin und Lux sind belegt; Engelmann bleibt offen",
+);
+const beDatei = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "berlin-mandatsarten-20260927.json"), "utf8"));
+a.equal(beDatei.quelle.seite, 204, "PDF-Seite 204 gebunden");
+a.equal(beDatei.quelle.pdfSeiteIndex, 204, "PDF-Seitenindex 204 gebunden");
+a.equal(beDatei.quelle.spalte, "links", "linke Nachruecker-Spalte gebunden");
+a.equal(beDatei.quelle.stand, "2025-10-08", "Stand 8.10.2025 gebunden");
+a.equal(beDatei.quelle.sha256, "3ccd91c80803046da57c2a398c9307dfadf938189cd4db99d9c15f256cf486d8");
+a.equal(beDatei.belege.length, 2, "genau zwei genehmigte Berliner Belege");
+const beByKennung = new Map(beQuittung.map((d) => [d.amtlicheKennung, d]));
+const mArt = { "johannes-martin": "Bezirksliste", "benedikt-lux": "Landesliste" };
+const mDatum = { "johannes-martin": "2025-09-27", "benedikt-lux": "2025-05-14" };
+const mRegion = { "johannes-martin": "Berlin — Bezirksliste Marzahn-Hellersdorf", "benedikt-lux": "Berlin — Landesliste" };
+const importModul = require("../lib/helmut/profil-import.js");
+const storageModul = require("../lib/helmut/storage.js");
+for (const d of beQuittung) {
+  const q = d.mandatsartQuittungBe;
+  const kennung = d.amtlicheKennung;
+  a.equal(d.parlament, "landtag-berlin");
+  a.equal(d.profil.bundesland, "Berlin");
+  a.equal(d.profil.listenmandat, true, "belegte Bezirks-/Landesliste muss ein Listenmandat sein");
+  a.ok(!("wahlkreis" in d.profil), "Listenmandat darf keinen Direktwahlkreis erfinden");
+  a.equal(d.profil.regionHinweis, mRegion[kennung], "belegter Regionshinweis aus der Quittung");
+  a.equal(q.mandatsart, mArt[kennung], "nur die belegte Mandatsart uebernehmen");
+  a.equal(q.nachgeruecktAm, mDatum[kennung], "exaktes Nachrueckdatum aus dem gebundenen Profilblock");
+  a.equal(q.seite, 204);
+  a.equal(q.spalte, "links");
+  a.equal(q.profilUrl, d.quelle.url, "Profil-URL gebunden");
+  a.equal(q.profilSha256, d.quelle.sha256, "Profilhash gebunden");
+  a.equal(q.url, "https://www.parlament-berlin.de/media/download/5468", "nur das amtliche Handbuch-PDF");
+  a.equal(q.sha256, beDatei.quelle.sha256);
+  a.ok(q.zitat.length > 20 && q.profilblockWortlaut.includes("Nachgerückt am"), "woertliche Transkription + Profilblock");
+  a.ok(d.feldbelege.mandatsartQuelle.includes("docs/betrieb/berlin-mandatsarten-20260927.json"));
+  a.ok(!d.offeneFelder.includes("mandatsart"), "belegte Mandatsart darf nicht mehr offen sein");
+  // Keine Partei-/Themen-/Funktionsaenderung durch die Mandatsartenquittung.
+  a.ok(!("themen" in d.profil), "Mandatsartenquittung darf keine Themen setzen");
+  a.ok(!("funktionen" in d.profil), "Mandatsartenquittung darf keine Funktionen setzen");
+  // Echter Import-/Storage-Roundtrip: Listenmandat + Region bleiben, kein Direktwahlkreis.
+  const gespeichert = importModul.zuHelmutProfil(d.profil);
+  a.ok(!gespeichert.constituency, "kein Direktwahlkreis nach dem Import");
+  a.equal(gespeichert.regionNote, mRegion[kennung], "Region muss den Importpfad erreichen");
+  a.equal(gespeichert.listenmandat, true, "Listenmandat muss den Importpfad erreichen");
+  const zeile = storageModul.toMandateProfileRow(gespeichert);
+  a.equal(zeile.wahlkreis, null, "Storage-Zeile darf keinen Wahlkreis tragen");
+  a.equal(zeile.aktiv, false, "Storage-Zeile darf nicht aktivieren");
+  const gelesen = storageModul.fromMandateProfileRow({ id: d.kanonischeKennung, name: d.profil.vollname }, zeile);
+  a.equal(gelesen.regionNote, mRegion[kennung], "Region uebersteht den Storage-Roundtrip");
+  a.equal(gelesen.listenmandat, true, "Listenmandat uebersteht den Storage-Roundtrip");
+  a.ok(!gelesen.constituency, "kein Direktwahlkreis nach dem Storage-Roundtrip");
+}
+a.equal(beByKennung.get("johannes-martin").profil.partei, "CDU", "Partei bleibt unveraendert belegt");
+a.equal(beByKennung.get("benedikt-lux").profil.partei, "GRÜNE", "Partei bleibt unveraendert belegt");
+a.ok(beDatei.belege.find((b) => b.amtlicheKennung === "johannes-martin").aktuelleAbschnittsbindung.href
+  === "/Abgeordnete/johannes-martin?groupStrategy=constituency", "Martin braucht die exakte Abschnittsbindung");
+a.ok(beDatei.belege.find((b) => b.amtlicheKennung === "benedikt-lux").aktuelleAbschnittsbindung === null,
+  "Lux hat keine Wahlkreissuche-Abschnittsbindung");
+a.ok(!datensaetze.some((d) => d.amtlicheKennung === "claudia-engelmann" && d.mandatsartQuittungBe), "Engelmann bleibt offen");
+
 // ── 6 · Der echte Importvertrag auf allen 500 Profilen ───────────────────────────────────
 const importDaten = { version: datei.vertragsformat, profile: datensaetze.map((d) => d.profil) };
 const ergebnis = pruefeImport(importDaten);
@@ -215,10 +286,10 @@ for (const e of ergebnis.ergebnisse) {
 // stellvertretender belegter Ausschuss NOCH ein belegtes Thema vorliegt. Ueber die
 // geprueften Ressort- (19), Aufgaben- (6) und beratenden (2) Quittungen erhalten
 // 27 zuvor offene Profile amtlich abgeleitete Themen; ihre Achse schliesst sich
-// ehrlich (54 -> 27). Vier Brandenburg-Mandate sind ueber die Mandatsartenquittung
-// belegt (7 -> 3 region-fehlt).
-a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 27, "region-fehlt": 3 }, "offene Felder muessen genau die bekannten Luecken sein");
-a.equal(ergebnis.gueltig, 470, "470 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
+// ehrlich (54 -> 27). Vier Brandenburg- und zwei Berliner Mandate sind ueber die
+// Mandatsartenquittungen belegt (7 -> 1 region-fehlt; offen bleibt nur Engelmann).
+a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 27, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
+a.equal(ergebnis.gueltig, 472, "472 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
 
 // Einzelpruefung (pruefeProfil) muss dieselbe Sprache sprechen wie die Mengenpruefung.
 for (let i = 0; i < datensaetze.length; i += 1) {
@@ -659,4 +730,4 @@ if (eingangVorhanden && python) {
   reproduzierbar = "byte-identisch neu erzeugt";
 }
 
-console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (470 technisch importierbar, 30 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung (4 Brandenburg-Landeslisten), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei), Aufgabenquittung (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14 Themenbegriffe und Herkunftshinweise verlustfrei, 14 exakte Themengegenproben, Mast disjunkt zu Griese), Beratende Achsenquittung (2 beratende Ausschussachsen: Knodel Landwirtschaft/Ernaehrung/Heimat + Seidler Haushalt, 4 Kurzthemen und getrennte Ableitungshinweise verlustfrei, bestehende beratende Funktion erhalten, keine ordentliche/stellvertretende Mitgliedschaft, keine endDate-Rolle; 27 Fachachsen bleiben offen), Bundestags-Readiness (306/330 bereit), Reproduzierbarkeit: " + reproduzierbar);
+console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (472 technisch importierbar, 28 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung Brandenburg (4 Landeslisten) und Berlin (2 Profile: Martin Bezirksliste Marzahn-Hellersdorf, Lux Landesliste; Handbuch-PDF Seite 204 linke Spalte, wörtliche Transkription, exakter H2/H3/Personlink, echter Import-/Storage-Roundtrip, Engelmann bleibt offen), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei), Aufgabenquittung (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14 Themenbegriffe und Herkunftshinweise verlustfrei, 14 exakte Themengegenproben, Mast disjunkt zu Griese), Beratende Achsenquittung (2 beratende Ausschussachsen: Knodel Landwirtschaft/Ernaehrung/Heimat + Seidler Haushalt, 4 Kurzthemen und getrennte Ableitungshinweise verlustfrei, bestehende beratende Funktion erhalten, keine ordentliche/stellvertretende Mitgliedschaft, keine endDate-Rolle; 27 Fachachsen bleiben offen), Bundestags-Readiness (306/330 bereit), Reproduzierbarkeit: " + reproduzierbar);
