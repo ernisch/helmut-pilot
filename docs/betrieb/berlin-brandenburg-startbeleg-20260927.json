@@ -451,5 +451,13 @@
       "sichtbarePipelineItems": 0,
       "gueltigkeit": "Lokale Teilprobe, keine Vollbestands- oder Frischeabnahme. Berlin mit vorhandenem fetchPardokText auf 30 Zähleinheiten/4 MiB begrenzt, 32483 Bytes empfangen; Brandenburg vollständiger Download, Parser auf 30 Records begrenzt."
     }
-  ]
+  ],
+  "afdProductionNachkontrolle": {
+    "checkedAt": "2026-09-27T12:41:43.597763Z",
+    "profiles": 500,
+    "activeProfiles": 0,
+    "afdProfilesLautParteiOderFraktion": 0,
+    "mandateHash": "198f25ff81cf5ee4ad2645c1881a8191",
+    "seit12Uhr31Hashgleich": true
+  }
 }

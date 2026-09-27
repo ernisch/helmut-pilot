@@ -40,7 +40,7 @@ const PROFILES = {
   T3_gruene: { id: "t3", fullName: "T3 Grüne", party: "Bündnis 90/Die Grünen", parliamentType: "Bundestag", constituency: "Stuttgart", committee: "Umwelt", focusTopics: ["Klimaschutz"], profileActive: true, expectTop: "ko-umwelt" },
   T4_linke_arbeit: { id: "t4", fullName: "T4 Linke", party: "Die Linke", parliamentType: "Bundestag", constituency: "Salzgitter", committee: "Arbeit und Soziales", focusTopics: ["Tarifbindung"], profileActive: true, expectTop: "ko-arbeit" },
   T5_fdp_wirtschaft: { id: "t5", fullName: "T5 FDP", party: "FDP", parliamentType: "Bundestag", constituency: "Frankfurt", committee: "Wirtschaft", focusTopics: ["Digitalisierung"], profileActive: true, expectTop: "ko-wirtschaft" },
-  T6_afd_innen: { id: "t6", fullName: "T6 AfD", party: "AfD", parliamentType: "Bundestag", constituency: "Dresden", committee: "Innenausschuss", focusTopics: ["Innere Sicherheit"], profileActive: true, expectTop: "ko-innen" },
+  T6_bsw_innen: { id: "t6", fullName: "T6 BSW", party: "BSW", parliamentType: "Bundestag", constituency: "Dresden", committee: "Innenausschuss", focusTopics: ["Innere Sicherheit"], profileActive: true, expectTop: "ko-innen" },
   T7_fraktionslos: { id: "t7", fullName: "T7 Fraktionslos", party: "Fraktionslos", parliamentType: "Bundestag", constituency: "Hamburg", committee: "Gesundheit", focusTopics: ["Pflege"], profileActive: true, expectTop: "ko-gesundheit" },
   T8_landtag_nrw: { id: "t8", fullName: "T8 NRW", party: "SPD", parliamentType: "Landtag", state: "Nordrhein-Westfalen", constituency: "Köln I", committee: "Bildung", focusTopics: ["Bildung"], profileActive: true, expectTop: "ko-nrw" },
   T9_landtag_bayern: { id: "t9", fullName: "T9 Bayern", party: "CSU", parliamentType: "Landtag", state: "Bayern", constituency: "Nürnberg-Nord", committee: "Landwirtschaft", focusTopics: ["Landwirtschaft"], profileActive: true, expectTop: "ko-bayern" },
@@ -74,7 +74,7 @@ for (const [name, p] of Object.entries(PROFILES)) {
   if (p.expectTop) tops[name] = results[name].top ? results[name].top.knowledge_object_id : null;
 }
 // Die sechs Bundestags-Fachprofile (T1-T6) muessen sechs UNTERSCHIEDLICHE Top-KOs haben.
-const btTops = ["T1_cdu_bt_grossstadt", "T2_spd_bt_laendlich", "T3_gruene", "T4_linke_arbeit", "T5_fdp_wirtschaft", "T6_afd_innen"].map((n) => tops[n]);
+const btTops = ["T1_cdu_bt_grossstadt", "T2_spd_bt_laendlich", "T3_gruene", "T4_linke_arbeit", "T5_fdp_wirtschaft", "T6_bsw_innen"].map((n) => tops[n]);
 check("T1-T6: sechs unterschiedliche Top-Treffer", new Set(btTops).size === 6, JSON.stringify(btTops));
 
 console.log("== 3) Keine Cross-Contamination ==");

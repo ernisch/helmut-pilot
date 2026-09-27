@@ -1,504 +1,7 @@
 {
   "status": "Vorlaeufige Namensauswahl, kein Importmanifest; Einzelprofil-Feldbelege und Rollen-/Parteienabdeckung offen",
-  "erstelltAm": "2026-09-27T12:30:42.756461+00:00",
+  "erstelltAm": "2026-09-27T12:40:11.379841+00:00",
   "auswahl": [
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/A/arpaschi_alexander-1043452",
-      "text": "Arpaschi, Alexander",
-      "fraktion": "AfD",
-      "amtlicheKennung": "arpaschi_alexander-1043452",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/bachmann_carolin-1043502",
-      "text": "Bachmann, Carolin",
-      "fraktion": "AfD",
-      "amtlicheKennung": "bachmann_carolin-1043502",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/balten_adam-1043518",
-      "text": "Balten, Adam",
-      "fraktion": "AfD",
-      "amtlicheKennung": "balten_adam-1043518",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/baum_christina-1048376",
-      "text": "Baum, Dr. Christina",
-      "fraktion": "AfD",
-      "amtlicheKennung": "baum_christina-1048376",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/baumann_bernd-1043568",
-      "text": "Baumann, Dr. Bernd",
-      "fraktion": "AfD",
-      "amtlicheKennung": "baumann_bernd-1043568",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/becker_carsten-1043590",
-      "text": "Becker, Carsten",
-      "fraktion": "AfD",
-      "amtlicheKennung": "becker_carsten-1043590",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/bernhard_marc-1043678",
-      "text": "Bernhard, Marc",
-      "fraktion": "AfD",
-      "amtlicheKennung": "bernhard_marc-1043678",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/bessin_birgit-1048412",
-      "text": "Bessin, Birgit",
-      "fraktion": "AfD",
-      "amtlicheKennung": "bessin_birgit-1048412",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/birghan_christoph-1043712",
-      "text": "Birghan, Dr. Christoph",
-      "fraktion": "AfD",
-      "amtlicheKennung": "birghan_christoph-1043712",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/bleck_andreas-1043722",
-      "text": "Bleck, Andreas",
-      "fraktion": "AfD",
-      "amtlicheKennung": "bleck_andreas-1043722",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/bloch_joachim-1043728",
-      "text": "Bloch, Joachim",
-      "fraktion": "AfD",
-      "amtlicheKennung": "bloch_joachim-1043728",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/blos_michael-1043730",
-      "text": "Blos, Dr. Michael",
-      "fraktion": "AfD",
-      "amtlicheKennung": "blos_michael-1043730",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/bochmann_rene-1043736",
-      "text": "Bochmann, René",
-      "fraktion": "AfD",
-      "amtlicheKennung": "bochmann_rene-1043736",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/boehringer_peter-1043742",
-      "text": "Boehringer, Peter",
-      "fraktion": "AfD",
-      "amtlicheKennung": "boehringer_peter-1043742",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/bohnhof_peter-1043750",
-      "text": "Bohnhof, Peter",
-      "fraktion": "AfD",
-      "amtlicheKennung": "bohnhof_peter-1043750",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/bollmann_gereon-1043754",
-      "text": "Bollmann, Gereon",
-      "fraktion": "AfD",
-      "amtlicheKennung": "bollmann_gereon-1043754",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/braga_torben-1043788",
-      "text": "Braga, Torben",
-      "fraktion": "AfD",
-      "amtlicheKennung": "braga_torben-1043788",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/brandes_dirk-1043794",
-      "text": "Brandes, Dirk",
-      "fraktion": "AfD",
-      "amtlicheKennung": "brandes_dirk-1043794",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/brandner_stephan-1043798",
-      "text": "Brandner, Stephan",
-      "fraktion": "AfD",
-      "amtlicheKennung": "brandner_stephan-1043798",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/brucker_erhard-1043846",
-      "text": "Brucker, Erhard",
-      "fraktion": "AfD",
-      "amtlicheKennung": "brucker_erhard-1043846",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/B/buehl_marcus-1048474",
-      "text": "Bühl, Marcus",
-      "fraktion": "AfD",
-      "amtlicheKennung": "buehl_marcus-1048474",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/C/chrupalla_tino-1043948",
-      "text": "Chrupalla, Tino",
-      "fraktion": "AfD",
-      "amtlicheKennung": "chrupalla_tino-1043948",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/C/curio_gottfried-1043982",
-      "text": "Curio, Dr. Gottfried",
-      "fraktion": "AfD",
-      "amtlicheKennung": "curio_gottfried-1043982",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/D/dietz_thomas-1048516",
-      "text": "Dietz, Thomas",
-      "fraktion": "AfD",
-      "amtlicheKennung": "dietz_thomas-1048516",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/D/douglas_christian-1044090",
-      "text": "Douglas, Christian",
-      "fraktion": "AfD",
-      "amtlicheKennung": "douglas_christian-1044090",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/D/droessler_christopher-1044106",
-      "text": "Drößler, Christopher",
-      "fraktion": "AfD",
-      "amtlicheKennung": "droessler_christopher-1044106",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/E/ebenberger_tobias-1044132",
-      "text": "Ebenberger, Tobias",
-      "fraktion": "AfD",
-      "amtlicheKennung": "ebenberger_tobias-1044132",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/E/espendiller_michael-1044228",
-      "text": "Espendiller, Dr. Michael",
-      "fraktion": "AfD",
-      "amtlicheKennung": "espendiller_michael-1044228",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/F/fehre_micha-1044272",
-      "text": "Fehre, Micha",
-      "fraktion": "AfD",
-      "amtlicheKennung": "fehre_micha-1044272",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/F/felser_peter-1044286",
-      "text": "Felser, Peter",
-      "fraktion": "AfD",
-      "amtlicheKennung": "felser_peter-1044286",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/F/feser_jan-1044292",
-      "text": "Feser, Jan",
-      "fraktion": "AfD",
-      "amtlicheKennung": "feser_jan-1044292",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/F/fetsch_thomas-1044296",
-      "text": "Fetsch, Thomas",
-      "fraktion": "AfD",
-      "amtlicheKennung": "fetsch_thomas-1044296",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/F/finger_hauke-1044304",
-      "text": "Finger, Hauke",
-      "fraktion": "AfD",
-      "amtlicheKennung": "finger_hauke-1044304",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/F/froemming_goetz-1044408",
-      "text": "Frömming, Dr. Götz",
-      "fraktion": "AfD",
-      "amtlicheKennung": "froemming_goetz-1044408",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/F/frohnmaier_markus-1044406",
-      "text": "Frohnmaier, Markus",
-      "fraktion": "AfD",
-      "amtlicheKennung": "frohnmaier_markus-1044406",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/galla_rainer-1044428",
-      "text": "Galla, Rainer",
-      "fraktion": "AfD",
-      "amtlicheKennung": "galla_rainer-1044428",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/gamanov_boris-1044434",
-      "text": "Gamanov, Boris",
-      "fraktion": "AfD",
-      "amtlicheKennung": "gamanov_boris-1044434",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/gauland_alexander-1044448",
-      "text": "Gauland, Dr. Alexander",
-      "fraktion": "AfD",
-      "amtlicheKennung": "gauland_alexander-1044448",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/giersch_alexis-1044490",
-      "text": "Giersch, Alexis L.",
-      "fraktion": "AfD",
-      "amtlicheKennung": "giersch_alexis-1044490",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/glaeser_ronald-1044508",
-      "text": "Gläser, Ronald",
-      "fraktion": "AfD",
-      "amtlicheKennung": "glaeser_ronald-1044508",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/gnauck_hannes-1044526",
-      "text": "Gnauck, Hannes",
-      "fraktion": "AfD",
-      "amtlicheKennung": "gnauck_hannes-1044526",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/gossner_hans-1044566",
-      "text": "Goßner, Hans-Jürgen",
-      "fraktion": "AfD",
-      "amtlicheKennung": "gossner_hans-1044566",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/gottschalk_kay-1044570",
-      "text": "Gottschalk, Kay",
-      "fraktion": "AfD",
-      "amtlicheKennung": "gottschalk_kay-1044570",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/grimm_christoph-1048654",
-      "text": "Grimm, Christoph",
-      "fraktion": "AfD",
-      "amtlicheKennung": "grimm_christoph-1048654",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/gross_karl-1044618",
-      "text": "Groß, Rainer",
-      "fraktion": "AfD",
-      "amtlicheKennung": "gross_karl-1044618",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hahn_ingo-1044696",
-      "text": "Hahn, Prof. Dr. Ingo",
-      "fraktion": "AfD",
-      "amtlicheKennung": "hahn_ingo-1044696",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/haise_lars-1044710",
-      "text": "Haise, Lars",
-      "fraktion": "AfD",
-      "amtlicheKennung": "haise_lars-1044710",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hanker_mirco-1044728",
-      "text": "Hanker, Mirco",
-      "fraktion": "AfD",
-      "amtlicheKennung": "hanker_mirco-1044728",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/haug_jochen-1044782",
-      "text": "Haug, Jochen",
-      "fraktion": "AfD",
-      "amtlicheKennung": "haug_jochen-1044782",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/helferich_matthias-1044860",
-      "text": "Helferich, Matthias",
-      "fraktion": "AfD",
-      "amtlicheKennung": "helferich_matthias-1044860",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hemmelgarn_udo-1044878",
-      "text": "Hemmelgarn, Udo Theodor",
-      "fraktion": "AfD",
-      "amtlicheKennung": "hemmelgarn_udo-1044878",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/henze_stefan-1044902",
-      "text": "Henze, Stefan",
-      "fraktion": "AfD",
-      "amtlicheKennung": "henze_stefan-1044902",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hess_martin-1044948",
-      "text": "Hess, Martin",
-      "fraktion": "AfD",
-      "amtlicheKennung": "hess_martin-1044948",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hess_nicole-1044950",
-      "text": "Hess, Nicole",
-      "fraktion": "AfD",
-      "amtlicheKennung": "hess_nicole-1044950",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hilmer_olaf-1044990",
-      "text": "Hilmer, Olaf",
-      "fraktion": "AfD",
-      "amtlicheKennung": "hilmer_olaf-1044990",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hilse_karsten-1044992",
-      "text": "Hilse, Karsten",
-      "fraktion": "AfD",
-      "amtlicheKennung": "hilse_karsten-1044992",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hoechst_nicole-1045014",
-      "text": "Höchst, Nicole",
-      "fraktion": "AfD",
-      "amtlicheKennung": "hoechst_nicole-1045014",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/holm_leif-1045050",
-      "text": "Holm, Leif-Erik",
-      "fraktion": "AfD",
-      "amtlicheKennung": "holm_leif-1045050",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/huy_rose-1045152",
-      "text": "Huy, Gerrit",
-      "fraktion": "AfD",
-      "amtlicheKennung": "huy_rose-1045152",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/J/jacobi_fabian-1045178",
-      "text": "Jacobi, Fabian",
-      "fraktion": "AfD",
-      "amtlicheKennung": "jacobi_fabian-1045178",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/J/janich_steffen-1045194",
-      "text": "Janich, Steffen",
-      "fraktion": "AfD",
-      "amtlicheKennung": "janich_steffen-1045194",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/J/juenger_robin-1045240",
-      "text": "Jünger, Robin",
-      "fraktion": "AfD",
-      "amtlicheKennung": "juenger_robin-1045240",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kaufmann_malte-1045334",
-      "text": "Kaufmann, Dr. Malte",
-      "fraktion": "AfD",
-      "amtlicheKennung": "kaufmann_malte-1045334",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kaufmann_michael-1045336",
-      "text": "Kaufmann, Prof. Dr.-Ing. habil. Michael",
-      "fraktion": "AfD",
-      "amtlicheKennung": "kaufmann_michael-1045336",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kempf_martina-1045360",
-      "text": "Kempf, Martina",
-      "fraktion": "AfD",
-      "amtlicheKennung": "kempf_martina-1045360",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/keuter_stefan-1045374",
-      "text": "Keuter, Stefan",
-      "fraktion": "AfD",
-      "amtlicheKennung": "keuter_stefan-1045374",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kever_rocco-1045376",
-      "text": "Kever, Rocco",
-      "fraktion": "AfD",
-      "amtlicheKennung": "kever_rocco-1045376",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kleinschmidt_kurt-1045416",
-      "text": "Kleinschmidt, Kurt",
-      "fraktion": "AfD",
-      "amtlicheKennung": "kleinschmidt_kurt-1045416",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kneller_maximilian-1045450",
-      "text": "Kneller, Maximilian",
-      "fraktion": "AfD",
-      "amtlicheKennung": "kneller_maximilian-1045450",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/koch_heinrich-1045476",
-      "text": "Koch, Heinrich",
-      "fraktion": "AfD",
-      "amtlicheKennung": "koch_heinrich-1045476",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/koegel_juergen-1045486",
-      "text": "Koegel, Jürgen",
-      "fraktion": "AfD",
-      "amtlicheKennung": "koegel_juergen-1045486",
-      "parlament": "bundestag"
-    },
     {
       "url": "https://www.bundestag.de/abgeordnete/biografien/V/1047906-1047906",
       "text": "Vriesema, Mayra",
@@ -777,6 +280,132 @@
       "text": "Kopf, Chantal",
       "fraktion": "Bündnis 90/Die Grünen",
       "amtlicheKennung": "kopf_chantal-1045532",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lang_ricarda-1045716",
+      "text": "Lang, Ricarda",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "lang_ricarda-1045716",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lehmann_sven-1045758",
+      "text": "Lehmann, Sven",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "lehmann_sven-1045758",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lemke_steffi-1045786",
+      "text": "Lemke, Steffi",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "lemke_steffi-1045786",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lenhard_rebecca-1045792",
+      "text": "Lenhard, Rebecca",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "lenhard_rebecca-1045792",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/limburg_helge-1045826",
+      "text": "Limburg, Helge",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "limburg_helge-1045826",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/loop_denise-1045868",
+      "text": "Loop, Denise",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "loop_denise-1045868",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lucks_max-1045878",
+      "text": "Lucks, Max",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "lucks_max-1045878",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/luebcke_andrea-1045874",
+      "text": "Lübcke, Dr. Andrea",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "luebcke_andrea-1045874",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/luehrmann_anna-1045894",
+      "text": "Lührmann, Dr. Anna",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "luehrmann_anna-1045894",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mayer_zoe-1046026",
+      "text": "Mayer, Dr. Zoe",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "mayer_zoe-1046026",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/michaelsen_swantje-1046108",
+      "text": "Michaelsen, Swantje Henrike",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "michaelsen_swantje-1046108",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mihalic_irene-1046128",
+      "text": "Mihalic, Dr. Irene",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "mihalic_irene-1046128",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mijatovic_boris-1046130",
+      "text": "Mijatović, Boris",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "mijatovic_boris-1046130",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mueller_claudia-1046228",
+      "text": "Müller, Claudia",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "mueller_claudia-1046228",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mueller_sascha-1046248",
+      "text": "Müller, Sascha",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "mueller_sascha-1046248",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/N/nanni_sara-1046284",
+      "text": "Nanni, Sara",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "nanni_sara-1046284",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/N/nick_ophelia-1046332",
+      "text": "Nick, Dr. Ophelia",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "nick_ophelia-1046332",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/N/notz_konstantin-1046366",
+      "text": "Notz, Dr. Konstantin von",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "notz_konstantin-1046366",
       "parlament": "bundestag"
     },
     {
@@ -1467,6 +1096,314 @@
       "parlament": "bundestag"
     },
     {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/koller_johann-1045510",
+      "text": "Koller, Hans",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "koller_johann-1045510",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/koob_markus-1045530",
+      "text": "Koob, Markus",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "koob_markus-1045530",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/korbach_stefan-1045536",
+      "text": "Korbach, Dr. Stefan",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "korbach_stefan-1045536",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/krichbaum_gunther-1048828",
+      "text": "Krichbaum, Gunther",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "krichbaum_gunther-1048828",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/krieger_lukas-1045624",
+      "text": "Krieger, Lukas",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "krieger_lukas-1045624",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/krings_guenter-1045628",
+      "text": "Krings, Prof. Dr. Günter",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "krings_guenter-1045628",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kuban_tilman-1045660",
+      "text": "Kuban, Tilman",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "kuban_tilman-1045660",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lange_ulrich-1048862",
+      "text": "Lange, Ulrich",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "lange_ulrich-1048862",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/laschet_armin-1045736",
+      "text": "Laschet, Armin",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "laschet_armin-1045736",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/launert_silke-1045740",
+      "text": "Launert, Dr. Silke",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "launert_silke-1045740",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lehmann_jens-1045756",
+      "text": "Lehmann, Jens",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "lehmann_jens-1045756",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lenz_andreas-1048878",
+      "text": "Lenz, Dr. Andreas",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "lenz_andreas-1048878",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lindholz_andrea-1045830",
+      "text": "Lindholz, Andrea",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "lindholz_andrea-1045830",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/linnemann_carsten-1048896",
+      "text": "Linnemann, Dr. Carsten",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "linnemann_carsten-1048896",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lips_patricia-1045854",
+      "text": "Lips, Patricia",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "lips_patricia-1045854",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/luczak_jan-1045880",
+      "text": "Luczak, Dr. Jan-Marco",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "luczak_jan-1045880",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/ludwig_daniela-1045886",
+      "text": "Ludwig, Daniela",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "ludwig_daniela-1045886",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/ludwig_saskia-1045888",
+      "text": "Ludwig, Dr. Saskia",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "ludwig_saskia-1045888",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mack_klaus-1048912",
+      "text": "Mack, Klaus",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "mack_klaus-1048912",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mattfeldt_andreas-1046008",
+      "text": "Mattfeldt, Andreas",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "mattfeldt_andreas-1046008",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mayer_lay_volker-1048934",
+      "text": "Mayer-Lay, Volker",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "mayer_lay_volker-1048934",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mayer_stephan-1048932",
+      "text": "Mayer, Stephan",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "mayer_stephan-1048932",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/meister_michael-1046052",
+      "text": "Meister, Dr. Michael",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "meister_michael-1046052",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080",
+      "text": "Merz, Friedrich",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "merz_friedrich-1046080",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/metzler_jan-1046086",
+      "text": "Metzler, Jan",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "metzler_jan-1046086",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/middelberg_mathias-1046116",
+      "text": "Middelberg, Dr. Mathias",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "middelberg_mathias-1046116",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/moser_christian-1046208",
+      "text": "Moser, Christian",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "moser_christian-1046208",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mueller_axel-1048984",
+      "text": "Müller, Axel",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "mueller_axel-1048984",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mueller_carsten-1046224",
+      "text": "Müller, Carsten",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "mueller_carsten-1046224",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mueller_florian-1046234",
+      "text": "Müller, Florian",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "mueller_florian-1046234",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mueller_sepp-1046250",
+      "text": "Müller, Sepp",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "mueller_sepp-1046250",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/N/nacke_stefan-1046276",
+      "text": "Nacke, Dr. Stefan",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "nacke_stefan-1046276",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/N/naser_christoph-1182708",
+      "text": "Naser, Christoph",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "naser_christoph-1182708",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/O/oellers_wilfried-1046398",
+      "text": "Oellers, Wilfried",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "oellers_wilfried-1046398",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/O/oest_florian-1046402",
+      "text": "Oest, Florian",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "oest_florian-1046402",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/O/orthey_harald-1046420",
+      "text": "Orthey, Harald",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "orthey_harald-1046420",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/O/ossner_florian-1049032",
+      "text": "Oßner, Florian",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "ossner_florian-1049032",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/O/oster_josef-1046428",
+      "text": "Oster, Josef",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "oster_josef-1046428",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/pauls_thomas-1046496",
+      "text": "Pauls, Dr. Thomas",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "pauls_thomas-1046496",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/pilsinger_stephan-1046542",
+      "text": "Pilsinger, Dr. med. Stephan",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "pilsinger_stephan-1046542",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/ploss_christoph-1046560",
+      "text": "Ploß, Dr. Christoph",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "ploss_christoph-1046560",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/plum_martin-1046564",
+      "text": "Plum, Dr. Martin",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "plum_martin-1046564",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/poepsel_oliver-1046586",
+      "text": "Pöpsel, Oliver",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "poepsel_oliver-1046586",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/pohlmann_jan-1046570",
+      "text": "Pohlmann, Jan-Wilhelm",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "pohlmann_jan-1046570",
+      "parlament": "bundestag"
+    },
+    {
       "url": "https://www.bundestag.de/abgeordnete/biografien/I/ince_cem-1045160",
       "text": "Ince, Cem",
       "fraktion": "Die Linke",
@@ -1682,6 +1619,97 @@
       "text": "Hoß, Luke",
       "fraktion": "Die Linke",
       "amtlicheKennung": "hoss_luke-1045106",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kaminski_maren-1045282",
+      "text": "Kaminski, Maren",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "kaminski_maren-1045282",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kocak_ferat-1045472",
+      "text": "Koçak, Ferat",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "kocak_ferat-1045472",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/koektuerk_cansin-1045504",
+      "text": "Köktürk, Cansin",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "koektuerk_cansin-1045504",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/krampe_jan-1045564",
+      "text": "Krampe, Jan",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "krampe_jan-1045564",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/latendorf_ina-1045738",
+      "text": "Latendorf, Ina",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "latendorf_ina-1045738",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lay_caren-1045746",
+      "text": "Lay, Caren",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "lay_caren-1045746",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lemke_sonja-1045784",
+      "text": "Lemke, Sonja",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "lemke_sonja-1045784",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mazzi_tamara-1046028",
+      "text": "Mazzi, Tamara",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "mazzi_tamara-1046028",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/meiser_pascal-1046050",
+      "text": "Meiser, Pascal",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "meiser_pascal-1046050",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/merendino_ottavia-1046072",
+      "text": "Merendino, Stella",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "merendino_ottavia-1046072",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mirow_sahra-1046140",
+      "text": "Mirow, Sahra",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "mirow_sahra-1046140",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/N/neuhaeuser_charlotte-1046310",
+      "text": "Neuhäuser, Charlotte Antonia",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "neuhaeuser_charlotte-1046310",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/O/oezdemir_cansu-1046452",
+      "text": "Özdemir, Cansu",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "oezdemir_cansu-1046452",
       "parlament": "bundestag"
     },
     {
@@ -2094,6 +2122,181 @@
       "parlament": "bundestag"
     },
     {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mann_holger-1045960",
+      "text": "Mann, Holger",
+      "fraktion": "SPD",
+      "amtlicheKennung": "mann_holger-1045960",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/marvi_parsa-1045992",
+      "text": "Marvi, Parsa",
+      "fraktion": "SPD",
+      "amtlicheKennung": "marvi_parsa-1045992",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mast_katja-1046000",
+      "text": "Mast, Katja",
+      "fraktion": "SPD",
+      "amtlicheKennung": "mast_katja-1046000",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/michel_kathrin-1048962",
+      "text": "Michel, Kathrin",
+      "fraktion": "SPD",
+      "amtlicheKennung": "michel_kathrin-1048962",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
+      "text": "Miersch, Dr. Matthias",
+      "fraktion": "SPD",
+      "amtlicheKennung": "miersch_matthias-1046120",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/mieves_matthias-1046124",
+      "text": "Mieves, Matthias David",
+      "fraktion": "SPD",
+      "amtlicheKennung": "mieves_matthias-1046124",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/moeller_siemtje-1046172",
+      "text": "Möller, Siemtje",
+      "fraktion": "SPD",
+      "amtlicheKennung": "moeller_siemtje-1046172",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/moll_claudia-1046166",
+      "text": "Moll, Claudia",
+      "fraktion": "SPD",
+      "amtlicheKennung": "moll_claudia-1046166",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/M/muetzenich_rolf-1046274",
+      "text": "Mützenich, Dr. Rolf",
+      "fraktion": "SPD",
+      "amtlicheKennung": "muetzenich_rolf-1046274",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/N/nasr_rasha-1046286",
+      "text": "Nasr, Rasha",
+      "fraktion": "SPD",
+      "amtlicheKennung": "nasr_rasha-1046286",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/O/oezdemir_mahmut-1046456",
+      "text": "Özdemir, Mahmut",
+      "fraktion": "SPD",
+      "amtlicheKennung": "oezdemir_mahmut-1046456",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/O/oezoguz_aydan-1046460",
+      "text": "Özoğuz, Aydan",
+      "fraktion": "SPD",
+      "amtlicheKennung": "oezoguz_aydan-1046460",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/O/ortleb_josephine-1046422",
+      "text": "Ortleb, Josephine",
+      "fraktion": "SPD",
+      "amtlicheKennung": "ortleb_josephine-1046422",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/pantazis_christos-1046474",
+      "text": "Pantazis, Dr. Christos",
+      "fraktion": "SPD",
+      "amtlicheKennung": "pantazis_christos-1046474",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/pawlik_natalie-1046500",
+      "text": "Pawlik, Natalie",
+      "fraktion": "SPD",
+      "amtlicheKennung": "pawlik_natalie-1046500",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/peick_jens-1046504",
+      "text": "Peick, Jens",
+      "fraktion": "SPD",
+      "amtlicheKennung": "peick_jens-1046504",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/pistorius_boris-1046550",
+      "text": "Pistorius, Boris",
+      "fraktion": "SPD",
+      "amtlicheKennung": "pistorius_boris-1046550",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/poschmann_sabine-1046592",
+      "text": "Poschmann, Sabine",
+      "fraktion": "SPD",
+      "amtlicheKennung": "poschmann_sabine-1046592",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/rabanus_martin-1046646",
+      "text": "Rabanus, Martin",
+      "fraktion": "SPD",
+      "amtlicheKennung": "rabanus_martin-1046646",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/reichardt_truels-1046712",
+      "text": "Reichardt, Truels",
+      "fraktion": "SPD",
+      "amtlicheKennung": "reichardt_truels-1046712",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/rinkert_daniel-1046796",
+      "text": "Rinkert, Daniel",
+      "fraktion": "SPD",
+      "amtlicheKennung": "rinkert_daniel-1046796",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/rohde_dennis-1046814",
+      "text": "Rohde, Dennis",
+      "fraktion": "SPD",
+      "amtlicheKennung": "rohde_dennis-1046814",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/roloff_sebastian-1046828",
+      "text": "Roloff, Sebastian",
+      "fraktion": "SPD",
+      "amtlicheKennung": "roloff_sebastian-1046828",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/rottwilm_philipp-1046874",
+      "text": "Rottwilm, Dr. Philipp",
+      "fraktion": "SPD",
+      "amtlicheKennung": "rottwilm_philipp-1046874",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/rudolph_thorsten-1046882",
+      "text": "Rudolph, Dr. Thorsten",
+      "fraktion": "SPD",
+      "amtlicheKennung": "rudolph_thorsten-1046882",
+      "parlament": "bundestag"
+    },
+    {
       "url": "https://www.bundestag.de/abgeordnete/biografien/K/knodel_sieghard-1045460",
       "text": "Knodel, Sieghard",
       "fraktion": "fraktionslos",
@@ -2108,88 +2311,11 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/Carsten-Ubbelohde?groupStrategy=nachnamen",
-      "text": "Ubbelohde, Carsten, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "Carsten-Ubbelohde",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/alexander-bertram?groupStrategy=nachnamen",
-      "text": "Bertram, Alexander, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "alexander-bertram",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/frank-christian-hansel?groupStrategy=nachnamen",
-      "text": "Hansel, Frank-Christian, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "frank-christian-hansel",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/frank-scheermesser?groupStrategy=nachnamen",
-      "text": "Scheermesser, Frank, AfD-Fraktion, Nachgerückt",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "frank-scheermesser",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/gunnar-lindemann?groupStrategy=nachnamen",
-      "text": "Lindemann, Gunnar, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "gunnar-lindemann",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/harald-laatsch?groupStrategy=nachnamen",
-      "text": "Laatsch, Harald, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "harald-laatsch",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/hugh-bronson?groupStrategy=nachnamen",
-      "text": "Bronson, Dr. Hugh, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "hugh-bronson",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/jeannette-auricht?groupStrategy=nachnamen",
-      "text": "Auricht, Jeannette, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "jeannette-auricht",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/karsten-woldeit?groupStrategy=nachnamen",
-      "text": "Woldeit, Karsten, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "karsten-woldeit",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/kristin-brinker?groupStrategy=nachnamen",
-      "text": "Brinker, Dr. Kristin, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "kristin-brinker",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/marc-vallendar?groupStrategy=nachnamen",
-      "text": "Vallendar, Marc, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "marc-vallendar",
-      "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/martin-trefzer?groupStrategy=nachnamen",
-      "text": "Trefzer, Martin, AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "martin-trefzer",
-      "parlament": "landtag-berlin"
+      "url": "https://www.bundestag.de/abgeordnete/biografien/S/seidler_stefan-1047378",
+      "text": "Seidler, Stefan",
+      "fraktion": "fraktionslos",
+      "amtlicheKennung": "seidler_stefan-1047378",
+      "parlament": "bundestag"
     },
     {
       "url": "https://www.parlament-berlin.de/Abgeordnete/Burkard-Dregger?groupStrategy=nachnamen",
@@ -2465,6 +2591,34 @@
       "parlament": "landtag-berlin"
     },
     {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/peer-mock-stumer-1?groupStrategy=nachnamen",
+      "text": "Mock-Stümer, Peer, CDU-Fraktion",
+      "fraktion": "CDU-Fraktion",
+      "amtlicheKennung": "peer-mock-stumer-1",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/robbin-juhnke?groupStrategy=nachnamen",
+      "text": "Juhnke, Dr. Robbin, CDU-Fraktion",
+      "fraktion": "CDU-Fraktion",
+      "amtlicheKennung": "robbin-juhnke",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/roman-simon?groupStrategy=nachnamen",
+      "text": "Simon, Roman, CDU-Fraktion",
+      "fraktion": "CDU-Fraktion",
+      "amtlicheKennung": "roman-simon",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/sandra-khalatbari?groupStrategy=nachnamen",
+      "text": "Khalatbari, Sandra, CDU-Fraktion",
+      "fraktion": "CDU-Fraktion",
+      "amtlicheKennung": "sandra-khalatbari",
+      "parlament": "landtag-berlin"
+    },
+    {
       "url": "https://www.parlament-berlin.de/Abgeordnete/anne-helm?groupStrategy=nachnamen",
       "text": "Helm, Anne, Die Linke Fraktion",
       "fraktion": "Die Linke Fraktion",
@@ -2567,6 +2721,20 @@
       "text": "Schenker, Niklas, Die Linke Fraktion",
       "fraktion": "Die Linke Fraktion",
       "amtlicheKennung": "niklas-schenker",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/niklas-schrader?groupStrategy=nachnamen",
+      "text": "Schrader, Niklas, Die Linke Fraktion",
+      "fraktion": "Die Linke Fraktion",
+      "amtlicheKennung": "niklas-schrader",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/philipp-bertram?groupStrategy=nachnamen",
+      "text": "Bertram, Philipp, Die Linke Fraktion, Nachgerückt",
+      "fraktion": "Die Linke Fraktion",
+      "amtlicheKennung": "philipp-bertram",
       "parlament": "landtag-berlin"
     },
     {
@@ -2742,6 +2910,27 @@
       "text": "Gebel, Silke, Fraktion Bündnis 90/Die Grünen",
       "fraktion": "Fraktion Bündnis 90/Die Grünen",
       "amtlicheKennung": "silke-gebel",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/stefan-taschner?groupStrategy=nachnamen",
+      "text": "Taschner, Dr. Stefan, Fraktion Bündnis 90/Die Grünen",
+      "fraktion": "Fraktion Bündnis 90/Die Grünen",
+      "amtlicheKennung": "stefan-taschner",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/stefan-ziller?groupStrategy=nachnamen",
+      "text": "Ziller, Stefan, Fraktion Bündnis 90/Die Grünen",
+      "fraktion": "Fraktion Bündnis 90/Die Grünen",
+      "amtlicheKennung": "stefan-ziller",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/susanna-kahlefeld?groupStrategy=nachnamen",
+      "text": "Kahlefeld, Dr. Susanna, Fraktion Bündnis 90/Die Grünen",
+      "fraktion": "Fraktion Bündnis 90/Die Grünen",
+      "amtlicheKennung": "susanna-kahlefeld",
       "parlament": "landtag-berlin"
     },
     {
@@ -2934,6 +3123,27 @@
       "parlament": "landtag-berlin"
     },
     {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/sebastian-schlusselburg?groupStrategy=nachnamen",
+      "text": "Schlüsselburg, Sebastian, SPD-Fraktion",
+      "fraktion": "SPD-Fraktion",
+      "amtlicheKennung": "sebastian-schlusselburg",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/sevim-aydin?groupStrategy=nachnamen",
+      "text": "Aydin, Sevim, SPD-Fraktion",
+      "fraktion": "SPD-Fraktion",
+      "amtlicheKennung": "sevim-aydin",
+      "parlament": "landtag-berlin"
+    },
+    {
+      "url": "https://www.parlament-berlin.de/Abgeordnete/sven-heinemann?groupStrategy=nachnamen",
+      "text": "Heinemann, Sven, SPD-Fraktion",
+      "fraktion": "SPD-Fraktion",
+      "amtlicheKennung": "sven-heinemann",
+      "parlament": "landtag-berlin"
+    },
+    {
       "url": "https://www.parlament-berlin.de/Abgeordnete/alexander-king?groupStrategy=nachnamen",
       "text": "King, Dr. Alexander, fraktionslos, Nachgerückt",
       "fraktion": "fraktionslos",
@@ -2946,195 +3156,6 @@
       "fraktion": "fraktionslos",
       "amtlicheKennung": "antonin-brousek-1",
       "parlament": "landtag-berlin"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/berndt_hans-christoph_(dr.)/11222",
-      "text": "Dr. Hans-Christoph Berndt AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "11222",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/drenske_peter/11226",
-      "text": "Peter Drenske AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "11226",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/kotr_lena/11227",
-      "text": "Lena Kotré AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "11227",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/huenich_lars/11229",
-      "text": "Lars Hünich AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "11229",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/kubitzki_steffen/11231",
-      "text": "Steffen Kubitzki AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "11231",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/freiherr_von_luetzow_daniel/11232",
-      "text": "Daniel Freiherr von Lützow AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "11232",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/moeller_wilko/11233",
-      "text": "Wilko Möller AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "11233",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/galau_andreas/11244",
-      "text": "Andreas Galau AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "11244",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/hanko_michael/11412",
-      "text": "Michael Hanko AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "11412",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/hohloch_dennis/12103",
-      "text": "Dennis Hohloch AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "12103",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/muenschke_daniel/12106",
-      "text": "Daniel Münschke AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "12106",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/nothing_volker/24175",
-      "text": "Volker Nothing AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "24175",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/guenther_lars/24177",
-      "text": "Lars Günther AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "24177",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/john_steffen/24189",
-      "text": "Steffen John AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "24189",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/teichner_felix/24193",
-      "text": "Felix Teichner AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "24193",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/oeynhausen_daniela_(dr.)/27223",
-      "text": "Dr. Daniela Oeynhausen AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "27223",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/adam_jean-ren/40605",
-      "text": "Jean-René Adam AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40605",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/arndt_torsten/40606",
-      "text": "Torsten Arndt AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40606",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/berger_kai/40607",
-      "text": "Kai Berger AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40607",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/filter_benjamin/40608",
-      "text": "Benjamin Filter AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40608",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/hohm_jean-pascal/40609",
-      "text": "Jean-Pascal Hohm AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40609",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/jank_fabian/40610",
-      "text": "Fabian Jank AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40610",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/janke_falk/40611",
-      "text": "Falk Janke AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40611",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/kaufner_dominik_(dr.)/40612",
-      "text": "Dr. Dominik Kaufner AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40612",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/kuffert_roman/40613",
-      "text": "Roman Kuffert AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40613",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/pardeik_erik/40614",
-      "text": "Erik Pardeik AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40614",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/rescher_norbert/40615",
-      "text": "Norbert Rescher AfD-Fraktion",
-      "fraktion": "AfD-Fraktion",
-      "amtlicheKennung": "40615",
-      "parlament": "landtag-brandenburg"
     },
     {
       "url": "https://www.landtag.brandenburg.de/de/dorst_christian/40618",
@@ -3253,13 +3274,6 @@
       "text": "Julian Brüning CDU-Fraktion",
       "fraktion": "CDU-Fraktion",
       "amtlicheKennung": "23854",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/faehrmann_ellen/40631",
-      "text": "Ellen Fährmann CDU-Fraktion",
-      "fraktion": "CDU-Fraktion",
-      "amtlicheKennung": "40631",
       "parlament": "landtag-brandenburg"
     },
     {
@@ -3466,20 +3480,6 @@
       "parlament": "landtag-brandenburg"
     },
     {
-      "url": "https://www.landtag.brandenburg.de/de/seiler_ines/40598",
-      "text": "Ines Seiler SPD-Fraktion",
-      "fraktion": "SPD-Fraktion",
-      "amtlicheKennung": "40598",
-      "parlament": "landtag-brandenburg"
-    },
-    {
-      "url": "https://www.landtag.brandenburg.de/de/steinfurth_matthias/40599",
-      "text": "Matthias Steinfurth SPD-Fraktion",
-      "fraktion": "SPD-Fraktion",
-      "amtlicheKennung": "40599",
-      "parlament": "landtag-brandenburg"
-    },
-    {
       "url": "https://www.landtag.brandenburg.de/de/matzies_melanie/40624",
       "text": "Melanie Matzies WfB-Gruppe",
       "fraktion": "WfB-Gruppe",
@@ -3511,71 +3511,59 @@
   "gruppen": {
     "bt": [
       {
-        "fraktion": "AfD",
-        "verzeichnis": 150,
-        "ausgewaehlt": 71,
-        "davonBestand": 0
-      },
-      {
         "fraktion": "Bündnis 90/Die Grünen",
         "verzeichnis": 85,
-        "ausgewaehlt": 40,
+        "ausgewaehlt": 58,
         "davonBestand": 0
       },
       {
         "fraktion": "CDU/CSU",
         "verzeichnis": 208,
-        "ausgewaehlt": 98,
+        "ausgewaehlt": 142,
         "davonBestand": 1
       },
       {
         "fraktion": "Die Linke",
         "verzeichnis": 64,
-        "ausgewaehlt": 31,
+        "ausgewaehlt": 44,
         "davonBestand": 1
       },
       {
         "fraktion": "SPD",
         "verzeichnis": 120,
-        "ausgewaehlt": 58,
+        "ausgewaehlt": 83,
         "davonBestand": 3
       },
       {
         "fraktion": "fraktionslos",
         "verzeichnis": 3,
-        "ausgewaehlt": 2,
+        "ausgewaehlt": 3,
         "davonBestand": 0
       }
     ],
     "be": [
       {
-        "fraktion": "AfD-Fraktion",
-        "verzeichnis": 16,
-        "ausgewaehlt": 12,
-        "davonBestand": 0
-      },
-      {
         "fraktion": "CDU-Fraktion",
         "verzeichnis": 52,
-        "ausgewaehlt": 39,
+        "ausgewaehlt": 43,
         "davonBestand": 0
       },
       {
         "fraktion": "Die Linke Fraktion",
         "verzeichnis": 20,
-        "ausgewaehlt": 15,
+        "ausgewaehlt": 17,
         "davonBestand": 0
       },
       {
         "fraktion": "Fraktion Bündnis 90/Die Grünen",
         "verzeichnis": 33,
-        "ausgewaehlt": 25,
+        "ausgewaehlt": 28,
         "davonBestand": 0
       },
       {
         "fraktion": "SPD-Fraktion",
         "verzeichnis": 36,
-        "ausgewaehlt": 27,
+        "ausgewaehlt": 30,
         "davonBestand": 0
       },
       {
@@ -3587,12 +3575,6 @@
     ],
     "bb": [
       {
-        "fraktion": "AfD-Fraktion",
-        "verzeichnis": 30,
-        "ausgewaehlt": 27,
-        "davonBestand": 0
-      },
-      {
         "fraktion": "BSW-Fraktion",
         "verzeichnis": 8,
         "ausgewaehlt": 7,
@@ -3601,13 +3583,13 @@
       {
         "fraktion": "CDU-Fraktion",
         "verzeichnis": 12,
-        "ausgewaehlt": 11,
+        "ausgewaehlt": 10,
         "davonBestand": 0
       },
       {
         "fraktion": "SPD-Fraktion",
         "verzeichnis": 34,
-        "ausgewaehlt": 31,
+        "ausgewaehlt": 29,
         "davonBestand": 0
       },
       {
@@ -3629,7 +3611,7 @@
       "parlament": "bt",
       "datei": "bt-liste-alle.html",
       "sha256": "6848cbe4e6f5763d83279f7208e25230fa4d608abb057dee4d7c77184c85357f",
-      "kandidatenAktuellLautVerzeichnis": 630,
+      "kandidatenAktuellLautVerzeichnis": 480,
       "detailprofileGeprueft": false,
       "url": "https://www.bundestag.de/ajax/filterlist/de/abgeordnete/1040594-1040594?offset=0&all=true"
     },
@@ -3637,7 +3619,7 @@
       "parlament": "be",
       "datei": "be-verzeichnis.html",
       "sha256": "7958c1d774bb190b777bf3dd9243538c84bfcf6b674e8dad1dc73e67611ad26a",
-      "kandidatenAktuellLautVerzeichnis": 159,
+      "kandidatenAktuellLautVerzeichnis": 143,
       "detailprofileGeprueft": false,
       "url": "https://www.parlament-berlin.de/Das-Parlament/Abgeordnete/alphabetische-Suche"
     },
@@ -3645,7 +3627,7 @@
       "parlament": "bb",
       "datei": "bb-verzeichnis.html",
       "sha256": "5c151150eab794686410d69491f339663c274bdf4e25d98a5871906af3a7988d",
-      "kandidatenAktuellLautVerzeichnis": 88,
+      "kandidatenAktuellLautVerzeichnis": 58,
       "detailprofileGeprueft": false,
       "url": "https://www.landtag.brandenburg.de/de/abgeordnete_-_fraktionen/abgeordnete/abgeordnete_im_ueberblick/25777"
     }
@@ -3697,18 +3679,11 @@
       "fraktion": "SPD (verstorben)"
     }
   ],
+  "zielgruppenregel": "Keine AfD-Kunden oder Testzielprofile. AfD-Fraktionen ausgeschlossen; aktuelle Parteimitgliedschaft pro Person vor Import separat belegen, auch bei Fraktionslosen.",
   "offen": [
-    "Parteien getrennt von Fraktionen aus den Detailprofilen belegen; CDU und CSU gesondert abdecken",
-    "Ausschuesse, Direkt-/Listenmandat, Regionen und Rollen pro Person belegen",
-    "Rollenvielfalt vor Nachrichtenauswertung pruefen und innerhalb der Gruppen dokumentiert ausgleichen",
-    "Fuenf geschuetzte Bestandsprofile nicht veraendern; amtliche Namensform Dr. Ottilie Klein weicht vom gespeicherten Vollnamen Ottilie Paola Klein ab",
-    "495 bestehende Testkennungen erst nach abgeschlossener Feldpruefung zuordnen; keine Aktivierung"
-  ],
-  "schritte": {
-    "verzeichnis": "gesichert",
-    "fraktionen": "aus Verzeichnis, keine Ableitung von Partei oder Positionen",
-    "aktuelleMitgliedschaft": "nur Verzeichnisstatus, vor Import Einzelprofil pruefen",
-    "pflichtfeldpruefung": "offen",
-    "import": "nicht gestartet"
-  }
+    "Partei, Ausschuesse, Mandatsart, Regionen und Funktionen einzeln amtlich belegen",
+    "Parteien- und Rollenvielfalt vor Nachrichtenauswertung pruefen; Partei nicht aus Fraktion ableiten",
+    "Keine AfD-Zugehoerigkeit, auch nicht bei fraktionslosen Abgeordneten; ungeklärte Faelle nicht importieren",
+    "Bestehende Testkennungen erst nach abgeschlossener Pruefung zuordnen; Bestandsprofile schuetzen; keine Aktivierung"
+  ]
 }

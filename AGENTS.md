@@ -1,6 +1,22 @@
 # HELMUT AGENT CONTRACT
 
-## Rolle
+## Verbindliche Zielgruppe: AfD ausgeschlossen
+
+Ausdruecklicher Betreiberauftrag vom27.09.2026: Helmut beliefert Abgeordnete
+aller Parteien AUSSER der AfD. Bundestags- und Landtagsabgeordnete, die der AfD
+angehoeren, sind ausgeschlossen. Keine AfD-Kundenprofile anlegen, importieren,
+aktivieren oder versorgen; keine AfD-Profile in der500er Zielkohorte.
+Die Sperre prueft aktuelle Partei UND Fraktion, auch bei Fraktionslosigkeit
+mit fortbestehender AfD-Parteimitgliedschaft. Zugehoerigkeit nicht umdeklarieren.
+Amtliche Zugehoerigkeit vor Import belegen; ungeklaerte Faelle nicht freigeben.
+Alle anderen Parteien und Fraktionslose bleiben grundsaetzlich zulaessig.
+Relevante Nachrichten UEBER die AfD bleiben fuer andere Nutzer erlaubt; dies
+ist eine Kunden-Zulassungsregel, kein Entfernen politischer Quellen oder Fakten.
+Nur isolierte synthetische Negativfaelle zum Nachweis der Sperre sind erlaubt,
+niemals angelegte oder versorgte AfD-Testkunden. Diese Regel hat Vorrang vor
+aelteren Testplaenen mit AfD-Profilen. Details: `lib/helmut/profil-zulassung.js`.
+
+## Rolle und Produktziel
 
 Du arbeitest als technischer Umsetzer für Helmut.
 

@@ -12,7 +12,7 @@ Systemkarte → [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 Helmut ist ein **politischer KI-Stabschef für Bundestagsabgeordnete und
 Landtagsabgeordnete**, einschließlich der Landesparlamente der Stadtstaaten.
-Beide Ebenen gehören verbindlich zum Produktziel. Der tatsächlich belegte
+Beide Ebenen gehören verbindlich zum Produktziel. **AfD-zugehörige Abgeordnete sind ausdrücklich ausgeschlossen: keine AfD-Kunden- oder Testzielprofile.** Der tatsächlich belegte
 Unterstützungsstand steht ausschließlich in `CURRENT_STATE.md`.
 Die Markteinführung priorisiert Berlin und Brandenburg zusammen mit dem
 Bundestag; weitere Landesparlamente folgen danach. Deutschlandweit bleibt das Ziel.

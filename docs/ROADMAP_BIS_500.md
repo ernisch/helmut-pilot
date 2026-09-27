@@ -29,6 +29,11 @@ Test vorher klar begrenzt ist.
 
 ## 1 · Eingefrorenes Produktziel
 
+**Verbindliche Zielgruppe: alle Parteien ausser AfD.** Keine AfD-zugehoerigen
+Bundestags-/Landtagsprofile importieren, anlegen, aktivieren oder beliefern;
+auch aus der500er Zielkohorte ausschliessen. Partei und Fraktion pruefen.
+AfD-Nachrichten bleiben fuer andere Profile als politische Informationen erlaubt.
+
 **Verbindliche Klarstellung des Betreibers vom 27.09.: Bundestag UND Landtage.**
 Die individuelle Versorgung beider Mandatsebenen ist Pflicht. Der 500er Nachweis
 muss beide Ebenen enthalten; ein ausschliesslicher Bundestagstest reicht nicht.

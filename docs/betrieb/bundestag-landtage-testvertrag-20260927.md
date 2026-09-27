@@ -20,6 +20,14 @@ schon diesen ersten Lauf mit allen16 Landesparlamenten zu besetzen, ist ueberhol
 Alle fachlichen Kriterien gelten in der ersten Etappe vollstaendig; sie ersetzt
 keine spaetere Abnahme weiterer Laender. [Startplan](berlin-brandenburg-startplan-20260927.md).
 
+## Verbindlicher AfD-Ausschluss
+
+Betreiberpraezisierung27.09.: keine AfD-zugehoerigen Kunden oder Testzielprofile,
+auf Bundes- wie Landesebene. Die Auswahl umfasst alle anderen Parteien.
+Partei UND Fraktion belegen; fraktionslose AfD-Mitglieder sind ebenfalls
+ausgeschlossen. Nachrichten ueber die AfD bleiben fuer andere Mandate erlaubt.
+Die Zielverteilung ist jetzt330 Bundestag/120 Berlin/50 Brandenburg.
+
 ## Realistischer Profilbestand
 
 - Die fuenf Bestandsprofile bleiben erhalten und technisch geschuetzt.

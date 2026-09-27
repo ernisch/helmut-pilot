@@ -4,26 +4,43 @@ Betreiberauftrag vom27.09.2026: Berlin und Brandenburg zuerst anbieten, die
 anderen14 Laender danach. Bundestagsmandate bleiben Teil des Produkts und des
 gemischten500er Nachweises. Dies ist keine deutschlandweite Landtagsabnahme.
 
+## AfD-Ausschluss
+
+Der Betreiber hat am27.09.2026 ausdruecklich festgelegt: Helmut beliefert keine
+AfD-zugehoerigen Bundestags- oder Landtagsabgeordneten. Keine AfD-Kundenprofile
+und keine AfD-Profile in der500er Zielkohorte. Die urspruengliche Auswahl mit110
+AfD-Fraktionsprofilen ist verworfen und ersetzt. Andere Parteien und Fraktionslose
+bleiben zulaessig; aktuelle Partei UND Fraktion einzeln belegen. Fraktionslos
+bedeutet nicht automatisch parteilos. AfD-Nachrichten bleiben als Informationen
+fuer andere Mandate zulaessig. Die Zulassung wird zentral durch
+`lib/helmut/profil-zulassung.js` in Import, Provisionierung, Speicherung,
+Aktivierung und Verarbeitung geprueft. Isolierte synthetische Sperrtests sind
+keine Kundenprofile. Der fruehere reale AfD-Seed wurde entfernt.
+
+Brandenburg hat nach Ausschluss der30 AfD-Fraktionsmitglieder hoechstens58
+verbleibende Mandate; deshalb50 Brandenburger Zielprofile und330 Bundestagsprofile.
+Die genauere Parteibelegung bleibt Teil der Einzelpruefung vor Import.
+
 ## Vorab festgelegte Auswahl
 
 Planungsentscheidung vor der Nachrichtenauswertung fuer diese Kohorte:
 
 | Parlament | Zielprofile | Davon neu zu belegende Testabbilder |
 |---|---:|---:|
-| Bundestag |300|295|
+| Bundestag |330|325|
 | Abgeordnetenhaus Berlin |120|120|
-| Landtag Brandenburg |80|80|
+| Landtag Brandenburg |50|50|
 | Gesamt |500|495|
 
 Die fuenf bestehenden Bundestagsprofile bleiben erhalten. Die groessere Berliner
-Landesgruppe beruecksichtigt das groessere Parlament;200 Landesprofile machen
+Landesgruppe beruecksichtigt das groessere Parlament;170 Landesprofile machen
 die erste Marktetappe zu einem wesentlichen Bestandteil der Abnahme. Dies ist
 eine Testverteilung, keine Aussage ueber Kunden oder den Productionbestand.
 Testkennungen werden erst nach Abgleich mit den bestehenden495 Kennungen
 gebunden; keine zusaetzlichen Profile oberhalb500 und keine doppelten Personen.
 
 Auswahl innerhalb jedes Parlaments: aktuelles amtliches Verzeichnis einfrieren,
-Parteien, Fraktionen, Gruppen und Fraktionslose getrennt erfassen. Jede vorhandene
+Parteien, Fraktionen, Gruppen und Fraktionslose getrennt erfassen. Jede zulaessige
 Fraktion/Gruppe sowie Fraktionslose erhalten mindestens einen Platz; restliche
 Plaetze proportional zur verbleibenden Mandatszahl nach groessten Resten.
 Die fuenf Bestandsmandate zaehlen in ihren Gruppen bereits mit. Bei Gleichstand
@@ -35,11 +52,11 @@ Direkt-/Listenmandate und unterschiedliche Wahlkreise beruecksichtigen.
 Keine Auswahl nach Nachrichtentreffern oder spaeterem Ergebnis.
 
 Ein [erster Namensentwurf mit500 Eintraegen](500-namensauswahl-20260927.json)
-liegt jetzt vor:300 Bundestag/120 Berlin/80 Brandenburg, darunter die fuenf
+liegt jetzt vor:330 Bundestag/120 Berlin/50 Brandenburg, darunter die fuenf
 Bestandsprofile. Grundlage:630 aktuell gefuehrte Bundestagsmitglieder nach
 Ausschluss von neun als ausgeschieden/verstorben markierten Eintraegen sowie
-159 Berliner und88 Brandenburger Verzeichniseintraege. Alle vorhandenen
-Fraktionen/Gruppen und Fraktionslose sind vertreten. Die Einzelprofil-Feldbelege
+159 Berliner und88 Brandenburger Verzeichniseintraege. Alle zulaessigen
+Fraktionen/Gruppen und Fraktionslose sind vertreten; AfD ist ausgeschlossen. Die Einzelprofil-Feldbelege
 und die zusaetzliche Parteien-/Rollenabdeckung sind noch offen; dies ist kein
 importierbarer Profilbestand. Die drei Rechercheproben unten wurden unabhaengig
 von dieser Namensauswahl fuer die Importpruefung verwendet.
@@ -147,3 +164,16 @@ Aufrufe koennen den Stand veraendern, deshalb vor jedem bezahlten Lauf frisch
 pruefen. Diese Recherche/Pruefung startet keinen kostenpflichtigen Modelllauf.
 6USD je UTC-Tag bleiben bestehen. Vorbereitung autonom; unmittelbar vor
 Aktivierung und eigentlichem500er Test weiterhin separates Betreiber-GO.
+
+## Pruefung der Ausschlussregel
+
+`profil-zulassung-test.js`:69/69 Sperr- und Gegenproben erfolgreich; als
+Pflichtsuite registriert. `profil-import-test.js`:76/76,
+`profile-validation-test.js`:36/36, `profil-bereitschaft-test.js`:96/96,
+`profile-supply-matrix-test.js`:20/20. Der positive Innenthemenfall nutzt
+jetzt ein zulaessiges BSW-Profil bei weiterhin unveraenderter AfD-Nachricht.
+Production12:41:43UTC rein lesend:500 Profile/0 aktiv/0 AfD nach hinterlegter
+Partei oder Fraktion, Profilbestand seit12:31UTC hashgleich. Keine Profile
+geloescht, umbenannt, importiert oder aktiviert. Das belegt den gespeicherten
+Stand; die tatsaechliche Parteizugehoerigkeit der neuen Kandidaten bleibt
+vor Import einzeln zu verifizieren.
