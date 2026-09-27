@@ -3347,3 +3347,380 @@ print('PASS: Kloeckner-Aufgabenquittung — fehlende Quittung/falsche Bilanz/Fre
       'und ein ungeschlossener Absatz sperren, nur echte geschlossene Elemente zaehlen, der '
       '--hidden-Linkhilfetext zaehlt nicht); das gueltige synthetische Paket (Fixture ohne /private/tmp) '
       'wird akzeptiert.')
+
+
+# ── 18 · Stellvertretungsquittung Brandenburg (belegter Verlust, 76 bei 35) ──────────────
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Die festen Zaehlwerte
+# (Quellen/Spalten/Profile/Mitgliedschaften/kanonische Personen) werden ueber den
+# injizierbaren ``erwartung``-Parameter ersetzt; das Modul bindet Index, Quellen und
+# Personen selbst und prueft fail closed (Index 25220, eigene geschlossene
+# Stellvertretungsspalte, exakter kanonischer Personenlink, Person/Profilhash/Name/
+# Fraktion separat an die Detailseiten, Unterausschuss als belegter Nullfall).
+stv_spec = importlib.util.spec_from_file_location(
+    'stellvertretungen', Path(__file__).with_name('profil-feldbelege-500-stellvertretungen.py'))
+sv = importlib.util.module_from_spec(stv_spec)
+stv_spec.loader.exec_module(sv)
+
+
+def _erwarte_stv_fehler(fn, was, meldung=None):
+    try:
+        fn()
+    except sv.StellvertretungenFehler as fehler:
+        if meldung is not None:
+            assert meldung in str(fehler), f"Falscher Sperrgrund: {fehler}"
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    HOST = 'https://www.landtag.brandenburg.de'
+    ABRUF = '2026-09-27T21:26:00+00:00'
+    K1 = 'landtag-brandenburg-11111'
+    K2 = 'landtag-brandenburg-22222'
+    P1 = 'Anna Beispiel'
+    P2 = 'Bernd Muster'
+    P1URL = f'{HOST}/de/beispiel_anna/11111'
+    P2URL = f'{HOST}/de/muster_bernd/22222'
+    FREMD_URL = f'{HOST}/de/fremd_person/99999'
+    INDEX_URL = f'{HOST}/de/parlament/ausschuesse_gremien_europa/fachausschuesse/25220'
+    A_URL = f'{HOST}/de/fachausschuss/test_a/90001'
+    B_URL = f'{HOST}/de/fachausschuss/test_b/90002'
+    C_URL = f'{HOST}/de/fachausschuss/unterausschuss_des_ausschusses_fuer_haushaltskontrolle/23893'
+    INDEX_DATEI = 'stv-index.html'
+    ADATEI, BDATEI, CDATEI = 'stv-a.html', 'stv-b.html', 'stv-c.html'
+    PDATEI = {K1: 'landtag-brandenburg-11111.html', K2: 'landtag-brandenburg-22222.html'}
+
+    def _li(name, url, gruppe):
+        return (f'<li><a href="{url}" class="profile"><strong>{name}</strong> '
+                f'<span class="organization-name">({gruppe})</span></a></li>')
+
+    def _spalte(segmente):
+        return ('<div class="col-12 col-md-6 col-lg-12 col-xl-6 my-4 my-md-0">'
+                '<h5 class="my-3">Stellvertretende Mitglieder</h5>' + ''.join(segmente) + '</div>')
+
+    def _ausschuss_html(h1, spalten):
+        return f'<html><body><main><h1>{h1}</h1><div class="row">{"".join(spalten)}</div></main></body></html>'
+
+    def _person_html(h1, subtitle):
+        return f'<html><body><main><h1>{h1}</h1><p role="doc-subtitle">{subtitle}</p></main></body></html>'
+
+    def _index_html(links):
+        inner = ''.join(f'<article><a href="{u}"><h6>{h}</h6></a></article>' for u, h in links)
+        return f'<html><body><main><h1>Fachausschüsse</h1><section class="teaser-grid">{inner}</section></main></body></html>'
+
+    def _meta(datei, url):
+        pfad = zusatz / datei
+        meta = dict(url=url, finalUrl=url, abgerufenAm=ABRUF, sha256=sv.ZU._sha256(pfad),
+                    bytes=pfad.stat().st_size, datei=datei, http=200)
+        (zusatz / f'{datei}.meta.json').write_text(json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+        return dict(meta, abrufStatus='abgerufen')
+
+    def _person_abruf(kennung, url, datei):
+        pfad = detail / datei
+        return dict(url=url, finalUrl=url, abgerufenAm=ABRUF, sha256=sv.ZU._sha256(pfad),
+                    bytes=pfad.stat().st_size, datei=datei, http=200, abrufStatus='abgerufen',
+                    amtlicheKennung=kennung.rsplit('-', 1)[-1], parlament='landtag-brandenburg')
+
+    def _standard():
+        (zusatz / INDEX_DATEI).write_text(
+            _index_html([('/de/fachausschuss/test_a/90001', 'Testausschuss A'),
+                         ('/de/fachausschuss/test_b/90002', 'Testausschuss B'),
+                         ('/de/fachausschuss/unterausschuss_des_ausschusses_fuer_haushaltskontrolle/23893', 'Unterausschuss des Ausschusses für Haushaltskontrolle')]),
+            encoding='utf-8')
+        (zusatz / ADATEI).write_text(_ausschuss_html('Testausschuss A', [_spalte([
+            '<h6>SPD-Fraktion</h6><ul class="list-unstyled">'
+            + _li(P1, '/de/beispiel_anna/11111', 'SPD-Fraktion')
+            + _li('Fremde Person', '/de/fremd_person/99999', 'SPD-Fraktion') + '</ul>',
+            '<h6>CDU-Fraktion</h6><ul class="list-unstyled">'
+            + _li(P2, '/de/muster_bernd/22222', 'CDU-Fraktion') + '</ul>',
+        ])]), encoding='utf-8')
+        (zusatz / BDATEI).write_text(_ausschuss_html('Testausschuss B', [_spalte([
+            '<h6>SPD-Fraktion</h6><ul class="list-unstyled">'
+            + _li(P1, '/de/beispiel_anna/11111', 'SPD-Fraktion') + '</ul>',
+        ])]), encoding='utf-8')
+        (zusatz / CDATEI).write_text(
+            _ausschuss_html('Unterausschuss des Ausschusses für Haushaltskontrolle', []), encoding='utf-8')
+        (detail / PDATEI[K1]).write_text(_person_html(P1, 'SPD-Fraktion'), encoding='utf-8')
+        (detail / PDATEI[K2]).write_text(_person_html(P2, 'CDU-Fraktion'), encoding='utf-8')
+
+    kanon = {sv._kanonisch(P1URL): K1, sv._kanonisch(P2URL): K2}
+    _standard()
+    personen = {K1: _person_abruf(K1, P1URL, PDATEI[K1]), K2: _person_abruf(K2, P2URL, PDATEI[K2])}
+    kennung_zu_abruf = dict(personen)
+
+    def _baue_quittung():
+        index_meta = _meta(INDEX_DATEI, INDEX_URL)
+        _, links = sv.index_lesen((zusatz / INDEX_DATEI).read_text(encoding='utf-8'), INDEX_URL)
+        quellen, ziel = [], []
+        for datei, url in ((ADATEI, A_URL), (BDATEI, B_URL), (CDATEI, C_URL)):
+            quelle = _meta(datei, url)
+            ausschuss, spalte, eintraege = sv.ausschussseite_lesen(
+                (zusatz / datei).read_text(encoding='utf-8'), url)
+            quellen.append(dict(quelle, h1=ausschuss, stellvertretendeSpalten=(1 if spalte is not None else 0)))
+            for eintrag in eintraege:
+                kennung = kanon.get(sv._kanonisch(eintrag['personenlink']))
+                if kennung is None:
+                    continue
+                ziel.append(dict(kennung=kennung, person=eintrag['name'], gruppe=eintrag['gruppe'],
+                                 ausschuss=ausschuss, personenlink=sv._kanonisch(eintrag['personenlink']),
+                                 quelleUrl=sv._kanonisch(url), quelleDatei=datei, quelleSha256=quelle['sha256']))
+        gruppen = {}
+        for eintrag in ziel:
+            gruppe = gruppen.setdefault(eintrag['kennung'], {'person': eintrag['person'],
+                                                             'gruppe': eintrag['gruppe'], 'm': []})
+            gruppe['m'].append(eintrag)
+        ergebnisse = []
+        for kennung in sorted(gruppen):
+            gruppe = gruppen[kennung]
+            person = personen[kennung]
+            ergebnisse.append(dict(
+                kennung=kennung, amtlicheKennung=person['amtlicheKennung'], parlament='landtag-brandenburg',
+                person=gruppe['person'], gruppe=gruppe['gruppe'],
+                personenquelle={n: person[n] for n in ('url', 'finalUrl', 'http', 'abrufStatus',
+                                                       'abgerufenAm', 'sha256', 'bytes', 'datei')},
+                mitgliedschaften=sorted([
+                    dict(ausschuss=m['ausschuss'], rolle=sv.ROLLE, personenlink=m['personenlink'],
+                         quelleUrl=m['quelleUrl'], quelleDatei=m['quelleDatei'], quelleSha256=m['quelleSha256'])
+                    for m in gruppe['m']], key=lambda m: m['ausschuss'])))
+        return dict(
+            status='synthetisch', index=index_meta, quellen=quellen,
+            bilanz=dict(gesamt=len(ziel), zielprofile=len(gruppen), quellen=len(quellen),
+                        mitStellvertretungsspalte=sum(q['stellvertretendeSpalten'] for q in quellen),
+                        ohneStellvertretungsspalte=sum(1 for q in quellen if q['stellvertretendeSpalten'] == 0),
+                        Brandenburg=len(ziel)),
+            ergebnisse=ergebnisse), index_meta, links
+
+    def _eingang(quittung, kzu=None):
+        return SimpleNamespace(verzeichnis=root, detailseiten=detail,
+                               kennung_zu_abruf=kzu if kzu is not None else kennung_zu_abruf,
+                               stellvertretungen=quittung)
+
+    gueltige_quittung, index_meta, index_links = _baue_quittung()
+    assert index_links == [sv._kanonisch(A_URL), sv._kanonisch(B_URL), sv._kanonisch(C_URL)]
+    ERW = {'index': {n: index_meta[n] for n in ('url', 'finalUrl', 'http', 'abrufStatus',
+                                                'abgerufenAm', 'sha256', 'bytes', 'datei')},
+           'indexH1': 'Fachausschüsse', 'quellen': 3, 'mitSpalte': 2, 'ohneSpalte': 1,
+           'kanonischeProfile': 2, 'gesamt': 3, 'zielprofile': 2, 'nullquelle': C_URL}
+
+    index = sv.pruefe_stellvertretungen(_eingang(gueltige_quittung), erwartung=ERW)
+    assert set(index) == {K1, K2}
+    assert len(index[K1]['ausschuesse']) == 2 and len(index[K2]['ausschuesse']) == 1
+    assert index[K1]['gruppe'] == 'SPD-Fraktion' and index[K2]['gruppe'] == 'CDU-Fraktion'
+    assert [m['ausschuss'] for m in index[K1]['ausschuesse']] == ['Testausschuss A', 'Testausschuss B']
+    assert all(m['rolle'] == sv.ROLLE for m in index[K1]['ausschuesse'])
+
+    def _mit(mutation, quittung=None):
+        neu = json.loads(json.dumps(quittung or gueltige_quittung))
+        mutation(neu)
+        return sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW)
+
+    # Fehlende Quittung (Datei fehlt).
+    echter_pfad = sv.STELLVERTRETUNGEN
+    sv.STELLVERTRETUNGEN = root / 'fehlt.json'
+    try:
+        _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(
+            SimpleNamespace(verzeichnis=root, detailseiten=detail, kennung_zu_abruf=kennung_zu_abruf),
+            erwartung=ERW), 'fehlende Quittung')
+    finally:
+        sv.STELLVERTRETUNGEN = echter_pfad
+    # Falsche Bilanz, Fremdkennung/unerwartetes Parlament, falsche Rolle.
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['bilanz'].__setitem__('gesamt', 0)), 'falsche Bilanz')
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('kennung', 'landtag-brandenburg-99999')),
+                        'unbekannte/Fremdkennung')
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('parlament', 'bundestag')),
+                        'unexpected parliament')
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['mitgliedschaften'][0].__setitem__(
+        'rolle', 'Ordentliches Mitglied')), 'falsche Rolle')
+    # Falscher Ausschuss, vertauschte Gruppe, fremder Name/Link.
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['mitgliedschaften'][0].__setitem__(
+        'ausschuss', 'Falscher Ausschuss')), 'falscher Ausschuss')
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('gruppe', 'CDU-Fraktion')),
+                        'vertauschte Gruppe')
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('person', 'Fremde Person')),
+                        'fremder Name')
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['mitgliedschaften'][0].__setitem__(
+        'personenlink', FREMD_URL)), 'fremder Link')
+    # Quellen-/Personen-/Metadaten-Drift und vertauschte Quellenpakete (konsistent gehasht).
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['mitgliedschaften'][0].__setitem__(
+        'quelleSha256', '0' * 64)), 'Quelldrift der Mitgliedschaft')
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['personenquelle'].__setitem__(
+        'sha256', '0' * 64)), 'Personenquellen-Drift')
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['personenquelle'].__setitem__(
+        'url', P2URL)), 'Personenquellen-URL-Drift')
+    _erwarte_stv_fehler(lambda: _mit(lambda q: q.__setitem__('quellen', [q['quellen'][1], q['quellen'][0], q['quellen'][2]])),
+                        'vertauschte Quellenpakete')
+    gueltige_quittung, index_meta, index_links = _baue_quittung()
+    (zusatz / f'{ADATEI}.meta.json').write_text(
+        json.dumps(dict(_meta(ADATEI, A_URL), sha256='0' * 64), ensure_ascii=False), encoding='utf-8')
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(
+        _eingang(gueltige_quittung), erwartung=ERW), 'Metadatum-Hash-Drift')
+
+    def _frisch():
+        """Stellt den synthetischen Standardstand wieder her und baut die Quittung neu."""
+        global personen, kennung_zu_abruf
+        _standard()
+        personen = {K1: _person_abruf(K1, P1URL, PDATEI[K1]), K2: _person_abruf(K2, P2URL, PDATEI[K2])}
+        kennung_zu_abruf = dict(personen)
+        quittung, _, _ = _baue_quittung()
+        return quittung
+
+    def _rebind_quelle(quittung, datei, url, html):
+        """Schreibt eine Quelle konsistent neu (Datei + Metadaten + Quittungshash)."""
+        (zusatz / datei).write_text(html, encoding='utf-8')
+        neu = json.loads(json.dumps(quittung))
+        quelle_neu = _meta(datei, url)
+        for quelle in neu['quellen']:
+            if sv._kanonisch(quelle['url']) == sv._kanonisch(url):
+                quelle.update(quelle_neu)
+                break
+        for ergebnis in neu['ergebnisse']:
+            for mitgliedschaft in ergebnis['mitgliedschaften']:
+                if mitgliedschaft['quelleUrl'] == url:
+                    mitgliedschaft['quelleSha256'] = quelle_neu['sha256']
+        return neu
+
+    def _rebind_person(quittung, kennung, html):
+        """Schreibt eine Personenseite konsistent neu (Datei + Abruf + Quittungshash)."""
+        (detail / PDATEI[kennung]).write_text(html, encoding='utf-8')
+        neu_abruf = _person_abruf(kennung, personen[kennung]['url'], PDATEI[kennung])
+        neu = json.loads(json.dumps(quittung))
+        for ergebnis in neu['ergebnisse']:
+            if ergebnis['kennung'] == kennung:
+                ergebnis['personenquelle'] = {
+                    n: neu_abruf[n] for n in ('url', 'finalUrl', 'http', 'abrufStatus',
+                                              'abgerufenAm', 'sha256', 'bytes', 'datei')}
+                break
+        kzu = dict(kennung_zu_abruf)
+        kzu[kennung] = neu_abruf
+        return neu, kzu
+
+    # Inerte Inhalte: die amtliche Spalte liegt nur in einer Vorlage -> keine echte
+    # Spalte; die konsistent neu gehashte Quittung haelt ihren alten Anspruch -> Sperre.
+    neu = _rebind_quelle(_frisch(), ADATEI, A_URL, _ausschuss_html('Testausschuss A', [
+        '<template>' + _spalte(['<h6>SPD-Fraktion</h6><ul class="list-unstyled">'
+                                + _li(P1, '/de/beispiel_anna/11111', 'SPD-Fraktion') + '</ul>']) + '</template>',
+        _spalte(['<h6>CDU-Fraktion</h6><ul class="list-unstyled">'
+                 + _li(P2, '/de/muster_bernd/22222', 'CDU-Fraktion') + '</ul>'])]))
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW),
+                        'inerte Vorlage als Spalte', 'erwartet 3 belegte Stellvertretungen')
+    # Echte H1 nur im Kommentar -> keine echte H1.
+    neu = _rebind_quelle(_frisch(), BDATEI, B_URL,
+                         '<html><body><!-- <h1>Testausschuss B</h1> --><p>Kein Beleg.</p></main></body></html>')
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW),
+                        'inerte H1 im Kommentar', 'genau eine echte H1')
+    # Abschnittsausbruch: ul nicht unmittelbar nach h6 (dazwischen ein eigenes Element).
+    neu = _rebind_quelle(_frisch(), BDATEI, B_URL, _ausschuss_html('Testausschuss B', [_spalte([
+        '<h6>SPD-Fraktion</h6><p>Dazwischen</p><ul class="list-unstyled">'
+        + _li(P1, '/de/beispiel_anna/11111', 'SPD-Fraktion') + '</ul>'])]))
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW),
+                        'Abschnittsausbruch', 'jede h6-Gruppe braucht')
+    # Doppelte Spalte.
+    neu = _rebind_quelle(_frisch(), BDATEI, B_URL, _ausschuss_html('Testausschuss B', [
+        _spalte(['<h6>SPD-Fraktion</h6><ul class="list-unstyled">'
+                 + _li(P1, '/de/beispiel_anna/11111', 'SPD-Fraktion') + '</ul>']),
+        _spalte(['<h6>CDU-Fraktion</h6><ul class="list-unstyled">'
+                 + _li(P2, '/de/muster_bernd/22222', 'CDU-Fraktion') + '</ul>'])]))
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW),
+                        'doppelte Spalte', 'mehr als eine Stellvertretungsspalte')
+    # Seite ohne Mitgliedschaftsliste: h5 vorhanden, aber keine eigene ul.
+    neu = _rebind_quelle(_frisch(), BDATEI, B_URL,
+                         _ausschuss_html('Testausschuss B', [_spalte(['<h6>SPD-Fraktion</h6>'])]))
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW),
+                        'Seite ohne Mitgliedschaftsliste', 'jede h6-Gruppe braucht')
+    # Doppelte Person im Original -> doppeltes (Profil, Ausschuss)-Paar.
+    neu = _rebind_quelle(_frisch(), ADATEI, A_URL, _ausschuss_html('Testausschuss A', [_spalte([
+        '<h6>SPD-Fraktion</h6><ul class="list-unstyled">'
+        + _li(P1, '/de/beispiel_anna/11111', 'SPD-Fraktion') + _li(P1, '/de/beispiel_anna/11111', 'SPD-Fraktion')
+        + '</ul>',
+        '<h6>CDU-Fraktion</h6><ul class="list-unstyled">'
+        + _li(P2, '/de/muster_bernd/22222', 'CDU-Fraktion') + '</ul>'])]))
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW),
+                        'doppelte Person/Paar', 'erwartet 3 belegte Stellvertretungen')
+    # Nullfall: der Unterausschuss bekommt eine Spalte -> kein belegter Nullfall mehr.
+    neu = _rebind_quelle(_frisch(), CDATEI, C_URL, _ausschuss_html(
+        'Unterausschuss des Ausschusses für Haushaltskontrolle', [_spalte([
+            '<h6>SPD-Fraktion</h6><ul class="list-unstyled">'
+            + _li(P1, '/de/beispiel_anna/11111', 'SPD-Fraktion') + '</ul>'])]))
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW),
+                        'kein belegter Nullfall', 'Spaltenzahl 1 weicht von der Quittung ab')
+    # Konsistent neu gebundene Personenseite mit fremder H1 (Hash + Abruf angepasst).
+    neu, kzu = _rebind_person(_frisch(), K1, _person_html('Fremde Person', 'SPD-Fraktion'))
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu, kzu=kzu), erwartung=ERW),
+                        'fremde H1 bei konsistentem Hash', 'Name passt nicht zur kanonischen H1')
+    # Konsistent neu gebundene Personenseite mit fremder Fraktion (doc-subtitle).
+    neu, kzu = _rebind_person(_frisch(), K1, _person_html(P1, 'CDU-Fraktion'))
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu, kzu=kzu), erwartung=ERW),
+                        'fremde Fraktion bei konsistentem Hash', 'Fraktion/Fraktionslosigkeit passt nicht')
+    # Orchestrator-Gegenproben: alle Hashes/Metadaten UND Mitgliedschaftsbelege
+    # werden konsistent neu gebunden; nur die Inhaltsregel darf die Probe sperren.
+    for was, mutation, grund in [
+        ('versteckte H1', lambda h: h.replace('<h1>', '<h1 hidden>'), 'genau eine echte H1'),
+        ('inerter H1-Text', lambda h: h.replace('>Testausschuss B</h1>', '><template>Testausschuss B</template></h1>'), 'leere Ausschuss-H1'),
+        ('versteckte Spalte', lambda h: h.replace('<div class="col-12', '<div hidden class="col-12'), 'Spaltenzahl 0'),
+        ('inerte Spalte', lambda h: h.replace('<div class="col-12', '<div inert class="col-12'), 'Spaltenzahl 0'),
+        ('unsichtbare Spalte', lambda h: h.replace('<div class="col-12', '<div style="display: none" class="col-12'), 'Spaltenzahl 0'),
+        ('versteckte Gruppe', lambda h: h.replace('<h6>', '<h6 aria-hidden="true">'), 'unmittelbar vorausgehende h6'),
+        ('versteckte Person', lambda h: h.replace('<li>', '<li hidden>'), 'sichtbare li-Mitglieder'),
+        ('inerter Name', lambda h: h.replace('>Anna Beispiel</strong>', '><template>Anna Beispiel</template></strong>'), 'leerer Name'),
+        ('fremde Linkquery', lambda h: h.replace('/de/beispiel_anna/11111', '/de/beispiel_anna/11111?person=22222'), 'URL mit fremder Query'),
+        ('fremdes Linkfragment', lambda h: h.replace('/de/beispiel_anna/11111', '/de/beispiel_anna/11111#fremd'), 'URL mit fremder Query'),
+        ('falsche Listenart', lambda h: h.replace('class="list-unstyled"', 'class="navigation"'), 'unmittelbar vorausgehende h6'),
+        ('Spalte ausserhalb main', lambda h: h.replace('<div class="row">', '</main><div class="row">').replace('</div></main>', '</div>'), 'kein direktes Kind'),
+    ]:
+        basis = _frisch()
+        original = (zusatz / BDATEI).read_text(encoding='utf-8')
+        neu = _rebind_quelle(basis, BDATEI, B_URL, mutation(original))
+        _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW), was, grund)
+
+    basis = _frisch()
+    person_html = _person_html(P1, 'SPD-Fraktion').replace('<p role=', '<p hidden role=')
+    neu, kzu = _rebind_person(basis, K1, person_html)
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu, kzu=kzu), erwartung=ERW),
+                        'versteckte Fraktion', 'genau eine doc-subtitle')
+
+    # Indexkarten in footer/ausserhalb main sind kein Inhaltsbeleg, selbst mit
+    # konsistent geaendertem Original und ausdruecklich neu gebundener Erwartung.
+    for was, mutation, grund in [
+        ('Index ausserhalb main', lambda h: h.replace('<section class="teaser-grid">', '</main><section class="teaser-grid">').replace('</section></main>', '</section>'), 'eigener Index-Kartenbereich'),
+        ('Index in Vorlage', lambda h: h.replace('<section class="teaser-grid">', '<template><section class="teaser-grid">').replace('</section>', '</section></template>'), 'eigener Index-Kartenbereich'),
+        ('versteckter Indexname', lambda h: h.replace('<h6>', '<h6 hidden>', 1), 'eigenen h6-Namen'),
+        ('falscher Ausschussname am Indexlink', lambda h: h.replace('Testausschuss A', 'Fremdausschuss'), 'Seiten-H1 passt nicht zum Ausschussnamen'),
+    ]:
+        neu = _frisch()
+        original = (zusatz / INDEX_DATEI).read_text(encoding='utf-8')
+        (zusatz / INDEX_DATEI).write_text(mutation(original), encoding='utf-8')
+        neu['index'] = _meta(INDEX_DATEI, INDEX_URL)
+        erwartung = dict(ERW, index=dict(neu['index']))
+        _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=erwartung), was, grund)
+
+    # Komplett vertauschte Ausschussseiten samt passenden neuen Quittungen und
+    # Personenpaaren: der unveraenderte amtliche Index bindet URL an Ausschussnamen.
+    _frisch()
+    html_a, html_b = ((zusatz / datei).read_text(encoding='utf-8') for datei in (ADATEI, BDATEI))
+    (zusatz / ADATEI).write_text(html_b, encoding='utf-8')
+    (zusatz / BDATEI).write_text(html_a, encoding='utf-8')
+    neu, _, _ = _baue_quittung()
+    _erwarte_stv_fehler(lambda: sv.pruefe_stellvertretungen(_eingang(neu), erwartung=ERW),
+                        'vollstaendig vertauschte Quellenpakete', 'Seiten-H1 passt nicht zum Ausschussnamen')
+
+    # Gueltiges synthetisches Paket wiederhergestellt und akzeptiert.
+    gueltige_quittung = _frisch()
+    ERW['index'] = {n: index_meta[n] for n in ('url', 'finalUrl', 'http', 'abrufStatus',
+                                               'abgerufenAm', 'sha256', 'bytes', 'datei')}
+    index = sv.pruefe_stellvertretungen(_eingang(gueltige_quittung), erwartung=ERW)
+    assert len(index) == 2 and sum(len(v['ausschuesse']) for v in index.values()) == 3
+    assert index[K1]['gruppe'] == 'SPD-Fraktion' and index[K2]['gruppe'] == 'CDU-Fraktion'
+
+print('PASS: Stellvertretungsquittung — fehlende Quittung/falsche Bilanz/Fremdkennung/unerwartetes '
+      'Parlament/falsche Rolle/falscher Ausschuss/vertauschte Gruppe/fremder Name/fremder Link/'
+      'Quellen- und Personenquellen-Drift/Metadatum-Drift/vertauschte Quellenpakete (konsistent '
+      'gehasht)/inerte Vorlagen und Kommentar-H1/Abschnittsausbruch (ul nicht nach h6)/doppelte '
+      'Spalte/doppelte Person/fehlende Mitgliedschaftsliste/fehlender Nullfall/konsistent neu '
+      'gebundene fremde H1 und Fraktion sowie versteckte/inerte Belege, fremde URL-Parameter, '
+      'Index-Ausbruch und vertauschte Quellseiten sperren fail closed; das gueltige synthetische Paket '
+      '(Fixture ohne /private/tmp) wird akzeptiert.')
