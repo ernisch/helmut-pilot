@@ -1,0 +1,142 @@
+{
+  "datum": "2026-09-27",
+  "version": 1,
+  "status": "Vom Orchestrator geprueft; drei zusaetzliche Fachzustaendigkeiten vorbereitet; nicht importfreigegeben",
+  "umfang": 3,
+  "bilanz": {
+    "gesamt": 3,
+    "Bund": 3,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-breher-silvia-1043814",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "bindungsart": "beauftragtenrolle",
+      "person": "Silvia Breher",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/breher_silvia-1043814",
+        "sha256": "204b7a1ed518270a4f6221955df35d6a110534b42fe7b2caa93fb236f469dbaa",
+        "abgerufenAm": "2026-09-27T13:00:04.915794+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/breher_silvia-1043814",
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/B/breher_silvia-1043814",
+        "abgerufenAm": "2026-09-27T13:00:04.915794+00:00",
+        "sha256": "204b7a1ed518270a4f6221955df35d6a110534b42fe7b2caa93fb236f469dbaa",
+        "bytes": 274171,
+        "datei": "bundestag-breher_silvia-1043814.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "funktion": "Beauftragte der Bundesregierung für Tierschutz",
+      "zitat": "seit September 2025 Beauftragte der Bundesregierung für Tierschutz.",
+      "abschnitt": "Biografie",
+      "zeitbeleg": "seit September 2025",
+      "themen": [
+        "Tierschutz"
+      ],
+      "ableitungsHinweis": "Amtszuständigkeit Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für Tierschutz; keine persönliche politische Position",
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-krichbaum-gunther-1048828",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "bindungsart": "amtshinweis",
+      "person": "Gunther Krichbaum",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/krichbaum_gunther-1048828",
+        "sha256": "5ebebff34fea0bfb60e0970f7fc41dc0a8fc2a9fe4cdf4a77e0392de0116d687",
+        "abgerufenAm": "2026-09-27T13:00:42.423556+00:00"
+      },
+      "quelle": {
+        "url": "https://www.auswaertiges-amt.de/de/aamt/leitung-des-auswaertigen-amts/staatsminister-krichbaum-seite",
+        "finalUrl": "https://www.auswaertiges-amt.de/de/aamt/leitung-des-auswaertigen-amts/staatsminister-krichbaum-seite",
+        "abgerufenAm": "2026-09-27T17:11:20.544628+00:00",
+        "sha256": "4c9da4728cb875bcec6d14e951a4ed8dc30e99787235b88eae9db3e2ef01da19",
+        "bytes": 87611,
+        "datei": "krichbaum-aa-europa-aktuell.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "amt": "Staatsminister für Europa",
+      "zitat": "Staatsminister für Europa Gunther Krichbaum",
+      "abschnitt": "Aktueller Seitenkopf der Leitungsseite; nicht die historische Sprecherrolle 2022–2025",
+      "themen": [
+        "Europa"
+      ],
+      "ableitungsHinweis": "Amtszuständigkeit Bund (amtlich abgeleitet): Staatsminister für Europa; keine persönliche politische Position",
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-kippels-georg-1045390",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "bindungsart": "abteilungszustaendigkeit",
+      "person": "Dr. Georg Kippels",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kippels_georg-1045390",
+        "sha256": "3860c81df63e36dffd70931b890b919fd09d326400a571ee8b08e238b9bc186c",
+        "abgerufenAm": "2026-09-27T13:00:36.656209+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesgesundheitsministerium.de/fileadmin/Dateien/3_Downloads/O/Organisationsplan/Organisationsplan.pdf",
+        "finalUrl": "https://www.bundesgesundheitsministerium.de/fileadmin/Dateien/3_Downloads/O/Organisationsplan/Organisationsplan.pdf",
+        "abgerufenAm": "2026-09-27T17:34:50.488963+00:00",
+        "sha256": "4b750443399db7330d45d4b3682476472a83771886a69ca4802ada9a2397f5bb",
+        "bytes": 120987,
+        "datei": "bmg-organisationsplan-20260903.pdf",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "aktuelleVerlinkung": {
+        "url": "https://www.bundesgesundheitsministerium.de/ministerium/aufgaben-und-organisation/organisationsplan-organigramm",
+        "finalUrl": "https://www.bundesgesundheitsministerium.de/ministerium/aufgaben-und-organisation/organisationsplan-organigramm",
+        "abgerufenAm": "2026-09-27T17:34:53.916904+00:00",
+        "sha256": "849ad8a813232bc5a5e09f3bbad0d9f36380934de7518506cde9729c2e931bcb",
+        "bytes": 436679,
+        "datei": "bmg-organisationsplan-landing-aktuell.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "seite": 1,
+      "stand": "03. September 2026",
+      "aufgabenbindung": "Parlamentarischer Staatssekretär im Bundesministerium für Gesundheit; Geschäftsbereich Abteilungen 1, 4, 5 und 6",
+      "personblock": [
+        "Parlamentarischer Staatssekretär",
+        "Dr. Georg Kippels",
+        "MdB",
+        "Geschäftsbereich: Abt. 1, 4, 5, 6"
+      ],
+      "abteilungen": {
+        "1": "Arzneimittel, Medizinprodukte, Biotechnologie",
+        "4": "Pflegeversicherung, Fachkräftesicherung, Recht der Heilberufe",
+        "5": "Digitalisierung und Innovation",
+        "6": "Gesundheitssicherheit, Resilienz; Internationales, Europa"
+      },
+      "themen": [
+        "Arzneimittel",
+        "Medizinprodukte",
+        "Biotechnologie",
+        "Pflegeversicherung",
+        "Fachkräftesicherung",
+        "Heilberufe",
+        "Digitalisierung",
+        "Innovation",
+        "Gesundheitssicherheit",
+        "Resilienz",
+        "Internationales",
+        "Europa"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Parlamentarischer Staatssekretär im Bundesministerium für Gesundheit; Geschäftsbereich Abteilungen 1, 4, 5 und 6; keine persönliche politische Position",
+      "importfreigegeben": false
+    }
+  ],
+  "pruefung": "Drei zusaetzliche Fachzustaendigkeiten (Breher Tierschutz, Krichbaum Europa, Kippels BMG-Abteilungen) an die amtlichen Originalquellen, an die kanonische 54er Rollenquittung und an die kanonischen Bundestags-Profilnamen/URL/Hashes gebunden. Breher: ausdrueckliche aktuelle 'seit September 2025 Beauftragte der Bundesregierung für Tierschutz.' im geschlossenen Biografieblock vor der Redaktionsnotiz, nicht aus Navigation oder historischer Bis-Rolle; neue Funktionsrolle und Thema, bestehende PSts-Rolle erhalten. Krichbaum: aktuelle AASeitenkopf-H1 'Staatsminister für Europa Gunther Krichbaum', nicht die alte Sprecherrolle 2022-2025; abgeleiteter Amts-/Herkunftshinweis und Thema Europa. Kippels: manuell am amtlichen BMG-Organisationsplan visuell abgenommenes PDF-Fachurteil (Stand 03. September 2026, Seite 1, Personenkasten Abt. 1/4/5/6, getrennte woertliche Abteilungstitel), KEIN automatischer PDF-Parser; aktuelle hashgebundene BMG-Landingpage verlinkt genau dieses amtliche PDF. 12 freigegebene Kurzthemen. Keine Importfreigabe."
+}
