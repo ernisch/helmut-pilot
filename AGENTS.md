@@ -228,6 +228,40 @@ Diese Regel erzeugt keine neue UI und ändert keine Schutzregeln.
 Dieser Routingvertrag ergänzt die bestehenden Regeln. Er ersetzt oder schwächt
 keine Schutzregel und erteilt keine zusätzliche Freigabe für geschützte Aktionen.
 
+## DeepSeek-Budget fuer lokale Agentenarbeit (Betreiberauftrag27.09.2026)
+
+Der ausdrueckliche neue Auftrag ersetzt fuer lokale DeepSeek-Agentenarbeit die
+bisherigen kleinen Einzelrahmen und die gemeinsame6-/7-USD-Begrenzung. DeepSeek
+hat einen eigenen harten Tagesdeckel von10USD je UTC-Tag einschliesslich bereits
+verbrauchter und offen reservierter Kosten. Helmuts Production-Tagesbudget6USD
+und kumulatives Production-Auftragsbudget7USD werden dadurch nicht erhoeht.
+Historisch bereits dort gebuchte Kosten werden nicht rueckwirkend entfernt.
+
+Regulaere Obergrenzen pro Helferlauf: Flash High2USD, Flash Max3USD, Pro High4USD,
+Pro Max5USD. Es sind keine Ausgabenziele: fertige Aufgaben sofort beenden.
+Keine kuenstlichen Kleinstbudgets wie0,03USD fuer neue DeepSeek-Auftraege.
+Das bestehende Modellrouting und die Schreib-/Production-Schutzregeln bleiben.
+
+Massgeblicher Startweg: `$HOME/bin/helmut-deepseek`, Konfiguration
+`$HOME/.codex-deepseek/budget.json`, gemeinsames Kostenbuch
+`$HOME/.codex-deepseek/budget.sqlite3`. Alle lokalen DeepSeek-Aufrufe muessen
+ueber diesen Kostenwaechter laufen; keine direkten ungemessenen API-Ausweichwege.
+Der Starter reserviert jede Anfrage atomar vor Versand, rechnet bestaetigten
+Verbrauch ab und behaelt ungeklaerte Kosten gebunden. Das Schema ist versioniert
+unter `tools/deepseek-budget/`; Installation veraendert keine Production-Variablen.
+
+Bei Kosten- oder Ausgabetokenlimit genau eine automatische Erweiterung im selben
+Modell/Denkmodus: bis zum doppelten Laufbudget und hoeherer Tokenobergrenze,
+jedoch immer innerhalb des Tagesdeckels und der Providergrenzen. Abgeschlossene
+Werkzeugaktionen nicht wiederholen. Unbekannter Versand/Verbrauch ist kein
+Budgetlimit und erlaubt keinen automatischen kostenpflichtigen Neuversuch.
+
+Wenn10USD fuer einen erforderlichen Lauf nicht reichen: keine weitere bezahlte
+Anfrage absenden, keine stille Erhoehung und keinen pauschalen Arbeitsabbruch.
+Den Betreiber ausdruecklich um ein hoeheres Tagesbudget fuer den konkreten
+UTC-Tag bitten; unabhaengige kostenlose Arbeit fortsetzen. Ein GO gilt nur fuer
+den genannten Tag, danach wieder10USD. Keine neue Freigabe innerhalb des Deckels.
+
 ## Grundregel
 
 Arbeite immer auf dem kürzesten sicheren Weg zum aktuellen Ziel.
@@ -558,8 +592,9 @@ Nur im konkret freigegebenen Umfang handeln.
 
 Innerhalb eines gestarteten, klar begrenzten Helmut-Sprints sind notwendige
 variable Modell- und API-Kosten bis insgesamt **6 USD je UTC Tag** vorab
-freigegeben. Alle Anbieter und alle auftragsbezogenen kostenpflichtigen Aufrufe
-zählen gemeinsam gegen dieselbe Tagesgrenze. Solange der nächste Aufruf die
+freigegeben. Alle Production-Anbieter und auftragsbezogenen kostenpflichtigen Aufrufe
+zaehlen gemeinsam gegen diese Tagesgrenze; lokale DeepSeek-Agentenarbeit folgt
+ausschliesslich dem oben ausdruecklich freigegebenen separaten10-USD-Tagesdeckel. Solange der nächste Aufruf die
 kumulative Tagesgrenze sicher bei höchstens 6 USD hält, ist keine erneute Kostenfreigabe
 erforderlich.
 

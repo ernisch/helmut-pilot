@@ -106,6 +106,13 @@ erzählen.
 
 ## 3 · Nächste Arbeiten vor dem 500er Start
 
+**Technischer Betreiberauftrag27.09. lokal abgeschlossen:** DeepSeek-Starter
+mit eigenem10-USD-Tagesdeckel, grosszuegigen Laufbudgets und genau einer
+Budget-/Tokenlimit-Erweiterung installiert und geprueft; Belege unter
+[`tools/deepseek-budget/`](../tools/deepseek-budget/README.md).
+Production-Kostenlimits bleiben bestehen. Naechster Fachschritt bleibt die
+folgende Profil-/Landesversorgung.
+
 **Aktueller vorgeschalteter Schritt:** Den bisherigen Platzhalterbestand durch
 einen vorab festgelegten, quellenbelegten Profil- und Pruefplan fuer Bundestag
 und die priorisierten Landesparlamente Berlin/Brandenburg ersetzen. Die anderen
