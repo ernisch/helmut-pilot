@@ -3489,7 +3489,13 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   };
 
   // Deterministische Bewertung (0 KI). Nur für die getroffenen Vorgänge Quellen laden.
-  const decisions = decisionsEngine.decideForUser(profile, understood, { userId, limit: 50 });
+  // Eine exakt gebundene redaktionelle Auswahl hat ihre Kandidaten bereits
+  // festgelegt. Textkorrekturen duerfen sie nicht ueber zufaellig negative
+  // Hash-Aehnlichkeit entfernen, bevor die explizite Reihenfolge greift.
+  // Quellen-/Frist-/Sicherheitsfilter folgen unveraendert; noch kein Fachurteil.
+  const decisions = korrekturDaten?.priorisierung
+    ? understood.map(ko => decisionsEngine.buildDecision(userId, ko))
+    : decisionsEngine.decideForUser(profile, understood, { userId, limit: 50 });
   if (!decisions.length) return emptyKeepMentions("keine-treffer");
   // Fresh-aware Kandidaten-Vervollstaendigung (on-read, 0 KI, deterministisch):
   // Der Top-Relevanz-Cut oben (limit 50, Ranking nach PROFIL-AEHNLICHKEIT) kann einen

@@ -172,6 +172,25 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); n++; }
       await A.rejects(build({ aussagenKorrektur: bad }), /korrektur-abweichend/);
     }
   });
+  await test("Explizite redaktionelle Auswahl bleibt trotz fehlendem automatischem Match pruefbar", async () => {
+    const engine = require("../lib/helmut/decisions"), old = engine.decideForUser;
+    // Ursprung bleibt gleich; erst die bereinigten Texte verlieren den Match.
+    engine.decideForUser = (p, rows, opts) => rows.some(r => /ALT/.test(r.recommendation))
+      ? old(p, rows, opts) : [];
+    try {
+      const k = structuredClone(korrektur);
+      A.equal((await build({ aussagenKorrektur: k })).briefing.items.length, 0);
+      k.priorisierung = [{ vorgangId: "vg-a", entscheidung: "Beobachten",
+        begruendung: "Belegte redaktionelle Auswahl, keine automatisch ermittelte Aehnlichkeit." }];
+      const b = await build({ aussagenKorrektur: k });
+      A.deepEqual(b.briefing.items.map(i => i.vorgangId), ["vg-a"]);
+      A.equal(b.briefing.items[0].finalScore, 40);
+      A.equal(Q.pruefe(b.eingabe).bereit, false);
+      k.entwuerfe[0].inhalt = { ...inhalt, titel: "Bundesminister stellt den Haushalt vor" };
+      A.equal((await build({ aussagenKorrektur: k })).briefing.items.length, 0);
+      A.deepEqual({ kos, sources, profile }, initial);
+    } finally { engine.decideForUser = old; }
+  });
   await test("Redaktionelle Reihenfolge ist exakt gebunden und erfindet keine Dringlichkeit", async () => {
     const k = structuredClone(korrektur);
     k.auslassungen = [];

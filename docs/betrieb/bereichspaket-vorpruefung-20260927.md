@@ -116,3 +116,37 @@ Beschluesse muessen getrennt und auf die belegten Auszuege begrenzt bleiben.
 Der Orchestrator muss diese Befunde am unveraenderten Builder pruefen;
 keine positive Gesamtbewertung und kein Lageaufruf vor dieser Nacharbeit.
 Privater vollstaendiger Pruefbericht: `/private/tmp/helmut-budget7/flash-quellenpruefung.md`.
+
+## Eng begrenzte Nacharbeit an Anzeige und Entwurfswahl
+
+Die eigene Nachpruefung unterscheidet Helferbefund und belegte Ursache:
+`eigenerwaehnung` bezeichnet im Radar jede Namensnennung, nicht ausschliesslich
+fremde Berichterstattung. Die konkrete Quelle ist eine eigene Rede. Ton und
+Konfidenz werden in der Anzeige daher unknown; Text und Zusammenfassung nennen
+nur Namensbeleg und tatsaechlichen Quellentag. Keine behauptete Resonanz.
+Der kanonische Bundestagslink ohne www bezeichnet dieselbe gebundene Quelle;
+der bestehende kanonische Adressvertrag wird nicht geaendert.
+
+Vorabendquellen sind nach bestehendem Frischevertrag im heutigen Fenster
+zulaessig. Der Tagesanlass nennt nun ausdruecklich ihren Quellenstand.
+Die Rede ist vom25.09.; die neueste Berliner Quelle vom26.09.
+Kein Datum, Frischefenster oder Status wird hochgestuft.
+
+Die genaue Auslassungsursache ging ueber die erste Frischevermutung hinaus:
+Die redaktionellen Entwuerfe verloren nach Textkorrektur ihre automatischen
+Matches (Aehnlichkeiten -0,0363/-0,1297/-0,0163 ohne harte Merkmale). Dadurch
+griff selbst die bereits exakt gebundene redaktionelle Auswahl nicht.
+Nur bei diesem internen, vollstaendig gebundenen Auswahlvertrag werden dessen
+Kandidaten jetzt vor den unveraenderten Quellen-/Sicherheitsfiltern aufgebaut.
+Normale automatische Auswahl unveraendert. Beobachten bleibt40, Ignorieren0;
+kein positives Sachurteil, keine erfundene Konfidenz oder Dringlichkeit.
+
+Lokaler echter Builder: drei Vertragsobjekte, eine heutige Briefingprioritaet,
+ein datierter Radarhinweis; die Zahl der Vertragsobjekte ist keine Zahl heutiger
+Tagesprioritaeten. Der Solidarprinzip-Vorgang bleibt als aelterer Hintergrund im
+Vertrag; die Rede begruendet ausschliesslich den Radarhinweis. Keine neue
+Productionaufnahme oder gemeinsame Fachabnahme.
+Gezielt22/22 Bereichsvertrag,11/11 Artikelbindung und16/16 Korrekturgruppen.
+Die neue Negativgegenprobe belegt: fehlender automatischer Match kann nur durch
+eine explizite gebundene Entwurfswahl ersetzt werden; eine unbelegte Minister-
+behauptung bleibt gesperrt. Keine zusaetzlichen Helfer-/Modellkosten.
