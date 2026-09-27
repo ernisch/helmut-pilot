@@ -12,6 +12,7 @@
     "parteifeldpruefung": "docs/betrieb/parteifeldpruefung-335-20260927.json (335 gepruefte Parteifelder: 261 belegt, 74 offen)",
     "mandatsartenquittung": "docs/betrieb/brandenburg-mandatsarten-20260927.json (amtliche Brandenburger Uebersicht; Landesliste fuer 4 Profile, URL + sha256 + Abrufzeit gebunden)",
     "profilrollenQuittung": "docs/betrieb/profilrollen-54-20260927.json (vom Orchestrator geprueft; 48 Rollen fuer fachlich offene Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches Zitat im personengebundenen Abschnitt gebunden)",
+    "ressortquittung": "docs/betrieb/ressortachsen-19-20260927.json (vom Orchestrator geprueft; 19 zuvor offene Fachachsen aus amtlich belegtem aktuellem Ressort geschlossen: 9 Bund / 4 Berlin / 6 Brandenburg; URL + sha256 + Abrufzeit + Datei der amtlichen Zusatzquelle und zusammenhaengendes Person/Ressort-Zitat gebunden)",
     "sonstigeGremien": "explizite Liste mit 15 amtlich belegten sonstigen Gremien des Bundestages (JSON-LD memberOf mit Original-Rolle und Original-URL); Sollmenge der staendigen Ausschuesse unveraendert aus lib/helmut/profile-readiness.resolveBundestagsausschuss",
     "eingangsverzeichnis": "/private/tmp/helmut-be-bb-start",
     "hinweis": "Detailseiten, Abrufe und Extraktionen sind lokale Arbeitsdateien ausserhalb des Repos; die Belegdatei bindet sie ueber URL und Quellhash."
@@ -29,6 +30,7 @@
     "Belegte sonstige Gremien des Bundestages (Beirat, Unterausschuss, Kommission, Kontrollgremium, Wahlausschuss, Rechnungspruefung) werden NICHT als staendige Ausschuesse gefuehrt: sie stehen als weitereGremien UND rollengetreu in funktionen. Nur die explizite Liste mit amtlicher JSON-LD-URL wird herausgeloest; unbekannte echte Ausschuesse bleiben gesperrt.",
     "Vier bislang offene Brandenburg-Mandatsarten sind ueber die versionierte lokale Quittung docs/betrieb/brandenburg-mandatsarten-20260927.json als Landesliste belegt (URL + Hash + Abrufzeit). Uebernommen werden NUR Mandatsart Landesliste und Region Brandenburg, NICHT Listenbeschriftung oder Listenplatz.",
     "Fuer die 54 fachlich offenen Profile werden ueber die vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json ausschliesslich die freigegebenen wortlaut-Strings dedupliziert an BESTEHENDE funktionen angehaengt (48 belegt, 6 offen). Es entsteht KEIN regierungsrolle-Schema und KEINE fachliche Achse; bestehende Gremienrollen bleiben erhalten. Jede Kennung ist an URL, Quellhash, erlaubten Status und ein woertliches Zitat im personengebundenen amtlichen Abschnitt gebunden (Bundestag Funktion nur m-biography__function, Biografie nur eigener Biografiebereich; keine Navigation als Beleg).",
+    "Fuer 19 dieser 54 Profile wird ueber die vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json die ausdruecklichen Ressortbegriffe als Themen gesetzt mit getrenntem Ableitungshinweis in funktionen und damit die fachliche Achse geschlossen. Nur die Regionen Bund/Berlin/Brandenburg sind erlaubt; jede Kennung ist eine bereits belegte Rolle der 54er Quittung, an deren Rollenquelle, an die amtliche Zusatzquelle (URL + sha256 + Abrufzeit + Datei) und an ein zusammenhaengendes woertliches Person/Ressort-Zitat gebunden. Keine persoenliche politische Position, keine erfundenen Themen, keine Ableitung aus Kanzler-/Vorsitzrollen; die disjunkte Vereinigung der 19 geschlossenen mit den 35 verbleibend offenen Achsen ergibt weiter genau die 54er Rollenquittung.",
     "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
     "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe."
   ],
@@ -57,7 +59,7 @@
       "deckungsgleichVerwendet": 335
     },
     "mandatsartOffen": 3,
-    "fachlicheAchseOffen": 54,
+    "fachlicheAchseOffen": 35,
     "sonstigeGremien": {
       "expliziteListe": 15,
       "profileMitWeiterenGremien": 114,
@@ -76,10 +78,23 @@
       "rollenVergeben": 48,
       "deckungsgleichVerwendet": 54
     },
+    "ressortachsenQuittung": {
+      "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+      "geprueftGesamt": 19,
+      "nachRegion": {
+        "Bund": 9,
+        "Berlin": 4,
+        "Brandenburg": 6
+      },
+      "themenGesetzt": 19,
+      "deckungsgleichVerwendet": 19,
+      "geschlosseneAchsen": 19,
+      "verbleibendOffeneAchsen": 35
+    },
     "offeneFelder": {
       "weitereGremien": 137,
       "partei": 74,
-      "fachlicheAchse": 54,
+      "fachlicheAchse": 35,
       "mandatsart": 3,
       "wahlbezirk": 1,
       "regionbezug": 28
@@ -8411,7 +8426,8 @@
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 247: Bad Kissingen",
         "funktionen": [
-          "Bundesministerin für Forschung, Technologie und Raumfahrt"
+          "Bundesministerin für Forschung, Technologie und Raumfahrt",
+          "Ressortzuständigkeit Bund (amtlich abgeleitet): Forschung, Technologie und Raumfahrt; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -8420,7 +8436,18 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/B/baer_dorothee-1043526",
             "abgerufenAm": "2026-09-27T12:59:57.956556+00:00",
             "sha256": "597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+            "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+            "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75"
           }
+        ],
+        "themen": [
+          "Forschung",
+          "Technologie",
+          "Raumfahrt"
         ]
       },
       "mandatsnachweis": {
@@ -8463,11 +8490,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519)",
         "parteiWert": "Eintritt in die CSU 1994",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/baer_dorothee-1043526 sha256 597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -8476,12 +8504,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -8499,6 +8523,32 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "bundestag-baer-dorothee-1043526",
+        "region": "Bund",
+        "ressort": "Forschung, Technologie und Raumfahrt",
+        "amtsrolle": "Bundesministerin für Forschung, Technologie und Raumfahrt",
+        "zitat": "Dorothee Bär Lebenslauf Bundesministerin für Forschung, Technologie und Raumfahrt",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/B/baer_dorothee-1043526",
+          "sha256": "597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519"
+        },
+        "quelle": {
+          "datei": "kabinett-breg-aktuell.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+          "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+          "bytes": 157668
+        },
+        "themen": [
+          "Forschung",
+          "Technologie",
+          "Raumfahrt"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Forschung, Technologie und Raumfahrt; keine persönliche politische Position"
       }
     },
     {
@@ -9258,7 +9308,8 @@
         "wahlkreis": "Wahlkreis 265: Ludwigsburg",
         "funktionen": [
           "Ordentliches Mitglied: Wahlausschuss",
-          "Bundesminister für Verkehr"
+          "Bundesminister für Verkehr",
+          "Ressortzuständigkeit Bund (amtlich abgeleitet): Verkehr; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -9267,7 +9318,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/B/bilger_steffen-1048434",
             "abgerufenAm": "2026-09-27T13:00:01.066704+00:00",
             "sha256": "8cfd7dd1d6347c6fdb6ecbf9419e9ceca2058a47323ac7ca56adf5a6ed0ba969"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+            "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+            "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75"
           }
+        ],
+        "themen": [
+          "Verkehr"
         ]
       },
       "mandatsnachweis": {
@@ -9312,11 +9372,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 8cfd7dd1d6347c6fdb6ecbf9419e9ceca2058a47323ac7ca56adf5a6ed0ba969)",
         "parteiWert": "Seit 2011 Vorsitzender des CDU-Bezirksverbands Nordwürttemberg",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/bilger_steffen-1048434 sha256 8cfd7dd1d6347c6fdb6ecbf9419e9ceca2058a47323ac7ca56adf5a6ed0ba969",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich memberOf-Rollen der Bundestagsseite bzw. Mitgliedschaften in belegten sonstigen Gremien rollengetreu als Funktion erhalten",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich memberOf-Rollen der Bundestagsseite bzw. Mitgliedschaften in belegten sonstigen Gremien rollengetreu als Funktion erhalten; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "weitereGremien": "amtliches JSON-LD (ProfilePage.mainEntity.memberOf) mit Original-Rolle UND Original-URL; ausdruecklich NICHT als staendiger Ausschuss der laufenden Wahlperiode gefuehrt"
       },
       "weitereGremien": [
@@ -9336,11 +9397,9 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden",
         "Weitere belegte Gremien sind nicht als ordentliche Ausschussmitgliedschaft zugeordnet"
       ],
       "offeneFelder": [
-        "fachlicheAchse",
         "weitereGremien"
       ],
       "importfreigegeben": false,
@@ -9360,6 +9419,30 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "bundestag-bilger-steffen-1048434",
+        "region": "Bund",
+        "ressort": "Verkehr",
+        "amtsrolle": "Bundesminister für Verkehr",
+        "zitat": "Steffen Bilger Lebenslauf Bundesminister für Verkehr",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/B/bilger_steffen-1048434",
+          "sha256": "8cfd7dd1d6347c6fdb6ecbf9419e9ceca2058a47323ac7ca56adf5a6ed0ba969"
+        },
+        "quelle": {
+          "datei": "kabinett-breg-aktuell.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+          "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+          "bytes": 157668
+        },
+        "themen": [
+          "Verkehr"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Verkehr; keine persönliche politische Position"
       }
     },
     {
@@ -11623,7 +11706,8 @@
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 225: Weilheim",
         "funktionen": [
-          "Bundesminister des Innern"
+          "Bundesminister des Innern",
+          "Ressortzuständigkeit Bund (amtlich abgeleitet): Inneres; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -11632,7 +11716,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/D/dobrindt_alexander-1044072",
             "abgerufenAm": "2026-09-27T13:00:10.703288+00:00",
             "sha256": "4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+            "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+            "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75"
           }
+        ],
+        "themen": [
+          "Inneres"
         ]
       },
       "mandatsnachweis": {
@@ -11675,11 +11768,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb)",
         "parteiWert": "seit 1990 Mitglied der CSU",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/D/dobrindt_alexander-1044072 sha256 4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -11688,12 +11782,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -11711,6 +11801,30 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "bundestag-dobrindt-alexander-1044072",
+        "region": "Bund",
+        "ressort": "Inneres",
+        "amtsrolle": "Bundesminister des Innern",
+        "zitat": "Alexander Dobrindt Lebenslauf Bundesminister des Innern",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/D/dobrindt_alexander-1044072",
+          "sha256": "4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb"
+        },
+        "quelle": {
+          "datei": "kabinett-breg-aktuell.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+          "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+          "bytes": 157668
+        },
+        "themen": [
+          "Inneres"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Inneres; keine persönliche politische Position"
       }
     },
     {
@@ -20345,7 +20459,8 @@
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 136: Paderborn",
         "funktionen": [
-          "Bundesminister für Gesundheit"
+          "Bundesminister für Gesundheit",
+          "Ressortzuständigkeit Bund (amtlich abgeleitet): Gesundheit; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -20354,7 +20469,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/L/linnemann_carsten-1048896",
             "abgerufenAm": "2026-09-27T13:00:47.810312+00:00",
             "sha256": "fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+            "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+            "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75"
           }
+        ],
+        "themen": [
+          "Gesundheit"
         ]
       },
       "mandatsnachweis": {
@@ -20397,11 +20521,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00)",
         "parteiWert": "seit 2010 Mitglied im Landesvorstand der CDU Nordrhein-Westfalen",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/L/linnemann_carsten-1048896 sha256 fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -20410,12 +20535,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -20433,6 +20554,30 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "bundestag-linnemann-carsten-1048896",
+        "region": "Bund",
+        "ressort": "Gesundheit",
+        "amtsrolle": "Bundesminister für Gesundheit",
+        "zitat": "Dr. Carsten Linnemann Lebenslauf Bundesminister für Gesundheit",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/L/linnemann_carsten-1048896",
+          "sha256": "fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00"
+        },
+        "quelle": {
+          "datei": "kabinett-breg-aktuell.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+          "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+          "bytes": 157668
+        },
+        "themen": [
+          "Gesundheit"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Gesundheit; keine persönliche politische Position"
       }
     },
     {
@@ -29710,7 +29855,8 @@
         "listenmandat": true,
         "regionHinweis": "Landesliste Mecklenburg-Vorpommern",
         "funktionen": [
-          "Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung"
+          "Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung",
+          "Ressortzuständigkeit Bund (amtlich abgeleitet): wirtschaftliche Zusammenarbeit und Entwicklung; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -29719,7 +29865,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/A/alabali_radovan_reem-1043386",
             "abgerufenAm": "2026-09-27T13:01:30.735187+00:00",
             "sha256": "d9d26417605ec59441ba35141afb225fe03a9141bb064d90cceeda862c349ab4"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+            "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+            "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75"
           }
+        ],
+        "themen": [
+          "wirtschaftliche Zusammenarbeit und Entwicklung"
         ]
       },
       "mandatsnachweis": {
@@ -29766,11 +29921,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash d9d26417605ec59441ba35141afb225fe03a9141bb064d90cceeda862c349ab4)",
         "parteiWert": "Mitgliedschaften: Sozialdemokratische Partei Deutschlands (SPD)",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/A/alabali_radovan_reem-1043386 sha256 d9d26417605ec59441ba35141afb225fe03a9141bb064d90cceeda862c349ab4",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -29780,12 +29936,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -29803,6 +29955,30 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "bundestag-alabali-radovan-reem-1043386",
+        "region": "Bund",
+        "ressort": "wirtschaftliche Zusammenarbeit und Entwicklung",
+        "amtsrolle": "Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung",
+        "zitat": "Reem Alabali Radovan Lebenslauf Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/A/alabali_radovan_reem-1043386",
+          "sha256": "d9d26417605ec59441ba35141afb225fe03a9141bb064d90cceeda862c349ab4"
+        },
+        "quelle": {
+          "datei": "kabinett-breg-aktuell.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+          "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+          "bytes": 157668
+        },
+        "themen": [
+          "wirtschaftliche Zusammenarbeit und Entwicklung"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): wirtschaftliche Zusammenarbeit und Entwicklung; keine persönliche politische Position"
       }
     },
     {
@@ -30075,7 +30251,8 @@
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 114: Duisburg I",
         "funktionen": [
-          "Bundesministerin für Arbeit und Soziales"
+          "Bundesministerin für Arbeit und Soziales",
+          "Ressortzuständigkeit Bund (amtlich abgeleitet): Arbeit und Soziales; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -30084,7 +30261,17 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/B/bas_baerbel-1043554",
             "abgerufenAm": "2026-09-27T13:01:32.582199+00:00",
             "sha256": "8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+            "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+            "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75"
           }
+        ],
+        "themen": [
+          "Arbeit",
+          "Soziales"
         ]
       },
       "mandatsnachweis": {
@@ -30127,11 +30314,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92)",
         "parteiWert": "Seit Oktober 1988 Mitglied der SPD",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/bas_baerbel-1043554 sha256 8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -30140,12 +30328,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -30163,6 +30347,31 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "bundestag-bas-baerbel-1043554",
+        "region": "Bund",
+        "ressort": "Arbeit und Soziales",
+        "amtsrolle": "Bundesministerin für Arbeit und Soziales",
+        "zitat": "Bärbel Bas Lebenslauf Bundesministerin für Arbeit und Soziales",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/B/bas_baerbel-1043554",
+          "sha256": "8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92"
+        },
+        "quelle": {
+          "datei": "kabinett-breg-aktuell.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+          "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+          "bytes": 157668
+        },
+        "themen": [
+          "Arbeit",
+          "Soziales"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Arbeit und Soziales; keine persönliche politische Position"
       }
     },
     {
@@ -34039,7 +34248,8 @@
         "listenmandat": true,
         "regionHinweis": "Landesliste Rheinland-Pfalz",
         "funktionen": [
-          "Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen"
+          "Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen",
+          "Ressortzuständigkeit Bund (amtlich abgeleitet): Wohnen, Stadtentwicklung und Bauwesen; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -34048,7 +34258,18 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/H/hubertz_verena-1045124",
             "abgerufenAm": "2026-09-27T13:01:49.706971+00:00",
             "sha256": "5b7f34a4e7cd146e4fbdbee4da34828816f2cd48b29fe3c74c3d2255a6d2a85f"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+            "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+            "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75"
           }
+        ],
+        "themen": [
+          "Wohnen",
+          "Stadtentwicklung",
+          "Bauwesen"
         ]
       },
       "mandatsnachweis": {
@@ -34095,11 +34316,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 5b7f34a4e7cd146e4fbdbee4da34828816f2cd48b29fe3c74c3d2255a6d2a85f)",
         "parteiWert": "2010 Eintritt in die SPD.",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hubertz_verena-1045124 sha256 5b7f34a4e7cd146e4fbdbee4da34828816f2cd48b29fe3c74c3d2255a6d2a85f",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -34109,12 +34331,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -34132,6 +34350,32 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "bundestag-hubertz-verena-1045124",
+        "region": "Bund",
+        "ressort": "Wohnen, Stadtentwicklung und Bauwesen",
+        "amtsrolle": "Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen",
+        "zitat": "Verena Hubertz Lebenslauf Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/H/hubertz_verena-1045124",
+          "sha256": "5b7f34a4e7cd146e4fbdbee4da34828816f2cd48b29fe3c74c3d2255a6d2a85f"
+        },
+        "quelle": {
+          "datei": "kabinett-breg-aktuell.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+          "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+          "bytes": 157668
+        },
+        "themen": [
+          "Wohnen",
+          "Stadtentwicklung",
+          "Bauwesen"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Wohnen, Stadtentwicklung und Bauwesen; keine persönliche politische Position"
       }
     },
     {
@@ -34805,7 +35049,8 @@
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 035: Rotenburg I – Heidekreis",
         "funktionen": [
-          "Bundesminister der Finanzen"
+          "Bundesminister der Finanzen",
+          "Ressortzuständigkeit Bund (amtlich abgeleitet): Finanzen; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -34814,7 +35059,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/K/klingbeil_lars-1045428",
             "abgerufenAm": "2026-09-27T13:01:52.440771+00:00",
             "sha256": "97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+            "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+            "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75"
           }
+        ],
+        "themen": [
+          "Finanzen"
         ]
       },
       "mandatsnachweis": {
@@ -34857,11 +35111,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989)",
         "parteiWert": "Mitgliedschaften: Sozialdemokratische Partei Deutschlands (SPD)",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/klingbeil_lars-1045428 sha256 97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -34870,12 +35125,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -34893,6 +35144,30 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "bundestag-klingbeil-lars-1045428",
+        "region": "Bund",
+        "ressort": "Finanzen",
+        "amtsrolle": "Bundesminister der Finanzen",
+        "zitat": "Lars Klingbeil Lebenslauf Bundesminister der Finanzen",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/K/klingbeil_lars-1045428",
+          "sha256": "97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989"
+        },
+        "quelle": {
+          "datei": "kabinett-breg-aktuell.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+          "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+          "bytes": 157668
+        },
+        "themen": [
+          "Finanzen"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Finanzen; keine persönliche politische Position"
       }
     },
     {
@@ -38422,7 +38697,8 @@
         "fraktion": "SPD",
         "wahlkreis": "Wahlkreis 042: Stadt Hannover II",
         "funktionen": [
-          "Bundesminister der Verteidigung"
+          "Bundesminister der Verteidigung",
+          "Ressortzuständigkeit Bund (amtlich abgeleitet): Verteidigung; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -38431,7 +38707,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/P/pistorius_boris-1046550",
             "abgerufenAm": "2026-09-27T13:02:07.414867+00:00",
             "sha256": "6ebba8fb601a27acf5b549b2db1d947ca10fb3e6ec6d60068fe1ed8117327939"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+            "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+            "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75"
           }
+        ],
+        "themen": [
+          "Verteidigung"
         ]
       },
       "mandatsnachweis": {
@@ -38467,9 +38752,10 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "bewusst NICHT abgeleitet: Bundestags-Fraktion ist keine Partei; kein Partei-String gesetzt",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -38479,12 +38765,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft in der amtlichen Biografie nicht belegt; NICHT aus der Fraktion abgeleitet",
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft in der amtlichen Biografie nicht belegt; NICHT aus der Fraktion abgeleitet"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false,
@@ -38503,6 +38787,30 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "bundestag-pistorius-boris-1046550",
+        "region": "Bund",
+        "ressort": "Verteidigung",
+        "amtsrolle": "Bundesminister der Verteidigung",
+        "zitat": "Boris Pistorius Lebenslauf Bundesminister der Verteidigung",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/P/pistorius_boris-1046550",
+          "sha256": "6ebba8fb601a27acf5b549b2db1d947ca10fb3e6ec6d60068fe1ed8117327939"
+        },
+        "quelle": {
+          "datei": "kabinett-breg-aktuell.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskabinett",
+          "abgerufenAm": "2026-09-27T15:43:26.258134+00:00",
+          "sha256": "b4705602412d66df5c12a3db5ec461d6e90b6fd8fb6cc517befa126f3537ae75",
+          "bytes": 157668
+        },
+        "themen": [
+          "Verteidigung"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Bund (amtlich abgeleitet): Verteidigung; keine persönliche politische Position"
       }
     },
     {
@@ -42104,7 +42412,8 @@
         "partei": "CDU",
         "wahlkreis": "Marzahn-Hellersdorf, Wahlkreis 5",
         "funktionen": [
-          "Senatorin für Bildung, Jugend und Familie"
+          "Senatorin für Bildung, Jugend und Familie",
+          "Ressortzuständigkeit Berlin (amtlich abgeleitet): Bildung, Jugend und Familie; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -42113,7 +42422,18 @@
             "url": "https://www.parlament-berlin.de/Abgeordnete/katharina-gunther-wunsch?groupStrategy=nachnamen",
             "abgerufenAm": "2026-09-27T12:35:42.630244+00:00",
             "sha256": "a13209a681959d95e2f42f6df8a4a153c6a85e3aaf6af7d4e31faa980bf908b9"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+            "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+            "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6"
           }
+        ],
+        "themen": [
+          "Bildung",
+          "Jugend",
+          "Familie"
         ]
       },
       "mandatsnachweis": {
@@ -42153,9 +42473,10 @@
         "partei": "detailseiten-HTML (h1), amtliches Verzeichnis",
         "region": "dl.b-delegate-facts",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Berlin + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "parteiWert": "h1 der amtlichen Landtagsseite fuehrt Namen und Partei",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -42164,12 +42485,8 @@
       "extraktionOffen": [
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
-      "offenePunkte": [
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -42187,6 +42504,32 @@
             "zeitbeleg": "seit 27. April 2023"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-berlin-katharina-gunther-wunsch",
+        "region": "Berlin",
+        "ressort": "Bildung, Jugend und Familie",
+        "amtsrolle": "Senatorin für Bildung, Jugend und Familie",
+        "zitat": "Senatorin für Bildung, Jugend und Familie: Katharina Günther-Wünsch, CDU",
+        "rollenquelle": {
+          "url": "https://www.parlament-berlin.de/Abgeordnete/katharina-gunther-wunsch?groupStrategy=nachnamen",
+          "sha256": "a13209a681959d95e2f42f6df8a4a153c6a85e3aaf6af7d4e31faa980bf908b9"
+        },
+        "quelle": {
+          "datei": "senat-berlin-aktuell.html",
+          "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+          "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+          "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+          "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6",
+          "bytes": 59352
+        },
+        "themen": [
+          "Bildung",
+          "Jugend",
+          "Familie"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Berlin (amtlich abgeleitet): Bildung, Jugend und Familie; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
@@ -49531,7 +49874,8 @@
         "listenmandat": true,
         "regionHinweis": "Neukölln",
         "funktionen": [
-          "Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe"
+          "Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe",
+          "Ressortzuständigkeit Berlin (amtlich abgeleitet): Wirtschaft, Energie und Betriebe; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -49540,7 +49884,18 @@
             "url": "https://www.parlament-berlin.de/Abgeordnete/franziska-giffey?groupStrategy=nachnamen",
             "abgerufenAm": "2026-09-27T12:36:39.237645+00:00",
             "sha256": "374c38ce87c4605a45d5a459d256678e793dd74b78c5d457a0f82fae0dcf3726"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+            "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+            "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6"
           }
+        ],
+        "themen": [
+          "Wirtschaft",
+          "Energie",
+          "Betriebe"
         ]
       },
       "mandatsnachweis": {
@@ -49580,9 +49935,10 @@
         "partei": "detailseiten-HTML (h1), amtliches Verzeichnis",
         "region": "dl.b-delegate-facts",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Berlin + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "parteiWert": "h1 der amtlichen Landtagsseite fuehrt Namen und Partei",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -49591,12 +49947,8 @@
       "extraktionOffen": [
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
-      "offenePunkte": [
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -49614,6 +49966,32 @@
             "zeitbeleg": "seit 27. April 2023"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-berlin-franziska-giffey",
+        "region": "Berlin",
+        "ressort": "Wirtschaft, Energie und Betriebe",
+        "amtsrolle": "Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe",
+        "zitat": "Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe: Franziska Giffey, SPD",
+        "rollenquelle": {
+          "url": "https://www.parlament-berlin.de/Abgeordnete/franziska-giffey?groupStrategy=nachnamen",
+          "sha256": "374c38ce87c4605a45d5a459d256678e793dd74b78c5d457a0f82fae0dcf3726"
+        },
+        "quelle": {
+          "datei": "senat-berlin-aktuell.html",
+          "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+          "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+          "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+          "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6",
+          "bytes": 59352
+        },
+        "themen": [
+          "Wirtschaft",
+          "Energie",
+          "Betriebe"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Berlin (amtlich abgeleitet): Wirtschaft, Energie und Betriebe; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
@@ -49648,7 +50026,8 @@
         "listenmandat": true,
         "regionHinweis": "Steglitz-Zehlendorf",
         "funktionen": [
-          "Senatorin für die Senatsverwaltung für Wissenschaft, Gesundheit und Pflege"
+          "Senatorin für die Senatsverwaltung für Wissenschaft, Gesundheit und Pflege",
+          "Ressortzuständigkeit Berlin (amtlich abgeleitet): Wissenschaft, Gesundheit und Pflege; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -49657,7 +50036,18 @@
             "url": "https://www.parlament-berlin.de/Abgeordnete/ina-czyborra?groupStrategy=nachnamen",
             "abgerufenAm": "2026-09-27T12:36:39.883102+00:00",
             "sha256": "caaf21738731d4ba766f06c7f809100bb74ba05cef0100341eb2a23ee5085cef"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+            "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+            "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6"
           }
+        ],
+        "themen": [
+          "Wissenschaft",
+          "Gesundheit",
+          "Pflege"
         ]
       },
       "mandatsnachweis": {
@@ -49697,9 +50087,10 @@
         "partei": "detailseiten-HTML (h1), amtliches Verzeichnis",
         "region": "dl.b-delegate-facts",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Berlin + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "parteiWert": "h1 der amtlichen Landtagsseite fuehrt Namen und Partei",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -49708,12 +50099,8 @@
       "extraktionOffen": [
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
-      "offenePunkte": [
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -49731,6 +50118,32 @@
             "zeitbeleg": "ohne Datumsangabe"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-berlin-ina-czyborra",
+        "region": "Berlin",
+        "ressort": "Wissenschaft, Gesundheit und Pflege",
+        "amtsrolle": "Senatorin für die Senatsverwaltung für Wissenschaft, Gesundheit und Pflege",
+        "zitat": "Senatorin für Wissenschaft, Gesundheit und Pflege: Dr. Ina Czyborra, SPD",
+        "rollenquelle": {
+          "url": "https://www.parlament-berlin.de/Abgeordnete/ina-czyborra?groupStrategy=nachnamen",
+          "sha256": "caaf21738731d4ba766f06c7f809100bb74ba05cef0100341eb2a23ee5085cef"
+        },
+        "quelle": {
+          "datei": "senat-berlin-aktuell.html",
+          "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+          "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+          "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+          "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6",
+          "bytes": 59352
+        },
+        "themen": [
+          "Wissenschaft",
+          "Gesundheit",
+          "Pflege"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Berlin (amtlich abgeleitet): Wissenschaft, Gesundheit und Pflege; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
@@ -49765,7 +50178,8 @@
         "listenmandat": true,
         "regionHinweis": "Marzahn-Hellersdorf",
         "funktionen": [
-          "Senatorin für Inneres und Sport"
+          "Senatorin für Inneres und Sport",
+          "Ressortzuständigkeit Berlin (amtlich abgeleitet): Inneres und Sport; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -49774,7 +50188,17 @@
             "url": "https://www.parlament-berlin.de/Abgeordnete/iris-spranger?groupStrategy=nachnamen",
             "abgerufenAm": "2026-09-27T12:36:40.815709+00:00",
             "sha256": "2b62b9d5a48f5a2855df7985f063504d0e822c8f430b59d464f31b192cadf4c1"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+            "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+            "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6"
           }
+        ],
+        "themen": [
+          "Inneres",
+          "Sport"
         ]
       },
       "mandatsnachweis": {
@@ -49814,9 +50238,10 @@
         "partei": "detailseiten-HTML (h1), amtliches Verzeichnis",
         "region": "dl.b-delegate-facts",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Berlin + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "parteiWert": "h1 der amtlichen Landtagsseite fuehrt Namen und Partei",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -49825,12 +50250,8 @@
       "extraktionOffen": [
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
-      "offenePunkte": [
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -49848,6 +50269,31 @@
             "zeitbeleg": "seit April 2023"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-berlin-iris-spranger",
+        "region": "Berlin",
+        "ressort": "Inneres und Sport",
+        "amtsrolle": "Senatorin für Inneres und Sport",
+        "zitat": "Senatorin für Inneres und Sport: Iris Spranger, SPD",
+        "rollenquelle": {
+          "url": "https://www.parlament-berlin.de/Abgeordnete/iris-spranger?groupStrategy=nachnamen",
+          "sha256": "2b62b9d5a48f5a2855df7985f063504d0e822c8f430b59d464f31b192cadf4c1"
+        },
+        "quelle": {
+          "datei": "senat-berlin-aktuell.html",
+          "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+          "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+          "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+          "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6",
+          "bytes": 59352
+        },
+        "themen": [
+          "Inneres",
+          "Sport"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Berlin (amtlich abgeleitet): Inneres und Sport; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
@@ -52747,7 +53193,8 @@
         "listenmandat": true,
         "regionHinweis": "Brandenburg — Landesliste CDU-Fraktion, Platz 1",
         "funktionen": [
-          "Stellvertretender Ministerpräsident und Minister für Inneres und Kommunales des Landes Brandenburg"
+          "Stellvertretender Ministerpräsident und Minister für Inneres und Kommunales des Landes Brandenburg",
+          "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Inneres und Kommunales; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -52756,7 +53203,17 @@
             "url": "https://www.landtag.brandenburg.de/de/redmann_jan_(dr.)/11249",
             "abgerufenAm": "2026-09-27T12:37:11.371894+00:00",
             "sha256": "560bb72f57c3e32c8017832f899c2f7595154f7ef6ad80c99658340c95cac455"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+            "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+            "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447"
           }
+        ],
+        "themen": [
+          "Inneres",
+          "Kommunales"
         ]
       },
       "mandatsnachweis": {
@@ -52791,10 +53248,11 @@
         "parlament": "amtliches Verzeichnis und Host",
         "region": "Landesliste-Absatz im Profilkopf",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Brandenburg + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 1999 Mitglied der CDU",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -52806,12 +53264,10 @@
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
       "offenePunkte": [
-        "Detaillierter beruflicher Regionsbezug noch zu recherchieren",
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
+        "Detaillierter beruflicher Regionsbezug noch zu recherchieren"
       ],
       "offeneFelder": [
-        "regionbezug",
-        "fachlicheAchse"
+        "regionbezug"
       ],
       "importfreigegeben": false,
       "aktiv": false,
@@ -52830,6 +53286,31 @@
             "zeitbeleg": "seit März 2026"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-brandenburg-11249",
+        "region": "Brandenburg",
+        "ressort": "Inneres und Kommunales",
+        "amtsrolle": "Stellvertretender Ministerpräsident und Minister für Inneres und Kommunales des Landes Brandenburg",
+        "zitat": "Dr. Jan Redmann Stv. Ministerpräsident und Minister des Innern und für Kommunales (MIK)",
+        "rollenquelle": {
+          "url": "https://www.landtag.brandenburg.de/de/redmann_jan_(dr.)/11249",
+          "sha256": "560bb72f57c3e32c8017832f899c2f7595154f7ef6ad80c99658340c95cac455"
+        },
+        "quelle": {
+          "datei": "kabinett-brandenburg-aktuell.html",
+          "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+          "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+          "bytes": 17016
+        },
+        "themen": [
+          "Inneres",
+          "Kommunales"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Inneres und Kommunales; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
@@ -52970,7 +53451,8 @@
         "listenmandat": true,
         "regionHinweis": "Brandenburg — Landesliste CDU-Fraktion, Platz 3",
         "funktionen": [
-          "Minister für Bildung, Jugend und Sport des Landes Brandenburg"
+          "Minister für Bildung, Jugend und Sport des Landes Brandenburg",
+          "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Bildung, Jugend und Sport; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -52979,7 +53461,18 @@
             "url": "https://www.landtag.brandenburg.de/de/hoffmann_gordon/13035",
             "abgerufenAm": "2026-09-27T12:37:12.193333+00:00",
             "sha256": "d7f5d8185722c6de1277f805fe4ec1ed4bb4b78b52e03e18b7c096b6831e522e"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+            "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+            "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447"
           }
+        ],
+        "themen": [
+          "Bildung",
+          "Jugend",
+          "Sport"
         ]
       },
       "mandatsnachweis": {
@@ -53014,10 +53507,11 @@
         "parlament": "amtliches Verzeichnis und Host",
         "region": "Landesliste-Absatz im Profilkopf",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Brandenburg + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 2004 Mitglied der CDU",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -53029,12 +53523,10 @@
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
       "offenePunkte": [
-        "Detaillierter beruflicher Regionsbezug noch zu recherchieren",
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
+        "Detaillierter beruflicher Regionsbezug noch zu recherchieren"
       ],
       "offeneFelder": [
-        "regionbezug",
-        "fachlicheAchse"
+        "regionbezug"
       ],
       "importfreigegeben": false,
       "aktiv": false,
@@ -53053,6 +53545,32 @@
             "zeitbeleg": "seit März 2026"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-brandenburg-13035",
+        "region": "Brandenburg",
+        "ressort": "Bildung, Jugend und Sport",
+        "amtsrolle": "Minister für Bildung, Jugend und Sport des Landes Brandenburg",
+        "zitat": "Gordon Hoffmann Minister für Bildung, Jugend und Sport (MBJS)",
+        "rollenquelle": {
+          "url": "https://www.landtag.brandenburg.de/de/hoffmann_gordon/13035",
+          "sha256": "d7f5d8185722c6de1277f805fe4ec1ed4bb4b78b52e03e18b7c096b6831e522e"
+        },
+        "quelle": {
+          "datei": "kabinett-brandenburg-aktuell.html",
+          "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+          "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+          "bytes": 17016
+        },
+        "themen": [
+          "Bildung",
+          "Jugend",
+          "Sport"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Bildung, Jugend und Sport; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
@@ -54137,7 +54655,8 @@
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 22 (Potsdam II)",
         "funktionen": [
-          "Minister der Finanzen des Landes Brandenburg"
+          "Minister der Finanzen des Landes Brandenburg",
+          "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Finanzen; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -54146,7 +54665,16 @@
             "url": "https://www.landtag.brandenburg.de/de/keller_daniel/24173",
             "abgerufenAm": "2026-09-27T12:37:17.175322+00:00",
             "sha256": "86e4eb295c9fab83cf6d3f450d6155d9eb7d0c54a855bcc518d182889ee2d495"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+            "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+            "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447"
           }
+        ],
+        "themen": [
+          "Finanzen"
         ]
       },
       "mandatsnachweis": {
@@ -54180,10 +54708,11 @@
         "parlament": "amtliches Verzeichnis und Host",
         "region": "Direktkandidat-Absatz im Profilkopf",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Brandenburg + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 2008 Mitglied der SPD",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -54193,12 +54722,8 @@
         "Partei separat zu belegen; nicht aus Fraktion abgeleitet",
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
-      "offenePunkte": [
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -54216,6 +54741,30 @@
             "zeitbeleg": "seit März 2026"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-brandenburg-24173",
+        "region": "Brandenburg",
+        "ressort": "Finanzen",
+        "amtsrolle": "Minister der Finanzen des Landes Brandenburg",
+        "zitat": "Daniel Keller Minister der Finanzen (MdF)",
+        "rollenquelle": {
+          "url": "https://www.landtag.brandenburg.de/de/keller_daniel/24173",
+          "sha256": "86e4eb295c9fab83cf6d3f450d6155d9eb7d0c54a855bcc518d182889ee2d495"
+        },
+        "quelle": {
+          "datei": "kabinett-brandenburg-aktuell.html",
+          "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+          "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+          "bytes": 17016
+        },
+        "themen": [
+          "Finanzen"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Finanzen; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
@@ -55567,7 +56116,8 @@
         "listenmandat": true,
         "regionHinweis": "Brandenburg — Landesliste SPD-Fraktion, Platz 12",
         "funktionen": [
-          "Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz des Landes Brandenburg"
+          "Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz des Landes Brandenburg",
+          "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -55576,7 +56126,18 @@
             "url": "https://www.landtag.brandenburg.de/de/mittelstaedt_hanka/33745",
             "abgerufenAm": "2026-09-27T12:37:23.205197+00:00",
             "sha256": "084832a3db129b779ed737a6aeb1a4ca6efea356db10cea02cf25c4e97bc6625"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+            "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+            "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447"
           }
+        ],
+        "themen": [
+          "Land- und Ernährungswirtschaft",
+          "Umwelt",
+          "Verbraucherschutz"
         ]
       },
       "mandatsnachweis": {
@@ -55611,10 +56172,11 @@
         "parlament": "amtliches Verzeichnis und Host",
         "region": "Landesliste-Absatz im Profilkopf",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Brandenburg + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 2019 Mitglied der SPD",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -55626,12 +56188,10 @@
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
       "offenePunkte": [
-        "Detaillierter beruflicher Regionsbezug noch zu recherchieren",
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
+        "Detaillierter beruflicher Regionsbezug noch zu recherchieren"
       ],
       "offeneFelder": [
-        "regionbezug",
-        "fachlicheAchse"
+        "regionbezug"
       ],
       "importfreigegeben": false,
       "aktiv": false,
@@ -55650,6 +56210,32 @@
             "zeitbeleg": "seit Dezember 2024"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-brandenburg-33745",
+        "region": "Brandenburg",
+        "ressort": "Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+        "amtsrolle": "Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz des Landes Brandenburg",
+        "zitat": "Hanka Mittelstädt Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz (MLEUV)",
+        "rollenquelle": {
+          "url": "https://www.landtag.brandenburg.de/de/mittelstaedt_hanka/33745",
+          "sha256": "084832a3db129b779ed737a6aeb1a4ca6efea356db10cea02cf25c4e97bc6625"
+        },
+        "quelle": {
+          "datei": "kabinett-brandenburg-aktuell.html",
+          "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+          "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+          "bytes": 17016
+        },
+        "themen": [
+          "Land- und Ernährungswirtschaft",
+          "Umwelt",
+          "Verbraucherschutz"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
@@ -55990,7 +56576,8 @@
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 08 (Oberhavel II)",
         "funktionen": [
-          "Minister der Justiz und für Digitalisierung des Landes Brandenburg"
+          "Minister der Justiz und für Digitalisierung des Landes Brandenburg",
+          "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Justiz und Digitalisierung; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -55999,7 +56586,17 @@
             "url": "https://www.landtag.brandenburg.de/de/grimm_benjamin_(dr.)/40591",
             "abgerufenAm": "2026-09-27T12:37:24.862053+00:00",
             "sha256": "6c1ae1fb8b3d8b6ba206cc3440e3fbbd80034410ddf03b7e1bfecae002b28c32"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+            "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+            "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447"
           }
+        ],
+        "themen": [
+          "Justiz",
+          "Digitalisierung"
         ]
       },
       "mandatsnachweis": {
@@ -56033,10 +56630,11 @@
         "parlament": "amtliches Verzeichnis und Host",
         "region": "Direktkandidat-Absatz im Profilkopf",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Brandenburg + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 2005 Mitglied der SPD",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -56046,12 +56644,8 @@
         "Partei separat zu belegen; nicht aus Fraktion abgeleitet",
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
-      "offenePunkte": [
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -56069,6 +56663,31 @@
             "zeitbeleg": "seit Dezember 2024"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-brandenburg-40591",
+        "region": "Brandenburg",
+        "ressort": "Justiz und Digitalisierung",
+        "amtsrolle": "Minister der Justiz und für Digitalisierung des Landes Brandenburg",
+        "zitat": "Dr. Benjamin Grimm Minister der Justiz und für Digitalisierung (MdJD)",
+        "rollenquelle": {
+          "url": "https://www.landtag.brandenburg.de/de/grimm_benjamin_(dr.)/40591",
+          "sha256": "6c1ae1fb8b3d8b6ba206cc3440e3fbbd80034410ddf03b7e1bfecae002b28c32"
+        },
+        "quelle": {
+          "datei": "kabinett-brandenburg-aktuell.html",
+          "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+          "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+          "bytes": 17016
+        },
+        "themen": [
+          "Justiz",
+          "Digitalisierung"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Justiz und Digitalisierung; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
@@ -56614,7 +57233,8 @@
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 21 (Potsdam I)",
         "funktionen": [
-          "Ministerin für Wissenschaft, Forschung und Kultur des Landes Brandenburg"
+          "Ministerin für Wissenschaft, Forschung und Kultur des Landes Brandenburg",
+          "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Wissenschaft, Forschung und Kultur; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -56623,7 +57243,18 @@
             "url": "https://www.landtag.brandenburg.de/de/schuele_manja_(dr.)/40597",
             "abgerufenAm": "2026-09-27T12:37:27.391139+00:00",
             "sha256": "230cbb3c738eedb4c3f981c905d90e36b3ffaf489ae0895e525a6b619934e756"
+          },
+          {
+            "art": "ressort-zustaendigkeit",
+            "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+            "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+            "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447"
           }
+        ],
+        "themen": [
+          "Wissenschaft",
+          "Forschung",
+          "Kultur"
         ]
       },
       "mandatsnachweis": {
@@ -56655,11 +57286,12 @@
         "fraktion": "amtliches aktuelles Verzeichnis",
         "parlament": "amtliches Verzeichnis und Host",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Brandenburg + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 1998 Mitglied der SPD",
         "region": "amtlicher Profilkopf (HTML), ausdrueckliche Angabe: gewählt als Direktkandidatin im Wahlkreis 21 (Potsdam I)",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -56670,12 +57302,8 @@
         "Mandatsart/Wahlkreis nicht extrahierbar",
         "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
       ],
-      "offenePunkte": [
-        "Keine Ausschusszuordnung extrahiert; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -56693,6 +57321,32 @@
             "zeitbeleg": "seit 2019"
           }
         ]
+      },
+      "ressortachsenQuittung": {
+        "datei": "docs/betrieb/ressortachsen-19-20260927.json",
+        "kennung": "landtag-brandenburg-40597",
+        "region": "Brandenburg",
+        "ressort": "Wissenschaft, Forschung und Kultur",
+        "amtsrolle": "Ministerin für Wissenschaft, Forschung und Kultur des Landes Brandenburg",
+        "zitat": "Dr. Manja Schüle Ministerin für Wissenschaft, Forschung und Kultur (MWFK)",
+        "rollenquelle": {
+          "url": "https://www.landtag.brandenburg.de/de/schuele_manja_(dr.)/40597",
+          "sha256": "230cbb3c738eedb4c3f981c905d90e36b3ffaf489ae0895e525a6b619934e756"
+        },
+        "quelle": {
+          "datei": "kabinett-brandenburg-aktuell.html",
+          "url": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.476877.de",
+          "abgerufenAm": "2026-09-27T15:43:27.317385+00:00",
+          "sha256": "2dc0771db70a94a47a6f2434ba0c1ffdc73210f663f9e332e5676a2537e88447",
+          "bytes": 17016
+        },
+        "themen": [
+          "Wissenschaft",
+          "Forschung",
+          "Kultur"
+        ],
+        "ableitungsHinweis": "Ressortzuständigkeit Brandenburg (amtlich abgeleitet): Wissenschaft, Forschung und Kultur; keine persönliche politische Position"
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },

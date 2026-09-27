@@ -36,6 +36,15 @@ Harte Grenzen dieses Werkzeugs:
     ``profil.funktionen`` angehaengt (48 belegt, 6 offen). Es entsteht kein
     ``regierungsrolle``-Schema und keine fachliche Achse; bestehende
     Gremienrollen bleiben erhalten,
+  * fuer 19 dieser 54 Profile wird ueber die vom Orchestrator gepruefte
+    Ressortquittung ``docs/betrieb/ressortachsen-19-20260927.json`` belegte
+    Ressortthemen aus dem amtlich belegten aktuellen Ressort gesetzt und damit
+    die fachliche Achse geschlossen (Importvertrag: Ausschuss ODER Thema). Zitat,
+    Person, Ressort, Region/Parlament und die amtliche Zusatzquelle (URL + Hash +
+    Abrufzeit + Datei) werden gegen die Original-HTML geprueft; die urspruenglich
+    offenen Achsen bleiben ueber die disjunkte Vereinigung mit der 54er
+    Rollenquittung deckungsgleich. Keine persoenliche Position, keine freie
+    Themen-/Zitatzuordnung, keine Ableitung aus Kanzler-/Vorsitzrollen,
   * keine erfundenen Positionen, Themen, Rollen oder Biografien; uebernommen
     wird nur, was in der amtlichen Quelle belegt ist,
   * keine AfD-Zielprofile (die Auswahl ist bereits ohne AfD; zusaetzlich wird
@@ -99,6 +108,52 @@ PROFILROLLEN_GESAMT = 54
 PROFILROLLEN_BELEGT = 48
 PROFILROLLEN_OFFEN = 6
 PROFILROLLEN_STATUS = ("belegt", "offen")
+
+# Versionierte, vom Orchestrator gepruefte Ressortquittung der 19 zuvor offenen
+# Fachachsen (9 Bund / 4 Berlin / 6 Brandenburg). Nur fuer diese 19 Profile wird
+# werden die ausdruecklichen Ressortbegriffe als Themen uebernommen, der
+# Ableitungshinweis bleibt separat in funktionen erhalten; damit
+# schliesst sich die fachliche Achse (Importvertrag: belegter Ausschuss ODER
+# Thema). Keine persoenliche politische Position, keine freie Themen- oder
+# Zitatzuordnung. Jede Kennung ist an die bestehende 54er Rollenquittung, die
+# amtliche Zusatzquelle (URL + Hash + Abrufzeit + Datei) und ein
+# zusammenhaengendes Person/Ressort-Zitat gebunden.
+RESSORTAKSEN = REPO_ROOT / "docs" / "betrieb" / "ressortachsen-19-20260927.json"
+RESSORTAKSEN_RESSOURCE = "docs/betrieb/ressortachsen-19-20260927.json"
+RESSORTAKSEN_GESAMT = 19
+RESSORTAKSEN_REGIONEN = {"Bund": 9, "Berlin": 4, "Brandenburg": 6}
+RESSORTAKSEN_STATUS = ("belegt",)
+# Region -> Parlament (konsistent zur kanonischen 500-Auswahl) und amtlicher Host
+# der Zusatzquelle. Weicht Region, Parlament oder Quellhost ab, bricht der Lauf ab.
+RESSORTAKSEN_REGION_PARLAMENT = {
+    "Bund": "bundestag",
+    "Berlin": "landtag-berlin",
+    "Brandenburg": "landtag-brandenburg",
+}
+RESSORTAKSEN_QUELLHOST = {
+    "Bund": "bundesregierung.de",
+    "Berlin": "berlin.de",
+    "Brandenburg": "brandenburg.de",
+}
+# Herkunftshinweis: Ressort + Region + Ableitungskennzeichnung.
+RESSORTAKSEN_THEMA = "Ressortzuständigkeit {region} (amtlich abgeleitet): {ressort}"
+
+def _ressort_themen(ressort):
+    # Nur ausdrueckliche Aufzaehlungen trennen. Diese zwei verbundenen Begriffe
+    # bleiben ungeteilt, damit z.B. Entwicklung kein beliebiges Fremdthema wird.
+    if ressort == "wirtschaftliche Zusammenarbeit und Entwicklung":
+        return [ressort]
+    return re.split(r", |(?<!Land-) und ", ressort)
+# Nur diese beiden amtlichen Namensfuegeworte werden beim lexikalischen
+# Ressort/Zitat-Abgleich ignoriert (amtliche Langnamen fuegen "und"/"für" ein).
+RESSORTAKSEN_VERBINDER = ("und", "für")
+# Einzige erlaubte enge lexikalische Ausnahme: amtliche Langform "Innern" fuer
+# die Kurzform "Inneres". Keine weitere Aufweichung, kein Fuzzy, kein Alias.
+RESSORTAKSEN_LEXIK = {"inneres": "innern"}
+# Amtliche Regierungs-/Ressortrollen tragen ein Ressort; reine Kanzler- oder
+# Vorsitzrollen tun das nicht und duerfen KEIN Ressort ableiten.
+RESSORTAKSEN_ROLLEN_VERBOTEN = ("kanzler", "vorsitz")
+ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
 ABRUF_LANDESPARLAMENTE = "landesprofile-170-abruf.json"
@@ -593,6 +648,7 @@ def _pruefe_profilrollen(eingang, quittung=None) -> dict:
         kennung_zu_abruf[_slug(eintrag["parlament"], abruf["amtlicheKennung"])] = abruf
     if len(kennung_zu_abruf) != len(eingang.auswahl["auswahl"]):
         raise AssemblerFehler("Kanonische Kennungen der 500 Zielprofile sind nicht eindeutig.")
+    eingang.kennung_zu_abruf = kennung_zu_abruf
 
     index = {}
     belegt = 0
@@ -625,6 +681,215 @@ def _pruefe_profilrollen(eingang, quittung=None) -> dict:
     return index
 
 
+# ── Versionierte Ressortquittung der 19 geschlossenen Fachachsen (fail closed) ─
+def _ressort_tokens(wert: str) -> list:
+    """Lexikalische Tokens eines Ressort-/Zitattextes (klein, ohne Interpunktion)."""
+    roh = unicodedata.normalize("NFC", _text(wert)).lower()
+    return re.findall(r"\w+", roh, flags=re.UNICODE)
+
+
+def _ressort_in_zitat(ressort: str, zitat: str) -> bool:
+    """Prueft lexikalisch, dass das Ressort im Zitat steht (keine Semantik).
+
+    Erlaubt ist ausschliesslich: (a) die beiden amtlichen Namensfuegeworte
+    ``und``/``für`` muessen im Zitat nicht an derselben Stelle stehen (amtliche
+    Langnamen fuegen sie ein), und (b) die eine enge lexikalische Ausnahme
+    ``Inneres`` (Kurzform) <-> ``Innern`` (amtliche Langform). Alle uebrigen
+    Ressortwoerter muessen in Reihenfolge woertlich im Zitat vorkommen; keine
+    Alias-, Kuerzel- oder Fuzzy-Erweiterung.
+    """
+    ressort_tokens = [t for t in _ressort_tokens(ressort) if t not in RESSORTAKSEN_VERBINDER]
+    zitat_tokens = _ressort_tokens(zitat)
+    if not ressort_tokens:
+        return False
+    position = 0
+    for token in ressort_tokens:
+        varianten = {token}
+        if token in RESSORTAKSEN_LEXIK:
+            varianten.add(RESSORTAKSEN_LEXIK[token])
+        treffer = None
+        for index in range(position, len(zitat_tokens)):
+            if zitat_tokens[index] in varianten:
+                treffer = index
+                break
+        if treffer is None:
+            return False
+        position = treffer + 1
+    return True
+
+
+def _quellenhost(url) -> str:
+    """Hostname einer URL ohne fuehrendes ``www.`` (leer bei ungueltiger URL)."""
+    treffer = re.match(r"^[a-zA-Z][a-zA-Z0-9+.\-]*://([^/?#]+)", str(url or ""))
+    if not treffer:
+        return ""
+    return re.sub(r"^www\.", "", treffer.group(1).lower())
+
+
+def _pruefe_ressortachsen(eingang) -> dict:
+    """Prueft die versionierte Ressortquittung der 19 Fachachsen (fail closed).
+
+    Erzwungen wird: exakt 19 eindeutige kanonische Kennungen (9 Bund / 4 Berlin /
+    6 Brandenburg), jede Kennung eine der 54 belegten Rollenquittungsprofile mit
+    passender bestehender Amtsrolle, Rollenquelle deckungsgleich mit der 54er
+    Quittung, Status ``belegt``, Region/Parlament konsistent, amtliche
+    Zusatzquelle an URL/Hash/Abrufzeit/Datei gebunden, ein zusammenhaengendes
+    woertliches Zitat mit Person UND Ressort, ausdrueckliche Ressortbegriffe sowie ein separater Ableitungshinweis. Jede Abweichung (Quelldrift,
+    fremde/unbekannte Kennung, Doppelung, fehlende Quittung, erfundenes Thema,
+    Kanzler-/Vorsitzrolle, Fehlen einer Zusatzquelle) bricht den Lauf ab.
+    """
+    quittung = getattr(eingang, "ressortachsen", None)
+    if not isinstance(quittung, dict):
+        raise AssemblerFehler(f"Ressortquittung fehlt: {RESSORTAKSEN_RESSOURCE}.")
+    ergebnisse = quittung.get("ergebnisse")
+    if not isinstance(ergebnisse, list) or len(ergebnisse) != RESSORTAKSEN_GESAMT:
+        raise AssemblerFehler(
+            f"Ressortquittung: erwartet {RESSORTAKSEN_GESAMT} Ergebnisse, "
+            f"gefunden {len(ergebnisse) if isinstance(ergebnisse, list) else 'n/a'}."
+        )
+    bilanz = quittung.get("bilanz") or {}
+    if (
+        bilanz.get("gesamt"),
+        bilanz.get("Bund"),
+        bilanz.get("Berlin"),
+        bilanz.get("Brandenburg"),
+    ) != (
+        RESSORTAKSEN_GESAMT,
+        RESSORTAKSEN_REGIONEN["Bund"],
+        RESSORTAKSEN_REGIONEN["Berlin"],
+        RESSORTAKSEN_REGIONEN["Brandenburg"],
+    ):
+        raise AssemblerFehler(f"Ressortquittung: unerwartete Bilanz {bilanz!r}.")
+
+    profilrollen = getattr(eingang, "profilrollen_by_kennung", None) or {}
+    kennung_zu_abruf = getattr(eingang, "kennung_zu_abruf", None)
+    if not kennung_zu_abruf:
+        kennung_zu_abruf = {
+            _slug(eintrag["parlament"], eingang.abruf_by_url[eintrag["url"]]["amtlicheKennung"]): eingang.abruf_by_url[eintrag["url"]]
+            for eintrag in eingang.auswahl["auswahl"]
+        }
+    zusatz = eingang.verzeichnis / ZUSATZQUELLEN
+
+    index = {}
+    region_zaehler = {"Bund": 0, "Berlin": 0, "Brandenburg": 0}
+    for ergebnis in ergebnisse:
+        kennung = str(ergebnis.get("kennung", "")).strip()
+        if not kennung:
+            raise AssemblerFehler("Ressortquittung: Eintrag ohne Kennung.")
+        if kennung in index:
+            raise AssemblerFehler(f"Ressortquittung: doppelte Kennung {kennung}.")
+        abruf = kennung_zu_abruf.get(kennung)
+        if abruf is None:
+            raise AssemblerFehler(f"Ressortquittung: Kennung {kennung} gehoert nicht zu den 500 Zielprofilen.")
+        rollen_eintrag = profilrollen.get(kennung)
+        if rollen_eintrag is None:
+            raise AssemblerFehler(f"Ressortquittung: Kennung {kennung} ist keine der 54 offenen Fachachsen.")
+        if str(rollen_eintrag.get("status")) != "belegt":
+            raise AssemblerFehler(f"Ressortquittung: Rollenquittung zu {kennung} ist nicht belegt.")
+
+        region = str(ergebnis.get("region") or "").strip()
+        if region not in RESSORTAKSEN_REGIONEN:
+            raise AssemblerFehler(f"Ressortquittung: unbekannte Region {region!r} bei {kennung}.")
+        if RESSORTAKSEN_REGION_PARLAMENT[region] != abruf.get("parlament"):
+            raise AssemblerFehler(
+                f"Ressortquittung: Region {region!r} passt nicht zum Parlament "
+                f"{abruf.get('parlament')!r} ({kennung})."
+            )
+        status = str(ergebnis.get("status") or "").strip()
+        if status not in RESSORTAKSEN_STATUS:
+            raise AssemblerFehler(f"Ressortquittung: unerwarteter Status {status!r} bei {kennung}.")
+
+        # Rollenquelle muss zur bestehenden 54er Rollenquittung passen.
+        rollen_quelle = ergebnis.get("rollenquelle") or {}
+        rollen_ref = rollen_eintrag.get("quelle") or {}
+        if rollen_quelle.get("url") != rollen_ref.get("url") or rollen_quelle.get("sha256") != rollen_ref.get("sha256"):
+            raise AssemblerFehler(f"Ressortquittung: Rollenquelle weicht von der 54er Quittung ab ({kennung}).")
+
+        # Amtsrolle muss eine bestehende belegte Rolle sein, ein echtes Ressort
+        # tragen und darf kein Kanzler-/Vorsitzamt sein.
+        amtsrolle = str(ergebnis.get("amtsrolle") or "").strip()
+        wortlaute = {str(f.get("wortlaut") or "").strip() for f in (rollen_eintrag.get("funktionen") or [])}
+        if not amtsrolle or amtsrolle not in wortlaute:
+            raise AssemblerFehler(f"Ressortquittung: Amtsrolle {amtsrolle!r} ist keine belegte Rolle bei {kennung}.")
+        rolle_norm = amtsrolle.lower()
+        if any(verboten in rolle_norm for verboten in RESSORTAKSEN_ROLLEN_VERBOTEN):
+            raise AssemblerFehler(f"Ressortquittung: Kanzler-/Vorsitzrolle traegt kein Ressort ({kennung}).")
+        if not re.search(r"\b(?:bundesminister(?:in)?|minister(?:in)?|senator(?:in)?)\s+(?:für|der|des)\b", rolle_norm):
+            raise AssemblerFehler(f"Ressortquittung: Amtsrolle {amtsrolle!r} traegt kein Ressort ({kennung}).")
+
+        # Amtliche Zusatzquelle: URL/Hash/Abrufzeit/Datei gegen Datei UND Metadaten.
+        quelle = ergebnis.get("quelle") or {}
+        datei_name = str(quelle.get("datei") or "").strip()
+        if Path(datei_name).name != datei_name or not datei_name.endswith(".html"):
+            raise AssemblerFehler(f"Ressortquittung: ungueltiger Zusatzquellen-Dateiname ({kennung}).")
+        quelle_datei = zusatz / datei_name
+        if not datei_name or not quelle_datei.is_file():
+            raise AssemblerFehler(f"Ressortquittung: Zusatzquelle fehlt lokal: {datei_name!r}.")
+        meta_pfad = quelle_datei.with_suffix(".json")
+        if not meta_pfad.is_file():
+            raise AssemblerFehler(f"Ressortquittung: Zusatzquellen-Metadaten fehlen: {meta_pfad.name!r}.")
+        meta = _lies_json(meta_pfad)
+        for feld in ("url", "finalUrl", "abgerufenAm", "sha256"):
+            if str(meta.get(feld) or "") != str(quelle.get(feld) or ""):
+                raise AssemblerFehler(f"Ressortquittung: Zusatzquellen-Metadatum {feld} weicht ab ({kennung}).")
+        if str(meta.get("datei") or "") != datei_name:
+            raise AssemblerFehler(f"Ressortquittung: Zusatzquellen-Dateiname weicht ab ({kennung}).")
+        if _sha256(quelle_datei) != str(quelle.get("sha256") or ""):
+            raise AssemblerFehler(f"Ressortquittung: Zusatzquellen-Hash weicht ab ({kennung}).")
+        if int(meta.get("bytes") or -1) != quelle_datei.stat().st_size:
+            raise AssemblerFehler(f"Ressortquittung: Zusatzquellen-Bytezahl weicht ab ({kennung}).")
+        if _quellenhost(quelle.get("url")) != RESSORTAKSEN_QUELLHOST[region]:
+            raise AssemblerFehler(
+                f"Ressortquittung: unerwarteter Quellhost {_quellenhost(quelle.get('url'))!r} "
+                f"fuer Region {region} ({kennung})."
+            )
+
+        # Zusammenhaengendes Zitat: woertlich in der Quelle UND zugleich Person/Ressort.
+        zitat = str(ergebnis.get("zitat") or "").strip()
+        quell_text = _text(quelle_datei.read_text(encoding="utf-8"))
+        if not zitat or _zitat_normalisiert(zitat) not in _zitat_normalisiert(quell_text):
+            raise AssemblerFehler(f"Ressortquittung: Zitat nicht woertlich in der Zusatzquelle ({kennung}).")
+        detail_html = (eingang.detailseiten / abruf["datei"]).read_text(encoding="utf-8")
+        h1_liste = _h1_ueberschriften(detail_html)
+        if len(h1_liste) != 1:
+            raise AssemblerFehler(f"Ressortquittung: keine eindeutige h1 fuer {kennung}.")
+        amtlicher_name = h1_liste[0].rsplit(", ", 1)[0] if abruf.get("parlament") == "landtag-berlin" and ", " in h1_liste[0] else h1_liste[0]
+        if _zitat_normalisiert(amtlicher_name) not in _zitat_normalisiert(zitat):
+            raise AssemblerFehler(f"Ressortquittung: Person {amtlicher_name!r} fehlt im Zitat ({kennung}).")
+        ressort = str(ergebnis.get("ressort") or "").strip()
+        if not ressort or not _ressort_in_zitat(ressort, zitat) or not _ressort_in_zitat(ressort, amtsrolle):
+            raise AssemblerFehler(f"Ressortquittung: Ressort {ressort!r} steht nicht im Zitat ({kennung}).")
+
+        # Ressortbegriffe und getrennter Herkunftshinweis, keine neuen Themen.
+        erwarteter_hinweis = RESSORTAKSEN_THEMA.format(region=region, ressort=ressort) + "; keine persönliche politische Position"
+        themen = ergebnis.get("themen")
+        if themen != _ressort_themen(ressort) or ergebnis.get("ableitungsHinweis") != erwarteter_hinweis:
+            raise AssemblerFehler(
+                f"Ressortquittung: Themenwortlaut weicht vom freigegebenen Muster ab ({kennung})."
+            )
+
+        region_zaehler[region] += 1
+        index[kennung] = {
+            "kennung": kennung,
+            "region": region,
+            "parlament": abruf.get("parlament"),
+            "status": status,
+            "amtsrolle": amtsrolle,
+            "ressort": ressort,
+            "zitat": zitat,
+            "themen": list(themen),
+            "ableitungsHinweis": erwarteter_hinweis,
+            "rollenquelle": rollen_quelle,
+            "quelle": quelle,
+        }
+
+    if region_zaehler != RESSORTAKSEN_REGIONEN:
+        raise AssemblerFehler(f"Ressortquittung: unerwartete Regionenbilanz {region_zaehler!r}.")
+    eingang.ressortachsen_by_kennung = index
+    eingang.ressortachsen_verwendet = set()
+    return index
+
+
 # ── Eingang laden und binden ──────────────────────────────────────────────────
 class Eingang:
     def __init__(self, verzeichnis: Path):
@@ -637,6 +902,10 @@ class Eingang:
             self.profilrollen = _lies_json(PROFILROLLEN)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Profilrollenquittung fehlt: {PROFILROLLEN_RESSOURCE}") from fehler
+        try:
+            self.ressortachsen = _lies_json(RESSORTAKSEN)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Ressortquittung fehlt: {RESSORTAKSEN_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -1243,9 +1512,65 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
     ]
 
+    # Versionierte Ressortquittung: fuer die 19 freigegebenen Fachachsen wird aus
+    # dem amtlich belegten aktuellen Ressort die ausdruecklichen Ressortbegriffe als Themen gesetzt und
+    # damit die fachliche Achse geschlossen (Ausschuss ODER Thema). Keine
+    # persoenliche Position, keine freie Themen-/Zitatzuordnung; bestehende
+    # Amtsrollen, Partei, Mandatsart, Gremien und alle anderen Felder bleiben
+    # unveraendert; funktionen erhaelt nur den Ableitungshinweis. Die Zusatzquelle steht in
+    # ``profil.offizielleQuellen`` und im Belegabschnitt ``ressortachsenQuittung``.
+    ressort_eintrag = (getattr(eingang, "ressortachsen_by_kennung", None) or {}).get(mandatsId)
+    ressort_beleg = None
+    achsen_geschlossen = ressort_eintrag is not None
+    if ressort_eintrag is not None:
+        verwendet = getattr(eingang, "ressortachsen_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        ressort_quelle = ressort_eintrag["quelle"]
+        profil["themen"] = list(ressort_eintrag["themen"])
+        hinweis = ressort_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "ressort-zustaendigkeit",
+            "url": ressort_quelle["url"],
+            "abgerufenAm": ressort_quelle["abgerufenAm"],
+            "sha256": ressort_quelle["sha256"],
+        })
+        ressort_beleg = {
+            "datei": RESSORTAKSEN_RESSOURCE,
+            "kennung": ressort_eintrag["kennung"],
+            "region": ressort_eintrag["region"],
+            "ressort": ressort_eintrag["ressort"],
+            "amtsrolle": ressort_eintrag["amtsrolle"],
+            "zitat": ressort_eintrag["zitat"],
+            "rollenquelle": {
+                "url": ressort_eintrag["rollenquelle"].get("url"),
+                "sha256": ressort_eintrag["rollenquelle"].get("sha256"),
+            },
+            "quelle": {
+                "datei": ressort_quelle.get("datei"),
+                "url": ressort_quelle.get("url"),
+                "finalUrl": ressort_quelle.get("finalUrl"),
+                "abgerufenAm": ressort_quelle.get("abgerufenAm"),
+                "sha256": ressort_quelle.get("sha256"),
+                "bytes": ressort_quelle.get("bytes"),
+            },
+            "themen": list(ressort_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
+    if ressort_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Ressortquittung {RESSORTAKSEN_RESSOURCE}: gepruefte "
+            f"Ressortbegriffe mit Herkunft aus Region {ressort_beleg['region']} + Ableitungskennzeichnung + "
+            f"amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt "
+            f"(URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)"
+        )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
         if parlament == "bundestag"
@@ -1294,6 +1619,9 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             "ausdruecklich NICHT als staendiger Ausschuss der laufenden Wahlperiode gefuehrt"
         )
 
+    if ressort_beleg is not None:
+        feldbelege["funktionen"] += "; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)"
+
     # ── Offene Punkte explizit zusammentragen ─────────────────────────────────
     offene_punkte = []
     offene_felder = []
@@ -1340,12 +1668,18 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
                 continue
             _merke("mandatsart", punkt)
             continue
-        _merke(roh_zu_feld.get(punkt), punkt)
+        feld = roh_zu_feld.get(punkt)
+        # Ein alter roher Extraktionspunkt "fachliche Achse offen" ist kein offener
+        # Punkt mehr, wenn die Achse ueber ein amtlich belegtes Ressort geschlossen
+        # wurde. Der Rohpunkt bleibt als historischer ``extraktionOffen`` erhalten.
+        if feld == "fachlicheAchse" and achsen_geschlossen:
+            continue
+        _merke(feld, punkt)
 
     # Die fachliche Achse ist erst dann offen, wenn WEDER eine ordentliche NOCH eine
     # stellvertretende belegte Ausschusszuordnung vorliegt (Import-/Validierungsvertrag
     # in lib/helmut: beide Mitgliedschaftsarten tragen die Achse, bleiben aber getrennt).
-    if not ordentliche and not stellvertretende:
+    if not ordentliche and not stellvertretende and not achsen_geschlossen:
         _merke_feld("fachlicheAchse", "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden")
     if parlament == "bundestag" and region["art"] == "offen":
         _merke_feld("mandatsart", region["offen"])
@@ -1422,6 +1756,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["mandatsartQuittung"] = mandatsart_quittung
     if rollen_beleg is not None:
         datensatz["profilrollenQuittung"] = rollen_beleg
+    if ressort_beleg is not None:
+        datensatz["ressortachsenQuittung"] = ressort_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -1434,6 +1770,7 @@ def assembliere(eingang: Eingang) -> dict:
     eingang.mandatsarten_bb = _pruefe_mandatsarten_bb(eingang)
     eingang.mandatsarten_verwendet = set()
     profilrollen = _pruefe_profilrollen(eingang)
+    ressortachsen = _pruefe_ressortachsen(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -1454,22 +1791,62 @@ def assembliere(eingang: Eingang) -> dict:
             f"Mandatsartenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_mandate)}."
         )
 
-    # Die Rollenquittung muss die 54 offenen Fachachsen DECKUNGSGLEICH abbilden:
-    # jede Kennung genau einmal verwendet, kein Eintrag fuer ein Profil mit
-    # belegter Ausschussachse, und keine offene Fachachse ohne Quittung.
+    # Die 54er Rollenquittung muss die urspruenglich offenen Fachachsen weiter
+    # DECKUNGSGLEICH abdecken: die 19 aus der geprueften Ressortquittung
+    # geschlossenen Achsen und die verbleibend offenen ergeben disjunkt genau die
+    # 54er Quittungsmenge. Keine Abschwaechung auf Teilmenge/Zahl allein.
     ungenutzte_rollen = set(profilrollen) - eingang.profilrollen_verwendet
     if ungenutzte_rollen:
         raise AssemblerFehler(
             f"Profilrollenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_rollen)}."
         )
-    offene_achsen = {d["kanonischeKennung"] for d in datensaetze if "fachlicheAchse" in d["offeneFelder"]}
-    if offene_achsen != set(profilrollen):
-        fehlend = sorted(offene_achsen - set(profilrollen))
-        fremd = sorted(set(profilrollen) - offene_achsen)
+    ungenutzte_ressorten = set(ressortachsen) - eingang.ressortachsen_verwendet
+    if ungenutzte_ressorten:
         raise AssemblerFehler(
-            "Profilrollenquittung deckt die offenen Fachachsen nicht genau ab "
-            f"(ohne Quittung: {fehlend[:5]}, nicht offen: {fremd[:5]})."
+            f"Ressortquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_ressorten)}."
         )
+    geschlossene_achsen = set(eingang.ressortachsen_verwendet)
+    if geschlossene_achsen != set(ressortachsen):
+        raise AssemblerFehler(
+            f"Ressortquittung deckt nicht genau ihre 19 Kennungen ab: "
+            f"{sorted(set(ressortachsen) ^ geschlossene_achsen)}."
+        )
+    if not geschlossene_achsen <= set(profilrollen):
+        raise AssemblerFehler(
+            "Ressortquittung enthaelt Kennungen ausserhalb der 54er Rollenquittung: "
+            f"{sorted(geschlossene_achsen - set(profilrollen))}."
+        )
+    offene_achsen = {d["kanonischeKennung"] for d in datensaetze if "fachlicheAchse" in d["offeneFelder"]}
+    if geschlossene_achsen & offene_achsen:
+        raise AssemblerFehler(
+            f"Ressortachse gleichzeitig offen und geschlossen: {sorted(geschlossene_achsen & offene_achsen)}."
+        )
+    vereinigung = offene_achsen | geschlossene_achsen
+    if vereinigung != set(profilrollen):
+        fehlend = sorted(set(profilrollen) - vereinigung)
+        fremd = sorted(vereinigung - set(profilrollen))
+        raise AssemblerFehler(
+            "Rollenquittung deckt die urspruenglich offenen Fachachsen nicht deckungsgleich ab "
+            f"(ohne Abdeckung: {fehlend[:5]}, nicht in der Quittung: {fremd[:5]})."
+        )
+
+    # Genau die 19 Ressortprofile tragen Ressortthemen, ihre fachliche Achse
+    # ist geschlossen; kein anderes Profil erhaelt erfundene Themen.
+    mit_themen = {d["kanonischeKennung"] for d in datensaetze if d["profil"].get("themen")}
+    if mit_themen != geschlossene_achsen:
+        raise AssemblerFehler(
+            f"Themen duerfen nur aus der Ressortquittung stammen: {sorted(mit_themen ^ geschlossene_achsen)}."
+        )
+    for datensatz in datensaetze:
+        if datensatz.get("ressortachsenQuittung"):
+            if "fachlicheAchse" in datensatz["offeneFelder"]:
+                raise AssemblerFehler(
+                    f"Geschlossene Ressortachse bleibt offen: {datensatz['kanonischeKennung']}."
+                )
+            if datensatz["profil"]["aktiv"] is not False or datensatz["importfreigegeben"] is not False:
+                raise AssemblerFehler(
+                    f"Ressortprofil darf nicht aktiv/importfreigegeben sein: {datensatz['kanonischeKennung']}."
+                )
 
     # Belegte sonstige Gremien duerfen NICHT in den Ausschussfeldern stehen: gegenprobe
     # ueber alle Datensaetze (fail closed, falls die Trennung je umgangen wird).
@@ -1553,6 +1930,13 @@ def assembliere(eingang: Eingang) -> dict:
                 "Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches "
                 "Zitat im personengebundenen Abschnitt gebunden)"
             ),
+            "ressortquittung": (
+                f"{RESSORTAKSEN_RESSOURCE} (vom Orchestrator geprueft; 19 zuvor offene Fachachsen aus "
+                "amtlich belegtem aktuellem Ressort geschlossen: "
+                f"{RESSORTAKSEN_REGIONEN['Bund']} Bund / {RESSORTAKSEN_REGIONEN['Berlin']} Berlin / "
+                f"{RESSORTAKSEN_REGIONEN['Brandenburg']} Brandenburg; URL + sha256 + Abrufzeit + Datei "
+                "der amtlichen Zusatzquelle und zusammenhaengendes Person/Ressort-Zitat gebunden)"
+            ),
             "sonstigeGremien": (
                 f"explizite Liste mit {len(SONSTIGE_GREMIEN)} amtlich belegten sonstigen Gremien des "
                 "Bundestages (JSON-LD memberOf mit Original-Rolle und Original-URL); Sollmenge der "
@@ -1599,6 +1983,18 @@ def assembliere(eingang: Eingang) -> dict:
                 "personengebundenen amtlichen Abschnitt gebunden (Bundestag Funktion nur m-biography__function, "
                 "Biografie nur eigener Biografiebereich; keine Navigation als Beleg)."
             ),
+            (
+                "Fuer 19 dieser 54 Profile wird ueber die vom Orchestrator gepruefte Ressortquittung "
+                f"{RESSORTAKSEN_RESSOURCE} die ausdruecklichen Ressortbegriffe als Themen gesetzt "
+                "mit getrenntem Ableitungshinweis in funktionen und damit die fachliche "
+                "Achse geschlossen. Nur die Regionen Bund/Berlin/Brandenburg sind erlaubt; jede Kennung ist "
+                "eine bereits belegte Rolle der 54er Quittung, an deren Rollenquelle, an die amtliche "
+                "Zusatzquelle (URL + sha256 + Abrufzeit + Datei) und an ein zusammenhaengendes woertliches "
+                "Person/Ressort-Zitat gebunden. Keine persoenliche politische Position, keine erfundenen "
+                "Themen, keine Ableitung aus Kanzler-/Vorsitzrollen; die disjunkte Vereinigung der 19 "
+                "geschlossenen mit den 35 verbleibend offenen Achsen ergibt weiter genau die 54er "
+                "Rollenquittung."
+            ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
         ],
@@ -1641,6 +2037,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "offen": rollen_offen,
                 "rollenVergeben": rollen_vergeben,
                 "deckungsgleichVerwendet": len(eingang.profilrollen_verwendet),
+            },
+            "ressortachsenQuittung": {
+                "datei": RESSORTAKSEN_RESSOURCE,
+                "geprueftGesamt": len(ressortachsen),
+                "nachRegion": dict(RESSORTAKSEN_REGIONEN),
+                "themenGesetzt": sum(1 for d in datensaetze if d["profil"].get("themen")),
+                "deckungsgleichVerwendet": len(eingang.ressortachsen_verwendet),
+                "geschlosseneAchsen": len(geschlossene_achsen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "offeneFelder": offene_felder,
         },

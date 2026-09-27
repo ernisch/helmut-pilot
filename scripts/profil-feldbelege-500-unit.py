@@ -451,6 +451,148 @@ if BUNDESTAG_NOURIPOUR.exists():
 else:
     print('Hinweis: Nouripour-Original-HTML lokal nicht vorhanden, Abschnittspruefung uebersprungen.')
 
+
+# ── 10 · Ressortquittung der 19 geschlossenen Fachachsen: fail closed ────────────────────
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    REGIONEN = [('Bund', 'bundestag', 'bundesregierung.de', 9),
+                ('Berlin', 'landtag-berlin', 'berlin.de', 4),
+                ('Brandenburg', 'landtag-brandenburg', 'brandenburg.de', 6)]
+
+    quittung_eintraege = []
+    profilrollen = {}
+    kennung_zu_abruf = {}
+    for region, parlament, host, anzahl in REGIONEN:
+        datei = f'{region.lower()}-quelle.html'
+        quelle_url = f'https://www.{host}/ressort-{region.lower()}'
+        zeilen = []
+        for i in range(anzahl):
+            zeilen.append((f'Person {region} {i}', f'Testressort {region} {i}',
+                           f'Minister für Testressort {region} {i}',
+                           f'Person {region} {i} Minister für Testressort {region} {i}'))
+        (zusatz / datei).write_text('<p>' + ' '.join(z[3] for z in zeilen) + '</p>', encoding='utf-8')
+        sha = m._sha256(zusatz / datei)
+        (zusatz / datei.replace('.html', '.json')).write_text(json.dumps(dict(
+            url=quelle_url, finalUrl=quelle_url, abgerufenAm='2026-09-27T15:43:00+00:00',
+            sha256=sha, bytes=(zusatz / datei).stat().st_size, datei=datei), ensure_ascii=False), encoding='utf-8')
+        for i, (name, ressort, amtsrolle, zitat) in enumerate(zeilen):
+            kennung = m._slug(parlament, f'{region.lower()}-{i}')
+            detail_datei = f'{region.lower()}-{i}.html'
+            (detail / detail_datei).write_text(f'<h1>{name}</h1>', encoding='utf-8')
+            rollen_url = f'https://www.{host}/person-{region.lower()}-{i}'
+            rollen_sha = m._sha256(detail / detail_datei)
+            kennung_zu_abruf[kennung] = dict(parlament=parlament, datei=detail_datei, url=rollen_url)
+            profilrollen[kennung] = dict(status='belegt', quelle=dict(url=rollen_url, sha256=rollen_sha),
+                                         funktionen=[dict(wortlaut=amtsrolle)])
+            quittung_eintraege.append(dict(
+                kennung=kennung, region=region, status='belegt', amtsrolle=amtsrolle,
+                rollenquelle=dict(url=rollen_url, sha256=rollen_sha, abgerufenAm='2026-09-27T12:59:00+00:00'),
+                quelle=dict(url=quelle_url, finalUrl=quelle_url, abgerufenAm='2026-09-27T15:43:00+00:00',
+                            sha256=sha, bytes=(zusatz / datei).stat().st_size, datei=datei),
+                zitat=zitat, ressort=ressort,
+                themen=[ressort],
+                ableitungsHinweis=f'Ressortzuständigkeit {region} (amtlich abgeleitet): {ressort}; keine persönliche politische Position',
+                importfreigegeben=False))
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=19, Bund=9, Berlin=4, Brandenburg=6),
+                             ergebnisse=quittung_eintraege)
+
+    def _ressort_eingang(quittung):
+        return SimpleNamespace(verzeichnis=root, detailseiten=detail, ressortachsen=quittung,
+                               profilrollen_by_kennung=profilrollen, kennung_zu_abruf=kennung_zu_abruf)
+
+    def _mit(mutation):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return _ressort_eingang(neu)
+
+    def _pruefe_mit(mutation):
+        return m._pruefe_ressortachsen(_mit(mutation))
+
+    index = m._pruefe_ressortachsen(_ressort_eingang(gueltige_quittung))
+    assert len(index) == 19, len(index)
+    assert sum(1 for e in index.values() if e['region'] == 'Bund') == 9
+    assert sum(1 for e in index.values() if e['region'] == 'Brandenburg') == 6
+    assert len(kennung_zu_abruf) == 19
+
+    # Fehlende Quittung.
+    _erwarte_fehler(lambda: m._pruefe_ressortachsen(SimpleNamespace(
+        verzeichnis=root, detailseiten=detail, ressortachsen=None,
+        profilrollen_by_kennung=profilrollen, kennung_zu_abruf=kennung_zu_abruf)), 'fehlende Ressortquittung')
+    # Falsche Bilanz.
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['bilanz'].__setitem__('Bund', 8)), 'falsche Ressortbilanz')
+    # Doppelte Kennung.
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][1].__setitem__(
+        'kennung', q['ergebnisse'][0]['kennung'])), 'doppelte Kennung')
+    # Fremdkennung ausserhalb der 500 Zielprofile.
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'kennung', 'bundestag-fremd-9999')), 'Fremdkennung (nicht in den 500 Zielprofilen)')
+    # Kennung in den 500 Zielprofilen, aber nicht in der 54er Rollenquittung.
+    kennung_zu_abruf['bundestag-nichtrolle-1'] = dict(parlament='bundestag', datei='bund-0.html',
+                                                      url='https://www.bundesregierung.de/nichtrolle')
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__('kennung', 'bundestag-nichtrolle-1')),
+                    'Kennung ausserhalb der 54er Rollenquittung')
+    kennung_zu_abruf.pop('bundestag-nichtrolle-1', None)
+    # Quelldrift: Hash, URL, fehlende Datei.
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('sha256', '0' * 64)),
+                    'Zusatzquellen-Hashdrift')
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'url', q['ergebnisse'][0]['quelle']['url'] + '-fremd')), 'Zusatzquellen-URL-Drift')
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('datei', 'fehlt.html')),
+                    'fehlende Zusatzquelle')
+    # Rollenquelle muss zur 54er Quittung passen.
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['rollenquelle'].__setitem__(
+        'url', q['ergebnisse'][0]['rollenquelle']['url'] + '-fremd')), 'Rollenquellen-Drift')
+    # Region/Parlament inkonsistent (erster Berlin-Eintrag als Bund deklariert).
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][9].__setitem__('region', 'Bund')),
+                    'Region/Parlament inkonsistent')
+    # Zitat: nicht in der Quelle, fremde Person, erfundenes Ressort.
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__('zitat', 'Voellig anderes Zitat')),
+                    'Zitat nicht woertlich in der Quelle')
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'zitat', q['ergebnisse'][1]['zitat'])), 'fremdes Person/Zitat')
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__('ressort', 'Erfundenes Ressort')),
+                    'Ressort nicht im Zitat')
+    # Erfundener/abweichender Themenwortlaut.
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'themen', ['Ressortzuständigkeit Bund (amtlich abgeleitet): Etwas anderes'])), 'erfundenes Thema')
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'themen', ['Ressortzuständigkeit Bund: Testressort Bund 0'])), 'Themenmuster unvollstaendig')
+    # Kanzler-/Vorsitzrolle traegt kein Ressort (Rolle steht in der 54er Quittung).
+    def _kanzler(neu):
+        eintrag = neu['ergebnisse'][0]
+        eintrag['amtsrolle'] = 'Bundeskanzler'
+        profilrollen[eintrag['kennung']]['funktionen'] = [dict(wortlaut='Bundeskanzler')]
+    _erwarte_fehler(lambda: _pruefe_mit(_kanzler), 'Kanzlerrolle')
+    profilrollen[quittung_eintraege[0]['kennung']]['funktionen'] = [dict(wortlaut=quittung_eintraege[0]['amtsrolle'])]
+
+    def _vorsitz(neu):
+        eintrag = neu['ergebnisse'][1]
+        eintrag['amtsrolle'] = 'Vorsitzender des Ausschusses fuer Testressort'
+        profilrollen[eintrag['kennung']]['funktionen'] = [dict(wortlaut='Vorsitzender des Ausschusses fuer Testressort')]
+    _erwarte_fehler(lambda: _pruefe_mit(_vorsitz), 'Vorsitzrolle')
+    profilrollen[quittung_eintraege[1]['kennung']]['funktionen'] = [dict(wortlaut=quittung_eintraege[1]['amtsrolle'])]
+
+    # Ein zusammenhaengendes Mehrpersonen-Zitat darf kein fremdes Ressort liefern.
+    def _fremdes_ressort(neu):
+        e, fremd = neu['ergebnisse'][:2]
+        e['zitat'] += ' ' + fremd['zitat']
+        e['ressort'] = fremd['ressort']
+        e['themen'] = fremd['themen']
+        e['ableitungsHinweis'] = fremd['ableitungsHinweis']
+    _erwarte_fehler(lambda: _pruefe_mit(_fremdes_ressort), 'fremdes Ressort aus Mehrpersonen-Zitat')
+    _erwarte_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].pop('ableitungsHinweis')), 'fehlende Ableitungskennzeichnung')
+    assert m._ressort_themen('Forschung, Technologie und Raumfahrt') == ['Forschung', 'Technologie', 'Raumfahrt']
+    assert m._ressort_themen('wirtschaftliche Zusammenarbeit und Entwicklung') == ['wirtschaftliche Zusammenarbeit und Entwicklung']
+    assert m._ressort_themen('Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz') == ['Land- und Ernährungswirtschaft', 'Umwelt', 'Verbraucherschutz']
+
+    # Gueltige Quittung nach allen Mutationen weiter akzeptiert.
+    assert len(m._pruefe_ressortachsen(_ressort_eingang(gueltige_quittung))) == 19
+
+
 print('PASS: Fraktionslosigkeit erhaelt belegte Partei; abweichender Parteienwert gesperrt; '
       'Quelldrift/Fremdkennung/Duplikat/unerwarteter Status/Konflikt und offen-bleibt-offen gesperrt.')
 print('PASS: sonstige Gremien rollengetreu aus den Ausschuessen geloest (Ordentlich/Stellvertretend '
@@ -460,3 +602,7 @@ print('PASS: sonstige Gremien rollengetreu aus den Ausschuessen geloest (Ordentl
 print('PASS: Rollenquittung — Fremdkennung/Duplikat/fehlende 54er-Quittung/falsche Bilanz/Quelldrift/'
       'erfundener Wortlaut/Zitat ausserhalb des Abschnitts/offener Eintrag mit Rolle sperren fail closed; '
       'nur der freigegebene Wortlaut wird dedupliziert an bestehende funktionen angehaengt, Gremienrolle bleibt.')
+print('PASS: Ressortquittung — fehlende Quittung/falsche Bilanz/Duplikat/Fremdkennung/Kennung ausserhalb '
+      'der 54er Rollenquittung/Quelldrift (Hash/URL/Datei)/Rollenquellen-Drift/Region-Parlament-Konflikt/'
+      'Zitat nicht in der Quelle/fremdes Person-Zitat/Ressort nicht im Zitat/erfundenes Themenmuster und '
+      'Kanzler-/Vorsitzrolle sperren fail closed; die gueltige 19er-Quittung wird unveraendert akzeptiert.')
