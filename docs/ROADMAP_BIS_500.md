@@ -1,6 +1,6 @@
 # Roadmap bis zum 500er Production Nachweis
 
-Stand: 25.09.2026
+Stand: 27.09.2026
 
 Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
@@ -28,6 +28,13 @@ der technische Tagesriegel von 6 USD je UTC Tag eingehalten wird und der jeweili
 Test vorher klar begrenzt ist.
 
 ## 1 · Eingefrorenes Produktziel
+
+**Verbindliche Klarstellung des Betreibers vom 27.09.: Bundestag UND Landtage.**
+Die individuelle Versorgung beider Mandatsebenen ist Pflicht. Der 500er Nachweis
+muss beide Ebenen enthalten; ein ausschliesslicher Bundestagstest reicht nicht.
+Notwendige Korrekturen an Landesquellen, Profilzuordnung und Ebenenpruefungen
+sind direkte Nachweisblocker, kein auf spaeter verschiebbares Nebenprojekt.
+[Testvertrag und belegte Luecken](betrieb/bundestag-landtage-testvertrag-20260927.md).
 
 Bis zum 500er Nachweis wird die Grundstruktur nicht erneut umgebaut, außer ein
 belegter schwerer Produktfehler erzwingt es.
@@ -88,6 +95,17 @@ erzählen.
 
 ## 3 · Nächste Arbeiten vor dem 500er Start
 
+**Aktueller vorgeschalteter Schritt:** Den bisherigen Platzhalterbestand durch
+einen vorab festgelegten, quellenbelegten Profil- und Pruefplan fuer Bundestag
+und Landtage ersetzen. Fuenf Bestandsprofile erhalten, fuer die495 Testabbilder
+reale oeffentliche Mandatsdaten recherchieren. Vor einem Import die genaue
+Mischung, vertretenen Landesparlamente, Parteien/Fraktionen, Rollen und Themen
+sowie Erwartungen je Profil festhalten; fehlende Unterstuetzung offen bilanzieren.
+Die bisherige4/500-Auswahl ist kein Nachweis realistischer Personalisierung und
+kein Grund, nur auf neue Nachrichten zu warten. Erst Profil-/Ebenenluecken
+abgrenzen und korrigieren, dann die frische Versorgung unter Punkt3 nachweisen.
+Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
+
 1. Die gemeinsame semantische Trennung der tatsächlich sichtbaren Texte aus
    Briefing, Lage und Radar technisch absichern und mit echten Helmut Ausgaben
    belegen. Nicht nur wortgleiche, sondern auch sinngleiche Wiederholungen
@@ -107,7 +125,9 @@ erzählen.
    Kostenreservierungen und technischer Tagesriegel gemäß Betreiberfreigabe vom26.09. 6 USD je UTC Tag.
 
 5. Profilbestand auf exakt 500 Zielprofile bereinigen und finalen rein lesenden
-   Startplan belegen. Alle 500 werden funktional gleich behandelt. Die fünf realen
+   Startplan fuer beide Mandatsebenen belegen. Ergebnisse zusaetzlich je Ebene,
+   vertretenem Landesparlament und Partei/Fraktion bilanzieren; ein Gesamtwert
+   darf keine unversorgte Teilgruppe verdecken. Alle 500 werden funktional gleich behandelt. Die fünf realen
    Bestandsprofile bleiben nur technisch vor versehentlichem Löschen geschützt.
    Zusätzliche Nichtzielprofile zuerst eindeutig identifizieren und nur dann
    entfernen. Danach: 0 aktive Profile vor Aktivierung, richtiger Production

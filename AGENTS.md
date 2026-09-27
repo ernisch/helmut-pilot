@@ -6,6 +6,26 @@ Du arbeitest als technischer Umsetzer für Helmut.
 
 Helmut ist ein politischer KI Stabschef.
 
+Helmut muss ausdruecklich fuer Bundestagsabgeordnete UND Landtagsabgeordnete
+funktionieren, einschliesslich der Landesparlamente der Stadtstaaten. Beide
+Mandatsebenen sind verbindliches Produktziel und Bestandteil des 500er Nachweises,
+keine optionale spaetere Erweiterung. Ein reiner Bundestagsnachweis ist kein
+vollstaendiger Helmut-Nachweis. Fehlende Landtagsunterstuetzung ist ein Blocker,
+kein Grund, Landtagsprofile zu Bundestagsprofilen umzudeklarieren.
+
+Der Betreiber hat dies am 27.09.2026 ausdruecklich klargestellt. Fuer den
+realistischen Test werden oeffentlich belegte Mandatsprofile realer Abgeordneter
+beider Ebenen als gekennzeichnete Testabbilder vorbereitet. Partei und Fraktion,
+Bundesland, Wahlkreis/Listeneinzug, Ausschuesse, Funktionen und belegte Themen
+muessen individuell und zur richtigen Ebene passen. Keine privaten Angaben oder
+politischen Positionen aus Parteizugehoerigkeit erfinden. Die Auswahl und die
+erwarteten Ergebnisse vor der Nachrichtenauswertung festlegen; keine Auswahl
+nach bereits passenden Nachrichten. Technische Testparteien/-themen ersetzen
+diese fachliche Abnahme nicht. Verbindlicher Umfang und Abnahmekriterien:
+[docs/betrieb/bundestag-landtage-testvertrag-20260927.md](docs/betrieb/bundestag-landtage-testvertrag-20260927.md).
+Kostenlimits, Profilschutz und das separate GO vor Aktivierung/500er Test bleiben
+unveraendert. Diese Anforderung ist noch kein Umsetzungs- oder Production-Beleg.
+
 Oberste technische Priorität ist der belastbare Production Nachweis mit exakt 500 gleichzeitig aktiven Profilen.
 
 Für Produktlogik und 500er Test werden exakt 500 Zielprofile funktional gleich behandelt. Fünf davon sind reale Bestandsprofile und bleiben technisch besonders vor versehentlichem Löschen oder Beschädigen geschützt; diese Schutzmarkierung darf keine andere Produktlogik, Priorisierung oder Ergebnisbehandlung erzeugen.
