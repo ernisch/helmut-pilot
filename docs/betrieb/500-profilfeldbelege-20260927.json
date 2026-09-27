@@ -13,6 +13,7 @@
     "mandatsartenquittung": "docs/betrieb/brandenburg-mandatsarten-20260927.json (amtliche Brandenburger Uebersicht; Landesliste fuer 4 Profile, URL + sha256 + Abrufzeit gebunden)",
     "profilrollenQuittung": "docs/betrieb/profilrollen-54-20260927.json (vom Orchestrator geprueft; 48 Rollen fuer fachlich offene Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches Zitat im personengebundenen Abschnitt gebunden)",
     "ressortquittung": "docs/betrieb/ressortachsen-19-20260927.json (vom Orchestrator geprueft; 19 zuvor offene Fachachsen aus amtlich belegtem aktuellem Ressort geschlossen: 9 Bund / 4 Berlin / 6 Brandenburg; URL + sha256 + Abrufzeit + Datei der amtlichen Zusatzquelle und zusammenhaengendes Person/Ressort-Zitat gebunden)",
+    "aufgabenquittung": "docs/betrieb/aufgabenachsen-6-20260927.json (vom Orchestrator geprueft; 6 weitere zuvor offene Fachachsen aus amtlich belegten personengebundenen Aufgabenbereichen geschlossen: Beauftragtenaufgaben (Brand/Connemann/Pawlik/Kaiser) und explizite BMAS-Abteilungszustaendigkeit (Griese IV/V, Mast II/III); Validierung im getrennten Modul scripts/profil-feldbelege-500-aufgaben.py; URL + sha256 + Abrufzeit + Datei + Bytezahl der amtlichen Zusatzquelle und woertliche Zitate im personengebundenen Aufgabenabschnitt gebunden)",
     "sonstigeGremien": "explizite Liste mit 15 amtlich belegten sonstigen Gremien des Bundestages (JSON-LD memberOf mit Original-Rolle und Original-URL); Sollmenge der staendigen Ausschuesse unveraendert aus lib/helmut/profile-readiness.resolveBundestagsausschuss",
     "eingangsverzeichnis": "/private/tmp/helmut-be-bb-start",
     "hinweis": "Detailseiten, Abrufe und Extraktionen sind lokale Arbeitsdateien ausserhalb des Repos; die Belegdatei bindet sie ueber URL und Quellhash."
@@ -31,6 +32,7 @@
     "Vier bislang offene Brandenburg-Mandatsarten sind ueber die versionierte lokale Quittung docs/betrieb/brandenburg-mandatsarten-20260927.json als Landesliste belegt (URL + Hash + Abrufzeit). Uebernommen werden NUR Mandatsart Landesliste und Region Brandenburg, NICHT Listenbeschriftung oder Listenplatz.",
     "Fuer die 54 fachlich offenen Profile werden ueber die vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json ausschliesslich die freigegebenen wortlaut-Strings dedupliziert an BESTEHENDE funktionen angehaengt (48 belegt, 6 offen). Es entsteht KEIN regierungsrolle-Schema und KEINE fachliche Achse; bestehende Gremienrollen bleiben erhalten. Jede Kennung ist an URL, Quellhash, erlaubten Status und ein woertliches Zitat im personengebundenen amtlichen Abschnitt gebunden (Bundestag Funktion nur m-biography__function, Biografie nur eigener Biografiebereich; keine Navigation als Beleg).",
     "Fuer 19 dieser 54 Profile wird ueber die vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json die ausdruecklichen Ressortbegriffe als Themen gesetzt mit getrenntem Ableitungshinweis in funktionen und damit die fachliche Achse geschlossen. Nur die Regionen Bund/Berlin/Brandenburg sind erlaubt; jede Kennung ist eine bereits belegte Rolle der 54er Quittung, an deren Rollenquelle, an die amtliche Zusatzquelle (URL + sha256 + Abrufzeit + Datei) und an ein zusammenhaengendes woertliches Person/Ressort-Zitat gebunden. Keine persoenliche politische Position, keine erfundenen Themen, keine Ableitung aus Kanzler-/Vorsitzrollen; die disjunkte Vereinigung der 19 geschlossenen mit den 35 verbleibend offenen Achsen ergibt weiter genau die 54er Rollenquittung.",
+    "Fuer 6 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte Aufgabenquittung docs/betrieb/aufgabenachsen-6-20260927.json der ausdrueckliche Themenbegriff aus einem amtlich belegten personengebundenen Aufgabenbereich gesetzt (getrennter Herkunftshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-aufgaben.py: Brand/Connemann/Pawlik nur Name UND ausdrueckliche Beauftragtenaufgabe, Themen nur innerhalb dieser Aufgabe (Connemann: Digitales ist keine Beauftragtenaufgabe); Kaiser ueber die belegte Amtsrolle und den ausdruecklichen Aufgabenabsatz; BMAS Person -> explizit genannte Abteilungsnummern -> deren Aufgabenabschnitt (Griese IV/V, Mast II/III; Mast erhaelt nie ein Griese-Thema). Jede Kennung ist eine bereits belegte Rolle der 54er Quittung, an deren Rollenquelle, an die amtliche Zusatzquelle (URL + sha256 + Abrufzeit + Datei + Bytezahl) und an woertliche Zitate im richtigen personengebundenen Aufgabenabschnitt gebunden. Keine persoenliche politische Position, keine erfundenen Themen; die disjunkte Vereinigung der 19 Ressort- mit den 6 Aufgabenachsen und den 29 verbleibend offenen ergibt weiter genau die 54er Rollenquittung.",
     "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
     "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe."
   ],
@@ -59,7 +61,7 @@
       "deckungsgleichVerwendet": 335
     },
     "mandatsartOffen": 3,
-    "fachlicheAchseOffen": 35,
+    "fachlicheAchseOffen": 29,
     "sonstigeGremien": {
       "expliziteListe": 15,
       "profileMitWeiterenGremien": 114,
@@ -89,12 +91,22 @@
       "themenGesetzt": 19,
       "deckungsgleichVerwendet": 19,
       "geschlosseneAchsen": 19,
-      "verbleibendOffeneAchsen": 35
+      "verbleibendOffeneAchsen": 29
+    },
+    "aufgabenachsenQuittung": {
+      "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
+      "geprueftGesamt": 6,
+      "nachRegion": {
+        "Bund": 6
+      },
+      "themenGesetzt": 6,
+      "deckungsgleichVerwendet": 6,
+      "geschlosseneAchsen": 6
     },
     "offeneFelder": {
       "weitereGremien": 137,
       "partei": 74,
-      "fachlicheAchse": 35,
+      "fachlicheAchse": 29,
       "mandatsart": 3,
       "wahlbezirk": 1,
       "regionbezug": 28
@@ -10034,7 +10046,8 @@
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 173: Fulda",
         "funktionen": [
-          "Parlamentarischer Staatssekretär für Bildung, Familie, Senioren, Frauen und Jugend"
+          "Parlamentarischer Staatssekretär für Bildung, Familie, Senioren, Frauen und Jugend",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragter der Bundesregierung gegen Antiziganismus und für das Leben der Sinti und Roma in Deutschland; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -10043,7 +10056,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/B/brand_michael-1043790",
             "abgerufenAm": "2026-09-27T13:00:04.095968+00:00",
             "sha256": "89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0"
+          },
+          {
+            "art": "aufgaben-zustaendigkeit",
+            "url": "https://www.bmbfsfj.bund.de/bmbfsfj/ministerium/behoerden-beauftragte-beiraete-gremien/antiziganismusbeauftragter-der-bundesregierung",
+            "abgerufenAm": "2026-09-27T16:35:53.152012+00:00",
+            "sha256": "57fc8e99eb286f9d720feb70e18f5b339a8234a01cf17cf5f7e84701b7f7f675"
           }
+        ],
+        "themen": [
+          "Antiziganismus"
         ]
       },
       "mandatsnachweis": {
@@ -10086,11 +10108,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Aufgabenquittung docs/betrieb/aufgabenachsen-6-20260927.json: gepruefte Aufgabenbegriffe mit Herkunft aus beauftragtenaufgabe der kanonischen Person Michael Brand + Ableitungskennzeichnung; Themen nur im personengebundenen amtlichen Aufgabenabschnitt belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0)",
         "parteiWert": "Seit 1993 Mitglied der CDU.",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/brand_michael-1043790 sha256 89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zur amtlichen Aufgabenbindung (konkrete Aufgabenbindung, keine persoenliche Position)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -10099,12 +10122,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -10122,6 +10141,34 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "aufgabenachsenQuittung": {
+        "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
+        "kennung": "bundestag-brand-michael-1043790",
+        "region": "Bund",
+        "bindungsart": "beauftragtenaufgabe",
+        "person": "Michael Brand",
+        "aufgabenbindung": "Beauftragter der Bundesregierung gegen Antiziganismus und für das Leben der Sinti und Roma in Deutschland",
+        "zitate": [
+          "Der parlamentarische Staatssekretär Michael Brand ist der Beauftragte der Bundesregierung gegen Antiziganismus und für das Leben der Sinti und Roma in Deutschland."
+        ],
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/B/brand_michael-1043790",
+          "sha256": "89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0",
+          "abgerufenAm": "2026-09-27T13:00:04.095968+00:00"
+        },
+        "quelle": {
+          "datei": "brand-antiziganismus-aktuell.html",
+          "url": "https://www.bmbfsfj.bund.de/bmbfsfj/ministerium/behoerden-beauftragte-beiraete-gremien/antiziganismusbeauftragter-der-bundesregierung",
+          "finalUrl": "https://www.bmbfsfj.bund.de/bmbfsfj/ministerium/behoerden-beauftragte-beiraete-gremien/antiziganismusbeauftragter-der-bundesregierung",
+          "abgerufenAm": "2026-09-27T16:35:53.152012+00:00",
+          "sha256": "57fc8e99eb286f9d720feb70e18f5b339a8234a01cf17cf5f7e84701b7f7f675",
+          "bytes": 76630
+        },
+        "themen": [
+          "Antiziganismus"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragter der Bundesregierung gegen Antiziganismus und für das Leben der Sinti und Roma in Deutschland; keine persönliche politische Position"
       }
     },
     {
@@ -11340,7 +11387,8 @@
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 025: Unterems",
         "funktionen": [
-          "Parlamentarische Staatssekretärin für Digitales und Staatsmodernisierung"
+          "Parlamentarische Staatssekretärin für Digitales und Staatsmodernisierung",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für den Mittelstand; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -11349,7 +11397,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/C/connemann_gitta-1043962",
             "abgerufenAm": "2026-09-27T13:00:09.094300+00:00",
             "sha256": "1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3"
+          },
+          {
+            "art": "aufgaben-zustaendigkeit",
+            "url": "https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/gitta-connemann",
+            "abgerufenAm": "2026-09-27T16:33:45.349152+00:00",
+            "sha256": "678f62204d463d23c2c7de398be4be85148416807495a91658db585e8d1bac1b"
           }
+        ],
+        "themen": [
+          "Mittelstand"
         ]
       },
       "mandatsnachweis": {
@@ -11392,11 +11449,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Aufgabenquittung docs/betrieb/aufgabenachsen-6-20260927.json: gepruefte Aufgabenbegriffe mit Herkunft aus beauftragtenaufgabe der kanonischen Person Gitta Connemann + Ableitungskennzeichnung; Themen nur im personengebundenen amtlichen Aufgabenabschnitt belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3)",
         "parteiWert": "Seit 1996 Mitglied der CDU",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/C/connemann_gitta-1043962 sha256 1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zur amtlichen Aufgabenbindung (konkrete Aufgabenbindung, keine persoenliche Position)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -11405,12 +11463,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -11428,6 +11482,34 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "aufgabenachsenQuittung": {
+        "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
+        "kennung": "bundestag-connemann-gitta-1043962",
+        "region": "Bund",
+        "bindungsart": "beauftragtenaufgabe",
+        "person": "Gitta Connemann",
+        "aufgabenbindung": "Beauftragte der Bundesregierung für den Mittelstand",
+        "zitate": [
+          "Gitta Connemann Parlamentarische Staatssekretärin beim Bundesminister für Digitales und Staatsmodernisierung sowie Beauftragte der Bundesregierung für den Mittelstand"
+        ],
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/C/connemann_gitta-1043962",
+          "sha256": "1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3",
+          "abgerufenAm": "2026-09-27T13:00:09.094300+00:00"
+        },
+        "quelle": {
+          "datei": "connemann-bmds-aktuell.html",
+          "url": "https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/gitta-connemann",
+          "finalUrl": "https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/gitta-connemann",
+          "abgerufenAm": "2026-09-27T16:33:45.349152+00:00",
+          "sha256": "678f62204d463d23c2c7de398be4be85148416807495a91658db585e8d1bac1b",
+          "bytes": 167084
+        },
+        "themen": [
+          "Mittelstand"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für den Mittelstand; keine persönliche politische Position"
       }
     },
     {
@@ -33037,7 +33119,8 @@
         "listenmandat": true,
         "regionHinweis": "Landesliste Nordrhein-Westfalen",
         "funktionen": [
-          "Parlamentarische Staatssekretärin für Arbeit und Soziales"
+          "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Zustaendigkeit laut BMAS-Organigramm: Abteilungen IV und V (belegte Teilmenge); keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -33046,7 +33129,19 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/G/griese_kerstin-1044602",
             "abgerufenAm": "2026-09-27T13:01:44.645466+00:00",
             "sha256": "93451fe964b7cbb9a223501b33c5405046b80be8605430cd462eea781a5ef2b3"
+          },
+          {
+            "art": "aufgaben-zustaendigkeit",
+            "url": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+            "abgerufenAm": "2026-09-27T16:34:23.222943+00:00",
+            "sha256": "cdcdb67ee24a479e69470bba5f22c1ce1fb0354e5f8438a5e302b08b955f6eab"
           }
+        ],
+        "themen": [
+          "Sozialversicherung",
+          "Alterssicherung",
+          "Teilhabe",
+          "Sozialhilfe"
         ]
       },
       "mandatsnachweis": {
@@ -33093,11 +33188,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Aufgabenquittung docs/betrieb/aufgabenachsen-6-20260927.json: gepruefte Aufgabenbegriffe mit Herkunft aus abteilungszustaendigkeit der kanonischen Person Kerstin Griese + Ableitungskennzeichnung; Themen nur im personengebundenen amtlichen Aufgabenabschnitt belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 93451fe964b7cbb9a223501b33c5405046b80be8605430cd462eea781a5ef2b3)",
         "parteiWert": "Seit 1986 Mitglied der SPD",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/G/griese_kerstin-1044602 sha256 93451fe964b7cbb9a223501b33c5405046b80be8605430cd462eea781a5ef2b3",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zur amtlichen Aufgabenbindung (konkrete Aufgabenbindung, keine persoenliche Position)",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -33107,12 +33203,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -33130,6 +33222,39 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "aufgabenachsenQuittung": {
+        "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
+        "kennung": "bundestag-griese-kerstin-1044602",
+        "region": "Bund",
+        "bindungsart": "abteilungszustaendigkeit",
+        "person": "Kerstin Griese",
+        "aufgabenbindung": "Zustaendigkeit laut BMAS-Organigramm: Abteilungen IV und V (belegte Teilmenge)",
+        "zitate": [
+          "Kerstin Griese, Parlamentarische Staatssekretärin Unterstützung der Ministerin insbesondere im Bereich der Abteilungen G, IV , V und VI b, Haushalts- und Rechnungsprüfungsausschuss",
+          "Abteilung IV Aufgabenbereiche: Sozialversicherung, Alterssicherung",
+          "Abteilung V Aufgabenbereiche: Teilhabe, Belange von Menschen mit Behinderungen, Soziale Entschädigung, Sozialhilfe"
+        ],
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/G/griese_kerstin-1044602",
+          "sha256": "93451fe964b7cbb9a223501b33c5405046b80be8605430cd462eea781a5ef2b3",
+          "abgerufenAm": "2026-09-27T13:01:44.645466+00:00"
+        },
+        "quelle": {
+          "datei": "bmas-organigramm-aktuell.html",
+          "url": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+          "finalUrl": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+          "abgerufenAm": "2026-09-27T16:34:23.222943+00:00",
+          "sha256": "cdcdb67ee24a479e69470bba5f22c1ce1fb0354e5f8438a5e302b08b955f6eab",
+          "bytes": 575325
+        },
+        "themen": [
+          "Sozialversicherung",
+          "Alterssicherung",
+          "Teilhabe",
+          "Sozialhilfe"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Zustaendigkeit laut BMAS-Organigramm: Abteilungen IV und V (belegte Teilmenge); keine persönliche politische Position"
       }
     },
     {
@@ -34525,7 +34650,8 @@
         "listenmandat": true,
         "regionHinweis": "Landesliste Thüringen",
         "funktionen": [
-          "Beauftragte der Bundesregierung für Ostdeutschland"
+          "Beauftragte der Bundesregierung für Ostdeutschland",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für Ostdeutschland; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -34534,7 +34660,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/K/kaiser_elisabeth-1045268",
             "abgerufenAm": "2026-09-27T13:01:50.798008+00:00",
             "sha256": "fbcd5c9040ac2592551f00af5a24d35061f2bd569ab6ad107003f1d3562db5a7"
+          },
+          {
+            "art": "aufgaben-zustaendigkeit",
+            "url": "https://www.ostbeauftragte.de/ostb/DE/Die-Staatsministerin/Aufgaben/aufgaben.html",
+            "abgerufenAm": "2026-09-27T16:34:23.008775+00:00",
+            "sha256": "08c2def2f0af78d523a96aebc1dd1e349a4cd578f95e9126a778e2b8582e5257"
           }
+        ],
+        "themen": [
+          "gleichwertige Lebensverhältnisse"
         ]
       },
       "mandatsnachweis": {
@@ -34581,11 +34716,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Aufgabenquittung docs/betrieb/aufgabenachsen-6-20260927.json: gepruefte Aufgabenbegriffe mit Herkunft aus beauftragtenaufgabe der kanonischen Person Elisabeth Kaiser + Ableitungskennzeichnung; Themen nur im personengebundenen amtlichen Aufgabenabschnitt belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash fbcd5c9040ac2592551f00af5a24d35061f2bd569ab6ad107003f1d3562db5a7)",
         "parteiWert": "Vorsitzende des SPD-Kreisverbandes Gera",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/kaiser_elisabeth-1045268 sha256 fbcd5c9040ac2592551f00af5a24d35061f2bd569ab6ad107003f1d3562db5a7",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zur amtlichen Aufgabenbindung (konkrete Aufgabenbindung, keine persoenliche Position)",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -34595,12 +34731,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -34618,6 +34750,37 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "aufgabenachsenQuittung": {
+        "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
+        "kennung": "bundestag-kaiser-elisabeth-1045268",
+        "region": "Bund",
+        "bindungsart": "beauftragtenaufgabe",
+        "person": "Elisabeth Kaiser",
+        "aufgabenbindung": "Beauftragte der Bundesregierung für Ostdeutschland",
+        "zitate": [
+          "Aufgaben der Ostbeauftragten",
+          "Staatsministerin Elisabeth Kaiser gemeinsam mit Bundesfinanzminister Lars Klingbeil",
+          "Unsere Ziele sind gleichwertige Lebensverhältnisse in ganz Deutschland.",
+          "Mehr Wachstum in Ostdeutschland"
+        ],
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/K/kaiser_elisabeth-1045268",
+          "sha256": "fbcd5c9040ac2592551f00af5a24d35061f2bd569ab6ad107003f1d3562db5a7",
+          "abgerufenAm": "2026-09-27T13:01:50.798008+00:00"
+        },
+        "quelle": {
+          "datei": "kaiser-ostbeauftragte-aufgaben.html",
+          "url": "https://www.ostbeauftragte.de/ostb/DE/Die-Staatsministerin/Aufgaben/aufgaben.html",
+          "finalUrl": "https://www.ostbeauftragte.de/ostb/DE/Die-Staatsministerin/Aufgaben/aufgaben.html",
+          "abgerufenAm": "2026-09-27T16:34:23.008775+00:00",
+          "sha256": "08c2def2f0af78d523a96aebc1dd1e349a4cd578f95e9126a778e2b8582e5257",
+          "bytes": 131842
+        },
+        "themen": [
+          "gleichwertige Lebensverhältnisse"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für Ostdeutschland; keine persönliche politische Position"
       }
     },
     {
@@ -37028,7 +37191,8 @@
         "listenmandat": true,
         "regionHinweis": "Landesliste Baden-Württemberg",
         "funktionen": [
-          "Parlamentarische Staatssekretärin für Arbeit und Soziales"
+          "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Zustaendigkeit laut BMAS-Organigramm: Abteilungen II und III (belegte Teilmenge); keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -37037,7 +37201,18 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/M/mast_katja-1046000",
             "abgerufenAm": "2026-09-27T13:02:00.435425+00:00",
             "sha256": "e35a4462ecd032bb24ed798c48f564f051bb065aa33262c6d58ee8c12b473714"
+          },
+          {
+            "art": "aufgaben-zustaendigkeit",
+            "url": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+            "abgerufenAm": "2026-09-27T16:34:23.222943+00:00",
+            "sha256": "cdcdb67ee24a479e69470bba5f22c1ce1fb0354e5f8438a5e302b08b955f6eab"
           }
+        ],
+        "themen": [
+          "Arbeitsmarktpolitik",
+          "Arbeitsrecht",
+          "Arbeitsschutz"
         ]
       },
       "mandatsnachweis": {
@@ -37084,11 +37259,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Aufgabenquittung docs/betrieb/aufgabenachsen-6-20260927.json: gepruefte Aufgabenbegriffe mit Herkunft aus abteilungszustaendigkeit der kanonischen Person Katja Mast + Ableitungskennzeichnung; Themen nur im personengebundenen amtlichen Aufgabenabschnitt belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash e35a4462ecd032bb24ed798c48f564f051bb065aa33262c6d58ee8c12b473714)",
         "parteiWert": "Mitglied der SPD seit 1994",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/M/mast_katja-1046000 sha256 e35a4462ecd032bb24ed798c48f564f051bb065aa33262c6d58ee8c12b473714",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zur amtlichen Aufgabenbindung (konkrete Aufgabenbindung, keine persoenliche Position)",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -37098,12 +37274,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -37121,6 +37293,38 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "aufgabenachsenQuittung": {
+        "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
+        "kennung": "bundestag-mast-katja-1046000",
+        "region": "Bund",
+        "bindungsart": "abteilungszustaendigkeit",
+        "person": "Katja Mast",
+        "aufgabenbindung": "Zustaendigkeit laut BMAS-Organigramm: Abteilungen II und III (belegte Teilmenge)",
+        "zitate": [
+          "Katja Mast, Parlamentarische Staatssekretärin Unterstützung der Ministerin insbesondere im Bereich der Abteilungen D , I , II , III , VI a und Gruppe EF",
+          "Abteilung II Aufgabenbereiche: Arbeitsmarktpolitik, Grundsicherung für Arbeitsuchende, Arbeitslosenversicherung, Bundesagentur für Arbeit",
+          "Abteilung III Aufgabenbereiche: Arbeitsrecht, Arbeitsschutz"
+        ],
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/M/mast_katja-1046000",
+          "sha256": "e35a4462ecd032bb24ed798c48f564f051bb065aa33262c6d58ee8c12b473714",
+          "abgerufenAm": "2026-09-27T13:02:00.435425+00:00"
+        },
+        "quelle": {
+          "datei": "bmas-organigramm-aktuell.html",
+          "url": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+          "finalUrl": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+          "abgerufenAm": "2026-09-27T16:34:23.222943+00:00",
+          "sha256": "cdcdb67ee24a479e69470bba5f22c1ce1fb0354e5f8438a5e302b08b955f6eab",
+          "bytes": 575325
+        },
+        "themen": [
+          "Arbeitsmarktpolitik",
+          "Arbeitsrecht",
+          "Arbeitsschutz"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Zustaendigkeit laut BMAS-Organigramm: Abteilungen II und III (belegte Teilmenge); keine persönliche politische Position"
       }
     },
     {
@@ -38444,7 +38648,8 @@
         "listenmandat": true,
         "regionHinweis": "Landesliste Hessen",
         "funktionen": [
-          "Staatsministerin und Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration"
+          "Staatsministerin und Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration sowie Beauftragte der Bundesregierung für Antirassismus; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -38453,7 +38658,19 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/P/pawlik_natalie-1046500",
             "abgerufenAm": "2026-09-27T13:02:06.343104+00:00",
             "sha256": "ac90fb0243ac6c470d85d6452c999c72e363900f9fcb88f0579b5bf9d3b6c349"
+          },
+          {
+            "art": "aufgaben-zustaendigkeit",
+            "url": "https://www.integrationsbeauftragte.de/staatsministerin",
+            "abgerufenAm": "2026-09-27T16:34:23.360143+00:00",
+            "sha256": "ab314082554aabe8e8cd839fcf98d3cc1ad7e8791f4c0a71abcba8d5e6307490"
           }
+        ],
+        "themen": [
+          "Migration",
+          "Flüchtlinge",
+          "Integration",
+          "Antirassismus"
         ]
       },
       "mandatsnachweis": {
@@ -38500,11 +38717,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Aufgabenquittung docs/betrieb/aufgabenachsen-6-20260927.json: gepruefte Aufgabenbegriffe mit Herkunft aus beauftragtenaufgabe der kanonischen Person Natalie Pawlik + Ableitungskennzeichnung; Themen nur im personengebundenen amtlichen Aufgabenabschnitt belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash ac90fb0243ac6c470d85d6452c999c72e363900f9fcb88f0579b5bf9d3b6c349)",
         "parteiWert": "seit 2018 stellvertretende Vorsitzende der SPD Wetterau",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/P/pawlik_natalie-1046500 sha256 ac90fb0243ac6c470d85d6452c999c72e363900f9fcb88f0579b5bf9d3b6c349",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zur amtlichen Aufgabenbindung (konkrete Aufgabenbindung, keine persoenliche Position)",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -38514,12 +38732,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -38537,6 +38751,37 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "aufgabenachsenQuittung": {
+        "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
+        "kennung": "bundestag-pawlik-natalie-1046500",
+        "region": "Bund",
+        "bindungsart": "beauftragtenaufgabe",
+        "person": "Natalie Pawlik",
+        "aufgabenbindung": "Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration sowie Beauftragte der Bundesregierung für Antirassismus",
+        "zitate": [
+          "Staatsministerin Natalie Pawlik, Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration zugleich Beauftragte der Bundesregierung für Antirassismus"
+        ],
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/P/pawlik_natalie-1046500",
+          "sha256": "ac90fb0243ac6c470d85d6452c999c72e363900f9fcb88f0579b5bf9d3b6c349",
+          "abgerufenAm": "2026-09-27T13:02:06.343104+00:00"
+        },
+        "quelle": {
+          "datei": "pawlik-integrationsbeauftragte-aktuell.html",
+          "url": "https://www.integrationsbeauftragte.de/staatsministerin",
+          "finalUrl": "https://www.integrationsbeauftragte.de/staatsministerin",
+          "abgerufenAm": "2026-09-27T16:34:23.360143+00:00",
+          "sha256": "ab314082554aabe8e8cd839fcf98d3cc1ad7e8791f4c0a71abcba8d5e6307490",
+          "bytes": 95281
+        },
+        "themen": [
+          "Migration",
+          "Flüchtlinge",
+          "Integration",
+          "Antirassismus"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration sowie Beauftragte der Bundesregierung für Antirassismus; keine persönliche politische Position"
       }
     },
     {

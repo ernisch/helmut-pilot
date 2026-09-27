@@ -1,0 +1,238 @@
+{
+  "version": 1,
+  "datum": "2026-09-27",
+  "zweck": "Roadmap §3: 6 der 54 urspruenglich offenen fachlichen Achsen aus amtlich belegten personengebundenen Aufgabenbereichen (Beauftragtenaufgaben und explizite BMAS-Abteilungszustaendigkeit); begrenzte gepruefte Ableitung.",
+  "pruefung": "Orchestrator: jede Zusatzquelle an URL/Hash/Abrufzeit/Bytezahl/Datei gebunden und gegen das Original geprueft; Aufgaben- und Themenzitate woertlich im Aufgabenbereich, nicht aus Navigation, Skript oder Bildunterschrift. Kaisers Bildunterschrift belegt nur die Person; Aufgabenrolle und Aufgabenabsatz sind separat belegt. Kanonischer Personenname, Abteilungen und Quellen-Bytezahl wurden mit negativen Tauschfaellen nachgeprueft. Brand/Connemann/Pawlik: Name UND ausdrueckliche Beauftragtenaufgabe; Themen nur innerhalb dieser Aufgabe, nicht aus allgemeiner Ministeriumszugehoerigkeit. Kaiser: bereits belegte Amtsrolle der 54er Rollenquittung plus amtliche Aufgaben-Seite derselben Amtsinhaberin und expliziter Aufgabenabsatz. BMAS: Person -> explizit genannte Abteilungsnummern -> deren Aufgabenabschnitt, keine Vermischung Griese/Mast. Eintraege duerfen typisierte Bindungsart/Abteilungsnummern/Personennamen zur maschinellen Pruefung tragen; keine neuen Tatsachen, Themen oder Zitate.",
+  "quellvorlage": "/private/tmp/helmut-aufgabenachsen-6-geprueft.json",
+  "bilanz": {
+    "gesamt": 6,
+    "Bund": 6,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-brand-michael-1043790",
+      "region": "Bund",
+      "status": "belegt",
+      "bindungsart": "beauftragtenaufgabe",
+      "person": "Michael Brand",
+      "personImZitat": true,
+      "aufgabenbindung": "Beauftragter der Bundesregierung gegen Antiziganismus und für das Leben der Sinti und Roma in Deutschland",
+      "personbeleg": "Der parlamentarische Staatssekretär Michael Brand ist der Beauftragte der Bundesregierung gegen Antiziganismus und für das Leben der Sinti und Roma in Deutschland.",
+      "themenzitat": "Der parlamentarische Staatssekretär Michael Brand ist der Beauftragte der Bundesregierung gegen Antiziganismus und für das Leben der Sinti und Roma in Deutschland.",
+      "zitate": [
+        "Der parlamentarische Staatssekretär Michael Brand ist der Beauftragte der Bundesregierung gegen Antiziganismus und für das Leben der Sinti und Roma in Deutschland."
+      ],
+      "themen": [
+        "Antiziganismus"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragter der Bundesregierung gegen Antiziganismus und für das Leben der Sinti und Roma in Deutschland; keine persönliche politische Position",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/brand_michael-1043790",
+        "sha256": "89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0",
+        "abgerufenAm": "2026-09-27T13:00:04.095968+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bmbfsfj.bund.de/bmbfsfj/ministerium/behoerden-beauftragte-beiraete-gremien/antiziganismusbeauftragter-der-bundesregierung",
+        "finalUrl": "https://www.bmbfsfj.bund.de/bmbfsfj/ministerium/behoerden-beauftragte-beiraete-gremien/antiziganismusbeauftragter-der-bundesregierung",
+        "abgerufenAm": "2026-09-27T16:35:53.152012+00:00",
+        "sha256": "57fc8e99eb286f9d720feb70e18f5b339a8234a01cf17cf5f7e84701b7f7f675",
+        "bytes": 76630,
+        "datei": "brand-antiziganismus-aktuell.html"
+      },
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-connemann-gitta-1043962",
+      "region": "Bund",
+      "status": "belegt",
+      "bindungsart": "beauftragtenaufgabe",
+      "person": "Gitta Connemann",
+      "personImZitat": true,
+      "aufgabenbindung": "Beauftragte der Bundesregierung für den Mittelstand",
+      "personbeleg": "Gitta Connemann Parlamentarische Staatssekretärin beim Bundesminister für Digitales und Staatsmodernisierung sowie Beauftragte der Bundesregierung für den Mittelstand",
+      "themenzitat": "Gitta Connemann Parlamentarische Staatssekretärin beim Bundesminister für Digitales und Staatsmodernisierung sowie Beauftragte der Bundesregierung für den Mittelstand",
+      "zitate": [
+        "Gitta Connemann Parlamentarische Staatssekretärin beim Bundesminister für Digitales und Staatsmodernisierung sowie Beauftragte der Bundesregierung für den Mittelstand"
+      ],
+      "themen": [
+        "Mittelstand"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für den Mittelstand; keine persönliche politische Position",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/C/connemann_gitta-1043962",
+        "sha256": "1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3",
+        "abgerufenAm": "2026-09-27T13:00:09.094300+00:00"
+      },
+      "quelle": {
+        "url": "https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/gitta-connemann",
+        "finalUrl": "https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/gitta-connemann",
+        "abgerufenAm": "2026-09-27T16:33:45.349152+00:00",
+        "sha256": "678f62204d463d23c2c7de398be4be85148416807495a91658db585e8d1bac1b",
+        "bytes": 167084,
+        "datei": "connemann-bmds-aktuell.html"
+      },
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-pawlik-natalie-1046500",
+      "region": "Bund",
+      "status": "belegt",
+      "bindungsart": "beauftragtenaufgabe",
+      "person": "Natalie Pawlik",
+      "personImZitat": true,
+      "aufgabenbindung": "Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration sowie Beauftragte der Bundesregierung für Antirassismus",
+      "personbeleg": "Staatsministerin Natalie Pawlik, Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration zugleich Beauftragte der Bundesregierung für Antirassismus",
+      "themenzitat": "Staatsministerin Natalie Pawlik, Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration zugleich Beauftragte der Bundesregierung für Antirassismus",
+      "zitate": [
+        "Staatsministerin Natalie Pawlik, Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration zugleich Beauftragte der Bundesregierung für Antirassismus"
+      ],
+      "themen": [
+        "Migration",
+        "Flüchtlinge",
+        "Integration",
+        "Antirassismus"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration sowie Beauftragte der Bundesregierung für Antirassismus; keine persönliche politische Position",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/pawlik_natalie-1046500",
+        "sha256": "ac90fb0243ac6c470d85d6452c999c72e363900f9fcb88f0579b5bf9d3b6c349",
+        "abgerufenAm": "2026-09-27T13:02:06.343104+00:00"
+      },
+      "quelle": {
+        "url": "https://www.integrationsbeauftragte.de/staatsministerin",
+        "finalUrl": "https://www.integrationsbeauftragte.de/staatsministerin",
+        "abgerufenAm": "2026-09-27T16:34:23.360143+00:00",
+        "sha256": "ab314082554aabe8e8cd839fcf98d3cc1ad7e8791f4c0a71abcba8d5e6307490",
+        "bytes": 95281,
+        "datei": "pawlik-integrationsbeauftragte-aktuell.html"
+      },
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-kaiser-elisabeth-1045268",
+      "region": "Bund",
+      "status": "belegt",
+      "bindungsart": "beauftragtenaufgabe",
+      "person": "Elisabeth Kaiser",
+      "personImZitat": false,
+      "aufgabenabsatz": "Aufgaben der Ostbeauftragten",
+      "aufgabenbindung": "Beauftragte der Bundesregierung für Ostdeutschland",
+      "personbeleg": "Staatsministerin Elisabeth Kaiser gemeinsam mit Bundesfinanzminister Lars Klingbeil",
+      "themenzitat": "Unsere Ziele sind gleichwertige Lebensverhältnisse in ganz Deutschland.",
+      "zitate": [
+        "Aufgaben der Ostbeauftragten",
+        "Staatsministerin Elisabeth Kaiser gemeinsam mit Bundesfinanzminister Lars Klingbeil",
+        "Unsere Ziele sind gleichwertige Lebensverhältnisse in ganz Deutschland.",
+        "Mehr Wachstum in Ostdeutschland"
+      ],
+      "themen": [
+        "gleichwertige Lebensverhältnisse"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Beauftragte der Bundesregierung für Ostdeutschland; keine persönliche politische Position",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kaiser_elisabeth-1045268",
+        "sha256": "fbcd5c9040ac2592551f00af5a24d35061f2bd569ab6ad107003f1d3562db5a7",
+        "abgerufenAm": "2026-09-27T13:01:50.798008+00:00"
+      },
+      "quelle": {
+        "url": "https://www.ostbeauftragte.de/ostb/DE/Die-Staatsministerin/Aufgaben/aufgaben.html",
+        "finalUrl": "https://www.ostbeauftragte.de/ostb/DE/Die-Staatsministerin/Aufgaben/aufgaben.html",
+        "abgerufenAm": "2026-09-27T16:34:23.008775+00:00",
+        "sha256": "08c2def2f0af78d523a96aebc1dd1e349a4cd578f95e9126a778e2b8582e5257",
+        "bytes": 131842,
+        "datei": "kaiser-ostbeauftragte-aufgaben.html"
+      },
+      "importfreigegeben": false,
+      "themenabsatz": "Mehr Wachstum in Ostdeutschland"
+    },
+    {
+      "kennung": "bundestag-griese-kerstin-1044602",
+      "region": "Bund",
+      "status": "belegt",
+      "bindungsart": "abteilungszustaendigkeit",
+      "person": "Kerstin Griese",
+      "personImZitat": true,
+      "aufgabenbindung": "Zustaendigkeit laut BMAS-Organigramm: Abteilungen IV und V (belegte Teilmenge)",
+      "personbeleg": "Kerstin Griese, Parlamentarische Staatssekretärin Unterstützung der Ministerin insbesondere im Bereich der Abteilungen G, IV , V und VI b, Haushalts- und Rechnungsprüfungsausschuss",
+      "abteilungsnummern": [
+        "IV",
+        "V"
+      ],
+      "abteilungszitate": [
+        "Abteilung IV Aufgabenbereiche: Sozialversicherung, Alterssicherung",
+        "Abteilung V Aufgabenbereiche: Teilhabe, Belange von Menschen mit Behinderungen, Soziale Entschädigung, Sozialhilfe"
+      ],
+      "zitate": [
+        "Kerstin Griese, Parlamentarische Staatssekretärin Unterstützung der Ministerin insbesondere im Bereich der Abteilungen G, IV , V und VI b, Haushalts- und Rechnungsprüfungsausschuss",
+        "Abteilung IV Aufgabenbereiche: Sozialversicherung, Alterssicherung",
+        "Abteilung V Aufgabenbereiche: Teilhabe, Belange von Menschen mit Behinderungen, Soziale Entschädigung, Sozialhilfe"
+      ],
+      "themen": [
+        "Sozialversicherung",
+        "Alterssicherung",
+        "Teilhabe",
+        "Sozialhilfe"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Zustaendigkeit laut BMAS-Organigramm: Abteilungen IV und V (belegte Teilmenge); keine persönliche politische Position",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/G/griese_kerstin-1044602",
+        "sha256": "93451fe964b7cbb9a223501b33c5405046b80be8605430cd462eea781a5ef2b3",
+        "abgerufenAm": "2026-09-27T13:01:44.645466+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+        "finalUrl": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+        "abgerufenAm": "2026-09-27T16:34:23.222943+00:00",
+        "sha256": "cdcdb67ee24a479e69470bba5f22c1ce1fb0354e5f8438a5e302b08b955f6eab",
+        "bytes": 575325,
+        "datei": "bmas-organigramm-aktuell.html"
+      },
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-mast-katja-1046000",
+      "region": "Bund",
+      "status": "belegt",
+      "bindungsart": "abteilungszustaendigkeit",
+      "person": "Katja Mast",
+      "personImZitat": true,
+      "aufgabenbindung": "Zustaendigkeit laut BMAS-Organigramm: Abteilungen II und III (belegte Teilmenge)",
+      "personbeleg": "Katja Mast, Parlamentarische Staatssekretärin Unterstützung der Ministerin insbesondere im Bereich der Abteilungen D , I , II , III , VI a und Gruppe EF",
+      "abteilungsnummern": [
+        "II",
+        "III"
+      ],
+      "abteilungszitate": [
+        "Abteilung II Aufgabenbereiche: Arbeitsmarktpolitik, Grundsicherung für Arbeitsuchende, Arbeitslosenversicherung, Bundesagentur für Arbeit",
+        "Abteilung III Aufgabenbereiche: Arbeitsrecht, Arbeitsschutz"
+      ],
+      "zitate": [
+        "Katja Mast, Parlamentarische Staatssekretärin Unterstützung der Ministerin insbesondere im Bereich der Abteilungen D , I , II , III , VI a und Gruppe EF",
+        "Abteilung II Aufgabenbereiche: Arbeitsmarktpolitik, Grundsicherung für Arbeitsuchende, Arbeitslosenversicherung, Bundesagentur für Arbeit",
+        "Abteilung III Aufgabenbereiche: Arbeitsrecht, Arbeitsschutz"
+      ],
+      "themen": [
+        "Arbeitsmarktpolitik",
+        "Arbeitsrecht",
+        "Arbeitsschutz"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Zustaendigkeit laut BMAS-Organigramm: Abteilungen II und III (belegte Teilmenge); keine persönliche politische Position",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/mast_katja-1046000",
+        "sha256": "e35a4462ecd032bb24ed798c48f564f051bb065aa33262c6d58ee8c12b473714",
+        "abgerufenAm": "2026-09-27T13:02:00.435425+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+        "finalUrl": "https://www.bmas.de/DE/Ministerium/organigramm.html",
+        "abgerufenAm": "2026-09-27T16:34:23.222943+00:00",
+        "sha256": "cdcdb67ee24a479e69470bba5f22c1ce1fb0354e5f8438a5e302b08b955f6eab",
+        "bytes": 575325,
+        "datei": "bmas-organigramm-aktuell.html"
+      },
+      "importfreigegeben": false
+    }
+  ]
+}

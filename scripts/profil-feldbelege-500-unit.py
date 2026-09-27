@@ -606,3 +606,246 @@ print('PASS: Ressortquittung — fehlende Quittung/falsche Bilanz/Duplikat/Fremd
       'der 54er Rollenquittung/Quelldrift (Hash/URL/Datei)/Rollenquellen-Drift/Region-Parlament-Konflikt/'
       'Zitat nicht in der Quelle/fremdes Person-Zitat/Ressort nicht im Zitat/erfundenes Themenmuster und '
       'Kanzler-/Vorsitzrolle sperren fail closed; die gueltige 19er-Quittung wird unveraendert akzeptiert.')
+
+
+# ── 11 · Aufgabenquittung der 6 geschlossenen Fachachsen (getrenntes Modul): fail closed ──
+am_spec = importlib.util.spec_from_file_location(
+    'aufgaben', Path(__file__).with_name('profil-feldbelege-500-aufgaben.py'))
+am = importlib.util.module_from_spec(am_spec)
+am_spec.loader.exec_module(am)
+
+
+def _erwarte_aufgaben_fehler(fn, was):
+    try:
+        fn()
+    except am.AufgabenachsenFehler:
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+
+    def _quelle(schluessel, host, datei, html):
+        (zusatz / datei).write_text(html, encoding='utf-8')
+        url = f'https://www.{host}/test-{schluessel}-quelle'
+        sha = am._sha256(zusatz / datei)
+        bytes_ = (zusatz / datei).stat().st_size
+        (zusatz / datei.replace('.html', '.json')).write_text(json.dumps(dict(
+            url=url, finalUrl=url, abgerufenAm='2026-09-27T16:34:00+00:00', sha256=sha,
+            bytes=bytes_, datei=datei), ensure_ascii=False), encoding='utf-8')
+        return dict(url=url, finalUrl=url, abgerufenAm='2026-09-27T16:34:00+00:00',
+                    sha256=sha, bytes=bytes_, datei=datei)
+
+    # Quelle A: personengebundene Beauftragtenaufgabe (Name UND Aufgabe im Zitat).
+    zitat_a = 'Person A ist der Beauftragte der Bundesregierung gegen Testantiziganismus.'
+    quelle_a = _quelle('a', 'bmbfsfj.bund.de', 'a.html', f'<p>{zitat_a}</p>')
+    # Quelle B: Ministeriumsrolle traegt einen Fremdbereich, Beauftragtenaufgabe den Mittelstand.
+    zitat_b = ('Person B Parlamentarische Staatssekretärin beim Bundesminister für Fremdbereich '
+               'sowie Beauftragte der Bundesregierung für Testmittelstand')
+    quelle_b = _quelle('b', 'bmds.bund.de', 'b.html', f'<p>{zitat_b}</p>')
+    # Quelle C: Amts-Seite mit ausdruecklichem Aufgabenabsatz; Person nur in der Bildunterschrift.
+    zitat_c_kopf = 'Aufgaben der Testbeauftragten'
+    zitat_c_person = 'Person C Testbeauftragte'
+    zitat_c_ziel = 'Unsere Ziele sind gleichwertige Testverhältnisse.'
+    c_html = (f'<h2>{zitat_c_kopf}</h2><p>{zitat_c_ziel}</p>'
+              f'<figcaption>{zitat_c_person}</figcaption>')
+    quelle_c = _quelle('c', 'ostbeauftragte.de', 'c.html', c_html)
+    # Nur Bildunterschrift/Navigation traegt den Zielsatz (Negativfall).
+    c_nav_html = (f'<h2>{zitat_c_kopf}</h2><nav>{zitat_c_ziel}</nav>'
+                  f'<figcaption>{zitat_c_person}</figcaption>')
+    quelle_c_nav = _quelle('c-nav', 'ostbeauftragte.de', 'c-nav.html', c_nav_html)
+    # Quelle D/E: gemeinsame BMAS-Seite (Person -> Abteilungsnummer -> Aufgabenabschnitt).
+    zitat_d_person = ('Person D, Parlamentarische Staatssekretärin Unterstützung der Ministerin '
+                      'insbesondere im Bereich der Abteilungen G, IV , V und VI b, Haushalts- und '
+                      'Rechnungsprüfungsausschuss')
+    zitat_e_person = ('Person E, Parlamentarische Staatssekretärin Unterstützung der Ministerin '
+                      'insbesondere im Bereich der Abteilungen D , I , II , III , VI a und Gruppe EF')
+    zitat_d4 = 'Abteilung IV Aufgabenbereiche: Sozialversicherungstest, Alterssicherungstest'
+    zitat_d5 = 'Abteilung V Aufgabenbereiche: Teilhabetest, Sozialhilfetest'
+    zitat_e2 = 'Abteilung II Aufgabenbereiche: Arbeitsmarktpolitiktest, Grundsicherungstest'
+    zitat_e3 = 'Abteilung III Aufgabenbereiche: Arbeitsrechttest, Arbeitsschutztest'
+    d_html = '<p>' + '</p><p>'.join([zitat_d_person, zitat_e_person, zitat_d4, zitat_d5, zitat_e2, zitat_e3]) + '</p>'
+    quelle_d = _quelle('d', 'bmas.de', 'd.html', d_html)
+    # Quelle F: zwei Beauftragtenaufgaben mit amtlicher Konjunktion 'zugleich'/'sowie'.
+    zitat_f = ('Person F Beauftragte der Bundesregierung für Migrationstest zugleich Beauftragte '
+               'der Bundesregierung für Antirassismustest')
+    quelle_f = _quelle('f', 'integrationsbeauftragte.de', 'f.html', f'<p>{zitat_f}</p>')
+
+    def _bindung(host, kennung):
+        rollen_url = f'https://www.bundestag.de/abgeordnete/biografien/{kennung}'
+        rollen_sha = ('a' * 64)
+        return rollen_url, rollen_sha
+
+    eintraege = []
+    profilrollen = {}
+    kennung_zu_abruf = {}
+    for kennung, host, quelle, extra in [
+        ('bundestag-test-a-1', 'bmbfsfj.bund.de', quelle_a, dict(
+            bindungsart='beauftragtenaufgabe', person='Person A', personImZitat=True,
+            aufgabenbindung='Beauftragter der Bundesregierung gegen Testantiziganismus',
+            personbeleg=zitat_a, themenzitat=zitat_a, zitate=[zitat_a], themen=['Testantiziganismus'])),
+        ('bundestag-test-b-1', 'bmds.bund.de', quelle_b, dict(
+            bindungsart='beauftragtenaufgabe', person='Person B', personImZitat=True,
+            aufgabenbindung='Beauftragte der Bundesregierung für Testmittelstand',
+            personbeleg=zitat_b, themenzitat=zitat_b, zitate=[zitat_b], themen=['Testmittelstand'])),
+        ('bundestag-test-c-1', 'ostbeauftragte.de', quelle_c, dict(
+            bindungsart='beauftragtenaufgabe', person='Person C', personImZitat=False,
+            aufgabenabsatz=zitat_c_kopf,
+            aufgabenbindung='Beauftragte der Bundesregierung für Testost',
+            personbeleg=zitat_c_person, themenzitat=zitat_c_ziel,
+            zitate=[zitat_c_kopf, zitat_c_person, zitat_c_ziel], themen=['gleichwertige Testverhältnisse'])),
+        ('bundestag-test-d-1', 'bmas.de', quelle_d, dict(
+            bindungsart='abteilungszustaendigkeit', person='Person D', personImZitat=True,
+            aufgabenbindung='Zustaendigkeit laut BMAS-Organigramm: Abteilungen IV und V (belegte Teilmenge)',
+            personbeleg=zitat_d_person, abteilungsnummern=['IV', 'V'],
+            abteilungszitate=[zitat_d4, zitat_d5],
+            zitate=[zitat_d_person, zitat_d4, zitat_d5],
+            themen=['Sozialversicherungstest', 'Alterssicherungstest', 'Teilhabetest', 'Sozialhilfetest'])),
+        ('bundestag-test-e-1', 'bmas.de', quelle_d, dict(
+            bindungsart='abteilungszustaendigkeit', person='Person E', personImZitat=True,
+            aufgabenbindung='Zustaendigkeit laut BMAS-Organigramm: Abteilungen II und III (belegte Teilmenge)',
+            personbeleg=zitat_e_person, abteilungsnummern=['II', 'III'],
+            abteilungszitate=[zitat_e2, zitat_e3],
+            zitate=[zitat_e_person, zitat_e2, zitat_e3],
+            themen=['Arbeitsmarktpolitiktest', 'Arbeitsrechttest', 'Arbeitsschutztest'])),
+        ('bundestag-test-f-1', 'integrationsbeauftragte.de', quelle_f, dict(
+            bindungsart='beauftragtenaufgabe', person='Person F', personImZitat=True,
+            aufgabenbindung=('Beauftragte der Bundesregierung für Migrationstest sowie Beauftragte '
+                             'der Bundesregierung für Antirassismustest'),
+            personbeleg=zitat_f, themenzitat=zitat_f, zitate=[zitat_f],
+            themen=['Migrationstest', 'Antirassismustest'])),
+    ]:
+        rollen_url, rollen_sha = _bindung(host, kennung)
+        detail_datei = f'{kennung}.html'
+        (root / 'detailseiten').mkdir(exist_ok=True)
+        detail = root / 'detailseiten' / detail_datei
+        detail.write_text(f'<h1>{extra["person"]}</h1>', encoding='utf-8')
+        rollen_sha = am._sha256(detail)
+        kennung_zu_abruf[kennung] = dict(parlament='bundestag', datei=detail_datei, url=rollen_url)
+        profilrollen[kennung] = dict(status='belegt', quelle=dict(
+            url=rollen_url, sha256=rollen_sha, abgerufenAm='2026-09-27T13:00:00+00:00'),
+            funktionen=[dict(wortlaut=extra['aufgabenbindung'] if extra.get('personImZitat') is False else 'Parlamentarische Staatssekretärin Test')])
+        eintraege.append(dict(
+            kennung=kennung, region='Bund', status='belegt', rollenquelle=dict(
+                url=rollen_url, sha256=rollen_sha, abgerufenAm='2026-09-27T13:00:00+00:00'),
+            quelle=quelle,
+            ableitungsHinweis=f'Aufgabenbindung Bund (amtlich abgeleitet): {extra["aufgabenbindung"]}; keine persönliche politische Position',
+            importfreigegeben=False, **extra))
+
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=6, Bund=6, Berlin=0, Brandenburg=0),
+                             ergebnisse=eintraege)
+
+    def _aufgaben_eingang(quittung):
+        return SimpleNamespace(verzeichnis=root, aufgabenachsen=quittung,
+                               profilrollen_by_kennung=profilrollen, kennung_zu_abruf=kennung_zu_abruf)
+
+    def _pruefe_mit(mutation, ressort=None):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return am.pruefe_aufgabenachsen(_aufgaben_eingang(neu), quittung=neu,
+                                        ressortachsen_kennungen=ressort or set())
+
+    index = am.pruefe_aufgabenachsen(_aufgaben_eingang(gueltige_quittung), quittung=gueltige_quittung)
+    assert len(index) == 6 and all(e['region'] == 'Bund' for e in index.values())
+    assert sum(len(e['themen']) for e in index.values()) == 12
+
+    # Fehlende Quittung.
+    _echter_pfad = am.AUFGABENACHSEN
+    am.AUFGABENACHSEN = root / 'fehlt.json'
+    try:
+        _erwarte_aufgaben_fehler(lambda: am.pruefe_aufgabenachsen(_aufgaben_eingang(None)), 'fehlende Aufgabenquittung')
+    finally:
+        am.AUFGABENACHSEN = _echter_pfad
+    # Falsche Bilanz.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['bilanz'].__setitem__('Bund', 5)), 'falsche Aufgabenbilanz')
+    # Duplikat.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][1].__setitem__(
+        'kennung', q['ergebnisse'][0]['kennung'])), 'doppelte Kennung')
+    # Fremdkennung (nicht in den 500 Zielprofilen).
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'kennung', 'bundestag-fremd-9')), 'Fremdkennung')
+    # Kennung bereits Ressortachse.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: None, ressort={'bundestag-test-a-1'}), 'Kennung bereits Ressortachse')
+    # Quellhash-Drift.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('sha256', '0' * 64)), 'Quelldrift Hash')
+    # Quell-URL-Drift.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'url', q['ergebnisse'][0]['quelle']['url'] + '-fremd')), 'Quelldrift URL')
+    # Unerwarteter Quellhost.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'url', 'https://www.example.org/fremd')), 'unerwarteter Quellhost')
+    # Fehlende Datei.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('datei', 'fehlt.html')), 'fehlende Zusatzquelle')
+    # Rollenquellen-Drift (andere kanonische Person).
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['rollenquelle'].__setitem__(
+        'sha256', 'b' * 64)), 'Rollenquellen-Drift')
+    # Zitat nicht woertlich.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'zitate', [q['ergebnisse'][0]['zitate'][0] + ' Erfundenes.'])), 'Zitat nicht woertlich')
+    # Person fehlt im Zitat.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__('person', 'Fremder Name')), 'Person fehlt im Zitat')
+    # Ministeriumszugehoerigkeit allein (Connemann-Muster): Fremdbereich als Thema.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][1].__setitem__('themen', ['Fremdbereich'])), 'Ministeriumszugehoerigkeit allein')
+    # Fremdes Thema.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][2].__setitem__('themen', ['Unbelegtes Fremdthema'])), 'fremdes Thema')
+    # Kaiser: Thema nur in Bildunterschrift/Navigation.
+    def _nur_bildunterschrift(q):
+        q['ergebnisse'][2]['quelle'] = dict(quelle_c_nav)
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(_nur_bildunterschrift), 'Thema nur in Navigation/Bildunterschrift')
+    # Kaiser: Personenbeleg fehlt in der Quelle.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][2].__setitem__('person', 'Fremde Person')), 'Personenbeleg fehlt')
+    # BMAS: Abteilungsnummer nicht in der Personenzeile (Mast-Griese-Tausch).
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][4].__setitem__(
+        'abteilungsnummern', ['IV', 'V'])), 'Abteilung nicht in der Personenzeile (Mast-Griese-Tausch)')
+    # BMAS: Mast erhaelt ein Griese-Thema.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][4].__setitem__(
+        'themen', ['Sozialversicherungstest'])), 'Mast erhaelt Griese-Thema')
+    # BMAS: zusammengesetztes Scheinzitat.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][3].__setitem__(
+        'zitate', [zitat_d_person, zitat_d4 + ' ' + zitat_d5])), 'zusammengesetztes Scheinzitat')
+    # Fehlender Herkunftshinweis.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].pop('ableitungsHinweis')), 'fehlender Herkunftshinweis')
+    # Importfreigabe gesetzt.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].__setitem__('importfreigegeben', True)), 'Importfreigabe gesetzt')
+    # Pawlik-Muster: Originalzitat 'zugleich' gegen 'sowie' getauscht.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][5].__setitem__(
+        'zitate', [zitat_f.replace('zugleich', 'sowie')])), 'Originalzitat Konjunktion getauscht')
+
+    # Zusaetzliche Orchestrator-Gegenproben: ganze Pakete und Personenzitate.
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('bytes', 1)), 'falsche Quittungs-Bytezahl')
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][3].__setitem__('person', 'Fremde Person')), 'BMAS falsche Person')
+    def _pakete_tauschen(q):
+        a, b = q['ergebnisse'][3:5]
+        for feld in ['kennung', 'rollenquelle']:
+            a[feld], b[feld] = b[feld], a[feld]
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(_pakete_tauschen), 'komplette Mast/Griese-Pakete vertauscht')
+    def _personzitat_tauschen(q):
+        e = q['ergebnisse'][3]
+        e['personbeleg'] = zitat_e_person
+        e['zitate'][0] = zitat_e_person
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(_personzitat_tauschen), 'BMAS fremdes Personenzitat')
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][0].pop('themenzitat')), 'fehlendes Themenzitat')
+    def _fremde_amtsbindung(q):
+        e = q['ergebnisse'][2]
+        e['aufgabenbindung'] = 'Beauftragte der Bundesregierung fuer etwas Anderes'
+        e['ableitungsHinweis'] = f'Aufgabenbindung Bund (amtlich abgeleitet): {e["aufgabenbindung"]}; keine persönliche politische Position'
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(_fremde_amtsbindung), 'Amtsrolle traegt Aufgabenbindung nicht')
+    ausserhalb = _quelle('c-anderer-absatz', 'ostbeauftragte.de', 'c-anderer-absatz.html',
+        f'<h2>{zitat_c_kopf}</h2><p>Andere Aufgaben.</p><h2>Anderes Amt</h2><p>{zitat_c_ziel}</p><figcaption>{zitat_c_person}</figcaption>')
+    _erwarte_aufgaben_fehler(lambda: _pruefe_mit(lambda q: q['ergebnisse'][2].__setitem__('quelle', ausserhalb)), 'Themenzitat im falschen Aufgabenabschnitt')
+    assert 'IV' not in am._abteilungsliste('Person: Abteilungen I und VI a')
+    assert 'VI b' not in am._abteilungsliste('Person: Abteilungen I und VI a')
+
+    # Gueltige Quittung nach allen Mutationen weiter akzeptiert.
+    assert len(am.pruefe_aufgabenachsen(_aufgaben_eingang(gueltige_quittung), quittung=gueltige_quittung)) == 6
+
+
+print('PASS: Aufgabenquittung — fehlende Quittung/falsche Bilanz/Duplikat/Fremdkennung/Ressortachsen-'
+      'Ueberschneidung/Quelldrift (Hash/URL/Host/Datei)/Rollenquellen-Drift/Zitat nicht woertlich/'
+      'fehlende Person/Ministeriumszugehoerigkeit allein/fremdes Thema/Thema nur in Navigation oder '
+      'Bildunterschrift/Abteilung nicht in der Personenzeile (Mast-Griese-Tausch)/Mast erhaelt Griese-Thema/'
+      'zusammengesetztes Scheinzitat/fehlender Herkunftshinweis/Importfreigabe/Originalzitat-Konjunktion '
+      'sperren fail closed; die gueltige synthetische 6er-Quittung wird akzeptiert.')
