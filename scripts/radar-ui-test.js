@@ -148,7 +148,7 @@ api.setArticlesExpanded(false);
 
 // 5) Dynamik-Leerzustand ist ehrlich (kein 'neu' erfunden).
 check("Dynamik leer -> ehrlicher Leerzustand statt erfundener Aktualität",
-  api.render().includes("Aktuell entsteht keine neue belegbare Dynamik"));
+  api.render().includes("In dieser Ansicht werden keine belegten Dynamikhinweise angezeigt"));
 
 // 6) Umfeld-Label dimensionsgenau.
 check("Umfeld zeigt dimensionsgenaues Label 'Betrifft deine Partei'", api.render().includes("Betrifft deine Partei"));
@@ -193,7 +193,7 @@ api.setBriefing({ engine: "v3", currentRadarState: emptyPartyState });
 api.setSegment("party");
 const emptyPartyHtml = api.render();
 check("Leeres Partei-Segment -> ehrlicher Leerzustand statt kaputt/leer",
-  /Keine neuen belegten Partei- oder Fraktionssignale/.test(emptyPartyHtml) && emptyPartyHtml.includes("Dein Umfeld"));
+  /In dieser Ansicht werden keine belegten Partei- oder Fraktionssignale angezeigt/.test(emptyPartyHtml) && emptyPartyHtml.includes("Dein Umfeld"));
 
 // 11) Stoerungswahrheit im Radar-Leerzustand (Audit-Folgebranch): store-error/
 //     keine-vorgaenge duerfen NICHT wie ein ruhiger Tag aussehen; "keine-treffer"

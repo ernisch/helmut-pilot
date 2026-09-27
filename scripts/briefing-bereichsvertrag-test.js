@@ -61,11 +61,32 @@ test("Persönliche Resonanz berührt denselben Vorgang mit anderer Funktion", ()
   const before = JSON.stringify(args);
   const r = R.buildCurrentRadarState(args);
   assert.equal(r.anzeige.mentions.length, 1);
-  assert.match(r.anzeige.mentions[0].evidence, /persönlicher Erwähnung/);
+  assert.match(r.anzeige.mentions[0].evidence, /nennt deinen Namen/);
   assert.equal(r.anzeige.mentions[0].summary, "");
   assert.ok(!JSON.stringify(r.anzeige).includes(k.display_summary));
   assert.ok(!JSON.stringify(r.anzeige).includes(k.why_relevant));
   assert.equal(JSON.stringify(args), before);
+});
+test("Titel einer eigenen Rede belegt Name und Datum, weder Ton noch Resonanz", () => {
+  const ds = [doc("rede", "2026-09-23", { title: "Rede von Alex Beispiel", summary: "" })];
+  const r = R.buildCurrentRadarState(input([ko()], { "vg-a": ds }));
+  const m = r.anzeige.mentions[0];
+  assert.equal(m.title, ds[0].title);
+  assert.equal(m.mentionTone, "unknown");
+  assert.equal(m.confidence, "unknown");
+  assert.match(m.evidence, /2026-09-23/);
+  assert.match(m.evidence, /Bewertung.*liegt nicht vor/);
+  assert.match(r.anzeige.summary.line1, /Quellenstand: 2026-09-23/);
+  assert.doesNotMatch(r.anzeige.summary.line1, /Aktuell|Heute|Resonanz/);
+  assert.equal(r.anzeige.status, "stale");
+  assert.equal(B.tagesAnlass(ds, now), null);
+});
+test("Vorabendquelle bleibt zulaessig und traegt sichtbar ihren wirklichen Tag", () => {
+  const ds = [doc("abend", "2026-09-23", { published_at: "2026-09-23T20:00:00Z" })];
+  const a = B.tagesAnlass(ds, now);
+  assert.equal(a.art, "neue-quelle");
+  assert.match(a.text, /Quellenstand: 2026-09-23/);
+  assert.equal(ds[0].published_at, "2026-09-23T20:00:00Z");
 });
 test("Verschiedene Tage und Artikel tragen begrenzte Beobachtung, keine Prognose", () => {
   const s = B.beobachtung([doc("alt", "2026-09-22"), doc("neu", "2026-09-24")], now);
