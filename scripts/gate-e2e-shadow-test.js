@@ -44,7 +44,8 @@ check("1c Dokumente + Fundstellen erzeugt", rep.dokumente >= 14 && rep.fundstell
 check("1d Ebenen-Klassifikation getrennt (land + bund vorhanden)", (rep.klassifikationEbenen.land || 0) >= 14 && (rep.klassifikationEbenen.bund || 0) >= 1);
 
 // --- 2. GATE ueber alle Quell-Dokumente (amtliche PARDOK + RSS) ---
-function gateInput(land, doc) { return { id: `sd-${doc.externe_id}`, content_hash: doc.inhaltsfingerabdruck || doc.externe_id, title: doc.titel || "", summary: "", source_id: land === "berlin" ? "be-plenum" : "bb-plenum", document_type: doc.dokumentart || null, published_at: doc.veroeffentlichungsdatum || null }; }
+// DokDat ist ein Dokumentdatum, kein Publikationszeitpunkt -> Gate-Eingang ohne published_at.
+function gateInput(land, doc) { return { id: `sd-${doc.externe_id}`, content_hash: doc.inhaltsfingerabdruck || doc.externe_id, title: doc.titel || "", summary: "", source_id: land === "berlin" ? "be-plenum" : "bb-plenum", document_type: doc.dokumentart || null, published_at: null }; }
 const gateDocs = [
   ...be.map((dd) => gateInput("berlin", dd)), ...bb.map((dd) => gateInput("brandenburg", dd)),
   ...rss.map((it) => ({ id: it.id, content_hash: it.hash, title: it.title, summary: "", source_id: "committee-soziales", document_type: null, published_at: it.publishedAt }))

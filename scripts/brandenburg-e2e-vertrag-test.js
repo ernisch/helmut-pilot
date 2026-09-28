@@ -66,6 +66,7 @@ const fs = require("fs");
 
 const P = require("../lib/helmut/quellenarchitektur/pardok-parser");
 const K = require("../lib/helmut/quellenarchitektur/pardok-dokumentklassen");
+const { toRawDocumentRow } = require("../lib/helmut/dedup");
 const DG = require("../lib/helmut/quellenarchitektur/dedup-global");
 const dispatch = require("../lib/helmut/quellenarchitektur/pardok-dispatch");
 const understanding = require("../lib/helmut/understanding");
@@ -434,6 +435,14 @@ function neuerStore() {
   check("C3 Dokumentklasse + Vorgangsbezug stehen im Vertrag (raw.*)",
     rohRelevant.raw.dokumentklasse === "anfrage" && rohRelevant.raw.vorgangsnummer === "V-369657"
       && rohRelevant.document_type === "Kleine Anfrage");
+  const normalisiertRelevant = toRawDocumentRow(rohRelevant);
+  check("C3a DokDat bleibt Dokumentdatum bis zur Speicherprojektion, niemals Publikationszeit",
+    rohRelevant.published_at === null && normalisiertRelevant.published_at === null
+      && normalisiertRelevant.raw.helmutPardokBeleg?.dokumentdatum === relevantRoh.dokumentdatum
+      && normalisiertRelevant.raw.helmutPardokBeleg?.vorgangsnummer === "V-369657");
+  check("C3b fremder Quellenweg kann den PARDOK-Kennungsbeleg nicht einschleusen",
+    !toRawDocumentRow({ ...rohRelevant, source_id: "fremde-quelle" }).raw.helmutPardokBeleg
+      && !toRawDocumentRow({ ...rohRelevant, sourceId: "fremde-quelle" }).raw.helmutPardokBeleg);
   check("C4 cluster_id bleibt leer — Vorgangsbildung gehoert dem Resolver",
     rohRelevant.cluster_id === null && rohKommunal.cluster_id === null && rohKommunalPlpr.cluster_id === null);
   check("C5 Originaladresse (parldok-PDF) bleibt als url/canonical_url erhalten",
@@ -465,6 +474,11 @@ function neuerStore() {
   // Regel 0 (Punkt 24): externe Identitaet Herausgeber+Kennung+Typ.
   const identitaet = (d) => DG.externalIdentity({ ...d, externe_id: d.raw && d.raw.externe_id }) || `${d.source_id}|${d.content_hash}`;
   const originalEingabe = [rohRelevant, rohKommunal, rohIrrelevant, rohBE, rohBEPyro, bundRoh];
+  const vorCluster = understanding.clusterRawDocuments(originalEingabe.map(toRawDocumentRow));
+  check("C6a Brandenburger Dokumentjahr trennt alten Kommunalvorgang vom neueren Bundesgesetz ohne erfundene Publikationszeit",
+    vorCluster.length === 6
+      && vorCluster.every((c) => c.documents.length === 1)
+      && new Set(vorCluster.map(understanding.deriveVorgangId)).size === 6);
   const identitaeten = originalEingabe.map(identitaet);
   check("C7 Regel 0: sechs Eingabedokumente -> sechs unterscheidbare globale Identitaeten",
     new Set(identitaeten).size === 6, identitaeten.join(" · "));

@@ -22,8 +22,9 @@ check("BE: 5 Dokumente mit Titel (Drs/VO/Antr/KlAnfr)", be.stats.mitTitel === 5)
 check("BE: formatTitel-Erkennung 5/5 = 100%", be.stats.formatTitelVorhanden === 5 && be.stats.formatTitelErkannt === 5);
 check("BE: titellose Typen bleiben titel=null (PlPr/GVBl/APr/Antwort)", bd.filter((d) => d.titel === null).length === 5);
 const beByNr = Object.fromEntries(bd.map((d) => [d.externe_id, d]));
-check("BE: Datum als ISO geparst (09.11.2021 -> 2021-11-09)", beByNr["D-351758"].veroeffentlichungsdatum === "2021-11-09");
-check("BE: fehlendes Datum bleibt null", beByNr["D-360003"].veroeffentlichungsdatum === null);
+check("BE: DokDat als ISO geparst (09.11.2021 -> 2021-11-09) und als dokumentdatum gefuehrt", beByNr["D-351758"].dokumentdatum === "2021-11-09");
+check("BE: DokDat wird NIE als veroeffentlichungsdatum gesetzt", !("veroeffentlichungsdatum" in beByNr["D-351758"]));
+check("BE: fehlendes Dokumentdatum bleibt null", beByNr["D-360003"].dokumentdatum === null);
 check("BE: Wahlperiode aus <Wp> = 19", bd.every((d) => d.wahlperiode === 19));
 check("BE: Drucksachennummer erkannt (19/10058)", beByNr["D-351758"].drucksachennummer === "19/10058");
 check("BE: GVBl ohne DokNr -> drucksachennummer null, externe_id trotzdem DBID", beByNr["D-351046"].drucksachennummer === null && beByNr["D-351046"].externe_id === "D-351046");
@@ -58,7 +59,8 @@ check("BB: Multi-Dok-Vorgang V-370081 -> 2 unterscheidbare Dokumente (ReihNr)", 
 check("BB: mehrere Urheber als Array", Array.isArray(bbById["V-369657#r0001"].urheber) && bbById["V-369657#r0001"].urheber.length === 2);
 check("BB: Vorgangs-Stichworte (Desk) uebernommen", (bbById["V-369657#r0001"].stichworte || []).includes("Extremismus"));
 check("BB: Vorgangstyp aus <VTypL>", bbById["V-369657#r0001"].vorgangstyp === "Anfrage");
-check("BB: fehlendes Datum bleibt null", bbById["V-380500#r0001"].veroeffentlichungsdatum === null);
+check("BB: fehlendes Dokumentdatum bleibt null", bbById["V-380500#r0001"].dokumentdatum === null);
+check("BB: DokDat wird NIE als veroeffentlichungsdatum gesetzt", bd.every((d) => !("veroeffentlichungsdatum" in d)) && cd.every((d) => !("veroeffentlichungsdatum" in d)));
 check("BB: Geografie = geo-land-brandenburg", cd.every((d) => d.geografie === "geo-land-brandenburg"));
 // Adversarial: identische Drucksachennummer (08/30) aus unterschiedlichen Wahlperioden/Vorgaengen
 check("BB-adv: DokNr 08/30 in WP8 und WP7 -> getrennte Dokumente, andere Fingerabdruecke",
@@ -93,6 +95,16 @@ big += "</Export>";
 const capped = P.parsePardokDocumentsFromString(big, { land: "berlin", maxRecords: 1000 });
 check("adv-gross: Record-Cap greift (5000 vorhanden, 1000 verarbeitet)", capped.documents.length === 1000 && capped.stats.rohRecords === 1000);
 check("adv-gross: alle Fingerabdruecke eindeutig (kein Cluster)", new Set(capped.documents.map((d) => d.inhaltsfingerabdruck)).size === 1000);
+
+// ============ DokDat-Zeitsemantik: DokDat ist Dokumentdatum, NIE Publikationszeit =========
+// Gegenfall: ein ZUKUENFTIGES Dokumentdatum darf nirgends als Veroeffentlichungszeit erscheinen.
+// Der Fingerabdruck/Identitaet muss das echte Dokumentdatum weiterhin nutzen (unveraendert).
+const zukunftXml = '<Dokument><DBID>D-990001</DBID><DokNr>99/1</DokNr><Wp>99</Wp><DokDat>31.12.2099</DokDat><DokArtL>Drucksache</DokArtL><Titel>Zukunfts-Drucksache (Testgegenfall)</Titel></Dokument>';
+const zukunftDoc = P.parseBerlinDokument(zukunftXml);
+check("Zeitsemantik: zukuenftiges DokDat wird als dokumentdatum gefuehrt", zukunftDoc.dokumentdatum === "2099-12-31");
+check("Zeitsemantik: Parser setzt KEIN veroeffentlichungsdatum (auch nicht aus DokDat)", !("veroeffentlichungsdatum" in zukunftDoc));
+check("Zeitsemantik: Fingerabdruck unveraendert — nutzt das Dokumentdatum weiter",
+  zukunftDoc.inhaltsfingerabdruck === P.buildFingerprint("berlin", "D-990001", 99, "99/1", "2099-12-31", "Drucksache"));
 
 // ============================ Einheiten: Datum + Wahlperiode ============================
 check("parseGermanDate: gueltig -> ISO", P.parseGermanDate("07.04.2022") === "2022-04-07");

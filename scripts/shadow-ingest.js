@@ -31,7 +31,11 @@ function pardokToItem(doc, sourceId, retrievalPathId) {
     id: `sd-${doc.externe_id}`, sourceId, retrieval_path_id: retrievalPathId,
     title: doc.titel || `${doc.dokumentart || "Dokument"} ${doc.drucksachennummer || doc.externe_id}`,
     url: doc.originaladresse || "", originalUrl: doc.originaladresse || "",
-    content: doc.titel || "", publishedAt: doc.veroeffentlichungsdatum || null,
+    content: doc.titel || "",
+    // DokDat der Quelle ist ein DOKUMENTDATUM, kein Veroeffentlichungszeitpunkt: `publishedAt`
+    // bleibt deshalb IMMER null. Das echte Dokumentdatum wird separat als `dokumentdatum`
+    // mitgefuehrt und nie als Publikationszeit ausgegeben (Rohdokument, Shadow-Item, Gate).
+    publishedAt: null, dokumentdatum: doc.dokumentdatum || null,
     linkType: doc.originaladresse ? "direct" : "missing",
     externe_id: doc.externe_id,
     // Quellen-AUTORITATIVE Klassifikation amtlicher Landesparlaments-Dokumente:
@@ -100,6 +104,7 @@ function ingestShadow(sources = [], opts = {}) {
     const c = classifyItem(it);
     return {
       externe_id: it.externe_id || it.id, titel: it.title, datum: it.publishedAt || null,
+      dokumentdatum: it.dokumentdatum || null,
       originaladresse: it.url || it.originalUrl || null, sourceId: it.sourceId, ...c
     };
   });

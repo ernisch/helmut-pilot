@@ -30,12 +30,23 @@ Feldannahme erzwungen (getrennte Adapter).
 Gemeinsame Felder je Dokument: `Titel`, `DokDat` (DD.MM.YYYY), `DokArt/DokArtL`, `DokTyp/DokTypL`,
 `DokNr`, `NrInTyp`, `Wp`, `Urheber` (mehrfach), `LokURL` (pdf/docx), `Desk` (Stichwörter).
 
+**`DokDat` ist das Dokumentdatum, kein Publikationszeitpunkt.** Es wird als `dokumentdatum`
+geführt und nie als `veroeffentlichungsdatum`/`published_at`/`publishedAt` ausgegeben. Für den
+Fingerabdruck bleibt es unverändert Teil der Identität (siehe unten).
+Die minimierte Rohprojektion bewahrt für `be-plenum`/`bb-plenum` ausschließlich den
+geprüften Dokumenttag und amtlichen Vorgangsbezug in `raw.helmutPardokBeleg`.
+Beim Vergleich schon gebildeter Cluster kann das Dokumentjahr einen mindestens
+zweijährigen Sachkonflikt belegen. Fehlt ein Publikationstag, trennt ein eindeutiger
+amtlicher Vorgangsbezug zudem kollidierende technische Kennungen. Beides ist
+**keine** Übernahme von `DokDat` als Publikations- oder Ereigniszeit und bildet
+aus dem Bezug allein noch keinen Vorgang.
+
 ## Parser-Architektur
 
 `lib/helmut/quellenarchitektur/pardok-parser.js` — rein, deterministisch, namespace-tolerant,
 kein Netz/DB/LLM. Extrahierte 12 Felder (fehlend → `null`, **nichts erfunden**):
 
-1. `titel` 2. `veroeffentlichungsdatum` (ISO) 3. `dokumentart` (+`dokumenttyp`)
+1. `titel` 2. `dokumentdatum` (ISO; **keine** Publikationszeit) 3. `dokumentart` (+`dokumenttyp`)
 4. `drucksachennummer` / `vorgangsnummer` 5. `wahlperiode` 6. `ausschuss` 7. `urheber` (Array)
 8. `originaladresse` (LokURL, pdf bevorzugt) 9. `politische_ebene` = `land`
 10. `geografie` = `geo-land-berlin` / `geo-land-brandenburg` 11. `externe_id` (stabil, eindeutig)
@@ -218,7 +229,7 @@ Informationen bleiben erhalten:
 | 2 | Herausgeber/Quelle | `source_id`, `source_name`, `source_type`, `publisher_id` |
 | 3 | Dokumenttyp | `document_type` (amtliche Bezeichnung) + `raw.dokumentklasse` (+ `_quelle`, `_beleg`) |
 | 4 | Titel | `title`; titellose Formate bekommen eine aus echten Feldern **abgeleitete, gekennzeichnete** Bezeichnung (`raw.titel_abgeleitet = true`, `raw.titel_original = null`) — kein erfundener Titel |
-| 5 | Veröffentlichungsdatum | `published_at` (fehlend → `null`) |
+| 5 | Dokumentdatum | `raw.dokumentdatum`; `published_at` bleibt **immer `null`** — `DokDat` ist kein Publikationszeitpunkt |
 | 6 | Externe Kennung | `raw.externe_id`; `content_hash` = Inhaltsfingerabdruck |
 | 7 | Kanonische URL | `canonical_url`/`url`, `link_type` (`direct`/`missing`) |
 | 8 | Vorgangsbezug | `raw.vorgangsnummer`, `raw.vorgangstyp` |
