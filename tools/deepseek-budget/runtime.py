@@ -10,6 +10,7 @@ DB = ROOT / 'budget.sqlite3'
 UPSTREAM = 'https://api.deepseek.com'
 MILLION = 1000000
 MAX_BODY = 32 * 1024 * 1024
+STREAM_TIMEOUT_SECONDS = 7200
 MODES = {f'{family}-{access}{suffix}': (model, effort, sandbox)
          for family, model in [('flash', 'deepseek-flash'), ('pro', 'deepseek-v4-pro')]
          for access, sandbox in [('read', 'read-only'), ('write', 'workspace-write')]
@@ -211,13 +212,18 @@ class Gate:
                 req = urllib.request.Request(self.upstream + '/responses', data=json.dumps(payload).encode(),
                     headers={'Authorization': 'Bearer ' + self.key, 'Content-Type': 'application/json'})
                 ctx = ssl.create_default_context(cafile='/etc/ssl/cert.pem' if Path('/etc/ssl/cert.pem').exists() else None)
-                with urllib.request.urlopen(req, context=ctx, timeout=300) as response:
+                # Long High/Max reasoning responses can legitimately remain silent for
+                # more than five minutes.  Keep the socket deadline aligned with the
+                # explicit two-hour stream bound below and with Codex' idle timeout;
+                # otherwise a local 300-second timeout leaves a real provider request
+                # billed but only conservatively reserved in the ledger.
+                with urllib.request.urlopen(req, context=ctx, timeout=STREAM_TIMEOUT_SECONDS) as response:
                     parts, terminal, size = [], None, 0
                     began = time.monotonic()
                     if streaming:
                         for line in response:
                             size += len(line)
-                            if size > MAX_BODY or time.monotonic() - began > 7200:
+                            if size > MAX_BODY or time.monotonic() - began > STREAM_TIMEOUT_SECONDS:
                                 raise BudgetError('response_bound', 'Antwortgrenze erreicht; Reservierung bleibt gebunden')
                             parts.append(line); ping()
                             if line.startswith(b'data: '):
@@ -305,7 +311,7 @@ def main():
     cmd = ['codex', 'exec', '-m', gate.model, '-c', 'model_reasoning_effort=' + json.dumps(gate.effort),
            '-c', 'model_providers.deepseek.base_url=' + json.dumps(f'http://127.0.0.1:{server.server_port}'),
            '-c', 'model_providers.deepseek.request_max_retries=0', '-c', 'model_providers.deepseek.stream_max_retries=0',
-           '-c', 'model_providers.deepseek.stream_idle_timeout_ms=7200000',
+           '-c', f'model_providers.deepseek.stream_idle_timeout_ms={STREAM_TIMEOUT_SECONDS * 1000}',
            '--sandbox', gate.sandbox, GUARD + '\n\nAUFGABE:\n' + ' '.join(args.task)]
     print(f'DeepSeek {gate.model} {gate.effort}: Laufdeckel {c["budgets_usd"][("flash" if args.mode.startswith("flash") else "pro")+"-"+gate.effort]} USD, Tagesdeckel {limit(c,day())/MILLION:g} USD.', file=sys.stderr)
     try:

@@ -70,6 +70,8 @@ class BudgetTests(unittest.TestCase):
    body,stream=g.execute({'model':g.model,'input':'hello'})
   self.assertEqual(f.call_count,1);self.assertEqual(json.loads(body)['status'],'completed');self.assertFalse(stream)
   self.assertLess(self.l.snapshot()['bound_micro_usd'],1000)
+  self.assertEqual(f.call_args.kwargs['timeout'],R.STREAM_TIMEOUT_SECONDS)
+  self.assertEqual(R.STREAM_TIMEOUT_SECONDS,7200)
  def test_token_limit_retries_once_larger_without_partial_output(self):
   g=self.gate();seen=[]
   def fake(req,**kw):
