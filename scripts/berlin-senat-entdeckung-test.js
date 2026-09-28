@@ -13,10 +13,12 @@
 //   node scripts/berlin-senat-entdeckung-test.js
 
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 
 const M = require("../lib/helmut/berlin-senat-entdeckung");
 const ABRUF = require("../lib/helmut/berlin-presseartikel-abruf");
+const SONDER_ABRUF = require("../lib/helmut/berlin-presse-sondervorlagen-abruf");
 const B = require("../lib/helmut/berlin-artikelstand");
 
 let bestanden = 0;
@@ -27,6 +29,7 @@ function check(name, bedingung) {
 }
 const H2_TEXT = M.H2_TEXT;
 const QUELLE = "https://www.berlin.de/presse/";
+const sha = value => crypto.createHash("sha256").update(value, "utf8").digest("hex");
 
 // ---------------------------------------------------------------------------------------------
 // Synthetische Portalseite in der beobachteten amtlichen Struktur.
@@ -68,26 +71,43 @@ function erwarteAbbruch(eingabe, label) {
 const ohneZeit = ergebnis => !/Uhr|\d{2}:\d{2}/.test(JSON.stringify(ergebnis));
 
 // ---------------------------------------------------------------------------------------------
-// 1) Positiv: synthetischer Block, ein weiterreichbarer und ein offener Treffer.
+// 1) Positiv: synthetischer Block, drei weiterreichbare und ein offener Treffer.
 // ---------------------------------------------------------------------------------------------
 {
+  const RB = "/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717887.php";
+  const SW = "/sen/web/presse/pressemitteilungen/2026/pressemitteilung.1717406.php";
+  const FREMD = "/sen/bjf/service/presse/pressemitteilung.1700001.php";
   const s = portal({ lis: [
     li("25.09.2026", "/sen/bjf/service/presse/pressearchiv-2026/pressemitteilung.1718345.php", "Erste Meldung"),
-    li("24.09.2026", "/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717887.php", "Zweite Meldung")
+    li("24.09.2026", RB, "Zweite Meldung"),
+    li("23.09.2026", SW, "Dritte Meldung"),
+    li("23.09.2026", FREMD, "Fremde Meldung")
   ] });
   const ergebnis = M.pruefeSenatsblock(s.eingabe);
   check("positiv: geschlossene Eingabefelder, quelle normalisiert",
     Object.keys(ergebnis).join(",") === M.AUSGANG_FELDER.join(",") && ergebnis.quelle === QUELLE);
-  check("positiv: genau zwei Fundstellen der eigenen UL",
-    ergebnis.fundstellen.length === 2
+  check("positiv: genau vier Fundstellen der eigenen UL",
+    ergebnis.fundstellen.length === 4
     && ergebnis.fundstellen.every(f => Object.keys(f).join(",") === M.FUNDSTELLE_FELDER.join(",")));
+  const [archiv, rb, sw, fremd] = ergebnis.fundstellen;
   check("positiv: Pressearchiv-Link ist weiterreichbar",
-    ergebnis.fundstellen[0].weiterreichbar === true && ergebnis.fundstellen[0].grund === null
-    && ergebnis.fundstellen[0].url === "https://www.berlin.de/sen/bjf/service/presse/pressearchiv-2026/pressemitteilung.1718345.php");
-  check("positiv: fremder Artikelpfad bleibt klar offen markiert",
-    ergebnis.fundstellen[1].weiterreichbar === false && ergebnis.fundstellen[1].grund === M.GRUND_PRESSEARCHIV);
+    archiv.weiterreichbar === true && archiv.grund === null
+    && archiv.url === "https://www.berlin.de/sen/bjf/service/presse/pressearchiv-2026/pressemitteilung.1718345.php"
+    && M.abrufzielFuer(archiv.url).art === "pressearchiv"
+    && ABRUF.pruefeAbrufziel(archiv.url) !== null && SONDER_ABRUF.pruefeAbrufziel(archiv.url) === null);
+  check("positiv: RBMSKZL-Sondervorlage ist weiterreichbar mit dem passenden Abrufziel",
+    rb.weiterreichbar === true && rb.grund === null && M.abrufzielFuer(rb.url).art === "sondervorlage"
+    && ABRUF.pruefeAbrufziel(rb.url) === null && SONDER_ABRUF.pruefeAbrufziel(rb.url).url === rb.url
+    && SONDER_ABRUF.pruefeAbrufziel(rb.url).host === "berlin.de");
+  check("positiv: SenWEB-Sondervorlage ist weiterreichbar mit dem passenden Abrufziel",
+    sw.weiterreichbar === true && sw.grund === null && M.abrufzielFuer(sw.url).art === "sondervorlage"
+    && ABRUF.pruefeAbrufziel(sw.url) === null && SONDER_ABRUF.pruefeAbrufziel(sw.url).url === sw.url);
+  check("positiv: nicht unterstuetzter Berliner Pfad bleibt fail closed markiert",
+    fremd.weiterreichbar === false && fremd.grund === M.GRUND_PRESSEARCHIV && M.abrufzielFuer(fremd.url) === null
+    && ABRUF.pruefeAbrufziel(fremd.url) === null && SONDER_ABRUF.pruefeAbrufziel(fremd.url) === null);
   check("positiv: reine Kalendertage, keine Uhrzeit in der Ausgabe",
-    ergebnis.fundstellen.map(f => f.publikationstag).join(",") === "2026-09-25,2026-09-24" && ohneZeit(ergebnis));
+    ergebnis.fundstellen.map(f => f.publikationstag).join(",") === "2026-09-25,2026-09-24,2026-09-23,2026-09-23"
+    && ohneZeit(ergebnis));
   check("positiv: Eingang eingefroren, Ergebnis eingefroren",
     Object.isFrozen(ergebnis) && Object.isFrozen(ergebnis.fundstellen) && Object.isFrozen(ergebnis.fundstellen[0]));
   const ohneUhrzeit = portal({ lis: [
@@ -232,27 +252,93 @@ erwarteAbbruch(portal({ lis: [
 erwarteAbbruch(portal({ lis: [] }).eingabe, "leere LI-Liste");
 
 // ---------------------------------------------------------------------------------------------
+// 4b) Gezielt: nur die exakten amtlichen Formen sind weiterreichbar. Beide Sonderfamilien
+//     werden erkannt; nicht unterstuetzte oder fremde Berliner Pfade bleiben fail closed.
+// ---------------------------------------------------------------------------------------------
+{
+  const faelle = [
+    ["/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717887.php", true, "sondervorlage"],
+    ["/sen/web/presse/pressemitteilungen/2026/pressemitteilung.1717406.php", true, "sondervorlage"],
+    ["/sen/bjf/service/presse/pressearchiv-2026/pressemitteilung.1718345.php", true, "pressearchiv"],
+    ["/sen/bjf/service/presse/pressemitteilung.1718345.php", false, null],
+    ["/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717887.html", false, null],
+    ["/rbmskzl/aktuelles/pressemitteilungen/pressemitteilung.1717887.php", false, null],
+    ["/rbmskzl/aktuelles/pressemitteilungen/2026/unterordner/pressemitteilung.1717887.php", false, null],
+    ["/sen/web/presse/pressemitteilungen/2026/1717406.php", false, null],
+    ["/sen/web/presse/pressemitteilungen/2026/pressemitteilung.php", false, null],
+    ["/sen/web/presse/pressemitteilungen/2026/pressemitteilung.1717406.php/", false, null]
+  ];
+  for (const [pfad, erwartetWeiter, erwartetArt] of faelle) {
+    const f = M.pruefeSenatsblock(portal({ lis: [li("25.09.2026", pfad, "Probe")] }).eingabe).fundstellen[0];
+    const ziel = M.abrufzielFuer(f.url);
+    check(`abrufziel: ${pfad}`,
+      f.weiterreichbar === erwartetWeiter
+      && f.grund === (erwartetWeiter ? null : M.GRUND_PRESSEARCHIV)
+      && (ziel ? ziel.art : null) === erwartetArt
+      && (erwartetArt === "sondervorlage"
+        ? ABRUF.pruefeAbrufziel(f.url) === null && SONDER_ABRUF.pruefeAbrufziel(f.url) !== null
+        : erwartetArt === "pressearchiv"
+          ? ABRUF.pruefeAbrufziel(f.url) !== null && SONDER_ABRUF.pruefeAbrufziel(f.url) === null
+          : ABRUF.pruefeAbrufziel(f.url) === null && SONDER_ABRUF.pruefeAbrufziel(f.url) === null));
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
 // 5) Echte lokale Originalprobe des Portals (nur wenn vorhanden) — CI-tauglich.
 // ---------------------------------------------------------------------------------------------
 const PORTAL_ORIGINAL = "/private/tmp/helmut-berlin-portal-20260928.html";
 const ARTIKEL_ORIGINAL = "/private/tmp/helmut-landesversorgung-originale/be-bjf-kinder-jugendhilfe-20260925.html";
 const BJF_URL = "https://www.berlin.de/sen/bjf/service/presse/pressearchiv-2026/pressemitteilung.1718345.php";
 const BJF_TITEL = "Reform der Kinder- und Jugendhilfe: Berlin fordert verbindlichen Fahrplan und verlässliche Finanzierung";
+// Die drei weiteren amtlichen Portaltreffer und ihre bereits gesicherten Originale (Hashes wie
+// in scripts/berlin-artikelstand-test.js). Nur die lokalen Originale werden offline gelesen.
+const SONDER_FUNDSTELLEN = Object.freeze([
+  { familie: "rbmskzl", datei: "/private/tmp/helmut-berlin-rbmskzl-1717887.html",
+    sha: "9fbe8472be24f8f6f15c02dd58b4780381cecb31a600dfd685eed858ae3efffa",
+    url: "https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717887.php",
+    titel: "Berlin zieht Olympiabewerbung zurück – BERLIN+ wird bei der DOSB-Mitgliederversammlung nicht zur Wahl gestellt",
+    tag: "2026-09-24", auszugZeichen: 625 },
+  { familie: "rbmskzl", datei: "/private/tmp/helmut-berlin-rbmskzl-1717654.html",
+    sha: "41ee95dc3ad942cf7ec3a1b1da5558cd077ee02e8082f63352aefb5634583b0b",
+    url: "https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717654.php",
+    titel: "Pressekonferenz zur Bewerbung Berlins für Olympische und Paralympische Spiele",
+    tag: "2026-09-23", auszugZeichen: 344 },
+  { familie: "senweb", datei: "/private/tmp/helmut-berlin-senweb-1717406.html",
+    sha: "987f3aef0890eff51caef25bc14671116c98bf7faf5ead1b3a211cfeeb569bbd",
+    url: "https://www.berlin.de/sen/web/presse/pressemitteilungen/2026/pressemitteilung.1717406.php",
+    titel: "30 Jahre internationale Leitmesse für Verkehrstechnologie",
+    tag: "2026-09-23", auszugZeichen: 240 }
+]);
 let originalErgebnis = null;
 if (fs.existsSync(PORTAL_ORIGINAL)) {
   const html = fs.readFileSync(PORTAL_ORIGINAL, "utf8");
   originalErgebnis = M.pruefeSenatsblock({ url: QUELLE, finalUrl: QUELLE, http: 200, html });
   const f = originalErgebnis.fundstellen;
   check("original: sechs eigene Senatstreffer", f.length === 6);
-  check("original: genau drei weiterreichbare Pressearchivlinks",
-    f.filter(x => x.weiterreichbar).length === 3
-    && f.filter(x => x.weiterreichbar).every(x => /\/pressearchiv-\d{4}\//.test(x.url)));
-  check("original: genau drei nicht abrufbare Treffer mit Skipgrund",
-    f.filter(x => !x.weiterreichbar).length === 3
-    && f.filter(x => !x.weiterreichbar).every(x => x.grund === M.GRUND_PRESSEARCHIV));
+  check("original: exakt 6/6 Senatstreffer weiterreichbar ohne Skipgrund",
+    f.length === 6 && f.every(x => x.weiterreichbar === true && x.grund === null));
+  check("original: pro Treffer genau das passende sichere Abrufziel",
+    f.every(x => {
+      const ziel = M.abrufzielFuer(x.url);
+      return ziel && ziel.ziel.url === x.url && ziel.ziel.host === "berlin.de";
+    })
+    && f.filter(x => M.abrufzielFuer(x.url).art === "pressearchiv").length === 3
+    && f.filter(x => M.abrufzielFuer(x.url).art === "sondervorlage").length === 3);
+  check("original: Pressearchivtreffer nur ueber den bestehenden Pressearchiv-Abruf",
+    f.filter(x => M.abrufzielFuer(x.url).art === "pressearchiv")
+      .every(x => ABRUF.pruefeAbrufziel(x.url) !== null && SONDER_ABRUF.pruefeAbrufziel(x.url) === null));
+  check("original: Sondervorlagentreffer nur ueber den neuen Sondervorlagen-Einzelabruf",
+    f.filter(x => M.abrufzielFuer(x.url).art === "sondervorlage")
+      .every(x => ABRUF.pruefeAbrufziel(x.url) === null && SONDER_ABRUF.pruefeAbrufziel(x.url) !== null));
+  check("original: die drei Sondervorlagen-Fundstellen tragen exakten Titel und reinen Tag",
+    SONDER_FUNDSTELLEN.every(p => {
+      const eintrag = f.find(x => x.url === p.url);
+      return eintrag && eintrag.titel === p.titel && eintrag.publikationstag === p.tag;
+    }));
   const bjf = f.find(x => x.url === BJF_URL);
   check("original: bekannte BJF-URL/Titel/Tag exakt",
-    bjf && bjf.titel === BJF_TITEL && bjf.publikationstag === "2026-09-25" && bjf.weiterreichbar === true);
+    bjf && bjf.titel === BJF_TITEL && bjf.publikationstag === "2026-09-25" && bjf.weiterreichbar === true
+    && M.abrufzielFuer(bjf.url).art === "pressearchiv");
   check("original: Bezirksamts- und sonstige Listen nicht eingelesen",
     f.every(x => !/\/presse\/pressemitteilungen\/index\/search/.test(x.url))
     && f.every(x => !x.url.includes("?")) && new Set(f.map(x => x.url)).size === f.length);
@@ -324,6 +410,67 @@ async function laufe() {
       widerspruch.ok === false && widerspruch.reason === "titel-abweichend");
   } else {
     console.log("SKIP Verkettung mit Original: lokale Originale nicht vorhanden (CI-tauglich)");
+  }
+
+  // -------------------------------------------------------------------------------------------
+  // 7) Offline-Verkettung der drei echten Sondervorlagen ueber die ENTDECKTE Fundstelle:
+  //    Sondervorlagen-EINZELABRUF (injizierte Originalantwort) -> standAusSondervorlage.
+  //    Kein Netz, keine DB, kein Modell. Fehlen die Originale, wird ehrlich uebersprungen.
+  // -------------------------------------------------------------------------------------------
+  const sonderVerfuegbar = SONDER_FUNDSTELLEN.filter(probe =>
+    fs.existsSync(probe.datei) && sha(fs.readFileSync(probe.datei, "utf8")) === probe.sha);
+  if (originalErgebnis && sonderVerfuegbar.length === SONDER_FUNDSTELLEN.length) {
+    const portalHtml = fs.readFileSync(PORTAL_ORIGINAL, "utf8");
+    const entdeckt = M.pruefeSenatsblock({ url: QUELLE, finalUrl: QUELLE, http: 200, html: portalHtml });
+    for (const probe of SONDER_FUNDSTELLEN) {
+      const html = fs.readFileSync(probe.datei, "utf8");
+      const f = entdeckt.fundstellen.find(x => x.url === probe.url);
+      const ziel = f ? M.abrufzielFuer(f.url) : null;
+      check(`sonder original ${probe.familie}: entdeckte Fundstelle ist genau dieser Sondervorlagenpfad`,
+        f && f.weiterreichbar === true && f.titel === probe.titel && f.publikationstag === probe.tag
+        && ziel && ziel.art === "sondervorlage" && ABRUF.pruefeAbrufziel(f.url) === null
+        && SONDER_ABRUF.pruefeAbrufziel(f.url).url === f.url);
+
+      const calls = [];
+      const fetchUrl = async (url, depth, deps) => {
+        calls.push({ url, deps });
+        return { body: html, finalUrl: url, status: 200 };
+      };
+      const abruf = await SONDER_ABRUF.ladeSondervorlage({ url: f.url }, { fetchUrl });
+      check(`sonder original ${probe.familie}: Einzelabruf nur auf die entdeckte Adresse mit Hostbindung`,
+        calls.length === 1 && calls[0].url === f.url && calls[0].deps.allowedHost === "berlin.de"
+        && calls[0].deps.meldeStatus === true);
+      check(`sonder original ${probe.familie}: Leserbeleg stimmt in Titel und Tag exakt mit der Fundstelle ueberein`,
+        abruf.ok === true && abruf.vorlage.url === f.url && abruf.vorlage.pfadfamilie === probe.familie
+        && abruf.vorlage.titel === f.titel && abruf.vorlage.publikationstag === f.publikationstag);
+
+      const doc = { id: "local-sonder-" + probe.familie, title: f.titel, url: f.url,
+        canonical_url: f.url, published_at: f.publikationstag, retrieved_at: null, summary: "" };
+      const stand = B.erzeugeSondervorlagenstand(doc, abruf.vorlage);
+      check(`sonder original ${probe.familie}: eigener, hashgebundener Sondervorlagenstand`,
+        stand.ok === true && stand.stand.herkunft === B.HERKUNFT_SONDER
+        && stand.stand.url === f.url.replace("https://www.berlin.de/", "https://berlin.de/")
+        && stand.stand.titel === f.titel && stand.stand.publikationstag === f.publikationstag
+        && stand.row.id === "rd-" + stand.stand.standHash && stand.row.content_hash === stand.stand.standHash
+        && stand.absatz.length === probe.auszugZeichen && stand.absatz === stand.row.summary);
+      check(`sonder original ${probe.familie}: kein HTML/Volltext, published_at null, reiner Kalendertag`,
+        stand.row.published_at === null && !Object.hasOwn(stand.row, "volltext")
+        && !/<[a-z/]/i.test(JSON.stringify(stand.row))
+        && !JSON.stringify(stand.row).includes(abruf.vorlage.volltext)
+        && stand.row.summary !== abruf.vorlage.volltext
+        && /^\d{4}-\d{2}-\d{2}$/.test(stand.stand.publikationstag)
+        && !/\d{2}:\d{2}/.test(JSON.stringify({ id: stand.row.id, hash: stand.row.content_hash,
+          tag: stand.stand.publikationstag, meta: stand.stand })));
+
+      // Widerspruch zwischen Fundstelle und Originalbeleg bricht fail closed ab.
+      const falscherTitel = B.erzeugeSondervorlagenstand({ ...doc, title: f.titel + " (falsch)" }, abruf.vorlage);
+      const falscherTag = B.erzeugeSondervorlagenstand({ ...doc, published_at: "2026-01-01" }, abruf.vorlage);
+      check(`sonder original ${probe.familie}: Titel-/Tagabweichung bricht fail closed ab`,
+        falscherTitel.ok === false && falscherTitel.reason === "titel-abweichend"
+        && falscherTag.ok === false && falscherTag.reason === "datum-nicht-tagesgenau");
+    }
+  } else {
+    console.log("SKIP Verkettung Sondervorlagen: lokale Originale fehlen oder weichen ab (CI-tauglich)");
   }
 
   assert.ok(B.VERSION >= 1);
