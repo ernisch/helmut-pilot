@@ -1,0 +1,59 @@
+{
+  "datum": "2026-09-28",
+  "version": 1,
+  "status": "Einzelfallquittung Friedrich Merz (Richtlinien der Regierungspolitik) vorbereitet; nicht importfreigegeben",
+  "umfang": 1,
+  "bilanz": {
+    "gesamt": 1,
+    "Bund": 1,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-merz-friedrich-1046080",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "bindungsart": "richtlinienkompetenz",
+      "person": "Friedrich Merz",
+      "funktion": "Bundeskanzler",
+      "funktionstext": "Bundeskanzler",
+      "artikelkopf": "Friedrich Merz ist Bundes-Kanzler",
+      "artikeltitel": "Aufgaben vom Bundes-Kanzler",
+      "abschnitt": "Richtlinien-Kompetenz",
+      "absaetze": [
+        "Im Grund-Gesetz steht: Der Bundes-Kanzler hat die Richtlinien-Kompetenz. Richtlinien-Kompetenz bedeutet: Der Bundes-Kanzler bestimmt, was die Bundes-Regierung tun soll. Welche Probleme gelöst werden sollen. Welche Aufgaben erledigt werden sollen.",
+        "Das Bundes-Kanzler bestimmt die Politik von der Bundes-Regierung."
+      ],
+      "aufgabenbindung": "Bundeskanzler; Richtlinien-Kompetenz nach Grund-Gesetz (Der Bundes-Kanzler bestimmt die Richtlinien der Regierungspolitik, also was die Bundes-Regierung tun soll)",
+      "themen": [
+        "Richtlinien der Regierungspolitik"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Bundeskanzler; Richtlinien-Kompetenz nach Grund-Gesetz (Der Bundes-Kanzler bestimmt die Richtlinien der Regierungspolitik, also was die Bundes-Regierung tun soll); keine persönliche politische Position",
+      "personenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080",
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080",
+        "abgerufenAm": "2026-09-27T13:00:52.405228+00:00",
+        "sha256": "533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7",
+        "bytes": 274264,
+        "datei": "bundestag-merz_friedrich-1046080.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/leichte-sprache/leichte-sprache-aufgaben-vom-bundes-kanzler-2342922",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/leichte-sprache/leichte-sprache-aufgaben-vom-bundes-kanzler-2342922",
+        "abgerufenAm": "2026-09-28T11:04:55+00:00",
+        "sha256": "64fe7461d8ecd2aaa6f2374f707322220f0c40bb53afd31fdfb1029a962a9022",
+        "bytes": 97984,
+        "datei": "breg-leichte-sprache-aufgaben-bundeskanzler-2342922.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    }
+  ],
+  "zweck": "Ein einzelner, zuvor offener Fachachsenfall (Friedrich Merz) wird gesondert neu gebunden. Es entsteht KEINE neue Rolle: die bestehende aktuelle Rolle Bundeskanzler stammt unveraendert aus der belegten 54er Rollenquittung.",
+  "pruefung": "Die kanonische 500er-Person (Friedrich Merz) wird eigenstaendig ueber ihre echte H1 und den eigenen aktuellen Funktionstext (genau ein geschlossener, sichtbarer div.m-biography__function = Bundeskanzler) der unveraenderten amtlichen Bundestags-Detailseite sowie ueber die 54er Rollenquelle (URL + sha256 + Abrufzeit) gebunden; es entsteht KEINE neue Rolle und KEINE Rolllockerung. Die Person und das Amt werden ausschliesslich aus dem echten sichtbaren eigenen Artikelkopf der amtlichen Bundesregierungsseite abgeleitet (genau eine header.bpa-article-header im Bereich #rs_reading_area_header, Topline 'Friedrich Merz ist Bundes-Kanzler'); Bild-Alt-Texte, Bildunterschriften und das BreadcrumbList-JSON-LD sind ausdruecklich KEIN Beleg. Die Aufgabe stammt ausschliesslich aus dem geschlossenen H2-Abschnitt 'Richtlinien-Kompetenz' des eigenen innersten div.bpa-richtext im Artikelinhalt (#rs_reading_area_content): genau der Ziel-H2 und genau seine beiden eigenen Absaetze; Figuren/Bildunterschriften, die Nachbar-H2-Abschnitte (Regierungs-Bildung, Ressort-Prinzip, Regierungs-Verantwortung, Regierungs-Koalition, Vize-Kanzler, Zustimmung zur Regierungs-Politik) und verborgene/inerte Inhalte sind kein Beleg. Fachlich entsteht NUR das eine enge Aufgabenthema 'Richtlinien der Regierungspolitik', am Original woertlich als 'Richtlinien-Kompetenz' belegt; keine konkreten politischen Positionen, Koalitionsziele, Ressorts oder allgemeinen Ministeriumsthemen. Die amtliche Zusatzquelle wird an URL/finalUrl/sha256/Bytezahl/Abrufzeit/HTTP/Datei gebunden (Original UND *.meta.json, HTTP 200, finalUrl identisch zur kanonischen URL)."
+}

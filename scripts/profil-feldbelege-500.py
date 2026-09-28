@@ -820,6 +820,61 @@ def _pruefe_pistorius(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator eng gepruefte Einzelfallquittung fuer den zuvor
+# offenen Fachachsenfall Friedrich Merz (Bundeskanzler, Richtlinien der
+# Regierungspolitik). Die fail-closed-Validierung liegt im getrennten Modul
+# ``profil-feldbelege-500-merz.py`` (das die sicheren Helfer des
+# Zusatzaufgabenmoduls wiederverwendet); hier wird nur der gepruefte Index
+# angewendet. Es entsteht KEINE neue Rolle; die bestehende Rolle Bundeskanzler
+# stammt unveraendert aus der 54er Rollenquittung. Person und Amt sind nur ueber
+# den echten sichtbaren eigenen Artikelkopf der amtlichen Bundesregierungsseite
+# belegt (nicht Bild/JSON-LD); die Aufgabe nur ueber den geschlossenen
+# H2-Abschnitt "Richtlinien-Kompetenz" des eigenen innersten div.bpa-richtext.
+MERZ = REPO_ROOT / "docs" / "betrieb" / "merz-richtlinien-1-20260928.json"
+MERZ_RESSOURCE = "docs/betrieb/merz-richtlinien-1-20260928.json"
+
+
+def _lade_merzmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-merz.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_merz", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+MERZMODUL = _lade_merzmodul()
+
+
+def _pruefe_merz(eingang) -> dict:
+    """Prueft die versionierte Merz-Einzelfallquittung ueber das getrennte Modul."""
+    try:
+        index = MERZMODUL.pruefe_merz(
+            eingang,
+            quittung=getattr(eingang, "merz", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+            aufgabenachsen_kennungen=set(getattr(eingang, "aufgabenachsen_by_kennung", None) or {}),
+            beratendeachsen_kennungen=set(getattr(eingang, "beratendeachsen_by_kennung", None) or {}),
+            zusatzaufgaben_kennungen=set(getattr(eingang, "zusaetzlicheaufgaben_by_kennung", None) or {}),
+            bmwsb_kennungen=set(getattr(eingang, "bmwsb_by_kennung", None) or {}),
+            amthor_kennungen=set(getattr(eingang, "amthor_by_kennung", None) or {}),
+            wahlausschuss_kennungen=set(getattr(eingang, "wahlausschuss_by_kennung", None) or {}),
+            jarzombek_kennungen=set(getattr(eingang, "jarzombek_by_kennung", None) or {}),
+            kloeckner_kennungen=set(getattr(eingang, "kloeckner_by_kennung", None) or {}),
+            rohde_kennungen=set(getattr(eingang, "rohde_by_kennung", None) or {}),
+            stellvertretungen_kennungen=set(getattr(eingang, "stellvertretungen_by_kennung", None) or {}),
+        )
+    except MERZMODUL.MerzFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.merz_by_kennung = index
+    eingang.merz_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -1812,6 +1867,10 @@ class Eingang:
             self.pistorius = _lies_json(PISTORIUS)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Pistorius-Parteizusatzquittung fehlt: {PISTORIUS_RESSOURCE}") from fehler
+        try:
+            self.merz = _lies_json(MERZ)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Merz-Einzelfallquittung fehlt: {MERZ_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -3243,6 +3302,74 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
         achsen_geschlossen = True
 
+    # Versionierte Merz-Einzelfallquittung: fuer den zuvor offenen Fachachsenfall
+    # Friedrich Merz entstehen ausschliesslich das eine amtlich abgeleitete Thema
+    # "Richtlinien der Regierungspolitik" (am Original woertlich als
+    # Richtlinien-Kompetenz belegt), der getrennte Herkunftshinweis und die amtliche
+    # Bundesregierungs-Quelle. Die bestehende aktuelle Rolle Bundeskanzler aus der
+    # 54er Rollenquittung und alle bestehenden offiziellen Quellen bleiben
+    # unveraendert erhalten; es entsteht KEINE neue Funktionsrolle, kein
+    # Scheinausschuss und keine Partei-/Mandatsartaenderung. Person und Amt stammen
+    # nur aus dem echten sichtbaren eigenen Artikelkopf (nicht Bild/JSON-LD), die
+    # Aufgabe nur aus dem geschlossenen H2-Abschnitt "Richtlinien-Kompetenz" des
+    # eigenen innersten div.bpa-richtext. Keine konkreten politischen Positionen,
+    # Koalitionsziele, Ressorts oder allgemeinen Ministeriumsthemen.
+    merz_eintrag = (getattr(eingang, "merz_by_kennung", None) or {}).get(mandatsId)
+    merz_beleg = None
+    if merz_eintrag is not None:
+        verwendet = getattr(eingang, "merz_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        merz_quelle = merz_eintrag["quelle"]
+        profil["themen"] = list(merz_eintrag["themen"])
+        hinweis = merz_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "kanzler-richtlinienkompetenz",
+            "url": merz_quelle["url"],
+            "abgerufenAm": merz_quelle["abgerufenAm"],
+            "sha256": merz_quelle["sha256"],
+        })
+        merz_beleg = {
+            "datei": MERZ_RESSOURCE,
+            "kennung": merz_eintrag["kennung"],
+            "region": merz_eintrag["region"],
+            "bindungsart": merz_eintrag["bindungsart"],
+            "person": merz_eintrag["person"],
+            "funktion": merz_eintrag["funktion"],
+            "funktionstext": merz_eintrag["funktionstext"],
+            "artikelkopf": merz_eintrag["artikelkopf"],
+            "artikeltitel": merz_eintrag["artikeltitel"],
+            "abschnitt": merz_eintrag["abschnitt"],
+            "absaetze": list(merz_eintrag["absaetze"]),
+            "aufgabenbindung": merz_eintrag["aufgabenbindung"],
+            "personenquelle": {
+                "datei": merz_eintrag["personenquelle"].get("datei"),
+                "url": merz_eintrag["personenquelle"].get("url"),
+                "finalUrl": merz_eintrag["personenquelle"].get("finalUrl"),
+                "abgerufenAm": merz_eintrag["personenquelle"].get("abgerufenAm"),
+                "sha256": merz_eintrag["personenquelle"].get("sha256"),
+                "bytes": merz_eintrag["personenquelle"].get("bytes"),
+                "http": merz_eintrag["personenquelle"].get("http"),
+                "abrufStatus": merz_eintrag["personenquelle"].get("abrufStatus"),
+            },
+            "quelle": {
+                "datei": merz_quelle.get("datei"),
+                "url": merz_quelle.get("url"),
+                "finalUrl": merz_quelle.get("finalUrl"),
+                "abgerufenAm": merz_quelle.get("abgerufenAm"),
+                "sha256": merz_quelle.get("sha256"),
+                "bytes": merz_quelle.get("bytes"),
+                "http": merz_quelle.get("http"),
+                "abrufStatus": merz_quelle.get("abrufStatus"),
+            },
+            "themen": list(merz_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -3342,6 +3469,21 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"automatischen PDF-Parser und keine erfundene Textextraktionsquelle; keine Nachbarkaesten "
             f"(Schrodi Steuerpolitik, Kaiser Ostdeutschland), keine beamteten Staatssekretaere, keine ganzen "
             f"Abteilungen, keine Kanzleramtsfunktion, keine persoenliche politische Position"
+        )
+    elif merz_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Merz-Einzelfallquittung {MERZ_RESSOURCE}: das eine amtlich "
+            f"abgeleitete Thema (Richtlinien der Regierungspolitik, am Original woertlich als "
+            f"Richtlinien-Kompetenz belegt) stammt ausschliesslich aus dem geschlossenen H2-Abschnitt "
+            f"{merz_beleg['abschnitt']!r} des eigenen innersten div.bpa-richtext im Artikelinhalt "
+            f"(#rs_reading_area_content); Figuren/Bildunterschriften, die Nachbar-H2-Abschnitte "
+            f"(Regierungs-Bildung, Ressort-Prinzip, Regierungs-Verantwortung, Regierungs-Koalition, "
+            f"Vize-Kanzler, Zustimmung zur Regierungs-Politik) und verborgene/inerte Inhalte sind kein "
+            f"Beleg; die Person und das Amt Bundes-Kanzler stammen ausschliesslich aus dem echten "
+            f"sichtbaren eigenen Artikelkopf (header.bpa-article-header; nicht Bild-Alt, nicht "
+            f"Bildunterschrift, nicht JSON-LD); keine konkreten politischen Positionen, Koalitionsziele, "
+            f"Ressorts oder allgemeinen Ministeriumsthemen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit "
+            f"+ HTTP + Datei der amtlichen Quelle, Original UND Metadaten, gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -3479,6 +3621,22 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"(Bundeshaushalt) aus Rohdes eigenem Kasten auf Seite 1 des verlinkten v=32-Organisationsplans, "
             f"keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP "
             f"+ Datei der amtlichen Quelle, Original UND Metadaten, gebunden)"
+        )
+        feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
+
+    if merz_beleg is not None:
+        vorher = feldbelege.get("funktionen")
+        zusatz = (
+            f"vom Orchestrator gepruefte Merz-Einzelfallquittung {MERZ_RESSOURCE}: die bestehende aktuelle "
+            f"Rolle Bundeskanzler aus der 54er Rollenquittung und alle bestehenden Funktionen bleiben "
+            f"unveraendert erhalten (KEINE neue Funktionsrolle, kein Scheinausschuss); die kanonische "
+            f"Bundestags-Person wird separat ueber ihre echte H1 und den eigenen aktuellen Funktionstext "
+            f"(div.m-biography__function) neu gebunden; zusaetzlich nur der getrennte Herkunftshinweis zur "
+            f"amtlichen Richtlinien-Kompetenz des Bundeskanzlers aus dem geschlossenen H2-Abschnitt "
+            f"{merz_beleg['abschnitt']!r} des eigenen innersten div.bpa-richtext, keine konkreten "
+            f"politischen Positionen, keine Koalitionsziele, keine Ressorts oder allgemeinen "
+            f"Ministeriumsthemen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der "
+            f"amtlichen Quelle, Original UND Metadaten, gebunden)"
         )
         feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
 
@@ -3662,6 +3820,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["kloecknerQuittung"] = kloeckner_beleg
     if rohde_beleg is not None:
         datensatz["rohdeQuittung"] = rohde_beleg
+    if merz_beleg is not None:
+        datensatz["merzQuittung"] = merz_beleg
     if stellvertretungen_beleg is not None:
         datensatz["stellvertretungenQuittung"] = stellvertretungen_beleg
     if "status" in extraktion:
@@ -3691,6 +3851,7 @@ def assembliere(eingang: Eingang) -> dict:
     rohde = _pruefe_rohde(eingang)
     stellvertretungen = _pruefe_stellvertretungen(eingang)
     pistorius = _pruefe_pistorius(eingang)
+    merz = _pruefe_merz(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -3788,6 +3949,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Rohde-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_rohde)}."
         )
+    ungenutzte_merz = set(merz) - eingang.merz_verwendet
+    if ungenutzte_merz:
+        raise AssemblerFehler(
+            f"Merz-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_merz)}."
+        )
     ungenutzte_stellvertretungen = set(stellvertretungen) - eingang.stellvertretungen_verwendet
     if ungenutzte_stellvertretungen:
         raise AssemblerFehler(
@@ -3858,6 +4024,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Rohde-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
             f"{sorted(set(rohde) ^ rohde_geschlossen)}."
+        )
+    merz_geschlossen = set(eingang.merz_verwendet)
+    if merz_geschlossen != set(merz):
+        raise AssemblerFehler(
+            f"Merz-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
+            f"{sorted(set(merz) ^ merz_geschlossen)}."
         )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
@@ -3965,10 +4137,27 @@ def assembliere(eingang: Eingang) -> dict:
                 f"Rohde-Einzelfall- und {name}achse gleichzeitig belegt: "
                 f"{sorted(rohde_geschlossen & andere)}."
             )
+    for andere, name in (
+        (ressort_geschlossen, "Ressort"),
+        (aufgaben_geschlossen, "Aufgaben"),
+        (beratende_geschlossen, "Beratende"),
+        (zusatz_geschlossen, "Zusatzaufgaben"),
+        (bmwsb_geschlossen, "BMWSB-Aufgaben"),
+        (amthor_geschlossen, "Amthor-Einzelfall"),
+        (wahlausschuss_geschlossen, "Wahlausschuss-Aufgaben"),
+        (jarzombek_geschlossen, "Jarzombek-Einzelfall"),
+        (kloeckner_geschlossen, "Kloeckner-Einzelfall"),
+        (rohde_geschlossen, "Rohde-Einzelfall"),
+    ):
+        if merz_geschlossen & andere:
+            raise AssemblerFehler(
+                f"Merz-Einzelfall- und {name}achse gleichzeitig belegt: "
+                f"{sorted(merz_geschlossen & andere)}."
+            )
     geschlossene_achsen = (ressort_geschlossen | aufgaben_geschlossen
                            | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen
                            | amthor_geschlossen | wahlausschuss_geschlossen | jarzombek_geschlossen
-                           | kloeckner_geschlossen | rohde_geschlossen)
+                           | kloeckner_geschlossen | rohde_geschlossen | merz_geschlossen)
     # Die Stellvertretungsquittung schliesst die fachliche Achse ueber eine belegte
     # stellvertretende (nicht ordentliche) Ausschussmitgliedschaft. Nur Profile,
     # deren Achse zuvor in der 54er Rollenquittung offen war, gehoeren in die
@@ -4020,6 +4209,7 @@ def assembliere(eingang: Eingang) -> dict:
                 or datensatz.get("bmwsbQuittung") or datensatz.get("amthorQuittung")
                 or datensatz.get("wahlausschussQuittung") or datensatz.get("jarzombekQuittung")
                 or datensatz.get("kloecknerQuittung") or datensatz.get("rohdeQuittung")
+                or datensatz.get("merzQuittung")
                 or datensatz.get("stellvertretungenQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
@@ -4114,6 +4304,17 @@ def assembliere(eingang: Eingang) -> dict:
                 "Bundestags-Parteibeleg aus der getrennten offiziellen Quelle "
                 "https://www.spd.de/ueber-uns; H2, section#m236604 und exakter li-Name "
                 "im Validator code-seitig fixiert; die 335er Quittung bleibt unveraendert offen)"
+            ),
+            "merzQuittung": (
+                f"{MERZ_RESSOURCE} (vom Orchestrator eng geprueft; EIN zuvor offener Fachachsenfall: "
+                "Bundeskanzler Friedrich Merz, Thema Richtlinien der Regierungspolitik, am Original "
+                "woertlich als Richtlinien-Kompetenz belegt. KEINE neue Rolle; die bestehende 54er-Rolle "
+                "Bundeskanzler bleibt erhalten und wird eigenstaendig ueber echte H1 + eigenen "
+                "Funktionstext (div.m-biography__function) der amtlichen Bundestagsseite neu gebunden. "
+                "Person/Amt nur aus dem echten sichtbaren eigenen Artikelkopf der amtlichen "
+                "Bundesregierungsseite (nicht Bild/JSON-LD); Aufgabe nur aus dem geschlossenen "
+                "H2-Abschnitt Richtlinien-Kompetenz des eigenen innersten div.bpa-richtext; URL + finalUrl "
+                "+ sha256 + Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten, gebunden)"
             ),
             "mandatsartenquittung": (
                 f"{MANDATSARTEN_BB_RESSOURCE} (amtliche Brandenburger Uebersicht; Landesliste fuer "
@@ -4398,6 +4599,34 @@ def assembliere(eingang: Eingang) -> dict:
                 "bleiben 14 Achsen offen."
             ),
             (
+                "Fuer den einzeln offenen Fachachsenfall Friedrich Merz wird ueber die vom Orchestrator eng "
+                f"gepruefte Einzelfallquittung {MERZ_RESSOURCE} das eine amtlich abgeleitete Thema "
+                "'Richtlinien der Regierungspolitik' gesetzt (getrennter Herkunftshinweis in funktionen) und "
+                "damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul "
+                "scripts/profil-feldbelege-500-merz.py, das die sicheren Helfer des Zusatzaufgabenmoduls "
+                "wiederverwendet: es entsteht KEINE neue Rolle; die bestehende aktuelle Rolle Bundeskanzler "
+                "stammt unveraendert aus der belegten 54er Rollenquittung und wird trotzdem eigenstaendig neu "
+                "gebunden (echte H1 und eigener aktueller Funktionstext div.m-biography__function der "
+                "amtlichen Bundestags-Detailseite). Person und Amt stammen ausschliesslich aus dem echten "
+                "sichtbaren eigenen Artikelkopf der amtlichen Bundesregierungsseite (genau eine "
+                "header.bpa-article-header im Bereich #rs_reading_area_header, Topline 'Friedrich Merz ist "
+                "Bundes-Kanzler'); Bild-Alt-Texte, Bildunterschriften und das BreadcrumbList-JSON-LD sind "
+                "ausdruecklich KEIN Beleg. Das Thema stammt ausschliesslich aus dem geschlossenen "
+                "H2-Abschnitt 'Richtlinien-Kompetenz' des eigenen innersten div.bpa-richtext im Artikelinhalt "
+                "(#rs_reading_area_content): genau der Ziel-H2 und genau seine beiden eigenen Absaetze; "
+                "Figuren/Bildunterschriften, die Nachbar-H2-Abschnitte (Regierungs-Bildung, Ressort-Prinzip, "
+                "Regierungs-Verantwortung, Regierungs-Koalition, Vize-Kanzler, Zustimmung zur "
+                "Regierungs-Politik) und verborgene/inerte Inhalte sind kein Beleg. Das Original traegt die "
+                "Aufgabe woertlich als 'Richtlinien-Kompetenz'; der enge Themenbegriff 'Richtlinien der "
+                "Regierungspolitik' ist die amtliche Bezeichnung derselben Aufgabe, keine freie "
+                "Themenzuordnung. Keine konkreten politischen Positionen, Koalitionsziele, Ressorts oder "
+                "allgemeinen Ministeriumsthemen; die amtliche Quelle wird an URL + finalUrl + sha256 + "
+                "Bytezahl + Abrufzeit + HTTP + Datei (Original UND Metadaten) gebunden. Die Kennung ist "
+                "disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB-, 1 "
+                "Amthor-, 3 Wahlausschuss-, 1 Jarzombek-, 1 Kloeckner- und 1 Rohde-Achse; die disjunkte "
+                "Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 13 Achsen offen."
+            ),
+            (
                 "Der belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften wird "
                 f"ueber die vom Orchestrator geprueffte Ergaenzungsquittung {STELLVERTRETUNGEN_RESSOURCE} "
                 "behoben: 76 bislang fehlende Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile "
@@ -4561,6 +4790,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("rohdeQuittung")),
                 "deckungsgleichVerwendet": len(eingang.rohde_verwendet),
                 "geschlosseneAchsen": len(rohde_geschlossen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
+            },
+            "merzQuittung": {
+                "datei": MERZ_RESSOURCE,
+                "geprueftGesamt": len(merz),
+                "nachRegion": {"Bund": len(merz)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("merzQuittung")),
+                "deckungsgleichVerwendet": len(eingang.merz_verwendet),
+                "geschlosseneAchsen": len(merz_geschlossen),
                 "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "stellvertretungenQuittung": {

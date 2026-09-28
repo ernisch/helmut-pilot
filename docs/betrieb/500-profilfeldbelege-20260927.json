@@ -11,6 +11,7 @@
     "brandenburgParteipruefung": "docs/betrieb/brandenburg-parteipruefung-20260927.json",
     "parteifeldpruefung": "docs/betrieb/parteifeldpruefung-335-20260927.json (335 gepruefte Parteifelder: 261 belegt, 74 offen)",
     "pistoriusParteibeleg": "docs/betrieb/pistorius-partei-1-20260928.json (enge Zusatzquittung; EIN bislang offener Bundestags-Parteibeleg aus der getrennten offiziellen Quelle https://www.spd.de/ueber-uns; H2, section#m236604 und exakter li-Name im Validator code-seitig fixiert; die 335er Quittung bleibt unveraendert offen)",
+    "merzQuittung": "docs/betrieb/merz-richtlinien-1-20260928.json (vom Orchestrator eng geprueft; EIN zuvor offener Fachachsenfall: Bundeskanzler Friedrich Merz, Thema Richtlinien der Regierungspolitik, am Original woertlich als Richtlinien-Kompetenz belegt. KEINE neue Rolle; die bestehende 54er-Rolle Bundeskanzler bleibt erhalten und wird eigenstaendig ueber echte H1 + eigenen Funktionstext (div.m-biography__function) der amtlichen Bundestagsseite neu gebunden. Person/Amt nur aus dem echten sichtbaren eigenen Artikelkopf der amtlichen Bundesregierungsseite (nicht Bild/JSON-LD); Aufgabe nur aus dem geschlossenen H2-Abschnitt Richtlinien-Kompetenz des eigenen innersten div.bpa-richtext; URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten, gebunden)",
     "mandatsartenquittung": "docs/betrieb/brandenburg-mandatsarten-20260927.json (amtliche Brandenburger Uebersicht; Landesliste fuer 4 Profile, URL + sha256 + Abrufzeit gebunden)",
     "mandatsartenquittungBerlin": "docs/betrieb/berlin-mandatsarten-20260927.json (amtliches Handbuch-PDF Stand 8.10.2025, Seite 204 linke Spalte; Bezirks-/Landesliste fuer 2 Profile, URL + sha256 + Bytezahl + Abrufzeit gebunden, woertliche Transkription; kein automatischer PDF-Parser-Nachweis)",
     "profilrollenQuittung": "docs/betrieb/profilrollen-54-20260927.json (vom Orchestrator geprueft; 48 Rollen fuer fachlich offene Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches Zitat im personengebundenen Abschnitt gebunden)",
@@ -46,6 +47,7 @@
     "Fuer den einzeln offenen Rollenfall Philipp Amthor wird ueber die vom Orchestrator gepruefte Einzelfallquittung docs/betrieb/amthor-aktuelles-amt-1-20260927.json die freigegebene aktuelle Funktionsrolle 'Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler' (seit 29. Juli 2026) genau einmal an bestehende funktionen angehaengt und das eine amtlich abgeleitete Thema 'Bund-Laender-Beziehungen' gesetzt (getrennter Herkunftshinweis in funktionen); damit ist die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-amthor.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: die aktuelle Rolle stammt ausschliesslich aus dem geschlossenen eigenen div.bpa-richtext-Lebenslauf-p der Bundesregierungs-Personenseite (nicht Meta/Bildunterschrift), der vorige PSts-Digitalabsatz (2025 bis 2026) bleibt ausdruecklich historisch, das Thema ausschliesslich aus genau einem echten li mit strong 'Staatsminister fuer die Bund-Laender-Beziehungen' und 'Philipp Amthor' unter der Personalien-h2 der Ankuendigung (24. Juli 2026; die Ankuendigung belegt den Amtsantritt NICHT). Der 54er-Eintrag bleibt historisch offen (separate Neubindung, KEINE Lockerung des alten Rollenvalidators); Partei, Mandatsart und Gremien bleiben unveraendert. Jede Kennung ist an den kanonischen Bundestags-Profilnamen/URL/Hash der 54er Quittung und beide Zusatzquellen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten) gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben- und 2 BMWSB-Achsen. Kein Digitalamt als aktuell, keine persoenliche Position; damals blieben 21 Achsen offen.",
     "Fuer 3 weitere dieser 54 Profile wird ueber die vom Orchestrator eng gepruefte Wahlausschuss-Aufgabenquittung docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json das enge amtlich abgeleitete Thema 'Richter des Bundesverfassungsgerichts' gesetzt (getrennter Herkunftshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-wahlausschuss.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: die kanonische Person (H1/URL/Hash/Bytezahl/Abruf/HTTP) stammt aus der unveraenderten 54er Rollenquittung; die aktuelle Mitgliedschaft wird eigenstaendig aus genau EINEM ProfilePage.mainEntity (Typ Person, '@id' #mdb, Name, falls url vorhanden exakt die Quell-URL, description 'Mitglied des 21. Deutschen Bundestages') in genau EINER echten Role auf exakt Organization/Wahlausschuss/kanonische Gremien-URL mit dem exakten roleName, startDate <= Abrufzeit und OHNE endDate geprueft. Das enge Thema stammt ausschliesslich aus dem geschlossenen aktuellen Gremienaufgabenabsatz unter #arbeit-und-aufgaben und .bt-standard-content (genau ein eigener p mit vollstaendigem Wortlaut und 21. Wahlperiode); Navigation, Template und fremde Absaetze sind kein Beleg. Das sonstige Gremium und die bestehenden ordentlichen/stellvertretenden Funktionen bleiben unveraendert, es wird NIE als regulaerer Ausschuss zurueckgeschrieben (PR660 bleibt richtig), keine Umdeklarierung, keine Fraktionsvorsitz-/Parteifeld-/Mandatsartaenderung, keine persoenliche politische Position. Die 54er Rollenquittung und alle bisherigen Quittungen bleiben unveraendert (Haßelmann/Miersch bleiben dort offen, kein Blocker dieser eigenstaendigen Mitgliedschaftsquelle). Jede Kennung ist disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB- und 1 Amthor-Achse; die disjunkte Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 18 Achsen offen.",
     "Fuer den einzeln offenen Fachachsenfall Dennis Rohde wird ueber die vom Orchestrator eng gepruefte Einzelfallquittung docs/betrieb/rohde-bundeshaushalt-1-20260927.json das eine amtlich abgeleitete Thema 'Bundeshaushalt' gesetzt (getrennter Herkunftshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-rohde.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: die bestehende Amtsfunktion 'Parlamentarischer Staatssekretaer fuer Finanzen' aus der belegten 54er Rollenquittung bleibt unveraendert und traegt im eigenen Funktionsabschnitt KEINE Datumsangabe, ein Amtsbeginn wird nicht (auch nicht aus der MdB-Role 2025-03-25 des JSON-LD) abgeleitet; die kanonische Person wird separat ueber echte H1, eigenen aktuellen Funktionstext (div.m-biography__function) und die JSON-LD-Gegenprobe (genau eine echte Role 'Mitglied des Bundestages' ohne endDate) neu gebunden. Das Thema stammt ausschliesslich aus Rohdes eigenem, klar umrandetem Kasten auf Seite 1 des amtlich von der Landingpage verlinkten v=32-Organisationsplans (Stand 3. August 2026); die PDF-Originalbytes werden NUR ueber URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei (Original UND Metadaten) gebunden, es gibt KEINEN automatischen PDF-Parser und keine erfundene Textextraktionsquelle. Die Landingpage muss genau diesen v=32-Link mit dem datierten Linktext tragen; die Suchtreffer-Fassung v=41 ist kein Beleg. Keine Nachbarkaesten (Schrodi Steuerpolitik, Kaiser Ostdeutschland), keine beamteten Staatssekretaere, keine ganzen Abteilungen, keine Kanzleramtsfunktion, keine persoenliche politische Position. Die Kennung ist disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB-, 1 Amthor-, 3 Wahlausschuss-, 1 Jarzombek- und 1 Kloeckner-Achse; die disjunkte Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 14 Achsen offen.",
+    "Fuer den einzeln offenen Fachachsenfall Friedrich Merz wird ueber die vom Orchestrator eng gepruefte Einzelfallquittung docs/betrieb/merz-richtlinien-1-20260928.json das eine amtlich abgeleitete Thema 'Richtlinien der Regierungspolitik' gesetzt (getrennter Herkunftshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-merz.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: es entsteht KEINE neue Rolle; die bestehende aktuelle Rolle Bundeskanzler stammt unveraendert aus der belegten 54er Rollenquittung und wird trotzdem eigenstaendig neu gebunden (echte H1 und eigener aktueller Funktionstext div.m-biography__function der amtlichen Bundestags-Detailseite). Person und Amt stammen ausschliesslich aus dem echten sichtbaren eigenen Artikelkopf der amtlichen Bundesregierungsseite (genau eine header.bpa-article-header im Bereich #rs_reading_area_header, Topline 'Friedrich Merz ist Bundes-Kanzler'); Bild-Alt-Texte, Bildunterschriften und das BreadcrumbList-JSON-LD sind ausdruecklich KEIN Beleg. Das Thema stammt ausschliesslich aus dem geschlossenen H2-Abschnitt 'Richtlinien-Kompetenz' des eigenen innersten div.bpa-richtext im Artikelinhalt (#rs_reading_area_content): genau der Ziel-H2 und genau seine beiden eigenen Absaetze; Figuren/Bildunterschriften, die Nachbar-H2-Abschnitte (Regierungs-Bildung, Ressort-Prinzip, Regierungs-Verantwortung, Regierungs-Koalition, Vize-Kanzler, Zustimmung zur Regierungs-Politik) und verborgene/inerte Inhalte sind kein Beleg. Das Original traegt die Aufgabe woertlich als 'Richtlinien-Kompetenz'; der enge Themenbegriff 'Richtlinien der Regierungspolitik' ist die amtliche Bezeichnung derselben Aufgabe, keine freie Themenzuordnung. Keine konkreten politischen Positionen, Koalitionsziele, Ressorts oder allgemeinen Ministeriumsthemen; die amtliche Quelle wird an URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei (Original UND Metadaten) gebunden. Die Kennung ist disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB-, 1 Amthor-, 3 Wahlausschuss-, 1 Jarzombek-, 1 Kloeckner- und 1 Rohde-Achse; die disjunkte Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 13 Achsen offen.",
     "Der belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften wird ueber die vom Orchestrator geprueffte Ergaenzungsquittung docs/betrieb/brandenburg-stellvertretungen-76-20260927.json behoben: 76 bislang fehlende Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile werden ausschliesslich aus der eigenen geschlossenen Stellvertretungsspalte der 13 von 14 amtlichen Fachausschussseiten ergaenzt (Index 25220; Unterausschuss 23893 ist der belegte Nullfall ohne Spalte). Nur die 50 kanonischen Brandenburger Personen-URLs bilden die Auswahlgrenze; andere Personen auf den amtlichen Seiten sind keine Kundenprofile, es entstehen keine AfD-Profile. Ordentliche Ausschuesse, Partei, Fraktion, Funktionen, Themen und Mandatsart bleiben unveraendert, keine Aufwertung zu ordentlichem Sitz oder Vorsitz, keine erfundenen Themen. Die belegte Stellvertretung traegt die fachliche Achse und schliesst genau die eine zuvor offene Achse (Oliver Skopec); die uebrigen 34 Profile werden nur vollstaendiger. Index und vollstaendige Menge der 14 Quellen sind an URL/finalUrl/HTTP/Abrufzeit/Hash/Bytes/Datei (Original UND Metadaten) gebunden.",
     "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
     "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe."
@@ -84,7 +86,7 @@
       "verwendet": 1
     },
     "mandatsartOffen": 1,
-    "fachlicheAchseOffen": 14,
+    "fachlicheAchseOffen": 13,
     "sonstigeGremien": {
       "expliziteListe": 15,
       "profileMitWeiterenGremien": 114,
@@ -119,7 +121,7 @@
       "themenGesetzt": 19,
       "deckungsgleichVerwendet": 19,
       "geschlosseneAchsen": 19,
-      "verbleibendOffeneAchsen": 14
+      "verbleibendOffeneAchsen": 13
     },
     "aufgabenachsenQuittung": {
       "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
@@ -170,7 +172,7 @@
       "themenGesetzt": 1,
       "deckungsgleichVerwendet": 1,
       "geschlosseneAchsen": 1,
-      "verbleibendOffeneAchsen": 14
+      "verbleibendOffeneAchsen": 13
     },
     "wahlausschussQuittung": {
       "datei": "docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json",
@@ -181,7 +183,7 @@
       "themenGesetzt": 3,
       "deckungsgleichVerwendet": 3,
       "geschlosseneAchsen": 3,
-      "verbleibendOffeneAchsen": 14
+      "verbleibendOffeneAchsen": 13
     },
     "fraktionsvorsitzQuittung": {
       "datei": "docs/betrieb/fraktionsvorsitz-zwei-20260927.json",
@@ -193,7 +195,7 @@
       "themenGesetzt": 0,
       "deckungsgleichVerwendet": 2,
       "geschlosseneAchsen": 0,
-      "verbleibendOffeneAchsen": 14
+      "verbleibendOffeneAchsen": 13
     },
     "jarzombekQuittung": {
       "datei": "docs/betrieb/jarzombek-bmds-abteilungen-1-20260927.json",
@@ -204,7 +206,7 @@
       "themenGesetzt": 1,
       "deckungsgleichVerwendet": 1,
       "geschlosseneAchsen": 1,
-      "verbleibendOffeneAchsen": 14
+      "verbleibendOffeneAchsen": 13
     },
     "kloecknerQuittung": {
       "datei": "docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json",
@@ -215,7 +217,7 @@
       "themenGesetzt": 1,
       "deckungsgleichVerwendet": 1,
       "geschlosseneAchsen": 1,
-      "verbleibendOffeneAchsen": 14
+      "verbleibendOffeneAchsen": 13
     },
     "rohdeQuittung": {
       "datei": "docs/betrieb/rohde-bundeshaushalt-1-20260927.json",
@@ -226,7 +228,18 @@
       "themenGesetzt": 1,
       "deckungsgleichVerwendet": 1,
       "geschlosseneAchsen": 1,
-      "verbleibendOffeneAchsen": 14
+      "verbleibendOffeneAchsen": 13
+    },
+    "merzQuittung": {
+      "datei": "docs/betrieb/merz-richtlinien-1-20260928.json",
+      "geprueftGesamt": 1,
+      "nachRegion": {
+        "Bund": 1
+      },
+      "themenGesetzt": 1,
+      "deckungsgleichVerwendet": 1,
+      "geschlosseneAchsen": 1,
+      "verbleibendOffeneAchsen": 13
     },
     "stellvertretungenQuittung": {
       "datei": "docs/betrieb/brandenburg-stellvertretungen-76-20260927.json",
@@ -236,12 +249,12 @@
       "quellen": 14,
       "deckungsgleichVerwendet": 35,
       "geschlosseneAchsen": 1,
-      "verbleibendOffeneAchsen": 14
+      "verbleibendOffeneAchsen": 13
     },
     "offeneFelder": {
       "weitereGremien": 137,
       "partei": 73,
-      "fachlicheAchse": 14,
+      "fachlicheAchse": 13,
       "wahlbezirk": 1,
       "mandatsart": 1,
       "regionbezug": 28
@@ -22352,7 +22365,8 @@
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 146: Hochsauerlandkreis",
         "funktionen": [
-          "Bundeskanzler"
+          "Bundeskanzler",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Bundeskanzler; Richtlinien-Kompetenz nach Grund-Gesetz (Der Bundes-Kanzler bestimmt die Richtlinien der Regierungspolitik, also was die Bundes-Regierung tun soll); keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -22361,7 +22375,16 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080",
             "abgerufenAm": "2026-09-27T13:00:52.405228+00:00",
             "sha256": "533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7"
+          },
+          {
+            "art": "kanzler-richtlinienkompetenz",
+            "url": "https://www.bundesregierung.de/breg-de/leichte-sprache/leichte-sprache-aufgaben-vom-bundes-kanzler-2342922",
+            "abgerufenAm": "2026-09-28T11:04:55+00:00",
+            "sha256": "64fe7461d8ecd2aaa6f2374f707322220f0c40bb53afd31fdfb1029a962a9022"
           }
+        ],
+        "themen": [
+          "Richtlinien der Regierungspolitik"
         ]
       },
       "mandatsnachweis": {
@@ -22404,11 +22427,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Merz-Einzelfallquittung docs/betrieb/merz-richtlinien-1-20260928.json: das eine amtlich abgeleitete Thema (Richtlinien der Regierungspolitik, am Original woertlich als Richtlinien-Kompetenz belegt) stammt ausschliesslich aus dem geschlossenen H2-Abschnitt 'Richtlinien-Kompetenz' des eigenen innersten div.bpa-richtext im Artikelinhalt (#rs_reading_area_content); Figuren/Bildunterschriften, die Nachbar-H2-Abschnitte (Regierungs-Bildung, Ressort-Prinzip, Regierungs-Verantwortung, Regierungs-Koalition, Vize-Kanzler, Zustimmung zur Regierungs-Politik) und verborgene/inerte Inhalte sind kein Beleg; die Person und das Amt Bundes-Kanzler stammen ausschliesslich aus dem echten sichtbaren eigenen Artikelkopf (header.bpa-article-header; nicht Bild-Alt, nicht Bildunterschrift, nicht JSON-LD); keine konkreten politischen Positionen, Koalitionsziele, Ressorts oder allgemeinen Ministeriumsthemen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der amtlichen Quelle, Original UND Metadaten, gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7)",
         "parteiWert": "seit Februar 2022 Vorsitzender der CDU-Deutschlands",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080 sha256 533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; vom Orchestrator gepruefte Merz-Einzelfallquittung docs/betrieb/merz-richtlinien-1-20260928.json: die bestehende aktuelle Rolle Bundeskanzler aus der 54er Rollenquittung und alle bestehenden Funktionen bleiben unveraendert erhalten (KEINE neue Funktionsrolle, kein Scheinausschuss); die kanonische Bundestags-Person wird separat ueber ihre echte H1 und den eigenen aktuellen Funktionstext (div.m-biography__function) neu gebunden; zusaetzlich nur der getrennte Herkunftshinweis zur amtlichen Richtlinien-Kompetenz des Bundeskanzlers aus dem geschlossenen H2-Abschnitt 'Richtlinien-Kompetenz' des eigenen innersten div.bpa-richtext, keine konkreten politischen Positionen, keine Koalitionsziele, keine Ressorts oder allgemeinen Ministeriumsthemen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der amtlichen Quelle, Original UND Metadaten, gebunden)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -22417,12 +22441,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -22440,6 +22460,47 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "merzQuittung": {
+        "datei": "docs/betrieb/merz-richtlinien-1-20260928.json",
+        "kennung": "bundestag-merz-friedrich-1046080",
+        "region": "Bund",
+        "bindungsart": "richtlinienkompetenz",
+        "person": "Friedrich Merz",
+        "funktion": "Bundeskanzler",
+        "funktionstext": "Bundeskanzler",
+        "artikelkopf": "Friedrich Merz ist Bundes-Kanzler",
+        "artikeltitel": "Aufgaben vom Bundes-Kanzler",
+        "abschnitt": "Richtlinien-Kompetenz",
+        "absaetze": [
+          "Im Grund-Gesetz steht: Der Bundes-Kanzler hat die Richtlinien-Kompetenz. Richtlinien-Kompetenz bedeutet: Der Bundes-Kanzler bestimmt, was die Bundes-Regierung tun soll. Welche Probleme gelöst werden sollen. Welche Aufgaben erledigt werden sollen.",
+          "Das Bundes-Kanzler bestimmt die Politik von der Bundes-Regierung."
+        ],
+        "aufgabenbindung": "Bundeskanzler; Richtlinien-Kompetenz nach Grund-Gesetz (Der Bundes-Kanzler bestimmt die Richtlinien der Regierungspolitik, also was die Bundes-Regierung tun soll)",
+        "personenquelle": {
+          "datei": "bundestag-merz_friedrich-1046080.html",
+          "url": "https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080",
+          "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080",
+          "abgerufenAm": "2026-09-27T13:00:52.405228+00:00",
+          "sha256": "533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7",
+          "bytes": 274264,
+          "http": 200,
+          "abrufStatus": "abgerufen"
+        },
+        "quelle": {
+          "datei": "breg-leichte-sprache-aufgaben-bundeskanzler-2342922.html",
+          "url": "https://www.bundesregierung.de/breg-de/leichte-sprache/leichte-sprache-aufgaben-vom-bundes-kanzler-2342922",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/leichte-sprache/leichte-sprache-aufgaben-vom-bundes-kanzler-2342922",
+          "abgerufenAm": "2026-09-28T11:04:55+00:00",
+          "sha256": "64fe7461d8ecd2aaa6f2374f707322220f0c40bb53afd31fdfb1029a962a9022",
+          "bytes": 97984,
+          "http": 200,
+          "abrufStatus": "abgerufen"
+        },
+        "themen": [
+          "Richtlinien der Regierungspolitik"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Bundeskanzler; Richtlinien-Kompetenz nach Grund-Gesetz (Der Bundes-Kanzler bestimmt die Richtlinien der Regierungspolitik, also was die Bundes-Regierung tun soll); keine persönliche politische Position"
       }
     },
     {

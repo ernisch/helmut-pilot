@@ -4173,3 +4173,303 @@ print('PASS: Rohde-Einzelfallquittung — fehlende Quittung/falsche Bilanz/Fremd
       'nicht belegte oder wortlautlose 54er-Rolle/Nachbarkaesten Steuerpolitik und Ostdeutschland sowie '
       'generalisierte Fremdthemen sperren fail closed; das gueltige synthetische Paket (Fixture ohne '
       '/private/tmp) wird akzeptiert.')
+
+# ── 20 · Merz-Einzelfallquittung (Bundeskanzler, Richtlinien der Regierungspolitik) ──
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Das eng fixierte
+# Fachurteil wird ueber den injizierbaren ``erwartung``-Parameter ersetzt; so bleibt der
+# Test auch ohne die lokalen Originale lauffaehig. Das Modul bindet die Person NUR ueber
+# den echten sichtbaren eigenen Artikelkopf (nicht Bild-Alt, nicht JSON-LD) und die
+# Aufgabe NUR ueber den geschlossenen H2-Abschnitt 'Richtlinien-Kompetenz' des eigenen
+# innersten div.bpa-richtext; die bestehende Rolle stammt unveraendert aus der 54er
+# Rollenquittung (keine neue Rolle).
+me_spec = importlib.util.spec_from_file_location(
+    'merz', Path(__file__).with_name('profil-feldbelege-500-merz.py'))
+me = importlib.util.module_from_spec(me_spec)
+me_spec.loader.exec_module(me)
+
+
+def _erwarte_me_fehler(fn, was):
+    try:
+        fn()
+    except me.MerzFehler:
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    HOST_BT = 'https://www.bundestag.de'
+    HOST_BR = 'https://www.bundesregierung.de'
+    ABRUF_PERSON = '2026-09-27T13:00:52+00:00'
+    ABRUF_QUELLE = '2026-09-28T11:04:55+00:00'
+    K = 'bundestag-test-merz-1'
+    person = 'Testperson Merz'
+    funktion = 'Testkanzler'
+    funktionstext = 'Testkanzler'
+    artikelkopf = f'{person} ist Bundes-Kanzler'
+    artikeltitel = 'Testaufgaben vom Bundes-Kanzler'
+    abschnitt = 'Richtlinien-Kompetenz'
+    absatz1 = ('Im Grund-Gesetz steht: Der Bundes-Kanzler hat die Richtlinien-Kompetenz. '
+               'Richtlinien-Kompetenz bedeutet: Der Bundes-Kanzler bestimmt, was die Bundes-Regierung tun soll.')
+    absatz2 = 'Das Bundes-Kanzler bestimmt die Politik von der Bundes-Regierung.'
+    thema = me.THEMEN[0]
+    aufgabenbindung = f'{funktion}; Richtlinien-Kompetenz (Testaufgabenbindung)'
+    person_url = f'{HOST_BT}/abgeordnete/biografien/T/test-merz-1'
+    person_datei = f'{K}.html'
+    quell_url = f'{HOST_BR}/breg-de/leichte-sprache/test-aufgaben-1'
+    quell_datei = 'test-breg-leichte-sprache-aufgaben.html'
+
+    def _meta(datei, url, abruf):
+        pfad = zusatz / datei
+        meta = dict(url=url, finalUrl=url, abgerufenAm=abruf, sha256=me.ZU._sha256(pfad),
+                    bytes=pfad.stat().st_size, datei=datei, http=200)
+        (zusatz / f'{datei}.meta.json').write_text(
+            json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+        return dict(meta, abrufStatus='abgerufen')
+
+    def _person_html(h1=person, funktion_wert=funktionstext, hidden_funktion=None, h1_hidden=False):
+        h1_markup = (f'<h1{" hidden" if h1_hidden else ""}>{h1}</h1>' if h1 is not None else '')
+        if funktion_wert is None:
+            funktion_markup = ''
+        else:
+            extra = f' {hidden_funktion}' if hidden_funktion else ''
+            funktion_markup = f'<div class="m-biography__function"{extra}><div><p>{funktion_wert}</p></div></div>'
+        return f'<html><body>{h1_markup}{funktion_markup}</body></html>'
+
+    def _br_html(topline=artikelkopf, titel=artikeltitel, abschnitt_kopf=abschnitt,
+                 absaetze=None, mit_bereich=True, mit_header=True, extra_h2=True,
+                 topline_hidden=False, header_hidden=False, nachbar_absatz=False, doppelt=False):
+        if nachbar_absatz:
+            absaetze = [absatz1]
+        elif absaetze is None:
+            absaetze = [absatz1, absatz2]
+        absatz_markup = ''.join(f'<p>{a}</p>' for a in absaetze)
+        header_markup = ''
+        if mit_header:
+            header_markup = (
+                f'<header class="bpa-article-header"{" hidden" if header_hidden else ""}>'
+                f'<h2 class="bpa-topline-title-wrapper">'
+                f'<span class="bpa-topline"><span class="bpa-topline-title"'
+                f'{" hidden" if topline_hidden else ""}>{topline}</span></span>'
+                f'<span class="bpa-title"><span class="bpa-teaser-title-text">'
+                f'<span class="bpa-teaser-title-text-inner">{titel}</span></span></span></h2>'
+                f'</header>'
+            )
+        if mit_bereich:
+            header_bereich = f'<div id="rs_reading_area_header">{header_markup}</div>'
+        else:
+            header_bereich = header_markup
+        neben = f'<h2>Ressort-Prinzip</h2><p>{absatz2}</p>' if nachbar_absatz else ''
+        generischer_nachbar = ('<h2>Ressort-Prinzip</h2><p>Ressort-Fremd.</p>'
+                               if (extra_h2 and not nachbar_absatz) else '')
+        richtext = (
+            f'<div class="bpa-richtext"><h2>Regierungs-Bildung</h2><p>Fremd.</p>'
+            f'<h2>{abschnitt_kopf}</h2>{absatz_markup}{neben}{generischer_nachbar}</div>'
+        )
+        if doppelt:
+            richtext += f'<div class="bpa-richtext"><h2>{abschnitt_kopf}</h2><p>{absatz1}</p></div>'
+        img = f'<img alt="{person}" src="/bild.webp"/>'
+        ld = json.dumps({"@type": "BreadcrumbList", "name": person})
+        return (
+            f'<html><body>{header_bereich}{img}'
+            f'<main><div id="rs_reading_area_content"><div class="bpa-module bpa-article">'
+            f'{richtext}</div></div></main>'
+            f'<script type="application/ld+json">{ld}</script></body></html>'
+        )
+
+    def _schreibe_person(dokument, abruf=ABRUF_PERSON):
+        (detail / person_datei).write_text(dokument, encoding='utf-8')
+        return dict(url=person_url, finalUrl=person_url, abgerufenAm=abruf,
+                    sha256=me.ZU._sha256(detail / person_datei),
+                    bytes=(detail / person_datei).stat().st_size, datei=person_datei,
+                    http=200, abrufStatus='abgerufen')
+
+    def _schreibe_quelle(dokument, abruf=ABRUF_QUELLE):
+        (zusatz / quell_datei).write_text(dokument, encoding='utf-8')
+        return _meta(quell_datei, quell_url, abruf)
+
+    personenquelle = _schreibe_person(_person_html())
+    quell_quelle = _schreibe_quelle(_br_html())
+    rollen_ref = dict(url=person_url, sha256=personenquelle['sha256'], abgerufenAm=ABRUF_PERSON)
+    kennung_zu_abruf = {K: dict(personenquelle, amtlicheKennung=K, parlament='bundestag')}
+    profilrollen = {K: dict(status='belegt', funktionen=[dict(wortlaut=funktion)], quelle=dict(rollen_ref))}
+    erwartung = {
+        K: dict(region='Bund', bindungsart='richtlinienkompetenz', person=person, funktion=funktion,
+                funktionstext=funktionstext, artikelkopf=artikelkopf, artikeltitel=artikeltitel,
+                abschnitt=abschnitt, absaetze=[absatz1, absatz2], aufgabenbindung=aufgabenbindung,
+                themen=[thema], personenquelle=dict(personenquelle), quelle=dict(quell_quelle)),
+    }
+    eintrag = dict(
+        kennung=K, region='Bund', parlament='bundestag', status='belegt', bindungsart='richtlinienkompetenz',
+        person=person, funktion=funktion, funktionstext=funktionstext, artikelkopf=artikelkopf,
+        artikeltitel=artikeltitel, abschnitt=abschnitt, absaetze=[absatz1, absatz2],
+        aufgabenbindung=aufgabenbindung, themen=[thema],
+        ableitungsHinweis=me.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=aufgabenbindung),
+        personenquelle=dict(personenquelle), quelle=dict(quell_quelle), importfreigegeben=False,
+    )
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=1, Bund=1, Berlin=0, Brandenburg=0),
+                             ergebnisse=[eintrag])
+
+    def _me_eingang(quittung, rollen=None, abruf=None, ressort=None, aufgaben=None, beratende=None,
+                    zusatz_kennungen=None, bmwsb=None, amthor=None, wahlausschuss=None, jarzombek=None,
+                    kloeckner=None, rohde=None, stellvertretungen=None):
+        return SimpleNamespace(
+            verzeichnis=root, detailseiten=detail, merz=quittung,
+            profilrollen_by_kennung=rollen or profilrollen,
+            kennung_zu_abruf=kennung_zu_abruf if abruf is None else abruf,
+            ressortachsen_by_kennung={k: {} for k in (ressort or [])},
+            aufgabenachsen_by_kennung={k: {} for k in (aufgaben or [])},
+            beratendeachsen_by_kennung={k: {} for k in (beratende or [])},
+            zusaetzlicheaufgaben_by_kennung={k: {} for k in (zusatz_kennungen or [])},
+            bmwsb_by_kennung={k: {} for k in (bmwsb or [])},
+            amthor_by_kennung={k: {} for k in (amthor or [])},
+            wahlausschuss_by_kennung={k: {} for k in (wahlausschuss or [])},
+            jarzombek_by_kennung={k: {} for k in (jarzombek or [])},
+            kloeckner_by_kennung={k: {} for k in (kloeckner or [])},
+            rohde_by_kennung={k: {} for k in (rohde or [])},
+            stellvertretungen_by_kennung={k: {} for k in (stellvertretungen or [])})
+
+    index = me.pruefe_merz(_me_eingang(gueltige_quittung), erwartung=erwartung)
+    assert len(index) == 1
+    assert index[K]['themen'] == [thema]
+    assert index[K]['abschnitt'] == abschnitt
+    assert index[K]['absaetze'] == [absatz1, absatz2]
+    assert index[K]['funktion'] == funktion
+
+    def _mit(mutation, erwartung_override=None):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return me.pruefe_merz(_me_eingang(neu), erwartung=erwartung_override or erwartung)
+
+    # Fehlende Quittung, falsche Bilanz, Duplikat/Fremdkennung.
+    echter_pfad = me.MERZ
+    me.MERZ = root / 'fehlt.json'
+    try:
+        _erwarte_me_fehler(lambda: me.pruefe_merz(
+            SimpleNamespace(verzeichnis=root, detailseiten=detail, profilrollen_by_kennung=profilrollen,
+                            kennung_zu_abruf=kennung_zu_abruf), erwartung=erwartung), 'fehlende Quittung')
+    finally:
+        me.MERZ = echter_pfad
+    _erwarte_me_fehler(lambda: _mit(lambda q: q['bilanz'].__setitem__('Bund', 0)), 'falsche Bilanz')
+    _erwarte_me_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('kennung', 'bundestag-fremd-9')),
+                       'unbekannte/Fremdkennung')
+    # Disjunktion zu allen bisherigen Achsen.
+    for feld in ('ressort', 'aufgaben', 'beratende', 'zusatz_kennungen', 'bmwsb', 'amthor',
+                 'wahlausschuss', 'jarzombek', 'kloeckner', 'rohde', 'stellvertretungen'):
+        _erwarte_me_fehler(lambda f=feld: me.pruefe_merz(
+            _me_eingang(gueltige_quittung, **{f: [K]}), erwartung=erwartung), f'Kennung bereits {feld}-Achse')
+    # Status/Region/Parlament/Bindungsart/Person/Importfreigabe.
+    _erwarte_me_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('status', 'offen')), 'unerwarteter Status')
+    _erwarte_me_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('region', 'Berlin')), 'falsche Region')
+    _erwarte_me_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('parlament', 'landtag-berlin')), 'falsches Parlament')
+    _erwarte_me_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('bindungsart', 'ressort')), 'falsche Bindungsart')
+    _erwarte_me_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('person', 'Fremde Person')), 'fremde Person')
+    _erwarte_me_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('importfreigegeben', True)), 'Importfreigabe gesetzt')
+    # Felddrift (Funktion/Funktionstext/Artikelkopf/Titel/Abschnitt/Absaetze/Aufgabenbindung/Themen/Hinweis).
+    for feld, wert in (('funktion', 'Fremdrolle'), ('funktionstext', 'Fremdrolle'),
+                       ('artikelkopf', 'Fremdkopf'), ('artikeltitel', 'Fremdtitel'),
+                       ('abschnitt', 'Fremdabschnitt'), ('absaetze', ['Fremdabsatz']),
+                       ('aufgabenbindung', 'Fremde Aufgabenbindung'), ('themen', ['Fremdthema']),
+                       ('ableitungsHinweis', 'Fremder Hinweis')):
+        _erwarte_me_fehler(lambda f=feld, w=wert: _mit(lambda q: q['ergebnisse'][0].__setitem__(f, w)), f'Feld {feld} Drift')
+    # Quellen-/Metadatendrift (amtliche Bundesregierungsseite).
+    for feld, wert in (('url', f'{HOST_BR}/breg-de/leichte-sprache/fremd-1'),
+                       ('finalUrl', f'{HOST_BR}/breg-de/leichte-sprache/fremd-1'),
+                       ('sha256', '0' * 64), ('bytes', 1), ('abgerufenAm', '2026-01-01T00:00:00+00:00'),
+                       ('datei', 'fremd.html')):
+        _erwarte_me_fehler(lambda f=feld, w=wert: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(f, w)),
+                           f'Quelldrift {feld}')
+    # Nur das eine freigegebene Thema; Nachbar-Themen und Fremdthemen sind gesperrt.
+    _erwarte_me_fehler(lambda: me._pruefe_themen(dict(themen=['Ressort-Prinzip']), [absatz1, absatz2], K),
+                       'Ressort-Prinzip als Thema gesperrt')
+    _erwarte_me_fehler(lambda: me._pruefe_themen(dict(themen=['Europa']), [absatz1, absatz2], K),
+                       'Fremdthema Europa gesperrt')
+    _erwarte_me_fehler(lambda: me._pruefe_themen(dict(themen=[thema]), ['Fremd ohne den amtlichen Wortlaut'], K),
+                       'Thema ohne woertliche Richtlinien-Kompetenz gesperrt')
+    me._pruefe_themen(dict(themen=[thema]), [absatz1, absatz2], K)
+    # Artikelkopf/Artikelinhalt: die Person kommt NUR aus dem sichtbaren eigenen Artikelkopf.
+    for dokument, was in (
+        (_br_html(mit_bereich=False), 'Person nur ausserhalb von #rs_reading_area_header'),
+        (_br_html(mit_header=False), 'Artikelkopf ohne header.bpa-article-header'),
+        (_br_html(topline_hidden=True), 'verborgene Topline'),
+        (_br_html(header_hidden=True), 'verborgener Artikelkopf'),
+        (_br_html(topline=f'Fremde Person ist Bundes-Kanzler'), 'fremde Topline'),
+        (_br_html(titel='Fremdtitel'), 'fremder Artikeltitel'),
+    ):
+        neu_q = _schreibe_quelle(dokument)
+        neu_erwartung = json.loads(json.dumps(erwartung))
+        neu_erwartung[K]['quelle'] = dict(neu_q)
+        _erwarte_me_fehler(lambda: me.pruefe_merz(_me_eingang(dict(
+            gueltige_quittung, ergebnisse=[dict(eintrag, quelle=dict(neu_q))])),
+            erwartung=neu_erwartung), was)
+    _schreibe_quelle(_br_html())
+    # Aufgabenabschnitt: genau der geschlossene H2 'Richtlinien-Kompetenz' mit seinen beiden Absaetzen.
+    for dokument, was in (
+        (_br_html(abschnitt_kopf='Anderer-Abschnitt'), 'fremder H2 statt Richtlinien-Kompetenz'),
+        (_br_html(absaetze=[absatz1]), 'fehlender zweiter Absatz'),
+        (_br_html(absaetze=[absatz1, absatz2, 'Fremder Zusatzabsatz.']), 'fremder Zusatzabsatz'),
+        (_br_html(absaetze=[absatz2, absatz1]), 'vertauschte Absaetze'),
+        (_br_html(nachbar_absatz=True), 'Absatz ausserhalb des Abschnitts'),
+        (_br_html(doppelt=True), 'doppelter Ziel-H2-Abschnitt'),
+    ):
+        neu_q = _schreibe_quelle(dokument)
+        neu_erwartung = json.loads(json.dumps(erwartung))
+        neu_erwartung[K]['quelle'] = dict(neu_q)
+        _erwarte_me_fehler(lambda: me.pruefe_merz(_me_eingang(dict(
+            gueltige_quittung, ergebnisse=[dict(eintrag, quelle=dict(neu_q))])),
+            erwartung=neu_erwartung), was)
+    _schreibe_quelle(_br_html())
+    # Konsistent neu gehashte Fremdquelle und vertauschte Quellenpakete sperren.
+    fremd_q = _schreibe_quelle(_br_html(titel='Fremdtitel'))
+    _erwarte_me_fehler(lambda: me.pruefe_merz(_me_eingang(dict(
+        gueltige_quittung, ergebnisse=[dict(eintrag, quelle=dict(fremd_q))])), erwartung=erwartung),
+        'konsistent neu gehashte Fremdquelle')
+    _schreibe_quelle(_br_html())
+    _erwarte_me_fehler(lambda: me.pruefe_merz(_me_eingang(dict(
+        gueltige_quittung, ergebnisse=[dict(eintrag, personenquelle=dict(quell_quelle))])),
+        erwartung=erwartung),
+        'vertauschte Quellenpakete (Person<->Quelle)')
+    # Inerte/fremde Personenbelege und fremde Rolle bei konsistenten Hashes.
+    for dokument, was in (
+        (_person_html(h1=None), 'Person ohne H1'),
+        (_person_html(h1='Fremde Person'), 'fremde H1 bei konsistentem Hash'),
+        (_person_html(h1_hidden=True), 'verborgene H1'),
+        (_person_html(funktion_wert=None), 'Person ohne eigenen Funktionstext'),
+        (_person_html(funktion_wert='Fremdrolle'), 'fremder Funktionstext bei konsistentem Hash'),
+        (_person_html(hidden_funktion='hidden'), 'verborgener Funktionstext'),
+    ):
+        pq = _schreibe_person(dokument)
+        rollen = {K: dict(status='belegt', funktionen=[dict(wortlaut=funktion)],
+                          quelle=dict(url=person_url, sha256=pq['sha256'], abgerufenAm=ABRUF_PERSON))}
+        abr = {K: dict(pq, amtlicheKennung=K, parlament='bundestag')}
+        neu_erwartung = json.loads(json.dumps(erwartung))
+        neu_erwartung[K]['personenquelle'] = dict(pq)
+        _erwarte_me_fehler(lambda: me.pruefe_merz(_me_eingang(dict(
+            gueltige_quittung, ergebnisse=[dict(eintrag, personenquelle=dict(pq))]),
+            rollen=rollen, abruf=abr), erwartung=neu_erwartung), was)
+    _schreibe_person(_person_html())
+    # Ungueltige/fehlende 54er-Rolle (keine neue Rolle, keine Rolllockerung).
+    _erwarte_me_fehler(lambda: me.pruefe_merz(_me_eingang(
+        gueltige_quittung, rollen={K: dict(status='offen', funktionen=[], quelle=dict(rollen_ref))}),
+        erwartung=erwartung), 'nicht belegte 54er-Rolle')
+    _erwarte_me_fehler(lambda: me.pruefe_merz(_me_eingang(
+        gueltige_quittung, rollen={K: dict(status='belegt', funktionen=[], quelle=dict(rollen_ref))}),
+        erwartung=erwartung), '54er-Rolle ohne Wortlaut')
+    # Das gueltige synthetische Paket wird akzeptiert.
+    assert len(me.pruefe_merz(_me_eingang(gueltige_quittung), erwartung=erwartung)) == 1
+
+print('PASS: Merz-Einzelfallquittung — fehlende Quittung/falsche Bilanz/Fremdkennung/Disjunktion zu '
+      'Ressort-/Aufgaben-/beratender-/Zusatzaufgaben-/BMWSB-/Amthor-/Wahlausschuss-/Jarzombek-/'
+      'Kloeckner-/Rohde-/Stellvertretungs-Achse/Status/Region/Parlament/Bindungsart/Person/Importfreigabe/'
+      'Felddrift (Funktion/Funktionstext/Artikelkopf/Titel/Abschnitt/Absaetze/Aufgabenbindung/Themen/'
+      'Hinweis)/Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/Datei)/Ressort- und Fremdthemen ohne '
+      'woertliche Richtlinien-Kompetenz/Person nur ausserhalb des eigenen sichtbaren Artikelkopfs/'
+      'verborgener oder fremder Artikelkopf/verborgene H1/fremder oder fehlender Funktionstext/'
+      'fremder H2 statt Richtlinien-Kompetenz/fehlender, fremder, vertauschter oder doppelter '
+      'Aufgabenabschnitt/Absatz ausserhalb des Abschnitts/konsistent neu gehashte Fremdquelle/'
+      'vertauschte Quellenpakete/nicht belegte oder wortlautlose 54er-Rolle sperren fail closed; das '
+      'gueltige synthetische Paket (Fixture ohne /private/tmp) wird akzeptiert.')
