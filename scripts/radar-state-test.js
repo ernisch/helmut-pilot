@@ -73,6 +73,15 @@ const koUnrelated = {
 const allKos = [koMentionName, koCriticism, koParty, koCommittee, koRegion, koUnrelated];
 const kosById = Object.fromEntries(allKos.map((k) => [k.id, k]));
 
+// Belegdokumente (Fail-closed-Nachschaerfung): der sichtbare Ursprung eines Wahlkreis-/
+// Ausschuss-Segments muss den Bezug SELBST stuetzen (eigener Titel/Auszug) — der KO-Fallback
+// (best_source_url) genuegt dafuer nicht mehr. Bewusst OHNE published_at, damit das belegte
+// Quellendatum dieses Fixtures leer bleibt (Status ehrlich 'stale').
+const envDocs = {
+  v4: [{ id: "rd-v4", title: "Der Ausschuss für Arbeit und Soziales hat getagt", url: "https://dip.bundestag.de/vorgang/arbeit-soziales" }],
+  v5: [{ id: "rd-v5", title: "Investitionen in Salzgitter-Wolfenbüttel", url: "https://www.sz-online.de/nachrichten/salzgitter-wolfenbuettel" }]
+};
+
 // decisions inkl. matched_features (aus der Matching-Engine, nicht erfunden).
 const decisions = [
   { knowledge_object_id: "k1", vorgang_id: "v1", score: 72, matched_features: [{ type: "partei", value: "Die Linke" }] },
@@ -83,7 +92,7 @@ const decisions = [
   { knowledge_object_id: "k6", vorgang_id: "v6", score: 45, matched_features: [] }
 ];
 
-const state = radarState.buildCurrentRadarState({ profile, decisions, kosById, knowledgeObjects: allKos, sourcesByVorgang: {}, now: nowDate });
+const state = radarState.buildCurrentRadarState({ profile, decisions, kosById, knowledgeObjects: allKos, sourcesByVorgang: envDocs, now: nowDate });
 
 // --- 1) Contract-Struktur ---------------------------------------------------
 for (const key of ["generatedAt", "lastUpdated", "status", "summary", "mentions", "environment", "dynamics", "articles", "quality"]) {
@@ -198,7 +207,7 @@ check("Zusammenfassung Satz 1 nennt die exakte Erwähnungszahl von heute",
   mentionsToday > 0 ? state.summary.line1.includes(String(mentionsToday)) || /einmal/.test(state.summary.line1) : true);
 check("Zusammenfassung max. 2 Sätze", [state.summary.line1, state.summary.line2].filter(Boolean).length <= 2);
 check("Zusammenfassung enthält keinen erfundenen Prozentwert", !/%/.test(state.summary.text));
-const state2 = radarState.buildCurrentRadarState({ profile, decisions, kosById, knowledgeObjects: allKos, sourcesByVorgang: {}, now: nowDate });
+const state2 = radarState.buildCurrentRadarState({ profile, decisions, kosById, knowledgeObjects: allKos, sourcesByVorgang: envDocs, now: nowDate });
 check("Radar-State ist deterministisch (2 Läufe identisch)", JSON.stringify(state) === JSON.stringify(state2));
 
 // --- 6) Artikel + Filter-relationTypes --------------------------------------
@@ -459,7 +468,8 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     !stState.environment.constituency.some((e) => e.vorgangId === "vst"));
   const koConc = { ...base, id: "kc", vorgang_id: "vc", display_title: "Investitionen in Salzgitter-Wolfenbüttel",
     mentioned_locations: ["Salzgitter-Wolfenbüttel"], best_source_url: "https://x.de/sz", updated_at: iso(3600e3), created_at: iso(3600e3) };
-  const stConc = radarState.buildCurrentRadarState({ profile: pState, decisions: [{ knowledge_object_id: "kc", vorgang_id: "vc", score: 55, matched_features: [{ type: "wahlkreis", value: "Salzgitter-Wolfenbüttel" }] }], kosById: { kc: koConc }, knowledgeObjects: [koConc], sourcesByVorgang: {}, now: nowDate });
+  // Sichtbarer Wahlkreis-Ursprung nur mit einem Dokument, das den konkreten Ort SELBST nennt.
+  const stConc = radarState.buildCurrentRadarState({ profile: pState, decisions: [{ knowledge_object_id: "kc", vorgang_id: "vc", score: 55, matched_features: [{ type: "wahlkreis", value: "Salzgitter-Wolfenbüttel" }] }], kosById: { kc: koConc }, knowledgeObjects: [koConc], sourcesByVorgang: { vc: [{ id: "rd-vc", title: "Investitionen in Salzgitter-Wolfenbüttel", url: "https://www.sz-online.de/nachrichten/salzgitter-wolfenbuettel" }] }, now: nowDate });
   check("#9 konkreter Profil-Wahlkreis (Salzgitter-Wolfenbüttel) -> unter Wahlkreis",
     stConc.environment.constituency.some((e) => e.vorgangId === "vc"));
 

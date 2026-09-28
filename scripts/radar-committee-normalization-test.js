@@ -35,10 +35,22 @@ const nowDate = new Date(NOW);
 const iso = (msAgo) => new Date(NOW - msAgo).toISOString();
 const KOBASE = { status: "neu", understanding_status: "complete" };
 
+// Belegdokumente (fail-closed-Vertrag): der sichtbare Ursprung eines Wahlkreis-/
+// Ausschuss-Segments muss den Bezug SELBST stuetzen — das Dokument nennt den konkreten
+// Ort bzw. den VOLLEN amtlichen Ausschussnamen samt politischer Ebene im eigenen Titel/
+// Auszug. ko.ausschuesse allein (auch in voller Form) und der KO-Fallback
+// (best_source_url) genuegen dafuer NICHT mehr. Negative Faelle erhalten bewusst KEIN
+// Dokument und bleiben fail-closed.
+const docArbeitSoziales = { title: "Der Ausschuss für Arbeit und Soziales hat getagt", url: "https://dip.bundestag.de/vorgang/arbeit-soziales" };
+const docGesundheit = { title: "Der Ausschuss für Gesundheit beriet die GKV-Novelle", url: "https://dip.bundestag.de/vorgang/gesundheit" };
+const docMenschenrechte = { title: "Der Ausschuss für Menschenrechte und humanitäre Hilfe tagt", url: "https://dip.bundestag.de/vorgang/menschenrechte" };
+const docRecht = { title: "Der Ausschuss für Recht hat getagt", url: "https://dip.bundestag.de/vorgang/recht" };
+const docSalzgitter = { title: "Investitionen in Salzgitter-Wolfenbüttel", url: "https://www.sz-online.de/nachrichten/salzgitter-wolfenbuettel" };
+
 // Fuehrt die ECHTE Kette aus: profileFeatures + knowledgeObjectFeatures -> matchedFeatures
 // -> buildCurrentRadarState -> environment.committees. Gibt zurueck, ob der Vorgang im
 // Ausschuss-Reiter erscheint (granted) + die erzeugten matched_features.
-function runCommittee({ profileFields, ausschuesse, mentioned_committees = [], title = "" }) {
+function runCommittee({ profileFields, ausschuesse, mentioned_committees = [], title = "", docs = [] }) {
   const profile = { id: "p", fullName: "Test Person", ...profileFields };
   const ko = { ...KOBASE, id: "k", vorgang_id: "v", display_title: title, ausschuesse,
     mentioned_committees, created_at: iso(24 * 3600e3), best_source_url: "https://example.org/d" };
@@ -48,7 +60,7 @@ function runCommittee({ profileFields, ausschuesse, mentioned_committees = [], t
   const decision = { knowledge_object_id: "k", vorgang_id: "v", score: 50, matched_features: mf };
   const st = radarState.buildCurrentRadarState({
     profile, decisions: [decision], kosById: { k: ko }, knowledgeObjects: [ko],
-    sourcesByVorgang: {}, now: nowDate
+    sourcesByVorgang: docs.length ? { v: docs } : {}, now: nowDate
   });
   return { granted: st.environment.committees.some((e) => e.vorgangId === "v"),
     committeeCount: st.environment.committees.length, mf };
@@ -109,12 +121,15 @@ check("2b Kleinschreibung: 'ausschuss für gesundheit' == 'Gesundheit'",
 // =============================================================================
 // Beleg-Nachschaerfung Phase A/B: der volle Ausschussname muss WÖRTLICH im Inhalt stehen
 // (ko.ausschuesse allein genuegt nicht) — daher tragen die "granted"-Faelle den Namen im Titel.
+// fail-closed (Ursprungsbeleg): zusaetzlich muss ein sourcesByVorgang-Dokument den
+// konkreten Ort bzw. den vollen Ausschuss samt Ebene SELBST stuetzen (siehe doc*-Fixtures
+// oben). Diese Belegdokumente tragen nur die Positivfaelle.
 check("4 Profil 'Arbeit und Soziales' + Ausschussname im Inhalt -> Ausschuss-Reiter",
-  runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], title: "Anhörung im Ausschuss für Arbeit und Soziales" }).granted);
+  runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], title: "Anhörung im Ausschuss für Arbeit und Soziales", docs: [docArbeitSoziales] }).granted);
 check("4b Profil 'Arbeit und Soziales' + KO ['Bundestagsausschuss für Arbeit und Soziales'] + Name im Inhalt -> erkannt",
-  runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Bundestagsausschuss für Arbeit und Soziales"], title: "Sitzung im Ausschuss für Arbeit und Soziales" }).granted);
+  runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Bundestagsausschuss für Arbeit und Soziales"], title: "Sitzung im Ausschuss für Arbeit und Soziales", docs: [docArbeitSoziales] }).granted);
 check("4c Profil 'Ausschuss für Gesundheit' + Name im Inhalt -> erkannt",
-  runCommittee({ profileFields: { committee: "Ausschuss für Gesundheit" }, ausschuesse: ["Ausschuss für Gesundheit"], title: "Sitzung im Ausschuss für Gesundheit" }).granted);
+  runCommittee({ profileFields: { committee: "Ausschuss für Gesundheit" }, ausschuesse: ["Ausschuss für Gesundheit"], title: "Sitzung im Ausschuss für Gesundheit", docs: [docGesundheit] }).granted);
 check("4c-2 Profil 'Ausschuss für Gesundheit' + KO ['Gesundheitsausschuss'] (bloße Kurzform, kein Beleg) -> NICHT erkannt (siehe radar-committee-evidence-test.js fuer die Beleg-Verschaerfung)",
   !runCommittee({ profileFields: { committee: "Ausschuss für Gesundheit" }, ausschuesse: ["Gesundheitsausschuss"] }).granted);
 check("4d Profil 'Menschenrechte und humanitäre Hilfe' + KO ['Recht und Verbraucherschutz'] -> NICHT erkannt (keine Kollision)",
@@ -122,7 +137,7 @@ check("4d Profil 'Menschenrechte und humanitäre Hilfe' + KO ['Recht und Verbrau
 check("4e Profil 'Recht und Verbraucherschutz' + KO ['Ausschuss für Menschenrechte und humanitäre Hilfe'] -> NICHT erkannt (umgekehrt)",
   !runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Menschenrechte und humanitäre Hilfe"] }).granted);
 check("4f Profil 'Menschenrechte und humanitäre Hilfe' + Name im Inhalt -> erkannt (eigener Ausschuss funktioniert)",
-  runCommittee({ profileFields: { committee: "Menschenrechte und humanitäre Hilfe" }, ausschuesse: ["Ausschuss für Menschenrechte und humanitäre Hilfe"], title: "Sitzung im Ausschuss für Menschenrechte und humanitäre Hilfe" }).granted);
+  runCommittee({ profileFields: { committee: "Menschenrechte und humanitäre Hilfe" }, ausschuesse: ["Ausschuss für Menschenrechte und humanitäre Hilfe"], title: "Sitzung im Ausschuss für Menschenrechte und humanitäre Hilfe", docs: [docMenschenrechte] }).granted);
 
 // =============================================================================
 // 5) Aehnliche Ausschussnamen — keine Verwechslung (Arbeit/Soziales vs. Gesundheit)
@@ -130,7 +145,7 @@ check("4f Profil 'Menschenrechte und humanitäre Hilfe' + Name im Inhalt -> erka
 check("5 Fremder Ausschuss: Gesundheit-Profil am reinen Arbeit-und-Soziales-KO -> KEIN Treffer",
   !runCommittee({ profileFields: { committee: "Gesundheit" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"] }).granted);
 check("5b Aehnlicher Klang, anderer Ausschuss: 'Recht' + 'Ausschuss für Recht und Verbraucherschutz' im Inhalt greift korrekt",
-  runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Recht und Verbraucherschutz"], title: "Sitzung im Ausschuss für Recht und Verbraucherschutz" }).granted);
+  runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Ausschuss für Recht und Verbraucherschutz"], title: "Sitzung im Ausschuss für Recht und Verbraucherschutz", docs: [docRecht] }).granted);
 check("5b-2 'Rechtsausschuss' (bloße Kurzform, kein Beleg) allein genuegt NICHT mehr (siehe radar-committee-evidence-test.js)",
   !runCommittee({ profileFields: { committee: "Recht und Verbraucherschutz" }, ausschuesse: ["Rechtsausschuss"] }).granted);
 
@@ -158,7 +173,7 @@ check("6 Nur mentioned_committees (bloße Erwähnung), NICHT in ausschuesse -> K
 // 8) Konsistenz: Dedup + sichtbare Zahl == belegte Liste
 // =============================================================================
 {
-  const r = runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], title: "Sitzung im Ausschuss für Arbeit und Soziales" });
+  const r = runCommittee({ profileFields: { committee: "Arbeit und Soziales" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], title: "Sitzung im Ausschuss für Arbeit und Soziales", docs: [docArbeitSoziales] });
   check("8 Genau ein belegter Ausschuss-Treffer -> environment.committees.length === 1", r.committeeCount === 1);
 }
 {
@@ -169,7 +184,7 @@ check("6 Nur mentioned_committees (bloße Erwähnung), NICHT in ausschuesse -> K
     { knowledge_object_id: "k", vorgang_id: "v", score: 60, matched_features: mf },
     { knowledge_object_id: "k", vorgang_id: "v", score: 60, matched_features: mf }
   ];
-  const st = radarState.buildCurrentRadarState({ profile, decisions, kosById: { k: ko }, knowledgeObjects: [ko], sourcesByVorgang: {}, now: nowDate });
+  const st = radarState.buildCurrentRadarState({ profile, decisions, kosById: { k: ko }, knowledgeObjects: [ko], sourcesByVorgang: { v: [docArbeitSoziales] }, now: nowDate });
   check("8b Dedup: derselbe Vorgang erscheint nur einmal im Ausschuss-Reiter", st.environment.committees.filter((e) => e.vorgangId === "v").length === 1);
 }
 
@@ -199,7 +214,7 @@ check("9d Fuer Arbeit-und-Soziales (kein Kollisionsfall) liefern beide Funktione
     { knowledge_object_id: "kp", vorgang_id: "vp", score: 60, matched_features: mfParty },
     { knowledge_object_id: "kr", vorgang_id: "vr", score: 58, matched_features: [{ type: "wahlkreis", value: "Salzgitter-Wolfenbüttel" }] }
   ];
-  const st = radarState.buildCurrentRadarState({ profile, decisions, kosById: { kp: koParty, kr: koRegion }, knowledgeObjects: [koParty, koRegion], sourcesByVorgang: { vp: [{ source_type: "party", url: "https://example.org/p", published_at: iso(3600e3) }] }, now: nowDate });
+  const st = radarState.buildCurrentRadarState({ profile, decisions, kosById: { kp: koParty, kr: koRegion }, knowledgeObjects: [koParty, koRegion], sourcesByVorgang: { vp: [{ source_type: "party", url: "https://example.org/p", published_at: iso(3600e3) }], vr: [docSalzgitter] }, now: nowDate });
   check("10 Partei-Segment unveraendert funktionsfaehig (unabhaengig von Ausschuss-Fix)", st.environment.party.some((e) => e.vorgangId === "vp"));
   check("10b Wahlkreis-Segment unveraendert funktionsfaehig (unabhaengig von Ausschuss-Fix)", st.environment.constituency.some((e) => e.vorgangId === "vr"));
 }

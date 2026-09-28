@@ -63,15 +63,25 @@ function runConstituency({ profileFields, mentioned_locations, docs = [] }) {
   return { granted: st.environment.constituency.some((e) => e.vorgangId === "v") };
 }
 
+// Belegdokumente (Fail-closed-Nachschaerfung): der sichtbare Ursprung eines Wahlkreis-/
+// Ausschuss-Segments muss den Bezug SELBST stuetzen — das Dokument nennt den konkreten Ort
+// bzw. den VOLLEN Ausschussnamen samt politischer Ebene im eigenen Titel/Auszug. Der KO-
+// Fallback (best_source_url) genuegt dafuer NICHT mehr. Bewusst KEINE Belegdokumente fuer
+// die Negativfaelle (2/3/4/5/6/7): die bleiben fail-closed.
+const docArbeitSoziales = { title: "Der Ausschuss für Arbeit und Soziales hat getagt", url: "https://dip.bundestag.de/vorgang/arbeit-soziales" };
+const docArbeitSozialesLandtag = { title: "Ausschuss für Arbeit und Soziales des Landtags Brandenburg berät den Antrag", url: "https://www.landtag.brandenburg.de/de/ausschuss_arbeit" };
+const docGesundheit = { title: "Der Ausschuss für Gesundheit beriet die GKV-Novelle", url: "https://dip.bundestag.de/vorgang/gesundheit" };
+const docSalzgitter = { title: "Investitionen in Salzgitter-Wolfenbüttel", url: "https://www.sz-online.de/nachrichten/salzgitter-wolfenbuettel" };
+
 // =============================================================================
 // 1) Echter Bundestagsausschuss — Ausschussname WÖRTLICH im Inhalt
 // =============================================================================
 check("1 Ausschussname im Inhalt ('Ausschuss für Arbeit und Soziales berät …') -> erkannt",
   runCommittee({ profileFields: { committee: "Arbeit und Soziales", politicalLevel: "Bund" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], ebene: "bund",
-    was_ist_passiert: "Der Ausschuss für Arbeit und Soziales berät den Gesetzentwurf zum Bürgergeld." }).granted);
+    was_ist_passiert: "Der Ausschuss für Arbeit und Soziales berät den Gesetzentwurf zum Bürgergeld.", docs: [docArbeitSoziales] }).granted);
 check("1b Ausschussname im Titel -> erkannt",
   runCommittee({ profileFields: { committee: "Arbeit und Soziales", politicalLevel: "Bund" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], ebene: "bund",
-    title: "Anhörung im Ausschuss für Arbeit und Soziales" }).granted);
+    title: "Anhörung im Ausschuss für Arbeit und Soziales", docs: [docArbeitSoziales] }).granted);
 
 // =============================================================================
 // 2) BMAS-Quelle OHNE Ausschussbezug — Ministerium != Ausschuss (der reale Kernfehler)
@@ -116,7 +126,7 @@ check("5 Landtagsausschuss (Inhalt nennt Landtag) -> NICHT fuer ein Bundestag-Pr
     geo: [BB_GEO], was_ist_passiert: "Der Ausschuss für Arbeit und Soziales des Landtags hat beraten." }).granted);
 check("5b Landtagsausschuss fuer ein LANDTAG-Profil (Ausschuss + Landtag + Fachbezug im Inhalt) -> erkannt",
   runCommittee({ profileFields: { committee: "Arbeit und Soziales", politische_ebene: "landtag", bundesland: "Brandenburg" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"],
-    ebene: "land", geo: [BB_GEO], was_ist_passiert: "Der Ausschuss für Arbeit und Soziales des Landtags hat den Antrag beraten." }).granted);
+    ebene: "land", geo: [BB_GEO], was_ist_passiert: "Der Ausschuss für Arbeit und Soziales des Landtags hat den Antrag beraten.", docs: [docArbeitSozialesLandtag] }).granted);
 check("5c Bundestagsausschuss fuer ein LANDTAG-Profil -> NICHT (falsche Ebene)",
   !runCommittee({ profileFields: { committee: "Arbeit und Soziales", politische_ebene: "landtag", bundesland: "Brandenburg" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"],
     ebene: "bund", was_ist_passiert: "Der Ausschuss für Arbeit und Soziales des Bundestags hat beraten." }).granted);
@@ -134,7 +144,7 @@ check("6b Reines Gesundheitsthema (GKV) ohne Ausschussnennung -> NICHT",
     was_ist_passiert: "Eine geplante GKV-Reform enthält eine Zuzahlungsregelung." }).granted);
 check("6c Gesundheit MIT Ausschussname im Inhalt -> erkannt (gleiche Regel wie Sozial)",
   runCommittee({ profileFields: { committee: "Gesundheit", politicalLevel: "Bund" }, ausschuesse: ["Ausschuss für Gesundheit"], ebene: "bund",
-    was_ist_passiert: "Der Ausschuss für Gesundheit hat die GKV-Novelle beraten." }).granted);
+    was_ist_passiert: "Der Ausschuss für Gesundheit hat die GKV-Novelle beraten.", docs: [docGesundheit] }).granted);
 
 // =============================================================================
 // 7) source_type ist KEIN Ausschussbeleg (weder 'bundestag' noch 'committee')
@@ -151,7 +161,7 @@ check("7b source_type 'committee' (im Bestand unzuverlaessig) -> KEIN Beleg",
 // =============================================================================
 check("8 Bund/Bund (Name im Inhalt, kein Ebenen-Widerspruch) -> Treffer",
   runCommittee({ profileFields: { committee: "Arbeit und Soziales", politicalLevel: "Bund" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], ebene: "bund",
-    was_ist_passiert: "Der Ausschuss für Arbeit und Soziales hat abgestimmt." }).granted);
+    was_ist_passiert: "Der Ausschuss für Arbeit und Soziales hat abgestimmt.", docs: [docArbeitSoziales] }).granted);
 check("8b Fremder Ausschuss (Gesundheit-Profil, Arbeit-Ausschuss im Inhalt) -> kein Treffer",
   !runCommittee({ profileFields: { committee: "Gesundheit", politicalLevel: "Bund" }, ausschuesse: ["Ausschuss für Arbeit und Soziales"], ebene: "bund",
     was_ist_passiert: "Der Ausschuss für Arbeit und Soziales hat getagt." }).granted);
@@ -167,7 +177,8 @@ check("8b Fremder Ausschuss (Gesundheit-Profil, Arbeit-Ausschuss im Inhalt) -> k
 const OHNE_EBENE_BASIS = {
   profileFields: { committee: "Arbeit und Soziales", politicalLevel: "Bund" },
   ausschuesse: ["Ausschuss für Arbeit und Soziales"],
-  was_ist_passiert: "Der Ausschuss für Arbeit und Soziales hat abgestimmt."
+  was_ist_passiert: "Der Ausschuss für Arbeit und Soziales hat abgestimmt.",
+  docs: [docArbeitSoziales]
 };
 check("14 Ebene FEHLT (null) -> KEIN Ausschussbeleg, obwohl der Name woertlich im Inhalt steht",
   !runCommittee({ ...OHNE_EBENE_BASIS, ebene: null }).granted);
@@ -191,10 +202,10 @@ check("14e die Belegregel greift schon in matchedFeatures, nicht erst im Radar",
 // =============================================================================
 check("9 Konkreter Wahlkreisort in mentioned_locations -> Wahlkreis-Reiter",
   runConstituency({ profileFields: { constituency: "Salzgitter-Wolfenbüttel", regionalInterests: ["Niedersachsen", "Salzgitter", "Salzgitter-Wolfenbüttel"] },
-    mentioned_locations: ["Salzgitter-Wolfenbüttel"] }).granted);
+    mentioned_locations: ["Salzgitter-Wolfenbüttel"], docs: [docSalzgitter] }).granted);
 check("9b Zugehörige Kommune -> Wahlkreis-Reiter",
   runConstituency({ profileFields: { constituency: "Salzgitter-Wolfenbüttel", regionalInterests: ["Niedersachsen", "Salzgitter"] },
-    mentioned_locations: ["Salzgitter"] }).granted);
+    mentioned_locations: ["Salzgitter"], docs: [docSalzgitter] }).granted);
 check("10 Bundesland allein (Niedersachsen) -> NICHT (Landes- statt Bundesebene)",
   !runConstituency({ profileFields: { constituency: "Salzgitter-Wolfenbüttel", regionalInterests: ["Niedersachsen", "Salzgitter-Wolfenbüttel"] },
     mentioned_locations: ["Europa", "Bundesrepublik Deutschland", "Niedersachsen"], docs: [{ source_type: "bundestag", source_name: "Bundesrat", url: "https://www.bundesrat.de/x" }] }).granted);
