@@ -202,3 +202,40 @@ Live-Crawl, keinen Netzabruf, keinen Import, keine Aktivierung, keinen 500er Tes
 DB-/Storage-/Lage-Aenderung, keine Profilversorgung und keine Production-Wirkung. Der Leser ist
 nicht an den Live-Quellenweg, an Storage oder an ein Landesmodul angeschlossen; die produktive
 Versorgung der Berliner Landesebene bleibt offen und braucht weiterhin ihre eigene Freigabe.
+
+## Einzelabruf fuer die zwei Senatspfadfamilien (28.09.2026, lokal)
+
+`lib/helmut/berlin-presse-sondervorlagen-abruf.js` ist der kleinste, ausdruecklich einzeln
+aufzurufende HTTP-Einzelabruf fuer genau die zwei Pfadfamilien aus
+`berlin-presse-sondervorlagen.js`. Er prueft die Adresse VOR jedem Abruf: nur HTTPS auf
+`berlin.de`/`www.berlin.de` ohne Benutzerinfo, Port, Query/Tracking, Fragment oder Trailing-Slash
+und nur `.../pressemitteilungen/<jahr>/pressemitteilung.<nr>.php` der beiden belegten Familien.
+Ein fremder Host oder Pfad wird nie angefragt. Der Abruf laeuft ueber die bestehende
+Anbietersteuerung `crawler.fetchUrl` mit `allowedHost = berlin.de` und `meldeStatus = true`; die
+beobachteten Werte Status, `finalUrl` und HTML gehen unveraendert an `pruefeSondervorlage`
+({url, finalUrl, http, html}). Nur ein tatsaechlich beobachteter 200 und ein geschlossenes
+Leserergebnis fuehren zu `{ok:true, vorlage}`; sonst fail closed mit kleinen, benannten Gruenden
+(`abrufziel-ungueltig`, `hostwechsel`, `http-status`, `anbietergrenze`, `abruf-fehlgeschlagen`
+oder der jeweilige Lesergrund). Kein eigener Netzweg, kein Speichern, keine Uhrzeit aus dem
+Publikationstag; Pressearchiv-Adapter/-Leser, Crawler, Source-Mode, Landesschutzgate,
+Qualitaetsschwellen und Rollen bleiben unveraendert.
+
+`node scripts/berlin-presse-sondervorlagen-abruf-test.js` faehrt ausschliesslich injizierte
+Abrufe (kein Netz): positive Proben beider Familien, Vorab-URL-Ablehnung ohne Abruf, falsche
+finale URL, fehlender/falscher HTTP-Status, fremder Hostredirect, ungueltiges HTML,
+Anbietergrenze sowie — falls vorhanden — die drei lokalen Originale (kein Kontakt/PDF, keine
+erfundene Uhrzeit): **45 Pruefungen** mit den `/private/tmp`-Originalen, **36** ohne sie
+(Originalproben werden dann als SKIP gemeldet und der Test bleibt CI-tauglich). Der Test laeuft
+ueber die bestehende Bereichsauswahl (`landesmodule-pardok` / `berlin`); die Pflichtmenge
+`STANDARD` bleibt unveraendert.
+
+Dieser Einzelabruf ist KEINE produktive Versorgung: es gab keinen Live-Crawl, keinen Netzabruf
+in diesem Helferlauf, keinen Import, keine Aktivierung, keinen 500er Test und keine
+DB-/Storage-/Lage-Aenderung. Er ist nicht an den Live-Quellenweg, Storage oder ein Landesmodul
+angeschlossen und wird von nichts automatisch aufgerufen.
+
+Eine einmalige rein lesende Gegenprobe des Einzelabrufs um 06:27 UTC lieferte fuer
+`pressemitteilung.1717887.php` den belegten Publikationstag `2026-09-24`,
+HTML-SHA256 `9fbe8472be24f8f6f15c02dd58b4780381cecb31a600dfd685eed858ae3efffa`
+wie das gespeicherte Original und den vollen Auszugsabsatz mit 625 Zeichen.
+Dabei wurde nichts gespeichert oder als produktive Landesversorgung gewertet.
