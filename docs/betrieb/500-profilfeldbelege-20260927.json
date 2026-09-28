@@ -1,6 +1,6 @@
 {
   "status": "Offline-Feldbelege fuer exakt 500 Zielprofile (Bundestag/Berlin/Brandenburg); technische Zusammenstellung, KEINE fachliche Freigabe und kein Importmanifest",
-  "erstelltAm": "2026-09-27T20:31:00+00:00",
+  "erstelltAm": "2026-09-28T08:28:30+00:00",
   "vertragsformat": "helmut-mandatsprofil/1",
   "grundlage": {
     "namensauswahl": "docs/betrieb/500-namensauswahl-20260927.json",
@@ -10,6 +10,7 @@
     "extraktionen": "bundestagsprofile-330-extraktion.json, landesprofile-170-extraktion.json",
     "brandenburgParteipruefung": "docs/betrieb/brandenburg-parteipruefung-20260927.json",
     "parteifeldpruefung": "docs/betrieb/parteifeldpruefung-335-20260927.json (335 gepruefte Parteifelder: 261 belegt, 74 offen)",
+    "pistoriusParteibeleg": "docs/betrieb/pistorius-partei-1-20260928.json (enge Zusatzquittung; EIN bislang offener Bundestags-Parteibeleg aus der getrennten offiziellen Quelle https://www.spd.de/ueber-uns; H2, section#m236604 und exakter li-Name im Validator code-seitig fixiert; die 335er Quittung bleibt unveraendert offen)",
     "mandatsartenquittung": "docs/betrieb/brandenburg-mandatsarten-20260927.json (amtliche Brandenburger Uebersicht; Landesliste fuer 4 Profile, URL + sha256 + Abrufzeit gebunden)",
     "mandatsartenquittungBerlin": "docs/betrieb/berlin-mandatsarten-20260927.json (amtliches Handbuch-PDF Stand 8.10.2025, Seite 204 linke Spalte; Bezirks-/Landesliste fuer 2 Profile, URL + sha256 + Bytezahl + Abrufzeit gebunden, woertliche Transkription; kein automatischer PDF-Parser-Nachweis)",
     "profilrollenQuittung": "docs/betrieb/profilrollen-54-20260927.json (vom Orchestrator geprueft; 48 Rollen fuer fachlich offene Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches Zitat im personengebundenen Abschnitt gebunden)",
@@ -60,9 +61,9 @@
     "hashPruefungBestanden": 500,
     "aktivFalse": 500,
     "importfreigegebenFalse": 500,
-    "parteiBelegt": 424,
+    "parteiBelegt": 425,
     "parteiParteilos": 2,
-    "parteiOffen": 74,
+    "parteiOffen": 73,
     "parteifeldpruefung": {
       "datei": "docs/betrieb/parteifeldpruefung-335-20260927.json",
       "geprueftGesamt": 335,
@@ -70,6 +71,15 @@
       "parteilos": 0,
       "offen": 74,
       "deckungsgleichVerwendet": 335
+    },
+    "pistoriusQuittung": {
+      "datei": "docs/betrieb/pistorius-partei-1-20260928.json",
+      "geprueftGesamt": 1,
+      "nachRegion": {
+        "Bund": 1
+      },
+      "belegt": 1,
+      "verwendet": 1
     },
     "mandatsartOffen": 1,
     "fachlicheAchseOffen": 14,
@@ -216,7 +226,7 @@
     },
     "offeneFelder": {
       "weitereGremien": 137,
-      "partei": 74,
+      "partei": 73,
       "fachlicheAchse": 14,
       "wahlbezirk": 1,
       "mandatsart": 1,
@@ -39565,6 +39575,7 @@
         "parlament": "bundestag",
         "bundesland": "Niedersachsen",
         "fraktion": "SPD",
+        "partei": "SPD",
         "wahlkreis": "Wahlkreis 042: Stadt Hannover II",
         "funktionen": [
           "Bundesminister der Verteidigung",
@@ -39577,6 +39588,12 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/P/pistorius_boris-1046550",
             "abgerufenAm": "2026-09-27T13:02:07.414867+00:00",
             "sha256": "6ebba8fb601a27acf5b549b2db1d947ca10fb3e6ec6d60068fe1ed8117327939"
+          },
+          {
+            "art": "partei-profil",
+            "url": "https://www.spd.de/ueber-uns",
+            "abgerufenAm": null,
+            "sha256": "535e62d64e01152270b4a3687fd8cd56c8feb4c561150d6821b6ea97493670c8"
           },
           {
             "art": "ressort-zustaendigkeit",
@@ -39609,12 +39626,19 @@
         "aktiv": false
       },
       "mandatsartBelegt": null,
-      "parteiStatus": "offen",
+      "parteiStatus": "belegt",
       "parteiBeleg": {
-        "partei": null,
-        "beleg": "",
-        "grund": "PoliticalParty/Fraktion beschreibt nur die Fraktion; nicht in Partei umgedeutet",
-        "herkunft": "bewusst NICHT abgeleitet: Bundestags-Fraktion ist keine Partei; kein Partei-String gesetzt"
+        "partei": "SPD",
+        "beleg": "Boris Pistorius",
+        "grund": "Boris Pistorius ist als eigenstaendiges sichtbares li im aktuell gelisteten SPD-Parteivorstand unter der H2 'Weitere Mitglieder im SPD-Parteivorstand' unmittelbar vor section#m236604 gefuehrt; daraus folgt die aktuelle SPD-Mitgliedschaft, kein Schluss aus der Fraktion",
+        "herkunft": "docs/betrieb/pistorius-partei-1-20260928.json (enge Zusatzquittung; getrennte offizielle Partei-Quelle https://www.spd.de/ueber-uns, SHA256 535e62d64e01152270b4a3687fd8cd56c8feb4c561150d6821b6ea97493670c8)",
+        "abschnitt": "Weitere Mitglieder im SPD-Parteivorstand",
+        "pruefung": "Sol: Identitaet/Kennung, Kanonik der Bundestagsquelle, URL, HTTP-Status/-Datum, Bytezahl und sha256 sowie H2, Abschnitt und exakter li-Name am Original abgeglichen.",
+        "quelle": {
+          "datei": "docs/betrieb/pistorius-partei-1-20260928.json",
+          "url": "https://www.spd.de/ueber-uns",
+          "sha256": "535e62d64e01152270b4a3687fd8cd56c8feb4c561150d6821b6ea97493670c8"
+        }
       },
       "feldbelege": {
         "vollname": "ProfilePage.mainEntity.name und h1",
@@ -39624,7 +39648,9 @@
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
         "themen": "vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json: gepruefte Ressortbegriffe mit Herkunft aus Region Bund + Ableitungskennzeichnung + amtlichem Ressort; Ressort im zusammenhaengenden woertlichen Zitat belegt (URL + sha256 + Abrufzeit + Datei der amtlichen Quelle gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
-        "partei": "bewusst NICHT abgeleitet: Bundestags-Fraktion ist keine Partei; kein Partei-String gesetzt",
+        "partei": "docs/betrieb/pistorius-partei-1-20260928.json (enge Zusatzquittung; getrennte offizielle Partei-Quelle https://www.spd.de/ueber-uns, SHA256 535e62d64e01152270b4a3687fd8cd56c8feb4c561150d6821b6ea97493670c8)",
+        "parteiWert": "Boris Pistorius",
+        "parteiQuelle": "docs/betrieb/pistorius-partei-1-20260928.json: https://www.spd.de/ueber-uns sha256 535e62d64e01152270b4a3687fd8cd56c8feb4c561150d6821b6ea97493670c8",
         "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich gekennzeichneter Ableitungshinweis zu den Ressortthemen (keine persoenliche Position)"
       },
       "weitereGremien": [],
@@ -39634,14 +39660,36 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Parteimitgliedschaft in der amtlichen Biografie nicht belegt; NICHT aus der Fraktion abgeleitet"
-      ],
-      "offeneFelder": [
-        "partei"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
+      "parteiQuittung": {
+        "datei": "docs/betrieb/pistorius-partei-1-20260928.json",
+        "kennung": "bundestag-pistorius-boris-1046550",
+        "region": "Bund",
+        "parlament": "bundestag",
+        "status": "belegt",
+        "partei": "SPD",
+        "person": "Boris Pistorius",
+        "abschnittH2": "Weitere Mitglieder im SPD-Parteivorstand",
+        "abschnittId": "m236604",
+        "liName": "Boris Pistorius",
+        "bindung": "amtlich gelisteter aktueller SPD-Parteivorstand; eigenstaendiges sichtbares li unter der H2 unmittelbar vor section#m236604",
+        "beleg": "Boris Pistorius",
+        "grund": "Boris Pistorius ist als eigenstaendiges sichtbares li im aktuell gelisteten SPD-Parteivorstand unter der H2 'Weitere Mitglieder im SPD-Parteivorstand' unmittelbar vor section#m236604 gefuehrt; daraus folgt die aktuelle SPD-Mitgliedschaft, kein Schluss aus der Fraktion",
+        "quelle": {
+          "url": "https://www.spd.de/ueber-uns",
+          "finalUrl": "https://www.spd.de/ueber-uns",
+          "datei": "helmut-spd-ueber-uns-20260928.html",
+          "abgerufenAm": null,
+          "sha256": "535e62d64e01152270b4a3687fd8cd56c8feb4c561150d6821b6ea97493670c8",
+          "bytes": 106172,
+          "http": 200,
+          "httpDate": "Mon, 28 Sep 2026 08:15:31 GMT"
+        },
+        "importfreigegeben": false
+      },
       "profilrollenQuittung": {
         "datei": "docs/betrieb/profilrollen-54-20260927.json",
         "url": "https://www.bundestag.de/abgeordnete/biografien/P/pistorius_boris-1046550",

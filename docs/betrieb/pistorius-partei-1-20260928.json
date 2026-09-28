@@ -1,0 +1,51 @@
+{
+  "vertragsformat": "helmut-parteibeleg/1",
+  "datum": "2026-09-28",
+  "version": 1,
+  "status": "Vom Orchestrator vorbereitete enge Zusatzquittung; ein Einzelfall (Boris Pistorius); keine Importfreigabe",
+  "umfang": 1,
+  "bilanz": {
+    "gesamt": 1,
+    "Bund": 1,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "hinweis": "Genaue Zusatzquittung fuer EINEN bislang offenen Bundestags-Parteibeleg. Die historische 335er-Parteifeldquittung bleibt als Audit byteidentisch und Pistorius darin offen; die Partei stammt aus einer getrennten offiziellen Quelle und NICHT aus der Fraktion.",
+  "regeln": [
+    "Die Partei SPD wird ausschliesslich fuer die eine kanonische Kennung aus dem aktuell gelisteten SPD-Parteivorstand uebernommen.",
+    "Die H2, der Abschnitt section#m236604 und der exakte li-Name sind als festes Fachurteil im Validator code-seitig fixiert; die Quittung liefert sie nur zur Gegenprobe.",
+    "Originalbytes werden an URL, HTTP-Status, beobachteten HTTP-Date-Header, Bytezahl und sha256 gebunden; eine genaue Abrufzeit ist nicht belegt und bleibt null. Fehlt das Original, wird fail closed abgebrochen.",
+    "Versteckte/inerte Bereiche, Fremdabschnitte, eine andere H2 oder ein fehlendes li sperren den Lauf, auch wenn eine Fixture konsistent neu gehasht wird.",
+    "Fraktion, Funktionen, Themen, Mandat und alle anderen Felder bleiben unveraendert; keine Importfreigabe, keine Aktivierung."
+  ],
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-pistorius-boris-1046550",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "partei": "SPD",
+      "person": "Boris Pistorius",
+      "abschnittH2": "Weitere Mitglieder im SPD-Parteivorstand",
+      "abschnittId": "m236604",
+      "liName": "Boris Pistorius",
+      "beleg": "Boris Pistorius",
+      "grund": "Boris Pistorius ist als eigenstaendiges sichtbares li im aktuell gelisteten SPD-Parteivorstand unter der H2 'Weitere Mitglieder im SPD-Parteivorstand' unmittelbar vor section#m236604 gefuehrt; daraus folgt die aktuelle SPD-Mitgliedschaft, kein Schluss aus der Fraktion",
+      "bindung": "amtlich gelisteter aktueller SPD-Parteivorstand; eigenstaendiges sichtbares li unter der H2 unmittelbar vor section#m236604",
+      "pruefung": "Sol: Identitaet/Kennung, Kanonik der Bundestagsquelle, URL, HTTP-Status/-Datum, Bytezahl und sha256 sowie H2, Abschnitt und exakter li-Name am Original abgeglichen.",
+      "quelle": {
+        "url": "https://www.spd.de/ueber-uns",
+        "finalUrl": "https://www.spd.de/ueber-uns",
+        "datei": "helmut-spd-ueber-uns-20260928.html",
+        "abgerufenAm": null,
+        "sha256": "535e62d64e01152270b4a3687fd8cd56c8feb4c561150d6821b6ea97493670c8",
+        "bytes": 106172,
+        "http": 200,
+        "httpDate": "Mon, 28 Sep 2026 08:15:31 GMT",
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    }
+  ],
+  "pruefung": "Ein einzelner, bislang offener Bundestags-Parteibeleg (Boris Pistorius) wird gesondert neu gebunden. Die SPD stellt auf https://www.spd.de/ueber-uns ihren aktuell gelisteten Parteivorstand dar; die echte H2 'Weitere Mitglieder im SPD-Parteivorstand' geht unmittelbar vor section#m236604, dessen eigene sichtbare ul/li-Liste genau 'Boris Pistorius' enthaelt. Die kanonische Bundestagsbiografie, Kennung und Fraktion bleiben unveraendert; es wird nichts aus der Fraktion abgeleitet."
+}

@@ -196,7 +196,9 @@ Danach schlossen die eng belegten [Jarzombek-Abteilungen](betrieb/jarzombek-bmds
 (nur Skopec als neue Fachachse) und die lokal geprüfte
 [Rohde-Bundeshaushaltsaufgabe](betrieb/rohde-bundeshaushalt-1-20260927.json)
 je eine weitere Achse. Aktueller lokaler Entwurf:485/15 technisch akzeptiert;
-14 Fachachsen,74 aktuelle Parteifelder und eine Berliner Mandatsart bleiben offen.
+14 Fachachsen,73 aktuelle Parteifelder und eine Berliner Mandatsart bleiben offen.
+Der getrennte [amtliche SPD-Parteivorstandsbeleg](betrieb/pistorius-partei-1-20260928.json)
+schliesst nur Boris Pistorius' Parteifeld; die bisherige335er-Auditquittung bleibt unveraendert.
 Naechster Fachschritt: verbleibende aktuelle Parteibelege, die letzte offene
 Berliner Mandatsart (Claudia Engelmann) und die restlichen Fachachsen.
 

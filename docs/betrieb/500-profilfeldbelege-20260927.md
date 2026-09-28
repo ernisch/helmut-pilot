@@ -6,7 +6,11 @@ Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
 **Aktuelle Fortschreibung nach dem Rohde-Schritt (Bundestag, BMF-Aufgabe Bundeshaushalt):**
 485 technisch akzeptiert, 15 unvollstaendig; 318/330 Bundestagsprofile technisch bereit.
-14 fachliche Achsen, 74 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor
+14 fachliche Achsen, 73 Parteifelder und eine Berliner Mandatsart bleiben offen. Der
+getrennte [aktuelle SPD-Parteivorstandsbeleg](pistorius-partei-1-20260928.json)
+schliesst ausschliesslich Boris Pistorius' bisher offenes Parteifeld. Die historische
+335er-Auditquittung und die weiter unten dokumentierte damalige 424/2/74-Bilanz bleiben
+unveraendert; aktuell gelten 425 belegt, 2 parteilos, 73 offen. Der zuvor
 einzeln offene Fachachsenfall Dennis Rohde ist ueber die amtlich belegte aktuelle
 BMF-Aufgabe "Bundeshaushalt" geschlossen (versionierte
 [Rohde-Einzelfallquittung](rohde-bundeshaushalt-1-20260927.json)): die bestehende PSts-Rolle

@@ -101,6 +101,26 @@ for (const e of ergaenzung.ergebnisse) {
   a.equal(e.partei, null, "offene Quittung darf keinen Parteiwert tragen");
 }
 
+// Enge, getrennte Zusatzquittung fuer GENAU einen zuvor offenen Bundestags-Parteibeleg
+// (Boris Pistorius). Die 335er Quittung bleibt byteidentisch und Pistorius darin offen;
+// die Partei stammt aus dem aktuell gelisteten SPD-Parteivorstand, nicht aus der Fraktion.
+const pistoriusBeleg = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "pistorius-partei-1-20260928.json"), "utf8"));
+a.equal(pistoriusBeleg.umfang, 1, "Pistorius-Zusatzquittung muss genau 1 Fall umfassen");
+a.equal(pistoriusBeleg.bilanz.gesamt, 1, "Pistorius-Zusatzquittung: gesamt 1");
+a.equal(pistoriusBeleg.ergebnisse.length, 1, "Pistorius-Zusatzquittung muss 1 Ergebnis tragen");
+const pistoriusKennung = "bundestag-pistorius-boris-1046550";
+const pistoriusQuittung = new Map(pistoriusBeleg.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(pistoriusQuittung.size, 1, "Pistorius-Zusatzquittungskennung muss eindeutig sein");
+const pistoriusEintrag = pistoriusQuittung.get(pistoriusKennung);
+a.ok(pistoriusEintrag, "Pistorius-Eintrag fehlt in der Zusatzquittung");
+a.equal(pistoriusEintrag.partei, "SPD", "Pistorius-Partei muss SPD sein");
+a.equal(pistoriusEintrag.abschnittH2, "Weitere Mitglieder im SPD-Parteivorstand", "gebundene H2");
+a.equal(pistoriusEintrag.abschnittId, "m236604", "gebundener Abschnitt");
+a.equal(pistoriusEintrag.liName, "Boris Pistorius", "gebundener exakter li-Name");
+a.equal(pistoriusEintrag.importfreigegeben, false, "Pistorius-Beleg darf nicht importfreigeben");
+a.equal(pistoriusEintrag.quelle.url, "https://www.spd.de/ueber-uns", "getrennte offizielle Partei-Quelle");
+a.equal(pistoriusEintrag.quelle.sha256, "535e62d64e01152270b4a3687fd8cd56c8feb4c561150d6821b6ea97493670c8", "SPD-Quellhash");
+
 const parteiStatus = { belegt: 0, offen: 0, parteilos: 0 };
 for (const d of datensaetze) {
   const e = ergByKennung.get(d.kanonischeKennung);
@@ -109,7 +129,18 @@ for (const d of datensaetze) {
   if (d.parteiStatus === "belegt") {
     a.ok(d.profil.partei, "belegter Parteistatus braucht einen Parteiwert");
     a.ok(d.feldbelege.partei && d.feldbelege.partei.length > 0, "Parteiherkunft muss belegt sein");
-    if (e) {
+    const pq = pistoriusQuittung.get(d.kanonischeKennung);
+    if (pq) {
+      // Nur der eine kanonische Fall: die 335er Quittung bleibt offen, der Parteiwert
+      // stammt aus der getrennten offiziellen SPD-Zusatzquittung.
+      a.equal(e.status, "offen", "die 335er Quittung bleibt fuer Pistorius offen");
+      a.equal(d.profil.partei, pq.partei, "Pistorius-Partei muss der Zusatzquittung entsprechen");
+      a.deepEqual(d.parteiBeleg.quelle, { datei: "docs/betrieb/pistorius-partei-1-20260928.json", url: pq.quelle.url, sha256: pq.quelle.sha256 });
+      a.equal(d.parteiQuittung.datei, "docs/betrieb/pistorius-partei-1-20260928.json", "Zusatzquittungsdatei gebunden");
+      a.equal(d.parteiQuittung.abschnittId, "m236604", "Abschnitt im Datensatz gebunden");
+      a.equal(d.parteiQuittung.liName, "Boris Pistorius", "li-Name im Datensatz gebunden");
+      a.ok(d.feldbelege.parteiQuelle.includes("pistorius-partei-1-20260928.json"), "ParteiQuelle nennt die Zusatzquittung");
+    } else if (e) {
       // Uebernommener Wert stammt woertlich aus der geprueften Quittung, gebunden an URL+sha256.
       a.equal(e.status, "belegt");
       a.equal(d.profil.partei, e.partei, "Parteiwert muss der geprueften Quittung entsprechen");
@@ -132,15 +163,56 @@ for (const d of datensaetze) {
   }
   parteiStatus[d.parteiStatus] += 1;
 }
-a.equal(parteiStatus.offen, 74, "74 Profile bleiben ohne belegte Partei");
-a.equal(parteiStatus.belegt, 424, "424 belegte Parteien (163 vorab + 261 aus der Quittung)");
+a.equal(parteiStatus.offen, 73, "73 Profile bleiben ohne belegte Partei (74 minus Pistorius)");
+a.equal(parteiStatus.belegt, 425, "425 belegte Parteien (424 + Pistorius aus der getrennten SPD-Zusatzquittung)");
 a.equal(parteiStatus.parteilos, 2, "zwei amtlich belegte parteilose Profile");
+a.equal(datensaetze.filter((d) => d.parteiQuittung).length, 1, "genau 1 Profil traegt die Pistorius-Zusatzquittung");
+a.equal(datensaetze.find((d) => d.parteiQuittung).kanonischeKennung, pistoriusKennung, "nur Pistorius traegt die Zusatzquittung");
 
 // Brandenburg kommt aus der Parteipruefung, ergaenzt um die Quittung: 46 belegt, 2 offen, 2 parteilos.
 const bb = datensaetze.filter((d) => d.parlament === "landtag-brandenburg");
 const bbStatus = {};
 for (const d of bb) bbStatus[d.parteiStatus] = (bbStatus[d.parteiStatus] || 0) + 1;
 a.deepEqual(bbStatus, { belegt: 46, offen: 2, parteilos: 2 }, "Brandenburg: 48 geklaert / 2 offen");
+
+// ── 4b · Pistorius: getrennte Partei-Quelle, Unveraendertheit, Import/Storage ─────────────
+// Nur die Partei des einen kanonischen Falls aendert sich; Fraktion, Funktionen, Themen,
+// Mandat und die kanonische Bundestagsquelle bleiben unveraendert. Der echte Import-/
+// Storage-Pfad traegt SPD und aktiviert nie; eine fremde Partei wird gesperrt.
+const pistoriusDatensatz = datensaetze.find((d) => d.kanonischeKennung === pistoriusKennung);
+a.ok(pistoriusDatensatz, "Pistorius-Datensatz fehlt");
+a.equal(pistoriusDatensatz.parteiStatus, "belegt", "Pistorius ist belegt");
+a.equal(pistoriusDatensatz.profil.partei, "SPD", "Pistorius-Partei ist SPD");
+a.equal(pistoriusDatensatz.profil.fraktion, "SPD", "Pistorius-Fraktion bleibt SPD");
+a.deepEqual(pistoriusDatensatz.profil.themen, ["Verteidigung"], "Pistorius-Themen unveraendert");
+a.deepEqual(pistoriusDatensatz.profil.funktionen, ["Bundesminister der Verteidigung", "Ressortzuständigkeit Bund (amtlich abgeleitet): Verteidigung; keine persönliche politische Position"], "Pistorius-Funktionen unveraendert");
+a.ok(!pistoriusDatensatz.offeneFelder.includes("partei"), "Parteifeld ist geschlossen");
+a.equal(pistoriusDatensatz.offeneFelder.length, 0, "Pistorius ist ohne offenes Feld");
+a.equal(pistoriusDatensatz.quelle.url, "https://www.bundestag.de/abgeordnete/biografien/P/pistorius_boris-1046550", "kanonische Bundestagsquelle unveraendert");
+const parteiQuelle = (pistoriusDatensatz.profil.offizielleQuellen || []).find((q) => q.art === "partei-profil");
+a.ok(parteiQuelle, "getrennte offizielle Partei-Quelle fehlt");
+a.equal(parteiQuelle.url, "https://www.spd.de/ueber-uns", "Partei-Quelle ist der SPD-Parteivorstand");
+a.equal(parteiQuelle.sha256, pistoriusEintrag.quelle.sha256, "Partei-Quelle bindet den SPD-Quellhash");
+{
+  const importPistorius = require("../lib/helmut/profil-import.js");
+  const storagePistorius = require("../lib/helmut/storage.js");
+  const gespeichert = importPistorius.zuHelmutProfil(pistoriusDatensatz.profil);
+  a.equal(gespeichert.party, "SPD", "Partei erreicht den Importpfad");
+  a.equal(gespeichert.faction, "SPD", "Fraktion erreicht den Importpfad");
+  a.equal(gespeichert.profileActive, false, "Import aktiviert nie");
+  const zeile = storagePistorius.toMandateProfileRow(gespeichert);
+  a.equal(zeile.partei, "SPD", "Party erreicht die Storage-Zeile");
+  a.equal(zeile.fraktion, "SPD", "Fraktion erreicht die Storage-Zeile");
+  a.equal(zeile.aktiv, false, "Storage-Zeile darf nicht aktivieren");
+  const gelesen = storagePistorius.fromMandateProfileRow({ id: pistoriusKennung, name: pistoriusDatensatz.profil.vollname }, zeile);
+  a.equal(gelesen.party, "SPD", "Partei uebersteht den Storage-Roundtrip");
+  a.equal(gelesen.faction, "SPD", "Fraktion uebersteht den Storage-Roundtrip");
+  a.equal(gelesen.profileActive, false, "Round-Trip bleibt aktiv=false");
+  // Negative Fremdpartei-Probe: eine fremde Partei (AfD) wird vor jedem Import gesperrt.
+  const fremd = { ...pistoriusDatensatz.profil, partei: "AfD" };
+  a.throws(() => importPistorius.zuHelmutProfil(fremd), /AfD|ausgeschlossen|zulassung|Zielgruppe/i,
+    "fremde Partei muss vor dem Import gesperrt werden");
+}
 
 // ── 5 · Mandatsachse: Wahlkreiskandidatur ist kein Direktmandat ───────────────────────────
 const btDirekt = datensaetze.filter((d) => d.parlament === "bundestag" && d.profil.wahlkreis).length;
@@ -1605,11 +1677,26 @@ for (const d of stvStichproben) {
 // ── 7 · Reproduzierbarkeit (nur mit lokalen Arbeitsdateien + python3) ────────────────────
 let reproduzierbar = "uebersprungen (lokale Eingangsdateien oder python3 fehlen)";
 const eingangVorhanden = fs.existsSync(path.join(STANDARD_EINGANG, "bundestagsprofile-330-abruf.json"))
-  && fs.existsSync(path.join(STANDARD_EINGANG, "landesprofile-170-abruf.json"));
+  && fs.existsSync(path.join(STANDARD_EINGANG, "landesprofile-170-abruf.json"))
+  // Der Assembler bindet die Pistorius-Parteizusatzquittung fail closed an das private
+  // SPD-Original; ohne dieses laeuft die byte-identische Neuerzeugung bewusst nicht.
+  && fs.existsSync("/private/tmp/helmut-spd-ueber-uns-20260928.html");
 const python = spawnSync("python3", ["--version"], { encoding: "utf8" }).status === 0;
 if (python) {
   const gegenprobe = spawnSync("python3", ["-B", path.join(__dirname, "profil-feldbelege-500-unit.py")], { encoding: "utf8" });
   a.equal(gegenprobe.status, 0, `Partei-Gegenprobe fehlgeschlagen: ${gegenprobe.stderr}`);
+  // Gezielte Node-Gegenprobe des Pistorius-Validators, ausdruecklich OHNE privates Original:
+  // der Validator muss fail closed abbrechen und niemals still einen Parteiwert liefern.
+  const fehlend = spawnSync("python3", ["-B", path.join(__dirname, "profil-feldbelege-500-pistorius.py"),
+    "--original", path.join(os.tmpdir(), `helmut-pistorius-fehlt-${process.pid}.html`)], { encoding: "utf8" });
+  a.notEqual(fehlend.status, 0, "Pistorius-Validator muss ohne privates Original fail closed abbrechen");
+  a.match(fehlend.stderr, /Original fehlt/, "fehlendes Original muss benannt werden");
+  // Mit privatem Original (nur wenn vorhanden) traegt die versionierte Quittung.
+  if (fs.existsSync("/private/tmp/helmut-spd-ueber-uns-20260928.html")) {
+    const mitOriginal = spawnSync("python3", ["-B", path.join(__dirname, "profil-feldbelege-500-pistorius.py")], { encoding: "utf8" });
+    a.equal(mitOriginal.status, 0, `Pistorius-Validator mit Original fehlgeschlagen: ${mitOriginal.stderr}`);
+    a.match(mitOriginal.stdout, /SPD/, "Pistorius-Validator muss SPD liefern");
+  }
 }
 if (eingangVorhanden && python) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "profilfeldbelege-"));

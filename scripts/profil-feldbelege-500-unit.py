@@ -3044,6 +3044,152 @@ print('PASS: Jarzombek-Abteilungsquittung — fehlende Quittung/falsche Bilanz/F
       '/private/tmp) wird akzeptiert.')
 
 
+# ── 16b · Pistorius-Partei-Zusatzquittung (genau ein zuvor offener Partei-Beleg) ────────────
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Original. H2, Abschnitt und
+# exakter li-Name sind im Modul code-seitig fixiert; eine konsistent neu gehashte Fixture
+# kann die Pruefung deshalb NICHT bestehen, wenn H2/Abschnitt/Liste/Name abweichen.
+pi_spec = importlib.util.spec_from_file_location(
+    'pistorius', Path(__file__).with_name('profil-feldbelege-500-pistorius.py'))
+pi = importlib.util.module_from_spec(pi_spec)
+pi_spec.loader.exec_module(pi)
+
+
+def _erwarte_pi_fehler(fn, was, meldung=None):
+    try:
+        fn()
+    except pi.PistoriusFehler as fehler:
+        if meldung is not None:
+            assert meldung in str(fehler), f"Falscher Sperrgrund: {fehler}"
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    pi_root = Path(tmp)
+    PI_K = 'bundestag-test-pistorius-1'
+    PI_ABRUF = '2026-09-28T08:15:31+00:00'
+    PI_HTTPDATE = 'Mon, 28 Sep 2026 08:15:31 GMT'
+
+    def _pi_html(h2='Weitere Mitglieder im SPD-Parteivorstand', li='Boris Pistorius',
+                 ziel='m236604', li_zusatz='', fremdsektion='', h2_zusatz=''):
+        return (f'<html><body><main id="main" class="page__main">'
+                f'<div class="p-headline"><h2 id="c1" class="p-headline__text"{h2_zusatz}>{h2}</h2></div>'
+                f'<section id="{ziel}" class="grid grid__wrapper">'
+                f'<div class="grid__column grid__column--fourty"><div id="m1" class="text">'
+                f'<div class="text__body"><ul><li{li_zusatz}>{li}</li></ul></div></div></div>'
+                f'</section>{fremdsektion}</main></body></html>')
+
+    def _pi_quelle(daten):
+        return dict(url='https://www.spd.de/ueber-uns', finalUrl='https://www.spd.de/ueber-uns',
+                    datei='test-spd.html', abgerufenAm=PI_ABRUF, sha256=pi._sha256_bytes(daten),
+                    bytes=len(daten), http=200, httpDate=PI_HTTPDATE, abrufStatus='abgerufen')
+
+    def _pi_erwartung(daten, h2='Weitere Mitglieder im SPD-Parteivorstand',
+                      li='Boris Pistorius', ziel='m236604'):
+        return dict(kennung=PI_K, region='Bund', parlament='bundestag', status='belegt', partei='SPD',
+                    person='Pistorius Test', h2=h2, abschnittId=ziel, liName=li, quelle=_pi_quelle(daten))
+
+    def _pi_quittung(erwartung):
+        return dict(version=1, umfang=1, bilanz=dict(gesamt=1, Bund=1, Berlin=0, Brandenburg=0),
+                    ergebnisse=[dict(kennung=PI_K, region='Bund', parlament='bundestag', status='belegt',
+                                     partei='SPD', person='Pistorius Test',
+                                     abschnittH2=erwartung['h2'], abschnittId=erwartung['abschnittId'],
+                                     liName=erwartung['liName'], beleg=erwartung['liName'],
+                                     grund='Testgrund', bindung='Testbindung', pruefung='Testpruefung',
+                                     quelle=dict(erwartung['quelle']), importfreigegeben=False)])
+
+    PI_KMAP = {PI_K: dict(parlament='bundestag', amtlicheKennung=PI_K)}
+    _pi_orig = _pi_html().encode('utf-8')
+    _pi_erw = _pi_erwartung(_pi_orig)
+    _pi_q = _pi_quittung(_pi_erw)
+
+    def _pi(quittung=None, daten=_pi_orig, erwartung=_pi_erw, **kwargs):
+        kw = dict(quittung=quittung, kennung_zu_abruf=PI_KMAP, original_bytes=daten, erwartung=erwartung)
+        kw.update(kwargs)
+        return pi.pruefe_pistorius(**kw)
+
+    index = _pi(_pi_q)
+    assert list(index) == [PI_K]
+    assert index[PI_K]['partei'] == 'SPD'
+    assert index[PI_K]['abschnittId'] == 'm236604'
+    assert index[PI_K]['liName'] == 'Boris Pistorius'
+
+    # Fehlende Quittung, falsche Bilanz/Partei/Kennung und Quellhash-Drift sperren fail closed.
+    _erwarte_pi_fehler(lambda: _pi(None), 'fehlende Zusatzquittung', 'Zusatzquittung fehlt')
+    _erwarte_pi_fehler(lambda: _pi(dict(_pi_q, bilanz=dict(gesamt=1, Bund=0, Berlin=0, Brandenburg=0))),
+                       'falsche Bilanz', 'Bilanz')
+    _erwarte_pi_fehler(lambda: _pi(dict(_pi_q, ergebnisse=[dict(_pi_q['ergebnisse'][0], partei='CDU')])),
+                       'fremde Partei', 'partei')
+    _erwarte_pi_fehler(lambda: _pi(dict(_pi_q, ergebnisse=[dict(_pi_q['ergebnisse'][0],
+                       kennung='bundestag-test-fremd-9')])), 'Fremdkennung', 'kennung')
+    _erwarte_pi_fehler(lambda: _pi(_pi_q, kennung_zu_abruf={}), 'Kennung ausserhalb der 500',
+                       'Zielprofilen')
+    _erwarte_pi_fehler(lambda: _pi(dict(_pi_q, ergebnisse=[dict(_pi_q['ergebnisse'][0],
+                       quelle=dict(_pi_erw['quelle'], sha256='0' * 64))])),
+                       'Quellhash-Drift', 'sha256')
+
+    # Konsistent neu gehashte Fixtures: H2/Abschnitt/Liste/Name sind code-seitig fixiert.
+    for dokument, was, meldung in (
+        (_pi_html(h2='Fremde Ueberschrift').encode('utf-8'), 'geaenderte H2 bei konsistentem Hash', 'H2'),
+        (_pi_html(ziel='m999999').encode('utf-8'), 'verschobener Abschnitt bei konsistentem Hash',
+         'm236604'),
+        (_pi_html(li='Boris Pistorius (Fremd)').encode('utf-8'), 'fremder li-Name bei konsistentem Hash',
+         'li'),
+        (_pi_html(li_zusatz=' hidden').encode('utf-8'), 'verstecktes li bei konsistentem Hash', 'versteckt'),
+        (_pi_html(h2_zusatz=' hidden').encode('utf-8'), 'versteckte H2 bei konsistentem Hash', 'versteckt'),
+        (_pi_html(fremdsektion='<section id="fremd"><ul><li>Boris Pistorius</li></ul></section>',
+                  li='Nur Fremdperson').encode('utf-8'), 'Fremdabschnitt bei konsistentem Hash', 'li'),
+    ):
+        erw = _pi_erwartung(dokument)
+        _erwarte_pi_fehler(lambda d=dokument, e=erw: _pi(_pi_quittung(e), d, e), was, meldung)
+
+    # Fehlendes oder gekuerztes Original sperrt fail closed (kein stilles Ueberspringen).
+    _erwarte_pi_fehler(lambda: _pi(_pi_q, original_pfad=pi_root / 'fehlt.html', original_bytes=None),
+                       'fehlendes Original', 'Original fehlt')
+    _erwarte_pi_fehler(lambda: _pi(_pi_q, daten=_pi_orig[:-1]), 'gekuerztes Original', 'Bytezahl')
+
+    # Mit echtem privatem Original (nur wenn vorhanden): die versionierte Quittung traegt.
+    if pi.PISTORIUS_QUELLE_STANDARD.is_file():
+        echter_index = pi.pruefe_pistorius(
+            quittung=pi._lies_json(pi.PISTORIUS),
+            kennung_zu_abruf={pi.ERWARTUNG['kennung']: dict(parlament='bundestag')},
+            original_pfad=pi.PISTORIUS_QUELLE_STANDARD)
+        assert echter_index[pi.ERWARTUNG['kennung']]['partei'] == 'SPD'
+        assert echter_index[pi.ERWARTUNG['kennung']]['abschnittId'] == 'm236604'
+        # Auch am ECHTEN Original: konsistent neu gehashte H2-/Abschnitts-/li-Manipulationen
+        # werden allein ueber die code-seitig fixierte Struktur gesperrt.
+        echter_text_roh = pi.PISTORIUS_QUELLE_STANDARD.read_bytes().decode('utf-8')
+
+        def _echte_probe(dokument: str, was: str, meldung: str):
+            daten = dokument.encode('utf-8')
+            q = json.loads(json.dumps(pi._lies_json(pi.PISTORIUS)))
+            q['ergebnisse'][0]['quelle']['sha256'] = pi._sha256_bytes(daten)
+            q['ergebnisse'][0]['quelle']['bytes'] = len(daten)
+            kw = dict(erwartung=dict(quelle=dict(pi.ERWARTUNG['quelle'],
+                                                sha256=pi._sha256_bytes(daten), bytes=len(daten))))
+            _erwarte_pi_fehler(lambda: pi.pruefe_pistorius(
+                quittung=q, kennung_zu_abruf={pi.ERWARTUNG['kennung']: dict(parlament='bundestag')},
+                original_bytes=daten, **kw), was, meldung)
+
+        _echte_probe(echter_text_roh.replace('Weitere\u00a0Mitglieder im SPD-Parteivorstand',
+                                             'Fremde Ueberschrift'),
+                     'reale H2-Manipulation (konsistent neu gehasht)', 'H2')
+        _echte_probe(echter_text_roh.replace('<section id="m236604"', '<section id="m000000"'),
+                     'reale Abschnittsverschiebung (konsistent neu gehasht)', 'm236604')
+        _echte_probe(echter_text_roh.replace('<li>Boris Pistorius</li>', '<li hidden>Boris Pistorius</li>'),
+                     'reales verstecktes li (konsistent neu gehasht)', 'versteckt')
+        echter_text = 'mit privatem Original'
+    else:
+        echter_text = 'ohne privates Original (synthetisch)'
+
+print('PASS: Pistorius-Partei-Zusatzquittung — fehlende Quittung/falsche Bilanz/fremde Partei oder '
+      'Kennung/Quelldrift (URL/Hash/Bytezahl/HTTP/HTTP-Datum)/fehlendes oder gekuerztes Original sperren '
+      'fail closed; geaenderte H2, verschobener Abschnitt, verstecktes li oder versteckte H2, fremder '
+      'li-Name und Fremdabschnitt werden auch bei konsistent neu gehashten Fixtures gesperrt, weil '
+      'H2/section#m236604/exakter li-Name code-seitig fixiert sind; das gueltige synthetische Paket wird '
+      f'akzeptiert ({echter_text}).')
+
+
 # ── 17 · Kloeckner-Aufgabenquittung (Bundestagspräsidentin, ein zuvor offener Fachachsenfall) ──
 # Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Das eng fixierte
 # Fachurteil wird ueber den injizierbaren ``erwartung``-Parameter ersetzt; so bleibt der Test
