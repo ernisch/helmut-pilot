@@ -473,7 +473,11 @@ if (require.main === module) {
   // versehentliche Production-Lesezugriff. Der zentrale Schutz prueft zusaetzlich die
   // Umgebung (Zugangsdaten, Datenbankadressen, Quellenmodus) und bricht fail closed ab.
   require("./lokaler-netzschutz.js");
-  process.exit(main());
+  // Beim langen `--list --extended` kann ein sofortiges process.exit() unter
+  // Linux die noch gepufferte stdout-Pipe abschneiden. Der Auswahlvertrag sieht
+  // dann nur einen Teil der Suiten, obwohl der Kindprozess Exit 0 meldet.
+  // exitCode erhaelt denselben Erfolg/Fehlerstatus und laesst stdout auslaufen.
+  process.exitCode = main();
 } else if (process.env.NO_NETWORK_TESTS === "1") {
   // Als --require-Preload in einem Testprozess geladen -> Offline-Zwang aktiv.
   installNetGuard();
