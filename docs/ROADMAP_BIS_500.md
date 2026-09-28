@@ -150,6 +150,18 @@ In-Memory-Storage (25 Gruppen, echte Originalprobe), Negativtests fuer Drift und
 Zeit. Der Bundestagspfad, die Schwellen und die AfD-Sperre bleiben unveraendert.
 Kein Liveabruf, Import, Aktivierung oder500er Test; Production bleibt500/0,
 Offline-Zielkohorte inzwischen 500/500 technisch akzeptiert und nicht importfreigegeben.
+**Erledigt29.09. (lokal, offline):** [Brandenburger Landtags-Presseartikelstand](betrieb/landesversorgung-brandenburg-20260928.md).
+Der minimierte Brandenburger Stand (`lib/helmut/brandenburg-landtag-presseartikelstand.js`)
+ist als dritter, eigener Standtyp im gemeinsamen Dispatcher `lib/helmut/artikelstand.js`
+registriert; jeder Stand behaelt eigenen Namespace und eigene Kennung. Die tatsaechlich
+relevanten Storage-Leser in `lib/helmut/storage.js` (Dedup-Bestandsfenster, KO-/
+Rohdokument-Projektionen, gebundene Lage-Quellen sowie ein vierter, ebenso begrenzter
+Lesepfad in `listAktuelleLageQuellen`) und die tagesgenaue sichtbare Lage-Quellenzeile in
+`lib/helmut/lage.js` fuehren den Stand ohne erfundene Uhrzeit (`published_at` bleibt leer,
+sichtbar nur der belegte Kalendertag). Offline belegt ueber die Brandenburger
+Artikelstand- und die Lage-Quellenfenster-Suite sowie die geprueften Berlin-/Bundestags-
+und Dedup-Regressionen. Weiterhin **kein Live-Crawl, kein Import, kein freigegebenes
+Landesmodul und kein produktiver Versorgungsnachweis**.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
 Zwei bislang offene Berliner Mandatsarten sind ueber die amtliche
