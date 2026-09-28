@@ -31,7 +31,7 @@ Harte Grenzen dieses Werkzeugs:
     Landesliste belegt (URL + Hash + Abrufzeit); uebernommen werden nur
     Mandatsart und Region — NICHT Listenbeschriftung oder Listenplatz,
   * fuer die 54 fachlich offenen Profile werden ueber die vom Orchestrator
-    gepruefte Quittung ``docs/betrieb/profilrollen-54-20260927.json`` nur die
+    gepruefte Quittung ``docs/betrieb/profilrollen-43-20260928.json`` nur die
     freigegebenen ``wortlaut``-Strings dedupliziert an BESTEHENDE
     ``profil.funktionen`` angehaengt (48 belegt, 6 offen). Es entsteht kein
     ``regierungsrolle``-Schema und keine fachliche Achse; bestehende
@@ -182,10 +182,10 @@ MANDATSARTEN_BE_GESAMT = 2
 # regierungsrolle-Schema und KEINE fachliche Achse. Jede Kennung ist an URL,
 # Quellhash, erlaubten Status und ein woertliches Zitat im personengebundenen
 # amtlichen Abschnitt gebunden. Abweichungen brechen fail closed ab.
-PROFILROLLEN = REPO_ROOT / "docs" / "betrieb" / "profilrollen-54-20260927.json"
-PROFILROLLEN_RESSOURCE = "docs/betrieb/profilrollen-54-20260927.json"
-PROFILROLLEN_GESAMT = 54
-PROFILROLLEN_BELEGT = 48
+PROFILROLLEN = REPO_ROOT / "docs" / "betrieb" / "profilrollen-43-20260928.json"
+PROFILROLLEN_RESSOURCE = "docs/betrieb/profilrollen-43-20260928.json"
+PROFILROLLEN_GESAMT = 43
+PROFILROLLEN_BELEGT = 37
 PROFILROLLEN_OFFEN = 6
 PROFILROLLEN_STATUS = ("belegt", "offen")
 
@@ -4624,7 +4624,7 @@ def assembliere(eingang: Eingang) -> dict:
                 "Bytezahl + Abrufzeit gebunden, woertliche Transkription; kein automatischer PDF-Parser-Nachweis)"
             ),
             "profilrollenQuittung": (
-                f"{PROFILROLLEN_RESSOURCE} (vom Orchestrator geprueft; 48 Rollen fuer fachlich offene "
+                f"{PROFILROLLEN_RESSOURCE} (vom Orchestrator geprueft; 37 Rollen fuer die fortgeschriebene "
                 "Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches "
                 "Zitat im personengebundenen Abschnitt gebunden)"
             ),
@@ -4719,12 +4719,14 @@ def assembliere(eingang: Eingang) -> dict:
                 "gebundenen aktuellen Profilblock geprueft; Martin zusaetzlich am exakten H2/H3/Personlink "
                 "der aktuellen Wahlkreissuche. Nur Mandatsart und Region werden uebernommen; ein Direktmandat "
                 "des Vorgaengers und die Partei/Fraktion des historischen Einzugs werden nie uebernommen. "
-                "Claudia Engelmann bleibt offen."
+                "Der zuvor letzte offene Fall Claudia Engelmann wurde durch Steffen Zillich derselben "
+                "Fraktionsgruppe ersetzt; dessen Landesliste steht direkt im amtlichen Profilkopf."
             ),
             (
-                "Fuer die 54 fachlich offenen Profile werden ueber die vom Orchestrator gepruefte "
+                "Fuer die nach dem belegbaren Profilersatz verbleibenden 43 Rollenprofile werden ueber die "
+                "vom Orchestrator gepruefte "
                 f"Rollenquittung {PROFILROLLEN_RESSOURCE} ausschliesslich die freigegebenen wortlaut-Strings "
-                "dedupliziert an BESTEHENDE funktionen angehaengt (48 belegt, 6 offen). Es entsteht KEIN "
+                "dedupliziert an BESTEHENDE funktionen angehaengt (37 belegt, 6 offen). Es entsteht KEIN "
                 "regierungsrolle-Schema und KEINE fachliche Achse; bestehende Gremienrollen bleiben erhalten. "
                 "Jede Kennung ist an URL, Quellhash, erlaubten Status und ein woertliches Zitat im "
                 "personengebundenen amtlichen Abschnitt gebunden (Bundestag Funktion nur m-biography__function, "
@@ -4923,7 +4925,8 @@ def assembliere(eingang: Eingang) -> dict:
                 "disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB-, 1 "
                 "Amthor-, 3 Wahlausschuss-, 1 Jarzombek-, 1 Kloeckner- und 1 Rohde-Achse; die disjunkte "
                 "Vereinigung ergibt weiter genau die 54er Rollenquittung. Nach den getrennten nachfolgenden "
-                "Woidke- und Wegner-Einzelfaellen weist die aktuelle Gesamtbilanz 11 offene Achsen aus."
+                "Woidke- und Wegner-Einzelfaellen waren 11 Achsen offen; der belegbare Ersatz dieser "
+                "elf Profile schliesst die aktuelle technische Fachachsenbilanz auf 0."
             ),
             (
                 "Der belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften wird "
@@ -4966,8 +4969,9 @@ def assembliere(eingang: Eingang) -> dict:
                 "(Original UND Metadaten) gebunden. Die Kennung ist disjunkt zu den 19 Ressort-, 6 "
                 "Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB-, 1 Amthor-, 3 Wahlausschuss-, 1 "
                 "Jarzombek-, 1 Kloeckner-, 1 Rohde-, 1 Merz-, 1 Woidke- und 1 Stellvertretungsachse; die "
-                "disjunkte Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 11 Achsen "
-                "offen."
+                "damalige disjunkte Vereinigung ergab die 54er Rollenquittung mit 11 offenen Achsen. "
+                "Diese elf Profile sind jetzt durch gleichgruppige, amtlich voll belegte Ersatzprofile "
+                "ersetzt; aktuell bleiben 0 Fachachsen offen."
             ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
