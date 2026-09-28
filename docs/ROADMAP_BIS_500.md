@@ -127,7 +127,7 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 73 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;485 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;486 technische Erfolge sind keine fachliche Importfreigabe.
 Fuer die Landesversorgung liegt ein enger Berliner Originalseiten-Leser vor:
 `lib/helmut/berlin-presseartikel.js` bindet amtliche URL, Titel, Publikationstag
 und vollstaendigen Artikeltext ohne erfundene Uhrzeit; die lokale Originalprobe
