@@ -90,3 +90,55 @@ ueberein. `node scripts/berlin-presseartikel-abruf-test.js` pruefte 32 synthetis
 und lokale Originalfaelle; `anbietersteuerung-fachpfad-test.js` 52 Faelle.
 Auch dieser Einzelabruf war kein Crawl, Import oder produktiver Versorgungsnachweis.
 Der Live-Quellenweg und die Landesmodulfreigabe bleiben offen.
+
+## Fundweg fuer den amtlichen Senatsblock (28.09.2026, lokal)
+
+Der bisher fehlende enge Fundweg fuer AKTUELLE amtliche Berliner Senatsmeldungen ist
+als eigener, rein lokaler Entdecker umgesetzt:
+`lib/helmut/berlin-senat-entdeckung.js`.
+
+Eingang sind genau vier beobachtete Felder (`url`, `finalUrl`, `http`, `html`). Der
+Parser macht KEIN Netz. Er akzeptiert nur das amtliche Presseportal
+`https://berlin.de/presse/` bzw. `https://www.berlin.de/presse/` mit beobachtetem
+HTTP 200 und passender finalUrl, ohne fremden Host, Port, Benutzerinfo, Query oder
+Tracking. Abgegrenzt wird genau der sichtbare H2 „Aktuelle Mitteilungen des
+Presse- und Informationsamts und der Senatsverwaltungen“ samt seiner geschlossenen
+UL und deren geschlossenen LI. Die nachfolgenden Bezirksaemter- und sonstigen
+Meldungen werden nicht eingelesen; jede Fundstelle muss zudem die amtliche
+Behördenkategorie des Presseamts oder einer Senatsverwaltung tragen. Sie enthaelt
+den amtlichen relativen Link (absolut aufgeloest), den exakten Titel und den REINEN
+Kalendertag; die Listenuhrzeit („13:05 Uhr“) ist keine belegte UTC-Publikationszeit
+und erscheint nirgends im Ergebnis.
+
+Nur Adressen, die der bestehende Einzelabruf (`berlin-presseartikel-abruf.js`)
+unterstuetzt, sind als `weiterreichbar: true` markiert. Die uebrigen Berliner
+Artikelpfade bleiben als klar ausgewiesene, NICHT abrufbare Treffer mit
+Skipgrund `pressearchiv-adresse-fehlt` erhalten — niemals als erfolgreiche
+Versorgung. Fail closed bei verborgener/ausbrechender/injizierter Struktur,
+doppelten oder mehrdeutigen Bloecken, ungeschlossenen Elementen, ungueltigen
+Kalendertagen, unzulaessigen Links sowie Duplikaten.
+
+Lokales amtliches Original
+`/private/tmp/helmut-berlin-portal-20260928.html` (28.09.2026 05:12 UTC, HTTP200,
+sha256 `1cb44dda…fac8`) liefert genau sechs eigene Senatstreffer, davon drei
+weiterreichbare Pressearchivlinks und drei offene Pfade. Die bekannte BJF-Fundstelle
+`https://www.berlin.de/sen/bjf/service/presse/pressearchiv-2026/pressemitteilung.1718345.php`
+stimmt mit Titel „Reform der Kinder- und Jugendhilfe: Berlin fordert verbindlichen
+Fahrplan und verlässliche Finanzierung“ und Tag `2026-09-25` exakt mit dem bereits
+gesicherten Artikel ueberein. Der im HTML verlinkte RSS-Feed
+(`https://www.berlin.de/presse/index.php/rss`) lieferte einen leeren channel ohne
+item und wird deshalb NICHT als Vollfeed behauptet.
+
+`node scripts/berlin-senat-entdeckung-test.js` (kein Netz, keine DB, kein Modell)
+pruefte die Originalseite, 35 synthetische Negativfaelle und eine Offline-Verkettung
+einer entdeckten BJF-Fundstelle ueber `ladePresseartikelStand` mit injizierter
+Originalantwort: **55 Pruefungen erfolgreich**. Ohne die lokalen `/private/tmp`-
+Originale laeuft derselbe Test CI-tauglich mit **45 Pruefungen** (Originalproben
+werden uebersprungen und ausdruecklich gemeldet). Der Test wird ueber die bestehende
+Bereichsauswahl (`landesmodule-pardok` / `berlin`) mitgefahren; die Pflichtmenge
+`STANDARD` bleibt unveraendert.
+
+Nicht umfasst: kein Live-Crawl-Hook, kein Netzabruf im Parser, kein Import, keine
+Aktivierung, kein 500er Test, keine DB-/Production-/Env-/Cron-Wirkung und keine
+Profilversorgung. Das bestehende Landesmandatsgate, der Source-Mode, die
+Crawl-Quellen, Produktpfade und bestehenden Vertraege bleiben unveraendert.
