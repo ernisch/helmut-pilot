@@ -875,6 +875,49 @@ def _pruefe_merz(eingang) -> dict:
     return index
 
 
+# Enger Einzelfall fuer die bestehende Woidke-Rolle: genau die amtlich belegte
+# Richtlinienkompetenz des brandenburgischen Ministerpraesidenten. Die getrennte
+# fail-closed-Pruefung bindet Rollenquittung, Profil-H1 und Staatskanzlei-Original.
+WOIDKE = REPO_ROOT / "docs" / "betrieb" / "woidke-richtlinien-1-20260928.json"
+WOIDKE_RESSOURCE = "docs/betrieb/woidke-richtlinien-1-20260928.json"
+
+
+def _lade_woidkemodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-woidke.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_woidke", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+WOIDKEMODUL = _lade_woidkemodul()
+
+
+def _pruefe_woidke(eingang) -> dict:
+    andere_achsen = set()
+    for name in (
+        "ressortachsen_by_kennung", "aufgabenachsen_by_kennung", "beratendeachsen_by_kennung",
+        "zusaetzlicheaufgaben_by_kennung", "bmwsb_by_kennung", "amthor_by_kennung",
+        "wahlausschuss_by_kennung", "jarzombek_by_kennung", "kloeckner_by_kennung",
+        "rohde_by_kennung", "merz_by_kennung", "stellvertretungen_by_kennung",
+    ):
+        andere_achsen.update(getattr(eingang, name, None) or {})
+    try:
+        index = WOIDKEMODUL.pruefe_woidke(
+            eingang, quittung=getattr(eingang, "woidke", None), andere_achsen=andere_achsen
+        )
+    except WOIDKEMODUL.WoidkeFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.woidke_by_kennung = index
+    eingang.woidke_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -1871,6 +1914,10 @@ class Eingang:
             self.merz = _lies_json(MERZ)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Merz-Einzelfallquittung fehlt: {MERZ_RESSOURCE}") from fehler
+        try:
+            self.woidke = _lies_json(WOIDKE)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Woidke-Einzelfallquittung fehlt: {WOIDKE_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -3370,6 +3417,43 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
         achsen_geschlossen = True
 
+    # Woidke: genau die amtlich belegte Richtlinienkompetenz des bereits als
+    # Ministerpraesident belegten Profils. Keine neue Rolle und keine weiteren
+    # Themen aus den nachfolgenden Staatskanzlei-Abschnitten.
+    woidke_eintrag = (getattr(eingang, "woidke_by_kennung", None) or {}).get(mandatsId)
+    woidke_beleg = None
+    if woidke_eintrag is not None:
+        eingang.woidke_verwendet.add(mandatsId)
+        woidke_quelle = woidke_eintrag["quelle"]
+        profil["themen"] = list(woidke_eintrag["themen"])
+        hinweis = woidke_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "ministerpraesident-richtlinienkompetenz",
+            "url": woidke_quelle["url"],
+            "abgerufenAm": woidke_quelle["abgerufenAm"],
+            "sha256": woidke_quelle["sha256"],
+        })
+        woidke_beleg = {
+            "datei": WOIDKE_RESSOURCE,
+            "kennung": woidke_eintrag["kennung"],
+            "region": woidke_eintrag["region"],
+            "bindungsart": woidke_eintrag["bindungsart"],
+            "person": woidke_eintrag["person"],
+            "funktion": woidke_eintrag["funktion"],
+            "rollenzitat": woidke_eintrag["rollenzitat"],
+            "abschnitt": woidke_eintrag["abschnitt"],
+            "aufgabenabsatz": woidke_eintrag["aufgabenabsatz"],
+            "aufgabenbindung": woidke_eintrag["aufgabenbindung"],
+            "personenquelle": dict(woidke_eintrag["personenquelle"]),
+            "quelle": dict(woidke_quelle),
+            "themen": list(woidke_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -3484,6 +3568,14 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"Bildunterschrift, nicht JSON-LD); keine konkreten politischen Positionen, Koalitionsziele, "
             f"Ressorts oder allgemeinen Ministeriumsthemen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit "
             f"+ HTTP + Datei der amtlichen Quelle, Original UND Metadaten, gebunden)"
+        )
+    elif woidke_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Woidke-Einzelfallquittung {WOIDKE_RESSOURCE}: genau das "
+            f"amtlich abgeleitete Thema Richtlinien der Landespolitik aus dem ersten direkten, sichtbaren "
+            f"Absatz des eigenen Inhaltsbereichs {woidke_beleg['abschnitt']!r}; nachfolgende Staatskanzlei-, "
+            "Ressort-, Koalitions- und Nachrichtenthemen sind kein Beleg (URL + finalUrl + sha256 + "
+            "Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten, gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -3637,6 +3729,16 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"politischen Positionen, keine Koalitionsziele, keine Ressorts oder allgemeinen "
             f"Ministeriumsthemen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der "
             f"amtlichen Quelle, Original UND Metadaten, gebunden)"
+        )
+        feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
+
+    if woidke_beleg is not None:
+        vorher = feldbelege.get("funktionen")
+        zusatz = (
+            f"vom Orchestrator gepruefte Woidke-Einzelfallquittung {WOIDKE_RESSOURCE}: die bestehende "
+            "Rolle Ministerpraesident des Landes Brandenburg aus der 54er Rollenquittung bleibt "
+            "unveraendert (KEINE neue Funktionsrolle); zusaetzlich nur der getrennte Herkunftshinweis "
+            "zur amtlichen Richtlinienkompetenz, keine persoenliche politische Position"
         )
         feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
 
@@ -3822,6 +3924,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["rohdeQuittung"] = rohde_beleg
     if merz_beleg is not None:
         datensatz["merzQuittung"] = merz_beleg
+    if woidke_beleg is not None:
+        datensatz["woidkeQuittung"] = woidke_beleg
     if stellvertretungen_beleg is not None:
         datensatz["stellvertretungenQuittung"] = stellvertretungen_beleg
     if "status" in extraktion:
@@ -3852,6 +3956,7 @@ def assembliere(eingang: Eingang) -> dict:
     stellvertretungen = _pruefe_stellvertretungen(eingang)
     pistorius = _pruefe_pistorius(eingang)
     merz = _pruefe_merz(eingang)
+    woidke = _pruefe_woidke(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -3954,6 +4059,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Merz-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_merz)}."
         )
+    ungenutzte_woidke = set(woidke) - eingang.woidke_verwendet
+    if ungenutzte_woidke:
+        raise AssemblerFehler(
+            f"Woidke-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_woidke)}."
+        )
     ungenutzte_stellvertretungen = set(stellvertretungen) - eingang.stellvertretungen_verwendet
     if ungenutzte_stellvertretungen:
         raise AssemblerFehler(
@@ -4030,6 +4140,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Merz-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
             f"{sorted(set(merz) ^ merz_geschlossen)}."
+        )
+    woidke_geschlossen = set(eingang.woidke_verwendet)
+    if woidke_geschlossen != set(woidke):
+        raise AssemblerFehler(
+            "Woidke-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
+            f"{sorted(set(woidke) ^ woidke_geschlossen)}."
         )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
@@ -4154,10 +4270,29 @@ def assembliere(eingang: Eingang) -> dict:
                 f"Merz-Einzelfall- und {name}achse gleichzeitig belegt: "
                 f"{sorted(merz_geschlossen & andere)}."
             )
+    for andere, name in (
+        (ressort_geschlossen, "Ressort"),
+        (aufgaben_geschlossen, "Aufgaben"),
+        (beratende_geschlossen, "Beratende"),
+        (zusatz_geschlossen, "Zusatzaufgaben"),
+        (bmwsb_geschlossen, "BMWSB-Aufgaben"),
+        (amthor_geschlossen, "Amthor-Einzelfall"),
+        (wahlausschuss_geschlossen, "Wahlausschuss-Aufgaben"),
+        (jarzombek_geschlossen, "Jarzombek-Einzelfall"),
+        (kloeckner_geschlossen, "Kloeckner-Einzelfall"),
+        (rohde_geschlossen, "Rohde-Einzelfall"),
+        (merz_geschlossen, "Merz-Einzelfall"),
+    ):
+        if woidke_geschlossen & andere:
+            raise AssemblerFehler(
+                f"Woidke-Einzelfall- und {name}achse gleichzeitig belegt: "
+                f"{sorted(woidke_geschlossen & andere)}."
+            )
     geschlossene_achsen = (ressort_geschlossen | aufgaben_geschlossen
                            | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen
                            | amthor_geschlossen | wahlausschuss_geschlossen | jarzombek_geschlossen
-                           | kloeckner_geschlossen | rohde_geschlossen | merz_geschlossen)
+                           | kloeckner_geschlossen | rohde_geschlossen | merz_geschlossen
+                           | woidke_geschlossen)
     # Die Stellvertretungsquittung schliesst die fachliche Achse ueber eine belegte
     # stellvertretende (nicht ordentliche) Ausschussmitgliedschaft. Nur Profile,
     # deren Achse zuvor in der 54er Rollenquittung offen war, gehoeren in die
@@ -4209,7 +4344,7 @@ def assembliere(eingang: Eingang) -> dict:
                 or datensatz.get("bmwsbQuittung") or datensatz.get("amthorQuittung")
                 or datensatz.get("wahlausschussQuittung") or datensatz.get("jarzombekQuittung")
                 or datensatz.get("kloecknerQuittung") or datensatz.get("rohdeQuittung")
-                or datensatz.get("merzQuittung")
+                or datensatz.get("merzQuittung") or datensatz.get("woidkeQuittung")
                 or datensatz.get("stellvertretungenQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
@@ -4315,6 +4450,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "Bundesregierungsseite (nicht Bild/JSON-LD); Aufgabe nur aus dem geschlossenen "
                 "H2-Abschnitt Richtlinien-Kompetenz des eigenen innersten div.bpa-richtext; URL + finalUrl "
                 "+ sha256 + Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten, gebunden)"
+            ),
+            "woidkeQuittung": (
+                f"{WOIDKE_RESSOURCE} (vom Orchestrator eng geprueft; EIN zuvor offener "
+                "Brandenburger Fachachsenfall: Dr. Dietmar Woidke, bestehende Rolle "
+                "Ministerpraesident des Landes Brandenburg und genau das Thema Richtlinien der "
+                "Landespolitik. Person nur ueber die sichtbare H1 der kanonischen Landtagsseite; "
+                "Aufgabe nur ueber den ersten direkten sichtbaren Absatz des eigenen Inhaltsbereichs "
+                "Aufgaben und Organisation; weitere Staatskanzlei-Inhalte bleiben ausgeschlossen; "
+                "URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei gebunden)"
             ),
             "mandatsartenquittung": (
                 f"{MANDATSARTEN_BB_RESSOURCE} (amtliche Brandenburger Uebersicht; Landesliste fuer "
@@ -4624,7 +4768,7 @@ def assembliere(eingang: Eingang) -> dict:
                 "Bytezahl + Abrufzeit + HTTP + Datei (Original UND Metadaten) gebunden. Die Kennung ist "
                 "disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB-, 1 "
                 "Amthor-, 3 Wahlausschuss-, 1 Jarzombek-, 1 Kloeckner- und 1 Rohde-Achse; die disjunkte "
-                "Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 13 Achsen offen."
+                "Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 12 Achsen offen."
             ),
             (
                 "Der belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften wird "
@@ -4799,6 +4943,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("merzQuittung")),
                 "deckungsgleichVerwendet": len(eingang.merz_verwendet),
                 "geschlosseneAchsen": len(merz_geschlossen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
+            },
+            "woidkeQuittung": {
+                "datei": WOIDKE_RESSOURCE,
+                "geprueftGesamt": len(woidke),
+                "nachRegion": {"Brandenburg": len(woidke)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("woidkeQuittung")),
+                "deckungsgleichVerwendet": len(eingang.woidke_verwendet),
+                "geschlosseneAchsen": len(woidke_geschlossen),
                 "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "stellvertretungenQuittung": {

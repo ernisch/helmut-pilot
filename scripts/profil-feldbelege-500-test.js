@@ -359,14 +359,15 @@ for (const e of ergebnis.ergebnisse) {
 // geprueften Ressort- (19), Aufgaben- (6), beratenden (2), Zusatzaufgaben- (3),
 // BMWSB-Aufgaben- (2), die Amthor-Einzelfallquittung (1) und die neue
 // Wahlausschuss-Aufgabenquittung (3) sowie die neue Jarzombek-Abteilungsquittung (1)
-// und die neue Kloeckner-Einzelfallquittung (1) erhalten 38 zuvor offene Profile amtlich
+// und die neuen Kloeckner-, Rohde-, Merz- und Woidke-Einzelfallquittungen (je 1)
+// erhalten 41 zuvor offene Profile amtlich
 // abgeleitete Themen; die neue Stellvertretungsquittung schliesst eine weitere zuvor
 // offene Achse ueber eine belegte stellvertretende Ausschussmitgliedschaft, ohne
-// Themen zu setzen; die Achse schliesst sich ehrlich (54 -> 15). Vier
+// Themen zu setzen; die Achse schliesst sich ehrlich (54 -> 12). Vier
 // Brandenburg- und zwei Berliner Mandate sind ueber die Mandatsartenquittungen
 // belegt (7 -> 1 region-fehlt; offen bleibt nur Engelmann).
-a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 13, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
-a.equal(ergebnis.gueltig, 486, "486 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
+a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 12, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
+a.equal(ergebnis.gueltig, 487, "487 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
 
 // Einzelpruefung (pruefeProfil) muss dieselbe Sprache sprechen wie die Mengenpruefung.
 for (let i = 0; i < datensaetze.length; i += 1) {
@@ -723,6 +724,28 @@ for (const e of merz.ergebnisse) {
   a.ok(!kloecknerByKennung.has(e.kennung), "Merz muss disjunkt zur Kloeckner-Achse sein");
   a.ok(!rohdeByKennung.has(e.kennung), "Merz muss disjunkt zur Rohde-Achse sein");
 }
+const woidke = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "woidke-richtlinien-1-20260928.json"), "utf8"));
+a.equal(woidke.bilanz.gesamt, 1, "Woidke-Einzelfallquittung: gesamt 1");
+a.equal(woidke.bilanz.Brandenburg, 1, "der Woidke-Fall ist Brandenburg");
+a.equal(woidke.ergebnisse.length, 1, "Woidke-Einzelfallquittung muss 1 Ergebnis tragen");
+const woidkeByKennung = new Map(woidke.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(woidkeByKennung.size, 1, "Woidke-Einzelfallquittungskennung muss eindeutig sein");
+a.deepEqual(woidke.ergebnisse[0].themen, ["Richtlinien der Landespolitik"], "genau das eine freigegebene Thema");
+a.equal(woidke.ergebnisse[0].funktion, "Ministerpräsident des Landes Brandenburg", "bestehende Rolle bleibt erhalten");
+a.equal(woidke.ergebnisse[0].abschnitt, "Aufgaben und Organisation", "eigener Aufgabenbereich");
+a.ok(woidke.ergebnisse[0].aufgabenabsatz.startsWith("Der Ministerpräsident bestimmt die Richtlinien der Landespolitik"),
+  "die Aufgabe steht woertlich am Anfang des gebundenen Absatzes");
+for (const e of woidke.ergebnisse) {
+  a.ok(rollenByKennung.has(e.kennung), "Woidke-Achse muss eine der 54 urspruenglich offenen Fachachsen sein");
+  a.equal(rollenByKennung.get(e.kennung).status, "belegt", "Woidke bleibt in der 54er Quittung belegt");
+  a.equal(e.status, "belegt", "Woidke-Einzelfall muss belegt sein");
+  a.equal(e.importfreigegeben, false, "keine Importfreigabe");
+  for (const menge of [ressortByKennung, aufgabenByKennung, beratendeByKennung, zusatzByKennung,
+    bmwsbByKennung, amthorByKennung, wahlausschussByKennung, jarzombekByKennung,
+    kloecknerByKennung, rohdeByKennung, merzByKennung]) {
+    a.ok(!menge.has(e.kennung), "Woidke muss zu allen bisherigen Themenachsen disjunkt sein");
+  }
+}
 const ressortProfil = datensaetze.filter((d) => d.ressortachsenQuittung);
 const aufgabenProfil = datensaetze.filter((d) => d.aufgabenachsenQuittung);
 const beratendeProfil = datensaetze.filter((d) => d.beratendeachsenQuittung);
@@ -734,6 +757,7 @@ const jarzombekProfil = datensaetze.filter((d) => d.jarzombekQuittung);
 const kloecknerProfil = datensaetze.filter((d) => d.kloecknerQuittung);
 const rohdeProfil = datensaetze.filter((d) => d.rohdeQuittung);
 const merzProfil = datensaetze.filter((d) => d.merzQuittung);
+const woidkeProfil = datensaetze.filter((d) => d.woidkeQuittung);
 const stellvertretungenProfil = datensaetze.filter((d) => d.stellvertretungenQuittung);
 // Nur Skopec schliesst damit eine zuvor offene 54er-Fachachse; die uebrigen 34
 // Profile waren bereits ueber ordentliche Ausschuesse geschlossen.
@@ -750,17 +774,18 @@ a.equal(jarzombekProfil.length, 1, "1 Profil traegt die Jarzombek-Abteilungsquit
 a.equal(kloecknerProfil.length, 1, "1 Profil traegt die Kloeckner-Einzelfallquittung");
 a.equal(rohdeProfil.length, 1, "1 Profil traegt die Rohde-Einzelfallquittung");
 a.equal(merzProfil.length, 1, "1 Profil traegt die Merz-Einzelfallquittung");
+a.equal(woidkeProfil.length, 1, "1 Profil traegt die Woidke-Einzelfallquittung");
 a.equal(stellvertretungenProfil.length, 35, "35 Profile tragen die Stellvertretungsquittung");
 a.equal(stellvertretungen54Profil.length, 1, "genau ein Profil schliesst damit eine zuvor offene 54er-Fachachse");
 a.equal(stellvertretungenProfil.reduce((s, d) => s + (d.profil.stellvertretendeAusschuesse || []).length, 0), 76,
   "die 35 Profile tragen zusammen genau 76 belegte Stellvertretungen");
-a.equal(fachAchseOffen.length, 13, "54 - 19 - 6 - 2 - 3 - 2 - 1 - 3 - 1 - 1 - 1 - 1 - 1 = 13 Fachachsen bleiben offen");
+a.equal(fachAchseOffen.length, 12, "54 - 19 - 6 - 2 - 3 - 2 - 1 - 3 - 1 - 1 - 1 - 1 - 1 - 1 = 12 Fachachsen bleiben offen");
 a.deepEqual(
-  new Set([...fachAchseOffen, ...stellvertretungen54Profil, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil, ...zusatzProfil, ...bmwsbProfil, ...amthorProfil, ...wahlausschussProfil, ...jarzombekProfil, ...kloecknerProfil, ...rohdeProfil, ...merzProfil].map((d) => d.kanonischeKennung)),
+  new Set([...fachAchseOffen, ...stellvertretungen54Profil, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil, ...zusatzProfil, ...bmwsbProfil, ...amthorProfil, ...wahlausschussProfil, ...jarzombekProfil, ...kloecknerProfil, ...rohdeProfil, ...merzProfil, ...woidkeProfil].map((d) => d.kanonischeKennung)),
   new Set(rollenByKennung.keys()),
-  "disjunkte Vereinigung aus 13 offenen + 1 Stellvertretungs- + 19 Ressort- + 6 Aufgaben- + 2 beratenden + 3 Zusatzaufgaben- + 2 BMWSB- + 1 Amthor- + 3 Wahlausschuss- + 1 Jarzombek- + 1 Kloeckner- + 1 Rohde- + 1 Merz-Achse ergibt genau die 54er Quittung",
+  "disjunkte Vereinigung aus 12 offenen + 1 Stellvertretungs- + 19 Ressort- + 6 Aufgaben- + 2 beratenden + 3 Zusatzaufgaben- + 2 BMWSB- + 1 Amthor- + 3 Wahlausschuss- + 1 Jarzombek- + 1 Kloeckner- + 1 Rohde- + 1 Merz- + 1 Woidke-Achse ergibt genau die 54er Quittung",
 );
-a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung && !d.zusaetzlicheaufgabenQuittung && !d.bmwsbQuittung && !d.amthorQuittung && !d.wahlausschussQuittung && !d.jarzombekQuittung && !d.kloecknerQuittung && !d.rohdeQuittung && !d.merzQuittung && !d.stellvertretungenQuittung), "offene Achse darf keine geschlossene Quittung tragen");
+a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung && !d.zusaetzlicheaufgabenQuittung && !d.bmwsbQuittung && !d.amthorQuittung && !d.wahlausschussQuittung && !d.jarzombekQuittung && !d.kloecknerQuittung && !d.rohdeQuittung && !d.merzQuittung && !d.woidkeQuittung && !d.stellvertretungenQuittung), "offene Achse darf keine geschlossene Quittung tragen");
 let rollenBelegt = 0;
 let rollenOffen = 0;
 const zuHelmutProfilRollen = zuHelmutProfil; // echter Import-/Storage-Pfad (bestehender Export)
@@ -778,7 +803,7 @@ for (const d of datensaetze) {
   a.equal(q.status, e.status, "Rollenstatus muss der Quittung entsprechen");
   // Eine Amtsrolle allein ist keine Ausschussachse. Die fachliche Achse ist genau dann
   // geschlossen, wenn die gepruefte Ressort- oder Aufgabenquittung belegte Themen setzt.
-  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung || d.beratendeachsenQuittung || d.zusaetzlicheaufgabenQuittung || d.bmwsbQuittung || d.amthorQuittung || d.wahlausschussQuittung || d.jarzombekQuittung || d.kloecknerQuittung || d.rohdeQuittung || d.merzQuittung || d.stellvertretungenQuittung);
+  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung || d.beratendeachsenQuittung || d.zusaetzlicheaufgabenQuittung || d.bmwsbQuittung || d.amthorQuittung || d.wahlausschussQuittung || d.jarzombekQuittung || d.kloecknerQuittung || d.rohdeQuittung || d.merzQuittung || d.woidkeQuittung || d.stellvertretungenQuittung);
   a.equal(achseGeschlossen, !d.offeneFelder.includes("fachlicheAchse"),
     `Achse muss genau dann geschlossen sein, wenn eine gepruefte Quittung greift (${d.kanonischeKennung})`);
   if (e.status === "offen") {
@@ -1757,6 +1782,56 @@ a.equal(gelesenMerz.profileActive, false, "Round-Trip bleibt aktiv=false");
   }
 }
 
+// ── 6q · Woidke-Einzelfall: Landesrichtlinienkompetenz verlustfrei, inaktiv ──────
+a.equal(woidkeProfil.length, 1, "genau ein Profil traegt die Woidke-Einzelfallquittung");
+const woidkeDatensatz = woidkeProfil[0];
+const woidkeEintrag = woidkeByKennung.get("landtag-brandenburg-11263");
+const WOIDKE_THEMEN = ["Richtlinien der Landespolitik"];
+const woidkeHinweis = woidkeEintrag.ableitungsHinweis;
+a.equal(woidkeDatensatz.kanonischeKennung, "landtag-brandenburg-11263");
+a.deepEqual(woidkeDatensatz.profil.themen, WOIDKE_THEMEN, "genau das eine freigegebene Thema");
+a.ok(!woidkeDatensatz.offeneFelder.includes("fachlicheAchse"), "Woidke-Achse ist geschlossen");
+a.deepEqual(woidkeDatensatz.offeneFelder, ["regionbezug"], "nur der unveraenderte Regionbezug bleibt offen");
+a.equal(woidkeDatensatz.profil.aktiv, false, "Woidke bleibt aktiv=false");
+a.equal(woidkeDatensatz.importfreigegeben, false, "Woidke bleibt importfreigegeben=false");
+a.equal(woidkeDatensatz.woidkeQuittung.person, "Dr. Dietmar Woidke");
+a.equal(woidkeDatensatz.woidkeQuittung.funktion, "Ministerpräsident des Landes Brandenburg");
+a.equal(woidkeDatensatz.woidkeQuittung.quelle.url,
+  "https://brandenburg.de/cms/detail.php/bb1.c.481693.de");
+a.equal(woidkeDatensatz.woidkeQuittung.quelle.sha256,
+  "0b1a81e7893e4ff45ccdd97e2e1b3498d2862a435550e18b750be8ef00991516");
+a.ok(woidkeDatensatz.woidkeQuittung.aufgabenabsatz.startsWith(
+  "Der Ministerpräsident bestimmt die Richtlinien der Landespolitik"));
+a.equal((woidkeDatensatz.profil.funktionen || []).filter((x) => x === woidkeHinweis).length, 1,
+  "Woidke: Herkunftshinweis genau einmal");
+a.ok((woidkeDatensatz.profil.funktionen || []).includes("Ministerpräsident des Landes Brandenburg"),
+  "bestehende Rolle bleibt erhalten");
+const woidkeQuelle = (woidkeDatensatz.profil.offizielleQuellen || [])
+  .find((x) => x.art === "ministerpraesident-richtlinienkompetenz");
+a.ok(woidkeQuelle, "amtliche Staatskanzlei-Quelle fehlt");
+a.equal(woidkeQuelle.sha256, woidkeDatensatz.woidkeQuittung.quelle.sha256);
+const gespeichertWoidke = zuHelmutProfil(woidkeDatensatz.profil);
+a.deepEqual(gespeichertWoidke.focusTopics, WOIDKE_THEMEN, "Importpfad muss das Thema erhalten");
+a.ok(gespeichertWoidke.function.includes(woidkeHinweis), "Hinweis erreicht den Importpfad");
+const zeileWoidke = storage.toMandateProfileRow(gespeichertWoidke);
+a.equal(zeileWoidke.aktiv, false, "Storage-Zeile darf nicht aktivieren");
+const gelesenWoidke = storage.fromMandateProfileRow(
+  { id: woidkeDatensatz.kanonischeKennung, name: woidkeDatensatz.profil.vollname }, zeileWoidke);
+a.deepEqual(gelesenWoidke.focusTopics, WOIDKE_THEMEN, "Thema uebersteht den Storage-Roundtrip");
+a.equal(gelesenWoidke.profileActive, false, "Round-Trip bleibt aktiv=false");
+{
+  const { proximityScore, personalRelevance } = require("../lib/helmut/scoring");
+  a.ok(proximityScore({ tags: WOIDKE_THEMEN }, { focusTopics: gelesenWoidke.focusTopics }) > 0,
+    "das exakte Woidke-Thema muss treffen");
+  a.ok(personalRelevance({ themen: WOIDKE_THEMEN, status: "neu", source_document_count: 1 },
+    { focusTopics: gelesenWoidke.focusTopics }).score > 0, "der Relevanzpfad muss positiv sein");
+  for (const fremd of ["Staatskanzlei", "Demografischer Wandel", "Pressearbeit", "Internationale Beziehungen",
+    "Kabinettsangelegenheiten", "Landtagsangelegenheiten"]) {
+    a.equal(proximityScore({ tags: [fremd] }, { focusTopics: gelesenWoidke.focusTopics }), 0,
+      `fremdes Staatskanzlei-Thema darf nicht treffen: ${fremd}`);
+  }
+}
+
 // ── 6o · Stellvertretungsquittung Brandenburg: 76 belegte Verluste, nur eine 54er-Achse ──
 // Der belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften wird
 // ueber die versionierte Ergaenzungsquittung behoben: 76 bislang fehlende
@@ -1913,4 +1988,7 @@ if (eingangVorhanden && python) {
   reproduzierbar = "byte-identisch neu erzeugt";
 }
 
-console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (486 technisch importierbar, 14 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung Brandenburg (4 Landeslisten) und Berlin (2 Profile: Martin Bezirksliste Marzahn-Hellersdorf, Lux Landesliste; Handbuch-PDF Seite 204 linke Spalte, wörtliche Transkription, exakter H2/H3/Personlink, echter Import-/Storage-Roundtrip, Engelmann bleibt offen), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei), Aufgabenquittung (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14 Themenbegriffe und Herkunftshinweise verlustfrei, 14 exakte Themengegenproben, Mast disjunkt zu Griese), Beratende Achsenquittung (2 beratende Ausschussachsen: Knodel Landwirtschaft/Ernaehrung/Heimat + Seidler Haushalt, 4 Kurzthemen und getrennte Ableitungshinweise verlustfrei, bestehende beratende Funktion erhalten, keine ordentliche/stellvertretende Mitgliedschaft, keine endDate-Rolle), Zusatzaufgabenquittung (3 Fachzustaendigkeiten: Breher Tierschutz mit genau einer neuen Funktionsrolle + erhaltener PSts-Rolle, Krichbaum Europa aus der aktuellen AA-Seitenkopf-H1, Kippels BMG-Abteilungen 1/4/5/6 mit 12 Kurzthemen aus visuell abgenommenem PDF-Fachurteil; 14 Kurzthemen und getrennte Herkunftshinweise verlustfrei, Fremdthemen ohne Treffer), BMWSB-Aufgabenquittung (2 personengebundene BMWSB-Unterbereichsachsen: Bartol Z I 3/W II/S I/B I/B II, Poschmann Z II/W I/S II/S III; 18 Kurzthemen und getrennte Herkunftshinweise verlustfrei, kanonische v10-Adresse 669957 Bytes, bestehende PSts-Rolle erhalten, keine Hochstufung auf ganze Abteilungen, keine Scheinausschuesse, Fremdthemen der anderen Person ohne Treffer), Amthor-Einzelfallquittung (1 zuvor offener Rollenfall: aktuelle Rolle Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler seit 29. Juli 2026 aus geschlossenem bpa-richtext-Lebenslauf, Thema Bund-Laender-Beziehungen aus genau einem echten li der Personalien-h2, historischer 54er-Eintrag bleibt offen, kein Digitalamt als aktuell, Fremdthema Digitalisierung ohne Treffer), Wahlausschuss-Aufgabenquittung (3 sonstige Gremien-Achsen: Haßelmann/Hoffmann/Miersch, aktuelle Wahlausschuss-Mitgliedschaft eigenstaendig aus genau einem ProfilePage.mainEntity in genau einer echten Role mit exaktem roleName/startDate ohne endDate, enges Thema Richter des Bundesverfassungsgerichts aus dem geschlossenen aktuellen Gremienaufgabenabsatz mit 21. Wahlperiode, sonstiges Gremium und bestehende Funktionen unveraendert, keine Scheinausschuesse, Fremdthemen ohne Treffer), Jarzombek-Abteilungsquittung (1 zuvor offener Fachachsenfall: BMDS-Abteilungen DS/DI/DW aus genau EINER echten geschlossenen HTML-Karte article#c5755 mit exaktem H2-Personenlink auf die kanonische Personen-URL und dem amtlichen Organigramm-JSON excludePersonalData=true Stand 2026-08-15, das JSON belegt nur Abteilungskennungen/-titel, NICHT die Person; vier Themen Deutschland-Stack/Digitale Infrastrukturen/Digitalpolitik/Wirtschaft und getrennter Herkunftshinweis verlustfrei, bestehende 54er-PSts-Rolle und Quellen erhalten, keine neue Funktionsrolle, keine Scheinausschuesse, Fremdabteilungen ohne Treffer), Kloeckner-Einzelfallquittung (1 zuvor offener Fachachsenfall: Bundestagspräsidentin, kanonische Person separat ueber echte H1 + eigenen aktuellen Funktionstext div.m-biography__function neu gebunden, bestehende 54er-Rolle erhalten; die zwei Themen Bundestagsverwaltung/Parteienfinanzierung stammen aus dem ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts 'An der Spitze der Bundestagsverwaltung', der erste Absatz und angrenzende Abschnitte sind keine Personenaufgaben, der --hidden-Linkhilfetext zaehlt nicht, Partei bleibt offen, Fremdthemen ohne Treffer), Rohde-Einzelfallquittung (1 zuvor offener Fachachsenfall: BMF-Aufgabe Bundeshaushalt, bestehende PSts-Rolle unveraendert erhalten, kanonische Person ueber echte H1 + eigenen Funktionstext + JSON-LD-Gegenprobe (eine MdB-Role ohne PSts-Datum) gebunden, Thema ausschliesslich aus Rohdes eigenem Kasten Seite 1 des amtlich verlinkten v=32-Organisationsplans Stand 3. August 2026, PDF-Original nur ueber Hash/Bytezahl/Stand/Seite ohne PDF-Parser, Landingpage mit datiertem v=32-Link, v=41 kein Beleg, Nachbarkaesten ohne Treffer, echter Import-/Storage-/Lage-Themenpfad positiv fuer Bundeshaushalt und negativ fuer Steuerpolitik/Fremdthemen), Merz-Einzelfallquittung (1 zuvor offener Fachachsenfall: Bundeskanzler Friedrich Merz, Thema Richtlinien der Regierungspolitik, am Original woertlich als Richtlinien-Kompetenz belegt; KEINE neue Rolle, bestehende 54er-Rolle Bundeskanzler erhalten und ueber echte H1 + eigenen Funktionstext div.m-biography__function neu gebunden; Person und Amt nur aus dem echten sichtbaren eigenen Artikelkopf header.bpa-article-header, nicht Bild-Alt/Bildunterschrift/JSON-LD; Aufgabe nur aus dem geschlossenen H2-Abschnitt Richtlinien-Kompetenz des eigenen innersten div.bpa-richtext, Nachbar-H2-Abschnitte ohne Treffer; bestehende Rolle, Partei, Mandatsart und Gremien unveraendert; echter Import-/Storage-/Lage-Themenpfad positiv fuer Richtlinien der Regierungspolitik und negativ fuer Ressort-/Koalitions-/Ministeriumsthemen), Bundestags-Readiness (319/330 bereit; 11 Bundestags-Fachachsen bleiben offen), Stellvertretungsquittung Brandenburg (76 belegte stellvertretende Ausschussmitgliedschaften bei 35 der 50 kanonischen Landtagsprofile aus dem amtlichen Fachausschussindex 25220 und 14 Quellen; 13 mit eigener Stellvertretungsspalte, Unterausschuss 23893 als belegter Nullfall; nur Skopec schliesst eine zuvor offene 54er-Fachachse, 14 bleiben offen; keine Aufwertung zu ordentlichem Sitz/Vorsitz, Partei/Fraktion/Themen/Mandatsart unveraendert; echter Import-/Storage-/Paketpfad verlustfrei, aktiv=false), Reproduzierbarkeit: " + reproduzierbar);
+console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, "
+  + "echter Importvertrag (487 technisch importierbar, 13 offen), "
+  + "Woidke-Einzelfallquittung (Richtlinien der Landespolitik, 12 Fachachsen verbleiben), "
+  + "Bundestags-Readiness (319/330), alle Profile inaktiv, Reproduzierbarkeit: " + reproduzierbar);

@@ -127,7 +127,7 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 73 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;486 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;487 technische Erfolge sind keine fachliche Importfreigabe.
 Fuer die Landesversorgung liegt ein enger Berliner Originalseiten-Leser vor:
 `lib/helmut/berlin-presseartikel.js` bindet amtliche URL, Titel, Publikationstag
 und vollstaendigen Artikeltext ohne erfundene Uhrzeit; die lokale Originalprobe
@@ -200,8 +200,13 @@ je eine weitere Achse. Danach schliesst die eng gepruefte
 Bundestags-Fachachsenfall Friedrich Merz ueber die amtlich belegte Bundeskanzler-Aufgabe
 Richtlinien-Kompetenz (keine neue Rolle; Person und Amt nur aus dem sichtbaren eigenen
 Artikelkopf, Thema nur aus dem geschlossenen H2-Abschnitt des eigenen innersten
-div.bpa-richtext). Aktueller lokaler Entwurf:486/14 technisch akzeptiert;
-13 Fachachsen,73 aktuelle Parteifelder und eine Berliner Mandatsart bleiben offen.
+div.bpa-richtext). Danach schliesst die eng gepruefte
+[Woidke-Einzelfallquittung](betrieb/woidke-richtlinien-1-20260928.json) genau den
+Brandenburger Fachachsenfall Dr. Dietmar Woidke ueber die amtlich belegte
+Richtlinienkompetenz des Ministerpraesidenten; die bestehende Rolle bleibt
+unveraendert und weitere Staatskanzlei-Themen werden nicht uebernommen.
+Aktueller lokaler Entwurf:487/13 technisch akzeptiert;12 Fachachsen,73 aktuelle
+Parteifelder und eine Berliner Mandatsart bleiben offen.
 Der getrennte [amtliche SPD-Parteivorstandsbeleg](betrieb/pistorius-partei-1-20260928.json)
 schliesst nur Boris Pistorius' Parteifeld; die bisherige335er-Auditquittung bleibt unveraendert.
 Die zwei zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder Britta

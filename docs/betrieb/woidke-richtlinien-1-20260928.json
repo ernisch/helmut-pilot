@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "datum": "2026-09-28",
+  "status": "Gepruefter enger Einzelfall; keine Importfreigabe",
+  "zweck": "Schliesst ausschliesslich die offene Fachachse von Dr. Dietmar Woidke ueber die amtlich belegte Richtlinienkompetenz des Ministerpraesidenten. Keine neue Rolle, keine Partei-, Fraktions-, Mandatsart-, Ressort- oder Positionsableitung.",
+  "bilanz": {
+    "gesamt": 1,
+    "Bund": 0,
+    "Berlin": 0,
+    "Brandenburg": 1
+  },
+  "regeln": [
+    "Die bestehende aktuelle Rolle Ministerpraesident des Landes Brandenburg bleibt unveraendert und stammt aus der bereits geprueften 54er Rollenquittung.",
+    "Die Aufgabe stammt ausschliesslich aus dem ersten sichtbaren eigenen Absatz der amtlichen Seite Aufgaben und Organisation: Der Ministerpraesident bestimmt die Richtlinien der Landespolitik.",
+    "Uebernommen wird genau das Thema Richtlinien der Landespolitik; die weiteren Staatskanzlei-, Ressort-, Koalitions- und Nachrichtenthemen der Seite werden nicht uebernommen.",
+    "Die Quittung ist keine Importfreigabe, keine Aktivierung und keine Production-Aktion."
+  ],
+  "ergebnisse": [
+    {
+      "kennung": "landtag-brandenburg-11263",
+      "region": "Brandenburg",
+      "parlament": "landtag-brandenburg",
+      "status": "belegt",
+      "bindungsart": "richtlinienkompetenz",
+      "person": "Dr. Dietmar Woidke",
+      "funktion": "Ministerpräsident des Landes Brandenburg",
+      "rollenzitat": "Seit August 2013 Ministerpräsident des Landes Brandenburg",
+      "abschnitt": "Aufgaben und Organisation",
+      "aufgabenabsatz": "Der Ministerpräsident bestimmt die Richtlinien der Landespolitik und vertritt das Land nach außen. Zur Erfüllung seiner Aufgaben steht ihm die Staatskanzlei zur Verfügung, die vom Chef der Staatskanzlei geleitet wird. Die Staatskanzlei ist die Regierungszentrale der Landesregierung, sie steuert und koordiniert die Landespolitik. Sie entwickelt Strategien für zentrale Vorhaben der Landesregierung und ist verantwortlich für die Gesamtdarstellung gegenüber der Öffentlichkeit. Zur Staatskanzlei gehört die Vertretung des Landes beim Bund.",
+      "aufgabenbindung": "Ministerpräsident des Landes Brandenburg; Richtlinien der Landespolitik",
+      "themen": [
+        "Richtlinien der Landespolitik"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Brandenburg (amtlich abgeleitet): Ministerpräsident des Landes Brandenburg; Richtlinien der Landespolitik; keine persönliche politische Position",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/woidke_dietmar_(dr.)/11263",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/woidke_dietmar_(dr.)/11263",
+        "abgerufenAm": "2026-09-27T12:37:15.982412+00:00",
+        "sha256": "86c879e54c79f873cffbf486c9ccc35ae6999b55a599046e79b371de2720fa36",
+        "bytes": 97481,
+        "datei": "landtag-brandenburg-11263.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "quelle": {
+        "url": "https://brandenburg.de/cms/detail.php/bb1.c.481693.de",
+        "finalUrl": "https://brandenburg.de/cms/detail.php/bb1.c.481693.de",
+        "abgerufenAm": "2026-09-27T18:46:03.498807+00:00",
+        "sha256": "0b1a81e7893e4ff45ccdd97e2e1b3498d2862a435550e18b750be8ef00991516",
+        "bytes": 14578,
+        "datei": "brandenburg-staatskanzlei-aufgaben-aktuell.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    }
+  ]
+}

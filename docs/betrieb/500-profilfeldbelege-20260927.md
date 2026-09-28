@@ -4,10 +4,16 @@
 Zielprofile. **Keine fachliche Freigabe, kein Importmanifest, keine Production-
 Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
-**Aktuelle Fortschreibung nach dem Merz-Schritt (Bundestag, Bundeskanzler Richtlinien-Kompetenz):**
-486 technisch akzeptiert, 14 unvollstaendig; 319/330 Bundestagsprofile technisch bereit.
-13 fachliche Achsen, 73 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor
-einzeln offene Fachachsenfall Friedrich Merz ist ueber die amtlich belegte Bundeskanzler-Aufgabe
+**Aktuelle Fortschreibung nach dem Woidke-Schritt (Brandenburg, Richtlinienkompetenz):**
+487 technisch akzeptiert, 13 unvollstaendig; 319/330 Bundestagsprofile technisch bereit.
+12 fachliche Achsen, 73 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor
+offene Brandenburger Fachachsenfall Dr. Dietmar Woidke ist ueber genau das amtlich belegte
+Thema "Richtlinien der Landespolitik" geschlossen (versionierte
+[Woidke-Einzelfallquittung](woidke-richtlinien-1-20260928.json)): die bestehende Rolle
+Ministerpraesident des Landes Brandenburg bleibt unveraendert; Person, Profil-H1,
+Rollenquittung und Staatskanzlei-Original sind gebunden. Weitere Staatskanzlei-, Ressort-,
+Koalitions- und Nachrichtenthemen werden nicht uebernommen. Der zuvor einzeln offene
+Fachachsenfall Friedrich Merz ist ueber die amtlich belegte Bundeskanzler-Aufgabe
 "Richtlinien der Regierungspolitik" geschlossen (versionierte
 [Merz-Einzelfallquittung](merz-richtlinien-1-20260928.json)): es entsteht KEINE neue Rolle; die
 bestehende Rolle Bundeskanzler aus der 54er Rollenquittung bleibt erhalten und wird eigenstaendig
@@ -99,7 +105,7 @@ eigenen Absatz des geschlossenen H2-Abschnitts, kanonische Person separat neu ge
 Zwei bislang offene Berliner Mandatsarten sind ueber eine versionierte lokale
 Quittung belegt (Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux
 Landesliste); Claudia Engelmann bleibt offen.
-486 Profile sind technisch importierbar.
+487 Profile sind technisch importierbar.
 
 **Nachtrag 28.09.2026 (zwei zuletzt fehlende aktuelle Funktionsfelder):** Die
 beiden zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder Britta
