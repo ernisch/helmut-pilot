@@ -4473,3 +4473,36 @@ print('PASS: Merz-Einzelfallquittung — fehlende Quittung/falsche Bilanz/Fremdk
       'Aufgabenabschnitt/Absatz ausserhalb des Abschnitts/konsistent neu gehashte Fremdquelle/'
       'vertauschte Quellenpakete/nicht belegte oder wortlautlose 54er-Rolle sperren fail closed; das '
       'gueltige synthetische Paket (Fixture ohne /private/tmp) wird akzeptiert.')
+
+# Woidke: der eigene sichtbare Inhaltsbereich und die sichtbare Personen-H1
+# werden unabhaengig von der echten /private/tmp-Quelle synthetisch abgegrenzt.
+wi = m.WOIDKEMODUL
+wi_html = (
+    '<article><div class="page-section page-content-section"><div class="center">'
+    '<div class="columns-3-4"><header><h1>Aufgaben und Organisation</h1></header>'
+    f'<p>{wi.AUFGABENABSATZ}</p><h3>Staatskanzlei</h3><p>Fremdthema.</p>'
+    '</div><aside><h1>Aufgaben und Organisation</h1><p>Fremd.</p></aside></div></div></article>'
+)
+wi_bereich = wi._Aufgabenbereich.lese(wi_html)
+assert wi_bereich['h1'] == [wi.ABSCHNITT]
+assert wi_bereich['p'][0] == wi.AUFGABENABSATZ
+assert wi._SichtbareH1.lese('<main><h1>Dr. Dietmar Woidke</h1><figure><h1>Fremd</h1></figure></main>') == [wi.PERSON]
+
+def _erwarte_wi_fehler(fn, was):
+    try:
+        fn()
+    except wi.WoidkeFehler:
+        return
+    raise AssertionError(f'Nicht gesperrt (Woidke): {was}')
+
+_erwarte_wi_fehler(
+    lambda: wi._Aufgabenbereich.lese(wi_html.replace('Aufgaben und Organisation', 'Fremder Bereich', 1)),
+    'fremde Bereichs-H1',
+)
+_erwarte_wi_fehler(
+    lambda: wi._Aufgabenbereich.lese(wi_html + wi_html),
+    'doppelter eigener Aufgabenbereich',
+)
+assert wi._SichtbareH1.lese('<main><h1 hidden>Dr. Dietmar Woidke</h1></main>') == []
+print('PASS: Woidke-Einzelfallquittung — sichtbare Personen-H1 und genau ein eigener '
+      'Aufgabenbereich werden eng abgegrenzt; fremde/doppelte Bereiche und verborgene H1 sperren.')
