@@ -239,3 +239,49 @@ Eine einmalige rein lesende Gegenprobe des Einzelabrufs um 06:27 UTC lieferte fu
 HTML-SHA256 `9fbe8472be24f8f6f15c02dd58b4780381cecb31a600dfd685eed858ae3efffa`
 wie das gespeicherte Original und den vollen Auszugsabsatz mit 625 Zeichen.
 Dabei wurde nichts gespeichert oder als produktive Landesversorgung gewertet.
+
+## Standvertrag fuer die zwei Senatspfadfamilien (28.09.2026, lokal)
+
+Bisher waren die zwei neuen Senatsvorlagen nur offline lesbar; es fehlte fuer sie eine sichere
+Stand-/Speicheridentitaet. `lib/helmut/berlin-artikelstand.js` traegt jetzt einen ZWEITEN, streng
+getrennten Standzweig fuer das bereits eingefrorene Ergebnis aus
+`lib/helmut/berlin-presse-sondervorlagen.js`:
+
+* Eigene Herkunft `berlin-de-senatsvorlage` und eigener Hash-Namespace
+  `helmut-berlin-sondervorlagenstand-v1`; Standhash = sha256([Namespace, kanonische URL,
+  exakter Titel, Tag, Absatzhash, Volltexthash]), Rohzeile `rd-<Standhash>`,
+  `content_hash = <Standhash>` — derselbe Kennungs-/content_hash-Schutz wie beim Pressearchiv.
+* Dieselben acht geschlossenen Standfelder, dasselbe Feld `raw.helmutBerlinArtikelstand` und
+  derselbe PostgREST-Alias `berlin_artikelstand`. Der bestehende Pressearchiv-Zweig, seine
+  Kennungen und alle alten Pressearchiv-Staende bleiben unveraendert. Ein alter
+  `standHashFuer`-Aufruf OHNE Herkunft behaelt exakt denselben Hash.
+* `summary` ist exakt der vom Parser gebundene, vollstaendige SACHABSATZ (`auszug`) mit
+  `absatzHash = auszugHash`, nicht der RBMSKZL-Absenderabsatz und ohne jede Kuerzung.
+  `volltextHash` sowie Titel, URL und Publikationstag stammen strikt aus demselben Parserbeleg;
+  `published_at` bleibt NULL, keine Uhrzeit, kein HTML und kein Volltext in der Rohzeile.
+* Beide Familien (RBMSKZL, SenWEB) nur nach kanonischer URL-Pruefung. Falsch deklarierte
+  Herkunft, ein ausgetauschter Absatz, eine falsche Familie, Quelle, Titel, Tag, Hash oder URL
+  sperren. `leseArtikelstand` validiert alte UND neue Staende rein lesend, ohne stillen
+  Rueckfall auf die URL-Identitaet.
+* `lib/helmut/artikelstand.js` behaelt die alte Identitaet exakt
+  (`berlin-presse|<Standhash>|erster-absatz`) und unterscheidet fuer die neue Herkunft
+  (`berlin-senatsvorlage|<Standhash>|sachabsatz`).
+
+### Abnahme (offline)
+
+`node scripts/berlin-artikelstand-test.js` (kein Netz, keine DB, kein Modell) prueft zusaetzlich
+den neuen Zweig: beide Familien, summary = gebundener Sachabsatz, getrennter Namespace,
+Negativfaelle (Absenderformel als summary, falsche Herkunft, falscher Hash, falscher Titel/Tag/URL,
+Uhrzeit im Speicher, zwei Staende in einer Zeile) und — falls vorhanden — die drei lokalen
+amtlichen Originale (RBMSKZL 1717887 mit 625 Zeichen, RBMSKZL 1717654 mit 344 Zeichen, SenWEB
+1717406 mit 240 Zeichen). Ausserdem laeuft der echte Import-/Dedup- und Speicherleser-/Lageweg
+jetzt auch fuer einen Sondervorlagenstand. Ergebnis: **41 Pruefgruppen** mit den lokalen
+Originalen, **39** ohne sie (CI-tauglich ohne `/private/tmp`).
+
+### Nicht umfasst
+
+Kein Live-Crawl, kein Netzabruf, kein Production-Import, keine Aktivierung, kein 500er Test, keine
+Production-DB-/Storage-/Lage-Datenaenderung, keine Profilversorgung, keine Production-Wirkung und keine
+Abschwaechung von Schwellen oder Landesmandatsgate. Der neue Standzweig ist an keinen
+Live-Quellenweg und kein Landesmodul angeschlossen; die produktive Versorgung der Berliner
+Landesebene bleibt offen und braucht weiterhin ihren eigenen Nachweis.
