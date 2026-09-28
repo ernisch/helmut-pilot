@@ -62,6 +62,9 @@ Der echte API-Schluessel bleibt im Proxy; Codex erhaelt nur ein zufaelliges
 lokales Zugangstoken. Rohprompts, API-Schluessel und Reasoning stehen nicht im
 Kostenbuch. Direkte Starts mit der alten Provider-URL sind in der lokalen
 Codex-Konfiguration gesperrt; der Launcher setzt den kontrollierten Laufport.
+Socket- und Codex-Idle-Timeout sind beide auf die ausdrueckliche zweistuendige
+Streamgrenze gebunden. Dadurch werden legitime lange High-/Max-Antworten nicht
+schon nach fuenf Minuten als unbekannte Kosten abgebrochen.
 
 Der lokale Test verwendet getrennte temporaere Kostenbuecher und Provider-Doubles,
 keine Production und keine bezahlten Fehlerwiederholungen. Der praktische Leselauf
