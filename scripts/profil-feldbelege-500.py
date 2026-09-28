@@ -519,6 +519,52 @@ def _pruefe_wahlausschuss(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator eng geprueffte ZWEIERQUITTUNG der zuletzt fehlenden
+# aktuellen Fraktionsvorsitz-Funktionsfelder (Britta Haßelmann, Dr. Matthias Miersch).
+# Die fail-closed-Validierung liegt im getrennten Modul
+# ``profil-feldbelege-500-fraktionsvorsitz.py`` (das die sicheren Quellen-Helfer des
+# Zusatzaufgabenmoduls wiederverwendet); hier wird nur der gepruefte Index angewendet.
+# Die kanonische Personenseite wird separat am lokalen Abruf und am echten Original
+# gebunden (H1 + ProfilePage.mainEntity @id #mdb); die aktuelle Rolle steht im
+# geschlossenen sichtbaren .bt-standard-content der amtlichen Fraktionsseite mit genau
+# EINEM kanonischen Biografielink. Es entsteht NUR das Funktionsfeld plus offizielle
+# Fraktionsquelle: KEINE Themen, keine Parteiableitung, keine Amtsbeginn-Daten, keine
+# weiteren Profilfelder, keine fachliche Achse. Die 54er Eintraege bleiben offen.
+FRAKTIONSVORSITZ = REPO_ROOT / "docs" / "betrieb" / "fraktionsvorsitz-zwei-20260927.json"
+FRAKTIONSVORSITZ_RESSOURCE = "docs/betrieb/fraktionsvorsitz-zwei-20260927.json"
+FRAKTIONSVORSITZ_GESAMT = 2
+
+
+def _lade_fraktionsvorsitzmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-fraktionsvorsitz.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_fraktionsvorsitz", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+FRAKTIONSVORSITZMODUL = _lade_fraktionsvorsitzmodul()
+
+
+def _pruefe_fraktionsvorsitz(eingang) -> dict:
+    """Prueft die versionierte Zweier-Fraktionsvorsitzquittung ueber das getrennte Modul."""
+    try:
+        index = FRAKTIONSVORSITZMODUL.pruefe_fraktionsvorsitz(
+            eingang,
+            quittung=getattr(eingang, "fraktionsvorsitz", None),
+        )
+    except FRAKTIONSVORSITZMODUL.FraktionsvorsitzFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.fraktionsvorsitz_by_kennung = index
+    eingang.fraktionsvorsitz_verwendet = set()
+    return index
+
+
 # Versionierte, vom Orchestrator eng gepruefte EINZELFALLQUITTUNG des zuvor offenen
 # Fachachsenfalls Thomas Jarzombek (Bundestag). Die fail-closed-Validierung liegt im
 # getrennten Modul ``profil-feldbelege-500-jarzombek.py`` (das die sicheren Helfer des
@@ -1747,6 +1793,10 @@ class Eingang:
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Wahlausschuss-Aufgabenquittung fehlt: {WAHLAUSSCHUSS_RESSOURCE}") from fehler
         try:
+            self.fraktionsvorsitz = _lies_json(FRAKTIONSVORSITZ)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Fraktionsvorsitz-Zweierquittung fehlt: {FRAKTIONSVORSITZ_RESSOURCE}") from fehler
+        try:
             self.jarzombek = _lies_json(JARZOMBEK)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Jarzombek-Einzelfallquittung fehlt: {JARZOMBEK_RESSOURCE}") from fehler
@@ -2943,6 +2993,60 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
         achsen_geschlossen = True
 
+    # Versionierte Fraktionsvorsitz-Zweierquittung: fuer die zuletzt fehlenden beiden
+    # aktuellen Funktionsfelder (Britta Haßelmann, Dr. Matthias Miersch) wird NUR die
+    # freigegebene aktuelle Funktionsrolle dedupliziert an bestehende funktionen
+    # angehaengt und die amtliche Fraktionsseite als offizielle Quelle (art
+    # fraktion-profil) gefuehrt. Es entstehen KEINE Themen, keine aus der
+    # Fraktionsrolle abgeleitete Parteimitgliedschaft, keine persoenlichen Positionen
+    # und keine Amtsbeginn-Daten; die fachliche Achse bleibt unveraendert offen.
+    fraktionsvorsitz_eintrag = (getattr(eingang, "fraktionsvorsitz_by_kennung", None) or {}).get(mandatsId)
+    fraktionsvorsitz_beleg = None
+    if fraktionsvorsitz_eintrag is not None:
+        verwendet = getattr(eingang, "fraktionsvorsitz_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        fraktionsvorsitz_quelle = fraktionsvorsitz_eintrag["quelle"]
+        profil.setdefault("funktionen", [])
+        neue_funktion = fraktionsvorsitz_eintrag["funktion"]
+        if neue_funktion not in profil["funktionen"]:
+            profil["funktionen"].append(neue_funktion)
+        profil["offizielleQuellen"].append({
+            "art": "fraktion-profil",
+            "url": fraktionsvorsitz_quelle["url"],
+            "abgerufenAm": fraktionsvorsitz_quelle["abgerufenAm"],
+            "sha256": fraktionsvorsitz_quelle["sha256"],
+        })
+        fraktionsvorsitz_beleg = {
+            "datei": FRAKTIONSVORSITZ_RESSOURCE,
+            "kennung": fraktionsvorsitz_eintrag["kennung"],
+            "region": fraktionsvorsitz_eintrag["region"],
+            "person": fraktionsvorsitz_eintrag["person"],
+            "funktion": fraktionsvorsitz_eintrag["funktion"],
+            "rolleAbschnitt": fraktionsvorsitz_eintrag["rolleAbschnitt"],
+            "rolleZitat": fraktionsvorsitz_eintrag["rolleZitat"],
+            "rollenquelle": {
+                "datei": fraktionsvorsitz_eintrag["rollenquelle"].get("datei"),
+                "url": fraktionsvorsitz_eintrag["rollenquelle"].get("url"),
+                "finalUrl": fraktionsvorsitz_eintrag["rollenquelle"].get("finalUrl"),
+                "abgerufenAm": fraktionsvorsitz_eintrag["rollenquelle"].get("abgerufenAm"),
+                "sha256": fraktionsvorsitz_eintrag["rollenquelle"].get("sha256"),
+                "bytes": fraktionsvorsitz_eintrag["rollenquelle"].get("bytes"),
+                "http": fraktionsvorsitz_eintrag["rollenquelle"].get("http"),
+                "abrufStatus": fraktionsvorsitz_eintrag["rollenquelle"].get("abrufStatus"),
+            },
+            "quelle": {
+                "datei": fraktionsvorsitz_quelle.get("datei"),
+                "url": fraktionsvorsitz_quelle.get("url"),
+                "finalUrl": fraktionsvorsitz_quelle.get("finalUrl"),
+                "abgerufenAm": fraktionsvorsitz_quelle.get("abgerufenAm"),
+                "sha256": fraktionsvorsitz_quelle.get("sha256"),
+                "bytes": fraktionsvorsitz_quelle.get("bytes"),
+                "http": fraktionsvorsitz_quelle.get("http"),
+                "abrufStatus": fraktionsvorsitz_quelle.get("abrufStatus"),
+            },
+        }
+
     # Versionierte Jarzombek-Einzelfallquittung: fuer den zuvor offenen Fachachsenfall
     # Thomas Jarzombek entstehen ausschliesslich die vier amtlich abgeleiteten Themen
     # (BMDS-Abteilungen DS/DI/DW), der getrennte Herkunftshinweis und die amtliche
@@ -3550,6 +3654,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["amthorQuittung"] = amthor_beleg
     if wahlausschuss_beleg is not None:
         datensatz["wahlausschussQuittung"] = wahlausschuss_beleg
+    if fraktionsvorsitz_beleg is not None:
+        datensatz["fraktionsvorsitzQuittung"] = fraktionsvorsitz_beleg
     if jarzombek_beleg is not None:
         datensatz["jarzombekQuittung"] = jarzombek_beleg
     if kloeckner_beleg is not None:
@@ -3579,6 +3685,7 @@ def assembliere(eingang: Eingang) -> dict:
     bmwsb = _pruefe_bmwsb(eingang)
     amthor = _pruefe_amthor(eingang)
     wahlausschuss = _pruefe_wahlausschuss(eingang)
+    fraktionsvorsitz = _pruefe_fraktionsvorsitz(eingang)
     jarzombek = _pruefe_jarzombek(eingang)
     kloeckner = _pruefe_kloeckner(eingang)
     rohde = _pruefe_rohde(eingang)
@@ -3661,6 +3768,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Wahlausschuss-Aufgabenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_wahlausschuss)}."
         )
+    ungenutzte_fraktionsvorsitz = set(fraktionsvorsitz) - eingang.fraktionsvorsitz_verwendet
+    if ungenutzte_fraktionsvorsitz:
+        raise AssemblerFehler(
+            f"Fraktionsvorsitz-Zweierquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_fraktionsvorsitz)}."
+        )
     ungenutzte_jarzombek = set(jarzombek) - eingang.jarzombek_verwendet
     if ungenutzte_jarzombek:
         raise AssemblerFehler(
@@ -3722,6 +3834,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Wahlausschuss-Aufgabenquittung deckt nicht genau ihre 3 Kennungen ab: "
             f"{sorted(set(wahlausschuss) ^ wahlausschuss_geschlossen)}."
+        )
+    fraktionsvorsitz_geschlossen = set(eingang.fraktionsvorsitz_verwendet)
+    if fraktionsvorsitz_geschlossen != set(fraktionsvorsitz):
+        raise AssemblerFehler(
+            f"Fraktionsvorsitz-Zweierquittung deckt nicht genau ihre 2 Kennungen ab: "
+            f"{sorted(set(fraktionsvorsitz) ^ fraktionsvorsitz_geschlossen)}."
         )
     jarzombek_geschlossen = set(eingang.jarzombek_verwendet)
     if jarzombek_geschlossen != set(jarzombek):
@@ -4011,6 +4129,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches "
                 "Zitat im personengebundenen Abschnitt gebunden)"
             ),
+            "fraktionsvorsitzQuittung": (
+                f"{FRAKTIONSVORSITZ_RESSOURCE} (vom Orchestrator eng geprueft; die ZWEI zuletzt fehlenden "
+                "aktuellen Fraktionsvorsitz-Funktionsfelder Britta Haßelmann und Dr. Matthias Miersch; "
+                "kanonische Personenseite separat am lokalen Abruf und am echten Original mit H1 + "
+                "ProfilePage.mainEntity '@id' #mdb gebunden, aktuelle Rolle nur im geschlossenen sichtbaren "
+                ".bt-standard-content der amtlichen Fraktionsseite mit genau EINEM kanonischen Biografielink; "
+                "URL + finalUrl + Abrufzeit + sha256 + Bytezahl + Datei beider Quellen, Original UND Metadaten; "
+                "HTTP 200/abgerufen fixiert; KEINE Themen, keine Parteiableitung, keine weiteren Profilfelder)"
+            ),
             "ressortquittung": (
                 f"{RESSORTAKSEN_RESSOURCE} (vom Orchestrator geprueft; 19 zuvor offene Fachachsen aus "
                 "amtlich belegtem aktuellem Ressort geschlossen: "
@@ -4103,6 +4230,25 @@ def assembliere(eingang: Eingang) -> dict:
                 "Jede Kennung ist an URL, Quellhash, erlaubten Status und ein woertliches Zitat im "
                 "personengebundenen amtlichen Abschnitt gebunden (Bundestag Funktion nur m-biography__function, "
                 "Biografie nur eigener Biografiebereich; keine Navigation als Beleg)."
+            ),
+            (
+                "Die ZWEI zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder (Britta Haßelmann, "
+                f"Dr. Matthias Miersch) werden ueber die vom Orchestrator eng gepruefte Quittung "
+                f"{FRAKTIONSVORSITZ_RESSOURCE} dedupliziert an bestehende funktionen angehaengt und die "
+                "amtliche Fraktionsseite als offizielle Quelle (art fraktion-profil) gefuehrt. Die "
+                "Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-fraktionsvorsitz.py: "
+                "die kanonische Personenseite wird SEPARAT am lokalen Abruf und am echten Original (genau "
+                "eine H1 und genau EIN ProfilePage.mainEntity Typ Person mit '@id' #mdb, Name und "
+                "description 'Mitglied des 21. Deutschen Bundestages') gebunden, der alte 54er Eintrag bleibt "
+                "offen. Die aktuelle Rolle steht ausschliesslich im geschlossenen sichtbaren "
+                ".bt-standard-content einer echten article.bt-artikel unter der exakten h2 "
+                "Fraktionsvorsitzende/Fraktionsvorsitzender mit eigenem p; genau EIN sichtbarer "
+                "Personenlink muss exakt auf die kanonische #mdb-Biografie-URL zeigen. Verborgene/inerte "
+                "Inhalte und Abschnittsausbrueche sind kein Beleg. Beide Quellen sind an URL/finalUrl/"
+                "Abrufzeit/sha256/Bytezahl/Datei gebunden (Original UND Metadaten), HTTP 200/abgerufen "
+                "fixiert. Es entstehen KEINE Themen, keine aus der Fraktionsrolle abgeleitete "
+                "Parteimitgliedschaft, keine persoenlichen Positionen, keine Amtsbeginn-Daten und KEINE "
+                "fachliche Achse; alle uebrigen Profilfelder bleiben unveraendert."
             ),
             (
                 "Fuer 19 dieser 54 Profile wird ueber die vom Orchestrator gepruefte Ressortquittung "
@@ -4378,6 +4524,16 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("wahlausschussQuittung")),
                 "deckungsgleichVerwendet": len(eingang.wahlausschuss_verwendet),
                 "geschlosseneAchsen": len(wahlausschuss_geschlossen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
+            },
+            "fraktionsvorsitzQuittung": {
+                "datei": FRAKTIONSVORSITZ_RESSOURCE,
+                "geprueftGesamt": len(fraktionsvorsitz),
+                "nachRegion": {"Bund": len(fraktionsvorsitz)},
+                "funktionenGesetzt": sum(1 for d in datensaetze if d.get("fraktionsvorsitzQuittung")),
+                "themenGesetzt": 0,
+                "deckungsgleichVerwendet": len(eingang.fraktionsvorsitz_verwendet),
+                "geschlosseneAchsen": 0,
                 "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "jarzombekQuittung": {

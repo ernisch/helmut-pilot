@@ -14,6 +14,7 @@
     "mandatsartenquittung": "docs/betrieb/brandenburg-mandatsarten-20260927.json (amtliche Brandenburger Uebersicht; Landesliste fuer 4 Profile, URL + sha256 + Abrufzeit gebunden)",
     "mandatsartenquittungBerlin": "docs/betrieb/berlin-mandatsarten-20260927.json (amtliches Handbuch-PDF Stand 8.10.2025, Seite 204 linke Spalte; Bezirks-/Landesliste fuer 2 Profile, URL + sha256 + Bytezahl + Abrufzeit gebunden, woertliche Transkription; kein automatischer PDF-Parser-Nachweis)",
     "profilrollenQuittung": "docs/betrieb/profilrollen-54-20260927.json (vom Orchestrator geprueft; 48 Rollen fuer fachlich offene Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches Zitat im personengebundenen Abschnitt gebunden)",
+    "fraktionsvorsitzQuittung": "docs/betrieb/fraktionsvorsitz-zwei-20260927.json (vom Orchestrator eng geprueft; die ZWEI zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder Britta Haßelmann und Dr. Matthias Miersch; kanonische Personenseite separat am lokalen Abruf und am echten Original mit H1 + ProfilePage.mainEntity '@id' #mdb gebunden, aktuelle Rolle nur im geschlossenen sichtbaren .bt-standard-content der amtlichen Fraktionsseite mit genau EINEM kanonischen Biografielink; URL + finalUrl + Abrufzeit + sha256 + Bytezahl + Datei beider Quellen, Original UND Metadaten; HTTP 200/abgerufen fixiert; KEINE Themen, keine Parteiableitung, keine weiteren Profilfelder)",
     "ressortquittung": "docs/betrieb/ressortachsen-19-20260927.json (vom Orchestrator geprueft; 19 zuvor offene Fachachsen aus amtlich belegtem aktuellem Ressort geschlossen: 9 Bund / 4 Berlin / 6 Brandenburg; URL + sha256 + Abrufzeit + Datei der amtlichen Zusatzquelle und zusammenhaengendes Person/Ressort-Zitat gebunden)",
     "aufgabenquittung": "docs/betrieb/aufgabenachsen-6-20260927.json (vom Orchestrator geprueft; 6 weitere zuvor offene Fachachsen aus amtlich belegten personengebundenen Aufgabenbereichen geschlossen: Beauftragtenaufgaben (Brand/Connemann/Pawlik/Kaiser) und explizite BMAS-Abteilungszustaendigkeit (Griese IV/V, Mast II/III); Validierung im getrennten Modul scripts/profil-feldbelege-500-aufgaben.py; URL + sha256 + Abrufzeit + Datei + Bytezahl der amtlichen Zusatzquelle und woertliche Zitate im personengebundenen Aufgabenabschnitt gebunden)",
     "beratendeachsenquittung": "docs/betrieb/beratende-achsen-2-20260927.json (vom Orchestrator geprueft; 2 weitere zuvor offene Fachachsen aus amtlich belegten BERATENDEN Ausschussrollen geschlossen: Knodel Landwirtschaft/Ernaehrung/Heimat, Seidler Haushalt; Validierung im getrennten Modul scripts/profil-feldbelege-500-beratende.py; kanonische Quelle an URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei gebunden, echtes Original mit eindeutiger H1 und exakter Role 'Beratendes Mitglied' ohne endDate in ProfilePage.mainEntity.memberOf; die bestehende beratende Funktion bleibt erhalten, keine ordentliche/stellvertretende Ausschussmitgliedschaft)",
@@ -36,6 +37,7 @@
     "Vier bislang offene Brandenburg-Mandatsarten sind ueber die versionierte lokale Quittung docs/betrieb/brandenburg-mandatsarten-20260927.json als Landesliste belegt (URL + Hash + Abrufzeit). Uebernommen werden NUR Mandatsart Landesliste und Region Brandenburg, NICHT Listenbeschriftung oder Listenplatz.",
     "Zwei bislang offene Berliner Mandatsarten sind ueber die versionierte lokale Quittung docs/betrieb/berlin-mandatsarten-20260927.json als Bezirksliste (Johannes Martin, Marzahn-Hellersdorf) und Landesliste (Benedikt Lux) belegt. Quelle ist das am Original visuell abgenommene amtliche Handbuch-PDF (Stand 8.10.2025, Seite 204 linke Spalte) samt woertlicher Transkription; URL + sha256 + Bytezahl + Abrufzeit und die Quellmeta-JSON sind gebunden, es gibt KEINEN automatischen PDF-Parser-Nachweis. Person, exaktes Nachrueckdatum und Profilhash werden am gebundenen aktuellen Profilblock geprueft; Martin zusaetzlich am exakten H2/H3/Personlink der aktuellen Wahlkreissuche. Nur Mandatsart und Region werden uebernommen; ein Direktmandat des Vorgaengers und die Partei/Fraktion des historischen Einzugs werden nie uebernommen. Claudia Engelmann bleibt offen.",
     "Fuer die 54 fachlich offenen Profile werden ueber die vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json ausschliesslich die freigegebenen wortlaut-Strings dedupliziert an BESTEHENDE funktionen angehaengt (48 belegt, 6 offen). Es entsteht KEIN regierungsrolle-Schema und KEINE fachliche Achse; bestehende Gremienrollen bleiben erhalten. Jede Kennung ist an URL, Quellhash, erlaubten Status und ein woertliches Zitat im personengebundenen amtlichen Abschnitt gebunden (Bundestag Funktion nur m-biography__function, Biografie nur eigener Biografiebereich; keine Navigation als Beleg).",
+    "Die ZWEI zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder (Britta Haßelmann, Dr. Matthias Miersch) werden ueber die vom Orchestrator eng gepruefte Quittung docs/betrieb/fraktionsvorsitz-zwei-20260927.json dedupliziert an bestehende funktionen angehaengt und die amtliche Fraktionsseite als offizielle Quelle (art fraktion-profil) gefuehrt. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-fraktionsvorsitz.py: die kanonische Personenseite wird SEPARAT am lokalen Abruf und am echten Original (genau eine H1 und genau EIN ProfilePage.mainEntity Typ Person mit '@id' #mdb, Name und description 'Mitglied des 21. Deutschen Bundestages') gebunden, der alte 54er Eintrag bleibt offen. Die aktuelle Rolle steht ausschliesslich im geschlossenen sichtbaren .bt-standard-content einer echten article.bt-artikel unter der exakten h2 Fraktionsvorsitzende/Fraktionsvorsitzender mit eigenem p; genau EIN sichtbarer Personenlink muss exakt auf die kanonische #mdb-Biografie-URL zeigen. Verborgene/inerte Inhalte und Abschnittsausbrueche sind kein Beleg. Beide Quellen sind an URL/finalUrl/Abrufzeit/sha256/Bytezahl/Datei gebunden (Original UND Metadaten), HTTP 200/abgerufen fixiert. Es entstehen KEINE Themen, keine aus der Fraktionsrolle abgeleitete Parteimitgliedschaft, keine persoenlichen Positionen, keine Amtsbeginn-Daten und KEINE fachliche Achse; alle uebrigen Profilfelder bleiben unveraendert.",
     "Fuer 19 dieser 54 Profile wird ueber die vom Orchestrator gepruefte Ressortquittung docs/betrieb/ressortachsen-19-20260927.json die ausdruecklichen Ressortbegriffe als Themen gesetzt mit getrenntem Ableitungshinweis in funktionen und damit die fachliche Achse geschlossen. Nur die Regionen Bund/Berlin/Brandenburg sind erlaubt; jede Kennung ist eine bereits belegte Rolle der 54er Quittung, an deren Rollenquelle, an die amtliche Zusatzquelle (URL + sha256 + Abrufzeit + Datei) und an ein zusammenhaengendes woertliches Person/Ressort-Zitat gebunden. Keine persoenliche politische Position, keine erfundenen Themen, keine Ableitung aus Kanzler-/Vorsitzrollen; die disjunkte Vereinigung der 19 geschlossenen mit den 35 verbleibend offenen Achsen ergibt weiter genau die 54er Rollenquittung.",
     "Fuer 6 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte Aufgabenquittung docs/betrieb/aufgabenachsen-6-20260927.json der ausdrueckliche Themenbegriff aus einem amtlich belegten personengebundenen Aufgabenbereich gesetzt (getrennter Herkunftshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-aufgaben.py: Brand/Connemann/Pawlik nur Name UND ausdrueckliche Beauftragtenaufgabe, Themen nur innerhalb dieser Aufgabe (Connemann: Digitales ist keine Beauftragtenaufgabe); Kaiser ueber die belegte Amtsrolle und den ausdruecklichen Aufgabenabsatz; BMAS Person -> explizit genannte Abteilungsnummern -> deren Aufgabenabschnitt (Griese IV/V, Mast II/III; Mast erhaelt nie ein Griese-Thema). Jede Kennung ist eine bereits belegte Rolle der 54er Quittung, an deren Rollenquelle, an die amtliche Zusatzquelle (URL + sha256 + Abrufzeit + Datei + Bytezahl) und an woertliche Zitate im richtigen personengebundenen Aufgabenabschnitt gebunden. Keine persoenliche politische Position, keine erfundenen Themen; die disjunkte Vereinigung der 19 Ressort- mit den 6 Aufgabenachsen und den 29 verbleibend offenen ergibt weiter genau die 54er Rollenquittung.",
     "Fuer 2 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte beratende Achsenquittung docs/betrieb/beratende-achsen-2-20260927.json die ausdrueckliche beratende Ausschussarbeit mit ihren Kurzthemen gesetzt (getrennter Ableitungshinweis in funktionen) und damit die fachliche Achse geschlossen. Die bestehende beratende Funktion bleibt erhalten; es entsteht NIE eine ordentliche/stellvertretende Ausschussmitgliedschaft und keine politische Position. Nur die zwei genehmigten Ausschuesse (Ausschuss fuer Landwirtschaft, Ernaehrung und Heimat; Haushaltsausschuss) sind erlaubt; jede Kennung ist an die kanonische Quelle (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei), an das echte Original mit eindeutiger H1 und an die exakte Role 'Beratendes Mitglied' ohne endDate in ProfilePage.mainEntity.memberOf gebunden. Die disjunkte Vereinigung der 19 Ressort-, 6 Aufgaben- und 2 beratenden Achsen mit den 27 verbleibend offenen ergibt weiter genau die 54er Rollenquittung; diese 2 bleiben dort ausdruecklich offen (die beratende Funktion war bereits belegt, das ist KEIN Fehler).",
@@ -179,6 +181,18 @@
       "themenGesetzt": 3,
       "deckungsgleichVerwendet": 3,
       "geschlosseneAchsen": 3,
+      "verbleibendOffeneAchsen": 14
+    },
+    "fraktionsvorsitzQuittung": {
+      "datei": "docs/betrieb/fraktionsvorsitz-zwei-20260927.json",
+      "geprueftGesamt": 2,
+      "nachRegion": {
+        "Bund": 2
+      },
+      "funktionenGesetzt": 2,
+      "themenGesetzt": 0,
+      "deckungsgleichVerwendet": 2,
+      "geschlosseneAchsen": 0,
       "verbleibendOffeneAchsen": 14
     },
     "jarzombekQuittung": {
@@ -3863,7 +3877,8 @@
         "regionHinweis": "Landesliste Nordrhein-Westfalen",
         "funktionen": [
           "Ordentliches Mitglied: Wahlausschuss",
-          "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
+          "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position",
+          "Fraktionsvorsitzende Bündnis 90/Die Grünen"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -3878,6 +3893,12 @@
             "url": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
             "abgerufenAm": "2026-09-27T19:39:37.872399+00:00",
             "sha256": "8e131046ee994e186873d8bbec7f84f90fd58057158a9080b06911826db26ed8"
+          },
+          {
+            "art": "fraktion-profil",
+            "url": "https://www.bundestag.de/parlament/fraktionen/gruene",
+            "abgerufenAm": "2026-09-27T15:43:25.103449+00:00",
+            "sha256": "6e562c9046312d80948c8a7fc70701e799cea2a81fc219f547842d7ed2836b8e"
           }
         ],
         "themen": [
@@ -3999,6 +4020,35 @@
           "Richter des Bundesverfassungsgerichts"
         ],
         "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
+      },
+      "fraktionsvorsitzQuittung": {
+        "datei": "docs/betrieb/fraktionsvorsitz-zwei-20260927.json",
+        "kennung": "bundestag-hasselmann-britta-1044778",
+        "region": "Bund",
+        "person": "Britta Haßelmann",
+        "funktion": "Fraktionsvorsitzende Bündnis 90/Die Grünen",
+        "rolleAbschnitt": "Fraktionsvorsitzende",
+        "rolleZitat": "Fraktionsvorsitzende Katharina Dröge (Interner Link) Britta Haßelmann",
+        "rollenquelle": {
+          "datei": "bundestag-hasselmann_britta-1044778.html",
+          "url": "https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778",
+          "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778",
+          "abgerufenAm": "2026-09-27T12:59:36.772613+00:00",
+          "sha256": "0750ba10353c7db1b54d6bf3d7d35161d526ee8f96a5c3159398d4674e7cfbea",
+          "bytes": 275923,
+          "http": 200,
+          "abrufStatus": "abgerufen"
+        },
+        "quelle": {
+          "datei": "fraktionsspitze-bt-gruene.html",
+          "url": "https://www.bundestag.de/parlament/fraktionen/gruene",
+          "finalUrl": "https://www.bundestag.de/parlament/fraktionen/gruene",
+          "abgerufenAm": "2026-09-27T15:43:25.103449+00:00",
+          "sha256": "6e562c9046312d80948c8a7fc70701e799cea2a81fc219f547842d7ed2836b8e",
+          "bytes": 255360,
+          "http": 200,
+          "abrufStatus": "abgerufen"
+        }
       }
     },
     {
@@ -38107,7 +38157,8 @@
         "wahlkreis": "Wahlkreis 047: Hannover-Land II",
         "funktionen": [
           "Stellvertretendes Mitglied: Wahlausschuss",
-          "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
+          "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position",
+          "Fraktionsvorsitzender SPD"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -38122,6 +38173,12 @@
             "url": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
             "abgerufenAm": "2026-09-27T19:39:37.872399+00:00",
             "sha256": "8e131046ee994e186873d8bbec7f84f90fd58057158a9080b06911826db26ed8"
+          },
+          {
+            "art": "fraktion-profil",
+            "url": "https://www.bundestag.de/parlament/fraktionen/spd",
+            "abgerufenAm": "2026-09-27T15:43:25.868125+00:00",
+            "sha256": "024ace40b33c0f0f449d93363075cb4eeb032880581fb26e1c05dfd4526ecf57"
           }
         ],
         "themen": [
@@ -38238,6 +38295,35 @@
           "Richter des Bundesverfassungsgerichts"
         ],
         "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts; keine persönliche politische Position"
+      },
+      "fraktionsvorsitzQuittung": {
+        "datei": "docs/betrieb/fraktionsvorsitz-zwei-20260927.json",
+        "kennung": "bundestag-miersch-matthias-1046120",
+        "region": "Bund",
+        "person": "Dr. Matthias Miersch",
+        "funktion": "Fraktionsvorsitzender SPD",
+        "rolleAbschnitt": "Fraktionsvorsitzender",
+        "rolleZitat": "Fraktionsvorsitzender Dr. Matthias Miersch",
+        "rollenquelle": {
+          "datei": "bundestag-miersch_matthias-1046120.html",
+          "url": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
+          "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
+          "abgerufenAm": "2026-09-27T13:02:01.522263+00:00",
+          "sha256": "1964d6f86f4c5ee9fdece19ece9483e17197c776db4c3e52f21b92d965d6b902",
+          "bytes": 279972,
+          "http": 200,
+          "abrufStatus": "abgerufen"
+        },
+        "quelle": {
+          "datei": "fraktionsspitze-bt-spd.html",
+          "url": "https://www.bundestag.de/parlament/fraktionen/spd",
+          "finalUrl": "https://www.bundestag.de/parlament/fraktionen/spd",
+          "abgerufenAm": "2026-09-27T15:43:25.868125+00:00",
+          "sha256": "024ace40b33c0f0f449d93363075cb4eeb032880581fb26e1c05dfd4526ecf57",
+          "bytes": 255836,
+          "http": 200,
+          "abrufStatus": "abgerufen"
+        }
       }
     },
     {

@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "datum": "2026-09-27",
+  "status": "Vom Orchestrator eng geprueft; zwei zuletzt fehlende aktuelle Fraktionsvorsitz-Funktionsfelder vorbereitet; nicht importfreigegeben",
+  "umfang": 2,
+  "bilanz": {
+    "gesamt": 2,
+    "Bund": 2,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-hasselmann-britta-1044778",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "person": "Britta Haßelmann",
+      "funktion": "Fraktionsvorsitzende Bündnis 90/Die Grünen",
+      "rolleAbschnitt": "Fraktionsvorsitzende",
+      "rolleZitat": "Fraktionsvorsitzende Katharina Dröge (Interner Link) Britta Haßelmann",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778",
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778",
+        "abgerufenAm": "2026-09-27T12:59:36.772613+00:00",
+        "sha256": "0750ba10353c7db1b54d6bf3d7d35161d526ee8f96a5c3159398d4674e7cfbea",
+        "bytes": 275923,
+        "datei": "bundestag-hasselmann_britta-1044778.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "quelle": {
+        "url": "https://www.bundestag.de/parlament/fraktionen/gruene",
+        "finalUrl": "https://www.bundestag.de/parlament/fraktionen/gruene",
+        "abgerufenAm": "2026-09-27T15:43:25.103449+00:00",
+        "sha256": "6e562c9046312d80948c8a7fc70701e799cea2a81fc219f547842d7ed2836b8e",
+        "bytes": 255360,
+        "datei": "fraktionsspitze-bt-gruene.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-miersch-matthias-1046120",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "person": "Dr. Matthias Miersch",
+      "funktion": "Fraktionsvorsitzender SPD",
+      "rolleAbschnitt": "Fraktionsvorsitzender",
+      "rolleZitat": "Fraktionsvorsitzender Dr. Matthias Miersch",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
+        "abgerufenAm": "2026-09-27T13:02:01.522263+00:00",
+        "sha256": "1964d6f86f4c5ee9fdece19ece9483e17197c776db4c3e52f21b92d965d6b902",
+        "bytes": 279972,
+        "datei": "bundestag-miersch_matthias-1046120.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "quelle": {
+        "url": "https://www.bundestag.de/parlament/fraktionen/spd",
+        "finalUrl": "https://www.bundestag.de/parlament/fraktionen/spd",
+        "abgerufenAm": "2026-09-27T15:43:25.868125+00:00",
+        "sha256": "024ace40b33c0f0f449d93363075cb4eeb032880581fb26e1c05dfd4526ecf57",
+        "bytes": 255836,
+        "datei": "fraktionsspitze-bt-spd.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    }
+  ],
+  "pruefung": "Zwei zuletzt fehlende aktuelle Funktionsfelder (Britta Haßelmann, Dr. Matthias Miersch) werden eng am amtlichen Original gebunden: die kanonische Personenseite stammt aus der unveraenderten 54er Rollenquittung (URL/Hash/Abrufzeit) und wird zusaetzlich am lokalen Abrufmetadatensatz und am echten Original (H1, ProfilePage.mainEntity '@id' #mdb, Name, description 'Mitglied des 21. Deutschen Bundestages') geprueft; die aktuelle Rolle steht ausschliesslich im geschlossenen sichtbaren Abschnitt .bt-standard-content (h2 'Fraktionsvorsitzende'/'Fraktionsvorsitzender' mit eigenem p) der amtlichen Fraktionsseite und der sichtbare Personenlink muss exakt auf die kanonische #mdb-Biografie-URL zeigen. Verborgene/inert markierte Inhalte (hidden, aria-hidden, display:none, '--hidden') und Abschnittsausbrueche (fremde h2 oder ausserhalb .bt-standard-content) sind kein Beleg. Das Fraktionsseiten-Begleitmetadatum traegt URL/finalUrl/Abrufzeit/Hash/Bytezahl; HTTP 200/abrufStatus 'abgerufen' sind in der Quittung fixiert, das Original wird ueber Hash UND Bytezahl geprueft. Es entstehen KEINE Themen, KEINE aktuelle Parteimitgliedschaft aus der Fraktionsrolle und KEINE persoenlichen Positionen; die Funktion wird dedupliziert in profil.funktionen angehaengt, die amtliche Fraktionsseite als offizielleQuelle (art fraktion-profil) gefuehrt, alle uebrigen Profilfelder bleiben unveraendert (498 identisch), alle 500 bleiben inaktiv und importfreigegeben=false.",
+  "importfreigegeben": false
+}

@@ -1279,6 +1279,85 @@ for (const d of wahlausschussProfil) {
   );
 }
 
+// ── 6k-bis · Fraktionsvorsitz-Zweierquittung: zwei Funktionsfelder, keine Themen ──
+// Die zwei zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder (Britta
+// Haßelmann, Dr. Matthias Miersch) werden dedupliziert an bestehende funktionen
+// angehaengt und die amtliche Fraktionsseite als offizielle Quelle (art
+// fraktion-profil) gefuehrt. Die kanonische Personenseite ist separat am lokalen
+// Abruf und am echten Original (H1 + ProfilePage.mainEntity @id #mdb) gebunden; der
+// alte 54er Eintrag bleibt offen. Es entstehen KEINE Themen, keine Parteiableitung,
+// keine Amtsbeginn-Daten und keine fachliche Achse. Der echte Pfad zuHelmutProfil ->
+// toMandateProfileRow -> fromMandateProfileRow erhaelt die Funktion verlustfrei und
+// bleibt aktiv=false. Die Original-/Abschnittsbindung wird zusaetzlich vom
+// Python-Gegenproben-Test (profil-feldbelege-500-fraktionsvorsitz-test.py) mit
+// synthetischen Negativfaellen geprueft.
+const fraktionsvorsitz = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "fraktionsvorsitz-zwei-20260927.json"), "utf8"));
+a.equal(fraktionsvorsitz.version, 1, "Fraktionsvorsitzquittung muss versioniert sein");
+a.equal(fraktionsvorsitz.umfang, 2, "Fraktionsvorsitzquittung muss genau 2 Faelle umfassen");
+a.deepEqual(fraktionsvorsitz.bilanz, { gesamt: 2, Bund: 2, Berlin: 0, Brandenburg: 0 }, "Fraktionsvorsitz-Bilanz");
+a.equal(fraktionsvorsitz.importfreigegeben, false, "Fraktionsvorsitzquittung darf nicht importfreigeben");
+a.ok(!("themen" in fraktionsvorsitz), "die Fraktionsvorsitzquittung darf keine Themen tragen");
+a.equal(fraktionsvorsitz.ergebnisse.length, 2, "Fraktionsvorsitzquittung muss 2 Ergebnisse tragen");
+const fraktionsvorsitzByKennung = new Map(fraktionsvorsitz.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(fraktionsvorsitzByKennung.size, 2, "Fraktionsvorsitzquittungskennungen muessen eindeutig sein");
+const FRAKTIONSVORSITZ_ROLLEN = {
+  "bundestag-hasselmann-britta-1044778": "Fraktionsvorsitzende Bündnis 90/Die Grünen",
+  "bundestag-miersch-matthias-1046120": "Fraktionsvorsitzender SPD",
+};
+for (const [kennung, funktion] of Object.entries(FRAKTIONSVORSITZ_ROLLEN)) {
+  const e = fraktionsvorsitzByKennung.get(kennung);
+  a.ok(e, `Fraktionsvorsitz-Eintrag fehlt (${kennung})`);
+  a.equal(e.funktion, funktion, `freigegebene Funktion (${kennung})`);
+  a.equal(e.importfreigegeben, false, `Eintrag darf nicht importfreigeben (${kennung})`);
+  a.ok(!("themen" in e), `kein Thema im Fraktionsvorsitz-Eintrag (${kennung})`);
+  a.ok(!("partei" in e) && !("fraktion" in e), `keine Partei-/Fraktionsableitung (${kennung})`);
+  const d = datensaetze.find((x) => x.kanonischeKennung === kennung);
+  a.ok(d, `Datensatz fehlt (${kennung})`);
+  a.equal(d.fraktionsvorsitzQuittung.datei, "docs/betrieb/fraktionsvorsitz-zwei-20260927.json", "Quittungsdatei gebunden");
+  a.equal(d.fraktionsvorsitzQuittung.person, e.person, "Person gebunden");
+  a.equal(d.fraktionsvorsitzQuittung.funktion, funktion, "Funktion gebunden");
+  a.equal((d.profil.funktionen || []).filter((x) => x === funktion).length, 1, "Funktion genau einmal in funktionen");
+  const fraktionsQuelle = (d.profil.offizielleQuellen || []).find((q) => q.art === "fraktion-profil");
+  a.ok(fraktionsQuelle, `amtliche Fraktionsquelle fehlt (${kennung})`);
+  a.equal(fraktionsQuelle.url, e.quelle.url, "Fraktionsquellen-URL gebunden");
+  a.equal(fraktionsQuelle.sha256, e.quelle.sha256, "Fraktionsquellen-Hash gebunden");
+  a.equal(fraktionsQuelle.abgerufenAm, e.quelle.abgerufenAm, "Fraktionsquellen-Abrufzeit gebunden");
+  // Die 54er Quittung und die Themen bleiben unveraendert; der neue Funktionsbeleg
+  // schliesst KEINE fachliche Achse.
+  a.equal(d.profilrollenQuittung.status, "offen", "der alte 54er Eintrag bleibt offen");
+  a.deepEqual(d.profil.themen, ["Richter des Bundesverfassungsgerichts"], "keine erfundenen Themen");
+  a.equal(d.profil.aktiv, false, "aktiv=false");
+  a.equal(d.importfreigegeben, false, "importfreigegeben=false");
+  // Echter Import-/Storage-Roundtrip der zwei Profile (keine DB, kein Netz).
+  const gespeichertFraktion = zuHelmutProfil(d.profil);
+  a.ok(gespeichertFraktion.function.includes(funktion), "Funktion erreicht den Importpfad");
+  const zeileFraktion = storage.toMandateProfileRow(gespeichertFraktion);
+  a.equal(zeileFraktion.aktiv, false, "Storage-Zeile darf nicht aktivieren");
+  const gelesenFraktion = storage.fromMandateProfileRow({ id: d.kanonischeKennung, name: d.profil.vollname }, zeileFraktion);
+  a.ok(gelesenFraktion.function.includes(funktion), "Funktion uebersteht den Storage-Roundtrip");
+  a.equal(gelesenFraktion.profileActive, false, "Round-Trip bleibt aktiv=false");
+  // Statusgroesse 4/4: Quittung belegt, nicht importfreigegeben, nicht aktiv, 54er offen.
+  a.deepEqual(
+    [
+      d.fraktionsvorsitzQuittung ? "belegt" : "offen",
+      d.importfreigegeben === false ? "false" : "true",
+      d.profil.aktiv === false ? "false" : "true",
+      d.profilrollenQuittung.status === "offen" ? "offen" : "belegt",
+    ],
+    ["belegt", "false", "false", "offen"],
+    `Statusgroesse 4/4 fuer ${d.kanonischeKennung}`,
+  );
+}
+a.equal(datensaetze.filter((d) => d.fraktionsvorsitzQuittung).length, 2,
+  "genau 2 Datensaetze tragen die Fraktionsvorsitzquittung (498 unveraendert)");
+a.ok(datensaetze.filter((d) => d.fraktionsvorsitzQuittung).every((d) => d.parlament === "bundestag"),
+  "nur Bundestagsprofile tragen die Fraktionsvorsitzquittung");
+for (const d of datensaetze) {
+  const q = (d.profil.offizielleQuellen || []).filter((x) => x.art === "fraktion-profil");
+  a.equal(q.length, d.fraktionsvorsitzQuittung ? 1 : 0,
+    `fraktion-profil nur bei den zwei belegten Profilen (${d.kanonischeKennung})`);
+}
+
 // ── 6l · Jarzombek-Abteilungsquittung: vier Themen/Hinweis/Quelle verlustfrei, Rolle erhalten ──
 // Der zuvor offene Fachachsenfall Thomas Jarzombek wird ueber seine amtlich belegten
 // BMDS-Abteilungen DS/DI/DW geschlossen. Die Abteilungen stammen aus genau EINER echten
@@ -1685,6 +1764,9 @@ const python = spawnSync("python3", ["--version"], { encoding: "utf8" }).status 
 if (python) {
   const gegenprobe = spawnSync("python3", ["-B", path.join(__dirname, "profil-feldbelege-500-unit.py")], { encoding: "utf8" });
   a.equal(gegenprobe.status, 0, `Partei-Gegenprobe fehlgeschlagen: ${gegenprobe.stderr}`);
+  const fraktionsgegenprobe = spawnSync("python3", ["-B", path.join(__dirname, "profil-feldbelege-500-fraktionsvorsitz-test.py")], { encoding: "utf8" });
+  a.equal(fraktionsgegenprobe.status, 0, `Fraktionsvorsitz-Gegenprobe fehlgeschlagen: ${fraktionsgegenprobe.stderr}`);
+  a.match(fraktionsgegenprobe.stdout, /PASS/, "Fraktionsvorsitz-Gegenprobe muss PASS melden");
   // Gezielte Node-Gegenprobe des Pistorius-Validators, ausdruecklich OHNE privates Original:
   // der Validator muss fail closed abbrechen und niemals still einen Parteiwert liefern.
   const fehlend = spawnSync("python3", ["-B", path.join(__dirname, "profil-feldbelege-500-pistorius.py"),

@@ -199,6 +199,11 @@ je eine weitere Achse. Aktueller lokaler Entwurf:485/15 technisch akzeptiert;
 14 Fachachsen,73 aktuelle Parteifelder und eine Berliner Mandatsart bleiben offen.
 Der getrennte [amtliche SPD-Parteivorstandsbeleg](betrieb/pistorius-partei-1-20260928.json)
 schliesst nur Boris Pistorius' Parteifeld; die bisherige335er-Auditquittung bleibt unveraendert.
+Die zwei zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder Britta
+Haßelmann und Dr. Matthias Miersch sind lokal ueber die enge
+[Fraktionsvorsitz-Zweierquittung](betrieb/fraktionsvorsitz-zwei-20260927.json)
+belegt (nur Funktion und amtliche Fraktionsquelle, keine Themen und keine
+Fachachse;498 Datensaetze bleiben identisch); keine Importfreigabe.
 Naechster Fachschritt: verbleibende aktuelle Parteibelege, die letzte offene
 Berliner Mandatsart (Claudia Engelmann) und die restlichen Fachachsen.
 
