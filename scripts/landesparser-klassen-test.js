@@ -249,9 +249,10 @@ check("E5 (4) Titel: echter Titel bleibt, titellose Formate bekommen eine GEKENN
   alleRoh.every((r) => typeof r.title === "string" && r.title.length > 0)
   && alleRoh.filter((r) => r.raw.titel_abgeleitet).every((r) => r.raw.titel_original === null)
   && alleRoh.filter((r) => !r.raw.titel_abgeleitet).every((r) => r.raw.titel_original === r.title));
-check("E6 (5) Veroeffentlichungsdatum erhalten, fehlend bleibt null (nichts erfunden)",
-  beRoh.find((r) => r.raw.externe_id === "D-351758").published_at === "2021-11-09"
-  && beRoh.find((r) => r.raw.externe_id === "D-360003").published_at === null);
+check("E6 (5) DokDat ist Dokumentdatum, NIE Publikationszeit: published_at bleibt null, Dokumentdatum steht in raw",
+  alleRoh.every((r) => r.published_at === null)
+  && beRoh.find((r) => r.raw.externe_id === "D-351758").raw.dokumentdatum === "2021-11-09"
+  && beRoh.find((r) => r.raw.externe_id === "D-360003").raw.dokumentdatum === null);
 check("E7 (6) Externe Kennung erhalten und identisch mit der Parserkennung",
   beRoh.every((r, i) => r.raw.externe_id === beDocs[i].externe_id)
   && bbRoh.every((r, i) => r.raw.externe_id === bbDocs[i].externe_id));
@@ -304,15 +305,34 @@ check("F10 HTML-Fehlerseite statt XML -> 0 Dokumente, kein Crash, keine Klasse",
 // ====================== TEIL G — Fehlende und uneinheitliche Metadaten ======================
 console.log("\n--- G · Fehlende Felder ---");
 check("G1 BE: fehlendes Datum bleibt null und blockiert die Klassifizierung nicht",
-  beById["D-360003"].veroeffentlichungsdatum === null && beById["D-360003"].dokumentklasse === "anfrage");
+  beById["D-360003"].dokumentdatum === null && !("veroeffentlichungsdatum" in beById["D-360003"]) && beById["D-360003"].dokumentklasse === "anfrage");
 check("G2 BB: fehlendes Datum bleibt null und blockiert die Klassifizierung nicht",
-  bbById["V-380500#r0001"].veroeffentlichungsdatum === null && bbById["V-380500#r0001"].dokumentklasse === "drucksache");
+  bbById["V-380500#r0001"].dokumentdatum === null && !("veroeffentlichungsdatum" in bbById["V-380500#r0001"]) && bbById["V-380500#r0001"].dokumentklasse === "drucksache");
 check("G3 BE: fehlende Drucksachennummer erzeugt keine erfundene Nummer",
   beById["D-351046"].drucksachennummer === null);
 check("G4 titellose Formate bleiben titel=null im Parser (Bezeichnung entsteht erst im Rohdokument)",
   beById["D-351042"].titel === null && K.zuRohdokument(beById["D-351042"], kontextFuer("berlin")).raw.titel_abgeleitet === true);
 check("G5 fehlender Ausschuss wird nicht geraten",
   beById["D-351758"].ausschuss === null && /Ausschuss/.test(beById["D-354521"].ausschuss || ""));
+
+// Gegenfall DokDat-Zeitsemantik: ein ZUKUENFTIGES Dokumentdatum darf NIE als Publikationszeit
+// erscheinen — nicht im Rohdokument, nicht im abgeleiteten Anzeigetext und nicht am Gate.
+// Bewusst titellos: nur so greift die ABGELEITETE Anzeige, die das Dokumentdatum kennzeichnen muss.
+const zukunftDoc = P.parseBerlinDokument('<Dokument><DBID>D-990001</DBID><DokNr>99/1</DokNr><Wp>99</Wp><DokDat>31.12.2099</DokDat><DokArtL>Drucksache</DokArtL><DokTypL>Antrag</DokTypL></Dokument>');
+const zukunftRoh = K.zuRohdokument(zukunftDoc, kontextFuer("berlin"));
+const zukunftGate = {
+  id: zukunftRoh.id, content_hash: zukunftRoh.content_hash, title: zukunftRoh.title, summary: zukunftRoh.summary,
+  source_id: zukunftRoh.source_id, document_type: zukunftRoh.document_type,
+  published_at: zukunftRoh.published_at, politische_ebene: zukunftRoh.raw.politische_ebene
+};
+check("G6 zukuenftiges DokDat: Parser setzt kein veroeffentlichungsdatum",
+  !("veroeffentlichungsdatum" in zukunftDoc) && zukunftDoc.dokumentdatum === "2099-12-31");
+check("G7 zukuenftiges DokDat: Rohdokument hat KEINE Publikationszeit (published_at null)",
+  zukunftRoh.published_at === null);
+check("G8 zukuenftiges DokDat bleibt als echtes Dokumentdatum gekennzeichnet erhalten",
+  zukunftRoh.raw.dokumentdatum === "2099-12-31" && /Dokumentdatum 2099-12-31/.test(zukunftRoh.title) && zukunftRoh.raw.titel_abgeleitet === true);
+check("G9 zukuenftiges Dokumentdatum erreicht das Gate NICHT als Publikationszeit",
+  zukunftGate.published_at === null && G.assessDocument(zukunftGate, { now: JETZT }).decision === "verstehen");
 
 // ==================== TEIL H — Identitaet, Mehrfachfundstellen, Dubletten ===================
 console.log("\n--- H · Dokumentidentitaet und Dublettenschutz ---");

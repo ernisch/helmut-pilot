@@ -19,12 +19,14 @@ function fx(n) { return fs.readFileSync(path.join(__dirname, "..", "test", "fixt
 const NOW = Date.parse("2026-07-14T00:00:00Z");
 
 // PARDOK-Dokument -> Gate-Eingang (wie im Dispatch/Shadow-Ingest: amtliche Quelle -plenum).
+// DokDat ist ein DOKUMENTDATUM, kein Publikationszeitpunkt: der Gate-Eingang traegt daher
+// bewusst KEINE published_at aus dem Quellfeld.
 function toGateInput(doc, land) {
   return {
     id: `sd-${doc.externe_id}`, content_hash: doc.inhaltsfingerabdruck || doc.externe_id,
     title: doc.titel || "", summary: "",
     source_id: land === "berlin" ? "be-plenum" : "bb-plenum",
-    document_type: doc.dokumentart || null, published_at: doc.veroeffentlichungsdatum || null,
+    document_type: doc.dokumentart || null, published_at: null,
     politische_ebene: doc.politische_ebene || "land"
   };
 }
@@ -32,7 +34,7 @@ function toGateInput(doc, land) {
 for (const land of ["berlin", "brandenburg"]) {
   const docs = P.parsePardokDocumentsFromString(fx(`${land}-gold.xml`), { land }).documents;
   const titellos = docs.filter((d) => !d.titel);
-  const alt = docs.map((d) => ({ ...d, veroeffentlichungsdatum: "2019-01-01" })); // kuenstlich sehr alt
+  const alt = docs.map((d) => ({ ...toGateInput(d, land), published_at: "2019-01-01" })); // kuenstlich sehr alt
 
   // 1) ALLE PARDOK-Dokumente -> verstehen + structured (keine doppelte KI)
   const g = docs.map((d) => G.assessDocument(toGateInput(d, land), { now: NOW }));
@@ -44,7 +46,7 @@ for (const land of ["berlin", "brandenburg"]) {
   check(`${land}: ${titellos.length} titellose Dokumente -> trotzdem verstehen`, titellos.length >= 1 && titellos.every((d) => G.assessDocument(toGateInput(d, land), { now: NOW }).decision === "verstehen"));
 
   // 3) Sehr alte amtliche Dokumente NICHT wegen Alter geparkt
-  check(`${land}: sehr alte amtliche Dokumente -> verstehen (nie wegen Alter verworfen)`, alt.every((d) => G.assessDocument(toGateInput(d, land), { now: NOW }).decision === "verstehen"));
+  check(`${land}: sehr alte amtliche Dokumente -> verstehen (nie wegen Alter verworfen)`, alt.every((d) => G.assessDocument(d, { now: NOW }).decision === "verstehen"));
 
   // 4) Strukturierte Felder OHNE KI erhalten
   check(`${land}: externe_id + Wahlperiode + Land erhalten (ohne KI)`, docs.every((d) => d.externe_id && (d.wahlperiode != null) && d.geografie === (land === "berlin" ? "geo-land-berlin" : "geo-land-brandenburg")));

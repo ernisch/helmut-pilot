@@ -6,7 +6,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { ingestShadow, isolationSelfCheck } = require("./shadow-ingest");
+const { ingestShadow, isolationSelfCheck, pardokToItem } = require("./shadow-ingest");
 const P = require("../lib/helmut/quellenarchitektur/pardok-parser");
 const { normalizeRawItem } = require("../lib/helmut/crawler");
 
@@ -68,6 +68,21 @@ check("neutrale RSS-Story -> Ebene 'unknown' (NICHT faelschlich bund/land)", neu
 // --- 5. KO-Input-Faehigkeit + Kosten ---
 check("KO-Inputs = Anzahl klassifizierter Dokumente", rep.koInputs === rep.documents.length);
 check("Kosten = 0 USD (kein LLM-Aufruf)", rep.kostenUsd === 0);
+
+// --- 6. DokDat-Zeitsemantik: DokDat ist Dokumentdatum, NIE Publikationszeit ---
+// Kein PARDOK-Dokument traegt im Shadow-Report eine Publikationszeit (datum bleibt null).
+const pardokIds = new Set([...be, ...bb].map((d) => d.externe_id));
+check("DokDat: PARDOK-Dokumente im Shadow-Report ohne Publikationszeit (datum null)",
+  rep.documents.filter((d) => pardokIds.has(d.externe_id)).every((d) => d.datum === null));
+// Gegenfall: ein ZUKUENFTIGES Dokumentdatum darf nicht als publishedAt im Shadow-Item erscheinen.
+const beFuture = P.parseBerlinDokument('<Dokument><DBID>D-990001</DBID><DokNr>99/1</DokNr><Wp>99</Wp><DokDat>31.12.2099</DokDat><DokArtL>Drucksache</DokArtL><Titel>Zukunfts-Drucksache</Titel></Dokument>');
+const futurItem = pardokToItem(beFuture, "be-plenum", "rp-be-plenum");
+check("DokDat: Shadow-Item traegt KEINE Publikationszeit (publishedAt null)", futurItem.publishedAt === null);
+check("DokDat: echtes Dokumentdatum bleibt am Shadow-Item erhalten", futurItem.dokumentdatum === "2099-12-31");
+const repFutur = ingestShadow([{ sourceId: "be-plenum", retrievalPathId: "rp-be-plenum", kind: "pardok", items: [beFuture] }], { now: Date.parse("2026-07-14T00:00:00Z") });
+const futurDoc = repFutur.documents.find((d) => d.externe_id === "D-990001");
+check("DokDat: Shadow-Pfad-Dokument hat null Publikationszeit und behaelt das Dokumentdatum",
+  !!futurDoc && futurDoc.datum === null && futurDoc.dokumentdatum === "2099-12-31");
 
 console.log(`\n== Shadow-Ingest Offline-Test: ${fail === 0 ? "ALLE TESTS GRÜN" : fail + " FEHLGESCHLAGEN"} · Dokumente=${rep.dokumente} · Ebenen=${JSON.stringify(rep.klassifikationEbenen)} ==`);
 process.exit(fail > 0 ? 1 : 0);
