@@ -89,6 +89,33 @@ Quittung belegt (Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux
 Landesliste); Claudia Engelmann bleibt offen.
 485 Profile sind technisch importierbar.
 
+**Nachtrag 28.09.2026 (zwei zuletzt fehlende aktuelle Funktionsfelder):** Die
+beiden zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder Britta
+Haßelmann (Fraktionsvorsitzende Bündnis 90/Die Grünen) und Dr. Matthias Miersch
+(Fraktionsvorsitzender SPD) sind ueber die eng gepruefte
+[Fraktionsvorsitz-Zweierquittung](fraktionsvorsitz-zwei-20260927.json) belegt
+(Validator `scripts/profil-feldbelege-500-fraktionsvorsitz.py`). Die kanonische
+Personenseite wird separat am lokalen Abrufmetadatensatz und am echten Original
+gebunden (genau eine H1 und genau EIN `ProfilePage.mainEntity` Typ Person mit
+`@id` `#mdb`, Name und `description` "Mitglied des 21. Deutschen Bundestages");
+die aktuelle Rolle steht ausschliesslich im geschlossenen sichtbaren
+`.bt-standard-content` einer echten `article.bt-artikel` unter der exakten h2
+`Fraktionsvorsitzende`/`Fraktionsvorsitzender` mit eigenem `p`, und genau EIN
+sichtbarer Personenlink muss exakt auf die kanonische `#mdb`-Biografie-URL
+zeigen. Verborgene/inerte Inhalte und Abschnittsausbrueche sind kein Beleg.
+Beide Quellen sind an URL/finalUrl/Abrufzeit/sha256/Bytezahl/Datei (Original UND
+Metadaten) gebunden; HTTP 200/`abgerufen` sind fixiert. Es entstehen KEINE
+Themen, keine aus der Fraktionsrolle abgeleitete Parteimitgliedschaft, keine
+persoenlichen Positionen, keine Amtsbeginn-Daten und KEINE fachliche Achse. Die
+Funktion wird dedupliziert in `profil.funktionen` gefuehrt, die amtliche
+Fraktionsseite als `offizielleQuellen`-Eintrag `fraktion-profil`; genau zwei
+Datensaetze aendern sich, 498 bleiben vollstaendig identisch, die 54er Quittung
+bleibt mit beiden Eintraegen offen. Die synthetischen Negativfaelle
+(falsche Person, vertauschte Quelle, andere Rolle, verborgen/inert,
+Abschnittsausbruch, Quellen-/Metadatendrift), der echte Assemblerlauf, der
+Import-/Speicher-Roundtrip beider Profile und die byte-identische Neuerzeugung
+sind lokal bestanden. Keine Importfreigabe.
+
 ## Artefakte
 
 | Datei | Rolle |
@@ -105,18 +132,21 @@ Landesliste); Claudia Engelmann bleibt offen.
 | [`docs/betrieb/bmwsb-aufgaben-2-20260927.json`](bmwsb-aufgaben-2-20260927.json) | vom Orchestrator gepruefte BMWSB-Aufgabenquittung: 2 personengebundene Unterbereichsachsen geschlossen (Bartol/Poschmann) an die kanonische v10-Adresse; keine Importfreigabe |
 | [`docs/betrieb/amthor-aktuelles-amt-1-20260927.json`](amthor-aktuelles-amt-1-20260927.json) | vom Orchestrator gepruefte Einzelfallquittung Philipp Amthor: aktuelle Kanzleramtsrolle aus geschlossenem bpa-richtext-Lebenslauf + ein Thema aus genau einem echten li; 54er-Eintrag bleibt offen; keine Importfreigabe |
 | [`docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json`](wahlausschuss-drei-aufgaben-20260927.json) | vom Orchestrator eng gepruefte Wahlausschuss-Aufgabenquittung: 3 sonstige Gremien-Achsen (Haßelmann/Hoffmann/Miersch) mit eigenstaendig neu gebundener aktueller Wahlausschuss-Rolle aus ProfilePage.mainEntity + engem Thema aus dem geschlossenen Gremienaufgabenabsatz; keine Importfreigabe |
+| [`docs/betrieb/fraktionsvorsitz-zwei-20260927.json`](fraktionsvorsitz-zwei-20260927.json) | vom Orchestrator eng gepruefte Zweierquittung der zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder (Britta Haßelmann, Dr. Matthias Miersch); kanonische Personenseite separat am lokalen Abruf und am echten Original mit H1 + ProfilePage.mainEntity `#mdb`, aktuelle Rolle im geschlossenen sichtbaren `.bt-standard-content` der amtlichen Fraktionsseite mit genau einem kanonischen Biografielink; keine Themen, keine Parteiableitung; keine Importfreigabe |
 | [`scripts/profil-gremien-resolver.js`](../../scripts/profil-gremien-resolver.js) | Node-Helfer, der den vorhandenen Ausschuss-Resolver (`lib/helmut/profile-readiness.js`) fuer den Assembler befragt — keine zweite Sollmenge |
 | [`scripts/profil-feldbelege-500-aufgaben.py`](../../scripts/profil-feldbelege-500-aufgaben.py) | getrenntes, fail-closed Pruefmodul der 6 Aufgabenachsen (haelt den Assembler schlank) |
 | [`scripts/profil-feldbelege-500-zusatzaufgaben.py`](../../scripts/profil-feldbelege-500-zusatzaufgaben.py) | getrenntes, fail-closed Pruefmodul der 3 zusaetzlichen Fachzustaendigkeiten (fixiertes PDF-Fachurteil, injizierbare Testfixtures) |
 | [`scripts/profil-feldbelege-500-bmwsb.py`](../../scripts/profil-feldbelege-500-bmwsb.py) | getrenntes, fail-closed Pruefmodul der 2 BMWSB-Unterbereichsachsen; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, fixiertes PDF-Fachurteil, injizierbare Testfixtures |
 | [`scripts/profil-feldbelege-500-amthor.py`](../../scripts/profil-feldbelege-500-amthor.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Amthor; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die zuvor offene 54er Rolle separiert neu, injizierbare Testfixtures |
 | [`scripts/profil-feldbelege-500-wahlausschuss.py`](../../scripts/profil-feldbelege-500-wahlausschuss.py) | getrenntes, fail-closed Pruefmodul der 3 Wahlausschuss-Aufgabenachsen; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die aktuelle Wahlausschuss-Rolle eigenstaendig aus ProfilePage.mainEntity, injizierbare Testfixtures |
+| [`scripts/profil-feldbelege-500-fraktionsvorsitz.py`](../../scripts/profil-feldbelege-500-fraktionsvorsitz.py) | getrenntes, fail-closed Pruefmodul der ZWEI aktuellen Fraktionsvorsitz-Funktionsfelder; bindet die kanonische Personenseite am lokalen Abruf und am echten Original (H1 + ProfilePage.mainEntity `#mdb`) und den sichtbaren kanonischen Biografielink im geschlossenen `.bt-standard-content`; keine Themen, keine Parteiableitung, injizierbare Testfixtures |
 | [`docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json`](kloeckner-praesidentinnen-aufgaben-1-20260927.json) | vom Orchestrator eng gepruefte Einzelfallquittung Julia Klöckner: die zwei Themen Bundestagsverwaltung/Parteienfinanzierung stammen aus dem zweiten eigenen Absatz des geschlossenen H2-Abschnitts der amtlichen Praesidiumsseite, die kanonische Person wird separat ueber echte H1 + eigenen aktuellen Funktionstext neu gebunden; 54er-Rolle bleibt erhalten; keine Importfreigabe |
 | [`scripts/profil-feldbelege-500-kloeckner.py`](../../scripts/profil-feldbelege-500-kloeckner.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Klöckner; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die zuvor offene Rolle separiert neu (echte H1 + eigener Funktionstext), injizierbare Testfixtures |
 | [`docs/betrieb/rohde-bundeshaushalt-1-20260927.json`](rohde-bundeshaushalt-1-20260927.json) | vom Orchestrator eng gepruefte Einzelfallquittung Dennis Rohde: das eine Thema Bundeshaushalt stammt aus Rohdes eigenem Kasten auf Seite 1 des amtlich verlinkten v=32-BMF-Organisationsplans (Stand 3. August 2026), kanonische Person ueber echte H1 + eigenen Funktionstext + JSON-LD-Gegenprobe neu gebunden, bestehende PSts-Rolle ohne Amtszeit erhalten; keine Importfreigabe |
 | [`scripts/profil-feldbelege-500-rohde.py`](../../scripts/profil-feldbelege-500-rohde.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Rohde; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die kanonische Person (echte H1 + eigener Funktionstext + JSON-LD-Gegenprobe), die PDF-Originalbytes nur ueber Hash/Bytezahl/Stand/Seite und die datierte v=32-Landingpage, injizierbare Testfixtures, kein PDF-Parser |
 | [`scripts/profil-feldbelege-500-test.js`](../../scripts/profil-feldbelege-500-test.js) | gezielter Offline-Test (kein Netz, keine DB, kein Modell) |
 | [`scripts/profil-feldbelege-500-unit.py`](../../scripts/profil-feldbelege-500-unit.py) | gezielte Gegenproben (Quelldrift, Fraktion-keine-Partei, Gremienrollen, unbekannter Ausschuss, Mandatsartenquittung, offen-bleibt-offen) |
+| [`scripts/profil-feldbelege-500-fraktionsvorsitz-test.py`](../../scripts/profil-feldbelege-500-fraktionsvorsitz-test.py) | gezielte synthetische Negativfaelle der Fraktionsvorsitz-Zweierquittung (falsche Person, vertauschte Quelle, andere Rolle, verborgen/inert, Abschnittsausbruch, Quellen-/Metadatendrift, Personendrift, 54er-Uebernahme, Themen, Parteiableitung, Dublette, Bilanz) |
 
 Aufruf: `python3 scripts/profil-feldbelege-500.py`
 Test: `node scripts/lokal.js -- node scripts/profil-feldbelege-500-test.js`
