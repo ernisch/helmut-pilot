@@ -399,3 +399,59 @@ DB-/Storage-/Lage-Aenderung, keine Profilversorgung und keine Production-Wirkung
 keinen Live-Quellenweg und kein Landesmodul angeschlossen und wird von nichts automatisch
 aufgerufen; die produktive Versorgung der Berliner Landesebene bleibt offen und braucht weiterhin
 ihren eigenen Nachweis.
+
+## Inaktiver Code-Dispatch fuer den Berliner Landesregierungsweg (28.09.2026, lokal)
+
+Der Roadmap-Schritt nach PR #684 schliesst NUR den schmalen, zunaechst inaktiven
+Code-Dispatch fuer genau den Berliner Landesregierungs-Abrufweg. Es gibt weiterhin
+KEINEN aktiven Live-Crawl in Production, keine Daten-/Flag-/Cron-/Profil-Aenderung und keine
+Production-Wirkung; die geplante Production-Zeilenänderung und ihre Freigabe bleiben
+ein spaeterer, separater Schritt.
+
+* `lib/helmut/quellenarchitektur/source-mode.js` bildet genau EINE exakt passende
+  kuenftige Pfadkonfiguration nach dem bestehenden Landesmandats-/Flag-/Status-/
+  Manual-Gate als speziellen Crawler-Quellentyp ab: `id rp-be-landesregierung`,
+  `legacy_source_id be-landesregierung`, `publisher_id publisher-berlin.de`,
+  `method html` und die feste Portaladresse
+  `https://www.berlin.de/presse/` (oder die vom Portaladapter zugelassene kanonisch
+  gleichwertige Form ohne `www`). Jede andere Zeile — auch mit gleichem Namen, anderer
+  Methode oder anderer URL — behaelt das bisherige Verhalten. Es gibt keine allgemeine
+  URL-Freigabe und keine Veraenderung an anderen Landes- oder Legacy-Wegen.
+  Die echte Publisher-Bindung ergibt den Quellentyp `government`, auch wenn die
+  Production-Spalte `represents_type` derzeit NULL ist.
+* `lib/helmut/crawler.js` laesst NUR diesen speziellen Typ mit exakter Kennung und
+  Portaladresse die geschlossene Komposition `lib/helmut/berlin-senatsquellen-kette.js`
+  aufrufen. Ein Fehler oder ein Teilergebnis der Kette liefert 0 Items und wird als
+  sichtbarer Quellenfehler gefuehrt (kein stiller Erfolg). Die minimierten
+  Stand-Rohzeilen erhalten ueber den bestehenden `toRawDocumentRow`-Vertrag eine echte,
+  gebundene `source_id`/`source_name`/`source_type`; ID, Standhash, Tag (`published_at`
+  bleibt NULL, sichtbar nur der Kalendertag) und Summary bleiben unveraendert. Kein HTML,
+  kein Volltext, keine erfundene Uhrzeit; leere oder fremde Rohzeilen brechen ab.
+  `fetchUrl` ist fuer gezielte Tests injizierbar.
+
+**Warum die neue Funktion heute NICHT wirkt:** Der Production-Weg ist aktuell
+`rp-be-landesregierung` mit `method googlenews_search` (Google-URL), `status
+needs_review` und `activation_mode manual` — schon die Manual-Sperre haelt ihn aus dem
+Plan, und die Konfiguration passt gar nicht auf den speziellen Typ. Selbst eine
+kuenftige `html`-/Portalzeile wird erst nach Berlin-Freigabe UND berechtigtem Berliner
+Landesmandat wirksam. Production bleibt 500/0; nichts wird importiert oder aktiviert.
+
+Abnahme (offline, ausschliesslich injizierte Abrufe — amtliches Original, falls lokal
+vorhanden, sonst synthetische Proben; kein Netz, keine DB, kein Modell):
+`node scripts/berlin-senat-crawl-dispatch-test.js` **28 Pruefungen** mit lokalem
+amtlichem Original (27 ohne diese private Datei), darunter die
+Gate-Faelle (0 Profile + Berlin-Flag gesperrt, Berliner Mandat ohne Flag gesperrt,
+beides + weiter `manual` gesperrt, erst synthetisch aktiv erreichbar), Bundestag/
+Brandenburg/Fremdweg unveraendert, die positive Kette durch Crawl/Dedup/
+Storage-Projektion mit echter Quellenbindung und tagesgenauem Tag ohne Uhrzeit, eine
+spaetere Fehlfundstelle (atomar 0 Items, sichtbarer Quellenfehler) sowie falsche
+Kennung/URL (gesperrt, kein Abruf). Der Test laeuft ueber die bestehende Bereichsauswahl
+(`quellen`/`landesmodule-pardok`, Dateiname `berlin-…`); die Pflichtmenge `STANDARD`
+bleibt unveraendert.
+
+### Nicht umfasst
+
+Kein aktiver Live-Crawl, kein Netzabruf in der Offline-Probe, keine DB-Migration,
+kein Flag und keine Profil-/Cron-Aenderung. Der neue Dispatch bleibt durch die
+heutige Production-Konfiguration inaktiv; die produktive Berliner
+Landesversorgung bleibt offen.
