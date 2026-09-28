@@ -259,6 +259,16 @@ Belegblocker gilt weiter der gleichgruppige Ersatz durch reale aktuelle Profile.
    erkennen. Wichtige unterschiedliche Aussagen dürfen dabei nicht entfernt
    werden.
 
+   Rein lokal/offline bereits abgesichert (29.09.2026): Der Aggregator
+   `lib/helmut/bereichsabnahme-500.js` fuehrt die gebundenen Einzelurteile
+   fail-closed zusammen (kein Modellaufruf, kein Netz, kein Production-Write) und
+   verlangt exakt 500 erwartete Profile und 1500 positive Bereichspaare (500 mal
+   drei Paare); fehlend, negativ, leer, dupliziert, unerwartet, ungueltig und
+   hashgedriftet werden vollstaendig ausgewiesen. Die Suite
+   `scripts/bereichsabnahme-500-test.js` ist mit 19/19 synthetischen Fallgruppen
+   lokal gruen. Das ist kein echter 500er Bedeutungs- oder Production-Nachweis und
+   keine Aktivierungs-/Testfreigabe.
+
 2. Für Radar die Artikelbindung von **Über dich** sauber belegen: Der tatsächlich
    angezeigte beziehungsweise verlinkte Artikel muss die Person nachweislich
    betreffen. Umfeldsignale müssen ihrem echten Ursprung Fraktion, Partei,
