@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "datum": "2026-09-28",
+  "status": "Gepruefter enger Einzelfall; keine Importfreigabe",
+  "zweck": "Schliesst ausschliesslich die offene Fachachse von Kai Wegner ueber die amtlich belegte Richtlinienkompetenz des Regierenden Buergermeisters von Berlin. Keine neue Rolle, keine Partei-, Fraktions-, Mandatsart-, Ressort- oder Positionsableitung.",
+  "bilanz": {
+    "gesamt": 1,
+    "Bund": 0,
+    "Berlin": 1,
+    "Brandenburg": 0
+  },
+  "regeln": [
+    "Die bestehende aktuelle Rolle Regierender Buergermeister von Berlin bleibt unveraendert und stammt aus der bereits geprueften 54er Rollenquittung.",
+    "Die Aufgabe stammt ausschliesslich aus dem ersten sichtbaren eigenen Listenelement des amtlichen H2-Abschnitts I. Zum Geschaeftsbereich des Regierenden Buergermeisters/der Regierenden Buergermeisterin gehoeren: Bestimmung und Fortentwicklung sowie Ueberwachung der Einhaltung der Richtlinien der Regierungspolitik.",
+    "Die Person ist ausschliesslich ueber den sichtbaren eigenen Artikel Kai Wegner (Regierender Buergermeister: Kai Wegner, CDU) der amtlichen Berliner Senatsseite belegt.",
+    "Uebernommen wird genau das Thema Richtlinien der Regierungspolitik; alle uebrigen Listenelemente des Geschaeftsbereichs I (Geschaeftsverteilung, Protokoll, Presse, Hauptstadtvertretung, Medien, Digitales, Wohnungsbau, Klimaschutz, Europa usw.) werden nicht uebernommen.",
+    "Die Quittung ist keine Importfreigabe, keine Aktivierung und keine Production-Aktion."
+  ],
+  "ergebnisse": [
+    {
+      "kennung": "landtag-berlin-kai-wegner",
+      "region": "Berlin",
+      "parlament": "landtag-berlin",
+      "status": "belegt",
+      "bindungsart": "richtlinienkompetenz",
+      "person": "Kai Wegner",
+      "funktion": "Regierender Bürgermeister von Berlin",
+      "rollenzitat": "Regierender Bürgermeister von Berlin",
+      "abschnitt": "I. Zum Geschäftsbereich des Regierenden Bürgermeisters/der Regierenden Bürgermeisterin gehören:",
+      "aufgabenabsatz": "Bestimmung und Fortentwicklung sowie Überwachung der Einhaltung der Richtlinien der Regierungspolitik; Strategiebildung, Planung und Konzeption in politischen Grundsatz-, ressortübergreifenden sowie gesamtstädtischen Angelegenheiten einschließlich Metropol- und Hauptstadtregion Berlin-Brandenburg und Großprojekte gemeinsam mit den Senatsverwaltungen; Koordinierung der Ressortpolitik;",
+      "aufgabenbindung": "Regierender Bürgermeister von Berlin; Richtlinien der Regierungspolitik",
+      "themen": [
+        "Richtlinien der Regierungspolitik"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Berlin (amtlich abgeleitet): Regierender Bürgermeister von Berlin; Richtlinien der Regierungspolitik; keine persönliche politische Position",
+      "rollenquelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/kai-wegner?groupStrategy=nachnamen",
+        "sha256": "435c232722686e07ff17e1a23e88d64f054f457544e523168058f10af6f6ca8e",
+        "abgerufenAm": "2026-09-27T12:35:42.293510+00:00"
+      },
+      "personenquelle": {
+        "url": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/",
+        "abgerufenAm": "2026-09-27T15:43:26.816304+00:00",
+        "sha256": "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6",
+        "bytes": 59352,
+        "datei": "senat-berlin-aktuell.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "quelle": {
+        "url": "https://www.berlin.de/rbmskzl/politik/senat/geschaeftsverteilung/",
+        "finalUrl": "https://www.berlin.de/rbmskzl/politik/senat/geschaeftsverteilung/",
+        "abgerufenAm": "2026-09-27T20:47:21.720907+00:00",
+        "sha256": "d729a2ebd65b3b379fc0420292b4993d6b903a33182980f4f44165e250bd2c5c",
+        "bytes": 206915,
+        "datei": "berlin-geschaeftsverteilung-20260927.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    }
+  ]
+}

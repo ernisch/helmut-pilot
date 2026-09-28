@@ -127,7 +127,7 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 73 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;487 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;488 technische Erfolge sind keine fachliche Importfreigabe.
 Fuer die Landesversorgung liegt ein enger Berliner Originalseiten-Leser vor:
 `lib/helmut/berlin-presseartikel.js` bindet amtliche URL, Titel, Publikationstag
 und vollstaendigen Artikeltext ohne erfundene Uhrzeit; die lokale Originalprobe
@@ -205,7 +205,13 @@ div.bpa-richtext). Danach schliesst die eng gepruefte
 Brandenburger Fachachsenfall Dr. Dietmar Woidke ueber die amtlich belegte
 Richtlinienkompetenz des Ministerpraesidenten; die bestehende Rolle bleibt
 unveraendert und weitere Staatskanzlei-Themen werden nicht uebernommen.
-Aktueller lokaler Entwurf:487/13 technisch akzeptiert;12 Fachachsen,73 aktuelle
+Danach schliesst die eng gepruefte
+[Wegner-Einzelfallquittung](betrieb/wegner-richtlinien-1-20260928.json) genau den
+Berliner Fachachsenfall Kai Wegner ueber die amtlich belegte Richtlinienkompetenz
+des Regierenden Buergermeisters; die bestehende Rolle bleibt unveraendert, Person
+und Amt sind getrennt an die aktuelle Senatsseite gebunden und die weiteren50
+Geschaeftsbereichsthemen werden nicht uebernommen.
+Aktueller lokaler Entwurf:488/12 technisch akzeptiert;11 Fachachsen,73 aktuelle
 Parteifelder und eine Berliner Mandatsart bleiben offen.
 Der getrennte [amtliche SPD-Parteivorstandsbeleg](betrieb/pistorius-partei-1-20260928.json)
 schliesst nur Boris Pistorius' Parteifeld; die bisherige335er-Auditquittung bleibt unveraendert.
