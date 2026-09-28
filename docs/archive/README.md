@@ -15,6 +15,7 @@ ausschließlich aktueller Projektstatus neu aufgesetzt.
 
 | Datei | Inhalt |
 |---|---|
+| [`project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md`](project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md) | Wortgleicher Status vor der Verdichtung vom 28.09.2026 (SHA256 `3b994d239fa65f1a97ef1027e36728ce313a398f4dcd2dabad7aef5f4eba5146`); enthält die historischen Läufe, PR-Details und früheren Zwischenstände. |
 | [`project_state/2026_09_20_CURRENT_STATE_vor_timingabschluss.md`](project_state/2026_09_20_CURRENT_STATE_vor_timingabschluss.md) | Bytegleicher Status von Main a4a67831 vor dem Timingabschluss; historische Reparaturkette und Betriebsaufnahmen. |
 | [`project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md`](project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md) | Unveränderte Statusfassung vor der Kürzung im Lesebelegabschluss am14.09.; insbesondere historische PR- und Deploymentdetails. |
 | [`project_state/2026_09_11_500_statuskopf.md`](project_state/2026_09_11_500_statuskopf.md) | Unveraenderte historische Kopfabschnitte des 500er Status vor der Quellenkorrektur vom 11.09. |
