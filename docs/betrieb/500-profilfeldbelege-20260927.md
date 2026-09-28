@@ -4,9 +4,21 @@
 Zielprofile. **Keine fachliche Freigabe, kein Importmanifest, keine Production-
 Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
-**Aktuelle Fortschreibung nach dem Rohde-Schritt (Bundestag, BMF-Aufgabe Bundeshaushalt):**
-485 technisch akzeptiert, 15 unvollstaendig; 318/330 Bundestagsprofile technisch bereit.
-14 fachliche Achsen, 73 Parteifelder und eine Berliner Mandatsart bleiben offen. Der
+**Aktuelle Fortschreibung nach dem Merz-Schritt (Bundestag, Bundeskanzler Richtlinien-Kompetenz):**
+486 technisch akzeptiert, 14 unvollstaendig; 319/330 Bundestagsprofile technisch bereit.
+13 fachliche Achsen, 73 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor
+einzeln offene Fachachsenfall Friedrich Merz ist ueber die amtlich belegte Bundeskanzler-Aufgabe
+"Richtlinien der Regierungspolitik" geschlossen (versionierte
+[Merz-Einzelfallquittung](merz-richtlinien-1-20260928.json)): es entsteht KEINE neue Rolle; die
+bestehende Rolle Bundeskanzler aus der 54er Rollenquittung bleibt erhalten und wird eigenstaendig
+ueber echte H1 und eigenen Funktionstext (div.m-biography__function) der amtlichen Bundestagsseite
+neu gebunden. Person und Amt stammen ausschliesslich aus dem echten sichtbaren eigenen Artikelkopf
+der amtlichen Bundesregierungsseite (nicht Bild-Alt/Bildunterschrift/JSON-LD); das enge Thema
+stammt ausschliesslich aus dem geschlossenen H2-Abschnitt "Richtlinien-Kompetenz" des eigenen
+innersten div.bpa-richtext und ist am Original woertlich als "Richtlinien-Kompetenz" belegt; keine
+konkreten politischen Positionen, Koalitionsziele, Ressorts oder allgemeinen Ministeriumsthemen;
+getrennter Herkunftshinweis und amtliche Bundesregierungs-Quelle. Genau ein Datensatz geaendert,
+499 byte-identisch, 54er Rollenquittung 48/6 unveraendert. Der
 getrennte [aktuelle SPD-Parteivorstandsbeleg](pistorius-partei-1-20260928.json)
 schliesst ausschliesslich Boris Pistorius' bisher offenes Parteifeld. Die historische
 335er-Auditquittung und die weiter unten dokumentierte damalige 424/2/74-Bilanz bleiben
@@ -87,7 +99,7 @@ eigenen Absatz des geschlossenen H2-Abschnitts, kanonische Person separat neu ge
 Zwei bislang offene Berliner Mandatsarten sind ueber eine versionierte lokale
 Quittung belegt (Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux
 Landesliste); Claudia Engelmann bleibt offen.
-485 Profile sind technisch importierbar.
+486 Profile sind technisch importierbar.
 
 **Nachtrag 28.09.2026 (zwei zuletzt fehlende aktuelle Funktionsfelder):** Die
 beiden zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder Britta
@@ -144,6 +156,8 @@ sind lokal bestanden. Keine Importfreigabe.
 | [`scripts/profil-feldbelege-500-kloeckner.py`](../../scripts/profil-feldbelege-500-kloeckner.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Klöckner; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die zuvor offene Rolle separiert neu (echte H1 + eigener Funktionstext), injizierbare Testfixtures |
 | [`docs/betrieb/rohde-bundeshaushalt-1-20260927.json`](rohde-bundeshaushalt-1-20260927.json) | vom Orchestrator eng gepruefte Einzelfallquittung Dennis Rohde: das eine Thema Bundeshaushalt stammt aus Rohdes eigenem Kasten auf Seite 1 des amtlich verlinkten v=32-BMF-Organisationsplans (Stand 3. August 2026), kanonische Person ueber echte H1 + eigenen Funktionstext + JSON-LD-Gegenprobe neu gebunden, bestehende PSts-Rolle ohne Amtszeit erhalten; keine Importfreigabe |
 | [`scripts/profil-feldbelege-500-rohde.py`](../../scripts/profil-feldbelege-500-rohde.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Rohde; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die kanonische Person (echte H1 + eigener Funktionstext + JSON-LD-Gegenprobe), die PDF-Originalbytes nur ueber Hash/Bytezahl/Stand/Seite und die datierte v=32-Landingpage, injizierbare Testfixtures, kein PDF-Parser |
+| [`docs/betrieb/merz-richtlinien-1-20260928.json`](merz-richtlinien-1-20260928.json) | vom Orchestrator eng gepruefte Einzelfallquittung Friedrich Merz: das eine Thema Richtlinien der Regierungspolitik stammt aus dem geschlossenen H2-Abschnitt "Richtlinien-Kompetenz" des eigenen innersten div.bpa-richtext der amtlichen Bundesregierungsseite (am Original woertlich als "Richtlinien-Kompetenz" belegt), Person und Amt nur aus dem echten sichtbaren eigenen Artikelkopf (nicht Bild-Alt/Bildunterschrift/JSON-LD), bestehende 54er-Rolle Bundeskanzler erhalten; keine Importfreigabe |
+| [`scripts/profil-feldbelege-500-merz.py`](../../scripts/profil-feldbelege-500-merz.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Merz; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet Person/Amt nur ueber den sichtbaren eigenen Artikelkopf, die Aufgabe nur ueber den geschlossenen H2-Abschnitt des eigenen innersten bpa-richtext und die bestehende 54er-Rolle separat neu, injizierbare Testfixtures |
 | [`scripts/profil-feldbelege-500-test.js`](../../scripts/profil-feldbelege-500-test.js) | gezielter Offline-Test (kein Netz, keine DB, kein Modell) |
 | [`scripts/profil-feldbelege-500-unit.py`](../../scripts/profil-feldbelege-500-unit.py) | gezielte Gegenproben (Quelldrift, Fraktion-keine-Partei, Gremienrollen, unbekannter Ausschuss, Mandatsartenquittung, offen-bleibt-offen) |
 | [`scripts/profil-feldbelege-500-fraktionsvorsitz-test.py`](../../scripts/profil-feldbelege-500-fraktionsvorsitz-test.py) | gezielte synthetische Negativfaelle der Fraktionsvorsitz-Zweierquittung (falsche Person, vertauschte Quelle, andere Rolle, verborgen/inert, Abschnittsausbruch, Quellen-/Metadatendrift, Personendrift, 54er-Uebernahme, Themen, Parteiableitung, Dublette, Bilanz) |

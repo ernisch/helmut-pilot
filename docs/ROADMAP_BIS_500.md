@@ -195,8 +195,13 @@ Danach schlossen die eng belegten [Jarzombek-Abteilungen](betrieb/jarzombek-bmds
 [Brandenburger Ausschussstellvertretungen](betrieb/brandenburg-stellvertretungen-76-20260927.json)
 (nur Skopec als neue Fachachse) und die lokal geprüfte
 [Rohde-Bundeshaushaltsaufgabe](betrieb/rohde-bundeshaushalt-1-20260927.json)
-je eine weitere Achse. Aktueller lokaler Entwurf:485/15 technisch akzeptiert;
-14 Fachachsen,73 aktuelle Parteifelder und eine Berliner Mandatsart bleiben offen.
+je eine weitere Achse. Danach schliesst die eng gepruefte
+[Merz-Einzelfallquittung](betrieb/merz-richtlinien-1-20260928.json) den zuvor offenen
+Bundestags-Fachachsenfall Friedrich Merz ueber die amtlich belegte Bundeskanzler-Aufgabe
+Richtlinien-Kompetenz (keine neue Rolle; Person und Amt nur aus dem sichtbaren eigenen
+Artikelkopf, Thema nur aus dem geschlossenen H2-Abschnitt des eigenen innersten
+div.bpa-richtext). Aktueller lokaler Entwurf:486/14 technisch akzeptiert;
+13 Fachachsen,73 aktuelle Parteifelder und eine Berliner Mandatsart bleiben offen.
 Der getrennte [amtliche SPD-Parteivorstandsbeleg](betrieb/pistorius-partei-1-20260928.json)
 schliesst nur Boris Pistorius' Parteifeld; die bisherige335er-Auditquittung bleibt unveraendert.
 Die zwei zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder Britta
