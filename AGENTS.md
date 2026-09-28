@@ -208,10 +208,11 @@ vergleichbaren lokalen Startfehler, genau einmal erneut versuchen. Scheitert auc
 der zweite Start, übernimmt Sol selbst oder meldet den Blocker. Ein technischer
 DeepSeek-Startfehler ist für sich allein kein Grund für Astra.
 
-DeepSeek darf niemals Production Aktionen, Production Daten- oder
-Profiländerungen, Migrationen, Umgebungsvariablenänderungen, Commit, Push, Merge,
-PR Erstellung, eigene Production-Entscheidungen, Freigabeumgehungen oder
-absichtliche kostenpflichtige Production Modellläufe durchführen.
+DeepSeek darf niemals Secrets lesen, kopieren oder verändern, Vercel verändern,
+Production Aktionen, Production Daten- oder Profiländerungen, Migrationen,
+Umgebungsvariablenänderungen, Commit, Push, Merge, PR Erstellung, eigene
+Production-Entscheidungen, Freigabeumgehungen oder absichtliche kostenpflichtige
+Production Modellläufe durchführen.
 
 ### Sichtbare Modellübergaben
 

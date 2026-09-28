@@ -17,6 +17,7 @@ MODES = {f'{family}-{access}{suffix}': (model, effort, sandbox)
 GUARD = '''Arbeite ausschliesslich am uebergebenen lokalen Auftrag. Keine Production-Aktionen,
 Production-Datenaenderungen, Migrationen, Umgebungsvariablenaenderungen, Commits,
 Pushes, Merges, PRs oder Production-Modelltests. Keine weiteren Agenten starten.
+Keine Secrets lesen, kopieren oder veraendern. Keine Vercel-Aenderungen.
 Respektiere Repository-Regeln. Fertige Aufgabe sofort beenden; Budget ist kein
 Ausgabenziel. Budgetkontrolle und Providerkonfiguration niemals umgehen/aendern.'''
 
