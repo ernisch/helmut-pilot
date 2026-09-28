@@ -120,11 +120,12 @@ Der erste Shadow-Lauf zeigte für Brandenburg `kein_Sammelcluster=false`: der ur
 ## Empfehlung
 
 Beide Plenumswege sind **bereit für einen längeren Shadow-Betrieb**: alle Akzeptanzkriterien
-erfüllt, 0 Fehler, stabile Identitäten, kein Sammelcluster, tagesaktuell (100% Datum),
-speicherschonend. Empfohlen als nächster Schritt: die beiden Wege in den bestehenden BE/BB-Shadow-
-Pilot aufnehmen (weiterhin isoliert, DB-frei, Artefakt-only) und über mehrere Läufe die Stabilität
-der externen IDs beobachten — bevor eine echte Ingest-Verdrahtung (eigener, freigabepflichtiger
-Schritt) erwogen wird.
+erfüllt, 0 Fehler, stabile Identitäten, kein Sammelcluster und 100% befuellte
+**Dokumentdaten** in der alten Stichprobe. Das ist kein Beleg fuer Publikationsfrische.
+Die Sonde war speicherschonend. Damals wurde empfohlen, die beiden Wege in den
+bestehenden BE/BB-Shadow-Pilot aufzunehmen (weiterhin isoliert, DB-frei,
+Artefakt-only) und über mehrere Läufe die Stabilität der externen IDs zu
+beobachten, bevor eine echte Ingest-Verdrahtung erwogen wird.
 
 ---
 
