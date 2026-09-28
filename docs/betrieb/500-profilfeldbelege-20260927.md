@@ -4,10 +4,18 @@
 Zielprofile. **Keine fachliche Freigabe, kein Importmanifest, keine Production-
 Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
-**Aktuelle Fortschreibung nach dem Woidke-Schritt (Brandenburg, Richtlinienkompetenz):**
-487 technisch akzeptiert, 13 unvollstaendig; 319/330 Bundestagsprofile technisch bereit.
-12 fachliche Achsen, 73 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor
-offene Brandenburger Fachachsenfall Dr. Dietmar Woidke ist ueber genau das amtlich belegte
+**Aktuelle Fortschreibung nach dem Wegner-Schritt (Berlin, Richtlinienkompetenz):**
+488 technisch akzeptiert, 12 unvollstaendig; 319/330 Bundestagsprofile technisch bereit.
+11 fachliche Achsen, 73 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor
+offene Berliner Fachachsenfall Kai Wegner ist ueber genau das amtlich belegte Thema
+"Richtlinien der Regierungspolitik" geschlossen (versionierte
+[Wegner-Einzelfallquittung](wegner-richtlinien-1-20260928.json)): die bestehende Rolle
+Regierender Buergermeister von Berlin bleibt unveraendert; die Rollenquelle, der sichtbare
+eigene Personenartikel der aktuellen Senatsseite und das erste eigene Listenelement des
+amtlichen H2-Geschaeftsbereichs sind getrennt gebunden. Die weiteren 50 Listenelemente
+(unter anderem Geschaeftsverteilung, Protokoll, Presse, Medien, Digitales, Wohnungsbau,
+Klimaschutz und Europa) werden nicht uebernommen. Zuvor war der Brandenburger Fachachsenfall
+Dr. Dietmar Woidke ueber genau das amtlich belegte
 Thema "Richtlinien der Landespolitik" geschlossen (versionierte
 [Woidke-Einzelfallquittung](woidke-richtlinien-1-20260928.json)): die bestehende Rolle
 Ministerpraesident des Landes Brandenburg bleibt unveraendert; Person, Profil-H1,
@@ -105,7 +113,7 @@ eigenen Absatz des geschlossenen H2-Abschnitts, kanonische Person separat neu ge
 Zwei bislang offene Berliner Mandatsarten sind ueber eine versionierte lokale
 Quittung belegt (Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux
 Landesliste); Claudia Engelmann bleibt offen.
-487 Profile sind technisch importierbar.
+488 Profile sind technisch importierbar.
 
 **Nachtrag 28.09.2026 (zwei zuletzt fehlende aktuelle Funktionsfelder):** Die
 beiden zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder Britta

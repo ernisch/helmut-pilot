@@ -4506,3 +4506,95 @@ _erwarte_wi_fehler(
 assert wi._SichtbareH1.lese('<main><h1 hidden>Dr. Dietmar Woidke</h1></main>') == []
 print('PASS: Woidke-Einzelfallquittung — sichtbare Personen-H1 und genau ein eigener '
       'Aufgabenbereich werden eng abgegrenzt; fremde/doppelte Bereiche und verborgene H1 sperren.')
+
+# Wegner: eigener sichtbarer Senatsartikel (Person/Amt) und genau das erste eigene
+# Listenelement des eigenen Geschaeftsbereichs I werden unabhaengig von den echten
+# /private/tmp-Quellen synthetisch abgegrenzt. Breite Nachbarthemen sind gesperrt.
+wg = m.WEGNERMODUL
+
+
+def _erwarte_wg_fehler(fn, was):
+    try:
+        fn()
+    except wg.WegnerFehler:
+        return
+    raise AssertionError(f'Nicht gesperrt (Wegner): {was}')
+
+
+def _wg_person_html(h3='Kai Wegner', text=None, h3_hidden=False, text_hidden=False, doppelt=False):
+    if text is None:
+        text = f'{wg.ROLLENAUSSAGE} <a class="more" href="/x">Weitere Informationen</a>'
+    artikel = (
+        f'<article class="modul-teaser"><div class="image"><img alt="Kai Wegner" src="/x.jpg"/></div>'
+        f'<h3 class="title" id="headline_1_0_0_0"{" hidden" if h3_hidden else ""}>{h3}</h3>'
+        f'<div class="inner"><p class="image__copyright">Bild: Yves</p>'
+        f'<p class="text"{" hidden" if text_hidden else ""}>{text}</p></div></article>'
+    )
+    return f'<section class="modul-multiteaser">{artikel}{artikel if doppelt else ""}</section>'
+
+
+def _wg_bereich_html(elemente, h2=None, doppelt=False):
+    if h2 is None:
+        h2 = wg.ABSCHNITT
+    eintraege = ''.join(f'<li>{x}</li>' for x in elemente)
+    bereich = (
+        f'<section class="modul-text_bild  imagealignleft teaser ">'
+        f'<h2 class="title" id="senatskanzlei">{h2}</h2>'
+        f'<div class="text"><div class="textile"><ol>{eintraege}</ol></div></div></section>'
+    )
+    fremd = ('<section class="modul-text_bild teaser">'
+             '<h2 class="title">II. Fremd</h2><ol><li>Fremdthema;</li></ol></section>')
+    return f'<main>{bereich}{bereich if doppelt else ""}{fremd}</main>'
+
+
+_wg_person = wg._Personenartikel.lese(_wg_person_html(), wg.PERSON)
+assert _wg_person['h3'] == wg.PERSON
+assert len(_wg_person['p']) == 1 and _wg_person['p'][0].startswith(wg.ROLLENAUSSAGE)
+assert _wg_person['p'][0] == f'{wg.ROLLENAUSSAGE} Weitere Informationen'
+wg._pruefe_personenquelle(_wg_person_html())
+_erwarte_wg_fehler(lambda: wg._Personenartikel.lese(_wg_person_html(h3='Fremde Person'), wg.PERSON),
+                   'fremde Personen-H3')
+_erwarte_wg_fehler(lambda: wg._Personenartikel.lese(_wg_person_html(h3_hidden=True), wg.PERSON),
+                   'verborgene Personen-H3')
+_erwarte_wg_fehler(lambda: wg._Personenartikel.lese(_wg_person_html(doppelt=True), wg.PERSON),
+                   'doppelter Personenartikel')
+_erwarte_wg_fehler(lambda: wg._Personenartikel.lese(
+    '<nav><article class="modul-teaser"><h3 class="title">Kai Wegner</h3>'
+    f'<p class="text">{wg.ROLLENAUSSAGE}</p></article></nav>', wg.PERSON),
+    'Person nur in der Navigation')
+_erwarte_wg_fehler(lambda: wg._pruefe_personenquelle(_wg_person_html(text='Fremde Amtsaussage.')),
+                   'fehlende eigene Amtsaussage')
+_erwarte_wg_fehler(lambda: wg._pruefe_personenquelle(_wg_person_html(text_hidden=True)),
+                   'verborgene eigene Amtsaussage')
+
+_wg_elemente = [wg.AUFGABENABSATZ, 'Bildung und Abgrenzung der Geschäftsbereiche des Senats;']
+_wg_bereich = wg._Geschaeftsbereich.lese(_wg_bereich_html(_wg_elemente), wg.ABSCHNITT)
+assert _wg_bereich['h2'] == wg.ABSCHNITT
+assert _wg_bereich['li'] == _wg_elemente
+assert wg._pruefe_aufgabenbereich(_wg_bereich_html(_wg_elemente), wg.AUFGABENABSATZ)[0] == wg.AUFGABENABSATZ
+_erwarte_wg_fehler(lambda: wg._Geschaeftsbereich.lese(_wg_bereich_html(_wg_elemente, h2='Fremder Bereich:'),
+                                                      wg.ABSCHNITT), 'fremder Geschaeftsbereich')
+_erwarte_wg_fehler(lambda: wg._Geschaeftsbereich.lese(_wg_bereich_html(_wg_elemente, doppelt=True),
+                                                      wg.ABSCHNITT), 'doppelter Geschaeftsbereich')
+_erwarte_wg_fehler(lambda: wg._pruefe_aufgabenbereich(
+    _wg_bereich_html([_wg_elemente[1], wg.AUFGABENABSATZ]), wg.AUFGABENABSATZ),
+    'vertauschtes erstes Listenelement')
+_erwarte_wg_fehler(lambda: wg._pruefe_aufgabenbereich(
+    _wg_bereich_html([f'<span hidden>{wg.AUFGABENABSATZ}</span>', _wg_elemente[1]]), wg.AUFGABENABSATZ),
+    'verborgener erster Listeneintrag')
+
+wg._pruefe_themen(list(wg.THEMEN), _wg_elemente)
+for breit in ('Geschäftsverteilung des Senats', 'Presseangelegenheiten', 'Verkündung von Gesetzen',
+              'Smart-City', 'Klimaschutz', 'Europapolitik', 'Digitalisierung der Verwaltung'):
+    _erwarte_wg_fehler(lambda b=breit: wg._pruefe_themen([b], _wg_elemente), f'breites Nachbarthema {breit}')
+    _erwarte_wg_fehler(lambda b=breit: wg._pruefe_themen(
+        [f'{wg.THEMEN[0]} und {b}'], _wg_elemente), f'verbreitertes Thema {breit}')
+_erwarte_wg_fehler(lambda: wg._pruefe_themen([wg.THEMEN[0], 'Fremdthema'], _wg_elemente),
+                   'mehr als ein Thema')
+_erwarte_wg_fehler(lambda: wg._pruefe_themen(list(wg.THEMEN), [wg.AUFGABENABSATZ, wg.AUFGABENABSATZ]),
+                   'Thema auch in einem anderen Listenelement')
+assert all(isinstance(b, str) and b.lower() not in wg.THEMEN[0].lower() for b in wg.VERBOTENE_THEMEN)
+print('PASS: Wegner-Einzelfallquittung — eigener sichtbarer Senatsartikel (Person/Amt) und genau '
+      'das erste eigene Listenelement des eigenen Geschaeftsbereichs I werden eng abgegrenzt; fremde '
+      'oder verborgene H3/Amtsaussage, doppelte Artikel/Bereiche, vertauschte oder verborgene '
+      'Listenelemente und breite Nachbarthemen sperren fail closed.')

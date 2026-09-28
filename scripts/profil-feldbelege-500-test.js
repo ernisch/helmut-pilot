@@ -359,15 +359,15 @@ for (const e of ergebnis.ergebnisse) {
 // geprueften Ressort- (19), Aufgaben- (6), beratenden (2), Zusatzaufgaben- (3),
 // BMWSB-Aufgaben- (2), die Amthor-Einzelfallquittung (1) und die neue
 // Wahlausschuss-Aufgabenquittung (3) sowie die neue Jarzombek-Abteilungsquittung (1)
-// und die neuen Kloeckner-, Rohde-, Merz- und Woidke-Einzelfallquittungen (je 1)
-// erhalten 41 zuvor offene Profile amtlich
+// und die neuen Kloeckner-, Rohde-, Merz-, Woidke- und Wegner-Einzelfallquittungen (je 1)
+// erhalten 42 zuvor offene Profile amtlich
 // abgeleitete Themen; die neue Stellvertretungsquittung schliesst eine weitere zuvor
 // offene Achse ueber eine belegte stellvertretende Ausschussmitgliedschaft, ohne
-// Themen zu setzen; die Achse schliesst sich ehrlich (54 -> 12). Vier
+// Themen zu setzen; die Achse schliesst sich ehrlich (54 -> 11). Vier
 // Brandenburg- und zwei Berliner Mandate sind ueber die Mandatsartenquittungen
 // belegt (7 -> 1 region-fehlt; offen bleibt nur Engelmann).
-a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 12, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
-a.equal(ergebnis.gueltig, 487, "487 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
+a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 11, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
+a.equal(ergebnis.gueltig, 488, "488 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
 
 // Einzelpruefung (pruefeProfil) muss dieselbe Sprache sprechen wie die Mengenpruefung.
 for (let i = 0; i < datensaetze.length; i += 1) {
@@ -746,6 +746,31 @@ for (const e of woidke.ergebnisse) {
     a.ok(!menge.has(e.kennung), "Woidke muss zu allen bisherigen Themenachsen disjunkt sein");
   }
 }
+const wegner = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "wegner-richtlinien-1-20260928.json"), "utf8"));
+a.equal(wegner.bilanz.gesamt, 1, "Wegner-Einzelfallquittung: gesamt 1");
+a.equal(wegner.bilanz.Berlin, 1, "der Wegner-Fall ist Berlin");
+a.equal(wegner.ergebnisse.length, 1, "Wegner-Einzelfallquittung muss 1 Ergebnis tragen");
+const wegnerByKennung = new Map(wegner.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(wegnerByKennung.size, 1, "Wegner-Einzelfallquittungskennung muss eindeutig sein");
+a.deepEqual(wegner.ergebnisse[0].themen, ["Richtlinien der Regierungspolitik"], "genau das eine freigegebene Thema");
+a.equal(wegner.ergebnisse[0].funktion, "Regierender Bürgermeister von Berlin", "bestehende Rolle bleibt erhalten");
+a.equal(wegner.ergebnisse[0].abschnitt,
+  "I. Zum Geschäftsbereich des Regierenden Bürgermeisters/der Regierenden Bürgermeisterin gehören:",
+  "eigener Geschaeftsbereich");
+a.ok(wegner.ergebnisse[0].aufgabenabsatz.startsWith(
+  "Bestimmung und Fortentwicklung sowie Überwachung der Einhaltung der Richtlinien der Regierungspolitik"),
+  "die Aufgabe steht woertlich am Anfang des gebundenen ersten Listenelements");
+for (const e of wegner.ergebnisse) {
+  a.ok(rollenByKennung.has(e.kennung), "Wegner-Achse muss eine der 54 urspruenglich offenen Fachachsen sein");
+  a.equal(rollenByKennung.get(e.kennung).status, "belegt", "Wegner bleibt in der 54er Quittung belegt");
+  a.equal(e.status, "belegt", "Wegner-Einzelfall muss belegt sein");
+  a.equal(e.importfreigegeben, false, "keine Importfreigabe");
+  for (const menge of [ressortByKennung, aufgabenByKennung, beratendeByKennung, zusatzByKennung,
+    bmwsbByKennung, amthorByKennung, wahlausschussByKennung, jarzombekByKennung,
+    kloecknerByKennung, rohdeByKennung, merzByKennung, woidkeByKennung]) {
+    a.ok(!menge.has(e.kennung), "Wegner muss zu allen bisherigen Themenachsen disjunkt sein");
+  }
+}
 const ressortProfil = datensaetze.filter((d) => d.ressortachsenQuittung);
 const aufgabenProfil = datensaetze.filter((d) => d.aufgabenachsenQuittung);
 const beratendeProfil = datensaetze.filter((d) => d.beratendeachsenQuittung);
@@ -758,6 +783,7 @@ const kloecknerProfil = datensaetze.filter((d) => d.kloecknerQuittung);
 const rohdeProfil = datensaetze.filter((d) => d.rohdeQuittung);
 const merzProfil = datensaetze.filter((d) => d.merzQuittung);
 const woidkeProfil = datensaetze.filter((d) => d.woidkeQuittung);
+const wegnerProfil = datensaetze.filter((d) => d.wegnerQuittung);
 const stellvertretungenProfil = datensaetze.filter((d) => d.stellvertretungenQuittung);
 // Nur Skopec schliesst damit eine zuvor offene 54er-Fachachse; die uebrigen 34
 // Profile waren bereits ueber ordentliche Ausschuesse geschlossen.
@@ -775,17 +801,18 @@ a.equal(kloecknerProfil.length, 1, "1 Profil traegt die Kloeckner-Einzelfallquit
 a.equal(rohdeProfil.length, 1, "1 Profil traegt die Rohde-Einzelfallquittung");
 a.equal(merzProfil.length, 1, "1 Profil traegt die Merz-Einzelfallquittung");
 a.equal(woidkeProfil.length, 1, "1 Profil traegt die Woidke-Einzelfallquittung");
+a.equal(wegnerProfil.length, 1, "1 Profil traegt die Wegner-Einzelfallquittung");
 a.equal(stellvertretungenProfil.length, 35, "35 Profile tragen die Stellvertretungsquittung");
 a.equal(stellvertretungen54Profil.length, 1, "genau ein Profil schliesst damit eine zuvor offene 54er-Fachachse");
 a.equal(stellvertretungenProfil.reduce((s, d) => s + (d.profil.stellvertretendeAusschuesse || []).length, 0), 76,
   "die 35 Profile tragen zusammen genau 76 belegte Stellvertretungen");
-a.equal(fachAchseOffen.length, 12, "54 - 19 - 6 - 2 - 3 - 2 - 1 - 3 - 1 - 1 - 1 - 1 - 1 - 1 = 12 Fachachsen bleiben offen");
+a.equal(fachAchseOffen.length, 11, "54 - 19 - 6 - 2 - 3 - 2 - 1 - 3 - 1 - 1 - 1 - 1 - 1 - 1 - 1 = 11 Fachachsen bleiben offen");
 a.deepEqual(
-  new Set([...fachAchseOffen, ...stellvertretungen54Profil, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil, ...zusatzProfil, ...bmwsbProfil, ...amthorProfil, ...wahlausschussProfil, ...jarzombekProfil, ...kloecknerProfil, ...rohdeProfil, ...merzProfil, ...woidkeProfil].map((d) => d.kanonischeKennung)),
+  new Set([...fachAchseOffen, ...stellvertretungen54Profil, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil, ...zusatzProfil, ...bmwsbProfil, ...amthorProfil, ...wahlausschussProfil, ...jarzombekProfil, ...kloecknerProfil, ...rohdeProfil, ...merzProfil, ...woidkeProfil, ...wegnerProfil].map((d) => d.kanonischeKennung)),
   new Set(rollenByKennung.keys()),
-  "disjunkte Vereinigung aus 12 offenen + 1 Stellvertretungs- + 19 Ressort- + 6 Aufgaben- + 2 beratenden + 3 Zusatzaufgaben- + 2 BMWSB- + 1 Amthor- + 3 Wahlausschuss- + 1 Jarzombek- + 1 Kloeckner- + 1 Rohde- + 1 Merz- + 1 Woidke-Achse ergibt genau die 54er Quittung",
+  "disjunkte Vereinigung aus 11 offenen + 1 Stellvertretungs- + 19 Ressort- + 6 Aufgaben- + 2 beratenden + 3 Zusatzaufgaben- + 2 BMWSB- + 1 Amthor- + 3 Wahlausschuss- + 1 Jarzombek- + 1 Kloeckner- + 1 Rohde- + 1 Merz- + 1 Woidke- + 1 Wegner-Achse ergibt genau die 54er Quittung",
 );
-a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung && !d.zusaetzlicheaufgabenQuittung && !d.bmwsbQuittung && !d.amthorQuittung && !d.wahlausschussQuittung && !d.jarzombekQuittung && !d.kloecknerQuittung && !d.rohdeQuittung && !d.merzQuittung && !d.woidkeQuittung && !d.stellvertretungenQuittung), "offene Achse darf keine geschlossene Quittung tragen");
+a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung && !d.zusaetzlicheaufgabenQuittung && !d.bmwsbQuittung && !d.amthorQuittung && !d.wahlausschussQuittung && !d.jarzombekQuittung && !d.kloecknerQuittung && !d.rohdeQuittung && !d.merzQuittung && !d.woidkeQuittung && !d.wegnerQuittung && !d.stellvertretungenQuittung), "offene Achse darf keine geschlossene Quittung tragen");
 let rollenBelegt = 0;
 let rollenOffen = 0;
 const zuHelmutProfilRollen = zuHelmutProfil; // echter Import-/Storage-Pfad (bestehender Export)
@@ -803,7 +830,7 @@ for (const d of datensaetze) {
   a.equal(q.status, e.status, "Rollenstatus muss der Quittung entsprechen");
   // Eine Amtsrolle allein ist keine Ausschussachse. Die fachliche Achse ist genau dann
   // geschlossen, wenn die gepruefte Ressort- oder Aufgabenquittung belegte Themen setzt.
-  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung || d.beratendeachsenQuittung || d.zusaetzlicheaufgabenQuittung || d.bmwsbQuittung || d.amthorQuittung || d.wahlausschussQuittung || d.jarzombekQuittung || d.kloecknerQuittung || d.rohdeQuittung || d.merzQuittung || d.woidkeQuittung || d.stellvertretungenQuittung);
+  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung || d.beratendeachsenQuittung || d.zusaetzlicheaufgabenQuittung || d.bmwsbQuittung || d.amthorQuittung || d.wahlausschussQuittung || d.jarzombekQuittung || d.kloecknerQuittung || d.rohdeQuittung || d.merzQuittung || d.woidkeQuittung || d.wegnerQuittung || d.stellvertretungenQuittung);
   a.equal(achseGeschlossen, !d.offeneFelder.includes("fachlicheAchse"),
     `Achse muss genau dann geschlossen sein, wenn eine gepruefte Quittung greift (${d.kanonischeKennung})`);
   if (e.status === "offen") {
@@ -1832,6 +1859,77 @@ a.equal(gelesenWoidke.profileActive, false, "Round-Trip bleibt aktiv=false");
   }
 }
 
+// ── 6r · Wegner-Einzelfall: Richtlinien der Regierungspolitik verlustfrei, inaktiv ─────
+// Kai Wegner wird ueber genau das erste Listenelement des amtlichen Geschaeftsbereichs I
+// geschlossen. Es entsteht KEINE neue Rolle: die bestehende Rolle Regierender Buergermeister
+// von Berlin aus der 54er Quittung bleibt unveraendert. Person/Amt stammen nur aus dem
+// sichtbaren eigenen Artikel der amtlichen Berliner Senatsseite; alle uebrigen
+// Listenelemente des Geschaeftsbereichs bleiben ausgeschlossen.
+a.equal(wegnerProfil.length, 1, "genau ein Profil traegt die Wegner-Einzelfallquittung");
+const wegnerDatensatz = wegnerProfil[0];
+const wegnerEintrag = wegnerByKennung.get("landtag-berlin-kai-wegner");
+const WEGNER_THEMEN = ["Richtlinien der Regierungspolitik"];
+const wegnerHinweis = wegnerEintrag.ableitungsHinweis;
+a.equal(wegnerDatensatz.kanonischeKennung, "landtag-berlin-kai-wegner");
+a.deepEqual(wegnerDatensatz.profil.themen, WEGNER_THEMEN, "genau das eine freigegebene Thema");
+a.ok(!wegnerDatensatz.offeneFelder.includes("fachlicheAchse"), "Wegner-Achse ist geschlossen");
+a.deepEqual(wegnerDatensatz.offeneFelder, [], "keine weiteren offenen Felder fuer Kai Wegner");
+a.equal(wegnerDatensatz.profil.aktiv, false, "Wegner bleibt aktiv=false");
+a.equal(wegnerDatensatz.importfreigegeben, false, "Wegner bleibt importfreigegeben=false");
+a.equal(wegnerDatensatz.wegnerQuittung.person, "Kai Wegner");
+a.equal(wegnerDatensatz.wegnerQuittung.funktion, "Regierender Bürgermeister von Berlin");
+a.equal(wegnerDatensatz.wegnerQuittung.quelle.url,
+  "https://www.berlin.de/rbmskzl/politik/senat/geschaeftsverteilung/");
+a.equal(wegnerDatensatz.wegnerQuittung.quelle.sha256,
+  "d729a2ebd65b3b379fc0420292b4993d6b903a33182980f4f44165e250bd2c5c");
+a.equal(wegnerDatensatz.wegnerQuittung.quelle.bytes, 206915);
+a.equal(wegnerDatensatz.wegnerQuittung.personenquelle.url,
+  "https://www.berlin.de/rbmskzl/politik/senat/senatsmitglieder/");
+a.equal(wegnerDatensatz.wegnerQuittung.personenquelle.sha256,
+  "d35a4e8878b1a9cf8474b2f7f9ea0332b08a9ed59e64f51f791c4d5394ae8bf6");
+a.ok(wegnerDatensatz.wegnerQuittung.aufgabenabsatz.startsWith(
+  "Bestimmung und Fortentwicklung sowie Überwachung der Einhaltung der Richtlinien der Regierungspolitik"));
+a.equal((wegnerDatensatz.profil.funktionen || []).filter((x) => x === wegnerHinweis).length, 1,
+  "Wegner: Herkunftshinweis genau einmal");
+a.ok((wegnerDatensatz.profil.funktionen || []).includes("Regierender Bürgermeister von Berlin"),
+  "bestehende Rolle bleibt erhalten");
+const wegnerRollenEintrag = rollenByKennung.get("landtag-berlin-kai-wegner");
+a.equal(wegnerDatensatz.wegnerQuittung.rollenquelle.url, wegnerRollenEintrag.quelle.url,
+  "Rollenquelle bleibt die kanonische Landtags-Person");
+a.equal(wegnerDatensatz.wegnerQuittung.rollenquelle.sha256, wegnerRollenEintrag.quelle.sha256);
+a.equal(wegnerDatensatz.quelle.url, wegnerRollenEintrag.quelle.url, "Quell-URL bleibt an die amtliche Personenquelle gebunden");
+const wegnerQuelle = (wegnerDatensatz.profil.offizielleQuellen || [])
+  .find((x) => x.art === "regierender-buergermeister-richtlinienkompetenz");
+a.ok(wegnerQuelle, "amtliche Geschaeftsverteilungs-Quelle fehlt");
+a.equal(wegnerQuelle.sha256, wegnerDatensatz.wegnerQuittung.quelle.sha256);
+const gespeichertWegner = zuHelmutProfil(wegnerDatensatz.profil);
+a.deepEqual(gespeichertWegner.focusTopics, WEGNER_THEMEN, "Importpfad muss das Thema erhalten");
+a.ok(gespeichertWegner.function.includes(wegnerHinweis), "Hinweis erreicht den Importpfad");
+a.ok(gespeichertWegner.function.includes("Regierender Bürgermeister von Berlin"),
+  "bestehende Rolle uebersteht den Importpfad");
+const zeileWegner = storage.toMandateProfileRow(gespeichertWegner);
+a.equal(zeileWegner.aktiv, false, "Storage-Zeile darf nicht aktivieren");
+const gelesenWegner = storage.fromMandateProfileRow(
+  { id: wegnerDatensatz.kanonischeKennung, name: wegnerDatensatz.profil.vollname }, zeileWegner);
+a.deepEqual(gelesenWegner.focusTopics, WEGNER_THEMEN, "Thema uebersteht den Storage-Roundtrip");
+a.equal(gelesenWegner.profileActive, false, "Round-Trip bleibt aktiv=false");
+{
+  const { proximityScore, personalRelevance } = require("../lib/helmut/scoring");
+  a.ok(proximityScore({ tags: WEGNER_THEMEN }, { focusTopics: gelesenWegner.focusTopics }) > 0,
+    "das exakte Wegner-Thema muss treffen");
+  a.ok(personalRelevance({ themen: WEGNER_THEMEN, status: "neu", source_document_count: 1 },
+    { focusTopics: gelesenWegner.focusTopics }).score > 0, "der Relevanzpfad muss positiv sein");
+  for (const fremd of ["Geschäftsverteilung des Senats", "Presseangelegenheiten", "Verkündung von Gesetzen",
+    "Smart-City", "Klimaschutz", "Europapolitik", "Wohnungsbau", "Open Data", "Koalitionsvertrag",
+    "Staatskanzlei", "Senatskanzlei", "Digitalisierung der Verwaltung"]) {
+    a.equal(proximityScore({ tags: [fremd] }, { focusTopics: gelesenWegner.focusTopics }), 0,
+      `breites Nachbarthema darf nicht treffen: ${fremd}`);
+    a.equal(personalRelevance({ themen: [fremd], status: "neu", source_document_count: 1 },
+      { focusTopics: gelesenWegner.focusTopics }).score, 0,
+      `breites Nachbarthema darf im Lage-/Relevanzpfad nicht treffen: ${fremd}`);
+  }
+}
+
 // ── 6o · Stellvertretungsquittung Brandenburg: 76 belegte Verluste, nur eine 54er-Achse ──
 // Der belegte Verlust stellvertretender Brandenburger Ausschussmitgliedschaften wird
 // ueber die versionierte Ergaenzungsquittung behoben: 76 bislang fehlende
@@ -1989,6 +2087,6 @@ if (eingangVorhanden && python) {
 }
 
 console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, "
-  + "echter Importvertrag (487 technisch importierbar, 13 offen), "
-  + "Woidke-Einzelfallquittung (Richtlinien der Landespolitik, 12 Fachachsen verbleiben), "
+  + "echter Importvertrag (488 technisch importierbar, 12 offen), "
+  + "Wegner-Einzelfallquittung (Richtlinien der Regierungspolitik, 11 Fachachsen verbleiben), "
   + "Bundestags-Readiness (319/330), alle Profile inaktiv, Reproduzierbarkeit: " + reproduzierbar);
