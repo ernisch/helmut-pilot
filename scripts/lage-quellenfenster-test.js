@@ -65,6 +65,9 @@ function standTransport(zeilen) {
     if (p.get("raw_documents.raw->helmutBundestagArtikelstand") === "not.is.null") {
       gewaehlt = gewaehlt.filter(z => z.doc.raw?.helmutBundestagArtikelstand != null);
     }
+    if (p.get("raw_documents.raw->helmutBrandenburgLandtagPresseArtikelstand") === "not.is.null") {
+      gewaehlt = gewaehlt.filter(z => z.doc.raw?.helmutBrandenburgLandtagPresseArtikelstand != null);
+    }
     const spalten = p.get("select").replace(/^.*raw_documents(?:!inner)?\(/u, "").replace(/\)$/u, "").split(",");
     const projiziert = gewaehlt.map(z => ({ knowledge_object_id: z.ko,
       raw_documents: Object.fromEntries(spalten.map(spalte => {
@@ -72,6 +75,10 @@ function standTransport(zeilen) {
           return ["bundestag_artikelstand", z.doc.raw?.helmutBundestagArtikelstand || null];
         }
         if (spalte === "bundestag_abgerufen_at:retrieved_at") return ["bundestag_abgerufen_at", z.doc.retrieved_at ?? null];
+        if (spalte === "brandenburg_artikelstand:raw->helmutBrandenburgLandtagPresseArtikelstand") {
+          return ["brandenburg_artikelstand", z.doc.raw?.helmutBrandenburgLandtagPresseArtikelstand || null];
+        }
+        if (spalte === "brandenburg_abgerufen_at:retrieved_at") return ["brandenburg_abgerufen_at", z.doc.retrieved_at ?? null];
         return [spalte, z.doc[spalte] ?? null];
       })) }));
     const offset = Number(p.get("offset") || 0), limit = Number(p.get("limit"));
@@ -79,6 +86,58 @@ function standTransport(zeilen) {
   };
   return { request, anfragen };
 }
+
+// Synthetischer, ueber den echten Brandenburger Landtagsstand erzeugter Beleg.
+// Eigener Namespace (brandenburg-landtag-presseartikelstand); tag = reiner
+// Publikationstag, published_at bleibt leer.
+function brandenburgStandQuelle(tag, nummer) {
+  const BB = require("../lib/helmut/brandenburg-landtag-presseartikelstand");
+  const P = require("../lib/helmut/brandenburg-landtag-presseartikel");
+  const MONATE = ["", "Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August",
+    "September", "Oktober", "November", "Dezember"];
+  const titel = `Synthetische Landtagsmeldung ${nummer}`;
+  const slug = `meldung_${nummer}`;
+  const url = `https://www.landtag.brandenburg.de/de/meldungen/${slug}/${nummer}`;
+  const [jahr, monat, tagImMonat] = tag.split("-");
+  const html = `<!doctype html><html lang="de"><head><meta charset="UTF-8">`
+    + `<meta property="og:title" content="${titel} - Landtag Brandenburg">`
+    + `<title>${titel} - Landtag Brandenburg</title>`
+    + `<link rel="canonical" href="${url}"></head><body><div class="wrapper container"><div class="row"><main class="col-lg">`
+    + `<nav aria-label="Sie sind hier"><h6>Breadcrumb</h6><ol><li><a href="/de/startseite">Start</a></li></ol></nav>`
+    + `<h1>${titel}</h1><p><em>Potsdam, ${Number(tagImMonat)}. ${MONATE[Number(monat)]} ${jahr} / 134</em></p>`
+    + `<p>Die synthetische Landtagsmeldung beschreibt einen amtlich belegten Sachverhalt der `
+    + `Brandenburger Landesversorgung fuer die lokale Offlinepruefung dieses Standes.</p>`
+    + `<p>Ein zweiter ganz eigener Sachabsatz derselben synthetischen Meldung.</p>`
+    + `<p><ul class="list-links"><li><a class="download" target="_blank" href="/media_fast/6/PM_134.pdf">PM [PDF]</a></li></ul></p>`
+    + `</main><aside class="col-lg-4"><section class="box accent"><h4>Kontakt</h4>`
+    + `<p>Die <a href="/sixcms/detail.php/25215">Pressestelle</a> steht zur Verfuegung.</p></section></aside>`
+    + `<footer><address class="vcard">Landtag Brandenburg</address></footer></div></div></body></html>`;
+  const artikel = P.pruefePresseartikel({ url, finalUrl: url, http: 200, html });
+  // Der gebundene RSS-Zeitpunkt MUSS auf den lokalen Publikationstag fallen, sonst
+  // sperrt die Bindung. rfc822Tag liefert denselben Kalendertag mit korrektem Offset.
+  const rfc822Tag = (() => {
+    const kurz = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const monat3 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const ref = new Date(Date.UTC(Number(jahr), Number(monat) - 1, Number(tagImMonat), 12, 0, 0));
+    const offset = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Berlin", timeZoneName: "shortOffset" })
+      .formatToParts(ref).find(part => part.type === "timeZoneName")?.value || "GMT+2";
+    const stunden = (offset.match(/GMT([+-]\d{1,2})(?::(\d{2}))?/) || [null, "+2", "00"]);
+    const vz = stunden[1].startsWith("-") ? "-" : "+";
+    const hh = String(Math.abs(Number(stunden[1]))).padStart(2, "0");
+    return `${kurz[ref.getUTCDay()]}, ${String(Number(tagImMonat)).padStart(2, "0")} `
+      + `${monat3[Number(monat) - 1]} ${jahr} 12:00:00 ${vz}${hh}${stunden[2] || "00"}`;
+  })();
+  const itemLink = `https://www.landtag.brandenburg.de/sixcms/detail.php?id=brandenburg_01.c.${nummer}.de`;
+  const item = { nummer, titel, link: itemLink, guid: itemLink,
+    author: `brandenburg_01.c.${nummer}.de (${nummer})`, pubDate: rfc822Tag,
+    publikationstag: artikel.publikationstag };
+  const erzeugt = BB.standAusRssItem({ id: `local-${nummer}`, title: artikel.titel, url: artikel.url,
+    canonical_url: artikel.url, published_at: null, summary: "", source_name: "Landtag Brandenburg" },
+    item, { url, finalUrl: url, http: 200, html });
+  assert.equal(erzeugt.ok, true, JSON.stringify(erzeugt));
+  return { ...erzeugt.row, source_name: "Landtag Brandenburg" };
+}
+
 (async () => {
   await test("Zwoelf frisch analysierte Altquellen verdraengen keine zwei aktuellen Sachverhalte", async () => {
     const pool = [...old, ...current], before = JSON.stringify(pool);
@@ -121,10 +180,10 @@ function standTransport(zeilen) {
     const result = await storage.listAktuelleLageQuellen(["eins", "eins"], now, {
       ready:()=>true, request:async endpoint=>{ requests.push(endpoint); return requests.length===1 ? rows : []; }
     });
-    // Ein Lesestapel nutzt jetzt drei begrenzte Pfade: den unveraenderten Zeitstempelpfad
-    // (hier zwei Seiten), den Bundestags-Artikelstandspfad und den zusaetzlichen, ebenso
-    // begrenzten Berliner Artikelstandspfad (eigener Namespace).
-    assert.equal(result.length,1000); assert.equal(requests.length,4);
+    // Ein Lesestapel nutzt jetzt vier begrenzte Pfade: den unveraenderten Zeitstempelpfad
+    // (hier zwei Seiten) sowie je einen ebenso begrenzten Artikelstandspfad fuer
+    // Bundestag, Berlin und Brandenburg (je eigener Namespace).
+    assert.equal(result.length,1000); assert.equal(requests.length,5);
     const p = new URL("https://example.org"+requests[0]).searchParams;
     assert.equal(p.get("select"),"knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at)");
     assert.equal(p.get("knowledge_object_id"),'in.("eins")');
@@ -150,6 +209,16 @@ function standTransport(zeilen) {
     assert.equal(b.get("raw_documents.raw->helmutBerlinArtikelstand"),"not.is.null");
     assert.equal(b.get("order"),"knowledge_object_id.asc,raw_document_id.asc");
     assert.equal(b.get("offset"),"0");
+    // Vierter, ebenso begrenzter Lesepfad: ausschliesslich Brandenburger
+    // Landtags-Presseartikelstaende (published_at NULL) mit eigener, geschlossener Projektion.
+    const bb = new URL("https://example.org"+requests[4]).searchParams;
+    assert.equal(bb.get("select"),"knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at,summary,"
+      + "brandenburg_artikelstand:raw->helmutBrandenburgLandtagPresseArtikelstand,brandenburg_abgerufen_at:retrieved_at)");
+    assert.equal(bb.get("knowledge_object_id"),'in.("eins")');
+    assert.deepEqual(bb.getAll("raw_documents.published_at"),["is.null"]);
+    assert.equal(bb.get("raw_documents.raw->helmutBrandenburgLandtagPresseArtikelstand"),"not.is.null");
+    assert.equal(bb.get("order"),"knowledge_object_id.asc,raw_document_id.asc");
+    assert.equal(bb.get("offset"),"0");
   });
   await test("Fehlende Verbindung, fremde Zeilen und unlesbare Antwort sind keine leeren Metadaten", async () => {
     for (const deps of [{ ready:()=>false }, {ready:()=>true,request:async()=>({})},
@@ -191,9 +260,55 @@ function standTransport(zeilen) {
       const p = new URL("https://example.org" + endpoint).searchParams;
       sizes.push(p.get("knowledge_object_id").match(/"ko-/g).length); return [];
     } });
-    // Je Stapel ein gewoehnlicher Zeitstempelpfad, ein Bundestags-Artikelstandspfad und
-    // ein ebenso begrenzter Berliner Artikelstandspfad (eigener Namespace).
-    assert.deepEqual(sizes, [100, 100, 100, 100, 100, 100, 1, 1, 1]);
+    // Je Stapel ein gewoehnlicher Zeitstempelpfad und drei ebenso begrenzte
+    // Artikelstandspfade (Bundestag, Berlin, Brandenburg — je eigener Namespace).
+    assert.deepEqual(sizes, [100, 100, 100, 100, 100, 100, 100, 100, 1, 1, 1, 1]);
+  });
+  await test("Brandenburger Landtagsstand: tagesgenau, fenstergebunden und fail-closed", async () => {
+    const alt = process.env.HELMUT_BRIEFING_RELEVANZ_TAGE;
+    process.env.HELMUT_BRIEFING_RELEVANZ_TAGE = "14";
+    try {
+      const fruehjahr = new Date("2026-03-31T12:00:00Z");
+      const zeilen = [
+        { ko: "ko-bb", doc: brandenburgStandQuelle("2026-03-16", "9100") }, // ausserhalb
+        { ko: "ko-bb", doc: brandenburgStandQuelle("2026-03-18", "9102") }, // innerer Rand: ganzer Tag im Fenster
+        { ko: "ko-bb", doc: brandenburgStandQuelle("2026-03-29", "9103") }, // DST-Tag vollstaendig im Fenster
+        { ko: "ko-bb", doc: brandenburgStandQuelle("2026-03-31", "9104") }, // heute noch nicht beendet
+        { ko: "ko-bb", doc: brandenburgStandQuelle("2026-04-01", "9105") }  // kuenftig
+      ];
+      const { request, anfragen } = standTransport(zeilen);
+      const gelesen = await storage.listAktuelleLageQuellen(["ko-bb"], fruehjahr, { ready: () => true, request });
+      assert.deepEqual(gelesen.map(r => r.raw_documents.brandenburg_artikelstand.publikationstag),
+        ["2026-03-18", "2026-03-29"]);
+      assert(gelesen.every(r => r.raw_documents.published_at === null));
+      // Die sichtbare Quellenzeile zeigt genau den belegten Kalendertag und KEINE
+      // erfundene Uhrzeit (publishedAt bleibt leer).
+      const sichtbar = L.mapSource(gelesen[0].raw_documents);
+      assert.equal(sichtbar.dateLabel, "18. März 2026");
+      assert.equal(sichtbar.publishedAt, "");
+      // Der eigene, begrenzte Brandenburg-Lesepfad bleibt tagesgenau und gezielt projiziert.
+      const bbAnfrage = anfragen.find(p => p.get("raw_documents.raw->helmutBrandenburgLandtagPresseArtikelstand") === "not.is.null");
+      assert.equal(bbAnfrage.get("select").includes("summary"), true);
+      assert.equal(bbAnfrage.get("select").includes("raw->helmutBrandenburgLandtagPresseArtikelstand"), true);
+      assert.deepEqual(bbAnfrage.getAll("raw_documents.published_at"), ["is.null"]);
+      // Undatierte gewoehnliche Quelle erhaelt kein Ersatzdatum aus Abruf/created_at.
+      const undatiert = { ko: "ko-bb", doc: { id: "rd-ohne-stand", title: "Synthetische undatierte Quelle",
+        url: "https://beispiel.test/ohne-datum", canonical_url: null, published_at: null,
+        retrieved_at: "2026-03-20T10:00:00Z", created_at: "2026-03-20T10:00:00Z", summary: "Ein beliebiger Auszug." } };
+      assert.deepEqual(await storage.listAktuelleLageQuellen(["ko-bb"], fruehjahr,
+        { ready: () => true, request: standTransport([undatiert]).request }), []);
+      // Widerspruechliche Brandenburger Stand-Metadaten sind ein lauter Fehler,
+      // kein stiller Rueckfall auf die URL-Identitaet.
+      const kaputt = brandenburgStandQuelle("2026-03-29", "9106");
+      kaputt.raw.helmutBrandenburgLandtagPresseArtikelstand = {
+        ...kaputt.raw.helmutBrandenburgLandtagPresseArtikelstand, publikationstag: "2026-03-30" };
+      await assert.rejects(() => storage.listAktuelleLageQuellen(["ko-bb"], fruehjahr,
+        { ready: () => true, request: standTransport([{ ko: "ko-bb", doc: kaputt }]).request }),
+      e => e.name === "StorageReadError" && e.quelle === "lage-quellen");
+    } finally {
+      if (alt === undefined) delete process.env.HELMUT_BRIEFING_RELEVANZ_TAGE;
+      else process.env.HELMUT_BRIEFING_RELEVANZ_TAGE = alt;
+    }
   });
   await test("Artikelstaende werden nur mit ganzem Berliner Publikationstag gelesen", async () => {
     const alt = process.env.HELMUT_BRIEFING_RELEVANZ_TAGE;

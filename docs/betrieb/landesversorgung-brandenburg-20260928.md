@@ -149,6 +149,10 @@ Test, keine Production-Aktion und keine Aenderung an Schwellen- oder Gate-Routin
 Bindung werden von nichts anderem automatisch aufgerufen; die tagesgenaue Meldung `50117`
 ist damit lokal belegt, aber noch nicht an Crawl, Storage oder Lage angebunden.
 
+*(Durch den Nachtrag 29.09.2026 unten teilweise ueberholt: Dispatcher, Storage-Leser und
+tagesgenaue Lage-Quellenzeile sind offline belegt. Live-Crawl, Import und Production bleiben
+weiterhin nicht umfasst.)*
+
 ## Nachtrag 28.09.2026 — eigenstaendiger Offline-Artikelstand
 
 `lib/helmut/brandenburg-landtag-presseartikelstand.js` verbindet den geschlossenen
@@ -168,6 +172,11 @@ als sichtbare Landesversorgung gezaehlt werden. Der Folge-Schritt muss den
 nachweisbaren Uhrzeitpfad samt Speicherleser und Lage-Ausgabe eigenstaendig
 schliessen; ein stiller Rueckfall auf die URL-Kennung waere Datenverlust.
 
+*(Durch den Nachtrag 29.09.2026 unten ueberholt: der Stand ist inzwischen offline
+im Dispatcher registriert und an Storage und Lage gefuehrt. `published_at` bleibt
+dabei NULL und nur der belegte Kalendertag sichtbar; Live-Crawl, Import und
+Production bleiben weiterhin offen.)*
+
 `node scripts/brandenburg-landtag-presseartikelstand-test.js` prueft neun
 gezielte Gruppen einschliesslich falscher RSS-Identitaet, Titel-/Tages-/Zeitdrift,
 manipulierter Standhashes, Summary-Drift, Rohtextbeigaben und fehlendem
@@ -175,3 +184,48 @@ RSS-Zeitbeleg. Mit den gesicherten Originalen bestaetigt er den 497-Zeichen-Absa
 und den exakten UTC-Zeitpunkt; ohne diese privaten Dateien bleiben die
 synthetischen Pruefungen CI-tauglich. Kein Netz, keine DB, keine Profile und keine
 Production-Daten wurden fuer diesen Stand veraendert.
+
+## Nachtrag 29.09.2026 — Offline-Anbindung an Dispatcher, Storage und Lage
+
+Der minimierte Brandenburger Landtags-Presseartikelstand ist nicht mehr
+eigenstaendig, sondern als dritter, eigener Standtyp in den gemeinsamen Dispatcher
+`lib/helmut/artikelstand.js` eingetragen (`rohFeld`
+`helmutBrandenburgLandtagPresseArtikelstand`, `abgerufenFeld`
+`brandenburg_abgerufen_at`, eigener Namespace und eigene Kennung
+`brandenburg-landtag-presse|<standHash>|erster-sachabsatz`). Damit waehlen Dedup,
+die Storage-Projektionen, der Quellenauszug, der Zeitvertrag und der
+Lage-Quellenbeleg denselben geschlossenen Stand wie Bundestag und Berlin, statt auf
+die URL-Kennung zurueckzufallen; widerspruechliche Standmetadaten brechen laut ab
+(fail-closed).
+
+`lib/helmut/storage.js` fuehrt den Stand durch alle tatsaechlich relevanten Leser:
+das Dedup-Bestandsfenster (`ladeDedupBestandsfenster`), die KO- und
+Rohdokument-Projektionen (`listKoDocuments`, `listRecentRawDocuments`,
+`listRawDocuments`, `getSourcesForVorgang`, `getPruefSourcesByVorgaenge`,
+`getGebundeneLageQuellen`, `getRawDocumentsByIds`) sowie einen vierten, ebenso
+begrenzten Lesepfad in `listAktuelleLageQuellen`. Dieser Pfad liest ausschliesslich
+als Brandenburger Stand validierte Zeilen (`published_at is null`), prueft den
+ganzen Publikationstag gegen das Lagefenster und wirft bei unlesbaren oder
+widerspruechlichen Metadaten laut — kein Ersatzdatum aus Abruf/`created_at`.
+
+`lib/helmut/lage.js` liest die sichtbare Quellenzeile ueber denselben Dispatcher
+(`mapSource`, `mapAbsatzQuellen`). Die Zeile zeigt genau den belegten Kalendertag
+(`dateLabel`), waehrend `publishedAt` leer bleibt; es wird keine Uhrzeit erfunden.
+
+Offline belegt ist dies ueber die bestehenden Suiten: die Brandenburger
+Artikelstand-Suite (`scripts/brandenburg-landtag-presseartikelstand-test.js` —
+dritter Standtyp erkannt, eigene Kennung, kein stiller Rueckfall, fail-closed) und
+die Lage-Quellenfenster-Suite (`scripts/lage-quellenfenster-test.js` — vierter
+Lesepfad, tagesgenau und fenstergebunden, sichtbare Quellenzeile ohne erfundene
+Uhrzeit). Die dort mitgefuehrten geprueften Berlin-/Bundestags-/Lage-/Dedup-
+Regressionen (`scripts/berlin-artikelstand-test.js`,
+`scripts/bundestag-artikelstand-test.js`, die Lage-Suiten und die Dedup-Suiten)
+bleiben deckungsgleich; der Bundestagspfad und die Schwellen wurden nicht
+gelockert. Genannt ist damit die vorhandene Abdeckung; in diesem
+Dokumentationsschritt wurde keine neue Pruefung ausgefuehrt.
+
+Weiterhin **nicht umfasst**: Live-Crawl, Netzabruf, Import, Storage-Schreibweg,
+Aktivierung, 500er Test, Profilversorgung, Landesmodul und jede Production-Wirkung.
+Der Stand bleibt rein offline; die aktuelle amtliche Brandenburger Landesversorgung
+und der produktive Versorgungsnachweis bleiben offen und brauchen weiterhin ihre
+eigene Freigabe.

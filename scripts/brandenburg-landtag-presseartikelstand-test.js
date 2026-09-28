@@ -259,17 +259,24 @@ test("Negativ: Artikelbeleg und Absatzstruktur", () => {
   wirft(() => B.pruefeArtikelstand({ ...STAND, herkunft: "fremd" }), "herkunft-ungueltig");
 });
 
-// 9) BEFUND (aktueller Sprint): der Stand ist BEWUSST nicht am generischen Dispatcher verdrahtet.
-// Der generische Import-/Storage-/Lage-Weg ist tagesgenau (published_at is null, berlinTagVollImFenster)
-// und wuerde die gebundene Uhrzeit still verlieren. Deshalb kein stiller Rueckfall und keine
-// generische Lockerung: der Folge-Sprint muss den Uhrzeitpfad selbst erweitern. Diese Erwartungen
-// sind beim Verdrahten des Standes anzupassen.
-test("BEFUND: getrennter Stand ohne stillen Rueckfall ueber den generischen Dispatcher", () => {
-  A.equal(ST.leseStand(ROW), null, "in diesem Sprint nicht verdrahtet");
-  // Ohne Verdrahtung faellt dedup auf die URL-Identitaet zurueck — genau der stille Verlust, den
-  // der Stand vermeidet. Deshalb gilt: kein Import ohne eigene, freigegebene Anbindung.
-  A.equal(D.toRawDocumentRow(ROW).content_hash, sha256("url:" + STAND.url));
-  A.notEqual(D.toRawDocumentRow(ROW).content_hash, STAND.standHash);
+// 9) VERDRAHTUNG: der Stand ist jetzt der dritte, eindeutige Standtyp des gemeinsamen
+// Dispatchers. Der Dispatcher erkennt GENAU diesen Stand, dedup nimmt die eigene Kennung
+// (kein stiller Rueckfall auf die URL-Identitaet), und ein widerspruechlicher Stand
+// scheitert laut statt still auf die URL auszuweichen (fail-closed).
+test("Verdrahtung: dritter Standtyp erkannt, eigene Kennung, kein stiller Rueckfall", () => {
+  const treffer = ST.leseStand(ROW);
+  A.equal(treffer?.name, "brandenburg");
+  A.equal(treffer?.rohFeld, "helmutBrandenburgLandtagPresseArtikelstand");
+  A.equal(treffer?.abgerufenFeld, "brandenburg_abgerufen_at");
+  A.equal(treffer?.stand.standHash, STAND.standHash);
+  A.equal(treffer?.identitaet(STAND), "brandenburg-landtag-presse|" + STAND.standHash + "|erster-sachabsatz");
+  const abgeleitet = D.toRawDocumentRow(ROW);
+  A.equal(abgeleitet.content_hash, STAND.standHash);
+  A.notEqual(abgeleitet.content_hash, sha256("url:" + STAND.url));
+  // Widerspruechliche Stand-Metadaten brechen am Dispatcher laut ab (kein URL-Rueckfall).
+  const drift = { ...ROW, raw: { ...ROW.raw,
+    helmutBrandenburgLandtagPresseArtikelstand: { ...STAND, publikationstag: "2026-09-24" } } };
+  wirft(() => ST.leseStand(drift), "brandenburg-landtag-presseartikelstand-standhash-abweichend");
 });
 
 // 10) Echte lokale Originale (nur wenn vorhanden) — die bekannten Hashes.
