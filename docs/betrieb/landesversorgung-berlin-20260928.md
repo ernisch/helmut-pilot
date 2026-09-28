@@ -110,38 +110,63 @@ den amtlichen relativen Link (absolut aufgeloest), den exakten Titel und den REI
 Kalendertag; die Listenuhrzeit („13:05 Uhr“) ist keine belegte UTC-Publikationszeit
 und erscheint nirgends im Ergebnis.
 
-Nur Adressen, die der bestehende Einzelabruf (`berlin-presseartikel-abruf.js`)
-unterstuetzt, sind als `weiterreichbar: true` markiert. Die uebrigen Berliner
-Artikelpfade bleiben als klar ausgewiesene, NICHT abrufbare Treffer mit
-Skipgrund `pressearchiv-adresse-fehlt` erhalten — niemals als erfolgreiche
-Versorgung. Fail closed bei verborgener/ausbrechender/injizierter Struktur,
-doppelten oder mehrdeutigen Bloecken, ungeschlossenen Elementen, ungueltigen
-Kalendertagen, unzulaessigen Links sowie Duplikaten.
+Nur Adressen, die VORAB entweder der bestehende Pressearchiv-Einzelabruf
+(`berlin-presseartikel-abruf.js`) ODER der Sondervorlagen-Einzelabruf
+(`berlin-presse-sondervorlagen-abruf.js`) akzeptiert, sind als `weiterreichbar: true`
+markiert. `abrufzielFuer(url)` nennt pro Treffer genau das passende sichere Abrufziel
+(`pressearchiv` oder `sondervorlage`) samt gepruefter Adresse und Host `berlin.de`; das
+Schema der Fundstelle (`url`, `titel`, `publikationstag`, `weiterreichbar`, `grund`)
+bleibt unveraendert. Nicht unterstuetzte oder fremde Berliner Artikelpfade bleiben als
+klar ausgewiesene, NICHT abrufbare Treffer mit dem unveraenderten Skipgrund
+`pressearchiv-adresse-fehlt` erhalten — niemals als erfolgreiche Versorgung. Der
+amtliche H2-/UL-/LI-/Behoerden-/Datums- und Hostschutz bleibt unveraendert. Fail
+closed bei verborgener/ausbrechender/injizierter Struktur, doppelten oder mehrdeutigen
+Bloecken, ungeschlossenen Elementen, ungueltigen Kalendertagen, unzulaessigen Links
+sowie Duplikaten; es gibt keine neue URL-Familie und kein allgemeines Berlin-Gate.
 
 Lokales amtliches Original
 `/private/tmp/helmut-berlin-portal-20260928.html` (28.09.2026 05:12 UTC, HTTP200,
-sha256 `1cb44dda…fac8`) liefert genau sechs eigene Senatstreffer, davon drei
-weiterreichbare Pressearchivlinks und drei offene Pfade. Die bekannte BJF-Fundstelle
+sha256 `1cb44dda…fac8`) liefert genau sechs eigene Senatstreffer — exakt **6/6
+weiterreichbar**: drei Pressearchivlinks und drei Sondervorlagenlinks
+(RBMSKZL 1717887/1717654, SenWEB 1717406). Pro Treffer wird das passende sichere
+Abrufziel identifiziert; die Sondervorlagenadressen werden nur vom Sondervorlagen-
+Einzelabruf akzeptiert, die Pressearchivadressen nur vom bestehenden Pressearchiv-
+Abruf (jeweils gegenlaeufig fail closed). Die bekannte BJF-Fundstelle
 `https://www.berlin.de/sen/bjf/service/presse/pressearchiv-2026/pressemitteilung.1718345.php`
 stimmt mit Titel „Reform der Kinder- und Jugendhilfe: Berlin fordert verbindlichen
 Fahrplan und verlässliche Finanzierung“ und Tag `2026-09-25` exakt mit dem bereits
-gesicherten Artikel ueberein. Der im HTML verlinkte RSS-Feed
-(`https://www.berlin.de/presse/index.php/rss`) lieferte einen leeren channel ohne
-item und wird deshalb NICHT als Vollfeed behauptet.
+gesicherten Artikel ueberein. Die drei Sondervorlagen-Fundstellen tragen dieselben
+Titel und reinen Kalendertage wie die bereits gesicherten Originale. Der im HTML
+verlinkte RSS-Feed (`https://www.berlin.de/presse/index.php/rss`) lieferte einen
+leeren channel ohne item und wird deshalb NICHT als Vollfeed behauptet.
 
 `node scripts/berlin-senat-entdeckung-test.js` (kein Netz, keine DB, kein Modell)
-pruefte die Originalseite, 35 synthetische Negativfaelle und eine Offline-Verkettung
-einer entdeckten BJF-Fundstelle ueber `ladePresseartikelStand` mit injizierter
-Originalantwort: **55 Pruefungen erfolgreich**. Ohne die lokalen `/private/tmp`-
-Originale laeuft derselbe Test CI-tauglich mit **45 Pruefungen** (Originalproben
-werden uebersprungen und ausdruecklich gemeldet). Der Test wird ueber die bestehende
+pruefte die Originalseite, synthetische Positiv-/Negativfaelle fuer beide
+Sonderfamilien und nicht unterstuetzte/fremde Pfade sowie Offline-Verkettungen mit
+injizierten Antworten: die entdeckte BJF-Fundstelle ueber `ladePresseartikelStand`
+und die drei echten Sondervorlagen ueber die entdeckte Fundstelle ->
+`ladeSondervorlage` (injizierte Originalantwort) ->
+`erzeugeSondervorlagenstand` mit demselben eingefrorenen Leserbeleg.
+Ergebnis: **88 Pruefungen erfolgreich**. Ohne die lokalen `/private/tmp`-Originale
+laeuft derselbe Test CI-tauglich mit **57 Pruefungen** (Originalproben werden
+uebersprungen und ausdruecklich gemeldet). Der Test wird ueber die bestehende
 Bereichsauswahl (`landesmodule-pardok` / `berlin`) mitgefahren; die Pflichtmenge
-`STANDARD` bleibt unveraendert.
+`STANDARD` bleibt unveraendert und die bestehende Pressearchiv-Probe
+(`berlin-presseartikel-abruf-test.js`, 32 Pruefungen) bleibt unveraendert.
 
-Nicht umfasst: kein Live-Crawl-Hook, kein Netzabruf im Parser, kein Import, keine
+Fuer die drei echten Sondervorlagen wurde offline belegt: der Einzelabruf laeuft nur
+auf die entdeckte amtliche Adresse (Hostbindung `berlin.de`, `meldeStatus`), Titel und
+reiner Tag aus der Fundstelle stimmen exakt mit dem Originalbeleg ueberein, und der
+Stand traegt eine eigene Sondervorlagen-Identitaet (`berlin-de-senatsvorlage`,
+eigener Hash-Namespace) mit `published_at = null`, ohne Volltext und ohne HTML im
+Rohdokument. Abweichender Titel oder Tag brechen fail closed ab.
+
+Nicht umfasst: kein Live-Crawl-Hook, kein Netzabruf im Parser, kein Production-Import, keine
 Aktivierung, kein 500er Test, keine DB-/Production-/Env-/Cron-Wirkung und keine
-Profilversorgung. Das bestehende Landesmandatsgate, der Source-Mode, die
-Crawl-Quellen, Produktpfade und bestehenden Vertraege bleiben unveraendert.
+Profilversorgung. Die Sondervorlagen-Verknuepfung ist eine reine Offline-Verprobung
+mit injizierter Originalantwort, kein produktiver Versorgungsnachweis. Das bestehende
+Landesmandatsgate, der Source-Mode, die Crawl-Quellen, Produktpfade, Profile und
+Schwellen sowie bestehenden Vertraege bleiben unveraendert.
 
 ## Zwei weitere Senatspfadfamilien — eigener Original- und Auszugleser (28.09.2026, lokal)
 
