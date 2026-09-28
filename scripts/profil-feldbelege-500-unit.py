@@ -355,8 +355,8 @@ with tempfile.TemporaryDirectory() as tmp:
     _erwarte_fehler(lambda: _pruefe_eintrag(_rollen_eintrag(funktionen=[
         dict(wortlaut=FUNKTION, zitat=FUNKTION, abschnitt='Navigation')])), 'unbekannter Abschnitt')
 
-    # Synthetische, deckungsgleiche 54er-Quittung fuer die Mengenpruefung.
-    def _synthetische_profilrollen(n_belegt=48, n_offen=6):
+    # Synthetische, deckungsgleiche aktuelle Rollenquittung fuer die Mengenpruefung.
+    def _synthetische_profilrollen(n_belegt=m.PROFILROLLEN_BELEGT, n_offen=m.PROFILROLLEN_OFFEN):
         datei = 'eintrag.html'
         (detail / datei).write_text(html, encoding='utf-8')
         sha = m._sha256(detail / datei)
@@ -383,16 +383,18 @@ with tempfile.TemporaryDirectory() as tmp:
 
     eingang, quittung = _synthetische_profilrollen()
     index = m._pruefe_profilrollen(eingang, quittung)
-    assert len(index) == 54, len(index)
-    assert sum(1 for e in index.values() if e['status'] == 'belegt') == 48
-    assert sum(1 for e in index.values() if e['status'] == 'offen') == 6
+    assert len(index) == m.PROFILROLLEN_GESAMT, len(index)
+    assert sum(1 for e in index.values() if e['status'] == 'belegt') == m.PROFILROLLEN_BELEGT
+    assert sum(1 for e in index.values() if e['status'] == 'offen') == m.PROFILROLLEN_OFFEN
 
     # Fehlende Quittung, falsche Menge und falsche Bilanz sperren fail closed.
     _erwarte_fehler(lambda: m._pruefe_profilrollen(SimpleNamespace(), None), 'fehlende Quittung')
-    _erwarte_fehler(lambda: m._pruefe_profilrollen(eingang, dict(quittung, ergebnisse=quittung['ergebnisse'][:53])),
-                    'fehlende 54er-Quittung')
+    _erwarte_fehler(lambda: m._pruefe_profilrollen(eingang, dict(quittung, ergebnisse=quittung['ergebnisse'][:-1])),
+                    'fehlender Rollenquittungseintrag')
     _erwarte_fehler(lambda: m._pruefe_profilrollen(
-        eingang, dict(quittung, bilanz=dict(gesamt=54, rollenbelegt=47, offen=7))), 'falsche Bilanz')
+        eingang, dict(quittung, bilanz=dict(gesamt=m.PROFILROLLEN_GESAMT,
+                                            rollenbelegt=m.PROFILROLLEN_BELEGT - 1,
+                                            offen=m.PROFILROLLEN_OFFEN + 1))), 'falsche Bilanz')
     # Doppelte Kennung und Fremdkennung ausserhalb der 500 Zielprofile.
     doppelt = [dict(e) for e in quittung['ergebnisse']]
     doppelt[1] = dict(doppelt[1], kennung=doppelt[0]['kennung'])

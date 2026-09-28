@@ -126,8 +126,12 @@ abgrenzen und korrigieren, dann die frische Versorgung unter Punkt3 nachweisen.
 Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
-Naechster offener Teilschritt:die 73 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;488 technische Erfolge sind keine fachliche Importfreigabe.
+Naechster offener Teilschritt: die 73 Parteifelder einzeln aktuell amtlich belegen
+oder bei reinem Belegblocker gleichgruppig sauber ersetzen; 500 technische Erfolge
+sind keine fachliche Importfreigabe. Die zuvor 11 offenen Fachachsen und die letzte
+Berliner Mandatsart sind durch zwoelf reale [Ersatzprofile](betrieb/500-ersatzprofile-20260928.json)
+derselben Parlaments-/Fraktionsgruppe geschlossen (500/500, 330/330 Bundestag,
+0 Fachachsen, 0 Mandatsarten; alle inaktiv und nicht importfreigegeben).
 Fuer die Landesversorgung liegt ein enger Berliner Originalseiten-Leser vor:
 `lib/helmut/berlin-presseartikel.js` bindet amtliche URL, Titel, Publikationstag
 und vollstaendigen Artikeltext ohne erfundene Uhrzeit; die lokale Originalprobe
@@ -145,14 +149,15 @@ Lage-Quellenbeleg und sichtbare Quellenzeile der Lage-Karte; Offline-End-to-End-
 In-Memory-Storage (25 Gruppen, echte Originalprobe), Negativtests fuer Drift und
 Zeit. Der Bundestagspfad, die Schwellen und die AfD-Sperre bleiben unveraendert.
 Kein Liveabruf, Import, Aktivierung oder500er Test; Production bleibt500/0,
-Offline-Zielkohorte485/15 und nicht importfreigegeben.
+Offline-Zielkohorte inzwischen 500/500 technisch akzeptiert und nicht importfreigegeben.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
 Zwei bislang offene Berliner Mandatsarten sind ueber die amtliche
 [Berliner Mandatsartenquittung](betrieb/berlin-mandatsarten-20260927.json) belegt
 (Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux Landesliste;
 Handbuch-PDF vom8.10.2025, Seite204 linke Spalte, woertliche Transkription, kein
-automatischer PDF-Parser); Claudia Engelmann bleibt offen.
+automatischer PDF-Parser); der damals offene Fall Claudia Engelmann ist inzwischen
+gleichgruppig durch Steffen Zillich mit direkt belegter Landesliste ersetzt.
 Die 54 urspruenglich fachlich offenen Profile tragen ueber die gepruefte
 [Rollenquittung](betrieb/profilrollen-54-20260927.json) 48 belegte Amtsrollen
 in `profil.funktionen` (dedupliziert angehaengt, 6 offen); das ist keine fachliche
@@ -211,8 +216,11 @@ Berliner Fachachsenfall Kai Wegner ueber die amtlich belegte Richtlinienkompeten
 des Regierenden Buergermeisters; die bestehende Rolle bleibt unveraendert, Person
 und Amt sind getrennt an die aktuelle Senatsseite gebunden und die weiteren50
 Geschaeftsbereichsthemen werden nicht uebernommen.
-Aktueller lokaler Entwurf:488/12 technisch akzeptiert;11 Fachachsen,73 aktuelle
-Parteifelder und eine Berliner Mandatsart bleiben offen.
+Aktueller lokaler Entwurf:500/500 technisch akzeptiert;0 Fachachsen und0
+Mandatsarten offen,73 aktuelle Parteifelder bleiben vor Import gesperrt. Die
+fortgeschriebene [Rollenquittung](betrieb/profilrollen-43-20260928.json) bindet
+die 43 weiter relevanten Altfaelle (37 belegt/6 offen); elf Bundestagsprofile
+und Claudia Engelmann wurden gleichgruppig durch voll belegbare reale Profile ersetzt.
 Der getrennte [amtliche SPD-Parteivorstandsbeleg](betrieb/pistorius-partei-1-20260928.json)
 schliesst nur Boris Pistorius' Parteifeld; die bisherige335er-Auditquittung bleibt unveraendert.
 Die zwei zuletzt fehlenden aktuellen Fraktionsvorsitz-Funktionsfelder Britta
@@ -220,8 +228,8 @@ Haßelmann und Dr. Matthias Miersch sind lokal ueber die enge
 [Fraktionsvorsitz-Zweierquittung](betrieb/fraktionsvorsitz-zwei-20260927.json)
 belegt (nur Funktion und amtliche Fraktionsquelle, keine Themen und keine
 Fachachse;498 Datensaetze bleiben identisch); keine Importfreigabe.
-Naechster Fachschritt: verbleibende aktuelle Parteibelege, die letzte offene
-Berliner Mandatsart (Claudia Engelmann) und die restlichen Fachachsen.
+Naechster Fachschritt: die verbleibenden 73 aktuellen Parteibelege; bei reinem
+Belegblocker gilt weiter der gleichgruppige Ersatz durch reale aktuelle Profile.
 
 1. Die gemeinsame semantische Trennung der tatsächlich sichtbaren Texte aus
    Briefing, Lage und Radar technisch absichern und mit echten Helmut Ausgaben

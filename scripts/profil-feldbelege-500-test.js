@@ -85,6 +85,20 @@ for (const d of datensaetze) {
 a.ok(!datensaetze.some((d) => d.quelle.url.includes("schmidt_jan-1047146")), "gesperrte Kennung in der Zielauswahl");
 a.ok(!datensaetze.some((d) => d.profil.vollname === "Schmidt, Jan Wenzel"), "gesperrter Name in der Zielauswahl");
 a.ok(datensaetze.some((d) => d.quelle.url.includes("preisendanz_david")), "Ersatzprofil fehlt");
+const ersetztAlt = [
+  "droege_katharina-1044100", "englhardt_kopf_martina-1044208", "frei_thorsten-1044370",
+  "gueler_serap-1044642", "hahn_florian-1044694", "hauer_matthias-1044780",
+  "hirte_christian-1045006", "lange_ulrich-1048862", "launert_silke-1045740",
+  "ludwig_daniela-1045886", "kofler_baerbel-1045482", "claudia-engelmann",
+];
+const ersetztNeu = [
+  "paus_lisa-1046498", "rachel_thomas-1046652", "radomski_kerstin-1046660",
+  "radwan_alexander-1049086", "reddig_pascal-1046704", "rehbaum_henning-1049104",
+  "reichel_markus-1046714", "roettgen_norbert-1049138", "rohwer_lars-1046822",
+  "rothenberger_johannes-1049136", "ruetzel_bernd-1046916", "steffen-zillich",
+];
+a.ok(ersetztAlt.every((k) => !datensaetze.some((d) => d.amtlicheKennung === k)), "ersetzte Altprofile duerfen nicht mehr vorkommen");
+a.ok(ersetztNeu.every((k) => datensaetze.some((d) => d.amtlicheKennung === k)), "alle zwoelf belegten Ersatzprofile muessen vorkommen");
 
 // ── 4 · Partei-/Fraktionsregeln und gepruefte Ergaenzungsquittung ─────────────────────────
 // 335 vorher offene Parteifelder wurden von Sol an URL+sha256 geprueft (261 belegt,
@@ -217,8 +231,8 @@ a.equal(parteiQuelle.sha256, pistoriusEintrag.quelle.sha256, "Partei-Quelle bind
 // ── 5 · Mandatsachse: Wahlkreiskandidatur ist kein Direktmandat ───────────────────────────
 const btDirekt = datensaetze.filter((d) => d.parlament === "bundestag" && d.profil.wahlkreis).length;
 const btListe = datensaetze.filter((d) => d.parlament === "bundestag" && d.profil.listenmandat).length;
-a.equal(btDirekt, 160, "160 Bundestags-Wahlkreismandate");
-a.equal(btListe, 170, "170 Bundestags-Listenmandate");
+a.equal(btDirekt, 159, "159 Bundestags-Wahlkreismandate");
+a.equal(btListe, 171, "171 Bundestags-Listenmandate");
 for (const d of datensaetze.filter((x) => x.parlament === "bundestag")) {
   const kandidatur = (d.mandatsnachweis.mandatsachsen || []).some((m) => m.art === "Wahlkreiskandidatur");
   if (kandidatur && !(d.mandatsnachweis.mandatsachsen || []).some((m) => m.art === "Wahlkreismandat")) {
@@ -238,14 +252,14 @@ a.equal(ausProfilkopf.filter((d) => d.parlament === "landtag-brandenburg").lengt
 for (const d of ausProfilkopf) {
   a.ok(d.mandatsartBelegt && (typeof d.mandatsartBelegt === "string" || Object.keys(d.mandatsartBelegt).length > 0));
 }
-// Genau 1 Berliner Landtagsmandat bleibt mangels belegter Angabe offen (Claudia
-// Engelmann). Zwei Berliner und vier Brandenburg-Mandate sind ueber versionierte
-// Mandatsartenquittungen belegt (nur Mandatsart + Region, kein Listenplatz, keine
-// Partei).
+// Der letzte offene Berliner Mandatsfall Claudia Engelmann wurde gleichgruppig
+// durch Steffen Zillich ersetzt; dessen Landesliste steht direkt im amtlichen
+// Profilkopf. Die historischen Zusatzquittungen bleiben eng begrenzt.
 const mandatsartOffen = datensaetze.filter((d) => d.offeneFelder.includes("mandatsart"));
-a.equal(mandatsartOffen.length, 1, "1 Berliner Mandatsart bleibt ehrlich offen");
-a.ok(mandatsartOffen.every((d) => d.parlament === "landtag-berlin"), "nur Berlin bleibt offen");
-a.deepEqual(mandatsartOffen.map((d) => d.amtlicheKennung), ["claudia-engelmann"], "offen bleibt nur Engelmann");
+a.equal(mandatsartOffen.length, 0, "keine Mandatsart bleibt offen");
+const zillich = datensaetze.find((d) => d.amtlicheKennung === "steffen-zillich");
+a.ok(zillich && zillich.profil.listenmandat === true, "Zillichs amtlich belegte Landesliste fehlt");
+a.equal(zillich.profil.regionHinweis, "Berlin — Landesliste");
 
 // 5a · Belegte Mandatsart Brandenburg: nur Landesliste + Region, kein Listenplatz.
 const ausQuittung = datensaetze.filter((d) => d.mandatsartQuittung);
@@ -280,7 +294,7 @@ a.equal(beQuittung.length, 2, "zwei Berliner Mandate stammen aus der Berliner Ma
 a.deepEqual(
   beQuittung.map((d) => d.amtlicheKennung).sort(),
   ["benedikt-lux", "johannes-martin"],
-  "genau Martin und Lux sind belegt; Engelmann bleibt offen",
+  "genau Martin und Lux stammen weiterhin aus der engen Zusatzquittung",
 );
 const beDatei = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "berlin-mandatsarten-20260927.json"), "utf8"));
 a.equal(beDatei.quelle.seite, 204, "PDF-Seite 204 gebunden");
@@ -336,7 +350,7 @@ a.ok(beDatei.belege.find((b) => b.amtlicheKennung === "johannes-martin").aktuell
   === "/Abgeordnete/johannes-martin?groupStrategy=constituency", "Martin braucht die exakte Abschnittsbindung");
 a.ok(beDatei.belege.find((b) => b.amtlicheKennung === "benedikt-lux").aktuelleAbschnittsbindung === null,
   "Lux hat keine Wahlkreissuche-Abschnittsbindung");
-a.ok(!datensaetze.some((d) => d.amtlicheKennung === "claudia-engelmann" && d.mandatsartQuittungBe), "Engelmann bleibt offen");
+a.ok(!datensaetze.some((d) => d.amtlicheKennung === "claudia-engelmann"), "Engelmann wurde gleichgruppig ersetzt");
 
 // ── 6 · Der echte Importvertrag auf allen 500 Profilen ───────────────────────────────────
 const importDaten = { version: datei.vertragsformat, profile: datensaetze.map((d) => d.profil) };
@@ -366,8 +380,8 @@ for (const e of ergebnis.ergebnisse) {
 // Themen zu setzen; die Achse schliesst sich ehrlich (54 -> 11). Vier
 // Brandenburg- und zwei Berliner Mandate sind ueber die Mandatsartenquittungen
 // belegt (7 -> 1 region-fehlt; offen bleibt nur Engelmann).
-a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 11, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
-a.equal(ergebnis.gueltig, 488, "488 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
+a.deepEqual(fehlercodes, {}, "keine technische Achsen-/Mandatsluecke darf verbleiben");
+a.equal(ergebnis.gueltig, 500, "alle 500 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
 
 // Einzelpruefung (pruefeProfil) muss dieselbe Sprache sprechen wie die Mengenpruefung.
 for (let i = 0; i < datensaetze.length; i += 1) {
@@ -409,12 +423,12 @@ for (const d of datensaetze.filter((x) => x.parlament === "bundestag")) {
 }
 
 const mitWeiterenGremien = datensaetze.filter((d) => (d.weitereGremienBeleg || []).length > 0);
-a.equal(mitWeiterenGremien.length, 114, "114 Bundestagsprofile tragen belegte sonstige Gremien");
+a.equal(mitWeiterenGremien.length, 118, "118 Bundestagsprofile tragen belegte sonstige Gremien");
 a.equal(mitWeiterenGremien.every((d) => d.parlament === "bundestag"), true, "nur Bundestagsprofile betroffen");
 a.equal(
   datensaetze.reduce((summe, d) => summe + (d.weitereGremienBeleg || []).length, 0),
-  141,
-  "141 belegte Mitgliedschaften in sonstigen Gremien",
+  145,
+  "145 belegte Mitgliedschaften in sonstigen Gremien",
 );
 a.equal(
   new Set(datensaetze.flatMap((d) => (d.weitereGremienBeleg || []).map((b) => b.gremium))).size,
@@ -435,7 +449,7 @@ const landtagWeitere = datensaetze.filter((d) => d.parlament !== "bundestag" && 
 a.equal(landtagWeitere.length, 23, "Landtags-Gremien bleiben unveraendert erhalten");
 a.equal(landtagWeitere.every((d) => (d.weitereGremienBeleg || []).length === 0), true, "Landtagsgremien sind kein Bundestags-JSON-LD-Beleg");
 const btAchseOffen = btSonstige.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
-a.equal(btAchseOffen.length, 11, "44 Bundestagsprofile urspruenglich ohne belegte fachliche Achse, davon 9 ueber die Ressort-, 6 ueber die Aufgaben-, 2 ueber die beratenden, 3 ueber die Zusatzaufgaben-, 2 ueber die BMWSB-Aufgaben-, 1 ueber die Amthor-Einzelfall-, 3 ueber die Wahlausschuss-Aufgaben-, 1 ueber die Jarzombek-Abteilungs-, 1 ueber die Kloeckner-Einzelfall-, 1 ueber die Rohde-Einzelfall- und 1 ueber die Merz-Einzelfallquittung geschlossen");
+a.equal(btAchseOffen.length, 0, "die elf letzten Bundestags-Fachachsen sind durch gleichgruppige Ersatzprofile geschlossen");
 const btNurSonstigeGremien = btSonstige.filter((d) => (d.weitereGremienBeleg || []).length
   && (d.profil.ausschuesse || []).length === 0
   && (d.profil.stellvertretendeAusschuesse || []).length === 0);
@@ -473,31 +487,28 @@ for (const d of btSonstige) {
 // Wahlausschuss-Aufgabenquittung (3), die Jarzombek-Abteilungsquittung (1) und die
 // Kloeckner-Einzelfallquittung (1), die Rohde-Einzelfallquittung (1) und die
 // Merz-Einzelfallquittung (1):
-// 319 von 330 bereit, 11 verbleiben ohne fachliche Achse.
-a.equal(btBereit, 319, "319 von 330 Bundestagsprofilen sind bereit (vorher 179)");
-a.equal(btNichtBereit, 11, "11 Bundestagsprofile bleiben nicht bereit");
+// Die elf technisch offenen Bundestagsprofile wurden gleichgruppig durch
+// aktuelle Abgeordnete mit amtlich belegten Ausschussachsen ersetzt.
+a.equal(btBereit, 330, "330 von 330 Bundestagsprofilen sind technisch bereit");
+a.equal(btNichtBereit, 0, "kein Bundestagsprofil bleibt technisch nicht bereit");
 // Stefan Seidler (SSW, fraktionslos) wurde zuvor faelschlich als
 // Partei/Fraktionswiderspruch gezaehlt. Fraktionslosigkeit schliesst eine
 // Parteimitgliedschaft nicht aus; der Fix in profile-readiness entfernt nur diesen
 // Prueffehler. Seine beratende Achse ist inzwischen belegt; die 11 nicht-bereiten
 // Bundestagsprofile entstehen ausschliesslich aus offenen fachlichen Achsen.
-a.deepEqual(
-  btReadinessGruende,
-  { "fehlend:schwerpunkt_oder_ausschuss": 11 },
-  "nur noch die offene fachliche Achse; der falsche Partei/Fraktionswiderspruch ist weg",
-);
+a.deepEqual(btReadinessGruende, {}, "keine Bundestags-Readiness-Luecke bleibt offen");
 
-// ── 6d · Rollenquittung der 54 offenen Fachachsen (48 belegt / 6 offen) ──────────────────
+// ── 6d · Fortgeschriebene Rollenquittung (43 Profile; 37 belegt / 6 offen) ───────────────
 // Die vom Orchestrator gepruefte Quittung haengt nur die freigegebenen wortlaut-Strings
 // dedupliziert an bestehende funktionen. Sie erzeugt KEINE fachliche Achse und KEIN
-// regierungsrolle-Schema: bestehende Gremienrollen bleiben, die 54 Achsen bleiben offen.
-const rollen = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "profilrollen-54-20260927.json"), "utf8"));
-a.equal(rollen.bilanz.gesamt, 54, "Quittung muss 54 Profile umfassen");
-a.equal(rollen.bilanz.rollenbelegt, 48, "48 Rollen sind belegt");
+// regierungsrolle-Schema: bestehende Gremienrollen bleiben unveraendert.
+const rollen = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "profilrollen-43-20260928.json"), "utf8"));
+a.equal(rollen.bilanz.gesamt, 43, "Quittung muss 43 verbleibende Profile umfassen");
+a.equal(rollen.bilanz.rollenbelegt, 37, "37 Rollen sind belegt");
 a.equal(rollen.bilanz.offen, 6, "6 Eintraege bleiben offen");
-a.equal(rollen.ergebnisse.length, 54, "Quittung muss 54 Ergebnisse tragen");
+a.equal(rollen.ergebnisse.length, 43, "Quittung muss 43 Ergebnisse tragen");
 const rollenByKennung = new Map(rollen.ergebnisse.map((e) => [e.kennung, e]));
-a.equal(rollenByKennung.size, 54, "Quittungskennungen muessen eindeutig sein");
+a.equal(rollenByKennung.size, 43, "Quittungskennungen muessen eindeutig sein");
 for (const e of rollen.ergebnisse) {
   if (e.status === "offen") a.deepEqual(e.funktionen, [], "offener Eintrag darf keine Rolle tragen");
   else a.ok(e.funktionen.length > 0, "belegter Eintrag braucht eine Rolle");
@@ -806,11 +817,11 @@ a.equal(stellvertretungenProfil.length, 35, "35 Profile tragen die Stellvertretu
 a.equal(stellvertretungen54Profil.length, 1, "genau ein Profil schliesst damit eine zuvor offene 54er-Fachachse");
 a.equal(stellvertretungenProfil.reduce((s, d) => s + (d.profil.stellvertretendeAusschuesse || []).length, 0), 76,
   "die 35 Profile tragen zusammen genau 76 belegte Stellvertretungen");
-a.equal(fachAchseOffen.length, 11, "54 - 19 - 6 - 2 - 3 - 2 - 1 - 3 - 1 - 1 - 1 - 1 - 1 - 1 - 1 = 11 Fachachsen bleiben offen");
+a.equal(fachAchseOffen.length, 0, "nach elf gleichgruppigen Ersatzprofilen bleibt keine Fachachse offen");
 a.deepEqual(
   new Set([...fachAchseOffen, ...stellvertretungen54Profil, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil, ...zusatzProfil, ...bmwsbProfil, ...amthorProfil, ...wahlausschussProfil, ...jarzombekProfil, ...kloecknerProfil, ...rohdeProfil, ...merzProfil, ...woidkeProfil, ...wegnerProfil].map((d) => d.kanonischeKennung)),
   new Set(rollenByKennung.keys()),
-  "disjunkte Vereinigung aus 11 offenen + 1 Stellvertretungs- + 19 Ressort- + 6 Aufgaben- + 2 beratenden + 3 Zusatzaufgaben- + 2 BMWSB- + 1 Amthor- + 3 Wahlausschuss- + 1 Jarzombek- + 1 Kloeckner- + 1 Rohde- + 1 Merz- + 1 Woidke- + 1 Wegner-Achse ergibt genau die 54er Quittung",
+  "disjunkte Vereinigung aus 1 Stellvertretungs- + 42 Themenachsen ergibt genau die fortgeschriebene 43er Quittung",
 );
 a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung && !d.zusaetzlicheaufgabenQuittung && !d.bmwsbQuittung && !d.amthorQuittung && !d.wahlausschussQuittung && !d.jarzombekQuittung && !d.kloecknerQuittung && !d.rohdeQuittung && !d.merzQuittung && !d.woidkeQuittung && !d.wegnerQuittung && !d.stellvertretungenQuittung), "offene Achse darf keine geschlossene Quittung tragen");
 let rollenBelegt = 0;
@@ -824,7 +835,7 @@ for (const d of datensaetze) {
     continue;
   }
   a.ok(q, `Rollenbeleg fehlt fuer ${d.kanonischeKennung}`);
-  a.equal(q.datei, "docs/betrieb/profilrollen-54-20260927.json");
+  a.equal(q.datei, "docs/betrieb/profilrollen-43-20260928.json");
   a.equal(q.url, d.quelle.url, "Rollenbeleg muss an die amtliche Quell-URL gebunden sein");
   a.equal(q.sha256, d.quelle.sha256, "Rollenbeleg muss denselben Quellhash binden");
   a.equal(q.status, e.status, "Rollenstatus muss der Quittung entsprechen");
@@ -853,7 +864,7 @@ for (const d of datensaetze) {
     a.ok((d.profil.funktionen || []).includes(`${beleg.rolle}: ${beleg.gremium}`), "Gremienrolle muss erhalten bleiben");
   }
 }
-a.equal(rollenBelegt, 48, "48 Profile tragen eine belegte Amtsrolle");
+a.equal(rollenBelegt, 37, "37 verbleibende Profile tragen eine belegte Amtsrolle");
 a.equal(rollenOffen, 6, "6 Profile bleiben ohne neue Rolle offen");
 
 // ── 6e · Ressortachse: Verlustfreier Import-/Storage-Round-Trip inkl. Kennzeichnung ──────
@@ -2087,6 +2098,6 @@ if (eingangVorhanden && python) {
 }
 
 console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, "
-  + "echter Importvertrag (488 technisch importierbar, 12 offen), "
-  + "Wegner-Einzelfallquittung (Richtlinien der Regierungspolitik, 11 Fachachsen verbleiben), "
-  + "Bundestags-Readiness (319/330), alle Profile inaktiv, Reproduzierbarkeit: " + reproduzierbar);
+  + "echter Importvertrag (500 technisch importierbar, 0 Achsen-/Mandatsluecken), "
+  + "12 gleichgruppige Ersatzprofile amtlich gebunden, "
+  + "Bundestags-Readiness (330/330), alle Profile inaktiv, Reproduzierbarkeit: " + reproduzierbar);

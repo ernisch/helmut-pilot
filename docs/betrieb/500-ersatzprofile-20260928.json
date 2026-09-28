@@ -1,0 +1,217 @@
+{
+  "status": "Zwoelf Ersatzprofile offline integriert; kein Import, keine Aktivierung, kein 500er Test",
+  "erstelltAm": "2026-09-28",
+  "regel": "Nur reale aktuelle Abgeordnete derselben vorgesehenen Parlaments-/Fraktionsgruppe; nichts geraten.",
+  "ersetzungen": [
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "droege_katharina-1044100",
+      "hinzu": "paus_lisa-1046498",
+      "partei": "Bündnis 90/Die Grünen",
+      "parteibeleg": "Seit 1995 Mitglied bei Bündnis 90/Grünen",
+      "parteibelegGrund": "andauernde Mitgliedschaft seit 1995",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/paus_lisa-1046498",
+        "sha256": "52a99806a6082718d941a6887858439d13070d965c3eb363d0fc9a532877f287",
+        "bytes": 278003,
+        "abgerufenAm": "2026-09-28T19:21:20.007626+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "englhardt_kopf_martina-1044208",
+      "hinzu": "rachel_thomas-1046652",
+      "partei": "CDU",
+      "parteibeleg": "Seit 2012 CDU Kreisvorsitzender im Kreis Düren",
+      "parteibelegGrund": "aktuelles Parteiamt seit 2012",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rachel_thomas-1046652",
+        "sha256": "eea6fd086672df73cbd07f1f5a14f26100416f4212360993dedf15407b9cf40a",
+        "bytes": 279589,
+        "abgerufenAm": "2026-09-28T19:03:30.138563+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "frei_thorsten-1044370",
+      "hinzu": "radomski_kerstin-1046660",
+      "partei": "CDU",
+      "parteibeleg": "Seit 1998 Mitglied der CDU Deutschlands",
+      "parteibelegGrund": "andauernde Mitgliedschaft seit 1998",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/radomski_kerstin-1046660",
+        "sha256": "d0d1191415a5b71018aba6283558fe72112684e185921f45e6bd977b5fe560cc",
+        "bytes": 279108,
+        "abgerufenAm": "2026-09-28T19:03:30.869779+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "gueler_serap-1044642",
+      "hinzu": "radwan_alexander-1049086",
+      "partei": "CSU",
+      "parteibeleg": "seit 2014 Kreisvorsitzender der CSU Miesbach",
+      "parteibelegGrund": "aktuelles Parteiamt seit 2014",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/radwan_alexander-1049086",
+        "sha256": "d42a0a6ad17956a58a8e361e926f824ef48b66ae35dee6a57d326b872053316d",
+        "bytes": 281656,
+        "abgerufenAm": "2026-09-28T19:03:30.026365+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "hahn_florian-1044694",
+      "hinzu": "reddig_pascal-1046704",
+      "partei": "CDU",
+      "parteibeleg": "Seit 2011 Mitglied der CDU und der Jungen Union",
+      "parteibelegGrund": "andauernde Mitgliedschaft seit 2011",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/reddig_pascal-1046704",
+        "sha256": "d58315565458a20631e9134ba03d9892a704fbf6acf5e34203abd49908cc0fd1",
+        "bytes": 277080,
+        "abgerufenAm": "2026-09-28T19:03:29.831608+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "hauer_matthias-1044780",
+      "hinzu": "rehbaum_henning-1049104",
+      "partei": "CDU",
+      "parteibeleg": "Mitglied der CDU seit 1998",
+      "parteibelegGrund": "andauernde Mitgliedschaft seit 1998",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rehbaum_henning-1049104",
+        "sha256": "d081ffdb7b471ca899551a793becf36f35e10691aa210b6b94b51b64d706c2a1",
+        "bytes": 276075,
+        "abgerufenAm": "2026-09-28T19:03:28.697632+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "hirte_christian-1045006",
+      "hinzu": "reichel_markus-1046714",
+      "partei": "CDU",
+      "parteibeleg": "Vorsitzender des Landesfachausschusses Wohlstand der CDU Sachsen",
+      "parteibelegGrund": "gegenwaertiges Parteiamt ohne Befristung",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/reichel_markus-1046714",
+        "sha256": "0a88121634d76bba1dbb2bf7c7d64a9126c6e2444fa394a17121f11e4932fa58",
+        "bytes": 280109,
+        "abgerufenAm": "2026-09-28T19:03:29.544078+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "lange_ulrich-1048862",
+      "hinzu": "roettgen_norbert-1049138",
+      "partei": "CDU",
+      "parteibeleg": "seit 2021 Mitglied des Präsidium der CDU Deutschlands",
+      "parteibelegGrund": "aktuelles Parteiamt seit 2021",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/roettgen_norbert-1049138",
+        "sha256": "fc09f1453eae41f52315db0b8f21e90373e454479da3ba29e0da5e4266e53407",
+        "bytes": 280921,
+        "abgerufenAm": "2026-09-28T19:03:31.023687+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "launert_silke-1045740",
+      "hinzu": "rohwer_lars-1046822",
+      "partei": "CDU",
+      "parteibeleg": "seit 2021 Landesvorsitzender des Evangelischen Arbeitskreises (EAK) der CDU Sachsen",
+      "parteibelegGrund": "aktuelles Parteiamt seit 2021",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rohwer_lars-1046822",
+        "sha256": "1b3d18e5624588604e292f99bc42f40d1739b1755a27fb645f6e595767d9d78b",
+        "bytes": 283408,
+        "abgerufenAm": "2026-09-28T19:09:33.555597+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "ludwig_daniela-1045886",
+      "hinzu": "rothenberger_johannes-1049136",
+      "partei": "CDU",
+      "parteibeleg": "Mitglied der Christlich Demokratischen Union Deutschlands",
+      "parteibelegGrund": "ausdrueckliche gegenwaertige Mitgliedschaft",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rothenberger_johannes-1049136",
+        "sha256": "1c9e2d4aa2919b907e3834c74d1549ef59423c8d11e18ef215d3113f7172d9df",
+        "bytes": 276510,
+        "abgerufenAm": "2026-09-28T19:21:08.861239+00:00"
+      }
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "kofler_baerbel-1045482",
+      "hinzu": "ruetzel_bernd-1046916",
+      "partei": "SPD",
+      "parteibeleg": "seit 2010 Vorsitzender SPD-Unterbezirk Main-Spessart/Miltenberg",
+      "parteibelegGrund": "aktuelles Parteiamt seit 2010",
+      "quelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/ruetzel_bernd-1046916",
+        "sha256": "7495de7e57ee945a05ff28dc9cb0b608ecef97f36eab5f30e1a0ade93567449d",
+        "bytes": 278179,
+        "abgerufenAm": "2026-09-28T19:03:29.876780+00:00"
+      }
+    },
+    {
+      "parlament": "landtag-berlin",
+      "fraktion": "Die Linke Fraktion",
+      "entfernt": "claudia-engelmann",
+      "hinzu": "steffen-zillich",
+      "partei": "LINKE",
+      "parteibeleg": null,
+      "parteibelegGrund": "Partei im amtlichen Profil-H1; Landesliste in der Faktenliste",
+      "quelle": {
+        "url": "https://www.parlament-berlin.de/Abgeordnete/steffen-zillich?groupStrategy=nachnamen",
+        "sha256": "eb2501b04607f910fd9c2ac5811deba0e56a26f5e6fbe6e2a099ce85ad385ace",
+        "bytes": 108195,
+        "abgerufenAm": "2026-09-28T19:09:34.106574+00:00"
+      }
+    }
+  ],
+  "uebersprungen": [
+    {
+      "amtlicheKennung": "rainer_alois-1046668",
+      "grund": "kein aktueller Bundestagsausschuss"
+    },
+    {
+      "amtlicheKennung": "roewekamp_thomas-1046878",
+      "grund": "keine eindeutige aktuelle Parteimitgliedschaft im amtlichen Profil"
+    },
+    {
+      "amtlicheKennung": "otte_karoline-1046442",
+      "grund": "keine eindeutige aktuelle Parteimitgliedschaft im amtlichen Profil"
+    },
+    {
+      "amtlicheKennung": "regina-kittler",
+      "grund": "keine eindeutige Mandatsart im amtlichen Profil"
+    }
+  ],
+  "bilanz": {
+    "gesamt": 500,
+    "nachParlament": {
+      "bundestag": 330,
+      "landtag-berlin": 120,
+      "landtag-brandenburg": 50
+    },
+    "ersetzt": 12,
+    "afdProfile": 0,
+    "aktiv": 0,
+    "importfreigegeben": 0
+  }
+}

@@ -469,30 +469,34 @@
       }
     },
     {
-      "kennung": "bundestag-droege-katharina-1044100",
+      "kennung": "bundestag-paus-lisa-1046498",
       "status": "belegt",
       "partei": "Bündnis 90/Die Grünen",
-      "beleg": "seit 2000 Mitglied bei Bündnis 90/ Die Grünen.",
+      "beleg": "Seit 1995 Mitglied bei Bündnis 90/Grünen",
       "abschnitt": "Biografie",
-      "grund": "andauernde Mitgliedschaft seit 2000",
+      "grund": "andauernde Mitgliedschaft seit 1995",
       "vorschlag": {
-        "kennung": "bundestag-droege-katharina-1044100",
+        "kennung": "bundestag-paus-lisa-1046498",
         "status": "belegt",
-        "partei": "GRÜNE",
-        "beleg": "seit 2000 Mitglied bei Bündnis 90/ Die Grünen.",
+        "partei": "Bündnis 90/Die Grünen",
+        "beleg": "Seit 1995 Mitglied bei Bündnis 90/Grünen",
         "abschnitt": "Biografie",
-        "grund": "andauernde Mitgliedschaft seit 2000"
+        "grund": "andauernde Mitgliedschaft seit 1995"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/D/droege_katharina-1044100",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/D/droege_katharina-1044100",
-        "abgerufenAm": "2026-09-27T12:59:29.625525+00:00",
-        "sha256": "dc1ef5c59e46f64d1b0cc5416f27b7ed216ae5f6ec9d16a85e96d663a8785385",
-        "bytes": 276492,
-        "datei": "bundestag-droege_katharina-1044100.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/paus_lisa-1046498",
+        "text": "Paus, Lisa",
+        "fraktion": "Bündnis 90/Die Grünen",
+        "amtlicheKennung": "paus_lisa-1046498",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:21:20.007626+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/P/paus_lisa-1046498",
+        "datei": "bundestag-paus_lisa-1046498.html",
+        "bytes": 278003,
+        "sha256": "52a99806a6082718d941a6887858439d13070d965c3eb363d0fc9a532877f287"
       }
     },
     {
@@ -2845,30 +2849,34 @@
       }
     },
     {
-      "kennung": "bundestag-englhardt-kopf-martina-1044208",
+      "kennung": "bundestag-rachel-thomas-1046652",
       "status": "belegt",
-      "partei": "CSU",
-      "beleg": "seit Oktober 2023 Mitglied im CSU-Parteivorstand",
+      "partei": "CDU",
+      "beleg": "Seit 2012 CDU Kreisvorsitzender im Kreis Düren",
       "abschnitt": "Biografie",
-      "grund": "aktuelles Parteigremium seit 2023",
+      "grund": "aktuelles Parteiamt seit 2012",
       "vorschlag": {
-        "kennung": "bundestag-englhardt-kopf-martina-1044208",
+        "kennung": "bundestag-rachel-thomas-1046652",
         "status": "belegt",
-        "partei": "CSU",
-        "beleg": "seit Oktober 2023 Mitglied im CSU-Parteivorstand",
+        "partei": "CDU",
+        "beleg": "Seit 2012 CDU Kreisvorsitzender im Kreis Düren",
         "abschnitt": "Biografie",
-        "grund": "aktuelles Parteigremium seit 2023"
+        "grund": "aktuelles Parteiamt seit 2012"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/E/englhardt_kopf_martina-1044208",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/E/englhardt_kopf_martina-1044208",
-        "abgerufenAm": "2026-09-27T13:00:14.885963+00:00",
-        "sha256": "1bc3695dfcb87dba1909c02e0d29d8b0e21ab6477df9c9f5694feb5c77b9c88b",
-        "bytes": 274197,
-        "datei": "bundestag-englhardt_kopf_martina-1044208.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rachel_thomas-1046652",
+        "text": "Rachel, Thomas",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "rachel_thomas-1046652",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:03:30.138563+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/rachel_thomas-1046652",
+        "datei": "bundestag-rachel_thomas-1046652.html",
+        "bytes": 279589,
+        "sha256": "eea6fd086672df73cbd07f1f5a14f26100416f4212360993dedf15407b9cf40a"
       }
     },
     {
@@ -3007,30 +3015,34 @@
       }
     },
     {
-      "kennung": "bundestag-frei-thorsten-1044370",
+      "kennung": "bundestag-radomski-kerstin-1046660",
       "status": "belegt",
       "partei": "CDU",
-      "beleg": "seit 2007 Stellvertretender Landesvorsitzender der CDU Baden-Württemberg",
+      "beleg": "Seit 1998 Mitglied der CDU Deutschlands",
       "abschnitt": "Biografie",
-      "grund": "aktuelles Parteiamt seit 2007",
+      "grund": "andauernde Mitgliedschaft seit 1998",
       "vorschlag": {
-        "kennung": "bundestag-frei-thorsten-1044370",
+        "kennung": "bundestag-radomski-kerstin-1046660",
         "status": "belegt",
         "partei": "CDU",
-        "beleg": "seit 2007 Stellvertretender Landesvorsitzender der CDU Baden-Württemberg",
+        "beleg": "Seit 1998 Mitglied der CDU Deutschlands",
         "abschnitt": "Biografie",
-        "grund": "aktuelles Parteiamt seit 2007"
+        "grund": "andauernde Mitgliedschaft seit 1998"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/F/frei_thorsten-1044370",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/F/frei_thorsten-1044370",
-        "abgerufenAm": "2026-09-27T13:00:17.579040+00:00",
-        "sha256": "098af37b685e3f841f3a2b9931ded3682dd7faab254e50334724a5be554c2ac3",
-        "bytes": 275907,
-        "datei": "bundestag-frei_thorsten-1044370.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/radomski_kerstin-1046660",
+        "text": "Radomski, Kerstin",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "radomski_kerstin-1046660",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:03:30.869779+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/radomski_kerstin-1046660",
+        "datei": "bundestag-radomski_kerstin-1046660.html",
+        "bytes": 279108,
+        "sha256": "d0d1191415a5b71018aba6283558fe72112684e185921f45e6bd977b5fe560cc"
       }
     },
     {
@@ -3277,30 +3289,34 @@
       }
     },
     {
-      "kennung": "bundestag-gueler-serap-1044642",
+      "kennung": "bundestag-radwan-alexander-1049086",
       "status": "belegt",
-      "partei": "CDU",
-      "beleg": "2009 Eintritt in die CDU",
+      "partei": "CSU",
+      "beleg": "seit 2014 Kreisvorsitzender der CSU Miesbach",
       "abschnitt": "Biografie",
-      "grund": "Eintritt 2009, kein spaeterer Austritt belegt",
+      "grund": "aktuelles Parteiamt seit 2014",
       "vorschlag": {
-        "kennung": "bundestag-gueler-serap-1044642",
+        "kennung": "bundestag-radwan-alexander-1049086",
         "status": "belegt",
-        "partei": "CDU",
-        "beleg": "2009 Eintritt in die CDU",
+        "partei": "CSU",
+        "beleg": "seit 2014 Kreisvorsitzender der CSU Miesbach",
         "abschnitt": "Biografie",
-        "grund": "Eintritt 2009, kein spaeterer Austritt belegt"
+        "grund": "aktuelles Parteiamt seit 2014"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/G/gueler_serap-1044642",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/G/gueler_serap-1044642",
-        "abgerufenAm": "2026-09-27T13:00:22.926951+00:00",
-        "sha256": "84844e5064a140efc47e2a4648dbc47df341b774f6270038f91073cffe50e8cb",
-        "bytes": 275365,
-        "datei": "bundestag-gueler_serap-1044642.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/radwan_alexander-1049086",
+        "text": "Radwan, Alexander",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "radwan_alexander-1049086",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:03:30.026365+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/radwan_alexander-1049086",
+        "datei": "bundestag-radwan_alexander-1049086.html",
+        "bytes": 281656,
+        "sha256": "d42a0a6ad17956a58a8e361e926f824ef48b66ae35dee6a57d326b872053316d"
       }
     },
     {
@@ -3412,30 +3428,34 @@
       }
     },
     {
-      "kennung": "bundestag-hahn-florian-1044694",
+      "kennung": "bundestag-reddig-pascal-1046704",
       "status": "belegt",
-      "partei": "CSU",
-      "beleg": "seit 1992 Mitglied der CSU",
+      "partei": "CDU",
+      "beleg": "Seit 2011 Mitglied der CDU und der Jungen Union",
       "abschnitt": "Biografie",
-      "grund": "andauernde Mitgliedschaft seit 1992",
+      "grund": "andauernde Mitgliedschaft seit 2011",
       "vorschlag": {
-        "kennung": "bundestag-hahn-florian-1044694",
+        "kennung": "bundestag-reddig-pascal-1046704",
         "status": "belegt",
-        "partei": "CSU",
-        "beleg": "seit 1992 Mitglied der CSU",
+        "partei": "CDU",
+        "beleg": "Seit 2011 Mitglied der CDU und der Jungen Union",
         "abschnitt": "Biografie",
-        "grund": "andauernde Mitgliedschaft seit 1992"
+        "grund": "andauernde Mitgliedschaft seit 2011"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hahn_florian-1044694",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/H/hahn_florian-1044694",
-        "abgerufenAm": "2026-09-27T13:00:25.118341+00:00",
-        "sha256": "6f3acbe390a7879d17ec3feee227b2764763ffde871b4201fe7ae28a77bc1b12",
-        "bytes": 276766,
-        "datei": "bundestag-hahn_florian-1044694.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/reddig_pascal-1046704",
+        "text": "Reddig, Pascal",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "reddig_pascal-1046704",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:03:29.831608+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/reddig_pascal-1046704",
+        "datei": "bundestag-reddig_pascal-1046704.html",
+        "bytes": 277080,
+        "sha256": "d58315565458a20631e9134ba03d9892a704fbf6acf5e34203abd49908cc0fd1"
       }
     },
     {
@@ -3493,30 +3513,34 @@
       }
     },
     {
-      "kennung": "bundestag-hauer-matthias-1044780",
+      "kennung": "bundestag-rehbaum-henning-1049104",
       "status": "belegt",
       "partei": "CDU",
-      "beleg": "1994 Eintritt in die CDU",
+      "beleg": "Mitglied der CDU seit 1998",
       "abschnitt": "Biografie",
-      "grund": "Eintritt 1994, kein spaeterer Austritt belegt",
+      "grund": "andauernde Mitgliedschaft seit 1998",
       "vorschlag": {
-        "kennung": "bundestag-hauer-matthias-1044780",
+        "kennung": "bundestag-rehbaum-henning-1049104",
         "status": "belegt",
         "partei": "CDU",
-        "beleg": "1994 Eintritt in die CDU",
+        "beleg": "Mitglied der CDU seit 1998",
         "abschnitt": "Biografie",
-        "grund": "Eintritt 1994, kein spaeterer Austritt belegt"
+        "grund": "andauernde Mitgliedschaft seit 1998"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hauer_matthias-1044780",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/H/hauer_matthias-1044780",
-        "abgerufenAm": "2026-09-27T13:00:26.717047+00:00",
-        "sha256": "180f4f76103434b8c5d287bc8d0b0142e9b0e5ba7332cb374a29b8e5e4ba70b3",
-        "bytes": 278552,
-        "datei": "bundestag-hauer_matthias-1044780.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rehbaum_henning-1049104",
+        "text": "Rehbaum, Henning",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "rehbaum_henning-1049104",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:03:28.697632+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/rehbaum_henning-1049104",
+        "datei": "bundestag-rehbaum_henning-1049104.html",
+        "bytes": 276075,
+        "sha256": "d081ffdb7b471ca899551a793becf36f35e10691aa210b6b94b51b64d706c2a1"
       }
     },
     {
@@ -3682,30 +3706,34 @@
       }
     },
     {
-      "kennung": "bundestag-hirte-christian-1045006",
+      "kennung": "bundestag-reichel-markus-1046714",
       "status": "belegt",
       "partei": "CDU",
-      "beleg": "1995 Eintritt in die CDU",
+      "beleg": "Vorsitzender des Landesfachausschusses Wohlstand der CDU Sachsen",
       "abschnitt": "Biografie",
-      "grund": "Eintritt 1995, kein spaeterer Austritt belegt",
+      "grund": "gegenwaertiges Parteiamt ohne Befristung",
       "vorschlag": {
-        "kennung": "bundestag-hirte-christian-1045006",
+        "kennung": "bundestag-reichel-markus-1046714",
         "status": "belegt",
         "partei": "CDU",
-        "beleg": "1995 Eintritt in die CDU",
+        "beleg": "Vorsitzender des Landesfachausschusses Wohlstand der CDU Sachsen",
         "abschnitt": "Biografie",
-        "grund": "Eintritt 1995, kein spaeterer Austritt belegt"
+        "grund": "gegenwaertiges Parteiamt ohne Befristung"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hirte_christian-1045006",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/H/hirte_christian-1045006",
-        "abgerufenAm": "2026-09-27T13:00:30.493939+00:00",
-        "sha256": "2ee9d4b1244966598964b66483cd843dc47e07af05f78c94cb09b918baf86894",
-        "bytes": 277456,
-        "datei": "bundestag-hirte_christian-1045006.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/reichel_markus-1046714",
+        "text": "Reichel, Dr. Markus",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "reichel_markus-1046714",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:03:29.544078+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/reichel_markus-1046714",
+        "datei": "bundestag-reichel_markus-1046714.html",
+        "bytes": 280109,
+        "sha256": "0a88121634d76bba1dbb2bf7c7d64a9126c6e2444fa394a17121f11e4932fa58"
       }
     },
     {
@@ -4438,30 +4466,34 @@
       }
     },
     {
-      "kennung": "bundestag-lange-ulrich-1048862",
+      "kennung": "bundestag-roettgen-norbert-1049138",
       "status": "belegt",
-      "partei": "CSU",
-      "beleg": "seit 2013 Kreisvorsitzender der CSU Donau-Ries",
+      "partei": "CDU",
+      "beleg": "seit 2021 Mitglied des Präsidium der CDU Deutschlands",
       "abschnitt": "Biografie",
-      "grund": "aktuelles Parteiamt seit 2013",
+      "grund": "aktuelles Parteiamt seit 2021",
       "vorschlag": {
-        "kennung": "bundestag-lange-ulrich-1048862",
+        "kennung": "bundestag-roettgen-norbert-1049138",
         "status": "belegt",
-        "partei": "CSU",
-        "beleg": "seit 2013 Kreisvorsitzender der CSU Donau-Ries",
+        "partei": "CDU",
+        "beleg": "seit 2021 Mitglied des Präsidium der CDU Deutschlands",
         "abschnitt": "Biografie",
-        "grund": "aktuelles Parteiamt seit 2013"
+        "grund": "aktuelles Parteiamt seit 2021"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/L/lange_ulrich-1048862",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/L/lange_ulrich-1048862",
-        "abgerufenAm": "2026-09-27T13:00:44.946587+00:00",
-        "sha256": "183b84105d6b28ae98ee11aa3dab3fd45b1c51f92925bc6a3ce6799c8f54575d",
-        "bytes": 275159,
-        "datei": "bundestag-lange_ulrich-1048862.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/roettgen_norbert-1049138",
+        "text": "Röttgen, Dr. Norbert",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "roettgen_norbert-1049138",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:03:31.023687+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/roettgen_norbert-1049138",
+        "datei": "bundestag-roettgen_norbert-1049138.html",
+        "bytes": 280921,
+        "sha256": "fc09f1453eae41f52315db0b8f21e90373e454479da3ba29e0da5e4266e53407"
       }
     },
     {
@@ -4492,30 +4524,34 @@
       }
     },
     {
-      "kennung": "bundestag-launert-silke-1045740",
+      "kennung": "bundestag-rohwer-lars-1046822",
       "status": "belegt",
-      "partei": "CSU",
-      "beleg": "Seit 2013 Mitglied im CSU-Parteivorstand",
+      "partei": "CDU",
+      "beleg": "seit 2021 Landesvorsitzender des Evangelischen Arbeitskreises (EAK) der CDU Sachsen",
       "abschnitt": "Biografie",
-      "grund": "aktuelles Parteigremium seit 2013",
+      "grund": "aktuelles Parteiamt seit 2021",
       "vorschlag": {
-        "kennung": "bundestag-launert-silke-1045740",
+        "kennung": "bundestag-rohwer-lars-1046822",
         "status": "belegt",
-        "partei": "CSU",
-        "beleg": "Seit 2013 Mitglied im CSU-Parteivorstand",
+        "partei": "CDU",
+        "beleg": "seit 2021 Landesvorsitzender des Evangelischen Arbeitskreises (EAK) der CDU Sachsen",
         "abschnitt": "Biografie",
-        "grund": "aktuelles Parteigremium seit 2013"
+        "grund": "aktuelles Parteiamt seit 2021"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/L/launert_silke-1045740",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/L/launert_silke-1045740",
-        "abgerufenAm": "2026-09-27T13:00:45.913447+00:00",
-        "sha256": "838e601967cd0189942fbec3ded5bad02052811ea3866fb0a8f12664af2fd41e",
-        "bytes": 275555,
-        "datei": "bundestag-launert_silke-1045740.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rohwer_lars-1046822",
+        "text": "Rohwer, Lars",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "rohwer_lars-1046822",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:09:33.555597+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/rohwer_lars-1046822",
+        "datei": "bundestag-rohwer_lars-1046822.html",
+        "bytes": 283408,
+        "sha256": "1b3d18e5624588604e292f99bc42f40d1739b1755a27fb645f6e595767d9d78b"
       }
     },
     {
@@ -4681,30 +4717,34 @@
       }
     },
     {
-      "kennung": "bundestag-ludwig-daniela-1045886",
+      "kennung": "bundestag-rothenberger-johannes-1049136",
       "status": "belegt",
-      "partei": "CSU",
-      "beleg": "1994 Beitritt CSU Ortsverband Kolbermoor",
+      "partei": "CDU",
+      "beleg": "Mitglied der Christlich Demokratischen Union Deutschlands",
       "abschnitt": "Biografie",
-      "grund": "Eintritt 1994, kein spaeterer Austritt belegt",
+      "grund": "ausdrueckliche gegenwaertige Mitgliedschaft",
       "vorschlag": {
-        "kennung": "bundestag-ludwig-daniela-1045886",
+        "kennung": "bundestag-rothenberger-johannes-1049136",
         "status": "belegt",
-        "partei": "CSU",
-        "beleg": "1994 Beitritt CSU Ortsverband Kolbermoor",
+        "partei": "CDU",
+        "beleg": "Mitglied der Christlich Demokratischen Union Deutschlands",
         "abschnitt": "Biografie",
-        "grund": "Eintritt 1994, kein spaeterer Austritt belegt"
+        "grund": "ausdrueckliche gegenwaertige Mitgliedschaft"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/L/ludwig_daniela-1045886",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/L/ludwig_daniela-1045886",
-        "abgerufenAm": "2026-09-27T13:00:49.408312+00:00",
-        "sha256": "34c9c00134b1439fccd19a9c48242d9939dd8355623ce7691c7463da3fc8b9b7",
-        "bytes": 276287,
-        "datei": "bundestag-ludwig_daniela-1045886.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rothenberger_johannes-1049136",
+        "text": "Rothenberger, Johannes",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "rothenberger_johannes-1049136",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:21:08.861239+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/rothenberger_johannes-1049136",
+        "datei": "bundestag-rothenberger_johannes-1049136.html",
+        "bytes": 276510,
+        "sha256": "1c9e2d4aa2919b907e3834c74d1549ef59423c8d11e18ef215d3113f7172d9df"
       }
     },
     {
@@ -7894,30 +7934,34 @@
       }
     },
     {
-      "kennung": "bundestag-kofler-baerbel-1045482",
+      "kennung": "bundestag-ruetzel-bernd-1046916",
       "status": "belegt",
       "partei": "SPD",
-      "beleg": "1991 Eintritt in die SPD",
+      "beleg": "seit 2010 Vorsitzender SPD-Unterbezirk Main-Spessart/Miltenberg",
       "abschnitt": "Biografie",
-      "grund": "Eintritt 1991, kein spaeterer Austritt belegt",
+      "grund": "aktuelles Parteiamt seit 2010",
       "vorschlag": {
-        "kennung": "bundestag-kofler-baerbel-1045482",
+        "kennung": "bundestag-ruetzel-bernd-1046916",
         "status": "belegt",
         "partei": "SPD",
-        "beleg": "1991 Eintritt in die SPD",
+        "beleg": "seit 2010 Vorsitzender SPD-Unterbezirk Main-Spessart/Miltenberg",
         "abschnitt": "Biografie",
-        "grund": "Eintritt 1991, kein spaeterer Austritt belegt"
+        "grund": "aktuelles Parteiamt seit 2010"
       },
       "pruefung": "Sol: Identitaet/URL/Hash und woertlicher Beleg abgeglichen; Aussage auf aktuelle Mitgliedschaft/Parteiamt geprueft.",
       "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kofler_baerbel-1045482",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/K/kofler_baerbel-1045482",
-        "abgerufenAm": "2026-09-27T13:01:53.579022+00:00",
-        "sha256": "74acc02af9dc035afbf55602502206aed11cd4cae01be90075440911a1398efb",
-        "bytes": 279285,
-        "datei": "bundestag-kofler_baerbel-1045482.html",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/ruetzel_bernd-1046916",
+        "text": "Rützel, Bernd",
+        "fraktion": "SPD",
+        "amtlicheKennung": "ruetzel_bernd-1046916",
+        "parlament": "bundestag",
+        "abgerufenAm": "2026-09-28T19:03:29.876780+00:00",
+        "abrufStatus": "abgerufen",
         "http": 200,
-        "abrufStatus": "abgerufen"
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/ruetzel_bernd-1046916",
+        "datei": "bundestag-ruetzel_bernd-1046916.html",
+        "bytes": 278179,
+        "sha256": "7495de7e57ee945a05ff28dc9cb0b608ecef97f36eab5f30e1a0ade93567449d"
       }
     },
     {

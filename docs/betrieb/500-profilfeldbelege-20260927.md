@@ -4,10 +4,19 @@
 Zielprofile. **Keine fachliche Freigabe, kein Importmanifest, keine Production-
 Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
-**Aktuelle Fortschreibung nach dem Wegner-Schritt (Berlin, Richtlinienkompetenz):**
-488 technisch akzeptiert, 12 unvollstaendig; 319/330 Bundestagsprofile technisch bereit.
-11 fachliche Achsen, 73 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor
-offene Berliner Fachachsenfall Kai Wegner ist ueber genau das amtlich belegte Thema
+**Aktuelle Fortschreibung nach dem belegbaren Profilersatz vom 28.09.2026:**
+500/500 technisch akzeptiert; 330/330 Bundestagsprofile technisch bereit. Es bleiben
+0 fachliche Achsen und 0 Mandatsarten offen; 73 aktuelle Parteifelder bleiben vor
+Import gesperrt. Elf Bundestagsprofile und Claudia Engelmann wurden durch reale aktuelle
+Abgeordnete derselben Parlaments-/Fraktionsgruppe mit sauber belegbaren amtlichen Daten
+ersetzt; der Mix 330/120/50 bleibt exakt erhalten. Karoline Otte, Thomas Röwekamp,
+Alois Rainer und Regina Kittler wurden fail-closed uebersprungen, weil jeweils ein
+notwendiger aktueller Beleg fehlte. Die genaue Zuordnung und Quellenbindung stehen im
+[Ersatzbericht](500-ersatzprofile-20260928.json); die fortgeschriebene
+[Rollenquittung](profilrollen-43-20260928.json) enthaelt die 43 weiter relevanten
+Altfaelle (37 Rollen belegt, 6 Rollen offen), ohne daraus eine Fachachse abzuleiten.
+Die folgenden Absaetze dokumentieren die zuvor durchlaufenen Zwischenstaende. Der zuvor
+offene Berliner Fachachsenfall Kai Wegner war ueber genau das amtlich belegte Thema
 "Richtlinien der Regierungspolitik" geschlossen (versionierte
 [Wegner-Einzelfallquittung](wegner-richtlinien-1-20260928.json)): die bestehende Rolle
 Regierender Buergermeister von Berlin bleibt unveraendert; die Rollenquelle, der sichtbare

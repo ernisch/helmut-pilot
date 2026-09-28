@@ -1,5 +1,5 @@
 {
-  "status": "Vorlaeufige Namensauswahl, kein Importmanifest; Einzelprofil-Feldbelege und Rollen-/Parteienabdeckung offen",
+  "status": "Kanonische reale 500er-Namensauswahl; kein Importmanifest, keine Aktivierung",
   "erstelltAm": "2026-09-27T12:40:11.379841+00:00",
   "auswahl": [
     {
@@ -122,10 +122,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/D/droege_katharina-1044100",
-      "text": "Dröge, Katharina",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/paus_lisa-1046498",
+      "text": "Paus, Lisa",
       "fraktion": "Bündnis 90/Die Grünen",
-      "amtlicheKennung": "droege_katharina-1044100",
+      "amtlicheKennung": "paus_lisa-1046498",
       "parlament": "bundestag"
     },
     {
@@ -738,10 +738,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/E/englhardt_kopf_martina-1044208",
-      "text": "Englhardt-Kopf, Martina",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/rachel_thomas-1046652",
+      "text": "Rachel, Thomas",
       "fraktion": "CDU/CSU",
-      "amtlicheKennung": "englhardt_kopf_martina-1044208",
+      "amtlicheKennung": "rachel_thomas-1046652",
       "parlament": "bundestag"
     },
     {
@@ -780,10 +780,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/F/frei_thorsten-1044370",
-      "text": "Frei, Thorsten",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/radomski_kerstin-1046660",
+      "text": "Radomski, Kerstin",
       "fraktion": "CDU/CSU",
-      "amtlicheKennung": "frei_thorsten-1044370",
+      "amtlicheKennung": "radomski_kerstin-1046660",
       "parlament": "bundestag"
     },
     {
@@ -850,10 +850,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/G/gueler_serap-1044642",
-      "text": "Güler, Serap",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/radwan_alexander-1049086",
+      "text": "Radwan, Alexander",
       "fraktion": "CDU/CSU",
-      "amtlicheKennung": "gueler_serap-1044642",
+      "amtlicheKennung": "radwan_alexander-1049086",
       "parlament": "bundestag"
     },
     {
@@ -885,10 +885,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hahn_florian-1044694",
-      "text": "Hahn, Florian",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/reddig_pascal-1046704",
+      "text": "Reddig, Pascal",
       "fraktion": "CDU/CSU",
-      "amtlicheKennung": "hahn_florian-1044694",
+      "amtlicheKennung": "reddig_pascal-1046704",
       "parlament": "bundestag"
     },
     {
@@ -906,10 +906,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hauer_matthias-1044780",
-      "text": "Hauer, Matthias",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/rehbaum_henning-1049104",
+      "text": "Rehbaum, Henning",
       "fraktion": "CDU/CSU",
-      "amtlicheKennung": "hauer_matthias-1044780",
+      "amtlicheKennung": "rehbaum_henning-1049104",
       "parlament": "bundestag"
     },
     {
@@ -955,10 +955,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/H/hirte_christian-1045006",
-      "text": "Hirte, Christian",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/reichel_markus-1046714",
+      "text": "Reichel, Dr. Markus",
       "fraktion": "CDU/CSU",
-      "amtlicheKennung": "hirte_christian-1045006",
+      "amtlicheKennung": "reichel_markus-1046714",
       "parlament": "bundestag"
     },
     {
@@ -1151,10 +1151,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/L/lange_ulrich-1048862",
-      "text": "Lange, Ulrich",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/roettgen_norbert-1049138",
+      "text": "Röttgen, Dr. Norbert",
       "fraktion": "CDU/CSU",
-      "amtlicheKennung": "lange_ulrich-1048862",
+      "amtlicheKennung": "roettgen_norbert-1049138",
       "parlament": "bundestag"
     },
     {
@@ -1165,10 +1165,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/L/launert_silke-1045740",
-      "text": "Launert, Dr. Silke",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/rohwer_lars-1046822",
+      "text": "Rohwer, Lars",
       "fraktion": "CDU/CSU",
-      "amtlicheKennung": "launert_silke-1045740",
+      "amtlicheKennung": "rohwer_lars-1046822",
       "parlament": "bundestag"
     },
     {
@@ -1214,10 +1214,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/L/ludwig_daniela-1045886",
-      "text": "Ludwig, Daniela",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/rothenberger_johannes-1049136",
+      "text": "Rothenberger, Johannes",
       "fraktion": "CDU/CSU",
-      "amtlicheKennung": "ludwig_daniela-1045886",
+      "amtlicheKennung": "rothenberger_johannes-1049136",
       "parlament": "bundestag"
     },
     {
@@ -2047,10 +2047,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kofler_baerbel-1045482",
-      "text": "Kofler, Dr. Bärbel",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/R/ruetzel_bernd-1046916",
+      "text": "Rützel, Bernd",
       "fraktion": "SPD",
-      "amtlicheKennung": "kofler_baerbel-1045482",
+      "amtlicheKennung": "ruetzel_bernd-1046916",
       "parlament": "bundestag"
     },
     {
@@ -2628,10 +2628,10 @@
       "parlament": "landtag-berlin"
     },
     {
-      "url": "https://www.parlament-berlin.de/Abgeordnete/claudia-engelmann?groupStrategy=nachnamen",
-      "text": "Engelmann, Claudia, Die Linke Fraktion, Nachgerückt",
+      "url": "https://www.parlament-berlin.de/Abgeordnete/steffen-zillich?groupStrategy=nachnamen",
+      "text": "Zillich, Steffen, Die Linke Fraktion",
       "fraktion": "Die Linke Fraktion",
-      "amtlicheKennung": "claudia-engelmann",
+      "amtlicheKennung": "steffen-zillich",
       "parlament": "landtag-berlin"
     },
     {
@@ -3733,6 +3733,201 @@
         "abgerufenAm": "2026-09-27T14:03:13.769206+00:00",
         "sha256": "9ff98762c3eb781e27d0594e07e43c55bc277b794690f717343d5c6c9dedc476"
       }
+    },
+    {
+      "art": "belegbarer Profilersatz 2026-09-28",
+      "am": "2026-09-28",
+      "grund": "Zwoelf ausschliesslich an schwer auffindbaren amtlichen Feldbelegen blockierte Profile durch reale aktuelle Abgeordnete derselben Parlaments-/Fraktionsgruppe ersetzt; Auswahl vor Nachrichtenauswertung, keine personenbezogenen Pflichtplaetze.",
+      "entfernt": [
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/D/droege_katharina-1044100",
+          "text": "Dröge, Katharina",
+          "fraktion": "Bündnis 90/Die Grünen",
+          "amtlicheKennung": "droege_katharina-1044100",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/E/englhardt_kopf_martina-1044208",
+          "text": "Englhardt-Kopf, Martina",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "englhardt_kopf_martina-1044208",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/F/frei_thorsten-1044370",
+          "text": "Frei, Thorsten",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "frei_thorsten-1044370",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/G/gueler_serap-1044642",
+          "text": "Güler, Serap",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "gueler_serap-1044642",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/H/hahn_florian-1044694",
+          "text": "Hahn, Florian",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "hahn_florian-1044694",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/H/hauer_matthias-1044780",
+          "text": "Hauer, Matthias",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "hauer_matthias-1044780",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/H/hirte_christian-1045006",
+          "text": "Hirte, Christian",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "hirte_christian-1045006",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/L/lange_ulrich-1048862",
+          "text": "Lange, Ulrich",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "lange_ulrich-1048862",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/L/launert_silke-1045740",
+          "text": "Launert, Dr. Silke",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "launert_silke-1045740",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/L/ludwig_daniela-1045886",
+          "text": "Ludwig, Daniela",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "ludwig_daniela-1045886",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/K/kofler_baerbel-1045482",
+          "text": "Kofler, Dr. Bärbel",
+          "fraktion": "SPD",
+          "amtlicheKennung": "kofler_baerbel-1045482",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.parlament-berlin.de/Abgeordnete/claudia-engelmann?groupStrategy=nachnamen",
+          "text": "Engelmann, Claudia, Die Linke Fraktion, Nachgerückt",
+          "fraktion": "Die Linke Fraktion",
+          "amtlicheKennung": "claudia-engelmann",
+          "parlament": "landtag-berlin"
+        }
+      ],
+      "hinzu": [
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/P/paus_lisa-1046498",
+          "text": "Paus, Lisa",
+          "fraktion": "Bündnis 90/Die Grünen",
+          "amtlicheKennung": "paus_lisa-1046498",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/rachel_thomas-1046652",
+          "text": "Rachel, Thomas",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "rachel_thomas-1046652",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/radomski_kerstin-1046660",
+          "text": "Radomski, Kerstin",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "radomski_kerstin-1046660",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/radwan_alexander-1049086",
+          "text": "Radwan, Alexander",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "radwan_alexander-1049086",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/reddig_pascal-1046704",
+          "text": "Reddig, Pascal",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "reddig_pascal-1046704",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/rehbaum_henning-1049104",
+          "text": "Rehbaum, Henning",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "rehbaum_henning-1049104",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/reichel_markus-1046714",
+          "text": "Reichel, Dr. Markus",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "reichel_markus-1046714",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/roettgen_norbert-1049138",
+          "text": "Röttgen, Dr. Norbert",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "roettgen_norbert-1049138",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/rohwer_lars-1046822",
+          "text": "Rohwer, Lars",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "rohwer_lars-1046822",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/rothenberger_johannes-1049136",
+          "text": "Rothenberger, Johannes",
+          "fraktion": "CDU/CSU",
+          "amtlicheKennung": "rothenberger_johannes-1049136",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/R/ruetzel_bernd-1046916",
+          "text": "Rützel, Bernd",
+          "fraktion": "SPD",
+          "amtlicheKennung": "ruetzel_bernd-1046916",
+          "parlament": "bundestag"
+        },
+        {
+          "url": "https://www.parlament-berlin.de/Abgeordnete/steffen-zillich?groupStrategy=nachnamen",
+          "text": "Zillich, Steffen, Die Linke Fraktion",
+          "fraktion": "Die Linke Fraktion",
+          "amtlicheKennung": "steffen-zillich",
+          "parlament": "landtag-berlin"
+        }
+      ],
+      "uebersprungeneKandidaten": [
+        {
+          "amtlicheKennung": "rainer_alois-1046668",
+          "grund": "kein aktueller Bundestagsausschuss"
+        },
+        {
+          "amtlicheKennung": "roewekamp_thomas-1046878",
+          "grund": "keine eindeutige aktuelle Parteimitgliedschaft im amtlichen Profil"
+        },
+        {
+          "amtlicheKennung": "otte_karoline-1046442",
+          "grund": "keine eindeutige aktuelle Parteimitgliedschaft im amtlichen Profil"
+        },
+        {
+          "amtlicheKennung": "regina-kittler",
+          "grund": "keine eindeutige Mandatsart im amtlichen Profil"
+        }
+      ]
     }
   ],
   "auswahlregel": "Je Fraktion/Gruppe ein Platz; restliche Plaetze proportional zu verbleibenden Kandidaten (groesste Reste), Gleichstand nach erster amtlicher Kennung. Innerhalb jeder Gruppe amtliche Kennung aufsteigend. Keine personenbezogenen Pflichtplaetze; bekannte Ausschlussfaelle zuvor entfernen. Ungeklaerte Parteifelder bleiben vor Import gesperrt."
