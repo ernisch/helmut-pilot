@@ -310,3 +310,47 @@ Production-DB-/Storage-/Lage-Datenaenderung, keine Profilversorgung, keine Produ
 Abschwaechung von Schwellen oder Landesmandatsgate. Der neue Standzweig ist an keinen
 Live-Quellenweg und kein Landesmodul angeschlossen; die produktive Versorgung der Berliner
 Landesebene bleibt offen und braucht weiterhin ihren eigenen Nachweis.
+
+## Einzelabruf der festen Senats-Portalseite (28.09.2026, lokal)
+
+`lib/helmut/berlin-portal-einzelabruf.js` ist der kleinste, ausdruecklich einzeln aufzurufende
+HTTP-Einzelabruf fuer GENAU die eine feste amtliche Portalseite
+`https://www.berlin.de/presse/`. Das ist keine allgemeine URL-Erlaubnis: die Adresse wird VOR jedem
+Abruf geprueft und auf die feste Portalseite (Pfad `/presse/`, amtliche www- und Nicht-www-Fassung,
+kein Port, keine Benutzerinfo, keine Query/kein Tracking, kein Fragment, kein Trailing-Drift)
+begrenzt. Jede andere Adresse — auch jedes andere `berlin.de`-Ziel — wird nie angefragt und fail
+closed mit `abrufziel-ungueltig` abgewiesen. Der Abruf laeuft ueber die bestehende Anbietersteuerung
+`crawler.fetchUrl` mit `allowedHost = berlin.de` und `meldeStatus = true`; die beobachteten Werte
+`{url, finalUrl, http, html}` gehen UNVERAENDERT an den bestehenden Entdecker `pruefeSenatsblock`
+aus `berlin-senat-entdeckung.js`. Nur der tatsaechlich beobachtete 200 und ein geschlossenes
+Entdeckerergebnis fuehren zu `{ok:true, quelle, fundstellen}`; sonst fail closed mit kleinen,
+benannten Gruenden (`abrufziel-ungueltig`, `dokument-ungueltig`, `hostwechsel`, `anbietergrenze`,
+`http-status`, `abruf-fehlgeschlagen` oder der jeweilige Entdeckergrund). Das Ergebnis ist genau der
+minimierte Senatsfundweg — die fuenf Fundstellenfelder `url`, `titel`, `publikationstag`,
+`weiterreichbar`, `grund` — OHNE HTML, ohne Rohdokument, ohne Listenuhrzeit und ohne Volltext.
+
+`node scripts/berlin-portal-einzelabruf-test.js` faehrt ausschliesslich injizierte Abrufe (kein
+Netz, keine DB, kein Modell): positive amtliche Portalantwort, Ablehnung jeder anderen Adresse VOR
+dem Abruf, fremder Host/Redirect, falsche finale URL, fehlender/falscher HTTP-Status, Parserdrift
+(H2-Wortlaut, Behoerde, Datumsspalte, Kalendertag, doppelte Fundstelle, kommentierte/verborgene
+Doppelung, ungueltiges HTML) sowie Hostwechsel, Anbietergrenze, echter HTTP-Fehler und sonstiger
+Abruffehler — und — falls vorhanden — das lokale Original. Ergebnis: **49 Pruefungen** mit dem
+gesicherten Original `/private/tmp/helmut-berlin-portal-20260928.html` (sha256 `1cb44dda…fac8`, sechs
+Senatstreffer, alle weiterreichbar, BJF-Fundstelle exakt), **44** ohne es (Originalprobe wird dann
+als SKIP gemeldet und der Test bleibt CI-tauglich). Der Test laeuft ueber die bestehende
+Bereichsauswahl (`landesmodule-pardok` / `berlin`, Dateiname `berlin-…`); die Pflichtmenge
+`STANDARD` bleibt unveraendert.
+
+Ein einmaliger echter, rein lesender Abruf durch genau diesen Adapter am 28.09.2026 nach
+07:32 UTC ergab `ok:true`, Quelle `https://www.berlin.de/presse/`, sechs Senatsfundstellen und
+sechs vorab zulaessige Einzelabrufziele. Es wurde nichts gespeichert.
+
+### Nicht umfasst
+
+Dieser Einzelabruf ist KEINE produktive Versorgung und KEIN Live-Crawl-Hook: In diesem Helferlauf
+gab es keinen Netzabruf, keinen Crawl-Anschluss, keinen Source-Mode-/Flag-/Cron-Eingriff, keinen
+Import, keine Aktivierung, keinen 500er Test, keine DB-/Storage-/Lage-Aenderung, keine
+Profilversorgung und keine Production-Wirkung. Er wird von nichts anderem automatisch aufgerufen
+und ist an kein Landesmodul angeschlossen; die produktive Versorgung der Berliner Landesebene
+bleibt offen und braucht weiterhin einen eigenen Nachweis. Pressearchiv- und Sondervorlagen-Adapter,
+Crawler, Source-Mode, Landesschutzgate, Schwellen und Rollen bleiben unveraendert.
