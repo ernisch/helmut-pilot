@@ -142,3 +142,63 @@ Nicht umfasst: kein Live-Crawl-Hook, kein Netzabruf im Parser, kein Import, kein
 Aktivierung, kein 500er Test, keine DB-/Production-/Env-/Cron-Wirkung und keine
 Profilversorgung. Das bestehende Landesmandatsgate, der Source-Mode, die
 Crawl-Quellen, Produktpfade und bestehenden Vertraege bleiben unveraendert.
+
+## Zwei weitere Senatspfadfamilien — eigener Original- und Auszugleser (28.09.2026, lokal)
+
+Die drei offenen Portal-Links der amtlichen Presseuebersicht gehoeren zwei Pfadfamilien
+ausserhalb des Pressearchivs. Fuer sie gilt ein EIGENER, eng begrenzter Vertrag in
+`lib/helmut/berlin-presse-sondervorlagen.js`; der bestehende Pressearchiv-Vertrag
+(`berlin-presseartikel.js`) bleibt unveraendert und weist diese Adressen weiterhin bewusst
+mit `berlin-presseartikel-pressearchiv-pfad-ungueltig` ab.
+
+Zugelassen sind genau:
+
+* `https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/<jahr>/pressemitteilung.<nr>.php`
+* `https://www.berlin.de/sen/web/presse/pressemitteilungen/<jahr>/pressemitteilung.<nr>.php`
+
+Eingang sind genau vier beobachtete Felder (`url`, `finalUrl`, `http`, `html`). Der Parser macht
+KEIN Netz, keinen Crawl und hat keine Datei-, DB-, Modell- oder Productionwirkung. Er verlangt
+HTTPS auf berlin.de/www.berlin.de ohne Port, Benutzerinfo, Query/Tracking und Fragment, die
+Gleichheit von Eingabe-, finaler und EINZIGER kanonischer Adresse, das Jahr aus `dcterms.date`
+gebunden an den Pfadabschnitt, den eigenen H1 in der herounit, den Datumssatz in genau einem
+geschlossenen `p.pressnumber`, genau eine geschlossene `div.textile` nach dem Pressnumber und vor
+`layout-grid__area--marginal` sowie ausschliesslich volle geschlossene `<p>`-Absaetze. PDF-
+Downloadmodul, Kontaktblock, Skripte, Kommentare, versteckte Huellen, ausbrechende Absatzgrenzen
+und fremde Restinhalte in der Textile brechen ab beziehungsweise werden nie Artikeltext.
+
+Ausgang (eingefroren): URL, Pfadfamilie, Titel, reiner Publikationstag, vollstaendiger Artikeltext,
+Volltext-Hash, HTML-Hash und ein EXAKTER ganzer Auszugsabsatz mit eigenem Hash. Die Auszugsregel
+ist an die belegte Familie gebunden und nicht generisch umschaltbar: bei RBMSKZL ist der erste
+Absatz exakt „Das Presse- und Informationsamt des Landes Berlin teilt mit:“ und der Auszug der
+zweite Absatz; bei SenWEB ist der Auszug der erste Sachabsatz. Keine Kuerzung, keine Ersatzwahl,
+keine erfundene Uhrzeit; `published_at` bleibt NULL.
+
+### Lokal lesbar (belegte Originale vom 28.09.2026)
+
+| Familie | Original SHA256 | Tag | Volltext | Volltext-Hash | Auszug | Auszug-Hash |
+|---|---|---|---|---|---|---|
+| RBMSKZL 1717887 | `9fbe8472be24f8f6f15c02dd58b4780381cecb31a600dfd685eed858ae3efffa` | 2026-09-24 | 3697 Zeichen | `9e1585014f7cb356d8cbca73890844e365e567d4c6c2df7f8af0ab8486c7a717` | 625 Zeichen | `153a969abbc83e4a950d35576ac2cf5e374ee664d9f7d5abf25d70e9084174e0` |
+| RBMSKZL 1717654 | `41ee95dc3ad942cf7ec3a1b1da5558cd077ee02e8082f63352aefb5634583b0b` | 2026-09-23 | 524 Zeichen | `11bc0281aca9889959c79787b632f62e2dbfc4d89f2c2b93ac29bc4cd4a35a01` | 344 Zeichen | `5b63aa886d825b60a66bc6f1a8d37229cf62355861c541ac9ef9e09b30522f16` |
+| SenWEB 1717406 | `987f3aef0890eff51caef25bc14671116c98bf7faf5ead1b3a211cfeeb569bbd` | 2026-09-23 | 3288 Zeichen | `ca1c84b76bd7acfae7c02d36f69b254c9b224b4f325900c23f3801d29de7bd1e` | 240 Zeichen | `d4730d568e526b5a656cb958c9fd05c7d49c565f5ee2b6ba969292142eb0bdf1` |
+
+Die drei Portallistendaten stimmen mit den drei einzeln geprueften Originaltagen ueberein;
+eine Uhrzeit ist damit nicht belegt und wird nirgends als UTC-Publikationszeit behauptet.
+
+`node scripts/berlin-presse-sondervorlagen-test.js` (kein Netz, keine DB, kein Modell) prueft beide
+Pfadfamilien mit synthetischen Positiv- und Negativfaellen — fremde/falsche URL, Canonical-,
+Titel- und Tagesdrift, versteckte Eltern, kommentierte Doppler, ausbrechende Textile-/Absatzgrenzen,
+PDF-/Kontakt-Leak, fehlende Absenderformel, fehlender Sachabsatz, zu langer Auszug und
+Hash-Abweichungen — sowie die drei lokalen Originale: **81 Pruefungen erfolgreich** mit den
+`/private/tmp`-Originalen, **69** ohne sie (Originalproben werden dann als SKIP gemeldet und der
+Test bleibt CI-tauglich ohne `/private/tmp`). Der Test laeuft ueber die bestehende Bereichsauswahl
+(`landesmodule-pardok` / `berlin`); die Pflichtmenge `STANDARD` bleibt unveraendert.
+
+### Trennung: lokal lesbar ist nicht produktiv versorgt
+
+„Lokal lesbar“ bedeutet ausschliesslich: die zwei belegten Pfadfamilien sind offline aus dem
+gesicherten Original belegbar, und fuer die drei Originale sind Volltext, Tag und Auszug
+reproduzierbar. Es bedeutet NICHT: produktive Versorgung. Es gab in diesem Sprint keinen
+Live-Crawl, keinen Netzabruf, keinen Import, keine Aktivierung, keinen 500er Test, keine
+DB-/Storage-/Lage-Aenderung, keine Profilversorgung und keine Production-Wirkung. Der Leser ist
+nicht an den Live-Quellenweg, an Storage oder an ein Landesmodul angeschlossen; die produktive
+Versorgung der Berliner Landesebene bleibt offen und braucht weiterhin ihre eigene Freigabe.
