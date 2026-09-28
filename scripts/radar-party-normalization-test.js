@@ -187,7 +187,14 @@ check("6c Nur beiläufige Erwähnung (mentioned_parties) -> KEIN Partei-Reiter",
     ausschuesse: ["Ausschuss für Arbeit und Soziales"], mentioned_locations: ["Salzgitter-Wolfenbüttel"],
     created_at: iso(24 * 3600e3), best_source_url: "https://example.org/d" };
   const mf = [{ type: "ausschuss", value: "Ausschuss für Arbeit und Soziales" }, { type: "wahlkreis", value: "Salzgitter-Wolfenbüttel" }];
-  const st = radarState.buildCurrentRadarState({ profile, decisions: [{ knowledge_object_id: "k", vorgang_id: "v", score: 60, matched_features: mf }], kosById: { k: ko }, knowledgeObjects: [ko], sourcesByVorgang: {}, now: nowDate });
+  // Der sichtbare Ursprung eines Wahlkreis-/Ausschuss-Segments muss den Bezug SELBST stuetzen
+  // (Fail-closed-Nachschaerfung): je ein Dokument, das den konkreten Ort bzw. den VOLLEN
+  // Ausschussnamen im eigenen Titel nennt — der KO-Fallback genuegt dafuer nicht mehr.
+  const docs = [
+    { id: "d-ausschuss", title: "Anhörung im Ausschuss für Arbeit und Soziales zum Bürgergeld", url: "https://dip.bundestag.de/vorgang/arbeit-soziales" },
+    { id: "d-wahlkreis", title: "Investitionen in Salzgitter-Wolfenbüttel", url: "https://www.sz-online.de/nachrichten/salzgitter-wolfenbuettel" }
+  ];
+  const st = radarState.buildCurrentRadarState({ profile, decisions: [{ knowledge_object_id: "k", vorgang_id: "v", score: 60, matched_features: mf }], kosById: { k: ko }, knowledgeObjects: [ko], sourcesByVorgang: { v: docs }, now: nowDate });
   check("8 Ausschuss-Beleg (Ausschussname im Inhalt) -> im Ausschüsse-Reiter", st.environment.committees.some((e) => e.vorgangId === "v"));
   check("8b Wahlkreis-Beleg unveraendert (konkreter Ort -> im Wahlkreis-Reiter)", st.environment.constituency.some((e) => e.vorgangId === "v"));
 }

@@ -87,6 +87,16 @@ Radar hat genau zwei Funktionen:
 Ein bloßer Themenbezug, ein hoher Score oder ein weiterer Artikel zum gleichen
 Sachstand reicht nicht für einen Radar Eintrag.
 
+**Lokal belegt (29.09.2026, offline/fail-closed):** Die segmentbezogene sichtbare
+Ursprungsbindung für Radar-Wahlkreis/Ausschuss ist fail-closed implementiert und
+durch genau fünf gezielte Suiten belegt: radar-ursprung 15/15,
+radar-committee-evidence 30/30, radar-party-normalization 32/32, radar-state
+115/115, radar-ui 32/32. Relationsfremde Artikel und fehlende passende
+Dokumentbelege werden nicht als sichtbarer Ursprung angezeigt; die
+Ebenenbindung für Bund sowie Berlin und Brandenburg bleibt erhalten.
+Ein produktiver Funktionsnachweis, ein echter Bedeutungsnachweis und der 500er
+Test sind dadurch **nicht** erbracht.
+
 ## 2 · Verbindliche Regel gegen Überschneidungen
 
 Jede Kernaussage hat genau einen Hauptort.
