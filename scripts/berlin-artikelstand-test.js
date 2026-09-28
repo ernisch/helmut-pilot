@@ -20,6 +20,7 @@ const B = require("../lib/helmut/berlin-artikelstand");
 const BT = require("../lib/helmut/bundestag-artikelstand");
 const ST = require("../lib/helmut/artikelstand");
 const P = require("../lib/helmut/berlin-presseartikel");
+const S = require("../lib/helmut/berlin-presse-sondervorlagen");
 const D = require("../lib/helmut/dedup");
 const G = require("../lib/helmut/quellenarchitektur/dedup-global");
 const Q = require("../lib/helmut/quellen-zeitvertrag");
@@ -88,6 +89,44 @@ const KANONISCH = B.kanonischeArtikelUrl(BE_URL);
 const ALT = { id: "rd-" + sha("url:" + KANONISCH), content_hash: sha("url:" + KANONISCH),
   canonical_url: KANONISCH, url: BE_URL, title: "Fruehere synthetische Fassung derselben Adresse",
   published_at: "2026-08-01T09:30:00.000Z", source_name: "Synthetische Altquelle" };
+
+// --- Synthetische Sondervorlagen (die zwei Senatspfadfamilien ausserhalb des Pressearchivs) --
+const SONDER_ABSENDER = S.ABSENDER_RB;
+const SONDER_SACH = "Die synthetische Senatsmeldung beschreibt einen amtlich belegten Sachverhalt der "
+  + "Berliner Landesversorgung und dient ausschliesslich der lokalen Offlinepruefung dieser Sondervorlage.";
+const SONDER_SACH2 = "Ein zweiter, ebenfalls vollstaendiger Sachabsatz derselben synthetischen Meldung "
+  + "fuer die gebundene Auszugsgrenze dieser Vorlage.";
+function sonderseite(optionen = {}) {
+  const familie = optionen.familie || "rbmskzl";
+  const datum = optionen.datum || TAG;
+  const jahr = optionen.jahr || datum.slice(0, 4);
+  const basis = familie === "rbmskzl" ? "rbmskzl/aktuelles/pressemitteilungen"
+    : "sen/web/presse/pressemitteilungen";
+  const url = optionen.url || `https://www.berlin.de/${basis}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
+  const titel = optionen.titel === undefined ? "Synthetische Senatsmeldung zur Standprobe" : optionen.titel;
+  const absaetze = optionen.absaetze === undefined
+    ? (familie === "rbmskzl" ? [SONDER_ABSENDER, SONDER_SACH] : [SONDER_SACH, SONDER_SACH2]) : optionen.absaetze;
+  const html = `<!doctype html><html lang="de"><head><meta charset="utf-8">`
+    + `<meta name="dcterms.date" content="${datum}"><meta name="dcterms.title" content="${titel}">`
+    + `<link rel="canonical" href="${url}"></head><body>`
+    + `<div id="layout-grid__area--herounit"><h1 class="title">${titel}</h1></div>`
+    + `<div id="layout-grid__area--maincontent"><p class="pressnumber">Pressemitteilung vom ${dmY(datum)}</p>`
+    + `<section class="modul-text_bild"><div class="text"><div class="textile">`
+    + absaetze.map(absatz => `<p>${absatz}</p>`).join("")
+    + `</div></div></section></div>`
+    + `<div id="layout-grid__area--marginal"><div class="modul-contact">Kontakt: presse@berlin.de</div></div>`
+    + `</body></html>`;
+  return { eingabe: { url, finalUrl: url, http: 200, html }, url, datum, titel, familie, absaetze };
+}
+function sonderBehoerde(optionen = {}) {
+  const s = sonderseite(optionen);
+  const beleg = S.pruefeSondervorlage(s.eingabe);
+  const doc = { id: "local-synthetische-sondervorlage", title: beleg.titel, url: beleg.url,
+    canonical_url: beleg.url, published_at: beleg.publikationstag, retrieved_at: null, summary: "" };
+  return { ...s, beleg, doc, erzeugt: B.erzeugeSondervorlagenstand(doc, beleg) };
+}
+const SONDER = sonderBehoerde({ familie: "rbmskzl" });
+const SONDER_SENWEB = sonderBehoerde({ familie: "senweb" });
 
 test("Erstellung bindet einen eigenen Namespace an URL, Titel, Tag, Absatz- und Volltexthash", () => {
   assert.equal(ERZEUGT.ok, true, JSON.stringify(ERZEUGT));
@@ -162,6 +201,9 @@ test("Der Bundestagspfad bleibt getrennt und unveraendert", () => {
   // widerspruechlich und wird laut abgewiesen (kein stilles Bevorzugen eines Namespace).
   wirft(() => ST.leseStand({ raw: { helmutBundestagArtikelstand: { ...bt.stand },
     helmutBerlinArtikelstand: { ...STAND } } }), /artikelstand-mehrdeutig/);
+  // Dasselbe gilt fuer einen Bundestagsstand zusammen mit einer neuen Berliner Sondervorlage.
+  wirft(() => ST.leseStand({ raw: { helmutBundestagArtikelstand: { ...bt.stand },
+    helmutBerlinArtikelstand: { ...SONDER.erzeugt.stand } } }), /artikelstand-mehrdeutig/);
 });
 
 test("Wiederholte Erzeugung desselben Standes behaelt dieselbe Kennung", () => {
@@ -309,6 +351,116 @@ test("Quellendrift: falscher Titel, falscher Tag, fremde URL, veraenderter Vollt
   abw(DOK, { ...SYN.beleg }, "beleg-nicht-geschlossen");
 });
 
+test("Sondervorlage: eigener Namespace, summary ist der gebundene Sachabsatz (auszug)", () => {
+  const { erzeugt, beleg } = SONDER;
+  assert.equal(erzeugt.ok, true, JSON.stringify(erzeugt));
+  const { stand, row, absatz } = erzeugt;
+  assert.deepEqual(Object.keys(stand), ["version", "herkunft", "url", "titel", "publikationstag",
+    "absatzHash", "volltextHash", "standHash"]);
+  assert.equal(stand.herkunft, "berlin-de-senatsvorlage");
+  assert.equal(B.HERKUNFT_SONDER, stand.herkunft);
+  assert.equal(B.NAMESPACE_SONDER, "helmut-berlin-sondervorlagenstand-v1");
+  assert.notEqual(B.NAMESPACE_SONDER, B.NAMESPACE);
+  assert.equal(beleg.pfadfamilie, "rbmskzl");
+  assert.equal(stand.url, "https://berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717887.php");
+  assert.equal(stand.titel, beleg.titel);
+  assert.equal(stand.publikationstag, beleg.publikationstag);
+  // summary = der vom Parser gebundene SACHABSATZ; absatzHash = auszugHash (niemals Absenderabsatz).
+  assert.equal(absatz, beleg.auszug);
+  assert.equal(row.summary, beleg.auszug);
+  assert.equal(stand.absatzHash, beleg.auszugHash);
+  assert.equal(sha(absatz), beleg.auszugHash);
+  assert.notEqual(beleg.auszug, S.ABSENDER_RB);
+  assert.notEqual(row.summary, S.ABSENDER_RB);
+  assert.equal(stand.volltextHash, beleg.volltextHash);
+  assert.equal(stand.standHash, sha(JSON.stringify([B.NAMESPACE_SONDER, stand.url, stand.titel,
+    stand.publikationstag, stand.absatzHash, stand.volltextHash])));
+  assert.equal(row.id, "rd-" + stand.standHash);
+  assert.equal(row.content_hash, stand.standHash);
+  assert.equal(row.published_at, null);
+  assert.equal(row.publishedAt ?? null, null);
+  assert.deepEqual(row.raw.helmutBerlinArtikelstand, stand);
+  assert.equal(B.leseArtikelstand(row).standHash, stand.standHash);
+  assert.equal(ST.leseStand(row).name, "berlin");
+  assert.equal(ST.leseStand(row).identitaet(ST.leseStand(row).stand),
+    "berlin-senatsvorlage|" + stand.standHash + "|sachabsatz");
+  // Kein Volltext und kein HTML in der Rohzeile.
+  assert.equal(JSON.stringify(row).includes(beleg.volltext), false);
+  assert.equal(JSON.stringify(row.raw).includes(beleg.auszug.slice(0, 50)), false);
+  assert.equal(JSON.stringify(row.raw).includes("<"), false);
+  // Wiederholte Erzeugung behaelt dieselbe Kennung.
+  const erneut = B.erzeugeSondervorlagenstand(SONDER.doc, beleg);
+  assert.equal(erneut.ok, true);
+  assert.deepEqual(erneut.row, row);
+});
+
+test("Sondervorlage senweb: erster Sachabsatz und eigene, von RBMSKZL verschiedene Kennung", () => {
+  const { erzeugt, beleg } = SONDER_SENWEB;
+  assert.equal(erzeugt.ok, true, JSON.stringify(erzeugt));
+  assert.equal(beleg.pfadfamilie, "senweb");
+  assert.equal(erzeugt.absatz, beleg.auszug);
+  assert.equal(erzeugt.row.summary, beleg.auszug);
+  assert.equal(erzeugt.stand.absatzHash, beleg.auszugHash);
+  assert.equal(erzeugt.stand.url, "https://berlin.de/sen/web/presse/pressemitteilungen/2026/pressemitteilung.1717887.php");
+  assert.notEqual(erzeugt.stand.standHash, SONDER.erzeugt.stand.standHash);
+  assert.equal(ST.leseStand(erzeugt.row).identitaet(ST.leseStand(erzeugt.row).stand),
+    "berlin-senatsvorlage|" + erzeugt.stand.standHash + "|sachabsatz");
+});
+
+test("Sondervorlage: Absenderformel als summary, falsche Familie, Drift und Uhrzeit sperren", () => {
+  const abw = (doc, belegwert, grund) => {
+    const ergebnis = B.erzeugeSondervorlagenstand(doc, belegwert);
+    assert.equal(ergebnis.ok, false, grund + " " + JSON.stringify(ergebnis));
+    assert.equal(ergebnis.reason, grund);
+  };
+  const { doc, beleg, erzeugt } = SONDER;
+  const f = patch => Object.freeze({ ...beleg, ...patch });
+  // Der RBMSKZL-Absenderabsatz als Auszug/summary ist keine zulaessige Sondervorlage.
+  abw(doc, f({ auszug: S.ABSENDER_RB, auszugHash: sha(S.ABSENDER_RB) }), "auszug-abweichend");
+  // Quelle, Titel, Tag und Adresse des Belegs sind gebunden.
+  abw({ ...doc, title: doc.title.toUpperCase() }, beleg, "titel-abweichend");
+  abw({ ...doc, published_at: "2026-09-23" }, beleg, "datum-nicht-tagesgenau");
+  abw({ ...doc, published_at: TAG + "T09:00:00Z" }, beleg, "datum-nicht-tagesgenau");
+  abw({ ...doc, url: "https://www.berlin.de/sen/web/presse/pressemitteilungen/2026/pressemitteilung.1717406.php" },
+    beleg, "artikelziel-abweichend");
+  abw({ ...doc, canonical_url: "https://www.berlin.de/sen/web/presse/pressemitteilungen/2026/pressemitteilung.1717406.php" },
+    beleg, "url-abweichend");
+  abw(doc, f({ volltextHash: "0".repeat(64) }), "volltexthash-abweichend");
+  abw(doc, f({ auszugHash: "0".repeat(64) }), "auszughash-abweichend");
+  abw(doc, f({ pfadfamilie: "senweb" }), "pfadfamilie-abweichend");
+  abw(doc, { ...beleg }, "beleg-nicht-geschlossen");
+  // Falsche Herkunft und fremde Kennung sperren (kein stiller Rueckfall auf URL-Identitaet).
+  wirft(() => B.pruefeArtikelstand({ ...erzeugt.stand, herkunft: B.HERKUNFT }),
+    /berlin-artikelstand-url-ungueltig/);
+  wirft(() => B.pruefeArtikelstand({ ...STAND, herkunft: B.HERKUNFT_SONDER }),
+    /berlin-artikelstand-url-ungueltig/);
+  wirft(() => B.pruefeArtikelstand({ ...erzeugt.stand, herkunft: "fremde-herkunft" }),
+    /berlin-artikelstand-herkunft-ungueltig/);
+  wirft(() => B.pruefeArtikelstand({ ...erzeugt.stand, standHash: "0".repeat(64) }),
+    /berlin-artikelstand-standhash-abweichend/);
+  wirft(() => B.leseArtikelstand({ ...kopie(erzeugt.row), id: ALT.id }),
+    /berlin-artikelstand-kennung-abweichend/);
+  // Eine erfundene Uhrzeit im Speicher widerspricht dem reinen Kalendertag.
+  wirft(() => B.leseArtikelstand({ ...kopie(erzeugt.row), published_at: TAG + "T09:00:00Z" }),
+    /berlin-artikelstand-veroeffentlichtzeit-widerspricht-tag/);
+  // Manipulierte summary in jedem Lesepfad.
+  for (const lesen of [B.leseArtikelstand, D.contentHash, D.toRawDocumentRow, Q.understandingQuelle]) {
+    wirft(() => lesen({ ...kopie(erzeugt.row), summary: S.ABSENDER_RB }),
+      /berlin-artikelstand-summary-abweichend/);
+  }
+  // Zwei gueltige, aber unterschiedliche Sondervorlagenstaende in einer Zeile sind widerspruechlich.
+  wirft(() => B.leseArtikelstand({ ...kopie(erzeugt.row),
+    berlin_artikelstand: { ...SONDER_SENWEB.erzeugt.stand } }),
+  /berlin-artikelstand-darstellung-widerspruechlich/);
+});
+
+test("Sondervorlage: Alter Pressearchiv-Hash ohne Herkunft bleibt unveraendert", () => {
+  assert.equal(B.standHashFuer({ url: KANONISCH, titel: TITEL, publikationstag: TAG,
+    absatzHash: sha(ABSATZ), volltextHash: SYN.beleg.volltextHash }), STAND.standHash);
+  assert.equal(ST.leseStand(ROW).identitaet(ROW.raw.helmutBerlinArtikelstand),
+    "berlin-presse|" + STAND.standHash + "|erster-absatz");
+});
+
 test("Lagefenster: nur der ganze Berliner Publikationstag zaehlt, DST-fest", () => {
   const ko = { id: "ko-fenster", vorgang_id: "vg-fenster" };
   const standFuerTag = tag => {
@@ -384,10 +536,59 @@ test("Echte Originalprobe: 619 Zeichen, hashgebundener erster Absatz, Tag ohne U
   console.log(`     Original: erster Absatz ${absatz.length} Zeichen, Absatzhash ${stand.absatzHash.slice(0, 12)}..., Tag ${stand.publikationstag}`);
 });
 
+// --- Echte lokale Sondervorlagen-Originale (nur wenn vorhanden) -----------------------------
+const SONDER_ORIGINALE = [
+  { familie: "rbmskzl", datei: "/private/tmp/helmut-berlin-rbmskzl-1717887.html",
+    url: "https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717887.php",
+    sha: "9fbe8472be24f8f6f15c02dd58b4780381cecb31a600dfd685eed858ae3efffa",
+    titel: "Berlin zieht Olympiabewerbung zurück – BERLIN+ wird bei der DOSB-Mitgliederversammlung nicht zur Wahl gestellt",
+    tag: "2026-09-24", auszugZeichen: 625, textZeichen: 3697 },
+  { familie: "rbmskzl", datei: "/private/tmp/helmut-berlin-rbmskzl-1717654.html",
+    url: "https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717654.php",
+    sha: "41ee95dc3ad942cf7ec3a1b1da5558cd077ee02e8082f63352aefb5634583b0b",
+    titel: "Pressekonferenz zur Bewerbung Berlins für Olympische und Paralympische Spiele",
+    tag: "2026-09-23", auszugZeichen: 344, textZeichen: 524 },
+  { familie: "senweb", datei: "/private/tmp/helmut-berlin-senweb-1717406.html",
+    url: "https://www.berlin.de/sen/web/presse/pressemitteilungen/2026/pressemitteilung.1717406.php",
+    sha: "987f3aef0890eff51caef25bc14671116c98bf7faf5ead1b3a211cfeeb569bbd",
+    titel: "30 Jahre internationale Leitmesse für Verkehrstechnologie",
+    tag: "2026-09-23", auszugZeichen: 240, textZeichen: 3288 }
+].filter(probe => fs.existsSync(probe.datei) && sha(fs.readFileSync(probe.datei, "utf8")) === probe.sha)
+  .map(probe => ({ ...probe, html: fs.readFileSync(probe.datei, "utf8") }));
+
+// Fuer den Speicher-/Lageweg wird bevorzugt ein echtes Original genommen; ohne /private/tmp
+// laeuft derselbe Weg mit der synthetischen Sondervorlage (CI-tauglich).
+let sonderspeicherProbe = null;
+test("Echte Sondervorlagen-Originale: drei amtliche Originale als hashgebundene Sachabsatz-Staende", () => {
+  if (!SONDER_ORIGINALE.length) return false;
+  assert.equal(SONDER_ORIGINALE.length, 3);
+  for (const probe of SONDER_ORIGINALE) {
+    const eingabe = { url: probe.url, finalUrl: probe.url, http: 200, html: probe.html };
+    const doc = { id: "local-sondervorlage-" + probe.familie, title: probe.titel, url: probe.url,
+      canonical_url: probe.url, published_at: probe.tag, retrieved_at: null, summary: "" };
+    const erzeugt = B.standAusSondervorlage(doc, eingabe);
+    assert.equal(erzeugt.ok, true, JSON.stringify(erzeugt));
+    assert.equal(erzeugt.stand.herkunft, B.HERKUNFT_SONDER);
+    assert.equal(erzeugt.stand.url, probe.url.replace("https://www.berlin.de/", "https://berlin.de/"));
+    assert.equal(erzeugt.stand.titel, probe.titel);
+    assert.equal(erzeugt.stand.publikationstag, probe.tag);
+    assert.equal(erzeugt.absatz.length, probe.auszugZeichen);
+    assert.equal(erzeugt.stand.absatzHash, sha(erzeugt.absatz));
+    assert.notEqual(erzeugt.absatz, S.ABSENDER_RB);
+    assert.equal(erzeugt.row.summary, erzeugt.absatz);
+    assert.equal(erzeugt.row.published_at, null);
+    assert.equal(erzeugt.stand.volltextHash.length, 64);
+    assert.equal(JSON.stringify(erzeugt.row.raw).includes("<"), false);
+    assert.equal(ST.leseStand(erzeugt.row).identitaet(ST.leseStand(erzeugt.row).stand),
+      "berlin-senatsvorlage|" + erzeugt.stand.standHash + "|sachabsatz");
+    if (!sonderspeicherProbe) sonderspeicherProbe = erzeugt;
+  }
+  console.log(`     Sondervorlagen-Originale: ${SONDER_ORIGINALE.length} Sachabsatz-Staende gebunden`
+    + ` (${SONDER_ORIGINALE.map(p => `${p.familie}:${p.auszugZeichen}`).join(", ")} Zeichen)`);
+});
+
 // --- Import/Dedup -> Speicherprojektion -> Lage-Quellenbeleg -> sichtbares Datum ------------
-async function speicherUndLeser() {
-  const quelle = ORIGINAL || { doc: DOK, eingabe: SYN.eingabe };
-  const erzeugt = ORIGINAL ? B.standAusOriginal(quelle.doc, quelle.eingabe) : ERZEUGT;
+async function speicherUndLeser(erzeugt, bezeichnung) {
   assert.equal(erzeugt.ok, true);
   const doc = erzeugt.row;
   const absatz = erzeugt.absatz;
@@ -485,7 +686,7 @@ async function speicherUndLeser() {
     assert.equal(geschrieben.raw.helmutBundestagArtikelstand, undefined);
     assert.equal(geschrieben.summary, absatz);
     assert.equal(JSON.stringify(geschrieben.raw).includes(absatz.slice(0, 40)), false);
-    bestanden += 1; console.log("OK Warteschlangen-Schreibweg speichert Stand, ersten Absatz und leere Uhrzeit");
+    bestanden += 1; console.log(`OK [${bezeichnung}] Warteschlangen-Schreibweg speichert Stand, gebundenen Absatz und leere Uhrzeit`);
 
     const plan = G.planDedupWrites([doc], []);
     const lauf = await storage.persistRawDocumentsDeduped([doc]);
@@ -494,7 +695,7 @@ async function speicherUndLeser() {
     const erneut = await storage.persistRawDocumentsDeduped([doc]);
     assert.equal(erneut.persisted, 0);
     assert.equal(schreibAnfragen, 2);
-    bestanden += 1; console.log("OK Zweiter Cutover liest den gespeicherten Stand ohne kanonisches Ziel wieder");
+    bestanden += 1; console.log(`OK [${bezeichnung}] Zweiter Cutover liest den gespeicherten Stand ohne kanonisches Ziel wieder`);
 
     const erwartet = [doc];
     const leser = [
@@ -515,7 +716,7 @@ async function speicherUndLeser() {
       assert.equal(B.leseArtikelstand(quelleRow).standHash, erzeugt.stand.standHash, name);
       assert.equal(D.toRawDocumentRow(quelleRow).id, doc.id, name);
       assert.equal(Q.understandingQuelle(quelleRow).veroeffentlichtAm, tag, name);
-      bestanden += 1; console.log("OK " + name + ": Stand-Metadaten und sichtbarer Tag bleiben erhalten");
+      bestanden += 1; console.log(`OK [${bezeichnung}] ${name}: Stand-Metadaten und sichtbarer Tag bleiben erhalten`);
     }
 
     const lageJetzt = new Date("2026-09-28T12:00:00Z");
@@ -547,7 +748,7 @@ async function speicherUndLeser() {
     assert.equal(karte.sources[0].publishedAt, "");
     wirft(() => lage.mapSource({ ...gebunden[0], published_at: tag + "T00:00:00Z" }),
       /berlin-artikelstand-veroeffentlichtzeit-widerspricht-tag/);
-    bestanden += 1; console.log("OK Berliner Stand erreicht den Lage-Quellenbeleg mit ganzem erstem Absatz und tagesgenauem Datum");
+    bestanden += 1; console.log(`OK [${bezeichnung}] Stand erreicht den Lage-Quellenbeleg mit ganzem gebundenem Absatz und tagesgenauem Datum`);
 
     const vorherRow = kopie(gespeichert.get(doc.id));
     for (const aenderung of [{ raw: {} }, { summary: null }, { summary: absatz + " Fremder Zusatz." }]) {
@@ -557,14 +758,14 @@ async function speicherUndLeser() {
       e => e.name === "StorageReadError" && e.quelle === "lage-quellenbindung");
     }
     gespeichert.set(doc.id, vorherRow);
-    bestanden += 1; console.log("OK Stand- oder Absatzverlust beim Folgelesen wird laut verweigert");
+    bestanden += 1; console.log(`OK [${bezeichnung}] Stand- oder Absatzverlust beim Folgelesen wird laut verweigert`);
 
     const ohneStand = kopie(vorherRow);
     delete ohneStand.raw.helmutBerlinArtikelstand;
     gespeichert.set(doc.id, ohneStand);
     assert.deepEqual(await storage.listAktuelleLageQuellen([KO], lageJetzt), []);
     gespeichert.set(doc.id, vorherRow);
-    bestanden += 1; console.log("OK Ohne Stand-Metadaten ist die Zeile im Lagefenster unsichtbar (kein Ersatzdatum)");
+    bestanden += 1; console.log(`OK [${bezeichnung}] Ohne Stand-Metadaten ist die Zeile im Lagefenster unsichtbar (kein Ersatzdatum)`);
   } finally {
     for (const name of namen) {
       if (vorher[name] === undefined) delete process.env[name];
@@ -574,7 +775,11 @@ async function speicherUndLeser() {
   }
 }
 
-speicherUndLeser().then(() => {
-  console.log(`\n${bestanden} Pruefgruppen erfolgreich; ${ORIGINAL ? "synthetische und amtliche lokale Belege"
-    : "synthetische Belege (amtliches Original lokal nicht vorhanden)"}, keine Production-Daten.`);
-}).catch(error => { console.error(error); process.exitCode = 1; });
+const archivErzeugt = ORIGINAL ? B.standAusOriginal(ORIGINAL.doc, ORIGINAL.eingabe) : ERZEUGT;
+speicherUndLeser(archivErzeugt, ORIGINAL ? "Pressearchiv-Original" : "Pressearchiv-synthetisch")
+  .then(() => speicherUndLeser(sonderspeicherProbe || SONDER.erzeugt,
+    sonderspeicherProbe ? "Sondervorlage-Original" : "Sondervorlage-synthetisch"))
+  .then(() => {
+    console.log(`\n${bestanden} Pruefgruppen erfolgreich; ${ORIGINAL ? "synthetische und amtliche lokale Belege"
+      : "synthetische Belege (amtliches Original lokal nicht vorhanden)"}, keine Production-Daten.`);
+  }).catch(error => { console.error(error); process.exitCode = 1; });
