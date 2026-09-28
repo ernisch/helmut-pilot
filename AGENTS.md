@@ -346,6 +346,12 @@ Vor jeder Änderung prüfen:
 6. laufende relevante Prozesse
 7. mögliche parallele Arbeit am selben Bereich
 
+Bekannte rein lesende Startprüfungen mit `gh` und `ps`, die in der Sandbox
+erwartbar an Berechtigungen scheitern, direkt mit der erforderlichen Berechtigung
+ausführen, statt zuerst den erwartbaren Sandbox-Fehler auszulösen. Dies gilt
+ausschließlich für rein lesende Prüfungen und erweitert keine Schreib-,
+Production-, destruktiven, Budget- oder sonstigen Freigaben.
+
 Fremde Änderungen niemals überschreiben.
 
 Wenn unklar ist, ob ein anderer Agent denselben Production Bereich gerade schreibend bearbeitet, nicht schreiben.
