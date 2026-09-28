@@ -148,3 +148,30 @@ Keine Live-/Crawl-/Storage-/Lage-Anbindung, kein Profilbezug, keine Aktivierung,
 Test, keine Production-Aktion und keine Aenderung an Schwellen- oder Gate-Routing. Leser und
 Bindung werden von nichts anderem automatisch aufgerufen; die tagesgenaue Meldung `50117`
 ist damit lokal belegt, aber noch nicht an Crawl, Storage oder Lage angebunden.
+
+## Nachtrag 28.09.2026 — eigenstaendiger Offline-Artikelstand
+
+`lib/helmut/brandenburg-landtag-presseartikelstand.js` verbindet den geschlossenen
+Artikelleser und die gebundene RSS-Fundstelle zu einer minimierten Rohzeile mit eigener
+Standkennung. Der Standhash bindet amtliche Artikeladresse, exakten Titel, lokalen
+Publikationstag, den aus dem RSS-`pubDate` gebundenen UTC-Zeitpunkt sowie Hashes des
+ersten ganzen Sachabsatzes und des Volltexts. Fuer Meldung `50117` ist der erste
+Sachabsatz 497 Zeichen lang. Nur dieser vollstaendige Absatz wird als `summary`
+uebernommen; Volltext und HTML werden nicht in die Rohzeile geschrieben.
+
+Die Uhrzeit `2026-09-23T10:42:00.000Z` steht vorerst nur in den geschlossenen
+Standmetadaten. `published_at` bleibt NULL, weil der bestehende gemeinsame
+Import-/Speicher-/Lage-Vertrag fuer Artikelstaende ausschliesslich tagesgenaue
+Staende verarbeitet. Der neue Stand ist noch **nicht** im Dispatcher
+`lib/helmut/artikelstand.js` registriert und darf deshalb nicht importiert oder
+als sichtbare Landesversorgung gezaehlt werden. Der Folge-Schritt muss den
+nachweisbaren Uhrzeitpfad samt Speicherleser und Lage-Ausgabe eigenstaendig
+schliessen; ein stiller Rueckfall auf die URL-Kennung waere Datenverlust.
+
+`node scripts/brandenburg-landtag-presseartikelstand-test.js` prueft neun
+gezielte Gruppen einschliesslich falscher RSS-Identitaet, Titel-/Tages-/Zeitdrift,
+manipulierter Standhashes, Summary-Drift, Rohtextbeigaben und fehlendem
+RSS-Zeitbeleg. Mit den gesicherten Originalen bestaetigt er den 497-Zeichen-Absatz
+und den exakten UTC-Zeitpunkt; ohne diese privaten Dateien bleiben die
+synthetischen Pruefungen CI-tauglich. Kein Netz, keine DB, keine Profile und keine
+Production-Daten wurden fuer diesen Stand veraendert.
