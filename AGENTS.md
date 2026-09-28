@@ -71,8 +71,9 @@ Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigke
 
 ## Modellrouting für lokale Agent-Arbeit
 
-GPT-5.6 Sol High ist der führende Standard-Orchestrator und verantwortet
-Aufgabenzuteilung, Zerlegung, Prüfung und Abnahme der lokalen Helfer.
+GPT-5.6 Sol High ist der einzige normale OpenAI-Orchestrator und Chef der lokalen
+Agent-Arbeit. Sol verantwortet Aufgabenzuteilung, Zerlegung, Priorisierung,
+Prüfung und Abnahme der lokalen Helfer.
 
 Astra High ist kein Standard-Orchestrator mehr, sondern eine manuelle
 Eskalationsstufe für seltene kritische Grenzfälle. Normale Repository-Arbeit,
@@ -81,37 +82,49 @@ begrenzte lokale Umsetzung rechtfertigen für sich allein keinen Astra-Einsatz.
 
 Es gibt vier DeepSeek Modell/Denkstufen-Kombinationen:
 
-DeepSeek Flash High ist Standard für normale lokale Coding Aufgaben, kleine und
-mittlere Änderungen, normale Bugfixes, gezielte Tests, Dokumentation,
-Routinearbeit, normale rein lesende Analyse und einfache Refactorings.
+DeepSeek Flash High ist der verpflichtende ausführende Standard für jede sicher
+delegierbare Aufgabe. Dazu gehören insbesondere Repository-Suche, Lesen,
+Verstehen, Abhängigkeiten, Routineanalyse, Debugging, Code, Tests, Test- und
+Logauswertung, Belege, Diffs, Dokumentation, CURRENT_STATE-Vorbereitung,
+Roadmap-Abgleich, Lösungsvorschläge, Risiken, Refactoring, Konfiguration, lokale
+Sicherheitsprüfung, GitHub- und Vercel-Nurleseprüfungen, PR-Vorprüfung,
+Regression, Fehleranalyse, begrenzte Implementierungspläne und
+Kontextverdichtung.
 
-DeepSeek Flash Max wird für komplexere lokale Analyse und schwierigere Aufgaben
-eingesetzt, wenn Flash ausreichend ist, aber deutlich mehr Reasoning nötig ist.
+DeepSeek Flash Max wird eingesetzt, wenn eine Flash-geeignete Aufgabe deutlich
+mehr Reasoning verlangt, Flash dafür aber voraussichtlich ausreicht.
 
-DeepSeek V4 Pro High wird für schwierige Implementierung, komplexes Debugging und
-schwierige lokale Ursachenanalyse eingesetzt, wenn Flash voraussichtlich nicht
-ausreichend ist.
+DeepSeek V4 Pro High wird für klar abgegrenzte Aufgaben eingesetzt, die Flash
+voraussichtlich überfordern, etwa schwierige Implementierung, komplexes Debugging
+und schwierige lokale Ursachenanalyse.
 
 DeepSeek V4 Pro Max wird ausschließlich für sehr schwierige klar abgegrenzte
 lokale Blocker, besonders schwer nachvollziehbare lokale Fehler und Probleme
 eingesetzt, für die Pro High voraussichtlich nicht ausreicht.
 
+Vor jeder Aufgabe prüft Sol ausdrücklich zuerst, ob DeepSeek sie sicher
+übernehmen kann; ist das der Fall, ist die Delegation Pflicht. Sol liest keine
+großen Dateimengen, führt normale Tests, Code- und Logsuche oder Routineanalyse
+nicht selbst aus und wiederholt ohne konkreten Grund keine bereits belegte Arbeit.
+
 Unklare, bereichsübergreifende, architekturrelevante oder Production-nahe
-Gesamtprobleme werden zuerst von Sol High analysiert und in sichere Teilaufgaben
-zerlegt. Dass das Gesamtproblem mehrere Helmut-Bereiche berührt, ist allein kein
-Grund, die gesamte Umsetzung bei Sol zu behalten oder zu Astra zu eskalieren.
+Gesamtprobleme bearbeitet Sol nicht allein: die sicher delegierbare Recherche und
+Kontextverdichtung lässt Sol soweit möglich von DeepSeek vorarbeiten und behält
+selbst Entscheidung und Zerlegung. Dass das Gesamtproblem mehrere Helmut-Bereiche
+berührt, ist allein kein Grund, die gesamte Umsetzung bei Sol zu behalten oder zu
+Astra zu eskalieren.
 
 Sobald eine Teilaufgabe klar abgegrenzt, lokal umsetzbar, mit eindeutigen
 Abnahmekriterien beschreibbar und ohne eigene kritische Production-Entscheidung
-ausführbar ist, delegiert Sol diese Teilaufgabe an die niedrigste ausreichend
-starke DeepSeek-Kombination.
+ausführbar ist, muss Sol diese Teilaufgabe an die niedrigste ausreichend starke
+DeepSeek-Kombination delegieren. Delegierbare Routine darf Sol nicht aus
+Bequemlichkeit selbst erledigen.
 
-Sol behält die Gesamtsteuerung, bereichsübergreifende Ursachenanalyse,
-Integrationsprüfung, normale Architekturabwägungen, normale Release-Steuerung,
-rein lesende Production-Prüfungen und finale Prüfung der DeepSeek-Ergebnisse.
-Sol setzt eine lokale Teilaufgabe selbst nur um, wenn sie nicht sicher abtrennbar
-ist, eine Delegation das Risiko wesentlich erhöhen würde oder die Aufgabe so klein
-ist, dass die Delegation mehr Aufwand als Nutzen erzeugt.
+Sol behält Steuerung, Priorisierung, Sprintziel, Zerlegung, bereichsübergreifende
+und größere Architekturentscheidungen, Production-Sicherheit, geschützte Aktionen
+und Freigaben, kritische Integration und die unabhängige kritische Abnahme. Sol
+setzt eine lokale Teilaufgabe selbst nur um, wenn sie nicht sicher abtrennbar ist
+oder eine Delegation das Risiko wesentlich erhöhen würde.
 
 Astra High wird nur empfohlen, wenn Sol einen echten kritischen Grenzfall belegt:
 eine sehr unklare systemweite Ursache, eine besonders schwierige und
@@ -128,8 +141,8 @@ das Modell dann manuell auf Astra High um. Sol darf niemals behaupten, Astra sei
 automatisch gestartet worden.
 
 Ziel des Routings ist, Sol für Führung, Gesamtzusammenhang und Prüfung zu nutzen,
-klar abgegrenzte lokale Umsetzung bevorzugt an DeepSeek zu delegieren und Astra
-nur als seltene Qualitätsreserve für echte Grenzfälle einzusetzen.
+klar abgegrenzte lokale Umsetzung verpflichtend an DeepSeek zu delegieren und
+Astra nur als seltene Qualitätsreserve für echte Grenzfälle einzusetzen.
 
 Sol wählt vor jeder DeepSeek-Delegation direkt die niedrigste voraussichtlich
 ausreichende Modell/Denkstufen-Kombination. Es gibt keine automatische
@@ -165,30 +178,40 @@ $HOME/bin/helmut-deepseek pro-read-max "<Aufgabe>"
 $HOME/bin/helmut-deepseek pro-write-max "<Aufgabe>"
 ```
 
-Jede DeepSeek Delegation muss aus dem aktuellen Roadmap Schritt in
-`docs/ROADMAP_BIS_500.md` und dem aktuellen Production Stand in
-`docs/CURRENT_STATE.md` abgeleitet sein. Sol nennt im DeepSeek Auftrag das konkrete
-Roadmap Ziel, die Abnahmekriterien und die Stop Grenze. DeepSeek darf keinen späteren
-Roadmap Schritt, kein Nebenprojekt und keine bereits abgeschlossene Prüfung
-eigenständig vorziehen oder wiederholen. Ändert sich der belegte Stand während der
-Arbeit, übernimmt Sol wieder und bestimmt den nächsten Roadmap Schritt neu.
+Jede DeepSeek Delegation leitet sich aus einem klar begrenzten Auftrag ab: bei
+Roadmap-Arbeit aus dem aktuellen Roadmap Schritt in `docs/ROADMAP_BIS_500.md` und
+dem aktuellen Production Stand in `docs/CURRENT_STATE.md`, bei anderen beauftragten
+Sprints aus deren klar begrenztem Ziel. Sol nennt im DeepSeek Auftrag immer die
+Abnahmekriterien und die Stop Grenze. DeepSeek darf keinen späteren Roadmap Schritt,
+kein Nebenprojekt und keine bereits abgeschlossene Prüfung eigenständig vorziehen
+oder wiederholen. Ändert sich der belegte Stand während der Arbeit, übernimmt Sol
+wieder und bestimmt den nächsten Schritt neu.
 
 Nur ein Agent darf gleichzeitig im selben Arbeitsbereich schreiben.
 Während DeepSeek schreibt, schreibt der führende Orchestrator dort nicht.
 
-Nach jeder DeepSeek Änderung übernimmt standardmäßig Sol wieder und prüft selbst
-`git status`, `git diff`, das Ergebnis und nur die fachlich notwendigen gezielten
-Tests. Bei reinen Regel- oder Dokumentationsänderungen keine unnötigen fachlichen
-Test Suiten starten.
+Sol muss nach jeder einzelnen DeepSeek Änderung nicht zwingend zwischenschalten.
+Innerhalb eines abgegrenzten Auftrags erledigt DeepSeek zusammenhängende Suche,
+Analyse, Umsetzung, gezielte Tests und Ergebnisaufbereitung; danach übernimmt Sol
+und prüft risikobasiert Ergebniszusammenfassung, relevanten Diff, kritische
+Ausschnitte, Tests, Belege, Unsicherheiten und die Abnahmekriterien. Für unkritische
+Routine genügt eine kompakte Plausibilitätsprüfung; bei Production-Nähe prüft Sol
+die entscheidenden Stellen unabhängig. Sol wiederholt Suche, Analyse oder Tests
+nicht ohne konkreten Grund; bei reinen Regel- oder Dokumentationsänderungen startet
+Sol keine unnötigen fachlichen Testsuiten. Bei einer neuen kritischen Entscheidung,
+einem neuen Risiko, einer Freigabe oder einer kritischen Abnahme geht DeepSeek an
+Sol über. Ein Schreibagent gleichzeitig und der Production-Schutz bleiben
+unverändert.
 
 Scheitert ein DeepSeek Start technisch mit `Operation not permitted` oder einem
 vergleichbaren lokalen Startfehler, genau einmal erneut versuchen. Scheitert auch
 der zweite Start, übernimmt Sol selbst oder meldet den Blocker. Ein technischer
 DeepSeek-Startfehler ist für sich allein kein Grund für Astra.
 
-DeepSeek darf niemals Production Aktionen, Production Datenänderungen,
-Migrationen, Umgebungsvariablenänderungen, Commit, Push, Merge, PR Erstellung
-oder absichtliche kostenpflichtige Production Modellläufe durchführen.
+DeepSeek darf niemals Production Aktionen, Production Daten- oder
+Profiländerungen, Migrationen, Umgebungsvariablenänderungen, Commit, Push, Merge,
+PR Erstellung, eigene Production-Entscheidungen, Freigabeumgehungen oder
+absichtliche kostenpflichtige Production Modellläufe durchführen.
 
 ### Sichtbare Modellübergaben
 
