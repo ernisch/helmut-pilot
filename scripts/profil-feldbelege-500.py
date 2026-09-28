@@ -727,6 +727,53 @@ def _pruefe_stellvertretungen(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator eng gepruefte ZUSATZQUITTUNG des EINEN bislang
+# offenen Bundestags-Parteibelegs Boris Pistorius. Die fail-closed-Validierung
+# liegt im getrennten Modul ``profil-feldbelege-500-pistorius.py``; hier wird nur
+# der gepruefte Index angewendet. Uebernommen wird AUSSCHLIESSLICH der Parteiwert
+# SPD aus der getrennten offiziellen Quelle https://www.spd.de/ueber-uns (H2,
+# section#m236604 und exakter li-Name im Modul fixiert). Die historische 335er
+# Parteifeldquittung bleibt byteidentisch und Pistorius darin offen; Fraktion,
+# Funktionen, Themen, Mandat und alle anderen Felder bleiben unveraendert, kein
+# Schluss aus der Fraktion, keine Importfreigabe.
+PISTORIUS = REPO_ROOT / "docs" / "betrieb" / "pistorius-partei-1-20260928.json"
+PISTORIUS_RESSOURCE = "docs/betrieb/pistorius-partei-1-20260928.json"
+PISTORIUS_GESAMT = 1
+
+
+def _lade_pistoriusmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-pistorius.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_pistorius", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+PISTORIUSMODUL = _lade_pistoriusmodul()
+
+
+def _pruefe_pistorius(eingang) -> dict:
+    """Prueft die versionierte Pistorius-Parteizusatzquittung ueber das getrennte Modul."""
+    try:
+        index = PISTORIUSMODUL.pruefe_pistorius(
+            eingang,
+            quittung=getattr(eingang, "pistorius", None),
+            kennung_zu_abruf=getattr(eingang, "kennung_zu_abruf", None) or {},
+            original_bytes=getattr(eingang, "pistorius_original", None),
+            original_pfad=getattr(eingang, "pistorius_original_pfad", None),
+        )
+    except PISTORIUSMODUL.PistoriusFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.pistorius_by_kennung = index
+    eingang.pistorius_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -1711,6 +1758,10 @@ class Eingang:
             self.rohde = _lies_json(ROHDE)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Rohde-Einzelfallquittung fehlt: {ROHDE_RESSOURCE}") from fehler
+        try:
+            self.pistorius = _lies_json(PISTORIUS)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Pistorius-Parteizusatzquittung fehlt: {PISTORIUS_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -2253,6 +2304,64 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
     parteinachweis = _ergaenzung_partnachweis(
         eingang, parlament, abruf, detail_html, mandatsId, parteinachweis
     )
+
+    # Versionierte Pistorius-Parteizusatzquittung: NUR fuer den einen kanonischen
+    # Fall wird ein bislang OFFENES Parteifeld aus der getrennten offiziellen
+    # SPD-Quelle belegt. Die historische 335er Quittung bleibt unveraendert offen;
+    # Fraktion, Funktionen, Themen, Mandat und alle anderen Felder bleiben gleich.
+    pistorius_eintrag = (getattr(eingang, "pistorius_by_kennung", None) or {}).get(mandatsId)
+    pistorius_beleg = None
+    if pistorius_eintrag is not None:
+        verwendet = getattr(eingang, "pistorius_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        if parteinachweis["status"] != "offen":
+            raise AssemblerFehler(
+                f"Pistorius-Parteizusatzquittung: {mandatsId} ist bereits "
+                f"{parteinachweis['status']}; ein offenes Parteifeld wird erwartet."
+            )
+        pistorius_quelle = pistorius_eintrag["quelle"]
+        parteinachweis = {
+            "status": "belegt",
+            "partei": pistorius_eintrag["partei"],
+            "beleg": pistorius_eintrag["beleg"],
+            "grund": pistorius_eintrag["grund"],
+            "abschnitt": pistorius_eintrag["abschnitt"],
+            "pruefung": pistorius_eintrag["pruefung"],
+            "herkunft": (
+                f"{PISTORIUS_RESSOURCE} (enge Zusatzquittung; getrennte offizielle "
+                f"Partei-Quelle {pistorius_quelle['url']}, SHA256 {pistorius_quelle['sha256']})"
+            ),
+            "quittung": {"url": pistorius_quelle["url"], "sha256": pistorius_quelle["sha256"]},
+            "quittungDatei": PISTORIUS_RESSOURCE,
+        }
+        pistorius_beleg = {
+            "datei": PISTORIUS_RESSOURCE,
+            "kennung": pistorius_eintrag["kennung"],
+            "region": pistorius_eintrag["region"],
+            "parlament": pistorius_eintrag["parlament"],
+            "status": pistorius_eintrag["status"],
+            "partei": pistorius_eintrag["partei"],
+            "person": pistorius_eintrag["person"],
+            "abschnittH2": pistorius_eintrag["abschnitt"],
+            "abschnittId": pistorius_eintrag["abschnittId"],
+            "liName": pistorius_eintrag["liName"],
+            "bindung": pistorius_eintrag["bindung"],
+            "beleg": pistorius_eintrag["beleg"],
+            "grund": pistorius_eintrag["grund"],
+            "quelle": {
+                "url": pistorius_quelle["url"],
+                "finalUrl": pistorius_quelle["finalUrl"],
+                "datei": pistorius_quelle["datei"],
+                "abgerufenAm": pistorius_quelle["abgerufenAm"],
+                "sha256": pistorius_quelle["sha256"],
+                "bytes": pistorius_quelle["bytes"],
+                "http": pistorius_quelle["http"],
+                "httpDate": pistorius_quelle["httpDate"],
+            },
+            "importfreigegeben": False,
+        }
+
     fraktion = profil_roh.get("fraktion")
     fraktionslos = bool(profil_roh.get("fraktionslos")) or (fraktion or "").strip().lower() == "fraktionslos"
 
@@ -2368,6 +2477,16 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             "sha256": abruf["sha256"],
         }
     ]
+    if pistorius_beleg is not None:
+        # Getrennte offizielle Partei-Quelle. Sie steht bewusst NICHT als
+        # ``parlament-profil`` und aendert damit die amtliche Parlamentsbelegpflicht
+        # nicht; die Partei selbst bleibt am Fraktionskopf vorbei neu gebunden.
+        profil["offizielleQuellen"].append({
+            "art": "partei-profil",
+            "url": pistorius_beleg["quelle"]["url"],
+            "abgerufenAm": pistorius_beleg["quelle"]["abgerufenAm"],
+            "sha256": pistorius_beleg["quelle"]["sha256"],
+        })
 
     # Versionierte Stellvertretungsquittung: die amtliche Quelle jeder ergaenzten
     # stellvertretenden Ausschussmitgliedschaft wird an profil.offizielleQuellen
@@ -3132,7 +3251,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         feldbelege["parteiWert"] = parteinachweis["beleg"]
     if parteinachweis.get("quittung"):
         feldbelege["parteiQuelle"] = (
-            f"{PARTEIFELDPRUEFUNG_RESSOURCE}: {parteinachweis['quittung']['url']} "
+            f"{parteinachweis.get('quittungDatei', PARTEIFELDPRUEFUNG_RESSOURCE)}: "
+            f"{parteinachweis['quittung']['url']} "
             f"sha256 {parteinachweis['quittung']['sha256']}"
         )
     if landtag_mandat and landtag_mandat.get("quelle") == "profilkopf" and landtag_mandat["art"] != "offen":
@@ -3367,7 +3487,7 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         parteibeleg["abschnitt"] = parteinachweis.get("abschnitt")
         parteibeleg["pruefung"] = parteinachweis.get("pruefung")
         parteibeleg["quelle"] = {
-            "datei": PARTEIFELDPRUEFUNG_RESSOURCE,
+            "datei": parteinachweis.get("quittungDatei", PARTEIFELDPRUEFUNG_RESSOURCE),
             "url": parteinachweis["quittung"]["url"],
             "sha256": parteinachweis["quittung"]["sha256"],
         }
@@ -3410,6 +3530,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
     }
     if mandatsart_quittung is not None:
         datensatz["mandatsartQuittung"] = mandatsart_quittung
+    if pistorius_beleg is not None:
+        datensatz["parteiQuittung"] = pistorius_beleg
     if mandatsart_quittung_be is not None:
         datensatz["mandatsartQuittungBe"] = mandatsart_quittung_be
     if rollen_beleg is not None:
@@ -3461,6 +3583,7 @@ def assembliere(eingang: Eingang) -> dict:
     kloeckner = _pruefe_kloeckner(eingang)
     rohde = _pruefe_rohde(eingang)
     stellvertretungen = _pruefe_stellvertretungen(eingang)
+    pistorius = _pruefe_pistorius(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -3471,6 +3594,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Parteifeldpruefung nicht deckungsgleich verwendet: {len(ungenutzt)} Eintraege ohne "
             f"offenes Parteifeld (z. B. {sorted(ungenutzt)[:3]})."
+        )
+    if eingang.pistorius_verwendet != set(pistorius):
+        raise AssemblerFehler(
+            "Pistorius-Parteizusatzquittung nicht deckungsgleich verwendet "
+            f"(verwendet={sorted(eingang.pistorius_verwendet)}, erwartet={sorted(pistorius)})."
         )
 
     # Auch die Mandatsartenquittung muss deckungsgleich verwendet werden: kein Beleg
@@ -3825,10 +3953,16 @@ def assembliere(eingang: Eingang) -> dict:
     achse_offen = sum(1 for d in datensaetze if "fachlicheAchse" in d["offeneFelder"])
     if partei_belegt + partei_parteilos + partei_offen != len(datensaetze):
         raise AssemblerFehler("Parteibilanz deckt nicht alle 500 Datensaetze ab.")
-    if (partei_belegt, partei_parteilos, partei_offen) != (424, 2, 74):
+    if (partei_belegt, partei_parteilos, partei_offen) != (425, 2, 73):
         raise AssemblerFehler(
             "Parteibilanz weicht von der geprueften Quittung ab "
             f"(belegt={partei_belegt}, parteilos={partei_parteilos}, offen={partei_offen})."
+        )
+    pistorius_belegt = sum(1 for d in datensaetze if d.get("parteiQuittung"))
+    if pistorius_belegt != PISTORIUS_GESAMT:
+        raise AssemblerFehler(
+            f"Pistorius-Parteizusatzquittung deckt {pistorius_belegt} Datensaetze ab "
+            f"(erwartet {PISTORIUS_GESAMT})."
         )
     ergaenzung_belegt = sum(1 for e in ergaenzung.values() if e["status"] == "belegt")
     ergaenzung_parteilos = sum(1 for e in ergaenzung.values() if e["status"] == "parteilos")
@@ -3856,6 +3990,12 @@ def assembliere(eingang: Eingang) -> dict:
             "parteifeldpruefung": (
                 f"{PARTEIFELDPRUEFUNG_RESSOURCE} (335 gepruefte Parteifelder: "
                 f"{ergaenzung_belegt} belegt, {ergaenzung_offen} offen)"
+            ),
+            "pistoriusParteibeleg": (
+                f"{PISTORIUS_RESSOURCE} (enge Zusatzquittung; EIN bislang offener "
+                "Bundestags-Parteibeleg aus der getrennten offiziellen Quelle "
+                "https://www.spd.de/ueber-uns; H2, section#m236604 und exakter li-Name "
+                "im Validator code-seitig fixiert; die 335er Quittung bleibt unveraendert offen)"
             ),
             "mandatsartenquittung": (
                 f"{MANDATSARTEN_BB_RESSOURCE} (amtliche Brandenburger Uebersicht; Landesliste fuer "
@@ -4148,6 +4288,13 @@ def assembliere(eingang: Eingang) -> dict:
                 "parteilos": ergaenzung_parteilos,
                 "offen": ergaenzung_offen,
                 "deckungsgleichVerwendet": len(eingang.ergaenzung_verwendet),
+            },
+            "pistoriusQuittung": {
+                "datei": PISTORIUS_RESSOURCE,
+                "geprueftGesamt": len(pistorius),
+                "nachRegion": {"Bund": len(pistorius)},
+                "belegt": pistorius_belegt,
+                "verwendet": len(eingang.pistorius_verwendet),
             },
             "mandatsartOffen": mandatsart_offen,
             "fachlicheAchseOffen": achse_offen,
