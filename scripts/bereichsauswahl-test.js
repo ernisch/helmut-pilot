@@ -65,8 +65,8 @@ function main() {
   const leere = Object.keys(A.BEREICHE).filter((b) => A.suitenFuerBereiche(ALLE, [b]).length === 0);
   check("A2 Kein Bereich ist leer (jeder Bereich trifft Suiten)", leere.length === 0,
     leere.join(", ") || "alle belegt");
-  check("A3 Die Standardmenge ist unveraendert 103",
-    STANDARD.size === 103, `Standard ${STANDARD.size}`);
+  check("A3 Die Standardmenge ist unveraendert 106",
+    STANDARD.size === 106, `Standard ${STANDARD.size}`);
   check("A4 Die Sammlung waechst nur um bewusst ergaenzte Tests (>= 457) und der neue Auswahltest ist NICHT Standard",
     ALLE.length >= 457 && ALLE.includes("bereichsauswahl-test.js") && !STANDARD.has("bereichsauswahl-test.js"),
     `erweitert ${ALLE.length}`);
@@ -187,8 +187,8 @@ function main() {
   // ── G · Echte Runner-Aufrufe (--list, keine Ausfuehrung) ─────────────────────
   console.log("\n== G · Runner-Aufrufe ==");
   const gStd = runnerListe();
-  check("G1 Standardlauf bleibt bei 103 Suiten",
-    gStd.status === 0 && /^103 Offline-Suiten \(Standard = Pflichtlauf\)/m.test(gStd.aus), "");
+  check("G1 Standardlauf bleibt bei 106 Suiten",
+    gStd.status === 0 && /^106 Offline-Suiten \(Standard = Pflichtlauf\)/m.test(gStd.aus), "");
   const gBriefing = runnerListe("--aendert", "lib/helmut/briefing-lauf.js", "--nur-bereich");
   check("G2 CLI: Briefing-Aenderung listet nur Bereichs-Suiten",
     gBriefing.status === 0 && /Bereich = automatische Fachregression/.test(gBriefing.aus)
