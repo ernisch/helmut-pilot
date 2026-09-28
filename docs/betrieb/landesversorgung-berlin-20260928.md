@@ -65,8 +65,28 @@ und weitere, nicht diesen neuen Vertrag.
 
 ## Nicht umfasst
 
-Kein Live-Abruf, kein Production-Import, keine Aktivierung, kein 500er Test und
-keine Production-Datenaenderung. Beim Offline-Test wurden keine Profile versorgt.
+Der oben beschriebene Offline-Vertrag umfasste keinen Live-Abruf, keinen
+Production-Import, keine Aktivierung, keinen 500er Test und keine
+Production-Datenaenderung. Beim Offline-Test wurden keine Profile versorgt.
 Die Offline-Zielkohorte bleibt 485/15 und ist nicht importfreigegeben. Der Berliner
 Leser ist weiterhin nicht an einen Live-Crawl oder ein freigegebenes Landesmodul
 angeschlossen; der produktive Versorgungsnachweis steht aus.
+
+## Einzelabruf des amtlichen Artikels (28.09.2026)
+
+Der eng begrenzte Adapter `lib/helmut/berlin-presseartikel-abruf.js` ruft nur eine
+vorab gepruefte Berlin.de-Pressearchiv-Artikeladresse ueber den bestehenden
+anbietergebundenen Crawler ab. Der Crawler liefert den beobachteten HTTP-Status
+nur auf ausdrueckliches Opt-in; alle bisherigen Aufrufer behalten ihre bisherige
+Antwortform. Fremde Hosts und abweichende finale Adressen werden abgewiesen.
+Der Adapter gibt nur den minimierten Artikelstand zurueck, kein HTML und keinen
+Volltext.
+
+Ein einmaliger rein lesender HTTP-Abruf des obigen amtlichen Artikels um
+03:26 UTC ergab einen gueltigen Stand mit Publikationstag `2026-09-25`,
+Volltext-SHA256 `6981f4be2aba74e8a8372aa29f0317c8193596111bc2ea448e86b4302a64d24a`
+und genau 619 Zeichen im ersten Absatz. Das stimmt mit dem gesicherten Original
+ueberein. `node scripts/berlin-presseartikel-abruf-test.js` pruefte 32 synthetische
+und lokale Originalfaelle; `anbietersteuerung-fachpfad-test.js` 52 Faelle.
+Auch dieser Einzelabruf war kein Crawl, Import oder produktiver Versorgungsnachweis.
+Der Live-Quellenweg und die Landesmodulfreigabe bleiben offen.
