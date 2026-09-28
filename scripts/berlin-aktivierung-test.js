@@ -650,6 +650,16 @@ function adversarialBefunde() {
     .split("\n")
     // Kommentarzeilen filtern nichts — nur ausführbarer Code zählt.
     .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
+    // Der gesondert end-to-end gepruefte Berliner Artikelstand projiziert nur
+    // seinen Publikationstag in die Lage-Quellenzeile. Diese fuenf exakten
+    // Quellabbildungen sind keine Mandats-/Landesfilter. Andere Berlin-Bezuege
+    // bleiben im Downstream-Scan weiterhin ein Fehler.
+    .filter((l) => ![
+      /^\s*const berlinStand = require\("\.\/berlin-artikelstand"\)\.leseArtikelstand\((?:doc|original)\);\s*$/,
+      /^\s*dateLabel: formatSourceDate\(berlinStand\?\.publikationstag \|\| doc\.published_at\),\s*$/,
+      /^\s*publishedAt: berlinStand \? "" : \(doc\.published_at \|\| ""\),\s*$/,
+      /^\s*title: q\.titel, published_at: berlinStand \? null : q\.veroeffentlichtAm \}\), quelleId: q\.quelle_id \};\s*$/
+    ].some((erlaubt) => erlaubt.test(l)))
     // Zeitzonen-/Tageswechsel-Helfer sind KEIN Landesfilter: der Frischevertrag
     // fuehrt den Berliner Kalendertag (berlinTag*) als EINE Quelle — geprueft wird
     // hier weiterhin ausschliesslich auf einen Filter auf das LAND Berlin.

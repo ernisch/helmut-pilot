@@ -32,7 +32,10 @@ const storage = require("../lib/helmut/storage");
 const sha = value => crypto.createHash("sha256").update(value, "utf8").digest("hex");
 const kopie = value => JSON.parse(JSON.stringify(value));
 let bestanden = 0;
-function test(name, fn) { fn(); bestanden += 1; console.log("OK " + name); }
+function test(name, fn) {
+  if (fn() === false) { console.log("SKIP " + name); return; }
+  bestanden += 1; console.log("OK " + name);
+}
 function wirft(fn, enthalt) {
   const muster = typeof enthalt === "string" ? new RegExp(enthalt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) : enthalt;
   try { fn(); } catch (error) { assert.match(String(error && error.message), muster); return; }
@@ -357,7 +360,9 @@ let ORIGINAL = null;
 }
 
 test("Echte Originalprobe: 619 Zeichen, hashgebundener erster Absatz, Tag ohne Uhrzeit", () => {
-  if (!ORIGINAL) { console.log("SKIP echte Originalprobe: /private/tmp/helmut-landesversorgung-originale fehlt (CI-tauglich)"); return; }
+  if (!ORIGINAL) {
+    return false;
+  }
   const erzeugt = B.standAusOriginal(ORIGINAL.doc, ORIGINAL.eingabe);
   assert.equal(erzeugt.ok, true, JSON.stringify(erzeugt));
   const { stand, row, absatz } = erzeugt;
@@ -533,12 +538,14 @@ async function speicherUndLeser() {
     assert.equal(gebundeneEingabe[0].quellenbelege[0].veroeffentlichtAm, tag);
     assert.equal(gebundeneEingabe[0].quellenbelege[0].quelle_id, lageEingabe[0].quellenbelege[0].quelle_id);
     const sichtbar = lage.mapSource(gebunden[0]);
-    assert.equal(sichtbar.dateLabel, "25. September 2026");
+    const datumSichtbar = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin",
+      day: "numeric", month: "long", year: "numeric" }).format(new Date(tag + "T12:00:00Z"));
+    assert.equal(sichtbar.dateLabel, datumSichtbar);
     assert.equal(sichtbar.publishedAt, "");
     const karte = lage.koToVorgangCard({ vorgang_id: VORGANG, headline: "Berliner Artikel" }, gebunden, lageJetzt);
-    assert.equal(karte.sources[0].dateLabel, "25. September 2026");
+    assert.equal(karte.sources[0].dateLabel, datumSichtbar);
     assert.equal(karte.sources[0].publishedAt, "");
-    wirft(() => lage.mapSource({ ...gebunden[0], published_at: "2026-09-25T00:00:00Z" }),
+    wirft(() => lage.mapSource({ ...gebunden[0], published_at: tag + "T00:00:00Z" }),
       /berlin-artikelstand-veroeffentlichtzeit-widerspricht-tag/);
     bestanden += 1; console.log("OK Berliner Stand erreicht den Lage-Quellenbeleg mit ganzem erstem Absatz und tagesgenauem Datum");
 
@@ -568,5 +575,6 @@ async function speicherUndLeser() {
 }
 
 speicherUndLeser().then(() => {
-  console.log(`\n${bestanden} Pruefgruppen erfolgreich; synthetische und amtliche lokale Belege, keine Production-Daten.`);
+  console.log(`\n${bestanden} Pruefgruppen erfolgreich; ${ORIGINAL ? "synthetische und amtliche lokale Belege"
+    : "synthetische Belege (amtliches Original lokal nicht vorhanden)"}, keine Production-Daten.`);
 }).catch(error => { console.error(error); process.exitCode = 1; });
