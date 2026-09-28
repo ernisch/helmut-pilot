@@ -354,3 +354,48 @@ Profilversorgung und keine Production-Wirkung. Er wird von nichts anderem automa
 und ist an kein Landesmodul angeschlossen; die produktive Versorgung der Berliner Landesebene
 bleibt offen und braucht weiterhin einen eigenen Nachweis. Pressearchiv- und Sondervorlagen-Adapter,
 Crawler, Source-Mode, Landesschutzgate, Schwellen und Rollen bleiben unveraendert.
+
+## Kompositionskette der Senatsquellen bis zur Rohzeile (28.09.2026, lokal)
+
+`lib/helmut/berlin-senatsquellen-kette.js` ist die EINE neue, ausdruecklich lokal aufzurufende
+Komposition der bereits fertigen Einzelbausteine. `ladeSenatsquellenKette(doc, deps)` laedt die
+fest amtliche Portalseite `https://www.berlin.de/presse/` ueber den bestehenden Portaladapter
+(`deps.fetchUrl` injizierbar), verlangt genau einen geschlossenen Senatsblock mit 1..8 Fundstellen
+(mehr als acht brechen ab, kein stilles Abschneiden) und fuer JEDE Fundstelle `weiterreichbar: true`
+plus GENAU EIN durch `abrufzielFuer` bestaetigtes Ziel (die jeweils andere der beiden
+Adressfamilien muss dieselbe Adresse abweisen). Danach ruft sie seriell pro Fundstelle den
+passenden bestehenden Einzelabruf auf — Pressearchiv ueber `ladePresseartikelStand`, Sondervorlagen
+ueber `ladeSondervorlage` + `erzeugeSondervorlagenstand` — und bindet den exakten Titel und den
+reinen Publikationstag der Portal-Fundstelle erneut an das Original (der Standvertrag verlangt
+exakte Gleichheit, sonst `titel-abweichend` bzw. `datum-nicht-tagesgenau`). Jede minimierte
+Rohzeile wird vor der Rueckgabe erneut mit `pruefeArtikelstand`/`leseArtikelstand` geprueft.
+
+Ergebnis NUR bei vollstaendigem Erfolg: `{ ok:true, quelle, kennungen:[rd-<Standhash>…],
+rows:[minimierte Rohzeile…] }`, eingefroren, ohne HTML, ohne Volltext und ohne Uhrzeit
+(`published_at` bleibt null). Bei EINEM Fehler: `{ ok:false, reason, kennungen:null, rows:null }` —
+fail closed, keine Teilfreigabe. Keine generische neue URL-Familie (das Ziel kommt ausschliesslich
+aus `abrufzielFuer`), keine Personen-/Parteifilterung, kein erfundener Quellentext, kein Mandat;
+Quelle/Herausgeber werden nicht gesetzt, weil die minimierte Fundstelle keine solchen Angaben
+traegt. Keine Speicherung; nichts ruft dieses Modul automatisch auf.
+
+`node scripts/berlin-senatsquellen-kette-test.js` (kein Netz, keine DB, kein Modell) faehrt
+ausschliesslich injizierte Abrufe: positiver Mix aus Pressearchiv + beiden Sonderfamilien in
+Portallistenreihenfolge (seriell, Hostbindung `berlin.de`, `meldeStatus`), Titel- und Tagesdrift in
+beiden Zweigen, unbekannter/nicht unterstuetzter Pfad, mehr als acht Fundstellen sowie eine spaeter
+fehlschlagende Fundstelle (jeweils fail closed mit null Ergebnissen, keine Teilfreigabe). Alle
+Ausgaben werden mit `pruefeArtikelstand`/`leseArtikelstand` geprueft; Roh-HTML, Volltext und die
+Listenuhrzeit sind ausgeschlossen. Ergebnis: **23 Pruefungen** mit den lokalen amtlichen Originalen
+(amtliches Portaloriginal als Grundlage einer auf vier lokal belegte Links begrenzten Teilliste,
+ BJF-Pressearchiv + drei Sondervorlagen; die Offline-Kette liefert vier Rohzeilen mit
+den gesicherten Absatzlaengen 619/625/344/240), **18** ohne sie (Originalprobe wird als SKIP
+gemeldet und der Test bleibt CI-tauglich). Der Test laeuft ueber die bestehende Bereichsauswahl
+(`landesmodule-pardok` / `berlin`, Dateiname `berlin-…`); die Pflichtmenge `STANDARD` bleibt
+unveraendert.
+
+### Nicht umfasst
+
+Kein Live-Crawl, kein Netzabruf, kein Production-Import, keine Aktivierung, kein 500er Test, keine
+DB-/Storage-/Lage-Aenderung, keine Profilversorgung und keine Production-Wirkung. Die Kette ist an
+keinen Live-Quellenweg und kein Landesmodul angeschlossen und wird von nichts automatisch
+aufgerufen; die produktive Versorgung der Berliner Landesebene bleibt offen und braucht weiterhin
+ihren eigenen Nachweis.
