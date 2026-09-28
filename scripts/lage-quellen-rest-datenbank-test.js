@@ -212,7 +212,9 @@ async function main() {
       const before = gateway.messung.anfragen;
       const rows = await meta(["ko-seiten"]);
       assert.equal(rows.length, 1001); assert.equal(new Set(rows.map(r => r.raw_documents.id)).size, 1001);
-      assert.equal(gateway.messung.anfragen - before, 3);
+      // Je Lesestapel drei begrenzte Pfade: Zeitstempel (hier zwei Seiten à 1000) und je ein
+      // expliziter Artikelstandspfad fuer Bundestag und Berlin (jeweils ohne Treffer -> 1 Seite).
+      assert.equal(gateway.messung.anfragen - before, 4);
     });
     await test("101 Wissensobjekte werden in zwei Stapeln gelesen", async () => {
       reset();
@@ -223,7 +225,8 @@ async function main() {
       const ids = Array.from({ length: 101 }, (_, i) => `ko-stapel-${i + 1}`);
       const before = gateway.messung.anfragen;
       assert.equal((await meta(ids)).length, 101);
-      assert.equal(gateway.messung.anfragen - before, 4);
+      // Zwei Stapel zu je drei begrenzten Pfaden (Zeitstempel, Bundestag-Stand, Berlin-Stand).
+      assert.equal(gateway.messung.anfragen - before, 6);
     });
     for (const field of ["title", "url", "canonical_url", "published_at"]) {
       await test(`Geaendertes ${field} wird beim echten Folgelesen verweigert`, async () => {

@@ -121,7 +121,10 @@ function standTransport(zeilen) {
     const result = await storage.listAktuelleLageQuellen(["eins", "eins"], now, {
       ready:()=>true, request:async endpoint=>{ requests.push(endpoint); return requests.length===1 ? rows : []; }
     });
-    assert.equal(result.length,1000); assert.equal(requests.length,3);
+    // Ein Lesestapel nutzt jetzt drei begrenzte Pfade: den unveraenderten Zeitstempelpfad
+    // (hier zwei Seiten), den Bundestags-Artikelstandspfad und den zusaetzlichen, ebenso
+    // begrenzten Berliner Artikelstandspfad (eigener Namespace).
+    assert.equal(result.length,1000); assert.equal(requests.length,4);
     const p = new URL("https://example.org"+requests[0]).searchParams;
     assert.equal(p.get("select"),"knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at)");
     assert.equal(p.get("knowledge_object_id"),'in.("eins")');
@@ -137,6 +140,16 @@ function standTransport(zeilen) {
     assert.deepEqual(s.getAll("raw_documents.published_at"),["is.null"]);
     assert.equal(s.get("order"),"knowledge_object_id.asc,raw_document_id.asc");
     assert.equal(s.get("offset"),"0");
+    // Dritter, ebenso begrenzter Lesepfad: ausschliesslich Berliner Artikelstaende
+    // (published_at absichtlich NULL) mit eigener, geschlossener Projektion.
+    const b = new URL("https://example.org"+requests[3]).searchParams;
+    assert.equal(b.get("select"),"knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at,summary,"
+      + "berlin_artikelstand:raw->helmutBerlinArtikelstand,berlin_abgerufen_at:retrieved_at)");
+    assert.equal(b.get("knowledge_object_id"),'in.("eins")');
+    assert.deepEqual(b.getAll("raw_documents.published_at"),["is.null"]);
+    assert.equal(b.get("raw_documents.raw->helmutBerlinArtikelstand"),"not.is.null");
+    assert.equal(b.get("order"),"knowledge_object_id.asc,raw_document_id.asc");
+    assert.equal(b.get("offset"),"0");
   });
   await test("Fehlende Verbindung, fremde Zeilen und unlesbare Antwort sind keine leeren Metadaten", async () => {
     for (const deps of [{ ready:()=>false }, {ready:()=>true,request:async()=>({})},
@@ -178,8 +191,9 @@ function standTransport(zeilen) {
       const p = new URL("https://example.org" + endpoint).searchParams;
       sizes.push(p.get("knowledge_object_id").match(/"ko-/g).length); return [];
     } });
-    // Je Stapel ein gewoehnlicher Zeitstempelpfad und ein Artikelstand-Pfad.
-    assert.deepEqual(sizes, [100, 100, 100, 100, 1, 1]);
+    // Je Stapel ein gewoehnlicher Zeitstempelpfad, ein Bundestags-Artikelstandspfad und
+    // ein ebenso begrenzter Berliner Artikelstandspfad (eigener Namespace).
+    assert.deepEqual(sizes, [100, 100, 100, 100, 100, 100, 1, 1, 1]);
   });
   await test("Artikelstaende werden nur mit ganzem Berliner Publikationstag gelesen", async () => {
     const alt = process.env.HELMUT_BRIEFING_RELEVANZ_TAGE;

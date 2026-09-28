@@ -131,10 +131,21 @@ Fachachsen einzeln belegen;485 technische Erfolge sind keine fachliche Importfre
 Fuer die Landesversorgung liegt ein enger Berliner Originalseiten-Leser vor:
 `lib/helmut/berlin-presseartikel.js` bindet amtliche URL, Titel, Publikationstag
 und vollstaendigen Artikeltext ohne erfundene Uhrzeit; die lokale Originalprobe
-vom25.09.2026 besteht. Der Leser ist noch nicht an Crawl, Speicher, Lage-Ausgabe
-oder ein freigegebenes Landesmodul angeschlossen. Naechster Versorgungsschritt:
-separaten Landes-Stand-/Speichervertrag mit tagesgenauer sichtbarer Ausgabe
-offline nachweisen; erst danach einen begrenzten Livepfad pruefen.
+vom25.09.2026 besteht. Der separate Stand-/Speichervertrag und die tagesgenaue
+Lage-Quellenanzeige sind jetzt offline geprueft; ein Live-Crawl und ein
+freigegebenes Landesmodul fehlen weiterhin.
+**Erledigt28.09. (lokal, offline):** [Berliner Artikelstand](betrieb/landesversorgung-berlin-20260928.md).
+`lib/helmut/berlin-artikelstand.js` bindet fuer das gesicherte amtliche Original
+(`be-bjf-kinder-jugendhilfe-20260925.html`) einen eigenen, geschlossenen Stand:
+Metadata URL/Titel/Tag/Absatz- und Volltexthash/Standhash, eigener Namespace,
+`published_at=null`, sichtbar nur der Kalendertag; als `summary` ausschliesslich der
+gepruefte erste ganze Absatz (619 Zeichen) hashgebunden, kein Volltext/HTML in
+`raw_documents`. Der Stand laeuft durch Import/Dedup, Speicherprojektion,
+Lage-Quellenbeleg und sichtbare Quellenzeile der Lage-Karte; Offline-End-to-End-Test mit
+In-Memory-Storage (25 Gruppen, echte Originalprobe), Negativtests fuer Drift und
+Zeit. Der Bundestagspfad, die Schwellen und die AfD-Sperre bleiben unveraendert.
+Kein Liveabruf, Import, Aktivierung oder500er Test; Production bleibt500/0,
+Offline-Zielkohorte485/15 und nicht importfreigegeben.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
 Zwei bislang offene Berliner Mandatsarten sind ueber die amtliche

@@ -92,11 +92,14 @@ const BEREICHE = {
       /(^|\/)lib\/helmut\/source-/i, /(^|\/)lib\/helmut\/sourceSafety/i,
       /(^|\/)lib\/helmut\/artikelkontext/i, /(^|\/)lib\/helmut\/herausgeber/i,
       /(^|\/)lib\/helmut\/bundestag-artikelstand\.js$/i,
+      /(^|\/)lib\/helmut\/berlin-artikelstand\.js$/i,
+      /(^|\/)lib\/helmut\/artikelstand\.js$/i,
       /(^|\/)lib\/helmut\/quellen-/i, /(^|\/)lib\/helmut\/dip/i,
       /(^|\/)lib\/helmut\/blob-relational/i, /(^|\/)lib\/helmut\/crawl-run-state/i,
       /(^|\/)lib\/helmut\/retention/i],
     suiten: [/^quellen/i, /^source/i, /^dedup/i, /^crawler/i, /^google-news/i, /^herausgeber/i,
-      /^artikelkontext/i, /^bundestag-artikelstand/i, /^dip-/i, /^quellentitel/i, /^incident-crawl/i, /^globalabruf/i,
+      /^artikelkontext/i, /^bundestag-artikelstand/i, /^berlin-artikelstand/i, /^dip-/i,
+      /^quellentitel/i, /^incident-crawl/i, /^globalabruf/i,
       /^globalphase/i, /^shadow-/i, /^vorgang/i, /^seed-drift/i, /^seed-restore/i]
   },
   verstehen: {

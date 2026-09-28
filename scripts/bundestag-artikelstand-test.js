@@ -612,9 +612,14 @@ async function speicherUndLeser() {
     bestanden += 1; console.log("OK Stand- oder Absatzverlust beim Folgelesen wird laut verweigert");
     assert.equal(geseheneSelects.length >= 6, true);
     // Der gewoehnliche Zeitstempelpfad des Lagefensters bleibt bewusst ohne Stand-Alias.
+    // Seit dem geschlossenen Berliner Artikelstand gibt es eine ZWEITE, ebenso explizite
+    // Stand-Projektion (eigener Namespace raw->helmutBerlinArtikelstand); ein Leser fragt
+    // entweder den Bundestags- oder den Berliner Alias ab, niemals gar keinen.
+    const standProjektion = sel => sel.includes("bundestag_artikelstand:raw->helmutBundestagArtikelstand")
+      || sel.includes("berlin_artikelstand:raw->helmutBerlinArtikelstand");
     const ohneAlias = geseheneSelects.filter(sel => sel !== "id,finding_count"
       && sel !== "knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at)"
-      && !sel.includes("bundestag_artikelstand:raw->helmutBundestagArtikelstand"));
+      && !standProjektion(sel));
     assert.deepEqual(ohneAlias, []);
     bestanden += 1; console.log("OK Alle relevanten Leser fragen die Aliasprojektion raw->helmutBundestagArtikelstand ab");
   } finally {
