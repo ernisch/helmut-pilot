@@ -264,7 +264,9 @@ Stellen unabhängig. Terra wiederholt Suche, Analyse oder Tests nicht ohne konkr
 Grund; bei reinen Regel- oder Dokumentationsänderungen startet Terra keine
 unnötigen fachlichen Testsuiten. Bei einer neuen kritischen Entscheidung, einem
 neuen Risiko, einer Freigabe oder einer kritischen Abnahme geht DeepSeek an Terra
-über. Ein Schreibagent gleichzeitig und der Production-Schutz bleiben unverändert.
+über. Pro isoliertem Arbeitsbereich schreibt weiterhin höchstens ein Agent
+gleichzeitig; insgesamt dürfen bis zu fünf getrennte Schreibagenten parallel
+arbeiten. Der Production-Schutz bleibt unverändert.
 
 Scheitert ein DeepSeek Start technisch mit `Operation not permitted` oder einem
 vergleichbaren lokalen Startfehler, genau einmal erneut versuchen. Scheitert auch
