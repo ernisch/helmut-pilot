@@ -15,11 +15,14 @@ Production-Modellbudget. Kein Abonnement und kein dauerhafter Server.
 
 Mit ausdruecklichem Betreiberauftrag vom29.09.2026 gelten fuer lokale
 DeepSeek-Arbeit zwei Tagesgrenzen je UTC-Tag ueber alle Helferprozesse gemeinsam:
-10USD Warnschwelle und20USD harter Sicherheitsdeckel. Die Warnschwelle informiert
-nur und stoppt keine Arbeit. Ab ihr soll Terra ausschliesslich den kritischen Pfad
-bearbeiten und hoechstens zwei bezahlte DeepSeek-Agenten gleichzeitig starten.
-Der harte Deckel umfasst bestaetigte Kosten, laufende Reservierungen und
-ungeklaerte konservative Bindungen. Fertige Aufgaben enden sofort. Nicht das
+10USD Warnschwelle,18USD Freigabeschwelle und20USD harter Sicherheitsdeckel.
+Die10USD Warnschwelle ist reine Information und veraendert weder Parallelitaet
+noch Aufgabenumfang. Bevor eine neue konservative Reservierung die Tagesbindung
+auf mindestens18USD bringen wuerde, fordert der Launcher eine ausdrueckliche
+Tageserhoehung an. Ohne GO bleibt20USD der harte Deckel. Ein GO erhoeht nur den
+Deckel fuer diesen UTC-Tag; bestaetigte oder gebundene Kosten werden niemals auf
+null gesetzt. Der harte Deckel umfasst bestaetigte Kosten, laufende Reservierungen
+und ungeklaerte konservative Bindungen. Fertige Aufgaben enden sofort. Nicht das
 gesamte Laufbudget wird ausgegeben oder vorab blockiert: vor jedem Modellaufruf
 wird dessen konservativer Hoechstverbrauch atomar reserviert.
 Bestaetigter Verbrauch gibt den ungenutzten Rest wieder frei. Historische belegte
@@ -67,10 +70,12 @@ entfernt. Ein tatsaechlich ueber Mitternacht laufender Aufruf wird konservativ
 an beiden Tagen beruecksichtigt. Ein verschwundener Prozess setzt keine Kosten
 auf null. Abweichungen vom reservierten Hoechstverbrauch sperren weitere Laeufe.
 
-Reichen20USD nicht, wird keine Anfrage gesendet. Der Starter liefert Exit78
-mit `daily_go_required`; der Orchestrator muss den Betreiber ausdruecklich um
-mehr Tagesbudget fuer genau diesen UTC-Tag bitten und kostenlose unabhaengige
-Arbeit fortsetzen. Ein ausdrueckliches GO wird mit UTC-Datum in
+Schon vor20USD wird gefragt: wuerde eine neue Reservierung mindestens18USD
+Tagesbindung erzeugen und existiert noch keine Tageserhoehung, liefert der Starter
+`daily_extension_go_required` mit Exit80. Terra fragt den Betreiber sofort nach
+einem hoeheren Tagesdeckel fuer genau diesen UTC-Tag. Der Kostenzaehler wird dabei
+nicht zurueckgesetzt. Reicht auch ein bereits freigegebener hoeherer Deckel nicht,
+liefert der Starter Exit78 mit `daily_go_required`. Ein ausdrueckliches GO wird mit UTC-Datum in
 `day_approvals` eingetragen, z.B.
 `"2026-09-28": {"usd": 25, "explicit_user_approval": "Beleg der konkreten Nutzerfreigabe"}`.
 Ein belegter alter Freigabewert bis zum harten Standarddeckel ist redundant und
