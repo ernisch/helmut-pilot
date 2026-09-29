@@ -6,6 +6,10 @@ Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
 stehen weiterhin in `docs/CURRENT_STATE.md`.
 
+## Kritischer Pfad und Parallelitaet
+
+Vor jeder neuen Arbeitswelle priorisiert Terra nur die Blocker, die das 500er Starttor direkt verhindern. Bis zu fünf unabhängige DeepSeek-Agenten dürfen parallel arbeiten. Wenn mindestens zwei Agenten gleichzeitig schreiben, nutzt Terra getrennte Git-Worktrees vom selben verifizierten main-Commit; maximal drei Schreibagenten gleichzeitig, übrige Plätze nur für unabhängige Lesearbeit. Die10-USD-Warnschwelle drosselt nicht. Vor einer neuen Reservierung, die mindestens18USD Tagesbindung erzeugen würde, fragt Terra nach einer optionalen Tageserhöhung; ohne GO bleibt20USD der harte Deckel.
+
 ## Arbeitsmodus
 
 Wenn der Nutzer einen Roadmap Schritt als Sprint startet, arbeitet Codex diesen
@@ -117,7 +121,7 @@ erzählen.
 ## 3 · Nächste Arbeiten vor dem 500er Start
 
 **Technischer Betreiberauftrag27.09. lokal abgeschlossen:** DeepSeek-Starter
-mit eigenem10-USD-Tagesdeckel, grosszuegigen Laufbudgets und genau einer
+mit reiner10-USD-Warnschwelle, Freigabefrage vor18USD, hartem20-USD-Tagesdeckel, grosszuegigen Laufbudgets und genau einer
 Budget-/Tokenlimit-Erweiterung installiert und geprueft; Belege unter
 [`tools/deepseek-budget/`](../tools/deepseek-budget/README.md).
 Production-Kostenlimits bleiben bestehen. Naechster Fachschritt bleibt die

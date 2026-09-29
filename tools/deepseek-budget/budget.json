@@ -1,9 +1,17 @@
 {
   "version": 1,
-  "daily_limit_usd": 10,
+  "daily_limit_usd": 20,
   "timezone": "UTC",
-  "budgets_usd": {"flash-high": 2, "flash-max": 3, "pro-high": 4, "pro-max": 5},
-  "output_tokens": {"high": 131072, "max": 196608},
+  "budgets_usd": {
+    "flash-high": 2,
+    "flash-max": 3,
+    "pro-high": 4,
+    "pro-max": 5
+  },
+  "output_tokens": {
+    "high": 131072,
+    "max": 196608
+  },
   "retry_multiplier": 2,
   "max_retries": 1,
   "provider_max_output_tokens": 393216,
@@ -11,8 +19,18 @@
   "rates_verified_at": "2026-09-27",
   "rates_source": "https://api-docs.deepseek.com/quick_start/pricing/",
   "peak_rates_usd_per_million": {
-    "deepseek-flash": {"input": 0.30, "cached": 0.006, "output": 1.20},
-    "deepseek-v4-pro": {"input": 1.32, "cached": 0.044, "output": 3.96}
+    "deepseek-flash": {
+      "input": 0.3,
+      "cached": 0.006,
+      "output": 1.2
+    },
+    "deepseek-v4-pro": {
+      "input": 1.32,
+      "cached": 0.044,
+      "output": 3.96
+    }
   },
-  "day_approvals": {}
+  "day_approvals": {},
+  "daily_warning_usd": 10,
+  "daily_approval_prompt_usd": 18
 }
