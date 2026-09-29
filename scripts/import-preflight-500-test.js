@@ -265,6 +265,33 @@ function main() {
     && new RegExp(`<>\\s*${GEN.PROFILES_GESAMT}\\b`).test(sql.forward));
   check("6.8 Alle 500 neuen Mandatszeilen stehen auf false", (sql.forward.match(/, false, 'neu', /g) || []).length === 500);
 
+  // Fail-closed Reihenfolge: der ausfuehrbare Riegel muss VOR der ersten Schreiboperation stehen.
+  // Bewusst unabhaengig zur Generator-Selbstpruefung implementiert (gleiche Textprobe, andere Stelle).
+  const ersteSchreibindex = (s) => {
+    const re = /\b(insert\s+into|update\s+public|delete\s+from|alter\s+table|truncate)\b/i;
+    let offset = 0;
+    for (const zeile of s.split("\n")) {
+      const rumpf = zeile.replace(/--.*$/, "");
+      if (re.test(rumpf)) return offset + rumpf.search(re);
+      offset += zeile.length + 1;
+    }
+    return -1;
+  };
+  const riegelEndindex = (s) => {
+    const start = s.indexOf("do $$");
+    return start < 0 ? -1 : s.indexOf("end $$;", start);
+  };
+  check("6.9 Der fail-closed Riegel steht vollstaendig VOR der ersten Schreiboperation",
+    (() => {
+      const posMut = ersteSchreibindex(sql.forward);
+      const posEnde = riegelEndindex(sql.forward);
+      const davor = posMut > 0 ? sql.forward.slice(0, posMut) : "";
+      return posMut > 0 && posEnde > 0 && posEnde < posMut
+        && (davor.match(/ERSATZ VORBEDINGUNG VERLETZT/g) || []).length >= 8
+        && /% profiles-Zeilen gesamt \(erwartet 501 = 500 Mandatsprofile \+ 1 Fremdprofil\)/.test(davor);
+    })(),
+    `ersteMutation=${ersteSchreibindex(sql.forward)} riegelEnde=${riegelEndindex(sql.forward)}`);
+
   // ── 7 · Rueckweg-Vertrag ─────────────────────────────────────────────────────────────────
   abschnitt("7 · Rueckweg: Guard, exakte neue Kohorte, FK-sichere Wiederherstellung");
   const rDel = sql.rollback.match(/delete\s+from\s+public\.profiles\s+where\s+id\s+in\s*\(([^)]*)\)/i);
@@ -291,6 +318,19 @@ function main() {
     /RUECKWEG NACHBEDINGUNG VERLETZT/.test(sql.rollback)
     && /Snapshot-Zeilen in public\.briefings \(erwartet 3\)/.test(sql.rollback)
     && /Fremdprofile tragen ein Mandat \(erwartet 0\)/.test(sql.rollback));
+  check("7.8 Der Guard steht vollstaendig VOR dem delete der neuen Kohorte",
+    (() => {
+      const posMut = ersteSchreibindex(sql.rollback);
+      const posEnde = riegelEndindex(sql.rollback);
+      return posMut > 0 && posEnde > 0 && posEnde < posMut
+        && /RUECKWEG VORBEDINGUNG VERLETZT/.test(sql.rollback.slice(0, posMut));
+    })(),
+    `ersteMutation=${ersteSchreibindex(sql.rollback)} riegelEnde=${riegelEndindex(sql.rollback)}`);
+  check("7.9 Der Rueckweg-Kopf bindet die Wiederherstellung an den versiegelten Snapshot",
+    sql.rollback.includes(`-- Snapshot: ${snapshot.erstelltAm} von`)
+    && sql.rollback.includes(snapshot.sha256)
+    && /ATOMARER RUECKWEG \(Preimage-Wiederherstellung\)/.test(sql.rollback)
+    && /Snapshot-Profile samt Kinddaten wieder her/.test(sql.rollback));
 
   // ── 8 · Mutationsprobe: der Selbsttest greift tatsaechlich ───────────────────────────────
   abschnitt("8 · Mutationsprobe: der SQL-Selbsttest greift tatsaechlich");
@@ -314,6 +354,19 @@ function main() {
     { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp });
   check("8.4 Ein expliziter mandate_profiles-delete im Rueckweg wird erkannt",
     mandateGeloescht.some((f) => f.code === "rollback-delete-mandate"));
+  const riegelVerschoben = (() => {
+    const start = sql.forward.indexOf("do $$");
+    const ende = sql.forward.indexOf("end $$;", start) + "end $$;".length;
+    const block = sql.forward.slice(start, ende);
+    const ohne = sql.forward.slice(0, start) + sql.forward.slice(ende);
+    return ohne.replace(/\ncommit;\s*$/, `\n${block}\n\ncommit;`);
+  })();
+  const reihenfolge = GEN.pruefeErsatzSql(
+    { forward: riegelVerschoben, rollback: sql.rollback },
+    { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp });
+  check("8.5 Ein hinter die Mutationen verschobener Riegel wird erkannt",
+    reihenfolge.some((f) => f.code === "forward-riegel-reihenfolge"),
+    reihenfolge.map((f) => f.code).join(", ") || "0 Befunde");
 
   // ── 9 · FAIL-CLOSED: ungueltige Snapshots/Pakete erzeugen kein SQL ───────────────────────
   abschnitt("9 · Fail-closed: ungueltiger Snapshot/Hash/ID-Menge/Paket => kein SQL");

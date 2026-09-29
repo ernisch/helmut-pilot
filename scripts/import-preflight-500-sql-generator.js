@@ -851,6 +851,33 @@ function pruefeErsatzSql(sql, { neueIds, alteIds, fremdIds, snapshot }) {
     }
   }
 
+  // Fail-closed Reihenfolge: der ausfuehrbare Riegel (do $$ ... raise exception ... end $$;) muss
+  // vollstaendig VOR der ersten Schreiboperation stehen — ein nachgelagerter Riegel koennte eine
+  // bereits begonnene Mutation nicht mehr verhindern. Reine Positionspruefung auf dem Text, ohne
+  // Ausfuehrung. Kommentarzeilen werden ignoriert, damit Beschriftungen wie "-- [INSERT-NEU]"
+  // nicht als Mutation zaehlen.
+  const ersteSchreibposition = (s) => {
+    const re = /\b(insert\s+into|update\s+public|delete\s+from|alter\s+table|truncate)\b/i;
+    let offset = 0;
+    for (const zeile of s.split("\n")) {
+      const rumpf = zeile.replace(/--.*$/, "");
+      if (re.test(rumpf)) return offset + rumpf.search(re);
+      offset += zeile.length + 1;
+    }
+    return -1;
+  };
+  for (const [name, s] of [["forward", sql.forward], ["rollback", sql.rollback]]) {
+    const posMutation = ersteSchreibposition(s);
+    if (posMutation < 0) continue; // fehlende Schreiboperation melden die Einzelpruefungen unten
+    const posRiegel = s.indexOf("do $$");
+    const posEnde = posRiegel >= 0 ? s.indexOf("end $$;", posRiegel) : -1;
+    const posBeginn = s.search(/^\s*begin;/mi);
+    if (!(posBeginn >= 0 && posBeginn < posRiegel && posRiegel < posEnde && posEnde < posMutation)) {
+      add(`${name}-riegel-reihenfolge`,
+        `${name}: fail-closed Riegel (do $$ ... end $$;) steht nicht vollstaendig vor der ersten Schreiboperation.`);
+    }
+  }
+
   if (!/VORBEDINGUNG VERLETZT/.test(sql.forward)) add("forward-vorbedingung", "Vorwaerts-SQL enthaelt keine ausfuehrbare Vorbedingung.");
   const nach = (sql.forward.match(/NACHBEDINGUNG VERLETZT/g) || []).length;
   if (nach < 6) add("forward-nachbedingung", `Vorwaerts-SQL hat nur ${nach} Nachbedingung(en); erwartet >= 6 (500, 501, aktiv, AfD, Fremdprofil, Altbestand).`);
