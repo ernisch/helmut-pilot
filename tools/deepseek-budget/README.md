@@ -13,12 +13,15 @@ Production-Modellbudget. Kein Abonnement und kein dauerhafter Server.
 | Pro High |4USD|
 | Pro Max |5USD|
 
-Mit ausdruecklichem Betreiberauftrag gilt wieder ein gemeinsamer dauerhafter
-Tagesdeckel von10USD je UTC-Tag; die zwischenzeitlichen15-USD-Angaben sind damit
-ersetzt, historische Archive bleiben unveraendert. Der Deckel gilt ueber alle
-Helferprozesse gemeinsam. Fertige Aufgaben enden sofort. Nicht das gesamte
-Laufbudget wird ausgegeben oder vorab blockiert:
-vor jedem Modellaufruf wird dessen konservativer Hoechstverbrauch atomar reserviert.
+Mit ausdruecklichem Betreiberauftrag vom29.09.2026 gelten fuer lokale
+DeepSeek-Arbeit zwei Tagesgrenzen je UTC-Tag ueber alle Helferprozesse gemeinsam:
+10USD Warnschwelle und20USD harter Sicherheitsdeckel. Die Warnschwelle informiert
+nur und stoppt keine Arbeit. Ab ihr soll Terra ausschliesslich den kritischen Pfad
+bearbeiten und hoechstens zwei bezahlte DeepSeek-Agenten gleichzeitig starten.
+Der harte Deckel umfasst bestaetigte Kosten, laufende Reservierungen und
+ungeklaerte konservative Bindungen. Fertige Aufgaben enden sofort. Nicht das
+gesamte Laufbudget wird ausgegeben oder vorab blockiert: vor jedem Modellaufruf
+wird dessen konservativer Hoechstverbrauch atomar reserviert.
 Bestaetigter Verbrauch gibt den ungenutzten Rest wieder frei. Historische belegte
 Nutzung des Installationstags wird einmalig aus Codex-Verbrauchsquittungen uebernommen.
 Reasoningtokens sind bereits in den Ausgabetokens enthalten und werden nicht doppelt
@@ -55,21 +58,29 @@ Werkzeugaufrufen zurueckgehalten, bevor dieselbe Anfrage einmal wiederholt wird.
 Bereits abgeschlossene Werkzeugaktionen werden nicht erneut ausgefuehrt. Ein
 spaeteres zweites Limit erzeugt keine dritte automatische Ausfuehrung.
 
-Ungeklaerte Provider-/Transportausgaenge bleiben konservativ reserviert und
-werden nicht automatisch wiederholt. Reservierungen decken einen moeglichen
+Ungeklaerte Provider-/Transportausgaenge bleiben konservativ gebunden und
+werden nicht automatisch wiederholt. Der Status kennzeichnet sie getrennt als
+`unknown`; laufende Reservierungen bleiben `reserved`, bestaetigte Nutzung
+`spent` beziehungsweise historische bestaetigte Nutzung `historical`. Reservierungen decken einen moeglichen
 UTC-Tageswechsel ab; bei Abschluss am gleichen Tag wird die Folgetagsbindung
 entfernt. Ein tatsaechlich ueber Mitternacht laufender Aufruf wird konservativ
 an beiden Tagen beruecksichtigt. Ein verschwundener Prozess setzt keine Kosten
 auf null. Abweichungen vom reservierten Hoechstverbrauch sperren weitere Laeufe.
 
-Reichen10USD nicht, wird keine Anfrage gesendet. Der Starter liefert Exit78
+Reichen20USD nicht, wird keine Anfrage gesendet. Der Starter liefert Exit78
 mit `daily_go_required`; der Orchestrator muss den Betreiber ausdruecklich um
-mehr Tagesbudget bitten und kostenlose unabhaengige Arbeit fortsetzen. Ein
-ausdrueckliches GO wird mit UTC-Datum in `day_approvals` eingetragen, z.B.
-`"2026-09-28": {"usd": 18, "explicit_user_approval": "Beleg der konkreten Nutzerfreigabe"}`.
-Ein belegter alter Freigabewert bis zum neuen Standarddeckel ist redundant und
+mehr Tagesbudget fuer genau diesen UTC-Tag bitten und kostenlose unabhaengige
+Arbeit fortsetzen. Ein ausdrueckliches GO wird mit UTC-Datum in
+`day_approvals` eingetragen, z.B.
+`"2026-09-28": {"usd": 25, "explicit_user_approval": "Beleg der konkreten Nutzerfreigabe"}`.
+Ein belegter alter Freigabewert bis zum harten Standarddeckel ist redundant und
 senkt den Deckel nicht. Ohne reales GO keinen solchen Eintrag anlegen. Am
-Folgetag gilt wieder10USD.
+Folgetag gilt wieder20USD. Die10-USD-Warnschwelle braucht kein GO.
+
+`~/bin/helmut-deepseek status` zeigt bestaetigte Kosten, aktive Reservierungen,
+ungeklaerte Bindungen, Gesamtbindung sowie den noch verfuegbaren Betrag bis
+Warnschwelle und hartem Deckel getrennt. Eine Reservierung ist daher nicht als
+bereits bezahlte Providerrechnung zu interpretieren.
 
 ## Installation und Pruefung
 
