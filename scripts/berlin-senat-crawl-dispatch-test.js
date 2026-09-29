@@ -56,6 +56,11 @@ const BE_WEG = { id: "rp-be-landesregierung", legacy_source_id: "be-landesregier
 const BB_WEG = { id: "rp-bb-landesregierung", legacy_source_id: "bb-landesregierung",
   name: "Landesregierung Brandenburg", represents_type: "government",
   method: "rss", url: "https://bb.example/rss", status: "healthy", activation_mode: "auto", priority: 55 };
+const BB_LANDTAG_WEG = { id: "rp-bb-landesparlament", legacy_source_id: "bb-landesparlament",
+  publisher_id: "publisher-landtag.brandenburg.de", name: "Landtag Brandenburg — Pressemitteilungen",
+  represents_type: "parliament", method: "rss",
+  url: "https://www.landtag.brandenburg.de/cms/detail.php?template=lt_rss_presse_d",
+  status: "healthy", activation_mode: "auto", priority: 55 };
 const BUND_WEG = { id: "rp-bundestag", legacy_source_id: "bundestag", name: "Bundestag",
   represents_type: "parliament", method: "rss", url: "https://bund.example/rss",
   status: "healthy", activation_mode: "always_on", priority: 100 };
@@ -74,13 +79,17 @@ const LINKS = [
   { package_id: "pk-be", retrieval_path_id: "rp-be-landesregierung" },
   { package_id: "pk-be", retrieval_path_id: "rp-be-fremdweg" },
   { package_id: "pk-bb", retrieval_path_id: "rp-bb-landesregierung" },
+  { package_id: "pk-bb", retrieval_path_id: "rp-bb-landesparlament" },
   { package_id: "pk-bund", retrieval_path_id: "rp-bundestag" }
 ];
 const FLAG_BE = { HELMUT_LANDESMODULE: "berlin" };
 const iPlan = (retrievalPaths, profiles, env) => SM.buildRelationalCrawlPlan({
   retrievalPaths, packages: PACKAGES, packagePaths: LINKS, profiles, legacySources: [], env
 });
-const mitWeg = (weg, ueberschreibung) => [ueberschreibung ? { ...weg, ...ueberschreibung } : weg, BB_WEG, BUND_WEG, FREMD_WEG];
+const mitWeg = (weg, ueberschreibung) => {
+  const wege = [ueberschreibung ? { ...weg, ...ueberschreibung } : weg, BB_WEG, BB_LANDTAG_WEG, BUND_WEG, FREMD_WEG];
+  return [...new Map(wege.map((eintrag) => [eintrag.id, eintrag])).values()];
+};
 const aktivIds = (p) => p.aktiv.map((a) => a.id).sort();
 const grundVon = (p, id) => (p.ausgeschlossen.find((a) => a.id === id) || {}).grund || null;
 const quelleVon = (p, id) => (p.aktiv.find((a) => a.id === id) || {}).source || null;
@@ -122,9 +131,11 @@ const quelleVon = (p, id) => (p.aktiv.find((a) => a.id === id) || {}).source || 
   check("Brandenburg bleibt bei Berlin-Flag gesperrt",
     !aktivIds(p).includes("rp-bb-landesregierung")
       && /landesmodul-gesperrt/.test(grundVon(p, "rp-bb-landesregierung")));
-  p = iPlan(mitWeg(BB_WEG, { method: "googlenews_search", url: "https://news.google.com/rss/search?q=BB" }),
-    [P_BB], { HELMUT_LANDESMODULE: "brandenburg" });
-  check("Brandenburg wird nie speziell typisiert", quelleVon(p, "rp-bb-landesregierung")?.crawlMethod === "rss");
+  p = iPlan(mitWeg(BB_LANDTAG_WEG), [P_BB], { HELMUT_LANDESMODULE: "brandenburg" });
+  check("Nur der exakte Brandenburger Landtagspfad wird speziell typisiert",
+    quelleVon(p, "rp-bb-landesparlament")?.crawlMethod === SM.BRANDENBURG_LANDTAG_PRESSE.crawlMethod
+      && quelleVon(p, "rp-bb-landesparlament")?.type === "parliament"
+      && quelleVon(p, "rp-bb-landesregierung")?.crawlMethod === "rss");
 
   p = iPlan(mitWeg(BE_WEG, { url: "https://www.berlin.de/presse/pressemitteilungen/" }), [P_BE], FLAG_BE);
   check("Falsche (nicht zulaessige) URL bleibt beim bisherigen HTML-Verhalten",
@@ -233,6 +244,20 @@ function synthetischesPortal() {
 }
 
 async function crawlerPruefungen() {
+  // Brandenburger Landtagspresse darf bis zur eigenen geschlossenen Kette niemals still
+  // als generischer RSS-Weg laufen. Der Fehler muss VOR jedem Abruf sichtbar sein.
+  {
+    const { fetchUrl, calls } = injektion(() => { throw new Error("Netz verboten"); });
+    let fehler = null;
+    try {
+      await C.crawlSource({ id: "bb-landesparlament", name: "Landtag Brandenburg — Pressemitteilungen",
+        type: "parliament", url: SM.BRANDENBURG_LANDTAG_PRESSE.urls[0], priority: 55,
+        crawlMethod: SM.BRANDENBURG_LANDTAG_PRESSE.crawlMethod }, { fetchUrl });
+    } catch (error) { fehler = error; }
+    check("Brandenburger Landtagsweg faellt ohne eigene Kette fail-closed aus",
+      fehler && /brandenburg-landtag-presse-kette-nicht-implementiert/.test(fehler.message) && calls.length === 0);
+  }
+
   // --- Positiv: Crawl -> Dedup/Storage-Projektion (kein Netz) --------------------------------
   {
     const { fetchUrl, calls } = injektion(ROUTEN(synthetischesPortal(), synthetischeSeiten()));
