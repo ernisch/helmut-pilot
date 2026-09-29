@@ -52,8 +52,10 @@ def exit_code(failure):
 
 def config(path=CONFIG):
     c = json.loads(Path(path).read_text())
-    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_limit_usd'] != 10 or c['max_retries'] != 1:
+    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_warning_usd'] != 10 or c['daily_limit_usd'] != 20 or c['max_retries'] != 1:
         raise ValueError('Ungueltige Budgetkonfiguration')
+    if not 0 < c['daily_warning_usd'] < c['daily_limit_usd']:
+        raise ValueError('Warnschwelle muss unter dem harten Tagesdeckel liegen')
     if c['retry_multiplier'] != 2 or c['provider_max_output_tokens'] != 393216 or c['provider_context_tokens'] != 1048576:
         raise ValueError('Ungueltige Wiederholungs-/Providergrenze')
     if set(c['output_tokens']) != {'high', 'max'} or any(type(v) is not int or not 65536 <= v <= 393216 for v in c['output_tokens'].values()):
@@ -123,11 +125,34 @@ class Ledger:
         with self.connect() as db: db.execute('INSERT INTO runs VALUES (?,?,0,NULL)', (ident, ceiling))
         return ident
 
-    def snapshot(self, date=None):
+    def snapshot(self, date=None, c=None):
         date = date or day()
         with self.connect() as db:
             rows = db.execute('SELECT state,SUM(amount) FROM requests WHERE day=? GROUP BY state', (date,)).fetchall()
-        return {'day': date, 'bound_micro_usd': sum(x[1] for x in rows), 'by_state': dict(rows)}
+        by_state = dict(rows)
+        confirmed = by_state.get('spent', 0) + by_state.get('historical', 0)
+        reserved = by_state.get('reserved', 0)
+        unknown = by_state.get('unknown', 0)
+        bound = sum(x[1] for x in rows)
+        result = {
+            'day': date,
+            'confirmed_micro_usd': confirmed,
+            'reserved_micro_usd': reserved,
+            'unknown_micro_usd': unknown,
+            'bound_micro_usd': bound,
+            'by_state': by_state,
+        }
+        if c is not None:
+            warning = micro(c['daily_warning_usd'])
+            hard = limit(c, date)
+            result.update({
+                'warning_limit_micro_usd': warning,
+                'hard_limit_micro_usd': hard,
+                'available_to_warning_micro_usd': max(0, warning - bound),
+                'available_to_hard_limit_micro_usd': max(0, hard - bound),
+                'warning_reached': bound >= warning,
+            })
+        return result
 
     def reserve(self, run, estimate, c, dates=None):
         dates = dates or [day(), day(utcnow() + dt.timedelta(days=1))]
@@ -148,6 +173,9 @@ class Ledger:
                     raise BudgetError('daily_go_required', f'DeepSeek-Tagesbudget {limit(c,date)/MILLION:g} USD ({date}) reicht nicht (mit naechster Reservierung mindestens {(used_day+estimate)/MILLION:.6f} USD). Fuer ein hoeheres Tagesbudget ausdrueckliche Betreiberfreigabe anfordern; keine weitere kostenpflichtige Anfrage senden.')
             db.executemany('INSERT INTO requests VALUES (?,?,?,?,?)', [(ident, d, run, estimate, 'reserved') for d in dates])
             db.commit()
+        warning = micro(c['daily_warning_usd'])
+        if any(self.snapshot(d)['bound_micro_usd'] >= warning for d in dates):
+            print(f'DeepSeek: Warnschwelle {c["daily_warning_usd"]:g} USD erreicht oder ueberschritten; Arbeit bleibt bis zum harten Deckel {limit(c,dates[0])/MILLION:g} USD erlaubt.', file=sys.stderr, flush=True)
         return ident
 
     def settle(self, ident, amount, dates):
@@ -168,6 +196,14 @@ class Ledger:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             db.execute('DELETE FROM requests WHERE id=?', (ident,))
+            db.commit()
+
+    def mark_unknown(self, ident):
+        # Preserve the conservative amount but distinguish an unclear provider
+        # outcome from a live in-flight reservation.
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            db.execute("UPDATE requests SET state='unknown' WHERE id=? AND state='reserved'", (ident,))
             db.commit()
 
     def retry(self, run, c, reason):
@@ -284,6 +320,8 @@ class Gate:
                     raise BudgetError('token_limit_final', 'Tokenlimit nach einmaliger Erweiterung oder Providermaximum erreicht')
                 return body, streaming
             except Exception as e:
+                if 'ident' in locals():
+                    self.ledger.mark_unknown(ident)
                 self.failure = e if isinstance(e, BudgetError) else BudgetError('upstream_unknown', f'Provider-/Transportfehler ({type(e).__name__}); ungeklaerte Kosten bleiben gebunden, kein automatischer Retry')
                 raise self.failure
 
@@ -334,7 +372,7 @@ def main():
     args = parser.parse_args()
     c = config(); ledger = Ledger(read_only=args.mode == "status")
     if args.mode == 'status':
-        print(json.dumps({**ledger.snapshot(), 'daily_limit_micro_usd': limit(c, day()), 'config': str(CONFIG)}, ensure_ascii=False)); return 0
+        print(json.dumps({**ledger.snapshot(c=c), 'config': str(CONFIG)}, ensure_ascii=False)); return 0
     if not args.task: parser.error('Aufgabe fehlt')
     key = subprocess.check_output(['security', 'find-generic-password', '-a', os.environ['USER'], '-s', 'helmut-deepseek-api-key', '-w'], stderr=subprocess.DEVNULL).decode().strip()
     gate = Gate(c, ledger, args.mode, key)
@@ -346,12 +384,12 @@ def main():
            '-c', 'model_providers.deepseek.request_max_retries=0', '-c', 'model_providers.deepseek.stream_max_retries=0',
            '-c', f'model_providers.deepseek.stream_idle_timeout_ms={STREAM_TIMEOUT_SECONDS * 1000}',
            '--sandbox', gate.sandbox, GUARD + '\n\nAUFGABE:\n' + ' '.join(args.task)]
-    print(f'DeepSeek {gate.model} {gate.effort}: Laufdeckel {c["budgets_usd"][("flash" if args.mode.startswith("flash") else "pro")+"-"+gate.effort]} USD, Tagesdeckel {limit(c,day())/MILLION:g} USD.', file=sys.stderr)
+    print(f'DeepSeek {gate.model} {gate.effort}: Laufdeckel {c["budgets_usd"][("flash" if args.mode.startswith("flash") else "pro")+"-"+gate.effort]} USD, Warnschwelle {c["daily_warning_usd"]:g} USD, harter Tagesdeckel {limit(c,day())/MILLION:g} USD.', file=sys.stderr)
     try:
         result = subprocess.run(cmd, env=env)
     finally:
         server.shutdown(); server.server_close()
-    print(json.dumps(ledger.snapshot()), file=sys.stderr)
+    print(json.dumps(ledger.snapshot(c=c)), file=sys.stderr)
     if gate.failure: return exit_code(gate.failure)
     return result.returncode
 
