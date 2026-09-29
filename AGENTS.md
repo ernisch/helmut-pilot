@@ -133,11 +133,13 @@ Worktree mit `python3 -B tools/agent-parallel/worktree.py create <name> --base <
 Das Hilfswerkzeug akzeptiert nur denselben frisch verifizierten `origin/main`-
 Commit, einen sauberen Hauptarbeitsbaum und eindeutig benannte eigene Branches.
 Terra legt fuer jeden Worktree den exklusiven
-Datei-/Codebereich, Ziel, Abnahmekriterien und Stop-Grenze fest. Maximal drei
-DeepSeek-Agenten duerfen gleichzeitig schreiben; freie Plaetze bis insgesamt
-fuenf duerfen fuer unabhaengige Lesearbeit genutzt werden. Ueberschneiden sich
-benoetigte Dateien oder Verantwortungsbereiche wesentlich, werden die betroffenen
-Aufgaben nacheinander ausgefuehrt. DeepSeek bleibt auch im Worktree ohne Commit,
+Datei-/Codebereich, Ziel, Abnahmekriterien und Stop-Grenze fest. Bis zu fuenf
+DeepSeek-Agenten duerfen gleichzeitig schreiben, wenn jeder in einem eigenen
+isolierten Worktree mit eindeutig getrenntem Datei-/Codebereich arbeitet.
+Rein lesende Helfer zaehlen gegen dieselbe Gesamtgrenze von fuenf. Terra nutzt
+weiterhin nur die kleinste sinnvolle Zahl gleichzeitig laufender Agenten.
+Ueberschneiden sich benoetigte Dateien oder Verantwortungsbereiche wesentlich,
+werden die betroffenen Aufgaben nacheinander ausgefuehrt. DeepSeek bleibt auch im Worktree ohne Commit,
 Push, PR oder Merge; Terra integriert und prueft die Ergebnisse anschliessend.
 Worktrees werden erst nach gesicherter Integration beziehungsweise bewusster
 Verwerfung sauber entfernt.
@@ -262,7 +264,9 @@ Stellen unabhängig. Terra wiederholt Suche, Analyse oder Tests nicht ohne konkr
 Grund; bei reinen Regel- oder Dokumentationsänderungen startet Terra keine
 unnötigen fachlichen Testsuiten. Bei einer neuen kritischen Entscheidung, einem
 neuen Risiko, einer Freigabe oder einer kritischen Abnahme geht DeepSeek an Terra
-über. Ein Schreibagent gleichzeitig und der Production-Schutz bleiben unverändert.
+über. Pro isoliertem Arbeitsbereich schreibt weiterhin höchstens ein Agent
+gleichzeitig; insgesamt dürfen bis zu fünf getrennte Schreibagenten parallel
+arbeiten. Der Production-Schutz bleibt unverändert.
 
 Scheitert ein DeepSeek Start technisch mit `Operation not permitted` oder einem
 vergleichbaren lokalen Startfehler, genau einmal erneut versuchen. Scheitert auch
