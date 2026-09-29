@@ -289,13 +289,18 @@ function sauberePlan(zeilenProTabelle = 3) {
   {
     const plan = {};
     for (const t of Object.keys(TABLES)) plan[t] = { zeilen: 1 };
-    const srv = await starteServer(plan, []);
+    const protokoll = [];
+    const srv = await starteServer(plan, protokoll);
     const { code, ordner, manifest } = await laufe(srv.address().port, []);
     srv.close();
 
     check("6 · art === 'voll'", manifest && manifest.art === "voll");
     check("6 · alle Tabellen aus TABLES exportiert",
       manifest && Object.keys(manifest.tabellen).length === Object.keys(TABLES).length);
+    check("6 · matching_runs ist im Voll-Export enthalten",
+      manifest && manifest.tabellen.matching_runs === 1);
+    check("6 · matching_runs wird deterministisch nach id paginiert",
+      protokoll.some((r) => r.url.includes("/matching_runs?") && r.url.includes("order=id.asc")));
     check("6 · Exit-Code 0", code === 0, `Exit ${code}`);
     check("6 · kein restoreReihenfolge-Feld im Voll-Modus", manifest && manifest.restoreReihenfolge === undefined);
     aufraeumen(ordner);
@@ -343,6 +348,11 @@ function sauberePlan(zeilenProTabelle = 3) {
 
   // --------------------------------- 7) Jede Seed-Tabelle hat einen PK ----
   console.log("\n== 7) Struktur ==");
+  check("7 · matching_runs hat id als Primaerschluessel/Sortierspalte",
+    TABLES.matching_runs === "id");
+  check("7 · jede Tabelle aus TABLES hat einen Primaerschluessel in TABLES",
+    Object.keys(TABLES).every((t) => typeof TABLES[t] === "string" && TABLES[t].length > 0),
+    Object.keys(TABLES).filter((t) => !TABLES[t]).join(", "));
   check("7 · jede Tabelle aus SEED_SCOPE_TABLES hat einen Primaerschluessel in TABLES",
     SEED_SCOPE_TABLES.every((t) => typeof TABLES[t] === "string" && TABLES[t].length > 0),
     SEED_SCOPE_TABLES.filter((t) => !TABLES[t]).join(", "));
