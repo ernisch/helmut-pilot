@@ -13,14 +13,37 @@ Production-Modellbudget. Kein Abonnement und kein dauerhafter Server.
 | Pro High |4USD|
 | Pro Max |5USD|
 
-Tagesdeckel:10USD je UTC-Tag, ueber alle Helferprozesse gemeinsam. Fertige Aufgaben
-enden sofort. Nicht das gesamte Laufbudget wird ausgegeben oder vorab blockiert:
+Mit ausdruecklicher Nutzerfreigabe vom29.09.2026 gilt ein gemeinsamer dauerhafter
+Tagesdeckel von15USD je UTC-Tag; die frueheren10-USD-Angaben sind vollstaendig
+ersetzt, historische Archive bleiben unveraendert. Der Deckel gilt ueber alle
+Helferprozesse gemeinsam. Fertige Aufgaben enden sofort. Nicht das gesamte
+Laufbudget wird ausgegeben oder vorab blockiert:
 vor jedem Modellaufruf wird dessen konservativer Hoechstverbrauch atomar reserviert.
 Bestaetigter Verbrauch gibt den ungenutzten Rest wieder frei. Historische belegte
 Nutzung des Installationstags wird einmalig aus Codex-Verbrauchsquittungen uebernommen.
 Reasoningtokens sind bereits in den Ausgabetokens enthalten und werden nicht doppelt
 berechnet. Peak-Tarife sichern Reservierungen; Abrechnung beruecksichtigt Cache
 und Tageszeit konservativ. Tarifquelle und Pruefdatum stehen in der Konfiguration.
+Die Laufdeckel2/3/4/5USD und die einmalige Erweiterung bleiben unveraendert.
+
+## Peak-Sperre (keine neue autonome Arbeit)
+
+Montag bis Freitag genau [01:00,04:00) und [06:00,10:00) UTC startet keine neue
+autonome Helmut-KI-Arbeit. Das Wochenende ist ganztägig frei. In Tuerkei-Zeit
+(UTC+3) sind das die Pausen04:00-07:00 und09:00-13:00; Arbeit ist Montag bis
+Freitag07:00-09:00 sowie13:00-04:00 des Folgetags. Nur eine ausdrueckliche,
+fallbezogene Nutzerfreigabe hebt die Sperre fuer genau diesen Fall auf. Ein
+bereits vor Peak gestarteter Aufruf darf sauber zu Ende laufen und wird nicht
+abgebrochen.
+
+Technisch prueft der Launcher die Sperre vor der Reservierung und unmittelbar vor
+dem Provider-Versand ueber dieselbe zentrale Tarif- und Peak-Funktion
+`runtime.peak()`. Faellt die Zeit nach der Reservierung in Peak, wird die
+Reservierung auf0 abgerechnet/freigegeben und der Provider nicht aufgerufen.
+Der Lauf endet dann mit dem eigenen Fehlercode `peak_blocked` (Exit79), nicht mit
+`daily_go_required`. Automationen muessen Peak vermeiden; ist keine technische
+Wiederaufnahme moeglich, wird ehrlich gemeldet, dass nach Peak manuell
+fortgesetzt werden muss.
 
 Einmal pro Helferlauf darf ein Kosten- oder Ausgabetokenlimit automatisch mehr
 Spielraum erhalten: doppelter kumulativer Laufdeckel und bei Tokenlimit doppelte
@@ -38,12 +61,14 @@ entfernt. Ein tatsaechlich ueber Mitternacht laufender Aufruf wird konservativ
 an beiden Tagen beruecksichtigt. Ein verschwundener Prozess setzt keine Kosten
 auf null. Abweichungen vom reservierten Hoechstverbrauch sperren weitere Laeufe.
 
-Reichen10USD nicht, wird keine Anfrage gesendet. Der Starter liefert Exit78
+Reichen15USD nicht, wird keine Anfrage gesendet. Der Starter liefert Exit78
 mit `daily_go_required`; der Orchestrator muss den Betreiber ausdruecklich um
 mehr Tagesbudget bitten und kostenlose unabhaengige Arbeit fortsetzen. Ein
 ausdrueckliches GO wird mit UTC-Datum in `day_approvals` eingetragen, z.B.
-`"2026-09-28": {"usd": 12, "explicit_user_approval": "Beleg der konkreten Nutzerfreigabe"}`.
-Ohne reales GO keinen solchen Eintrag anlegen. Am Folgetag gilt wieder10USD.
+`"2026-09-28": {"usd": 18, "explicit_user_approval": "Beleg der konkreten Nutzerfreigabe"}`.
+Ein belegter alter Freigabewert bis zum neuen Standarddeckel ist redundant und
+senkt den Deckel nicht. Ohne reales GO keinen solchen Eintrag anlegen. Am
+Folgetag gilt wieder15USD.
 
 ## Installation und Pruefung
 
@@ -57,6 +82,13 @@ python3 -B tools/deepseek-budget/install.py --install
 Der Installer sichert die bisherigen Dateien, erhaelt das Modellrouting und
 uebernimmt vorhandene datierte Freigaben. Ein laufender alter DeepSeek-Helfer
 verhindert die Installation. Updates setzen das Kostenbuch nicht zurueck.
+Zusaetzlich installiert er idempotent eine eng begrenzte Codex-Regel fuer den
+exakten absoluten Launcherpfad. Dadurch laufen Keychain-Zugriff, Provider-Netzwerk
+und Kostenbuch ausserhalb der Workspace-Sandbox, ohne andere Befehle freizugeben;
+bestehende Codex-Regeln werden erhalten.
+Der Repository-GUARD in `runtime.py` bewahrt die zusaetzlichen Saetze
+"Keine Secrets lesen, kopieren oder veraendern. Keine Vercel-Aenderungen.",
+damit eine Neuinstallation sie nicht entfernt.
 Der Launcher startet einen nur fuer diesen Lauf bestehenden Loopback-Proxy.
 Der echte API-Schluessel bleibt im Proxy; Codex erhaelt nur ein zufaelliges
 lokales Zugangstoken. Rohprompts, API-Schluessel und Reasoning stehen nicht im
@@ -71,6 +103,19 @@ keine Production und keine bezahlten Fehlerwiederholungen. Der praktische Lesela
 prueft zusaetzlich den installierten Starter, die echte Providerantwort und deren
 Verbrauchsquittung. Versionskopie im Repository und installierte Runtime muessen
 vor Abschluss denselben SHA256 haben.
+
+## Verifikation am29.09.2026
+
+- 33 gezielte Offline-Tests erfolgreich (`python3 -B tools/deepseek-budget/test_budget.py`):
+  zusaetzlich Peak-Grenzfenster, Wochenende, Block vor Reservierung und vor dem
+  Provider-Versand, Uebergang zwischen Reservierung und Versand mit sauberer
+  Freigabe, Retry-Recheck in Peak, eigener Exitcode `peak_blocked` gegen
+  `daily_go_required`, 15-USD-Tagesdeckel sowie unveraenderte Laufdeckel
+  2/3/4/5USD und unveraenderte einmalige Erweiterung. Keine bezahlten
+  Fehlerwiederholungen, kein Provider-Aufruf in den Tests.
+- Die geaenderte Runtime, der15-USD-Deckel, die Peak-Sperre und die eng begrenzte
+  Launcher-Regel wurden lokal installiert. Repository- und Installationskopie der
+  Runtime werden vor Abschluss per SHA256 abgeglichen.
 
 ## Verifikation am27.09.2026
 

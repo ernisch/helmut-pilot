@@ -11,6 +11,10 @@ UPSTREAM = 'https://api.deepseek.com'
 MILLION = 1000000
 MAX_BODY = 32 * 1024 * 1024
 STREAM_TIMEOUT_SECONDS = 7200
+PEAK_EXIT_CODE = 79
+PEAK_MESSAGE = ('UTC-Peak-Sperre: Montag-Freitag 01:00-04:00 und 06:00-10:00 UTC '
+                '(Tuerkei 04:00-07:00 und 09:00-13:00) startet keine neue autonome '
+                'Helmut-KI-Arbeit. Kein Provider-Versand; nach Peak manuell fortsetzen.')
 MODES = {f'{family}-{access}{suffix}': (model, effort, sandbox)
          for family, model in [('flash', 'deepseek-flash'), ('pro', 'deepseek-v4-pro')]
          for access, sandbox in [('read', 'read-only'), ('write', 'workspace-write')]
@@ -18,6 +22,7 @@ MODES = {f'{family}-{access}{suffix}': (model, effort, sandbox)
 GUARD = '''Arbeite ausschliesslich am uebergebenen lokalen Auftrag. Keine Production-Aktionen,
 Production-Datenaenderungen, Migrationen, Umgebungsvariablenaenderungen, Commits,
 Pushes, Merges, PRs oder Production-Modelltests. Keine weiteren Agenten starten.
+Keine Secrets lesen, kopieren oder veraendern. Keine Vercel-Aenderungen.
 Respektiere Repository-Regeln. Fertige Aufgabe sofort beenden; Budget ist kein
 Ausgabenziel. Budgetkontrolle und Providerkonfiguration niemals umgehen/aendern.'''
 
@@ -27,14 +32,26 @@ def day(now=None): return (now or utcnow()).date().isoformat()
 def micro(usd): return math.ceil(float(usd) * MILLION - 1e-8)
 
 
+def peak(now=None):
+    # Single source of truth for the peak tariff windows and the autonomous work block:
+    # Monday-Friday exactly [01:00,04:00) and [06:00,10:00) UTC; weekends are off-peak.
+    n = now or utcnow()
+    return n.weekday() < 5 and (1 <= n.hour < 4 or 6 <= n.hour < 10)
+
+
 class BudgetError(Exception):
     def __init__(self, code, message):
         super().__init__(message); self.code = code
 
 
+def exit_code(failure):
+    if failure.code == 'peak_blocked': return PEAK_EXIT_CODE
+    return 78 if failure.code == 'daily_go_required' else 1
+
+
 def config(path=CONFIG):
     c = json.loads(Path(path).read_text())
-    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_limit_usd'] != 10 or c['max_retries'] != 1:
+    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_limit_usd'] != 15 or c['max_retries'] != 1:
         raise ValueError('Ungueltige Budgetkonfiguration')
     if c['retry_multiplier'] != 2 or c['provider_max_output_tokens'] != 393216 or c['provider_context_tokens'] != 1048576:
         raise ValueError('Ungueltige Wiederholungs-/Providergrenze')
@@ -52,18 +69,17 @@ def config(path=CONFIG):
 def limit(c, date):
     approved = c.get('day_approvals', {}).get(date)
     if approved:
-        if not approved.get('explicit_user_approval') or float(approved['usd']) <= 10:
+        if not approved.get('explicit_user_approval'):
             raise ValueError('Tageserhoehung braucht datierte ausdrueckliche Betreiberfreigabe')
-        return micro(approved['usd'])
+        return micro(max(float(approved['usd']), c['daily_limit_usd']))
     return micro(c['daily_limit_usd'])
 
 
 def rates(c, model, now=None, worst=False):
     p = c['peak_rates_usd_per_million'][model]
     n = now or utcnow()
-    peak = n.weekday() < 5 and (1 <= n.hour < 4 or 6 <= n.hour < 10)
     # Feiertage konservativ wie normale Wochentage; nie billiger schaetzen.
-    factor = 1 if worst or peak else 0.5
+    factor = 1 if worst or peak(n) else 0.5
     return {k: v * factor for k, v in p.items()}
 
 
@@ -146,6 +162,13 @@ class Ledger:
                 else: db.execute('DELETE FROM requests WHERE id=? AND day=?', (ident, date))
             db.commit()
 
+    def release(self, ident):
+        # Recalculate an unused reservation to zero and free it again.
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            db.execute('DELETE FROM requests WHERE id=?', (ident,))
+            db.commit()
+
     def retry(self, run, c, reason):
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -201,6 +224,9 @@ class Gate:
         while True:
             payload['max_output_tokens'] = self.output
             now = utcnow()
+            if peak(now):
+                self.failure = BudgetError('peak_blocked', PEAK_MESSAGE)
+                raise self.failure
             try:
                 ident = self.ledger.reserve(self.run, estimate(self.c, self.model, payload, self.output), self.c,
                                             [day(now), day(now + dt.timedelta(days=1))])
@@ -208,6 +234,12 @@ class Gate:
                 if e.code == 'run_budget' and self.ledger.retry(self.run, self.c, 'Kostenlimit'):
                     continue  # Same pending request; completed tool work is never rerun.
                 self.failure = e; raise
+            if peak(utcnow()):
+                # The clock moved into peak between reservation and send: free the
+                # reservation and never contact the provider.
+                self.ledger.release(ident)
+                self.failure = BudgetError('peak_blocked', PEAK_MESSAGE)
+                raise self.failure
             try:
                 req = urllib.request.Request(self.upstream + '/responses', data=json.dumps(payload).encode(),
                     headers={'Authorization': 'Bearer ' + self.key, 'Content-Type': 'application/json'})
@@ -319,7 +351,7 @@ def main():
     finally:
         server.shutdown(); server.server_close()
     print(json.dumps(ledger.snapshot()), file=sys.stderr)
-    if gate.failure: return 78 if gate.failure.code == 'daily_go_required' else 1
+    if gate.failure: return exit_code(gate.failure)
     return result.returncode
 
 

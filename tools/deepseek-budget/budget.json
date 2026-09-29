@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "daily_limit_usd": 10,
+  "daily_limit_usd": 15,
   "timezone": "UTC",
   "budgets_usd": {"flash-high": 2, "flash-max": 3, "pro-high": 4, "pro-max": 5},
   "output_tokens": {"high": 131072, "max": 196608},
