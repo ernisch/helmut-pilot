@@ -18,4 +18,6 @@ jobs:
         with:
           python-version: '3.13'
       - name: Isolierte Worktrees sicher pruefen
-        run: python3 -B tools/agent-parallel/test_worktree.py
+        run: |
+          python3 -B tools/agent-parallel/test_worktree.py
+          python3 -B tools/agent-parallel/test_lease.py
