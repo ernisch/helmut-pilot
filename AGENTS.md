@@ -125,9 +125,11 @@ vollen konservativen Reservierung unter dem harten20-USD-Tagesdeckel bleiben.
 
 Parallele Schreibarbeit ist nur in wirklich getrennten Git-Arbeitsbereichen
 zulaessig. Wenn mindestens zwei DeepSeek-Agenten gleichzeitig schreiben sollen,
-erstellt Terra fuer jeden Schreibauftrag vor dem Start einen eigenen
-`git worktree` von demselben frisch verifizierten main-Commit und einen eindeutig
-benannten eigenen Branch. Terra legt fuer jeden Worktree den exklusiven
+erstellt Terra fuer jeden Schreibauftrag vor dem Start einen eigenen isolierten
+Worktree mit `python3 -B tools/agent-parallel/worktree.py create <name> --base <voller-main-sha>`.
+Das Hilfswerkzeug akzeptiert nur denselben frisch verifizierten `origin/main`-
+Commit, einen sauberen Hauptarbeitsbaum und eindeutig benannte eigene Branches.
+Terra legt fuer jeden Worktree den exklusiven
 Datei-/Codebereich, Ziel, Abnahmekriterien und Stop-Grenze fest. Maximal drei
 DeepSeek-Agenten duerfen gleichzeitig schreiben; freie Plaetze bis insgesamt
 fuenf duerfen fuer unabhaengige Lesearbeit genutzt werden. Ueberschneiden sich
