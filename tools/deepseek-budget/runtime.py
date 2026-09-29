@@ -12,6 +12,7 @@ MILLION = 1000000
 MAX_BODY = 32 * 1024 * 1024
 STREAM_TIMEOUT_SECONDS = 7200
 PEAK_EXIT_CODE = 79
+EXTENSION_GO_EXIT_CODE = 80
 PEAK_MESSAGE = ('UTC-Peak-Sperre: Montag-Freitag 01:00-04:00 und 06:00-10:00 UTC '
                 '(Tuerkei 04:00-07:00 und 09:00-13:00) startet keine neue autonome '
                 'Helmut-KI-Arbeit. Kein Provider-Versand; geplante Automationen '
@@ -47,15 +48,16 @@ class BudgetError(Exception):
 
 def exit_code(failure):
     if failure.code == 'peak_blocked': return PEAK_EXIT_CODE
+    if failure.code == 'daily_extension_go_required': return EXTENSION_GO_EXIT_CODE
     return 78 if failure.code == 'daily_go_required' else 1
 
 
 def config(path=CONFIG):
     c = json.loads(Path(path).read_text())
-    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_warning_usd'] != 10 or c['daily_limit_usd'] != 20 or c['max_retries'] != 1:
+    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_warning_usd'] != 10 or c['daily_approval_prompt_usd'] != 18 or c['daily_limit_usd'] != 20 or c['max_retries'] != 1:
         raise ValueError('Ungueltige Budgetkonfiguration')
-    if not 0 < c['daily_warning_usd'] < c['daily_limit_usd']:
-        raise ValueError('Warnschwelle muss unter dem harten Tagesdeckel liegen')
+    if not 0 < c['daily_warning_usd'] < c['daily_approval_prompt_usd'] < c['daily_limit_usd']:
+        raise ValueError('Warn-, Freigabe- und harte Tagesgrenze muessen streng ansteigen')
     if c['retry_multiplier'] != 2 or c['provider_max_output_tokens'] != 393216 or c['provider_context_tokens'] != 1048576:
         raise ValueError('Ungueltige Wiederholungs-/Providergrenze')
     if set(c['output_tokens']) != {'high', 'max'} or any(type(v) is not int or not 65536 <= v <= 393216 for v in c['output_tokens'].values()):
@@ -144,13 +146,17 @@ class Ledger:
         }
         if c is not None:
             warning = micro(c['daily_warning_usd'])
+            approval_prompt = micro(c['daily_approval_prompt_usd'])
             hard = limit(c, date)
             result.update({
                 'warning_limit_micro_usd': warning,
+                'approval_prompt_micro_usd': approval_prompt,
                 'hard_limit_micro_usd': hard,
                 'available_to_warning_micro_usd': max(0, warning - bound),
+                'available_to_approval_prompt_micro_usd': max(0, approval_prompt - bound),
                 'available_to_hard_limit_micro_usd': max(0, hard - bound),
                 'warning_reached': bound >= warning,
+                'approval_prompt_reached': bound >= approval_prompt and hard <= micro(c['daily_limit_usd']),
             })
         return result
 
@@ -168,9 +174,18 @@ class Ledger:
                 db.rollback(); raise BudgetError('run_budget', 'Aufrufbudget erreicht')
             for date in dates:
                 used_day = db.execute('SELECT COALESCE(SUM(amount),0) FROM requests WHERE day=?', (date,)).fetchone()[0]
-                if used_day + estimate > limit(c, date):
+                hard = limit(c, date)
+                default_hard = micro(c['daily_limit_usd'])
+                approval_prompt = micro(c['daily_approval_prompt_usd'])
+                if hard <= default_hard and used_day + estimate >= approval_prompt:
                     db.rollback()
-                    raise BudgetError('daily_go_required', f'DeepSeek-Tagesbudget {limit(c,date)/MILLION:g} USD ({date}) reicht nicht (mit naechster Reservierung mindestens {(used_day+estimate)/MILLION:.6f} USD). Fuer ein hoeheres Tagesbudget ausdrueckliche Betreiberfreigabe anfordern; keine weitere kostenpflichtige Anfrage senden.')
+                    raise BudgetError(
+                        'daily_extension_go_required',
+                        f'DeepSeek liegt vor dem harten Tagesdeckel: naechste Reservierung wuerde mindestens {(used_day+estimate)/MILLION:.6f} USD am {date} binden. Betreiber jetzt fragen, ob der Tagesdeckel fuer genau diesen UTC-Tag erhoeht werden soll. Kostenzaehler niemals auf null setzen.'
+                    )
+                if used_day + estimate > hard:
+                    db.rollback()
+                    raise BudgetError('daily_go_required', f'DeepSeek-Tagesbudget {hard/MILLION:g} USD ({date}) reicht nicht (mit naechster Reservierung mindestens {(used_day+estimate)/MILLION:.6f} USD). Fuer ein hoeheres Tagesbudget ausdrueckliche Betreiberfreigabe anfordern; keine weitere kostenpflichtige Anfrage senden.')
             db.executemany('INSERT INTO requests VALUES (?,?,?,?,?)', [(ident, d, run, estimate, 'reserved') for d in dates])
             db.commit()
         warning = micro(c['daily_warning_usd'])
@@ -384,7 +399,7 @@ def main():
            '-c', 'model_providers.deepseek.request_max_retries=0', '-c', 'model_providers.deepseek.stream_max_retries=0',
            '-c', f'model_providers.deepseek.stream_idle_timeout_ms={STREAM_TIMEOUT_SECONDS * 1000}',
            '--sandbox', gate.sandbox, GUARD + '\n\nAUFGABE:\n' + ' '.join(args.task)]
-    print(f'DeepSeek {gate.model} {gate.effort}: Laufdeckel {c["budgets_usd"][("flash" if args.mode.startswith("flash") else "pro")+"-"+gate.effort]} USD, Warnschwelle {c["daily_warning_usd"]:g} USD, harter Tagesdeckel {limit(c,day())/MILLION:g} USD.', file=sys.stderr)
+    print(f'DeepSeek {gate.model} {gate.effort}: Laufdeckel {c["budgets_usd"][("flash" if args.mode.startswith("flash") else "pro")+"-"+gate.effort]} USD, Warnschwelle {c["daily_warning_usd"]:g} USD, Freigabefrage ab {c["daily_approval_prompt_usd"]:g} USD, harter Tagesdeckel {limit(c,day())/MILLION:g} USD.', file=sys.stderr)
     try:
         result = subprocess.run(cmd, env=env)
     finally:
