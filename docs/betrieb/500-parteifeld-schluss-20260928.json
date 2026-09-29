@@ -1,0 +1,697 @@
+{
+  "status": "AUSWAHLENTSCHEIDUNG BESTAETIGT: vier dokumentierte Ersatzpaare wechseln wegen fehlenden zulaessigen gleichgruppigen Ersatzes nur innerhalb derselben Parlamentsebene; kein Import, keine Aktivierung, kein 500er Test",
+  "erstelltAm": "2026-09-28",
+  "regel": "Regelfall: nur reale aktuelle Abgeordnete derselben Parlaments-/Fraktionsgruppe. Fehlt dort ein zulaessiger Ersatz, darf ausschliesslich fuer den dokumentierten Einzelfall nach ausdruecklicher Betreiberentscheidung vom 2026-09-29 ein reales aktuelles, nicht-AfD Profil derselben Parlamentsebene nachruecken; Partei nie aus der Fraktion ableiten.",
+  "ersetzungen": [
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "amtsberg_luise-1043430",
+      "hinzu": "piechotta_paula-1046534",
+      "person": "Piechotta, Dr. med. Paula",
+      "parteibeleg": "Seit 2010 Mitglied Bündnis 90/Die Grünen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/P/piechotta_paula-1046534"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "badum_lisa-1043506",
+      "hinzu": "polat_filiz-1046574",
+      "person": "Polat, Filiz",
+      "parteibeleg": "Mitglied bei Bündnis 90/Die Grünen seit 1996",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/P/polat_filiz-1046574"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "detzer_sandra-1044030",
+      "hinzu": "rietenberg_sylvia-1046792",
+      "person": "Rietenberg, Sylvia",
+      "parteibeleg": "Seit 2011 Mitglied von Bündnis 90/Die Grünen im KV Münster",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/R/rietenberg_sylvia-1046792"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "dzienus_timon-1044128",
+      "hinzu": "roth_claudia-1046858",
+      "person": "Roth, Claudia",
+      "parteibeleg": "Seit 1987 Mitglied von Bündnis 90/Die Grünen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/R/roth_claudia-1046858"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "eckert_leon-1044146",
+      "hinzu": "rueffer_corinna-1046892",
+      "person": "Rüffer, Corinna",
+      "parteibeleg": "Seit 1999 Mitglied bei Bündnis 90/Die Grünen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/R/rueffer_corinna-1046892"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "gambir_schahina-1044436",
+      "hinzu": "schmidt_stefan-1047168",
+      "person": "Schmidt, Stefan",
+      "parteibeleg": "seit 2002 Mitglied von Bündnis 90/Die Grünen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schmidt_stefan-1047168"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "gumnior_lena-1044644",
+      "hinzu": "schneider_julia-1047200",
+      "person": "Schneider, Julia",
+      "parteibeleg": "Seit 2017 Mitglied von Bündnis 90/Die Grünen.",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schneider_julia-1047200"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "heitmann_linda-1044850",
+      "hinzu": "schoenberger_marlene-1047232",
+      "person": "Schönberger, Marlene",
+      "parteibeleg": "Seit 2010 Mitglied von Bündnis 90/ Die Grünen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schoenberger_marlene-1047232"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "kaddor_lamya-1045258",
+      "hinzu": "slawik_nyke-1047458",
+      "person": "Slawik, Nyke",
+      "parteibeleg": "seit 2013 von Bündnis 90/Die Grünen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/slawik_nyke-1047458"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "kellner_michael-1045350",
+      "hinzu": "steffen_till-1047534",
+      "person": "Steffen, Dr. Till",
+      "parteibeleg": "Seit 1990 Mitglied der GRÜNEN",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/steffen_till-1047534"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "kopf_chantal-1045532",
+      "hinzu": "steinmueller_hanna-1047564",
+      "person": "Steinmüller, Hanna",
+      "parteibeleg": "Seit 2015 Mitglied von Bündnis 90/Die Grünen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/steinmueller_hanna-1047564"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "lang_ricarda-1045716",
+      "hinzu": "tesfaiesus_awet-1047698",
+      "person": "Tesfaiesus, Awet",
+      "parteibeleg": "Seit 2009 Mitglied Bündnis 90/Die Grünen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/T/tesfaiesus_awet-1047698"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "lehmann_sven-1045758",
+      "hinzu": "verlinden_julia-1047856",
+      "person": "Verlinden, Dr. Julia",
+      "parteibeleg": "Eintritt in die Partei Bündnis 90/Die Grünen 1998",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/V/verlinden_julia-1047856"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "lemke_steffi-1045786",
+      "hinzu": "wagener_niklas-1047918",
+      "person": "Wagener, Niklas",
+      "parteibeleg": "Seit 2014 Mitglied bei Bündnis 90/Die Grünen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/wagener_niklas-1047918"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "entfernt": "mueller_claudia-1046228",
+      "hinzu": "otte_karoline-1046442",
+      "person": "Otte, Karoline",
+      "parteibeleg": null,
+      "parteibelegQuelle": "gesonderte Paar-Quelle"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "albani_stephan-1043390",
+      "hinzu": "rupprecht_albert-1046908",
+      "person": "Rupprecht, Albert",
+      "parteibeleg": "Mitglied der CSU, Mittelstandsunion und Jungen Union",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/R/rupprecht_albert-1046908"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "ataoglu_tijen-1043470",
+      "hinzu": "santos_wintz_catarina-1046964",
+      "person": "Santos-Wintz, Catarina dos",
+      "parteibeleg": "Seit 2014 Mitglied der Christlich Demokratischen Union (CDU)",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/santos_wintz_catarina-1046964"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "babendererde_cornell-1043496",
+      "hinzu": "sassenrath_carl-1046970",
+      "person": "Sassenrath, Carl-Philipp",
+      "parteibeleg": "2008 Eintritt in CDU und Junge Union",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/sassenrath_carl-1046970"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "baumgartner_guenter-1043570",
+      "hinzu": "schmidt_henri-1047142",
+      "person": "Schmidt, Henri",
+      "parteibeleg": "Seit 2004 Mitglied der CDU Deutschlands",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schmidt_henri-1047142"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "beyer_peter-1043696",
+      "hinzu": "schmidt_sebastian-1047166",
+      "person": "Schmidt, Sebastian",
+      "parteibeleg": "2009 Eintritt in Junge Union und CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schmidt_sebastian-1047166"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "bilic_florian-1043708",
+      "hinzu": "seif_detlef-1047380",
+      "person": "Seif, Detlef",
+      "parteibeleg": "Seit Oktober 1982 Mitglied der CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/seif_detlef-1047380"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "borchardt_simone-1043764",
+      "hinzu": "simon_bjoern-1047448",
+      "person": "Simon, Björn",
+      "parteibeleg": "Seit 2004 Mitglied der CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/simon_bjoern-1047448"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "bosbach_caroline-1043774",
+      "hinzu": "sorge_tino-1047476",
+      "person": "Sorge, Tino",
+      "parteibeleg": "seit 1995 Mitglied der CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/sorge_tino-1047476"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "brodesser_carsten-1043834",
+      "hinzu": "staffler_katrin-1047508",
+      "person": "Staffler, Katrin",
+      "parteibeleg": "2007 Eintritt in die CSU, Jungen Union und Frauen Union",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/staffler_katrin-1047508"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "broehr_marlon-1043836",
+      "hinzu": "stegemann_albert-1047540",
+      "person": "Stegemann, Albert",
+      "parteibeleg": "2002 Eintritt in die CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/stegemann_albert-1047540"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "dahler_wolfgang-1048508",
+      "hinzu": "steineke_sebastian-1047556",
+      "person": "Steineke, Sebastian",
+      "parteibeleg": "2004 Mitglied der CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/steineke_sebastian-1047556"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "dorn_florian-1048528",
+      "hinzu": "stier_dieter-1047580",
+      "person": "Stier, Dieter",
+      "parteibeleg": "Seit 1999 Mitglied der CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/stier_dieter-1047580"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "dueber_huelya-1044112",
+      "hinzu": "stumpp_christina-1047632",
+      "person": "Stumpp, Christina",
+      "parteibeleg": "seit 2003 CDU-Mitglied",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/stumpp_christina-1047632"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "edelhaeusser_ralph-1048538",
+      "hinzu": "tauschwitz_vivian-1047674",
+      "person": "Tauschwitz, Vivian",
+      "parteibeleg": "Seit 2018 Mitglied der CDU Deutschland",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/T/tauschwitz_vivian-1047674"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "gebhard_wilhelm-1044462",
+      "hinzu": "theiss_hans-1047718",
+      "person": "Theiss, Prof. Dr. Hans",
+      "parteibeleg": "2002 Eintritt in die CSU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/T/theiss_hans-1047718"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "gramling_fabian-1048646",
+      "hinzu": "throm_alexander-1049290",
+      "person": "Throm, Alexander",
+      "parteibeleg": "1986 Eintritt in die CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/T/throm_alexander-1049290"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "gutting_olav-1048666",
+      "hinzu": "timmermann_fechter_astrid-1047754",
+      "person": "Timmermann-Fechter, Astrid",
+      "parteibeleg": "Seit 1998 Mitglied der CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/T/timmermann_fechter_astrid-1047754"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "hierl_susanne-1044978",
+      "hinzu": "vieregge_kerstin-1047860",
+      "person": "Vieregge, Kerstin",
+      "parteibeleg": "1999 Eintritt in die CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/V/vieregge_kerstin-1047860"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "hose_michael-1045100",
+      "hinzu": "vogt_oliver-1047874",
+      "person": "Vogt, Dr. Oliver",
+      "parteibeleg": "1998 Eintritt in die CDU und die Junge Union",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/V/vogt_oliver-1047874"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "kappe_nicklas-1045306",
+      "hinzu": "walch_siegfried-1049328",
+      "person": "Walch, Siegfried",
+      "parteibeleg": "seit 2013 Mitglied des Parteivorstands der CSU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/walch_siegfried-1049328"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "kiesewetter_roderich-1048784",
+      "hinzu": "weiss_maria-1049354",
+      "person": "Weiss, Dr. jur. Maria-Lena",
+      "parteibeleg": "Seit 2015 Kreisvorsitzende CDU-Kreisverband Tuttlingen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/weiss_maria-1049354"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "klein_ottilie-1045410",
+      "hinzu": "whittaker_kai-1049362",
+      "person": "Whittaker, Kai",
+      "parteibeleg": "seit 2022 Kreisvorsitzender der CDU Baden-Baden",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/whittaker_kai-1049362"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "kloeckner_julia-1045434",
+      "hinzu": "wiegelmann_johannes-1048118",
+      "person": "Wiegelmann, Johannes",
+      "parteibeleg": "Seit 2009 Mitglied der CDU und der Jungen Union",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/wiegelmann_johannes-1048118"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "laschet_armin-1045736",
+      "hinzu": "wiener_klaus-1048126",
+      "person": "Wiener, Dr. Klaus",
+      "parteibeleg": "Seit 2005 Mitglied der CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/wiener_klaus-1048126"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "lehmann_jens-1045756",
+      "hinzu": "willsch_klaus-1048150",
+      "person": "Willsch, Klaus-Peter",
+      "parteibeleg": "seit 1979 Mitglied der CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/willsch_klaus-1048150"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "ludwig_saskia-1045888",
+      "hinzu": "winkelmeier_becker_elisabeth-1048162",
+      "person": "Winkelmeier-Becker, Elisabeth",
+      "parteibeleg": "Seit 1981 Mitglied der CDU",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/winkelmeier_becker_elisabeth-1048162"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "mack_klaus-1048912",
+      "hinzu": "winkler_tobias-1049378",
+      "person": "Winkler, Tobias",
+      "parteibeleg": "seit Mai 2018 Mitglied im Bezirksvorstand der CSU Nürnberg-Fürth-Schwabach",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/winkler_tobias-1049378"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "moser_christian-1046208",
+      "hinzu": "wittmann_mechthilde-1048210",
+      "person": "Wittmann, Mechthilde",
+      "parteibeleg": "Mitglied im CSU Bezirksverband Schwaben",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/wittmann_mechthilde-1048210"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "pauls_thomas-1046496",
+      "hinzu": "ziemiak_paul-1048298",
+      "person": "Ziemiak, Paul",
+      "parteibeleg": "2001 Eintritt in die Christlich Demokratische Union Deutschlands",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/Z/ziemiak_paul-1048298"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "CDU/CSU",
+      "entfernt": "pohlmann_jan-1046570",
+      "hinzu": "zobel_vanessa-1048318",
+      "person": "Zobel, Vanessa",
+      "parteibeleg": "Seit 2016 CDU-Mitglied",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/Z/zobel_vanessa-1048318"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "arndt_michael-1043446",
+      "hinzu": "pellmann_soeren-1046508",
+      "person": "Pellmann, Sören",
+      "parteibeleg": "Seit 1993 Mitglied der PDS/Die Linke",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/P/pellmann_soeren-1046508"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "bartsch_dietmar-1043548",
+      "hinzu": "reisner_lea-1046742",
+      "person": "Reisner, Lea",
+      "parteibeleg": "Mitglied Die Linke seit 2019",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/R/reisner_lea-1046742"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "bauer_marcel-1043562",
+      "hinzu": "schliesing_david-1047102",
+      "person": "Schliesing, David",
+      "parteibeleg": "Seit 2020 Mitglied der Partei Die Linke",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schliesing_david-1047102"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "bock_violetta-1043738",
+      "hinzu": "schoetz_evelyn-1047244",
+      "person": "Schötz, Evelyn",
+      "parteibeleg": "Ab 2017: Mitglied der Partei Die Linke",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schoetz_evelyn-1047244"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "buenger_clara-1043894",
+      "hinzu": "thoden_ulrich-1047738",
+      "person": "Thoden, Ulrich",
+      "parteibeleg": "2018 Eintritt in die Partei Die Linke",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/T/thoden_ulrich-1047738"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "edis_mirze-1044156",
+      "hinzu": "vandre_isabelle-1047846",
+      "person": "Vandre, Isabelle",
+      "parteibeleg": "Seit 2011 Mitglied der Partei Die Linke in Brandenburg",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/V/vandre_isabelle-1047846"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "glaser_vinzenz-1044506",
+      "hinzu": "vogtschmidt_donata-1047876",
+      "person": "Vogtschmidt, Donata",
+      "parteibeleg": "Mitglied Landesvorstand Die Linke Thüringen",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/V/vogtschmidt_donata-1047876"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "gysi_gregor-1044670",
+      "hinzu": "vollath_sarah-1047888",
+      "person": "Vollath, Sarah",
+      "parteibeleg": "seit 2023 geschäftsführender Landesvorstand von Die Linke Bayern",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/V/vollath_sarah-1047888"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "hermeier_mareike-1044924",
+      "hinzu": "wagner_sascha-1047948",
+      "person": "Wagner, Sascha",
+      "parteibeleg": "Seit 2014 Kreissprecher Die Linke, Kreisverband Wesel",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/wagner_sascha-1047948"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "ince_cem-1045160",
+      "hinzu": "wissler_janine-1048194",
+      "person": "Wissler, Janine",
+      "parteibeleg": "seit 2021 Parteivorsitzende DIE LINKE",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/W/wissler_janine-1048194"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "koektuerk_cansin-1045504",
+      "hinzu": "schwerdtner_ines-1047360",
+      "person": "Schwerdtner, Ines",
+      "parteibeleg": "Sommer 2023 Beitritt zur Partei Die Linke",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schwerdtner_ines-1047360"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "lay_caren-1045746",
+      "hinzu": "pantisano_luigi-1046476",
+      "person": "Pantisano, Luigi",
+      "parteibeleg": "Mitgliedschaften Die Linke",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/P/pantisano_luigi-1046476"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "Die Linke",
+      "entfernt": "oezdemir_cansu-1046452",
+      "hinzu": "valent_aaron-1047844",
+      "person": "Valent, Aaron",
+      "parteibeleg": null,
+      "parteibelegQuelle": "gesonderte Paar-Quelle"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "baldy_daniel-1043516",
+      "hinzu": "rump_daniela-1046900",
+      "person": "Rump, Daniela",
+      "parteibeleg": "Seit 2016 Mitglied der SPD",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/R/rump_daniela-1046900"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "castellucci_lars-1043938",
+      "hinzu": "scheer_nina-1047022",
+      "person": "Scheer, Dr. Nina",
+      "parteibeleg": "Seit 1987 Mitglied der SPD",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/scheer_nina-1047022"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "demir_hakan-1044016",
+      "hinzu": "schmidt_uwe-1047170",
+      "person": "Schmidt, Uwe",
+      "parteibeleg": "2010 Eintritt in die SPD",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schmidt_uwe-1047170"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "drossmann_falko-1044108",
+      "hinzu": "schraps_johannes-1047252",
+      "person": "Schraps, Johannes",
+      "parteibeleg": "1999 Eintritt in die SPD",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schraps_johannes-1047252"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "hagedorn_bettina-1044684",
+      "hinzu": "schwartze_stefan-1047344",
+      "person": "Schwartze, Stefan",
+      "parteibeleg": "Seit 1994 Mitglied der SPD",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schwartze_stefan-1047344"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "lauterbach_karl-1048870",
+      "hinzu": "seitzl_lina-1047394",
+      "person": "Seitzl, Dr. Lina",
+      "parteibeleg": "Seit 2008 Mitglied der SPD",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/seitzl_lina-1047394"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "oezdemir_mahmut-1046456",
+      "hinzu": "stegner_ralf-1047542",
+      "person": "Stegner, Dr. Ralf",
+      "parteibeleg": "seit 1982 Mitglied der SPD",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/stegner_ralf-1047542"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "rabanus_martin-1046646",
+      "hinzu": "toens_markus-1047772",
+      "person": "Töns, Markus",
+      "parteibeleg": "Mitglied der SPD seit 1987",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/T/toens_markus-1047772"
+    },
+    {
+      "parlament": "bundestag",
+      "fraktion": "SPD",
+      "entfernt": "knodel_sieghard-1045460",
+      "hinzu": "schulze_svenja-1047308",
+      "person": "Schulze, Svenja",
+      "parteibeleg": "seit 1988 Mitglied der SPD",
+      "parteibelegQuelle": "https://www.bundestag.de/abgeordnete/biografien/S/schulze_svenja-1047308"
+    },
+    {
+      "parlament": "landtag-berlin",
+      "fraktion": "Die Linke Fraktion",
+      "entfernt": "antonin-brousek-1",
+      "hinzu": "tobias-schulze",
+      "person": "Schulze, Tobias, Die Linke Fraktion",
+      "parteibeleg": null,
+      "parteibelegQuelle": "gesonderte Paar-Quelle"
+    },
+    {
+      "parlament": "landtag-brandenburg",
+      "fraktion": "CDU-Fraktion",
+      "entfernt": "40624",
+      "hinzu": "40631",
+      "person": "Ellen Fährmann CDU-Fraktion",
+      "parteibeleg": "Mitglied im CDU Kreisvorstand Uckermark",
+      "parteibelegQuelle": "https://www.landtag.brandenburg.de/de/faehrmann_ellen/40631"
+    },
+    {
+      "parlament": "landtag-brandenburg",
+      "fraktion": "SPD-Fraktion",
+      "entfernt": "40627",
+      "hinzu": "40599",
+      "person": "Matthias Steinfurth SPD-Fraktion",
+      "parteibeleg": "Seit 2019 Mitglied der SPD",
+      "parteibelegQuelle": "https://www.landtag.brandenburg.de/de/steinfurth_matthias/40599"
+    }
+  ],
+  "inPlace": [
+    {
+      "kennung": "bundestag-achelwilm-doris-1043346",
+      "partei": "Die Linke",
+      "beleg": "Gremientätigkeit: Mitglied im Landesvorstand der Bremer Linken",
+      "grund": "woertliche aktuelle Gremienangabe im amtlichen Biografieblock"
+    },
+    {
+      "kennung": "bundestag-meiser-pascal-1046050",
+      "partei": "Die Linke",
+      "beleg": "Die Linke",
+      "grund": "woertlicher erster Eintrag der aktuellen Mitgliedschaftenliste im amtlichen Biografieblock"
+    }
+  ],
+  "gesondertePaarquellen": [
+    "gohlke_nicole-1044540",
+    "otte_karoline-1046442",
+    "valent_aaron-1047844"
+  ],
+  "bilanz": {
+    "gesamt": 500,
+    "nachParlament": {
+      "bundestag": 330,
+      "landtag-berlin": 120,
+      "landtag-brandenburg": 50
+    },
+    "ersetzt": 70,
+    "inPlace": 2,
+    "afdProfile": 0,
+    "aktiv": 0,
+    "importfreigegeben": 0,
+    "parteiquittung": {
+      "gesamt": 332,
+      "belegt": 328,
+      "offen": 4
+    },
+    "getrennteParteibelege": {
+      "pistorius": 1,
+      "otteGohlkeValent": 3,
+      "finalBelegt": 498,
+      "finalParteilos": 2,
+      "finalOffen": 0
+    },
+    "abnahme": {
+      "status": "auswahlentscheidung-bestaetigt",
+      "grund": "Der Betreiber hat am 2026-09-29 fuer genau diese vier Faelle den Ersatz durch ein zulaessiges reales Profil derselben Parlamentsebene erlaubt, nachdem kein zulaessiger gleichgruppiger Ersatz verfuegbar war. Diese Auswahlentscheidung ist keine Import-, Aktivierungs- oder Testfreigabe.",
+      "gruppenwechselNachParlamentsebene": [
+        "knodel_sieghard-1045460 -> schulze_svenja-1047308",
+        "antonin-brousek-1 -> tobias-schulze",
+        "40624 -> 40631",
+        "40627 -> 40599"
+      ],
+      "gleichgruppigNichtVerfuegbar": [
+        "Bundestag fraktionslos: neben dem entfernten Fall kein weiterer zulaessiger Ersatz im vorab bestimmten Pool",
+        "Berlin fraktionslos: neben dem entfernten Fall kein weiterer zulaessiger Ersatz im vorab bestimmten Pool",
+        "Brandenburg WfB-Gruppe: nach Entfernung der zwei Faelle kein weiterer zulaessiger Ersatz im vorab bestimmten Pool"
+      ]
+    },
+    "brandenburgNeu": 2
+  }
+}

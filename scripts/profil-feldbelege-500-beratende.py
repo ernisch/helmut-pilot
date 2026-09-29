@@ -50,7 +50,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 BERATENDEACHSEN = REPO_ROOT / "docs" / "betrieb" / "beratende-achsen-2-20260927.json"
 BERATENDEACHSEN_RESSOURCE = "docs/betrieb/beratende-achsen-2-20260927.json"
 
-GESAMT = 2
+GESAMT = 1  # Produktionsstand: eine verbleibende beratende Achse (Seidler)
 REGION = "Bund"
 STATUS = ("belegt",)
 ROLLE = "Beratendes Mitglied"
@@ -306,15 +306,16 @@ def pruefe_beratendeachsen(eingang, *, quittung=None,
         quittung = _lies_json(BERATENDEACHSEN)
     if not isinstance(quittung, dict):
         raise BeratendeachsenFehler(f"Beratende Achsenquittung fehlt: {BERATENDEACHSEN_RESSOURCE}.")
+    erwartete_gesamt = int(getattr(eingang, "beratende_erwartete_gesamt", GESAMT) or GESAMT)
     ergebnisse = quittung.get("ergebnisse")
-    if not isinstance(ergebnisse, list) or len(ergebnisse) != GESAMT:
+    if not isinstance(ergebnisse, list) or len(ergebnisse) != erwartete_gesamt:
         raise BeratendeachsenFehler(
-            f"Beratende Achsenquittung: erwartet {GESAMT} Ergebnisse, "
+            f"Beratende Achsenquittung: erwartet {erwartete_gesamt} Ergebnisse, "
             f"gefunden {len(ergebnisse) if isinstance(ergebnisse, list) else 'n/a'}."
         )
     bilanz = quittung.get("bilanz") or {}
     if (bilanz.get("gesamt"), bilanz.get("Bund"), bilanz.get("Berlin"), bilanz.get("Brandenburg")) != (
-        GESAMT, GESAMT, 0, 0
+        erwartete_gesamt, erwartete_gesamt, 0, 0
     ):
         raise BeratendeachsenFehler(f"Beratende Achsenquittung: unerwartete Bilanz {bilanz!r}.")
 
@@ -393,6 +394,6 @@ def pruefe_beratendeachsen(eingang, *, quittung=None,
             "quelle": quelle,
         }
 
-    if len(index) != GESAMT:
-        raise BeratendeachsenFehler(f"Beratende Achsenquittung: erwartet {GESAMT} eindeutige Kennungen, gefunden {len(index)}.")
+    if len(index) != erwartete_gesamt:
+        raise BeratendeachsenFehler(f"Beratende Achsenquittung: erwartet {erwartete_gesamt} eindeutige Kennungen, gefunden {len(index)}.")
     return index

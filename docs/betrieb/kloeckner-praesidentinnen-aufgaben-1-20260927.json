@@ -1,55 +1,15 @@
 {
   "datum": "2026-09-27",
   "version": 1,
-  "status": "Vom Orchestrator geprueft; ein Einzelfall (Julia Klöckner) vorbereitet; nicht importfreigegeben",
-  "umfang": 1,
+  "status": "Aufgehobene Einzelfallquittung: das Profil Julia Kloeckner ist nicht mehr Teil der 500er Zielkohorte (gleichgruppiger belegbarer Ersatz). Die Datei bleibt als Audit erhalten; keine Themen-/Achsenaussage mehr, keine Importfreigabe.",
+  "umfang": 0,
   "bilanz": {
-    "gesamt": 1,
-    "Bund": 1,
+    "gesamt": 0,
+    "Bund": 0,
     "Berlin": 0,
     "Brandenburg": 0
   },
-  "ergebnisse": [
-    {
-      "kennung": "bundestag-kloeckner-julia-1045434",
-      "region": "Bund",
-      "parlament": "bundestag",
-      "status": "belegt",
-      "bindungsart": "amtsaufgabe",
-      "person": "Julia Klöckner",
-      "funktion": "Bundestagspräsidentin",
-      "funktionstext": "Bundestagspräsidentin",
-      "abschnitt": "An der Spitze der Bundestagsverwaltung",
-      "ersterAbsatz": "Die Aufgaben des Bundestagspräsidenten gehen über die neutrale und unparteiische Leitung der Plenarsitzungen weit hinaus. Als Repräsentant des ganzen Hauses vertritt er den Bundestag auch nach außen. Er wird zu Staatsempfängen eingeladen, hält Reden bei wichtigen politischen und gesellschaftlichen Anlässen und wahrt die Würde des Bundestages und die Rechte seiner Mitglieder.",
-      "absatz": "Der Präsident steht auch an der Spitze der Bundestagsverwaltung. Er ist der oberste Dienstherr der rund 3.000 Mitarbeiterinnen und Mitarbeiter des Bundestages und übt die Polizeigewalt und das Hausrecht in den Gebäuden des Parlaments aus. Zudem setzt der Präsident jährlich die Höhe der staatlichen Mittel zur Parteienfinanzierung fest. Das Parteiengesetz hat ihm diese Exekutivaufgabe übertragen.",
-      "themen": [
-        "Bundestagsverwaltung",
-        "Parteienfinanzierung"
-      ],
-      "aufgabenbindung": "Bundestagspräsidentin; Spitze der Bundestagsverwaltung und jährliche Festsetzung der staatlichen Mittel zur Parteienfinanzierung",
-      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Bundestagspräsidentin; Spitze der Bundestagsverwaltung und jährliche Festsetzung der staatlichen Mittel zur Parteienfinanzierung; keine persönliche politische Position",
-      "personenquelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kloeckner_julia-1045434",
-        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/K/kloeckner_julia-1045434",
-        "abgerufenAm": "2026-09-27T13:00:37.494520+00:00",
-        "sha256": "f89405b0fa87c453503b83a0e7d0f3e2b4a5e8a6df41c9544a4e9bd796f74329",
-        "bytes": 283248,
-        "datei": "bundestag-kloeckner_julia-1045434.html",
-        "http": 200,
-        "abrufStatus": "abgerufen"
-      },
-      "quelle": {
-        "url": "https://www.bundestag.de/parlament/praesidium/funktion_neu",
-        "finalUrl": "https://www.bundestag.de/parlament/praesidium/funktion_neu",
-        "abgerufenAm": "2026-09-27T20:42:16.429190+00:00",
-        "sha256": "d63f72c87b88a2b7d174386fe33137d45280707e311d779ede39136627d7c9cd",
-        "bytes": 257178,
-        "datei": "praesidentin-aufgaben-20260927.html",
-        "http": 200,
-        "abrufStatus": "abgerufen"
-      },
-      "importfreigegeben": false
-    }
-  ],
-  "pruefung": "Ein einzelner, zuvor offener Fachachsenfall (Julia Klöckner) wird gesondert neu gebunden; die 54er Rollenquittung bleibt unveraendert 48 belegt / 6 offen, und ihr belegter Wortlaut 'Bundestagspräsidentin' bleibt erhalten. Die kanonische Bundestags-Person wird separat ueber ihre echte H1 (Name + URL + Hash + Bytezahl + Abrufzeit + HTTP) und den eigenen aktuellen Funktionstext der amtlichen Profilseite (genau ein geschlossener div.m-biography__function) neu gebunden. Die Aufgaben stammen ausschliesslich aus dem zweiten eigenen Absatz des geschlossenen H2-Abschnitts 'An der Spitze der Bundestagsverwaltung' der amtlichen Praesidiumsseite; der erste Absatz, sonstige Praesidiums-/Aeltestenratsarbeit, angrenzende Abschnitte und der --hidden-Linkhilfetext sind ausdruecklich keine Personenaufgaben. Nur die zwei Themen Bundestagsverwaltung und Parteienfinanzierung sowie der getrennte Herkunftshinweis entstehen; keine allgemeine Polizei-/Innenpolitik, keine persoenliche politische Position, keine Scheinausschuesse, keine Partei-/Mandatsartaenderung, keine Importfreigabe. Die amtliche Aufgabenquelle (Original UND *.meta.json) und die kanonische Personenquelle (Original UND Abrufmetadatum) sind an URL/finalUrl/sha256/Bytezahl/Abrufzeit/HTTP/Datei gebunden."
+  "ergebnisse": [],
+  "pruefung": "Ein einzelner, zuvor offener Fachachsenfall (Julia Klöckner) wird gesondert neu gebunden; die 54er Rollenquittung bleibt unveraendert 48 belegt / 6 offen, und ihr belegter Wortlaut 'Bundestagspräsidentin' bleibt erhalten. Die kanonische Bundestags-Person wird separat ueber ihre echte H1 (Name + URL + Hash + Bytezahl + Abrufzeit + HTTP) und den eigenen aktuellen Funktionstext der amtlichen Profilseite (genau ein geschlossener div.m-biography__function) neu gebunden. Die Aufgaben stammen ausschliesslich aus dem zweiten eigenen Absatz des geschlossenen H2-Abschnitts 'An der Spitze der Bundestagsverwaltung' der amtlichen Praesidiumsseite; der erste Absatz, sonstige Praesidiums-/Aeltestenratsarbeit, angrenzende Abschnitte und der --hidden-Linkhilfetext sind ausdruecklich keine Personenaufgaben. Nur die zwei Themen Bundestagsverwaltung und Parteienfinanzierung sowie der getrennte Herkunftshinweis entstehen; keine allgemeine Polizei-/Innenpolitik, keine persoenliche politische Position, keine Scheinausschuesse, keine Partei-/Mandatsartaenderung, keine Importfreigabe. Die amtliche Aufgabenquelle (Original UND *.meta.json) und die kanonische Personenquelle (Original UND Abrufmetadatum) sind an URL/finalUrl/sha256/Bytezahl/Abrufzeit/HTTP/Datei gebunden.",
+  "hinweis": "Ohne verbleibenden Fall. Die Quittung wird nicht mehr angewendet; der Ersatzabgeordnete traegt eine eigene amtliche ordentliche Ausschusszuordnung."
 }

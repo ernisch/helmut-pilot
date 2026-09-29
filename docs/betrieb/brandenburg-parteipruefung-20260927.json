@@ -667,34 +667,6 @@
       "importfreigegeben": false
     },
     {
-      "name": "Melanie Matzies",
-      "parlament": "landtag-brandenburg",
-      "url": "https://www.landtag.brandenburg.de/de/matzies_melanie/40624",
-      "sha256": "fdaa2c4af58a916bebd7f732be4bfe9f3e10d7925ac0b536c5eb580aecbffa34",
-      "abgerufenAm": "2026-09-27T12:37:28.850396+00:00",
-      "fraktion": "WfB-Gruppe",
-      "partei": null,
-      "status": "offen",
-      "beleg": "",
-      "grund": "keine Belegzeile vorhanden",
-      "eigenpruefung": "Belegzeile exakt im Ausgangsabschnitt, Zuordnung und zeitliche Aussage geprueft",
-      "importfreigegeben": false
-    },
-    {
-      "name": "Reinhard Simon",
-      "parlament": "landtag-brandenburg",
-      "url": "https://www.landtag.brandenburg.de/de/simon_reinhard/40627",
-      "sha256": "43f3cb7dbcd6de69c4e693ed6647272cb3981474896001b450d7eb2febf10859",
-      "abgerufenAm": "2026-09-27T12:37:29.101067+00:00",
-      "fraktion": "WfB-Gruppe",
-      "partei": null,
-      "status": "offen",
-      "beleg": "",
-      "grund": "nur beendete Funktion 2009-2014, keine aktuelle Mitgliedschaft belegt",
-      "eigenpruefung": "Belegzeile exakt im Ausgangsabschnitt, Zuordnung und zeitliche Aussage geprueft",
-      "importfreigegeben": false
-    },
-    {
       "name": "André von Ossowski",
       "parlament": "landtag-brandenburg",
       "url": "https://www.landtag.brandenburg.de/de/von_ossowski_andr/40630",
@@ -719,6 +691,34 @@
       "status": "belegt",
       "beleg": "Seit September 2026 parteilos, zuvor Mitglied des BSW",
       "grund": "explizite Aussage parteilos",
+      "eigenpruefung": "Belegzeile exakt im Ausgangsabschnitt, Zuordnung und zeitliche Aussage geprueft",
+      "importfreigegeben": false
+    },
+    {
+      "name": "Ellen Fährmann CDU-Fraktion",
+      "parlament": "landtag-brandenburg",
+      "url": "https://www.landtag.brandenburg.de/de/faehrmann_ellen/40631",
+      "sha256": "a02b9f9d6e735b95d5533f93f9b0ecfb19f9eda953533b12c8907833be07c1f9",
+      "abgerufenAm": "2026-09-27T12:37:15.815293+00:00",
+      "fraktion": "CDU-Fraktion",
+      "partei": "CDU",
+      "status": "belegt",
+      "beleg": "Mitglied im CDU Kreisvorstand Uckermark",
+      "grund": "woertlicher aktueller Mitgliedschafts-/Amtssatz der amtlichen Politischen Laufbahn",
+      "eigenpruefung": "Belegzeile exakt im Ausgangsabschnitt, Zuordnung und zeitliche Aussage geprueft",
+      "importfreigegeben": false
+    },
+    {
+      "name": "Matthias Steinfurth SPD-Fraktion",
+      "parlament": "landtag-brandenburg",
+      "url": "https://www.landtag.brandenburg.de/de/steinfurth_matthias/40599",
+      "sha256": "3390b1133300d9f2790c1591c19d8765ecba6341d807bcac3803836a55e3e472",
+      "abgerufenAm": "2026-09-27T12:37:28.941463+00:00",
+      "fraktion": "SPD-Fraktion",
+      "partei": "SPD",
+      "status": "belegt",
+      "beleg": "Seit 2019 Mitglied der SPD",
+      "grund": "woertlicher aktueller Mitgliedschafts-/Amtssatz der amtlichen Politischen Laufbahn",
       "eigenpruefung": "Belegzeile exakt im Ausgangsabschnitt, Zuordnung und zeitliche Aussage geprueft",
       "importfreigegeben": false
     }

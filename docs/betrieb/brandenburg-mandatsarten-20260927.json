@@ -1,6 +1,6 @@
 {
   "vertragsformat": "helmut-mandatsartenbeleg/1",
-  "zweck": "Amtlicher Mandatsartenbeleg (Landesliste) fuer vier bislang offene Brandenburg-Zielprofile. Lokale Quittung: keine Importfreigabe, keine Aktivierung, keine Production-Aktion.",
+  "zweck": "Amtlicher Mandatsartenbeleg (Landesliste) fuer die verbleibenden bislang offenen Brandenburg-Zielprofile. Zwei amtliche Belege (Matzies, Simon) sind entfallen, weil diese Profile durch gleichqualifizierte reale Brandenburger Abgeordnete mit eigener amtlicher Landesliste ersetzt wurden. Lokale Quittung: keine Importfreigabe.",
   "quelle": {
     "url": "https://www.landtag.brandenburg.de/de/abgeordnete_fraktionen_-_gruppe/abgeordnete/abgeordnete_im_ueberblick/25777",
     "datei": "roster-bb-mandatsarten-20260927.html",
@@ -17,22 +17,6 @@
     "Diese lokale Quittung ist keine fachliche Freigabe und kein Importmanifest."
   ],
   "belege": [
-    {
-      "amtlicheKennung": "40624",
-      "vollname": "Matzies, Melanie",
-      "profilPfad": "/de/matzies_melanie/40624",
-      "mandatsart": "Landesliste",
-      "region": "Brandenburg",
-      "zeileWortlaut": "Matzies, Melanie WfB-Gruppe Landesliste WfB-Gruppe, Platz 0"
-    },
-    {
-      "amtlicheKennung": "40627",
-      "vollname": "Simon, Reinhard",
-      "profilPfad": "/de/simon_reinhard/40627",
-      "mandatsart": "Landesliste",
-      "region": "Brandenburg",
-      "zeileWortlaut": "Simon, Reinhard WfB-Gruppe Landesliste WfB-Gruppe, Platz 0"
-    },
     {
       "amtlicheKennung": "40629",
       "vollname": "Skopec, Oliver",

@@ -941,7 +941,10 @@ with tempfile.TemporaryDirectory() as tmp:
                              ergebnisse=[eintrag_a, eintrag_b])
 
     def _beratende_eingang(quittung, original=None, ressort=None, aufgaben=None):
+        # Synthetische 2er-Quittung: der Validator prueft den Produktionsstand (1 Achse);
+        # die Gegenprobe fixiert bewusst eine eigene Erwartung und bleibt fail-closed.
         return SimpleNamespace(verzeichnis=root, detailseiten=detail, beratendeachsen=quittung,
+                               beratende_erwartete_gesamt=2,
                                beratende_originalbelege=originalbelege if original is None else original,
                                profilrollen_by_kennung=profilrollen, kennung_zu_abruf=kennung_zu_abruf,
                                ressortachsen_by_kennung={k: {} for k in (ressort or [])},

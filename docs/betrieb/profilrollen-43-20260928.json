@@ -1,16 +1,16 @@
 {
   "version": 1,
   "datum": "2026-09-28",
-  "zweck": "Fortgeschriebene Rollenquittung fuer 43 weiterhin relevante Profile nach dem belegbaren Ersatz von elf Bundestagsprofilen; keine Import- oder Aktivierungsfreigabe.",
+  "zweck": "Fortgeschriebene Rollenquittung fuer die nach den belegbaren Profilersaetzen weiterhin relevanten Profile; keine Import- oder Aktivierungsfreigabe.",
   "pruefung": {
     "modell": "DeepSeek Flash High, schreibend; anschliessende Sol-Pruefung",
     "quelle": "54 Originalseiten, URL und SHA256 nachgerechnet; akzeptierte Zitate woertlich. Keine Helferbehauptung als alleiniger Beleg.",
     "verworfen": "Nebenaemter mit unklarem Zeitbezug, widerspruechliche Rollen, alte Fraktionszustaendigkeiten, nichtwoertliche zusammengesetzte Zitate und Fachthemen-Ableitungen nicht uebernommen."
   },
   "bilanz": {
-    "gesamt": 43,
-    "rollenbelegt": 37,
-    "offen": 6
+    "gesamt": 41,
+    "rollenbelegt": 36,
+    "offen": 5
   },
   "ergebnisse": [
     {
@@ -211,26 +211,6 @@
         {
           "wortlaut": "Parlamentarischer Staatssekretär für Gesundheit",
           "zitat": "Parlamentarischer Staatssekretär für Gesundheit",
-          "abschnitt": "Funktion",
-          "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
-        }
-      ],
-      "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
-      "fachachseFreigegeben": false,
-      "importfreigegeben": false
-    },
-    {
-      "kennung": "bundestag-kloeckner-julia-1045434",
-      "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kloeckner_julia-1045434",
-        "sha256": "f89405b0fa87c453503b83a0e7d0f3e2b4a5e8a6df41c9544a4e9bd796f74329",
-        "abgerufenAm": "2026-09-27T13:00:37.494520+00:00"
-      },
-      "status": "belegt",
-      "funktionen": [
-        {
-          "wortlaut": "Bundestagspräsidentin",
-          "zitat": "Bundestagspräsidentin",
           "abschnitt": "Funktion",
           "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
         }
@@ -549,19 +529,6 @@
         }
       ],
       "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
-      "fachachseFreigegeben": false,
-      "importfreigegeben": false
-    },
-    {
-      "kennung": "bundestag-knodel-sieghard-1045460",
-      "quelle": {
-        "url": "https://www.bundestag.de/abgeordnete/biografien/K/knodel_sieghard-1045460",
-        "sha256": "42a96cb4530a81c3400811b1f64303d2facb55546b156f7bacac6655f59ed5cf",
-        "abgerufenAm": "2026-09-27T13:02:11.977166+00:00"
-      },
-      "status": "offen",
-      "funktionen": [],
-      "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
       "fachachseFreigegeben": false,
       "importfreigegeben": false
     },
