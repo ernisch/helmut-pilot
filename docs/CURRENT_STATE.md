@@ -24,7 +24,7 @@ Production-Konfiguration, Migrationen, Cron- und Profilschutz vor einer Wirkung 
 
 ## Arbeitssteuerung
 
-Terra High priorisiert vor jeder Arbeitswelle den kritischen Pfad zum 500er Starttor. Bis zu fünf unabhängige DeepSeek-Agenten können parallel arbeiten; bei paralleler Schreibarbeit sind maximal drei getrennte Git-Worktrees zulässig, jeder mit exklusivem Datei- beziehungsweise Codebereich. Die 10-USD-Warnschwelle drosselt nicht. Vor mindestens 18 USD Tagesbindung fragt Terra nach einer optionalen Tageserhöhung; ohne GO greift der harte 20-USD-Deckel. Automatische Fortsetzungen starten keine zweite konkurrierende Arbeitswelle, wenn bereits ein gültiger Lauf am selben Roadmap-Bereich aktiv ist.
+Terra High priorisiert vor jeder Arbeitswelle den kritischen Pfad zum 500er Starttor. Bis zu fünf unabhängige DeepSeek-Agenten können parallel arbeiten; bei paralleler Schreibarbeit sind maximal drei getrennte Git-Worktrees zulässig, jeder mit exklusivem Datei- beziehungsweise Codebereich. Die 10-USD-Warnschwelle drosselt nicht. Vor mindestens 18 USD Tagesbindung fragt Terra nach einer optionalen Tageserhöhung; ohne GO greift der harte 20-USD-Deckel. Automatische Fortsetzungen starten keine zweite konkurrierende Arbeitswelle, wenn bereits ein gültiger Lauf am selben Roadmap-Bereich aktiv ist. Ein manueller Prompt mit der ersten nichtleeren Zeile **`PEAK GO EINMALIG`** darf ausschließlich für diesen Auftrag die Peak-Arbeitszeitsperre umgehen; die Ausnahme wird nicht gespeichert, Automationen dürfen sie nicht selbst erzeugen und alle übrigen Schutzgrenzen bleiben unverändert.
 
 ## Nächster notwendiger Schritt
 
