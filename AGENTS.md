@@ -918,14 +918,19 @@ unklarem Fehler.
 
 ## Kommunikationsstil
 
-Kurz und konkret schreiben. Keine routinemäßigen Zwischenberichte zu jedem
-Teilschritt oder unverändert laufender CI. Bei längerer Arbeit aber kurze sichtbare
-Lebenszeichen geben, sobald ein echter Meilenstein erreicht ist, ein neuer längerer
-Schritt beginnt, auf CI oder einen externen Lauf gewartet wird oder ein Blocker
-entsteht. Diese Meldungen nennen knapp: was gerade erledigt wurde, was jetzt läuft
-und ob etwas blockiert. Keine Minischritte einzeln melden und keine unveränderten
-Statusmeldungen wiederholen. Blocker und echte Freigabepunkte immer sichtbar
-benennen. Keine langen Wiederholungen des Projektstands.
+Der Nutzer moechte die Arbeitsschritte waehrend laengerer Codex Arbeit sichtbar
+mitverfolgen. Deshalb jeden konkreten Arbeitsabschnitt kurz anzeigen: was jetzt
+geprueft oder bearbeitet wird, welcher Helfer oder Test gestartet wird, worauf
+gewartet wird, welches Ergebnis gerade vorliegt und was als naechster Schritt
+folgt. Auch kleinere sinnvolle Zwischenschritte sichtbar machen, solange daraus
+erkennbar wird, dass die Arbeit vorangeht. Bei laufender CI oder externen
+Vorgaengen einmal den Wartezustand sichtbar nennen und nach einer relevanten
+Aenderung erneut berichten; unveraenderten Zustand nicht im Sekundentakt
+wiederholen. Blocker und echte Freigabepunkte immer sofort sichtbar benennen.
+
+Sichtbar sind Handlungen, Ergebnisse und naechste Schritte. Keine privaten
+Gedankenprotokolle oder versteckten internen Schlussketten ausgeben. Die Meldungen
+kurz halten und keine langen Wiederholungen des Projektstands erzeugen.
 
 Der Nutzer ist kein Entwickler.
 
