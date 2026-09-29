@@ -31,5 +31,6 @@
     }
   },
   "day_approvals": {},
-  "daily_warning_usd": 10
+  "daily_warning_usd": 10,
+  "daily_approval_prompt_usd": 18
 }
