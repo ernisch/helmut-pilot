@@ -1,9 +1,9 @@
 {
-  "status": "Vom Orchestrator geprueffte Stellvertretungs-Ergaenzungsquittung, KEINE fachliche Importfreigabe",
+  "status": "Gepruefte Stellvertretungsquittung der aktuellen 50er-Brandenburg-Auswahl; keine Importfreigabe",
   "vertragsformat": "brandenburg-stellvertretungen-1",
   "version": 1,
-  "datum": "2026-09-27",
-  "zweck": "Belegter Verlust stellvertretender Brandenburger Ausschussmitgliedschaften: 76 bislang fehlende Stellvertretungen bei 35 der 50 kanonischen Landtagsprofile, ausschliesslich aus dem amtlichen Fachausschussindex 25220 und seinen 14 verlinkten Ausschussseiten.",
+  "datum": "2026-09-28",
+  "zweck": "Amtliche Neubindung der stellvertretenden Ausschussmitgliedschaften an die aktuelle Brandenburger 50er-Zielauswahl nach zwei belegbaren Profilersaetzen.",
   "pruefung": "Index und vollstaendige Menge der 14 Quellen an URL/finalUrl/HTTP/Abrufzeit/Hash/Bytes/Datei (Original UND Metadaten); echte eindeutige H1, eigene geschlossene Stellvertretungsspalte (col-12 col-md-6 col-lg-12 col-xl-6 my-4 my-md-0 als direktes Kind der row) mit h5/h6/ul/li/a.profile; nur die 50 kanonischen Brandenburger Personen-URLs; Person/Profilhash/Name/Fraktion separat an die kanonischen Detailseiten; Unterausschuss 23893 ist der belegte Nullfall ohne Spalte.",
   "index": {
     "url": "https://www.landtag.brandenburg.de/de/parlament/ausschuesse_gremien_europa/fachausschuesse/25220",
@@ -186,12 +186,12 @@
     }
   ],
   "bilanz": {
-    "gesamt": 76,
-    "zielprofile": 35,
+    "gesamt": 81,
+    "zielprofile": 37,
     "quellen": 14,
     "mitStellvertretungsspalte": 13,
     "ohneStellvertretungsspalte": 1,
-    "Brandenburg": 76
+    "Brandenburg": 81
   },
   "ergebnisse": [
     {
@@ -1220,6 +1220,49 @@
       ]
     },
     {
+      "kennung": "landtag-brandenburg-40599",
+      "amtlicheKennung": "40599",
+      "parlament": "landtag-brandenburg",
+      "person": "Matthias Steinfurth",
+      "gruppe": "SPD-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/steinfurth_matthias/40599",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/steinfurth_matthias/40599",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:28.941463+00:00",
+        "sha256": "3390b1133300d9f2790c1591c19d8765ecba6341d807bcac3803836a55e3e472",
+        "bytes": 94959,
+        "datei": "landtag-brandenburg-40599.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Inneres und Kommunales",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/steinfurth_matthias/40599",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_inneres_und_kommunales/25462",
+          "quelleDatei": "bb-ausschuss-25462-20260927.html",
+          "quelleSha256": "cc5e63ab7be903f3cadfa4a51cf6dd2a87f2ac54aaa2dd2710029b6103aa88e8"
+        },
+        {
+          "ausschuss": "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/steinfurth_matthias/40599",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_land-_und_ernaehrungswirtschaft_umwelt_und_verbraucherschutz/23885",
+          "quelleDatei": "bb-ausschuss-23885-20260927.html",
+          "quelleSha256": "d02c009349db06b94971753d542697228a26f4e8d79b036366ef4131b9e73405"
+        },
+        {
+          "ausschuss": "Ausschuss für Wirtschaft, Energie und Klimaschutz",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/steinfurth_matthias/40599",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wirtschaft_energie_und_klimaschutz/23884",
+          "quelleDatei": "bb-ausschuss-23884-20260927.html",
+          "quelleSha256": "80b37be41fd88e15a66b732f8cb509de3fa6e7aac2c256885215e9c4b16c712c"
+        }
+      ]
+    },
+    {
       "kennung": "landtag-brandenburg-40618",
       "amtlicheKennung": "40618",
       "parlament": "landtag-brandenburg",
@@ -1461,6 +1504,41 @@
           "ausschuss": "Ausschuss für Wissenschaft, Forschung und Kultur",
           "rolle": "Stellvertretendes Mitglied",
           "personenlink": "https://www.landtag.brandenburg.de/de/skopec_oliver/40629",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
+          "quelleDatei": "bb-ausschuss-23883-20260927.html",
+          "quelleSha256": "740223903fe68f3973efdbfac51b9f772f79b416e90a718074999edcb3465f50"
+        }
+      ]
+    },
+    {
+      "kennung": "landtag-brandenburg-40631",
+      "amtlicheKennung": "40631",
+      "parlament": "landtag-brandenburg",
+      "person": "Ellen Fährmann",
+      "gruppe": "CDU-Fraktion",
+      "personenquelle": {
+        "url": "https://www.landtag.brandenburg.de/de/faehrmann_ellen/40631",
+        "finalUrl": "https://www.landtag.brandenburg.de/de/faehrmann_ellen/40631",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "abgerufenAm": "2026-09-27T12:37:15.815293+00:00",
+        "sha256": "a02b9f9d6e735b95d5533f93f9b0ecfb19f9eda953533b12c8907833be07c1f9",
+        "bytes": 102902,
+        "datei": "landtag-brandenburg-40631.html"
+      },
+      "mitgliedschaften": [
+        {
+          "ausschuss": "Ausschuss für Infrastruktur und Landesplanung",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/faehrmann_ellen/40631",
+          "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_infrastruktur_und_landesentwicklung/23886",
+          "quelleDatei": "bb-ail-mitglieder-20260927.html",
+          "quelleSha256": "2b6d37980b54e2143f1b3261edf330f45952d9bc3e41b5178fec40b65d440e18"
+        },
+        {
+          "ausschuss": "Ausschuss für Wissenschaft, Forschung und Kultur",
+          "rolle": "Stellvertretendes Mitglied",
+          "personenlink": "https://www.landtag.brandenburg.de/de/faehrmann_ellen/40631",
           "quelleUrl": "https://www.landtag.brandenburg.de/de/fachausschuss/ausschuss_fuer_wissenschaft_forschung_und_kultur/23883",
           "quelleDatei": "bb-ausschuss-23883-20260927.html",
           "quelleSha256": "740223903fe68f3973efdbfac51b9f772f79b416e90a718074999edcb3465f50"

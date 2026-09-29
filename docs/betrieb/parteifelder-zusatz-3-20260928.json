@@ -1,0 +1,103 @@
+{
+  "vertragsformat": "helmut-parteizusatz/1",
+  "datum": "2026-09-28",
+  "version": 1,
+  "status": "Drei enge amtliche Zusatzbelege; keine Importfreigabe",
+  "umfang": 3,
+  "bilanz": {
+    "gesamt": 3,
+    "Bund": 3,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "hinweis": "Nur drei bislang offene Bundestags-Parteifelder werden aus getrennten aktuellen offiziellen Partei-Seiten geschlossen. Jede Person bleibt zusaetzlich an URL, Hash, Bytezahl und Datei ihres kanonischen Bundestagsprofils gebunden; es wird nichts aus der Fraktion abgeleitet.",
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-otte-karoline-1046442",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "partei": "Bündnis 90/Die Grünen",
+      "person": "Karoline Otte",
+      "beleg": "Der derzeitige Parteirat besteht aus folgenden Mitgliedern: Karoline Otte MdB",
+      "grund": "Karoline Otte MdB ist auf der aktuellen offiziellen Seite des niedersaechsischen Gruenen-Landesverbands als Mitglied des derzeitigen Parteirats aufgefuehrt.",
+      "bindung": "gruene-parteirat",
+      "profilQuelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/O/otte_karoline-1046442",
+        "sha256": "14d5ff2fd186946d6209c6e900fa7b4516ad518e79b3f94298ebb446eb4ea1bb",
+        "bytes": 276706,
+        "datei": "bundestag-otte_karoline-1046442.html"
+      },
+      "quelle": {
+        "url": "https://gruene-niedersachsen.de/partei/parteirat/",
+        "finalUrl": "https://gruene-niedersachsen.de/partei/parteirat/",
+        "datei": "gruene-nds-parteirat-20260928.html",
+        "abgerufenAm": "2026-09-28T20:24:08Z",
+        "sha256": "e2ab40d352447107b3863ff32390bb8654f243d59fa88ee03b3e0b8c759be2fc",
+        "bytes": 88694,
+        "http": 200,
+        "httpDate": "Mon, 28 Sep 2026 20:24:08 GMT",
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-gohlke-nicole-1044540",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "partei": "Die Linke",
+      "person": "Nicole Gohlke",
+      "beleg": "Dem 21. deutschen Budestag gehören sieben Abgeordnete Der Linken Bayern an: Nicole Gohlke",
+      "grund": "Nicole Gohlke ist auf der aktuellen offiziellen Seite des bayerischen Linke-Landesverbands in der Landesgruppe Bayern unter den sieben Abgeordneten Der Linken Bayern aufgefuehrt.",
+      "bindung": "linke-landesgruppe",
+      "profilQuelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/G/gohlke_nicole-1044540",
+        "sha256": "fea0545ebb917a78b8e8ead376de23f78af903193b9068467aac91330725fa88",
+        "bytes": 277409,
+        "datei": "bundestag-gohlke_nicole-1044540.html"
+      },
+      "quelle": {
+        "url": "https://www.die-linke-bayern.de/parlamente/bundestag/kategorie/nicole-gohlke-mdb/oder/",
+        "finalUrl": "https://www.die-linke-bayern.de/parlamente/bundestag/kategorie/nicole-gohlke-mdb/oder/",
+        "datei": "linke-bayern-bundestag-20260928.html",
+        "abgerufenAm": "2026-09-28T20:23:37Z",
+        "sha256": "893edd59188b7e130b2fd8895f4ff6741a99b71bd401140124a710499942df67",
+        "bytes": 111617,
+        "http": 200,
+        "httpDate": "Mon, 28 Sep 2026 20:23:37 GMT",
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-valent-aaron-1047844",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "partei": "Die Linke",
+      "person": "Aaron Valent",
+      "beleg": "Dem 21. deutschen Budestag gehören sieben Abgeordnete Der Linken Bayern an: Aaron Valent",
+      "grund": "Aaron Valent ist auf der aktuellen offiziellen Seite des bayerischen Linke-Landesverbands in der Landesgruppe Bayern unter den sieben Abgeordneten Der Linken Bayern aufgefuehrt.",
+      "bindung": "linke-landesgruppe",
+      "profilQuelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/V/valent_aaron-1047844",
+        "sha256": "ccf67ae6be0c9fc9368c235b7ab9f21b571bf6e53ad87cbb3481f5c66e8ae0eb",
+        "bytes": 277657,
+        "datei": "bundestag-valent_aaron-1047844.html"
+      },
+      "quelle": {
+        "url": "https://www.die-linke-bayern.de/parlamente/bundestag/kategorie/nicole-gohlke-mdb/oder/",
+        "finalUrl": "https://www.die-linke-bayern.de/parlamente/bundestag/kategorie/nicole-gohlke-mdb/oder/",
+        "datei": "linke-bayern-bundestag-20260928.html",
+        "abgerufenAm": "2026-09-28T20:23:37Z",
+        "sha256": "893edd59188b7e130b2fd8895f4ff6741a99b71bd401140124a710499942df67",
+        "bytes": 111617,
+        "http": 200,
+        "httpDate": "Mon, 28 Sep 2026 20:23:37 GMT",
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    }
+  ]
+}

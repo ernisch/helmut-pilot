@@ -56,7 +56,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 KLOECKNER = REPO_ROOT / "docs" / "betrieb" / "kloeckner-praesidentinnen-aufgaben-1-20260927.json"
 KLOECKNER_RESSOURCE = "docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json"
 
-GESAMT = 1
+GESAMT = 0  # Produktionsstand: kein verbleibender Fall (Profil nicht mehr in der Zielkohorte)
 REGION = "Bund"
 STATUS = ("belegt",)
 BINDUNGSART = "amtsaufgabe"
@@ -543,6 +543,7 @@ def pruefe_kloeckner(eingang, *, quittung=None, ressortachsen_kennungen=None,
     HTTP/Datei jeweils Original UND Metadatum gebunden. Jede Abweichung bricht ab.
     """
     aufgaben = erwartung or ERWARTUNG
+    erwartete_gesamt = len(aufgaben) if erwartung else GESAMT
     if quittung is None:
         quittung = getattr(eingang, "kloeckner", None)
     if quittung is None:
@@ -552,14 +553,14 @@ def pruefe_kloeckner(eingang, *, quittung=None, ressortachsen_kennungen=None,
     if not isinstance(quittung, dict):
         raise KloecknerFehler(f"Kloeckner-Quittung fehlt: {KLOECKNER_RESSOURCE}.")
     ergebnisse = quittung.get("ergebnisse")
-    if not isinstance(ergebnisse, list) or len(ergebnisse) != GESAMT:
+    if not isinstance(ergebnisse, list) or len(ergebnisse) != erwartete_gesamt:
         raise KloecknerFehler(
-            f"Kloeckner-Quittung: erwartet {GESAMT} Ergebnisse, "
+            f"Kloeckner-Quittung: erwartet {erwartete_gesamt} Ergebnisse, "
             f"gefunden {len(ergebnisse) if isinstance(ergebnisse, list) else 'n/a'}."
         )
     bilanz = quittung.get("bilanz") or {}
     if (bilanz.get("gesamt"), bilanz.get("Bund"), bilanz.get("Berlin"), bilanz.get("Brandenburg")) != (
-        GESAMT, GESAMT, 0, 0
+        erwartete_gesamt, erwartete_gesamt, 0, 0
     ):
         raise KloecknerFehler(f"Kloeckner-Quittung: unerwartete Bilanz {bilanz!r}.")
 
@@ -670,6 +671,8 @@ def pruefe_kloeckner(eingang, *, quittung=None, ressortachsen_kennungen=None,
             "quelle": quelle,
         }
 
-    if len(index) != GESAMT:
-        raise KloecknerFehler(f"Kloeckner-Quittung: erwartet {GESAMT} eindeutige Kennung, gefunden {len(index)}.")
+    if len(index) != erwartete_gesamt:
+        raise KloecknerFehler(
+            f"Kloeckner-Quittung: erwartet {erwartete_gesamt} eindeutige Kennungen, gefunden {len(index)}."
+        )
     return index

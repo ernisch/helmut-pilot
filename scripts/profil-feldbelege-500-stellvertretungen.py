@@ -106,8 +106,8 @@ ERWARTUNG = {
     "mitSpalte": 13,
     "ohneSpalte": 1,
     "kanonischeProfile": 50,
-    "gesamt": 76,
-    "zielprofile": 35,
+    "gesamt": 81,
+    "zielprofile": 37,
     # Der belegte Nullfall: der Unterausschuss traegt keine Stellvertretungsspalte.
     "nullquelle": "https://www.landtag.brandenburg.de/de/fachausschuss/"
                   "unterausschuss_des_ausschusses_fuer_haushaltskontrolle/23893",

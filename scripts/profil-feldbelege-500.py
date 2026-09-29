@@ -184,9 +184,9 @@ MANDATSARTEN_BE_GESAMT = 2
 # amtlichen Abschnitt gebunden. Abweichungen brechen fail closed ab.
 PROFILROLLEN = REPO_ROOT / "docs" / "betrieb" / "profilrollen-43-20260928.json"
 PROFILROLLEN_RESSOURCE = "docs/betrieb/profilrollen-43-20260928.json"
-PROFILROLLEN_GESAMT = 43
-PROFILROLLEN_BELEGT = 37
-PROFILROLLEN_OFFEN = 6
+PROFILROLLEN_GESAMT = 41
+PROFILROLLEN_BELEGT = 36
+PROFILROLLEN_OFFEN = 5
 PROFILROLLEN_STATUS = ("belegt", "offen")
 
 # Versionierte, vom Orchestrator gepruefte Ressortquittung der 19 zuvor offenen
@@ -817,6 +817,44 @@ def _pruefe_pistorius(eingang) -> dict:
         raise AssemblerFehler(str(fehler)) from fehler
     eingang.pistorius_by_kennung = index
     eingang.pistorius_verwendet = set()
+    return index
+
+
+# Drei getrennte offizielle Partei-Belege fuer die nach dem sicheren Ersatz
+# verbliebenen offenen Bundestagsfaelle. Das Modul bindet jede Partei-Quelle
+# zusaetzlich an das kanonische Bundestagsprofil; es aendert nur ``partei``.
+PARTEIZUSATZ = REPO_ROOT / "docs" / "betrieb" / "parteifelder-zusatz-3-20260928.json"
+PARTEIZUSATZ_RESSOURCE = "docs/betrieb/parteifelder-zusatz-3-20260928.json"
+PARTEIZUSATZ_GESAMT = 3
+
+
+def _lade_parteizusatzmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-parteizusatz.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_parteizusatz", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+PARTEIZUSATZMODUL = _lade_parteizusatzmodul()
+
+
+def _pruefe_parteizusatz(eingang) -> dict:
+    try:
+        index = PARTEIZUSATZMODUL.pruefe_parteizusatz(
+            eingang,
+            quittung=getattr(eingang, "parteizusatz", None),
+            kennung_zu_abruf=getattr(eingang, "kennung_zu_abruf", None) or {},
+        )
+    except PARTEIZUSATZMODUL.ParteizusatzFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.parteizusatz_by_kennung = index
+    eingang.parteizusatz_verwendet = set()
     return index
 
 
@@ -1956,6 +1994,10 @@ class Eingang:
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Pistorius-Parteizusatzquittung fehlt: {PISTORIUS_RESSOURCE}") from fehler
         try:
+            self.parteizusatz = _lies_json(PARTEIZUSATZ)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Parteizusatzquittung fehlt: {PARTEIZUSATZ_RESSOURCE}") from fehler
+        try:
             self.merz = _lies_json(MERZ)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Merz-Einzelfallquittung fehlt: {MERZ_RESSOURCE}") from fehler
@@ -2510,6 +2552,48 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         eingang, parlament, abruf, detail_html, mandatsId, parteinachweis
     )
 
+    # Drei eng gebundene offizielle Partei-Zusatzbelege. Sie duerfen nur ein
+    # nach der allgemeinen Quittung weiterhin offenes Parteifeld schliessen.
+    parteizusatz_eintrag = (getattr(eingang, "parteizusatz_by_kennung", None) or {}).get(mandatsId)
+    parteizusatz_beleg = None
+    if parteizusatz_eintrag is not None:
+        verwendet = getattr(eingang, "parteizusatz_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        if parteinachweis["status"] != "offen":
+            raise AssemblerFehler(
+                f"Parteizusatzquittung: {mandatsId} ist bereits {parteinachweis['status']}; "
+                "ein offenes Parteifeld wird erwartet."
+            )
+        quelle = parteizusatz_eintrag["quelle"]
+        parteinachweis = {
+            "status": "belegt",
+            "partei": parteizusatz_eintrag["partei"],
+            "beleg": parteizusatz_eintrag["beleg"],
+            "grund": parteizusatz_eintrag["grund"],
+            "herkunft": (
+                f"{PARTEIZUSATZ_RESSOURCE} (enge Zusatzquittung; getrennte offizielle "
+                f"Partei-Quelle {quelle['url']}, SHA256 {quelle['sha256']})"
+            ),
+            "quittung": {"url": quelle["url"], "sha256": quelle["sha256"]},
+            "quittungDatei": PARTEIZUSATZ_RESSOURCE,
+        }
+        parteizusatz_beleg = {
+            "datei": PARTEIZUSATZ_RESSOURCE,
+            "kennung": parteizusatz_eintrag["kennung"],
+            "region": parteizusatz_eintrag["region"],
+            "parlament": parteizusatz_eintrag["parlament"],
+            "status": parteizusatz_eintrag["status"],
+            "partei": parteizusatz_eintrag["partei"],
+            "person": parteizusatz_eintrag["person"],
+            "bindung": parteizusatz_eintrag["bindung"],
+            "beleg": parteizusatz_eintrag["beleg"],
+            "grund": parteizusatz_eintrag["grund"],
+            "profilQuelle": dict(parteizusatz_eintrag["profilQuelle"]),
+            "quelle": dict(quelle),
+            "importfreigegeben": False,
+        }
+
     # Versionierte Pistorius-Parteizusatzquittung: NUR fuer den einen kanonischen
     # Fall wird ein bislang OFFENES Parteifeld aus der getrennten offiziellen
     # SPD-Quelle belegt. Die historische 335er Quittung bleibt unveraendert offen;
@@ -2691,6 +2775,13 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             "url": pistorius_beleg["quelle"]["url"],
             "abgerufenAm": pistorius_beleg["quelle"]["abgerufenAm"],
             "sha256": pistorius_beleg["quelle"]["sha256"],
+        })
+    if parteizusatz_beleg is not None:
+        profil["offizielleQuellen"].append({
+            "art": "partei-profil",
+            "url": parteizusatz_beleg["quelle"]["url"],
+            "abgerufenAm": parteizusatz_beleg["quelle"]["abgerufenAm"],
+            "sha256": parteizusatz_beleg["quelle"]["sha256"],
         })
 
     # Versionierte Stellvertretungsquittung: die amtliche Quelle jeder ergaenzten
@@ -4004,6 +4095,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["mandatsartQuittung"] = mandatsart_quittung
     if pistorius_beleg is not None:
         datensatz["parteiQuittung"] = pistorius_beleg
+    if parteizusatz_beleg is not None:
+        datensatz["parteiZusatzQuittung"] = parteizusatz_beleg
     if mandatsart_quittung_be is not None:
         datensatz["mandatsartQuittungBe"] = mandatsart_quittung_be
     if rollen_beleg is not None:
@@ -4065,6 +4158,7 @@ def assembliere(eingang: Eingang) -> dict:
     rohde = _pruefe_rohde(eingang)
     stellvertretungen = _pruefe_stellvertretungen(eingang)
     pistorius = _pruefe_pistorius(eingang)
+    parteizusatz = _pruefe_parteizusatz(eingang)
     merz = _pruefe_merz(eingang)
     woidke = _pruefe_woidke(eingang)
     wegner = _pruefe_wegner(eingang)
@@ -4083,6 +4177,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             "Pistorius-Parteizusatzquittung nicht deckungsgleich verwendet "
             f"(verwendet={sorted(eingang.pistorius_verwendet)}, erwartet={sorted(pistorius)})."
+        )
+    if eingang.parteizusatz_verwendet != set(parteizusatz):
+        raise AssemblerFehler(
+            "Parteizusatzquittung nicht deckungsgleich verwendet "
+            f"(verwendet={sorted(eingang.parteizusatz_verwendet)}, erwartet={sorted(parteizusatz)})."
         )
 
     # Auch die Mandatsartenquittung muss deckungsgleich verwendet werden: kein Beleg
@@ -4540,7 +4639,7 @@ def assembliere(eingang: Eingang) -> dict:
     achse_offen = sum(1 for d in datensaetze if "fachlicheAchse" in d["offeneFelder"])
     if partei_belegt + partei_parteilos + partei_offen != len(datensaetze):
         raise AssemblerFehler("Parteibilanz deckt nicht alle 500 Datensaetze ab.")
-    if (partei_belegt, partei_parteilos, partei_offen) != (425, 2, 73):
+    if (partei_belegt, partei_parteilos, partei_offen) != (498, 2, 0):
         raise AssemblerFehler(
             "Parteibilanz weicht von der geprueften Quittung ab "
             f"(belegt={partei_belegt}, parteilos={partei_parteilos}, offen={partei_offen})."
@@ -4550,6 +4649,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Pistorius-Parteizusatzquittung deckt {pistorius_belegt} Datensaetze ab "
             f"(erwartet {PISTORIUS_GESAMT})."
+        )
+    parteizusatz_belegt = sum(1 for d in datensaetze if d.get("parteiZusatzQuittung"))
+    if parteizusatz_belegt != PARTEIZUSATZ_GESAMT:
+        raise AssemblerFehler(
+            f"Parteizusatzquittung deckt {parteizusatz_belegt} Datensaetze ab "
+            f"(erwartet {PARTEIZUSATZ_GESAMT})."
         )
     ergaenzung_belegt = sum(1 for e in ergaenzung.values() if e["status"] == "belegt")
     ergaenzung_parteilos = sum(1 for e in ergaenzung.values() if e["status"] == "parteilos")
@@ -5002,6 +5107,13 @@ def assembliere(eingang: Eingang) -> dict:
                 "nachRegion": {"Bund": len(pistorius)},
                 "belegt": pistorius_belegt,
                 "verwendet": len(eingang.pistorius_verwendet),
+            },
+            "parteizusatzQuittung": {
+                "datei": PARTEIZUSATZ_RESSOURCE,
+                "geprueftGesamt": len(parteizusatz),
+                "nachRegion": {"Bund": len(parteizusatz)},
+                "belegt": parteizusatz_belegt,
+                "verwendet": len(eingang.parteizusatz_verwendet),
             },
             "mandatsartOffen": mandatsart_offen,
             "fachlicheAchseOffen": achse_offen,

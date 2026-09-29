@@ -140,9 +140,13 @@ abgrenzen und korrigieren, dann die frische Versorgung unter Punkt3 nachweisen.
 Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
-Naechster offener Teilschritt: die 73 Parteifelder einzeln aktuell amtlich belegen
-oder bei reinem Belegblocker gleichgruppig sauber ersetzen; 500 technische Erfolge
-sind keine fachliche Importfreigabe. Die zuvor 11 offenen Fachachsen und die letzte
+Die zuvor offenen Parteifelder sind aktuell amtlich geschlossen (498 belegt, 2 amtlich
+parteilos). Fuer genau vier dokumentierte Einzelfaelle hat der Betreiber am 29.09.2026
+einen Ersatz innerhalb derselben Parlamentsebene erlaubt, weil kein zulaessiger
+gleichgruppiger Ersatz im vorab bestimmten Pool verfuegbar war; die
+[Parteifeld-Schlussquittung](betrieb/500-parteifeld-schluss-20260928.json) bindet die Ausnahme.
+500 technische Erfolge und die Auswahlentscheidung sind keine fachliche Importfreigabe.
+Die zuvor 11 offenen Fachachsen und die letzte
 Berliner Mandatsart sind durch zwoelf reale [Ersatzprofile](betrieb/500-ersatzprofile-20260928.json)
 derselben Parlaments-/Fraktionsgruppe geschlossen (500/500, 330/330 Bundestag,
 0 Fachachsen, 0 Mandatsarten; alle inaktiv und nicht importfreigegeben).
@@ -242,8 +246,8 @@ Berliner Fachachsenfall Kai Wegner ueber die amtlich belegte Richtlinienkompeten
 des Regierenden Buergermeisters; die bestehende Rolle bleibt unveraendert, Person
 und Amt sind getrennt an die aktuelle Senatsseite gebunden und die weiteren50
 Geschaeftsbereichsthemen werden nicht uebernommen.
-Aktueller lokaler Entwurf:500/500 technisch akzeptiert;0 Fachachsen und0
-Mandatsarten offen,73 aktuelle Parteifelder bleiben vor Import gesperrt. Die
+Aktueller lokaler Entwurf:500/500 technisch akzeptiert;0 Fachachsen,0
+Mandatsarten und0 Parteifelder offen; alle500 Profile bleiben vor Import gesperrt. Die
 fortgeschriebene [Rollenquittung](betrieb/profilrollen-43-20260928.json) bindet
 die 43 weiter relevanten Altfaelle (37 belegt/6 offen); elf Bundestagsprofile
 und Claudia Engelmann wurden gleichgruppig durch voll belegbare reale Profile ersetzt.
@@ -254,8 +258,10 @@ Haßelmann und Dr. Matthias Miersch sind lokal ueber die enge
 [Fraktionsvorsitz-Zweierquittung](betrieb/fraktionsvorsitz-zwei-20260927.json)
 belegt (nur Funktion und amtliche Fraktionsquelle, keine Themen und keine
 Fachachse;498 Datensaetze bleiben identisch); keine Importfreigabe.
-Naechster Fachschritt: die verbleibenden 73 aktuellen Parteibelege; bei reinem
-Belegblocker gilt weiter der gleichgruppige Ersatz durch reale aktuelle Profile.
+Naechster Fachschritt: den produktiven, sichtbaren Nachweis der Berliner und
+Brandenburger Landesversorgung unter dem bestehenden Landesmandatsgate schliessen.
+Die enge Vierer-Ausnahme der Profilwahl ist abgeschlossen und darf weder auf weitere
+Faelle ausgeweitet noch als Importfreigabe gelesen werden.
 
 1. Die gemeinsame semantische Trennung der tatsächlich sichtbaren Texte aus
    Briefing, Lage und Radar technisch absichern und mit echten Helmut Ausgaben
