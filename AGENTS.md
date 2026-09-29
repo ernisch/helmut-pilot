@@ -108,17 +108,52 @@ Vor jeder Aufgabe prüft Terra ausdrücklich zuerst, ob DeepSeek sie sicher
 großen Dateimengen, führt normale Tests, Code- und Logsuche oder Routineanalyse
 nicht selbst aus und wiederholt ohne konkreten Grund keine bereits belegte Arbeit.
 
-Terra arbeitet dynamisch mit der kleinsten sinnvollen Zahl paralleler
-DeepSeek-Agenten, höchstens fünf. Unabhängige Lesearbeit wird bevorzugt parallel
-gestartet. Überlappende Schreibarbeit ist unzulässig: in einem Arbeitsbereich
-schreibt höchstens ein Agent gleichzeitig. Jede Delegation nennt ein klares Ziel,
-die Abnahmekriterien und die Stop-Grenze. Terra wartet auf entscheidungsrelevante
-Ergebnisse, statt routinemäßig Doppelarbeit zu erzeugen; ändert sich der belegte
-Stand, entscheidet Terra neu.
+Vor jeder Arbeitswelle bestimmt Terra zuerst den kritischen Pfad zum aktuellen
+500er Starttor: Welche noch offenen Blocker verhindern den naechsten belastbaren
+Nachweis? Nur Aufgaben auf diesem Pfad oder unmittelbar notwendige Vorbedingungen
+erhalten bezahlte Agentenkapazitaet. Nebenaufgaben, Komfortverbesserungen und
+spaetere Roadmap-Punkte warten.
 
-Jedes DeepSeek-Prüfpaket enthält Ergebnis, geänderte Dateien beziehungsweise Diff,
-Tests, Belege, Unsicherheiten/Risiken und die erfüllten wie offenen
-Abnahmekriterien.
+Terra arbeitet dynamisch mit der kleinsten sinnvollen Zahl paralleler
+DeepSeek-Agenten, insgesamt hoechstens fuenf. Unabhaengige Lesearbeit wird
+bevorzugt parallel gestartet. Vor jeder bezahlten Welle liest Terra einmal den
+aktuellen DeepSeek-Kostenstatus. Unterhalb der10-USD-Warnschwelle sind bis zu
+fuenf sinnvoll getrennte Agenten erlaubt. Ab Erreichen der Warnschwelle wird
+nicht gestoppt, aber nur noch kritischer Pfad bearbeitet und hoechstens zwei
+bezahlte DeepSeek-Agenten gleichzeitig gestartet. Jeder neue Lauf muss mit seiner
+vollen konservativen Reservierung unter dem harten20-USD-Tagesdeckel bleiben.
+
+Parallele Schreibarbeit ist nur in wirklich getrennten Git-Arbeitsbereichen
+zulaessig. Wenn mindestens zwei DeepSeek-Agenten gleichzeitig schreiben sollen,
+erstellt Terra fuer jeden Schreibauftrag vor dem Start einen eigenen
+`git worktree` von demselben frisch verifizierten main-Commit und einen eindeutig
+benannten eigenen Branch. Terra legt fuer jeden Worktree den exklusiven
+Datei-/Codebereich, Ziel, Abnahmekriterien und Stop-Grenze fest. Maximal drei
+DeepSeek-Agenten duerfen gleichzeitig schreiben; freie Plaetze bis insgesamt
+fuenf duerfen fuer unabhaengige Lesearbeit genutzt werden. Ueberschneiden sich
+benoetigte Dateien oder Verantwortungsbereiche wesentlich, werden die betroffenen
+Aufgaben nacheinander ausgefuehrt. DeepSeek bleibt auch im Worktree ohne Commit,
+Push, PR oder Merge; Terra integriert und prueft die Ergebnisse anschliessend.
+Worktrees werden erst nach gesicherter Integration beziehungsweise bewusster
+Verwerfung sauber entfernt.
+
+Automatische Fortsetzungen duerfen keinen zweiten konkurrierenden Helmut-Lauf
+erzeugen. Zu Beginn jeder Fortsetzung werden laufende relevante Codex-/DeepSeek-
+Prozesse, offene Schreibzustaendigkeiten und aktive Arbeitsbereiche geprueft. Ist
+bereits ein gueltiger Lauf am selben Roadmap-Bereich aktiv, startet die neue
+Fortsetzung keine zweite Agentenwelle und beendet sich ohne konkurrierende
+Schreibarbeit.
+
+Jede Delegation nennt ein klares Ziel, die Abnahmekriterien und die Stop-Grenze.
+Terra wartet auf die fuer eine Entscheidung notwendigen Ergebnisse, statt
+routinemaessig Doppelarbeit zu erzeugen; aendert sich der belegte Stand,
+entscheidet Terra neu.
+
+Jedes DeepSeek-Pruefpaket bleibt bewusst kompakt und enthaelt nur: Ergebnis,
+geaenderte Dateien beziehungsweise relevanten Diff, Tests, Belege,
+Unsicherheiten/Risiken sowie erfuellte und offene Abnahmekriterien. Keine
+ausfuehrliche Wiedererzaehlung des bereits gelesenen Kontexts, sofern sie fuer
+die Abnahme nicht notwendig ist.
 
 Unklare, bereichsübergreifende, architekturrelevante oder Production-nahe
 Gesamtprobleme bearbeitet Terra nicht allein: die sicher delegierbare Recherche und
@@ -304,14 +339,19 @@ einem eigenen Fehlercode (nicht `daily_go_required`).
 
 ## DeepSeek-Budget fuer lokale Agentenarbeit (Betreiberauftrag27.09.2026)
 
-Der ausdrueckliche neue Auftrag ersetzt fuer lokale DeepSeek-Agentenarbeit die
-bisherigen kleinen Einzelrahmen und die gemeinsame6-/7-USD-Begrenzung. DeepSeek
-hat einen eigenen harten Tagesdeckel von10USD je UTC-Tag einschliesslich
-bereits verbrauchter und offen reservierter Kosten; die zwischenzeitlichen
-15-USD-Angaben sind damit vollstaendig ersetzt,
-historische Archive bleiben unveraendert. Helmuts Production-Tagesbudget6USD und
-kumulatives Production-Auftragsbudget7USD werden dadurch nicht erhoeht. Historisch
-bereits dort gebuchte Kosten werden nicht rueckwirkend entfernt.
+Der ausdrueckliche Betreiberauftrag vom29.09.2026 ersetzt fuer lokale
+DeepSeek-Agentenarbeit den bisherigen harten10-USD-Tagesstopp. Es gelten jetzt
+zwei getrennte Grenzen je UTC-Tag ueber alle Helferprozesse gemeinsam:
+
+-10USD Warnschwelle: nur Information, kein Arbeitsstopp. Ab hier ausschliesslich
+kritischer Pfad und hoechstens zwei bezahlte DeepSeek-Agenten gleichzeitig.
+-20USD harter Sicherheitsdeckel einschliesslich bestaetigter Kosten, laufender
+Reservierungen und ungeklaerter konservativer Bindungen. Ein neuer Aufruf darf
+diese Grenze nicht ueberschreiten.
+
+Helmuts Production-Tagesbudget6USD und kumulatives Production-Auftragsbudget7USD
+werden dadurch nicht erhoeht. Historisch bereits dort gebuchte Kosten werden
+nicht rueckwirkend entfernt.
 
 Regulaere Obergrenzen pro Helferlauf: Flash High2USD, Flash Max3USD, Pro High4USD,
 Pro Max5USD. Es sind keine Ausgabenziele: fertige Aufgaben sofort beenden.
@@ -332,11 +372,18 @@ jedoch immer innerhalb des Tagesdeckels und der Providergrenzen. Abgeschlossene
 Werkzeugaktionen nicht wiederholen. Unbekannter Versand/Verbrauch ist kein
 Budgetlimit und erlaubt keinen automatischen kostenpflichtigen Neuversuch.
 
-Wenn10USD fuer einen erforderlichen Lauf nicht reichen: keine weitere bezahlte
-Anfrage absenden, keine stille Erhoehung und keinen pauschalen Arbeitsabbruch.
-Den Betreiber ausdruecklich um ein hoeheres Tagesbudget fuer den konkreten
-UTC-Tag bitten; unabhaengige kostenlose Arbeit fortsetzen. Ein GO gilt nur fuer
-den genannten Tag, danach wieder10USD. Keine neue Freigabe innerhalb des Deckels.
+Der Kostenstatus muss bestaetigte beziehungsweise historische Kosten,
+aktuell reservierte Kosten und ungeklaerte konservative Bindungen getrennt
+ausweisen. Eine Reservierung ist nicht als bereits bezahlte Providerrechnung
+auszugeben. Erfolgreich abgeschlossene Aufrufe geben ungenutzte Reservierung
+sofort frei; ungeklaerte Provider-/Transportausgaenge bleiben konservativ
+gebunden, werden aber sichtbar als ungeklaert markiert.
+
+Wenn20USD fuer einen erforderlichen Lauf nicht reichen: keine weitere bezahlte
+Anfrage absenden und keine stille Erhoehung. Den Betreiber ausdruecklich um ein
+hoeheres Tagesbudget fuer den konkreten UTC-Tag bitten; unabhaengige kostenlose
+Arbeit fortsetzen. Ein GO gilt nur fuer den genannten Tag, danach wieder20USD.
+Die10-USD-Warnschwelle verlangt keine Freigabe.
 
 ## Grundregel
 
