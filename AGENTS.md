@@ -140,11 +140,15 @@ Worktrees werden erst nach gesicherter Integration beziehungsweise bewusster
 Verwerfung sauber entfernt.
 
 Automatische Fortsetzungen duerfen keinen zweiten konkurrierenden Helmut-Lauf
-erzeugen. Zu Beginn jeder Fortsetzung werden laufende relevante Codex-/DeepSeek-
-Prozesse, offene Schreibzustaendigkeiten und aktive Arbeitsbereiche geprueft. Ist
-bereits ein gueltiger Lauf am selben Roadmap-Bereich aktiv, startet die neue
-Fortsetzung keine zweite Agentenwelle und beendet sich ohne konkurrierende
-Schreibarbeit.
+erzeugen. Zu Beginn jeder Fortsetzung wird zuerst eine lokale Lauf-Lease mit
+`python3 -B tools/agent-parallel/lease.py acquire` genommen. Meldet das Werkzeug
+eine aktive fremde Lease, startet die neue Fortsetzung keine zweite Agentenwelle
+und beendet sich ohne konkurrierende Arbeit. Eine aktive Fortsetzung erneuert ihre
+Lease bei laengerer Arbeit rechtzeitig und gibt sie am Ende mit dem ausgegebenen
+Owner wieder frei. Zusaetzlich werden laufende relevante Codex-/DeepSeek-Prozesse,
+offene Schreibzustaendigkeiten und aktive Arbeitsbereiche geprueft. Eine
+abgelaufene Lease allein beweist keinen sauberen Zustand; bei sichtbarer laufender
+Arbeit wird nicht parallel geschrieben.
 
 Jede Delegation nennt ein klares Ziel, die Abnahmekriterien und die Stop-Grenze.
 Terra wartet auf die fuer eine Entscheidung notwendigen Ergebnisse, statt
