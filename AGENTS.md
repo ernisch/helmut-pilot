@@ -919,8 +919,13 @@ unklarem Fehler.
 ## Kommunikationsstil
 
 Kurz und konkret schreiben. Keine routinemäßigen Zwischenberichte zu jedem
-Teilschritt oder unverändert laufender CI; Blocker und echte Freigabepunkte benennen.
-Keine langen Wiederholungen des Projektstands.
+Teilschritt oder unverändert laufender CI. Bei längerer Arbeit aber kurze sichtbare
+Lebenszeichen geben, sobald ein echter Meilenstein erreicht ist, ein neuer längerer
+Schritt beginnt, auf CI oder einen externen Lauf gewartet wird oder ein Blocker
+entsteht. Diese Meldungen nennen knapp: was gerade erledigt wurde, was jetzt läuft
+und ob etwas blockiert. Keine Minischritte einzeln melden und keine unveränderten
+Statusmeldungen wiederholen. Blocker und echte Freigabepunkte immer sichtbar
+benennen. Keine langen Wiederholungen des Projektstands.
 
 Der Nutzer ist kein Entwickler.
 
