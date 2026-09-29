@@ -241,8 +241,10 @@ Die verfügbaren lokalen Helfer werden mit einem klar abgegrenzten Auftrag gesta
 Jede DeepSeek Delegation leitet sich aus einem klar begrenzten Auftrag ab: bei
 Roadmap-Arbeit aus dem aktuellen Roadmap Schritt in `docs/ROADMAP_BIS_500.md` und
 dem aktuellen Production Stand in `docs/CURRENT_STATE.md`, bei anderen beauftragten
-Sprints aus deren klar begrenztem Ziel. Terra nennt im DeepSeek Auftrag immer die
-Abnahmekriterien und die Stop Grenze. Die Aufträge sind so verteilt, dass
+Sprints aus deren klar begrenztem Ziel. Jeder Auftrag ist von Anfang an eigenständig
+verständlich: Er nennt Ziel, verifizierten Stand, Branch, relevante Dateien,
+Einschränkungen sowie Abnahmekriterien und Stop-Grenze. Terra nennt im DeepSeek
+Auftrag immer die Abnahmekriterien und die Stop Grenze. Die Aufträge sind so verteilt, dass
 unabhängige Lesearbeit parallel läuft und keine zwei Agenten gleichzeitig dieselbe
 Datei oder denselben Arbeitsbereich schreiben. DeepSeek darf keinen späteren
 Roadmap Schritt, kein Nebenprojekt und keine bereits abgeschlossene Prüfung
@@ -268,10 +270,15 @@ neuen Risiko, einer Freigabe oder einer kritischen Abnahme geht DeepSeek an Terr
 gleichzeitig; insgesamt dürfen bis zu fünf getrennte Schreibagenten parallel
 arbeiten. Der Production-Schutz bleibt unverändert.
 
-Scheitert ein DeepSeek Start technisch mit `Operation not permitted` oder einem
-vergleichbaren lokalen Startfehler, genau einmal erneut versuchen. Scheitert auch
-der zweite Start, übernimmt Terra selbst oder meldet den Blocker. Ein technischer
-DeepSeek-Startfehler ist für sich allein kein Grund für eine Sol-Eskalation.
+Scheitert ein DeepSeek Start **vor Arbeitsbeginn** wegen Launcher, Schlüsselbund,
+Netzwerk oder anderer lokaler Infrastruktur, zählt dies nicht als fachlicher
+Fehlversuch. Terra prüft und repariert zuerst gezielt den DeepSeek-Zugang und startet
+danach **denselben eigenständig verständlichen Auftrag** erneut. Terra übernimmt den
+eigentlichen Entwicklungs- oder Prüfauftrag erst, wenn DeepSeek nach dieser gezielten
+Ursachenprüfung technisch nicht nutzbar bleibt; der technische Befund, die Reparatur
+oder die verbleibende Einschränkung sind dann offen zu nennen. Bereits belegte Arbeit
+wird nicht wiederholt. Ein technischer Startfehler ist für sich allein kein Grund für
+eine Sol-Eskalation.
 
 DeepSeek darf niemals Production Aktionen, Production Daten- oder
 Profiländerungen, Migrationen, Umgebungsvariablenänderungen, Commit, Push, Merge,
@@ -303,9 +310,10 @@ eingesetzte DeepSeek Modell mit der tatsächlich gewählten Denkstufe High oder 
 Nach einer Sol-Entscheidung meldet Terra ebenfalls "Terra übernimmt wieder" und
 führt die Umsetzung fort.
 
-Technische Startfehler und der Rückfall auf Terra werden ehrlich benannt; niemals
-behaupten, ein Helfer oder eine Eskalationsstufe habe gearbeitet, wenn das Modell
-nicht gestartet beziehungsweise manuell ausgewählt wurde.
+Technische Startfehler, die gezielte Zugangsreparatur und ein erst danach erforderlicher
+Rückfall auf Terra werden ehrlich benannt; niemals behaupten, ein Helfer oder eine
+Eskalationsstufe habe gearbeitet, wenn das Modell nicht gestartet beziehungsweise
+manuell ausgewählt wurde.
 
 Meldungen erfolgen als kurze sichtbare Chatnachrichten bei tatsächlichem Wechsel;
 keine routinemäßige Wiederholung bei unverändertem Modell und unveränderter
