@@ -22,7 +22,7 @@ class BudgetTests(unittest.TestCase):
   self.clock=patch.object(R,'utcnow',return_value=R.dt.datetime(2026,9,26,12,0,tzinfo=R.dt.timezone.utc))
   self.clock.start();self.addCleanup(self.clock.stop)
  def tearDown(self):self.tmp.cleanup()
- def gate(self,mode='flash-read'):return R.Gate(self.c,self.l,mode,'test-key')
+ def gate(self,mode='flash-read',peak_go_einmalig=False):return R.Gate(self.c,self.l,mode,'test-key',peak_go_einmalig=peak_go_einmalig)
  def at(self,*moments):
   # Scripted UTC clock: the last moment repeats if read more often than provided.
   seq=list(moments)
@@ -224,6 +224,29 @@ class BudgetTests(unittest.TestCase):
     with self.assertRaises(R.BudgetError) as cm:g.execute({'model':g.model,'input':'hello'})
   self.assertEqual(cm.exception.code,'peak_blocked');self.assertNotEqual(cm.exception.code,'daily_go_required')
   f.assert_not_called();self.assertEqual(self.l.snapshot()['bound_micro_usd'],0)
+ def test_peak_go_einmalig_allows_exact_gate_only(self):
+  peak=R.dt.datetime(2026,9,28,2,tzinfo=R.dt.timezone.utc)
+  g=self.gate(peak_go_einmalig=True)
+  with self.at(peak,peak,peak):
+   with patch.object(R.urllib.request,'urlopen',return_value=Response(terminal())) as f:
+    body,_=g.execute({'model':g.model,'input':'hello'})
+  self.assertEqual(f.call_count,1);self.assertEqual(json.loads(body)['status'],'completed')
+  self.assertGreater(self.l.snapshot(R.day(peak))['bound_micro_usd'],0)
+  # A fresh gate has no inherited exception and must block at the same peak time.
+  g2=self.gate()
+  with self.at(peak):
+   with patch.object(R.urllib.request,'urlopen') as f:
+    with self.assertRaises(R.BudgetError) as cm:g2.execute({'model':g2.model,'input':'hello'})
+  self.assertEqual(cm.exception.code,'peak_blocked');f.assert_not_called()
+ def test_peak_go_einmalig_keeps_peak_pricing(self):
+  peak=R.dt.datetime(2026,9,28,2,tzinfo=R.dt.timezone.utc)
+  g=self.gate(peak_go_einmalig=True)
+  with self.at(peak,peak,peak):
+   with patch.object(R.urllib.request,'urlopen',return_value=Response(terminal())):
+    g.execute({'model':g.model,'input':'hello'})
+  snap=self.l.snapshot(R.day(peak))
+  expected=R.cost(self.c,g.model,terminal()['usage'],peak)
+  self.assertEqual(snap['by_state'].get('spent'),expected)
  def test_entry_into_peak_after_reservation_releases_and_skips_provider(self):
   g=self.gate();off=R.dt.datetime(2026,9,28,0,30,tzinfo=R.dt.timezone.utc);on=R.dt.datetime(2026,9,28,1,5,tzinfo=R.dt.timezone.utc)
   with self.at(off,on):

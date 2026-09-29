@@ -37,20 +37,24 @@ Die Laufdeckel2/3/4/5USD und die einmalige Erweiterung bleiben unveraendert.
 Montag bis Freitag genau [01:00,04:00) und [06:00,10:00) UTC startet keine neue
 autonome Helmut-KI-Arbeit. Das Wochenende ist ganztägig frei. In Tuerkei-Zeit
 (UTC+3) sind das die Pausen04:00-07:00 und09:00-13:00; Arbeit ist Montag bis
-Freitag07:00-09:00 sowie13:00-04:00 des Folgetags. Nur eine ausdrueckliche,
-fallbezogene Nutzerfreigabe hebt die Sperre fuer genau diesen Fall auf. Ein
-bereits vor Peak gestarteter Aufruf darf sauber zu Ende laufen und wird nicht
-abgebrochen.
+Freitag07:00-09:00 sowie13:00-04:00 des Folgetags.
+
+Ein manueller Nutzerprompt darf die Sperre fuer genau einen Auftrag aufheben, wenn
+seine erste nichtleere Zeile exakt `PEAK GO EINMALIG` lautet. Terra setzt dann
+nur fuer die zu diesem Auftrag gehoerenden DeepSeek-Helfer den Launcher-Parameter
+`--peak-go-einmalig`. Der Parameter wird nicht gespeichert und gilt nur fuer
+den jeweiligen Launcher-Prozess. Automationen und Scheduler duerfen das Codewort
+oder den Parameter niemals selbst erzeugen oder aus einem frueheren Prompt
+wiederverwenden. Die Ausnahme veraendert weder Kostenlimits noch Production-,
+Merge- oder sonstige Schutzregeln.
 
 Technisch prueft der Launcher die Sperre vor der Reservierung und unmittelbar vor
 dem Provider-Versand ueber dieselbe zentrale Tarif- und Peak-Funktion
-`runtime.peak()`. Faellt die Zeit nach der Reservierung in Peak, wird die
-Reservierung auf0 abgerechnet/freigegeben und der Provider nicht aufgerufen.
-Der Lauf endet dann mit dem eigenen Fehlercode `peak_blocked` (Exit79), nicht mit
-`daily_go_required`. Die lokale halbstuendliche Helmut-Automation nutzt getrennte
-aktive Werktag-/Wochenend-RRULEs, plant in Peak keinen Modelllauf ein und startet
-am ersten halbstuendlichen Off-Peak-Termin automatisch wieder. Der UTC-Check im
-Automationsprompt bleibt eine zweite Sperre gegen Fehlplanung.
+`runtime.peak()`. Ohne einmalige Ausnahme wird ein Peak-Lauf weiterhin blockiert
+und endet mit `peak_blocked` (Exit79). Mit `--peak-go-einmalig` wird nur fuer
+diesen Prozess nicht blockiert; die Peak-Tarife bleiben voll wirksam. Die lokale
+halbstuendliche Helmut-Automation bleibt unveraendert Off-Peak gebunden und startet
+am ersten halbstuendlichen Off-Peak-Termin automatisch wieder.
 
 Einmal pro Helferlauf darf ein Kosten- oder Ausgabetokenlimit automatisch mehr
 Spielraum erhalten: doppelter kumulativer Laufdeckel und bei Tokenlimit doppelte

@@ -257,8 +257,9 @@ def estimate(c, model, payload, output):
 
 
 class Gate:
-    def __init__(self, c, ledger, mode, key, upstream=UPSTREAM):
+    def __init__(self, c, ledger, mode, key, upstream=UPSTREAM, peak_go_einmalig=False):
         self.c, self.ledger, self.key, self.upstream = c, ledger, key, upstream
+        self.peak_go_einmalig = bool(peak_go_einmalig)
         self.model, self.effort, self.sandbox = MODES[mode]
         self.run = ledger.new_run(micro(c['budgets_usd'][('flash' if mode.startswith('flash') else 'pro') + '-' + self.effort]))
         self.token = secrets.token_urlsafe(32)
@@ -276,7 +277,7 @@ class Gate:
         while True:
             payload['max_output_tokens'] = self.output
             now = utcnow()
-            if peak(now):
+            if peak(now) and not self.peak_go_einmalig:
                 self.failure = BudgetError('peak_blocked', PEAK_MESSAGE)
                 raise self.failure
             try:
@@ -286,7 +287,7 @@ class Gate:
                 if e.code == 'run_budget' and self.ledger.retry(self.run, self.c, 'Kostenlimit'):
                     continue  # Same pending request; completed tool work is never rerun.
                 self.failure = e; raise
-            if peak(utcnow()):
+            if peak(utcnow()) and not self.peak_go_einmalig:
                 # The clock moved into peak between reservation and send: free the
                 # reservation and never contact the provider.
                 self.ledger.release(ident)
@@ -382,15 +383,18 @@ def server_for(gate):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--peak-go-einmalig', action='store_true',
+                        help='Einmalige Peak-Ausnahme nur nach explizitem Nutzer-Codewort PEAK GO EINMALIG')
     parser.add_argument('mode', choices=[*MODES, 'status'])
     parser.add_argument('task', nargs='*')
     args = parser.parse_args()
     c = config(); ledger = Ledger(read_only=args.mode == "status")
     if args.mode == 'status':
+        if args.peak_go_einmalig: parser.error('--peak-go-einmalig ist fuer status ungueltig')
         print(json.dumps({**ledger.snapshot(c=c), 'config': str(CONFIG)}, ensure_ascii=False)); return 0
     if not args.task: parser.error('Aufgabe fehlt')
     key = subprocess.check_output(['security', 'find-generic-password', '-a', os.environ['USER'], '-s', 'helmut-deepseek-api-key', '-w'], stderr=subprocess.DEVNULL).decode().strip()
-    gate = Gate(c, ledger, args.mode, key)
+    gate = Gate(c, ledger, args.mode, key, peak_go_einmalig=args.peak_go_einmalig)
     server = server_for(gate)
     thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
     env = os.environ.copy(); env['CODEX_HOME'] = str(ROOT); env['DEEPSEEK_API_KEY'] = gate.token
@@ -400,6 +404,8 @@ def main():
            '-c', f'model_providers.deepseek.stream_idle_timeout_ms={STREAM_TIMEOUT_SECONDS * 1000}',
            '--sandbox', gate.sandbox, GUARD + '\n\nAUFGABE:\n' + ' '.join(args.task)]
     print(f'DeepSeek {gate.model} {gate.effort}: Laufdeckel {c["budgets_usd"][("flash" if args.mode.startswith("flash") else "pro")+"-"+gate.effort]} USD, Warnschwelle {c["daily_warning_usd"]:g} USD, Freigabefrage ab {c["daily_approval_prompt_usd"]:g} USD, harter Tagesdeckel {limit(c,day())/MILLION:g} USD.', file=sys.stderr)
+    if args.peak_go_einmalig:
+        print('DeepSeek: PEAK GO EINMALIG fuer genau diesen Launcher-Lauf aktiv; keine dauerhafte Peak-Aenderung.', file=sys.stderr)
     try:
         result = subprocess.run(cmd, env=env)
     finally:

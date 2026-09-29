@@ -333,18 +333,34 @@ ist Montag bis Freitag 07:00-09:00 sowie 13:00-04:00 des Folgetags; am Wochenend
 ist ganztägig Arbeit möglich.
 
 Nur eine ausdrückliche, fallbezogene Nutzerfreigabe hebt die Peak-Sperre für genau
-diesen Fall auf. Automationen müssen Peak vermeiden und dürfen keinen neuen
-Modelllauf in Peak einplanen. Die bestehende halbstündliche Helmut-Weiterarbeit
-ist deshalb in disjunkte aktive Werktag- und Wochenend-RRULEs geteilt: werktags
-nur 00:00-04:00, 07:00-09:00 und 13:00-24:00 Tuerkei-Zeit, am Wochenende
-ganztägig. Nach einer Peak-Pause startet der Scheduler automatisch am ersten
-halbstündlichen Off-Peak-Termin; der UTC-Check im Prompt bleibt zweite Sperre.
+diesen Fall auf. Das verbindliche manuelle Codewort ist `PEAK GO EINMALIG`.
+Die Ausnahme gilt nur, wenn die aktuelle Nutzeranweisung als erste nichtleere
+Zeile exakt dieses Codewort enthält. Dann darf genau dieser eine manuell
+gestartete Auftrag trotz Peak sofort arbeiten. Terra darf für notwendige
+DeepSeek-Helfer dieses Auftrags den Launcher-Parameter
+`--peak-go-einmalig` setzen. Die Ausnahme gilt fuer alle notwendigen Helfer
+innerhalb genau dieses einen Auftrags, wird aber niemals persistent gespeichert,
+niemals auf einen spaeteren Prompt uebertragen und niemals als allgemeine
+Freigabe interpretiert. Das Codewort hebt ausschliesslich die Peak-Arbeitszeitregel
+auf; Production-Schutz, Kostenlimits, Merge-Freigaben und alle anderen Grenzen
+bleiben voll wirksam.
+
+Automationen, Scheduler und Agenten duerfen das Codewort oder den
+`--peak-go-einmalig`-Parameter niemals selbst erzeugen oder aus frueheren
+Prompts wiederverwenden. Ohne aktuelles manuelles Codewort muessen sie Peak
+weiter vermeiden. Die bestehende halbstündliche Helmut-Weiterarbeit ist deshalb
+in disjunkte aktive Werktag- und Wochenend-RRULEs geteilt: werktags nur
+00:00-04:00, 07:00-09:00 und 13:00-24:00 Tuerkei-Zeit, am Wochenende ganztägig.
+Nach einer Peak-Pause startet der Scheduler automatisch am ersten halbstündlichen
+Off-Peak-Termin; der UTC-Check im Prompt bleibt zweite Sperre.
 
 Die technische Durchsetzung erfolgt vor jedem Provider-Versand im kontrollierten
 Launcherpfad `tools/deepseek-budget/runtime.py` über dieselbe zentrale Tarif- und
-Peak-Funktion. Fällt die Zeit nach der Reservierung in Peak, wird die Reservierung
-auf 0 abgerechnet/freigegeben und der Provider nicht aufgerufen; der Lauf endet mit
-einem eigenen Fehlercode (nicht `daily_go_required`).
+Peak-Funktion. Ohne einmalige Ausnahme wird ein Peak-Lauf weiterhin blockiert.
+Mit dem expliziten Launcher-Parameter gilt die Ausnahme nur fuer diesen
+Launcher-Prozess; ein neuer Launcher ist wieder gesperrt, sofern Terra ihn nicht
+innerhalb desselben aktuellen Codewort-Auftrags erneut explizit freigibt. Die
+Peak-Preise bleiben dabei unverändert und werden nicht als Off-Peak abgerechnet.
 
 ## DeepSeek-Budget fuer lokale Agentenarbeit (Betreiberauftrag27.09.2026)
 
