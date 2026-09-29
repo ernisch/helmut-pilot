@@ -122,10 +122,10 @@ vor Abschluss denselben SHA256 haben.
   zusaetzlich Peak-Grenzfenster, Wochenende, Block vor Reservierung und vor dem
   Provider-Versand, Uebergang zwischen Reservierung und Versand mit sauberer
   Freigabe, Retry-Recheck in Peak, eigener Exitcode `peak_blocked` gegen
-  `daily_go_required`, 15-USD-Tagesdeckel sowie unveraenderte Laufdeckel
+  `daily_go_required`, damaligen15-USD-Zwischenstand sowie unveraenderte Laufdeckel
   2/3/4/5USD und unveraenderte einmalige Erweiterung. Keine bezahlten
   Fehlerwiederholungen, kein Provider-Aufruf in den Tests.
-- Die geaenderte Runtime, der15-USD-Deckel, die Peak-Sperre und die eng begrenzte
+- Historischer Zwischenstand: Die damalige Runtime, der spaeter ersetzte15-USD-Deckel, die Peak-Sperre und die eng begrenzte
   Launcher-Regel wurden lokal installiert. Repository- und Installationskopie der
   Runtime werden vor Abschluss per SHA256 abgeglichen.
 
