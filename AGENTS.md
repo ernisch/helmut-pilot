@@ -116,12 +116,15 @@ spaetere Roadmap-Punkte warten.
 
 Terra arbeitet dynamisch mit der kleinsten sinnvollen Zahl paralleler
 DeepSeek-Agenten, insgesamt hoechstens fuenf. Unabhaengige Lesearbeit wird
-bevorzugt parallel gestartet. Vor jeder bezahlten Welle liest Terra einmal den
-aktuellen DeepSeek-Kostenstatus. Unterhalb der10-USD-Warnschwelle sind bis zu
-fuenf sinnvoll getrennte Agenten erlaubt. Ab Erreichen der Warnschwelle wird
-nicht gestoppt, aber nur noch kritischer Pfad bearbeitet und hoechstens zwei
-bezahlte DeepSeek-Agenten gleichzeitig gestartet. Jeder neue Lauf muss mit seiner
-vollen konservativen Reservierung unter dem harten20-USD-Tagesdeckel bleiben.
+bevorzugt parallel gestartet. Vor jeder bezahlten Welle liest Terra einmal den aktuellen DeepSeek-Kostenstatus.
+Die10-USD-Warnschwelle ist reine Information und aendert weder Parallelitaet noch
+Aufgabenumfang. Bis zur Freigabefrage duerfen weiterhin bis zu fuenf sinnvoll
+getrennte Agenten parallel arbeiten. Sobald eine neue konservative Reservierung
+die Tagesbindung auf mindestens18USD bringen wuerde, startet kein weiterer
+bezahlter DeepSeek-Aufruf, bevor Terra den Betreiber sichtbar fragt, ob der
+Tagesdeckel fuer genau diesen UTC-Tag erhoeht werden soll. Der Kostenzaehler wird
+dabei niemals zurueckgesetzt oder auf null gesetzt. Ohne neue Freigabe bleibt
+20USD der harte Sicherheitsdeckel.
 
 Parallele Schreibarbeit ist nur in wirklich getrennten Git-Arbeitsbereichen
 zulaessig. Wenn mindestens zwei DeepSeek-Agenten gleichzeitig schreiben sollen,
@@ -349,11 +352,16 @@ Der ausdrueckliche Betreiberauftrag vom29.09.2026 ersetzt fuer lokale
 DeepSeek-Agentenarbeit den bisherigen harten10-USD-Tagesstopp. Es gelten jetzt
 zwei getrennte Grenzen je UTC-Tag ueber alle Helferprozesse gemeinsam:
 
--10USD Warnschwelle: nur Information, kein Arbeitsstopp. Ab hier ausschliesslich
-kritischer Pfad und hoechstens zwei bezahlte DeepSeek-Agenten gleichzeitig.
--20USD harter Sicherheitsdeckel einschliesslich bestaetigter Kosten, laufender
-Reservierungen und ungeklaerter konservativer Bindungen. Ein neuer Aufruf darf
-diese Grenze nicht ueberschreiten.
+-10USD Warnschwelle: reine Information. Keine Drosselung, keine Reduzierung der
+Agentenzahl und keine zusaetzliche Freigabe.
+-18USD Freigabeschwelle: bevor eine neue konservative Reservierung die
+Tagesbindung auf mindestens18USD bringen wuerde, fragt Terra den Betreiber
+sichtbar, ob der Tagesdeckel fuer genau diesen UTC-Tag erhoeht werden soll.
+-20USD harter Sicherheitsdeckel ohne zusaetzliches GO. Er umfasst bestaetigte
+Kosten, laufende Reservierungen und ungeklaerte konservative Bindungen.
+
+Eine Freigabe erhoeht den Tagesdeckel fuer den genannten UTC-Tag; sie setzt den
+Kostenzaehler niemals zurueck und loescht keine Kostenhistorie.
 
 Helmuts Production-Tagesbudget6USD und kumulatives Production-Auftragsbudget7USD
 werden dadurch nicht erhoeht. Historisch bereits dort gebuchte Kosten werden
@@ -385,11 +393,13 @@ auszugeben. Erfolgreich abgeschlossene Aufrufe geben ungenutzte Reservierung
 sofort frei; ungeklaerte Provider-/Transportausgaenge bleiben konservativ
 gebunden, werden aber sichtbar als ungeklaert markiert.
 
-Wenn20USD fuer einen erforderlichen Lauf nicht reichen: keine weitere bezahlte
-Anfrage absenden und keine stille Erhoehung. Den Betreiber ausdruecklich um ein
-hoeheres Tagesbudget fuer den konkreten UTC-Tag bitten; unabhaengige kostenlose
-Arbeit fortsetzen. Ein GO gilt nur fuer den genannten Tag, danach wieder20USD.
-Die10-USD-Warnschwelle verlangt keine Freigabe.
+Die Freigabefrage wird bereits vor dem harten Deckel gestellt: sobald die naechste
+Reservierung mindestens18USD Tagesbindung erzeugen wuerde und noch keine
+Tageserhoehung vorliegt. Terra fragt dann unmittelbar nach einem hoeheren Deckel
+fuer genau diesen UTC-Tag. Ohne GO wird kein weiterer bezahlter DeepSeek-Aufruf
+gestartet. Mit GO wird nur der Tagesdeckel erhoeht, niemals der bisherige Verbrauch
+zurueckgesetzt. Am Folgetag gilt wieder20USD. Die10-USD-Warnschwelle verlangt
+keine Freigabe und veraendert die Arbeitsweise nicht.
 
 ## Grundregel
 
