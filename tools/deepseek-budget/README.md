@@ -13,8 +13,8 @@ Production-Modellbudget. Kein Abonnement und kein dauerhafter Server.
 | Pro High |4USD|
 | Pro Max |5USD|
 
-Mit ausdruecklicher Nutzerfreigabe vom29.09.2026 gilt ein gemeinsamer dauerhafter
-Tagesdeckel von15USD je UTC-Tag; die frueheren10-USD-Angaben sind vollstaendig
+Mit ausdruecklichem Betreiberauftrag gilt wieder ein gemeinsamer dauerhafter
+Tagesdeckel von10USD je UTC-Tag; die zwischenzeitlichen15-USD-Angaben sind damit
 ersetzt, historische Archive bleiben unveraendert. Der Deckel gilt ueber alle
 Helferprozesse gemeinsam. Fertige Aufgaben enden sofort. Nicht das gesamte
 Laufbudget wird ausgegeben oder vorab blockiert:
@@ -41,9 +41,10 @@ dem Provider-Versand ueber dieselbe zentrale Tarif- und Peak-Funktion
 `runtime.peak()`. Faellt die Zeit nach der Reservierung in Peak, wird die
 Reservierung auf0 abgerechnet/freigegeben und der Provider nicht aufgerufen.
 Der Lauf endet dann mit dem eigenen Fehlercode `peak_blocked` (Exit79), nicht mit
-`daily_go_required`. Automationen muessen Peak vermeiden; ist keine technische
-Wiederaufnahme moeglich, wird ehrlich gemeldet, dass nach Peak manuell
-fortgesetzt werden muss.
+`daily_go_required`. Die lokale halbstuendliche Helmut-Automation nutzt getrennte
+aktive Werktag-/Wochenend-RRULEs, plant in Peak keinen Modelllauf ein und startet
+am ersten halbstuendlichen Off-Peak-Termin automatisch wieder. Der UTC-Check im
+Automationsprompt bleibt eine zweite Sperre gegen Fehlplanung.
 
 Einmal pro Helferlauf darf ein Kosten- oder Ausgabetokenlimit automatisch mehr
 Spielraum erhalten: doppelter kumulativer Laufdeckel und bei Tokenlimit doppelte
@@ -61,14 +62,14 @@ entfernt. Ein tatsaechlich ueber Mitternacht laufender Aufruf wird konservativ
 an beiden Tagen beruecksichtigt. Ein verschwundener Prozess setzt keine Kosten
 auf null. Abweichungen vom reservierten Hoechstverbrauch sperren weitere Laeufe.
 
-Reichen15USD nicht, wird keine Anfrage gesendet. Der Starter liefert Exit78
+Reichen10USD nicht, wird keine Anfrage gesendet. Der Starter liefert Exit78
 mit `daily_go_required`; der Orchestrator muss den Betreiber ausdruecklich um
 mehr Tagesbudget bitten und kostenlose unabhaengige Arbeit fortsetzen. Ein
 ausdrueckliches GO wird mit UTC-Datum in `day_approvals` eingetragen, z.B.
 `"2026-09-28": {"usd": 18, "explicit_user_approval": "Beleg der konkreten Nutzerfreigabe"}`.
 Ein belegter alter Freigabewert bis zum neuen Standarddeckel ist redundant und
 senkt den Deckel nicht. Ohne reales GO keinen solchen Eintrag anlegen. Am
-Folgetag gilt wieder15USD.
+Folgetag gilt wieder10USD.
 
 ## Installation und Pruefung
 

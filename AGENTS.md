@@ -290,9 +290,11 @@ ist ganztägig Arbeit möglich.
 
 Nur eine ausdrückliche, fallbezogene Nutzerfreigabe hebt die Peak-Sperre für genau
 diesen Fall auf. Automationen müssen Peak vermeiden und dürfen keinen neuen
-Modelllauf in Peak einplanen. Unterstützt eine technische Wiederaufnahme das nicht,
-wird ehrlich gemeldet, dass nach Peak manuell fortgesetzt werden muss; eine
-automatische Fortsetzung wird nicht vorgetäuscht.
+Modelllauf in Peak einplanen. Die bestehende halbstündliche Helmut-Weiterarbeit
+ist deshalb in disjunkte aktive Werktag- und Wochenend-RRULEs geteilt: werktags
+nur 00:00-04:00, 07:00-09:00 und 13:00-24:00 Tuerkei-Zeit, am Wochenende
+ganztägig. Nach einer Peak-Pause startet der Scheduler automatisch am ersten
+halbstündlichen Off-Peak-Termin; der UTC-Check im Prompt bleibt zweite Sperre.
 
 Die technische Durchsetzung erfolgt vor jedem Provider-Versand im kontrollierten
 Launcherpfad `tools/deepseek-budget/runtime.py` über dieselbe zentrale Tarif- und
@@ -304,9 +306,9 @@ einem eigenen Fehlercode (nicht `daily_go_required`).
 
 Der ausdrueckliche neue Auftrag ersetzt fuer lokale DeepSeek-Agentenarbeit die
 bisherigen kleinen Einzelrahmen und die gemeinsame6-/7-USD-Begrenzung. DeepSeek
-hat mit ausdruecklicher Nutzerfreigabe vom29.09.2026 einen eigenen harten
-Tagesdeckel von15USD je UTC-Tag einschliesslich bereits verbrauchter und offen
-reservierter Kosten; die frueheren10-USD-Angaben sind damit vollstaendig ersetzt,
+hat einen eigenen harten Tagesdeckel von10USD je UTC-Tag einschliesslich
+bereits verbrauchter und offen reservierter Kosten; die zwischenzeitlichen
+15-USD-Angaben sind damit vollstaendig ersetzt,
 historische Archive bleiben unveraendert. Helmuts Production-Tagesbudget6USD und
 kumulatives Production-Auftragsbudget7USD werden dadurch nicht erhoeht. Historisch
 bereits dort gebuchte Kosten werden nicht rueckwirkend entfernt.
@@ -330,11 +332,11 @@ jedoch immer innerhalb des Tagesdeckels und der Providergrenzen. Abgeschlossene
 Werkzeugaktionen nicht wiederholen. Unbekannter Versand/Verbrauch ist kein
 Budgetlimit und erlaubt keinen automatischen kostenpflichtigen Neuversuch.
 
-Wenn15USD fuer einen erforderlichen Lauf nicht reichen: keine weitere bezahlte
+Wenn10USD fuer einen erforderlichen Lauf nicht reichen: keine weitere bezahlte
 Anfrage absenden, keine stille Erhoehung und keinen pauschalen Arbeitsabbruch.
 Den Betreiber ausdruecklich um ein hoeheres Tagesbudget fuer den konkreten
 UTC-Tag bitten; unabhaengige kostenlose Arbeit fortsetzen. Ein GO gilt nur fuer
-den genannten Tag, danach wieder15USD. Keine neue Freigabe innerhalb des Deckels.
+den genannten Tag, danach wieder10USD. Keine neue Freigabe innerhalb des Deckels.
 
 ## Grundregel
 
@@ -674,7 +676,7 @@ Innerhalb eines gestarteten, klar begrenzten Helmut-Sprints sind notwendige
 variable Modell- und API-Kosten bis insgesamt **6 USD je UTC Tag** vorab
 freigegeben. Alle Production-Anbieter und auftragsbezogenen kostenpflichtigen Aufrufe
 zaehlen gemeinsam gegen diese Tagesgrenze; lokale DeepSeek-Agentenarbeit folgt
-ausschliesslich dem oben ausdruecklich freigegebenen separaten15-USD-Tagesdeckel. Solange der nächste Aufruf die
+ausschliesslich dem oben ausdruecklich freigegebenen separaten10-USD-Tagesdeckel. Solange der nächste Aufruf die
 kumulative Tagesgrenze sicher bei höchstens 6 USD hält, ist keine erneute Kostenfreigabe
 erforderlich.
 

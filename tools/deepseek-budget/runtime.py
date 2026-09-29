@@ -14,7 +14,8 @@ STREAM_TIMEOUT_SECONDS = 7200
 PEAK_EXIT_CODE = 79
 PEAK_MESSAGE = ('UTC-Peak-Sperre: Montag-Freitag 01:00-04:00 und 06:00-10:00 UTC '
                 '(Tuerkei 04:00-07:00 und 09:00-13:00) startet keine neue autonome '
-                'Helmut-KI-Arbeit. Kein Provider-Versand; nach Peak manuell fortsetzen.')
+                'Helmut-KI-Arbeit. Kein Provider-Versand; geplante Automationen '
+                'starten erst im naechsten Off-Peak-Fenster wieder.')
 MODES = {f'{family}-{access}{suffix}': (model, effort, sandbox)
          for family, model in [('flash', 'deepseek-flash'), ('pro', 'deepseek-v4-pro')]
          for access, sandbox in [('read', 'read-only'), ('write', 'workspace-write')]
@@ -51,7 +52,7 @@ def exit_code(failure):
 
 def config(path=CONFIG):
     c = json.loads(Path(path).read_text())
-    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_limit_usd'] != 15 or c['max_retries'] != 1:
+    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_limit_usd'] != 10 or c['max_retries'] != 1:
         raise ValueError('Ungueltige Budgetkonfiguration')
     if c['retry_multiplier'] != 2 or c['provider_max_output_tokens'] != 393216 or c['provider_context_tokens'] != 1048576:
         raise ValueError('Ungueltige Wiederholungs-/Providergrenze')
