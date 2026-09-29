@@ -231,7 +231,7 @@ class BudgetTests(unittest.TestCase):
    with patch.object(R.urllib.request,'urlopen',return_value=Response(terminal())) as f:
     body,_=g.execute({'model':g.model,'input':'hello'})
   self.assertEqual(f.call_count,1);self.assertEqual(json.loads(body)['status'],'completed')
-  self.assertGreater(self.l.snapshot()['bound_micro_usd'],0)
+  self.assertGreater(self.l.snapshot(R.day(peak))['bound_micro_usd'],0)
   # A fresh gate has no inherited exception and must block at the same peak time.
   g2=self.gate()
   with self.at(peak):
@@ -244,7 +244,7 @@ class BudgetTests(unittest.TestCase):
   with self.at(peak,peak,peak):
    with patch.object(R.urllib.request,'urlopen',return_value=Response(terminal())):
     g.execute({'model':g.model,'input':'hello'})
-  snap=self.l.snapshot()
+  snap=self.l.snapshot(R.day(peak))
   expected=R.cost(self.c,g.model,terminal()['usage'],peak)
   self.assertEqual(snap['by_state'].get('spent'),expected)
  def test_entry_into_peak_after_reservation_releases_and_skips_provider(self):
