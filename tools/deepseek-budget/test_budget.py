@@ -141,10 +141,17 @@ class BudgetTests(unittest.TestCase):
   self.assertEqual(R.Ledger(p,read_only=True).snapshot(D)['bound_micro_usd'],0)
   self.assertEqual(p.stat().st_mode & 0o777,0o400)
  def test_preapproval_guard_blocks_token_retry_without_second_request(self):
-  g=self.gate();est=R.estimate(self.c,g.model,{'model':g.model,'input':'hello','reasoning':{'effort':g.effort},'max_output_tokens':g.output},g.output)
-  self.l.seed('nearly-prompt',R.day(),18000000-est)
+  g=self.gate()
+  p1={'model':g.model,'input':'hello','reasoning':{'effort':g.effort},'max_output_tokens':g.output}
+  p2={**p1,'max_output_tokens':min(self.c['provider_max_output_tokens'],g.output*2)}
+  est1=R.estimate(self.c,g.model,p1,g.output);est2=R.estimate(self.c,g.model,p2,p2['max_output_tokens'])
+  prompt=R.micro(self.c['daily_approval_prompt_usd'])
+  # First request remains below the prompt threshold; after its tiny confirmed
+  # usage, the larger retry reservation would cross the threshold and must stop.
+  self.l.seed('nearly-prompt',R.day(),prompt-est2+1)
   with patch.object(R.urllib.request,'urlopen',return_value=Response(terminal('incomplete','max_output_tokens'))) as f:
    with self.assertRaises(R.BudgetError) as cm:g.execute({'model':g.model,'input':'hello'})
+  self.assertLess(prompt-est2+1+est1,prompt)
   self.assertEqual(f.call_count,1);self.assertEqual(cm.exception.code,'daily_extension_go_required')
  def test_reservation_anomaly_freezes_future_processes(self):
   run=self.l.new_run(2000000);ident=self.l.reserve(run,10,self.c,[D])
