@@ -34,20 +34,20 @@ class BudgetTests(unittest.TestCase):
    with self.l.connect() as db:ceiling=db.execute('select ceiling from runs where id=?',(g.run,)).fetchone()[0]
    self.assertEqual(ceiling,R.micro({'flash-high':2,'flash-max':3,'pro-high':4,'pro-max':5}[('flash' if m.startswith('flash') else 'pro')+'-'+effort]))
  def test_daily_cap_exact_inclusive(self):
-  run=self.l.new_run(20000000);self.l.seed('old',D,9000000)
+  run=self.l.new_run(20000000);self.l.seed('old',D,19000000)
   self.l.reserve(run,1000000,self.c,[D])
   with self.assertRaises(R.BudgetError) as cm:self.l.reserve(run,1,self.c,[D])
   self.assertEqual(cm.exception.code,'daily_go_required')
  def test_concurrent_reservations_cannot_overspend(self):
-  run=self.l.new_run(20000000);barrier=threading.Barrier(8);out=[]
+  run=self.l.new_run(30000000);barrier=threading.Barrier(12);out=[]
   def f():
    barrier.wait()
    try:self.l.reserve(run,2000000,self.c,[D]);out.append(True)
    except R.BudgetError:out.append(False)
-  ts=[threading.Thread(target=f) for _ in range(8)]
+  ts=[threading.Thread(target=f) for _ in range(12)]
   for t in ts:t.start()
   for t in ts:t.join()
-  self.assertEqual(sum(out),5);self.assertEqual(self.l.snapshot(D)['bound_micro_usd'],10000000)
+  self.assertEqual(sum(out),10);self.assertEqual(self.l.snapshot(D)['bound_micro_usd'],20000000)
  def test_finished_call_releases_unused_reservation(self):
   run=self.l.new_run(2000000);i=self.l.reserve(run,1000000,self.c,[D,'2026-09-28'])
   self.l.settle(i,1234,[D]);self.assertEqual(self.l.snapshot(D)['bound_micro_usd'],1234)
@@ -59,16 +59,16 @@ class BudgetTests(unittest.TestCase):
   run=self.l.new_run(2000000);i=self.l.reserve(run,1000000,self.c,[D,'2026-09-28']);self.l.settle(i,2345,[D,'2026-09-28'])
   self.assertEqual(self.l.snapshot('2026-09-28')['bound_micro_usd'],2345)
  def test_no_default_daily_raise(self):
-  self.assertEqual(R.limit(self.c,D),10000000)
+  self.assertEqual(R.limit(self.c,D),20000000)
   # Approval without an explicit operator release is never enough.
-  self.c['day_approvals'][D]={'usd':20}
+  self.c['day_approvals'][D]={'usd':30}
   with self.assertRaises(ValueError):R.limit(self.c,D)
-  # A preserved approval at or below the new default is redundant, not invalid.
+  # A preserved approval at or below the new hard default is redundant, not invalid.
   self.c['day_approvals'][D]={'usd':8,'explicit_user_approval':'Betreiber-GO fuer genau diesen UTC-Tag'}
-  self.assertEqual(R.limit(self.c,D),10000000)
-  # A real, dated operator release above the default raises only its own UTC date.
-  self.c['day_approvals'][D]={'usd':20,'explicit_user_approval':'Betreiber-GO fuer genau diesen UTC-Tag'}
-  self.assertEqual(R.limit(self.c,D),20000000);self.assertEqual(R.limit(self.c,'2026-09-28'),10000000)
+  self.assertEqual(R.limit(self.c,D),20000000)
+  # A real, dated operator release above the hard default raises only its own UTC date.
+  self.c['day_approvals'][D]={'usd':30,'explicit_user_approval':'Betreiber-GO fuer genau diesen UTC-Tag'}
+  self.assertEqual(R.limit(self.c,D),30000000);self.assertEqual(R.limit(self.c,'2026-09-28'),20000000)
  def test_single_budget_retry_then_stop(self):
   run=self.l.new_run(2000000);self.assertTrue(self.l.retry(run,self.c,'Kostenlimit'));self.assertFalse(self.l.retry(run,self.c,'Tokenlimit'))
  def test_cached_and_reasoning_cost_not_double_counted(self):
@@ -98,7 +98,7 @@ class BudgetTests(unittest.TestCase):
    with self.assertRaises(R.BudgetError):g.execute({'model':g.model,'input':'hello'})
   self.assertEqual(f.call_count,2)
  def test_day_limit_never_sends_upstream(self):
-  self.l.seed('full',R.day(),10000000);g=self.gate()
+  self.l.seed('full',R.day(),20000000);g=self.gate()
   with patch.object(R.urllib.request,'urlopen') as f:
    with self.assertRaises(R.BudgetError) as cm:g.execute({'model':g.model,'input':'hello'})
   self.assertEqual(cm.exception.code,'daily_go_required');f.assert_not_called()
@@ -106,12 +106,14 @@ class BudgetTests(unittest.TestCase):
   g=self.gate()
   with patch.object(R.urllib.request,'urlopen',side_effect=OSError('test')) as f:
    with self.assertRaises(R.BudgetError):g.execute({'model':g.model,'input':'hello'})
-  self.assertEqual(f.call_count,1);self.assertGreater(self.l.snapshot()['bound_micro_usd'],0)
+  snap=self.l.snapshot();self.assertEqual(f.call_count,1);self.assertGreater(snap['bound_micro_usd'],0)
+  self.assertGreater(snap['by_state'].get('unknown',0),0);self.assertEqual(snap['by_state'].get('reserved',0),0)
  def test_missing_usage_holds_reservation(self):
   g=self.gate();t=terminal();t.pop('usage')
   with patch.object(R.urllib.request,'urlopen',return_value=Response(t)):
    with self.assertRaises(R.BudgetError):g.execute({'model':g.model,'input':'hello'})
-  self.assertGreater(self.l.snapshot()['bound_micro_usd'],0)
+  snap=self.l.snapshot();self.assertGreater(snap['bound_micro_usd'],0)
+  self.assertGreater(snap['by_state'].get('unknown',0),0);self.assertEqual(snap['by_state'].get('reserved',0),0)
  def test_model_routing_cannot_change(self):
   g=self.gate()
   with patch.object(R.urllib.request,'urlopen') as f:
@@ -133,7 +135,7 @@ class BudgetTests(unittest.TestCase):
   self.assertEqual(p.stat().st_mode & 0o777,0o400)
  def test_daily_cap_blocks_token_retry_without_second_request(self):
   g=self.gate();est=R.estimate(self.c,g.model,{'model':g.model,'input':'hello','reasoning':{'effort':g.effort},'max_output_tokens':g.output},g.output)
-  self.l.seed('nearly-full',R.day(),10000000-est)
+  self.l.seed('nearly-full',R.day(),20000000-est)
   with patch.object(R.urllib.request,'urlopen',return_value=Response(terminal('incomplete','max_output_tokens'))) as f:
    with self.assertRaises(R.BudgetError) as cm:g.execute({'model':g.model,'input':'hello'})
   self.assertEqual(f.call_count,1);self.assertEqual(cm.exception.code,'daily_go_required')
@@ -160,17 +162,29 @@ class BudgetTests(unittest.TestCase):
   image={'input':[{'role':'user','content':[{'type':'input_image','image_url':'https://example.test/img'}]}]}
   self.assertLess(R.estimate(self.c,'deepseek-flash',ordinary,131072),200000)
   self.assertGreater(R.estimate(self.c,'deepseek-flash',image,131072),450000)
- def test_daily_limit_is_ten_usd_and_config_rejects_others(self):
-  self.assertEqual(R.limit(self.c,D),10000000)
+ def test_warning_ten_hard_twenty_and_config_rejects_others(self):
+  self.assertEqual(self.c['daily_warning_usd'],10);self.assertEqual(R.limit(self.c,D),20000000)
   p=Path(self.tmp.name)/'old.json'
-  for wrong in (5,15,20):
+  for wrong in (5,10,15):
    c=copy.deepcopy(BASE);c['daily_limit_usd']=wrong;p.write_text(json.dumps(c))
    with self.assertRaises(ValueError):R.config(p)
+  for wrong in (0,20,25):
+   c=copy.deepcopy(BASE);c['daily_warning_usd']=wrong;p.write_text(json.dumps(c))
+   with self.assertRaises(ValueError):R.config(p)
+ def test_warning_does_not_block_and_status_is_transparent(self):
+  self.l.seed('warn',D,10000000);run=self.l.new_run(2000000)
+  ident=self.l.reserve(run,1,self.c,[D]);snap=self.l.snapshot(D,c=self.c)
+  self.assertTrue(snap['warning_reached']);self.assertEqual(snap['confirmed_micro_usd'],10000000)
+  self.assertEqual(snap['reserved_micro_usd'],1);self.assertEqual(snap['unknown_micro_usd'],0)
+  self.assertEqual(snap['available_to_warning_micro_usd'],0)
+  self.assertEqual(snap['available_to_hard_limit_micro_usd'],9999999)
+  self.l.release(ident)
  def test_run_caps_and_extension_unchanged(self):
   self.assertEqual(self.c['budgets_usd'],{'flash-high':2,'flash-max':3,'pro-high':4,'pro-max':5})
   self.assertEqual(self.c['retry_multiplier'],2);self.assertEqual(self.c['max_retries'],1)
   self.assertEqual(self.c['output_tokens'],{'high':131072,'max':196608})
-  self.assertEqual(R.config(Path(__file__).with_name('budget.json'))['daily_limit_usd'],10)
+  cfg=R.config(Path(__file__).with_name('budget.json'))
+  self.assertEqual(cfg['daily_warning_usd'],10);self.assertEqual(cfg['daily_limit_usd'],20)
  def test_peak_windows_and_weekend_exact(self):
   monday=R.dt.datetime(2026,9,28,tzinfo=R.dt.timezone.utc)
   expected={0:False,1:True,2:True,3:True,4:False,5:False,6:True,7:True,9:True,10:False,23:False}
