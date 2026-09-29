@@ -65,6 +65,9 @@ const TABLES = {
   decisions: "id",
   briefings: "id",
   matching_results: "id",
+  // Migration 20260728_matching_audit.sql: profilgebundenes Auditprotokoll der
+  // Matching-Laeufe. Der stabile Primaerschluessel id dient auch als order-Spalte.
+  matching_runs: "id",
   matching_weights: "user_id",
   profile_embeddings: "user_id",
   office_outputs: "id",
