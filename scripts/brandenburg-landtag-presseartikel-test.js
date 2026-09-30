@@ -265,6 +265,111 @@ console.log("PASS Kopfzeile eindeutig, nur Tag, ohne erfundene Uhrzeit");
   console.log("PASS kombinierte Kopfzeile und Termintabelle eng gebunden; Strukturdrift fail closed");
 }
 
+// 6c) ID-gebundener Sonderpfad der realen Programm-Meldung 49674 auf dem
+// normalen /de/meldungen-Pfad. Nur die exakt belegte Kopf-/14-Zeilen-Grammatik
+// darf die bestehende Standardform verlassen.
+{
+  const programmUrl = "https://www.landtag.brandenburg.de/de/meldungen/"
+    + "neuer_flyer_zur_langen_nacht_des_parlaments_am_11._september_veroeffentlicht/49674";
+  const titel = "Neuer Flyer zur Langen Nacht des Parlaments am 11. September veröffentlicht";
+  const programmKopf = '<p style="margin-bottom: 36.0pt;">'
+    + "<em>Potsdam, 28. August 2026 / 122<br><br></em>"
+    + "Der neue Flyer fasst die Angebote am <strong>Freitag, 11. September 2026</strong> "
+    + "von <strong>17 bis 23 Uhr</strong> zusammen.<br>\n<br>\nDas Veranstaltungsprogramm:</p>";
+  const programmZeilen = Array.from({ length: 14 }, (_, index) => {
+    const stunde = String(index + 9).padStart(2, "0");
+    const zusatz = index % 2 === 0 ? "Plenarsaal" : "";
+    return `<tr><td><strong>${stunde}:00 Uhr</strong> Programmpunkt ${index + 1}</td><td>${zusatz}</td></tr>`;
+  });
+  const tabelleAus = zeilen => `<table><tbody>\n${zeilen.join("\n")}\n</tbody></table>`;
+  const programmTabelle = tabelleAus(programmZeilen);
+  const pdf = '<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>';
+  const eingabeMit = (optionen = {}) => {
+    const url = optionen.url || programmUrl;
+    const kopf = optionen.kopf === undefined ? programmKopf : optionen.kopf;
+    const tabelle = optionen.tabelle === undefined ? programmTabelle : optionen.tabelle;
+    const nachAbsatz = optionen.nachAbsatz === undefined
+      ? "<p>Weitere Hinweise zum Besuch.</p>" : optionen.nachAbsatz;
+    const pdfAbsatz = optionen.pdfAbsatz === undefined ? pdf : optionen.pdfAbsatz;
+    return seite({ url, titel, mainInhalt: `<nav></nav>\n<h1>${titel}</h1>\n${kopf}\n${tabelle}\n${nachAbsatz}\n${pdfAbsatz}` }).eingabe;
+  };
+
+  const ergebnis = pruefePresseartikel(eingabeMit());
+  A.equal(ergebnis.url, programmUrl);
+  A.equal(ergebnis.publikationstag, "2026-08-28");
+  A.equal(ergebnis.kopfzeile, "Potsdam, 28. August 2026 / 122");
+  A.equal(ergebnis.volltext, [
+    "Der neue Flyer fasst die Angebote am Freitag, 11. September 2026 von 17 bis 23 Uhr zusammen. Das Veranstaltungsprogramm:",
+    ...programmZeilen.map((_, index) => {
+      const stunde = String(index + 9).padStart(2, "0");
+      const zusatz = index % 2 === 0 ? " Plenarsaal" : "";
+      return `${stunde}:00 Uhr Programmpunkt ${index + 1}${zusatz}`;
+    }),
+    "Weitere Hinweise zum Besuch.\n"
+  ].join("\n\n"));
+
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("margin-bottom: 36.0pt;", "margin-bottom: 36pt;") }),
+    "Programm-Kopf mit geaendertem style");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace(' style="margin-bottom: 36.0pt;"', "") }),
+    "Programm-Kopf ohne style");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace('style="margin-bottom: 36.0pt;"',
+    'style="margin-bottom: 36.0pt;" style="margin-bottom: 36.0pt;"') }),
+  "Programm-Kopf mit doppeltem style");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("Potsdam, 28. August 2026 / 122",
+    "Potsdam, 29. August 2026 / 122") }), "abweichende Programm-Kopfzeile");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("<br><br></em>", "<br></em>") }),
+    "Programm-Kopf mit fehlendem em-Umbruch");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("<br><br></em>", '<br class="x"><br></em>') }),
+    "Programm-Kopf mit attributiertem em-Umbruch");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("zusammen.<br>\n<br>", "zusammen.<br>") }),
+    "Programm-Kopf mit fehlendem Abschlussumbruch");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("<strong>Freitag", "Freitag").replace("2026</strong>", "2026") }),
+    "Programm-Kopf mit fehlendem strong");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("<strong>Freitag", '<strong class="x">Freitag') }),
+    "Programm-Kopf mit strong-Attribut");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("Freitag, 11.", "<em>Freitag</em>, 11.") }),
+    "Programm-Kopf mit verschachteltem strong-Inhalt");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("Der neue Flyer", '<a href="/x">Der neue Flyer</a>') }),
+    "Link im Programm-Kopf");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("Der neue Flyer", "<!--x-->Der neue Flyer") }),
+    "Kommentar im Programm-Kopf");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("Der neue Flyer", "<script>x()</script>Der neue Flyer") }),
+    "Skript im Programm-Kopf");
+  erwarteAbbruch(eingabeMit({ kopf: programmKopf.replace("Das Veranstaltungsprogramm:", "Das Programm:") }),
+    "abweichender finaler Programmtext");
+
+  erwarteAbbruch(eingabeMit({ tabelle: "" }), "fehlende Programmtabelle");
+  erwarteAbbruch(eingabeMit({ tabelle: `${programmTabelle}\n${programmTabelle}` }),
+    "doppelte Programmtabelle");
+  erwarteAbbruch(eingabeMit({ tabelle: programmTabelle.replace("Programmpunkt 1", "Programmpunkt 1<table><tbody></tbody></table>") }),
+    "verschachtelte Programmtabelle");
+  erwarteAbbruch(eingabeMit({ tabelle: tabelleAus(programmZeilen.slice(0, 13)) }),
+    "Programmtabelle mit fehlender Zeile");
+  erwarteAbbruch(eingabeMit({ tabelle: tabelleAus([...programmZeilen,
+    "<tr><td><strong>23:00 Uhr</strong> Zusatz</td><td></td></tr>"]) }),
+  "Programmtabelle mit zusaetzlicher Zeile");
+  erwarteAbbruch(eingabeMit({ tabelle: programmTabelle.replace("<tr><td><strong>09:00", "<tr hidden><td><strong>09:00") }),
+    "versteckte Programmzeile");
+  erwarteAbbruch(eingabeMit({ tabelle: programmTabelle.replace("Programmpunkt 1", '<a href="/x">Programmpunkt 1</a>') }),
+    "Link in Programmtabelle");
+  erwarteAbbruch(eingabeMit({ tabelle: programmTabelle.replace("Programmpunkt 1", "Programm<!--x-->punkt 1") }),
+    "Kommentar in Programmtabelle");
+  erwarteAbbruch(eingabeMit({ tabelle: programmTabelle.replace("Programmpunkt 1", "Programm<script>x()</script>punkt 1") }),
+    "Skript in Programmtabelle");
+  erwarteAbbruch(eingabeMit({ tabelle: programmTabelle.replace("09:00 Uhr", "9:00 Uhr") }),
+    "malformierte Programmzeit");
+  erwarteAbbruch(eingabeMit({ tabelle: programmTabelle.replace("<td>Plenarsaal</td>", "<td>Plenarsaal ab 10:30 Uhr</td>") }),
+    "zweite Zeit in Programmzeile");
+  erwarteAbbruch(eingabeMit({ nachAbsatz: "" }), "fehlender normaler Nachabsatz");
+  erwarteAbbruch(eingabeMit({ nachAbsatz: "<p>A.</p><p>B.</p>" }), "zusaetzlicher normaler Nachabsatz");
+  erwarteAbbruch(eingabeMit({ pdfAbsatz: "" }), "fehlende PDF-Liste");
+  erwarteAbbruch(eingabeMit({ url: programmUrl.replace(/49674$/, "49675") }),
+    "Programmstruktur auf anderer Meldungs-ID");
+  erwarteAbbruch(eingabeMit({ url: "https://www.landtag.brandenburg.de/de/aktuelles/neuigkeiten/aktuelle_meldungen/49674" }),
+    "Programmstruktur auf aktuellem Sonderpfad");
+  console.log("PASS Programm-Meldung 49674 exakt an Kopf, 14-Zeilen-Tabelle und Nachlauf gebunden");
+}
+
 // 7) Sachabsaetze: versteckt, leer, doppelt, Blockfremdinhalt, PDF-Leak.
 erwarteAbbruch(seite({ absaetze: ["<span hidden>Versteckt</span>"] }).eingabe, "versteckter Sachabsatz");
 erwarteAbbruch(seite({ absaetze: [""] }).eingabe, "leerer Sachabsatz", "sachabsatz-leer");
