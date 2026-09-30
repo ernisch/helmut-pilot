@@ -8719,11 +8719,19 @@ async function handleDebugRequest(request, response, url) {
     });
   }
 
-  // GET /api/debug/crawl?politicianId=test-mdb&secret=... — Crawl ausfuehren
+  // POST /api/debug/crawl?politicianId=test-mdb&secret=... — Crawl ausfuehren
   if (url.pathname === "/api/debug/crawl") {
     return handleAsync(response, async () => {
-      const result = await runSourceCrawl(politicianId);
-      return { debug: true, politicianId, result };
+      // NO-PAID-MODELL-GRENZE (Operator-only, fail-closed): dieser Pfad ist bereits
+      // global admin-/secret-geschuetzt (isDebugSecretOk). NUR bei exakt
+      // `noPaidModel=1` wird der Schalter weitergereicht; jeder andere Wert (0, true,
+      // leer, fehlend) bedeutet Normalpfad. Die regulaeren Pfade /api/crawl/run,
+      // /api/pipeline/run und alle Cron-Aufrufe setzen die Option nie.
+      const noPaidModel = url.searchParams.get("noPaidModel") === "1";
+      const result = noPaidModel
+        ? await runSourceCrawl(politicianId, { noPaidModel: true })
+        : await runSourceCrawl(politicianId);
+      return { debug: true, politicianId, noPaidModel, result };
     });
   }
 
