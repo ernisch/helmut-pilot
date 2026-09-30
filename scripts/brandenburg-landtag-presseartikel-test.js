@@ -423,12 +423,59 @@ console.log("PASS Sachabsaetze vollstaendig, geschlossen und ohne Fremd-/PDF-Inh
     '<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>'
   ].join("\n") });
   A.match(pruefePresseartikel(punktzeit.eingabe).volltext, /19\.30 Uhr\n\nAbendtermin/);
+  const termin49670 = "https://www.landtag.brandenburg.de/de/meldungen/"
+    + "termine_des_landtages_brandenburg_in_der_zeit_vom_29._august_bis_5._september_2026/49670";
+  const ohneWochentag = seite({ url: termin49670, mainInhalt: [
+    "<nav></nav>", "<h1>" + t + "</h1>", "<p><em>Potsdam, 23. September 2026 / 134</em></p>",
+    "29. August 2026", '<p class="time-line">11:00 Uhr</p>', "<p>Amtlicher Termin.</p>",
+    '<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>'
+  ].join("\n") });
+  A.match(pruefePresseartikel(ohneWochentag.eingabe).volltext,
+    /29\. August 2026\n\n11:00 Uhr\n\nAmtlicher Termin/);
+  const bereichMitBeidseitigemJahr = seite({ url: termin49670, mainInhalt: [
+    "<nav></nav>", "<h1>" + t + "</h1>", "<p><em>Potsdam, 23. September 2026 / 134</em></p>",
+    "Mittwoch, 2. September 2026 bis Freitag, 4. September 2026", "<p>Amtlicher Mehrtagetermin.</p>",
+    '<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>'
+  ].join("\n") });
+  A.match(pruefePresseartikel(bereichMitBeidseitigemJahr.eingabe).volltext,
+    /Mittwoch, 2\. September 2026 bis Freitag, 4\. September 2026\n\nAmtlicher Mehrtagetermin/);
   erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${t}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\nUngebundener Text\n<p class="time-line">10:00 Uhr</p>\n<p>A</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>` }).eingabe,
   "beliebter Text vor Uhrzeitzeile", "fremdinhalt-zwischen-absaetzen");
   erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${t}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\nMontag, 28. September 2026\n<p class="time-line">10 Uhr</p>\n<p>A</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>` }).eingabe,
   "ungueltige Uhrzeitzeile", "fremdinhalt-zwischen-absaetzen");
+  erwarteAbbruch(seite({ url: termin49670, mainInhalt: `<nav></nav>\n<h1>${t}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n31. September 2026\n<p class="time-line">10:00 Uhr</p>\n<p>A</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>` }).eingabe,
+  "ungueltiger kopfloser Termin-Tag", "fremdinhalt-zwischen-absaetzen");
+  erwarteAbbruch(seite({ url: termin49670, mainInhalt: `<nav></nav>\n<h1>${t}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n29 August 2026\n<p class="time-line">10:00 Uhr</p>\n<p>A</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>` }).eingabe,
+  "falsch formatierter kopfloser Termin-Tag", "fremdinhalt-zwischen-absaetzen");
+  erwarteAbbruch(seite({ url: termin49670, mainInhalt: `<nav></nav>\n<h1>${t}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n29. August 2026\n<p class="anderer-termin">10:00 Uhr</p>\n<p>A</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>` }).eingabe,
+  "kopfloser Termin-Tag vor falschem Folgeabsatz", "fremdinhalt-zwischen-absaetzen");
+  erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${t}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n29. August 2026\n<p class="time-line">10:00 Uhr</p>\n<p>A</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>` }).eingabe,
+  "kopfloser Termin-Tag auf anderer Artikel-ID", "fremdinhalt-zwischen-absaetzen");
 }
 console.log("PASS Termin-Tagesueberschriften nur vor strikter Uhrzeitzeile und mit Volltextbindung");
+
+// 7c) Der einzige belegte Leerabsatz der Terminmeldung 49670 steht exakt vor
+// ihrem Schlussvorbehalt; andere leere oder verschobene Absätze bleiben gesperrt.
+{
+  const t = seite().titel;
+  const vor = "<nav></nav>\n<h1>" + t + "</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n<p>A</p>";
+  const pdf = '<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>';
+  const vorbehalt = "<p><em><strong>Veränderungen und Ergänzungen vorbehalten!</strong></em></p>";
+  const termin49670 = "https://www.landtag.brandenburg.de/de/meldungen/"
+    + "termine_des_landtages_brandenburg_in_der_zeit_vom_29._august_bis_5._september_2026/49670";
+  A.match(pruefePresseartikel(seite({ url: termin49670,
+    mainInhalt: `${vor}\n<p></p>\n${vorbehalt}\n${pdf}` }).eingabe).volltext,
+    /^A\n\nVeränderungen und Ergänzungen vorbehalten!\n$/);
+  erwarteAbbruch(seite({ url: termin49670, mainInhalt: `${vor}\n<p></p>\n<p>Anderer Hinweis.</p>\n${pdf}` }).eingabe,
+    "leerer Absatz vor anderem Hinweis", "sachabsatz-leer");
+  erwarteAbbruch(seite({ url: termin49670, mainInhalt: `${vor}\n<p></p>\n<p></p>\n${vorbehalt}\n${pdf}` }).eingabe,
+    "zweiter leerer Absatz", "sachabsatz-leer");
+  erwarteAbbruch(seite({ url: termin49670, mainInhalt: `${vor}\n<p class="leer"></p>\n${vorbehalt}\n${pdf}` }).eingabe,
+    "attributierter leerer Absatz", "sachabsatz-leer");
+  erwarteAbbruch(seite({ mainInhalt: `${vor}\n<p></p>\n${vorbehalt}\n${pdf}` }).eingabe,
+    "leerer Absatz auf anderer Artikel-ID", "sachabsatz-leer");
+}
+console.log("PASS Leerabsatz nur vor gebundenem Termin-Schlussvorbehalt");
 
 // 8) PDF-Downloadliste: nicht letzter Block, doppelt, Fremd-Leak, Ausbruch aus main.
 erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>\n<p>Nachlauf</p>` }).eingabe,
