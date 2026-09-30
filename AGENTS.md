@@ -631,11 +631,14 @@ Der Start eines klar benannten Sprints autorisiert die zugehörigen grünen Merg
 und die dadurch regulär ausgelösten Vercel Production Deployments innerhalb dieses
 Sprintumfangs.
 
-Diese Freigabe umfasst jedoch nicht automatisch die folgenden besonders geschützten
-Production Aktionen. Sie benötigen weiterhin ein ausdrückliches GO für die konkrete
-Aktion, Umgebung und den konkreten Umfang:
+Für den laufenden Weg bis zum 500er Starttor gilt zusätzlich die dauerhafte
+Production Autopilot Freigabe vom 01.10.2026 weiter unten. Innerhalb ihres exakt
+benannten Umfangs ist kein neues GO je einzelner Production Aktion nötig. Aktionen,
+die dort ausdrücklich ausgeschlossen sind oder den Umfang erweitern, benötigen
+weiterhin ein ausdrückliches GO für die konkrete Aktion, Umgebung und den konkreten
+Umfang.
 
-Dies betrifft insbesondere:
+Besonders geschützt bleiben insbesondere:
 
 Migrationen
 
@@ -675,7 +678,7 @@ Aktivierung ist keine Testfreigabe.
 
 Testfreigabe ist keine Freigabe für eine weitere Teststufe.
 
-## Aktueller Betreiberauftrag26.09.2026
+## Historischer Betreiberauftrag 26./27.09.2026
 
 Die ausdrueckliche Freigabe zur autonomen Roadmap-Arbeit einschliesslich des
 konkret angefragten16er Production-Imports und begrenzter Modelltests ist in
@@ -749,6 +752,46 @@ Vorarbeiten fortsetzen. Keine Nebenprojekte oder externen Nachrichten aus dieser
 Freigabe ableiten; keine neuen Abonnements oder dauerhaften kostenpflichtigen
 Ressourcen. Aktivierung und500er Test benoetigen weiterhin ein neues GO.
 
+## Dauerhafte Production Autopilot Freigabe 01.10.2026
+
+Der Betreiber hat am 01.10.2026 die Production Autopilot Freigabe dauerhaft
+erweitert. Sie ist nicht auf Nacht oder Abend beschränkt. Sie gilt bei jedem
+zulässigen Arbeitslauf bis unmittelbar vor Aktivierung und Start des eigentlichen
+500er Production Tests. Die separate Peak Zeit Regel bleibt davon unberührt:
+diese Freigabe ist keine automatische Peak Ausnahme.
+
+Innerhalb des bestehenden Helmut Roadmap Auftrags bis zum 500er Starttor darf Terra
+ohne weitere Einzel Gos selbstständig die notwendigen, klar gebundenen und
+reversiblen Production Schritte ausführen. Dazu gehören insbesondere geprüfte
+Production Datenkorrekturen und Importe innerhalb der bereits definierten
+500er Zielkohorte, reguläre Merges und Deployments, notwendige rein technische
+Production Nachkontrollen sowie begrenzte kostenpflichtige Production Modell und
+API Aufrufe innerhalb des unten festgelegten Kostenrahmens.
+
+Vor jeder schreibenden Production Aktion werden Änderung, Umgebung, erwartete
+Wirkung, Risiko, rein lesende Nachkontrolle und Rückweg konkret festgelegt.
+Danach darf innerhalb dieser Dauerfreigabe ohne weitere Nutzerbestätigung
+ausgeführt und weitergearbeitet werden. Ein normaler behebbarer Fehler ist kein
+Freigabestopp: Ursache prüfen, sicher korrigieren, gezielt testen und fortsetzen.
+
+Die Production Autopilot Freigabe hat einen harten Kostenrahmen von **20 USD
+kumulativ für diesen autonomen Production Auftrag** und zugleich **höchstens
+20 USD je UTC Tag**, jeweils einschließlich offener Reservierungen und Bindungen.
+Ein UTC Tageswechsel setzt den kumulativen 20 USD Rahmen nicht zurück. Lokale
+DeepSeek Kosten bleiben getrennt und folgen ihrem eigenen Kostenwächter.
+
+Nicht von dieser Dauerfreigabe umfasst sind: Aktivierung oder Deaktivierung von
+Profilen, Start oder Wiederholung des eigentlichen 500er Production Tests,
+Profil Löschung, irreversible oder destruktive Production Datenänderungen,
+Production Migrationen, Änderungen von Cron Zeit oder Reihenfolge, Secrets oder
+Umgebungsvariablen, Azure Konfiguration, Erhöhung der 20 USD Grenzen, neue
+kostenpflichtige Ressourcen oder Abonnements, externe Nachrichten sowie jede
+Erweiterung auf ein neues Problemfeld außerhalb des bestehenden Wegs zum 500er
+Starttor. Dafür bleibt ein neues ausdrückliches GO nötig.
+
+Provisionierung oder Import ist keine Aktivierungsfreigabe. Aktivierung ist keine
+Testfreigabe. Der 500er Test startet erst nach dem weiterhin getrennten Betreiber GO.
+
 ## Kritische Aktionen
 
 Vor jeder kritischen Aktion kurz feststellen:
@@ -770,18 +813,17 @@ Nur im konkret freigegebenen Umfang handeln.
 
 ## Kostenpflichtige Modell- und API-Aufrufe
 
-Innerhalb eines gestarteten, klar begrenzten Helmut-Sprints sind notwendige
-variable Modell- und API-Kosten bis insgesamt **6 USD je UTC Tag** vorab
-freigegeben. Alle Production-Anbieter und auftragsbezogenen kostenpflichtigen Aufrufe
-zaehlen gemeinsam gegen diese Tagesgrenze; lokale DeepSeek-Agentenarbeit folgt
-ausschliesslich dem oben ausdruecklich freigegebenen separaten10-USD-Tagesdeckel. Solange der nächste Aufruf die
-kumulative Tagesgrenze sicher bei höchstens 6 USD hält, ist keine erneute Kostenfreigabe
-erforderlich.
+Innerhalb des dauerhaften Production Autopiloten sind notwendige variable Modell-
+und API-Kosten bis **20 USD kumulativ für den autonomen Production Auftrag** und
+zugleich bis **20 USD je UTC Tag** vorab freigegeben. Alle Production Anbieter und
+auftragsbezogenen kostenpflichtigen Aufrufe zählen gemeinsam gegen beide Grenzen;
+offene Reservierungen und Bindungen zählen mit. Ein UTC Tageswechsel setzt den
+kumulativen 20 USD Rahmen nicht zurück. Lokale DeepSeek Agentenarbeit bleibt davon
+getrennt und folgt ausschließlich ihrem eigenen Kostenwächter.
 
-Vor einem Aufruf, der die kumulative Tagesgrenze überschreiten
-könnte, stoppen und eine ausdrückliche Freigabe einholen. Der technische
-Tagesriegel von 6 USD ist ausdrücklich freigegeben und darf nicht still erhöht oder umgangen
-werden.
+Vor einem Aufruf, der eine der beiden 20 USD Grenzen überschreiten könnte, stoppen
+und eine ausdrückliche Freigabe einholen. Die Grenzen dürfen nicht still erhöht,
+zurückgesetzt oder umgangen werden.
 
 Nicht von dieser Dauerfreigabe umfasst sind Abonnements, Plan-Upgrades,
 dauerhaft laufende oder wiederkehrend kostenpflichtige Ressourcen, neue
