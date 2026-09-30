@@ -80,8 +80,8 @@ const PFLICHT_TABELLEN = [
     PFLICHT_TABELLEN.every((t) => exp.tabellen && exp.tabellen[t] !== undefined),
     "fehlend: " + PFLICHT_TABELLEN.filter((t) => !exp.tabellen || exp.tabellen[t] === undefined).join(","));
   check("V3-Export liefert echte Zeilen", Array.isArray(exp.tabellen.decisions) && exp.tabellen.decisions.length === 2);
-  check("V3-Export: llm_usage wird ueber alle drei Zuordnungsspalten gesucht",
-    calls.some((c) => c.endpoint.includes("llm_usage") && c.endpoint.includes("politician_id.eq.mdb-x") && c.endpoint.includes("user_id.eq.mdb-x") && c.endpoint.includes("profile_id.eq.mdb-x")));
+  check("V3-Export: llm_usage wird ueber die zwei vorhandenen Zuordnungsspalten gesucht",
+    calls.some((c) => c.endpoint.includes("llm_usage") && c.endpoint.includes("politician_id.eq.mdb-x") && c.endpoint.includes("user_id.eq.mdb-x") && !c.endpoint.includes("profile_id.eq.mdb-x")));
 
   calls.length = 0;
   const del = await storage.deleteProfileDataV3("mdb-x", { ready: true, request: fakeRequest });
