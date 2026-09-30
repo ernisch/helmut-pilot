@@ -136,8 +136,9 @@ Terra legt fuer jeden Worktree den exklusiven
 Datei-/Codebereich, Ziel, Abnahmekriterien und Stop-Grenze fest. Bis zu drei
 DeepSeek-Agenten duerfen gleichzeitig schreiben, wenn jeder in einem eigenen
 isolierten Worktree mit eindeutig getrenntem Datei-/Codebereich arbeitet.
-Bis zu zwei weitere Helfer duerfen parallel ausschliesslich unabhängige Lesearbeit
-uebernehmen. Schreibende und lesende Helfer zusammen bleiben auf fuenf begrenzt. Terra nutzt
+Bei drei gleichzeitig schreibenden Agenten koennen zwei weitere Helfer
+unabhaengige Lesearbeit uebernehmen; bei weniger Schreibern entsprechend mehr.
+Schreibende und lesende Helfer zusammen bleiben auf fuenf begrenzt. Terra nutzt
 weiterhin nur die kleinste sinnvolle Zahl gleichzeitig laufender Agenten.
 Ueberschneiden sich benoetigte Dateien oder Verantwortungsbereiche wesentlich,
 werden die betroffenen Aufgaben nacheinander ausgefuehrt. DeepSeek bleibt auch im Worktree ohne Commit,
