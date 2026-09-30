@@ -111,6 +111,13 @@ const PRIMAERSCHLUESSEL = Object.freeze({
 // daily_tasks, communication_drafts, user_notes, priority_changes, matching_weights, decisions,
 // topic_memory, interactions, office_outputs, briefings, profile_embeddings, matching_results)
 // und supabase/migrations/20260728_matching_audit.sql (matching_runs).
+// WICHTIG: matching_runs steht VOR matching_results, weil
+// matching_results.run_id -> matching_runs.id zeigt
+// (20260728_matching_audit.sql, "add column if not exists run_id text references
+// public.matching_runs(id)"). Werden die Zeilen in umgekehrter Reihenfolge eingefuegt,
+// verletzt ein matching_results-Satz mit nicht-null run_id den FK. matching_runs ist
+// ausserdem Voraussetzung fuer den Trigger matching_results_run_complete, der je Ergebniszeile
+// eine bereits vorhandene, vollstaendige Laufzeile verlangt.
 const FK_KINDTABELLEN = Object.freeze([
   "mandate_profiles",
   "political_items",
@@ -126,8 +133,8 @@ const FK_KINDTABELLEN = Object.freeze([
   "office_outputs",
   "briefings",
   "profile_embeddings",
-  "matching_results",
-  "matching_runs"
+  "matching_runs",
+  "matching_results"
 ]);
 const SNAPSHOT_TABELLEN = Object.freeze(["profiles", ...FK_KINDTABELLEN]);
 const V2_SNAPSHOT_DATEIEN = Object.freeze([...SNAPSHOT_TABELLEN, FREMD_TABELLE]);

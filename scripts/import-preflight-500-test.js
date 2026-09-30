@@ -105,11 +105,12 @@ function baueAltbestand() {
     { id: "dec-2", user_id: alteIds[2], knowledge_object_id: "ko-2", score: 20, status: "new" }
   );
   tabellen.matching_results.push(
-    { id: "mr-1", user_id: alteIds[0], knowledge_object_id: "ko-1", similarity: 0.5, rank: 1, matched_features: ["partei:SPD"], filters: {} },
-    { id: "mr-2", user_id: alteIds[1], knowledge_object_id: "ko-2", similarity: 0.7, rank: 1, matched_features: [], filters: {} }
+    { id: "mr-1", user_id: alteIds[0], knowledge_object_id: "ko-1", similarity: 0.5, rank: 1, matched_features: ["partei:SPD"], filters: {}, run_id: "run-1" },
+    { id: "mr-2", user_id: alteIds[1], knowledge_object_id: "ko-2", similarity: 0.7, rank: 1, matched_features: [], filters: {}, run_id: "run-2" }
   );
   tabellen.matching_runs.push(
-    { id: "run-1", user_id: alteIds[0], status: "abgeschlossen", eingabe_fingerabdruck: "fp-1", gestartet_am: "2026-02-01T06:00:00.000Z" }
+    { id: "run-1", user_id: alteIds[0], status: "vollstaendig", eingabe_fingerabdruck: "fp-1", gestartet_am: "2026-02-01T06:00:00.000Z" },
+    { id: "run-2", user_id: alteIds[1], status: "vollstaendig", eingabe_fingerabdruck: "fp-2", gestartet_am: "2026-02-01T07:00:00.000Z" }
   );
   tabellen.profile_embeddings.push(
     { user_id: alteIds[0], embedding: "[0.1, 0.2, 0.3]", profile_hash: "h1", dim: 256 },
@@ -271,6 +272,53 @@ async function main() {
       // bei sehr grossen payload-Zeilen sind korrekt und werden nicht als Fehler gewertet.
       return offene === selects && offene >= erwartet;
     })(), `profiles=${sp.dateien.profiles.zeilen} erwartete-Batches=${Math.ceil(sp.dateien.profiles.zeilen / GEN.JSONB_BATCH_MAX_ROWS)}`);
+
+  abschnitt("5b · FK-Reihenfolge im Rueckweg: matching_runs vor matching_results");
+  // Belegt: matching_results.run_id -> matching_runs.id (20260728_matching_audit.sql). Ein
+  // matching_results-Satz mit nicht-null run_id darf deshalb NICHT vor der zugehoerigen
+  // matching_runs-Zeile eingefuegt werden — sonst verletzt der Rueckweg den FK (bzw. den
+  // Trigger matching_results_run_complete) und bricht ab. Die Zeilenposition wird bewusst
+  // unabhaengig von GEN.SNAPSHOT_TABELLEN geprueft, damit genau dieser Fehler auffaellt.
+  const mrZeilen = fs.readFileSync(path.join(snapshotDir, GEN.dateiName("matching_results")), "utf8")
+    .split("\n").filter(Boolean).map((z) => JSON.parse(z));
+  check("5b.1 Der Snapshot traegt matching_results-Zeilen mit nicht-null run_id gegen matching_runs",
+    mrZeilen.length === 2 && mrZeilen.every((z) => typeof z.run_id === "string" && z.run_id.length > 0),
+    `matching_results-Zeilen=${mrZeilen.length} run_ids=${mrZeilen.map((z) => z.run_id).join("/")}`);
+  const posRun = roll.indexOf("insert into public.matching_runs (");
+  const posResult = roll.indexOf("insert into public.matching_results (");
+  check("5b.2 Rueckweg stellt matching_runs VOR matching_results wieder her (FK-sicher)",
+    posRun >= 0 && posResult >= 0 && posRun < posResult,
+    `matching_runs@${posRun} matching_results@${posResult}`);
+
+  // Fail-closed: Wird die Reihenfolge vertauscht, muss der Datei-Selbsttest die Verletzung als
+  // rollback-restore-reihenfolge melden. Der Block tauscht die beiden echten Insert-Statements
+  // im Rueckweg und prueft genau diese Erkennung.
+  const rollZeilen = roll.split("\n");
+  const blockGrenzen = (t) => {
+    const start = rollZeilen.findIndex((l) => l.startsWith(`insert into public.${t} (`));
+    if (start < 0) throw new Error(`Insert fuer ${t} im Rueckweg nicht gefunden.`);
+    let ende = start;
+    while (ende < rollZeilen.length && !/::jsonb\);\s*$/.test(rollZeilen[ende])) ende += 1;
+    return { start, ende };
+  };
+  const A = blockGrenzen("matching_runs");
+  const B = blockGrenzen("matching_results");
+  const vertauschteZeilen = rollZeilen.slice();
+  const blockRun = vertauschteZeilen.slice(A.start, A.ende + 1);
+  const blockResult = vertauschteZeilen.slice(B.start, B.ende + 1);
+  vertauschteZeilen.splice(B.start, blockResult.length, ...blockRun);
+  vertauschteZeilen.splice(A.start, blockRun.length, ...blockResult);
+  const vertauschterRollback = path.join(tmp, "vertauschte-reihenfolge-rueckweg.sql");
+  fs.writeFileSync(vertauschterRollback, vertauschteZeilen.join("\n"));
+  const reihenfolgeSelbst = await GEN.pruefeErsatzSqlDateien(
+    { forwardPfad: sql.forwardZiel, rollbackPfad: vertauschterRollback },
+    { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp }
+  );
+  check("5b.3 Fail-closed: eine vertauschte Reihenfolge wird als rollback-restore-reihenfolge erkannt",
+    reihenfolgeSelbst.some((f) => f.code === "rollback-restore-reihenfolge"),
+    reihenfolgeSelbst.map((f) => f.code).join(", ") || "keine");
+  check("5b.4 Der echte Rueckweg bleibt ohne Reihenfolge-Befund",
+    selbst.every((f) => f.code !== "rollback-restore-reihenfolge"));
 
   abschnitt("6 · Fail-closed: v2-Snapshot-Mutationen erzeugen kein SQL");
   const snapshotFaelle = [
