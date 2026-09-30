@@ -1,10 +1,10 @@
 "use strict";
 
-// Helmut — gezielter Offline-Test des strengen Lesers fuer die beiden amtlichen Berliner
+// Helmut — gezielter Offline-Test des strengen Lesers fuer die eng belegten amtlichen Berliner
 // Senats-Pressemitteilungs-Pfadfamilien AUSSERHALB des Pressearchivs.
 // =============================================================================================
 // Prueft lib/helmut/berlin-presse-sondervorlagen.js mit kleinen SYNTHETISCHEN Proben
-// (Positiv + Negativ) fuer beide Pfadfamilien sowie — falls vorhanden — gegen die drei lokalen
+// (Positiv + Negativ) fuer alle Pfadfamilien sowie — falls vorhanden — gegen die drei lokalen
 // amtlichen Originale unter /private/tmp. Fehlen die Originale, laeuft derselbe Test vollstaendig
 // weiter (CI-tauglich ohne /private/tmp); die Originalproben werden dann uebersprungen und
 // ausdruecklich als SKIP gemeldet.
@@ -37,6 +37,13 @@ const SACH = "Die synthetische Meldung beschreibt einen amtlich belegten Sachver
   + "Berliner Landesversorgung und dient ausschliesslich der lokalen Offlinepruefung dieser Vorlage.";
 const SACH2 = "Ein zweiter, ebenfalls vollstaendiger Sachabsatz derselben synthetischen Meldung "
   + "fuer die gebundene Auszugsgrenze dieser Vorlage.";
+const ASGIVA_HINWEIS = "Weitere amtliche Hinweise zu diesem Sachverhalt:";
+const ASGIVA_STARK = "Weiterführende Informationen";
+const ASGIVA_LISTE1 = "Erste amtliche Informationsseite";
+const ASGIVA_LISTE2 = "Zweite amtliche Informationsseite";
+const ASGIVA_ZUSATZ = ASGIVA_HINWEIS + `<strong>${ASGIVA_STARK}</strong>`
+  + `<ul><li><a href="/sen/asgiva/themen/information-eins">${ASGIVA_LISTE1}</a></li>`
+  + `<li><a href="https://www.berlin.de/sen/asgiva/themen/information-zwei">${ASGIVA_LISTE2}</a></li></ul>`;
 
 // SenWEB hat zwischen Artikeltext und Randbereich ein PDF-Downloadmodul; der Kontaktblock steht im
 // Randbereich. Beides darf nie Artikeltext werden.
@@ -65,7 +72,8 @@ function seite(optionen = {}) {
     rbmskzl: "/rbmskzl/aktuelles/pressemitteilungen",
     senweb: "/sen/web/presse/pressemitteilungen",
     justv: "/sen/justv/presse/pressemitteilungen",
-    kultgz: "/sen/kultgz/aktuelles/pressemitteilungen"
+    kultgz: "/sen/kultgz/aktuelles/pressemitteilungen",
+    asgiva: "/sen/asgiva/presse/pressemitteilungen"
   })[familie];
   const host = optionen.host || "www.berlin.de";
   const url = optionen.url || `https://${host}${praefix}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
@@ -117,7 +125,7 @@ function erwarteAbbruch(eingabe, label, grund) {
 // 1) Vertragsoberflaeche
 // ---------------------------------------------------------------------------------------------
 check("Version und Pfadfamilien exakt", M.VERSION === "berlin-presse-sondervorlagen-v1"
-  && M.FAMILIEN_NAMEN.join(",") === "rbmskzl,senweb,justv,kultgz");
+  && M.FAMILIEN_NAMEN.join(",") === "rbmskzl,senweb,justv,kultgz,asgiva");
 check("Vertragsausgang exakt neun Felder", M.AUSGANG_FELDER.join(",")
   === "url,pfadfamilie,titel,publikationstag,volltext,volltextHash,htmlHash,auszug,auszugHash");
 check("Auszugsgrenzen gebunden", M.MIN_AUSZUG_ZEICHEN > 0
@@ -189,6 +197,20 @@ check("Absenderformel exakt", M.ABSENDER_RB === ABSENDER);
   erwarteAbbruch(seite({ familie: "kultgz", textileInner: kontakt }).eingabe,
     "kultgz Kontaktmodul mit Sach-Mailto", "kontaktblock-im-artikel");
 }
+{
+  const textileInner = `<p>${SACH}</p><p>${SACH2}</p>${ASGIVA_ZUSATZ}`;
+  const s = seite({ familie: "asgiva", nummer: "1719881", datum: "2026-09-30", textileInner });
+  const e = M.pruefeSondervorlage(s.eingabe);
+  check("asgiva: exakte Pfadfamilie mit engem Hinweis-/Strong-/Listenblock",
+    e.pfadfamilie === "asgiva" && e.url.includes("/sen/asgiva/presse/pressemitteilungen/")
+    && e.auszug === SACH);
+  check("asgiva: Volltext bindet nur sichtbare Texte in Quellenreihenfolge",
+    e.volltext === [SACH, SACH2, ASGIVA_HINWEIS, ASGIVA_STARK, ASGIVA_LISTE1, ASGIVA_LISTE2]
+      .join("\n\n") + "\n"
+    && !/href=|<\/?(?:a|strong|ul|li)/i.test(e.volltext));
+  check("asgiva: keine erfundene Uhrzeit", !Object.hasOwn(e, "publishedAt")
+    && !Object.hasOwn(e, "uhrzeit") && !/[T ]\d{2}:\d{2}/.test(e.publikationstag));
+}
 
 // ---------------------------------------------------------------------------------------------
 // 3) Eingang und Adresse
@@ -213,6 +235,8 @@ erwarteAbbruch(seite({ url: "https://www.berlin.de/sen/bjf/service/presse/presse
   "Pressearchivpfad", "pfadfamilie-ungueltig");
 erwarteAbbruch(seite({ url: "https://www.berlin.de/sen/inn/presse/pressemitteilungen/2026/pressemitteilung.1717887.php" }).eingabe,
   "anderer Senatspfad", "pfadfamilie-ungueltig");
+erwarteAbbruch(seite({ url: "https://www.berlin.de/sen/asgiva/aktuelles/pressemitteilungen/2026/pressemitteilung.1719881.php" }).eingabe,
+  "ASGIVA-Pfad ausserhalb der exakten Familie", "pfadfamilie-ungueltig");
 erwarteAbbruch(seite({ url: "https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/pressemitteilung.1717887.php" }).eingabe,
   "Pfad ohne Jahressgement", "pfadfamilie-ungueltig");
 erwarteAbbruch(seite({ url: "https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1717887.html" }).eingabe,
@@ -280,6 +304,47 @@ erwarteAbbruch(seite({ textileInner: `<p>${SACH} <a href="mailto:presse@berlin.d
 erwarteAbbruch(seite({ textileInner: `<p>${SACH}</p><ul><li>Fremd</li></ul>` }).eingabe,
   "Fremdinhalt statt nur Absaetzen", "textile-fremdinhalt");
 erwarteAbbruch(seite({ absaetze: [ABSENDER, SACH, SACH] }).eingabe, "Absatz-Doppler", "absatz-doppler");
+
+// Die ASGIVA-Ausnahme bleibt eine eigene, direkte Grammatik und weitet keine andere Familie aus.
+const asgivaSeite = textileInner => seite({ familie: "asgiva", nummer: "1719881",
+  datum: "2026-09-30", textileInner }).eingabe;
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p>${ASGIVA_ZUSATZ}<ul><li>Zusatzliste</li></ul>`),
+  "asgiva mehrere UL", "asgiva-struktur-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><strong>${ASGIVA_STARK}</strong><strong>Zweiter Titel</strong>`),
+  "asgiva mehrere STRONG", "asgiva-struktur-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul></ul>`),
+  "asgiva leere UL", "asgiva-liste-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p>${ASGIVA_HINWEIS}<strong>${ASGIVA_STARK}</strong>`
+  + `<ul><li>${ASGIVA_LISTE1}<ul><li>Verschachtelt</li></ul></li></ul>`),
+  "asgiva verschachtelte Liste", "asgiva-struktur-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="https://example.com/info">Extern</a></li></ul>`),
+  "asgiva externer HTTPS-Link", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="http://berlin.de/info">HTTP</a></li></ul>`),
+  "asgiva unsicherer HTTP-Link", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="https://user@berlin.de/info">Benutzerinfo</a></li></ul>`),
+  "asgiva Link mit Benutzerinfo", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="https://berlin.de:8443/info">Port</a></li></ul>`),
+  "asgiva Link mit Port", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="/sen/asgiva/info?x=1">Query</a></li></ul>`),
+  "asgiva Root-Link mit Query", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="https://berlin.de/sen/asgiva/info#anker">Fragment</a></li></ul>`),
+  "asgiva HTTPS-Link mit Fragment", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="mailto:presse@berlin.de">Mail</a></li></ul>`),
+  "asgiva Mailto", "kontaktblock-im-artikel");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="tel:+493012345">Telefon</a></li></ul>`),
+  "asgiva Telefon", "kontaktblock-im-artikel");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul hidden><li>${ASGIVA_LISTE1}</li></ul>`),
+  "asgiva verborgene Liste", "versteckter-inhalt-im-textile");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul aria-hidden="true"><li>${ASGIVA_LISTE1}</li></ul>`),
+  "asgiva aria-hidden-Liste", "versteckter-inhalt-im-textile");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul style="display: none"><li>${ASGIVA_LISTE1}</li></ul>`),
+  "asgiva display-none-Liste", "versteckter-inhalt-im-textile");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p>${ASGIVA_ZUSATZ}Nicht erlaubter Zusatztext.`),
+  "asgiva nackter Zusatztext nach der Liste", "asgiva-struktur-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><div class="contact"><p>${SACH2}</p></div>`),
+  "asgiva Kontaktblock", "kontaktblock-im-artikel");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a download href="/sen/asgiva/datei.pdf">Download</a></li></ul>`),
+  "asgiva Downloadlink", "downloadmodul-im-artikel");
 
 // ---------------------------------------------------------------------------------------------
 // 6) Auszug: belegte Form je Familie, substanziell, gebunden
