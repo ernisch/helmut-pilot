@@ -6,8 +6,9 @@ Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
 **Aktuelle Fortschreibung nach dem belegbaren Profilersatz vom 28.09.2026:**
 500/500 technisch akzeptiert; 330/330 Bundestagsprofile technisch bereit. Es bleiben
-0 fachliche Achsen und 0 Mandatsarten offen; 73 aktuelle Parteifelder bleiben vor
-Import gesperrt. Elf Bundestagsprofile und Claudia Engelmann wurden durch reale aktuelle
+0 fachliche Achsen und 0 Mandatsarten offen; 0 aktuelle Parteifelder bleiben vor
+Import gesperrt (498 belegt, 2 amtlich parteilos, 0 offen). Elf Bundestagsprofile
+und Claudia Engelmann wurden durch reale aktuelle
 Abgeordnete derselben Parlaments-/Fraktionsgruppe mit sauber belegbaren amtlichen Daten
 ersetzt; der Mix 330/120/50 bleibt exakt erhalten. Karoline Otte, Thomas Röwekamp,
 Alois Rainer und Regina Kittler wurden fail-closed uebersprungen, weil jeweils ein
@@ -45,7 +46,7 @@ getrennter Herkunftshinweis und amtliche Bundesregierungs-Quelle. Genau ein Date
 getrennte [aktuelle SPD-Parteivorstandsbeleg](pistorius-partei-1-20260928.json)
 schliesst ausschliesslich Boris Pistorius' bisher offenes Parteifeld. Die historische
 335er-Auditquittung und die weiter unten dokumentierte damalige 424/2/74-Bilanz bleiben
-unveraendert; aktuell gelten 425 belegt, 2 parteilos, 73 offen. Der zuvor
+unveraendert; aktuell gelten 498 belegt, 2 parteilos, 0 offen. Der zuvor
 einzeln offene Fachachsenfall Dennis Rohde ist ueber die amtlich belegte aktuelle
 BMF-Aufgabe "Bundeshaushalt" geschlossen (versionierte
 [Rohde-Einzelfallquittung](rohde-bundeshaushalt-1-20260927.json)): die bestehende PSts-Rolle
