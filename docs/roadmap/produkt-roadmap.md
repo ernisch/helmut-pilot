@@ -206,3 +206,42 @@ LINIE ist als Premium Produktinitiative angenommen.
 **Priorität:** nach dem direkten Alltagsnutzen von KALENDER und nach den offenen P0 Verkaufsblockern.
 
 **Freigabe:** keine Umsetzung, keine Production Daten und keine Aktivierung durch diesen Roadmap Eintrag.
+
+## 5. Prüf und Verbesserungsprogramm nach dem 500er Nachweis
+
+**Auslöser:** Erst nach dem erfolgreichen, belegten Production Nachweis mit exakt
+500 gleichzeitig aktiven Profilen. Diese Liste ist eine vorgemerkte Produktarbeit,
+kein Auftrag zur sofortigen Umsetzung und keine Freigabe für Änderungen an
+Production, neue Modellkosten, externe Kommunikation oder neue Funktionen.
+
+**Reihenfolge:**
+
+1. Zunächst die Ergebnisse des 500er Tests auswerten und dort nachgewiesene
+   fachliche oder technische Mängel beheben. Bestandenes nicht ohne sachlichen
+   Grund erneut testen.
+2. Anschließend die offenen Betriebs-, Rechts- und Sicherheitsvoraussetzungen
+   für die Verkaufsbereitschaft prüfen. Dafür gilt ausschließlich die
+   [Datenmotor Restliste](../datenmotor-restliste.md), insbesondere OP-01 bis OP-04.
+3. Das folgende Paket anhand von Aufwand, Nutzen, Kosten und Risiken priorisieren.
+   Was bereits durch den 500er Nachweis belastbar erfüllt ist, nicht neu bauen.
+   KALENDER und LINIE bleiben die oben separat dokumentierten Produktinitiativen.
+
+### 5.1 Vorgemerkte Prüfungen und Verbesserungen
+
+| Bereich | Nach dem 500er Nachweis prüfen und bei belegtem Bedarf verbessern | Nachweis für einen Abschluss |
+|---|---|---|
+| Individuelle Personalisierung | Überprüfen, ob Partei, Fraktion, Ausschüsse, Mandatsebene, Themen und Region tatsächlich unterschiedliche und passende Ergebnisse erzeugen. | Vorab definierte echte Profilfälle und Gegenbeispiele mit nachvollziehbar passender und unpassender Zuordnung; keine falsch zugewiesene Mandatsebene. |
+| Politische Zusammenhänge | Verwandte Vorgänge, neue Entwicklungen und echte Veränderungen im Zeitverlauf fachlich richtig verbinden; reine Wortüberschneidungen nicht als Verständnis ausgeben. | Kuratierte Vergleichsfälle mit Quellen, Gegenbeispielen und dokumentierten Fehlzuordnungen; Zielwerte vor der Verbesserung festlegen. |
+| Aussagen und Quellen | Prüfen, ob wesentliche sichtbare Tatsachen, Zeitangaben, Rollen, Fristen und Schlussfolgerungen an konkrete Originalquellen beziehungsweise Fundstellen gebunden sind. Belegte Tatsache und KI Einordnung klar unterscheiden. | Aussagenbezogene Stichproben mit vollständiger Fehlerbilanz im geprüften Umfang; keine pauschale Vollständigkeitsbehauptung aus Stichproben. Unbelegtes bleibt unsichtbar oder ausdrücklich ungesichert. |
+| Persönliche Priorisierung | Prüfen, ob Briefing die wichtigsten heutigen Arbeitsanlässe verständlich nach persönlicher Relevanz und tatsächlichem Handlungsbedarf auswählt, statt bloß neue Nachrichten zu sammeln. | Vorab definierte Vergleichsfälle zu Dringlichkeit, Mandatsbezug und Leerzuständen, fachlich geprüft und reproduzierbar. |
+| Büro und Arbeit | Bestehende Arbeitsaufträge, Textentwürfe, Übergaben und Vorbereitung auf konkrete Aufgaben auf tatsächlichen Nutzen prüfen und nur gezielt verbessern. | Erlaubte, belegte Anwendungsfälle mit Quellenkontrolle, menschlicher Freigabe und messbarer Zeitersparnis; keine eigenständige politische Entscheidung oder externe Nachricht. |
+| Vergleich mit ChatGPT | Helmut gegen ein gut eingerichtetes ChatGPT mit denselben zulässigen Informationen, Profilen und Aufgaben vergleichen. | Vorab festgelegter fairer Vergleich: relevante Treffer, übersehene Entwicklungen, belegte Fehler, Einrichtungsaufwand, laufender Aufwand und Kosten. Kein Wettbewerbsvorteil ohne Ergebnis behaupten. |
+| Zweiwöchiger Praxistest | Freiwillige geeignete politische Testpersonen Helmut und eine sinnvoll konfigurierte ChatGPT Alternative im normalen Arbeitsalltag vergleichen lassen; nur nach den nötigen Rechts- und Sicherheitsfreigaben. | Dokumentiertes Feedback, tatsächliche Nutzungsfälle, gemessene Zeitersparnis und erfasste Fehler; Ergebnisse ausdrücklich auf die beteiligten Personen und den Testzeitraum begrenzen. |
+
+### 5.2 Startentscheidung
+
+Vor jedem anschließenden Entwicklungssprint entscheiden, welche Lücke durch den
+500er Nachweis oder den Vergleich tatsächlich belegt ist und welchen Nutzen,
+Aufwand, Kosten und welches Risiko eine Änderung hat. Änderungen nur im
+jeweils ausdrücklich freigegebenen Umfang. Dieses Programm verschiebt
+weder den 500er Test noch erteilt es eine pauschale Ausführungsfreigabe.
