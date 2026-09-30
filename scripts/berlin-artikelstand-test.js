@@ -92,6 +92,7 @@ const ALT = { id: "rd-" + sha("url:" + KANONISCH), content_hash: sha("url:" + KA
 
 // --- Synthetische Sondervorlagen (eng belegte Senatspfadfamilien ausserhalb des Pressearchivs) --
 const SONDER_ABSENDER = S.ABSENDER_RB;
+const SONDER_SITZUNGSFORMEL = "Aus der Sitzung des Senats am 24. September 2026:";
 const SONDER_SACH = "Die synthetische Senatsmeldung beschreibt einen amtlich belegten Sachverhalt der "
   + "Berliner Landesversorgung und dient ausschliesslich der lokalen Offlinepruefung dieser Sondervorlage.";
 const SONDER_SACH2 = "Ein zweiter, ebenfalls vollstaendiger Sachabsatz derselben synthetischen Meldung "
@@ -137,6 +138,8 @@ function sonderBehoerde(optionen = {}) {
   return { ...s, beleg, doc, erzeugt: B.erzeugeSondervorlagenstand(doc, beleg) };
 }
 const SONDER = sonderBehoerde({ familie: "rbmskzl" });
+const SONDER_SITZUNG = sonderBehoerde({ familie: "rbmskzl",
+  absaetze: [SONDER_SITZUNGSFORMEL, SONDER_SACH] });
 const SONDER_SENWEB = sonderBehoerde({ familie: "senweb" });
 const SONDER_JUSTV = sonderBehoerde({ familie: "justv", nummer: "1719894" });
 const SONDER_KULTGZ = sonderBehoerde({ familie: "kultgz", nummer: "1719812",
@@ -408,6 +411,40 @@ test("Sondervorlage: eigener Namespace, summary ist der gebundene Sachabsatz (au
   const erneut = B.erzeugeSondervorlagenstand(SONDER.doc, beleg);
   assert.equal(erneut.ok, true);
   assert.deepEqual(erneut.row, row);
+});
+
+test("Sondervorlage RBMSKZL: alte und datumsgebundene Sitzungsformel binden nur Absatz 2", () => {
+  assert.equal(SONDER.erzeugt.ok, true, JSON.stringify(SONDER.erzeugt));
+  assert.equal(SONDER_SITZUNG.erzeugt.ok, true, JSON.stringify(SONDER_SITZUNG.erzeugt));
+  assert.equal(S.istRbmskzlAbsenderformel(S.ABSENDER_RB, TAG), true);
+  assert.equal(S.istRbmskzlAbsenderformel(SONDER_SITZUNGSFORMEL, TAG), true);
+  for (const probe of [SONDER, SONDER_SITZUNG]) {
+    assert.equal(probe.erzeugt.absatz, SONDER_SACH);
+    assert.equal(probe.erzeugt.row.summary, SONDER_SACH);
+    assert.equal(probe.erzeugt.stand.absatzHash, sha(SONDER_SACH));
+    assert.notEqual(probe.erzeugt.row.summary, probe.absaetze[0]);
+  }
+});
+
+test("Sondervorlagenstand RBMSKZL: Sitzungsformeldrift und Absatztausch sperren", () => {
+  const { doc, beleg } = SONDER_SITZUNG;
+  const abw = (name, teile, auszug = beleg.auszug) => {
+    const volltext = teile.join("\n\n") + "\n";
+    const belegwert = Object.freeze({ ...beleg, volltext, volltextHash: sha(volltext),
+      auszug, auszugHash: sha(auszug) });
+    const ergebnis = B.erzeugeSondervorlagenstand(doc, belegwert);
+    assert.equal(ergebnis.ok, false, name + " " + JSON.stringify(ergebnis));
+    assert.equal(ergebnis.reason, "auszug-abweichend", name);
+  };
+  for (const [name, formel] of [
+    ["falscher Tag", "Aus der Sitzung des Senats am 23. September 2026:"],
+    ["falscher Monat", "Aus der Sitzung des Senats am 24. Oktober 2026:"],
+    ["falsches Jahr", "Aus der Sitzung des Senats am 24. September 2025:"],
+    ["falscher Wortlaut", "Aus einer Sitzung des Senats am 24. September 2026:"],
+    ["fehlender Doppelpunkt", "Aus der Sitzung des Senats am 24. September 2026"]
+  ]) abw(name, [formel, beleg.auszug]);
+  abw("manipulierter zweiter Absatz", [SONDER_SITZUNGSFORMEL, beleg.auszug + " Manipuliert."]);
+  abw("vertauschte Absaetze", [beleg.auszug, SONDER_SITZUNGSFORMEL]);
 });
 
 test("Sondervorlage senweb: erster Sachabsatz und eigene, von RBMSKZL verschiedene Kennung", () => {
