@@ -133,10 +133,12 @@ Worktree mit `python3 -B tools/agent-parallel/worktree.py create <name> --base <
 Das Hilfswerkzeug akzeptiert nur denselben frisch verifizierten `origin/main`-
 Commit, einen sauberen Hauptarbeitsbaum und eindeutig benannte eigene Branches.
 Terra legt fuer jeden Worktree den exklusiven
-Datei-/Codebereich, Ziel, Abnahmekriterien und Stop-Grenze fest. Bis zu fuenf
+Datei-/Codebereich, Ziel, Abnahmekriterien und Stop-Grenze fest. Bis zu drei
 DeepSeek-Agenten duerfen gleichzeitig schreiben, wenn jeder in einem eigenen
 isolierten Worktree mit eindeutig getrenntem Datei-/Codebereich arbeitet.
-Rein lesende Helfer zaehlen gegen dieselbe Gesamtgrenze von fuenf. Terra nutzt
+Bei drei gleichzeitig schreibenden Agenten koennen zwei weitere Helfer
+unabhaengige Lesearbeit uebernehmen; bei weniger Schreibern entsprechend mehr.
+Schreibende und lesende Helfer zusammen bleiben auf fuenf begrenzt. Terra nutzt
 weiterhin nur die kleinste sinnvolle Zahl gleichzeitig laufender Agenten.
 Ueberschneiden sich benoetigte Dateien oder Verantwortungsbereiche wesentlich,
 werden die betroffenen Aufgaben nacheinander ausgefuehrt. DeepSeek bleibt auch im Worktree ohne Commit,
@@ -193,6 +195,10 @@ dafür den belegten Stand, die gescheiterten Lösungsversuche und die konkrete
 Entscheidungsfrage. Nach der Sol-Entscheidung übernimmt Terra wieder und setzt das
 Ergebnis um. Routinearbeit, Routine-Debugging und klar begrenzte lokale Umsetzung
 rechtfertigen für sich allein keine Sol-Eskalation.
+Die gesonderte, vom Betreiber manuell veranlasste unabhaengige Sol-High-Endpruefung
+des aussergewoehnlich kritischen 500er Production-Nachweises ist in
+"500er Production Nachweis" geregelt. Sie ist kein automatischer Modellstart
+und begruendet keine regelmaessige Sol-Eskalation.
 
 Es gibt keine automatische Eskalationskette über Sol High hinaus. Reicht auch die
 Sol-Stufe nach konkretem Nachweis nicht, stoppt Terra sichtbar, nennt den konkreten
@@ -267,8 +273,9 @@ Grund; bei reinen Regel- oder Dokumentationsänderungen startet Terra keine
 unnötigen fachlichen Testsuiten. Bei einer neuen kritischen Entscheidung, einem
 neuen Risiko, einer Freigabe oder einer kritischen Abnahme geht DeepSeek an Terra
 über. Pro isoliertem Arbeitsbereich schreibt weiterhin höchstens ein Agent
-gleichzeitig; insgesamt dürfen bis zu fünf getrennte Schreibagenten parallel
-arbeiten. Der Production-Schutz bleibt unverändert.
+gleichzeitig; insgesamt dürfen bis zu drei getrennte Schreibagenten parallel
+arbeiten, bei insgesamt höchstens fünf gleichzeitigen DeepSeek-Agenten.
+Der Production-Schutz bleibt unverändert.
 
 Scheitert ein DeepSeek Start **vor Arbeitsbeginn** wegen Launcher, Schlüsselbund,
 Netzwerk oder anderer lokaler Infrastruktur, zählt dies nicht als fachlicher
@@ -835,6 +842,34 @@ Unbrauchbare Ergebnisse müssen vollständig ausgewiesen werden.
 Stichproben niemals als vollständige Prüfung darstellen.
 
 Alle500 Zielprofile erhalten dieselben fachlichen Pruefungen und denselben technischen Schutz vor versehentlicher Beschaedigung; keine besondere Profilgruppe.
+
+### Gesonderte unabhaengige Endpruefung
+
+Terra High orchestriert den freigegebenen Production-Lauf und laesst DeepSeek die
+sicher delegierbare Vorbereitung, technische Auswertung und Fehleranalyse
+uebernehmen. Terra verantwortet Startschutz, vollstaendige Bilanz und ein
+nachpruefbares Belegpaket. Dieses enthaelt mindestens Laufkennung, Production-
+Commit und Deployment, den Beleg fuer exakt 500 gleichzeitig aktive Profile,
+die 1500 erwarteten Ergebnispositionen mit getrennten Fehler- und Leergruenden,
+die vorab festgelegten Fachkriterien und zugehoerigen Belege, transparent
+abgegrenzte Textpruefungen, Kosten, Laufzeit, Endzustand und Rueckweg.
+
+Nach dem Lauf wird das Belegpaket fuer die **gesonderte unabhaengige Pruefung
+durch ChatGPT Sol High** bereitgestellt. Der Betreiber uebergibt die konkreten
+Belegreferenzen manuell an eine ChatGPT-Sol-High-Sitzung; Codex kann eine solche
+Sitzung nicht selbst starten oder die Uebergabe automatisch garantieren.
+Sol High prueft unabhaengig die primaeren Production-, Repository- und
+Pruefbelege gegen die vorab festgelegten 500er Abnahmekriterien. Eine
+vollstaendige maschinelle Ergebnisbilanz ersetzt keine unbelegte Behauptung
+ueber die fachliche Qualitaet aller Texte; Stichproben bleiben als solche
+gekennzeichnet. Die Sol-Pruefung ist keine Wiederholung des bezahlten
+Production-Tests und erteilt keine zusaetzliche Production-Freigabe.
+
+Bis diese unabhaengige Pruefung anhand erreichbarer Belege erfolgt ist und
+keine abnahmeverhindernden Luecken bestehen, lautet der Endstatus
+**Production-Lauf durchgefuehrt, unabhaengige Endabnahme offen** und nicht
+"500er Production-Nachweis erfolgreich abgeschlossen". Bei fehlendem Zugang
+zu Primaerbelegen oder nicht geklaerten Widerspruechen bleibt die Abnahme offen.
 
 ## Dokumentation
 
