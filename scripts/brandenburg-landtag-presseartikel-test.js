@@ -239,6 +239,14 @@ erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><
   "PDF-Liste nicht letzter Absatz");
 erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n<p>A</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>\n<p><ul class="list-links"><li><a class="download" href="/b.pdf">PDF</a></li></ul></p>` }).eingabe,
   "zwei PDF-Listen");
+{
+  const leererNachlauf = seite({ mainInhalt: [
+    "<nav></nav>", "<h1>" + seite().titel + "</h1>", "<p><em>Potsdam, 23. September 2026 / 134</em></p>",
+    "<p>A</p>", '<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>',
+    "<p>&nbsp;</p>"
+  ].join("\n") });
+  A.match(pruefePresseartikel(leererNachlauf.eingabe).volltext, /^A\n$/);
+}
 erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em>\n<p>A</p>\n${"<p><ul class=\"list-links\"><li><a class=\"download\" href=\"/a.pdf\">PDF</a></li></ul></p>"}` }).eingabe,
   "Ausbruch aus main (ungeschlossene Kopfzeile)");
 erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n<p>A</p>\n<aside>Kontakt</aside>\n${"<p><ul class=\"list-links\"><li><a class=\"download\" href=\"/a.pdf\">PDF</a></li></ul></p>"}` }).eingabe,
