@@ -289,7 +289,7 @@ console.log("PASS Kopfzeile eindeutig, nur Tag, ohne erfundene Uhrzeit");
     const kopf = optionen.kopf === undefined ? programmKopf : optionen.kopf;
     const tabelle = optionen.tabelle === undefined ? programmTabelle : optionen.tabelle;
     const nachAbsatz = optionen.nachAbsatz === undefined
-      ? "<p>Weitere Hinweise zum Besuch.</p>" : optionen.nachAbsatz;
+      ? '<p style="margin-bottom: 36.0pt;">Weitere Hinweise zum Besuch.</p>' : optionen.nachAbsatz;
     const pdfAbsatz = optionen.pdfAbsatz === undefined ? pdf : optionen.pdfAbsatz;
     return seite({ url, titel, mainInhalt: `<nav></nav>\n<h1>${titel}</h1>\n${kopf}\n${tabelle}\n${nachAbsatz}\n${pdfAbsatz}` }).eingabe;
   };
@@ -360,8 +360,20 @@ console.log("PASS Kopfzeile eindeutig, nur Tag, ohne erfundene Uhrzeit");
     "malformierte Programmzeit");
   erwarteAbbruch(eingabeMit({ tabelle: programmTabelle.replace("<td>Plenarsaal</td>", "<td>Plenarsaal ab 10:30 Uhr</td>") }),
     "zweite Zeit in Programmzeile");
-  erwarteAbbruch(eingabeMit({ nachAbsatz: "" }), "fehlender normaler Nachabsatz");
-  erwarteAbbruch(eingabeMit({ nachAbsatz: "<p>A.</p><p>B.</p>" }), "zusaetzlicher normaler Nachabsatz");
+  erwarteAbbruch(eingabeMit({ nachAbsatz: "" }), "fehlender Programm-Nachabsatz",
+    "programm-nachabsatz-ungueltig");
+  erwarteAbbruch(eingabeMit({ nachAbsatz: "<p>Weitere Hinweise zum Besuch.</p>" }),
+    "Programm-Nachabsatz ohne style", "programm-nachabsatz-ungueltig");
+  erwarteAbbruch(eingabeMit({ nachAbsatz: '<p style="margin-bottom: 36pt;">Weitere Hinweise zum Besuch.</p>' }),
+    "Programm-Nachabsatz mit falschem style", "programm-nachabsatz-ungueltig");
+  erwarteAbbruch(eingabeMit({ nachAbsatz: '<p style="margin-bottom: 36.0pt;" style="margin-bottom: 36.0pt;">Weitere Hinweise zum Besuch.</p>' }),
+    "Programm-Nachabsatz mit zusaetzlichem style", "programm-nachabsatz-ungueltig");
+  erwarteAbbruch(eingabeMit({ nachAbsatz: '<p style="margin-bottom: 36.0pt;" class="x">Weitere Hinweise zum Besuch.</p>' }),
+    "Programm-Nachabsatz mit class", "programm-nachabsatz-ungueltig");
+  erwarteAbbruch(eingabeMit({ nachAbsatz: '<p style="margin-bottom: 36.0pt;" hidden>Weitere Hinweise zum Besuch.</p>' }),
+    "versteckter Programm-Nachabsatz", "programm-nachabsatz-ungueltig");
+  erwarteAbbruch(eingabeMit({ nachAbsatz: '<p style="margin-bottom: 36.0pt;">A.</p><p style="margin-bottom: 36.0pt;">B.</p>' }),
+    "zwei Programm-Nachabsaetze", "programm-nachabsatz-ungueltig");
   erwarteAbbruch(eingabeMit({ pdfAbsatz: "" }), "fehlende PDF-Liste");
   erwarteAbbruch(eingabeMit({ url: programmUrl.replace(/49674$/, "49675") }),
     "Programmstruktur auf anderer Meldungs-ID");
