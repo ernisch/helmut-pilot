@@ -135,7 +135,41 @@ async function main() {
     assert.equal(result.ok, false); assert.equal(result.reason, "zielprofil-nicht-aktiv");
     assert.deepEqual(calls, ["vorflug"]);
   });
-  await check("11. HTTP-Pfad bleibt ohne Bearer-Secret unsichtbar und ohne Bestaetigung schreibfrei", async () => {
+  await check("11. Gemeinsamer Nachweis-Lauf gibt dieselbe absolute Deadline an jeden Crawl weiter", async () => {
+    const deadlines = [];
+    const result = await operator.ausfuehren(body("nachweis-lauf"), fakeDeps([], {
+      now: () => 1_000_000,
+      runSourceCrawl: async (id, options) => {
+        deadlines.push(options.deadlineMs);
+        return { runId: `run-${id}`, noPaidModel: true, paidModelCalls: 0, skippedPaidModelPhases: [], checkedSources: 1, successfulSources: 1, failedSources: 0, savedItems: 1 };
+      }
+    }));
+    assert.equal(result.ok, true);
+    // 240000 Gesamtbudget - 30000 Response-Reserve = +210000 ms, EINE gemeinsame Deadline.
+    assert.deepEqual(deadlines, [1_000_000 + 210_000, 1_000_000 + 210_000]);
+  });
+  await check("12. Zweiter Nachweis-Crawl startet nicht ohne ausreichende Restzeit (fail-closed, kein Hintergrundlauf)", async () => {
+    const calls = [];
+    let jetzt = 0;
+    const result = await operator.ausfuehren(body("nachweis-lauf"), fakeDeps(calls, {
+      now: () => jetzt,
+      nachweisBudgetMs: 1000,
+      nachweisReserveMs: 100,
+      nachweisMindestCrawlReserveMs: 300,
+      runSourceCrawl: async (id, options) => {
+        calls.push(`crawl:${id}:${options.noPaidModel}:${options.deadlineMs}`);
+        jetzt += 700; // erster Crawl verbraucht fast das gesamte Fenster
+        return { runId: `run-${id}`, noPaidModel: true, paidModelCalls: 0, skippedPaidModelPhases: [], checkedSources: 1, successfulSources: 1, failedSources: 0, savedItems: 1 };
+      }
+    }));
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, "nachweis-zeitbudget-erschoepft");
+    // crawlDeadline = 1000 - 100 = 900ms; nur der erste Crawl startet, mit dieser Deadline.
+    assert.deepEqual(calls, ["vorflug", `crawl:${operator.TARGET_IDS[0]}:true:900`]);
+    assert.deepEqual(result.detail.laeufe.map((x) => x.tenantId), [operator.TARGET_IDS[0]]);
+    assert.deepEqual(result.detail.uebersprungen.map((x) => x.tenantId), [operator.TARGET_IDS[1]]);
+  });
+  await check("13. HTTP-Pfad bleibt ohne Bearer-Secret unsichtbar und ohne Bestaetigung schreibfrei", async () => {
     const old = {
       auth: process.env.HELMUT_AUTH_MODE,
       secret: process.env.HELMUT_ADMIN_SECRET,
