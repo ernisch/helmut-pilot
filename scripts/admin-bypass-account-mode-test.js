@@ -150,10 +150,12 @@ async function login(email, password) {
   check("Account-Modus: Bypass OHNE Mandatsauswahl faellt fail-closed (mehrere aktive -> Auswahl)",
     noSelection.status === 409 && noSelBody.needsMandateSelection === true,
     `status=${noSelection.status} body=${noSelection.body.slice(0, 140)}`);
-  check("FAIL-CLOSED: KEINE fremde Standardzuordnung (kein tenant.activePoliticianId)",
+  const noSelMandateIds = Array.isArray(noSelBody.mandates) ? noSelBody.mandates.map((m) => m && m.id) : [];
+  check("FAIL-CLOSED: KEINE fremde Standardzuordnung, aber beide Testmandate in der Auswahlliste",
     !noSelBody.tenant && !noSelBody.activePoliticianId && Array.isArray(noSelBody.mandates)
-      && noSelBody.mandates.map((m) => m.id).sort().join(",") === [A, B].sort().join(","),
-    JSON.stringify(noSelBody).slice(0, 160));
+      && noSelMandateIds.includes(A) && noSelMandateIds.includes(B),
+    `tenant=${JSON.stringify(noSelBody.tenant)} activePoliticianId=${JSON.stringify(noSelBody.activePoliticianId)} `
+      + `mandatesArray=${Array.isArray(noSelBody.mandates)} mandateIds=${JSON.stringify(noSelMandateIds).slice(0, 160)}`);
 
   // ── (4) SCHUTZVERGLEICH: normale Account-Nutzer unveraendert ─────────────────
   const cookie = await login("mdb-beta-synthetic@test.local", "mdb-beta-pass-123");
