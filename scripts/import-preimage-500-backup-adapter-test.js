@@ -7,8 +7,9 @@
 // Preimage-Assembler erwartet:
 //   1. Positiv: synthetischer 501er-Bestand (500 Mandate + 1 Fremdprofil ohne Mandat, mit
 //      FK-Kinddaten) als vollstaendiges Backup => Exit 0, 19 Eingabedateien, alle mode 0600.
-//   2. Der entstandene Input wird vom bestehenden Assembler akzeptiert (Exit 0) und dessen
-//      Snapshot vom Generatorvertrag bestaetigt (pruefeSnapshot + baueErsatzSql, KEINE Ausfuehrung).
+//   2. Der entstandene Input wird vom bestehenden v2-Assembler akzeptiert (Exit 0); das
+//      Snapshot-VERZEICHNIS (manifest.json + JSONL) wird vom v2-Generatorvertrag bestaetigt
+//      (pruefeSnapshotVerzeichnis + baueErsatzSqlDateien, KEINE Ausfuehrung).
 //   3. Fail-closed Negativfaelle: unvollstaendiges Manifest, falsche Pruefsumme, inkonsistente
 //      Zeilenzahl, fehlende Pflichttabelle, falsches Paket, Fremdprofilanzahl 0/2, AfD in
 //      Partei/Fraktion, aktive Zeile, Kindzeile ausserhalb der Kohorte.
@@ -138,7 +139,7 @@ function laufAdapter(backupDir, outDir, extra = []) {
   ], { encoding: "utf8" });
 }
 
-function main() {
+async function main() {
   console.log("Helmut — Voll-Backup -> Assembler-Input-Adapter (offline)\n");
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-backup-adapter-"));
   const paketHash = GEN.hashPaket(PAKET_PFAD);
@@ -171,30 +172,36 @@ function main() {
   check("1.6 Fremdprofil ist genau die profiles-Zeile ohne Mandat",
     fremd.length === 1 && fremd[0].id === FREMD_ID && !mandate.some((z) => z.user_id === FREMD_ID));
 
-  // ── 2 · Der entstandene Input wird vom bestehenden Assembler akzeptiert ──────────────────
-  abschnitt("2 · Bestehender Assembler akzeptiert den Input (keine Ausfuehrung)");
-  const snapshotPfad = path.join(tmp, "snapshot.json");
+  // ── 2 · Der entstandene Input wird vom bestehenden v2-Assembler akzeptiert ────────────────
+  abschnitt("2 · Bestehender v2-Assembler akzeptiert den Input (Manifest-Verzeichnis, keine Ausfuehrung)");
+  const snapshotDir = path.join(tmp, "snapshot");
   const assembler = spawnSync(process.execPath, [
-    ASSEMBLER, "--input-dir", outDir, "--out", snapshotPfad,
+    ASSEMBLER, "--input-dir", outDir, "--out", snapshotDir,
     "--operation-id", OP_ID, "--operator", OPERATOR, "--paket", PAKET_PFAD
   ], { encoding: "utf8" });
   check("2.1 Assembler Exit 0 auf dem Adapter-Input", assembler.status === 0,
     `status=${assembler.status} ${(assembler.stderr || "").slice(0, 200)}`);
-  const snapshot = fs.existsSync(snapshotPfad) ? JSON.parse(fs.readFileSync(snapshotPfad, "utf8")) : null;
-  const sp = snapshot ? GEN.pruefeSnapshot(snapshot, { paketHash, neueIds: [] }) : { ok: false, fehler: [] };
-  check("2.2 Generatorvertrag bestaetigt den Snapshot", sp.ok === true,
+  check("2.2 v2-Ausgabe ist ein Manifest-Verzeichnis",
+    fs.existsSync(path.join(snapshotDir, GEN.MANIFEST_DATEI)));
+  const sp = GEN.pruefeSnapshotVerzeichnis(snapshotDir, { paketHash, neueIds: [] });
+  check("2.3 v2-Generatorvertrag bestaetigt das Snapshot-Verzeichnis", sp.ok === true,
     (sp.fehler || []).map((f) => f.code).join(", ") || "0 Befunde");
-  check("2.3 Bestand: 501 profiles / 500 mandate / 0 aktiv / 1 fremd",
-    !!snapshot && snapshot.bestand.profilesGesamt === 501 && snapshot.bestand.mandateProfilesGesamt === 500
-    && snapshot.bestand.aktivGesamt === 0 && snapshot.fremd_profiles.length === 1);
+  const manifest = sp.manifest || {};
+  check("2.4 Bestand: 501 profiles / 500 mandate / 0 aktiv / 1 fremd",
+    !!manifest.bestand && manifest.bestand.profilesGesamt === 501 && manifest.bestand.mandateProfilesGesamt === 500
+    && manifest.bestand.aktivGesamt === 0 && sp.ids.fremd.length === 1);
+  const paket = GEN.ladePaket(PAKET_PFAD);
+  const ergebnis = GEN.preflight(paket);
+  const sqlOut = path.join(tmp, "sql");
   let sql = null;
-  try { sql = GEN.baueErsatzSql(GEN.ladePaket(PAKET_PFAD), GEN.preflight(GEN.ladePaket(PAKET_PFAD)), snapshot, { paketHash }); }
-  catch (e) { check("2.4 Aus dem Snapshot entsteht gueltiges Ersatz-SQL", false, `${e && e.code}: ${e && e.message}`); }
+  try { sql = await GEN.baueErsatzSqlDateien(paket, ergebnis, snapshotDir, { paketHash, outDir: sqlOut }); }
+  catch (e) { check("2.5 Aus dem Snapshot entsteht gueltiges Ersatz-SQL", false, `${e && e.code}: ${e && e.message}`); }
   if (sql) {
-    const selbst = GEN.pruefeErsatzSql(sql, {
-      neueIds: GEN.preflight(GEN.ladePaket(PAKET_PFAD)).ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp
-    });
-    check("2.4 Aus dem Snapshot entsteht gueltiges Ersatz-SQL (Selbsttest gruen)", selbst.length === 0,
+    const selbst = await GEN.pruefeErsatzSqlDateien(
+      { forwardPfad: sql.forwardZiel, rollbackPfad: sql.rollbackZiel },
+      { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp }
+    );
+    check("2.5 Aus dem Snapshot entsteht gueltiges Ersatz-SQL (Datei-Selbsttest gruen)", selbst.length === 0,
       selbst.map((f) => f.code).join(", ") || "0 Befunde");
   }
 
@@ -259,11 +266,11 @@ function main() {
   fs.cpSync(outDir, falschDir, { recursive: true });
   fs.writeFileSync(path.join(falschDir, "paket.json"), JSON.stringify({ pfad: PAKET_PFAD, sha256: "a".repeat(64) }));
   const falscherHash = spawnSync(process.execPath, [
-    ASSEMBLER, "--input-dir", falschDir, "--out", path.join(tmp, "falscher-hash.json"),
+    ASSEMBLER, "--input-dir", falschDir, "--out", path.join(tmp, "falscher-hash"),
     "--operation-id", OP_ID, "--operator", OPERATOR, "--paket", PAKET_PFAD
   ], { encoding: "utf8" });
   check("4.7 Assembler lehnt falschen Paket-Hash ab (kein Output)",
-    falscherHash.status !== 0 && !fs.existsSync(path.join(tmp, "falscher-hash.json")), `status=${falscherHash.status}`);
+    falscherHash.status !== 0 && !fs.existsSync(path.join(tmp, "falscher-hash")), `status=${falscherHash.status}`);
 
   const falschesPaket = path.join(tmp, "paket-499.json");
   const paketRoh = JSON.parse(fs.readFileSync(PAKET_PFAD, "utf8"));
@@ -284,7 +291,10 @@ function main() {
     && !/insert\s+into/i.test(lauf.stdout) && !/begin;/i.test(lauf.stdout));
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (Pruefungen ${pass + fail})`);
-  process.exit(fail === 0 ? 0 : 1);
+  process.exitCode = fail === 0 ? 0 : 1;
 }
 
-main();
+main().catch((e) => {
+  console.error(e && e.stack || e);
+  process.exitCode = 1;
+});
