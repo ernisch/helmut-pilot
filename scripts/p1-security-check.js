@@ -309,6 +309,9 @@ async function debugBriefingEndpointChecks() {
     check("Debug-Briefing ohne Secret -> 404 (fail closed)", noAuth.status === 404, `status=${noAuth.status}`);
     const wrong = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer falsch" } });
     check("Debug-Briefing mit falschem Secret -> 404", wrong.status === 404, `status=${wrong.status}`);
+    const queryOnly = await request(server, { pathname: `${p}?${pid}&secret=p1-admin-secret` });
+    check("Debug-Briefing: Query-Secret allein bleibt bei deaktiviertem Flag abgelehnt -> 404",
+      queryOnly.status === 404, `status=${queryOnly.status}`);
     const ok = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer p1-admin-secret" } });
     const okj = parse(ok);
     check("Debug-Briefing mit Bearer HELMUT_ADMIN_SECRET -> 200 + engine v3",

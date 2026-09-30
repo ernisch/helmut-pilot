@@ -423,6 +423,13 @@ async function handleRequest(request, response) {
 
   const accountAuth = auth.authMode();
   let authUser = null;
+  // Der dokumentierte Admin-/Debug-Bypass (HELMUT_ADMIN_SECRET, ersatzweise
+  // CRON_SECRET) gilt im gesamten Request einheitlich und wird genau einmal
+  // timing-safe geprueft. Auch im Account-Modus erreicht ein gueltiger
+  // Bearer-Secret-Weg die Ops-/Debug-Mandatspfade (z.B. /api/ops/status), die
+  // sonst nur per Session erreichbar waeren. Ohne gueltiges Secret bleibt es
+  // beim Session-Schutz (401) — das ist keine Lockerung fuer normale Nutzer.
+  const adminBypass = hasAdminBypass(request, url);
 
   // Die vorhandene Pilotpruefung bleibt vor jeder oeffentlichen Auslieferung.
   if (!accountAuth && !hasPilotAccess(request, url)) {
@@ -481,7 +488,9 @@ async function handleRequest(request, response) {
       // SPA-HTML und oeffentliche Assets ausliefern, damit der Login-Screen laden kann.
       // Cron-Routen schuetzen sich selbst (authorizeCron, fail closed). Jeder andere API-Aufruf: 401.
       const isCron = url.pathname.startsWith("/api/cron/");
-      if (url.pathname.startsWith("/api/") && !isCron) {
+      // Ausnahme: der secret-geschuetzte Admin-Bypass (s.o.) faellt zur
+      // Mandatsaufloesung unten durch statt in den 401.
+      if (url.pathname.startsWith("/api/") && !isCron && !adminBypass) {
         return sendUnauthorized(response);
       }
       // sonst: durchfallen zur statischen Auslieferung / Cron-Routen unten
@@ -490,8 +499,9 @@ async function handleRequest(request, response) {
 
   // Mandant-Aufloesung. SICHERHEITSKERN: Im Account-Modus wird politicianId
   // serverseitig aus Session + Assignments bestimmt; das URL-Param dient nur als
-  // Auswahl innerhalb erlaubter Mandate, niemals als Berechtigung. Im Legacy-Modus
-  // bleibt das bisherige Verhalten erhalten.
+  // Auswahl innerhalb erlaubter Mandate, niemals als Berechtigung. Der
+  // secret-geschuetzte Admin-Bypass nutzt dieselbe Aufloesung wie im Legacy-Modus;
+  // im Legacy-Modus bleibt das bisherige Verhalten erhalten.
   let politicianId;
   let allowedPoliticians = null;
   if (accountAuth && authUser) {
@@ -525,15 +535,16 @@ async function handleRequest(request, response) {
       }
       // sonst: statische Auslieferung bzw. mandatsfreier Admin-/Auth-Pfad, kein Fremddaten-Read.
     }
-  } else if (!accountAuth) {
-    // Legacy-Zugang (geteiltes PILOT_SECRET, keine Accounts): Es gibt KEIN bevorzugtes,
+  } else if (!accountAuth || adminBypass) {
+    // Legacy-Zugang (geteiltes PILOT_SECRET, keine Accounts) ODER Admin-Bypass im
+    // Account-Modus (gueltiges Secret, keine Session): Es gibt KEIN bevorzugtes,
     // konfiguriertes oder geratenes Mandat. Die AKTIVEN Mandate der Datenbank sind die
     // Zugriffsmenge (allgemeine, datenbankbasierte Zugangszuordnung):
     //   * Admin-Bypass (secret-geschuetzt) darf jedes Mandat per ?politicianId waehlen.
     //   * sonst: ?politicianId, falls es ein AKTIVES Mandat benennt; sonst genau EIN
     //     aktives Mandat (ohne Environment-Auswahl); sonst "" -> Auswahl/Leerzustand.
     const requested = url.searchParams.get("politicianId") || url.searchParams.get("profileId");
-    if (hasAdminBypass(request, url)) {
+    if (adminBypass) {
       // Admin-Bypass (secret-geschuetzt) darf jedes Mandat waehlen; ohne Parameter
       // greift dieselbe Aufloesung wie fuer normale Zugriffe (einziges aktives Mandat).
       politicianId = tenantContext.slugifyTenantId(requested)
