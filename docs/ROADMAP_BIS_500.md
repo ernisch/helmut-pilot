@@ -118,6 +118,79 @@ nicht zulässig.
 Andere Bereiche verweisen auf den Hauptort, statt denselben Inhalt erneut zu
 erzählen.
 
+## 2a · Datenschutz vor dem Test und vollständige Prüfung vor dem Verkauf
+
+**Betreiberentscheidung vom 30.09.2026:** Datenschutz ist kein optionaler
+Nachtrag. Die für den konkreten 500er Test notwendigen rechtlichen und
+technischen Voraussetzungen sind **vor der ersten entsprechenden Production
+Wirkung** zu klären. Eine umfassende, belegbasierte Verkaufsprüfung folgt
+**unmittelbar nach dem erfolgreichen 500er Production Nachweis** und vor dem
+regulären Verkauf. Diese Trennung verschiebt keine schon vorher zwingende Pflicht.
+
+**Phase A: Eng begrenztes Datenschutz Starttor vor dem 500er Test**
+
+1. Vor Import oder Aktivierung der vorgesehenen realen politischen Zielprofile
+   den tatsächlichen Testumfang dokumentieren: personenbezogene Profilfelder,
+   Quellen und Herkunft, gespeicherte Ausgaben, etwaige Konten, Nutzungsdaten,
+   Protokolle und externe Empfänger. Bereits vorhandene personenbezogene Daten
+   nicht aus der Betrachtung ausnehmen.
+2. Für genau diesen Umfang Verantwortlichkeit, konkrete Zwecke sowie die
+   einschlägigen Rechtsgrundlagen nach Artikel 6 und gegebenenfalls Artikel 9
+   DSGVO fachlich prüfen und dokumentieren. Die Pflicht zu einer
+   Datenschutz Folgenabschätzung durch eine qualifizierte Stelle klären und
+   eine erforderliche Folgenabschätzung **vor** der betroffenen Verarbeitung
+   abschließen. Öffentliche Quellen oder Testabsicht sind keine pauschale
+   Rechtsfreigabe.
+3. Die für den Test relevanten Datenflüsse und Dienstleister prüfen, insbesondere
+   Azure KI, Vercel, Supabase, tatsächliche Verarbeitungsregionen, mögliche
+   Drittlandtransfers und erforderliche Auftragsverarbeitungsverträge.
+   Erforderliche Zugriffssperren, Mandantentrennung, Aufbewahrungs- und
+   Löschgrenzen für genau den Testumfang nachweisbar prüfen.
+4. Vor der betreffenden Production Aktion ein dokumentiertes fachliches
+   Ergebnis mit Belegen, offenen Risiken und gegebenenfalls externer
+   juristischer beziehungsweise datenschutzfachlicher Freigabe vorlegen.
+   Notwendige ungeklärte Voraussetzungen sperren die Aktion; ein technischer
+   Test oder eine KI Einschätzung ersetzt keine Rechtsentscheidung. Die
+   gesonderten Betreiberfreigaben für Import, Provisionierung, Aktivierung,
+   Test, Budget und Production Änderungen bleiben bestehen.
+
+**Phase B: Vollständige Datenschutz- und Sicherheitsprüfung nach dem 500er Nachweis,
+vor regulärem Verkauf und vor Nutzung vertraulicher Büroinhalte**
+
+1. Den tatsächlichen dann aktuellen Code **und** die wirksame Production
+   Konfiguration prüfen; ältere Dokumente sind Hinweise, keine aktuellen
+   Wirksamkeitsbelege. Datenfluss vom Eingang bis zu KI Anbieter, Datenbank,
+   Hosting, Benachrichtigungen, Protokollen und Sicherungen nachvollziehen.
+2. Authentifizierung, Rollen und Berechtigungen, technische Mandantentrennung
+   einschließlich Service Rolle und Datenbankregeln, Zugriffsprotokolle,
+   Verschlüsselung, Secret Verwaltung, Backup und praktisch überprüften
+   Wiederherstellungsweg im relevanten Umfang untersuchen.
+3. Für personenbezogene und gegebenenfalls besonders geschützte politische
+   Daten Datenminimierung, Aufbewahrung, Export, Auskunft, Berichtigung und
+   tatsächliche Löschung einschließlich Sicherungen und Dienstleistern
+   nachweisbar prüfen. Externe Datenweitergabe, Regionen, Verträge und
+   mögliche Drittlandtransfers anhand der realen Konfiguration bewerten.
+4. Rechtsgrundlagen, gegebenenfalls die vollständige Datenschutz
+   Folgenabschätzung, Datenschutzhinweise, verbindliche Löschfristen,
+   erforderliche Auftragsverarbeitungsverträge und die Eignung für
+   parlamentarische Büros mit qualifizierter Datenschutz- oder Rechtsstelle
+   abschließend klären. Freigabe für vertrauliche Inhalte ist eine eigene
+   Entscheidung; keine stillschweigende Erweiterung des öffentlichen MVP.
+5. Befunde nach Schwere, Nachweis, Behebungsaufwand und Verkaufswirkung
+   priorisieren. Kritische Punkte vor Verkauf oder entsprechender
+   Datennutzung schließen und gezielt nachprüfen. Frühere gültige Belege
+   wiederverwenden; keine pauschalen Wiederholungstests und keine neuen
+   Funktionen allein aus dieser Planung ableiten.
+
+**Verbindliche Referenzen:** [OP-02 und OP-03](datenmotor-restliste.md),
+[DSGVO Checkliste](dsgvo-checklist.md),
+[technische Vorprüfung](recht/datenschutz-folgenabschaetzung-vorpruefung.md)
+und [Produktroadmap nach Verkaufsbereitschaft](roadmap/produkt-roadmap.md).
+Die rechtlichen Abschlussstände stehen in OP-02, der tatsächliche Betriebsstand
+in CURRENT_STATE; diese Roadmap dokumentiert nur Reihenfolge und Abnahmetore.
+Dieser Eintrag ist weder eine Datenschutzfreigabe noch eine Freigabe für
+Production Änderungen oder zusätzliche Kosten.
+
 ## 3 · Nächste Arbeiten vor dem 500er Start
 
 **Technischer Betreiberauftrag27.09. lokal abgeschlossen:** DeepSeek-Starter
@@ -304,6 +377,11 @@ Faelle ausgeweitet noch als Importfreigabe gelesen werden.
 6. Danach stoppen. Exakt diese 500 gleich behandelten Zielprofile aktivieren und
    den eigentlichen 500er Production Nachweis erst nach neuem ausdrücklichem
    Betreiber GO starten.
+
+Nach dem erfolgreichen 500er Nachweis folgt die vollständige Datenschutz-
+und Sicherheitsprüfung aus §2a vor regulärem Verkauf und vor vertraulicher
+Büronutzung. Zwingende Voraussetzungen für den 500er Test selbst bleiben
+bereits **vor** dem Test nach §2a Phase A zu erfüllen.
 
 ## 4 · Nicht vor dem 500er Nachweis
 
