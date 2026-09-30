@@ -31,6 +31,7 @@ const cronGlobalphase = require("./lib/helmut/cron-globalphase");
 // OP-30: skalierbarer Pfad (Arbeitswarteschlange). DEFAULT AUS — ohne
 // HELMUT_SCALABLE_PIPELINE wird von hier nichts betreten.
 const scalablePipeline = require("./lib/helmut/scalable-pipeline");
+const bbNachweisOperator = require("./lib/helmut/bb-nachweis-operator");
 // OP-30 (Befund O2 des Abschlussreviews): der Workerbetrieb ist seit diesem Sprint die EINE
 // Betriebsform des Warteschlangenpfads — begrenzte Parallelitaet, Riegel gegen externen
 // Abruf bei ausgeschaltetem Quellenmodus, Health und Readiness. Er laedt nichts und startet
@@ -430,6 +431,20 @@ async function handleRequest(request, response) {
   // sonst nur per Session erreichbar waeren. Ohne gueltiges Secret bleibt es
   // beim Session-Schutz (401) — das ist keine Lockerung fuer normale Nutzer.
   const adminBypass = hasAdminBypass(request, url);
+
+  // Ausschliesslich fuer den zuvor eng festgelegten Berlin-/Brandenburg-Nachweis:
+  // kein generischer Profil-Operator, keine URL-Parameter fuer Mandate, standardmaessig
+  // ausgeschaltet. Ohne gueltiges Bearer-Secret antwortet der Pfad absichtlich wie
+  // ein nicht vorhandener Endpunkt, damit er keine neue Angriffsoberflaeche verraet.
+  if (url.pathname === "/api/ops/berlin-brandenburg-nachweis") {
+    if (!adminBypass) return sendNotFound(response);
+    if (request.method !== "POST") {
+      response.writeHead(405, jsonHeaders({ Allow: "POST" }));
+      response.end(JSON.stringify({ error: "Dieser Operatorpfad verlangt POST." }, null, 2));
+      return;
+    }
+    return handleJson(request, response, (body) => bbNachweisOperator.ausfuehren(body));
+  }
 
   // Die vorhandene Pilotpruefung bleibt vor jeder oeffentlichen Auslieferung.
   if (!accountAuth && !hasPilotAccess(request, url)) {
