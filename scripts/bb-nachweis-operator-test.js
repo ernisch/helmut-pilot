@@ -31,6 +31,9 @@ function fakeDeps(calls, extra = {}) {
       deactivateTenant: async (id) => { calls.push(`deaktiv:${id}`); return { ok: true, tenantId: id }; },
       teardownTenant: async (id) => { calls.push(`rueckbau:${id}`); return { ok: true, tenantId: id }; }
     },
+    storage: {
+      getProfile: async (id) => ({ id, profileActive: true })
+    },
     ...extra
   };
 }
@@ -111,7 +114,28 @@ async function main() {
     assert.equal(result.ok, true);
     assert.deepEqual(calls, ["vorflug", ...operator.TARGET_IDS.map((id) => `deaktiv:${id}`), ...operator.TARGET_IDS.map((id) => `rueckbau:${id}`)]);
   });
-  await check("9. HTTP-Pfad bleibt ohne Bearer-Secret unsichtbar und ohne Bestaetigung schreibfrei", async () => {
+  await check("9. Gemeinsamer Nachweis-Lauf startet ausschliesslich beide festen Profile mit noPaidModel", async () => {
+    const calls = [];
+    const result = await operator.ausfuehren(body("nachweis-lauf"), fakeDeps(calls, {
+      runSourceCrawl: async (id, options) => {
+        calls.push(`crawl:${id}:${options.noPaidModel}`);
+        return { runId: `run-${id}`, noPaidModel: true, paidModelCalls: 0, skippedPaidModelPhases: ["lazy-understanding", "eager-understanding"], checkedSources: 1, successfulSources: 1, failedSources: 0, savedItems: 1 };
+      }
+    }));
+    assert.equal(result.ok, true);
+    assert.deepEqual(calls, ["vorflug", ...operator.TARGET_IDS.map((id) => `crawl:${id}:true`)]);
+    assert.ok(result.detail.every((entry) => entry.noPaidModel && entry.paidModelCalls === 0));
+  });
+  await check("10. Gemeinsamer Nachweis-Lauf bleibt ohne beide aktiven Zielprofile gesperrt", async () => {
+    const calls = [];
+    const result = await operator.ausfuehren(body("nachweis-lauf"), fakeDeps(calls, {
+      storage: { getProfile: async (id) => ({ id, profileActive: id === operator.TARGET_IDS[0] }) },
+      runSourceCrawl: async () => { calls.push("crawl"); return {}; }
+    }));
+    assert.equal(result.ok, false); assert.equal(result.reason, "zielprofil-nicht-aktiv");
+    assert.deepEqual(calls, ["vorflug"]);
+  });
+  await check("11. HTTP-Pfad bleibt ohne Bearer-Secret unsichtbar und ohne Bestaetigung schreibfrei", async () => {
     const old = {
       auth: process.env.HELMUT_AUTH_MODE,
       secret: process.env.HELMUT_ADMIN_SECRET,
