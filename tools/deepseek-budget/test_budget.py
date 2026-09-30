@@ -53,7 +53,7 @@ class BudgetTests(unittest.TestCase):
   ts=[threading.Thread(target=f) for _ in range(12)]
   for t in ts:t.start()
   for t in ts:t.join()
-  self.assertEqual(out.count(True),8);self.assertEqual(self.l.snapshot(D)['bound_micro_usd'],16000000)
+  self.assertEqual(out.count(True),4);self.assertEqual(self.l.snapshot(D)['bound_micro_usd'],8000000)
   self.assertTrue(all(x is True or x=='daily_extension_go_required' for x in out))
  def test_finished_call_releases_unused_reservation(self):
   run=self.l.new_run(2000000);i=self.l.reserve(run,1000000,self.c,[D,'2026-09-28'])
@@ -66,16 +66,16 @@ class BudgetTests(unittest.TestCase):
   run=self.l.new_run(2000000);i=self.l.reserve(run,1000000,self.c,[D,'2026-09-28']);self.l.settle(i,2345,[D,'2026-09-28'])
   self.assertEqual(self.l.snapshot('2026-09-28')['bound_micro_usd'],2345)
  def test_no_default_daily_raise(self):
-  self.assertEqual(R.limit(self.c,D),20000000)
+  self.assertEqual(R.limit(self.c,D),10000000)
   # Approval without an explicit operator release is never enough.
   self.c['day_approvals'][D]={'usd':30}
   with self.assertRaises(ValueError):R.limit(self.c,D)
   # A preserved approval at or below the new hard default is redundant, not invalid.
   self.c['day_approvals'][D]={'usd':8,'explicit_user_approval':'Betreiber-GO fuer genau diesen UTC-Tag'}
-  self.assertEqual(R.limit(self.c,D),20000000)
+  self.assertEqual(R.limit(self.c,D),10000000)
   # A real, dated operator release above the hard default raises only its own UTC date.
   self.c['day_approvals'][D]={'usd':30,'explicit_user_approval':'Betreiber-GO fuer genau diesen UTC-Tag'}
-  self.assertEqual(R.limit(self.c,D),30000000);self.assertEqual(R.limit(self.c,'2026-09-28'),20000000)
+  self.assertEqual(R.limit(self.c,D),30000000);self.assertEqual(R.limit(self.c,'2026-09-28'),10000000)
  def test_single_budget_retry_then_stop(self):
   run=self.l.new_run(2000000);self.assertTrue(self.l.retry(run,self.c,'Kostenlimit'));self.assertFalse(self.l.retry(run,self.c,'Tokenlimit'))
  def test_cached_and_reasoning_cost_not_double_counted(self):
@@ -176,26 +176,26 @@ class BudgetTests(unittest.TestCase):
   image={'input':[{'role':'user','content':[{'type':'input_image','image_url':'https://example.test/img'}]}]}
   self.assertLess(R.estimate(self.c,'deepseek-flash',ordinary,131072),200000)
   self.assertGreater(R.estimate(self.c,'deepseek-flash',image,131072),450000)
- def test_warning_ten_prompt_eighteen_hard_twenty_and_config_rejects_others(self):
-  self.assertEqual(self.c['daily_warning_usd'],10);self.assertEqual(self.c['daily_approval_prompt_usd'],18);self.assertEqual(R.limit(self.c,D),20000000)
+ def test_warning_eight_prompt_nine_hard_ten_and_config_rejects_others(self):
+  self.assertEqual(self.c['daily_warning_usd'],8);self.assertEqual(self.c['daily_approval_prompt_usd'],9);self.assertEqual(R.limit(self.c,D),10000000)
   p=Path(self.tmp.name)/'old.json'
-  for wrong in (5,10,15):
+  for wrong in (5,15,20):
    c=copy.deepcopy(BASE);c['daily_limit_usd']=wrong;p.write_text(json.dumps(c))
    with self.assertRaises(ValueError):R.config(p)
-  for wrong in (0,18,20):
+  for wrong in (0,9,10):
    c=copy.deepcopy(BASE);c['daily_warning_usd']=wrong;p.write_text(json.dumps(c))
    with self.assertRaises(ValueError):R.config(p)
-  for wrong in (9,10,20):
+  for wrong in (8,10,20):
    c=copy.deepcopy(BASE);c['daily_approval_prompt_usd']=wrong;p.write_text(json.dumps(c))
    with self.assertRaises(ValueError):R.config(p)
  def test_warning_does_not_block_and_status_is_transparent(self):
-  self.l.seed('warn',D,10000000);run=self.l.new_run(2000000)
+  self.l.seed('warn',D,8000000);run=self.l.new_run(2000000)
   ident=self.l.reserve(run,1,self.c,[D]);snap=self.l.snapshot(D,c=self.c)
-  self.assertTrue(snap['warning_reached']);self.assertEqual(snap['confirmed_micro_usd'],10000000)
+  self.assertTrue(snap['warning_reached']);self.assertEqual(snap['confirmed_micro_usd'],8000000)
   self.assertEqual(snap['reserved_micro_usd'],1);self.assertEqual(snap['unknown_micro_usd'],0)
   self.assertEqual(snap['available_to_warning_micro_usd'],0)
-  self.assertEqual(snap['available_to_approval_prompt_micro_usd'],7999999)
-  self.assertEqual(snap['available_to_hard_limit_micro_usd'],9999999)
+  self.assertEqual(snap['available_to_approval_prompt_micro_usd'],999999)
+  self.assertEqual(snap['available_to_hard_limit_micro_usd'],1999999)
   self.assertFalse(snap['approval_prompt_reached'])
   self.l.release(ident)
  def test_run_caps_and_extension_unchanged(self):
@@ -203,7 +203,7 @@ class BudgetTests(unittest.TestCase):
   self.assertEqual(self.c['retry_multiplier'],2);self.assertEqual(self.c['max_retries'],1)
   self.assertEqual(self.c['output_tokens'],{'high':131072,'max':196608})
   cfg=R.config(Path(__file__).with_name('budget.json'))
-  self.assertEqual(cfg['daily_warning_usd'],10);self.assertEqual(cfg['daily_approval_prompt_usd'],18);self.assertEqual(cfg['daily_limit_usd'],20)
+  self.assertEqual(cfg['daily_warning_usd'],8);self.assertEqual(cfg['daily_approval_prompt_usd'],9);self.assertEqual(cfg['daily_limit_usd'],10)
  def test_peak_windows_and_weekend_exact(self):
   monday=R.dt.datetime(2026,9,28,tzinfo=R.dt.timezone.utc)
   expected={0:False,1:True,2:True,3:True,4:False,5:False,6:True,7:True,9:True,10:False,23:False}

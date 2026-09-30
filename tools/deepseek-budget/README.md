@@ -13,13 +13,10 @@ Production-Modellbudget. Kein Abonnement und kein dauerhafter Server.
 | Pro High |4USD|
 | Pro Max |5USD|
 
-Mit ausdruecklichem Betreiberauftrag vom29.09.2026 gelten fuer lokale
-DeepSeek-Arbeit zwei Tagesgrenzen je UTC-Tag ueber alle Helferprozesse gemeinsam:
-10USD Warnschwelle,18USD Freigabeschwelle und20USD harter Sicherheitsdeckel.
-Die10USD Warnschwelle ist reine Information und veraendert weder Parallelitaet
-noch Aufgabenumfang. Bevor eine neue konservative Reservierung die Tagesbindung
-auf mindestens18USD bringen wuerde, fordert der Launcher eine ausdrueckliche
-Tageserhoehung an. Ohne GO bleibt20USD der harte Deckel. Ein GO erhoeht nur den
+Fuer lokale DeepSeek-Arbeit gilt ein gemeinsamer harter Tagesdeckel von10USD je
+UTC-Tag ueber alle Helferprozesse. Der Launcher meldet ab8USD und verlangt vor
+einer neuen konservativen Reservierung ab9USD eine ausdrueckliche
+Tageserhoehung. Ohne konkretes GO bleibt10USD der harte Deckel. Ein GO erhoeht nur den
 Deckel fuer diesen UTC-Tag; bestaetigte oder gebundene Kosten werden niemals auf
 null gesetzt. Der harte Deckel umfasst bestaetigte Kosten, laufende Reservierungen
 und ungeklaerte konservative Bindungen. Fertige Aufgaben enden sofort. Nicht das
@@ -74,7 +71,7 @@ entfernt. Ein tatsaechlich ueber Mitternacht laufender Aufruf wird konservativ
 an beiden Tagen beruecksichtigt. Ein verschwundener Prozess setzt keine Kosten
 auf null. Abweichungen vom reservierten Hoechstverbrauch sperren weitere Laeufe.
 
-Schon vor20USD wird gefragt: wuerde eine neue Reservierung mindestens18USD
+Schon vor10USD wird gefragt: wuerde eine neue Reservierung mindestens9USD
 Tagesbindung erzeugen und existiert noch keine Tageserhoehung, liefert der Starter
 `daily_extension_go_required` mit Exit80. Terra fragt den Betreiber sofort nach
 einem hoeheren Tagesdeckel fuer genau diesen UTC-Tag. Der Kostenzaehler wird dabei
@@ -84,7 +81,7 @@ liefert der Starter Exit78 mit `daily_go_required`. Ein ausdrueckliches GO wird 
 `"2026-09-28": {"usd": 25, "explicit_user_approval": "Beleg der konkreten Nutzerfreigabe"}`.
 Ein belegter alter Freigabewert bis zum harten Standarddeckel ist redundant und
 senkt den Deckel nicht. Ohne reales GO keinen solchen Eintrag anlegen. Am
-Folgetag gilt wieder20USD. Die10-USD-Warnschwelle braucht kein GO.
+Folgetag gilt wieder10USD. Die8-USD-Warnschwelle braucht kein GO.
 
 `~/bin/helmut-deepseek status` zeigt bestaetigte Kosten, aktive Reservierungen,
 ungeklaerte Bindungen, Gesamtbindung sowie den noch verfuegbaren Betrag bis

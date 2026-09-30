@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "daily_limit_usd": 20,
+  "daily_limit_usd": 10,
   "timezone": "UTC",
   "budgets_usd": {
     "flash-high": 2,
@@ -31,6 +31,6 @@
     }
   },
   "day_approvals": {},
-  "daily_warning_usd": 10,
-  "daily_approval_prompt_usd": 18
+  "daily_warning_usd": 8,
+  "daily_approval_prompt_usd": 9
 }

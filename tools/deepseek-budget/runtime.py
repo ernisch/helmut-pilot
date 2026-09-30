@@ -54,7 +54,7 @@ def exit_code(failure):
 
 def config(path=CONFIG):
     c = json.loads(Path(path).read_text())
-    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_warning_usd'] != 10 or c['daily_approval_prompt_usd'] != 18 or c['daily_limit_usd'] != 20 or c['max_retries'] != 1:
+    if c['version'] != 1 or c['timezone'] != 'UTC' or c['daily_warning_usd'] != 8 or c['daily_approval_prompt_usd'] != 9 or c['daily_limit_usd'] != 10 or c['max_retries'] != 1:
         raise ValueError('Ungueltige Budgetkonfiguration')
     if not 0 < c['daily_warning_usd'] < c['daily_approval_prompt_usd'] < c['daily_limit_usd']:
         raise ValueError('Warn-, Freigabe- und harte Tagesgrenze muessen streng ansteigen')
