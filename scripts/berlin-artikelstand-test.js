@@ -103,7 +103,8 @@ function sonderseite(optionen = {}) {
   const basis = Object.freeze({
     rbmskzl: "rbmskzl/aktuelles/pressemitteilungen",
     senweb: "sen/web/presse/pressemitteilungen",
-    justv: "sen/justv/presse/pressemitteilungen"
+    justv: "sen/justv/presse/pressemitteilungen",
+    kultgz: "sen/kultgz/aktuelles/pressemitteilungen"
   })[familie];
   const url = optionen.url || `https://www.berlin.de/${basis}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
   const titel = optionen.titel === undefined ? "Synthetische Senatsmeldung zur Standprobe" : optionen.titel;
@@ -131,6 +132,8 @@ function sonderBehoerde(optionen = {}) {
 const SONDER = sonderBehoerde({ familie: "rbmskzl" });
 const SONDER_SENWEB = sonderBehoerde({ familie: "senweb" });
 const SONDER_JUSTV = sonderBehoerde({ familie: "justv", nummer: "1719894" });
+const SONDER_KULTGZ = sonderBehoerde({ familie: "kultgz", nummer: "1719812",
+  absaetze: [SONDER_SACH + ' <a href="mailto:kontakt@ehrenamtskarte.berlin.de">E-Mail</a>', SONDER_SACH2] });
 
 test("Erstellung bindet einen eigenen Namespace an URL, Titel, Tag, Absatz- und Volltexthash", () => {
   assert.equal(ERZEUGT.ok, true, JSON.stringify(ERZEUGT));
@@ -417,6 +420,14 @@ test("Sondervorlage justv: erster Sachabsatz und exakt gebundene JUSTV-Adresse",
   assert.equal(beleg.pfadfamilie, "justv");
   assert.match(beleg.url, /^https:\/\/(?:www\.)?berlin\.de\/sen\/justv\/presse\/pressemitteilungen\/2026\/pressemitteilung\.1719894\.php$/);
   assert.equal(erzeugt.absatz, beleg.auszug);
+  assert.equal(erzeugt.row.summary, beleg.auszug);
+});
+
+test("Sondervorlage kultgz: erster Sachabsatz und exakt gebundene KULTGZ-Adresse", () => {
+  const { erzeugt, beleg } = SONDER_KULTGZ;
+  assert.equal(erzeugt.ok, true, JSON.stringify(erzeugt));
+  assert.equal(beleg.pfadfamilie, "kultgz");
+  assert.match(beleg.url, /^https:\/\/(?:www\.)?berlin\.de\/sen\/kultgz\/aktuelles\/pressemitteilungen\/2026\/pressemitteilung\.1719812\.php$/);
   assert.equal(erzeugt.row.summary, beleg.auszug);
 });
 
