@@ -1,6 +1,6 @@
 "use strict";
 
-// Helmut — gezielter Offline-Test des engen Einzelabrufs fuer die beiden Berliner
+// Helmut — gezielter Offline-Test des engen Einzelabrufs fuer die belegten Berliner
 // Senats-Pressemitteilungs-Pfadfamilien.
 // =============================================================================================
 // Prueft lib/helmut/berlin-presse-sondervorlagen-abruf.js. Der echte Abruf wird AUSNAHMSLOS
@@ -51,7 +51,8 @@ function seite(optionen = {}) {
     rbmskzl: "rbmskzl/aktuelles/pressemitteilungen",
     senweb: "sen/web/presse/pressemitteilungen",
     justv: "sen/justv/presse/pressemitteilungen",
-    kultgz: "sen/kultgz/aktuelles/pressemitteilungen"
+    kultgz: "sen/kultgz/aktuelles/pressemitteilungen",
+    asgiva: "sen/asgiva/presse/pressemitteilungen"
   })[familie];
   const host = optionen.host || "www.berlin.de";
   const url = optionen.url
@@ -147,6 +148,24 @@ async function laufe() {
       && p.calls[0].url === s.url && p.calls[0].deps.allowedHost === "berlin.de");
   }
   {
+    const zusatz = "Weitere amtliche Hinweise:" + "<strong>Weiterführende Informationen</strong>"
+      + '<ul><li><a href="/sen/asgiva/info/eins">Erste Informationsseite</a></li>'
+      + '<li><a href="https://www.berlin.de/sen/asgiva/info/zwei">Zweite Informationsseite</a></li></ul>';
+    const s = seite({ familie: "asgiva", nummer: "1719881", datum: "2026-09-30",
+      textile: `<div class="textile"><p>${SACH}</p><p>${SACH2}</p>${zusatz}</div>` });
+    const p = abruf({ html: s.html, status: 200 });
+    const ergebnis = await ABRUF.ladeSondervorlage({ url: s.url }, { fetchUrl: p.fn });
+    check("asgiva: Erfolg mit engem Hinweis-/Listenblock und genau einem hostgebundenen Abruf",
+      ergebnis.ok === true && ergebnis.vorlage.pfadfamilie === "asgiva"
+      && ergebnis.vorlage.auszug === SACH && p.calls.length === 1
+      && p.calls[0].url === s.url && p.calls[0].deps.allowedHost === "berlin.de");
+    check("asgiva: Adapter gibt nur gebundene sichtbare Texte ohne Uhrzeit weiter",
+      ergebnis.vorlage.volltext.includes("Erste Informationsseite")
+      && ergebnis.vorlage.volltext.includes("Zweite Informationsseite")
+      && !ergebnis.vorlage.volltext.includes("href=")
+      && !Object.hasOwn(ergebnis.vorlage, "publishedAt"));
+  }
+  {
     // Beide zulaessigen Hosts (mit/ohne www) sind erlaubt; die Hostbindung bleibt berlin.de.
     const s = seite({ host: "berlin.de" });
     const p = abruf({ html: s.html, status: 200 });
@@ -172,6 +191,7 @@ async function laufe() {
       ["Trailing-Slash", basis.url + "/"],
       ["Pressearchivpfad", "https://www.berlin.de/sen/bjf/service/presse/pressearchiv-2026/pressemitteilung.1718345.php"],
       ["anderer Senatspfad", "https://www.berlin.de/sen/inn/presse/pressemitteilungen/2026/pressemitteilung.1717887.php"],
+      ["ASGIVA ausserhalb der exakten Familie", "https://www.berlin.de/sen/asgiva/aktuelles/pressemitteilungen/2026/pressemitteilung.1719881.php"],
       ["Pfad ohne Jahressegment", "https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/pressemitteilung.1717887.php"],
       ["falsche Endung", basis.url.replace(".php", ".html")],
       ["verkuerzter Pfad", "https://www.berlin.de/rbmskzl/aktuelles/2026/pressemitteilung.1717887.php"]

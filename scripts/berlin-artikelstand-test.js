@@ -90,12 +90,16 @@ const ALT = { id: "rd-" + sha("url:" + KANONISCH), content_hash: sha("url:" + KA
   canonical_url: KANONISCH, url: BE_URL, title: "Fruehere synthetische Fassung derselben Adresse",
   published_at: "2026-08-01T09:30:00.000Z", source_name: "Synthetische Altquelle" };
 
-// --- Synthetische Sondervorlagen (die zwei Senatspfadfamilien ausserhalb des Pressearchivs) --
+// --- Synthetische Sondervorlagen (eng belegte Senatspfadfamilien ausserhalb des Pressearchivs) --
 const SONDER_ABSENDER = S.ABSENDER_RB;
 const SONDER_SACH = "Die synthetische Senatsmeldung beschreibt einen amtlich belegten Sachverhalt der "
   + "Berliner Landesversorgung und dient ausschliesslich der lokalen Offlinepruefung dieser Sondervorlage.";
 const SONDER_SACH2 = "Ein zweiter, ebenfalls vollstaendiger Sachabsatz derselben synthetischen Meldung "
   + "fuer die gebundene Auszugsgrenze dieser Vorlage.";
+const SONDER_ASGIVA_ZUSATZ = "Weitere amtliche Hinweise:"
+  + "<strong>Weiterführende Informationen</strong>"
+  + '<ul><li><a href="/sen/asgiva/info/eins">Erste Informationsseite</a></li>'
+  + '<li><a href="https://www.berlin.de/sen/asgiva/info/zwei">Zweite Informationsseite</a></li></ul>';
 function sonderseite(optionen = {}) {
   const familie = optionen.familie || "rbmskzl";
   const datum = optionen.datum || TAG;
@@ -104,19 +108,22 @@ function sonderseite(optionen = {}) {
     rbmskzl: "rbmskzl/aktuelles/pressemitteilungen",
     senweb: "sen/web/presse/pressemitteilungen",
     justv: "sen/justv/presse/pressemitteilungen",
-    kultgz: "sen/kultgz/aktuelles/pressemitteilungen"
+    kultgz: "sen/kultgz/aktuelles/pressemitteilungen",
+    asgiva: "sen/asgiva/presse/pressemitteilungen"
   })[familie];
   const url = optionen.url || `https://www.berlin.de/${basis}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
   const titel = optionen.titel === undefined ? "Synthetische Senatsmeldung zur Standprobe" : optionen.titel;
   const absaetze = optionen.absaetze === undefined
     ? (familie === "rbmskzl" ? [SONDER_ABSENDER, SONDER_SACH] : [SONDER_SACH, SONDER_SACH2]) : optionen.absaetze;
+  const textileInner = optionen.textileInner === undefined
+    ? absaetze.map(absatz => `<p>${absatz}</p>`).join("") : optionen.textileInner;
   const html = `<!doctype html><html lang="de"><head><meta charset="utf-8">`
     + `<meta name="dcterms.date" content="${datum}"><meta name="dcterms.title" content="${titel}">`
     + `<link rel="canonical" href="${url}"></head><body>`
     + `<div id="layout-grid__area--herounit"><h1 class="title">${titel}</h1></div>`
     + `<div id="layout-grid__area--maincontent"><p class="pressnumber">Pressemitteilung vom ${dmY(datum)}</p>`
     + `<section class="modul-text_bild"><div class="text"><div class="textile">`
-    + absaetze.map(absatz => `<p>${absatz}</p>`).join("")
+    + textileInner
     + `</div></div></section></div>`
     + `<div id="layout-grid__area--marginal"><div class="modul-contact">Kontakt: presse@berlin.de</div></div>`
     + `</body></html>`;
@@ -134,6 +141,8 @@ const SONDER_SENWEB = sonderBehoerde({ familie: "senweb" });
 const SONDER_JUSTV = sonderBehoerde({ familie: "justv", nummer: "1719894" });
 const SONDER_KULTGZ = sonderBehoerde({ familie: "kultgz", nummer: "1719812",
   absaetze: [SONDER_SACH + ' <a href="mailto:kontakt@ehrenamtskarte.berlin.de">E-Mail</a>', SONDER_SACH2] });
+const SONDER_ASGIVA = sonderBehoerde({ familie: "asgiva", nummer: "1719881",
+  textileInner: `<p>${SONDER_SACH}</p><p>${SONDER_SACH2}</p>${SONDER_ASGIVA_ZUSATZ}` });
 
 test("Erstellung bindet einen eigenen Namespace an URL, Titel, Tag, Absatz- und Volltexthash", () => {
   assert.equal(ERZEUGT.ok, true, JSON.stringify(ERZEUGT));
@@ -429,6 +438,24 @@ test("Sondervorlage kultgz: erster Sachabsatz und exakt gebundene KULTGZ-Adresse
   assert.equal(beleg.pfadfamilie, "kultgz");
   assert.match(beleg.url, /^https:\/\/(?:www\.)?berlin\.de\/sen\/kultgz\/aktuelles\/pressemitteilungen\/2026\/pressemitteilung\.1719812\.php$/);
   assert.equal(erzeugt.row.summary, beleg.auszug);
+});
+
+test("Sondervorlage asgiva: sichtbarer Zusatzblock und exakt gebundene ASGIVA-Adresse", () => {
+  const { erzeugt, beleg } = SONDER_ASGIVA;
+  assert.equal(erzeugt.ok, true, JSON.stringify(erzeugt));
+  assert.equal(beleg.pfadfamilie, "asgiva");
+  assert.match(beleg.url, /^https:\/\/(?:www\.)?berlin\.de\/sen\/asgiva\/presse\/pressemitteilungen\/2026\/pressemitteilung\.1719881\.php$/);
+  assert.equal(erzeugt.stand.url,
+    "https://berlin.de/sen/asgiva/presse/pressemitteilungen/2026/pressemitteilung.1719881.php");
+  assert.equal(erzeugt.absatz, SONDER_SACH);
+  assert.equal(erzeugt.row.summary, SONDER_SACH);
+  assert.equal(erzeugt.row.published_at, null);
+  assert.equal(beleg.volltext.includes("Erste Informationsseite"), true);
+  assert.equal(beleg.volltext.includes("Zweite Informationsseite"), true);
+  assert.equal(JSON.stringify(erzeugt.row.raw).includes("Informationsseite"), false);
+  assert.equal(Object.hasOwn(beleg, "publishedAt"), false);
+  assert.equal(B.kanonischeSondervorlagenUrl(
+    "https://berlin.de/sen/asgiva/aktuelles/pressemitteilungen/2026/pressemitteilung.1719881.php"), null);
 });
 
 test("Sondervorlage: Absenderformel als summary, falsche Familie, Drift und Uhrzeit sperren", () => {
