@@ -17,8 +17,8 @@ dauerhaft verbindliche technische Projektregel entsteht.
   und die **einzige** Quelle für laufende Betriebszustände (aktive Profile, offene
   Migrationen, Blocker).
 
-**Stand:** 2026-09-24 (kompakter Sprintstart und konkretes Merge-GO je PR nach
-neuester Nutzeranweisung; AGENTS.md führt den Arbeitsmodus)
+**Stand:** 2026-10-01 (dauerhafter Production Autopilot; AGENTS.md führt
+Arbeitsmodus, Freigaben und Kostenrahmen)
 
 ---
 
@@ -124,10 +124,15 @@ festgestellt wurde.
     Persistenzfehler ausdrücklich. Belegter Anlass: F-CAS, 2026-08-02
     ([`docs/betrieb/cron-fairness.md`](docs/betrieb/cron-fairness.md) §13).
 
-## 5 · Ohne ausdrückliche Freigabe verboten
+## 5 · Production-Schutz und Freigaben
 
-- Merge nach `main` (Merge = **Production-Deployment**) ohne konkretes GO für genau
-  diesen PR sowie jedes andere Deployment ohne passende ausdrückliche Freigabe
+Für den aktuellen Freigabestatus gilt ausschließlich die ranghöhere
+[`AGENTS.md`](AGENTS.md). Eine dort geltende Sprint- oder Production-Autopilot-
+Freigabe benötigt **kein zusätzliches Einzel-GO je PR oder je bereits umfasster
+Production-Aktion**. Diese Datei führt nur die dauerhaften technischen Schutzgrenzen.
+
+- Nie direkt auf `main`; Merge ausschließlich über PR und nur innerhalb des in
+  `AGENTS.md` freigegebenen Umfangs. Merge nach `main` löst Production-Deployment aus
 - Anwenden einer Migration auf Production. **Welche Migrationen offen sind, führt
   ausschließlich [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)**; die Liste wird hier
   bewusst nicht dupliziert, damit sie nicht auseinanderläuft. Jede Anwendung bleibt
@@ -138,6 +143,7 @@ festgestellt wurde.
 - Scharfschalten von Feature-Flags (`helmut-flags.json` oder Vercel-Env)
 - Cron-Zeiten oder -Reihenfolge ändern
 - Ausführen kostenverursachender Läufe (Backfills, Recovery, Massen-Crawls)
+  außerhalb des in `AGENTS.md` ausdrücklich freigegebenen Kosten- und Auftragsrahmens
 - Ausführen von `.github/workflows/understanding-recovery.yml` — dieser Pfad ist in
   Production bereits **gescheitert** (siehe `CURRENT_STATE.md` §10, F-3)
 - Retention/Löschung scharfschalten (`HELMUT_RETENTION_EXECUTE`)
@@ -179,9 +185,10 @@ reversibel und eindeutig sinnvoll ist.
   Workflows und Vercel-Checks nie als Required Check setzen.
 - **PR-Beschreibung:** was geändert wurde, echte Testergebnisse (Zahlen, keine
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
-- **Merge nur mit konkretem GO für genau diesen PR nach `AGENTS.md`.** Die frühere
-  Dauerfreigabe ist widerrufen. Grüne CI allein ist keine Merge-Freigabe.
-  Nach einem autorisierten Merge selbstständig nachprüfen und im Auftrag weiterarbeiten.
+- **Merge ausschließlich nach `AGENTS.md`.** Gilt dort für den konkreten Sprint oder
+  Production Autopilot eine Dauerfreigabe, ist kein zusätzliches GO je PR nötig.
+  Grüne CI allein erweitert den freigegebenen Auftragsumfang nicht. Nach einem
+  autorisierten Merge selbstständig nachprüfen und im Auftrag weiterarbeiten.
 - **Drei Testebenen (Testorganisation 2026-09-23):**
   - **Standard (immer):** Der CI-Pflichtlauf führt ausschließlich die explizite Kernmenge
     `STANDARD` in `scripts/run-offline-tests.js` aus.
