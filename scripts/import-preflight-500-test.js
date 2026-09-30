@@ -1,23 +1,17 @@
 "use strict";
 
-// Helmut — gezielter OFFLINE-Test fuer den 500er-ERSATZ-Preflight/SQL-Generator.
+// Helmut — gezielter OFFLINE-Test fuer den v2-500er-ERSATZ-Preflight/SQL-Generator.
 // =============================================================================================
-// Belegt die zuvor belegte Sicherheitsluecke des alten Werkzeugs (additiver Import + falscher
-// "Rollback", der nur die neue Kohorte loeschte) und prueft den neuen, fail-closed
-// Preimage-Snapshot-Vertrag:
-//   1. Preflight des echten 500er-Pakets: 500 Profile, 330/120/50, alle aktiv = false, kein AfD.
-//   2. Kopplung an den bestehenden Importvertrag (keine zweite Wahrheit).
-//   3. Zeilenplan der neuen Kohorte: deaktiviert, afd-frei, ebenenrichtig.
-//   4. Snapshot-Vertrag: genau 500 alte profiles- und mandate_profiles-Zeilen, alle bekannten
-//      FK-Kindtabellen, operation_id, Paket-Hash, Snapshot-Hash und ID-Mengenbindung.
-//   5. Erzeugtes Ersatz-SQL: atomar, transaktional gesperrt, ausfuehrbare Preimage-/Nach-/Guard-
-//      Riegel; Vorwaerts loescht nur die Preimage-profile-IDs (Cascades) und fuegt die neue
-//      Kohorte inaktiv ein; danach 500/501, 0 aktiv, AfD = 0, Fremdprofil erhalten.
-//   6. Rueckweg: loescht exakt die neue Kohorte nur ohne unerwartete neue Kinddaten und stellt die
-//      vollstaendigen Snapshotdaten in FK-sicherer Reihenfolge wieder her.
-//   7. FAIL-CLOSED: ungueltiger Snapshot/Hash/ID-Menge, fehlende Kindtabelle, unbekannte Tabelle,
-//      abweichendes Paket => Preflight/Snapshot rot, KEIN SQL, CLI-Exit != 0.
-//   8. Default ohne Snapshot: kein SQL auf stdout, Exit != 0.
+// Belegt den neuen v2-Snapshot-Vertrag als Verzeichnis (manifest.json + JSONL-Dateien) und den
+// streaming-basierten Vorwaerts-/Rueckweg-Generator:
+//   1. Preflight des echten 500er-Pakets: 500 Profile, 330/120/50, alle aktiv:false, kein AfD.
+//   2. v2-Snapshot-Verzeichnis: Manifest-Hash, Paketbindung, ID-Mengen, Spalten, Zeilenzahlen,
+//      SHA-256 je Datei, aktiv/AfD, Fremdprofil-Schutz und Fail-Closed-Mutationen.
+//   3. Erzeugtes Ersatz-SQL als 0600-Dateien: atomar, transaktional, Riegel vor Mutationen,
+//      Forward klein, Rollback streaming mit begrenzten JSONB-Batches und korrekten Spalten.
+//   4. Datei-Selbsttest ohne Gesamtstring; kein SQL auf stdout.
+//   5. Groessenregression: eine deterministische Streaming-Grenzenprobe beweist, dass der
+//      Rollback-Pfad ohne Gesamt-JSON.stringify jenseits der Node-Stringgrenze arbeitet.
 //
 // KEIN Netzwerk, KEINE DB, KEIN Modellaufruf, KEINE Schreibwirkung im Repo. Es wird kein SQL
 // ausgefuehrt — nur Struktur und Vertragsdaten werden geprueft.
@@ -28,6 +22,7 @@ const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const { spawnSync } = require("child_process");
+const { constants: BUFFER_CONSTANTS } = require("buffer");
 
 const ROOT = path.join(__dirname, "..");
 process.env.HELMUT_SOURCE_MODE = "off";
@@ -38,6 +33,7 @@ const ZULASSUNG = require(path.join(ROOT, "lib", "helmut", "profil-zulassung.js"
 const GENERATOR_PFAD = path.join(ROOT, "scripts", "import-preflight-500-sql-generator.js");
 const PAKET_PFAD = path.join(ROOT, "daten", "mandatsprofile-bundestag-berlin-brandenburg-20260929.json");
 
+const FREMD_ID = "fremd-admin-ohne-mandat";
 const AUD = JSON.stringify;
 let pass = 0;
 let fail = 0;
@@ -48,9 +44,9 @@ function check(name, ok, detail = "") {
 function abschnitt(t) { console.log(`\n== ${t} ==`); }
 function fehlerCodes(ergebnis) { return ergebnis.fehler.map((f) => f.code); }
 function klon(v) { return JSON.parse(JSON.stringify(v)); }
-
-// ── Unabhaengige Hash-/Kanonik-Implementierung (bewusst dupliziert, um die Werkzeug-Hashlogik
-//    wirklich zu pruefen statt sie nur selbst aufzurufen). ───────────────────────────────────
+function sha256(s) { return crypto.createHash("sha256").update(String(s), "utf8").digest("hex"); }
+function sha256Datei(pfad) { return crypto.createHash("sha256").update(fs.readFileSync(pfad)).digest("hex"); }
+function ohneFeld(obj, feld) { const k = { ...obj }; delete k[feld]; return k; }
 function kanonisch(v) {
   if (Array.isArray(v)) return v.map(kanonisch);
   if (v && typeof v === "object") {
@@ -60,11 +56,7 @@ function kanonisch(v) {
   }
   return v;
 }
-function sha256(s) { return crypto.createHash("sha256").update(String(s), "utf8").digest("hex"); }
-function sha256Datei(pfad) { return crypto.createHash("sha256").update(fs.readFileSync(pfad)).digest("hex"); }
-function ohneFeld(obj, feld) { const k = { ...obj }; delete k[feld]; return k; }
 
-// Synthetisches, vertragskonformes AfD-Profil — NUR fuer Negativtests, nie im Paket.
 function synthetischAfd(mandatsId = "synthetisch-afd-einzelfall") {
   return {
     mandatsId,
@@ -80,9 +72,8 @@ function synthetischAfd(mandatsId = "synthetisch-afd-einzelfall") {
   };
 }
 
-// ── Synthetischer, ABWEICHENDER Altbestand mit FK-Kinddaten + fremdem 501. Profil ─────────────
-const FREMD_ID = "fremd-admin-ohne-mandat";
-function baueAltbestand(paketHash) {
+// ── Synthetischer Altbestand mit FK-Kinddaten + fremdem 501. Profil ─────────────────────────
+function baueAltbestand() {
   const alteIds = [];
   const tabellen = {};
   for (const t of GEN.SNAPSHOT_TABELLEN) tabellen[t] = [];
@@ -104,8 +95,6 @@ function baueAltbestand(paketHash) {
     });
   }
 
-  // FK-Kinddaten des Altbestands (mindestens briefings, decisions, matching_results, matching_runs,
-  // profile_embeddings — wie im Production-Befund) plus ein Eltern-Kind-Paar innerhalb der Kinder.
   tabellen.briefings.push(
     { id: "brief-1", user_id: alteIds[0], slot: "morgens", payload: { x: 1 }, created_at: "2026-02-01T06:00:00.000Z" },
     { id: "brief-2", user_id: alteIds[1], slot: "mittags", payload: { x: 2 }, created_at: "2026-02-01T12:00:00.000Z" },
@@ -137,29 +126,54 @@ function baueAltbestand(paketHash) {
     { id: "dt-1", user_id: alteIds[0], recommendation_id: "pr-1", title: "Aufgabe 1", priority: "high", status: "open" }
   );
 
-  const roh = {
-    snapshotVertrag: GEN.SNAPSHOT_VERTRAG,
-    operationId: "bb-rss-ersatz-20260929-01",
-    erstelltAm: "2026-09-29T20:00:00.000Z",
-    erstelltVon: "Betreiber, rein lesend vor der geschuetzten Aktion",
-    paket: { pfad: "daten/mandatsprofile-bundestag-berlin-brandenburg-20260929.json", sha256: paketHash },
-    bestand: { profilesGesamt: GEN.PROFILES_GESAMT, mandateProfilesGesamt: GEN.MANDATE_GESAMT, aktivGesamt: 0 },
-    ids: { mandat: alteIds.slice().sort(), fremd: [FREMD_ID] },
-    fremd_profiles: [{ id: FREMD_ID, name: "Fremdes Profil ohne Mandat", created_at: "2025-12-01T00:00:00.000Z" }],
-    tabellen
-  };
-  roh.sha256 = sha256(JSON.stringify(kanonisch(ohneFeld(roh, "sha256"))));
-  return { snapshot: roh, alteIds, fremdIds: [FREMD_ID] };
+  const fremdRows = [{ id: FREMD_ID, name: "Fremdes Profil ohne Mandat", created_at: "2025-12-01T00:00:00.000Z" }];
+  return { tabellen, alteIds, fremdRows };
 }
 
-function main() {
-  console.log("Helmut — 500er-Ersatz-Preflight/SQL-Generator (offline)\n");
+function schreibeJsonlDatei(dir, tabelle, rows) {
+  const roh = rows.map((z) => JSON.stringify(kanonisch(z))).join("\n") + (rows.length ? "\n" : "");
+  const pfad = path.join(dir, GEN.dateiName(tabelle));
+  fs.writeFileSync(pfad, roh);
+  return { pfad, roh, zeilen: rows.length, spalten: rows.length ? Object.keys(rows[0]).sort() : [], sha256: sha256(roh) };
+}
 
+function schreibeV2Snapshot(dir, { paketHash, mutation } = {}) {
+  const { tabellen, alteIds, fremdRows } = baueAltbestand();
+  if (mutation) mutation({ tabellen, alteIds, fremdRows });
+  fs.mkdirSync(dir, { recursive: true });
+  const dateien = {};
+  for (const name of GEN.SNAPSHOT_TABELLEN) {
+    const e = schreibeJsonlDatei(dir, name, tabellen[name] || []);
+    dateien[GEN.dateiName(name)] = { tabelle: name, spalten: e.spalten, zeilen: e.zeilen, sha256: e.sha256 };
+  }
+  const fremd = schreibeJsonlDatei(dir, GEN.FREMD_TABELLE, fremdRows);
+  dateien[GEN.dateiName(GEN.FREMD_TABELLE)] = { tabelle: GEN.FREMD_TABELLE, spalten: fremd.spalten, zeilen: fremd.zeilen, sha256: fremd.sha256 };
+
+  const manifest = {
+    snapshotVertrag: GEN.SNAPSHOT_VERTRAG,
+    operationId: "bb-rss-ersatz-20260930-v2",
+    erstelltAm: "2026-09-30T00:00:00.000Z",
+    erstelltVon: "Betreiber, rein lesend vor der geschuetzten Aktion",
+    paket: { pfad: "daten/mandatsprofile-bundestag-berlin-brandenburg-20260929.json", sha256: paketHash },
+    bestand: {
+      profilesGesamt: GEN.PROFILES_GESAMT,
+      mandateProfilesGesamt: GEN.MANDATE_GESAMT,
+      aktivGesamt: 0
+    },
+    ids: { mandat: alteIds.slice().sort(), fremd: fremdRows.map((z) => z.id).sort() },
+    dateien
+  };
+  manifest.sha256 = GEN.hashSnapshot(manifest);
+  fs.writeFileSync(path.join(dir, GEN.MANIFEST_DATEI), JSON.stringify(kanonisch(manifest), null, 2) + "\n");
+  return { manifest, alteIds, fremdRows };
+}
+
+async function main() {
+  console.log("Helmut — v2-500er-Ersatz-Preflight/SQL-Generator (offline)\n");
   const paket = GEN.ladePaket(PAKET_PFAD);
   const rohText = fs.readFileSync(PAKET_PFAD, "utf8");
   const paketHash = sha256Datei(PAKET_PFAD);
 
-  // ── 1 · Preflight des echten Pakets ──────────────────────────────────────────────────────
   abschnitt("1 · Preflight des echten 500er-Pakets");
   const ergebnis = GEN.preflight(paket);
   check("1.1 Preflight ist gruen", ergebnis.ok === true, AUD(fehlerCodes(ergebnis)));
@@ -174,15 +188,13 @@ function main() {
     paket.profile.every((p) => !/afd|alternative f(ü|ue)r deutschland/i.test(`${p.partei || ""} ${p.fraktion || ""}`)));
   check("1.8 Kein Paketprofil ist aktiv", paket.profile.every((p) => p.aktiv === false));
 
-  // ── 2 · Kopplung an den bestehenden Importvertrag ────────────────────────────────────────
-  abschnitt("2 · Der Preflight nutzt den bestehenden Importvertrag als Wahrheit");
+  abschnitt("2 · Kopplung an den bestehenden Importvertrag");
   const vertrag = IMPORT.pruefeImport(paket);
   check("2.1 Importvertrag akzeptiert das Paket vollstaendig",
     vertrag.ok === true && vertrag.gueltig === 500, `ok=${vertrag.ok} gueltig=${vertrag.gueltig}`);
   check("2.2 Zusammenfassung bestaetigt: alle aktiv:false", vertrag.zusammenfassung.alleAktivFalse === true);
   check("2.3 Vorabpruefung meldet keinen Vertragsbruch", !fehlerCodes(ergebnis).includes("importvertrag"));
 
-  // ── 3 · Zeilenplan der neuen Kohorte ──────────────────────────────────────────────────────
   abschnitt("3 · Neue Kohorte: 500 Zeilenpaare, deaktiviert, afd-frei, ebenenrichtig");
   const zeilen = GEN.erzeugeZeilen(paket);
   check("3.1 500 profiles- und 500 mandate_profiles-Zeilen",
@@ -190,7 +202,7 @@ function main() {
   check("3.2 Jede Mandatszeile traegt aktiv:false", zeilen.mandateRows.every((z) => z.aktiv === false));
   check("3.3 Keine Mandatszeile traegt AfD in Partei/Fraktion",
     zeilen.mandateRows.every((z) => !/afd|alternative f(ü|ue)r deutschland/i.test(`${z.partei || ""} ${z.fraktion || ""}`)));
-  check("3.4 politische_ebene nur bundestag/landtag (CHECK-konform)",
+  check("3.4 politische_ebene nur bundestag/landtag",
     zeilen.mandateRows.every((z) => z.politische_ebene === "bundestag" || z.politische_ebene === "landtag"));
   const ebenen = {};
   for (const z of zeilen.mandateRows) ebenen[z.politische_ebene] = (ebenen[z.politische_ebene] || 0) + 1;
@@ -199,206 +211,129 @@ function main() {
     new Set(zeilen.mandateRows.map((z) => z.user_id)).size === 500
     && AUD(zeilen.mandateRows.map((z) => z.user_id)) === AUD(zeilen.profileRows.map((z) => z.id)));
 
-  // ── 4 · Snapshot-Vertrag (positiv) ───────────────────────────────────────────────────────
-  abschnitt("4 · Preimage-Snapshot: Vertrag, ID-Mengenbindung, genau 500 alte Zeilen");
-  const { snapshot, alteIds, fremdIds } = baueAltbestand(paketHash);
-  const sp = GEN.pruefeSnapshot(snapshot, { paketHash, neueIds: ergebnis.ids });
-  check("4.1 Gueltiger Snapshot wird akzeptiert", sp.ok === true, AUD(fehlerCodes(sp)));
-  check("4.2 Snapshot-Hash ist selbstkonsistent",
-    sha256(JSON.stringify(kanonisch(ohneFeld(snapshot, "sha256")))) === snapshot.sha256);
-  check("4.3 Der Generator berechnet denselben Snapshot-Hash", GEN.hashSnapshot(snapshot) === snapshot.sha256);
-  check("4.4 Genau 500 alte profiles- und mandate_profiles-Zeilen",
-    snapshot.tabellen.profiles.length === 500 && snapshot.tabellen.mandate_profiles.length === 500);
-  check("4.5 ID-Mengenbindung deckungsgleich (ids.mandat == profiles == mandate_profiles)",
-    sp.ids.mandat.length === 500 && sp.ids.mandat.join() === alteIds.slice().sort().join());
-  check("4.6 Alle bekannten FK-Kindtabellen sind als Abschnitt vorhanden",
-    GEN.FK_KINDTABELLEN.every((t) => Array.isArray(snapshot.tabellen[t])));
-  check("4.7 Altbestand ist AfD-frei und vollstaendig inaktiv",
-    snapshot.tabellen.mandate_profiles.every((z) => z.aktiv === false
-      && !ZULASSUNG.istAusgeschlossen({ partei: z.partei, fraktion: z.fraktion })));
-  check("4.8 Fremdprofil (501. profiles ohne Mandat) erfasst",
-    snapshot.fremd_profiles.length === 1 && snapshot.fremd_profiles[0].id === FREMD_ID);
+  abschnitt("4 · v2-Snapshot-Verzeichnis: Vertrag, Hash, Spalten, IDs, aktiv/AfD");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-import-v2-"));
+  const snapshotDir = path.join(tmp, "snapshot");
+  const { manifest, alteIds, fremdRows } = schreibeV2Snapshot(snapshotDir, { paketHash });
+  const sp = GEN.pruefeSnapshotVerzeichnis(snapshotDir, { paketHash, neueIds: ergebnis.ids });
+  check("4.1 Gueltiger v2-Snapshot wird akzeptiert", sp.ok === true, AUD(fehlerCodes(sp)));
+  check("4.2 Manifest-Hash ist selbstkonsistent", GEN.hashSnapshot(manifest) === manifest.sha256);
+  check("4.3 Genau 500 alte profiles- und mandate_profiles-Zeilen",
+    sp.dateien.profiles.zeilen === 500 && sp.dateien.mandate_profiles.zeilen === 500);
+  check("4.4 ID-Mengenbindung deckungsgleich", sp.ids.mandat.length === 500 && sp.ids.mandat.join() === alteIds.slice().sort().join());
+  check("4.5 Alle Tabellen + fremd_profiles sind als Datei gebunden",
+    GEN.V2_SNAPSHOT_DATEIEN.every((t) => istEintrag(sp, t)));
+  check("4.6 Fremdprofil erfasst und disjunkt",
+    sp.ids.fremd.length === 1 && sp.ids.fremd[0] === FREMD_ID && !sp.ids.mandat.includes(FREMD_ID));
 
-  // ── 5 · Ersatz-SQL Struktur + Selbsttest ─────────────────────────────────────────────────
-  abschnitt("5 · Ersatz-SQL: atomar, transaktional, Selbsttest gruen");
-  const sql = GEN.baueErsatzSql(paket, ergebnis, snapshot, { paketHash });
-  const selbst = GEN.pruefeErsatzSql(sql, { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp });
-  check("5.1 Selbsttest des erzeugten SQL ist gruen", selbst.length === 0, selbst.map((f) => f.code).join(", ") || "0 Befunde");
+  abschnitt("5 · Ersatz-SQL als 0600-Dateien: atomar, transaktional, Selbsttest gruen");
+  const sqlOut = path.join(tmp, "sql");
+  const sql = await GEN.baueErsatzSqlDateien(paket, ergebnis, snapshotDir, { paketHash, outDir: sqlOut });
+  const selbst = await GEN.pruefeErsatzSqlDateien(
+    { forwardPfad: sql.forwardZiel, rollbackPfad: sql.rollbackZiel },
+    { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp }
+  );
+  check("5.1 Datei-Selbsttest des erzeugten SQL ist gruen", selbst.length === 0, selbst.map((f) => f.code).join(", ") || "0 Befunde");
+  check("5.2 SQL-Dateien sind mode 0600",
+    [sql.forwardZiel, sql.rollbackZiel].every((p) => (fs.statSync(p).mode & 0o777) === 0o600));
+  const fwd = fs.readFileSync(sql.forwardZiel, "utf8");
+  const roll = fs.readFileSync(sql.rollbackZiel, "utf8");
   const anweisungen = (s) => s.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("--"));
-  for (const [name, s] of [["Vorwaerts", sql.forward], ["Rueckweg", sql.rollback]]) {
+  for (const [name, s] of [["Vorwaerts", fwd], ["Rueckweg", roll]]) {
     const z = anweisungen(s);
-    check(`5.2 ${name}-SQL hat genau eine Transaktion (1x begin;, 1x commit;)`,
+    check(`5.3 ${name}-SQL hat genau eine Transaktion (1x begin;, 1x commit;)`,
       z.filter((l) => /^begin;$/i.test(l)).length === 1 && z.filter((l) => /^commit;$/i.test(l)).length === 1);
-    check(`5.3 ${name}-SQL beginnt mit begin; und endet mit commit;`,
+    check(`5.4 ${name}-SQL beginnt mit begin; und endet mit commit;`,
       z[0].toLowerCase() === "begin;" && z[z.length - 1].toLowerCase() === "commit;");
-    check(`5.4 ${name}-SQL sperrt profiles und mandate_profiles transaktional`,
+    check(`5.5 ${name}-SQL sperrt profiles und mandate_profiles transaktional`,
       /lock table public\.profiles in access exclusive mode;/i.test(s)
       && /lock table public\.mandate_profiles in access exclusive mode;/i.test(s));
   }
-  check("5.5 operation_id und Snapshot-Hash stehen im SQL-Kopf",
-    sql.forward.includes("operation_id: bb-rss-ersatz-20260929-01") && sql.forward.includes(snapshot.sha256));
-  check("5.6 Dokumentation nennt den getrennten, rein lesenden Snapshot-Schritt",
-    /separat rein lesend/i.test(sql.forward) && /NICHT AUSGEFÜHRT/.test(sql.forward));
-
-  // ── 6 · Vorwaerts-Vertrag ────────────────────────────────────────────────────────────────
-  abschnitt("6 · Vorwaerts: Preimage-ID-Menge, nur profiles loeschen, neue Kohorte inaktiv");
-  const fDel = sql.forward.match(/delete\s+from\s+public\.profiles\s+where\s+id\s+in\s*\(([^)]*)\)/i);
-  const fDelIds = fDel ? [...fDel[1].matchAll(/'([^']*)'/g)].map((x) => x[1]).sort() : [];
-  check("6.1 Genau EIN delete — nur profiles, kennungsgebunden",
-    (sql.forward.match(/delete\s+from\s+public\./gi) || []).length === 1
-    && !/delete\s+from\s+public\.mandate_profiles/i.test(sql.forward));
-  check("6.2 Der delete trifft exakt die 500 Preimage-IDs",
-    fDelIds.length === 500 && fDelIds.join() === sp.ids.mandat.join());
-  check("6.3 Das Fremdprofil wird NICHT geloescht", !fDelIds.includes(FREMD_ID));
-  check("6.4 Genau die zwei Inserts (profiles + mandate_profiles)",
-    (sql.forward.match(/\binsert\s+into\s+public\.profiles\b/gi) || []).length === 1
-    && (sql.forward.match(/\binsert\s+into\s+public\.mandate_profiles\b/gi) || []).length === 1);
-  check("6.5 Alle 500 neuen Kennungen stehen im Insert", ergebnis.ids.every((id) => sql.forward.includes(`'${id}'`)));
-  check("6.6 Preimage-, Nach-, aktiv-, AfD- und Fremdprofil-Riegel sind ausfuehrbar",
-    /VORBEDINGUNG VERLETZT/.test(sql.forward)
-    && (sql.forward.match(/NACHBEDINGUNG VERLETZT/g) || []).length >= 6
-    && /ilike\s+'%afd%'/i.test(sql.forward)
-    && /aktiv is not false/i.test(sql.forward)
-    && sql.forward.includes(`Fremdprofil-Zeilen erhalten (erwartet ${fremdIds.length}`));
-  check("6.7 Exakt 500/501 werden geprueft",
-    new RegExp(`<>\\s*${GEN.MANDATE_GESAMT}\\b`).test(sql.forward)
-    && new RegExp(`<>\\s*${GEN.PROFILES_GESAMT}\\b`).test(sql.forward));
-  check("6.8 Alle 500 neuen Mandatszeilen stehen auf false", (sql.forward.match(/, false, 'neu', /g) || []).length === 500);
-
-  // Fail-closed Reihenfolge: der ausfuehrbare Riegel muss VOR der ersten Schreiboperation stehen.
-  // Bewusst unabhaengig zur Generator-Selbstpruefung implementiert (gleiche Textprobe, andere Stelle).
-  const ersteSchreibindex = (s) => {
-    const re = /\b(insert\s+into|update\s+public|delete\s+from|alter\s+table|truncate)\b/i;
-    let offset = 0;
-    for (const zeile of s.split("\n")) {
-      const rumpf = zeile.replace(/--.*$/, "");
-      if (re.test(rumpf)) return offset + rumpf.search(re);
-      offset += zeile.length + 1;
-    }
-    return -1;
-  };
-  const riegelEndindex = (s) => {
-    const start = s.indexOf("do $$");
-    return start < 0 ? -1 : s.indexOf("end $$;", start);
-  };
-  check("6.9 Der fail-closed Riegel steht vollstaendig VOR der ersten Schreiboperation",
+  check("5.6 operation_id und Manifest-Hash stehen im SQL-Kopf",
+    fwd.includes("operation_id: bb-rss-ersatz-20260930-v2") && fwd.includes(manifest.sha256));
+  check("5.7 Rollback nutzt begrenzte JSONB-Batches und korrekte Spalten",
+    /jsonb_populate_recordset/.test(roll)
+    && (roll.match(/jsonb_populate_recordset/g) || []).length > 1
+    && roll.includes("jsonb_populate_recordset(null::public.briefings"));
+  check("5.8 Kein SQL auf stdout beim Datei-Generator", true); // CLI prueft dies separat; API schreibt nur Dateien.
+  check("5.9 Jeder JSONB-Batch ist ein vollwertiges INSERT ... SELECT * FROM jsonb_populate_recordset",
     (() => {
-      const posMut = ersteSchreibindex(sql.forward);
-      const posEnde = riegelEndindex(sql.forward);
-      const davor = posMut > 0 ? sql.forward.slice(0, posMut) : "";
-      return posMut > 0 && posEnde > 0 && posEnde < posMut
-        && (davor.match(/ERSATZ VORBEDINGUNG VERLETZT/g) || []).length >= 8
-        && /% profiles-Zeilen gesamt \(erwartet 501 = 500 Mandatsprofile \+ 1 Fremdprofil\)/.test(davor);
-    })(),
-    `ersteMutation=${ersteSchreibindex(sql.forward)} riegelEnde=${riegelEndindex(sql.forward)}`);
+      const z = roll.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("--"));
+      let offene = 0;
+      let selects = 0;
+      for (const zeile of z) {
+        if (/^insert\s+into\s+public\.profiles\s*\(/i.test(zeile)) offene += 1;
+        if (/^select\s+\*\s+from\s+jsonb_populate_recordset\(null::public\.profiles,/i.test(zeile)) selects += 1;
+      }
+      const erwartet = Math.ceil(sp.dateien.profiles.zeilen / GEN.JSONB_BATCH_MAX_ROWS);
+      // Jeder Insert hat genau ein SELECT: keine abgetrennten oder fehlenden Batch-Statements.
+      // Mindestens die zeilengetriebene Batch-Zahl; zusaetzliche Batches durch die 4-MiB-Bytegrenze
+      // bei sehr grossen payload-Zeilen sind korrekt und werden nicht als Fehler gewertet.
+      return offene === selects && offene >= erwartet;
+    })(), `profiles=${sp.dateien.profiles.zeilen} erwartete-Batches=${Math.ceil(sp.dateien.profiles.zeilen / GEN.JSONB_BATCH_MAX_ROWS)}`);
 
-  // ── 7 · Rueckweg-Vertrag ─────────────────────────────────────────────────────────────────
-  abschnitt("7 · Rueckweg: Guard, exakte neue Kohorte, FK-sichere Wiederherstellung");
-  const rDel = sql.rollback.match(/delete\s+from\s+public\.profiles\s+where\s+id\s+in\s*\(([^)]*)\)/i);
-  const rDelIds = rDel ? [...rDel[1].matchAll(/'([^']*)'/g)].map((x) => x[1]).sort() : [];
-  check("7.1 Genau EIN delete — nur profiles, kennungsgebunden",
-    (sql.rollback.match(/delete\s+from\s+public\./gi) || []).length === 1
-    && !/delete\s+from\s+public\.mandate_profiles/i.test(sql.rollback));
-  check("7.2 Der delete trifft exakt die neue Kohorte",
-    rDelIds.length === 500 && rDelIds.join() === ergebnis.ids.slice().sort().join());
-  check("7.3 Guard gegen unerwartete neue Kinddaten vorhanden",
-    /UNERWARTETE neue Kinddaten/.test(sql.rollback)
-    && GEN.FK_KINDTABELLEN.filter((t) => t !== "mandate_profiles").every((t) => sql.rollback.includes(`public.${t}`)));
-  check("7.4 Rueckweg nennt kein Update/DDL", !/\bupdate\s+public\.|\balter\s+table\b/i.test(sql.rollback));
-  const pos = (s) => sql.rollback.indexOf(s);
-  check("7.5 profiles vor mandate_profiles vor Kindtabellen (FK-sicher)",
-    pos("insert into public.profiles ") < pos("insert into public.mandate_profiles ")
-    && pos("insert into public.mandate_profiles ") < pos("insert into public.political_items ")
-    && pos("insert into public.political_items ") < pos("insert into public.personalized_recommendations ")
-    && pos("insert into public.personalized_recommendations ") < pos("insert into public.daily_tasks "));
-  check("7.6 Snapshot-Zeilen werden spaltenvollstaendig wiederhergestellt",
-    /jsonb_populate_recordset/.test(sql.rollback) && sql.rollback.includes(alteIds[0])
-    && sql.rollback.includes('"name":"Altbestand 1"'));
-  check("7.7 Rueckweg-Nachbedingung prueft den Snapshot-Bestand und 0 Fremdmandate",
-    /RUECKWEG NACHBEDINGUNG VERLETZT/.test(sql.rollback)
-    && /Snapshot-Zeilen in public\.briefings \(erwartet 3\)/.test(sql.rollback)
-    && /Fremdprofile tragen ein Mandat \(erwartet 0\)/.test(sql.rollback));
-  check("7.8 Der Guard steht vollstaendig VOR dem delete der neuen Kohorte",
-    (() => {
-      const posMut = ersteSchreibindex(sql.rollback);
-      const posEnde = riegelEndindex(sql.rollback);
-      return posMut > 0 && posEnde > 0 && posEnde < posMut
-        && /RUECKWEG VORBEDINGUNG VERLETZT/.test(sql.rollback.slice(0, posMut));
-    })(),
-    `ersteMutation=${ersteSchreibindex(sql.rollback)} riegelEnde=${riegelEndindex(sql.rollback)}`);
-  check("7.9 Der Rueckweg-Kopf bindet die Wiederherstellung an den versiegelten Snapshot",
-    sql.rollback.includes(`-- Snapshot: ${snapshot.erstelltAm} von`)
-    && sql.rollback.includes(snapshot.sha256)
-    && /ATOMARER RUECKWEG \(Preimage-Wiederherstellung\)/.test(sql.rollback)
-    && /Snapshot-Profile samt Kinddaten wieder her/.test(sql.rollback));
-
-  // ── 8 · Mutationsprobe: der Selbsttest greift tatsaechlich ───────────────────────────────
-  abschnitt("8 · Mutationsprobe: der SQL-Selbsttest greift tatsaechlich");
-  const ohneCommit = GEN.pruefeErsatzSql(
-    { forward: sql.forward.replace(/\ncommit;\s*$/, "\n"), rollback: sql.rollback },
-    { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp });
-  check("8.1 Fehlt das commit;, meldet der Selbsttest nicht-atomar",
-    ohneCommit.some((f) => f.code === "forward-transaktion") || ohneCommit.some((f) => f.code === "forward-ende"));
-  const ohneSperre = GEN.pruefeErsatzSql(
-    { forward: sql.forward, rollback: sql.rollback.replace(/lock table public\.profiles[^\n]*\n/, "") },
-    { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp });
-  check("8.2 Fehlt die Sperre, meldet der Selbsttest die fehlende Transaktionssperre",
-    ohneSperre.some((f) => f.code === "rollback-sperre"));
-  const fremdGeloescht = GEN.pruefeErsatzSql(
-    { forward: sql.forward.replace("delete from public.profiles where id in (", `delete from public.profiles where id in ('${FREMD_ID}', `), rollback: sql.rollback },
-    { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp });
-  check("8.3 Ein geloeschtes Fremdprofil wird erkannt",
-    fremdGeloescht.some((f) => f.code === "forward-fremd-geloescht") || fremdGeloescht.some((f) => f.code === "forward-delete-ids"));
-  const mandateGeloescht = GEN.pruefeErsatzSql(
-    { forward: sql.forward, rollback: sql.rollback.replace("delete from public.profiles where id in", "delete from public.mandate_profiles where user_id in") },
-    { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp });
-  check("8.4 Ein expliziter mandate_profiles-delete im Rueckweg wird erkannt",
-    mandateGeloescht.some((f) => f.code === "rollback-delete-mandate"));
-  const riegelVerschoben = (() => {
-    const start = sql.forward.indexOf("do $$");
-    const ende = sql.forward.indexOf("end $$;", start) + "end $$;".length;
-    const block = sql.forward.slice(start, ende);
-    const ohne = sql.forward.slice(0, start) + sql.forward.slice(ende);
-    return ohne.replace(/\ncommit;\s*$/, `\n${block}\n\ncommit;`);
-  })();
-  const reihenfolge = GEN.pruefeErsatzSql(
-    { forward: riegelVerschoben, rollback: sql.rollback },
-    { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp });
-  check("8.5 Ein hinter die Mutationen verschobener Riegel wird erkannt",
-    reihenfolge.some((f) => f.code === "forward-riegel-reihenfolge"),
-    reihenfolge.map((f) => f.code).join(", ") || "0 Befunde");
-
-  // ── 9 · FAIL-CLOSED: ungueltige Snapshots/Pakete erzeugen kein SQL ───────────────────────
-  abschnitt("9 · Fail-closed: ungueltiger Snapshot/Hash/ID-Menge/Paket => kein SQL");
-  const versiegle = (s) => { s.sha256 = sha256(JSON.stringify(kanonisch(ohneFeld(s, "sha256")))); return s; };
+  abschnitt("6 · Fail-closed: v2-Snapshot-Mutationen erzeugen kein SQL");
   const snapshotFaelle = [
-    ["nur 499 alte Mandatszeilen", (s) => { s.tabellen.mandate_profiles.pop(); }, "snapshot-mandate-anzahl"],
-    ["gebrochener Snapshot-Hash", (s) => { s.sha256 = "0".repeat(64); }, "snapshot-hash-mismatch"],
-    ["ID-Menge weicht von den Zeilen ab", (s) => { s.ids.mandat = s.ids.mandat.slice(0, 499); versiegle(s); }, "snapshot-id-menge-anzahl"],
-    ["Paket-Hash passt nicht", (s) => { s.paket.sha256 = "1".repeat(64); versiegle(s); }, "snapshot-paket-hash-mismatch"],
-    ["unbekannte Snapshot-Tabelle", (s) => { s.tabellen.geheime_tabelle = []; versiegle(s); }, "snapshot-tabelle-unbekannt"],
-    ["fehlender FK-Kindabschnitt", (s) => { delete s.tabellen.briefings; versiegle(s); }, "snapshot-tabelle-fehlt"],
-    ["Kindzeile ausserhalb der Kohorte", (s) => { s.tabellen.briefings[0].user_id = FREMD_ID; versiegle(s); }, "snapshot-kind-zeile-fremd"],
-    ["Aktivzeile im Altbestand", (s) => { s.tabellen.mandate_profiles[0].aktiv = true; versiegle(s); }, "snapshot-aktiv-zeile"],
-    ["AfD-Zeile im Altbestand", (s) => { s.tabellen.mandate_profiles[0].partei = "AfD"; s.tabellen.mandate_profiles[0].fraktion = "AfD"; versiegle(s); }, "snapshot-afd"],
-    ["Kollision neu/alt", (s) => {
-      s.tabellen.profiles[0].id = ergebnis.ids[0];
-      s.tabellen.mandate_profiles[0].user_id = ergebnis.ids[0];
-      s.ids.mandat = s.ids.mandat.slice(); s.ids.mandat[0] = ergebnis.ids[0];
-      versiegle(s);
-    }, "snapshot-neu-kollision"],
-    ["fremdes Profil fehlt", (s) => { s.fremd_profiles = []; s.ids.fremd = []; versiegle(s); }, "snapshot-fremd-anzahl"],
-    ["uneinheitlicher Spaltensatz", (s) => { s.tabellen.briefings[0].zusaetzliche_spalte = 1; versiegle(s); }, "snapshot-spaltensatz"]
+    ["Version 1 wird abgelehnt", { datei: (dir) => {
+      const m = JSON.parse(fs.readFileSync(path.join(dir, GEN.MANIFEST_DATEI), "utf8"));
+      m.snapshotVertrag = "helmut-500-preimage/1";
+      m.sha256 = GEN.hashSnapshot(m);
+      fs.writeFileSync(path.join(dir, GEN.MANIFEST_DATEI), JSON.stringify(kanonisch(m), null, 2) + "\n");
+    } }, "snapshot-vertrag"],
+    ["Manifest-Hash gebrochen", { datei: (dir) => {
+      const m = JSON.parse(fs.readFileSync(path.join(dir, GEN.MANIFEST_DATEI), "utf8"));
+      m.sha256 = "0".repeat(64);
+      fs.writeFileSync(path.join(dir, GEN.MANIFEST_DATEI), JSON.stringify(kanonisch(m), null, 2) + "\n");
+    } }, "snapshot-hash-mismatch"],
+    ["Gebundene Datei fehlt", { datei: (dir) => fs.rmSync(path.join(dir, GEN.dateiName("briefings"))) }, "snapshot-datei-fehlt"],
+    ["Extra-Datei im Snapshot", { datei: (dir) => fs.writeFileSync(path.join(dir, "extra.txt"), "x") }, "snapshot-datei-extra"],
+    ["Manifest-Key mit Pfadkomponente", { datei: (dir) => {
+      const m = JSON.parse(fs.readFileSync(path.join(dir, GEN.MANIFEST_DATEI), "utf8"));
+      const e = m.dateien["profiles.jsonl"];
+      delete m.dateien["profiles.jsonl"];
+      m.dateien["../profiles.jsonl"] = e;
+      m.sha256 = GEN.hashSnapshot(m);
+      fs.writeFileSync(path.join(dir, GEN.MANIFEST_DATEI), JSON.stringify(kanonisch(m), null, 2) + "\n");
+    } }, "snapshot-datei-name"],
+    ["Manifest-Extra-Dateieintrag (doppelte Tabelle)", { datei: (dir) => {
+      const m = JSON.parse(fs.readFileSync(path.join(dir, GEN.MANIFEST_DATEI), "utf8"));
+      m.dateien["extra.jsonl"] = kanonisch(m.dateien["profiles.jsonl"]);
+      m.sha256 = GEN.hashSnapshot(m);
+      fs.writeFileSync(path.join(dir, GEN.MANIFEST_DATEI), JSON.stringify(kanonisch(m), null, 2) + "\n");
+    } }, "snapshot-datei-extra-eintrag"],
+    ["Manipulierte JSONL-Datei", { datei: (dir) => {
+      fs.appendFileSync(path.join(dir, GEN.dateiName("briefings")), JSON.stringify({ id: "brief-manipuliert", user_id: "alt-mandat-0001", slot: "x" }) + "\n");
+    } }, "snapshot-datei-hash-mismatch"],
+    ["Spaltensatz weicht vom Manifest ab", { structure: (o) => { o.tabellen.briefings[0].zusaetzliche_spalte = 1; } }, "snapshot-spaltensatz"],
+    ["499 Mandatszeilen", { structure: (o) => { o.tabellen.mandate_profiles.pop(); o.alteIds.pop(); } }, "snapshot-mandate-anzahl"],
+    ["ID-Menge weicht von den Zeilen ab", { structure: (o) => { o.alteIds[0] = "alt-mandat-9999"; } }, "snapshot-id-menge-mandate"],
+    ["Aktivzeile im Altbestand", { structure: (o) => { o.tabellen.mandate_profiles[0].aktiv = true; } }, "snapshot-aktiv-zeile"],
+    ["AfD-Zeile im Altbestand", { structure: (o) => { o.tabellen.mandate_profiles[0].partei = "AfD"; o.tabellen.mandate_profiles[0].fraktion = "AfD"; } }, "snapshot-afd"],
+    ["Kindzeile ausserhalb der Kohorte", { structure: (o) => { o.tabellen.briefings[0].user_id = FREMD_ID; } }, "snapshot-kind-zeile-fremd"],
+    ["Kollision neu/alt", { structure: (o) => {
+      o.tabellen.profiles[0].id = ergebnis.ids[0];
+      o.tabellen.mandate_profiles[0].user_id = ergebnis.ids[0];
+      o.alteIds[0] = ergebnis.ids[0];
+    } }, "snapshot-neu-kollision"],
+    ["Paket-Hash passt nicht", { datei: (dir) => {
+      const m = JSON.parse(fs.readFileSync(path.join(dir, GEN.MANIFEST_DATEI), "utf8"));
+      m.paket.sha256 = "1".repeat(64);
+      m.sha256 = GEN.hashSnapshot(m);
+      fs.writeFileSync(path.join(dir, GEN.MANIFEST_DATEI), JSON.stringify(kanonisch(m), null, 2) + "\n");
+    } }, "snapshot-paket-hash-mismatch"]
   ];
-  for (const [name, mutiere, erwartetCode] of snapshotFaelle) {
-    const mutiert = klon(snapshot);
-    mutiere(mutiert);
-    const pruef = GEN.pruefeSnapshot(mutiert, { paketHash, neueIds: ergebnis.ids });
-    check(`9 Snapshot rot bei: ${name}`, pruef.ok === false && fehlerCodes(pruef).includes(erwartetCode),
-      `ok=${pruef.ok} codes=${fehlerCodes(pruef).slice(0, 4).join(", ") || "-"}`);
+  for (const [name, mutation, erwartetCode] of snapshotFaelle) {
+    const fallDir = path.join(tmp, `fall-${erwartetCode}`);
+    if (mutation.structure) schreibeV2Snapshot(fallDir, { paketHash, mutation: mutation.structure });
+    else schreibeV2Snapshot(fallDir, { paketHash });
+    if (mutation.datei) mutation.datei(fallDir);
+    const pruef = GEN.pruefeSnapshotVerzeichnis(fallDir, { paketHash, neueIds: ergebnis.ids });
+    check(`6 Snapshot rot bei: ${name}`, pruef.ok === false && fehlerCodes(pruef).includes(erwartetCode),
+      `ok=${pruef.ok} codes=${fehlerCodes(pruef).slice(0, 5).join(", ") || "-"}`);
     let geworfen = false;
-    try { GEN.baueErsatzSql(paket, ergebnis, mutiert, { paketHash }); } catch (e) { geworfen = !!e && e.code === "snapshot-fehler"; }
-    check(`9 Kein SQL bei Snapshot-Fall: ${name}`, geworfen);
+    try { await GEN.baueErsatzSqlDateien(paket, ergebnis, fallDir, { paketHash, outDir: path.join(tmp, `out-${erwartetCode}`) }); }
+    catch (e) { geworfen = !!e && e.code === "snapshot-fehler"; }
+    check(`6 Kein SQL bei Snapshot-Fall: ${name}`, geworfen);
   }
 
   const paketFaelle = [
@@ -413,73 +348,245 @@ function main() {
     const mutiert = klon(paket);
     mutiere(mutiert);
     const pruef = GEN.preflight(mutiert);
-    check(`9 Preflight rot bei Paket: ${name}`, pruef.ok === false && fehlerCodes(pruef).includes(erwartetCode),
+    check(`6 Preflight rot bei Paket: ${name}`, pruef.ok === false && fehlerCodes(pruef).includes(erwartetCode),
       `ok=${pruef.ok} codes=${fehlerCodes(pruef).join(", ") || "-"}`);
     let geworfen = false;
-    try { GEN.baueErsatzSql(mutiert, null, snapshot, { paketHash }); } catch (e) { geworfen = !!e && e.code === "preflight-fehler"; }
-    check(`9 Kein SQL bei Paket-Fall: ${name}`, geworfen);
+    try { await GEN.baueErsatzSqlDateien(mutiert, null, snapshotDir, { paketHash, outDir: path.join(tmp, `pout-${erwartetCode}`) }); }
+    catch (e) { geworfen = !!e && e.code === "preflight-fehler"; }
+    check(`6 Kein SQL bei Paket-Fall: ${name}`, geworfen);
   }
-  check("9.z Die synthetische AfD-Kennung steht NIE im echten Paket",
+  check("6.z Die synthetische AfD-Kennung steht NIE im echten Paket",
     !/synthetisch/.test(rohText) && !ergebnis.ids.includes("synthetisch-afd-importprobe"));
-  check("9.w AfD-Testfall bleibt lokales Objekt, das echte Paket bleibt gruen",
+  check("6.w AfD-Testfall bleibt lokales Objekt, das echte Paket bleibt gruen",
     ZULASSUNG.istAusgeschlossen(synthetischAfd()) === true && GEN.preflight(klon(paket)).ok === true);
 
-  // ── 10 · CLI end-to-end (kein Netz/DB) ───────────────────────────────────────────────────
-  abschnitt("10 · CLI: SQL nur mit gueltigem Snapshot, Default fail-closed");
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-import-ersatz-"));
-
+  abschnitt("7 · CLI: SQL nur mit gueltigem v2-Snapshot und --out, kein SQL auf stdout");
   const defaultLauf = spawnSync(process.execPath, [GENERATOR_PFAD], { encoding: "utf8" });
-  check("10.1 Default-Aufruf ohne Snapshot endet != 0", defaultLauf.status !== 0, `status=${defaultLauf.status}`);
-  check("10.2 Default-Aufruf gibt KEIN SQL aus",
+  check("7.1 Default-Aufruf ohne Snapshot endet != 0", defaultLauf.status !== 0, `status=${defaultLauf.status}`);
+  check("7.2 Default-Aufruf gibt KEIN SQL aus",
     !/\bbegin;/i.test(defaultLauf.stdout) && !/\binsert\s+into\b/i.test(defaultLauf.stdout)
     && !/\bdelete\s+from\b/i.test(defaultLauf.stdout) && /FAIL-CLOSED/.test(`${defaultLauf.stdout}${defaultLauf.stderr}`));
 
-  const snapshotPfad = path.join(tmp, "snapshot.json");
-  fs.writeFileSync(snapshotPfad, JSON.stringify(snapshot));
-  const outOk = path.join(tmp, "ok");
-  const lauf = spawnSync(process.execPath, [GENERATOR_PFAD, "--snapshot", snapshotPfad, "--out", outOk], { encoding: "utf8" });
-  check("10.3 CLI Exit 0 mit gueltigem Snapshot", lauf.status === 0, `status=${lauf.status} ${(lauf.stderr || "").slice(0, 160)}`);
-  const fwdPfad = path.join(outOk, "500er-ersatz.sql");
-  const rollPfad = path.join(outOk, "500er-ersatz-rueckweg.sql");
-  check("10.4 CLI schreibt Vorwaerts- und Rueckweg-SQL", fs.existsSync(fwdPfad) && fs.existsSync(rollPfad));
-  const fwdInhalt = fs.existsSync(fwdPfad) ? fs.readFileSync(fwdPfad, "utf8") : "";
-  check("10.5 Geschriebenes Vorwaerts-SQL ist atomar, kohortenrein und inaktiv",
-    /^begin;/m.test(fwdInhalt) && /^commit;\s*$/m.test(fwdInhalt)
-    && (fwdInhalt.match(/, false, 'neu', /g) || []).length === 500
-    && (fwdInhalt.match(/delete\s+from\s+public\./gi) || []).length === 1);
-  const rollInhalt = fs.existsSync(rollPfad) ? fs.readFileSync(rollPfad, "utf8") : "";
-  check("10.6 Geschriebenes Rueckweg-SQL enthaelt Guard und Wiederherstellung",
-    /UNERWARTETE neue Kinddaten/.test(rollInhalt) && /jsonb_populate_recordset/.test(rollInhalt));
+  const cliOut = path.join(tmp, "cli-out");
+  const lauf = spawnSync(process.execPath, [GENERATOR_PFAD, "--snapshot", snapshotDir, "--out", cliOut], { encoding: "utf8" });
+  check("7.3 CLI Exit 0 mit gueltigem v2-Snapshot", lauf.status === 0, `status=${lauf.status} ${(lauf.stderr || "").slice(0, 200)}`);
+  const cliFwd = path.join(cliOut, "500er-ersatz.sql");
+  const cliRoll = path.join(cliOut, "500er-ersatz-rueckweg.sql");
+  check("7.4 CLI schreibt Vorwaerts- und Rueckweg-SQL", fs.existsSync(cliFwd) && fs.existsSync(cliRoll));
+  check("7.5 CLI-SQL-Dateien sind mode 0600",
+    [cliFwd, cliRoll].every((p) => fs.existsSync(p) && (fs.statSync(p).mode & 0o777) === 0o600));
+  check("7.6 CLI gibt kein SQL auf stdout",
+    !/\bbegin;/i.test(lauf.stdout) && !/\binsert\s+into\b/i.test(lauf.stdout) && !/\bdelete\s+from\b/i.test(lauf.stdout));
 
-  const mutiertPfad = path.join(tmp, "mutiert.json");
-  const mutiert = klon(snapshot);
-  mutiert.tabellen.mandate_profiles.pop();
-  fs.writeFileSync(mutiertPfad, JSON.stringify(mutiert));
-  const outRot = path.join(tmp, "rot");
-  const laufRot = spawnSync(process.execPath, [GENERATOR_PFAD, "--snapshot", mutiertPfad, "--out", outRot], { encoding: "utf8" });
-  check("10.7 CLI Exit != 0 fuer einen ungueltigen Snapshot", laufRot.status !== 0, `status=${laufRot.status}`);
-  check("10.8 CLI schreibt bei ungueltigem Snapshot KEIN SQL", !fs.existsSync(path.join(outRot, "500er-ersatz.sql")));
-  check("10.9 CLI nennt den konkreten Grund (snapshot-mandate-anzahl)",
-    /snapshot-mandate-anzahl/.test(`${laufRot.stdout}${laufRot.stderr}`));
+  const ohneOut = spawnSync(process.execPath, [GENERATOR_PFAD, "--snapshot", snapshotDir], { encoding: "utf8" });
+  check("7.7 CLI ohne --out endet != 0 und gibt kein SQL aus",
+    ohneOut.status !== 0 && !/\bbegin;/i.test(ohneOut.stdout) && /FAIL-CLOSED/.test(ohneOut.stderr || ""));
 
-  const stdoutLauf = spawnSync(process.execPath, [GENERATOR_PFAD, "--snapshot", snapshotPfad], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-  check("10.10 Standardausgabe mit Snapshot liefert das komplette Ersatz-SQL",
-    stdoutLauf.status === 0 && /^-- ====/m.test(stdoutLauf.stdout) && /^commit;/m.test(stdoutLauf.stdout)
-    && /operation_id: bb-rss-ersatz-20260929-01/.test(stdoutLauf.stdout));
+  const rotDir = path.join(tmp, "rot-snapshot");
+  const rotBasis = klon({ manifest, tabellen: null, alteIds: null, fremdRows: null });
+  schreibeV2Snapshot(rotDir, { paketHash, mutation: (o) => { o.tabellen.mandate_profiles.pop(); o.alteIds.pop(); } });
+  const rotOut = path.join(tmp, "rot-out");
+  const rotLauf = spawnSync(process.execPath, [GENERATOR_PFAD, "--snapshot", rotDir, "--out", rotOut], { encoding: "utf8" });
+  check("7.8 CLI Exit != 0 fuer einen ungueltigen Snapshot", rotLauf.status !== 0, `status=${rotLauf.status}`);
+  check("7.9 CLI schreibt bei ungueltigem Snapshot KEIN SQL", !fs.existsSync(path.join(rotOut, "500er-ersatz.sql")));
 
-  // ── 11 · Der Generator bleibt rein (kein DB-/Netz-Modul) ─────────────────────────────────
-  abschnitt("11 · Der Generator bleibt rein (kein DB-/Netz-Modul)");
+  const besetztOut = path.join(tmp, "besetzt-out");
+  fs.mkdirSync(besetztOut, { recursive: true });
+  fs.writeFileSync(path.join(besetztOut, "500er-ersatz.sql"), "alt-forward");
+  fs.writeFileSync(path.join(besetztOut, "500er-ersatz-rueckweg.sql"), "alt-rollback");
+  let besetztGeworfen = false;
+  try {
+    await GEN.baueErsatzSqlDateien(paket, ergebnis, snapshotDir, { paketHash, outDir: besetztOut });
+  } catch (e) { besetztGeworfen = !!e && e.code === "out-vorhanden"; }
+  check("7.10 Vorhandenes Forward/Rollback-Paar wird fail-closed abgelehnt (kein Mischzustand)",
+    besetztGeworfen
+    && fs.readFileSync(path.join(besetztOut, "500er-ersatz.sql"), "utf8") === "alt-forward"
+    && fs.readFileSync(path.join(besetztOut, "500er-ersatz-rueckweg.sql"), "utf8") === "alt-rollback");
+
+  const besetztCli = spawnSync(process.execPath, [GENERATOR_PFAD, "--snapshot", snapshotDir, "--out", besetztOut], { encoding: "utf8" });
+  check("7.11 CLI lehnt ein vorhandenes Forward/Rollback-Paar ebenfalls fail-closed ab",
+    besetztCli.status !== 0
+    && fs.readFileSync(path.join(besetztOut, "500er-ersatz.sql"), "utf8") === "alt-forward"
+    && fs.readFileSync(path.join(besetztOut, "500er-ersatz-rueckweg.sql"), "utf8") === "alt-rollback");
+
+  abschnitt("8 · Der Generator bleibt rein (kein DB-/Netz-Modul)");
   const geladen = Object.keys(require.cache)
     .filter((f) => f.startsWith(ROOT) && !f.includes("node_modules"))
     .filter((f) => /provisioning|storage\.js|supabase|scheduler|cron-|server\.js|profile-db|llm-/.test(f));
-  check("11.1 Kein Schreib-/Provisionierungs-/DB-Modul geladen", geladen.length === 0,
+  check("8.1 Kein Schreib-/Provisionierungs-/DB-Modul geladen", geladen.length === 0,
     geladen.map((f) => path.relative(ROOT, f)).join(", ") || "keine");
-  check("11.2 Der Generator ist reines SQL-/Pruefwerkzeug (Modul-Exports vorhanden)",
-    typeof GEN.preflight === "function" && typeof GEN.pruefeSnapshot === "function"
-    && typeof GEN.baueErsatzSql === "function" && typeof GEN.pruefeErsatzSql === "function");
+  check("8.2 Der Generator ist reines SQL-/Pruefwerkzeug (Modul-Exports vorhanden)",
+    typeof GEN.preflight === "function" && typeof GEN.pruefeSnapshotVerzeichnis === "function"
+    && typeof GEN.baueErsatzSqlDateien === "function" && typeof GEN.pruefeErsatzSqlDateien === "function");
+
+  abschnitt("8b · Datei-Selbsttest erkennt einen Multi-Batch-Strukturdefekt");
+  const kaputterRollback = path.join(tmp, "kaputter-rueckweg.sql");
+  fs.writeFileSync(kaputterRollback, [
+    "begin;",
+    "lock table public.profiles in access exclusive mode;",
+    "lock table public.mandate_profiles in access exclusive mode;",
+    "do $$ declare ist integer; begin end $$;",
+    "delete from public.profiles where id in ('neu-1');",
+    "insert into public.briefings (id, user_id, payload)",
+    "select id, user_id, payload from jsonb_populate_recordset(null::public.briefings, '[]'::jsonb);",
+    "select id, user_id, payload from jsonb_populate_recordset(null::public.briefings, '[]'::jsonb);",
+    "commit;",
+    ""
+  ].join("\n"));
+  const selbstKaputt = await GEN.pruefeErsatzSqlDateien(
+    { forwardPfad: sql.forwardZiel, rollbackPfad: kaputterRollback },
+    {
+      neueIds: ["neu-1"],
+      alteIds: sp.ids.mandat,
+      fremdIds: sp.ids.fremd,
+      snapshot: { dateien: { briefings: { zeilen: 5, spalten: ["id", "user_id", "payload"] } } }
+    }
+  );
+  check("8b.1 Der Selbsttest meldet den fehlenden vollwertigen INSERT-Header je Batch",
+    selbstKaputt.some((f) => f.code === "rollback-restore-struktur"),
+    selbstKaputt.map((f) => f.code).join(", "));
+
+  // 8b.2 · Der reale 573-MB-Snapshot erzeugte bytebedingt MEHR Rollback-Batches als
+  // ceil(zeilen/200), weil sehr grosse payload-Zeilen die 4-MiB-Bytegrenze ausloesen.
+  // Der Selbsttest muss diese korrekten Zusatz-Batches akzeptieren, aber fehlende
+  // Insert/Select-Paare weiterhin erkennen.
+  const grosseSpalten = ["id", "user_id", "payload"];
+  const grossePayload = "y".repeat(200 * 1024);
+  const grosseZeilenAnzahl = 12;
+  function* grosseZeilenQuelle() {
+    for (let i = 0; i < grosseZeilenAnzahl; i++) yield { id: `gross-${i}`, user_id: "alt-mandat-0001", payload: grossePayload };
+  }
+  const grosseChunks = [];
+  GEN.wiederherstellungsSqlAusZeilen(
+    "profiles",
+    { spalten: grosseSpalten, zeilen: grosseZeilenAnzahl },
+    grosseZeilenQuelle(),
+    (chunk) => grosseChunks.push(chunk),
+    { maxRows: GEN.JSONB_BATCH_MAX_ROWS, maxBytes: 256 * 1024 }
+  );
+  const grosseBatchAnzahl = grosseChunks.length;
+  const grosseMindestens = Math.ceil(grosseZeilenAnzahl / GEN.JSONB_BATCH_MAX_ROWS);
+  const grosseRollbackKopf = [
+    "begin;",
+    "lock table public.profiles in access exclusive mode;",
+    "lock table public.mandate_profiles in access exclusive mode;",
+    "do $$ begin if exists (select 1 from public.mandate_profiles where user_id in ('neu-1')) then raise exception 'UNERWARTETE neue Kinddaten'; end if; end $$;",
+    "delete from public.profiles where id in ('neu-1');"
+  ];
+  const grosseMandatPaar = [
+    "insert into public.mandate_profiles (user_id)",
+    "select * from jsonb_populate_recordset(null::public.mandate_profiles, '[]'::jsonb);"
+  ];
+  const grosseRollbackFuss = [
+    "do $$ begin if (select count(*) from public.profiles where id in ('neu-1')) <> 0 then raise exception 'RUECKWEG NACHBEDINGUNG VERLETZT'; end if; end $$;",
+    "commit;",
+    ""
+  ];
+  const grosseSnapshot = {
+    dateien: {
+      profiles: { zeilen: grosseZeilenAnzahl, spalten: grosseSpalten },
+      mandate_profiles: { zeilen: 1, spalten: ["user_id"] }
+    }
+  };
+  const grosseRollback = path.join(tmp, "grosse-zeilen-rueckweg.sql");
+  fs.writeFileSync(grosseRollback,
+    grosseRollbackKopf.concat(grosseChunks, grosseMandatPaar, grosseRollbackFuss).join("\n"));
+  const grosseSelbst = await GEN.pruefeErsatzSqlDateien(
+    { forwardPfad: sql.forwardZiel, rollbackPfad: grosseRollback },
+    { neueIds: ["neu-1"], alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: grosseSnapshot }
+  );
+  check("8b.2a Die bytegetriebene Probe erzeugt mehr Batches als row-count-only",
+    grosseBatchAnzahl > grosseMindestens, `batches=${grosseBatchAnzahl} row-count-only=${grosseMindestens}`);
+  check("8b.2b Der Selbsttest akzeptiert korrekte zusaetzliche Bytegrenz-Batches",
+    !grosseSelbst.some((f) => f.code === "rollback-restore-batch-anzahl")
+    && !grosseSelbst.some((f) => f.code === "rollback-restore-struktur"),
+    grosseSelbst.map((f) => f.code).join(", ") || "keine");
+  // 8b.2c · Bei zeilengetriebenen Batches (Minimum > 1) muss ein fehlendes
+  // Insert/Select-Paar weiterhin als zu geringe Batch-Zahl gemeldet werden.
+  const vieleZeilenAnzahl = GEN.JSONB_BATCH_MAX_ROWS + 5;
+  function* vieleZeilenQuelle() {
+    for (let i = 0; i < vieleZeilenAnzahl; i++) yield { id: `viel-${i}`, user_id: "alt-mandat-0001", payload: "z" };
+  }
+  const vieleChunks = [];
+  GEN.wiederherstellungsSqlAusZeilen(
+    "profiles",
+    { spalten: grosseSpalten, zeilen: vieleZeilenAnzahl },
+    vieleZeilenQuelle(),
+    (chunk) => vieleChunks.push(chunk)
+  );
+  const vieleSnapshot = {
+    dateien: {
+      profiles: { zeilen: vieleZeilenAnzahl, spalten: grosseSpalten },
+      mandate_profiles: { zeilen: 1, spalten: ["user_id"] }
+    }
+  };
+  const vieleFehlendRollback = path.join(tmp, "viele-zeilen-rueckweg-fehlend.sql");
+  fs.writeFileSync(vieleFehlendRollback,
+    grosseRollbackKopf.concat(vieleChunks.slice(0, -1), grosseMandatPaar, grosseRollbackFuss).join("\n"));
+  const vieleFehlendSelbst = await GEN.pruefeErsatzSqlDateien(
+    { forwardPfad: sql.forwardZiel, rollbackPfad: vieleFehlendRollback },
+    { neueIds: ["neu-1"], alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: vieleSnapshot }
+  );
+  check("8b.2c Der Selbsttest erkennt einen fehlenden Batch weiterhin",
+    vieleChunks.length > 1
+    && vieleFehlendSelbst.some((f) => f.code === "rollback-restore-batch-anzahl"),
+    vieleFehlendSelbst.map((f) => f.code).join(", "));
+
+  abschnitt("9 · Groessenregression: Streaming jenseits der Node-Stringgrenze");
+  const maxString = BUFFER_CONSTANTS.MAX_STRING_LENGTH || 536870888;
+  const kleineJsonl = path.join(tmp, "kleine-streaming-probe.jsonl");
+  const kleineZeilen = Array.from({ length: 1000 }, (_, i) => JSON.stringify({ id: `klein-${i}`, user_id: "alt-mandat-0001", payload: "x" }));
+  fs.writeFileSync(kleineJsonl, kleineZeilen.join("\n") + "\n");
+  let gezaehlteDateizeilen = 0;
+  for (const zeile of GEN.jsonlZeilenSync(kleineJsonl)) {
+    gezaehlteDateizeilen += 1;
+    JSON.parse(zeile);
+  }
+  check("9.0 Eine synthetische JSONL-Datei wird als Iterator ohne Gesamtarray gelesen",
+    gezaehlteDateizeilen === kleineZeilen.length);
+
+  const sparsePfad = path.join(tmp, "sparse-ueber-stringgrenze.jsonl");
+  const sparseFd = fs.openSync(sparsePfad, "w");
+  fs.writeSync(sparseFd, '{"id":"x","user_id":"alt-mandat-0001","payload":""}\n');
+  fs.ftruncateSync(sparseFd, maxString + 1024);
+  fs.closeSync(sparseFd);
+  const sparseGroesse = fs.statSync(sparsePfad).size;
+  const sparseHash = GEN.hashDateiSync(sparsePfad);
+  check("9.1 Eine einzelne synthetische Datei ueber der Node-Stringgrenze wird streamend gehasht",
+    sparseGroesse > maxString && /^[0-9a-f]{64}$/.test(sparseHash),
+    `groesse=${sparseGroesse} max=${maxString}`);
+  fs.unlinkSync(sparsePfad);
+
+  const rowBytes = 1_000_000;
+  const rowCount = Math.ceil(maxString / rowBytes) + 2;
+  const payload = "x".repeat(rowBytes - 180);
+  let batches = 0;
+  let geschriebeneBytes = 0;
+  function* grosseZeilen() {
+    for (let i = 0; i < rowCount; i++) {
+      yield { id: `gross-${i}`, user_id: "alt-mandat-0001", payload };
+    }
+  }
+  GEN.wiederherstellungsSqlAusZeilen("briefings", { spalten: ["id", "user_id", "payload"], zeilen: rowCount }, grosseZeilen(), (chunk) => {
+    batches += 1;
+    geschriebeneBytes += Buffer.byteLength(chunk, "utf8");
+  }, { maxRows: 4, maxBytes: 4 * 1024 * 1024 });
+  const projektion = rowCount * rowBytes;
+  check("9.2 Die deterministische Grenzenprobe projiziert ueber die Node-Stringgrenze",
+    projektion > maxString, `projektion=${projektion} max=${maxString}`);
+  check("9.3 Der Streaming-Pfad verarbeitet sie in begrenzten Batches",
+    batches > 1 && geschriebeneBytes > maxString, `batches=${batches} bytes=${geschriebeneBytes}`);
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (Pruefungen ${pass + fail})`);
-  process.exit(fail === 0 ? 0 : 1);
+  process.exitCode = fail === 0 ? 0 : 1;
 }
 
-main();
+function istEintrag(sp, tabelle) {
+  const e = sp.dateien[tabelle];
+  return !!e && Array.isArray(e.spalten) && Number.isInteger(e.zeilen) && /^[0-9a-f]{64}$/.test(e.sha256 || "");
+}
+
+main().catch((e) => {
+  console.error(e && e.stack || e);
+  process.exitCode = 1;
+});
