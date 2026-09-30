@@ -47,8 +47,11 @@ function seite(optionen = {}) {
   const familie = optionen.familie || "rbmskzl";
   const datum = optionen.datum || "2026-09-24";
   const jahr = datum.slice(0, 4);
-  const basis = familie === "rbmskzl"
-    ? "rbmskzl/aktuelles/pressemitteilungen" : "sen/web/presse/pressemitteilungen";
+  const basis = Object.freeze({
+    rbmskzl: "rbmskzl/aktuelles/pressemitteilungen",
+    senweb: "sen/web/presse/pressemitteilungen",
+    justv: "sen/justv/presse/pressemitteilungen"
+  })[familie];
   const host = optionen.host || "www.berlin.de";
   const url = optionen.url
     || `https://${host}/${basis}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
@@ -122,6 +125,15 @@ async function laufe() {
       && ergebnis.vorlage.auszug === SACH && ergebnis.vorlage.publikationstag === "2026-09-23");
     check("senweb: genau ein Abruf an den geprueften Host",
       p.calls.length === 1 && p.calls[0].url === s.url && p.calls[0].deps.allowedHost === "berlin.de");
+  }
+  {
+    const s = seite({ familie: "justv", nummer: "1719894", datum: "2026-09-30" });
+    const p = abruf({ html: s.html, status: 200 });
+    const ergebnis = await ABRUF.ladeSondervorlage({ url: s.url }, { fetchUrl: p.fn });
+    check("justv: Erfolg, Pfadfamilie und genau ein hostgebundener Abruf",
+      ergebnis.ok === true && ergebnis.vorlage.pfadfamilie === "justv"
+      && ergebnis.vorlage.auszug === SACH && p.calls.length === 1
+      && p.calls[0].url === s.url && p.calls[0].deps.allowedHost === "berlin.de");
   }
   {
     // Beide zulaessigen Hosts (mit/ohne www) sind erlaubt; die Hostbindung bleibt berlin.de.

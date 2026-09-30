@@ -100,8 +100,11 @@ function sonderseite(optionen = {}) {
   const familie = optionen.familie || "rbmskzl";
   const datum = optionen.datum || TAG;
   const jahr = optionen.jahr || datum.slice(0, 4);
-  const basis = familie === "rbmskzl" ? "rbmskzl/aktuelles/pressemitteilungen"
-    : "sen/web/presse/pressemitteilungen";
+  const basis = Object.freeze({
+    rbmskzl: "rbmskzl/aktuelles/pressemitteilungen",
+    senweb: "sen/web/presse/pressemitteilungen",
+    justv: "sen/justv/presse/pressemitteilungen"
+  })[familie];
   const url = optionen.url || `https://www.berlin.de/${basis}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
   const titel = optionen.titel === undefined ? "Synthetische Senatsmeldung zur Standprobe" : optionen.titel;
   const absaetze = optionen.absaetze === undefined
@@ -127,6 +130,7 @@ function sonderBehoerde(optionen = {}) {
 }
 const SONDER = sonderBehoerde({ familie: "rbmskzl" });
 const SONDER_SENWEB = sonderBehoerde({ familie: "senweb" });
+const SONDER_JUSTV = sonderBehoerde({ familie: "justv", nummer: "1719894" });
 
 test("Erstellung bindet einen eigenen Namespace an URL, Titel, Tag, Absatz- und Volltexthash", () => {
   assert.equal(ERZEUGT.ok, true, JSON.stringify(ERZEUGT));
@@ -405,6 +409,15 @@ test("Sondervorlage senweb: erster Sachabsatz und eigene, von RBMSKZL verschiede
   assert.notEqual(erzeugt.stand.standHash, SONDER.erzeugt.stand.standHash);
   assert.equal(ST.leseStand(erzeugt.row).identitaet(ST.leseStand(erzeugt.row).stand),
     "berlin-senatsvorlage|" + erzeugt.stand.standHash + "|sachabsatz");
+});
+
+test("Sondervorlage justv: erster Sachabsatz und exakt gebundene JUSTV-Adresse", () => {
+  const { erzeugt, beleg } = SONDER_JUSTV;
+  assert.equal(erzeugt.ok, true, JSON.stringify(erzeugt));
+  assert.equal(beleg.pfadfamilie, "justv");
+  assert.match(beleg.url, /^https:\/\/(?:www\.)?berlin\.de\/sen\/justv\/presse\/pressemitteilungen\/2026\/pressemitteilung\.1719894\.php$/);
+  assert.equal(erzeugt.absatz, beleg.auszug);
+  assert.equal(erzeugt.row.summary, beleg.auszug);
 });
 
 test("Sondervorlage: Absenderformel als summary, falsche Familie, Drift und Uhrzeit sperren", () => {
