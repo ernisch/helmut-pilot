@@ -44,6 +44,9 @@ const ASGIVA_LISTE2 = "Zweite amtliche Informationsseite";
 const ASGIVA_ZUSATZ = ASGIVA_HINWEIS + `<strong>${ASGIVA_STARK}</strong>`
   + `<ul><li><a href="/sen/asgiva/themen/information-eins">${ASGIVA_LISTE1}</a></li>`
   + `<li><a href="https://www.berlin.de/sen/asgiva/themen/information-zwei">${ASGIVA_LISTE2}</a></li></ul>`;
+const ASGIVA_EXTERN = "https://www.kaeltehilfe-berlin.de";
+const ASGIVA_INLINE_STARK = "Sozialsenatorin Cansel Kiziltepe";
+const ASGIVA_INLINE_TEXT = "Die Senatorin informiert zur Berliner Kaeltehilfe.";
 
 // SenWEB hat zwischen Artikeltext und Randbereich ein PDF-Downloadmodul; der Kontaktblock steht im
 // Randbereich. Beides darf nie Artikeltext werden.
@@ -211,6 +214,22 @@ check("Absenderformel exakt", M.ABSENDER_RB === ABSENDER);
   check("asgiva: keine erfundene Uhrzeit", !Object.hasOwn(e, "publishedAt")
     && !Object.hasOwn(e, "uhrzeit") && !/[T ]\d{2}:\d{2}/.test(e.publikationstag));
 }
+{
+  const textileInner = `<p>${SACH}</p>`
+    + `<p><strong>${ASGIVA_INLINE_STARK}</strong> ${SACH2}</p>`
+    + `<p>${ASGIVA_INLINE_TEXT}</p>${ASGIVA_HINWEIS}`
+    + `<ul><li><a href="/kaeltehilfe">${ASGIVA_LISTE1}</a></li>`
+    + `<li><a href="${ASGIVA_EXTERN}">${ASGIVA_LISTE2}</a></li></ul>`;
+  const s = seite({ familie: "asgiva", nummer: "1719881", datum: "2026-09-30", textileInner });
+  const e = M.pruefeSondervorlage(s.eingabe);
+  check("asgiva: inline STRONG im direkten P wird als Text gebunden",
+    e.auszug === SACH
+    && e.volltext === [SACH, `${ASGIVA_INLINE_STARK} ${SACH2}`, ASGIVA_INLINE_TEXT,
+      ASGIVA_HINWEIS, ASGIVA_LISTE1, ASGIVA_LISTE2].join("\n\n") + "\n"
+    && !/href=|<\/?(?:a|strong|ul|li)/i.test(e.volltext));
+  check("asgiva: exakte Kaeltehilfe-URL zusaetzlich zu berlin.de-Links erlaubt",
+    s.eingabe.html.includes(ASGIVA_EXTERN) && e.volltext.includes(ASGIVA_LISTE2));
+}
 
 // ---------------------------------------------------------------------------------------------
 // 3) Eingang und Adresse
@@ -308,10 +327,25 @@ erwarteAbbruch(seite({ absaetze: [ABSENDER, SACH, SACH] }).eingabe, "Absatz-Dopp
 // Die ASGIVA-Ausnahme bleibt eine eigene, direkte Grammatik und weitet keine andere Familie aus.
 const asgivaSeite = textileInner => seite({ familie: "asgiva", nummer: "1719881",
   datum: "2026-09-30", textileInner }).eingabe;
+const asgivaLinkSeite = href => asgivaSeite(`<p>${SACH}</p>`
+  + `<ul><li><a href="${href}">${ASGIVA_LISTE1}</a></li></ul>`);
 erwarteAbbruch(asgivaSeite(`<p>${SACH}</p>${ASGIVA_ZUSATZ}<ul><li>Zusatzliste</li></ul>`),
   "asgiva mehrere UL", "asgiva-struktur-ungueltig");
 erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><strong>${ASGIVA_STARK}</strong><strong>Zweiter Titel</strong>`),
   "asgiva mehrere STRONG", "asgiva-struktur-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><p><strong>${ASGIVA_STARK}</strong> ${SACH2}</p>`
+  + `${ASGIVA_HINWEIS}<strong>Zweiter Titel</strong>`),
+  "asgiva direktes und inline STRONG zusammen", "asgiva-struktur-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><strong>${ASGIVA_STARK}</strong> ${ASGIVA_LISTE1}</li></ul>`),
+  "asgiva STRONG in LI", "asgiva-struktur-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><p><em><strong>${ASGIVA_STARK}</strong></em> ${SACH2}</p>`),
+  "asgiva STRONG unter Inline-Element", "asgiva-struktur-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><p><strong></strong> ${SACH2}</p>`),
+  "asgiva leeres STRONG", "asgiva-strong-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><p><strong>   </strong> ${SACH2}</p>`),
+  "asgiva STRONG nur Leerraum", "asgiva-strong-ungueltig");
+erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><p><strong><em>${ASGIVA_STARK}</em></strong> ${SACH2}</p>`),
+  "asgiva STRONG mit Elementkind", "asgiva-strong-ungueltig");
 erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul></ul>`),
   "asgiva leere UL", "asgiva-liste-ungueltig");
 erwarteAbbruch(asgivaSeite(`<p>${SACH}</p>${ASGIVA_HINWEIS}<strong>${ASGIVA_STARK}</strong>`
@@ -319,6 +353,24 @@ erwarteAbbruch(asgivaSeite(`<p>${SACH}</p>${ASGIVA_HINWEIS}<strong>${ASGIVA_STAR
   "asgiva verschachtelte Liste", "asgiva-struktur-ungueltig");
 erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="https://example.com/info">Extern</a></li></ul>`),
   "asgiva externer HTTPS-Link", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaLinkSeite("https://www.kaeltehilfe-berlin.de/kaeltehilfe"),
+  "asgiva Kaeltehilfe fremder Pfad", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaLinkSeite("https://www.kaeltehilfe-berlin.de/"),
+  "asgiva Kaeltehilfe Root mit Slash", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaLinkSeite("https://kaeltehilfe-berlin.de"),
+  "asgiva Kaeltehilfe ohne www", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaLinkSeite("https://www.kaeltehilfe-berlin.de.evil.example"),
+  "asgiva Kaeltehilfe fremder Suffixhost", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaLinkSeite("https://user@www.kaeltehilfe-berlin.de"),
+  "asgiva Kaeltehilfe Benutzerinfo", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaLinkSeite("https://www.kaeltehilfe-berlin.de:8443"),
+  "asgiva Kaeltehilfe Port", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaLinkSeite("https://www.kaeltehilfe-berlin.de?x=1"),
+  "asgiva Kaeltehilfe Query", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaLinkSeite("https://www.kaeltehilfe-berlin.de#top"),
+  "asgiva Kaeltehilfe Fragment", "asgiva-link-ungueltig");
+erwarteAbbruch(asgivaLinkSeite("http://www.kaeltehilfe-berlin.de"),
+  "asgiva Kaeltehilfe HTTP", "asgiva-link-ungueltig");
 erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="http://berlin.de/info">HTTP</a></li></ul>`),
   "asgiva unsicherer HTTP-Link", "asgiva-link-ungueltig");
 erwarteAbbruch(asgivaSeite(`<p>${SACH}</p><ul><li><a href="https://user@berlin.de/info">Benutzerinfo</a></li></ul>`),
