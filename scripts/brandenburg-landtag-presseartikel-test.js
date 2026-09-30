@@ -186,6 +186,85 @@ erwarteAbbruch(seite({ datum: "2026-02-31" }).eingabe, "ungueltiger Kalendertag"
 erwarteAbbruch(seite({ kopfAbsatz: "<p><em>Potsdam, 23. September 2026 / 134</em> Nachtrag</p>" }).eingabe, "Kopfzeile mit Fremdinhalt", "kopfzeile-fremdinhalt");
 console.log("PASS Kopfzeile eindeutig, nur Tag, ohne erfundene Uhrzeit");
 
+// 6b) Enger Sonderpfad der aktuellen Meldungen: kombinierte Kopfzeile und genau
+// eine streng gebundene Termintabelle. Der Standardpfad oben bleibt unveraendert.
+{
+  const aktuelleUrl = "https://www.landtag.brandenburg.de/de/aktuelles/neuigkeiten/aktuelle_meldungen/49719";
+  const titel = "Aktuelle Termine des Landtages Brandenburg";
+  const kopf = "<p><em>Potsdam, 28. August 2026 / 122<br><br></em>Der Landtag informiert über folgende Termine.</p>";
+  const pdf = '<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>';
+  const tabelle = [
+    "<table><tbody>",
+    "<tr><td><strong>09:30</strong> Pressekonferenz</td><td>Raum 1</td></tr>",
+    "<tr><td><strong>14:00</strong> Ausschusssitzung</td><td></td></tr>",
+    "</tbody></table>"
+  ].join("\n");
+  const eingabeMit = (tabellenHtml, kopfHtml = kopf) => seite({
+    url: aktuelleUrl,
+    titel,
+    mainInhalt: `<nav></nav>\n<h1>${titel}</h1>\n${kopfHtml}\n${tabellenHtml}\n<p>Weiterer Sachabsatz.</p>\n${pdf}`
+  }).eingabe;
+
+  const ergebnis = pruefePresseartikel(eingabeMit(tabelle));
+  A.equal(ergebnis.url, aktuelleUrl);
+  A.equal(ergebnis.publikationstag, "2026-08-28");
+  A.equal(ergebnis.kopfzeile, "Potsdam, 28. August 2026 / 122");
+  A.equal(ergebnis.volltext, [
+    "Der Landtag informiert über folgende Termine.",
+    "09:30 Pressekonferenz Raum 1",
+    "14:00 Ausschusssitzung",
+    "Weiterer Sachabsatz.\n"
+  ].join("\n\n"));
+  A.deepEqual(Object.keys(ergebnis), AUSGANG_FELDER);
+  A.equal(Object.hasOwn(ergebnis, "published_at"), false, "keine erfundene Publikationszeit");
+  const mitLeeremPdfNachlauf = eingabeMit(tabelle);
+  const mitLeeremPdfNachlaufErgebnis = pruefePresseartikel({ ...mitLeeremPdfNachlauf,
+    html: mitLeeremPdfNachlauf.html.replace("</main>", "<p>&nbsp;</p></main>") });
+  A.equal(mitLeeremPdfNachlaufErgebnis.volltext, ergebnis.volltext);
+
+  erwarteAbbruch(seite({ url: aktuelleUrl, titel }).eingabe,
+    "aktueller Pfad ohne Sonderstruktur", "aktuelle-struktur-fehlt");
+  erwarteAbbruch(seite({ titel, mainInhalt: `<nav></nav>\n<h1>${titel}</h1>\n${kopf}\n${tabelle}\n<p>A.</p>\n${pdf}` }).eingabe,
+    "Sonderstruktur auf altem Artikelpfad", "kopfzeile-fremdinhalt");
+  erwarteAbbruch(eingabeMit(tabelle,
+    "<p><em>Potsdam, 28. Sommer 2026 / 122<br><br></em>Textbeginn.</p>"),
+  "unbekannte kombinierte Kopfzeile", "kopfzeile-ungueltig");
+  erwarteAbbruch(eingabeMit(tabelle,
+    "<p><em>Potsdam, 28. August 2026 / 122<br></em>Textbeginn.</p>"),
+  "abweichende kombinierte Kopfzeile", "kopfzeile-fremdinhalt");
+  erwarteAbbruch(eingabeMit(tabelle.replace("<tbody>", "<thead><tr><th>Zeit</th><th>Ort</th></tr></thead><tbody>")),
+    "thead und th", "termin-tabelle-tag-ungueltig");
+  erwarteAbbruch(eingabeMit(tabelle.replace("<td>Raum 1</td>", "<td>Raum 1</td><td>Dritte Zelle</td>")),
+    "dritte Zelle", "termin-tabelle-zellen-ungueltig");
+  erwarteAbbruch(eingabeMit(tabelle.replace("Pressekonferenz", '<a href="/termin">Pressekonferenz</a>')),
+    "Link in Tabelle", "termin-tabelle-tag-ungueltig");
+  erwarteAbbruch(eingabeMit(tabelle.replace("<tr><td><strong>09:30", "<tr hidden><td><strong>09:30")),
+    "versteckte Zeile", "termin-tabelle-versteckt");
+  erwarteAbbruch(eingabeMit(tabelle.replace("<td>Raum 1</td>", "<td aria-hidden=\"true\">Raum 1</td>")),
+    "versteckte Zelle", "termin-tabelle-versteckt");
+  erwarteAbbruch(eingabeMit(tabelle.replace("<tr><td><strong>14:00", "<tr style=\"display: none\"><td><strong>14:00")),
+    "per CSS versteckte Zeile", "termin-tabelle-versteckt");
+  erwarteAbbruch(eingabeMit(tabelle.replace("09:30", "9:30")),
+    "falsche Zeit", "termin-tabelle-zeit-ungueltig");
+  erwarteAbbruch(eingabeMit(tabelle.replace("Pressekonferenz", "Pressekonferenz bis 10:30")),
+    "mehrdeutige Zeit", "termin-tabelle-zeit-mehrdeutig-oder-fehlend");
+  erwarteAbbruch(eingabeMit(`${tabelle}\n${tabelle}`),
+    "doppelte Tabelle", "termin-tabelle-mehrdeutig-oder-fehlend");
+  erwarteAbbruch(eingabeMit(tabelle.replace("Pressekonferenz", "Presse<!-- verborgen -->konferenz")),
+    "Kommentar in Tabelle", "termin-tabelle-verborgener-oder-pdf-inhalt");
+  erwarteAbbruch(eingabeMit(tabelle.replace("Pressekonferenz", "Presse<script>x()</script>konferenz")),
+    "Skript in Tabelle", "termin-tabelle-verborgener-oder-pdf-inhalt");
+  erwarteAbbruch(eingabeMit(tabelle.replace("Pressekonferenz", "Presse<style>td{}</style>konferenz")),
+    "Style in Tabelle", "termin-tabelle-verborgener-oder-pdf-inhalt");
+  erwarteAbbruch(eingabeMit(tabelle.replace("Raum 1", "Hinweis.pdf")),
+    "PDF in Tabelle", "termin-tabelle-verborgener-oder-pdf-inhalt");
+  erwarteAbbruch(eingabeMit(tabelle.replace("Ausschusssitzung", "Ausschuss<table><tbody><tr><td>X</td><td>Y</td></tr></tbody></table>")),
+    "verschachtelte Tabelle", "termin-tabelle-mehrdeutig-oder-fehlend");
+  erwarteAbbruch(eingabeMit(tabelle.replace("Pressekonferenz</td>", "Pressekonferenz</tr>")),
+    "ungeschlossene Zelle");
+  console.log("PASS kombinierte Kopfzeile und Termintabelle eng gebunden; Strukturdrift fail closed");
+}
+
 // 7) Sachabsaetze: versteckt, leer, doppelt, Blockfremdinhalt, PDF-Leak.
 erwarteAbbruch(seite({ absaetze: ["<span hidden>Versteckt</span>"] }).eingabe, "versteckter Sachabsatz");
 erwarteAbbruch(seite({ absaetze: [""] }).eingabe, "leerer Sachabsatz", "sachabsatz-leer");
