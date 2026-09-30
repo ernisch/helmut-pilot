@@ -64,7 +64,8 @@ function seite(optionen = {}) {
   const praefix = Object.freeze({
     rbmskzl: "/rbmskzl/aktuelles/pressemitteilungen",
     senweb: "/sen/web/presse/pressemitteilungen",
-    justv: "/sen/justv/presse/pressemitteilungen"
+    justv: "/sen/justv/presse/pressemitteilungen",
+    kultgz: "/sen/kultgz/aktuelles/pressemitteilungen"
   })[familie];
   const host = optionen.host || "www.berlin.de";
   const url = optionen.url || `https://${host}${praefix}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
@@ -116,7 +117,7 @@ function erwarteAbbruch(eingabe, label, grund) {
 // 1) Vertragsoberflaeche
 // ---------------------------------------------------------------------------------------------
 check("Version und Pfadfamilien exakt", M.VERSION === "berlin-presse-sondervorlagen-v1"
-  && M.FAMILIEN_NAMEN.join(",") === "rbmskzl,senweb,justv");
+  && M.FAMILIEN_NAMEN.join(",") === "rbmskzl,senweb,justv,kultgz");
 check("Vertragsausgang exakt neun Felder", M.AUSGANG_FELDER.join(",")
   === "url,pfadfamilie,titel,publikationstag,volltext,volltextHash,htmlHash,auszug,auszugHash");
 check("Auszugsgrenzen gebunden", M.MIN_AUSZUG_ZEICHEN > 0
@@ -160,6 +161,33 @@ check("Absenderformel exakt", M.ABSENDER_RB === ABSENDER);
   const e = M.pruefeSondervorlage(s.eingabe);
   check("justv: Pfadfamilie, Tag und erster Sachabsatz", e.pfadfamilie === "justv"
     && e.publikationstag === s.datum && e.auszug === SACH && e.volltext.includes(SACH2));
+}
+{
+  const artikel = "<p>" + SACH + ' <a href="mailto:kontakt@ehrenamtskarte.berlin.de">E-Mail</a></p>'
+    + "<p>" + SACH2 + "</p>";
+  const s = seite({ familie: "kultgz", textileInner: artikel });
+  const e = M.pruefeSondervorlage(s.eingabe);
+  check("kultgz: exakt ein sichtbarer Sach-Mailto-Link", e.pfadfamilie === "kultgz"
+    && e.auszug.includes("E-Mail") && e.volltext.includes(SACH2));
+  const zwei = "<p>" + SACH + ' <a href="mailto:a@ehrenamtskarte.berlin.de">A</a>'
+    + ' <a href="mailto:b@ehrenamtskarte.berlin.de">B</a></p><p>' + SACH2 + "</p>";
+  erwarteAbbruch(seite({ familie: "kultgz", textileInner: zwei }).eingabe,
+    "kultgz zwei Mailto-Links", "kontaktblock-im-artikel");
+  const query = "<p>" + SACH + ' <a href="mailto:kontakt@ehrenamtskarte.berlin.de?x=1">E-Mail</a></p>'
+    + "<p>" + SACH2 + "</p>";
+  erwarteAbbruch(seite({ familie: "kultgz", textileInner: query }).eingabe,
+    "kultgz Mailto mit Query", "kontaktblock-im-artikel");
+  const frei = "<p>" + SACH + " mailto:kontakt@ehrenamtskarte.berlin.de</p><p>" + SACH2 + "</p>";
+  erwarteAbbruch(seite({ familie: "kultgz", textileInner: frei }).eingabe,
+    "kultgz Mailto ausserhalb eines Links", "kontaktblock-im-artikel");
+  const telefon = "<p>" + SACH + ' <a href="mailto:kontakt@ehrenamtskarte.berlin.de">E-Mail</a>'
+    + ' <a href="tel:+49301234567">Telefon</a></p><p>' + SACH2 + "</p>";
+  erwarteAbbruch(seite({ familie: "kultgz", textileInner: telefon }).eingabe,
+    "kultgz Telefon neben Sach-Mailto", "kontaktblock-im-artikel");
+  const kontakt = "<div class=\"contact\"><p>" + SACH
+    + ' <a href="mailto:kontakt@ehrenamtskarte.berlin.de">E-Mail</a></p></div><p>' + SACH2 + "</p>";
+  erwarteAbbruch(seite({ familie: "kultgz", textileInner: kontakt }).eingabe,
+    "kultgz Kontaktmodul mit Sach-Mailto", "kontaktblock-im-artikel");
 }
 
 // ---------------------------------------------------------------------------------------------

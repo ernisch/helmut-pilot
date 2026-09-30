@@ -50,7 +50,8 @@ function seite(optionen = {}) {
   const basis = Object.freeze({
     rbmskzl: "rbmskzl/aktuelles/pressemitteilungen",
     senweb: "sen/web/presse/pressemitteilungen",
-    justv: "sen/justv/presse/pressemitteilungen"
+    justv: "sen/justv/presse/pressemitteilungen",
+    kultgz: "sen/kultgz/aktuelles/pressemitteilungen"
   })[familie];
   const host = optionen.host || "www.berlin.de";
   const url = optionen.url
@@ -133,6 +134,16 @@ async function laufe() {
     check("justv: Erfolg, Pfadfamilie und genau ein hostgebundener Abruf",
       ergebnis.ok === true && ergebnis.vorlage.pfadfamilie === "justv"
       && ergebnis.vorlage.auszug === SACH && p.calls.length === 1
+      && p.calls[0].url === s.url && p.calls[0].deps.allowedHost === "berlin.de");
+  }
+  {
+    const s = seite({ familie: "kultgz", nummer: "1719812", datum: "2026-09-30",
+      textile: '<div class="textile"><p>' + SACH
+        + ' <a href="mailto:kontakt@ehrenamtskarte.berlin.de">E-Mail</a></p><p>' + SACH2 + "</p></div>" });
+    const p = abruf({ html: s.html, status: 200 });
+    const ergebnis = await ABRUF.ladeSondervorlage({ url: s.url }, { fetchUrl: p.fn });
+    check("kultgz: Erfolg und genau ein hostgebundener Abruf",
+      ergebnis.ok === true && ergebnis.vorlage.pfadfamilie === "kultgz" && p.calls.length === 1
       && p.calls[0].url === s.url && p.calls[0].deps.allowedHost === "berlin.de");
   }
   {
