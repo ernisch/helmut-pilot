@@ -116,6 +116,22 @@ const fehler = (out, grund) => {
   A.equal(out.rows, null);
 };
 
+// Die RSS-Weiche darf nur dann akzeptiert werden, wenn das sichtbare Dokument GENAU
+// eine kanonische, nummerngebundene amtliche Artikeladresse belegt.
+{
+  const item = STD_ITEMS[0];
+  const gateway = itemLink(item);
+  const canonical = kanonischUrl(item);
+  A.equal(K.kanonischeArtikelUrlAusAntwort(gateway,
+    `<head><link rel="canonical" href="${canonical}"></head>`, item.nummer), canonical);
+  A.equal(K.kanonischeArtikelUrlAusAntwort(gateway,
+    `<head><link rel="canonical" href="${canonical}"><link rel="canonical" href="${canonical}"></head>`, item.nummer), null);
+  A.equal(K.kanonischeArtikelUrlAusAntwort(gateway,
+    `<script><link rel="canonical" href="${canonical}"></script>`, item.nummer), null);
+  bestanden += 1;
+  console.log("OK sixcms-Weiche verlangt genau eine sichtbare nummerngebundene Canonical-Adresse");
+}
+
 (async () => {
   // 1) Positiv Einartikel: genau eine minimale Stand-Rohzeile, Artikel nur ueber den Item-Link.
   await test("Positiv Einartikel: minimale Stand-Rohzeile, keine Teilfreigabe", async () => {

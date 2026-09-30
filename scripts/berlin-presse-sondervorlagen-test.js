@@ -61,8 +61,11 @@ function seite(optionen = {}) {
   const familie = optionen.familie || "rbmskzl";
   const datum = optionen.datum || "2026-09-24";
   const jahr = optionen.jahr || datum.slice(0, 4);
-  const praefix = familie === "rbmskzl"
-    ? "/rbmskzl/aktuelles/pressemitteilungen" : "/sen/web/presse/pressemitteilungen";
+  const praefix = Object.freeze({
+    rbmskzl: "/rbmskzl/aktuelles/pressemitteilungen",
+    senweb: "/sen/web/presse/pressemitteilungen",
+    justv: "/sen/justv/presse/pressemitteilungen"
+  })[familie];
   const host = optionen.host || "www.berlin.de";
   const url = optionen.url || `https://${host}${praefix}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
   const titel = optionen.titel === undefined ? "Synthetische Senatsmeldung zur lokalen Vorlage" : optionen.titel;
@@ -113,7 +116,7 @@ function erwarteAbbruch(eingabe, label, grund) {
 // 1) Vertragsoberflaeche
 // ---------------------------------------------------------------------------------------------
 check("Version und Pfadfamilien exakt", M.VERSION === "berlin-presse-sondervorlagen-v1"
-  && M.FAMILIEN_NAMEN.join(",") === "rbmskzl,senweb");
+  && M.FAMILIEN_NAMEN.join(",") === "rbmskzl,senweb,justv");
 check("Vertragsausgang exakt neun Felder", M.AUSGANG_FELDER.join(",")
   === "url,pfadfamilie,titel,publikationstag,volltext,volltextHash,htmlHash,auszug,auszugHash");
 check("Auszugsgrenzen gebunden", M.MIN_AUSZUG_ZEICHEN > 0
@@ -151,6 +154,12 @@ check("Absenderformel exakt", M.ABSENDER_RB === ABSENDER);
   check("senweb: Kontaktblock bleibt ausgeschlossen",
     !/mailto:|Tel\.:|Jüdenstr|Kontakt</.test(e.volltext + e.auszug));
   check("senweb: eigener Auszughash", e.auszugHash === sha256(SACH) && e.auszugHash !== e.volltextHash);
+}
+{
+  const s = seite({ familie: "justv" });
+  const e = M.pruefeSondervorlage(s.eingabe);
+  check("justv: Pfadfamilie, Tag und erster Sachabsatz", e.pfadfamilie === "justv"
+    && e.publikationstag === s.datum && e.auszug === SACH && e.volltext.includes(SACH2));
 }
 
 // ---------------------------------------------------------------------------------------------

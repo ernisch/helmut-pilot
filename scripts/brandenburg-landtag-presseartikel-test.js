@@ -195,7 +195,44 @@ erwarteAbbruch(seite({ absaetze: ["Erster <div>Block</div>"] }).eingabe, "div im
 erwarteAbbruch(seite({ absaetze: ['Erster <a href="/media_fast/6/x.pdf">PDF</a>'] }).eingabe, "PDF-Link im Sachabsatz", "pdf-link-im-sachabsatz");
 erwarteAbbruch(seite({ absaetze: ['Erster <a class="download" href="/media_fast/6/x.pdf">Download</a>'] }).eingabe, "Downloadlink im Sachabsatz");
 erwarteAbbruch(seite({ absaetze: ["Erster <aside>Kontakt</aside>"] }).eingabe, "Kontaktblock im Sachabsatz");
+{
+  const amtlich = seite({ absaetze: ['Terminabstimmung unter <a href="mailto:petitionsausschuss@landtag.brandenburg.de">petitionsausschuss@landtag.brandenburg.de</a>.'] });
+  A.match(pruefePresseartikel(amtlich.eingabe).volltext, /petitionsausschuss@landtag\.brandenburg\.de/);
+}
+erwarteAbbruch(seite({ absaetze: ['Erster <a href="mailto:pressestelle@example.org">Mail</a>'] }).eingabe,
+  "fremde Kontaktmail", "kontakt-im-artikel");
 console.log("PASS Sachabsaetze vollstaendig, geschlossen und ohne Fremd-/PDF-Inhalt");
+
+// 7b) Terminankuendigungen duerfen ausschliesslich eine sichtbare, gueltige Tagesueberschrift
+// direkt vor einer reinen Uhrzeitzeile enthalten. Die Überschrift bleibt im Volltext erhalten.
+{
+  const t = seite().titel;
+  const termin = seite({ mainInhalt: `<nav></nav>\n<h1>${t}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\nMontag, 28. September 2026\n<p class="time-line">10:00 Uhr</p>\n<p>Oeffentliche Sitzung des Ausschusses.</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>` });
+  A.match(pruefePresseartikel(termin.eingabe).volltext,
+    /Montag, 28\. September 2026\n\n10:00 Uhr\n\nOeffentliche Sitzung/);
+  const mehrtagig = seite({ mainInhalt: "<nav></nav>\n<h1>" + t + "</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\nFreitag, 2. Oktober bis Samstag, 3. Oktober 2026\n<p>Oeffentliche mehrtaegige Veranstaltung.</p>\n<p><ul class=\"list-links\"><li><a class=\"download\" href=\"/a.pdf\">PDF</a></li></ul></p>" });
+  A.match(pruefePresseartikel(mehrtagig.eingabe).volltext,
+    /Freitag, 2\. Oktober bis Samstag, 3\. Oktober 2026\n\nOeffentliche mehrtaegige/);
+  const gleicheZeit = seite({ mainInhalt: [
+    "<nav></nav>", "<h1>" + t + "</h1>", "<p><em>Potsdam, 23. September 2026 / 134</em></p>",
+    "Montag, 28. September 2026", '<p class="time-line">10:00 Uhr</p>', "<p>Erste Sitzung.</p>",
+    "Dienstag, 29. September 2026", '<p class="time-line">10:00 Uhr</p>', "<p>Zweite Sitzung.</p>",
+    '<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>'
+  ].join("\n") });
+  A.match(pruefePresseartikel(gleicheZeit.eingabe).volltext,
+    /Erste Sitzung\.\n\nDienstag, 29\. September 2026\n\n10:00 Uhr\n\nZweite Sitzung/);
+  const punktzeit = seite({ mainInhalt: [
+    "<nav></nav>", "<h1>" + t + "</h1>", "<p><em>Potsdam, 23. September 2026 / 134</em></p>",
+    "Samstag, 26. September 2026", '<p class="time-line">19.30 Uhr</p>', "<p>Abendtermin.</p>",
+    '<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>'
+  ].join("\n") });
+  A.match(pruefePresseartikel(punktzeit.eingabe).volltext, /19\.30 Uhr\n\nAbendtermin/);
+  erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${t}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\nUngebundener Text\n<p class="time-line">10:00 Uhr</p>\n<p>A</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>` }).eingabe,
+  "beliebter Text vor Uhrzeitzeile", "fremdinhalt-zwischen-absaetzen");
+  erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${t}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\nMontag, 28. September 2026\n<p class="time-line">10 Uhr</p>\n<p>A</p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>` }).eingabe,
+  "ungueltige Uhrzeitzeile", "fremdinhalt-zwischen-absaetzen");
+}
+console.log("PASS Termin-Tagesueberschriften nur vor strikter Uhrzeitzeile und mit Volltextbindung");
 
 // 8) PDF-Downloadliste: nicht letzter Block, doppelt, Fremd-Leak, Ausbruch aus main.
 erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n<p><ul class="list-links"><li><a class="download" href="/a.pdf">PDF</a></li></ul></p>\n<p>Nachlauf</p>` }).eingabe,
@@ -206,7 +243,7 @@ erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><
   "Ausbruch aus main (ungeschlossene Kopfzeile)");
 erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n<p>A</p>\n<aside>Kontakt</aside>\n${"<p><ul class=\"list-links\"><li><a class=\"download\" href=\"/a.pdf\">PDF</a></li></ul></p>"}` }).eingabe,
   "Sidebar/Kontakt innerhalb main");
-erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n<p>A<a href="mailto:pressestelle@landtag.brandenburg.de">Mail</a></p>\n${"<p><ul class=\"list-links\"><li><a class=\"download\" href=\"/a.pdf\">PDF</a></li></ul></p>"}` }).eingabe,
+erwarteAbbruch(seite({ mainInhalt: `<nav></nav>\n<h1>${seite().titel}</h1>\n<p><em>Potsdam, 23. September 2026 / 134</em></p>\n<p>A<a href="mailto:pressestelle@example.org">Mail</a></p>\n${"<p><ul class=\"list-links\"><li><a class=\"download\" href=\"/a.pdf\">PDF</a></li></ul></p>"}` }).eingabe,
   "Kontaktmail innerhalb main", "kontakt-im-artikel");
 {
   const original = seite().eingabe;
