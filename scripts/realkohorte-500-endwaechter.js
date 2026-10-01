@@ -1,7 +1,9 @@
 "use strict";
 
 // Nur expliziter manueller Endwaechter. Keine Aktivierung, Artefakte oder Schedule.
-const R = require("../lib/helmut/realkohorte-500-end-runtime");
+function erzeugeEndwaechter(R, optionen = {}) {
+const envPrefix = optionen.synthetik ? "HELMUT_SYNTHETIK500_" : "HELMUT_REAL500_";
+const workflow = optionen.synthetik ? "synthetik-500-endwaechter.yml" : "realkohorte-500-endwaechter.yml";
 const K = require("../lib/helmut/testkosten-budget");
 const PROJECT_URL = "https://ddckuvvpcytqbyfmbvie.supabase.co";
 const STATUS_URL = "https://helmut-pilot.vercel.app/api/cron/testnachweis-status";
@@ -53,7 +55,7 @@ function pruefeKontext(auftrag, env) {
   R.pruefeAuftrag(auftrag);
   fordere(env.GITHUB_REPOSITORY === REPO && env.GITHUB_REF === "refs/heads/main"
     && env.GITHUB_EVENT_NAME === "workflow_dispatch" && env.GITHUB_SHA === auftrag.productionCommit
-    && env.GITHUB_WORKFLOW_REF === REPO + "/.github/workflows/realkohorte-500-endwaechter.yml@refs/heads/main"
+    && env.GITHUB_WORKFLOW_REF === REPO + "/.github/workflows/" + workflow + "@refs/heads/main"
     && env.GITHUB_RUN_ATTEMPT === "1" && /^[0-9]+$/.test(env.GITHUB_RUN_ID || ""), "workflow-kontext");
 }
 function endbericht(result, auftrag) {
@@ -147,13 +149,13 @@ async function ausfuehren({ scharf = false, auftrag, env = process.env, fetchFn 
   jetzt = Date.now, warte = ms => new Promise(resolve => setTimeout(resolve, ms)),
   melde = r => console.log(JSON.stringify(r)) } = {}) {
   try {
-    auftrag ||= { operationId: env.HELMUT_REAL500_OPERATION_ID, manifestHash: env.HELMUT_REAL500_MANIFEST_HASH,
-      productionCommit: env.HELMUT_REAL500_PRODUCTION_COMMIT, grund: "frist" };
+    auftrag ||= { operationId: env[envPrefix + "OPERATION_ID"], manifestHash: env[envPrefix + "MANIFEST_HASH"],
+      productionCommit: env[envPrefix + "PRODUCTION_COMMIT"], grund: "frist" };
     pruefeKontext(auftrag, env);
     if (!scharf) return { ok: true, modus: "inerte-eingabepruefung", bewaffnet: false,
       externeAnfragen: 0, aktivierungsrecht: false, starttorFreigegeben: false };
-    fordere(env.HELMUT_REAL500_ENDWAECHTER_EXECUTE === "1"
-      && env.HELMUT_REAL500_ENDWAECHTER_CONFIRM === R.BESTAETIGUNG, "explizite-endfreigabe-fehlt");
+    fordere(env[envPrefix + "ENDWAECHTER_EXECUTE"] === "1"
+      && env[envPrefix + "ENDWAECHTER_CONFIRM"] === R.BESTAETIGUNG, "explizite-endfreigabe-fehlt");
     const request = requestFactory({ env, fetchFn });
     const json = (url, options) => begrenztesJson(url, options, { fetchFn });
     return await steuere({ auftrag, env, deps: { jetzt, warte, melde,
@@ -192,12 +194,15 @@ async function ausfuehren({ scharf = false, auftrag, env = process.env, fetchFn 
       aktivierungsrecht: false, starttorFreigegeben: false };
   }
 }
+return { MAX_MS, MAX_FENSTER_MS, begrenztesJson, requestFactory, lesendEinmalWiederholen,
+  pruefeKontext, endbericht, steuere, ausfuehren };
+
+}
+module.exports = { ...erzeugeEndwaechter(require("../lib/helmut/realkohorte-500-end-runtime")), erzeugeEndwaechter };
 if (require.main === module) {
   const args = process.argv.slice(2);
   if (args.length > 1 || (args.length === 1 && args[0] !== "--scharf")) process.exitCode = 2;
-  else ausfuehren({ scharf: args[0] === "--scharf" }).then(r => {
+  else module.exports.ausfuehren({ scharf: args[0] === "--scharf" }).then(r => {
     console.log(JSON.stringify(r)); process.exitCode = r.ok ? 0 : 1;
   }).catch(() => { console.error("Realkohorten-Ende nicht bestaetigt; gebundenen manuellen Rueckweg pruefen."); process.exitCode = 1; });
 }
-module.exports = { MAX_MS, MAX_FENSTER_MS, begrenztesJson, requestFactory, lesendEinmalWiederholen,
-  pruefeKontext, endbericht, steuere, ausfuehren };

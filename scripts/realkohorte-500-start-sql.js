@@ -5,16 +5,17 @@
 // separates Aktivierungs-GO verweigert den betreffenden Plan statt Gruen.
 const fs = require("node:fs");
 const path = require("node:path");
-const V = require("../lib/helmut/realkohorte-500-vertrag");
-const S = require("../lib/helmut/realkohorte-500-startschutz");
+function erzeugeStartSql(V, S, optionen = {}) {
 const ROOT = path.resolve(__dirname, "..");
-const VERSION = "helmut-realkohorte500-runtime/1";
-const MANIFEST_VERSION = "helmut-realkohorte500-runtime-manifest/1";
-const PAKET = path.resolve(__dirname, "../daten/mandatsprofile-bundestag-berlin-brandenburg-20260929.json");
+const VERSION = optionen.synthetik ? "helmut-synthetik500-runtime/1" : "helmut-realkohorte500-runtime/1";
+const MANIFEST_VERSION = optionen.synthetik ? "helmut-synthetik500-runtime-manifest/1" : "helmut-realkohorte500-runtime-manifest/1";
+const PAKET = optionen.paketPfad || path.resolve(__dirname, "../daten/mandatsprofile-bundestag-berlin-brandenburg-20260929.json");
+const namespace = optionen.synthetik ? "helmut_synthetik500_internal" : "helmut_real500_internal";
+const slotPrefix = optionen.synthetik ? "synthetik500-runtime-" : "realkohorte500-runtime-";
 const literal = s => "'" + String(s).replace(/'/g, "''") + "'";
 const json = x => literal(JSON.stringify(x)) + "::jsonb";
 const sqlHash = expr => `encode(sha256(convert_to((${expr})::text,'UTF8')),'hex')`;
-const jsHash = expr => `encode(sha256(convert_to(helmut_real500_internal.json_compact(${expr}),'UTF8')),'hex')`;
+const jsHash = expr => `encode(sha256(convert_to(${namespace}.json_compact(${expr}),'UTF8')),'hex')`;
 const exakt = (o, keys) => o && Object.keys(o).sort().join("|") === [...keys].sort().join("|");
 
 function schreibePrivat(out, inhalt) {
@@ -55,9 +56,9 @@ function pruefeGo(go, runtimeManifest, jetzt) {
   const m = runtimeManifest.profilvertrag, grund = runtimeManifest.startbelegeGrundlinie;
   V.fordere(exakt(go, ["version", "operationId", "manifestHash", "productionCommit", "aktion", "freigegebenAm",
     "aussteller", "primaerbeleg"])
-    && go.version === "helmut-real500-aktivierungs-go/1" && go.operationId === m.operationId
+    && go.version === (optionen.synthetik ? "helmut-synthetik500-aktivierungs-go/1" : "helmut-real500-aktivierungs-go/1") && go.operationId === m.operationId
     && go.manifestHash === V.hash(runtimeManifest) && go.productionCommit === grund.productionCommit
-    && go.aktion === "EXAKT_500_REALPROFILE_AKTIVIEREN_UND_TEST_STARTEN"
+    && go.aktion === (optionen.synthetik ? "EXAKT_500_SYNTHETISCHE_PROFILE_AKTIVIEREN_UND_TEST_STARTEN" : "EXAKT_500_REALPROFILE_AKTIVIEREN_UND_TEST_STARTEN")
     && typeof go.aussteller === "string" && go.aussteller.trim(), "startsql-separates-aktivierungs-go-fehlt");
   S.frisch(go.freigegebenAm, jetzt); S.referenz(go.primaerbeleg);
   return { freigegeben: true, operationId: go.operationId, manifestHash: go.manifestHash,
@@ -82,8 +83,8 @@ function baueEnvelope({ runtimeManifest, snapshot, belege, schritt = "vorbereite
     S.pruefeRuntimeVorbereitung({ runtimeManifest, snapshot, belege }, paketBytes, jetzt);
   }
   const grundlinie = runtimeManifest.startbelegeGrundlinie;
-  const startbelege = { version: "helmut-realkohorte500-startbelege/1", grundlinie,
-    qualifizierteRechtsfreigabe: { freigegeben: true, qualifiziert: true, belegHash: grundlinie.phaseAHash,
+  const startbelege = { version: optionen.synthetik ? "helmut-synthetik500-startbelege/1" : "helmut-realkohorte500-startbelege/1", grundlinie,
+    [optionen.synthetik ? "technikvertrag" : "qualifizierteRechtsfreigabe"]: { freigegeben: true, qualifiziert: true, belegHash: grundlinie[optionen.synthetik ? "technikHash" : "phaseAHash"],
       paketHash: V.PAKET_HASH, idsHash: V.IDS_HASH },
     fachfreigabe: { freigegeben: true, belegHash: grundlinie.fachHash, paketHash: V.PAKET_HASH, idsHash: V.IDS_HASH },
     aktivierungsGo: go, endwaechterBereit: wach };
@@ -96,7 +97,7 @@ function baueEnvelope({ runtimeManifest, snapshot, belege, schritt = "vorbereite
 
 function baueSql(input, paketBytes, jetzt = Date.now()) {
   const e = baueEnvelope(input, paketBytes, jetzt), m = e.manifest.profilvertrag;
-  const aktivieren = input.schritt === "aktivieren", slot = "realkohorte500-runtime-" + e.operationId;
+  const aktivieren = input.schritt === "aktivieren", slot = slotPrefix + e.operationId;
   const grund = e.startbelege.grundlinie;
   const vorherBelege = { ...e.startbelege, aktivierungsGo: null, endwaechterBereit: null };
   const alleFrischenBelege = [m.vorflugAm, e.snapshot.beobachtetAm, input.belege.production.beobachtetAm,
@@ -125,12 +126,18 @@ begin
       (select jsonb_agg(v order by v->>'id' collate "C") from jsonb_array_elements(e->'snapshot'->'profiles') x(v))
     or exists(select 1 from public.pipeline_locks where expires_at>clock_timestamp())
     or exists(select 1 from public.helmut_jobs where lease_expires_at>clock_timestamp() or status not in ('erledigt','fehlgeschlagen'))
-    or exists(select 1 from public.process_runs where finished_at is null and status='running') then
+    or exists(select 1 from public.process_runs where finished_at is null and status='running')
+    ${optionen.synthetik ? `or exists(select 1 from public.helmut_job_outbox where status is null or status not in ('bestaetigt','aufgegeben','verzichtet'))
+    or exists(select 1 from public.helmut_jobs where status is null)
+    or exists(select 1 from jsonb_each(coalesce(vor_auth->'pipelineLocks','{}'::jsonb)) c
+      where jsonb_typeof(c.value) is distinct from 'object'
+        or jsonb_typeof(c.value->'expiresAt') is distinct from 'number'
+        or not coalesce((c.value->>'expiresAt')::numeric <= extract(epoch from clock_timestamp())*1000,false))` : ""} then
     raise exception 'real500-startsql-null-grundlinie-ruhe-drift';
   end if;
   e := e||jsonb_build_object('manifestSqlHash',${sqlHash("e->'manifest'")},
     'snapshotSqlHash',${sqlHash("e->'snapshot'")},'startbelegeSqlHash',${sqlHash("e->'startbelege'")});
-  ${aktivieren ? `vorher := helmut_real500_internal.pruefe(${literal(e.operationId)},${literal(e.manifestHash)},${literal(grund.productionCommit)});
+  ${aktivieren ? `vorher := ${namespace}.pruefe(${literal(e.operationId)},${literal(e.manifestHash)},${literal(grund.productionCommit)});
   if vorher->>'zustand' is distinct from 'vorbereitet' or vorher->'manifest' is distinct from e->'manifest'
     or vorher->'snapshot' is distinct from e->'snapshot' or vorher->'startbelege' is distinct from ${json(vorherBelege)} then
     raise exception 'real500-startsql-prepared-cas';
@@ -141,7 +148,7 @@ begin
   if n<>500 or (select count(*) from public.mandate_profiles where aktiv)<>500 then
     raise exception 'real500-startsql-aktivierung-nicht-vollstaendig';
   end if;
-  q := jsonb_build_object('version','helmut-realkohorte-500/1','operationId',${literal(e.operationId)},
+  q := jsonb_build_object('version',${literal(V.VERSION)},'operationId',${literal(e.operationId)},
     'manifest',e->'manifest'->'profilvertrag','zustand','aktiv','bestaetigtAktiv',500,
     'aktiviertAm',to_char(clock_timestamp() at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'));
   e := e||jsonb_build_object('zustand','aktiv','quittung',q,'quittungSqlHash',${sqlHash("q")});
@@ -151,7 +158,7 @@ begin
     raise exception 'real500-startsql-operation-bereits-verwendet';
   end if;
   insert into public.helmut_store(id,data) values(${literal(slot)},e);`}
-  perform helmut_real500_internal.pruefe(${literal(e.operationId)},${literal(e.manifestHash)},${literal(grund.productionCommit)});
+  perform ${namespace}.pruefe(${literal(e.operationId)},${literal(e.manifestHash)},${literal(grund.productionCommit)});
   if vor_auth is distinct from (select data from public.helmut_store where id='main-auth')
     or vor_main is distinct from (select data from public.helmut_store where id='main') then
     raise exception 'real500-startsql-auth-main-veraendert';
@@ -165,7 +172,7 @@ end`;
 begin;
 set local lock_timeout='3s';
 set local statement_timeout='15s';
-lock table public.mandate_profiles,public.profiles,public.helmut_store,public.pipeline_locks,public.helmut_jobs,public.process_runs in share row exclusive mode;
+lock table public.mandate_profiles,public.profiles,public.helmut_store,public.pipeline_locks,public.helmut_jobs,public.process_runs${optionen.synthetik ? ",public.helmut_job_outbox" : ""} in share row exclusive mode;
 do ${tag}
 ${body}
 ${tag};
@@ -181,12 +188,16 @@ function main(argv) {
   schreibePrivat(argv[3], baueSql(input, fs.readFileSync(PAKET)));
   console.log("Private Offline-Startvorbereitung (0600) erstellt. Nichts angewendet; Fachentscheidung/GO nicht durch Code bestaetigt.");
 }
+return { VERSION, MANIFEST_VERSION, baueRuntimeManifest, pruefeGo, baueEnvelope, baueSql, schreibePrivat, main };
+
+}
+const V = require("../lib/helmut/realkohorte-500-vertrag");
+module.exports = { ...erzeugeStartSql(V, require("../lib/helmut/realkohorte-500-startschutz")), erzeugeStartSql };
 if (require.main === module) {
-  try { main(process.argv.slice(2)); }
+  try { module.exports.main(process.argv.slice(2)); }
   catch (error) {
     console.error("Startvorbereitung verweigert: " + (/^real500-[a-z0-9-]+$/.test(error.message || "")
       ? error.message : "Eingabe/Beleg/Dateipfad ungueltig"));
     process.exitCode = 1;
   }
 }
-module.exports = { VERSION, MANIFEST_VERSION, baueRuntimeManifest, pruefeGo, baueEnvelope, baueSql, schreibePrivat, main };
