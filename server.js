@@ -32,6 +32,7 @@ const cronGlobalphase = require("./lib/helmut/cron-globalphase");
 // HELMUT_SCALABLE_PIPELINE wird von hier nichts betreten.
 const scalablePipeline = require("./lib/helmut/scalable-pipeline");
 const bbNachweisOperator = require("./lib/helmut/bb-nachweis-operator");
+const bbQuellenCutoverOperator = require("./lib/helmut/bb-quellen-cutover-operator");
 // OP-30 (Befund O2 des Abschlussreviews): der Workerbetrieb ist seit diesem Sprint die EINE
 // Betriebsform des Warteschlangenpfads — begrenzte Parallelitaet, Riegel gegen externen
 // Abruf bei ausgeschaltetem Quellenmodus, Health und Readiness. Er laedt nichts und startet
@@ -444,6 +445,26 @@ async function handleRequest(request, response) {
       return;
     }
     return handleJson(request, response, (body) => bbNachweisOperator.ausfuehren(body));
+  }
+
+  // Zweiter, ebenso eng begrenzter Operatorpfad: der BE/BB-QUELLEN-CUTOVER. POST-only und
+  // ausschliesslich per Bearer-HELMUT_ADMIN_SECRET erreichbar — bewusst KEIN ?secret=-Weg und
+  // kein CRON_SECRET-Fallback. Ohne gueltiges Bearer-Secret antwortet der Pfad wie ein nicht
+  // vorhandener Endpunkt (404). Der Operator selbst ist standardmaessig AUS
+  // (HELMUT_BB_QUELLEN_CUTOVER_OPERATOR, Default 0).
+  if (url.pathname === "/api/ops/quellen-cutover-be-bb") {
+    const cutoverSecret = String(process.env.HELMUT_ADMIN_SECRET || "");
+    const authHeader = String(request.headers.authorization || "");
+    const cutoverToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const cutoverErlaubt = Boolean(cutoverSecret) && Boolean(cutoverToken)
+      && timingSafeEqual(cutoverToken, cutoverSecret);
+    if (!cutoverErlaubt) return sendNotFound(response);
+    if (request.method !== "POST") {
+      response.writeHead(405, jsonHeaders({ Allow: "POST" }));
+      response.end(JSON.stringify({ error: "Dieser Operatorpfad verlangt POST." }, null, 2));
+      return;
+    }
+    return handleJson(request, response, (body) => bbQuellenCutoverOperator.ausfuehren(body));
   }
 
   // Die vorhandene Pilotpruefung bleibt vor jeder oeffentlichen Auslieferung.
