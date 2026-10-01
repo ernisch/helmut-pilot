@@ -178,14 +178,50 @@ prüfen. Kein Version-Repair, keine Dateiverschiebung/-umbenennung und kein
 `db push --include-all`, um diese Abweichung still zu schließen oder ungeprüfte
 Migrationen anzuwenden. Die Schema-Anwendung ist kein 500er Funktionsnachweis.
 
-Der private Rückweg ist erst aus diesem tatsächlichen 40er-Postimage gebunden:
+Der damalige private Schema-Rückweg war aus dem tatsächlichen 40er-Postimage gebunden:
 SQL-SHA256 `bdd49d54643c4e6f6f8954ec59ceba97eb37eed1d49c738d70f25edcd29396eb`,
 Request-SHA256 `cc4660a731f5001c2737c58b881544b190ca98210bb14c626ebf2ee690e32a8b`.
-Er ist **nicht ausgeführt**, entfernt ausschließlich die eigenen fünf Funktionen
-und den eigenen Namespace, erhält Installationsaudit 40 und verlangt beim
-App-Rückweg einen eigenen neuen Auditeintrag 41. Keine Rückkehr zum ursprünglichen
-39er-Journal behaupten. Jeder unbekannte Schreibausgang verlangt Stop und native
-lesende Zustandsklärung; keine automatische Wiederholung.
+Er ist **nicht ausgeführt** und nach dem folgenden DATA-Lauf historisch;
+vor Schema-Rücknahme müssen aktuelles Journal und geänderte Prozessfingerprints
+neu gebunden werden. Er betraf ausschließlich die eigenen fünf Funktionen und
+den eigenen Namespace. Keine Rückkehr zum ursprünglichen39er-Journal behaupten.
+Jeder unbekannte Schreibausgang verlangt Stop und native lesende Zustandsklärung;
+keine automatische Wiederholung.
+
+**Prozessaltlasttor separat erledigt, angewendet und unabhängig endabgenommen:**
+Das ausdrückliche DATA-GO betraf ausschließlich genau drei privat gebundene alte
+`process_runs`; ein einmaliger nativer Apply setzte ausschließlich `status=failed`,
+`reason=operatorcleanupabandoned` und ein gemeinsames natives `finished_at`
+`2026-10-01T21:25:00.662712Z`. Kein Cleanup-Retry oder sonstiger Datenwrite.
+Der neue native Auditeintrag heißt `process_cleanup_abandoned_20261001_native_guarded`,
+Version `20261001212457`, genau ein Statement mit SHA256
+`cc717e059e0dda5ac437bbc293642f94643ad0073846a349665d7479fe6efcdf`.
+
+Privates Belegverzeichnis `process-cleanup-data-go-execution-20261001-v3/`:
+`authorized-single-apply-record.json`, `actual-native-apply-result.json`,
+`actual-native-postimage-read-only.json` und `root-actual-delta-check.json`.
+Der Postimage vom **02.10.2026 00:25:25.186 Tuerkei /
+01.10.2026 23:25:25.186 Berlin / 21:25:25.186 UTC** bindet 711 Gesamtprozesse / 0 running;
+708 andere 22-Feld-Vollzeilen samt xmin und je19 übrige Zielfelder sind unverändert.
+Alle geschützten Profile/Mandate/Store/Jobs/Locks/Outbox sowie Real- und
+Synthetikfunktionsmetadaten bleiben identisch; 500 Mandate / 501 Identitäten / 0 Aktive /
+0 Slots, keine lebenden Jobs/Locks oder offene Outbox. Journal nun **41**;
+bisherige 40 Vollzeilen samt xmin unverändert. Synthetikruntime-Version
+`20261001203937` und CLI-Mappingwarnung bleiben unverändert.
+Die unabhängige kritische Endprüfung `independent-postimage-rollback-review.json`
+(SHA256 `bb0c4190c84c6b40c0d3d29720241dc818ce4f8f71644af74ab270d7edaf87b5`)
+erteilt die Abnahme ohne Befunde; 21 gezielte echte PostgreSQL-Fälle sind belegt
+und werden für die Dokumentation nicht wiederholt. Vollzeilen, konkrete PKs und
+SQL bleiben ausschließlich privat; keine personenbezogenen Belege im Repository.
+
+Der offline an den tatsächlichen 41er-Postimage gebundene **Cleanup-Rückweg**
+(SHA256 `3db220108004d4d87152a3c4db219830301b5defb15c9c1f10f4d3a0db7b555a`)
+ist nur vorbereitet, nicht ausgeführt. Er bewahrt Audit 41 und verlangt bei
+App-Anwendung einen eigenen tatsächlichen neuen Audit 42. Er ersetzt keinen
+frischen Vorflug und keine erforderliche Rückwegfreigabe.
+Die Bereinigung ist kein Profilimport, keine Aktivierung, kein 500er Test,
+Modelllauf oder Quellen-/Flag-/Budgetänderung. Das DATA-GO für diese drei Zeilen
+umfasst keinen Profilersatz; dafür ist weiterhin konkretes DATA-/Profil-GO nötig.
 
 Der **inaktive vollständige500er Profilersatz ist noch nicht anwendungsbereit**;
 frische Snapshot-/Schema-/Ruheprüfung und belastbarer Vollbestandsrückweg fehlen.
@@ -195,7 +231,7 @@ erhalten. Unbekannter Schreibausgang: sofort stoppen und lesend klären, kein Re
 Das GO umfasst weder Aktivierung noch Modellaufruf oder500er Test.
 
 Weitere belegte Startblocker vom01.10.: Landesartikelstände in Production noch0,
-wirksame Flags und Workflowsecrets nicht bewiesen, historische Kostenbücher29./30.09.
+wirksame Flags und Workflowsecrets nicht bewiesen, historische Kostenbücher 29./30.09.
 fehlen; der rechnerische Rest von höchstens0,205868USD ist keine Kostenfreigabe.
 Der lesende Katalogvorflug bestätigt PostgreSQL17.6 und keine unbekannten
 Fremdschlüsselreferenzen. Der vollständige private v2-Export umfasst136764Zeilen
@@ -224,7 +260,7 @@ vollständigem Rollback. Die unabhängige Abnahme bindet den endgültigen PR-Kop
 Alle drei SQL-Dateien sind zunächst für einen direkten
 psql-Operatorweg vorgesehen; ihre unveränderte Anwendung im App-Migrationstool
 ist nicht belegt. Die17s-Gesamtfrist bleibt unverändert.
-Drei alte unvollendete Prozesszeilen vom06.–17.09. sperren den Import weiter;
-ihre gegebenenfalls notwendige gebundene Bereinigung braucht eigenes GO.
+Die drei alten unvollendeten Prozesszeilen sind mit eigenem DATA-GO bereinigt;
+dieses Altlasttor ist erledigt. Prozessruhe vor weiteren Writes erneut frisch prüfen.
 Kostenklärung und notwendige Quellen-/Konfigurationsänderungen benötigen eigene
 konkrete Bindungen. Keine Kontopreise, Budgetfreigaben oder Nullkosten erfinden.
