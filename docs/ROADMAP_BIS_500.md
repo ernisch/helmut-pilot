@@ -1,6 +1,6 @@
 # Roadmap bis zum 500er Production Nachweis
 
-Stand: 27.09.2026
+Stand: 01.10.2026
 
 Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
@@ -8,7 +8,7 @@ stehen weiterhin in `docs/CURRENT_STATE.md`.
 
 ## Kritischer Pfad und Parallelitaet
 
-Vor jeder neuen Arbeitswelle priorisiert Terra nur die Blocker, die das 500er Starttor direkt verhindern. Bis zu fünf unabhängige DeepSeek-Agenten dürfen parallel arbeiten. Wenn mindestens zwei Agenten gleichzeitig schreiben, nutzt Terra getrennte Git-Worktrees vom selben verifizierten main-Commit; maximal drei Schreibagenten gleichzeitig, übrige Plätze nur für unabhängige Lesearbeit. Die10-USD-Warnschwelle drosselt nicht. Vor einer neuen Reservierung, die mindestens18USD Tagesbindung erzeugen würde, fragt Terra nach einer optionalen Tageserhöhung; ohne GO bleibt20USD der harte Deckel.
+Vor jeder neuen Arbeitswelle priorisiert GPT-6.1 Sol High direkt in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Es gibt keinen aktiven Modellrouter und keine verpflichtende externe Delegation. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Fuer Codex Cloud Entwicklungsarbeit gilt keine zeitabhaengige Peak Sperre. Production Schutz und Production Kostenlimits bleiben unveraendert.
 
 ## Arbeitsmodus
 
@@ -192,13 +192,6 @@ Dieser Eintrag ist weder eine Datenschutzfreigabe noch eine Freigabe für
 Production Änderungen oder zusätzliche Kosten.
 
 ## 3 · Nächste Arbeiten vor dem 500er Start
-
-**Technischer Betreiberauftrag27.09. lokal abgeschlossen:** DeepSeek-Starter
-mit reiner10-USD-Warnschwelle, Freigabefrage vor18USD, hartem20-USD-Tagesdeckel, grosszuegigen Laufbudgets und genau einer
-Budget-/Tokenlimit-Erweiterung installiert und geprueft; Belege unter
-[`tools/deepseek-budget/`](../tools/deepseek-budget/README.md).
-Production-Kostenlimits bleiben bestehen. Naechster Fachschritt bleibt die
-folgende Profil-/Landesversorgung.
 
 **Aktueller vorgeschalteter Schritt:** Den bisherigen Platzhalterbestand durch
 einen vorab festgelegten, quellenbelegten Profil- und Pruefplan fuer Bundestag

@@ -69,372 +69,44 @@ Pruefungen umgehen. Aktivierung und500er Test bleiben gesondert freizugeben.
 
 Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigkeit haben Vorrang vor neuen Funktionen.
 
-## Modellrouting für lokale Agent-Arbeit
+## Modell und Arbeitsumgebung
 
-GPT-5.6 Terra High ist der normale Chef und Orchestrator der lokalen Agent-Arbeit.
-Terra verantwortet Aufgabenzuteilung, Zerlegung, Priorisierung, Prüfung und Abnahme
-der lokalen Helfer.
+GPT-6.1 Sol High ist der verbindliche Standard fuer Helmut Entwicklungsarbeit.
+Codex Cloud ist die bevorzugte Arbeitsumgebung. Sol High orchestriert, analysiert,
+programmiert, debuggt, prueft, dokumentiert und fuehrt die notwendige Repository
+Arbeit direkt aus.
 
-Astra ist keine automatische und keine zweite Eskalationsstufe. Es gibt in diesem
-Routing keinen automatischen Astra-Helfer und keinen automatischen Wechsel auf ein
-weiteres Modell. Normale Repository-Arbeit, Routine-Debugging, GitHub- und
-Vercel-Nurleseprüfungen, PR-Prüfung und klar begrenzte lokale Umsetzung bleiben
-Aufgaben von Terra und DeepSeek.
+Es gibt keinen Modellrouter und keine verpflichtende Delegation an externe
+Entwicklermodelle. Fuer normale Helmut Arbeit wird kein lokaler Provider Launcher,
+kein separates Agentenbudget und keine providerbezogene Peak Steuerung benoetigt.
+Die fruehere lokale Routertechnik gehoert nicht mehr zum aktiven Arbeitsweg.
 
-Es gibt vier DeepSeek Modell/Denkstufen-Kombinationen:
+Sol High waehlt fuer jeden Sprint den kuerzesten sicheren Weg zum aktuellen
+500er Starttor. Unabhaengige Teilaufgaben duerfen nur dann parallelisiert werden,
+wenn Codex Cloud sie sauber trennt und keine zwei schreibenden Aufgaben denselben
+Datei oder Production Bereich beruehren. Ein Router oder externer Provider darf
+dafuer nicht still installiert oder aktiviert werden.
 
-DeepSeek Flash High ist der verpflichtende ausführende Standard für jede sicher
-delegierbare Aufgabe. Dazu gehören insbesondere Repository-Suche, Lesen,
-Verstehen, Abhängigkeiten, Routineanalyse, Debugging, Code, Tests, Test- und
-Logauswertung, Belege, Diffs, Dokumentation, CURRENT_STATE-Vorbereitung,
-Roadmap-Abgleich, Lösungsvorschläge, Risiken, Refactoring, Konfiguration, lokale
-Sicherheitsprüfung, GitHub- und Vercel-Nurleseprüfungen, PR-Vorprüfung,
-Regression, Fehleranalyse, begrenzte Implementierungspläne und
-Kontextverdichtung.
+Die Denkstufe ist standardmaessig High. Eine hoehere Denkstufe ist nur fuer
+ungewoehnlich schwierige Fehler, komplexe Architekturfragen oder kritische
+Production Sicherheit sinnvoll. Bereits belegte Arbeit wird nicht ohne konkreten
+Grund wiederholt.
 
-DeepSeek Flash Max wird eingesetzt, wenn eine Flash-geeignete Aufgabe deutlich
-mehr Reasoning verlangt, Flash dafür aber voraussichtlich ausreicht.
+Fuer Codex Cloud gilt keine zeitabhaengige Peak Arbeitssperre. Neue Helmut
+Entwicklungsarbeit darf zu jeder Uhrzeit starten. Diese Freigabe betrifft nur die
+Arbeitszeit. Production Schutz, Kostenlimits fuer echte Production Anbieter,
+Merge Regeln und alle ausdruecklich geschuetzten Aktionen bleiben unveraendert.
 
-DeepSeek V4 Pro High wird für klar abgegrenzte Aufgaben eingesetzt, die Flash
-voraussichtlich überfordern, etwa schwierige Implementierung, komplexes Debugging
-und schwierige lokale Ursachenanalyse.
+Bei kritischen Production Aenderungen darf die endgueltige Abnahme nicht
+ausschliesslich durch denselben ausfuehrenden Modelllauf erfolgen. Sol High darf
+die Umsetzung und das Belegpaket erstellen. Fuer die kritische Endabnahme ist ein
+unabhaengiger Pruefer mit einem anderen Modell oder einer anderweitig unabhaengigen
+Pruefinstanz erforderlich. Ist diese nicht verfuegbar, bleibt die Endabnahme offen.
+Es gibt dafuer keinen automatischen Router und keinen automatischen Modellstart.
 
-DeepSeek V4 Pro Max wird ausschließlich für sehr schwierige klar abgegrenzte
-lokale Blocker, besonders schwer nachvollziehbare lokale Fehler und Probleme
-eingesetzt, für die Pro High voraussichtlich nicht ausreicht.
-
-Vor jeder Aufgabe prüft Terra ausdrücklich zuerst, ob DeepSeek sie sicher
-übernehmen kann; ist das der Fall, ist die Delegation Pflicht. Terra liest keine
-großen Dateimengen, führt normale Tests, Code- und Logsuche oder Routineanalyse
-nicht selbst aus und wiederholt ohne konkreten Grund keine bereits belegte Arbeit.
-
-Vor jeder Arbeitswelle bestimmt Terra zuerst den kritischen Pfad zum aktuellen
-500er Starttor: Welche noch offenen Blocker verhindern den naechsten belastbaren
-Nachweis? Nur Aufgaben auf diesem Pfad oder unmittelbar notwendige Vorbedingungen
-erhalten bezahlte Agentenkapazitaet. Nebenaufgaben, Komfortverbesserungen und
-spaetere Roadmap-Punkte warten.
-
-Terra arbeitet dynamisch mit der kleinsten sinnvollen Zahl paralleler
-DeepSeek-Agenten, insgesamt hoechstens fuenf. Unabhaengige Lesearbeit wird
-bevorzugt parallel gestartet. Vor jeder bezahlten Welle liest Terra einmal den aktuellen DeepSeek-Kostenstatus.
-Die10-USD-Warnschwelle ist reine Information und aendert weder Parallelitaet noch
-Aufgabenumfang. Bis zur Freigabefrage duerfen weiterhin bis zu fuenf sinnvoll
-getrennte Agenten parallel arbeiten. Sobald eine neue konservative Reservierung
-die Tagesbindung auf mindestens18USD bringen wuerde, startet kein weiterer
-bezahlter DeepSeek-Aufruf, bevor Terra den Betreiber sichtbar fragt, ob der
-Tagesdeckel fuer genau diesen UTC-Tag erhoeht werden soll. Der Kostenzaehler wird
-dabei niemals zurueckgesetzt oder auf null gesetzt. Ohne neue Freigabe bleibt
-20USD der harte Sicherheitsdeckel.
-
-Parallele Schreibarbeit ist nur in wirklich getrennten Git-Arbeitsbereichen
-zulaessig. Wenn mindestens zwei DeepSeek-Agenten gleichzeitig schreiben sollen,
-erstellt Terra fuer jeden Schreibauftrag vor dem Start einen eigenen isolierten
-Worktree mit `python3 -B tools/agent-parallel/worktree.py create <name> --base <voller-main-sha>`.
-Das Hilfswerkzeug akzeptiert nur denselben frisch verifizierten `origin/main`-
-Commit, einen sauberen Hauptarbeitsbaum und eindeutig benannte eigene Branches.
-Terra legt fuer jeden Worktree den exklusiven
-Datei-/Codebereich, Ziel, Abnahmekriterien und Stop-Grenze fest. Bis zu drei
-DeepSeek-Agenten duerfen gleichzeitig schreiben, wenn jeder in einem eigenen
-isolierten Worktree mit eindeutig getrenntem Datei-/Codebereich arbeitet.
-Bei drei gleichzeitig schreibenden Agenten koennen zwei weitere Helfer
-unabhaengige Lesearbeit uebernehmen; bei weniger Schreibern entsprechend mehr.
-Schreibende und lesende Helfer zusammen bleiben auf fuenf begrenzt. Terra nutzt
-weiterhin nur die kleinste sinnvolle Zahl gleichzeitig laufender Agenten.
-Ueberschneiden sich benoetigte Dateien oder Verantwortungsbereiche wesentlich,
-werden die betroffenen Aufgaben nacheinander ausgefuehrt. DeepSeek bleibt auch im Worktree ohne Commit,
-Push, PR oder Merge; Terra integriert und prueft die Ergebnisse anschliessend.
-Worktrees werden erst nach gesicherter Integration beziehungsweise bewusster
-Verwerfung sauber entfernt.
-
-Automatische Fortsetzungen duerfen keinen zweiten konkurrierenden Helmut-Lauf
-erzeugen. Zu Beginn jeder Fortsetzung wird zuerst eine lokale Lauf-Lease mit
-`python3 -B tools/agent-parallel/lease.py acquire` genommen. Meldet das Werkzeug
-eine aktive fremde Lease, startet die neue Fortsetzung keine zweite Agentenwelle
-und beendet sich ohne konkurrierende Arbeit. Eine aktive Fortsetzung erneuert ihre
-Lease bei laengerer Arbeit rechtzeitig und gibt sie am Ende mit dem ausgegebenen
-Owner wieder frei. Zusaetzlich werden laufende relevante Codex-/DeepSeek-Prozesse,
-offene Schreibzustaendigkeiten und aktive Arbeitsbereiche geprueft. Eine
-abgelaufene Lease allein beweist keinen sauberen Zustand; bei sichtbarer laufender
-Arbeit wird nicht parallel geschrieben.
-
-Jede Delegation nennt ein klares Ziel, die Abnahmekriterien und die Stop-Grenze.
-Terra wartet auf die fuer eine Entscheidung notwendigen Ergebnisse, statt
-routinemaessig Doppelarbeit zu erzeugen; aendert sich der belegte Stand,
-entscheidet Terra neu.
-
-Jedes DeepSeek-Pruefpaket bleibt bewusst kompakt und enthaelt nur: Ergebnis,
-geaenderte Dateien beziehungsweise relevanten Diff, Tests, Belege,
-Unsicherheiten/Risiken sowie erfuellte und offene Abnahmekriterien. Keine
-ausfuehrliche Wiedererzaehlung des bereits gelesenen Kontexts, sofern sie fuer
-die Abnahme nicht notwendig ist.
-
-Unklare, bereichsübergreifende, architekturrelevante oder Production-nahe
-Gesamtprobleme bearbeitet Terra nicht allein: die sicher delegierbare Recherche und
-Kontextverdichtung lässt Terra soweit möglich von DeepSeek vorarbeiten und behält
-selbst Entscheidung und Zerlegung. Dass das Gesamtproblem mehrere Helmut-Bereiche
-berührt, ist allein kein Grund, die gesamte Umsetzung bei Terra zu behalten oder
-weiter zu eskalieren.
-
-Sobald eine Teilaufgabe klar abgegrenzt, lokal umsetzbar, mit eindeutigen
-Abnahmekriterien beschreibbar und ohne eigene kritische Production-Entscheidung
-ausführbar ist, muss Terra diese Teilaufgabe an die niedrigste ausreichend starke
-DeepSeek-Kombination delegieren. Delegierbare Routine darf Terra nicht aus
-Bequemlichkeit selbst erledigen.
-
-Terra behält Steuerung, Priorisierung, Sprintziel, Zerlegung, bereichsübergreifende
-und größere Architekturentscheidungen, Production-Sicherheit, geschützte Aktionen
-und Freigaben, kritische Integration und die unabhängige kritische Abnahme. Terra
-setzt eine lokale Teilaufgabe selbst nur um, wenn sie nicht sicher abtrennbar ist
-oder eine Delegation das Risiko wesentlich erhöhen würde.
-
-Sol High ist ausschließlich die letzte Eskalationsstufe, kein regulärer
-Dauer-Orchestrator. Terra eskaliert erst zu Sol High, wenn ein ernsthafter
-Lösungsversuch von Terra zusammen mit DeepSeek gescheitert ist oder eine
-außergewöhnlich kritische, konkret begründete Entscheidung belegt ist. Sol erhält
-dafür den belegten Stand, die gescheiterten Lösungsversuche und die konkrete
-Entscheidungsfrage. Nach der Sol-Entscheidung übernimmt Terra wieder und setzt das
-Ergebnis um. Routinearbeit, Routine-Debugging und klar begrenzte lokale Umsetzung
-rechtfertigen für sich allein keine Sol-Eskalation.
-Die gesonderte, vom Betreiber manuell veranlasste unabhaengige Sol-High-Endpruefung
-des aussergewoehnlich kritischen 500er Production-Nachweises ist in
-"500er Production Nachweis" geregelt. Sie ist kein automatischer Modellstart
-und begruendet keine regelmaessige Sol-Eskalation.
-
-Es gibt keine automatische Eskalationskette über Sol High hinaus. Reicht auch die
-Sol-Stufe nach konkretem Nachweis nicht, stoppt Terra sichtbar, nennt den konkreten
-Grund und überlässt die Entscheidung über eine weitere Stufe ausdrücklich dem
-Nutzer. Terra darf niemals behaupten, eine weitere Stufe sei automatisch gestartet
-worden.
-
-Ziel des Routings ist, Terra für Führung, Gesamtzusammenhang und Prüfung zu nutzen,
-klar abgegrenzte lokale Umsetzung verpflichtend an DeepSeek zu delegieren und Sol
-nur als seltene letzte Eskalationsstufe einzusetzen.
-
-Terra wählt vor jeder DeepSeek-Delegation direkt die niedrigste voraussichtlich
-ausreichende Modell/Denkstufen-Kombination. Es gibt keine automatische
-Eskalationskette Flash High zu Flash Max zu Pro High zu Pro Max. Ein fachlich
-gescheiterter ernsthafter Versuch darf eine Eskalation begründen; unnötige
-Vergleichs-Modellaufrufe sind nicht zulässig.
-
-Die verfügbaren lokalen Helfer werden mit einem klar abgegrenzten Auftrag gestartet:
-
-```sh
-# Flash High rein lesend
-/Users/lueynohut/bin/helmut-deepseek flash-read "<Aufgabe>"
-
-# Flash High schreibend
-/Users/lueynohut/bin/helmut-deepseek flash-write "<Aufgabe>"
-
-# Flash Max rein lesend
-/Users/lueynohut/bin/helmut-deepseek flash-read-max "<Aufgabe>"
-
-# Flash Max schreibend
-/Users/lueynohut/bin/helmut-deepseek flash-write-max "<Aufgabe>"
-
-# Pro High rein lesend
-/Users/lueynohut/bin/helmut-deepseek pro-read "<Aufgabe>"
-
-# Pro High schreibend
-/Users/lueynohut/bin/helmut-deepseek pro-write "<Aufgabe>"
-
-# Pro Max rein lesend
-/Users/lueynohut/bin/helmut-deepseek pro-read-max "<Aufgabe>"
-
-# Pro Max schreibend
-/Users/lueynohut/bin/helmut-deepseek pro-write-max "<Aufgabe>"
-```
-
-Jede DeepSeek Delegation leitet sich aus einem klar begrenzten Auftrag ab: bei
-Roadmap-Arbeit aus dem aktuellen Roadmap Schritt in `docs/ROADMAP_BIS_500.md` und
-dem aktuellen Production Stand in `docs/CURRENT_STATE.md`, bei anderen beauftragten
-Sprints aus deren klar begrenztem Ziel. Jeder Auftrag ist von Anfang an eigenständig
-verständlich: Er nennt Ziel, verifizierten Stand, Branch, relevante Dateien,
-Einschränkungen sowie Abnahmekriterien und Stop-Grenze. Terra nennt im DeepSeek
-Auftrag immer die Abnahmekriterien und die Stop Grenze. Die Aufträge sind so verteilt, dass
-unabhängige Lesearbeit parallel läuft und keine zwei Agenten gleichzeitig dieselbe
-Datei oder denselben Arbeitsbereich schreiben. DeepSeek darf keinen späteren
-Roadmap Schritt, kein Nebenprojekt und keine bereits abgeschlossene Prüfung
-eigenständig vorziehen oder wiederholen. Ändert sich der belegte Stand während der
-Arbeit, übernimmt Terra wieder und bestimmt den nächsten Schritt neu.
-
-Nur ein Agent darf gleichzeitig im selben Arbeitsbereich schreiben.
-Während DeepSeek schreibt, schreibt der führende Orchestrator dort nicht.
-
-Terra muss nach jeder einzelnen DeepSeek Änderung nicht zwingend zwischenschalten.
-Innerhalb eines abgegrenzten Auftrags erledigt DeepSeek zusammenhängende Suche,
-Analyse, Umsetzung, gezielte Tests und Ergebnisaufbereitung und liefert das
-Prüfpaket (Ergebnis, Dateien/Diff, Tests, Belege, Unsicherheiten/Risiken,
-Abnahmekriterien); danach übernimmt Terra und prüft risikobasiert
-Ergebniszusammenfassung, relevanten Diff, kritische Ausschnitte, Tests, Belege,
-Unsicherheiten und die Abnahmekriterien. Für unkritische Routine genügt eine
-kompakte Plausibilitätsprüfung; bei Production-Nähe prüft Terra die entscheidenden
-Stellen unabhängig. Terra wiederholt Suche, Analyse oder Tests nicht ohne konkreten
-Grund; bei reinen Regel- oder Dokumentationsänderungen startet Terra keine
-unnötigen fachlichen Testsuiten. Bei einer neuen kritischen Entscheidung, einem
-neuen Risiko, einer Freigabe oder einer kritischen Abnahme geht DeepSeek an Terra
-über. Pro isoliertem Arbeitsbereich schreibt weiterhin höchstens ein Agent
-gleichzeitig; insgesamt dürfen bis zu drei getrennte Schreibagenten parallel
-arbeiten, bei insgesamt höchstens fünf gleichzeitigen DeepSeek-Agenten.
-Der Production-Schutz bleibt unverändert.
-
-Scheitert ein DeepSeek Start **vor Arbeitsbeginn** wegen Launcher, Schlüsselbund,
-Netzwerk oder anderer lokaler Infrastruktur, zählt dies nicht als fachlicher
-Fehlversuch. Terra prüft und repariert zuerst gezielt den DeepSeek-Zugang und startet
-danach **denselben eigenständig verständlichen Auftrag** erneut. Terra übernimmt den
-eigentlichen Entwicklungs- oder Prüfauftrag erst, wenn DeepSeek nach dieser gezielten
-Ursachenprüfung technisch nicht nutzbar bleibt; der technische Befund, die Reparatur
-oder die verbleibende Einschränkung sind dann offen zu nennen. Bereits belegte Arbeit
-wird nicht wiederholt. Ein technischer Startfehler ist für sich allein kein Grund für
-eine Sol-Eskalation.
-
-DeepSeek darf niemals Production Aktionen, Production Daten- oder
-Profiländerungen, Migrationen, Umgebungsvariablenänderungen, Commit, Push, Merge,
-PR Erstellung, eigene Production-Entscheidungen, Freigabeumgehungen oder
-absichtliche kostenpflichtige Production Modellläufe durchführen.
-
-### Sichtbare Modellübergaben
-
-Der führende Orchestrator meldet zu Aufgabenbeginn das aktive Modell mit
-Denkstufe und kurzem Zweck. Standard ist "Terra High".
-
-Modell- und Denkstufenangaben richten sich nach der tatsächlichen
-Startkonfiguration und dem beobachteten Lauf, nicht nach einer abweichenden
-Selbstauskunft des Helfers.
-
-Vor jedem Flash- oder Pro-Start meldet Terra "Flash wird gestartet" beziehungsweise
-"Pro wird gestartet" mit Aufgabe, tatsächlicher Denkstufe High oder Max und rein
-lesend oder schreibend. Erst nach bestätigtem Start sagt Terra "Flash übernimmt"
-beziehungsweise "Pro übernimmt" ebenfalls mit der tatsächlichen Denkstufe High
-oder Max.
-
-Vor einer letzten Eskalation zu Sol High nennt Terra kurz den konkreten Grund, den
-gescheiterten Terra-plus-DeepSeek-Lösungsversuch und die konkrete
-Entscheidungsfrage.
-
-Nach Abschluss oder Abbruch eines DeepSeek-Laufs meldet Terra "Terra übernimmt
-wieder" mit Ergebnisprüfung als nächstem Schritt und nennt dabei das zuvor
-eingesetzte DeepSeek Modell mit der tatsächlich gewählten Denkstufe High oder Max.
-Nach einer Sol-Entscheidung meldet Terra ebenfalls "Terra übernimmt wieder" und
-führt die Umsetzung fort.
-
-Technische Startfehler, die gezielte Zugangsreparatur und ein erst danach erforderlicher
-Rückfall auf Terra werden ehrlich benannt; niemals behaupten, ein Helfer oder eine
-Eskalationsstufe habe gearbeitet, wenn das Modell nicht gestartet beziehungsweise
-manuell ausgewählt wurde.
-
-Meldungen erfolgen als kurze sichtbare Chatnachrichten bei tatsächlichem Wechsel;
-keine routinemäßige Wiederholung bei unverändertem Modell und unveränderter
-Denkstufe.
-
-Abschließend wird kurz genannt, welche Modelle und Denkstufen tatsächlich
-beteiligt waren.
-
-Diese Regel erzeugt keine neue UI und ändert keine Schutzregeln.
-
-Dieser Routingvertrag ergänzt die bestehenden Regeln. Er ersetzt oder schwächt
-keine Schutzregel und erteilt keine zusätzliche Freigabe für geschützte Aktionen.
-
-## Arbeitszeitregel fuer lokale Agent-Arbeit (UTC)
-
-Es gilt eine harte Peak-Sperre fuer neue autonome Helmut-KI-Arbeit. Peak ist
-Montag bis Freitag genau [01:00,04:00) UTC und [06:00,10:00) UTC. Das Wochenende
-ist ganztägig Off-Peak.
-
-Während Peak startet keine neue autonome Helmut-KI-Arbeit: kein DeepSeek, Terra,
-Sol oder anderes Modell, keine neue Analyse, Roadmap-Arbeit oder Fortsetzung und
-kein Ausweichen auf ein anderes Modell oder einen anderen Startweg. Bereits vor
-Peak gestartete Aufrufe dürfen sauber zu Ende laufen; danach wird pausiert. Ein
-laufender Aufruf wird nicht abgebrochen, aber auch nicht fortgesetzt oder
-erweitert.
-
-In Türkei-Zeit (UTC+3) sind das die Pausen 04:00-07:00 und 09:00-13:00. Arbeit
-ist Montag bis Freitag 07:00-09:00 sowie 13:00-04:00 des Folgetags; am Wochenende
-ist ganztägig Arbeit möglich.
-
-Nur eine ausdrückliche, fallbezogene Nutzerfreigabe hebt die Peak-Sperre für genau
-diesen Fall auf. Das verbindliche manuelle Codewort ist `PEAK GO EINMALIG`.
-Die Ausnahme gilt nur, wenn die aktuelle Nutzeranweisung als erste nichtleere
-Zeile exakt dieses Codewort enthält. Dann darf genau dieser eine manuell
-gestartete Auftrag trotz Peak sofort arbeiten. Terra darf für notwendige
-DeepSeek-Helfer dieses Auftrags den Launcher-Parameter
-`--peak-go-einmalig` setzen. Die Ausnahme gilt fuer alle notwendigen Helfer
-innerhalb genau dieses einen Auftrags, wird aber niemals persistent gespeichert,
-niemals auf einen spaeteren Prompt uebertragen und niemals als allgemeine
-Freigabe interpretiert. Das Codewort hebt ausschliesslich die Peak-Arbeitszeitregel
-auf; Production-Schutz, Kostenlimits, Merge-Freigaben und alle anderen Grenzen
-bleiben voll wirksam.
-
-Automationen, Scheduler und Agenten duerfen das Codewort oder den
-`--peak-go-einmalig`-Parameter niemals selbst erzeugen oder aus frueheren
-Prompts wiederverwenden. Ohne aktuelles manuelles Codewort muessen sie Peak
-weiter vermeiden. Die bestehende halbstündliche Helmut-Weiterarbeit ist deshalb
-in disjunkte aktive Werktag- und Wochenend-RRULEs geteilt: werktags nur
-00:00-04:00, 07:00-09:00 und 13:00-24:00 Tuerkei-Zeit, am Wochenende ganztägig.
-Nach einer Peak-Pause startet der Scheduler automatisch am ersten halbstündlichen
-Off-Peak-Termin; der UTC-Check im Prompt bleibt zweite Sperre.
-
-Die technische Durchsetzung erfolgt vor jedem Provider-Versand im kontrollierten
-Launcherpfad `tools/deepseek-budget/runtime.py` über dieselbe zentrale Tarif- und
-Peak-Funktion. Ohne einmalige Ausnahme wird ein Peak-Lauf weiterhin blockiert.
-Mit dem expliziten Launcher-Parameter gilt die Ausnahme nur fuer diesen
-Launcher-Prozess; ein neuer Launcher ist wieder gesperrt, sofern Terra ihn nicht
-innerhalb desselben aktuellen Codewort-Auftrags erneut explizit freigibt. Die
-Peak-Preise bleiben dabei unverändert und werden nicht als Off-Peak abgerechnet.
-
-## DeepSeek-Budget fuer lokale Agentenarbeit (Betreiberauftrag27.09.2026)
-
-Der ausdrueckliche Betreiberauftrag vom29.09.2026 ersetzt fuer lokale
-DeepSeek-Agentenarbeit den bisherigen harten10-USD-Tagesstopp. Es gelten jetzt
-zwei getrennte Grenzen je UTC-Tag ueber alle Helferprozesse gemeinsam:
-
--10USD Warnschwelle: reine Information. Keine Drosselung, keine Reduzierung der
-Agentenzahl und keine zusaetzliche Freigabe.
--18USD Freigabeschwelle: bevor eine neue konservative Reservierung die
-Tagesbindung auf mindestens18USD bringen wuerde, fragt Terra den Betreiber
-sichtbar, ob der Tagesdeckel fuer genau diesen UTC-Tag erhoeht werden soll.
--20USD harter Sicherheitsdeckel ohne zusaetzliches GO. Er umfasst bestaetigte
-Kosten, laufende Reservierungen und ungeklaerte konservative Bindungen.
-
-Eine Freigabe erhoeht den Tagesdeckel fuer den genannten UTC-Tag; sie setzt den
-Kostenzaehler niemals zurueck und loescht keine Kostenhistorie.
-
-Helmuts Production-Tagesbudget6USD und kumulatives Production-Auftragsbudget7USD
-werden dadurch nicht erhoeht. Historisch bereits dort gebuchte Kosten werden
-nicht rueckwirkend entfernt.
-
-Regulaere Obergrenzen pro Helferlauf: Flash High2USD, Flash Max3USD, Pro High4USD,
-Pro Max5USD. Es sind keine Ausgabenziele: fertige Aufgaben sofort beenden.
-Keine kuenstlichen Kleinstbudgets wie0,03USD fuer neue DeepSeek-Auftraege.
-Das bestehende Modellrouting und die Schreib-/Production-Schutzregeln bleiben.
-
-Massgeblicher Startweg: `/Users/lueynohut/bin/helmut-deepseek`, Konfiguration
-`$HOME/.codex-deepseek/budget.json`, gemeinsames Kostenbuch
-`$HOME/.codex-deepseek/budget.sqlite3`. Alle lokalen DeepSeek-Aufrufe muessen
-ueber diesen Kostenwaechter laufen; keine direkten ungemessenen API-Ausweichwege.
-Der Starter reserviert jede Anfrage atomar vor Versand, rechnet bestaetigten
-Verbrauch ab und behaelt ungeklaerte Kosten gebunden. Das Schema ist versioniert
-unter `tools/deepseek-budget/`; Installation veraendert keine Production-Variablen.
-
-Bei Kosten- oder Ausgabetokenlimit genau eine automatische Erweiterung im selben
-Modell/Denkmodus: bis zum doppelten Laufbudget und hoeherer Tokenobergrenze,
-jedoch immer innerhalb des Tagesdeckels und der Providergrenzen. Abgeschlossene
-Werkzeugaktionen nicht wiederholen. Unbekannter Versand/Verbrauch ist kein
-Budgetlimit und erlaubt keinen automatischen kostenpflichtigen Neuversuch.
-
-Der Kostenstatus muss bestaetigte beziehungsweise historische Kosten,
-aktuell reservierte Kosten und ungeklaerte konservative Bindungen getrennt
-ausweisen. Eine Reservierung ist nicht als bereits bezahlte Providerrechnung
-auszugeben. Erfolgreich abgeschlossene Aufrufe geben ungenutzte Reservierung
-sofort frei; ungeklaerte Provider-/Transportausgaenge bleiben konservativ
-gebunden, werden aber sichtbar als ungeklaert markiert.
-
-Die Freigabefrage wird bereits vor dem harten Deckel gestellt: sobald die naechste
-Reservierung mindestens18USD Tagesbindung erzeugen wuerde und noch keine
-Tageserhoehung vorliegt. Terra fragt dann unmittelbar nach einem hoeheren Deckel
-fuer genau diesen UTC-Tag. Ohne GO wird kein weiterer bezahlter DeepSeek-Aufruf
-gestartet. Mit GO wird nur der Tagesdeckel erhoeht, niemals der bisherige Verbrauch
-zurueckgesetzt. Am Folgetag gilt wieder20USD. Die10-USD-Warnschwelle verlangt
-keine Freigabe und veraendert die Arbeitsweise nicht.
+Zu Aufgabenbeginn wird nur dann ein Modellwechsel sichtbar gemeldet, wenn
+tatsaechlich ein Wechsel stattfindet. Keine erfundenen Helfer, keine behaupteten
+Delegationen und keine automatische Eskalation ohne realen Start.
 
 ## Grundregel
 
@@ -770,29 +442,25 @@ Nur im konkret freigegebenen Umfang handeln.
 
 ## Kostenpflichtige Modell- und API-Aufrufe
 
-Innerhalb eines gestarteten, klar begrenzten Helmut-Sprints sind notwendige
-variable Modell- und API-Kosten bis insgesamt **6 USD je UTC Tag** vorab
-freigegeben. Alle Production-Anbieter und auftragsbezogenen kostenpflichtigen Aufrufe
-zaehlen gemeinsam gegen diese Tagesgrenze; lokale DeepSeek-Agentenarbeit folgt
-ausschliesslich dem oben ausdruecklich freigegebenen separaten10-USD-Tagesdeckel. Solange der nächste Aufruf die
-kumulative Tagesgrenze sicher bei höchstens 6 USD hält, ist keine erneute Kostenfreigabe
-erforderlich.
+Normale Codex Cloud Entwicklungsarbeit mit GPT-6.1 Sol High ist vom Helmut
+Production Anbieterbudget getrennt. Dafuer gibt es im Repository keinen eigenen
+Router, keinen separaten Provider Kostenwaechter und keine zeitabhaengige
+Arbeitsfreigabe.
 
-Vor einem Aufruf, der die kumulative Tagesgrenze überschreiten
-könnte, stoppen und eine ausdrückliche Freigabe einholen. Der technische
-Tagesriegel von 6 USD ist ausdrücklich freigegeben und darf nicht still erhöht oder umgangen
-werden.
+Fuer echte Helmut Production Modell und API Aufrufe innerhalb eines gestarteten,
+klar begrenzten Sprints bleiben die bestehenden Grenzen unveraendert:
+hoechstens 6 USD je UTC Tag und hoechstens 7 USD kumulativ fuer den bestehenden
+autonomen Auftrag, jeweils einschliesslich offener Reservierungen. Vor einem
+Aufruf, der eine dieser Grenzen ueberschreiten koennte, stoppen und eine
+ausdrueckliche Freigabe einholen.
 
-Nicht von dieser Dauerfreigabe umfasst sind Abonnements, Plan-Upgrades,
+Nicht von dieser Dauerfreigabe umfasst sind Abonnements, Plan Upgrades,
 dauerhaft laufende oder wiederkehrend kostenpflichtige Ressourcen, neue
-kostenpflichtige Infrastruktur, Budgeterhöhungen oder Kosten außerhalb des
+kostenpflichtige Infrastruktur, Budgeterhoehungen oder Kosten ausserhalb des
 gestarteten Sprintziels.
 
-Für reine lokale Agentenarbeit innerhalb dieses Rahmens ist keine einzelne
-Kostenrückfrage pro Flash-, Pro-, Terra- oder Sol-Aufruf nötig.
-
-Vor jedem kostenpflichtigen fachlichen Test oder begrenzten Production-Modelllauf
-müssen dennoch feststehen:
+Vor jedem kostenpflichtigen fachlichen Test oder begrenzten Production Modelllauf
+muessen feststehen:
 
 Anzahl der Profile
 
@@ -810,8 +478,8 @@ Umgang mit Testprofilen danach
 
 Keine unbegrenzten Wiederholungen.
 
-Fehlschlägt ein notwendiger Test, Ursache bewerten, den auftragsbezogenen Fehler
-selbstständig beheben und nur mit sachlichem Grund erneut testen.
+Fehlschlaegt ein notwendiger Test, Ursache bewerten, den auftragsbezogenen Fehler
+selbststaendig beheben und nur mit sachlichem Grund erneut testen.
 
 ## 500er Production Nachweis
 
@@ -845,31 +513,26 @@ Alle500 Zielprofile erhalten dieselben fachlichen Pruefungen und denselben techn
 
 ### Gesonderte unabhaengige Endpruefung
 
-Terra High orchestriert den freigegebenen Production-Lauf und laesst DeepSeek die
-sicher delegierbare Vorbereitung, technische Auswertung und Fehleranalyse
-uebernehmen. Terra verantwortet Startschutz, vollstaendige Bilanz und ein
-nachpruefbares Belegpaket. Dieses enthaelt mindestens Laufkennung, Production-
-Commit und Deployment, den Beleg fuer exakt 500 gleichzeitig aktive Profile,
-die 1500 erwarteten Ergebnispositionen mit getrennten Fehler- und Leergruenden,
-die vorab festgelegten Fachkriterien und zugehoerigen Belege, transparent
-abgegrenzte Textpruefungen, Kosten, Laufzeit, Endzustand und Rueckweg.
+GPT-6.1 Sol High orchestriert den freigegebenen Production Lauf und verantwortet
+Startschutz, vollstaendige Bilanz und ein nachpruefbares Belegpaket. Dieses
+enthaelt mindestens Laufkennung, Production Commit und Deployment, den Beleg fuer
+exakt 500 gleichzeitig aktive Profile, die 1500 erwarteten Ergebnispositionen mit
+getrennten Fehler und Leergruenden, die vorab festgelegten Fachkriterien und
+zugehoerigen Belege, transparent abgegrenzte Textpruefungen, Kosten, Laufzeit,
+Endzustand und Rueckweg.
 
-Nach dem Lauf wird das Belegpaket fuer die **gesonderte unabhaengige Pruefung
-durch ChatGPT Sol High** bereitgestellt. Der Betreiber uebergibt die konkreten
-Belegreferenzen manuell an eine ChatGPT-Sol-High-Sitzung; Codex kann eine solche
-Sitzung nicht selbst starten oder die Uebergabe automatisch garantieren.
-Sol High prueft unabhaengig die primaeren Production-, Repository- und
-Pruefbelege gegen die vorab festgelegten 500er Abnahmekriterien. Eine
-vollstaendige maschinelle Ergebnisbilanz ersetzt keine unbelegte Behauptung
-ueber die fachliche Qualitaet aller Texte; Stichproben bleiben als solche
-gekennzeichnet. Die Sol-Pruefung ist keine Wiederholung des bezahlten
-Production-Tests und erteilt keine zusaetzliche Production-Freigabe.
+Nach dem Lauf wird dieses Belegpaket einer gesonderten unabhaengigen Endpruefung
+vorgelegt. Weil Sol High der ausfuehrende Standard ist, darf Sol High nicht allein
+seine eigene kritische Endabnahme erteilen. Fuer den endgueltigen Production
+Nachweis ist ein anderes geeignetes Modell oder eine anderweitig unabhaengige
+Pruefinstanz erforderlich. Diese Pruefung wiederholt den bezahlten Production Test
+nicht und erteilt keine zusaetzliche Production Freigabe.
 
-Bis diese unabhaengige Pruefung anhand erreichbarer Belege erfolgt ist und
+Bis diese unabhaengige Pruefung anhand erreichbarer Primaerbelege erfolgt ist und
 keine abnahmeverhindernden Luecken bestehen, lautet der Endstatus
-**Production-Lauf durchgefuehrt, unabhaengige Endabnahme offen** und nicht
-"500er Production-Nachweis erfolgreich abgeschlossen". Bei fehlendem Zugang
-zu Primaerbelegen oder nicht geklaerten Widerspruechen bleibt die Abnahme offen.
+**Production Lauf durchgefuehrt, unabhaengige Endabnahme offen** und nicht
+"500er Production Nachweis erfolgreich abgeschlossen". Bei fehlendem Zugang zu
+Primaerbelegen oder nicht geklaerten Widerspruechen bleibt die Abnahme offen.
 
 ## Dokumentation
 

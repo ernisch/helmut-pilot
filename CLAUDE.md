@@ -110,9 +110,9 @@ festgestellt wurde.
    `scripts/migrations-organisation-test.js`). Altbestand mit 8-stelligen Stempeln ist
    angewendete Historie und wird nicht umbenannt.
 9. **Produktionsrelevante Skripte, die Secrets benötigen, müssen sowohl lokal als auch in
-   einer Claude-Code-Cloud-Sitzung lauffähig sein.** Sie lesen Secrets ausschließlich aus
+   einer Codex-Cloud-Sitzung lauffähig sein.** Sie lesen Secrets ausschließlich aus
    `process.env` — kein eigenes Parsen einer `.env.local` im Code. In Cloud-Sitzungen
-   erreichen Secrets den Prozess **ausschließlich über die Claude-Code-Environment-
+   erreichen Secrets den Prozess **ausschließlich über die Codex-Cloud-Environment-
    Einstellungen** (Environment → Environment Variables), **niemals über den Chat und
    niemals über Commits**. Details/Referenz: [`docs/betrieb/env-inventar.md`](docs/betrieb/env-inventar.md) §8.
 10. **Gemeinsam genutzter Zustand wird bedingt geschrieben, und eine Meldung behauptet nur, was

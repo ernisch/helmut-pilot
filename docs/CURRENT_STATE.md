@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 30.09.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
+**Stand: 01.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
 
 ## Aktueller Production- und Entwicklungsstand
 
@@ -24,13 +24,20 @@ Der erste gemischte 500er Nachweis betrifft **Bundestag, Berlin und Brandenburg*
 
 Vor Aktivierung müssen reale Profilqualität, aktuelle Landesversorgung bis in die sichtbare Ausgabe, Kosten-/Zeitplan, Testfenster und Endwächter belegt sein. **Aktivierung und eigentlicher 500er Test benötigen danach ein gesondertes Betreiber-GO.** Der Test muss bei exakt 500 gleichzeitig aktiven Profilen je 500 Mandatsbriefings, Morgenbriefings und Lage-Ergebnisse bilanzieren (**1500 Positionen**), darunter fehlende, leere, doppelte, unbrauchbare und technische Fehler; Qualität, Gesamtzeit, Gesamtkosten, automatisches Ende und Rückweg auf 0 aktive Profile sind nachzuweisen. Frühere kleinere oder unvollständige Läufe ersetzen das nicht. [Sicherheitsrahmen](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md), [Betriebsplan](betrieb/500-betriebsplan-2026-09-20.md).
 
-Die [geltende AGENTS.md](../AGENTS.md) erlaubt die notwendigen Vorarbeiten, geprüfte Importe, grüne auftragsbezogene Merges und reguläre Deployments bis zum Starttor. **Helmut-Production: höchstens 7 USD kumulativ und 6 USD je UTC-Tag**, jeweils einschließlich offener Bindungen; ein Tageswechsel setzt den kumulativen Wert nicht zurück. **Lokale DeepSeek-Arbeit separat: 10 USD reine Warnschwelle, Freigabefrage vor 18 USD Tagesbindung und 20 USD harter Sicherheitsdeckel je UTC-Tag** über den Kostenwächter; 10 USD verändert die Parallelität nicht. Kosten vor bezahlten Läufen frisch prüfen. Nur ein schreibender Ausführer; fremde Änderungen nicht überschreiben. Pflicht-CI vor Merge, nach Merge Deployment und betroffenen Zustand rein lesend prüfen. Keine Schutzregeln oder Qualitätsschwellen absenken.
+Die [geltende AGENTS.md](../AGENTS.md) erlaubt die notwendigen Vorarbeiten, geprüfte Importe, grüne auftragsbezogene Merges und reguläre Deployments bis zum Starttor. **Helmut-Production: höchstens 7 USD kumulativ und 6 USD je UTC-Tag**, jeweils einschließlich offener Bindungen; ein Tageswechsel setzt den kumulativen Wert nicht zurück. **Codex Cloud Entwicklungsarbeit:** GPT-6.1 Sol High arbeitet direkt ohne Modellrouter oder externe Pflichtdelegation. Diese Entwicklungsnutzung ist vom Helmut Production Anbieterbudget getrennt. Kosten vor bezahlten Läufen frisch prüfen. Nur ein schreibender Ausführer; fremde Änderungen nicht überschreiben. Pflicht-CI vor Merge, nach Merge Deployment und betroffenen Zustand rein lesend prüfen. Keine Schutzregeln oder Qualitätsschwellen absenken.
 
 Production-Konfiguration, Migrationen, Cron- und Profilschutz vor einer Wirkung **frisch lesen**; historische Flags oder alte Profilzahlen sind keine aktuelle Freigabe. Die Endfunktion für das Testfenster wurde installiert, aber nicht als 500er Funktionsnachweis ausgeführt. Offene Migrationen und besonders geschützte Aktionen nur innerhalb des konkret autorisierten Umfangs behandeln. [Autonomer Auftrag](betrieb/autonom-bis-500-starttor-20260926.md), [Production-Beweisprotokoll](betrieb/production_beweisprotokoll.md).
 
 ## Arbeitssteuerung
 
-Terra High priorisiert vor jeder Arbeitswelle den kritischen Pfad zum 500er Starttor. Bis zu fünf unabhängige DeepSeek-Agenten können parallel arbeiten; bei paralleler Schreibarbeit sind maximal drei getrennte Git-Worktrees zulässig, jeder mit exklusivem Datei- beziehungsweise Codebereich. Die 10-USD-Warnschwelle drosselt nicht. Vor mindestens 18 USD Tagesbindung fragt Terra nach einer optionalen Tageserhöhung; ohne GO greift der harte 20-USD-Deckel. Automatische Fortsetzungen starten keine zweite konkurrierende Arbeitswelle, wenn bereits ein gültiger Lauf am selben Roadmap-Bereich aktiv ist. Ein manueller Prompt mit der ersten nichtleeren Zeile **`PEAK GO EINMALIG`** darf ausschließlich für diesen Auftrag die Peak-Arbeitszeitsperre umgehen; die Ausnahme wird nicht gespeichert, Automationen dürfen sie nicht selbst erzeugen und alle übrigen Schutzgrenzen bleiben unverändert.
+GPT-6.1 Sol High ist der direkte Standard in Codex Cloud und priorisiert vor jeder
+Arbeitswelle ausschliesslich den kritischen Pfad zum 500er Starttor. Es gibt keinen
+aktiven Modellrouter, keine verpflichtende externe Delegation und keine
+zeitabhaengige Peak Sperre fuer Codex Cloud Entwicklungsarbeit. Production
+Schutzgrenzen, das gesonderte GO vor Aktivierung und 500er Test sowie die
+Production Kostenlimits bleiben unveraendert. Parallele Schreibarbeit darf nur in
+klar getrennten Bereichen stattfinden; bei Ueberschneidung wird nacheinander
+gearbeitet.
 
 ## Nächster notwendiger Schritt
 
