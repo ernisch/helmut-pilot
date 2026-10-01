@@ -23,7 +23,7 @@ function fixture(dir) {
   for (let i = 0; i < 500; i++) {
     const id = "alt-mandat-" + String(i + 1).padStart(3, "0");
     tab.profiles.push({ id, name: "Alt ' $$ \\ " + i, email: null, ...extra });
-    tab.mandate_profiles.push({ ...p.mandateRows[i], user_id: id, partei: "SPD", fraktion: "SPD", freies_feld: "Alt ' $$ \\ " + i, ...extra });
+    tab.mandate_profiles.push({ ...p.mandateRows[i], user_id: id, partei: "SPD", fraktion: "SPD", freies_feld: "Alt ' $$ \\ " + i, geloescht_at: null, ...extra });
   }
   for (const t of G.FK_KINDTABELLEN.filter(t => t !== "mandate_profiles")) {
     const single = ["matching_weights", "profile_embeddings"].includes(t);
@@ -56,7 +56,7 @@ function bootstrap(f) {
     + "create table public.mandate_profiles(" + G.MANDAT_SPALTEN.map(k => k + " "
       + (k === "user_id" ? "text primary key references public.profiles(id) on delete cascade"
         : k === "aktiv" ? "boolean" : k === "profil_extras" ? "jsonb" : arrays.has(k) ? "text[]" : "text")).join(",")
-    + ",freies_feld text,created_at timestamptz default now(),updated_at timestamptz default now());\n";
+    + ",freies_feld text,geloescht_at timestamptz,created_at timestamptz default now(),updated_at timestamptz default now());\n";
   for (const t of G.FK_KINDTABELLEN.filter(t => t !== "mandate_profiles")) {
     const single = ["matching_weights", "profile_embeddings"].includes(t);
     sql += `create table public.${t}(${single ? "" : "id text primary key,"}user_id text${single ? " primary key" : ""} references public.profiles(id) on delete cascade,inhalt jsonb${t === "matching_results" ? ",run_id text references public.matching_runs(id) on delete set null" : ""});\n`;
