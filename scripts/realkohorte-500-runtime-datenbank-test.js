@@ -132,17 +132,25 @@ function alterEnvelope(x, expression, rehashField = null) {
     to_jsonb(${shaSql("data->" + literal(rehashField))})) where id=${literal(x.slot)};`);
 }
 
-function frischeStartFixture() {
-  const seeded = reset({ prepared: true });
-  psql(`delete from public.helmut_store where id=${literal(seeded.slot)};`);
-  const now = Date.now() - 1000, day = new Date(now).toISOString().slice(0, 10), am = new Date(now).toISOString();
+function baueFrischenStartbestand(snapshot, now, operationId) {
+  const day = new Date(now).toISOString().slice(0, 10), am = new Date(now).toISOString();
   const dayEnd = Date.parse(day + "T23:59:59.000Z"), ende = Math.min(now + 600000, dayEnd);
   A.ok(ende - now > 10000, "Frischer CI-Lifecycle muss noch innerhalb seines UTC-Budgettags enden koennen");
-  const snapshot = { beobachtetAm: am, mandate_profiles: lese().mandate, profiles: lese().profiles };
-  const f = fixture({ snapshot, day, operationId: "real500-startsql-isolierte-db-" + crypto.randomBytes(6).toString("hex") });
+  // Die alte Offline-Fixture hat einen festen10:00-Vorflug. Den frischen
+  // DB-Snapshot erst an den neu konstruierten aktuellen Vorflug binden.
+  const f = fixture({ day, operationId });
+  f.snapshot = snapshot;
   const kosten = { ...f.manifest.kosten, beobachtetAm: am };
   f.manifest = V.vorbereiten({ paketBytes: bytes, snapshot, operationId: f.manifest.operationId, kosten,
     vorflugAm: am, startBis: new Date(Math.min(now + 180000, ende - 5000)).toISOString(), endeAm: new Date(ende).toISOString() });
+  return f;
+}
+function frischeStartFixture() {
+  const seeded = reset({ prepared: true });
+  psql(`delete from public.helmut_store where id=${literal(seeded.slot)};`);
+  const now = Date.now() - 1000, am = new Date(now).toISOString();
+  const snapshot = { beobachtetAm: am, mandate_profiles: lese().mandate, profiles: lese().profiles };
+  const f = baueFrischenStartbestand(snapshot, now, "real500-startsql-isolierte-db-" + crypto.randomBytes(6).toString("hex"));
   const full = belegFixture(f), { endwaechter, ...belege } = full;
   for (const key of ["production", "ruhe", "kosten", "landesversorgung"]) belege[key].beobachtetAm = am;
   belege.phaseA.entschiedenAm = am; belege.fach.entschiedenAm = am;
@@ -186,7 +194,7 @@ function main() {
       create table public.helmut_store(id text primary key,data jsonb not null,updated_at timestamptz not null default now());
       create table public.graph_testdaten(id text primary key,user_id text not null references public.profiles(id),inhalt jsonb not null);
       create table public.pipeline_locks(id text primary key,expires_at timestamptz not null);
-      create table public.helmut_jobs(id text primary key,status text not null check(status in ('wartend','laufend','erledigt','fehlgeschlagen')),lease_expires_at timestamptz);
+      create table public.helmut_jobs(id text primary key,status text not null check(status in ('wartend','laeuft','erledigt','fehlgeschlagen')),lease_expires_at timestamptz);
       create table public.process_runs(id text primary key,status text not null,finished_at timestamptz);
       create function public.fixture_updated_at() returns trigger language plpgsql as $$ begin new.updated_at=now(); return new; end $$;
       create trigger fixture_mandate_updated_at before update on public.mandate_profiles for each row execute function public.fixture_updated_at();
@@ -376,4 +384,4 @@ if (require.main === module) {
     process.exitCode = 1;
   }
 }
-module.exports = { main };
+module.exports = { main, baueFrischenStartbestand };
