@@ -226,21 +226,33 @@ Der native Generator besteht den Vollclone mit136765Zeilen inklFremdentscheidung
 Finaler Renderer auf exaktPG17.6/vector0.8.0:4760ms Sicherung/4902ms Ersatz/12179ms
 Rückweg, vorher16938ms;17s bleiben unverändert, Walltime schwankt. Keine
 Production-Performance oder Importfreigabe. Gebundenen tatsächlichen Operatorweg
-und frische Production-Voraussetzungen vorProfilersatz belegen. Drei alte
-laufend markierte Prozesszeilen sperren weiter.
+und frische Production-Voraussetzungen vorProfilersatz belegen. Das bisherige
+Prozessaltlasttor ist durch die separat freigegebene Bereinigung erledigt.
 Die unabhängig geprüfte inerte Synthetikmigration ist nach konkretem Betreiber-GO
 nativ angewendet: Postimage 01.10. 23:39:53 Tuerkei / 22:39:53 Berlin / 20:39:53 UTC, exakt fünf Originalfunktionen,
 Journal 40 / Version `20261001203937`; 500 Mandate / 501 Identitäten / 0 Aktive / 0 Slots,
 alle geschützten Fingerprints unverändert. PR #764/main `b53be3d8` war beim Vorflug
 Ready. Die CLI-Version `20261001172619` bleibt unregistriert: kein Repair,
 Dateiumbenennen oder `db push --include-all`; tatsächliche Zuordnung vor jedem
-späteren Migrationsweg beachten. Rückweg an 40 gebunden, nicht ausgeführt;
-Audit 40 bleibt, eine Rückweganwendung erhält eigenen Audit 41.
+späteren Migrationsweg beachten. Der damalige Schema-Rückweg an Journal40
+ist nach der separaten Bereinigung historisch und nicht ausgeführt; vor einer
+Schema-Rücknahme an den aktuellen Gesamtstand neu binden.
 REST 403 änderte nichts; native Anwendung dauerte gemessen 8,926s, ohne belegte
 harte 20s-Tooltransportgarantie. DB 17s/Statement 15s/Lockwarten 3s unverändert;
 unbekannter Schreibausgang: Stop, lesende Klärung, kein Retry. Die Betreiberfrist
 20s gilt für KI-Anfragen; Schutzgates und Importsperren bleiben unverändert.
-Inaktiven Ersatz noch nicht freigeben; Migration ist kein 500er Erfolg.
+Die separat ausdrücklich freigegebene Bereinigung genau dreier alter Prozesse
+ist angewendet und unabhängig endabgenommen. Postimage 02.10.2026 00:25:25 Tuerkei /
+01.10.2026 23:25:25 Berlin / 21:25:25 UTC: 711 Prozesse / 0 running;
+nur status/reason/finished_at der drei Ziele geändert, 708 andere Vollzeilen/xmin,
+19 übrige Zielfelder und alle geschützten Bestände/Runtime unverändert.
+Journal jetzt 41 / Version `20261001212457`, bisherige 40 Vollzeilen/xmin erhalten.
+Cleanup-Rückweg nur vorbereitet: Audit 41 bleibt, Anwendung verlangt neuen Audit 42.
+500 Mandate / 501 Identitäten / 0 Aktive / 0 Slots bleiben unverändert. Kein Profilimport,
+Flag-/Budgetwechsel oder Modelllauf. Das DATA-GO erweiterte sich nicht auf Profile;
+inaktiven Ersatz weiterhin konkret vorbereiten und gesondert freigeben.
+Nächste Tore: Berlin-/Brandenburg-Artikelstände weiterhin 0, Kostenbücher 29./30.09.,
+Budget/Adminflags sowie gebundener inaktiver Profilimport. Kein 500er Nachweis.
 Passende Quellen-/Ebenenversorgung,
 Kosten-/Ruhebelege und lebender Endwaechter bleiben Pflicht.
 Vor Aktivierung und Test anhalten. Die nachfolgende reale Profilhistorie bleibt
