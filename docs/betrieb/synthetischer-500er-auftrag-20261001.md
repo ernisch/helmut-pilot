@@ -50,9 +50,16 @@ IP-/Audit- und Bestandsdaten werden durch fiktive Zielprofile nicht anonym.
 ## Weiter geltende Startschutzregeln
 
 - 6 USD je UTC-Tag und 7 USD kumulativ einschließlich offener Reservierungen.
-- Jede externe Anfrage erhält eine harte Gesamtfrist von höchstens 20 Sekunden,
-  einschließlich Antwortinhalt. Höchstens eine gezielte Wiederholung nach
-  lesendem Fehler; unbekannte Schreibausgänge werden nicht blind wiederholt.
+- Die Betreiberforderung für KI-Anfragen ist eine harte Gesamtfrist von höchstens
+  20 Sekunden einschließlich vollständigem Antwortinhalt; die ausgerollte
+  Providerabsicherung bleibt unverändert. Die frühere pauschale Ausdehnung auf
+  jede externe Anfrage war eine zusätzliche Arbeitsvorgabe, keine belegte
+  Eigenschaft aller Admin-Adapter. Der eigene Migration-REST-Transport erzwingt
+  20s einschließlich Body; beim tatsächlich verwendeten nativen Supabase-App-Tool
+  ist diese Transportgarantie nicht belegt. DB-Transaktion17s, Statement15s und
+  eigenes Lockwarten3s bleiben unverändert; fremde Schreiber können bis zum Ende
+  der Transaktion samt Abbruch warten. Unbekannter Schreibausgang: stoppen,
+  ausschließlich lesend klären, kein Write-Retry. Keine Testgates absenken.
 - Frischer vollständiger Preimage-Snapshot, kontrollierter inaktiver Ersatz und
   FK-sicherer Rückweg; erwarteter Bestand 500 Mandate / 501 Identitäten / 0 aktiv mit
   erhaltenem Nichtmandatsprofil. Technische Schutzbindungen nicht umgehen.
@@ -102,7 +109,7 @@ Production-Nachweis und erteilt keine Anwendungserlaubnis.
    in einer Transaktion mit17s Gesamtfrist durch die fiktive Zielmenge ersetzt; abhängige Kinddaten
    sind im Preimage gesichert, die Fremdidentität und fremde Kinddaten erhalten.
    Rückweg ist ausschließlich vor Aktivierung und ohne neue Kinddaten zulässig.
-2. Schema: vorbereitete Migration
+2. Schema: nach konkretem Betreiber-GO nativ angewendete Migration aus
    `20261001172619_synthetik500_end_runtime.sql` installiert ausschließlich eigene
    private Hilfsfunktionen und zwei eng gebundene service-role-RPCs. Sie startet
    keinen Workflow und verändert keine Profilzeile. Rückweg entfernt ausschließlich
@@ -123,31 +130,63 @@ Production-Nachweis und erteilt keine Anwendungserlaubnis.
    bleiben getrennt. Der Bericht bleibt bis zur unabhängigen Prüfung ohne
    Erfolgsbehauptung; Hashes belegen allein weder Herkunft noch semantische Wahrheit.
 
-Der nächste geschützte Schritt ist die
-**Installation dieser inerten Synthetikmigration** in der bestehenden
-Helmut-Supabase-Production. SHA-256 der Migration
-`38f32149fe3695f7e6079a2d91ceb96b1844ecc5466574c9862a0f4da18a7112`
-und des Rückwegs werden vor Anwendung frisch mit den geprüften Dateien
-abgeglichen. Der Zielkatalog bestätigt fünf kollisionsfreie neue Funktionsnamen,
-keinen eigenen Namespace und ein fehlendes Versionsjournal20261001172619.
-Der native Supabase-App-Zugang bestätigt am01.10. um22:09Tuerkei/21:09Berlin/19:09UTC
-in einer ausdrücklich lesenden Transaktion den Actor `postgres` sowie
-CREATE- und Journalrechte. Der getrennte Management-API-Leseactor besitzt diese
-Rechte nicht. Für DDL ist der offizielle Migration-Endpunkt mit selbst erzeugtem
-Versionsjournal vorgesehen. Der vorbereitete eigene Transport muss20s
-einschließlich Antwortkörper erzwingen; beim nativen App-Tool ist diese
-Transportgrenze nicht konfigurierbar belegt. Die gebundene API-Variante verlangt
-den gemeinsamen Commit von fünf Originalfunktionen und tatsächlicher neuer
-Journalzeile,17s Gesamtfrist sowie unveränderte Profile/Steuerung/alteRuntime.
-Vor einer GO-Vorlage diese Variante und ihre Tests unabhängig prüfen. Die
-manuelle SQL-Variante mit eigenem BEGIN/COMMIT/JournalINSERT darf nicht
-unverändert eingespeist werden. Die automatisch erzeugte Version erst nach
-tatsächlicher Anwendung binden; keine vorher erfundene Versionsnummer oder
-Behauptung, dass die originale CLI-Version20261001172619 registriert wurde.
-Der API-Rückweg führt einen eigenen Journalauditeintrag; kein vermeintliches
-Wiederherstellen der ursprünglichen39 Journalzeilen behaupten.
-Kein Slot, Workflow oder Profil wird damit angelegt/aktiviert.
-Das erfordert nach der jüngsten Chatsteuerung ein ausdrückliches GO.
+**Inerte Runtimeinstallation durchgeführt (01.10.2026):** Vorflug 23:31 Tuerkei /
+22:31 Berlin / 20:31 UTC bindet PR #764, beide Pflichtchecks am Kopf `5aeb`/Tree `a06`,
+unabhängige Astra-Abnahme, main `b53be3d885eacc4b82afa167418fb0e80226ba4f`
+und Ready-Deployment `dpl_BabpYWffJ9B5xiChWSXLmfS3JA59` (`fra1`, kanonische Aliase).
+Das konkrete Betreiber-GO galt ausschließlich der Installation dieser fünf
+inerten Funktionen, nicht Profil-DML, Aktivierung, Modellaufruf oder500er Test.
+
+Autoritativ bleibt die private 711-Kapsel
+`synthetikruntime-native-rest-freigabekapsel-process711-builderbound-final-v5-20261001.json`,
+SHA256 `ed755f54a4d4ac139c31340a53597712d856ed5ef94877eb2db4fb634485aac7`.
+Die Originalmigration hat SHA256
+`38f32149fe3695f7e6079a2d91ceb96b1844ecc5466574c9862a0f4da18a7112`;
+der gebundene App-SQL-Body mit Originalfunktionen und Commitgate hat SHA256
+`4ad204c369e3a5cc6c7ec4cb3a85d7034e22b70c2de8fc36c380dd7d05f70396`.
+Der eigene 20s-REST-Weg mit Management-API-PAT scheiterte mit 403; der anschließende
+native Lesebeleg zeigte keine Änderung. Nach unabhängig geprüftem Wegwechsel
+wendete die native Supabase-App denselben SQL-Body erfolgreich an, gemessen 8,926s.
+Das ist eine gemessene Dauer, keine harte 20s-Garantie des Tooltransports.
+Die private Routeergänzung `synthetikruntime-native-app-route-after403-20261001.json`
+(SHA256 `612036eb1686801709beb2c01b401b92ef2935cba1dc8694b96549ceb5531044`) bindet den Wechsel nach bestätigtem unverändertem 403-Ausgang
+an dieselbe freigegebene SQL; sie verändert keine Rollen oder Netzfreigaben.
+Die 17s-DB-Gesamtfrist, Statement 15s, Lockwarten 3s und gemeinsame Commitprüfung
+für Originalfunktionen/Journal/geschützten Bestand blieben unverändert.
+Kein eigenes BEGIN/COMMIT oder manueller JournalINSERT wurde eingespeist.
+
+Der private lesende Postimage
+`synthetikruntime-actual-postimage-after-native-apply-20261001.json`
+(SHA256 `2d91531ec6b5c072398692fcb659fc7e567cdc47c618bf7d46df42f783d91a15`)
+ist vom 01.10. 23:39:53 Tuerkei / 22:39:53 Berlin / 20:39:53 UTC:
+exakt 40 Journalzeilen, tatsächliche Version `20261001203937`, Name
+`synthetik500_end_runtime_native_guarded`, genau ein Statement mit obigem App-SHA.
+Fünf Originalbodies, ACLs, Owner 16388, SECURITY INVOKER und Konfiguration passen.
+Alle fünf geschützten Fingerprints (Mandate, Identitäten, Store, Prozesse und alte
+Realkohortenfunktionen) sind identisch; 500 Mandate / 501 Identitäten / 0 Aktive / 0 Slots,
+weiterhin drei alte running-Markierungen. Die private effektive Rechteprobe
+`synthetikruntime-actual-effective-privileges-20261001.json` vom 23:41:02 Tuerkei / 22:41:02 Berlin / 20:41:02 UTC
+(SHA256 `afc1eab1e13600c8669939d914295959ca07784c3c06ad7d20a5a6601fc62abd`)
+belegt für alle fünf Funktionen: anon/authenticated kein EXECUTE,
+service_role EXECUTE; privater Namespace ebenfalls ohne anon-USAGE.
+Es wurden keine Profile, Slots, Workflows, Aktivierung oder Modellläufe angelegt.
+
+**CLI-/Journalzuordnung:** Die Dateiversion `20261001172619` ist weiterhin nicht
+als diese Version registriert; der native App-Weg erzeugte `20261001203937`.
+Vor jedem späteren Migrationslauf die Source-SHA→App-SHA→tatsächliche Version
+prüfen. Kein Version-Repair, keine Dateiverschiebung/-umbenennung und kein
+`db push --include-all`, um diese Abweichung still zu schließen oder ungeprüfte
+Migrationen anzuwenden. Die Schema-Anwendung ist kein 500er Funktionsnachweis.
+
+Der private Rückweg ist erst aus diesem tatsächlichen 40er-Postimage gebunden:
+SQL-SHA256 `bdd49d54643c4e6f6f8954ec59ceba97eb37eed1d49c738d70f25edcd29396eb`,
+Request-SHA256 `cc4660a731f5001c2737c58b881544b190ca98210bb14c626ebf2ee690e32a8b`.
+Er ist **nicht ausgeführt**, entfernt ausschließlich die eigenen fünf Funktionen
+und den eigenen Namespace, erhält Installationsaudit 40 und verlangt beim
+App-Rückweg einen eigenen neuen Auditeintrag 41. Keine Rückkehr zum ursprünglichen
+39er-Journal behaupten. Jeder unbekannte Schreibausgang verlangt Stop und native
+lesende Zustandsklärung; keine automatische Wiederholung.
+
 Der **inaktive vollständige500er Profilersatz ist noch nicht anwendungsbereit**;
 frische Snapshot-/Schema-/Ruheprüfung und belastbarer Vollbestandsrückweg fehlen.
 Seine spätere Nachkontrolle: exakt500Mandate/501Identitäten/0Aktive,

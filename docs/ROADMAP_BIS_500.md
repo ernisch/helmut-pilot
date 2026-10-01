@@ -217,7 +217,7 @@ Production Änderungen oder zusätzliche Kosten.
 ## 3 · Nächste Arbeiten vor dem 500er Start
 
 **Aktueller kritischer Pfad fuer den Synthetiknachweis:** Vollstaendig fiktives
-500er Paket mit vorher festgelegten1500 Sollpositionen und harte 20-Sekunden-Gesamtfristen sind in PR #762 ausgerollt; der Azure-Lesezugang ist authentifiziert belegt. Eigene eng gebundene synthetische Import-/Start-/End- und Nachweisbruecken
+500er Paket mit vorher festgelegten1500 Sollpositionen und harte 20-Sekunden-Gesamtfristen für KI-Anfragen einschließlich Antwortkörper sind in PR #762 ausgerollt; der Azure-Lesezugang ist authentifiziert belegt. Eigene eng gebundene synthetische Import-/Start-/End- und Nachweisbruecken
 sind mit unabhängiger Codeabnahme und beiden grünen Pflichtchecks in PR #763 gemergt und ausgerollt. [Konkreter Ablauf](betrieb/synthetischer-500er-auftrag-20261001.md). Alte495-plus5-,4 USD- und Realprofilvertraege passen nicht
 unveraendert zum neuen Umfang. Bestehende Schutzpruefungen nicht aufweichen.
 Vollsnapshot ist privat gesichert; der rund576MB große Ersatzweg scheitert im
@@ -228,8 +228,19 @@ Rückweg, vorher16938ms;17s bleiben unverändert, Walltime schwankt. Keine
 Production-Performance oder Importfreigabe. Gebundenen tatsächlichen Operatorweg
 und frische Production-Voraussetzungen vorProfilersatz belegen. Drei alte
 laufend markierte Prozesszeilen sperren weiter.
-Separates konkretes GO kann derzeit nur die unabhängig geprüfte inerte
-Synthetikmigration umfassen; inaktiven Ersatz noch nicht freigeben.
+Die unabhängig geprüfte inerte Synthetikmigration ist nach konkretem Betreiber-GO
+nativ angewendet: Postimage 01.10. 23:39:53 Tuerkei / 22:39:53 Berlin / 20:39:53 UTC, exakt fünf Originalfunktionen,
+Journal 40 / Version `20261001203937`; 500 Mandate / 501 Identitäten / 0 Aktive / 0 Slots,
+alle geschützten Fingerprints unverändert. PR #764/main `b53be3d8` war beim Vorflug
+Ready. Die CLI-Version `20261001172619` bleibt unregistriert: kein Repair,
+Dateiumbenennen oder `db push --include-all`; tatsächliche Zuordnung vor jedem
+späteren Migrationsweg beachten. Rückweg an 40 gebunden, nicht ausgeführt;
+Audit 40 bleibt, eine Rückweganwendung erhält eigenen Audit 41.
+REST 403 änderte nichts; native Anwendung dauerte gemessen 8,926s, ohne belegte
+harte 20s-Tooltransportgarantie. DB 17s/Statement 15s/Lockwarten 3s unverändert;
+unbekannter Schreibausgang: Stop, lesende Klärung, kein Retry. Die Betreiberfrist
+20s gilt für KI-Anfragen; Schutzgates und Importsperren bleiben unverändert.
+Inaktiven Ersatz noch nicht freigeben; Migration ist kein 500er Erfolg.
 Passende Quellen-/Ebenenversorgung,
 Kosten-/Ruhebelege und lebender Endwaechter bleiben Pflicht.
 Vor Aktivierung und Test anhalten. Die nachfolgende reale Profilhistorie bleibt
