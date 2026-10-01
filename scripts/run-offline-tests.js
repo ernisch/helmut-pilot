@@ -195,6 +195,9 @@ const STANDARD = new Set([
   "speicherpfad-schutz-test.js",            // Schutz des gemeinsamen Speicherpfads
   "azure-endpunkt-guard-test.js",           // Azure-Endpunkt Pruefung vor Budget/Senden
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
+  "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist
+  "bb-quellen-cutover-operator-test.js",     // enger Landesquellen-Cutover und geschuetzter Rueckweg
+  "bb-quellen-cutover-baseline-test.js",     // Berlin erhalten, Zustandsdrift und unbekannte Writes sperren
   "befund-27a2-schreibschutz-test.js",      // Messwerkzeug kann strukturell nicht schreiben
   "nachhol-schreibgate-test.js",            // Production-Schreibgate der Nachholskripte
   "store-cas-test.js",                      // CAS im gemeinsamen Store
