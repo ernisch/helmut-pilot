@@ -209,6 +209,17 @@ jobs:
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js scripts/synthetik-500-runtime-datenbank-test.js
 
+      - name: Synthetik500 nativer Vollbackup und Rueckweg gegen isolierte PostgreSQL17
+        # Kleine SQL-Requests, typgetreue Sicherung und vollstaendiger Feld-CAS.
+        timeout-minutes: 3
+        env:
+          HELMUT_SYNTHETIK500_PG_ISOLIERT: "JA"
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          PGPASSWORD: "helmut"
+        run: node scripts/lokal.js scripts/synthetik-500-native-import-test.js --postgres-local
+
       - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
         # Der Runner erzwingt Offline technisch: jede Suite läuft mit einem
         # --require-Netz-Guard (blockt http/https/fetch auf Nicht-Localhost)

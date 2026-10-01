@@ -200,6 +200,7 @@ const STANDARD = new Set([
   "ai-request-deadline-test.js",            // absolute Providerfrist einschliesslich fließendem Antwortbody
   "synthetik-500-profile-test.js",          // disjunkte Fiktion330/120/50, private Ausgabe und1500 offene Sollpositionen
   "synthetik-500-import-test.js",           // inaktiver Ersatz, vollstaendiges Preimage und privater Rueckweg
+  "synthetik-500-native-import-test.js",    // nativer Vollbackup, kompakte SQL und typisierter Vollfeld-CAS
   "synthetik-500-runtime-test.js",          // eigener Start-/Endvertrag, Paketvarianten und lebender Waechter
   "synthetik-500-nachweis-test.js",         // 1500 Volltexte, native Laufbelege und getrennte Fehlerbilanz
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
