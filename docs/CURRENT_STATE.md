@@ -14,18 +14,18 @@
 
 - **Synthetikbrücken (PR #763, Code/gezielte Tests):** [Importprojektion](../lib/helmut/synthetik-500-import.js), Start-/Endruntime und [Vollbilanz](../lib/helmut/synthetik-500-nachweis.js) sind gemergt. Import43/43, Runtime11/11Offline+11/11PostgreSQL, Realregression36/36 und Nachweis64/64 grün; beide Pflichtchecks einschließlich echter Import→Start→Ende-SQL-Integration erfolgreich. Bindungen umfassen v2-Preimage,17s Gesamtfrist,500-Zielzeilenjournal, Fremd-/Kinddaten, manuellen Wächter und1500Vorabpositionen. Volltexte, Originalquellen, Einzelurteile und unabhängige Production-Endabnahme bleiben Pflicht. Diese kleinen SQL-Fixtures beweisen keine Vollbestandsperformance.
 
-- **Nativer Vollbestandsweg lokal geprüft (01.10.2026):** Privater v2-Export:
-  136764 Zielzeilen/573,6 MB; rund 576 MB SQL überschreitet 17 s, vollständig zurückgerollt.
-  Der [native Generator](../scripts/synthetik-500-native-import.js) sichert typgetreu unter
-  Sperren: 17 ganze Quelltabellen/18 Zielgruppen, alle Felder/PK+xmin und echte Importpostimages.
-  Finaler Vollclone mit136765 Zeilen auf exaktPG17.6/vector0.8.0:
-  4760ms Sicherung/4902ms Ersatz/12179ms Rückweg, SQL unter2,7MB;
-  Fremdentscheidung vollständig samt xmin erhalten. Frühere Probe16938ms Rückweg:
-  stark schwankende Walltime, tatsächliche Transaktionsreserve nicht isoliert gemessen.
-  **Kein Production-Performancebeleg**. Native Tests:3 offline/46 PostgreSQL grün;
-  traditionelle Tabellenvererbung wird unter allen22Quellsperren abgewiesen.
-  Direkter psql-Pfad; keine unveränderte App-Anwendung
-  oder Importfreigabe. Die drei Prozessaltlasten sind separat bereinigt; weiterhin kein Profilimport.
+- **Private V6-Appbrücke, Import offen:** Integrität unabhängig geprüft,11 neue Gruppen.
+  Ein nativer READ-ONLY-Aufruf: alle22 Tabellen/182908 Zeilen,
+  136765 Quellen+46143 Kontrollen, zwei gleiche Prüfungen2408,263/321,347ms;
+  Transaktion bis2.Prüfung2988,186ms, Tool13647ms, CPU/Ende unbekannt.
+  Nur Altzeilen-Metadaten, kein Gesamtphasenbeleg. Lokal4 Helferstarts/3 committete Phasen:
+  Stage/Forward/Rückweg6604,464/5112,517/16312,015ms, CPU6480/4960/15870ms;
+  keine harte17s-Reserve. Originalbodies/3 Audits/Fremddaten erhalten,17-20-2 unverändert.
+  Clone136765 Quellen/7 Kontrollen statt46143; Parentfallback beobachtet, SubTX-Leistung offen.
+  Zyklusdiagnose unabhängig akzeptiert. Nächste Tore: Kontrollhistorie lesend exportieren
+  mit Vorher/Nachherbindung und Apptransportvertrag klären; frische Bindung/Profil-GO offen.
+  0 Production-Profilimporte/0 Aktivierungen/0 neue bezahlte Modellaufrufe.
+  [Belegscope](betrieb/synthetischer-500er-auftrag-20261001.md#private-v6-appbrücke-belegscope).
 
 - **Neue Betreibersteuerung (01.10.2026):** Der naechste technische 500er Nachweis erfolgt mit vollstaendig synthetischen Profilen; keine Realpersonenprofile umbenennen oder mit Testflag als Fiktion ausgeben. Verteilung 330 Bundestag / 120 Berlin / 50 Brandenburg bleibt bestehen. Qualifizierte Datenschutzentscheidung und Vertragsunterlagen existieren laut Betreiber derzeit nicht; diese bleiben offen vor regulaerem Betrieb und sind kein Starttor fuer diesen synthetischen technischen Nachweis. Azure-SKU frisch gelesen: `GlobalStandard`, Kapazität250, Modellversion`2025-08-07`,250RPM/250.000TPM; Kontopreis und Production-Modellaufruf dadurch nicht belegt. Ein Azure-Konto und eine KI-Ressource existieren laut Betreiber bereits; Azure-Lesezugang ist seit 01.10.2026 authentifiziert belegt (Dienstprinzipal ausschliesslich Leser auf `helmut-rg`, keine Datenzugriffsrechte); Modellaufruf und wirksame Production-Konfiguration sind dadurch nicht bewiesen. [Aktueller Synthetikauftrag](betrieb/synthetischer-500er-auftrag-20261001.md). Dies ist eine Umfangsaenderung, keine Production-Aktivierung oder Testfreigabe.
 

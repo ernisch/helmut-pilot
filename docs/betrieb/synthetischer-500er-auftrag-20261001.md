@@ -233,7 +233,10 @@ Das GO umfasst weder Aktivierung noch Modellaufruf oder500er Test.
 Weitere belegte Startblocker vom01.10.: Landesartikelstände in Production noch0,
 wirksame Flags und Workflowsecrets nicht bewiesen, historische Kostenbücher 29./30.09.
 fehlen; der rechnerische Rest von höchstens0,205868USD ist keine Kostenfreigabe.
-Der lesende Katalogvorflug bestätigt PostgreSQL17.6 und keine unbekannten
+
+### Historische Vollbestandsvorarbeit, keine frische Ausführungsbindung
+
+Der damalige lesende Katalogvorflug bestätigt PostgreSQL17.6 und keine unbekannten
 Fremdschlüsselreferenzen. Der vollständige private v2-Export umfasst136764Zeilen
 und573,6MB; vor/nach Export vollständige identische PK/xmin-Mengen und Katalog,
 getrennte Lesetransaktionen ohne behaupteten gemeinsamen MVCC-Snapshot.
@@ -264,3 +267,129 @@ Die drei alten unvollendeten Prozesszeilen sind mit eigenem DATA-GO bereinigt;
 dieses Altlasttor ist erledigt. Prozessruhe vor weiteren Writes erneut frisch prüfen.
 Kostenklärung und notwendige Quellen-/Konfigurationsänderungen benötigen eigene
 konkrete Bindungen. Keine Kontopreise, Budgetfreigaben oder Nullkosten erfinden.
+
+### Private V6-Appbrücke: Belegscope
+
+**Lokaler Zyklus diagnostisch unabhängig akzeptiert; keine Importfreigabe.** Die private
+V6-Kopie liegt außerhalb von Git, Verzeichnis0700/Dateien0600. Alle originalen
+Stage-/Vorwärts-/Rückweg-Bodies bleiben bytegleich; Actor-, Zeit-, Phasen-,
+Runtime-, Journal-, Audit- und vollständige Geschäftsdatenprüfungen sowie
+17s-Transaktion/20s-Statement/2s-Sperrwartezeit sind unverändert. Die unabhängige
+Integritätsprüfung akzeptiert11 neue Fallgruppen:10 zunächst erfolgreich,
+eine EXPLAIN-Assertion am falschen Planknoten korrigiert und nur diesen Fall
+erneut geprüft; kein Schutzcodefix und keine Wiederholung der alten Suiten.
+
+Die temporäre Abschlusskontrolle erfasst weiterhin alle22Quellen/Kontrollen
+und eigene Backup-/Meta-/Posttabellen: Count und SHA256 über die sortierte,
+eindeutig gerahmte Multimenge aus tableoid/ctid/xmin/cmin/xmax und Feldhashzweig.
+Der vollständige typisierte Zeilenhash wird nur bei raw xmax!=0 und
+coalesce(age(xmin)<=0,true) berechnet. Zugewiesener Top-XID/age=0 wird vor Body,
+vor Checkpoint und bei Commit strikt geprüft. Bestehende öffentliche Namespace-,
+Tabellen- und Spaltenrechte werden nur beobachtet und an drei Grenzen gegen
+die ursprüngliche Beobachtung geprüft. Diese Headermerkmale gelten nur kurz
+unter den gehaltenen Transaktionssperren; Headeränderungen/Rowlocks und
+abgebrochene Untertransaktionen dürfen konservativ abbrechen.
+
+**Tatsächlicher nativer Lesebeleg:** genau ein READ-ONLY-Aufruf am02.10.01:53Türkei
+/00:53Berlin/01.10.22:53UTC, alle22Tabellen mit182908Zeilen:
+136765Quellen+46143Kontrollen. Zwei unabhängig ausgewertete gleiche Prüfungen
+dauerten2408,263/321,347ms; tatsächliche Transaktionszeit bis zur zweiten
+Prüfung2988,186ms, Toolwall13647ms. CPU und finales Transaktionsende fehlen.
+Ohne eigene DML misst dies nur Altzeilen-Metadaten/konservative Fallbacks,
+keine Parent-/erfolgreicheSubTX-Schreibzweige, Originalbodies, Privatkopien,
+ACL/Runtime/Journal/Topguards oder Gesamtcommit. Daraus folgt keine
+Gesamtphasenreserve oder Stage-Readiness. Die lokale diagnostische Kopie hat
+136765Quellzeilen und7Kontrollen statt46143;46136Kontrollhistorienzeilen fehlen,
+MVCC-Header sind nach Restore verändert. Sie beweist keine native Gesamtphase.
+
+**Lokaler Ablauf:** insgesamt vier Helferstarts. Der erste
+scheiterte mit42601 an der vorbereitenden READ-ONLY-Abfrage; der zweite an
+der strikten Lexerprüfung vor App-Sendung. Beim dritten wurde genau eine
+Stage-Abfrage gesendet; PostgreSQL verwarf den gesamten Payload beim Rawparse
+wegen `where truelimit 1` im angehängten Mess-SQL. Kein belegter Originalbody-
+Start, kein Transaktionsfrist-/Commitgate-Fehlertest und keine abgeschlossene
+Phasen-Wall-/CPU-Zeit. Lesender Vorher-/Nachherbeleg: persistente sichtbare
+Identitäten/Counts aller22Quellen/Kontrollen und eigenen Objekte, Katalog/OIDs/
+filenodes, Namespace-/Tabellen-/Spalten-ACL, Journal/Runtime/Phasenstand gleich;
+Fremdentscheidung in vollständigen Feldern und xmin erhalten. Raw xmax/cmin
+werden zwischen diesen getrennten Beobachtungstransaktionen nicht als gleich
+behauptet. V6-Operator und seine Originalbodybytes bleiben unverändert.
+
+**Neue tatsächliche Grammatikprobe:** Auf leerer, separater PostgreSQL17.6-
+Einwegfixture genau eine READ-ONLY-EXPLAIN-Probe ohne ANALYZE: alle drei Phasen-
+Metadaten-UPDATEs und drei ergänzenden CPU-/Audit-/Endabfragen erfolgreich geplant,
+0 Quellzeilen/0 temporäre Messzeilen. Keine App-Phase, Vollclone-/Productionaktion,
+Leistungs- oder Parent-/SubTX-Laufzeitmessung. Fixture gelöscht, Abwesenheit im
+Katalog bestätigt. Der neue private perf-v7-Helfer verändert gegenüber seinem
+Vorgänger nur das fehlende Leerzeichen und den eindeutigen neuen Attemptdateinamen;
+V6-Operator/Bodybytes unverändert.
+
+**Tatsächlicher neuer lokaler Gesamtzyklus:** Nach Parserbeleg, unabhängiger
+Helferprüfung und separater Root-Freigabe committete der vierte Start genau
+Stage/Forward/Rückweg, ohne Retry. Tatsächliche Transaktionswallzeiten inklusive
+Originalbody, Mess-Samples, später lokaler Auditquittung, verzögertem Commitgate
+und kleinem Endpunkt:6604,464/5112,517/16312,015ms. Backend-CPU6480/4960/15870ms.
+Keine isolierte Bodyzeit und keine harte17s-CPU-/Transaktionsreserve: Der Rückweg
+liegt nur rechnerisch rund0,688s unter17s. Drei tatsächlich gespeicherte lokale
+Auditquittungen, Fixturejournal1→4, alle Originalbodies bytegleich; voller
+Geschäftsdatenrückweg und Fremdentscheidung mit vollständigen Feldern/xmin erhalten.
+Final501Identitäten/500inaktiveMandate/0aktive,9Kontrollzeilen (anfangs7),
+37eigene Backup-/Meta-/Posttabellen mit274529Zeilen, beide eigenen Storezustände
+rueckgestellt. Privatkopien und Quittungen bleiben vorhanden; keine Productionquittung.
+
+Kleine tatsächliche Postfooter-Samples zeigen natürliche Parent-Feldhash-Fallbacks
+mit nonzero raw xmax, creator age0 und normalisiertem Topgleichstand. Sie sind
+keine vollständigen Zweigcounts; erfolgreich abgeschlossene SubTX-Leistung bleibt
+unbelegt. All22-Scope/Guards/17-20-2 unverändert, kein Scopeabbau. Der lokale
+Initialbestand136765Quellen/7Kontrollen und dessen restaurierte MVCC bilden die
+native46143Kontrollhistorie nicht ab. Ein erfolgreicher lokaler Zyklus bestätigt
+diesen konkreten Diagnoseablauf, keine native Gesamtphasen-/Transportbereitschaft.
+Runtime-Namensräume fehlen in dieser lokalen Fixture; ihre Productionkosten
+sind darin nicht abgebildet.
+Die unabhängige Astra-Prüfung akzeptiert den eingefrorenen diagnostischen Zyklus
+ohne lokalen Integritätsbefund. Vollständige native Kontrollhistorie, native
+Gesamtphasenleistung und Appvertrag bleiben blockierende Ausführungstore.
+
+**Nächste notwendige Vorarbeit:** Echte Kontrollhistorie gezielt rein lesend mit
+Vorher-/Nachher-Revisionsbindung exportieren und den tatsächlichen App-
+apply_migration-Größen-/Transportvertrag vorbereiten. Keine weitere Vollprobe,
+Production-Stage oder GO-Anfrage aus diesem Ergebnis ableiten.
+Native Gesamtphasenleistung/Reserve, tatsächliche App-Maximalgröße und harte
+Transportfrist bleiben unbewiesen; lokale SQL-Bytegrößen und interner4MiB-Guard
+sind keine App-Zusage. Unbekannter Schreibausgang: Stop, nur lesend klären,
+kein Retry. Frische vollständige Export-/Aufnahme-/Owner-/Ruhe-/ACL-/Journal-
+und exakte Phasen-SQL-Bindungen bleiben vor einem Profilersatz erforderlich.
+
+Der historische private Entscheidungsentwurf für Sicherung und inaktiven Ersatz
+der alten500Mandate durch500fiktive Profile (330/120/50), Erhaltung der einen
+Nichtmandatsidentität, Ziel501/500/0 und bedingten Rückweg bleibt
+**FREIGABEANFRAGE_NOCH_NICHT_READY**. Sein damaliger PENDING-Prüfstand ist Vorarbeit,
+keine aktuelle Frische-/Ausführungsbindung. Stage schreibt bereits eigene Backups,
+Meta- und Journaldaten; Forward ersetzt auch die gebundenen alten Kinddaten.
+Rückweg restauriert Geschäftsfelder mit neuen xmin, erhält private Backups und
+Auditquittungen und ist kein globaler Datenbank-Zeitreset. Historische Preimages
+und Journal41 sind keine frischen Freigabebelege. Cleanup3 und PR #767/READY
+sind abgeschlossen;0 Production-Profilimporte/0 Aktivierungen/0 neue bezahlte
+Modellaufrufe. Landesquellen-, Kosten- und Adminflagblocker bleiben unverändert;
+Aktivierung und500er Test benötigen weiterhin separates GO.
+
+Private Belegwurzel: `/workspace/helmut-synthetik500-vorbereitung-20261001/`.
+Hier nur Dateibindungen und aggregierte Befunde; keine Bestandszeilen/PII oder
+privaten Payloads. SHA256 bezieht sich jeweils auf die exakten Datei-Bytes:
+
+| Datei unter der Privatwurzel | SHA256 |
+|---|---|
+| `synthetik500-native-app-operator-v6/prepare.js` | `7ce6b45d1f9c5cc45c1dcd8076d261b7f68b7447e56e2cdec76268aafc40ecff` |
+| `synthetik500-native-app-operator-v6/safety-freeze.json` | `81bfcf91929babe63ec4dfd21d84d3c3d05936af9a5b7d87ecd301d564e59df7` |
+| `synthetik500-native-app-operator-v6/body-byte-binding-report.json` | `f7df480b03a7e982f89d78baa6204d73458449abc5ba2ab45737226804df8996` |
+| `synthetik500-native-app-operator-v6/test-report.json` | `3a6a2b85d0a1bf6ca4302048327a24acbecb8009799960538c7feb8ad61d8fa0` |
+| `native-v6-independent-integrity-review-20261001.json` | `371d5e3f546a131723df4b02c3865448c631449e86eeff8b536d44abfad29568` |
+| `native-v6-source-pair-independent-review-20261001.json` | `28fc0aba831253c04b7e21360c5f546fa1bddce697cd5f7f9c1c1d4b929510a8` |
+| `synthetik500-native-app-gate-performance-v4/root-native-readonly-source-pair-actual-response.json` | `a19e90e4f646779d29325fbb4a63ab547027c7c2d6964c735fbe3885b12b4bc1` |
+| `synthetik500-native-app-gate-performance-v6/actual-stage-abort-analysis.json` | `ef7baea48b2ed514fa640b57fb22a10b8fbca1e504158c8eb518859464b82869` |
+| `synthetik500-native-app-gate-performance-v7/actual-metadata-grammar-probe-report.json` | `c98d89c2a1667884068a39749856a74e0f4dd905b7b3f19edf7f114b03cd2e7e` |
+| `synthetik500-native-app-gate-performance-v7/full-cycle-v6-harness-fix3.js` | `e227bcbf99d9473009ef9a81a8b959007e7cbf7c0311363daa6990e7915abe88` |
+| `synthetik500-native-app-gate-performance-v7/actual-full-cycle-analysis.json` | `12bc33d30ef61570ab34263035b2ddf17a7a1b3c78b197154dc2976a252d5392` |
+| `synthetik500-native-app-gate-performance-v7/actual-full-cycle-freeze.json` | `ad3c21b0a123ee9c7e570a91a09713aea0c01bb1d4e9fb4ada95a1a53f3e35f6` |
+| `native-v6-local-whole-cycle-independent-review-20261001.json` | `0aa0de42c1f8be60631314ba2608ab3b579f60581374f451f007317b25a4c59e` |
+| `inaktiver-import-go-entscheidungsentwurf-v6-20261001.json` | `e582efbddb50ce6a1f51e89b1959a129496d676f39e25d1ead1c377a62da07d4` |
