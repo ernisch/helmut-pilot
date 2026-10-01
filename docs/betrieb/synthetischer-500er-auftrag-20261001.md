@@ -99,7 +99,7 @@ Production-Nachweis und erteilt keine Anwendungserlaubnis.
    Anwendung verlangt frischen Snapshot (höchstens5Minuten), vollständigen
    Zeilen-/Schemaabgleich, Prozessruhe einschließlich Bloblocks und Outbox sowie
    exakt500Mandate/501Identitäten/0Aktive. Alle500 alten Mandatsidentitäten werden
-   in einer Transaktion durch die fiktive Zielmenge ersetzt; abhängige Kinddaten
+   in einer Transaktion mit17s Gesamtfrist durch die fiktive Zielmenge ersetzt; abhängige Kinddaten
    sind im Preimage gesichert, die Fremdidentität und fremde Kinddaten erhalten.
    Rückweg ist ausschließlich vor Aktivierung und ohne neue Kinddaten zulässig.
 2. Schema: vorbereitete Migration
@@ -135,5 +135,9 @@ Das GO umfasst weder Aktivierung noch Modellaufruf oder500er Test.
 Weitere belegte Startblocker vom01.10.: Landesartikelstände in Production noch0,
 wirksame Flags und Workflowsecrets nicht bewiesen, historische Kostenbücher29./30.09.
 fehlen; der rechnerische Rest von höchstens0,205868USD ist keine Kostenfreigabe.
+Der lesende Katalogvorflug bestätigt PostgreSQL17.6 und keine unbekannten
+Fremdschlüsselreferenzen. Die vollständige Größenabfrage endete am HTTP-Zeitlimit;
+der große echte Preimage-Export und die Ausführbarkeit von Vor-/Rückweg innerhalb
+der17s-Transaktionsfrist bleiben vor Anwendung nachzuweisen. Keine Fristverlängerung.
 Kostenklärung und notwendige Quellen-/Konfigurationsänderungen benötigen eigene
 konkrete Bindungen. Keine Kontopreise, Budgetfreigaben oder Nullkosten erfinden.
