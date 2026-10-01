@@ -1,7 +1,7 @@
 "use strict";
 
 // Offline-Test des eng begrenzten BE/BB-Quellen-Cutover-Operators.
-// KEINE DB, KEIN Netz, KEINE Env-Aenderung, KEINE Production-Aktion. Alle Datenzugriffe
+// KEINE DB, KEIN Netz, KEINE Production-Aktion. HTTP-Grenztests setzen nur lokale Env-Sentinels. Alle Datenzugriffe
 // laufen ueber einen injizierten Fake-Store; der reale Store/Transport wird nie beruehrt.
 //
 // Aufruf: node scripts/bb-quellen-cutover-operator-test.js
@@ -11,7 +11,10 @@ const operator = require("../lib/helmut/bb-quellen-cutover-operator");
 
 let pass = 0;
 let fail = 0;
+// Optionaler enger Wiederholungslauf nach einer konkreten Korrektur; CI prueft standardmaessig alles.
+const testFilter = process.env.BB_CUTOVER_TEST_FILTER ? new RegExp(process.env.BB_CUTOVER_TEST_FILTER) : null;
 async function check(name, fn) {
+  if (testFilter && !testFilter.test(name)) return;
   try { await fn(); pass += 1; console.log(`  PASS  ${name}`); }
   catch (error) { fail += 1; console.log(`  FAIL  ${name} — ${error.message}`); }
 }
@@ -46,16 +49,29 @@ function pfadZeile(def, status, mode) {
 // Vorbereitungszustand ("vorher") ODER aktiver Zustand ("nachher").
 function pakete(zustand) {
   const status = zustand === "nachher" ? "active" : "prepared";
-  return operator.ZIEL_PAKETE.map((d) => paketZeile(d, status));
+  return operator.ZIEL_PAKETE.map((d) => paketZeile(d, d.id === "pkg-berlin-basis" ? "active" : status));
 }
 function pfade(zustand) {
   return operator.ZIEL_PFADE.map((d) => (zustand === "nachher"
     ? pfadZeile(d, "healthy", "auto")
     : pfadZeile(d, "needs_review", "manual")));
 }
-// GENAU die zwei erlaubten Paket-<->Pfad-Verknuepfungen.
+// Unabhaengig fixierter Vertragsbestand: 16 Bindungen / 15 Pfade, rbb24 in beiden Paketen.
 function links() {
-  return operator.ZIEL_PFADE.map((d) => ({ package_id: d.paketId, retrieval_path_id: d.id }));
+  const gruppen = {
+    "pkg-berlin-basis": ["rp-be-landesfraktionen", "rp-be-landesparlament", "rp-be-landesregierung",
+      "rp-be-plenum", "rp-be-regionale_leitmedien", "rp-be-staatskanzlei", "rp-rbb24-politik"],
+    "pkg-brandenburg-basis": ["rp-bb-ausschuesse", "rp-bb-landesfraktionen", "rp-bb-landesparlament",
+      "rp-bb-landesregierung", "rp-bb-ministerien", "rp-bb-partei_pilot", "rp-bb-plenum",
+      "rp-bb-regionale_leitmedien", "rp-rbb24-politik"]
+  };
+  return Object.entries(gruppen).flatMap(([package_id, ids]) => ids.map((retrieval_path_id) => ({ package_id, retrieval_path_id })));
+}
+function linkedPfade(targetRows = pfade("vorher")) {
+  return [...new Set(links().map((row) => row.retrieval_path_id))].map((id) => {
+    const target = targetRows.find((row) => row && row.id === id);
+    return { id, status: target ? target.status : "needs_review", activation_mode: target ? target.activation_mode : "manual" };
+  });
 }
 
 // Fake-Store mit echtem CAS-Verhalten auf dem vollstaendigen Vorzustand. `fehltPaket`/`fehltPfad`
@@ -66,12 +82,11 @@ function fakeStore(opts = {}) {
     pakete: (opts.pakete || pakete("vorher")).map((r) => (r ? { ...r } : r)),
     pfade: (opts.pfade || pfade("vorher")).map((r) => (r ? { ...r } : r)),
     links: (opts.links || links()).map((l) => (l ? { ...l } : l)),
-    linkedPfade: (opts.linkedPfade || pfade("vorher").map((row) => ({
-      id: row.id, status: row.status, activation_mode: row.activation_mode
-    }))).map((row) => (row ? { ...row } : row))
+    linkedPfade: (opts.linkedPfade || linkedPfade(opts.pfade || pfade("vorher"))).map((row) => (row ? { ...row } : row))
   };
   const calls = [];
   const writes = [];
+  let readCount = 0;
   const snapshot = () => ({
     pakete: zustand.pakete.map((r) => (r ? { ...r } : r)),
     pfade: zustand.pfade.map((r) => (r ? { ...r } : r)),
@@ -88,13 +103,20 @@ function fakeStore(opts = {}) {
     },
     async leseZielbestand() {
       calls.push("lesen");
+      readCount += 1;
+      if (opts.onRead) await opts.onRead({ zustand, calls, writes, readCount });
       if (opts.leseFehler) throw new Error(opts.leseFehler);
       const s = snapshot();
       return opts.leseTransform ? opts.leseTransform(s) : s;
     },
     async schreibePaketStatus({ id, erwartetStatus, neuerStatus }) {
       calls.push(`paket:${id}:${erwartetStatus}->${neuerStatus}`);
-      writes.push({ art: "paket", id, erwartetStatus, neuerStatus });
+      const write = { art: "paket", id, erwartetStatus, neuerStatus };
+      writes.push(write);
+      if (opts.onWrite) {
+        const result = await opts.onWrite({ write, zustand, calls, writes });
+        if (result !== undefined) return result;
+      }
       const row = zustand.pakete.find((r) => r && r.id === id);
       if (!row || row.status !== erwartetStatus || opts.fehltPaket === id) return { betroffen: 0 };
       row.status = neuerStatus;
@@ -102,12 +124,19 @@ function fakeStore(opts = {}) {
     },
     async schreibePfadStatus({ id, erwartetUrl, erwartetStatus, erwartetActivationMode, neuerStatus, neuerActivationMode }) {
       calls.push(`pfad:${id}:${erwartetStatus}/${erwartetActivationMode}->${neuerStatus}/${neuerActivationMode}`);
-      writes.push({ art: "pfad", id, erwartetUrl, erwartetStatus, erwartetActivationMode, neuerStatus, neuerActivationMode });
+      const write = { art: "pfad", id, erwartetUrl, erwartetStatus, erwartetActivationMode, neuerStatus, neuerActivationMode };
+      writes.push(write);
+      if (opts.onWrite) {
+        const result = await opts.onWrite({ write, zustand, calls, writes });
+        if (result !== undefined) return result;
+      }
       const row = zustand.pfade.find((r) => r && r.id === id);
       if (!row || row.status !== erwartetStatus || row.activation_mode !== erwartetActivationMode
         || row.url !== erwartetUrl || opts.fehltPfad === id) return { betroffen: 0 };
       row.status = neuerStatus;
       row.activation_mode = neuerActivationMode;
+      const linked = zustand.linkedPfade.find((r) => r && r.id === id);
+      if (linked) { linked.status = neuerStatus; linked.activation_mode = neuerActivationMode; }
       return { betroffen: 1 };
     }
   };
@@ -292,8 +321,7 @@ async function main() {
   await check("14b. Zusaetzlicher aktiver Pfad eines Zielpakets blockiert den Cutover (0 Writes)", async () => {
     const store = fakeStore({
       links: [...links(), { package_id: "pkg-berlin-basis", retrieval_path_id: "rp-fremd" }],
-      linkedPfade: [...pfade("vorher").map((row) => ({ id: row.id, status: row.status, activation_mode: row.activation_mode })),
-        { id: "rp-fremd", status: "healthy", activation_mode: "auto" }]
+      linkedPfade: [...linkedPfade(), { id: "rp-fremd", status: "healthy", activation_mode: "auto" }]
     });
     const result = await operator.ausfuehren(body("quellen-cutover"), { env: envAn, store });
     assert.equal(result.ok, false);
@@ -338,14 +366,13 @@ async function main() {
     const store = fakeStore();
     const result = await operator.ausfuehren(body("quellen-cutover"), { env: envAn, store });
     assert.equal(result.ok, true);
-    assert.deepEqual(store.calls, [
-      "bereit", "lesen",
-      "paket:pkg-berlin-basis:prepared->active", "lesen",
-      "paket:pkg-brandenburg-basis:prepared->active", "lesen",
-      "pfad:rp-be-landesregierung:needs_review/manual->healthy/auto", "lesen",
-      "pfad:rp-bb-landesparlament:needs_review/manual->healthy/auto", "lesen"
-    ]);
-    assert.deepEqual(result.detail.schritte, ["paket:pkg-berlin-basis", "paket:pkg-brandenburg-basis", "pfad:rp-be-landesregierung", "pfad:rp-bb-landesparlament"]);
+    assert.deepEqual(store.calls.filter((call) => call !== "lesen" && call !== "bereit"), ["paket:pkg-brandenburg-basis:prepared->active", "pfad:rp-be-landesregierung:needs_review/manual->healthy/auto", "pfad:rp-bb-landesparlament:needs_review/manual->healthy/auto"]);
+    for (let i = 0; i < store.calls.length; i += 1) {
+      if (!store.calls[i].startsWith("paket:") && !store.calls[i].startsWith("pfad:")) continue;
+      assert.equal(store.calls[i - 1], "lesen", "frische Bindung vor Write");
+      assert.equal(store.calls[i + 1], "lesen", "Ruecklesung nach Write");
+    }
+    assert.deepEqual(result.detail.schritte, ["paket:pkg-brandenburg-basis", "pfad:rp-be-landesregierung", "pfad:rp-bb-landesparlament"]);
     // Nur die freigegebenen Felder wurden geschrieben; Identitaet/URL/Parser/query bleiben.
     for (const w of store.writes) {
       if (w.art === "paket") assert.deepEqual(Object.keys(w).sort(), ["art", "erwartetStatus", "id", "neuerStatus"]);
@@ -369,14 +396,13 @@ async function main() {
     const store = fakeStore({ pakete: pakete("nachher"), pfade: pfade("nachher") });
     const result = await operator.ausfuehren(body("quellen-rueckbau"), { env: envNurFlag, store });
     assert.equal(result.ok, true);
-    assert.deepEqual(store.calls, [
-      "bereit", "lesen",
-      "pfad:rp-be-landesregierung:healthy/auto->needs_review/manual", "lesen",
-      "pfad:rp-bb-landesparlament:healthy/auto->needs_review/manual", "lesen",
-      "paket:pkg-berlin-basis:active->prepared", "lesen",
-      "paket:pkg-brandenburg-basis:active->prepared", "lesen"
-    ]);
-    assert.ok(store.zustand.pakete.every((r) => r.status === "prepared"));
+    assert.deepEqual(store.calls.filter((call) => call !== "lesen" && call !== "bereit"), ["pfad:rp-bb-landesparlament:healthy/auto->needs_review/manual", "pfad:rp-be-landesregierung:healthy/auto->needs_review/manual", "paket:pkg-brandenburg-basis:active->prepared"]);
+    for (let i = 0; i < store.calls.length; i += 1) {
+      if (!store.calls[i].startsWith("paket:") && !store.calls[i].startsWith("pfad:")) continue;
+      assert.equal(store.calls[i - 1], "lesen", "frische Bindung vor Write");
+      assert.equal(store.calls[i + 1], "lesen", "Ruecklesung nach Write");
+    }
+    assert.deepEqual(store.zustand.pakete, pakete("vorher"));
     assert.ok(store.zustand.pfade.every((r) => r.status === "needs_review" && r.activation_mode === "manual"));
   });
 
@@ -395,43 +421,31 @@ async function main() {
     assert.equal(result.ok, false);
     assert.equal(result.reason, "cas-fehlgeschlagen");
     assert.equal(result.detail.schritt, `pfad:${operator.ZIEL_PFAD_IDS[1]}`);
-    // Geschrieben: 2 Pakete + 1 Pfad. Kompensiert rueckwaerts: 1 Pfad, dann 2 Pakete.
-    assert.deepEqual(store.calls, [
-      "bereit", "lesen",
-      "paket:pkg-berlin-basis:prepared->active", "lesen",
-      "paket:pkg-brandenburg-basis:prepared->active", "lesen",
-      "pfad:rp-be-landesregierung:needs_review/manual->healthy/auto", "lesen",
-      "pfad:rp-bb-landesparlament:needs_review/manual->healthy/auto",
-      "pfad:rp-be-landesregierung:healthy/auto->needs_review/manual",
-      "paket:pkg-brandenburg-basis:active->prepared",
-      "paket:pkg-berlin-basis:active->prepared"
+    assert.deepEqual(store.writes.map((w) => [w.id, w.neuerStatus]), [
+      ["pkg-brandenburg-basis", "active"], ["rp-be-landesregierung", "healthy"],
+      ["rp-bb-landesparlament", "healthy"], ["rp-be-landesregierung", "needs_review"],
+      ["pkg-brandenburg-basis", "prepared"]
     ]);
+    assert.equal(store.writes.some((w) => w.id === "pkg-berlin-basis"), false);
     assert.ok(result.detail.ausgleich.every((x) => x.ok));
     assert.ok(result.detail.ausgleich.every((x) => x.betroffen === 1));
-    assert.ok(store.zustand.pakete.every((r) => r.status === "prepared"));
+    assert.deepEqual(store.zustand.pakete, pakete("vorher"));
     assert.ok(store.zustand.pfade.every((r) => r.status === "needs_review" && r.activation_mode === "manual"));
   });
 
-  await check("23. Readback-Abweichung kompensiert den gesamten Cutover fail-closed", async () => {
+  await check("23. Fremde Readback-Abweichung stoppt ohne blinde Kompensation", async () => {
     const store = fakeStore({
-      leseTransform: (snapshot) => ({
-        pakete: snapshot.pakete,
-        pfade: snapshot.pfade.map((r) => (r && r.id === operator.ZIEL_PFAD_IDS[1] ? { ...r, status: "needs_review" } : r)),
-        links: snapshot.links,
-        linkedPfade: snapshot.linkedPfade
+      leseTransform: (snapshot) => ({ ...snapshot,
+        pfade: snapshot.pfade.map((r) => (r && r.id === operator.ZIEL_PFAD_IDS[1] && r.status === "healthy"
+          ? { ...r, status: "needs_review" } : r))
       })
     });
     const result = await operator.ausfuehren(body("quellen-cutover"), { env: envAn, store });
     assert.equal(result.ok, false);
     assert.equal(result.reason, "readback-abgewichen");
-    assert.deepEqual(store.calls.slice(-4), [
-      "pfad:rp-bb-landesparlament:healthy/auto->needs_review/manual",
-      "pfad:rp-be-landesregierung:healthy/auto->needs_review/manual",
-      "paket:pkg-brandenburg-basis:active->prepared",
-      "paket:pkg-berlin-basis:active->prepared"
-    ]);
-    assert.ok(store.zustand.pakete.every((r) => r.status === "prepared"));
-    assert.ok(store.zustand.pfade.every((r) => r.status === "needs_review" && r.activation_mode === "manual"));
+    assert.equal(store.writes.length, 3);
+    assert.equal(store.writes.some((w) => w.id === "pkg-berlin-basis"), false);
+    assert.equal(store.zustand.pakete[0].status, "active");
   });
 
   await check("24. Antworten sind minimal/redigiert (keine URL, Parser, Publisher, query)", async () => {
@@ -446,10 +460,10 @@ async function main() {
     assert.deepEqual(Object.keys(result).sort(), ["action", "detail", "ok", "pakete", "pfade"]);
   });
 
-  await check("25. Scope ist unveraenderlich: nur die zwei Pakete und zwei Pfade werden angefasst", async () => {
+  await check("25. Schreibscope ist unveraenderlich: nur Brandenburg-Paket und zwei Zielpfade", async () => {
     const store = fakeStore();
     await operator.ausfuehren(body("quellen-cutover"), { env: envAn, store });
-    const erlaubte = /^(paket:(pkg-berlin-basis|pkg-brandenburg-basis)|pfad:(rp-be-landesregierung|rp-bb-landesparlament)):/;
+    const erlaubte = /^(paket:pkg-brandenburg-basis|pfad:(rp-be-landesregierung|rp-bb-landesparlament)):/;
     for (const call of store.calls) {
       if (call === "bereit" || call === "lesen") continue;
       assert.ok(erlaubte.test(call), `unerlaubter Schreibzugriff: ${call}`);
@@ -518,8 +532,8 @@ async function main() {
   await check("27. Zielmengen und Ausgangszustaende sind exakt die freigegebenen", async () => {
     assert.deepEqual(operator.ZIEL_PAKET_IDS, ["pkg-berlin-basis", "pkg-brandenburg-basis"]);
     assert.deepEqual(operator.ZIEL_PFAD_IDS, ["rp-be-landesregierung", "rp-bb-landesparlament"]);
-    const linkedVorher = pfade("vorher").map((row) => ({ id: row.id, status: row.status, activation_mode: row.activation_mode }));
-    const linkedNachher = pfade("nachher").map((row) => ({ id: row.id, status: row.status, activation_mode: row.activation_mode }));
+    const linkedVorher = linkedPfade(pfade("vorher"));
+    const linkedNachher = linkedPfade(pfade("nachher"));
     assert.equal(operator.klassifiziere({ pakete: pakete("vorher"), pfade: pfade("vorher"), links: links(), linkedPfade: linkedVorher }).gesamt, "vorher");
     assert.equal(operator.klassifiziere({ pakete: pakete("nachher"), pfade: pfade("nachher"), links: links(), linkedPfade: linkedNachher }).gesamt, "nachher");
     assert.deepEqual(operator.ACTIONS, ["quellen-vorschau", "quellen-cutover", "quellen-rueckbau"]);
@@ -529,4 +543,5 @@ async function main() {
   if (fail) process.exitCode = 1;
 }
 
-main();
+if (require.main === module) main();
+module.exports = { body, fakeStore, links, linkedPfade, pakete, pfade, envAn, envNurFlag };

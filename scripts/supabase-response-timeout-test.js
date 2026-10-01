@@ -37,11 +37,11 @@ const server = http.createServer((req, res) => {
 
 // Auch der fehlerhafte alte Code muss den Test beenden koennen. Dieser Waechter
 // ist absichtlich viel laenger als die Produktfrist und gilt NIE als Erfolg.
-async function request(path) {
+async function request(path, options = {}) {
   let timer;
   try {
     return await Promise.race([
-      storage.tenantRequest(path, "local-timeout-test"),
+      storage.tenantRequest(path, "local-timeout-test", options),
       new Promise((_, reject) => {
         timer = setTimeout(() => {
           reject(new Error("Testwaechter: Datenbankabruf blieb unbegrenzt offen"));
@@ -69,6 +69,15 @@ async function check(name, run) {
         const res = responses.get(path);
         if (!res.destroyed) await once(res, "close");
         assert.equal(res.destroyed, true, "abgebrochene Verbindung wird geschlossen");
+      });
+    }
+    for (const path of ["/headers-stall", "/body-stall", "/error-body-stall"]) {
+      await check(`${path}: explizite 80ms-Frist bricht auch die echte Verbindung ab`, async () => {
+        await assert.rejects(request(path, { timeoutMs: 80 }), /Supabase storage timed out after 80ms/);
+        assert.equal(calls.filter((url) => url === path).length, 2, "je Test genau ein Abruf, kein Retry");
+        const res = responses.get(path);
+        if (!res.destroyed) await once(res, "close");
+        assert.equal(res.destroyed, true);
       });
     }
     await check("Nach einem Timeout wird die naechste vollstaendige Antwort gelesen", async () => {

@@ -139,9 +139,10 @@ const BEREICHE = {
   },
   "landesmodule-pardok": {
     quelle: [/(^|\/)lib\/helmut\/landes/i, /(^|\/)landesparser/i, /(^|\/)pardok/i,
-      /(^|\/)lib\/helmut\/berlin/i, /(^|\/)lib\/helmut\/brandenburg/i],
+      /(^|\/)lib\/helmut\/berlin/i, /(^|\/)lib\/helmut\/brandenburg/i,
+      /(^|\/)lib\/helmut\/bb-quellen-cutover/i],
     suiten: [/^landes/i, /^pardok/i, /^berlin/i, /^brandenburg/i, /^parlamentszusammensetzung/i,
-      /^profilpaket-berlin/i]
+      /^profilpaket-berlin/i, /^bb-quellen-cutover/i]
   },
   "warteschlange-pipeline": {
     quelle: [/(^|\/)lib\/helmut\/job-dispatch/i, /(^|\/)lib\/helmut\/jobqueue/i,
