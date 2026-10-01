@@ -82,6 +82,9 @@ const REINE_ZUGANGSDATEN = [
   // aufgehobener Laufzeitsperre haette echte, kostenpflichtige Modellaufrufe auf dem
   // Production-Konto ausgeloest. `AZURE_OPENAI_API_KEY` ist der dokumentierte Alias.
   "AZURE_OPENAI_KEY", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT",
+  // Cloud-Managementzugang gehoert ebenfalls nie in Offline-Testkindprozesse.
+  "HELMUT_AZURE_TENANT_ID", "HELMUT_AZURE_CLIENT_ID", "HELMUT_AZURE_CLIENT_SECRET",
+  "SUPABASE_ACCESS_TOKEN",
   "VERCEL_TOKEN", "BLOB_READ_WRITE_TOKEN", "VAPID_PRIVATE_KEY"
 ];
 // Bleibt als Gesamtliste erhalten: `scripts/lokal.js` entfernt genau diese Namen aus der
