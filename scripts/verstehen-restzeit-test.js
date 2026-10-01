@@ -414,7 +414,6 @@ async function main() {
     const scheduler = src("lib/helmut/scheduler.js");
     const serverJs = src("server.js");
     const pipeline = src("lib/helmut/scalable-pipeline.js");
-    const aiJs = src("lib/helmut/ai.js");
     // Seit dem Sprint 05.09. ist die Deadline des Lage-Checks das MINIMUM aus der Zeitscheibe
     // des Mandats und dem Funktionsfenster t0+280000 — also STRENGER als vorher, nie lockerer.
     check("§9.1 Lage-Pfad reicht die absolute Deadline in das Verstehen",
@@ -437,8 +436,22 @@ async function main() {
     check("§9.5 Warteschlange: Handler-Aufruf traegt auftragsDeadlineMs, Verstehens-Handler nutzt sie",
       /auftragsDeadlineMs:\s*d\.now\(\) \+ auftragsBudget/.test(pipeline)
       && /Number\(kontext\.auftragsDeadlineMs\)/.test(pipeline));
-    check("§9.6 ai.js nutzt den zentralen KI-Timeout statt eines Literals",
-      /timeout:\s*kiTimeoutMs\(\)/.test(aiJs) && !/timeout:\s*20000/.test(aiJs));
+    // Echte Zahlenbeziehung statt einer Schreibweise des Request-Literals.
+    // Den Transport und die Timer-/Streambereinigung prueft die HTTPS-Suite.
+    for (const [label, value, expectedProvider, expectedReserve] of [
+      ["fehlend", undefined, 20000, 20000],
+      ["negativ", "-1", 20000, 20000],
+      ["kurz", "1500", 1500, 1500],
+      ["60s", "60000", 20000, 60000]
+    ]) {
+      const env = value === undefined ? {} : { HELMUT_KI_TIMEOUT_MS: value };
+      const provider = restzeit.kiProviderTimeoutMs(env);
+      const reserve = restzeit.kiTimeoutMs(env);
+      check(`§9.6 ${label}: Providerfrist <=20s und <=konfigurierte Reserve`,
+        provider === expectedProvider && reserve === expectedReserve
+        && provider <= 20000 && provider <= reserve
+        && restzeit.reserveMs(env) === reserve + 25000);
+    }
     const understandingSrc = src("lib/helmut/understanding.js");
     check("§9.7 BEIDE Pfade tragen das dritte Gate (nach Modellstart, vor dem externen Aufruf) und den modellstart-Rueckweg",
       (understandingSrc.match(/DRITTE PRUEFUNG/g) || []).length === 2
