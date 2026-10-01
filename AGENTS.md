@@ -8,7 +8,9 @@ angehoeren, sind ausgeschlossen. Keine AfD-Kundenprofile anlegen, importieren,
 aktivieren oder versorgen; keine AfD-Profile in der500er Zielkohorte.
 Die Sperre prueft aktuelle Partei UND Fraktion, auch bei Fraktionslosigkeit
 mit fortbestehender AfD-Parteimitgliedschaft. Zugehoerigkeit nicht umdeklarieren.
-Amtliche Zugehoerigkeit vor Import belegen; ungeklaerte Faelle nicht freigeben.
+Bei realen Profilen amtliche Zugehoerigkeit vor Import belegen; ungeklaerte
+Faelle nicht freigeben. Fiktive Synthetikprofile nutzen deklarierte Szenariowerte,
+keine erfundenen amtlichen Personenbelege.
 Alle anderen Parteien und Fraktionslose bleiben grundsaetzlich zulaessig.
 Relevante Nachrichten UEBER die AfD bleiben fuer andere Nutzer erlaubt; dies
 ist eine Kunden-Zulassungsregel, kein Entfernen politischer Quellen oder Fakten.
@@ -38,7 +40,26 @@ der Etappe gelten alle fachlichen Nachweise unveraendert. Deutschlandweit bleibt
 das Gesamtziel. Details und naechste Arbeit:
 [docs/betrieb/berlin-brandenburg-startplan-20260927.md](docs/betrieb/berlin-brandenburg-startplan-20260927.md).
 
-Der Betreiber hat dies am 27.09.2026 ausdruecklich klargestellt. Fuer den
+**Aktuelle Betreibersteuerung vom 01.10.2026:** Der technische 500er Nachweis
+erfolgt ausschliesslich mit vollstaendig synthetischen Profilen. Keine Namen,
+Personenkennungen oder individuellen Feldkombinationen realer Abgeordneter
+uebernehmen und keine erfundene amtliche Herkunft behaupten. Die Verteilung
+330 Bundestag / 120 Berlin / 50 Brandenburg bleibt fuer beide Mandatsebenen bestehen.
+Rechtliche Datenschutzfreigabe und Vertragsunterlagen existieren laut Betreiber
+derzeit nicht; sie bleiben offen vor regulaerem Betrieb und sind keine
+Voraussetzung fuer diesen technischen Synthetiknachweis. Bestehende reale
+Bestandsdaten und personenbezogene Nachrichten sind dadurch nicht anonymisiert
+oder rechtlich freigegeben. Technische Zugriffssperren, Kommunikationsriegel,
+Snapshots, Rueckweg, 6 USD/UTC-Tag und 7 USD kumulativ bleiben Pflicht; vor Aktivierung
+und eigentlichem 500er Test ist weiterhin ein separates GO erforderlich.
+Der bestehende Realkohortenpfad bleibt unveraendert, wird fuer diesen Test jedoch
+nicht verwendet. Technische Vollstaendigkeit/Last/Ebenenzuordnung und eine
+fachliche Abnahme realer Mandatspersonalisierung getrennt berichten.
+Details: [Synthetischer 500er Auftrag](docs/betrieb/synthetischer-500er-auftrag-20261001.md).
+
+Die folgende reale Profilanforderung vom27.09.2026 gilt weiterhin fuer eine
+spaetere reale Mandatsabnahme, nicht fuer den aktuellen Synthetiknachweis:
+Der Betreiber hatte dies am 27.09.2026 ausdruecklich klargestellt. Fuer den
 realistischen Test werden oeffentlich belegte Mandatsprofile realer Abgeordneter
 beider Ebenen als gekennzeichnete Testabbilder vorbereitet. Partei und Fraktion,
 Bundesland, Wahlkreis/Listeneinzug, Ausschuesse, Funktionen und belegte Themen

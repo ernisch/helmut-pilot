@@ -6,6 +6,17 @@ Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
 stehen weiterhin in `docs/CURRENT_STATE.md`.
 
+**Aktuelle Steuerung vom 01.10.2026:** Der technische 500er Nachweis verwendet
+ausschliesslich vollstaendig synthetische Profile. Die bisher vorbereitete reale
+500er Kohorte wird dafuer nicht importiert oder aktiviert. Datenschutzfreigabe
+und Vertragsunterlagen existieren laut Betreiber derzeit nicht und bleiben vor
+regulaerem Betrieb offen; sie sperren diesen technischen Synthetiknachweis nicht.
+Verteilung 330 Bundestag / 120 Berlin / 50 Brandenburg, technischer Profilschutz,
+Kosten 6 USD/UTC-Tag und 7 USD insgesamt sowie separates GO vor Aktivierung/Test
+gelten weiter. [Aktueller Umfang und Nachweisgrenzen](betrieb/synthetischer-500er-auftrag-20261001.md).
+Die nachfolgenden historischen Realprofilvorarbeiten sind keine aktuelle
+Importanweisung und kein Beleg synthetischer Startbereitschaft.
+
 ## Kritischer Pfad und Parallelitaet
 
 Vor jeder neuen Arbeitswelle priorisiert GPT-6.1 Sol High direkt in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Es gibt keinen aktiven Modellrouter und keine verpflichtende externe Delegation. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Fuer Codex Cloud Entwicklungsarbeit gilt keine zeitabhaengige Peak Sperre. Production Schutz und Production Kostenlimits bleiben unveraendert.
@@ -120,7 +131,19 @@ erzählen.
 
 ## 2a · Datenschutz vor dem Test und vollständige Prüfung vor dem Verkauf
 
-**Betreiberentscheidung vom 30.09.2026:** Datenschutz ist kein optionaler
+**Praezisierung vom 01.10.2026:** Die folgende Phase A beschreibt die reale
+Profilverarbeitung und bleibt fuer regulaeren Betrieb beziehungsweise eine
+spaetere reale Mandatsabnahme offen. Fuer den jetzt beauftragten rein
+synthetischen technischen 500er Nachweis verlangt der Betreiber keine vorherige
+qualifizierte Datenschutzentscheidung. Keine solche Entscheidung fingieren und
+keinen alten Realprofilbeleg als Synthetikfreigabe ausgeben. Bestehende
+personenbezogene Daten, Protokolle und Nachrichten bleiben im Inventar;
+synthetische Zielprofile anonymisieren sie nicht. Zugriffssperren, geschlossene
+Testkommunikation, begrenzte Datenweitergabe und gesicherter Rueckweg bleiben
+technische Startvoraussetzungen. Phase B bleibt vor regulaerem Betrieb/Verkauf
+und vertraulicher Bueronutzung verbindlich.
+
+**Fruehere Betreiberentscheidung vom 30.09.2026 fuer reale Profile:** Datenschutz ist kein optionaler
 Nachtrag. Die für den konkreten 500er Test notwendigen rechtlichen und
 technischen Voraussetzungen sind **vor der ersten entsprechenden Production
 Wirkung** zu klären. Eine umfassende, belegbasierte Verkaufsprüfung folgt
@@ -193,7 +216,18 @@ Production Änderungen oder zusätzliche Kosten.
 
 ## 3 · Nächste Arbeiten vor dem 500er Start
 
-**Aktueller vorgeschalteter Schritt:** Den bisherigen Platzhalterbestand durch
+**Aktueller kritischer Pfad fuer den Synthetiknachweis:** Vollstaendig fiktives
+500er Paket mit vorher festgelegten1500 Sollpositionen vorbereiten; Azure-Zugang
+zur vorhandenen Ressource und harte 20-Sekunden-Gesamtfristen herstellen;
+einen eigenen eng gebundenen synthetischen Import-/Start-/End- und Nachweisweg
+bereitstellen. Alte495-plus5-,4 USD- und Realprofilvertraege passen nicht
+unveraendert zum neuen Umfang. Bestehende Schutzpruefungen nicht aufweichen.
+Danach frischer voller Snapshot, kontrollierter inaktiver Ersatz, passende
+Quellen-/Ebenenversorgung, Kosten-/Ruhebelege und lebender Endwaechter.
+Vor Aktivierung und Test anhalten. Die nachfolgende reale Profilhistorie bleibt
+als Vorarbeit fuer eine spaetere Fachabnahme erhalten.
+
+**Historische Vorarbeit fuer eine spaetere reale Fachabnahme:** Den bisherigen Platzhalterbestand durch
 einen vorab festgelegten, quellenbelegten Profil- und Pruefplan fuer Bundestag
 und die priorisierten Landesparlamente Berlin/Brandenburg ersetzen. Die anderen
 Laender in diesem Sprint nicht vorziehen. Fuer alle500 Zielprofile reale oeffentliche Mandatsdaten recherchieren;
@@ -373,8 +407,9 @@ Faelle ausgeweitet noch als Importfreigabe gelesen werden.
 
 Nach dem erfolgreichen 500er Nachweis folgt die vollständige Datenschutz-
 und Sicherheitsprüfung aus §2a vor regulärem Verkauf und vor vertraulicher
-Büronutzung. Zwingende Voraussetzungen für den 500er Test selbst bleiben
-bereits **vor** dem Test nach §2a Phase A zu erfüllen.
+Büronutzung. Fuer den aktuellen synthetischen technischen Nachweis gilt die
+Praezisierung vom 01.10.2026 in §2a; dessen technische Schutzvoraussetzungen
+bleiben vor dem Test zu erfuellen.
 
 ## 4 · Nicht vor dem 500er Nachweis
 

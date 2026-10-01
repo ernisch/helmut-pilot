@@ -196,6 +196,8 @@ const STANDARD = new Set([
   "env-inventar-test.js",                   // Umgebungsvariablen vollstaendig/dokumentiert
   "speicherpfad-schutz-test.js",            // Schutz des gemeinsamen Speicherpfads
   "azure-endpunkt-guard-test.js",           // Azure-Endpunkt Pruefung vor Budget/Senden
+  "ai-request-deadline-test.js",            // absolute Providerfrist einschliesslich fließendem Antwortbody
+  "synthetik-500-profile-test.js",          // disjunkte Fiktion330/120/50, private Ausgabe und1500 offene Sollpositionen
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
   "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist
   "bb-quellen-cutover-operator-test.js",     // enger Landesquellen-Cutover und geschuetzter Rueckweg
