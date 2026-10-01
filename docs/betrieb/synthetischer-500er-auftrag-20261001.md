@@ -167,16 +167,19 @@ Im strukturgleichen isolierten PG17.11/vector0.8.7-Clone (Production17.6/0.8.0)
 bricht der vollständige Vorwärtsweg nach17119ms am17s-Transaktionslimit ab;
 alle18Bestandsgruppen/Versionen, Steuerung und Journal bleiben zurückgerollt.
 Der fertige [native Generator](../../scripts/synthetik-500-native-import.js) hat
-den vollständigen Bestand im lokalen Clone gesichert, ersetzt und vollständig
-zurückgespielt:7542ms Stage,3609ms Vorwärts,16080ms Rückweg; SQL unter2,7MB.
+den vollständigen Bestand im lokalen Clone mit exaktPostgreSQL17.6/pgvector0.8.0
+gesichert, ersetzt und vollständig zurückgespielt:4760ms Stage,4902ms Vorwärts,
+12179ms Rückweg; SQL unter2,7MB, bytegleich zum endgültigen Renderer.
 Alle Quellfelder sind typgetreu gesichert und nach Rückweg verglichen;
 Fremdentscheidung vollständig einschließlich tatsächlicher xmin erhalten.
-Die920ms lokale Rückwegmarge auf abweichenderPG/vectorVersion ist knapp und
-beweist keine Production-Performance.
+Eine vorherige Vollprobe dauerte16938ms im Rückweg. Die stark schwankende
+Walltime und eine nicht isoliert gemessene tatsächliche Transaktionsreserve
+beweisen keine Production-Performance; die17s-Frist bleibt unverändert.
 Die zusätzliche native Aufnahme umfasst136765Quellzeilen: ein weiterer
 Fremdentscheidungsdatensatz liegt außerhalb der500Zielprofile und bleibt erhalten.
-Native Tests:3 offline/42 echte PostgreSQL-Fälle erfolgreich. Darunter Noop-
-Updates, Schema/Typen, leere Tabellen, ACL, Fremd-/NULL-Kinddaten, neue
+Native Tests:3 offline/46 echte PostgreSQL-Fälle erfolgreich. Darunter Noop-
+Updates, Schema/Typen, leere Tabellen, traditionelle Tabellenvererbung,
+ACL, Fremd-/NULL-Kinddaten, neue
 Zielkinddaten, Postimage-/Journalversionen und echte17s-Terminierung mit
 vollständigem Rollback. Die unabhängige Abnahme bindet den endgültigen PR-Kopf.
 Alle drei SQL-Dateien sind zunächst für einen direkten

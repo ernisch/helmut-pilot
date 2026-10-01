@@ -16,10 +16,12 @@
   136764 Zielzeilen/573,6 MB; rund 576 MB SQL überschreitet 17 s, vollständig zurückgerollt.
   Der [native Generator](../scripts/synthetik-500-native-import.js) sichert typgetreu unter
   Sperren: 17 ganze Quelltabellen/18 Zielgruppen, alle Felder/PK+xmin und echte Importpostimages.
-  Vollclone mit 136765 Zeilen inklusive Fremdentscheidung: 7542 ms Sicherung/3609 ms Ersatz/16080 ms Rückweg,
-  SQL unter 2,7 MB; Fremdentscheidung vollständig samt xmin erhalten.
-  Lokal PG17.11/vector0.8.7 statt Production17.6/0.8.0, nur 920 ms Rückwegmarge:
-  **kein Production-Performancebeleg**. Native Tests:3 offline/42 PostgreSQL grün.
+  Finaler Vollclone mit136765 Zeilen auf exaktPG17.6/vector0.8.0:
+  4760ms Sicherung/4902ms Ersatz/12179ms Rückweg, SQL unter2,7MB;
+  Fremdentscheidung vollständig samt xmin erhalten. Frühere Probe16938ms Rückweg:
+  stark schwankende Walltime, tatsächliche Transaktionsreserve nicht isoliert gemessen.
+  **Kein Production-Performancebeleg**. Native Tests:3 offline/46 PostgreSQL grün;
+  traditionelle Tabellenvererbung wird unter allen22Quellsperren abgewiesen.
   Direkter psql-Pfad; keine unveränderte App-Anwendung
   oder Importfreigabe. 3 alte Prozesszeilen sperren; keine Bereinigung/Migration/Profiländerung.
 

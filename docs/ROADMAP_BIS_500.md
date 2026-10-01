@@ -223,8 +223,8 @@ unveraendert zum neuen Umfang. Bestehende Schutzpruefungen nicht aufweichen.
 Vollsnapshot ist privat gesichert; der rund576MB große Ersatzweg scheitert im
 strukturgleichen Vollclone am17s-Transaktionslimit mit vollständigem Rollback.
 Der native Generator besteht den Vollclone mit136765Zeilen inklFremdentscheidung:
-7542ms Sicherung/3609ms Ersatz/16080ms Rückweg,17s bleiben unverändert.
-Nur920ms lokale Rückwegmarge aufabweichenderPG/vectorVersion; keine
+Finaler Renderer auf exaktPG17.6/vector0.8.0:4760ms Sicherung/4902ms Ersatz/12179ms
+Rückweg, vorher16938ms;17s bleiben unverändert, Walltime schwankt. Keine
 Production-Performance oder Importfreigabe. Gebundenen tatsächlichen Operatorweg
 und frische Production-Voraussetzungen vorProfilersatz belegen. Drei alte
 laufend markierte Prozesszeilen sperren weiter.
