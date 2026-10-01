@@ -92,26 +92,31 @@ Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigke
 
 ## Modell und Arbeitsumgebung
 
-GPT-6.1 Sol High ist der verbindliche Standard fuer Helmut Entwicklungsarbeit.
-Codex Cloud ist die bevorzugte Arbeitsumgebung. Sol High orchestriert, analysiert,
-programmiert, debuggt, prueft, dokumentiert und fuehrt die notwendige Repository
-Arbeit direkt aus.
+GPT-6.1 Sol ist das verbindliche Standardmodell fuer Helmut Entwicklungsarbeit.
+Codex Cloud ist die bevorzugte Arbeitsumgebung. Bis zum erfolgreich belegten
+500er Production Nachweis ist **Sehr hoch** die Standard Denkstufe. Sol
+orchestriert, analysiert, programmiert, debuggt, prueft, dokumentiert und fuehrt
+die notwendige Repository Arbeit direkt aus.
 
 Es gibt keinen Modellrouter und keine verpflichtende Delegation an externe
 Entwicklermodelle. Fuer normale Helmut Arbeit wird kein lokaler Provider Launcher,
 kein separates Agentenbudget und keine providerbezogene Peak Steuerung benoetigt.
 Die fruehere lokale Routertechnik gehoert nicht mehr zum aktiven Arbeitsweg.
 
-Sol High waehlt fuer jeden Sprint den kuerzesten sicheren Weg zum aktuellen
+Sol waehlt fuer jeden Sprint den kuerzesten sicheren Weg zum aktuellen
 500er Starttor. Unabhaengige Teilaufgaben duerfen nur dann parallelisiert werden,
 wenn Codex Cloud sie sauber trennt und keine zwei schreibenden Aufgaben denselben
 Datei oder Production Bereich beruehren. Ein Router oder externer Provider darf
 dafuer nicht still installiert oder aktiviert werden.
 
-Die Denkstufe ist standardmaessig High. Eine hoehere Denkstufe ist nur fuer
-ungewoehnlich schwierige Fehler, komplexe Architekturfragen oder kritische
-Production Sicherheit sinnvoll. Bereits belegte Arbeit wird nicht ohne konkreten
-Grund wiederholt.
+Die Denkstufe ist bis zum erfolgreich belegten 500er Production Nachweis
+standardmaessig **Sehr hoch**. **Hoch** ist nur fuer eindeutig einfache Arbeit
+sinnvoll, zum Beispiel kleine rein lesende Pruefungen, einfache Git Pruefungen,
+kleine Dokumentationsaenderungen oder einen klaren Routinefix. **Max** ist fuer
+kritische Production Sicherheit, einen schwer nachvollziehbaren Fehler, eine
+komplexe Architekturentscheidung oder dann vorgesehen, wenn Sehr hoch bei einem
+konkret belegten schwierigen Problem nicht ausreicht. Bereits belegte Arbeit wird
+nicht ohne konkreten Grund wiederholt.
 
 Fuer Codex Cloud gilt keine zeitabhaengige Peak Arbeitssperre. Neue Helmut
 Entwicklungsarbeit darf zu jeder Uhrzeit starten. Diese Freigabe betrifft nur die
@@ -119,8 +124,7 @@ Arbeitszeit. Production Schutz, Kostenlimits fuer echte Production Anbieter,
 Merge Regeln und alle ausdruecklich geschuetzten Aktionen bleiben unveraendert.
 
 Bei kritischen Production Aenderungen darf die endgueltige Abnahme nicht
-ausschliesslich durch denselben ausfuehrenden Modelllauf erfolgen. Sol High darf
-die Umsetzung und das Belegpaket erstellen. Fuer die kritische Endabnahme ist ein
+ausschliesslich durch denselben ausfuehrenden Modelllauf erfolgen. Sol darf die Umsetzung und das Belegpaket erstellen. Fuer die kritische Endabnahme ist ein
 unabhaengiger Pruefer mit einem anderen Modell oder einer anderweitig unabhaengigen
 Pruefinstanz erforderlich. Ist diese nicht verfuegbar, bleibt die Endabnahme offen.
 Es gibt dafuer keinen automatischen Router und keinen automatischen Modellstart.
@@ -631,9 +635,27 @@ Kurze Empfehlung.
 
 ### Empfohlene Denkstufe?
 
-Mittel für einfache rein lesende Prüfungen. High für normale Implementierung und
-Fehlerbehebung. Max nur bei kritischer Production-Sicherheit oder schwerem,
-unklarem Fehler.
+Jeder relevante Abschlussbericht nennt fuer den **unmittelbar naechsten Schritt**
+genau eine Empfehlung aus **Hoch**, **Sehr hoch** oder **Max**. Direkt danach
+folgt ein kurzer, konkreter Grund, damit der Betreiber die Empfehlung
+nachvollziehen kann.
+
+**Hoch**: nur fuer eindeutig einfache Arbeit wie kleine rein lesende Pruefungen,
+einfache Git Pruefungen, kleine Dokumentationsaenderungen oder einen klaren
+Routinefix.
+
+**Sehr hoch**: Standard bis zum erfolgreich belegten 500er Production Nachweis
+und fuer normale Helmut Implementierung, Debugging, Orchestrierung sowie mehrere
+zusammenhaengende technische Schritte.
+
+**Max**: nur fuer kritische Production Sicherheit, schwer nachvollziehbare Fehler,
+komplexe Architekturentscheidungen oder wenn Sehr hoch bei einem konkret belegten
+schwierigen Problem nicht ausreicht.
+
+Die Empfehlung ist eine begruendete Arbeitseinschaetzung, keine Garantie. Sie darf
+nicht aus Gewohnheit auf Max gesetzt werden und darf Hoch nicht empfehlen, wenn
+der naechste Schritt mehrere kritische oder schwer reversible Entscheidungen
+enthaelt.
 
 ## Kommunikationsstil
 
