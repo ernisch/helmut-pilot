@@ -220,14 +220,39 @@ Production Änderungen oder zusätzliche Kosten.
 500er Paket mit vorher festgelegten1500 Sollpositionen und harte 20-Sekunden-Gesamtfristen für KI-Anfragen einschließlich Antwortkörper sind in PR #762 ausgerollt; der Azure-Lesezugang ist authentifiziert belegt. Eigene eng gebundene synthetische Import-/Start-/End- und Nachweisbruecken
 sind mit unabhängiger Codeabnahme und beiden grünen Pflichtchecks in PR #763 gemergt und ausgerollt. [Konkreter Ablauf](betrieb/synthetischer-500er-auftrag-20261001.md). Alte495-plus5-,4 USD- und Realprofilvertraege passen nicht
 unveraendert zum neuen Umfang. Bestehende Schutzpruefungen nicht aufweichen.
-Vollsnapshot ist privat gesichert; der rund576MB große Ersatzweg scheitert im
-strukturgleichen Vollclone am17s-Transaktionslimit mit vollständigem Rollback.
-Der native Generator besteht den Vollclone mit136765Zeilen inklFremdentscheidung:
-Finaler Renderer auf exaktPG17.6/vector0.8.0:4760ms Sicherung/4902ms Ersatz/12179ms
-Rückweg, vorher16938ms;17s bleiben unverändert, Walltime schwankt. Keine
-Production-Performance oder Importfreigabe. Gebundenen tatsächlichen Operatorweg
-und frische Production-Voraussetzungen vorProfilersatz belegen. Das bisherige
-Prozessaltlasttor ist durch die separat freigegebene Bereinigung erledigt.
+Historische Privatpreimages und psql-Vollclonezeiten bleiben Vorarbeit im
+[Runbook](betrieb/synthetischer-500er-auftrag-20261001.md#private-v6-appbrücke-belegscope),
+keine frische Ausführungsbindung. Die private V6-Appbrücke ist unabhängig auf
+Integrität geprüft:11 neue Gruppen, Originalbodies und alle Guards/17s-Transaktion,
+20s-Statement und2s-Sperrwartezeit unverändert. Ein nativer READ-ONLY-Aufruf
+(02.10.01:53 Türkei/00:53 Berlin/01.10.22:53 UTC) umfasst alle22Tabellen,
+182908Zeilen=136765Quellen+46143Kontrollen; beide Prüfungen gleich,
+2408,263/321,347ms, Transaktion bis zweiter Prüfung2988,186ms, Tool13647ms.
+CPU/finales Transaktionsende unbekannt; nur Altzeilen-Metadaten, kein
+Schreib-/Gesamtphasen-/Reservebeleg. Vier lokale Helferstarts: die ersten zwei
+stoppten vor App-Sendung; der dritte sendete genau eine Stage-Abfrage und
+scheiterte bereits beim PostgreSQL-Rawparse am zusätzlichen Mess-SQL.
+Der dritte Start committete0Phasen; alle22Quellen/Kontrollen, eigene Objekte, Katalog/ACL,
+Journal/Runtime/Phasenstand und Fremdentscheidung samt Feldern/xmin erhalten.
+Operator unverändert. Eine neue lokale PostgreSQL17-READ-ONLY-EXPLAIN-Probe ohne
+ANALYZE plant alle drei Metadaten- und drei Zusatzabfragen erfolgreich, mit0
+Quell-/Messzeilen; Einwegfixture gelöscht und Abwesenheit belegt. Kein Leistungs-
+oder Originalbodynachweis. Die minimale Leerzeichenkorrektur bleibt im neuen
+privaten perf-v7-Helfer. Der separat freigegebene vierte Start committete danach
+Stage/Forward/Rückweg in6604,464/5112,517/16312,015ms, Backend-CPU6480/4960/15870ms.
+Originalbodies bytegleich, drei tatsächliche lokale Auditquittungen; vollständiger
+Geschäftsdatenrückweg und Fremdentscheidung samt xmin erhalten. Natürlicher
+Parent-Feldhashzweig an ausgewählten Metadatensamples beobachtet, keine erfolgreiche
+SubTX-Leistung belegt. Clone136765Quellen/7Kontrollen statt46143, veränderte MVCC;
+Rückweg nur0,688s unter17s, keine harte Reserve oder native Gesamtphasenabnahme.
+Diagnostisch unabhängig akzeptiert, keine lokalen Integritätsbefunde.
+Nächste Vorarbeit: echte Kontrollhistorie
+rein lesend mit Vorher-/Nachherrevisionen exportieren und tatsächlichen
+App-apply_migration-Größen-/Transportvertrag vorbereiten. Native Gesamtphasenleistung
+und frische Snapshot-/Owner-/Ruhe-/Journalbindungen bleiben offen. Der historische
+private Importentwurf bleibt **FREIGABEANFRAGE_NOCH_NICHT_READY**; keine neue GO-Anfrage.
+0 Production-Profilimporte/0 Aktivierungen/0 neue bezahlte Modellaufrufe.
+Das bisherige Prozessaltlasttor ist durch die separat freigegebene Bereinigung erledigt.
 Die unabhängig geprüfte inerte Synthetikmigration ist nach konkretem Betreiber-GO
 nativ angewendet: Postimage 01.10. 23:39:53 Tuerkei / 22:39:53 Berlin / 20:39:53 UTC, exakt fünf Originalfunktionen,
 Journal 40 / Version `20261001203937`; 500 Mandate / 501 Identitäten / 0 Aktive / 0 Slots,
