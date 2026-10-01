@@ -143,6 +143,12 @@ function main() {
       assert.match(sql, /synthetik500-import-fk-schema-drift/);
     }
   });
+  check("Beide Wege begrenzen die gesamte Transaktion auf 17 Sekunden", () => {
+    for (const sql of [forward, rollback]) {
+      assert.match(sql, /^begin;\nset local transaction_timeout='17s';\nset local statement_timeout='20s';/m);
+      assert(sql.indexOf("set local transaction_timeout") < sql.indexOf("lock table"));
+    }
+  });
   check("FK-Rueckweg ordnet matching_runs vor matching_results", () => assert(rollback.indexOf("insert into public.matching_runs") < rollback.indexOf("insert into public.matching_results")));
   check("Spaltenprojektion folgt Snapshot statt physischem SELECT-star", () => assert(!/select \* from jsonb_populate_recordset/.test(forward + rollback)));
   check("Blob-Lock- und Outbox-Ruhe stehen in beiden Wegen vor allen permanenten Writes", () => {
@@ -236,6 +242,17 @@ function main() {
       run(forward); run(rollback);
       assert.equal(run("select data from helmut_store where id='main-auth';"), before);
       assert.equal(run("select status from helmut_job_outbox where id='terminal';"), "bestaetigt");
+    });
+    check("Postgres: Gesamttransaktionsfrist terminiert die Sitzung und rollt alle importierten Daten zurueck", () => {
+      reset();
+      const state = "select jsonb_build_object(" + [...G.SNAPSHOT_TABELLEN, "helmut_store"].map(table =>
+        literal(table) + ", (select jsonb_agg(to_jsonb(t) order by to_jsonb(t)::text) from public." + table + " t)").join(",") + ");";
+      const before = run(state);
+      // Alle echten Ersatzwrites einschliesslich Journal liegen VOR dem Sleep.
+      // 18s ist kuerzer als das Statementlimit20s, aber laenger als die gesamte
+      // Transaktionsfrist17s. Kein Retry: neue Verbindung liest nur den Befund.
+      run(forward.replace(/^commit;$/m, "select pg_sleep(18);\ncommit;"), "terminating connection due to transaction timeout");
+      assert.equal(run(state), before);
     });
     } finally { postgres.close(); }
   }

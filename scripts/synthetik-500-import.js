@@ -68,7 +68,7 @@ function bestandCas(sp, ids, neu = false) {
 function anfang(write, binding) {
   write(`-- Offline Synthetik500 Ersatz, KEINE Ausfuehrung/Freigabe. ${VERSION}\n`);
   write(`-- Bindung: operation=${binding.operationId} snapshot=${binding.snapshotHash} paket=${binding.paketBytesHash}\n`);
-  write("begin;\nset local statement_timeout='20s';\nset local lock_timeout='2s';\nset local standard_conforming_strings=on;\n");
+  write("begin;\nset local transaction_timeout='17s';\nset local statement_timeout='20s';\nset local lock_timeout='2s';\nset local standard_conforming_strings=on;\n");
   // Ein fester Lockauftrag schuetzt auch alle Kindzeilen vor Check/Delete-Rennen.
   write(`lock table ${[...G.SNAPSHOT_TABELLEN, "helmut_store", "pipeline_locks", "helmut_jobs", "process_runs", "helmut_job_outbox"].map(t => "public." + t).join(",")} in access exclusive mode;\n`);
   const tables = G.SNAPSHOT_TABELLEN.map(t => literal("public." + t) + "::regclass").join(",");
