@@ -122,6 +122,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
+  "synthetik-500-runtime-datenbank-test.js", // eigener Pflichtschritt: echtes Importjournal bis 500->0, kein Offline-Skip
   "realkohorte-500-runtime-datenbank-test.js", // eigener Pflichtschritt: isolierte PostgreSQL17, kein stiller Offline-Skip
   "realkohorte-500-endweg-datenbank-test.js", // eigener Pflichtschritt: echte isolierte PostgreSQL, kein Offline-Scheinbeleg
   "lage-quellen-rest-datenbank-test.js", // separater isolierter REST Nachweis; fehlende Umgebung ist kein PASS
@@ -198,6 +199,9 @@ const STANDARD = new Set([
   "azure-endpunkt-guard-test.js",           // Azure-Endpunkt Pruefung vor Budget/Senden
   "ai-request-deadline-test.js",            // absolute Providerfrist einschliesslich fließendem Antwortbody
   "synthetik-500-profile-test.js",          // disjunkte Fiktion330/120/50, private Ausgabe und1500 offene Sollpositionen
+  "synthetik-500-import-test.js",           // inaktiver Ersatz, vollstaendiges Preimage und privater Rueckweg
+  "synthetik-500-runtime-test.js",          // eigener Start-/Endvertrag, Paketvarianten und lebender Waechter
+  "synthetik-500-nachweis-test.js",         // 1500 Volltexte, native Laufbelege und getrennte Fehlerbilanz
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
   "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist
   "bb-quellen-cutover-operator-test.js",     // enger Landesquellen-Cutover und geschuetzter Rueckweg

@@ -63,6 +63,9 @@ const MUSS_STANDARD = [
   "verdraengungsschutz-test.js",
   "github-direkt500-test.js",
   "testkohorte-vorwaerts-test.js",
+  "synthetik-500-import-test.js",
+  "synthetik-500-runtime-test.js",
+  "synthetik-500-nachweis-test.js",
   // grundlegende Vertraege des heutigen Production-Pfads
   "flags-test.js",
   "source-mode-test.js",
