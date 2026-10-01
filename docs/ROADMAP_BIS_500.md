@@ -218,11 +218,19 @@ Production Änderungen oder zusätzliche Kosten.
 
 **Aktueller kritischer Pfad fuer den Synthetiknachweis:** Vollstaendig fiktives
 500er Paket mit vorher festgelegten1500 Sollpositionen und harte 20-Sekunden-Gesamtfristen sind in PR #762 ausgerollt; der Azure-Lesezugang ist authentifiziert belegt. Eigene eng gebundene synthetische Import-/Start-/End- und Nachweisbruecken
-sind im aktuellen Entwicklungsbranch vorbereitet; zugehoerige PR-Abnahme/CI
-vor Merge nachweisen. [Konkreter Ablauf](betrieb/synthetischer-500er-auftrag-20261001.md). Alte495-plus5-,4 USD- und Realprofilvertraege passen nicht
+sind mit unabhängiger Codeabnahme und beiden grünen Pflichtchecks in PR #763 gemergt und ausgerollt. [Konkreter Ablauf](betrieb/synthetischer-500er-auftrag-20261001.md). Alte495-plus5-,4 USD- und Realprofilvertraege passen nicht
 unveraendert zum neuen Umfang. Bestehende Schutzpruefungen nicht aufweichen.
-Danach frischer voller Snapshot und separates konkretes GO fuer die vorbereitete
-Synthetikmigration und den inaktiven500er Ersatz; passende Quellen-/Ebenenversorgung,
+Vollsnapshot ist privat gesichert; der rund576MB große Ersatzweg scheitert im
+strukturgleichen Vollclone am17s-Transaktionslimit mit vollständigem Rollback.
+Der native Generator besteht den Vollclone mit136765Zeilen inklFremdentscheidung:
+Finaler Renderer auf exaktPG17.6/vector0.8.0:4760ms Sicherung/4902ms Ersatz/12179ms
+Rückweg, vorher16938ms;17s bleiben unverändert, Walltime schwankt. Keine
+Production-Performance oder Importfreigabe. Gebundenen tatsächlichen Operatorweg
+und frische Production-Voraussetzungen vorProfilersatz belegen. Drei alte
+laufend markierte Prozesszeilen sperren weiter.
+Separates konkretes GO kann derzeit nur die unabhängig geprüfte inerte
+Synthetikmigration umfassen; inaktiven Ersatz noch nicht freigeben.
+Passende Quellen-/Ebenenversorgung,
 Kosten-/Ruhebelege und lebender Endwaechter bleiben Pflicht.
 Vor Aktivierung und Test anhalten. Die nachfolgende reale Profilhistorie bleibt
 als Vorarbeit fuer eine spaetere Fachabnahme erhalten.

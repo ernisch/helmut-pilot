@@ -123,11 +123,34 @@ Production-Nachweis und erteilt keine Anwendungserlaubnis.
    bleiben getrennt. Der Bericht bleibt bis zur unabhängigen Prüfung ohne
    Erfolgsbehauptung; Hashes belegen allein weder Herkunft noch semantische Wahrheit.
 
-Die konkreten nächsten geschützten Aktionen sind die **Installation dieser
-Synthetikmigration** und der **inaktive vollständige500er Profilersatz** in der
-bestehenden Helmut-Supabase-Production, erst nach grüner Codeabnahme und erneuter
-Snapshot-/Schema-/Ruheprüfung. Das erfordert nach der jüngsten Chatsteuerung ein
-ausdrückliches GO. Nachkontrolle: exakt500Mandate/501Identitäten/0Aktive,
+Der nächste geschützte Schritt ist die
+**Installation dieser inerten Synthetikmigration** in der bestehenden
+Helmut-Supabase-Production. SHA-256 der Migration
+`38f32149fe3695f7e6079a2d91ceb96b1844ecc5466574c9862a0f4da18a7112`
+und des Rückwegs werden vor Anwendung frisch mit den geprüften Dateien
+abgeglichen. Der Zielkatalog bestätigt fünf kollisionsfreie neue Funktionsnamen,
+keinen eigenen Namespace und ein fehlendes Versionsjournal20261001172619.
+Der native Supabase-App-Zugang bestätigt am01.10. um22:09Tuerkei/21:09Berlin/19:09UTC
+in einer ausdrücklich lesenden Transaktion den Actor `postgres` sowie
+CREATE- und Journalrechte. Der getrennte Management-API-Leseactor besitzt diese
+Rechte nicht. Für DDL ist der offizielle Migration-Endpunkt mit selbst erzeugtem
+Versionsjournal vorgesehen. Der vorbereitete eigene Transport muss20s
+einschließlich Antwortkörper erzwingen; beim nativen App-Tool ist diese
+Transportgrenze nicht konfigurierbar belegt. Die gebundene API-Variante verlangt
+den gemeinsamen Commit von fünf Originalfunktionen und tatsächlicher neuer
+Journalzeile,17s Gesamtfrist sowie unveränderte Profile/Steuerung/alteRuntime.
+Vor einer GO-Vorlage diese Variante und ihre Tests unabhängig prüfen. Die
+manuelle SQL-Variante mit eigenem BEGIN/COMMIT/JournalINSERT darf nicht
+unverändert eingespeist werden. Die automatisch erzeugte Version erst nach
+tatsächlicher Anwendung binden; keine vorher erfundene Versionsnummer oder
+Behauptung, dass die originale CLI-Version20261001172619 registriert wurde.
+Der API-Rückweg führt einen eigenen Journalauditeintrag; kein vermeintliches
+Wiederherstellen der ursprünglichen39 Journalzeilen behaupten.
+Kein Slot, Workflow oder Profil wird damit angelegt/aktiviert.
+Das erfordert nach der jüngsten Chatsteuerung ein ausdrückliches GO.
+Der **inaktive vollständige500er Profilersatz ist noch nicht anwendungsbereit**;
+frische Snapshot-/Schema-/Ruheprüfung und belastbarer Vollbestandsrückweg fehlen.
+Seine spätere Nachkontrolle: exakt500Mandate/501Identitäten/0Aktive,
 330Bundestag/120Berlin/50Brandenburg, volle Importbindung, Fremdprofil und Steuerung
 erhalten. Unbekannter Schreibausgang: sofort stoppen und lesend klären, kein Retry.
 Das GO umfasst weder Aktivierung noch Modellaufruf oder500er Test.
@@ -136,8 +159,33 @@ Weitere belegte Startblocker vom01.10.: Landesartikelstände in Production noch0
 wirksame Flags und Workflowsecrets nicht bewiesen, historische Kostenbücher29./30.09.
 fehlen; der rechnerische Rest von höchstens0,205868USD ist keine Kostenfreigabe.
 Der lesende Katalogvorflug bestätigt PostgreSQL17.6 und keine unbekannten
-Fremdschlüsselreferenzen. Die vollständige Größenabfrage endete am HTTP-Zeitlimit;
-der große echte Preimage-Export und die Ausführbarkeit von Vor-/Rückweg innerhalb
-der17s-Transaktionsfrist bleiben vor Anwendung nachzuweisen. Keine Fristverlängerung.
+Fremdschlüsselreferenzen. Der vollständige private v2-Export umfasst136764Zeilen
+und573,6MB; vor/nach Export vollständige identische PK/xmin-Mengen und Katalog,
+getrennte Lesetransaktionen ohne behaupteten gemeinsamen MVCC-Snapshot.
+Vorwärts-/Rückweg-SQL je rund576MB, JSON-Request je rund616MB.
+Im strukturgleichen isolierten PG17.11/vector0.8.7-Clone (Production17.6/0.8.0)
+bricht der vollständige Vorwärtsweg nach17119ms am17s-Transaktionslimit ab;
+alle18Bestandsgruppen/Versionen, Steuerung und Journal bleiben zurückgerollt.
+Der fertige [native Generator](../../scripts/synthetik-500-native-import.js) hat
+den vollständigen Bestand im lokalen Clone mit exaktPostgreSQL17.6/pgvector0.8.0
+gesichert, ersetzt und vollständig zurückgespielt:4760ms Stage,4902ms Vorwärts,
+12179ms Rückweg; SQL unter2,7MB, bytegleich zum endgültigen Renderer.
+Alle Quellfelder sind typgetreu gesichert und nach Rückweg verglichen;
+Fremdentscheidung vollständig einschließlich tatsächlicher xmin erhalten.
+Eine vorherige Vollprobe dauerte16938ms im Rückweg. Die stark schwankende
+Walltime und eine nicht isoliert gemessene tatsächliche Transaktionsreserve
+beweisen keine Production-Performance; die17s-Frist bleibt unverändert.
+Die zusätzliche native Aufnahme umfasst136765Quellzeilen: ein weiterer
+Fremdentscheidungsdatensatz liegt außerhalb der500Zielprofile und bleibt erhalten.
+Native Tests:3 offline/46 echte PostgreSQL-Fälle erfolgreich. Darunter Noop-
+Updates, Schema/Typen, leere Tabellen, traditionelle Tabellenvererbung,
+ACL, Fremd-/NULL-Kinddaten, neue
+Zielkinddaten, Postimage-/Journalversionen und echte17s-Terminierung mit
+vollständigem Rollback. Die unabhängige Abnahme bindet den endgültigen PR-Kopf.
+Alle drei SQL-Dateien sind zunächst für einen direkten
+psql-Operatorweg vorgesehen; ihre unveränderte Anwendung im App-Migrationstool
+ist nicht belegt. Die17s-Gesamtfrist bleibt unverändert.
+Drei alte unvollendete Prozesszeilen vom06.–17.09. sperren den Import weiter;
+ihre gegebenenfalls notwendige gebundene Bereinigung braucht eigenes GO.
 Kostenklärung und notwendige Quellen-/Konfigurationsänderungen benötigen eigene
 konkrete Bindungen. Keine Kontopreise, Budgetfreigaben oder Nullkosten erfinden.
