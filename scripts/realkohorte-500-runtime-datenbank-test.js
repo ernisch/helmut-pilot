@@ -66,7 +66,17 @@ function endSql(x, args = {}) {
 }
 function ruf(sql) { return JSON.parse(psql("set role service_role;" + sql)); }
 function abweisen(sql, code = /real500-runtime-/) {
-  const before = lese(); A.throws(() => ruf(sql), code);
+  const before = lese(); let beobachtet = "kein-fehler";
+  try {
+    A.throws(() => {
+      try { ruf(sql); }
+      catch (error) { beobachtet = /^real500-[a-z0-9-]+$/.test(error.message) ? error.message : "ungueltiger-fehlercode"; throw error; }
+    }, code);
+  } catch (error) {
+    // Nur Gruppenindex/statische Guardcodes, keine Assertiondaten/SQL-Abbilder.
+    console.error(`FAIL Abweisung in Gruppe${pass + 1}: erwartet /${code.source}/, beobachtet ${beobachtet}`);
+    throw error;
+  }
   A.deepEqual(lese(), before, "Abweisung/Triggerfehler muss alle Zeilen und Quittung exakt erhalten");
 }
 function reset({ prepared = false, active = 500, preparedLong = false } = {}) {
@@ -315,8 +325,22 @@ function main() {
     alterEnvelope(x, `jsonb_set(data,${literal("{snapshot,mandate_profiles," + snapshotIndex + ",inhalt}")},${json(changedFach)})`, "snapshot");
     psql(`update public.mandate_profiles set inhalt=${json(changedFach)} where user_id=${literal(paket.ids[0])};`);
     A.equal(lese().store.find(r => r.id === x.slot).data.manifestHash, x.manifestHash);
-    abweisen(endSql(x), /snapshot-manifestbindung/);
-    ok("Passende Snapshot-/SQL-Selbsthash-/DB-Fachdrift ohne aeussere Manifestaenderung bleibt0 Endwrites");
+    abweisen(endSql(x), /real500-runtime-startbelege/);
+    const rebound = clone(lese().store.find(r => r.id === x.slot).data);
+    const changedSnapshotHash = V.hash(rebound.snapshot);
+    rebound.manifest.startbelegeGrundlinie.snapshotHash = changedSnapshotHash;
+    rebound.startbelege.grundlinie.snapshotHash = changedSnapshotHash;
+    rebound.manifestHash = V.hash(rebound.manifest);
+    rebound.startbelege.aktivierungsGo.manifestHash = rebound.manifestHash;
+    rebound.startbelege.endwaechterBereit.manifestHash = rebound.manifestHash;
+    A.notEqual(rebound.manifestHash, x.manifestHash, "Zweite Gegenprobe pinnt explizit einen neuen aeusseren Auftrag");
+    A.deepEqual(rebound.manifest.profilvertrag, x.runtimeManifest.profilvertrag);
+    A.equal(rebound.manifest.profilManifestHash, x.runtimeManifest.profilManifestHash);
+    alterEnvelope(x, json(rebound), "snapshot");
+    alterEnvelope(x, "data", "manifest");
+    alterEnvelope(x, "data", "startbelege");
+    abweisen(endSql(x, { manifestHash: rebound.manifestHash }), /real500-runtime-snapshot-manifestbindung/);
+    ok("Snapshot-/Selbsthash-/DB-Fachdrift: alter Outerpin scheitert an Startbelegen; neu gebundener Outerpin bleibt am unveraenderten inneren Nullhash gesperrt,0 Endwrites");
 
     x = reset();
     alterEnvelope(x, `jsonb_set(data,'{startbelege,grundlinie,authHash}',${json("0".repeat(64))})`, "startbelege");
