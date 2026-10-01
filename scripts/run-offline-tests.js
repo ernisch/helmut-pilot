@@ -288,6 +288,7 @@ const STANDARD = new Set([
   "understanding-gate-arm-test.js",         // Gate-Riegel
   "understanding-gate-integration-test.js", // Gate ist im Pfad verdrahtet
   "dedup-findings-test.js",                 // Dedup-Kennungswahrheit
+  "berlin-rbmskzl-current-test.js",          // heutiger amtlicher H4-Artikel; Fremdmodule weiter gesperrt
   "source-dedupe-test.js"                   // Quellen-Deduplizierung
 ]);
 
