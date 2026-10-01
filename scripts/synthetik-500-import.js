@@ -70,14 +70,24 @@ function anfang(write, binding) {
   write(`-- Bindung: operation=${binding.operationId} snapshot=${binding.snapshotHash} paket=${binding.paketBytesHash}\n`);
   write("begin;\nset local statement_timeout='20s';\nset local lock_timeout='2s';\nset local standard_conforming_strings=on;\n");
   // Ein fester Lockauftrag schuetzt auch alle Kindzeilen vor Check/Delete-Rennen.
-  write(`lock table ${[...G.SNAPSHOT_TABELLEN, "helmut_store", "pipeline_locks", "helmut_jobs", "process_runs"].map(t => "public." + t).join(",")} in access exclusive mode;\n`);
+  write(`lock table ${[...G.SNAPSHOT_TABELLEN, "helmut_store", "pipeline_locks", "helmut_jobs", "process_runs", "helmut_job_outbox"].map(t => "public." + t).join(",")} in access exclusive mode;\n`);
   const tables = G.SNAPSHOT_TABELLEN.map(t => literal("public." + t) + "::regclass").join(",");
   write(assertion(`exists(select 1 from pg_constraint where contype='f' and confrelid in (${tables})
     and (conrelid not in (${tables}) or (confrelid='public.profiles'::regclass and confdeltype<>'c')))`,
   "synthetik500-import-fk-schema-drift"));
   write(assertion("exists(select 1 from public.pipeline_locks where expires_at>clock_timestamp())"
     + " or exists(select 1 from public.helmut_jobs where lease_expires_at>clock_timestamp() or status not in ('erledigt','fehlgeschlagen'))"
-    + " or exists(select 1 from public.process_runs where finished_at is null and status='running')", "synthetik500-import-prozessruhe-fehlt"));
+    + " or exists(select 1 from public.process_runs where finished_at is null and status='running')"
+    + " or exists(select 1 from public.helmut_job_outbox where status is null or status not in ('bestaetigt','aufgegeben','verzichtet'))", "synthetik500-import-prozessruhe-fehlt"));
+  // Der Blob-Fallback kann parallel zur relationalen Locktabelle aktiv sein.
+  // Authstore und Outbox sind bereits gesperrt: Ruhecheck und Ersatz sind atomar.
+  write(assertion("not exists(select 1 from public.helmut_store where id='main-auth' and jsonb_typeof(data)='object')"
+    + " or exists(select 1 from public.helmut_store where id='main-auth' and data ? 'pipelineLocks' and jsonb_typeof(data->'pipelineLocks') is distinct from 'object')",
+  "synthetik500-import-blob-lock-format"));
+  write(assertion("exists(select 1 from jsonb_each(coalesce((select data->'pipelineLocks' from public.helmut_store where id='main-auth'),'{}'::jsonb)) c"
+    + " where (jsonb_typeof(c.value) is distinct from 'object' or not coalesce(case when jsonb_typeof(c.value->'expiresAt')='number'"
+    + " then (c.value->>'expiresAt')::numeric<=extract(epoch from clock_timestamp())*1000 else null end,false)))",
+  "synthetik500-import-blob-lock-aktiv-oder-unklar"));
   write("create temp table steuerung_vorher on commit drop as select id,data from public.helmut_store where id in ('main','main-auth');\n");
 }
 function ende(write) {
