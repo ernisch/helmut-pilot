@@ -346,6 +346,29 @@ function main() {
       env.HELMUT_V3_STORE === "1" && env.HELMUT_STORAGE_BACKEND === "supabase");
   }
 
+  abschnitt("16 · Cloud-Managementzugang bleibt ausserhalb lokaler Tests");
+  {
+    const namen = ["HELMUT_AZURE_TENANT_ID", "HELMUT_AZURE_CLIENT_ID",
+      "HELMUT_AZURE_CLIENT_SECRET", "SUPABASE_ACCESS_TOKEN"];
+    const marker = "OFFLINE-ATTRAPPE-KEIN-ECHTES-SECRET";
+    for (const name of namen) {
+      const r = starte('console.log("UNZULAESSIG-GESTARTET")', sauber({ [name]: marker }));
+      check(`16.x ${name} sperrt den direkten Handlauf`, r.abgebrochen && !r.aus.includes("UNZULAESSIG"));
+      check(`16.x ${name} wird nie ausgegeben`, !r.fehler.includes(marker) && !r.aus.includes(marker));
+    }
+    const env = sauber(Object.fromEntries(namen.map(n => [n, marker])));
+    const r = spawnSync(process.execPath, [path.join(ROOT, "scripts/lokal.js"), "--", process.execPath,
+      "-e", 'console.log(JSON.stringify(' + JSON.stringify(namen)
+        + '.map(n => Object.hasOwn(process.env,n))))'], { encoding: "utf8", env, timeout: 30000 });
+    let gesehen;
+    try { gesehen = JSON.parse(String(r.stdout || "").trim()); } catch { gesehen = null; }
+    check("16.1 Starter entfernt alle vier Managementvariablen", r.status === 0
+      && Array.isArray(gesehen) && gesehen.length === 4 && gesehen.every(x => x === false));
+    check("16.2 Starterausgabe enthaelt keine Zugangswerte", !String(r.stdout).includes(marker)
+      && !String(r.stderr).includes(marker));
+    check("16.3 Aufrufende Umgebung bleibt unveraendert", namen.every(n => env[n] === marker));
+  }
+
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   console.log("\nKein einziger echter Netzzugriff: alle nicht-lokalen Ziele sind `.invalid`-Namen,");
   console.log("und der Schutz greift ohnehin vor der Namensaufloesung.");

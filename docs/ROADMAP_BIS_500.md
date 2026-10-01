@@ -19,7 +19,7 @@ Importanweisung und kein Beleg synthetischer Startbereitschaft.
 
 ## Kritischer Pfad und Parallelitaet
 
-Vor jeder neuen Arbeitswelle priorisiert GPT-6.1 Sol High direkt in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Es gibt keinen aktiven Modellrouter und keine verpflichtende externe Delegation. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Fuer Codex Cloud Entwicklungsarbeit gilt keine zeitabhaengige Peak Sperre. Production Schutz und Production Kostenlimits bleiben unveraendert.
+Vor jeder neuen Arbeitswelle priorisiert GPT-6.1 Sol High direkt in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Es gibt keinen aktiven Modellrouter und keine verpflichtende externe Delegation. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Der aktuelle Cloud-Auftrag vom01.10. verlangt werktags die Tuerkei-Peaksperre04–07/09–13. Production Schutz und Production Kostenlimits bleiben unveraendert; gruene Merges und regulaere Deployments sind inzwischen konkret freigegeben.
 
 ## Arbeitsmodus
 
@@ -38,9 +38,9 @@ Production Daten oder Profiländerungen, Cron, Environment oder Azure Änderunge
 Budgetänderungen, externe Nachrichten sowie Aktivierung der 500 Profile und Start
 des 500er Nachweises brauchen weiterhin das dafür ausdrücklich erforderliche GO.
 
-Notwendige Modelltests dürfen innerhalb des Sprintziels autonom laufen, solange
-der technische Tagesriegel von 6 USD je UTC Tag eingehalten wird und der jeweilige
-Test vorher klar begrenzt ist.
+Im aktuellen Cloud-Auftrag vom01.10. brauchen kostenpflichtige Production-
+Modelltests ein konkretes GO; 6 USD/UTC-Tag und7 USD kumulativ einschließlich
+Reservierungen bleiben zusätzlich verbindlich.
 
 ## 1 · Eingefrorenes Produktziel
 
@@ -217,13 +217,13 @@ Production Änderungen oder zusätzliche Kosten.
 ## 3 · Nächste Arbeiten vor dem 500er Start
 
 **Aktueller kritischer Pfad fuer den Synthetiknachweis:** Vollstaendig fiktives
-500er Paket mit vorher festgelegten1500 Sollpositionen vorbereiten; Azure-Zugang
-zur vorhandenen Ressource und harte 20-Sekunden-Gesamtfristen herstellen;
-einen eigenen eng gebundenen synthetischen Import-/Start-/End- und Nachweisweg
-bereitstellen. Alte495-plus5-,4 USD- und Realprofilvertraege passen nicht
+500er Paket mit vorher festgelegten1500 Sollpositionen und harte 20-Sekunden-Gesamtfristen sind in PR #762 ausgerollt; der Azure-Lesezugang ist authentifiziert belegt. Eigene eng gebundene synthetische Import-/Start-/End- und Nachweisbruecken
+sind im aktuellen Entwicklungsbranch vorbereitet; zugehoerige PR-Abnahme/CI
+vor Merge nachweisen. [Konkreter Ablauf](betrieb/synthetischer-500er-auftrag-20261001.md). Alte495-plus5-,4 USD- und Realprofilvertraege passen nicht
 unveraendert zum neuen Umfang. Bestehende Schutzpruefungen nicht aufweichen.
-Danach frischer voller Snapshot, kontrollierter inaktiver Ersatz, passende
-Quellen-/Ebenenversorgung, Kosten-/Ruhebelege und lebender Endwaechter.
+Danach frischer voller Snapshot und separates konkretes GO fuer die vorbereitete
+Synthetikmigration und den inaktiven500er Ersatz; passende Quellen-/Ebenenversorgung,
+Kosten-/Ruhebelege und lebender Endwaechter bleiben Pflicht.
 Vor Aktivierung und Test anhalten. Die nachfolgende reale Profilhistorie bleibt
 als Vorarbeit fuer eine spaetere Fachabnahme erhalten.
 
