@@ -1,0 +1,63 @@
+name: "Reale 500: ausschliesslich gebundener Endwaechter"
+on:
+  workflow_dispatch:
+    inputs:
+      schritt:
+        description: "Inerte Eingaben pruefen oder ausdruecklich Endwaechter bewaffnen; kein Startrecht"
+        type: choice
+        options: [eingabepruefung, bewaffnen]
+        default: eingabepruefung
+        required: true
+      operation_id:
+        description: "Gebundene reale operationId; private Daten bleiben serverseitig"
+        type: string
+        required: true
+      manifest_hash:
+        description: "SHA256 des vorbereiteten privaten Manifests"
+        type: string
+        required: true
+      production_commit:
+        description: "Vollstaendig belegter READY Main Commit"
+        type: string
+        required: true
+      bestaetigung:
+        description: "Nur fuer bewaffnen: GEBUNDENE_REAL500_NUR_DEAKTIVIEREN"
+        type: string
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: helmut-realkohorte500-ende
+  cancel-in-progress: false
+jobs:
+  endwaechter:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 270
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Nur reale gebundene Endsteuerung, standardmaessig aus
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          GITHUB_TOKEN: ${{ github.token }}
+          HELMUT_REAL500_OPERATION_ID: ${{ inputs.operation_id }}
+          HELMUT_REAL500_MANIFEST_HASH: ${{ inputs.manifest_hash }}
+          HELMUT_REAL500_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_REAL500_ENDWAECHTER_EXECUTE: ${{ inputs.schritt == 'bewaffnen' && '1' || '0' }}
+          HELMUT_REAL500_ENDWAECHTER_CONFIRM: ${{ inputs.bestaetigung }}
+          HELMUT_REAL500_ENDWAECHTER_SCHRITT: ${{ inputs.schritt }}
+        run: |
+          if [ "$HELMUT_REAL500_ENDWAECHTER_SCHRITT" = "bewaffnen" ]; then
+            node scripts/realkohorte-500-endwaechter.js --scharf
+          else
+            node scripts/realkohorte-500-endwaechter.js
+          fi

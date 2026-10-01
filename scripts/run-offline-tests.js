@@ -122,6 +122,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
+  "realkohorte-500-runtime-datenbank-test.js", // eigener Pflichtschritt: isolierte PostgreSQL17, kein stiller Offline-Skip
   "realkohorte-500-endweg-datenbank-test.js", // eigener Pflichtschritt: echte isolierte PostgreSQL, kein Offline-Scheinbeleg
   "lage-quellen-rest-datenbank-test.js", // separater isolierter REST Nachweis; fehlende Umgebung ist kein PASS
   "auth-store-cas-datenbank-test.js", // eigener verpflichtender CI Schritt mit PostgreSQL + PostgREST
@@ -201,6 +202,7 @@ const STANDARD = new Set([
   "bb-quellen-cutover-baseline-test.js",     // Berlin erhalten, Zustandsdrift und unbekannte Writes sperren
   "realkohorte-500-vertrag-test.js",         // separater inaktiver Realvertrag, Kosten und privater Endweg
   "realkohorte-500-erwartungen-test.js",     // 500 individuelle Voraberwartungen, 1500 ausstehende Positionen
+  "realkohorte-500-runtime-test.js",         // Zwei-Phasen-Startschutz, kompakter Endweg, Deadline und Ergebnisbindung
   "befund-27a2-schreibschutz-test.js",      // Messwerkzeug kann strukturell nicht schreiben
   "nachhol-schreibgate-test.js",            // Production-Schreibgate der Nachholskripte
   "store-cas-test.js",                      // CAS im gemeinsamen Store
