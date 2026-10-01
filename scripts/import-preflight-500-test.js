@@ -257,14 +257,14 @@ async function main() {
     && (roll.match(/jsonb_populate_recordset/g) || []).length > 1
     && roll.includes("jsonb_populate_recordset(null::public.briefings"));
   check("5.8 Kein SQL auf stdout beim Datei-Generator", true); // CLI prueft dies separat; API schreibt nur Dateien.
-  check("5.9 Jeder JSONB-Batch ist ein vollwertiges INSERT ... SELECT * FROM jsonb_populate_recordset",
+  check("5.9 Jeder JSONB-Batch nutzt explizite identische Snapshotspalten in INSERT und SELECT",
     (() => {
       const z = roll.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("--"));
       let offene = 0;
       let selects = 0;
       for (const zeile of z) {
         if (/^insert\s+into\s+public\.profiles\s*\(/i.test(zeile)) offene += 1;
-        if (/^select\s+\*\s+from\s+jsonb_populate_recordset\(null::public\.profiles,/i.test(zeile)) selects += 1;
+        if (zeile.startsWith(`select ${sp.dateien.profiles.spalten.join(", ")} from jsonb_populate_recordset(null::public.profiles,`)) selects += 1;
       }
       const erwartet = Math.ceil(sp.dateien.profiles.zeilen / GEN.JSONB_BATCH_MAX_ROWS);
       // Jeder Insert hat genau ein SELECT: keine abgetrennten oder fehlenden Batch-Statements.
@@ -494,6 +494,17 @@ async function main() {
     selbstKaputt.some((f) => f.code === "rollback-restore-struktur"),
     selbstKaputt.map((f) => f.code).join(", "));
 
+  const vertauschteSpalten = path.join(tmp, "vertauschte-spalten-rueckweg.sql");
+  const originalProjektion = `select ${sp.dateien.profiles.spalten.join(", ")} from jsonb_populate_recordset(null::public.profiles,`;
+  fs.writeFileSync(vertauschteSpalten, roll.replace(originalProjektion,
+    `select ${sp.dateien.profiles.spalten.slice().reverse().join(", ")} from jsonb_populate_recordset(null::public.profiles,`));
+  const spaltenSelbst = await GEN.pruefeErsatzSqlDateien(
+    { forwardPfad: sql.forwardZiel, rollbackPfad: vertauschteSpalten },
+    { neueIds: ergebnis.ids, alteIds: sp.ids.mandat, fremdIds: sp.ids.fremd, snapshot: sp }
+  );
+  check("8b.1b Selbsttest stoppt dieselben Spalten in falscher SELECT-Reihenfolge",
+    spaltenSelbst.some(f => f.code === "rollback-restore-struktur"));
+
   // 8b.2 · Der reale 573-MB-Snapshot erzeugte bytebedingt MEHR Rollback-Batches als
   // ceil(zeilen/200), weil sehr grosse payload-Zeilen die 4-MiB-Bytegrenze ausloesen.
   // Der Selbsttest muss diese korrekten Zusatz-Batches akzeptieren, aber fehlende
@@ -523,7 +534,7 @@ async function main() {
   ];
   const grosseMandatPaar = [
     "insert into public.mandate_profiles (user_id)",
-    "select * from jsonb_populate_recordset(null::public.mandate_profiles, '[]'::jsonb);"
+    "select user_id from jsonb_populate_recordset(null::public.mandate_profiles, '[]'::jsonb);"
   ];
   const grosseRollbackFuss = [
     "do $$ begin if (select count(*) from public.profiles where id in ('neu-1')) <> 0 then raise exception 'RUECKWEG NACHBEDINGUNG VERLETZT'; end if; end $$;",

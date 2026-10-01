@@ -1193,7 +1193,7 @@ function wiederherstellungsSqlAusZeilen(tabelle, eintrag, zeilenIter, schreibe, 
     const tag = sichererDollarTag(json, tabelle);
     schreibe(
       `insert into public.${tabelle} (${spalten.join(", ")})\n`
-      + `select * from jsonb_populate_recordset(null::public.${tabelle}, ${tag}${json}${tag}::jsonb);\n`
+      + `select ${spalten.join(", ")} from jsonb_populate_recordset(null::public.${tabelle}, ${tag}${json}${tag}::jsonb);\n`
     );
     batch = [];
     bytes = 0;
@@ -1726,18 +1726,22 @@ async function pruefeErsatzSqlDateien({ forwardPfad, rollbackPfad }, { neueIds, 
     if (/jsonb_populate_recordset/.test(roh)) r.jsonb = true;
     if (/\bupdate\s+public\.|\balter\s+table\b/i.test(rumpf)) r.updateDdl = true;
 
-    const ins = rumpf.match(/^insert\s+into\s+public\.([a-z_][a-z0-9_]*)\s*\(/i);
-    const sel = rumpf.match(/^select\s+\*\s+from\s+jsonb_populate_recordset\(null::public\.([a-z_][a-z0-9_]*),/i);
+    const ins = rumpf.match(/^insert\s+into\s+public\.([a-z_][a-z0-9_]*)\s*\(([^)]+)\)/i);
+    const sel = rumpf.match(/^select\s+([a-z_][a-z0-9_]*(?:\s*,\s*[a-z_][a-z0-9_]*)*)\s+from\s+jsonb_populate_recordset\(null::public\.([a-z_][a-z0-9_]*),/i);
     if (ins && !sel) {
       if (r.pendingInsert) r.strukturFehler = true;
-      r.pendingInsert = ins[1];
+      r.pendingInsert = { table: ins[1], columns: ins[2].split(",").map(s => s.trim()) };
       if (!r.erstePosition.has(ins[1])) r.erstePosition.set(ins[1], st.zeilennummer);
     }
     if (sel) {
-      if (r.pendingInsert !== sel[1]) r.strukturFehler = true;
+      const columns = sel[1].split(",").map(s => s.trim());
+      const table = sel[2];
+      if (!r.pendingInsert || r.pendingInsert.table !== table
+        || JSON.stringify(r.pendingInsert.columns) !== JSON.stringify(columns)
+        || JSON.stringify(columns) !== JSON.stringify(snapshot.dateien[table] && snapshot.dateien[table].spalten)) r.strukturFehler = true;
       else {
-        r.batchAnzahl.set(sel[1], (r.batchAnzahl.get(sel[1]) || 0) + 1);
-        r.jsonbTabellen.add(sel[1]);
+        r.batchAnzahl.set(table, (r.batchAnzahl.get(table) || 0) + 1);
+        r.jsonbTabellen.add(table);
         r.pendingInsert = null;
       }
     }
@@ -1756,7 +1760,7 @@ async function pruefeErsatzSqlDateien({ forwardPfad, rollbackPfad }, { neueIds, 
   if (!r.jsonb) add("rollback-spaltenvollstaendig", "Rueckweg nutzt keine spaltenvollstaendige Wiederherstellung.");
   if (r.updateDdl) add("rollback-nur-wiederherstellung", "Rueckweg enthaelt Update/DDL (erwartet: nur delete + insert).");
   if (r.strukturFehler) {
-    add("rollback-restore-struktur", "Rueckweg enthaelt keinen vollwertigen INSERT ... SELECT * FROM jsonb_populate_recordset(...) je JSONB-Batch.");
+    add("rollback-restore-struktur", "Rueckweg enthaelt kein vollwertiges INSERT/SELECT-Paar mit identischen Snapshotspalten je JSONB-Batch.");
   }
 
   let letztePosition = -1;
