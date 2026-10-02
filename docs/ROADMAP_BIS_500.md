@@ -253,7 +253,11 @@ Neue inerte Native-Textprobe mit3.113.000B Argumenten terminal
 `Invalid or expired requestState` nach802,388s; keine PG-Byte-/Hashquittung,
 keine Grenze/Schicht belegt,0 Business-/Profiländerungen. Abnahme`533b5839`
 akzeptiert nur den Fehlschlag, kein Retry. Separate kleine RO erfolgreich,
-kein Großtransportnachweis. Historische3,85MB-Body-Abweisung unverändert gültig.
+damals kein Großtransportnachweis. Historische3,85MB-Body-Abweisung bleibt gültig.
+**Neuer verlustfreier Transport erfolgreich:** Exakt eine inerte Native-pgcrypto-RO-Probe
+mit584292B Argumenten rekonstruiert3023730Originalbytes/SHA1c4f3753;
+alle Guards positiv, unabhängige tatsächliche Abnahme0c04c55b.
+Kein Original-App-EXECUTE: current_query-/Auditadapter und Native-Ganzphase bleiben offen.
 [Private Profil-/Snapshot-/Endwächterkapsel](betrieb/synthetik-500-profil-starttor-kapsel-20261002.md)
 verknüpft Originalarchive und Code unverändert; neun dynamische Gates bleiben rot.
 Frischer vollständiger Snapshot mit aktueller MainAuth/Audit42, konkrete Operatorbindung,

@@ -81,3 +81,10 @@ nennt diesen Kandidaten ohne neue Nutzerpräferenzfrage. Solange der konkrete
 Executor diese Grenzen und die endlichen Inputversionen/Upstream-Mengen nicht
 nachweist, bleiben Vollkosten- und500-Abschlussnachweis rot. Die konditionalen
 212USD aus1000Lage-Reservierungen sind kein vollständiger Kostenplan oder Antrag.
+
+Der spätere Native-RO-Decoderbeleg vom02.10.,09:37:23UTC schließt nur den
+inerten Byte-/Hashtransport:584292B Toolargumente ergeben exakt3023730
+Originalbytes/SHA1c4f3753, unabhängig abgenommen0c04c55b. Die Kapselreferenz
+auf den vorherigen Requeststate-Fehlschlag bleibt eine unveränderte Historienbindung.
+App-Ausführung, current_query-/Auditadapter, Native-Ganzphase und sämtliche
+dynamischen Import-/Startrechte sind dadurch weiterhin nicht belegt.

@@ -14,23 +14,24 @@
 
 - **Synthetikbrücken (PR #763, Code/gezielte Tests):** [Importprojektion](../lib/helmut/synthetik-500-import.js), Start-/Endruntime und [Vollbilanz](../lib/helmut/synthetik-500-nachweis.js) sind gemergt. Import43/43, Runtime11/11Offline+11/11PostgreSQL, Realregression36/36 und Nachweis64/64 grün; beide Pflichtchecks einschließlich echter Import→Start→Ende-SQL-Integration erfolgreich. Bindungen umfassen v2-Preimage,17s Gesamtfrist,500-Zielzeilenjournal, Fremd-/Kinddaten, manuellen Wächter und1500Vorabpositionen. Volltexte, Originalquellen, Einzelurteile und unabhängige Production-Endabnahme bleiben Pflicht. Diese kleinen SQL-Fixtures beweisen keine Vollbestandsperformance.
 
-- **Private Vollhistorienprüfung V7/fix2 (02.10., unabhängig akzeptiert):** Neuer lokaler
-  Stage/Forward/Rückweg mit136765Quellzeilen,46143Kontrollzeilen,
-  Runtime10/2 und Journal41→44 committet; Wrapper6,236/5,014/13,056s,
-  Backend-CPU6,130/4,910/12,900s im2CPU/2GiB-Diagnoseclone.
-  Source5/Originalgeschäftskörper,17/20/2, Vollfeldguards und Fremdentscheidung erhalten.
-  Rootreport`6a8aa67a`, Abnahme`1f85df23`. Keine Native-Hardware-/MVCC-/Owner-/ACL-
-  oder Gesamtphasenabnahme, Body-only-Zeit, harte17s-CPU-Reserve oder erfolgreiche SubTX-Leistung.
-  Neue inerte Native-Textprobe:3.113.000B Argumente, terminal
-  `Invalid or expired requestState` nach802,388s (`f932e3a0`, Abnahme`533b5839`).
-  Keine PG-Byte-/Hashquittung; Ursache/Schicht unbekannt, keine neue Größenlimitbehauptung,
-  kein Retry. Separate kleine RO-Probe erfolgreich (`fc9511a5`); kein Großtransportbeleg.
-  Frühere3,85MB-Abweisung bleibt historische Evidenz. Original-App nie nativ ausgeführt.
+- **Private V7/fix2 und neuer Native-Transport (02.10.):** Lokaler Stage/Forward/Rückweg
+  mit136765Quell-/46143Kontrollzeilen, Runtime10/2, Journal41→44 akzeptiert
+  (`6a8aa67a`/`1f85df23`); Wrapper6,236/5,014/13,056s, CPU6,130/4,910/12,900s
+  im2CPU/2GiB-Clone. Source5/Geschäftskörper,17/20/2 und Vollfeldguards erhalten.
+  Keine Native-Hardware-/MVCC-/Owner-/ACL-/Ganzphasenabnahme, Body-only-Zeit,
+  harte17s-Reserve oder erfolgreiche SubTX-Leistung.
+  Historische inerte3.113.000B-Textprobe scheiterte terminal nach802,388s:
+  `Invalid or expired requestState` (`f932e3a0`/`533b5839`), Ursache/Schicht unbekannt.
+  Neuer verlustfreier pgcrypto-Transport: genau eine Native-RO-Decoderprobe erfolgreich,
+  **3.023.730 Originalbytes/SHA`1c4f3753`**, kleinere Argumente584292B,
+  alle Guards positiv; unabhängige tatsächliche Abnahme`0c04c55b`.
+  Original-App nicht ausgeführt; `current_query`-/Auditadapter und Native-Gesamtphase offen.
+  Frühere3,85MB-Abweisung bleibt historische Evidenz; kein Retry der alten Proben.
   [Profil-/Snapshot-/Endwächterkapsel](betrieb/synthetik-500-profil-starttor-kapsel-20261002.md)
-  bindet diese Historie privat, kopiert keine großen Archive und hält neun dynamische Tore rot.
-  Nach Kostencommit sind aktuelle MainAuth- und Audit42-Vollbindungen Pflicht;
-  alter Snapshot ist kein aktuelles Importpreimage. Konkretes Profil-GO, Quellen,
-  finanzierter Qualitätsplan und lebender Endwächter fehlen;0 Profilimporte/0 Aktivierungen/0 Modellaufrufe.
+  bindet Historie privat, kopiert keine großen Archive und hält neun dynamische Tore rot.
+  Aktuelle MainAuth/Audit42-Vollbindungen statt altem Importpreimage sind Pflicht.
+  Profil-GO, Quellen, finanzierter Qualitätsplan und lebender Endwächter fehlen;
+  0 Profilimporte/0 Aktivierungen/0 neue Modellaufrufe.
 
 - **Neue Betreibersteuerung (01.10.2026):** Der naechste technische 500er Nachweis erfolgt mit vollstaendig synthetischen Profilen; keine Realpersonenprofile umbenennen oder mit Testflag als Fiktion ausgeben. Verteilung 330 Bundestag / 120 Berlin / 50 Brandenburg bleibt bestehen. Qualifizierte Datenschutzentscheidung und Vertragsunterlagen existieren laut Betreiber derzeit nicht; diese bleiben offen vor regulaerem Betrieb und sind kein Starttor fuer diesen synthetischen technischen Nachweis. Azure-SKU frisch gelesen: `GlobalStandard`, Kapazität250, Modellversion`2025-08-07`,250RPM/250.000TPM; Kontopreis und Production-Modellaufruf dadurch nicht belegt. Ein Azure-Konto und eine KI-Ressource existieren laut Betreiber bereits; Azure-Lesezugang ist seit 01.10.2026 authentifiziert belegt (Dienstprinzipal ausschliesslich Leser auf `helmut-rg`, keine Datenzugriffsrechte); Modellaufruf und wirksame Production-Konfiguration sind dadurch nicht bewiesen. [Aktueller Synthetikauftrag](betrieb/synthetischer-500er-auftrag-20261001.md). Dies ist eine Umfangsaenderung, keine Production-Aktivierung oder Testfreigabe.
 
