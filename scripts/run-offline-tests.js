@@ -211,6 +211,7 @@ const STANDARD = new Set([
   "synthetik-500-provider-routen-test.js",  // gebundenes Quelleninventar aller erkannten Anbieterpfade
   "synthetik-500-review-receipt-test.js",   // private D-Herkunft, exakte R-Bindung und Einmal-Senderiegel
   "synthetik-500-ab-review-v2-test.js",     // explizite Kostenplan-/Executorbindung an den gespeicherten D/R-Vertrag
+  "synthetik-500-artikelkontext-kostenbindung-test.js", // identische Runtime-/Plan-/3-Bindung von Artikelprompt und40er Vertrag
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
   "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist
   "bb-quellen-cutover-operator-test.js",     // enger Landesquellen-Cutover und geschuetzter Rueckweg
