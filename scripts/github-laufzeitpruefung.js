@@ -9,6 +9,7 @@ const BOOLEAN_FELDER = Object.freeze([
   "storageSupabase", "v3Bereit", "profileRelational", "profileExclusive",
   "retentionGueltig", "kommunikationGesperrt", "kohortenQuellenGesperrt"
 ]);
+const QUELLEN_FLAG_FELDER = Object.freeze(["sourceModeOn", "landesmodulBerlin", "landesmodulBrandenburg"]);
 const ZAHL_FELDER = Object.freeze(["retention", "tagesdeckel", "understandingReserve", "vorrangreserveReal"]);
 
 async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
@@ -39,6 +40,9 @@ async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
     return {
       ok: true, reinLesend: true, grund: "production-laufzeit-gelesen", httpStatus: 200, commit: erwartet,
       ...Object.fromEntries([...BOOLEAN_FELDER, ...ZAHL_FELDER].map((f) => [f, body[f]])),
+      // Alte Laufzeitantworten bleiben lesbar; nur drei echte Booleans bilden diesen Beleg.
+      ...(QUELLEN_FLAG_FELDER.every((f) => typeof body[f] === "boolean")
+        ? Object.fromEntries(QUELLEN_FLAG_FELDER.map((f) => [f, body[f]])) : {}),
       ...([1, 2].includes(body.textnachlaufVersion) ? { textnachlaufVersion: body.textnachlaufVersion } : {}),
       ...(body.textnachlaufArbeitsauswahlVersion === 1 ? { textnachlaufArbeitsauswahlVersion: 1 } : {}),
       ...(body.textnachlaufTestfensterVersion === 1 ? { textnachlaufTestfensterVersion: 1 } : {}),

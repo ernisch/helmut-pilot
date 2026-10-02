@@ -61,7 +61,7 @@ const rollingHealth = require("./lib/helmut/rolling-health");
 const motorHealth = require("./lib/helmut/motor-health");
 const monitoringWebhook = require("./lib/helmut/monitoring-webhook");
 const kommunikationsriegel = require("./lib/helmut/kommunikationsriegel");
-const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
+const { sourceMode, freigegebeneLandesmodule } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, extractKnowledgeObjectTags } = require("./lib/helmut/ai");
@@ -245,10 +245,15 @@ async function handleRequest(request, response) {
       const riegel = require("./lib/helmut/kommunikationsriegel");
       const retention = vorflug.crawlRunAufbewahrung();
       const commit = String(process.env.VERCEL_GIT_COMMIT_SHA || "");
+      const landesmodule = freigegebeneLandesmodule();
       sendJson(response, {
         ok: true, schemaVersion: 1, reinLesend: true,
         commit: /^[a-f0-9]{40}$/.test(commit) ? commit : null,
         production: process.env.VERCEL_ENV === "production",
+        // Nur effektive Schalter, keine Mandats-/Dokument- oder Aktivierungsfreigabe.
+        sourceModeOn: sourceMode() === "on",
+        landesmodulBerlin: landesmodule.has("berlin"),
+        landesmodulBrandenburg: landesmodule.has("brandenburg"),
         storageSupabase: getStorageStatus().backend === "supabase",
         v3Bereit: v3StoreReady(),
         profileRelational: profileDbModeEnabled(),
