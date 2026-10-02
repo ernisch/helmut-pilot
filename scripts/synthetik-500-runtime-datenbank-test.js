@@ -4,7 +4,7 @@ const A=require("node:assert/strict"),fs=require("node:fs"),path=require("node:p
 const {execFileSync}=require("node:child_process");
 const P=require("../lib/helmut/synthetik-500-profile"),I=require("../lib/helmut/synthetik-500-import");
 const IMPORT=require("./synthetik-500-import"),IF=require("./synthetik-500-import-test");
-const {fixture,COMMIT}=require("./synthetik-500-runtime-test");
+const {fixture,fixtureZeitfenster,COMMIT}=require("./synthetik-500-runtime-test");
 const MIG=path.join(__dirname,"../supabase/migrations/20261001172619_synthetik500_end_runtime.sql");
 const BACK=path.join(__dirname,"../supabase/migrations/rollback_20261001172619_synthetik500_end_runtime.sql");
 const db="helmut_synthetik500_runtime_"+crypto.randomBytes(8).toString("hex");
@@ -23,7 +23,7 @@ function psql(sql,database=db){
 }
 function bestand(){return JSON.parse(psql(`select jsonb_build_object('mandate_profiles',(select jsonb_agg(to_jsonb(p) order by user_id collate "C") from mandate_profiles p),
 'profiles',(select jsonb_agg(to_jsonb(p) order by id collate "C") from profiles p),'store',(select jsonb_agg(to_jsonb(p) order by id collate "C") from helmut_store p));`));}
-function main(){
+async function main(){
   A.equal(process.env.HELMUT_SYNTHETIK500_PG_ISOLIERT,"JA");
   if(container){A.match(container,/^synthetik500-runtime-pg-[a-f0-9]{8,16}$/);
     const info=JSON.parse(execFileSync("docker",["--host=unix:///var/run/docker.sock","inspect",container],{encoding:"utf8",env:{PATH:process.env.PATH}}))[0];
@@ -43,7 +43,7 @@ function main(){
     const snapshotDir=path.join(tmp,"preimage"),old=IF.fixture(snapshotDir),outDir=path.join(tmp,"sql");
     IMPORT.baueDateien({paketBytes:IF.paketBytes,snapshotDir,outDir});
     const forward=fs.readFileSync(path.join(outDir,"synthetik500-ersatz.sql"),"utf8"),paket=JSON.parse(IF.paketBytes),rows=I.erzeugeZeilen(paket);
-    function seed(){
+    async function seed(){
       psql("drop schema if exists helmut_synthetik500_internal cascade;"+IF.bootstrap(old));
       psql(forward);
       // Echte erzeugte Importquittung enthaelt500Zielidentitaeten, mitFremdprofil501.
@@ -52,7 +52,16 @@ function main(){
         create trigger fixture_touch before update on mandate_profiles for each row execute function fixture_touch();
         grant usage on schema public to service_role;grant select,insert,update,delete on all tables in schema public to service_role;`);
       psql(fs.readFileSync(MIG,"utf8"));
-      const b=bestand(),now=Date.now(),snapshot={beobachtetAm:new Date(now-1000).toISOString(),mandate_profiles:b.mandate_profiles,profiles:b.profiles};
+      let b=bestand(),now=Date.now(),fenster=fixtureZeitfenster(now);
+      if(fenster.warteMs){
+        console.log("UTC-Tageswechsel: isolierte Testfixture wartet "+fenster.warteMs+"ms auf ihr frisches 1-Minuten-Fenster.");
+        await new Promise(resolve=>setTimeout(resolve,fenster.warteMs));
+        // Nach dem wirklichen Tageswechsel neu lesen; keine Uhrsimulation oder
+        // Umetikettierung alter Kosten-/Bestandsbelege.
+        b=bestand();now=Date.now();fenster=fixtureZeitfenster(now);
+      }
+      A.equal(fenster.warteMs,0);
+      const snapshot={beobachtetAm:fenster.beobachtetAm,mandate_profiles:b.mandate_profiles,profiles:b.profiles};
       const x=fixture({snapshot,now,operationId:"synthetik500-isolierte-db-"+crypto.randomBytes(6).toString("hex")});
       x.belege.ruhe.mainHash=x.V.hash(b.store.find(r=>r.id==="main").data);
       psql(`update helmut_store set data=${json(x.belege.kosten.auth)} where id='main-auth';`);
@@ -62,7 +71,7 @@ function main(){
       x.auftrag.manifestHash=x.V.hash(x.runtimeManifest);x.slot="synthetik500-runtime-"+x.manifest.operationId;
       return x;
     }
-    seed();
+    await seed();
     for(const role of ["anon","authenticated"]){
       A.equal(psql(`select has_function_privilege('${role}','public.helmut_synthetik500_lesung(text,text,text)','EXECUTE');`),"f");
       A.equal(psql(`select has_function_privilege('${role}','public.helmut_synthetik500_ende(text,text,text,text,text)','EXECUTE');`),"f");
@@ -77,18 +86,18 @@ function main(){
       "insert into pipeline_locks(expires_at) values(clock_timestamp()+interval '1 minute');","insert into process_runs(status,finished_at) values('running',null);",
       "insert into helmut_job_outbox values('offen','offen');","insert into helmut_job_outbox values('versendet','versendet');",
       "insert into helmut_job_outbox values('unbekannt','unbekannt');","insert into helmut_job_outbox values('nullstatus',null);"]){
-      const x=seed();psql(blocker);reject(sql(x));
+      const x=await seed();psql(blocker);reject(sql(x));
     }
     ok("Wirkliche queuedJobs/Leases/PipelineLocks/Running/Outbox sperren prepared0 atomar");
-    let x=seed();const original=x.belege.kosten.auth;const withLock={...original,pipelineLocks:{fixture:{expiresAt:Date.now()+60000}}};
+    let x=await seed();const original=x.belege.kosten.auth;const withLock={...original,pipelineLocks:{fixture:{expiresAt:Date.now()+60000}}};
     psql(`update helmut_store set data=${json(withLock)} where id='main-auth';`);
     // Erneut frisch und korrekt hashen: Authhash allein ersetzt keine Ruhepruefung.
     x.belege.kosten.auth=withLock;x.belege.ruhe.authHash=x.V.hash(withLock);
     x.runtimeManifest=x.G.baueRuntimeManifest({manifest:x.manifest,snapshot:x.snapshot,belege:x.belege},x.bytes,Date.now());x.prepare.runtimeManifest=x.runtimeManifest;
     reject(sql(x));ok("Aktiver JSON-PipelineLock trotz korrekt neu gebundener Authhashes verweigert Start");
-    x=seed();psql("delete from helmut_store where id like 'synthetik500-import-%';");reject(sql(x));
+    x=await seed();psql("delete from helmut_store where id like 'synthetik500-import-%';");reject(sql(x));
     ok("Selbstgehashte synthetische Labels ohne vollstaendige passende Importquittung verweigert");
-    x=seed();psql(sql(x));let r=JSON.parse(psql("set role service_role;"+read(x)));A.equal(r.zustand,"vorbereitet");A.equal(r.aktiv,0);
+    x=await seed();psql(sql(x));let r=JSON.parse(psql("set role service_role;"+read(x)));A.equal(r.zustand,"vorbereitet");A.equal(r.aktiv,0);
     reject(sql(x));reject(end(x));ok("Prepared0 ist echte SQL-Lesung ohne Aktivquittung; Wiederverwendung/Endwrite gesperrt");
     let activate=x.G.baueSql(x.activate,x.bytes,Date.now());
     psql("insert into helmut_job_outbox values('race','versendet');");reject(activate);psql("delete from helmut_job_outbox;");
@@ -103,7 +112,7 @@ function main(){
     ok("AktiverRollback gesperrt; partielle499 enden automatisch gebunden auf0 ohne Fach-/Fremddrift");
     const closed=bestand();JSON.parse(psql("set role service_role;"+end(x)));A.deepEqual(bestand(),closed);
     reject(activate);ok("QuittiertesEnde idempotent lesbar; verbrauchterAuftrag kann keine Profile reaktivieren");
-    x=seed();psql(sql(x));psql(x.G.baueSql(x.activate,x.bytes,Date.now()));
+    x=await seed();psql(sql(x));psql(x.G.baueSql(x.activate,x.bytes,Date.now()));
     psql(`create function fixture_fail() returns trigger language plpgsql as $$ begin if new.user_id=${literal(rows.mandateRows[250].user_id)} then raise exception 'synthetik500-fixture-abbruch';end if;return new;end $$;
       create trigger fixture_fail before update on mandate_profiles for each row execute function fixture_fail();`);
     reject(end(x));psql("drop trigger fixture_fail on mandate_profiles;drop function fixture_fail();");
@@ -118,5 +127,5 @@ function main(){
     }finally{fs.rmSync(tmp,{recursive:true,force:true});}
   }finally{psql(`drop database ${db};`,"postgres");}
 }
-if(require.main===module){try{main();}catch(e){console.error("Synthetik-Runtime-DB-Abnahme fehlgeschlagen: "+e.message+(e.isolierterFehler?" ("+e.isolierterFehler+")":""));process.exitCode=1;}}
+if(require.main===module)main().catch(e=>{console.error("Synthetik-Runtime-DB-Abnahme fehlgeschlagen: "+e.message+(e.isolierterFehler?" ("+e.isolierterFehler+")":""));process.exitCode=1;});
 module.exports={main};

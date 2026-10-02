@@ -1,6 +1,6 @@
 # Roadmap bis zum 500er Production Nachweis
 
-Stand: 01.10.2026
+Stand: 02.10.2026
 
 Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
@@ -19,7 +19,7 @@ Importanweisung und kein Beleg synthetischer Startbereitschaft.
 
 ## Kritischer Pfad und Parallelitaet
 
-Vor jeder neuen Arbeitswelle priorisiert GPT-6.1 Sol High direkt in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Es gibt keinen aktiven Modellrouter und keine verpflichtende externe Delegation. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Der aktuelle Cloud-Auftrag vom01.10. verlangt werktags die Tuerkei-Peaksperre04–07/09–13. Production Schutz und Production Kostenlimits bleiben unveraendert; gruene Merges und regulaere Deployments sind inzwischen konkret freigegeben.
+Vor jeder neuen Arbeitswelle priorisiert GPT-6.1 Sol High direkt in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Es gibt keinen aktiven Modellrouter und keine verpflichtende externe Delegation. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Am02.10.2026 hat der Betreiber alle Peak Arbeitssperren aufgehoben, auch die Chatvorgabe vom01.10.; Entwicklungsarbeit darf jederzeit ohne Peak GO starten. Production Schutz und Production Kostenlimits bleiben unveraendert; gruene Merges und regulaere Deployments sind inzwischen konkret freigegeben.
 
 ## Arbeitsmodus
 

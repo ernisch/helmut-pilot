@@ -69,7 +69,7 @@ Production-Konfiguration, Migrationen, Cron- und Profilschutz vor einer Wirkung 
 GPT-6.1 Sol High ist der direkte Standard in Codex Cloud und priorisiert vor jeder
 Arbeitswelle ausschliesslich den kritischen Pfad zum 500er Starttor. Es gibt keinen
 aktiven Modellrouter, keine verpflichtende externe Delegation und keine
-zeitabhaengige Peak Sperre fuer Codex Cloud Entwicklungsarbeit im allgemeinen Repovertrag. Fuer diesen Chat gilt jedoch die neu uebergebene Werktags-Peaksperre04–07/09–13 Tuerkei; keine dauerhafte Ausnahme ableiten. Production
+zeitabhaengige Peak Sperre. Der Betreiber hat am02.10.2026 auch die Chatvorgabe vom01.10. aufgehoben; Entwicklungsarbeit darf jederzeit starten, ohne Peak GO. Production
 Schutzgrenzen, das gesonderte GO vor Aktivierung und 500er Test sowie die
 Production Kostenlimits bleiben unveraendert. Parallele Schreibarbeit darf nur in
 klar getrennten Bereichen stattfinden; bei Ueberschneidung wird nacheinander
