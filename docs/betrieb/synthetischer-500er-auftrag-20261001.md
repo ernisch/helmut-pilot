@@ -15,6 +15,11 @@ Kontopreis- oder erfolgreicher Production-Modellbeleg. Kostenplanung und wirksam
 Production-Modellzugang bleiben getrennt nachzuweisen. Es werden keine neue Subscription oder dauerhaft kostenpflichtige
 Ressourcen ohne konkreten Bedarf angelegt.
 
+**Arbeitszeitsteuerung vom 02.10.2026:** Der Betreiber hat alle Peak Arbeitssperren
+aufgehoben, auch die Chatvorgabe vom01.10.2026. Entwicklungsarbeit darf jederzeit
+ohne Peak GO starten. Production Schutz, Kostenlimits und gesonderte Freigaben
+bleiben unveraendert.
+
 ## Aktueller Umfang
 
 Genau 500 vollständig fiktive Zielprofile: 330 Bundestag, 120 Berlin, 50 Brandenburg.

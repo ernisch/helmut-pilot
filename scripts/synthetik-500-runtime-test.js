@@ -11,14 +11,25 @@ const R0 = require("../lib/helmut/synthetik-500-end-runtime");
 const W0 = require("./synthetik-500-endwaechter");
 const COMMIT = "c".repeat(40), NOW = Date.parse("2026-10-01T10:01:00.000Z");
 const clone = x => structuredClone(x);
+function fixtureZeitfenster(now) {
+  A.ok(Number.isSafeInteger(now));
+  const tagStart=Date.parse(new Date(now).toISOString().slice(0,10)+"T00:00:00.000Z"),tagEnde=tagStart+86400000-1;
+  // Kosten bleiben an den wirklichen UTC-Tag gebunden. Die SQL-Pruefung braucht
+  // ihr unveraendertes frisches 1-Minuten-Fenster vor dem Tageswechsel.
+  const warteMs=tagEnde-now<60000?tagEnde-now+1:0;
+  return {warteMs,beobachtetAm:new Date(Math.max(now-1000,tagStart)).toISOString(),
+    startBis:new Date(Math.min(now+180000,tagEnde-1)).toISOString(),
+    endeAm:new Date(Math.min(now+600000,tagEnde)).toISOString()};
+}
 function fixture({variante="basis-v1",snapshot=null,operationId="synthetik500-runtime-offline-20261001",now=NOW}={}) {
   const paket=P.erzeuge({variante}),bytes=P.serialisiere(paket),V=V0.erzeugeVertrag(bytes),G=G0.erzeugeStartSql(bytes);
-  const rows=I.erzeugeZeilen(paket),am=new Date(now-1000).toISOString(),day=am.slice(0,10);
+  const fenster=fixtureZeitfenster(now);A.equal(fenster.warteMs,0,"isolierte-fixture-utc-startfenster-fehlt");
+  const rows=I.erzeugeZeilen(paket),am=fenster.beobachtetAm,day=am.slice(0,10);
   snapshot ||= {beobachtetAm:am,mandate_profiles:rows.mandateRows.map(p=>({...p,geloescht_at:null,updated_at:am})),
     profiles:[...rows.profileRows,{id:"synthetik500-fremdprofil",name:"Fiktive isolierte Fremdidentitaet"}]};
   const kosten={...F.fixture().manifest.kosten,tag:day,beobachtetAm:am};
   const manifest=V.vorbereiten({paketBytes:bytes,snapshot,operationId,vorflugAm:am,
-    startBis:new Date(now+180000).toISOString(),endeAm:new Date(now+600000).toISOString(),kosten});
+    startBis:fenster.startBis,endeAm:fenster.endeAm,kosten});
   const full=F.belegFixture({manifest});
   full.technik={...full.phaseA,art:"synthetik-technische-zugriffssperren-kommunikation-snapshot-rueckweg"};delete full.phaseA;
   for(const key of ["technik","fach"]) {full[key].paketHash=V.PAKET_HASH;full[key].idsHash=V.IDS_HASH;full[key].entschiedenAm=am;}
@@ -38,8 +49,27 @@ function fixture({variante="basis-v1",snapshot=null,operationId="synthetik500-ru
     fremdUnveraendert:true,fachfelderUnveraendert:true,quittungBindungBestaetigt:true,endeAm:manifest.endeAm};delete status.grund;
   return {paket,bytes,V,G,manifest,snapshot,belege,full,runtimeManifest,prepare,activate,auftrag,status};
 }
+function pruefeFixtureZeitfenster() {
+  for(const am of ["2026-10-01T23:58:42.117Z","2026-10-01T23:58:59.999Z","2026-10-02T00:00:00.000Z","2026-10-02T00:00:00.001Z"]){
+    const now=Date.parse(am),x=fixture({now});
+    A.equal(x.manifest.vorflugAm.slice(0,10),am.slice(0,10));
+    A.equal(x.manifest.kosten.tag,am.slice(0,10));A.equal(x.manifest.endeAm.slice(0,10),am.slice(0,10));
+    A.ok(Date.parse(x.manifest.vorflugAm)<=now && now<Date.parse(x.manifest.startBis));
+    A.ok(Date.parse(x.manifest.startBis)<Date.parse(x.manifest.endeAm));
+    x.G.baueSql(x.prepare,x.bytes,now);x.G.baueSql(x.activate,x.bytes,now);
+  }
+  const x=fixture({now:Date.parse("2026-10-01T23:58:42.117Z")}),m=clone(x.manifest);
+  m.endeAm="2026-10-02T00:08:42.117Z";
+  A.throws(()=>x.V.pruefeManifest(m,x.bytes,x.snapshot),/kosten-zeit/);
+  for(const [am,wait] of [["2026-10-01T23:59:00.000Z",60000],["2026-10-01T23:59:59.999Z",1]]){
+    const now=Date.parse(am);A.equal(fixtureZeitfenster(now).warteMs,wait);
+    A.throws(()=>fixture({now}),/isolierte-fixture-utc-startfenster-fehlt/);
+    A.equal(fixtureZeitfenster(now+wait).warteMs,0);
+  }
+}
 async function main(){
   let pass=0;const test=async(name,fn)=>{await fn();pass++;console.log("PASS "+name);};
+  await test("UTC-Tagesgrenze bindet echte Testzeit; taguebergreifende Kosten bleiben gesperrt",pruefeFixtureZeitfenster);
   await test("Beide geschlossenen Varianten binden exakt500/1500, neueIDs, alle importierten Fachfelder",()=>{
     for(const variante of P.VARIANTEN){const x=fixture({variante});A.equal(x.manifest.ids.length,500);
       A.equal(x.manifest.erwartungenHash,x.paket.bindung.erwartungenHash);A.equal(x.manifest.profileHash,x.paket.bindung.profileHash);
@@ -121,4 +151,4 @@ async function main(){
   console.log(`${pass}/${pass} Synthetik-Runtime-Offlinetests gruen; keine Production-/Startfreigabe.`);
 }
 if(require.main===module)main().catch(e=>{console.error("Synthetik-Runtime-Test fehlgeschlagen: "+e.message);process.exitCode=1;});
-module.exports={fixture,main,COMMIT,NOW};
+module.exports={fixture,fixtureZeitfenster,pruefeFixtureZeitfenster,main,COMMIT,NOW};

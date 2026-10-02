@@ -118,9 +118,11 @@ komplexe Architekturentscheidung oder dann vorgesehen, wenn Sehr hoch bei einem
 konkret belegten schwierigen Problem nicht ausreicht. Bereits belegte Arbeit wird
 nicht ohne konkreten Grund wiederholt.
 
-Fuer Codex Cloud gilt keine zeitabhaengige Peak Arbeitssperre. Neue Helmut
-Entwicklungsarbeit darf zu jeder Uhrzeit starten. Diese Freigabe betrifft nur die
-Arbeitszeit. Production Schutz, Kostenlimits fuer echte Production Anbieter,
+**Betreibersteuerung vom 02.10.2026:** Alle zeitabhaengigen Peak Arbeitssperren
+sind aufgehoben, auch die Chatvorgabe vom 01.10.2026. Neue Helmut Entwicklungsarbeit
+darf zu jeder Uhrzeit starten; dafuer ist kein Peak GO erforderlich. Aeltere
+Chattexte und Uploads begruenden keine erneute Arbeitssperre. Diese Freigabe betrifft
+nur die Arbeitszeit. Production Schutz, Kostenlimits fuer echte Production Anbieter,
 Merge Regeln und alle ausdruecklich geschuetzten Aktionen bleiben unveraendert.
 
 Bei kritischen Production Aenderungen darf die endgueltige Abnahme nicht
