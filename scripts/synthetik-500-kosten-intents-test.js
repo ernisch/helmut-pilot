@@ -92,6 +92,29 @@ function main() {
         const e = inputs(); mutate(e); A.throws(() => I.vorbereite(paket, e), /synthetik500-intents-/);
       }
     });
+    test("JSON-Arrays, Zahlen, Wahrheitswerte, null und Objekte sind keine Kennungen oder Hashes", () => {
+      const fields = [
+        [e => e, "runId", /eingaben-format/],
+        [e => e.lageInputs[0], "owner", /lage-input-bindung/],
+        [e => e.lageInputs[0], "inputVersionHash", /lage-input-bindung/],
+        [e => e.understandingInputs[0], "vorgangId", /u-input-bindung/],
+        [e => e.understandingInputs[0], "inputVersionHash", /u-input-bindung/]
+      ];
+      for (const [select, field, error] of fields) for (const wrongType of ["array", "number", "boolean", "null", "object"]) {
+        const e = inputs(), row = select(e), valid = row[field];
+        row[field] = { array: [valid], number: 123, boolean: true, null: null, object: {} }[wrongType];
+        const json = JSON.parse(JSON.stringify(e));
+        A.throws(() => I.vorbereite(paket, json), error, field + ":" + wrongType);
+      }
+    });
+    test("Auch Format-, Modell-, Zeit- und Tokenfelder akzeptieren keine JSON-Typkonvertierung", () => {
+      for (const mutate of [e => { e.version = [e.version]; }, e => { e.model = [e.model]; },
+        e => { e.reviewMaxOutputTokens = [3000]; }, e => { e.reviewMaxOutputTokens = "3000"; },
+        e => { e.window.startUTC = [e.window.startUTC]; }, e => { e.window.endUTC = [e.window.endUTC]; }]) {
+        const e = inputs(); mutate(e);
+        A.throws(() => I.vorbereite(paket, JSON.parse(JSON.stringify(e))), /eingaben-format|qualitaetsmodus|utc-format/);
+      }
+    });
     test("VierStunden/sameUTC und gültigeDatumsfelder stopppen vorInventur", () => {
       for (const [start, end] of [["2026-10-02T12:00:00.000Z", "2026-10-02T16:00:00.001Z"],
         ["2026-10-02T23:00:00.000Z", "2026-10-03T01:00:00.000Z"],
