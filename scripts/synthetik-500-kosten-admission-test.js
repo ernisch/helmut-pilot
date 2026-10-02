@@ -96,11 +96,29 @@ async function sender(h, fn, active = true, realAuthRead = false) {
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
 async function strictReadTests() {
-  const fs = require("node:fs"), path = require("node:path"), storage = require("../lib/helmut/storage");
-  const dir = path.join(__dirname, "..", ".helmut-data"), file = path.join(dir, "auth.json");
-  assert.equal(fs.existsSync(dir), false, "Strict-read test owns its new isolated worktree-local fixture directory");
-  fs.mkdirSync(dir);
+  const fs = require("node:fs"), path = require("node:path"), os = require("node:os");
+  const storage = require("../lib/helmut/storage"), originalReadFileSync = fs.readFileSync;
+  const sharedDir = path.join(__dirname, "..", ".helmut-data"), sharedAuth = path.join(sharedDir, "auth.json");
+  const sharedDirExisted = fs.existsSync(sharedDir);
+  if (!sharedDirExisted) fs.mkdirSync(sharedDir);
+  const witnessDir = fs.mkdtempSync(path.join(sharedDir, "admission-unrelated-"));
+  const witness = path.join(witnessDir, "unchanged.txt"); fs.writeFileSync(witness, "unrelated suite fixture");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-admission-strict-")), file = path.join(dir, "auth.json");
+  // Nur den Dateipfad umlenken: echter Strictleser, JSON-Parser und echte
+  // ENOENT/EISDIR bleiben erhalten. Andere Suiten-Dateien nie ersetzen/loeschen.
+  let authReads = 0;
+  fs.readFileSync = (target, ...args) => {
+    if (target === sharedAuth) { authReads++; target = file; }
+    return originalReadFileSync(target, ...args);
+  };
   try {
+    await test("Strict-Authfixture bleibt bei bereits vorhandenem Suite-Speicher isoliert", async () => {
+      assert.equal(fs.existsSync(sharedDir), true);
+      fs.writeFileSync(file, JSON.stringify({ users: [{ id: "isolated-fixture" }] }));
+      assert.deepEqual((await storage.readAuthStore({ strict: true })).users, [{ id: "isolated-fixture" }]);
+      assert.equal(authReads, 1);
+      assert.equal(originalReadFileSync(witness, "utf8"), "unrelated suite fixture");
+    });
     await test("Echter Strict-Authleser: beschaedigte oder primitive lokale JSON stoppen ohne Provider", async () => {
       for (const raw of ["{broken-json", "null", "[]", '"not-a-store"']) {
         fs.writeFileSync(file, raw);
@@ -153,7 +171,11 @@ async function strictReadTests() {
       }
     });
   } finally {
+    fs.readFileSync = originalReadFileSync;
     fs.rmSync(dir, { recursive: true, force: true });
+    assert.equal(fs.readFileSync(witness, "utf8"), "unrelated suite fixture");
+    fs.rmSync(witnessDir, { recursive: true });
+    if (!sharedDirExisted && fs.readdirSync(sharedDir).length === 0) fs.rmdirSync(sharedDir);
   }
 }
 async function main({ strictReadOnly = false } = {}) {
