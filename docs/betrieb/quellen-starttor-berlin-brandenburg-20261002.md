@@ -123,8 +123,8 @@ diese fachliche Abnahme allein nicht.
 
 Eine separat freizugebende, auditierte Native-Migration könnte dieselben drei
 Quellenzeilen mit vollständigem CAS in einer Transaktion korrigieren und alle
-übrigen Quellendaten erhalten. Dafür wären der frische PG17-/20-Funktionen-/
-2-Namensräume-Katalog, das geeignete Auditformat, Sperren, Fristen und der genaue
+übrigen Quellendaten erhalten. Dafür wären der frische vollständige Quellenkatalog,
+17s Transaktions-/20s Statement-/2s Lockfrist, geeignetes Auditformat und der genaue
 Datenrückweg erst zu prüfen; diese Variante ist weder implementiert noch abgenommen.
 Zusätzliche Auditwrites gehören ausdrücklich zum freizugebenden Umfang.
 

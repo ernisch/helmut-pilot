@@ -6,30 +6,31 @@
 
 - **Inerte Synthetikruntime installiert und nachkontrolliert (01.10.2026):** PR #764/main `b53be3d8`, historische Schemaabnahme mit beiden Pflichtchecks und unabhängiger Astra-Prüfung belegt. Nach konkretem GO exakt fünf Originalfunktionen nativ installiert, Journalversion `20261001203937`; Bodies/ACLs/Owner/Invoker/Konfiguration gebunden, anon/authenticated kein EXECUTE, service_role erlaubt. CLI-Version `20261001172619` bleibt unregistriert: kein Repair, Dateiumbenennen oder `db push --include-all`. Der damalige 40er-Snapshot und Schema-Rückweg sind historisch; aktuelles Journal siehe Bereinigung. [Belegbindung](betrieb/synthetischer-500er-auftrag-20261001.md).
 
-- **Prozessaltlasttor erledigt, unabhängig endabgenommen:** Nach ausdrücklichem DATA-GO genau drei alte `process_runs` einmal nativ auf `failed` / `operatorcleanupabandoned` gesetzt, gemeinsames `finished_at` 02.10. 00:25:00.662712 Tuerkei / 01.10. 23:25:00.662712 Berlin / 21:25:00.662712 UTC. Postimage **02.10. 00:25:25 Tuerkei / 01.10. 23:25:25 Berlin / 21:25:25 UTC**: **711 Prozesse / 0 running**, 708 andere Vollzeilen samt xmin und je 19 übrige Zielfelder unverändert; alle geschützten Bestands-/Runtimefingerprints identisch. **500 Mandate / 501 Identitäten / 0 aktiv / 0 Slots**, Jobs/Locks/Outbox 0. Journal jetzt **41**, neue Version **`20261001212457`**; bisherige 40 Vollzeilen samt xmin erhalten. Gebundener Cleanup-Rückweg nur vorbereitet, erhält Audit41 und verlangt bei Anwendung neuen Audit42. Keine Profil-, Quellen-, Flag-, Budget- oder Modellwirkung; kein 500er Test. Nächste Tore: Landesquellen, Kosten/Adminflags und konkret gebundener inaktiver Profilimport mit gesondertem DATA-/Profil-GO außerhalb dieser drei Zeilen. [Details](betrieb/synthetischer-500er-auftrag-20261001.md).
+- **Prozessaltlasttor erledigt, unabhängig endabgenommen:** Nach ausdrücklichem DATA-GO genau drei alte `process_runs` einmal nativ auf `failed` / `operatorcleanupabandoned` gesetzt, gemeinsames `finished_at` 02.10. 00:25:00.662712 Tuerkei / 01.10. 23:25:00.662712 Berlin / 21:25:00.662712 UTC. Postimage **02.10. 00:25:25 Tuerkei / 01.10. 23:25:25 Berlin / 21:25:25 UTC**: **711 Prozesse / 0 running**, 708 andere Vollzeilen samt xmin und je 19 übrige Zielfelder unverändert; alle geschützten Bestands-/Runtimefingerprints identisch. **500 Mandate / 501 Identitäten / 0 aktiv / 0 Slots**, Jobs/Locks/Outbox 0. Journal damals **41**, neue Version **`20261001212457`**; bisherige 40 Vollzeilen samt xmin erhalten. Gebundener Cleanup-Rückweg historisch nur vorbereitet; vor Anwendung an das aktuelle Journal42 neu binden. Keine Profil-, Quellen-, Flag-, Budget- oder Modellwirkung; kein 500er Test. [Details](betrieb/synthetischer-500er-auftrag-20261001.md).
 
-- **Startblocker:** Quellenbefund01.10.: Berlin `active`, Brandenburg `prepared`, spezifische Artikelstände jeweils **0**; redigierte Vercel-Env-Werte belegen keine wirksamen Flags/Adminrechte. Kostenlesung02.10.,09:06:44 Türkei/08:06:44 Berlin/06:06:44 UTC: Tagesbücher29.09.–02.10. fehlen, für diese Tage keine globalen Zählerzeilen; gespeicherte gültige No-Call-Einträge14/14/14/0, keine gespeicherten bezahlten Aufrufe. Technische Nullkostenkandidaten und Kostenfunktionsabgleich unabhängig akzeptiert (`70cf115d`), keine Anbieterrechnung belegt. AuftragVersion3:5195303MikroUSD extern plus1598829MikroUSD gebucht = **6,794132USD** gebunden, höchstens **0,205868USD** Rest. Selbst belegte Nullbücher reichen nicht für die Standardreserve **0,206USD**. Keine Bücher geschrieben, Bindungen gelöscht oder Budgets erhöht. Quellen-/Konfigurationsbelege und konkrete Production-GOs bleiben offen.
+- **Kostenkorrektur produktiv und unabhängig abgenommen (02.10., 12:06:04 Türkei/11:06:04 Berlin/09:06:04 UTC):** Nach konkretem DATA-GO exakt vier Null-Tagesbücher29.09.–02.10. ergänzt; bestehende20 Bücher, übrige Auth-Daten, Zähler und Budget erhalten. Neue Auth-UUID über den bestehenden CAS-Pfad, vorhandener Zeitstempeltrigger, genau eine Auditzeile`20261002090542`; Journal42, bisherige41 Vollzeilen/xmin erhalten. Native SQL-SHA`45c78018`, Postimage`8f338931`, unabhängige Endabnahme`249fb42a`. Erster Aufruf vor DML wegen abgelaufener60s-Bindung zurückgewiesen und unverändertes Postimage unabhängig bestätigt; neue unveränderte Zeitbindung danach erfolgreich. **6,794132USD** gebunden, höchstens **0,205868USD** Rest gegen mindestens **0,206USD** Standardreserve. Die vier Nullbücher erhöhen kein Budget; vollständiger finanzierter Qualitäts-/Requestplan und bezahltes GO bleiben offen. [Kostenbeleg](betrieb/kosten-nullbuecher-nachbeleg-20261002.md).
 
 - **Synthetikpaket und 20s-Transport (PR #762):** Der geschlossene [Generator](../lib/helmut/synthetik-500-profile.js) liefert 500 fiktive, inaktive Profile (330 Bundestag/120 Berlin/50 Brandenburg), neue Testkennungen und1500 offene Sollpositionen; keine amtlichen Personenbelege, Authkonten oder Aktivierungsfreigabe. Private kanonische CLI-Ausgabe ist0600 außerhalb aller Gitroots. Neue lokale Paketprüfungen16/16 und HTTPS-Fristprüfungen11/11 grün. Providerabruf samt vollständigem Antwortinhalt höchstens20s, laufende Streams werden zerstört; Kostenquittungen bleiben erhalten, kein neuer Retry. Unabhängig geprüft, beide Pflichtchecks grün, regulär ausgerollt. Kein500er Nachweis.
 
 - **Synthetikbrücken (PR #763, Code/gezielte Tests):** [Importprojektion](../lib/helmut/synthetik-500-import.js), Start-/Endruntime und [Vollbilanz](../lib/helmut/synthetik-500-nachweis.js) sind gemergt. Import43/43, Runtime11/11Offline+11/11PostgreSQL, Realregression36/36 und Nachweis64/64 grün; beide Pflichtchecks einschließlich echter Import→Start→Ende-SQL-Integration erfolgreich. Bindungen umfassen v2-Preimage,17s Gesamtfrist,500-Zielzeilenjournal, Fremd-/Kinddaten, manuellen Wächter und1500Vorabpositionen. Volltexte, Originalquellen, Einzelurteile und unabhängige Production-Endabnahme bleiben Pflicht. Diese kleinen SQL-Fixtures beweisen keine Vollbestandsperformance.
 
-- **Private Vollhistorienprüfung (02.10., unabhängig akzeptiert):** Ein vollständiger lokaler
-  V5-Zyklus Stage/Forward/Rückweg mit136765Quellzeilen,46143Kontrollzeilen,
-  allen10Runtimefunktionen/2Namespaces und Journal41→44 committet.
-  Transaktionswrapper8,604/4,577/14,017s, Backend-CPU6,480/4,360/13,450s;
-  Diagnoseclone2CPU/2GiB. Original-App/Source5 und17/20/2 unverändert;
-  alle17 typisierten Quellguards und der Geschäftsdatenrückweg bestanden,
-  vier unbeteiligte Kontrolltabellen, Runtime/Katalog/ACL sowie Fremdentscheidung
-  mit Vollfeldern/xmin erhalten. Segmentierte Lesebelege und früh gesicherter
-  Commitstatus beheben den Beobachtertimeout. Rootreport`ac5b9cec`, Abnahme`75f921ac`.
-  Keine Native-Hardware-/MVCC-/Owner-/ACL-Parität, Body-only-Zeit, harte17s-Reserve oder
-  native Gesamtphasenabnahme; erfolgreiche SubTX-Leistung offen. Native READ-ONLY-Textprobe
-  mit3,85MB Toolargumenten abgewiesen: `Request body is too large` (`2d94830d`);
-  Original-App nicht ausgeführt. Exakte Grenze/Schicht und apply_migration-Weg offen.
-  Größen-/Transportfix, frische Ausführungsbindung und Profil-GO fehlen. 0 Production-Profilimporte,
-  0 Aktivierungen,0 neue bezahlte Modellaufrufe.
-  [Belegscope](betrieb/synthetischer-500er-auftrag-20261001.md#private-v6-appbrücke-belegscope).
+- **Private Vollhistorienprüfung V7/fix2 (02.10., unabhängig akzeptiert):** Neuer lokaler
+  Stage/Forward/Rückweg mit136765Quellzeilen,46143Kontrollzeilen,
+  Runtime10/2 und Journal41→44 committet; Wrapper6,236/5,014/13,056s,
+  Backend-CPU6,130/4,910/12,900s im2CPU/2GiB-Diagnoseclone.
+  Source5/Originalgeschäftskörper,17/20/2, Vollfeldguards und Fremdentscheidung erhalten.
+  Rootreport`6a8aa67a`, Abnahme`1f85df23`. Keine Native-Hardware-/MVCC-/Owner-/ACL-
+  oder Gesamtphasenabnahme, Body-only-Zeit, harte17s-CPU-Reserve oder erfolgreiche SubTX-Leistung.
+  Neue inerte Native-Textprobe:3.113.000B Argumente, terminal
+  `Invalid or expired requestState` nach802,388s (`f932e3a0`, Abnahme`533b5839`).
+  Keine PG-Byte-/Hashquittung; Ursache/Schicht unbekannt, keine neue Größenlimitbehauptung,
+  kein Retry. Separate kleine RO-Probe erfolgreich (`fc9511a5`); kein Großtransportbeleg.
+  Frühere3,85MB-Abweisung bleibt historische Evidenz. Original-App nie nativ ausgeführt.
+  [Profil-/Snapshot-/Endwächterkapsel](betrieb/synthetik-500-profil-starttor-kapsel-20261002.md)
+  bindet diese Historie privat, kopiert keine großen Archive und hält neun dynamische Tore rot.
+  Nach Kostencommit sind aktuelle MainAuth- und Audit42-Vollbindungen Pflicht;
+  alter Snapshot ist kein aktuelles Importpreimage. Konkretes Profil-GO, Quellen,
+  finanzierter Qualitätsplan und lebender Endwächter fehlen;0 Profilimporte/0 Aktivierungen/0 Modellaufrufe.
 
 - **Neue Betreibersteuerung (01.10.2026):** Der naechste technische 500er Nachweis erfolgt mit vollstaendig synthetischen Profilen; keine Realpersonenprofile umbenennen oder mit Testflag als Fiktion ausgeben. Verteilung 330 Bundestag / 120 Berlin / 50 Brandenburg bleibt bestehen. Qualifizierte Datenschutzentscheidung und Vertragsunterlagen existieren laut Betreiber derzeit nicht; diese bleiben offen vor regulaerem Betrieb und sind kein Starttor fuer diesen synthetischen technischen Nachweis. Azure-SKU frisch gelesen: `GlobalStandard`, Kapazität250, Modellversion`2025-08-07`,250RPM/250.000TPM; Kontopreis und Production-Modellaufruf dadurch nicht belegt. Ein Azure-Konto und eine KI-Ressource existieren laut Betreiber bereits; Azure-Lesezugang ist seit 01.10.2026 authentifiziert belegt (Dienstprinzipal ausschliesslich Leser auf `helmut-rg`, keine Datenzugriffsrechte); Modellaufruf und wirksame Production-Konfiguration sind dadurch nicht bewiesen. [Aktueller Synthetikauftrag](betrieb/synthetischer-500er-auftrag-20261001.md). Dies ist eine Umfangsaenderung, keine Production-Aktivierung oder Testfreigabe.
 
@@ -39,7 +40,16 @@
 
 - **Neue amtliche Quellenprobe (01.10.2026, 11:10–11:13 UTC):** Vier reine GETs, alle HTTP 200, keine Wiederholung. Berliner Übersicht: sechs amtliche Fundstellen, neueste vom 01.10.; Brandenburger RSS: 15 Einträge, neuester Publikationstag 25.09.2026 (Termine bis 03.10.). Genau ein Einzelartikel je Land geprüft. Brandenburgs Artikel 50179 wird kanonisch und datumsgebunden akzeptiert. Berlins Artikel 1720353 wurde wegen einer redaktionellen H4-Zwischenüberschrift abgelehnt; der enge RBMSKZL-Parserfix erlaubt ausschließlich die beobachtete direkte Form `p{>=2} h4 p{>=1}`, exakt eine attributfreie Textüberschrift, und erhält die Fremdinhaltsperren. Volltext enthält die Überschrift, der Auszug bleibt unverändert gebunden. Neue lokale Prüfungen: 25/25 einschließlich gesichertem Original, davon 24 dauerhaft in Pflicht-CI. Unabhängig geprüft. **Keine Production-Speicherung oder sichtbare Landesausgabe belegt.**
 
-- **Frischer rein lesender Production-Befund (01.10.2026, 10:24–10:28 UTC):** `main` und das Ready-Production-Deployment `dpl_FTVzCcb8D2gF7WSQD26VQSnoa6EP` binden Commit `11951d446274ec00a63c607947127eafa363ac3a` aus [PR #757](https://github.com/ernisch/helmut-pilot/pull/757). Supabase ist `ACTIVE_HEALTHY` in `eu-west-1`. Gemessen: **500 Mandatsprofile / 501 Identitäten / 0 aktiv / 0 AfD-Zugehörigkeiten**; alle bestehenden Mandate haben Ebene Bundestag. Das ist weiterhin die alte Kohorte. Berlin-Basispaket ist **active**, Brandenburg **prepared**; die beiden Zielpfade stehen auf **needs_review/manual**. Alle 16 Paketbindungen und 15 Pfadstatus wurden gelesen; es gibt **0** gespeicherte Berliner Senatsartikelstände und **0** Brandenburger Landtags-Presseartikelstände. Sichtbare Landesversorgung bleibt offen. Diese Messung ersetzt die ältere Mengenmessung unten, nicht deren historischen Inhalt.
+- **Frischer Quellenstand (02.10.,12:08:09 Türkei/11:08:09 Berlin/09:08:09 UTC):**
+  Native RO auf dem unveränderten READY-Stand`97a84350`/`dpl_5iv1vDLvKzSL2S5spVvVmyML78jD`:
+  **500 Mandate/501 Identitäten/0 aktiv**, alle Bestandsmandate Bundestag;
+  Berlin `active`, Brandenburg `prepared`, beide Zielpfade `needs_review/manual`,16 Bindungen/15 Pfade,
+  je Land **0** spezifische gespeicherte Artikelstände. Einmalige Offline-Klassifikation`vorher`,
+  Struktur vollständig (`a0161bf9`, unabhängig`d16867fc`). Wirksame Operator-/Landesflags
+  und nutzbare Adminauth bleiben unbekannt; sensitive API-Leerwerte sind keine leeren Runtimewerte.
+  HTTP-Cutover blockiert. Native Alternative nur vorbereitet, gesonderter Quellen-Datenumfang nötig.
+  [Quellen-Starttorplan](betrieb/quellen-starttor-berlin-brandenburg-20261002.md).
+
 
 - **Begrenzte Cutover-Korrektur (01.10.2026):** Der Quellenoperator bindet nun den tatsächlichen Ausgang Berlin `active` / Brandenburg `prepared`; das Berliner Paket wird nie geschrieben. Genau drei Vorwärtsschritte, umgekehrter Rückweg, vollständige Bindungsprüfung und Stop ohne weitere Writes bei unbekanntem PATCH-Ausgang. Beide PATCH-Bodies werden als JSON serialisiert. Der gemeinsame Supabase-Transport begrenzt Header- und Bodywartezeit auf höchstens 20 Sekunden, Aufruffristen können diese Grenze nur verkürzen. Die neuen Schutzsuiten sind im Pflicht-Offline-Lauf. Das ist Code-/Offline-Absicherung, noch **kein ausgeführter Production-Cutover**; mehrere REST-Aufrufe ersetzen keine Datenbanktransaktion.
 
