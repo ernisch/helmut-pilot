@@ -274,4 +274,111 @@ async function main() {
   }
   console.log(`github-laufzeitpruefung: ${pass} PASS / 0 FAIL`);
 }
-main().catch((error) => { console.error(error); process.exitCode = 1; });
+// Eng isolierbar: keine alte Suite fuer die neue Quellenprojektion wiederholen.
+async function sourceRuntimeProjectionCases() {
+  const names = ["sourceModeOn", "landesmodulBerlin", "landesmodulBrandenburg"];
+  const sha = "c".repeat(40), secret = "TEST_ONLY_SOURCE_RUNTIME_SECRET";
+  const env = { HELMUT_PRODUCTION_COMMIT: sha, GITHUB_SHA: sha, HELMUT_CRON_SECRET: secret };
+  const payload = { ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: sha,
+    storageSupabase: false, v3Bereit: false, profileRelational: false, profileExclusive: false,
+    retentionGueltig: true, retention: 36, tagesdeckel: 2416, understandingReserve: 702,
+    vorrangreserveReal: 0, kommunikationGesperrt: true, kohortenQuellenGesperrt: true };
+  const read = body => pruefe({ env, fetchFn: async () => ({ status: 200, json: async () => body }) });
+  let groups = 0;
+  for (const bits of [[true, true, true], [false, true, false], [false, false, false]]) {
+    const flags = Object.fromEntries(names.map((n, i) => [n, bits[i]]));
+    const result = await read({ ...payload, ...flags, HELMUT_LANDESMODULE: secret, secret });
+    assert.deepEqual(Object.fromEntries(names.map(n => [n, result[n]])), flags);
+    assert.equal(result.scharferPfadFreigegeben, false);
+    assert.equal(JSON.stringify(result).includes(secret), false);
+  }
+  groups++;
+  const full = { ...payload, ...Object.fromEntries(names.map(n => [n, true])) };
+  for (const name of names) for (const bad of [undefined, null, "true", "false", 1, {}, []]) {
+    const result = await read({ ...full, [name]: bad });
+    assert.equal(result.ok, true); // bekannte alte Laufzeitdaten bleiben verwendbar
+    for (const n of names) assert.equal(Object.hasOwn(result, n), false);
+  }
+  const old = await read(payload);
+  assert.equal(old.ok, true);
+  for (const n of names) assert.equal(Object.hasOwn(old, n), false);
+  assert.equal((await read({ ...full, commit: "d".repeat(40) })).ok, false);
+  groups++;
+
+  const savedEnv = { ...process.env }, replacements = [];
+  let forbiddenCalls = 0;
+  const blocked = () => { forbiddenCalls++; throw new Error("source-runtime-forbidden-io"); };
+  const replace = (object, key) => {
+    replacements.push([object, key, object[key]]); object[key] = blocked;
+  };
+  try {
+    process.env.HELMUT_AUTH_MODE = "accounts";
+    process.env.CRON_SECRET = secret;
+    process.env.VERCEL_GIT_COMMIT_SHA = sha;
+    process.env.VERCEL_ENV = "production";
+    delete process.env.HELMUT_SOURCE_MODE;
+    delete process.env.HELMUT_LANDESMODULE;
+    for (const [object, keys] of [
+      [global, ["fetch"]], [http, ["request", "get"]], [require("https"), ["request", "get"]],
+      [require("../lib/helmut/accounts"), ["ensureAdminSeed", "recordSystemError"]],
+      [require("../lib/helmut/storage"), ["getSources", "listFullProfiles", "listSourceArchitectureRows",
+        "getLatestCrawlRun", "readAuthStore", "writeAuthStore", "saveRawDocument", "saveRawItems"]],
+      [require("../lib/helmut/scheduler"), ["runSourceCrawl", "runLageCheck", "runGlobaleErfassung"]],
+      [require("../lib/helmut/ai"), ["generateCommunicationDraft", "assessParliamentaryItem"]]
+    ]) for (const key of keys) replace(object, key);
+    const handler = require("../server");
+    // Echten Handler direkt aufrufen: keine HTTP-Verbindung, kein lauschender Server.
+    const call = (method = "GET", token = secret) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("source-runtime-handler-timeout")), 2000);
+      const response = { headersSent: false, status: null,
+        writeHead(status) { this.status = status; this.headersSent = true; },
+        end(text) { clearTimeout(timer); try { resolve({ status: this.status, body: JSON.parse(text) }); }
+          catch (error) { reject(error); } } };
+      handler({ url: "/api/cron/testnachweis-status", method,
+        headers: { host: "offline.invalid", ...(token ? { authorization: `Bearer ${token}` } : {}) } }, response);
+    });
+    const projected = response => names.map(n => response.body[n]);
+    // Echte Datei-Ebene (SOURCE_MODE=on, kein Landesflag), keine Datei manipulieren.
+    let actual = await call();
+    assert.equal(actual.status, 200);
+    assert.deepEqual(projected(actual), [true, false, false]);
+    process.env.HELMUT_SOURCE_MODE = "off";
+    process.env.HELMUT_LANDESMODULE = " BERLIN ; brandenburg ";
+    actual = await call();
+    assert.deepEqual(projected(actual), [false, true, true]);
+    process.env.HELMUT_SOURCE_MODE = "shadow";
+    process.env.HELMUT_LANDESMODULE = "berlin";
+    assert.deepEqual(projected(await call()), [false, true, false]);
+    process.env.HELMUT_SOURCE_MODE = "live";
+    process.env.HELMUT_LANDESMODULE = "brandenburg";
+    assert.deepEqual(projected(await call()), [true, false, true]);
+    process.env.HELMUT_SOURCE_MODE = "unknown";
+    process.env.HELMUT_LANDESMODULE = "all,*";
+    assert.deepEqual(projected(await call()), [false, false, false]);
+    groups++;
+    const result = await read({ ...actual.body, secret, HELMUT_LANDESMODULE: secret });
+    assert.deepEqual(names.map(n => result[n]), [false, true, true]);
+    assert.equal(JSON.stringify(result).includes(secret), false);
+    assert.equal(Object.hasOwn(result, "HELMUT_LANDESMODULE"), false);
+    assert.equal(result.scharferPfadFreigegeben, false);
+    groups++;
+    for (const [method, token, status] of [["GET", null, 403], ["GET", "wrong", 403], ["POST", secret, 405]]) {
+      const denied = await call(method, token);
+      assert.equal(denied.status, status);
+      for (const n of names) assert.equal(Object.hasOwn(denied.body, n), false);
+    }
+    delete process.env.CRON_SECRET;
+    assert.equal((await call()).status, 503);
+    assert.equal(forbiddenCalls, 0);
+    groups++;
+  } finally {
+    for (const [object, key, original] of replacements.reverse()) object[key] = original;
+    for (const key of Object.keys(process.env)) if (!Object.hasOwn(savedEnv, key)) delete process.env[key];
+    Object.assign(process.env, savedEnv);
+  }
+  console.log(`github-laufzeitpruefung Quellenprojektion: ${groups} PASS / 0 FAIL; no HTTP/DB/model/account calls`);
+}
+(async () => {
+  if (!process.argv.includes("--source-runtime-only")) await main();
+  await sourceRuntimeProjectionCases();
+})().catch((error) => { console.error(error); process.exitCode = 1; });
