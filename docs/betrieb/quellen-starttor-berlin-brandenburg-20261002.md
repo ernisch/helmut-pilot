@@ -1,12 +1,24 @@
 # Berlin/Brandenburg: Quellen-Starttor (02.10.2026)
 
-Der vorhandene Quellen-Cutover ist vorbereitet. Der letzte datierte Quellenread vom
-01.10., 10:24–10:28 UTC, belegt Berlin `active`, Brandenburg `prepared`, beide
-Zielpfade `needs_review/manual`, 16 Paketbindungen und 15 gebundene Pfade. Je Land
-waren null spezifische Artikelstände gespeichert. Das ist ein historischer
-Production-Befund; ein frischer Quellenread nach den Kostenkorrekturen steht aus.
-Die vier erfolgreichen amtlichen GETs vom 01.10., 11:10–11:13 UTC, und die
-bestehenden grünen Parser-/Cutover-Prüfungen ersetzen diesen Speicherbeleg nicht.
+Der frische Root-Native-Read vom 02.10., **09:08:09.436103 UTC**, belegt nach der
+Kostenkorrektur Berlin `active`, Brandenburg `prepared`, beide Zielpfade
+`needs_review/manual`, die exakten amtlichen URLs/Parser, 16 Paketbindungen und
+15 gebundene Pfade. Der bestehende reine Cutover-Klassifikator ordnet diesen
+vollständigen Bestand als `vorher` ein (`struktur.ok=true`). Gemessen wurden
+500 Mandate / 501 Identitäten / 0 aktiv; alle Mandate haben Ebene Bundestag.
+Beide spezifischen Artikelstandmengen und die Standstichproben sind leer, also
+je Land null gespeicherte Stände. Der Quellenread ist rein lesend
+(`transactionReadOnly=on`), sein Root-Rohbeleg hat SHA-256
+`a0161bf90f0b61a85e5ccba532604aa4574af8d2fead6583bb3b8af189c09305`.
+Die amtlichen GETs vom 01.10. und die bestehenden grünen Parser-/Cutover-Prüfungen
+sind weiterhin historische Belege; eine neue amtliche Lieferung ist nicht gemessen.
+
+Die zum Lesefenster gehörende Production war `READY` auf `main`/`97a8435`.
+Aktuelle wirksame Flagwerte und ein verwendbares Admin-Secret wurden nicht gelesen:
+Vercel liefert für sensitive Werte nur Metadaten. Das gilt insbesondere für
+Quellenoperator und Landesmodule. Der HTTP-Drei-Patch-Plan ist damit derzeit nicht
+ausführbar. Ein konkreter Quellen-GO kann zurzeit weder Originalflagwerte noch
+deren sicheren Rückweg binden. Quellen-/Aktivierungs-GO wurde nicht erteilt.
 
 ## Das verbleibende Tor
 
@@ -32,8 +44,10 @@ Voraussetzung für die beiden geteilten amtlichen Landesquellen.
 
 ## Nächster frischer Lesebeleg
 
-Der führende Root führt nach der Kostenmigration die vorbereiteten Reads einmal
-aus; die Vorbereitung selbst führt keine entfernten Aufrufe aus:
+Der erste Native-Read ist ausgeführt und oben datiert. Die Admin-Laufzeitdiagnose
+steht mangels bestehender Authentisierung weiter aus. Vor einer späteren
+Schreibfreigabe braucht Root erneut einen aktuellen, vollständig gebundenen
+Preimage-/Schutzbeleg; diese Vorbereitung führt keine entfernten Aufrufe aus:
 
 1. Ein Native-Read in einer begrenzten Read-only-Transaktion: genau die beiden
    Paketidentitäten/-status, die zwei vollständigen Zielpfade, alle Bindungen der
@@ -104,3 +118,20 @@ dem RSS gebundene Publikations-UTC. Alte BB-Artikel werden durch einen neuen
 Abruf nicht zu Nachrichten von heute. Geteilte rbb24-Wege bleiben mehrländrig
 gekennzeichnet. Eine Konfigurationsquittung oder positive Rohdokumentzahl erfüllt
 diese fachliche Abnahme allein nicht.
+
+## Benannte Native-Alternative, noch ohne Umsetzung
+
+Eine separat freizugebende, auditierte Native-Migration könnte dieselben drei
+Quellenzeilen mit vollständigem CAS in einer Transaktion korrigieren und alle
+übrigen Quellendaten erhalten. Dafür wären der frische PG17-/20-Funktionen-/
+2-Namensräume-Katalog, das geeignete Auditformat, Sperren, Fristen und der genaue
+Datenrückweg erst zu prüfen; diese Variante ist weder implementiert noch abgenommen.
+Zusätzliche Auditwrites gehören ausdrücklich zum freizugebenden Umfang.
+
+Der Vorteil wäre eine gemeinsam bestätigte Datenänderung ohne ein unbekanntes
+Vercel-Flag zu überschreiben. Der Nachteil ist der neue geprüfte Schreibpfad statt
+des vorhandenen HTTP-Operators. Dessen Flagcheck würde dabei nicht ausgeführt;
+die Native-Aktion braucht deshalb eine eigene konkrete geschützte Freigabe und
+Schutzprüfung. Sie ändert keine Laufzeitflags, aktiviert keine Mandate und belegt
+keine wirksame Landesfreigabe oder Versorgung. Der unbekannte Laufzeitkontext
+bleibt ein eigenes Tor vor dem späteren synthetischen Quellenlauf.
