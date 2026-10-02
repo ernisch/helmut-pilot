@@ -206,6 +206,10 @@ const STANDARD = new Set([
   "synthetik-500-starttor-kapsel-test.js",  // private Historienbindung ohne implizites Import-/Startrecht
   "synthetik-500-kosten-intents-test.js",   // endliche vorbereitete D/R/U-Menge, keine Laufzeitfreigabe
   "synthetik-500-kosten-admission-test.js", // dormante atomare Intentreserve, kein installierter Laufplan
+  "synthetik-500-kosten-plan-test.js",      // vollstaendige endliche Kostenpositionen ohne Budgetfreigabe
+  "synthetik-500-executor-test.js",         // gebundene Offline-Ablaufvorbereitung und absolute Laufzeitgrenze
+  "synthetik-500-provider-routen-test.js",  // gebundenes Quelleninventar aller erkannten Anbieterpfade
+  "synthetik-500-review-receipt-test.js",   // private D-Herkunft, exakte R-Bindung und Einmal-Senderiegel
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
   "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist
   "bb-quellen-cutover-operator-test.js",     // enger Landesquellen-Cutover und geschuetzter Rueckweg
