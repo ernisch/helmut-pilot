@@ -266,9 +266,9 @@ const navItems = [
 ];
 
 const mobileNavItems = [
+  ["helmut", "Briefing"],
   ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["helmut", "Briefing"],
   ["office", "Büro"]
 ];
 
@@ -5447,6 +5447,19 @@ function openVorgangSheet(id, { viaClick = false } = {}) {
   const v = vsheetFindVorgang(id);
   if (!v) return;
   if (vsheetEl) { vsheetTeardown(); }
+  if (window.matchMedia("(max-width: 767px)").matches) {
+    const before = uiViewSnapshot();
+    selectedVorgangId = id;
+    detailOriginView = currentView === "vorgang" ? detailOriginView : currentView;
+    currentView = "vorgang";
+    navOpen = false;
+    updatesOpen = false;
+    rememberUiDetail(before);
+    render();
+    window.scrollTo({ top: 0, behavior: "auto" });
+    guardDetailGhostClick(viaClick);
+    return;
+  }
 
   vsheetLastFocus = document.activeElement;
 
@@ -5504,18 +5517,7 @@ function openVorgangSheet(id, { viaClick = false } = {}) {
   // einen nachfolgenden Klick in der CAPTURE-Phase ab (läuft vor dem Backdrop-
   // Handler) und lösen den Fänger danach wieder — spätere, bewusste Backdrop-
   // Klicks (neue Geste) schließen wie vorgesehen.
-  if (!viaClick) {
-    let ghostTimer = 0;
-    const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); releaseGuard(); };
-    const releaseGuard = () => {
-      if (ghostTimer) { window.clearTimeout(ghostTimer); ghostTimer = 0; }
-      document.removeEventListener("click", swallow, true);
-      vsheetGhostGuard = null;
-    };
-    document.addEventListener("click", swallow, true);
-    ghostTimer = window.setTimeout(releaseGuard, 700); // falls doch kein Klick folgt
-    vsheetGhostGuard = releaseGuard;
-  }
+  guardDetailGhostClick(viaClick);
 
   // Escape + einfacher Fokus-Trap (Tab bleibt im Sheet).
   vsheetKeyHandler = (e) => {
@@ -5558,6 +5560,22 @@ function openVorgangSheet(id, { viaClick = false } = {}) {
   requestAnimationFrame(() => {
     if (sheet) { try { sheet.focus({ preventScroll: true }); } catch (_) { sheet.focus(); } }
   });
+}
+
+// Verhindert denselben nachfolgenden Kompatibilitätsklick in beiden Darstellungen.
+function guardDetailGhostClick(viaClick) {
+  if (!viaClick) {
+    let ghostTimer = 0;
+    const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); releaseGuard(); };
+    const releaseGuard = () => {
+      if (ghostTimer) { window.clearTimeout(ghostTimer); ghostTimer = 0; }
+      document.removeEventListener("click", swallow, true);
+      vsheetGhostGuard = null;
+    };
+    document.addEventListener("click", swallow, true);
+    ghostTimer = window.setTimeout(releaseGuard, 700); // falls doch kein Klick folgt
+    vsheetGhostGuard = releaseGuard;
+  }
 }
 
 // Setzt die vertikale Verschiebung des Sheets (Snap/Drag).
@@ -5706,8 +5724,14 @@ function lageStarIcon() {
 function renderVorgangDetailView() {
   const data = lageData();
   const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
-  const v = list.find((x) => x.id === selectedVorgangId) || list[0];
+  const v = list.find((x) => String(x.vorgangId || x.id) === String(selectedVorgangId)) || list[0];
   if (!v) { currentView = "briefing"; return renderLageView(); }
+  if (window.matchMedia("(max-width: 767px)").matches) {
+    return `<section class="vdetail vdetail--mobile">
+      <button class="vdetail-back" type="button" data-detail-back data-view="${escapeAttribute(detailOriginView || "briefing")}">← ${escapeHtml(navItems.find(([id]) => id === detailOriginView)?.[1] || "Lage")}</button>
+      ${vsheetContentHtml(v)}
+    </section>`;
+  }
 
   const sources = Array.isArray(v.sources) ? v.sources : [];
   const docs = Array.isArray(v.documents) ? v.documents : [];
@@ -5724,7 +5748,7 @@ function renderVorgangDetailView() {
 
   return `
     <section class="vdetail">
-      <button class="vdetail-back" type="button" data-view="briefing">← Zurück zur Lage</button>
+      <button class="vdetail-back" type="button" data-detail-back data-view="${escapeAttribute(detailOriginView || "briefing")}">← ${escapeHtml(navItems.find(([id]) => id === detailOriginView)?.[1] || "Lage")}</button>
       <div class="vdetail-grid">
         <div class="vdetail-main">
           <div class="vdetail-topline">
@@ -7394,9 +7418,59 @@ function patchCarousel() {
 // Öffnet die Detailansicht einer Entscheidung. Gescopt bindbar, damit Teil-Patches
 // (patchCarousel) nur ihre eigenen neuen Knoten binden und render()/bindActions()
 // weiterhin den Gesamtbaum abdeckt.
+// M2: Browser-Zurück für bestehende Detailansichten. Inhalte bleiben nur im
+// Arbeitsspeicher; history.state enthält einen sitzungsgebundenen Index, keine
+// Profil-/Entwurfstexte. Keine neuen URLs oder Backendabrufe.
+const uiDetailSession = `${Date.now()}:${Math.random()}`;
+const uiDetailEntries = [];
+function uiViewSnapshot() {
+  return { view: currentView, origin: detailOriginView, decision: selectedDecisionId,
+    vorgang: selectedVorgangId, draft: selectedOfficeDraft, profile: activePoliticianId, account: currentUser?.id || null,
+    scroll: window.scrollY || 0 };
+}
+function uiHistoryEntry() {
+  const marker = window.history?.state?.helmutUiDetail;
+  return marker?.session === uiDetailSession ? marker : null;
+}
+function rememberUiDetail(before) {
+  if (!window.history?.pushState) return;
+  try {
+    const originIndex = uiDetailEntries.push(before) - 1;
+    window.history.replaceState({ ...window.history.state,
+      helmutUiDetail: { session: uiDetailSession, index: originIndex } }, "");
+    const detailIndex = uiDetailEntries.push(uiViewSnapshot()) - 1;
+    window.history.pushState({ ...window.history.state,
+      helmutUiDetail: { session: uiDetailSession, index: detailIndex } }, "");
+  } catch (error) { console.warn("Detail-Zurück nicht verfügbar", error); }
+}
+function returnFromUiDetail() {
+  const marker = uiHistoryEntry();
+  const entry = marker && uiDetailEntries[marker.index];
+  if (!entry || entry.profile !== activePoliticianId || entry.account !== (currentUser?.id || null) || entry.view !== currentView) return false;
+  window.history.back();
+  return true;
+}
+window.addEventListener("popstate", () => {
+  const marker = uiHistoryEntry();
+  const entry = marker && uiDetailEntries[marker.index];
+  if (!entry || entry.profile !== activePoliticianId || entry.account !== (currentUser?.id || null)) return;
+  if (vsheetEl) vsheetTeardown();
+  currentView = entry.view;
+  detailOriginView = entry.origin;
+  selectedDecisionId = entry.decision;
+  selectedVorgangId = entry.vorgang;
+  selectedOfficeDraft = entry.draft;
+  navOpen = false;
+  updatesOpen = false;
+  persistView(currentView);
+  render();
+  window.scrollTo({ top: entry.scroll, behavior: "auto" });
+});
+
 function bindDetailOpen(root) {
   (root || app).querySelectorAll("[data-detail]").forEach((button) => {
     button.addEventListener("click", () => {
+      const before = uiViewSnapshot();
       selectedDecisionId = button.dataset.detail;
       detailOriginView = currentView === "detail" ? detailOriginView : currentView;
       currentView = "detail";
@@ -7404,7 +7478,9 @@ function bindDetailOpen(root) {
       updatesOpen = false;
       const decision = selectedDecision();
       logDecisionInteraction("detail_opened", decision);
+      rememberUiDetail(before);
       render();
+      window.scrollTo({ top: 0, behavior: "auto" });
     });
   });
 }
@@ -8755,7 +8831,7 @@ function renderDetailView() {
   const feedbackState = decision.feedback || (decision.status === "ignored" ? "ignored" : decision.status === "snoozed" ? "snoozed" : decision.status === "relevant" ? "marked_relevant" : "");
   return `
     <article class="detail-page">
-      <button class="back-link" type="button" data-view="briefing">Zurück zur Lage</button>
+      <button class="back-link" type="button" data-detail-back data-view="${escapeAttribute(detailOriginView || "briefing")}">← ${escapeHtml(navItems.find(([id]) => id === detailOriginView)?.[1] || "Lage")}</button>
 
       <header class="article-head">
         <span class="${decision.priorityType}">${escapeHtml(decision.priorityLabel)}</span>
@@ -9150,7 +9226,7 @@ function renderOfficeDraftDetail() {
     <div class="buero-detail-view">
       <nav class="buero-detail-nav">
         <button class="buero-back-btn" type="button" data-office-back>
-          <i class="ti ti-arrow-left" aria-hidden="true"></i> Büro
+          ← Büro
         </button>
       </nav>
       <header class="buero-detail-header">
@@ -11389,9 +11465,12 @@ function bindActions() {
   }
   app.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.hasAttribute("data-detail-back") && returnFromUiDetail()) return;
       if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
       currentView = button.dataset.view;
       persistView(currentView);
+      const marker = uiHistoryEntry();
+      if (marker) uiDetailEntries[marker.index] = uiViewSnapshot();
       navOpen = false;
       updatesOpen = false;
       if (currentView === "office" || currentView === "office-detail" || currentView === "tasks") markOfficeSeen();
@@ -11545,6 +11624,7 @@ function bindActions() {
 
   app.querySelectorAll("[data-office-open]").forEach((card) => {
     const open = () => {
+      const before = uiViewSnapshot();
       const key = card.dataset.officeOpen;
       const formatId = card.dataset.officeFormat;
       const format = OFFICE_FORMATS.find((f) => f.id === formatId);
@@ -11573,6 +11653,7 @@ function bindActions() {
         provenance: draftProvenanceLabel(officeDraftProvenance(cachedValue), hasValidCached)
       };
       currentView = "office-detail";
+      rememberUiDetail(before);
       render();
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -11582,6 +11663,7 @@ function bindActions() {
 
   app.querySelectorAll("[data-office-back]").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (returnFromUiDetail()) return;
       selectedOfficeDraft = null;
       currentView = "office";
       render();
@@ -11661,11 +11743,13 @@ function bindActions() {
         openVorgangSheet(button.dataset.vorgang, { viaClick: true });
         return;
       }
+      const before = uiViewSnapshot();
       selectedVorgangId = button.dataset.vorgang;
       detailOriginView = (currentView === "vorgang") ? detailOriginView : currentView;
       currentView = "vorgang";
       navOpen = false;
       updatesOpen = false;
+      rememberUiDetail(before);
       render();
       window.scrollTo({ top: 0, behavior: "auto" });
     });

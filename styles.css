@@ -12246,3 +12246,99 @@ body, .app-splash { background: var(--bg); }
 :root[data-theme="light"] #app :where(.hstand-status, .hstand-kicker--risk) { color: var(--text); }
 :root[data-theme="light"] #app .hstand-kicker--risk svg { color: var(--risk); }
 body.is-loading { background: var(--bg); }
+
+/* Finale Mobile Übergabe 02.10.2026: gleiche App, nur Hochformat-Anordnung.
+   M3 (Sperrtext) und M8 (Startbildschirm) bleiben ausdrücklich zurückgestellt. */
+@media (max-width: 767px) {
+  #app .app-frame:not(.view-admin) { min-width: 0; min-height: 0; }
+  #app .app-frame:not(.view-admin) .content-shell {
+    position: relative;
+    width: calc(100% - 32px);
+    min-width: 0;
+    min-height: 0;
+    padding: calc(88px + env(safe-area-inset-top, 0px)) 0 calc(104px + env(safe-area-inset-bottom, 0px));
+    overflow-x: hidden;
+    touch-action: pan-y pinch-zoom;
+  }
+  #app .app-frame:not(.view-admin) .topbar {
+    display: flex;
+    position: absolute;
+    top: calc(16px + env(safe-area-inset-top, 0px));
+    left: 0;
+    right: 0;
+    height: auto;
+    min-height: 44px;
+    margin: 0;
+    gap: 8px;
+  }
+  #app .app-frame:not(.view-admin) :where(.page-intro, .hstand-head, .lage2-head, .radar2-header, .buero-header) {
+    height: auto;
+    min-height: 108px; /* zusammen mit der oberen Kopfleiste mindestens 196 px */
+    max-height: none;
+  }
+  #app .app-frame:not(.view-admin) :where(.page-intro h1, .hstand-title, .lage2-greeting, .radar2-title, .buero-title) {
+    font-size: 34px;
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+  }
+  #app .app-frame:not(.view-admin) :where(.hstand, .hstand-duo, .hstand-metrics, .article-grid, .profile-grid, .profile-row, .office-board, .buero-grid, .vdetail-grid, .task-grid) {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #app .app-frame:not(.view-admin) :where(section, article, header, footer, main, div) { min-width: 0; }
+  #app .hstand { margin-inline: 0; }
+  #app .hstand-mk-full { display: inline; }
+  #app .hstand-mk-short { display: none; }
+  #app :where(.hstand-head-row, .radar2-header-row, .radar2-meta, .radar2-card-foot, .buero-detail-type-row, .buero-card-footer, .buero-card-meta-row, .buero-quality-row, .profile-actions, .profile-footer, .vdetail-topline) {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  #app .hstand-proposal-text { font-size: 30px; line-height: 1.3; }
+  #app :where(.helmut-list-title, .lage2-card-title, .buero-card-title) { font-size: 22px; }
+  #app :where(.article-head h1, .vdetail-title, .vsheet-title, .buero-detail-title) {
+    font-size: 28px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+  #app .buero-detail-title { font-size: 30px; }
+  #app :where(.app-frame:not(.view-admin)) :where(p, small, label, button, input, select, textarea, dt, dd, time, summary, a, span) { font-size: max(13px, 1em); }
+  #app .app-frame:not(.view-admin) :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { font-size: 16px; }
+  #app :where(.hstand-body, .buero-detail-body p) { font-size: 16px; }
+  #app :where(.stg-label, .hstand-kicker, .hstand-metric dt, .radar2-badge, .radar2-tag, .lage2-vtag, .buero-card-type, .helmut-deck-badge, .vsheet-h) {
+    font-family: var(--font-label);
+    font-size: 12px;
+  }
+  #app :where(.lage2-stand, .lage2-source-recency, .buero-card-provenance, .buero-detail-meta, .buero-detail-linecheck, .buero-card-meta-row, .hstand-step-due, .hstand-step-num, .hstand-q, .radar2-card-sub, .radar2-time, .profile-save-status) { font-size: 13px; }
+  #app .mobile-dock { height: auto !important; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important; }
+  #app .app-frame:not(.view-admin) .mobile-dock button { height: 60px !important; min-height: 60px !important; font-size: 13px; }
+  #app .mobile-dock button.active span { color: var(--action); }
+  #app .profile-avatar { width: 44px; height: 44px; }
+  #app :where(.vdetail-side, .vdetail-main, .buero-detail-view) { position: static; min-height: 0; height: auto; max-height: none; overflow: visible; }
+  #app .vdetail--mobile { min-width: 0; }
+  #app :where(.vdetail-back, .back-link, .buero-back-btn) { min-height: 44px; min-width: 44px; }
+  #app :where(.profile-form label, .profile-row label, .onboarding-card label:not(.onboarding-chip)) { display: flex; flex-direction: column; align-items: stretch; min-width: 0; gap: 8px; }
+  #app :where(.hstand-foot, .profile-actions, .buero-detail-footer) { height: auto; flex-wrap: wrap; }
+  #app :where(.stg-row-value, .lage2-source-recency, .lage2-stand, .radar2-status, .radar2-source-name, .radar2-card-sub, .buero-card-provenance, .buero-detail-linecheck, .buero-detail-meta, .buero-card-meta-row, .profile-save-status, .hstand-rel-why) {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+    -webkit-line-clamp: unset;
+  }
+  #app .app-frame:not(.view-admin) :where([class*="status"], [class*="hint"], [class*="notice"], .lage2-vtag) {
+    max-width: 100%; white-space: normal; text-overflow: clip; overflow-wrap: anywhere;
+  }
+  #app .radar2-segs { flex-wrap: wrap; overflow-x: visible; }
+  #app .radar2-seg { flex: 1 1 44%; white-space: normal; min-height: 44px; }
+  #app .lage2-carousel-bleed { position: static; left: auto; right: auto; margin-inline: 0; width: 100%; max-width: 100%; }
+  #app .lage2-carousel { display: grid; grid-template-columns: minmax(0, 1fr); padding-inline: 0; overflow: visible; }
+  #app .lage2-card { width: 100%; min-width: 0; min-height: 0; max-width: 100%; border-radius: 8px; }
+  #app .lage2-dots { display: none; }
+  .updates-layer { min-width: 0; min-height: 0; }
+  .updates-panel { width: calc(100% - 32px); margin: 16px; padding: 24px 16px; max-width: none; min-width: 0; min-height: 0; height: calc(100dvh - 32px); max-height: calc(100dvh - 32px); overflow-x: hidden; }
+  .updates-list { min-width: 0; min-height: 0; overflow-x: hidden; }
+  .updates-panel :where(p, small, time, button) { font-size: 13px; }
+}
