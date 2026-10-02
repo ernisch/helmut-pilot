@@ -31,7 +31,7 @@ function fixture() {
     productionCommit: sollplan.productionCommit, runtimeManifestHash: sollplan.runtimeManifestHash,
     startsAtUTC: sollplan.startsAt, endsAtUTC: sollplan.endsAt, intents };
   const eingaben = { version: E.INPUT_VERSION, runtimeManifest: runtime, snapshot: f.snapshot, sollplan,
-    kostenSlot: { version: A.VERSION, plan, planHash: P.hash(plan), consumed: {} } };
+    kostenSlot: { version: A.VERSION, plan, planHash: P.hash(plan), consumed: {} }, kostenPlan: null };
   return { paket: f.paket, eingaben, now: F.NOW };
 }
 const basis = fixture();
@@ -47,9 +47,16 @@ async function main() {
   await test("Fehlende reale Eingaben bleiben null und sperren alle Productiontore", () => {
     const v = E.vorbereite(basis.paket); assert.equal(v.erwartetePositionen.length, 1500);
     assert.equal(v.strukturVollstaendig, false); assert.equal(v.laufBindung, null);
-    assert.equal(v.fehlendeEingaben.length, 4); assert.equal(v.startrecht, false);
+    assert.equal(v.fehlendeEingaben.length, 5); assert.equal(v.startrecht, false);
     assert.throws(() => E.productionStart({ go: true }), /nicht-implementiert/);
     assert.throws(() => CLI.argumente(["--start", "/tmp/anything"]), /argumente/);
+  });
+  await test("Vollkostenplan bleibt nullable offen und frei behauptete SHA ersetzt keinen echten Validator", () => {
+    const { v, paket, eingaben } = prepared();
+    assert.equal(v.kostenPlanHash, null); assert.equal(v.strukturVollstaendig, false);
+    assert.equal(v.ablaufstrukturVollstaendig, true); assert(v.fehlendeEingaben.includes("vollstaendiger-kostenplan"));
+    const bad = clone(eingaben); bad.kostenPlan = { planHash: "a".repeat(64), admissionCandidate: bad.kostenSlot };
+    assert.throws(() => E.vorbereite(paket, bad));
   });
   await test("Eigener exakt500-Paketvertrag und geschuetzte501te Identitaet statt495/504", () => {
     const { v, paket, eingaben } = prepared();
@@ -117,6 +124,19 @@ async function main() {
     const r = await E.simuliere(v, paket, { modus: E.SIMULATION, jetzt: () => now, timeoutMs: 5,
       fixture: x => { calls++; const until = performance.now() + 12; while (performance.now() < until) {} return quittung(x); } });
     assert.equal(calls, 1); assert.equal(r.quittungen[0].status, "ausgang-unbekannt");
+    assert.equal(r.grund, "antwort-ausserhalb-zeitfenster"); assert.equal(r.positionen.length, 1500);
+  });
+  await test("Spaeter Start mit stehender Uhr und mehreren U nutzt nur einmal verbleibende Restzeit", async () => {
+    const f = clone(basis), plan = f.eingaben.kostenSlot.plan;
+    const old = plan.intents.find(x => x.phase === "U"), { id, ...descriptor } = old;
+    const d = { ...descriptor, vorgangId: "fixture-second-u" };
+    plan.intents.push({ id: A.intentHash(plan.runId, d), ...d }); rehashSlot(f);
+    const v = E.vorbereite(f.paket, f.eingaben), late = Date.parse(plan.endsAtUTC) - 80; let calls = 0;
+    const r = await E.simuliere(v, f.paket, { modus: E.SIMULATION, jetzt: () => late,
+      fixture: x => { calls++; assert.equal(x.intent.phase, "U");
+        const until = performance.now() + 50; while (performance.now() < until) {} return quittung(x); } });
+    assert.equal(calls, 2); assert.equal(r.quittungen[0].status, "fixture-quittiert");
+    assert.equal(r.quittungen[1].status, "ausgang-unbekannt");
     assert.equal(r.grund, "antwort-ausserhalb-zeitfenster"); assert.equal(r.positionen.length, 1500);
   });
   await test("Zeitfenster/UTC-Wechsel/Rueckwaertsuhr/Stop verhindern weiteren Attempt", async () => {
