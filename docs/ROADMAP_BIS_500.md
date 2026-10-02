@@ -229,29 +229,34 @@ Integrität geprüft:11 neue Gruppen, Originalbodies und alle Guards/17s-Transak
 182908Zeilen=136765Quellen+46143Kontrollen; beide Prüfungen gleich,
 2408,263/321,347ms, Transaktion bis zweiter Prüfung2988,186ms, Tool13647ms.
 CPU/finales Transaktionsende unbekannt; nur Altzeilen-Metadaten, kein
-Schreib-/Gesamtphasen-/Reservebeleg. Vier lokale Helferstarts: die ersten zwei
-stoppten vor App-Sendung; der dritte sendete genau eine Stage-Abfrage und
-scheiterte bereits beim PostgreSQL-Rawparse am zusätzlichen Mess-SQL.
-Der dritte Start committete0Phasen; alle22Quellen/Kontrollen, eigene Objekte, Katalog/ACL,
-Journal/Runtime/Phasenstand und Fremdentscheidung samt Feldern/xmin erhalten.
-Operator unverändert. Eine neue lokale PostgreSQL17-READ-ONLY-EXPLAIN-Probe ohne
-ANALYZE plant alle drei Metadaten- und drei Zusatzabfragen erfolgreich, mit0
-Quell-/Messzeilen; Einwegfixture gelöscht und Abwesenheit belegt. Kein Leistungs-
-oder Originalbodynachweis. Die minimale Leerzeichenkorrektur bleibt im neuen
-privaten perf-v7-Helfer. Der separat freigegebene vierte Start committete danach
-Stage/Forward/Rückweg in6604,464/5112,517/16312,015ms, Backend-CPU6480/4960/15870ms.
-Originalbodies bytegleich, drei tatsächliche lokale Auditquittungen; vollständiger
-Geschäftsdatenrückweg und Fremdentscheidung samt xmin erhalten. Natürlicher
-Parent-Feldhashzweig an ausgewählten Metadatensamples beobachtet, keine erfolgreiche
-SubTX-Leistung belegt. Clone136765Quellen/7Kontrollen statt46143, veränderte MVCC;
-Rückweg nur0,688s unter17s, keine harte Reserve oder native Gesamtphasenabnahme.
-Diagnostisch unabhängig akzeptiert, keine lokalen Integritätsbefunde.
-Nächste Vorarbeit: echte Kontrollhistorie
-rein lesend mit Vorher-/Nachherrevisionen exportieren und tatsächlichen
-App-apply_migration-Größen-/Transportvertrag vorbereiten. Native Gesamtphasenleistung
-und frische Snapshot-/Owner-/Ruhe-/Journalbindungen bleiben offen. Der historische
-private Importentwurf bleibt **FREIGABEANFRAGE_NOCH_NICHT_READY**; keine neue GO-Anfrage.
-0 Production-Profilimporte/0 Aktivierungen/0 neue bezahlte Modellaufrufe.
+Schreib-/Gesamtphasen-/Reservebeleg. Der Vollhistorienexport ist inzwischen rein
+lesend mit Vorher-/Nachherbindung abgeschlossen. Am02.10. committete der neue
+private V5-Helfer einmal alle drei lokalen Phasen mit136765Quellzeilen,
+46143Kontrollzeilen, allen10geschützten Runtimefunktionen/2Namespaces und dem
+originalen41er Auditjournal; nach Stage/Forward/Rückweg44Auditzeilen.
+Transaktionswrapper8,604/4,577/14,017s, Backend-CPU6,480/4,360/13,450s,
+diagnostischer2CPU/2GiB-Clone. Original-App/Source5 bytegleich,17s-Transaktion,
+20s-Statement und2s-Sperrwartezeit unverändert. Alle17 typisierten Quellguards,
+vollständiger Geschäftsdatenrückweg, vier unbeteiligte Kontrolltabellen,
+Runtime/Katalog/ACL und Fremdentscheidung samt Vollfeldern/xmin bestanden.
+Die segmentierte rein lesende Nachkontrolle behebt den bisherigen aggregierten
+Beobachtertimeout; der Commitstatus wird vor weiterer Prüfung dauerhaft gesichert.
+Unabhängige Abnahme`75f921ac` akzeptiert Rootreport`ac5b9cec` ausschließlich als
+lokale Wrapperdiagnose. Keine Native-Hardware-/MVCC-/Owner-/ACL-/Transportparität,
+keine Body-only-Zeit, harte17s-Reserve oder erfolgreiche SubTX-Leistung belegt.
+**Aktueller Transportblocker (02.10.,09:14–09:15 Türkei/08:14–08:15 Berlin/06:14–06:15 UTC):**
+Eine native READ-ONLY-Textprobe trägt das größte Vorwärts-App-SQL ausschließlich
+als inerte Zeichenfolge:3706253B Artefakt,3707586B Abfrage,3850365B Toolargumente.
+Das Tool lehnt mit`Request body is too large` ab (`isError=true`, Root`2d94830d`);
+keine serverseitige Byte-/Hashquittung, Original-App nicht ausgeführt,
+0 Business-/Profiländerungen,0 Modellaufrufe und kein Retry. Exaktes Serverlimit, HTTP-Status
+und Ablehnungsschicht unbekannt; der andere apply_migration-Weg ist damit nicht
+abgenommen. Nächste Vorarbeit: kleinsten Größen-/Transportfix prüfen, Original-App,
+fünf Originalquelldateien und alle Schutzguards unverändert binden.
+Native Gesamtphasenleistung und frische Snapshot-/Owner-/Ruhe-/Journalbindungen
+bleiben offen; Profil-GO ersetzt keinen Transportnachweis. Der historische private Importentwurf bleibt
+**FREIGABEANFRAGE_NOCH_NICHT_READY**; kein Production-500er-Import-, Aktivierungs-
+oder Test-GO. 0 Production-Profilimporte/0 Aktivierungen/0 neue bezahlte Modellaufrufe.
 Das bisherige Prozessaltlasttor ist durch die separat freigegebene Bereinigung erledigt.
 Die unabhängig geprüfte inerte Synthetikmigration ist nach konkretem Betreiber-GO
 nativ angewendet: Postimage 01.10. 23:39:53 Tuerkei / 22:39:53 Berlin / 20:39:53 UTC, exakt fünf Originalfunktionen,
@@ -276,8 +281,23 @@ Cleanup-Rückweg nur vorbereitet: Audit 41 bleibt, Anwendung verlangt neuen Audi
 500 Mandate / 501 Identitäten / 0 Aktive / 0 Slots bleiben unverändert. Kein Profilimport,
 Flag-/Budgetwechsel oder Modelllauf. Das DATA-GO erweiterte sich nicht auf Profile;
 inaktiven Ersatz weiterhin konkret vorbereiten und gesondert freigeben.
-Nächste Tore: Berlin-/Brandenburg-Artikelstände weiterhin 0, Kostenbücher 29./30.09.,
-Budget/Adminflags sowie gebundener inaktiver Profilimport. Kein 500er Nachweis.
+Aktueller CI-/Deploymentstand02.10.: [PR #769](https://github.com/ernisch/helmut-pilot/pull/769)
+hebt Peak-Sperren auf und behebt die UTC-Tagesbindung der Runtime-CI;
+beide Pflichtchecks und main-CI grün, Merge`484a74ee`,
+Ready`dpl_4bcmCLiVBxZ31ybGHCTNGzhkpQuq` auf exakt diesem Commit.
+Native Lesung08:33:38 Türkei/07:33:38 Berlin/05:33:38 UTC:
+500Mandate/501Identitäten/0aktiv/0synthetisch/0Slots, Journal41.
+Nächste Tore: letzter Quellenbefund01.10. Berlin-/Brandenburg-Artikelstände0,
+wirksame Konfiguration/Adminrechte und gebundener inaktiver Profilimport.
+Kostenlesung02.10.,09:06:44 Türkei/08:06:44 Berlin/06:06:44 UTC:
+vier Tagesbücher29.09.–02.10. fehlen, keine globalen Zählerzeilen für diese Tage;
+gespeicherte gültige No-Call-Einträge14/14/14/0, keine gespeicherten bezahlten Aufrufe,
+keine Anbieterrechnungsabnahme. Selbst belegte Nullbücher ließen höchstens
+0,205868USD Rest gegen mindestens0,206USD Standardreserve; die bloße
+Nullbuchergänzung öffnet das Startgate nicht. Kostenfunktionsabgleich und vier
+technische Nullkostenkandidaten unabhängig akzeptiert (`70cf115d`);
+keine Bücher geschrieben, Reserven gelöscht oder Limits
+erhöht. Kein500er Nachweis.
 Passende Quellen-/Ebenenversorgung,
 Kosten-/Ruhebelege und lebender Endwaechter bleiben Pflicht.
 Vor Aktivierung und Test anhalten. Die nachfolgende reale Profilhistorie bleibt
