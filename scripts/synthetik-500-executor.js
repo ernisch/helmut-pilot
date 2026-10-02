@@ -26,7 +26,7 @@ function main(argv) {
   const a = argumente(argv), paket = lesePrivat(a.paket);
   const v = E.vorbereite(paket, a.eingaben ? lesePrivat(a.eingaben) : E.offeneEingaben());
   if (a.out) schreibePrivat(a.out, JSON.stringify(v, null, 2) + "\n");
-  const r = { version: E.VERSION, executorHash: v.executorHash, strukturVollstaendig: v.strukturVollstaendig,
+  const r = { version: v.version, executorHash: v.executorHash, strukturVollstaendig: v.strukturVollstaendig,
     erwarteteAusgaben: v.erwartetePositionen.length, fehlendeEingaben: v.fehlendeEingaben,
     offeneProductionTore: v.offeneProductionTore, privateDateiErstellt: Boolean(a.out),
     productionReady: false, startrecht: false, modellaufrufe: 0, schreibaufrufe: 0 };
