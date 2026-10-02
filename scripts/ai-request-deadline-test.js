@@ -21,7 +21,7 @@ const storage = require(storagePath);
 const costsPath = require.resolve("../lib/helmut/testkosten-budget");
 const costs = require(costsPath);
 let reservations = [], receipts = [], completions = [], notSent = [];
-let testCostsActive = true;
+let testCostsActive = true, inactiveAdmissionChecks = 0;
 require.cache[storagePath].exports = {
   ...storage,
   reserveLlmCall: async () => { reservations.push("call"); return { allowed: true }; },
@@ -29,7 +29,10 @@ require.cache[storagePath].exports = {
 };
 require.cache[costsPath].exports = {
   ...costs, aktiv: () => testCostsActive,
-  reserviere: async () => { reservations.push("usd"); return { id: "synthetisches-ticket" }; },
+  reserviere: async () => {
+    if (!testCostsActive) { inactiveAdmissionChecks++; return null; }
+    reservations.push("usd"); return { id: "synthetisches-ticket" };
+  },
   abschliessen: async (ticket, receipt) => { completions.push({ ticket, receipt }); },
   nichtGesendet: async (ticket, error) => { notSent.push({ ticket, marked: error.kiNichtGesendet === true }); }
 };
@@ -45,7 +48,7 @@ async function check(name, run) {
   catch (error) { failed += 1; console.error(`FAIL  ${name}: ${error.message}`); }
 }
 function reset() {
-  reservations = []; receipts = []; completions = []; notSent = [];
+  reservations = []; receipts = []; completions = []; notSent = []; inactiveAdmissionChecks = 0;
   requests = []; timers = []; responseStreams = []; socketTimeouts = 0; chunks = 0; calls = 0;
 }
 function finished(expectSuccess) {
@@ -182,6 +185,7 @@ function finished(expectSuccess) {
       assert.equal(timers.every((timer) => timer.cleared), true);
       assert.equal(receipts.length, 1, "bestehende einzelne finale Quittung erhalten");
       assert.deepEqual(reservations, ["call"]);
+      assert.equal(inactiveAdmissionChecks, 2, "beide Fallbackversuche pruefen Admission ohne Dollarreserve");
     });
   } finally {
     https.request = originalRequest;

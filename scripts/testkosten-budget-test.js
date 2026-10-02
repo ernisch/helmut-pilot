@@ -9,8 +9,14 @@ const ARGS = { model: "gpt-5-mini", maxOutputTokens: 3000, runId: "nachlauf500-1
 const RECEIPT = { model: "gpt-5-mini", promptTokens: 100, completionTokens: 20, _ablage: { blob: true } };
 function fixture() {
   let state = { llmUsage: [], users: [{ id: "bestehend" }] }, queue = Promise.resolve(), clock = Date.parse(START);
-  const h = { counter: 0, fail: false, read: () => structuredClone(state), advance: n => { clock += n; } };
+  const h = { counter: 0, fail: false, failRead: false, authReads: 0,
+    read: () => structuredClone(state), advance: n => { clock += n; } };
   h.storage = {
+    readAuthStore: async options => {
+      assert.deepEqual(options, { strict: true }); h.authReads++;
+      if (h.failRead) throw Error("offline Lesefehler");
+      return h.read();
+    },
     leseLlmTageszaehler: async () => ({ ok: true, used: h.counter }),
     mutateAuthStore: fn => {
       const p = queue.then(async () => {
@@ -158,10 +164,19 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
   });
   await test("Inaktiv ohne Schreibwirkung; falsches Modell oder Limit vor Reservierung gesperrt", async () => {
     const h = fixture();
+    const before = h.read();
     assert.equal(await B.reserviere(ARGS, { ...h.deps, env: {} }), null);
+    assert.equal(h.authReads, 1, "inaktiver Pfad bestaetigt die Planabwesenheit strikt");
+    assert.deepEqual(h.read(), before);
     for (const args of [{ ...ARGS, model: "unbekannt" }, { ...ARGS, maxOutputTokens: 8001 }])
       await assert.rejects(B.reserviere(args, h.deps), { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
     assert.equal(h.read()[B.KEY], undefined);
+  });
+  await test("Inaktiver Dollar-Riegel lehnt unbekannten Auth-Lesestand ohne Buchung ab", async () => {
+    const h = fixture(), before = h.read(); h.failRead = true;
+    await assert.rejects(B.reserviere(ARGS, { ...h.deps, env: {} }),
+      { reason: "synthetik500-admission-auth-unreadable", kiNichtGesendet: true });
+    assert.equal(h.authReads, 1); assert.deepEqual(h.read(), before);
   });
   await test("Ausgabegrenze: 8000 Tokens erlaubt (232000 Reserve), 8001 vor jeder Reservierung gesperrt", async () => {
     const h = fixture();
