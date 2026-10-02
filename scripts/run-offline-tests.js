@@ -203,6 +203,7 @@ const STANDARD = new Set([
   "synthetik-500-native-import-test.js",    // nativer Vollbackup, kompakte SQL und typisierter Vollfeld-CAS
   "synthetik-500-runtime-test.js",          // eigener Start-/Endvertrag, Paketvarianten und lebender Waechter
   "synthetik-500-nachweis-test.js",         // 1500 Volltexte, native Laufbelege und getrennte Fehlerbilanz
+  "synthetik-500-starttor-kapsel-test.js",  // private Historienbindung ohne implizites Import-/Startrecht
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
   "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist
   "bb-quellen-cutover-operator-test.js",     // enger Landesquellen-Cutover und geschuetzter Rueckweg

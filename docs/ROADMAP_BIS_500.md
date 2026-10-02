@@ -244,19 +244,25 @@ Beobachtertimeout; der Commitstatus wird vor weiterer Prüfung dauerhaft gesiche
 Unabhängige Abnahme`75f921ac` akzeptiert Rootreport`ac5b9cec` ausschließlich als
 lokale Wrapperdiagnose. Keine Native-Hardware-/MVCC-/Owner-/ACL-/Transportparität,
 keine Body-only-Zeit, harte17s-Reserve oder erfolgreiche SubTX-Leistung belegt.
-**Aktueller Transportblocker (02.10.,09:14–09:15 Türkei/08:14–08:15 Berlin/06:14–06:15 UTC):**
-Eine native READ-ONLY-Textprobe trägt das größte Vorwärts-App-SQL ausschließlich
-als inerte Zeichenfolge:3706253B Artefakt,3707586B Abfrage,3850365B Toolargumente.
-Das Tool lehnt mit`Request body is too large` ab (`isError=true`, Root`2d94830d`);
-keine serverseitige Byte-/Hashquittung, Original-App nicht ausgeführt,
-0 Business-/Profiländerungen,0 Modellaufrufe und kein Retry. Exaktes Serverlimit, HTTP-Status
-und Ablehnungsschicht unbekannt; der andere apply_migration-Weg ist damit nicht
-abgenommen. Nächste Vorarbeit: kleinsten Größen-/Transportfix prüfen, Original-App,
-fünf Originalquelldateien und alle Schutzguards unverändert binden.
-Native Gesamtphasenleistung und frische Snapshot-/Owner-/Ruhe-/Journalbindungen
-bleiben offen; Profil-GO ersetzt keinen Transportnachweis. Der historische private Importentwurf bleibt
-**FREIGABEANFRAGE_NOCH_NICHT_READY**; kein Production-500er-Import-, Aktivierungs-
-oder Test-GO. 0 Production-Profilimporte/0 Aktivierungen/0 neue bezahlte Modellaufrufe.
+**Aktuelle private V7/fix2-Weiterführung (02.10.):** Neuer kompletter lokaler
+Stage/Forward/Rückweg bei136765Quell-/46143Kontrollzeilen, Runtime10/2,
+Journal41→44 unabhängig akzeptiert (`6a8aa67a`/`1f85df23`). Wrapper6,236/5,014/13,056s,
+CPU6,130/4,910/12,900s; unveränderte Source5/Geschäftskörper und17/20/2.
+Dies bleibt lokale Diagnose ohne Native-Hardware-/MVCC-/Owner-/ACL-/Ganzphasenabnahme.
+Neue inerte Native-Textprobe mit3.113.000B Argumenten terminal
+`Invalid or expired requestState` nach802,388s; keine PG-Byte-/Hashquittung,
+keine Grenze/Schicht belegt,0 Business-/Profiländerungen. Abnahme`533b5839`
+akzeptiert nur den Fehlschlag, kein Retry. Separate kleine RO erfolgreich,
+damals kein Großtransportnachweis. Historische3,85MB-Body-Abweisung bleibt gültig.
+**Neuer verlustfreier Transport erfolgreich:** Exakt eine inerte Native-pgcrypto-RO-Probe
+mit584292B Argumenten rekonstruiert3023730Originalbytes/SHA1c4f3753;
+alle Guards positiv, unabhängige tatsächliche Abnahme0c04c55b.
+Kein Original-App-EXECUTE: current_query-/Auditadapter und Native-Ganzphase bleiben offen.
+[Private Profil-/Snapshot-/Endwächterkapsel](betrieb/synthetik-500-profil-starttor-kapsel-20261002.md)
+verknüpft Originalarchive und Code unverändert; neun dynamische Gates bleiben rot.
+Frischer vollständiger Snapshot mit aktueller MainAuth/Audit42, konkrete Operatorbindung,
+Native Transport/Gesamtphase, Profil-GO und lebender Originalendwächter stehen aus.
+0 Production-Profilimporte/0 Aktivierungen/0 neue bezahlte Modellaufrufe.
 Das bisherige Prozessaltlasttor ist durch die separat freigegebene Bereinigung erledigt.
 Die unabhängig geprüfte inerte Synthetikmigration ist nach konkretem Betreiber-GO
 nativ angewendet: Postimage 01.10. 23:39:53 Tuerkei / 22:39:53 Berlin / 20:39:53 UTC, exakt fünf Originalfunktionen,
@@ -276,8 +282,8 @@ ist angewendet und unabhängig endabgenommen. Postimage 02.10.2026 00:25:25 Tuer
 01.10.2026 23:25:25 Berlin / 21:25:25 UTC: 711 Prozesse / 0 running;
 nur status/reason/finished_at der drei Ziele geändert, 708 andere Vollzeilen/xmin,
 19 übrige Zielfelder und alle geschützten Bestände/Runtime unverändert.
-Journal jetzt 41 / Version `20261001212457`, bisherige 40 Vollzeilen/xmin erhalten.
-Cleanup-Rückweg nur vorbereitet: Audit 41 bleibt, Anwendung verlangt neuen Audit 42.
+Journal damals 41 / Version `20261001212457`, bisherige 40 Vollzeilen/xmin erhalten.
+Cleanup-Rückweg historisch nur vorbereitet; vor Anwendung an aktuelle Audit42-Bindung anpassen.
 500 Mandate / 501 Identitäten / 0 Aktive / 0 Slots bleiben unverändert. Kein Profilimport,
 Flag-/Budgetwechsel oder Modelllauf. Das DATA-GO erweiterte sich nicht auf Profile;
 inaktiven Ersatz weiterhin konkret vorbereiten und gesondert freigeben.
@@ -287,19 +293,21 @@ beide Pflichtchecks und main-CI grün, Merge`484a74ee`,
 Ready`dpl_4bcmCLiVBxZ31ybGHCTNGzhkpQuq` auf exakt diesem Commit.
 Native Lesung08:33:38 Türkei/07:33:38 Berlin/05:33:38 UTC:
 500Mandate/501Identitäten/0aktiv/0synthetisch/0Slots, Journal41.
-Nächste Tore: letzter Quellenbefund01.10. Berlin-/Brandenburg-Artikelstände0,
-wirksame Konfiguration/Adminrechte und gebundener inaktiver Profilimport.
-Kostenlesung02.10.,09:06:44 Türkei/08:06:44 Berlin/06:06:44 UTC:
-vier Tagesbücher29.09.–02.10. fehlen, keine globalen Zählerzeilen für diese Tage;
-gespeicherte gültige No-Call-Einträge14/14/14/0, keine gespeicherten bezahlten Aufrufe,
-keine Anbieterrechnungsabnahme. Selbst belegte Nullbücher ließen höchstens
-0,205868USD Rest gegen mindestens0,206USD Standardreserve; die bloße
-Nullbuchergänzung öffnet das Startgate nicht. Kostenfunktionsabgleich und vier
-technische Nullkostenkandidaten unabhängig akzeptiert (`70cf115d`);
-keine Bücher geschrieben, Reserven gelöscht oder Limits
-erhöht. Kein500er Nachweis.
-Passende Quellen-/Ebenenversorgung,
-Kosten-/Ruhebelege und lebender Endwaechter bleiben Pflicht.
+Frischer Quellenread02.10.,12:08:09 Türkei/11:08:09 Berlin/09:08:09 UTC:
+Berlin active/Brandenburg prepared, zwei Zielpfade needs_review/manual,
+16 Bindungen/15 Pfade vollständig klassifiziert vorher; beide Artikelstandmengen0.
+500/501/0aktiv, alle Bestandsmandate Bundestag. Wirksame Landes-/Operatorflags
+und nutzbare Adminauth unbekannt; HTTP-Cutover blockiert. [Quellenplan](betrieb/quellen-starttor-berlin-brandenburg-20261002.md).
+Freigegebene Vier-Bücher-Korrektur produktiv: Postimage12:06:04 Türkei/11:06:04 Berlin/09:06:04 UTC,
+24 Bücher/4 exakte Nullbücher, erneuerte CAS-UUID/vorhandener Zeitstempeltrigger,
+singleton Audit20261002090542, Journal42/prior41 unverändert. Unabhängig249fb42a,
+Originalbudget/Zähler/Altbücher erhalten; keine Reservefreigabe oder bezahlter Aufruf.
+6,794132USD gebunden und0,205868USD Rest reichen weiterhin nicht für
+mindestens0,206USD reguläre Reserve. Der volle phasenweise Qualitäts-/Kostenplan
+muss endliche Inputs/Versuche/Pfade und aktuelle Runtime binden; der konditionale
+212USD-Vollkontext-Lage-Risikowert ist keine Anbieterrechnung und kein Budgetantrag.
+Quellenversorgung, finanzierter Gesamtlauf, frischer Vollsnapshot/Ruhe und lebender
+Endwächter bleiben Pflicht. Kein500er Nachweis.
 Vor Aktivierung und Test anhalten. Die nachfolgende reale Profilhistorie bleibt
 als Vorarbeit fuer eine spaetere Fachabnahme erhalten.
 
