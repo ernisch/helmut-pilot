@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 02.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
+**Stand: 03.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
 
 ## Aktueller Production- und Entwicklungsstand
 
@@ -75,16 +75,17 @@ Der aktuelle gemischte technische 500er Nachweis betrifft **synthetische Profile
 
 Vor Aktivierung muessen synthetische Paketbindung, passende aktuelle Ebenen-/Landesversorgung bis in die sichtbare Ausgabe, Kosten-/Zeitplan, Testfenster und Endwaechter belegt sein. **Aktivierung und eigentlicher 500er Test benötigen danach ein gesondertes Betreiber-GO.** Der Test muss bei exakt 500 gleichzeitig aktiven Profilen je 500 Mandatsbriefings, Morgenbriefings und Lage-Ergebnisse bilanzieren (**1500 Positionen**), darunter fehlende, leere, doppelte, unbrauchbare und technische Fehler; Qualität, Gesamtzeit, Gesamtkosten, automatisches Ende und Rückweg auf 0 aktive Profile sind nachzuweisen. Frühere kleinere oder unvollständige Läufe ersetzen das nicht. [Sicherheitsrahmen](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md), [Betriebsplan](betrieb/500-betriebsplan-2026-09-20.md).
 
-Für diesen Cloud-Auftrag vom01.10. hat die jüngste Betreibersteuerung Vorrang: Entwicklung, geprüfte grüne Merges und reguläre Deployments sind erlaubt. Migrationen, Production-Daten-/Profil-/Konfigurations-/Budgetänderungen und bezahlte Modellaufrufe benötigen ausdrückliches GO; Aktivierung und500er Test sind nicht freigegeben. **Helmut-Production: höchstens 7 USD kumulativ und 6 USD je UTC-Tag**, jeweils einschließlich offener Bindungen; ein Tageswechsel setzt den kumulativen Wert nicht zurück. **Codex Cloud Entwicklungsarbeit:** GPT-6.1 Sol High arbeitet direkt ohne Modellrouter oder externe Pflichtdelegation. Diese Entwicklungsnutzung ist vom Helmut Production Anbieterbudget getrennt. Kosten vor bezahlten Läufen frisch prüfen. Nur ein schreibender Ausführer; fremde Änderungen nicht überschreiben. Pflicht-CI vor Merge, nach Merge Deployment und betroffenen Zustand rein lesend prüfen. Keine Schutzregeln oder Qualitätsschwellen absenken.
+Für diesen Cloud-Auftrag vom01.10. hat die jüngste Betreibersteuerung Vorrang: Entwicklung, geprüfte grüne Merges und reguläre Deployments sind erlaubt. Migrationen, Production-Daten-/Profil-/Konfigurations-/Budgetänderungen und bezahlte Modellaufrufe benötigen ausdrückliches GO; Aktivierung und500er Test sind nicht freigegeben. **Helmut-Production: höchstens 7 USD kumulativ und 6 USD je UTC-Tag**, jeweils einschließlich offener Bindungen; ein Tageswechsel setzt den kumulativen Wert nicht zurück. **Codex Cloud Entwicklungsarbeit:** Modell und Denkstufe werden vom Betreiber direkt in Codex gewählt; das Repository erzwingt dafür keinen festen Standard. Es gibt keinen Modellrouter oder externe Pflichtdelegation. Diese Entwicklungsnutzung ist vom Helmut Production Anbieterbudget getrennt. Kosten vor bezahlten Läufen frisch prüfen. Nur ein schreibender Ausführer; fremde Änderungen nicht überschreiben. Pflicht-CI vor Merge, nach Merge Deployment und betroffenen Zustand rein lesend prüfen. Keine Schutzregeln oder Qualitätsschwellen absenken.
 
 Production-Konfiguration, Migrationen, Cron- und Profilschutz vor einer Wirkung **frisch lesen**; historische Flags oder alte Profilzahlen sind keine aktuelle Freigabe. Die bisherige synthetische Endfunktion für das Testfenster wurde installiert, aber nicht als 500er Funktionsnachweis ausgeführt. Offene Migrationen und besonders geschützte Aktionen nur innerhalb des konkret autorisierten Umfangs behandeln. [Autonomer Auftrag](betrieb/autonom-bis-500-starttor-20260926.md), [Production-Beweisprotokoll](betrieb/production_beweisprotokoll.md).
 
 ## Arbeitssteuerung
 
-GPT-6.1 Sol High ist der direkte Standard in Codex Cloud und priorisiert vor jeder
-Arbeitswelle ausschliesslich den kritischen Pfad zum 500er Starttor. Es gibt keinen
-aktiven Modellrouter, keine verpflichtende externe Delegation und keine
-zeitabhaengige Peak Sperre. Der Betreiber hat am02.10.2026 auch die Chatvorgabe vom01.10. aufgehoben; Entwicklungsarbeit darf jederzeit starten, ohne Peak GO. Production
+Codex Cloud ist der direkte Arbeitsweg und priorisiert vor jeder Arbeitswelle
+ausschliesslich den kritischen Pfad zum 500er Starttor. Modell und Denkstufe werden
+vom Betreiber in Codex gewählt und nicht im Repository als Standard festgeschrieben.
+Es gibt keinen aktiven Modellrouter, keine verpflichtende externe Delegation und
+keine zeitabhaengige Peak Sperre. Der Betreiber hat am02.10.2026 auch die Chatvorgabe vom01.10. aufgehoben; Entwicklungsarbeit darf jederzeit starten, ohne Peak GO. Production
 Schutzgrenzen, das gesonderte GO vor Aktivierung und 500er Test sowie die
 Production Kostenlimits bleiben unveraendert. Parallele Schreibarbeit darf nur in
 klar getrennten Bereichen stattfinden; bei Ueberschneidung wird nacheinander
