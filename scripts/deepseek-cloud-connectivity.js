@@ -1,17 +1,48 @@
 #!/usr/bin/env node
 "use strict";
 
-const https = require("https");
+const cp = require("child_process");
 
-const HOST = "api.deepseek.com";
-const PATH = "/responses";
+const URL = "https://api.deepseek.com/responses";
 const EXPECTED = "HELMUT_DEEPSEEK_CLOUD_OK";
 const MAX_OUTPUT_TOKENS = 1024;
-const TIMEOUT_MS = 30000;
+const TIMEOUT_SECONDS = 30;
 
-function callDeepSeek({ apiKey, request = https.request } = {}) {
-  const key = apiKey || process.env.DEEPSEEK_API_KEY;
-  if (!key) return Promise.reject(new Error("DEEPSEEK_API_KEY-fehlt"));
+function parseCurlResponse(raw) {
+  const marker = "\n__HELMUT_HTTP_STATUS__:";
+  const idx = raw.lastIndexOf(marker);
+  if (idx < 0) throw new Error("deepseek-curl-status-fehlt");
+  const body = raw.slice(0, idx);
+  const code = Number(raw.slice(idx + marker.length).trim());
+  if (code !== 200) throw new Error(`deepseek-http-${code || "unknown"}`);
+  let parsed;
+  try { parsed = JSON.parse(body); }
+  catch { throw new Error("deepseek-invalid-json"); }
+
+  const text = (parsed.output || [])
+    .filter((x) => x && x.type === "message")
+    .flatMap((x) => x.content || [])
+    .filter((x) => x && x.type === "output_text")
+    .map((x) => x.text || "")
+    .join("")
+    .trim();
+
+  if (text !== EXPECTED) throw new Error("deepseek-marker-mismatch");
+  const usage = parsed.usage || {};
+  return {
+    ok: true,
+    model: parsed.model || "deepseek-flash",
+    status: parsed.status || null,
+    input_tokens: Number(usage.input_tokens || 0),
+    output_tokens: Number(usage.output_tokens || 0),
+    total_tokens: Number(usage.total_tokens || 0),
+    max_output_tokens: MAX_OUTPUT_TOKENS,
+  };
+}
+
+function callDeepSeek({ apiKey, spawnSync = cp.spawnSync, env = process.env } = {}) {
+  const key = apiKey || env.DEEPSEEK_API_KEY;
+  if (!key) throw new Error("DEEPSEEK_API_KEY-fehlt");
 
   const body = JSON.stringify({
     model: "deepseek-flash",
@@ -22,65 +53,35 @@ function callDeepSeek({ apiKey, request = https.request } = {}) {
     stream: false,
   });
 
-  return new Promise((resolve, reject) => {
-    const req = request({
-      hostname: HOST,
-      port: 443,
-      path: PATH,
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${key}`,
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(body),
-      },
-      timeout: TIMEOUT_MS,
-    }, (res) => {
-      let raw = "";
-      res.setEncoding("utf8");
-      res.on("data", (chunk) => {
-        raw += chunk;
-        if (raw.length > 1024 * 1024) {
-          req.destroy(new Error("response-too-large"));
-        }
-      });
-      res.on("end", () => {
-        if (res.statusCode !== 200) {
-          return reject(new Error(`deepseek-http-${res.statusCode}`));
-        }
-        let parsed;
-        try { parsed = JSON.parse(raw); }
-        catch { return reject(new Error("deepseek-invalid-json")); }
-
-        const text = (parsed.output || [])
-          .filter((x) => x && x.type === "message")
-          .flatMap((x) => x.content || [])
-          .filter((x) => x && x.type === "output_text")
-          .map((x) => x.text || "")
-          .join("")
-          .trim();
-
-        if (text !== EXPECTED) return reject(new Error("deepseek-marker-mismatch"));
-        const usage = parsed.usage || {};
-        resolve({
-          ok: true,
-          model: parsed.model || "deepseek-flash",
-          status: parsed.status || null,
-          input_tokens: Number(usage.input_tokens || 0),
-          output_tokens: Number(usage.output_tokens || 0),
-          total_tokens: Number(usage.total_tokens || 0),
-          max_output_tokens: MAX_OUTPUT_TOKENS,
-        });
-      });
-    });
-    req.on("timeout", () => req.destroy(new Error("deepseek-timeout")));
-    req.on("error", reject);
-    req.end(body);
+  const result = spawnSync("curl", [
+    "--silent",
+    "--show-error",
+    "--connect-timeout", "10",
+    "--max-time", String(TIMEOUT_SECONDS),
+    "--request", "POST",
+    "--header", `Authorization: Bearer ${key}`,
+    "--header", "Content-Type: application/json",
+    "--data-binary", "@-",
+    "--write-out", "\n__HELMUT_HTTP_STATUS__:%{http_code}",
+    URL,
+  ], {
+    input: body,
+    encoding: "utf8",
+    env,
+    maxBuffer: 1024 * 1024,
   });
+
+  if (result.error) throw new Error(`deepseek-curl-start:${result.error.code || result.error.message}`);
+  if (result.status !== 0) {
+    const tail = String(result.stderr || "").trim().split("\n").slice(-2).join(" | ").slice(0, 300);
+    throw new Error(`deepseek-curl-exit-${result.status}${tail ? ":" + tail : ""}`);
+  }
+  return parseCurlResponse(String(result.stdout || ""));
 }
 
-async function main() {
+function main() {
   try {
-    const result = await callDeepSeek();
+    const result = callDeepSeek();
     process.stdout.write(JSON.stringify(result) + "\n");
   } catch (error) {
     process.stderr.write(`[deepseek-connectivity] ${error.message}\n`);
@@ -90,4 +91,11 @@ async function main() {
 
 if (require.main === module) main();
 
-module.exports = { HOST, PATH, EXPECTED, MAX_OUTPUT_TOKENS, TIMEOUT_MS, callDeepSeek };
+module.exports = {
+  URL,
+  EXPECTED,
+  MAX_OUTPUT_TOKENS,
+  TIMEOUT_SECONDS,
+  parseCurlResponse,
+  callDeepSeek,
+};
