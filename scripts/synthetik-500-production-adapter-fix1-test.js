@@ -135,13 +135,13 @@ async function main() {
     Guard.attach(f.deps, async actual => { assert.deepEqual(actual, f.pair); await control(); }, control);
     await assert.rejects(U.understandOneCluster(f.cluster, f.deps, f.options), e => e.code === Guard.CODE);
     for (const name of ["save", "saveSources", "savePending", "markFailed", "writeUpdateRetries", "recordGateParkung", "markGateGeparkt", "releaseGateGeparkt"])
-      await assert.rejects(f.deps[name](), /expired/);
-    await assert.rejects(f.deps.verstehenVertrag().reserviere({}), /expired/);
+      await assert.rejects(f.deps[name](), /u-mutation-guard/);
+    await assert.rejects(f.deps.verstehenVertrag().reserviere({}), /u-mutation-guard/);
     assert.deepEqual(f.counters, { writers: 0, reserve: 0, start: 0, provider: 0, release: 0, failed: 0, memo: 0 });
     // The window changes during the real canSpend await, after reservation but
     // before modellstart: the model-start wrapper must refuse the effect.
     open = true; f.deps.canSpend = async () => { open = false; return { allowed: true }; };
-    await assert.rejects(U.understandOneCluster(f.cluster, f.deps, f.options), /expired/);
+    await assert.rejects(U.understandOneCluster(f.cluster, f.deps, f.options), /u-mutation-guard/);
     assert.equal(f.counters.reserve, 1); assert.equal(f.counters.start, 0); assert.equal(f.counters.provider, 0);
     assert.equal(f.counters.writers + f.counters.failed + f.counters.memo, 0);
   });
@@ -171,7 +171,7 @@ async function main() {
     const f = uFixture(); let writes = 0;
     f.deps.verstehenVertrag = () => ({ speichere: async () => { writes++; }, freigabeOhneAufruf: async () => ({ ok: true }) });
     Guard.attach(f.deps, async () => {}, async () => { throw Error("expired-after-provider"); });
-    await assert.rejects(f.deps.verstehenVertrag().speichere({}), e => e.message === "expired-after-provider" && e.kiNichtGesendet !== true);
+    await assert.rejects(f.deps.verstehenVertrag().speichere({}), e => e.message === "synthetik500-production-u-mutation-guard" && e.kiNichtGesendet !== true);
     assert.equal(writes, 0); assert.deepEqual(await f.deps.verstehenVertrag().freigabeOhneAufruf({}), { ok: true });
     await assert.rejects(Guard.provedPreSend(async () => { throw Error("late-sender-window"); }), e => e.code === Guard.CODE && e.kiNichtGesendet === true);
     const Adapter = require("../lib/helmut/synthetik-500-production-adapter");

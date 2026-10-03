@@ -37,8 +37,12 @@ dem reinen Resolver vor den ersten Wirkungen und nochmals vor der nativen
 Reservierung. Claim und Zeitfenster werden vor den einzelnen echten U-Schreibern
 erneut geprüft; deren Implementierung bleibt bestehen. Nur eine nachweislich
 vor dem Provider abgewiesene Hookprüfung erhält den Nichtsend-Beleg und erzeugt
-keinen Inhaltsfehler oder Update-Fehlversuch. Die native Freigabe und ehrliche
-Unbekannt-Buchung bleiben auch nach einem Stop möglich; sie öffnen keinen
+keinen Inhaltsfehler oder Update-Fehlversuch.
+Mutationsguard-Ablehnungen erhalten ausdrücklich keinen Nichtsend-Beleg, auch
+wenn ein interner Journalfehler einen solchen Marker trägt. Nur der Guardfehler
+wird dafür neutralisiert; Fehler des danach aufgerufenen echten Schreibers
+werden unverändert weitergegeben.
+Die native Freigabe und ehrliche Unbekannt-Buchung bleiben auch nach einem Stop möglich; sie öffnen keinen
 bezahlten Versuch erneut. Artikelkontext ist für diesen endlichen Anschluss
 weiterhin nicht zugelassen.
 
