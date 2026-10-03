@@ -212,11 +212,14 @@ async function main() {
       const malformed = clone(input); malformed.kostenPlan.inputs.clusters[0].artikelkontextVersuch.quellenHash = "0".repeat(64);
       assert.throws(() => B.vorbereite(paket, malformed), /artikelkontext-/);
     });
-    await test("Mehrere U-Versionen bleiben auch/3 explizit zentral blockiert", () => {
+    await test("Mehrere U-Versionen erhalten nur bei/3 den gebundenen zentralenPlan3", () => {
       const e = fixture(); e.clusters.push({ ...clone(e.clusters[0]), mode: "update", koVersion: 2 }); rebuild(e);
-      const p = C.vorbereite(paket, e); assert.equal(p.completeness.U, 2); assert.equal(p.admissionCandidate, null);
-      assert.equal(p.completeness.multiVersionUAdmissionSupported, false);
-      assert(p.requiredActualInputs.includes("central-admission-multiple-u-versions-per-vorgang"));
+      const p = C.vorbereite(paket, e); assert.equal(p.completeness.U, 2);
+      assert.equal(p.admissionCandidate.version, A.REVIEW_VERSION);
+      assert.equal(p.admissionCandidate.plan.version, A.MULTI_U_PLAN_VERSION);
+      assert.equal(p.admissionCandidate.plan.sourceBinding.inputHash, P.hash(e));
+      assert.equal(p.completeness.multiVersionUAdmissionSupported, true);
+      assert(!p.requiredActualInputs.includes("central-admission-multiple-u-versions-per-vorgang"));
     });
     assert.equal(sends, 0);
     console.log(JSON.stringify({ newGroups: passed, passed, providerCalls: sends, databaseCalls: 0, nativeCalls: 0,
