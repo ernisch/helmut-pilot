@@ -58,6 +58,37 @@ function mappedWInputs(f) {
   f.draftInputs.forEach(d => { d.documentKeys = [...f.clusters[0].documentKeys]; });
   return originals;
 }
+async function routeWFixture(routed = true) {
+  const input = wInputs(); input.knowledgeObjects = [];
+  const originals = mappedWInputs(input), cluster = { documents: input.documents.map(d => d.version) };
+  const vorgangId = U.deriveVorgangId(cluster);
+  input.clusters[0].vorgangId = vorgangId;
+  const route = { version: A.ROUTE_CONTRACT_VERSION, runtimeManifestHash: input.runtimeManifestHash,
+    route: { provider: "azure", responsesUrl: "https://helmut-resource.openai.azure.com/openai/v1/responses",
+      model: "gpt-5-mini", productionCommit: input.productionCommit, deploymentHost: "helmut-fictional-immutable.vercel.app",
+      deploymentId: "dpl_FictionalImmutable", authMode: "api-key" },
+    management: { modelFamily: "gpt-5-mini", versionPolicy: "family-context-price-class-re-admit-on-contradiction",
+      contextTokens: 400000, maxInputTokens: 272000, inputReserveTokens: 400000, maxOutputTokens: 128000,
+      reasoningIncludedInOutput: true, inputUsdPerMillion: 0.5, outputUsdPerMillion: 4,
+      validFromUTC: input.window.startUTC, validUntilUTC: input.window.endUTC,
+      evidencePins: Object.fromEntries(["rootAdmission", "management", "serviceContext", "price"].map(name =>
+        [name, { name: "fictional-" + name, sha256: P.hash("fixture-only-" + name), bytes: 10 }])) } };
+  if (routed) { input.version = C.ROUTE_INPUT_VERSION; input.routeContract = route; }
+  bind(input);
+  const prefixes = identity.candidatePrefixes(cluster, 3, { personengruppenAltbestand: true });
+  const resolution = await U.resolveVorgang(cluster, { findVorgangCandidates: () => [], getExistingStreng: () => null });
+  const w = { version: W.VERSION, projectionVersion: KO.VERSION, projectionFieldsetHash: KO.FIELDSET_HASH,
+    documents: originals, linkedDocuments: [], knowledgeObjects: [], prefixes: prefixes.length ? [{ prefixes, rows: [], evidence }] : [],
+    exacts: [{ vorgangId, knowledgeObjectId: null, evidence }], links: [],
+    reservations: [{ vorgangId, row: null, evidence }], memos: [{ vorgangId, row: null, evidence }],
+    decisions: [{ versionKey: C.sourceVersions(input.documents, [], input.clusters, input.version).clusters[0].key,
+      cluster, resolution, eligibilityEvidence: evidence }] };
+  const inventoryBytes = JSON.stringify(w), capture = { reference: "fictional-route-W-original", sha256: byteHash(inventoryBytes) };
+  input.understandingCompleteness.evidence = capture;
+  const routeBytes = JSON.stringify(route), routeEvidence = { reference: "fictional-route-original", sha256: byteHash(routeBytes) };
+  return { input, w, inventoryBytes, capture, routeBytes, routeEvidence };
+}
+const routeIntake = x => W.vorbereiteRoute(paket, JSON.stringify(x.input), x.inventoryBytes, x.capture, x.routeBytes, x.routeEvidence);
 const rehash = slot => { slot.planHash = P.hash(slot.plan); return slot; };
 const request = (slot, x) => ({ admission: { operationId: slot.plan.operationId, planHash: slot.planHash }, runId: slot.plan.runId,
   phase: null, vorgangId: x.vorgangId, contractInputHash: x.contractInputHash,
@@ -72,6 +103,96 @@ async function main() {
   async function test(name, fn) { if (only && !only.test(name)) return; await fn(); passed++; console.log("PASS " + name); }
   try {
     const e = inputs(), plan = C.vorbereite(paket, e), slot = plan.admissionCandidate;
+    await test("Input4-W-route LegacyInput3 bleibt exakt getrennt und unveraendert", async () => {
+      const old = await routeWFixture(false), inputBytes = JSON.stringify(old.input), expected = C.vorbereite(paket, old.input);
+      assert.deepEqual(await W.vorbereite(paket, inputBytes, old.inventoryBytes, old.capture), {
+        version: W.VERSION, inputBytesSha256: byteHash(inputBytes), inventoryBytesSha256: old.capture.sha256,
+        sourceBinding: expected.admissionCandidate.plan.sourceBinding, plan: expected,
+        actualInputAcceptanceVerified: false, eligibilityAcceptanceVerified: false,
+        primitiveAndCodecAcceptanceVerified: false, executionReady: false, installationAvailable: false });
+      assert.equal(expected.admissionCandidate.plan.sourceBinding.inputVersion, C.ARTICLE_INPUT_VERSION);
+      await assert.rejects(routeIntake(old), /originalinput-w-bindung/);
+      const routed = await routeWFixture();
+      await assert.rejects(W.vorbereite(paket, JSON.stringify(routed.input), routed.inventoryBytes, routed.capture), /originalinput-w-bindung/);
+    });
+    await test("Input4-W-route OriginalbyteSHA und semantischeHashes binden Input4 Plan4 Slot3", async () => {
+      const x = await routeWFixture(), result = await routeIntake(x), candidate = result.plan.admissionCandidate;
+      assert.equal(result.version, W.ROUTE_VERSION); assert.equal(result.plan.version, C.ROUTE_VERSION);
+      assert.equal(result.inputBytesSha256, byteHash(JSON.stringify(x.input)));
+      assert.equal(result.routeBinding.inputHash, P.hash(x.input));
+      assert.equal(result.routeBinding.routeBytesSha256, byteHash(x.routeBytes));
+      assert.equal(result.routeBinding.routeContractHash, P.hash(x.input.routeContract));
+      assert.notEqual(result.routeBinding.routeBytesSha256, result.routeBinding.routeContractHash);
+      assert.deepEqual(result.routeBinding.routeEvidence, x.routeEvidence);
+      assert.notEqual(result.routeBinding.routeEvidence, x.routeEvidence);
+      assert.equal(candidate.version, A.ROUTE_VERSION); assert.equal(candidate.plan.version, A.ROUTE_PLAN_VERSION);
+      assert.equal(candidate.plan.sourceBinding.inputVersion, C.ROUTE_INPUT_VERSION);
+      assert.equal(candidate.plan.sourceBinding.inputHash, P.hash(x.input));
+      assert.deepEqual(candidate.plan.routeContract, x.input.routeContract);
+      assert.equal(candidate.planHash, P.hash(candidate.plan)); assert.equal(result.routeBinding.admissionPlanHash, candidate.planHash);
+      assert.doesNotThrow(() => C.pruefe(result.plan, paket));
+      for (const key of ["actualInputAcceptanceVerified", "eligibilityAcceptanceVerified", "primitiveAndCodecAcceptanceVerified",
+        "executionReady", "installationAvailable"]) assert.equal(result[key], false);
+      assert.equal(result.plan.status.executionReady, false); assert.equal(result.plan.status.budgetGo, false);
+    });
+    await test("Input4-W-route falsche und nichtkanonische Originalbytes werden abgewiesen", async () => {
+      const x = await routeWFixture();
+      await assert.rejects(routeIntake({ ...x, routeEvidence: { ...x.routeEvidence, sha256: "0".repeat(64) } }), /originalroute-hash/);
+      const pretty = JSON.stringify(x.input.routeContract, null, 2);
+      await assert.rejects(routeIntake({ ...x, routeBytes: pretty, routeEvidence: { ...x.routeEvidence, sha256: byteHash(pretty) } }), /original-kanonisch/);
+      const different = copy(x.input.routeContract); different.route.deploymentId = "dpl_OtherFictional";
+      const bytes = JSON.stringify(different);
+      await assert.rejects(routeIntake({ ...x, routeBytes: bytes, routeEvidence: { ...x.routeEvidence, sha256: byteHash(bytes) } }), /originalinput4-route-bindung/);
+      await assert.rejects(W.vorbereiteRoute(paket, JSON.stringify(x.input, null, 2), x.inventoryBytes, x.capture,
+        x.routeBytes, x.routeEvidence), /original-kanonisch/);
+    });
+    await test("Input4-W-route Commit Runtime und Fenster sowie fehlende Route sind geschlossen", async () => {
+      const x = await routeWFixture();
+      for (const mutate of [f => { f.productionCommit = "a".repeat(40); }, f => { f.runtimeManifestHash = "b".repeat(64); },
+        f => { f.window.endUTC = "2026-10-02T14:00:00.000Z"; }, f => { f.routeContract = null; },
+        f => { f.productionCommit = null; }, f => { f.runtimeManifestHash = null; }]) {
+        const input = copy(x.input); mutate(input);
+        await assert.rejects(routeIntake({ ...x, input }), /synthetik500-/);
+      }
+    });
+    await test("Input4-W-route fehlende D-Kontexte bleiben ohne Admission oder erfundene U-only Abnahme", async () => {
+      const x = await routeWFixture(); x.input.draftInputs = null; x.input.paidRoutes = null;
+      const result = await routeIntake(x);
+      assert.equal(result.plan.admissionCandidate, null); assert.equal(result.sourceBinding, null);
+      assert.equal(result.routeBinding.admissionPlanHash, null); assert.equal(result.executionReady, false);
+      assert.equal(result.actualInputAcceptanceVerified, false); assert.equal(result.plan.status.budgetGo, false);
+      assert.ok(result.plan.requiredActualInputs.includes("final-profile-context-and-actual-draft-payloads"));
+      assert.equal(result.plan.phasePositions.D.length, 500);
+      assert.ok(result.plan.phasePositions.D.every(d => d.inputVersionHash === null && d.requestId === null));
+    });
+    await test("Input4-W-route falsche D-Profil und Sourcebindungen werden abgewiesen", async () => {
+      const x = await routeWFixture();
+      for (const mutate of [f => { f.draftInputs[0].profileHash = "0".repeat(64); },
+        f => { f.draftInputs[0].documentKeys = ["f".repeat(64)]; },
+        f => { f.draftInputs[0].knowledgeObjectKeys = ["e".repeat(64)]; }, f => { f.draftInputs[0].context = {}; }]) {
+        const input = copy(x.input); mutate(input);
+        await assert.rejects(routeIntake({ ...x, input }), /draft-input|draft-source-binding/);
+      }
+      const result = await routeIntake(x), candidate = result.plan.admissionCandidate;
+      const u = candidate.plan.intents.find(i => i.phase === "U");
+      const command = { version: require("../lib/helmut/synthetik-500-production-command").VERSION, mode: "D-R-500",
+        package: paket, executor: null, slot: candidate,
+        understanding: [{ intentId: u.id, cluster: copy(x.w.decisions[0].cluster),
+          reads: { getExisting: {}, findVorgangCandidates: {}, listVorgangDocuments: {} },
+          sources: { documents: x.w.documents.map(d => copy(d.version)), knowledgeObjects: [] }, options: {} }],
+        drafts: [], predecessors: [], native: null, units: [] };
+      assert.throws(() => require("../lib/helmut/synthetik-500-production-command").validate(command), /future-u-dependent-D-not-admissible/);
+    });
+    await test("Input4-W-route unvollstaendige W Resolver CAS und Quellenbelege bleiben abgewiesen", async () => {
+      const x = await routeWFixture();
+      for (const mutate of [w => { w.exacts = []; }, w => { w.reservations = []; }, w => { w.memos = []; },
+        w => { w.decisions = []; }, w => { w.decisions[0].resolution.vorgangId = "fictional-foreign"; },
+        w => { w.documents[0].version.title += " drift"; }]) {
+        const w = copy(x.w); mutate(w); const inventoryBytes = JSON.stringify(w), capture = { ...x.capture, sha256: byteHash(inventoryBytes) };
+        const input = copy(x.input); input.understandingCompleteness.evidence = capture;
+        await assert.rejects(routeIntake({ ...x, input, inventoryBytes, capture }), /synthetik500-w-inventar-/);
+      }
+    });
     await test("KO60 hat feste60-Feldidentitaet und verlangt vollstaendige verlustfreieJSON-Werte", () => {
       assert.equal(KO.VERSION_FIELDS.length, 60);
       assert.equal(KO.FIELDSET_HASH, "74ffb7ce60c0bfeae472c37dce8ad10e9faae6300c094b2ef7a7b409150e1357");
