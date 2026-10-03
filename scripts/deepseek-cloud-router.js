@@ -31,9 +31,9 @@ const MAX_RETURN_CHARS = 2000;
 const DEFAULT_TIMEOUT_MS = 20 * 60 * 1000;
 
 const SAFE_ENV_KEYS = [
-  "PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "TMP", "TEMP",
+  "PATH", "USER", "LOGNAME", "SHELL", "TMPDIR", "TMP", "TEMP",
   "LANG", "LC_ALL", "LC_CTYPE", "TERM", "COLORTERM", "NO_COLOR",
-  "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY",
+  "SSL_CERT_FILE", "SSL_CERT_DIR",
 ];
 
 function charCount(value) {
@@ -46,6 +46,7 @@ function sanitizeEnv(source, codexHome) {
     if (source[key] != null && source[key] !== "") env[key] = source[key];
   }
   if (source.DEEPSEEK_API_KEY) env.DEEPSEEK_API_KEY = source.DEEPSEEK_API_KEY;
+  env.HOME = codexHome;
   env.CODEX_HOME = codexHome;
   env.HELMUT_DEEPSEEK_ROUTER = "1";
   env.TZ = "UTC";
@@ -141,6 +142,8 @@ function buildCodexArgs({ model, effort, mode, schemaFile, resultFile, cwd }) {
     "-c", `model_reasoning_effort="${effort}"`,
     "-c", 'web_search="disabled"',
     "-c", "sandbox_workspace_write.network_access=false",
+    "-c", 'shell_environment_policy.inherit="core"',
+    "-c", "shell_environment_policy.ignore_default_excludes=false",
     "-c", 'approval_policy="never"',
   ];
 }
