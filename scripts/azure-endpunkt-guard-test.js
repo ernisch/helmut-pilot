@@ -278,8 +278,12 @@ async function laufe(env) {
     guardIndex > 0 && requestIndex > guardIndex, `guard@${guardIndex} request@${requestIndex}`);
   check("G3 Die Ziel-URL wird NICHT mehr aus dem Rohwert zusammengesetzt",
     !quelle.includes("${process.env.AZURE_OPENAI_ENDPOINT}/openai/v1/responses"));
+  const routeBlock = quelle.slice(quelle.indexOf("function responsesRoute("),
+    quelle.indexOf("function requestOpenAI("));
   check("G4 Die Ziel-URL kommt aus dem geprueften Baustein",
-    quelle.includes("azureEndpunkt.baueResponsesUrl(process.env.AZURE_OPENAI_ENDPOINT,"));
+    routeBlock.includes("azureEndpunkt.baueResponsesUrl(env.AZURE_OPENAI_ENDPOINT,")
+      && routeBlock.includes("return Object.freeze({ apiUrl,")
+      && block.includes("const apiUrl = senderRoute.apiUrl;"));
 
   // ── H · Auch die uebrigen Netzaufrufstellen pruefen den Endpunkt ──────────
   // Der Guard in ai.js allein genuegt nicht: es gab drei weitere Stellen, an
