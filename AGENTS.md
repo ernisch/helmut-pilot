@@ -94,18 +94,60 @@ Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigke
 
 Codex Cloud ist die bevorzugte Arbeitsumgebung.
 
-Welches in Codex verfügbare Modell und welche Denkstufe verwendet werden,
-stellt der Betreiber in Codex ein. Dieses Repository erzwingt dafür kein
-Standardmodell und keine feste Standard Denkstufe. Die Auswahl in Codex ist
-maßgeblich für den jeweiligen Lauf.
+Das Hauptmodell und seine Denkstufe stellt der Betreiber in Codex ein. Für den
+Routerbetrieb ist GPT 6.1 Sol High oder Sehr hoch als führender Orchestrator
+vorgesehen. Die tatsächliche Auswahl bleibt eine bewusste Einstellung des
+Betreibers und wird nicht durch das Repository heimlich umgestellt.
 
-Es gibt keinen Modellrouter und keine verpflichtende Delegation an externe
-Entwicklermodelle. Für normale Helmut Arbeit wird kein lokaler Provider Launcher,
-kein separates Agentenbudget und keine providerbezogene Peak Steuerung benötigt.
-Die frühere lokale Routertechnik gehört nicht mehr zum aktiven Arbeitsweg.
+Der Cloud Router darf DeepSeek nur über
+`scripts/deepseek-cloud-router.js` starten. Er verwendet einen eigenen
+ephemeren Codex Bereich und verändert die Konfiguration der führenden Sol
+Sitzung nicht. Der Router ist erst aktiv, wenn `DEEPSEEK_API_KEY` in der
+Codex Cloud Umgebung vorhanden ist, `api.deepseek.com` erreichbar ist und ein
+gezielter Cloud Test erfolgreich war. Vorher bleibt DeepSeek inaktiv.
 
-Codex wählt für jeden Sprint den kürzesten sicheren Weg zum aktuellen
-500er Starttor. Bereits belegte Arbeit wird nicht ohne konkreten Grund wiederholt.
+Die Aufgabenverteilung im aktiven Routerbetrieb ist:
+
+1. DeepSeek Flash High für normale Analyse, Coding Arbeit, gezielte Tests,
+   Dokumentation und Routinefehler.
+2. DeepSeek V4 Pro High für schwierige Implementierung, komplexes Debugging und
+   klar abgegrenzte technische Ursachenanalyse.
+3. DeepSeek V4 Pro Max nur für sehr schwierige klar abgegrenzte technische
+   Blocker, wenn Pro High voraussichtlich nicht ausreicht.
+4. Sol Sehr hoch für unklare bereichsübergreifende Ursachen, Architektur,
+   kritische Production Sicherheit oder Aufgaben, die sich nicht sicher an
+   DeepSeek abtrennen lassen.
+5. Sol Max nur bei kritischer Production Sicherheit oder einem schwer
+   nachvollziehbaren Problem, das auf Sehr hoch nicht zuverlässig geklärt wird.
+
+Es gibt keine automatische Eskalationskette. Der Orchestrator wählt vor jedem
+Start direkt die kleinste voraussichtlich ausreichende Stufe. Ein DeepSeek
+Fehlschlag startet nicht automatisch ein weiteres Modell.
+
+DeepSeek darf keine Production Aktionen, Production Datenänderungen,
+Migrationen, Profileingriffe, Cron Änderungen, Umgebungsvariablenänderungen,
+Budgetänderungen, externe Nachrichten, Commits, Pushes, Pull Requests oder
+Merges ausführen. Architektur, Production Entscheidungen, Integrationsprüfung
+und finale Abnahme bleiben beim führenden Sol Lauf.
+
+### Kompakte DeepSeek Übergabe
+
+Der Arbeitsauftrag an DeepSeek enthält nur Ziel, relevante Dateien,
+Abnahmekriterien und notwendige Schutzgrenzen. Kein vollständiger Chatverlauf und
+keine unnötige Projektgeschichte.
+
+Die Rückgabe an Sol ist hart begrenzt auf höchstens 2000 Zeichen und enthält nur:
+
+1. Ergebnis in höchstens vier kurzen Punkten.
+2. Geänderte Dateien mit je einem kurzen Hinweis.
+3. Tatsächlich ausgeführte Tests mit Ergebnis.
+4. Echte Risiken oder offene Punkte.
+5. Genau einen empfohlenen nächsten Schritt.
+
+Keine Rohlogs, keine vollständigen Diffs, keine langen Erklärungen und keine
+Wiederholung des Projektstands. Wenn die strukturierte Rückgabe die Grenze
+überschreitet oder ungültig ist, gilt der Helferlauf als nicht sauber übergeben
+und wird nicht still als Erfolg gewertet.
 
 ### Subagenten und Parallelisierung
 
@@ -116,16 +158,19 @@ Nicht automatisch mehrere Subagenten starten.
 
 Immer die kleinste sinnvolle Anzahl verwenden.
 
-Höchstens drei parallele Schreibvorgänge gleichzeitig und nur in getrennten
-Git Worktrees oder eindeutig getrennten Bereichen.
+Standard ist ein DeepSeek Helfer gleichzeitig. Höchstens drei parallele
+Schreibvorgänge sind erlaubt und nur in getrennten Git Worktrees oder eindeutig
+getrennten Bereichen.
 
 Keine parallelen Schreibzugriffe auf gleiche Dateien, denselben Test oder
-denselben Production Bereich.
+denselben Production Bereich. Während DeepSeek in einem Bereich schreibt,
+schreibt Sol dort nicht.
 
 Doppelarbeit vermeiden. Ergebnisse vor gemeinsamen Änderungen zusammenführen
 und auf Widersprüche prüfen.
 
-Einfache Aufgaben ohne Subagent erledigen.
+Einfache Aufgaben ohne Subagent erledigen. Nach jeder DeepSeek Änderung prüft
+Sol selbst mindestens Git Status, Diff, relevante Tests und die Abnahmekriterien.
 
 **Betreibersteuerung vom 02.10.2026:** Alle zeitabhängigen Peak Arbeitssperren
 sind aufgehoben, auch die Chatvorgabe vom 01.10.2026. Neue Helmut Entwicklungsarbeit
