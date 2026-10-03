@@ -51,6 +51,7 @@ check("Umgebung reicht nur sichere Werte und DeepSeek Key weiter", () => {
   assert.equal(env.DEEPSEEK_API_KEY, "secret-deepseek");
   assert.equal(env.PATH, "/bin");
   assert.equal(env.CODEX_HOME, "/tmp/codex-home");
+  assert.equal(env.HOME, "/tmp/codex-home");
   assert.equal(env.OPENAI_API_KEY, undefined);
   assert.equal(env.SUPABASE_SERVICE_ROLE_KEY, undefined);
   assert.equal(env.VERCEL_TOKEN, undefined);
@@ -75,6 +76,8 @@ check("Codex Argumente enthalten Provider aber niemals Keywert", () => {
   assert(joined.includes("request_max_retries=0"));
   assert(joined.includes("stream_max_retries=0"));
   assert(joined.includes("sandbox_workspace_write.network_access=false"));
+  assert(joined.includes('shell_environment_policy.inherit="core"'));
+  assert(joined.includes("shell_environment_policy.ignore_default_excludes=false"));
   assert(!joined.includes("secret-deepseek"));
 });
 
