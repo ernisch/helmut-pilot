@@ -1,0 +1,26 @@
+name: DeepSeek Router Check
+
+on:
+  pull_request:
+    paths:
+      - "scripts/deepseek-cloud-router.js"
+      - "scripts/deepseek-cloud-router-test.js"
+      - "AGENTS.md"
+      - "docs/betrieb/deepseek-cloud-router-20261004.md"
+      - ".github/workflows/deepseek-router-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  router:
+    name: DeepSeek Router Offline
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Router isolation and compact handoff
+        run: node scripts/deepseek-cloud-router-test.js
