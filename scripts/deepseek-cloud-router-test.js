@@ -5,6 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const router = require("./deepseek-cloud-router");
+const connectivity = require("./deepseek-cloud-connectivity");
 
 let pass = 0;
 let fail = 0;
@@ -160,6 +161,47 @@ check("Echter Wrapper gibt nur Endbilanz zurueck und isoliert Credentials", () =
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+
+check("Connectivity nutzt curl und bewahrt den Network-Secret-Platzhalter", () => {
+  let seen = null;
+  const fakeSpawn = (bin, args, options) => {
+    seen = { bin, args, options };
+    const payload = {
+      model: "deepseek-flash",
+      status: "completed",
+      output: [{
+        type: "message",
+        content: [{ type: "output_text", text: connectivity.EXPECTED }],
+      }],
+      usage: { input_tokens: 12, output_tokens: 7, total_tokens: 19 },
+    };
+    return {
+      status: 0,
+      stdout: JSON.stringify(payload) + "\n__HELMUT_HTTP_STATUS__:200",
+      stderr: "",
+      error: null,
+    };
+  };
+  const result = connectivity.callDeepSeek({
+    apiKey: "network-secret-placeholder",
+    spawnSync: fakeSpawn,
+    env: { HTTPS_PROXY: "http://proxy.internal:3128" },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.total_tokens, 19);
+  assert.equal(seen.bin, "curl");
+  assert(seen.args.includes("https://api.deepseek.com/responses"));
+  assert(seen.args.includes("Authorization: Bearer network-secret-placeholder"));
+  assert.equal(seen.options.env.HTTPS_PROXY, "http://proxy.internal:3128");
+});
+
+check("Connectivity lehnt HTTP Fehler fail closed ab", () => {
+  assert.throws(
+    () => connectivity.parseCurlResponse('{"error":"unauthorized"}\n__HELMUT_HTTP_STATUS__:401'),
+    /deepseek-http-401/
+  );
 });
 
 check("Ohne DeepSeek Key startet kein Worker", () => {
