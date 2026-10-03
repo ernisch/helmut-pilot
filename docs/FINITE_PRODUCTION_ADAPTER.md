@@ -32,6 +32,15 @@ geprüft; `getExisting` nutzt dabei den strengen Bestandsleser. Der Provider und
 fenced Schreiber bleiben die Defaults. Alle SOURCE23- und KO60-Werte werden vor
 dem Aufruf erneut über begrenzte IDs verglichen. U benötigt den eingeschalteten
 nativen CAS; anschließend werden KO60 und die eigenen Links rein lesend bestätigt.
+Interne, sonst inaktive U-Hooks prüfen das tatsächliche Erst-/Update-Paar nach
+dem reinen Resolver vor den ersten Wirkungen und nochmals vor der nativen
+Reservierung. Claim und Zeitfenster werden vor den einzelnen echten U-Schreibern
+erneut geprüft; deren Implementierung bleibt bestehen. Nur eine nachweislich
+vor dem Provider abgewiesene Hookprüfung erhält den Nichtsend-Beleg und erzeugt
+keinen Inhaltsfehler oder Update-Fehlversuch. Die native Freigabe und ehrliche
+Unbekannt-Buchung bleiben auch nach einem Stop möglich; sie öffnen keinen
+bezahlten Versuch erneut. Artikelkontext ist für diesen endlichen Anschluss
+weiterhin nicht zugelassen.
 
 Ein D/R-Command enthält genau 500 Einheiten. Jede Einheit ruft Lage genau einmal
 mit `missingOnly` auf. Lage erzeugt D, sichert den vorhandenen Herkunftsbeleg,
@@ -44,8 +53,11 @@ endlichen Kontext vor einem weiteren Aufruf.
 
 Die vorhandene Briefing-Materialisierung erhält ausschließlich das schon
 gebundene Briefing, keinen Builder. Eine fehlende Morgenquittung wird INSERT-only
-im tatsächlichen Slot `morgenlage` an das gespeicherte Paket gebunden. Alle drei
-Ergebnispositionen werden zurückgelesen und privat aufbewahrt. Fehlende oder alte
+im tatsächlichen Slot `morgenlage` an das gespeicherte Paket gebunden.
+Die Morgenquittung hat dafür einen eigenen Schreiber mit kanonischem Beleg,
+exakter Owner-/Tag-/Paketbindung, schlichtem INSERT und vollständigem Readback;
+ein Konflikt oder eine unklare Quittierung wird nicht wiederholt.
+Alle drei Ergebnispositionen werden zurückgelesen und privat aufbewahrt. Fehlende oder alte
 Ausgaben bleiben ausdrücklich unbestätigt. Technische Speicherung erteilt kein
 Fachurteil. Auch bei Abbruch zeigt `status` alle 1500 Sollpositionen, einschließlich
 der noch nicht erreichten Positionen.
