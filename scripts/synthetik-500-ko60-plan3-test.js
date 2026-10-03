@@ -51,6 +51,13 @@ function wInputs() {
   f.draftInputs.forEach(d => { d.documentKeys = [...f.clusters[0].documentKeys]; });
   return f;
 }
+function mappedWInputs(f) {
+  const originals = copy(f.documents);
+  f.documents = f.documents.map(x => ({ ...x, version: require("../lib/helmut/quellen-auszug").geleseneQuelle(copy(x.version)) }));
+  f.clusters[0].documentKeys = C.sourceVersions(f.documents, null, null, f.version).documents.map(d => d.key);
+  f.draftInputs.forEach(d => { d.documentKeys = [...f.clusters[0].documentKeys]; });
+  return originals;
+}
 const rehash = slot => { slot.planHash = P.hash(slot.plan); return slot; };
 const request = (slot, x) => ({ admission: { operationId: slot.plan.operationId, planHash: slot.planHash }, runId: slot.plan.runId,
   phase: null, vorgangId: x.vorgangId, contractInputHash: x.contractInputHash,
@@ -213,12 +220,13 @@ async function main() {
     });
     await test("W intake bindet kanonischeOriginalbytes/Captures/Resolver ohne echteAbnahme oderLiveFallback", async () => {
       const f = wInputs(); f.knowledgeObjects = [];
+      const originalDocs = mappedWInputs(f);
       const cluster = { documents: f.documents.map(d => d.version) }, vorgangId = U.deriveVorgangId(cluster);
       f.clusters[0].vorgangId = vorgangId; bind(f);
       const ps = identity.candidatePrefixes(cluster, 3, { personengruppenAltbestand: true });
       const resolution = await U.resolveVorgang(cluster, { findVorgangCandidates: () => [], getExistingStreng: () => null });
       const w = { version: W.VERSION, projectionVersion: KO.VERSION, projectionFieldsetHash: KO.FIELDSET_HASH,
-        documents: f.documents, linkedDocuments: [], knowledgeObjects: [], prefixes: ps.length ? [{ prefixes: ps, rows: [], evidence }] : [],
+        documents: originalDocs, linkedDocuments: [], knowledgeObjects: [], prefixes: ps.length ? [{ prefixes: ps, rows: [], evidence }] : [],
         exacts: [{ vorgangId, knowledgeObjectId: null, evidence }], links: [],
         reservations: [{ vorgangId, row: null, evidence }], memos: [{ vorgangId, row: null, evidence }],
         decisions: [{ versionKey: C.sourceVersions(f.documents, [], f.clusters, f.version).clusters[0].key,
@@ -242,6 +250,7 @@ async function main() {
     });
     await test("W akzeptiert den echten nicht-exaktenPrefix15-Resolverausgang mit separaterKO60-Bindung", async () => {
       const f = wInputs();
+      const originalDocs = mappedWInputs(f);
       const cluster = { documents: f.documents.map(d => d.version) };
       const ps = identity.candidatePrefixes(cluster, 3, { personengruppenAltbestand: true });
       assert.ok(ps.length > 0);
@@ -250,7 +259,7 @@ async function main() {
       f.knowledgeObjects = [{ vorgangId: legacy, koVersion: 1, version: full }];
       f.clusters[0].vorgangId = legacy; f.clusters[0].mode = "update"; f.clusters[0].koVersion = 2; bind(f);
       const w = { version: W.VERSION, projectionVersion: KO.VERSION, projectionFieldsetHash: KO.FIELDSET_HASH,
-        documents: f.documents, linkedDocuments: [], knowledgeObjects: f.knowledgeObjects,
+        documents: originalDocs, linkedDocuments: [], knowledgeObjects: f.knowledgeObjects,
         prefixes: [{ prefixes: ps, rows: [prefix], evidence }],
         exacts: [{ vorgangId: proposed, knowledgeObjectId: null, evidence }, { vorgangId: legacy, knowledgeObjectId: full.id, evidence }],
         links: [{ knowledgeObjectId: full.id, rows: f.documents.map(d => ({ knowledge_object_id: full.id,
@@ -310,6 +319,34 @@ async function main() {
         x => { x.documents[0].version.berlin_abgerufen_at = "fictional-different-time"; }]) {
         const bad = copy(w); mutate(bad); assert.throws(() => W.baueLeseAdapter(bad), /dokument/);
       }
+    });
+    await test("W bindet roheSOURCE23-Originale getrennt vom normalisierten aktuellenResolvercluster", async () => {
+      const f = wInputs(); f.knowledgeObjects = [];
+      f.documents[0].version.quellenauszug_beleg = { status: "ergaenzt" };
+      f.documents[0].version.summary = "Cookie-Hinweis ohne belastbaren Originalartikel.";
+      const originalDocs = mappedWInputs(f);
+      assert.equal(f.documents[0].version.summary, null);
+      assert.equal(Object.hasOwn(f.documents[0].version, "quellenauszug_beleg"), false);
+      const cluster = { documents: f.documents.map(d => d.version) }, vorgangId = U.deriveVorgangId(cluster);
+      f.clusters[0].vorgangId = vorgangId; bind(f);
+      const ps = identity.candidatePrefixes(cluster, 3, { personengruppenAltbestand: true });
+      const resolution = await U.resolveVorgang(cluster, { findVorgangCandidates: () => [], getExistingStreng: () => null });
+      const w = { version: W.VERSION, projectionVersion: KO.VERSION, projectionFieldsetHash: KO.FIELDSET_HASH,
+        documents: originalDocs, linkedDocuments: [], knowledgeObjects: [],
+        prefixes: ps.length ? [{ prefixes: ps, rows: [], evidence }] : [], exacts: [{ vorgangId, knowledgeObjectId: null, evidence }],
+        links: [], reservations: [{ vorgangId, row: null, evidence }], memos: [{ vorgangId, row: null, evidence }],
+        decisions: [{ versionKey: C.sourceVersions(f.documents, [], f.clusters, f.version).clusters[0].key,
+          cluster, resolution, eligibilityEvidence: evidence }] };
+      const wb = JSON.stringify(w), ev = { reference: "fictional-normalized-W-original", sha256: byteHash(wb) };
+      f.understandingCompleteness.evidence = ev;
+      const result = await W.vorbereite(paket, JSON.stringify(f), wb, ev);
+      assert.equal(result.actualInputAcceptanceVerified, false);
+      const rawInput = copy(f); rawInput.documents = originalDocs;
+      await assert.rejects(W.vorbereite(paket, JSON.stringify(rawInput), wb, ev), /originalinput-w-bindung/);
+      const rawCluster = copy(w); rawCluster.decisions[0].cluster.documents = originalDocs.map(x => x.version);
+      const rawBytes = JSON.stringify(rawCluster), rawEvidence = { ...ev, sha256: byteHash(rawBytes) };
+      const bound = copy(f); bound.understandingCompleteness.evidence = rawEvidence;
+      await assert.rejects(W.vorbereite(paket, JSON.stringify(bound), rawBytes, rawEvidence), /resolver-originalquellen/);
     });
     assert.equal(outsideCalls, 0);
     console.log(JSON.stringify({ newGroups: passed, passed, providerCalls: 0, databaseCalls: 0, nativeCalls: 0,
