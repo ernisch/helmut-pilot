@@ -208,6 +208,7 @@ const STANDARD = new Set([
   "synthetik-500-kosten-admission-test.js", // dormante atomare Intentreserve, kein installierter Laufplan
   "synthetik-500-kosten-plan-test.js",      // vollstaendige endliche Kostenpositionen ohne Budgetfreigabe
   "synthetik-500-executor-test.js",         // gebundene Offline-Ablaufvorbereitung und absolute Laufzeitgrenze
+  "synthetik-500-production-adapter-test.js", // neuer endlicher Adapter/CAS/Once, ausschliesslich lokale Fakes
   "synthetik-500-provider-routen-test.js",  // gebundenes Quelleninventar aller erkannten Anbieterpfade
   "synthetik-500-review-receipt-test.js",   // private D-Herkunft, exakte R-Bindung und Einmal-Senderiegel
   "synthetik-500-ab-review-v2-test.js",     // explizite Kostenplan-/Executorbindung an den gespeicherten D/R-Vertrag
