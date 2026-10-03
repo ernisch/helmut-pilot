@@ -242,6 +242,11 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "relevanz-tage") {
     return require("./lib/helmut/relevanz-tage-runtime-witness").handleRequest(request, response, url, { jsonHeaders });
   }
+  if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "postgrest-actor-metadata") {
+    return require("./lib/helmut/postgrest-actor-runtime-witness").handleRequest(request, response, url, {
+      jsonHeaders, storage: storageModul
+    });
+  }
   if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "starttor-original-state") {
     return require("./lib/helmut/starttor-original-state-witness").handleRequest(request, response, url, {
       authorizeCron, jsonHeaders, storage: storageModul,
