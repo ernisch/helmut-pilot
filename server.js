@@ -242,6 +242,15 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "relevanz-tage") {
     return require("./lib/helmut/relevanz-tage-runtime-witness").handleRequest(request, response, url, { jsonHeaders });
   }
+  if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "starttor-original-state") {
+    return require("./lib/helmut/starttor-original-state-witness").handleRequest(request, response, url, {
+      authorizeCron, jsonHeaders, storage: storageModul,
+      runtime: () => ({ production: process.env.VERCEL_ENV === "production",
+        commit: process.env.VERCEL_GIT_COMMIT_SHA, deploymentId: process.env.VERCEL_DEPLOYMENT_ID,
+        immutableHost: process.env.VERCEL_URL,
+        projectRef: new URL(process.env.SUPABASE_URL || "").hostname.split(".")[0] })
+    });
+  }
   if (url.pathname === "/api/cron/testnachweis-status") {
     try {
       if (request.method !== "GET") {
