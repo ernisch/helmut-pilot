@@ -92,47 +92,58 @@ Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigke
 
 ## Modell und Arbeitsumgebung
 
-GPT-6.1 Sol ist das verbindliche Standardmodell fuer Helmut Entwicklungsarbeit.
-Codex Cloud ist die bevorzugte Arbeitsumgebung. Bis zum erfolgreich belegten
-500er Production Nachweis ist **Sehr hoch** die Standard Denkstufe. Sol
-orchestriert, analysiert, programmiert, debuggt, prueft, dokumentiert und fuehrt
-die notwendige Repository Arbeit direkt aus.
+Codex Cloud ist die bevorzugte Arbeitsumgebung.
+
+Welches in Codex verfügbare Modell und welche Denkstufe verwendet werden,
+stellt der Betreiber in Codex ein. Dieses Repository erzwingt dafür kein
+Standardmodell und keine feste Standard Denkstufe. Die Auswahl in Codex ist
+maßgeblich für den jeweiligen Lauf.
 
 Es gibt keinen Modellrouter und keine verpflichtende Delegation an externe
-Entwicklermodelle. Fuer normale Helmut Arbeit wird kein lokaler Provider Launcher,
-kein separates Agentenbudget und keine providerbezogene Peak Steuerung benoetigt.
-Die fruehere lokale Routertechnik gehoert nicht mehr zum aktiven Arbeitsweg.
+Entwicklermodelle. Für normale Helmut Arbeit wird kein lokaler Provider Launcher,
+kein separates Agentenbudget und keine providerbezogene Peak Steuerung benötigt.
+Die frühere lokale Routertechnik gehört nicht mehr zum aktiven Arbeitsweg.
 
-Sol waehlt fuer jeden Sprint den kuerzesten sicheren Weg zum aktuellen
-500er Starttor. Unabhaengige Teilaufgaben duerfen nur dann parallelisiert werden,
-wenn Codex Cloud sie sauber trennt und keine zwei schreibenden Aufgaben denselben
-Datei oder Production Bereich beruehren. Ein Router oder externer Provider darf
-dafuer nicht still installiert oder aktiviert werden.
+Codex wählt für jeden Sprint den kürzesten sicheren Weg zum aktuellen
+500er Starttor. Bereits belegte Arbeit wird nicht ohne konkreten Grund wiederholt.
 
-Die Denkstufe ist bis zum erfolgreich belegten 500er Production Nachweis
-standardmaessig **Sehr hoch**. **Hoch** ist nur fuer eindeutig einfache Arbeit
-sinnvoll, zum Beispiel kleine rein lesende Pruefungen, einfache Git Pruefungen,
-kleine Dokumentationsaenderungen oder einen klaren Routinefix. **Max** ist fuer
-kritische Production Sicherheit, einen schwer nachvollziehbaren Fehler, eine
-komplexe Architekturentscheidung oder dann vorgesehen, wenn Sehr hoch bei einem
-konkret belegten schwierigen Problem nicht ausreicht. Bereits belegte Arbeit wird
-nicht ohne konkreten Grund wiederholt.
+### Subagenten und Parallelisierung
 
-**Betreibersteuerung vom 02.10.2026:** Alle zeitabhaengigen Peak Arbeitssperren
+Subagenten nur einsetzen, wenn Parallelisierung tatsächlich Zeit spart oder
+unabhängige Arbeit sinnvoll getrennt werden kann.
+
+Nicht automatisch mehrere Subagenten starten.
+
+Immer die kleinste sinnvolle Anzahl verwenden.
+
+Höchstens drei parallele Schreibvorgänge gleichzeitig und nur in getrennten
+Git Worktrees oder eindeutig getrennten Bereichen.
+
+Keine parallelen Schreibzugriffe auf gleiche Dateien, denselben Test oder
+denselben Production Bereich.
+
+Doppelarbeit vermeiden. Ergebnisse vor gemeinsamen Änderungen zusammenführen
+und auf Widersprüche prüfen.
+
+Einfache Aufgaben ohne Subagent erledigen.
+
+**Betreibersteuerung vom 02.10.2026:** Alle zeitabhängigen Peak Arbeitssperren
 sind aufgehoben, auch die Chatvorgabe vom 01.10.2026. Neue Helmut Entwicklungsarbeit
-darf zu jeder Uhrzeit starten; dafuer ist kein Peak GO erforderlich. Aeltere
-Chattexte und Uploads begruenden keine erneute Arbeitssperre. Diese Freigabe betrifft
-nur die Arbeitszeit. Production Schutz, Kostenlimits fuer echte Production Anbieter,
-Merge Regeln und alle ausdruecklich geschuetzten Aktionen bleiben unveraendert.
+darf zu jeder Uhrzeit starten; dafür ist kein Peak GO erforderlich. Ältere
+Chattexte und Uploads begründen keine erneute Arbeitssperre. Diese Freigabe betrifft
+nur die Arbeitszeit. Production Schutz, Kostenlimits für echte Production Anbieter,
+Merge Regeln und alle ausdrücklich geschützten Aktionen bleiben unverändert.
 
-Bei kritischen Production Aenderungen darf die endgueltige Abnahme nicht
-ausschliesslich durch denselben ausfuehrenden Modelllauf erfolgen. Sol darf die Umsetzung und das Belegpaket erstellen. Fuer die kritische Endabnahme ist ein
-unabhaengiger Pruefer mit einem anderen Modell oder einer anderweitig unabhaengigen
-Pruefinstanz erforderlich. Ist diese nicht verfuegbar, bleibt die Endabnahme offen.
-Es gibt dafuer keinen automatischen Router und keinen automatischen Modellstart.
+Bei kritischen Production Änderungen darf die endgültige Abnahme nicht
+ausschließlich durch denselben ausführenden Modelllauf erfolgen. Der ausführende
+Hauptlauf darf die Umsetzung und das Belegpaket erstellen. Für die kritische
+Endabnahme ist ein unabhängiger Prüfer mit einem anderen geeigneten Modell oder
+einer anderweitig unabhängigen Prüfinstanz erforderlich. Ist diese nicht
+verfügbar, bleibt die Endabnahme offen. Es gibt dafür keinen automatischen Router
+und keinen automatischen Modellstart.
 
 Zu Aufgabenbeginn wird nur dann ein Modellwechsel sichtbar gemeldet, wenn
-tatsaechlich ein Wechsel stattfindet. Keine erfundenen Helfer, keine behaupteten
+tatsächlich ein Wechsel stattfindet. Keine erfundenen Helfer, keine behaupteten
 Delegationen und keine automatische Eskalation ohne realen Start.
 
 ## Grundregel
@@ -469,10 +480,10 @@ Nur im konkret freigegebenen Umfang handeln.
 
 ## Kostenpflichtige Modell- und API-Aufrufe
 
-Normale Codex Cloud Entwicklungsarbeit mit GPT-6.1 Sol High ist vom Helmut
-Production Anbieterbudget getrennt. Dafuer gibt es im Repository keinen eigenen
-Router, keinen separaten Provider Kostenwaechter und keine zeitabhaengige
-Arbeitsfreigabe.
+Normale Codex Cloud Entwicklungsarbeit mit dem vom Betreiber in Codex
+ausgewählten Modell und der dort gewählten Denkstufe ist vom Helmut Production
+Anbieterbudget getrennt. Dafür gibt es im Repository keinen eigenen Router,
+keinen separaten Provider Kostenwächter und keine zeitabhängige Arbeitsfreigabe.
 
 Fuer echte Helmut Production Modell und API Aufrufe innerhalb eines gestarteten,
 klar begrenzten Sprints bleiben die bestehenden Grenzen unveraendert:
@@ -540,19 +551,18 @@ Alle500 Zielprofile erhalten dieselben fachlichen Pruefungen und denselben techn
 
 ### Gesonderte unabhaengige Endpruefung
 
-GPT-6.1 Sol High orchestriert den freigegebenen Production Lauf und verantwortet
-Startschutz, vollstaendige Bilanz und ein nachpruefbares Belegpaket. Dieses
-enthaelt mindestens Laufkennung, Production Commit und Deployment, den Beleg fuer
-exakt 500 gleichzeitig aktive Profile, die 1500 erwarteten Ergebnispositionen mit
-getrennten Fehler und Leergruenden, die vorab festgelegten Fachkriterien und
-zugehoerigen Belege, transparent abgegrenzte Textpruefungen, Kosten, Laufzeit,
-Endzustand und Rueckweg.
+Der vom Betreiber in Codex für den freigegebenen Production Lauf gewählte
+Hauptlauf verantwortet Startschutz, vollständige Bilanz und ein nachprüfbares
+Belegpaket. Dieses enthält mindestens Laufkennung, Production Commit und
+Deployment, den Beleg für exakt 500 gleichzeitig aktive Profile, die 1500
+erwarteten Ergebnispositionen mit getrennten Fehler und Leergründen, die vorab
+festgelegten Fachkriterien und zugehörigen Belege, transparent abgegrenzte
+Textprüfungen, Kosten, Laufzeit, Endzustand und Rückweg.
 
-Nach dem Lauf wird dieses Belegpaket einer gesonderten unabhaengigen Endpruefung
-vorgelegt. Weil Sol High der ausfuehrende Standard ist, darf Sol High nicht allein
-seine eigene kritische Endabnahme erteilen. Fuer den endgueltigen Production
-Nachweis ist ein anderes geeignetes Modell oder eine anderweitig unabhaengige
-Pruefinstanz erforderlich. Diese Pruefung wiederholt den bezahlten Production Test
+Nach dem Lauf wird dieses Belegpaket einer gesonderten unabhängigen Endprüfung
+vorgelegt. Der ausführende Hauptlauf darf nicht allein seine eigene kritische
+Endabnahme erteilen. Für den endgültigen Production Nachweis ist ein anderes
+geeignetes Modell oder eine anderweitig unabhängige Prüfinstanz erforderlich. Diese Pruefung wiederholt den bezahlten Production Test
 nicht und erteilt keine zusaetzliche Production Freigabe.
 
 Bis diese unabhaengige Pruefung anhand erreichbarer Primaerbelege erfolgt ist und
@@ -637,27 +647,24 @@ Kurze Empfehlung.
 
 ### Empfohlene Denkstufe?
 
-Jeder relevante Abschlussbericht nennt fuer den **unmittelbar naechsten Schritt**
+Jeder relevante Abschlussbericht nennt für den **unmittelbar nächsten Schritt**
 genau eine Empfehlung aus **Hoch**, **Sehr hoch** oder **Max**. Direkt danach
 folgt ein kurzer, konkreter Grund, damit der Betreiber die Empfehlung
 nachvollziehen kann.
 
-**Hoch**: nur fuer eindeutig einfache Arbeit wie kleine rein lesende Pruefungen,
-einfache Git Pruefungen, kleine Dokumentationsaenderungen oder einen klaren
-Routinefix.
+**Hoch**: für Routine, normale technische Umsetzung, gezielte Prüfung und kleine
+bis mittlere Änderungen.
 
-**Sehr hoch**: Standard bis zum erfolgreich belegten 500er Production Nachweis
-und fuer normale Helmut Implementierung, Debugging, Orchestrierung sowie mehrere
-zusammenhaengende technische Schritte.
+**Sehr hoch**: für schwierige Fehler, komplexe Entscheidungen, größere Änderungen
+oder mehrere eng zusammenhängende technische Schritte mit erhöhtem Risiko.
 
-**Max**: nur fuer kritische Production Sicherheit, schwer nachvollziehbare Fehler,
+**Max**: nur für kritische Production Sicherheit, schwer nachvollziehbare Fehler,
 komplexe Architekturentscheidungen oder wenn Sehr hoch bei einem konkret belegten
 schwierigen Problem nicht ausreicht.
 
-Die Empfehlung ist eine begruendete Arbeitseinschaetzung, keine Garantie. Sie darf
-nicht aus Gewohnheit auf Max gesetzt werden und darf Hoch nicht empfehlen, wenn
-der naechste Schritt mehrere kritische oder schwer reversible Entscheidungen
-enthaelt.
+Die Empfehlung ist eine Arbeitseinschätzung. Sie legt die Denkstufe nicht
+automatisch fest. Der Betreiber wählt die tatsächliche Denkstufe in Codex.
+Nicht aus Gewohnheit Sehr hoch oder Max empfehlen.
 
 ## Kommunikationsstil
 
