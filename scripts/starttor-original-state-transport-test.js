@@ -17,7 +17,7 @@ const closed = /starttor-original-state-transport-closed/;
 const never = () => new Promise(() => {});
 let passed = 0;
 
-function fixture({ phase, bytes, status = 200, headers = {}, cancelReject = false } = {}) {
+function fixture({ phase, bytes, status = 200, headers = {}, cancelReject = false, realBody } = {}) {
   let clock = 1000, seq = 0, enteredResolve;
   const entered = new Promise(resolve => { enteredResolve = resolve; });
   const timers = new Map(), calls = [], signals = [];
@@ -52,7 +52,7 @@ function fixture({ phase, bytes, status = 200, headers = {}, cancelReject = fals
     fetchImpl: (url, init) => {
       calls.push({ url, init }); signals.push(init.signal);
       if (phase === "fetch") { enteredResolve(); return never(); }
-      const responseBody = body(url);
+      const responseBody = realBody || body(url);
       return Promise.resolve({ status, headers: { get: key => headers[key] ??
         (key === "content-type" ? "application/json" : null) }, body: responseBody });
     }
@@ -95,6 +95,28 @@ async function main() {
     const f = fixture({ cancelReject: true }); await assert.rejects(f.reader.original("auth"), closed);
     assert.equal(f.stats().released, 1); assert.equal(f.timers.size, 0);
   });
+  for (const rejectLate of [false, true]) {
+    await check("Real stream cancellation settles after deadline, rejection=" + rejectLate, async () => {
+      let waitingResolve, finishCancel, failCancel;
+      const waiting = new Promise(resolve => { waitingResolve = resolve; });
+      const cancellation = new Promise((resolve, reject) => { finishCancel = resolve; failCancel = reject; });
+      let cancelled = 0;
+      const stream = new ReadableStream({
+        start(controller) { controller.enqueue(Buffer.from('[{"id":"main-auth","data":{"original":true}}]')); },
+        pull() { waitingResolve(); },
+        cancel() { cancelled++; return cancellation; }
+      });
+      const f = fixture({ realBody: stream });
+      const rejected = assert.rejects(f.reader.original("auth"), closed);
+      await waiting; f.advance(20); await rejected;
+      assert.equal(cancelled, 1); assert.equal(stream.locked, false); assert.equal(f.timers.size, 0);
+      if (rejectLate) failCancel(new Error("fictitious-late-cancel-error")); else finishCancel();
+      // Exercise the real reader's late settlement after releaseLock, including
+      // rejection. Node would fail this test process on an unhandled rejection.
+      await new Promise(setImmediate);
+      assert.equal(f.calls.length, 1); assert.equal(stream.locked, false);
+    });
+  }
   await check("Later calls retain the original operation deadline", async () => {
     const f = fixture(); await f.reader.original("auth"); f.advance(19);
     await f.reader.original("main"); f.advance(1);
