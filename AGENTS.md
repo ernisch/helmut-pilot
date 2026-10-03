@@ -162,6 +162,12 @@ Standard ist ein DeepSeek Helfer gleichzeitig. Höchstens drei parallele
 Schreibvorgänge sind erlaubt und nur in getrennten Git Worktrees oder eindeutig
 getrennten Bereichen.
 
+Parallele Helfer und operative Subagenten werden im aktiven Routerbetrieb
+grundsätzlich über DeepSeek gestartet. Keine zusätzlichen Sol Subagenten für
+Arbeit, die sicher an DeepSeek delegiert werden kann. Ein Sol Subagent ist nur
+zulässig, wenn die konkrete Aufgabe nicht sicher an DeepSeek delegiert werden
+kann; der Grund muss vor dem Start kurz ausdrücklich genannt werden.
+
 Keine parallelen Schreibzugriffe auf gleiche Dateien, denselben Test oder
 denselben Production Bereich. Während DeepSeek in einem Bereich schreibt,
 schreibt Sol dort nicht.
