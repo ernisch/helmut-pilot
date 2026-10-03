@@ -266,9 +266,9 @@ const navItems = [
 ];
 
 const mobileNavItems = [
+  ["helmut", "Briefing"],
   ["briefing", "Lage"],
   ["radar", "Radar"],
-  ["helmut", "Briefing"],
   ["office", "Büro"]
 ];
 
@@ -590,12 +590,11 @@ const ONBOARDING_STEPS = 7;
 function renderOnboarding() {
   if (!onboardingActive) return "";
   const d = onboardingDraft;
-  const mandateName = profile?.fullName || allowedProfiles.find((p) => p.id === activePoliticianId)?.name || "dein Mandat";
   let body = "";
   if (onboardingStep === 0) {
     body = `
       <h2>Willkommen bei Helmut.</h2>
-      <p class="onboarding-lead">Lass uns ${escapeHtml(mandateName)} in unter 2 Minuten einrichten, damit dein Briefing sofort passt.</p>
+      <p class="onboarding-lead">Lass uns dein Mandatsprofil einrichten. Das dauert etwa zwei Minuten.</p>
       <p class="onboarding-note">Diese Angaben nutzt Helmut nur zur Personalisierung deiner Briefings. Du kannst sie jederzeit ändern oder löschen.</p>`;
   } else if (onboardingStep === 1) {
     body = `
@@ -630,7 +629,7 @@ function renderOnboarding() {
     const selectedFormats = new Set(d.officeFormats || ["presse", "linkedin"]);
     body = `
       <h2>Büro-Formate</h2>
-      <p class="onboarding-note">Was soll Helmut automatisch vorbereiten, wenn dein Briefing kommt? Du kannst das jederzeit in den Einstellungen ändern.</p>
+      <p class="onboarding-note">Welche Entwürfe soll Helmut dir im Büro anbieten? Du kannst das jederzeit in den Einstellungen ändern.</p>
       <div class="onboarding-chips">
         ${OFFICE_FORMATS.map((f) => `<label class="onboarding-chip"><input type="checkbox" name="officeFormat" value="${escapeAttribute(f.id)}" ${selectedFormats.has(f.id) ? "checked" : ""}/> ${escapeHtml(f.label)}</label>`).join("")}
       </div>`;
@@ -639,7 +638,7 @@ function renderOnboarding() {
       <h2>Risiken & Chancen (optional)</h2>
       <label>Risiko-Themen (Komma-getrennt)<input name="riskTopics" type="text" value="${escapeAttribute(d.riskTopics || "")}" placeholder="z. B. Klinikschließungen" /></label>
       <label>Chancen-Themen (Komma-getrennt)<input name="opportunityTopics" type="text" value="${escapeAttribute(d.opportunityTopics || "")}" placeholder="z. B. Pflege-Offensive" /></label>
-      <p class="onboarding-note">Fertig — danach ist Helmut auf dich eingestellt.</p>`;
+      <p class="onboarding-note">Mit „Fertig & speichern“ wird dein Profil gespeichert. Alles lässt sich später im Profil ändern.</p>`;
   }
   const isFirst = onboardingStep === 0;
   const isLast = onboardingStep === ONBOARDING_STEPS - 1;
@@ -701,9 +700,10 @@ async function finishOnboarding(skip) {
   try {
     const res = await apiSend("PATCH", `/api/profile/current?${apiScopeQuery()}`, payload);
     if (res.ok && res.json) profile = res.json;
-    showToast(skip ? "Du kannst dein Profil jederzeit in den Einstellungen ergänzen." : "Profil eingerichtet — Helmut ist startklar.");
+    showToast(!res.ok || !res.json ? "Profil konnte nicht gespeichert werden" : skip ? "Du kannst dein Profil jederzeit in den Einstellungen ergänzen." : "Profil gespeichert");
   } catch (error) {
     console.warn("Onboarding speichern fehlgeschlagen", error);
+    showToast("Profil konnte nicht gespeichert werden");
   }
   render();
 }
@@ -5447,6 +5447,19 @@ function openVorgangSheet(id, { viaClick = false } = {}) {
   const v = vsheetFindVorgang(id);
   if (!v) return;
   if (vsheetEl) { vsheetTeardown(); }
+  if (window.matchMedia("(max-width: 767px)").matches) {
+    const before = uiViewSnapshot();
+    selectedVorgangId = id;
+    detailOriginView = currentView === "vorgang" ? detailOriginView : currentView;
+    currentView = "vorgang";
+    navOpen = false;
+    updatesOpen = false;
+    rememberUiDetail(before);
+    render();
+    window.scrollTo({ top: 0, behavior: "auto" });
+    guardDetailGhostClick(viaClick);
+    return;
+  }
 
   vsheetLastFocus = document.activeElement;
 
@@ -5504,18 +5517,7 @@ function openVorgangSheet(id, { viaClick = false } = {}) {
   // einen nachfolgenden Klick in der CAPTURE-Phase ab (läuft vor dem Backdrop-
   // Handler) und lösen den Fänger danach wieder — spätere, bewusste Backdrop-
   // Klicks (neue Geste) schließen wie vorgesehen.
-  if (!viaClick) {
-    let ghostTimer = 0;
-    const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); releaseGuard(); };
-    const releaseGuard = () => {
-      if (ghostTimer) { window.clearTimeout(ghostTimer); ghostTimer = 0; }
-      document.removeEventListener("click", swallow, true);
-      vsheetGhostGuard = null;
-    };
-    document.addEventListener("click", swallow, true);
-    ghostTimer = window.setTimeout(releaseGuard, 700); // falls doch kein Klick folgt
-    vsheetGhostGuard = releaseGuard;
-  }
+  guardDetailGhostClick(viaClick);
 
   // Escape + einfacher Fokus-Trap (Tab bleibt im Sheet).
   vsheetKeyHandler = (e) => {
@@ -5558,6 +5560,22 @@ function openVorgangSheet(id, { viaClick = false } = {}) {
   requestAnimationFrame(() => {
     if (sheet) { try { sheet.focus({ preventScroll: true }); } catch (_) { sheet.focus(); } }
   });
+}
+
+// Verhindert denselben nachfolgenden Kompatibilitätsklick in beiden Darstellungen.
+function guardDetailGhostClick(viaClick) {
+  if (!viaClick) {
+    let ghostTimer = 0;
+    const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); releaseGuard(); };
+    const releaseGuard = () => {
+      if (ghostTimer) { window.clearTimeout(ghostTimer); ghostTimer = 0; }
+      document.removeEventListener("click", swallow, true);
+      vsheetGhostGuard = null;
+    };
+    document.addEventListener("click", swallow, true);
+    ghostTimer = window.setTimeout(releaseGuard, 700); // falls doch kein Klick folgt
+    vsheetGhostGuard = releaseGuard;
+  }
 }
 
 // Setzt die vertikale Verschiebung des Sheets (Snap/Drag).
@@ -5706,8 +5724,14 @@ function lageStarIcon() {
 function renderVorgangDetailView() {
   const data = lageData();
   const list = (data && Array.isArray(data.vorgaenge)) ? data.vorgaenge : [];
-  const v = list.find((x) => x.id === selectedVorgangId) || list[0];
+  const v = list.find((x) => String(x.vorgangId || x.id) === String(selectedVorgangId)) || list[0];
   if (!v) { currentView = "briefing"; return renderLageView(); }
+  if (window.matchMedia("(max-width: 767px)").matches) {
+    return `<section class="vdetail vdetail--mobile">
+      <button class="vdetail-back" type="button" data-detail-back data-view="${escapeAttribute(detailOriginView || "briefing")}">← ${escapeHtml(navItems.find(([id]) => id === detailOriginView)?.[1] || "Lage")}</button>
+      ${vsheetContentHtml(v)}
+    </section>`;
+  }
 
   const sources = Array.isArray(v.sources) ? v.sources : [];
   const docs = Array.isArray(v.documents) ? v.documents : [];
@@ -5724,7 +5748,7 @@ function renderVorgangDetailView() {
 
   return `
     <section class="vdetail">
-      <button class="vdetail-back" type="button" data-view="briefing">← Zurück zur Lage</button>
+      <button class="vdetail-back" type="button" data-detail-back data-view="${escapeAttribute(detailOriginView || "briefing")}">← ${escapeHtml(navItems.find(([id]) => id === detailOriginView)?.[1] || "Lage")}</button>
       <div class="vdetail-grid">
         <div class="vdetail-main">
           <div class="vdetail-topline">
@@ -6017,7 +6041,7 @@ function renderBriefingView() {
     ${renderCollapsible("parlament", "Parlamentarische Vorgänge", parliamentItems.length || null, renderParliamentListHtml())}
     ${renderCollapsible("termine", "Termine & Vorbereitung", null, renderMeetingPrepSection())}
     ${renderCollapsible("ausblick", "Wochenausblick & Kontext", null, renderWeeklyOutlook())}
-    ${renderCollapsible("lernen", "Lernpuls", null, renderLearningPulse())}
+    ${renderCollapsible("lernen", "Rückmeldungen", null, renderLearningPulse())}
   `;
 }
 
@@ -6127,17 +6151,10 @@ function renderLageSnapshot() {
 
 function renderLearningPulse() {
   const learning = opsStatus?.learning || briefing.learning || briefing.learningProfile || {};
-  const count = Number(learning.eventCount || 0);
-  const positive = learning.topicWeights?.find((entry) => Number(entry.score || 0) > 0);
-  const negative = learning.topicWeights?.find((entry) => Number(entry.score || 0) < 0);
-  const message = count
-    ? learning.summary || `Helmut hat ${count} Nutzungssignale und passt die Priorisierung vorsichtig an.`
-    : "Markiere Empfehlungen als relevant, später, erledigt oder nicht relevant. Daraus lernt Helmut, was für dein Mandat wirklich zählt.";
-  const focus = positive ? `Stärker: ${positive.label}` : negative ? `Weniger: ${negative.label}` : "Lernmodus bereit";
   return `
-    <section class="learning-pulse" aria-label="Lernmodus">
-      <span>${escapeHtml(focus)}</span>
-      <p>${escapeHtml(message)}</p>
+    <section class="learning-pulse" aria-label="Rückmeldungen">
+      <span>Rückmeldungen</span>
+      <p>${escapeHtml(learningSummary(learning))}</p>
     </section>
   `;
 }
@@ -6445,7 +6462,7 @@ function renderHelmutThinkingView() {
       <section class="helmut-refresh helmut-refresh--error" aria-live="polite">
         <div class="helmut-refresh-core" aria-hidden="true"><span class="helmut-refresh-mark">H</span></div>
         <p class="helmut-refresh-title">Aktualisierung gerade nicht möglich</p>
-        <p class="helmut-refresh-sub">Helmut konnte den Stand gerade nicht neu prüfen. Der zuletzt bekannte Stand bleibt sichtbar. Bitte in einem Moment erneut auf „neu prüfen" tippen.</p>
+        <p class="helmut-refresh-sub">Helmut konnte den Stand gerade nicht neu prüfen. Der zuletzt bekannte Stand bleibt sichtbar. Ein neuer Versuch ist in einigen Minuten möglich.</p>
       </section>
     `;
   }
@@ -6478,7 +6495,7 @@ function renderHelmutThinkingView() {
 const HELMUT_ICON_BOLT = `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>`;
 const HELMUT_ICON_EYE = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
 const HELMUT_ICON_IGNORE = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>`;
-const HELMUT_ICON_STAR = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="m12 3 2.6 5.6 6 .6-4.5 4 1.3 6L12 16.9 6.6 19.2l1.3-6L3.4 9.2l6-.6z"/></svg>`;
+const HELMUT_ICON_ACTION_DOT = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>`;
 const HELMUT_ICON_CLOCK = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
 const HELMUT_ICON_SPARK = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/></svg>`;
 const HELMUT_ICON_X = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>`;
@@ -7150,7 +7167,7 @@ function renderHelmutDeckSection() {
   if (!helmutDeck.length) {
     return `
       <section class="helmut-deck-section" aria-label="Deine wichtigsten Entscheidungen">
-        <p class="helmut-deck-empty">Heute ist wenig Dringendes dabei — ich melde mich, sobald sich etwas bewegt.</p>
+        <p class="helmut-deck-empty">Heute ist wenig Dringendes dabei.</p>
       </section>`;
   }
   const remaining = Math.max(0, helmutDeck.length - helmutDecisionsMade);
@@ -7365,13 +7382,13 @@ function renderCarouselInner() {
         <div class="helmut-deck-card-head">
           <span class="helmut-deck-progress">${safeIndex + 1} von ${items.length}</span>
           <span class="helmut-deck-badge ${escapeAttribute(bucket)}">${escapeHtml(HELMUT_BUCKET_LABEL[bucket])}</span>
-          <button class="helmut-deck-star" type="button" data-detail="${escapeAttribute(card.id)}" aria-label="Empfehlung öffnen">${HELMUT_ICON_STAR}</button>
+          <button class="helmut-deck-open" type="button" data-detail="${escapeAttribute(card.id)}" aria-label="Empfehlung öffnen">${HELMUT_ICON_ACTION_DOT}</button>
         </div>
         <h3 class="helmut-deck-title">${escapeHtml(card.title || "Thema")}</h3>
         ${subtitle ? `<p class="helmut-deck-subtitle">${escapeHtml(subtitle)}</p>` : ""}
         <dl class="helmut-deck-bullets">
-          ${why ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_STAR}</span>Warum betrifft dich das?</dt><dd>${escapeHtml(why)}</dd></div>` : ""}
-          ${risk ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_STAR}</span>Risiko bei Nichtreaktion</dt><dd>${escapeHtml(risk)}</dd></div>` : ""}
+          ${why ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_ACTION_DOT}</span>Warum betrifft dich das?</dt><dd>${escapeHtml(why)}</dd></div>` : ""}
+          ${risk ? `<div><dt><span class="helmut-bullet-ico">${HELMUT_ICON_ACTION_DOT}</span>Risiko bei Nichtreaktion</dt><dd>${escapeHtml(risk)}</dd></div>` : ""}
           ${time ? `<div class="helmut-deck-line"><dt><span class="helmut-bullet-ico">${HELMUT_ICON_CLOCK}</span>Zeitaufwand</dt><dd>${escapeHtml(time)}</dd></div>` : ""}
           ${pct != null ? `<div class="helmut-deck-line helmut-deck-score"><dt><span class="helmut-bullet-ico">${HELMUT_ICON_SPARK}</span>Vertrauensscore</dt><dd><span class="helmut-score-bar"><span class="helmut-score-fill" style="width:${pct}%"></span></span><span class="helmut-score-val">${pct} %</span></dd></div>` : ""}
         </dl>
@@ -7401,9 +7418,59 @@ function patchCarousel() {
 // Öffnet die Detailansicht einer Entscheidung. Gescopt bindbar, damit Teil-Patches
 // (patchCarousel) nur ihre eigenen neuen Knoten binden und render()/bindActions()
 // weiterhin den Gesamtbaum abdeckt.
+// M2: Browser-Zurück für bestehende Detailansichten. Inhalte bleiben nur im
+// Arbeitsspeicher; history.state enthält einen sitzungsgebundenen Index, keine
+// Profil-/Entwurfstexte. Keine neuen URLs oder Backendabrufe.
+const uiDetailSession = `${Date.now()}:${Math.random()}`;
+const uiDetailEntries = [];
+function uiViewSnapshot() {
+  return { view: currentView, origin: detailOriginView, decision: selectedDecisionId,
+    vorgang: selectedVorgangId, draft: selectedOfficeDraft, profile: activePoliticianId, account: currentUser?.id || null,
+    scroll: window.scrollY || 0 };
+}
+function uiHistoryEntry() {
+  const marker = window.history?.state?.helmutUiDetail;
+  return marker?.session === uiDetailSession ? marker : null;
+}
+function rememberUiDetail(before) {
+  if (!window.history?.pushState) return;
+  try {
+    const originIndex = uiDetailEntries.push(before) - 1;
+    window.history.replaceState({ ...window.history.state,
+      helmutUiDetail: { session: uiDetailSession, index: originIndex } }, "");
+    const detailIndex = uiDetailEntries.push(uiViewSnapshot()) - 1;
+    window.history.pushState({ ...window.history.state,
+      helmutUiDetail: { session: uiDetailSession, index: detailIndex } }, "");
+  } catch (error) { console.warn("Detail-Zurück nicht verfügbar", error); }
+}
+function returnFromUiDetail() {
+  const marker = uiHistoryEntry();
+  const entry = marker && uiDetailEntries[marker.index];
+  if (!entry || entry.profile !== activePoliticianId || entry.account !== (currentUser?.id || null) || entry.view !== currentView) return false;
+  window.history.back();
+  return true;
+}
+window.addEventListener("popstate", () => {
+  const marker = uiHistoryEntry();
+  const entry = marker && uiDetailEntries[marker.index];
+  if (!entry || entry.profile !== activePoliticianId || entry.account !== (currentUser?.id || null)) return;
+  if (vsheetEl) vsheetTeardown();
+  currentView = entry.view;
+  detailOriginView = entry.origin;
+  selectedDecisionId = entry.decision;
+  selectedVorgangId = entry.vorgang;
+  selectedOfficeDraft = entry.draft;
+  navOpen = false;
+  updatesOpen = false;
+  persistView(currentView);
+  render();
+  window.scrollTo({ top: entry.scroll, behavior: "auto" });
+});
+
 function bindDetailOpen(root) {
   (root || app).querySelectorAll("[data-detail]").forEach((button) => {
     button.addEventListener("click", () => {
+      const before = uiViewSnapshot();
       selectedDecisionId = button.dataset.detail;
       detailOriginView = currentView === "detail" ? detailOriginView : currentView;
       currentView = "detail";
@@ -7411,7 +7478,9 @@ function bindDetailOpen(root) {
       updatesOpen = false;
       const decision = selectedDecision();
       logDecisionInteraction("detail_opened", decision);
+      rememberUiDetail(before);
       render();
+      window.scrollTo({ top: 0, behavior: "auto" });
     });
   });
 }
@@ -8762,7 +8831,7 @@ function renderDetailView() {
   const feedbackState = decision.feedback || (decision.status === "ignored" ? "ignored" : decision.status === "snoozed" ? "snoozed" : decision.status === "relevant" ? "marked_relevant" : "");
   return `
     <article class="detail-page">
-      <button class="back-link" type="button" data-view="briefing">Zurück zur Lage</button>
+      <button class="back-link" type="button" data-detail-back data-view="${escapeAttribute(detailOriginView || "briefing")}">← ${escapeHtml(navItems.find(([id]) => id === detailOriginView)?.[1] || "Lage")}</button>
 
       <header class="article-head">
         <span class="${decision.priorityType}">${escapeHtml(decision.priorityLabel)}</span>
@@ -9157,7 +9226,7 @@ function renderOfficeDraftDetail() {
     <div class="buero-detail-view">
       <nav class="buero-detail-nav">
         <button class="buero-back-btn" type="button" data-office-back>
-          <i class="ti ti-arrow-left" aria-hidden="true"></i> Büro
+          ← Büro
         </button>
       </nav>
       <header class="buero-detail-header">
@@ -10028,8 +10097,8 @@ function mentionRows(items, options = {}) {
     if (options.empty === false) return "";
     return `
       <div class="radar-empty-hint">
-        <p><strong>Keine neue Erwähnung</strong><br>Personensuche läuft weiter. Nächster Quellenlauf heute Abend.</p>
-        <button class="secondary-button" type="button" data-radar-search>Suche prüfen</button>
+        <p><strong>Keine neue Erwähnung</strong><br>Helmut prüft die Quellen morgens und abends.</p>
+        <button class="secondary-button" type="button" data-radar-search>Quellen jetzt prüfen</button>
       </div>
     `;
   }
@@ -10215,12 +10284,8 @@ function renderSettingsView() {
   const isAdmin = role === "admin";
 
   const learning = ops.learning || {};
-  const learnCount = Number(learning.eventCount || 0);
-  const learnLabel = learnCount === 0
-    ? "Noch keine Signale"
-    : learnCount < 5
-      ? `${learnCount} Signal${learnCount === 1 ? "" : "e"} · lernt an`
-      : `${learnCount} Signale · Vertrauen ${learning.confidence || "mittel"}`;
+  const learnLabel = learningSummary(learning);
+
 
   const systemOk = opsStatusLoaded && storage.backend === "supabase" && ops.ai?.enabled;
   const systemBadge = !opsStatusLoaded
@@ -10269,7 +10334,7 @@ function renderSettingsView() {
           </label>`;
         }).join("")}
         <div class="stg-row">
-          <span class="stg-row-label">Helmut lernt</span>
+          <span class="stg-row-label">Rückmeldungen</span>
           <span class="stg-row-value">${escapeHtml(learnLabel)}</span>
         </div>
       </div>
@@ -10292,17 +10357,17 @@ function renderSettingsView() {
     <div class="stg-section">
       <span class="stg-label">Mitteilungen</span>
       <div class="stg-group">
-        <div class="stg-row">
+        <label class="stg-row stg-row--toggle">
           <div style="flex:1;min-width:0">
             <div class="stg-row-label">Push-Benachrichtigungen</div>
             ${pushBlocked ? `<div class="stg-row-sublabel">In den Browser-Einstellungen erlauben</div>` : ""}
           </div>
-          <label class="stg-toggle">
+          <span class="stg-toggle">
             <input type="checkbox" data-enable-push ${push.enabled && pushPermissionState() === "granted" ? "checked" : ""} ${!pushSupported || pushBlocked ? "disabled" : ""}/>
             <span class="stg-toggle-track"></span>
             <span class="stg-toggle-thumb"></span>
-          </label>
-        </div>
+          </span>
+        </label>
         ${isAdmin ? `
         <div class="stg-row">
           <span class="stg-row-label">Push-Test</span>
@@ -10325,17 +10390,17 @@ function renderSettingsView() {
           </div>
           ${cats.map(c => {
             const on = ns[c.id] !== false;
-            return `<div class="stg-row">
+            return `<label class="stg-row stg-row--toggle">
               <div style="flex:1;min-width:0">
                 <div class="stg-row-label">${escapeHtml(c.label)}</div>
                 <div class="stg-row-sublabel">${escapeHtml(c.sub)}</div>
               </div>
-              <label class="stg-toggle">
+              <span class="stg-toggle">
                 <input type="checkbox" data-notif-toggle="${escapeAttribute(c.id)}" ${on ? "checked" : ""}/>
                 <span class="stg-toggle-track"></span>
                 <span class="stg-toggle-thumb"></span>
-              </label>
-            </div>`;
+              </span>
+            </label>`;
           }).join("")}
         </div>`;
       })() : ""}
@@ -10467,8 +10532,8 @@ function qualitySummary(quality) {
 }
 
 function learningSummary(learning) {
-  if (!learning || !learning.eventCount) return "Helmut lernt aus Relevant, Später, Nicht relevant, Kopieren, Notizen und Büroaufträgen. Noch gibt es keine gespeicherten Nutzungssignale.";
-  return `${learning.eventCount} Signale · Vertrauen ${learning.confidence}. ${learning.summary || "Ähnliche Themen werden künftig vorsichtig angepasst."}`;
+  if (!learning || !learning.eventCount) return "Noch keine Rückmeldungen gespeichert.";
+  return `${learning.eventCount} Rückmeldungen gespeichert. Ab fünf berücksichtigt Helmut sie bei Textentwürfen im Büro. Die Priorisierung ändern sie derzeit nicht.`;
 }
 
 function readinessSummary(readiness) {
@@ -11400,9 +11465,12 @@ function bindActions() {
   }
   app.querySelectorAll("[data-view]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.hasAttribute("data-detail-back") && returnFromUiDetail()) return;
       if (vsheetEl) closeVorgangSheet(true); // Detail-Sheet bei Navigation schließen
       currentView = button.dataset.view;
       persistView(currentView);
+      const marker = uiHistoryEntry();
+      if (marker) uiDetailEntries[marker.index] = uiViewSnapshot();
       navOpen = false;
       updatesOpen = false;
       if (currentView === "office" || currentView === "office-detail" || currentView === "tasks") markOfficeSeen();
@@ -11477,20 +11545,20 @@ function bindActions() {
   app.querySelectorAll("[data-lage-done]").forEach((button) => {
     button.addEventListener("click", async () => {
       const decision = decisions.find((entry) => entry.id === button.dataset.lageDone);
+      if (!await logDecisionInteraction("done", decision)) { showToast("Rückmeldung nicht gespeichert"); return; }
       if (decision) { decision.status = "done"; decision.feedback = "done"; }
       render();
-      showToast("Als erledigt markiert");
-      logDecisionInteraction("done", decision);
+      showToast("Als erledigt gespeichert");
     });
   });
 
   app.querySelectorAll("[data-lage-ignore]").forEach((button) => {
     button.addEventListener("click", async () => {
       const decision = decisions.find((entry) => entry.id === button.dataset.lageIgnore);
+      if (!await logDecisionInteraction("ignored", decision)) { showToast("Rückmeldung nicht gespeichert"); return; }
       if (decision) { decision.status = "ignored"; decision.feedback = "ignored"; }
       render();
-      showToast("Wird niedriger gewichtet");
-      logDecisionInteraction("ignored", decision);
+      showToast("Als nicht relevant gespeichert");
     });
   });
 
@@ -11534,10 +11602,10 @@ function bindActions() {
             status: "open"
           })
         });
-        if (res.ok) {
-          const saved = await res.json();
-          if (saved && saved.id) tasks = [saved, ...tasks.filter((t) => t.id !== saved.id)];
-        }
+        if (!res.ok) { showToast("Konnte nicht delegiert werden"); return; }
+        const saved = await res.json();
+        if (!saved || !saved.id) { showToast("Konnte nicht delegiert werden"); return; }
+        tasks = [saved, ...tasks.filter((t) => t.id !== saved.id)];
         logDecisionInteraction("delegated", decision);
         showToast("An Büro delegiert");
       } catch (error) {
@@ -11556,6 +11624,7 @@ function bindActions() {
 
   app.querySelectorAll("[data-office-open]").forEach((card) => {
     const open = () => {
+      const before = uiViewSnapshot();
       const key = card.dataset.officeOpen;
       const formatId = card.dataset.officeFormat;
       const format = OFFICE_FORMATS.find((f) => f.id === formatId);
@@ -11584,6 +11653,7 @@ function bindActions() {
         provenance: draftProvenanceLabel(officeDraftProvenance(cachedValue), hasValidCached)
       };
       currentView = "office-detail";
+      rememberUiDetail(before);
       render();
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -11593,6 +11663,7 @@ function bindActions() {
 
   app.querySelectorAll("[data-office-back]").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (returnFromUiDetail()) return;
       selectedOfficeDraft = null;
       currentView = "office";
       render();
@@ -11672,11 +11743,13 @@ function bindActions() {
         openVorgangSheet(button.dataset.vorgang, { viaClick: true });
         return;
       }
+      const before = uiViewSnapshot();
       selectedVorgangId = button.dataset.vorgang;
       detailOriginView = (currentView === "vorgang") ? detailOriginView : currentView;
       currentView = "vorgang";
       navOpen = false;
       updatesOpen = false;
+      rememberUiDetail(before);
       render();
       window.scrollTo({ top: 0, behavior: "auto" });
     });
@@ -11802,14 +11875,14 @@ function bindActions() {
         : button.dataset.feedback === "later" ? "snoozed"
           : button.dataset.feedback === "done" ? "done"
           : "marked_relevant";
-      await logDecisionInteraction(type, decision);
+      if (!await logDecisionInteraction(type, decision)) { showToast("Rückmeldung nicht gespeichert"); return; }
       if (decision) {
         decision.feedback = type;
         decision.status = type === "ignored" ? "ignored" : type === "snoozed" ? "snoozed" : type === "done" ? "done" : "relevant";
       }
       button.closest(".learning-actions")?.querySelectorAll("[data-feedback]").forEach((entry) => entry.classList.remove("is-active"));
       button.classList.add("is-active");
-      showToast(type === "ignored" ? "Wird niedriger gewichtet" : type === "snoozed" ? "Für später gemerkt" : type === "done" ? "Als erledigt gelernt" : "Als relevant gemerkt");
+      showToast(type === "ignored" ? "Als nicht relevant gespeichert" : type === "snoozed" ? "Für später vermerkt" : type === "done" ? "Als erledigt gespeichert" : "Als relevant gespeichert");
     });
   });
 
@@ -11836,8 +11909,9 @@ function bindActions() {
         const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Pilot check failed: ${response.status}`);
         const result = await response.json();
-        showToast(result.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
-        await loadBriefing();
+        showToast(result.ok === false ? "Prüfung nicht abgeschlossen – letzter Stand bleibt sichtbar" : result.skippedReason ? "Letzter Lauf wird genutzt" : "Helmut ist aktualisiert");
+        if (result.ok !== false) await loadBriefing();
+        else { button.disabled = false; button.textContent = originalText; }
       } catch (error) {
         console.error(error);
         button.disabled = false;
@@ -11852,16 +11926,16 @@ function bindActions() {
     button.addEventListener("click", async () => {
       const originalText = button.textContent;
       button.disabled = true;
-      button.textContent = "Suche wird geprüft";
+      button.textContent = "Prüft …";
       try {
         const response = await fetchWithTimeout(`/api/pipeline/run?${apiScopeQuery()}`);
         if (!response.ok) throw new Error(`Search failed: ${response.status}`);
         const result = await response.json();
-        button.textContent = result.skippedReason ? "Keine neue Erwähnung gefunden." : "Suche aktualisiert.";
+        button.textContent = result.ok === false ? "Prüfung nicht abgeschlossen." : result.skippedReason ? "Gerade erst geprüft – letzter Lauf gilt." : "Quellen geprüft.";
         window.setTimeout(() => { button.disabled = false; button.textContent = originalText; }, 2600);
-        await loadBriefing();
+        if (result.ok !== false) await loadBriefing();
       } catch {
-        button.textContent = "Suche wird beim nächsten Quellenlauf aktualisiert.";
+        button.textContent = "Prüfung konnte nicht gestartet werden.";
         window.setTimeout(() => { button.disabled = false; button.textContent = originalText; }, 2600);
       }
     });
@@ -13307,21 +13381,24 @@ function showToast(message) {
 }
 
 async function logInteraction(interaction) {
-  if (previewMode) return;
-  if (!profile) return;
+  if (previewMode || !profile) return false;
   try {
-    await fetchWithTimeout(`/api/interactions?${apiScopeQuery()}`, {
+    const response = await fetchWithTimeout(`/api/interactions?${apiScopeQuery()}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ politicianId: profile.id, ...interaction })
     });
+    if (!response.ok) return false;
+    const saved = await response.json();
+    return Boolean(saved && saved.id);
   } catch (error) {
     console.warn("Interaction not saved", error);
+    return false;
   }
 }
 
 async function logDecisionInteraction(type, decision, extra = {}) {
-  if (!decision) return;
+  if (!decision) return false;
   return logInteraction({
     type,
     signalId: decision.signalId || decision.id || "",
