@@ -47,6 +47,8 @@ check("Umgebung reicht nur sichere Werte und DeepSeek Key weiter", () => {
     SUPABASE_SERVICE_ROLE_KEY: "secret-db",
     VERCEL_TOKEN: "secret-vercel",
     GITHUB_TOKEN: "secret-github",
+    HTTPS_PROXY: "http://proxy.internal:3128",
+    NO_PROXY: "localhost,127.0.0.1",
   }, "/tmp/codex-home");
   assert.equal(env.DEEPSEEK_API_KEY, "secret-deepseek");
   assert.equal(env.PATH, "/bin");
@@ -56,6 +58,8 @@ check("Umgebung reicht nur sichere Werte und DeepSeek Key weiter", () => {
   assert.equal(env.SUPABASE_SERVICE_ROLE_KEY, undefined);
   assert.equal(env.VERCEL_TOKEN, undefined);
   assert.equal(env.GITHUB_TOKEN, undefined);
+  assert.equal(env.HTTPS_PROXY, "http://proxy.internal:3128");
+  assert.equal(env.NO_PROXY, "localhost,127.0.0.1");
 });
 
 check("Codex Argumente enthalten Provider aber niemals Keywert", () => {
