@@ -34,6 +34,8 @@ const SAFE_ENV_KEYS = [
   "PATH", "USER", "LOGNAME", "SHELL", "TMPDIR", "TMP", "TEMP",
   "LANG", "LC_ALL", "LC_CTYPE", "TERM", "COLORTERM", "NO_COLOR",
   "SSL_CERT_FILE", "SSL_CERT_DIR",
+  "HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY", "NO_PROXY",
+  "https_proxy", "http_proxy", "all_proxy", "no_proxy",
 ];
 
 function charCount(value) {
