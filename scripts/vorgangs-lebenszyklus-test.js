@@ -174,6 +174,16 @@ check("5b · `--ausfuehren` impliziert weiterhin die Kandidatenermittlung", args
 // 6 · Lauftelemetrie — jeder Ausgang klassifiziert und zaehlbar
 // =========================================================================
 const alleStatus = Object.keys(ERGEBNISGRUPPEN);
+const admissionStop = buildOutcomeTelemetry({
+  clusters: [{ documents: [{ id: "fixture-admission-doc-1" }, { id: "fixture-admission-doc-2" }] }],
+  results: [{ status: "skipped-production-admission", documents: 0 }]
+});
+check("6 · Production-Vorstopp bleibt unerledigte Arbeit ohne fachlichen Endzustand",
+  admissionStop.ergebnisse["skipped-production-admission"] === 1
+    && admissionStop.gruppen.erneut === 1 && admissionStop.gruppen.unbekannt === 0
+    && admissionStop.gruppen.fehlgeschlagen === 0 && admissionStop.gruppen.verarbeitet === 0
+    && admissionStop.dokumente === 2 && admissionStop.dokumenteMitEndzustand === 0
+    && admissionStop.dokumenteOhneEndzustand === 2);
 check("6 · `skipped-exists` ist keine Ergebnisklasse mehr", !alleStatus.includes("skipped-exists"));
 check("6 · alle Ergebnisklassen sind einer Gruppe zugeordnet (keine offene Kategorie)",
   alleStatus.every((s) => typeof ERGEBNISGRUPPEN[s] === "string" && ERGEBNISGRUPPEN[s].length > 0));

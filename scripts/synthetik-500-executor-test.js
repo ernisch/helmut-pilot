@@ -44,11 +44,11 @@ function quittung(x, status = "fixture-quittiert") {
 let passed = 0;
 async function test(name, fn) { if (process.argv[2] && !name.includes(process.argv[2])) return; await fn(); passed++; console.log("PASS " + name); }
 async function main() {
-  await test("Fehlende reale Eingaben bleiben null und sperren alle Productiontore", () => {
+  await test("Fehlende reale Eingaben bleiben null und sperren alle Productiontore", async () => {
     const v = E.vorbereite(basis.paket); assert.equal(v.erwartetePositionen.length, 1500);
     assert.equal(v.strukturVollstaendig, false); assert.equal(v.laufBindung, null);
     assert.equal(v.fehlendeEingaben.length, 5); assert.equal(v.startrecht, false);
-    assert.throws(() => E.productionStart({ go: true }), /nicht-implementiert/);
+    await assert.rejects(E.productionStart({ go: true }), /closed-selector-only/);
     assert.throws(() => CLI.argumente(["--start", "/tmp/anything"]), /argumente/);
   });
   await test("Vollkostenplan bleibt nullable offen und frei behauptete SHA ersetzt keinen echten Validator", () => {

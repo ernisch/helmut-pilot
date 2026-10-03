@@ -149,10 +149,32 @@ async function completedDraft(h) {
 }
 const prepare = (h, x, overrides = {}) => R.prepareReview(x.raw, x.save, { sources: SOURCES, profile: PROFILE, owner: OWNER,
   runId: RUN, contextHash: INPUT, rule: h.rule, maxOutputTokens: h.r.maxOutputTokens, ...overrides });
+async function nativeContractRemainsClosed() {
+  // The dormant storage seam now delegates asynchronously to the guarded
+  // native adapter. Exercise that real seam with fake Auth; no transport reads.
+  const native = require("../lib/helmut/synthetik-500-native-d-store"), J = require("../lib/helmut/synthetik-500-dispatch-journal");
+  const real = native.contract;
+  let seamCalls = 0, authReads = 0, commandReads = 0, rpcCalls = 0;
+  try {
+    for (const state of [null, { state: "installed", stopRequested: false }, { state: "running", stopRequested: true }]) {
+      native.contract = io => {
+        seamCalls++; assert.equal(typeof io.auth, "function"); assert.equal(typeof io.command, "function"); assert.equal(typeof io.rpc, "function");
+        return real({ auth: async () => {
+          authReads++;
+          return state ? { [J.KEY]: { version: J.VERSION, activeOperationId: "fictional-unclaimed",
+            operations: { "fictional-unclaimed": { operationId: "fictional-unclaimed", units: [], attempts: {}, ...state } } } } : {};
+        }, command: async () => { commandReads++; throw Error("fixture-forbidden-command-read"); },
+        rpc: async () => { rpcCalls++; throw Error("fixture-forbidden-native-rpc"); } });
+      };
+      await assert.rejects(storage.synthetik500ReviewStorageContract(), /synthetik500-production-native-D-no-claim/);
+    }
+    assert.equal(seamCalls, 3); assert.equal(authReads, 3); assert.equal(commandReads, 0); assert.equal(rpcCalls, 0);
+  } finally { native.contract = real; }
+}
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
 async function main() {
-  assert.equal(storage.synthetik500ReviewStorageContract(), null); assert.equal(A.status().reviewAdmission, false);
+  await nativeContractRemainsClosed(); assert.equal(A.status().reviewAdmission, false);
   await test("Legacy-Entwurfsreadback bleibt bool; /1 wird nicht als neue R-Freigabe umgedeutet", async () => {
     const h = fixture({ v1: true });
     await withFixture(h, async () => {
@@ -277,7 +299,7 @@ async function main() {
     slot.plan.intents[1].id = A.intentHash(RUN, slot.plan.intents[1]); slot.planHash = P.hash(slot.plan);
     assert.throws(() => A.pruefeSlot(slot), /r-derivation-rule/);
   });
-  assert.equal(storage.synthetik500ReviewStorageContract(), null); assert.equal(A.status().reviewAdmission, false);
+  await nativeContractRemainsClosed(); assert.equal(A.status().reviewAdmission, false);
   console.log("synthetik500-review-receipt: " + passed + "/" + passed + " neue Offlinefälle;0 echte Provider/DB/Native-Aufrufe;ProductionRgeschlossen");
   return { passed, productionReviewAdmission: false };
 }
@@ -354,7 +376,7 @@ async function criticalMain() {
         assert.doesNotThrow(() => A.pruefeSlot(h.read()[A.KEY]));
       });
     }
-    assert.equal(storage.synthetik500ReviewStorageContract(), null); assert.equal(A.status().reviewAdmission, false);
+    await nativeContractRemainsClosed(); assert.equal(A.status().reviewAdmission, false);
   });
   console.log("synthetik500-review-receipt-critical: " + passed + "/3 neue kritische Offlinefälle;0 echte Provider/DB/Native-Aufrufe;ProductionRgeschlossen");
 }
