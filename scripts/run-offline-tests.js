@@ -232,6 +232,7 @@ const STANDARD = new Set([
   "admin-config-diagnose-test.js",          // Admin-Authz + keine Secrets in der Diagnose
   "provider-runtime-attestation-test.js",   // enger Cron-Bearer-Laufzeitbeleg ohne DB/Anbieter/Secrets
   "provider-runtime-auth-rebind-test.js",   // neue Nonce/Verifier-Bindung, feste Frist; keine privaten Credentials
+  "relevanz-tage-runtime-witness-test.js",  // eigener Root-Zweck, echter Relevanzresolver/Fallback, keine Daten/Provider/Secrets
   "alarm-payload-test.js",                  // Alarmkanal ohne Inhalte/Secrets
   "login-eine-mutation-test.js",            // genau eine CAS-Mutation je Login
   "invite-flow-test.js",                    // Einmal-Token, keine Enumeration, kein PII

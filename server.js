@@ -239,6 +239,9 @@ async function handleRequest(request, response) {
       readRuntimeConfiguration: () => require("./lib/helmut/ai").runtimeProviderConfiguration()
     });
   }
+  if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "relevanz-tage") {
+    return require("./lib/helmut/relevanz-tage-runtime-witness").handleRequest(request, response, url, { jsonHeaders });
+  }
   if (url.pathname === "/api/cron/testnachweis-status") {
     try {
       if (request.method !== "GET") {
