@@ -90,7 +90,11 @@ async function withSender(h, afterReserve, check, response = "ok") {
   }
 }
 let passed = 0;
-async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
+const reasoningOnly = process.argv.includes("--reasoning-guard-only");
+async function test(name, fn) {
+  if (reasoningOnly && name !== "present reasoning must be exact approved effort, including falsy inputs") return;
+  await fn(); passed++; console.log("PASS " + name);
+}
 async function drift(change) {
   const h = fixture();
   await withSender(h, change, async (send, sent) => {
@@ -148,6 +152,16 @@ async function main() {
       p => { p.tools = []; }, p => { p.model = "other"; }, p => { p.max_output_tokens = 8001; }]) {
       const p = payload(); mutate(p); assert.throws(() => A.pruefeRoutePayload(p), /route-text-features/);
     }
+  });
+  await test("present reasoning must be exact approved effort, including falsy inputs", () => {
+    for (const reasoning of [false, 0, "", null, [], {}, { effort: "high" }, { effort: "low", extra: true }]) {
+      const p = payload(); p.reasoning = reasoning;
+      assert.throws(() => A.pruefeRoutePayload(p), /route-reasoning-features/);
+    }
+    for (const effort of ["minimal", "low", "medium"]) {
+      const p = payload(); p.reasoning = { effort }; assert.doesNotThrow(() => A.pruefeRoutePayload(p));
+    }
+    const p = payload(); delete p.reasoning; assert.doesNotThrow(() => A.pruefeRoutePayload(p));
   });
   await test("every final input/schema/output/model content bound, including Unicode", async () => {
     const h = fixture(), t = await B.reserviere(h.args, h.deps);
