@@ -122,6 +122,7 @@ async function main() {
       assert.equal(Object.keys(JSON.parse(out.body)).length, 8); assert.equal(f.calls.length, 1);
       const sent = f.calls[0], expected = ["fictitious-primary-key", "fictitious-secondary-key", "fictitious-third-key"][which];
       assert.equal(sent.init.headers.apikey, expected); assert.equal(sent.init.headers.Authorization, "Bearer " + expected);
+      assert.equal(sent.init.headers["Accept-Encoding"], "identity");
       assert.equal(sent.init.method, "GET"); assert.equal(sent.init.redirect, "error"); assert.equal(sent.init.cache, "no-store");
       assert.equal(sent.url, ORIGIN + "/rest/v1/rpc/helmut_postgrest_identity_probe_v1?nonce=" + NONCE);
       assert.equal(out.headers["Cache-Control"], "no-store, private");
