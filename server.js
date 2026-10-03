@@ -233,6 +233,12 @@ async function handleRequest(request, response) {
   }
   // Maschinenlesender Laufzeitbeleg VOR dem Account Vorlauf (Adminseed).
   // Nur reine Konfigurationsfunktionen; auch Fehler werden ohne Auditwrite beantwortet.
+  if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "provider-konfiguration") {
+    return require("./lib/helmut/provider-runtime-attestation").handleRequest(request, response, url, {
+      jsonHeaders,
+      readRuntimeConfiguration: () => require("./lib/helmut/ai").runtimeProviderConfiguration()
+    });
+  }
   if (url.pathname === "/api/cron/testnachweis-status") {
     try {
       if (request.method !== "GET") {
