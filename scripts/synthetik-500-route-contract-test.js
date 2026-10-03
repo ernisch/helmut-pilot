@@ -181,13 +181,29 @@ async function main() {
       assert.equal(c.status, "ungeklaert"); assert.equal(c.reserved, 212000); assert.equal(c.cost, undefined);
     }, "error");
   });
-  await test("legacy slot readable and no opt-in upgrade or reserve/rate increase", () => {
+  await test("legacy slot readable and no opt-in upgrade or reserve/rate increase", async () => {
     const s = fixture().read()[A.KEY]; s.version = A.REVIEW_VERSION; s.plan.version = A.MULTI_U_PLAN_VERSION;
     s.plan.sourceBinding.inputVersion = C.ARTICLE_INPUT_VERSION; delete s.plan.routeContract; s.planHash = P.hash(s.plan);
     assert.doesNotThrow(() => A.pruefeSlot(s)); assert.equal(B.reservierungHoeheUsd(3000), 0.212);
     assert.equal(B.reservierungHoeheUsd(8000), 0.232); assert.equal(B.LIMIT_MICRO_USD, 6000000);
     assert.equal(E.offeneEingaben(E.ROUTE_INPUT_VERSION).kostenPlan, null);
-    assert.throws(() => E.productionStart(), /nicht-implementiert/);
+    await assert.rejects(E.productionStart(), /synthetik500-production-closed-selector-only/);
+  });
+  await test("dormant production entry rejects injected selectors and needs an installed command", async () => {
+    const storage = require("../lib/helmut/storage"), real = storage.loadSynthetik500ProductionCommand;
+    let reads = 0;
+    try {
+      storage.loadSynthetik500ProductionCommand = async (operationId, commandHash) => {
+        reads++; assert.equal(operationId, OP); assert.equal(commandHash, HASH);
+        throw Error("fixture-command-not-installed");
+      };
+      for (const selection of [null, {}, { operationId: OP, commandHash: HASH, fixture: () => {} },
+        { operationId: "foreign-operation", commandHash: HASH }, { operationId: OP, commandHash: "invalid" }])
+        await assert.rejects(E.productionStart(selection), /synthetik500-production-closed-selector-only/);
+      assert.equal(reads, 0);
+      await assert.rejects(E.productionStart({ operationId: OP, commandHash: HASH }), /fixture-command-not-installed/);
+      assert.equal(reads, 1); assert.equal(A.status().reviewAdmission, false);
+    } finally { storage.loadSynthetik500ProductionCommand = real; }
   });
   await test("new costplan explicit NULL contract stays inert; legacy rejects added contract", () => {
     const input = { version: C.ROUTE_INPUT_VERSION, operationId: OP, runId: RUN,
