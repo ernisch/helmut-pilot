@@ -91,8 +91,10 @@ async function withSender(h, afterReserve, check, response = "ok") {
 }
 let passed = 0;
 const reasoningOnly = process.argv.includes("--reasoning-guard-only");
+const deploymentOnly = process.argv.includes("--deployment-binding-only");
 async function test(name, fn) {
   if (reasoningOnly && name !== "present reasoning must be exact approved effort, including falsy inputs") return;
+  if (deploymentOnly && !["executor binds routed deployment to the same runtime and target plan", "route contract suite is in the mandatory standard selector"].includes(name)) return;
   await fn(); passed++; console.log("PASS " + name);
 }
 async function drift(change) {
@@ -231,6 +233,45 @@ async function main() {
     const k = fixture(); await B.reserviere(k.args, k.deps);
     k.modify(s => { Object.values(s[B.KEY][DAY].calls)[0].admission.runtimeRouteSnapshot.deploymentId = "dpl_Relabeled"; });
     await assert.rejects(B.reserviere(k.args, k.deps), /consumption-ledger-drift/);
+  });
+  await test("executor binds routed deployment to the same runtime and target plan", () => {
+    // Import the pure offline fixture factory; its historic test main does not run.
+    const F = require("./synthetik-500-runtime-test"), N = require("../lib/helmut/synthetik-500-nachweis");
+    const f = F.fixture({ now: Date.parse(START), operationId: OP }), runtime = f.runtimeManifest;
+    const sollplan = N.erzeugeSollplan(f.paket, { operationId: OP, productionCommit: COMMIT,
+      deploymentId: runtime.startbelegeGrundlinie.deploymentId, runtimeManifestHash: P.hash(runtime),
+      definiertAm: new Date(Date.parse(START) - 1000).toISOString(), startsAt: START,
+      endsAt: f.manifest.endeAm, briefingFensterStart: START.slice(0, 10) + "T00:00:00.000Z" });
+    const slot = fixture().read()[A.KEY], plan = slot.plan;
+    plan.runtimeManifestHash = sollplan.runtimeManifestHash; plan.endsAtUTC = sollplan.endsAt;
+    plan.routeContract.runtimeManifestHash = plan.runtimeManifestHash;
+    plan.routeContract.route.deploymentId = sollplan.deploymentId;
+    const intent = d => ({ id: A.intentHash(RUN, d), ...d });
+    plan.intents = f.paket.profile.flatMap(p => {
+      const d = intent({ phase: "D", owner: p.mandatsId, inputVersionHash: P.hash(p), actualRequestHash: HASH,
+        model: "gpt-5-mini", maxOutputTokens: 3000, attemptLimit: 1 });
+      return [d, intent({ phase: "R", owner: p.mandatsId, inputVersionHash: null, actualRequestHash: null,
+        dependsOn: d.id, contextVersionHash: d.inputVersionHash,
+        model: "gpt-5-mini", maxOutputTokens: 3000, attemptLimit: 1,
+        reviewRule: { version: require("../lib/helmut/synthetik-500-review-receipt").RULE_VERSION, reasoningEffort: "low" } })];
+    });
+    slot.planHash = P.hash(plan);
+    const input = { version: E.ROUTE_INPUT_VERSION, runtimeManifest: runtime, snapshot: f.snapshot,
+      sollplan, kostenSlot: slot, kostenPlan: null };
+    const good = E.vorbereite(f.paket, input);
+    assert.equal(good.ablaufstrukturVollstaendig, true); assert.equal(good.productionReady, false);
+    assert.equal(good.laufBindung.deploymentId, plan.routeContract.route.deploymentId);
+    // Commit, runtime hash, times, every intent and all contract fields remain valid.
+    // Only the route claims another deployment of that same commit.
+    plan.routeContract.route.deploymentId = "dpl_OtherSameCommit"; slot.planHash = P.hash(plan);
+    assert.doesNotThrow(() => A.pruefeSlot(slot));
+    assert.throws(() => E.vorbereite(f.paket, input), /kostenplan-route-deployment-drift/);
+  });
+  await test("route contract suite is in the mandatory standard selector", () => {
+    const runner = require("./run-offline-tests");
+    assert(runner.STANDARD.has("synthetik-500-route-contract-test.js"));
+    assert(runner.collectSuites().includes("synthetik-500-route-contract-test.js"));
+    assert(runner.standardSuites().includes("synthetik-500-route-contract-test.js"));
   });
   console.log(passed + "/" + passed + " new offline route groups; no current ARM/window/Production proof.");
 }
