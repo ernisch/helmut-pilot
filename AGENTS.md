@@ -147,7 +147,7 @@ Der Arbeitsauftrag an DeepSeek enthält nur Ziel, relevante Dateien,
 Abnahmekriterien und notwendige Schutzgrenzen. Kein vollständiger Chatverlauf und
 keine unnötige Projektgeschichte.
 
-Die Rückgabe an Sol ist hart begrenzt auf höchstens 2000 Zeichen und enthält nur:
+Die sichtbare Rückgabe an Sol bleibt auf höchstens 2000 Zeichen begrenzt und enthält nur:
 
 1. Ergebnis in höchstens vier kurzen Punkten.
 2. Geänderte Dateien mit je einem kurzen Hinweis.
@@ -156,9 +156,12 @@ Die Rückgabe an Sol ist hart begrenzt auf höchstens 2000 Zeichen und enthält 
 5. Genau einen empfohlenen nächsten Schritt.
 
 Keine Rohlogs, keine vollständigen Diffs, keine langen Erklärungen und keine
-Wiederholung des Projektstands. Wenn die strukturierte Rückgabe die Grenze
-überschreitet oder ungültig ist, gilt der Helferlauf als nicht sauber übergeben
-und wird nicht still als Erfolg gewertet.
+Wiederholung des Projektstands. Eine inhaltlich gültige DeepSeek Rückgabe wird
+nicht allein deshalb verworfen oder von Sol neu bearbeitet, weil ihre strukturierte
+Zusammenfassung die 2000 Zeichen Grenze geringfügig überschreitet. Der Router
+verdichtet in diesem Fall die sichtbare Übergabe deterministisch auf die Grenze
+und kennzeichnet die Verdichtung. Ungültige Struktur, fehlende Pflichtfelder,
+Widersprüche oder sicherheitsrelevante Lücken bleiben dagegen echte Fehler.
 
 ### Subagenten und Parallelisierung
 
@@ -441,6 +444,26 @@ Keine Browser Suite aus Vorsicht.
 Keine Datenbank Gesamtabnahme aus Vorsicht.
 
 Bereits erfolgreich belegte Prüfungen nicht ohne sachlichen Grund wiederholen.
+
+Die beiden GitHub Pflichtchecks bleiben als Merge Schranke bestehen, aber ihr
+Testumfang richtet sich nach den tatsächlich geänderten Dateien:
+
+1. Nur Dokumentation, `AGENTS.md` oder vergleichbare reine Steuertexte:
+   keine große Offline Suite, keine Datenbank Gesamtabnahme und kein Browserlauf.
+2. Normale klar zugeordnete Fachänderung:
+   Syntaxprüfung und nur die Tests des betroffenen Bereichs.
+3. UI Änderung:
+   zugehörige Bereichstests und Browser Smoke.
+4. Datenbank, 500er Schutzlogik, geteilte Kerndateien, CI Testauswahl,
+   Abhängigkeiten oder nicht sicher zuordenbare relevante Dateien:
+   konservative große Offline Prüfung und die erforderlichen Datenbanknachweise.
+5. Der finale 500er Production Nachweis folgt unabhängig davon immer seinem
+   ausdrücklich freigegebenen vollständigen Prüfvertrag.
+
+Die Auswahl muss fail closed sein: Ist unklar, ob eine Änderung breit wirken kann,
+wird mehr geprüft statt still weniger. Ein grüner Pflichtcheck darf bei eindeutig
+nicht betroffenen Testarten durch bewusstes Überspringen entstehen; er darf nie
+einen tatsächlich erforderlichen Test als ausgeführt darstellen.
 
 Pflicht CI darf laufen.
 
