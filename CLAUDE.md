@@ -174,9 +174,16 @@ reversibel und eindeutig sinnvoll ist.
   2026-08-24, [`docs/betrieb/op30-aktivierung-5-mandate.md`](docs/betrieb/op30-aktivierung-5-mandate.md) §31.6).
   `scripts/lokal.js` entfernt die Kennungen aus der Kindprozess-Umgebung — Dateien und
   Sitzungsvariablen bleiben unangetastet.
-- **CI-Gate:** `.github/workflows/ci.yml` — Pflicht-Checks sind ausschließlich
-  `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`. Pfadgefilterte
-  Workflows und Vercel-Checks nie als Required Check setzen.
+- **CI-Gate:** `.github/workflows/ci.yml` — Pflicht-Checks bleiben ausschließlich
+  `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`. Der kanonische
+  Prüfplan `scripts/ci-pruefplan.js` entscheidet fail closed anhand der tatsächlich
+  geänderten Dateien, welche Schritte innerhalb dieser beiden Checks nötig sind. Reine
+  Dokumentation darf schnell grün werden; normale Fachänderungen erhalten Bereichstests;
+  Browser läuft nur für UI oder direkt browserrelevante Änderungen; die große Standard-
+  Offline-Suite und isolierte Datenbanknachweise laufen nur bei Kern-, Sicherheits-,
+  Datenbank-, 500er-, CI-/Abhängigkeitsänderungen oder unklarer Zuordnung. Änderungen
+  am Prüfplan selbst erzwingen die konservative Vollprüfung. Pfadgefilterte Workflows
+  und Vercel-Checks nie als Required Check setzen.
 - **PR-Beschreibung:** was geändert wurde, echte Testergebnisse (Zahlen, keine
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
 - **Merge nur mit konkretem GO für genau diesen PR nach `AGENTS.md`.** Die frühere
