@@ -324,6 +324,26 @@ const STANDARD = new Set([
   "source-dedupe-test.js"                   // Quellen-Deduplizierung
 ]);
 
+// Schneller universeller Kern fuer normale Codeaenderungen. Diese Suiten sind
+// bewusst kurz und decken zentrale Sicherheits- und Schnittstellenvertraege ab.
+// Die grosse STANDARD-Menge bleibt fuer kritische, zentrale oder unklare Aenderungen.
+const FAST_CORE = new Set([
+  "profil-zulassung-test.js",
+  "mandantentrennung-test.js",
+  "cross-tenant-security-test.js",
+  "tenant-guard-test.js",
+  "tenant-neutrality-test.js",
+  "secret-redaction-test.js",
+  "source-mode-test.js",
+  "flags-test.js",
+  "p1-security-check.js",
+  "saas-foundation-test.js",
+  "quellenpflicht-vertrag-test.js",
+  "ki-antwortvertrag-test.js",
+  "contract-snapshot-test.js",
+  "profile-auth-decoupling-test.js",
+]);
+
 // Alle Suiten, die der Runner sammelt (Standard + alles Weitere). Die Sammlung ist die
 // VOLLSTAENDIGE Offline-Regression und der erweiterte Lauf; der Standardlauf ist die
 // Teilmenge STANDARD (siehe oben).
@@ -360,6 +380,7 @@ function main() {
   const args = process.argv.slice(2);
   const listOnly = args.includes("--list");
   const extended = args.includes("--extended");
+  const fastCore = args.includes("--fast-core");
   const nurBereich = args.includes("--nur-bereich");
   const onlyIdx = args.indexOf("--only");
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
@@ -391,6 +412,13 @@ function main() {
   let suites;
   if (extended) {
     suites = alle.slice();
+  } else if (fastCore) {
+    const fehlendFast = [...FAST_CORE].filter((f) => !alle.includes(f));
+    if (fehlendFast.length) {
+      console.error(`[run-offline-tests] FAST_CORE nennt fehlende Suite(n): ${fehlendFast.join(", ")}`);
+      return 1;
+    }
+    suites = alle.filter((f) => FAST_CORE.has(f));
   } else {
     const aendert = wertNach(args, "--aendert");
     const bereichArg = wertNach(args, "--bereich");
@@ -427,7 +455,8 @@ function main() {
 
   const modus = extended
     ? "erweitert = vollstaendige Regression"
-    : ((auswahlInfo || nurBereich) ? "Bereich = automatische Fachregression" : "Standard = Pflichtlauf");
+    : (fastCore ? "Schnellkern = zentrale Schutzvertraege"
+      : ((auswahlInfo || nurBereich) ? "Bereich = automatische Fachregression" : "Standard = Pflichtlauf"));
 
   if (listOnly) {
     suites.forEach((f) => console.log(f));
@@ -522,4 +551,4 @@ if (require.main === module) {
 
 // Fuer den Auswahl-Vertragstest (scripts/bereichsauswahl-test.js): die Kernmenge und die
 // Sammlung lesbar machen, ohne den Runner als Prozess zu starten.
-module.exports = { STANDARD, collectSuites, standardSuites };
+module.exports = { STANDARD, FAST_CORE, collectSuites, standardSuites };
