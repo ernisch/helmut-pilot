@@ -14,6 +14,7 @@ check("Dokumentation startet keine grosse CI", () => {
   const p = P.plan(["docs/CURRENT_STATE.md", "AGENTS.md"]);
   assert.equal(p.mode, "docs");
   assert.equal(p.standard, false);
+  assert.equal(p.core, false);
   assert.equal(p.database, false);
   assert.equal(p.browser, false);
   assert.equal(p.area, false);
@@ -23,6 +24,7 @@ check("Normale Fachdatei bekommt nur Bereichstests", () => {
   const p = P.plan(["lib/helmut/briefing-lauf.js"]);
   assert.equal(p.mode, "targeted");
   assert.equal(p.standard, false);
+  assert.equal(p.core, true);
   assert.equal(p.database, false);
   assert.equal(p.browser, false);
   assert.equal(p.area, true);
@@ -32,6 +34,7 @@ check("Normale Fachdatei bekommt nur Bereichstests", () => {
 check("UI bekommt Bereich plus Browser aber keine grosse Offline Suite", () => {
   const p = P.plan(["client.js", "styles.css"]);
   assert.equal(p.standard, false);
+  assert.equal(p.core, true);
   assert.equal(p.database, false);
   assert.equal(p.browser, true);
   assert.equal(p.area, true);
