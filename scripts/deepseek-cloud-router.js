@@ -46,7 +46,12 @@ const MAX_FILE_CHARS = 220000;
 // dem Reasoning Platz hat. 32768 ist die feste Obergrenze, keine Garantie fuer
 // beliebige Aufgaben.
 const READ_MAX_OUTPUT_TOKENS = 32768;
-const WRITE_MAX_OUTPUT_TOKENS = 24000;
+// Auch echte FlashHigh/ProHigh Schreibpruefungen liefen mit 24000 in
+// status=incomplete/max_output_tokens und lieferten null Aenderungen, weil sich
+// Reasoning und finale Antwort dasselbe Limit teilen. Der Write-Modus nutzt
+// deshalb dieselbe feste Obergrenze 32768; sie bleibt eine endliche gemeinsame
+// Schranke, keine Garantie fuer beliebige Aufgaben.
+const WRITE_MAX_OUTPUT_TOKENS = 32768;
 const REQUEST_TIMEOUT_SECONDS = 20 * 60;
 
 const SAFE_ENV_KEYS = [
