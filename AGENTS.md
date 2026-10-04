@@ -420,11 +420,14 @@ Beide Pflichtprüfungen `Syntax + Offline-Suiten` und
 sein. Merge an diesen Commit binden; keine Admin Umgehung, kein Force Push und
 keine Abschwächung von Schutzregeln für grüne Tests.
 
-Nach jedem Merge Deployment und Commit, relevante Fehlerprotokolle und den
-betroffenen Zustand rein lesend prüfen. Wenn ein auftragsbezogener Fehler gefunden
-wird, ihn selbstständig im selben Sprint beheben, gezielt prüfen, neuen PR erstellen,
-bei grüner Pflicht CI erneut mergen und weiterarbeiten. Keine Rückfrage nur wegen
-eines normalen auftragsbezogenen Fehlers.
+Nach jedem Merge Commit und den erwarteten Deploymentzustand rein lesend prüfen.
+Bei einer Runtime oder Konfigurationsänderung muss das reguläre Deployment erfolgreich
+sein. Bei einer ausschließlich als deploy-unwirksam klassifizierten Doku, Agenten oder
+Teständerung darf Vercel den Build über den fail-closed Ignore-Vertrag bewusst
+überspringen; dann ist genau dieser Skip zu prüfen statt ein Deployment zu erfinden.
+Wenn ein auftragsbezogener Fehler gefunden wird, ihn selbstständig im selben Sprint
+beheben, gezielt prüfen, neuen PR erstellen, bei grüner Pflicht CI erneut mergen und
+weiterarbeiten. Keine Rückfrage nur wegen eines normalen auftragsbezogenen Fehlers.
 
 Der Sprint endet erst, wenn die Abnahmekriterien erfüllt sind, ein echter
 Schutzfreigabepunkt erreicht ist oder ein nicht sicher lösbarer Blocker belegt ist.
