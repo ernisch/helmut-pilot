@@ -166,13 +166,15 @@ check("Read Modus verarbeitet private Quellen ohne Dateianderung", () => {
   }
 });
 
-check("Read Modus verarbeitet Reasoning ueber 6000 Tokens mit ausreichendem begrenztem Budget", () => {
+check("Read Modus verarbeitet Reasoning ueber dem alten 12000-Limit mit fester 32768-Obergrenze", () => {
   const p = project();
   const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-router-reasoning-"));
   const privateFile = path.join(privateDir, "caller.json");
   fs.writeFileSync(privateFile, '{"caller":"original"}\n');
   const before = fs.readFileSync(privateFile, "utf8");
-  const reasoningTokens = 7000;
+  const reasoningTokens = 16000;
+  const READ_MAX_OUTPUT_TOKENS = 32768;
+  const WRITE_MAX_OUTPUT_TOKENS = 24000;
   const responseText = JSON.stringify({
     summary: summary({ result: ["Quellenpruefung mit langem Reasoning"], next: "Sol prueft" }),
     edits: [{
@@ -216,12 +218,20 @@ check("Read Modus verarbeitet Reasoning ueber 6000 Tokens mit ausreichendem begr
     assert.equal(calls.length, 1);
     assert.equal(calls[0].bin, "curl");
     const request = JSON.parse(calls[0].options.input);
-    assert.equal(request.max_output_tokens, 12000);
+    assert.equal(request.max_output_tokens, READ_MAX_OUTPUT_TOKENS);
+    assert.equal(request.max_output_tokens, 32768, "feste Read-Obergrenze");
+    assert.equal(request.reasoning.effort, "high");
+    assert.ok(reasoningTokens > 12000, "Reasoning liegt ueber dem alten 12000-Limit");
     assert.ok(request.max_output_tokens > reasoningTokens, "Budget deckt Reasoning plus Antwort");
-    assert.ok(request.max_output_tokens < 24000, "Read-Budget bleibt begrenzt unter dem Write-Budget");
+
+    const writeRequest = router.buildRequestBody("Pruefe.", {
+      model: "deepseek-v4-pro", effort: "high", mode: "write",
+    }, []);
+    assert.equal(writeRequest.max_output_tokens, WRITE_MAX_OUTPUT_TOKENS, "Write-Budget bleibt 24000");
 
     assert.equal(result.status, "ok");
     assert.equal(result.route.mode, "read");
+    assert.equal(result.route.effort, "high");
     assert.equal(result.usage.output_tokens, reasoningTokens + 25);
     assert.deepEqual(result.applied_files, []);
     assert.equal(fs.readFileSync(privateFile, "utf8"), before);
