@@ -59,9 +59,11 @@ Abnahmekriterien und Schutzgrenzen. Der Router liest die ausgewählten Dateien
 im äußeren Codex Workspace und übergibt ihren Inhalt direkt an DeepSeek.
 DeepSeek besitzt keinen eigenen Workspace Zugriff.
 
-Die finale Rückgabe ist strukturiertes JSON und höchstens 2000 Zeichen lang.
+Die finale sichtbare Rückgabe ist strukturiertes JSON und höchstens 2000 Zeichen lang.
 Sie enthält nur Ergebnis, geänderte Dateien, tatsächlich ausgeführte Tests,
-echte Risiken und genau einen nächsten Schritt.
+echte Risiken und genau einen nächsten Schritt. Ist eine valide strukturierte
+Zusammenfassung länger, verdichtet der Router sie deterministisch und kennzeichnet
+dies; der Helferlauf wird nicht allein wegen einer kleinen Längenüberschreitung verworfen.
 
 Rohlogs, vollständige Diffs, lange Erklärungen und Projektgeschichte werden
 nicht an Sol zurückgegeben. Bei schreibenden Aufgaben verarbeitet der Router
@@ -78,7 +80,8 @@ Der Router bleibt inaktiv, bis alle folgenden Punkte erfüllt sind.
 2. Der Codex Cloud Netzwerkzugang erlaubt `api.deepseek.com`.
 3. Der Offline Routertest ist grün.
 4. Ein einzelner rein lesender Flash High Cloud Test ist erfolgreich.
-5. Die Rückgabe erfüllt den 2000 Zeichen Vertrag.
+5. Die sichtbare Rückgabe erfüllt den 2000 Zeichen Vertrag, gegebenenfalls nach
+   deterministischer Verdichtung durch den Router.
 6. Erst danach werden die aktiven Arbeitsregeln und der aktuelle Status als
    aktiviert gemergt.
 
