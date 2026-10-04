@@ -88,3 +88,25 @@ Originalbytes/SHA1c4f3753, unabhängig abgenommen0c04c55b. Die Kapselreferenz
 auf den vorherigen Requeststate-Fehlschlag bleibt eine unveränderte Historienbindung.
 App-Ausführung, current_query-/Auditadapter, Native-Ganzphase und sämtliche
 dynamischen Import-/Startrechte sind dadurch weiterhin nicht belegt.
+
+## Additive native Metadatenbindung
+
+`lib/helmut/synthetik-500-native-pin.js` ergänzt den bestehenden Importgenerator
+um `helmut-synthetik500-native-source-pin/1`. Die rein lesende Aufnahme bindet
+22 Relationen, 17 Gesamt- und 18 Scope-Revisionen, die 500 alten Mandatskennungen
+und eine Fremdkennung, den vollständigen Auth-Zeilenhash samt xmin,
+Kontrollzählungen, Prozessruhe und den aktuellen Migrationsversionsbestand.
+Sie ersetzt keinen JSONL-Beleg und behauptet keinen historischen Dateiexport.
+
+Stage erstellt den vollständigen, geschützten Rückweg weiterhin serverseitig.
+Der neue Wrapper ergänzt vor dem ersten dauerhaften Schreibeffekt drei
+Abweisungen für Auth-, Kontroll- und Journaldrift. Die übrigen Stage-Bytes sowie
+Vorwärts- und Rückweg stammen unverändert aus dem bestehenden Generator.
+Ein geänderter Eingabekontext wird bereits vor der SQL-Erzeugung abgewiesen.
+Die Eingabe bleibt auf 4 MiB begrenzt; 17 Sekunden Gesamttransaktion,
+20 Sekunden Statement und 2 Sekunden Lock bleiben erhalten.
+
+Der neue Vertrag gewährt kein Ausführungsrecht. Ein erfolgreicher lokaler
+Stage-/Ersatz-/Rückweg-Zyklus beweist keine Native-Performance und kein lebendes
+Production-Ende. Vor Anwendung sind aktuelle Primärbelege und die unabhängige
+Abnahme nötig. Aktivierung und eigentlicher 500er Test bleiben getrennte Schritte.
