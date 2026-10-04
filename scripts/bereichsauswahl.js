@@ -132,8 +132,8 @@ const BEREICHE = {
   },
   ui: {
     quelle: [/(^|\/)client\.js$/i, /(^|\/)styles\.css$/i, /(^|\/)index\.html$/i,
-      /(^|\/)sw\.js$/i, /(^|\/)lib\/helmut\/templates\//i, /(^|\/)lib\/helmut\/kalender\//i,
-      /(^|\/)lib\/helmut\/push\.js$/i],
+      /(^|\/)sw\.js$/i, /(^|\/)assets\//i, /(^|\/)lib\/helmut\/templates\//i,
+      /(^|\/)lib\/helmut\/kalender\//i, /(^|\/)lib\/helmut\/push\.js$/i],
     suiten: [/-ui-test\.js$/i, /^helmut-tab-ui/i, /^splash-boot/i, /^orientation-lock/i,
       /^pwa-icon/i, /^kalender-ics/i, /^backend-refresh/i]
   },
