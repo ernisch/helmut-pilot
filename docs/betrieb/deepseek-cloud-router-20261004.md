@@ -59,6 +59,13 @@ Abnahmekriterien und Schutzgrenzen. Der Router liest die ausgewählten Dateien
 im äußeren Codex Workspace und übergibt ihren Inhalt direkt an DeepSeek.
 DeepSeek besitzt keinen eigenen Workspace Zugriff.
 
+Die drei automatisch beigefügten kanonischen Projektquellen werden nicht mehr
+vollständig übertragen. Der Router extrahiert daraus nur die für Helfer relevanten
+Regel-, Schutz-, Ziel- und aktuellen Starttorabschnitte. Die Originaldateien bleiben
+die einzige Wahrheit; bei fehlenden erwarteten Überschriften bricht der Router
+fail closed ab. Messstand 04.10.2026 auf diesem Branch: 76.940 Zeichen vollständiger
+Kernkontext gegenüber 32.142 Zeichen ausgewähltem Kernkontext.
+
 Die finale sichtbare Rückgabe ist strukturiertes JSON und höchstens 2000 Zeichen lang.
 Sie enthält nur Ergebnis, geänderte Dateien, tatsächlich ausgeführte Tests,
 echte Risiken und genau einen nächsten Schritt. Ist eine valide strukturierte
