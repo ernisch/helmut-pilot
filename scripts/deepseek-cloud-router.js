@@ -32,9 +32,39 @@ const MODELS = Object.freeze({
 const EFFORTS = new Set(["high", "max"]);
 const MODES = new Set(["read", "write"]);
 const CORE_CONTEXT = Object.freeze([
-  "AGENTS.md",
-  "docs/START_HERE.md",
-  "docs/CURRENT_STATE.md",
+  {
+    path: "AGENTS.md",
+    sections: [
+      { title: "Verbindliche Zielgruppe: AfD ausgeschlossen" },
+      { title: "Rolle und Produktziel" },
+      { title: "Modell und Arbeitsumgebung", introOnly: true },
+      { title: "Kompakte DeepSeek Übergabe" },
+      { title: "Subagenten und Parallelisierung" },
+      { title: "Grundregel" },
+      { title: "Tests" },
+      { title: "Production Schutz", introOnly: true },
+      { title: "Kritische Aktionen" },
+      { title: "500er Production Nachweis" },
+      { title: "Wichtigste Regel" },
+    ],
+  },
+  {
+    path: "docs/START_HERE.md",
+    sections: [
+      { title: "1 · Was Helmut ist" },
+      { title: "2 · Aktuelles Projektziel" },
+      { title: "5 · Verbindliche Produktprinzipien" },
+      { title: "6 · Wichtigste technische Regeln" },
+    ],
+  },
+  {
+    path: "docs/CURRENT_STATE.md",
+    sections: [
+      { title: "Starttor und Schutzgrenzen" },
+      { title: "Arbeitssteuerung" },
+      { title: "Nächster notwendiger Schritt" },
+    ],
+  },
 ]);
 const MAX_TASK_CHARS = 12000;
 const MAX_RETURN_CHARS = 2000;
@@ -208,10 +238,47 @@ function inside(root, candidate) {
   return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
 }
 
+function markdownSection(content, title, introOnly = false) {
+  const lines = String(content || "").split("\n");
+  const heading = /^(#{1,6})\s+(.*)$/;
+  const start = lines.findIndex((line) => {
+    const match = line.match(heading);
+    return match && match[2].trim() === title;
+  });
+  if (start < 0) throw new Error(`core-context-section-missing:${title}`);
+  const level = lines[start].match(heading)[1].length;
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i += 1) {
+    const match = lines[i].match(heading);
+    if (!match) continue;
+    if (introOnly || match[1].length <= level) {
+      end = i;
+      break;
+    }
+  }
+  return lines.slice(start, end).join("\n").trim();
+}
+
+function selectCoreContext(content, spec) {
+  return spec.sections
+    .map((section) => markdownSection(content, section.title, Boolean(section.introOnly)))
+    .join("\n\n");
+}
+
 function loadSources({ cwd, explicitFiles }) {
   const seen = new Set();
   const sources = [];
   let totalChars = 0;
+  const explicitAbs = new Set(explicitFiles.map((filePath) => path.isAbsolute(filePath)
+    ? path.resolve(filePath) : path.resolve(cwd, filePath)));
+
+  function pushSource(source) {
+    totalChars += charCount(source.content);
+    if (totalChars > MAX_SOURCE_CHARS) {
+      throw new Error(`source-context-too-large:${totalChars}>${MAX_SOURCE_CHARS}`);
+    }
+    sources.push(source);
+  }
 
   function add(filePath, editable) {
     const abs = path.isAbsolute(filePath)
@@ -228,12 +295,8 @@ function loadSources({ cwd, explicitFiles }) {
       throw new Error(`source-file-missing:${filePath}`);
     }
     const content = ensureTextFile(abs);
-    totalChars += charCount(content);
-    if (totalChars > MAX_SOURCE_CHARS) {
-      throw new Error(`source-context-too-large:${totalChars}>${MAX_SOURCE_CHARS}`);
-    }
     seen.add(abs);
-    sources.push({
+    pushSource({
       abs,
       label: inside(cwd, abs) ? path.relative(cwd, abs) || path.basename(abs) : abs,
       content,
@@ -242,7 +305,22 @@ function loadSources({ cwd, explicitFiles }) {
     });
   }
 
-  for (const p of CORE_CONTEXT) add(p, false);
+  for (const spec of CORE_CONTEXT) {
+    const abs = path.resolve(cwd, spec.path);
+    if (explicitAbs.has(abs)) continue;
+    if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) {
+      throw new Error(`source-file-missing:${spec.path}`);
+    }
+    const full = ensureTextFile(abs);
+    const selected = selectCoreContext(full, spec);
+    pushSource({
+      abs,
+      label: spec.path,
+      content: selected,
+      sha256: sha256(selected),
+      editable: false,
+    });
+  }
   for (const p of explicitFiles) add(p, true);
 
   return sources;
@@ -479,6 +557,7 @@ function finalVisibleResult(summary, cfg, apiResult, applied) {
       input_tokens: Number(apiResult.usage.input_tokens || 0),
       output_tokens: Number(apiResult.usage.output_tokens || 0),
       total_tokens: Number(apiResult.usage.total_tokens || 0),
+      context_chars: Number(apiResult.contextChars || 0),
     },
     applied_files: applied.map((x) => truncateText(x, 120)),
     summary_compacted: compacted.compacted,
@@ -515,6 +594,7 @@ function run(options = {}) {
     spawnSync: options.spawnSync,
     apiKey: options.apiKey,
   });
+  apiResult.contextChars = charCount(body.input);
 
   const payload = apiResult.payload;
   const summary = validateSummary(payload.summary);
@@ -551,6 +631,8 @@ module.exports = {
   MAX_SOURCE_CHARS,
   MAX_FILE_CHARS,
   sanitizeEnv,
+  markdownSection,
+  selectCoreContext,
   summarySchema,
   modelOutputSchema,
   parseArgs,
