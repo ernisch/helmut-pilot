@@ -1,6 +1,6 @@
 "use strict";
 
-// Gleichstandsregression: synthetische UUIDs, echte Resolverlogik, nur Localhost.
+// Gleichstandsregression: synthetische Textkennungen, echte Resolverlogik, nur Localhost.
 // node scripts/lokal.js scripts/vorgangs-resolver-tie-order-test.js
 const A = require("node:assert/strict");
 const http = require("node:http");
@@ -10,7 +10,7 @@ const { resolveVorgang } = require("../lib/helmut/understanding");
 const { clusterRawDocuments, deriveVorgangId } = require("../lib/helmut/vorgang-identity");
 const { contentHash, canonicalizeUrl, dedupeRawDocuments, toRawDocumentRow } = require("../lib/helmut/dedup");
 const ISO = "2026-10-04T08:00:00.000000+00:00";
-const uuid = n => `00000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
+const key = n => `ko-${n.toString(16).padStart(12, "0")}`;
 function doc(slug, title = "Zitterpappel") {
   const url = `https://example.org/${slug}`;
   return { id: "rd-" + contentHash({ url, publishedAt: ISO, title }), title,
@@ -22,8 +22,7 @@ const clusters = clusterRawDocuments(dedupeRawDocuments([toRawDocumentRow(doc("n
 A.equal(clusters.length, 1);
 const cluster = clusters[0], proposal = deriveVorgangId(cluster);
 function ko(id, opts = {}) {
-  A.match(id, /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i,
-    "Fixture muss eine UUID enthalten");
+  A.equal(typeof id, "string", "Fixture braucht eine Textkennung");
   return { id, vorgang_id: `vg-fixture-${id.toLowerCase()}`, status: "complete",
     understanding_status: "complete", headline: "Haselnussstrauch",
     updated_at: ISO, created_at: ISO, ...opts };
@@ -49,43 +48,39 @@ let passed = 0;
 async function check(name, fn) { await fn(); passed++; console.log("PASS " + name); }
 
 (async () => {
-  await check("Gleiche Zeit: beide Eingangsreihenfolgen ergeben denselben fachlichen Gewinner", async () => {
-    const a = ko(uuid(15)), b = ko(uuid(16));
-    for (const rows of [[b, a], [a, b]]) {
-      const { result, seen } = await resolve(rows, { matching: true });
-      A.equal(result.resolution, "bestand");
-      A.equal(result.existing.id, a.id);
-      A.deepEqual(seen, [a.id]);
+  await check("Gleiche Zeit: der erste Datenbanktreffer entscheidet fachlich", async () => {
+    const a = ko(key(15)), b = ko(key(16));
+    const { result, seen } = await resolve([a, b], { matching: true });
+    A.equal(result.resolution, "bestand");
+    A.equal(result.existing.id, a.id);
+    A.deepEqual(seen, [a.id]);
+  });
+  await check("Textkennungen: Datenbankreihenfolge bleibt ohne eigene Collation oder Normalisierung erhalten", async () => {
+    for (const ids of [["ko-ä", "ko-z"], ["ko-Z", "ko-a"]]) {
+      A.deepEqual((await resolve(ids.map(id => ko(id)))).seen, ids);
     }
   });
-  await check("UUID-Reihenfolge entspricht Bytevergleich, auch bei gross geschriebenen Hexziffern", async () => {
-    const ids = [uuid(65535).toUpperCase(), uuid(256), uuid(255), uuid(16), uuid(15)];
-    const expected = ids.slice().sort((a, b) => Buffer.compare(
-      Buffer.from(a.replaceAll("-", ""), "hex"), Buffer.from(b.replaceAll("-", ""), "hex")));
-    const { seen } = await resolve(ids.map(id => ko(id)));
-    A.deepEqual(seen, expected);
-  });
-  await check("Exakter aelterer Treffer bleibt vor kleinerer UUID", async () => {
-    const exact = ko(uuid(65535), { vorgang_id: proposal, updated_at: "2021-01-01T00:00:00Z" });
-    const { result, seen } = await resolve([ko(uuid(1))], { exact, matching: true });
+  await check("Exakter aelterer Treffer bleibt vor kleinerer Kennung", async () => {
+    const exact = ko(key(65535), { vorgang_id: proposal, updated_at: "2021-01-01T00:00:00Z" });
+    const { result, seen } = await resolve([ko(key(1))], { exact, matching: true });
     A.equal(result.existing.id, exact.id);
     A.deepEqual(seen, [exact.id]);
   });
-  await check("Deduplizieren vor dem Acht-Fenster: spaete kleine UUID wird nicht hineinsortiert", async () => {
-    const exact = ko(uuid(99), { vorgang_id: proposal });
-    const retained = [9, 8, 7, 6, 5, 4, 3].map(n => ko(uuid(n)));
-    const { seen, result } = await resolve([exact, ...retained, ko(uuid(1))], { exact });
+  await check("Deduplizieren vor dem Acht-Fenster: spaete kleine Kennung wird nicht hineinsortiert", async () => {
+    const exact = ko(key(99), { vorgang_id: proposal });
+    const retained = [9, 8, 7, 6, 5, 4, 3].map(n => ko(key(n)));
+    const { seen, result } = await resolve([exact, ...retained, ko(key(1))], { exact });
     A.equal(result.spuren.length, 8);
-    A.deepEqual(seen, [exact.id, ...retained.map(k => k.id).reverse()]);
+    A.deepEqual(seen, [exact.id, ...retained.map(k => k.id)]);
   });
-  await check("Verschiedene Mikrosekunden bleiben vor der UUID massgeblich", async () => {
-    const older = ko(uuid(1), { updated_at: "2026-10-04T08:00:00.123455+00:00" });
-    const newer = ko(uuid(2), { updated_at: "2026-10-04T08:00:00.123456+00:00" });
+  await check("Verschiedene Mikrosekunden bleiben vor der Kennung massgeblich", async () => {
+    const older = ko(key(1), { updated_at: "2026-10-04T08:00:00.123455+00:00" });
+    const newer = ko(key(2), { updated_at: "2026-10-04T08:00:00.123456+00:00" });
     A.deepEqual((await resolve([older, newer])).seen, [newer.id, older.id]);
   });
   await check("Bestehender created_at-Ersatz bleibt erhalten", async () => {
-    const older = ko(uuid(1), { updated_at: null, created_at: "2020-01-01T00:00:00Z" });
-    const newer = ko(uuid(2), { updated_at: null, created_at: "2021-01-01T00:00:00Z" });
+    const older = ko(key(1), { updated_at: null, created_at: "2020-01-01T00:00:00Z" });
+    const newer = ko(key(2), { updated_at: null, created_at: "2021-01-01T00:00:00Z" });
     A.deepEqual((await resolve([older, newer])).seen, [newer.id, older.id]);
   });
   await check("Gleichstandsfix macht aus Lesefehlern keine neue Vorgangsauswahl", async () => {
@@ -94,8 +89,8 @@ async function check(name, fn) { await fn(); passed++; console.log("PASS " + nam
     A.equal(result.resolution, "bestand-lesefehler");
     A.deepEqual(seen, []);
   });
-  await check("PostgREST-Leser bindet UUID aufsteigend vor der Acht-Grenze", async () => {
-    const requests = [], rows = [ko(uuid(15)), ko(uuid(16))];
+  await check("PostgREST-Leser bindet den Textprimaerschluessel vor der Acht-Grenze", async () => {
+    const requests = [], rows = [ko(key(15)), ko(key(16))];
     const server = http.createServer((req, res) => {
       requests.push(new URL(req.url, "http://127.0.0.1"));
       res.writeHead(200, { "Content-Type": "application/json" }); res.end(JSON.stringify(rows));
@@ -120,8 +115,9 @@ async function check(name, fn) { await fn(); passed++; console.log("PASS " + nam
       server.closeAllConnections?.(); await closed;
     }
   });
-  await check("Fehlende oder fehlerhafte Fixture-UUIDs werden ausgeschlossen", async () => {
-    for (const id of ["", "ko-unqualified", "00000000-0000-4000-8000-zzzzzzzzzzzz"]) A.throws(() => ko(id));
+  await check("Textkennungen brauchen keine UUID-Form und werden nicht umgeschrieben", async () => {
+    for (const id of ["ko-Ä", "ko-Z", "ko-unqualified"]) A.equal(ko(id).id, id);
+    A.throws(() => ko(undefined));
   });
   console.log(`${passed}/${passed} Gleichstandsregressionen bestanden (nur Offline/Localhost).`);
 })().catch(error => { console.error(error); process.exitCode = 1; });
