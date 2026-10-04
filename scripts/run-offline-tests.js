@@ -304,6 +304,7 @@ const STANDARD = new Set([
   "migrations-organisation-test.js",        // Migration/Rollback-Namensregel
   "current-state-groesse-test.js",          // CURRENT_STATE-Groessengrenze
   "offline-suite-auswahl-test.js",          // dieser Standard-/Extended-Vertrag
+  "ci-pruefplan-test.js",                    // risikobasierte CI-Auswahl bleibt fail closed
   "quellenpflicht-vertrag-test.js",         // Belegpflicht (jedes Element traegt Quelle)
   "quellenpflicht-faelle-test.js",          // Belegpflicht-Faelle
   "profil-stellvertretung-integration-test.js", // nur stellvertretende Ausschuesse: Import->Storage->Reife->Pakete->Quellen (kein Rollenwechsel)
