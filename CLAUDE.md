@@ -184,6 +184,15 @@ reversibel und eindeutig sinnvoll ist.
   Datenbank-, 500er-, CI-/Abhängigkeitsänderungen oder unklarer Zuordnung. Änderungen
   am Prüfplan selbst erzwingen die konservative Vollprüfung. Pfadgefilterte Workflows
   und Vercel-Checks nie als Required Check setzen.
+- **Vercel Build-Auswahl:** `vercel.json` nutzt `scripts/vercel-ignore-build.js`.
+  Nur eindeutig reine Dokumentation, Agentenregeln und reine Testdateien dürfen einen
+  Build überspringen. Runtime, Konfiguration, Dependencies, GitHub-Workflows und jede
+  unbekannte Datei erzwingen fail closed einen normalen Build. Fehlt
+  `VERCEL_GIT_PREVIOUS_SHA` oder kann der Diff nicht sicher gelesen werden, wird gebaut.
+- **CI auf `main`:** Der Push-Lauf bleibt als zusätzliche Absicherung bestehen, solange
+  die klassische Branch-Protection mit dem verfügbaren GitHub-Zugang nicht lesend belegt
+  werden kann. Durch den risikobasierten Prüfplan wiederholt er aber keine pauschale
+  Vollsuite mehr bei eindeutig kleinen Änderungen.
 - **PR-Beschreibung:** was geändert wurde, echte Testergebnisse (Zahlen, keine
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
 - **Merge nur mit konkretem GO für genau diesen PR nach `AGENTS.md`.** Die frühere
