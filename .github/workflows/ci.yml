@@ -251,6 +251,12 @@ jobs:
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js scripts/synthetik-500-native-import-test.js --postgres-local
 
+      - name: Schnelle Kernschutzprüfung
+        if: steps.plan.outputs.core == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: node scripts/lokal.js -- node scripts/run-offline-tests.js --fast-core
+
       - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
         if: steps.plan.outputs.standard == 'true'
         # Der Runner erzwingt Offline technisch: jede Suite läuft mit einem
