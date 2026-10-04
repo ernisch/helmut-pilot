@@ -305,6 +305,7 @@ const STANDARD = new Set([
   "current-state-groesse-test.js",          // CURRENT_STATE-Groessengrenze
   "offline-suite-auswahl-test.js",          // dieser Standard-/Extended-Vertrag
   "ci-pruefplan-test.js",                    // risikobasierte CI-Auswahl bleibt fail closed
+  "vercel-ignore-build-test.js",             // Doku-Deployments nur mit enger fail-closed Erlaubnisliste ueberspringen
   "quellenpflicht-vertrag-test.js",         // Belegpflicht (jedes Element traegt Quelle)
   "quellenpflicht-faelle-test.js",          // Belegpflicht-Faelle
   "profil-stellvertretung-integration-test.js", // nur stellvertretende Ausschuesse: Import->Storage->Reife->Pakete->Quellen (kein Rollenwechsel)
