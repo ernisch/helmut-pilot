@@ -177,5 +177,6 @@
       "path": "/api/cron/understanding-rueckstand",
       "schedule": "30 17 * * *"
     }
-  ]
+  ],
+  "ignoreCommand": "node scripts/vercel-ignore-build.js"
 }
