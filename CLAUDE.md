@@ -174,29 +174,47 @@ reversibel und eindeutig sinnvoll ist.
   2026-08-24, [`docs/betrieb/op30-aktivierung-5-mandate.md`](docs/betrieb/op30-aktivierung-5-mandate.md) §31.6).
   `scripts/lokal.js` entfernt die Kennungen aus der Kindprozess-Umgebung — Dateien und
   Sitzungsvariablen bleiben unangetastet.
-- **CI-Gate:** `.github/workflows/ci.yml` — Pflicht-Checks sind ausschließlich
-  `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`. Pfadgefilterte
-  Workflows und Vercel-Checks nie als Required Check setzen.
+- **CI-Gate:** `.github/workflows/ci.yml` — Pflicht-Checks bleiben ausschließlich
+  `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`. Der kanonische
+  Prüfplan `scripts/ci-pruefplan.js` entscheidet fail closed anhand der tatsächlich
+  geänderten Dateien, welche Schritte innerhalb dieser beiden Checks nötig sind. Reine
+  Dokumentation darf schnell grün werden; normale Fachänderungen erhalten einen kleinen
+  universellen Kernschutz plus Bereichstests; Browser läuft nur für UI oder direkt
+  browserrelevante Änderungen; die große Standard-
+  Offline-Suite und isolierte Datenbanknachweise laufen nur bei Kern-, Sicherheits-,
+  Datenbank-, 500er-, CI-/Abhängigkeitsänderungen oder unklarer Zuordnung. Änderungen
+  am Prüfplan selbst erzwingen die konservative Vollprüfung. Pfadgefilterte Workflows
+  und Vercel-Checks nie als Required Check setzen.
+- **Vercel Build-Auswahl:** `vercel.json` nutzt `scripts/vercel-ignore-build.js`.
+  Nur eindeutig reine Dokumentation, Agentenregeln und reine Testdateien dürfen einen
+  Build überspringen. Runtime, Konfiguration, Dependencies, GitHub-Workflows und jede
+  unbekannte Datei erzwingen fail closed einen normalen Build. Fehlt
+  `VERCEL_GIT_PREVIOUS_SHA` oder kann der Diff nicht sicher gelesen werden, wird gebaut.
+- **CI auf `main`:** Der Push-Lauf bleibt als zusätzliche Absicherung bestehen, solange
+  die klassische Branch-Protection mit dem verfügbaren GitHub-Zugang nicht lesend belegt
+  werden kann. Durch den risikobasierten Prüfplan wiederholt er aber keine pauschale
+  Vollsuite mehr bei eindeutig kleinen Änderungen.
 - **PR-Beschreibung:** was geändert wurde, echte Testergebnisse (Zahlen, keine
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
 - **Merge nur mit konkretem GO für genau diesen PR nach `AGENTS.md`.** Die frühere
   Dauerfreigabe ist widerrufen. Grüne CI allein ist keine Merge-Freigabe.
   Nach einem autorisierten Merge selbstständig nachprüfen und im Auftrag weiterarbeiten.
-- **Drei Testebenen (Testorganisation 2026-09-23):**
-  - **Standard (immer):** Der CI-Pflichtlauf führt ausschließlich die explizite Kernmenge
-    `STANDARD` in `scripts/run-offline-tests.js` aus.
-  - **Bereich (automatisch):** Je nach tatsächlich geänderten Dateien laufen zusätzlich die
+- **Vier Testebenen:**
+  - **Schnellkern (automatisch bei normalem Code):** kleine universelle Menge
+    `FAST_CORE` in `scripts/run-offline-tests.js`; zentrale Mandanten-, Sicherheits-
+    und Schnittstellenverträge ohne die lange 500er Vollmenge.
+  - **Standard (nur konservativ):** die große explizite Kernmenge `STANDARD` läuft bei
+    Datenbank-, 500er-, zentralen, CI-/Deployment- oder unklaren relevanten Änderungen.
+  - **Bereich (automatisch):** Je nach tatsächlich geänderten Dateien laufen die
     Fach-Regressionstests der betroffenen Bereiche. Kanonische Zuordnung:
     `scripts/bereichsauswahl.js` (ausgewertet im CI-Schritt „Bereichs-Regression“ und über
-    `--aendert`/`--bereich`). Ein Test gehört über seinen **Dateinamen** zu einem Bereich
-    (z. B. `briefing-…-test.js` → Bereich `briefing`). Eine fachlich relevante, nicht
-    zuordenbare Datei wird **nicht** still übersprungen, sondern erzwingt die konservative
-    Sammelmenge.
+    `--aendert`/`--bereich`). Eine fachlich relevante, nicht zuordenbare Datei wird
+    **nicht** still übersprungen, sondern erzwingt die konservative Sammelmenge.
   - **Extended (bewusst):** die vollständige Regression über `--extended` bzw.
     `npm run test:offline:extended`.
-  Eine neue Testdatei ist **nicht** automatisch Standard; wer sie im Pflichtlauf braucht,
-  trägt sie bewusst in `STANDARD` ein. Bereiche gezielt: `--bereich <name>` oder
-  `--extended --only <substring>`; Übersicht der Bereiche: `--bereiche`.
+  Eine neue Testdatei wird weder automatisch Schnellkern noch Standard. Wer sie dort braucht,
+  trägt sie bewusst in `FAST_CORE` bzw. `STANDARD` ein. Bereiche gezielt:
+  `--bereich <name>` oder `--extended --only <substring>`; Übersicht: `--bereiche`.
 
 ## 7 · Token- und Kostenregeln
 

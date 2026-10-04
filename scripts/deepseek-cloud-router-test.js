@@ -34,9 +34,41 @@ function project() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-router-v2-test-"));
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
   fs.mkdirSync(path.join(root, "lib"), { recursive: true });
-  fs.writeFileSync(path.join(root, "AGENTS.md"), "AGENTS\n");
-  fs.writeFileSync(path.join(root, "docs/START_HERE.md"), "START\n");
-  fs.writeFileSync(path.join(root, "docs/CURRENT_STATE.md"), "STATE\n");
+  fs.writeFileSync(path.join(root, "AGENTS.md"), [
+    "# HELMUT AGENT CONTRACT",
+    "## Verbindliche Zielgruppe: AfD ausgeschlossen", "zielgruppe",
+    "## Rolle und Produktziel", "produkt",
+    "## Modell und Arbeitsumgebung", "modell intro",
+    "### Kompakte DeepSeek Übergabe", "uebergabe",
+    "### Subagenten und Parallelisierung", "parallel",
+    "### Sichtbarer Helferstatus", "NICHT_SENDEN_STATUS",
+    "## Grundregel", "grundregel",
+    "## Tests", "tests",
+    "## Production Schutz", "production intro",
+    "### Unterpunkt", "NICHT_SENDEN_PRODUCTION_DETAIL",
+    "## Kritische Aktionen", "kritisch",
+    "## 500er Production Nachweis", "500",
+    "## Wichtigste Regel", "wichtig",
+    "## Kommunikationsstil", "NICHT_SENDEN_KOMMUNIKATION",
+    ""
+  ].join("\n"));
+  fs.writeFileSync(path.join(root, "docs/START_HERE.md"), [
+    "# START",
+    "## 1 · Was Helmut ist", "was",
+    "## 2 · Aktuelles Projektziel", "ziel",
+    "## 3 · Zielgruppe und Pilotlogik", "NICHT_SENDEN_PILOT",
+    "## 5 · Verbindliche Produktprinzipien", "prinzipien",
+    "## 6 · Wichtigste technische Regeln", "technik",
+    ""
+  ].join("\n"));
+  fs.writeFileSync(path.join(root, "docs/CURRENT_STATE.md"), [
+    "# STATE",
+    "## Aktueller Production- und Entwicklungsstand", "NICHT_SENDEN_HISTORIE",
+    "## Starttor und Schutzgrenzen", "starttor",
+    "## Arbeitssteuerung", "steuerung",
+    "## Nächster notwendiger Schritt", "naechster",
+    ""
+  ].join("\n"));
   fs.writeFileSync(path.join(root, "lib/example.js"), "module.exports = 1;\n");
   const task = path.join(root, "task.txt");
   fs.writeFileSync(task, "Pruefe die uebergebenen Quellen.");
@@ -98,6 +130,37 @@ check("Quellenloader nimmt Kernregeln und explizite private Datei auf", () => {
   } finally {
     fs.rmSync(p.root, { recursive: true, force: true });
     fs.rmSync(privateDir, { recursive: true, force: true });
+  }
+});
+
+check("Kernkontext nutzt nur relevante Abschnitte der kanonischen Dateien", () => {
+  const p = project();
+  try {
+    const sources = router.loadSources({ cwd: p.root, explicitFiles: [] });
+    assert.equal(sources.length, 3);
+    const combined = sources.map((s) => s.content).join("\n");
+    assert(combined.includes("zielgruppe"));
+    assert(combined.includes("uebergabe"));
+    assert(combined.includes("starttor"));
+    assert(!combined.includes("NICHT_SENDEN_STATUS"));
+    assert(!combined.includes("NICHT_SENDEN_PRODUCTION_DETAIL"));
+    assert(!combined.includes("NICHT_SENDEN_HISTORIE"));
+    assert(!combined.includes("NICHT_SENDEN_PILOT"));
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
+  }
+});
+
+check("Explizit uebergebene Kerndatei ersetzt den gekuerzten Kontext fuer genau diese Datei", () => {
+  const p = project();
+  try {
+    const sources = router.loadSources({ cwd: p.root, explicitFiles: ["AGENTS.md"] });
+    const agents = sources.filter((s) => s.label === "AGENTS.md");
+    assert.equal(agents.length, 1);
+    assert.equal(agents[0].editable, true);
+    assert(agents[0].content.includes("NICHT_SENDEN_STATUS"));
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
   }
 });
 
@@ -316,6 +379,30 @@ check("Write Modus mit 25000 Reasoning-Tokens schreibt genau einen gebundenen Ed
   }
 });
 
+
+check("Ueberlange valide Summary wird kompakt uebergeben statt verworfen", () => {
+  const long = summary({
+    result: Array.from({ length: 4 }, (_, i) => `Ergebnis ${i + 1} ${"x".repeat(210)}`),
+    files: Array.from({ length: 10 }, (_, i) => ({
+      path: `lib/helmut/sehr-langer-pfad-${i}-${"p".repeat(120)}.js`,
+      note: `Hinweis ${"n".repeat(150)}`,
+    })),
+    tests: Array.from({ length: 8 }, (_, i) => ({
+      name: `Test ${i} ${"t".repeat(120)}`,
+      result: `not run ${"r".repeat(100)}`,
+    })),
+    risks: Array.from({ length: 4 }, (_, i) => `Risiko ${i} ${"q".repeat(200)}`),
+    next: `Weiter ${"w".repeat(220)}`,
+  });
+  assert.ok(charLength(JSON.stringify(long)) > 2000, "Testsummary ist wirklich ueberlang");
+  assert.doesNotThrow(() => router.validateSummary(long));
+  const visible = router.finalVisibleResult(long,
+    { model: "deepseek-v4-pro", effort: "high", mode: "read" },
+    { usage: { input_tokens: 1, output_tokens: 2, total_tokens: 3 } }, []);
+  assert.equal(visible.summary_compacted, true);
+  assert.ok(charLength(JSON.stringify(visible)) <= 2000, "sichtbare Rueckgabe bleibt unter 2000 Zeichen");
+});
+
 check("Write Modus wendet nur hashgebundene explizite Repository Datei an", () => {
   const p = project();
   const target = path.join(p.root, "lib/example.js");
@@ -423,14 +510,16 @@ check("Hash Drift vor Anwendung stoppt ohne Schreiben", () => {
   }
 });
 
-check("Kompakte sichtbare Rueckgabe bleibt hart begrenzt", () => {
+check("Ueberlange sichtbare Rueckgabe wird verdichtet und bleibt hart begrenzt", () => {
   const cfg = { model: "deepseek-flash", effort: "high", mode: "read" };
-  assert.throws(() => router.finalVisibleResult(
+  const visible = router.finalVisibleResult(
     summary({ result: ["x".repeat(1900)] }),
     cfg,
     { usage: {}, model: "deepseek-flash" },
     []
-  ), /visible-result-too-long|summary-too-long/);
+  );
+  assert.equal(visible.summary_compacted, true);
+  assert.ok(charLength(JSON.stringify(visible)) <= 2000);
 });
 
 check("HTTP und unvollstaendige Modellantworten werden fail closed abgelehnt", () => {

@@ -145,9 +145,12 @@ Integrationsprüfung und finale Abnahme bleiben beim führenden Sol Lauf.
 
 Der Arbeitsauftrag an DeepSeek enthält nur Ziel, relevante Dateien,
 Abnahmekriterien und notwendige Schutzgrenzen. Kein vollständiger Chatverlauf und
-keine unnötige Projektgeschichte.
+keine unnötige Projektgeschichte. Der Router übergibt aus den kanonischen
+Projektdateien nur die für einen Helfer dauerhaft relevanten Abschnitte plus den
+aktuellen Starttor und nächsten Schritt. Die kanonischen Dateien selbst bleiben
+die Wahrheit; es entsteht keine zweite Regeldatei.
 
-Die Rückgabe an Sol ist hart begrenzt auf höchstens 2000 Zeichen und enthält nur:
+Die sichtbare Rückgabe an Sol bleibt auf höchstens 2000 Zeichen begrenzt und enthält nur:
 
 1. Ergebnis in höchstens vier kurzen Punkten.
 2. Geänderte Dateien mit je einem kurzen Hinweis.
@@ -156,14 +159,29 @@ Die Rückgabe an Sol ist hart begrenzt auf höchstens 2000 Zeichen und enthält 
 5. Genau einen empfohlenen nächsten Schritt.
 
 Keine Rohlogs, keine vollständigen Diffs, keine langen Erklärungen und keine
-Wiederholung des Projektstands. Wenn die strukturierte Rückgabe die Grenze
-überschreitet oder ungültig ist, gilt der Helferlauf als nicht sauber übergeben
-und wird nicht still als Erfolg gewertet.
+Wiederholung des Projektstands. Eine inhaltlich gültige DeepSeek Rückgabe wird
+nicht allein deshalb verworfen oder von Sol neu bearbeitet, weil ihre strukturierte
+Zusammenfassung die 2000 Zeichen Grenze geringfügig überschreitet. Der Router
+verdichtet in diesem Fall die sichtbare Übergabe deterministisch auf die Grenze
+und kennzeichnet die Verdichtung. Ungültige Struktur, fehlende Pflichtfelder,
+Widersprüche oder sicherheitsrelevante Lücken bleiben dagegen echte Fehler.
 
 ### Subagenten und Parallelisierung
 
 Subagenten nur einsetzen, wenn Parallelisierung tatsächlich Zeit spart oder
 unabhängige Arbeit sinnvoll getrennt werden kann.
+
+Kleine klare Aufgaben nicht aus Gewohnheit delegieren. Wenn Sol eine Änderung
+direkt in höchstens ein bis zwei kleinen Dateien sicher erledigen kann und weder
+Parallelisierung noch umfangreiche Analyse nötig ist, arbeitet Sol selbst. Ein
+DeepSeek Start ist nur sinnvoll, wenn mindestens einer dieser Vorteile konkret
+vorliegt: parallele unabhängige Arbeit, größere klar abgegrenzte Analyse,
+eigenständige Implementierung oder erkennbare Einsparung teurer Sol Arbeit.
+
+Dateien, die den Router Dateiumfang überschreiten oder deren vollständige
+Übertragung den Delegationsnutzen offensichtlich aufzehrt, nicht erst erfolglos
+an DeepSeek senden. In diesem Fall arbeitet Sol direkt oder grenzt die Aufgabe
+anders sicher ab. Keine Router Schleife nur um eine Routingpräferenz zu erfüllen.
 
 Nicht automatisch mehrere Subagenten starten.
 
@@ -402,11 +420,14 @@ Beide Pflichtprüfungen `Syntax + Offline-Suiten` und
 sein. Merge an diesen Commit binden; keine Admin Umgehung, kein Force Push und
 keine Abschwächung von Schutzregeln für grüne Tests.
 
-Nach jedem Merge Deployment und Commit, relevante Fehlerprotokolle und den
-betroffenen Zustand rein lesend prüfen. Wenn ein auftragsbezogener Fehler gefunden
-wird, ihn selbstständig im selben Sprint beheben, gezielt prüfen, neuen PR erstellen,
-bei grüner Pflicht CI erneut mergen und weiterarbeiten. Keine Rückfrage nur wegen
-eines normalen auftragsbezogenen Fehlers.
+Nach jedem Merge Commit und den erwarteten Deploymentzustand rein lesend prüfen.
+Bei einer Runtime oder Konfigurationsänderung muss das reguläre Deployment erfolgreich
+sein. Bei einer ausschließlich als deploy-unwirksam klassifizierten Doku, Agenten oder
+Teständerung darf Vercel den Build über den fail-closed Ignore-Vertrag bewusst
+überspringen; dann ist genau dieser Skip zu prüfen statt ein Deployment zu erfinden.
+Wenn ein auftragsbezogener Fehler gefunden wird, ihn selbstständig im selben Sprint
+beheben, gezielt prüfen, neuen PR erstellen, bei grüner Pflicht CI erneut mergen und
+weiterarbeiten. Keine Rückfrage nur wegen eines normalen auftragsbezogenen Fehlers.
 
 Der Sprint endet erst, wenn die Abnahmekriterien erfüllt sind, ein echter
 Schutzfreigabepunkt erreicht ist oder ein nicht sicher lösbarer Blocker belegt ist.
@@ -417,6 +438,12 @@ Bei laufender GitHub-CI einmal den Status prüfen, dann in sinnvollen Abständen
 Nicht alle paar Sekunden pollen und keine Befehlsflut für unveränderte Zustände.
 Pflicht-CI nicht zusätzlich lokal duplizieren; bereits belegte Tests nicht ohne
 konkreten Grund wiederholen.
+
+Während CI läuft, nicht passiv warten, wenn eindeutig unabhängige Arbeit ohne
+Konflikt möglich ist. Rein lesende Analyse oder Arbeit in einem klar getrennten
+Bereich darf fortgesetzt werden. Keine Änderung an denselben Dateien, kein zweiter
+Test desselben Nachweises und keine Arbeit, deren Gültigkeit vom noch offenen CI
+Ergebnis abhängt.
 
 ## Tests
 
@@ -441,6 +468,27 @@ Keine Browser Suite aus Vorsicht.
 Keine Datenbank Gesamtabnahme aus Vorsicht.
 
 Bereits erfolgreich belegte Prüfungen nicht ohne sachlichen Grund wiederholen.
+
+Die beiden GitHub Pflichtchecks bleiben als Merge Schranke bestehen, aber ihr
+Testumfang richtet sich nach den tatsächlich geänderten Dateien:
+
+1. Nur Dokumentation, `AGENTS.md` oder vergleichbare reine Steuertexte:
+   keine große Offline Suite, keine Datenbank Gesamtabnahme und kein Browserlauf.
+2. Normale klar zugeordnete Fachänderung:
+   Syntaxprüfung, eine kleine schnelle Kernschutzprüfung und die Tests des
+   betroffenen Bereichs.
+3. UI Änderung:
+   schnelle Kernschutzprüfung, zugehörige Bereichstests und Browser Smoke.
+4. Datenbank, 500er Schutzlogik, geteilte Kerndateien, CI Testauswahl,
+   Abhängigkeiten oder nicht sicher zuordenbare relevante Dateien:
+   konservative große Offline Prüfung und die erforderlichen Datenbanknachweise.
+5. Der finale 500er Production Nachweis folgt unabhängig davon immer seinem
+   ausdrücklich freigegebenen vollständigen Prüfvertrag.
+
+Die Auswahl muss fail closed sein: Ist unklar, ob eine Änderung breit wirken kann,
+wird mehr geprüft statt still weniger. Ein grüner Pflichtcheck darf bei eindeutig
+nicht betroffenen Testarten durch bewusstes Überspringen entstehen; er darf nie
+einen tatsächlich erforderlichen Test als ausgeführt darstellen.
 
 Pflicht CI darf laufen.
 

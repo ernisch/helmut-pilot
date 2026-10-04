@@ -5,18 +5,18 @@
 //
 // Hintergrund (Audit 2026-07): 15 von 76 Testdateien waren in keinem npm-Script
 // verdrahtet und "alle Tests grün" war manuell praktisch nicht herstellbar.
-// Dieser Runner ist die eine kanonische Antwort auf "läuft die Offline-Suite?"
-// und wird vom CI-Gate (.github/workflows/ci.yml) bei jedem PR ausgeführt.
+// Dieser Runner ist die kanonische Ausfuehrung fuer Offline-Pruefungen.
+// Das CI-Gate waehlt risikobasiert zwischen Schnellkern, Bereich und grosser
+// Standardmenge; die grosse Standardmenge laeuft nicht mehr bei jedem PR.
 //
 // Aufruf:  node scripts/run-offline-tests.js [--list] [--only <substring>] [--extended]
 // Exit-Code 0 nur, wenn jede Suite mit Exit-Code 0 endet.
 //
-// STANDARD vs. BEREICH vs. ERWEITERT (Sprint 2026-09-23, Testorganisation):
-//   Standard  = der kanonische Pflichtlauf und das CI-Gate. Er fuehrt AUSSCHLIESSLICH die
-//               explizite Kernmenge STANDARD aus (aktuelle Schutz-/Sicherheitsvertraege,
-//               aktuelle 500er-Schutzlogik und die grundlegenden Vertraege des heutigen
-//               Production-Pfads).
-//   Bereich   = zusaetzlich die fachliche Regression der im PR tatsaechlich geaenderten
+// SCHNELLKERN vs. STANDARD vs. BEREICH vs. ERWEITERT:
+//   Schnellkern = kleine universelle Schutzmenge fuer normale Codeaenderungen.
+//   Standard  = grosse konservative Kernmenge fuer kritische, zentrale oder unklare
+//               Aenderungen. Sie fuehrt AUSSCHLIESSLICH die explizite Menge STANDARD aus.
+//   Bereich   = fachliche Regression der im PR tatsaechlich geaenderten
 //               Bereiche. Auswahl ueber `--aendert "<datei1 datei2 ..."` (oder `--bereich
 //               <name,...>`) anhand der kanonischen Zuordnung in scripts/bereichsauswahl.js.
 //               `--nur-bereich` fuehrt NUR die Bereichs-Suiten aus (ohne Standard, fuer einen
@@ -25,8 +25,9 @@
 //   Erweitert = die VOLLSTAENDIGE Offline-Regression (alle sammelbaren Suiten). Aufruf
 //               ueber `--extended` bzw. `npm run test:offline:extended`. Laeuft NICHT
 //               automatisch im PR.
-// Eine neue Testdatei wird NICHT automatisch zum Pflichtlauf: sie muss bewusst in STANDARD
-// eingetragen werden, sonst laeuft sie nur im erweiterten Lauf. Fuer die Bereichsauswahl
+// Eine neue Testdatei wird NICHT automatisch Teil von Schnellkern oder Standard: sie muss
+// bewusst in FAST_CORE bzw. STANDARD eingetragen werden, sonst laeuft sie nur ueber Bereich
+// oder den erweiterten Lauf. Fuer die Bereichsauswahl
 // entscheidet der DATEINAME (siehe scripts/bereichsauswahl.js). Bereichsspezifisch
 // ausfuehren: `--extended --only <substring>` (z. B. `--extended --only briefing`).
 //
@@ -169,8 +170,9 @@ const DENYLIST = new Set([
 ]);
 
 // ── STANDARD: die explizite Kernmenge des Pflichtlaufs ──────────────────────────────
-// NUR diese Suiten laufen bei jedem PR (CI-Gate). Aufnahmekriterium ist ein AKTUELLER
-// Vertrag, nicht die Laufzeit: Schutz/Sicherheit, aktuelle 500er-Schutzlogik und die
+// Diese grosse Kernmenge laeuft nur, wenn der CI-Pruefplan eine konservative Vollpruefung
+// verlangt. Aufnahmekriterium ist ein AKTUELLER Vertrag, nicht die Laufzeit: Schutz/Sicherheit,
+// aktuelle 500er-Schutzlogik und die
 // grundlegenden Vertraege des heutigen Production-Pfads. Abgeschlossene Sprints,
 // bereichsspezifische Regressionen (Briefing/Lage/Quellen/Radar/Profil/Matching/Scoring/
 // UI/Cron/Landesmodule/PARDOK/…), Simulationen und historische Nachweise gehoeren NICHT
@@ -304,6 +306,8 @@ const STANDARD = new Set([
   "migrations-organisation-test.js",        // Migration/Rollback-Namensregel
   "current-state-groesse-test.js",          // CURRENT_STATE-Groessengrenze
   "offline-suite-auswahl-test.js",          // dieser Standard-/Extended-Vertrag
+  "ci-pruefplan-test.js",                    // risikobasierte CI-Auswahl bleibt fail closed
+  "vercel-ignore-build-test.js",             // Doku-Deployments nur mit enger fail-closed Erlaubnisliste ueberspringen
   "quellenpflicht-vertrag-test.js",         // Belegpflicht (jedes Element traegt Quelle)
   "quellenpflicht-faelle-test.js",          // Belegpflicht-Faelle
   "profil-stellvertretung-integration-test.js", // nur stellvertretende Ausschuesse: Import->Storage->Reife->Pakete->Quellen (kein Rollenwechsel)
@@ -320,6 +324,26 @@ const STANDARD = new Set([
   "dedup-findings-test.js",                 // Dedup-Kennungswahrheit
   "berlin-rbmskzl-current-test.js",          // heutiger amtlicher H4-Artikel; Fremdmodule weiter gesperrt
   "source-dedupe-test.js"                   // Quellen-Deduplizierung
+]);
+
+// Schneller universeller Kern fuer normale Codeaenderungen. Diese Suiten sind
+// bewusst kurz und decken zentrale Sicherheits- und Schnittstellenvertraege ab.
+// Die grosse STANDARD-Menge bleibt fuer kritische, zentrale oder unklare Aenderungen.
+const FAST_CORE = new Set([
+  "profil-zulassung-test.js",
+  "mandantentrennung-test.js",
+  "cross-tenant-security-test.js",
+  "tenant-guard-test.js",
+  "tenant-neutrality-test.js",
+  "secret-redaction-test.js",
+  "source-mode-test.js",
+  "flags-test.js",
+  "p1-security-check.js",
+  "saas-foundation-test.js",
+  "quellenpflicht-vertrag-test.js",
+  "ki-antwortvertrag-test.js",
+  "contract-snapshot-test.js",
+  "profile-auth-decoupling-test.js",
 ]);
 
 // Alle Suiten, die der Runner sammelt (Standard + alles Weitere). Die Sammlung ist die
@@ -358,6 +382,7 @@ function main() {
   const args = process.argv.slice(2);
   const listOnly = args.includes("--list");
   const extended = args.includes("--extended");
+  const fastCore = args.includes("--fast-core");
   const nurBereich = args.includes("--nur-bereich");
   const onlyIdx = args.indexOf("--only");
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
@@ -389,6 +414,13 @@ function main() {
   let suites;
   if (extended) {
     suites = alle.slice();
+  } else if (fastCore) {
+    const fehlendFast = [...FAST_CORE].filter((f) => !alle.includes(f));
+    if (fehlendFast.length) {
+      console.error(`[run-offline-tests] FAST_CORE nennt fehlende Suite(n): ${fehlendFast.join(", ")}`);
+      return 1;
+    }
+    suites = alle.filter((f) => FAST_CORE.has(f));
   } else {
     const aendert = wertNach(args, "--aendert");
     const bereichArg = wertNach(args, "--bereich");
@@ -425,7 +457,8 @@ function main() {
 
   const modus = extended
     ? "erweitert = vollstaendige Regression"
-    : ((auswahlInfo || nurBereich) ? "Bereich = automatische Fachregression" : "Standard = Pflichtlauf");
+    : (fastCore ? "Schnellkern = zentrale Schutzvertraege"
+      : ((auswahlInfo || nurBereich) ? "Bereich = automatische Fachregression" : "Standard = Pflichtlauf"));
 
   if (listOnly) {
     suites.forEach((f) => console.log(f));
@@ -520,4 +553,4 @@ if (require.main === module) {
 
 // Fuer den Auswahl-Vertragstest (scripts/bereichsauswahl-test.js): die Kernmenge und die
 // Sammlung lesbar machen, ohne den Runner als Prozess zu starten.
-module.exports = { STANDARD, collectSuites, standardSuites };
+module.exports = { STANDARD, FAST_CORE, collectSuites, standardSuites };
