@@ -178,6 +178,54 @@ und auf Widersprüche prüfen.
 Einfache Aufgaben ohne Subagent erledigen. Nach jeder DeepSeek Änderung prüft
 Sol selbst mindestens Git Status, Diff, relevante Tests und die Abnahmekriterien.
 
+### Sichtbarer Helferstatus
+
+Der Betreiber muss jederzeit erkennen können, wie viele KI Rollen tatsächlich
+arbeiten. Der führende Sol Lauf wird als Orchestrator ausgewiesen. Tatsächlich
+gestartete DeepSeek oder Sol Helfer werden separat gezählt.
+
+Vor jedem Helferstart sichtbar und kurz nennen:
+
+1. aktuell aktive KI Rollen insgesamt und Anzahl aktiver Helfer
+2. Modell und Denkstufe des geplanten Helfers
+3. lesend oder schreibend
+4. seine konkrete Aufgabe
+5. einen kurzen sachlichen Grund, warum genau dieses Modell und diese Denkstufe
+   gewählt wurden
+6. bei Parallelisierung zusätzlich kurz, warum parallele Arbeit tatsächlich Zeit
+   spart und welcher getrennte Arbeitsbereich dem Helfer gehört
+
+Ein Helfer zählt erst dann als aktiv, wenn sein Start technisch bestätigt ist.
+Geplante, abgewiesene oder technisch nicht gestartete Helfer dürfen nicht als
+aktiv gemeldet werden.
+
+Unmittelbar nach bestätigtem Start den sichtbaren Zähler aktualisieren. Beispiel:
+
+`Aktive KIs: 3 gesamt | Orchestrator: Sol Hoch | Helfer: 2`
+
+Danach für den neuen Helfer kompakt:
+
+`DeepSeek Pro High | schreibend | Aufgabe: Caller Prüfung | Grund: schwierige klar abgegrenzte technische Prüfung`
+
+Bei Abschluss, Fehler oder Abbruch eines Helfers den Zähler in der nächsten
+sichtbaren Meldung wieder aktualisieren und den Zustand nennen. Keine unveränderten
+Zählerstände regelmäßig wiederholen.
+
+Wenn ein DeepSeek Helfer scheitert und Sol Arbeit selbst übernehmen soll, muss
+vor der Übernahme sichtbar genannt werden:
+
+1. dass der DeepSeek Helfer beendet ist
+2. der neue aktuelle Helferzähler
+3. warum Sol übernehmen muss
+4. welche Denkstufe Sol dafür tatsächlich nutzt
+
+Kein stiller Rückfall von DeepSeek auf Sol. Kein stiller Modellwechsel. Modell
+und Denkstufe richten sich immer nach der tatsächlich gestarteten Konfiguration,
+nicht nach einer Selbstauskunft des Helfers.
+
+Die Begründung bleibt kurz und sachlich. Sie erklärt die Auswahl, nicht private
+Gedankengänge oder interne Schlussketten.
+
 **Betreibersteuerung vom 02.10.2026:** Alle zeitabhängigen Peak Arbeitssperren
 sind aufgehoben, auch die Chatvorgabe vom 01.10.2026. Neue Helmut Entwicklungsarbeit
 darf zu jeder Uhrzeit starten; dafür ist kein Peak GO erforderlich. Ältere
