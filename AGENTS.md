@@ -183,11 +183,18 @@ Keine parallelen Schreibzugriffe auf gleiche Dateien, denselben Test oder
 denselben Production Bereich. Während DeepSeek in einem Bereich schreibt,
 schreibt Sol dort nicht.
 
-Doppelarbeit vermeiden. Ergebnisse vor gemeinsamen Änderungen zusammenführen
-und auf Widersprüche prüfen.
+Doppelarbeit vermeiden. Arbeit, die DeepSeek vollständig und nachvollziehbar
+erledigt hat, wird von Sol nicht erneut fachlich ausgeführt oder von Grund auf neu
+analysiert. Sol übernimmt das Ergebnis und beschränkt seine eigene Prüfung auf
+Integration, Git Status, Diff, fachlich notwendige Tests, Abnahmekriterien,
+Widersprüche und sicherheitskritische Auswirkungen. Eine erneute fachliche Analyse
+ist nur zulässig, wenn DeepSeek unvollständig oder widersprüchlich geliefert hat,
+relevante Tests scheitern oder Production Sicherheit betroffen ist. Ergebnisse vor
+gemeinsamen Änderungen zusammenführen und auf Widersprüche prüfen.
 
-Einfache Aufgaben ohne Subagent erledigen. Nach jeder DeepSeek Änderung prüft
-Sol selbst mindestens Git Status, Diff, relevante Tests und die Abnahmekriterien.
+Einfache Aufgaben ohne Subagent erledigen. Nach jeder DeepSeek Änderung führt Sol
+keine fachliche Vollwiederholung durch. Pflicht bleiben Git Status, Diff, fachlich
+notwendige Tests und die Abnahmekriterien gemäß der obigen Risikoprüfung.
 
 ### Sichtbarer Helferstatus
 
