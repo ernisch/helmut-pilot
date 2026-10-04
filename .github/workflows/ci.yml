@@ -105,6 +105,9 @@ jobs:
         # vollstaendig synthetisch: kein DB-, API-, Netz- oder Secretzugriff,
         # keine Production-Wirkung. python3 ist auf ubuntu-latest vorhanden.
         run: python3 -B scripts/source23_closed_tuple_codec_test.py
+      - name: FinalContext Subject-Tupel-Codec (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        run: python3 -B scripts/final_context_subject_tuple_codec_test.py
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
         if: steps.plan.outputs.database == 'true'
         # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang
