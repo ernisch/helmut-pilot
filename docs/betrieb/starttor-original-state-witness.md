@@ -41,6 +41,13 @@ actual current fit and physical peak memory are unknown, and failures stay close
 Streaming bounds precede chunk retention; UTF-8, JSON and finite safe parsed values
 are checked. A cap or precision/depth failure is a STOP, never an empty object.
 
+The transport also races fetch, each stream read and cancellation against that
+same absolute deadline; AbortSignal cooperation alone does not establish a bound.
+The timer remains active through cleanup, cancellation failure closes the read,
+and reader locks are released. The targeted offline transport suite covers
+uncooperative fetch/read/cancel, the shared deadline and response limits with
+fictitious originals. This establishes no actual Finance, native ABI or funding.
+
 The server does not write a once ledger. The eventual Root transport caller must
 have a newly reviewed raw-first physical once family, retain the whole result before
 decoding, and consume a failure permanently. No old Finance or capture family is
