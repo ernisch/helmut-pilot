@@ -11,6 +11,8 @@ const FULL_FILES = [
   /(^|\/)scripts\/offline-suite-auswahl-test\.js$/i,
   /(^|\/)scripts\/lokal(?:er-netzschutz)?\.js$/i,
   /(^|\/)package(?:-lock)?\.json$/i,
+  /(^|\/)vercel\.json$/i,
+  /(^|\/)scripts\/vercel-ignore-build(?:-test)?\.js$/i,
 ];
 
 const BROWSER_DIRECT = [
