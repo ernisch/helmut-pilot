@@ -34,9 +34,41 @@ function project() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-router-v2-test-"));
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
   fs.mkdirSync(path.join(root, "lib"), { recursive: true });
-  fs.writeFileSync(path.join(root, "AGENTS.md"), "AGENTS\n");
-  fs.writeFileSync(path.join(root, "docs/START_HERE.md"), "START\n");
-  fs.writeFileSync(path.join(root, "docs/CURRENT_STATE.md"), "STATE\n");
+  fs.writeFileSync(path.join(root, "AGENTS.md"), [
+    "# HELMUT AGENT CONTRACT",
+    "## Verbindliche Zielgruppe: AfD ausgeschlossen", "zielgruppe",
+    "## Rolle und Produktziel", "produkt",
+    "## Modell und Arbeitsumgebung", "modell intro",
+    "### Kompakte DeepSeek Übergabe", "uebergabe",
+    "### Subagenten und Parallelisierung", "parallel",
+    "### Sichtbarer Helferstatus", "NICHT_SENDEN_STATUS",
+    "## Grundregel", "grundregel",
+    "## Tests", "tests",
+    "## Production Schutz", "production intro",
+    "### Unterpunkt", "NICHT_SENDEN_PRODUCTION_DETAIL",
+    "## Kritische Aktionen", "kritisch",
+    "## 500er Production Nachweis", "500",
+    "## Wichtigste Regel", "wichtig",
+    "## Kommunikationsstil", "NICHT_SENDEN_KOMMUNIKATION",
+    ""
+  ].join("\n"));
+  fs.writeFileSync(path.join(root, "docs/START_HERE.md"), [
+    "# START",
+    "## 1 · Was Helmut ist", "was",
+    "## 2 · Aktuelles Projektziel", "ziel",
+    "## 3 · Zielgruppe und Pilotlogik", "NICHT_SENDEN_PILOT",
+    "## 5 · Verbindliche Produktprinzipien", "prinzipien",
+    "## 6 · Wichtigste technische Regeln", "technik",
+    ""
+  ].join("\n"));
+  fs.writeFileSync(path.join(root, "docs/CURRENT_STATE.md"), [
+    "# STATE",
+    "## Aktueller Production- und Entwicklungsstand", "NICHT_SENDEN_HISTORIE",
+    "## Starttor und Schutzgrenzen", "starttor",
+    "## Arbeitssteuerung", "steuerung",
+    "## Nächster notwendiger Schritt", "naechster",
+    ""
+  ].join("\n"));
   fs.writeFileSync(path.join(root, "lib/example.js"), "module.exports = 1;\n");
   const task = path.join(root, "task.txt");
   fs.writeFileSync(task, "Pruefe die uebergebenen Quellen.");
@@ -98,6 +130,37 @@ check("Quellenloader nimmt Kernregeln und explizite private Datei auf", () => {
   } finally {
     fs.rmSync(p.root, { recursive: true, force: true });
     fs.rmSync(privateDir, { recursive: true, force: true });
+  }
+});
+
+check("Kernkontext nutzt nur relevante Abschnitte der kanonischen Dateien", () => {
+  const p = project();
+  try {
+    const sources = router.loadSources({ cwd: p.root, explicitFiles: [] });
+    assert.equal(sources.length, 3);
+    const combined = sources.map((s) => s.content).join("\n");
+    assert(combined.includes("zielgruppe"));
+    assert(combined.includes("uebergabe"));
+    assert(combined.includes("starttor"));
+    assert(!combined.includes("NICHT_SENDEN_STATUS"));
+    assert(!combined.includes("NICHT_SENDEN_PRODUCTION_DETAIL"));
+    assert(!combined.includes("NICHT_SENDEN_HISTORIE"));
+    assert(!combined.includes("NICHT_SENDEN_PILOT"));
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
+  }
+});
+
+check("Explizit uebergebene Kerndatei ersetzt den gekuerzten Kontext fuer genau diese Datei", () => {
+  const p = project();
+  try {
+    const sources = router.loadSources({ cwd: p.root, explicitFiles: ["AGENTS.md"] });
+    const agents = sources.filter((s) => s.label === "AGENTS.md");
+    assert.equal(agents.length, 1);
+    assert.equal(agents[0].editable, true);
+    assert(agents[0].content.includes("NICHT_SENDEN_STATUS"));
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
   }
 });
 
