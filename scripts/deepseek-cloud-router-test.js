@@ -447,14 +447,16 @@ check("Hash Drift vor Anwendung stoppt ohne Schreiben", () => {
   }
 });
 
-check("Kompakte sichtbare Rueckgabe bleibt hart begrenzt", () => {
+check("Ueberlange sichtbare Rueckgabe wird verdichtet und bleibt hart begrenzt", () => {
   const cfg = { model: "deepseek-flash", effort: "high", mode: "read" };
-  assert.throws(() => router.finalVisibleResult(
+  const visible = router.finalVisibleResult(
     summary({ result: ["x".repeat(1900)] }),
     cfg,
     { usage: {}, model: "deepseek-flash" },
     []
-  ), /visible-result-too-long|summary-too-long/);
+  );
+  assert.equal(visible.summary_compacted, true);
+  assert.ok(charLength(JSON.stringify(visible)) <= 2000);
 });
 
 check("HTTP und unvollstaendige Modellantworten werden fail closed abgelehnt", () => {
