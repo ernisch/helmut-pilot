@@ -19,9 +19,9 @@ nur die bewährten Delegationsprinzipien.
 
 Der Launcher ist `scripts/deepseek-cloud-router.js`.
 
-Er startet einen separaten ephemeren `codex exec` Prozess mit einem eigenen
-`CODEX_HOME`. Die Konfiguration der führenden Codex Sitzung wird nicht
-verändert.
+Er ruft DeepSeek direkt über die Responses API auf. Es gibt keinen
+verschachtelten `codex exec` Prozess und keine zweite Codex Sandbox. Die
+Konfiguration der führenden Codex Sitzung wird nicht verändert.
 
 Der Provider ist `https://api.deepseek.com`. Unterstützte Routen sind
 `deepseek-flash` und `deepseek-v4-pro` mit Denkstufe `high` oder `max`.
@@ -31,9 +31,13 @@ Schlüssel steht weder im Repository noch in Kommandozeilenargumenten. OpenAI,
 Supabase, Vercel, GitHub und andere Production Zugangsdaten werden nicht an den
 DeepSeek Prozess weitergereicht.
 
-Codex filtert Variablen mit `KEY`, `SECRET` und `TOKEN` zusätzlich aus der
-Umgebung der vom Helfer gestarteten Shell Befehle. Shell Netzwerkzugriff ist
-deaktiviert. DeepSeek darf keine Production Aktionen ausführen.
+DeepSeek erhält keine Shell. Der Router liest nur ausdrücklich übergebene
+Textdateien und sendet deren Inhalt zusammen mit Pfad und SHA256 an die API.
+Bei schreibenden Aufgaben akzeptiert der Router nur Änderungen an zuvor
+ausdrücklich freigegebenen Repository Dateien und nur bei unverändertem
+Ausgangs SHA256. Private Dateien außerhalb des Repositorys können für
+rein lesende Prüfungen übergeben, aber niemals vom Router geschrieben werden.
+DeepSeek darf keine Production Aktionen ausführen.
 
 ## Routing
 
@@ -51,15 +55,19 @@ nicht still ein zweites Modell.
 ## Übergabevertrag
 
 Der Auftrag an DeepSeek enthält nur Ziel, relevante Dateien,
-Abnahmekriterien und Schutzgrenzen. DeepSeek liest den benötigten Projektstand
-selbst aus dem Workspace.
+Abnahmekriterien und Schutzgrenzen. Der Router liest die ausgewählten Dateien
+im äußeren Codex Workspace und übergibt ihren Inhalt direkt an DeepSeek.
+DeepSeek besitzt keinen eigenen Workspace Zugriff.
 
 Die finale Rückgabe ist strukturiertes JSON und höchstens 2000 Zeichen lang.
 Sie enthält nur Ergebnis, geänderte Dateien, tatsächlich ausgeführte Tests,
 echte Risiken und genau einen nächsten Schritt.
 
 Rohlogs, vollständige Diffs, lange Erklärungen und Projektgeschichte werden
-nicht an Sol zurückgegeben. Sol öffnet Primärbelege nur bei Bedarf.
+nicht an Sol zurückgegeben. Bei schreibenden Aufgaben verarbeitet der Router
+die ausführliche interne Änderungsantwort selbst und gibt an Sol nur die
+kompakte Zusammenfassung, Route, Tokenverbrauch und angewendete Dateinamen
+zurück. Sol prüft anschließend Diff und notwendige Tests.
 
 ## Aktivierungstor
 
@@ -78,15 +86,18 @@ Der Router bleibt inaktiv, bis alle folgenden Punkte erfüllt sind.
 Aufgaben. Für den ersten Routertest deshalb eine neue Cloud Aufgabe nach der
 Umgebungsänderung starten.
 
-## Erster Cloud Test
+## Direkter Router Test
 
-Eine temporäre Auftragsdatei außerhalb des Repositorys enthält eine kleine rein
-lesende Frage zum aktuellen Repository. Der Aufruf nutzt Flash High und
-`read`. Es werden keine Dateien geändert, keine Production Systeme berührt und
-keine weiteren Modelle automatisch gestartet.
+Nach der Umstellung ohne verschachtelte Sandbox wird zuerst ein einzelner
+rein lesender Aufruf mit einer ausdrücklich übergebenen Testdatei geprüft.
+Erfolgsbedingungen sind: DeepSeek liest den übergebenen Inhalt, die strukturierte
+Rückgabe bleibt unter 2000 Zeichen, keine Datei ändert sich und kein zweiter
+Modellaufruf startet automatisch.
 
-Der erste bezahlte DeepSeek Aufruf benötigt vor Ausführung eine konkrete
-Kostenfreigabe. Danach wird nur bei tatsächlichem Bedarf weitergeroutet.
+Danach folgt ein kleiner schreibender Test nur auf einer isolierten Testdatei:
+DeepSeek liefert einen hashgebundenen Ersatzinhalt, der Router wendet ihn an und
+ein lokaler Test bestätigt die Änderung. Erst danach gilt die direkte
+Dateidelegation als belegt.
 
 ## Rückweg
 

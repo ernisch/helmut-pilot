@@ -100,16 +100,18 @@ vorgesehen. Die tatsächliche Auswahl bleibt eine bewusste Einstellung des
 Betreibers und wird nicht durch das Repository heimlich umgestellt.
 
 Der Cloud Router darf DeepSeek nur über
-`scripts/deepseek-cloud-router.js` starten. Er verwendet einen eigenen
-ephemeren Codex Bereich und verändert die Konfiguration der führenden Sol
-Sitzung nicht. Der Router ist erst aktiv, wenn `DEEPSEEK_API_KEY` in der
-Codex Cloud Umgebung vorhanden ist, `api.deepseek.com` erreichbar ist und ein
-gezielter Cloud Test erfolgreich war. Vorher bleibt DeepSeek inaktiv.
+`scripts/deepseek-cloud-router.js` starten. DeepSeek wird direkt über die
+Responses API aufgerufen; es wird kein verschachtelter `codex exec` Prozess und
+keine zweite Codex Sandbox gestartet. Der Router liest ausschließlich die vom
+Orchestrator ausdrücklich ausgewählten Dateien und übermittelt deren Inhalt mit
+Pfad und SHA256 an DeepSeek. Die Konfiguration der führenden Sol Sitzung bleibt
+unverändert. Der Router ist nur aktiv, wenn `DEEPSEEK_API_KEY` in der Codex
+Cloud Umgebung vorhanden ist und `api.deepseek.com` erreichbar ist.
 
 Die Aufgabenverteilung im aktiven Routerbetrieb ist:
 
-1. DeepSeek Flash High für normale Analyse, Coding Arbeit, gezielte Tests,
-   Dokumentation und Routinefehler.
+1. DeepSeek Flash High für normale Analyse, Coding Arbeit, Dokumentation und
+   Routinefehler.
 2. DeepSeek V4 Pro High für schwierige Implementierung, komplexes Debugging und
    klar abgegrenzte technische Ursachenanalyse.
 3. DeepSeek V4 Pro Max nur für sehr schwierige klar abgegrenzte technische
@@ -124,11 +126,20 @@ Es gibt keine automatische Eskalationskette. Der Orchestrator wählt vor jedem
 Start direkt die kleinste voraussichtlich ausreichende Stufe. Ein DeepSeek
 Fehlschlag startet nicht automatisch ein weiteres Modell.
 
+DeepSeek hat im Router keine Shell und keinen eigenständigen Workspace Zugriff.
+Es arbeitet ausschließlich mit den vom Router übergebenen Textquellen. Bei
+schreibenden Aufgaben darf DeepSeek nur vollständige Ersatzinhalte für zuvor
+ausdrücklich freigegebene Repository Dateien liefern. Der Router wendet eine
+Änderung nur an, wenn Pfad und ursprünglicher SHA256 exakt gebunden sind; bei
+Drift oder einem nicht freigegebenen Pfad wird nichts geschrieben.
+
 DeepSeek darf keine Production Aktionen, Production Datenänderungen,
 Migrationen, Profileingriffe, Cron Änderungen, Umgebungsvariablenänderungen,
 Budgetänderungen, externe Nachrichten, Commits, Pushes, Pull Requests oder
-Merges ausführen. Architektur, Production Entscheidungen, Integrationsprüfung
-und finale Abnahme bleiben beim führenden Sol Lauf.
+Merges ausführen. DeepSeek führt selbst keine Tests aus und darf keine
+Testergebnisse erfinden. Sol führt nur die fachlich notwendigen Tests nach der
+DeepSeek Änderung aus. Architektur, Production Entscheidungen,
+Integrationsprüfung und finale Abnahme bleiben beim führenden Sol Lauf.
 
 ### Kompakte DeepSeek Übergabe
 
@@ -140,7 +151,7 @@ Die Rückgabe an Sol ist hart begrenzt auf höchstens 2000 Zeichen und enthält 
 
 1. Ergebnis in höchstens vier kurzen Punkten.
 2. Geänderte Dateien mit je einem kurzen Hinweis.
-3. Tatsächlich ausgeführte Tests mit Ergebnis.
+3. Empfohlene Tests; da DeepSeek keine Shell hat, ist ihr Ergebnis `not run`.
 4. Echte Risiken oder offene Punkte.
 5. Genau einen empfohlenen nächsten Schritt.
 
@@ -580,9 +591,11 @@ Nur im konkret freigegebenen Umfang handeln.
 ## Kostenpflichtige Modell- und API-Aufrufe
 
 Normale Codex Cloud Entwicklungsarbeit mit dem vom Betreiber in Codex
-ausgewählten Modell und der dort gewählten Denkstufe ist vom Helmut Production
-Anbieterbudget getrennt. Dafür gibt es im Repository keinen eigenen Router,
-keinen separaten Provider Kostenwächter und keine zeitabhängige Arbeitsfreigabe.
+ausgewählten Sol Modell und die über den Repository Router delegierte DeepSeek
+Entwicklungsarbeit sind vom Helmut Production Anbieterbudget getrennt. Der
+DeepSeek Router nutzt den vorhandenen API Schlüssel und erzeugt nur durch
+tatsächliche DeepSeek Aufrufe Anbietergebühren. Er darf keine Production
+Kostenfreigaben ableiten und startet keine automatischen Modellwiederholungen.
 
 Fuer echte Helmut Production Modell und API Aufrufe innerhalb eines gestarteten,
 klar begrenzten Sprints bleiben die bestehenden Grenzen unveraendert:
