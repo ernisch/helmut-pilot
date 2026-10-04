@@ -316,6 +316,30 @@ check("Write Modus mit 25000 Reasoning-Tokens schreibt genau einen gebundenen Ed
   }
 });
 
+
+check("Ueberlange valide Summary wird kompakt uebergeben statt verworfen", () => {
+  const long = summary({
+    result: Array.from({ length: 4 }, (_, i) => `Ergebnis ${i + 1} ${"x".repeat(210)}`),
+    files: Array.from({ length: 10 }, (_, i) => ({
+      path: `lib/helmut/sehr-langer-pfad-${i}-${"p".repeat(120)}.js`,
+      note: `Hinweis ${"n".repeat(150)}`,
+    })),
+    tests: Array.from({ length: 8 }, (_, i) => ({
+      name: `Test ${i} ${"t".repeat(120)}`,
+      result: `not run ${"r".repeat(100)}`,
+    })),
+    risks: Array.from({ length: 4 }, (_, i) => `Risiko ${i} ${"q".repeat(200)}`),
+    next: `Weiter ${"w".repeat(220)}`,
+  });
+  assert.ok(charLength(JSON.stringify(long)) > 2000, "Testsummary ist wirklich ueberlang");
+  assert.doesNotThrow(() => router.validateSummary(long));
+  const visible = router.finalVisibleResult(long,
+    { model: "deepseek-v4-pro", effort: "high", mode: "read" },
+    { usage: { input_tokens: 1, output_tokens: 2, total_tokens: 3 } }, []);
+  assert.equal(visible.summary_compacted, true);
+  assert.ok(charLength(JSON.stringify(visible)) <= 2000, "sichtbare Rueckgabe bleibt unter 2000 Zeichen");
+});
+
 check("Write Modus wendet nur hashgebundene explizite Repository Datei an", () => {
   const p = project();
   const target = path.join(p.root, "lib/example.js");
