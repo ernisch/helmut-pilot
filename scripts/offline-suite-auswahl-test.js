@@ -146,6 +146,18 @@ function main() {
   check("A6 Die Standardliste benennt die ausgelagerten Suiten als Zahl",
     /Nicht im Standardlauf[^\n]*: \d+ Suiten/.test(standard.aus), "");
 
+  console.log("\n== A2 · Schneller Kern (`--list --fast-core`) ==");
+  const schnell = liste("--fast-core");
+  check("A7 Schnellkern endet mit Exit 0", schnell.status === 0, `exit ${schnell.status}`);
+  check("A8 Schnellkern ist nicht leer und echte Teilmenge des Standardlaufs",
+    schnell.suiten.size > 0 && schnell.suiten.size < standard.suiten.size
+      && [...schnell.suiten].every((f) => standard.suiten.has(f)),
+    `Schnellkern ${schnell.suiten.size}, Standard ${standard.suiten.size}`);
+  check("A9 Schnellkern enthaelt zentrale Mandanten- und Vertragspruefungen",
+    ["mandantentrennung-test.js", "cross-tenant-security-test.js", "tenant-guard-test.js",
+      "p1-security-check.js", "contract-snapshot-test.js"].every((f) => schnell.suiten.has(f)),
+    "");
+
   console.log("\n== B · Erweiterter Lauf (`--list --extended`) ==");
   const erweitert = liste("--extended");
   check("B1 Der erweiterte Listen-Aufruf endet mit Exit 0", erweitert.status === 0, `exit ${erweitert.status}`);
