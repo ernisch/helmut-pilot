@@ -5,18 +5,18 @@
 //
 // Hintergrund (Audit 2026-07): 15 von 76 Testdateien waren in keinem npm-Script
 // verdrahtet und "alle Tests grün" war manuell praktisch nicht herstellbar.
-// Dieser Runner ist die eine kanonische Antwort auf "läuft die Offline-Suite?"
-// und wird vom CI-Gate (.github/workflows/ci.yml) bei jedem PR ausgeführt.
+// Dieser Runner ist die kanonische Ausfuehrung fuer Offline-Pruefungen.
+// Das CI-Gate waehlt risikobasiert zwischen Schnellkern, Bereich und grosser
+// Standardmenge; die grosse Standardmenge laeuft nicht mehr bei jedem PR.
 //
 // Aufruf:  node scripts/run-offline-tests.js [--list] [--only <substring>] [--extended]
 // Exit-Code 0 nur, wenn jede Suite mit Exit-Code 0 endet.
 //
-// STANDARD vs. BEREICH vs. ERWEITERT (Sprint 2026-09-23, Testorganisation):
-//   Standard  = der kanonische Pflichtlauf und das CI-Gate. Er fuehrt AUSSCHLIESSLICH die
-//               explizite Kernmenge STANDARD aus (aktuelle Schutz-/Sicherheitsvertraege,
-//               aktuelle 500er-Schutzlogik und die grundlegenden Vertraege des heutigen
-//               Production-Pfads).
-//   Bereich   = zusaetzlich die fachliche Regression der im PR tatsaechlich geaenderten
+// SCHNELLKERN vs. STANDARD vs. BEREICH vs. ERWEITERT:
+//   Schnellkern = kleine universelle Schutzmenge fuer normale Codeaenderungen.
+//   Standard  = grosse konservative Kernmenge fuer kritische, zentrale oder unklare
+//               Aenderungen. Sie fuehrt AUSSCHLIESSLICH die explizite Menge STANDARD aus.
+//   Bereich   = fachliche Regression der im PR tatsaechlich geaenderten
 //               Bereiche. Auswahl ueber `--aendert "<datei1 datei2 ..."` (oder `--bereich
 //               <name,...>`) anhand der kanonischen Zuordnung in scripts/bereichsauswahl.js.
 //               `--nur-bereich` fuehrt NUR die Bereichs-Suiten aus (ohne Standard, fuer einen
@@ -25,8 +25,9 @@
 //   Erweitert = die VOLLSTAENDIGE Offline-Regression (alle sammelbaren Suiten). Aufruf
 //               ueber `--extended` bzw. `npm run test:offline:extended`. Laeuft NICHT
 //               automatisch im PR.
-// Eine neue Testdatei wird NICHT automatisch zum Pflichtlauf: sie muss bewusst in STANDARD
-// eingetragen werden, sonst laeuft sie nur im erweiterten Lauf. Fuer die Bereichsauswahl
+// Eine neue Testdatei wird NICHT automatisch Teil von Schnellkern oder Standard: sie muss
+// bewusst in FAST_CORE bzw. STANDARD eingetragen werden, sonst laeuft sie nur ueber Bereich
+// oder den erweiterten Lauf. Fuer die Bereichsauswahl
 // entscheidet der DATEINAME (siehe scripts/bereichsauswahl.js). Bereichsspezifisch
 // ausfuehren: `--extended --only <substring>` (z. B. `--extended --only briefing`).
 //
@@ -169,8 +170,9 @@ const DENYLIST = new Set([
 ]);
 
 // ── STANDARD: die explizite Kernmenge des Pflichtlaufs ──────────────────────────────
-// NUR diese Suiten laufen bei jedem PR (CI-Gate). Aufnahmekriterium ist ein AKTUELLER
-// Vertrag, nicht die Laufzeit: Schutz/Sicherheit, aktuelle 500er-Schutzlogik und die
+// Diese grosse Kernmenge laeuft nur, wenn der CI-Pruefplan eine konservative Vollpruefung
+// verlangt. Aufnahmekriterium ist ein AKTUELLER Vertrag, nicht die Laufzeit: Schutz/Sicherheit,
+// aktuelle 500er-Schutzlogik und die
 // grundlegenden Vertraege des heutigen Production-Pfads. Abgeschlossene Sprints,
 // bereichsspezifische Regressionen (Briefing/Lage/Quellen/Radar/Profil/Matching/Scoring/
 // UI/Cron/Landesmodule/PARDOK/…), Simulationen und historische Nachweise gehoeren NICHT
