@@ -4,7 +4,7 @@ const fs = require("fs");
 const A = require("./bereichsauswahl.js");
 
 const FULL_FILES = [
-  /(^|\/)\.github\/workflows\/ci\.yml$/i,
+  /(^|\/)\.github\/workflows\//i,
   /(^|\/)scripts\/ci-pruefplan(?:-test)?\.js$/i,
   /(^|\/)scripts\/bereichsauswahl(?:-test)?\.js$/i,
   /(^|\/)scripts\/run-offline-tests\.js$/i,
