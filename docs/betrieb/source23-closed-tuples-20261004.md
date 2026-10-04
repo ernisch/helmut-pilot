@@ -8,7 +8,8 @@ Nur öffentliche, quellenseitige Angaben. Keine privaten Originale, Pfade, Rohda
 
 ## Aktueller quellenseitiger Stand (04.10.2026)
 
-- Die unabhängige Caller-/Root-Tupelprüfung wurde über DeepSeek Pro High angenommen; die gültige Antwort umfasste 515 Zeichen.
-- Eine erste Antwort mit 3671 Zeichen wurde durch die unveränderte 2000-Zeichen-Grenze verworfen und ist keine Annahme.
-- Eine frische aktuelle Runtimequellen-Neubindung und die tatsächliche Beobachtung der verlustfreien Tupel stehen weiterhin aus.
-- Keine neuen Production-Abfragen und keine Aussage über einen tatsächlichen Tupel-Fit.
+- Caller-/Root-Quelle an Production `f8e58d9d` gebunden; datierte Read-only-Runtimebeobachtung 04.10. 14:52:39 UTC löste14 über `code-default`/`ABSENT` (nicht konfigurierter Env-Schlüssel; keine künftige Frische).
+- Genau eine Native Source67-Aufnahme 15:02:42 UTC: **121051 Payload-Bytes ≤ unveränderter131072-Cap**, 67 erklärte Zeilen (46 BT/6 Berlin/15 Brandenburg), volles SDK vor Dekodierung erhalten. Der originale Betriebsdecoder bleibt `STOP` (actual-current-selected-attribute), dauerhaft verbraucht, kein Retry.
+- Ein separater privater SAVED-ONLY-Validator korrigiert die numerische Sortierung und den Attributvergleich sowie die Umrechnung der ISO-BT-Zeitstempel in ganzzahlige Millisekunden. Die Originale sind unverändert. Unabhängige DeepSeek-Prüfungen bestätigen die Quelle, den tatsächlichen Schutzstopp, die Sicherung im geprüften Umfang und die korrigierten SAVED-ONLY-Fakten. Sol prüfte zusätzlich die vollständige physische Integration der68 Root-Prozessbelege, alle67 Native-Projektionshashes und21 gespeicherte Berlin-/Brandenburg-MVCC-Bindungen.
+- SAVED-ONLY-Faktannahme ist ausdrücklich getrennt vom Erfolg des Original-Betriebsdecoders; keine angenommene aktuelle BT-Fenster-Vollständigkeit/W/Wirkungen/Funding/Aktivierung/bezahlte500.
+- Nächster echter Blocker: vollständige aktuelle BT-14-Tage-Abdeckung/W mit qualifiziertem Endkontext; die feste67er-Teilmenge belegt nicht das ganze Fenster. Der Finanzstopp ohne akzeptierten Export bleibt bestätigt, seine genaue Teilursache unbekannt. Der historische Rest von0,205868USD belegt keine aktuelle Finanzierung.
