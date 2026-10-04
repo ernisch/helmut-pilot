@@ -26,6 +26,10 @@ function hash(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
+function charLength(value) {
+  return Array.from(String(value || "")).length;
+}
+
 function project() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-router-v2-test-"));
   fs.mkdirSync(path.join(root, "docs"), { recursive: true });
@@ -156,6 +160,72 @@ check("Read Modus verarbeitet private Quellen ohne Dateianderung", () => {
     assert.equal(result.usage.total_tokens, 15);
     assert.deepEqual(result.applied_files, []);
     assert.equal(fs.readFileSync(privateFile, "utf8"), before);
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
+    fs.rmSync(privateDir, { recursive: true, force: true });
+  }
+});
+
+check("Read Modus verarbeitet Reasoning ueber 6000 Tokens mit ausreichendem begrenztem Budget", () => {
+  const p = project();
+  const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-router-reasoning-"));
+  const privateFile = path.join(privateDir, "caller.json");
+  fs.writeFileSync(privateFile, '{"caller":"original"}\n');
+  const before = fs.readFileSync(privateFile, "utf8");
+  const reasoningTokens = 7000;
+  const responseText = JSON.stringify({
+    summary: summary({ result: ["Quellenpruefung mit langem Reasoning"], next: "Sol prueft" }),
+    edits: [{
+      path: privateFile,
+      expected_sha256: hash(before),
+      content: '{"caller":"read-modus-schreibt-nicht"}\n',
+    }],
+  });
+  const raw = JSON.stringify({
+    status: "completed",
+    model: "deepseek-v4-pro",
+    output: [{
+      type: "message",
+      content: [{ type: "output_text", text: responseText }],
+    }],
+    usage: {
+      input_tokens: 800,
+      output_tokens: reasoningTokens + 25,
+      total_tokens: 800 + reasoningTokens + 25,
+      output_tokens_details: { reasoning_tokens: reasoningTokens },
+    },
+  }) + "\n__HELMUT_HTTP_STATUS__:200";
+
+  const parsed = router.parseCurlResponse(raw);
+  assert.equal(parsed.usage.output_tokens_details.reasoning_tokens, reasoningTokens);
+  assert.equal(parsed.payload.summary.result[0], "Quellenpruefung mit langem Reasoning");
+
+  const calls = [];
+  const fakeSpawn = (bin, args, options) => {
+    calls.push({ bin, args, options });
+    return { status: 0, stdout: raw, stderr: "", error: null };
+  };
+  try {
+    const result = router.run({
+      argv: ["pro", "high", "read", "--task-file", p.task, "--file", privateFile],
+      cwd: p.root,
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      spawnSync: fakeSpawn,
+    });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].bin, "curl");
+    const request = JSON.parse(calls[0].options.input);
+    assert.equal(request.max_output_tokens, 12000);
+    assert.ok(request.max_output_tokens > reasoningTokens, "Budget deckt Reasoning plus Antwort");
+    assert.ok(request.max_output_tokens < 24000, "Read-Budget bleibt begrenzt unter dem Write-Budget");
+
+    assert.equal(result.status, "ok");
+    assert.equal(result.route.mode, "read");
+    assert.equal(result.usage.output_tokens, reasoningTokens + 25);
+    assert.deepEqual(result.applied_files, []);
+    assert.equal(fs.readFileSync(privateFile, "utf8"), before);
+    assert.ok(charLength(JSON.stringify(result)) <= 2000, "Rueckgabe bleibt unter 2000 Zeichen");
   } finally {
     fs.rmSync(p.root, { recursive: true, force: true });
     fs.rmSync(privateDir, { recursive: true, force: true });
