@@ -475,9 +475,10 @@ Testumfang richtet sich nach den tatsächlich geänderten Dateien:
 1. Nur Dokumentation, `AGENTS.md` oder vergleichbare reine Steuertexte:
    keine große Offline Suite, keine Datenbank Gesamtabnahme und kein Browserlauf.
 2. Normale klar zugeordnete Fachänderung:
-   Syntaxprüfung und nur die Tests des betroffenen Bereichs.
+   Syntaxprüfung, eine kleine schnelle Kernschutzprüfung und die Tests des
+   betroffenen Bereichs.
 3. UI Änderung:
-   zugehörige Bereichstests und Browser Smoke.
+   schnelle Kernschutzprüfung, zugehörige Bereichstests und Browser Smoke.
 4. Datenbank, 500er Schutzlogik, geteilte Kerndateien, CI Testauswahl,
    Abhängigkeiten oder nicht sicher zuordenbare relevante Dateien:
    konservative große Offline Prüfung und die erforderlichen Datenbanknachweise.
