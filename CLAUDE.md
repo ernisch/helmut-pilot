@@ -199,21 +199,22 @@ reversibel und eindeutig sinnvoll ist.
 - **Merge nur mit konkretem GO für genau diesen PR nach `AGENTS.md`.** Die frühere
   Dauerfreigabe ist widerrufen. Grüne CI allein ist keine Merge-Freigabe.
   Nach einem autorisierten Merge selbstständig nachprüfen und im Auftrag weiterarbeiten.
-- **Drei Testebenen (Testorganisation 2026-09-23):**
-  - **Standard (immer):** Der CI-Pflichtlauf führt ausschließlich die explizite Kernmenge
-    `STANDARD` in `scripts/run-offline-tests.js` aus.
-  - **Bereich (automatisch):** Je nach tatsächlich geänderten Dateien laufen zusätzlich die
+- **Vier Testebenen:**
+  - **Schnellkern (automatisch bei normalem Code):** kleine universelle Menge
+    `FAST_CORE` in `scripts/run-offline-tests.js`; zentrale Mandanten-, Sicherheits-
+    und Schnittstellenverträge ohne die lange 500er Vollmenge.
+  - **Standard (nur konservativ):** die große explizite Kernmenge `STANDARD` läuft bei
+    Datenbank-, 500er-, zentralen, CI-/Deployment- oder unklaren relevanten Änderungen.
+  - **Bereich (automatisch):** Je nach tatsächlich geänderten Dateien laufen die
     Fach-Regressionstests der betroffenen Bereiche. Kanonische Zuordnung:
     `scripts/bereichsauswahl.js` (ausgewertet im CI-Schritt „Bereichs-Regression“ und über
-    `--aendert`/`--bereich`). Ein Test gehört über seinen **Dateinamen** zu einem Bereich
-    (z. B. `briefing-…-test.js` → Bereich `briefing`). Eine fachlich relevante, nicht
-    zuordenbare Datei wird **nicht** still übersprungen, sondern erzwingt die konservative
-    Sammelmenge.
+    `--aendert`/`--bereich`). Eine fachlich relevante, nicht zuordenbare Datei wird
+    **nicht** still übersprungen, sondern erzwingt die konservative Sammelmenge.
   - **Extended (bewusst):** die vollständige Regression über `--extended` bzw.
     `npm run test:offline:extended`.
-  Eine neue Testdatei ist **nicht** automatisch Standard; wer sie im Pflichtlauf braucht,
-  trägt sie bewusst in `STANDARD` ein. Bereiche gezielt: `--bereich <name>` oder
-  `--extended --only <substring>`; Übersicht der Bereiche: `--bereiche`.
+  Eine neue Testdatei wird weder automatisch Schnellkern noch Standard. Wer sie dort braucht,
+  trägt sie bewusst in `FAST_CORE` bzw. `STANDARD` ein. Bereiche gezielt:
+  `--bereich <name>` oder `--extended --only <substring>`; Übersicht: `--bereiche`.
 
 ## 7 · Token- und Kostenregeln
 
