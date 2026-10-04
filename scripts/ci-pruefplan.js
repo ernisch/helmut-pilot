@@ -43,6 +43,7 @@ function plan(files) {
       reason: "Keine geaenderten Dateien sicher bestimmbar",
       changed,
       standard: true,
+      core: false,
       area: true,
       database: true,
       browser: true,
@@ -58,6 +59,7 @@ function plan(files) {
   const relevant = changed.some((f) => A.istRelevant(f)) || fullFile;
   const browser = changed.some((f) => matches(f, BROWSER_DIRECT)) || info.bereiche.includes("ui");
   const area = relevant;
+  const core = relevant && !full;
   const syntax = full || changed.some((f) => /\.js$/i.test(f));
   const database = full;
 
@@ -82,6 +84,7 @@ function plan(files) {
     reason,
     changed,
     standard: full,
+    core,
     area,
     database,
     browser,
@@ -112,7 +115,7 @@ function main() {
   const result = plan(args.files);
   console.log(JSON.stringify(result));
   if (args.githubOutput) {
-    for (const key of ["standard", "area", "database", "browser", "syntax", "npm"]) {
+    for (const key of ["standard", "core", "area", "database", "browser", "syntax", "npm"]) {
       fs.appendFileSync(args.githubOutput, key + "=" + String(Boolean(result[key])) + "\n");
     }
     fs.appendFileSync(args.githubOutput, "mode=" + result.mode + "\n");
