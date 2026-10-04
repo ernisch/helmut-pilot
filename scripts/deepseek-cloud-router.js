@@ -382,10 +382,6 @@ function callDeepSeek(body, options = {}) {
 }
 
 function validateSummary(summary) {
-  const raw = JSON.stringify(summary);
-  if (charCount(raw) > MAX_RETURN_CHARS) {
-    throw new Error(`deepseek-summary-too-long:${charCount(raw)}>${MAX_RETURN_CHARS}`);
-  }
   if (!summary || typeof summary !== "object" || Array.isArray(summary)) {
     throw new Error("deepseek-summary-invalid-object");
   }
@@ -447,18 +443,52 @@ function applyEdits(prepared) {
   }
 }
 
+function truncateText(value, maxChars) {
+  const chars = Array.from(String(value || ""));
+  if (chars.length <= maxChars) return chars.join("");
+  return chars.slice(0, Math.max(0, maxChars - 1)).join("") + "…";
+}
+
+function compactSummary(summary) {
+  const raw = JSON.stringify(summary);
+  if (charCount(raw) <= 1300) return { summary, compacted: false };
+
+  const compact = {
+    status: summary.status,
+    result: summary.result.slice(0, 3).map((x) => truncateText(x, 120)),
+    files: summary.files.slice(0, 4).map((x) => ({
+      path: truncateText(x.path, 90),
+      note: truncateText(x.note, 80),
+    })),
+    tests: summary.tests.slice(0, 3).map((x) => ({
+      name: truncateText(x.name, 80),
+      result: truncateText(x.result, 50),
+    })),
+    risks: summary.risks.slice(0, 2).map((x) => truncateText(x, 110)),
+    next: truncateText(summary.next, 120),
+  };
+  return { summary: compact, compacted: true };
+}
+
 function finalVisibleResult(summary, cfg, apiResult, applied) {
+  const compacted = compactSummary(summary);
   const result = {
-    ...summary,
+    ...compacted.summary,
     route: { model: cfg.model, effort: cfg.effort, mode: cfg.mode },
     usage: {
       input_tokens: Number(apiResult.usage.input_tokens || 0),
       output_tokens: Number(apiResult.usage.output_tokens || 0),
       total_tokens: Number(apiResult.usage.total_tokens || 0),
     },
-    applied_files: applied,
+    applied_files: applied.map((x) => truncateText(x, 120)),
+    summary_compacted: compacted.compacted,
   };
-  const raw = JSON.stringify(result);
+  let raw = JSON.stringify(result);
+  if (charCount(raw) > MAX_RETURN_CHARS) {
+    result.applied_files = applied.slice(0, 5).map((x) => truncateText(x, 80));
+    if (applied.length > 5) result.applied_files.push(`… +${applied.length - 5}`);
+    raw = JSON.stringify(result);
+  }
   if (charCount(raw) > MAX_RETURN_CHARS) {
     throw new Error(`deepseek-visible-result-too-long:${charCount(raw)}>${MAX_RETURN_CHARS}`);
   }
@@ -533,6 +563,8 @@ module.exports = {
   validateSummary,
   prepareEdits,
   applyEdits,
+  truncateText,
+  compactSummary,
   finalVisibleResult,
   run,
 };
