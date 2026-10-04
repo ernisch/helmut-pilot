@@ -41,9 +41,11 @@ const MAX_RETURN_CHARS = 2000;
 const MAX_FILES = 20;
 const MAX_SOURCE_CHARS = 500000;
 const MAX_FILE_CHARS = 220000;
-// Reasoning und Antwort teilen sich dieses Limit; echte ProHigh Quellenpruefungen
-// brachen mit 6000 ab, weil die Antwort erst nach dem Reasoning Platz hat.
-const READ_MAX_OUTPUT_TOKENS = 12000;
+// Reasoning und finale Antwort teilen sich dieses Limit; echte FlashHigh und
+// ProHigh Lesepruefungen brachen auch mit 12000 ab, weil die Antwort erst nach
+// dem Reasoning Platz hat. 32768 ist die feste Obergrenze, keine Garantie fuer
+// beliebige Aufgaben.
+const READ_MAX_OUTPUT_TOKENS = 32768;
 const WRITE_MAX_OUTPUT_TOKENS = 24000;
 const REQUEST_TIMEOUT_SECONDS = 20 * 60;
 
