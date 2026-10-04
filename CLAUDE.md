@@ -178,8 +178,9 @@ reversibel und eindeutig sinnvoll ist.
   `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`. Der kanonische
   Prüfplan `scripts/ci-pruefplan.js` entscheidet fail closed anhand der tatsächlich
   geänderten Dateien, welche Schritte innerhalb dieser beiden Checks nötig sind. Reine
-  Dokumentation darf schnell grün werden; normale Fachänderungen erhalten Bereichstests;
-  Browser läuft nur für UI oder direkt browserrelevante Änderungen; die große Standard-
+  Dokumentation darf schnell grün werden; normale Fachänderungen erhalten einen kleinen
+  universellen Kernschutz plus Bereichstests; Browser läuft nur für UI oder direkt
+  browserrelevante Änderungen; die große Standard-
   Offline-Suite und isolierte Datenbanknachweise laufen nur bei Kern-, Sicherheits-,
   Datenbank-, 500er-, CI-/Abhängigkeitsänderungen oder unklarer Zuordnung. Änderungen
   am Prüfplan selbst erzwingen die konservative Vollprüfung. Pfadgefilterte Workflows
