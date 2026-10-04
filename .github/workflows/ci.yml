@@ -69,7 +69,19 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Prüfplan aus geänderten Dateien
+        id: plan
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
+            CHANGED="$(git diff --name-only "$BASE" "${{ github.sha }}")"
+          else
+            CHANGED=""
+          fi
+          printf 'Geänderte Dateien:\n%s\n' "$CHANGED"
+          node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
       - name: Abhängigkeiten installieren (aus package-lock.json)
+        if: steps.plan.outputs.npm == 'true'
         # Seit Sprint „Kalender Machbarkeit 1" hat das Repo GENAU EINE
         # Laufzeitabhängigkeit: ical.js (MPL-2.0, RFC-5545-Parser, selbst ohne
         # Transitivabhängigkeiten). Davor war das Repo installationsfrei.
@@ -79,6 +91,7 @@ jobs:
         # ziehen als der Lockfile-Stand, den wir geprüft haben.
         run: npm ci
       - name: Syntax-Check aller JS-Dateien
+        if: steps.plan.outputs.syntax == 'true'
         run: |
           set -e
           for f in server.js client.js sw.js api/index.js lambda/*.js lib/helmut/*.js lib/helmut/kalender/*.js lib/helmut/quellenarchitektur/*.js lib/helmut/quellenarchitektur/seeds/*.js scripts/*.js; do
@@ -86,12 +99,14 @@ jobs:
           done
           echo "Syntax OK"
       - name: SOURCE23 geschlossener Tuple-Codec (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
         # Ziel ist genau die Testdatei des neuen geschlossenen Codec
         # scripts/source23_closed_tuple_codec.py. Reiner stdlib-unittest und
         # vollstaendig synthetisch: kein DB-, API-, Netz- oder Secretzugriff,
         # keine Production-Wirkung. python3 ist auf ubuntu-latest vorhanden.
         run: python3 -B scripts/source23_closed_tuple_codec_test.py
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
+        if: steps.plan.outputs.database == 'true'
         # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang
         # jederzeit ändern, und seit der Nachweis fail-closed ist, würde ein fehlendes
         # Binary JEDEN Merge blockieren, ohne dass jemand Code angefasst hat. Die
@@ -107,6 +122,7 @@ jobs:
           fi
 
       - name: PostgREST 12.2.3 bereitstellen (Voraussetzung des §11-Rückfallnachweises)
+        if: steps.plan.outputs.database == 'true'
         # §11 des Z22-Datenbanknachweises beweist, dass ein Deployment VOR der Migration
         # die Reihenfolgezusage nicht still abschaltet (PGRST202-Rückfall). Dieser Beweis
         # braucht ein echtes PostgREST. Version und Prüfsumme sind gepinnt, damit weder
@@ -131,6 +147,7 @@ jobs:
       # Fehler im neuen Datenbankpfad sofort sichtbar sind. Alle bisherigen
       # Pflichtschritte bleiben im selben blockierenden Job erhalten.
       - name: Kontoschreibschutz und 500 Registrierungen gegen PostgreSQL und PostgREST
+        if: steps.plan.outputs.database == 'true'
         # Einschliesslich 475 echter inaktiver Anlagen und 475 Aktivierungen.
         timeout-minutes: 5
         env:
@@ -142,6 +159,7 @@ jobs:
         run: node scripts/lokal.js scripts/auth-store-cas-datenbank-test.js
 
       - name: Lage-Quellenvertrag gegen isolierte PostgreSQL und PostgREST
+        if: steps.plan.outputs.database == 'true'
         timeout-minutes: 2
         env:
           HELMUT_TEST_PG_HOST: "127.0.0.1"
@@ -152,6 +170,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/lage-quellen-rest-datenbank-test.js
 
       - name: Null auf 500 auf Null gegen echte isolierte PostgreSQL
+        if: steps.plan.outputs.database == 'true'
         timeout-minutes: 2
         env:
           HELMUT_TEST_PG_HOST: "127.0.0.1"
@@ -161,6 +180,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/testfenster-null500-datenbank.js
 
       - name: Vierer-Nacharbeit gegen isolierte PostgreSQL (Atomarik und kein Retry)
+        if: steps.plan.outputs.database == 'true'
         timeout-minutes: 3
         env:
           HELMUT_TEST_PG_HOST: "127.0.0.1"
@@ -170,6 +190,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/verstehen-vier-datenbank.js
 
       - name: Realkohorten-Endweg gegen echte isolierte PostgreSQL
+        if: steps.plan.outputs.database == 'true'
         # Neuer inaktiver Vertrag; synthetischer Tabellenbestand in eigener
         # kurzlebiger Testdatenbank. Keine Production-Verbindung oder Freigabe.
         timeout-minutes: 2
@@ -182,6 +203,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/realkohorte-500-endweg-datenbank-test.js
 
       - name: Realkohorten-Runtime gegen echte isolierte PostgreSQL17
+        if: steps.plan.outputs.database == 'true'
         # Default-off RPC, private Quittung, Teilaktivierung und Triggerrollback.
         # Eigene kurzlebige Datenbank; fehlender DB-Beleg ist ein Fehler.
         timeout-minutes: 3
@@ -194,6 +216,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/realkohorte-500-runtime-datenbank-test.js
 
       - name: Synthetik500 Import gegen echte isolierte PostgreSQL17
+        if: steps.plan.outputs.database == 'true'
         # Vollstaendiger Profilersatz/Rueckweg; Standardlauf alleine fuehrt kein SQL aus.
         timeout-minutes: 3
         env:
@@ -205,6 +228,7 @@ jobs:
         run: node scripts/lokal.js scripts/synthetik-500-import-test.js --postgres-local
 
       - name: Synthetik500 Import bis Abschaltung gegen echte isolierte PostgreSQL17
+        if: steps.plan.outputs.database == 'true'
         # Echtes erzeugtes Importjournal, atomarer 500er Start, Teilende und RPC-Rechte.
         timeout-minutes: 3
         env:
@@ -216,6 +240,7 @@ jobs:
         run: node scripts/lokal.js scripts/synthetik-500-runtime-datenbank-test.js
 
       - name: Synthetik500 nativer Vollbackup und Rueckweg gegen isolierte PostgreSQL17
+        if: steps.plan.outputs.database == 'true'
         # Kleine SQL-Requests, typgetreue Sicherung und vollstaendiger Feld-CAS.
         timeout-minutes: 3
         env:
@@ -227,6 +252,7 @@ jobs:
         run: node scripts/lokal.js scripts/synthetik-500-native-import-test.js --postgres-local
 
       - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
+        if: steps.plan.outputs.standard == 'true'
         # Der Runner erzwingt Offline technisch: jede Suite läuft mit einem
         # --require-Netz-Guard (blockt http/https/fetch auf Nicht-Localhost)
         # und NO_NETWORK_TESTS=1. browser-smoke-test.js darf hier mangels
@@ -244,6 +270,7 @@ jobs:
         run: node scripts/lokal.js -- node scripts/run-offline-tests.js
 
       - name: Bereichs-Regression (nur geänderte Fachbereiche)
+        if: steps.plan.outputs.area == 'true'
         # Deterministische Bereichsauswahl (scripts/bereichsauswahl.js): laeuft NUR die
         # fachlichen Regressionstests der im PR tatsaechlich geaenderten Bereiche — nie die
         # vollstaendige Extended-Suite. Reine Doku-Aenderungen laufen leer durch. Fail closed:
@@ -253,7 +280,7 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
         run: |
           set -e
-          BASE="${{ github.event.pull_request.base.sha }}"
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
           if [ -z "$BASE" ]; then
             echo "Kein pull_request-Basis-Commit (Ereignis ohne PR) — Bereichsauswahl uebersprungen."
             exit 0
@@ -264,6 +291,7 @@ jobs:
           node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "$CHANGED" --nur-bereich
 
       - name: Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)
+        if: steps.plan.outputs.database == 'true'
         # WARUM EIN EIGENER SCHRITT: Der Nachweis braucht eine echte PostgreSQL. In
         # run-offline-tests.js lief er nur als stiller SKIP mit (Exit 0 = PASS) und
         # täuschte damit eine Abdeckung vor, die niemand erbracht hatte — genau darunter
@@ -304,13 +332,27 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - name: Prüfplan aus geänderten Dateien
+        id: plan
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -n "$BASE" ] && [ "$BASE" != "0000000000000000000000000000000000000000" ]; then
+            CHANGED="$(git diff --name-only "$BASE" "${{ github.sha }}")"
+          else
+            CHANGED=""
+          fi
+          node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
       - name: Abhängigkeiten installieren (aus package-lock.json)
+        if: steps.plan.outputs.browser == 'true'
         run: npm ci
       - name: Playwright + Chromium installieren
+        if: steps.plan.outputs.browser == 'true'
         run: |
           # Version gepinnt (Review-Fix): ohne Pin zöge jeder CI-Lauf die neueste
           # Playwright/Chromium-Version — ein Release könnte das Merge-Gate ohne
@@ -337,6 +379,7 @@ jobs:
           PY
           npx playwright install --with-deps chromium
       - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
+        if: steps.plan.outputs.browser == 'true'
         # Fail-closed (Audit-Folgebranch): GitHub setzt CI=true automatisch,
         # womit browser-smoke-test.js bei fehlendem Playwright bereits mit
         # Exit 1 abbricht statt still zu SKIPpen. Das Flag macht die Pflicht
@@ -347,6 +390,7 @@ jobs:
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/browser-smoke-test.js
       - name: Getrennte Prosa in beiden App Ansichten (Chromium, hell und dunkel)
+        if: steps.plan.outputs.browser == 'true'
         env:
           HELMUT_REQUIRE_BROWSER: "1"
           HELMUT_SOURCE_MODE: "off"
