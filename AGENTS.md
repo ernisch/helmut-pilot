@@ -145,7 +145,10 @@ Integrationsprüfung und finale Abnahme bleiben beim führenden Sol Lauf.
 
 Der Arbeitsauftrag an DeepSeek enthält nur Ziel, relevante Dateien,
 Abnahmekriterien und notwendige Schutzgrenzen. Kein vollständiger Chatverlauf und
-keine unnötige Projektgeschichte.
+keine unnötige Projektgeschichte. Der Router übergibt aus den kanonischen
+Projektdateien nur die für einen Helfer dauerhaft relevanten Abschnitte plus den
+aktuellen Starttor und nächsten Schritt. Die kanonischen Dateien selbst bleiben
+die Wahrheit; es entsteht keine zweite Regeldatei.
 
 Die sichtbare Rückgabe an Sol bleibt auf höchstens 2000 Zeichen begrenzt und enthält nur:
 
@@ -167,6 +170,18 @@ Widersprüche oder sicherheitsrelevante Lücken bleiben dagegen echte Fehler.
 
 Subagenten nur einsetzen, wenn Parallelisierung tatsächlich Zeit spart oder
 unabhängige Arbeit sinnvoll getrennt werden kann.
+
+Kleine klare Aufgaben nicht aus Gewohnheit delegieren. Wenn Sol eine Änderung
+direkt in höchstens ein bis zwei kleinen Dateien sicher erledigen kann und weder
+Parallelisierung noch umfangreiche Analyse nötig ist, arbeitet Sol selbst. Ein
+DeepSeek Start ist nur sinnvoll, wenn mindestens einer dieser Vorteile konkret
+vorliegt: parallele unabhängige Arbeit, größere klar abgegrenzte Analyse,
+eigenständige Implementierung oder erkennbare Einsparung teurer Sol Arbeit.
+
+Dateien, die den Router Dateiumfang überschreiten oder deren vollständige
+Übertragung den Delegationsnutzen offensichtlich aufzehrt, nicht erst erfolglos
+an DeepSeek senden. In diesem Fall arbeitet Sol direkt oder grenzt die Aufgabe
+anders sicher ab. Keine Router Schleife nur um eine Routingpräferenz zu erfüllen.
 
 Nicht automatisch mehrere Subagenten starten.
 
@@ -420,6 +435,12 @@ Bei laufender GitHub-CI einmal den Status prüfen, dann in sinnvollen Abständen
 Nicht alle paar Sekunden pollen und keine Befehlsflut für unveränderte Zustände.
 Pflicht-CI nicht zusätzlich lokal duplizieren; bereits belegte Tests nicht ohne
 konkreten Grund wiederholen.
+
+Während CI läuft, nicht passiv warten, wenn eindeutig unabhängige Arbeit ohne
+Konflikt möglich ist. Rein lesende Analyse oder Arbeit in einem klar getrennten
+Bereich darf fortgesetzt werden. Keine Änderung an denselben Dateien, kein zweiter
+Test desselben Nachweises und keine Arbeit, deren Gültigkeit vom noch offenen CI
+Ergebnis abhängt.
 
 ## Tests
 
