@@ -451,21 +451,21 @@ function truncateText(value, maxChars) {
 
 function compactSummary(summary) {
   const raw = JSON.stringify(summary);
-  if (charCount(raw) <= 1300) return { summary, compacted: false };
+  if (charCount(raw) <= 1100) return { summary, compacted: false };
 
   const compact = {
     status: summary.status,
-    result: summary.result.slice(0, 3).map((x) => truncateText(x, 120)),
-    files: summary.files.slice(0, 4).map((x) => ({
-      path: truncateText(x.path, 90),
-      note: truncateText(x.note, 80),
+    result: summary.result.slice(0, 3).map((x) => truncateText(x, 90)),
+    files: summary.files.slice(0, 3).map((x) => ({
+      path: truncateText(x.path, 70),
+      note: truncateText(x.note, 60),
     })),
-    tests: summary.tests.slice(0, 3).map((x) => ({
-      name: truncateText(x.name, 80),
-      result: truncateText(x.result, 50),
+    tests: summary.tests.slice(0, 2).map((x) => ({
+      name: truncateText(x.name, 70),
+      result: truncateText(x.result, 40),
     })),
-    risks: summary.risks.slice(0, 2).map((x) => truncateText(x, 110)),
-    next: truncateText(summary.next, 120),
+    risks: summary.risks.slice(0, 2).map((x) => truncateText(x, 80)),
+    next: truncateText(summary.next, 90),
   };
   return { summary: compact, compacted: true };
 }
