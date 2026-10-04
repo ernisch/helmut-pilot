@@ -85,6 +85,12 @@ jobs:
             node --check "$f"
           done
           echo "Syntax OK"
+      - name: SOURCE23 geschlossener Tuple-Codec (synthetisch/offline)
+        # Ziel ist genau die Testdatei des neuen geschlossenen Codec
+        # scripts/source23_closed_tuple_codec.py. Reiner stdlib-unittest und
+        # vollstaendig synthetisch: kein DB-, API-, Netz- oder Secretzugriff,
+        # keine Production-Wirkung. python3 ist auf ubuntu-latest vorhanden.
+        run: python3 -B scripts/source23_closed_tuple_codec_test.py
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
         # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang
         # jederzeit ändern, und seit der Nachweis fail-closed ist, würde ein fehlendes
