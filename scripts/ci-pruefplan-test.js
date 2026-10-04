@@ -72,6 +72,15 @@ check("CI Aenderung prueft die CI selbst voll", () => {
   assert.equal(p.browser, true);
 });
 
+check("Vercel Deploymentlogik erzwingt konservative Vollpruefung", () => {
+  for (const file of ["vercel.json", "scripts/vercel-ignore-build.js", "scripts/vercel-ignore-build-test.js"]) {
+    const p = P.plan([file]);
+    assert.equal(p.mode, "full", file);
+    assert.equal(p.standard, true, file);
+    assert.equal(p.database, true, file);
+  }
+});
+
 check("Leere Dateiliste ist fail closed", () => {
   const p = P.plan([]);
   assert.equal(p.mode, "full");
