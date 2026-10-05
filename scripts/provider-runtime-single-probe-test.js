@@ -18,7 +18,7 @@ function fixture() {
     secretNamePresence: { AZURE_OPENAI_KEY: true }, conservativeTextReservationPolicy: K.konfiguration(env) };
   const deps = { env, operationAuth: pin, now: () => clock, readRuntimeConfiguration: () => configuration,
     kosten: { ...K, pruefeStart: () => ({ startklar: true }), laufGebundenUsd: async () => K.tokenKosten(5, 2) / 1e6 },
-    storage: { readAuthStore: async () => auth, leseLlmTageszaehler: async () => ({ ok: true, used: 0 }),
+    storage: { getStorageStatus: () => ({ backend: "supabase", supabaseConfigured: true }), readAuthStore: async () => auth, leseLlmTageszaehler: async () => ({ ok: true, used: 0 }),
       mutateAuthStore: async fn => { writes++; return fn(auth); } },
     requestText: async (...args) => { calls.push(args); assert.ok(auth[P.KEY][pin.operationNonce]);
       auth.llmUsage.push({ id: "receipt-one", runId: pin.runId, callType: "pre500-provider-probe", model: "gpt-5-mini",
@@ -65,6 +65,7 @@ async function main() {
       f => { f.configuration.resolved.providerForSend = "openai"; },
       f => { f.configuration.resolved.loopbackExactOne = true; },
       f => { f.configuration.secretNamePresence.AZURE_OPENAI_KEY = false; },
+      f => { f.deps.storage.getStorageStatus = () => ({ backend: "local", supabaseConfigured: false }); },
       f => { delete f.auth.testKostenAuftrag; },
       f => { f.auth.synthetik500KostenAdmission = {}; }]) {
       const f = fixture(); mutate(f); const r = await f.invoke(); assert.notEqual(r.status, 200);
