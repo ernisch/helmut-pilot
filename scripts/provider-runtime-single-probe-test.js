@@ -46,7 +46,7 @@ async function main() {
     const f = fixture(), r = await f.invoke(); assert.equal(r.status, 200); assert.equal(r.body.ok, true);
     assert.equal(f.calls.length, 1); assert.deepEqual(f.calls[0], ["Reply with exactly OK.",
       { callType: "pre500-provider-probe", runId: "nachlauf500-20261005024845", politicianId: null },
-      { model: "gpt-5-mini", maxOutputTokens: 16 }]);
+      { model: "gpt-5-mini", maxOutputTokens: 128 }]);
     assert.deepEqual(f.auth.historic, { kept: true }); assert.equal(r.body.actual500Test, false);
     assert.equal(r.body.boundUsd, 0.000011); assert.equal(r.body.usage.estimatedCost, 0.000005);
     assert.equal(Object.hasOwn(r.body, "text"), false);
@@ -107,7 +107,7 @@ async function main() {
   });
   await test("missing corrupt duplicate or unmatched accounting is never success", async () => {
     for (const change of [f => { f.auth.llmUsage = []; }, f => { f.auth.llmUsage.push({ ...f.auth.llmUsage[0] }); },
-      f => { f.auth.llmUsage[0].completionTokens = 17; },
+      f => { f.auth.llmUsage[0].completionTokens = 129; },
       f => { f.auth.llmUsage[0].id = { private: "must not leave auth" }; },
       f => { f.deps.kosten.laufGebundenUsd = async () => 0; }]) {
       const f = fixture(), real = f.deps.requestText; f.deps.requestText = async (...args) => { await real(...args); change(f); return "OK"; };
@@ -119,7 +119,7 @@ async function main() {
     const f = fixture(); delete f.deps.operationAuth; const r = await f.invoke(); assert.equal(r.status, 403); assert.equal(f.writes(), 0);
   });
   await test("fixed operation identifiers satisfy real manual run and reservation policy", async () => {
-    assert.ok(K.MANUELLE_RUN_ID.test(P.AUTH.runId)); assert.equal(K.reservierungHoeheUsd(16), 0.200064);
+    assert.ok(K.MANUELLE_RUN_ID.test(P.AUTH.runId)); assert.equal(K.reservierungHoeheUsd(128), 0.200512);
   });
   await require("./provider-runtime-single-probe-cas-test").run(fixture);
   console.log(`${passed} targeted handler checks plus real storage CAS passed; provider calls not run`);
