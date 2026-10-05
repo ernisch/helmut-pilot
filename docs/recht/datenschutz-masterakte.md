@@ -50,7 +50,7 @@ Für den rein synthetischen technischen 500er Nachweis ist die offene Datenschut
 | Freie Texteingaben | 🔴 | Entgegen früherer Annahme existieren freie Texteingaben. Kommunikationsprompt bis 1200 Zeichen geht an `/api/communication/generate` und wird an die KI übergeben. Tagesinput speichert unter anderem Kontext, Ziel und gewünschte Vorbereitung | Rechtstexte und Datenfluss ergänzen. Vor echten Kunden Eingabehinweis und Zweckbegrenzung festlegen | Ja |
 | Datei Uploads | 🟢 | Keine aktuelle Produktfunktion gefunden | Nicht ohne neue Datenschutzprüfung hinzufügen | Nein |
 | Eigene KI Trainings | 🟢 | Kein Fine Tuning oder eigenes Training mit Kundendaten gefunden | So beibehalten | Nein |
-| Azure KI | 🟠 | Azure ist der vorgesehene primäre KI Pfad. Ressource ist in Sweden Central. Das aktuelle Deployment ist jedoch `GlobalStandard` | Verarbeitungsgeografie und Vertrag vor Kunden verbindlich klären | Ja |
+| Azure KI | 🟠 | Azure ist der vorgesehene primäre KI Pfad. Ressource ist in Sweden Central. Das aktuelle Deployment ist jedoch `GlobalStandard` | Ziel für Helmut: `Data Zone Standard` für `gpt-5-mini`, damit die Inferenz auf die europäische Datenzone begrenzt wird. Vor Umstellung aktuelle Subscription Quota und Kapazität prüfen | Ja |
 | Direkte OpenAI API | 🟠 | Ein direkter OpenAI Production Schlüssel ist vorhanden. Azure hat im Code Vorrang | Vor echten Kunden entscheiden, ob der direkte Fallback vollständig entfernt wird | Ja |
 | DeepSeek | 🟢 für Kundensicht | Kein DeepSeek Schlüssel in der aktuellen Vercel Production Konfiguration gefunden | Interne Regel: keine echten Kunden oder Production Personendaten an DeepSeek | Nein |
 | Supabase | 🟢 Standort | Aktuelles Hauptprojekt liegt in AWS `eu-west-1`, Irland | DPA und Unterauftragnehmer dokumentieren | Ja |
@@ -134,6 +134,27 @@ Wichtig: Das aktuelle Deployment ist `GlobalStandard`. Der Standort der Azure Re
 | GitHub | Code und CI | Aktiv | Interne Dienstleisterliste und Zugriffsrisiko dokumentieren |
 | DeepSeek | Entwicklung | Nicht in Helmut Production belegt | Keine echten Kunden oder Production Personendaten dorthin geben |
 
+## 5a. Festgelegte Zielarchitektur für die KI Datenresidenz
+
+**Entscheidung vom 05.10.2026:** Für Helmut soll der reguläre Kundenbetrieb nicht auf `GlobalStandard` verbleiben. Ziel ist `Data Zone Standard` für das bestehende Modell `gpt-5-mini`.
+
+Microsoft dokumentiert:
+
+* `GlobalStandard`: Prompts und Antworten können weltweit in unterstützten Azure Regionen verarbeitet werden.
+* `Data Zone Standard`: Verarbeitung bleibt innerhalb der gewählten Datenzone. Für eine europäische Ressource ist dies die europäische Datenzone beziehungsweise Azure EU Data Boundary.
+* `Standard/Regional`: Verarbeitung erfolgt in der Region des Deployments und ist damit noch enger.
+
+Für das aktuell verwendete `gpt-5-mini` ist ein regionales Standard Deployment in `Sweden Central` verfügbar, nicht jedoch in `Germany West Central`. Ein strikt deutsches regionales Deployment mit demselben Modell ist nach dem Microsoft Verfügbarkeitsstand vom 05.10.2026 daher nicht möglich. Andere Modelle, beispielsweise `gpt-5.4`, sind regional in `Germany West Central` verfügbar, würden aber einen Modellwechsel und damit eine neue fachliche und kostenbezogene Abnahme erfordern.
+
+**Pragmatisches Helmut Ziel:** `gpt-5-mini` behalten und von `GlobalStandard` auf `Data Zone Standard` umstellen, sobald Subscription Quota und verfügbare Kapazität lesend bestätigt sind. Keine Umstellung ohne gesonderte Azure und Production Freigabe.
+
+Hinweis zur Formulierung in Rechtstexten: Microsoft beschreibt die europäische Datenzone im Zusammenhang mit der Azure EU Data Boundary. Die aktuelle Dokumentation weist darauf hin, dass diese Grenze je nach Dienst auch EFTA Regionen einbeziehen kann. Deshalb nicht pauschal „nur Deutschland“ oder ohne Vertragsprüfung „ausschließlich EU Mitgliedstaaten“ versprechen.
+
+Offizielle Quellen:
+* https://learn.microsoft.com/azure/ai-services/openai/how-to/deployment-types
+* https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy
+* https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability
+
 ## 6. Speicherorte und Verarbeitungsgeografie
 
 | Bereich | Belegter Stand |
@@ -141,7 +162,7 @@ Wichtig: Das aktuelle Deployment ist `GlobalStandard`. Der Standort der Azure Re
 | Supabase Datenbank | `eu-west-1`, Irland |
 | Vercel App Konfiguration | `fra1`, Frankfurt im Repository konfiguriert |
 | Azure Ressource | Sweden Central |
-| Azure Deployment | `GlobalStandard`, daher keine EU Ausschließlichkeit allein aus der Ressourcenregion ableiten |
+| Azure Deployment | Aktuell `GlobalStandard`. Ziel: `Data Zone Standard` mit `gpt-5-mini`. Deutschland allein wäre mit demselben Modell aktuell nicht als regionales Standard Deployment in `Germany West Central` verfügbar |
 | DeepSeek | Nicht Teil der aktuellen Helmut Production Laufzeit |
 | Eigene Domain | `mithelmut.de` festgelegt, technische Verbindung noch nicht belegt |
 
