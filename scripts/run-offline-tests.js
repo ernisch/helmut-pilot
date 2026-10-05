@@ -239,6 +239,7 @@ const STANDARD = new Set([
   "admin-config-diagnose-test.js",          // Admin-Authz + keine Secrets in der Diagnose
   "provider-runtime-attestation-test.js",   // enger Cron-Bearer-Laufzeitbeleg ohne DB/Anbieter/Secrets
   "provider-runtime-auth-rebind-test.js",   // neue Nonce/Verifier-Bindung, feste Frist; keine privaten Credentials
+  "provider-runtime-single-probe-test.js", // feste Einzelprobe: Auth, echter Mehrprozess-CAS und Kostenriegel; lokaler Testtransport
   "relevanz-tage-runtime-witness-test.js",  // eigener Root-Zweck, echter Relevanzresolver/Fallback, keine Daten/Provider/Secrets
   "postgrest-actor-runtime-witness-test.js", // eigener Root-Zweck: genau ein Metadaten-RPC mit produktiver Key-Auswahl, kein Businessread
   "starttor-original-state-transport-test.js", // absolute Frist auch für Fetch, Stream und Cleanup; nur fiktiver Transport

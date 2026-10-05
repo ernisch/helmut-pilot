@@ -231,6 +231,10 @@ async function handleRequest(request, response) {
       }
     }));
   }
+  // Feste, budgetgebundene Einzelprobe VOR dem Account-Vorlauf; keine Profile.
+  if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "provider-einzelprobe") {
+    return require("./lib/helmut/provider-runtime-single-probe").handleRequest(request, response, url, { jsonHeaders });
+  }
   // Maschinenlesender Laufzeitbeleg VOR dem Account Vorlauf (Adminseed).
   // Nur reine Konfigurationsfunktionen; auch Fehler werden ohne Auditwrite beantwortet.
   if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "provider-konfiguration") {
