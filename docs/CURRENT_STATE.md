@@ -1,8 +1,10 @@
 # CURRENT STATE — Helmut
 
-**Stand: 05.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
+**Stand: 06.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
 
 ## Aktueller Production- und Entwicklungsstand
+
+- **Native Katalogbindung (06.10.,01:04:35 Türkei / 05.10.,22:04:35 UTC):** Genau ein freigegebener RO-Abruf bestätigt vollständige semantische Gleichheit zum privaten Original; genau fünf physische Wartungsfelder bleiben ausgenommen. Neue typed/union-v2-Bindungen, vier weitere Komponenten und Strukturprüfungen belegt. Der neue Laufzeitquellentwurf ist unabhängig geprüft und lokal geplant, noch nicht installiert. Vollständige Native-D-/Caller-/Root-Zulassung und500er Start bleiben offen;0 Daten-/Schemaänderungen. Private Originale bleiben außerhalb von Git.
 
 - **Supabase-Plattformgrenze und Audit-Diagnose (05.10.,19:09:42 UTC):** Betreiberübermittelte Support-Antwort schließt `pg_maintain`/privilegierte Kundensonderwege verbindlich aus. Freigegebene temporäre pgAudit17.1-Einrichtung und Rückbau unabhängig akzeptiert; begrenzte DDL-/ROLE-/MISC-Metadaten belegt, `SET ROLE` einer Testrolle und sitzungsbezogene Auditabschaltung jeweils42501, keine Wiederholung oder zusätzliche Rechtevergabe. Extension/Testobjekte entfernt, vorherige Einstellungen/Callbacks restauriert;501 Identitäten/500 Mandate/0 aktiv, geschützte Vollzeilen+xmin und47 alte Journalzeilen unverändert, Journal49 durch genau2 neue Quittungen.0 neue Production-Modellaufrufe. Ersatzschutz und vollständige aktuelle Native-D-/Caller-/Root-Zulassung bleiben offen; keine globale Katalogsperre/Immutable-Behauptung oder500er Startfreigabe. [Umfang und Beleggrenzen](betrieb/supabase-plattformgrenze-audit-20261005.md).
 
@@ -18,28 +20,11 @@
 
 - **Synthetikbrücken (PR #763, Code/gezielte Tests):** [Importprojektion](../lib/helmut/synthetik-500-import.js), Start-/Endruntime und [Vollbilanz](../lib/helmut/synthetik-500-nachweis.js) sind gemergt. Import43/43, Runtime11/11Offline+11/11PostgreSQL, Realregression36/36 und Nachweis64/64 grün; beide Pflichtchecks einschließlich echter Import→Start→Ende-SQL-Integration erfolgreich. Bindungen umfassen v2-Preimage,17s Gesamtfrist,500-Zielzeilenjournal, Fremd-/Kinddaten, manuellen Wächter und1500Vorabpositionen. Volltexte, Originalquellen, Einzelurteile und unabhängige Production-Endabnahme bleiben Pflicht. Diese kleinen SQL-Fixtures beweisen keine Vollbestandsperformance.
 
-- **Private V7/fix2 und neuer Native-Transport (02.10.):** Lokaler Stage/Forward/Rückweg
-  mit136765Quell-/46143Kontrollzeilen, Runtime10/2, Journal41→44 akzeptiert
-  (`6a8aa67a`/`1f85df23`); Wrapper6,236/5,014/13,056s, CPU6,130/4,910/12,900s
-  im2CPU/2GiB-Clone. Source5/Geschäftskörper,17/20/2 und Vollfeldguards erhalten.
-  Keine Native-Hardware-/MVCC-/Owner-/ACL-/Ganzphasenabnahme, Body-only-Zeit,
-  harte17s-Reserve oder erfolgreiche SubTX-Leistung.
-  Historische inerte3.113.000B-Textprobe scheiterte terminal nach802,388s:
-  `Invalid or expired requestState` (`f932e3a0`/`533b5839`), Ursache/Schicht unbekannt.
-  Neuer verlustfreier pgcrypto-Transport: genau eine Native-RO-Decoderprobe erfolgreich,
-  **3.023.730 Originalbytes/SHA`1c4f3753`**, kleinere Argumente584292B,
-  alle Guards positiv; unabhängige tatsächliche Abnahme`0c04c55b`.
-  Original-App nicht ausgeführt; `current_query`-/Auditadapter und Native-Gesamtphase offen.
-  Frühere3,85MB-Abweisung bleibt historische Evidenz; kein Retry der alten Proben.
-  [Profil-/Snapshot-/Endwächterkapsel](betrieb/synthetik-500-profil-starttor-kapsel-20261002.md)
-  bindet Historie privat, kopiert keine großen Archive und hält neun dynamische Tore rot.
-  Aktuelle MainAuth/Audit42-Vollbindungen statt altem Importpreimage sind Pflicht.
-  Profil-GO, Quellen, finanzierter Qualitätsplan und lebender Endwächter fehlen;
-  0 Profilimporte/0 Aktivierungen/0 neue Modellaufrufe.
+- **Historischer V7-/Decoderstand (02.10.):** Lokale Vorarbeiten und verlustfreie Native-Decoderprobe akzeptiert; Original-App nicht ausgeführt. Native-Gesamtphase, Auditadapter und dynamische Starttore bleiben offen. [Unveränderte Einzelbefunde](archive/project_state/2026_10_05_CURRENT_STATE_historische_transporte.md).
 
 - **Neue Betreibersteuerung (01.10.2026):** Der naechste technische 500er Nachweis erfolgt mit vollstaendig synthetischen Profilen; keine Realpersonenprofile umbenennen oder mit Testflag als Fiktion ausgeben. Verteilung 330 Bundestag / 120 Berlin / 50 Brandenburg bleibt bestehen. Qualifizierte Datenschutzentscheidung und Vertragsunterlagen existieren laut Betreiber derzeit nicht; diese bleiben offen vor regulaerem Betrieb und sind kein Starttor fuer diesen synthetischen technischen Nachweis. Azure-SKU frisch gelesen: `GlobalStandard`, Kapazität250, Modellversion`2025-08-07`,250RPM/250.000TPM; Kontopreis und Production-Modellaufruf dadurch nicht belegt. Ein Azure-Konto und eine KI-Ressource existieren laut Betreiber bereits; Azure-Lesezugang ist seit 01.10.2026 authentifiziert belegt (Dienstprinzipal ausschliesslich Leser auf `helmut-rg`, keine Datenzugriffsrechte); Modellaufruf und wirksame Production-Konfiguration sind dadurch nicht bewiesen. [Aktueller Synthetikauftrag](betrieb/synthetischer-500er-auftrag-20261001.md). Dies ist eine Umfangsaenderung, keine Production-Aktivierung oder Testfreigabe.
 
-- **Frueher gesicherter Production-Befund (01.10.2026, 13:22 UTC):** PR #761 ist als `f5f775c326d4feafbfcbcc3d4ca18de1e94aba60` mit beiden Pflichtchecks gemergt; Ready-Deployment `dpl_rUjodyYwiz9EDGWZBXDcLV7WZAhp`, Region `fra1`. 500 Mandate / 501 Identitaeten / 0 aktiv / 0 unklare Aktivwerte, keine Runtime-Slots. Die neue reale Mischkohorte ist nicht importiert. Fuenf Realkohorten-Runtimefunktionen sind installiert und ihre Bodies/ACLs gebunden; Journalversion nach kontrolliertem Abgleich `20261001115020`. Diese Funktionen belegen keine synthetische 500er Startbereitschaft. Der historische null500-Vertrag bindet 495 alte Testprofile plus 5 Bestandsprofile und 4 USD und passt nicht unveraendert zum neuen Auftrag. Der Befund wurde fuer diese Dokumentation nicht erneut gemessen. Fehlender synthetischer Import-/Start-/End- und Nachweisweg bleibt offen; der Azure-Lesezugang ist inzwischen nachgewiesen.
+- **Historischer Production-Befund (01.10.,13:22 UTC):** PR #761 Ready,500 Mandate/501 Identitäten/0 aktiv; reale Runtime belegt keine Synthetikbereitschaft. Der alte495-plus5-/4USD-Vertrag passt nicht zum neuen Auftrag. [Unveränderte Einzelbefunde](archive/project_state/2026_10_05_CURRENT_STATE_historische_transporte.md).
 
 - **Aktueller Merge-/CI-Stand (02.10.):** [PR #769](https://github.com/ernisch/helmut-pilot/pull/769) entfernt Peak-Sperren und korrigiert die UTC-Tagesbindung der Runtime-CI. Beide Pflichtchecks und main-CI grün; Merge`484a74ee`, Ready`dpl_4bcmCLiVBxZ31ybGHCTNGzhkpQuq` auf exakt diesem Commit. Native Nachkontrolle08:33:38 Türkei/07:33:38 Berlin/05:33:38 UTC: **500 Mandate/501 Identitäten/0 aktiv/0 synthetisch/0 Slots**, Journal41. Nur dieser datierte Befund, keine neue Quellen-/Kostenabnahme oder500er Freigabe.
 

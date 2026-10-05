@@ -216,6 +216,7 @@ const STANDARD = new Set([
   "synthetik-500-production-adapter-fix2-test.js", // neuer FPA3 Journalmarker am Mutationsguard, reine Fakes
   "synthetik-500-provider-routen-test.js",  // gebundenes Quelleninventar aller erkannten Anbieterpfade
   "synthetik-500-review-receipt-test.js",   // private D-Herkunft, exakte R-Bindung und Einmal-Senderiegel
+  "synthetik-500-bounded-consumed-d-vertrag-test.js", // private Originalbytes/Requestbindung; keine globale Immutable- oder Startfreigabe
   "synthetik-500-ab-review-v2-test.js",     // explizite Kostenplan-/Executorbindung an den gespeicherten D/R-Vertrag
   "synthetik-500-artikelkontext-kostenbindung-test.js", // identische Runtime-/Plan-/3-Bindung von Artikelprompt und40er Vertrag
   "synthetik-500-route-contract-test.js",   // opt-in Route/Deployment/Auth-Auswahl vor Reserve und nach Await-Gates binden
