@@ -20,6 +20,15 @@ Die18 vollständigen scoped Sicherungen,17 Metadatentabellen und2 echten Postima
 
 ## Nächste notwendige Tore
 
-Der tatsächliche D/R-Datenbankvertrag fehlt weiterhin. Vollständiges aktuelles W/Kontext, tatsächliche Providerkonfiguration, finanzierter Request-/Zeitplan und lebender gebundener Endwächter sind getrennt zu schließen. Historische Caller-/Root-Abnahmen gelten nur für ihre gespeicherten Primärbelege. Die Importabnahme ersetzt keinen fachlichen Versorgungs-, Bedeutungs- oder500er Nachweis.
+Der tatsächliche D/R-Datenbankvertrag fehlt weiterhin. Vollständiges aktuelles W/Kontext, tatsächlicher Providerantwortbeleg, finanzierter Request-/Zeitplan und lebender gebundener Endwächter sind getrennt zu schließen. Historische Caller-/Root-Abnahmen gelten nur für ihre gespeicherten Primärbelege. Die Importabnahme ersetzt keinen fachlichen Versorgungs-, Bedeutungs- oder500er Nachweis.
 
-Die aktuelle Betreiberfreigabe deckt notwendige Vorbereitung dieser Arbeitsphase einschließlich Production-Änderungen; bezahlte Production-Modellaufrufe bleiben insgesamt auf20USD begrenzt, bestehende Kosten/Reservierungen werden erhalten. In dieser Phase bisher0 solche Aufrufe und0 neue USD. Neue kostenpflichtige Infrastruktur sowie Aktivierung und eigentlicher500er Test bleiben gesperrt.
+Die aktuelle Betreiberfreigabe deckt notwendige Vorbereitung dieser Arbeitsphase einschließlich Production-Änderungen; bezahlte Production-Modellaufrufe bleiben insgesamt auf20USD begrenzt, bestehende Kosten/Reservierungen werden erhalten. In dieser Phase bisher0 solche Aufrufe und0 neue USD. Neue kostenpflichtige Infrastruktur und der eigentliche500er Test bleiben gesperrt. Profiländerungen sind für diese Arbeitsphase ausdrücklich freigegeben; der inaktive Bestand bleibt bis zu den vollständigen technischen Toren erhalten.
+
+
+## Weitere vorbereitende Belege am05.10.
+
+Die aktuelle Providerkonfiguration wurde am05.10. auf dem regulären PR#805-Deployment geprüft: Azure, `helmut-resource.openai.azure.com`, aktive Text-/Verstehendeployment `gpt-5-mini`, Schlüssel vorhanden, kein Loopback. Dies belegt weder einen Modellaufruf noch den aktuellen Kontotarif. ARM-Metadaten bestätigen GlobalStandard inSwedenCentral; der bestehende konservative Kostenriegel bleibt führend.
+
+Die native D-Metadatenprüfung ist um02:57:46 UTC vollständig erfolgreich: sämtliche sechs Foundation-Hashes,497 Funktionen,74 Typen,839 Closure- und1757 Hook-Einträge sowie276 Target-D-Tupel. Post-Import-Namespace- und vollständige physische Katalogzeilen wurden verlustfrei neu gebunden; kein Feld wurde aus dem Vergleich entfernt. Geschäftsinhalte, Effekte, SourceGlobal17, Backend, Gesamtinstallation und vollständiges W sind dadurch nicht abgenommen. Das externe MCP-Wrapper-Queryhash ist weiterhin nicht als Identität der lokal eingereichten SQL-Bytes belegt.
+
+Der vorbereitete Einzelprobe-Handler verwendet ausschließlich einen festen synthetischen Kurzprompt,0 Profile und höchstens16 Ausgabetokens. Ein dauerhaftes CAS-Claim vor dem vorhandenen AI-/Kostenpfad verhindert einen zweiten Aufruf; bei unbestätigtem Schreiben wird kein Anbieter aufgerufen. Wiederaufrufe schreiben den verbrauchten Claim nicht erneut. Authentisierung ist an einen separaten kurzlebigen Bearer-Hash, Nonce, Deployment-Commit/-Host und ein20-Minutenfenster gebunden. Die maximale konservative Vorreservierung beträgt0,200064USD; historische Kosten und offene Reserven bleiben erhalten. Code und lokale synthetische Tests sind Vorbereitung, kein tatsächlicher Providerbeleg.
