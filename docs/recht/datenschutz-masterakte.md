@@ -167,7 +167,7 @@ Technisch vorhanden:
 1. Profildatenexport
 2. Profilbezogene Löschung
 3. Berechtigungsprüfung für Export und Löschung
-4. Teilfehler werden nicht als vollständiger Lößerfolg ausgegeben
+4. Teilfehler werden nicht als vollständiger Löscherfolg ausgegeben
 
 Vor echten Kunden noch erforderlich:
 
