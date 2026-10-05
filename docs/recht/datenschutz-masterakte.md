@@ -40,7 +40,7 @@ Für den rein synthetischen technischen 500er Nachweis ist die offene Datenschut
 | Domain | 🟡 | `mithelmut.de` ist festgelegt, Custom Domain Verbindung noch nicht belegt | Nach technischer Einrichtung Website und App zuordnen | Nein |
 | Website Tracking | 🟢 | Kein Google Analytics, Meta Pixel oder vergleichbarer Tracker im aktuellen Live Auftritt gefunden | Tracking weiterhin vermeiden | Nein |
 | Website Fonts | 🟢 | Schriften werden lokal ausgeliefert | So beibehalten | Nein |
-| Website Datenschutzhinweis | 🔴 | Aktueller Text behauptet, die Website erhebe keine personenbezogenen Daten. Das ist wegen Hosting und technischer Zugriffsdaten zu pauschal | Datenschutzhinweis vor öffentlichem Launch korrigieren | Ja |
+| Website Datenschutzhinweis | 🟢 | Am 06.10.2026 auf Production aktualisiert: Vercel Hosting, technische Zugriffsdaten, Rechtsgrundlage, Drittlandhinweise, Speicherkriterien, E Mail Kontakt, Betroffenenrechte und Beschwerderecht enthalten. Alte falsche Aussage entfernt. Live Prüfung: HTTP 200, keine Marketing Tracker gefunden, kein Set Cookie Header | Bei Anbieter oder Website Funktionsänderungen erneut prüfen | Nein |
 | Öffentliche Registrierung | 🟢 | Keine öffentliche Signup oder Register Route gefunden | Betreiber Einladung beibehalten | Nein |
 | Kontodaten | 🟡 | Name, E Mail, Rolle, Passwort Hash, Sessions, Login Zeitpunkte und Sicherheitsmetadaten sind technisch vorgesehen | Rechtsgrundlage, Frist und Empfänger dokumentieren | Ja |
 | Mandatsprofil | 🟠 | Partei, Fraktion, Parlament, Region, Wahlkreis, Ausschüsse, Themen, Funktionen und weitere politische Profildaten werden verarbeitet | Art. 6 und Art. 9 Grundlage verbindlich festlegen | Ja |
@@ -235,7 +235,7 @@ Bis zur späteren Rechtsfreigabe gelten als Zielregeln:
 
 1. Diese Masterakte als Arbeitswahrheit pflegen.
 2. Domain technisch anbinden, sobald vom Betreiber gewünscht.
-3. Website Datenschutzerklärung korrigieren.
+3. Website Datenschutzerklärung ist seit 06.10.2026 korrigiert und live geprüft.
 4. App Datenschutzerklärung auf den tatsächlichen aktuellen Datenfluss bringen.
 5. Dienstleister und Verträge vollständig inventarisieren.
 6. Verbindliche Löschfristen vorbereiten, aber Retention noch nicht scharf schalten.
