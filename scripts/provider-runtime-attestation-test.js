@@ -26,7 +26,7 @@ function check(name, fn) { fn(); passed += 1; console.log("PASS " + name); }
 function forbiddenEffect() { blockedEffectAttempts += 1; throw new Error("offline-effect-forbidden"); }
 
 // Echte Module im isolierten Kontext, enges Require-Inventar, leere Test-Env.
-// Nur der Verifier im Testkontext wird durch den synthetischen Hash ersetzt.
+// Nur die Verifier-Bindung im Testkontext wird durch synthetische Werte ersetzt.
 // Der Production-Handler erhaelt KEINEN Auth-Override und kennt den Testbearer nicht.
 const dependencies = {
   "ai.js": ["https", "./verstehen-restzeit", "./azure-endpunkt", "./provider-runtime-attestation", "./anbieter-steuerung"],
@@ -48,6 +48,12 @@ function loadPureModule(name) {
     productionVerifierHash = source.match(/bearerSha256: "([a-f0-9]{64})"/)[1];
     assert.notEqual(productionVerifierHash, BEARER_HASH);
     source = source.replace(hashDeclaration, 'bearerSha256: "' + BEARER_HASH + '"');
+    const nonceDeclaration = /operationNonce: "[a-f0-9-]{36}"/g;
+    const expiryDeclaration = /expiresAtUTC: "[0-9TZ:.-]+"/g;
+    assert.equal((source.match(nonceDeclaration) || []).length, 1);
+    assert.equal((source.match(expiryDeclaration) || []).length, 1);
+    source = source.replace(nonceDeclaration, 'operationNonce: "' + NONCE + '"');
+    source = source.replace(expiryDeclaration, 'expiresAtUTC: "' + EXPIRES + '"');
   }
   const module = { exports: {} };
   const requirePure = specifier => {
