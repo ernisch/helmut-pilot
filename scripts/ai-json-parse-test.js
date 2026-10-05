@@ -73,6 +73,21 @@ for (const status of ["incomplete", "failed", "cancelled", "queued", "in_progres
       && !String(statusFehler.message).includes(String(status)));
 }
 
+// Eng begrenzte Diagnose: Kategorien statt Anbieterinhalt, Status bleibt fail closed.
+for (const [status, reason, wantStatus, wantReason] of [
+  ["incomplete", "max_output_tokens", "incomplete", "max_output_tokens"],
+  ["incomplete", "content_filter", "incomplete", "content_filter"],
+  [undefined, undefined, "absent", "absent"],
+  ["PRIVATE_STATUS", "PRIVATE_REASON", "other", "other"]]) {
+  let error;
+  try { ai.requireCompletedProviderResponse({ status, incomplete_details: { reason },
+    output_text: "PRIVATE_MODEL_TEXT", error: { message: "PRIVATE_ERROR_BODY" } }); } catch (e) { error = e; }
+  check(`4g sichere Diagnose ${wantStatus}/${wantReason}`,
+    error?.code === "AI_RESPONSE_NOT_COMPLETED" && error.providerDiagnostic.status === wantStatus
+      && error.providerDiagnostic.incompleteReason === wantReason
+      && !JSON.stringify(error).includes("PRIVATE") && !error.message.includes("PRIVATE"));
+}
+
 // --- 5) Ehrliches Scheitern: echter Muell wirft weiterhin ---------------------------
 let threw = false;
 try { ai.parseJsonText("kein json weit und breit"); } catch { threw = true; }

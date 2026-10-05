@@ -83,6 +83,23 @@ async function main() {
     assert.equal(r.body.providerCompletionProven, false); assert.equal((await f.invoke()).status, 409);
     assert.equal(f.calls.length, 1); assert.equal(JSON.stringify(r.body).includes("private upstream"), false);
   });
+  await test("incomplete diagnosis is whitelisted, never raw provider data or retry", async () => {
+    for (const diagnostic of [{ status: "incomplete", incompleteReason: "max_output_tokens", private: "PRIVATE_MODEL_BODY" },
+      { status: "PRIVATE_STATUS", incompleteReason: "PRIVATE_REASON" }]) {
+      const f = fixture();
+      f.deps.requestText = async () => {
+        f.calls.push([]);
+        const e = new Error("PRIVATE_ERROR_BODY"); e.code = "AI_RESPONSE_NOT_COMPLETED";
+        e.providerDiagnostic = diagnostic; throw e;
+      };
+      const r = await f.invoke(); assert.equal(r.status, 502); assert.equal(r.body.consumed, true);
+      assert.equal(r.body.providerCompletionProven, false);
+      assert.deepEqual(r.body.providerFailure, diagnostic.status === "incomplete"
+        ? { status: "incomplete", incompleteReason: "max_output_tokens" } : null);
+      assert.equal(JSON.stringify(r.body).includes("PRIVATE"), false);
+      assert.equal((await f.invoke()).status, 409); assert.equal(f.calls.length, 1);
+    }
+  });
   await test("expiry during awaited preflight never claims or sends", async () => {
     const f = fixture(); f.deps.storage.leseLlmTageszaehler = async () => {
       f.advance("2026-10-05T04:00:00.000Z"); return { ok: true, used: 0 }; };
