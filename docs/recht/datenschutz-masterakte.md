@@ -146,7 +146,7 @@ Microsoft dokumentiert:
 
 Für das aktuell verwendete `gpt-5-mini` ist ein regionales Standard Deployment in `Sweden Central` verfügbar, nicht jedoch in `Germany West Central`. Ein strikt deutsches regionales Deployment mit demselben Modell ist nach dem Microsoft Verfügbarkeitsstand vom 05.10.2026 daher nicht möglich. Andere Modelle, beispielsweise `gpt-5.4`, sind regional in `Germany West Central` verfügbar, würden aber einen Modellwechsel und damit eine neue fachliche und kostenbezogene Abnahme erfordern.
 
-**Pragmatisches Helmut Ziel:** `gpt-5-mini` behalten und von `GlobalStandard` auf `Data Zone Standard` umstellen, sobald Subscription Quota und verfügbare Kapazität lesend bestätigt sind. Keine Umstellung ohne gesonderte Azure und Production Freigabe.
+**Pragmatisches Helmut Ziel:** `gpt-5-mini` behalten und von `GlobalStandard` auf `Data Zone Standard` umstellen. Die Subscription Kapazität ist inzwischen authentifiziert und rein lesend bestätigt: Prüfung vom 05.10.2026, 14:53 bis 14:55 Istanbul / 13:53 bis 13:55 Berlin / 11:53 bis 11:55 UTC. Aktuell bestehen 250 GlobalStandard Einheiten mit 250.000 TPM / 250 RPM. Für `DataZoneStandard` meldet Azure 670 verfügbare Einheiten; 250 Einheiten können die heutige Zuteilung vollständig spiegeln. Modell und Version bleiben `gpt-5-mini` / `2025-08-07`. Ein erfolgreicher Data Zone Deployment Vorgang ist dadurch noch nicht belegt. Keine Umstellung ohne gesonderte Azure und Production Freigabe.
 
 Hinweis zur Formulierung in Rechtstexten: Microsoft beschreibt die europäische Datenzone im Zusammenhang mit der Azure EU Data Boundary. Die aktuelle Dokumentation weist darauf hin, dass diese Grenze je nach Dienst auch EFTA Regionen einbeziehen kann. Deshalb nicht pauschal „nur Deutschland“ oder ohne Vertragsprüfung „ausschließlich EU Mitgliedstaaten“ versprechen.
 
@@ -162,7 +162,7 @@ Offizielle Quellen:
 | Supabase Datenbank | `eu-west-1`, Irland |
 | Vercel App Konfiguration | `fra1`, Frankfurt im Repository konfiguriert |
 | Azure Ressource | Sweden Central |
-| Azure Deployment | Aktuell `GlobalStandard`. Ziel: `Data Zone Standard` mit `gpt-5-mini`. Deutschland allein wäre mit demselben Modell aktuell nicht als regionales Standard Deployment in `Germany West Central` verfügbar |
+| Azure Deployment | Aktuell `GlobalStandard`, 250 Einheiten = 250.000 TPM / 250 RPM. Für `DataZoneStandard` sind authentifiziert 670 Einheiten verfügbar; 250 Einheiten können die heutige Zuteilung spiegeln. Noch kein Data Zone Deployment angelegt |
 | DeepSeek | Nicht Teil der aktuellen Helmut Production Laufzeit |
 | Eigene Domain | `mithelmut.de` festgelegt, technische Verbindung noch nicht belegt |
 
