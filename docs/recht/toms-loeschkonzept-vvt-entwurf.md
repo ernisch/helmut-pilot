@@ -48,17 +48,18 @@ Sprint 4 — Datenexport/-löschung. Runtime-Fehler zentral (Vercel) einsehbar.
 
 | Datenkategorie | Speicherort | Löschweg | Frist (VORSCHLAG — DSB festlegen) |
 |---|---|---|---|
-| Mandatsprofil + alle Nutzer-Artefakte (Briefings, Decisions, Büro-Texte, Notizen, Embeddings) | Blob + 17 V3-Tabellen | `/api/privacy/delete` (seit Sprint 4 vollständig, mit Audit-Eintrag; Teilfehler werden gemeldet) | bei Vertragsende: Export anbieten, dann Löschung binnen 30 Tagen |
-| Konto, Sessions, Zuweisungen, Tagesinputs | Auth-Store | in `/api/privacy/delete` enthalten (Sprint 4) | wie oben |
-| KI-Nutzungslog des Mandats | Blob-Ring + llm_usage | in `/api/privacy/delete` enthalten | wie oben; ggf. anonymisierte Kostensummen für Abrechnung behalten (DSB-Frage) |
-| Audit-Ereignisse des Nutzers | Auth-Store | in `/api/privacy/delete` enthalten | DSB-Frage: Sicherheitslogs ggf. gesetzlich länger? |
-| Push-Subscriptions | Blob | löschbar (bestehende Funktion) | sofort bei Abmeldung |
+| Mandatsprofil + alle kundenspezifischen Nutzer-Artefakte (Briefings, Decisions, Büro-Texte, Notizen, Embeddings, persönliche Zuordnungen) | Blob + V3-Tabellen | `/api/privacy/delete`; Teilfehler müssen sichtbar bleiben | **sofort bei Konto-/Mandatslöschung oder berechtigtem Löschantrag; kein künstliches Wartefenster** |
+| Konto, Sessions, Zuweisungen, Tagesinputs, Passwort-/Einladungslinks | Auth-Store | in `/api/privacy/delete` enthalten | **sofort** |
+| KI-Nutzungslog des Mandats | Blob-Ring + llm_usage | in `/api/privacy/delete` enthalten | **sofort**, soweit mandatsbezogen; gesetzlich notwendige Abrechnungsbelege getrennt und ohne Produktnutzung |
+| Audit-/Sicherheitsereignisse mit Kundenbezug | Auth-/Fehlerspeicher | Löschpfad muss alle identifizierenden Verknüpfungen entfernen | **sofort**; danach nur inhaltsfreie, nicht rückführbare Löschquittung zulässig |
+| Push-Subscriptions und Push-Ereignisse | Blob | bestehender mandatsbezogener Löschpfad | **sofort** bei Abmeldung oder Gesamtlöschung |
 | Global geteilte Daten (raw_documents 5k+, knowledge_objects) | V3 | KEIN Personenbezug zum Kunden; enthalten öffentliche Politik-Daten | TTL-Vorschlag: raw_documents 24 Monate (technisch noch nicht umgesetzt — Roadmap E) |
 | Backups (`backups/`, lokal) | Betreiber-Gerät | manuell | Vorschlag: 3 Monatsstände, rollierend |
 | Vercel-Logs | Vercel | Plan-abhängige Retention | dokumentieren |
 
-Offen (technisch): Soft-Delete-Fenster (geloescht_at existiert, wird nicht
-genutzt); TTL-Job für raw_documents.
+Betreiberentscheidung 06.10.2026: **kein Soft-Delete-Fenster als Standard**. Die aktive Kundenlöschung ist eine sofortige Hard-Delete-Operation. Ein Export kann angeboten werden, darf die Löschung aber nicht verzögern.
+
+Offen (technisch): vollständige Gegenprüfung aller aktuellen mandatsbezogenen Speicherorte; insbesondere `systemErrors`/weitere technische Metadaten mit Nutzerbezug sowie der derzeit nachgelagert geschriebene `privacy.delete`-Audit-Eintrag dürfen keinen identifizierenden Kundenrest hinterlassen. Für Backups ist eine kurze Rotation plus Wiederanwendung ausgeführter Löschungen nach Restore zu belegen. TTL für global geteilte öffentliche Quellen bleibt eine getrennte Retention-Frage.
 
 ## Teil C — Verzeichnis von Verarbeitungstätigkeiten (Art. 30) — GERÜST
 
