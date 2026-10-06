@@ -176,11 +176,19 @@ function jsonAusAusgabe(stdout) {
   try { return JSON.parse(bloecke[0]); } catch { return "unparsebar"; }
 }
 
+// Synthetic historical scheduling only for the two extra child-process regressions.
+const LEGACY_SCHEDULE_PRELOAD = path.join(SPION_DIR, "historische-cron-fixture.js");
+fs.writeFileSync(LEGACY_SCHEDULE_PRELOAD, `"use strict";
+const target = ${JSON.stringify(path.join(ROOT, "vercel.json"))};
+const original = require(target);
+require.cache[require.resolve(target)].exports = { ...original,
+  crons: require(${JSON.stringify(path.join(ROOT, "scripts/fixtures/scheduled-crons-before-pre500-pause.json"))}) };
+`);
 const ALLE = [];
-function cli(args, extraEnv = {}) {
+function cli(args, extraEnv = {}, historicalSchedule = false) {
   spionZuruecksetzen();
   const vorher = speicherSchnappschuss();
-  const r = spawnSync(process.execPath, ["--require", NETZ_GUARD, "--require", SPION_PRELOAD, CLI, ...args], {
+  const r = spawnSync(process.execPath, ["--require", NETZ_GUARD, "--require", SPION_PRELOAD, ...(historicalSchedule ? ["--require", LEGACY_SCHEDULE_PRELOAD] : []), CLI, ...args], {
     cwd: ROOT, env: kindUmgebung(extraEnv), encoding: "utf8", timeout: 90000
   });
   const nachher = speicherSchnappschuss();
@@ -318,6 +326,14 @@ function main() {
   check("E2 Echte Cron-Pause bleibt auch AUSSERHALB wegen fehlender Cronliste geschlossen",
     uhrDraussen.status === 0 && uhrDraussen.json && uhrDraussen.json.startfenster.frei === false
       && uhrDraussen.json.startfenster.grund === "startfenster-ohne-cronliste" && uhrDraussen.speicherUnveraendert);
+  const historicalInside = cli(["provisionierung", "--stufe=a", ...FENSTER, JETZT_DRIN], {}, true);
+  check("E4 Historische isolierte Cron-Fixture: echte CLI-Pruefuhr IM Fenster", historicalInside.status === 0
+    && historicalInside.json?.startfenster.frei === true && historicalInside.json.startfenster.grund === "fenster-gilt-jetzt"
+    && historicalInside.json.modus === "trockenlauf" && historicalInside.speicherUnveraendert);
+  const historicalOutside = cli(["provisionierung", "--stufe=a", ...FENSTER, JETZT_DRAUSSEN], {}, true);
+  check("E5 Historische isolierte Cron-Fixture: echte CLI-Pruefuhr AUSSERHALB", historicalOutside.status === 0
+    && historicalOutside.json?.startfenster.frei === false && historicalOutside.json.startfenster.grund === "startzeit-ausserhalb-des-fensters"
+    && historicalOutside.json.modus === "trockenlauf" && historicalOutside.speicherUnveraendert);
   const scharfMitUhr = cli(["provisionierung", "--stufe=a", "--scharf", ...FENSTER, JETZT_DRIN],
     { [K.EXECUTE_FLAG]: "1", [K.CONFIRM_VARIABLE]: WORT("a") });
   check("E3 --scharf mit --jetzt= wird ABGEWIESEN (Exit 2, kein Banner, nichts geschrieben) — der dritte Riegel ist nicht setzbar",
