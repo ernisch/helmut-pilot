@@ -44,12 +44,12 @@ function dated(f,op,run,start,end){
  const plan=f.command.slot.plan;Object.assign(plan,{operationId:op,runId:run,startsAtUTC:start,endsAtUTC:end});Object.assign(plan.routeContract.management,{validFromUTC:start,validUntilUTC:end});
  const {id,...desc}=plan.intents[0];plan.intents[0]={id:A.intentHash(run,desc),...desc};f.intent=plan.intents[0];f.command.understanding[0].intentId=f.intent.id;f.command.units[0].intentIds=[f.intent.id];f.command.slot.planHash=sha(plan);C.validate(f.command);return f;
 }
-function scenario(){
+function scenario(installNext=true){
  const ms=Date.now(),iso=x=>new Date(x).toISOString(),old=dated(fixture(),'synthetik500-fixture-old-unclaimed','nachlauf500-'+(ms-7200000),iso(ms-7200000),iso(ms-3600000)),next=dated(fixture(),'synthetik500-fixture-new-only','nachlauf500-'+(ms-1000),iso(ms-1000),iso(ms+1200000));
  const auth={llmUsage:[],[K.AUFTRAG_KEY]:{version:4,id:'fictional-order',abTag:iso(ms).slice(0,10),limit:20000000,externGebunden:0}},day=iso(ms).slice(0,10);
  auth[K.KEY]={[day]:{version:K.VERSION,day,tarif:K.konfiguration({}).tarif,limit:K.LIMIT_MICRO_USD,spent:0,baseline:0,manualCalls:0,manualUntil:null,calls:{},frozen:null}};
  J.install(auth,old.command,sha(old.command),C.controlHash(auth));const original=clone(J.current(auth));next.command.predecessors=[{operationId:original.operationId,commandHash:original.commandHash,planHash:original.planHash,journalHash:sha(original)}];
- J.install(auth,next.command,sha(next.command),C.controlHash(auth));Object.assign(next.record,{commandHash:sha(next.command),planHash:next.command.slot.planHash,admittedAtUTC:next.command.slot.plan.startsAtUTC,expiresAtUTC:next.command.slot.plan.endsAtUTC,controlHash:C.controlHash(auth),booksHash:C.booksHash(auth)});
+ if(installNext)J.install(auth,next.command,sha(next.command),C.controlHash(auth));Object.assign(next.record,{commandHash:sha(next.command),planHash:next.command.slot.planHash,admittedAtUTC:next.command.slot.plan.startsAtUTC,expiresAtUTC:next.command.slot.plan.endsAtUTC,controlHash:C.controlHash(auth),booksHash:C.booksHash(auth)});
  return {old,next,auth,original};
 }
 async function startFixture(change){
@@ -80,6 +80,34 @@ async function startFixture(change){
  }finally{C.validate=realValidate;C.admission=realAdmission;K.aktiv=oldActive;if(oldCommit===undefined)delete process.env.HELMUT_PRODUCTION_COMMIT;else process.env.HELMUT_PRODUCTION_COMMIT=oldCommit;if(oldCache)require.cache[storagePath]=oldCache;else delete require.cache[storagePath];}
 }
 async function main(){
+ await test('expired U installs an independently admitted DR transport successor without consuming the old operation',()=>{
+  const f=scenario(false),command=f.next.command,owners=P.erzeuge().profile.map(x=>x.mandatsId).sort();
+  // The DR schema/admission boundary is explicitly mocked here, as in the
+  // existing start fixture; the real journal checks and install are exercised.
+  command.mode='D-R-500';command.understanding=[];command.drafts=owners.map(id=>({profile:{id}}));
+  command.units=owners.map(id=>({kind:'DR',subject:id,intentIds:[sha([id,'D']),sha([id,'R'])]}));
+  const validate=C.validate;let validated=0;
+  C.validate=c=>{if(c===command){validated++;return {commandHash:sha(c),plan:c.slot.plan};}return validate(c);};
+  try{
+   const before=clone(f.auth),control=C.controlHash(f.auth);J.install(f.auth,command,sha(command),control);
+   assert.equal(validated,1);assert.deepEqual(f.auth[J.KEY].operations[f.original.operationId],f.original);
+   const installed=J.current(f.auth);assert.equal(installed.state,'installed');assert.equal(installed.claimId,null);
+   assert.equal(installed.units.length,500);assert.equal(installed.index,0);assert.deepEqual(installed.attempts,{});assert.deepEqual(installed.outputs,{});
+   assert.deepEqual(f.auth[K.KEY],before[K.KEY]);assert.deepEqual(f.auth[K.AUFTRAG_KEY],before[K.AUFTRAG_KEY]);
+   assert.throws(()=>J.install(f.auth,command,sha(command),C.controlHash(f.auth)),/previous-operation-not-closed/);
+   for(const change of [a=>{J.current(a).claimId='fixture-claim';},a=>{J.current(a).units[0].entered=true;},a=>{J.current(a).state='unknown';},a=>{J.current(a).attempts.fake={status:'unknown'};},a=>{a.synthetik500KostenAdmission.consumed.fake={};},a=>{a.synthetik500KostenAdmission.plan.endsAtUTC=new Date(Date.now()+60000).toISOString();}]){
+    const a=clone(before);change(a);const unchanged=clone(a);assert.throws(()=>J.install(a,command,sha(command),C.controlHash(a)),/previous-operation-not-closed/);assert.deepEqual(a,unchanged);
+   }
+   for(const mutate of [c=>{c.predecessors=[];},c=>{c.predecessors[0].journalHash='a'.repeat(64);},c=>{c.predecessors[0].commandHash='a'.repeat(64);}]){
+    const saved=clone(command.predecessors),a=clone(before);mutate(command);assert.throws(()=>J.install(a,command,sha(command),C.controlHash(a)),/previous-operation-not-closed/);assert.deepEqual(a,before);command.predecessors=saved;
+   }
+  }finally{C.validate=validate;}
+ });
+ await test('DR mode alone cannot replace an expired U without the real complete command validator',()=>{
+  const f=scenario(false),before=clone(f.auth);f.next.command.mode='D-R-500';
+  assert.throws(()=>J.install(f.auth,f.next.command,sha(f.next.command),C.controlHash(f.auth)),/previous-operation-not-closed/);
+  assert.deepEqual(f.auth,before);
+ });
  await test('expired intact prior U passes real predicate and real productionStart claim',async()=>{const f=scenario();assert.equal(J.expiredUnclaimedPredecessor(f.original,f.old.command,f.next.command),true);const r=await startFixture();assert.equal(r.claims,1);assert.equal(r.oldReads,1);assert.deepEqual(r.claimed[J.KEY].operations[r.f.original.operationId],r.f.original);assert.equal(r.claimed[J.KEY].operations[r.f.next.command.slot.plan.operationId].state,'running');assert.equal(Object.keys(r.claimed[K.KEY][new Date().toISOString().slice(0,10)].calls).length,0);});
  for(const[name,change]of [['missing immutable prior packet',c=>c.setMissing()],['wrong immutable prior packet hash',c=>{const p=clone(c.f.old.command);p.understanding[0].reads.getExisting['fixture-only']={unexpected:true};c.setBadPacket(p);}],['prior journal changes during CAS',c=>c.setDrift(a=>{a[J.KEY].operations[c.f.original.operationId].stopRequested=true;})]])await test(name+' rejects before claim',async()=>{const r=await startFixture(change);assert.equal(r.claims,0);assert.equal(r.effects,0);});
  const unsafe=[['claimed',j=>{j.claimId='fake-prior-claim';}],['entered',j=>{j.units[0].entered=true;}],['running',j=>{j.state='running';}],['unknown',j=>{j.state='unknown';}],['stopped',j=>{j.state='stopped';}],['in flight',j=>{j.inFlight={index:0,intentIds:j.units[0].intentIds};}],['attempt',j=>{j.attempts[j.units[0].intentIds[0]]={status:'reserved'};}],['output',j=>{j.outputs[0]={resultHash:sha('fake')};}],['index',j=>{j.index=1;}],['subject',j=>{j.units[0].subject='changed';}],['intent',j=>{j.units[0].intentIds=['b'.repeat(64)];}],['hash',j=>{j.commandHash='b'.repeat(64);}],['plan hash',j=>{j.planHash='b'.repeat(64);}],['operation',j=>{j.operationId='synthetik500-fake-foreign';}],['extra key',j=>{j.extra=true;}],['extra unit',j=>{j.units.push(clone(j.units[0]));}]];
