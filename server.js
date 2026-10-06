@@ -235,6 +235,10 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "synthetik500-u-vorlauf") {
     return require("./lib/helmut/synthetik-500-u-prestage-entry").handleRequest(request, response, url, { jsonHeaders });
   }
+  // Rein lesende, gesondert autorisierte JS-Finanzbindung; keine Finanzoriginale.
+  if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "synthetik500-finanzbindung") {
+    return require("./lib/helmut/synthetik-500-financing-witness").handleRequest(request, response, url, { jsonHeaders });
+  }
   // Feste, budgetgebundene Einzelprobe VOR dem Account-Vorlauf; keine Profile.
   if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "provider-einzelprobe") {
     return require("./lib/helmut/provider-runtime-single-probe").handleRequest(request, response, url, { jsonHeaders });

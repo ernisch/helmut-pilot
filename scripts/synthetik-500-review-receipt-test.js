@@ -32,14 +32,14 @@ const SCHEMA = { type: "object" }, clone = x => structuredClone(x);
 const INPUT = P.hash({ profile: PROFILE, sources: SOURCES });
 const ENV = { VERCEL_ENV: "production", HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt", HELMUT_PRODUCTION_COMMIT: COMMIT,
   AZURE_OPENAI_KEY: "offline-fixture-key", AZURE_OPENAI_ENDPOINT: "https://offline.openai.azure.com", AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini" };
-function fixture({ generation = true, tokens = 3000, v1 = false } = {}) {
+function fixture({ generation = true, tokens = 3000, v1 = false, routed = false, model = "gpt-5-mini" } = {}) {
   const start = new Date(Date.now() - 1000).toISOString(), day = start.slice(0, 10);
   const end = new Date(Math.min(Date.parse(start) + 3600000, Date.parse(day + "T23:59:59.999Z"))).toISOString();
   const meta = { politicianId: OWNER, runId: RUN, briefingDatum: start };
   const schema = generation ? clone(ai.LAGE_BRIEFING_SCHEMA) : SCHEMA;
   if (generation) { delete schema.properties.paragraphs.minItems; delete schema.properties.paragraphs.maxItems; }
   const prompt = generation ? ai.buildLageBriefingPrompt(SOURCES, PROFILE, meta) : "OFFLINE-D";
-  const body = JSON.stringify({ model: "gpt-5-mini", input: prompt, max_output_tokens: 3000, reasoning: { effort: "low" },
+  const body = JSON.stringify({ model, input: prompt, max_output_tokens: 3000, reasoning: { effort: "low" },
     text: { format: { type: "json_schema", name: "knowledge_object", schema, strict: true } } });
   const make = descriptor => ({ id: A.intentHash(RUN, descriptor), ...descriptor });
   const d = make({ phase: "D", owner: OWNER, inputVersionHash: INPUT, actualRequestHash: A.requestHash(body),
@@ -50,15 +50,32 @@ function fixture({ generation = true, tokens = 3000, v1 = false } = {}) {
     ...(!v1 ? { reviewRule: rule } : {}) });
   const plan = { version: v1 ? A.PLAN_VERSION : A.REVIEW_PLAN_VERSION, operationId: "synthetik500-review-offline-20261002",
     runId: RUN, productionCommit: COMMIT, runtimeManifestHash: P.hash("fictional-runtime"), startsAtUTC: start, endsAtUTC: end, intents: [d, r] };
+  const runtime = { ...ENV, AZURE_OPENAI_DEPLOYMENT: model };
+  if (routed) {
+    Object.assign(runtime, { AZURE_OPENAI_ENDPOINT: "https://helmut-resource.openai.azure.com", VERCEL_GIT_COMMIT_SHA: COMMIT,
+      VERCEL_URL: "helmut-fictional-review.vercel.app", VERCEL_DEPLOYMENT_ID: "dpl_FictionalReview" });
+    const KO = require("../lib/helmut/knowledge-object-version");
+    plan.version = A.ROUTE_PLAN_VERSION;
+    plan.sourceBinding = { inputVersion: A.ROUTE_INPUT_VERSION, inputHash: INPUT, projectionVersion: KO.VERSION,
+      projectionFieldsetHash: KO.FIELDSET_HASH };
+    plan.routeContract = { version: A.ROUTE_CONTRACT_VERSION, runtimeManifestHash: plan.runtimeManifestHash,
+      route: { provider: "azure", responsesUrl: runtime.AZURE_OPENAI_ENDPOINT + "/openai/v1/responses", model,
+        productionCommit: COMMIT, deploymentHost: runtime.VERCEL_URL, deploymentId: runtime.VERCEL_DEPLOYMENT_ID, authMode: "api-key" },
+      management: { modelFamily: "gpt-5-mini", versionPolicy: "family-context-price-class-re-admit-on-contradiction",
+        contextTokens: 400000, maxInputTokens: 272000, inputReserveTokens: 400000, maxOutputTokens: 128000,
+        reasoningIncludedInOutput: true, inputUsdPerMillion: 0.5, outputUsdPerMillion: 4,
+        validFromUTC: start, validUntilUTC: end, evidencePins: Object.fromEntries(["rootAdmission", "management", "serviceContext", "price"]
+          .map(name => [name, { name: "fictional-" + name, sha256: P.hash(name), bytes: 10 }])) } };
+  }
   let state = { llmUsage: [], users: [{ id: "unrelated-fixture" }],
     [K.AUFTRAG_KEY]: { version: 3, id: "offline-order", abTag: day, limit: 7000000, externGebunden: 0 },
-    [A.KEY]: { version: v1 ? A.VERSION : A.REVIEW_VERSION, plan, planHash: P.hash(plan), consumed: {},
+    [A.KEY]: { version: routed ? A.ROUTE_VERSION : v1 ? A.VERSION : A.REVIEW_VERSION, plan, planHash: P.hash(plan), consumed: {},
       ...(!v1 ? { draftCompletions: {}, reviewBindings: {}, reviewBindingsHash: P.hash({}) } : {}) } };
   let queue = Promise.resolve(), serial = 0, clock = Date.parse(start), callbackRuns = 0;
   const rows = new Map(), history = new Map(), bodies = [];
   const contract = { version: R.STORAGE_VERSION, contractHash: P.hash("offline-enforced-immutable-history-only") };
   const h = { failCost: false, forgeUsage: false, lostCommit: false, corruptImmutable: false, contractMissing: false, conflict: false,
-    d, r, rule, prompt, schema, meta, day, start, end, rows, history, bodies, contract,
+    d, r, rule, prompt, schema, meta, day, start, end, rows, history, bodies, contract, env: runtime,
     read: () => clone(state), mutate: fn => fn(state), advance: ms => { clock += ms; }, callbackRuns: () => callbackRuns };
   h.storage = {
     readAuthStore: async () => h.read(),
@@ -100,16 +117,17 @@ function fixture({ generation = true, tokens = 3000, v1 = false } = {}) {
       return row;
     }
   };
-  h.deps = { storage: h.storage, env: ENV, now: () => new Date(clock), id: () => "fixture-ticket-" + (++serial) };
-  h.admission = { operationId: plan.operationId, planHash: P.hash(plan) };
+  h.deps = { storage: h.storage, env: runtime, now: () => new Date(clock), id: () => "fixture-ticket-" + (++serial) };
+  h.admission = { operationId: plan.operationId, planHash: P.hash(plan), ...(routed ? { routeContractHash: P.hash(plan.routeContract) } : {}) };
   h.dMeta = { callType: "lageBriefing", politicianId: OWNER, runId: RUN, testKostenPhase: "entwurf",
     costAdmission: h.admission, costInputVersionHash: INPUT };
-  h.reserveArgs = receipt => ({ model: "gpt-5-mini", maxOutputTokens: tokens, runId: RUN, politicianId: OWNER, phase: "pruefung",
-    admission: h.admission, inputVersionHash: INPUT, actualRequestHash: P.hash(JSON.parse(reviewBody(h))), reviewReceipt: receipt });
+  h.reserveArgs = receipt => ({ model, maxOutputTokens: tokens, runId: RUN, politicianId: OWNER, phase: "pruefung",
+    admission: h.admission, inputVersionHash: INPUT, actualRequestHash: P.hash(JSON.parse(reviewBody(h))), reviewReceipt: receipt,
+    ...(routed ? { runtimeRouteSnapshot: plan.routeContract.route } : {}) });
   return h;
 }
 function reviewBody(h) {
-  return JSON.stringify({ model: "gpt-5-mini", input: ai.prepareLageReviewInput(RAW, SOURCES, PROFILE).prompt,
+  return JSON.stringify({ model: h.env.AZURE_OPENAI_DEPLOYMENT, input: ai.prepareLageReviewInput(RAW, SOURCES, PROFILE).prompt,
     max_output_tokens: h.r.maxOutputTokens, reasoning: { effort: h.rule.reasoningEffort },
     text: { format: { type: "json_schema", name: "knowledge_object", schema: Q.SCHEMA, strict: true } } });
 }
@@ -117,7 +135,7 @@ async function withFixture(h, fn, { status = "completed", output = RAW } = {}) {
   const env = { ...process.env }, oldRequest = https.request, oldActive = provider.steuerungAktiv;
   const old = Object.fromEntries(Object.keys(h.storage).map(k => [k, storage[k]]));
   try {
-    Object.assign(process.env, ENV); Object.assign(storage, h.storage); provider.steuerungAktiv = () => false;
+    Object.assign(process.env, h.env); Object.assign(storage, h.storage); provider.steuerungAktiv = () => false;
     https.request = (_url, _options, cb) => {
       const req = new EventEmitter(); req.destroy = () => {};
       req.write = body => {
@@ -380,7 +398,31 @@ async function criticalMain() {
   });
   console.log("synthetik500-review-receipt-critical: " + passed + "/3 neue kritische Offlinefälle;0 echte Provider/DB/Native-Aufrufe;ProductionRgeschlossen");
 }
-async function allMain() { await main(); passed = 0; await criticalMain(); }
-if (require.main === module) (process.argv.includes("--critical-only") ? criticalMain() : allMain())
+async function aliasMain() {
+  for (const tokens of [3000, 6000]) {
+    const h = fixture({ routed: true, model: "gpt-5-mini-eu", tokens });
+    await withFixture(h, async () => {
+      const result = await ai.generateLageBriefing(SOURCES, PROFILE, { ...h.meta, costAdmission: h.admission,
+        costInputVersionHash: INPUT, pruefaufwandNachweis: tokens === 6000, beforeReview: async () => {},
+        onDraft: raw => D.speichere({ userId: OWNER, runId: RUN, phase: "entwurf", antwort: raw, quellen: SOURCES, profile: PROFILE }) });
+      assert.equal(result.paragraphs.length, 2); assert.equal(h.bodies.length, 2);
+      assert(h.bodies.every(body => JSON.parse(body).model === "gpt-5-mini-eu")); assert.equal(h.bodies[1], reviewBody(h));
+      const auth = h.read(), slot = auth[A.KEY]; assert(slot.draftCompletions[h.d.id]); assert(slot.reviewBindings[h.r.id]);
+      assert(Object.values(auth[K.KEY][h.day].calls).every(x => x.status === "abgerechnet"));
+      assert(slot.plan.intents.every(x => x.model === "gpt-5-mini")); assert.doesNotThrow(() => A.pruefeSlot(slot));
+    });
+  }
+  const h = fixture({ routed: true, model: "gpt-5-mini-eu" });
+  const ticket = await K.reserviere({ model: "gpt-5-mini-eu", maxOutputTokens: 3000, runId: RUN, politicianId: OWNER,
+    phase: "entwurf", admission: h.admission, inputVersionHash: INPUT, actualRequestHash: h.d.actualRequestHash,
+    runtimeRouteSnapshot: h.read()[A.KEY].plan.routeContract.route }, h.deps);
+  await assert.rejects(K.abschliessen(ticket, { model: "gpt-5-mini", promptTokens: 100, completionTokens: 20,
+    _ablage: { blob: true } }, h.deps), /abschluss-nicht-bestaetigt/);
+  assert.equal(h.read()[K.KEY][h.day].calls[ticket.id].status, "ungeklaert");
+  assert.equal(h.read()[K.KEY][h.day].frozen, "test-usd-beleg-obergrenze-verletzt");
+  console.log("PASS EU alias D/R3000+6000 and mismatched usage-model freeze; synthetic only");
+}
+async function allMain() { await main(); passed = 0; await criticalMain(); await aliasMain(); }
+if (require.main === module) (process.argv.includes("--alias-receipt-only") ? aliasMain() : process.argv.includes("--critical-only") ? criticalMain() : allMain())
   .catch(error => { console.error(error); process.exitCode = 1; });
 module.exports = { main: allMain, criticalMain };
