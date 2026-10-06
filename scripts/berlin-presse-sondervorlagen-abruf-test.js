@@ -1,7 +1,7 @@
 "use strict";
 
 // Helmut — gezielter Offline-Test des engen Einzelabrufs fuer die belegten Berliner
-// Senats-Pressemitteilungs-Pfadfamilien.
+// Senats-Pressemitteilungs-Pfadfamilien (inkl. der bounded ergaenzten Basen UVK und WGP).
 // =============================================================================================
 // Prueft lib/helmut/berlin-presse-sondervorlagen-abruf.js. Der echte Abruf wird AUSNAHMSLOS
 // injiziert (deps.fetchUrl): es gibt KEIN Netz, KEINE DB, KEIN Modell und KEINE Production-Daten.
@@ -41,7 +41,8 @@ const MARGINAL = `<div id="layout-grid__area--marginal" role="complementary">`
   + `<a href="mailto:presse-information@senatskanzlei.berlin.de">E-Mail</a></address></div></div>`;
 
 // ---------------------------------------------------------------------------------------------
-// Synthetische Seite in der belegten Struktur beider Pfadfamilien.
+// Synthetische Seite in der belegten Struktur der Pfadfamilien, inklusive der beiden bounded
+// ergaenzten Basen UVK und WGP. UVK/WGP nutzen die absenderformelfreie Sachabsatzform [SACH, SACH2].
 // ---------------------------------------------------------------------------------------------
 function seite(optionen = {}) {
   const familie = optionen.familie || "rbmskzl";
@@ -52,7 +53,9 @@ function seite(optionen = {}) {
     senweb: "sen/web/presse/pressemitteilungen",
     justv: "sen/justv/presse/pressemitteilungen",
     kultgz: "sen/kultgz/aktuelles/pressemitteilungen",
-    asgiva: "sen/asgiva/presse/pressemitteilungen"
+    asgiva: "sen/asgiva/presse/pressemitteilungen",
+    uvk: "sen/uvk/presse/pressemitteilungen",
+    wgp: "sen/wgp/presse"
   })[familie];
   const host = optionen.host || "www.berlin.de";
   const url = optionen.url
@@ -96,7 +99,7 @@ async function laufe() {
   check("Version und Statuswunsch exakt", ABRUF.VERSION === "berlin-presse-sondervorlagen-abruf-v1"
     && ABRUF.MELDE_STATUS === true);
 
-  // 2) Positive beider Pfadfamilien: injizierter Abruf -> genau das eingefrorene Leserergebnis.
+  // 2) Positive der Pfadfamilien: injizierter Abruf -> genau das eingefrorene Leserergebnis.
   {
     const s = seite({ familie: "rbmskzl" });
     const p = abruf({ html: s.html, status: 200 });
@@ -173,6 +176,39 @@ async function laufe() {
     check("Ohne www: Erfolg und Hostbindung berlin.de",
       ergebnis.ok === true && p.calls[0].deps.allowedHost === "berlin.de");
   }
+  {
+    // UVK und WGP: kanonische Adresse ausdruecklich als kanonisch injiziert (canonicalHref === url).
+    // WGP traegt kein `pressemitteilungen`-Segment und wird dennoch exakt getragen.
+    const urlUvk = "https://www.berlin.de/sen/uvk/presse/pressemitteilungen/2026/pressemitteilung.1719901.php";
+    const sUvk = seite({ familie: "uvk", url: urlUvk, canonicalHref: urlUvk,
+      nummer: "1719901", datum: "2026-09-29" });
+    const pUvk = abruf({ html: sUvk.html, status: 200 });
+    const eUvk = await ABRUF.ladeSondervorlage({ url: sUvk.url }, { fetchUrl: pUvk.fn });
+    check("uvk: Erfolg, Pfadfamilie und erster Sachabsatz",
+      eUvk.ok === true && eUvk.vorlage.pfadfamilie === "uvk"
+      && eUvk.vorlage.auszug === SACH && eUvk.vorlage.publikationstag === "2026-09-29");
+    check("uvk: genau ein Abruf mit URL, Depth, Hostbindung und Statuswunsch",
+      pUvk.calls.length === 1 && pUvk.calls[0].url === urlUvk && pUvk.calls[0].depth === 0
+      && pUvk.calls[0].deps.allowedHost === "berlin.de" && pUvk.calls[0].deps.meldeStatus === true);
+    check("uvk: keine erfundene Uhrzeit und kein Kontakt/PDF",
+      !Object.hasOwn(eUvk.vorlage, "publishedAt")
+      && !/mailto:|Tel\.:|PDF-Dokument|\.pdf/.test(eUvk.vorlage.volltext + eUvk.vorlage.auszug));
+
+    const urlWgp = "https://www.berlin.de/sen/wgp/presse/2026/pressemitteilung.1719902.php";
+    const sWgp = seite({ familie: "wgp", url: urlWgp, canonicalHref: urlWgp,
+      nummer: "1719902", datum: "2026-09-28" });
+    const pWgp = abruf({ html: sWgp.html, status: 200 });
+    const eWgp = await ABRUF.ladeSondervorlage({ url: sWgp.url }, { fetchUrl: pWgp.fn });
+    check("wgp: Erfolg, Pfadfamilie und erster Sachabsatz",
+      eWgp.ok === true && eWgp.vorlage.pfadfamilie === "wgp"
+      && eWgp.vorlage.auszug === SACH && eWgp.vorlage.publikationstag === "2026-09-28");
+    check("wgp: genau ein Abruf mit URL, Depth, Hostbindung und Statuswunsch",
+      pWgp.calls.length === 1 && pWgp.calls[0].url === urlWgp && pWgp.calls[0].depth === 0
+      && pWgp.calls[0].deps.allowedHost === "berlin.de" && pWgp.calls[0].deps.meldeStatus === true);
+    check("wgp: keine erfundene Uhrzeit und kein Kontakt/PDF",
+      !Object.hasOwn(eWgp.vorlage, "publishedAt")
+      && !/mailto:|Tel\.:|PDF-Dokument|\.pdf/.test(eWgp.vorlage.volltext + eWgp.vorlage.auszug));
+  }
 
   // 3) Unamtliche URL/Host/Pfad: fail closed VOR jedem Abruf.
   {
@@ -194,7 +230,23 @@ async function laufe() {
       ["ASGIVA ausserhalb der exakten Familie", "https://www.berlin.de/sen/asgiva/aktuelles/pressemitteilungen/2026/pressemitteilung.1719881.php"],
       ["Pfad ohne Jahressegment", "https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/pressemitteilung.1717887.php"],
       ["falsche Endung", basis.url.replace(".php", ".html")],
-      ["verkuerzter Pfad", "https://www.berlin.de/rbmskzl/aktuelles/2026/pressemitteilung.1717887.php"]
+      ["verkuerzter Pfad", "https://www.berlin.de/rbmskzl/aktuelles/2026/pressemitteilung.1717887.php"],
+      ["UVK ohne pressemitteilungen-Segment",
+        "https://www.berlin.de/sen/uvk/presse/2026/pressemitteilung.1719901.php"],
+      ["WGP mit pressemitteilungen-Segment",
+        "https://www.berlin.de/sen/wgp/presse/pressemitteilungen/2026/pressemitteilung.1719902.php"],
+      ["UVK fremder Host",
+        "https://www.berlin.example/sen/uvk/presse/pressemitteilungen/2026/pressemitteilung.1719901.php"],
+      ["WGP fremder Host mit Suffix",
+        "https://berlin.de.evil.test/sen/wgp/presse/2026/pressemitteilung.1719902.php"],
+      ["UVK expliziter Port",
+        "https://www.berlin.de:8443/sen/uvk/presse/pressemitteilungen/2026/pressemitteilung.1719901.php"],
+      ["WGP expliziter Standardport",
+        "https://www.berlin.de:443/sen/wgp/presse/2026/pressemitteilung.1719902.php"],
+      ["UVK Query/Tracking",
+        "https://www.berlin.de/sen/uvk/presse/pressemitteilungen/2026/pressemitteilung.1719901.php?ts=1790150970"],
+      ["WGP Query/Tracking",
+        "https://www.berlin.de/sen/wgp/presse/2026/pressemitteilung.1719902.php?ts=1790150970"]
     ];
     for (const fall of faelle) {
       const p = abruf({ html: basis.html, status: 200 });
@@ -224,6 +276,22 @@ async function laufe() {
     const eFremd = await ABRUF.ladeSondervorlage({ url: s.url }, { fetchUrl: pFremd.fn });
     check("Negativ (finale Adresse fremder Host): finalurl-ungueltig",
       eFremd.ok === false && eFremd.reason === "finalurl-ungueltig" && keinErgebnis(eFremd));
+
+    const urlUvk = "https://www.berlin.de/sen/uvk/presse/pressemitteilungen/2026/pressemitteilung.1719901.php";
+    const sUvk = seite({ familie: "uvk", url: urlUvk, canonicalHref: urlUvk, nummer: "1719901" });
+    const pUvk = abruf({ html: sUvk.html, status: 200,
+      finalUrl: urlUvk.replace("1719901", "1799901") });
+    const eUvk = await ABRUF.ladeSondervorlage({ url: sUvk.url }, { fetchUrl: pUvk.fn });
+    check("Negativ (uvk finale Adresse abweichend): url-nicht-finalurl",
+      eUvk.ok === false && eUvk.reason === "url-nicht-finalurl" && keinErgebnis(eUvk));
+
+    const urlWgp = "https://www.berlin.de/sen/wgp/presse/2026/pressemitteilung.1719902.php";
+    const sWgp = seite({ familie: "wgp", url: urlWgp, canonicalHref: urlWgp, nummer: "1719902" });
+    const pWgp = abruf({ html: sWgp.html, status: 200,
+      finalUrl: urlWgp.replace("www.berlin.de", "example.com") });
+    const eWgp = await ABRUF.ladeSondervorlage({ url: sWgp.url }, { fetchUrl: pWgp.fn });
+    check("Negativ (wgp finale Adresse fremder Host): finalurl-ungueltig",
+      eWgp.ok === false && eWgp.reason === "finalurl-ungueltig" && keinErgebnis(eWgp));
   }
 
   // 5) Status: nur der tatsaechlich beobachtete 200 zaehlt.

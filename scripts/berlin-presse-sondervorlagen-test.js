@@ -76,7 +76,9 @@ function seite(optionen = {}) {
     senweb: "/sen/web/presse/pressemitteilungen",
     justv: "/sen/justv/presse/pressemitteilungen",
     kultgz: "/sen/kultgz/aktuelles/pressemitteilungen",
-    asgiva: "/sen/asgiva/presse/pressemitteilungen"
+    asgiva: "/sen/asgiva/presse/pressemitteilungen",
+    uvk: "/sen/uvk/presse/pressemitteilungen",
+    wgp: "/sen/wgp/presse"
   })[familie];
   const host = optionen.host || "www.berlin.de";
   const url = optionen.url || `https://${host}${praefix}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
@@ -128,7 +130,7 @@ function erwarteAbbruch(eingabe, label, grund) {
 // 1) Vertragsoberflaeche
 // ---------------------------------------------------------------------------------------------
 check("Version und Pfadfamilien exakt", M.VERSION === "berlin-presse-sondervorlagen-v1"
-  && M.FAMILIEN_NAMEN.join(",") === "rbmskzl,senweb,justv,kultgz,asgiva");
+  && M.FAMILIEN_NAMEN.join(",") === "rbmskzl,senweb,justv,kultgz,asgiva,uvk,wgp");
 check("Vertragsausgang exakt neun Felder", M.AUSGANG_FELDER.join(",")
   === "url,pfadfamilie,titel,publikationstag,volltext,volltextHash,htmlHash,auszug,auszugHash");
 check("Auszugsgrenzen gebunden", M.MIN_AUSZUG_ZEICHEN > 0
@@ -232,6 +234,85 @@ check("Absenderformel exakt", M.ABSENDER_RB === ABSENDER);
 }
 
 // ---------------------------------------------------------------------------------------------
+// Eng belegte ASGIVA-Faktenblattform: Sach-Mail ist kein Kontaktkasten.
+{
+  const adresse = "pressestelle@senasgiva.berlin.de";
+  const mail = `<a href="mailto:${adresse}" title="${adresse}">${adresse}</a>`;
+  const sach = `<p>${SACH}</p><p>${SACH2}</p><p>Dritter synthetischer Sachabsatz zur Gewalthilfe.</p>`;
+  const angebot = `<p>Sie können unter ${mail} ein Faktenblatt zur Gewalthilfe in Berlin anfordern.</p>`;
+  const form = sach + angebot;
+  const probe = textileInner => seite({ familie: "asgiva", nummer: "1721958",
+    datum: "2026-10-06", textileInner });
+  const s = probe(form);
+  const e = M.pruefeSondervorlage(s.eingabe);
+  check("asgiva Faktenblatt: kompletter Sachtext und eigene Hashes, ohne Randkontakt",
+    e.volltext.endsWith(`Sie können unter ${adresse} ein Faktenblatt zur Gewalthilfe in Berlin anfordern.\n`)
+    && e.auszug === SACH && e.htmlHash === sha256(s.eingabe.html)
+    && e.volltextHash === sha256(e.volltext) && e.publikationstag === "2026-10-06"
+    && !e.volltext.includes("Jüdenstr") && !e.volltext.includes("href="));
+  for (const [label, html] of [
+    ["zweiter Mail-Link", form.replace(mail, mail + mail)],
+    ["zweite Mailto-Nennung", form.replace("Sie können", "mailto: Sie können")],
+    ["fremde Mail-Adresse", form.replaceAll(adresse, "presse@example.com")],
+    ["Mail-Query", form.replace(`href="mailto:${adresse}"`, `href="mailto:${adresse}?subject=Info"`)],
+    ["Mail-Fragment", form.replace(`href="mailto:${adresse}"`, `href="mailto:${adresse}#info"`)],
+    ["zusaetzliches Linkattribut", form.replace("<a href", '<a class="kontakt" href')],
+    ["doppeltes href", form.replace(`href="mailto:${adresse}"`, `href="mailto:${adresse}" href="mailto:${adresse}"`)],
+    ["anderes Linklabel", form.replace(`>${adresse}</a>`, ">Kontakt</a>")],
+    ["verschachteltes Linklabel", form.replace(`>${adresse}</a>`, `><span>${adresse}</span></a>`)],
+    ["anderer Titel", form.replace(`title="${adresse}"`, 'title="Kontakt"')],
+    ["loser Mail-Link", sach + mail],
+    ["Mail in Liste", sach + `<ul><li>${mail}</li></ul>`],
+    ["anderer Satz", form.replace("ein Faktenblatt zur Gewalthilfe in Berlin anfordern.", "Kontakt aufnehmen.")],
+    ["weiterer Absatz", form + "<p>Kontakt aufnehmen.</p>"],
+    ["versteckter Mail-Link", form.replace("<a href", "<a hidden href")],
+    ["Download-Mail", form.replace("<a href", "<a download href")],
+    ["Kontaktkennung im Absatz", form.replace("<p>Sie können", '<p class="contact">Sie können')],
+    ["Address im Angebot", form.replace(mail, `<address>${mail}</address>`)],
+    ["Telefon im Angebot", form.replace(mail, mail + '<a href="tel:030123">Telefon</a>')]
+  ]) erwarteAbbruch(probe(html).eingabe, "asgiva Faktenblatt " + label);
+  for (const familie of ["justv", "senweb", "rbmskzl"])
+    erwarteAbbruch(seite({ familie, textileInner: form }).eingabe,
+      "Faktenblatt-Ausnahme gilt nicht fuer " + familie, "kontaktblock-im-artikel");
+}
+
+// Amtlich belegte UVK/WGP-Familien; alle gemeinsamen Abbruchgrenzen bleiben Pflicht.
+for (const familie of ["uvk", "wgp"]) {
+  const s = seite({ familie });
+  const e = M.pruefeSondervorlage(s.eingabe);
+  check(familie + ": eigene exakte Familie, voller Sachauszug und Text-/HTML-Pins",
+    e.pfadfamilie === familie && e.auszug === SACH && e.volltext === `${SACH}\n\n${SACH2}\n`
+    && e.htmlHash === sha256(s.eingabe.html) && e.volltextHash === sha256(e.volltext));
+  for (const [label, inner] of [
+    ["Kontaktkasten", `<div class="contact"><p>${SACH}</p></div>`],
+    ["Address", `<p>${SACH}</p><address>Kontakt</address>`],
+    ["Mail", `<p>${SACH} <a href="mailto:presse@berlin.de">Mail</a></p>`],
+    ["Telefon", `<p>${SACH} <a href="tel:030123">Telefon</a></p>`],
+    ["versteckter Absatz", `<p hidden>${SACH}</p>`],
+    ["Skript", `<p>${SACH}<script>hidden</script></p>`]
+  ]) erwarteAbbruch(seite({ familie, textileInner: inner }).eingabe, familie + " " + label);
+}
+{
+  const vorspann = "Dr. Ina Czyborra, Senatorin für Wissenschaft, Gesundheit und Pflege zur heutigen Verkündung des Nobelpreiskomitees:";
+  const titel = "Berlin ist stolz auf seinen neuen Nobel-Preisträger: Senatorin Ina Czyborra gratuliert Professor Peter Hegemann";
+  const optionen = { familie: "wgp", nummer: "1721444", datum: "2026-10-05", titel,
+    absaetze: [vorspann, SACH] };
+  const e = M.pruefeSondervorlage(seite(optionen).eingabe);
+  check("WGP Attribution: nur gebundener zweiter Sachabsatz, erster bleibt vollstaendig",
+    vorspann.length < M.MIN_AUSZUG_ZEICHEN && e.auszug === SACH
+    && e.volltext === `${vorspann}\n\n${SACH}\n` && e.auszugHash === sha256(SACH));
+  for (const [label, delta] of [
+    ["andere Kennung", { nummer: "1721445" }],
+    ["anderer Titel", { titel: titel + " Drift" }],
+    ["anderer Tag", { datum: "2026-10-06" }],
+    ["anderer Vorspann", { absaetze: [vorspann.replace("Dr.", "Prof."), SACH] }],
+    ["zusaetzlicher Absatz", { absaetze: [vorspann, SACH, SACH2] }],
+    ["kein Sachabsatz", { absaetze: [vorspann] }],
+    ["zu kurzer Sachabsatz", { absaetze: [vorspann, "Kurzer Absatz."] }],
+    ["zu langer Sachabsatz", { absaetze: [vorspann, "X".repeat(M.MAX_AUSZUG_ZEICHEN + 1)] }]
+  ]) erwarteAbbruch(seite({ ...optionen, ...delta }).eingabe, "WGP Attribution " + label);
+}
+
 // 3) Eingang und Adresse
 // ---------------------------------------------------------------------------------------------
 erwarteAbbruch({ ...seite().eingabe, extra: 1 }, "zusaetzliches Eingabefeld", "eingabefelder-ungueltig");
