@@ -231,6 +231,10 @@ async function handleRequest(request, response) {
       }
     }));
   }
+  // Genau eine bereits installierte U-Vorbereitung; kein500er Lauf/Profilzugriff.
+  if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "synthetik500-u-vorlauf") {
+    return require("./lib/helmut/synthetik-500-u-prestage-entry").handleRequest(request, response, url, { jsonHeaders });
+  }
   // Feste, budgetgebundene Einzelprobe VOR dem Account-Vorlauf; keine Profile.
   if (url.pathname === "/api/cron/testnachweis-status" && url.searchParams.get("modus") === "provider-einzelprobe") {
     return require("./lib/helmut/provider-runtime-single-probe").handleRequest(request, response, url, { jsonHeaders });
