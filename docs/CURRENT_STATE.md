@@ -4,7 +4,7 @@
 
 ## Aktueller Production- und Entwicklungsstand
 
-- **Gebundene U-Vorbereitung (06.10.,05:31 UTC):** Ein neuer U-Auftrag geschlossen und konservativ abgerechnet; ein Wissensobjekt mit gezielt korrigierten unbelegten Nebenfeldern. Arbeitsphase6.540 Mikro-USD,500 Mandate/0 aktiv. Cron-Pause ist ein noch nicht wirksamer Entwurf; Native-D-/Gesamtzulassung offen. [Nachweisgrenzen und Rückweg](betrieb/gebundene-u-vorbereitung-cron-ruhe-20261006.md).
+- **Gebundene U-Vorbereitung (06.10.):** Ein U-Auftrag geschlossen, Nebenfelder gezielt korrigiert; Arbeitsphase6.540 Mikro-USD,500 Mandate/0 aktiv. PR#822 pausiert Projekt-Crons nachweislich. Start-/Endschutz bindet synthetische7/20USD exakt ans Buch (offline geprüft); Native-D/Gesamtzulassung offen. [Grenzen/Rückweg](betrieb/gebundene-u-vorbereitung-cron-ruhe-20261006.md).
 
 - **W-Zusatzquellen (06.10., Codeentwurf):** Verknüpfte Quellen ohne DIP-/Parlamentsartikelstand können neutral bleiben; Eingangsquellen bleiben strikt BT/BE/BB. Runtime-DTO, Quellvollständigkeit und Zulassungstore bleiben erhalten. Vollständige Native-W-/Caller-/Root-Abnahme und500er Start bleiben offen.
 
