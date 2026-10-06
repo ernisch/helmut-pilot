@@ -63,10 +63,10 @@ Für den rein synthetischen technischen 500er Nachweis ist die offene Datenschut
 | Browser Speicher | 🟡 | App nutzt unter anderem localStorage für Push Status und sessionStorage für den Installationshinweis | TDDDG Bewertung je Speicherung dokumentieren | Vor Launch klären |
 | Export | 🟢 technisch vorbereitet | `/api/privacy/export` existiert und hat Berechtigungsprüfungen | Vor Kunden reale Vollständigkeit erneut belegen | Ja |
 | Löschung Profil | 🟢 technisch vorbereitet | `/api/privacy/delete` existiert und meldet Teilfehler ausdrücklich | Vor Kunden reale Vollständigkeit und Backup Behandlung belegen | Ja |
-| Automatische Aufbewahrung | 🔴 | Retention Werkzeug und Fristvorschläge existieren, Ausführung ist in Production nicht aktiviert | Verbindliche Fristen rechtlich festlegen, danach kontrolliert technisch aktivieren | Ja |
+| Automatische Aufbewahrung | 🔴 | Retention Werkzeug und Fristvorschläge existieren, Ausführung ist in Production nicht aktiviert. Betreiberziel: personenbezogene technische Logs grundsätzlich höchstens 7 Tage, soweit kein dokumentierter zwingender Sicherheitszweck eine längere Frist rechtfertigt; danach löschen oder wirksam entpersonalisieren | Fristen je Logklasse technisch belegen, Provider-Retention gesondert prüfen und erst danach kontrolliert aktivieren | Ja |
 | DSFA | 🔴 | Technische Vorprüfung sieht mehrere Risikokriterien | Pflicht verbindlich feststellen und falls nötig vollständige DSFA abschließen | Ja |
 | Datenschutzbeauftragter | 🟠 | Noch keine verbindliche Entscheidung | Nach DSFA Entscheidung anhand Art. 37 DSGVO und § 38 BDSG verbindlich klären | Ja |
-| Art. 14 Information | 🟠 | Daten über andere öffentlich handelnde Politiker stammen aus Drittquellen | Informationspflicht und mögliche Ausnahme samt Schutzmaßnahmen verbindlich klären | Ja |
+| Art. 14 Information und Datenherkunft | 🟠 | Daten über andere öffentlich handelnde Politiker stammen aus Drittquellen. Herkunft und konkrete Quelle sind für Helmut fachlich ohnehin zentral | Informationspflicht und mögliche Ausnahme samt Schutzmaßnahmen verbindlich klären; Herkunft so dokumentieren, dass sie bei Auskunft nachvollziehbar genannt werden kann | Ja |
 | Strafrechtliche Angaben | 🟠 | Quellen und Source Safety Logik können Meldungen zu Strafverfahren und Vorwürfen erkennen. Das ist keine rechtliche Ausschlussregel | Art. 10 DSGVO ausdrücklich in die Rechtsprüfung aufnehmen | Ja |
 | Weitere sensible Angaben | 🟠 | Quellen können theoretisch Gesundheitsdaten, Religion, Herkunft oder andere sensible Angaben enthalten | Technische Regel für nicht erforderliche private oder sensible Attribute prüfen | Ja |
 | AV Verträge | 🔴 | Bestehende DPA und AVV Nachweise sind noch nicht als abgeschlossen dokumentiert | Vercel, Supabase, Microsoft und tatsächlich eingesetzte weitere Empfänger abschließen und ablegen | Ja |
@@ -198,6 +198,12 @@ Das umfasst insbesondere Konto, Sessions, Passwort-/Einladungslinks, Zuweisungen
 
 **Technischer Ist-Stand:** `/api/privacy/delete` löscht bereits den mandatsbezogenen Blob-/Profilbestand, V3-Nutzertabellen und Auth-Daten. Der Auth-Löscher umfasst Konten, Sessions, Zuweisungen, Tagesinputs, Audit-Ereignisse, KI-Nutzungsdaten und Passworttokens und führt eine Verifikationslesung mit begrenztem Wiederholungsversuch durch. V3-Teilfehler führen zu `ok=false`; es darf kein Erfolg gemeldet werden, solange bekannte Reste verbleiben. **Noch zu schließen:** `systemErrors` kann eine `userId` tragen und ist im aktuellen Auth-Löscher nicht als Löschklasse sichtbar. Außerdem schreibt `/api/privacy/delete` nach dem Löschvorgang derzeit erneut ein Audit-Ereignis mit `politicianId` und IP. Für die Sofortlöschregel darf danach höchstens eine inhaltsfreie, nicht auf eine Person rückführbare Löschquittung verbleiben. Vor regulärem Kundenbetrieb ist eine vollständige Gegenprüfung gegen alle aktuellen Speicherorte und Backup-Wege Pflicht.
 
+## 7b. Kurze Aufbewahrung personenbezogener technischer Logs
+
+**Betreiberentscheidung vom 06.10.2026:** Für personenbezogene technische Logs gilt als Ziel grundsätzlich **höchstens 7 Tage**, sofern kein konkret dokumentierter zwingender Sicherheits-, Missbrauchsabwehr- oder Rechtszweck eine längere Aufbewahrung erforderlich macht. Danach werden personenbezogene Anteile gelöscht oder so entpersonalisiert, dass keine Zuordnung zu einer Person oder einem Mandat mehr möglich ist.
+
+Die 7 Tage sind eine interne Datenminimierungsentscheidung und **keine pauschal gesetzlich vorgeschriebene Frist**. Für jede Logklasse sind Zweck, tatsächlicher Speicherort, wirksame Provider-Retention und gegebenenfalls eine begründete Abweichung gesondert zu dokumentieren. Externe Provider-Logs, deren Frist Helmut nicht selbst steuern kann, müssen auf die kürzest verfügbare geeignete Einstellung geprüft und transparent dokumentiert werden.
+
 ## 8. Rechte betroffener Personen
 
 Technisch vorhanden:
@@ -210,11 +216,13 @@ Technisch vorhanden:
 Vor echten Kunden noch erforderlich:
 
 1. Reale Vollständigkeit des Exports belegen
-2. Reale Vollständigkeit der Löschung belegen
-3. Berichtigung als Prozess definieren
-4. Umgang mit Backups und Dienstleistern definieren
-5. Anfrageweg für öffentlich erwähnte politische Personen definieren
-6. Fristen und Identitätsprüfung dokumentieren
+2. Bei Auskunft auch die Herkunft personenbezogener Daten nachvollziehbar nennen können, soweit die Daten nicht direkt bei der betroffenen Person erhoben wurden
+3. Reale Vollständigkeit der Löschung belegen
+4. Berichtigung als Prozess definieren
+5. Umgang mit Backups und Dienstleistern definieren
+6. Anfrageweg für öffentlich erwähnte politische Personen definieren
+7. Fristen und Identitätsprüfung dokumentieren
+8. Beschwerderecht vollständig erläutern: Beschwerde bei einer zuständigen Datenschutzaufsichtsbehörde ermöglichen; neben der für den Verantwortlichen zuständigen Berliner Behörde kommen nach den gesetzlichen Voraussetzungen insbesondere Behörden am gewöhnlichen Aufenthaltsort oder Arbeitsplatz der betroffenen Person in Betracht
 
 ## 9. Rechtliche Kernfragen für die spätere Fachprüfung
 
@@ -223,7 +231,7 @@ Diese Punkte werden nicht durch diese Akte entschieden:
 1. Welche Rechtsgrundlage nach Art. 6 DSGVO trägt jede konkrete Verarbeitung?
 2. Welche Ausnahme nach Art. 9 Abs. 2 DSGVO trägt politische Profildaten und Daten über andere Politiker?
 3. Welche Daten gelten tatsächlich als von der betroffenen Person offenkundig öffentlich gemacht?
-4. Wie wird Art. 14 DSGVO für Daten aus öffentlichen Drittquellen erfüllt?
+4. Wie wird Art. 14 DSGVO für Daten aus öffentlichen Drittquellen erfüllt, und wie wird die konkrete Datenherkunft für Information und Auskunft dauerhaft nachvollziehbar gehalten?
 5. Ist eine Datenschutz Folgenabschätzung verpflichtend? Die technische Vorprüfung spricht deutlich dafür, dies verbindlich zu klären.
 6. Falls eine DSFA verpflichtend ist, folgt daraus nach § 38 BDSG eine Pflicht zur Benennung eines Datenschutzbeauftragten?
 7. Welche Verarbeitung fällt unter Art. 10 DSGVO, insbesondere bei Meldungen über Straftaten, Ermittlungen oder Vorwürfe?
@@ -239,7 +247,7 @@ Bis zur späteren Rechtsfreigabe gelten als Zielregeln:
 2. Keine privaten Adressen, Telefonnummern, privaten Kontaktdaten oder privaten Personenprofile über Dritte.
 3. Keine sensiblen privaten Eigenschaften aus politischer Zugehörigkeit oder anderen Indizien ableiten.
 4. Keine politischen Positionen aus bloßer Parteimitgliedschaft erfinden.
-5. Angaben über andere Personen nur quellenbelegt und mit nachvollziehbarer Herkunft.
+5. Angaben über andere Personen nur quellenbelegt und mit nachvollziehbarer Herkunft; die Herkunft muss für Information und Auskunft abrufbar bleiben.
 6. Freie Nutzereingaben als potenziell personenbezogen und vertraulich behandeln.
 7. Keine echten Kunden oder Production Personendaten an DeepSeek geben.
 8. Keine neuen Tracker, Upload Funktionen oder externen Datenempfänger ohne neue Datenschutzprüfung.
