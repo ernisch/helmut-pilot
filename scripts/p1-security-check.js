@@ -2196,8 +2196,11 @@ async function c9OfficeChecks() {
 // in BEIDEN Zuständen (KI aus / KI an).
 async function legalPagesChecks() {
   const prev = {
-    openai: process.env.OPENAI_API_KEY, azureK: process.env.AZURE_OPENAI_KEY,
-    azureE: process.env.AZURE_OPENAI_ENDPOINT, pilot: process.env.PILOT_SECRET
+    openai: process.env.OPENAI_API_KEY,
+    azureK: process.env.AZURE_OPENAI_KEY,
+    azureE: process.env.AZURE_OPENAI_ENDPOINT,
+    azureD: process.env.AZURE_OPENAI_DEPLOYMENT,
+    pilot: process.env.PILOT_SECRET
   };
   const FALSE_ART9 = "besondere Kategorien personenbezogener Daten werden nicht übermittelt";
   const server = http.createServer(handler);
@@ -2206,7 +2209,10 @@ async function legalPagesChecks() {
   try {
     // Pilot-Gate scharf: Rechtstexte müssen trotzdem ohne Login erreichbar sein.
     process.env.PILOT_SECRET = "p1-pilot-secret";
-    delete process.env.OPENAI_API_KEY; delete process.env.AZURE_OPENAI_KEY; delete process.env.AZURE_OPENAI_ENDPOINT;
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.AZURE_OPENAI_KEY;
+    delete process.env.AZURE_OPENAI_ENDPOINT;
+    delete process.env.AZURE_OPENAI_DEPLOYMENT;
 
     const imp = await get("/impressum");
     check("Recht: /impressum -> 200, öffentlich trotz scharfem Pilot-Gate", imp.status === 200, `status=${imp.status}`);
@@ -2219,23 +2225,46 @@ async function legalPagesChecks() {
     check("Recht: /datenschutz -> 200 + verlinkt Impressum", dsOff.status === 200 && dsOff.body.includes("/impressum"), `status=${dsOff.status}`);
     check("Recht: /datenschutz (KI aus) enthält KEINE falsche Art.-9-Ausschlussaussage",
       !dsOff.body.includes(FALSE_ART9));
-    check("Recht: /datenschutz (KI aus) benennt Art. 9 + politische Daten als Betreiber-Grundlage",
-      dsOff.body.includes("Art. 9 DSGVO") && dsOff.body.includes("politische"));
+    check("Recht: /datenschutz benennt Art. 9 + politische Daten als offene rechtliche Bindung",
+      dsOff.body.includes("Art. 9 Abs. 2 DSGVO") && dsOff.body.includes("politische"));
+    check("Recht: /datenschutz nennt freie Nutzereingaben und KI-Weitergabe transparent",
+      dsOff.body.includes("Tageskontext") && dsOff.body.includes("gewünschte Vorbereitung")
+      && dsOff.body.includes("Kommunikationsaufträge") && dsOff.body.includes("KI-Verarbeitung"));
+    check("Recht: /datenschutz beschreibt Retention ehrlich als noch nicht scharf",
+      dsOff.body.includes("allgemeine automatische Retention ist derzeit jedoch noch nicht scharf geschaltet"));
+    check("Recht: /datenschutz nennt Supabase Production-Region Irland",
+      dsOff.body.includes("eu-west-1") && dsOff.body.includes("Irland"));
+    check("Recht: /datenschutz erklärt fehlende Art.-22-Automatik",
+      dsOff.body.includes("keine ausschließlich automatisierten Entscheidungen"));
 
-    // Datenschutz, KI AN (OpenAI)
+    // Datenschutz, KI AN (OpenAI direkt): Anbieter transparent, aber keine Azure-spezifische Trainingszusage.
     process.env.OPENAI_API_KEY = "p1-openai-key";
     const dsOn = await get("/datenschutz");
-    check("Recht: /datenschutz (KI aktiv) enthält KEINE falsche Art.-9-Ausschlussaussage",
+    check("Recht: /datenschutz (OpenAI aktiv) enthält KEINE falsche Art.-9-Ausschlussaussage",
       !dsOn.body.includes(FALSE_ART9));
-    check("Recht: /datenschutz (KI aktiv) macht politische KI-Übermittlung transparent + nennt Anbieter",
-      dsOn.body.includes("politische") && dsOn.body.includes("übermittelt") && dsOn.body.includes("OpenAI"));
-    check("Recht: /datenschutz (KI aktiv) macht KEINE 'kein Training'-Garantie mehr",
-      !dsOn.body.includes("nicht zum Training verwendet"));
+    check("Recht: /datenschutz (OpenAI aktiv) macht politische KI-Übermittlung transparent + nennt Anbieter",
+      dsOn.body.includes("Mandatsprofils") && dsOn.body.includes("OpenAI"));
+    check("Recht: /datenschutz (OpenAI direkt) erfindet KEINE Azure-Trainingszusage",
+      !dsOn.body.includes("nicht zum Training der Basismodelle verwendet"));
+
+    // Datenschutz, KI AN (aktuelle Azure-EU-Konfiguration).
+    delete process.env.OPENAI_API_KEY;
+    process.env.AZURE_OPENAI_KEY = "p1-azure-key";
+    process.env.AZURE_OPENAI_ENDPOINT = "https://helmut-resource.openai.azure.com";
+    process.env.AZURE_OPENAI_DEPLOYMENT = "gpt-5-mini-eu";
+    const dsAzure = await get("/datenschutz");
+    check("Recht: /datenschutz (Azure EU) nennt Provider + konkretes Deployment",
+      dsAzure.body.includes("Microsoft Azure OpenAI") && dsAzure.body.includes("gpt-5-mini-eu"));
+    check("Recht: /datenschutz (Azure EU) bindet die europäische Datenzone",
+      dsAzure.body.includes("europäische Microsoft Azure Datenzone"));
+    check("Recht: /datenschutz (Azure EU) bindet Trainingsaussage nur an Microsoft",
+      dsAzure.body.includes("nicht zum Training der Basismodelle verwendet"));
   } finally {
     await new Promise((r) => server.close(r));
     if (prev.openai === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = prev.openai;
     if (prev.azureK === undefined) delete process.env.AZURE_OPENAI_KEY; else process.env.AZURE_OPENAI_KEY = prev.azureK;
     if (prev.azureE === undefined) delete process.env.AZURE_OPENAI_ENDPOINT; else process.env.AZURE_OPENAI_ENDPOINT = prev.azureE;
+    if (prev.azureD === undefined) delete process.env.AZURE_OPENAI_DEPLOYMENT; else process.env.AZURE_OPENAI_DEPLOYMENT = prev.azureD;
     if (prev.pilot === undefined) delete process.env.PILOT_SECRET; else process.env.PILOT_SECRET = prev.pilot;
   }
 }
