@@ -69,7 +69,7 @@ Für den rein synthetischen technischen 500er Nachweis ist die offene Datenschut
 | Art. 14 Information und Datenherkunft | 🟠 | Daten über andere öffentlich handelnde Politiker stammen aus Drittquellen. Herkunft und konkrete Quelle sind für Helmut fachlich ohnehin zentral | Informationspflicht und mögliche Ausnahme samt Schutzmaßnahmen verbindlich klären; Herkunft so dokumentieren, dass sie bei Auskunft nachvollziehbar genannt werden kann | Ja |
 | Strafrechtliche Angaben | 🟠 | Quellen und Source Safety Logik können Meldungen zu Strafverfahren und Vorwürfen erkennen. Das ist keine rechtliche Ausschlussregel | Art. 10 DSGVO ausdrücklich in die Rechtsprüfung aufnehmen | Ja |
 | Weitere sensible Angaben | 🟠 | Quellen können theoretisch Gesundheitsdaten, Religion, Herkunft oder andere sensible Angaben enthalten | Technische Regel für nicht erforderliche private oder sensible Attribute prüfen | Ja |
-| AV Verträge | 🔴 | Bestehende DPA und AVV Nachweise sind noch nicht als abgeschlossen dokumentiert | Vercel, Supabase, Microsoft und tatsächlich eingesetzte weitere Empfänger abschließen und ablegen | Ja |
+| AV Verträge / DPAs | 🔴 wegen Vercel | Supabase und Microsoft haben aktuelle DPA Grundlagen; bei Azure muss der konkrete Kundenvertrag noch archiviert werden. Vercel Pro hat zwar einen bindenden DPA mit Standardvertragsklauseln, dessen aktueller Inhalt ist für Helmuts politischen Datenfluss aber klärungsbedürftig | Vercel schriftlich klären oder Datenpfad ändern; danach Vertragsakte vervollständigen | Ja |
 | Datenpannen Prozess | 🟠 | Technische Logs und Security Maßnahmen existieren, formaler Meldeprozess ist nicht abschließend dokumentiert | 72 Stunden Prozess und Verantwortlichkeit festlegen | Ja |
 
 ## 4. Aktueller Datenfluss
