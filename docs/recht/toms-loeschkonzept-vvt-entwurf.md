@@ -43,6 +43,11 @@ einkanalig.
 
 **Protokollierung:** Audit-Log für Logins (mit IP), Admin-Aktionen und — seit
 Sprint 4 — Datenexport/-löschung. Runtime-Fehler zentral (Vercel) einsehbar.
+**Zielregel 06.10.2026:** personenbezogene technische Logs grundsätzlich höchstens
+7 Tage, sofern kein konkret dokumentierter zwingender Sicherheits-, Missbrauchsabwehr-
+oder Rechtszweck eine längere Frist verlangt; danach löschen oder wirksam
+entpersonalisieren. Diese 7 Tage sind eine interne Datenminimierungsentscheidung,
+keine pauschale gesetzliche Frist. Provider-Retention separat dokumentieren.
 
 ## Teil B — Löschkonzept (ENTWURF)
 
@@ -55,7 +60,7 @@ Sprint 4 — Datenexport/-löschung. Runtime-Fehler zentral (Vercel) einsehbar.
 | Push-Subscriptions und Push-Ereignisse | Blob | bestehender mandatsbezogener Löschpfad | **sofort** bei Abmeldung oder Gesamtlöschung |
 | Global geteilte Daten (raw_documents 5k+, knowledge_objects) | V3 | KEIN Personenbezug zum Kunden; enthalten öffentliche Politik-Daten | TTL-Vorschlag: raw_documents 24 Monate (technisch noch nicht umgesetzt — Roadmap E) |
 | Backups (`backups/`, lokal) | Betreiber-Gerät | manuell | Vorschlag: 3 Monatsstände, rollierend |
-| Vercel-Logs | Vercel | Plan-abhängige Retention | dokumentieren |
+| Vercel-/Provider-Logs mit Personenbezug | Vercel / jeweiliger Provider | Providerabhängige Retention | Ziel: **höchstens 7 Tage**, soweit technisch steuerbar und kein dokumentierter zwingender Zweck längere Speicherung verlangt; sonst kürzeste geeignete Provider-Frist dokumentieren und personenbezogene Zuordnung danach entpersonalisieren |
 
 Betreiberentscheidung 06.10.2026: **kein Soft-Delete-Fenster als Standard**. Die aktive Kundenlöschung ist eine sofortige Hard-Delete-Operation. Ein Export kann angeboten werden, darf die Löschung aber nicht verzögern.
 
@@ -64,7 +69,7 @@ Offen (technisch): vollständige Gegenprüfung aller aktuellen mandatsbezogenen 
 ## Teil C — Verzeichnis von Verarbeitungstätigkeiten (Art. 30) — GERÜST
 
 1. **Verantwortlicher:** Lüey Nohut, Eresburgstr. 42, 12103 Berlin (lt. Impressum) — Rechtsform/DSB-Pflicht klären.
-2. **VT1 Politisches Lagebild & Briefing:** Zweck: Informations-/Entscheidungsvorbereitung für Mandatsträger. Betroffene: Kunde (Mandatsträger), öffentlich handelnde Politiker (Erwähnungen). Kategorien: Mandatsprofil (Art. 9!), öffentliche politische Inhalte. Rechtsgrundlage: **VOM ANWALT ZU BESTIMMEN** (Vertrag + Art. 9 Abs. 2 — Kandidaten: lit. e „offenkundig öffentlich gemacht" für Amtsdaten? ausdrückliche Einwilligung für Profildaten?). Empfänger: Dienstleister (siehe AVV-Liste). Löschung: Teil B. TOMs: Teil A.
+2. **VT1 Politisches Lagebild & Briefing:** Zweck: Informations-/Entscheidungsvorbereitung für Mandatsträger. Betroffene: Kunde (Mandatsträger), öffentlich handelnde Politiker (Erwähnungen). Kategorien: Mandatsprofil (Art. 9!), öffentliche politische Inhalte. Rechtsgrundlage: **VOM ANWALT ZU BESTIMMEN** (Vertrag + Art. 9 Abs. 2 — Kandidaten: lit. e „offenkundig öffentlich gemacht" für Amtsdaten? ausdrückliche Einwilligung für Profildaten?). Empfänger: Dienstleister (siehe AVV-Liste). Herkunft: konkrete öffentliche Quelle/Provenienz muss für Information und Auskunft nachvollziehbar bleiben, soweit Daten nicht direkt bei der betroffenen Person erhoben wurden. Löschung: Teil B. TOMs: Teil A.
 3. **VT2 Konto-/Zugangsverwaltung:** Bestandsdaten, Login-IPs, Sessions. Grundlage: Vertrag/berechtigtes Interesse (Sicherheit).
 4. **VT3 KI-Textentwürfe (Büro):** Profilauszug + Vorgang an Azure OpenAI; Kennzeichnung im UI (seit Sprint 1). Grundlage + AI-Act-Einordnung: Anwalt.
 5. **VT4 Betriebsüberwachung:** Health-Report, Fehlerlogs, Kostenlog (ohne Inhalte).
