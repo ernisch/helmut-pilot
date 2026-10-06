@@ -898,6 +898,35 @@ function sechsProfile() {
   }
 
   // ────────────────────────────────────────────────────────────────────────────────────────
+  // Explicit global source preparation: real scheduler, no transport or models.
+  abschnitt("5b · Globale Quellen-Vorbereitung ohne bezahlte Modelle");
+  for (const option of [true, false, "true", undefined]) {
+    const uhr = makeUhr(); Date.now = uhr.now;
+    const profile = sechsProfile().map(p => ({ ...p, aktiv: false }));
+    const welt = baueWelt({ profile, uhr });
+    let pending = 0, eagerTelemetry = 0;
+    const scheduler = ladeScheduler(welt.doubles);
+    GN.resetSharedFetchLedger();
+    const result = await scheduler.runGlobaleErfassung({
+      tenantIds: SECHS, budgetMs: 240000, startedMs: uhr.now(), runId: "source-no-paid-" + String(option),
+      ...(option === undefined ? {} : { noPaidModel: option }),
+      deps: { now: uhr.now, savePendingBulk: async () => { pending++; return { vorgemerkt: 0 }; },
+        recordProcessRun: async row => { if (row.process === "understanding-eager") eagerTelemetry++; return { ok: true }; } }
+    });
+    const label = "5b " + String(option);
+    check(label + " Quellenabruf und Rohdokumente trotz inaktiver Profile", welt.abrufe.length > 0 && welt.rawDocuments.size > 0);
+    check(label + " keine Mandatsprojektion oder Profilaktivierung", welt.matchingLaeufe.length === 0 && welt.entscheidungsLaeufe.length === 0 && profile.every(p => p.aktiv === false));
+    if (option === true) {
+      check(label + " genau boolean true sperrt Lazy und Eager", welt.lazyLaeufe === 0 && welt.kiAufrufe === 0);
+      check(label + " keine Vormerk- oder Eager-Telemetrieschreibvorgaenge", pending === 0 && eagerTelemetry === 0);
+      check(label + " ausgelassenes Verstehen wird ehrlich teilweise gemeldet", result.datenstand.status === G.DATENSTAND_TEILWEISE && result.datenstand.fehler.some(f => f.schritt === "no-paid-model") && result.datenstand.versiegelt);
+      check(label + " Lauftelemetrie bindet ausgeschlossene Verstehensarbeit", welt.crawlRuns[0].datenstandDetail.noPaidModel === true && welt.crawlRuns[0].datenstandDetail.understandingExecuted === false && welt.crawlRuns[0].understanding.reason === "no-paid-model");
+    } else {
+      check(label + " normale Lazy-/Eager-Arbeit erhalten", welt.lazyLaeufe > 0 && welt.kiAufrufe > 0 && eagerTelemetry === 1);
+      check(label + " keine falsche NoPaid-Kennzeichnung", !result.datenstand.fehler.some(f => f.schritt === "no-paid-model") && !Object.hasOwn(welt.crawlRuns[0].datenstandDetail, "noPaidModel"));
+    }
+  }
+
   abschnitt("6 · Mandatsphase am echten Produktionscode");
   {
     const uhr = makeUhr();
