@@ -110,7 +110,9 @@ function sonderseite(optionen = {}) {
     senweb: "sen/web/presse/pressemitteilungen",
     justv: "sen/justv/presse/pressemitteilungen",
     kultgz: "sen/kultgz/aktuelles/pressemitteilungen",
-    asgiva: "sen/asgiva/presse/pressemitteilungen"
+    asgiva: "sen/asgiva/presse/pressemitteilungen",
+    uvk: "sen/uvk/presse/pressemitteilungen",
+    wgp: "sen/wgp/presse"
   })[familie];
   const url = optionen.url || `https://www.berlin.de/${basis}/${jahr}/pressemitteilung.${optionen.nummer || "1717887"}.php`;
   const titel = optionen.titel === undefined ? "Synthetische Senatsmeldung zur Standprobe" : optionen.titel;
@@ -411,6 +413,37 @@ test("Sondervorlage: eigener Namespace, summary ist der gebundene Sachabsatz (au
   const erneut = B.erzeugeSondervorlagenstand(SONDER.doc, beleg);
   assert.equal(erneut.ok, true);
   assert.deepEqual(erneut.row, row);
+});
+
+test("Sondervorlagen UVK/WGP: eigene gebundene Staende mit unveraenderten Sachabsatz-Hashes", () => {
+  for (const familie of ["uvk", "wgp"]) {
+    const { beleg, erzeugt } = sonderBehoerde({ familie });
+    assert.equal(erzeugt.ok, true, JSON.stringify(erzeugt));
+    assert.equal(erzeugt.row.summary, SONDER_SACH);
+    assert.equal(erzeugt.stand.volltextHash, beleg.volltextHash);
+    assert.equal(B.leseArtikelstand(erzeugt.row).standHash, erzeugt.stand.standHash);
+  }
+});
+
+test("WGP Attribution: Leser und Artikelstand binden denselben ganzen zweiten Sachabsatz", () => {
+  const vorspann = "Dr. Ina Czyborra, Senatorin für Wissenschaft, Gesundheit und Pflege zur heutigen Verkündung des Nobelpreiskomitees:";
+  const probe = sonderBehoerde({ familie: "wgp", nummer: "1721444", datum: "2026-10-05",
+    titel: "Berlin ist stolz auf seinen neuen Nobel-Preisträger: Senatorin Ina Czyborra gratuliert Professor Peter Hegemann",
+    absaetze: [vorspann, SONDER_SACH] });
+  assert.equal(probe.erzeugt.ok, true, JSON.stringify(probe.erzeugt));
+  assert.equal(probe.erzeugt.row.summary, SONDER_SACH);
+  assert.equal(probe.erzeugt.stand.volltextHash, sha(`${vorspann}\n\n${SONDER_SACH}\n`));
+  for (const delta of [
+    { auszug: vorspann, auszugHash: sha(vorspann) },
+    { titel: probe.beleg.titel + " Drift" },
+    { publikationstag: "2026-10-06" },
+    { url: probe.beleg.url.replace("1721444", "1721445") },
+    { volltext: `${vorspann} Drift\n\n${SONDER_SACH}\n`,
+      volltextHash: sha(`${vorspann} Drift\n\n${SONDER_SACH}\n`) },
+    { volltext: `${vorspann}\n\n${SONDER_SACH}\n\n${SONDER_SACH2}\n`,
+      volltextHash: sha(`${vorspann}\n\n${SONDER_SACH}\n\n${SONDER_SACH2}\n`) }
+  ]) assert.equal(B.erzeugeSondervorlagenstand(probe.doc, Object.freeze({ ...probe.beleg, ...delta })).ok,
+    false, JSON.stringify(delta));
 });
 
 test("Sondervorlage RBMSKZL: alte und datumsgebundene Sitzungsformel binden nur Absatz 2", () => {
