@@ -182,6 +182,22 @@ Aktuell existiert eine technische Datenklassenmatrix mit Vorschlägen. Diese Fri
 
 Das Retention Werkzeug ist absichtlich nicht aktiv. Eine echte Production Löschung braucht eine gesonderte Freigabe und darf erst nach verbindlicher Festlegung der Fristen scharf geschaltet werden.
 
+## 7a. Verbindliche Löschregel des Betreibers
+
+**Betreiberentscheidung vom 06.10.2026:** Helmut verfolgt für kundenspezifische personenbezogene Daten eine Sofortlöschung. Sobald der Mandat sein Konto löscht oder ein berechtigter Löschantrag ausgeführt wird, werden die dem Mandat zugeordneten personenbezogenen Daten im aktiven System ohne künstliche Wartefrist hart gelöscht.
+
+Das umfasst insbesondere Konto, Sessions, Passwort-/Einladungslinks, Zuweisungen, Tagesinputs, freie Texteingaben, Mandatsprofil, politische Profilangaben, Notizen, Briefings, Lage-Ausgaben, persönliche Radar-/Matching-Daten, Kommunikationsentwürfe, Push-Abonnements und Push-Ereignisse, mandatsbezogene KI-/Kostenmetadaten, Audit-Ereignisse mit Mandatsbezug, Scheduler-Spuren sowie abgeleitete Personalisierungsdaten.
+
+**Kein Soft-Delete-Fenster als Standard.** Ein früher dokumentiertes 30-Tage-Löschfenster ist für Helmut verworfen. Ein Export darf angeboten werden, ist aber keine Voraussetzung für die Löschung und darf sie nicht verzögern.
+
+**Geteilte öffentliche Quellen:** Global gemeinsam genutzte politische Quellen und mandantenlose Wissensobjekte werden nicht allein wegen der Löschung eines einzelnen Mandats entfernt, sofern sie einen eigenständigen, nicht kundenspezifischen Zweck haben. Sämtliche kundenspezifischen Zuordnungen, Ableitungen und Personalisierungen müssen jedoch entfernt werden. Eigene Personenquellen oder explizit dem Mandat gehörende Rohdaten sind Teil der Löschung.
+
+**Gesetzliche Aufbewahrung:** Daten, die unabhängig vom Produkt aufgrund zwingender gesetzlicher Pflichten weiter aufzubewahren sind, werden vom Helmut-Kundenprofil getrennt, gesperrt und nicht weiter für Produktzwecke verwendet. Eine solche Pflicht darf nicht als Grund dienen, politische Produktdaten pauschal länger zu speichern.
+
+**Backups:** Die aktive Datenbasis wird sofort bereinigt. Bereits bestehende unveränderliche Sicherungskopien dürfen nur bis zum technisch notwendigen, möglichst kurzen Ablauf der jeweiligen Backup-Rotation fortbestehen. Bei jeder Wiederherstellung eines älteren Backups müssen bereits ausgeführte Löschungen vor Wiederaufnahme des Betriebs erneut angewendet werden. Backup-Rotation und Wiederherstellungs-Löschjournal sind noch technisch zu belegen.
+
+**Technischer Ist-Stand:** `/api/privacy/delete` löscht bereits den mandatsbezogenen Blob-/Profilbestand, V3-Nutzertabellen und Auth-Daten. Der Auth-Löscher umfasst Konten, Sessions, Zuweisungen, Tagesinputs, Audit-Ereignisse, KI-Nutzungsdaten und Passworttokens und führt eine Verifikationslesung mit begrenztem Wiederholungsversuch durch. V3-Teilfehler führen zu `ok=false`; es darf kein Erfolg gemeldet werden, solange bekannte Reste verbleiben. Vor regulärem Kundenbetrieb ist trotzdem eine vollständige Gegenprüfung gegen alle aktuellen Speicherorte und Backup-Wege Pflicht.
+
 ## 8. Rechte betroffener Personen
 
 Technisch vorhanden:
