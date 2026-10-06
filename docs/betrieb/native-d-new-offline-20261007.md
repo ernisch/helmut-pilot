@@ -75,6 +75,10 @@ unveraenderter Auth. Keine bezahlten Aufrufe oder Production-Daten verwendet.
 
 ## Noch notwendige Installations- und Abnahmekriterien
 
+Die Pflicht-CI fuehrt denselben echten Datenbanktest in einem separaten netzlosen,
+digestgebundenen PG17.6-Container aus. Der Offline-Runner schliesst ihn ausdruecklich
+aus; fehlende Isolation bleibt im Datenbanktest ein harter Fehler, kein Skip.
+
 1. Unabhaengige kritische Pruefung dieser **neuen** Quelle und ihres Rueckwegs,
    aktueller main/PR-/CI-Abgleich. Originalinstaller bleiben als fehlend berichtet.
 2. Frische native Katalog-/Owner-/ACL-/Rollen-/Abhaengigkeitspruefung: die drei
