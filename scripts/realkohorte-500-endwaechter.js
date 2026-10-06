@@ -114,7 +114,9 @@ async function steuere({ auftrag, env, deps }) {
           const kosten = await lesendEinmalWiederholen(() => deps.leseKosten());
           fordere(kosten.tag === new Date(deps.jetzt()).toISOString().slice(0, 10)
             && kosten.tag === status.endeAm.slice(0, 10), "kostentag");
-          if (kosten.gebundenMikroUsd >= 6000000 || kosten.auftragGebundenMikroUsd >= 7000000
+          const auftragslimit = optionen.synthetik ? kosten.auftragslimitMikroUsd : K.AUFTRAG_V3_LIMIT_MICRO_USD;
+          fordere([K.AUFTRAG_V3_LIMIT_MICRO_USD, K.AUFTRAG_V4_LIMIT_MICRO_USD].includes(auftragslimit), "kostengrenzen");
+          if (kosten.gebundenMikroUsd >= 6000000 || kosten.auftragGebundenMikroUsd >= auftragslimit
             || kosten.ungeklaert || kosten.frozen !== null) grund = "notstopp";
         } catch { grund = "notstopp"; }
       }
@@ -183,9 +185,12 @@ async function ausfuehren({ scharf = false, auftrag, env = process.env, fetchFn 
         fordere(Array.isArray(rows) && rows.length === 1 && rows[0].buecher && rows[0].auftrag, "kostenbuch-unlesbar");
         const auth = { [K.KEY]: rows[0].buecher, [K.AUFTRAG_KEY]: rows[0].auftrag };
         const tag = new Date(jetzt()).toISOString().slice(0, 10), k = K.kontrolliere(auth, tag), a = K.auftragsStand(auth, tag);
-        fordere(k.limitUsd === 6 && a?.limitMicroUsd === 7000000 && a.grenzeInklusive, "kostengrenzen");
+        fordere(k.limitUsd === 6 && (optionen.synthetik
+          ? [K.AUFTRAG_V3_LIMIT_MICRO_USD, K.AUFTRAG_V4_LIMIT_MICRO_USD].includes(a?.limitMicroUsd)
+          : a?.limitMicroUsd === K.AUFTRAG_V3_LIMIT_MICRO_USD) && a.grenzeInklusive, "kostengrenzen");
         const t = auth[K.KEY][tag];
         return { tag, gebundenMikroUsd: K.belegt(t), auftragGebundenMikroUsd: a.gebundenMicroUsd,
+          auftragslimitMikroUsd: a.limitMicroUsd,
           ungeklaert: Object.values(t.calls).some(c => c.status === "ungeklaert"), frozen: t.frozen };
       }
     } });
