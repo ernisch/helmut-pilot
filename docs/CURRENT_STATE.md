@@ -4,7 +4,7 @@
 
 ## Aktueller Production- und Entwicklungsstand
 
-- **Gebundene U-Vorbereitung (06.10.):** Ein U geschlossen; U2 vor Sender abgewiesen, Journal `unknown` erhalten. Phase6.540 Mikro-USD plus private424.000-Reserve fuer zwei vor Sender abgewiesene Versuche;500/0 aktiv. PR#822 pausiert Crons;7/20USD ans Buch gebunden. Quellen-ID-Fix ausgerollt, NoSender-/Native-D-Gesamtzulassung offen. [Grenzen/Rückweg](betrieb/gebundene-u-vorbereitung-cron-ruhe-20261006.md).
+- **Gebundene U-Vorbereitung (06.10.,14:16 UTC):** Ein U geschlossen; U2 `unknown` erhalten. Neuer Einzel-U nativ installiert, Journal54/53 alte Vollzeilen+xmin erhalten; HTTP409 vor Claim/Eintritt/Ticket/Modell, alle alten Einträge unverändert. Phase6.540 Mikro-USD plus private636.000-Reserve;500/0 aktiv, Crons0. Die Startprüfung bindet abgelaufene, nie gestartete U-Vorgänger an ihre gespeicherten Originalbefehle und prüft sie im Claim-CAS erneut; kein künstliches Schließen/Wiederöffnen. NoSender-/Native-D-Gesamtzulassung offen. [Grenzen/Rückweg](betrieb/gebundene-u-vorbereitung-cron-ruhe-20261006.md).
 
 - **W-Zusatzquellen (06.10., Codeentwurf):** Verknüpfte Quellen ohne DIP-/Parlamentsartikelstand können neutral bleiben; Eingangsquellen bleiben strikt BT/BE/BB. Runtime-DTO, Quellvollständigkeit und Zulassungstore bleiben erhalten. Vollständige Native-W-/Caller-/Root-Abnahme und500er Start bleiben offen.
 

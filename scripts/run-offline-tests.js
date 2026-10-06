@@ -216,6 +216,7 @@ const STANDARD = new Set([
   "synthetik-500-financing-witness-test.js", // echte reine JS-Hashes/Budgetbindung, synthetische Speicherleser
   "synthetik-500-production-adapter-fix1-test.js", // neue FPA1/FPA2 Fehlerzweige, keine Native-/Provider-Aufrufe
   "synthetik-500-production-adapter-fix2-test.js", // neuer FPA3 Journalmarker am Mutationsguard, reine Fakes
+  "synthetik-500-expired-predecessor-start-test.js", // immutable abgelaufene U-Pakete und Claim-CAS, kein Netz
   "synthetik-500-provider-routen-test.js",  // gebundenes Quelleninventar aller erkannten Anbieterpfade
   "synthetik-500-review-receipt-test.js",   // private D-Herkunft, exakte R-Bindung und Einmal-Senderiegel
   "synthetik-500-bounded-consumed-d-vertrag-test.js", // private Originalbytes/Requestbindung; keine globale Immutable- oder Startfreigabe
