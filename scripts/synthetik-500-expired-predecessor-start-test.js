@@ -98,7 +98,7 @@ async function main(){
    for(const change of [a=>{J.current(a).claimId='fixture-claim';},a=>{J.current(a).units[0].entered=true;},a=>{J.current(a).state='unknown';},a=>{J.current(a).attempts.fake={status:'unknown'};},a=>{a.synthetik500KostenAdmission.consumed.fake={};},a=>{a.synthetik500KostenAdmission.plan.endsAtUTC=new Date(Date.now()+60000).toISOString();}]){
     const a=clone(before);change(a);const unchanged=clone(a);assert.throws(()=>J.install(a,command,sha(command),C.controlHash(a)),/previous-operation-not-closed/);assert.deepEqual(a,unchanged);
    }
-   for(const mutate of [c=>{c.predecessors=[];},c=>{c.predecessors[0].journalHash='a'.repeat(64);},c=>{c.predecessors[0].commandHash='a'.repeat(64);}]){
+   for(const mutate of [c=>{c.predecessors=[];},c=>{c.predecessors[0].journalHash='a'.repeat(64);},c=>{c.predecessors[0].commandHash='a'.repeat(64);},c=>{c.predecessors[0].operationId='synthetik500-fixture-other-operation';},c=>{c.predecessors[0].planHash='a'.repeat(64);},c=>{c.predecessors[0].qualification='no-sender';}]){
     const saved=clone(command.predecessors),a=clone(before);mutate(command);assert.throws(()=>J.install(a,command,sha(command),C.controlHash(a)),/previous-operation-not-closed/);assert.deepEqual(a,before);command.predecessors=saved;
    }
   }finally{C.validate=validate;}
