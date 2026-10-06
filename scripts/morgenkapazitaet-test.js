@@ -1,3 +1,5 @@
+// Historical schedule regression against the exact pre-pause restore fixture.
+// This suite does not attest an active Production schedule.
 "use strict";
 
 // Helmut — TRÄGT DER MORGEN 200 MANDATE? (Kapazitaetssprint 2026-08-09)
@@ -76,6 +78,8 @@ async function main() {
     const fs = require("fs");
     const serverSrc = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
     const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+    // Historical plan regression only; actual pause is checked by pre500-cron-pause-test.js.
+    vercel.crons = structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json"));
     const morgenSlots = (vercel.crons || []).filter((c) => /lage-briefing/.test(c.path));
     check("1.1 Es gibt GENAU DREI morgendliche Narrativslots in vercel.json",
       morgenSlots.length === 3, morgenSlots.map((c) => `${c.path}@${c.schedule}`).join(" · "));

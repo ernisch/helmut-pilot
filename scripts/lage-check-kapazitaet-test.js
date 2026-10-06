@@ -1,3 +1,5 @@
+// Historical schedule regression against the exact pre-pause restore fixture.
+// This suite does not attest an active Production schedule.
 "use strict";
 
 // Helmut — Testsuite: Kapazität und Vollständigkeit des Lage-Checks (Sprint 05.09.2026).
@@ -768,6 +770,8 @@ const VORLAUF_MS = GEMESSEN.abrufMs + GEMESSEN.vorphaseRestMs + GEMESSEN.rohdoku
   abschnitt("13) Grenzen des Sprints — was ausdrücklich unverändert bleibt");
   {
     const vercel = JSON.parse(lies("vercel.json"));
+    // Historical plan regression only; actual pause is checked by pre500-cron-pause-test.js.
+    vercel.crons = structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json"));
     check("Keine Cron-Zeit und keine Cron-Reihenfolge geändert",
       vercel.crons.map((c) => `${c.path}@${c.schedule}`).sort().join("|") === [
         "/api/cron/crawl@0 4 * * *", "/api/cron/crawl@0 20 * * *",

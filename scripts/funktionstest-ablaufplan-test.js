@@ -1,3 +1,5 @@
+// Historical schedule regression against the exact pre-pause restore fixture.
+// This suite does not attest an active Production schedule.
 "use strict";
 
 // Offline-Vertragstest des ABLAUFPLANS, der STUFENKONTROLLE, des RÜCKBAU-
@@ -24,6 +26,8 @@ const M = require("../lib/helmut/mandatsklasse");
 
 const ROOT = path.join(__dirname, "..");
 const VERCEL = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+    // Historical plan regression only; actual pause is checked by pre500-cron-pause-test.js.
+    VERCEL.crons = structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json"));
 let pass = 0;
 let fail = 0;
 
@@ -447,13 +451,11 @@ async function main() {
       grenzen: { ...VOLLE_GRENZEN, maxLaufzeitMinuten: 240 },
       startfenster: { startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: VERCEL.crons }
     }).offen.some((n) => /Laufzeitgrenze/.test(n)));
-  check("B11 Die Watchdogzeit stimmt mit dem Actions-Workflow überein",
+  check("B11 Der echte Actions-Watchdog ist pausiert; manuelle Dispatchs bleiben möglich",
     (() => {
       const yml = fs.readFileSync(path.join(ROOT, ".github/workflows/briefing-watchdog.yml"), "utf8");
-      const treffer = yml.match(/cron:\s*["']?(\d+)\s+(\d+)\s+\*\s+\*\s+\*/);
-      if (!treffer) return false;
-      return Number(treffer[2]) * 60 + Number(treffer[1]) === F.WATCHDOG_START_MINUTE_UTC;
-    })(), "sonst wäre die Sperrzeit eine Behauptung");
+      return !/^  schedule:/m.test(yml) && /^  workflow_dispatch:/m.test(yml);
+    })(), "Historische Watchdog-Sperrfenster werden oben konservativ weiterhin geprüft");
 
   // ── C · Stufenkontrolle ───────────────────────────────────────────────────
   console.log("\nC · Stufenkontrolle: die Regeln bekommen Messwerte");

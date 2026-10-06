@@ -24,9 +24,8 @@ name: Briefing Watchdog
 #     Unbekannt-oder-läuft-noch. Nie wieder "nicht ausgeführt" ohne Beleg.
 
 on:
-  schedule:
-    # 05:30 UTC = 07:30 Berlin (Sommer) — kurz NACH Vercels morning-briefing (05:00 UTC).
-    - cron: "30 5 * * *"
+  # Zeitplan temporaer pausiert: kontrollierte Vorbereitung des synthetischen500er Nachweises.
+  # Manuelle Dispatchs bleiben unveraendert; Rueckweg nur der schedule-Block aus26d57b69.
   workflow_dispatch:
     inputs:
       # K7: Betreiber-Übersteuerung der bedingten Vorprüfung. "1" überspringt die

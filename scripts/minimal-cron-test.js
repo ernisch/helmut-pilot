@@ -1,3 +1,5 @@
+// Historical schedule regression against the exact pre-pause restore fixture.
+// This suite does not attest an active Production schedule.
 "use strict";
 
 // ============================================================================
@@ -29,6 +31,8 @@ function check(name, cond) { console.log(`  ${cond ? "PASS" : "FAIL"}  ${name}`)
 function abschnitt(t) { console.log(`\n== ${t} ==`); }
 
 const vercel = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+    // Historical plan regression only; actual pause is checked by pre500-cron-pause-test.js.
+    vercel.crons = structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json"));
 const serverSrc = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
 const minimalSrc = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut", "minimal-cron.js"), "utf8");
 const rueckstandSrc = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut", "verstehen-rueckstand.js"), "utf8");
