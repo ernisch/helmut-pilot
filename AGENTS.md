@@ -405,6 +405,51 @@ Freigabegrenzen bleiben unverändert; grüne Tests ersetzen diese Freigaben nich
 Codex arbeitet innerhalb dieses Sprints autonom weiter, bis Ziel und Abnahmekriterien
 erfüllt sind oder eine unten ausdrücklich geschützte Aktion erreicht wird.
 
+## Threadwechsel und Übergabesicherung
+
+Ein Threadwechsel soll vorbereitet werden, **bevor** ein Größen-, Nachrichten- oder
+Kontextlimit die laufende Arbeit unbrauchbar macht. Ein technischer Überlauf ist kein
+zulässiger Übergabezeitpunkt.
+
+Wenn ein Thread stark angewachsen ist, ein größerer Zwischenabschluss erreicht wurde,
+wiederholte Lade- oder Kontextprobleme auftreten oder ein Größenlimit plausibel droht,
+vor weiterer umfangreicher Arbeit selbstständig eine Übergabe vorbereiten.
+
+Die Übergabe enthält mindestens:
+
+1. aktuelles Ziel und aktuellen Stand,
+2. Zeitpunkt,
+3. Branch, Commit und relevante PRs,
+4. aktuellen Production- und Deployment-Stand,
+5. offene Blocker,
+6. laufende Prozesse und Worktrees,
+7. geltende Freigaben, Kosten- und Sicherheitsgrenzen,
+8. den nächsten konkreten Arbeitsschritt und seine Abnahmekriterien,
+9. alle für die Fortsetzung benötigten privaten Dateien und Originalbelege,
+10. ein frisches privates Übergabearchiv mit Manifest, vollständiger Dateiliste,
+    Dateigrößen und SHA256-Hashes.
+
+Private Originale bleiben außerhalb von Git. Das Archiv muss alle für die Fortsetzung
+notwendigen privaten Belege enthalten, soweit sie im aktuellen Workspace vorhanden sind.
+Fehlende oder außerhalb des Workspace liegende Belege werden separat und eindeutig
+ausgewiesen; sie dürfen nicht erfunden, nachgebaut oder still durch Zusammenfassungen
+ersetzt werden.
+
+Vor der Übergabe laufende Prozesse, Worktrees und noch nicht integrierte Änderungen
+prüfen und dokumentieren. Ein neuer Thread beendet keine laufenden Prozesse.
+
+Nach erstellter Übergabe im alten Thread keine neue umfangreiche Facharbeit mehr
+beginnen. Stattdessen dem Betreiber eindeutig melden:
+
+`THREADWECHSEL EMPFOHLEN. Übergabe und privates Archiv sind vorbereitet. Neuen Thread starten und dort fortsetzen.`
+
+Codex eröffnet keinen neuen Chat selbst. Der neue Thread liest zuerst die Pflichtdateien,
+prüft den tatsächlich aktuellen Repository- und Production-Stand und setzt erst danach
+beim belegten Übergabepunkt fort.
+
+Diese Regel löst keine Production-Aktion aus, erweitert keine Freigabe und verändert
+keine bestehenden Kosten-, Sicherheits- oder Testgrenzen.
+
 ## Selbstständige Sprint-Abwicklung
 
 Bei einem klaren Auftrag selbstständig analysieren, den kleinsten sicheren Fix
