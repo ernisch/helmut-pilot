@@ -4088,9 +4088,19 @@ function sendPilotUnlockPage(response, url) {
 function aiRecipientDescriptor() {
   const azure = Boolean(process.env.AZURE_OPENAI_KEY && process.env.AZURE_OPENAI_ENDPOINT);
   const openai = Boolean(process.env.OPENAI_API_KEY);
-  if (azure) return { enabled: true, name: "Azure OpenAI", location: "Serverregion gemäß Betreiber-Konfiguration" };
-  if (openai) return { enabled: true, name: "OpenAI", location: "USA" };
-  return { enabled: false, name: "Azure OpenAI bzw. OpenAI", location: "je nach Konfiguration (ggf. USA)" };
+  if (azure) {
+    const deployment = String(process.env.AZURE_OPENAI_DEPLOYMENT || "").trim();
+    const euDataZone = deployment === "gpt-5-mini-eu";
+    return {
+      enabled: true,
+      name: "Microsoft Azure OpenAI",
+      deployment: deployment || null,
+      location: euDataZone ? "europäische Microsoft Azure Datenzone" : "gemäß aktueller Betreiber-Konfiguration",
+      euDataZone
+    };
+  }
+  if (openai) return { enabled: true, name: "OpenAI", deployment: null, location: "gemäß Anbieter-Konfiguration", euDataZone: false };
+  return { enabled: false, name: "Microsoft Azure OpenAI bzw. OpenAI", deployment: null, location: "je nach Konfiguration", euDataZone: false };
 }
 
 // Impressum nach § 5 DDG (früher § 5 TMG). Nur faktische Angaben aus dem
@@ -4347,61 +4357,69 @@ function sendPrivacyPage(response) {
   <body>
     <main>
       <h1>Datenschutzerklärung</h1>
-      <p class="notice">Diese Erklärung beschreibt die Datenverarbeitung von Helmut im Pilotbetrieb. Vor einem breiten oder kommerziellen Produktivbetrieb wird eine rechtliche Prüfung ausdrücklich empfohlen — insbesondere zur Rechtsgrundlage für politische Daten (Art. 9 DSGVO), zu den Auftragsverarbeitungsverträgen und zur Aktivierung der KI-Funktion.</p>
+      <p class="notice">Diese Erklärung beschreibt die Datenverarbeitung in der Helmut App nach dem aktuellen technischen Stand. Helmut befindet sich im Pilotbetrieb. Für den regulären Kundenbetrieb werden die noch offenen rechtlichen Festlegungen zu besonders geschützten politischen Daten und Aufbewahrungsfristen vorab verbindlich abgeschlossen.</p>
 
       <h2>1. Verantwortlicher</h2>
-      <p>Lüey Nohut<br>Eresburgstr. 42, 12103 Berlin<br>E-Mail: <a href="mailto:hi@nohut.de">hi@nohut.de</a></p>
+      <p>Lüey Nohut<br>Eresburgstr. 42, 12103 Berlin<br>Deutschland<br>E-Mail: <a href="mailto:hi@nohut.de">hi@nohut.de</a></p>
 
-      <h2>2. Verarbeitete Daten</h2>
+      <h2>2. Welche Daten Helmut verarbeitet</h2>
       <ul>
-        <li><strong>Kontodaten:</strong> Name, E-Mail-Adresse, Rolle, Passwort (nur als kryptografischer Hash), Login-Zeitpunkte.</li>
-        <li><strong>Mandatsprofil:</strong> Partei/Fraktion, Ausschüsse, Schwerpunkt-, Risiko- und Chancen-Themen, Wahlkreis/Region, Kommunikationsstil.</li>
-        <li><strong>Inhalte:</strong> Briefings, Empfehlungen, Aufgaben, Notizen, Tagesinput, Lage-Checks.</li>
-        <li><strong>Nutzungssignale:</strong> markiert/geöffnet/ignoriert zur Verbesserung der Relevanz.</li>
-        <li><strong>Technische Daten:</strong> Session-Cookie, IP-Adresse und Browser-User-Agent (Sicherheit/Push), Zeitstempel, Fehlerprotokolle.</li>
+        <li><strong>Kontodaten:</strong> Name, E-Mail-Adresse, Rolle, Passwort ausschließlich als kryptografischer Hash, Login- und Sitzungsdaten.</li>
+        <li><strong>Mandatsprofil:</strong> insbesondere Parlamentsebene, Partei und Fraktion, Bundesland oder Region, Wahlkreis, Ausschüsse, Funktionen, Themenfelder, öffentliche Positionen, Zielgruppen sowie fachliche Risiko- und Chancen-Themen.</li>
+        <li><strong>Eigene Eingaben:</strong> Tageskontext, Ziel, gewünschte Vorbereitung, Notizen, frei formulierte Themen sowie Kommunikationsaufträge. Solche Texte können an die KI-Verarbeitung übermittelt werden, wenn die jeweilige Funktion KI verwendet.</li>
+        <li><strong>Erzeugte Inhalte:</strong> Briefings, Lage-Texte, Radar- und Beobachtungshinweise, Empfehlungen, Aufgaben und Kommunikationsentwürfe.</li>
+        <li><strong>Nutzung und Rückmeldungen:</strong> zum Beispiel geöffnet, markiert, ignoriert oder bewertet, soweit die jeweilige Funktion dies erfasst.</li>
+        <li><strong>Technische Daten:</strong> Session-Informationen, IP-Adresse, Browser- und Geräteinformationen, Zeitstempel, Sicherheits- und Fehlerprotokolle sowie Push-Endpunkte, wenn Push aktiviert wird.</li>
       </ul>
+      <p>Bitte gib in freie Textfelder keine vertraulichen oder privaten personenbezogenen Daten Dritter ein, wenn sie für den konkreten Arbeitszweck nicht erforderlich sind.</p>
 
-      <h2>3. Zwecke</h2>
-      <p>Quellen prüfen, politische Entwicklungen pro Mandat priorisieren, personalisierte Briefings erzeugen, Aufgaben/Kommunikation vorbereiten, Push-Hinweise senden, Sicherheit gewährleisten und die Relevanzlogik verbessern.</p>
+      <h2>3. Öffentliche politische Quellen und Daten Dritter</h2>
+      <p>Helmut verarbeitet öffentlich zugängliche politische und parlamentarische Informationen aus offiziellen Quellen, Parlaments- und Behördenangeboten sowie veröffentlichten Medienquellen. Dabei können Namen und öffentliche berufliche oder politische Rollen von Amtsträgern und anderen öffentlich handelnden politischen Akteuren vorkommen.</p>
+      <p>Helmut ist nicht darauf ausgelegt, private Personenprofile oder private Kontakt-, Adress-, Telefon- oder sonstige nicht öffentlich für den politischen Zweck erforderliche Daten Dritter zu erstellen. Öffentliche Verfügbarkeit allein bedeutet jedoch nicht automatisch, dass jede weitere Verarbeitung rechtlich zulässig ist.</p>
 
-      <h2>4. Rechtsgrundlagen</h2>
-      <p>Die Verarbeitung erfolgt auf Grundlage von Art. 6 Abs. 1 DSGVO:</p>
+      <h2>4. Zwecke der Verarbeitung</h2>
+      <p>Die Daten werden verarbeitet, um Konten und Mandatsprofile bereitzustellen, politische Quellen auszuwerten, Entwicklungen dem jeweiligen Mandat zuzuordnen und zu priorisieren, Briefings und Lage-Texte zu erzeugen, Arbeits- und Kommunikationsvorbereitung zu unterstützen, optionale Benachrichtigungen zuzustellen, Sicherheit zu gewährleisten und die Relevanz der Ergebnisse zu verbessern.</p>
+
+      <h2>5. Rechtsgrundlagen</h2>
       <ul>
-        <li><strong>lit. b</strong> (Vertrag/Nutzungsverhältnis): Bereitstellung der App, Konten und Briefings.</li>
-        <li><strong>lit. f</strong> (berechtigtes Interesse): Personalisierung, Relevanz-Verbesserung und Sicherheit des Dienstes.</li>
-        <li><strong>lit. a</strong> (Einwilligung): optionale Push-Benachrichtigungen.</li>
+        <li><strong>Art. 6 Abs. 1 lit. b DSGVO:</strong> soweit die Verarbeitung zur Bereitstellung des vereinbarten Dienstes oder zur Durchführung vorvertraglicher Maßnahmen erforderlich ist.</li>
+        <li><strong>Art. 6 Abs. 1 lit. f DSGVO:</strong> soweit berechtigte Interessen an sicherem Betrieb, Missbrauchsabwehr und einer funktionsfähigen, mandatsbezogenen Bereitstellung überwiegen.</li>
+        <li><strong>Art. 6 Abs. 1 lit. a DSGVO:</strong> soweit eine freiwillige Einwilligung verwendet wird, zum Beispiel für optionale Benachrichtigungen, sofern dafür eine Einwilligung erforderlich ist.</li>
       </ul>
-      <p><strong>Besondere Datenkategorien (Art. 9 DSGVO):</strong> Das Mandatsprofil kann politische Meinungen abbilden. Für deren Verarbeitung ist eine gesonderte Rechtsgrundlage nach Art. 9 DSGVO erforderlich. Die rechtssichere Festlegung dieser Grundlage sowie eine ggf. erforderliche Datenschutz-Folgenabschätzung (DSFA) obliegen dem Betreiber und sind vor einem Produktivbetrieb mit mehreren Mandaten abzuschließen.</p>
-      <!-- BETREIBER-TODO: Art. 9-Rechtsgrundlage rechtssicher festlegen und DSFA durchführen (siehe docs/dsgvo-checklist.md). Nicht aus dem Code lösbar. -->
+      <p><strong>Politische Meinungen und andere besondere Kategorien:</strong> Mandatsprofile, öffentliche politische Aussagen oder politische Analysen können Informationen betreffen, die unter Art. 9 DSGVO fallen. Soweit solche Daten verarbeitet werden, ist zusätzlich eine Voraussetzung nach Art. 9 Abs. 2 DSGVO erforderlich. Die konkrete rechtliche Einordnung für den regulären Kundenbetrieb wird vor dessen Start verbindlich dokumentiert; die technische Pilot- oder Testnutzung ersetzt diese Prüfung nicht.</p>
 
-      <h2>5. Empfänger / Auftragsverarbeiter</h2>
+      <h2>6. Empfänger und technische Dienstleister</h2>
       <ul>
-        <li><strong>Vercel</strong> (Hosting/Betrieb der Anwendung; konfigurierte Region Frankfurt, <code>fra1</code>).</li>
-        <li><strong>Supabase</strong> (Datenbank und Datenspeicherung).</li>
+        <li><strong>Vercel</strong> für Hosting und Serverfunktionen. Die Helmut Production-Funktionen sind derzeit in Frankfurt (<code>fra1</code>) konfiguriert. Vercel kann außerdem technische System- und Zugriffsdaten nach den eigenen Vertrags- und Datenschutzbedingungen verarbeiten.</li>
+        <li><strong>Supabase</strong> für Datenbank und Datenspeicherung. Das aktuelle Production-Projekt liegt in <code>eu-west-1</code> (Irland).</li>
         ${ai.enabled
-          ? `<li><strong>${ai.name}</strong> (KI-Textgenerierung) — <strong>derzeit AKTIV</strong>: Inhalte werden zur Texterzeugung an ${ai.name} übermittelt (Serverstandort: ${ai.location}).</li>`
-          : `<li><strong>KI-Dienst (${ai.name})</strong> (KI-Textgenerierung) — <strong>derzeit deaktiviert</strong>, daher keine Nutzung und keine Übermittlung.</li>`}
-        <li><strong>Browser-Push-Dienste</strong> (nur bei aktivierten Benachrichtigungen).</li>
+          ? `<li><strong>${ai.name}</strong> für KI-Textgenerierung. Aktive Bereitstellung: ${ai.deployment ? `<code>${ai.deployment}</code>` : "konfiguriertes Modell"}; Verarbeitung: ${ai.location}. Für eine KI-Anfrage können die dafür erforderlichen öffentlichen Quelleninhalte, Teile des Mandatsprofils und die konkrete Nutzereingabe übermittelt werden.${ai.name === "Microsoft Azure OpenAI" ? " Microsoft erklärt für über Azure bereitgestellte Modelle, dass Prompts und Antworten nicht zum Training der Basismodelle verwendet werden." : ""}</li>`
+          : `<li><strong>KI-Dienst</strong>: derzeit ist in dieser Laufzeit kein KI-Empfänger aktiv. Bei Aktivierung wird diese Seite anhand der Laufzeitkonfiguration aktualisiert.</li>`}
+        <li><strong>Browser-Push-Infrastruktur</strong> nur bei aktivierten Push-Benachrichtigungen. Dabei werden der technische Push-Endpunkt und die für die Zustellung erforderlichen Benachrichtigungsdaten an den jeweiligen Browser-Push-Dienst übermittelt.</li>
       </ul>
-      <p>Für die eingesetzten Auftragsverarbeiter sind <strong>Auftragsverarbeitungsverträge (AVV)</strong> nach Art. 28 DSGVO erforderlich. Ihr Abschluss sowie die verbindliche Festlegung der Serverregionen (u. a. Supabase, KI-Dienst) liegen in der Verantwortung des Betreibers.</p>
-      <!-- BETREIBER-TODO: AVV nach Art. 28 mit Vercel, Supabase, KI-Dienst und Push-Anbietern tatsächlich abschließen; reale Serverregionen dokumentieren. Nicht aus dem Code lösbar. -->
+      <p>Soweit Dienstleister personenbezogene Daten in unserem Auftrag verarbeiten, werden die erforderlichen Vereinbarungen zur Auftragsverarbeitung eingesetzt. Die aktuellen Anbieterinformationen finden sich bei <a href="https://vercel.com/legal/dpa">Vercel</a>, <a href="https://supabase.com/legal/customer-resources/data-processing-addendum">Supabase</a> und <a href="https://learn.microsoft.com/azure/ai-foundry/responsible-ai/openai/data-privacy">Microsoft Azure</a>.</p>
 
-      <h2>6. Übermittlung in Drittländer</h2>
-      ${ai.enabled
-        ? `<p><strong>Die KI-Funktion ist derzeit aktiv.</strong> Zur Texterzeugung werden Inhalte an ${ai.name} übermittelt (Serverstandort: ${ai.location}) — im Wesentlichen öffentlich verfügbare Nachrichteninhalte sowie das fachliche Mandatsprofil. <strong>Dieses Mandatsprofil kann politische Schwerpunkt-, Risiko- und No-Go-Themen enthalten; solche politischen Informationen können damit zur KI-Verarbeitung an den KI-Dienst übermittelt werden.</strong> Sofern der Serverstandort in einem Drittland (z. B. USA) liegt, ist dafür eine gültige Rechtsgrundlage (etwa EU-Standardvertragsklauseln) erforderlich; deren Sicherstellung obliegt dem Betreiber.</p>`
-        : `<p><strong>Im aktuellen Betrieb ist die KI-Textgenerierung deaktiviert; eine entsprechende Übermittlung findet nicht statt.</strong> Wird die KI-Funktion aktiviert, können Inhalte einschließlich des Mandatsprofils — das politische Schwerpunkt-, Risiko- und No-Go-Themen enthalten kann — zur KI-Verarbeitung an den KI-Dienst (${ai.name}) übermittelt werden, ggf. in ein Drittland (z. B. USA). Dies erfordert dann eine gültige Rechtsgrundlage und eine Aktualisierung dieser Erklärung.</p>`}
+      <h2>7. Drittlandübermittlungen</h2>
+      <p>Die aktuelle Azure KI-Bereitstellung ${ai.enabled && ai.euDataZone ? "verarbeitet KI-Anfragen in der europäischen Microsoft Azure Datenzone." : "richtet sich nach der jeweils aktiven Anbieter-Konfiguration."} Das Supabase Production-Projekt speichert seine Primärdaten derzeit in Irland. Bei Vercel, Supabase, Browser-Push-Diensten und deren Unterauftragnehmern können je nach Dienst zusätzliche Verarbeitungen außerhalb des Europäischen Wirtschaftsraums stattfinden. Soweit dafür erforderlich, werden die vertraglich vorgesehenen Übermittlungsmechanismen wie Angemessenheitsbeschlüsse oder EU-Standardvertragsklauseln zugrunde gelegt.</p>
 
-      <h2>7. Speicherdauer</h2>
-      <p>Profil- und Inhaltsdaten werden bis zur Löschung des Kontos bzw. bis zum Ende des Pilotbetriebs gespeichert. Verläufe (u. a. Briefings, Interaktionen, Notizen, Sessions, Fehlerprotokolle) werden technisch begrenzt und pro Mandat gekappt. Auf Wunsch werden Daten umgehend gelöscht (siehe Deine Rechte).</p>
+      <h2>8. Speicherdauer und Löschung</h2>
+      <p>Konten, Mandatsprofile und nutzerbezogene Arbeitsinhalte werden grundsätzlich so lange gespeichert, wie sie für den Pilot- oder Nutzungszweck benötigt werden oder gesetzliche Pflichten einer Löschung entgegenstehen. Sitzungen und technische Protokolle werden nur so lange vorgehalten, wie dies für Anmeldung, Sicherheit, Fehleranalyse und Nachweiszwecke erforderlich ist.</p>
+      <p>Für Quellen-, Analyse- und technische Bestände bestehen technische Löschkonzepte. Die allgemeine automatische Retention ist derzeit jedoch noch nicht scharf geschaltet. Verbindliche Fristen und der automatische Löschbetrieb werden vor regulärem Kundenbetrieb festgelegt und dokumentiert. Eine kontobezogene Export- und Löschfunktion ist technisch vorhanden; gesetzliche Aufbewahrungspflichten und Rechte Dritter bleiben unberührt.</p>
 
-      <h2>8. Cookies</h2>
-      <p>Helmut setzt ein technisch notwendiges Session-Cookie (<code>helmut_session</code>, HttpOnly, SameSite=Lax) zur Anmeldung. Es dient nicht der Werbung oder dem Tracking.</p>
+      <h2>9. Cookies und lokaler Browserspeicher</h2>
+      <p>Helmut verwendet für angemeldete Nutzer das technisch notwendige Session-Cookie <code>helmut_session</code> (HttpOnly, SameSite=Lax und bei HTTPS Secure). Es dient nicht der Werbung oder dem Marketing-Tracking. Zusätzlich kann technisch notwendiger lokaler Browser- oder Sitzungsspeicher für App-Zustände wie Push-Status oder Installationshinweise verwendet werden.</p>
 
-      <h2>9. Deine Rechte</h2>
-      <p>Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit und Widerspruch. In der App: Profildaten <strong>exportieren</strong> und <strong>löschen</strong> (Einstellungen). Es besteht ein <strong>Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde</strong>.</p>
+      <h2>10. Automatisierte Entscheidungen</h2>
+      <p>Helmut priorisiert Informationen und erstellt Empfehlungen. Es werden nach aktuellem Produktstand keine ausschließlich automatisierten Entscheidungen über Personen getroffen, die rechtliche Wirkung entfalten oder eine Person in ähnlich erheblicher Weise beeinträchtigen. Die politische oder organisatorische Entscheidung verbleibt beim Nutzer.</p>
 
-      <h2>10. Kontakt &amp; Stand</h2>
-      <p>Datenschutzanfragen: <a href="mailto:hi@nohut.de">hi@nohut.de</a> · Stand: Juli 2026</p>
+      <h2>11. Deine Rechte</h2>
+      <p>Nach den gesetzlichen Voraussetzungen bestehen insbesondere Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Soweit eine Verarbeitung auf Einwilligung beruht, kann diese für die Zukunft widerrufen werden. In der App bestehen technische Wege für Export und Löschung nutzerbezogener Daten.</p>
+
+      <h2>12. Beschwerderecht</h2>
+      <p>Du hast das Recht, dich bei einer Datenschutzaufsichtsbehörde zu beschweren. Für den Verantwortlichen in Berlin ist insbesondere die Berliner Beauftragte für Datenschutz und Informationsfreiheit zuständig: <a href="https://www.datenschutz-berlin.de/">www.datenschutz-berlin.de</a>.</p>
+
+      <h2>13. Kontakt und Stand</h2>
+      <p>Datenschutzanfragen: <a href="mailto:hi@nohut.de">hi@nohut.de</a><br>Stand: 6. Oktober 2026</p>
       <p><a href="/impressum">Impressum</a> · <a href="/">Zurück zu Helmut</a></p>
     </main>
   </body>
