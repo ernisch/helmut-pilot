@@ -41,16 +41,17 @@ Für den rein synthetischen technischen 500er Nachweis ist die offene Datenschut
 | Website Tracking | 🟢 | Kein Google Analytics, Meta Pixel oder vergleichbarer Tracker im aktuellen Live Auftritt gefunden | Tracking weiterhin vermeiden | Nein |
 | Website Fonts | 🟢 | Schriften werden lokal ausgeliefert | So beibehalten | Nein |
 | Website Datenschutzhinweis | 🟢 | Am 06.10.2026 auf Production aktualisiert: Vercel Hosting, technische Zugriffsdaten, Rechtsgrundlage, Drittlandhinweise, Speicherkriterien, E Mail Kontakt, Betroffenenrechte und Beschwerderecht enthalten. Alte falsche Aussage entfernt. Live Prüfung: HTTP 200, keine Marketing Tracker gefunden, kein Set Cookie Header | Bei Anbieter oder Website Funktionsänderungen erneut prüfen | Nein |
+| App Datenschutzhinweis | 🟡 | PR #824 aktualisiert den öffentlichen App Hinweis auf den aktuellen Datenfluss: freie Texteingaben, öffentliche politische Quellen, Vercel, Supabase Irland, Azure EU Data Zone, Push, Browser Speicher, Retention und Betroffenenrechte. Vercel Preview ist READY und `/datenschutz` liefert HTTP 200; Pflicht CI läuft noch. | Pflicht CI abwarten, danach nach separatem Merge GO Production ausrollen und live prüfen | Ja bis zum Live Nachweis |
 | Öffentliche Registrierung | 🟢 | Keine öffentliche Signup oder Register Route gefunden | Betreiber Einladung beibehalten | Nein |
 | Kontodaten | 🟡 | Name, E Mail, Rolle, Passwort Hash, Sessions, Login Zeitpunkte und Sicherheitsmetadaten sind technisch vorgesehen | Rechtsgrundlage, Frist und Empfänger dokumentieren | Ja |
 | Mandatsprofil | 🟠 | Partei, Fraktion, Parlament, Region, Wahlkreis, Ausschüsse, Themen, Funktionen und weitere politische Profildaten werden verarbeitet | Art. 6 und Art. 9 Grundlage verbindlich festlegen | Ja |
 | Politische Positionen | 🟠 | Felder wie `publicPositions`, `riskTopics`, `opportunityTopics` und weitere Profilfelder existieren | Nutzung auf erforderliche und belegte Angaben begrenzen | Ja |
 | Öffentliche Politiker Nennungen | 🟠 | `knowledge_objects` kann Namen öffentlich handelnder politischer Akteure speichern | Art. 9 und Art. 14 Behandlung klären | Ja |
 | Privatpersonen | 🟢 technisch | Understanding Prompt verbietet Privatpersonen, Adressen, E Mails, Telefonnummern und private Personenprofile | Schutzregel beibehalten und später gezielt testen | Nein, sofern wirksam |
-| Freie Texteingaben | 🔴 | Entgegen früherer Annahme existieren freie Texteingaben. Kommunikationsprompt bis 1200 Zeichen geht an `/api/communication/generate` und wird an die KI übergeben. Tagesinput speichert unter anderem Kontext, Ziel und gewünschte Vorbereitung | Rechtstexte und Datenfluss ergänzen. Vor echten Kunden Eingabehinweis und Zweckbegrenzung festlegen | Ja |
+| Freie Texteingaben | 🟡 | Kommunikationsprompt bis 1200 Zeichen geht an `/api/communication/generate` und wird an die KI übergeben. Tagesinput speichert unter anderem Kontext, Ziel und gewünschte Vorbereitung. PR #824 nimmt diese Verarbeitung ausdrücklich in den App Datenschutzhinweis auf | Vor echten Kunden zusätzlich einen klaren Eingabehinweis und die Zweckbegrenzung in der Produktoberfläche festlegen | Ja bis Eingabegrenze geklärt |
 | Datei Uploads | 🟢 | Keine aktuelle Produktfunktion gefunden | Nicht ohne neue Datenschutzprüfung hinzufügen | Nein |
 | Eigene KI Trainings | 🟢 | Kein Fine Tuning oder eigenes Training mit Kundendaten gefunden | So beibehalten | Nein |
-| Azure KI | 🟠 | Azure ist der vorgesehene primäre KI Pfad. Ressource ist in Sweden Central. Das aktuelle Deployment ist jedoch `GlobalStandard` | Ziel für Helmut: `Data Zone Standard` für `gpt-5-mini`, damit die Inferenz auf die europäische Datenzone begrenzt wird. Vor Umstellung aktuelle Subscription Quota und Kapazität prüfen | Ja |
+| Azure KI | 🟢 technisch | Production ist auf `gpt-5-mini-eu` / `DataZoneStandard` umgestellt. Das Deployment ist READY; `/api/ai/status` bestätigt live `enabled=true`, `model=gpt-5-mini-eu`, `backend=azure-eu`. Der vorherige GlobalStandard bleibt als Rückweg bestehen | Vertrags- und Art.-9-Gesamtbewertung bleibt getrennt; technische EU Datenzonen-Umschaltung ist erledigt | Nein für den technischen Standortpunkt |
 | Direkte OpenAI API | 🟠 | Ein direkter OpenAI Production Schlüssel ist vorhanden. Azure hat im Code Vorrang | Vor echten Kunden entscheiden, ob der direkte Fallback vollständig entfernt wird | Ja |
 | DeepSeek | 🟢 für Kundensicht | Kein DeepSeek Schlüssel in der aktuellen Vercel Production Konfiguration gefunden | Interne Regel: keine echten Kunden oder Production Personendaten an DeepSeek | Nein |
 | Supabase | 🟢 Standort | Aktuelles Hauptprojekt liegt in AWS `eu-west-1`, Irland | DPA und Unterauftragnehmer dokumentieren | Ja |
@@ -236,7 +237,7 @@ Bis zur späteren Rechtsfreigabe gelten als Zielregeln:
 1. Diese Masterakte als Arbeitswahrheit pflegen.
 2. Domain technisch anbinden, sobald vom Betreiber gewünscht.
 3. Website Datenschutzerklärung ist seit 06.10.2026 korrigiert und live geprüft.
-4. App Datenschutzerklärung auf den tatsächlichen aktuellen Datenfluss bringen.
+4. App Datenschutzerklärung ist in PR #824 auf den aktuellen Datenfluss gebracht; Preview READY, Pflicht CI und Production Live Nachweis noch offen.
 5. Dienstleister und Verträge vollständig inventarisieren.
 6. Verbindliche Löschfristen vorbereiten, aber Retention noch nicht scharf schalten.
 7. Vollständige DSFA Vorlage und Art. 14 Information vorbereiten.
