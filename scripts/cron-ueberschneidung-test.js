@@ -1,3 +1,5 @@
+// Historical schedule regression against the exact pre-pause restore fixture.
+// This suite does not attest an active Production schedule.
 "use strict";
 
 // Offline-Nachweis der CRON-LAUFZEITÜBERSCHNEIDUNG (Frage „05:45/05:48").
@@ -38,6 +40,8 @@ function check(name, ok, detail = "") {
 }
 
 const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+    // Historical plan regression only; actual pause is checked by pre500-cron-pause-test.js.
+    vercel.crons = structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json"));
 
 // Startminute des UTC-Tages aus einem 5-Feld-Cron. `null`, wenn Minute oder
 // Stunde keine schlichte Zahl sind — ein Rhythmus wie `18,48 * * * *` hat keine

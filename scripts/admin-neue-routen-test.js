@@ -10,6 +10,12 @@
 //  - Waehrungsvertrag: Kostenfelder heissen ...Usd (keine erfundene EUR-Umrechnung)
 //  - CSRF-Pflicht fuer schreibende Privacy-Aktion + Server-Confirm
 //  - keine Kostenwerte im Abgeordneten-Endpoint (/api/app/start)
+//
+// Belegter Ist-Stand der Betriebsmetadaten: die reale vercel.json hat `crons: []`,
+// also ist der Zeitplan ehrlich leer; briefing-watchdog.yml hat keinen schedule
+// (verfuegbar + inaktiv, zeitplanUtc:null, manuell dispatchbar) und health-watch.yml
+// hat den Zeitplan auskommentiert (verfuegbar + inaktiv, zeitplanUtc:null).
+// Es werden keine Fixtures oder Caches im Admin angelegt.
 
 const http = require("http");
 const fs = require("fs");
@@ -130,7 +136,8 @@ async function login(port, email, password) {
 
     const pr = await getJson("/api/admin/stats/process-runs");
     check("B process-runs: processRuns Array + latestByProcess Objekt", Array.isArray(pr.processRuns) && pr.latestByProcess && typeof pr.latestByProcess === "object");
-    check("B process-runs: Zeitplan aus vercel.json gelesen (crawl enthalten)", Array.isArray(pr.zeitplan) && pr.zeitplan.some((c) => c.path === "/api/cron/crawl"));
+    check("B process-runs: Zeitplan ehrlich als verfuegbare LEERE Liste aus vercel.json (crons: [])",
+      Array.isArray(pr.zeitplan) && pr.zeitplan.length === 0, `zeitplan=${JSON.stringify(pr.zeitplan)}`);
 
     const audit = await getJson("/api/admin/audit?limit=20");
     check("B audit: auditEvents Array mit login-Ereignis", Array.isArray(audit.auditEvents) && audit.auditEvents.some((e) => e.action === "auth.login"));
@@ -147,8 +154,14 @@ async function login(port, email, password) {
     const sources = await getJson("/api/admin/sources-status");
     check("B sources-status: lokal ehrlich nicht verfuegbar + Hinweis", sources.verfuegbar === false && typeof sources.hinweis === "string");
     check("B sources-status: keine erfundenen Statuszahlen", sources.statusCounts === null && sources.problematischeWege === null);
-    check("B sources-status: Watchdog aus Workflow-Datei gelesen (briefing aktiv)", sources.watchdog && sources.watchdog.briefingWatchdog && sources.watchdog.briefingWatchdog.aktiv === true);
-    check("B sources-status: Health-Watch ehrlich inaktiv (Zeitplan auskommentiert)", sources.watchdog.healthWatch.aktiv === false);
+    check("B sources-status: Watchdog aus Workflow-Datei gelesen (briefing verfuegbar, ohne schedule ehrlich inaktiv)",
+      sources.watchdog && sources.watchdog.briefingWatchdog &&
+      sources.watchdog.briefingWatchdog.verfuegbar === true &&
+      sources.watchdog.briefingWatchdog.aktiv === false &&
+      sources.watchdog.briefingWatchdog.zeitplanUtc === null,
+      `wd=${JSON.stringify(sources.watchdog && sources.watchdog.briefingWatchdog)}`);
+    check("B sources-status: Health-Watch ehrlich inaktiv (Zeitplan auskommentiert)",
+      sources.watchdog.healthWatch.verfuegbar === true && sources.watchdog.healthWatch.aktiv === false && sources.watchdog.healthWatch.zeitplanUtc === null);
 
     // Keine Geheimnisse in irgendeiner neuen Antwort.
     const allBodies = JSON.stringify([budget, cpu, pr, audit, fb, customers, sources]);

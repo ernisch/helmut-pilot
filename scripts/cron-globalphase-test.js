@@ -1,3 +1,5 @@
+// Historical schedule regression against the exact pre-pause restore fixture.
+// This suite does not attest an active Production schedule.
 "use strict";
 
 // Helmut — Testsuite OP-25 K1: globale Erfassung EINMAL, danach nur Mandatsprojektionen.
@@ -1192,6 +1194,8 @@ function sechsProfile() {
     check("7c.4 der Rest bleibt zurueckgestellt und wird vom dedizierten Understanding-Cron geholt",
       (() => {
         const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+    // Historical plan regression only; actual pause is checked by pre500-cron-pause-test.js.
+    vercel.crons = structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json"));
         return vercel.crons.filter((c) => c.path === "/api/cron/understanding").length === 2;
       })());
     check("7c.5 der neue Pfad kostet nie MEHR KI-Aufrufe je Lauf als der alte",
@@ -1539,6 +1543,8 @@ function sechsProfile() {
     const schedSrc = fs.readFileSync(path.join(ROOT, "lib", "helmut", "scheduler.js"), "utf8");
     const serverSrc = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
     const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+    // Historical plan regression only; actual pause is checked by pre500-cron-pause-test.js.
+    vercel.crons = structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json"));
 
     check("9.1 der globale Crawl wird NICHT je Mandat ausgefuehrt (die globale Phase kennt keine Mandatsschleife um den Abruf)",
       /runGlobaleErfassung/.test(schedSrc)

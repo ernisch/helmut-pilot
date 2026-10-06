@@ -1,3 +1,5 @@
+// Historical schedule regression against the exact pre-pause restore fixture.
+// This suite does not attest an active Production schedule.
 "use strict";
 
 // Helmut — WIE VIELE ABFLUSSPLAETZE HAT DIE WARTESCHLANGE WIRKLICH?
@@ -54,6 +56,8 @@ function check(name, ok, detail = "") {
 function abschnitt(t) { console.log(`\n== ${t} ==`); }
 
 const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+    // Historical plan regression only; actual pause is checked by pre500-cron-pause-test.js.
+    vercel.crons = structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json"));
 const serverSrc = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
 const watchdogSrc = fs.readFileSync(path.join(ROOT, "scripts/watchdog-pipeline-check.js"), "utf8");
 const crons = Array.isArray(vercel.crons) ? vercel.crons : [];

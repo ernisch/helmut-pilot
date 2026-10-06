@@ -1,4 +1,11 @@
 "use strict";
+// Isolated historical positive/negative runtime contract; no Production configuration change.
+// Live empty-cron start rejection remains checked by pre500-cron-pause-test.js.
+const historicalVercelPath = require.resolve("../vercel.json");
+require(historicalVercelPath);
+require.cache[historicalVercelPath].exports = { ...require(historicalVercelPath),
+  crons: structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json")) };
+
 const A = require("node:assert/strict");
 const E = require("../lib/helmut/b055-einzelabschluss");
 const S = require("../lib/helmut/storage");

@@ -5,6 +5,12 @@
 // Production nicht lesbar/nicht gebundelt ist — Rueckgabe null bzw. { verfuegbar:false },
 // niemals ein Absturz und niemals erfundene Werte. KEIN Netz, KEINE KI.
 //
+// Belegter Ist-Stand: die reale vercel.json enthaelt `crons: []`. Der Leser liefert
+// deshalb eine VERFUEGBARE, LEERE Liste — kein null und keine erfundenen Zeiten.
+// .github/workflows/briefing-watchdog.yml hat KEINEN schedule und bleibt manuell
+// dispatchbar; health-watch.yml hat den Zeitplan auskommentiert. Beide werden
+// ehrlich als verfuegbar + inaktiv mit zeitplanUtc:null gelesen.
+//
 // Hintergrund: vercel.json wird per statischem require geladen (von @vercel/nft
 // deterministisch ins Bundle getragen); die Workflow-YMLs per fs-Read mit
 // includeFiles-Bundling. Beide haben einen ehrlichen Fallback.
@@ -30,9 +36,10 @@ function check(name, cond, detail = "") {
 check("Test-Hooks exportiert", typeof handler.__readVercelCronSchedule === "function" && typeof handler.__readWorkflowWatchdog === "function");
 
 // --- 1) Cron-Zeitplan: Normalfall (vercel.json via require gebundelt) ---------
+// Reale Datei: crons ist eine leere Liste -> verfuegbar, ehrlich leer, nicht null.
 const crons = handler.__readVercelCronSchedule();
-check("Cron: reale vercel.json-Zeiten geladen (Array mit crawl-Eintrag)",
-  Array.isArray(crons) && crons.some((c) => c.path === "/api/cron/crawl" && /\d/.test(c.schedule)));
+check("Cron: reale vercel.json gelesen -> verfuegbare LEERE Cronliste (Array, length 0, nie null)",
+  Array.isArray(crons) && crons.length === 0, `crons=${JSON.stringify(crons)}`);
 check("Cron: Felder gekappt/sauber (path<=80, schedule<=40)",
   crons.every((c) => typeof c.path === "string" && c.path.length <= 80 && typeof c.schedule === "string" && c.schedule.length <= 40));
 
@@ -42,12 +49,14 @@ check("Cron: config ohne crons-Array -> null (keine erfundenen Zeiten)", handler
 check("Cron: config.crons kein Array -> null", handler.__readVercelCronSchedule({ crons: "kaputt" }) === null);
 
 // --- 3) Watchdog: Normalfall (Workflow-Dateien vorhanden) ---------------------
+// briefing-watchdog.yml hat keinen Zeitplan: ehrlich verfuegbar + inaktiv, aber
+// weiterhin manuell dispatchbar (kein erfundener cron, kein Fehlalarm "aktiv").
 const briefing = handler.__readWorkflowWatchdog(".github/workflows/briefing-watchdog.yml");
-check("Watchdog: briefing-watchdog wird als verfuegbar + aktiv gelesen (echter cron)",
-  briefing.verfuegbar === true && briefing.aktiv === true && /\d/.test(String(briefing.zeitplanUtc || "")));
+check("Watchdog: briefing-watchdog verfuegbar, ohne schedule ehrlich inaktiv (zeitplanUtc:null, manuell dispatchbar)",
+  briefing.verfuegbar === true && briefing.aktiv === false && briefing.zeitplanUtc === null, `wd=${JSON.stringify(briefing)}`);
 const health = handler.__readWorkflowWatchdog(".github/workflows/health-watch.yml");
-check("Watchdog: health-watch ehrlich inaktiv (Zeitplan auskommentiert)",
-  health.verfuegbar === true && health.aktiv === false && health.zeitplanUtc === null);
+check("Watchdog: health-watch ehrlich inaktiv (Zeitplan auskommentiert, zeitplanUtc:null)",
+  health.verfuegbar === true && health.aktiv === false && health.zeitplanUtc === null, `wd=${JSON.stringify(health)}`);
 
 // --- 4) Watchdog: Degradation (Datei nicht lesbar/nicht gebundelt) ------------
 const missing = handler.__readWorkflowWatchdog(".github/workflows/gibt-es-nicht.yml");
@@ -55,6 +64,8 @@ check("Watchdog: fehlende Datei -> { verfuegbar:false, aktiv:null }, kein Abstur
   missing.verfuegbar === false && missing.aktiv === null && missing.zeitplanUtc === null);
 
 // --- 5) Robustheit: leere/kommentar-nur Datei -> aktiv:false, kein Wurf -------
+// Temp-Datei liegt ausserhalb des Repositorys und wird im finally entfernt;
+// im Admin-Bereich entstehen keine Fixtures oder Caches.
 const tmp = path.join(os.tmpdir(), `helmut-wd-${process.pid}.yml`);
 try {
   fs.writeFileSync(tmp, "# nur ein Kommentar\n# cron: '0 0 * * *'\nname: test\n");

@@ -1,3 +1,5 @@
+// Historical schedule regression against the exact pre-pause restore fixture.
+// This suite does not attest an active Production schedule.
 "use strict";
 
 // Helmut — Testsuite: faire Mandantenreihenfolge der Mehrmandanten-Crons (OP-25).
@@ -1384,6 +1386,8 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
   {
     const lies = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
     const vercel = JSON.parse(lies("vercel.json"));
+    // Historical plan regression only; actual pause is checked by pre500-cron-pause-test.js.
+    vercel.crons = structuredClone(require("./fixtures/scheduled-crons-before-pre500-pause.json"));
     const plan = (vercel.crons || []).map((c) => `${c.path}@${c.schedule}`).sort().join("|");
     // KAPAZITAETSSPRINT 2026-08-09: ZWEI Eintraege kommen dazu — der zweite und dritte
     // Morgenslot, beide auf DERSELBEN neuen Route `/api/cron/lage-briefing-nachlauf`
