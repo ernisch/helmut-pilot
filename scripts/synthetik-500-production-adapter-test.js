@@ -281,7 +281,10 @@ async function main() {
     let lageCalls = 0, materializations = 0, retained = 0, rejectEvidence = false, holdGenerate = null;
     let mutations = Promise.resolve();
     const cas = fn => {
-      const work = mutations.then(async () => { const next = clone(auth), result = await fn(next); auth = next; return result; });
+      const work = mutations.then(async () => { const next = clone(auth), result = await fn(next);
+        const current = J.current(next);
+        if (current?.index === 500) assert.equal(current.state, "closed", "final finish+close must be one CAS");
+        auth = next; return result; });
       mutations = work.catch(() => {}); return work;
     };
     const row = (owner, area, payload = {}) => ({ id: `fake-${owner}-${area}`, user_id: owner, slot: area,
@@ -348,7 +351,9 @@ async function main() {
       // inside its unit; a loser cannot stop it or take a later unit on retry.
       let release; holdGenerate = new Promise(resolve => { release = resolve; });
       const winner = Adapter.productionNext(selector);
-      while (lageCalls < 2) await new Promise(resolve => setImmediate(resolve));
+      const raceDeadline = Date.now() + 5000;
+      while (lageCalls < 2) { assert(Date.now() < raceDeadline, "winner must enter the held unit");
+        await new Promise(resolve => setImmediate(resolve)); }
       await assert.rejects(Adapter.productionNext(selector), /next-unit-not-proven/);
       assert.equal(J.current(auth).state, "running"); assert.equal(J.current(auth).stopRequested, false);
       release(); await winner; holdGenerate = null;
