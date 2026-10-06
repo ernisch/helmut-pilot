@@ -37,7 +37,10 @@ jobs:
     # und Kontoschutz am15-Minuten-Jobende abgebrochen; Z22 wurde uebersprungen.
     # Endliches Gesamtfenster fuer ALLE Pflichtschritte; Suiten und ihre
     # Einzelzeitgrenzen bleiben unveraendert, kein uebersprungener Nachweis.
-    timeout-minutes: 20
+    # CI37442488028: Datenbank/Setup ~7min und erfolgreiche Standard-Suite9min;
+    # Bereichsregression am20-Minuten-Limit abgebrochen. Alle Pflichtschritte
+    # und Einzelgrenzen bleiben gleich, Gesamtfenster endlich30min.
+    timeout-minutes: 30
     # KURZLEBIGE CI-TESTDATENBANK (Korrektur 2026-08-28, Befund „falsches Grün").
     # ---------------------------------------------------------------------------
     # Für die Datenbanknachweise zu Z22 und Kontoschreibschutz. Der Dienst lebt so lange wie
