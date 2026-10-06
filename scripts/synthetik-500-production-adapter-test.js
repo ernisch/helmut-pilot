@@ -19,8 +19,10 @@ require("node:https").request = noNet;
 require("node:http").request = noNet;
 let passed = 0;
 const orderV4Only = process.argv.includes("--order-v4");
+const boundedDrOnly = process.argv.includes("--bounded-dr-only");
 async function test(name, f) {
   if (orderV4Only && !name.startsWith("20USD order")) return;
+  if (boundedDrOnly && !name.startsWith("bounded DR")) return;
   await f(); passed++; console.log("PASS " + name);
 }
 function fixture(phase = "U") {
@@ -258,7 +260,7 @@ async function main() {
       await assert.rejects(Native.read(io, "foreign", entry.id, sha(entry), native.contractHash), /read-owner/);
     } finally { C.admission = realAdmission; }
   });
-  await test("closed wrapper invokes 500 owner D/R units once, materializes views with no generator", async () => {
+  await test("bounded DR steps preserve one claim, stop races and finish exactly500 owners/1500 positions", async () => {
     // Mock the already-admitted Root/native boundary, not the real admission
     // validator tested above. No fixture is written or accepted as actual W.
     const paths = ["storage", "lage", "briefing-lagebindung", "briefing-speicher"].map(n => require.resolve("../lib/helmut/" + n));
@@ -276,17 +278,23 @@ async function main() {
     let auth = { testKostenAuftrag: { version: 3, id: "fake-order", abTag: time.toISOString().slice(0, 10), limit: 7000000, externGebunden: 0 } };
     const admission = { booksHash: C.booksHash(auth) }, packet = { command, admission };
     J.install(auth, command, sha(command), C.controlHash(auth));
-    let lageCalls = 0, materializations = 0, retained = 0;
+    let lageCalls = 0, materializations = 0, retained = 0, rejectEvidence = false, holdGenerate = null;
+    let mutations = Promise.resolve();
+    const cas = fn => {
+      const work = mutations.then(async () => { const next = clone(auth), result = await fn(next); auth = next; return result; });
+      mutations = work.catch(() => {}); return work;
+    };
     const row = (owner, area, payload = {}) => ({ id: `fake-${owner}-${area}`, user_id: owner, slot: area,
       generated_at: new Date().toISOString(), payload });
     const fakeStorage = { synthetik500ProductionBackend() {}, loadSynthetik500ProductionCommand: async () => packet,
       leseLlmTageszaehler: async () => ({ ok: true, used: 0 }), readAuthStore: async () => clone(auth),
-      mutateAuthStore: async fn => { const next = clone(auth), result = await fn(next); auth = next; return result; },
+      mutateAuthStore: cas,
       readSynthetik500CurrentInputs: async x => x, getProfileFromDb: async id => ({ id }),
       synthetik500ReviewStorageContract: async () => ({}),
-      getRenderedBriefingV3: async (owner, area) => row(owner, area), retainSynthetik500ProductionEvidence: async () => { retained++; } };
+      getRenderedBriefingV3: async (owner, area) => row(owner, area), retainSynthetik500ProductionEvidence: async () => { retained++; if (rejectEvidence) throw Error("fake-unknown-insert"); } };
     const fakeLage = { buildLageBriefing: async (...args) => {
       assert.equal(args.length, 2); const [profile, opts] = args; lageCalls++;
+      if (holdGenerate) await holdGenerate;
       assert.equal(opts.missingOnly, true); assert.equal(opts.costRunId, RUN);
       await opts.beforeGenerate(); const c = J.current(auth), unit = c.units[c.index], day = time.toISOString().slice(0, 10);
       for (const [i, id] of unit.intentIds.entries()) {
@@ -308,12 +316,64 @@ async function main() {
       C.admission = () => "mock-only-not-actual"; K.aktiv = () => true; K.pruefeStart = () => ({});
       const modules = [fakeStorage, fakeLage, { pruefe: () => ({ eingabeHash: sha("fake-binding") }) }, fakeB];
       paths.forEach((p, i) => { require.cache[p] = { id: p, filename: p, loaded: true, exports: modules[i] }; });
-      const result = await Adapter.productionStart({ operationId: OP, commandHash: sha(command) });
-      assert.equal(result.state, "closed"); assert.equal(lageCalls, 500); assert.equal(materializations, 500);
-      assert.equal(retained, 500); assert.equal(Object.keys(J.current(auth).attempts).length, 1000);
-      const report = await Adapter.status({ operationId: OP, commandHash: sha(command) });
+      const selector = { operationId: OP, commandHash: sha(command) };
+      const result = await Adapter.productionStart(selector);
+      assert.equal(result.state, "running"); assert.equal(result.dispatchedUnits, 1); assert.equal(result.completedUnits, 1);
+      assert.equal(lageCalls, 1); assert.equal(materializations, 1); assert.equal(retained, 1);
+      const permanentClaim = J.current(auth).claimId, afterFirst = clone(auth);
+      const rejectUnchanged = async (edit, pattern) => {
+        auth = clone(afterFirst); edit(auth); const before = clone(auth), calls = lageCalls;
+        await assert.rejects(Adapter.productionNext(selector), pattern);
+        assert.deepEqual(auth, before, "rejection may not change journal or stop a winner"); assert.equal(lageCalls, calls);
+      };
+      await rejectUnchanged(a => { J.current(a).inFlight = { index: 1, intentIds: units[1].intentIds }; }, /next-unit-not-proven/);
+      await rejectUnchanged(a => { J.current(a).units[1].entered = true; }, /next-unit-not-proven/);
+      await rejectUnchanged(a => { J.current(a).attempts[units[0].intentIds[0]].status = "unknown"; }, /next-unit-not-proven/);
+      await rejectUnchanged(a => { J.current(a).state = "stopped"; }, /claim-or-window/);
+      await rejectUnchanged(a => { delete J.current(a).outputs[0]; }, /next-unit-not-proven/);
+      await rejectUnchanged(a => { J.current(a).index = 0; }, /next-unit-not-proven/);
+      auth = clone(afterFirst);
+      await assert.rejects(Adapter.productionStart(selector), /claim-books-cas|already-claimed/);
+      await assert.rejects(Adapter.productionNext({ ...selector, index: 1 }), /closed-selector-only/);
+      const keptMode = command.mode; command.mode = "U-prestage";
+      await assert.rejects(Adapter.productionNext(selector), /next-only-installed-500-dr/); command.mode = keptMode;
+      const savedStartCheck = K.pruefeStart, savedAdmission = C.admission;
+      K.pruefeStart = () => { throw Error("fake-budget-denial"); };
+      await assert.rejects(Adapter.productionNext(selector), /fake-budget-denial/); K.pruefeStart = savedStartCheck;
+      K.aktiv = () => false; await assert.rejects(Adapter.productionNext(selector), /inactive-or-deployment-drift/); K.aktiv = () => true;
+      C.admission = () => { throw Error("fake-expired-window"); };
+      await assert.rejects(Adapter.productionNext(selector), /fake-expired-window/); C.admission = savedAdmission;
+      assert.deepEqual(auth, afterFirst); assert.equal(lageCalls, 1);
+      // Same observed index races through a serial fake CAS. Hold the winner
+      // inside its unit; a loser cannot stop it or take a later unit on retry.
+      let release; holdGenerate = new Promise(resolve => { release = resolve; });
+      const winner = Adapter.productionNext(selector);
+      while (lageCalls < 2) await new Promise(resolve => setImmediate(resolve));
+      await assert.rejects(Adapter.productionNext(selector), /next-unit-not-proven/);
+      assert.equal(J.current(auth).state, "running"); assert.equal(J.current(auth).stopRequested, false);
+      release(); await winner; holdGenerate = null;
+      assert.equal(J.current(auth).index, 2); assert.equal(J.current(auth).claimId, permanentClaim);
+      // Unknown evidence INSERT blocks the entered unit forever, with no retry.
+      const afterSecond = clone(auth); rejectEvidence = true;
+      await assert.rejects(Adapter.productionNext(selector), /stopped-or-unknown/);
+      assert.equal(J.current(auth).state, "unknown"); const callsAfterUnknown = lageCalls;
+      await assert.rejects(Adapter.productionNext(selector), /claim-or-window/);
+      assert.equal(lageCalls, callsAfterUnknown); assert.equal(J.current(auth).claimId, permanentClaim);
+      // Resume the separate fictional successful scenario from its saved fixture.
+      // This is local test isolation, never an allowed Production restoration.
+      auth = clone(afterSecond); rejectEvidence = false; lageCalls = materializations = retained = 2;
+      for (let index = 2; index < 500; index++) {
+        const next = await Adapter.productionNext(selector);
+        assert.equal(next.dispatchedUnits, 1); assert.equal(next.completedUnits, index + 1);
+        assert.equal(next.state, index === 499 ? "closed" : "running");
+        assert.equal(J.current(auth).claimId, permanentClaim); assert.equal(lageCalls, index + 1);
+      }
+      assert.equal(lageCalls, 500); assert.equal(materializations, 500); assert.equal(retained, 500);
+      assert.equal(Object.keys(J.current(auth).attempts).length, 1000);
+      const report = await Adapter.status(selector);
       assert.equal(report.positions.length, 1500); assert.equal(report.fachabnahme, false);
-      await assert.rejects(Adapter.productionStart({ operationId: OP, commandHash: sha(command) }), /claim-books-cas|already-claimed/);
+      await assert.rejects(Adapter.productionStart(selector), /claim-books-cas|already-claimed/);
+      await assert.rejects(Adapter.productionNext(selector), /claim-or-window/);
       assert.equal(lageCalls, 500);
     } finally {
       paths.forEach((p, i) => { if (oldCache[i]) require.cache[p] = oldCache[i]; else delete require.cache[p]; });
