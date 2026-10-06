@@ -41,7 +41,7 @@ Für den rein synthetischen technischen 500er Nachweis ist die offene Datenschut
 | Website Tracking | 🟢 | Kein Google Analytics, Meta Pixel oder vergleichbarer Tracker im aktuellen Live Auftritt gefunden | Tracking weiterhin vermeiden | Nein |
 | Website Fonts | 🟢 | Schriften werden lokal ausgeliefert | So beibehalten | Nein |
 | Website Datenschutzhinweis | 🟢 | Am 06.10.2026 auf Production aktualisiert: Vercel Hosting, technische Zugriffsdaten, Rechtsgrundlage, Drittlandhinweise, Speicherkriterien, E Mail Kontakt, Betroffenenrechte und Beschwerderecht enthalten. Alte falsche Aussage entfernt. Live Prüfung: HTTP 200, keine Marketing Tracker gefunden, kein Set Cookie Header | Bei Anbieter oder Website Funktionsänderungen erneut prüfen | Nein |
-| App Datenschutzhinweis | 🟡 | PR #824 aktualisiert den öffentlichen App Hinweis auf den aktuellen Datenfluss: freie Texteingaben, öffentliche politische Quellen, Vercel, Supabase Irland, Azure EU Data Zone, Push, Browser Speicher, Retention und Betroffenenrechte. Vercel Preview ist READY und `/datenschutz` liefert HTTP 200; Pflicht CI läuft noch. | Pflicht CI abwarten, danach nach separatem Merge GO Production ausrollen und live prüfen | Ja bis zum Live Nachweis |
+| App Datenschutzhinweis | 🟢 technisch aktuell | PR #824 ist gemergt und Production `READY`. Live `/datenschutz` liefert HTTP 200 und nennt freie Texteingaben, öffentliche politische Quellen, Vercel, Supabase `eu-west-1` Irland, Microsoft Azure OpenAI `gpt-5-mini-eu` in der europäischen Azure Datenzone, Push, Browser Speicher, Retention, Rechte und Art.-9-Offenheit. | Bei Datenflussänderungen nachziehen; rechtliche Art.-9-/Art.-14-/DSFA-Entscheidungen bleiben getrennt offen | Nein für die technische Aktualität des Hinweises |
 | Öffentliche Registrierung | 🟢 | Keine öffentliche Signup oder Register Route gefunden | Betreiber Einladung beibehalten | Nein |
 | Kontodaten | 🟡 | Name, E Mail, Rolle, Passwort Hash, Sessions, Login Zeitpunkte und Sicherheitsmetadaten sind technisch vorgesehen | Rechtsgrundlage, Frist und Empfänger dokumentieren | Ja |
 | Mandatsprofil | 🟠 | Partei, Fraktion, Parlament, Region, Wahlkreis, Ausschüsse, Themen, Funktionen und weitere politische Profildaten werden verarbeitet | Art. 6 und Art. 9 Grundlage verbindlich festlegen | Ja |
@@ -237,7 +237,7 @@ Bis zur späteren Rechtsfreigabe gelten als Zielregeln:
 1. Diese Masterakte als Arbeitswahrheit pflegen.
 2. Domain technisch anbinden, sobald vom Betreiber gewünscht.
 3. Website Datenschutzerklärung ist seit 06.10.2026 korrigiert und live geprüft.
-4. App Datenschutzerklärung ist in PR #824 auf den aktuellen Datenfluss gebracht; Preview READY, Pflicht CI und Production Live Nachweis noch offen.
+4. App Datenschutzerklärung ist mit PR #824 in Production ausgerollt und live geprüft; technische Aktualität des Rechtstextes ist belegt.
 5. Dienstleister und Verträge vollständig inventarisieren.
 6. Verbindliche Löschfristen vorbereiten, aber Retention noch nicht scharf schalten.
 7. Vollständige DSFA Vorlage und Art. 14 Information vorbereiten.
