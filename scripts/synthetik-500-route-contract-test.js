@@ -65,10 +65,10 @@ async function withSender(h, afterReserve, check, response = "ok") {
   try {
     global.Date = class extends RealDate { constructor(...args) { super(...(args.length ? args : [START])); } static now() { return RealDate.parse(START); } };
     for (const k of ["HELMUT_PRODUCTION_COMMIT", "OPENAI_API_KEY", "HELMUT_KI_LOOPBACK_ERLAUBT"]) delete process.env[k];
-    Object.assign(process.env, ENV);
+    Object.assign(process.env, h.env || ENV);
     for (const k of ["mutateAuthStore", "readAuthStore", "leseLlmTageszaehler"]) storage[k] = h.storage[k];
     storage.reserveLlmCall = async () => { await afterReserve(); return { allowed: true }; };
-    storage.recordLlmUsage = async () => ({ id: "fictional-usage", model: "gpt-5-mini",
+    storage.recordLlmUsage = async () => ({ id: "fictional-usage", model: h.args.model,
       ...(response === "error" ? {} : { promptTokens: 100, completionTokens: 20 }), _ablage: { blob: true } });
     provider.steuerungAktiv = () => false;
     https.request = (url, opts, cb) => {
@@ -81,7 +81,7 @@ async function withSender(h, afterReserve, check, response = "ok") {
           output: [{ content: [{ type: "output_text", text: '{"ok":true}' }] }] })); res.emit("end");
       }); return req;
     };
-    await check(() => ai.requestStructuredJson(PROMPT, SCHEMA, h.meta, "gpt-5-mini"), sent);
+    await check(() => ai.requestStructuredJson(PROMPT, SCHEMA, h.meta, h.args.model), sent);
   } finally {
     global.Date = RealDate; https.request = oldHttps; provider.steuerungAktiv = oldProvider;
     for (const k of names) storage[k] = old[k];
@@ -92,7 +92,9 @@ async function withSender(h, afterReserve, check, response = "ok") {
 let passed = 0;
 const reasoningOnly = process.argv.includes("--reasoning-guard-only");
 const deploymentOnly = process.argv.includes("--deployment-binding-only");
+const aliasOnly = process.argv.includes("--alias-binding-only");
 async function test(name, fn) {
+  if (aliasOnly && !name.startsWith("exact EU alias")) return;
   if (reasoningOnly && name !== "present reasoning must be exact approved effort, including falsy inputs") return;
   if (deploymentOnly && !["executor binds routed deployment to the same runtime and target plan", "route contract suite is in the mandatory standard selector"].includes(name)) return;
   await fn(); passed++; console.log("PASS " + name);
@@ -111,6 +113,64 @@ async function drift(change) {
   });
 }
 async function main() {
+  await test("exact EU alias freezes full routed costplan bodies while intents keep cost-family identity", () => {
+    const paket = P.erzeuge(), documents = ["BT", "BE", "BB"].map(scope => ({ scope,
+      id: "fictional-" + scope, version: { id: "fictional-" + scope, fictional: true } }));
+    const docs = C.sourceVersions(documents, [], null).documents.map(d => d.key);
+    const clusters = [{ vorgangId: "fictional-process", mode: "erst", koVersion: null, documentKeys: docs,
+      requiresUnderstanding: true, coverage: null, artikelkontextVersuch: null }];
+    const source = C.sourceVersions(documents, [], clusters, C.ROUTE_INPUT_VERSION), routeContract = contract();
+    routeContract.route.model = "gpt-5-mini-eu";
+    const body = JSON.stringify({ ...payload(), model: "gpt-5-mini-eu" });
+    const e = { version: C.ROUTE_INPUT_VERSION, operationId: OP, runId: RUN, window: { startUTC: START, endUTC: END },
+      productionCommit: COMMIT, runtimeManifestHash: "f".repeat(64), documents, knowledgeObjects: [], clusters,
+      understandingInputs: source.clusters.map(v => ({ versionKey: v.key, contractInputHash: v.contractInputHash,
+        requestBody: body, routeId: null, attemptLimit: 1 })),
+      understandingCompleteness: { version: C.PROOF_VERSION, documentInventoryHash: P.hash(source.documents),
+        knowledgeObjectInventoryHash: P.hash(source.knowledgeObjects), clusterInventoryHash: P.hash(source.clusters),
+        requiredVersionKeys: source.clusters.map(v => v.key), evidence: { reference: "fictional-only", sha256: P.hash("not-real-W") } },
+      draftInputs: paket.profile.map(p => ({ owner: p.mandatsId, profileHash: P.hash(p), context: { fictional: true },
+        documentKeys: docs, knowledgeObjectKeys: [], requestBody: body, routeId: null, attemptLimit: 1 })),
+      reviewMaxOutputTokens: 3000, paidRoutes: null, otherPaidInputs: [], routeContract };
+    const plan = C.vorbereite(paket, e); assert(plan.admissionCandidate);
+    assert(plan.admissionCandidate.plan.intents.every(x => x.model === "gpt-5-mini"));
+    assert.equal(plan.admissionCandidate.plan.routeContract.route.model, "gpt-5-mini-eu");
+    assert.equal(plan.admissionCandidate.plan.intents.find(x => x.phase === "U").actualRequestHash, A.requestHash(body));
+    assert.doesNotThrow(() => C.pruefe(plan, paket));
+    e.understandingInputs[0].requestBody = JSON.stringify({ ...payload(), model: "gpt-5-mini-other" });
+    assert.throws(() => C.vorbereite(paket, e), /request-binding|route-text-features/);
+  });
+  await test("exact EU alias binds actual bytes and accounts unchanged conservative reserve", async () => {
+    const h = fixture(), body = JSON.stringify({ ...payload(), model: "gpt-5-mini-eu" });
+    h.modify(auth => {
+      const slot = auth[A.KEY], plan = slot.plan, d = plan.intents[0];
+      plan.routeContract.route.model = "gpt-5-mini-eu";
+      d.actualRequestHash = A.requestHash(body); d.id = A.intentHash(RUN, d); slot.planHash = P.hash(plan);
+      h.args.model = "gpt-5-mini-eu"; h.args.actualRequestHash = d.actualRequestHash;
+      h.args.runtimeRouteSnapshot = clone(plan.routeContract.route);
+      h.args.admission.planHash = slot.planHash; h.args.admission.routeContractHash = P.hash(plan.routeContract);
+    });
+    h.env = { ...ENV, AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini-eu" };
+    h.deps.env = h.env;
+    await withSender(h, async () => {}, async (send, sent) => {
+      assert.deepEqual(await send(), { ok: true }); assert.equal(sent.length, 1); assert.equal(sent[0].body, body);
+      const book = h.read()[B.KEY][DAY], ticket = Object.values(book.calls)[0];
+      assert.equal(ticket.status, "abgerechnet"); assert.equal(ticket.cost, 130); assert.equal(ticket.reserved, 212000);
+      assert.equal(book.limit, 6000000); assert.equal(ticket.admission.runtimeRouteSnapshot.model, "gpt-5-mini-eu");
+    });
+  });
+  await test("exact EU alias rejects unknown aliases and preserves exact route snapshot identity", async () => {
+    for (const bad of ["gpt-5-mini-other", "gpt-5-mini-eu-extra", "GPT-5-mini-eu", "gpt-5.6-luna", null]) {
+      assert.equal(A.modelFamily(bad), null);
+      assert.throws(() => A.pruefeRoutePayload({ ...payload(), model: bad }), /route-text-features/);
+      assert.throws(() => A.pruefeRouteSnapshot({ ...contract().route, model: bad }), /route-snapshot/);
+      const h = fixture(); await assert.rejects(B.reserviere({ ...h.args, model: bad }, h.deps), /modell-nicht-freigegeben/);
+      assert.equal(h.read()[B.KEY], undefined);
+    }
+    assert.notEqual(A.pruefeRouteSnapshot(contract().route), A.pruefeRouteSnapshot({ ...contract().route, model: "gpt-5-mini-eu" }));
+    const h = fixture(); h.args.model = "gpt-5-mini-eu"; h.args.runtimeRouteSnapshot.model = "gpt-5-mini-eu";
+    await assert.rejects(B.reserviere(h.args, h.deps), /reservation-route-drift/);
+  });
   await test("new contract follows exact one mocked URL/body/auth and atomic ticket", async () => {
     const h = fixture(); await withSender(h, async () => {}, async (send, sent) => {
       assert.deepEqual(await send(), { ok: true }); assert.equal(sent.length, 1);
