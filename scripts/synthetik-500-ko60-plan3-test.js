@@ -441,6 +441,37 @@ async function main() {
         const bad = copy(w); mutate(bad); assert.throws(() => W.baueLeseAdapter(bad), /dokument/);
       }
     });
+    await test("W neutrale Zusatzquellen behalten RuntimeDTO und strikte Eingangsquellenebenen", () => {
+      const full = ko("vg-fictional"), doc = copy(wInputs().documents[0]); doc.scope = null;
+      const w = { version: W.VERSION, projectionVersion: KO.VERSION, projectionFieldsetHash: KO.FIELDSET_HASH,
+        documents: [], linkedDocuments: [doc], knowledgeObjects: [{ vorgangId: full.vorgang_id, koVersion: 1, version: full }],
+        prefixes: [], exacts: [], links: [{ knowledgeObjectId: full.id, rows: [{ knowledge_object_id: full.id,
+          raw_document_id: doc.id, created_at: "2026-10-02T10:00:00.000Z" }], evidence }],
+        reservations: [], memos: [], decisions: [] };
+      const adapter = W.baueLeseAdapter(w);
+      assert.equal(adapter.inventar.linkedDocuments[0].scope, null);
+      const dto = adapter.deps.listVorgangDocuments(full.id)[0];
+      assert.deepEqual(dto, require("../lib/helmut/quellen-auszug").geleseneQuelle(
+        Object.fromEntries(W.LINKED_SOURCE_FIELDS.map(k => [k, doc.version[k]]))));
+      assert.equal(Object.hasOwn(dto, "scope"), false);
+      const input = copy(w); input.documents = input.linkedDocuments; input.linkedDocuments = [];
+      assert.throws(() => W.baueLeseAdapter(input), /dokument/);
+      for (const scope of ["BT", "BE", "BB"]) {
+        const scoped = copy(input); scoped.documents[0].scope = scope;
+        assert.doesNotThrow(() => W.baueLeseAdapter(scoped));
+      }
+      for (const field of ["dip_quellfelder", "bundestag_artikelstand", "berlin_artikelstand", "brandenburg_artikelstand"]) {
+        const bad = copy(w); bad.linkedDocuments[0].version[field] = {};
+        assert.throws(() => W.baueLeseAdapter(bad), /dokument/);
+      }
+      for (const mutate of [x => { x.linkedDocuments[0].scope = "unknown"; },
+        x => { delete x.linkedDocuments[0].version.dip_quellfelder; },
+        x => { x.documents = copy(x.linkedDocuments); x.documents[0].scope = "BT"; },
+        x => { x.links[0].rows[0].raw_document_id = "missing-source"; }]) {
+        const bad = copy(w); mutate(bad);
+        assert.throws(() => W.baueLeseAdapter(bad), /dokument|link-verwaist-oder-doppelt/);
+      }
+    });
     await test("W bindet roheSOURCE23-Originale getrennt vom normalisierten aktuellenResolvercluster", async () => {
       const f = wInputs(); f.knowledgeObjects = [];
       f.documents[0].version.quellenauszug_beleg = { status: "ergaenzt" };
