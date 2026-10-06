@@ -103,6 +103,42 @@ async function main() {
   async function test(name, fn) { if (only && !only.test(name)) return; await fn(); passed++; console.log("PASS " + name); }
   try {
     const e = inputs(), plan = C.vorbereite(paket, e), slot = plan.admissionCandidate;
+    await test("Single-U actual intake derives only one inert intent and retains incomplete 500 plan", async () => {
+      const x = await routeWFixture();
+      x.input.draftInputs = null;
+      const u = C.vorbereite(paket, { ...x.input, paidRoutes: null }).phasePositions.U[0];
+      x.input.paidRoutes[0].admittedRequestIds = [u.requestId];
+      const prepare = input => W.vorbereiteEinzelU(paket, JSON.stringify(input), x.inventoryBytes,
+        x.capture, x.routeBytes, x.routeEvidence);
+      const accepted = await prepare(x.input), expected = await routeIntake(x);
+      assert.deepEqual(accepted.plan, expected.plan, "No fabricated full D plan or completion flags");
+      assert.equal(accepted.plan.admissionCandidate, null);
+      assert.equal(accepted.slotCandidate.plan.intents.length, 1);
+      assert.deepEqual(accepted.slotCandidate.plan.intents[0], u.admissionIntent);
+      assert.equal(accepted.slotCandidate.plan.sourceBinding.inputHash, P.hash(x.input));
+      assert.equal(accepted.slotCandidate.plan.sourceBinding.inputHash, expected.routeBinding.inputHash);
+      assert.equal(accepted.slotCandidate.planHash, P.hash(accepted.slotCandidate.plan));
+      assert.equal(accepted.plan.status.full500CompletionProven, false);
+      for (const key of ["actualInputAcceptanceVerified", "executionReady", "installationAvailable"])
+        assert.equal(accepted[key], false);
+      assert.doesNotThrow(() => A.pruefeSlot(accepted.slotCandidate));
+      for (const mutate of [
+        f => { f.understandingCompleteness = null; },
+        f => { f.documents[0].version.title += " source drift"; },
+        f => { f.draftInputs = []; },
+        f => { f.paidRoutes = null; },
+        f => { f.understandingInputs[0].requestBody = null; },
+        f => { f.understandingInputs[0].routeId = null; },
+        f => { f.understandingInputs[0].requestBody = JSON.stringify({ model: "gpt-5-mini-eu", input: "fictional", max_output_tokens: 3000 }); }
+      ]) {
+        const bad = copy(x.input); mutate(bad);
+        await assert.rejects(prepare(bad), /synthetik500-/);
+      }
+      const badInventory = copy(x.w); badInventory.exacts = [];
+      const bytes = JSON.stringify(badInventory), ev = { ...x.capture, sha256: byteHash(bytes) }, bad = copy(x.input);
+      bad.understandingCompleteness.evidence = ev;
+      await assert.rejects(W.vorbereiteEinzelU(paket, JSON.stringify(bad), bytes, ev, x.routeBytes, x.routeEvidence), /resolver-oder-zustandsbeleg/);
+    });
     await test("Input4-W-route LegacyInput3 bleibt exakt getrennt und unveraendert", async () => {
       const old = await routeWFixture(false), inputBytes = JSON.stringify(old.input), expected = C.vorbereite(paket, old.input);
       assert.deepEqual(await W.vorbereite(paket, inputBytes, old.inventoryBytes, old.capture), {
