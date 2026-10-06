@@ -123,6 +123,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
+  "synthetik-500-native-d-new-datenbank-test.js", // eigener Pflichtschritt: netzloser PG17-Container, kein Offline-Scheinbeleg
   "synthetik-500-runtime-datenbank-test.js", // eigener Pflichtschritt: echtes Importjournal bis 500->0, kein Offline-Skip
   "realkohorte-500-runtime-datenbank-test.js", // eigener Pflichtschritt: isolierte PostgreSQL17, kein stiller Offline-Skip
   "realkohorte-500-endweg-datenbank-test.js", // eigener Pflichtschritt: echte isolierte PostgreSQL, kein Offline-Scheinbeleg

@@ -257,6 +257,25 @@ jobs:
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js scripts/synthetik-500-native-import-test.js --postgres-local
 
+      - name: Neue inerte Native-D-Ablage gegen echte isolierte PostgreSQL17
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 3
+        env:
+          HELMUT_SYNTHETIK500_PG_ISOLIERT: "JA"
+        run: |
+          set -euo pipefail
+          IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
+          export HELMUT_SYNTHETIK500_PG_CONTAINER="synthetik500-runtime-pg-$(openssl rand -hex 8)"
+          docker pull "$IMAGE"
+          docker tag "$IMAGE" postgres:17.6-bookworm
+          docker run -d --network none --name "$HELMUT_SYNTHETIK500_PG_CONTAINER" -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.6-bookworm
+          trap 'docker rm -fv "$HELMUT_SYNTHETIK500_PG_CONTAINER" >/dev/null' EXIT
+          for attempt in {1..30}; do
+            if docker exec "$HELMUT_SYNTHETIK500_PG_CONTAINER" pg_isready -U postgres; then break; fi
+            sleep 1
+          done
+          node scripts/lokal.js -- node scripts/synthetik-500-native-d-new-datenbank-test.js
+
       - name: Schnelle Kernschutzprüfung
         if: steps.plan.outputs.core == 'true'
         env:
