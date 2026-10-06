@@ -494,6 +494,8 @@ function laufGegenAblage(storage, zeile, { cronName, tenantIds, runId, startedMs
       const fairnessQuelle = fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-fairness.js"), "utf8");
       const serverQuelle = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
       const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+      // Retained historical schedule for this fairness regression, no live schedule claim.
+      vercel.crons = require("./fixtures/scheduled-crons-before-pre500-pause.json");
       check("Version 3 schuetzt 500 Laufplaetze vor alten Schreibern", F.FAIRNESS_VERSION === 3);
       check("Zeitbudgets unveraendert (270 000 / 240 000 ms)",
         /270000/.test(serverQuelle) && /240000/.test(serverQuelle));

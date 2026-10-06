@@ -1,4 +1,8 @@
 "use strict";
+// Test-local historical scheduling; production config is checked without overrides in pre500-cron-pause-test.
+const legacyVercel = require("../vercel.json");
+require.cache[require.resolve("../vercel.json")].exports = { ...legacyVercel,
+  crons: require("./fixtures/scheduled-crons-before-pre500-pause.json") };
 const assert = require("node:assert/strict");
 const D = require("../lib/helmut/testkohorte-direkt500");
 const S = require("../lib/helmut/storage");

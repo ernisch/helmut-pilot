@@ -1,0 +1,31 @@
+"use strict";
+// Live pause contract. No historical config injection, provider, DB or HTTP calls.
+const assert = require("node:assert/strict"), fs = require("node:fs"), crypto = require("node:crypto"), path = require("node:path");
+const root = path.join(__dirname, "..");
+const hash = x => crypto.createHash("sha256").update(x).digest("hex");
+const config = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8"));
+assert.deepEqual(config.crons, [], "Live scheduled Vercel jobs must be explicitly paused");
+const others = structuredClone(config); delete others.crons;
+assert.equal(hash(JSON.stringify(others)), "24a69af89f3460c6fcb34076bcbefefc1766f04f5a7f337285717923bd1bbc22", "Pause may change no unrelated configuration field");
+const historicalPath = path.join(__dirname, "fixtures/scheduled-crons-before-pre500-pause.json");
+const historicalBytes = fs.readFileSync(historicalPath);
+assert.equal(hash(historicalBytes), "f543bcca088d3881b4d7bab959b82a28ec153f267f7bc17117db20d01ff484de", "Full parent restore schedule must remain exact");
+const historical = JSON.parse(historicalBytes);
+assert.equal(historical.length, 13);
+const restored = { ...config, crons: historical };
+assert.deepEqual(Object.fromEntries(Object.entries(restored).filter(([k]) => k !== "crons")), others);
+const workflow = fs.readFileSync(path.join(root, ".github/workflows/briefing-watchdog.yml"), "utf8");
+assert.doesNotMatch(workflow, /^  schedule:/m);
+assert.match(workflow, /^  workflow_dispatch:/m);
+const pauseComments = "  # Zeitplan temporaer pausiert: kontrollierte Vorbereitung des synthetischen500er Nachweises.\n  # Manuelle Dispatchs bleiben unveraendert; Rueckweg nur der schedule-Block aus26d57b69.\n";
+assert.equal(workflow.split(pauseComments).length, 2);
+assert.equal(hash(workflow.replace(pauseComments, "")), "2a91476999fa614c874177cf930c7d2bb8e29011a6d6f36e59fca32db9ea13da", "All manual workflow and job bytes remain unchanged");
+const F = require("../lib/helmut/funktionstest-500");
+const paused = F.pruefeStartfenster({ startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: config.crons, minimalCronAktiv: false });
+assert.equal(paused.startErlaubt, false);
+assert.ok(paused.konflikte.some(x => x.art === "cronliste-fehlt"));
+assert.equal(F.pruefeStartfenster({ startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: [{path:"/api/x",schedule:"invalid"}] }).startErlaubt, false);
+assert.equal(F.pruefeStartfenster({ startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: historical, minimalCronAktiv: false }).startErlaubt, true);
+assert.equal(require("./vercel-ignore-build").shouldSkip(["vercel.json", ".github/workflows/briefing-watchdog.yml"]), false);
+console.log(JSON.stringify({ status: "PASS_LIVE_CRON_PAUSE_AND_EXACT_PARENT_RESTORE", liveCronCount: 0, restoreCronCount: 13,
+  nonCronConfigUnchanged: true, remainingWorkflowBytesUnchanged: true, old500StartFailsClosed: true, productionCalls: 0 }));

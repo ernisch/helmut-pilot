@@ -517,6 +517,8 @@ async function main() {
   abschnitt("§11 Quelltext- und Konfigurationsverträge (P8)");
   {
     const vercel = JSON.parse(src("vercel.json"));
+    // Historical scheduled regression; actual pause keeps the old start gates closed.
+    vercel.crons = require("./fixtures/scheduled-crons-before-pre500-pause.json");
     const crons = vercel.crons || [];
     const rueckstandCrons = crons.filter((c) => c.path === "/api/cron/understanding-rueckstand");
     check("§11.1 genau zwei Rückstandsslots: 11:30 und 17:30 UTC (≥ 30 min Abstand zu jedem anderen Slot)",

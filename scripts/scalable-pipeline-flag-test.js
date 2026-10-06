@@ -130,9 +130,11 @@ function main() {
   // der zweite Morgenslot IST ein neuer Eintrag. Die Pruefung wird deshalb nicht abgeschwaecht,
   // sondern auf das umgestellt, was wirklich gilt — die NEUN BESTANDSZEITEN sind unveraendert,
   // und der einzige neue Eintrag ist der flaggeschuetzte Nachlaufslot.
-  check("6.5 Die neun bestehenden Cron-Zeiten sind unveraendert",
+  check("6.5 Die neun historischen Cron-Zeiten sind unveraendert",
     (() => {
       const v = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+      // Historical schedule contract; live pause guarded by pre500-cron-pause-test.
+      v.crons = require("./fixtures/scheduled-crons-before-pre500-pause.json");
       // Kapazitaetssprint 2026-08-31: die Rueckstandsslots gehoeren wie die
       // Nachlaufslots zu den spaeter ergaenzten Routen und werden hier ausgefiltert —
       // geprueft wird, dass die NEUN urspruenglichen Zeiten zeichengleich bleiben.
@@ -146,9 +148,11 @@ function main() {
         "/api/cron/understanding@30 21 * * *", "/api/cron/understanding@30 5 * * *"
       ].sort().join("|");
     })(), "die neun Bestandszeiten muessen zeichengleich bleiben");
-  check("6.6 Die einzigen neuen Cron-Eintraege sind Nachlauf- und Rueckstandsslots",
+  check("6.6 Historische Zusatz-Crons sind Nachlauf- und Rueckstandsslots",
     (() => {
       const v = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+      // Historical schedule contract; live pause guarded by pre500-cron-pause-test.
+      v.crons = require("./fixtures/scheduled-crons-before-pre500-pause.json");
       const neu = (v.crons || []).map((c) => `${c.path}@${c.schedule}`)
         .filter((s) => !/^\/api\/cron\/(crawl|health-report|lage-briefing|lage-check|morning-briefing|pipeline|understanding)@/.test(s));
       return v.crons.length === 13 && neu.length === 4

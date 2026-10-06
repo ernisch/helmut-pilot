@@ -310,14 +310,14 @@ function main() {
   // ── E · Die Fensterlogik (Prüfuhr NUR im Trockenlauf) ─────────────────────
   console.log("\nE · Fenster und Uhr: die Prüfuhr gilt nur im Trockenlauf, im scharfen Lauf zählt die Systemuhr");
   const uhrDrin = cli(["provisionierung", "--stufe=a", ...FENSTER, JETZT_DRIN]);
-  check("E1 Trockenlauf mit Prüfuhr IM Fenster: Fenster gilt, Modus bleibt Trockenlauf (kein --scharf)",
+  check("E1 Echte Cron-Pause lehnt auch IM Fenster geschlossen ab; Trockenlauf bleibt ohne Schreiben",
     uhrDrin.status === 0 && uhrDrin.json && uhrDrin.json.modus === "trockenlauf"
-      && uhrDrin.json.startfenster.frei === true && uhrDrin.json.startfenster.grund === "fenster-gilt-jetzt"
+      && uhrDrin.json.startfenster.frei === false && uhrDrin.json.startfenster.grund === "startfenster-ohne-cronliste"
       && uhrDrin.json.uhr === "pruefuhr-trockenlauf" && uhrDrin.speicherUnveraendert);
   const uhrDraussen = cli(["provisionierung", "--stufe=a", ...FENSTER, JETZT_DRAUSSEN]);
-  check("E2 Trockenlauf mit Prüfuhr AUSSERHALB: startzeit-ausserhalb-des-fensters",
+  check("E2 Echte Cron-Pause bleibt auch AUSSERHALB wegen fehlender Cronliste geschlossen",
     uhrDraussen.status === 0 && uhrDraussen.json && uhrDraussen.json.startfenster.frei === false
-      && uhrDraussen.json.startfenster.grund === "startzeit-ausserhalb-des-fensters");
+      && uhrDraussen.json.startfenster.grund === "startfenster-ohne-cronliste" && uhrDraussen.speicherUnveraendert);
   const scharfMitUhr = cli(["provisionierung", "--stufe=a", "--scharf", ...FENSTER, JETZT_DRIN],
     { [K.EXECUTE_FLAG]: "1", [K.CONFIRM_VARIABLE]: WORT("a") });
   check("E3 --scharf mit --jetzt= wird ABGEWIESEN (Exit 2, kein Banner, nichts geschrieben) — der dritte Riegel ist nicht setzbar",

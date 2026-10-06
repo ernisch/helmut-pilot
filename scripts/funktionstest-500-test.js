@@ -36,6 +36,8 @@ function check(name, ok, detail = "") {
 }
 
 const VERCEL = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+// Historical scheduled cases; the live pause is covered separately and still closes old starts.
+VERCEL.crons = require("./fixtures/scheduled-crons-before-pre500-pause.json");
 const COMMIT = "b998e9bc6a0ecca0cd3d43e344f03101c0ede5f0";
 
 // Eine in sich stimmige, aber ausdrücklich NICHT freigegebene Beispielkonfiguration.
@@ -329,7 +331,7 @@ function main() {
 
   // ── J · Cron-Überschneidung blockiert ─────────────────────────────────────
   console.log("\n== J · Cron- und Laufzeitüberschneidung blockiert ==");
-  check("J1 Production trägt weiterhin genau 13 Crons ohne den Minimal-Cron",
+  check("J1 Historische Fixture trägt genau 13 Crons ohne den Minimal-Cron",
     VERCEL.crons.length === 13
       && !VERCEL.crons.some((c) => c.schedule === minimalCron.MINIMAL_CRON_RHYTHMUS));
   const fensterFrueh = F.pruefeStartfenster({

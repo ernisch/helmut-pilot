@@ -1,0 +1,3 @@
+# Historischer inerte-Runtime-Stand
+
+- **Inerte Synthetikruntime installiert und nachkontrolliert (01.10.2026):** PR #764/main `b53be3d8`, historische Schemaabnahme mit beiden Pflichtchecks und unabhängiger Astra-Prüfung belegt. Nach konkretem GO exakt fünf Originalfunktionen nativ installiert, Journalversion `20261001203937`; Bodies/ACLs/Owner/Invoker/Konfiguration gebunden, anon/authenticated kein EXECUTE, service_role erlaubt. CLI-Version `20261001172619` bleibt unregistriert: kein Repair, Dateiumbenennen oder `db push --include-all`. Der damalige 40er-Snapshot und Schema-Rückweg sind historisch; aktuelles Journal siehe Bereinigung. [Belegbindung](betrieb/synthetischer-500er-auftrag-20261001.md).
