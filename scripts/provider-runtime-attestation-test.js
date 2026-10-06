@@ -30,7 +30,8 @@ function forbiddenEffect() { blockedEffectAttempts += 1; throw new Error("offlin
 // Der Production-Handler erhaelt KEINEN Auth-Override und kennt den Testbearer nicht.
 const dependencies = {
   "ai.js": ["https", "./verstehen-restzeit", "./azure-endpunkt", "./provider-runtime-attestation", "./anbieter-steuerung"],
-  "provider-runtime-attestation.js": ["./azure-endpunkt", "./testkosten-budget", "node:crypto"],
+  "provider-runtime-attestation.js": ["./azure-endpunkt", "./testkosten-budget", "node:crypto", "./flags"],
+  "flags.js": ["fs", "path", "../../helmut-flags.json"],
   "azure-endpunkt.js": ["crypto"], "testkosten-budget.js": ["node:crypto"],
   "anbieter-steuerung.js": ["crypto"], "verstehen-restzeit.js": []
 };
@@ -60,11 +61,14 @@ function loadPureModule(name) {
     assert(dependencies[name].includes(specifier), "unexpected dependency in " + name);
     imported.push(name + ":" + specifier);
     if (["crypto", "node:crypto"].includes(specifier)) return testCrypto;
+    if (specifier === "path") return path;
+    if (specifier === "fs") return { readFileSync(file, ...args) { assert.equal(path.resolve(file), path.resolve(__dirname, "../helmut-flags.json")); return fs.readFileSync(file, ...args); } };
+    if (specifier === "../../helmut-flags.json") return JSON.parse(fs.readFileSync(path.join(__dirname, "../helmut-flags.json"), "utf8"));
     if (specifier === "https") return { request: forbiddenEffect, get: forbiddenEffect };
     return loadPureModule(specifier.slice(2) + ".js");
   };
   const run = vm.runInNewContext("(function(require, module, exports) {\n" + source + "\n})", {
-    Buffer, URL, Date, process: sandboxProcess,
+    Buffer, URL, Date, __dirname: path.dirname(filename), process: sandboxProcess,
     console: { log: forbiddenEffect, warn: forbiddenEffect, error: forbiddenEffect },
     fetch: forbiddenEffect, setTimeout: forbiddenEffect, setInterval: forbiddenEffect
   }, { filename });
@@ -126,6 +130,28 @@ check("17 typed text fields, loopback bool and four name-presence bools only", (
   const empty = config({ OPENAI_API_KEY: "", HELMUT_KI_LOOPBACK_ERLAUBT: "" }, false, false);
   assert.equal(empty.secretNamePresence.OPENAI_API_KEY, true); assert.equal(empty.resolved.sendEnabled, false);
   assert.deepEqual(empty.loopback, { namePresent: true, exactOne: false });
+});
+
+check("source preparation reveals only canonical modes, bounded flags and credential NAME presence", () => {
+  const c = config({ HELMUT_SOURCE_MODE: "on", HELMUT_LANDESMODULE: "berlin,brandenburg",
+    HELMUT_STORAGE_BACKEND: "supabase", HELMUT_V3_STORE: "on", HELMUT_PROFILE_DB_MODE: "true",
+    HELMUT_PROFILE_DB_EXCLUSIVE: "1", HELMUT_TESTKOHORTE_QUELLEN: "off", DIP_API_KEY: "private-dip-fixture",
+    SUPABASE_SERVICE_ROLE_KEY: "private-service-fixture", SUPABASE_URL: "https://private-fixture.invalid" });
+  const q = c.sourcePreparation; assert.equal(q.flags.find(x => x.key === "HELMUT_SOURCE_MODE").value, "on"); assert.equal(q.flags.find(x => x.key === "HELMUT_LANDESMODULE").value, "berlin,brandenburg");
+  assert(q.flags.every(x => x.status === "VALIDATED_CURRENT_RUNTIME_CONFIG"));
+  assert.equal(q.credentialNamePresence.DIP_API_KEY, true); assert.equal(q.credentialNamePresence.SUPABASE_SERVICE_ROLE_KEY, true);
+  assert.equal(q.credentialUsabilityProven, false); assert.equal(q.profileActivation, false); assert.equal(q.paidModelCalls, 0); assert.equal(q.nativeCalls, 0);
+  for (const secret of ["private-dip-fixture", "private-service-fixture", "https://private-fixture.invalid"]) assert(!JSON.stringify(c).includes(secret));
+});
+check("source preparation discards secret-shaped and nonstring flags without claiming defaults or usable credentials", () => {
+  const c = config({ HELMUT_SOURCE_MODE: "secret-fixture", HELMUT_LANDESMODULE: "secret-fixture",
+    HELMUT_STORAGE_BACKEND: "secret-fixture", HELMUT_V3_STORE: {}, HELMUT_PROFILE_DB_MODE: "secret-fixture",
+    HELMUT_PROFILE_DB_EXCLUSIVE: true, HELMUT_TESTKOHORTE_QUELLEN: "secret-fixture", DIP_API_KEY: "" });
+  const q = c.sourcePreparation;
+  assert(q.flags.every(x => x.status === "INVALID_VALUE_DISCARDED")); assert(!JSON.stringify(q).includes("secret-fixture"));
+  assert.equal(q.credentialNamePresence.DIP_API_KEY, true); assert.equal(q.credentialUsabilityProven, false);
+  const empty = config({}).sourcePreparation; assert(empty.flags.every(x => x.status === "ABSENT" && x.defaultProvenByAbsence === false));
+  assert.equal(empty.credentialNamePresence.DIP_API_KEY, false);
 });
 
 check("normalized Azure destination excludes secret values and paid-call claims", () => {

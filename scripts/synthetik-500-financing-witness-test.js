@@ -5,7 +5,7 @@ const C=require("../lib/helmut/synthetik-500-production-command"),K=require("../
 const SHA="a".repeat(40),HOST="synthetic-finance.vercel.app",BEARER="synthetic-finance-bearer-000000000000000000000000000";
 const raw=fs.readFileSync(path.join(__dirname,"../lib/helmut/synthetik-500-financing-witness.js"),"utf8");
 const nonce=raw.match(/operationNonce: "([a-f0-9-]+)"/)[1];
-const source=raw.replace(/bearerSha256: "[a-f0-9]{64}"/,'bearerSha256: "'+crypto.createHash("sha256").update(BEARER).digest("hex")+'"').replace('expiresAtUTC: "2026-10-06T12:00:00.000Z"','expiresAtUTC: "2026-10-07T06:00:00.000Z"');
+const source=raw.replace(/bearerSha256: "[a-f0-9]{64}"/,'bearerSha256: "'+crypto.createHash("sha256").update(BEARER).digest("hex")+'"').replace('expiresAtUTC: "2026-10-06T20:00:00.000Z"','expiresAtUTC: "2026-10-07T06:00:00.000Z"');
 const zero=day=>({version:2,day,tarif:"azure-gpt5-mini-obergrenze-20260909",limit:6000000,spent:0,baseline:0,baselineCalls:0,manualCalls:0,manualUntil:null,calls:{},frozen:null});
 function fixture(){const days={};for(let i=0;i<28;i++){const d=new Date(Date.UTC(2026,8,9+i)).toISOString().slice(0,10);days[d]=zero(d);}return {testKostenAuftrag:{version:4,id:"synthetic-finance-order",limit:20000000,abTag:"2026-09-25",externGebunden:6794258},testKostenTage:days,llmUsage:[],privateUsers:"never-export",secretKey:"never-export"};}
 async function call(o={}){

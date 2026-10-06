@@ -506,6 +506,13 @@ function main() {
     if (!ok) {
       failed.push(suite);
       console.log(`FAIL  ${suite} (${ms}ms, exit=${res.status})`);
+      // Keep the failed suite identifiable through the checks API when the
+      // separate job-log download is unavailable. Preserve the test outcome.
+      if (process.env.GITHUB_ACTIONS === "true") {
+        const detail = `${suite}; exit=${res.status}; signal=${res.signal || "none"}; error=${res.error?.code || "none"}`;
+        const escaped = detail.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+        console.log(`::error title=Offline suite failed::${escaped}`);
+      }
       const zeilen = `${res.stdout || ""}\n${res.stderr || ""}`.trim().split("\n");
       // Diagnose-Fix 2026-08-03: der Auszug "letzte 15 Zeilen" verfehlt bei langen
       // Suiten genau die Zeile, die den Fehlschlag BENENNT. Beim CI-Flackern vom

@@ -67,6 +67,86 @@ function main() {
   test("noSender predecessor requires an additional genuine gate", () => {
     const f = setup(); refresh(f); A.throws(() => C.admission(f.command, f.record, START, true), /complete-actual-gates/);
   });
+  function expiredFixture() {
+    const f = fixture(); J.install(f.auth, f.command, P.hash(f.command), C.controlHash(f.auth));
+    f.oldInstalled = clone(J.current(f.auth)); f.oldSlot = clone(f.auth.synthetik500KostenAdmission);
+    f.command.slot.plan.operationId = "synthetik500-expired-unclaimed-new";
+    f.command.slot.plan.runId = "nachlauf500-1893592800000";
+    Object.assign(f.command.slot.plan, { startsAtUTC: "2030-01-02T13:00:00.000Z", endsAtUTC: "2030-01-02T14:00:00.000Z" });
+    Object.assign(f.command.slot.plan.routeContract.management, { validFromUTC: "2030-01-02T13:00:00.000Z", validUntilUTC: "2030-01-02T14:00:00.000Z" });
+    const intent = f.command.slot.plan.intents[0], { id, ...descriptor } = intent;
+    intent.id = require("../lib/helmut/synthetik-500-kosten-admission").intentHash(f.command.slot.plan.runId, descriptor);
+    f.command.units[0].intentIds = [intent.id]; f.command.understanding[0].intentId = intent.id;
+    f.command.slot.planHash = P.hash(f.command.slot.plan); return f;
+  }
+  const actualNow = Date.now;
+  try {
+  Date.now = () => Date.parse("2030-01-02T13:00:00.000Z");
+  for (const entered of [undefined, false]) test("expired never-claimed U appends a NEW immutable operation " + String(entered), () => {
+    const f = expiredFixture(); if (entered === false) J.current(f.auth).units[0].entered = false;
+    const before = clone(f.auth), nextHash = P.hash(f.command); C.validate(f.command);
+    J.install(f.auth, f.command, nextHash, C.controlHash(f.auth));
+    A.deepEqual(f.auth[J.KEY].operations[f.oldInstalled.operationId], before[J.KEY].operations[f.oldInstalled.operationId]);
+    A.deepEqual(f.auth.testKostenAuftrag, before.testKostenAuftrag); A.deepEqual(f.auth.testKostenTage, before.testKostenTage);
+    A.equal(J.current(f.auth).state, "installed"); A.equal(Object.keys(f.auth[J.KEY].operations).length, 2);
+    A.throws(() => J.claim(f.auth, f.oldInstalled.commandHash, "expired-old-selector", "2030-01-02T13:00:00.000Z"), /already-claimed/);
+    J.claim(f.auth, nextHash, "new-one-use-claim", "2030-01-02T13:00:00.000Z");
+    A.throws(() => J.claim(f.auth, nextHash, "second-claim", "2030-01-02T13:00:00.000Z"), /already-claimed/);
+  });
+  const expiredNegatives = [
+    ["claimed", f => J.current(f.auth).claimId = "already-claimed"],
+    ["claimedAt", f => J.current(f.auth).claimedAtUTC = START],
+    ["closedSlot", f => J.current(f.auth).closedSlot = {}],
+    ["entered", f => J.current(f.auth).units[0].entered = true],
+    ["nonboolean-entered", f => J.current(f.auth).units[0].entered = null],
+    ["extra-unit-metadata", f => J.current(f.auth).units[0].sent = true],
+    ["index", f => J.current(f.auth).index = 1],
+    ["inFlight", f => J.current(f.auth).inFlight = { index: 0 }],
+    ["attempt", f => J.current(f.auth).attempts.first = { status: "reserved" }],
+    ["output", f => J.current(f.auth).outputs[0] = { resultHash: "f".repeat(64) }],
+    ["stop", f => J.current(f.auth).stopRequested = true],
+    ["terminal", f => J.current(f.auth).terminalReason = "stopped"],
+    ["running", f => J.current(f.auth).state = "running"],
+    ["unknown", f => J.current(f.auth).state = "unknown"],
+    ["slot-planHash", f => f.auth.synthetik500KostenAdmission.planHash = "f".repeat(64)],
+    ["slot-operation", f => f.auth.synthetik500KostenAdmission.plan.operationId = "foreign"],
+    ["slot-intent", f => f.auth.synthetik500KostenAdmission.plan.intents[0].id = "f".repeat(64)],
+    ["slot-subject", f => J.current(f.auth).units[0].subject = "different-pair"],
+    ["slot-corrupt-route", f => f.auth.synthetik500KostenAdmission.plan.routeContract = {}],
+    ["consumed", f => f.auth.synthetik500KostenAdmission.consumed.first = {}],
+    ["draft", f => f.auth.synthetik500KostenAdmission.draftCompletions.first = {}],
+    ["review", f => f.auth.synthetik500KostenAdmission.reviewBindings.first = {}],
+    ["array-attempts", f => J.current(f.auth).attempts = []],
+    ["array-outputs", f => J.current(f.auth).outputs = []],
+    ["old-DR", f => J.current(f.auth).units[0].kind = "DR"],
+    ["old-multiU", f => J.current(f.auth).units.push(clone(J.current(f.auth).units[0]))],
+    ["old-invalid-time", f => f.auth.synthetik500KostenAdmission.plan.endsAtUTC = "invalid"],
+    ["new-invalid-time", f => f.command.slot.plan.startsAtUTC = "invalid"],
+    ["new-reversed-window", f => f.command.slot.plan.endsAtUTC = START],
+    ["overlap-1ms", f => f.command.slot.plan.startsAtUTC = "2030-01-02T12:59:59.999Z"],
+    ["newDR", f => f.command.mode = "D-R-500"],
+    ["new-multiU", f => f.command.units.push(clone(f.command.units[0]))],
+    ["new-intent-shape", f => f.command.slot.plan.intents.push(clone(f.command.slot.plan.intents[0]))],
+    ["new-unit-intent", f => f.command.units[0].intentIds = ["other"]]
+  ];
+  for (const [name, edit] of expiredNegatives) test("expired-unclaimed boundary rejects " + name + " without mutation", () => {
+    const f = expiredFixture(); edit(f); const before = clone(f.auth);
+    A.throws(() => J.install(f.auth, f.command, P.hash(f.command), C.controlHash(f.auth)), /previous-operation/); A.deepEqual(f.auth, before);
+  });
+  for (const boundary of ["CAS", "same-operation", "cap", "historical-entered-subject"]) test("expired-unclaimed preserves " + boundary, () => {
+    const f = expiredFixture(); let controlHash;
+    if (boundary === "same-operation") f.command.slot.plan.operationId = f.oldInstalled.operationId;
+    if (boundary === "cap") for (let i = 1; i < 64; i++) f.auth[J.KEY].operations["extra-" + i] = { ...clone(f.oldInstalled), operationId: "extra-" + i };
+    if (boundary === "historical-entered-subject") { const old = clone(f.oldInstalled); old.operationId = "other-historical"; old.units[0].entered = true; old.state = "unknown"; f.auth[J.KEY].operations[old.operationId] = old; }
+    controlHash = boundary === "CAS" ? "0".repeat(64) : C.controlHash(f.auth); const before = clone(f.auth);
+    A.throws(() => J.install(f.auth, f.command, P.hash(f.command), controlHash), /install-cas|permanent-once-or-cap|u-predecessor-consumed/); A.deepEqual(f.auth, before);
+  });
+  for (const ms of [Date.parse("2030-01-02T12:59:59.999Z"), NaN]) test("expired-unclaimed rejects actual unexpired/nonfinite clock " + String(ms), () => {
+    const f = expiredFixture(), before = clone(f.auth), normalClock = Date.now;
+    try { Date.now = () => ms; A.throws(() => J.install(f.auth, f.command, P.hash(f.command), C.controlHash(f.auth)), /previous-operation/); A.deepEqual(f.auth, before); }
+    finally { Date.now = normalClock; }
+  });
+  } finally { Date.now = actualNow; }
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-no-sender-fictional-")); fs.chmodSync(dir, 0o700);
   try {
     const pin = file => { const b = fs.readFileSync(file); return { path: file, bytes: b.length, sha256: crypto.createHash("sha256").update(b).digest("hex") }; };
