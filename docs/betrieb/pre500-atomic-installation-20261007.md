@@ -58,6 +58,9 @@ Fixtures und deaktiviertem Containernetz, saemtlich ueber scripts/lokal.js:
 4. RR liest nach fremdem ACL-Commit weiterhin den alten SQL-Katalogstand;
    danach angelegte synthetische Testwirkung kann committen.
 5. Dasselbe Gegenbeispiel unter SERIALIZABLE kann ebenfalls committen.
+   Der konkurrierende GRANT lief dabei mit Default-Isolation. Eine getrennte
+   neue Ergaenzungsgruppe mit BEIDEN Sitzungen unter SERIALIZABLE bestaetigt
+   ebenfalls veraltete SQL-Kataloglesung und erfolgreichen Wirkungscommit.
 6. Ein normaler lokaler Nichtsuperuser als Tabellenowner hat keine benoetigten
    Katalogtabellen-/Zeilensperrrechte. Das simuliert nicht Supabases gesamte
    Rollenpolitik und ist kein Beleg des dortigen Migrationscallers.
@@ -70,7 +73,8 @@ Spaltenausgabe. Nach expliziter JSON-Ausgabe wurde nur diese Gruppe erneut
 geprueft und bestand. Erster Fehler/Originalereignisse und Reparaturdelta bleiben
 getrennt erhalten. Ein vorheriger Start traf nur die Containerinitialisierung;
 ein kurzer exec-Verbindungsverlust wurde vor dem fachlichen Lauf geklaert.
-Das sind sieben belegte Gruppen, kein behaupteter fehlerfreier Gesamtlauf.
+Das sind sieben belegte Erstgruppen plus eine gezielte SSI-Ergaenzung,
+kein behaupteter fehlerfreier Gesamtlauf.
 Keine Vollbestandsperformance, native Commitlatenz oder OS-Gesamtfrist bewiesen.
 
 Ein weiterer privater Erfassungsentwurf erweitert bekannte Katalogabhaengigkeiten
