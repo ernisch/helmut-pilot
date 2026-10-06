@@ -32,10 +32,62 @@ function fixture() {
   return h;
 }
 let count = 0;
-async function test(name, fn) { await fn(); console.log("PASS " + name); count++; }
+const orderV4Only = process.argv.includes("--order-v4");
+async function test(name, fn) {
+  if (orderV4Only && !name.startsWith("Auftrag Version4")) return;
+  await fn(); console.log("PASS " + name); count++;
+}
 (async () => {
   const auftrag = externGebunden => ({ version: 1, id: "offline-auftrag", abTag: DAY,
     limit: 4000000, externGebunden });
+  const v4 = externGebunden => ({ version: 4, id: "offline-auftrag", abTag: DAY,
+    limit: 20000000, externGebunden });
+  await test("Auftrag Version4 bindet exakt20USD inklusive und sperrt einen weiteren Versuch ohne Mutation", async () => {
+    const h = fixture();
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = v4(19788000); });
+    await B.reserviere(ARGS, h.deps);
+    assert.equal(B.auftragsStand(h.read(), DAY).gebundenMicroUsd, 20000000);
+    assert.equal(B.auftragsStand(h.read(), DAY).grenzeInklusive, true);
+    assert.deepEqual(h.read().users, [{ id: "bestehend" }]);
+    const before = h.read();
+    await assert.rejects(B.reserviere(ARGS, h.deps),
+      { reason: "test-usd-auftragsgrenze-erreicht", kiNichtGesendet: true });
+    assert.deepEqual(h.read(), before);
+  });
+  await test("Auftrag Version4 sperrt Ueberbindung und jede falsche Version/Grenze ohne Mutation", async () => {
+    for (const bad of [v4(19788001), ...[4000000, 6000000, 7000000, 19999999, 20000001].map(limit => ({ ...v4(0), limit })),
+      ...[1, 2, 3, 5].map(version => ({ ...v4(0), version }))]) {
+      const h = fixture();
+      await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = bad; });
+      const before = h.read();
+      await assert.rejects(B.reserviere(ARGS, h.deps),
+        { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
+      assert.deepEqual(h.read(), before);
+    }
+  });
+  await test("Auftrag Version4 bindet parallele Versuche atomar und erhaelt ungeklaerte Reserve ueber Mitternacht", async () => {
+    const h = fixture();
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = v4(19576000); });
+    const results = await Promise.allSettled(Array.from({ length: 3 }, () => B.reserviere(ARGS, h.deps)));
+    assert.equal(results.filter(x => x.status === "fulfilled").length, 2);
+    assert.equal(B.auftragsStand(h.read(), DAY).gebundenMicroUsd, 20000000);
+    const ticket = results.find(x => x.status === "fulfilled").value;
+    await assert.rejects(B.abschliessen(ticket, null, h.deps));
+    const old = h.day(); h.advance(86400000);
+    const before = h.read();
+    await assert.rejects(B.reserviere(ARGS, h.deps),
+      { reason: "test-usd-auftragsgrenze-erreicht", kiNichtGesendet: true });
+    assert.deepEqual(h.read(), before);
+    assert.deepEqual(h.day(), old);
+  });
+  await test("Auftrag Version4 laesst den6USD-Tagesriegel wirksam", async () => {
+    const h = fixture();
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = v4(0); });
+    const results = await Promise.allSettled(Array.from({ length: 40 }, () => B.reserviere(ARGS, h.deps)));
+    assert.equal(results.filter(x => x.status === "fulfilled").length, 28);
+    assert.equal(h.day().limit, 6000000);
+    assert.equal(B.belegt(h.day()), 5936000);
+  });
   await test("Tagespolitik akzeptiert nur die bekannten Paare2/4 und3/6, freie Werte bleiben gesperrt", async () => {
     assert.equal(B.tagespolitikGueltig({ version: 2, limitUsd: 4 }), true);
     assert.equal(B.tagespolitikGueltig({ version: 3, limitUsd: 6 }), true);
