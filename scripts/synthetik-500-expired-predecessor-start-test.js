@@ -54,8 +54,16 @@ function scenario(){
 }
 async function startFixture(change){
  const f=scenario(),storagePath=require.resolve('../lib/helmut/storage'),oldCache=require.cache[storagePath],oldActive=K.aktiv,oldCommit=process.env.HELMUT_PRODUCTION_COMMIT;
- let auth=clone(f.auth),oldReads=0,claims=0,effects=0,claimed=null,missing=false,badPacket=null,drift=null;
- const config={f,setMissing:()=>{missing=true;},setBadPacket:x=>{badPacket=x;},setDrift:x=>{drift=x;},setAuth:x=>{auth=x;}};if(change)change(config);
+ let auth=clone(f.auth),oldReads=0,claims=0,effects=0,claimed=null,missing=false,badPacket=null,drift=null;const realValidate=C.validate,realAdmission=C.admission;
+ const config={f,setDRBoundary:()=>{
+   // Transport-only already-admitted DR boundary, as in the existing 500-step
+   // adapter fixture. This does not claim a full real DR schema/Native admission.
+   const owners=P.erzeuge().profile.map(x=>x.mandatsId).sort(),command=f.next.command;
+   command.mode='D-R-500';command.understanding=[];command.drafts=owners.map(id=>({profile:{id}}));command.units=owners.map(id=>({kind:'DR',subject:id,intentIds:[sha([id,'D']),sha([id,'R'])]}));
+   const current=auth[J.KEY].operations[command.slot.plan.operationId];current.commandHash=sha(command);current.units=clone(command.units);
+   C.admission=(c,...args)=>c===command?sha(command):realAdmission(c,...args);
+   C.validate=c=>c===command?{commandHash:sha(command),plan:command.slot.plan}:realValidate(c);
+ },setMissing:()=>{missing=true;},setBadPacket:x=>{badPacket=x;},setDrift:x=>{drift=x;},setAuth:x=>{auth=x;}};if(change)change(config);
  try{
   K.aktiv=()=>true;process.env.HELMUT_PRODUCTION_COMMIT=COMMIT;
   require.cache[storagePath]={id:storagePath,filename:storagePath,loaded:true,exports:{
@@ -69,7 +77,7 @@ async function startFixture(change){
   }};
   await assert.rejects(Adapter.productionStart({operationId:f.next.command.slot.plan.operationId,commandHash:sha(f.next.command)}));
   return {auth,oldReads,claims,effects,claimed,f};
- }finally{K.aktiv=oldActive;if(oldCommit===undefined)delete process.env.HELMUT_PRODUCTION_COMMIT;else process.env.HELMUT_PRODUCTION_COMMIT=oldCommit;if(oldCache)require.cache[storagePath]=oldCache;else delete require.cache[storagePath];}
+ }finally{C.validate=realValidate;C.admission=realAdmission;K.aktiv=oldActive;if(oldCommit===undefined)delete process.env.HELMUT_PRODUCTION_COMMIT;else process.env.HELMUT_PRODUCTION_COMMIT=oldCommit;if(oldCache)require.cache[storagePath]=oldCache;else delete require.cache[storagePath];}
 }
 async function main(){
  await test('expired intact prior U passes real predicate and real productionStart claim',async()=>{const f=scenario();assert.equal(J.expiredUnclaimedPredecessor(f.original,f.old.command,f.next.command),true);const r=await startFixture();assert.equal(r.claims,1);assert.equal(r.oldReads,1);assert.deepEqual(r.claimed[J.KEY].operations[r.f.original.operationId],r.f.original);assert.equal(r.claimed[J.KEY].operations[r.f.next.command.slot.plan.operationId].state,'running');assert.equal(Object.keys(r.claimed[K.KEY][new Date().toISOString().slice(0,10)].calls).length,0);});
@@ -78,6 +86,9 @@ async function main(){
  for(const[name,change]of unsafe)await test('frozen '+name+' rejected',async()=>{const f=scenario(),j=clone(f.original);change(j);assert.equal(J.expiredUnclaimedPredecessor(j,f.old.command,f.next.command),false);});
  await test('original slot consumption and unexpired plan reject',async()=>{const f=scenario(),c=clone(f.old.command);c.slot.consumed.fake={};assert.equal(J.expiredUnclaimedPredecessor(f.original,c,f.next.command),false);const fresh=dated(fixture(),'synthetik500-fixture-old-unclaimed','nachlauf500-'+Date.now(),new Date(Date.now()-1000).toISOString(),new Date(Date.now()+60000).toISOString());const j=clone(f.original);j.commandHash=sha(fresh.command);j.planHash=fresh.command.slot.planHash;j.units=clone(fresh.command.units);assert.equal(J.expiredUnclaimedPredecessor(j,fresh.command,f.next.command),false);});
  await test('claim or entry drift in CAS cannot consume new operation',async()=>{for(const field of ['claim','enter']){const r=await startFixture(c=>c.setDrift(a=>{const j=a[J.KEY].operations[c.f.original.operationId];if(field==='claim')j.claimId='fake-claim';else j.units[0].entered=true;}));assert.equal(r.claims,0);assert.equal(r.effects,0);}});
- console.log(JSON.stringify({targetedChecks:passed,production:false,network:false,providerCalls:0,profilesActivated:false}));
+ await test('malformed or invalid successor cannot bypass real command validation',()=>{const f=scenario();for(const args of [[],[null,f.old.command,f.next.command],[f.original,null,f.next.command],[f.original,f.old.command,null]])assert.equal(J.expiredUnclaimedPredecessor(...args),false);const invalid=clone(f.next.command);invalid.mode='D-R-500';assert.equal(J.expiredUnclaimedPredecessor(f.original,f.old.command,invalid),false);});
+ await test('admitted DR transport boundary accepts historical frozen U only once before first entry',async()=>{const r=await startFixture(c=>c.setDRBoundary());assert.equal(r.claims,1);assert.deepEqual(r.claimed[J.KEY].operations[r.f.original.operationId],r.f.original);assert.equal(r.claimed[J.KEY].operations[r.f.next.command.slot.plan.operationId].units.length,500);assert.equal(r.effects,1);});
+ await test('admitted DR transport still rejects prior entered and unknown state before claim',async()=>{for(const kind of ['entered','unknown']){const r=await startFixture(c=>{c.setDRBoundary();c.setDrift(a=>{const j=a[J.KEY].operations[c.f.original.operationId];if(kind==='entered')j.units[0].entered=true;else j.state='unknown';});});assert.equal(r.claims,0);assert.equal(r.effects,0);}});
+ console.log(JSON.stringify({targetedChecks:passed,production:false,network:false,providerCalls:0,profilesActivated:false,DRTransportAdmissionIsMocked:true,actualFullDRSchemaOrNativeAdmissionProven:false}));
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});
