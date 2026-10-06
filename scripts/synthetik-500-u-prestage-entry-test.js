@@ -43,7 +43,7 @@ async function call(options = {}) {
   const module = { exports: {} };
   const dependencies = { "./synthetik-500-production-command": testC,
     "./provider-runtime-attestation": { verifyOperationBearer: (authorization, nonce, ms, expected) => {
-      assert.equal(expected.expiresAtUTC, "2026-10-06T06:00:00.000Z");
+      assert.equal(expected.expiresAtUTC, "2026-10-06T12:00:00.000Z");
       return R.verifyOperationBearer(authorization, nonce, ms, { ...expected,
         bearerSha256: crypto.createHash("sha256").update(BEARER).digest("hex") });
     } }, "./storage": storage, "./synthetik-500-production-adapter": adapter };
@@ -52,7 +52,7 @@ async function call(options = {}) {
   const request = new EventEmitter(); request.pause = () => {};
   request.method = options.method || "POST";
   request.headers = { authorization: "Bearer " + BEARER, "content-type": "application/json",
-    "x-helmut-root-nonce": "f107ed2f-60b2-4fa9-83d4-52f45d9dedd2", "x-helmut-root-admitted-at": AT,
+    "x-helmut-root-nonce": "ac5e25b2-fb9d-4f90-a8fe-b412eb11b677", "x-helmut-root-admitted-at": AT,
     "x-helmut-root-deadline-at": END, "x-helmut-production-commit": SHA, "x-helmut-deployment-host": HOST,
     ...options.headers };
   const response = { code: null, writeHead(code) { this.code = code; }, end(text) { this.text = text; this.writableEnded = true; } };
@@ -77,7 +77,7 @@ async function call(options = {}) {
     { headers: { authorization: "bad" } }, { headers: { "content-type": "text/plain" } },
     { headers: { "x-helmut-production-commit": "c".repeat(40) } }, { headers: { "x-helmut-deployment-host": "other.vercel.app" } },
     { headers: { "x-helmut-root-deadline-at": "2026-10-06T03:19:00.000Z" } },
-    { env: { VERCEL_ENV: "preview" } }, { time: "2026-10-06T06:00:00.000Z" },
+    { env: { VERCEL_ENV: "preview" } }, { time: "2026-10-06T12:00:00.000Z" },
     { headers: { "content-length": "1025" } }, { rawBody: "{" }, { rawBody: "x".repeat(1025) },
     { body: { ...selector, command: {} } }, { streamError: true }
   ]) { const r = await call(bad); assert.notEqual(r.code, 200); assert.equal(r.loads, 0); assert.equal(r.calls, 0); } groups++;
