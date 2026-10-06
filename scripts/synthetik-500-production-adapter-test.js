@@ -18,7 +18,11 @@ global.fetch = noNet;
 require("node:https").request = noNet;
 require("node:http").request = noNet;
 let passed = 0;
-async function test(name, f) { await f(); passed++; console.log("PASS " + name); }
+const orderV4Only = process.argv.includes("--order-v4");
+async function test(name, f) {
+  if (orderV4Only && !name.startsWith("20USD order")) return;
+  await f(); passed++; console.log("PASS " + name);
+}
 function fixture(phase = "U") {
   const descriptor = phase === "U" ? { phase: "U", vorgangId: "fixture-only", contractInputHash: "d".repeat(40),
     actualRequestHash: sha("fake-U-body"), model: "gpt-5-mini", maxOutputTokens: 3000, attemptLimit: 1 }
@@ -63,6 +67,48 @@ function setup() {
   return f;
 }
 async function main() {
+  await test("20USD order installs an inert U-prestage with real financial validation; invalid pairing consumes nothing", async () => {
+    const storagePath = require.resolve("../lib/helmut/storage"), oldCache = require.cache[storagePath];
+    const oldLoad = C.loadPacket, oldActive = K.aktiv, oldCommit = process.env.HELMUT_PRODUCTION_COMMIT;
+    const time = new Date(), start = new Date(time.getTime() - 1000).toISOString(), end = new Date(time.getTime() + 3600000).toISOString();
+    try {
+      K.aktiv = () => true; process.env.HELMUT_PRODUCTION_COMMIT = COMMIT;
+      for (const version of [4, 3]) {
+        const f = fixture();
+        f.auth[K.AUFTRAG_KEY] = { version, id: "fake-order", abTag: time.toISOString().slice(0, 10), limit: 20000000, externGebunden: 0 };
+        const day = time.toISOString().slice(0, 10);
+        f.auth[K.KEY] = { [day]: { version: K.VERSION, day, tarif: K.konfiguration({}).tarif,
+          limit: K.LIMIT_MICRO_USD, spent: 0, baseline: 0, manualCalls: 0, manualUntil: null, calls: {}, frozen: null } };
+        Object.assign(f.command.slot.plan, { startsAtUTC: start, endsAtUTC: end });
+        Object.assign(f.command.slot.plan.routeContract.management, { validFromUTC: start, validUntilUTC: end });
+        f.command.slot.planHash = sha(f.command.slot.plan);
+        Object.assign(f.record, { commandHash: sha(f.command), planHash: f.command.slot.planHash,
+          admittedAtUTC: start, expiresAtUTC: end, controlHash: C.controlHash(f.auth), booksHash: C.booksHash(f.auth) });
+        let auth = clone(f.auth), staged = 0;
+        C.loadPacket = () => ({ command: f.command, admission: f.record });
+        require.cache[storagePath] = { id: storagePath, filename: storagePath, loaded: true, exports: {
+          synthetik500ProductionBackend() {}, leseLlmTageszaehler: async () => ({ ok: true, used: 0 }),
+          stageSynthetik500ProductionCommand: async () => { staged++; },
+          mutateAuthStore: async fn => { const next = clone(auth), result = await fn(next); auth = next; return result; }
+        } };
+        if (version === 4) {
+          const result = await Adapter.install({}, {});
+          assert.equal(result.installed, true); assert.equal(result.started, false);
+          assert.equal(K.auftragsStand(auth, day).limitMicroUsd, 20000000);
+          assert.deepEqual(auth[K.KEY], f.auth[K.KEY], "Installation preserves the existing book and creates no money ticket");
+          assert.equal(J.current(auth).state, "installed");
+        } else {
+          await assert.rejects(Adapter.install({}, {}), /test-usd-auftrag-unlesbar/);
+          assert.deepEqual(auth, f.auth, "Invalid pairing does not install a plan or consume a position");
+        }
+        assert.equal(staged, 1);
+      }
+    } finally {
+      if (oldCache) require.cache[storagePath] = oldCache; else delete require.cache[storagePath];
+      C.loadPacket = oldLoad; K.aktiv = oldActive;
+      if (oldCommit === undefined) delete process.env.HELMUT_PRODUCTION_COMMIT; else process.env.HELMUT_PRODUCTION_COMMIT = oldCommit;
+    }
+  });
   await test("closed production selector refuses booleans/functions before storage", async () => {
     await assert.rejects(Adapter.productionStart({ go: true }), /closed-selector-only/);
     await assert.rejects(Adapter.productionStart({ operationId: OP, commandHash: sha("x"), dispatch: noNet }), /closed-selector-only/);
