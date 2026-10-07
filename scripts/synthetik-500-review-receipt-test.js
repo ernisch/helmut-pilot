@@ -307,6 +307,24 @@ async function main() {
       });
     }
   });
+  await test("Direkter INSERT/readback-Vertrag oeffnet reale D/R3000+6000 mit gebundenem Inhalt und Kosten", async () => {
+    for (const tokens of [3000, 6000]) {
+      const h = fixture({ routed: true, tokens });
+      h.contract.version = require("../lib/helmut/synthetik-500-direct-d-store").VERSION;
+      await withFixture(h, async () => {
+        const result = await ai.generateLageBriefing(SOURCES, PROFILE, { ...h.meta, costAdmission: h.admission,
+          costInputVersionHash: INPUT, pruefaufwandNachweis: tokens === 6000, beforeReview: async () => {},
+          onDraft: raw => D.speichere({ userId: OWNER, runId: RUN, phase: "entwurf", antwort: raw, quellen: SOURCES, profile: PROFILE }) });
+        assert.equal(result.paragraphs.length, 2); assert.equal(h.bodies.length, 2);
+        assert.equal(h.bodies[1], reviewBody(h));
+        const auth = h.read(), slot = auth[A.KEY];
+        assert.equal(slot.reviewBindings[h.r.id].storedD.storageContractHash, h.contract.contractHash);
+        assert(slot.draftCompletions[h.d.id]); assert.equal(Object.keys(slot.consumed).length, 2);
+        assert(Object.values(auth[K.KEY][h.day].calls).every(x => x.status === "abgerechnet"));
+        assert.equal(h.rows.size, 1); assert.equal(h.history.size, 1);
+      });
+    }
+  });
   await test("Freier onDraft-Callback attestiert kein D; fixe6000-Regel kann keine Qualitaet absenken", async () => {
     const h = fixture({ generation: true }); await withFixture(h, async () => {
       await assert.rejects(ai.generateLageBriefing(SOURCES, PROFILE, { ...h.meta, costAdmission: h.admission,
