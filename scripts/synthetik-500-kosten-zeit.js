@@ -80,8 +80,91 @@ function analyze({ observation = HISTORICAL_OBSERVATION, understandingCalls = nu
       "Fresh complete financial witness", "Private reserve identity and overlap proof", "Common approved 7/20 USD scope in controls and proof validator"]
   };
 }
-if (require.main === module) {
-  if (process.argv.length !== 2) { console.error("synthetik500-kostenzeit-no-arguments"); process.exitCode = 1; }
-  else console.log(JSON.stringify(analyze(), null, 2));
+const SHEET_VERSION = "helmut-synthetik500-offline-kostenblatt/1";
+function stats(xs) {
+  if (!xs.length) return { count: 0, min: null, median: null, max: null, sum: 0 };
+  const s = [...xs].sort((a, b) => a - b), n = s.length;
+  return { count: n, min: s[0], median: n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2,
+    max: s[n - 1], sum: sum(...s) };
 }
-module.exports = { HISTORICAL_OBSERVATION, analyze };
+// An inert worksheet, never an admission. Token estimates do not become usage.
+function worksheet(s) {
+  if (!s || s.version !== SHEET_VERSION) fail("sheet-version");
+  const base = analyze({ observation: s.observation, understandingCalls: s.understandingCalls,
+    otherPaidCalls: s.otherPaidCalls, reviewMaxOutputTokens: s.reviewMaxOutputTokens });
+  const U = base.calls.U, total = base.calls.totalCalls;
+  let tokens = null;
+  if (s.tokenRows !== null) {
+    if (total === null || !Array.isArray(s.tokenRows) || s.tokenRows.length !== total) fail("sheet-cardinality");
+    const keys = new Set(), rows = s.tokenRows.map((r, i) => {
+      const phase = i < U ? "U" : (i - U) % 2 === 0 ? "D" : "R";
+      if (!r || r.phase !== phase || typeof r.positionKey !== "string" || !r.positionKey.trim()
+        || r.positionKey.length > 200 || keys.has(r.positionKey)) fail("sheet-order-or-duplicate");
+      keys.add(r.positionKey);
+      const cap = phase === "R" ? s.reviewMaxOutputTokens : 3000;
+      for (const key of ["expectedInputTokens", "expectedOutputTokens", "upperInputTokens"]) integer(r[key]);
+      if (r.upperInputTokens > 400000 || r.expectedInputTokens > r.upperInputTokens
+        || r.expectedOutputTokens > cap) fail("sheet-token-bound");
+      if (r.inputBytes !== null) integer(r.inputBytes);
+      return { phase, inputBytes: r.inputBytes, expectedInputTokens: r.expectedInputTokens,
+        expectedOutputTokens: r.expectedOutputTokens, upperInputTokens: r.upperInputTokens,
+        expectedCost: integer(K.tokenKosten(r.expectedInputTokens, r.expectedOutputTokens)),
+        upperCost: integer(K.tokenKosten(r.upperInputTokens, cap)),
+        reserve: Math.round(K.reservierungHoeheUsd(cap) * 1e6) };
+    });
+    let prefix = 0, required = 0;
+    for (const row of rows) {
+      required = Math.max(required, sum(prefix, row.reserve));
+      prefix = sum(prefix, row.upperCost);
+    }
+    tokens = { expectedCostMicroUsd: sum(...rows.map(r => r.expectedCost)),
+      conditionalCostUpperBoundMicroUsd: prefix,
+      requiredIncrementalHeadroomForEveryReserveMicroUsd: Math.max(required, prefix),
+      inputBytes: rows.every(r => r.inputBytes !== null) ? stats(rows.map(r => r.inputBytes)) : null,
+      expectedInputTokens: stats(rows.map(r => r.expectedInputTokens)),
+      expectedOutputTokens: stats(rows.map(r => r.expectedOutputTokens)),
+      upperInputTokens: stats(rows.map(r => r.upperInputTokens)),
+      byPhase: Object.fromEntries(["U", "D", "R"].map(phase => {
+        const xs = rows.filter(r => r.phase === phase);
+        return [phase, { calls: xs.length, expectedCostMicroUsd: sum(...xs.map(r => r.expectedCost)),
+          conditionalCostUpperBoundMicroUsd: sum(...xs.map(r => r.upperCost)) }];
+      })), actualUsageProven: false, upperBoundRequiresAcceptedInputAndTariffProof: true };
+  }
+  let counter = null;
+  if (s.callCounter !== null) {
+    const c = s.callCounter;
+    if (!c || c.dailyLimit === 0) fail("sheet-counter");
+    for (const k of ["dailyLimit", "used", "understandingReserve", "sharedReserve"]) integer(c[k]);
+    const drMax = Math.max(0, c.dailyLimit - c.understandingReserve);
+    const uMax = Math.max(Math.min(c.dailyLimit, c.understandingReserve), c.dailyLimit - c.sharedReserve);
+    counter = { providedValuesAreNotProductionProof: true, assumesAllNewUBeforeDRInSameUtcDay: true,
+      drEffectiveMax: drMax, understandingEffectiveMax: uMax,
+      requiredDailyLimitIgnoringOtherTraffic: U === null ? null : Math.max(sum(c.used, U, 1000, c.understandingReserve),
+        U === 0 ? 0 : sum(c.used, U) <= c.understandingReserve ? sum(c.used, U) : sum(c.used, U, c.sharedReserve)),
+      countFits: U === null ? null : sum(c.used, U, 1000) <= drMax && (U === 0 || sum(c.used, U) <= uMax) };
+  }
+  const required = tokens?.requiredIncrementalHeadroomForEveryReserveMicroUsd ?? null;
+  return { version: SHEET_VERSION, mode: "inert-unapproved-worksheet", budgetsChanged: false,
+    executionReady: false, productionReady: false, blocker3Complete: false, base, tokens, counter,
+    affordability: { reserveAndUpperCostFitExisting7: required === null ? null
+      : required <= Math.min(base.money.orderHeadroomAt7MicroUsd, base.money.conservativeDatedDayHeadroomMicroUsd),
+    reserveAndUpperCostFitProposed20: required === null ? null
+      : required <= Math.min(base.money.orderHeadroomAt20MicroUsd, base.money.conservativeDatedDayHeadroomMicroUsd),
+    proposed20IsApprovedFor500: false },
+    timeScenarios: total === null ? null : [5, 10, 15, 20].map(seconds => ({ secondsPerCallAssumption: seconds,
+      providerMsIgnoringControlStorageAndClosure: integer(total * seconds * 1000), measured: false })) };
+}
+if (require.main === module) {
+  try {
+    const args = process.argv.slice(2);
+    let r;
+    if (!args.length) r = analyze();
+    else if (args.length === 2 && args[0] === "--sheet") {
+      const bytes = require("node:fs").readFileSync(args[1]);
+      if (bytes.length > 16 * 1024 * 1024 || !Buffer.from(bytes.toString("utf8"), "utf8").equals(bytes)) fail("sheet-bytes");
+      r = worksheet(JSON.parse(bytes));
+    } else fail("arguments");
+    console.log(JSON.stringify(r, null, 2));
+  } catch (error) { console.error(error.message); process.exitCode = 1; }
+}
+module.exports = { HISTORICAL_OBSERVATION, SHEET_VERSION, analyze, worksheet };

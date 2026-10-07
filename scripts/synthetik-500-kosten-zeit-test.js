@@ -62,4 +62,89 @@ test("CI cost area includes this calculation and its regression", () => {
   const r = B.bereichsSuiten(["scripts/synthetik-500-kosten-zeit.js"], [suite], new Set());
   A.deepEqual(r.bereiche, ["500-nachweis"]); A.deepEqual(r.suiten, [suite]); A.equal(r.konservativ, false);
 });
-console.log(`synthetik-500-kosten-zeit: ${passed}/${passed} offline groups; no Production acceptance.`);
+const sheet = (U = null) => ({ version: C.SHEET_VERSION, observation: { ...C.HISTORICAL_OBSERVATION },
+  understandingCalls: U, otherPaidCalls: 0, reviewMaxOutputTokens: 3000, tokenRows: null, callCounter: null });
+const tokenRows = () => Array.from({ length: 1000 }, (_, i) => ({ phase: i % 2 ? "R" : "D",
+  positionKey: "offline-position-" + i, inputBytes: 120, expectedInputTokens: 1001,
+  expectedOutputTokens: 100, upperInputTokens: 1001 }));
+test("worksheet preserves unknowns and never converts scenarios into approval", () => {
+  const s = sheet(), before = JSON.stringify(s), r = C.worksheet(s);
+  A.equal(r.tokens, null); A.equal(r.counter, null); A.equal(r.timeScenarios, null);
+  A.equal(r.affordability.reserveAndUpperCostFitProposed20, null);
+  for (const k of ["budgetsChanged", "executionReady", "productionReady", "blocker3Complete"]) A.equal(r[k], false);
+  A.equal(JSON.stringify(s), before);
+});
+test("per-call rounding, conditional maximum and next reserve differ from estimates", () => {
+  const s = { ...sheet(0), tokenRows: tokenRows() }, r = C.worksheet(s), t = r.tokens;
+  A.equal(t.expectedCostMicroUsd, 901000); A.equal(t.conditionalCostUpperBoundMicroUsd, 12501000);
+  A.equal(t.requiredIncrementalHeadroomForEveryReserveMicroUsd, 12700499);
+  A.equal(t.expectedInputTokens.sum, 1001000); A.equal(t.expectedInputTokens.median, 1001);
+  A.equal(t.byPhase.D.calls, 500); A.equal(t.byPhase.R.calls, 500);
+  A.equal(r.affordability.reserveAndUpperCostFitProposed20, false); // day6 still binds
+  A.equal(t.actualUsageProven, false); A.equal(r.executionReady, false);
+});
+test("full existing output caps already exceed day6 even at zero input", () => {
+  const rows = tokenRows().map(r => ({ ...r, expectedInputTokens: 0, upperInputTokens: 0 }));
+  A.equal(C.worksheet({ ...sheet(0), tokenRows: rows }).tokens.conditionalCostUpperBoundMicroUsd, 12000000);
+  A.equal(C.worksheet({ ...sheet(0), reviewMaxOutputTokens: 6000, tokenRows: rows })
+    .tokens.conditionalCostUpperBoundMicroUsd, 18000000);
+});
+test("missing, duplicate and out-of-bound token positions fail without partial whole budget", () => {
+  const s = { ...sheet(0), tokenRows: tokenRows() };
+  for (const change of [rows => rows.pop(), rows => rows[1].positionKey = rows[0].positionKey,
+    rows => rows[0].phase = "R", rows => rows[0].expectedOutputTokens = 3001,
+    rows => rows[0].upperInputTokens = 400001]) {
+    const rows = structuredClone(s.tokenRows); change(rows);
+    A.throws(() => C.worksheet({ ...s, tokenRows: rows }), /synthetik500-kostenzeit-/);
+  }
+  A.throws(() => C.worksheet({ ...s, otherPaidCalls: 1 }), /cardinality/);
+});
+test("noU phase and protectedU floor do not invent a higher required raw limit", () => {
+  const c = { dailyLimit: 4000, used: 900, understandingReserve: 702, sharedReserve: 10000 };
+  A.equal(C.worksheet({ ...sheet(0), callCounter: c }).counter.countFits, true);
+  const r = C.worksheet({ ...sheet(48), callCounter: { ...c, used: 0 } });
+  A.equal(r.counter.countFits, true); A.equal(r.counter.requiredDailyLimitIgnoringOtherTraffic, 1750);
+});
+test("actual20 start reader and actual7 end guard accept different scopes", () => {
+  const K = require("../lib/helmut/testkosten-budget"), N = require("../lib/helmut/synthetik-500-nachweis");
+  const day = "2026-10-07", auth = { llmUsage: [], [K.KEY]: { [day]: { version: K.VERSION, day,
+    tarif: K.konfiguration().tarif, limit: K.LIMIT_MICRO_USD, spent: 0, baseline: 0,
+    baselineCalls: 0, manualCalls: 0, manualUntil: null, calls: {}, frozen: null } },
+  [K.AUFTRAG_KEY]: { version: 4, id: "offline-order", abTag: day, limit: 20000000, externGebunden: 6809364 } };
+  A.equal(K.pruefeStart(auth, day, { ok: true, used: 0 }).startklar, true);
+  const plan = { startsAt: day + "T09:00:00.000Z", endsAt: day + "T10:00:00.000Z", sollpositionen: [], paketBindung: {} };
+  const costErrors = (spent, reserved = 0, daySpent = 0) => N.belegePruefen(plan, { kosten: {
+    gelesenAm: day + "T10:01:00.000Z", utcTage: [{ tag: day, verbrauchtUsd: daySpent, reserviertUsd: 0 }],
+    auftragVerbrauchtUsd: spent, auftragReserviertUsd: reserved, primaerbeleg: "offline-only-cost-projection" } })
+    .filter(x => x === "kostenbeleg-fehlt-oder-grenze-verletzt");
+  A.deepEqual(costErrors(7), []); A.equal(costErrors(7.000001).length, 1);
+  A.equal(costErrors(6.809364, 0.636).length, 1); A.equal(costErrors(6, 0, 6.000001).length, 1);
+  // Only the cost predicate was tested: these incomplete fixtures never prove a500 run.
+});
+async function capacityCases() {
+  const S = require("../lib/helmut/storage"), vars = ["HELMUT_MAX_LLM_CALLS_PER_DAY", "HELMUT_LLM_RESERVE_UNDERSTANDING",
+    "HELMUT_TESTLAUF_VORRANG_REAL", "HELMUT_TENANT_LLM_CAP", "HELMUT_LLM_BUDGET_FAIL_CLOSED"];
+  const saved = Object.fromEntries(vars.map(k => [k, process.env[k]]));
+  try {
+    delete process.env.HELMUT_MAX_LLM_CALLS_PER_DAY;
+    test("code fallback50 is not a measured current production limit", () => A.equal(S.llmDailyCallLimit(), 50));
+    Object.assign(process.env, { HELMUT_MAX_LLM_CALLS_PER_DAY: "2416", HELMUT_LLM_RESERVE_UNDERSTANDING: "702",
+      HELMUT_TESTLAUF_VORRANG_REAL: "200", HELMUT_TENANT_LLM_CAP: "0", HELMUT_LLM_BUDGET_FAIL_CLOSED: "1" });
+    const params = [], rpc = async p => { params.push(p); return { allowed: true, used: 1 }; };
+    await S.reserveLlmCall({ politicianId: "test-kohorte-synthetik-bt-001", callType: "lageBriefing", deps: { rpc } });
+    await S.reserveLlmCall({ callType: "understanding", deps: { rpc } });
+    test("actual reservation path uses1714 forDR and2216 forU in historical scenario", () => {
+      A.deepEqual(params.map(p => [p.p_scope, p.p_max]), [["global", 1714], ["global", 2216]]);
+      const r = C.worksheet({ ...sheet(48), callCounter: { dailyLimit: 2416, used: 0, understandingReserve: 702, sharedReserve: 200 } });
+      A.equal(r.counter.requiredDailyLimitIgnoringOtherTraffic, 1750); A.equal(r.counter.countFits, true);
+      A.equal(r.counter.providedValuesAreNotProductionProof, true); A.equal(r.executionReady, false);
+    });
+    test("infrastructure failclosed flag is separate from missing-value fallback", () => {
+      A.equal(S.llmBudgetFailResult(2416).allowed, false);
+      process.env.HELMUT_LLM_BUDGET_FAIL_CLOSED = "0";
+      A.equal(S.llmBudgetFailResult(2416).allowed, true);
+    });
+  } finally { for (const k of vars) saved[k] === undefined ? delete process.env[k] : process.env[k] = saved[k]; }
+  console.log(`synthetik-500-kosten-zeit: ${passed}/${passed} offline groups; no Production acceptance.`);
+}
+capacityCases().catch(error => { console.error(error); process.exitCode = 1; });
