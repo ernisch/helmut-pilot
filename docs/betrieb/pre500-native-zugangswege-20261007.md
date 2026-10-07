@@ -1,8 +1,9 @@
 # Unterstuetzte native Controllerkanaele vor Native-D
 
 Stand07.10.2026, Fortsetzung nach PR839/main`05f599e7`.
-Neue begrenzte RR/RO- und Management-API-Belege; keine Production-Writes,
-Modellaufrufe, Aktivierung,500er Tests oder STOP-Vollkostenexporte.
+Neue begrenzte RR/RO- und Management-API-Belege sowie genau ein neu
+angeforderter Proxy-Connect-Beleg; keine Production-Writes,
+Helmut-Production-Modellaufrufe, Aktivierung,500er Tests oder STOP-Vollkostenexporte.
 Die bedingungslose Installationsverweigerung bleibt erhalten.
 
 ## Frischer Bestand und normale Rechte
@@ -41,16 +42,39 @@ zurueck und garantiert keine transaktionsuebergreifende Sitzungskontinuitaet.
 Der aktuelle Projekt-Poolerread liefert aws-0-eu-west-1.pooler.supabase.com,
 6543,postgres,transaction. Dies ist kein Nachweis einer Controllerverbindung
 zu einer anderen Datenbank; auch der Sessionmodus waere dafuer separat zu pruefen.
-Die Projekt-Netzbeschraenkung erlaubt derzeit IPv4/IPv6-Netze; das hebt die
-Cloud-Ausgangspolitik nicht auf.
+Die Projekt-Netzbeschraenkung erlaubt derzeit IPv4/IPv6-Netze; das stellt die
+Verfuegbarkeit des lokalen Cloud-TCP-Proxys nicht her.
 
 Die Cloud-Policyversion1 enthaelt tcp_network_access mit leeren domains und
 ip_ranges sowie vpn_configured=false. Native Zugangsdaten sind in den
 beobachteten ueblichen DB-Variablen nicht gebunden. Vorhanden sind
-SUPABASE_ACCESS_TOKEN und SUPABASE_PROJECT_REF. Der Runtime-Status meldet
-deren Readiness unknown; erfolgreiche HTTPS-Aufrufe belegen nur deren
-tatsaechlich beobachteten Management-API-Zugang. Kein TCP-Bypass,
+SUPABASE_ACCESS_TOKEN und SUPABASE_PROJECT_REF. Der fruehere Runtime-Status
+meldete Readiness unknown; die akzeptierte Fortsetzungsaufnahme mit
+Revision4/current=true belegt spaeter bereite HTTP-API-Bindings.
+Dies und erfolgreiche HTTPS-Aufrufe belegen keinen nativen DB-Zugang. Kein TCP-Bypass,
 keine Suche nach unbereitgestellten Geheimnissen und kein Passwortreset.
+
+## Neuer Transportbefund am07.10.01:04UTC: lokaler TCP-Proxy vor dem Ziel
+
+Genau ein neu und ausdruecklich angeforderter nativer Pooler-Versuch am
+07.10.2026 01:04:34.327096UTC zu aws-0-eu-west-1.pooler.supabase.com:5432 fuer
+die Datenbank postgres und den Nutzer postgres.ddckuvvpcytqbyfmbvie endete vor
+jedem Supabase-Kontakt. Es lief nur genau ein Socket-Connect zum
+Cloud-TCP-Proxy `proxy:8088`; dieser wurde mit ConnectionRefused (Errno111)
+abgewiesen. Belegt ist die Reihenfolge ohne CONNECT zu Supabase, ohne Login und
+ohne SQL (failureStage cloud-proxy-connect, connectionAttempts gleich
+maximumConnectionAttempts gleich1, connectRequestSent/supabaseReached/
+authAttempted/sqlSent false, elapsed0.002s). Kein weiterer Host-, Port- oder
+Proxyversuch wurde unternommen. Die Originalantwort mit SHA256
+aefff8ffacaad740ed9a846047c03cc9681eb7711cf84821853f5da4abf3858e bleibt privat
+ausserhalb Git. Der Betreiber bestaetigt Internet aktiviert, Policy all
+unrestricted und kein TCP-Portfeld; die Umgebung wurde nicht geaendert. Damit
+liegt die belegte Transportgrenze nicht bei Supabase oder der Datenbank,
+sondern am lokalen TCP-Proxy dieser Cloud-Laufzeit: der Verbindungsversuch
+erreicht das Pooler-Ziel nicht einmal. Eine Ziel-Policy-Ablehnung ist nicht
+belegt. Dieser Test liest keinen Profil-,
+Journal- oder Callerstand und deutet die datierten Primaerbefunde00:36/00:31UTC
+nicht um; diese bleiben alte, separate DB-Beobachtungen.
 
 ## Neuer unterstuetzter Tokenweg und seine Projektgrenze
 
@@ -98,16 +122,31 @@ den tatsaechlichen Caller noch den Umgang mit einem gelieferten COMMIT.
 rollback bleibt ein SQL-String, kein dokumentierter Dry-run.
 Kein schreibender API-Versuch wurde als harmlose Callerdiagnose ausgefuehrt.
 
-Konkreter naechster Zugangsschritt ist ein unterstuetzter nativer Kanal mit
-sicher gebundener DB-Authentifizierung und gepruefter Cloud-TCP-Freigabe.
-Danach zuerst rein lesend andere Datenbank, tatsaechliche Rolle und getrennte
-dauerhafte Guard-/Recoveryverbindungen belegen. Diese Zugangsvoraussetzung
-erteilt keine Installationszulassung. Ein technisch belegter Ausschluss
-normaler Shared-Katalogwriter ueber template1/weitere Eintrittswege sowie
-relevanter bestehender und Worker-Sitzungen bleibt erforderlich.
-Eine neue Vertrauensgrenze braucht ausdrueckliche Betreiberentscheidung.
-Keine universelle SQL-Unmoeglichkeit oder logisch zwingenden globalen
-Sonderrechte behauptet; pg_maintain/privilegierte Kundensonderwege bleiben aus.
+Konkreter naechster Zugangsschritt ist keine weitere Cloud-Domain-/TCP-Freigabe,
+sondern der kuerzeste zu pruefende native Kandidat: das bereits existierende
+lokale Git-Projekt Helmut ausserhalb dieser Cloud. Die Projektmetadaten belegen
+keine nativen Secrets und keine bestehende native Verbindung; dieser Chat hat
+kein lokales Shellwerkzeug. Deshalb kein neuer Thread, kein Workflowdispatch,
+keine neue Ressource und kein Cloud-Tunnel. Der HTTP-API-Weg bleibt ein
+unterstuetzter RO-Pfad. Fuer Native-D bleiben anderer DB-Selector, dauerhafte
+drei Kanaele, tatsaechlicher Migrationscaller und Guard-Wirkung-Journal-Commit
+weiterhin NICHT belegt. Ein API-Migrations-POST mit Idempotency-Key oder
+rollback-SQL ist kein Dry-run- oder Atomaritaetsbeweis; keine API-Writeprobe.
+Ein anderer DB-Selector beim Sessionpooler wird nicht vorausgesetzt. Erster
+moeglicher Schritt: vorhandener kompatibler nativer Client UND vorhandene
+native Credentials, verify-full und die vorbereitete RO-Probe. Diese ist
+nicht ausgefuehrt; ein zugelassener Native-D-Client oder Installationsplan ist
+damit nicht belegt. Danach zuerst rein lesend andere Datenbank,
+tatsaechliche Rolle und getrennte dauerhafte Guard-/Recoveryverbindungen
+belegen. Diese Zugangsvoraussetzung erteilt keine Installationszulassung.
+Keine globale Codex-/Supabase-Unmoeglichkeit und keine notwendigen
+privilegierten Rechte behaupten. Ein technisch belegter Ausschluss normaler
+Sharedwriter, von template1/Eintrittswegen und relevanter bestehender Worker
+bleibt erforderlich. Eine geaenderte Vertrauensgrenze oder ein externer
+Production-Executor braucht ausdrueckliche konkrete Betreiberentscheidung.
+pg_maintain und privilegierte Kundensonderwege bleiben nach der uebermittelten
+Supabase-Supportgrenze ausgeschlossen.
+Keine Erneuerung des alten V2.
 
 Unveraenderte15s Statement/17s Transaktion/2s Lock; kein neuer Vollcapture,
 kein Commitment zu nativer Vollbestands-, Commit- oder OS-Gesamtfrist.
@@ -118,8 +157,11 @@ konkretes Paket, native Postimages und fingerprintgebundener Rueckweg bleiben
 separate nachgelagerte Tore. Keine Erneuerung des abgelaufenen V2-Pakets.
 
 20USD-Auftrag/6USD je UTC-Tag und alle Altreserven einschliesslich privater
-0.636USD ohne belegte Ueberschneidung bleiben erhalten. W/Resolver/Briefing-
-Eingaenge aller500, finanzierter Gesamtplan und lebender Endwaechter offen.
-Die historische968er Inventur ist kein pauschaler Startblocker oder
-Uploadauftrag; die Einzeldateiliste direkt im Chat wird gesondert berichtet.
-Alle neuen Originalantworten und Quellpins bleiben privat ausserhalb Git.
+0.636USD ohne belegte Ueberschneidung bleiben erhalten;0 neue
+Production-Writes, Helmut-Modellaufrufe, Aktivierung oder500er Test.
+Entwicklungs-DeepSeek-Aufrufe sind davon separat und werden nicht als0
+Anbieterkosten behauptet. W/Resolver/Briefing-Eingaenge aller500, finanzierter
+Gesamtplan und lebender Endwaechter offen. Die historische968er Inventur ist
+kein pauschaler Startblocker oder Uploadauftrag; die Einzeldateiliste direkt im
+Chat wird gesondert berichtet. Alle neuen Originalantworten und Quellpins
+bleiben privat ausserhalb Git.
