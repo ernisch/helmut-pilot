@@ -56,8 +56,17 @@ try {
   A.throws(() => X.teile(source, dest, context));
   F.unlinkSync(P.join(source, "0500.json"));
   A.throws(() => X.teile(source, P.join(temp, "invalid"), context)); A(!F.existsSync(P.join(temp, "invalid")));
+  F.unlinkSync(P.join(source, "manifest.json"));
+  const partial = P.join(temp, "partial");
+  A.equal(X.teile(source, partial, context, { partial: true }), 1);
+  for (const name of F.readdirSync(source)) A.equal(sha(F.readFileSync(P.join(partial, "01", name))), sha(F.readFileSync(P.join(source, name))));
+  A(!F.existsSync(P.join(partial, "01", "manifest.json"))); A(!F.existsSync(P.join(partial, "01", "0500.json")));
+  F.writeFileSync(P.join(source, "plaintext.txt"), "DO_NOT_UPLOAD");
+  A.throws(() => X.teile(source, P.join(temp, "foreign-partial"), context, { partial: true }));
+  A(!F.existsSync(P.join(temp, "foreign-partial"))); F.unlinkSync(P.join(source, "plaintext.txt"));
   F.symlinkSync(P.join(source, "0001.json"), P.join(source, "0500.json"));
   A.throws(() => X.teile(source, P.join(temp, "symlink"), context)); A(!F.existsSync(P.join(temp, "symlink")));
+  A.throws(() => X.teile(source, P.join(temp, "symlink-partial"), context, { partial: true })); A(!F.existsSync(P.join(temp, "symlink-partial")));
 } finally { F.rmSync(temp, { recursive: true, force: true }); }
 // Recovery darf keine Productionidentitaet, Cronsecret oder Provider verwenden.
 const recovery = F.readFileSync(P.join(__dirname, "../.github/workflows/blocker2-cipher-recovery.yml"), "utf8");

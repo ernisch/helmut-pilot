@@ -1,0 +1,5 @@
+name: "Blocker 2: geschuetzter Nurleser mit Cipher-Zwischenstaenden"
+description: "Nur die geschlossenen 500 inaktiven Synthetikprofile; keine Writes, Modelle oder Funktionspruefung"
+runs:
+  using: node24
+  main: ../../../scripts/github-blocker2-readonly500.js

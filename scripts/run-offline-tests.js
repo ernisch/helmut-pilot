@@ -308,6 +308,7 @@ const STANDARD = new Set([
   "testnachweis-ergebnisse-test.js",        // Ergebniswahrheit des 500er Nachweises
   "bereichsabnahme-500-test.js",            // lokaler 500er Bereichsabnahme-Aggregator (fail-closed: 500 Profile/1500 Paare)
   "github-blocker2-readonly500-test.js",     // B2-Nurleser mit verschluesselten 500er Betreiberbelegen
+  "github-blocker2-durable-cipher-test.js",  // Cipher-Zwischenstaende und reale Abbruchsignale ohne Production
   "blocker2-cipher-parts-test.js",           // Begrenzter Ciphertransport ohne Productionzugriff
   "briefing-pruefaufnahme-test.js",         // RO-Eingaben der inaktiven, geschlossenen synthetischen Kohorten
   "briefing-pruefaufnahme-500-test.js",     // Pruefaufnahme des 500er Briefingnachweises
