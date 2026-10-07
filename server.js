@@ -473,6 +473,10 @@ async function handleRequest(request, response) {
   // beim Session-Schutz (401) — das ist keine Lockerung fuer normale Nutzer.
   const adminBypass = hasAdminBypass(request, url);
 
+  if (url.pathname === "/api/ops/synthetik500-direkt") {
+    return require("./lib/helmut/synthetik-500-direct-entry").handleRequest(request, response, url, { jsonHeaders });
+  }
+
   // Ausschliesslich fuer den zuvor eng festgelegten Berlin-/Brandenburg-Nachweis:
   // kein generischer Profil-Operator, keine URL-Parameter fuer Mandate, standardmaessig
   // ausgeschaltet. Ohne gueltiges Bearer-Secret antwortet der Pfad absichtlich wie
