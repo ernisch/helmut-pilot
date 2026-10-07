@@ -56,12 +56,12 @@ nicht ausgeführt:
 ```sh
 node scripts/synthetik-500-direct.js prepare --input /tmp/500-input.json --out /tmp/500-command.json
 node scripts/synthetik-500-direct.js install --command /tmp/500-command.json --admission /tmp/500-admission.json --scharf
-node scripts/synthetik-500-direct.js start --command /tmp/500-command.json --out /tmp/500-start.json --scharf --vercel-curl
-node scripts/synthetik-500-direct.js next --command /tmp/500-command.json --out /tmp/500-next.json --scharf --vercel-curl
-node scripts/synthetik-500-direct.js status --command /tmp/500-command.json --out /tmp/500-status.json --vercel-curl
-node scripts/synthetik-500-direct.js stop --command /tmp/500-command.json --out /tmp/500-stop.json --scharf --vercel-curl
-node scripts/synthetik-500-direct.js export --command /tmp/500-command.json --index manifest --out /tmp/500-manifest.json --vercel-curl
-node scripts/synthetik-500-direct.js export --command /tmp/500-command.json --index 0 --out /tmp/500-position-000.json --vercel-curl
+node scripts/synthetik-500-direct.js start --command /tmp/500-command.json --out /tmp/500-start.json --scharf --vercel-oidc
+node scripts/synthetik-500-direct.js next --command /tmp/500-command.json --out /tmp/500-next.json --scharf --vercel-oidc
+node scripts/synthetik-500-direct.js status --command /tmp/500-command.json --out /tmp/500-status.json --vercel-oidc
+node scripts/synthetik-500-direct.js stop --command /tmp/500-command.json --out /tmp/500-stop.json --scharf --vercel-oidc
+node scripts/synthetik-500-direct.js export --command /tmp/500-command.json --index manifest --out /tmp/500-manifest.json --vercel-oidc
+node scripts/synthetik-500-direct.js export --command /tmp/500-command.json --index 0 --out /tmp/500-position-000.json --vercel-oidc
 ```
 
 `install` läuft mit dem vorhandenen Production-Storagezugang und passend
@@ -73,19 +73,25 @@ Ausweichroute. Die CLI setzt keine Production-Flags.
 
 Die tatsächlichen Vercel-Adressen sind SSO-geschützt: die reine GET-Healthprobe
 vom07.10. wird auf den Vercel-Login umgeleitet. Für diesen Bestand verwenden die
-Beispiele ausdrücklich `--vercel-curl`: installierte aktuelle Vercel-CLI und
-`curl`, bereits vorhandene Operator-Authentifizierung über `VERCEL_TOKEN`,
-zusätzlich der Helmut-Bearer. Der hier gelesene Zielkontext ist Projekt
-`prj_xbZ6QzTkr7YoxQI71lW59FT03IR3`, Team
-`team_bTAfzDHwD3mT03r1z7rh1TC3`; bei Bedarf bindet der lokale Operator
-`VERCEL_ORG_ID` dieses Team ausdrücklich als `--scope`. Die CLI verwendet die exakt gebundene volle URL,
-keinen Link-/Deploy-/Trace-Befehl. Helmut-Secret und Selector bleiben auf stdin,
-außerhalb argv und Dateien; DB-/Azurecredentials werden nicht an den Kindprozess
-weitergegeben. Gesamtfrist180s, curl170s, endliche Antwort, kein Redirect, Retry
-oder Rückfall auf einen anderen Transport. Vercel-Schutz wird nicht deaktiviert;
-kein neuer langlebiger Secretwert und keine Trusted-Sources-Regel wurden in
-diesem Auftrag angelegt. Ohne den expliziten Schalter bleibt der bestehende
-Node-HTTPS-Transport für bereits zugängliche Deployments.
+Beispiele ausdrücklich `--vercel-oidc`: ein bereits vorhandener kurzlebiger
+`VERCEL_OIDC_TOKEN`, zusätzlich der Helmut-Bearer. Der Token muss nach bereits
+bestehender Trusted-Sources-Regel für dieses Production-Ziel zugelassen sein;
+ein Development-Token besitzt diese Berechtigung nicht automatisch. Der reine
+API-Zugang `VERCEL_TOKEN` ersetzt diesen Deployment-Zugang nicht. Der hier
+gelesene Zielkontext ist Projekt `prj_xbZ6QzTkr7YoxQI71lW59FT03IR3`, Team
+`team_bTAfzDHwD3mT03r1z7rh1TC3`.
+
+Alternativ wählt `--vercel-bypass` ausdrücklich einen bereits vorhandenen
+`VERCEL_AUTOMATION_BYPASS_SECRET`. Beide Schalter schließen sich aus. Die CLI
+übergibt genau den gewählten bestehenden Wert als Vercel-Header im gleichen
+Node-HTTPS-POST an die exakt gebundene unveränderliche Deployment-URL. Kein
+Kindprozess, Tokenaufbau, Refresh, Trusted-Sources-Schreibzugriff oder Wechsel
+bei abgelehntem Zugang; kein Zugangswert in argv, Ausgabe oder Dateien. Frist
+180s und Antwortgrenze16 MiB gelten für den ganzen Request, ohne Redirect oder
+Retry. Ohne expliziten Schalter werden keine Vercel-Zugangsdaten gesendet.
+Dieser Auftrag legt weder Token noch Schutzregel an. Tatsächlich zugelassene
+Operatorcredentials sind hier noch nicht nachgewiesen; die Offlineprüfung
+benutzt ausschließlich fiktive Werte und Transportstubs.
 
 Die rein lesende Deploymentliste bestätigt weiterhin Production READY
 `dpl_E2kyvMw6bMetgeKxvTqeExKzmM8n`/Commit`0333fd20`; die neueren main-Stände
@@ -165,8 +171,9 @@ CLI-Dateipfad für normale/komprimierte private Eingaben und geschlossener Route
 Speicher-/Herkunftsdrift und Stop; bestehende Adapter-, Review-Receipt- und
 Kosten-/CAS-Gegenfälle; Generator-/Review-Suite15/15 (direkter Vertrag mit
 3000/6000 Tokens), kritische3/3 und EU-Alias; unveränderter Nachweisvalidator64/64 und reale
-Senderdeadline 11/11 mit ausschließlich lokalen Transportstubs. Die Direkt-Suite und die6/6 Transportgruppen (Kindprozessstubs plus echter
-curl-stdin-Parser ausschließlich am Loopback) sind im Standard-Offline-Lauf
-registriert. Pflicht-CI und unabhängige
+Senderdeadline 11/11 mit ausschließlich lokalen Transportstubs. Die Direkt-Suite und die5/5 Transportgruppen (bestehende OIDC-/Bypass-Header,
+fehlende/ungültige Credentials, Redirect/Antwortgrenzen/Frist, jeweils mit
+lokalen HTTPS-Stubs und ohne Kindprozess oder Tokenaufbau) sind im
+Standard-Offline-Lauf registriert. Pflicht-CI und unabhängige
 kritische Codeprüfung werden im PR belegt. Kein echter500er Lauf und keine
 Production-Funktionsabnahme aus diesen Offlinefixtures.

@@ -17,7 +17,9 @@ function args(argv) {
   C.requireThat(ACTIONS.includes(action), "direct-cli-action");
   for (let i = 0; i < rest.length; i++) {
     if (rest[i] === "--scharf") { C.requireThat(!a.sharp, "direct-cli-duplicate"); a.sharp = true; continue; }
-    if (rest[i] === "--vercel-curl") { C.requireThat(!a.vercelCurl, "direct-cli-duplicate"); a.vercelCurl = true; continue; }
+    if (["--vercel-oidc", "--vercel-bypass"].includes(rest[i])) {
+      C.requireThat(!a.vercelAuth, "direct-cli-duplicate"); a.vercelAuth = rest[i].slice("--vercel-".length); continue;
+    }
     const key = { "--input": "input", "--out": "out", "--command": "command", "--admission": "admission", "--index": "index" }[rest[i]];
     C.requireThat(key && !Object.hasOwn(a, key) && typeof rest[i + 1] === "string", "direct-cli-argument");
     const value = rest[++i];
@@ -28,8 +30,8 @@ function args(argv) {
   }
   const keys = action === "prepare" ? ["input", "out"] : action === "install" ? ["command", "admission"]
     : action === "export" ? ["command", "out", "index"] : ["command", "out"];
-  C.requireThat(!a.vercelCurl || !["prepare", "install"].includes(action), "direct-cli-remote-only");
-  C.requireThat(C.exact(a, ["action", "sharp", ...keys, ...(a.vercelCurl ? ["vercelCurl"] : [])]), "direct-cli-scope");
+  C.requireThat(!a.vercelAuth || !["prepare", "install"].includes(action), "direct-cli-remote-only");
+  C.requireThat(C.exact(a, ["action", "sharp", ...keys, ...(a.vercelAuth ? ["vercelAuth"] : [])]), "direct-cli-scope");
   C.requireThat(!["install", "start", "next", "stop"].includes(action) || a.sharp, "direct-cli-sharp-required");
   C.requireThat(!["prepare", "status", "export"].includes(action) || !a.sharp, "direct-cli-no-sharp-read");
   return a;
@@ -49,14 +51,15 @@ function prepare(input) {
       intentIds: [d.intentId, input.executorInputs.kostenSlot.plan.intents.find(x => x.phase === "R" && x.owner === d.profile.id)?.id] })) };
   C.validate(command); return command;
 }
-async function remote(command, action, index, { vercelCurl = false } = {}) {
+async function remote(command, action, index, { vercelAuth = null } = {}) {
   C.validate(command); C.requireThat(C.isDirect(command), "direct-cli-command");
   const r = command.slot.plan.routeContract.route, token = process.env.HELMUT_ADMIN_SECRET;
   C.requireThat(typeof token === "string" && token.length > 0, "direct-cli-admin-bearer-required");
   const body = JSON.stringify({ action, operationId: command.slot.plan.operationId, commandHash: P.hash(command),
     ...(action === "export" ? { index } : {}) });
   const url = "https://" + r.deploymentHost + require("../lib/helmut/synthetik-500-direct-entry").PATH;
-  const result = vercelCurl ? await require("./synthetik-500-direct-vercel").request(url, body, token) : await new Promise((resolve, reject) => {
+  const protection = vercelAuth === null ? {} : require("./synthetik-500-direct-vercel").headers(vercelAuth);
+  const result = await new Promise((resolve, reject) => {
     let finished = false, response, bytes = 0, chunks = [];
     const finish = (error, value) => {
       if (finished) return; finished = true; clearTimeout(timer);
@@ -64,7 +67,7 @@ async function remote(command, action, index, { vercelCurl = false } = {}) {
       else resolve(value);
     };
     const req = require("node:https").request(url,
-      { method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } }, res => {
+      { method: "POST", headers: { ...protection, Authorization: "Bearer " + token, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } }, res => {
         response = res;
         res.on("data", chunk => { if ((bytes += chunk.length) > 16 * 1024 * 1024) return finish(true); chunks.push(chunk); });
         res.once("error", () => finish(true)); res.once("aborted", () => finish(true));
@@ -90,7 +93,7 @@ async function main(argv) {
     const commandPin = pin(a.command), admissionPin = pin(a.admission);
     C.requireThat(C.isDirect(Codec.decode(JSON.parse(C.readPin(commandPin)))), "direct-cli-command");
     result = await require("../lib/helmut/synthetik-500-production-adapter").install(commandPin, admissionPin);
-  } else result = await remote(Codec.decode(lesePrivat(a.command)), a.action, a.index, { vercelCurl: a.vercelCurl === true });
+  } else result = await remote(Codec.decode(lesePrivat(a.command)), a.action, a.index, { vercelAuth: a.vercelAuth ?? null });
   if (a.out) schreibePrivat(a.out, JSON.stringify(result, null, 2) + "\n");
   console.log(JSON.stringify({ action: a.action, privateOutput: Boolean(a.out),
     prepared: a.action === "prepare", independentFinalAcceptance: false, profilesActivated: false }));
