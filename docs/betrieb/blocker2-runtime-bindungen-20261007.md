@@ -146,3 +146,73 @@ bei Blocker 3. Aktivierung und 500er Test bleiben ausserhalb dieses Auftrags.
 Die Originalsicherung, Vorbereitung und diese PR sind die reviewbaren Ergebnisse;
 die vollstaendige Blocker-2-Abnahme bleibt offen. Kein autonomer Merge oder
 Production-Rueckweg ist autorisiert.
+
+
+## Fortsetzung nach der exakt freigegebenen Siebenerkorrektur
+
+Die bisherigen Abschnitte dokumentieren die Vorbereitung vor PR850. Die Codeprobe
+ist seit dessen Deployment erfolgreich; neun feste Gegenproben und die unveraenderten
+Modulhashes wurden mit der tatsaechlichen Production-Identitaet gelesen. Der am
+07.10. gelesene READY-Stand `fcd7de564e9c6814a9a65ce5019f3f979bf81043`
+baut auf dem PR850-Merge `a0b3e817` auf; DIP-, Resolver- und Briefingleserdateien
+sind gegenueber diesem Merge bytegleich.
+
+Genau die sieben Datensaetze der expliziten Freigabe wurden mit der unveraenderten
+Transaktion SHA256 `6aafec149eadffd63bd1b780eaf972579d1cead882e3afd85c7e2262cd4dcd58`
+atomar korrigiert. Unmittelbare native Nachkontrollen und ein unabhaengiger Pro-High
+Pruefer bestaetigten die sieben Metadatenobjekte, alle uebrigen Zeilenfelder,
+31.131 unangetastete Quelldatensaetze und51 weitere Relationen. Die anderen36
+vorbereiteten DIP-Korrekturen wurden nicht angewendet. Die Datenfreigabe ist damit
+erfuellt; daraus entsteht keine weitere Schreib-, Modell- oder Mergefreigabe.
+
+Alle500 Profil-/Paketbindungen wurden auf die tatsaechlichen neuen Quellenstaende
+und48 Resolverkandidaten neu gebunden. Das ausdrueckliche Fenster16:57:55UTC
+enthaelt935 strukturell zulaessige Quellen aus989 Originalversionen. Bestehende
+Quellenpruefungen wurden weiterverwendet; alte Vorbereitungswerte gelten nicht als
+geschriebene SOURCE23-Versionen. Die erste fachliche Auswahl umfasst198 Kandidaten,
+ist vorlaeufig und hat keine Vollstaendigkeitsabnahme. Die Grenze von fuenf
+Themen je Profilgruppe ist keine notwendige Auswahlgrenze.
+
+Der neue native RO-Abgleich der gesamten989 Quellenkennungen fand82 verknuepfte
+Quellen, davon79 mit `understanding_status=complete` und nicht-pending KO. Alle72
+zugehoerigen KO60-Versionen wurden vollstaendig gelesen und gegen ihre zuvor
+erfassten nativen Hashes/xmin geprueft. Linkvorhandensein ist kein semantischer
+Identitaets-, notwendiger Auswahl- oder Briefingbeleg. Aus einem fehlenden Link
+folgt auch keine globale Abwesenheit eines verwandten Wissensobjekts. Alle500
+Profile bleiben einzeln erfasst; die notwendige Eingabeabnahme bleibt **0/500**.
+
+Neu notwendige Originaltextpruefungen belegen Bundesakteure bei der Drohnenerkennung
+am BER und Brandenburgs Gesundheitsminister beim Aerztemangel. Die Preisberichte
+betreffen beide Laender; der amtliche Statistiktext berichtet vorlaeufige
+Septemberzahlen, waehrend seine Open-Graph-Vorschau irrtuemlich Juni nennt. Diese
+Vorschau wird nicht als Septemberbeleg uebernommen. Abweichende Sekundenwerte,
+widerspruechliche Datumsversionen und die spaeter aktualisierte Streikseite bleiben
+offen; es wurde nichts automatisch korrigiert. Beim Brandenburger Besoldungsbericht
+sind Artikeladresse und Publikationszeit identisch, aber der gespeicherte
+Originalkontext fehlt. Ausschusszustimmung zu einem Entwurf ist kein endgueltiger
+Landtagsbeschluss. Die privaten Vollbelege bleiben ausserhalb von Git.
+
+## Eng begrenzter Nurleser fuer die neue inaktive Synthetikkohorte
+
+Der Cron-geschuetzte GET `briefing-nachweis?modus=eingabe` akzeptierte bisher nur
+die alte495er Testkohorte oder den vorhandenen Einzelbeleg. Er wies saemtliche
+neuen500 Synthetikkennungen vor dem Profilabruf zurueck. Die vorbereitete Korrektur
+erweitert ausschliesslich diesen Nurleser auf die geschlossenen500 Kennungen
+und die unveraenderten Generatorvarianten. Vor dem Build muss das vollstaendige
+Profil-DTO dem kanonischen Generator/Import entsprechen; nur `updatedAt` ist
+fluechtig. Eigene Marker oder Hashes reichen nicht. Aktive, reale, manipulierte
+oder fremde Profile werden abgewiesen. Ein zweites Profillesen erhaelt die
+bestehende Driftsperre. Cron-Authentisierung, Motor, Aktivierung, Kosten und der
+separate Nachweisweg fuer die aktive500er Kohorte bleiben unveraendert.
+
+Die Zielpruefung deckt alle500 Generatorprofile (330BT/120BE/50BB), Kontrastfaelle,
+Kennungsgrenzen,19 Profilmanipulationen und die bestehenden Alt-/Einzelbelege ab.
+Ein zusaetzlicher privater lokaler Aufnahmetest nimmt alle500 tatsaechlich
+gespeicherten Profil-DTOs an; dessen Build ist ausdruecklich gemockt. Er ist keine
+Production-Aufnahme und kein Nachweis vorhandener notwendiger Briefingeingaben.
+Der Leser liefert weiterhin `fachlicheFreigabe=false` und fuer neue Synthetik
+`all500InputAcceptance=false`. Diese Korrektur benoetigt einen eigenen konkret
+freigegebenen Merge vor ihrer Production-Nachkontrolle. Bis dahin bleibt der
+technische Production-Aufnahmeschritt gesperrt; fachliche Quellen-/KO-Auswahl
+und Eingabeabnahme bleiben offen. Keine weiteren Datenaenderungen, Aktivierung
+oder kostenpflichtigen Helmut-Production-Modellaufrufe wurden ausgefuehrt.
