@@ -69,6 +69,8 @@ async function main() {
   const context = { runId: env.GITHUB_RUN_ID, commit: env.GITHUB_SHA, tag };
   const decode = (envelope, position = 1) => T.entschluesseln(envelope, key, { ...context, abPosition: position, anzahl: 1 });
   const good = fixture(env), result = await G.ausfuehren(good.args);
+  const missingStore = fixture(env); delete missingStore.args.persistCheckpoint;
+  await A.rejects(G.ausfuehren(missingStore.args)); A.deepEqual(missingStore.counts(), { inputs: 0, identities: 0 });
   A.equal(result.ok, true); A.equal(good.checkpoints.length, 28);
   A.deepEqual(good.counts(), { inputs: 500, identities: 2 });
   A.equal(decode(good.checkpoints[0].envelope).attempted, 0);

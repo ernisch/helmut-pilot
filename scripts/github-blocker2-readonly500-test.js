@@ -22,6 +22,7 @@ function payload(target) {
 function fixture(change = () => {}, failure = null) {
   const calls = [], envelopes = new Map(); let inputs = 0, identities = 0;
   const args = { env: { ...env }, expectedRecipient: T.publicKey(publicKey).fingerprint, now: () => fixed,
+    persistCheckpoint: async () => {}, // Nur der explizite Fake-Artefaktdienst dieses Offline-Tests.
     writeEnvelope: async (name, value) => { A(!envelopes.has(name)); envelopes.set(name, value); },
     fetchFn: async (url, options) => {
       calls.push(url); A.equal(options.method, "GET"); A.equal(options.redirect, "error");

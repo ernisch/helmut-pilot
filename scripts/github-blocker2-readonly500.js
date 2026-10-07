@@ -61,8 +61,9 @@ async function readBody(response, signal) {
   } finally { signal?.removeEventListener("abort", onAbort); reader.releaseLock(); }
 }
 async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () => new Date(), writeEnvelope,
-  persistCheckpoint = async () => {}, signal, expectedRecipient = RECIPIENT } = {}) {
+  persistCheckpoint, signal, expectedRecipient = RECIPIENT } = {}) {
   const start = now(), tag = berlinTagKey(start); preflight(env, tag, expectedRecipient); A.equal(typeof writeEnvelope, "function");
+  A.equal(typeof persistCheckpoint, "function");
   let stopped = null, attempted = 0, firstIdentity = null, lastIdentity = null;
   const statuses = [];
   const seal = async (name, payload, position) => {
@@ -77,7 +78,9 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
   // 55min-/Tagesgrenze, nicht erst beim folgenden Profil.
   const requestSignal = () => {
     const current = now();
+    signal?.throwIfAborted();
     let milliseconds = Math.min(60000, start.getTime() + 55 * 60000 - current.getTime());
+    if (berlinTagKey(current) !== tag || milliseconds <= 0) throw new Error("read-window-closed");
     if (berlinTagKey(new Date(current.getTime() + Math.max(0, milliseconds))) !== tag) {
       let lo = 0, hi = Math.max(0, milliseconds);
       while (hi - lo > 1) {
@@ -128,12 +131,12 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
   for (let index = 0; index < TARGET.length; index++) {
     const target = TARGET[index], position = index + 1;
     stopCheck();
-    let status = "not-captured", response = null;
+    let status = "not-captured", response = null, requestStarted = false;
     if (!stopped) {
-      attempted++;
       const url = ORIGIN + "/api/cron/briefing-nachweis?modus=eingabe&mandat=" + encodeURIComponent(target.mandatsId) + "&tag=" + tag;
       try {
         const readSignal = requestSignal();
+        attempted++; requestStarted = true;
         const r = await fetchFn(url, { method: "GET", redirect: "error", signal: readSignal,
           headers: { Authorization: "Bearer " + env.HELMUT_CRON_SECRET, Accept: "application/json", "x-helmut-production-commit": env.HELMUT_PRODUCTION_COMMIT } });
         response = { url, httpStatus: r.status, observedUTC: now().toISOString() };
@@ -147,9 +150,9 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
           try { status = validate(JSON.parse(raw), target, env, tag); } catch { status = "unusable"; }
           if (status === "contradictory") stopped = "production-proof-contradiction";
         }
-      } catch (error) { status = "technical"; if (response) response.bodyReadFailure = error.message === "body-limit" ? "body-limit" : "body-read-failed"; }
+      } catch (error) { status = requestStarted ? "technical" : "not-captured"; if (response) response.bodyReadFailure = error.message === "body-limit" ? "body-limit" : "body-read-failed"; }
       stopCheck();
-      if (!timeOK()) { stopped = "day-or-duration-boundary"; status = "unusable"; }
+      if (!timeOK()) { stopped = "day-or-duration-boundary"; if (requestStarted) status = "unusable"; }
     }
     const record = { version: 1, purpose: "blocker2-readonly500-input", userId: target.mandatsId, position, tag,
       workflowCommit: env.GITHUB_SHA, productionCommit: env.HELMUT_PRODUCTION_COMMIT, status, stopReason: stopped,
