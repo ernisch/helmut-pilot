@@ -260,3 +260,82 @@ abzugleichen. Lokal sind alle500 geschlossenen Kennungen, Fehlerklassen,
 Schutzstopps und der Transport geprueft. Das ist keine Production-Abnahme.
 Ein eigener konkreter Merge ist erforderlich; der Workflow wurde nicht gestartet.
 Die Freigabe fuer PR853 erlaubt keinen weiteren Merge oder Production-Dateneingriff.
+
+
+## PR854 und genau einmal ausgefuehrter Nurleselauf (07.10.,21:21UTC)
+
+Der freigegebene Kopf `4e1da2699d8f1fc315e65a3e7c5685ac4e9af766` ist
+mit `38a0b6a9684eee24760566c6494e78ffbb4b84ce` gemergt. Dessen Eltern sind
+PR853-Merge `f216ad0d7fdbcf74fc89189d7464a05a4e225d11` und der freigegebene Kopf;
+der Mergebaum ist exakt kopfgleich. Production READY
+`dpl_9fAwg5jdZQ1gCTQdS5tKahCw6o7r` und oeffentlicher Runtimebeleg bestaetigen
+den Mergecommit und erhalten PR853/854. Der Workflow war vor der gesondert
+freigegebenen manuellen Ausfuehrung nicht gestartet, bleibt ausschliesslich
+`workflow_dispatch` auf `main` und besitzt `contents: read`.
+
+[Original-Lauf37681748370](https://github.com/ernisch/helmut-pilot/actions/runs/37681748370)
+wurde genau einmal auf diesem Commit gestartet, `run_attempt=1`. Das bestehende
+GitHub-Cron-Secret blieb ausschliesslich im Runner. Es gab keine Production
+Schreib-, Profil- oder Modellaktion und keinen eigentlichen500er Funktionstest.
+Alle52 nativen Tabellen-Vollzeilen-/xmin-Hashes sind zwischen20:22:28 vor Merge,
+20:24:06 nach Deployment,20:52:44 waehrend und21:21:10 nach dem Lauf identisch.
+Die erneut gebundenen500 Originalprofile bleiben inaktiv (330BT/120BE/50BB).
+
+Der Lauf endet an der festen55min-Grenze, nicht an Authentisierung, Commitdrift
+oder Datenwiderspruch. Seine Protokollbilanz ist:
+
+| Parlament | Erfasst | Leer | Unbrauchbar | Technisch | Widerspruechlich | Nach Stop unerfasst |
+|---|---:|---:|---:|---:|---:|---:|
+| Bundestag |330|0|0|0|0|0|
+| Berlin |105|0|1|0|0|14|
+| Brandenburg |0|0|0|0|0|50|
+| Gesamt |435|0|1|0|0|64|
+
+Dies sind die Gesamtwerte des exakt gebundenen Collectors, keine unabhaengige
+inhaltliche Abnahme der435 Antworten. Alle500 Positionsbelege und ein Manifest
+wurden verschluesselt behalten. Artefakt11511389020 hat310370018 ZIP-Bytes und
+SHA256 `529e484cb8ec71ae23227ee024a601b3a93e3dbd81310dd38154469930dbbcdc`;
+ein Tag Aufbewahrung, Ablauf08.10.2026,21:19:39UTC. Der GitHub-Connector hat es
+als Betreiberdatei abgerufen; der Ausfuehrungsdownload lehnt es mit der festen
+32MiB-Transfergrenze ab. Der alternative Azure-Transport lieferte403, dessen
+Ursache ungeklärt ist; die Cloud-HTTP-Policy ist nachweislich unrestricted.
+Es wird keine Netzsperre, erfolgreiche lokale Entschluesselung oder neue
+Production-Erfassung behauptet. Fachliche Eingabeabnahme bleibt **0/500**.
+
+## Kleinerer Ciphertransport und vorhandene Quellen-Leseschnittstelle (Code)
+
+Der neue B2-PR teilt501 verschluesselte Dateien in hoechstens32 Pakete mit
+je hoechstens20MiB Originalbytes; ZIP ohne Zusatzkompression bleibt samt
+501 kleinen Dateinamen deutlich unter32MiB. Metadaten, Empfaenger, Lauf,
+Commit, Tag, Positionen, Vollstaendigkeit und Groessen werden vor Ausgabe
+geprueft. Originalbytes werden unveraendert kopiert; weder Entschluesseln noch
+Privatschluessel oder Klartextupload sind im Workflow vorhanden. Jeder Teil
+behaelt nur einen Tag Aufbewahrung. Fehlende Dateien, fremde Empfaenger oder
+zu grosse Belege werden abgewiesen statt abgeschnitten oder akzeptiert.
+
+Ein separater rein manueller Cipher-Transportworkflow liest ausschliesslich
+das oben fest gebundene vorhandene GitHub-Artefakt. Er besitzt nur
+`contents: read` und `actions: read`, verwendet ausschliesslich das GitHub-
+Token fuer die GitHub-API und prueft Originallauf, Artefaktmetadaten sowie die
+komplette ZIP-SHA256 vor geschlossenem Entpacken. Der folgende signierte
+HTTPS-Storageabruf erhaelt keine GitHub-Authorization. Es gibt dort keinen
+Cron-Secret-, Production-, Datenbank- oder Modellzugriff. Ein abgelaufenes,
+fremdes oder geaendertes Original fuehrt zum Stop; kein automatischer Neuabruf.
+Der Betreiberprivatschluessel bleibt ausserhalb von Git und GitHub.
+
+Fuer den streng geschlossenen500er Synthetik-Leser wird ausschliesslich die
+bereits vorhandene `quellenGebundelt`-Schnittstelle aktiviert: frische
+Quellenabfragen mit25 KO-Kennungen je Anfrage, unveraenderte erste40 Kanten
+nach Kennung und anschliessende Publikationssortierung. Fehlende oder
+widerspruechliche Bindungen schlagen fehl. Keine Caches oder Profilparallelitaet;
+B1-Motor, Server und Storageadapter werden nicht geaendert. Alte495/Cem-Pfade
+behalten ihre bisherigen Optionen. Die55min-Grenze bleibt unveraendert;
+schnellere vollstaendige Production-Erfassung ist dadurch noch nicht belegt.
+
+Die bisherige Einmallauffreigabe ist verbraucht. Weder neuer Merge noch
+manueller Cipher-Transport oder erneuter Production-Abruf wurden ausgefuehrt.
+Ein neuer Kopfmerge und konkret neuer Nurleselauf benoetigen Betreiberfreigabe;
+die Codeschutzpruefung ersetzt diese nicht. Keine der weiteren36 DIP-
+Korrekturen, keine Aktivierung und kein bezahlter Helmut-Modellaufruf.
+Die notwendige KO-/Resolver-/Briefingeingabeabnahme fuer alle500 bleibt offen;
+435 erfasste Protokollantworten oder Metadatenkorrekturen erteilen kein Fachurteil.

@@ -1,25 +1,17 @@
-name: "Blocker 2: inaktive500 Briefingeingaben nur lesen"
+name: "Blocker 2: vorhandenen Cipherbeleg transportieren"
 on:
-  workflow_dispatch:
-    inputs:
-      production_commit:
-        description: "Rein lesend bestaetigter READY Production Commit (40 Zeichen)"
-        required: true
-        type: string
-      public_key:
-        description: "Oeffentlicher RSA3072 SPKI Schluessel in Base64"
-        required: true
-        type: string
+  workflow_dispatch: {}
 permissions:
   contents: read
+  actions: read
 concurrency:
-  group: helmut-blocker2-readonly500
+  group: helmut-blocker2-cipher-recovery
   cancel-in-progress: false
 jobs:
-  lesen:
+  transport:
     if: github.repository == 'ernisch/helmut-pilot' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -27,16 +19,13 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
-      - name: Inaktive500 Eingaben ausschliesslich lesen und verschluesseln
+      - name: Ausschliesslich fest gebundenes vorhandenes GitHub-Cipherarchiv lesen
         env:
-          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
-          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
-          HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.public_key }}
-        run: node scripts/github-blocker2-readonly500.js
-      - name: Original-Cipherdateien in begrenzte Pakete teilen
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/blocker2-cipher-recovery.py
+      - name: Original-Cipherdateien unveraendert in kleine Pakete teilen
         id: pack
-        if: always()
-        run: node scripts/blocker2-cipher-parts.js
+        run: node scripts/blocker2-cipher-parts.js wiederhergestellt
       - name: Cipherpaket 01 sichern
         if: always() && steps.pack.outcome == 'success' && fromJSON(steps.pack.outputs.part_count) >= 1
         uses: actions/upload-artifact@v4
