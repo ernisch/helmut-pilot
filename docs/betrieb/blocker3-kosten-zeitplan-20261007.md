@@ -266,3 +266,12 @@ Finaler Abschluss erst bei **allen** folgenden Belegen:
    Endwächter; unabhängige Abnahme des integrierten Kostenvertrags.
 
 **Diese Kriterien sind derzeit nicht erfüllt. Blocker 3 bleibt offen.**
+
+## Erhaltene historische Kostenstatuszeilen
+
+Die folgenden bisherigen CURRENT_STATE-Zeilen sind vollständig erhalten.
+Der aktuelle Status verweist auf diese datierten Belege; die Beobachtungen vom
+05./06.10. ersetzen keine aktuellen Start-/Kostenoriginale.
+
+- **Gebundene U-Vorbereitung (06.10.,17:32:57 UTC):** Zwei echte Einzel-U geschlossen und konservativ abgerechnet; Original-U2 bleibt `unknown`. Phase15.232 Mikro-USD plus unveraenderte private636.000-Reserve, keine offenen Anbieteraufrufe. Der zweite Modellbeleg wurde fachlich abgelehnt; genau16 unbelegte/mischende Felder des eigenen Wissensobjekts wurden unabhaengig geprueft korrigiert, KO-Version2 und separater Operatorbeleg nativ nachkontrolliert. Originalmodellbeleg/Verbrauchshistorie bleiben unveraendert; Journal57/56 alte Vollzeilen+xmin erhalten,500/0 aktiv. Fehlversuche rollten nachweislich zurueck; volle Zeilen-/xmin-Fingerprints jetzt vor Aggregation verdichtet, dieselben15s/17s/2s-Grenzen erhalten. Cron-Ruhe produktiv bestaetigt; vollstaendige aktuelle Quellen-/Briefing-Eingaben beider Ebenen, Native-D, Finanzierung und Endwaechter bleiben offen. [Umfang und Rueckweg](gebundene-u-vorbereitung-cron-ruhe-20261006.md).
+- **Kostentage ergänzt (05.10.,04:40 UTC):** Native Nachkontrolle bestätigt26 Bücher:03./04.10. jeweils14 reine Skip-Belege,0 Anbieter-/Zählerereignisse; exakt2 Nullbücher ergänzt. Vollständiger Auth-Deltaguard erhielt alle alten Bücher/Kosten/Reserven/Grenzen; Journal47, vorherige46 Vollzeilen/xmin erhalten. Kostenstand6,794132USD erhalten. PR#807 Ready: Zwei16-Token-Proben06:05/06:36 UTC enden502;128-Token-Probe07:43 UTC endet200/vollständig,30 Tokens. Zusammen126 Mikro-USD konservativ abgerechnet,0 offene Reserve im Auftragsfenster. Global:15 historische Reserven/3,176USD vor25.09. unverändert; alle Production-Bücher16,703860USD gebunden. Anbieter-/Kostenbeleg unabhängig schmal abgenommen. [Aktuelle Grenzen](synthetik-500-inaktiver-import-20261005.md), [frühere Kostenkorrektur](kosten-nullbuecher-nachbeleg-20261002.md).
