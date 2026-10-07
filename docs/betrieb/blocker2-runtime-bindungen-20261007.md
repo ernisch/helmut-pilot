@@ -1,0 +1,148 @@
+# Blocker 2: Runtime-Nachweis und Eingabeabhaengigkeiten
+
+Stand: 07.10.2026. Ausschliesslich Blocker 2; keine Production-Datenaenderung,
+kein kostenpflichtiger Helmut-Production-Modellaufruf und kein 500er Start.
+
+## Beobachteter Production-Stand
+
+PR845 wurde mit dem freigegebenen Kopf
+`9416c041eaddb553462856d10bf058b7092b687c` als
+`a85834c600a10f4fd324ae21488ed22dc44da39f` gemergt. Das reguläre Deployment war
+READY. Der separat gemergte Nachfolger PR846 steht auf
+`5cada0342b3c2218b9dd2f8ac50bdf1ee57db63a`, dessen unmittelbarer Elterncommit
+der PR845-Merge ist. Production-Deployment `dpl_P4Ue8vNRWR3Mz7ZCJFYsTeLv5QTU`
+ist READY. Der Betreiber hat nach Klaerung dieses Nachfolgers die Fortsetzung
+von Blocker 2 autorisiert. Daraus folgt keine Daten- oder neue Mergefreigabe.
+
+Die Abschlussaufnahme vom07.10.13:19 UTC zeigt den separat gemergten PR847-
+Nachfolger `53e1e369696fc52b69a5378f749a47cfa607ea2b`, unmittelbar auf `5cada034`
+aufbauend. Production-Deployment `dpl_CoPUDLjaD8NKRNTRMvDyeycFVpsD` ist READY und
+dem Alias zugeordnet. Auch an diesem Nachfolger sind die drei DIP-/Identitaets-
+dateien bytegleich. Alle52 geschuetzten Datenrelationen samt Vollzeilen und xmin
+sowie der Kataloghash sind seit12:33 UTC unveraendert. Der Nachweis deckt dieses
+beobachtete Intervall ab; er behauptet keine neue Laufzeitprobe.
+
+Die drei DIP-/Identitaetsdateien sind am Nachfolger bytegleich zum freigegebenen
+Kopf. Deployment-/Git-Bindung ersetzt keine direkt ausgefuehrte Laufzeitprobe.
+Der Git-Deployment-Dateibaum ist ueber den vorhandenen Vercel-Leseweg nicht
+verfuegbar; die direkten Dateiabfragen liefern keinen Source-Inhalt. Der bisherige
+Provider-Witness besitzt eine abgelaufene besondere Freigabe und ist kein
+allgemeiner DIP-Pruefzugang. Kein Secret wurde fuer einen Ersatzweg beschafft.
+
+## Begrenzter Code-Nachweis
+
+Der neue `GET /api/release/dip-resolver` fuehrt neun feste synthetische Proben
+mit den wirklichen DIP-/Identitaets-/Resolverfunktionen aus. Er prueft den
+V1-Leser, vollstaendige V2-Bezuege, disjunkte Bezugsmengen, fehlenden positiven
+Identitaetskurzschluss, echte Folgemeldungen, Jahreszahlen, manipulierte Metadaten
+und die Ablehnung eines sachfremden Haushaltsbestands durch `resolveVorgang`.
+Der Resolver erhaelt ausschliesslich feste in-memory Lesedependencies.
+
+Der Pfad liegt vor jedem Account-/Session-/Profil-Vorlauf. Er ist bewusst
+oeffentlich und liefert ausschliesslich Codehashes, feste boolesche Gegenproben,
+Production-Commit und Deployment-ID. Er akzeptiert keine Quellen, Profile oder
+anderen Nutzdaten. Nur GET ohne Query ist erlaubt. Der Header
+`x-helmut-production-commit` muss dem wirklichen aktuellen Production-Commit
+entsprechen. Preview, fehlende Runtimeidentitaet, Drift, eine fehlgeschlagene
+Gegenprobe oder nicht lesbare Modulbytes liefern keinen positiven Nachweis.
+Keine Datenbank-, Account-, Modell-, Netzwerk- oder Budgetfunktion wird aufgerufen.
+
+Die Antwort traegt ausdruecklich `syntheticFixturesOnly=true`,
+`productionSourceVersionsInspected=false` und `all500InputAcceptance=false`.
+Sie ist keine fachliche Abnahme oder Beleg dafuer, dass vorbereitete V2-Quellen
+bereits gespeichert wurden. Nach einem gesondert freigegebenen Merge muss der
+Operator den dann tatsaechlichen neuen Production-Commit binden, die Codehashes
+mit diesem Commit vergleichen und die neun Ergebnisse am Production-Pfad lesen.
+Die neue Probe wurde bisher nur lokal ausgefuehrt, nicht in Production.
+
+Die beim neuen Fenster erstmals einzubeziehende Berliner Recyclingpapiermeldung
+wurde faelschlich mit Nobelpreis-Meldungen verbunden. Die Entscheidungsspur
+zaehlte Berlin, das Jahr und allgemeine Auszeichnungswoerter. Die neue begrenzte
+Regel entzieht dem gemeinsamen Landesort den Titel-/Sachbeleg, ausschliesslich
+bei zwei kanonisch validierten Berliner Artikelstaenden. Originalanker und
+Suchwurzeln bleiben erhalten; kein anderer Land-/Medienpfad wird umgestellt.
+Ungueltige Staende werden laut abgewiesen. Gegenproben erhalten echte Nobelpreis-
+Folgemeldungen und dokumentieren die Ablehnung im wirklichen Resolver.
+
+## Neue endliche Resolver- und Profilbindung
+
+Die bestehenden Originalquellen und die bereits belegte 43er-DIP-Recherche
+wurden wiederverwendet. Fuer die 47 vorbereiteten Cluster wurden nun die
+vollstaendigen Prefix-Treffermengen, die Acht-Treffer-Fenster und Exaktkennungen
+gelesen: 1561 verschiedene Prefixkandidaten, daraus 92 vom Resolver gelesene
+KO60-Versionen, 186 SOURCE23-Versionen und 225 Links. Alle 19 Originalsegmente
+sind READ ONLY und jeweils unter 100 kB. Es gibt keinen Grenzzeitgleichstand
+und keinen ausgewaehlten KO mit mehr als 40 Links.
+
+Die 47 vorbereiteten Entscheidungen sind `neu`. Fuer alle 47 Kennungen sind
+Exakt-KO, Reservierung und Vormerkung als Abwesenheit gebunden. Das ist keine
+Freigabe, alle 47 zu erzeugen: notwendige fachliche Auswahl und Eligibility
+bleiben getrennt. Das alte unbekannte Bundespolizeigesetz-U wurde weder neu
+gestartet noch seine Reserve freigegeben.
+
+Die Nachkontrolle am 07.10.12:54 UTC bestaetigt alle 92 KO- und 186 Quellenwerte
+samt xmin sowie alle 225 Links unveraendert. Eine weitere Prefixaufnahme bestaetigt
+alle vollstaendigen Prefixlisten unveraendert. Getrennte Aufnahmen behaupten
+keine atomare native W-Abnahme oder zukuenftige Frische.
+
+Alle 500 Profile wurden einzeln gegen ihre Originalprofilhashes und
+Paketentscheidungen gebunden: 330 BT, 120 BE, 50 BB. Die private Datei
+`all500-dependency-bindings.json` bindet Originale, Resolverentscheidungen,
+Zustands-/Driftbelege und vorbereitete Quellenversionen ueber Dateihashes.
+SHA256: `00d903efceea62e19d2074a1ac926aaa65e91f66c7a68c55bab4c4c8abc7c2ee`.
+Scopekompatibilitaet wird nicht als notwendige Auswahl oder Zustaendigkeit
+ausgegeben. Kein inaktives Profil wurde als aktives Motorprofil umgeschrieben.
+`briefingEingabe`, `briefingDatum` und deren angenommene Quellen bleiben ehrlich
+ungebunden. Positive notwendige KO-/Briefingeingabeabnahmen: 0/500.
+
+Fuer das neue explizite Planfenster am07.10.13:01 UTC wurden die71 bereits
+gebundenen Quellen mit bekannter Ebene neu zeitlich abgeleitet, ohne Abruf oder
+Importwiederholung.58 sind strukturell zugelassen:44 BT,12 BE,2 BB. Zwei Berliner
+Meldungen vom06.10. kommen hinzu; die BB-Schulnetzwerkmeldung vom23.09. ist jetzt
+ausserhalb des ganzen tagesgenauen Fensters. Diese bekannte Teilmenge belegt
+keine notwendige Gesamtversorgung und ersetzt keine Scopeentscheidung der
+weiteren historischen917 Kandidaten.
+
+Mit der vorbereiteten Berliner Regel enthalten die58 Versionen48 verlustfrei
+gebundene Cluster.46 Originalcluster aus der bisherigen Aufnahme werden
+wiederverwendet; Recyclingpapier und Frauen-/Kinderschutzhaus erhalten getrennte
+Bestandsaufnahmen. Insgesamt97 KO60-Versionen,193 SOURCE23-Versionen und232 Links
+tragen die neue48er Resolvervorbereitung. Alle48 Entscheidungen sind `neu`,
+alle48 Exakt-/Reservierungs-/Vormerkungszustaende sind als Abwesenheit belegt.
+Alle500 Profilzeilen wurden auf diese48 Entscheidungen neu gebunden; keine
+Quellen-/KO-/Eligibility- oder Briefingabnahme wird daraus erfunden.
+
+## Neu geschlossene Brandenburger Originaltextluecke
+
+Die aktuelle Wochenmeldung50253 war bisher nur mit ihrem ersten Datumsabsatz
+verfuegbar. Ihr vollstaendiger Artikel wurde am07.10.13:01 UTC einmal gelesen;
+Titel, Publikationstag und Volltexthash stimmen exakt mit dem bereits
+gespeicherten Stand ueberein. Kein Wiederimport oder neuer Stand wurde erzeugt.
+Zwei ganze Originalabsaetze belegen die20. oeffentliche Sitzung des Wirtschafts-,
+Energie- und Klimaausschusses sowie die17. oeffentliche Sitzung des Infrastruktur-
+und Landesplanungsausschusses mit Fachgespraech zur Niederbarnimer Eisenbahn.
+
+Der bestehende manuelle Artikelkontextvertrag bindet beide Absaetze getrennt an
+die unveraenderte SOURCE23-Version und an jeweils einen vollstaendigen lokalen
+Verstehensprompt. Kein kombinierter Mehrfachkontext oder ausfuehrbarer Modell-
+Command wird behauptet. Datums-/Uhrzeitbloecke wurden nicht in einen einzelnen
+Absatz hineinkopiert; keine tatsaechlich abgehaltene Sitzung wird aus einer
+Ankuendigung abgeleitet. Publikations- und erster Absatzstand bleiben erhalten.
+Alle50 BB-Profile bleiben einzeln erfasst;25 besitzen einen direkten deklarierten
+Energie-/Verkehrsthemenbezug zu diesen Kandidaten. Das ist keine Ausschuss-
+mitgliedschaft, kein notwendiger KO-Bestand und kein positiver Briefingnachweis.
+
+## Externe Grenzen und naechster konkreter Schritt
+
+Die direkte Production-Codeprobe benoetigt einen gesondert freigegebenen Merge
+dieses begrenzten Nachweispfads. Die 43 vorbereiteten DIP-Metadatenversionen
+benoetigen vor jeder Anwendung eine konkrete Datenfreigabe, frische CAS-/Original-
+und Betriebsschutzbindungen sowie vollstaendiges Ruecklesen. Sie wurden weiterhin
+nicht geschrieben. Notwendige neue KO-Versionen und wirkliche Briefingeingaben
+duerfen nicht aus alten Zusammenfassungen oder Offlinefixtures erfunden werden.
+Aus dem 47er Resolverbefund folgt keine Modellfreigabe; Kostenplanung bleibt
+bei Blocker 3. Aktivierung und 500er Test bleiben ausserhalb dieses Auftrags.
+
+Die Originalsicherung, Vorbereitung und diese PR sind die reviewbaren Ergebnisse;
+die vollstaendige Blocker-2-Abnahme bleibt offen. Kein autonomer Merge oder
+Production-Rueckweg ist autorisiert.

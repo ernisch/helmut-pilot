@@ -123,6 +123,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
+  "end500-unabhaengig-datenbank-test.js", // eigener CI-Schritt: echter netzloser PG17/pg_cron, kein Offline-Skip
   "synthetik-500-native-d-new-datenbank-test.js", // eigener Pflichtschritt: netzloser PG17-Container, kein Offline-Scheinbeleg
   "synthetik-500-runtime-datenbank-test.js", // eigener Pflichtschritt: echtes Importjournal bis 500->0, kein Offline-Skip
   "realkohorte-500-runtime-datenbank-test.js", // eigener Pflichtschritt: isolierte PostgreSQL17, kein stiller Offline-Skip
@@ -274,6 +275,8 @@ const STANDARD = new Set([
   "vorgangs-belegfenster-test.js",          // auch Kandidat6–8 anhand seiner tatsächlichen Quellen prüfen
   "vorgangs-amtliche-sachbindung-test.js",  // Dokumentformeln/Ressortlabels ersetzen keinen Sachgegenstand
   "dip-vorgangsbezug-test.js",             // geschlossene Amtsbezuge trennen fachfremde Vorgaenge
+  "dip-resolver-runtime-witness-test.js",  // feste Codeproben vor jedem Account-/Profilzugriff
+  "vorgangs-landesort-sachbindung-test.js", // gebundener Landesort ersetzt keinen Titelgegenstand
   "verstehen-rest15-test.js",              // unbegonnene Restmenge, keine Wiederaufnahme
   "lage-pruefaufwand-test.js",              // isolierter Medium-Vergleich mit echten Fehlabsätzen
   "lage-pruefaufwand-transport-test.js",     // tatsaechlich serialisierte Denkstufe minimal/low/medium

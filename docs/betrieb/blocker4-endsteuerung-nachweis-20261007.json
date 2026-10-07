@@ -1,0 +1,508 @@
+{
+  "version": "helmut-end500-abnahme/1",
+  "scope": "Unabhaengige Endsteuerung, keine Aktivierung/kein500erProductiontest",
+  "codeCommit": "19e0bb2ba52c985f93135a24a000fbc0e3df2afc",
+  "migrationFileHash": "40dc2b19095f6de9d5bfdf38a64799064a4d2d02b08320a8c3f2682a1dd64fc0",
+  "installationPreimage": {
+    "actor": "postgres",
+    "targets": 500,
+    "authHash": "9a9ce703e55ab26e4d83af64f4901653954ca0297a9e0a8167fab79a55584c97",
+    "mainHash": "eb8e7fc45f152fd29a9a7756aafc648650c8997888fe2c6cde4beb7d2f91d337",
+    "triggers": [],
+    "observedAt": "2026-10-07T11:10:43.311318+00:00",
+    "mandatesHash": "0266f7e2cbd5c868de7501c8222fc2447b32861148c7207e2e99cf6c1c00e0b3",
+    "profilesHash": "233501086937c88fdb16ddd52d6adae666e2ed880acf1ffb31edfd32773a2f49",
+    "activeTargets": 0,
+    "cronInstalled": false,
+    "controllerSchema": false
+  },
+  "security": {
+    "job": {
+      "name": "helmut-end500-independent",
+      "user": "postgres",
+      "jobId": 1,
+      "active": true,
+      "command": "set statement_timeout='15s'; set lock_timeout='3s'; select helmut_end500_internal.tick();",
+      "database": "postgres",
+      "schedule": "30 seconds"
+    },
+    "tables": [
+      {
+        "rls": true,
+        "name": "heartbeat",
+        "serviceSelect": false,
+        "serviceUpdate": false
+      },
+      {
+        "rls": true,
+        "name": "bindings",
+        "serviceSelect": false,
+        "serviceUpdate": false
+      }
+    ],
+    "guardian": {
+      "endAt": null,
+      "jobId": 1,
+      "state": "standby",
+      "ticks": 3,
+      "reason": null,
+      "startAt": null,
+      "version": "helmut-end500/1",
+      "lastTick": "2026-10-07T11:13:07.072103+00:00",
+      "stoppedAt": null,
+      "observedAt": "2026-10-07T11:13:21.694896+00:00",
+      "deactivated": null,
+      "operationId": null,
+      "targetCount": 500,
+      "manifestHash": null,
+      "activeTargets": 0,
+      "activationRight": false,
+      "schedulerActive": true,
+      "productionCommit": null,
+      "recentSuccessfulRuns": 3
+    },
+    "functions": [
+      {
+        "acl": "{postgres=X/postgres}",
+        "name": "helmut_end500_internal.ids",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "definer": false,
+        "bodyHash": "9a7846ffef7e5fa87e7c971dc42baa6086eb66d85d9683c0f4c32165cbf6676b"
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "name": "helmut_end500_internal.tick",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "definer": false,
+        "bodyHash": "3d00e93d1f7b90872cf30f4d0060f0ec49ac330f162529f8c8b74415fdbe36c5"
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "name": "helmut_end500_internal.profile_statement",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "definer": true,
+        "bodyHash": "a8b6cbdc70083deea2e8447e96a6973bdbfb2da6165bfa5d661545151e1311d1"
+      },
+      {
+        "acl": "{postgres=X/postgres}",
+        "name": "helmut_end500_internal.profile_row",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "definer": true,
+        "bodyHash": "f330b90af2735ab8d6b0953272034b07de1b32a163b444b2c9465977477e10bf"
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "helmut_end500_internal.status",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "definer": true,
+        "bodyHash": "6ac97f4cf86f4ac5bdeb433412b7ce657d33b70844dc611442b332d1399526ce"
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "public.helmut_end500_status",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "definer": false,
+        "bodyHash": "7c4a91ac2a224549b57b08a23ff125179c9d00b5eba16d492d7d3e4eedd85755"
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "helmut_end500_internal.bind",
+        "config": [
+          "search_path=pg_catalog",
+          "statement_timeout=15s",
+          "lock_timeout=3s"
+        ],
+        "definer": true,
+        "bodyHash": "e2961d621bed60c94d496e53e5c6cb5b8712b9651d356d0b1ea9fd498b375f74"
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "helmut_end500_internal.stop",
+        "config": [
+          "search_path=pg_catalog",
+          "statement_timeout=15s",
+          "lock_timeout=3s"
+        ],
+        "definer": true,
+        "bodyHash": "13d4bf3d7193942061c209ac4ebbc97a210602d6a5ba0404f6d79a56db1b0d01"
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "public.helmut_end500_binden",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "definer": false,
+        "bodyHash": "1e846f4446cb120f80fd79362eeb558a68ec0519c138dd8a2565fc96cdfbfc02"
+      },
+      {
+        "acl": "{postgres=X/postgres,service_role=X/postgres}",
+        "name": "public.helmut_end500_notstopp",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "definer": false,
+        "bodyHash": "15c4df3153cad661d6cb46b3a9defdc820c390038d7dfef0a3ef6e636c53164a"
+      }
+    ],
+    "observedAt": "2026-10-07T11:13:21.690566+00:00"
+  },
+  "deadline": {
+    "actor": "postgres",
+    "jobRuns": [
+      {
+        "jobid": 1,
+        "runid": 8,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:15:37.157005+00:00",
+        "start_time": "2026-10-07T11:15:37.142963+00:00",
+        "return_message": "1 row"
+      },
+      {
+        "jobid": 1,
+        "runid": 7,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:15:07.132853+00:00",
+        "start_time": "2026-10-07T11:15:07.128477+00:00",
+        "return_message": "1 row"
+      },
+      {
+        "jobid": 1,
+        "runid": 6,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:14:37.118108+00:00",
+        "start_time": "2026-10-07T11:14:37.113728+00:00",
+        "return_message": "1 row"
+      },
+      {
+        "jobid": 1,
+        "runid": 5,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:14:07.102568+00:00",
+        "start_time": "2026-10-07T11:14:07.098725+00:00",
+        "return_message": "1 row"
+      },
+      {
+        "jobid": 1,
+        "runid": 4,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:13:37.088437+00:00",
+        "start_time": "2026-10-07T11:13:37.084534+00:00",
+        "return_message": "1 row"
+      }
+    ],
+    "targets": 500,
+    "authHash": "9a9ce703e55ab26e4d83af64f4901653954ca0297a9e0a8167fab79a55584c97",
+    "guardian": {
+      "endAt": "2026-10-07T11:15:16.812+00:00",
+      "jobId": 1,
+      "state": "stopped",
+      "ticks": 8,
+      "reason": "frist",
+      "startAt": "2026-10-07T11:14:16.812+00:00",
+      "version": "helmut-end500/1",
+      "lastTick": "2026-10-07T11:15:37.155031+00:00",
+      "stoppedAt": "2026-10-07T11:15:37.150022+00:00",
+      "observedAt": "2026-10-07T11:16:06.206614+00:00",
+      "deactivated": 0,
+      "operationId": "synthetik500-endqual-frist-20261007-1791371656812",
+      "targetCount": 500,
+      "manifestHash": "2b83dbaa3cf9c4ec3bbb5e8735e9adcc04cba588cb6c8d28529748da7ad8d62a",
+      "activeTargets": 0,
+      "activationRight": false,
+      "schedulerActive": true,
+      "productionCommit": "416cb2f1028203df1fe05ff8580bb1a23a7f36b8",
+      "recentSuccessfulRuns": 3
+    },
+    "mainHash": "eb8e7fc45f152fd29a9a7756aafc648650c8997888fe2c6cde4beb7d2f91d337",
+    "triggers": [
+      "end500_row",
+      "end500_statement"
+    ],
+    "observedAt": "2026-10-07T11:16:06.09553+00:00",
+    "cronVersion": "1.6.4",
+    "mandatesHash": "0266f7e2cbd5c868de7501c8222fc2447b32861148c7207e2e99cf6c1c00e0b3",
+    "profilesHash": "233501086937c88fdb16ddd52d6adae666e2ed880acf1ffb31edfd32773a2f49",
+    "activeTargets": 0,
+    "cronInstalled": true,
+    "rpcPrivileges": [
+      {
+        "anon": false,
+        "definer": false,
+        "service": true,
+        "function": "helmut_end500_binden",
+        "authenticated": false,
+        "definitionHash": "8bf463d613aaa1145fd95172e355b072de70f9b16cf6df3bf3924a0c92db5ed3"
+      },
+      {
+        "anon": false,
+        "definer": false,
+        "service": true,
+        "function": "helmut_end500_notstopp",
+        "authenticated": false,
+        "definitionHash": "ad857f3e93f59b7e7b47df5d01af78e9fce24ff12d4a1e18e0f528a0f9a38757"
+      },
+      {
+        "anon": false,
+        "definer": false,
+        "service": true,
+        "function": "helmut_end500_status",
+        "authenticated": false,
+        "definitionHash": "122ef86eb778f81b8fa010b01eec2de96895d5fe7898c5403a6dc22a1c3ff222"
+      }
+    ],
+    "controllerSchema": true
+  },
+  "emergencyStop": {
+    "actor": "postgres",
+    "jobRuns": [
+      {
+        "jobid": 1,
+        "runid": 12,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:17:37.205425+00:00",
+        "start_time": "2026-10-07T11:17:37.201635+00:00",
+        "return_message": "1 row"
+      },
+      {
+        "jobid": 1,
+        "runid": 11,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:17:07.191408+00:00",
+        "start_time": "2026-10-07T11:17:07.187492+00:00",
+        "return_message": "1 row"
+      },
+      {
+        "jobid": 1,
+        "runid": 10,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:16:37.177013+00:00",
+        "start_time": "2026-10-07T11:16:37.172717+00:00",
+        "return_message": "1 row"
+      },
+      {
+        "jobid": 1,
+        "runid": 9,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:16:07.162397+00:00",
+        "start_time": "2026-10-07T11:16:07.158234+00:00",
+        "return_message": "1 row"
+      },
+      {
+        "jobid": 1,
+        "runid": 8,
+        "status": "succeeded",
+        "end_time": "2026-10-07T11:15:37.157005+00:00",
+        "start_time": "2026-10-07T11:15:37.142963+00:00",
+        "return_message": "1 row"
+      }
+    ],
+    "targets": 500,
+    "authHash": "9a9ce703e55ab26e4d83af64f4901653954ca0297a9e0a8167fab79a55584c97",
+    "guardian": {
+      "endAt": "2026-10-07T11:19:33.737+00:00",
+      "jobId": 1,
+      "state": "stopped",
+      "ticks": 12,
+      "reason": "notstopp",
+      "startAt": "2026-10-07T11:16:33.737+00:00",
+      "version": "helmut-end500/1",
+      "lastTick": "2026-10-07T11:17:37.203627+00:00",
+      "stoppedAt": "2026-10-07T11:17:35.132885+00:00",
+      "observedAt": "2026-10-07T11:17:43.530474+00:00",
+      "deactivated": 0,
+      "operationId": "synthetik500-endqual-notstopp-20261007-1791371793737",
+      "targetCount": 500,
+      "manifestHash": "f319168ae1cfec6588596303f636a54259087cd3a9b98b6b17678eec4893d5f0",
+      "activeTargets": 0,
+      "activationRight": false,
+      "schedulerActive": true,
+      "productionCommit": "416cb2f1028203df1fe05ff8580bb1a23a7f36b8",
+      "recentSuccessfulRuns": 3
+    },
+    "mainHash": "eb8e7fc45f152fd29a9a7756aafc648650c8997888fe2c6cde4beb7d2f91d337",
+    "triggers": [
+      "end500_row",
+      "end500_statement"
+    ],
+    "observedAt": "2026-10-07T11:17:43.419888+00:00",
+    "cronVersion": "1.6.4",
+    "mandatesHash": "0266f7e2cbd5c868de7501c8222fc2447b32861148c7207e2e99cf6c1c00e0b3",
+    "profilesHash": "233501086937c88fdb16ddd52d6adae666e2ed880acf1ffb31edfd32773a2f49",
+    "activeTargets": 0,
+    "cronInstalled": true,
+    "rpcPrivileges": [
+      {
+        "anon": false,
+        "definer": false,
+        "service": true,
+        "function": "helmut_end500_binden",
+        "authenticated": false,
+        "definitionHash": "8bf463d613aaa1145fd95172e355b072de70f9b16cf6df3bf3924a0c92db5ed3"
+      },
+      {
+        "anon": false,
+        "definer": false,
+        "service": true,
+        "function": "helmut_end500_notstopp",
+        "authenticated": false,
+        "definitionHash": "ad857f3e93f59b7e7b47df5d01af78e9fce24ff12d4a1e18e0f528a0f9a38757"
+      },
+      {
+        "anon": false,
+        "definer": false,
+        "service": true,
+        "function": "helmut_end500_status",
+        "authenticated": false,
+        "definitionHash": "122ef86eb778f81b8fa010b01eec2de96895d5fe7898c5403a6dc22a1c3ff222"
+      }
+    ],
+    "controllerSchema": true
+  },
+  "negativeChecks": [
+    {
+      "name": "anon",
+      "error": "Failed to run sql query: ERROR:  42501: permission denied for function helmut_end500_status\n"
+    },
+    {
+      "name": "authenticated",
+      "error": "Failed to run sql query: ERROR:  42501: permission denied for function helmut_end500_status\n"
+    },
+    {
+      "name": "wrongConfirmation",
+      "error": "Failed to run sql query: ERROR:  P0001: end500-endauftrag\nCONTEXT:  PL/pgSQL function helmut_end500_internal.stop(text,text,text,text) line 6 at RAISE\n"
+    }
+  ],
+  "localTests": {
+    "postgres": "17.6",
+    "pgCronSource": "v1.6.4",
+    "sourceSha256": "52d1850ee7beb85a4cb7185731ef4e5a90d1de216709d8988324b0d02e76af61",
+    "groupsPassed": 12,
+    "belegAdapterPassed": 17,
+    "migrationOrganizationPassed": 56
+  },
+  "productionProfilesActivated": 0,
+  "production500TestRun": false,
+  "mergePerformed": false,
+  "finalInspection": {
+    "bindings": [
+      {
+        "reason": "frist",
+        "ende_am": "2026-10-07T11:15:16.812+00:00",
+        "start_am": "2026-10-07T11:14:16.812+00:00",
+        "created_am": "2026-10-07T11:14:26.731037+00:00",
+        "stopped_am": "2026-10-07T11:15:37.150022+00:00",
+        "deactivated": 0,
+        "operation_id": "synthetik500-endqual-frist-20261007-1791371656812",
+        "manifest_hash": "2b83dbaa3cf9c4ec3bbb5e8735e9adcc04cba588cb6c8d28529748da7ad8d62a",
+        "production_commit": "416cb2f1028203df1fe05ff8580bb1a23a7f36b8"
+      },
+      {
+        "reason": "notstopp",
+        "ende_am": "2026-10-07T11:19:33.737+00:00",
+        "start_am": "2026-10-07T11:16:33.737+00:00",
+        "created_am": "2026-10-07T11:16:42.715976+00:00",
+        "stopped_am": "2026-10-07T11:17:35.132885+00:00",
+        "deactivated": 0,
+        "operation_id": "synthetik500-endqual-notstopp-20261007-1791371793737",
+        "manifest_hash": "f319168ae1cfec6588596303f636a54259087cd3a9b98b6b17678eec4893d5f0",
+        "production_commit": "416cb2f1028203df1fe05ff8580bb1a23a7f36b8"
+      }
+    ],
+    "heartbeat": {
+      "endAt": "2026-10-07T11:19:33.737+00:00",
+      "jobId": 1,
+      "state": "stopped",
+      "ticks": 14,
+      "reason": "notstopp",
+      "startAt": "2026-10-07T11:16:33.737+00:00",
+      "version": "helmut-end500/1",
+      "lastTick": "2026-10-07T11:18:37.231817+00:00",
+      "stoppedAt": "2026-10-07T11:17:35.132885+00:00",
+      "observedAt": "2026-10-07T11:19:02.674655+00:00",
+      "deactivated": 0,
+      "operationId": "synthetik500-endqual-notstopp-20261007-1791371793737",
+      "targetCount": 500,
+      "manifestHash": "f319168ae1cfec6588596303f636a54259087cd3a9b98b6b17678eec4893d5f0",
+      "activeTargets": 0,
+      "activationRight": false,
+      "schedulerActive": true,
+      "productionCommit": "416cb2f1028203df1fe05ff8580bb1a23a7f36b8",
+      "recentSuccessfulRuns": 3
+    },
+    "migration": [
+      {
+        "name": "synthetik500_unabhaengiger_endwaechter",
+        "version": "20261007111136"
+      }
+    ],
+    "observedAt": "2026-10-07T11:19:02.669373+00:00",
+    "tableAuthority": {
+      "rls": true,
+      "owner": "postgres",
+      "forceRls": false,
+      "postgresSelect": true,
+      "postgresUpdate": true,
+      "postgresBypassRls": true,
+      "postgresSuperuser": false
+    }
+  },
+  "qualificationManifests": {
+    "frist": "{\n  \"version\": \"helmut-end500-qualifikation/1\",\n  \"scope\": \"Nur Endsteuerung bei 0 aktiven Production-Zielen\",\n  \"operationId\": \"synthetik500-endqual-frist-20261007-1791371656812\",\n  \"productionCommit\": \"416cb2f1028203df1fe05ff8580bb1a23a7f36b8\",\n  \"startAt\": \"2026-10-07T11:14:16.812Z\",\n  \"endAt\": \"2026-10-07T11:15:16.812Z\",\n  \"activationRight\": false,\n  \"test500Right\": false\n}\n",
+    "notstopp": "{\n  \"version\": \"helmut-end500-qualifikation/1\",\n  \"scope\": \"Nur Operator-Notstopp bei 0 aktiven Production-Zielen\",\n  \"operationId\": \"synthetik500-endqual-notstopp-20261007-1791371793737\",\n  \"productionCommit\": \"416cb2f1028203df1fe05ff8580bb1a23a7f36b8\",\n  \"startAt\": \"2026-10-07T11:16:33.737Z\",\n  \"endAt\": \"2026-10-07T11:19:33.737Z\",\n  \"activationRight\": false,\n  \"test500Right\": false\n}\n"
+  },
+  "authenticReceiptExample": {
+    "jobId": "1",
+    "operationId": "synthetik500-endqual-notstopp-20261007-1791371793737",
+    "manifestHash": "f319168ae1cfec6588596303f636a54259087cd3a9b98b6b17678eec4893d5f0",
+    "productionCommit": "416cb2f1028203df1fe05ff8580bb1a23a7f36b8",
+    "beobachtetAm": "2026-10-07T11:16:42.719Z",
+    "zustand": "bereit-lesend",
+    "rpcHash": "ad857f3e93f59b7e7b47df5d01af78e9fce24ff12d4a1e18e0f528a0f9a38757",
+    "primaerbeleg": {
+      "referenz": "/workspace/blocker4-evidence/notstopp-bind-raw.json",
+      "sha256": "bd87868753ad0469615cac8cca11fd659b2688cb014ca7d4f3b5bdb7762c39b2"
+    }
+  },
+  "receiptExampleConsumed": true,
+  "independentFinalReview": {
+    "status": "ok",
+    "result": [
+      "Die Endsteuerung ist im NoActivation-Scope unabhaengig abgenommen.",
+      "Lebender pg_cron-1.6.4-Job postgres, 14 Ticks, service-only RPCs, Quellhashes exakt.",
+      "Frist/Notstopp, 0-Rueckfuehrung und Zukunftsfensterbindung belegt; 0->0 kein 500er-Beleg."
+    ],
+    "route": {
+      "model": "deepseek-v4-pro",
+      "effort": "high",
+      "mode": "read"
+    },
+    "tests": [
+      {
+        "name": "Endsteuerung Belegpruefung",
+        "result": "beleggeprüft/notrun"
+      }
+    ],
+    "risks": [
+      "Neue CI nach ca-certificates-Ergaenzung ausstehend; keine Production-SQL-Aenderung."
+    ],
+    "next": "Kein weiterer Schritt im Endsteuerungs-Scope; 500er-Fensterbindung erst nach gesondertem GO.",
+    "reviewedCodeCommit": "ebba7c26324a5012ffbd4d8e7be24f632ecb9b4e",
+    "reviewedEvidenceSha256": "c8fa80f3864a9267dafcf43edb6ab574b97ab71ad7e3d60ed06c1e45027c7b89",
+    "reviewOutputSha256": "917701706431013955a5dedc701f287bf9856b1cc0e3dbac873fb6f1a476cb91",
+    "productionActivation": false,
+    "production500Test": false
+  }
+}
