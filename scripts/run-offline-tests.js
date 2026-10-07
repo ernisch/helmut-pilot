@@ -275,6 +275,8 @@ const STANDARD = new Set([
   "vorgangs-belegfenster-test.js",          // auch Kandidat6–8 anhand seiner tatsächlichen Quellen prüfen
   "vorgangs-amtliche-sachbindung-test.js",  // Dokumentformeln/Ressortlabels ersetzen keinen Sachgegenstand
   "dip-vorgangsbezug-test.js",             // geschlossene Amtsbezuge trennen fachfremde Vorgaenge
+  "dip-resolver-runtime-witness-test.js",  // feste Codeproben vor jedem Account-/Profilzugriff
+  "vorgangs-landesort-sachbindung-test.js", // gebundener Landesort ersetzt keinen Titelgegenstand
   "verstehen-rest15-test.js",              // unbegonnene Restmenge, keine Wiederaufnahme
   "lage-pruefaufwand-test.js",              // isolierter Medium-Vergleich mit echten Fehlabsätzen
   "lage-pruefaufwand-transport-test.js",     // tatsaechlich serialisierte Denkstufe minimal/low/medium

@@ -4,6 +4,8 @@
 
 ## Aktueller Production- und Entwicklungsstand
 
+- **Blocker 2 (07.10., offen):** PR845 gemergt; Production READY `53e1e369` baut auf `5cada034` auf, die DIP-/Identitaetsdateien sind bytegleich. Direkte Live-Codeprobe offen; fester RO-Nachweispfad vorbereitet. Alle 500 Profile/Hashes/Paketentscheidungen einzeln gebunden; aktuelles bekanntes Fenster: 58 Quellen, 48 vorbereitete Cluster, 97 KO60, 193 SOURCE23, 232 Links und 48 Resolverkennungen samt Zustandsbelegen. Zwei BB-Originalabsaetze an 25 Themenprofile als Kandidaten gebunden. 43 DIP-V2-Versionen nicht geschrieben; notwendige KO-/Briefingeingabeabnahme 0/500. 0 Production-Datenwrites/Helmut-Modellcalls, kein neues Merge-GO. [Nachweis und Grenzen](betrieb/blocker2-runtime-bindungen-20261007.md).
+
 - **Blocker 4: Endsteuerung abgenommen (07.10.,11:19:02 UTC):** Persistenter 30s-Cron lebt; Authentifizierung, Frist und Notstopp produktiv mit 0→0, Rückführung 500/499→0 nur isoliert belegt. Profil-/Auth-/Hauptdaten unverändert; Pro High akzeptiert. Ersetzt historische Hinweise „lebender Wächter offen“. Konkretes Testfenster vorbereitet, ungebunden. Keine Aktivierung/500er Test. [Dossier und Belege](betrieb/blocker4-endsteuerung-20261007.md).
 
 - **Blocker 3 Kosten/Zeit (07.10., offen):** Native Auftrag6.809364USD + private0.636USD =7.445364USD; gespeicherter Vertrag20USD, Endvalidator/Plan7USD widersprechen sich. Grenzen/Reserven unverändert, keine Modelltests. Final abhängig von Blocker1/2. [Bestand, Zeitplan und vollständige Altbelege](betrieb/blocker3-kosten-zeitplan-20261007.md).

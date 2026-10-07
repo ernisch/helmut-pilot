@@ -156,6 +156,11 @@ function isOutputStale(completeKoAt) {
 
 async function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+  // Public, fixed synthetic code probes before any account/session work.
+  if (url.pathname === "/api/release/dip-resolver") {
+    return require("./lib/helmut/dip-resolver-runtime-witness")
+      .handleRequest(request, response, url, { jsonHeaders });
+  }
   // Einmalige explizite B055-Freigabe vor jedem Account-/Profil-Vorlauf.
   // Private Fachtexte kommen ausschliesslich aus dem gebundenen DB-Auftrag.
   if (url.pathname === "/api/cron/b055-einzelabschluss") {
