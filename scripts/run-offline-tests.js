@@ -307,6 +307,7 @@ const STANDARD = new Set([
   "testnachweis-ziel500-test.js",           // 500er Nachweisvollstaendigkeit
   "testnachweis-ergebnisse-test.js",        // Ergebniswahrheit des 500er Nachweises
   "bereichsabnahme-500-test.js",            // lokaler 500er Bereichsabnahme-Aggregator (fail-closed: 500 Profile/1500 Paare)
+  "briefing-pruefaufnahme-test.js",         // RO-Eingaben der inaktiven, geschlossenen synthetischen Kohorten
   "briefing-pruefaufnahme-500-test.js",     // Pruefaufnahme des 500er Briefingnachweises
   "github-direkt500-test.js",               // 500er Direkt-Runner (No-Write/Quellensperre)
   "github-null500-ende-test.js",            // 500er Rueckweg auf null

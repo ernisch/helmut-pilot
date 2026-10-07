@@ -2,6 +2,29 @@
 const A = require("node:assert/strict"), P = require("../lib/helmut/briefing-pruefaufnahme");
 const commit = "a".repeat(40), userId = "test-kohorte-b-055", tag = "2026-09-15";
 const zeit = new Date("2026-09-14T22:30:00Z");
+const S = require("../lib/helmut/synthetik-500-profile");
+function synthetischeProfile(variante = "basis-v1") {
+  const rows = require("../lib/helmut/synthetik-500-import").erzeugeZeilen(S.erzeuge({ variante }));
+  return rows.profileRows.map((row, i) => ({
+    ...require("../lib/helmut/storage").fromMandateProfileRow(row, rows.mandateRows[i]),
+    updatedAt: "2026-10-05T01:07:20.936627Z"
+  }));
+}
+function synthetischeFixture(profile) {
+  let reads = 0, builds = 0, writes = 0;
+  const args = { userId: profile.id, tag, commit, expectedCommit: commit, production: true,
+    now: () => zeit,
+    storage: {
+      getProfile: async () => { reads++; return structuredClone(profile); },
+      saveProfile: async () => { writes++; throw Error("kein Writer erlaubt"); }
+    },
+    build: async (p, id, opts) => {
+      builds++; A.deepEqual(p, profile); A.equal(id, profile.id);
+      A.deepEqual(opts, { aussagenEingabe: true, now: zeit });
+      return { eingabe: { mandat: id, tag }, korrekturBasis: { kos: [] }, briefing: { items: [] } };
+    } };
+  return { args, counts: () => ({ reads, builds, writes }) };
+}
 function fixture(userId = "test-kohorte-b-055") {
   let reads = 0, builds = 0, lageReads = 0;
   const profile = { id: userId, profileActive: false, committees: ["Haushaltsausschuss"] };
@@ -66,5 +89,43 @@ function fixture(userId = "test-kohorte-b-055") {
   await A.rejects(P.erfasse(drift.args));
   const day = fixture(); let t = 0; day.args.now = () => ++t === 1 ? zeit : new Date("2026-09-15T22:01:00Z");
   await A.rejects(P.erfasse(day.args));
-  console.log("9/9 Aufnahmegruppen: Productionbindung, inaktive Kohorte/Cem, lesende Lage-Auswahl, Demo-/Lesefehler, Profil-/Tagesdrift und ehrliche Beleggrenze.");
+  const alle = synthetischeProfile(), ebenen = {};
+  for (const profile of alle) {
+    const f = synthetischeFixture(profile), result = await P.erfasse(f.args);
+    A.deepEqual(f.counts(), { reads: 2, builds: 1, writes: 0 });
+    A.equal(result.profile.id, profile.id); A.equal(result.synthetisch, true);
+    A.equal(result.modellaufrufe, 0); A.equal(result.schreibaufrufe, 0);
+    A.equal(result.fachlicheFreigabe, false); A.equal(result.funktionsnachweis500, false);
+    A.equal(result.all500InputAcceptance, false);
+    ebenen[profile.parlament] = (ebenen[profile.parlament] || 0) + 1;
+  }
+  A.deepEqual(ebenen, { bundestag: 330, "landtag-berlin": 120, "landtag-brandenburg": 50 });
+  for (const parlament of Object.keys(ebenen)) {
+    const f = synthetischeFixture(synthetischeProfile("kontrast-v1").find(p => p.parlament === parlament));
+    await P.erfasse(f.args); A.deepEqual(f.counts(), { reads: 2, builds: 1, writes: 0 });
+  }
+  for (const id of ["test-kohorte-synthetik-bt-000", "test-kohorte-synthetik-bt-331",
+    "test-kohorte-synthetik-be-121", "test-kohorte-synthetik-bb-051",
+    "test-kohorte-synthetik-bt-001-extra", "test-kohorte-synthetik-bt-1", "fremdes-mandat"]) {
+    const f = synthetischeFixture({ ...alle[0], id });
+    await A.rejects(P.erfasse(f.args)); A.deepEqual(f.counts(), { reads: 0, builds: 0, writes: 0 });
+  }
+  for (const mutate of [p => { p.synthetisch = false; }, p => { delete p.synthetisch; },
+    p => { p.fullName = "Realer Name"; }, p => { p.party = "AfD"; }, p => { p.faction = "AfD"; },
+    p => { p.parlament = "landtag-berlin"; }, p => { p.politicalLevel = "Land"; },
+    p => { p.herkunft.amtlicherPersonenbeleg = true; }, p => { p.herkunft.person = "real"; },
+    p => { p.szenario.variante = "frei-erfunden"; }, p => { p.szenario.nummer = 2; },
+    p => { p.profilHash = "0".repeat(64); }, p => { p.paketHash = "0".repeat(64); },
+    p => { p.focusTopics = ["Reales Interessengebiet"]; }, p => { p.state = "Sachsen"; },
+    p => { p.constituency = "Realer Wahlkreis"; }, p => { p.committees = ["Realer Ausschuss"]; },
+    p => { p.publicPositions = ["Nicht deklarierte Position"]; }, p => { p.profileActive = true; }]) {
+    const profile = structuredClone(alle[0]); mutate(profile);
+    const f = synthetischeFixture(profile);
+    await A.rejects(P.erfasse(f.args)); A.deepEqual(f.counts(), { reads: 1, builds: 0, writes: 0 });
+  }
+  const synthetikDrift = synthetischeFixture(alle[0]); let gelesen = 0;
+  synthetikDrift.args.storage.getProfile = async () => ({ ...alle[0],
+    updatedAt: ++gelesen === 1 ? alle[0].updatedAt : "2026-10-06T01:00:00Z" });
+  await A.rejects(P.erfasse(synthetikDrift.args));
+  console.log("9/9 Altgruppen; 500/500 neue inaktive Profile (330/120/50), drei Kontrastprofile, 7 ID-Grenzen, 19 Profilmanipulationen und synthetische Lesedrift: RO/kein Writer/keine fachliche Abnahme.");
 })().catch(e => { console.error(e); process.exitCode = 1; });
