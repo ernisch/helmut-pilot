@@ -59,7 +59,7 @@ Rest zum bestehenden 20-USD-Auftrag einschließlich privater Reserve:
 Keiner dieser Reste ist eine neue Ausführungsfreigabe oder der heutige Tagesstand.
 
 In diesem Thread scheiterten zwei rein lesende Management-SQL-Abfragen mit
-HTTP 400; es wurde kein Kostenstand als erfolgreich frisch gelesen ausgegeben.
+HTTP 400; aus diesen Fehlern wurde kein frischer Kostenstand abgeleitet.
 Die zweite Diagnose verwendete eine nicht vorhandene `jsonb_object_length`-
 Funktion. Nach Neubewertung über den Supabase-SQL-Leser mit expliziter
 REPEATABLE-READ/READ-ONLY-Transaktion und 15s Statement/17s Transaktion/2s Lock
@@ -166,6 +166,34 @@ zugesichert werden. Auch 20 USD kumulativ heben den 6-USD-Tagesriegel innerhalb
 des höchstens vierstündigen, eintägigen Fensters nicht auf. Das maximale neu
 ausgebbare Tagesgeld ist erst nach frischem Tages-/Auftrags-/Privatreservenabgleich
 bestimmbar. Ein Budgetstopp belegt Kostenkontrolle, aber keinen vollständigen Lauf.
+
+## Weitere technische Budgetriegel
+
+Die Dollarreserve ist nur einer der vorhandenen Riegel. `ai.requestOpenAI`
+prüft außerdem vor HTTP die atomare Anzahlreservierung über `reserveLlmCall`
+sowie die Anbietersteuerung. `HELMUT_MAX_LLM_CALLS_PER_DAY` wird in
+`storage.js` bei fehlendem oder ungültigem Wert auf **50 Calls/UTC-Tag**
+begrenzt. Für 1.000 D/R-Aufrufe müssen im tatsächlich wirksamen Tageszähler
+mindestens 1.000 freie passende Positionen bestehen, zusätzlich zu nötigen
+U-/anderen Aufrufen. Ein 20-USD-Auftrag ersetzt diesen Anzahlriegel nicht.
+Sein aktueller Production-Wert ist hier **nicht belegt** und muss aus dem
+endgültigen Runtimebeleg von Blocker 1 übernommen werden; keine Variable geändert.
+
+Wenn `HELMUT_TENANT_LLM_CAP` aktiv ist, gelten außerdem bestehende individuelle
+Overrides bzw. `HELMUT_MAX_LLM_CALLS_PER_TENANT_PER_DAY`; sicherer Fallback
+40. Für jedes Zielprofil sind die zwei D/R-Positionen gegen seinen tatsächlichen
+Rest abzugleichen. Geteilte Understanding-Calltypen besitzen keinen eigenen
+Profilverbrauch, verbrauchen aber globale Positionen und Geld. Falls die
+skalierbare Fairness aktiv ist, muss auch die globale/mandatsbezogene Aufteilung
+ausreichend freie passende Positionen zulassen. Eine pauschale hohe Zahl ist
+kein Nachweis dieser Freiplätze. Globale/per-Profil-Zähler, Fairness-,
+Anbieter- und Geldtickets werden nicht zurückgesetzt oder umgangen.
+
+Der konkrete endliche Admissionplan bindet Konto/Route, Modell, Commit, Fenster,
+Payloadhash und genau einen Versuch je Position. Geld und Intentverbrauch werden
+im selben bestätigten Auth-CAS gebucht. Technisch wirksame Budgetkontrolle
+benötigt damit zugleich bestätigte Dollar-, Anzahl-, Anbieter- und Intentriegel
+an jedem tatsächlich bezahlten Pfad. Die lokale Rechnung ist kein solcher Riegel.
 
 ## Grober Zeitplan und Stoppbedingungen
 
