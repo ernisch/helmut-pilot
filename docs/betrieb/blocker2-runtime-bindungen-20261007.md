@@ -216,3 +216,47 @@ freigegebenen Merge vor ihrer Production-Nachkontrolle. Bis dahin bleibt der
 technische Production-Aufnahmeschritt gesperrt; fachliche Quellen-/KO-Auswahl
 und Eingabeabnahme bleiben offen. Keine weiteren Datenaenderungen, Aktivierung
 oder kostenpflichtigen Helmut-Production-Modellaufrufe wurden ausgefuehrt.
+
+
+## PR853 Production und gesonderter GitHub-Nurleser
+
+Der konkret freigegebene Kopf `cbade2f4359f782e92671d103d616771c11f1281`
+ist mit `f216ad0d7fdbcf74fc89189d7464a05a4e225d11` gemergt. Production ist
+READY (`dpl_E3xKXjXDyDANsKUscVYR3GzzqsNG`); der oeffentliche technische
+Runtimebeleg bestaetigt genau diesen Commit. Der Leser ist bytegleich zum
+freigegebenen Kopf enthalten. Alle52 nativen Vor-/Nachvergleichstabellen,
+einschliesslich Profil- und Modellnutzungsdaten, sind unveraendert.
+Alle500 Profile wurden erneut einzeln gelesen und mit Original-xmin,
+Namen sowie den bereits gebundenen Profil-/Pakethashes verglichen: alle inaktiv.
+
+Die tatsächliche authentisierte Eingabeaufnahme bleibt **0/500**. Der Cloud
+fehlt das Cron-Zugangsgeheimnis; Vercel gibt den als `sensitive` geschuetzten
+Wert nicht heraus. Ein einzelner unauthentisierter GET liefert403 und ist keine
+Eingabeaufnahme. Die500 Profile sind einzeln mit dieser gemeinsamen technischen
+Zugangssperre erfasst. Daraus folgt weder fehlender noch leerer oder falscher
+Inhalt; diese Inhaltsklassen bleiben ohne authentischen Abruf unbestimmbar.
+Die neuen Production-Positiv-/Negativgegenproben bleiben wegen dieser Sperre offen.
+Bestehende495/Cem-Ausnahmen wurden nicht veraendert; der neue Collector waehlt
+streng nur die geschlossenen500 Synthetikkennungen.
+
+Der Betreiber hat einen gesonderten Nurlese-Workflow mit dem bestehenden GitHub
+Secret `HELMUT_CRON_SECRET` gewaehlt. Der vorbereitete Workflow startet nur
+manuell auf `main`, hat keine Aktivierungs-, Datenbank-, Modell- oder Teststart-
+Funktion und liest ausschliesslich `modus=eingabe`. Er bindet den erwarteten
+Production-Commit und Berliner Tag, prueft die Runtimeidentitaet vorher/nachher
+und stoppt bei Zugangs-/Profil-/Commit-/Schreib-/Modellwiderspruch oder Tagesdrift.
+Andere technische/unbrauchbare Antworten werden getrennt von leeren Eingaben
+aufbewahrt; nach Stop nicht abgerufene Profile bleiben ausdruecklich unerfasst.
+
+Jede vollstaendige Antwort samt unveraendertem Antworttext und SHA256 geht
+allein in einen RSA3072/AES256-GCM/gzip-verschluesselten Betreiberbeleg. Der
+bestehende Transport bindet Actions-Lauf, Workflowcommit, Tag und Profilposition;
+die enthaltene Productionbindung wird getrennt geprueft. Der Empfaengerfingerprint ist im Collector fest gebunden; ein fremder
+Empfaenger wird vor dem ersten Abruf abgewiesen. Der Privatschluessel
+bleibt beim Betreiber. Actions-Logs enthalten nur feste Gesamtwerte, Artefakte
+nur verschluesselte JSON-Dateien (ein Tag Aufbewahrung). Verschluesselung ersetzt
+keinen Herkunftsnachweis: Actions-Lauf/Commit/Artefakt sind vor der Entschluesselung
+abzugleichen. Lokal sind alle500 geschlossenen Kennungen, Fehlerklassen,
+Schutzstopps und der Transport geprueft. Das ist keine Production-Abnahme.
+Ein eigener konkreter Merge ist erforderlich; der Workflow wurde nicht gestartet.
+Die Freigabe fuer PR853 erlaubt keinen weiteren Merge oder Production-Dateneingriff.

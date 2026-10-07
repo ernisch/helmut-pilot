@@ -1,0 +1,44 @@
+name: "Blocker 2: inaktive500 Briefingeingaben nur lesen"
+on:
+  workflow_dispatch:
+    inputs:
+      production_commit:
+        description: "Rein lesend bestaetigter READY Production Commit (40 Zeichen)"
+        required: true
+        type: string
+      public_key:
+        description: "Oeffentlicher RSA3072 SPKI Schluessel in Base64"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: helmut-blocker2-readonly500
+  cancel-in-progress: false
+jobs:
+  lesen:
+    if: github.repository == 'ernisch/helmut-pilot' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Inaktive500 Eingaben ausschliesslich lesen und verschluesseln
+        env:
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.public_key }}
+        run: node scripts/github-blocker2-readonly500.js
+      - name: Ausschliesslich verschluesselte Betreiberbelege sichern
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blocker2-readonly500-${{ github.run_id }}
+          path: tmp/blocker2-readonly500/*.json
+          if-no-files-found: ignore
+          retention-days: 1
+          include-hidden-files: false
