@@ -407,27 +407,54 @@ erfüllt sind oder eine unten ausdrücklich geschützte Aktion erreicht wird.
 
 ## Threadwechsel und Übergabesicherung
 
-Ein Threadwechsel soll vorbereitet werden, **bevor** ein Größen-, Nachrichten- oder
-Kontextlimit die laufende Arbeit unbrauchbar macht. Ein technischer Überlauf ist kein
-zulässiger Übergabezeitpunkt.
+Grundsatz: Ein bestehender Thread wird weiterverwendet, solange die nächste Arbeit
+direkt an dasselbe Problemfeld anschließt und der Thread technisch stabil nutzbar ist.
+Ein Sprintabschluss, PR Abschluss, Merge, Deployment, Zwischenbericht oder kleiner bis
+mittlerer Zwischenabschluss ist für sich allein **kein** Grund für einen Threadwechsel.
+Mehrere direkt zusammenhängende Sprints sollen bewusst im selben Thread abgearbeitet
+werden, damit Pflichtlektüre, Startprüfung und Kontextaufbau nicht unnötig wiederholt
+werden.
 
-Wenn ein Thread stark angewachsen ist, ein größerer Zwischenabschluss erreicht wurde,
-wiederholte Lade- oder Kontextprobleme auftreten oder ein Größenlimit plausibel droht,
-vor weiterer umfangreicher Arbeit selbstständig eine Übergabe vorbereiten.
+Ein Threadwechsel soll erst vorbereitet werden, wenn mindestens einer dieser Gründe
+tatsächlich vorliegt:
 
-Die Übergabe enthält mindestens:
+1. Der Thread ist so stark angewachsen, dass weitere umfangreiche Arbeit ein Größen,
+   Nachrichten oder Kontextlimit plausibel gefährdet.
+2. Wiederholte Lade, Nachrichten oder Kontextprobleme treten bereits auf.
+3. Die nächste Aufgabe beginnt ein deutlich anderes Problemfeld und die Trennung
+   verbessert die sichere Bearbeitung wesentlich.
+4. Nach mehreren zusammenhängenden Sprints ist ein größerer Gesamtmeilenstein erreicht
+   und die nächste Phase unterscheidet sich fachlich oder technisch deutlich.
+5. Der Betreiber verlangt ausdrücklich einen neuen Thread.
+
+Ein technischer Überlauf ist kein zulässiger Übergabezeitpunkt. Die Übergabe wird
+rechtzeitig vor einem plausiblen Limit vorbereitet, aber nicht vorsorglich nach jedem
+Sprint.
+
+Die Formulierung `größerer Zwischenabschluss` in älteren oder aktuellen
+Betriebsdokumenten löst allein keinen Threadwechsel aus. Hinweise wie
+`Threadwechsel vorbereiten` oder `nach diesem Zwischenabschluss Übergabe sichern`
+gelten nur, wenn zusätzlich mindestens einer der oben genannten aktuellen Gründe
+vorliegt. Eine ausdrückliche aktuelle Betreiberanweisung hat Vorrang.
+
+Solange keiner dieser Gründe vorliegt, gilt verbindlich: im bestehenden Thread
+weiterarbeiten, auch nach Commit, PR, Merge, Deployment, Nachkontrolle oder Abschluss
+eines kleinen Sprints. Keine neue Übergabe und kein neues privates Übergabearchiv nur
+zur Routine erzeugen.
+
+Wenn ein Threadwechsel tatsächlich erforderlich ist, enthält die Übergabe mindestens:
 
 1. aktuelles Ziel und aktuellen Stand,
 2. Zeitpunkt,
 3. Branch, Commit und relevante PRs,
-4. aktuellen Production- und Deployment-Stand,
+4. aktuellen Production und Deployment Stand,
 5. offene Blocker,
 6. laufende Prozesse und Worktrees,
-7. geltende Freigaben, Kosten- und Sicherheitsgrenzen,
+7. geltende Freigaben, Kosten und Sicherheitsgrenzen,
 8. den nächsten konkreten Arbeitsschritt und seine Abnahmekriterien,
 9. alle für die Fortsetzung benötigten privaten Dateien und Originalbelege,
 10. ein frisches privates Übergabearchiv mit Manifest, vollständiger Dateiliste,
-    Dateigrößen und SHA256-Hashes.
+    Dateigrößen und SHA256 Hashes.
 
 Private Originale bleiben außerhalb von Git. Das Archiv muss alle für die Fortsetzung
 notwendigen privaten Belege enthalten, soweit sie im aktuellen Workspace vorhanden sind.
@@ -444,11 +471,11 @@ beginnen. Stattdessen dem Betreiber eindeutig melden:
 `THREADWECHSEL EMPFOHLEN. Übergabe und privates Archiv sind vorbereitet. Neuen Thread starten und dort fortsetzen.`
 
 Codex eröffnet keinen neuen Chat selbst. Der neue Thread liest zuerst die Pflichtdateien,
-prüft den tatsächlich aktuellen Repository- und Production-Stand und setzt erst danach
+prüft den tatsächlich aktuellen Repository und Production Stand und setzt erst danach
 beim belegten Übergabepunkt fort.
 
-Diese Regel löst keine Production-Aktion aus, erweitert keine Freigabe und verändert
-keine bestehenden Kosten-, Sicherheits- oder Testgrenzen.
+Diese Regel löst keine Production Aktion aus, erweitert keine Freigabe und verändert
+keine bestehenden Kosten, Sicherheits oder Testgrenzen.
 
 ## Selbstständige Sprint-Abwicklung
 
