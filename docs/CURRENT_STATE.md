@@ -1,8 +1,10 @@
 # CURRENT STATE — Helmut
 
-**Stand: 06.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
+**Stand: 07.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
 
 ## Aktueller Production- und Entwicklungsstand
+
+- **Blocker 4: unabhängige Endsteuerung (07.10.,11:19:02 UTC):** Persistenter pg_cron-1.6.4-Job lebt mit 30s-Takt, 14 echten Ticks und drei frischen erfolgreichen Runs. Service-only-RPCs, authentifizierter Operatorweg, automatisches Fristende und Notstopp produktiv mit jeweils 0→0 belegt; alle Profil-/Auth-/Hauptdatenfingerprints unverändert. 500/499→0, Fachdrift, Writer-Race und Rückbau nur mit künstlichen Daten auf isoliertem PostgreSQL17.6 geprüft (12/12 Gruppen); Belegadapter 17/17. DeepSeek V4 Pro High akzeptiert die unabhängige Endabnahme innerhalb des Auftrags ohne Aktivierung. Konkretes späteres Testfenster samt frischem Wächterbeleg vorbereitet, noch ungebunden. Dieser datierte Befund ersetzt historische Aussagen „lebender Endwächter offen“; er ist keine Aktivierungs- oder 500er Testfreigabe. [PR #847](https://github.com/ernisch/helmut-pilot/pull/847) bleibt ungemergt, Merge nur mit konkreter Betreiberfreigabe. [Betrieb und Belege](betrieb/blocker4-endsteuerung-20261007.md).
 
 - **Betreiberentscheidung Native-D (07.10.2026):** Native-D ist kein aktueller Blocker und wird vor dem500er Nachweis nicht weiter bearbeitet. Erst wenn Helmut funktional fertig und der500er Nachweis erfolgreich abgeschlossen ist, kann Native-D als moegliche zusaetzliche Sicherheits- und Infrastrukturverbesserung erneut geprueft werden. Native-D darf aktuell keine Voraussetzung fuer Production, Motor oder500er Test sein. Diese Entscheidung ersetzt aeltere Native-D-Starttorhinweise unten und in verlinkten historischen Belegen. Diese Dokumentationsaenderung veraendert keine Codegates.
 

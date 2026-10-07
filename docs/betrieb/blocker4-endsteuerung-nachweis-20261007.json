@@ -476,5 +476,33 @@
       "sha256": "bd87868753ad0469615cac8cca11fd659b2688cb014ca7d4f3b5bdb7762c39b2"
     }
   },
-  "receiptExampleConsumed": true
+  "receiptExampleConsumed": true,
+  "independentFinalReview": {
+    "status": "ok",
+    "result": [
+      "Die Endsteuerung ist im NoActivation-Scope unabhaengig abgenommen.",
+      "Lebender pg_cron-1.6.4-Job postgres, 14 Ticks, service-only RPCs, Quellhashes exakt.",
+      "Frist/Notstopp, 0-Rueckfuehrung und Zukunftsfensterbindung belegt; 0->0 kein 500er-Beleg."
+    ],
+    "route": {
+      "model": "deepseek-v4-pro",
+      "effort": "high",
+      "mode": "read"
+    },
+    "tests": [
+      {
+        "name": "Endsteuerung Belegpruefung",
+        "result": "beleggeprüft/notrun"
+      }
+    ],
+    "risks": [
+      "Neue CI nach ca-certificates-Ergaenzung ausstehend; keine Production-SQL-Aenderung."
+    ],
+    "next": "Kein weiterer Schritt im Endsteuerungs-Scope; 500er-Fensterbindung erst nach gesondertem GO.",
+    "reviewedCodeCommit": "ebba7c26324a5012ffbd4d8e7be24f632ecb9b4e",
+    "reviewedEvidenceSha256": "c8fa80f3864a9267dafcf43edb6ab574b97ab71ad7e3d60ed06c1e45027c7b89",
+    "reviewOutputSha256": "917701706431013955a5dedc701f287bf9856b1cc0e3dbac873fb6f1a476cb91",
+    "productionActivation": false,
+    "production500Test": false
+  }
 }

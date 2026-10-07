@@ -142,6 +142,15 @@ Fingerprints. Originalantworten und Manifestdateien liegen0600 ausserhalbGit in
 Security-Advisors: keine neuen WARN-/ERROR-Befunde; zwei INFOs fuer absichtlich
 policylose privateRLS-Tabellen ([Erklaerung](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)).
 
-Unabhaengige finale Endabnahme anhand des aktuellen Belegpakets steht noch aus.
-CI19e0bb2b fand fehlende CA-Zertifikate im eigenen Testbuild (curl77);
-`ca-certificates` explizit ergaenzt, TLS-Pruefung bleibt aktiv.
+DeepSeek V4 Pro High hat die finale Endabnahme rein lesend anhand dieses
+Belegpakets akzeptiert: „Die Endsteuerung ist im NoActivation-Scope unabhaengig
+abgenommen.“ Geprueft wurden die Live-Belege, installierten Funktionshashes,
+Quellcode und isolierten Tests; der Reviewer fuehrte selbst keine Tests aus.
+Er unterscheidet ausdruecklich den produktiven 0→0-Beleg vom isolierten 500→0-Test.
+Sein einzig verbliebener Hinweis betrifft die noch laufende PR-Pflicht-CI.
+Das Urteil samt Modellroute steht im datierten Metadatenbeleg.
+
+CI auf `19e0bb2b` fand fehlende CA-Zertifikate im eigenen Testbuild (curl77);
+`ca-certificates` ist explizit ergaenzt, TLS-Pruefung bleibt aktiv. Keine Aenderung
+an der bereits installierten Production-SQL. Die Pflicht-CI des aktuellen PR-Heads
+muss vor einem spaeter separat freigegebenen Merge erfolgreich sein.
