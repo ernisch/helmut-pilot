@@ -172,6 +172,7 @@ const BEREICHE = {
   },
   "500-nachweis": {
     quelle: [/(^|\/)scripts\/500-themenplan(?:-test)?\.js$/, /(^|\/)lib\/helmut\/bereichsabnahme-500\.js$/,
+      /(^|\/)(?:lib\/helmut|scripts)\/end500-/i,
       /(^|\/)(?:lib\/helmut|scripts)\/synthetik-500-(?:kosten-(?:intents|admission|plan)|executor|provider-routen|review-receipt|ab-review-v2)(?:-test)?\.js$/,
       /(^|\/)(?:lib\/helmut|scripts)\/(?:knowledge-object-version|synthetik-500-(?:w-inventar|ko60-plan3))(?:-test)?\.js$/,
       /(^|\/)(?:lib\/helmut|scripts)\/realkohorte-500-/i,
@@ -180,6 +181,7 @@ const BEREICHE = {
       /(^|\/)lib\/helmut\/funktionstest/i, /(^|\/)lib\/helmut\/kapazitaet-500/i,
       /(^|\/)lib\/helmut\/verstehen-/i],
     suiten: [/^500-themenplan-test\.js$/, /^bereichsabnahme-500-test\.js$/,
+      /^end500-/i,
       /^synthetik-500-(?:kosten-(?:intents|admission|plan)|executor|provider-routen|review-receipt|ab-review-v2)-test\.js$/,
       /^synthetik-500-ko60-plan3-test\.js$/,
       /^realkohorte-500-/i,

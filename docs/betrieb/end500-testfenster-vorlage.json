@@ -1,0 +1,13 @@
+{
+  "version": "helmut-end500-bindungsvorlage/1",
+  "operationId": null,
+  "manifestHash": null,
+  "productionCommit": null,
+  "startAt": null,
+  "endAt": null,
+  "idsHash": "4d6d7b169831128cc69f0f3beb04c2fe05b57b7b4f528934b52e5c155f54e258",
+  "bindingConfirmation": "NUR_ENDSTEUERUNG_KEINE_AKTIVIERUNG",
+  "stopConfirmation": "GEBUNDENE_SYNTHETIK500_NUR_DEAKTIVIEREN",
+  "activationRight": false,
+  "test500Right": false
+}
