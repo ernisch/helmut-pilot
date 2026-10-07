@@ -22,14 +22,16 @@ const pin = bytes => ({ path: "/tmp/fictional-only", bytes: bytes.length,
 async function main() {
   let command;
   await test("full real direct assembly binds500 owners1000 D/R intents1500 positions without Native D", () => {
-    command = CLI.prepare(require("./fixtures/synthetik500-direct")());
+    const input = require("./fixtures/synthetik500-direct")();
+    const codec = require("../lib/helmut/synthetik-500-direct-codec");
+    command = CLI.prepare(codec.decode(codec.encode(input)));
     assert.equal(C.validate(command).commandHash, hash(command));
     assert.equal(command.units.length, 500); assert.equal(command.slot.plan.intents.length, 1000);
     assert.equal(command.executor.erwartetePositionen.length, 1500); assert.equal(command.native, null);
     assert(command.drafts.every(d => d.profile.profileActive));
     assert(!command.executor.offeneProductionTore.includes("native-immutable-d-storage-und-retention"));
     assert.equal(command.executor.startrecht, false);
-    const codec = require("../lib/helmut/synthetik-500-direct-codec"), encoded = codec.encode(command);
+    const encoded = codec.encode(command);
     assert(Buffer.byteLength(JSON.stringify(encoded)) < codec.MAX_ENCODED);
     assert.equal(hash(codec.decode(encoded)), hash(command));
     const bad = { ...encoded, bytes: 1 }; assert.throws(() => codec.decode(bad));
@@ -69,6 +71,32 @@ async function main() {
     for (const key of ["gateBytes", "goBytes"]) assert.throws(() => C.validateStoredAuthority(command, record, { ...authority, [key]: Buffer.from("{}").toString("base64") }, time));
     assert.throws(() => C.validateStoredAuthority(command, record, null, time));
     assert(!C.DIRECT_GATES.includes("nativeD")); assert(C.DIRECT_GATES.includes("testGo"));
+    // Real private-pin loader with explicitly fictional gate originals. This
+    // proves the install seam accepts the direct set and still reads all pins;
+    // it is neither an actual Root review nor an operator authorization.
+    const fs = require("node:fs"), dir = fs.mkdtempSync("/tmp/helmut-direct-offline-");
+    const write = (name, value) => {
+      const file = dir + "/" + name, bytes = Buffer.from(JSON.stringify(value));
+      fs.writeFileSync(file, bytes, { mode: 0o600 }); return { ...pin(bytes), path: file };
+    };
+    try {
+      const primary = write("primary.json", { purpose: "FICTIONAL OFFLINE ONLY" }), goPin = write("go.json", go);
+      const admission = { version: C.ADMISSION_VERSION, executor: "/root", purpose: "finite-D-R-500",
+        commandHash: hash(command), planHash: command.slot.planHash, productionCommit: plan.productionCommit,
+        admittedAtUTC: time, expiresAtUTC: plan.endsAtUTC, controlHash: hash("fictional-control"), booksHash: hash("fictional-books"),
+        gates: {}, evidencePins: {} };
+      for (const purpose of C.DIRECT_GATES) {
+        admission.gates[purpose] = true;
+        admission.evidencePins[purpose] = write(purpose + ".json", { ...gate, purpose,
+          primaryEvidencePins: [purpose === "testGo" ? goPin : primary] });
+      }
+      const commandPin = write("command.json", require("../lib/helmut/synthetik-500-direct-codec").encode(command));
+      const admissionPin = write("admission.json", admission), packet = C.loadPacket(commandPin, admissionPin, time);
+      assert.equal(hash(packet.command), hash(command));
+      assert.deepEqual(C.validateStoredAuthority(command, admission, packet.testAuthority, time), go);
+      fs.writeFileSync(primary.path, "{}", { mode: 0o600 });
+      assert.throws(() => C.loadPacket(commandPin, admissionPin, time), /evidence/);
+    } finally { fs.rmSync(dir, { recursive: true }); }
   });
   await test("direct private D storage enforces actual completion ledger usage owner and readback without RPC", async () => {
     const now = new Date().toISOString(), day = now.slice(0, 10), owner = command.drafts[0].profile.id;
@@ -129,6 +157,44 @@ async function main() {
       }
       T.modus = () => "off"; await assert.rejects(Adapter.directRuntime(command));
     } finally { T.modus = mode; Object.assign(storage, old); }
+  });
+  await test("retained unit evidence keeps full D/R and cost receipts independently of later usage rings", async () => {
+    const oldRead = storage.readAuthStore, oldDraft = storage.getLageEntwurfsbeleg;
+    const exportNames = ["loadSynthetik500ProductionCommand", "readSynthetik500Runtime", "readSynthetik500RuntimeEnvelope", "readSynthetik500ProductionEvidence"];
+    const oldExport = Object.fromEntries(exportNames.map(k => [k, storage[k]]));
+    const owner = command.drafts[0].profile.id, ids = command.units[0].intentIds;
+    const auth = { synthetik500KostenAdmission: { planHash: command.slot.planHash,
+      consumed: Object.fromEntries(ids.map(id => [id, { day: "2026-10-01", ticketId: id }])),
+      draftCompletions: { [ids[0]]: { original: "D-completion" } }, reviewBindings: { [ids[1]]: { original: "R-binding" } } },
+      testKostenTage: { "2026-10-01": { calls: Object.fromEntries(ids.map(id => [id, { status: "abgerechnet", cost: 20 }])) } },
+      llmUsage: [{ id: "D", runId: command.slot.plan.runId, profileId: owner },
+        { id: "R", runId: command.slot.plan.runId, politicianId: owner }, { id: "foreign", runId: "foreign", profileId: owner }] };
+    try {
+      storage.readAuthStore = async () => auth;
+      storage.getLageEntwurfsbeleg = async (user_id, id) => ({ user_id, id, payload: {
+        phase: id.endsWith("entwurf") ? "entwurf" : "pruefung", fullText: "FICTIONAL COMPLETE TEXT" } });
+      const evidence = await Adapter.directArtifacts(command, 0, true);
+      assert.equal(evidence.draft.payload.fullText, "FICTIONAL COMPLETE TEXT");
+      assert.equal(evidence.review.payload.phase, "pruefung"); assert.equal(evidence.costs.intents.length, 2);
+      assert.equal(evidence.costs.intents[0].draftCompletion.original, "D-completion");
+      assert.equal(evidence.costs.intents[1].reviewBinding.original, "R-binding");
+      assert.deepEqual(evidence.costs.usage.map(x => x.id), ["D", "R"]);
+      const closedSlot = clone(auth.synthetik500KostenAdmission);
+      auth.llmUsage.length = 0; auth.synthetik500KostenAdmission.consumed = {};
+      assert.equal(evidence.costs.usage.length, 2); assert(evidence.costs.intents[0].consumed);
+      auth.synthetik500KostenAdmission.planHash = hash("drift"); await assert.rejects(Adapter.directArtifacts(command, 0, true));
+      storage.getLageEntwurfsbeleg = async () => null; await assert.rejects(Adapter.directArtifacts(command, 0, true));
+      const args = { operationId: command.slot.plan.operationId, commandHash: hash(command) };
+      const unit = { ...args, index: 0, artifacts: evidence }, c = { commandHash: args.commandHash,
+        closedSlot, units: [{ entered: true }], outputs: [{ resultHash: hash(unit) }] };
+      auth.synthetik500DispatchJournal = { operations: { [args.operationId]: c } };
+      storage.loadSynthetik500ProductionCommand = async () => ({ command });
+      storage.readSynthetik500Runtime = storage.readSynthetik500RuntimeEnvelope = async () => ({ fixture: true });
+      storage.readSynthetik500ProductionEvidence = async () => unit;
+      assert.deepEqual((await Adapter.exportEvidence(args, null)).costs.admission, closedSlot);
+      assert.deepEqual(await Adapter.exportEvidence(args, 0), unit);
+      unit.artifacts = {}; await assert.rejects(Adapter.exportEvidence(args, 0), /export-evidence-drift/);
+    } finally { storage.readAuthStore = oldRead; storage.getLageEntwurfsbeleg = oldDraft; Object.assign(storage, oldExport); }
   });
   await test("operator accepts only protected bounded selectors on exact immutable deployment", async () => {
     const oldLoad = storage.loadSynthetik500ProductionCommand, oldValidate = C.validate;

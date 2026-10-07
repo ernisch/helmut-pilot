@@ -44,6 +44,10 @@ jeweils exakt `intentId`, `profile`, `descriptor`, `briefingEingabe`,
 Quellen enthalten die originalen SOURCE23- und KO60-Zeilen. Der D-Requesthash
 muss zum tatsächlichen Motorprompt, Schema und Body passen. Fiktive Testbodies
 sind ausschließlich Offlinefixtures und keine ausführbaren Production-Eingaben.
+Auch die gesamte Eingabedatei kann verlustfrei mit
+`require("./lib/helmut/synthetik-500-direct-codec").encode(input)` vorbereitet
+werden; `prepare` akzeptiert dieses begrenzte Kompressionsformat. Damit erzwingt
+die private Dateigrenze von16 MiB keine Kürzung vollständiger500er Eingaben.
 
 Alle Dateien liegen privat mit Modus 0600 außerhalb des Repositorys. Diese
 Kommandos beschreiben den späteren Operatorweg; scharfe Schritte wurden hier
@@ -116,10 +120,12 @@ Profile bleibt Aufgabe des separat nachgewiesenen Endwegs/Endwächters.
 ## Ergebnisbelege und spätere Nachweisabnahme
 
 Der Manifestexport enthält Originalcommand, Zulassung und GO-Bytes, Journal,
-Kostenbücher und Usage sowie das originale Runtime-Envelope mit Startsnapshot,
+Kostenbücher, Usage und den aktuellen Kosten-Slot mit vollständigen D-Completion-
+und R-Bindungsbelegen sowie das originale Runtime-Envelope mit Startsnapshot,
 Startbelegen, Aktivierungs-/Endquittung. Die 500 separaten Unitexports enthalten
 vollständige private D-/R-Texte, alle drei gespeicherten Ausgabezeilen mit
-Payloads, Kostenintent-IDs und den beobachteten aktiven Runtimezustand. Auch
+Payloads, Kostenintent-IDs, originale Tickets/Usage/D-Completion/R-Bindung außerhalb
+des globalen Usage-Rings und den beobachteten aktiven Runtimezustand. Auch
 Fehler und nicht erreichte Positionen werden ehrlich ausgewiesen. Ergebnis- und
 Journalhashes binden bestätigte Einheiten; kein verkürzter Text als Vollbeleg.
 

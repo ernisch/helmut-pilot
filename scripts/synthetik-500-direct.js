@@ -80,7 +80,7 @@ async function remote(command, action, index) {
 async function main(argv) {
   const a = args(argv);
   let result;
-  if (a.action === "prepare") result = Codec.encode(prepare(lesePrivat(a.input)));
+  if (a.action === "prepare") result = Codec.encode(prepare(Codec.decode(lesePrivat(a.input))));
   else if (a.action === "install") {
     // Root validates every gate and all its original private bytes before the
     // existing server-selected installation. This step sends no model request.
