@@ -214,6 +214,8 @@ const STANDARD = new Set([
   "synthetik-500-kosten-plan-test.js",      // vollstaendige endliche Kostenpositionen ohne Budgetfreigabe
   "synthetik-500-executor-test.js",         // gebundene Offline-Ablaufvorbereitung und absolute Laufzeitgrenze
   "synthetik-500-production-adapter-test.js", // neuer endlicher Adapter/CAS/Once, ausschliesslich lokale Fakes
+  "synthetik-500-direct-test.js",            // expliziter direkter500er Vertrag, GO/INSERT/readback/aktive500/Operatorgrenzen
+  "synthetik-500-direct-vercel-test.js",     // geschuetzter Operatorzugang: bestehende Vercelheader, kein Tokenaufbau, Frist/keinRetry
   "synthetik-500-u-prestage-entry-test.js", // geschlossener Einzel-U Einstieg, ohne reale Effekte
   "synthetik-500-financing-witness-test.js", // echte reine JS-Hashes/Budgetbindung, synthetische Speicherleser
   "synthetik-500-production-adapter-fix1-test.js", // neue FPA1/FPA2 Fehlerzweige, keine Native-/Provider-Aufrufe
@@ -271,6 +273,8 @@ const STANDARD = new Set([
   "verstehen-169-workflow-test.js",         // manueller 169er Ausfuehrungsweg
   "verstehen-cas-vertrag-test.js",          // CAS-/Quittungsvertrag des Verstehens
   "vorgangs-belegfenster-test.js",          // auch Kandidat6–8 anhand seiner tatsächlichen Quellen prüfen
+  "vorgangs-amtliche-sachbindung-test.js",  // Dokumentformeln/Ressortlabels ersetzen keinen Sachgegenstand
+  "dip-vorgangsbezug-test.js",             // geschlossene Amtsbezuge trennen fachfremde Vorgaenge
   "verstehen-rest15-test.js",              // unbegonnene Restmenge, keine Wiederaufnahme
   "lage-pruefaufwand-test.js",              // isolierter Medium-Vergleich mit echten Fehlabsätzen
   "lage-pruefaufwand-transport-test.js",     // tatsaechlich serialisierte Denkstufe minimal/low/medium
