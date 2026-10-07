@@ -8,7 +8,7 @@
 
 - **Blocker 4: Endsteuerung abgenommen (07.10.,11:19:02 UTC):** Persistenter 30s-Cron lebt; Authentifizierung, Frist und Notstopp produktiv mit 0→0, Rückführung 500/499→0 nur isoliert belegt. Profil-/Auth-/Hauptdaten unverändert; Pro High akzeptiert. Ersetzt historische Hinweise „lebender Wächter offen“. Konkretes Testfenster vorbereitet, ungebunden. Keine Aktivierung/500er Test. [Dossier und Belege](betrieb/blocker4-endsteuerung-20261007.md).
 
-- **Blocker 3 Kosten/Zeit (07.10., offen):** Native Auftrag6.809364USD + private0.636USD =7.445364USD; gespeicherter Vertrag20USD, Endvalidator/Plan7USD widersprechen sich. Grenzen/Reserven unverändert, keine Modelltests. Final abhängig von Blocker1/2. [Bestand, Zeitplan und vollständige Altbelege](betrieb/blocker3-kosten-zeitplan-20261007.md).
+- **Blocker 3 Kosten/Zeit (07.10., offen):** PR846-Codevertrag übernommen:1000D/R-Calls,500 explizite Einheiten;180s Steuerrequest ist keine4h-Laufgarantie. PR850:48 vorbereitete Cluster,Eingabeabnahme0/500; U-/Zusatzpfade und Größen offen. Datierter konservativer Auftrag7.445364USD; Vertrag20USD,Endvalidator/Plan7USD widersprechen sich. Grenzen/Reserven unverändert,keine Modelltests. Final abhängig von vollständigen Blocker1/2-Belegen. [Kosten, Zeit und erhaltene Altbelege](betrieb/blocker3-kosten-zeitplan-20261007.md).
 
 - **Betreiberentscheidung Native-D (07.10.):** Zurueckgestellt bis Helmut funktional fertig UND500er Nachweis erfolgreich; aktuell keine Voraussetzung fuer Production, Motor oder500er Test. Ersetzt alte Starttorhinweise. [Unverkuerzter Wortlaut und bisheriger Status](archive/project_state/2026_10_07_CURRENT_STATE_vor_blocker1_komprimierung.md).
 

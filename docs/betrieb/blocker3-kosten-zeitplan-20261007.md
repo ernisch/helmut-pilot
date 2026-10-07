@@ -103,15 +103,18 @@ Rest bei zusätzlicher Tagesanrechnung. Keine Reserven werden dadurch freigegebe
 
 ## Aufrufinventur und notwendige Eingabegrößen
 
-Vorläufige Integration des Blocker-1-Entwurfs
-[PR #846](https://github.com/ernisch/helmut-pilot/pull/846), gelesener Kopf
-`809ccc29c982faa78eb435e946ebaa26edada7e2`: 500 sequenzielle D/R-Einheiten,
+Übernommener Blocker-1-Codevertrag aus
+[PR #846](https://github.com/ernisch/helmut-pilot/pull/846), geprüfter Kopf
+`b241b36b62bf292c5efc200d17e6a45c20801320`, Merge
+`5cada0342b3c2218b9dd2f8ac50bdf1ee57db63a`: 500 sequenzielle D/R-Einheiten,
 je ein Entwurf D und eine Quellenprüfung R über den bestehenden Helmut-Motor.
 Damit **500 D + 500 R = 1.000 Textmodellaufrufe**, höchstens ein Versuch je
 Intent. Drei gespeicherte Ergebnisse je Einheit ergeben 1.500 Ergebnispositionen,
 keine zusätzlichen 1.500 Modellaufrufe. Kein zweiter 500er Lauf, bezahlter Retry
-oder Resume. Die endgültige Motorabnahme ist noch **abhängig von Blocker 1**;
-der offene PR und Offlinefixtures sind kein Production-Beleg.
+oder Resume. Der Codevertrag und seine Pflicht-CIs sind übernommen. Die tatsächliche
+Production-Zulassung, Operatorcredentials, Runtimeanzahlriegel und Eingabebindung
+bleiben **abhängig von Blocker 1** und dem integrierten Vorflug. Der gemergte Code
+und Offlinefixtures sind kein vollständiger Production-Abnahmebeleg.
 
 Zusätzliche Verstehensaufrufe U: **unbekannt, abhängig von Blocker 2**. Ein
 leerer U-Plan ist nur mit vollständigem Quellen-/KO-/Resolvernachweis zulässig.
@@ -120,6 +123,27 @@ jeweiligen UTC-Tag. Embeddings und andere kostenpflichtige Pfade müssen entwede
 nachweislich ausgeschlossen oder endlich mit eigenem Tarif und Reserve gebunden
 sein; Anzahl und Ausschluss sind ebenfalls offen. Keine unbekannte Menge als
 Null behandeln.
+
+**Neue belegte Blocker-2-Teilergebnisse:** [PR #845](https://github.com/ernisch/helmut-pilot/pull/845)
+ist als `a85834c600a10f4fd324ae21488ed22dc44da39f` übernommen; die weitere
+[Runtime-/Eingabevorbereitung](blocker2-runtime-bindungen-20261007.md) liegt mit
+[PR #850](https://github.com/ernisch/helmut-pilot/pull/850) auf `main` vor
+(hier gelesener Stand `a0b3e817`). Ihr datiertes Planfenster vom 07.10.,
+16:01 Uhr Europe/Istanbul (13:01 UTC) umfasst 58 strukturell zugelassene
+Quellenversionen und 48 vorbereitete Cluster. Die neue Resolverbindung enthält
+97 KO60-Versionen, 193 SOURCE23-Versionen und 232 Links. Alle 48 Entscheidungen
+sind vorbereitet als `neu`; Exaktobjekt, Reservierung und Vormerkung sind jeweils
+als Abwesenheit belegt. Diese Bestandsabwesenheit ist keine Auswahl- oder
+Modellfreigabe. Die frühere 47er Vorbereitung bleibt ein datierter Vorzustand.
+
+Alle 500 Profile sind an die Kandidaten und Originalhashes gebunden, aber
+angenommene notwendige KO-/Briefingeingaben bleiben **0/500**. Die 43 vorbereiteten
+DIP-V2-Versionen wurden laut diesem Beleg nicht in Production geschrieben.
+Zwei vollständige Brandenburger Originalabsätze liefern zusätzliche gebundene
+Verstehensprompt-Kandidaten; Themenbezug von 25 Profilen ist keine angenommene
+Versorgung. Weder 48 Cluster noch 25 Profile ergeben die Zahl notwendiger U-Calls.
+Die U-Liste und die tatsächlichen 500 D-Eingaben bleiben offen. Diese neuen
+Quellen-/Resolveraufnahmen aktualisieren den oben datierten Kostenbestand nicht.
 
 Erwartete Eingabegrößen: **noch nicht belegbar, abhängig von Blocker 2**.
 Benötigt werden je tatsächlichem D- und U-Payload vollständige Bytes/Hash,
@@ -197,7 +221,7 @@ an jedem tatsächlich bezahlten Pfad. Die lokale Rechnung ist kein solcher Riege
 
 ## Grober Zeitplan und Stoppbedingungen
 
-Der Blocker-1-Entwurf arbeitet explizit sequenziell: `start` bearbeitet die erste
+Der übernommene Blocker-1-Codevertrag arbeitet explizit sequenziell: `start` bearbeitet die erste
 Einheit, 499 separate `next`-Aktionen die übrigen. Steuerung, Quell-/Profilguards,
 Geld-CAS, Speicherung, Rücklesen und Belegexports benötigen zusätzliche Zeit.
 Aktivierungs- und Testfenster bleiben höchstens vier Stunden in einem UTC-Tag.
@@ -218,6 +242,24 @@ ohne zusätzliche U-Aufbereitung und sonstigen Aufwand. Der endgültige Zeitplan
 bleibt **abhängig von Blocker 1** und den Eingabegrößen aus **Blocker 2**.
 Zeit für frischen Vorflug, Abschlussaufnahme, Endwächter und Rückweg muss im
 konkreten Fenster ausdrücklich reserviert werden, bevor Startfähigkeit behauptet wird.
+
+Der tatsächliche Operatorvertrag begrenzt einen HTTPS-Steuerrequest einschließlich
+Antwort auf 180 Sekunden und 16 MiB, ohne Redirect oder Retry. Das umfasst eine
+Profileinheit samt D/R und Nebenarbeit; die Frist wird nicht zusätzlich zu den
+beiden enthaltenen Modellfristen addiert. 500 ausgeschöpfte Steuerrequestfristen
+wären allein 25 Stunden und passen nicht in das Vierstundenfenster. Der Vertrag
+belegt deshalb einen begrenzten Einzelrequest, keine garantierte Gesamtlaufzeit.
+Für die vollständige Zeitfreigabe fehlen weiterhin gemessene oder konservativ
+belegte Einheitzeiten und ein endlicher Ablauf aller 500 expliziten Aktionen.
+Status-/Export-/Stopaktionen und die Endbelegsicherung benötigen einen eigenen
+Zeitanteil; sie sind keine zusätzlichen Modellaufrufe.
+
+Der übernommene [Blocker-4-Endweg](blocker4-endsteuerung-20261007.md) besitzt
+einen 30-Sekunden-Schedulertick. Das ist keine Verlängerung des Testfensters oder
+des UTC-Tagesbudgets. Nach Fensterende ist kein neuer bezahlter Dispatch zulässig;
+bereits begonnene oder unbekannt gebliebene Arbeit wird belegt abgerechnet bzw.
+voll reserviert erhalten. Der echte Lauf muss ausreichend Zeit für Abschluss und
+Rückweg freihalten; frühere 0→0-Proben ersetzen keinen vollständigen 500er Lauf.
 
 Stopp vor dem nächsten bezahlten Sender bei fehlender Deckung der ganzen
 Reserve; unbekannten Kosten/Schreibausgängen; unvollständigen oder abweichenden
@@ -266,6 +308,14 @@ Finaler Abschluss erst bei **allen** folgenden Belegen:
    Endwächter; unabhängige Abnahme des integrierten Kostenvertrags.
 
 **Diese Kriterien sind derzeit nicht erfüllt. Blocker 3 bleibt offen.**
+
+Abhängigkeitsstand nach Übernahme von PR845/846/850: Blocker-1-Codevertrag und
+Aufrufstruktur sind integriert, die tatsächlichen Runtime-/Zulassungswerte fehlen.
+Blocker 2 meldet ausdrücklich keine vollständige Eingabeabnahme. Gesamtkosten
+und Zeitgarantie bleiben offen; Plan, Senderzulassung und Endvalidator verwenden
+weiterhin keinen gemeinsam freigegebenen vollständigen 500er Kostenrahmen.
+Keine Budgetgrenze wurde geändert, keine bestehende Bindung freigegeben und kein
+Production-Modelltest gestartet. Dieser Teilstand schließt Blocker 3 nicht ab.
 
 ## Erhaltene historische Kostenstatuszeilen
 
