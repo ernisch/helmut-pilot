@@ -168,15 +168,36 @@ Widersprüche oder sicherheitsrelevante Lücken bleiben dagegen echte Fehler.
 
 ### Subagenten und Parallelisierung
 
-Subagenten nur einsetzen, wenn Parallelisierung tatsächlich Zeit spart oder
-unabhängige Arbeit sinnvoll getrennt werden kann.
+Im aktiven Routerbetrieb ist DeepSeek der Standardausführer für sicher
+abgrenzbare Routinearbeit. Sol orchestriert und soll solche Arbeit nicht selbst
+übernehmen, nur weil Sol sie ebenfalls erledigen könnte.
 
-Kleine klare Aufgaben nicht aus Gewohnheit delegieren. Wenn Sol eine Änderung
-direkt in höchstens ein bis zwei kleinen Dateien sicher erledigen kann und weder
-Parallelisierung noch umfangreiche Analyse nötig ist, arbeitet Sol selbst. Ein
-DeepSeek Start ist nur sinnvoll, wenn mindestens einer dieser Vorteile konkret
-vorliegt: parallele unabhängige Arbeit, größere klar abgegrenzte Analyse,
-eigenständige Implementierung oder erkennbare Einsparung teurer Sol Arbeit.
+Zu Beginn jedes größeren Blockers prüft Sol aktiv, ob mindestens ein klar
+abgegrenztes Arbeitspaket sicher an DeepSeek gegeben werden kann. Wenn ja, soll
+dieses Paket an DeepSeek gehen, sofern Dateiumfang, Schutzgrenzen und Routervertrag
+passen. Wenn kein sinnvolles DeepSeek Paket existiert, nennt Sol kurz sichtbar den
+konkreten Grund.
+
+Typische DeepSeek Aufgaben sind normale Analyse, Codeprüfung, klar abgegrenztes
+Debugging, begrenzte Codeänderungen, Dokumentation, Auswertung vorhandener Tests
+und Reviews sowie Quellen und Vertragsprüfungen. Parallelisierung ist dafür keine
+Voraussetzung. Auch erkennbare Einsparung teurer Sol Arbeit allein ist ein
+ausreichender Delegationsgrund, solange Qualität, Sicherheit und Tempo nicht leiden.
+
+Sol arbeitet direkt, wenn mindestens einer dieser Gründe vorliegt:
+
+1. Architektur, Integration, kritische Production Sicherheit, Production
+   Entscheidung oder finale Abnahme müssen beim führenden Sol Lauf bleiben.
+2. Die Aufgabe lässt sich nicht sicher von gemeinsamem Zustand oder einem
+   sicherheitskritischen Gesamtproblem trennen.
+3. Der notwendige Datei oder Kontextumfang überschreitet den sicheren Routerumfang
+   oder würde den Delegationsnutzen offensichtlich aufzehren.
+4. Es handelt sich nur um eine triviale einzelne Orchestratorhandlung ohne
+   eigenständige Analyse, Implementierung oder Reviewarbeit.
+
+Die bloße Tatsache, dass eine Änderung nur ein oder zwei kleine Dateien betrifft
+oder dass Sol sie schnell selbst erledigen könnte, ist allein kein Grund, DeepSeek
+zu überspringen.
 
 Dateien, die den Router Dateiumfang überschreiten oder deren vollständige
 Übertragung den Delegationsnutzen offensichtlich aufzehrt, nicht erst erfolglos
@@ -210,8 +231,9 @@ ist nur zulässig, wenn DeepSeek unvollständig oder widersprüchlich geliefert 
 relevante Tests scheitern oder Production Sicherheit betroffen ist. Ergebnisse vor
 gemeinsamen Änderungen zusammenführen und auf Widersprüche prüfen.
 
-Einfache Aufgaben ohne Subagent erledigen. Nach jeder DeepSeek Änderung führt Sol
-keine fachliche Vollwiederholung durch. Pflicht bleiben Git Status, Diff, fachlich
+Reine Orchestratorhandlungen ohne eigenständigen Analyse oder Implementierungsanteil
+können ohne Helfer erledigt werden. Nach jeder DeepSeek Änderung führt Sol keine
+fachliche Vollwiederholung durch. Pflicht bleiben Git Status, Diff, fachlich
 notwendige Tests und die Abnahmekriterien gemäß der obigen Risikoprüfung.
 
 ### Sichtbarer Helferstatus
