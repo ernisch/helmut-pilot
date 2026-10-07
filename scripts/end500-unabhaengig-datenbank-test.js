@@ -27,7 +27,7 @@ async function main() {
   A.equal(info.Config.Image,"helmut-end500-pg17:1");
   A.equal(Object.keys(info.HostConfig.PortBindings||{}).length,0);
   A.ok(info.Mounts.every(m=>m.Type==="volume" && m.Destination==="/var/lib/postgresql/data"));
-  A.ok(Number(sql("show server_version_num"))>=170000);
+  A.equal(Number(sql("show server_version_num")),170006);
   sql("create role service_role nologin; create role anon nologin; create role authenticated nologin; create table public.mandate_profiles(user_id text primary key,aktiv boolean not null,geloescht_at timestamptz,fach text default 'unveraendert'); grant usage on schema public to service_role,anon,authenticated; grant select,update on public.mandate_profiles to service_role;");
   const ids=P.erzeuge().profile.map(p=>p.mandatsId); // Test muss reale Generator-ID-Struktur verwenden.
   A.equal(ids.length,500);
@@ -66,7 +66,8 @@ async function main() {
   A.equal(JSON.parse(service(bind(op))).activeTargets,0);
   A.equal(read().operationId,op);A.equal(read().activationRight,false);
   reject("set role service_role;"+bind("synthetik500-doppelt01"),"duplicate key");
-  reject(`select helmut_end500_internal.stop(${q(op)},${q("a".repeat(64))},'frist');`,"end500-frist-nicht-erreicht");
+  reject(`select helmut_end500_internal.stop(${q(op)},${q("a".repeat(64))},'frist','GEBUNDENE_SYNTHETIK500_NUR_DEAKTIVIEREN');`,"end500-frist-nicht-erreicht");
+  reject(`set role service_role; select helmut_end500_internal.stop(${q(op)},${q("a".repeat(64))},'notstopp','FALSCH');`,"end500-endauftrag");
   reject("set role service_role;"+stop(op).replace("a".repeat(64),"f".repeat(64)),"end500-fremde-bindung");
   reject("set role service_role;"+stop(op).replace("GEBUNDENE_SYNTHETIK500_NUR_DEAKTIVIEREN","FALSCH"),"end500-bestaetigung-fehlt");
   ok("ExakteFensterbindung: keine zweiteBindung, fremderHash und vorzeitigeFrist abgewiesen");

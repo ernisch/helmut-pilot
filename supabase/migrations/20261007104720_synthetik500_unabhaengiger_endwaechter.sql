@@ -111,11 +111,12 @@ begin
   return helmut_end500_internal.status();
 end $$;
 
-create function helmut_end500_internal.stop(p_operation_id text,p_manifest_hash text,p_grund text) returns jsonb
+create function helmut_end500_internal.stop(p_operation_id text,p_manifest_hash text,p_grund text,p_bestaetigung text) returns jsonb
 language plpgsql security definer set search_path=pg_catalog set statement_timeout='15s' set lock_timeout='3s' as $$
 declare b helmut_end500_internal.bindings; n integer;
 begin
-  if p_operation_id is null or p_manifest_hash is null or p_grund is null or p_grund not in ('frist','notstopp') then
+  if p_operation_id is null or p_manifest_hash is null or p_grund is null or p_grund not in ('frist','notstopp')
+    or p_bestaetigung is distinct from 'GEBUNDENE_SYNTHETIK500_NUR_DEAKTIVIEREN' then
     raise exception 'end500-endauftrag';
   end if;
   lock table public.mandate_profiles in share row exclusive mode;
@@ -142,7 +143,7 @@ declare b helmut_end500_internal.bindings;
 begin
   select * into b from helmut_end500_internal.bindings where stopped_am is null;
   if found and clock_timestamp()>=b.ende_am then
-    perform helmut_end500_internal.stop(b.operation_id,b.manifest_hash,'frist');
+    perform helmut_end500_internal.stop(b.operation_id,b.manifest_hash,'frist','GEBUNDENE_SYNTHETIK500_NUR_DEAKTIVIEREN');
   end if;
   update helmut_end500_internal.heartbeat set last_tick=clock_timestamp(),ticks=ticks+1;
 end $$;
@@ -186,7 +187,7 @@ begin
   if p_bestaetigung is distinct from 'GEBUNDENE_SYNTHETIK500_NUR_DEAKTIVIEREN' then
     raise exception 'end500-bestaetigung-fehlt';
   end if;
-  return helmut_end500_internal.stop(p_operation_id,p_manifest_hash,'notstopp');
+  return helmut_end500_internal.stop(p_operation_id,p_manifest_hash,'notstopp',p_bestaetigung);
 end $$;
 
 revoke all on all tables in schema helmut_end500_internal from public,anon,authenticated,service_role;
@@ -196,7 +197,7 @@ revoke all on function public.helmut_end500_binden(text,text,text,timestamptz,ti
 revoke all on function public.helmut_end500_notstopp(text,text,text) from public,anon,authenticated;
 grant usage on schema helmut_end500_internal to service_role;
 grant execute on function helmut_end500_internal.status(),helmut_end500_internal.bind(text,text,text,timestamptz,timestamptz,text),
-  helmut_end500_internal.stop(text,text,text) to service_role;
+  helmut_end500_internal.stop(text,text,text,text) to service_role;
 grant execute on function public.helmut_end500_status(),
   public.helmut_end500_binden(text,text,text,timestamptz,timestamptz,text),
   public.helmut_end500_notstopp(text,text,text) to service_role;
