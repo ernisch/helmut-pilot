@@ -3,8 +3,8 @@ FROM postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0e
 RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then \
       apt-get -o Acquire::https::CaInfo=/run/secrets/proxy_ca update && \
-      apt-get -o Acquire::https::CaInfo=/run/secrets/proxy_ca install -y --no-install-recommends curl build-essential postgresql-server-dev-17; \
-    else apt-get update && apt-get install -y --no-install-recommends curl build-essential postgresql-server-dev-17; fi && \
+      apt-get -o Acquire::https::CaInfo=/run/secrets/proxy_ca install -y --no-install-recommends ca-certificates curl build-essential postgresql-server-dev-17; \
+    else apt-get update && apt-get install -y --no-install-recommends ca-certificates curl build-essential postgresql-server-dev-17; fi && \
     if [ -f /run/secrets/proxy_ca ]; then \
       curl --cacert /run/secrets/proxy_ca -fsSL https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.4.tar.gz -o /tmp/pg_cron.tar.gz; \
     else curl -fsSL https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.4.tar.gz -o /tmp/pg_cron.tar.gz; fi && \

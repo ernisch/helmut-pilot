@@ -92,9 +92,11 @@ Migration beim App-Start oder Deployment.
 
 ## Abnahmebelege
 
-Installation und Production-Abnahme stehen noch aus. Die konkrete kontrollierte
-Production-Qualifikation wird nur zwei kurze Endfenster mit bereits0aktiven
-Zielen verwenden: ein automatisch ablaufendes Fenster und einen Operator-Notstopp.
+Installation ist erfolgt: Migration `20261007111136`, gepruefter SQL-SHA256
+`40dc2b19095f6de9d5bfdf38a64799064a4d2d02b08320a8c3f2682a1dd64fc0`
+aus PR847/Codecommit`19e0bb2b`; kein Merge oder App-Deployment. Die kontrollierte
+Production-Qualifikation verwendete nur zwei kurze Endfenster mit bereits0aktiven
+Zielen: automatisch ablaufendes Fenster und Operator-Notstopp.
 Keine Profilaktivierung;500->0 und die Writer-Race werden ausschliesslich mit
 kuenstlichen Daten in isoliertem PostgreSQL17/pg_cron geprueft.
 
@@ -106,3 +108,40 @@ zwei Scheduler-Runs, automatische Frist500->0, Notstopp500/499->0 trotz
 Fachdrift, Rechte, Idempotenz, Reaktivierungsriegel, Writer-Race und Rueckweg. Bereichsauswahl hat zwei
 vorbestehende Zaehlerfehler106vs145; STANDARD ist bytegleich zu main. Diese zwei
 Checks sind kein Beleg fuer eine Standardmengen-Aenderung durch diesen PR.
+
+
+## Live-Ergebnis und unabhaengige Abnahme
+
+07.10.2026,14:19:02Europe/Istanbul /11:19:02UTC: Job1lebt,14Ticks,
+aktiver30sScheduler, drei erfolgreicheRuns in den letzten90s. Production
+pg_cron1.6.4 verbindet sich tatsaechlich als postgres. Tabellen-/UPDATE-Autoritaet:
+postgres ist Tabellenowner mit BYPASSRLS, kein Superuser; SELECT/UPDATE erlaubt.
+Public-RPCs sind INVOKER/service-only, private Tabellen RLS-geschuetzt und fuer
+Dienstrolle direkt weder les- noch schreibbar. Zehn installierte Funktionskoerper
+stimmen exakt mit der geprueften Migrationsquelle ueberein.
+
+Fristfenster14:14:16.812 bis14:15:16.812Turkey: automatisches Ende14:15:37.150022
+Europe/Istanbul (20.338s nach Frist, innerhalb30sTick). Notstoppfenster ab
+14:16:33.737, manueller authentifizierter Dienstrollenstopp14:17:35.132885,
+vor der Frist14:19:33.737. Beide Fenster geschlossen; jeweils0vorher/0nachher.
+Alle Mandats-/Identitaetsvollzeilen samt xmin und Auth-/Hauptdatenfingerprints
+identisch zur Installationsgrundlinie. **500->0 wurde nur isoliert belegt**, mit
+PostgreSQL17.6 und offiziellem pg_cronQuellstandv1.6.4; keine Production-Aktivierung.
+
+Live-Negativproben: anon/authenticated erhalten42501beimStatus-RPC; direkter
+Dienstrollenaufruf des Stop-Helfers mit falscherPhrase liefertP0001end500-endauftrag.
+Der unabhaengige ProHigh-Vorpruefer verlangte genau diese Haertung und akzeptierte
+sie nach Korrektur. Die neue Belegadapterquittung wurde tatsaechlich aus dem frischen
+ARMED-Status vor dem Notstopp erzeugt; diese Qualifikationsoperation ist inzwischen
+verbraucht und darf nicht fuer den500er Start wiederverwendet werden.
+
+[Datierter Metadatenbeleg](blocker4-endsteuerung-nachweis-20261007.json) enthaelt
+Counts, Rechte, Funktionshashes, Scheduler-Runs, Frist/Notstopp, Fenster und
+Fingerprints. Originalantworten und Manifestdateien liegen0600 ausserhalbGit in
+`/workspace/blocker4-evidence/`. Keine Zugangsschluessel oder Profilinhalte imBeleg.
+Security-Advisors: keine neuen WARN-/ERROR-Befunde; zwei INFOs fuer absichtlich
+policylose privateRLS-Tabellen ([Erklaerung](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)).
+
+Unabhaengige finale Endabnahme anhand des aktuellen Belegpakets steht noch aus.
+CI19e0bb2b fand fehlende CA-Zertifikate im eigenen Testbuild (curl77);
+`ca-certificates` explizit ergaenzt, TLS-Pruefung bleibt aktiv.
