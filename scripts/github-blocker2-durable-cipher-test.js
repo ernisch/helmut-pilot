@@ -93,6 +93,18 @@ async function main() {
     ? new Response("x".repeat(T.MAX_BYTES + 1), { status: 401 }) : deniedFetch(url, options);
   const denial = await G.ausfuehren(denied.args);
   A.equal(denial.stopReason, "cron-access-rejected"); A.equal(denial.attempted, 1); A.equal(denial.counts["not-captured"], 499);
+  const stuckCancel = fixture(env), cancelFetch = stuckCancel.args.fetchFn; let bodyCancelled = false;
+  stuckCancel.args.fetchFn = async (url, options) => url.includes("modus=eingabe") ? {
+    status: 401, headers: new Headers({ "content-length": String(T.MAX_BYTES + 1) }),
+    body: new ReadableStream({ cancel() { bodyCancelled = true; return new Promise(() => {}); } })
+  } : cancelFetch(url, options);
+  let cancelTimer;
+  try {
+    const r = await Promise.race([G.ausfuehren(stuckCancel.args), new Promise((_, reject) => {
+      cancelTimer = setTimeout(() => reject(new Error("cancel-ack-must-not-block-stop")), 3000);
+    })]);
+    A(bodyCancelled); A.equal(r.stopReason, "cron-access-rejected"); A.equal(r.attempted, 1);
+  } finally { clearTimeout(cancelTimer); }
   const cancelledUpload = fixture(env), uploadStop = new AbortController(); cancelledUpload.args.signal = uploadStop.signal;
   cancelledUpload.args.persistCheckpoint = async request => {
     if (request.sequence === 1) { uploadStop.abort(); throw new Error("UPLOAD_CANCELLED"); }

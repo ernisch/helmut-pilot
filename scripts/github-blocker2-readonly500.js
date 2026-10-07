@@ -40,7 +40,8 @@ async function readBody(response, signal) {
   signal?.throwIfAborted();
   const limit = T.MAX_BYTES, length = response.headers?.get("content-length");
   if (length != null && /^\d+$/.test(length) && Number(length) > limit) {
-    if (response.body) await response.body.cancel(); throw new Error("body-limit");
+    if (response.body) void response.body.cancel().catch(() => {});
+    throw new Error("body-limit");
   }
   if (!response.body) return "";
   const reader = response.body.getReader(), chunks = []; let size = 0;
@@ -54,7 +55,7 @@ async function readBody(response, signal) {
       const { done, value } = await Promise.race([reader.read(), aborted]);
       signal?.throwIfAborted(); if (done) break;
       size += value.byteLength;
-      if (size > limit) { await reader.cancel(); throw new Error("body-limit"); }
+      if (size > limit) { void reader.cancel().catch(() => {}); throw new Error("body-limit"); }
       chunks.push(Buffer.from(value));
     }
     return Buffer.concat(chunks).toString("utf8");
