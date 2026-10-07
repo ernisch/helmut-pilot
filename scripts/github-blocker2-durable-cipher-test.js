@@ -71,7 +71,7 @@ async function main() {
   const good = fixture(env), result = await G.ausfuehren(good.args);
   const missingStore = fixture(env); delete missingStore.args.persistCheckpoint;
   await A.rejects(G.ausfuehren(missingStore.args)); A.deepEqual(missingStore.counts(), { inputs: 0, identities: 0 });
-  A.equal(result.ok, true); A.equal(good.checkpoints.length, 28);
+  A.equal(result.ok, true); A.equal(result.cipherFinalSaved, true); A.equal(good.checkpoints.length, 28);
   A.deepEqual(good.counts(), { inputs: 500, identities: 2 });
   A.equal(decode(good.checkpoints[0].envelope).attempted, 0);
   A.equal(decode(good.checkpoints[0].envelope).phase, "in-progress");
@@ -86,6 +86,7 @@ async function main() {
     A.equal(f.counts().inputs, failedAt === 0 ? 0 : failedAt === 1 ? 1 : 500);
     A.equal(f.counts().identities, failedAt === 0 ? 0 : failedAt === 1 ? 1 : 2);
     A.equal(f.files.size, 501); A.equal(decode(f.files.get("manifest.json")).stopReason, "cipher-checkpoint-failed");
+    if (failedAt === 27) A.equal(r.cipherFinalSaved, false);
   }
   const denied = fixture(env), deniedFetch = denied.args.fetchFn;
   denied.args.fetchFn = async (url, options) => url.includes("modus=eingabe")
@@ -98,6 +99,7 @@ async function main() {
   };
   const cancelledReport = await G.ausfuehren(cancelledUpload.args);
   A.equal(cancelledReport.stopReason, "workflow-cancelled"); A.equal(cancelledReport.attempted, 1);
+  A.equal(cancelledReport.cipherFinalSaved, false);
   A.equal(cancelledUpload.counts().identities, 1); A.equal(cancelledUpload.files.size, 501);
   // Echtzeitdeadline, die waehrend eines blockierten Bodys ablaeuft. Keine
   // sleeps oder realen Productionanfragen und keine neue 60s-Nachlaufzeit.
@@ -174,6 +176,7 @@ async function main() {
         if (report?.stopReason !== "workflow-cancelled" || report?.attempted !== 2)
           console.error(JSON.stringify({ signal, stopReason: report?.stopReason, attempted: report?.attempted }));
         A.equal(report.stopReason, "workflow-cancelled"); A.equal(report.attempted, 2);
+        A.equal(report.cipherFinalSaved, false);
         A.deepEqual(report.counts, { captured: 1, empty: 0, technical: 1, unusable: 0, contradictory: 0, "not-captured": 498 });
         A.equal(F.readdirSync(source).length, 501); A.equal(report.all500InputAcceptance, false);
         const interrupted = decode(JSON.parse(F.readFileSync(P.join(source, "0002.json"))), 2);
@@ -186,6 +189,7 @@ async function main() {
   const action = F.readFileSync(P.join(__dirname, "../.github/actions/blocker2-readonly500/action.yml"), "utf8");
   A.match(action, /using: node24/); A.match(action, /main: \.\.\/\.\.\/\.\.\/scripts\/github-blocker2-readonly500\.js/);
   A.match(workflow, /blocker2-cipher-parts\.js teilstand/);
+  A.match(workflow, /if: always\(\) && steps\.capture\.outputs\.cipher_final_saved != 'true'/);
   A.match(workflow, /npm ci --prefix scripts\/blocker2-artifact-client --ignore-scripts/);
   A(!/actions: write|contents: write|schedule:|workflow_run:|DEEPSEEK_API_KEY/.test(workflow));
   console.log("B2 dauerhafte Cipher-Sicherung offline: 500 geschlossene Positionen, Upload-vor-GET, Sicherungsfehlerstop, feste Identitaet/Empfaenger, Secrettrennung, SIGINT/SIGTERM und erhaltene Originalbytes nach SIGKILL bestanden. Kein Production-Nachweis.");

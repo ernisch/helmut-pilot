@@ -94,6 +94,8 @@ Profil noch eine Erfassungszahl werden daraus behauptet.
    Teilstand ohne Manifest retten. Fremde Dateien/Empfaenger/Positionen,
    Symlinks und uebergrosse Teile bleiben abgewiesen. Der historische
    Transport-/Recoverypfad bleibt strikt auf seine 501 Originale gebunden.
+   Nach quittierter vollstaendiger Endstandsicherung wird diese Rettung bewusst
+   ausgelassen, damit die Originale nicht nochmals komplett hochgeladen werden.
 7. Laufende Requests einschliesslich Body werden auf die verbleibende
    55min-/Berliner Tagesgrenze begrenzt. HTTP 401/403 stoppen weitere
    Profilabrufe auch bei nicht lesbarem Fehlerbody.

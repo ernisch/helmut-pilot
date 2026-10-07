@@ -92,7 +92,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     const deadline = AbortSignal.timeout(Math.max(1, Math.floor(milliseconds)));
     return signal ? AbortSignal.any([signal, deadline]) : deadline;
   };
-  let checkpointSequence = 0;
+  let checkpointSequence = 0, cipherFinalSaved = false;
   const checkpoint = async (final = false) => {
     const allStatuses = TARGET.map((target, index) => statuses[index] || {
       userId: target.mandatsId, position: index + 1, status: "not-captured", fullBodyRetained: false });
@@ -111,6 +111,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     try {
       await persistCheckpoint({ sequence: checkpointSequence++, tag, envelope,
         completedPositions: statuses.length, final, signal, cancelled: signal?.aborted === true });
+      if (final && !signal?.aborted) cipherFinalSaved = true;
     } catch { stopCheck(); if (!stopped) stopped = "cipher-checkpoint-failed"; }
     stopCheck();
   };
@@ -177,7 +178,8 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
   await checkpoint(true);
   const counts = Object.fromEntries(["captured", "empty", "technical", "unusable", "contradictory", "not-captured"]
     .map(status => [status, statuses.filter(s => s.status === status).length]));
-  const report = { ok: !stopped && counts.captured === 500, collectionCompleted: !stopped && attempted === 500, reinLesend: true, profiles: 500, attempted, counts,
+  const report = { ok: !stopped && counts.captured === 500, collectionCompleted: !stopped && attempted === 500,
+    cipherFinalSaved, reinLesend: true, profiles: 500, attempted, counts,
     stopReason: stopped, productionCommit: env.HELMUT_PRODUCTION_COMMIT, all500InputAcceptance: false,
     fachlicheFreigabe: false, paidModelCalls: 0, productionDataWrites: 0, transaktionalerSnapshot: false };
   await seal("manifest.json", { version: 1, purpose: "blocker2-readonly500-manifest", ...report,
@@ -203,7 +205,10 @@ if (require.main === module) {
   const { checkpointWriter } = require("./github-blocker2-cipher-checkpoint");
   ausfuehren({ signal: controller.signal, writeEnvelope: (name, envelope) => atomicEnvelope(dir, name, envelope),
     persistCheckpoint: checkpointWriter({ source: dir, env: process.env })
-  }).then(r => { console.log(JSON.stringify(r)); if (!r.ok) process.exitCode = 1; })
+  }).then(r => {
+    if (process.env.GITHUB_OUTPUT) F.appendFileSync(process.env.GITHUB_OUTPUT, "cipher_final_saved=" + String(r.cipherFinalSaved) + "\n");
+    console.log(JSON.stringify(r)); if (!r.ok) process.exitCode = 1;
+  })
     .catch(() => { console.error("Blocker2 Nurleseaufnahme unvollstaendig; ausschliesslich verschluesselte Belege."); process.exitCode = 1; })
     .finally(cleanup);
 }
