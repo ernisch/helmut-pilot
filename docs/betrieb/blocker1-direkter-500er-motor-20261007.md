@@ -1,9 +1,21 @@
 # Blocker 1: direkter synthetischer 500er Motorweg
 
-Stand: 07.10.2026. Codevorbereitung auf `main`-Basis `416cb2f1`; kein
+Stand: 07.10.2026. Direkter Motorweg auf `main`-Commit `5cada034`; kein
 Production-Write, keine Aktivierung und kein Production-Modellaufruf in diesem
 Arbeitsauftrag. Die technische Codeabnahme und der spätere echte 500er Nachweis
-sind getrennte Abnahmen. Merge bleibt ausdrücklich freigabepflichtig.
+sind getrennte Abnahmen.
+
+## Merge- und Deploymentstand
+
+[PR #846](https://github.com/ernisch/helmut-pilot/pull/846)
+(Kopf `b241b36b62bf292c5efc200d17e6a45c20801320`) ist nach
+ausdrücklicher Betreiberfreigabe per Squash nach `main` gemergt:
+`5cada0342b3c2218b9dd2f8ac50bdf1ee57db63a`. Das automatische Production
+Deployment ist READY; das aktuelle Production-Ziel steht auf genau diesem
+Commit. [PR-Pflicht-CI](https://github.com/ernisch/helmut-pilot/actions/runs/37618464270)
+beide success. [main-CI](https://github.com/ernisch/helmut-pilot/actions/runs/37621852879):
+Browser success, Offline noch laufend und hier nicht als bestanden ausgewiesen.
+Code/Offline ist damit unabhängig akzeptiert und Production ausgerollt.
 
 ## Technisches Abnahmekriterium
 
@@ -71,15 +83,14 @@ kein Modellaufruf und keine Aktivierung. Remoteaktionen benötigen den bestehend
 `HELMUT_ADMIN_SECRET` als Bearer; keine Querysecret-, Cronsecret- oder Cookie-
 Ausweichroute. Die CLI setzt keine Production-Flags.
 
-Die tatsächlichen Vercel-Adressen sind SSO-geschützt: die reine GET-Healthprobe
-vom07.10. wird auf den Vercel-Login umgeleitet. Für diesen Bestand verwenden die
-Beispiele ausdrücklich `--vercel-oidc`: ein bereits vorhandener kurzlebiger
+Die tatsächlichen Vercel-Adressen sind SSO-geschützt. Für die rein lesende
+Live-Abnahme vom07.10. wurde der bestehende Vercel-Deployment-Zugang genutzt; es
+wurde nichts angelegt oder geändert. Für diesen Bestand verwenden die Beispiele
+ausdrücklich `--vercel-oidc`: ein bereits vorhandener kurzlebiger
 `VERCEL_OIDC_TOKEN`, zusätzlich der Helmut-Bearer. Der Token muss nach bereits
 bestehender Trusted-Sources-Regel für dieses Production-Ziel zugelassen sein;
 ein Development-Token besitzt diese Berechtigung nicht automatisch. Der reine
-API-Zugang `VERCEL_TOKEN` ersetzt diesen Deployment-Zugang nicht. Der hier
-gelesene Zielkontext ist Projekt `prj_xbZ6QzTkr7YoxQI71lW59FT03IR3`, Team
-`team_bTAfzDHwD3mT03r1z7rh1TC3`.
+API-Zugang `VERCEL_TOKEN` ersetzt diesen Deployment-Zugang nicht.
 
 Alternativ wählt `--vercel-bypass` ausdrücklich einen bereits vorhandenen
 `VERCEL_AUTOMATION_BYPASS_SECRET`. Beide Schalter schließen sich aus. Die CLI
@@ -89,14 +100,39 @@ Kindprozess, Tokenaufbau, Refresh, Trusted-Sources-Schreibzugriff oder Wechsel
 bei abgelehntem Zugang; kein Zugangswert in argv, Ausgabe oder Dateien. Frist
 180s und Antwortgrenze16 MiB gelten für den ganzen Request, ohne Redirect oder
 Retry. Ohne expliziten Schalter werden keine Vercel-Zugangsdaten gesendet.
-Dieser Auftrag legt weder Token noch Schutzregel an. Tatsächlich zugelassene
-Operatorcredentials sind hier noch nicht nachgewiesen; die Offlineprüfung
-benutzt ausschließlich fiktive Werte und Transportstubs.
+Dieser Auftrag legt weder Token noch Schutzregel an. Ein gültiger Helmut-Admin-
+Bearer ist hier noch nicht nachgewiesen; die Offlineprüfung benutzt ausschließlich
+fiktive Werte und Transportstubs.
 
-Die rein lesende Deploymentliste bestätigt weiterhin Production READY
-`dpl_E2kyvMw6bMetgeKxvTqeExKzmM8n`/Commit`0333fd20`; die neueren main-Stände
-sind nicht ausgerollt. Der neue direkte Operator ist deshalb bis zur konkreten
-Merge-/Ausrollfreigabe ausschließlich geprüfter Code, keine Live-Funktionsabnahme.
+Rein lesende Live-Abnahme vom07.10.2026 mit dem bestehenden
+Vercel-Deployment-Zugang, ohne Anlage oder Änderung: `GET /api/release/public`
+liefert 200 mit JSON `ok:true`, `ready:false`, `storage:true`; `ready:false` ist
+keine globale Gesundheitsabnahme. `GET /api/ops/synthetik500-direkt` liefert
+ohne Bearer und mit absichtlich falschem Bearer jeweils 404, JSON `ok:false`,
+`no-store`. Kein POST, in diesem Auftrag kein Command installiert, keine Aktivierung, keine
+Production-Datenänderung, kein500er Lauf und0 bezahlte Production
+Modellaufrufe.
+
+Externer Zugangsblocker: Die konfigurierte aktuelle autorisierte Cloud-Umgebung
+hat keine `HELMUT_ADMIN_SECRET`-Bindung; die laufende Umgebung führt weder
+`HELMUT_ADMIN_SECRET` noch `HELMUT_ADMIN_SECRET_FILE`, und geprüfte
+konventionelle `.env`-Dateien existieren nicht. Der Betreiber kennt keinen
+bestehenden Secretpfad. Das sensitive Vercel Production Secret soll nicht
+ausgelesen werden und wurde nach dieser Weisung nicht erneut angefragt. Es wird
+kein Zugang erfunden und kein Secret geändert. Damit fehlt der positiv
+authentifizierte Zugriff auf diesen Direct-Endpunkt; das technische
+Gesamtabnahmekriterium von Blocker 1 ist NICHT vollständig erfüllt.
+
+Letzter kleiner sicherer Nachweis: ein autorisierter Operator mit bestehendem
+Secret macht GENAU EIN GET auf den exakt gebundenen unveränderlichen
+Production-Direct-Endpunkt mit gültigem bestehendem Bearer und vorhandenem
+Vercel-Zugang; erwartet werden 405 und `Allow: POST`. Im Handler liegt dieser
+Return vor Bodylesen, Commandladen, DB und Adapter. Protokolliert werden nur
+bereinigter Antwortstatus/Allow/JSON, UTC-Zeit und Commitbindung, kein Secret
+und kein Requestheader. Alternativ wird das bestehende Secret über zugelassenen
+privaten Cloud-/Dateizugang eingespeist, ohne das Production Secret zu ändern;
+eine neue Einrichtung benötigt Betreiberfreigabe. Aus diesem Nachweis wird keine
+Freigabe für Test, Aktivierung oder Modelle abgeleitet.
 
 `start` bearbeitet nur Ownerposition 0. Jede weitere explizite `next`-Aktion
 bearbeitet genau die nächste nachweislich noch unbetretene Einheit desselben
@@ -170,10 +206,17 @@ Gezielte Offlineprüfungen: Direkt-Suite8/8 Gruppen einschließlich tatsächlich
 CLI-Dateipfad für normale/komprimierte private Eingaben und geschlossener Route,
 Speicher-/Herkunftsdrift und Stop; bestehende Adapter-, Review-Receipt- und
 Kosten-/CAS-Gegenfälle; Generator-/Review-Suite15/15 (direkter Vertrag mit
-3000/6000 Tokens), kritische3/3 und EU-Alias; unveränderter Nachweisvalidator64/64 und reale
-Senderdeadline 11/11 mit ausschließlich lokalen Transportstubs. Die Direkt-Suite und die5/5 Transportgruppen (bestehende OIDC-/Bypass-Header,
+3000/6000 Tokens), kritische3/3 und EU-Alias; unveränderter Nachweisvalidator
+64/64 und reale Senderdeadline 11/11 mit ausschließlich lokalen Transportstubs.
+Die Direkt-Suite und die5/5 Transportgruppen (bestehende OIDC-/Bypass-Header,
 fehlende/ungültige Credentials, Redirect/Antwortgrenzen/Frist, jeweils mit
 lokalen HTTPS-Stubs und ohne Kindprozess oder Tokenaufbau) sind im
-Standard-Offline-Lauf registriert. Pflicht-CI und unabhängige
-kritische Codeprüfung werden im PR belegt. Kein echter500er Lauf und keine
-Production-Funktionsabnahme aus diesen Offlinefixtures.
+Standard-Offline-Lauf registriert. Einmalige Codeprüfungen DeepSeek Pro High für
+Operator, Motor und vorhandene Vercel-Headers waren statusok; die gezielten
+Suites und der strenge 64/64-Nachweisvalidator bleiben unverändert erhalten.
+Pflicht-CI des PR #846 (37618464270) beide success. Alle fachlichen Schutzgates,
+Kosten-/Tagesgrenzen, Originale, Aufrufschritte, Vollbelege und fachlichen
+Nachweisgrenzen im Dossier bleiben erhalten. Native D ist keine Voraussetzung.
+Dynamische Start-/GO-/Finanzierungstore werden NICHT für grün erklärt. Kein
+echter500er Lauf und keine Production-Funktionsabnahme aus diesen
+Offlinefixtures.
