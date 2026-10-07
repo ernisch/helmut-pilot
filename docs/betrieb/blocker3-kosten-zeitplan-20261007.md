@@ -6,6 +6,12 @@ kein Production-Modelltest und keine Aktivierung gestartet. Dieser Thread bleibt
 der Arbeitsort. Endgültiger Abschluss hängt ausdrücklich von den endgültigen
 Ergebnissen aus Blocker 1 und Blocker 2 ab.
 
+Die [vollständige Prüfung des 7/20-USD-Vertragswegs](blocker3-kostenvertrag-pruefung-20261007.md)
+trennt Sendergrenze und Endvalidator, bindet historische Aufrufdeckel und enthält
+die kleinste spätere Änderung samt konkreter, noch nicht erteilter Freigabe.
+Ein [ausfüllbares Offline-Kostenblatt](blocker3-kostenblatt-vorlage-20261007.json)
+ist vorbereitet; es erteilt keine Runtime- oder Budgetzulassung.
+
 ## Belegte Grenzen und ihr Widerspruch
 
 | Bindung | Vorhandener Wert | Technische Quelle und Bedeutung |
@@ -23,7 +29,10 @@ Startvertrag, der 20 USD akzeptiert, und eine spätere Ablehnung oberhalb von
 ausdrücklichen Auflösung müssen alle anwendbaren Bindungen eingehalten werden;
 für den erfolgreichen 500er Nachweis bleibt damit die engere 7-USD-Grenze
 maßgeblich. Dies ist keine Umstellung oder neue Konfiguration des Tages- oder
-Auftragsriegels. Keine automatische Vertragsmigration, keine Anhebung des
+Auftragsriegels. Die 7-USD-Planprojektion wird nicht als zusätzlicher Sender-Riegel
+durchgesetzt: der heutige Sender prüft das gespeicherte 20-USD-Limit. Die engere
+7-USD-Grenze entscheidet über die Endabnahme, nicht zusätzlich über jeden Sender.
+Keine automatische Vertragsmigration, keine Anhebung des
 Validators, kein neues leeres Kostenkonto und kein Kostenreset.
 
 ## Bestand, Reserven und verbleibender Spielraum
@@ -184,7 +193,10 @@ der maximalen D/R-Ausgabetokens allein kostet höchstens 12 USD regulär bzw.
 Eingabekosten. Das sind keine tatsächlichen Mindestkosten. Ohne vollständige
 Eingaben und andere Pfade existiert noch keine belastbare Gesamtprognose.
 
-Aktueller belegter 7-USD-Rahmen lässt schon die erste neue D-Reserve nicht zu.
+Ein auf den 7-USD-Endnachweis ausgerichteter Reserveguard würde schon die erste
+neue D-Reserve verweigern; dieser zusätzliche 7-USD-Guard ist im gespeicherten
+20-USD-Senderweg nicht vorhanden. Der konservative Endbeleg verletzt bereits
+ohne neue Kosten die 7-USD-Grenze.
 Es kann daher unter diesem Stand **kein finanzierter vollständiger 500er Lauf**
 zugesichert werden. Auch 20 USD kumulativ heben den 6-USD-Tagesriegel innerhalb
 des höchstens vierstündigen, eintägigen Fensters nicht auf. Das maximale neu
@@ -202,6 +214,11 @@ mindestens 1.000 freie passende Positionen bestehen, zusätzlich zu nötigen
 U-/anderen Aufrufen. Ein 20-USD-Auftrag ersetzt diesen Anzahlriegel nicht.
 Sein aktueller Production-Wert ist hier **nicht belegt** und muss aus dem
 endgültigen Runtimebeleg von Blocker 1 übernommen werden; keine Variable geändert.
+Historische Production-Leser vom 19./20.09. dokumentieren 2.416, U-Reserve702
+und Vorrang200; sie belegen keinen heutigen Wert. Unter diesen Szenariowerten
+stehen D/R höchstens1.714 und U2.216 im gemeinsamen Zähler zur Verfügung.
+Die genaue Herleitung, der Fehlerpfad und benötigte frische Beleg sind in der
+oben verlinkten Vertragsprüfung festgehalten.
 
 Wenn `HELMUT_TENANT_LLM_CAP` aktiv ist, gelten außerdem bestehende individuelle
 Overrides bzw. `HELMUT_MAX_LLM_CALLS_PER_TENANT_PER_DAY`; sicherer Fallback

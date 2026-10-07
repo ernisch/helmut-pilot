@@ -1,0 +1,21 @@
+{
+  "version": "helmut-synthetik500-offline-kostenblatt/1",
+  "understandingCalls": null,
+  "otherPaidCalls": null,
+  "reviewMaxOutputTokens": 3000,
+  "tokenRows": null,
+  "callCounter": null,
+  "observation": {
+    "observedAtUTC": "2026-10-06T23:05:51.000Z",
+    "day": "2026-10-06",
+    "source": "docs/betrieb/pre500-client-sicherung-20261007.md; historical, not fresh admission",
+    "orderSpentIncludingExternalMicroUsd": 6809364,
+    "orderOpenMicroUsd": 0,
+    "externalAlreadyIncludedMicroUsd": 5195303,
+    "privateAdditionalMicroUsd": 636000,
+    "globalSpentMicroUsd": 13542966,
+    "globalOpenMicroUsd": 3176000,
+    "historicalDaySpentMicroUsd": 15106,
+    "historicalDayOpenMicroUsd": 0
+  }
+}
