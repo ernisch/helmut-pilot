@@ -270,6 +270,8 @@ const STANDARD = new Set([
   "verstehen-169-workflow-test.js",         // manueller 169er Ausfuehrungsweg
   "verstehen-cas-vertrag-test.js",          // CAS-/Quittungsvertrag des Verstehens
   "vorgangs-belegfenster-test.js",          // auch Kandidat6–8 anhand seiner tatsächlichen Quellen prüfen
+  "vorgangs-amtliche-sachbindung-test.js",  // Dokumentformeln/Ressortlabels ersetzen keinen Sachgegenstand
+  "dip-vorgangsbezug-test.js",             // geschlossene Amtsbezuge trennen fachfremde Vorgaenge
   "verstehen-rest15-test.js",              // unbegonnene Restmenge, keine Wiederaufnahme
   "lage-pruefaufwand-test.js",              // isolierter Medium-Vergleich mit echten Fehlabsätzen
   "lage-pruefaufwand-transport-test.js",     // tatsaechlich serialisierte Denkstufe minimal/low/medium
