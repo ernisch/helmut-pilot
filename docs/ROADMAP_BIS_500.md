@@ -21,7 +21,7 @@ Importanweisung und kein Beleg synthetischer Startbereitschaft.
 
 **Blocker1, 07.10.2026:** Direkter synthetischer500er Motorweg aus PR846 nach
 konkreter Freigabe als`5cada034` gemergt und Production READY, ohne Native D.
-Code-/Offlineabnahme und PR-Pflicht-CI bestanden; main-CI noch laufend.
+Code-/Offlineabnahme sowie PR- und main-Pflicht-CI bestanden.
 Die rein lesende Abnahme belegt die Abweisung fehlender/falscher Bearer.
 Der bestehende Adminzugang fehlt in der autorisierten Arbeitsumgebung;
 die positive Authprobe bleibt als externer Zugangsblocker offen.

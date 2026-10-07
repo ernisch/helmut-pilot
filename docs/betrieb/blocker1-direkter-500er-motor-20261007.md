@@ -14,7 +14,10 @@ ausdrücklicher Betreiberfreigabe per Squash nach `main` gemergt:
 Deployment ist READY; das aktuelle Production-Ziel steht auf genau diesem
 Commit. [PR-Pflicht-CI](https://github.com/ernisch/helmut-pilot/actions/runs/37618464270)
 beide success. [main-CI](https://github.com/ernisch/helmut-pilot/actions/runs/37621852879):
-Browser success, Offline noch laufend und hier nicht als bestanden ausgewiesen.
+Browser und Syntax/Offline beide success, einschließlich Fachbereichsregression
+und isoliertem Datenbanknachweis. Die geprüften direkten Motor- und Testdateien
+sind im Production-Commit bytegleich zum PR-Kopf; der Test-Runner ergänzt
+ausschließlich zwei Suiten aus dem separat gemergten Blocker2.
 Code/Offline ist damit unabhängig akzeptiert und Production ausgerollt.
 
 ## Technisches Abnahmekriterium
