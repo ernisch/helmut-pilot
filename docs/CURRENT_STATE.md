@@ -1,8 +1,10 @@
 # CURRENT STATE — Helmut
 
-**Stand: 06.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
+**Stand: 07.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
 
 ## Aktueller Production- und Entwicklungsstand
+
+- **Blocker 4: Endsteuerung abgenommen (07.10.,11:19:02 UTC):** Persistenter 30s-Cron lebt; Authentifizierung, Frist und Notstopp produktiv mit 0→0, Rückführung 500/499→0 nur isoliert belegt. Profil-/Auth-/Hauptdaten unverändert; Pro High akzeptiert. Ersetzt historische Hinweise „lebender Wächter offen“. Konkretes Testfenster vorbereitet, ungebunden. Keine Aktivierung/500er Test. [Dossier und Belege](betrieb/blocker4-endsteuerung-20261007.md).
 
 - **Blocker 3 Kosten/Zeit (07.10., offen):** Native Auftrag6.809364USD + private0.636USD =7.445364USD; gespeicherter Vertrag20USD, Endvalidator/Plan7USD widersprechen sich. Grenzen/Reserven unverändert, keine Modelltests. Final abhängig von Blocker1/2. [Bestand, Zeitplan und vollständige Altbelege](betrieb/blocker3-kosten-zeitplan-20261007.md).
 
@@ -63,7 +65,7 @@
 
 ## Starttor und Schutzgrenzen
 
-**Realkohorten-Vorbereitung (01.10.2026, ausschließlich offline):** Ein eigener [Vertrag](../lib/helmut/realkohorte-500-vertrag.js) bindet das kanonische Paket, genau dessen 500 IDs und 330/120/50, einen frischen 500/501/0-Snapshot, Kosten einschließlich Reservierungen (6 USD/Tag, 7 USD/Auftrag) und ein kurzes Startfenster. Der [Endgenerator](../scripts/realkohorte-500-endweg.js) erzeugt ausschließlich eine private 0600-Datei außerhalb des Repositorys; Transaktion, exakte Quittung und Bestands-CAS, Erhaltung aller Identitäten und nur Deaktivierung. Kollisionsfreie SQL-Dollarquote ist durch vier neue Gegenfälle abgesichert. **PR #760 belegt den manuellen Endweg mit 10/10 neuen Fällen auf echter isolierter PostgreSQL17:** voller Rückweg 500→0, Bestands-/Fremdprofil-Erhaltung, CAS-/Drift-Abweisung und atomarer Triggerrollback. Das ist kein Production-Endlauf; ein tatsächlich lebender automatischer Endwächter bleibt offen. Der alte synthetische null500-Vertrag bleibt unverändert. Der [Erwartungsgenerator](../scripts/realkohorte-500-erwartungen.js) legt 500 individuelle Voraberwartungen und 1500 **ausstehende** Bereichspositionen fest, mit getrennten Mengen- und Qualitätsbilanzen. Keine Nachrichtenauswertung oder Fachabnahme; frische Mandate/Quellen und das konkrete Nachrichtenzeitfenster fehlen noch. Neue gezielte Prüfungen: Vertrag 41/41, SQL-Kollision 4/4, Erwartungen 31/31; unabhängige kritische Prüfung akzeptiert ausschließlich die Offline-Vorbereitung. Beide neuen Schutzsuiten sind im Pflichtlauf. Kein Import, keine Aktivierung, kein 500er Test und keine SQL-Anwendung.
+**Realkohorten-Endweg (historisch,01.10.):** Manuelles 500→0 nur isoliert belegt, keine Production-Aktivierung oder Testfreigabe. [Vollständige unveränderte Vorarbeit](archive/project_state/2026_10_07_realkohorten_endweg_historisch.md). Aktueller unabhängiger Wächter siehe Blocker 4 oben.
 
 **Runtime (01.10.2026, inert installiert):** End-RPCs vorhanden, Endwächter nur vorbereitet; Manifest, sechs Nullbestandsbelege, lebender Wächter und Aktivierungs-GO bleiben Pflicht. Ergebnisleser erteilt kein Fachurteil. Native Schema-Anwendung nach unverändertem REST403-Ausgang: 8,926s gemessen, keine belegte harte20s-Admintransportfrist. DB17s/Statement15s/Lockwarten3s und Betreiberfrist20s für KI-Anfragen samt Body unverändert. Unbekannter Schreibausgang: Stop, lesende Klärung, kein Retry. [CLI-/Journalzuordnung und Rückwege](betrieb/synthetischer-500er-auftrag-20261001.md).
 
