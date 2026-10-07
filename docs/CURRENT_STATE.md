@@ -4,13 +4,13 @@
 
 ## Aktueller Production- und Entwicklungsstand
 
-- **Blocker1 (07.10., Code):** Direkter500er Motor ohne Native-D-Voraussetzung; Gates, D/R, Kosten/Stop und Vollbelege erhalten. Production unveraendert; kein Modellcall/500er Test. PR846, Merge nur konkret freigegeben. [Weg/Abnahme](betrieb/blocker1-direkter-500er-motor-20261007.md).
-
 - **Blocker 3 Kosten/Zeit (07.10., offen):** Native Auftrag6.809364USD + private0.636USD =7.445364USD; gespeicherter Vertrag20USD, Endvalidator/Plan7USD widersprechen sich. Grenzen/Reserven unverändert, keine Modelltests. Final abhängig von Blocker1/2. [Bestand, Zeitplan und vollständige Altbelege](betrieb/blocker3-kosten-zeitplan-20261007.md).
 
 - **Betreiberentscheidung Native-D (07.10.):** Zurueckgestellt bis Helmut funktional fertig UND500er Nachweis erfolgreich; aktuell keine Voraussetzung fuer Production, Motor oder500er Test. Ersetzt alte Starttorhinweise. [Unverkuerzter Wortlaut und bisheriger Status](archive/project_state/2026_10_07_CURRENT_STATE_vor_blocker1_komprimierung.md).
 
 - **Native-D-Diagnose (07.10., zurueckgestellt):**500synthetisch/0aktiv(330/120/50),Journal58; nicht installiert. Pooler5432 am TCP-Proxy abgewiesen; HTTPS RO.20USD/6USD-Tag/Reserven erhalten;0 Writes/Modellcalls/Test. Vollstand im oben verlinkten Archiv. [Zugang](betrieb/pre500-native-zugangswege-20261007.md).
+
+- **Blocker1 (07.10., Code):** Direkter500er Motor ohne Native-D-Voraussetzung; Gates, D/R, Kosten/Stop und Vollbelege erhalten. Production unveraendert; kein Modellcall/500er Test. PR846, Merge nur konkret freigegeben. [Weg/Abnahme](betrieb/blocker1-direkter-500er-motor-20261007.md).
 
 - **Guard-Capture behoben (07.10.,06.10.UTC):** Originalarchiv`3b0d7350`,363 Payloads und vier Originalarchive rein lesend geprueft; aktueller main`b59828d2`, PR836-/main-Pflicht-CI gruen, Production-Alias weiter READY`dpl_E2kyvMw6bMetgeKxvTqeExKzmM8n`/Runtime`0333fd20`. Native23:32:28UTC:500 synthetisch/0 aktiv(330BT/120BE/50BB),Journal58 und Ruhe. Neuer privater V3-Guard materialisiert volle Zeilen+xmin vor Sortierung;9/9 begrenzte native Gleichheitsgruppen, danach genau ein geaenderter RR/RO-Vollcapture23:35:28UTC:52 Relationen/372067 Zeilen/58 Einzeljournalhashes,postgres-Caller,DB bis Beobachtung9.188s bei unveraenderten15/17/2s. Capture unabhaengig tatsaechlich akzeptiert; Installationsabnahme offen, Native-D NICHT installiert. Store-only-Lock/READ-COMMITTED-Race, Kontinuitaet/Paket/Rueckweg sowie W/Resolver/Briefingeingaenge/Finanzierung/lebender Endwaechter offen.20USD bestaetigt,6USD/UTC-Tag und private0.636USD erhalten. Keine Aktivierung/500er Test. [Belege und naechster Schritt](betrieb/pre500-guard-capture-20261007.md).
 
