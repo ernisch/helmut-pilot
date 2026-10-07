@@ -139,9 +139,11 @@ negative Nachweise bleiben ausdrücklich offen.
 
 ## Verifikation in diesem Auftrag
 
-Gezielte Offlineprüfungen: direkter 500er Datenvertrag und geschlossene Route,
+Gezielte Offlineprüfungen: Direkt-Suite8/8 Gruppen einschließlich tatsächlichem
+CLI-Dateipfad für normale/komprimierte private Eingaben und geschlossener Route,
 Speicher-/Herkunftsdrift und Stop; bestehende Adapter-, Review-Receipt- und
-Kosten-/CAS-Gegenfälle; unveränderter Nachweisvalidator 64/64 und reale
+Kosten-/CAS-Gegenfälle; Generator-/Review-Suite15/15 (direkter Vertrag mit
+3000/6000 Tokens), kritische3/3 und EU-Alias; unveränderter Nachweisvalidator64/64 und reale
 Senderdeadline 11/11 mit ausschließlich lokalen Transportstubs. Der neue
 Direkt-Test ist im Standard-Offline-Lauf registriert. Pflicht-CI und unabhängige
 kritische Codeprüfung werden im PR belegt. Kein echter500er Lauf und keine

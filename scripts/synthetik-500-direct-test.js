@@ -21,7 +21,7 @@ const pin = bytes => ({ path: "/tmp/fictional-only", bytes: bytes.length,
   sha256: crypto.createHash("sha256").update(bytes).digest("hex") });
 async function main() {
   let command;
-  await test("full real direct assembly binds500 owners1000 D/R intents1500 positions without Native D", () => {
+  await test("full real direct assembly binds500 owners1000 D/R intents1500 positions without Native D", async () => {
     const input = require("./fixtures/synthetik500-direct")();
     const codec = require("../lib/helmut/synthetik-500-direct-codec");
     command = CLI.prepare(codec.decode(codec.encode(input)));
@@ -37,6 +37,16 @@ async function main() {
     const bad = { ...encoded, bytes: 1 }; assert.throws(() => codec.decode(bad));
     assert.throws(() => codec.decode({ ...encoded, sha256: hash("drift") }));
     assert.throws(() => codec.decode({ ...encoded, bytes: codec.MAX_BYTES + 1 }));
+    const fs = require("node:fs"), dir = fs.mkdtempSync("/tmp/helmut-direct-cli-offline-");
+    try {
+      for (const [name, data] of [["plain", input], ["gzip", codec.encode(input)]]) {
+        const inputPath = dir + "/" + name + ".json", out = dir + "/" + name + "-out.json";
+        fs.writeFileSync(inputPath, JSON.stringify(data), { mode: 0o600 });
+        await CLI.main(["prepare", "--input", inputPath, "--out", out]);
+        assert.equal(fs.statSync(out).mode & 0o777, 0o600);
+        assert.equal(hash(codec.decode(JSON.parse(fs.readFileSync(out)))), hash(command));
+      }
+    } finally { fs.rmSync(dir, { recursive: true }); }
   });
   await test("direct contract cannot accept495+5, inactive targets, a native binding or altered executor", () => {
     for (const mutate of [c => { c.drafts.pop(); }, c => { c.drafts[0].profile.profileActive = false; },
