@@ -20,7 +20,7 @@ function synthetischeFixture(profile) {
     },
     build: async (p, id, opts) => {
       builds++; A.deepEqual(p, profile); A.equal(id, profile.id);
-      A.deepEqual(opts, { aussagenEingabe: true, now: zeit });
+      A.deepEqual(opts, { aussagenEingabe: true, now: zeit, quellenGebundelt: true });
       return { eingabe: { mandat: id, tag }, korrekturBasis: { kos: [] }, briefing: { items: [] } };
     } };
   return { args, counts: () => ({ reads, builds, writes }) };
@@ -100,6 +100,12 @@ function fixture(userId = "test-kohorte-b-055") {
     ebenen[profile.parlament] = (ebenen[profile.parlament] || 0) + 1;
   }
   A.deepEqual(ebenen, { bundestag: 330, "landtag-berlin": 120, "landtag-brandenburg": 50 });
+  const quellenFehler = synthetischeFixture(alle[0]);
+  quellenFehler.args.build = async (p, id, opts) => {
+    A.equal(opts.quellenGebundelt, true); throw Error("pruefquellen-unvollstaendig");
+  };
+  await A.rejects(P.erfasse(quellenFehler.args), /pruefquellen-unvollstaendig/);
+  A.equal(quellenFehler.counts().writes, 0);
   for (const parlament of Object.keys(ebenen)) {
     const f = synthetischeFixture(synthetischeProfile("kontrast-v1").find(p => p.parlament === parlament));
     await P.erfasse(f.args); A.deepEqual(f.counts(), { reads: 2, builds: 1, writes: 0 });

@@ -98,6 +98,6 @@ const decrypt = (f, name, position = 1) => T.entschluesseln(f.envelopes.get(name
   A.match(workflow, /workflow_dispatch:/); A(!/^  (schedule|push|pull_request):/m.test(workflow));
   A.match(workflow, /contents: read/); A.match(workflow, /secrets\.HELMUT_CRON_SECRET/);
   A(!/(SUPABASE_SERVICE_ROLE_KEY|DEEPSEEK_API_KEY|500-direkt|500-testfenster|500-testende)/.test(workflow));
-  A.match(workflow, /tmp\/blocker2-readonly500\/\*\.json/);
+  A.match(workflow, /tmp\/blocker2-cipher-parts\/01\/\*\.json/);
   console.log("B2 Nurleser: 500/500 eindeutige inaktive synthetische Eingaben 330/120/50, verschluesselter Transport, Zugriffssperren, Drift-/Widerspruchsstop und getrennte Fehlerklassen offline bestanden; keine Production-Abnahme.");
 })().catch(() => { console.error("B2 Nurleser Offline-Test fehlgeschlagen."); process.exitCode = 1; });
