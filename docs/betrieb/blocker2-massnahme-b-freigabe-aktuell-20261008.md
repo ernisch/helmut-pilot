@@ -1,6 +1,6 @@
 # Blocker 2: Maßnahme B nach vollständiger aktueller Aufnahme
 
-**Nur Freigabevorbereitung, nicht freigegeben und nicht angewendet.** Maßnahme A ist abgeschlossen; sie wird nicht wiederholt. C bleibt gesperrt. Kein neuer Nurleselauf, keine Profile, Reservierungen, Rohquellen oder kostenpflichtigen Production-Modelle.
+**Historische konkrete Freigabevorlage.** B-v2 mit exakt dem unten genannten SHA256 wurde anschließend konkret freigegeben, am08.10.2026 genau einmal angewendet und vollständig sowie unabhängig nachkontrolliert; [Ausführung und500er Fortschritt](blocker2-massnahme-b-nachkontrolle-20261008.md). Die unten angegebenen Vorherwerte bleiben historische Bindungen, keine aktuellen Production-Werte und keine Freigabe zur Wiederholung. Maßnahme A abgeschlossen, C weiterhin gesperrt; kein neuer Nurleselauf, Profileingriff oder kostenpflichtiger Production-Modellaufruf.
 
 Der erfolgreiche aktuelle Lauf [37775654108](https://github.com/ernisch/helmut-pilot/actions/runs/37775654108) zeigt die folgenden drei bestehenden Widersprüche weiterhin in den tatsächlichen Eingaben. Die alten Vor-A-52-Hashes sind durch die vier A-INSERTs überholt; diese neue Transaktion bindet den vollständigen Nach-A-Bestand.
 

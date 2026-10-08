@@ -1,6 +1,6 @@
 # Blocker 2: vollständige aktuelle Nurleseaufnahme
 
-**Stand 08.10.2026: 500/500 aktuell erfasst, fachlich 0/500 angenommen.** Die technische Reparatur und der Sicherungsweg funktionieren. Die vollständige fachliche Eingabeabnahme ist nicht erreicht. Dieser Nachweis stammt ausschließlich aus dem neuen Lauf; historische Teilaufnahmen wurden nicht hinzugemischt.
+**Historische vollständige Aufnahme vor Maßnahme B,08.10.2026:500/500 erfasst, fachlich0/500 angenommen.** Die anschließend konkret freigegebene Maßnahme B ist [ausgeführt und vollständig nachkontrolliert](blocker2-massnahme-b-nachkontrolle-20261008.md). Diese Originalaufnahme und ihre damalige Bilanz bleiben unverändert erhalten; sie beweisen keine tatsächlichen Briefingeingaben nach B. Dafür sind derzeit0/500 neu erfasst und ein eigener neuer vollständiger Nurleselauf vorzubereiten/freizugeben. Keine Teilaufnahmen hinzugemischt.
 
 ## Tatsächlicher Einmallauf
 
@@ -48,7 +48,7 @@ Beide neuen KOs und Quellenkanten sind in **30/30 Berliner Bildungsprofilen und1
 
 Zusätzlicher aktueller Quellenstand-Nachweis: alle42 gebundenen Artikelstand-Metadaten bestehen den kanonischen aktuellen Leser und stimmen exakt mit dem nativen A-Quellenoriginal überein. **Berlin: Veröffentlichungstag02.10.2026, ausschließlich Berliner Kalendertag; Brandenburg:02.10.2026,10:57UTC.** Keine Berliner Uhrzeit erfunden. `published_at` und das tatsächliche Q-Vertragsfeld `veroeffentlichtAm` bleiben in allen42 FällenNULL. Die amtliche Publikation ist damit nicht pauschal unbekannt; das Feld ist nicht befüllt und der vollständige Ereignisfenster-/Notwendigkeits-/Relevanznachweis weiterhin offen. Keine automatische A- oder Profilabnahme.
 
-## Nächster kleinster notwendiger Schritt
+## Nächster kleinster notwendiger Schritt zum Vor-B-Zeitpunkt
 
 [Maßnahme B exakt neu vorbereiten und separat freigeben](blocker2-massnahme-b-freigabe-aktuell-20261008.md): drei bestehende KO-Zeilen berichtigen, zwei fremde Quellenkanten entfernen. Neue Nach-A-Baseline, exakt gebundene native Vorher-/Nachherwerte und Guard-/Rückwegplan; **B nicht freigegeben/nicht angewendet**. C-Duplikatlöschung bleibt gesperrt; historische abgeschlossene Reservierungen nicht umgehen und B1-Motor nicht verändern. Das beseitigt nicht automatisch alle fehlenden Fachnachweise.
 
