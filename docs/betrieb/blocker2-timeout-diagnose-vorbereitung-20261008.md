@@ -1,8 +1,11 @@
 # Blocker 2: Timeoutdiagnose vorbereiten
 
 Stand 08.10.2026. Eigener Branch auf main411e89673470226ae5b2d1cb501b36036da810cf.
-**Nur Code-/Offline-Vorbereitung. Kein Merge, Deployment oder neuer Eingabeabruf.
+**Nur Code-/Offline-Vorbereitung. Kein Merge, Production-Deployment oder neuer Eingabeabruf.
 Fachliche Abnahme weiterhin0/500.**
+
+Eine Draft-PR kann den regulären Vercel-Preview auslösen; dieser ist kein
+Production-Rollout oder tatsächlicher Production-Eingabenachweis.
 
 ## Belegter Fehler und Grenze
 
