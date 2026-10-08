@@ -93,7 +93,9 @@ Status nicht ueberschrieben werden.
 Kritische unabhaengige Pruefung (gpt-6-astra High) des tatsaechlichen Runtime- und Belegstands: PASS.
 Privater Einzelbericht `single122-20261008-independent-runtime-and-evidence-review.json`,
 SHA256 `9815cd883210c2e6ca765293ad282145c4b52053ab0640a4204491e092807754`.
-Sie hat Chiffre, 52 Tabellen, Vertrag und alle 44 Semantiken unabhaengig neu gehasht.
+Sie hat Cipher-Hashes und die nativen 52 Tabellen-/xmin-Bilanzen verglichen,
+den Eingabevertrag neu berechnet und alle 44 aktuellen KO-/Quellenbindungen
+unabhaengig gehasht. 42 vorhandene Fachurteile wurden nur exaktversionsgebunden uebernommen.
 
 ## 10 Vorbereiteter, nicht autorisierter naechster Schritt
 
