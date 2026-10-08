@@ -19,7 +19,7 @@ Importanweisung und kein Beleg synthetischer Startbereitschaft.
 
 ## Kritischer Pfad und Parallelitaet
 
-**Blocker 1 ist technisch vollständig abgenommen.** Der direkte synthetische500er Motorweg aus PR846 ist als `5cada034` gemergt, unabhängig geprüft und ausgerollt. Für das gebundene unveränderliche Production-Deployment `53e1e369` ist ein authentifizierter GET mit HTTP405 und `Allow: POST` belegt; der Return liegt vor Datenbank- und Motorzugriff. Diese Abnahme beweist den technischen Operatorweg, nicht den eigentlichen500er Test. Quellen-, Kosten- und Test-GO-Tore bleiben separat offen. [Motorweg und Abnahme](betrieb/blocker1-direkter-500er-motor-20261007.md).
+**Blocker 1 technisch abgeschlossen:** Der direkte500er Motorweg aus PR846 ist gemergt und ausgerollt; ein authentifizierter GET auf das gebundene READY-Deployment `53e1e369` ergab HTTP405/`Allow: POST` vor Datenbank- und Motorzugriff. Kein500er Test. Andere Starttore bleiben separat offen. [Abnahme](betrieb/blocker1-direkter-500er-motor-20261007.md).
 
 Vor jeder neuen Arbeitswelle priorisiert Sol in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Der geprüfte Cloud Router delegiert klar abgegrenzte Arbeit nach AGENTS.md an DeepSeek; Architektur, Production Entscheidungen, Integration und finale Abnahme bleiben bei Sol. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Am02.10.2026 hat der Betreiber alle Peak Arbeitssperren aufgehoben, auch die Chatvorgabe vom01.10.; Entwicklungsarbeit darf jederzeit ohne Peak GO starten. Production Schutz und Production Kostenlimits bleiben unveraendert; gruene Merges und regulaere Deployments sind inzwischen konkret freigegeben.
 
