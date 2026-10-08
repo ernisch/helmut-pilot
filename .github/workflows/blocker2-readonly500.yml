@@ -27,16 +27,21 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
+      - name: Isolierten Cipher-Transport aus Lockfile bereitstellen
+        run: npm ci --prefix scripts/blocker2-artifact-client --ignore-scripts --no-audit --no-fund
       - name: Inaktive500 Eingaben ausschliesslich lesen und verschluesseln
+        id: capture
         env:
           HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
           HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.public_key }}
-        run: node scripts/github-blocker2-readonly500.js
+        # JavaScript-Aktionen erhalten das kurzlebige Artifact-Runtime-Token
+        # direkt vom Runner. Shell-Schritte erhalten es nicht verlaesslich.
+        uses: ./.github/actions/blocker2-readonly500
       - name: Original-Cipherdateien in begrenzte Pakete teilen
         id: pack
-        if: always()
-        run: node scripts/blocker2-cipher-parts.js
+        if: always() && steps.capture.outputs.cipher_final_saved != 'true'
+        run: node scripts/blocker2-cipher-parts.js teilstand
       - name: Cipherpaket 01 sichern
         if: always() && steps.pack.outcome == 'success' && fromJSON(steps.pack.outputs.part_count) >= 1
         uses: actions/upload-artifact@v4
