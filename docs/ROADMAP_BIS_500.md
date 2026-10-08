@@ -1,6 +1,6 @@
 # Roadmap bis zum 500er Production Nachweis
 
-Stand: 08.10.2026
+Stand: 02.10.2026
 
 Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
