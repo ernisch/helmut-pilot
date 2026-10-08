@@ -58,7 +58,7 @@ Die beiden amtlichen Artikelstände sind in jedem dieser 42 neuen Originalkörpe
 
 ## Verbleibender nächster Schritt und Schutzgrenzen
 
-**Nachtrag nach PR #872:** Die [reine Kandidatenschranke](blocker2-kandidatenschranke-20261008.md) ist auf Production `802428e9` READY und alle52 geschützten Tabellen sind unverändert. Die nachfolgende Bilanz bleibt ausschließlich die tatsächliche Aufnahme `37790661298` auf `d6147232`; die Offline-Erwartung ersetzt keine aktuellen Eingaben. Zur Wirksamkeits- und vollständigen Fachprüfung des geänderten Lesepfads ist jetzt ein neuer konkret freigegebener einmaliger500er Nurleselauf vorbereitet, noch nicht gestartet.
+**Nachtrag nach PR #872:** Die [reine Kandidatenschranke](blocker2-kandidatenschranke-20261008.md) ist auf Production `802428e9` READY und alle52 geschützten Tabellen sind unverändert. Die nachfolgende Bilanz bleibt ausschließlich die tatsächliche Aufnahme `37790661298` auf `d6147232`; die Offline-Erwartung ersetzt keine aktuellen Eingaben. Zur Wirksamkeits- und vollständigen Fachprüfung des geänderten Lesepfads ist jetzt ein neuer einmaliger500er Nurleselauf zur neuen konkreten Freigabe vorbereitet, weder freigegeben noch gestartet.
 
 **Kein weiterer Production-Eingabeabruf nötig, um die vorhandenen 500 Originale weiter fachlich auszuwerten.** Zuerst die explizit notwendigen A42-Bindungen und die aktuelle Lückenprovenienz mit den vorhandenen amtlichen Originalen und Szenarioparametern fachlich schließen; NULL-Werte und Grenzen des konservativen Auswerters nicht mit tatsächlichen notwendigen Datenlücken verwechseln. Nicht erneut bereits belegte Importe oder Quellenarbeit ausführen.
 
