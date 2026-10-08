@@ -1,0 +1,501 @@
+position,profileId,scope,captureState,transportStatus,primaryOutcome,inputHash,accepted,necessaryATarget,necessaryAActualInputProven,visibleBindingFaultCount,eventDuplicate
+1,test-kohorte-synthetik-bt-001,BT,captured,captured,Ereignisduplikat,2af6ca72664001b59b1c16797efe6ec728244f951cf715f405264f760973aa06,False,False,False,0,True
+2,test-kohorte-synthetik-bt-002,BT,captured,captured,fehlender fachlicher Nachweis,2fe763d2e2baa6683ab135f76082dec82cbf3c96f28c2d1b228bc339e155168e,False,False,False,0,False
+3,test-kohorte-synthetik-bt-003,BT,captured,captured,fehlender fachlicher Nachweis,ee0581fc7eff0fc65972bfbe99bbe0008278ff159d0ab166b142548709c9e07c,False,False,False,0,False
+4,test-kohorte-synthetik-bt-004,BT,captured,captured,fehlender fachlicher Nachweis,08099c093b9aa2d1042cc599c7494f83ee6ef12de701b8f2df32f732156f8a41,False,False,False,0,False
+5,test-kohorte-synthetik-bt-005,BT,captured,captured,fehlender fachlicher Nachweis,d92038f7a3ee45f547d2260135dcf714d67a6c32fbef332e1f8a0febb4cf3228,False,False,False,0,False
+6,test-kohorte-synthetik-bt-006,BT,captured,captured,fehlender fachlicher Nachweis,6c0b3b6b6e3643dde08632e42e24b648472e2a141b9175350a879debd04a1b01,False,False,False,0,False
+7,test-kohorte-synthetik-bt-007,BT,captured,captured,Ereignisduplikat,3abf2ba94fcf5cd5bc3a3c3b26fd5bdc7cbdb9ce9cc98703b6e209f23ac4a31a,False,False,False,0,True
+8,test-kohorte-synthetik-bt-008,BT,captured,captured,fehlender fachlicher Nachweis,b866d8ddf23133d58f6ef7c0f9e27f43956ef1b64baa266a1f60d25e5482bea0,False,False,False,0,False
+9,test-kohorte-synthetik-bt-009,BT,captured,captured,fehlender fachlicher Nachweis,7a1aee5a71b91ab955d8e9e9736a7927e2a3b0f5a5d4a6c3cb703cfc41d87db2,False,False,False,0,False
+10,test-kohorte-synthetik-bt-010,BT,captured,captured,fehlender fachlicher Nachweis,337289c81ca950b92850961e35255865693eac6890331da7341baf7ea9f4ad75,False,False,False,0,False
+11,test-kohorte-synthetik-bt-011,BT,captured,captured,fehlender fachlicher Nachweis,e7c8b375c7b5b2ba99713f2e234aba8b1cb0236e0da687134f695052e29826b1,False,False,False,0,False
+12,test-kohorte-synthetik-bt-012,BT,captured,captured,Ereignisduplikat,0176ec7b1225df8c0a9289e872919bfd501e59fa0ae9d2a1b2725e740e71dc84,False,False,False,0,True
+13,test-kohorte-synthetik-bt-013,BT,captured,captured,fehlender fachlicher Nachweis,d9166129ce1396d6a2f4b325b08bd45e6f73ac448eda7fba45105d836d4bb74c,False,False,False,0,False
+14,test-kohorte-synthetik-bt-014,BT,captured,captured,fehlender fachlicher Nachweis,33a873e17ae3909fe84cde2d805adafe949b4332ba0a802d4bd92ee4589fd154,False,False,False,0,False
+15,test-kohorte-synthetik-bt-015,BT,captured,captured,fehlender fachlicher Nachweis,73c8b4bab0049c9cebafc0d27df0a2bbe279421850b866530b4da4ba440c99f7,False,False,False,0,False
+16,test-kohorte-synthetik-bt-016,BT,captured,captured,fehlender fachlicher Nachweis,423bbffe5a64595cf5178aa6136b3280daf5c023c2f98c94fdf9eee52f9fbe19,False,False,False,0,False
+17,test-kohorte-synthetik-bt-017,BT,captured,captured,fehlender fachlicher Nachweis,18205cf67bac039bff84da8fe7b509292e7356f1f19d87a2552a158fb3264019,False,False,False,0,False
+18,test-kohorte-synthetik-bt-018,BT,captured,captured,fehlender fachlicher Nachweis,b21b0eacdb03546ef157ab95cc7da408b684245aab3c6ced3b466ac2766f20ba,False,False,False,0,False
+19,test-kohorte-synthetik-bt-019,BT,captured,captured,fehlender fachlicher Nachweis,1aa5c960d050af5f6d430f51116910d671843b7acaa03e411be4f3d788e2490e,False,False,False,0,False
+20,test-kohorte-synthetik-bt-020,BT,captured,captured,Ereignisduplikat,d7f6fec5ef7af5061cad71ab233f6cf619f5fd08eeec348f127361dad3755d7e,False,False,False,0,True
+21,test-kohorte-synthetik-bt-021,BT,captured,captured,fehlender fachlicher Nachweis,865de54f90759dad774d2a601b21a4709fe651d9d662327a10093a14425822ce,False,False,False,0,False
+22,test-kohorte-synthetik-bt-022,BT,captured,captured,fehlender fachlicher Nachweis,09ed69f82222e80a366b430e61da1c497a7fafd518715544635cf2b07a1c7f2b,False,False,False,0,False
+23,test-kohorte-synthetik-bt-023,BT,captured,captured,Ereignisduplikat,76aef00c5cb8ce0a720580238b47a23f14ac8a0de10d8e0881556eeda5842db4,False,False,False,0,True
+24,test-kohorte-synthetik-bt-024,BT,captured,captured,fehlender fachlicher Nachweis,96cc4eff0d618eab3e385bb4ba3adfe3f04f2828cd7a94afc7154339ab4c6565,False,False,False,0,False
+25,test-kohorte-synthetik-bt-025,BT,captured,captured,fehlender fachlicher Nachweis,f2543cf97bbc2dc0027428f74c35f2d4455baff972e25de9423ede5279e42848,False,False,False,0,False
+26,test-kohorte-synthetik-bt-026,BT,captured,captured,fehlender fachlicher Nachweis,b7bd562e78f74f01d99579881b1d9b80f314c7def92cf8757c2a9e1e85e28cf7,False,False,False,0,False
+27,test-kohorte-synthetik-bt-027,BT,captured,captured,fehlender fachlicher Nachweis,46ed6d66fae4fb83b106ca5c7e2851fad022b80ffdd2741f17d8a0f20b08014a,False,False,False,0,False
+28,test-kohorte-synthetik-bt-028,BT,captured,captured,Ereignisduplikat,49ec3ae46c4381c2b21a957b27de45b8032bfcdd9fc890be1c6608d1eca17803,False,False,False,0,True
+29,test-kohorte-synthetik-bt-029,BT,captured,captured,fehlender fachlicher Nachweis,c78587a24eedf78f1312c1b00e89fb0864ce9241df6af4773926ce8fd5b6be5a,False,False,False,0,False
+30,test-kohorte-synthetik-bt-030,BT,captured,captured,fehlender fachlicher Nachweis,7d1b177bb2186e6df3ae9345c85d53a70b18effaf6aaf6fb3c7783275d7924de,False,False,False,0,False
+31,test-kohorte-synthetik-bt-031,BT,captured,captured,Ereignisduplikat,583d7d99f7d7d375d07266351f5f5bf83fc869ae6166908f18a3b4e219f56ce1,False,False,False,0,True
+32,test-kohorte-synthetik-bt-032,BT,captured,captured,fehlender fachlicher Nachweis,fffb371155a04d45ee100a4e882381f91ee0d88779963fd4aaad2ae32fabf2db,False,False,False,0,False
+33,test-kohorte-synthetik-bt-033,BT,captured,captured,fehlender fachlicher Nachweis,4edfd6e2cefc06e2d74d3efd1e51abae2f96de99812c18fcdd1ab720087d2028,False,False,False,0,False
+34,test-kohorte-synthetik-bt-034,BT,captured,captured,fehlender fachlicher Nachweis,4ed0b7515dcff33be34b970dceb7a8137e6ed1a9e64ea3e62ab9bd1247382095,False,False,False,0,False
+35,test-kohorte-synthetik-bt-035,BT,captured,captured,fehlender fachlicher Nachweis,283d3db22c7e7ce8ec4522fe039f199860686f64aacc350d23e1daa6f0b12bc3,False,False,False,0,False
+36,test-kohorte-synthetik-bt-036,BT,captured,captured,Ereignisduplikat,13ca909696dd1c3b201c778947ae7b028b874920acc5d863c7a32e63395714ac,False,False,False,0,True
+37,test-kohorte-synthetik-bt-037,BT,captured,captured,fehlender fachlicher Nachweis,9929027f5a764b4231df0ddbdbab605666604d4752a9941583f5f37756c1c821,False,False,False,0,False
+38,test-kohorte-synthetik-bt-038,BT,captured,captured,fehlender fachlicher Nachweis,32d99a5e5ddcd58dbd3a234ceb65e03cfafdc68b20be07846b6af523f898371e,False,False,False,0,False
+39,test-kohorte-synthetik-bt-039,BT,captured,captured,fehlender fachlicher Nachweis,4fa094c1e0bddce236158c59c07fa7a7b9eab0733462913bde8102b162bcebb9,False,False,False,0,False
+40,test-kohorte-synthetik-bt-040,BT,captured,captured,fehlender fachlicher Nachweis,f3a9a281a1b0285cb24b0d96183895ca8172958088c12dedfa554324d916f2cf,False,False,False,0,False
+41,test-kohorte-synthetik-bt-041,BT,captured,captured,fehlender fachlicher Nachweis,38a4bca59c2f276764dea1fe8981e7ae2e06e961b503c8fde90f014208ef81bd,False,False,False,0,False
+42,test-kohorte-synthetik-bt-042,BT,captured,captured,fehlender fachlicher Nachweis,82e5dd3e655b01e894168ed502256c429419a4c9fa10669490862ad1d4e19964,False,False,False,0,False
+43,test-kohorte-synthetik-bt-043,BT,captured,captured,fehlender fachlicher Nachweis,1cb9fb9673f2d7b3d44c7e99575e6fb2bda7d6381396d5f211cd778fc3ec970f,False,False,False,0,False
+44,test-kohorte-synthetik-bt-044,BT,captured,captured,Ereignisduplikat,496e182cabefb760488a7825201f569aff7e449e1cd846abc8c73fccb9095e37,False,False,False,0,True
+45,test-kohorte-synthetik-bt-045,BT,captured,captured,fehlender fachlicher Nachweis,8b4dc1b85c1854dfd93889dc5beca676bf9288157b21f52da62ba52f06d0b181,False,False,False,0,False
+46,test-kohorte-synthetik-bt-046,BT,captured,captured,fehlender fachlicher Nachweis,382f9cd2bcd2cb0312ccd2f389afbba718837325e3a5808d8faa3b02d560dcd6,False,False,False,0,False
+47,test-kohorte-synthetik-bt-047,BT,captured,captured,Ereignisduplikat,f7ee0197b6d0a32b8e1589bf089a2a75f323bb01756570ed4061be954de08701,False,False,False,0,True
+48,test-kohorte-synthetik-bt-048,BT,captured,captured,fehlender fachlicher Nachweis,b562198fc56b97d56ae2204419e7a6f33918227d637d6393d179918c6aec0c3c,False,False,False,0,False
+49,test-kohorte-synthetik-bt-049,BT,captured,captured,fehlender fachlicher Nachweis,a618950196f025fbdb20f47af7969bbcac32877e127660686af04d2b5e3e54b7,False,False,False,0,False
+50,test-kohorte-synthetik-bt-050,BT,captured,captured,fehlender fachlicher Nachweis,c879505562aadcebaaaae37c343ab466bd0ddf0b12979c56732c32c48aaf3246,False,False,False,0,False
+51,test-kohorte-synthetik-bt-051,BT,captured,captured,fehlender fachlicher Nachweis,e65f135d122430d653352155cf73b96d0efb3f4adc23fa7241b67d149676123c,False,False,False,0,False
+52,test-kohorte-synthetik-bt-052,BT,captured,captured,fehlender fachlicher Nachweis,c7f3b88f89bf80638e676bd33240e9cf77e9f91d8467d622306ef4ac86367b27,False,False,False,0,False
+53,test-kohorte-synthetik-bt-053,BT,captured,captured,fehlender fachlicher Nachweis,c76e25e0b567e320cbb01910cd67721fe3cc159fb8452023d7a4d5853c1af615,False,False,False,0,False
+54,test-kohorte-synthetik-bt-054,BT,captured,captured,fehlender fachlicher Nachweis,00b7044dc31d3e4612f5caf5282f357fd8478704d8a5c0b9e71cb03b7aa93bdf,False,False,False,0,False
+55,test-kohorte-synthetik-bt-055,BT,captured,captured,Ereignisduplikat,aabfaaa15ea6c4366bc3238845f368e1dca0c451a7f32cdcf35d6975ef4949b0,False,False,False,0,True
+56,test-kohorte-synthetik-bt-056,BT,captured,captured,fehlender fachlicher Nachweis,8b06dfad65cdf8cafb399f6573262b912b2992a06fda244dd5a0e6b5532294b1,False,False,False,0,False
+57,test-kohorte-synthetik-bt-057,BT,captured,captured,fehlender fachlicher Nachweis,fb4cf9b0622918a2e08973e374b5ae0eaab2f2d0c18d6032f4d3a0246d11da37,False,False,False,0,False
+58,test-kohorte-synthetik-bt-058,BT,captured,captured,fehlender fachlicher Nachweis,d4f15b1b1301c4bd783bbe4e8b6918457e4bf3336cb96b1d5086ed7d35c4c937,False,False,False,0,False
+59,test-kohorte-synthetik-bt-059,BT,captured,captured,fehlender fachlicher Nachweis,9353c75821d22febabcbca9ac07e2c91ad0507aa69cf8e2a766f1eda0c980d26,False,False,False,0,False
+60,test-kohorte-synthetik-bt-060,BT,captured,captured,fehlender fachlicher Nachweis,ea5f432e052a76182ddc49899a33af3c7a321d1864142d4def54af57c1621497,False,False,False,0,False
+61,test-kohorte-synthetik-bt-061,BT,captured,captured,fehlender fachlicher Nachweis,dad6cb286f5ba9c340c8c6188bf4a002d71bb65b2d80820320138fa08c56ee89,False,False,False,0,False
+62,test-kohorte-synthetik-bt-062,BT,captured,captured,fehlender fachlicher Nachweis,2431b355eefb41fad1b78da58cfcdbc087926e7a34498b99c0380baa5d8158dd,False,False,False,0,False
+63,test-kohorte-synthetik-bt-063,BT,captured,captured,fehlender fachlicher Nachweis,0c3fdd3e0e9178b7faa701401b5099e5d0ad1ca35dfea7c86dd0f9c6145b733d,False,False,False,0,False
+64,test-kohorte-synthetik-bt-064,BT,captured,captured,fehlender fachlicher Nachweis,a4c18906add46f8a9bbf2ad46f1b83ca1a1f937c7d4709a9d43f0403f345bf2f,False,False,False,0,False
+65,test-kohorte-synthetik-bt-065,BT,captured,captured,fehlender fachlicher Nachweis,d498afe169af47bda435305aee3c041eb2687292f5d22c4c17b75fd3a5e9e5d9,False,False,False,0,False
+66,test-kohorte-synthetik-bt-066,BT,captured,captured,fehlender fachlicher Nachweis,425b129cff80562613effd5e349bb8b7e17c6fcf73b1f4c45d8569f59db70b7d,False,False,False,0,False
+67,test-kohorte-synthetik-bt-067,BT,captured,captured,fehlender fachlicher Nachweis,df653d8b21295a91a2c9be7d8eac79f7ca80e33a6c8cbf2314ab6eb7b7b6ff19,False,False,False,0,False
+68,test-kohorte-synthetik-bt-068,BT,captured,captured,Ereignisduplikat,fb38375ff516e2979b540f663cd40e6bfc9ba13623fce73033f0f69b8d4d0738,False,False,False,0,True
+69,test-kohorte-synthetik-bt-069,BT,captured,captured,fehlender fachlicher Nachweis,92f6a47cfdd787ed0dcaf6e7f232e9c542570e8d7d26c3afca93c0e3320a3bd9,False,False,False,0,False
+70,test-kohorte-synthetik-bt-070,BT,captured,captured,fehlender fachlicher Nachweis,189e103449df4b0137c69ec9058abace4328fe6f891634b8ce2f7f430e368c49,False,False,False,0,False
+71,test-kohorte-synthetik-bt-071,BT,captured,captured,Ereignisduplikat,2e817d7705c6f00775b238429345d0bae77446281a9a11612ae3a581c5345ae5,False,False,False,0,True
+72,test-kohorte-synthetik-bt-072,BT,captured,captured,fehlender fachlicher Nachweis,0041742e367da152439a009ce4a4d88e114c5a79d5b4583a23253569122b4410,False,False,False,0,False
+73,test-kohorte-synthetik-bt-073,BT,captured,captured,fehlender fachlicher Nachweis,ec84dad03ac193d124f2d4a8587d4955de22990cdcf0f9cdd36609ac543da582,False,False,False,0,False
+74,test-kohorte-synthetik-bt-074,BT,captured,captured,fehlender fachlicher Nachweis,fab3477935f97d326ee1a879b833ce18539e267f0439eeed51e51a301ab705fd,False,False,False,0,False
+75,test-kohorte-synthetik-bt-075,BT,captured,captured,fehlender fachlicher Nachweis,c618a5f64db57f3cdc44c3b6c32071e6b3c0bd9d639e7b5b99fa35ce647ba06c,False,False,False,0,False
+76,test-kohorte-synthetik-bt-076,BT,captured,captured,fehlender fachlicher Nachweis,2a02faf179e60d6d0844eeb6e2f6c34bb06404dcdde1f3072cbf6b13b0809b14,False,False,False,0,False
+77,test-kohorte-synthetik-bt-077,BT,captured,captured,fehlender fachlicher Nachweis,9e6ba3a1b631d9135d4e570e63469e51f2c0fb5e8d9a96bc9ca7a413afabbde6,False,False,False,0,False
+78,test-kohorte-synthetik-bt-078,BT,captured,captured,fehlender fachlicher Nachweis,4c7bd07b2a723a0d345425e116d10ca3b5b23331ec07887592ab30d383364f84,False,False,False,0,False
+79,test-kohorte-synthetik-bt-079,BT,captured,captured,Ereignisduplikat,babde5c75270c0970d06baa3683e9964c8d5443f5c96a1f32f3bf4c23ee1a8f9,False,False,False,0,True
+80,test-kohorte-synthetik-bt-080,BT,captured,captured,fehlender fachlicher Nachweis,07ba2644b0b3e1641e623afe95a56ca6cd73a34c856618ad35c0a22d0434b31e,False,False,False,0,False
+81,test-kohorte-synthetik-bt-081,BT,captured,captured,fehlender fachlicher Nachweis,11dff8b2cddb1fce0e0674fba3f369bb978400c4b461cf6ec0bc2b2b8da7a837,False,False,False,0,False
+82,test-kohorte-synthetik-bt-082,BT,captured,captured,fehlender fachlicher Nachweis,eccdbaf57e12c1ca59bd8c35c5cd3e1c3946760dd16401140267fbbdb93bad7e,False,False,False,0,False
+83,test-kohorte-synthetik-bt-083,BT,captured,captured,fehlender fachlicher Nachweis,ab9925f70b36c1f94b26f3b0ca3a5feb65b0ad1a0f72016ff4abbb55b9b779a4,False,False,False,0,False
+84,test-kohorte-synthetik-bt-084,BT,captured,captured,Ereignisduplikat,79a7b21801276b29aae71cc10df2c4735f60517c5b3885c2414a4d43e481da25,False,False,False,0,True
+85,test-kohorte-synthetik-bt-085,BT,captured,captured,fehlender fachlicher Nachweis,4091b5154bd6230fa2674a2756e17d6e43ea0eace03648f3457dc6ca10586486,False,False,False,0,False
+86,test-kohorte-synthetik-bt-086,BT,captured,captured,fehlender fachlicher Nachweis,fa76844bd9d798171d18c4baccc27436b5a207ff0f924b603d593cb1595de6cd,False,False,False,0,False
+87,test-kohorte-synthetik-bt-087,BT,captured,captured,Ereignisduplikat,b7369c9f8895ca8afe85e941b9c66c909c39b608792a1e4b6cc9dafa172a2fc1,False,False,False,0,True
+88,test-kohorte-synthetik-bt-088,BT,captured,captured,fehlender fachlicher Nachweis,c8a71077e74224385fbcd718bdebf99c91eacc1bc38a2ab3e2f1bf13380cb475,False,False,False,0,False
+89,test-kohorte-synthetik-bt-089,BT,captured,captured,fehlender fachlicher Nachweis,0b7f10131bb1ff7ef09a30e2002eef0e92a9872f953366bbc621230523fc0138,False,False,False,0,False
+90,test-kohorte-synthetik-bt-090,BT,captured,captured,fehlender fachlicher Nachweis,891bf50e1e4a1cb5604eb8cf72535234e3f54196df16a0aba8fa5116d1c73ae4,False,False,False,0,False
+91,test-kohorte-synthetik-bt-091,BT,captured,captured,fehlender fachlicher Nachweis,d8d5805f1339eb43a486619892b248b7938532211f8180bd1b13dfa58fdd70b6,False,False,False,0,False
+92,test-kohorte-synthetik-bt-092,BT,captured,captured,Ereignisduplikat,90ebb4becc664aa7cf1ab73a449a232808a3fe5cf3cb3ed357abba05f1e49240,False,False,False,0,True
+93,test-kohorte-synthetik-bt-093,BT,captured,captured,fehlender fachlicher Nachweis,7af34ab7f29a57b3c734945677576aa1cdcd062ccda62737a735c56c31c92442,False,False,False,0,False
+94,test-kohorte-synthetik-bt-094,BT,captured,captured,fehlender fachlicher Nachweis,10523c5b1e49c480c3cbccad8188b516ecd67973a8e007f92aa41b7af81a4369,False,False,False,0,False
+95,test-kohorte-synthetik-bt-095,BT,captured,captured,Ereignisduplikat,7e0d574a5f1d7c9363624d276954afcad7756c223ac4b1f9f30749290b274a61,False,False,False,0,True
+96,test-kohorte-synthetik-bt-096,BT,captured,captured,fehlender fachlicher Nachweis,16d1785b0f188295dd254631db1af583ef41a5a59a9a3133b2e111b007733baf,False,False,False,0,False
+97,test-kohorte-synthetik-bt-097,BT,captured,captured,fehlender fachlicher Nachweis,627f49e2fc12c2714ea12e454f556c6fb2717661929a91970859501daa18715a,False,False,False,0,False
+98,test-kohorte-synthetik-bt-098,BT,captured,captured,fehlender fachlicher Nachweis,e05f0c09bc3e57cb1755919f437fafdc203a39697e88cce6b2f2423d7f68ffee,False,False,False,0,False
+99,test-kohorte-synthetik-bt-099,BT,captured,captured,fehlender fachlicher Nachweis,7445082130290779417eef0e8a6d885ad8766f1e96727a212285ac9dc4179c44,False,False,False,0,False
+100,test-kohorte-synthetik-bt-100,BT,captured,captured,fehlender fachlicher Nachweis,6320af4c10600e8e15f4cb0d8617667025e34739fe9b0881f367ff5029c1dc27,False,False,False,0,False
+101,test-kohorte-synthetik-bt-101,BT,captured,captured,fehlender fachlicher Nachweis,a374b58da8878c103bde8bf83c1d50bf93551c45a9cb8c3e25ec2cb0bb73a736,False,False,False,0,False
+102,test-kohorte-synthetik-bt-102,BT,captured,captured,fehlender fachlicher Nachweis,0c7c3465da50651d8921d499dad7aeac56afc90f8deb7b7a763245fc14f341f0,False,False,False,0,False
+103,test-kohorte-synthetik-bt-103,BT,captured,captured,Ereignisduplikat,770f85339020ac98907696210ed48705cb544e201c0e44904893554633459184,False,False,False,0,True
+104,test-kohorte-synthetik-bt-104,BT,captured,captured,fehlender fachlicher Nachweis,44b137285305579a1d65a0b2ea11191250c3b10d38a48777a7b224e5280cd177,False,False,False,0,False
+105,test-kohorte-synthetik-bt-105,BT,captured,captured,fehlender fachlicher Nachweis,4bb91583d89175e41096d1352403c6fa0376f7c2b0555a6794ad7357463a4fed,False,False,False,0,False
+106,test-kohorte-synthetik-bt-106,BT,captured,captured,fehlender fachlicher Nachweis,e8a1b1feec46a1d8d5b422618f02eabcf00670dd2debf2790f186932fbf97d53,False,False,False,0,False
+107,test-kohorte-synthetik-bt-107,BT,captured,captured,fehlender fachlicher Nachweis,d84579681e2e63b9c10b524243e67b0f477529209016bb4d6dcdc2de3c646e00,False,False,False,0,False
+108,test-kohorte-synthetik-bt-108,BT,captured,captured,Ereignisduplikat,6d5fc5c335bd12961d4fb1ba0cc07555bf1dd8493ccceb6ac90ab6cf362c9cab,False,False,False,0,True
+109,test-kohorte-synthetik-bt-109,BT,captured,captured,fehlender fachlicher Nachweis,235498a85010144cf0641a3a2bef305909206678b315f2c1ba2dd9ff41109db7,False,False,False,0,False
+110,test-kohorte-synthetik-bt-110,BT,captured,captured,fehlender fachlicher Nachweis,a59cce37997235ae8da431ee54efb2096bf5b576846c5cb9c179f6b72c13ba19,False,False,False,0,False
+111,test-kohorte-synthetik-bt-111,BT,captured,captured,fehlender fachlicher Nachweis,671ad926c32d934026f621ec3e1693e3830b5916661cd8f534d6c3a16cc9641c,False,False,False,0,False
+112,test-kohorte-synthetik-bt-112,BT,captured,captured,fehlender fachlicher Nachweis,abb0d66ccedfe5fe6bf8f0726eba638ddbd89155bbaf61e4a32a657f849477c3,False,False,False,0,False
+113,test-kohorte-synthetik-bt-113,BT,captured,captured,fehlender fachlicher Nachweis,6e3da654366905838a79b74b0b53558df7b5981a2f1302bb9bed8be3a81feaec,False,False,False,0,False
+114,test-kohorte-synthetik-bt-114,BT,captured,captured,fehlender fachlicher Nachweis,7ba7cba1c931e8cc093c4837c21f050a86b6a19191ed3b549e18bb4505c872ba,False,False,False,0,False
+115,test-kohorte-synthetik-bt-115,BT,captured,captured,fehlender fachlicher Nachweis,19f2d88e3e6782584b4d46fab0f55a4effb9771fe5e696546c2c3aff778b6a89,False,False,False,0,False
+116,test-kohorte-synthetik-bt-116,BT,captured,captured,Ereignisduplikat,663551496015af52d6e1bda29e1d578511d42fc00bfb413b5dab6383a5deb0d2,False,False,False,0,True
+117,test-kohorte-synthetik-bt-117,BT,captured,captured,fehlender fachlicher Nachweis,8c8cda2da7c504ed359cf8a05e45dd8c6df65096a3422e966714accdb4de1cf9,False,False,False,0,False
+118,test-kohorte-synthetik-bt-118,BT,captured,captured,fehlender fachlicher Nachweis,b9c4cbcab130c3f0e342fdbf18cce0769d714d1089ceae974f0349b0c6107666,False,False,False,0,False
+119,test-kohorte-synthetik-bt-119,BT,captured,captured,Ereignisduplikat,d8a9af193f6219cb5fd4d2696a97b6478023bb33f06d13830479a29585bcca12,False,False,False,0,True
+120,test-kohorte-synthetik-bt-120,BT,captured,captured,fehlender fachlicher Nachweis,f9790492b618e7cadaa10478a974515634c4303f46c28921f9a14e78aae2271f,False,False,False,0,False
+121,test-kohorte-synthetik-bt-121,BT,captured,captured,fehlender fachlicher Nachweis,bf9d35b9620ec248eb18125e72f144db40e7764b51bdd239dc66bde10e223663,False,False,False,0,False
+122,test-kohorte-synthetik-bt-122,BT,captured,captured,fehlender fachlicher Nachweis,8feac31c23fbf6c75314751593c2c5289347d42d78ebb986ac3fb3055a5f665f,False,False,False,0,False
+123,test-kohorte-synthetik-bt-123,BT,captured,captured,fehlender fachlicher Nachweis,bd07fa0a653ae3e1786d4c3d81d2a030b86e5279db405e5ee582fc6249af1b3b,False,False,False,0,False
+124,test-kohorte-synthetik-bt-124,BT,captured,captured,fehlender fachlicher Nachweis,35d44774b8d4422989d812674faf6caf77235882c659789baafb89e91510395b,False,False,False,0,False
+125,test-kohorte-synthetik-bt-125,BT,captured,captured,fehlender fachlicher Nachweis,9b86727da3f710923d8305ba53232a64a03ddc45222cbda4003149d1dcf358db,False,False,False,0,False
+126,test-kohorte-synthetik-bt-126,BT,captured,captured,fehlender fachlicher Nachweis,00add0f4ae34ef702d85c2d411c258b7ad24eeac6780831a03c776a1530eae7f,False,False,False,0,False
+127,test-kohorte-synthetik-bt-127,BT,captured,captured,Ereignisduplikat,a6761f4b1c7879e3b4cb15777b533104de883836b3c334e615b69c61adb3f611,False,False,False,0,True
+128,test-kohorte-synthetik-bt-128,BT,captured,captured,fehlender fachlicher Nachweis,47ef76e71a733f33dff586b7921b41790f1420183b3ba78667726580a695ef3e,False,False,False,0,False
+129,test-kohorte-synthetik-bt-129,BT,captured,captured,fehlender fachlicher Nachweis,386f95c723396f299a3ef32619910aa1c05a522bdff1828ac4a5f83b1ecaa053,False,False,False,0,False
+130,test-kohorte-synthetik-bt-130,BT,captured,captured,fehlender fachlicher Nachweis,e9323585be5690c22e0e981859e8912caa8aed4075e7c3498474a5848a125b06,False,False,False,0,False
+131,test-kohorte-synthetik-bt-131,BT,captured,captured,fehlender fachlicher Nachweis,f6c3f906e2acc8fb10981ac4184685ad30832e19266e8a545968c873d78cbb16,False,False,False,0,False
+132,test-kohorte-synthetik-bt-132,BT,captured,captured,Ereignisduplikat,2a82d12c90f83c647689526c4cb130b19885e47879cf53df7f8db8222650d551,False,False,False,0,True
+133,test-kohorte-synthetik-bt-133,BT,captured,captured,fehlender fachlicher Nachweis,6a956a301c0a36b6e951c48781c97845f24eea15a97503d7c1c6d1a98b8e5d7f,False,False,False,0,False
+134,test-kohorte-synthetik-bt-134,BT,captured,captured,fehlender fachlicher Nachweis,fc898cb3c943e852742f708bb8640b18e4b6edeaf0334bcf0176ea929d1981f9,False,False,False,0,False
+135,test-kohorte-synthetik-bt-135,BT,captured,captured,fehlender fachlicher Nachweis,f746d489b1e23e885ecaa956ac3d229e6d50b8c6f4186ef111f18084fabdb1d8,False,False,False,0,False
+136,test-kohorte-synthetik-bt-136,BT,captured,captured,fehlender fachlicher Nachweis,85702214318e024d0545de1715367630c1fa33494a8fd5a8d96977c6c61cadd1,False,False,False,0,False
+137,test-kohorte-synthetik-bt-137,BT,captured,captured,fehlender fachlicher Nachweis,270175f548a27f959dd88c2d2e2fbaf8a57050abf945c438c5501179b25934ba,False,False,False,0,False
+138,test-kohorte-synthetik-bt-138,BT,captured,captured,fehlender fachlicher Nachweis,c8b10ea154d2a8364cf259a2015fe0e9129d74018976d8e14c0d17359d0a9cfb,False,False,False,0,False
+139,test-kohorte-synthetik-bt-139,BT,captured,captured,fehlender fachlicher Nachweis,7f0c1e37f53a617e6fc0f45799d1d77ea78cb53023dfaa0e462d5615fa9d7bed,False,False,False,0,False
+140,test-kohorte-synthetik-bt-140,BT,captured,captured,Ereignisduplikat,d3ad7da0038f9d79207c1bec7f6b3a597bcb58556c52d9cec0f0699570038f77,False,False,False,0,True
+141,test-kohorte-synthetik-bt-141,BT,captured,captured,fehlender fachlicher Nachweis,ccb632b1004d1413bdf038b029caa070b804edd7995d8957cfaad962145910b5,False,False,False,0,False
+142,test-kohorte-synthetik-bt-142,BT,captured,captured,fehlender fachlicher Nachweis,c20a9cc96e3158dd5e483cc9b70d578386b388c1b17a32e9d02b0e053a160de4,False,False,False,0,False
+143,test-kohorte-synthetik-bt-143,BT,captured,captured,Ereignisduplikat,7f76434b96461b0d06d988f5b872127a57f7f344d57d3f3c065765dccc7154ff,False,False,False,0,True
+144,test-kohorte-synthetik-bt-144,BT,captured,captured,fehlender fachlicher Nachweis,2c87013da6d80e236420d3bae07e4e36fbf44fafb28e5cff10e0e21121a3e5ab,False,False,False,0,False
+145,test-kohorte-synthetik-bt-145,BT,captured,captured,fehlender fachlicher Nachweis,bc3ba66ca1e39e419cb8ede43d2116090eb390ffda6ce8df30d3aa181c2d8621,False,False,False,0,False
+146,test-kohorte-synthetik-bt-146,BT,captured,captured,fehlender fachlicher Nachweis,d075e25fca78d5c39ff9dea2e114cc7a1195ed3906e42fd200ba7001e35d6205,False,False,False,0,False
+147,test-kohorte-synthetik-bt-147,BT,captured,captured,fehlender fachlicher Nachweis,f35b8c4d8d24c8d47cb5fdfb24734134f78f9f45254f20d2d0829df756a6fdc3,False,False,False,0,False
+148,test-kohorte-synthetik-bt-148,BT,captured,captured,fehlender fachlicher Nachweis,6455370e3eb66de3bebfb0943992355e794b49224a5a98f6b4f8cdc0af8b0127,False,False,False,0,False
+149,test-kohorte-synthetik-bt-149,BT,captured,captured,fehlender fachlicher Nachweis,626944d23058cbe38b3a72befe6ba7f67155d997dd3f437fe7809f10daa9b81b,False,False,False,0,False
+150,test-kohorte-synthetik-bt-150,BT,captured,captured,fehlender fachlicher Nachweis,d92ff601dad1ac931b5119afd448240bb32e6b87d6e41c51352fde76dbdbf79b,False,False,False,0,False
+151,test-kohorte-synthetik-bt-151,BT,captured,captured,Ereignisduplikat,f5ad3a1ceecaee944fcb4b4cd656eeaf4db1fb033661097323d5ab3a3a8a0475,False,False,False,0,True
+152,test-kohorte-synthetik-bt-152,BT,captured,captured,fehlender fachlicher Nachweis,bd3f2c3b7789519f6bb233bde91908fbd00b3c1799fb1822beea91080196bd0e,False,False,False,0,False
+153,test-kohorte-synthetik-bt-153,BT,captured,captured,fehlender fachlicher Nachweis,ea3d3f4daad339a46d98caabfcf85580d016d4555fa5c861b1afc81633717a17,False,False,False,0,False
+154,test-kohorte-synthetik-bt-154,BT,captured,captured,fehlender fachlicher Nachweis,ebee472c72afe041b7b4c1f0d28c2a52ccfb781df8bef76c76b5bc4ef68d10eb,False,False,False,0,False
+155,test-kohorte-synthetik-bt-155,BT,captured,captured,fehlender fachlicher Nachweis,de7357bbff506dfb0272fcae23a8f96fc9852cbee0de0dd78d3557a0d41836ac,False,False,False,0,False
+156,test-kohorte-synthetik-bt-156,BT,captured,captured,Ereignisduplikat,e1ff05d8c91b269ca44a0e51a56528c5d4f246643122f449ecafbf1dcc4e223e,False,False,False,0,True
+157,test-kohorte-synthetik-bt-157,BT,captured,captured,fehlender fachlicher Nachweis,af44a99043f1db82ae6b1825f8b1d45e92cdc02186735cfb66cb1ea0424c434d,False,False,False,0,False
+158,test-kohorte-synthetik-bt-158,BT,captured,captured,fehlender fachlicher Nachweis,55d755eb8f8de4212653c0ed3f8e5d37e7ffda32a03fa0d371ae2b4fe35af7d3,False,False,False,0,False
+159,test-kohorte-synthetik-bt-159,BT,captured,captured,fehlender fachlicher Nachweis,92cbf189c556f492cd7c0c9cea828072b8749f8926f68baaddaba8978741a1b8,False,False,False,0,False
+160,test-kohorte-synthetik-bt-160,BT,captured,captured,fehlender fachlicher Nachweis,bb68a54c1158b9aeab80a6633a7c5b1fb655c5a91ce9da7dd07f82b45a9fbfac,False,False,False,0,False
+161,test-kohorte-synthetik-bt-161,BT,captured,captured,fehlender fachlicher Nachweis,4e7505ead5cb35d709076e5be244c6238686ef826212cd0fc588698856c62728,False,False,False,0,False
+162,test-kohorte-synthetik-bt-162,BT,captured,captured,fehlender fachlicher Nachweis,4d2f85a8fe6fa664d65fa734583ba507e42a9e9004fa60855162cad44c50f658,False,False,False,0,False
+163,test-kohorte-synthetik-bt-163,BT,captured,captured,fehlender fachlicher Nachweis,65a973e14d115b98990afc9610a6b99b67d9d6fc0fd8a9b53c74f2a425d084d3,False,False,False,0,False
+164,test-kohorte-synthetik-bt-164,BT,captured,captured,Ereignisduplikat,8cb3222b678461d8fd36465130eb477443ca089a5ca46bcda6ad503812abdc88,False,False,False,0,True
+165,test-kohorte-synthetik-bt-165,BT,captured,captured,fehlender fachlicher Nachweis,0ed6950f3709177dc9e0ad724238a900bca249adb100fe3dbfef1c4cdcdac406,False,False,False,0,False
+166,test-kohorte-synthetik-bt-166,BT,captured,captured,fehlender fachlicher Nachweis,f2b50696b97d983ac10e3610be5dfe9f5a47aceb0c427829f9b17f847c0d3744,False,False,False,0,False
+167,test-kohorte-synthetik-bt-167,BT,captured,captured,Ereignisduplikat,8830f9daf2b8aa5533241fbd89188ad478d6e5b9c249e24b3ebbc2bb3e39ef0f,False,False,False,0,True
+168,test-kohorte-synthetik-bt-168,BT,captured,captured,fehlender fachlicher Nachweis,116ec8663604bd1025bc5bd6b8d2988873f0da6cf7ae275f9499bc3c2b8793ea,False,False,False,0,False
+169,test-kohorte-synthetik-bt-169,BT,captured,captured,fehlender fachlicher Nachweis,5b38a7f87a3369e08804f09e0502255e50e8a0339535eeb1e753ff47d39c5e5e,False,False,False,0,False
+170,test-kohorte-synthetik-bt-170,BT,captured,captured,fehlender fachlicher Nachweis,d385efbc910352b414127dd623f1c20290bde1678e8d662973c42454a9d5a455,False,False,False,0,False
+171,test-kohorte-synthetik-bt-171,BT,captured,captured,fehlender fachlicher Nachweis,f9b5a9fe70ea96117bf5cf9ce1da79ddd9e5d07e6f9fbe6469b03857a44a4b41,False,False,False,0,False
+172,test-kohorte-synthetik-bt-172,BT,captured,captured,fehlender fachlicher Nachweis,e0c8ca6cfa01007be5b5bbad7120014ff7de08319a7d49c86180e21615fe95a6,False,False,False,0,False
+173,test-kohorte-synthetik-bt-173,BT,captured,captured,fehlender fachlicher Nachweis,fd7f5452a996c7f1b921e3153dd9d3937cc2c739fb989d262dcbbddf1cf1f7f8,False,False,False,0,False
+174,test-kohorte-synthetik-bt-174,BT,captured,captured,fehlender fachlicher Nachweis,0d1f61b4825c82dab94855cbe7d0a745f7b4a2617e24dc605d41d36605e8d1bc,False,False,False,0,False
+175,test-kohorte-synthetik-bt-175,BT,captured,captured,Ereignisduplikat,51a1eabc989693c490c0295feb3f67352bec75472dd3a199e7c2fab4a5cc7161,False,False,False,0,True
+176,test-kohorte-synthetik-bt-176,BT,captured,captured,fehlender fachlicher Nachweis,b01bb9c7289e35f0a9ace232963f131de637340a9264eb089a53434d7ed3e6ec,False,False,False,0,False
+177,test-kohorte-synthetik-bt-177,BT,captured,captured,fehlender fachlicher Nachweis,5133c81c8e0cede2ba0db46320813018c4222aa9b376729ef85a0f7cbf94a7f0,False,False,False,0,False
+178,test-kohorte-synthetik-bt-178,BT,captured,captured,fehlender fachlicher Nachweis,14d193c4e6ad7e044f976336dd188a09c8f8bf69eb537e7e0a9f89395d8db8dd,False,False,False,0,False
+179,test-kohorte-synthetik-bt-179,BT,captured,captured,fehlender fachlicher Nachweis,6c55659e23211c3e03ab326b456fe0317726ae3b2a16ec868dfd1be3d07a5da8,False,False,False,0,False
+180,test-kohorte-synthetik-bt-180,BT,captured,captured,Ereignisduplikat,970b36453cf58efb7ea0b5b5f6e8645f919717e0ee43f32d41dd8578320cf3ee,False,False,False,0,True
+181,test-kohorte-synthetik-bt-181,BT,captured,captured,fehlender fachlicher Nachweis,fb7a34e00f63051a59b44dfbacc7cef5b6f2a88db7779596e50b3cdc6a6ebd57,False,False,False,0,False
+182,test-kohorte-synthetik-bt-182,BT,captured,captured,fehlender fachlicher Nachweis,c664a019259daaee95232a1991d891306684e982cfb9886c0e092ded71f8dad9,False,False,False,0,False
+183,test-kohorte-synthetik-bt-183,BT,captured,captured,fehlender fachlicher Nachweis,e567d0c61c815a189c24da294df7791898b07989beeb9b69d253d2e33e3c0c76,False,False,False,0,False
+184,test-kohorte-synthetik-bt-184,BT,captured,captured,fehlender fachlicher Nachweis,cc5c1c966df0f4a4ad2da4e6f6bbe8767eafe6e60cc8793a57f6696d433af7f1,False,False,False,0,False
+185,test-kohorte-synthetik-bt-185,BT,captured,captured,fehlender fachlicher Nachweis,c734d80ab07ad4b7bc29178cd35d366af12cd010b292f7644aeeb4f96bbcf52a,False,False,False,0,False
+186,test-kohorte-synthetik-bt-186,BT,captured,captured,fehlender fachlicher Nachweis,47774a7a87c220b6bae31bca41320cca7d6e68170ac05b02a87c5fc1c7ff6567,False,False,False,0,False
+187,test-kohorte-synthetik-bt-187,BT,captured,captured,fehlender fachlicher Nachweis,b06b824c6e6d9f55d52ca3be058426415e2c34a6de1f8fbc68268e779f9eeb34,False,False,False,0,False
+188,test-kohorte-synthetik-bt-188,BT,captured,captured,Ereignisduplikat,e38ed47c4e6963175706b9f01c61bc212b4d8e70ec9f55309abef7383af10586,False,False,False,0,True
+189,test-kohorte-synthetik-bt-189,BT,captured,captured,fehlender fachlicher Nachweis,20fc2b8c0249ecebb044acb35cd0d6a314545db63dd4ef3b13a310d3875af062,False,False,False,0,False
+190,test-kohorte-synthetik-bt-190,BT,captured,captured,fehlender fachlicher Nachweis,12178a8f539ac48b2d61edac00cfd62c270a985e4e3dd5bd5887996850d17876,False,False,False,0,False
+191,test-kohorte-synthetik-bt-191,BT,captured,captured,Ereignisduplikat,a12abcfc762df2ed1e8595eef27bf70bca327be797071556df408ac78deb0727,False,False,False,0,True
+192,test-kohorte-synthetik-bt-192,BT,captured,captured,fehlender fachlicher Nachweis,2436d9e198917cee33b397ae3dc809a034a5e460303730ce6da6e9f93133d2f2,False,False,False,0,False
+193,test-kohorte-synthetik-bt-193,BT,captured,captured,fehlender fachlicher Nachweis,c0a5248de2f84de32ddaf4a6344d1a070a1f7b919441b4cffe0f22e0fa8132a1,False,False,False,0,False
+194,test-kohorte-synthetik-bt-194,BT,captured,captured,fehlender fachlicher Nachweis,b71ad17a03bdd102b256ec01284080f9adf34642f47be122f1e66357fb23fb46,False,False,False,0,False
+195,test-kohorte-synthetik-bt-195,BT,captured,captured,fehlender fachlicher Nachweis,c36c8387215d4dba329956a881a940264e26abb18177996f139ebb52abd8bf44,False,False,False,0,False
+196,test-kohorte-synthetik-bt-196,BT,captured,captured,fehlender fachlicher Nachweis,287662cf04ee3fea4dd6f799047e696f4c3199cb36c1a662313880af9c70636c,False,False,False,0,False
+197,test-kohorte-synthetik-bt-197,BT,captured,captured,fehlender fachlicher Nachweis,068a54d6699506113a9d87458ad41f1cf2c1d30ad42faba46b502ff411c93a08,False,False,False,0,False
+198,test-kohorte-synthetik-bt-198,BT,captured,captured,fehlender fachlicher Nachweis,80273a4acdedec9bf3ff30119094f90acfcf5b1aa472c4a2cc328b9dacdba315,False,False,False,0,False
+199,test-kohorte-synthetik-bt-199,BT,captured,captured,Ereignisduplikat,d60c3c5c8cba40e910735a9180db6ebd6393200c63b124b6165f1108a9806c14,False,False,False,0,True
+200,test-kohorte-synthetik-bt-200,BT,captured,captured,fehlender fachlicher Nachweis,b6ea1ef0752ab6120c65c45d71b4ab88234d948da6a6a60f2f70934a8c940788,False,False,False,0,False
+201,test-kohorte-synthetik-bt-201,BT,captured,captured,fehlender fachlicher Nachweis,e64f8ea9ec1bfa553ec9427050107f097cbf40af37d12818e2493447bce19e42,False,False,False,0,False
+202,test-kohorte-synthetik-bt-202,BT,captured,captured,fehlender fachlicher Nachweis,f25189ffc779c068507143cbc8bbd93126b7dfb0a2944dfc70e91b84a5dcb30c,False,False,False,0,False
+203,test-kohorte-synthetik-bt-203,BT,captured,captured,fehlender fachlicher Nachweis,e3772d62de8f8187af0f15557f395bf2e456123bf6becb5474b4a450c9da1cfb,False,False,False,0,False
+204,test-kohorte-synthetik-bt-204,BT,captured,captured,Ereignisduplikat,d9920dde5a815f1c02c83301aca06e60bd8c5bab78e6737b249fa6e979f3074b,False,False,False,0,True
+205,test-kohorte-synthetik-bt-205,BT,captured,captured,fehlender fachlicher Nachweis,9d9f6a06e6ba2ff08c9e459b294ac6e9326cb0cf5d268ef37db317360369c984,False,False,False,0,False
+206,test-kohorte-synthetik-bt-206,BT,captured,captured,fehlender fachlicher Nachweis,c4bb01a8767639cb20d78834a103759a543d9da717f85284e5439f08a3ac596c,False,False,False,0,False
+207,test-kohorte-synthetik-bt-207,BT,captured,captured,fehlender fachlicher Nachweis,d2c1f97d60bf822ee461202804d18014b8ab866b9e5b3cd15c3f10a8e4843a52,False,False,False,0,False
+208,test-kohorte-synthetik-bt-208,BT,captured,captured,fehlender fachlicher Nachweis,b3a7c0faca777f07455e1d43d853b765c8bdf9896e55fcc653f93069b0064688,False,False,False,0,False
+209,test-kohorte-synthetik-bt-209,BT,captured,captured,fehlender fachlicher Nachweis,92b9822a775653cb801937c77ccbf2a8a12f9fdc4d547a4cdd6eddb76ab80591,False,False,False,0,False
+210,test-kohorte-synthetik-bt-210,BT,captured,captured,fehlender fachlicher Nachweis,c06eb2e15ead6f98e38c07ff5572975fb57610e29219f4261cc761a0e0b7abf7,False,False,False,0,False
+211,test-kohorte-synthetik-bt-211,BT,captured,captured,fehlender fachlicher Nachweis,0290f554dca7053a5a365f4db90bb3dc93fc38ef661e8d50e28967f9f87501bd,False,False,False,0,False
+212,test-kohorte-synthetik-bt-212,BT,captured,captured,Ereignisduplikat,59c5ec308ba1bea95e0d54e19848bcb108a375fad5789ae750ccb85044aeee9b,False,False,False,0,True
+213,test-kohorte-synthetik-bt-213,BT,captured,captured,fehlender fachlicher Nachweis,f2dc8ea2fc716d1d6ba11f894dc57cbc7b5b407d0da43ec99dceeba684337cfe,False,False,False,0,False
+214,test-kohorte-synthetik-bt-214,BT,captured,captured,fehlender fachlicher Nachweis,ad462558bf24755d43df8d48a3a11a7f7b83bd0bdc2770a22003bd6a6b6738c1,False,False,False,0,False
+215,test-kohorte-synthetik-bt-215,BT,captured,captured,Ereignisduplikat,a66066fc63561beedce5af6b68d577ad4da0110f012428d77807f858616352bd,False,False,False,0,True
+216,test-kohorte-synthetik-bt-216,BT,captured,captured,fehlender fachlicher Nachweis,22d2d383ba1431f0163b2a009a13a05cb74e0f500a208373cee84ed0bd71b7ee,False,False,False,0,False
+217,test-kohorte-synthetik-bt-217,BT,captured,captured,fehlender fachlicher Nachweis,786261de5ccdee28fd0197fd71ae70825cf0ed4e9f98bc3d677aea6096f84938,False,False,False,0,False
+218,test-kohorte-synthetik-bt-218,BT,captured,captured,fehlender fachlicher Nachweis,e994635605913e51ed1e0a1612535526500117a8ef2441f34a2fda319e5a51b0,False,False,False,0,False
+219,test-kohorte-synthetik-bt-219,BT,captured,captured,fehlender fachlicher Nachweis,e83101808b8e067eee3f00f34b54b3306f223679cf0dcd3732f11cfb194a5fbf,False,False,False,0,False
+220,test-kohorte-synthetik-bt-220,BT,captured,captured,fehlender fachlicher Nachweis,5f8e9cd3799a73ef88e0d5f1d23b526ef30bfe39d872e0655c7422caeac4d304,False,False,False,0,False
+221,test-kohorte-synthetik-bt-221,BT,captured,captured,fehlender fachlicher Nachweis,658c492ebd00702500a5d982a4453cbfdda2611b163c39a4044b2b37a0bb5fb9,False,False,False,0,False
+222,test-kohorte-synthetik-bt-222,BT,captured,captured,fehlender fachlicher Nachweis,4392d9d5933e57296157672b906b36e103c4a79b1a774387981d0b3ef5b9f6f8,False,False,False,0,False
+223,test-kohorte-synthetik-bt-223,BT,captured,captured,Ereignisduplikat,768069a6215b5dcd459a971139caa09b10a446cc91d4f945d37daae1b7a916ef,False,False,False,0,True
+224,test-kohorte-synthetik-bt-224,BT,captured,captured,fehlender fachlicher Nachweis,c156a7ec95b0ea678bb482300966d94c7cd718bb03e66dd2e4290d5b4ec37080,False,False,False,0,False
+225,test-kohorte-synthetik-bt-225,BT,captured,captured,fehlender fachlicher Nachweis,3b60dc67f1e6ec2f22f0a990a24926b9e851d4f3417fef1a967c9efaed024914,False,False,False,0,False
+226,test-kohorte-synthetik-bt-226,BT,captured,captured,fehlender fachlicher Nachweis,db41c047d570dba45709d435fcc5623d94db2fe47771387802e15c03856e1f6e,False,False,False,0,False
+227,test-kohorte-synthetik-bt-227,BT,captured,captured,fehlender fachlicher Nachweis,5a9a53c8f68d42787069d6772f1f1af93e2668c4573589d7d58c5135333ef460,False,False,False,0,False
+228,test-kohorte-synthetik-bt-228,BT,captured,captured,Ereignisduplikat,b4e7252afa307c18c6ec18def8adcb50f2fdcf162316337d0782223adc275ba3,False,False,False,0,True
+229,test-kohorte-synthetik-bt-229,BT,captured,captured,fehlender fachlicher Nachweis,708ab04d2de38ad1372d9fb65a216e6864cb5a60cf786cfc49ab73e7e4e9b44e,False,False,False,0,False
+230,test-kohorte-synthetik-bt-230,BT,captured,captured,fehlender fachlicher Nachweis,d14ca20703329e22ef26abaac13a9d024d3dda6164eebb6bae849fd18e8127ed,False,False,False,0,False
+231,test-kohorte-synthetik-bt-231,BT,captured,captured,Ereignisduplikat,f0a42e052f799be2b9dff6b23199c157898de15c43091d36a1f4b61209448b95,False,False,False,0,True
+232,test-kohorte-synthetik-bt-232,BT,captured,captured,fehlender fachlicher Nachweis,3453052e8f23a69492d5ffbbbacb2db599a60f5036b179e5c0cea290527a794a,False,False,False,0,False
+233,test-kohorte-synthetik-bt-233,BT,captured,captured,fehlender fachlicher Nachweis,09c7017c0a2e94ab69f0bcca2e345145d1ed7a9749a4c026c9c8fdb5ff7e27ef,False,False,False,0,False
+234,test-kohorte-synthetik-bt-234,BT,captured,captured,fehlender fachlicher Nachweis,e46e118158f321a56ee8d7bc873f9a2f97d593890cf45e53a62fbb057030778f,False,False,False,0,False
+235,test-kohorte-synthetik-bt-235,BT,captured,captured,fehlender fachlicher Nachweis,62abac2e18b632be130e3fb79a3f8563e587824e406de3363c92f2e29c9abd2b,False,False,False,0,False
+236,test-kohorte-synthetik-bt-236,BT,captured,captured,Ereignisduplikat,3e945332ae293bd0ea2e75c61acf8a758be4a80bcba6ac852f9cd92f3f7c2e33,False,False,False,0,True
+237,test-kohorte-synthetik-bt-237,BT,captured,captured,fehlender fachlicher Nachweis,7eeda0bdff3c603474a33f4fd855f75b34cd8c56dbe2b6ec55dc2f231bab37a0,False,False,False,0,False
+238,test-kohorte-synthetik-bt-238,BT,captured,captured,fehlender fachlicher Nachweis,128a3e063c2894d2469aaabc68e726c3b8656522fdef019cab3f7664f7fa228f,False,False,False,0,False
+239,test-kohorte-synthetik-bt-239,BT,captured,captured,Ereignisduplikat,866eb970cb0c54ab12c53f2c68ef4f74fa9b03af68a15a015a0cf148250c6ce1,False,False,False,0,True
+240,test-kohorte-synthetik-bt-240,BT,captured,captured,fehlender fachlicher Nachweis,06feb4f53f6928ac749937d638318c564309374817220acbcbad954fba3cdc0b,False,False,False,0,False
+241,test-kohorte-synthetik-bt-241,BT,captured,captured,fehlender fachlicher Nachweis,f79f1883fb28e96093862e87f87b5316df9aa1d400ae5565f2153369aa2a0261,False,False,False,0,False
+242,test-kohorte-synthetik-bt-242,BT,captured,captured,fehlender fachlicher Nachweis,3a221fd44532f82917ad6346c578c07982011058bd5c671e8576c9039548a468,False,False,False,0,False
+243,test-kohorte-synthetik-bt-243,BT,captured,captured,fehlender fachlicher Nachweis,90cb9c3885ccb2c3e796e6b504ebf7cba75eafb47755902f7eff30cb411b4154,False,False,False,0,False
+244,test-kohorte-synthetik-bt-244,BT,captured,captured,fehlender fachlicher Nachweis,884acc60c451eb03aa56dc2ab7a94562bbb86bcc0d89da3355e3c9b79ed5998b,False,False,False,0,False
+245,test-kohorte-synthetik-bt-245,BT,captured,captured,fehlender fachlicher Nachweis,3bd6b4deff6bb7759b64c5a24297eeaebaae846b05b59e9003fbe510e15d6b20,False,False,False,0,False
+246,test-kohorte-synthetik-bt-246,BT,captured,captured,fehlender fachlicher Nachweis,234b4c7444b9ae5008494a3dc094d143e3d37b7d7f7592988b0044bff310ad19,False,False,False,0,False
+247,test-kohorte-synthetik-bt-247,BT,captured,captured,Ereignisduplikat,0453bb98893a17eb7a5c064d9ce6c89eac781391d6a9d3bfe3c46c996e107e11,False,False,False,0,True
+248,test-kohorte-synthetik-bt-248,BT,captured,captured,fehlender fachlicher Nachweis,06676a963f6c6079c6fd28446966ca2bc6cf9a4428d30f05a8e10f1448a1e71c,False,False,False,0,False
+249,test-kohorte-synthetik-bt-249,BT,captured,captured,fehlender fachlicher Nachweis,47c6a4cd6515c047df2dccef6968d29e74dd545ff13a1fb1d8ce07503af310ed,False,False,False,0,False
+250,test-kohorte-synthetik-bt-250,BT,captured,captured,fehlender fachlicher Nachweis,0aecc1c5b54999d5e807715b3515615ebaf2fad5e8a6a2352b73c70513972c15,False,False,False,0,False
+251,test-kohorte-synthetik-bt-251,BT,captured,captured,fehlender fachlicher Nachweis,2645f9bc4044529a6a1cd682115680ad5c0286771f2307d2d19a1ad19a0c795b,False,False,False,0,False
+252,test-kohorte-synthetik-bt-252,BT,captured,captured,Ereignisduplikat,2baedc3702b010488951936356f9f0de6f6177db739a575e8cd03a69c0cf3008,False,False,False,0,True
+253,test-kohorte-synthetik-bt-253,BT,captured,captured,fehlender fachlicher Nachweis,93d607f9ccbb41f76463c06429afda8eb00347e1e644a1d1dd9086f1d4cafe1c,False,False,False,0,False
+254,test-kohorte-synthetik-bt-254,BT,captured,captured,fehlender fachlicher Nachweis,7033a4e11c7dabf656cf6ba14a71172e6a1e2563b7200a673a24ea4e654d6e8a,False,False,False,0,False
+255,test-kohorte-synthetik-bt-255,BT,captured,captured,fehlender fachlicher Nachweis,533d48755e8262a5587c1fb623607ee147357add2b7ba5b3381b80da004eacd5,False,False,False,0,False
+256,test-kohorte-synthetik-bt-256,BT,captured,captured,fehlender fachlicher Nachweis,433506962c895adccbb1b70db3c9a6eade2be78ae0f641d48a2d3889cd43cfee,False,False,False,0,False
+257,test-kohorte-synthetik-bt-257,BT,captured,captured,fehlender fachlicher Nachweis,7633d5d53fe3d7ec656db7ff7e3655930183a3b9ce2d1d8df424b0057e606c69,False,False,False,0,False
+258,test-kohorte-synthetik-bt-258,BT,captured,captured,fehlender fachlicher Nachweis,8255f6661b6c7bd45f4490ddf997697903b73bb40a7184196f46bc0e929a6465,False,False,False,0,False
+259,test-kohorte-synthetik-bt-259,BT,captured,captured,fehlender fachlicher Nachweis,d74b993d36315e098a21dbc5a7f392f4caae01585e97c217ae22c5aecebf30ad,False,False,False,0,False
+260,test-kohorte-synthetik-bt-260,BT,captured,captured,Ereignisduplikat,ef2385e482b33df927fd6e1e0406c6664a0e175aa255608e1d5195d79d55cfb8,False,False,False,0,True
+261,test-kohorte-synthetik-bt-261,BT,captured,captured,fehlender fachlicher Nachweis,6ab9a76e9fbf043b87a832a46e4c54ed01f78124a2ef4face58c7fdecde5baef,False,False,False,0,False
+262,test-kohorte-synthetik-bt-262,BT,captured,captured,fehlender fachlicher Nachweis,1cb3491911e566d20befc97e0280c6d01318a46baf14d0aa29be2c3df2bc74d0,False,False,False,0,False
+263,test-kohorte-synthetik-bt-263,BT,captured,captured,Ereignisduplikat,01988faa6a06af05289f8a333e5b35d061adc8fa338157abd3a054230bd9a58a,False,False,False,0,True
+264,test-kohorte-synthetik-bt-264,BT,captured,captured,fehlender fachlicher Nachweis,d732a304e746f05974bc941f5234f6355d4026bb2ce2cf7a74b14342b355b7fe,False,False,False,0,False
+265,test-kohorte-synthetik-bt-265,BT,captured,captured,fehlender fachlicher Nachweis,c5c7b5e16c1728a4439d6c6cc45b2571b33cc83d35544b5d8c856e3830295961,False,False,False,0,False
+266,test-kohorte-synthetik-bt-266,BT,captured,captured,fehlender fachlicher Nachweis,b91346170cd3246d8e987e3c3e50e9c2fc97b9c164f7792426ed4cbe3656c851,False,False,False,0,False
+267,test-kohorte-synthetik-bt-267,BT,captured,captured,fehlender fachlicher Nachweis,d954537598cd35a7a3537918147546879a56798757aad5269d7733df4b557f9c,False,False,False,0,False
+268,test-kohorte-synthetik-bt-268,BT,captured,captured,fehlender fachlicher Nachweis,d48fbe2902ffb2b48509392254c6ad4d1019648b60c006874d6485640115f17d,False,False,False,0,False
+269,test-kohorte-synthetik-bt-269,BT,captured,captured,fehlender fachlicher Nachweis,aa8476696b5190d8d7e7e7bbda942fe95b5aaf6ef55a3f714c513d0e28c99f49,False,False,False,0,False
+270,test-kohorte-synthetik-bt-270,BT,captured,captured,fehlender fachlicher Nachweis,8ff7470079806676651d1175e49f4ebc9408e5bbc7be1b58e3a7d5b62943b7c0,False,False,False,0,False
+271,test-kohorte-synthetik-bt-271,BT,captured,captured,Ereignisduplikat,92ed05b727d52db9ba4ced42cab4eae408b99ab893084c542c89542bed16b9e9,False,False,False,0,True
+272,test-kohorte-synthetik-bt-272,BT,captured,captured,fehlender fachlicher Nachweis,5d316c0cb0acf408b430b8c06bb77a32397166e198c2fede4539900045c91507,False,False,False,0,False
+273,test-kohorte-synthetik-bt-273,BT,captured,captured,fehlender fachlicher Nachweis,6e54a0648b47f4b7d5936f7e4ee5f682ada83e042af3492679dec3ff27ba1438,False,False,False,0,False
+274,test-kohorte-synthetik-bt-274,BT,captured,captured,fehlender fachlicher Nachweis,7c94b0862ee393ddf22795038a75fcade0ed174ecbaf6222eb6178f1ffaeb241,False,False,False,0,False
+275,test-kohorte-synthetik-bt-275,BT,captured,captured,fehlender fachlicher Nachweis,573722033f397460f89405bcb16d6a6e5a52af8ead32ee28834f9eba5ed29a9a,False,False,False,0,False
+276,test-kohorte-synthetik-bt-276,BT,captured,captured,Ereignisduplikat,60c4c314ebd53533bb4e2847a3ef733aec8ad42ed3333817f28aaf7dedbd48cc,False,False,False,0,True
+277,test-kohorte-synthetik-bt-277,BT,captured,captured,fehlender fachlicher Nachweis,f61b715ff7087161c8279bd8967b45055f69365679613b531c39952a7f9312bb,False,False,False,0,False
+278,test-kohorte-synthetik-bt-278,BT,captured,captured,fehlender fachlicher Nachweis,b92096c7cd079eac150466ff811b76c028982732cf244aeb5765c5f43705a93c,False,False,False,0,False
+279,test-kohorte-synthetik-bt-279,BT,captured,captured,Ereignisduplikat,e6488fefd4ae99fb6d7ef124998abfe120280bb01032bf9743a1df80184ad42b,False,False,False,0,True
+280,test-kohorte-synthetik-bt-280,BT,captured,captured,fehlender fachlicher Nachweis,34ac5480bf3f5b6d114b11f76768058bd6480af42054a041cbd75c5823f48522,False,False,False,0,False
+281,test-kohorte-synthetik-bt-281,BT,captured,captured,fehlender fachlicher Nachweis,6e6d5f92d7142ed915e96f7b5977a41ff014d817d7d06675bd9b59317e2d3400,False,False,False,0,False
+282,test-kohorte-synthetik-bt-282,BT,captured,captured,fehlender fachlicher Nachweis,5bfb89ca98ad018ec5cc416354dca5a32b7c8963638d5b05cda0231ad23a153f,False,False,False,0,False
+283,test-kohorte-synthetik-bt-283,BT,captured,captured,fehlender fachlicher Nachweis,92e661254b57bb4477c27aaae5e6fcb4be85e4b1cc5d2a5bf02b80a9a5428d6f,False,False,False,0,False
+284,test-kohorte-synthetik-bt-284,BT,captured,captured,Ereignisduplikat,ee8d72ea55e508d5d3ce8bf22248fb0f47b73de7d26bfab807210e8544b424d4,False,False,False,0,True
+285,test-kohorte-synthetik-bt-285,BT,captured,captured,fehlender fachlicher Nachweis,0889bd4a5fafd54f47184af34d1e9e52c449cd27a4044f34f99d7d91e74d58fe,False,False,False,0,False
+286,test-kohorte-synthetik-bt-286,BT,captured,captured,fehlender fachlicher Nachweis,0dfe1b7e964cbbd92e0501cb4e47208ee2d93443ff65cfa33833f65cae9439b9,False,False,False,0,False
+287,test-kohorte-synthetik-bt-287,BT,captured,captured,Ereignisduplikat,b4b33e7d709f8e67a102f388b6b98916948c08aa90c2180f62ca8b5904e964dc,False,False,False,0,True
+288,test-kohorte-synthetik-bt-288,BT,captured,captured,fehlender fachlicher Nachweis,ccde465faa053f1c335189bb1f64fc0f84965fbea00bf041c084e68c27174ace,False,False,False,0,False
+289,test-kohorte-synthetik-bt-289,BT,captured,captured,fehlender fachlicher Nachweis,35e0d1fed320fe6aca64918948318d9bfc849ebd017ba6347590d67660942301,False,False,False,0,False
+290,test-kohorte-synthetik-bt-290,BT,captured,captured,fehlender fachlicher Nachweis,85b3de7e9314c1c3bd3d98eb6de1fdfcf29638e27cc7d66c45fc80f389dc64e2,False,False,False,0,False
+291,test-kohorte-synthetik-bt-291,BT,captured,captured,fehlender fachlicher Nachweis,63fba79e8da0ce5f325eaf11cd7d99fb444699a61e2733241af2878d92c40b67,False,False,False,0,False
+292,test-kohorte-synthetik-bt-292,BT,captured,captured,fehlender fachlicher Nachweis,d919f10c8eb47f068d1f164ba2453fbe75f07c80e1d38bbc135fbaf5b54f8d34,False,False,False,0,False
+293,test-kohorte-synthetik-bt-293,BT,captured,captured,fehlender fachlicher Nachweis,9bc5c5c7b80ee9a1ca91cb2ef6b4f2a93d9d2946e2ad669dd1387b1ceb7ee393,False,False,False,0,False
+294,test-kohorte-synthetik-bt-294,BT,captured,captured,fehlender fachlicher Nachweis,e4a87ec5bf8488e3ff43c0236f45fa4d2b042743ccf6893677770de78c5a4f94,False,False,False,0,False
+295,test-kohorte-synthetik-bt-295,BT,captured,captured,Ereignisduplikat,375738f14dd9f82c9c471bb4c7604e5ca1dc14eaa4f14aac91a79a53c2d1df60,False,False,False,0,True
+296,test-kohorte-synthetik-bt-296,BT,captured,captured,fehlender fachlicher Nachweis,2c806bd00bbdfcf66f2b258812c881506ae882cc6dac3c3a66e9dd0971448da5,False,False,False,0,False
+297,test-kohorte-synthetik-bt-297,BT,captured,captured,fehlender fachlicher Nachweis,7a119d0498f0732f9682ca5510206a947eb7cf36c1e39f7ae5729307bb7cc747,False,False,False,0,False
+298,test-kohorte-synthetik-bt-298,BT,captured,captured,fehlender fachlicher Nachweis,26ea1db6335036c15bde8d63ead66bd6c9a7c62cf118591752832f5f71a7ac03,False,False,False,0,False
+299,test-kohorte-synthetik-bt-299,BT,captured,captured,fehlender fachlicher Nachweis,3c16d152fd503791937e64fbaa4d92ed86e5f99dff8f836ed5e37a11a0a15994,False,False,False,0,False
+300,test-kohorte-synthetik-bt-300,BT,captured,captured,Ereignisduplikat,e11acf07061fea81f95a3a7814f16f1356500d2c15493e176d23ef2b37b0f6f4,False,False,False,0,True
+301,test-kohorte-synthetik-bt-301,BT,captured,captured,fehlender fachlicher Nachweis,aa67ee1bf81ffd5d9582620015d74415ee7aa27f2117d9bf468bd30d17bd060d,False,False,False,0,False
+302,test-kohorte-synthetik-bt-302,BT,captured,captured,fehlender fachlicher Nachweis,822ce2c33823c9f590e94eb9162e989c8fedfb15a209376473ec47bc3e429dbb,False,False,False,0,False
+303,test-kohorte-synthetik-bt-303,BT,captured,captured,fehlender fachlicher Nachweis,75fe7a757292afabb6f7da5ce5ad677fd1c9b842b6f7c99b081782a77be1269f,False,False,False,0,False
+304,test-kohorte-synthetik-bt-304,BT,captured,captured,fehlender fachlicher Nachweis,e6f4c03b5f7270a9f49cc5c343fb13b84a6754ad3a9981afae4a3b1685acc34f,False,False,False,0,False
+305,test-kohorte-synthetik-bt-305,BT,captured,captured,fehlender fachlicher Nachweis,ac4032f7203905e4cdcc595553219488a89c2d537039fbde13fb868610e0448b,False,False,False,0,False
+306,test-kohorte-synthetik-bt-306,BT,captured,captured,fehlender fachlicher Nachweis,574acedb6702f6d6a6dfc8c74cb1b7dac7d19cd9dc6ec0e31ce4d444a3526c6f,False,False,False,0,False
+307,test-kohorte-synthetik-bt-307,BT,captured,captured,fehlender fachlicher Nachweis,08b9f26c4a7eef1b08bc06a0d11e3a514a754e784897749c43b787b318225c39,False,False,False,0,False
+308,test-kohorte-synthetik-bt-308,BT,captured,captured,Ereignisduplikat,ff522fc1a7e8f391709b1591ba95fe296d247af23b6427f74b1bdf38ec8daf19,False,False,False,0,True
+309,test-kohorte-synthetik-bt-309,BT,captured,captured,fehlender fachlicher Nachweis,0af7efa4144b293a06e4162da3681f10e9766ad22984555fc9ceade36c51c59d,False,False,False,0,False
+310,test-kohorte-synthetik-bt-310,BT,captured,captured,fehlender fachlicher Nachweis,f4451595f212a7341343919df83e7fea6da2dc021e06e01776fa7e6a9e1859c9,False,False,False,0,False
+311,test-kohorte-synthetik-bt-311,BT,captured,captured,Ereignisduplikat,11a1f6730ff121552a25e087640210757d59f1957c91bfb87ce7377daa9edb7a,False,False,False,0,True
+312,test-kohorte-synthetik-bt-312,BT,captured,captured,fehlender fachlicher Nachweis,9ac95a3cbde5baa8eef0ccbfc42edbb4f16f54d5da62c1611f8b636761a06f58,False,False,False,0,False
+313,test-kohorte-synthetik-bt-313,BT,captured,captured,fehlender fachlicher Nachweis,eadc8a4ae51c24490c2c8afefe8a5f43bb3385788a384024a702f1a9c30963a6,False,False,False,0,False
+314,test-kohorte-synthetik-bt-314,BT,captured,captured,fehlender fachlicher Nachweis,fed8d1f2ce24cf1a5aa5d55796c420c1cb26319b0d1b993c7706491a382e83d3,False,False,False,0,False
+315,test-kohorte-synthetik-bt-315,BT,captured,captured,fehlender fachlicher Nachweis,371e2932a583a408beb49750794f6573dee260fc0bb926eb33a18cd2e63b83f9,False,False,False,0,False
+316,test-kohorte-synthetik-bt-316,BT,captured,captured,fehlender fachlicher Nachweis,d9e21a8e1fc0854f20fe83e4e69141e1aa69a5b0594b688a825a60f679c42d81,False,False,False,0,False
+317,test-kohorte-synthetik-bt-317,BT,captured,captured,fehlender fachlicher Nachweis,9b27dc1f91d093f9edd19c0d330d5278b07b0b14e9a78d242002c2fea05d3a3d,False,False,False,0,False
+318,test-kohorte-synthetik-bt-318,BT,captured,captured,fehlender fachlicher Nachweis,76a03e62f917376ee98a7a8f47de7979e331e2e0cc430b7651af42a3e812575d,False,False,False,0,False
+319,test-kohorte-synthetik-bt-319,BT,captured,captured,Ereignisduplikat,a5139de6bc6010e51b67c95819004f3baf69e1c8f94011db79297c55a056c448,False,False,False,0,True
+320,test-kohorte-synthetik-bt-320,BT,captured,captured,fehlender fachlicher Nachweis,e9ec98530b6d5b91dc73c6472af5504f58409daa2e85a7c223019531e68dce95,False,False,False,0,False
+321,test-kohorte-synthetik-bt-321,BT,captured,captured,fehlender fachlicher Nachweis,30b54468cefc62ec0b32fffefab624510f72e257c67c33949a3fcb1d3cdf472d,False,False,False,0,False
+322,test-kohorte-synthetik-bt-322,BT,captured,captured,fehlender fachlicher Nachweis,538a80eb307e57dcb4094efa758e5312905ec06f1e0c229ce2d76a9f4ee71396,False,False,False,0,False
+323,test-kohorte-synthetik-bt-323,BT,captured,captured,fehlender fachlicher Nachweis,2adabd5f18891c4316068b5a08518154f5ddc51b61264c95df8781b4cc70c9c0,False,False,False,0,False
+324,test-kohorte-synthetik-bt-324,BT,captured,captured,Ereignisduplikat,3d3fed61cea742d2466218ecb0dcc025b32e70906ac55228a8006c78d72aef56,False,False,False,0,True
+325,test-kohorte-synthetik-bt-325,BT,captured,captured,fehlender fachlicher Nachweis,eb6cb44ef547992908b1b01a204e78a98a54b8840da443900e6b7fded7e024e6,False,False,False,0,False
+326,test-kohorte-synthetik-bt-326,BT,captured,captured,fehlender fachlicher Nachweis,bccc4616a9c31166197c407e751e905e4a8655ad0a08903132ba0419d1d483bc,False,False,False,0,False
+327,test-kohorte-synthetik-bt-327,BT,captured,captured,fehlender fachlicher Nachweis,4408184f257072f618e821647fb25842f6b0d1232a4c2376f03a6cb7e744de24,False,False,False,0,False
+328,test-kohorte-synthetik-bt-328,BT,captured,captured,fehlender fachlicher Nachweis,0b8e3729e78c5ac269fbc56510dfbff9451206b7fe4e5ac9ef753f5ccfdeffa5,False,False,False,0,False
+329,test-kohorte-synthetik-bt-329,BT,captured,captured,fehlender fachlicher Nachweis,014ecc1efc07c1c09636152c8188a0fb8a7efd5ce2fba893debc44b2def08105,False,False,False,0,False
+330,test-kohorte-synthetik-bt-330,BT,captured,captured,fehlender fachlicher Nachweis,d5ddcca811604db192f3a938637747c5d02784d7c5f9a013bf170d0a78292549,False,False,False,0,False
+331,test-kohorte-synthetik-be-001,BE,captured,captured,fehlender fachlicher Nachweis,af7ee6fa8efe04355e35e344355c2d1f8008ea1dead4cc98cc916feca9fa93d8,False,True,False,0,False
+332,test-kohorte-synthetik-be-002,BE,captured,captured,Ereignisduplikat,17c504f926fb99581361b39eec7e0c0e53dad501fcc4da158a20a0981eaefd20,False,False,False,0,True
+333,test-kohorte-synthetik-be-003,BE,captured,captured,fehlender fachlicher Nachweis,06fd0731d13cffd7aa4350818c75adfe1cb1e7d3604ebd3ffb38305bddb51554,False,False,False,0,False
+334,test-kohorte-synthetik-be-004,BE,captured,captured,fehlender fachlicher Nachweis,155175cdbe8d95ac7defd1feb2351be36db2c766f254e1491c51fedfaef90d04,False,False,False,0,False
+335,test-kohorte-synthetik-be-005,BE,captured,captured,Ereignisduplikat,604cf8a400c2c60a049f53f0fefe353c19826fdf0640e9717579aef51630fb70,False,False,False,0,True
+336,test-kohorte-synthetik-be-006,BE,captured,captured,fehlender fachlicher Nachweis,bf4bf8c7172af2a315b008fd39a7c6c430d36e730544eb568c465281c61a4a2d,False,True,False,0,False
+337,test-kohorte-synthetik-be-007,BE,captured,captured,fehlender fachlicher Nachweis,b91deaedd261f0f72d185e30bcee26d5814ba92fcca3f135cbf9469956663982,False,False,False,0,False
+338,test-kohorte-synthetik-be-008,BE,captured,captured,fehlender fachlicher Nachweis,8813e909011ece8bd982cc2679b43cff064d1810d9748f59aab2f66976a2d231,False,False,False,0,False
+339,test-kohorte-synthetik-be-009,BE,captured,captured,fehlender fachlicher Nachweis,fa346c2fcec326f09f91e6a9778b62c9ceb89083c34bf6222c6e6bee7eb033cc,False,True,False,0,False
+340,test-kohorte-synthetik-be-010,BE,captured,captured,fehlender fachlicher Nachweis,46321ae3aa6dd2ed4a0b827769119485c5fcce2dbef8d2eac0e7b1cac997dd02,False,False,False,0,False
+341,test-kohorte-synthetik-be-011,BE,captured,captured,fehlender fachlicher Nachweis,c4eb0f9b739f3d4b0fb6b4ebddd47f3e3b6ae0f7748202b719aeb61c2f4664fe,False,False,False,0,False
+342,test-kohorte-synthetik-be-012,BE,captured,captured,fehlender fachlicher Nachweis,fe91eeaec568b7d90e293b657044d72495077fc08803422ae8cb3ae01f40e706,False,False,False,0,False
+343,test-kohorte-synthetik-be-013,BE,captured,captured,Ereignisduplikat,05d822603e3300a30e3541dd5bbe72f1ea0b73b0bcd85227eafcef42f20659cb,False,False,False,0,True
+344,test-kohorte-synthetik-be-014,BE,captured,captured,fehlender fachlicher Nachweis,81b91827836cd39b7333f1557b37b4afd04e74d8a8d4b9e21f2f4e7a4d6b4527,False,True,False,0,False
+345,test-kohorte-synthetik-be-015,BE,captured,captured,fehlender fachlicher Nachweis,e9b292b9a2ddb074cff1d0a3940ac4bb4335d3a9960e617971baadf8427ea843,False,False,False,0,False
+346,test-kohorte-synthetik-be-016,BE,captured,captured,fehlender fachlicher Nachweis,1cb03fc1f770fd6a2b4046ce6e34cd5da6ddd1bd41f68c65bc49b4d7256f7e60,False,False,False,0,False
+347,test-kohorte-synthetik-be-017,BE,captured,captured,fehlender fachlicher Nachweis,97f5923550ca328b1d70c0bf83418f5195ddd291a12052778b479987ee619538,False,True,False,0,False
+348,test-kohorte-synthetik-be-018,BE,captured,captured,Ereignisduplikat,ae6f7fcbd22cd561796f06d98b0abe459aa6acc9a00afa852b165984d91248f3,False,False,False,0,True
+349,test-kohorte-synthetik-be-019,BE,captured,captured,fehlender fachlicher Nachweis,8d23e55f8070827680271f9574063b31e29d684d11b917f2a60046eea041930b,False,False,False,0,False
+350,test-kohorte-synthetik-be-020,BE,captured,captured,fehlender fachlicher Nachweis,cfa6ef9fa43fb712026f7e94a88d18156b7df930001a38098fc1b5c35c89edd8,False,False,False,0,False
+351,test-kohorte-synthetik-be-021,BE,captured,captured,fehlender fachlicher Nachweis,8fdb3b0cb4958772bb586827f836fb1f80edd83a7e74fbddc9305772daf65991,False,False,False,0,False
+352,test-kohorte-synthetik-be-022,BE,captured,captured,fehlender fachlicher Nachweis,ef5b06a1eeae3e490cb7d7b1740ad29a1aa6f89d25fa73191428d9f66c15cd9d,False,True,False,0,False
+353,test-kohorte-synthetik-be-023,BE,captured,captured,fehlender fachlicher Nachweis,4cd0478d213620d0186fab8cc727b62d3d8b94299878fe9043ffc760710c56ba,False,False,False,0,False
+354,test-kohorte-synthetik-be-024,BE,captured,captured,fehlender fachlicher Nachweis,d5af6a1f8cc9e5a22c18cc98bcd136d481f90ece0ddd638697f1206cf4a60540,False,False,False,0,False
+355,test-kohorte-synthetik-be-025,BE,captured,captured,fehlender fachlicher Nachweis,582e0ea9a8862f5f25cbe8f3d262ec3ea1285376d53f820762c67afa7b1b321e,False,True,False,0,False
+356,test-kohorte-synthetik-be-026,BE,captured,captured,Ereignisduplikat,d219951c4df92ad0d23e86e023bec474643b1d89949ba62e5b9eb79e40681b0c,False,False,False,0,True
+357,test-kohorte-synthetik-be-027,BE,captured,captured,fehlender fachlicher Nachweis,28328b432cf9acb63896a409686aa123e97e9d4149bc5477a484e67cef2f216f,False,False,False,0,False
+358,test-kohorte-synthetik-be-028,BE,captured,captured,fehlender fachlicher Nachweis,9003246f94a5a2ab64243152446633bc2150d0c8e64de0ee19e358a0cfed6b74,False,False,False,0,False
+359,test-kohorte-synthetik-be-029,BE,captured,captured,Ereignisduplikat,5b35ba1c69acced02bd3d9eac8e63c4de54c81394530fab24f1f1da6edc2d852,False,False,False,0,True
+360,test-kohorte-synthetik-be-030,BE,captured,captured,fehlender fachlicher Nachweis,806956884a20e81634e617f78ebdd51b63d48110a08cff86c3c943b866520df6,False,True,False,0,False
+361,test-kohorte-synthetik-be-031,BE,captured,captured,fehlender fachlicher Nachweis,dc411ac29d7b3516c58a87c5bfb5bdb94f302e54131bcc2eb721bca909267b16,False,False,False,0,False
+362,test-kohorte-synthetik-be-032,BE,captured,captured,fehlender fachlicher Nachweis,b8cb27828f4b4e9ad96e9b5762c033dd8638dd0c9030199bb1ad179750ae83c7,False,False,False,0,False
+363,test-kohorte-synthetik-be-033,BE,captured,captured,fehlender fachlicher Nachweis,a052bdc726e99b7be3506282a846f267e6f9fc9893c05bfcaca5e82b64accbc6,False,True,False,0,False
+364,test-kohorte-synthetik-be-034,BE,captured,captured,fehlender fachlicher Nachweis,6d90c3c48245494ad3f30d762b252cb6696a10bc8f5ba151059dc8f720ad2f90,False,False,False,0,False
+365,test-kohorte-synthetik-be-035,BE,captured,captured,fehlender fachlicher Nachweis,05be1a11c29d96670c75e4ec12363cc6d538898a532112e3101b64faef59c689,False,False,False,0,False
+366,test-kohorte-synthetik-be-036,BE,captured,captured,fehlender fachlicher Nachweis,e6309a10332827f9cc9464a48160476c85e50984d62404fd26435af4c0708f13,False,False,False,0,False
+367,test-kohorte-synthetik-be-037,BE,captured,captured,Ereignisduplikat,3d36641d84bd9eb40965719b45e1570e152eb06cfa2bc4ccd2718e02491b6dfd,False,False,False,0,True
+368,test-kohorte-synthetik-be-038,BE,captured,captured,fehlender fachlicher Nachweis,f6fb68151b1a554f1a11ae6f296badc599f066590c1db006e59cb8be5cb449b1,False,True,False,0,False
+369,test-kohorte-synthetik-be-039,BE,captured,captured,fehlender fachlicher Nachweis,aefae1a30509156b8f0486b0efaa0a7a87c442bf2baac1f11e2a14c12624cae8,False,False,False,0,False
+370,test-kohorte-synthetik-be-040,BE,captured,captured,fehlender fachlicher Nachweis,7d79eda453b309954b242ad39d812d4a6252c64c6a4469707fa5ef751617354f,False,False,False,0,False
+371,test-kohorte-synthetik-be-041,BE,captured,captured,fehlender fachlicher Nachweis,abcf5a9c7c92197f7023287af7a66e78fcc170f871a5fe9c133c41b48a8494ff,False,True,False,0,False
+372,test-kohorte-synthetik-be-042,BE,captured,captured,Ereignisduplikat,586f869058fff151970d34d3c122f7658cdc4618d608a43fcf105c4de2496e4f,False,False,False,0,True
+373,test-kohorte-synthetik-be-043,BE,captured,captured,fehlender fachlicher Nachweis,4ac4d595dc7114f891101997876c266cddaeb1a895ba8e8e851fc87c161b22d1,False,False,False,0,False
+374,test-kohorte-synthetik-be-044,BE,captured,captured,fehlender fachlicher Nachweis,fde7a485c22674731cca93c2a65807f2a6a0a9365b783b8863b4c1162678d384,False,False,False,0,False
+375,test-kohorte-synthetik-be-045,BE,captured,captured,Ereignisduplikat,64ef7362cca62037ac72e18b97d8bd726f4f89196712848438d4cd90c97a6691,False,False,False,0,True
+376,test-kohorte-synthetik-be-046,BE,captured,captured,fehlender fachlicher Nachweis,fc17bd467c55ed75d3c1f376df53e77af0adc509fa566e304ed58155b6777882,False,True,False,0,False
+377,test-kohorte-synthetik-be-047,BE,captured,captured,fehlender fachlicher Nachweis,36bb9162466ce858178a1f4f36a687d48a9185649eb382cf2f175a7b662ad7e9,False,False,False,0,False
+378,test-kohorte-synthetik-be-048,BE,captured,captured,fehlender fachlicher Nachweis,c7438b7be9d27a6b51488b3f34f2c6984d58abf651ea24a81653cc8c8907909d,False,False,False,0,False
+379,test-kohorte-synthetik-be-049,BE,captured,captured,fehlender fachlicher Nachweis,15cc56e440af4db2c453f3ef4d13d2e8b320fd9bb5b6eca49a746dee4d61f87c,False,True,False,0,False
+380,test-kohorte-synthetik-be-050,BE,captured,captured,Ereignisduplikat,a68f1168b3f4e309bcdd2880865124a9c485c780c52cbd790ea33ba97108b6d9,False,False,False,0,True
+381,test-kohorte-synthetik-be-051,BE,captured,captured,fehlender fachlicher Nachweis,e8dd64f29d259447a41491525fb429cb617921c9fe2afade1f463d0f5ae7dcb4,False,False,False,0,False
+382,test-kohorte-synthetik-be-052,BE,captured,captured,fehlender fachlicher Nachweis,fc95c52ebbf531e1c99f8aae9eb261609f79a372afa8a68a94d91ea47f410613,False,False,False,0,False
+383,test-kohorte-synthetik-be-053,BE,captured,captured,Ereignisduplikat,7b369ae3aea3738888dc007cce8261f5442e7b04e658a348ac3f6df95b69ba21,False,False,False,0,True
+384,test-kohorte-synthetik-be-054,BE,captured,captured,fehlender fachlicher Nachweis,9620a0c22aae124d806b3d53e6d7fda569242a87746e7557c7175ca2b467c2ad,False,True,False,0,False
+385,test-kohorte-synthetik-be-055,BE,captured,captured,fehlender fachlicher Nachweis,6640eb09e59ff508f29e89bc9e00a9335c68a707501d506084b9bb808cf1eb0b,False,False,False,0,False
+386,test-kohorte-synthetik-be-056,BE,captured,captured,fehlender fachlicher Nachweis,584c2ed6d7cdc70d486f93185924df62696a280237e9cd75c7920bf0fd947658,False,False,False,0,False
+387,test-kohorte-synthetik-be-057,BE,captured,captured,fehlender fachlicher Nachweis,619605d8c67c6b19b0e00b15ddd18fcb42b941b5e6abe0a76ebe3b62ddb7c481,False,True,False,0,False
+388,test-kohorte-synthetik-be-058,BE,captured,captured,fehlender fachlicher Nachweis,798a4f71c2fb0687c2c10a08ac312a03bc50d4c61030e212d5098282ee0ae8aa,False,False,False,0,False
+389,test-kohorte-synthetik-be-059,BE,captured,captured,fehlender fachlicher Nachweis,0d1992949390e68f5f9555e25d19867167cc6a1e862b9939cd0d76a77440595d,False,False,False,0,False
+390,test-kohorte-synthetik-be-060,BE,captured,captured,fehlender fachlicher Nachweis,375eb6063037e1fd0e6e8212e2c4ec0815727dd242b453b22e6889b3848f7c39,False,False,False,0,False
+391,test-kohorte-synthetik-be-061,BE,captured,captured,Ereignisduplikat,ae11165b830b64d5cb2c50465587f797227de46bf543e2959faaf8e233f1a718,False,False,False,0,True
+392,test-kohorte-synthetik-be-062,BE,captured,captured,fehlender fachlicher Nachweis,16aed79436c89d22f2ba59d75e883db9ac43a07126c97f48739aaf8b37e81c39,False,True,False,0,False
+393,test-kohorte-synthetik-be-063,BE,captured,captured,fehlender fachlicher Nachweis,f605e0f5003b4c2bb483e31316b4cab55320653b12060071d274a9a6dc8cf152,False,False,False,0,False
+394,test-kohorte-synthetik-be-064,BE,captured,captured,fehlender fachlicher Nachweis,e30d60698033b2b48ed85c42f8c772d9cf517fab6d88ef2a5b08d948ad1b32db,False,False,False,0,False
+395,test-kohorte-synthetik-be-065,BE,captured,captured,fehlender fachlicher Nachweis,796359ebd4bec0d9d2d95fcd1d9b6dcfa33b51f5e5f852323ed3531cbfb803b5,False,True,False,0,False
+396,test-kohorte-synthetik-be-066,BE,captured,captured,Ereignisduplikat,470142863adb63b5d679b2d16e17042ab6cbe4e035237cfdc41041ddccd10b37,False,False,False,0,True
+397,test-kohorte-synthetik-be-067,BE,captured,captured,fehlender fachlicher Nachweis,fc19f62b4efe81820d124080055c4394c03a8558d7e2ed92f4a9c5c1d8cd4821,False,False,False,0,False
+398,test-kohorte-synthetik-be-068,BE,captured,captured,fehlender fachlicher Nachweis,6766a05e2c2c805fed460203cd46971a9b6f19896ad34ec49310103216684858,False,False,False,0,False
+399,test-kohorte-synthetik-be-069,BE,captured,captured,fehlender fachlicher Nachweis,7fd8fb2ad403de2acb48e39a099c2b5b6cc08b718a0d2243b83ea492ae99c5f9,False,False,False,0,False
+400,test-kohorte-synthetik-be-070,BE,captured,captured,fehlender fachlicher Nachweis,4c918d9e7b00be6d1b1fe62e9af374e1a46a0a268b704bdfd46bf6e619aba183,False,True,False,0,False
+401,test-kohorte-synthetik-be-071,BE,captured,captured,fehlender fachlicher Nachweis,18ce75d3c14935c9b7670d4106dd4c5d3bbea3ca831897be8f2cdcad2244ec5b,False,False,False,0,False
+402,test-kohorte-synthetik-be-072,BE,captured,captured,fehlender fachlicher Nachweis,4e3b30f4d7c245aaaa74edc350626799a621eaea8512b9d5f2b5559f5f2997ce,False,False,False,0,False
+403,test-kohorte-synthetik-be-073,BE,captured,captured,fehlender fachlicher Nachweis,644530350e5189f5c960796c448be53d47e81932124db190f36bd0b09e289664,False,True,False,0,False
+404,test-kohorte-synthetik-be-074,BE,captured,captured,Ereignisduplikat,324f93bf0f89d830a919b1dbc58c604a7b8f5df2465831560934367a182cad48,False,False,False,0,True
+405,test-kohorte-synthetik-be-075,BE,captured,captured,fehlender fachlicher Nachweis,8612eac1bac83ebd0b6b440f2808f7ff4a7420579ec91116f25e1645912e7ed3,False,False,False,0,False
+406,test-kohorte-synthetik-be-076,BE,captured,captured,fehlender fachlicher Nachweis,28f1d57434ed317318c45de677f60a31c2983b9ad5b876ea5e5f47f093d75cd4,False,False,False,0,False
+407,test-kohorte-synthetik-be-077,BE,captured,captured,Ereignisduplikat,f2a8a2fe0400d2b2732e6b56418dbbd6ca0c8ad5da17e080da305738d9fb4338,False,False,False,0,True
+408,test-kohorte-synthetik-be-078,BE,captured,captured,fehlender fachlicher Nachweis,8b58040039318380fc5b277d35b77e64e4cb17592a69bfadc8c511c9d23d8d08,False,True,False,0,False
+409,test-kohorte-synthetik-be-079,BE,captured,captured,fehlender fachlicher Nachweis,5bfc5504fec908fda6bbe1ae59d3b638d8c52ad7d4a7b9abb508ac34c8671b10,False,False,False,0,False
+410,test-kohorte-synthetik-be-080,BE,captured,captured,fehlender fachlicher Nachweis,1ed16f1e2a3f8b4780a26c480f24b23e8884fe4664cb31fec95969b9fa0756ac,False,False,False,0,False
+411,test-kohorte-synthetik-be-081,BE,captured,captured,fehlender fachlicher Nachweis,54e5786b24f6b25e7437da6a058b41c13f6acefe673cb4c58bfa8309c5fa5f46,False,True,False,0,False
+412,test-kohorte-synthetik-be-082,BE,captured,captured,Ereignisduplikat,044667970850da15e1802955d011a89cb768ac8ce6ed5670480f4e4ce5db50b6,False,False,False,0,True
+413,test-kohorte-synthetik-be-083,BE,captured,captured,fehlender fachlicher Nachweis,a1e0c74a51df1a0da990885caa5ee3fc244867ccffd3af4f2e842e672543981d,False,False,False,0,False
+414,test-kohorte-synthetik-be-084,BE,captured,captured,fehlender fachlicher Nachweis,e7cb8a76734216caff33a1c44884926bc56bceb6d1ed4d1b2e2f9e07b22dbe5a,False,False,False,0,False
+415,test-kohorte-synthetik-be-085,BE,captured,captured,Ereignisduplikat,c00fc2aa352786277b95eca20d9044c92657a9f6dc84860888f838f288410b32,False,False,False,0,True
+416,test-kohorte-synthetik-be-086,BE,captured,captured,fehlender fachlicher Nachweis,8878a2a5d0083cae0e84f6def4fdf76aeeaec43b7ec32ccd85e85bdebe462452,False,True,False,0,False
+417,test-kohorte-synthetik-be-087,BE,captured,captured,fehlender fachlicher Nachweis,dacbb056560b5e361b0126a8c719fd58daef492e7c739a01314437a8bf9fcc62,False,False,False,0,False
+418,test-kohorte-synthetik-be-088,BE,captured,captured,fehlender fachlicher Nachweis,ad22ccbe2dfc5293ee09cd652daebda36424d4312aa45e17fef35e35a15bc47e,False,False,False,0,False
+419,test-kohorte-synthetik-be-089,BE,captured,captured,fehlender fachlicher Nachweis,2644b4a9469df623766d93643b21b9a60d4ec3f1baa7ce8c932110a8b827913d,False,True,False,0,False
+420,test-kohorte-synthetik-be-090,BE,captured,captured,Ereignisduplikat,e31257caae564d057c494975f1cd1fec156bd39282aa4cf5bcc9378725c5fbd4,False,False,False,0,True
+421,test-kohorte-synthetik-be-091,BE,captured,captured,fehlender fachlicher Nachweis,ca85b14f2dc6bb4d88bb4eda0ddcbe395f0a4229c63ab929fe284356e0463c17,False,False,False,0,False
+422,test-kohorte-synthetik-be-092,BE,captured,captured,fehlender fachlicher Nachweis,6536365e47d9ea528eb33164f63ff8ed7aa274032f4c2ca24d73aceb149deb00,False,False,False,0,False
+423,test-kohorte-synthetik-be-093,BE,captured,captured,fehlender fachlicher Nachweis,5ea961488fab844b707905eea878ee82f3a27ac6108390a8aeb65888d651813e,False,False,False,0,False
+424,test-kohorte-synthetik-be-094,BE,captured,captured,fehlender fachlicher Nachweis,004eabacabec9a8326c53e28a3effc61e322c5c5ccddd38298b349c40060270e,False,True,False,0,False
+425,test-kohorte-synthetik-be-095,BE,captured,captured,fehlender fachlicher Nachweis,d5e8dc35589d7ee39fd9dd739512bf1a3526263733690b6b354a2fc8aa331ea1,False,False,False,0,False
+426,test-kohorte-synthetik-be-096,BE,captured,captured,fehlender fachlicher Nachweis,c2c47668c8be4ac3998be688819fc778a8dda17924ad214ace51f9f91682a503,False,False,False,0,False
+427,test-kohorte-synthetik-be-097,BE,captured,captured,fehlender fachlicher Nachweis,cfd11a2d5e906710a5aa0c4d2de09ee25e8ac9706fd6ec66e5c38f83f42a21c2,False,True,False,0,False
+428,test-kohorte-synthetik-be-098,BE,captured,captured,Ereignisduplikat,9266cda2fb0d66b2b6090bc3698c4a1854705c971bb01beb1ad787355ab9e13e,False,False,False,0,True
+429,test-kohorte-synthetik-be-099,BE,captured,captured,fehlender fachlicher Nachweis,4ccf61f797133c2f8e6f1ad4b8c3fb0121ab369a8cf6c52d9be15791e08dd15e,False,False,False,0,False
+430,test-kohorte-synthetik-be-100,BE,captured,captured,fehlender fachlicher Nachweis,5d5a1d21d6a69dcba43e97d06f960a331d26d6242dc06ebfe94e4061fd55041a,False,False,False,0,False
+431,test-kohorte-synthetik-be-101,BE,captured,captured,Ereignisduplikat,2f0a5f03ee2c6f2b8f8010db40e76c41c2da558aa21cc3321cb12726937c4f82,False,False,False,0,True
+432,test-kohorte-synthetik-be-102,BE,captured,captured,fehlender fachlicher Nachweis,ab03c7c29baa78e8a0dad6fe5e94e5dad88321f0129bab7c3dacb482a3e7d302,False,True,False,0,False
+433,test-kohorte-synthetik-be-103,BE,captured,captured,fehlender fachlicher Nachweis,053ec124545f188012d399ba61737a00ff58703c2e662cdb4074db79d794186a,False,False,False,0,False
+434,test-kohorte-synthetik-be-104,BE,captured,captured,fehlender fachlicher Nachweis,5e74014206979107cf7c4c8cbe067795aaf5013d525417c48af9d26ccf7b33b4,False,False,False,0,False
+435,test-kohorte-synthetik-be-105,BE,captured,captured,fehlender fachlicher Nachweis,75db48af42d34ef10a9649398be97912c2dcfb82aa268bc7f4d8185b1c984338,False,True,False,0,False
+436,test-kohorte-synthetik-be-106,BE,captured,captured,fehlender fachlicher Nachweis,0019d28155bb519b14c8a20e7d504679bec0fa84e638fc6ec7bfa12aeb0231ed,False,False,False,0,False
+437,test-kohorte-synthetik-be-107,BE,captured,captured,fehlender fachlicher Nachweis,90997b3952db1b70c11728e8be5785a8dabc5fa52506193328f997107743c1ef,False,False,False,0,False
+438,test-kohorte-synthetik-be-108,BE,captured,captured,fehlender fachlicher Nachweis,42efb427d493a752236df573d7ef271c834b10ebbfbbbe818a9f5c12f767f3f3,False,False,False,0,False
+439,test-kohorte-synthetik-be-109,BE,captured,captured,Ereignisduplikat,a3d6903dcdf253fd36cf99fafade4d9b0fcd9799c6f6482cae718b338dad3990,False,False,False,0,True
+440,test-kohorte-synthetik-be-110,BE,captured,captured,fehlender fachlicher Nachweis,7d84de936e142b444256b720d4c6a52770012b10cb4b4a8301916b6bee84fc6b,False,True,False,0,False
+441,test-kohorte-synthetik-be-111,BE,captured,captured,fehlender fachlicher Nachweis,bad324ad0ed28f4b2da8a6e6d3ce7cd49d2f699f2242c002aaf7b28581259b36,False,False,False,0,False
+442,test-kohorte-synthetik-be-112,BE,captured,captured,fehlender fachlicher Nachweis,ae913d078345b0a794d7c3a62cb1b2c92c4ac3b9dc04c480b3a1ddbf55e8ec33,False,False,False,0,False
+443,test-kohorte-synthetik-be-113,BE,captured,captured,fehlender fachlicher Nachweis,b3b7fac0a5ccd9e17d40e8b7866445d0ffe594e8cac7a6d10c3282d8f43ce1aa,False,True,False,0,False
+444,test-kohorte-synthetik-be-114,BE,captured,captured,Ereignisduplikat,c8f67fe39f7e0ad6b16011a2496a5b4ff1010ea3a273107b9ccd2afb4fff3226,False,False,False,0,True
+445,test-kohorte-synthetik-be-115,BE,captured,captured,fehlender fachlicher Nachweis,4c6437857373bf13774482e8e8b6b8a7eee204a898ce69e5762d12cee45fad77,False,False,False,0,False
+446,test-kohorte-synthetik-be-116,BE,captured,captured,fehlender fachlicher Nachweis,8834436a6e4b00a90727a761c5c5a4c7afa4eec2c9f532755ed2b304eaf08ecd,False,False,False,0,False
+447,test-kohorte-synthetik-be-117,BE,captured,captured,fehlender fachlicher Nachweis,c92d0361d977687fb2c806c2f15a8aa47113c674e4ebffca7c0136b476723fbb,False,False,False,0,False
+448,test-kohorte-synthetik-be-118,BE,captured,captured,fehlender fachlicher Nachweis,c1c8f0be3f80e9b446716753d513687f27c921586bdeb3b680c83fee1a729164,False,True,False,0,False
+449,test-kohorte-synthetik-be-119,BE,captured,captured,fehlender fachlicher Nachweis,917597deb14b650f9283d10904f3ea5d695ac375ce0a761163d548c7a896f157,False,False,False,0,False
+450,test-kohorte-synthetik-be-120,BE,captured,captured,fehlender fachlicher Nachweis,49e660ef8e0c4206441eed88f74a81f31a92804d1e4a1f3233d87db25157c45a,False,False,False,0,False
+451,test-kohorte-synthetik-bb-001,BB,captured,captured,fehlender fachlicher Nachweis,0e02ace413faf6410a15a10025113c1b53ade0ebc505888b60b69b53d23ace25,False,False,False,0,False
+452,test-kohorte-synthetik-bb-002,BB,captured,captured,Ereignisduplikat,02f877130442be05ae32879c52659e581765397d2c55df0fb4293a23e26cb284,False,False,False,0,True
+453,test-kohorte-synthetik-bb-003,BB,captured,captured,fehlender fachlicher Nachweis,4e7a5a8e7cb94be7fae94071b903006eda28e9eefce8efb58733b025d19626aa,False,True,False,0,False
+454,test-kohorte-synthetik-bb-004,BB,captured,captured,fehlender fachlicher Nachweis,ba109e5e05e686a9c3a1b914f2826c411c577a6d1d42a753d9dcac5a3016a445,False,False,False,0,False
+455,test-kohorte-synthetik-bb-005,BB,captured,captured,Ereignisduplikat,2b5e9cf5de0e53043d0150b411a3845520a006a1fe8863498209ee14492a8969,False,False,False,0,True
+456,test-kohorte-synthetik-bb-006,BB,captured,captured,fehlender fachlicher Nachweis,5bed90db2f8a2e713c963de5117e40fdfe35931f1246015dbaa52908dd5fbf92,False,False,False,0,False
+457,test-kohorte-synthetik-bb-007,BB,captured,captured,fehlender fachlicher Nachweis,f7cd31081029e721f9d6231f9b967fce1c24c341bec2aa7f24243ebe1001f3d1,False,False,False,0,False
+458,test-kohorte-synthetik-bb-008,BB,captured,captured,fehlender fachlicher Nachweis,c5553086b312d3697f8fe5e1760f718cad628e7db6059e22d343cd767edae49e,False,True,False,0,False
+459,test-kohorte-synthetik-bb-009,BB,captured,captured,fehlender fachlicher Nachweis,92a9bb4f05456cbb79113871eb15523996cb922767dd670abd31e435c4cd6697,False,False,False,0,False
+460,test-kohorte-synthetik-bb-010,BB,captured,captured,fehlender fachlicher Nachweis,adfeb66c40eaa8bc65651ed0b1d1fc6950f6fdcddca8ac74a96e50e5769ce0ee,False,False,False,0,False
+461,test-kohorte-synthetik-bb-011,BB,captured,captured,fehlender fachlicher Nachweis,5e888ecf44852a0a645d07a4117bd5517496f17d266eb5d8bd57ec3d570703eb,False,True,False,0,False
+462,test-kohorte-synthetik-bb-012,BB,captured,captured,fehlender fachlicher Nachweis,cdde855540b5c6ff5b5e47cb954ce49e449608fe254e7cc14c5fb45cc76ce835,False,False,False,0,False
+463,test-kohorte-synthetik-bb-013,BB,captured,captured,Ereignisduplikat,16fa0af987a719456f27806be312db821be8dcc2b361df064b265ed6a65dfe5d,False,False,False,0,True
+464,test-kohorte-synthetik-bb-014,BB,captured,captured,fehlender fachlicher Nachweis,51251e42c516cf4abe813f0dc6b0e4f281a17bc3c783c7c61765c7fa0934132a,False,False,False,0,False
+465,test-kohorte-synthetik-bb-015,BB,captured,captured,fehlender fachlicher Nachweis,83a736273b4386507e43ba14b7cbbe703ea888461cb1acea6864096fe302cb9a,False,False,False,0,False
+466,test-kohorte-synthetik-bb-016,BB,captured,captured,fehlender fachlicher Nachweis,7df9de8af47eec8fa0ebfeae5bd13fc5b4af769de0a86c0170df6fc4b4265ed7,False,True,False,0,False
+467,test-kohorte-synthetik-bb-017,BB,captured,captured,fehlender fachlicher Nachweis,f8fc67f639a49a29f234017f155d0ffe4fb1dd90a23764d78f8128904f4b8807,False,False,False,0,False
+468,test-kohorte-synthetik-bb-018,BB,captured,captured,Ereignisduplikat,0a3f37c7ff476020227faf95031eec839c1f9775237898f530b2f7844b268dd9,False,False,False,0,True
+469,test-kohorte-synthetik-bb-019,BB,captured,captured,fehlender fachlicher Nachweis,6e509114bd235ad5674ba1c967c29240290b0c16551db327ae5cdc7f2ae4522a,False,True,False,0,False
+470,test-kohorte-synthetik-bb-020,BB,captured,captured,fehlender fachlicher Nachweis,d7ee57f15f5d14243f3732a576eabbeea92b3c137cbb67f0faae8373b9a1aedb,False,False,False,0,False
+471,test-kohorte-synthetik-bb-021,BB,captured,captured,Ereignisduplikat,47319484482e7ed3e3579be66b4add9930d1f57b6081dbf05b28f1c5b436a0b0,False,False,False,0,True
+472,test-kohorte-synthetik-bb-022,BB,captured,captured,fehlender fachlicher Nachweis,257c044dbdae80d0aba34f0ae9726e057715da807d7a32a0235d752205e2c0c5,False,False,False,0,False
+473,test-kohorte-synthetik-bb-023,BB,captured,captured,fehlender fachlicher Nachweis,7ff376557ad78abfa6eb2212fa0fca3b362362999945cc834cd2b9cd04e37fb1,False,False,False,0,False
+474,test-kohorte-synthetik-bb-024,BB,captured,captured,fehlender fachlicher Nachweis,5980a0d7e209c2674b3e0cfaace3d1a8f591c36390a98d8444c88df2bc9fc4f6,False,True,False,0,False
+475,test-kohorte-synthetik-bb-025,BB,captured,captured,fehlender fachlicher Nachweis,256252733ead18ec384d0e3e61cacdb81cd10d1fa6b48e72c9da11ec0fd65900,False,False,False,0,False
+476,test-kohorte-synthetik-bb-026,BB,captured,captured,Ereignisduplikat,c18e68b02032289777b666a2fef71a9eec31adc3269b7eba7935650a82781e53,False,False,False,0,True
+477,test-kohorte-synthetik-bb-027,BB,captured,captured,fehlender fachlicher Nachweis,7532c3c0db084494fc3937f9473e5c60833feccaddff4dc2e0db4544b3f8c644,False,True,False,0,False
+478,test-kohorte-synthetik-bb-028,BB,captured,captured,fehlender fachlicher Nachweis,c89182d41d7dc077db9e49229b76d45ce3d4c55e53b7b448f3c2c958aa087b47,False,False,False,0,False
+479,test-kohorte-synthetik-bb-029,BB,captured,captured,Ereignisduplikat,00d4770425be886f9d24d8c6dd6e2f8c0f519a3ddccc05a9e4eb08697df28cc4,False,False,False,0,True
+480,test-kohorte-synthetik-bb-030,BB,captured,captured,fehlender fachlicher Nachweis,4e92d1952d54dfdec67ec84ba6542ea8868821db92d70a836a3a17c9504ddf7b,False,False,False,0,False
+481,test-kohorte-synthetik-bb-031,BB,captured,captured,fehlender fachlicher Nachweis,9abca9c6b8888d2964eb06f4bf79f58b9128d8c842f38dc5e8e2ff55efdc9370,False,False,False,0,False
+482,test-kohorte-synthetik-bb-032,BB,captured,captured,fehlender fachlicher Nachweis,4cc287cbd1dee1e887446910c8c742a5b577105d2eacad3f1b9deb65b59e916a,False,True,False,0,False
+483,test-kohorte-synthetik-bb-033,BB,captured,captured,fehlender fachlicher Nachweis,603df02cf6d6592eb83084440e060d05f93058528cc3677fb44fb9bd24232360,False,False,False,0,False
+484,test-kohorte-synthetik-bb-034,BB,captured,captured,fehlender fachlicher Nachweis,eb6876371c398d4096b93ed598954e98c73ce1515abb764af5d822f45aadb112,False,False,False,0,False
+485,test-kohorte-synthetik-bb-035,BB,captured,captured,fehlender fachlicher Nachweis,a09ae0e35aeb31edb29d6de801a051313d6d46432555afe10cd55d8c0961fe96,False,True,False,0,False
+486,test-kohorte-synthetik-bb-036,BB,captured,captured,fehlender fachlicher Nachweis,9a69dcd79c2bd9e776e320df775e6808e16833d550e0c7de7e04c903512b755a,False,False,False,0,False
+487,test-kohorte-synthetik-bb-037,BB,captured,captured,Ereignisduplikat,d4d3e7943d75bab3a8b9557e2bc8f972600ce963ac459fb69f75ece6b6052841,False,False,False,0,True
+488,test-kohorte-synthetik-bb-038,BB,captured,captured,fehlender fachlicher Nachweis,6b441b9fb8c8e17b67f1bbb6448fe7846a702950784032a163c2423de14bd95f,False,False,False,0,False
+489,test-kohorte-synthetik-bb-039,BB,captured,captured,fehlender fachlicher Nachweis,6a298968134fe6b274f2405827687f97307efa56f571a04ab5a38bf7a4d5757b,False,False,False,0,False
+490,test-kohorte-synthetik-bb-040,BB,captured,captured,fehlender fachlicher Nachweis,975dc62d45355c0f7a4c429d12f83067cb2548df6fd079dad5c419d54bc1c1fb,False,True,False,0,False
+491,test-kohorte-synthetik-bb-041,BB,captured,captured,fehlender fachlicher Nachweis,35ae7e529d7171e0d89e062437f26baa43ce9bc1edcb28a8064a53f3a1bd407d,False,False,False,0,False
+492,test-kohorte-synthetik-bb-042,BB,captured,captured,Ereignisduplikat,dc18120a00cb913be4daf329c9e3881be4e252ea00c11be721a663f47de80035,False,False,False,0,True
+493,test-kohorte-synthetik-bb-043,BB,captured,captured,fehlender fachlicher Nachweis,f2a1ffe5b2f0e6c26e40999e858255161e77bbc8ea7693d81453c97b14fc15e5,False,True,False,0,False
+494,test-kohorte-synthetik-bb-044,BB,captured,captured,fehlender fachlicher Nachweis,2f1e2586592d8b716bf1b40a037eb042e4c9a3bed13d8379b9b835ef11c7b545,False,False,False,0,False
+495,test-kohorte-synthetik-bb-045,BB,captured,captured,Ereignisduplikat,5171f0443315cee61f8bfe9412347d32510745343836d1296b25d3e940320c56,False,False,False,0,True
+496,test-kohorte-synthetik-bb-046,BB,captured,captured,fehlender fachlicher Nachweis,6a3756dcd8498307e8f5afbfb53399550ca34c96e1e2da515c83b0ab91743dc3,False,False,False,0,False
+497,test-kohorte-synthetik-bb-047,BB,captured,captured,fehlender fachlicher Nachweis,40d01f61df225d3ff85aaec4bdf31559b31caf4fe7b730cfd6c3b8513e671358,False,False,False,0,False
+498,test-kohorte-synthetik-bb-048,BB,captured,captured,fehlender fachlicher Nachweis,d4bacc189cf329300b989de190bf2a4076ca30bf19c9ff6ee88c3588ef386410,False,True,False,0,False
+499,test-kohorte-synthetik-bb-049,BB,captured,captured,fehlender fachlicher Nachweis,5b261c8b899b3e6dbb9b126aea985cbbb962e4b24be447bf0a3ee5fa059d47de,False,False,False,0,False
+500,test-kohorte-synthetik-bb-050,BB,captured,captured,Ereignisduplikat,5f86fab983fb426fb2a1ba1a291f7bda1da4316c56ea12c3b6063123eb69072e,False,False,False,0,True
