@@ -1,7 +1,10 @@
 # Blocker 2: Abbruchbefund und dauerhafte Cipher-Zwischenstaende
 
-Stand: 08.10.2026 (Tuerkei). Ausschliesslich Blocker 2. Reparatur vorbereitet,
-nicht gemergt, nicht auf Production ausgefuehrt. Kein neuer Eingabelauf genehmigt.
+Historischer Vorbereitungsstand vom 08.10.2026. Ausschließlich Blocker 2.
+Die folgenden Abbruch- und Reparaturbefunde bleiben als damaliger Stand erhalten.
+Die inzwischen gemergte Reparatur PR857, der erfolgreiche vollständige Nurleselauf
+und die weiterhin offene fachliche Abnahme stehen im
+[aktuellen 500er Dossier](blocker2-vollaufnahme-und-freigabegrenze-20261008.md).
 
 ## Belastbarer Befund des abgebrochenen Laufs
 
