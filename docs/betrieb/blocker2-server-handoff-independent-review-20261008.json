@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "conclusion": "PASS",
+  "reviewedCommit": "af77d42f41d311cfb1669afe1ee11442940730d5",
+  "reviewedUTC": "2026-10-08T17:48:41.004837+00:00",
+  "scope": "Independent narrow final review of public handoff documentation, index, published restoration helpers and consistency of completed fresh-restoration evidence.",
+  "publicEvidence": [
+    {
+      "path": "docs/betrieb/blocker2-server-handoff-20261008.md",
+      "sha256": "5d1e81b66b862c70653e3a70ee4936e5ad7fb024b2c4af96867d75ca486422d4"
+    },
+    {
+      "path": "docs/betrieb/blocker2-server-handoff-index-20261008.json",
+      "sha256": "8110630942e3e91b99823a7c64631bbae3d8e9645b3df6262c666a0627a95bb2"
+    },
+    {
+      "path": "docs/betrieb/blocker2-server-handoff-fresh-proof-20261008.json",
+      "sha256": "dfc542efd2ae0cc43817fb3d8ad1e6f44c2ae2ef9b92c94559f8990494d2899f"
+    }
+  ],
+  "checks": {
+    "publishedFileIntegrityVerified": true,
+    "READMEContextShapesMatchPublishedHelpers": true,
+    "retainedArtifacts": 29,
+    "originalCipherZIPs": 28,
+    "nativeAuthenticatedInputPositionsReported": 500,
+    "privateCipherParts": 58,
+    "privateOriginalEntriesReported": 1896,
+    "indexAndFreshProofBindingsConsistent": true,
+    "privateIdentifiersKeyValuesAndAccountEmailAbsentFromReviewedPublicFiles": true,
+    "freshDirectoryNotSeparateMachineScopeExplicit": true,
+    "retentionAndAccessLimitsExplicit": true,
+    "noProductionActionOrOldCaptureGOReuseAuthorized": true
+  },
+  "limits": [
+    "Reviewer did not repeat large downloads, full decryption or all1896/all500 verification; completed evidence and helper implementations were checked for consistency.",
+    "No real private key was read; no network, Production, merge, capture or model action was performed by reviewer.",
+    "Fresh restoration evidence uses the available connected-tool path in a fresh directory, not an independently provisioned machine.",
+    "GitHub retention is bounded; private storage depends on owner/account/service availability.",
+    "No new B2 semantic acceptance: existing actual balance remains0 accepted,91 duplicates,409 missing complete proof.",
+    "Handoff branch must not be merged or deployed; any next Production capture needs a new specific GO."
+  ],
+  "blockingFindings": []
+}
