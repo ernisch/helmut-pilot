@@ -62,7 +62,12 @@ async function readBody(response, signal) {
   } finally { signal?.removeEventListener("abort", onAbort); reader.releaseLock(); }
 }
 async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () => new Date(), writeEnvelope,
-  persistCheckpoint, signal, expectedRecipient = RECIPIENT } = {}) {
+  persistCheckpoint, signal, expectedRecipient = RECIPIENT, diagnose = false } = {}) {
+  A.equal(typeof diagnose, "boolean");
+  // Nur der separate feste Diagnose-Einstieg setzt dies. Kein HTTP-/ENV-/
+  // Workflow-Parameter kann ein anderes Profil oder zusaetzliche GETs waehlen.
+  const plannedInputGETs = diagnose ? 1 : 500, minutes = diagnose ? 3 : 55;
+  const scope = diagnose ? { diagnosticOnly: true, fixedProfilePosition: 122, plannedInputGETs: 1 } : {};
   const start = now(), tag = berlinTagKey(start); preflight(env, tag, expectedRecipient); A.equal(typeof writeEnvelope, "function");
   A.equal(typeof persistCheckpoint, "function");
   let stopped = null, attempted = 0, firstIdentity = null, lastIdentity = null;
@@ -70,7 +75,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
   const seal = async (name, payload, position) => {
     await writeEnvelope(name, T.verschluesseln(payload, env.HELMUT_NACHWEIS_PUBLIC_KEY, ctx(env, tag, position)));
   };
-  const timeOK = () => berlinTagKey(now()) === tag && now().getTime() - start.getTime() < 55 * 60000;
+  const timeOK = () => berlinTagKey(now()) === tag && now().getTime() - start.getTime() < minutes * 60000;
   const stopCheck = () => {
     if (!stopped && signal?.aborted) stopped = "workflow-cancelled";
     if (!stopped && !timeOK()) stopped = "day-or-duration-boundary";
@@ -80,7 +85,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
   const requestSignal = () => {
     const current = now();
     signal?.throwIfAborted();
-    let milliseconds = Math.min(60000, start.getTime() + 55 * 60000 - current.getTime());
+    let milliseconds = Math.min(60000, start.getTime() + minutes * 60000 - current.getTime());
     if (berlinTagKey(current) !== tag || milliseconds <= 0) throw new Error("read-window-closed");
     if (berlinTagKey(new Date(current.getTime() + Math.max(0, milliseconds))) !== tag) {
       let lo = 0, hi = Math.max(0, milliseconds);
@@ -101,9 +106,9 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
       .map(status => [status, allStatuses.filter(s => s.status === status).length]));
     const payload = { version: 1, purpose: "blocker2-readonly500-manifest", runId: env.GITHUB_RUN_ID,
       workflowCommit: env.GITHUB_SHA, tag, productionCommit: env.HELMUT_PRODUCTION_COMMIT,
-      phase: final ? "final" : "in-progress", completedPositions: statuses.length, profiles: 500, attempted, counts,
+      phase: final ? "final" : "in-progress", completedPositions: statuses.length, profiles: 500, attempted, counts, ...scope,
       stopReason: stopped, firstIdentity, lastIdentity, statuses: allStatuses,
-      collectionCompleted: final && !stopped && attempted === 500,
+      collectionCompleted: final && !diagnose && !stopped && attempted === 500,
       all500InputAcceptance: false, fachlicheFreigabe: false, reinLesend: true,
       paidModelCalls: 0, productionDataWrites: 0, transaktionalerSnapshot: false };
     const envelope = T.verschluesseln(payload, env.HELMUT_NACHWEIS_PUBLIC_KEY, ctx(env, tag, 1));
@@ -132,9 +137,10 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
   }
   for (let index = 0; index < TARGET.length; index++) {
     const target = TARGET[index], position = index + 1;
+    const requested = !diagnose || position === 122;
     stopCheck();
     let status = "not-captured", response = null, requestStarted = false;
-    if (!stopped) {
+    if (!stopped && requested) {
       const url = ORIGIN + "/api/cron/briefing-nachweis?modus=eingabe&mandat=" + encodeURIComponent(target.mandatsId) + "&tag=" + tag;
       try {
         const readSignal = requestSignal();
@@ -152,25 +158,30 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
         if (r.status === 200) {
           try { status = validate(JSON.parse(raw), target, env, tag); } catch { status = "unusable"; }
           if (status === "contradictory") stopped = "production-proof-contradiction";
+          if (diagnose && status === "unusable") stopped = "production-input-unusable";
         }
-      } catch (error) { status = requestStarted ? "technical" : "not-captured"; if (response) response.bodyReadFailure = error.message === "body-limit" ? "body-limit" : "body-read-failed"; }
+      } catch (error) { status = requestStarted ? "technical" : "not-captured";
+        if (diagnose && !stopped) stopped = "production-input-read-error";
+        if (response) response.bodyReadFailure = error.message === "body-limit" ? "body-limit" : "body-read-failed"; }
       stopCheck();
       if (!timeOK()) { stopped = "day-or-duration-boundary"; if (requestStarted) status = "unusable"; }
     }
     const record = { version: 1, purpose: "blocker2-readonly500-input", userId: target.mandatsId, position, tag,
       workflowCommit: env.GITHUB_SHA, productionCommit: env.HELMUT_PRODUCTION_COMMIT, status, stopReason: stopped,
-      fullBodyRetained: response !== null && typeof response.rawBody === "string", response, all500InputAcceptance: false };
+      fullBodyRetained: response !== null && typeof response.rawBody === "string", response, all500InputAcceptance: false, ...scope };
     // Zu grosse Antworten bleiben explizit unerfassbar, kein abgeschnittener Erfolg.
     if (Buffer.byteLength(JSON.stringify(record)) > T.MAX_BYTES) {
       if (response) { delete response.rawBody; record.fullBodyRetained = false; }
       record.status = status = "technical"; record.transportLimitExceeded = true;
+      if (diagnose && !stopped) stopped = "production-input-transport-limit";
+      record.stopReason = stopped;
     }
     await seal(String(position).padStart(4, "0") + ".json", record, position);
     statuses.push({ userId: target.mandatsId, position, status, fullBodyRetained: record.fullBodyRetained });
     // Erste Eingabe sofort dauerhaft sichern; danach begrenzte Zwischenstaende.
     // Bei Signal zuerst schnell den geschlossenen Endstand schreiben. Bereits
     // bestaetigte Artefakte bleiben auch bei hartem Prozessende abrufbar.
-    if (!stopped && (position === 1 || position % 20 === 0)) await checkpoint();
+    if (!stopped && requested && (attempted === 1 || position % 20 === 0)) await checkpoint();
   }
   stopCheck();
   if (!stopped) {
@@ -180,8 +191,9 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
   await checkpoint(true);
   const counts = Object.fromEntries(["captured", "empty", "technical", "unusable", "contradictory", "not-captured"]
     .map(status => [status, statuses.filter(s => s.status === status).length]));
-  const report = { ok: !stopped && counts.captured === 500, collectionCompleted: !stopped && attempted === 500,
-    cipherFinalSaved, reinLesend: true, profiles: 500, attempted, counts,
+  const report = { ok: !stopped && counts.captured === plannedInputGETs,
+    collectionCompleted: !diagnose && !stopped && attempted === 500,
+    cipherFinalSaved, reinLesend: true, profiles: 500, attempted, counts, ...scope,
     stopReason: stopped, productionCommit: env.HELMUT_PRODUCTION_COMMIT, all500InputAcceptance: false,
     fachlicheFreigabe: false, paidModelCalls: 0, productionDataWrites: 0, transaktionalerSnapshot: false };
   await seal("manifest.json", { version: 1, purpose: "blocker2-readonly500-manifest", ...report,
