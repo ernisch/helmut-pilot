@@ -113,17 +113,47 @@ bestehende500er- und reale Abbruchsignal-Regression. Die neuen Tests sind
 im Pflicht-Standard registriert. Kritische unabhängige Endprüfung und Pflicht-CI
 werden am exakten PR-Kopf gebunden; keine Runtime-Verifikation durch Fixtures ersetzt.
 
+## Tatsächlicher Merge und reguläres Deployment
+
+[PR #862](https://github.com/ernisch/helmut-pilot/pull/862) wurde ausschließlich am
+Kopf `aaf688304f9089f2037d0694f097aa78e46e8592` gemergt. Beide Pflichtchecks im
+[CI-Lauf37752964486](https://github.com/ernisch/helmut-pilot/actions/runs/37752964486)
+erfolgreich; unabhängiger Code-/Doc-Endreview PASS, SHA256
+`f4ebbba694ca2f1847214fe146c6950592cd4eb3379b7fa5693f0ed4d09ad84c`.
+Merge am08.10. um12:12:48 Uhr Türkei (09:12:48 UTC), genau Eltern
+`65edf8d8730fda96258a3ab57e8363f384d41092` und der geprüfte PR-Kopf.
+Alle zwölf geprüften Dateihashes im Merge unverändert; der vorige Production-
+Commit `05cc738df6e8b8856e84540fc7c5fef8c0f08fb7` ist Vorfahr.
+
+Reguläres Production-Deployment **`dpl_7q4VfZfH15PYrPEDwTDatd2afPEa` READY** auf
+Merge **`3f5fbc731f32d1b73488bc0e0df49240a3993b92`**, aktive Aliasbindung bestätigt.
+Vollständige native52-Tabellen-/xmin-Vergleiche unmittelbar vor Merge um
+09:11:52.941165 UTC und nach READY um09:13:54.055704 UTC exakt gleich;
+einschließlich501 Identitäten/500 Mandate sowie Nutzungs-/Reservierungs-/Budgettabellen.
+Keine Production-Daten-/Profiländerung oder Modellaufrufe. GitHub bestätigt
+**null Diagnose-Läufe**; der letzte500er Lauf bleibt37748818380. Kein neuer Abruf.
+Private Quittungen: `blocker2-pr862-merge-tree-proof.json`,
+`blocker2-pr862-ready-protected-deployment-proof.json`,
+`blocker2-pr862-immediate-premerge-full52.json`,
+`blocker2-pr862-immediate-postdeployment-full52.json` und
+`blocker2-pr862-diagnostic-zero-runs-native-receipt.json`.
+
 ## Nächster kleinster Production-Schritt — noch nicht freigegeben
 
-Nach grüner unabhängiger Codeprüfung, regulärem Deployment und frischer
-READY-/52-Tabellen-Nachkontrolle den **neuen tatsächlichen Production-Merge-Commit**
-als genaue Bindung festhalten. Anschließend gesondert freizugeben:
+Die konkrete neue Abruffreigabe muss an Production-Commit
+**`3f5fbc731f32d1b73488bc0e0df49240a3993b92`** gebunden sein. Vorbereitung vollständig;
+der ursprüngliche Einmallaufauftrag ist verbraucht. Gesondert freizugeben:
 
 - genau ein manueller Lauf des festen Einzeldiagnose-Workflows;
+- Workflow `blocker2-readonly-diagnose.yml` auf überprüftem `main`, dessen
+  Diagnose-/Ciphercode bytegleich mit dem kritisch akzeptierten Kopf sein muss;
 - genau `test-kohorte-synthetik-bt-122`, höchstens eine Eingabe und zwei Identitäten;
 - höchstens drei Minuten Erfassung auf einem unveränderten Commit/Berliner Tag;
 - native vollständige52-Tabellen-Nurlesekontrolle unmittelbar vorher/nachher;
 - derselbe feste Verschlüsselungsempfänger, keine Secrets oder signierten Links ausgeben;
+- Empfänger-SPKI-SHA256
+  `8d665b71487b557f9cbdedb7e5da848022f3f80f820f9fc6233353658ffd41e7`,
+  vorhandenes Cron-Secret ausschließlich im GitHub-Workflow verwenden;
 - null Daten-/Profil-/Reservierungsänderung, Aktivierung oder Modellaufrufe;
 - kein500er Funktionstest, kein weiterer500er Eingabelauf, keine automatische Wiederholung;
 - neue Antwort vollständig authentifiziert auswerten; bei Fehler Phase und Klasse
