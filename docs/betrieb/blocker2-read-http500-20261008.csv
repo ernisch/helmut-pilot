@@ -1,0 +1,501 @@
+position,profileId,scope,capture,primaryOutcome,inputHash,accepted,necessaryATarget,necessaryAActualInputProven
+1,test-kohorte-synthetik-bt-001,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",8edfbaa439d54f583476a44d7186fc3f1a8aa6fe1d09596827097c53c6e6871a,False,False,False
+2,test-kohorte-synthetik-bt-002,BT,captured,fehlender fachlicher Nachweis,9654ffbe16812a263d36f95482b018b68e886597fdba2e8126b3d89fbe748089,False,False,False
+3,test-kohorte-synthetik-bt-003,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",a2168511153d8e77b00dea79be7cace8da60b5fd6a7c156d2a87236a6d14745f,False,False,False
+4,test-kohorte-synthetik-bt-004,BT,captured,fehlender fachlicher Nachweis,0346eea5f51978b3dec8eefa45916e44df7c39f4afd4f8f3d37347c8546c8bb8,False,False,False
+5,test-kohorte-synthetik-bt-005,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",5f19e9c16393b1e3dd03793d6b10bc841844e4674cf60427516a92b7450f7078,False,False,False
+6,test-kohorte-synthetik-bt-006,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",8ca19707574d11418205e12a698aba79bd81a409b8edfc1807cf385b697dfcbd,False,False,False
+7,test-kohorte-synthetik-bt-007,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",9ed058c2ad545f82918e443fac5228366e72e108597718c9e649b8dcce5c3ae4,False,False,False
+8,test-kohorte-synthetik-bt-008,BT,captured,fehlender fachlicher Nachweis,6a700c7b9a2e048037ee4fe919c2aa429976b5295bb58ee7fc02cac67c12f3bc,False,False,False
+9,test-kohorte-synthetik-bt-009,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",c59e1a0f1d8fb15d24fa3853d68675fd84073d065b8f5f9876af0d9173b1fb5a,False,False,False
+10,test-kohorte-synthetik-bt-010,BT,captured,fehlender fachlicher Nachweis,35440468cf2bd848f3a1d5593629bfee4e52b8f2e6ff2ad96fea9b30cbc743b2,False,False,False
+11,test-kohorte-synthetik-bt-011,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",7bc068c21d2efcc63c5b3e8ddb38df87c036c0324bfdb96fdc45947b1453830a,False,False,False
+12,test-kohorte-synthetik-bt-012,BT,captured,Ereignisduplikat,4017b31a892bd06ba6683ada47e976882f516623e7c11703c7c15e924df7d10e,False,False,False
+13,test-kohorte-synthetik-bt-013,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",20ff448a14f4b750490744ff3930489b62a9fe6a1993210ff46074e646ad0a32,False,False,False
+14,test-kohorte-synthetik-bt-014,BT,captured,fehlender fachlicher Nachweis,4f44de91bf3ccc9641df33d568c8617125f6032a336925965296b01c76522c2d,False,False,False
+15,test-kohorte-synthetik-bt-015,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",473ebbf1ee8bb41a70432da8d916e9b49e6fa8a38b38e46a4af8817f0a5f1f06,False,False,False
+16,test-kohorte-synthetik-bt-016,BT,captured,fehlender fachlicher Nachweis,ea50a64efc50e23cff089c59e676c69f2d95b3367925e2f8517b3a30bc9d2a51,False,False,False
+17,test-kohorte-synthetik-bt-017,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",bf8a9b3294a8efae74bbbaf43fdfc33115eb64a6fd3828412b0fc448decb24eb,False,False,False
+18,test-kohorte-synthetik-bt-018,BT,captured,fehlender fachlicher Nachweis,45103651f1500523d171d3ddba25e5917c66ce2105d32e1784a329bdbda89af0,False,False,False
+19,test-kohorte-synthetik-bt-019,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",e026a8d1d747fe8561aaadf46ccc44f8c961c90987488599ce114466ea81e1b6,False,False,False
+20,test-kohorte-synthetik-bt-020,BT,captured,Ereignisduplikat,02cccf33aee383399cc094a8d7f5b49364562dec5d1bfec958566a2f83868fc5,False,False,False
+21,test-kohorte-synthetik-bt-021,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",e7fe34788dfcca84c9087ff56409fe4e8fd85bc65957ed9396c8409303e54e1b,False,False,False
+22,test-kohorte-synthetik-bt-022,BT,captured,fehlender fachlicher Nachweis,0ed52b34b1e824839f7b1b5134e1a9b5c0928f608a57e8ba5ed8471ba5db258d,False,False,False
+23,test-kohorte-synthetik-bt-023,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",76005e7f5461eac923d976994c7f64a4ef46fa0a7decb994c4c8cfd64f1bfe1a,False,False,False
+24,test-kohorte-synthetik-bt-024,BT,captured,fehlender fachlicher Nachweis,8061c65f5670641c2879ddddca1be39baa6d2a7394326c4c100e04852d46c319,False,False,False
+25,test-kohorte-synthetik-bt-025,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",25c1fd5530c8495f78d87be804003c95dccb24fa3ac54162dca7babdbdc0a5b9,False,False,False
+26,test-kohorte-synthetik-bt-026,BT,captured,fehlender fachlicher Nachweis,7467097aa2937219535be9e90248bd194da0b4c06242c29f6b0696952ec18fda,False,False,False
+27,test-kohorte-synthetik-bt-027,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",cec5d77c9103909e1c905aeef1317461a0946bfa2e9cd291f4cd5ef12164e194,False,False,False
+28,test-kohorte-synthetik-bt-028,BT,captured,Ereignisduplikat,65543a479ab22e5c60b2b1107fb1ffd2ac10eb1165b3c15430ed95d382fbe0be,False,False,False
+29,test-kohorte-synthetik-bt-029,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",e490fe34df9ed8e695d7af019225866bab8c2c55915f40e6cae94995a22fa7f7,False,False,False
+30,test-kohorte-synthetik-bt-030,BT,captured,fehlender fachlicher Nachweis,ffe68ecd2e43f9c08588ded1ffd42c287cf8c058c67b66c1a98f5c6a17028504,False,False,False
+31,test-kohorte-synthetik-bt-031,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",ffafb445a1ddda0d11aa238d79a578f9141c32595e97648f56eb13aa65431246,False,False,False
+32,test-kohorte-synthetik-bt-032,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",7be1eb74d02c694cdcc2dd958b1513dbed63e5a495f6570e7d97fc4517c97ecd,False,False,False
+33,test-kohorte-synthetik-bt-033,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",d4ce26f76e4b15ddede88e1d2cb20fcaf45abdc1cd5ca16c0535ca66239ab83c,False,False,False
+34,test-kohorte-synthetik-bt-034,BT,captured,fehlender fachlicher Nachweis,a04ee96f76a70b1d328887cb457fa4680cd2530458958c110c20e41b9fb3704e,False,False,False
+35,test-kohorte-synthetik-bt-035,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",7bdd1837a67ab201644e0070d8ea1b717efcb1ec8e95c7c958333bb094c9e6bb,False,False,False
+36,test-kohorte-synthetik-bt-036,BT,captured,Ereignisduplikat,9fc766490d2d918d3b736c006ab1ad449d2d7df9c989fa9096f776b9d9218b6c,False,False,False
+37,test-kohorte-synthetik-bt-037,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",70881506d199eef863de6154d9f8f0fbfc803bfef8f0e31e048cc1321158733e,False,False,False
+38,test-kohorte-synthetik-bt-038,BT,captured,fehlender fachlicher Nachweis,3e90db765aec15c4f0d28228e7406d4687de4f5c54f67111271fb686e992e773,False,False,False
+39,test-kohorte-synthetik-bt-039,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",92876801b67dd01bdefe1556eb4f5ab92a714bd013b9a6b8d03db31d2c9f1e95,False,False,False
+40,test-kohorte-synthetik-bt-040,BT,captured,fehlender fachlicher Nachweis,18c7f5c2512ac21b82a4ece570650227744a5fab2a2769c388462f0dcf8e88e9,False,False,False
+41,test-kohorte-synthetik-bt-041,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",f4bc6ff2040d1d99736aa0385f1a68dd69a578eaca04cc28c001597d572cc580,False,False,False
+42,test-kohorte-synthetik-bt-042,BT,captured,fehlender fachlicher Nachweis,67c4a6061587323b88230ae64d3038fbc581a5cc571420f8d6484e3622cb01a1,False,False,False
+43,test-kohorte-synthetik-bt-043,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",19a9017e0feffc57f8b8537488f2ee06f4e74e80e9836918f1b72f732103217f,False,False,False
+44,test-kohorte-synthetik-bt-044,BT,captured,Ereignisduplikat,ec5afd4881946f8aaae91929eb70d17c3fe35d02f6d2a65e25ee84c781ad69a4,False,False,False
+45,test-kohorte-synthetik-bt-045,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",b77be98eae0beeaddc9b1a8b06302db04f9ef78cc4bd5858eea9eda71d89ef2c,False,False,False
+46,test-kohorte-synthetik-bt-046,BT,captured,fehlender fachlicher Nachweis,00bad12600feafdd8571692217f34020b49b3b88221d15a31d21aac3cb13ce2e,False,False,False
+47,test-kohorte-synthetik-bt-047,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",86424c6f6632290bba7b09c19e045e150fb476809796db9ef9322df83a93aec4,False,False,False
+48,test-kohorte-synthetik-bt-048,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",eef12311536aabc9e444dc11040a8cb56c551bd4662cd968dd452b7227344fdd,False,False,False
+49,test-kohorte-synthetik-bt-049,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",4fd06cff49790ca4c7deab252908f1eb9bf57850b274345ef35722755e22694f,False,False,False
+50,test-kohorte-synthetik-bt-050,BT,captured,fehlender fachlicher Nachweis,a9b199b389d732b2763bc7c022dac384d1891e1bbd9382df0c6fe7340efe6d00,False,False,False
+51,test-kohorte-synthetik-bt-051,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",8111f02d8d86e990665609daafa1da2f2c44776c054fd96a84af1bd5e1650ee1,False,False,False
+52,test-kohorte-synthetik-bt-052,BT,captured,fehlender fachlicher Nachweis,220c66530f0f74dbe9ee9e868ed2149eb705d3059cbde6dd421fc53e1a4029f5,False,False,False
+53,test-kohorte-synthetik-bt-053,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",24b9446162fc237d12ca3c0f8c23a08224394838c42cd6e6fa5e939f898e27af,False,False,False
+54,test-kohorte-synthetik-bt-054,BT,captured,fehlender fachlicher Nachweis,e128341e5d8f1910059640f7c9ff0ea89030fb0caa0f77d365da7831b032afd2,False,False,False
+55,test-kohorte-synthetik-bt-055,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",c5aca3394205036c3366cd92dbf185d5e36fdcb170534ef071e9e02eaf807f5f,False,False,False
+56,test-kohorte-synthetik-bt-056,BT,captured,fehlender fachlicher Nachweis,e9ea0a6bfd120fc733b2e66f9b5f215ee99c5ca63d351a0250a8f493d32b9874,False,False,False
+57,test-kohorte-synthetik-bt-057,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",4b89742d73505d9f5e2f9f2d80bb34ff87f24400c87e0176ba0245b663eff224,False,False,False
+58,test-kohorte-synthetik-bt-058,BT,captured,fehlender fachlicher Nachweis,f1a5c371ac95a955cc49a4df1c650103759ffc73b4a9994ccaf54e1b6e5ebc94,False,False,False
+59,test-kohorte-synthetik-bt-059,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",9d54e23524d491049547f985f19a058ea87a81c1b8bd2022f488625b186b51ee,False,False,False
+60,test-kohorte-synthetik-bt-060,BT,captured,fehlender fachlicher Nachweis,7c613a09d0eb06aa8cc788f3ca5f38393366f789957d9ffd488cefad9aeea070,False,False,False
+61,test-kohorte-synthetik-bt-061,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",e481d12ef0abf6ea9e4c1aaf1e6c5488509baba3332361474c516a7336e785c5,False,False,False
+62,test-kohorte-synthetik-bt-062,BT,captured,fehlender fachlicher Nachweis,b5f25ecb45ea1d6a2b4222ef95d1a3fc79d73d2e6fbeedbf79c1a07a4e72c6dc,False,False,False
+63,test-kohorte-synthetik-bt-063,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",d37eff052af103f9471b6ba31cf7bfa125595cb453709f97f9debf9199686b75,False,False,False
+64,test-kohorte-synthetik-bt-064,BT,captured,fehlender fachlicher Nachweis,909b88d56d898f943caf74b3b2de7170f86f32a076d76f2ba7299deca74a2249,False,False,False
+65,test-kohorte-synthetik-bt-065,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",d4916421944bc67ee9fc17eac729c493db50aa91ec41eb7f5c6b73f627adc942,False,False,False
+66,test-kohorte-synthetik-bt-066,BT,captured,fehlender fachlicher Nachweis,a2062c3cc5152ec50383db669e748f0254ec7f0bbc300990650da790a617e8cd,False,False,False
+67,test-kohorte-synthetik-bt-067,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",ab367bbe435f3dce472e32bef61ed1298e6f474b875c31b212f8a7d6280276e8,False,False,False
+68,test-kohorte-synthetik-bt-068,BT,captured,Ereignisduplikat,f9ece54254f2a69818a8d784fb620ba09062519e093ac30ed96f4df4180f54b0,False,False,False
+69,test-kohorte-synthetik-bt-069,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",3c92a42432910c3eed7306a6ebab8d4df0f053e6ff1c9064fdc6ae0374f7344c,False,False,False
+70,test-kohorte-synthetik-bt-070,BT,captured,fehlender fachlicher Nachweis,4331d2de4301dbece4dda1ac043c6478f55b37a59fd12a3a8b8baef6601896ac,False,False,False
+71,test-kohorte-synthetik-bt-071,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",27560207fcf1208f53eab97bfd0b7fb445ffe103e51dbca5f69f3be4c79be78e,False,False,False
+72,test-kohorte-synthetik-bt-072,BT,captured,fehlender fachlicher Nachweis,9824b0428a666cef95cf56c76e0603b6cfbf4191d77ad8f9e7efce66e07b2292,False,False,False
+73,test-kohorte-synthetik-bt-073,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",eafc6bfe81cd1f87e8c339a05b9f5dde4b81525fb04a6eec1a1dc0c536329d00,False,False,False
+74,test-kohorte-synthetik-bt-074,BT,captured,fehlender fachlicher Nachweis,8ea5bc7efd66b04ad961b5f185f26c04f9ac8d1ccf4625f186b411de16396d22,False,False,False
+75,test-kohorte-synthetik-bt-075,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",8b0e656b31a3fb269ae6a2077a019d9db43dfcc763ada5534b83905c2a90b88e,False,False,False
+76,test-kohorte-synthetik-bt-076,BT,captured,fehlender fachlicher Nachweis,5aa919989b5da9fcf360fd295d83d8ce9df737bc5d83a4870657034f6d38efda,False,False,False
+77,test-kohorte-synthetik-bt-077,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",d5021d06ddb100bf6f0244c0bd6256ba399c58e2275d82e8dc271955b772a853,False,False,False
+78,test-kohorte-synthetik-bt-078,BT,captured,fehlender fachlicher Nachweis,75e4b30dbc53a1f2f4d7422c195c02d77a397e488b7531245b91dc12ae577c70,False,False,False
+79,test-kohorte-synthetik-bt-079,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",e91b9c789dd1443340e564524835a9886e60a1588d718d12b09906eb710dd0f9,False,False,False
+80,test-kohorte-synthetik-bt-080,BT,captured,fehlender fachlicher Nachweis,47eb46da01931ee08aad58db3b3cb2e17c223ba747c62949ef14fdd75059f02c,False,False,False
+81,test-kohorte-synthetik-bt-081,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",11d20efa6c22adb01b4ab414566b3de9070180914e7f41fe887a5baf15850ccc,False,False,False
+82,test-kohorte-synthetik-bt-082,BT,captured,fehlender fachlicher Nachweis,599fb08fab3f55a8c107f9e7069cc726324e07cb05c8f7395e94e7804c870b1b,False,False,False
+83,test-kohorte-synthetik-bt-083,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",431cfcbeb39fa303ce60be43ca3958fa065748a57d223fec7b26b1abfa35f68b,False,False,False
+84,test-kohorte-synthetik-bt-084,BT,captured,Ereignisduplikat,b03dc59d3aaa9e4e37525b0a7a6268c0ea77d57e2f4b86a286d3f7b2a7564cfd,False,False,False
+85,test-kohorte-synthetik-bt-085,BT,captured,fehlender fachlicher Nachweis,bc369123c73cb2e0bf3b84e1631146fc4a48cb7d74efc159f61cff7b9055ae30,False,False,False
+86,test-kohorte-synthetik-bt-086,BT,captured,fehlender fachlicher Nachweis,5a4ec0f5355bd93da1ac141200082ced2a8da0c2be58956d9902b3a972ab4109,False,False,False
+87,test-kohorte-synthetik-bt-087,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",dc158a377b42e8cac01ac11ac8d5cdbb83b4827f0f8bc3eebe23f602d520e5a2,False,False,False
+88,test-kohorte-synthetik-bt-088,BT,captured,fehlender fachlicher Nachweis,68eb65bdb4dbc14885269845641bc185c6348b0d77926b50674ad44f8a6de249,False,False,False
+89,test-kohorte-synthetik-bt-089,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",3cf1118fd66edeee3a38ad9803ae090baa2bfa96478acf660865558a70ea5db6,False,False,False
+90,test-kohorte-synthetik-bt-090,BT,captured,fehlender fachlicher Nachweis,a626d77a7c9c83a4aad4358ceab0e9dfc19c4ac3e617f88c1b6ef4dc3b62b7a0,False,False,False
+91,test-kohorte-synthetik-bt-091,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",bb0ed7d920562fa2b0078fc58acd318ea284542d9c4af74a067a226faff300ce,False,False,False
+92,test-kohorte-synthetik-bt-092,BT,captured,Ereignisduplikat,8f4441a860e08dbcbb5470373671a76349b94a9d0f341068232d0ecd56a31cda,False,False,False
+93,test-kohorte-synthetik-bt-093,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",b95af8b692bc6f0cea5f4e1c4aa9c4566b154e69a29d39aecf2ef1ecd81aba76,False,False,False
+94,test-kohorte-synthetik-bt-094,BT,captured,fehlender fachlicher Nachweis,64021c25b4a772820bfe114e8638e76b662ba93c88e9834ed68b689e440d638d,False,False,False
+95,test-kohorte-synthetik-bt-095,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",343cc21bba045d8e1beb18c39c054f403416476b8a03d9d7f007121472cbb4db,False,False,False
+96,test-kohorte-synthetik-bt-096,BT,captured,fehlender fachlicher Nachweis,7099100dc1f7686c1a668f14d285eb73c0a20a82898652dd933895dfaf36063a,False,False,False
+97,test-kohorte-synthetik-bt-097,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",753825c9368b4e718739b9e75f38654a8bcf4e1b7a47f4240ef04eab95375038,False,False,False
+98,test-kohorte-synthetik-bt-098,BT,captured,fehlender fachlicher Nachweis,5fccee5dca2e6e1f0f9a6f77368995358825ff1954ae5d35487842cb8723d5ee,False,False,False
+99,test-kohorte-synthetik-bt-099,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",bdbb49ab01aa2e43f26b4df3898df525056e117e76a1413348a3e084429448a7,False,False,False
+100,test-kohorte-synthetik-bt-100,BT,captured,fehlender fachlicher Nachweis,c56eb57359306d66c9705b2ada20af09bb35133efd19bc6830236f9812bf12f5,False,False,False
+101,test-kohorte-synthetik-bt-101,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",203fdf3ed646d027ae397d0acb591f199ce99bb6ac4663c05c1caa73708a5168,False,False,False
+102,test-kohorte-synthetik-bt-102,BT,captured,fehlender fachlicher Nachweis,56849c10988911ddc264c14757e099d29ea6bfa978069ebbae9fbe6168441319,False,False,False
+103,test-kohorte-synthetik-bt-103,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",896808169aeadbefde51b79ad7d042a11ac7b8700fd6b9dc1950464f1203f710,False,False,False
+104,test-kohorte-synthetik-bt-104,BT,captured,fehlender fachlicher Nachweis,6a9898ec4ea504f7ac6111609689f8c0983391130c5ad2809841f205423520c3,False,False,False
+105,test-kohorte-synthetik-bt-105,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",8ff6681130816fa79021877dcf2d3c01e04cc2d6188525f4b291fe91586bed7d,False,False,False
+106,test-kohorte-synthetik-bt-106,BT,captured,fehlender fachlicher Nachweis,e940885311e8668606477be07e4078153ff51f77197c03becf78eaba32327d01,False,False,False
+107,test-kohorte-synthetik-bt-107,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",4916052bec769693e2ad0fde94adfc46a2c87a3d0c1a6353d177ee5780a9f48a,False,False,False
+108,test-kohorte-synthetik-bt-108,BT,captured,Ereignisduplikat,4daa1220f047b9a01e04c6700bbc988ecec164c6351df7fbb887148f8e92ef32,False,False,False
+109,test-kohorte-synthetik-bt-109,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",bba843da745843af3cb8e734d249ca37a084e5aed55c6ac4bf7795fffe73ced0,False,False,False
+110,test-kohorte-synthetik-bt-110,BT,captured,fehlender fachlicher Nachweis,d716511543130f4e06a77263c0467be712dd9d8a27fb648825c262c91ebdd1ee,False,False,False
+111,test-kohorte-synthetik-bt-111,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",a8733bec0b279023887ef5fafbb4bc22e22c1323f66eb881cda6bc37bfef7ad2,False,False,False
+112,test-kohorte-synthetik-bt-112,BT,captured,fehlender fachlicher Nachweis,4de21c817b1425620ee3e762cc9e2c7a8243d7e243ee1995022af3fda943a0dd,False,False,False
+113,test-kohorte-synthetik-bt-113,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",ffb1b37b505cf75157985b62a174ba233d090a6a00c00d8c1440a1f56be2161f,False,False,False
+114,test-kohorte-synthetik-bt-114,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",ce8cc860df775cd4577f88fe0bea970ed83a28601a5fe5f537a56df6f8dd131d,False,False,False
+115,test-kohorte-synthetik-bt-115,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",655d3970a2c7c89efce5057b1ed1c4a63bce207654049954fc8e1d4faa6b1be1,False,False,False
+116,test-kohorte-synthetik-bt-116,BT,captured,Ereignisduplikat,25c02f28fa8f0e33d661e5ab34e17d99de3f18cd904993f4ef026d553844cf6a,False,False,False
+117,test-kohorte-synthetik-bt-117,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",66117cf5ec47dd9376b0f4596793621bd148bcde739cc2eb8d4adaf3b8e39ab7,False,False,False
+118,test-kohorte-synthetik-bt-118,BT,captured,fehlender fachlicher Nachweis,ce2110af558594295c49005f064056860751e1b0f0f6b82557de49b9c48a3b8e,False,False,False
+119,test-kohorte-synthetik-bt-119,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",a93caeaaf577c70e5131cca33c983fdba1358586d9f98a509c1a507f5315c154,False,False,False
+120,test-kohorte-synthetik-bt-120,BT,captured,fehlender fachlicher Nachweis,ce1d9b1f254e0d455611d1a3e5eea4a0c3b90c9060a4e1c683715ae4f868f2f9,False,False,False
+121,test-kohorte-synthetik-bt-121,BT,captured,"Zeit, Quellen oder Ebenenwiderspruch",0e69722237c173dbf4befa7077c53e2213afe81f090ae9076f9d663b9c5e95f0,False,False,False
+122,test-kohorte-synthetik-bt-122,BT,technical,technisch fehlerhaft,,False,False,False
+123,test-kohorte-synthetik-bt-123,BT,not-captured,nicht erfasst,,False,False,False
+124,test-kohorte-synthetik-bt-124,BT,not-captured,nicht erfasst,,False,False,False
+125,test-kohorte-synthetik-bt-125,BT,not-captured,nicht erfasst,,False,False,False
+126,test-kohorte-synthetik-bt-126,BT,not-captured,nicht erfasst,,False,False,False
+127,test-kohorte-synthetik-bt-127,BT,not-captured,nicht erfasst,,False,False,False
+128,test-kohorte-synthetik-bt-128,BT,not-captured,nicht erfasst,,False,False,False
+129,test-kohorte-synthetik-bt-129,BT,not-captured,nicht erfasst,,False,False,False
+130,test-kohorte-synthetik-bt-130,BT,not-captured,nicht erfasst,,False,False,False
+131,test-kohorte-synthetik-bt-131,BT,not-captured,nicht erfasst,,False,False,False
+132,test-kohorte-synthetik-bt-132,BT,not-captured,nicht erfasst,,False,False,False
+133,test-kohorte-synthetik-bt-133,BT,not-captured,nicht erfasst,,False,False,False
+134,test-kohorte-synthetik-bt-134,BT,not-captured,nicht erfasst,,False,False,False
+135,test-kohorte-synthetik-bt-135,BT,not-captured,nicht erfasst,,False,False,False
+136,test-kohorte-synthetik-bt-136,BT,not-captured,nicht erfasst,,False,False,False
+137,test-kohorte-synthetik-bt-137,BT,not-captured,nicht erfasst,,False,False,False
+138,test-kohorte-synthetik-bt-138,BT,not-captured,nicht erfasst,,False,False,False
+139,test-kohorte-synthetik-bt-139,BT,not-captured,nicht erfasst,,False,False,False
+140,test-kohorte-synthetik-bt-140,BT,not-captured,nicht erfasst,,False,False,False
+141,test-kohorte-synthetik-bt-141,BT,not-captured,nicht erfasst,,False,False,False
+142,test-kohorte-synthetik-bt-142,BT,not-captured,nicht erfasst,,False,False,False
+143,test-kohorte-synthetik-bt-143,BT,not-captured,nicht erfasst,,False,False,False
+144,test-kohorte-synthetik-bt-144,BT,not-captured,nicht erfasst,,False,False,False
+145,test-kohorte-synthetik-bt-145,BT,not-captured,nicht erfasst,,False,False,False
+146,test-kohorte-synthetik-bt-146,BT,not-captured,nicht erfasst,,False,False,False
+147,test-kohorte-synthetik-bt-147,BT,not-captured,nicht erfasst,,False,False,False
+148,test-kohorte-synthetik-bt-148,BT,not-captured,nicht erfasst,,False,False,False
+149,test-kohorte-synthetik-bt-149,BT,not-captured,nicht erfasst,,False,False,False
+150,test-kohorte-synthetik-bt-150,BT,not-captured,nicht erfasst,,False,False,False
+151,test-kohorte-synthetik-bt-151,BT,not-captured,nicht erfasst,,False,False,False
+152,test-kohorte-synthetik-bt-152,BT,not-captured,nicht erfasst,,False,False,False
+153,test-kohorte-synthetik-bt-153,BT,not-captured,nicht erfasst,,False,False,False
+154,test-kohorte-synthetik-bt-154,BT,not-captured,nicht erfasst,,False,False,False
+155,test-kohorte-synthetik-bt-155,BT,not-captured,nicht erfasst,,False,False,False
+156,test-kohorte-synthetik-bt-156,BT,not-captured,nicht erfasst,,False,False,False
+157,test-kohorte-synthetik-bt-157,BT,not-captured,nicht erfasst,,False,False,False
+158,test-kohorte-synthetik-bt-158,BT,not-captured,nicht erfasst,,False,False,False
+159,test-kohorte-synthetik-bt-159,BT,not-captured,nicht erfasst,,False,False,False
+160,test-kohorte-synthetik-bt-160,BT,not-captured,nicht erfasst,,False,False,False
+161,test-kohorte-synthetik-bt-161,BT,not-captured,nicht erfasst,,False,False,False
+162,test-kohorte-synthetik-bt-162,BT,not-captured,nicht erfasst,,False,False,False
+163,test-kohorte-synthetik-bt-163,BT,not-captured,nicht erfasst,,False,False,False
+164,test-kohorte-synthetik-bt-164,BT,not-captured,nicht erfasst,,False,False,False
+165,test-kohorte-synthetik-bt-165,BT,not-captured,nicht erfasst,,False,False,False
+166,test-kohorte-synthetik-bt-166,BT,not-captured,nicht erfasst,,False,False,False
+167,test-kohorte-synthetik-bt-167,BT,not-captured,nicht erfasst,,False,False,False
+168,test-kohorte-synthetik-bt-168,BT,not-captured,nicht erfasst,,False,False,False
+169,test-kohorte-synthetik-bt-169,BT,not-captured,nicht erfasst,,False,False,False
+170,test-kohorte-synthetik-bt-170,BT,not-captured,nicht erfasst,,False,False,False
+171,test-kohorte-synthetik-bt-171,BT,not-captured,nicht erfasst,,False,False,False
+172,test-kohorte-synthetik-bt-172,BT,not-captured,nicht erfasst,,False,False,False
+173,test-kohorte-synthetik-bt-173,BT,not-captured,nicht erfasst,,False,False,False
+174,test-kohorte-synthetik-bt-174,BT,not-captured,nicht erfasst,,False,False,False
+175,test-kohorte-synthetik-bt-175,BT,not-captured,nicht erfasst,,False,False,False
+176,test-kohorte-synthetik-bt-176,BT,not-captured,nicht erfasst,,False,False,False
+177,test-kohorte-synthetik-bt-177,BT,not-captured,nicht erfasst,,False,False,False
+178,test-kohorte-synthetik-bt-178,BT,not-captured,nicht erfasst,,False,False,False
+179,test-kohorte-synthetik-bt-179,BT,not-captured,nicht erfasst,,False,False,False
+180,test-kohorte-synthetik-bt-180,BT,not-captured,nicht erfasst,,False,False,False
+181,test-kohorte-synthetik-bt-181,BT,not-captured,nicht erfasst,,False,False,False
+182,test-kohorte-synthetik-bt-182,BT,not-captured,nicht erfasst,,False,False,False
+183,test-kohorte-synthetik-bt-183,BT,not-captured,nicht erfasst,,False,False,False
+184,test-kohorte-synthetik-bt-184,BT,not-captured,nicht erfasst,,False,False,False
+185,test-kohorte-synthetik-bt-185,BT,not-captured,nicht erfasst,,False,False,False
+186,test-kohorte-synthetik-bt-186,BT,not-captured,nicht erfasst,,False,False,False
+187,test-kohorte-synthetik-bt-187,BT,not-captured,nicht erfasst,,False,False,False
+188,test-kohorte-synthetik-bt-188,BT,not-captured,nicht erfasst,,False,False,False
+189,test-kohorte-synthetik-bt-189,BT,not-captured,nicht erfasst,,False,False,False
+190,test-kohorte-synthetik-bt-190,BT,not-captured,nicht erfasst,,False,False,False
+191,test-kohorte-synthetik-bt-191,BT,not-captured,nicht erfasst,,False,False,False
+192,test-kohorte-synthetik-bt-192,BT,not-captured,nicht erfasst,,False,False,False
+193,test-kohorte-synthetik-bt-193,BT,not-captured,nicht erfasst,,False,False,False
+194,test-kohorte-synthetik-bt-194,BT,not-captured,nicht erfasst,,False,False,False
+195,test-kohorte-synthetik-bt-195,BT,not-captured,nicht erfasst,,False,False,False
+196,test-kohorte-synthetik-bt-196,BT,not-captured,nicht erfasst,,False,False,False
+197,test-kohorte-synthetik-bt-197,BT,not-captured,nicht erfasst,,False,False,False
+198,test-kohorte-synthetik-bt-198,BT,not-captured,nicht erfasst,,False,False,False
+199,test-kohorte-synthetik-bt-199,BT,not-captured,nicht erfasst,,False,False,False
+200,test-kohorte-synthetik-bt-200,BT,not-captured,nicht erfasst,,False,False,False
+201,test-kohorte-synthetik-bt-201,BT,not-captured,nicht erfasst,,False,False,False
+202,test-kohorte-synthetik-bt-202,BT,not-captured,nicht erfasst,,False,False,False
+203,test-kohorte-synthetik-bt-203,BT,not-captured,nicht erfasst,,False,False,False
+204,test-kohorte-synthetik-bt-204,BT,not-captured,nicht erfasst,,False,False,False
+205,test-kohorte-synthetik-bt-205,BT,not-captured,nicht erfasst,,False,False,False
+206,test-kohorte-synthetik-bt-206,BT,not-captured,nicht erfasst,,False,False,False
+207,test-kohorte-synthetik-bt-207,BT,not-captured,nicht erfasst,,False,False,False
+208,test-kohorte-synthetik-bt-208,BT,not-captured,nicht erfasst,,False,False,False
+209,test-kohorte-synthetik-bt-209,BT,not-captured,nicht erfasst,,False,False,False
+210,test-kohorte-synthetik-bt-210,BT,not-captured,nicht erfasst,,False,False,False
+211,test-kohorte-synthetik-bt-211,BT,not-captured,nicht erfasst,,False,False,False
+212,test-kohorte-synthetik-bt-212,BT,not-captured,nicht erfasst,,False,False,False
+213,test-kohorte-synthetik-bt-213,BT,not-captured,nicht erfasst,,False,False,False
+214,test-kohorte-synthetik-bt-214,BT,not-captured,nicht erfasst,,False,False,False
+215,test-kohorte-synthetik-bt-215,BT,not-captured,nicht erfasst,,False,False,False
+216,test-kohorte-synthetik-bt-216,BT,not-captured,nicht erfasst,,False,False,False
+217,test-kohorte-synthetik-bt-217,BT,not-captured,nicht erfasst,,False,False,False
+218,test-kohorte-synthetik-bt-218,BT,not-captured,nicht erfasst,,False,False,False
+219,test-kohorte-synthetik-bt-219,BT,not-captured,nicht erfasst,,False,False,False
+220,test-kohorte-synthetik-bt-220,BT,not-captured,nicht erfasst,,False,False,False
+221,test-kohorte-synthetik-bt-221,BT,not-captured,nicht erfasst,,False,False,False
+222,test-kohorte-synthetik-bt-222,BT,not-captured,nicht erfasst,,False,False,False
+223,test-kohorte-synthetik-bt-223,BT,not-captured,nicht erfasst,,False,False,False
+224,test-kohorte-synthetik-bt-224,BT,not-captured,nicht erfasst,,False,False,False
+225,test-kohorte-synthetik-bt-225,BT,not-captured,nicht erfasst,,False,False,False
+226,test-kohorte-synthetik-bt-226,BT,not-captured,nicht erfasst,,False,False,False
+227,test-kohorte-synthetik-bt-227,BT,not-captured,nicht erfasst,,False,False,False
+228,test-kohorte-synthetik-bt-228,BT,not-captured,nicht erfasst,,False,False,False
+229,test-kohorte-synthetik-bt-229,BT,not-captured,nicht erfasst,,False,False,False
+230,test-kohorte-synthetik-bt-230,BT,not-captured,nicht erfasst,,False,False,False
+231,test-kohorte-synthetik-bt-231,BT,not-captured,nicht erfasst,,False,False,False
+232,test-kohorte-synthetik-bt-232,BT,not-captured,nicht erfasst,,False,False,False
+233,test-kohorte-synthetik-bt-233,BT,not-captured,nicht erfasst,,False,False,False
+234,test-kohorte-synthetik-bt-234,BT,not-captured,nicht erfasst,,False,False,False
+235,test-kohorte-synthetik-bt-235,BT,not-captured,nicht erfasst,,False,False,False
+236,test-kohorte-synthetik-bt-236,BT,not-captured,nicht erfasst,,False,False,False
+237,test-kohorte-synthetik-bt-237,BT,not-captured,nicht erfasst,,False,False,False
+238,test-kohorte-synthetik-bt-238,BT,not-captured,nicht erfasst,,False,False,False
+239,test-kohorte-synthetik-bt-239,BT,not-captured,nicht erfasst,,False,False,False
+240,test-kohorte-synthetik-bt-240,BT,not-captured,nicht erfasst,,False,False,False
+241,test-kohorte-synthetik-bt-241,BT,not-captured,nicht erfasst,,False,False,False
+242,test-kohorte-synthetik-bt-242,BT,not-captured,nicht erfasst,,False,False,False
+243,test-kohorte-synthetik-bt-243,BT,not-captured,nicht erfasst,,False,False,False
+244,test-kohorte-synthetik-bt-244,BT,not-captured,nicht erfasst,,False,False,False
+245,test-kohorte-synthetik-bt-245,BT,not-captured,nicht erfasst,,False,False,False
+246,test-kohorte-synthetik-bt-246,BT,not-captured,nicht erfasst,,False,False,False
+247,test-kohorte-synthetik-bt-247,BT,not-captured,nicht erfasst,,False,False,False
+248,test-kohorte-synthetik-bt-248,BT,not-captured,nicht erfasst,,False,False,False
+249,test-kohorte-synthetik-bt-249,BT,not-captured,nicht erfasst,,False,False,False
+250,test-kohorte-synthetik-bt-250,BT,not-captured,nicht erfasst,,False,False,False
+251,test-kohorte-synthetik-bt-251,BT,not-captured,nicht erfasst,,False,False,False
+252,test-kohorte-synthetik-bt-252,BT,not-captured,nicht erfasst,,False,False,False
+253,test-kohorte-synthetik-bt-253,BT,not-captured,nicht erfasst,,False,False,False
+254,test-kohorte-synthetik-bt-254,BT,not-captured,nicht erfasst,,False,False,False
+255,test-kohorte-synthetik-bt-255,BT,not-captured,nicht erfasst,,False,False,False
+256,test-kohorte-synthetik-bt-256,BT,not-captured,nicht erfasst,,False,False,False
+257,test-kohorte-synthetik-bt-257,BT,not-captured,nicht erfasst,,False,False,False
+258,test-kohorte-synthetik-bt-258,BT,not-captured,nicht erfasst,,False,False,False
+259,test-kohorte-synthetik-bt-259,BT,not-captured,nicht erfasst,,False,False,False
+260,test-kohorte-synthetik-bt-260,BT,not-captured,nicht erfasst,,False,False,False
+261,test-kohorte-synthetik-bt-261,BT,not-captured,nicht erfasst,,False,False,False
+262,test-kohorte-synthetik-bt-262,BT,not-captured,nicht erfasst,,False,False,False
+263,test-kohorte-synthetik-bt-263,BT,not-captured,nicht erfasst,,False,False,False
+264,test-kohorte-synthetik-bt-264,BT,not-captured,nicht erfasst,,False,False,False
+265,test-kohorte-synthetik-bt-265,BT,not-captured,nicht erfasst,,False,False,False
+266,test-kohorte-synthetik-bt-266,BT,not-captured,nicht erfasst,,False,False,False
+267,test-kohorte-synthetik-bt-267,BT,not-captured,nicht erfasst,,False,False,False
+268,test-kohorte-synthetik-bt-268,BT,not-captured,nicht erfasst,,False,False,False
+269,test-kohorte-synthetik-bt-269,BT,not-captured,nicht erfasst,,False,False,False
+270,test-kohorte-synthetik-bt-270,BT,not-captured,nicht erfasst,,False,False,False
+271,test-kohorte-synthetik-bt-271,BT,not-captured,nicht erfasst,,False,False,False
+272,test-kohorte-synthetik-bt-272,BT,not-captured,nicht erfasst,,False,False,False
+273,test-kohorte-synthetik-bt-273,BT,not-captured,nicht erfasst,,False,False,False
+274,test-kohorte-synthetik-bt-274,BT,not-captured,nicht erfasst,,False,False,False
+275,test-kohorte-synthetik-bt-275,BT,not-captured,nicht erfasst,,False,False,False
+276,test-kohorte-synthetik-bt-276,BT,not-captured,nicht erfasst,,False,False,False
+277,test-kohorte-synthetik-bt-277,BT,not-captured,nicht erfasst,,False,False,False
+278,test-kohorte-synthetik-bt-278,BT,not-captured,nicht erfasst,,False,False,False
+279,test-kohorte-synthetik-bt-279,BT,not-captured,nicht erfasst,,False,False,False
+280,test-kohorte-synthetik-bt-280,BT,not-captured,nicht erfasst,,False,False,False
+281,test-kohorte-synthetik-bt-281,BT,not-captured,nicht erfasst,,False,False,False
+282,test-kohorte-synthetik-bt-282,BT,not-captured,nicht erfasst,,False,False,False
+283,test-kohorte-synthetik-bt-283,BT,not-captured,nicht erfasst,,False,False,False
+284,test-kohorte-synthetik-bt-284,BT,not-captured,nicht erfasst,,False,False,False
+285,test-kohorte-synthetik-bt-285,BT,not-captured,nicht erfasst,,False,False,False
+286,test-kohorte-synthetik-bt-286,BT,not-captured,nicht erfasst,,False,False,False
+287,test-kohorte-synthetik-bt-287,BT,not-captured,nicht erfasst,,False,False,False
+288,test-kohorte-synthetik-bt-288,BT,not-captured,nicht erfasst,,False,False,False
+289,test-kohorte-synthetik-bt-289,BT,not-captured,nicht erfasst,,False,False,False
+290,test-kohorte-synthetik-bt-290,BT,not-captured,nicht erfasst,,False,False,False
+291,test-kohorte-synthetik-bt-291,BT,not-captured,nicht erfasst,,False,False,False
+292,test-kohorte-synthetik-bt-292,BT,not-captured,nicht erfasst,,False,False,False
+293,test-kohorte-synthetik-bt-293,BT,not-captured,nicht erfasst,,False,False,False
+294,test-kohorte-synthetik-bt-294,BT,not-captured,nicht erfasst,,False,False,False
+295,test-kohorte-synthetik-bt-295,BT,not-captured,nicht erfasst,,False,False,False
+296,test-kohorte-synthetik-bt-296,BT,not-captured,nicht erfasst,,False,False,False
+297,test-kohorte-synthetik-bt-297,BT,not-captured,nicht erfasst,,False,False,False
+298,test-kohorte-synthetik-bt-298,BT,not-captured,nicht erfasst,,False,False,False
+299,test-kohorte-synthetik-bt-299,BT,not-captured,nicht erfasst,,False,False,False
+300,test-kohorte-synthetik-bt-300,BT,not-captured,nicht erfasst,,False,False,False
+301,test-kohorte-synthetik-bt-301,BT,not-captured,nicht erfasst,,False,False,False
+302,test-kohorte-synthetik-bt-302,BT,not-captured,nicht erfasst,,False,False,False
+303,test-kohorte-synthetik-bt-303,BT,not-captured,nicht erfasst,,False,False,False
+304,test-kohorte-synthetik-bt-304,BT,not-captured,nicht erfasst,,False,False,False
+305,test-kohorte-synthetik-bt-305,BT,not-captured,nicht erfasst,,False,False,False
+306,test-kohorte-synthetik-bt-306,BT,not-captured,nicht erfasst,,False,False,False
+307,test-kohorte-synthetik-bt-307,BT,not-captured,nicht erfasst,,False,False,False
+308,test-kohorte-synthetik-bt-308,BT,not-captured,nicht erfasst,,False,False,False
+309,test-kohorte-synthetik-bt-309,BT,not-captured,nicht erfasst,,False,False,False
+310,test-kohorte-synthetik-bt-310,BT,not-captured,nicht erfasst,,False,False,False
+311,test-kohorte-synthetik-bt-311,BT,not-captured,nicht erfasst,,False,False,False
+312,test-kohorte-synthetik-bt-312,BT,not-captured,nicht erfasst,,False,False,False
+313,test-kohorte-synthetik-bt-313,BT,not-captured,nicht erfasst,,False,False,False
+314,test-kohorte-synthetik-bt-314,BT,not-captured,nicht erfasst,,False,False,False
+315,test-kohorte-synthetik-bt-315,BT,not-captured,nicht erfasst,,False,False,False
+316,test-kohorte-synthetik-bt-316,BT,not-captured,nicht erfasst,,False,False,False
+317,test-kohorte-synthetik-bt-317,BT,not-captured,nicht erfasst,,False,False,False
+318,test-kohorte-synthetik-bt-318,BT,not-captured,nicht erfasst,,False,False,False
+319,test-kohorte-synthetik-bt-319,BT,not-captured,nicht erfasst,,False,False,False
+320,test-kohorte-synthetik-bt-320,BT,not-captured,nicht erfasst,,False,False,False
+321,test-kohorte-synthetik-bt-321,BT,not-captured,nicht erfasst,,False,False,False
+322,test-kohorte-synthetik-bt-322,BT,not-captured,nicht erfasst,,False,False,False
+323,test-kohorte-synthetik-bt-323,BT,not-captured,nicht erfasst,,False,False,False
+324,test-kohorte-synthetik-bt-324,BT,not-captured,nicht erfasst,,False,False,False
+325,test-kohorte-synthetik-bt-325,BT,not-captured,nicht erfasst,,False,False,False
+326,test-kohorte-synthetik-bt-326,BT,not-captured,nicht erfasst,,False,False,False
+327,test-kohorte-synthetik-bt-327,BT,not-captured,nicht erfasst,,False,False,False
+328,test-kohorte-synthetik-bt-328,BT,not-captured,nicht erfasst,,False,False,False
+329,test-kohorte-synthetik-bt-329,BT,not-captured,nicht erfasst,,False,False,False
+330,test-kohorte-synthetik-bt-330,BT,not-captured,nicht erfasst,,False,False,False
+331,test-kohorte-synthetik-be-001,BE,not-captured,nicht erfasst,,False,True,False
+332,test-kohorte-synthetik-be-002,BE,not-captured,nicht erfasst,,False,False,False
+333,test-kohorte-synthetik-be-003,BE,not-captured,nicht erfasst,,False,False,False
+334,test-kohorte-synthetik-be-004,BE,not-captured,nicht erfasst,,False,False,False
+335,test-kohorte-synthetik-be-005,BE,not-captured,nicht erfasst,,False,False,False
+336,test-kohorte-synthetik-be-006,BE,not-captured,nicht erfasst,,False,True,False
+337,test-kohorte-synthetik-be-007,BE,not-captured,nicht erfasst,,False,False,False
+338,test-kohorte-synthetik-be-008,BE,not-captured,nicht erfasst,,False,False,False
+339,test-kohorte-synthetik-be-009,BE,not-captured,nicht erfasst,,False,True,False
+340,test-kohorte-synthetik-be-010,BE,not-captured,nicht erfasst,,False,False,False
+341,test-kohorte-synthetik-be-011,BE,not-captured,nicht erfasst,,False,False,False
+342,test-kohorte-synthetik-be-012,BE,not-captured,nicht erfasst,,False,False,False
+343,test-kohorte-synthetik-be-013,BE,not-captured,nicht erfasst,,False,False,False
+344,test-kohorte-synthetik-be-014,BE,not-captured,nicht erfasst,,False,True,False
+345,test-kohorte-synthetik-be-015,BE,not-captured,nicht erfasst,,False,False,False
+346,test-kohorte-synthetik-be-016,BE,not-captured,nicht erfasst,,False,False,False
+347,test-kohorte-synthetik-be-017,BE,not-captured,nicht erfasst,,False,True,False
+348,test-kohorte-synthetik-be-018,BE,not-captured,nicht erfasst,,False,False,False
+349,test-kohorte-synthetik-be-019,BE,not-captured,nicht erfasst,,False,False,False
+350,test-kohorte-synthetik-be-020,BE,not-captured,nicht erfasst,,False,False,False
+351,test-kohorte-synthetik-be-021,BE,not-captured,nicht erfasst,,False,False,False
+352,test-kohorte-synthetik-be-022,BE,not-captured,nicht erfasst,,False,True,False
+353,test-kohorte-synthetik-be-023,BE,not-captured,nicht erfasst,,False,False,False
+354,test-kohorte-synthetik-be-024,BE,not-captured,nicht erfasst,,False,False,False
+355,test-kohorte-synthetik-be-025,BE,not-captured,nicht erfasst,,False,True,False
+356,test-kohorte-synthetik-be-026,BE,not-captured,nicht erfasst,,False,False,False
+357,test-kohorte-synthetik-be-027,BE,not-captured,nicht erfasst,,False,False,False
+358,test-kohorte-synthetik-be-028,BE,not-captured,nicht erfasst,,False,False,False
+359,test-kohorte-synthetik-be-029,BE,not-captured,nicht erfasst,,False,False,False
+360,test-kohorte-synthetik-be-030,BE,not-captured,nicht erfasst,,False,True,False
+361,test-kohorte-synthetik-be-031,BE,not-captured,nicht erfasst,,False,False,False
+362,test-kohorte-synthetik-be-032,BE,not-captured,nicht erfasst,,False,False,False
+363,test-kohorte-synthetik-be-033,BE,not-captured,nicht erfasst,,False,True,False
+364,test-kohorte-synthetik-be-034,BE,not-captured,nicht erfasst,,False,False,False
+365,test-kohorte-synthetik-be-035,BE,not-captured,nicht erfasst,,False,False,False
+366,test-kohorte-synthetik-be-036,BE,not-captured,nicht erfasst,,False,False,False
+367,test-kohorte-synthetik-be-037,BE,not-captured,nicht erfasst,,False,False,False
+368,test-kohorte-synthetik-be-038,BE,not-captured,nicht erfasst,,False,True,False
+369,test-kohorte-synthetik-be-039,BE,not-captured,nicht erfasst,,False,False,False
+370,test-kohorte-synthetik-be-040,BE,not-captured,nicht erfasst,,False,False,False
+371,test-kohorte-synthetik-be-041,BE,not-captured,nicht erfasst,,False,True,False
+372,test-kohorte-synthetik-be-042,BE,not-captured,nicht erfasst,,False,False,False
+373,test-kohorte-synthetik-be-043,BE,not-captured,nicht erfasst,,False,False,False
+374,test-kohorte-synthetik-be-044,BE,not-captured,nicht erfasst,,False,False,False
+375,test-kohorte-synthetik-be-045,BE,not-captured,nicht erfasst,,False,False,False
+376,test-kohorte-synthetik-be-046,BE,not-captured,nicht erfasst,,False,True,False
+377,test-kohorte-synthetik-be-047,BE,not-captured,nicht erfasst,,False,False,False
+378,test-kohorte-synthetik-be-048,BE,not-captured,nicht erfasst,,False,False,False
+379,test-kohorte-synthetik-be-049,BE,not-captured,nicht erfasst,,False,True,False
+380,test-kohorte-synthetik-be-050,BE,not-captured,nicht erfasst,,False,False,False
+381,test-kohorte-synthetik-be-051,BE,not-captured,nicht erfasst,,False,False,False
+382,test-kohorte-synthetik-be-052,BE,not-captured,nicht erfasst,,False,False,False
+383,test-kohorte-synthetik-be-053,BE,not-captured,nicht erfasst,,False,False,False
+384,test-kohorte-synthetik-be-054,BE,not-captured,nicht erfasst,,False,True,False
+385,test-kohorte-synthetik-be-055,BE,not-captured,nicht erfasst,,False,False,False
+386,test-kohorte-synthetik-be-056,BE,not-captured,nicht erfasst,,False,False,False
+387,test-kohorte-synthetik-be-057,BE,not-captured,nicht erfasst,,False,True,False
+388,test-kohorte-synthetik-be-058,BE,not-captured,nicht erfasst,,False,False,False
+389,test-kohorte-synthetik-be-059,BE,not-captured,nicht erfasst,,False,False,False
+390,test-kohorte-synthetik-be-060,BE,not-captured,nicht erfasst,,False,False,False
+391,test-kohorte-synthetik-be-061,BE,not-captured,nicht erfasst,,False,False,False
+392,test-kohorte-synthetik-be-062,BE,not-captured,nicht erfasst,,False,True,False
+393,test-kohorte-synthetik-be-063,BE,not-captured,nicht erfasst,,False,False,False
+394,test-kohorte-synthetik-be-064,BE,not-captured,nicht erfasst,,False,False,False
+395,test-kohorte-synthetik-be-065,BE,not-captured,nicht erfasst,,False,True,False
+396,test-kohorte-synthetik-be-066,BE,not-captured,nicht erfasst,,False,False,False
+397,test-kohorte-synthetik-be-067,BE,not-captured,nicht erfasst,,False,False,False
+398,test-kohorte-synthetik-be-068,BE,not-captured,nicht erfasst,,False,False,False
+399,test-kohorte-synthetik-be-069,BE,not-captured,nicht erfasst,,False,False,False
+400,test-kohorte-synthetik-be-070,BE,not-captured,nicht erfasst,,False,True,False
+401,test-kohorte-synthetik-be-071,BE,not-captured,nicht erfasst,,False,False,False
+402,test-kohorte-synthetik-be-072,BE,not-captured,nicht erfasst,,False,False,False
+403,test-kohorte-synthetik-be-073,BE,not-captured,nicht erfasst,,False,True,False
+404,test-kohorte-synthetik-be-074,BE,not-captured,nicht erfasst,,False,False,False
+405,test-kohorte-synthetik-be-075,BE,not-captured,nicht erfasst,,False,False,False
+406,test-kohorte-synthetik-be-076,BE,not-captured,nicht erfasst,,False,False,False
+407,test-kohorte-synthetik-be-077,BE,not-captured,nicht erfasst,,False,False,False
+408,test-kohorte-synthetik-be-078,BE,not-captured,nicht erfasst,,False,True,False
+409,test-kohorte-synthetik-be-079,BE,not-captured,nicht erfasst,,False,False,False
+410,test-kohorte-synthetik-be-080,BE,not-captured,nicht erfasst,,False,False,False
+411,test-kohorte-synthetik-be-081,BE,not-captured,nicht erfasst,,False,True,False
+412,test-kohorte-synthetik-be-082,BE,not-captured,nicht erfasst,,False,False,False
+413,test-kohorte-synthetik-be-083,BE,not-captured,nicht erfasst,,False,False,False
+414,test-kohorte-synthetik-be-084,BE,not-captured,nicht erfasst,,False,False,False
+415,test-kohorte-synthetik-be-085,BE,not-captured,nicht erfasst,,False,False,False
+416,test-kohorte-synthetik-be-086,BE,not-captured,nicht erfasst,,False,True,False
+417,test-kohorte-synthetik-be-087,BE,not-captured,nicht erfasst,,False,False,False
+418,test-kohorte-synthetik-be-088,BE,not-captured,nicht erfasst,,False,False,False
+419,test-kohorte-synthetik-be-089,BE,not-captured,nicht erfasst,,False,True,False
+420,test-kohorte-synthetik-be-090,BE,not-captured,nicht erfasst,,False,False,False
+421,test-kohorte-synthetik-be-091,BE,not-captured,nicht erfasst,,False,False,False
+422,test-kohorte-synthetik-be-092,BE,not-captured,nicht erfasst,,False,False,False
+423,test-kohorte-synthetik-be-093,BE,not-captured,nicht erfasst,,False,False,False
+424,test-kohorte-synthetik-be-094,BE,not-captured,nicht erfasst,,False,True,False
+425,test-kohorte-synthetik-be-095,BE,not-captured,nicht erfasst,,False,False,False
+426,test-kohorte-synthetik-be-096,BE,not-captured,nicht erfasst,,False,False,False
+427,test-kohorte-synthetik-be-097,BE,not-captured,nicht erfasst,,False,True,False
+428,test-kohorte-synthetik-be-098,BE,not-captured,nicht erfasst,,False,False,False
+429,test-kohorte-synthetik-be-099,BE,not-captured,nicht erfasst,,False,False,False
+430,test-kohorte-synthetik-be-100,BE,not-captured,nicht erfasst,,False,False,False
+431,test-kohorte-synthetik-be-101,BE,not-captured,nicht erfasst,,False,False,False
+432,test-kohorte-synthetik-be-102,BE,not-captured,nicht erfasst,,False,True,False
+433,test-kohorte-synthetik-be-103,BE,not-captured,nicht erfasst,,False,False,False
+434,test-kohorte-synthetik-be-104,BE,not-captured,nicht erfasst,,False,False,False
+435,test-kohorte-synthetik-be-105,BE,not-captured,nicht erfasst,,False,True,False
+436,test-kohorte-synthetik-be-106,BE,not-captured,nicht erfasst,,False,False,False
+437,test-kohorte-synthetik-be-107,BE,not-captured,nicht erfasst,,False,False,False
+438,test-kohorte-synthetik-be-108,BE,not-captured,nicht erfasst,,False,False,False
+439,test-kohorte-synthetik-be-109,BE,not-captured,nicht erfasst,,False,False,False
+440,test-kohorte-synthetik-be-110,BE,not-captured,nicht erfasst,,False,True,False
+441,test-kohorte-synthetik-be-111,BE,not-captured,nicht erfasst,,False,False,False
+442,test-kohorte-synthetik-be-112,BE,not-captured,nicht erfasst,,False,False,False
+443,test-kohorte-synthetik-be-113,BE,not-captured,nicht erfasst,,False,True,False
+444,test-kohorte-synthetik-be-114,BE,not-captured,nicht erfasst,,False,False,False
+445,test-kohorte-synthetik-be-115,BE,not-captured,nicht erfasst,,False,False,False
+446,test-kohorte-synthetik-be-116,BE,not-captured,nicht erfasst,,False,False,False
+447,test-kohorte-synthetik-be-117,BE,not-captured,nicht erfasst,,False,False,False
+448,test-kohorte-synthetik-be-118,BE,not-captured,nicht erfasst,,False,True,False
+449,test-kohorte-synthetik-be-119,BE,not-captured,nicht erfasst,,False,False,False
+450,test-kohorte-synthetik-be-120,BE,not-captured,nicht erfasst,,False,False,False
+451,test-kohorte-synthetik-bb-001,BB,not-captured,nicht erfasst,,False,False,False
+452,test-kohorte-synthetik-bb-002,BB,not-captured,nicht erfasst,,False,False,False
+453,test-kohorte-synthetik-bb-003,BB,not-captured,nicht erfasst,,False,True,False
+454,test-kohorte-synthetik-bb-004,BB,not-captured,nicht erfasst,,False,False,False
+455,test-kohorte-synthetik-bb-005,BB,not-captured,nicht erfasst,,False,False,False
+456,test-kohorte-synthetik-bb-006,BB,not-captured,nicht erfasst,,False,False,False
+457,test-kohorte-synthetik-bb-007,BB,not-captured,nicht erfasst,,False,False,False
+458,test-kohorte-synthetik-bb-008,BB,not-captured,nicht erfasst,,False,True,False
+459,test-kohorte-synthetik-bb-009,BB,not-captured,nicht erfasst,,False,False,False
+460,test-kohorte-synthetik-bb-010,BB,not-captured,nicht erfasst,,False,False,False
+461,test-kohorte-synthetik-bb-011,BB,not-captured,nicht erfasst,,False,True,False
+462,test-kohorte-synthetik-bb-012,BB,not-captured,nicht erfasst,,False,False,False
+463,test-kohorte-synthetik-bb-013,BB,not-captured,nicht erfasst,,False,False,False
+464,test-kohorte-synthetik-bb-014,BB,not-captured,nicht erfasst,,False,False,False
+465,test-kohorte-synthetik-bb-015,BB,not-captured,nicht erfasst,,False,False,False
+466,test-kohorte-synthetik-bb-016,BB,not-captured,nicht erfasst,,False,True,False
+467,test-kohorte-synthetik-bb-017,BB,not-captured,nicht erfasst,,False,False,False
+468,test-kohorte-synthetik-bb-018,BB,not-captured,nicht erfasst,,False,False,False
+469,test-kohorte-synthetik-bb-019,BB,not-captured,nicht erfasst,,False,True,False
+470,test-kohorte-synthetik-bb-020,BB,not-captured,nicht erfasst,,False,False,False
+471,test-kohorte-synthetik-bb-021,BB,not-captured,nicht erfasst,,False,False,False
+472,test-kohorte-synthetik-bb-022,BB,not-captured,nicht erfasst,,False,False,False
+473,test-kohorte-synthetik-bb-023,BB,not-captured,nicht erfasst,,False,False,False
+474,test-kohorte-synthetik-bb-024,BB,not-captured,nicht erfasst,,False,True,False
+475,test-kohorte-synthetik-bb-025,BB,not-captured,nicht erfasst,,False,False,False
+476,test-kohorte-synthetik-bb-026,BB,not-captured,nicht erfasst,,False,False,False
+477,test-kohorte-synthetik-bb-027,BB,not-captured,nicht erfasst,,False,True,False
+478,test-kohorte-synthetik-bb-028,BB,not-captured,nicht erfasst,,False,False,False
+479,test-kohorte-synthetik-bb-029,BB,not-captured,nicht erfasst,,False,False,False
+480,test-kohorte-synthetik-bb-030,BB,not-captured,nicht erfasst,,False,False,False
+481,test-kohorte-synthetik-bb-031,BB,not-captured,nicht erfasst,,False,False,False
+482,test-kohorte-synthetik-bb-032,BB,not-captured,nicht erfasst,,False,True,False
+483,test-kohorte-synthetik-bb-033,BB,not-captured,nicht erfasst,,False,False,False
+484,test-kohorte-synthetik-bb-034,BB,not-captured,nicht erfasst,,False,False,False
+485,test-kohorte-synthetik-bb-035,BB,not-captured,nicht erfasst,,False,True,False
+486,test-kohorte-synthetik-bb-036,BB,not-captured,nicht erfasst,,False,False,False
+487,test-kohorte-synthetik-bb-037,BB,not-captured,nicht erfasst,,False,False,False
+488,test-kohorte-synthetik-bb-038,BB,not-captured,nicht erfasst,,False,False,False
+489,test-kohorte-synthetik-bb-039,BB,not-captured,nicht erfasst,,False,False,False
+490,test-kohorte-synthetik-bb-040,BB,not-captured,nicht erfasst,,False,True,False
+491,test-kohorte-synthetik-bb-041,BB,not-captured,nicht erfasst,,False,False,False
+492,test-kohorte-synthetik-bb-042,BB,not-captured,nicht erfasst,,False,False,False
+493,test-kohorte-synthetik-bb-043,BB,not-captured,nicht erfasst,,False,True,False
+494,test-kohorte-synthetik-bb-044,BB,not-captured,nicht erfasst,,False,False,False
+495,test-kohorte-synthetik-bb-045,BB,not-captured,nicht erfasst,,False,False,False
+496,test-kohorte-synthetik-bb-046,BB,not-captured,nicht erfasst,,False,False,False
+497,test-kohorte-synthetik-bb-047,BB,not-captured,nicht erfasst,,False,False,False
+498,test-kohorte-synthetik-bb-048,BB,not-captured,nicht erfasst,,False,True,False
+499,test-kohorte-synthetik-bb-049,BB,not-captured,nicht erfasst,,False,False,False
+500,test-kohorte-synthetik-bb-050,BB,not-captured,nicht erfasst,,False,False,False

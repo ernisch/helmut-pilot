@@ -311,6 +311,8 @@ const STANDARD = new Set([
   "github-blocker2-durable-cipher-test.js",  // Cipher-Zwischenstaende und reale Abbruchsignale ohne Production
   "blocker2-cipher-parts-test.js",           // Begrenzter Ciphertransport ohne Productionzugriff
   "briefing-pruefaufnahme-test.js",         // RO-Eingaben der inaktiven, geschlossenen synthetischen Kohorten
+  "briefing-lesediagnose-test.js",           // Sichere B2-Fehlerklassen statt verschluckter Lesefehler
+  "github-blocker2-readonly-diagnose-test.js", // Fester Einzeleingabe-/Ciphervertrag, kein neuer500er Lauf
   "briefing-pruefaufnahme-500-test.js",     // Pruefaufnahme des 500er Briefingnachweises
   "github-direkt500-test.js",               // 500er Direkt-Runner (No-Write/Quellensperre)
   "github-null500-ende-test.js",            // 500er Rueckweg auf null

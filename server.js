@@ -202,8 +202,12 @@ async function handleRequest(request, response) {
       nachweisUrl.searchParams.set("aktuellGespeichert", day || "");
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day || "")) throw new Error("briefing-tag-ungueltig");
       return sendJson(response, await latestBriefingPayload({ politicianId: userId, profile, url: nachweisUrl, compact: false }));
-    } catch (_) {
-      response.writeHead(500, jsonHeaders()); response.end(JSON.stringify({ ok: false, grund: "briefing-nachweis-nicht-lesbar" })); return;
+    } catch (error) {
+      const diagnose = url.searchParams.get("modus") === "eingabe"
+        ? require("./lib/helmut/briefing-pruefaufnahme").fehlerDiagnose(error) : null;
+      if (diagnose) console.error("[blocker2-nurlese]", JSON.stringify(diagnose));
+      response.writeHead(500, jsonHeaders()); response.end(JSON.stringify({ ok: false,
+        grund: "briefing-nachweis-nicht-lesbar", ...(diagnose ? { diagnose } : {}) })); return;
     }
   }
   // Derselbe Lage Cron, ausdruecklicher manueller Teilnachlauf. Vor jedem
