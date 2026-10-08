@@ -1,0 +1,8 @@
+name: "Blocker 2: fester Nurlese-Diagnoseabruf Profil12"
+description: "Nur das inaktive synthetische BT-Profil012; ein GET, keine Writes oder Modelle"
+outputs:
+  cipher_final_saved:
+    description: "Nur true nach quittierter Cipher-Endstandsicherung; kein 500er Nachweis"
+runs:
+  using: node24
+  main: ../../../scripts/github-blocker2-readonly-diagnose12.js

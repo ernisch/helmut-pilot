@@ -61,13 +61,29 @@ async function readBody(response, signal) {
     return Buffer.concat(chunks).toString("utf8");
   } finally { signal?.removeEventListener("abort", onAbort); reader.releaseLock(); }
 }
-async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () => new Date(), writeEnvelope,
-  persistCheckpoint, signal, expectedRecipient = RECIPIENT, diagnose = false } = {}) {
+// Die beiden oeffentlichen Einstiege binden die Position im Code. Keine
+// ENV-, HTTP- oder Workflow-Eingabe darf diese Auswahl erweitern.
+async function ausfuehren(options = {}) {
+  return ausfuehrenGebunden(options, 122);
+}
+async function ausfuehrenDiagnose12(options = {}) {
+  A(options && typeof options === "object" && !Array.isArray(options));
+  const erlaubt = new Set(["env", "fetchFn", "now", "writeEnvelope", "persistCheckpoint", "signal", "expectedRecipient"]);
+  A(Object.keys(options).every(k => erlaubt.has(k)));
+  const env = options.env || process.env;
+  // Dieser eigene Lauf muss aus genau dem ausgerollten Stand stammen.
+  // Ein paralleler main-Wechsel stoppt vor Cipher-ACK und Production-GETs.
+  A.match(env.GITHUB_SHA || "", /^[a-f0-9]{40}$/);
+  A.equal(env.GITHUB_SHA, env.HELMUT_PRODUCTION_COMMIT);
+  return ausfuehrenGebunden({ ...options, diagnose: true }, 12);
+}
+async function ausfuehrenGebunden({ env = process.env, fetchFn = global.fetch, now = () => new Date(), writeEnvelope,
+  persistCheckpoint, signal, expectedRecipient = RECIPIENT, diagnose = false } = {}, festePosition) {
   A.equal(typeof diagnose, "boolean");
   // Nur der separate feste Diagnose-Einstieg setzt dies. Kein HTTP-/ENV-/
   // Workflow-Parameter kann ein anderes Profil oder zusaetzliche GETs waehlen.
   const plannedInputGETs = diagnose ? 1 : 500, minutes = diagnose ? 3 : 55;
-  const scope = diagnose ? { diagnosticOnly: true, fixedProfilePosition: 122, plannedInputGETs: 1 } : {};
+  const scope = diagnose ? { diagnosticOnly: true, fixedProfilePosition: festePosition, plannedInputGETs: 1 } : {};
   const start = now(), tag = berlinTagKey(start); preflight(env, tag, expectedRecipient); A.equal(typeof writeEnvelope, "function");
   A.equal(typeof persistCheckpoint, "function");
   let stopped = null, attempted = 0, firstIdentity = null, lastIdentity = null;
@@ -137,7 +153,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
   }
   for (let index = 0; index < TARGET.length; index++) {
     const target = TARGET[index], position = index + 1;
-    const requested = !diagnose || position === 122;
+    const requested = !diagnose || position === festePosition;
     stopCheck();
     let status = "not-captured", response = null, requestStarted = false;
     if (!stopped && requested) {
@@ -226,4 +242,4 @@ if (require.main === module) {
     .catch(() => { console.error("Blocker2 Nurleseaufnahme unvollstaendig; ausschliesslich verschluesselte Belege."); process.exitCode = 1; })
     .finally(cleanup);
 }
-module.exports = { ausfuehren, installStopHandlers, atomicEnvelope };
+module.exports = { ausfuehren, ausfuehrenDiagnose12, installStopHandlers, atomicEnvelope };

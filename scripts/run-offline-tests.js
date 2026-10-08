@@ -315,6 +315,7 @@ const STANDARD = new Set([
   "briefing-speicher-lesediagnose-test.js",  // B2-Timeoutphase, echte Versuche und isolierte Transportmetadaten
   "briefing-kandidatenzeit-test.js",         // Auditkorrektur ist kein neuer Quellenanlass; echte Builder
   "github-blocker2-readonly-diagnose-test.js", // Fester Einzeleingabe-/Ciphervertrag, kein neuer500er Lauf
+  "github-blocker2-readonly-diagnose12-test.js", // Eigener quellgebundener BT012-Einstieg, alter122er bleibt erhalten
   "briefing-pruefaufnahme-500-test.js",     // Pruefaufnahme des 500er Briefingnachweises
   "github-direkt500-test.js",               // 500er Direkt-Runner (No-Write/Quellensperre)
   "github-null500-ende-test.js",            // 500er Rueckweg auf null
