@@ -312,6 +312,7 @@ const STANDARD = new Set([
   "blocker2-cipher-parts-test.js",           // Begrenzter Ciphertransport ohne Productionzugriff
   "briefing-pruefaufnahme-test.js",         // RO-Eingaben der inaktiven, geschlossenen synthetischen Kohorten
   "briefing-lesediagnose-test.js",           // Sichere B2-Fehlerklassen statt verschluckter Lesefehler
+  "briefing-kandidatenzeit-test.js",         // Auditkorrektur ist kein neuer Quellenanlass; echte Builder
   "github-blocker2-readonly-diagnose-test.js", // Fester Einzeleingabe-/Ciphervertrag, kein neuer500er Lauf
   "briefing-pruefaufnahme-500-test.js",     // Pruefaufnahme des 500er Briefingnachweises
   "github-direkt500-test.js",               // 500er Direkt-Runner (No-Write/Quellensperre)
