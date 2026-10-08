@@ -133,5 +133,107 @@ function fixture(userId = "test-kohorte-b-055") {
   synthetikDrift.args.storage.getProfile = async () => ({ ...alle[0],
     updatedAt: ++gelesen === 1 ? alle[0].updatedAt : "2026-10-06T01:00:00Z" });
   await A.rejects(P.erfasse(synthetikDrift.args));
-  console.log("9/9 Altgruppen; 500/500 neue inaktive Profile (330/120/50), drei Kontrastprofile, 7 ID-Grenzen, 19 Profilmanipulationen und synthetische Lesedrift: RO/kein Writer/keine fachliche Abnahme.");
+
+  // Begrenzte Blocker-2-Wiederaufnahme: genau ein zweiter build()-Versuch im
+  // selben Eingabeabruf, nur fuer den streng erkannten echten gebuendelten
+  // Quellen-Supabase-Timeout des geschlossenen Synthetiknachweises.
+  const quellenTimeout = (ms = 15000) => Error(
+    `Supabase storage timed out after ${ms}ms: /rest/v1/knowledge_objects?id=in.(synthetik-000)&select=id,source_kanten`);
+  const getterBombe = {};
+  Object.defineProperty(getterBombe, "message", { get() { throw Error("hostile"); } });
+  function synthetikRetryFixture(profile, fehlerfolge, erfolg) {
+    let reads = 0, builds = 0, writes = 0;
+    const args = { userId: profile.id, tag, commit, expectedCommit: commit, production: true,
+      now: () => zeit,
+      storage: {
+        getProfile: async () => { reads++; return structuredClone(profile); },
+        saveProfile: async () => { writes++; throw Error("kein Writer erlaubt"); }
+      },
+      build: async (p, id, opts) => {
+        builds++;
+        A.deepEqual(p, profile); A.equal(id, profile.id);
+        A.deepEqual(opts, { aussagenEingabe: true, now: zeit, quellenGebundelt: true });
+        const fehler = fehlerfolge[builds - 1];
+        if (fehler) throw fehler;
+        return erfolg ? erfolg(id, builds)
+          : { eingabe: { mandat: id, tag }, korrekturBasis: { kos: [] }, briefing: { items: [] } };
+      } };
+    return { args, counts: () => ({ reads, builds, writes }) };
+  }
+  const retryProfil = alle[0];
+  const basis = synthetischeFixture(retryProfil);
+  const basisErfolg = await P.erfasse(basis.args);
+  const transient = synthetikRetryFixture(retryProfil, [quellenTimeout(15000)]);
+  const transientErfolg = await P.erfasse(transient.args);
+  A.deepEqual(transient.counts(), { reads: 2, builds: 2, writes: 0 });
+  A.deepEqual(transientErfolg.leseWiederaufnahme, { version: "blocker2-read-resume/1",
+    phase: "briefing-aufbauen", art: "speicher-timeout", versuche: 2 });
+  A.equal(transientErfolg.all500InputAcceptance, false);
+  A.equal(transientErfolg.fachlicheFreigabe, false);
+  const { leseWiederaufnahme: _wiederaufnahme, ...transientRest } = transientErfolg;
+  A.deepEqual(transientRest, basisErfolg);
+  const zweiterTimeout = quellenTimeout(12000);
+  const doppelTimeout = synthetikRetryFixture(retryProfil, [quellenTimeout(15000), zweiterTimeout]);
+  await A.rejects(P.erfasse(doppelTimeout.args), e => e === zweiterTimeout);
+  A.deepEqual(doppelTimeout.counts(), { reads: 1, builds: 2, writes: 0 });
+  const zweiterQuellenfehler = Error("pruefquellen-unvollstaendig");
+  const zweiterQuellen = synthetikRetryFixture(retryProfil, [quellenTimeout(15000), zweiterQuellenfehler]);
+  await A.rejects(P.erfasse(zweiterQuellen.args), e => e === zweiterQuellenfehler);
+  A.equal(zweiterQuellen.counts().builds, 2);
+  const zweiteAssertion = Object.assign(Error("schutz-widerspruch"), { code: "ERR_ASSERTION" });
+  const assertionZweit = synthetikRetryFixture(retryProfil, [quellenTimeout(15000), zweiteAssertion]);
+  await A.rejects(P.erfasse(assertionZweit.args), e => e === zweiteAssertion);
+  A.equal(assertionZweit.counts().builds, 2);
+  const negativ = [
+    ["bare-abort", Object.assign(Error("aborted"), { name: "AbortError" })],
+    ["deadline-exceeded", Error("Supabase request deadline exceeded after 15000ms")],
+    ["profil-timeout", Error("Supabase storage timed out after 15000ms: /rest/v1/profiles?id=eq.x")],
+    ["frist-null", quellenTimeout(0)],
+    ["frist-zu-gross", quellenTimeout(20001)],
+    ["fremder-endpoint", Error("Supabase storage timed out after 15000ms: /rest/v1/knowledge_objects?id=eq.a")],
+    ["fremder-prefix", Error("Supabase storage timed out after 15000ms")],
+    ["http-401", Error("Supabase storage failed (401): /rest/v1/knowledge_objects")],
+    ["http-403", Error("Supabase storage failed (403): /rest/v1/knowledge_objects")],
+    ["http-429", Error("Supabase storage failed (429): /rest/v1/knowledge_objects")],
+    ["http-500", Error("Supabase storage failed (500): /rest/v1/knowledge_objects")],
+    ["http-503", Error("Supabase storage failed (503): /rest/v1/knowledge_objects")],
+    ["assertion", Object.assign(Error("schutz"), { code: "ERR_ASSERTION" })],
+    ["source-unvollstaendig", Error("pruefquellen-unvollstaendig")],
+    ["hostile-getter", getterBombe],
+    ["primitiv-string", "boom"],
+    ["primitiv-zahl", 42]
+  ];
+  for (const [name, fehler] of negativ) {
+    const f = synthetikRetryFixture(retryProfil, [fehler]);
+    let geworfen = null, hatGeworfen = false;
+    try { await P.erfasse(f.args); } catch (e) { hatGeworfen = true; geworfen = e; }
+    A.equal(hatGeworfen, true, `muss scheitern: ${name}`);
+    A.equal(geworfen, fehler, `Identitaet erhalten: ${name}`);
+    A.equal(f.counts().builds, 1, `genau ein build: ${name}`);
+  }
+  const nichtSynthetik = fixture("cem-ince");
+  let nichtSynthetikBuilds = 0;
+  nichtSynthetik.args.build = async () => { nichtSynthetikBuilds++; throw quellenTimeout(15000); };
+  await A.rejects(P.erfasse(nichtSynthetik.args));
+  A.equal(nichtSynthetikBuilds, 1);
+  const tageswechsel = synthetikRetryFixture(retryProfil, [quellenTimeout(15000)]);
+  let tagZaehler = 0;
+  tageswechsel.args.now = () => (++tagZaehler === 1 ? zeit : new Date("2026-09-15T22:01:00Z"));
+  await A.rejects(P.erfasse(tageswechsel.args));
+  A.deepEqual(tageswechsel.counts(), { reads: 1, builds: 1, writes: 0 });
+  const driftNachRetry = synthetikRetryFixture(retryProfil, [quellenTimeout(15000)]);
+  let driftLesen = 0;
+  driftNachRetry.args.storage.getProfile = async () => {
+    const kopie = structuredClone(retryProfil);
+    if (++driftLesen === 2) kopie.updatedAt = "2026-10-06T01:00:00Z";
+    return kopie;
+  };
+  await A.rejects(P.erfasse(driftNachRetry.args));
+  A.equal(driftLesen, 2); A.equal(driftNachRetry.counts().builds, 2);
+  const vertragsdrift = synthetikRetryFixture(retryProfil, [quellenTimeout(15000)],
+    () => ({ eingabe: { mandat: "fremdes-mandat", tag }, korrekturBasis: { kos: [] }, briefing: { items: [] } }));
+  await A.rejects(P.erfasse(vertragsdrift.args));
+  A.deepEqual(vertragsdrift.counts(), { reads: 1, builds: 2, writes: 0 });
+
+  console.log("9/9 Altgruppen; 500/500 neue inaktive Profile (330/120/50), drei Kontrastprofile, 7 ID-Grenzen, 19 Profilmanipulationen, synthetische Lesedrift und begrenzte Blocker-2-Quellen-Wiederaufnahme: RO/kein Writer/keine fachliche Abnahme.");
 })().catch(e => { console.error(e); process.exitCode = 1; });
