@@ -42,7 +42,10 @@ die folgenden eng begrenzten Werte enthalten:
   sb-request-id-UUID. Keine rohe Provider-ID oder freie Headerwerte gespeichert.
 
 Opaque Beobachtungstoken und Fehlerbindung per WeakMap; fremde Fehlerfelder
-erzeugen keine Diagnose. Der Providerhash erlaubt eine zukünftige Zuordnung nur
+erzeugen keine Diagnose. Ein wiederverwendeter Fehler aus einem anderen
+Aufnahmekontext liefert keine alten Transportwerte. Die Versuchszähler zählen
+build()/Profilaufrufe, nicht Datenbank-HTTP-Requests; auch ein erneut geworfener
+Fehler erhält die aktuellen Aufrufzahlen. Der Providerhash erlaubt eine Zuordnung nur
 bei tatsächlicher Übereinstimmung. Fehlende Metadaten bleiben unbekannt.
 Keine zusätzlichen Requests, Header, Wiederholungen, Schreiber, Modelle oder Logs.
 Fristen, Guards, Wiederaufnahmebudget, Fehlertexte und Erfolgs-DTO unverändert.
@@ -54,17 +57,20 @@ Alle Tests über scripts/lokal.js mit entfernten Production-Zugangsdaten:
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| Neue reale lokale HTTP-Gegenproben | 11/11: Header-,200-Body-,Fehler-Body-Timeout; ungültige Provider-ID; vorhandene Wiederaufnahmegrenzen; Parallelität; fremde Token/Schreibmethoden; feindlicher Getter; echte HTTP-Antwort/Logs ohne private Werte |
+| Neue reale lokale HTTP-Gegenproben | 13/13: Header-,200-Body-,Fehler-Body-Timeout; ungültige Provider-ID; vorhandene Wiederaufnahmegrenzen; Parallelität; fremde und echte kontextfremde Token/Schreibmethoden; wiederverwendete Fehler innerhalb/außerhalb ihrer Aufnahme; feindlicher Getter; echte HTTP-Antwort/Logs ohne private Werte |
 | Bestehende Supabase-Antwortfristen | 10/10:200ms und80ms, Verbindungsabbruch, nächste Antwort, HTTP-Redaktion, leere Antwort, ungültiges JSON |
 | Bestehende B2-Aufnahme | 9/9Altgruppen und500/500inaktive synthetische Profile samt Kontrast-/Schutz-/Wiederaufnahmeproben |
 | Bestehende B2-Lesediagnose | Bestanden: Fehleridentität, Klassen, Phasen, Getter, Profilsperren und sichere HTTP-Ausgabe |
 | Neuer Modulsyntax- und Diffcheck | Bestanden |
 
-Unabhängiger lesender Review: DeepSeek V4 Pro High über den vorgeschriebenen
-Router, status ok,0Änderungen, keine Tests durch den Reviewer. Vollständiges
+Zwei begrenzte unabhängige lesende Reviews: DeepSeek V4 Pro High über den
+vorgeschriebenen Router, jeweils status ok,0Änderungen, keine Reviewer-Tests.
+Der Nachreview betrifft die korrigierte Kontextbindung und Versuchszähler.
+Die empfohlene echte kontextfremde Tokenprobe ist anschließend ergänzt;
+der geprüfte Laufzeitcode ist unverändert. Vollständiges
 Diagnosemodul, Aufnahme, neue Testdatei und exakter geänderter Transportauszug
 geprüft; nicht die ganze530KBStorage-Datei. Ihr übriger Inhalt ist unverändert.
-Die Routerzusammenfassung wurde verdichtet. Hinweise auf bestehende interne
+Die Routerzusammenfassungen wurden verdichtet. Hinweise auf bestehende interne
 Rohfehlermeldungen und begrenzte Redaktion sind keine neue allgemeine
 Sicherheitsabnahme. Neue Suite im Standardlauf registriert. Der kanonische
 CI-Plan verlangt konservative Standard-/Datenbankprüfung; Pflicht-CI vor Merge

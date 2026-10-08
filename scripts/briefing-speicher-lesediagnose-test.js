@@ -118,7 +118,43 @@ async function read(endpoint) { return S.tenantRequest(endpoint, profile.id); }
         A.equal(D.beginne("/rest/v1/profiles?id=eq.secret", "POST", 200), null);
         const error = new Error(privateText); D.bindeTimeout(error, {}); A.equal(D.lese(error), null);
         D.antwort({}, { get status() { A.fail("fremder Token darf keine Getter lesen"); } });
+        const token = D.beginne("/rest/v1/profiles?id=eq.secret", "GET", 200);
+        let getterZugriffe = 0;
+        D.mitKontext(() => {
+          D.antwort(token, {
+            get status() { getterZugriffe++; return 200; },
+            get headers() { getterZugriffe++; return { get: () => providerId }; }
+          });
+          D.bindeTimeout(error, token);
+          A.equal(D.lese(error), null, "echter Token aus anderem Kontext bleibt inert");
+          A.equal(getterZugriffe, 0, "fremder Kontext darf keine Antwortattribute lesen");
+        });
+        D.bindeTimeout(error, token);
+        const dto = D.lese(error);
+        A.equal(dto.schritt, "vor-antwort-headern", "fremde Antwort darf den Ursprung nicht aendern");
+        A.equal(dto.httpStatus, undefined); A.equal(dto.anbieterRequestHash, undefined);
       });
+    });
+    let cachedError;
+    await check("Wiederverwendete Ausnahme meldet echte Buildaufrufe statt erfundener Transportversuche", async () => {
+      const endpoint = koEndpoint("cached-error"); plans.set(endpoint, () => "body");
+      const f = fixture(async () => {
+        if (cachedError) throw cachedError;
+        try { await read(endpoint); } catch (error) { cachedError = error; throw error; }
+      });
+      const d = (await capture(f)).diagnose.speicher;
+      A.equal(f.counts().builds, 2); A.equal(calls.get(endpoint), 1);
+      A.equal(d.buildVersuche, 2, "zaehlt build(), nicht HTTP-Requests");
+      A.equal(D.lese(cachedError), null, "Transportreceipt ausserhalb ihres Kontexts inert");
+    });
+    await check("Alte Transportausnahme liefert in neuer Aufnahme keine fremden Metadaten", async () => {
+      const f = fixture(async () => { throw cachedError; });
+      try { await P.erfasse(f.args); A.fail("alte Ausnahme erwartet"); }
+      catch (error) {
+        A.equal(error, cachedError); A.equal(f.counts().builds, 2);
+        A.equal(P.fehlerDiagnose(error).art, "speicher-timeout");
+        A.equal(P.fehlerDiagnose(error).speicher, undefined);
+      }
     });
     await check("Feindlicher Headergetter aendert die urspruengliche Timeoutausnahme nicht", async () => {
       const saved = global.fetch, endpoint = koEndpoint("hostile-header");
