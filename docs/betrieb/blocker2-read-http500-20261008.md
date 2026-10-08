@@ -4,6 +4,11 @@ Stand 08.10.2026. **Blocker 2 offen, fachliche Abnahme 0/500.**
 Der konkrete einmalige neue 500er Nurleseauftrag ist verbraucht.
 Keine automatische Wiederholung oder weitere Production-Datenfreigabe.
 
+**Folgestand:** Der unten vorbereitete einzelne Diagnoseabruf wurde nach neuem
+konkretem GO ausgeführt und vollständig geprüft. Aktuell gelten die
+[Einzeldiagnose-Quittung und neue500er Freigabevorlage](blocker2-einzeldiagnose-runtime-20261008.md).
+Die ursprüngliche fehlgeschlagene Aufnahme bleibt unverändert historisch.
+
 ## Tatsächlicher neuer Lauf
 
 [Lauf 37748818380](https://github.com/ernisch/helmut-pilot/actions/runs/37748818380)
