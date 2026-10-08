@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 RECIPIENT = '8d665b71487b557f9cbdedb7e5da848022f3f80f820f9fc6233353658ffd41e7'
+BUNDLE_MANIFEST_SHA256 = '6d06aee5713ca9d309f5f8ca73d9886ce2336f3268a2d60158c66545a4ba0ed2'
 PART_BYTES = 16 * 1024 * 1024
 def sha(path):
     with pathlib.Path(path).open('rb') as f:
@@ -63,6 +64,7 @@ def encode(source, private_key_file, destination):
 
 def decode(manifest_file, private_key_file, destination):
     manifest_file, destination = pathlib.Path(manifest_file), pathlib.Path(destination)
+    assert sha(manifest_file) == BUNDLE_MANIFEST_SHA256
     m = json.loads(manifest_file.read_text())
     assert m['meta']['version'] == 1 and m['meta']['recipient'] == RECIPIENT
     key = serialization.load_pem_private_key(pathlib.Path(private_key_file).read_bytes(), None)
