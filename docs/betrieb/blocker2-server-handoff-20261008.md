@@ -20,7 +20,19 @@ Main ist `411e89673470226ae5b2d1cb501b36036da810cf`. Letzter geprüfter Producti
 6. Alle **29** Artefakte von Lauf `37815559846` anhand des Index direkt über `github_download_workflow_artifact` und anschließend `download_file` abrufen. Alle liegen unter20MiB und damit unter der32MiB-Dateigrenze. SHA256 und Größe des äußeren ZIP prüfen. Jeder der28 Originalbeleg-Uploads enthält exakt eine ursprüngliche ZIP-Datei; deren vollständige Größe und SHA256 gegen `originalSourceArtifact` prüfen. Das29. Artefakt enthält `TRANSPORT_MANIFEST.json`. Große Sammelartefakte und bereits abgelaufene ursprüngliche Ein-Tages-Artefakte nicht als benötigten Zugriffspfad voraussetzen.
 7. Die500 ursprünglichen direkten Cipher-Envelope-JSONs und28 Checkpoint-Manifeste mit `scripts/privater-nachweis-transport.js` authentisiert entschlüsseln. Kontext: Lauf `37790661298`, Workflow-Commit `7904945181ad58faf456d013bec7f5fdd718052a`, Tag `2026-10-08`, jeweilige Position1…500, Anzahl1; Manifestkontext Position1/Anzahl1. Tatsächlicher Eingabe-Production-Commit bleibt `d6147232add23e83b39e15235a290552d96703cb`. Alle vollständigen Antwortkörper gegen ihre nativen SHA256 prüfen. Keine Vermischung mit historischen Aufnahmen und keine fachliche Annahme durch Entschlüsselung.
 
-Die drei veröffentlichten `scripts/blocker2-handoff-verify-*` bilden den tatsächlich erfolgreichen technischen Wiederherstellungsnachweis ab. Zur Wiederholung in ein frisches privates Verzeichnis kopieren, gemeinsam mit `privater-nachweis-transport.js`. Kontextdateien dort aus den **neuen** serverseitigen Abrufen erstellen: `FRESH_ALL58_CONTEXT.json` enthält neue Schlüssel-/Manifestpfade, die58 `{name,path,size_bytes,ownerOnly}`-Teile und die beiden bekannten Manifesthashes; `FRESH_GITHUB_CONTEXT.json` enthält neuen Schlüsselpfad und29 `{artifactId,name,path,size_bytes,digest,expires_at}`-Abrufe. Die Original-Artefaktpins als `original-artifact-pins.json` aus dem Repository beziehen. `blocker2-handoff-verify-private-stream.py` prüft ohne dauerhaften Klartext die1.896 Einträge; `blocker2-handoff-verify-github-cipher.py` prüft beide ZIP-Ebenen und ruft den Native500-Helfer auf. Kein Production-Abruf oder Modellaufruf.
+Die drei veröffentlichten `scripts/blocker2-handoff-verify-*` bilden den tatsächlich erfolgreichen technischen Wiederherstellungsnachweis ab. Zur Wiederholung in ein frisches privates Verzeichnis kopieren, gemeinsam mit `privater-nachweis-transport.js`. Python für diese Prüfhelfer ohne `-O` oder `-OO` ausführen, damit alle Prüfbedingungen aktiv bleiben. Kontextdateien dort aus den **neuen** serverseitigen Abrufen erstellen:
+
+```json
+{
+  "manifest": {"path": "<frisch abgerufenes Manifest>", "size_bytes": 10725},
+  "privateKey": {"path": "<frisch abgerufener privater Schlüssel>", "size_bytes": 2484},
+  "parts": [{"name": "continuity-0001.cipher", "path": "<frischer Pfad>", "size_bytes": 16777216, "ownerOnly": true}],
+  "manifestSHA256": "6d06aee5713ca9d309f5f8ca73d9886ce2336f3268a2d60158c66545a4ba0ed2",
+  "privateManifestSHA256": "ce269403922940a6b195073e9e7d9043ad3f35f26c997e5c3e6c576b0b685139"
+}
+```
+
+Dies ist die Form von `FRESH_ALL58_CONTEXT.json`; `parts` muss tatsächlich alle58 frisch abgerufenen Teile enthalten. Für `FRESH_GITHUB_CONTEXT.json` die Form `{"privateKey":{"path":"<frischer Schlüsselpfad>"},"artifacts":[{"artifactId":0,"name":"<exakter Indexname>","path":"<frischer ZIP-Pfad>","size_bytes":0,"digest":"sha256:<Indexhash>","expires_at":"<Indexablaufdatum>"}]}` verwenden und alle29 tatsächlichen Artefaktdatensätze aus dem Index eintragen. Die Original-Artefaktpins als `original-artifact-pins.json` aus dem Repository beziehen. `blocker2-handoff-verify-private-stream.py` prüft ohne dauerhaften Klartext die1.896 Einträge; `blocker2-handoff-verify-github-cipher.py` prüft beide ZIP-Ebenen und ruft den Native500-Helfer auf. Kein Production-Abruf oder Modellaufruf.
 
 ## Aufbewahrung, Stand und Grenzen
 
