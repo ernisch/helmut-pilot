@@ -58,6 +58,8 @@ Die beiden amtlichen Artikelstände sind in jedem dieser 42 neuen Originalkörpe
 
 ## Verbleibender nächster Schritt und Schutzgrenzen
 
+**Nachtrag nach PR #872:** Die [reine Kandidatenschranke](blocker2-kandidatenschranke-20261008.md) ist auf Production `802428e9` READY und alle52 geschützten Tabellen sind unverändert. Die nachfolgende Bilanz bleibt ausschließlich die tatsächliche Aufnahme `37790661298` auf `d6147232`; die Offline-Erwartung ersetzt keine aktuellen Eingaben. Zur Wirksamkeits- und vollständigen Fachprüfung des geänderten Lesepfads ist jetzt ein neuer konkret freigegebener einmaliger500er Nurleselauf vorbereitet, noch nicht gestartet.
+
 **Kein weiterer Production-Eingabeabruf nötig, um die vorhandenen 500 Originale weiter fachlich auszuwerten.** Zuerst die explizit notwendigen A42-Bindungen und die aktuelle Lückenprovenienz mit den vorhandenen amtlichen Originalen und Szenarioparametern fachlich schließen; NULL-Werte und Grenzen des konservativen Auswerters nicht mit tatsächlichen notwendigen Datenlücken verwechseln. Nicht erneut bereits belegte Importe oder Quellenarbeit ausführen.
 
 Die 91 aktuellen Duplikatfälle enthalten das unveränderte Paar `ko-vg-haushaltsausschuss-20260708-6cf862` / `ko-vg-haushaltsausschuss-20260708-734bcf`. [Der alte C-Löschentwurf](blocker2-datenfreigabe-vorbereitung-20261008.md) bleibt **gesperrt**: eine fertige Reservierung erwartet die alte KO-Identität. Kein Löschen, Reservierungsbypass, B1-Umbau oder maskierender Ähnlichkeitsmerge. Ein sicherer künftig notwendiger Ereignisgruppenweg braucht einen expliziten versionsgebundenen Gleichheitsbeleg und muss beide unveränderten KO-/Quellenidentitäten erhalten; der alte Entwurf ist keine ausführbare Freigabevorlage.
