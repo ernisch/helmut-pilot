@@ -241,5 +241,84 @@ function fixture(userId = "test-kohorte-b-055") {
   await A.rejects(P.erfasse(vertragsdrift.args));
   A.deepEqual(vertragsdrift.counts(), { reads: 1, builds: 2, writes: 0 });
 
-  console.log("9/9 Altgruppen; 500/500 neue inaktive Profile (330/120/50), drei Kontrastprofile, 7 ID-Grenzen, 19 Profilmanipulationen, synthetische Lesedrift und begrenzte Blocker-2-Quellen-Wiederaufnahme: RO/kein Writer/keine fachliche Abnahme.");
+  // Belegter anderer Fehlerort: erster relationaler Profil-GET. Genau ein
+  // zusaetzlicher Leseversuch insgesamt, niemals ein zweites Retry-Budget.
+  const profilTimeout = (id = retryProfil.id, ms = 10000, suffix = "") => Error(
+    `Supabase storage timed out after ${ms}ms: /rest/v1/profiles?id=eq.${encodeURIComponent(id)}&select=*,mandate_profiles(*)&limit=1${suffix}`);
+  function profilRetryFixture(fehlerfolge, aendereProfil) {
+    const f = synthetischeFixture(retryProfil);
+    let reads = 0;
+    f.args.storage.getProfile = async () => {
+      const index = reads++;
+      if (index < fehlerfolge.length) throw fehlerfolge[index];
+      const p = structuredClone(retryProfil);
+      if (aendereProfil) aendereProfil(p, reads);
+      return p;
+    };
+    return { args: f.args, reads: () => reads, counts: f.counts };
+  }
+  const profilTransient = profilRetryFixture([profilTimeout()]);
+  const profilErfolg = await P.erfasse(profilTransient.args);
+  A.equal(profilTransient.reads(), 3); A.equal(profilTransient.counts().builds, 1);
+  A.equal(profilTransient.counts().writes, 0);
+  A.deepEqual(profilErfolg.leseWiederaufnahme, { version: "blocker2-read-resume/1",
+    phase: "profil-vorher-lesen", art: "speicher-timeout", versuche: 2 });
+  const { leseWiederaufnahme: _profilQuittung, ...profilRest } = profilErfolg;
+  A.deepEqual(profilRest, basisErfolg);
+  const profilLetzterFehler = profilTimeout();
+  const profilDoppelt = profilRetryFixture([profilTimeout(), profilLetzterFehler]);
+  await A.rejects(P.erfasse(profilDoppelt.args), e => e === profilLetzterFehler);
+  A.equal(profilDoppelt.reads(), 2); A.equal(profilDoppelt.counts().builds, 0);
+  A.deepEqual(P.fehlerDiagnose(profilLetzterFehler), { version: "blocker2-briefing-read-diagnostic/1",
+    phase: "profil-vorher-lesen", art: "speicher-timeout" });
+  const profilGetterFehler = ["name", "code", "message"].map(key => {
+    const e = profilTimeout(); Object.defineProperty(e, key, { get() { throw Error("hostile"); } }); return e;
+  });
+  for (const e of [profilTimeout("fremdes-profil"), profilTimeout(retryProfil.id, 0),
+    profilTimeout(retryProfil.id, -1), profilTimeout(retryProfil.id, 10001),
+    profilTimeout(retryProfil.id, 10000, "&extra=1"), profilTimeout(retryProfil.id, 10000, "\n"),
+    Error("Supabase storage timed out after 10000ms: /rest/v1/profiles?id=eq.x"),
+    quellenTimeout(), ...profilGetterFehler,
+    Object.assign(profilTimeout(), { name: "AbortError" }),
+    Object.assign(profilTimeout(), { code: "ERR_ASSERTION" }),
+    ...[401, 403, 429, 500, 503].map(status => Error(`Supabase storage failed (${status}): /rest/v1/profiles`)),
+    Error("Supabase request deadline exceeded"), "primitive", 42]) {
+    const f = profilRetryFixture([e]);
+    await A.rejects(P.erfasse(f.args), got => got === e);
+    A.equal(f.reads(), 1); A.equal(f.counts().builds, 0);
+  }
+  for (const id of ["cem-ince", userId]) {
+    const f = fixture(id); let reads = 0; const e = profilTimeout(id);
+    f.args.storage.getProfile = async () => { reads++; throw e; };
+    await A.rejects(P.erfasse(f.args), got => got === e); A.equal(reads, 1);
+  }
+  for (const mutate of [p => { p.profileActive = true; }, p => { p.id = "fremdes-profil"; },
+    p => { p.fullName = "Nicht synthetisch"; }, p => { p.focusTopics = ["Manipuliert"]; }]) {
+    const f = profilRetryFixture([profilTimeout()], mutate);
+    await A.rejects(P.erfasse(f.args)); A.equal(f.reads(), 2); A.equal(f.counts().builds, 0);
+  }
+  const profilTagwechsel = profilRetryFixture([profilTimeout()]); let profilUhr = 0;
+  profilTagwechsel.args.now = () => (++profilUhr === 1 ? zeit : new Date("2026-09-15T22:01:00Z"));
+  await A.rejects(P.erfasse(profilTagwechsel.args)); A.equal(profilTagwechsel.reads(), 1);
+  const budgetVerbraucht = profilRetryFixture([profilTimeout()]); let budgetBuilds = 0;
+  const keinZweitesBudget = quellenTimeout();
+  budgetVerbraucht.args.build = async () => { budgetBuilds++; throw keinZweitesBudget; };
+  await A.rejects(P.erfasse(budgetVerbraucht.args), e => e === keinZweitesBudget);
+  A.equal(budgetBuilds, 1); A.equal(budgetVerbraucht.reads(), 2);
+  const profilFinalDrift = profilRetryFixture([profilTimeout()], (p, n) => {
+    if (n === 3) p.updatedAt = "2026-10-06T01:00:00Z";
+  });
+  await A.rejects(P.erfasse(profilFinalDrift.args)); A.equal(profilFinalDrift.reads(), 3);
+  const profilNachherFehler = profilRetryFixture([profilTimeout()]); let nachherReads = 0;
+  const abschliessenderFehler = profilTimeout();
+  profilNachherFehler.args.storage.getProfile = async () => {
+    if (++nachherReads === 1) throw profilTimeout();
+    if (nachherReads === 3) throw abschliessenderFehler;
+    return structuredClone(retryProfil);
+  };
+  await A.rejects(P.erfasse(profilNachherFehler.args), e => e === abschliessenderFehler);
+  A.equal(nachherReads, 3);
+  A.equal(P.fehlerDiagnose(abschliessenderFehler).phase, "profil-nachher-lesen");
+
+  console.log("9/9 Altgruppen; 500/500 neue inaktive Profile (330/120/50), Kontrast- und Schutzproben, genau ein gemeinsames Blocker-2-Wiederaufnahmebudget: RO/kein Writer/keine fachliche Abnahme.");
 })().catch(e => { console.error(e); process.exitCode = 1; });
