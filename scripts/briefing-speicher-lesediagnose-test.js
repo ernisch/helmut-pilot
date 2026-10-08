@@ -196,4 +196,3 @@ async function read(endpoint) { return S.tenantRequest(endpoint, profile.id); }
 })().catch(error => {
   console.error(error); server.closeAllConnections(); server.close(); process.exitCode = 1;
 });
-
