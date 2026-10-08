@@ -3604,16 +3604,18 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // sind. Ohne ihn kann die fresh-aware Primary-Auswahl (briefingContract) ihn nie waehlen
   // und der stale Dauervorgang bleibt Primary. Die wenigen fehlenden FRISCHEN verstandenen
   // Vorgaenge (heutiger Berliner Kalendertag) mit derselben Engine nachbewerten und als
-  // Kandidaten anhaengen. Kein neuer Motor, keine neue Datenarchitektur, kein LLM-Call;
-  // selectFreshAwarePrimary bleibt die einzige Relevanz-/Renderbarkeits-Schranke.
-  const candidateDecisions = briefingContract.augmentFreshCandidates(
+  // Kandidaten vorlaeufig laden. Eine reine Metadatenkorrektur ist noch kein
+  // heutiger Quellenanlass: die Zeitbeleg-Schranke folgt nach denselben Reads.
+  // Kein neuer Motor, keine neue Datenarchitektur, kein LLM-Call; danach gelten
+  // weiterhin die bisherigen Quellen-, Sicherheits- und Anzeigeschranken.
+  const provisionalCandidateDecisions = briefingContract.augmentFreshCandidates(
     understood, decisions,
     (kos) => decisionsEngine.decideForUser(profile, kos, { userId, limit: kos.length }),
     now
   );
   const kosById = {};
   for (const ko of understood) if (ko && ko.id) kosById[ko.id] = ko;
-  const selected = candidateDecisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
+  const selected = provisionalCandidateDecisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
   // Die interne Inhaltsabnahme muss auch begruendete Auslassungen ausserhalb
   // der automatischen Vorauswahl beurteilen koennen. Nur bereits eingelesene,
   // verarbeitete KOs; keine neuen Kandidaten im normalen Appabruf.
@@ -3628,6 +3630,13 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // für die wenigen Erwähnungs-KOs ohne geladene Quelle diese gezielt nachladen
   // (deterministisch, 0 KI, hart gedeckelt). Nur ADDITIV — keine Decision entsteht.
   if (!korrekturDaten) await loadMentionSourcesInto(profile, understood, sourcesByVorgang);
+  // Ein heutiges KO.updated_at kann eine reine Metadatenkorrektur sein.
+  // Erst mit den bereits geladenen Quellen die zusaetzlichen Kandidaten
+  // binden; regulaere Top-50 und heutige Erstaufnahmen bleiben erhalten.
+  const candidateDecisions = require("./lib/helmut/briefing-kandidatenzeit").begrenzeErgaenzungen({
+    vorher: decisions, vorlaeufig: provisionalCandidateDecisions,
+    kosById, sourcesByVorgang, now
+  });
   // Source Safety Guard (regelbasiert, 0 KI): kritische, unbestaetigte Claims aus
   // unbekannten/schwachen Quellen NICHT ins Helmut-Briefing. Quarantaene wird verworfen.
   const safeDecisions = candidateDecisions.filter((d) => {
