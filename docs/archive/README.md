@@ -15,6 +15,7 @@ ausschließlich aktueller Projektstatus neu aufgesetzt.
 
 | Datei | Inhalt |
 |---|---|
+| [`project_state/2026_10_08_CURRENT_STATE_vor_blocker2_kandidatenschranke.md`](project_state/2026_10_08_CURRENT_STATE_vor_blocker2_kandidatenschranke.md) | Bytegleicher `main`-Stand `eaab008d` vor der Blocker2-Cockpitverdichtung; SHA256 `c53bbde6a0179b2775a854fe41e5737756c34c11d81bb3b14fcb16be68518b6a`. Alle früheren Blocker2-Stop-, Diagnose- und Quellenbilanzen unverändert erhalten. |
 | [`project_state/2026_10_07_CURRENT_STATE_vor_blocker1_komprimierung.md`](project_state/2026_10_07_CURRENT_STATE_vor_blocker1_komprimierung.md) | Bytegleicher `main`-Stand `416cb2f1` vor der für Blocker1 nötigen Größenverdichtung; SHA256 `1a0dcb4dcdfb2ee5ed06ff6693b9181d7a01002f9b9fc728f196682064b0fe6f`. Native-D-Betreiberentscheidung und Diagnose bleiben vollständig erhalten. |
 | [`project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md`](project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md) | Wortgleicher Status vor der Verdichtung vom 28.09.2026 (SHA256 `3b994d239fa65f1a97ef1027e36728ce313a398f4dcd2dabad7aef5f4eba5146`); enthält die historischen Läufe, PR-Details und früheren Zwischenstände. |
 | [`project_state/2026_09_20_CURRENT_STATE_vor_timingabschluss.md`](project_state/2026_09_20_CURRENT_STATE_vor_timingabschluss.md) | Bytegleicher Status von Main a4a67831 vor dem Timingabschluss; historische Reparaturkette und Betriebsaufnahmen. |
