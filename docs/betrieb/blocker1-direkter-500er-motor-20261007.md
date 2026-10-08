@@ -1,34 +1,26 @@
 # Blocker 1: direkter synthetischer 500er Motorweg
 
-Stand: 08.10.2026. Finale technische Blocker-1-Abnahme des direkten Motorwegs.
-Der eigentliche500er Test bleibt eine getrennte Abnahme; Native D bleibt
-zurueckgestellt und ist keine Voraussetzung. Kein Production-Write, keine
-Profilaktivierung und kein Production-Modellaufruf wurden durch diese Abnahme
-ausgefuehrt.
+Stand: 08.10.2026. Blocker 1 ist technisch vollständig abgenommen. Der echte
+500er Test bleibt eine getrennte Abnahme; Native D ist keine Voraussetzung.
 
-## Finale technische Abnahme vom 07.10.2026
+## Finale technische Abnahme
 
-PR846 am Kopf `b241b36b62bf292c5efc200d17e6a45c20801320` wurde nach konkreter
-Freigabe als `5cada0342b3c2218b9dd2f8ac50bdf1ee57db63a` nach `main` gemergt.
+PR846 wurde als `5cada0342b3c2218b9dd2f8ac50bdf1ee57db63a` gemergt und ausgerollt.
 Code, gezielte Offlinepruefungen, unabhaengige kritische Pruefung sowie PR- und
 main-Pflicht-CI sind erfolgreich belegt. Der direkte Handler blieb im separat
 gebundenen Production-Stand `53e1e369696fc52b69a5378f749a47cfa607ea2b`
 unveraendert; dieses Deployment war READY.
 
 Genau ein authentifizierter Operator-GET auf `/api/ops/synthetik500-direkt`
-ergab HTTP405 mit `Allow: POST`. Der gepruefte Handler beendet GET vor Bodylesen,
-Datenbankzugriff, Commandladen und Motorstart. Dieser Nachweis bestaetigt damit
-den geschuetzten Operatorzugang und die Methodensperre, ohne Profile zu
-aktivieren, Daten zu veraendern oder Modelle aufzurufen.
+ergab HTTP405 mit `Allow: POST`. Der Handler beendet GET vor Bodylesen,
+Datenbankzugriff, Commandladen und Motorstart. Damit ist der geschuetzte direkte
+Motorweg fuer exakt500 synthetische Profile technisch abgenommen, ohne Profile
+zu aktivieren, Daten zu veraendern oder Modelle aufzurufen.
 
-Finalurteil: Das technische Abnahmekriterium von Blocker 1 ist vollstaendig
-erfuellt. Belegt ist der direkte ausfuehrbare Motorweg fuer exakt500 synthetische
-Profile unter Erhalt von Inhaltspruefung, Speicherung, Kostenkontrolle,
-Abbruchbedingungen und Vollbelegen. Nicht ausgefuehrt sind Aktivierung, der
-eigentliche500er Test und die1500 Produktergebnisbelege. Quellen-, Kosten- und
-Test-GO-Tore anderer Blocker bleiben getrennt offen. Die Abnahme ist an das
-gebundene unveraenderliche `53e1e369`-Deployment gebunden und wird nicht auf
-spaetere Production-Aliase uebertragen.
+Nicht abgenommen sind der eigentliche500er Test und die1500 Produktergebnisse.
+Quellen-, Kosten- und Test-GO-Tore anderer Blocker bleiben getrennt offen. Die
+Abnahme gilt dem gebundenen unveraenderlichen `53e1e369`-Deployment und wird
+nicht automatisch auf spaetere Production-Aliase uebertragen.
 
 ## Technisches Abnahmekriterium
 
@@ -97,16 +89,11 @@ kein Modellaufruf und keine Aktivierung. Remoteaktionen benötigen den bestehend
 Ausweichroute. Die CLI setzt keine Production-Flags.
 
 Die Production-Adressen sind zugangsgeschuetzt. Die CLI verwendet nur bereits
-vorhandene Operatorzugangsdaten als Header; sie erzeugt, erneuert oder veraendert
-keine Tokens, Trusted-Sources-Regeln oder Schutzkonfiguration. Ohne expliziten
-Zugangsschalter werden keine Vercel-Zugangsdaten gesendet. Frist180s,
-Antwortgrenze16MiB, kein Redirect und kein Retry bleiben unveraendert.
-
-Der abschliessende Betreiberweg ist fuer das gebundene unveraenderliche
-`53e1e369`-Deployment rein lesend belegt: genau ein authentifizierter GET auf den
-Direct-Endpunkt lieferte HTTP405 mit `Allow: POST`. Es wurde kein POST ausgefuehrt.
-Spaetere Production-Aliase sind davon getrennt und werden durch diesen Nachweis
-nicht automatisch mitabgenommen.
+vorhandene Operatorzugangsdaten als Header; sie erzeugt oder veraendert keine
+Tokens oder Schutzkonfiguration. Der abschliessende Betreiberweg ist fuer das
+gebundene `53e1e369`-Deployment rein lesend belegt: genau ein authentifizierter
+GET auf den Direct-Endpunkt lieferte HTTP405 mit `Allow: POST`. Es wurde kein
+POST ausgefuehrt. Spaetere Production-Aliase sind davon getrennt.
 
 `start` bearbeitet nur Ownerposition 0. Jede weitere explizite `next`-Aktion
 bearbeitet genau die nächste nachweislich noch unbetretene Einheit desselben
@@ -184,8 +171,8 @@ Kosten-/CAS-Gegenfälle; Generator-/Review-Suite15/15 (direkter Vertrag mit
 Senderdeadline 11/11 mit ausschließlich lokalen Transportstubs. Die Direkt-Suite und die5/5 Transportgruppen (bestehende OIDC-/Bypass-Header,
 fehlende/ungültige Credentials, Redirect/Antwortgrenzen/Frist, jeweils mit
 lokalen HTTPS-Stubs und ohne Kindprozess oder Tokenaufbau) sind im
-Standard-Offline-Lauf registriert. Pflicht-CI und unabhaengige
-kritische Codepruefung sind fuer PR846 und den gebundenen Production-Stand
-belegt. Die Offlinefixtures allein sind keine Production-Funktionsabnahme; die
-technische Blocker-1-Abnahme stuetzt sich zusaetzlich auf Merge, READY-Bindung
-und den authentifizierten GET mit HTTP405/`Allow: POST`. Kein echter500er Lauf.
+Standard-Offline-Lauf registriert. Pflicht-CI und unabhaengige kritische
+Codepruefung sind belegt. Die Offlinefixtures allein sind keine Production-
+Funktionsabnahme; die technische Blocker-1-Abnahme stuetzt sich zusaetzlich auf
+Merge, READY-Bindung und den authentifizierten GET mit HTTP405/`Allow: POST`.
+Kein echter500er Lauf.
