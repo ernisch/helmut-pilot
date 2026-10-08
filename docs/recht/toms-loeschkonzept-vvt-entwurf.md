@@ -43,27 +43,33 @@ einkanalig.
 
 **Protokollierung:** Audit-Log für Logins (mit IP), Admin-Aktionen und — seit
 Sprint 4 — Datenexport/-löschung. Runtime-Fehler zentral (Vercel) einsehbar.
+**Zielregel 06.10.2026:** personenbezogene technische Logs grundsätzlich höchstens
+7 Tage, sofern kein konkret dokumentierter zwingender Sicherheits-, Missbrauchsabwehr-
+oder Rechtszweck eine längere Frist verlangt; danach löschen oder wirksam
+entpersonalisieren. Diese 7 Tage sind eine interne Datenminimierungsentscheidung,
+keine pauschale gesetzliche Frist. Provider-Retention separat dokumentieren.
 
 ## Teil B — Löschkonzept (ENTWURF)
 
 | Datenkategorie | Speicherort | Löschweg | Frist (VORSCHLAG — DSB festlegen) |
 |---|---|---|---|
-| Mandatsprofil + alle Nutzer-Artefakte (Briefings, Decisions, Büro-Texte, Notizen, Embeddings) | Blob + 17 V3-Tabellen | `/api/privacy/delete` (seit Sprint 4 vollständig, mit Audit-Eintrag; Teilfehler werden gemeldet) | bei Vertragsende: Export anbieten, dann Löschung binnen 30 Tagen |
-| Konto, Sessions, Zuweisungen, Tagesinputs | Auth-Store | in `/api/privacy/delete` enthalten (Sprint 4) | wie oben |
-| KI-Nutzungslog des Mandats | Blob-Ring + llm_usage | in `/api/privacy/delete` enthalten | wie oben; ggf. anonymisierte Kostensummen für Abrechnung behalten (DSB-Frage) |
-| Audit-Ereignisse des Nutzers | Auth-Store | in `/api/privacy/delete` enthalten | DSB-Frage: Sicherheitslogs ggf. gesetzlich länger? |
-| Push-Subscriptions | Blob | löschbar (bestehende Funktion) | sofort bei Abmeldung |
+| Mandatsprofil + alle kundenspezifischen Nutzer-Artefakte (Briefings, Decisions, Büro-Texte, Notizen, Embeddings, persönliche Zuordnungen) | Blob + V3-Tabellen | `/api/privacy/delete`; Teilfehler müssen sichtbar bleiben | **sofort bei Konto-/Mandatslöschung oder berechtigtem Löschantrag; kein künstliches Wartefenster** |
+| Konto, Sessions, Zuweisungen, Tagesinputs, Passwort-/Einladungslinks | Auth-Store | in `/api/privacy/delete` enthalten | **sofort** |
+| KI-Nutzungslog des Mandats | Blob-Ring + llm_usage | in `/api/privacy/delete` enthalten | **sofort**, soweit mandatsbezogen; gesetzlich notwendige Abrechnungsbelege getrennt und ohne Produktnutzung |
+| Audit-/Sicherheitsereignisse mit Kundenbezug | Auth-/Fehlerspeicher | Löschpfad muss alle identifizierenden Verknüpfungen entfernen | **sofort**; danach nur inhaltsfreie, nicht rückführbare Löschquittung zulässig |
+| Push-Subscriptions und Push-Ereignisse | Blob | bestehender mandatsbezogener Löschpfad | **sofort** bei Abmeldung oder Gesamtlöschung |
 | Global geteilte Daten (raw_documents 5k+, knowledge_objects) | V3 | KEIN Personenbezug zum Kunden; enthalten öffentliche Politik-Daten | TTL-Vorschlag: raw_documents 24 Monate (technisch noch nicht umgesetzt — Roadmap E) |
 | Backups (`backups/`, lokal) | Betreiber-Gerät | manuell | Vorschlag: 3 Monatsstände, rollierend |
-| Vercel-Logs | Vercel | Plan-abhängige Retention | dokumentieren |
+| Vercel-/Provider-Logs mit Personenbezug | Vercel / jeweiliger Provider | Providerabhängige Retention | Ziel: **höchstens 7 Tage**, soweit technisch steuerbar und kein dokumentierter zwingender Zweck längere Speicherung verlangt; sonst kürzeste geeignete Provider-Frist dokumentieren und personenbezogene Zuordnung danach entpersonalisieren |
 
-Offen (technisch): Soft-Delete-Fenster (geloescht_at existiert, wird nicht
-genutzt); TTL-Job für raw_documents.
+Betreiberentscheidung 06.10.2026: **kein Soft-Delete-Fenster als Standard**. Die aktive Kundenlöschung ist eine sofortige Hard-Delete-Operation. Ein Export kann angeboten werden, darf die Löschung aber nicht verzögern.
+
+Offen (technisch): vollständige Gegenprüfung aller aktuellen mandatsbezogenen Speicherorte; insbesondere `systemErrors`/weitere technische Metadaten mit Nutzerbezug sowie der derzeit nachgelagert geschriebene `privacy.delete`-Audit-Eintrag dürfen keinen identifizierenden Kundenrest hinterlassen. Für Backups ist eine kurze Rotation plus Wiederanwendung ausgeführter Löschungen nach Restore zu belegen. TTL für global geteilte öffentliche Quellen bleibt eine getrennte Retention-Frage.
 
 ## Teil C — Verzeichnis von Verarbeitungstätigkeiten (Art. 30) — GERÜST
 
 1. **Verantwortlicher:** Lüey Nohut, Eresburgstr. 42, 12103 Berlin (lt. Impressum) — Rechtsform/DSB-Pflicht klären.
-2. **VT1 Politisches Lagebild & Briefing:** Zweck: Informations-/Entscheidungsvorbereitung für Mandatsträger. Betroffene: Kunde (Mandatsträger), öffentlich handelnde Politiker (Erwähnungen). Kategorien: Mandatsprofil (Art. 9!), öffentliche politische Inhalte. Rechtsgrundlage: **VOM ANWALT ZU BESTIMMEN** (Vertrag + Art. 9 Abs. 2 — Kandidaten: lit. e „offenkundig öffentlich gemacht" für Amtsdaten? ausdrückliche Einwilligung für Profildaten?). Empfänger: Dienstleister (siehe AVV-Liste). Löschung: Teil B. TOMs: Teil A.
+2. **VT1 Politisches Lagebild & Briefing:** Zweck: Informations-/Entscheidungsvorbereitung für Mandatsträger. Betroffene: Kunde (Mandatsträger), öffentlich handelnde Politiker (Erwähnungen). Kategorien: Mandatsprofil (Art. 9!), öffentliche politische Inhalte. Rechtsgrundlage: **VOM ANWALT ZU BESTIMMEN** (Vertrag + Art. 9 Abs. 2 — Kandidaten: lit. e „offenkundig öffentlich gemacht" für Amtsdaten? ausdrückliche Einwilligung für Profildaten?). Empfänger: Dienstleister (siehe AVV-Liste). Herkunft: konkrete öffentliche Quelle/Provenienz muss für Information und Auskunft nachvollziehbar bleiben, soweit Daten nicht direkt bei der betroffenen Person erhoben wurden. Löschung: Teil B. TOMs: Teil A.
 3. **VT2 Konto-/Zugangsverwaltung:** Bestandsdaten, Login-IPs, Sessions. Grundlage: Vertrag/berechtigtes Interesse (Sicherheit).
 4. **VT3 KI-Textentwürfe (Büro):** Profilauszug + Vorgang an Azure OpenAI; Kennzeichnung im UI (seit Sprint 1). Grundlage + AI-Act-Einordnung: Anwalt.
 5. **VT4 Betriebsüberwachung:** Health-Report, Fehlerlogs, Kostenlog (ohne Inhalte).
