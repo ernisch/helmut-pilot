@@ -1,6 +1,6 @@
 # Blocker 2: vollständige Eingabeaufnahme und Datenfreigabegrenze
 
-Stand: 08.10.2026, UTC. Ausschließlich Blocker 2. **Offen; fachliche Eingabeabnahme 0/500.** Alle 500 tatsächlichen Eingaben sind authentifiziert und einzeln gegen die verfügbaren Belege geprüft. Eine vollständige positive fachliche Abnahme ist nicht belegt. Keine neuen Production-Datenänderungen, Profiländerungen/-aktivierungen, kostenpflichtigen Helmut-Production-Modellaufrufe oder 500er Funktionstests.
+Historischer Stand vor Anwendung A: 08.10.2026, UTC. Der nachfolgende [A-Ausführungsbeleg](blocker2-massnahme-a-nachkontrolle-20261008.md) beschreibt die konkret genehmigten vier INSERTs und den weiterhin fehlenden neuen tatsächlichen 500er Eingabenachweis. Die hier beschriebene Originalaufnahme bleibt unverändert. Ausschließlich Blocker 2. **Offen; fachliche Eingabeabnahme 0/500.** Alle 500 tatsächlichen Eingaben sind authentifiziert und einzeln gegen die verfügbaren Belege geprüft. Eine vollständige positive fachliche Abnahme ist nicht belegt. Keine neuen Production-Datenänderungen, Profiländerungen/-aktivierungen, kostenpflichtigen Helmut-Production-Modellaufrufe oder 500er Funktionstests.
 
 ## Aufnahme und Einzelbilanz
 

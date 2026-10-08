@@ -1,6 +1,6 @@
 # Blocker 2: konkrete Datenfreigabevorbereitung
 
-**Nicht freigegeben, nicht angewendet.** Stand 08.10.2026. Kein Production-Schreiben aus diesem Dokument ableiten. Die Dauerfreigabe für normale Blocker2-Entwicklung umfasst keine Datenänderung. Fachliche Abnahme weiterhin **0/500**.
+**Historische Freigabevorlage.** Maßnahme A wurde anschließend konkret freigegeben, am 08.10.2026 exakt mit dem unten bezeichneten SHA256 angewendet und vollständig nachkontrolliert; siehe [Ausführung und 500er Bindungsfortschritt](blocker2-massnahme-a-nachkontrolle-20261008.md). B bleibt nicht freigegeben/nicht angewendet, C gesperrt. Alte Vorherbedingungen und B-Transaktionshash dürfen nach A nicht unbesehen weiterverwendet werden. Keine erneute A-Ausführung aus diesem Dokument ableiten. Fachliche Abnahme weiterhin **0/500**.
 
 ## A: Mindestmaßnahme, exakt vier neue Datensätze
 
