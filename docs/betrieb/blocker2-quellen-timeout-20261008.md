@@ -4,7 +4,7 @@ Dieses Dossier wird aus dem getrennten Lauf 37760486609 und seinen authentifizie
 
 ## 1 · Lauf und Freigabe
 
-- Genau ein neues freigegebenes GO, direkt nach dem Einzeldiagnose-Vorschlag erteilt; jetzt verbraucht. Keine Wiederholung genehmigt, kein Auto-Repeat, kein weiterer Dispatch.
+- Genau ein neues GO für den exakt beschriebenen vollständigen 500er Nurleselauf nach abgeschlossener Einzeldiagnose; jetzt verbraucht. Keine Wiederholung genehmigt, kein Auto-Repeat, kein weiterer Dispatch.
 - Run: https://github.com/ernisch/helmut-pilot/actions/runs/37760486609
 - Workflow: `blocker2-readonly500.yml`@`32289d99c8e0de2656a9798fe398b4cfbde80639`
 - Productioncommit: `3f5fbc731f32d1b73488bc0e0df49240a3993b92`; READY `dpl_7q4VfZfH15PYrPEDwTDatd2afPEa`; Berliner Tag 2026-10-08.
@@ -19,7 +19,7 @@ Dieses Dossier wird aus dem getrennten Lauf 37760486609 und seinen authentifizie
 - Finaler Checkpoint 0004 tatsächlich hochgeladen und kanonisch ausgewählt; kein erfundenes Post-ACK-Manifest.
 - 454 versiegelte, nie angefragte Datensätze sind keine tatsächlichen Eingaben.
 - Erster ACK 10:00:08.595 UTC vor erstem Serverstart 10:00:09.272 UTC; Close-ACK gespeichert, `cipherFinalSaved` true, Originale dauerhaft privat gesichert.
-- Nicht mit diesem Lauf vermischen: historische 121 Bodies, 435, alter 500-Stand und Einzel122 bleiben getrennte frühere Befunde. Kandidaten: 500 KO-Versionen / 877 Quellversionen; **keine** 500 Profil-Eingabe-Bodies.
+- Nicht mit diesem Lauf vermischen: historische 121 Bodies, alter 500-Stand und Einzel122 bleiben getrennte frühere Befunde. Kandidaten: 500 KO-Versionen / 877 Quellversionen; **keine** 500 Profil-Eingabe-Bodies.
 
 ## 3 · Native 52-Vorher/Nachher
 
