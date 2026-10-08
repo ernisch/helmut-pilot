@@ -1,0 +1,792 @@
+{
+  "version": 1,
+  "status": "SERVER_STORAGE_READY-FULL_FRESH_RESTORE_IN_PROGRESS",
+  "preparedUTC": "2026-10-08T17:27:24.003043+00:00",
+  "goal": "Blocker2 only: necessary input acceptance for all500 inactive synthetic profiles BT330/BE120/BB50. Handoff only; no new semantic or Production work.",
+  "repository": "ernisch/helmut-pilot",
+  "mainCommit": "411e89673470226ae5b2d1cb501b36036da810cf",
+  "productionCommitLastVerified": "802428e9fe6f653f345d9fbd4b0d795998ccb974",
+  "productionDeploymentLastVerified": "dpl_FmKarwceshbUNr3LW7BxvcfnRoxf",
+  "productionLastVerifiedUTC": "2026-10-08T16:53:23.655047+00:00",
+  "noProductionActionsDuringHandoff": true,
+  "handoffBranch": "codex/blocker2-server-handoff-20261008",
+  "transportCodeHead": "75428189443a0a5383d03cbb38e5c32957fd7372",
+  "doNotMergeHandoffBranch": "Isolated transport workflow deliberately differs from main. No merge/deployment during handoff. Fetch this index from its immutable commit.",
+  "relevantPRs": [
+    845,
+    850,
+    853,
+    854,
+    855,
+    856,
+    867,
+    868,
+    869,
+    870,
+    871,
+    872,
+    873
+  ],
+  "actualInputRun": 37790661298,
+  "actualInputWorkflowCommit": "7904945181ad58faf456d013bec7f5fdd718052a",
+  "actualInputProductionCommit": "d6147232add23e83b39e15235a290552d96703cb",
+  "historicalInputRunsOnly": [
+    37709954587,
+    37775654108
+  ],
+  "cipherTransportRuns": [
+    37813596397,
+    37815559846
+  ],
+  "transportIndependentReviewSHA256": "b415543be40bc6e33eda43895e77363e10401eaeb2e03b920d295e2ee3b9748c",
+  "cipherStorageRetentionDays": 90,
+  "cipherEarliestExpiryUTC": "2027-01-06T17:18:39Z",
+  "cipherArtifacts": [
+    {
+      "id": 11567097078,
+      "name": "blocker2-handoff90-source-11555474251",
+      "size_in_bytes": 5887,
+      "digest": "sha256:970a3192f0a060b0126b6bc5792b5db03aa275e108b57ccb737db99b001de7c0",
+      "created_at": "2026-10-08T17:20:01Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11555474251,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0000-part-01",
+        "size_in_bytes": 5653,
+        "digest": "sha256:01f7c7f1c0e4d2a0907c25d9bbefca53302b843e08e8a28e4cd528e713a26bc9"
+      }
+    },
+    {
+      "id": 11567421076,
+      "name": "blocker2-handoff90-source-11555579692",
+      "size_in_bytes": 19018741,
+      "digest": "sha256:85186978f08c7bd1b1e5ce6d4c3fa57c3d0f7144ad7ebeca19aa4d1c712df035",
+      "created_at": "2026-10-08T17:20:12Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11555579692,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0005-part-01",
+        "size_in_bytes": 19018507,
+        "digest": "sha256:edecd097a66e0912fff0b1ed23780f6151f02b0b1e361861019f67267281ae7b"
+      }
+    },
+    {
+      "id": 11567017570,
+      "name": "blocker2-handoff90-source-11555664455",
+      "size_in_bytes": 19022383,
+      "digest": "sha256:5410ace7d28b31b0028d3903e31cee71db4d7195fdb769a06dd4158d9334ab22",
+      "created_at": "2026-10-08T17:20:10Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11555664455,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0004-part-01",
+        "size_in_bytes": 19022149,
+        "digest": "sha256:14e96888f25ca3ab211f4ee45e5f97346add2ccb09d94f48766092e2d3c407bd"
+      }
+    },
+    {
+      "id": 11567421060,
+      "name": "blocker2-handoff90-source-11555693987",
+      "size_in_bytes": 962163,
+      "digest": "sha256:99de7cc5bab64cc6392d6f587cb329acb9834c86e9c4a86cd90533d01feb2b71",
+      "created_at": "2026-10-08T17:20:03Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11555693987,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0001-part-01",
+        "size_in_bytes": 961929,
+        "digest": "sha256:1395b7ecc72ee6c0e0a054da2217fef6aa6bed8193c9c4d58a5c595e66836a47"
+      }
+    },
+    {
+      "id": 11567355987,
+      "name": "blocker2-handoff90-source-11555714290",
+      "size_in_bytes": 18992333,
+      "digest": "sha256:05c902290d7caec9577eb7332cfffeb9edf94e1727b45dee6c59a7ce4d640899",
+      "created_at": "2026-10-08T17:20:14Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11555714290,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0006-part-01",
+        "size_in_bytes": 18992099,
+        "digest": "sha256:3ff1ac4e9dfb67ecddc3f09650b1cbe0f2ad6ece044684b63409c932311d279d"
+      }
+    },
+    {
+      "id": 11567520760,
+      "name": "blocker2-handoff90-source-11555914372",
+      "size_in_bytes": 19004384,
+      "digest": "sha256:515bf617a5abaf9c7944f452469521f1a6ebc9a21e5cbc57e14884a4909be797",
+      "created_at": "2026-10-08T17:20:27Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11555914372,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0010-part-01",
+        "size_in_bytes": 19004150,
+        "digest": "sha256:51d4866492ee34a2e859e6ed05b9993cb5182286dd83b0441a7dd1327b903478"
+      }
+    },
+    {
+      "id": 11567341033,
+      "name": "blocker2-handoff90-source-11555968995",
+      "size_in_bytes": 18995950,
+      "digest": "sha256:45cf1e05454371bd0312837fdf0c44c366f85bb9b05b1cbbc7852ae5eb3d836e",
+      "created_at": "2026-10-08T17:20:23Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11555968995,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0008-part-01",
+        "size_in_bytes": 18995716,
+        "digest": "sha256:cabd9d0e79092711527c66a852637208360199e3a8dc547a541820543b240f96"
+      }
+    },
+    {
+      "id": 11567361004,
+      "name": "blocker2-handoff90-source-11556249583",
+      "size_in_bytes": 19019103,
+      "digest": "sha256:d25cd394cf3222f7228dc5f2470d97047e9ad0348d2a810f7151220dd8857e94",
+      "created_at": "2026-10-08T17:20:34Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556249583,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0013-part-01",
+        "size_in_bytes": 19018869,
+        "digest": "sha256:773513e9a5f0e2dd9f2dc87fb8fffd5ddc3a28e87efccc52a8d274ee4e10c864"
+      }
+    },
+    {
+      "id": 11567525691,
+      "name": "blocker2-handoff90-source-11556327603",
+      "size_in_bytes": 18056046,
+      "digest": "sha256:92b71d3f82b0b96c000e6bc23991682fe4cf33fd5c00997f9f43036bbe5c6581",
+      "created_at": "2026-10-08T17:20:05Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556327603,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0002-part-01",
+        "size_in_bytes": 18055812,
+        "digest": "sha256:300c032cf4facd397905617bc5aed46f6bc3be32d7eeaa46f8276715aa6ca40d"
+      }
+    },
+    {
+      "id": 11567306319,
+      "name": "blocker2-handoff90-source-11556357373",
+      "size_in_bytes": 19003373,
+      "digest": "sha256:faaacd0a13fe2b1b2c34610c49e4ec2e776e6f3dd37e74cee031cc5ad40d8aed",
+      "created_at": "2026-10-08T17:20:07Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556357373,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0003-part-01",
+        "size_in_bytes": 19003139,
+        "digest": "sha256:4e33b8284e7e9a1b536f76a1f8b000152b813e02f236bf93361634449bbd33ff"
+      }
+    },
+    {
+      "id": 11567032526,
+      "name": "blocker2-handoff90-source-11556363231",
+      "size_in_bytes": 19002151,
+      "digest": "sha256:d28e49c56d9269a0ba2be639ec0bedd73ad0b158b75e8dd98c1024a7606eb840",
+      "created_at": "2026-10-08T17:20:20Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556363231,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0007-part-01",
+        "size_in_bytes": 19001917,
+        "digest": "sha256:f159590d13787bafa59936e0fce8324075dad903678bacef7b08900ce96a571e"
+      }
+    },
+    {
+      "id": 11567416170,
+      "name": "blocker2-handoff90-source-11556418486",
+      "size_in_bytes": 19024243,
+      "digest": "sha256:6caebea4ccf0824c1bcd14e59356ce5cc0b3757ad7bc77cad8470dfc94938b88",
+      "created_at": "2026-10-08T17:20:31Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556418486,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0012-part-01",
+        "size_in_bytes": 19024009,
+        "digest": "sha256:3ed434724c4252ef81afeabb4d41a3e757723343acbaa4873d144521db97947d"
+      }
+    },
+    {
+      "id": 11567545686,
+      "name": "blocker2-handoff90-source-11556494253",
+      "size_in_bytes": 19023861,
+      "digest": "sha256:e7c4f05904afe8e446ad397a1a86659c8197083144e5f7757d120e8615db7d0c",
+      "created_at": "2026-10-08T17:20:44Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556494253,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0018-part-01",
+        "size_in_bytes": 19023627,
+        "digest": "sha256:e5b03f72da0daaa11cba2b3c442a246c06f5bd021de10537d546c0b9998f4bf1"
+      }
+    },
+    {
+      "id": 11567211347,
+      "name": "blocker2-handoff90-source-11556553915",
+      "size_in_bytes": 18994353,
+      "digest": "sha256:b09d2d06e8b0526044112cab302a438571570e84cd93de03c932443a93e4a38a",
+      "created_at": "2026-10-08T17:20:42Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556553915,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0017-part-01",
+        "size_in_bytes": 18994119,
+        "digest": "sha256:27903369a80d683ed4987c53a8d0a2113d4254e0505905f55a94a6fb9f79273a"
+      }
+    },
+    {
+      "id": 11567087380,
+      "name": "blocker2-handoff90-source-11556659826",
+      "size_in_bytes": 18997684,
+      "digest": "sha256:d14d417860a37193fc6ea03dc5ac760ae49709814b52085474c1aa1c683c8a2e",
+      "created_at": "2026-10-08T17:20:59Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556659826,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0024-part-01",
+        "size_in_bytes": 18997450,
+        "digest": "sha256:779d2b6b09e3949bf231a27a9066ed4408e5b6e107f02cb2bed9544ae58dab71"
+      }
+    },
+    {
+      "id": 11566284743,
+      "name": "blocker2-handoff90-source-11556737130",
+      "size_in_bytes": 19009561,
+      "digest": "sha256:45dacf56fbb7726b4ea607a61a547ae0c162d9f2c7f8df4e030ddcfeebd52f48",
+      "created_at": "2026-10-08T17:20:25Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556737130,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0009-part-01",
+        "size_in_bytes": 19009327,
+        "digest": "sha256:1131fe0475f2b2861dbdcca10d21eb599ce859e693803f9bbac2ee7221c99465"
+      }
+    },
+    {
+      "id": 11567455901,
+      "name": "blocker2-handoff90-source-11556908638",
+      "size_in_bytes": 19008995,
+      "digest": "sha256:e122baa7ede41eae8c90789d6367433362e45832d2cc0f4b58261729fb64ea24",
+      "created_at": "2026-10-08T17:21:03Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556908638,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0026-part-01",
+        "size_in_bytes": 19008761,
+        "digest": "sha256:ea290e6a0f9f66398d96c585bbae4b4499f472e1ac335b71ba8df284ed973db8"
+      }
+    },
+    {
+      "id": 11567441018,
+      "name": "blocker2-handoff90-source-11556937537",
+      "size_in_bytes": 19043836,
+      "digest": "sha256:d27611b2f1470c0a4746fa0b87b23242369dce1b3fa11569cc712ad6f71f5f70",
+      "created_at": "2026-10-08T17:20:49Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556937537,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0020-part-01",
+        "size_in_bytes": 19043602,
+        "digest": "sha256:2e698561f87afef4d168a703f04d8908f683d40b29222a8e66a07eb6f3d56508"
+      }
+    },
+    {
+      "id": 11567121728,
+      "name": "blocker2-handoff90-source-11556973051",
+      "size_in_bytes": 18993527,
+      "digest": "sha256:7db897a3b03ff1e055732d1958664d6f0d554bc5219695af26a1e8bb6349e98a",
+      "created_at": "2026-10-08T17:21:01Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11556973051,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0025-part-01",
+        "size_in_bytes": 18993293,
+        "digest": "sha256:24eb62a32db7bfedba0d65b54f2bc8c5073f2a747714e2574ceeb3ad84a6a7b9"
+      }
+    },
+    {
+      "id": 11567111873,
+      "name": "blocker2-handoff90-source-11557081254",
+      "size_in_bytes": 18972747,
+      "digest": "sha256:f3ecb1d2edd6b24585629a2aebc35869bacad4bbd870944b359b8c60540b16dd",
+      "created_at": "2026-10-08T17:20:38Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11557081254,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0015-part-01",
+        "size_in_bytes": 18972513,
+        "digest": "sha256:382f92676648b16ac1a50ae72d25ea4e77c980ae79f56d5873ce315be12b3927"
+      }
+    },
+    {
+      "id": 11567475857,
+      "name": "blocker2-handoff90-source-11557147520",
+      "size_in_bytes": 19050464,
+      "digest": "sha256:de9dfebe004044f1c6641759757b396de8e84639488d9f70ef2d994d59f0e448",
+      "created_at": "2026-10-08T17:20:56Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11557147520,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0023-part-01",
+        "size_in_bytes": 19050230,
+        "digest": "sha256:c65099fe1b1b374c057cc68a464ff91e915cbd6413b11e43d64659b2bdd52ac3"
+      }
+    },
+    {
+      "id": 11567296095,
+      "name": "blocker2-handoff90-source-11557170301",
+      "size_in_bytes": 19001603,
+      "digest": "sha256:66acc8ac18b2d2496bbc77e87d93e831e23d20846d25990e537ce15f7eb1bd08",
+      "created_at": "2026-10-08T17:20:29Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11557170301,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0011-part-01",
+        "size_in_bytes": 19001369,
+        "digest": "sha256:b38399adbb6b8fa5f56e6a892b906f1f40b7fa851af49240fda06618fe296e1a"
+      }
+    },
+    {
+      "id": 11567246357,
+      "name": "blocker2-handoff90-source-11557257710",
+      "size_in_bytes": 6559,
+      "digest": "sha256:f757032d2abc027289a2869689788ce38314918d1e866b8dc9bb31e8edc40811",
+      "created_at": "2026-10-08T17:21:04Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11557257710,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0027-part-01",
+        "size_in_bytes": 6325,
+        "digest": "sha256:0573d6b7ad19790d6fe712402215adeae664132b6a935b766b296890492e7700"
+      }
+    },
+    {
+      "id": 11567246304,
+      "name": "blocker2-handoff90-source-11557410435",
+      "size_in_bytes": 19007863,
+      "digest": "sha256:7927a8a2b93072db1d2c9919f0d826eebdb66b6d46467732fa56f042f671cedd",
+      "created_at": "2026-10-08T17:20:40Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11557410435,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0016-part-01",
+        "size_in_bytes": 19007629,
+        "digest": "sha256:b68027c43192672563b2eb8c907e31ebda934f9501d4fbee4dfb91d62746c237"
+      }
+    },
+    {
+      "id": 11567480925,
+      "name": "blocker2-handoff90-source-11557411191",
+      "size_in_bytes": 19058858,
+      "digest": "sha256:f8e0356841d08a7a60f48ed9654953fe862a52bfc1b5f8f65e65db9968990f3a",
+      "created_at": "2026-10-08T17:20:51Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11557411191,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0021-part-01",
+        "size_in_bytes": 19058624,
+        "digest": "sha256:43aa2c651708c037d7f4a62fc5c969571f9d6f4669d288ce6b15782f80c27f2d"
+      }
+    },
+    {
+      "id": 11567077223,
+      "name": "blocker2-handoff90-source-11557530025",
+      "size_in_bytes": 19032833,
+      "digest": "sha256:458368d732e5eb73a7e17da52bbb31ea2caa4256185d8cb41c104bf17354466e",
+      "created_at": "2026-10-08T17:20:36Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11557530025,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0014-part-01",
+        "size_in_bytes": 19032599,
+        "digest": "sha256:d8fd4b4a7eed6a65e29920830786953e47c9d91d5a05002642ac67841fdcf0c1"
+      }
+    },
+    {
+      "id": 11567241412,
+      "name": "blocker2-handoff90-source-11557611100",
+      "size_in_bytes": 19030666,
+      "digest": "sha256:3e07d8a799ee2a96476e007f8d0851cb6704e243354af153eea14a4dc6ef6a84",
+      "created_at": "2026-10-08T17:20:54Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11557611100,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0022-part-01",
+        "size_in_bytes": 19030432,
+        "digest": "sha256:e3c23a1901c92e241c9aa6316454b63a84d6bd0446e294511bbd056a33d1cbbb"
+      }
+    },
+    {
+      "id": 11567256314,
+      "name": "blocker2-handoff90-source-11557675617",
+      "size_in_bytes": 19068228,
+      "digest": "sha256:397bd3f3848f6a997d0ba755fb4a4eceaec36551f50c8d8a5a4cea1c483e7c18",
+      "created_at": "2026-10-08T17:20:47Z",
+      "expires_at": "2027-01-06T17:18:39Z",
+      "originalSourceArtifact": {
+        "id": 11557675617,
+        "name": "blocker2-readonly500-37790661298-checkpoint-0019-part-01",
+        "size_in_bytes": 19067994,
+        "digest": "sha256:e8982749fa31e44296c5b7fc649f12c2db4baf46c86f600f29fc35308b5acab4"
+      }
+    },
+    {
+      "id": 11567216426,
+      "name": "blocker2-handoff90-transport-manifest",
+      "size_in_bytes": 7092,
+      "digest": "sha256:1007da248209c92e223a23ba4e6f188bfcb3edd90dd4eba873f2421312418da5",
+      "created_at": "2026-10-08T17:21:05Z",
+      "expires_at": "2027-01-06T17:18:39Z"
+    }
+  ],
+  "privateContinuity": {
+    "ownerOnly": true,
+    "keyRecipientSPKISHA256": "8d665b71487b557f9cbdedb7e5da848022f3f80f820f9fc6233353658ffd41e7",
+    "encryptedManifestSHA256": "6d06aee5713ca9d309f5f8ca73d9886ce2336f3268a2d60158c66545a4ba0ed2",
+    "privateManifestSHA256": "ce269403922940a6b195073e9e7d9043ad3f35f26c997e5c3e6c576b0b685139",
+    "archiveSHA256": "2b2a221eed560694f5864bf4465d0b3754fb1122096de6c80f77391c371eaa98",
+    "archiveBytes": 958883848,
+    "originalPrivateFiles": 1896,
+    "privateKeyExcludedFromArchive": true,
+    "noExpiryScheduled": true,
+    "retentionLimitation": "Persistent private My Drive files without an expiry field; owner deletion/account/service availability remain possible. No permanent-availability guarantee.",
+    "parts": [
+      {
+        "name": "continuity-0001.cipher",
+        "bytes": 16777216,
+        "sha256": "95b4571314f60cfb1ea0b7ede6a441ef42ef92da22fddfc49fb15e39b6e1645c"
+      },
+      {
+        "name": "continuity-0002.cipher",
+        "bytes": 16777216,
+        "sha256": "d9775ab4756cb41d0c8db433dcbf8a1d059d38d0714aac655afef1bda8f4a59d"
+      },
+      {
+        "name": "continuity-0003.cipher",
+        "bytes": 16777216,
+        "sha256": "db6d02b524e04a97a9ea5399fabf1af0c05d822f8129937d05c87cb4819f4dcb"
+      },
+      {
+        "name": "continuity-0004.cipher",
+        "bytes": 16777216,
+        "sha256": "39602e4d43a0e077b2c369f0eb6f62aa374ea43d002fd1bdb1d7e3a089381663"
+      },
+      {
+        "name": "continuity-0005.cipher",
+        "bytes": 16777216,
+        "sha256": "b08e71d10967d4a838ebce354c56155c3465ca2374690daca7f15599bf38d4b8"
+      },
+      {
+        "name": "continuity-0006.cipher",
+        "bytes": 16777216,
+        "sha256": "c6594f1fb543c37fa65ecc00bd42df3e5fc1f48adad29acb96302b7e53cc062f"
+      },
+      {
+        "name": "continuity-0007.cipher",
+        "bytes": 16777216,
+        "sha256": "35b8886c5add5597809b35f8dcfae0822bd2e27f33d2d67473654acfb246e918"
+      },
+      {
+        "name": "continuity-0008.cipher",
+        "bytes": 16777216,
+        "sha256": "a73ecacdff183b673e7ca5101433c11047935c834ec50d22c2217dd59945eea9"
+      },
+      {
+        "name": "continuity-0009.cipher",
+        "bytes": 16777216,
+        "sha256": "36bee77465facf587c73b7a6881effc9782db7f788da7509a822c4849895cbc2"
+      },
+      {
+        "name": "continuity-0010.cipher",
+        "bytes": 16777216,
+        "sha256": "6dec4de08da3bb1a1e689b58b1095fbe1a247adc1d67be40a6259b9b278da8f1"
+      },
+      {
+        "name": "continuity-0011.cipher",
+        "bytes": 16777216,
+        "sha256": "b781b1f29a6b1b2b6594a57a77debf81d8e44b759e782f073e783f2cbb43dd6b"
+      },
+      {
+        "name": "continuity-0012.cipher",
+        "bytes": 16777216,
+        "sha256": "4a3a4e6421fb57f3573f891ea94740c4c831c0d0fe3a6b4c24b67dad6be0d731"
+      },
+      {
+        "name": "continuity-0013.cipher",
+        "bytes": 16777216,
+        "sha256": "bb01dd2616ffebed85cbab34cbe11139ee77085a860f79b49ec65bac06e4d29d"
+      },
+      {
+        "name": "continuity-0014.cipher",
+        "bytes": 16777216,
+        "sha256": "3edab18b1397f929046930f3dd0a7f6ace135466cf6af367c486da51475161e1"
+      },
+      {
+        "name": "continuity-0015.cipher",
+        "bytes": 16777216,
+        "sha256": "1d590e65e03e9f8f3a6b9fe5284255388c2a50ee0b51c4e91a5fda0700243cc5"
+      },
+      {
+        "name": "continuity-0016.cipher",
+        "bytes": 16777216,
+        "sha256": "978d95a1814e233ef347e0c7ad7748ba75edb541202e4b05b88d773b01688ef0"
+      },
+      {
+        "name": "continuity-0017.cipher",
+        "bytes": 16777216,
+        "sha256": "dbd1a6301fd9f956073a1d99d81e07d921ff55c30aafd02894c852eaff0f18ce"
+      },
+      {
+        "name": "continuity-0018.cipher",
+        "bytes": 16777216,
+        "sha256": "c67a1fe7f6e2fa6eeab71f0b9bd3f5031d0cc51e4036ac038613269f5d86b9ce"
+      },
+      {
+        "name": "continuity-0019.cipher",
+        "bytes": 16777216,
+        "sha256": "7363cf0fd6590154ad1d2d37bbfc31e0c902ecb24ef40b7b70db45b78b30dfd7"
+      },
+      {
+        "name": "continuity-0020.cipher",
+        "bytes": 16777216,
+        "sha256": "2ecf2f369180d8083f24b64a30b16a994fb2c0485b3e8c15236d5e2c212ceb1c"
+      },
+      {
+        "name": "continuity-0021.cipher",
+        "bytes": 16777216,
+        "sha256": "85b798a53fe2a12de61c3161a17aed403db1b2361a06bd8bcb7ce55e123aa218"
+      },
+      {
+        "name": "continuity-0022.cipher",
+        "bytes": 16777216,
+        "sha256": "7929cdc8189f441cc092d53f1a52eb11109abc0742c46b6873d7ed6e5391de7f"
+      },
+      {
+        "name": "continuity-0023.cipher",
+        "bytes": 16777216,
+        "sha256": "85231d6fb4b5e17b3dc0b1d1b7dfba4a6478dec863baf7847685eb0cc20ac90e"
+      },
+      {
+        "name": "continuity-0024.cipher",
+        "bytes": 16777216,
+        "sha256": "1ccdfaaa3462cc970df777cc0d1dc1224c2c8bea5ac8879942e35c2bb4782ede"
+      },
+      {
+        "name": "continuity-0025.cipher",
+        "bytes": 16777216,
+        "sha256": "cec0d81bd77e2ace7f804e464cfffd4074cd918f72e660a7265edce5e438166b"
+      },
+      {
+        "name": "continuity-0026.cipher",
+        "bytes": 16777216,
+        "sha256": "04bff92d4c65e1ffcc61c8291f6cdf2db8acf01397d3274048a82ea050823c9d"
+      },
+      {
+        "name": "continuity-0027.cipher",
+        "bytes": 16777216,
+        "sha256": "51c5534295096789c4196db58edafa411110fc61b9d7d78367b0ce4f6a843559"
+      },
+      {
+        "name": "continuity-0028.cipher",
+        "bytes": 16777216,
+        "sha256": "b13af78f2ba962a12faa1917f60cb4281bae3b71a2a97fac6f0162388d4f01d8"
+      },
+      {
+        "name": "continuity-0029.cipher",
+        "bytes": 16777216,
+        "sha256": "5a415c627042acd2b29d4296d39d24288595710c671cb5575df2174adda11650"
+      },
+      {
+        "name": "continuity-0030.cipher",
+        "bytes": 16777216,
+        "sha256": "533058aabc1ec034037e055de439db267c306c1d8eedadbf97088ec38f448509"
+      },
+      {
+        "name": "continuity-0031.cipher",
+        "bytes": 16777216,
+        "sha256": "7bacbb100c64da02229587cb2d1e1433fba0b3c2b4515bfcf238b7e9cdd09362"
+      },
+      {
+        "name": "continuity-0032.cipher",
+        "bytes": 16777216,
+        "sha256": "46f81233e95edfd973665d3ed84506cae4a05deecd433f197e530183a69c5f23"
+      },
+      {
+        "name": "continuity-0033.cipher",
+        "bytes": 16777216,
+        "sha256": "cafdcd8d961505a612c855a87cec14826c87fc2619c51ca77374028f8c390ffc"
+      },
+      {
+        "name": "continuity-0034.cipher",
+        "bytes": 16777216,
+        "sha256": "9074d5e78855d1c4a2760c673da1bef846b054255a2c735f26ec588a5e14fa3f"
+      },
+      {
+        "name": "continuity-0035.cipher",
+        "bytes": 16777216,
+        "sha256": "8311d31b7251998d6c62958dcdcbc6ac78326712cdd3b47140d752a61932e182"
+      },
+      {
+        "name": "continuity-0036.cipher",
+        "bytes": 16777216,
+        "sha256": "14b4aeda9815cd87951aaa65ce098ecb2a9c3598d2ea41da6c078a9f763d27eb"
+      },
+      {
+        "name": "continuity-0037.cipher",
+        "bytes": 16777216,
+        "sha256": "f26d25da77519be31f16855dc7d65370822f97e4b524388dbb710512e4a1d69f"
+      },
+      {
+        "name": "continuity-0038.cipher",
+        "bytes": 16777216,
+        "sha256": "29b25a5feb84acee04b644729ca8dcbe1e0bc964a134a69060b59da4b752af3b"
+      },
+      {
+        "name": "continuity-0039.cipher",
+        "bytes": 16777216,
+        "sha256": "12d0d8829b57a38ec09df66e7fbe8da02e8b65c60e128e03109d298601d91bef"
+      },
+      {
+        "name": "continuity-0040.cipher",
+        "bytes": 16777216,
+        "sha256": "93867e60fdc3f8229b3f81aa48d7362b8e2a07ed06eefd82a166f8e84f0c6b41"
+      },
+      {
+        "name": "continuity-0041.cipher",
+        "bytes": 16777216,
+        "sha256": "4610cbab892a0ba6b0bd2919c636d912b307f9ccf0622a1b59ad489612dd989e"
+      },
+      {
+        "name": "continuity-0042.cipher",
+        "bytes": 16777216,
+        "sha256": "ab1d387deb9630f3ead36e80d3aac018d66041932b6db9123b8d8c2ea66372da"
+      },
+      {
+        "name": "continuity-0043.cipher",
+        "bytes": 16777216,
+        "sha256": "e3eff1c5b464965f8425576dd08f86db11dc65272ac8738dcc66ebafa5de1be5"
+      },
+      {
+        "name": "continuity-0044.cipher",
+        "bytes": 16777216,
+        "sha256": "b92a0d3993c95cd6507eda3059098ee131f2bd89af0be872418836cff0dd8cbf"
+      },
+      {
+        "name": "continuity-0045.cipher",
+        "bytes": 16777216,
+        "sha256": "66fd74a8c5013a344428fa8d60b2449234fd63695dac418d2f27f8bf527c5837"
+      },
+      {
+        "name": "continuity-0046.cipher",
+        "bytes": 16777216,
+        "sha256": "2c349c4781d3dcea2b1265d4a58e328b86aca8f92f1f449f429ebff0b635d66e"
+      },
+      {
+        "name": "continuity-0047.cipher",
+        "bytes": 16777216,
+        "sha256": "f8ab948d97b231b9308ca57bc7c0d3a6c2bfff8cf9e81e65408b97db425af154"
+      },
+      {
+        "name": "continuity-0048.cipher",
+        "bytes": 16777216,
+        "sha256": "f80fb6905bd9c3e6232e0e744231ab26e51fe0382bfcba45d555ce02e7064587"
+      },
+      {
+        "name": "continuity-0049.cipher",
+        "bytes": 16777216,
+        "sha256": "2a0c999ed311d44b3b4ec6a98df552599805e8e5ec4a8a1920a0a0fc9b8328b3"
+      },
+      {
+        "name": "continuity-0050.cipher",
+        "bytes": 16777216,
+        "sha256": "f8319299307a8ded3a8f7d3e6e1b5d9afbe580335d3d080337997773a24c9a98"
+      },
+      {
+        "name": "continuity-0051.cipher",
+        "bytes": 16777216,
+        "sha256": "285dcf7e86745182480dcfd35235228133946f4e501c94320c07095a303598d3"
+      },
+      {
+        "name": "continuity-0052.cipher",
+        "bytes": 16777216,
+        "sha256": "4807d4a30577645dd44a3eeacae00fa87c495d8efde46bba9d82706b65d978ab"
+      },
+      {
+        "name": "continuity-0053.cipher",
+        "bytes": 16777216,
+        "sha256": "a84b5435bec9e74ff6bf5beb5ee65312f1163a6e7d1228764341e1e30f89c61a"
+      },
+      {
+        "name": "continuity-0054.cipher",
+        "bytes": 16777216,
+        "sha256": "11434afd52fc3978be2d61aaf295b14bcb3374fc82c15f96684a50f4fc096cbd"
+      },
+      {
+        "name": "continuity-0055.cipher",
+        "bytes": 16777216,
+        "sha256": "5b50e5d19811f9cdef2ae8a595b93d89c6c1b7d23a0acc2ad452d331ed73759a"
+      },
+      {
+        "name": "continuity-0056.cipher",
+        "bytes": 16777216,
+        "sha256": "5f42dae59072a22062ee4e350ebeb99944d6372778d38311e1721cfa55d98a80"
+      },
+      {
+        "name": "continuity-0057.cipher",
+        "bytes": 16777216,
+        "sha256": "ba3b5b6ee76a4af149836c2909431df1d6e254f25530e4abec72fdf1a552e601"
+      },
+      {
+        "name": "continuity-0058.cipher",
+        "bytes": 2582536,
+        "sha256": "ded5309f99eb0f6af8aca74de78642ed39fd32ae18453735ac4f833e3942c64b"
+      }
+    ],
+    "privateFolderDiscoveryName": "Helmut Blocker2 private server handoff 2026-10-08",
+    "keyFileName": "blocker2-readonly500-recipient-private.pem",
+    "encryptedManifestFileName": "ENCRYPTED_BUNDLE_MANIFEST.json"
+  },
+  "semanticBalance": {
+    "fullyAccepted": 0,
+    "eventDuplicate": 91,
+    "missingFullProof": 409,
+    "timeSourceLevelContradiction": 0,
+    "empty": 0,
+    "unusable": 0,
+    "technicalFailure": 0,
+    "notCaptured": 0
+  },
+  "all500CapturedAndIndividuallyReviewed": true,
+  "newActualInputsAfterPR872": 0,
+  "offlineForecastOnly": {
+    "affectedProfiles": 444,
+    "additionalOccurrencesRemoved": 888,
+    "necessaryARetained": 42,
+    "notANewProductionCapture": true
+  },
+  "approvedCompletedDataActions": "DIP7+A4+B5 completed; never repeat. C deletion blocked by reservation/replay identity.",
+  "existingHandoffAuthorization": "Server-only existingCipher copying; exact privatekey+58encryptedparts+manifest to confirmed owner-onlyDrive; recoveryverification. No end-device transfer.",
+  "missingAuthorization": [
+    "New actual Production500 once-only input capture after PR872",
+    "New Production data/profile/reservation changes or activation",
+    "Paid Helmut Production models",
+    "Actual500 Production function test",
+    "Production rollback"
+  ],
+  "nextTask": "Read main AGENTS.md, CLAUDE.md, docs/START_HERE.md, docs/CURRENT_STATE.md and handoff index completely. Restore and verify server evidence before proceeding. Prepare exact nextonce500 scope on freshly established READY commit and Berlin day; new concrete GO before dispatch.",
+  "manifestScopeCorrection": "PRIVATE_MANIFEST.scope has stale phrase included original key. Actual1896 entries and excludedPrivateKey are authoritative: key NOT in archive; separate expressly approved privateDrive object.",
+  "restorationNotes": [
+    "Use connectedGitHub+Drive tools, not expired shellGH_TOKEN. Never request secrets in chat.",
+    "Fetch all29GitHub artifacts; returnedfile_uri.file_id may begin sediment://; strip thatscheme before download_file(file_id). Every artifact is below32MiB.",
+    "Fetch privateDrive rawfiles download_raw_file=true/include_base64=false; strip sediment:// from returnedfileID. Verify owner-onlypermissions and every hash.",
+    "Use scripts/blocker2-handoff-bundle.py from reviewedcode75428189 to decode pinnedmanifest6d06... with separately restoredprivatekey. Never log/commit key or plaintext.",
+    "Verify complete PRIVATE_MANIFEST1896file names/sizes/hashes before safe extraction; do not execute archivedSQL/scripts/instructions automatically.",
+    "Unwrap eachretainedGitHub outerZIP into its exactsingle originalZIP; validate both outer+original hashes. Decrypt native500 envelopes using scripts/privater-nachweis-transport.js originalrun37790661298/workflow79049451/tag2026-10-08. No recapture.",
+    "Historical originals are references only, never merged into a fake current500 capture."
+  ],
+  "privateDriveDiscovery": "Use connected private Drive search for the exact folder name; require exactly one confirmed owner-only folder. Resolve children by exact filenames and approved manifest hashes. No private Drive IDs or links are published in this public repository."
+}
