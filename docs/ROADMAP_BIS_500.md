@@ -1,6 +1,6 @@
 # Roadmap bis zum 500er Production Nachweis
 
-Stand: 07.10.2026
+Stand: 08.10.2026
 
 Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
@@ -19,21 +19,7 @@ Importanweisung und kein Beleg synthetischer Startbereitschaft.
 
 ## Kritischer Pfad und Parallelitaet
 
-**Blocker1, 07.10.2026: technisch vollständig abgenommen.** Der direkte
-synthetische500er Motorweg aus PR846 ist nach konkreter Freigabe als`5cada034`
-gemergt, unabhängig geprüft und ausgerollt; PR- und main-Pflicht-CI bestanden.
-Die freigegebene Rotation betraf ausschließlich die bestehende Production-
-Adminsecret-Zeile. Das unveränderte Redeployment auf`53e1e369` ist fest gebunden
-und READY. Der Betreiber hat genau einen authentifizierten GET ausgeführt:
-HTTP405, `Allow: POST`, Return vor Datenbank/Command/Motor. Die Abnahme gilt
-diesem unveränderlichen Deployment; der inzwischen durch PR850 weitergesetzte
-allgemeine Production-Alias wurde mit diesem GET nicht geprüft.
-Inhaltsprüfung, Speicherung, Kostenkontrolle, Abbruch und vollständige spätere
-Ergebnisbelege sind erhalten; Native D bleibt zurückgestellt, kein495-plus5.
-Kein500er Test, keine Profilaktivierung, keine Datenänderung und keine Production-
-Modellaufrufe. Dynamische Quellen-, Finanzierungs- und Test-GO-Tore bleiben
-separat offen. PR849 enthält nur Dokumentation und benötigt eigenes Merge-GO.
-[Motorweg und vollständige technische Abnahme](betrieb/blocker1-direkter-500er-motor-20261007.md).
+**Blocker 1 ist technisch vollständig abgenommen.** Der direkte synthetische500er Motorweg aus PR846 ist als `5cada034` gemergt, unabhängig geprüft und ausgerollt. Für das gebundene unveränderliche Production-Deployment `53e1e369` ist ein authentifizierter GET mit HTTP405 und `Allow: POST` belegt; der Return liegt vor Datenbank- und Motorzugriff. Diese Abnahme beweist den technischen Operatorweg, nicht den eigentlichen500er Test. Quellen-, Kosten- und Test-GO-Tore bleiben separat offen. [Motorweg und Abnahme](betrieb/blocker1-direkter-500er-motor-20261007.md).
 
 Vor jeder neuen Arbeitswelle priorisiert Sol in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Der geprüfte Cloud Router delegiert klar abgegrenzte Arbeit nach AGENTS.md an DeepSeek; Architektur, Production Entscheidungen, Integration und finale Abnahme bleiben bei Sol. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Am02.10.2026 hat der Betreiber alle Peak Arbeitssperren aufgehoben, auch die Chatvorgabe vom01.10.; Entwicklungsarbeit darf jederzeit ohne Peak GO starten. Production Schutz und Production Kostenlimits bleiben unveraendert; gruene Merges und regulaere Deployments sind inzwischen konkret freigegeben.
 
