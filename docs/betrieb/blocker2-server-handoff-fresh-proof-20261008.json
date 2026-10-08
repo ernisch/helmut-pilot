@@ -1,0 +1,267 @@
+{
+  "version": 1,
+  "status": "PASS-FULL-SERVER-ONLY-FRESH-RESTORATION",
+  "observedUTC": "2026-10-08T17:35:30.808868+00:00",
+  "access": "New-task supported connectedGitHub+Drive filefetch and download_file; isolated fresh directory, old workspace originals not read",
+  "privateProof": {
+    "status": "PASS",
+    "freshAccessPath": "Authenticated Drive metadata+raw fetch+download_file from server; source key/manifest/all58parts fetched anew",
+    "oldWorkspaceOriginalFilesRead": 0,
+    "freshCipherParts": 58,
+    "allPartsOwnerOnly": true,
+    "allCipherPartNamesSizesSHA256Verified": true,
+    "RSARecipientMatched": "8d665b71487b557f9cbdedb7e5da848022f3f80f820f9fc6233353658ffd41e7",
+    "AEADAuthenticationPassed": true,
+    "encryptedManifestSHA256": "6d06aee5713ca9d309f5f8ca73d9886ce2336f3268a2d60158c66545a4ba0ed2",
+    "privateManifestSHA256": "ce269403922940a6b195073e9e7d9043ad3f35f26c997e5c3e6c576b0b685139",
+    "archiveBytes": 958883848,
+    "archiveSHA256": "2b2a221eed560694f5864bf4465d0b3754fb1122096de6c80f77391c371eaa98",
+    "allPrivateOriginalNamesSizesSHA256Verified": 1896,
+    "privateKeyExcludedFromArchive": true,
+    "plaintextPersistedByThisVerification": false,
+    "ProductionRequests": 0,
+    "paidHelmutModels": 0,
+    "observedUTC": "2026-10-08T17:32:09.457855+00:00"
+  },
+  "cipherProof": {
+    "status": "PASS",
+    "allRetainedArtifacts": 29,
+    "all28OriginalZIPsByteIdentical": true,
+    "nativeCipherPositions": 500,
+    "checkpointManifests": 28,
+    "freshServerAccessWithoutOldWorkspaceEvidence": true,
+    "sourceRun": 37790661298,
+    "transportRun": 37815559846,
+    "ProductionRequests": 0,
+    "artifacts": [
+      {
+        "artifactId": 11567097078,
+        "originalSourceArtifactId": 11555474251,
+        "outerSHA256": "970a3192f0a060b0126b6bc5792b5db03aa275e108b57ccb737db99b001de7c0",
+        "originalSHA256": "01f7c7f1c0e4d2a0907c25d9bbefca53302b843e08e8a28e4cd528e713a26bc9",
+        "originalBytes": 5653
+      },
+      {
+        "artifactId": 11567421076,
+        "originalSourceArtifactId": 11555579692,
+        "outerSHA256": "85186978f08c7bd1b1e5ce6d4c3fa57c3d0f7144ad7ebeca19aa4d1c712df035",
+        "originalSHA256": "edecd097a66e0912fff0b1ed23780f6151f02b0b1e361861019f67267281ae7b",
+        "originalBytes": 19018507
+      },
+      {
+        "artifactId": 11567017570,
+        "originalSourceArtifactId": 11555664455,
+        "outerSHA256": "5410ace7d28b31b0028d3903e31cee71db4d7195fdb769a06dd4158d9334ab22",
+        "originalSHA256": "14e96888f25ca3ab211f4ee45e5f97346add2ccb09d94f48766092e2d3c407bd",
+        "originalBytes": 19022149
+      },
+      {
+        "artifactId": 11567421060,
+        "originalSourceArtifactId": 11555693987,
+        "outerSHA256": "99de7cc5bab64cc6392d6f587cb329acb9834c86e9c4a86cd90533d01feb2b71",
+        "originalSHA256": "1395b7ecc72ee6c0e0a054da2217fef6aa6bed8193c9c4d58a5c595e66836a47",
+        "originalBytes": 961929
+      },
+      {
+        "artifactId": 11567355987,
+        "originalSourceArtifactId": 11555714290,
+        "outerSHA256": "05c902290d7caec9577eb7332cfffeb9edf94e1727b45dee6c59a7ce4d640899",
+        "originalSHA256": "3ff1ac4e9dfb67ecddc3f09650b1cbe0f2ad6ece044684b63409c932311d279d",
+        "originalBytes": 18992099
+      },
+      {
+        "artifactId": 11567520760,
+        "originalSourceArtifactId": 11555914372,
+        "outerSHA256": "515bf617a5abaf9c7944f452469521f1a6ebc9a21e5cbc57e14884a4909be797",
+        "originalSHA256": "51d4866492ee34a2e859e6ed05b9993cb5182286dd83b0441a7dd1327b903478",
+        "originalBytes": 19004150
+      },
+      {
+        "artifactId": 11567341033,
+        "originalSourceArtifactId": 11555968995,
+        "outerSHA256": "45cf1e05454371bd0312837fdf0c44c366f85bb9b05b1cbbc7852ae5eb3d836e",
+        "originalSHA256": "cabd9d0e79092711527c66a852637208360199e3a8dc547a541820543b240f96",
+        "originalBytes": 18995716
+      },
+      {
+        "artifactId": 11567361004,
+        "originalSourceArtifactId": 11556249583,
+        "outerSHA256": "d25cd394cf3222f7228dc5f2470d97047e9ad0348d2a810f7151220dd8857e94",
+        "originalSHA256": "773513e9a5f0e2dd9f2dc87fb8fffd5ddc3a28e87efccc52a8d274ee4e10c864",
+        "originalBytes": 19018869
+      },
+      {
+        "artifactId": 11567525691,
+        "originalSourceArtifactId": 11556327603,
+        "outerSHA256": "92b71d3f82b0b96c000e6bc23991682fe4cf33fd5c00997f9f43036bbe5c6581",
+        "originalSHA256": "300c032cf4facd397905617bc5aed46f6bc3be32d7eeaa46f8276715aa6ca40d",
+        "originalBytes": 18055812
+      },
+      {
+        "artifactId": 11567306319,
+        "originalSourceArtifactId": 11556357373,
+        "outerSHA256": "faaacd0a13fe2b1b2c34610c49e4ec2e776e6f3dd37e74cee031cc5ad40d8aed",
+        "originalSHA256": "4e33b8284e7e9a1b536f76a1f8b000152b813e02f236bf93361634449bbd33ff",
+        "originalBytes": 19003139
+      },
+      {
+        "artifactId": 11567032526,
+        "originalSourceArtifactId": 11556363231,
+        "outerSHA256": "d28e49c56d9269a0ba2be639ec0bedd73ad0b158b75e8dd98c1024a7606eb840",
+        "originalSHA256": "f159590d13787bafa59936e0fce8324075dad903678bacef7b08900ce96a571e",
+        "originalBytes": 19001917
+      },
+      {
+        "artifactId": 11567416170,
+        "originalSourceArtifactId": 11556418486,
+        "outerSHA256": "6caebea4ccf0824c1bcd14e59356ce5cc0b3757ad7bc77cad8470dfc94938b88",
+        "originalSHA256": "3ed434724c4252ef81afeabb4d41a3e757723343acbaa4873d144521db97947d",
+        "originalBytes": 19024009
+      },
+      {
+        "artifactId": 11567545686,
+        "originalSourceArtifactId": 11556494253,
+        "outerSHA256": "e7c4f05904afe8e446ad397a1a86659c8197083144e5f7757d120e8615db7d0c",
+        "originalSHA256": "e5b03f72da0daaa11cba2b3c442a246c06f5bd021de10537d546c0b9998f4bf1",
+        "originalBytes": 19023627
+      },
+      {
+        "artifactId": 11567211347,
+        "originalSourceArtifactId": 11556553915,
+        "outerSHA256": "b09d2d06e8b0526044112cab302a438571570e84cd93de03c932443a93e4a38a",
+        "originalSHA256": "27903369a80d683ed4987c53a8d0a2113d4254e0505905f55a94a6fb9f79273a",
+        "originalBytes": 18994119
+      },
+      {
+        "artifactId": 11567087380,
+        "originalSourceArtifactId": 11556659826,
+        "outerSHA256": "d14d417860a37193fc6ea03dc5ac760ae49709814b52085474c1aa1c683c8a2e",
+        "originalSHA256": "779d2b6b09e3949bf231a27a9066ed4408e5b6e107f02cb2bed9544ae58dab71",
+        "originalBytes": 18997450
+      },
+      {
+        "artifactId": 11566284743,
+        "originalSourceArtifactId": 11556737130,
+        "outerSHA256": "45dacf56fbb7726b4ea607a61a547ae0c162d9f2c7f8df4e030ddcfeebd52f48",
+        "originalSHA256": "1131fe0475f2b2861dbdcca10d21eb599ce859e693803f9bbac2ee7221c99465",
+        "originalBytes": 19009327
+      },
+      {
+        "artifactId": 11567455901,
+        "originalSourceArtifactId": 11556908638,
+        "outerSHA256": "e122baa7ede41eae8c90789d6367433362e45832d2cc0f4b58261729fb64ea24",
+        "originalSHA256": "ea290e6a0f9f66398d96c585bbae4b4499f472e1ac335b71ba8df284ed973db8",
+        "originalBytes": 19008761
+      },
+      {
+        "artifactId": 11567441018,
+        "originalSourceArtifactId": 11556937537,
+        "outerSHA256": "d27611b2f1470c0a4746fa0b87b23242369dce1b3fa11569cc712ad6f71f5f70",
+        "originalSHA256": "2e698561f87afef4d168a703f04d8908f683d40b29222a8e66a07eb6f3d56508",
+        "originalBytes": 19043602
+      },
+      {
+        "artifactId": 11567121728,
+        "originalSourceArtifactId": 11556973051,
+        "outerSHA256": "7db897a3b03ff1e055732d1958664d6f0d554bc5219695af26a1e8bb6349e98a",
+        "originalSHA256": "24eb62a32db7bfedba0d65b54f2bc8c5073f2a747714e2574ceeb3ad84a6a7b9",
+        "originalBytes": 18993293
+      },
+      {
+        "artifactId": 11567111873,
+        "originalSourceArtifactId": 11557081254,
+        "outerSHA256": "f3ecb1d2edd6b24585629a2aebc35869bacad4bbd870944b359b8c60540b16dd",
+        "originalSHA256": "382f92676648b16ac1a50ae72d25ea4e77c980ae79f56d5873ce315be12b3927",
+        "originalBytes": 18972513
+      },
+      {
+        "artifactId": 11567475857,
+        "originalSourceArtifactId": 11557147520,
+        "outerSHA256": "de9dfebe004044f1c6641759757b396de8e84639488d9f70ef2d994d59f0e448",
+        "originalSHA256": "c65099fe1b1b374c057cc68a464ff91e915cbd6413b11e43d64659b2bdd52ac3",
+        "originalBytes": 19050230
+      },
+      {
+        "artifactId": 11567296095,
+        "originalSourceArtifactId": 11557170301,
+        "outerSHA256": "66acc8ac18b2d2496bbc77e87d93e831e23d20846d25990e537ce15f7eb1bd08",
+        "originalSHA256": "b38399adbb6b8fa5f56e6a892b906f1f40b7fa851af49240fda06618fe296e1a",
+        "originalBytes": 19001369
+      },
+      {
+        "artifactId": 11567246357,
+        "originalSourceArtifactId": 11557257710,
+        "outerSHA256": "f757032d2abc027289a2869689788ce38314918d1e866b8dc9bb31e8edc40811",
+        "originalSHA256": "0573d6b7ad19790d6fe712402215adeae664132b6a935b766b296890492e7700",
+        "originalBytes": 6325
+      },
+      {
+        "artifactId": 11567246304,
+        "originalSourceArtifactId": 11557410435,
+        "outerSHA256": "7927a8a2b93072db1d2c9919f0d826eebdb66b6d46467732fa56f042f671cedd",
+        "originalSHA256": "b68027c43192672563b2eb8c907e31ebda934f9501d4fbee4dfb91d62746c237",
+        "originalBytes": 19007629
+      },
+      {
+        "artifactId": 11567480925,
+        "originalSourceArtifactId": 11557411191,
+        "outerSHA256": "f8e0356841d08a7a60f48ed9654953fe862a52bfc1b5f8f65e65db9968990f3a",
+        "originalSHA256": "43aa2c651708c037d7f4a62fc5c969571f9d6f4669d288ce6b15782f80c27f2d",
+        "originalBytes": 19058624
+      },
+      {
+        "artifactId": 11567077223,
+        "originalSourceArtifactId": 11557530025,
+        "outerSHA256": "458368d732e5eb73a7e17da52bbb31ea2caa4256185d8cb41c104bf17354466e",
+        "originalSHA256": "d8fd4b4a7eed6a65e29920830786953e47c9d91d5a05002642ac67841fdcf0c1",
+        "originalBytes": 19032599
+      },
+      {
+        "artifactId": 11567241412,
+        "originalSourceArtifactId": 11557611100,
+        "outerSHA256": "3e07d8a799ee2a96476e007f8d0851cb6704e243354af153eea14a4dc6ef6a84",
+        "originalSHA256": "e3c23a1901c92e241c9aa6316454b63a84d6bd0446e294511bbd056a33d1cbbb",
+        "originalBytes": 19030432
+      },
+      {
+        "artifactId": 11567256314,
+        "originalSourceArtifactId": 11557675617,
+        "outerSHA256": "397bd3f3848f6a997d0ba755fb4a4eceaec36551f50c8d8a5a4cea1c483e7c18",
+        "originalSHA256": "e8982749fa31e44296c5b7fc649f12c2db4baf46c86f600f29fc35308b5acab4",
+        "originalBytes": 19067994
+      }
+    ]
+  },
+  "native500": {
+    "status": "PASS",
+    "sourceRun": "37790661298",
+    "cipherTransportRun": "37815559846",
+    "nativeOriginalProfiles": 500,
+    "authenticatedCheckpointManifests": 28,
+    "allBodySHA256Verified": true,
+    "allProfilesInactiveSynthetic": true,
+    "privateKeySource": "Fresh authenticated private Drive fetch",
+    "artifactSource": "Fresh GitHub connector artifact downloads",
+    "oldWorkspaceOriginalFilesRead": 0,
+    "newProductionRequests": 0,
+    "models": 0,
+    "newSemanticAcceptance": 0
+  },
+  "all500BodyAndInputHashRowsSHA256": "1ea49462e2c3b0d61fc174bbfda92e34ea47a6b18b88970a74f5575026d2d8df",
+  "native500FullTechnicalProofSHA256": "7afaa4a624561cf0d06c885d5373cbc762de50ab73301db09b2b0595b7d08c42",
+  "privateFolderDiscoveredByNameWithoutPublishedIDs": true,
+  "privateDriveIDsOrURLsPublished": false,
+  "models": 0,
+  "ProductionRequests": 0,
+  "ProductionWrites": 0,
+  "profileChanges": 0,
+  "newCaptureRuns": 0,
+  "mergesDuringHandoff": 0,
+  "newSemanticAcceptance": 0,
+  "limits": [
+    "Fresh-directory verification uses available new-task connector path, not a newly provisioned separate machine.",
+    "Native500 authenticated and original body hashes verified; no new semantic acceptance or current PR872 capture.",
+    "PrivateDrive storage has no scheduled expiry but owner deletion/account/service availability can affect future access.",
+    "GitHub cipher originals expire2027-01-06T17:18:39Z; do not use alreadyexpired old one-day artifacts."
+  ]
+}
