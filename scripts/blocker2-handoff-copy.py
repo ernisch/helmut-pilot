@@ -4,6 +4,7 @@ import json
 import os
 import pathlib
 import re
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -21,6 +22,7 @@ def require(condition):
         raise ValueError('blocker2-handoff-guard')
 
 def storage_url(url):
+    require(not any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in url))
     p = urllib.parse.urlsplit(url)
     require(p.scheme == 'https' and p.username is None and p.password is None
             and p.port in (None, 443) and not p.fragment
@@ -95,4 +97,9 @@ def main():
     (dest / 'TRANSPORT_MANIFEST.json').write_text(json.dumps(report, indent=2) + '\n')
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception:
+        # Public Actions logs must never contain request paths, signed URLs or tokens.
+        print('blocker2-handoff-copy-stopped', file=sys.stderr)
+        sys.exit(1)
