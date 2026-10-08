@@ -1,6 +1,6 @@
 # Blocker 2: Maßnahme B ausgeführt und vollständig nachkontrolliert
 
-**Stand08.10.2026: B-v2 nach konkreter Betreiberfreigabe exakt angewendet und unabhängig nachgeprüft. Fachliche Abnahme weiterhin0/500.** Drei bestehende KO-Zeilen wurden korrigiert und genau zwei fremde Quellenkanten gelöscht. Kein neuer Nurleselauf und keine neue tatsächliche500er Briefingeingabeaufnahme nach B.
+**Historischer B-Datenzeitpunkt 08.10.2026,13:49UTC:** Die folgende Nachkontrolle dokumentiert die einmalige genehmigte Anwendung und den damaligen Stand vor einer neuen Erfassung. Anschließend wurde [Lauf37790661298 vollständig ausgewertet](blocker2-vollaufnahme-nach-massnahme-b-20261008.md):500 neue tatsächliche Nach-B-Eingaben,0fachlichangenommen/91Duplikat/409fehlenderVollnachweis; neue tatsächliche B-/A-Wirkung dort nachgewiesen. Die nachstehenden damaligen Angaben „noch kein neuer Lauf“ und „noch nicht freigegeben“ sind historische Vorbereitungsstände, keine aktuell offenen Erfassungszahlen. B wird nicht wiederholt.
 
 Die [historische konkrete Freigabevorlage](blocker2-massnahme-b-freigabe-aktuell-20261008.md) bindet exakt die Transaktion `B-after-current500-20261008-v2-five-exact-atomic-transaction-NOT-APPROVED.sql`, SHA256 `53bc5ee6f01d48e55e2fffe319f3e818bd246c81c675f6b6bc09c5d76331456b`. Der vorbereitete Dateiname bleibt unverändert; die anschließende konkrete Chatfreigabe „du hast die freigabe“ und Ausführung werden in neuen privaten Originalbelegen festgehalten. Keine Anwendung eines alten v1-Hashes.
 
