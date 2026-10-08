@@ -9,6 +9,9 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+if not __debug__:
+    raise RuntimeError('blocker2-handoff-bundle-optimization-forbidden')
+
 RECIPIENT = '8d665b71487b557f9cbdedb7e5da848022f3f80f820f9fc6233353658ffd41e7'
 BUNDLE_MANIFEST_SHA256 = '6d06aee5713ca9d309f5f8ca73d9886ce2336f3268a2d60158c66545a4ba0ed2'
 PART_BYTES = 16 * 1024 * 1024
