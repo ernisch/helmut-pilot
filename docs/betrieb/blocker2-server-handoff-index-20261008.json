@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "status": "SERVER_STORAGE_READY-FULL_FRESH_RESTORE_IN_PROGRESS",
+  "status": "PASS-FULL-SERVER-ONLY-HANDOFF-RESTORATION",
   "preparedUTC": "2026-10-08T17:27:24.003043+00:00",
   "goal": "Blocker2 only: necessary input acceptance for all500 inactive synthetic profiles BT330/BE120/BB50. Handoff only; no new semantic or Production work.",
   "repository": "ernisch/helmut-pilot",
@@ -788,5 +788,27 @@
     "Unwrap eachretainedGitHub outerZIP into its exactsingle originalZIP; validate both outer+original hashes. Decrypt native500 envelopes using scripts/privater-nachweis-transport.js originalrun37790661298/workflow79049451/tag2026-10-08. No recapture.",
     "Historical originals are references only, never merged into a fake current500 capture."
   ],
-  "privateDriveDiscovery": "Use connected private Drive search for the exact folder name; require exactly one confirmed owner-only folder. Resolve children by exact filenames and approved manifest hashes. No private Drive IDs or links are published in this public repository."
+  "privateDriveDiscovery": "Use connected private Drive search for the exact folder name; require exactly one confirmed owner-only folder. Resolve children by exact filenames and approved manifest hashes. No private Drive IDs or links are published in this public repository.",
+  "completedUTC": "2026-10-08T17:37:44.455962+00:00",
+  "freshRestorationProof": {
+    "path": "docs/betrieb/blocker2-server-handoff-fresh-proof-20261008.json",
+    "bytes": 12127,
+    "sha256": "dfc542efd2ae0cc43817fb3d8ad1e6f44c2ae2ef9b92c94559f8990494d2899f",
+    "nativeProfiles": 500,
+    "privateOriginals": 1896,
+    "originalCipherZIPs": 28,
+    "retainedArtifacts": 29,
+    "privateCipherParts": 58,
+    "oldWorkspaceOriginalFilesRead": 0,
+    "semanticAcceptance": 0
+  },
+  "serverVerificationHelpers": [
+    "scripts/blocker2-handoff-bundle.py",
+    "scripts/blocker2-handoff-verify-private-stream.py",
+    "scripts/blocker2-handoff-verify-github-cipher.py",
+    "scripts/blocker2-handoff-verify-native500.js",
+    "scripts/privater-nachweis-transport.js"
+  ],
+  "runningProcessesAtHandoff": [],
+  "shellAccessCaveat": "ShellGH_TOKEN returned401 duringhandoff; connectedGitHub read/write/file-artifact tools remained working. Newtask uses connectedtools, never borrowed secrets or signedURLs inrepository."
 }
