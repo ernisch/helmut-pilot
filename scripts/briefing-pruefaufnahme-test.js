@@ -141,6 +141,10 @@ function fixture(userId = "test-kohorte-b-055") {
     `Supabase storage timed out after ${ms}ms: /rest/v1/knowledge_objects?id=in.(synthetik-000)&select=id,source_kanten`);
   const getterBombe = {};
   Object.defineProperty(getterBombe, "message", { get() { throw Error("hostile"); } });
+  const getterNameBombe = quellenTimeout();
+  Object.defineProperty(getterNameBombe, "name", { get() { throw Error("hostile name"); } });
+  const getterCodeBombe = quellenTimeout();
+  Object.defineProperty(getterCodeBombe, "code", { get() { throw Error("hostile code"); } });
   function synthetikRetryFixture(profile, fehlerfolge, erfolg) {
     let reads = 0, builds = 0, writes = 0;
     const args = { userId: profile.id, tag, commit, expectedCommit: commit, production: true,
@@ -200,6 +204,8 @@ function fixture(userId = "test-kohorte-b-055") {
     ["assertion", Object.assign(Error("schutz"), { code: "ERR_ASSERTION" })],
     ["source-unvollstaendig", Error("pruefquellen-unvollstaendig")],
     ["hostile-getter", getterBombe],
+    ["valid-timeout-hostile-name-getter", getterNameBombe],
+    ["valid-timeout-hostile-code-getter", getterCodeBombe],
     ["primitiv-string", "boom"],
     ["primitiv-zahl", 42]
   ];
