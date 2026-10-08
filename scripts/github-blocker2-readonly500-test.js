@@ -78,11 +78,15 @@ const decrypt = (f, name, position = 1) => T.entschluesseln(f.envelopes.get(name
     const f = fixture(mutate), x = await G.ausfuehren(f.args); A.equal(x.ok, false); A.equal(f.count(), 1);
     A.equal(x.counts.contradictory, 1); A.equal(x.counts["not-captured"], 499); A.equal(x.all500InputAcceptance, false);
   }
-  for (const failure of ["network", "non-json", "503", "oversize"]) {
+  for (const failure of ["network", "non-json", "oversize"]) {
     const f = fixture(() => {}, failure), x = await G.ausfuehren(f.args); A.equal(f.count(), 500);
     A.equal(x.ok, false); A.equal(x.collectionCompleted, true); A.equal(x.counts.captured, 499); A.equal(x.counts.technical + x.counts.unusable, 1);
     if (failure === "oversize") { const d = decrypt(f, "0001.json"); A.equal(d.fullBodyRetained, false); A.equal(d.response.bodyReadFailure, "body-limit"); }
   }
+  const serverFailure = fixture(() => {}, "503"), failureReport = await G.ausfuehren(serverFailure.args);
+  A.equal(serverFailure.count(), 1); A.equal(failureReport.stopReason, "production-input-http-error");
+  A.equal(failureReport.collectionCompleted, false); A.equal(failureReport.counts.technical, 1);
+  A.equal(failureReport.counts["not-captured"], 499); A.equal(decrypt(serverFailure, "0001.json").fullBodyRetained, true);
   const recipientDrift = fixture(); recipientDrift.args.expectedRecipient = "0".repeat(64);
   await A.rejects(G.ausfuehren(recipientDrift.args)); A.equal(recipientDrift.calls.length, 0); A.equal(recipientDrift.envelopes.size, 0);
   const denied = fixture(() => {}, "403"), deniedReport = await G.ausfuehren(denied.args);

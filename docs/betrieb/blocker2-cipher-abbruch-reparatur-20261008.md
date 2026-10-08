@@ -104,8 +104,8 @@ Der Workflow bleibt manuell, main-/Repository-gebunden und ohne automatische
 Wiederholung. Exakt 500 inaktive synthetische Zielprofile, hoechstens 500
 Eingabeabrufe und zwei Identitaetspruefungen; weder Motor noch Production-
 Datenpfad werden veraendert. Fester Empfaenger unveraendert. Transportteile
-bleiben hoechstens 20 MiB, Retention bleibt einen Tag. Maximal 64 quittierte
-Checkpoint-Artefakte sowie die bestehenden maximal 32 abschliessenden Teile.
+bleiben hoechstens 20 MiB, Retention bleibt einen Tag. Maximal 64 erzeugte
+Checkpoint-Artefakte (einschliesslich unklarer Teilupload-Ausgaenge) sowie die bestehenden maximal 32 abschliessenden Teile.
 Diese Grenze ist fest und keine Budget- oder Production-Konfigurationsaenderung.
 
 `@actions/artifact` ist in einem eigenen, vollstaendig gebundenen Lockfile
@@ -138,13 +138,42 @@ Teiltransport ohne Manifest und unveraenderten historischen Recoveryvertrag.
 Der Fake-Artefaktdienst dieser Tests ist kein neuer echter Productionlauf und
 kein bereits bewiesener erfolgreicher Upload der reparierten Runtime in GitHub.
 
-Die kritische unabhaengige Endabnahme bleibt offen: Die aktuelle Betreiberweisung
-verbietet zusaetzliche Modellaufrufe; deshalb wird keine unabhaengige KI gestartet.
-Ein gepruefter PR, gruene CI oder dieses Dokument ersetzen kein konkretes Merge-
-GO und keinen gesondert genehmigten neuen einmaligen Production-Nurleselauf.
+## Unabhaengige Endpruefung und Nachfolgekorrektur
 
-Vor einem neuen Lauf: unabhängige Pruefung, konkreter Kopf-/Merge-/Deployment-
-Auftrag, frischer READY-Commit und eigenes Lauf-GO mit Datum, Profilmenge,
-Abrufgrenzen, 52-Tabellen-Vergleichen und Originaldownload innerhalb Retention.
-Bis dahin **0/500 fachliche Eingabeabnahme**; keine Production-/Profil-/Modell-
-Aktion, kein 500er Funktionstest, kein Rueckweg.
+Die kritische unabhaengige Astra-High-Pruefung des Kopfes `f6b7facf` von PR856
+lautet **BLOCKED**. Dieser Kopf wird nicht gemergt. Zwei konkrete Befunde:
+
+- Fehlgeschlagene Commit-/Profil-Schutzassertions des echten Nurlese-Endpunkts
+  erscheinen durch den Server als generische HTTP500-Antwort. Der bisherige
+  Reader setzte danach weitere Eingabe-GETs fort. Jede Nicht-200-Antwort setzt
+  nun den Stop vor dem begrenzten Bodylesen;401/403 behalten ihren Auth-Stop.
+  Vorhandene Originalbodies bleiben erhalten, weitere Positionen nicht erfasst.
+- Ein Checkpoint kann einige Artefaktteile erfolgreich erzeugen und erst danach
+  scheitern. Ohne Gesamtquittung ist die verbleibende Kapazitaet unklar. Nach
+  Beginn eines Uploads bleibt ein Fehlerriegel bis zur vollstaendig validierten
+  und gespeicherten Quittung gesetzt. Ein unklarer Ausgang verbietet weitere
+  Checkpoint-Transporte; die schon begrenzte32-Teile-Rettung bleibt verfuegbar.
+
+Gezielte Offline-Gegenproben umfassen echte generische500-Fehlerantworten,
+503 mit Schreib-/Modell-/Commitwiderspruch, unerwartete302-Antworten,
+uebergrosse500-Bodies und Teiluploadfehler nach61 quittierten Artefakten sowie
+ungueltige bzw. nicht speicherbare Quittungen. Keine echten Productionabrufe.
+Die neue Korrektur benoetigt gruene Pflicht-CI und eine unabhaengige Abnahme
+ihres eigenen exakten Kopfes. Lokales Laden der exakt gebundenen SDK6.3.1
+unter Node24 ist belegt, tatsaechlicher GitHub-Upload noch nicht.
+
+Der Betreiber hat am08.10. die autonome Fortsetzung ausschliesslich fuer
+Blocker2 einschliesslich notwendiger Code-/PR-Arbeit, unabhaengiger Pruefung,
+gepruefter Merges und regulaerer Production-Deployments freigegeben. Der
+Nurleselauf bleibt an exakt500 inaktive Synthetikprofile, hoechstens500
+Eingabe-GETs, hoechstens zwei Identitaetschecks, maximal55 Minuten sowie
+denselben Production-Commit und Berlin-Tag gebunden. Vorher/nachher alle52
+Tabellen vollstaendig rein lesend vergleichen; Cipher-Originale innerhalb
+Retention sichern. Bei Fehlschlag zuerst konkrete Ursache und Zwischenbelege,
+gezielte Reparatur, neuer gepruefter PR; keine blinde Wiederholung und dieselbe
+technische Methode hoechstens zweimal.
+
+Bis zum vollstaendigen positiven Fachnachweis bleibt die Eingabeabnahme
+**0/500**. Neue Production-Daten-/Profilaenderungen, Aktivierung, bezahlte
+Helmut-Production-Modellaufrufe und500er Funktionstest bleiben gesperrt;
+kein automatischer Rueckweg. Historische435 nie mit neuem Teilstand auffuellen.

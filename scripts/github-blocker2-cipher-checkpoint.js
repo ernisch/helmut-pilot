@@ -74,9 +74,13 @@ function runTransport(request, env, signal) {
   });
 }
 function checkpointWriter({ source, env, root = ROOT, upload = runTransport }) {
-  let savedThrough = 0, uploads = 0;
+  let savedThrough = 0, uploads = 0, transportUncertain = false;
   return async ({ sequence, tag, envelope, completedPositions, cancelled, signal }) => {
     if (cancelled) return;
+    // Latch: Nach einem unsicheren Transportausgang (Ausnahme, ungueltige oder
+    // nicht dauerhaft gesicherte Quittung) startet kein weiterer Upload. Erst
+    // geprueft, dann darf ueberhaupt ein neuer Transport erfolgen.
+    A(!transportUncertain, "cipher-checkpoint-transport-uncertain");
     A(Number.isInteger(sequence) && sequence >= 0 && sequence <= 27);
     A(Number.isInteger(completedPositions) && completedPositions >= savedThrough && completedPositions <= 500);
     A(uploads < MAX_UPLOADS);
@@ -89,6 +93,9 @@ function checkpointWriter({ source, env, root = ROOT, upload = runTransport }) {
     }
     // Bei SIGINT/SIGTERM kein neuer/langsamer Upload. Der Reader beendet sich
     // schnell; always()-Paketierung rettet den lokalen End-/Teilstand.
+    // Latch unmittelbar vor dem Transport setzen: solange der Ausgang nicht
+    // vollstaendig bestaetigt und dauerhaft gesichert ist, bleibt er gesetzt.
+    transportUncertain = true;
     const receipt = await upload({ sequence, tag, remainingParts: MAX_UPLOADS - uploads }, env, signal);
     A.equal(receipt.encryptedOnly, true); A.equal(receipt.checkpoint, sequence);
     A(Array.isArray(receipt.receipts) && receipt.receipts.length > 0 && receipt.receipts.length <= MAX_UPLOADS - uploads);
@@ -100,6 +107,9 @@ function checkpointWriter({ source, env, root = ROOT, upload = runTransport }) {
       JSON.stringify(receipt) + "\n", { flag: "wx", mode: 0o600 });
     savedThrough = completedPositions;
     uploads += receipt.receipts.length;
+    // Erst nach validierter, dauerhaft gesicherter Quittung und fortgeschrittenen
+    // Zaehlern loesen; vorher bleibt jeder weitere Transport gesperrt.
+    transportUncertain = false;
     console.log(JSON.stringify({ cipherCheckpointSaved: sequence, artifacts: receipt.receipts.length, all500InputAcceptance: false }));
   };
 }

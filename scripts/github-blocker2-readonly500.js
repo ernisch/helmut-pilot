@@ -142,9 +142,10 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
         const r = await fetchFn(url, { method: "GET", redirect: "error", signal: readSignal,
           headers: { Authorization: "Bearer " + env.HELMUT_CRON_SECRET, Accept: "application/json", "x-helmut-production-commit": env.HELMUT_PRODUCTION_COMMIT } });
         response = { url, httpStatus: r.status, observedUTC: now().toISOString() };
-        // Auch ein fehlender/zu grosser Fehlerbody darf den Auth-Stop nicht
-        // umgehen und weitere Profilabrufe ausloesen.
+        // Jeder Nicht-200-Ausgang stoppt vor jedem weiteren Production-GET.
+        // Auch ein fehlender/zu grosser Fehlerbody darf den Stop nicht umgehen.
         if ([401, 403].includes(r.status)) stopped = "cron-access-rejected";
+        else if (r.status !== 200) stopped = "production-input-http-error";
         const raw = await readBody(r, readSignal);
         response.rawBodySHA256 = sha(raw); response.rawBody = raw;
         status = "technical";

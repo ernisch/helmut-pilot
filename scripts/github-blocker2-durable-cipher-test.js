@@ -93,6 +93,26 @@ async function main() {
     ? new Response("x".repeat(T.MAX_BYTES + 1), { status: 401 }) : deniedFetch(url, options);
   const denial = await G.ausfuehren(denied.args);
   A.equal(denial.stopReason, "cron-access-rejected"); A.equal(denial.attempted, 1); A.equal(denial.counts["not-captured"], 499);
+  // Der Server verbirgt Commit-/Profil-Assertions hinter HTTP500. Auch ein
+  // Fehlerbody mit Schreib-/Modellhinweis oder ohne lesbaren Body stoppt.
+  for (const [status, body] of [[500, { ok: false, grund: "briefing-nachweis-nicht-lesbar" }],
+    [503, { productionCommit: "e".repeat(40), schreibaufrufe: 1, modellaufrufe: 1 }], [302, {}]]) {
+    const f = fixture(env), fetch = f.args.fetchFn;
+    f.args.fetchFn = async (url, options) => url.includes("modus=eingabe")
+      ? new Response(JSON.stringify(body), { status }) : fetch(url, options);
+    const r = await G.ausfuehren(f.args);
+    A.equal(r.stopReason, "production-input-http-error"); A.equal(r.attempted, 1);
+    A.equal(r.counts.technical, 1); A.equal(r.counts["not-captured"], 499);
+    A.equal(r.collectionCompleted, false); A.equal(r.all500InputAcceptance, false);
+    const original = decode(f.files.get("0001.json"));
+    A.equal(original.fullBodyRetained, true); A.deepEqual(JSON.parse(original.response.rawBody), body);
+  }
+  const oversizedFailure = fixture(env), oversizedFetch = oversizedFailure.args.fetchFn;
+  oversizedFailure.args.fetchFn = async (url, options) => url.includes("modus=eingabe")
+    ? new Response("x".repeat(T.MAX_BYTES + 1), { status: 500 }) : oversizedFetch(url, options);
+  const oversizedReport = await G.ausfuehren(oversizedFailure.args);
+  A.equal(oversizedReport.stopReason, "production-input-http-error"); A.equal(oversizedReport.attempted, 1);
+  A.equal(decode(oversizedFailure.files.get("0001.json")).fullBodyRetained, false);
   const stuckCancel = fixture(env), cancelFetch = stuckCancel.args.fetchFn; let bodyCancelled = false;
   stuckCancel.args.fetchFn = async (url, options) => url.includes("modus=eingabe") ? {
     status: 401, headers: new Headers({ "content-length": String(T.MAX_BYTES + 1) }),
@@ -155,6 +175,32 @@ async function main() {
     const before = calls.length; await A.rejects(H.uploadCheckpoint(request)); A.equal(calls.length, before); F.unlinkSync(P.join(dir, "secret.txt"));
     for (const receipt of [{ id: 0, size: 100, digest: "f".repeat(64) }, { id: 1, size: 100, digest: undefined }])
       await A.rejects(H.uploadCheckpoint({ ...request, client: { uploadArtifact: async () => receipt } }));
+    // Nach 61 quittierten Artefakten entstehen zwei weitere, dann scheitert
+    // ein Teilupload. Ohne Fehlerriegel koennte der Endstand drei weitere
+    // Artefakte unter einem veralteten Restbudget erzeugen (66 statt64).
+    const capSource = P.join(temp, "cap-source"), capRoot = P.join(temp, "cap-checkpoints");
+    F.mkdirSync(capSource); let uploadCalls = 0, actualUploads = 0;
+    const capWriter = H.checkpointWriter({ source: capSource, env, root: capRoot, upload: async req => {
+      uploadCalls++;
+      if (uploadCalls === 3) { A.equal(req.remainingParts, 3); actualUploads += 2; throw new Error("third-part-failed-after-two-saved"); }
+      const count = uploadCalls === 1 ? 32 : uploadCalls === 2 ? 29 : 3;
+      const receipts = Array.from({ length: count }, (_, i) => ({ id: actualUploads + i + 1,
+        size: 1, digest: "e".repeat(64), files: 1 })); actualUploads += count;
+      return { checkpoint: req.sequence, encryptedOnly: true, receipts };
+    } });
+    const cap = sequence => ({ sequence, tag, envelope: good.checkpoints[0].envelope, completedPositions: 0, cancelled: false });
+    await capWriter(cap(0)); await capWriter(cap(1)); await A.rejects(capWriter(cap(2)));
+    await A.rejects(capWriter(cap(3))); A.equal(uploadCalls, 3); A.equal(actualUploads, 63);
+    for (const fault of ["invalid-receipt", "receipt-persistence"]) {
+      const faultRoot = P.join(temp, fault); let attempts = 0;
+      const writer = H.checkpointWriter({ source: capSource, env, root: faultRoot, upload: async req => {
+        attempts++;
+        if (fault === "receipt-persistence") F.mkdirSync(P.join(faultRoot, "0000-receipt.json"));
+        return { checkpoint: req.sequence, encryptedOnly: true,
+          receipts: [{ id: 1, size: 1, digest: fault === "invalid-receipt" ? "invalid" : "e".repeat(64), files: 1 }] };
+      } });
+      await A.rejects(writer(cap(0))); await A.rejects(writer(cap(1))); A.equal(attempts, 1);
+    }
     const allowed = H.transportEnv({ ...env, GH_TOKEN: "FORBIDDEN", DEEPSEEK_API_KEY: "FORBIDDEN", ACTIONS_RUNTIME_TOKEN: "FAKE_RUNTIME" });
     A.equal(allowed.ACTIONS_RUNTIME_TOKEN, "FAKE_RUNTIME");
     A.equal(allowed.HELMUT_CRON_SECRET, undefined); A.equal(allowed.HELMUT_NACHWEIS_PUBLIC_KEY, undefined);
