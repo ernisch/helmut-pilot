@@ -20,11 +20,235 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 scripts/blocker2-handoff-copy.py
-      - name: Bytegleiche Cipher-Originale90 Tage sichern
+      - name: Original-Cipher-ZIP 01 einzeln90 Tage sichern
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: blocker2-handoff-37790661298-original-cipher90
-          path: tmp/blocker2-handoff-original-cipher/*
+          name: blocker2-handoff90-source-11555474251
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0000-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 02 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11555693987
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0001-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 03 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556327603
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0002-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 04 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556357373
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0003-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 05 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11555664455
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0004-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 06 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11555579692
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0005-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 07 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11555714290
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0006-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 08 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556363231
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0007-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 09 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11555968995
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0008-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 10 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556737130
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0009-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 11 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11555914372
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0010-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 12 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11557170301
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0011-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 13 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556418486
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0012-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 14 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556249583
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0013-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 15 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11557530025
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0014-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 16 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11557081254
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0015-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 17 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11557410435
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0016-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 18 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556553915
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0017-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 19 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556494253
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0018-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 20 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11557675617
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0019-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 21 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556937537
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0020-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 22 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11557411191
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0021-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 23 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11557611100
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0022-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 24 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11557147520
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0023-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 25 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556659826
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0024-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 26 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556973051
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0025-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 27 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11556908638
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0026-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Original-Cipher-ZIP 28 einzeln90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-source-11557257710
+          path: tmp/blocker2-handoff-original-cipher/blocker2-readonly500-37790661298-checkpoint-0027-part-01.zip
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+      - name: Nurlese-Transportmanifest90 Tage sichern
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: blocker2-handoff90-transport-manifest
+          path: tmp/blocker2-handoff-original-cipher/TRANSPORT_MANIFEST.json
           if-no-files-found: error
           retention-days: 90
           compression-level: 0
