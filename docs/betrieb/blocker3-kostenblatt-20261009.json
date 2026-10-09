@@ -1,0 +1,404 @@
+{
+  "version": "helmut-blocker3-production-input-cost-analysis/1",
+  "approved": false,
+  "blocker3Complete": false,
+  "productionReady": false,
+  "budgetOrReserveChanges": 0,
+  "productionModelCallsStarted": 0,
+  "snapshot": {
+    "version": 1,
+    "scope": "snapshot sizes and unaccepted offline D projections only",
+    "runId": "37923233626",
+    "snapshotProductionCommit": "81a70cbe2ffec2499565b68649b97408d80ead69",
+    "repositoryBasis": "eebb2c51fe35bcdd957c870a150627ebb36b2b0d",
+    "profiles": 500,
+    "semanticAcceptance": 0,
+    "tokenizer": {
+      "package": "js-tiktoken",
+      "version": "1.0.21",
+      "encoding": "o200k_base",
+      "vocabularyFileSHA256": "d2a4d9f263b2de045dcd98f347c50e38d71104141948918b6c30a92fb2411f42",
+      "bpeRanksSHA256": "46095c39ad133184da5315ac91dd491f39901e6d89a05f58f24717fd7cbf0523",
+      "countImplementation": "tiktoken 0.12.0; JS-port vocabulary; independent JS first-position checks",
+      "independentJSRowComparisons": 48,
+      "maxTokenBytes": 128,
+      "canonicalVocabularySHA256": "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d",
+      "upstreamPinnedVocabularyHashVerified": true
+    },
+    "rawBodyBytes": {
+      "min": 4485540,
+      "median": 4558905.5,
+      "max": 4636524,
+      "sum": 2279874802
+    },
+    "inputDTOBytes": {
+      "min": 487455,
+      "median": 516084,
+      "max": 537555,
+      "sum": 257886997
+    },
+    "inputDTOTextTokens": {
+      "min": 168579,
+      "median": 176210.0,
+      "max": 181868,
+      "sum": 88057204
+    },
+    "visibleCards": {
+      "min": 34,
+      "median": 41,
+      "max": 50,
+      "sum": 20525
+    },
+    "candidateD": {
+      "sourceKOCount": {
+        "min": 0,
+        "median": 5,
+        "max": 9,
+        "sum": 2476
+      },
+      "sourceDocumentCount": {
+        "min": 0,
+        "median": 5,
+        "max": 10,
+        "sum": 2644
+      },
+      "promptBytes": {
+        "min": 12136,
+        "median": 15360,
+        "max": 18464,
+        "sum": 7706689
+      },
+      "promptTokens": {
+        "min": 2927,
+        "median": 3959.5,
+        "max": 4957,
+        "sum": 1992560
+      },
+      "schemaTokens": {
+        "min": 304,
+        "median": 304.0,
+        "max": 304,
+        "sum": 152000
+      },
+      "promptPlusSchemaTokens": {
+        "min": 3231,
+        "median": 4263.5,
+        "max": 5261,
+        "sum": 2144560
+      },
+      "requestJSONBytes": {
+        "min": 13702,
+        "median": 17103,
+        "max": 20388,
+        "sum": 8583277
+      },
+      "requestJSONTextTokens": {
+        "min": 3360,
+        "median": 4421.5,
+        "max": 5452,
+        "sum": 2225161
+      }
+    },
+    "candidateDWithoutSources": 1,
+    "actualProviderInputTokens": null,
+    "actualRInputs": null,
+    "necessaryUCalls": null,
+    "otherNewPaidCalls": 0,
+    "productionCallsStarted": 0,
+    "providerUsageProven": false,
+    "productionReady": false,
+    "blocker3Complete": false,
+    "sourceFiles": {
+      "lib/helmut/ai.js": "d1a475c66d4d00b7cde0c6991382fe3d5b7d4469d8b307e96f26a2ba7c3c40c0",
+      "lib/helmut/lage.js": "e8e7227017c6052bb5cddfa39b27711648942540527a52510060a43af55ff09b",
+      "lib/helmut/lage-quellenbeleg.js": "947d64472e7d78d9af0a12a190236456369fbcf153d8c0ea1fa28048d61f1544",
+      "lib/helmut/lage-textqualitaet.js": "7c3ac32af8bebcd3df70a3efc08394bb7f656068215a0c701b37f51c74a1f3d4",
+      "lib/helmut/briefing-lagebindung.js": "ef7543f978cd689d409a9fb297332b1db2a1c02fe5723519eb323f24a55cf122",
+      "lib/helmut/testkosten-budget.js": "9d29edd7bf885349d01718f15dc6bbe6a63d7b1491e3f530664b60ff07522260",
+      "lib/helmut/synthetik-500-kosten-admission.js": "e69331a721c14a4e4642f7e2827d2f0005267da146a66a4937831f1be561d7ca"
+    },
+    "rowReportSHA256": "54fe7501d4d1b63dc0bcced42f547e35d2e732555a6a3f7ce43fec3794d9e003",
+    "otherNewPaidCallsScope": "closed direct path only; unrelated concurrency not admitted"
+  },
+  "knownRunCalls": {
+    "D": 500,
+    "R": 500,
+    "U": null,
+    "otherClosedDirectPath": 0,
+    "scope": "complete successful direct run, not currently admitted execution"
+  },
+  "financialObservation": {
+    "observedAtUTC": "2026-10-09T17:14:18.395Z",
+    "orderId": "autonom-bis500-20260926",
+    "abTag": "2026-09-25",
+    "version": 4,
+    "nativeOrderLimitMicroUsd": 20000000,
+    "endValidatorLimitMicroUsd": 7000000,
+    "dayLimitMicroUsd": 6000000,
+    "nativeOrderSpentIncludingExternalMicroUsd": 6809364,
+    "externalAlreadyIncludedMicroUsd": 5195303,
+    "nativeOrderOpenMicroUsd": 0,
+    "privateAdditionalMicroUsd": 636000,
+    "conservativeOrderBoundMicroUsd": 7445364,
+    "orderHeadroomAt20MicroUsd": 12554636,
+    "globalHistoricalSpentMicroUsd": 13542966,
+    "globalHistoricalOpenMicroUsd": 3176000,
+    "globalHistoricalOpenTickets": 15,
+    "todayBookPresent": false,
+    "missingOrderBookDays": [
+      "2026-10-07",
+      "2026-10-08",
+      "2026-10-09"
+    ],
+    "observationIsPositiveAdmission": false
+  },
+  "callCeiling": {
+    "codeFallback": 50,
+    "historicalProductionValues": {
+      "dailyLimit": 2416,
+      "understandingReserve": 702,
+      "sharedReserve": 200
+    },
+    "currentProductionProjectConfigRead": {
+      "day": "2026-10-09",
+      "dailyLimit": 2416,
+      "understandingReserve": 702,
+      "sharedReserve": 200,
+      "failClosed": true,
+      "immutableDeploymentEnvProven": false
+    },
+    "datedCounterRead": {
+      "observedAtUTC": "2026-10-09T17:14:58.164692Z",
+      "counterRows": 0,
+      "storedUsed": null,
+      "readerInterpretedUsed": 0,
+      "reservationRPCPresent": true,
+      "atomicExecutionTestPerformed": false
+    },
+    "conditionalEffectiveDRMax": 1714,
+    "conditionalEffectiveUMax": 2216,
+    "conditionalMaxUBeforeDRAtUsed0": 714,
+    "minimumRawFor1000DRWithReserve702AtUsed0": 1702,
+    "actualRunDayProofPending": true
+  },
+  "pricing": {
+    "rateId": "azure-gpt5-mini-obergrenze-20260909",
+    "inputUsdPerMillion": 0.5,
+    "outputIncludingReasoningUsdPerMillion": 4,
+    "microUsdFormula": "ceil(inputTokens/2 + 4*outputTokens)",
+    "DAndUOutputCap": 3000,
+    "standardROutputCap": 3000,
+    "expandedROutputCapSensitivity": 6000,
+    "inputReserveTokens": 400000,
+    "routeDeclaredServiceMaxInputTokens": 272000,
+    "routePayloadValidatesThatTokenCount": false,
+    "standardReserveMicroUsd": 212000,
+    "expandedRReserveMicroUsd": 224000,
+    "fullCapsOutputOnlyStandardDRMicroUsd": 12000000,
+    "fullCapsOutputOnlyExpandedDRMicroUsd": 18000000,
+    "roughFullReserveBasisCostDRMicroUsd": 212000000,
+    "roughExpandedFullReserveBasisCostDRMicroUsd": 218000000,
+    "roughBoundsRequireValidRouteAndTariff": true,
+    "notSimultaneousHolds": true
+  },
+  "conditionalScenarios": {
+    "scope": "conditional cost scenarios, not an expected usage proof or admission",
+    "snapshots": {
+      "allTemplateInputOnly": 1072404,
+      "nonempty499InputOnly": 1070788,
+      "emptyPositions": [
+        342
+      ]
+    },
+    "scenarios": [
+      {
+        "assumptions": {
+          "DFramingExtraTokens": 256,
+          "expectedTotalRInputPerCall": 4000,
+          "DOutputPerCall": 500,
+          "ROutputPerCall": 500,
+          "U": 0,
+          "other": 0
+        },
+        "newCostMicroUsd": 4136404,
+        "nextReservePeakMicroUsd": 4344404,
+        "conservativeOrderTotalMicroUsd": 11581768,
+        "conservativeOrderPeakMicroUsd": 11789768,
+        "dayPeakWithPrivateMicroUsd": 4980404,
+        "day6FitsPeak": true,
+        "order20FitsPeak": true
+      },
+      {
+        "assumptions": {
+          "DFramingExtraTokens": 256,
+          "expectedTotalRInputPerCall": 4000,
+          "DOutputPerCall": 1000,
+          "ROutputPerCall": 1000,
+          "U": 0,
+          "other": 0
+        },
+        "newCostMicroUsd": 6136404,
+        "nextReservePeakMicroUsd": 6342404,
+        "conservativeOrderTotalMicroUsd": 13581768,
+        "conservativeOrderPeakMicroUsd": 13787768,
+        "dayPeakWithPrivateMicroUsd": 6978404,
+        "day6FitsPeak": false,
+        "order20FitsPeak": true
+      },
+      {
+        "assumptions": {
+          "DFramingExtraTokens": 256,
+          "expectedTotalRInputPerCall": 4000,
+          "DOutputPerCall": 3000,
+          "ROutputPerCall": 3000,
+          "U": 0,
+          "other": 0
+        },
+        "newCostMicroUsd": 14136404,
+        "nextReservePeakMicroUsd": 14334404,
+        "conservativeOrderTotalMicroUsd": 21581768,
+        "conservativeOrderPeakMicroUsd": 21779768,
+        "dayPeakWithPrivateMicroUsd": 14970404,
+        "day6FitsPeak": false,
+        "order20FitsPeak": false
+      },
+      {
+        "assumptions": {
+          "DFramingExtraTokens": 256,
+          "expectedTotalRInputPerCall": 5000,
+          "DOutputPerCall": 500,
+          "ROutputPerCall": 500,
+          "U": 0,
+          "other": 0
+        },
+        "newCostMicroUsd": 4386404,
+        "nextReservePeakMicroUsd": 4593904,
+        "conservativeOrderTotalMicroUsd": 11831768,
+        "conservativeOrderPeakMicroUsd": 12039268,
+        "dayPeakWithPrivateMicroUsd": 5229904,
+        "day6FitsPeak": true,
+        "order20FitsPeak": true
+      },
+      {
+        "assumptions": {
+          "DFramingExtraTokens": 256,
+          "expectedTotalRInputPerCall": 5000,
+          "DOutputPerCall": 1000,
+          "ROutputPerCall": 1000,
+          "U": 0,
+          "other": 0
+        },
+        "newCostMicroUsd": 6386404,
+        "nextReservePeakMicroUsd": 6591904,
+        "conservativeOrderTotalMicroUsd": 13831768,
+        "conservativeOrderPeakMicroUsd": 14037268,
+        "dayPeakWithPrivateMicroUsd": 7227904,
+        "day6FitsPeak": false,
+        "order20FitsPeak": true
+      },
+      {
+        "assumptions": {
+          "DFramingExtraTokens": 256,
+          "expectedTotalRInputPerCall": 5000,
+          "DOutputPerCall": 3000,
+          "ROutputPerCall": 3000,
+          "U": 0,
+          "other": 0
+        },
+        "newCostMicroUsd": 14386404,
+        "nextReservePeakMicroUsd": 14583904,
+        "conservativeOrderTotalMicroUsd": 21831768,
+        "conservativeOrderPeakMicroUsd": 22029268,
+        "dayPeakWithPrivateMicroUsd": 15219904,
+        "day6FitsPeak": false,
+        "order20FitsPeak": false
+      },
+      {
+        "assumptions": {
+          "DFramingExtraTokens": 256,
+          "expectedTotalRInputPerCall": 8000,
+          "DOutputPerCall": 500,
+          "ROutputPerCall": 500,
+          "U": 0,
+          "other": 0
+        },
+        "newCostMicroUsd": 5136404,
+        "nextReservePeakMicroUsd": 5342404,
+        "conservativeOrderTotalMicroUsd": 12581768,
+        "conservativeOrderPeakMicroUsd": 12787768,
+        "dayPeakWithPrivateMicroUsd": 5978404,
+        "day6FitsPeak": true,
+        "order20FitsPeak": true
+      },
+      {
+        "assumptions": {
+          "DFramingExtraTokens": 256,
+          "expectedTotalRInputPerCall": 8000,
+          "DOutputPerCall": 1000,
+          "ROutputPerCall": 1000,
+          "U": 0,
+          "other": 0
+        },
+        "newCostMicroUsd": 7136404,
+        "nextReservePeakMicroUsd": 7340404,
+        "conservativeOrderTotalMicroUsd": 14581768,
+        "conservativeOrderPeakMicroUsd": 14785768,
+        "dayPeakWithPrivateMicroUsd": 7976404,
+        "day6FitsPeak": false,
+        "order20FitsPeak": true
+      },
+      {
+        "assumptions": {
+          "DFramingExtraTokens": 256,
+          "expectedTotalRInputPerCall": 8000,
+          "DOutputPerCall": 3000,
+          "ROutputPerCall": 3000,
+          "U": 0,
+          "other": 0
+        },
+        "newCostMicroUsd": 15136404,
+        "nextReservePeakMicroUsd": 15332404,
+        "conservativeOrderTotalMicroUsd": 22581768,
+        "conservativeOrderPeakMicroUsd": 22777768,
+        "dayPeakWithPrivateMicroUsd": 15968404,
+        "day6FitsPeak": false,
+        "order20FitsPeak": false
+      }
+    ],
+    "unpricedFutureU": true,
+    "unapproved": true
+  },
+  "duration": {
+    "captureWorkflowSeconds": 1193,
+    "directWindowMaxSeconds": 14400,
+    "approvedCurrentDatedWindow": null,
+    "planningEndBufferSeconds": 600,
+    "measuredModelLatency": null,
+    "modelOnlySecondsFor1000DR": {
+      "5sec": 5000,
+      "10sec": 10000,
+      "15sec": 15000,
+      "20sec": 20000
+    },
+    "fullFinishWithinWindowGuaranteed": false,
+    "otherOverheadSeconds": null,
+    "UModelSecondsPerCallPlanning": 10,
+    "UModelSecondsPerCallProviderEnvelope": 20
+  },
+  "remainingBlocker2Inputs": [
+    "final admitted 500 D contexts and source/KO/profile/briefing version bindings and opinions",
+    "necessary finite U intents/input versions and accounting scope or proven U=0",
+    "final corrected input/token bounds and semantically suitable R effort/cap"
+  ],
+  "otherPending": [
+    "specific financed contract approval",
+    "subsequent same-contract technical implementation and validator integration",
+    "fresh integrated run-day books/counter/runtime/tariff/quiet-state and dated window proof"
+  ],
+  "privateEvidence": {
+    "inputAnalysisSHA256": "0f760689c6b17d1bd5d589ec5877d9c6c17a6979784729daf2da0da66e8f29a3",
+    "restoreScriptSHA256": "f931bffbcc49b62b5920a24bf82fa3dbcb2af6ab632190ff13a535afbcea955c",
+    "projectionScriptSHA256": "8fb2b6e32a2ba2b955427537557ae995f26b1b5a1eec1c0e9c6336d2e235f3fd",
+    "tokenCountScriptSHA256": "15045d7915c1a9764bd37e26396175582fbc5c7e433b087f1f707e053e80620f"
+  }
+}
