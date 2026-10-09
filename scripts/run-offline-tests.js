@@ -314,6 +314,7 @@ const STANDARD = new Set([
   "briefing-lesediagnose-test.js",           // Sichere B2-Fehlerklassen statt verschluckter Lesefehler
   "briefing-speicher-lesediagnose-test.js",  // B2-Timeoutphase, echte Versuche und isolierte Transportmetadaten
   "briefing-kandidatenzeit-test.js",         // Auditkorrektur ist kein neuer Quellenanlass; echte Builder
+  "briefing-ereignisgruppen-test.js",        // Quellengebundene Ereignisgruppe; vollständige Mitglieder erhalten
   "github-blocker2-readonly-diagnose-test.js", // Fester Einzeleingabe-/Ciphervertrag, kein neuer500er Lauf
   "github-blocker2-readonly-diagnose12-test.js", // Eigener quellgebundener BT012-Einstieg, alter122er bleibt erhalten
   "briefing-pruefaufnahme-500-test.js",     // Pruefaufnahme des 500er Briefingnachweises
