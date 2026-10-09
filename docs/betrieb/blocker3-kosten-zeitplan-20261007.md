@@ -12,6 +12,8 @@ die kleinste spätere Änderung samt konkreter, noch nicht erteilter Freigabe.
 Ein [ausfüllbares Offline-Kostenblatt](blocker3-kostenblatt-vorlage-20261007.json)
 ist vorbereitet; es erteilt keine Runtime- oder Budgetzulassung.
 
+Aktueller Nachtrag09.10.: [tatsächliche500 Eingaben, Kostenentscheidung und Zeitrahmen](blocker3-production-kosten-zeit-20261009.md). Die unten erhaltenen Werte sind datierte Altbelege.
+
 ## Belegte Grenzen und ihr Widerspruch
 
 | Bindung | Vorhandener Wert | Technische Quelle und Bedeutung |
@@ -342,3 +344,8 @@ Der aktuelle Status verweist auf diese datierten Belege; die Beobachtungen vom
 
 - **Gebundene U-Vorbereitung (06.10.,17:32:57 UTC):** Zwei echte Einzel-U geschlossen und konservativ abgerechnet; Original-U2 bleibt `unknown`. Phase15.232 Mikro-USD plus unveraenderte private636.000-Reserve, keine offenen Anbieteraufrufe. Der zweite Modellbeleg wurde fachlich abgelehnt; genau16 unbelegte/mischende Felder des eigenen Wissensobjekts wurden unabhaengig geprueft korrigiert, KO-Version2 und separater Operatorbeleg nativ nachkontrolliert. Originalmodellbeleg/Verbrauchshistorie bleiben unveraendert; Journal57/56 alte Vollzeilen+xmin erhalten,500/0 aktiv. Fehlversuche rollten nachweislich zurueck; volle Zeilen-/xmin-Fingerprints jetzt vor Aggregation verdichtet, dieselben15s/17s/2s-Grenzen erhalten. Cron-Ruhe produktiv bestaetigt; vollstaendige aktuelle Quellen-/Briefing-Eingaben beider Ebenen, Native-D, Finanzierung und Endwaechter bleiben offen. [Umfang und Rueckweg](gebundene-u-vorbereitung-cron-ruhe-20261006.md).
 - **Kostentage ergänzt (05.10.,04:40 UTC):** Native Nachkontrolle bestätigt26 Bücher:03./04.10. jeweils14 reine Skip-Belege,0 Anbieter-/Zählerereignisse; exakt2 Nullbücher ergänzt. Vollständiger Auth-Deltaguard erhielt alle alten Bücher/Kosten/Reserven/Grenzen; Journal47, vorherige46 Vollzeilen/xmin erhalten. Kostenstand6,794132USD erhalten. PR#807 Ready: Zwei16-Token-Proben06:05/06:36 UTC enden502;128-Token-Probe07:43 UTC endet200/vollständig,30 Tokens. Zusammen126 Mikro-USD konservativ abgerechnet,0 offene Reserve im Auftragsfenster. Global:15 historische Reserven/3,176USD vor25.09. unverändert; alle Production-Bücher16,703860USD gebunden. Anbieter-/Kostenbeleg unabhängig schmal abgenommen. [Aktuelle Grenzen](synthetik-500-inaktiver-import-20261005.md), [frühere Kostenkorrektur](kosten-nullbuecher-nachbeleg-20261002.md).
+
+
+Erhaltene CURRENT_STATE-Kostenzeile vor dem Nachtrag vom09.10.2026:
+
+- **Blocker 3 Kosten/Zeit (07.10., offen):** Sender prüft gespeicherte20USD/Tag6USD; Plan7USD ist Metadatum, Endvalidator7USD. Konservativer Bestand7.445364USD scheitert dort zwingend. Scoped20USD-Vertrag/Freigabe vorbereitet, nicht angewendet. Callfallback50; historische Production2416/U702, aktueller Wert offen. Kostenblatt für1000D/R plus endgültigeU-/Tokenwerte vorhanden; volle Ausgabecaps allein12/18USD verhindern6USD-Vollgarantie. Grenzen/Reserven unverändert,0 Modellcalls. [Prüfung/Freigabe](betrieb/blocker3-kostenvertrag-pruefung-20261007.md), [Kosten/Altbelege](betrieb/blocker3-kosten-zeitplan-20261007.md).
