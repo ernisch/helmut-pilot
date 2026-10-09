@@ -270,10 +270,19 @@ jobs:
           docker tag "$IMAGE" postgres:17.6-bookworm
           docker run -d --network none --name "$HELMUT_SYNTHETIK500_PG_CONTAINER" -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.6-bookworm
           trap 'docker rm -fv "$HELMUT_SYNTHETIK500_PG_CONTAINER" >/dev/null' EXIT
+          # Die offizielle Docker-Initialisierung oeffnet kurzzeitig einen NUR
+          # am Unix-Socket erreichbaren Server und stoppt ihn wieder, bevor der
+          # echte Daemon startet. Das Default-pg_isready im Container prueft nur
+          # den Unix-Socket und meldete diesen Zwischenstand faelschlich als
+          # bereit (CI: erster SQL-Socket danach nicht vorhanden). Deshalb wird
+          # ausschliesslich der TCP-Loopback des realen Enddienstes geprueft.
           for attempt in {1..30}; do
-            if docker exec "$HELMUT_SYNTHETIK500_PG_CONTAINER" pg_isready -U postgres; then break; fi
+            if docker exec "$HELMUT_SYNTHETIK500_PG_CONTAINER" pg_isready -h 127.0.0.1 -U postgres; then break; fi
             sleep 1
           done
+          # Kein stiller Durchfall nach der Grenze: die TCP-Bereitschaft muss
+          # hier positiv bestaetigt sein, sonst scheitert der Schritt.
+          docker exec "$HELMUT_SYNTHETIK500_PG_CONTAINER" pg_isready -h 127.0.0.1 -U postgres
           node scripts/lokal.js -- node scripts/synthetik-500-native-d-new-datenbank-test.js
 
       - name: Unabhaengige Endsteuerung gegen echten PostgreSQL17 und pg_cron
@@ -287,10 +296,16 @@ jobs:
           export HELMUT_END500_PG_CONTAINER="end500-pg-$(openssl rand -hex 8)"
           docker run -d --network none --name "$HELMUT_END500_PG_CONTAINER" -e POSTGRES_HOST_AUTH_METHOD=trust helmut-end500-pg17:1 -c shared_preload_libraries=pg_cron -c cron.database_name=postgres -c cron.use_background_workers=on
           trap 'docker rm -fv "$HELMUT_END500_PG_CONTAINER" >/dev/null' EXIT
+          # Gleiche Ursache wie im Native-D-Schritt: der transiente
+          # Unix-Socket-Zwischenstand der Init ist keine echte Bereitschaft.
+          # Geprueft wird nur der TCP-Loopback des realen Enddienstes.
           for attempt in {1..30}; do
-            if docker exec "$HELMUT_END500_PG_CONTAINER" pg_isready -U postgres; then break; fi
+            if docker exec "$HELMUT_END500_PG_CONTAINER" pg_isready -h 127.0.0.1 -U postgres; then break; fi
             sleep 1
           done
+          # Kein stiller Durchfall nach der Grenze: die TCP-Bereitschaft muss
+          # hier positiv bestaetigt sein, sonst scheitert der Schritt.
+          docker exec "$HELMUT_END500_PG_CONTAINER" pg_isready -h 127.0.0.1 -U postgres
           node scripts/lokal.js -- node scripts/end500-unabhaengig-datenbank-test.js
 
       - name: Schnelle Kernschutzprüfung
