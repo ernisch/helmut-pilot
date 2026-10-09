@@ -1,7 +1,20 @@
 "use strict";
 // Isolated transport fixtures. Real C/A/J validators, no network or Production.
-const assert=require('node:assert/strict'),P=require('../lib/helmut/synthetik-500-profile'),A=require('../lib/helmut/synthetik-500-kosten-admission'),K=require('../lib/helmut/testkosten-budget'),KO=require('../lib/helmut/knowledge-object-version'),C=require('../lib/helmut/synthetik-500-production-command'),J=require('../lib/helmut/synthetik-500-dispatch-journal'),Adapter=require('../lib/helmut/synthetik-500-production-adapter');
-const START='2030-01-02T12:00:00.000Z',END='2030-01-02T13:00:00.000Z',DAY=START.slice(0,10),COMMIT='c'.repeat(40),OP='synthetik500-production-fake-only',RUN='nachlauf500-1893585600000',sha=P.hash,clone=structuredClone;
+const assert=require('node:assert/strict');
+const START='2030-01-02T12:00:00.000Z',END='2030-01-02T13:00:00.000Z',DAY=START.slice(0,10),COMMIT='c'.repeat(40),OP='synthetik500-production-fake-only',RUN='nachlauf500-1893585600000';
+// Deterministic fixture clock: this standalone test process freezes no-arg
+// Date/Date.now() at START (2030-01-02T12:00:00Z). The fixture windows
+// (ms-2h..ms-1h) then never cross a UTC day boundary, which the real slot
+// validator correctly rejects. Explicit Date arguments, Date.parse/UTC and Date
+// instances stay native; the builtin is restored in the finally below and no
+// other process is affected.
+const FIXED_MS=Date.parse(START),RealDate=Date;
+global.Date=class FixtureDate extends RealDate{
+  constructor(...args){super(...(args.length?args:[FIXED_MS]));}
+  static now(){return FIXED_MS;}
+};
+const P=require('../lib/helmut/synthetik-500-profile'),A=require('../lib/helmut/synthetik-500-kosten-admission'),K=require('../lib/helmut/testkosten-budget'),KO=require('../lib/helmut/knowledge-object-version'),C=require('../lib/helmut/synthetik-500-production-command'),J=require('../lib/helmut/synthetik-500-dispatch-journal'),Adapter=require('../lib/helmut/synthetik-500-production-adapter');
+const sha=P.hash,clone=structuredClone;
 const noNet=()=>{throw Error('fixture forbids network');};global.fetch=noNet;require('node:https').request=noNet;require('node:http').request=noNet;
 let passed=0;const test=async(name,fn)=>{await fn();passed++;console.log('PASS '+name);};
 function fixture(phase = "U") {
@@ -119,4 +132,4 @@ async function main(){
  await test('admitted DR transport still rejects prior entered and unknown state before claim',async()=>{for(const kind of ['entered','unknown']){const r=await startFixture(c=>{c.setDRBoundary();c.setDrift(a=>{const j=a[J.KEY].operations[c.f.original.operationId];if(kind==='entered')j.units[0].entered=true;else j.state='unknown';});});assert.equal(r.claims,0);assert.equal(r.effects,0);}});
  console.log(JSON.stringify({targetedChecks:passed,production:false,network:false,providerCalls:0,profilesActivated:false,DRTransportAdmissionIsMocked:true,actualFullDRSchemaOrNativeAdmissionProven:false}));
 }
-main().catch(e=>{console.error(e);process.exitCode=1;});
+main().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{global.Date=RealDate;});
