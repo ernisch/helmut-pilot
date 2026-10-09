@@ -51,13 +51,15 @@ Gemeinsamer Umfangsvorbehalt für alle acht Positionen: wiederhergestellt ist de
 
 Die acht Positionen ergeben zusammen 443 Profil-Sichtbarkeiten; die Vereinigungsmenge umfasst 347 Profile.
 
-## Neue unabhängige 500er-Neuauszählung
+## Unabhängige 500er-Neuauszählung der gelisteten negativen Fälle
+
+Die Herkunftsprüfung hat den Umfang der bisherigen Ableitung korrigiert: Der Ausgangsledger bindet ausdrücklich nur 26 frühere negative KO-Fälle (`negativeEvidenceOnly=true`) an die aktuelle Aufnahme. Die spätere Ableitung entfernt die acht neu belegten KO-Fälle. Für die anderen sichtbaren KO prüft dieser Pfad keine individuellen Artikelkörper. Die rechnerische Abwesenheit eines gelisteten Falls ist deshalb kein positiver Volltextnachweis. Frühere hashgebundene Ledgers bleiben unverändert; ihre darüber hinausgehenden Vollständigkeitsbeschreibungen werden nicht übernommen.
 
 | Kennzahl | Baseline | Aktuell |
 | --- | --- | --- |
-| Profile mit mindestens einem sichtbaren KO ohne belegten Originalvolltext | 499 | 465 |
+| Profile mit mindestens einem KO aus der gelisteten Negativmenge | 499 | 465 |
 | Profile mit mindestens einem neu wiedergewonnenen Körper | — | 347 |
-| Profile neu ohne Textlücke | — | 34 |
+| Profile neu ohne einen dieser gelisteten Fälle | — | 34 |
 | Positiv abgenommene Profile | 0 | 0 |
 | Fehlender vollständiger positiver Nachweis | 500 | 500 |
 | Fehlende Eingaben | 0 | 0 |
@@ -68,20 +70,26 @@ Die acht Positionen ergeben zusammen 443 Profil-Sichtbarkeiten; die Vereinigungs
 | Offene KO im Prüfumfang | 26 | 18 |
 | Offene Quellen im Prüfumfang | 28 | 20 |
 
-Die Differenz 499→465 beträgt genau 34 und entspricht den 34 Profilen, die neu ohne Textlücke sind. Im geprüften Umfang von 26 KOs und 28 Quellen bleiben 18 KOs und 20 Quellen ohne wiederhergestellten exakten Volltext. Fehlende, leere, doppelte und technisch fehlerhafte Antworten bleiben vollständig bei 0.
+Die Differenz 499→465 beträgt genau34.35Profile enthalten keinen der18verbleibenden gelisteten Fälle;23davon enthalten weiterhin den Tarif-KO,12nicht. Weder diese35Profile noch die12Kandidaten sind damit positiv volltextgeprüft. Im bisherigen negativen Prüfumfang von26KOs/28Quellen verbleiben18KOs/20Quellen. Das ist keine vollständige Inventur aller möglichen Quellenlücken. Root hat die korrigierte Zählung direkt gegen alle500aktuellen Antwortkörper und ihre Hashes geprüft (Beleg-SHA256`d9f0aa257dbd3a14d2ea2b58a37ee6f478cc46b8c2ac7ef23d5ef685dbed1fc8`). Fehlende, leere, doppelte und technisch fehlerhafte Antworten bleiben bei0.
 
 ## Body-Verfügbarkeit ist nicht fachliche Abnahme
 
 Die acht Volltexte belegen ausschließlich, dass zu sichtbaren KO ein exakter Text der veröffentlichten Quellenseite vorliegt. Sie belegen **nicht** die positive Qualität der Quelle, nicht einzelne Tatsachen, nicht den Zeit- und Zuständigkeitsbezug, nicht die Relevanz für ein konkretes Mandat und nicht die vollständige positive Profilversorgung. Ebenso wenig belegen sie, dass jede einzelne Aussage eines sichtbaren Elements einer bestimmten Textstelle zugeordnet ist.
 
-Der Umfangsvorbehalt der Belegbasis lautet entsprechend: mindestens ein exakter Volltext für sichtbare KO; nicht alle verlinkten Einzelartikel und kein Audio, keine Publikationshistorie der Quelle, nicht alle Fakten, keine vollständige Zeit-, Zuständigkeits- oder Bedeutungsprüfung und kein vollständiger positiver Profilnachweis. Der Baseline-Ledger bleibt erhalten. Die Fachabnahme bleibt deshalb bei 0 von 500.
+Für die acht neu gebundenen KO liegt jeweils der vollständige veröffentlichte Text genau ihrer Quellenseite vor. Für alle übrigen sichtbaren KO folgt daraus kein Volltextnachweis. Verlinkte Einzelartikel, Audio, historische Erstpublikation, sämtliche Fakten, Zeit-, Zuständigkeits- und Profilurteile bleiben gesondert zu prüfen. Der Baseline-Ledger bleibt erhalten. Die Fachabnahme bleibt bei0von500.
 
 Trennung der beiden Ebenen:
 
 | Ebene | Aussage | Stand |
 | --- | --- | --- |
-| Body-Verfügbarkeit | Exakter Volltext der veröffentlichten Seite liegt vor | 8 Positionen neu belegt, 34 Profile ohne Textlücke |
+| Body-Verfügbarkeit | Exakter Volltext der veröffentlichten Seite liegt vor | 8 Positionen neu belegt; keine vollständige Profilabdeckung abgeleitet |
 | Positive Abnahme | Quelle, Tatsachen, Zeit und Profil individuell akzeptiert | 0 von 500 |
+
+## Konkrete nächste Quellenprüfung
+
+Position100der aktuellen Aufnahme ist als kleinster bisheriger Kandidat ohne gelisteten Negativfall und ohne Tarif-KO vorbereitet:42sichtbareKO-Versionen,60Source19-Verträge und326Ausgabeaussagen. Auch Auswahl und Auslassungen gegenüber dem globalen500KO-Pool müssen fachlich geprüft werden. Source19 enthält keinen Rohtext; bei50der60Quellen fehlt auch ein brauchbarer Auszug.
+
+Die lokale Herkunftsinventur hat alle60Verträge direkt an die aktuelle Eingabe gebunden und147unterschiedliche Original-/Textartefakte hashgeprüft. Stand dieser Inventur:1bereits gebundenes DLF-Recovery,40Kandidaten mit noch offener Artikelidentität/-vollständigkeit und19fehlende oder nicht vollständige Originalnachweise (8ohneURL,3Fehlabrufe/Redirects,4Zugangssperren,3Landing-/Abstractseiten,1Metadatenseite). Katalog-SHA256`7931e1488fca381fa3cbe253ff4ffe12797d9846e655d070e045e82b2b7c33d2`; Root-Abgleich`8352ca5a22f3fa54c5f5c2117fde805c4ac30e3f297f42bdc4d9c5441d8b1a47`. Die anschließende individuelle Prüfung dieser40Kandidaten läuft getrennt und ist hier noch nicht als abgeschlossen verbucht. Vollständige HTML-Bytes, HTTP200, eine Seitennavigation oder verwandte Artikel ersetzen keinen vollständigen exakten Originaltext.
 
 ## Bekannte Tarifwidersprüche und keine neuen Gegenfakten
 
@@ -105,12 +113,14 @@ Im sichtbaren Bestand bleiben **372** bekannte Tarifwidersprüche bestehen. Dies
 | Anwendung | weiterhin nicht angewendet |
 | Umfang | 1 KO UPDATE + 1 Primärquellen-UPDATE + 1 inkompatibler KO-/Quellen-Link-DELETE; Quelldokumente bleiben erhalten; Embedding bewusst NULL |
 | Nativer Fehler | `McpServerError: Invalid or expired requestState; JSON-RPC -32602 invalid_request_state` |
-| Voriger Versuch | scheiterte auch nach einem bereits erfolgreichen UPDATE weiterhin |
-| Native Caller-Rechte | volle DML-Rechte frisch bestätigt am 2026-10-09T12:24:29.685792Z |
-| Ziele | unverändert frisch bestätigt am 2026-10-09T12:24:24.555638Z |
-| Management-API | Lesecaller mit 42501 abgewiesen |
+| Letzter Schreibversuch | nach bestätigtem Brave-Web-Reconnect mit „Connected“ erneut derselbe Fehler |
+| Native Caller-Rechte | postgres mit vollständigen DML-Rechten auf drei Ziele, bestätigt13:56:22UTC |
+| Vollständige Nachkontrolle |14:13:00.83382UTC:52gebundeneTabellen/372.070Zeilen, alle Zeilen-/xmin-Aggregate und vollständige Ziele unverändert; zusätzlich328unabhängige Python-Prüfungen |
+| Aktueller nativer Lesezugriff | rein lesende Probe14:43:06UTC erfolgreich |
+| Management-API |14:48:16UTC:auch mit`read_only:false`als Transportparameter in einer ausdrücklich nur lesenden SQL-Transaktion weiterhin`supabase_read_only_user`,SELECTtrue/UPDATE-INSERT-DELETEfalse auf allen dreiZielen; kein neuer DML-Versuch |
+| Support | Fall16845711am14:14:48UTC an einen Spezialisten eskaliert; Antwort „in den kommenden Tagen“ angekündigt, keine Reparatur bestätigt |
 
-Der konkrete Blocker ist der native Transport der Aktionsbestätigung, nicht die Datenfreigabe. Benötigt wird ein funktionierender nativer App-/Connector-Aktionsbestätigungstransport; eine Broker-Reparaturfähigkeit ist nicht offengelegt. Ausdrücklich nicht vorgesehen sind ein blinder Retry, die Wiederverwendung eines abgelaufenen States sowie Änderungen an Rollen oder Grants. Dieses Dokument bittet um **keine** zusätzliche Freigabe, keinen Retry und keinen Workaround.
+Die fachliche Autorisierung für die unveränderte Transaktion bleibt gültig. Der native Schreibweg scheitert im Bestätigungstransport; sein genauer interner Fehlerort ist unbekannt. Der reguläre Cloud-API-Weg hat keine erforderlichen Änderungsrechte. Für die Übernahme wird ein funktionierender Connector oder ein tatsächlich passend berechtigter Supabase-Transport benötigt. Ein Mac-Wechsel ist keine belegte Reparatur. Quellen-/Faktenprüfung und lokale Entwicklung können unabhängig fortgesetzt werden. Keine Rollen-/Grantänderung und kein blinder Retry. Nachkontrollen belegen keine beobachtete Commit-Wirkung zwischen den Aufnahmen, nicht die Abwesenheit vorübergehender oder zurückgerollter Aktivität.
 
 ## Sicherung und Serverordner
 
