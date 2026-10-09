@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 09.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Die vorige Fassung ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
+**Stand: 09.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Ein früherer Stand ist [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den unten verlinkten Dossiers. Production-Befunde gelten jeweils nur zum angegebenen Prüfzeitpunkt.
 
 ## Aktueller Production- und Entwicklungsstand
 
