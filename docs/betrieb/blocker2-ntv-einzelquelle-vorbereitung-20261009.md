@@ -57,3 +57,14 @@ Kein Production-Datenwrite, keine neue Aufnahme oder Fachabnahme.
   kein Nachweis einer Policy-Ablehnung.
 - Budget unverändert; keine bezahlten Production-Calls. DeepSeek ist nur
   autorisierte Entwicklungsprüfung, keine Production-Instanz.
+
+## Verifizierter Code-Abschluss (09.10., UTC)
+
+[PR #879](https://github.com/ernisch/helmut-pilot/pull/879) wurde nach beiden
+Pflichtchecks grün am08:33:12UTC gemergt. Native ProductionREADY81a70cbe
+(Deployment dpl_AnfQEy7AGrd2jy6VDDg6fUc4v4gF), öffentlicher Alias bestätigt.
+Alle52 Tabellen ohne Ausnahmen, vollständige Zeilen+xmin, von08:31:31
+bis08:35:08UTC exakt unverändert. Alle500 Profile inaktiv; Reservierungen,
+Budgets und Modellaufrufe unverändert. Kompatibilitätscode ausgerollt,
+n-tv-Datenaktion nicht autorisiert/nicht ausgeführt; Tarifaktion transportblockiert.
+Die echte500-Aufnahme bleibt37873722112; Fachabnahme0/500.
