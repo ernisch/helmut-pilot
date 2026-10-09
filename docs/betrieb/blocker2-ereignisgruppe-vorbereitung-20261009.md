@@ -1,0 +1,27 @@
+# Blocker 2: quellengebundene Ereignisgruppe ohne Datenlöschung
+
+Stand: 09.10.2026 UTC. Code und Offline-Gegenprobe; kein neuer Production- oder fachlicher 500er-Abnahmebeleg. Die dauerhafte Betreiberfreigabe umfasst notwendige Blocker-2-Arbeit ohne erneute Einzel-GO-Fragen. Kosten-, Quellen- und Profilschutz bleiben erhalten.
+
+## Konkreter Fehler und Korrektur
+
+Zwei bestehende Wissensobjekte berichten denselben Beschluss des Haushaltsausschusses des Deutschen Bundestages vom 8. Juli 2026: vier MEKO A-200 DEU und eine Option auf weitere Einheiten. Die vollständigen n-tv- und TKMS-Originaltexte sind privat gesichert. Ihre SHA256 sind `43e25628cb3ad6b7ee92fb5a9304944ffe018a3bba28b15c56dca38a3fbbce65` und `308c4c5fc3dd037df8949df686a441297f3730fae05eeef780483ede6e4057bf`. Die unabhängige Pro-High-Leseprüfung bestätigt die Ereignisgleichheit. Vertragsunterzeichnung, Liefertermine und einzelne zusätzliche Fakten werden nicht als weitere gleiche Ereignisse behauptet.
+
+[briefing-ereignisgruppen.js](../../lib/helmut/briefing-ereignisgruppen.js) bindet ausschließlich die vollständigen kanonischen Datenhashes beider tatsächlicher KO-Fassungen und ihrer jeweiligen vollständigen Quellenfassung. Es verlangt beide tatsächlichen Entscheidungen sowie beide eindeutigen Ausgabebindungen. Eine Änderung, fehlende oder zusätzliche Quelle, ein anderes KO, eine doppelte Entscheidung oder fehlende Empfehlung verhindert die Gruppierung. Keine Titel-/Embedding-Heuristik und keine vom Aufrufer vergebene Produktionsbescheinigung. Die HTML-Hashes bezeichnen die separat archivierten und unabhängig geprüften Originalbelege; der Laufzeitadapter lädt oder verifiziert keine Live-HTML-Texte. Seine exakte Versionsbindung gilt den tatsächlich vorliegenden KO59-/Quellen19-Projektionen. Eine vollständige Quellen- und Fachabnahme bleibt davon getrennt erforderlich.
+
+Der reguläre V3-Vertrag bildet daraus einen Ereignispunkt vor der Ableitung von Einschätzung, Zählern und Home-/Situational-Ansichten. Die bestehenden Einzelkarten und Empfehlungen bleiben vollständig in `ereignisMitglieder` erhalten, jeweils mit eigener Vorgangs-, KO- und Quellenidentität. Es entsteht keine neue gemeinsame politische Prosa, Quellenbehauptung oder Priorität. Der Aussagenvertrag erfasst die Mitgliederaussagen unter ihrem eigenen Vorgang und bindet beide sichtbaren Vorgangsidentitäten in den Korrekturkontext.
+
+Beide KO-, Quellen- und abgeschlossenen Reservierungsidentitäten bleiben im Bestand. Der gesperrte C-Löschentwurf wird weder angewendet noch freigegeben. A und B werden nicht wiederholt. Der ausdrückliche Tageskopf-Wächter verhindert eine Gruppierung, sobald eines der Mitglieder im Tageskopf oder seinen zugehörigen Detailvorgängen vorkommt, unabhängig von Zeit oder Entscheidungsschwelle. Der bisherige CurrentHelmutState bleibt in den nachstehenden Gegenproben identisch. Geänderte Fassungen werden nicht automatisch weitergruppiert.
+
+## Tatsächliche Offline-Prüfung
+
+Alle 500 authentisierten Originalantworten der historischen Vollaufnahme `37790661298` wurden aus den frisch wiederhergestellten, bytegleichen Original-ZIPs lokal entschlüsselt. Antwortbody- und Eingabehash wurden vor jeder Gegenprobe neu berechnet. Unveränderte und geänderte Builder wurden mit demselben jeweiligen Originalkontext verglichen: 91 Ereignisgruppen, 409 vollständig identische Ausgaben. In den 91 Gruppen bleiben alle Mitgliederaussagen, Quellen und anderen Vorgänge erhalten; CurrentHelmutState bleibt identisch. Keine Vermischung historischer Aufnahmen und keine neuen Production-Anfragen.
+
+Zusätzlich wurde die getrennte aktuelle Profil-12-Aufnahme `37864057317` offline geprüft: 44 auf 43 Ereignispunkte, beide Mitglieder erhalten. 17 absichtliche Änderungen an echten KO-/Quellenfassungen und Entscheidungsbindungen verhindern die Gruppierung. Die öffentliche gezielte Suite besteht mit sieben Fallgruppen; Aussagenbindung 15/15 und Kandidatenzeit 36/36 ebenfalls bestanden. Der vollständige konservative Pflicht-CI-Lauf und die unabhängige Code-Endprüfung müssen am finalen PR-Kopf vor dem Merge bestehen.
+
+Private Nachweise liegen unter `/workspace/blocker2-autonomous-resolution-20261009`. `event-grouping-all500-offline-proof.json`, SHA256 `a1e31842b5509ad6799ac120871f3589ec0ff5cb0753dc3c24c4954289bf371f`, führt jede der 500 Originalbindungen und deren Gegenprobe. Die Gruppierung ist keine Quellen-, Zeit-, Notwendigkeits- oder Profilabnahme: weiterhin **0/500 fachlich angenommen**.
+
+## Begrenzter nächster Schritt
+
+Nach unabhängiger Codeprüfung und grünen Pflichtchecks regulär mergen und das unveränderte Production-Deployment auf READY sowie Aliasbindung prüfen. Anschließend genau einen neuen vollständigen Nurleselauf auf diesem Commit vorbereiten und unter dem Dauer-GO ausführen: 500 inaktive synthetische Profile, höchstens 500 Eingabe- und zwei Identitäts-GETs, 55 Minuten Lesefrist, gleicher Berliner Tag/Commit, feste Empfängerbindung und dauerhafte Chiffre-Checkpoints. Alle 52 Tabellen unmittelbar vor und nach den relevanten Schritten vollständig rein lesend vergleichen. Keine automatischen Wiederholungen, Daten-/Profil-/Reservierungsänderungen oder bezahlten Helmut-Production-Modelle.
+
+Für jedes neue Original bleiben vollständige Quellen-, KO-, Zuständigkeits-, Resolver-, Zeit-, Notwendigkeits- und tatsächliche Eingabebelege Pflicht. Eine technische Vollaufnahme oder Gruppierung der 91 historischen Fälle erfüllt das Abnahmekriterium nicht.
