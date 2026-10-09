@@ -21,7 +21,7 @@ let n = 0;
 function test(name, fn) { fn(); console.log("PASS " + name); n++; }
 test("Ignorierter Vorgang ohne Profilzuordnung uebernimmt keine globale Profilbehauptung", () => {
   const b = build(decision), i = b.items[0];
-  A.equal(i.whyItMatters, "Für diesen Vorgang ist kein konkreter Bezug zum gespeicherten Profil belegt.");
+  A.equal(i.whyItMatters, "Für diesen Vorgang ist derzeit keine Profilzuordnung ausgewiesen.");
   A.equal(i.recommendedAction, ""); A.equal(i.riskNote, ""); A.equal(i.opportunityNote, "");
   A.equal(i.summary, ko.display_summary); A.equal(i.title, ko.display_title);
   A.equal(i.sources[0].url, docs[0].url); A.equal(i.sourceCount, 1);
@@ -62,5 +62,42 @@ test("Vorhandener Verarbeitungsfehler bleibt trotz geleerter Handlung sichtbar",
     A.equal(r.helmutQualityStatus, "error");
     A.equal(r.recommended_action, ""); A.deepEqual(r.actionItems, []);
   } finally { ko.understanding_status = previous; }
+});
+test("Fester Leerhinweis erscheint in beiden Ansichten nicht als Handlung", () => {
+  const d = { ...decision, decision: "Beobachten", score: 40, priority_type: "watch",
+    matched_features: [{ type: "topic", value: "Verwaltung" }] };
+  const saved = structuredClone(ko);
+  try {
+    for (const field of ["recommendation", "handlungsempfehlung"]) {
+      Object.assign(ko, saved, { recommendation: "", handlungsempfehlung: "" });
+      ko[field] = "  Keine Handlung aus den gelieferten Quellen ableitbar.  ";
+      const b = build(d), i = b.items[0], r = b.personalizedRecommendations[0];
+      A.equal(i.recommendedAction, ""); A.equal(r.recommended_action, "");
+      A.equal(i.decision, "Beobachten"); A.equal(i.finalScore, 40);
+      A.equal(i.title, saved.display_title); A.equal(i.summary, saved.display_summary);
+      A.equal(i.whyItMatters, saved.why_relevant); A.equal(i.riskNote, d.risk);
+    }
+    ko.recommendation = "Keine Handlung aus den gelieferten Quellen ableitbar.";
+    ko.handlungsempfehlung = "Pruefe nach einem konkreten Auftrag die Unterlagen.";
+    A.equal(build(d).items[0].recommendedAction, "");
+    A.equal(build(d).personalizedRecommendations[0].recommended_action, "");
+  } finally { Object.assign(ko, saved); delete ko.handlungsempfehlung; }
+});
+test("Bedingte Empfehlungen und qualifizierte Eingabegrenzen bleiben vollstaendig", () => {
+  const d = { ...decision, decision: "Beobachten", score: 40, priority_type: "watch",
+    matched_features: [{ type: "topic", value: "Verwaltung" }] };
+  const saved = ko.recommendation;
+  try {
+    for (const text of [
+      "Die Verwaltung koennte die Unterlagen pruefen; Voraussetzung ist ein konkreter Auftrag, der bisher nicht vorliegt.",
+      "Keine konkrete Handlung oder Frist aus dem gelieferten Absatz ableitbar.",
+      "Interne Verbreitung waere moeglich; dies ist jedoch nicht aus den Quellen ableitbar."
+    ]) {
+      ko.recommendation = text;
+      const b = build(d);
+      A.equal(b.items[0].recommendedAction, text);
+      A.equal(b.personalizedRecommendations[0].recommended_action, text);
+    }
+  } finally { ko.recommendation = saved; }
 });
 console.log(`${n}/${n} Gruppen bestanden`);
