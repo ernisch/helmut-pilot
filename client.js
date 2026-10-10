@@ -4198,6 +4198,8 @@ function renderAdminMandatesSection(mandates) {
 
 function toDecision(item) {
   return {
+    ereignisTeilrollen: item.ereignisTeilrollen,
+    ereignisKontexte: item.ereignisKontexte,
     id: item.id,
     signalId: item.signalId,
     title: item.title,
@@ -4247,6 +4249,8 @@ function toDecision(item) {
 
 function recommendationToDecisionItem(recommendation) {
   return {
+    ereignisTeilrollen: recommendation.ereignisTeilrollen,
+    ereignisKontexte: recommendation.ereignisKontexte,
     id: recommendation.id,
     signalId: recommendation.signal_id,
     title: recommendation.title,
@@ -5421,6 +5425,8 @@ function vsheetContentHtml(v) {
     <section class="vsheet-sec">
       ${briefingLink}
     </section>` : ""}
+
+    ${renderEreignisRollen(v)}
 
     ${betroffene}
 
@@ -8742,6 +8748,17 @@ function decisionCountSentence() {
   return `Heute sind ${count} politische Entscheidungen relevant.`;
 }
 
+// Explizite Teilrollen mit ihren eigenen Quellen; kein Primaerlink als
+// Alleinbeleg fuer Bundestagsstand oder einen anderen pluralen Kontext.
+function renderEreignisRollen(item) {
+  const rows = [...(item.ereignisTeilrollen || []), ...(item.ereignisKontexte || [])];
+  if (!rows.length) return "";
+  return `<section class="source-basis">${rows.map(r => `<article>
+    <h3>${escapeHtml(r.title)}</h3><p>${escapeHtml(r.summary)}</p>
+    ${(r.sources || []).filter(s => sourceHref(s)).map(s => `<a class="source-pill" href="${escapeAttribute(sourceHref(s))}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.name || s.sourceName || "Quelle")} · ${escapeHtml(s.title || "Artikel öffnen")}</a>`).join("")}
+  </article>`).join("")}</section>`;
+}
+
 function renderDecisionBlock(decision) {
   return `
     <article class="briefing-block ${decision.priorityType}">
@@ -8749,6 +8766,7 @@ function renderDecisionBlock(decision) {
         <span>${escapeHtml(decision.priorityLabel)}</span>
         <h2>${escapeHtml(decision.title)}</h2>
         <p>${escapeHtml(decision.summary)}</p>
+        ${renderEreignisRollen(decision)}
         ${sourceLink(decision)}
       </div>
       <button class="secondary-button" type="button" data-detail="${escapeHtml(decision.id)}">${decision.priorityType === "watch" ? "Details ansehen" : "Empfehlung lesen"}</button>
@@ -8768,6 +8786,7 @@ function renderDetailView() {
         <span class="${decision.priorityType}">${escapeHtml(decision.priorityLabel)}</span>
         <h1 class="${headlineClass(decision.title)}">${escapeHtml(decision.title)}</h1>
         <p>${escapeHtml(decision.summary)}</p>
+        ${renderEreignisRollen(decision)}
         <small>Aktualisiert: ${formatBriefingDate(briefing.generatedAt || new Date().toISOString())}</small>
         ${sourceLink(decision)}
       </header>
