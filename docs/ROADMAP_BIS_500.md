@@ -1,6 +1,6 @@
 # Roadmap bis zum 500er Production Nachweis
 
-Stand: 02.10.2026
+Stand: 10.10.2026
 
 Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
@@ -20,6 +20,8 @@ Importanweisung und kein Beleg synthetischer Startbereitschaft.
 ## Kritischer Pfad und Parallelitaet
 
 **Blocker 1 technisch abgeschlossen:** Der direkte500er Motorweg aus PR846 ist gemergt und ausgerollt; ein authentifizierter GET auf das gebundene READY-Deployment `53e1e369` ergab HTTP405/`Allow: POST` vor Datenbank- und Motorzugriff. Kein500er Test. Andere Starttore bleiben separat offen. [Abnahme](betrieb/blocker1-direkter-500er-motor-20261007.md).
+
+**Blocker 2 weiter offen, neue tatsächliche Abnahme10.10.:** Data13 ist einmal geschützt committet; die neue rein lesende500er Aufnahme hat **408/500 vollständig fachlich angenommene Eingaben**. Offen sind nur die vereinbarten eigenen ZEIT-/Stern-Originalminima (Quellenunion91Profile) und der eigene Kreiszeitungs-Ereignisbeleg für Brake69. Alle114 früheren Ereignisdubletten sind tatsächlich geschlossen; unbeurteilte Aussagen/übrige Fehlerkategorien0. Als Nächstes nur diese konkreten Mindestbelege beschaffen und ihre betroffenen Einzelurteile nach gebundenem Nachweis schließen; keine alten Aufnahme-/Projektionsergebnisse als500er Erfolg verwenden. [Aktueller vollständiger Bericht](betrieb/blocker2-data13-und-aktuelle-500er-fachabnahme-20261010.md). Keine Aktivierung oder Freigabe des späteren1500-Positionen-Funktionstests daraus ableiten.
 
 Vor jeder neuen Arbeitswelle priorisiert Sol in Codex Cloud nur die Blocker, die das 500er Starttor unmittelbar verhindern. Der geprüfte Cloud Router delegiert klar abgegrenzte Arbeit nach AGENTS.md an DeepSeek; Architektur, Production Entscheidungen, Integration und finale Abnahme bleiben bei Sol. Unabhaengige Arbeit darf nur parallel laufen, wenn die Schreibbereiche eindeutig getrennt sind. Am02.10.2026 hat der Betreiber alle Peak Arbeitssperren aufgehoben, auch die Chatvorgabe vom01.10.; Entwicklungsarbeit darf jederzeit ohne Peak GO starten. Production Schutz und Production Kostenlimits bleiben unveraendert; gruene Merges und regulaere Deployments sind inzwischen konkret freigegeben.
 
