@@ -1,5 +1,7 @@
 # Blocker 2: Data13 und neue vollständige Aufnahme
 
+> Historische408er-Basis vom10.10.2026. Die spätere [tatsächliche415er-Fortschreibung nach eigenem ZEIT-Originalminimum](blocker2-zeit-originalminimum-und-415er-fachabnahme-20261010.md) ist der aktuelle Fachstand; alle folgenden408er-Zahlen und Basisbelege bleiben als damalige Bilanz erhalten.
+
 **Stand: 10.10.2026.** Aktuelle vollständige Fachentscheidung zur neuen tatsächlichen Aufnahme. **408/500 vollständig fachlich angenommen; Blocker 2 bleibt offen.**
 
 ## Geltungsbereich
