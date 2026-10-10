@@ -101,4 +101,12 @@ test("Persistierter Rollenhash und Ursprungs-/Quellendrift sperren Cache und Rek
     assert.ok(!E.cachePasst(payload,[]));assert.ok(E.cachePasst({},[]));
   }
 });
+test("Gesamturteil darf doppelte oder ungebundene sichtbare IDs nicht durch Herkunfts-Deduplikation heilen",()=>{
+  const F=require("../lib/helmut/briefing-fachurteil");
+  for (const items of [[{vorgangId:"vg-a"},{vorgangId:"vg-a"}],[{vorgangId:"vg-a"},{}]]) {
+    const result={briefing:{available:true,items},eingabe:{eingabeHash:"a".repeat(64),darstellungsHash:"b".repeat(64)}};
+    const urteil={ursprungHash:"c".repeat(64),gesamtpruefung:{version:F.VERSION,umfang:F.umfang(result,{ursprungHash:"c".repeat(64)}),kriterien:{},quellen:[]}};
+    assert.equal(F.pruefe(result,urteil).grund,"briefing-gesamtpruefung-veraltet");
+  }
+});
 console.log(JSON.stringify({passed,ProductionWrites:0,modelCalls:0,originalFetches:0}));
