@@ -8,6 +8,7 @@ const { hash } = require("../lib/helmut/briefing-speicher");
 let passed = 0;
 function test(name, fn) {
   if (process.argv.includes("--additional-events-only") && !name.startsWith("VW/Litauen:")) return;
+  if (process.argv.includes("--bka-event-only") && !name.startsWith("BKA:")) return;
   fn(); passed++; console.log("PASS " + name);
 }
 // Synthetische Darstellungsfixtures sind keine Produktionsbescheinigung.
@@ -436,7 +437,7 @@ test("VW/Litauen: zusätzliche Modelle, Codes und späterer Untersuchungsstand b
   A.equal(JSON.stringify({ input, originalItems, originalRecommendations }), before);
 });
 
-test("VW/Litauen: Caller bewahrt fünf unabhängige Gruppen und lässt beide ungeklärten BKA-Berichte einzeln", () => {
+test("VW/Litauen: Caller bewahrt fünf unabhängige Gruppen und lässt unbekannte BKA-Versionen einzeln", () => {
   const { register, input } = additionalEpisodeFixture(true);
   const bkaIds = ["ko-vg-bundeskriminalamtes-20260915-12d9ca", "ko-vg-rekordschaden-20260915-c60639"];
   for (const id of bkaIds) {
@@ -479,5 +480,99 @@ test("VW/Litauen: Tageskopf schützt jede neue Episode einzeln und unbekannte Vo
     unknown.decisions.find(d => d.knowledge_object_id === member.koId).knowledge_object_id += "-anderer-vorgang";
   }
   A.equal(register.planeAlle(unknown).length, 0);
+});
+function bkaEpisodeFixture(mitBisherigenGruppen = false) {
+  const input = { decisions: [], kosById: {}, sourcesByVorgang: {} };
+  const fixtureHashes = new Map();
+  if (mitBisherigenGruppen) {
+    const base = additionalEpisodeFixture(true);
+    Object.assign(input.kosById, base.input.kosById);
+    Object.assign(input.sourcesByVorgang, base.input.sourcesByVorgang);
+    input.decisions.push(...base.input.decisions);
+    for (const group of base.register.planeAlle(base.input)) {
+      for (const member of group.mitglieder) {
+        fixtureHashes.set(hash(input.kosById[member.koId]), member.koHash);
+        for (const pin of member.quellen || [member]) {
+          const source = input.sourcesByVorgang[member.vorgangId].find(s => s.id === pin.quelleId);
+          fixtureHashes.set(hash(source), pin.quelleHash);
+        }
+      }
+    }
+  }
+  const members = [
+    { koId: "ko-vg-bundeskriminalamtes-20260915-12d9ca", vorgangId: "vg-bundeskriminalamtes-20260915-12d9ca",
+      koHash: "a8359f052a406779c13b78f893683d68bfb26d9b96388a65ced2ea02efe0ee41",
+      quelleId: "rd-2c9cd5d87b8aba92964d5cd3a003be0595d4537b51a2fc46fef346ebf566fcbd",
+      quelleHash: "2ea768e7fb98a8ff0f1da31044c6dd78a954ae561fe2cb29c1f5e0381ea438fd",
+      summary: "Synthetisch: Lagebild 2025; Verfahren und veränderte Erscheinungsformen." },
+    { koId: "ko-vg-rekordschaden-20260915-c60639", vorgangId: "vg-rekordschaden-20260915-c60639",
+      koHash: "0df2038ae75a51e11d89ba05de766136855c42e40c65d5e9933d8df3127b12f0",
+      quelleId: "rd-1bbfb7b186f044cee845bca759fc280100d1587ffba0e6d11e1671aff6bfa7f2",
+      quelleHash: "8a45ef88a9ed457c57f37a67d541adc1b5a0faf6c948c2245b2fbc942729b227",
+      summary: "Synthetisch: jährliche Schäden und eigener Täterstrukturbericht." }
+  ];
+  for (const member of members) {
+    const ko = { id: member.koId, vorgang_id: member.vorgangId,
+      display_title: "Synthetischer eigener BKA-Bericht", display_summary: member.summary };
+    const source = { id: member.quelleId, title: "Synthetische eigene BKA-Quelle",
+      url: "https://example.org/" + member.quelleId, published_at: "2026-09-15T08:00:38Z" };
+    input.kosById[member.koId] = ko; input.sourcesByVorgang[member.vorgangId] = [source];
+    input.decisions.push({ knowledge_object_id: member.koId, vorgang_id: member.vorgangId,
+      score: 0, decision: "Ignorieren" });
+    fixtureHashes.set(hash(ko), member.koHash); fixtureHashes.set(hash(source), member.quelleHash);
+  }
+  const sandbox = { Map, module: { exports: {} }, require: name => {
+    A.equal(name, "./briefing-speicher");
+    return { hash: value => fixtureHashes.get(hash(value)) || hash(value) };
+  } };
+  vm.runInNewContext(fs.readFileSync(require.resolve("../lib/helmut/briefing-ereignisgruppen"), "utf8"), sandbox);
+  return { register: sandbox.module.exports, members, input };
+}
+
+test("BKA: konkrete Jahresepisode verlangt beide vollständigen exakten KO-/Quellversionen", () => {
+  const { register, members, input } = bkaEpisodeFixture();
+  A.equal(register.planeAlle(input).length, 1);
+  for (const member of members) {
+    for (const mode of ["koDrift", "quelleDrift", "quelleFehlt", "quelleZusaetzlich",
+      "quelleFremd", "entscheidungFehlt", "entscheidungDoppelt", "vorgangFremd"]) {
+      const bad = structuredClone(input), docs = bad.sourcesByVorgang[member.vorgangId];
+      if (mode === "koDrift") bad.kosById[member.koId].display_summary += " andere Jahresversion";
+      if (mode === "quelleDrift") docs[0].published_at = "2027-09-15T08:00:38Z";
+      if (mode === "quelleFehlt") docs.pop();
+      if (mode === "quelleZusaetzlich") docs.push({ ...docs[0] });
+      if (mode === "quelleFremd") docs[0].id = "quelle-andere-jahresversion";
+      if (mode === "entscheidungFehlt") bad.decisions = bad.decisions.filter(d => d.knowledge_object_id !== member.koId);
+      if (mode === "entscheidungDoppelt") bad.decisions.push(bad.decisions.find(d => d.knowledge_object_id === member.koId));
+      if (mode === "vorgangFremd") bad.decisions.find(d => d.knowledge_object_id === member.koId).vorgang_id = "vg-anderes-jahr";
+      A.equal(register.planeAlle(bad).length, 0, member.koId + ":" + mode);
+    }
+  }
+});
+
+test("BKA: sechs unabhängige Gruppen erhalten beide eigenen Volltexte und ihre getrennten Quellen", () => {
+  const { register, members, input } = bkaEpisodeFixture(true);
+  const plans = register.planeAlle(input); A.equal(plans.length, 6);
+  const file = require.resolve("../lib/helmut/briefingContract");
+  const actualRequire = require("node:module").createRequire(file);
+  const sandbox = { Map, URL, process: { env: {} }, module: { exports: {} }, require: name =>
+    name === "./briefing-ereignisgruppen" ? register : actualRequire(name) };
+  vm.runInNewContext(fs.readFileSync(file, "utf8"), sandbox);
+  const contract = sandbox.module.exports.toBriefingContractV3({ ...input,
+    profile: { id: "fiktives-profil", full_name: "Fiktive Person", parliament: "bundestag" },
+    now: "2026-10-10T08:00:00Z" });
+  A.equal(contract.items.length, 6); A.equal(contract.personalizedRecommendations.length, 6);
+  A.equal(new Set(contract.items.map(i => i.ereignisId)).size, 6);
+  const bka = contract.items.find(i => i.ereignisId.includes("bka-jahreslagebild"));
+  const claims = Aussagen.texte(contract, { kos: Object.values(input.kosById),
+    quellen: Aussagen.quellenVertrag(input.sourcesByVorgang) });
+  for (const member of members) {
+    const row = bka.ereignisMitglieder.find(i => i.knowledgeObjectId === member.koId);
+    A.equal(row.summary, member.summary);
+    A.deepEqual(Array.from(row.quellenIds), [member.quelleId]);
+    A.ok(claims.some(c => c.text === member.summary && c.vorgangId === member.vorgangId
+      && c.pfad.includes("/ereignisMitglieder/")));
+    const remaining = plans.map(p => register.ausserhalbTageskopf(p, { primaryVorgangId: member.vorgangId })).filter(Boolean);
+    A.equal(remaining.length, 5); A.ok(remaining.every(p => !p.id.includes("bka-jahreslagebild")));
+  }
 });
 console.log(`${passed}/${passed} Fallgruppen bestanden`);
