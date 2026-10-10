@@ -6,7 +6,10 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const { hash } = require("../lib/helmut/briefing-speicher");
 let passed = 0;
-function test(name, fn) { fn(); passed++; console.log("PASS " + name); }
+function test(name, fn) {
+  if (process.argv.includes("--additional-events-only") && !name.startsWith("VW/Litauen:")) return;
+  fn(); passed++; console.log("PASS " + name);
+}
 // Synthetische Darstellungsfixtures sind keine Produktionsbescheinigung.
 const plan = { id: "ereignis-synthetisch", mitglieder: [
   { koId: "ko-a", vorgangId: "vg-a", quelleId: "quelle-a" },
@@ -317,5 +320,164 @@ test("Drei unabhängige Gruppen bewahren GKV-Berichtsrisiko, Quellen und getrenn
   const withoutGkv = plans.map(p => register.ausserhalbTageskopf(p,
     { primaryVorgangId: members.find(m => m.gkv).vorgangId })).filter(Boolean);
   A.equal(withoutGkv.length, 2); A.ok(withoutGkv.every(p => !p.id.includes("gkv")));
+});
+function additionalEpisodeFixture(mitBisherigenGruppen = false) {
+  const members = [
+    { episode: "vw", koId: "ko-vg-zurückrufen-20260925-960556",
+      vorgangId: "vg-zurückrufen-20260925-960556",
+      koHash: "8285d99ea9537af849e19bb7cdf326d4f3b562ececfafa9215e60850a937176f",
+      quelleId: "rd-d000952bb20d481c5cb655370267548d8e34626e72cc3b3ad235328e1503b7b5",
+      quelleHash: "75c013fd4b383a1464195eeecc0b12a6e2c37618eb2ea91f601cbbb0c040fd0c",
+      summary: "Synthetisch: anfänglicher Lenkschrauben-Rückruf und Reparaturhinweis." },
+    { episode: "vw", koId: "ko-vg-fehlerhafte-20260925-d06a89",
+      vorgangId: "vg-fehlerhafte-20260925-d06a89",
+      koHash: "cd5029558185bea460044ab3682770eb6b46367b4cddc03e1a27b00c1018aa4e",
+      quelleId: "rd-61878316a37f03ad7542d0098f488128cf2f48ed6c794a8981830aa998e34dac",
+      quelleHash: "bb2e6e1f88611f76889e4dfaa8744313e8f0238105f822563002e898d2febfca",
+      summary: "Synthetisch: zusätzlicher Audi-/Seat-Umfang und Rückrufcodes." },
+    { episode: "litauen", koId: "ko-vg-kampfflugzeuge-20260915-be221c",
+      vorgangId: "vg-kampfflugzeuge-20260915-be221c",
+      koHash: "c21bf8c33aed7b5177670a750d28a6e508d2cc45aba2b742a3e02ed8a8c008c6",
+      quelleId: "rd-d49e4eeba6603280c83c3b9c1b3219309c963417cde1f1ad55beabdad49294b8",
+      quelleHash: "20eac38cf6fc15fe16bf1cc55c402a05fce7aabd52bd2c6a6be15ed688110c3c",
+      summary: "Synthetisch: Abschuss; späterer Sprengsatz- und Untersuchungsstand bleibt hier." },
+    { episode: "litauen", koId: "ko-vg-abgeschossen-20260915-64651d",
+      vorgangId: "vg-abgeschossen-20260915-64651d",
+      koHash: "2db2cb7bc1b71e32c0f34ae228d3b1f7c0d2a4313923704013970669d7858557",
+      quelleId: "rd-b05282187da9d8d22eb60896dc5e9f62fe5690a4971657afde8b858e2881ff29",
+      quelleHash: "15294e8850dfb32100fa1f01bc119d8fa93ddcdd8aadd714a942878256c5ae5d",
+      summary: "Synthetisch: erster Abschussbericht; Drohnentyp zunächst unklar." }
+  ];
+  const input = { decisions: [], kosById: {}, sourcesByVorgang: {} };
+  const fixtureHashes = new Map();
+  if (mitBisherigenGruppen) {
+    const base = ankaraFixture(true, true);
+    Object.assign(input.kosById, base.input.kosById);
+    Object.assign(input.sourcesByVorgang, base.input.sourcesByVorgang);
+    input.decisions.push(...base.input.decisions);
+    for (const group of base.register.planeAlle(base.input)) {
+      for (const member of group.mitglieder) {
+        fixtureHashes.set(hash(input.kosById[member.koId]), member.koHash);
+        for (const pin of member.quellen || [member]) {
+          const source = input.sourcesByVorgang[member.vorgangId].find(s => s.id === pin.quelleId);
+          fixtureHashes.set(hash(source), pin.quelleHash);
+        }
+      }
+    }
+  }
+  for (const member of members) {
+    const ko = { id: member.koId, vorgang_id: member.vorgangId,
+      display_title: "Synthetischer " + member.episode + "-Bericht",
+      display_summary: member.summary, source_document_count: 1 };
+    const source = { id: member.quelleId, title: "Synthetischer eigener Bericht",
+      url: "https://example.org/" + member.quelleId,
+      published_at: member.episode === "litauen" ? "2026-09-15T05:12:20Z" : "2026-09-25T08:57:58Z" };
+    input.kosById[member.koId] = ko;
+    input.sourcesByVorgang[member.vorgangId] = [source];
+    input.decisions.push({ knowledge_object_id: member.koId, vorgang_id: member.vorgangId,
+      score: 0, decision: "Ignorieren" });
+    fixtureHashes.set(hash(ko), member.koHash); fixtureHashes.set(hash(source), member.quelleHash);
+  }
+  const sandbox = { Map, module: { exports: {} }, require: name => {
+    A.equal(name, "./briefing-speicher");
+    return { hash: value => fixtureHashes.get(hash(value)) || hash(value) };
+  } };
+  vm.runInNewContext(fs.readFileSync(require.resolve("../lib/helmut/briefing-ereignisgruppen"), "utf8"), sandbox);
+  return { register: sandbox.module.exports, members, input };
+}
+
+test("VW/Litauen: beide Episoden verlangen vollständige exakte KO-/Quellen- und Entscheidungsbindungen", () => {
+  const { register, members, input } = additionalEpisodeFixture();
+  A.equal(register.planeAlle(input).length, 2);
+  for (const member of members) {
+    for (const mode of ["koDrift", "quelleDrift", "quelleFehlt", "quelleZusaetzlich",
+      "quelleFremd", "entscheidungFehlt", "entscheidungDoppelt", "vorgangFremd"]) {
+      const bad = structuredClone(input), docs = bad.sourcesByVorgang[member.vorgangId];
+      if (mode === "koDrift") bad.kosById[member.koId].display_summary += " Drift";
+      if (mode === "quelleDrift") docs[0].published_at += " Drift";
+      if (mode === "quelleFehlt") docs.pop();
+      if (mode === "quelleZusaetzlich") docs.push({ ...docs[0] });
+      if (mode === "quelleFremd") docs[0].id = "quelle-nicht-geprueft";
+      if (mode === "entscheidungFehlt") bad.decisions = bad.decisions.filter(d => d.knowledge_object_id !== member.koId);
+      if (mode === "entscheidungDoppelt") bad.decisions.push(bad.decisions.find(d => d.knowledge_object_id === member.koId));
+      if (mode === "vorgangFremd") bad.decisions.find(d => d.knowledge_object_id === member.koId).vorgang_id = "vg-fremd";
+      const remaining = register.planeAlle(bad);
+      A.equal(remaining.length, 1, member.koId + ":" + mode);
+      A.ok(!remaining[0].id.includes(member.episode));
+    }
+  }
+});
+
+test("VW/Litauen: zusätzliche Modelle, Codes und späterer Untersuchungsstand behalten alle eigenen Aussagen", () => {
+  const { register, members, input } = additionalEpisodeFixture();
+  const originalItems = input.decisions.map(d => ({ knowledgeObjectId: d.knowledge_object_id,
+    vorgangId: d.vorgang_id, title: input.kosById[d.knowledge_object_id].display_title,
+    summary: input.kosById[d.knowledge_object_id].display_summary,
+    sources: input.sourcesByVorgang[d.vorgang_id].map(s => ({ url: s.url })) }));
+  const originalRecommendations = input.decisions.map(d => ({ ...d,
+    recommended_action: "Eigenständiger Hinweis " + d.vorgang_id }));
+  const before = JSON.stringify({ input, originalItems, originalRecommendations });
+  const out = register.gruppiereAusgaben({ items: originalItems, recommendations: originalRecommendations,
+    plans: register.planeAlle(input) });
+  A.equal(out.items.length, 2); A.equal(out.recommendations.length, 2);
+  const claims = Aussagen.texte({ items: out.items, personalizedRecommendations: out.recommendations }, {
+    kos: Object.values(input.kosById), quellen: Aussagen.quellenVertrag(input.sourcesByVorgang) });
+  for (const member of members) {
+    const card = out.items.find(i => i.ereignisId.includes(member.episode));
+    const retained = card.ereignisMitglieder.find(i => i.knowledgeObjectId === member.koId);
+    A.deepEqual(Array.from(retained.quellenIds), [member.quelleId]);
+    const { quellenIds, ...original } = retained;
+    A.deepEqual(original, originalItems.find(i => i.knowledgeObjectId === member.koId));
+    A.ok(claims.some(c => c.text === member.summary && c.vorgangId === member.vorgangId
+      && c.pfad.includes("/ereignisMitglieder/")));
+    A.ok(claims.some(c => c.text === "Eigenständiger Hinweis " + member.vorgangId
+      && c.vorgangId === member.vorgangId && c.pfad.includes("/ereignisMitglieder/")));
+  }
+  A.equal(JSON.stringify({ input, originalItems, originalRecommendations }), before);
+});
+
+test("VW/Litauen: Caller bewahrt fünf unabhängige Gruppen und lässt beide ungeklärten BKA-Berichte einzeln", () => {
+  const { register, input } = additionalEpisodeFixture(true);
+  const bkaIds = ["ko-vg-bundeskriminalamtes-20260915-12d9ca", "ko-vg-rekordschaden-20260915-c60639"];
+  for (const id of bkaIds) {
+    const vorgang = id.slice(3);
+    input.kosById[id] = { id, vorgang_id: vorgang, display_title: "Synthetischer BKA-Bericht",
+      display_summary: "Eigenständige Aussage; gemeinsame Jahresversion ungeklärt." };
+    input.sourcesByVorgang[vorgang] = [{ id: "synthetische-quelle-" + id, url: "https://example.org/" + id }];
+    input.decisions.push({ knowledge_object_id: id, vorgang_id: vorgang, score: 0, decision: "Ignorieren" });
+  }
+  A.equal(register.planeAlle(input).length, 5);
+  const file = require.resolve("../lib/helmut/briefingContract");
+  const actualRequire = require("node:module").createRequire(file);
+  const sandbox = { Map, URL, process: { env: {} }, module: { exports: {} }, require: name =>
+    name === "./briefing-ereignisgruppen" ? register : actualRequire(name) };
+  vm.runInNewContext(fs.readFileSync(file, "utf8"), sandbox);
+  const contract = sandbox.module.exports.toBriefingContractV3({ ...input,
+    profile: { id: "fiktives-profil", full_name: "Fiktive Person", parliament: "bundestag" },
+    now: "2026-10-10T08:00:00Z" });
+  A.equal(contract.items.length, 7); A.equal(contract.personalizedRecommendations.length, 7);
+  A.equal(new Set(contract.items.filter(i => i.ereignisId).map(i => i.ereignisId)).size, 5);
+  for (const id of bkaIds) {
+    const separate = contract.items.find(i => i.knowledgeObjectId === id);
+    A.ok(separate); A.equal(separate.ereignisId, undefined);
+    A.equal(separate.summary, input.kosById[id].display_summary);
+  }
+});
+
+test("VW/Litauen: Tageskopf schützt jede neue Episode einzeln und unbekannte Vorgänge bleiben ungruppiert", () => {
+  const { register, members, input } = additionalEpisodeFixture();
+  const plans = register.planeAlle(input);
+  for (const member of members) {
+    for (const state of [{ primaryVorgangId: member.vorgangId }, { relatedVorgangIds: [member.vorgangId] }]) {
+      const remaining = plans.map(p => register.ausserhalbTageskopf(p, state)).filter(Boolean);
+      A.equal(remaining.length, 1); A.ok(!remaining[0].id.includes(member.episode));
+    }
+  }
+  const unknown = structuredClone(input);
+  for (const member of members) {
+    unknown.kosById[member.koId].id += "-anderer-vorgang";
+    unknown.decisions.find(d => d.knowledge_object_id === member.koId).knowledge_object_id += "-anderer-vorgang";
+  }
+  A.equal(register.planeAlle(unknown).length, 0);
 });
 console.log(`${passed}/${passed} Fallgruppen bestanden`);
