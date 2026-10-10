@@ -25,7 +25,11 @@ function fixture(r) {
 }
 const same = (a,b) => assert.equal(JSON.stringify(a),JSON.stringify(b));
 let passed = 0;
-function test(name, f) { f(); passed++; console.log("PASS " + name); }
+const onlyItemsStructure = process.argv.includes("--only-items-structure");
+function test(name, f, itemsStructure = false) {
+  if (onlyItemsStructure && !itemsStructure) return;
+  f(); passed++; console.log("PASS " + name);
+}
 for (const r of real.REGISTER) {
   test(r.art + " genaue Original-/Quellenbindung und sichtbare Teilrollen", () => {
     const { E, input } = fixture(r), before = JSON.stringify(input), out = E.projiziere(input);
@@ -109,4 +113,14 @@ test("Gesamturteil darf doppelte oder ungebundene sichtbare IDs nicht durch Herk
     assert.equal(F.pruefe(result,urteil).grund,"briefing-gesamtpruefung-veraltet");
   }
 });
+test("Gesamturteil weist fehlende und nicht-arrayfoermige Items ohne Ausnahme zurueck",()=>{
+  const F=require("../lib/helmut/briefing-fachurteil");
+  for (const fields of [{},{items:null},{items:{}},{items:"ungueltig"},{items:42}]) {
+    const result={briefing:{available:true,...fields},eingabe:{}};
+    const urteil={gesamtpruefung:{version:F.VERSION,umfang:{},kriterien:{},quellen:[]}};
+    assert.deepEqual(F.pruefe(result,urteil),{
+      bereit:false,grund:"briefing-gesamtpruefung-veraltet",vollstaendigeFaktenpruefung:false
+    });
+  }
+},true);
 console.log(JSON.stringify({passed,ProductionWrites:0,modelCalls:0,originalFetches:0}));

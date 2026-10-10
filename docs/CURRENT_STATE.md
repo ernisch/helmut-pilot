@@ -12,7 +12,7 @@
 
 - **Kandidatenschranke, historischer PR #872 (08.10.):** Kopf`b36a5ed8` unabhängig geprüft/CI grün, ProductionREADY`802428e9`;52geschützte Tabellen unverändert.500Offline-Replays:888Audit-Zusätze bei444Profilen entfernt,42A-Zielbindungen erhalten. Damals keine neue tatsächliche Aufnahme, Fachabnahme0/500. [Vollbeleg](betrieb/blocker2-kandidatenschranke-20261008.md).
 
-- **Blocker-2-Historie:** Der bisherige Status vor der neuen Vollaufnahme ist [wortgleich erhalten](archive/project_state/2026_10_09_CURRENT_STATE_vor_neuer_vollaufnahme.md). Frühere Stop-/Diagnose-/Quellenbilanzen wortgleich im [Statusarchiv](archive/project_state/2026_10_08_CURRENT_STATE_vor_blocker2_kandidatenschranke.md), SHA256`c53bbde6a0179b2775a854fe41e5737756c34c11d81bb3b14fcb16be68518b6a`. Die vollständige Aufnahme37790661298 und spätere abgebrochene Aufnahmen bleiben getrennt; keine Vermischung historischer Eingaben.
+- **Blocker-2-Historie:** Der bisherige Status vor der neuen Vollaufnahme ist [wortgleich erhalten](archive/project_state/2026_10_09_CURRENT_STATE_vor_neuer_vollaufnahme.md). Frühere Stop-/Diagnose-/Quellenbilanzen wortgleich im [Statusarchiv](archive/project_state/2026_10_08_CURRENT_STATE_vor_blocker2_kandidatenschranke.md), SHA256`c53bbde6a0179b2775a854fe41e5737756c34c11d81bb3b14fcb16be68518b6a`.
 
 - **Blocker 4: Endsteuerung abgenommen (07.10.,11:19:02 UTC):** Persistenter 30s-Cron lebt; Authentifizierung, Frist und Notstopp produktiv mit 0→0, Rückführung 500/499→0 nur isoliert belegt. Profil-/Auth-/Hauptdaten unverändert; Pro High akzeptiert. Ersetzt historische Hinweise „lebender Wächter offen“. Konkretes Testfenster vorbereitet, ungebunden. Keine Aktivierung/500er Test. [Dossier und Belege](betrieb/blocker4-endsteuerung-20261007.md).
 
