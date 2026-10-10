@@ -71,9 +71,16 @@ function setup() {
 async function main() {
   await test("20USD order installs an inert U-prestage with real financial validation; invalid pairing consumes nothing", async () => {
     const storagePath = require.resolve("../lib/helmut/storage"), oldCache = require.cache[storagePath];
-    const oldLoad = C.loadPacket, oldActive = K.aktiv, oldCommit = process.env.HELMUT_PRODUCTION_COMMIT;
-    const time = new Date(), start = new Date(time.getTime() - 1000).toISOString(), end = new Date(time.getTime() + 3600000).toISOString();
+    const oldLoad = C.loadPacket, oldActive = K.aktiv, oldCommit = process.env.HELMUT_PRODUCTION_COMMIT, oldDate = global.Date;
     try {
+      // This fictional install uses the real same-UTC-day admission validator.
+      // A fixed noon clock avoids wall-clock midnight and expiry races after awaits.
+      const fixed = oldDate.parse(START);
+      global.Date = class extends oldDate {
+        constructor(...args) { super(...(args.length ? args : [fixed])); }
+        static now() { return fixed; }
+      };
+      const time = new Date(), start = new Date(time.getTime() - 1000).toISOString(), end = new Date(time.getTime() + 3600000).toISOString();
       K.aktiv = () => true; process.env.HELMUT_PRODUCTION_COMMIT = COMMIT;
       for (const version of [4, 3]) {
         const f = fixture();
@@ -107,6 +114,7 @@ async function main() {
       }
     } finally {
       if (oldCache) require.cache[storagePath] = oldCache; else delete require.cache[storagePath];
+      global.Date = oldDate;
       C.loadPacket = oldLoad; K.aktiv = oldActive;
       if (oldCommit === undefined) delete process.env.HELMUT_PRODUCTION_COMMIT; else process.env.HELMUT_PRODUCTION_COMMIT = oldCommit;
     }
@@ -118,6 +126,11 @@ async function main() {
   await test("real strict routed U-prestage schema is not full 500 admission", () => {
     const f = fixture(); assert.equal(C.validate(f.command).plan.intents.length, 1);
     assert.equal(C.admission(f.command, f.record, START, true), sha(f.command));
+    const crossDay = clone(f.command.slot);
+    Object.assign(crossDay.plan, { startsAtUTC: "2030-01-02T23:30:00.000Z", endsAtUTC: "2030-01-03T00:30:00.000Z" });
+    Object.assign(crossDay.plan.routeContract.management, { validFromUTC: crossDay.plan.startsAtUTC, validUntilUTC: crossDay.plan.endsAtUTC });
+    crossDay.planHash = sha(crossDay.plan);
+    assert.throws(() => A.pruefeSlot(crossDay), /synthetik500-admission-plan-bindung/, "Cross-UTC-day plan remains forbidden with valid hashes and route window");
     const bad = clone(f.command); bad.mode = "D-R-500";
     assert.throws(() => C.validate(bad), /future-u-dependent-D/);
   });
