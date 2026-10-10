@@ -280,6 +280,62 @@ function check(name, cond, detail = "") {
         check(`${label}: keine JS Fehler beim Wechsel zwischen allen drei Fachbereichen`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
       }
 
+      // Neue UI-Teilrollen: synthetische Darstellung, kein Quellen-/Profil-PASS.
+      // Dieselben echten Renderer und antippbaren Karten auf Desktop UND Mobil.
+      const memberFixture = (() => {
+        const src = (id, title) => ({ name: "Testoriginal", sourceName: "Testoriginal", title,
+          url: `https://publisher.test/articles/${id}`, publishedAt: "2026-09-10T12:00:00Z" });
+        const draft = src("draft", "Referenten-Vorentwurf"), bt = src("bt", "Bundestagsstand"),
+          br = src("br", "Bundesrat billigt Reform"), remagen = src("remagen", "Personalwechsel Remagen"),
+          contextA = src("context-a", "Pluraler Kontext A"), contextB = src("context-b", "Pluraler Kontext B");
+        return [
+          { id: "vg-browser-remagen", vorgangId: "vg-browser-remagen", displayTitle: "Ein gemeinsames Personalmitglied",
+            displaySummary: "Ein genau einmal dargestellter Personalwechsel.", sources: [remagen, contextA, contextB],
+            ereignisKontexte: [
+              { title: "Unveraenderter pluraler Kontext A", summary: "Mehrere Fraktionen nennen Personalwechsel und Positionen.", sources: [contextA] },
+              { title: "Unveraenderter pluraler Kontext B", summary: "Interne Wechsel und mehrere politische Themen bleiben Kontext.", sources: [contextB] }
+            ] },
+          { id: "vg-browser-br-rest", vorgangId: "vg-browser-br-rest", displayTitle: "Vorentwurf und Bundestagsstand",
+            displaySummary: "Der Vorentwurf liegt vor; der Bundestagsstand bleibt separat belegt.", sources: [draft, bt],
+            ereignisTeilrollen: [
+              { title: "Referenten-Vorentwurf", summary: "Der nicht-offizielle Vorentwurf liegt vor.", sources: [draft] },
+              { title: "Bundestagsstand", summary: "Der Bundestag hat bereits Beschluesse gefasst.", sources: [bt] }
+            ] },
+          { id: "vg-browser-br-member", vorgangId: "vg-browser-br-member", displayTitle: "Bundesrat billigt Reform",
+            displaySummary: "Die Bundesratszustimmung bleibt ein eigenstaendiger Punkt.", sources: [br] }
+        ];
+      })();
+      await page.evaluate((vorgaenge) => {
+        briefing.lageBriefing = { available: true, vorgaenge };
+        currentView = "briefing"; render();
+      }, memberFixture);
+      check(`${label}: Teilmitgliedskarten erhalten einen Remagen- und zwei BR-Stufenpunkte`,
+        await page.locator(".lage2-card").count() === 3);
+      await page.locator('[data-lage-open="vg-browser-remagen"]').click();
+      await page.waitForSelector(".vsheet-title", { timeout: 5000 });
+      const greenRoles = page.locator(".vsheet .source-basis article");
+      const greenTexts = await greenRoles.allTextContents();
+      const greenLinks = await greenRoles.locator("a[href]").evaluateAll(nodes => nodes.map(n => n.href));
+      check(`${label}: Remagen Detail zeigt beide unveraenderten Kontexte mit eigenen Quellen`,
+        greenTexts.length === 2 && greenTexts[0].includes(memberFixture[0].ereignisKontexte[0].summary)
+          && greenTexts[1].includes(memberFixture[0].ereignisKontexte[1].summary)
+          && greenLinks.includes("https://publisher.test/articles/context-a")
+          && greenLinks.includes("https://publisher.test/articles/context-b"));
+      await page.locator("button[data-vsheet-close]").click();
+      await page.waitForSelector(".vsheet-title", { state: "detached" });
+      await page.locator('[data-lage-open="vg-browser-br-rest"]').click();
+      await page.waitForSelector(".vsheet-title", { timeout: 5000 });
+      const brRoles = page.locator(".vsheet .source-basis article");
+      const brLinks = await brRoles.locator("a[href]").evaluateAll(nodes => nodes.map(n => n.href));
+      check(`${label}: BR Restdetail bindet Vorentwurf und Bundestagsstand an getrennte Originale`,
+        await brRoles.count() === 2 && brLinks.length === 2
+          && brLinks[0] === "https://publisher.test/articles/draft"
+          && brLinks[1] === "https://publisher.test/articles/bt"
+          && !(await page.locator(".vsheet").innerText()).includes("Bundesrat billigt Reform"));
+      await page.locator("button[data-vsheet-close]").click();
+      await page.waitForSelector(".vsheet-title", { state: "detached" });
+      check(`${label}: keine JS Fehler bei Teilrollen und Quellenwechsel`, pageErrors.length === 0);
+
       if (isMobile) {
         const dock = await page.evaluate(`Boolean(document.querySelector(".mobile-dock"))`).catch(() => false);
         check(`${label}: mobile Dock-Navigation vorhanden`, dock);

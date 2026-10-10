@@ -41,10 +41,10 @@ Extern offen bleiben die beiden folgenden Fragen; ihre aktuelle Profilunion betr
 
 | Frage | Fehlender Mindestbeleg |
 | --- | --- |
-| `ZEIT_ISLAMISM` | Ein passender eigener Titel kann getragen sein; die erhaltene Summary benötigt jedoch eine eigene tragende Passage. Eine generierte Zusammenfassung ersetzt sie nicht; kein erfundener Originalbeleg. |
-| `STERN_COURT_REPORT` | Kein unabhängig beschaffter passender eigener Gerichtsbericht; eine passende eigene gecachte Überschrift fehlt. Zirkuläre Metadaten aus der Eingabe wurden als Beleg verworfen. |
+| `ZEIT_ISLAMISM` | Originalüberschrift bereits ausreichend belegt. Für9Profile/18Summary-Verweise fehlt nur eine kurze Originalpassage zur konkreten Aussage über gesellschaftliche Angst/Stigmatisierung; kein Vollartikel erforderlich. |
+| `STERN_COURT_REPORT` | Für84Profile/336Verweise fehlt eine passende Originalüberschrift **oder** ein passender Originalteaser. Kein Vollartikel oder vollständiges Urteil erforderlich; zirkuläre Eingabemetadaten bleiben unzulässig. |
 
-Zusätzlich bleibt genau ein enger Ereignisvergleich offen: Die unmittelbare Brief-/Ereignisbindung zwischen den beiden gesonderten Originalberichten fehlt weiterhin. Gleiche Partei, Straße oder gleicher Tag reichen dafür nicht. Ein Duplikat- oder Identitätsurteil wird nicht erfunden.
+Zusätzlich bleibt genau ein enger Ereignisvergleich für **Brake, Profilposition69**, offen: Die unmittelbare Brief-/Ereignisbindung zwischen den beiden gesonderten Originalberichten fehlt weiterhin. Gleiche Partei, Straße oder gleicher Tag reichen dafür nicht. Ein Duplikat- oder Identitätsurteil wird nicht erfunden.
 
 Die frühere Unterelbe-Jahrlücke 2025 ist durch ein passendes eigenes Original mit passendem Publikationsjahr geschlossen; die 2025er-Summary bleibt erhalten. Der Städtetag-Study-Titelbedarf ist im 13er-DataPlan enthalten. Ein neuer breiter Quellenaudit fand nicht statt; bereits bewiesene Quellen- und Bereichstests wurden nicht erneut geprüft.
 
@@ -52,15 +52,15 @@ Die frühere Unterelbe-Jahrlücke 2025 ist durch ein passendes eigenes Original 
 
 **PR #889** wurde am exakt freigegebenen Originalkopf `867443456d6f477ed1e807794a7e4311dc8c4dd2` regulär nach `main` gemergt. Main-Commit: `ffcc666fa76de37d6d4a578da04a2dc4d1f52b48`. Production gilt als READY (`ProductionReady`, Deployment `dpl_5Mogr5r5T46peuUyzVxTXBExUFTX`). Der profilfreie GET war HTTP 200 am exakten Deployment/Commit, alle 9 festen DIP-Fixtures `true`. Es werden **keine 109 tatsächlichen Profilausgaben** behauptet. Die früheren PR889-Vorbereitungsangaben sind damit überholt und nur noch historisch; die Behauptung, PR889 sei derzeit noch nicht gemergt, ist nicht mehr aktuell.
 
-**PR #890** hat den neuen Kopf `7f0e3c69493255968dfb6b6ce57d549eb06ed336` auf Basis `main` `ffcc666fa76de37d6d4a578da04a2dc4d1f52b48`. Die 13 fachlichen Diff-Dateien und der Tree sind bytegleich zum bisherigen Stand. FreshCI [Run38052081150](https://github.com/ernisch/helmut-pilot/actions/runs/38052081150): beide Pflichtchecks SUCCESS und 8 tatsächliche Desktop-/Mobile-Assertions. Der PR ist **OPEN und nicht gemergt**; die ausdrückliche Freigabe genau dieses neuen Kopfes fehlt. Der frühere Kopf `8dfaf0759a59c2ce9dbe5a4e280d80b4487aa237` samt damaligen CI-Angaben ist ausschließlich historisch.
+**PR #890** wurde nach dem frischen Kopf-/main-/Pflicht-CI-Abgleich am ausdrücklich freigegebenen Kopf `7f0e3c69493255968dfb6b6ce57d549eb06ed336` regulär gemergt: Commit `47063bebd0f2f1e4a93d7bf5c79710b61e291b7c`, 10.10.2026,16:06:56UTC. Die bestehenden Pflichtchecks aus [Run38052081150](https://github.com/ernisch/helmut-pilot/actions/runs/38052081150), acht Desktop-/Mobile-Assertions und unabhängiger DeepSeek-Review wurden übernommen, nicht unnötig wiederholt. Reguläres Production-Deployment `dpl_6Y7RogeMuoH9R2jifPDJRbkh4ix6` ist **READY**. Profilfreier Runtime-GET HTTP200 bestätigt exakten Commit/Deployment und neun feste Prüfungen. Die114 Ereignisduplikate in Abschnitt1 gehören weiterhin zur historischen Aufnahme, nicht zu einer neu beobachteten Production-Ausgabe.
 
-**PR #891** (Dokumentationsupdate) ist lokal regulär auf den aktuellen `main`-Stand gebracht, umfasst nur die drei bestehenden Dokumente, ändert nur die zwei aktuellen Dokumente und erhält das historische Archivwort exakt. Er bleibt **vorbereitet und nicht gemergt**; eine Merge-Freigabe fehlt.
+**PR #891** aktualisiert die zwei aktuellen Dokumente und erhält den dritten historischen Archivpfad bytegleich. Der Betreiber hat den Merge nun freigegeben; Integration und aktuelle Pflicht-CI am neuen Kopf bleiben vor dem tatsächlichen Merge erforderlich. Noch kein Merge behaupten.
 
-Aus diesem Dokumentationsstand folgt **keine** Merge-, Write- oder Aktivierungsfreigabe. Weitere PRs werden vor einem Merge an ihrem konkreten Kopf ausdrücklich freigegeben.
+Der Betreiber hat für die konkreten Blocker-2-Aktionen einschließlich Data13, Dokumentationsmerge und begrenzter neuer500er Nurleseaufnahme Freigabe erteilt und weitere Rückfragen ausgeschlossen. Technische Schutzbedingungen, keine Aktivierung und keine kostenpflichtigen Helmut-Production-Modellaufrufe bleiben unverändert.
 
-## 4 · Vorbereitete finale 13er-Datenaktion
+## 4 · Freigegebene Data13-Aktion: technischer Ausführungsschutz offen
 
-Es existiert genau eine finale vorbereitete Datenaktion. Sie umfasst 13 KO-Zeilen: 10 `display_summary` und 3 `display_title`. Betroffen sind eine tatsächliche Profilunion von **312 Profilen** sowie **1.226 sichtbare Pointer** (1.006 Summary-Pointer, 220 Titel-Pointer). Die exakten Bindungen:
+Es existiert genau eine finale vorbereitete Datenaktion. Sie umfasst 13 KO-Zeilen: 10 `display_summary` und 3 `display_title`. Betroffen sind eine tatsächliche Profilunion von **312 Profilen** sowie **1.226 sichtbare Pointer** (1.006 Summary-Pointer, 220 Titel-Pointer). Die bisherigen unveränderlichen Bindungen (alte52er Schutzversion, derzeit **nicht ausführbar**):
 
 | Bindung | SHA256 |
 | --- | --- |
@@ -72,15 +72,14 @@ Es existiert genau eine finale vorbereitete Datenaktion. Sie umfasst 13 KO-Zeile
 Die Aktion ist **nur vorbereitet**; es gab **keine neue Production-DML** und keine vollzogene Änderung. Schutz und Ablauf:
 
 - Jede Zielzeile hat 61 native Felder; genau das deklarierte Feld wird geändert, die anderen 60 bleiben unverändert.
-- 52 geschützte öffentliche Tabellen sind einbezogen.
+- Der alte Vertrag erwartet52 Tabellen. Der frische vollständige native Katalog enthält tatsächlich51 öffentliche Tabellen; keine Views oder weiteren Relationstypen erklären die Differenz. Diese Abweichung sperrt den alten Vertrag. Eine neue Version muss alle tatsächlich vorhandenen Tabellen namentlich und mit Schemahash binden; die Zahl wird nicht stillschweigend herabgesetzt.
 - Zuerst werden alle 13 Zeilen gesperrt und sämtliche 13 Vorhertexte, Hashes und xmin vor dem ersten Write geprüft.
 - Alle 13 Nachherwerte werden nach allen Updates und vor dem Commit validiert.
 - Ein frischer nativer Vorherwert ist vor einer künftigen Ausführung zwingend.
 - Unbekannter Transportausgang: kein Retry.
-- Getrennte guarded-Return-Freigabe und tatsächliche Postimages sind erforderlich.
+- Ein Rückweg wird konkret an tatsächlich bestätigte vollständige Nachherbilder/xmins gebunden; kein automatischer oder blinder Rückweg.
 
-Risiken: veralteter Snapshot, zwingend frischer nativer Vorherwert und Triggerdrift mit Abbruch. Es gibt keine vollzogene Änderung und keine automatische Ganzprofilannahme. Die Ausführungsfreigabe fehlt; Die Mindestbelege sind fachlich angenommen; die unabhängige Prüfung des neuen 13er-Schutzdeltas ist bestanden, der neue 13er-Mixed-Field-Fixture ergibt 3 PASS ohne alte Guard-Wiederholung. `actualExecutionApproval` ist false; die aktuelle 139er-Matrix bleibt durch die vorbereitete Datenaktion unverändert. Zukunftsprojektionen sind keine tatsächliche Abnahme.
-
+**Frischer Befund:** Alle13 vollständigen nativen Vorhertexte, Hashes und xmins stimmen überein; jeder Nachhertext ändert genau ein Feld,60 bleiben gleich. Der alte vollständige Schutzscan überschreitet15s und wurde rein lesend abgebrochen. Eine neue versionierte SHA256-Multimengenprüfung erfasst alle51 Tabellen und371.994 geschützten Zeilen in12,905s, einschließlich vollständiger nativer Zeilen/xmins, Duplikatmultiplikität und Schemahashes. Das ist nur eine lesende Diagnose, kein alter52er Gate-PASS und kein Nachweis einer atomaren Vorher-/Nachher-DML innerhalb15s. DB17s/Statement15s/HTTP20s bleiben erhalten. Ein neuer Vertrag benötigt eigene Hashbindung, gezielte Tests seines Schutzdeltas und unabhängige kritische Prüfung. **Freigabe vorhanden; Ausführung technisch noch blockiert,0 neue Production-Schreibversuche.** Risiken bleiben Snapshot-/Schema-/Triggerdrift und unbekannter Transportausgang. Keine automatische Ganzprofilannahme.
 Historisch und **nicht** auszuführen: frühere BKA-Schreibpläne (`NEVEREXECUTE`), die überholte Städtetag-Jahresentfernung sowie ältere 6-Summary-, 6-Feld- und 3-Supplement-Pläne. Letztere sind ausschließlich historische Provenienz und keine aktuelle Ausführungsakte; ältere Profil-/Stellenzahlen daraus sind keine aktuelle Union. Die Greifenstein-Summary wurde aus qualifizierten gelieferten Quellen positiv bewertet, ohne Datenkorrektur. Es werden nur minimaler Before/After-Originalscope und Bindungshashes beschrieben; private SQL-Zeilenwerte, Rohprofile, private IDs oder Originaltexte gehören nicht in dieses Dokument.
 
 ## 5 · Prognose (klar abgegrenzt, keine Abnahme)
@@ -91,7 +90,7 @@ Die vollständige deterministische Auswertung aller 500 bestehenden individuelle
 
 Das Belegpaket umfasst **26 Dateien**: 22 native Chiffreteile, 3 Belegteile und 1 Indexdatei, zusammen **404.625.187 Bytes**. Alle 26 Dateien wurden vollständig in Drive hochgeladen, rückgelesen und sind hashgleich. Eine frische Server-Wiederherstellung endete mit Exit 0 in 94,242 Sekunden; sie umfasst 28 Original-ZIPs, 6.662 wiederhergestellte Belegdateien und 528 Chiffremitglieder. Alle 500 Wrapper-/Body-/Input-Representation-Bindungen sind PASS. Index-SHA256: `d20f4b4fddf3cb0fb070ed8362f7202b24b9429cd0c329f0899473c799313718`.
 
-Dieses Paket ist **nicht** mehr als vorbereitet oder „ohne Upload“ darzustellen. Neue Cycle-2-Belege liegen nur privat lokal vor; es gibt kein neues Upload-GO, und das bestehende Backup enthält keine neuen Cycle-2-Belege. Die frühere 669-Dateien-Belegakte darf datiert historisch bleiben. Rohprofil-IDs, private Drive-IDs, Secretwerte, private Originaltexte und SQL-Zeilenwerte sind in diesem öffentlichen Dokument ausgeschlossen.
+Das historische Parentpaket ist vollständig serverseitig geprüft. Zusätzlich sind die aktuellen Cycle2-Belege inzwischen in einem neuen verschlüsselten Archiv mit Serverindex und Abschlussquittung in Drive gesichert und vollständig hashgenau rückgelesen. Index-SHA256 `e43d88fad3a703e8a44794f78cbbb5242bdfd81a058d4540119354ccc594fb65`; Cipher-SHA256 `b05be4700d24b6ff09476be9c47f95860c996250bc9b8933080d8266df21e4d0`; Abschlussquittung-SHA256 `346e7f675b721f09d2266974dbc54b4eefaa675f69b1f64fec373fd9edd7f5ca`. Ein frischer authentisierter Restore aus tatsächlichen Drive-Bytes ist PASS: **2.863 Dateien/565.128.549 Bytes**. Alle500 Individualreferenzen sind gebunden:429 im neuen Archiv,71 unverändert im geprüften Parentarchiv,0 ungelöste Referenzen. Bestehende erfolgreiche Restores wurden bei erhaltenen Belegen nicht wiederholt. Rohprofile, private Drive-IDs, Secret-/Schlüsselwerte und native SQL-Zeilenwerte gehören nicht ins öffentliche Repository.
 
 ## 7 · Datierte Historie: V8-Ausführung und 500er-Capture
 
@@ -111,4 +110,4 @@ Historische, damals geschlossene gemeinsame Quellenursachen bleiben als datierte
 
 ## 8 · Grenzen und nächster Erfolgsmaßstab
 
-Alle Angaben sind rein lesende Fach- und Dokumentationsaussagen. Aus diesem Dokument folgt kein Merge-, Write-, Upload-, Aktivierungs- oder Test-GO. Es gab keine neue 500er-Eingabeaufnahme, keine kostenpflichtigen Helmut-Production-Modellaufrufe und keine Profilaktivierung. Blocker 2 ist erst bei **500 von 500** vollständig fachlich angenommenen Profilen erfolgreich abgeschlossen.
+Freigaben stammen aus dem Betreiberauftrag, nicht aus diesem Dokument. PR890-Merge/Deployment sind tatsächlich abgeschlossen; Data13 und PR891 sind freigegeben, aber bis zur erfolgreichen aktuellen technischen Grenze nicht als ausgeführt zu zählen. Eine neue rein lesende500er Aufnahme ist mit höchstens500 Eingabeabrufen und zwei Identitätsprüfungen zulässig; noch nicht ausgeführt. Keine kostenpflichtigen Helmut-Production-Modellaufrufe und keine Profilaktivierung. Nach jeder tatsächlich geschlossenen Ursache wird die vollständige500er Matrix neu berechnet. Blocker2 ist erst bei **500 von500** vollständig fachlich angenommenen Profilen erfolgreich abgeschlossen.
