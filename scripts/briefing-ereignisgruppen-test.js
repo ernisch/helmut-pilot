@@ -146,4 +146,111 @@ test("Tatsächlicher Aussagenvertrag bindet Mitglied B an dessen eigene Quelle u
   A.deepEqual(new Set(eingabe.korrekturKontext.sichtbareVorgaenge), new Set(["vg-a", "vg-b", "vg-u"]));
   A.ok(!eingabe.aussagen.some(a => a.text === plan.id || a.text === "quelle-a" || a.text === "quelle-b"));
 });
+
+function ankaraFixture(mitMeko = false) {
+  const members = [
+    { koId: "ko-vg-kanzler-20260707-d96896", vorgangId: "vg-kanzler-20260707-d96896",
+      koHash: "b331ea98a119559d239f5472c0b2df3fb36aa2c97d5de9335b2d8be7dd7174b7",
+      quellen: [
+        ["rd-2ded9a718103cfca04fd87f2fad30e36e6fb4fc98729bd0e5ada8fe42c01b9a5", "9525de419dbe7a42e14861860fdf580b9864565de3f52931fd3214e7a6b33a21"],
+        ["rd-63a4df3327c1a804217aba53c43a6c9712910815db2f7c8817028599c2b31eee", "de7284d6f4044fb8f1d41f05729e6eadc7962ce23a1692204e05e5cb07a29836"],
+        ["rd-66259f7a0696a504d2108e20bb4bf2e56a6abfac012a526cff3b61023ff26f73", "555b72caa1a2085dc4d422ee5fde99b5ee3891e7e04acd32b9cb0b2c4cd78482"] ] },
+    { koId: "ko-vg-kanzler-20260708-20b7a7", vorgangId: "vg-kanzler-20260708-20b7a7",
+      koHash: "ebcd41c7ba03e295d2c6acb146972694354f631feca74010c5ac1bedddb86874",
+      quellen: [["rd-66259f7a0696a504d2108e20bb4bf2e56a6abfac012a526cff3b61023ff26f73", "555b72caa1a2085dc4d422ee5fde99b5ee3891e7e04acd32b9cb0b2c4cd78482"]] }
+  ];
+  const input = { decisions: [], kosById: {}, sourcesByVorgang: {} };
+  const fixtureHashes = new Map();
+  for (const [index, member] of members.entries()) {
+    const ko = { id: member.koId, vorgang_id: member.vorgangId,
+      display_title: "Synthetische Teilnahme " + index,
+      display_summary: index ? "Teilnahmebericht." : "Reise, Fotos und Vorfeldstatement.",
+      source_document_count: member.quellen.length };
+    input.kosById[member.koId] = ko;
+    input.decisions.push({ knowledge_object_id: member.koId, vorgang_id: member.vorgangId,
+      score: 0, decision: "Ignorieren" });
+    input.sourcesByVorgang[member.vorgangId] = member.quellen.map(([id, pin]) => {
+      const source = { id, title: "Synthetischer Quellenbeleg", url: "https://example.org/" + id,
+        published_at: "2020-01-01T00:00:00Z" };
+      fixtureHashes.set(hash(source), pin); return source;
+    });
+    fixtureHashes.set(hash(ko), member.koHash);
+  }
+  if (mitMeko) {
+    const meko = gebundeneRegisterFixture();
+    Object.assign(input.kosById, meko.input.kosById);
+    Object.assign(input.sourcesByVorgang, meko.input.sourcesByVorgang);
+    input.decisions.push(...meko.input.decisions.map(d => ({ ...d, score: 0, decision: "Ignorieren" })));
+    for (const member of meko.members) {
+      fixtureHashes.set(hash(input.kosById[member.koId]), member.koHash);
+      fixtureHashes.set(hash(input.sourcesByVorgang[member.vorgangId][0]), member.quelleHash);
+    }
+  }
+  const sandbox = { Map, module: { exports: {} }, require: name => {
+    A.equal(name, "./briefing-speicher");
+    return { hash: value => fixtureHashes.get(hash(value)) || hash(value) };
+  } };
+  vm.runInNewContext(fs.readFileSync(require.resolve("../lib/helmut/briefing-ereignisgruppen"), "utf8"), sandbox);
+  return { register: sandbox.module.exports, members, input };
+}
+test("Ankara verlangt die vollständigen exakten 3/1-Quellenmengen unabhängig von ihrer Reihenfolge", () => {
+  const { register, members, input } = ankaraFixture();
+  A.equal(register.planeAlle(input).length, 1);
+  const reordered = structuredClone(input);
+  reordered.sourcesByVorgang[members[0].vorgangId].reverse();
+  A.equal(register.planeAlle(reordered).length, 1);
+  for (const member of members) {
+    for (const mode of ["fehlend", "zusätzlich", "doppelt", "quelleninhalt", "koinhalt", "entscheidung"]) {
+      const bad = structuredClone(input), docs = bad.sourcesByVorgang[member.vorgangId];
+      if (mode === "fehlend") docs.pop();
+      if (mode === "zusätzlich") docs.push({ id: "nicht-geprüfte-quelle" });
+      if (mode === "doppelt") docs.push(docs[0]);
+      if (mode === "quelleninhalt") docs[0].title += " Drift";
+      if (mode === "koinhalt") bad.kosById[member.koId].display_summary += " Drift";
+      if (mode === "entscheidung") bad.decisions.push(bad.decisions.find(d => d.knowledge_object_id === member.koId));
+      A.equal(register.planeAlle(bad).length, 0, member.koId + ":" + mode);
+    }
+  }
+});
+test("Unabhängige Gruppen bleiben unabhängig gültig und behalten alle Quellen und Mitgliedstexte", () => {
+  const { register, members, input } = ankaraFixture(true);
+  const plans = register.planeAlle(input);
+  A.equal(plans.length, 2);
+  const outputItems = input.decisions.map(d => ({ knowledgeObjectId: d.knowledge_object_id,
+    vorgangId: d.vorgang_id, summary: input.kosById[d.knowledge_object_id].display_summary || "MEKO-Mitglied" }));
+  const before = JSON.stringify({ input, outputItems });
+  const out = register.gruppiereAusgaben({ items: outputItems, recommendations: input.decisions, plans });
+  A.equal(out.items.length, 2); A.equal(out.recommendations.length, 2);
+  const ankara = out.items.find(i => i.ereignisId.includes("ankara"));
+  A.deepEqual(Array.from(ankara.ereignisMitglieder[0].quellenIds), members[0].quellen.map(s => s[0]));
+  A.equal(ankara.ereignisMitglieder[0].summary, "Reise, Fotos und Vorfeldstatement.");
+  A.equal(ankara.ereignisMitglieder[1].summary, "Teilnahmebericht.");
+  A.equal(JSON.stringify({ input, outputItems }), before);
+  const bad = structuredClone(input);
+  bad.sourcesByVorgang[members[0].vorgangId][0].title += " Drift";
+  A.equal(register.planeAlle(bad).length, 1);
+  A.ok(register.planeAlle(bad)[0].id.includes("meko"));
+  const outside = plans.map(p => register.ausserhalbTageskopf(p, { primaryVorgangId: members[0].vorgangId })).filter(Boolean);
+  A.equal(outside.length, 1); A.ok(outside[0].id.includes("meko"));
+});
+test("Briefing-Caller verarbeitet alle unabhängigen Gruppen und der Aussagenvertrag erhält Ankara-Nebenmitglieder", () => {
+  const { register, members, input } = ankaraFixture(true);
+  const file = require.resolve("../lib/helmut/briefingContract");
+  const actualRequire = require("node:module").createRequire(file);
+  const sandbox = { Map, URL, process: { env: {} }, module: { exports: {} }, require: name =>
+    name === "./briefing-ereignisgruppen" ? register : actualRequire(name) };
+  vm.runInNewContext(fs.readFileSync(file, "utf8"), sandbox);
+  const contract = sandbox.module.exports.toBriefingContractV3({ ...input,
+    profile: { id: "fiktives-profil", full_name: "Fiktive Person", parliament: "bundestag" },
+    now: "2026-10-10T08:00:00Z" });
+  A.equal(contract.items.length, 2);
+  A.equal(contract.personalizedRecommendations.length, 2);
+  A.equal(new Set(contract.items.map(i => i.ereignisId)).size, 2);
+  const claims = Aussagen.texte(contract, { kos: Object.values(input.kosById),
+    quellen: Aussagen.quellenVertrag(input.sourcesByVorgang) });
+  A.ok(claims.some(c => c.text === "Reise, Fotos und Vorfeldstatement."
+    && c.vorgangId === members[0].vorgangId && c.pfad.includes("/ereignisMitglieder/")));
+  A.ok(claims.some(c => c.text === "Teilnahmebericht."
+    && c.vorgangId === members[1].vorgangId && c.pfad.includes("/ereignisMitglieder/")));
+});
 console.log(`${passed}/${passed} Fallgruppen bestanden`);
