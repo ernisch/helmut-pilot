@@ -147,7 +147,7 @@ test("Tatsächlicher Aussagenvertrag bindet Mitglied B an dessen eigene Quelle u
   A.ok(!eingabe.aussagen.some(a => a.text === plan.id || a.text === "quelle-a" || a.text === "quelle-b"));
 });
 
-function ankaraFixture(mitMeko = false) {
+function ankaraFixture(mitMeko = false, mitGkv = false) {
   const members = [
     { koId: "ko-vg-kanzler-20260707-d96896", vorgangId: "vg-kanzler-20260707-d96896",
       koHash: "b331ea98a119559d239f5472c0b2df3fb36aa2c97d5de9335b2d8be7dd7174b7",
@@ -159,19 +159,32 @@ function ankaraFixture(mitMeko = false) {
       koHash: "ebcd41c7ba03e295d2c6acb146972694354f631feca74010c5ac1bedddb86874",
       quellen: [["rd-66259f7a0696a504d2108e20bb4bf2e56a6abfac012a526cff3b61023ff26f73", "555b72caa1a2085dc4d422ee5fde99b5ee3891e7e04acd32b9cb0b2c4cd78482"]] }
   ];
+  if (mitGkv) members.push(
+    { gkv: true, koId: "ko-vg-verfassungsgericht-20260709-9c13ca",
+      vorgangId: "vg-verfassungsgericht-20260709-9c13ca",
+      koHash: "0d914e108399f6261628e8f0d03b983236f16dfbbacaa13b6bb8da507a2dad05",
+      publishedAt: "2026-07-09T07:00:00Z",
+      quellen: [["rd-9d214337bfce866a21b36336ba95542042372f325b7f5a62ceb341404c2429bf", "0a8eff48550fd9aca530457113108caab1577ceb5bc8998df809ad26387578a1"]] },
+    { gkv: true, koId: "ko-vg-bundesverfassungsgericht-20260713-c425db",
+      vorgangId: "vg-bundesverfassungsgericht-20260713-c425db",
+      koHash: "a2b89b459d2752687af75bf238448adebebdd859809e1881f03e9bea6adbc8e2",
+      publishedAt: "2026-07-13T07:00:00Z",
+      quellen: [["rd-6ace2a35a26485e3a6467c07acaf32af81506663d6449f67f3b25c1fec85a3f7", "74719ee655cea688026b281e0ab64c7c67c2a7d1f546638b493b33f0dd16b1d3"]] });
   const input = { decisions: [], kosById: {}, sourcesByVorgang: {} };
   const fixtureHashes = new Map();
   for (const [index, member] of members.entries()) {
     const ko = { id: member.koId, vorgang_id: member.vorgangId,
-      display_title: "Synthetische Teilnahme " + index,
-      display_summary: index ? "Teilnahmebericht." : "Reise, Fotos und Vorfeldstatement.",
+      display_title: member.gkv ? "Synthetischer GKV-Interimsbericht " + index : "Synthetische Teilnahme " + index,
+      display_summary: member.gkv
+        ? "Interimsablehnung; mögliche milliardenschwere Folgen für rund 75 Millionen Versicherte laut Bericht."
+        : index ? "Teilnahmebericht." : "Reise, Fotos und Vorfeldstatement.",
       source_document_count: member.quellen.length };
     input.kosById[member.koId] = ko;
     input.decisions.push({ knowledge_object_id: member.koId, vorgang_id: member.vorgangId,
       score: 0, decision: "Ignorieren" });
     input.sourcesByVorgang[member.vorgangId] = member.quellen.map(([id, pin]) => {
       const source = { id, title: "Synthetischer Quellenbeleg", url: "https://example.org/" + id,
-        published_at: "2020-01-01T00:00:00Z" };
+        published_at: member.publishedAt || "2020-01-01T00:00:00Z" };
       fixtureHashes.set(hash(source), pin); return source;
     });
     fixtureHashes.set(hash(ko), member.koHash);
@@ -252,5 +265,57 @@ test("Briefing-Caller verarbeitet alle unabhängigen Gruppen und der Aussagenver
     && c.vorgangId === members[0].vorgangId && c.pfad.includes("/ereignisMitglieder/")));
   A.ok(claims.some(c => c.text === "Teilnahmebericht."
     && c.vorgangId === members[1].vorgangId && c.pfad.includes("/ereignisMitglieder/")));
+});
+test("GKV bindet beide vollständigen Einzelquellen und lehnt jede KO-/Quellversion-Drift ab", () => {
+  const { register, members, input } = ankaraFixture(false, true);
+  const gkv = members.filter(m => m.gkv);
+  const plans = value => register.planeAlle(value).filter(p => p.id.includes("gkv"));
+  A.equal(plans(input).length, 1);
+  for (const m of gkv) {
+    for (const mode of ["fehlendeQuelle", "weitereQuelle", "fremdeQuelle", "quellversion", "kofeld", "entscheidung"]) {
+      const bad = structuredClone(input), docs = bad.sourcesByVorgang[m.vorgangId];
+      if (mode === "fehlendeQuelle") docs.pop();
+      if (mode === "weitereQuelle") docs.push(docs[0]);
+      if (mode === "fremdeQuelle") docs[0].id = "ungeprüfte-quelle";
+      if (mode === "quellversion") docs[0].published_at = "2026-07-14T07:00:00Z";
+      if (mode === "kofeld") bad.kosById[m.koId].display_summary += " Drift";
+      if (mode === "entscheidung") bad.decisions = bad.decisions.filter(d => d.knowledge_object_id !== m.koId);
+      A.equal(plans(bad).length, 0, m.koId + ":" + mode);
+    }
+  }
+});
+test("Drei unabhängige Gruppen bewahren GKV-Berichtsrisiko, Quellen und getrennte spätere Akte", () => {
+  const { register, members, input } = ankaraFixture(true, true);
+  const later = { id: "ko-spaeterer-bt-beschluss", vorgang_id: "vg-spaeterer-bt-beschluss",
+    display_title: "Synthetischer späterer Bundestagsbeschluss", display_summary: "Der Bundestag hat danach beschlossen." };
+  input.kosById[later.id] = later;
+  input.sourcesByVorgang[later.vorgang_id] = [{ id: "quelle-bt", url: "https://example.org/bt" }];
+  input.decisions.push({ knowledge_object_id: later.id, vorgang_id: later.vorgang_id, score: 0, decision: "Ignorieren" });
+  const plans = register.planeAlle(input); A.equal(plans.length, 3);
+  const file = require.resolve("../lib/helmut/briefingContract");
+  const actualRequire = require("node:module").createRequire(file);
+  const sandbox = { Map, URL, process: { env: {} }, module: { exports: {} }, require: name =>
+    name === "./briefing-ereignisgruppen" ? register : actualRequire(name) };
+  vm.runInNewContext(fs.readFileSync(file, "utf8"), sandbox);
+  const contract = sandbox.module.exports.toBriefingContractV3({ ...input,
+    profile: { id: "fiktives-profil", full_name: "Fiktive Person", parliament: "bundestag" },
+    now: "2026-10-10T08:00:00Z" });
+  A.equal(contract.items.length, 4); A.equal(contract.personalizedRecommendations.length, 4);
+  const gkv = contract.items.find(i => i.ereignisId?.includes("gkv"));
+  A.equal(gkv.ereignisMitglieder.length, 2);
+  for (const m of members.filter(m => m.gkv)) {
+    const row = gkv.ereignisMitglieder.find(i => i.knowledgeObjectId === m.koId);
+    A.ok(row.summary.includes("mögliche milliardenschwere Folgen für rund 75 Millionen"));
+    A.deepEqual(Array.from(row.quellenIds), m.quellen.map(q => q[0]));
+  }
+  const separate = contract.items.find(i => i.knowledgeObjectId === later.id);
+  A.equal(separate.summary, later.display_summary); A.equal(separate.ereignisId, undefined);
+  const claims = Aussagen.texte(contract, { kos: Object.values(input.kosById),
+    quellen: Aussagen.quellenVertrag(input.sourcesByVorgang) });
+  for (const m of members.filter(m => m.gkv)) A.ok(claims.some(c => c.vorgangId === m.vorgangId
+    && c.text.includes("75 Millionen") && c.pfad.includes("/ereignisMitglieder/")));
+  const withoutGkv = plans.map(p => register.ausserhalbTageskopf(p,
+    { primaryVorgangId: members.find(m => m.gkv).vorgangId })).filter(Boolean);
+  A.equal(withoutGkv.length, 2); A.ok(withoutGkv.every(p => !p.id.includes("gkv")));
 });
 console.log(`${passed}/${passed} Fallgruppen bestanden`);
