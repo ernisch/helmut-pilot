@@ -1,5 +1,7 @@
 # Blocker 2: eigenes ZEIT-Originalminimum und tatsächliche 415er-Fachabnahme
 
+> Historischer Stand: Die hier dokumentierte415er-Bilanz wurde durch die [tatsächliche499er-Stern-Fortschreibung](blocker2-stern-originalminimum-und-499er-fachabnahme-20261010.md) ergänzt. Die frühere Stern-Lücke ist geschlossen; dieser Bericht und seine Belege bleiben unverändert nachvollziehbar.
+
 **Stand: 10.10.2026, nach der ergänzenden Originalprüfung. 415/500 vollständig fachlich angenommen; Blocker 2 bleibt offen.**
 
 Die aktuelle Bilanz betrifft 500 inaktive, vollständig synthetische Eingaben
