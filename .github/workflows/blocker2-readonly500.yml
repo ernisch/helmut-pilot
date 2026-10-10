@@ -10,6 +10,11 @@ on:
         description: "Oeffentlicher RSA3072 SPKI Schluessel in Base64"
         required: true
         type: string
+      publication_policy_hash:
+        description: "Separat freigegebene aktive Publikationspolicy (64 Hexzeichen); leer erwartet keine Sperre"
+        required: false
+        default: ""
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -35,6 +40,7 @@ jobs:
           HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
           HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.public_key }}
+          HELMUT_PUBLICATION_ELIGIBILITY_HASH: ${{ inputs.publication_policy_hash }}
         # JavaScript-Aktionen erhalten das kurzlebige Artifact-Runtime-Token
         # direkt vom Runner. Shell-Schritte erhalten es nicht verlaesslich.
         uses: ./.github/actions/blocker2-readonly500

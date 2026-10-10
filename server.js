@@ -183,6 +183,8 @@ async function handleRequest(request, response) {
       response.writeHead(400, jsonHeaders()); response.end(JSON.stringify({ ok: false, grund: "nachweis-aufruf-ungueltig" })); return;
     }
     try {
+      const publicationEligibility = require("./lib/helmut/publication-eligibility");
+      const publicationPolicy = publicationEligibility.assertCaptureHeader(request.headers);
       const storage = require("./lib/helmut/storage"), userId = url.searchParams.get("mandat"), day = url.searchParams.get("tag");
       storage.assertTenant(userId, "briefingNachweisApp");
       if (url.searchParams.get("modus") === "eingabe-500")
@@ -206,7 +208,7 @@ async function handleRequest(request, response) {
       const diagnose = url.searchParams.get("modus") === "eingabe"
         ? require("./lib/helmut/briefing-pruefaufnahme").fehlerDiagnose(error) : null;
       if (diagnose) console.error("[blocker2-nurlese]", JSON.stringify(diagnose));
-      response.writeHead(500, jsonHeaders()); response.end(JSON.stringify({ ok: false,
+      response.writeHead(error.code === "PUBLICATION_ELIGIBILITY_UNAVAILABLE" ? 503 : 500, jsonHeaders()); response.end(JSON.stringify({ ok: false,
         grund: "briefing-nachweis-nicht-lesbar", ...(diagnose ? { diagnose } : {}) })); return;
     }
   }
@@ -322,8 +324,7 @@ async function handleRequest(request, response) {
           koScan: Number(process.env.HELMUT_KO_SCAN_LIMIT || 500),
           lageMax: Number(process.env.HELMUT_LAGE_MAX_VORGAENGE || 12),
           relevanzTage: require("./lib/helmut/briefing-frische").relevanzTage(),
-          sourceSafetyStandard: ![process.env.HELMUT_SOURCE_BLOCKLIST, process.env.HELMUT_SOURCE_ALLOWLIST]
-            .some(v => String(v || "").split(",").some(x => x.trim())),
+          sourceSafetyStandard: require("./lib/helmut/publication-eligibility").sourceSafetyStandard(),
           atomicLock: require("./lib/helmut/storage").atomicLockEnabled()
         }
       });
@@ -3393,6 +3394,27 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
   if (gespeichertTag) {
     const row = await require("./lib/helmut/briefing-speicher").lese({ userId: politicianId, day: gespeichertTag, profile, historisch: !aktuellTag });
     if (!row) return { available: false, reason: "briefing-nicht-gespeichert" };
+    if (aktuellTag) {
+      const publicationEligibility = require("./lib/helmut/publication-eligibility");
+      const policy = publicationEligibility.current();
+      let stale = false;
+      try { publicationEligibility.assertRecorded(row.payload.briefing?.publicationEligibilityPolicy, policy); }
+      catch (error) {
+        if (error.message !== "publication-eligibility-stored-policy-stale") throw error;
+        stale = true;
+      }
+      if (policy.hash || stale) {
+        // An unchanged policy hash does not bind newly attached source links.
+        // Current active views reread the corpus; immutable history stays intact.
+        // The Lage cache-only path cannot start a model or replace stored narrative.
+        const briefing = await buildV3Briefing(profile, politicianId);
+        const lageBriefing = await buildLageBriefing(profile, { politicianId, cacheOnly: true });
+        publicationEligibility.assertSame(policy);
+        return prepareBriefingResponse({ ...briefing, lageBriefing,
+          aktuellerLesestand: { gespeicherterStandVeraltet: stale, reinLesend: true } },
+        { previewMode, compact, frischeKontext: null });
+      }
+    }
     return prepareBriefingResponse({ ...row.payload.briefing,
       lageBriefing: require("./lib/helmut/briefing-speicher").lageAusgabe(row.payload.lage),
       gespeicherterNachweis: { id: row.id, erzeugtAm: row.generated_at,
@@ -3470,6 +3492,8 @@ async function loadMentionSourcesInto(profile, understood, sourcesByVorgang) {
 
 const AUSSAGEN_DATEN = Symbol("gepruefte-korrekturauswahl");
 async function buildV3Briefing(profile, politicianId, opts = {}) {
+  const publicationEligibility = require("./lib/helmut/publication-eligibility");
+  const publicationPolicy = publicationEligibility.current();
   // Nur eine interne, bereits gepruefte Vorschau. Keine HTTP Option aktiviert sie.
   if (opts.prosaVorschau) return require("./lib/helmut/prosa-vorschau").lese(opts.prosaVorschau, {
     profile, userId: politicianId, bereich: "briefing",
@@ -3495,6 +3519,9 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   let kos = [];
   // Nur interne, rein lesende Fachpruefung; kein Queryparameter aktiviert sie.
   const ausgabe = (briefing, sourcesByVorgang = {}) => {
+    publicationEligibility.assertSame(publicationPolicy);
+    const policyInfo = publicationEligibility.publicInfo(publicationPolicy);
+    if (policyInfo) briefing.publicationEligibilityPolicy = policyInfo;
     if (!opts.aussagenEingabe) return briefing;
     if (korrekturDaten) {
       // Erst nach den bestehenden Quellen- und Anzeigefiltern zaehlen. Ein
@@ -3558,9 +3585,13 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // ob der Read wirklich lief (auch 0 Treffer moeglich) oder scharf fehlschlug.
   let storeFailed = false;
   try {
-    const res = korrekturDaten ? korrekturDaten.kos : await listKnowledgeObjects({ limit: koScanLimit, _signalError: true });
+    const res = korrekturDaten
+      ? await publicationEligibility.filterCandidates(storageModul, korrekturDaten.kos, publicationPolicy)
+      : await publicationEligibility.listCandidates({ ...storageModul, listKnowledgeObjects },
+        { limit: koScanLimit, _signalError: true }, publicationPolicy);
     if (res && res.__storeError) storeFailed = true; else kos = res || [];
   } catch (error) {
+    if (error.code === "PUBLICATION_ELIGIBILITY_UNAVAILABLE") throw error;
     console.error("[v3-briefing] listKnowledgeObjects fehlgeschlagen:", error && error.message);
     storeFailed = true;
   }
