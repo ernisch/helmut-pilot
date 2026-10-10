@@ -1,5 +1,7 @@
 # Blocker 2: V8-Ausführung, 500er-Nachaufnahme und aktuelle 139er-Fachmatrix
 
+> **Historischer Bericht vor Data13-COMMIT und neuer Aufnahme.** Die damalige139er-Abnahme und die Aussagen „Data13 nicht ausgeführt“/„neue Aufnahme offen“ sind durch den [aktuellen Betriebsbericht](blocker2-data13-und-aktuelle-500er-fachabnahme-20261010.md) ersetzt. Die folgenden datierten Einzelbelege bleiben als Historie erhalten.
+
 **Stand: 10.10.2026.** Dieses Dokument führt den gesicherten aktuellen Stand. Es behält die datierten V8-Ausführungsbelege und die historischen Capturebindungen der bestehenden 500er-Aufnahme; frühere Zwischenstände (42/449 um 10:11:25 UTC, alte PR- und CI-Köpfe, der alte Backup-Vorbereitungsstand) bleiben ausschließlich datierte Historie. **Blocker 2 bleibt offen. Erfolgsziel bleibt exakt 500 von 500 vollständig fachlich angenommenen Profilen.**
 
 ## 1 · Aktuelle vollständige fachliche Entscheidung: 139 von 500
