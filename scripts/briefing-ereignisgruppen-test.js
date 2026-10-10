@@ -2,6 +2,9 @@
 const A = require("node:assert/strict");
 const E = require("../lib/helmut/briefing-ereignisgruppen");
 const Aussagen = require("../lib/helmut/briefing-aussagenbindung");
+const fs = require("node:fs");
+const vm = require("node:vm");
+const { hash } = require("../lib/helmut/briefing-speicher");
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log("PASS " + name); }
 // Synthetische Darstellungsfixtures sind keine Produktionsbescheinigung.
@@ -57,6 +60,65 @@ test("Synthetische Gleichheit oder selbst vergebene Hashpins ergeben keinen Prod
   const decisions = recommendations.map(r => ({ knowledge_object_id: r.knowledge_object_id, vorgang_id: r.vorgang_id }));
   A.equal(E.plane({ decisions, kosById, sourcesByVorgang: {} }), null);
   A.strictEqual(apply({ plan: null }).items, items);
+});
+// Nur den festen Registervertrag prüfen: Die folgenden Objekte sind synthetisch.
+// Der abgegrenzte Hash-Stub gilt ausschließlich für ihre unveränderten Inhalte;
+// er ersetzt weder echte KO-/Source19-Projektionen noch deren Offline-Nachweis.
+function gebundeneRegisterFixture() {
+  const members = [
+    { koId: "ko-vg-haushaltsausschuss-20260708-6cf862", vorgangId: "vg-haushaltsausschuss-20260708-6cf862",
+      koHash: "f9c6917a9adf3ee5d2cff460eb1b812859133174d607a8ea658b5bc8f5ca49ba",
+      quelleId: "rd-e116a8d2e36564a8169d128853c3d2fcc3f2b5b45e4573a406db10058807e78d",
+      quelleHash: "97e4f458506e2f0758b01020eb5912a8c4255db03480777fc88633d8c4aa0080" },
+    { koId: "ko-vg-haushaltsausschuss-20260708-734bcf", vorgangId: "vg-haushaltsausschuss-20260708-734bcf",
+      koHash: "17207dce899bbf928496eba0b700dc9e8a630b715918f446c7278a1137e676af",
+      quelleId: "rd-5985aa691aebdd2401d9ed12963af89f9aa8ef56a4c04fca781448b73c3dcc32",
+      quelleHash: "7ae2f9b4ad2f87b2d5016d22b878d01f73a12bdee018223a1a248ebf9e1d3c6f" }
+  ];
+  const kosById = Object.fromEntries(members.map(m => [m.koId,
+    { id: m.koId, vorgang_id: m.vorgangId, headline: "Synthetische Registerfixture" }]));
+  const sourcesByVorgang = Object.fromEntries(members.map(m => [m.vorgangId,
+    [{ id: m.quelleId, title: "Synthetische Quellenfixture" }]]));
+  const decisions = members.map(m => ({ knowledge_object_id: m.koId, vorgang_id: m.vorgangId }));
+  const exactFixtures = new Map(members.flatMap(m => [
+    [hash(kosById[m.koId]), m.koHash], [hash(sourcesByVorgang[m.vorgangId][0]), m.quelleHash]
+  ]));
+  const sandbox = { Map, module: { exports: {} }, require: name => {
+    A.equal(name, "./briefing-speicher");
+    return { hash: value => exactFixtures.get(hash(value)) || hash(value) };
+  } };
+  vm.runInNewContext(fs.readFileSync(require.resolve("../lib/helmut/briefing-ereignisgruppen"), "utf8"), sandbox);
+  return { register: sandbox.module.exports, members, input: { decisions, kosById, sourcesByVorgang } };
+}
+test("Aktueller fester n-tv-KO-Pin gruppiert nur mit unveränderten Peer- und Quellenpins", () => {
+  const { register, members, input } = gebundeneRegisterFixture();
+  const bound = register.plane(input);
+  A.ok(bound);
+  A.equal(bound.mitglieder[0].koHash, members[0].koHash);
+  A.equal(bound.mitglieder[1].koHash, members[1].koHash);
+  A.equal(bound.mitglieder[0].quelleHashes.length, 2);
+  A.equal(bound.mitglieder[1].quelleHashes, undefined);
+  A.ok(register.plane({ ...input, kosById: new Map(Object.entries(input.kosById)) }));
+});
+test("Beliebige KO-/Quellfeld-Drift und falsche Mitgliedsbindungen bleiben geschlossen", () => {
+  const { register, members, input } = gebundeneRegisterFixture();
+  for (const member of members) {
+    const koDrift = structuredClone(input);
+    koDrift.kosById[member.koId].headline += " verändert";
+    A.equal(register.plane(koDrift), null);
+    const sourceDrift = structuredClone(input);
+    sourceDrift.sourcesByVorgang[member.vorgangId][0].published_at = "2026-10-10T00:00:00Z";
+    A.equal(register.plane(sourceDrift), null);
+    const duplicateSource = structuredClone(input);
+    duplicateSource.sourcesByVorgang[member.vorgangId].push(duplicateSource.sourcesByVorgang[member.vorgangId][0]);
+    A.equal(register.plane(duplicateSource), null);
+    const duplicateDecision = structuredClone(input);
+    duplicateDecision.decisions.push(duplicateDecision.decisions.find(d => d.knowledge_object_id === member.koId));
+    A.equal(register.plane(duplicateDecision), null);
+    const wrongBinding = structuredClone(input);
+    wrongBinding.decisions.find(d => d.knowledge_object_id === member.koId).vorgang_id = "vg-fremd";
+    A.equal(register.plane(wrongBinding), null);
+  }
 });
 test("Jedes Mitglied im Tageskopf/Detail verhindert Gruppierung unabhängig von Zeit und Schwelle", () => {
   for (const state of [{ primaryVorgangId: "vg-a" }, { primaryItem: { id: "vg-b" } },
