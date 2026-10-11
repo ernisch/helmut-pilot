@@ -386,7 +386,7 @@
     ]
   },
   "externalDependencies": [
-    "Authoritative Microsoft evidence for complete billed-input counting or a complete tokenization/schema/framing upper bound on the exact Azure gpt-5-mini-eu Responses v1 route, including counter charges/quotas if applicable; then prove every unchanged permitted D-to-R body fits the financed envelope."
+    "Authoritative Microsoft complete billed-input tokenization/schema/framing upper relation for the exact Azure gpt-5-mini-eu Responses v1 route; current staff Q&A rules out the v1 input_tokens helper, and REST usage is post-response only. Then prove all unchanged permitted D-to-R bodies fit the financed envelope; a finite Canary cannot replace this universal proof."
   ],
   "originalPins": [
     {
@@ -542,6 +542,20 @@
       "readUTC": "2026-10-11T12:08:47.562832+00:00",
       "sha256": "684bc2a2d7b1ee6cae35c16e00f14cde255f22879b9a612dfa8ebaf44484bbd9",
       "bytes": 1951729
+    },
+    {
+      "name": "microsoft-qa.html",
+      "url": "https://learn.microsoft.com/en-us/answers/questions/5889782/404-response-when-executing-getinputtokencountasyn",
+      "readUTC": "2026-10-11T20:59:04.806602+00:00",
+      "bytes": 126594,
+      "sha256": "e6bc2b2de424b73d69ff2df548f4d9808765ffa57c01430a839bf6ab08f27863"
+    },
+    {
+      "name": "azure-responses-rest.html",
+      "url": "https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/azureopenai/responses",
+      "readUTC": "2026-10-11T20:59:04.520370+00:00",
+      "bytes": 541405,
+      "sha256": "7f2133af81319928071f21e986f2aa1be85805b4f5dd534e803f252494a7760f"
     }
   ],
   "productionChanges": 0,
@@ -600,7 +614,9 @@
     "protectedRuntimeChangesPerformed": false,
     "providerCallsPerformed": 0,
     "paidAdditionalProductionPathsIntroduced": 0,
-    "finalLeastCostContractProven": false
+    "finalLeastCostContractProven": false,
+    "providerNonSupportNowBackedByMicrosoftStaffQA": true,
+    "officialRestPostResponseUsageProven": true
   },
   "freeMicrosoftAlternatives": {
     "checkedUTC": "2026-10-11T12:35:22Z",
@@ -660,7 +676,16 @@
         "bytes": 22346,
         "readUTC": "2026-10-11T12:35:21.991530+00:00"
       }
-    ]
+    ],
+    "newMicrosoftPartialProof": {
+      "path": "docs/betrieb/blocker3-microsoft-inputbeleg-und-canary-20261011.json",
+      "unsupportedAzureV1PreCountStaffEvidence": true,
+      "clientTokenizerAttributedToSeparateAIAnswer": true,
+      "postResponseUsageOfficiallyDocumented": true,
+      "completeSchemaFramingUpperProven": false,
+      "canaryPlannedOnly": true,
+      "paidCanaryCalls": 0
+    }
   },
   "offlinePreparation": {
     "mode": "inert-not-imported-by-runtime",

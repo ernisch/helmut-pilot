@@ -86,7 +86,9 @@
     "counterLatencyUpperSeconds": null,
     "counterChargingGuard": "Any charged preflight has its own atomic reservation before calling; never infer free or outside the contract.",
     "noTruncationNoOutputReductionNoAcceptanceChange": true,
-    "implementationAfterEvidence": "Pure authoritative counter/bound adapter replaces blocked seam only after proof review; count exact frozen bytes before reserve/send; no TOCTOU; preserve full future R text."
+    "implementationAfterEvidence": "Pure authoritative counter/bound adapter replaces blocked seam only after proof review; count exact frozen bytes before reserve/send; no TOCTOU; preserve full future R text.",
+    "azureV1InputTokensHelperPlanned": false,
+    "genericCounterPlaceholdersNotExternalDependencies": true
   },
   "conditionalMoney": {
     "finalBudgetDecisionProven": false,
@@ -321,7 +323,7 @@
     "localForecastCanReplaceNativeUsage": false
   },
   "externalDependencies": [
-    "Authoritative Microsoft evidence for complete billed-input counting or a complete tokenization/schema/framing upper bound on the exact Azure gpt-5-mini-eu Responses v1 route, including counter charges/quotas if applicable; then prove every unchanged permitted D-to-R body fits the financed envelope."
+    "Authoritative Microsoft complete billed-input tokenization/schema/framing upper relation for the exact Azure gpt-5-mini-eu Responses v1 route; current staff Q&A rules out the v1 input_tokens helper, and REST usage is post-response only. Then prove all unchanged permitted D-to-R bodies fit the financed envelope; a finite Canary cannot replace this universal proof."
   ],
   "notExternalDependenciesButRequiredFreshStartBindings": [
     "operator later two GO scopes",
@@ -344,5 +346,5 @@
       "500 command transport and full endvalidator evidence, no paid test"
     ]
   },
-  "preparationSHA256": "15ce12887aa1cc99ad5a4ffca20101513de912caa83568942c72e59c6c6c38ab"
+  "preparationSHA256": "c9faddad62f6956462912e323e2c6c03edb88fc8d0073f2e93065818f5330c6c"
 }

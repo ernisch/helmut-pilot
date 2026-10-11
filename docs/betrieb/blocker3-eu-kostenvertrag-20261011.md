@@ -116,9 +116,10 @@ Die kleinere vollständige Anbietergrenze D12288/R16384 einschließlich Schema
 und internem Framing ist weiterhin **nicht belegt oder technisch umgesetzt**.
 Die bestehende gezielte Responses-Prüfung bleibt für dieselbe Modellversion
 und Azure-v1-API anwendbar: kein dokumentierter kleinerer`max_input_tokens`-
-Parameter und kein belegter vollständiger Azure-Vorabzähler. Ein nicht
-dokumentiertes Feature wird nicht als nativ widerlegt ausgegeben. Unterstützung
-und Abrechnung eines Zählers müssten erst autoritativ belegt werden; keine Probe.
+Parameter. Die jetzt gelesene [Microsoft-Staff-Antwort](https://learn.microsoft.com/en-us/answers/questions/5889782/404-response-when-executing-getinputtokencountasyn)
+belegt die fehlende Unterstützung der Azure-v1-Inputzählhilfsroute. Sie wird
+nicht eingeplant oder ausprobiert. Die verbleibende kleine Schema-/Framingobergrenze
+ist dadurch nicht belegt.
 
 ### Verbleibende technische Beweisgrenze nach geschlossenem Oktoberpreis
 
@@ -134,8 +135,9 @@ Identität des Bodys, keine Obergrenze seiner Anbieter-Abrechnung.**
 Die frische [Azure-v1-Referenz](https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/azureopenai/responses)
 und [Azure-API-Übersicht](https://ai.azure.com/api-reference/responses/) dokumentieren
 weiterhin keinen kleineren`max_input_tokens`-Parameter oder vollständigen
-`/responses/input_tokens`-Vorabzähler. Das ist eine Dokumentationslücke, kein
-nativ bewiesener Ausschluss einer solchen Funktion. Der separate
+`/responses/input_tokens`-Vorabzähler. Zusätzlich bestätigt die Microsoft-Staff-
+Antwort nun den Ausschluss genau dieser v1-Hilfsroute; keine Aussage über
+unbekannte zukünftige APIs. Der separate
 [OpenAI-Zähler](https://developers.openai.com/api/docs/guides/token-counting)
 belegt weder Azure-Unterstützung noch Kostenfreiheit auf der Zielroute.
 
@@ -152,15 +154,14 @@ keine zusätzliche Ablehnung zulässiger Antworten zum Beweis der Caps einführe
 
 **Genau eine externe Voraussetzung bleibt für die kleinere Inputbindung:** eine
 autoritative Microsoft-Grundlage für das vollständige abgerechnete Input dieser
-Azure-Route. Entweder ein unterstützter Vorabzähler mit zugesicherter vollständiger
-Zählung und geklärter Abrechnung oder eine vollständige Tokenisierungs-/Schema-/
-Framingobergrenze. Erst darauf lassen sich alle500 D und alle zulässigen
+Azure-Route: eine vollständige nachprüfbare Tokenisierungs-/Schema-/
+Framingobergrenze. Der bislang erwogene Azure-v1-Hilfszähler ist nicht unterstützt. Erst darauf lassen sich alle500 D und alle zulässigen
 zukünftigen R-Eingaben ohne geänderte Abnahme begrenzen. Ein bloßer Zähler plus
 Abbruch bei Überschreitung beweist finanzielle Absicherung, noch keinen
 vollständigen Lauf für sämtliche bisher zulässigen D→R-Texte.
 
 Die Communityfrage ist laut Betreiber gestellt; kein29USD-Supportfall wird eröffnet. Die hier vorbereitete fachliche Anfrage lautet: „Welche offiziell
-unterstützte vollständige Input-Vorabzählung oder nachprüfbare Tokenisierungs-
+nachprüfbare vollständige Tokenisierungs-, Schema-
 und Framingobergrenze gilt für`gpt-5-mini-eu`, DataZoneStandard/Sweden Central,
 Modellversion2025-08-07,`/openai/v1/responses`? Sie muss den tatsächlich
 verarbeiteten Stringinput,`text.format` vom Typ`json_schema` einschließlich
@@ -313,3 +314,11 @@ Ein reines Routen-GO ist kein Kosten- oder Test-GO. B3-Abschluss benötigt weite
 die vollständige kleinere Anbieter-Eingabeobergrenze auf Basis des übernommenen
 Oktober-Kontopreises, danach einen konkret freigegebenen gemeinsamen Geld-/Zeit-
 Änderungssatz und dessen technische unabhängige Abnahme.
+
+Aktueller kostenloser [Microsoft-Teilbeleg und optionaler Diagnosecanary](blocker3-microsoft-inputbeleg-und-canary-20261011.md):
+Staff bestätigt die fehlende Azure-v1-Zählhilfsroute; offizielle REST-Referenz
+dokumentiert nachgelagerte Usage. Der Tokenizerhinweis stammt aus der separat
+gekennzeichneten KI-Antwort. Höchstens zwei geplante EU-Calls, keine Ausführung;
+0,162800 USD aus allgemeinen Servicelimits, 0,293400 USD serielle Reservebindung.
+Ein erfolgreiches Sample ersetzt keine universelle Schema-/Framingobergrenze
+und keine Finanzierung aller unverändert zulässigen R;12/20 bleibt bedingt.

@@ -1,0 +1,74 @@
+{
+  "version": "helmut-blocker3-Microsoft-partial-proof-canary-verification/1",
+  "readUTC": "2026-10-11T21:05:22.529167+00:00",
+  "preparationOnly": true,
+  "blocker3Accepted": false,
+  "paidProductionCalls": 0,
+  "productionChanges": 0,
+  "budgetOrReserveChanges": 0,
+  "focusedOfflineGroups": 8,
+  "focusedTests": "pass",
+  "focusedLogPin": {
+    "path": "/workspace/private/blocker3-microsoft-canary-20261011/current-focused-tests.txt",
+    "sha256": "672cdecdcb54435674a4f62b1d43b0a645ebdddfde4fd22a3a1f6e17bb45820d",
+    "bytes": 747
+  },
+  "canaryArithmeticAndSourcePins": "pass",
+  "selectedDReproducedOfflinePin": {
+    "path": "/workspace/private/blocker3-microsoft-canary-20261011/canary-D-sealed-body.json",
+    "sha256": "538cb3f66684c657fda379538074d71afb31004fef8d60b5bd901d68a8f3c880",
+    "bytes": 34878
+  },
+  "selectedDPosition": 468,
+  "fullRestParentUsageOptionalVerified": true,
+  "independentFinalReviewPin": {
+    "path": "/workspace/private/blocker3-microsoft-canary-20261011/deepseek-final-canary-review.json",
+    "sha256": "c42ecec9f5966c5dbf1562599e72205373d6be005b2db86921a06fbf03d32a39",
+    "bytes": 1455
+  },
+  "solIntegrationReview": "Resolved final review7/20scope risk explicitly; verified optional parent Usage from complete pinned REST source. No Runtime authorization inferred.",
+  "historicalVerificationReceiptPreserved": {
+    "path": "docs/betrieb/blocker3-eu-vorbereitungspruefung-20261011.json",
+    "sha256": "a77b1f12e03cefa9e3227d67f90162755a05de8332793a477e82157cad7dda57",
+    "bytes": 2472
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/blocker3-eu-vorbereitung.js",
+      "sha256": "b951cb8a699fe33495a0f2e77c1267f4c8866b3a0bc5ae9f2a39c9b385763544",
+      "bytes": 10250
+    },
+    {
+      "path": "scripts/blocker3-eu-vorbereitung-test.js",
+      "sha256": "16571a522bc53e22f1ed9ce330ff964b70066aa91df7b717a32f1ec2193c6cce",
+      "bytes": 7907
+    },
+    {
+      "path": "docs/betrieb/blocker3-eu-kostenvertrag-20261011.json",
+      "sha256": "abf19476dfd7d0e769cb6749e629aaf453f6ca8b48f4bfcbff17ab15724c1161",
+      "bytes": 28654
+    },
+    {
+      "path": "docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.json",
+      "sha256": "b264e3f53ca1f95d43efc7a1b7b8e9f07135ab943dd9e3f828f1ace2e38ad18e",
+      "bytes": 19300
+    },
+    {
+      "path": "docs/betrieb/blocker3-microsoft-inputbeleg-und-canary-20261011.json",
+      "sha256": "1ff880ce17a0575e58b6147fec6a0bb94a7c42eddf7e44619fac84abae1fecc7",
+      "bytes": 12993
+    },
+    {
+      "path": "docs/betrieb/blocker3-microsoft-inputbeleg-und-canary-20261011.md",
+      "sha256": "a3cf4464086bc13e15f9f032944457d88dc2659d2bb4f8baf5208c7d5edec2cd",
+      "bytes": 12708
+    },
+    {
+      "path": "docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.md",
+      "sha256": "18330e81b5a8b1907dcbc1a6a73adc4d8bd8384089d16a5538abb2b004757511",
+      "bytes": 12795
+    }
+  ],
+  "historicalPreparationCommit": "2650796a42338a7b20e5d6d74cc31757dab254cb",
+  "currentMainVerified": "fe00adf537d005a56cc6d6bc28604c433cdb810d"
+}

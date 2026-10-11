@@ -22,8 +22,10 @@ Final übernommen:500 angenommene D-Kontexte,468 regulär/32 historisch,
 **500D+500R+0U=1000 Modellaufrufe**, ein Versuch, Modellparallelität1.
 3000 Outputtokens einschließlich Reasoning, reasoning`low`, vollständige
 Prüftexte, Quellen-/Paarurteile und1500 Abnahmepositionen bleiben erhalten.
-Eventuelle Anbieter-Zählrequests sind noch nicht autorisiert; Anzahl, Gebühren
-und Quoten hängen vom fehlenden Microsoft-Beleg ab. Kein weiterer U-Pfad.
+Die belegte nicht unterstützte Azure-v1-Zählhilfsroute wird nicht eingeplant
+oder ausprobiert. Keine zusätzlichen Zählrequests oder Gebühren autorisiert;
+die generischen Gebührenfelder bleiben unfreigegebene Platzhalter, keine
+weitere externe Voraussetzung. Kein weiterer U-Pfad.
 
 Die [Offline-Vorbereitung](../../scripts/blocker3-eu-vorbereitung.js)
 rechnet in ganzzahligen MikroUSD, prüft unveränderte Vertragswerte und bindet
@@ -42,9 +44,19 @@ unveränderte lange zukünftige R-Texte:
     node --require ./scripts/run-offline-tests.js scripts/blocker3-eu-vorbereitung-test.js
     node scripts/blocker3-eu-vorbereitung.js --contract docs/betrieb/blocker3-eu-kostenvertrag-20261011.json
 
-Acht Prüfgruppen bestanden; unabhängige Flash-High-Leseprüfung der Vorbereitung positiv.\nSol ergänzte strengere Ablehnungsassertions und den automatisierten kanonischen\nHashabgleich; erneut gezielt bestanden. Der [gebundene Prüfbeleg](blocker3-eu-vorbereitungspruefung-20261011.json)\ntrennt Review, lokale Tests und fehlende Runtimeabnahme. Keine Production-/Budget-/Reserve-/Profilwirkung.
+Acht Prüfgruppen bestanden; unabhängige Flash-High-Leseprüfung der Vorbereitung positiv.
+Sol ergänzte strengere Ablehnungsassertions und den automatisierten kanonischen
+Hashabgleich; erneut gezielt bestanden. Der [gebundene Prüfbeleg](blocker3-eu-vorbereitungspruefung-20261011.json)
+trennt Review, lokale Tests und fehlende Runtimeabnahme. Keine Production-/Budget-/Reserve-/Profilwirkung.
 
 ## Kostenloser Microsoft-Belegcheck
+
+**Aktueller Teilabschluss:** [Microsoft-Q&A, REST-Usage und optionaler Zweicall-Canary](blocker3-microsoft-inputbeleg-und-canary-20261011.md).
+Die Staff-Antwort belegt die nicht unterstützte v1-Vorabzählroute, die offizielle
+REST-Referenz nachgelagerte Usage. Clienttokenisierung steht in der separaten
+KI-Antwort. Kein kleiner vollständiger Inputdeckel oder universeller R-Nachweis.
+Die unten verlinkte Vorbereitungsprüfung bleibt ein historischer Hashbeleg;
+die aktuellen Bindungen/Tests stehen im neuen Teilbeleg-JSON.
 
 Offizielle Quellen einschließlich aufgelöster INCLUDE-Inhalte gelesen;
 Originalhashes im EU-JSON. Quellen und Geld-/Zeitverbraucher wurden durch
@@ -55,19 +67,18 @@ getrennte Flash-High-Helfer geprüft.
 | [APIM Tokenlimit](https://learn.microsoft.com/en-us/azure/api-management/llm-token-limit-policy) | Responses; vorher Promptschätzung, nachher Usage; mögliche Überschreitung | Nein. Quota/Schätzung ist kein vollständiger Abrechnungsdeckel. |
 | [Structured Outputs](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs) | GPT-5-mini, strict JSONschema | Keine vollständige Schema-/Framingzählregel. |
 | [Chat-Tokenbeispiel](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/chatgpt) | Lokale modellabhängige Abschätzung | Kein Vollzählbeleg für diese Azure-Responsesroute. |
-| Bereits gebundene Responses-/Modellreferenzen | API-Felder und große Servicelimits | Kein dokumentierter kleiner Vollinputdeckel. Eine Dokumentationslücke beweist keine native Nichtunterstützung. |
+| Bereits gebundene Responses-/Modellreferenzen | API-Felder und große Servicelimits | Kein dokumentierter kleiner Vollinputdeckel. Die aktuelle Microsoft-Q&A-Antwort belegt nun die fehlende v1-Hilfsroute; keine vollständige kleine Framingobergrenze. |
 
 Communityfrage laut Betreiber gestellt; hier keine externe Nachricht,
 kein29USD-Supportfall, kein Testcall auf eine undocumented API.
 
-**Microsoft muss genau einen autoritativen Beleg liefern:** entweder
-unterstützte Vorabzählung mit sicherer Obergrenze der späteren
-`usage.input_tokens` für denselben unveränderten Body, oder vollständige
+**Microsoft muss genau einen autoritativen Beleg liefern:** vollständige
 nachprüfbare Tokenisierungs-/Framingobergrenze für`/openai/v1/responses`,
 `gpt-5-mini-eu`, DataZoneStandard/SwedenCentral, Modell2025-08-07.
 Er muss Stringinput, vollständiges`text.format`-Schema einschließlich
 Name/strict und sämtliche intern abgerechneten Framingtokens umfassen.
-Bei Vorabzählrequests müssen Unterstützung, Gebühren und Quoten geklärt sein.
+Die derzeit belegte v1-Inputzählhilfsroute ist nicht unterstützt;
+sie wird nicht eingeplant oder ausprobiert.
 Eine Communityantwort genügt nur mit belegbarer Microsoft-Autorität und dieser
 Zusicherung.
 
