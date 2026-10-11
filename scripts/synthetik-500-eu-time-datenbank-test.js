@@ -7,10 +7,24 @@ const db="helmut_eu_contract_"+crypto.randomBytes(8).toString("hex");
 function psql(sql,database=db){assert([db,"postgres"].includes(database));return execFileSync("docker",["--host=unix:///var/run/docker.sock","exec","-i",container,
   "psql","-X","-w","-qAt","-v","ON_ERROR_STOP=1","-U","postgres","-d",database,"-f","-"],{input:sql,encoding:"utf8",timeout:20000,
   env:{PATH:process.env.PATH},stdio:["pipe","pipe","pipe"]}).trim();}
+function originalFunction(sql,name){
+  assert(["helmut_synthetik500_internal.pruefe","helmut_synthetik500_internal.status","helmut_end500_internal.bind"].includes(name));
+  const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const starts=[...sql.matchAll(new RegExp("\\bCREATE\\s+(?:OR\\s+REPLACE\\s+)?FUNCTION\\s+"+escaped+"\\s*\\(","gi"))];
+  assert.equal(starts.length,1,"exactly one approved original function: "+name);
+  const rest=sql.slice(starts[0].index),opening=/\bAS\s+(\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$)/i.exec(rest);
+  assert(opening,"SQL dollar body required: "+name);
+  const end=rest.indexOf(opening[1],opening.index+opening[0].length);
+  assert(end>=0,"matching SQL dollar body required: "+name);
+  const after=end+opening[1].length,terminator=/^\s*;/.exec(rest.slice(after));
+  assert(terminator,"function terminator required: "+name);
+  return rest.slice(0,after+terminator[0].length);
+}
 function main(){assert.match(container||"",/^blocker3-eu-pg-[0-9]{8}$/);
   const info=JSON.parse(execFileSync("docker",["--host=unix:///var/run/docker.sock","inspect",container],{encoding:"utf8",env:{PATH:process.env.PATH}}))[0];
   assert.equal(info.HostConfig.NetworkMode,"none");assert.equal(info.Config.Image,"postgres:17.6-bookworm");assert.equal(Object.keys(info.HostConfig.PortBindings||{}).length,0);
-  const originals=process.env.HELMUT_EU_NATIVE_FUNCTION_DIR;assert(originals?.startsWith("/workspace/private/"));
+  const originals=process.env.HELMUT_EU_NATIVE_FUNCTION_DIR;
+  if(originals)assert(path.resolve(originals).startsWith("/workspace/private/"));
   psql(`create database ${db} template template0 lc_collate 'C' lc_ctype 'C';`,"postgres");
   try{
     const old=fs.readFileSync(path.join(__dirname,"../supabase/migrations/20261007104720_synthetik500_unabhaengiger_endwaechter.sql"),"utf8");
@@ -22,8 +36,15 @@ function main(){assert.match(container||"",/^blocker3-eu-pg-[0-9]{8}$/);
       if not exists(select from pg_roles where rolname='authenticated')then create role authenticated;end if;
       if not exists(select from pg_roles where rolname='service_role')then create role service_role;end if;end$$;
       ${tables}`);
-    for(const name of ["helmut_synthetik500_internal-pruefe.sql","helmut_end500_internal-bind.sql","native-time-status.sql"])
-      psql(fs.readFileSync(path.join(originals,name),"utf8"));
+    if(originals){
+      for(const name of ["helmut_synthetik500_internal-pruefe.sql","helmut_end500_internal-bind.sql","native-time-status.sql"])
+        psql(fs.readFileSync(path.join(originals,name),"utf8"));
+    }else{
+      const rollback=fs.readFileSync(path.join(__dirname,"../supabase/migrations/rollback_20261011213611_synthetik500_eu_service_contract_time.sql"),"utf8");
+      psql(originalFunction(rollback,"helmut_synthetik500_internal.pruefe"));
+      psql(originalFunction(old,"helmut_end500_internal.bind"));
+      psql(originalFunction(rollback,"helmut_synthetik500_internal.status"));
+    }
     const previous=psql("select pg_get_functiondef('helmut_end500_internal.bind(text,text,text,timestamptz,timestamptz,text)'::regprocedure);");
     psql(fs.readFileSync(path.join(__dirname,"../supabase/migrations/20261011213611_synthetik500_eu_service_contract_time.sql"),"utf8"));
     assert.equal(psql("select pg_get_functiondef('helmut_end500_internal.bind(text,text,text,timestamptz,timestamptz,text)'::regprocedure);"),previous);
@@ -44,7 +65,7 @@ function main(){assert.match(container||"",/^blocker3-eu-pg-[0-9]{8}$/);
     psql(fs.readFileSync(path.join(__dirname,"../supabase/migrations/rollback_20261011213611_synthetik500_eu_service_contract_time.sql"),"utf8"));
     assert.equal(psql("select count(*) from information_schema.columns where table_schema='helmut_end500_internal' and table_name='bindings' and column_name='service_contract_hash';"),"0");
     assert.equal(psql("select pg_get_functiondef('helmut_end500_internal.bind(text,text,text,timestamptz,timestamptz,text)'::regprocedure);"),previous);
-    console.log("PASS isolated PG17 migration preimages, exact EU9h/legacy4h/null checks, service-only RPC, old binder unchanged, native status hash, zero activation/bindings, safe rollback");
+    console.log("PASS isolated PG17 migration preimages ("+(originals?"fresh-native-private":"public-repository")+"), exact EU9h/legacy4h/null checks, service-only RPC, old binder unchanged, native status hash, zero activation/bindings, safe rollback");
   }finally{psql(`drop database ${db} with(force);`,"postgres");}
 }
 if(require.main===module){try{main();}catch(e){console.error(String(e.stderr||e.stack));process.exitCode=1;}}

@@ -28,7 +28,7 @@
     "legacyRoute": "passed",
     "legacyEndValidator": "64/64 passed",
     "legacyRuntime": "12/12 passed",
-    "isolatedPG17": "migration and rollback passed",
+    "isolatedPG17": "migration and rollback passed with fresh native preimages and public repository preimages",
     "moneyIndependentFollowup": "ok",
     "timeIndependentReview": "ok",
     "mandatoryCIAtImplementationCommit": "pending",
@@ -38,7 +38,10 @@
     "financingIndependentReview": "ok",
     "providerAuthRebind": "3 groups passed; real pure EU/profile/canonical VM modules; independent review ok",
     "environmentInventory": "38/38 passed",
-    "supersededCI_a8f48b81": "168/169 standard suites passed; missing pure VM dependency in auth-rebind harness fixed; current mandatory rerun required"
+    "supersededCI_a8f48b81": "168/169 standard suites passed; missing pure VM dependency in auth-rebind harness fixed; current mandatory rerun required",
+    "supersededCI_cac5f8a3": "169/169 standard suites passed; area regression required real isolated PG fixture instead of offline collection; mandatory explicit EU DB step prepared; current mandatory rerun required",
+    "ciSelection": "11/11 CI-plan and 37/37 area-selection checks passed; existing169 standard suites unchanged",
+    "euDatabaseCI": "Explicit mandatory network-none PG17 step, original preimages source-bound; focused independent review pending; current mandatory CI rerun required"
   },
   "rolloutReceipt": "Pending actual READY/runtime/financial/native SQL read-only evidence; no closure claim",
   "nativeSQLMigrationSHA256": "bde7ad31af248a7099600202e664168b866bf8dc0217ebda1e07089e236db62c",

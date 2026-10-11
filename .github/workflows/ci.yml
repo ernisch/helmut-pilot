@@ -40,7 +40,10 @@ jobs:
     # CI37442488028: Datenbank/Setup ~7min und erfolgreiche Standard-Suite9min;
     # Bereichsregression am20-Minuten-Limit abgebrochen. Alle Pflichtschritte
     # und Einzelgrenzen bleiben gleich, Gesamtfenster endlich30min.
-    timeout-minutes: 30
+    # CI38183359329: Standard169/169 ~14min plus DB/Setup und Bereichsregression;
+    # der neue echte EU-Migrationsnachweis und Z22 behalten eigene Pflichtschritte.
+    # Endliches Gesamtfenster35min, keine Suite oder Einzelgrenze entfaellt.
+    timeout-minutes: 35
     # KURZLEBIGE CI-TESTDATENBANK (Korrektur 2026-08-28, Befund „falsches Grün").
     # ---------------------------------------------------------------------------
     # Für die Datenbanknachweise zu Z22 und Kontoschreibschutz. Der Dienst lebt so lange wie
@@ -307,6 +310,26 @@ jobs:
           # hier positiv bestaetigt sein, sonst scheitert der Schritt.
           docker exec "$HELMUT_END500_PG_CONTAINER" pg_isready -h 127.0.0.1 -U postgres
           node scripts/lokal.js -- node scripts/end500-unabhaengig-datenbank-test.js
+
+      - name: EU-Servicezeitvertrag und Rueckweg gegen isolierten PostgreSQL17
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
+          export HELMUT_EU_PG_CONTAINER="blocker3-eu-pg-$(date -u +%Y%m%d)"
+          docker pull "$IMAGE"
+          docker tag "$IMAGE" postgres:17.6-bookworm
+          docker run -d --network none --name "$HELMUT_EU_PG_CONTAINER" -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.6-bookworm
+          trap 'docker rm -fv "$HELMUT_EU_PG_CONTAINER" >/dev/null' EXIT
+          for attempt in {1..30}; do
+            if docker exec "$HELMUT_EU_PG_CONTAINER" pg_isready -h 127.0.0.1 -U postgres; then break; fi
+            sleep 1
+          done
+          docker exec "$HELMUT_EU_PG_CONTAINER" pg_isready -h 127.0.0.1 -U postgres
+          # Die gebundenen Vorfunktionen kommen ausschliesslich aus den
+          # Repository-Migrationen; keine Production-Daten oder Credentials.
+          node scripts/lokal.js -- node scripts/synthetik-500-eu-time-datenbank-test.js
 
       - name: Schnelle Kernschutzprüfung
         if: steps.plan.outputs.core == 'true'

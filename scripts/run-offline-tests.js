@@ -124,6 +124,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
   "end500-unabhaengig-datenbank-test.js", // eigener CI-Schritt: echter netzloser PG17/pg_cron, kein Offline-Skip
+  "synthetik-500-eu-time-datenbank-test.js", // eigener Pflichtschritt: netzloser PG17, reale EU-Zeitmigration und Rueckweg
   "synthetik-500-native-d-new-datenbank-test.js", // eigener Pflichtschritt: netzloser PG17-Container, kein Offline-Scheinbeleg
   "synthetik-500-runtime-datenbank-test.js", // eigener Pflichtschritt: echtes Importjournal bis 500->0, kein Offline-Skip
   "realkohorte-500-runtime-datenbank-test.js", // eigener Pflichtschritt: isolierte PostgreSQL17, kein stiller Offline-Skip
