@@ -30,9 +30,11 @@ function forbiddenEffect() { blockedEffectAttempts += 1; throw new Error("offlin
 // Der Production-Handler erhaelt KEINEN Auth-Override und kennt den Testbearer nicht.
 const dependencies = {
   "ai.js": ["https", "./verstehen-restzeit", "./azure-endpunkt", "./provider-runtime-attestation", "./anbieter-steuerung"],
-  "provider-runtime-attestation.js": ["./azure-endpunkt", "./testkosten-budget", "node:crypto", "./flags"],
+  "provider-runtime-attestation.js": ["./azure-endpunkt", "./testkosten-budget", "node:crypto", "./flags", "./synthetik-500-eu-service-contract"],
   "flags.js": ["fs", "path", "../../helmut-flags.json"],
-  "azure-endpunkt.js": ["crypto"], "testkosten-budget.js": ["node:crypto"],
+  "azure-endpunkt.js": ["crypto"], "testkosten-budget.js": ["node:crypto", "./synthetik-500-eu-service-contract"],
+  "synthetik-500-eu-service-contract.js": ["./synthetik-500-profile"], "synthetik-500-profile.js": ["node:crypto", "./streaming-canonical-hash"],
+  "streaming-canonical-hash.js": ["node:crypto"],
   "anbieter-steuerung.js": ["crypto"], "verstehen-restzeit.js": []
 };
 const sandboxProcess = { env: {} }, loaded = new Map();

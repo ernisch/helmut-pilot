@@ -32,7 +32,10 @@
     "moneyIndependentFollowup": "ok",
     "timeIndependentReview": "ok",
     "mandatoryCIAtImplementationCommit": "pending",
-    "historyRetentionIndependentReview": "ok"
+    "historyRetentionIndependentReview": "ok",
+    "providerReadOnlyAttestation": "12/12 passed",
+    "financingReadOnlyWitness": "6/6 passed including unchanged global call policy",
+    "financingIndependentReview": "ok"
   },
   "rolloutReceipt": "Pending actual READY/runtime/financial/native SQL read-only evidence; no closure claim",
   "nativeSQLMigrationSHA256": "bde7ad31af248a7099600202e664168b866bf8dc0217ebda1e07089e236db62c",
