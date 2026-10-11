@@ -1,3 +1,5 @@
+> Historischer Analyseabschluss vor PR899. Die damalige32er Senderlücke ist inzwischen geschlossen. Aktuell gilt die [bezifferte Freigabevorlage](blocker3-finanzierung-freigabe-20261011.md); alle nachfolgenden damaligen Werte und offenen Punkte bleiben als Original erhalten.
+
 # Blocker 3: endgültige Eingabeabnahme und Kostenvertragsgrenze
 
 Stand 11.10.2026; geprüftes `main` `e3eeaca1fc733c88b0b43075d0b25330001bbf64`.
@@ -321,3 +323,7 @@ Kostenoriginale bleiben vollständig erhalten.
 **Abnahme: offen.** Die vorliegende Arbeit ist eine finale Eingabeintegration
 und vollständige unabhängige Vertragsbestandsanalyse. Sie ist kein freigegebener
 finanzierter500er Lauf und keine Änderung eines technischen Budgetriegels.
+
+## Wortgleich erhaltene frühere Statuszeile
+
+- **Blocker 3 Kosten/Zeit (11.10., offen):** Finale B2-Abnahme übernommen; 500 Originale Run38102593796 offline vermessen. 1.000D/R geplant, U0 für eingefrorene KOs. Native D-Projektion bei14 Tagen:468 nichtleer/32 leer; vollständige Senderübergabe fehlt trotz abgeschlossener Fachabnahme. Bestand7,445364USD frisch, Sender20/6 versus Endvalidator7/6. 2416/702/200/failclosed1 frisch als Projektwerte; keine Grenzen/Reserven/Production-Modelle geändert. [Rechnung, Übergabe und Freigabegrenze](betrieb/blocker3-finaler-kostenvertrag-20261011.md).

@@ -1,0 +1,214 @@
+{
+  "version": "helmut-synthetik500-financial-time-proposal/1",
+  "mode": "inert-reviewable-proposal",
+  "approved": false,
+  "runtimeEnforcement": false,
+  "blocker3Complete": false,
+  "operatorApprovalOriginal": null,
+  "repositoryBasis": "fe00adf537d005a56cc6d6bc28604c433cdb810d",
+  "deployedBasis": "1ad00cd464f88f37a1adc3417b2758ab1eb24e80",
+  "deploymentId": "dpl_76HSdbWhPMaDRJzQqQ1GsrGx3wcE",
+  "cohort": {
+    "profiles": 500,
+    "BT": 330,
+    "BE": 120,
+    "BB": 50,
+    "expectedPositions": 1500,
+    "normalContexts": 468,
+    "historicalContexts": 32
+  },
+  "inputEvidence": {
+    "b2Run": "38102593796",
+    "b2Complete": true,
+    "contextHandoffAccepted": true,
+    "nativePricingIntegritySHA256": "da2804ff489c610aa152ceac350b17275e9e6ce05ec802aea103c41937173f1d",
+    "nativePricingHandoffSHA256": "149a37f74ac41313e45aae0df23ff6c95809f915bb576640ab4a613c5ce270c1",
+    "merkleRoot": "ce7ee487274b39952d23dbb377647659f6c41b6684eb0406cbc1d8553df87c69",
+    "all500LeavesVerified": true,
+    "nativeHistoricalCapabilitiesVerified": 32,
+    "DPromptPlusSchemaLocalTokens": {
+      "min": 3413,
+      "median": 3468,
+      "max": 10486,
+      "sum": 1955057
+    },
+    "DWireLocalTokens": {
+      "min": 3548,
+      "median": 3604,
+      "max": 10755,
+      "sum": 2027471
+    },
+    "DWireUTF8Bytes": {
+      "min": 14239,
+      "median": 14494,
+      "max": 34875,
+      "sum": 7887854
+    },
+    "providerUsageMeasured": false,
+    "actualFutureRInputsKnown": false
+  },
+  "calls": {
+    "D": 500,
+    "R": 500,
+    "U": 0,
+    "otherProductionPaths": 0,
+    "total": 1000,
+    "maxAttemptsPerIntent": 1,
+    "modelConcurrency": 1,
+    "model": "gpt-5-mini",
+    "outputIncludingReasoning": {
+      "D": 3000,
+      "R": 3000
+    },
+    "reasoningEffort": "low",
+    "independentEndReview": "separate non-generative independent review; no extra Production model authorized"
+  },
+  "proposedCaps": {
+    "preHttpFullRequestLocalO200k": {
+      "D": 11000,
+      "R": 14000
+    },
+    "confirmedProviderInputTokens": {
+      "D": 12288,
+      "R": 16384
+    },
+    "quotaOverrunAction": "stop whole run immediately; no next call or retry; account actual cost or retain full unknown reserve",
+    "preHttpOverrunAction": "stop before send; no truncation",
+    "standardReserveMicroUsd": 212000,
+    "standardReserveInputTokens": 400000,
+    "existingReservesChanged": false
+  },
+  "finance": {
+    "unit": "microUSD",
+    "tariffInputPerMillionUsd": 0.5,
+    "tariffOutputPerMillionUsd": 4,
+    "perCallRounding": "ceil(inputTokens / 2 + 4 * outputTokens)",
+    "nativeBaselineIncludingExternal": 6809364,
+    "externalAlreadyIncluded": 5195303,
+    "privateAdditionalRetained": 636000,
+    "conservativeBaseline": 7445364,
+    "freshBaselineUTC": "2026-10-11T09:57:02.541Z",
+    "financialJsonMd5": "a9297ea47babf3c9903257df726c547f",
+    "authRevision": "476643",
+    "maxCapConformantNewCost": 19168000,
+    "maxRunEnvelopeIncludingOneAbnormalFullReserve": 19359808,
+    "minimumDayWithZeroProvenPriorAndPrivate": 19995808,
+    "minimumCumulativeIncludingPreservedBase": 26805172,
+    "requestedDayLimit": 20000000,
+    "requestedCumulativeLimit": 27000000,
+    "runIncrementalLimit": 19359808,
+    "limitsChanged": false,
+    "missingBooks": [
+      "2026-10-07",
+      "2026-10-08",
+      "2026-10-09",
+      "2026-10-10",
+      "2026-10-11"
+    ],
+    "missingBookRepairApproved": false,
+    "freshGapReadUTC": "2026-10-11T10:01:08.223224+00:00",
+    "missingBookIsNotZero": true,
+    "allHistoricalReservesPreserved": true
+  },
+  "planningScenarios": {
+    "framingAssumption": 256,
+    "historicalRuleTokens": 101,
+    "RInputAssumption": "all-sourceJSON local tokens +wholeDoutputtokens as paragraph estimate +nativebase+schema; component sums approximate notprovider upper",
+    "scenarios": [
+      {
+        "outputPerCall": 500,
+        "RInputMin": 4351,
+        "RInputMax": 9878,
+        "RInputSum": 2375088,
+        "runCost": 4229324,
+        "H": 4437123,
+        "day": 5073123,
+        "cumulative": 11882487
+      },
+      {
+        "outputPerCall": 1000,
+        "RInputMin": 4851,
+        "RInputMax": 10378,
+        "RInputSum": 2625088,
+        "runCost": 6354324,
+        "H": 6559873,
+        "day": 7195873,
+        "cumulative": 14005237
+      },
+      {
+        "outputPerCall": 3000,
+        "RInputMin": 6851,
+        "RInputMax": 12378,
+        "RInputSum": 3625088,
+        "runCost": 14854324,
+        "H": 15050873,
+        "day": 15686873,
+        "cumulative": 22496237
+      }
+    ]
+  },
+  "globalCounter": {
+    "fallback": 50,
+    "currentProductionProjectLimit": 2416,
+    "understandingReserve": 702,
+    "realPriorityReserve": 200,
+    "budgetFailClosed": 1,
+    "currentReaderProjectedUsed": 0,
+    "effectiveDRLimit": 1714,
+    "maximumStartUsedFor1000": 714,
+    "minimumRawLimitAtUsed0Preserving702": 1702,
+    "requestedChange": null,
+    "immutableRuntimeValuesMustBeBoundBeforeExecution": true,
+    "atomicPaidReservationTestExecuted": false
+  },
+  "time": {
+    "existingWindowSeconds": 14400,
+    "existingProviderFullResponseSeconds": 20,
+    "proposedUnitSeconds": 60,
+    "proposedSetupSeconds": 1200,
+    "proposedDispatchSeconds": 30000,
+    "proposedActiveSlackSeconds": 1200,
+    "proposedActiveWindowSeconds": 32400,
+    "proposedEndEvidenceSeconds": 1800,
+    "proposedCompleteDeadlineSeconds": 34200,
+    "exportReadOnlyRequests": 501,
+    "exportConcurrency": 8,
+    "exportFullRequestCapSeconds": 20,
+    "endReadbackSeconds": 60,
+    "offlineFinalizationSeconds": 300,
+    "forecastModelSeconds": 10000,
+    "forecastExtraUnitSeconds": 10,
+    "forecastTotalSeconds": 18000,
+    "forecastAssumptions": "10s per model,10s extra per unit,20min setup,30min end; not measured",
+    "completeProductionRuntimeMeasured": false,
+    "successfulCompleteRuntimeGuaranteed": false,
+    "nativeFourHourMigrationRequired": true,
+    "migrationApproved": false,
+    "originalBerlinCaptureDay": "2026-10-11",
+    "sameUtcExecutionDayRequiredByCurrentContract": true,
+    "proposedExecutionStartsAtUTC": null,
+    "separateTestGORequired": true,
+    "calendarCannotShiftAutomatically": true,
+    "latestNineHourStartOnCurrentCaptureDay": "strictly before 2026-10-11T13:00:00.000Z"
+  },
+  "requiredSharedContractConsumers": [
+    "documentation",
+    "costPlan",
+    "intents",
+    "admission",
+    "command",
+    "atomicMoneyCAS",
+    "centralSender",
+    "endValidator",
+    "nativeEndRuntime",
+    "independentEndWatcher"
+  ],
+  "implementationApproved": false,
+  "commandInstallationApproved": false,
+  "profileActivationApproved": false,
+  "journalMutationApproved": false,
+  "paidProductionExecutionApproved": false,
+  "newProductionModelCalls": 0,
+  "newProductionMutations": 0,
+  "proposalHash": "ab914c80b56e5e3cfb774f4835e147acc78172adeda076c6cb4e9d6301fe44b2"
+}
