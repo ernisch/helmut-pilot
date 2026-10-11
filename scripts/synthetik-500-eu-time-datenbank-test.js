@@ -41,7 +41,10 @@ function main(){assert.match(container||"",/^blocker3-eu-pg-[0-9]{8}$/);
     assert.equal(psql("select helmut_synthetik500_internal.status('{}'::jsonb,0) ? 'serviceContractHash';"),"f");
     assert.equal(psql("select count(*) from helmut_end500_internal.bindings;"),"0");
     assert.equal(psql("select count(*) from mandate_profiles where aktiv;"),"0");
-    console.log("PASS isolated PG17 migration preimages, exact EU9h/legacy4h/null checks, service-only RPC, old binder unchanged, native status hash, zero activation/bindings");
+    psql(fs.readFileSync(path.join(__dirname,"../supabase/migrations/rollback_20261011213611_synthetik500_eu_service_contract_time.sql"),"utf8"));
+    assert.equal(psql("select count(*) from information_schema.columns where table_schema='helmut_end500_internal' and table_name='bindings' and column_name='service_contract_hash';"),"0");
+    assert.equal(psql("select pg_get_functiondef('helmut_end500_internal.bind(text,text,text,timestamptz,timestamptz,text)'::regprocedure);"),previous);
+    console.log("PASS isolated PG17 migration preimages, exact EU9h/legacy4h/null checks, service-only RPC, old binder unchanged, native status hash, zero activation/bindings, safe rollback");
   }finally{psql(`drop database ${db} with(force);`,"postgres");}
 }
 if(require.main===module){try{main();}catch(e){console.error(String(e.stderr||e.stack));process.exitCode=1;}}

@@ -28,10 +28,11 @@
     "legacyRoute": "passed",
     "legacyEndValidator": "64/64 passed",
     "legacyRuntime": "12/12 passed",
-    "isolatedPG17": "passed",
+    "isolatedPG17": "migration and rollback passed",
     "moneyIndependentFollowup": "ok",
-    "timeIndependentReview": "pending",
+    "timeIndependentReview": "ok",
     "mandatoryCIAtImplementationCommit": "pending"
   },
-  "rolloutReceipt": "Pending actual READY/runtime/financial/native SQL read-only evidence; no closure claim"
+  "rolloutReceipt": "Pending actual READY/runtime/financial/native SQL read-only evidence; no closure claim",
+  "nativeSQLMigrationSHA256": "bde7ad31af248a7099600202e664168b866bf8dc0217ebda1e07089e236db62c"
 }
