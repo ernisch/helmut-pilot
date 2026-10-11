@@ -1,5 +1,11 @@
 # Blocker 3: ausschließlich europäischer Zielvertrag
 
+**Historische Vorbereitung, abgelöst am12.10.:** [Aktueller EU-Servicekostenvertrag](blocker3-eu-servicekostenvertrag-20261012.md).
+Die externe Microsoft-Antwort ist für dessen vollständigen finanziellen
+Servicedeckel kein Blocker mehr. Der Canary ist vom Betreiber verworfen und
+wird nicht ausgeführt; frühere Rechnungen/Belege bleiben historisch erhalten.
+
+
 **Fortschreibung11.10.:** Unabhängige Vorbereitung, blockierende Offline-Inputschnittstelle, gezielte Tests, kostenlose Microsoft-Quellenprüfung und spätere GO-Felder sind im [EU-Vorbereitungsabschluss](blocker3-eu-freigabevorbereitung-20261011.md) gebündelt. Neue Runtime-Geld-/Input-/Zeitversion noch nicht wirksam; genau die autoritative vollständige Microsoft-Inputgrundlage bleibt extern offen.
 
 Stand11.10.2026. **Verbindliche Zielroute ist `gpt-5-mini-eu`.**

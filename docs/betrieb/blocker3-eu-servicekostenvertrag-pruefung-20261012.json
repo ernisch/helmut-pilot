@@ -1,0 +1,84 @@
+{
+  "version": "helmut-blocker3-EU-service-cap-financial-proof-verification/1",
+  "clientDate": "2026-10-12",
+  "clientTimeZone": "Europe/Istanbul",
+  "readUTC": "2026-10-11T21:24:11.282404+00:00",
+  "financialServiceCeilingProofAccepted": true,
+  "proposalOnly": true,
+  "runtimeCommonContractImplemented": false,
+  "blocker3Accepted": false,
+  "paidProductionCalls": 0,
+  "protectedChanges": 0,
+  "canaryCancelled": true,
+  "exactModelChargeCeilingMicroUSD": 81400000,
+  "exactProposedDayMicroUSD": 82036000,
+  "exactProposedCumulativeMicroUSD": 88845364,
+  "exactNewReserveMicroUSD": 81400,
+  "proposalSHA256": "b4b9982a07ac7b0c300cbd91e5a618b0a84026e04420b92ce5d473d5bfbb5392",
+  "focusedChecks": "PASS:5groups plus independent PythonDecimal verification; all1000prefixes and inclusive boundaries, new/oldreservecomparison, source originalSHA256s, calls/quality/approvalflags, order/global ledger/counter/time scope.",
+  "focusedLogPin": {
+    "path": "/workspace/private/blocker3-service-ceiling-20261012/focused-service-contract-checks.txt",
+    "sha256": "97f25fb7788680a3343554b806729f42df061418573c6adef8b163f05894802f",
+    "bytes": 438
+  },
+  "providerReadReviewPin": {
+    "path": "/workspace/private/blocker3-service-ceiling-20261012/deepseek-provider-review.json",
+    "sha256": "3f16789073dd315f482801f32260b2a9640a6ecd73fa02531273dd3c8692a9a4",
+    "bytes": 1397
+  },
+  "moneyReadReviewPin": {
+    "path": "/workspace/private/blocker3-service-ceiling-20261012/deepseek-money-review.json",
+    "sha256": "bfabf9611d3984a4d3ec3ac89223aec9ce15784668339ebf9ce168357eae7106",
+    "bytes": 1427
+  },
+  "independentFinalReadReviewPin": {
+    "path": "/workspace/private/blocker3-service-ceiling-20261012/deepseek-final-review.json",
+    "sha256": "f7a574fc04ae5fc18eba24df9323e8cf17c1763a97d5bdb9134cbb1002e7ccc1",
+    "bytes": 1273
+  },
+  "reviewIntegration": "Historical smallcap blocker of money-only reader closed by independent official-provider evidence; no fake runtimecompletion. Final integration review positive.",
+  "legacyJSONOriginalsUnchanged": [
+    "docs/betrieb/blocker3-eu-kostenvertrag-20261011.json",
+    "docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.json",
+    "docs/betrieb/blocker3-microsoft-inputbeleg-und-canary-20261011.json"
+  ],
+  "sourcePins": [
+    {
+      "path": "docs/betrieb/blocker3-eu-servicekostenvertrag-20261012.json",
+      "sha256": "e6d495891c7cda50fcbaa3784e47042e797d48c301be14c774e7791f2269d0b0",
+      "bytes": 27749
+    },
+    {
+      "path": "docs/betrieb/blocker3-eu-servicekostenvertrag-20261012.md",
+      "sha256": "974f050d0bc03dd1f50ecb92f0c0c463be0a27d18afc034b5dba87e206bae177",
+      "bytes": 13822
+    },
+    {
+      "path": "docs/betrieb/blocker3-eu-kostenvertrag-20261011.json",
+      "sha256": "abf19476dfd7d0e769cb6749e629aaf453f6ca8b48f4bfcbff17ab15724c1161",
+      "bytes": 28654
+    },
+    {
+      "path": "docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.json",
+      "sha256": "b264e3f53ca1f95d43efc7a1b7b8e9f07135ab943dd9e3f828f1ace2e38ad18e",
+      "bytes": 19300
+    },
+    {
+      "path": "scripts/blocker3-eu-vorbereitung.js",
+      "sha256": "b951cb8a699fe33495a0f2e77c1267f4c8866b3a0bc5ae9f2a39c9b385763544",
+      "bytes": 10250
+    },
+    {
+      "path": "lib/helmut/testkosten-budget.js",
+      "sha256": "9d29edd7bf885349d01718f15dc6bbe6a63d7b1491e3f530664b60ff07522260",
+      "bytes": 27227
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "sha256": "12fbbc4a6fa9935a6021cc8e3a98cfeb41d06cc971901252f991b18191a21e70",
+      "bytes": 534081
+    }
+  ],
+  "remainingExternalFinancialDependencies": [],
+  "remainingApprovalAndImplementationRequired": true
+}

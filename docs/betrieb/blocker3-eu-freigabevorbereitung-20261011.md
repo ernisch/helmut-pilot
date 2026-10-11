@@ -1,5 +1,11 @@
 # Blocker 3: EU-Vorbereitung bis zur einzigen externen Beweisgrenze
 
+**Historische Vorbereitung, abgelöst am12.10.:** [Aktueller EU-Servicekostenvertrag](blocker3-eu-servicekostenvertrag-20261012.md).
+Die externe Microsoft-Antwort ist für dessen vollständigen finanziellen
+Servicedeckel kein Blocker mehr. Der Canary ist vom Betreiber verworfen und
+wird nicht ausgeführt; frühere Rechnungen/Belege bleiben historisch erhalten.
+
+
 Stand11.10.2026. **Keine Ausführungsfreigabe, kein wirksamer neuer Budgetvertrag.**
 Der [EU-Belegvertrag](blocker3-eu-kostenvertrag-20261011.json) ist die Quelle für
 Route, Oktoberpreis, finale B2-Eingaben und unveränderte Qualität.

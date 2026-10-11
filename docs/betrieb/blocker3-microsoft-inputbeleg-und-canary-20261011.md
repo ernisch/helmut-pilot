@@ -1,5 +1,11 @@
 # Blocker 3: Microsoft-Teilbeleg und kleinster EU-Diagnosecanary
 
+**Historische Vorbereitung, abgelöst am12.10.:** [Aktueller EU-Servicekostenvertrag](blocker3-eu-servicekostenvertrag-20261012.md).
+Die externe Microsoft-Antwort ist für dessen vollständigen finanziellen
+Servicedeckel kein Blocker mehr. Der Canary ist vom Betreiber verworfen und
+wird nicht ausgeführt; frühere Rechnungen/Belege bleiben historisch erhalten.
+
+
 Stand 11.10.2026. **Nur geprüft und geplant; kein GO, kein Modellaufruf,
 keine Production-, Budget-, Reserve- oder Aufrufgrenzenänderung.**
 Der [maschinenlesbare Plan](blocker3-microsoft-inputbeleg-und-canary-20261011.json)
