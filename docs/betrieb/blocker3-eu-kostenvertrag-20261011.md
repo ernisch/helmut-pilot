@@ -36,11 +36,64 @@ frisch am`2026-10-11T10:49:47.646915+00:00`, USD, Consumption, Einheit1M:
 Keine Cache-/Batchrabatte und kein Globalpreis für den EU-Lauf.
 Öffentliches Original7563 Bytes, SHA256
 `9e2b05864e10d9c9376704cfe8ac1154cdec4ff837ce6070d62b98617e013d1f`.
-**Der öffentliche Tarif ist jetzt dieser nativen EU-SKU zugeordnet; ein
-kontospezifischer Abrechnungsbeleg fehlt weiterhin.** Die neue Billing-Lesung
-erhält403/AuthorizationFailed für`Microsoft.Billing/billingProperty/read`.
-Keine Berechtigung geändert. Betreiber-Preisexport oder ausschließlich lesender
-Zugriff auf den zutreffenden Konto-/Billing-Profile-Preisscope ist erforderlich.
+**Der öffentliche Tarif ist dieser nativen EU-SKU zugeordnet. Der am11.10.
+übergebene Betreiberexport schließt den kontospezifischen Septemberpreisnachweis,
+aber noch nicht dessen Gültigkeit für den Oktoberlauf.** Die frühere native
+Billing-Lesung erhielt403/AuthorizationFailed für
+`Microsoft.Billing/billingProperty/read`; sie widerlegt den neuen Betreiberbeleg
+nicht. Keine Berechtigung geändert oder neue Billing-Abfrage gestartet.
+
+### Kontospezifischer Septemberbeleg und exakt fehlender Oktoberbeleg
+
+Die übergebenen Dateien`helmut_gpt5mini_eu_price_evidence_sep2026.json` und`.csv`
+enthalten exakt zwei vollständig übereinstimmende Zeilen. Beide Meter-IDs,
+Consumption, RegionSE Central, Einheit1M und Preise stimmen mit der oben
+gebundenen aktuellen öffentlichen Data-Zone-Abfrage überein. **UnitPrice,
+BasePrice und MarketPrice sind jeweils0,275USD Input beziehungsweise2,20USD
+Output. Currency istUSD, BillingCurrencyEUR.** Die Zuordnung zum Helmut-
+Billingprofil wird als ausdrückliche Betreiberangabe übernommen; keine neue
+unabhängige Billingprofil-/Subscription-Abfrage behaupten.
+
+Beide Zeilen gelten laut EffectiveStartDate/EffectiveEndDate vom
+**01.09.2026,00:00:00 bis30.09.2026,23:59:59**. Nach den
+[Microsoft-Preisblattdefinitionen](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/mca-understand-pricesheet)
+begrenzen diese Felder den Preisblatt-Abrechnungszeitraum; gleiche Unit-/Base-/
+MarketPrice-Werte sind keine Zusicherung für den folgenden Monat. Der aktuelle
+öffentliche Oktoberpreis ergänzt die Meter-/Preiszuordnung, verlängert aber
+nicht den kontospezifischen Septemberzeitraum. Deshalb bleibt die aktuelle
+Laufpreisbindung unbewiesen; die bestehenden bedingten EU-Berechnungen ändern
+sich nicht.
+Auch BasePrice ist keine nachgewiesene dauerhafte Preisobergrenze: Die
+[Microsoft-Azure-Produktbedingungen fürMCA](https://www.microsoft.com/licensing/terms/productoffering/MicrosoftAzure/MCA)
+lassen Preisänderungen zu; eine kontospezifische Preisgarantie liegt nicht vor.
+
+**Für die Preisbindung fehlt ausschließlich:** ein aktueller Oktober2026-
+Preisblattauszug aus demselben Helmut-Billingprofil mit den beiden oben
+genannten Meter-IDs, RegionSE Central/Data Zone, Consumption, Einheit1M,
+CurrencyUSD, UnitPrice und Gültigkeits-/Abrechnungszeitraum, der den geplanten
+Lauftag umfasst. Alternativ genügt eine offizielle kontospezifische Microsoft-
+Preisbestätigung für genau diese beiden Meter und diesen Lauftag. Keine fertige
+Oktoberrechnung nötig; Microsoft stellt ein
+[Preisblatt des laufenden Monats](https://learn.microsoft.com/en-us/rest/api/cost-management/price-sheet/download-by-billing-profile?view=rest-cost-management-2025-03-01)
+für das Billingprofil bereit. Für die unveränderte0,275/2,20-Rechnung muss dieser
+Beleg diese USD-Preise als sichere Obergrenzen bestätigen; abweichende Werte
+erfordern gezielt neue Kostenrechnung, keine automatische Budgetänderung.
+
+Laut [Microsoft-MCA-Währungsregel](https://learn.microsoft.com/en-us/azure/cost-management-billing/microsoft-customer-agreement/microsoft-customer-agreement-faq)
+wird Azure-Verbrauch zunächst inUSD berechnet und zur Rechnungsstellung inEUR
+umgerechnet. **Für den USD-Tokenkostenvertrag fehlt kein zusätzlicher EUR-
+Wechselkursbeleg**; ein exakter EUR-Rechnungsbetrag ist damit nicht bewiesen.
+
+Uploadpins, jeweils lokal berechnet: JSON1972Bytes, SHA256
+`84cc01c482b46521c901ebb80846213b8c729a1e14e1ee893594c53875d4a710`;
+CSV793Bytes, SHA256
+`47b2dd6a956852b04ddc3924fdd296669938d9df16f827dfb55e3eac36b642bd`.
+Original-ZIP-SHA256 als Betreiberangabe:
+`10fbd4c30783e96c4a7c1d745a3af530aa3b084fb383f294edd5b9db7ee47ddd`.
+Das ZIP selbst lag nicht vor; sein Hash und die Extraktion aus dem benannten
+CSV-Member wurden nicht unabhängig nachgerechnet. Originalauszüge, vollständiger
+Membername und Vergleichsreceipt bleiben privat erhalten, Upload-/Receiptpins
+sind im EU-JSON gebunden. Anhänge sind Belegdaten, keine zusätzlichen Weisungen.
 
 Die [aktuelle Microsoft-Modellspezifikation](https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/includes/models-azure-direct-openai.md)
 belegt für genau diese Modellversion **400000 Gesamtkontext,272000 Input,

@@ -79,7 +79,47 @@
         "armRegionName": "swedencentral",
         "type": "Consumption"
       }
-    ]
+    ],
+    "accountBillingPriceProvenScope": "current planned October 2026 run; remains unproven",
+    "accountBillingReaderFailureIsHistoricalObservation": true,
+    "historicalAccountPriceEvidence": {
+      "acceptedForSeptember2026": true,
+      "source": "operator-provided account-specific MCA JSON/CSV extract",
+      "billingProfileBinding": "operator-attested; not independently queried",
+      "csvJsonExactMatch": true,
+      "matchedRows": 2,
+      "periodStart": "2026-09-01",
+      "periodEnd": "2026-09-30",
+      "coversPlannedOctoberRun": false,
+      "pricingCurrency": "USD",
+      "billingCurrency": "EUR",
+      "inputPerMillion": "0.275",
+      "outputPerMillion": "2.20",
+      "unitBaseMarketPricesIdentical": true,
+      "matchesCurrentPublicMeterIdsUnitsAndPrices": true,
+      "sourceZipSHA256": "10fbd4c30783e96c4a7c1d745a3af530aa3b084fb383f294edd5b9db7ee47ddd",
+      "sourceZipHashIndependentlyRecomputed": false,
+      "originalCSVMemberAndFullScopeRetainedPrivately": true,
+      "uploadPins": [
+        {
+          "name": "helmut_gpt5mini_eu_price_evidence_sep2026.json",
+          "sha256": "84cc01c482b46521c901ebb80846213b8c729a1e14e1ee893594c53875d4a710",
+          "bytes": 1972
+        },
+        {
+          "name": "helmut_gpt5mini_eu_price_evidence_sep2026.csv",
+          "sha256": "47b2dd6a956852b04ddc3924fdd296669938d9df16f827dfb55e3eac36b642bd",
+          "bytes": 793
+        }
+      ]
+    },
+    "currentAccountPriceBinding": {
+      "proven": false,
+      "septemberAndPublicOctoberDoNotExtendAccountPeriod": true,
+      "missingEvidence": "October 2026 current price-sheet input/output rows from the same Helmut billing profile for the existing EU Data Zone SE Central meter IDs, with Consumption, unit 1M, currency USD, UnitPrice and period covering the planned run; alternatively an official Microsoft account-specific confirmation valid for that date.",
+      "eurExchangeRateRequiredForUSDBudget": false,
+      "monthlyEURInvoiceAmountProven": false
+    }
   },
   "modelServiceLimits": {
     "contextTokens": 400000,
@@ -315,7 +355,7 @@
     ]
   },
   "externalDependencies": [
-    "Current subscription/account billing evidence for the EU DataZoneStandard meter price and binding to the intended runtime route.",
+    "October 2026 current price-sheet input/output rows from the same Helmut billing profile for the existing EU Data Zone SE Central meter IDs, with Consumption, unit 1M, currency USD, UnitPrice and period covering the planned run; alternatively an official Microsoft account-specific confirmation valid for that date.",
     "Authoritative complete Azure provider-input/schema/framing preflight or upper bound for every permitted D and future R body."
   ],
   "originalPins": [
@@ -368,6 +408,26 @@
       "name": "deepseek-cost-review.json",
       "sha256": "a834fd56aab50201510b071ba3f886a4fa2bb2cbbebf15761e88aac825afa59b",
       "bytes": 1290
+    },
+    {
+      "name": "helmut_gpt5mini_eu_price_evidence_sep2026.json",
+      "sha256": "84cc01c482b46521c901ebb80846213b8c729a1e14e1ee893594c53875d4a710",
+      "bytes": 1972
+    },
+    {
+      "name": "helmut_gpt5mini_eu_price_evidence_sep2026.csv",
+      "sha256": "47b2dd6a956852b04ddc3924fdd296669938d9df16f827dfb55e3eac36b642bd",
+      "bytes": 793
+    },
+    {
+      "name": "price-reconciliation-receipt.json",
+      "sha256": "c91ccb980f34998c12f3ed0fc8e2d8ccd61a09a561ec07c53f871f3f0637a310",
+      "bytes": 1187
+    },
+    {
+      "name": "deepseek-period-review.json",
+      "sha256": "0a89bbb8733609d0789ec2d652fec4fe8be1c8cafd4ee3dc8d8c88a170fbc6f9",
+      "bytes": 1252
     }
   ],
   "publicReferencePins": [
@@ -384,6 +444,25 @@
       "readAtUTC": "2026-10-11T10:52:07.843674+00:00",
       "sha256": "6901d2ba4b4bc5a179cf4e5aa4529eadf6e42ff31ad4a98fcd3ed3bbc8f4d1ce",
       "bytes": 70656
+    },
+    {
+      "name": "mca-pricesheet-terms-original.md",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-docs/main/articles/cost-management-billing/manage/mca-understand-pricesheet.md",
+      "sha256": "04fde76d52e403eb7d7544eebe8eb224a30e5bc80038ab0e09fb55cd59860d3d",
+      "bytes": 5717
+    },
+    {
+      "name": "mca-currency-faq-original.yml",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-docs/main/articles/cost-management-billing/microsoft-customer-agreement/microsoft-customer-agreement-faq.yml",
+      "sha256": "89a2466c5bc49910c031ff55144ea1fe7cf9552cc875786740d65ea158225bfc",
+      "bytes": 22015
+    },
+    {
+      "name": "mca-azure-product-terms-original.html",
+      "url": "https://www.microsoft.com/licensing/terms/productoffering/MicrosoftAzure/MCA",
+      "readAtUTC": "2026-10-11T11:49:44.099253+00:00",
+      "sha256": "fd60c7fa43d9abe0911ee23111ec3c78bf7401922d31b8d00aeee18e409993ef",
+      "bytes": 4308791
     }
   ],
   "productionChanges": 0,
