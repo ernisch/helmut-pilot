@@ -1,5 +1,7 @@
 # Blocker 3: Kosten und Zeit aus der tatsächlichen 500er Aufnahme
 
+**Historischer Beleg. Aktuelle Grundlage ist ausschließlich die [finale Eingabeintegration vom11.10.](blocker3-finaler-kostenvertrag-20261011.md).** Die früheren B2-Werte unten bleiben erhalten und werden nicht als aktuelle Grundlage verwendet.
+
 Stand 09.10.2026; Basis `main` `eebb2c51`. **Blocker 3 bleibt offen.**
 Alle unabhängigen Rechnungen sind vorbereitet. Blocker 2 ist fachlich noch
 nicht abgenommen; keine Budget-, Aufrufgrenzen-, Konfigurations- oder
@@ -358,3 +360,7 @@ Private Messungen/Prüfer/Originale: `/workspace/private/blocker3-20261009/`;
 Messbericht-SHA256 `0f760689c6b17d1bd5d589ec5877d9c6c17a6979784729daf2da0da66e8f29a3`.
 Die erhaltenen [Kostenhistorie und Stoppregeln](blocker3-kosten-zeitplan-20261007.md)
 werden durch diesen aktuellen Nachtrag nicht umgeschrieben.
+
+## Erhaltene historische Kostenstatuszeile vom09.10.
+
+- **Blocker 3 Kosten/Zeit (09.10., offen):** Aktuelle500 Originale aus Run37923233626 offline vermessen: vorläufig2,145M D-Prompt-/Schematokens, R/U offen; 1.000D/R fest. Konfiguration frisch2416/U702/V200/failclosed1, Lauftagswirkung offen. Bestand7,445364USD erneut bestätigt; Sender20/6, Endvalidator7/6. Erwartungsszenario4,386404USD, volle Caps allein12/18USD; 6/20 keine Vollgarantie. Fehlende Tagesbücher07.–09.10.; keine Grenzen/Reserven/Modelle geändert. [Rechnung/Freigabe/Abhängigkeiten](betrieb/blocker3-production-kosten-zeit-20261009.md).

@@ -1,5 +1,7 @@
 # Blocker 3: Kosten und Zeit für genau einen synthetischen 500er Lauf
 
+**Aktuelle Rechnung:** [Finale Eingabeintegration und Freigabegrenze vom11.10.](blocker3-finaler-kostenvertrag-20261011.md). Die datierten Bestands- und Originalkostenbelege unten bleiben historisch erhalten.
+
 Stand: 07.10.2026; erfolgreiche native Kostenmetadaten unten. **Offen; kein finanzierter oder freigegebener vollständiger
 Lauf.** Beginn rein lesend. Keine Budgetgrenze verändert, keine Reserve gelöscht,
 kein Production-Modelltest und keine Aktivierung gestartet. Dieser Thread bleibt

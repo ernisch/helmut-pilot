@@ -1,0 +1,282 @@
+{
+  "version": "helmut-blocker3-final-input-integration/1",
+  "runId": "38102593796",
+  "productionCommit": "6cdaa1cd3cdf16b9e5d18cb9add267583a730292",
+  "repositoryBasis": "e3eeaca1fc733c88b0b43075d0b25330001bbf64",
+  "profiles": 500,
+  "rawBodyBytes": {
+    "min": 4467209,
+    "median": 4524171.0,
+    "max": 4724561,
+    "sum": 2263061779
+  },
+  "inputDTOBytes": {
+    "min": 485770,
+    "median": 505221.5,
+    "max": 528512,
+    "sum": 252962850
+  },
+  "inputDTOTextTokens": {
+    "min": 168111,
+    "median": 173157.0,
+    "max": 179181,
+    "sum": 86655211
+  },
+  "candidateD": {
+    "sourceKOCount": {
+      "min": 0,
+      "median": 1.0,
+      "max": 2,
+      "sum": 674
+    },
+    "sourceDocumentCount": {
+      "min": 0,
+      "median": 1.0,
+      "max": 2,
+      "sum": 674
+    },
+    "promptBytes": {
+      "min": 12132,
+      "median": 12888.0,
+      "max": 13420,
+      "sum": 6491692
+    },
+    "requestJSONBytes": {
+      "min": 13698,
+      "median": 14489.0,
+      "max": 15056,
+      "sum": 7298282
+    },
+    "promptTokens": {
+      "min": 2925,
+      "median": 3162.0,
+      "max": 3357,
+      "sum": 1605807
+    },
+    "schemaTokens": {
+      "min": 304,
+      "median": 304.0,
+      "max": 304,
+      "sum": 152000
+    },
+    "promptPlusSchemaTokens": {
+      "min": 3229,
+      "median": 3466.0,
+      "max": 3661,
+      "sum": 1757807
+    },
+    "requestJSONTextTokens": {
+      "min": 3358,
+      "median": 3602.0,
+      "max": 3801,
+      "sum": 1826213
+    }
+  },
+  "review": {
+    "allSourcesJSONBytes": {
+      "min": 2,
+      "median": 671.0,
+      "max": 1124,
+      "sum": 370906
+    },
+    "emptyPromptBytes": {
+      "min": 11635,
+      "median": 11643.0,
+      "max": 11656,
+      "sum": 5822108
+    },
+    "fourParagraphWrappersBytes": {
+      "min": 573,
+      "median": 713.0,
+      "max": 737,
+      "sum": 354660
+    },
+    "schemaTokens": {
+      "min": 720,
+      "median": 720.0,
+      "max": 720,
+      "sum": 360000
+    },
+    "emptyPromptTokens": {
+      "min": 2723,
+      "median": 2725.0,
+      "max": 2728,
+      "sum": 1362627
+    },
+    "allSourcesJSONTokens": {
+      "min": 1,
+      "median": 201.0,
+      "max": 359,
+      "sum": 119426
+    }
+  },
+  "zeroSourcePositions": [
+    6,
+    12,
+    84,
+    95,
+    100,
+    108,
+    132,
+    134,
+    151,
+    156,
+    159,
+    164,
+    196,
+    201,
+    204,
+    228,
+    276,
+    292,
+    300,
+    313,
+    342,
+    350,
+    374,
+    388,
+    399,
+    414,
+    420,
+    430,
+    439,
+    460,
+    468,
+    487
+  ],
+  "UCallsForFrozenInputs": 0,
+  "otherProductionCallsForDirectPath": 0,
+  "providerInputTokensMeasured": false,
+  "actualReviewInputTokens": null,
+  "newProductionCalls": 0,
+  "tokenizer": {
+    "package": "tiktoken",
+    "version": "0.12.0",
+    "encoding": "o200k_base",
+    "canonicalVocabularySHA256": "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d",
+    "maximumTokenBytes": 128
+  },
+  "rowsSHA256": "bbd55bb9b0f78c76ee5f946ca3a99cbb5e1b8d6439fbff4815a28a856bb6921c",
+  "DNonEmptyPromptPlusSchemaTokens": 1654411,
+  "DNonEmptyContexts": 468,
+  "UCallsForFrozenInputsDerivedFromPathAndCompleteKOState": true,
+  "all500SenderDContextsReady": false,
+  "b2ProfessionalAcceptanceStillComplete": true,
+  "B2Complete": true,
+  "B3Complete": false,
+  "approved": false,
+  "financialObservation": {
+    "observedAtUTC": "2026-10-11T07:35:29.983Z",
+    "orderVersion": 4,
+    "orderId": "autonom-bis500-20260926",
+    "orderSinceUTCDate": "2026-09-25",
+    "nativeOrderSpentMicroUsd": 1614061,
+    "nativeOrderReservedMicroUsd": 0,
+    "externalAlreadyIncludedMicroUsd": 5195303,
+    "unknownAdditionalPrivateMicroUsd": 636000,
+    "conservativeBoundOrderMicroUsd": 7445364,
+    "financialJsonMD5": "a9297ea47babf3c9903257df726c547f",
+    "missingOrderBooks": [
+      "2026-10-07",
+      "2026-10-08",
+      "2026-10-09",
+      "2026-10-10",
+      "2026-10-11"
+    ]
+  },
+  "plannedCalls": {
+    "D": 500,
+    "R": 500,
+    "UForFrozenAcceptedKOState": 0,
+    "otherPaidProductionPathsInDirectCommand": 0,
+    "completeRunTotal": 1000,
+    "actualCallsStartedHere": 0
+  },
+  "reviewOutputCapTokens": 3000,
+  "reviewReasoningEffort": "low",
+  "expandedReview": {
+    "outputCapTokens": 6000,
+    "reasoningEffort": "medium",
+    "necessaryByFinalB2": false,
+    "includedInProposedStandardPlan": false
+  },
+  "costContract": {
+    "senderCumulativeUsd": 20,
+    "senderDayUsd": 6,
+    "validatorCumulativeUsd": 7,
+    "validatorDayUsd": 6,
+    "expectedCompleteRunMicroUsd": null,
+    "smallestRobustCompleteRunUpperMicroUsd": null,
+    "requiredFinalDayMicroUsd": null,
+    "requiredFinalCumulativeMicroUsd": null,
+    "genericFullStandardReservationEnvelopeMicroUsd": 212000000,
+    "genericFullExpandedReservationEnvelopeMicroUsd": 218000000,
+    "reservationIsNotExpectedCost": true,
+    "fundingReady": false
+  },
+  "globalCounter": {
+    "fallback": 50,
+    "freshProjectEnvRawLimit": 2416,
+    "freshProjectEnvUnderstandingReserve": 702,
+    "freshProjectEnvSharedReserve": 200,
+    "freshProjectEnvFailClosed": 1,
+    "projectEnvReadsNotDeploymentRuntimeProof": true,
+    "DRCeilingUnderTheseValues": 1714,
+    "minimumRawLimitAtUsed0U0Preserving702": 1702,
+    "runDayMustProveUsedAtMost": 714,
+    "actualCounterObservedAtUTC": "2026-10-11T07:35:35.834525+00:00",
+    "todayRowPresent": false,
+    "todayReaderProjectionUsed": 0,
+    "atomicSlotsTested": false
+  },
+  "time": {
+    "providerRequestMaxSeconds": 20,
+    "CLIUnitTimeoutSeconds": 180,
+    "permittedPlanWindowSeconds": 14400,
+    "expectedMeasuredCompleteRuntimeSeconds": null,
+    "guaranteedCompleteRuntimeSeconds": null,
+    "modelOnlyAt10SecondsEach": 10000,
+    "modelOnlyAt20SecondsEach": 20000,
+    "sum500CLIUnitTimeoutsSeconds": 90000,
+    "concreteFutureTestWindow": null
+  },
+  "conditionalScenarios": [
+    {
+      "scope": "conditional_arithmetic_only_not_executable_full500_plan",
+      "DFramingAssumptionTokens": 256,
+      "RInputAssumptionTokens": 5000,
+      "eachDAndROutputAssumptionTokens": 500,
+      "runCostMicroUsd": 4193032,
+      "reservationPeakMicroUsd": 4400532,
+      "dayIncludingUnknownPrivateMicroUsd": 5036532,
+      "cumulativeIncludingExistingAndPrivateMicroUsd": 11845896
+    },
+    {
+      "scope": "conditional_arithmetic_only_not_executable_full500_plan",
+      "DFramingAssumptionTokens": 256,
+      "RInputAssumptionTokens": 5000,
+      "eachDAndROutputAssumptionTokens": 1000,
+      "runCostMicroUsd": 6193032,
+      "reservationPeakMicroUsd": 6398532,
+      "dayIncludingUnknownPrivateMicroUsd": 7034532,
+      "cumulativeIncludingExistingAndPrivateMicroUsd": 13843896
+    },
+    {
+      "scope": "conditional_arithmetic_only_not_executable_full500_plan",
+      "DFramingAssumptionTokens": 256,
+      "RInputAssumptionTokens": 5000,
+      "eachDAndROutputAssumptionTokens": 3000,
+      "runCostMicroUsd": 14193032,
+      "reservationPeakMicroUsd": 14390532,
+      "dayIncludingUnknownPrivateMicroUsd": 15026532,
+      "cumulativeIncludingExistingAndPrivateMicroUsd": 21835896
+    }
+  ],
+  "remainingDependencies": [
+    "Accepted briefing-input to nonempty valid D sender-context binding for all500; 32 empty native-source projections at14-day default. No source remediation inB3.",
+    "Bound provider input upper accounting/framing and derived R upper for accepted executable D set; actual R bodies arise only after D.",
+    "Concrete whole-run time window and bounded processing/retention/end control; currently max4h, model-only cap5h33m20s.",
+    "Separate operator approval for one closed scope contract propagated to plan/admission/CAS/sender/endvalidator; no protected change authorized here.",
+    "Independent final review method; any separately paid examination is not silently counted as0."
+  ]
+}
