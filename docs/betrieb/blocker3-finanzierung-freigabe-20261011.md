@@ -1,14 +1,18 @@
 # Blocker 3: bezifferter Kosten- und Zeitvertrag zur Freigabe
 
 Stand 11.10.2026, Repositorybasis `fe00adf537d005a56cc6d6bc28604c433cdb810d`.
-**Vorbereitung abgeschlossen; Betreiberfreigabe und technische Umsetzung offen.**
+**Erhaltener früherer20/27-Entwurf; derzeit keine aktuelle Freigabeempfehlung.**
 Die hier vorgeschlagenen Grenzen sind nicht aktiviert. Blocker3 ist erst abgenommen,
 wenn Dokumentation, Plan, atomare Budgetriegel und Endvalidator denselben
 freigegebenen Vertrag tatsächlich verwenden.
 
-Nachfrage nach kleinerem Betrag: Die [gezielte Folgeprüfung](blocker3-kleinerer-maximalbetrag-20261011.md)
-belegt ein günstigeres Tarifszenario, aber noch keinen kleineren endgültigen
-Production-Maximalbetrag. Die20/27-Vorlage wurde nicht freigegeben.
+Die [aktuelle Prüfung der zwei Voraussetzungen](blocker3-kleinerer-maximalbetrag-20261011.md)
+belegt jetzt nativ GlobalStandard und den öffentlichen0,25/2-Tarif. Konto-/
+Routenpreisbindung und eine kleinere vollständige Anbieter-Inputobergrenze
+bleiben extern offen. Weder12/20 noch20/27 ist als Finanzierung aller zulässigen
+vollständigen Läufe bewiesen. Die20/27-GO-Frage ist zurückgestellt; die
+ursprüngliche maschinenlesbare Vorlage und ihr Hash bleiben unverändert als
+unfreigegebener historischer Entwurf erhalten. Keine Umsetzung daraus ableiten.
 
 ## Übernommene Grundlage
 

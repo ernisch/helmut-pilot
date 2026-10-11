@@ -1,0 +1,183 @@
+{
+  "version": "helmut-blocker3-final-prerequisites/1",
+  "approved": false,
+  "blocker3Complete": false,
+  "productionModelCalls": 0,
+  "productionMutations": 0,
+  "budgetChanges": 0,
+  "oldProposalUnchanged": true,
+  "oldProposalCurrentlyRecommended": false,
+  "finalCostContractAvailable": false,
+  "repositoryBasis": "fe00adf537d005a56cc6d6bc28604c433cdb810d",
+  "deployedBasis": "1ad00cd464f88f37a1adc3417b2758ab1eb24e80",
+  "nativeReadAtUTC": "2026-10-11T10:34:07.045860+00:00",
+  "provider": {
+    "resourceName": "helmut-resource",
+    "resourceGroup": "helmut-rg",
+    "region": "swedencentral",
+    "openAIEndpoint": "https://helmut-resource.openai.azure.com/",
+    "deploymentName": "gpt-5-mini",
+    "sku": {
+      "name": "GlobalStandard",
+      "capacity": 250
+    },
+    "model": {
+      "format": "OpenAI",
+      "name": "gpt-5-mini",
+      "version": "2025-08-07"
+    },
+    "state": "Succeeded",
+    "subscriptionQuotaId": "PayAsYouGo_2014-09-01",
+    "nativeDeploymentSKUProven": true,
+    "publicRetailTariffForDeploymentProven": true,
+    "accountBillingPriceProven": false,
+    "currentRuntimeNonsecretValuesRecoverableFromVercel": false
+  },
+  "publicMeters": [
+    {
+      "meterId": "22dd2fde-fadb-570f-a541-ca915805441c",
+      "meterName": "GPT 5 Mini outpt Glbl 1M Tokens",
+      "skuName": "GPT 5 Mini outpt Glbl",
+      "currencyCode": "USD",
+      "unitOfMeasure": "1M",
+      "retailPrice": 2.0,
+      "effectiveStartDate": "2025-08-01T00:00:00Z",
+      "type": "Consumption",
+      "armRegionName": "swedencentral"
+    },
+    {
+      "meterId": "45f4acef-7483-5b10-8986-cea7d10ba581",
+      "meterName": "GPT 5 Mini Inpt Glbl 1M Tokens",
+      "skuName": "GPT 5 Mini Inpt Glbl",
+      "currencyCode": "USD",
+      "unitOfMeasure": "1M",
+      "retailPrice": 0.25,
+      "effectiveStartDate": "2025-08-01T00:00:00Z",
+      "type": "Consumption",
+      "armRegionName": "swedencentral"
+    }
+  ],
+  "originalPins": [
+    {
+      "name": "azure-account-original.json",
+      "sha256": "a0c986207d52a07a71af635b4493b8a068b142756b1d0a6d019e0078e8db36fc",
+      "bytes": 40957
+    },
+    {
+      "name": "azure-deployment-original.json",
+      "sha256": "b312b5cf18f41ed64803d13ccb5f44a1c5d34907d8032cca484bc4317120db86",
+      "bytes": 1037
+    },
+    {
+      "name": "azure-subscription-original.json",
+      "sha256": "b776593b3704958a4e420d33621b6a07e3a82ddce5e9d0a71cddd2bda035d1e7",
+      "bytes": 483
+    },
+    {
+      "name": "azure-billing-property-original.json",
+      "sha256": "4dd8eee162b9483342f17753c93edc2dab447e7ceb61be7a2ee710dd2a13300c",
+      "bytes": 450
+    },
+    {
+      "name": "runtime-route-readonly.json",
+      "sha256": "00da04caa375fdf8fd66004cf94bb07fe5f00efd4472b42f26677aab628e5b43",
+      "bytes": 1574
+    },
+    {
+      "name": "deepseek-input-proof.json",
+      "sha256": "676e23264e84d3bf69bff1a69b973c3808b61123828d5004e0ce676618b30f3f",
+      "bytes": 1373
+    },
+    {
+      "name": "azure-retail-current-original.json",
+      "sha256": "9e2b05864e10d9c9376704cfe8ac1154cdec4ff837ce6070d62b98617e013d1f",
+      "bytes": 7563
+    }
+  ],
+  "publicReferences": [
+    {
+      "name": "azure-responses-reference.html",
+      "url": "https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/azureopenai/responses",
+      "readAtUTC": "2026-10-11T10:39:20.925073+00:00",
+      "sha256": "7f2133af81319928071f21e986f2aa1be85805b4f5dd534e803f252494a7760f",
+      "bytes": 541405,
+      "finalURL": "https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/azureopenai/responses"
+    },
+    {
+      "name": "openai-input-count-reference.html",
+      "url": "https://developers.openai.com/api/reference/resources/responses/subresources/input_tokens/methods/count",
+      "readAtUTC": "2026-10-11T10:39:21.504361+00:00",
+      "sha256": "3dd9f1b51cf27f3d3df43ebf2120563b62695806a6e008ce31fe90efa2ce7469",
+      "bytes": 4186714,
+      "finalURL": "https://developers.openai.com/api/reference/resources/responses/subresources/input_tokens/methods/count"
+    },
+    {
+      "name": "azure-pricing-faq.html",
+      "url": "https://learn.microsoft.com/en-us/azure/foundry-classic/openai/faq",
+      "readAtUTC": "2026-10-11T10:39:21.747300+00:00",
+      "sha256": "8725e7570e77129a87f6bf6b8c436c553d9397c4e8d2a6c06252cc29a38e55c9",
+      "bytes": 105544,
+      "finalURL": "https://learn.microsoft.com/en-us/azure/foundry-classic/openai/faq"
+    }
+  ],
+  "billingRead": {
+    "subscriptionReadHTTP": 200,
+    "billingPropertyReadHTTP": 403,
+    "missingAction": "Microsoft.Billing/billingProperty/read",
+    "legacyConsumptionPriceSheetHTTP": 406,
+    "legacyConsumptionPriceSheetReturnedBytes": 0,
+    "accessChanged": false
+  },
+  "inputProof": {
+    "calls": {
+      "D": 500,
+      "R": 500,
+      "U": 0,
+      "other": 0
+    },
+    "outputIncludingReasoningTokensPerCall": 3000,
+    "effort": "low",
+    "answersOrCriteriaChanged": false,
+    "DLocalFullJSONTokensMax": 10755,
+    "DLocalFullJSONTokensSum": 2027471,
+    "localTokensAreProviderTokens": false,
+    "proposedProviderInputCaps": {
+      "D": 12288,
+      "R": 16384
+    },
+    "providerFramingUpperProven": false,
+    "futureRUniversalUpperProven": false,
+    "preSendProviderInputEnforcementImplemented": false,
+    "productionProviderInputEnforcementProven": false,
+    "azureReferenceDocumentsMaxInputTokensParameter": false,
+    "azureReferenceDocumentsInputTokensCountEndpoint": false,
+    "azureCountEndpointSupportProven": false,
+    "azureCountEndpointZeroPriceProven": false,
+    "newRestrictionsOnValidAnswersAdded": false
+  },
+  "costDecision": {
+    "twelvePerDayTwentyCumulativeProven": false,
+    "twentyPerDayTwentySevenCumulativeProvenForAllValidInputs": false,
+    "noBudgetApprovalRequestedUntilProof": true,
+    "conditionalGlobalCalculationReused": {
+      "completeCapConformantNewCostMicroUSD": 9584000,
+      "HIncludingOneUnresolvedCallMicroUSD": 9785904,
+      "dayIncludingPreservedPrivateReserveAtProvenOldSpendZeroMicroUSD": 10421904,
+      "cumulativeIncludingPreservedBaselineMicroUSD": 17231268
+    },
+    "calculationDoesNotProveProviderInputCaps": true
+  },
+  "externalDependencies": [
+    "Current account/subscription billing-price evidence for the exact GlobalStandard deployment, plus binding to the accepted runtime route.",
+    "Authoritative Azure full-input preflight/cap or a supported complete tokenization/framing specification; must cover JSON schema and every permitted future D-to-R text without stricter answer acceptance."
+  ],
+  "excluded": [
+    "budget or reserve changes",
+    "Production configuration changes",
+    "Production model calls",
+    "profile activation",
+    "command installation",
+    "journal mutation",
+    "merge or rollout"
+  ]
+}
