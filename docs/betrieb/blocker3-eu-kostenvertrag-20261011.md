@@ -36,14 +36,14 @@ frisch am`2026-10-11T10:49:47.646915+00:00`, USD, Consumption, Einheit1M:
 Keine Cache-/Batchrabatte und kein Globalpreis für den EU-Lauf.
 Öffentliches Original7563 Bytes, SHA256
 `9e2b05864e10d9c9376704cfe8ac1154cdec4ff837ce6070d62b98617e013d1f`.
-**Der öffentliche Tarif ist dieser nativen EU-SKU zugeordnet. Der am11.10.
-übergebene Betreiberexport schließt den kontospezifischen Septemberpreisnachweis,
-aber noch nicht dessen Gültigkeit für den Oktoberlauf.** Die frühere native
+**Der öffentliche Tarif ist dieser nativen EU-SKU zugeordnet. Die am11.10.
+übergebenen Betreiberexporte schließen den kontospezifischen September- und
+Oktoberpreisnachweis jeweils für ihren Zeitraum.** Die frühere native
 Billing-Lesung erhielt403/AuthorizationFailed für
 `Microsoft.Billing/billingProperty/read`; sie widerlegt den neuen Betreiberbeleg
 nicht. Keine Berechtigung geändert oder neue Billing-Abfrage gestartet.
 
-### Kontospezifischer Septemberbeleg und exakt fehlender Oktoberbeleg
+### Kontospezifische September- und Oktoberbelege
 
 Die übergebenen Dateien`helmut_gpt5mini_eu_price_evidence_sep2026.json` und`.csv`
 enthalten exakt zwei vollständig übereinstimmende Zeilen. Beide Meter-IDs,
@@ -60,24 +60,32 @@ Beide Zeilen gelten laut EffectiveStartDate/EffectiveEndDate vom
 begrenzen diese Felder den Preisblatt-Abrechnungszeitraum; gleiche Unit-/Base-/
 MarketPrice-Werte sind keine Zusicherung für den folgenden Monat. Der aktuelle
 öffentliche Oktoberpreis ergänzt die Meter-/Preiszuordnung, verlängert aber
-nicht den kontospezifischen Septemberzeitraum. Deshalb bleibt die aktuelle
-Laufpreisbindung unbewiesen; die bestehenden bedingten EU-Berechnungen ändern
-sich nicht.
+nicht den kontospezifischen Septemberzeitraum. Diese zuvor offene Oktoberbindung
+wurde jetzt durch den gesonderten aktuellen Kontoexport geschlossen.
 Auch BasePrice ist keine nachgewiesene dauerhafte Preisobergrenze: Die
 [Microsoft-Azure-Produktbedingungen fürMCA](https://www.microsoft.com/licensing/terms/productoffering/MicrosoftAzure/MCA)
-lassen Preisänderungen zu; eine kontospezifische Preisgarantie liegt nicht vor.
+lassen Preisänderungen zu. Die aktuelle Bindung folgt aus dem Oktoberexport,
+nicht aus einer angenommenen dauerhaften September-Preisgarantie.
 
-**Für die Preisbindung fehlt ausschließlich:** ein aktueller Oktober2026-
-Preisblattauszug aus demselben Helmut-Billingprofil mit den beiden oben
-genannten Meter-IDs, RegionSE Central/Data Zone, Consumption, Einheit1M,
-CurrencyUSD, UnitPrice und Gültigkeits-/Abrechnungszeitraum, der den geplanten
-Lauftag umfasst. Alternativ genügt eine offizielle kontospezifische Microsoft-
-Preisbestätigung für genau diese beiden Meter und diesen Lauftag. Keine fertige
-Oktoberrechnung nötig; Microsoft stellt ein
-[Preisblatt des laufenden Monats](https://learn.microsoft.com/en-us/rest/api/cost-management/price-sheet/download-by-billing-profile?view=rest-cost-management-2025-03-01)
-für das Billingprofil bereit. Für die unveränderte0,275/2,20-Rechnung muss dieser
-Beleg diese USD-Preise als sichere Obergrenzen bestätigen; abweichende Werte
-erfordern gezielt neue Kostenrechnung, keine automatische Budgetänderung.
+**Oktoberpreisnachweis geschlossen:** Die neu übergebenen Dateien
+`helmut_gpt5mini_eu_price_evidence_oct2026.json` und`.csv` enthalten exakt zwei
+vollständig übereinstimmende Zeilen desselben vom Betreiber zugeordneten
+Helmut-MCA-Billingprofils. Beide oben genannten Meter-IDs, RegionSE Central,
+Consumption, Einheit1M, CurrencyUSD und BillingCurrencyEUR sind abgeglichen;
+UnitPrice/BasePrice/MarketPrice jeweils0,275 Input und2,20 Output.
+Beide Zeilen umfassen **01.10.2026,00:00:00 bis31.10.2026,23:59:59** und damit
+den geplanten Oktober-Lauftag. Der Input stammt aus Member`…_17.csv`, Output
+aus`…_14.csv`; die vollständigen Namen sind privat erhalten. Die Preiswerte der
+EU-Rechnung bleiben gleich; **deren Tarifannahme ist jetzt kontospezifisch
+belegt**. Für einen Lauf außerhalb dieses Zeitraums ist dieser Beleg keine
+Freigabe. Native technische Tarifbuchung und Production-Route bleiben unberührt.
+
+Oktober-Uploadpins, jeweils lokal berechnet: JSON1443Bytes, SHA256
+`8fe06280c34f195bdd4598796d204723b92e48fe6a63131646c2a65cbca0334c`;
+CSV648Bytes, SHA256
+`ac83ef67c888efdd1a647186dff3d08f9f6c4540f32d2c60b329e64f207c8527`.
+Original-ZIP-SHA256 als Betreiberangabe, ohne unabhängige ZIP-Rückrechnung:
+`8247482c6cdf686375ef90a9be5724063c0920d3d37b6231e387df9c2d7905de`.
 
 Laut [Microsoft-MCA-Währungsregel](https://learn.microsoft.com/en-us/azure/cost-management-billing/microsoft-customer-agreement/microsoft-customer-agreement-faq)
 wird Azure-Verbrauch zunächst inUSD berechnet und zur Rechnungsstellung inEUR
@@ -109,6 +117,64 @@ und Azure-v1-API anwendbar: kein dokumentierter kleinerer`max_input_tokens`-
 Parameter und kein belegter vollständiger Azure-Vorabzähler. Ein nicht
 dokumentiertes Feature wird nicht als nativ widerlegt ausgegeben. Unterstützung
 und Abrechnung eines Zählers müssten erst autoritativ belegt werden; keine Probe.
+
+### Verbleibende technische Beweisgrenze nach geschlossenem Oktoberpreis
+
+Gezielte Prüfung am frisch gelesenen main`fe00adf5…`, die vier relevanten
+Codeoriginale bytegleich: `ai.responsesPayload/requestOpenAI`,
+`synthetik-500-kosten-admission.pruefeRoutePayload`,
+`synthetik-500-review-receipt.prepareReview` und
+`lage-textqualitaet.pruefQuellen/prompt`. Der Sender serialisiert den vollständigen
+Body einschließlich Schema und Output-/Reasoningwerten; R bindet dessen Hash an
+die unveränderliche D-Fassung und denselben Sendepfad. **Hashbindung beweist die
+Identität des Bodys, keine Obergrenze seiner Anbieter-Abrechnung.**
+
+Die frische [Azure-v1-Referenz](https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/azureopenai/responses)
+und [Azure-API-Übersicht](https://ai.azure.com/api-reference/responses/) dokumentieren
+weiterhin keinen kleineren`max_input_tokens`-Parameter oder vollständigen
+`/responses/input_tokens`-Vorabzähler. Das ist eine Dokumentationslücke, kein
+nativ bewiesener Ausschluss einer solchen Funktion. Der separate
+[OpenAI-Zähler](https://developers.openai.com/api/docs/guides/token-counting)
+belegt weder Azure-Unterstützung noch Kostenfreiheit auf der Zielroute.
+
+Für zukünftiges R sind feste Regeln, Modellprofil, Prüfschema und alle möglichen
+Quellbelege bereits gebunden. Variabel bleiben die erzeugten D-Absätze und die
+Auswahl von höchstens vier vollständigen Dokumenten. Die bestehende Prüfung
+erhält2–4 Absätze und alle bis zu6 Paarurteile; die private Auswahlnotiz wird
+nicht erneut transportiert. JSON-Parsing, Whitespace-Normalisierung und erneute
+JSON-Serialisierung erlauben keine Gleichsetzung von D-Outputtokens und
+R-Inputtokens.250 Wörter begrenzen nicht die Tokenlänge einzelner Wörter;
+3000 Outputtokens begrenzen Output einschließlich Reasoning, nicht vollständigen
+R-Prompt plus Schema-/Anbieter-Framing. Keine Texte oder Schemafelder kürzen,
+keine zusätzliche Ablehnung zulässiger Antworten zum Beweis der Caps einführen.
+
+**Genau eine externe Voraussetzung bleibt für die kleinere Inputbindung:** eine
+autoritative Microsoft-Grundlage für das vollständige abgerechnete Input dieser
+Azure-Route. Entweder ein unterstützter Vorabzähler mit zugesicherter vollständiger
+Zählung und geklärter Abrechnung oder eine vollständige Tokenisierungs-/Schema-/
+Framingobergrenze. Erst darauf lassen sich alle500 D und alle zulässigen
+zukünftigen R-Eingaben ohne geänderte Abnahme begrenzen. Ein bloßer Zähler plus
+Abbruch bei Überschreitung beweist finanzielle Absicherung, noch keinen
+vollständigen Lauf für sämtliche bisher zulässigen D→R-Texte.
+
+Konkrete **Microsoft-Anfragevorlage, nicht versandt**: „Welche offiziell
+unterstützte vollständige Input-Vorabzählung oder nachprüfbare Tokenisierungs-
+und Framingobergrenze gilt für`gpt-5-mini-eu`, DataZoneStandard/Sweden Central,
+Modellversion2025-08-07,`/openai/v1/responses`? Sie muss den tatsächlich
+verarbeiteten Stringinput,`text.format` vom Typ`json_schema` einschließlich
+Schema, Name/strict und sämtliche intern abgerechneten Framingtokens erfassen.
+Falls`/responses/input_tokens` unterstützt wird: Ist sein Ergebnis für denselben
+unveränderten Body und dieselbe Modell-/Routefassung eine sichere Obergrenze
+der späteren`usage.input_tokens`? Welche Gebühren und Quoten fallen an?
+Keine Inferenz, Tools, Conversation-Historie oder Compaction erforderlich.“
+
+Die spätere technische Umsetzung muss diese Grundlage, Route/Modellversion,
+vollständigen Bodyhash, Schemahash und Zähler-/Regelversion gemeinsam binden;
+Prüfung vor Geldreservierung und Senden, keine Payloadänderung dazwischen.
+Die universelle unveränderte D→R-Hülle muss vor der1000-Call-Freigabe separat
+aus dieser Grundlage folgen. Kein unbewiesener256-Token-Aufschlag, kein
+lokaler Zähler als Anbieterbeleg und keine Usageprüfung nach Inferenz als
+vorheriger Kostenriegel. Kein Code-/Production-Testdouble ersetzt diesen Beleg.
 
 ## Unveränderte Eingaben und einzige neue Transportmessung
 
@@ -153,7 +219,7 @@ D9980µUSD, R11106µUSD;500×(9980+11106)=10543000µUSD.
 `H=max(sum(c_i),max_i(prefix(c_1..c_(i-1))+212000))` berücksichtigt eine
 unaufgelöste volle Einzelreserve und den danach zwingenden gesamten Runstopp.
 
-| EU-Rechnung, bedingt auf Tarif und Caps | USD |
+| EU-Rechnung, Oktober-Kontotarif belegt, kleinere Caps weiterhin bedingt | USD |
 |---|---:|
 | Vollständiger capkonformer neuer Lauf |10,543000|
 | Neuer Finanzierungsrahmen H |10,743894|
@@ -182,7 +248,8 @@ Sie zeigt, weshalb die Servicegrenze die12/20-Frage allein nicht entscheidet.
 
 **Entscheidung:**12/20 reicht rechnerisch im Capvertrag, ist aber noch nicht
 belastbar für den geforderten vollständigen Lauf bewiesen. Keine andere
-kleinste sichere Grenze lässt sich ohne die beiden externen Belege festlegen.
+kleinste sichere Grenze lässt sich ohne die verbliebene vollständige Anbieter-
+Inputgrundlage festlegen.
 Der größere20/27-Vorschlag bleibt historisch und wird nicht empfohlen; eine
 größere Geldgrenze ersetzt keine Eingabe-/Tarifbindung.
 
@@ -241,6 +308,6 @@ wurde verwendet. Eine gültige enge Lesefreigabe ist vor der Nachkontrolle nöti
 **Nicht enthalten:** Budget-/Tarifcode-/Aufrufgrenzenänderungen, Command-
 Installation, Profilaktivierung, Journalmutation, Modelltests oder500er Ausführung.
 Ein reines Routen-GO ist kein Kosten- oder Test-GO. B3-Abschluss benötigt weiterhin
-den originalen Konto-/Routenpreisbeleg, die vollständige kleinere Anbieter-
-Eingabeobergrenze, danach einen konkret freigegebenen gemeinsamen Geld-/Zeit-
+die vollständige kleinere Anbieter-Eingabeobergrenze auf Basis des übernommenen
+Oktober-Kontopreises, danach einen konkret freigegebenen gemeinsamen Geld-/Zeit-
 Änderungssatz und dessen technische unabhängige Abnahme.

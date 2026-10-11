@@ -48,9 +48,9 @@
     "currency": "USD",
     "inputPerMillion": "0.275",
     "outputPerMillion": "2.20",
-    "kind": "public-uncached-synchronous-Consumption",
+    "kind": "account-specific-operator-MCA-October2026-uncached-synchronous-Consumption",
     "publicPriceMatchedToNativeSKU": true,
-    "accountBillingPriceProven": false,
+    "accountBillingPriceProven": true,
     "accountBillingReaderHTTP": 403,
     "accountBillingReaderMissingAction": "Microsoft.Billing/billingProperty/read",
     "nativeBookkeepingUsesNewTariff": false,
@@ -80,7 +80,7 @@
         "type": "Consumption"
       }
     ],
-    "accountBillingPriceProvenScope": "current planned October 2026 run; remains unproven",
+    "accountBillingPriceProvenScope": "operator-provided Helmut billing-profile extract, October 2026 planned run; native runtime route remains separately unapproved",
     "accountBillingReaderFailureIsHistoricalObservation": true,
     "historicalAccountPriceEvidence": {
       "acceptedForSeptember2026": true,
@@ -114,9 +114,35 @@
       ]
     },
     "currentAccountPriceBinding": {
-      "proven": false,
+      "proven": true,
+      "evidenceSource": "operator-provided account-specific MCA extract, CSV/JSON exact match",
+      "billingProfileBinding": "operator-attested Helmut billing profile",
+      "periodStart": "2026-10-01",
+      "periodEnd": "2026-10-31",
+      "coversPlannedOctoberRun": true,
+      "inputPerMillion": "0.275",
+      "outputPerMillion": "2.20",
+      "pricingCurrency": "USD",
+      "billingCurrency": "EUR",
+      "unitBaseMarketPricesIdentical": true,
+      "matchesCurrentPublicMeterIdsUnitsAndPrices": true,
+      "sourceZipSHA256": "8247482c6cdf686375ef90a9be5724063c0920d3d37b6231e387df9c2d7905de",
+      "sourceZipHashIndependentlyRecomputed": false,
+      "originalCSVMemberAndFullScopeRetainedPrivately": true,
+      "uploadPins": [
+        {
+          "name": "helmut_gpt5mini_eu_price_evidence_oct2026.json",
+          "sha256": "8fe06280c34f195bdd4598796d204723b92e48fe6a63131646c2a65cbca0334c",
+          "bytes": 1443
+        },
+        {
+          "name": "helmut_gpt5mini_eu_price_evidence_oct2026.csv",
+          "sha256": "ac83ef67c888efdd1a647186dff3d08f9f6c4540f32d2c60b329e64f207c8527",
+          "bytes": 648
+        }
+      ],
       "septemberAndPublicOctoberDoNotExtendAccountPeriod": true,
-      "missingEvidence": "October 2026 current price-sheet input/output rows from the same Helmut billing profile for the existing EU Data Zone SE Central meter IDs, with Consumption, unit 1M, currency USD, UnitPrice and period covering the planned run; alternatively an official Microsoft account-specific confirmation valid for that date.",
+      "missingEvidence": null,
       "eurExchangeRateRequiredForUSDBudget": false,
       "monthlyEURInvoiceAmountProven": false
     }
@@ -206,7 +232,7 @@
   "conditionalFinancialCalculation": {
     "version": "blocker3-eu-cost-arithmetic/1",
     "targetDeployment": "gpt-5-mini-eu",
-    "priceIsPublicNotAccountVerified": true,
+    "priceIsPublicNotAccountVerified": false,
     "microUsdFormula": "ceil((275*inputTokens+2200*outputTokens)/1000) per call",
     "providerInputCapsProven": false,
     "caps": {
@@ -261,6 +287,11 @@
       "cumulativeMicroUSD": 88975964,
       "notSmallestNecessaryRunBudget": true,
       "notQualitySuccessProof": true
+    },
+    "accountPriceEvidencePeriod": {
+      "from": "2026-10-01",
+      "through": "2026-10-31",
+      "jsonSHA256": "8fe06280c34f195bdd4598796d204723b92e48fe6a63131646c2a65cbca0334c"
     }
   },
   "budgetDecision": {
@@ -355,8 +386,7 @@
     ]
   },
   "externalDependencies": [
-    "October 2026 current price-sheet input/output rows from the same Helmut billing profile for the existing EU Data Zone SE Central meter IDs, with Consumption, unit 1M, currency USD, UnitPrice and period covering the planned run; alternatively an official Microsoft account-specific confirmation valid for that date.",
-    "Authoritative complete Azure provider-input/schema/framing preflight or upper bound for every permitted D and future R body."
+    "Authoritative Microsoft evidence for complete billed-input counting or a complete tokenization/schema/framing upper bound on the exact Azure gpt-5-mini-eu Responses v1 route, including counter charges/quotas if applicable; then prove every unchanged permitted D-to-R body fits the financed envelope."
   ],
   "originalPins": [
     {
@@ -428,6 +458,41 @@
       "name": "deepseek-period-review.json",
       "sha256": "0a89bbb8733609d0789ec2d652fec4fe8be1c8cafd4ee3dc8d8c88a170fbc6f9",
       "bytes": 1252
+    },
+    {
+      "name": "helmut_gpt5mini_eu_price_evidence_oct2026.json",
+      "sha256": "8fe06280c34f195bdd4598796d204723b92e48fe6a63131646c2a65cbca0334c",
+      "bytes": 1443
+    },
+    {
+      "name": "helmut_gpt5mini_eu_price_evidence_oct2026.csv",
+      "sha256": "ac83ef67c888efdd1a647186dff3d08f9f6c4540f32d2c60b329e64f207c8527",
+      "bytes": 648
+    },
+    {
+      "name": "october-price-reconciliation-receipt.json",
+      "sha256": "60a6f3b26bd1f966573edfd716ffbd4ed60d7d56d5ac9034fce92419902daa17",
+      "bytes": 1135
+    },
+    {
+      "name": "current-main-input-code-receipt.json",
+      "sha256": "5cbdac9f202784191bd316d341a8f2bc975ab69a81dcc3209fb760519e692471",
+      "bytes": 1046
+    },
+    {
+      "name": "deepseek-R-transform-review.json",
+      "sha256": "5984eb54d7683c62394121bc2da377f6e49c916656946088cbb2379638d55987",
+      "bytes": 1357
+    },
+    {
+      "name": "deepseek-R-transform-completion.json",
+      "sha256": "01cd9fdd3b5c66c9aff28ed1ebae5889542b9f2850d4cf8f3a522e85dd1e752e",
+      "bytes": 1365
+    },
+    {
+      "name": "deepseek-provider-bound-review.json",
+      "sha256": "66d58a54615caa0cdf4916159572f8ecf797cc112b21bc016a8c0fc00c0214ab",
+      "bytes": 1340
     }
   ],
   "publicReferencePins": [
@@ -463,6 +528,20 @@
       "readAtUTC": "2026-10-11T11:49:44.099253+00:00",
       "sha256": "fd60c7fa43d9abe0911ee23111ec3c78bf7401922d31b8d00aeee18e409993ef",
       "bytes": 4308791
+    },
+    {
+      "name": "azure-responses-reference-current.html",
+      "url": "https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/azureopenai/responses",
+      "readUTC": "2026-10-11T12:08:46.880635+00:00",
+      "sha256": "7f2133af81319928071f21e986f2aa1be85805b4f5dd534e803f252494a7760f",
+      "bytes": 541405
+    },
+    {
+      "name": "azure-api-responses-index-current.html",
+      "url": "https://ai.azure.com/api-reference/responses/",
+      "readUTC": "2026-10-11T12:08:47.562832+00:00",
+      "sha256": "684bc2a2d7b1ee6cae35c16e00f14cde255f22879b9a612dfa8ebaf44484bbd9",
+      "bytes": 1951729
     }
   ],
   "productionChanges": 0,
@@ -487,5 +566,40 @@
     "raiPoliciesEqual": true,
     "rateLimitsEqual": true,
     "notATargetOrAlternativeRoute": true
+  },
+  "inputBoundaryAnalysis": {
+    "status": "blocked-on-one-external-Azure-provider-evidence-dependency",
+    "DInputProviderCapProven": false,
+    "RInputProviderCapProven": false,
+    "localDWireUpperReused": 10757,
+    "schemaAndInternalFramingUpperProven": false,
+    "currentMainCodeReceipt": "current-main-input-code-receipt.json",
+    "existingMainCodeUnchanged": true,
+    "RComponents": {
+      "known": "fixed review instructions, bound model-profile data, unchanged review schema, allowed source documents",
+      "variable": "2-4 future normalized D paragraphs and selection of at most 4 full source documents",
+      "privateSelectionNotesRetainedInDNotResentToR": true,
+      "pairwiseReviewsUnchangedUpTo": 6
+    },
+    "unchangedOutputTokensIncludingReasoning": 3000,
+    "unchangedWordLimit": 250,
+    "wordCountIsNotProviderTokenCount": true,
+    "DOutputTokenCountIsNotRInputTokenCount": true,
+    "freshAzureReferencesDocumentSmallerMaxInputTokens": false,
+    "freshAzureReferencesDocumentFullPreflightCounter": false,
+    "noUndocumentedProviderNonSupportClaim": true,
+    "noAssumed256TokenFrameAsBound": true,
+    "postUsageDoesNotEnforcePreSendInputBound": true,
+    "counterSupportDoesNotAloneProveAllPermittedFutureRFit": true,
+    "preSendEnforcementRequirements": [
+      "Authoritative route-specific complete billed-input semantics and applicable charges/quotas.",
+      "Bind model/deployment/version, complete sender body hash, schema hash and provider counting/rule version before generation reservation and sending.",
+      "Derive a universal envelope for all 500 fixed D and all unchanged permitted future D-to-R bodies; no new rejection/truncation rule for otherwise accepted responses.",
+      "No payload/route mutation between the bound preflight and the actual sender; absent evidence stops before sending."
+    ],
+    "protectedRuntimeChangesPerformed": false,
+    "providerCallsPerformed": 0,
+    "paidAdditionalProductionPathsIntroduced": 0,
+    "finalLeastCostContractProven": false
   }
 }
