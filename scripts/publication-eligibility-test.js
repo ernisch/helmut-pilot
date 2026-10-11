@@ -54,6 +54,50 @@ const callWitness = async env => {
     await A.rejects(P.filterCandidates({ getPublicationSourceIdentities: async () => ({}) }, [k]));
     await A.rejects(S.getPublicationSourceIdentities([k], { request: async () => [...rows, rows[0]] }));
   });
+  await test("Explicit-null absentURL projection is benign, retained and paginated to empty", async () => {
+    activate();
+    const readAll = rows => { const pages = []; return { pages, request: async path => {
+      A(path.includes("limit=1000")); A(!path.includes("limit=40"));
+      const offset = Number(new URL(path, "https://fixture.invalid").searchParams.get("offset"));
+      const page = rows.slice(offset, offset + 40); pages.push({ offset, count: page.length }); return page; } }; };
+    const nativeRows = (k, n, tailHeld) => Array.from({ length: n }, (_, i) => ({ knowledge_object_id: k.id,
+      raw_document_id: "rd-" + i, raw_documents: { id: "rd-" + i, url: tailHeld && i === n - 1 ? own : null, canonical_url: null } }));
+    const open = ko("null-open", "https://other.example/unheld"), openRead = readAll(nativeRows(open, 1, false));
+    const openSources = await S.getPublicationSourceIdentities([open], { request: openRead.request }), kept = openSources[open.id];
+    A.equal(kept.length, 1); A(Object.hasOwn(kept[0], "url")); A(Object.hasOwn(kept[0], "canonical_url"));
+    A.equal(kept[0].url, null); A.equal(kept[0].canonical_url, null);
+    A.equal(JSON.parse(JSON.stringify(kept[0])).url, null); A.equal(JSON.parse(JSON.stringify(kept[0])).canonical_url, null);
+    A.equal(openRead.pages[0].offset, 0); A.equal(openRead.pages[openRead.pages.length - 1].count, 0);
+    A.deepEqual((await P.filterCandidates({ getPublicationSourceIdentities: async () => openSources }, [open])).map(k => k.id), [open.id]);
+    const held = ko("null-held"), heldRead = readAll(nativeRows(held, 1, false));
+    const heldSources = await S.getPublicationSourceIdentities([held], { request: heldRead.request });
+    A.equal((await P.filterCandidates({ getPublicationSourceIdentities: async () => heldSources }, [held])).length, 0);
+    const tail = ko("null-tail", "https://other.example/tail-unheld"), tailRead = readAll(nativeRows(tail, 41, true));
+    const tailSources = await S.getPublicationSourceIdentities([tail], { request: tailRead.request });
+    A.equal(tailSources[tail.id].length, 41);
+    A.equal(tailRead.pages.reduce((n, p) => n + p.count, 0), 41);
+    A.equal(tailRead.pages[tailRead.pages.length - 1].count, 0);
+    A(tailRead.pages.every((p, i) => (i === 0 ? p.offset === 0 : p.offset > tailRead.pages[i - 1].offset)));
+    A.equal((await P.filterCandidates({ getPublicationSourceIdentities: async () => tailSources }, [tail])).length, 0);
+    const bad = ko("null-bad", "https://other.example/bad");
+    const reject = (name, raw, link = "rd-0") => A.rejects(S.getPublicationSourceIdentities([bad],
+      { request: async () => [{ knowledge_object_id: bad.id, raw_document_id: link, raw_documents: raw }] }),
+    e => e.statusCode === 503, name + " stays typed 503");
+    for (const [name, raw] of [["bothmissing", { id: "rd-0" }], ["bothundefined", { id: "rd-0", url: undefined, canonical_url: undefined }],
+      ["bothempty", { id: "rd-0", url: "", canonical_url: "" }], ["bothinvalidstrings", { id: "rd-0", url: "not a url", canonical_url: "also not a url" }],
+      ["bothobjects", { id: "rd-0", url: { href: own }, canonical_url: {} }],
+      ["alternateunknownURLkeys", { id: "rd-0", link: own, canonical: own }]]) await reject(name, raw);
+    await reject("IDmismatch", { id: "rd-1", url: own, canonical_url: own });
+    const duplicated = { knowledge_object_id: bad.id, raw_document_id: "rd-0", raw_documents: { id: "rd-0", url: own, canonical_url: own } };
+    await A.rejects(S.getPublicationSourceIdentities([bad], { request: async () =>
+      [duplicated, { ...duplicated, raw_documents: { ...duplicated.raw_documents } }] }), e => e.statusCode === 503);
+    for (const raw of [{ id: "rd-0", url: own }, { id: "rd-0", url: own, canonical_url: null },
+      { id: "rd-0", url: own, canonical_url: "not a url" }]) {
+      const fallback = ko("null-fallback"), fallbackRead = readAll([{ knowledge_object_id: fallback.id, raw_document_id: "rd-0", raw_documents: raw }]);
+      const accepted = await S.getPublicationSourceIdentities([fallback], { request: fallbackRead.request });
+      A.equal(accepted[fallback.id].length, 1); A.equal(accepted[fallback.id][0].url, own);
+    }
+  });
   await test("Re-intake/newKO/newSource/changedcontent stays withheld, unrelated remains unchanged", async () => {
     const target = ko("new-id"), safe = Object.freeze(ko("safe", "https://other.example/safe"));
     target.display_summary = "Changed article contents";
