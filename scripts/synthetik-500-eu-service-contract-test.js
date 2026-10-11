@@ -110,8 +110,19 @@ async function main(){let passed=0;const test=async(name,fn)=>{await fn();passed
     const higher=fixture();higher.modify(s=>s[K.AUFTRAG_KEY].externGebunden++);await assert.rejects(K.reserviere(higher.args(ds[0]),higher.deps));
   });
   await test("1000 native receipts exactly finance 81.4 plus preserved opening; end proof rejects drift",()=>{
-    const {plan,cost}=completedFixture();assert.equal(K.auftragsStand(cost.nativeAfter,DAY).gebundenMicroUsd,88845364);
+    const {plan,cost}=completedFixture();
+    const historic=Array.from({length:5000},(_,i)=>({id:"old-"+i,estimatedCost:1,model:"legacy"}));
+    cost.nativeBefore.llmUsage=clone(historic);cost.nativeAfter.llmUsage.push(...clone(historic));
+    assert.equal(EU.retainUsage(cost.nativeAfter.llmUsage,cost.nativeAfter[K.AUFTRAG_KEY],5000).length,6000);
+    assert.equal(EU.retainUsage(cost.nativeAfter.llmUsage,{version:4},5000).length,5000);
+    assert.equal(K.auftragsStand(cost.nativeAfter,DAY).gebundenMicroUsd,88845364);
     assert.equal(N.pruefeEUKostenbeleg(cost,plan),true);
+    const skipped=clone(cost);skipped.nativeAfter.llmUsage.push(S.buildLlmUsageRecord({keinAufruf:true,success:false,callType:"skipped-budget",model:"none"},{id:"skip",createdAt:START}));
+    assert.equal(N.pruefeEUKostenbeleg(skipped,plan),true);
+    const missing=clone(skipped);missing.nativeAfter.llmUsage.shift();assert.equal(N.pruefeEUKostenbeleg(missing,plan),false);
+    const extra=clone(skipped);extra.nativeAfter.llmUsage.push({id:"undisclosed-paid",model:EU.CONTRACT.model,success:true,estimatedCost:0.000001});
+    assert.equal(N.pruefeEUKostenbeleg(extra,plan),false);
+    skipped.nativeAfter.llmUsage.at(-1).completionTokens=1;assert.equal(N.pruefeEUKostenbeleg(skipped,plan),false);
     for(const mutate of [c=>c.counterAfter++,c=>c.nativeAfter.llmUsage.pop(),c=>c.nativeAfter.llmUsage[0].costRequestHash="0".repeat(64),
       c=>c.nativeAfter.llmUsage[0].politicianId="foreign",c=>c.nativeAfter[K.KEY]["2026-09-25"].baseline++,
       c=>c.nativeAfter[K.KEY][DAY].calls[Object.keys(c.nativeAfter[K.KEY][DAY].calls)[0]].cost++]){

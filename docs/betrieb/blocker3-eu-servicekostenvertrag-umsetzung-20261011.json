@@ -23,7 +23,7 @@
   },
   "nativeSQLMigration": "20261011213611_synthetik500_eu_service_contract_time.sql",
   "checks": {
-    "focusedEU": "6/6 passed",
+    "focusedEU": "6/6 passed including5000historic/1000new receipts, validskip, missing-paid-plus-skip and extra-paid rejection",
     "legacyMoney": "26/26 passed",
     "legacyRoute": "passed",
     "legacyEndValidator": "64/64 passed",
@@ -31,8 +31,10 @@
     "isolatedPG17": "migration and rollback passed",
     "moneyIndependentFollowup": "ok",
     "timeIndependentReview": "ok",
-    "mandatoryCIAtImplementationCommit": "pending"
+    "mandatoryCIAtImplementationCommit": "pending",
+    "historyRetentionIndependentReview": "ok"
   },
   "rolloutReceipt": "Pending actual READY/runtime/financial/native SQL read-only evidence; no closure claim",
-  "nativeSQLMigrationSHA256": "bde7ad31af248a7099600202e664168b866bf8dc0217ebda1e07089e236db62c"
+  "nativeSQLMigrationSHA256": "bde7ad31af248a7099600202e664168b866bf8dc0217ebda1e07089e236db62c",
+  "usageRetention": "No truncation for closed EU order version5/hash; preserve all existing records; legacy ring unchanged"
 }
