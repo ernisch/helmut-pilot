@@ -1,6 +1,11 @@
 # Blocker 3: Prüfung eines kleineren Maximalbetrags
 
-## Aktuelle Entscheidung nach Prüfung der beiden Voraussetzungen
+> Historischer Global-Prüfstand. Seit der Betreiberentscheidung gilt ausschließlich
+> der [EU-Zielvertrag](blocker3-eu-kostenvertrag-20261011.md) für`gpt-5-mini-eu`.
+> Die folgenden Global-Rechnungen und Originalpins bleiben erhalten und sind
+> keine aktuelle Kosten-/Routenfreigabe.
+
+## Erhaltene Entscheidung vor der verbindlichen EU-Zielroute
 
 Lesungen11.10.2026,10:34–10:39UTC. **Kein endgültiger freigabefähiger
 Kostenvertrag bewiesen.12USD/UTC-Tag und20USD kumulativ bleiben ein bedingtes

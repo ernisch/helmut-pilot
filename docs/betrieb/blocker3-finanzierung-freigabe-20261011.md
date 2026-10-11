@@ -1,7 +1,11 @@
 # Blocker 3: bezifferter Kosten- und Zeitvertrag zur Freigabe
 
 Stand 11.10.2026, Repositorybasis `fe00adf537d005a56cc6d6bc28604c433cdb810d`.
-**Erhaltener früherer20/27-Entwurf; derzeit keine aktuelle Freigabeempfehlung.**
+**Erhaltener früherer20/27-Entwurf; keine aktuelle Freigabeempfehlung.**
+Seit der Betreiberentscheidung gilt ausschließlich der
+[EU-Zielvertrag für`gpt-5-mini-eu`](blocker3-eu-kostenvertrag-20261011.md).
+Nachfolgende Global-/0,5-4-Rechnungen sind erhaltene historische Vorschläge,
+keine aktuelle Zielplanung. Ursprüngliche JSON-Vorlage/Proposalhash bleiben erhalten.
 Die hier vorgeschlagenen Grenzen sind nicht aktiviert. Blocker3 ist erst abgenommen,
 wenn Dokumentation, Plan, atomare Budgetriegel und Endvalidator denselben
 freigegebenen Vertrag tatsächlich verwenden.

@@ -1,4 +1,4 @@
-> Historischer Analyseabschluss vor PR899. Die damalige32er Senderlücke ist inzwischen geschlossen. Aktuell gilt die [bezifferte Freigabevorlage](blocker3-finanzierung-freigabe-20261011.md); alle nachfolgenden damaligen Werte und offenen Punkte bleiben als Original erhalten.
+> Historischer Analyseabschluss vor PR899. Die damalige32er Senderlücke ist inzwischen geschlossen. Aktuell gilt ausschließlich der [EU-Zielvertrag](blocker3-eu-kostenvertrag-20261011.md); alle nachfolgenden damaligen Werte und offenen Punkte bleiben als Original erhalten.
 
 # Blocker 3: endgültige Eingabeabnahme und Kostenvertragsgrenze
 

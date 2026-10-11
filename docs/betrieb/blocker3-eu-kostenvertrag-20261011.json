@@ -1,0 +1,412 @@
+{
+  "version": "helmut-blocker3-eu-target-contract/1",
+  "mode": "inert-unapproved-target-contract",
+  "operatorTargetDecisionAccepted": true,
+  "protectedChangesApproved": false,
+  "budgetApproved": false,
+  "routeSwitchApproved": false,
+  "runtimeEnforcement": false,
+  "blocker3Complete": false,
+  "repositoryBasis": "fe00adf537d005a56cc6d6bc28604c433cdb810d",
+  "observedRuntimeCommit": "1ad00cd464f88f37a1adc3417b2758ab1eb24e80",
+  "targetRoute": {
+    "provider": "azure",
+    "endpoint": "https://helmut-resource.openai.azure.com/",
+    "responsesURL": "https://helmut-resource.openai.azure.com/openai/v1/responses",
+    "deployment": "gpt-5-mini-eu",
+    "modelFamily": "gpt-5-mini",
+    "modelVersion": "2025-08-07",
+    "sku": "DataZoneStandard",
+    "resource": "helmut-resource",
+    "resourceGroup": "helmut-rg",
+    "region": "swedencentral",
+    "dataZone": "EU, Microsoft Azure EU Data Boundary definition",
+    "capacity": 250,
+    "nativeArea": "EUR",
+    "responsesSupported": true,
+    "nativeRateLimits": [
+      {
+        "key": "request",
+        "renewalPeriod": 60,
+        "count": 250
+      },
+      {
+        "key": "token",
+        "renewalPeriod": 60,
+        "count": 250000
+      }
+    ],
+    "rateLimitsAreNotSmallerBilledInputCaps": true,
+    "versionUpgradeOption": "NoAutoUpgrade",
+    "provisioningState": "Succeeded",
+    "nativeReadUTC": "2026-10-11T10:49:30.987142+00:00",
+    "globalDeploymentAcceptedAsRunRoute": false,
+    "automaticGlobalFallbackAllowed": false,
+    "targetIsAlreadyActiveInProductionProven": false
+  },
+  "pricing": {
+    "currency": "USD",
+    "inputPerMillion": "0.275",
+    "outputPerMillion": "2.20",
+    "kind": "public-uncached-synchronous-Consumption",
+    "publicPriceMatchedToNativeSKU": true,
+    "accountBillingPriceProven": false,
+    "accountBillingReaderHTTP": 403,
+    "accountBillingReaderMissingAction": "Microsoft.Billing/billingProperty/read",
+    "nativeBookkeepingUsesNewTariff": false,
+    "historicalBooksMustNotBeRepriced": true,
+    "publicReadUTC": "2026-10-11T10:49:47.646915+00:00",
+    "publicMeters": [
+      {
+        "meterId": "68cae02f-c5bd-5272-96de-fcdddf816ef7",
+        "meterName": "GPT 5 Mini outpt DZone 1M Tokens",
+        "skuName": "GPT 5 Mini outpt DZone",
+        "currencyCode": "USD",
+        "unitOfMeasure": "1M",
+        "retailPrice": 2.2,
+        "effectiveStartDate": "2025-08-01T00:00:00Z",
+        "armRegionName": "swedencentral",
+        "type": "Consumption"
+      },
+      {
+        "meterId": "ba8737fb-3392-5ead-80cf-14de6801f5fb",
+        "meterName": "GPT 5 Mini Inpt DZone 1M Tokens",
+        "skuName": "GPT 5 Mini Inpt DZone",
+        "currencyCode": "USD",
+        "unitOfMeasure": "1M",
+        "retailPrice": 0.275,
+        "effectiveStartDate": "2025-08-01T00:00:00Z",
+        "armRegionName": "swedencentral",
+        "type": "Consumption"
+      }
+    ]
+  },
+  "modelServiceLimits": {
+    "contextTokens": 400000,
+    "inputTokens": 272000,
+    "outputTokensIncludingReasoning": 128000,
+    "routeVersionMatchesMicrosoftSpecification": true,
+    "schemaAndInternalFramingSmallCapProven": false,
+    "smallerPreSendProviderInputEnforcementProven": false,
+    "futureRUpperUnderProposedCapProven": false,
+    "notLocalTokenizerAsProviderCounter": true
+  },
+  "calls": {
+    "D": 500,
+    "R": 500,
+    "U": 0,
+    "otherProductionModelPaths": 0,
+    "total": 1000,
+    "maxAttemptsPerIntent": 1,
+    "modelConcurrency": 1,
+    "deployment": "gpt-5-mini-eu",
+    "outputTokensIncludingReasoning": {
+      "D": 3000,
+      "R": 3000
+    },
+    "reasoningEffort": "low",
+    "qualityAndAcceptanceUnchanged": true
+  },
+  "inputEvidenceReused": {
+    "b2Run": "38102593796",
+    "b2Complete": true,
+    "contextHandoffAccepted": true,
+    "nativePricingIntegritySHA256": "da2804ff489c610aa152ceac350b17275e9e6ce05ec802aea103c41937173f1d",
+    "nativePricingHandoffSHA256": "149a37f74ac41313e45aae0df23ff6c95809f915bb576640ab4a613c5ce270c1",
+    "merkleRoot": "ce7ee487274b39952d23dbb377647659f6c41b6684eb0406cbc1d8553df87c69",
+    "all500LeavesVerified": true,
+    "nativeHistoricalCapabilitiesVerified": 32,
+    "DPromptPlusSchemaLocalTokens": {
+      "min": 3413,
+      "median": 3468,
+      "max": 10486,
+      "sum": 1955057
+    },
+    "DWireLocalTokens": {
+      "min": 3548,
+      "median": 3604,
+      "max": 10755,
+      "sum": 2027471,
+      "scope": "historical global-model JSON; current EU values are euLocalWireRebind"
+    },
+    "DWireUTF8Bytes": {
+      "min": 14239,
+      "median": 14494,
+      "max": 34875,
+      "sum": 7887854,
+      "scope": "historical global-model JSON; current EU values are euLocalWireRebind"
+    },
+    "providerUsageMeasured": false,
+    "actualFutureRInputsKnown": false
+  },
+  "euLocalWireRebind": {
+    "version": "blocker3-eu500-D-wire-alias-rebind/1",
+    "model": "gpt-5-mini-eu",
+    "semanticInputsUnchanged": true,
+    "schemaOutputReasoningUnchanged": true,
+    "sourceWireSHA256": "2f9bca2155bfa97c62b61594abf1cb94ec47416fead0cbaa40ff6e1de8b66c5f",
+    "providerInputTokensMeasured": false,
+    "tokens": {
+      "min": 3550,
+      "median": 3606.0,
+      "max": 10757,
+      "sum": 2028471
+    },
+    "bytes": {
+      "min": 14242,
+      "median": 14497.0,
+      "max": 34878,
+      "sum": 7889354
+    },
+    "uniqueTokenDeltas": [
+      2
+    ],
+    "tokenizerVocabularySHA256": "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d"
+  },
+  "conditionalFinancialCalculation": {
+    "version": "blocker3-eu-cost-arithmetic/1",
+    "targetDeployment": "gpt-5-mini-eu",
+    "priceIsPublicNotAccountVerified": true,
+    "microUsdFormula": "ceil((275*inputTokens+2200*outputTokens)/1000) per call",
+    "providerInputCapsProven": false,
+    "caps": {
+      "D": 12288,
+      "R": 16384,
+      "output": 3000
+    },
+    "DPerCallMicroUSD": 9980,
+    "RPerCallMicroUSD": 11106,
+    "fullCapConformantMicroUSD": 10543000,
+    "HMicroUSD": 10743894,
+    "dayIncludingPrivateAtOldSpendZeroMicroUSD": 11379894,
+    "cumulativeIncludingPreservedBaselineMicroUSD": 18189258,
+    "minimumConditionalDayIntegerUSD": 12,
+    "existingCumulativeOrderUSD": 20,
+    "preservedStandardReserveMicroUSD": 212000,
+    "preservedPrivateReserveMicroUSD": 636000,
+    "preservedCumulativeBaselineMicroUSD": 7445364,
+    "unmeasuredComponentScenarios": [
+      {
+        "outputEstimatePerCall": 500,
+        "expectedNotBound": true,
+        "newCostMicroUSD": 2326449,
+        "HMicroUSD": 2536138,
+        "dayIncludingPrivateAtOldSpendZeroMicroUSD": 3172138,
+        "cumulativeIncludingPreservedBaselineMicroUSD": 9981502
+      },
+      {
+        "outputEstimatePerCall": 1000,
+        "expectedNotBound": true,
+        "newCostMicroUSD": 3495264,
+        "HMicroUSD": 3703715,
+        "dayIncludingPrivateAtOldSpendZeroMicroUSD": 4339715,
+        "cumulativeIncludingPreservedBaselineMicroUSD": 11149079
+      },
+      {
+        "outputEstimatePerCall": 3000,
+        "expectedNotBound": true,
+        "newCostMicroUSD": 8170264,
+        "HMicroUSD": 8373765,
+        "dayIncludingPrivateAtOldSpendZeroMicroUSD": 9009765,
+        "cumulativeIncludingPreservedBaselineMicroUSD": 15819129
+      }
+    ],
+    "generalServiceCeilingOnly": {
+      "inputPerCall": 272000,
+      "actualOutputCapPerCall": 3000,
+      "perCallMicroUSD": 81400,
+      "newFullCostMicroUSD": 81400000,
+      "HMicroUSD": 81530600,
+      "dayMicroUSD": 82166600,
+      "cumulativeMicroUSD": 88975964,
+      "notSmallestNecessaryRunBudget": true,
+      "notQualitySuccessProof": true
+    }
+  },
+  "budgetDecision": {
+    "twelvePerUTCdayAndExistingTwentyCumulativeProven": false,
+    "leastNecessaryRunBudgetProven": false,
+    "conditionalIntegerDayUSD": 12,
+    "existingCumulativeOrderUSD": 20,
+    "olderTwentyDailyTwentySevenCumulativeRecommended": false,
+    "sharedNewVersionImplemented": false,
+    "currentRuntimeDayUSD": 6,
+    "currentOrderCumulativeUSD": 20,
+    "currentEndValidatorDayUSD": 6,
+    "currentEndValidatorCumulativeUSD": 7
+  },
+  "globalCounterUnchanged": {
+    "fallback": 50,
+    "currentProductionProjectLimit": 2416,
+    "understandingReserve": 702,
+    "realPriorityReserve": 200,
+    "budgetFailClosed": 1,
+    "currentReaderProjectedUsed": 0,
+    "effectiveDRLimit": 1714,
+    "maximumStartUsedFor1000": 714,
+    "minimumRawLimitAtUsed0Preserving702": 1702,
+    "requestedChange": null,
+    "immutableRuntimeValuesMustBeBoundBeforeExecution": true,
+    "atomicPaidReservationTestExecuted": false
+  },
+  "timeContractUnchanged": {
+    "existingWindowSeconds": 14400,
+    "existingProviderFullResponseSeconds": 20,
+    "proposedUnitSeconds": 60,
+    "proposedSetupSeconds": 1200,
+    "proposedDispatchSeconds": 30000,
+    "proposedActiveSlackSeconds": 1200,
+    "proposedActiveWindowSeconds": 32400,
+    "proposedEndEvidenceSeconds": 1800,
+    "proposedCompleteDeadlineSeconds": 34200,
+    "exportReadOnlyRequests": 501,
+    "exportConcurrency": 8,
+    "exportFullRequestCapSeconds": 20,
+    "endReadbackSeconds": 60,
+    "offlineFinalizationSeconds": 300,
+    "forecastModelSeconds": 10000,
+    "forecastExtraUnitSeconds": 10,
+    "forecastTotalSeconds": 18000,
+    "forecastAssumptions": "10s per model,10s extra per unit,20min setup,30min end; not measured",
+    "completeProductionRuntimeMeasured": false,
+    "successfulCompleteRuntimeGuaranteed": false,
+    "nativeFourHourMigrationRequired": true,
+    "migrationApproved": false,
+    "originalBerlinCaptureDay": "2026-10-11",
+    "sameUtcExecutionDayRequiredByCurrentContract": true,
+    "proposedExecutionStartsAtUTC": null,
+    "separateTestGORequired": true,
+    "calendarCannotShiftAutomatically": true,
+    "latestNineHourStartOnCurrentCaptureDay": "strictly before 2026-10-11T13:00:00.000Z"
+  },
+  "reusedContextAdmission": {
+    "B2Final": true,
+    "acceptedContexts": 500,
+    "regular": 468,
+    "historical": 32,
+    "B1B2B4Repeated": false,
+    "routeSensitiveRequestAndPlanHashesMustBeRebound": true,
+    "semanticInputOrSourcesChanged": false
+  },
+  "routeSwitchProposal": {
+    "environment": "Vercel helmut-pilot Production only",
+    "projectId": "prj_xbZ6QzTkr7YoxQI71lW59FT03IR3",
+    "environmentKey": "AZURE_OPENAI_DEPLOYMENT",
+    "existingEnvironmentId": "US4stoZZY7AkOvV0",
+    "requiredValue": "gpt-5-mini-eu",
+    "existingType": "sensitive",
+    "target": [
+      "production"
+    ],
+    "metadataPreimageUpdatedAt": 1791203417901,
+    "currentPlaintextValueProven": false,
+    "needsControlledRedeploy": true,
+    "readOnlyRuntimeVerifierCurrentlyExpired": true,
+    "renewNarrowReadOnlyRuntimeAuthorizationBeforePostcheck": true,
+    "oldReadyRollbackDeploymentId": "dpl_76HSdbWhPMaDRJzQqQ1GsrGx3wcE",
+    "rollbackMustKeepPaidRunUnauthorizedAndNotUseGlobalAsReplacementRun": true,
+    "excluded": [
+      "budget and price-policy changes",
+      "profiles",
+      "command installation",
+      "journal changes",
+      "model calls",
+      "automatic global fallback"
+    ]
+  },
+  "externalDependencies": [
+    "Current subscription/account billing evidence for the EU DataZoneStandard meter price and binding to the intended runtime route.",
+    "Authoritative complete Azure provider-input/schema/framing preflight or upper bound for every permitted D and future R body."
+  ],
+  "originalPins": [
+    {
+      "name": "azure-account-original.json",
+      "sha256": "a0c986207d52a07a71af635b4493b8a068b142756b1d0a6d019e0078e8db36fc",
+      "bytes": 40957
+    },
+    {
+      "name": "azure-deployment-original.json",
+      "sha256": "996ba6a031225e3ed50ccd419671cdf069f345d5ceeaa38bef2892cce2601d8c",
+      "bytes": 1026
+    },
+    {
+      "name": "historical-global-deployment-original.json",
+      "sha256": "b312b5cf18f41ed64803d13ccb5f44a1c5d34907d8032cca484bc4317120db86",
+      "bytes": 1037
+    },
+    {
+      "name": "azure-billing-property-original.json",
+      "sha256": "4dd8eee162b9483342f17753c93edc2dab447e7ceb61be7a2ee710dd2a13300c",
+      "bytes": 450
+    },
+    {
+      "name": "runtime-route-readonly.json",
+      "sha256": "c72c307f23dae6cbb945aa6d3c11f9e759c842e203af92b0abb89550cd75d60e",
+      "bytes": 1574
+    },
+    {
+      "name": "azure-retail-eu-original.json",
+      "sha256": "9e2b05864e10d9c9376704cfe8ac1154cdec4ff837ce6070d62b98617e013d1f",
+      "bytes": 7563
+    },
+    {
+      "name": "eu-D-wire-localtokens.json",
+      "sha256": "ae4407c451bafe09464959367f63e8fdd17c51f95f73329cddae6248d533ad43",
+      "bytes": 152536
+    },
+    {
+      "name": "eu-cost-arithmetic.json",
+      "sha256": "7681e72ddab2efcb79e1e2b1d2740352505cd10ec15fd90015031d69468a7fbd",
+      "bytes": 1951
+    },
+    {
+      "name": "deepseek-contract-review.json",
+      "sha256": "81ce340b5a4df82cc0651cf78bce2d665d792e753cb4ec4a065b4e4b93388180",
+      "bytes": 1303
+    },
+    {
+      "name": "deepseek-cost-review.json",
+      "sha256": "a834fd56aab50201510b071ba3f886a4fa2bb2cbbebf15761e88aac825afa59b",
+      "bytes": 1290
+    }
+  ],
+  "publicReferencePins": [
+    {
+      "name": "azure-model-limits-original.md",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/includes/models-azure-direct-openai.md",
+      "readAtUTC": "2026-10-11T10:52:07.435418+00:00",
+      "sha256": "04b9b3d5098c276cd529a476b890caecafd540d33e2edca34cbd109a8c7251fe",
+      "bytes": 60204
+    },
+    {
+      "name": "azure-deployment-types-original.html",
+      "url": "https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types",
+      "readAtUTC": "2026-10-11T10:52:07.843674+00:00",
+      "sha256": "6901d2ba4b4bc5a179cf4e5aa4529eadf6e42ff31ad4a98fcd3ed3bbc8f4d1ce",
+      "bytes": 70656
+    }
+  ],
+  "productionChanges": 0,
+  "productionModelCalls": 0,
+  "budgetsOrReservesChanged": false,
+  "supersedesTargetPlanning": [
+    "blocker3-voraussetzungen-kleinerer-vertrag-20261011.json",
+    "blocker3-freigabevertrag-20261011.json"
+  ],
+  "historicalEvidencePreserved": true,
+  "preservedBaselineDefinition": {
+    "nativeAndAlreadyIncludedExternalMicroUSD": 6809364,
+    "nativeSpentMicroUSD": 1614061,
+    "alreadyIncludedExternalMicroUSD": 5195303,
+    "privateUnresolvedMicroUSD": 636000,
+    "conservativeTotalMicroUSD": 7445364,
+    "privateIncludedInTotal": true,
+    "privateMustNotBeAddedAgainToCumulativeTotal": true
+  },
+  "historicalDeploymentComparisonForReuseOnly": {
+    "modelsAndVersionsEqual": true,
+    "raiPoliciesEqual": true,
+    "rateLimitsEqual": true,
+    "notATargetOrAlternativeRoute": true
+  }
+}
