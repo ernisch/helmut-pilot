@@ -6,6 +6,10 @@ Die hier vorgeschlagenen Grenzen sind nicht aktiviert. Blocker3 ist erst abgenom
 wenn Dokumentation, Plan, atomare Budgetriegel und Endvalidator denselben
 freigegebenen Vertrag tatsächlich verwenden.
 
+Nachfrage nach kleinerem Betrag: Die [gezielte Folgeprüfung](blocker3-kleinerer-maximalbetrag-20261011.md)
+belegt ein günstigeres Tarifszenario, aber noch keinen kleineren endgültigen
+Production-Maximalbetrag. Die20/27-Vorlage wurde nicht freigegeben.
+
 ## Übernommene Grundlage
 
 [B2 ist fachlich abgeschlossen](blocker2-abschluss-20261011.md).
