@@ -1,14 +1,14 @@
 # Begrenzte B2-Übergabe an den direkten D-Sender
 
-Stand: 11.10.2026. **Vorbereitung, keine Production-Abnahme.** Blocker2 bleibt
+Stand: 11.10.2026. **Code ausgerollt, vollständige Senderabnahme offen.** Blocker2 bleibt
 abgeschlossen. Der bereits abgenommene direkte Blocker1-Motor wird nicht neu
 abgenommen. Dieses Dossier betrifft ausschließlich seine technische Versorgung
 mit den unveränderten 500 final angenommenen Eingaben.
 
 Der Betreiber hat einen begrenzten historischen Übergabevertrag zur Vorbereitung
-gewählt. Production, Profile, Daten, Konfiguration, Budget und bezahlte Aufrufe
-bleiben bis zu einer konkreten Freigabe unverändert. Kein Test-GO wird aus dieser
-Vorbereitung abgeleitet.
+gewählt und anschließend den konkreten Code-Rollout freigegeben. Profile, Daten,
+Konfiguration, Budget und bezahlte Aufrufe bleiben unverändert. Kein Installations-,
+Aktivierungs- oder Test-GO wird aus dieser Code-Freigabe abgeleitet.
 
 ## Gebundene Ausgangslage und gemeinsame Ursache
 
@@ -193,9 +193,9 @@ Der darin gebundene gezielte Nachbeleg für 196/228 hat SHA256
 
 ## Konkrete Production-Freigabegrenze
 
-Vor jeder geschützten Wirkung ist eine konkrete Freigabe erforderlich. Der
-vorbereitete Code wird deshalb als Reviewstand behandelt und nicht autonom
-auf Production ausgerollt oder installiert.
+Vor jeder geschützten Wirkung ist eine konkrete Freigabe erforderlich. Die
+nachfolgende Code-Rollout-Freigabe wurde ausdrücklich erteilt und ausgeführt;
+Installation, Aktivierung und bezahlte Modellarbeit bleiben davon getrennt.
 
 | Punkt | Begrenzter nächster Schritt |
 |---|---|
@@ -210,3 +210,58 @@ Ein Installations-, Aktivierungs- oder bezahlter Testaufruf ist hiervon nicht
 autorisiert. Das übrige [Blocker3-Kostenstarttor](blocker3-finaler-kostenvertrag-20261011.md)
 bleibt getrennt. **Sprintabnahme erst bei exakt 500/500 gültigen, nichtleeren
 Kontexten über den tatsächlich vorgesehenen bereitgestellten direkten D-Weg.**
+
+## Freigegebener Rollout und lesende Nachkontrolle
+
+Der Betreiber bestätigte das konkrete GO für Code-Merge und Production-Rollout
+von [PR899](https://github.com/ernisch/helmut-pilot/pull/899) samt rein lesender
+Nachkontrolle. Installation, Profilaktivierung und bezahlte Modellaufrufe waren
+ausdrücklich ausgeschlossen. Vor Merge wurden PR-Kopf, beide grünen Pflichtchecks,
+unverändertes `main` und die bestehende Deploymentzuordnung frisch geprüft.
+
+PR899 wurde exakt an Reviewkopf
+`f77225d4687f983655e08f411f965ce6f84b9a61` gebunden gemergt. Mergecommit
+`1ad00cd464f88f37a1adc3417b2758ab1eb24e80` hat denselben Git-Tree
+`7528b6058fe457db55478320ec39553caf8d4100` wie der geprüfte Kopf. Die
+[Pflicht-CI](https://github.com/ernisch/helmut-pilot/actions/runs/38127233374)
+belegte 168/168 Standardsuiten und 330/330 zusätzliche Bereichssuiten;
+alle erforderlichen isolierten Datenbanknachweise bestanden. Der Browserlauf
+wurde vom bestehenden Prüfplan bewusst übersprungen (`browser=false`).
+
+Vercel bestätigte Production-Deployment
+`dpl_76HSdbWhPMaDRJzQqQ1GsrGx3wcE` als READY, `target=production`, Commit
+`1ad00cd464f88f37a1adc3417b2758ab1eb24e80`. Der bestehende Productionalias
+`helmut-pilot-nohut.vercel.app` zeigt auf genau dieses Deployment. Rückweg ist
+weiter das zuvor bestätigte READY-Deployment
+`dpl_8xGYus2BL4TSy4cgrD18jZDBDHPv` mit Runtimecommit
+`6cdaa1cd3cdf16b9e5d18cb9add267583a730292`.
+
+Parallel zum Rollout wurde genau eine gezielte native Repeatable-Read-Abfrage
+mit `readOnly=on` ausgeführt: Beobachtung `2026-10-11T09:40:45.502Z`, Snapshot
+`568684:568684:`. Alle 874 vollständigen Source23, 500 KO60 und 972 vollständigen
+Publicationlinks einschließlich 906 Dokumentidentitäten sind feldgleich zum
+gebundenen Archiv: **Drift 0**. Privater Beleg
+`current-source-binding/post-rollout-version-readback-receipt.json`, 1.950 Bytes,
+SHA256 `ce2817137a376be4bde7317c9d2af6ca6856d782283d77ed92d5092782f8cb44`.
+Es gab keine Productiondaten-, Profil-, Policy-, Konfigurations- oder
+Budgetänderung und keine Modellaufrufe.
+
+Der private Root-Nachkontrollbeleg `contract/approved-rollout-readback.json`
+bindet den erteilten Umfang, Merge/Deployment/Rückweg, die 23 identischen
+Codehashes, die bisherigen 500 Senderpositionen und die native Versionskontrolle:
+4.868 Bytes, SHA256
+`88b740de56fda37d404acd3354ac7789424d47cb42991b471ddd90be28ab4b90`.
+Die Codebindung erfolgt über den READY-Deploymentcommit und den exakt gleichen
+geprüften Git-Tree. Vercel stellt für diesen Git-Rollout keinen abrufbaren
+Dateibaum bereit (`404`); ein zusätzlicher Server-Quelldateirücklesebeleg wird
+deshalb nicht behauptet.
+
+Der lokale 500/500-Beleg gilt weiterhin für genau denselben ausgerollten
+Sendercode und die unveränderten nativen Versionen. Das ist **keine vollständige
+Production-Senderabnahme**: Der tatsächliche direkte Einstieg lädt ausschließlich
+installierte, zugelassene Commands; `directRuntime` verlangt vor der D-Verarbeitung
+einen frischen Zustand mit exakt 500 aktiven Profilen. Vor `buildLageBriefing`
+erfolgt zudem eine Auth-Journalmutation. Eine Ausführung dieses Einstiegs ist
+deshalb keine rein lesende Nachkontrolle und wird aus diesem Code-Rollout-GO
+nicht abgeleitet. Vollständiger Command, seine Zulassung und eine geschützte
+Ausführungsvorbereitung bleiben offen; der lokale Sentinelbeleg ersetzt sie nicht.
