@@ -601,5 +601,90 @@
     "providerCallsPerformed": 0,
     "paidAdditionalProductionPathsIntroduced": 0,
     "finalLeastCostContractProven": false
+  },
+  "freeMicrosoftAlternatives": {
+    "checkedUTC": "2026-10-11T12:35:22Z",
+    "completeInputBoundFound": false,
+    "documentationAbsenceIsNotNativeUnsupportedProof": true,
+    "operatorCommunityQuestionReportedPosted": true,
+    "communityAnswerReceived": false,
+    "paidSupportCaseOpened": false,
+    "supportPriceUSD": 29,
+    "results": [
+      {
+        "source": "microsoft-apim-tokenlimit.md",
+        "result": "Responses supported; prompt estimate before call and usage after call. Documented possible limit overshoot; not a complete billed-input upper bound."
+      },
+      {
+        "source": "microsoft-structured-outputs-content.md",
+        "result": "GPT-5-mini strict JSON schema support; no complete billed-input/schema/framing count guarantee."
+      },
+      {
+        "source": "microsoft-chat-python-content.md",
+        "result": "Chat-model local token estimate example; no full Azure Responses v1 schema/framing billing bound."
+      }
+    ],
+    "sourcePins": [
+      {
+        "name": "microsoft-apim-tokenlimit.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-docs/main/articles/api-management/llm-token-limit-policy.md",
+        "sha256": "4d3aa7f217b118df5878f1aad204ba53b93cdec7ac137137d2e0611501ca5a8e",
+        "bytes": 10989,
+        "readUTC": "2026-10-11T12:34:19.733452+00:00"
+      },
+      {
+        "name": "microsoft-structured-outputs.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/how-to/structured-outputs.md",
+        "sha256": "d8d69c8d55e22006aed581c1598419deda8bd5b6f17cdafbc0f189f3ef976c0d",
+        "bytes": 608,
+        "readUTC": "2026-10-11T12:34:20.073952+00:00"
+      },
+      {
+        "name": "microsoft-token-example.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/how-to/chatgpt.md",
+        "sha256": "3024cc4bd1fd0d323de9d63451d24d13fbce752e7880a7f7d07643038e77c0dd",
+        "bytes": 3499,
+        "readUTC": "2026-10-11T12:34:20.503587+00:00"
+      },
+      {
+        "name": "microsoft-structured-outputs-content.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/includes/how-to-structured-outputs-content.md",
+        "sha256": "8b8eca2cf09077ebca2918e7eb7561dc3322379ef27f74944abe755c1ba7c5c8",
+        "bytes": 11500,
+        "readUTC": "2026-10-11T12:35:21.530243+00:00"
+      },
+      {
+        "name": "microsoft-chat-python-content.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/includes/chat-completion-python.md",
+        "sha256": "7128cb01f3dfbae09edb26e6fbd3945e7c717f7eeeeb1b897e5e07c269a45c66",
+        "bytes": 22346,
+        "readUTC": "2026-10-11T12:35:21.991530+00:00"
+      }
+    ]
+  },
+  "offlinePreparation": {
+    "mode": "inert-not-imported-by-runtime",
+    "implementationPlan": "docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.json",
+    "documentation": "docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.md",
+    "tool": "scripts/blocker3-eu-vorbereitung.js",
+    "focusedTests": "scripts/blocker3-eu-vorbereitung-test.js",
+    "reserveOrSendPossible": false,
+    "providerCounterImplemented": false,
+    "runtimeChangesImplemented": false,
+    "protectedActionsPerformed": false,
+    "remainingExternalProofs": 1,
+    "futureCounterRequestsFeesQuotasAndLatencyUnknown": true,
+    "localVerificationReceipt": "docs/betrieb/blocker3-eu-vorbereitungspruefung-20261011.json",
+    "independentReview": {
+      "model": "deepseek-flash",
+      "effort": "high",
+      "mode": "read",
+      "status": "ok-for-inert-conditional-preparation-only",
+      "sha256": "5ea7cf5dda8dda2cbfd65b009120880cbfaa573b461490bde131438746c299f5",
+      "bytes": 1296,
+      "reviewScope": "offline tool/tests and both EU JSONs plus preparation MD before Sol final assertion/hash-test strengthening",
+      "notProductionEnforcementOrBlockerAcceptance": true,
+      "solIntegration": "Preparation hash excluding self verified with repository canonical hasher; additional rejection assertions for Global fallback and false final money flags, no runtime integration."
+    }
   }
 }

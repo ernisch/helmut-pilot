@@ -1,0 +1,60 @@
+{
+  "version": "helmut-blocker3-EU-preparation-verification/1",
+  "readUTC": "2026-10-11T12:48:14.718553+00:00",
+  "preparationOnly": true,
+  "productionEnforcementVerified": false,
+  "blocker3Accepted": false,
+  "focusedTests": {
+    "groups": 8,
+    "result": "pass",
+    "networkGuard": true,
+    "logPin": {
+      "path": "/workspace/private/blocker3-preparation-20261011/final-focused-tests.txt",
+      "sha256": "672cdecdcb54435674a4f62b1d43b0a645ebdddfde4fd22a3a1f6e17bb45820d",
+      "bytes": 747
+    }
+  },
+  "syntaxChecks": "both new JS files passed",
+  "canonicalPreparationHash": "repository hasher verified, excluding preparationSHA256 field; automated in focused test",
+  "independentReviewPin": {
+    "path": "/workspace/private/blocker3-preparation-20261011/deepseek-final-preparation-review.json",
+    "sha256": "5ea7cf5dda8dda2cbfd65b009120880cbfaa573b461490bde131438746c299f5",
+    "bytes": 1296
+  },
+  "independentReviewScope": "inert preparation; no tests performed by helper. Final Sol changes only stricter rejection assertions and canonical-hash consistency tests.",
+  "offlineReceiptPin": {
+    "path": "/workspace/private/blocker3-preparation-20261011/offline-preparation-receipt.json",
+    "sha256": "d48cfd3e50c19b42c431358a802dca42635910952c7a7eba01834b99f3a2bfe0",
+    "bytes": 1449
+  },
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-pilot/scripts/blocker3-eu-vorbereitung.js",
+      "sha256": "b951cb8a699fe33495a0f2e77c1267f4c8866b3a0bc5ae9f2a39c9b385763544",
+      "bytes": 10250
+    },
+    {
+      "path": "/workspace/helmut-pilot/scripts/blocker3-eu-vorbereitung-test.js",
+      "sha256": "16571a522bc53e22f1ed9ce330ff964b70066aa91df7b717a32f1ec2193c6cce",
+      "bytes": 7907
+    },
+    {
+      "path": "/workspace/helmut-pilot/docs/betrieb/blocker3-eu-kostenvertrag-20261011.json",
+      "sha256": "b0dbfc58470e37f352dc9ae323bfcbcb3d2fa170c90784ab4fe25f5849d680a7",
+      "bytes": 27430
+    },
+    {
+      "path": "/workspace/helmut-pilot/docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.json",
+      "sha256": "6f6b414f91ab7d6db30fd1ef48580f897e6599c397894b7b76fe6d0d2f170e28",
+      "bytes": 19125
+    },
+    {
+      "path": "/workspace/helmut-pilot/docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.md",
+      "sha256": "b41e2ba72a838ec2f36f2be8f1648649eac349282ed417583e720b196eebffa2",
+      "bytes": 12197
+    }
+  ],
+  "protectedChanges": 0,
+  "paidProductionCalls": 0,
+  "externalProofsStillRequired": 1
+}

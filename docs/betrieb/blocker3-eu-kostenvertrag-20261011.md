@@ -1,5 +1,7 @@
 # Blocker 3: ausschließlich europäischer Zielvertrag
 
+**Fortschreibung11.10.:** Unabhängige Vorbereitung, blockierende Offline-Inputschnittstelle, gezielte Tests, kostenlose Microsoft-Quellenprüfung und spätere GO-Felder sind im [EU-Vorbereitungsabschluss](blocker3-eu-freigabevorbereitung-20261011.md) gebündelt. Neue Runtime-Geld-/Input-/Zeitversion noch nicht wirksam; genau die autoritative vollständige Microsoft-Inputgrundlage bleibt extern offen.
+
 Stand11.10.2026. **Verbindliche Zielroute ist `gpt-5-mini-eu`.**
 Die Betreiberentscheidung legt den Zielnamen fest, erteilt noch kein GO für
 Production-Konfiguration, Budget, Rollout oder kostenpflichtige Modellaufrufe.
@@ -157,7 +159,7 @@ zukünftigen R-Eingaben ohne geänderte Abnahme begrenzen. Ein bloßer Zähler p
 Abbruch bei Überschreitung beweist finanzielle Absicherung, noch keinen
 vollständigen Lauf für sämtliche bisher zulässigen D→R-Texte.
 
-Konkrete **Microsoft-Anfragevorlage, nicht versandt**: „Welche offiziell
+Die Communityfrage ist laut Betreiber gestellt; kein29USD-Supportfall wird eröffnet. Die hier vorbereitete fachliche Anfrage lautet: „Welche offiziell
 unterstützte vollständige Input-Vorabzählung oder nachprüfbare Tokenisierungs-
 und Framingobergrenze gilt für`gpt-5-mini-eu`, DataZoneStandard/Sweden Central,
 Modellversion2025-08-07,`/openai/v1/responses`? Sie muss den tatsächlich
