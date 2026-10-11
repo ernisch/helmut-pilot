@@ -1,5 +1,7 @@
 # Blocker 3: Kostenvertrag des direkten 500er Nachweises
 
+**Historischer Vertragsbeleg.** Die [Prüfung mit finalem B2-Stand vom11.10.](blocker3-finaler-kostenvertrag-20261011.md) ersetzt die damalige20/6-Richtung als aktuelle Budgetempfehlung. Grenzen, Originale und die frühere Vorlage bleiben unten unverändert erhalten.
+
 Stand: 07.10.2026. Geprüfte Runtimequellen aus `main` `369e07d7`.
 Nur Bestandsanalyse, Dokumentation und isolierte Offline-Gegenproben. Keine
 Budget-, Reserve- oder Production-Konfigurationsänderung, kein kostenpflichtiger
