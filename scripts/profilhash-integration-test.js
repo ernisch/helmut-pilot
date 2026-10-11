@@ -111,8 +111,15 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     const src = fs.readFileSync(require.resolve("../server.js"), "utf8");
     const start = src.indexOf("async function latestBriefingPayload("), end = src.indexOf("\n// opts.slot", start);
     assert(start > 0 && end > start);
+    const dependencies = Object.freeze({
+      "./lib/helmut/briefing-speicher": B,
+      "./lib/helmut/publication-eligibility": require("../lib/helmut/publication-eligibility")
+    });
+    assert.equal(dependencies["./lib/helmut/publication-eligibility"].current().hash, null,
+      "This profile-hash fixture exercises the unchanged default-inactive publication policy");
     const latest = vm.runInNewContext(src.slice(start, end) + "\nlatestBriefingPayload", {
-      require: name => { assert.equal(name, "./lib/helmut/briefing-speicher"); return B; }, prepareBriefingResponse: value => value });
+      require: name => { assert(Object.hasOwn(dependencies, name), "Unexpected reader dependency: " + name); return dependencies[name]; },
+      prepareBriefingResponse: value => value });
     const original = S.getRenderedBriefingV3; S.getRenderedBriefingV3 = f.storage.getRenderedBriefingV3;
     try {
       const args = { politicianId: profile.id, profile };

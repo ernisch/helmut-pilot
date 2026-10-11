@@ -761,6 +761,24 @@ Radar rendert `currentRadarState.anzeige`. Interne Rohzuordnungen sind kein
 zweiter sichtbarer Feed. Kein neuer Speicher, Prompt oder Modellaufruf.
 Semantische Qualität bleibt separat zu prüfen; [Vertrag und Ausrollstatus](betrieb/lage-radar-briefing-abnahme-20260924.md).
 
+### Geprüfte Publikationsauswahl (11.10.2026, Default leer)
+
+`publication-eligibility.js` hält nach ausdrücklicher Betreiberkonfiguration
+einzelne Publikationen bei ungeklärtem Ereigniskontext aus der aktuellen Auswahl.
+Die generische Zulassung greift vor Rangfolge und Ausgabe, unabhängig vom
+Understanding-Zustand. Ein vollständiger begrenzter Quellenidentitätsleser erfasst
+weitere Dokumente; neue Kennungen derselben Publikation heben die Zurückhaltung
+nicht auf. Native Quellen, Wissensobjekte und historische Ausgaben bleiben erhalten.
+Ohne Konfiguration bleibt der bisherige Weg bestehen.
+
+Briefing, Lage, Radar und Matching verwenden denselben Auswahlvertrag. Aktive
+Policyhashes binden Eingaben und Cacheidentitäten. Aktuelle gespeicherte Ansichten
+lesen die Zulassung erneut, mit rein lesendem Briefing-/Lage-`cacheOnly`-Rückfall.
+Die Nurleseaufnahme bestätigt den erwarteten Policyumfang in beiden Identitäten
+und jeder Eingabe. Aktivierung und neuer Production-Nachweis verlangen getrennt
+von Code-/Testbereitschaft ein konkretes Betreiber-GO.
+[Fachliche Grenzen und Aufnahmevertrag](betrieb/blocker2-publikationsauswahl-und-freigabegrenze-20261011.md).
+
 ## 9 · Admin-Bereich
 
 View `"admin"` in `client.js` (`renderAdminView()` ab ~Z. 2580), erreichbar nur im

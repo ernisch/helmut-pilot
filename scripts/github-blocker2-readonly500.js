@@ -8,12 +8,41 @@ const ORIGIN = "https://helmut-pilot.vercel.app";
 const TARGET = S.erzeuge().profile;
 const sha = raw => C.createHash("sha256").update(raw).digest("hex");
 const ctx = (env, tag, position) => ({ runId: env.GITHUB_RUN_ID, commit: env.GITHUB_SHA, tag, abPosition: position, anzahl: 1 });
+// Eine aktive Publikationssperre braucht ihre eigene erwartete Bindung. Der
+// Commit allein darf einen geaenderten Quellenumfang nicht still freigeben.
+function expectedPublicationHash(env) {
+  const value = env.HELMUT_PUBLICATION_ELIGIBILITY_HASH;
+  if (value === undefined || value === "") return null;
+  A.equal(typeof value, "string"); A.match(value, /^[a-f0-9]{64}$/); return value;
+}
+function publicationPolicy(value) {
+  if (value === undefined) return null;
+  A(value && typeof value === "object" && !Array.isArray(value));
+  A.deepEqual(Object.keys(value).sort(), ["hash", "heldPublications", "version"]);
+  A.equal(value.version, 1); A.match(value.hash || "", /^[a-f0-9]{64}$/);
+  A(Number.isSafeInteger(value.heldPublications) && value.heldPublications > 0);
+  return { version: 1, hash: value.hash, heldPublications: value.heldPublications };
+}
+function samePublicationPolicy(a, b) { return B.hash(a) === B.hash(b); }
+function assertSourceSafety(payload, policy) {
+  const nested = payload.quellenkontext?.sourceSafetyStandard;
+  if (policy) {
+    A.equal(payload.sourceSafetyStandard, false);
+    A.equal(payload.legacySourceFiltersActive, false);
+    if (nested !== undefined) A.equal(nested, false);
+  } else {
+    A(payload.sourceSafetyStandard === undefined || payload.sourceSafetyStandard === true);
+    A(payload.legacySourceFiltersActive === undefined || payload.legacySourceFiltersActive === false);
+    A(nested === undefined || nested === true);
+  }
+}
 function preflight(env, tag, expectedRecipient) {
   A.equal(env.GITHUB_REPOSITORY, "ernisch/helmut-pilot"); A.equal(env.GITHUB_REF, "refs/heads/main");
   A.equal(env.GITHUB_EVENT_NAME, "workflow_dispatch"); A.equal(env.GITHUB_RUN_ATTEMPT, "1");
   A.match(env.GITHUB_SHA || "", /^[a-f0-9]{40}$/); A.match(env.HELMUT_PRODUCTION_COMMIT || "", /^[a-f0-9]{40}$/);
   A(typeof env.HELMUT_CRON_SECRET === "string" && env.HELMUT_CRON_SECRET.trim() === env.HELMUT_CRON_SECRET && env.HELMUT_CRON_SECRET.length > 0);
   A.equal(T.publicKey(env.HELMUT_NACHWEIS_PUBLIC_KEY).fingerprint, expectedRecipient); T.kontext(ctx(env, tag, 1));
+  expectedPublicationHash(env);
 }
 function validate(payload, target, env, tag) {
   const contradiction = payload.productionCommit !== env.HELMUT_PRODUCTION_COMMIT
@@ -86,7 +115,14 @@ async function ausfuehrenGebunden({ env = process.env, fetchFn = global.fetch, n
   const scope = diagnose ? { diagnosticOnly: true, fixedProfilePosition: festePosition, plannedInputGETs: 1 } : {};
   const start = now(), tag = berlinTagKey(start); preflight(env, tag, expectedRecipient); A.equal(typeof writeEnvelope, "function");
   A.equal(typeof persistCheckpoint, "function");
+  const expectedPolicyHash = expectedPublicationHash(env);
   let stopped = null, attempted = 0, firstIdentity = null, lastIdentity = null;
+  let firstPublicationPolicy = null;
+  const policyEvidence = () => ({
+    ...(expectedPolicyHash ? { expectedPublicationEligibilityHash: expectedPolicyHash } : {}),
+    ...(firstPublicationPolicy ? { publicationEligibilityPolicy: firstPublicationPolicy, sourceSafetyStandard: false } : {})
+  });
+  const policyHeaders = expectedPolicyHash ? { "x-helmut-publication-eligibility-hash": expectedPolicyHash } : {};
   const statuses = [];
   const seal = async (name, payload, position) => {
     await writeEnvelope(name, T.verschluesseln(payload, env.HELMUT_NACHWEIS_PUBLIC_KEY, ctx(env, tag, position)));
@@ -123,7 +159,7 @@ async function ausfuehrenGebunden({ env = process.env, fetchFn = global.fetch, n
     const payload = { version: 1, purpose: "blocker2-readonly500-manifest", runId: env.GITHUB_RUN_ID,
       workflowCommit: env.GITHUB_SHA, tag, productionCommit: env.HELMUT_PRODUCTION_COMMIT,
       phase: final ? "final" : "in-progress", completedPositions: statuses.length, profiles: 500, attempted, counts, ...scope,
-      stopReason: stopped, firstIdentity, lastIdentity, statuses: allStatuses,
+      stopReason: stopped, firstIdentity, lastIdentity, statuses: allStatuses, ...policyEvidence(),
       collectionCompleted: final && !diagnose && !stopped && attempted === 500,
       all500InputAcceptance: false, fachlicheFreigabe: false, reinLesend: true,
       paidModelCalls: 0, productionDataWrites: 0, transaktionalerSnapshot: false };
@@ -140,15 +176,26 @@ async function ausfuehrenGebunden({ env = process.env, fetchFn = global.fetch, n
   const identity = async () => {
     const readSignal = requestSignal();
     const r = await fetchFn(ORIGIN + "/api/release/dip-resolver", { method: "GET", redirect: "error", signal: readSignal,
-      headers: { Accept: "application/json", "x-helmut-production-commit": env.HELMUT_PRODUCTION_COMMIT } });
+      headers: { Accept: "application/json", "x-helmut-production-commit": env.HELMUT_PRODUCTION_COMMIT, ...policyHeaders } });
     A.equal(r.status, 200); const x = JSON.parse(await readBody(r, readSignal));
     A.equal(x.ok, true); A.equal(x.commit, env.HELMUT_PRODUCTION_COMMIT); A.equal(x.reinLesend, true);
     A.equal(x.productionDataWrites, 0); A.equal(x.paidModelCalls, 0);
-    A.equal(x.syntheticFixturesOnly, true); A.equal(x.all500InputAcceptance, false); return x;
+    A.equal(x.syntheticFixturesOnly, true); A.equal(x.all500InputAcceptance, false);
+    let policy;
+    try {
+      policy = publicationPolicy(x.publicationEligibilityPolicy);
+      A.equal(policy?.hash || null, expectedPolicyHash);
+      if (firstIdentity) A(samePublicationPolicy(policy, firstPublicationPolicy));
+    } catch { throw new Error("publication-policy-mismatch"); }
+    try { assertSourceSafety(x, policy); } catch { throw new Error("source-safety-mismatch"); }
+    return x;
   };
   await checkpoint();
   if (!stopped) {
-    try { firstIdentity = await identity(); } catch { stopCheck(); if (!stopped) stopped = "production-identity-unconfirmed"; }
+    try { firstIdentity = await identity(); firstPublicationPolicy = publicationPolicy(firstIdentity.publicationEligibilityPolicy); }
+    catch (error) { stopCheck(); if (!stopped) stopped = error.message === "publication-policy-mismatch"
+      ? "production-publication-policy-mismatch" : error.message === "source-safety-mismatch"
+        ? "production-source-safety-mismatch" : "production-identity-unconfirmed"; }
     stopCheck();
   }
   for (let index = 0; index < TARGET.length; index++) {
@@ -162,7 +209,7 @@ async function ausfuehrenGebunden({ env = process.env, fetchFn = global.fetch, n
         const readSignal = requestSignal();
         attempted++; requestStarted = true;
         const r = await fetchFn(url, { method: "GET", redirect: "error", signal: readSignal,
-          headers: { Authorization: "Bearer " + env.HELMUT_CRON_SECRET, Accept: "application/json", "x-helmut-production-commit": env.HELMUT_PRODUCTION_COMMIT } });
+          headers: { Authorization: "Bearer " + env.HELMUT_CRON_SECRET, Accept: "application/json", "x-helmut-production-commit": env.HELMUT_PRODUCTION_COMMIT, ...policyHeaders } });
         response = { url, httpStatus: r.status, observedUTC: now().toISOString() };
         // Jeder Nicht-200-Ausgang stoppt vor jedem weiteren Production-GET.
         // Auch ein fehlender/zu grosser Fehlerbody darf den Stop nicht umgehen.
@@ -172,24 +219,37 @@ async function ausfuehrenGebunden({ env = process.env, fetchFn = global.fetch, n
         response.rawBodySHA256 = sha(raw); response.rawBody = raw;
         status = "technical";
         if (r.status === 200) {
-          try { status = validate(JSON.parse(raw), target, env, tag); } catch { status = "unusable"; }
-          if (status === "contradictory") stopped = "production-proof-contradiction";
-          if (diagnose && status === "unusable") stopped = "production-input-unusable";
+          try {
+            const payload = JSON.parse(raw);
+            try {
+              A(samePublicationPolicy(publicationPolicy(payload.publicationEligibilityPolicy), firstPublicationPolicy));
+              A(samePublicationPolicy(publicationPolicy(payload.result?.eingabe?.publicationEligibilityPolicy), firstPublicationPolicy));
+            } catch { stopped = "production-publication-policy-drift"; status = "contradictory"; }
+            if (!stopped) {
+              try { assertSourceSafety(payload, firstPublicationPolicy); }
+              catch { stopped = "production-source-safety-drift"; status = "contradictory"; }
+            }
+            if (!stopped) status = validate(payload, target, env, tag);
+          } catch { status = "unusable"; if (firstPublicationPolicy && !stopped) stopped = "production-publication-policy-unconfirmed"; }
+          if (status === "contradictory" && !stopped) stopped = "production-proof-contradiction";
+          if ((diagnose || firstPublicationPolicy) && status === "unusable" && !stopped) stopped = "production-input-unusable";
+          if (firstPublicationPolicy && status === "empty" && !stopped) stopped = "production-input-empty";
         }
       } catch (error) { status = requestStarted ? "technical" : "not-captured";
         if (diagnose && !stopped) stopped = "production-input-read-error";
+        if (firstPublicationPolicy && requestStarted && !stopped) stopped = "production-publication-policy-unconfirmed";
         if (response) response.bodyReadFailure = error.message === "body-limit" ? "body-limit" : "body-read-failed"; }
       stopCheck();
       if (!timeOK()) { stopped = "day-or-duration-boundary"; if (requestStarted) status = "unusable"; }
     }
     const record = { version: 1, purpose: "blocker2-readonly500-input", userId: target.mandatsId, position, tag,
       workflowCommit: env.GITHUB_SHA, productionCommit: env.HELMUT_PRODUCTION_COMMIT, status, stopReason: stopped,
-      fullBodyRetained: response !== null && typeof response.rawBody === "string", response, all500InputAcceptance: false, ...scope };
+      fullBodyRetained: response !== null && typeof response.rawBody === "string", response, all500InputAcceptance: false, ...scope, ...policyEvidence() };
     // Zu grosse Antworten bleiben explizit unerfassbar, kein abgeschnittener Erfolg.
     if (Buffer.byteLength(JSON.stringify(record)) > T.MAX_BYTES) {
       if (response) { delete response.rawBody; record.fullBodyRetained = false; }
       record.status = status = "technical"; record.transportLimitExceeded = true;
-      if (diagnose && !stopped) stopped = "production-input-transport-limit";
+      if ((diagnose || firstPublicationPolicy) && !stopped) stopped = "production-input-transport-limit";
       record.stopReason = stopped;
     }
     await seal(String(position).padStart(4, "0") + ".json", record, position);
@@ -201,7 +261,9 @@ async function ausfuehrenGebunden({ env = process.env, fetchFn = global.fetch, n
   }
   stopCheck();
   if (!stopped) {
-    try { lastIdentity = await identity(); } catch { stopCheck(); if (!stopped) stopped = "ending-production-identity-unconfirmed"; }
+    try { lastIdentity = await identity(); } catch (error) { stopCheck(); if (!stopped) stopped = error.message === "publication-policy-mismatch"
+      ? "ending-production-publication-policy-drift" : error.message === "source-safety-mismatch"
+        ? "ending-production-source-safety-drift" : "ending-production-identity-unconfirmed"; }
     stopCheck();
   }
   await checkpoint(true);
@@ -209,7 +271,7 @@ async function ausfuehrenGebunden({ env = process.env, fetchFn = global.fetch, n
     .map(status => [status, statuses.filter(s => s.status === status).length]));
   const report = { ok: !stopped && counts.captured === plannedInputGETs,
     collectionCompleted: !diagnose && !stopped && attempted === 500,
-    cipherFinalSaved, reinLesend: true, profiles: 500, attempted, counts, ...scope,
+    cipherFinalSaved, reinLesend: true, profiles: 500, attempted, counts, ...scope, ...policyEvidence(),
     stopReason: stopped, productionCommit: env.HELMUT_PRODUCTION_COMMIT, all500InputAcceptance: false,
     fachlicheFreigabe: false, paidModelCalls: 0, productionDataWrites: 0, transaktionalerSnapshot: false };
   await seal("manifest.json", { version: 1, purpose: "blocker2-readonly500-manifest", ...report,
