@@ -1,5 +1,7 @@
 # Blocker 3: vollständiger EU-Finanzierungsvertrag über das Servicelimit
 
+**Betreiber-GO und Umsetzung:** Der freigegebene aktuelle Stand steht im [Umsetzungsvertrag](blocker3-eu-servicekostenvertrag-umsetzung-20261011.md). Die folgenden offenen GO-/Umsetzungsaussagen dokumentieren den unveränderten historischen Vorschlag.
+
 Stand 12.10.2026, Betreiberzeit Europe/Istanbul. **Finanzieller Beweis geschlossen;
 Vertragsvorschlag vorbereitet, nicht freigegeben oder produktiv umgesetzt.**
 Kein Canary, kein Supportfall, kein Production-Modellaufruf, Merge, Rollout,

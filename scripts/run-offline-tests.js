@@ -230,6 +230,7 @@ const STANDARD = new Set([
   "synthetik-500-bounded-consumed-d-vertrag-test.js", // private Originalbytes/Requestbindung; keine globale Immutable- oder Startfreigabe
   "synthetik-500-ab-review-v2-test.js",     // explizite Kostenplan-/Executorbindung an den gespeicherten D/R-Vertrag
   "synthetik-500-artikelkontext-kostenbindung-test.js", // identische Runtime-/Plan-/3-Bindung von Artikelprompt und40er Vertrag
+  "synthetik-500-eu-service-contract-test.js", // approved closed EU financing/usage contract
   "synthetik-500-route-contract-test.js",   // opt-in Route/Deployment/Auth-Auswahl vor Reserve und nach Await-Gates binden
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
   "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist

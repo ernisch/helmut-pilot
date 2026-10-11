@@ -1,0 +1,37 @@
+{
+  "version": "helmut-blocker3-eu-implementation/1",
+  "state": "implemented-locally-rollout-gated",
+  "runtimeServiceContractSHA256": "78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f",
+  "operatorGO": "blocker3-eu-servicekostenvertrag-go-20261011.json",
+  "productionChanged": false,
+  "paidProductionCalls": 0,
+  "profileActivations": 0,
+  "commandInstallations": 0,
+  "journalMutations": 0,
+  "newTestGORequired": true,
+  "currentMandatoryCIRequired": true,
+  "freshPreflightRequiredBeforeMergeAndRollout": true,
+  "immutableOriginalProposal": "blocker3-eu-servicekostenvertrag-20261012.json",
+  "nativePreflightObservedAtUTC": "2026-10-11T21:31:26.26736+00:00",
+  "nativePreflightSHA256": "2af549097a10922ddb4e3449bda729306a26c764158d0b379f9efb21dfac34f8",
+  "globalConfig": {
+    "raw": 2416,
+    "understandingReserve": 702,
+    "syntheticDREffective": 1714,
+    "maximumStartUsed": 714,
+    "changed": false
+  },
+  "nativeSQLMigration": "20261011213611_synthetik500_eu_service_contract_time.sql",
+  "checks": {
+    "focusedEU": "6/6 passed",
+    "legacyMoney": "26/26 passed",
+    "legacyRoute": "passed",
+    "legacyEndValidator": "64/64 passed",
+    "legacyRuntime": "12/12 passed",
+    "isolatedPG17": "passed",
+    "moneyIndependentFollowup": "ok",
+    "timeIndependentReview": "pending",
+    "mandatoryCIAtImplementationCommit": "pending"
+  },
+  "rolloutReceipt": "Pending actual READY/runtime/financial/native SQL read-only evidence; no closure claim"
+}

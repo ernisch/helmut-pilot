@@ -77,7 +77,8 @@ async function remote(command, action, index, { vercelAuth = null } = {}) {
             finish(false, value); } catch { finish(true); }
         });
       });
-    const timer = setTimeout(() => finish(true), 180000);
+    const timer = setTimeout(() => finish(true),
+      require("../lib/helmut/synthetik-500-eu-service-contract").isPlan(command.slot.plan) ? 60000 : 180000);
     req.once("error", () => finish(true)); req.end(body);
   });
   if (action === "export") result.result = Codec.decode(result.result);
