@@ -215,6 +215,8 @@ const STANDARD = new Set([
   "synthetik-500-kosten-plan-test.js",      // vollstaendige endliche Kostenpositionen ohne Budgetfreigabe
   "synthetik-500-executor-test.js",         // gebundene Offline-Ablaufvorbereitung und absolute Laufzeitgrenze
   "synthetik-500-production-adapter-test.js", // neuer endlicher Adapter/CAS/Once, ausschliesslich lokale Fakes
+  "synthetik-500-date-binding-test.js",     // neue reine Quellen-/Ausfuehrungszeitbindung, unveraenderlicher EU-Vertrag
+  "synthetik-500-date-handoff-test.js",     // neue opaque Token-/D/R-/Belegtag-Integration, ausschliesslich lokale Fakes
   "synthetik-500-direct-test.js",            // expliziter direkter500er Vertrag, GO/INSERT/readback/aktive500/Operatorgrenzen
   "blocker2-d-historical-binding-test.js",   // festes B2-Snapshot-Membership, keine erfundene Fachabnahme
   "blocker2-d-historical-context-test.js",   // historische Ausnahme bleibt dem geschlossenen direkten Pfad vorbehalten
