@@ -261,6 +261,8 @@ const STANDARD = new Set([
   "relevanz-tage-runtime-witness-test.js",  // eigener Root-Zweck, echter Relevanzresolver/Fallback, keine Daten/Provider/Secrets
   "postgrest-actor-runtime-witness-test.js", // eigener Root-Zweck: genau ein Metadaten-RPC mit produktiver Key-Auswahl, kein Businessread
   "starttor-original-state-transport-test.js", // absolute Frist auch für Fetch, Stream und Cleanup; nur fiktiver Transport
+  "starttor-original-state-witness-test.js", // kompletter Verbraucher, typisierter nativer Zaehler und geschlossener Legacy-/Opt-in-Pfad
+  "starttor-preserved-controls-test.js",     // ruhende hashgebundene Altzustände erhalten; keine Claims, Bereinigung oder Wiederholung
   "alarm-payload-test.js",                  // Alarmkanal ohne Inhalte/Secrets
   "login-eine-mutation-test.js",            // genau eine CAS-Mutation je Login
   "invite-flow-test.js",                    // Einmal-Token, keine Enumeration, kein PII

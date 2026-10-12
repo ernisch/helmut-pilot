@@ -22,7 +22,8 @@ const STANDARD = R.STANDARD;
 // Bewusst hinzugekommene Schutzvertraege seit der historischen 169er Menge.
 // Keine dynamische Selbstbestaetigung einer beliebig wachsenden Pflichtliste.
 const NEUE_PFLICHTVERTRAEGE = ["synthetik-500-eu-service-contract-test.js",
-  "synthetik-500-route-contract-test.js", "synthetik-500-eu-daybook-init-test.js"];
+  "synthetik-500-route-contract-test.js", "synthetik-500-eu-daybook-init-test.js",
+  "starttor-original-state-witness-test.js", "starttor-preserved-controls-test.js"];
 const ERWARTETE_STANDARDANZAHL = 169 + NEUE_PFLICHTVERTRAEGE.length;
 
 // Modul nur LADEN (nicht scharfschalten) fuer eine saubere Kindprozess-Umgebung.

@@ -1,8 +1,16 @@
 # CURRENT STATE — Helmut
 
-**Stand: 12.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
+**Stand: 13.10.2026 (Betreiberzeit Europe/Istanbul).** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
-## Frischer Git- und Deployment-Beleg (12.10.2026)
+## Lokale Originalzustands-Leserreparatur (13.10.2026 Istanbul)
+
+Branch `codex/starttor-reader-preserved-controls-20261013` basiert auf dem belegten Production-Commit `a48f75dbd85bd6da3932caec1e743d94305e4107`; GitHub-main bestätigt diesen Stand. Die Reparatur ist **lokal, noch nicht Production**. Der bisherige Lesemodus verweigert weiterhin vorhandene Journale/Slots; ein ausdrücklicher neuer, hash- und Review-beleggebundener Modus kann ruhende Altzustände unverändert beobachten. Der aktuelle Vorgänger muss abgelaufen, unbeansprucht und ohne Versuche/Ergebnisse sein. Historische `unknown`-Zustände samt Reserven werden weder bereinigt noch als versandfrei erklärt. Der vollständige Startschutz erhält den nativ belegten Zähler als Objekt; angezeigte Budgetgrenzen stammen aus seinem geprüften Manifest. Keine Änderung an Limits, Authentifizierung, Fristen, nativer ABI oder Aktivierungs-/Testrechten.
+
+Gezielt lokal bestanden:30 Altzustands-Grenzfälle, 7 Verbraucher-/Gate-Integrationsgruppen und 16 bestehende Transportgruppen; nur fiktive Offlineprüfungen, kein nativer Runtime-Nachweis. Die separat gelesenen sieben tatsächlichen Altzustände passen zur neuen Struktur; dies ersetzt keine Root-Zulassung. Unabhängiges Quellreview und neue Commit-CI bleiben vor Abnahme erforderlich. Vor tatsächlichem Lesen sind bestehendes `CRON_SECRET` mit aktueller Cloud-Readiness, kompatible unabhängig geprüfte native ABI, spezifische Lesezulassung, echte Finance-/Zählerköpfe und Stagingbeleg erforderlich. Keine Staging-/DB-/Credentialänderung oder Production-Anfrage aus dieser Reparatur.
+
+Die folgenden älteren Abschnitte bleiben historische Belege; für Thread1 ist der aktuelle private Gesamtstand in `/workspace/thread1-handoff-post-pr905/parallel-work/PARALLEL_WORK_CLOSEOUT.json` abgelegt. Merge, Production-Anwendung, Commandinstallation, Profilaktivierung und bezahlter500er-Test bleiben ohne separates GO gesperrt.
+
+## Historischer Git- und Deployment-Beleg (12.10.2026, vor PR902–905)
 
 - **PR901 gemergt:** [PR901](https://github.com/ernisch/helmut-pilot/pull/901) MERGED am 2026-10-12T00:33:24Z, Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Beide Pflichtchecks SUCCESS auf PR-Head `36b2e573d8e9ee9d677129553025e3eb4f744194`; `origin/main` identisch zum Merge.
 - **Frisch gelesenes Deployment:** Vercel `dpl_3FWWM3CtEj324fjTrgkD7b6UWSsi` READY, Target production, auf demselben SHA, Alias `helmut-pilot.vercel.app`. Belegt nur die Auslieferung dieses Git-Stands, nicht Funktion, Aktivierung oder 500er-Test.
