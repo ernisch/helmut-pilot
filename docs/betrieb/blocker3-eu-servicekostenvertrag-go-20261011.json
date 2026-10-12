@@ -1,0 +1,39 @@
+{
+  "version": "helmut-blocker3-eu-operator-go/1",
+  "recordedAtUTC": "2026-10-11T21:59:25.673683+00:00",
+  "authority": "explicit operator GO in this chat",
+  "proposalPR": "https://github.com/ernisch/helmut-pilot/pull/901",
+  "approvedProposalSHA256": "b4b9982a07ac7b0c300cbd91e5a618b0a84026e04420b92ce5d473d5bfbb5392",
+  "runtimeServiceContractSHA256": "78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f",
+  "dailyMicroUSD": 82036000,
+  "cumulativeMicroUSD": 88845364,
+  "futureEUReserveMicroUSD": 81400,
+  "deployment": "gpt-5-mini-eu",
+  "sku": "DataZoneStandard",
+  "region": "swedencentral",
+  "maximumNecessaryBookCapacity": 47,
+  "activeSeconds": 32400,
+  "endEvidenceSeconds": 1800,
+  "authorized": [
+    "implementation",
+    "focused offline tests",
+    "independent review",
+    "merge after current mandatory green checks and fresh read-only preflight",
+    "controlled rollout under the same gates"
+  ],
+  "excluded": [
+    "profile activation",
+    "command installation",
+    "journal mutation",
+    "paid model calls",
+    "500-profile test"
+  ],
+  "stopOn": [
+    "higher or unknown daily opening",
+    "higher cumulative opening than7445364",
+    "red mandatory check",
+    "contract or source contradiction"
+  ],
+  "automaticBudgetIncrease": false,
+  "paidTestGO": false
+}

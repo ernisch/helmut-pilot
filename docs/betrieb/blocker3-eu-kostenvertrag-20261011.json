@@ -1,0 +1,715 @@
+{
+  "version": "helmut-blocker3-eu-target-contract/1",
+  "mode": "inert-unapproved-target-contract",
+  "operatorTargetDecisionAccepted": true,
+  "protectedChangesApproved": false,
+  "budgetApproved": false,
+  "routeSwitchApproved": false,
+  "runtimeEnforcement": false,
+  "blocker3Complete": false,
+  "repositoryBasis": "fe00adf537d005a56cc6d6bc28604c433cdb810d",
+  "observedRuntimeCommit": "1ad00cd464f88f37a1adc3417b2758ab1eb24e80",
+  "targetRoute": {
+    "provider": "azure",
+    "endpoint": "https://helmut-resource.openai.azure.com/",
+    "responsesURL": "https://helmut-resource.openai.azure.com/openai/v1/responses",
+    "deployment": "gpt-5-mini-eu",
+    "modelFamily": "gpt-5-mini",
+    "modelVersion": "2025-08-07",
+    "sku": "DataZoneStandard",
+    "resource": "helmut-resource",
+    "resourceGroup": "helmut-rg",
+    "region": "swedencentral",
+    "dataZone": "EU, Microsoft Azure EU Data Boundary definition",
+    "capacity": 250,
+    "nativeArea": "EUR",
+    "responsesSupported": true,
+    "nativeRateLimits": [
+      {
+        "key": "request",
+        "renewalPeriod": 60,
+        "count": 250
+      },
+      {
+        "key": "token",
+        "renewalPeriod": 60,
+        "count": 250000
+      }
+    ],
+    "rateLimitsAreNotSmallerBilledInputCaps": true,
+    "versionUpgradeOption": "NoAutoUpgrade",
+    "provisioningState": "Succeeded",
+    "nativeReadUTC": "2026-10-11T10:49:30.987142+00:00",
+    "globalDeploymentAcceptedAsRunRoute": false,
+    "automaticGlobalFallbackAllowed": false,
+    "targetIsAlreadyActiveInProductionProven": false
+  },
+  "pricing": {
+    "currency": "USD",
+    "inputPerMillion": "0.275",
+    "outputPerMillion": "2.20",
+    "kind": "account-specific-operator-MCA-October2026-uncached-synchronous-Consumption",
+    "publicPriceMatchedToNativeSKU": true,
+    "accountBillingPriceProven": true,
+    "accountBillingReaderHTTP": 403,
+    "accountBillingReaderMissingAction": "Microsoft.Billing/billingProperty/read",
+    "nativeBookkeepingUsesNewTariff": false,
+    "historicalBooksMustNotBeRepriced": true,
+    "publicReadUTC": "2026-10-11T10:49:47.646915+00:00",
+    "publicMeters": [
+      {
+        "meterId": "68cae02f-c5bd-5272-96de-fcdddf816ef7",
+        "meterName": "GPT 5 Mini outpt DZone 1M Tokens",
+        "skuName": "GPT 5 Mini outpt DZone",
+        "currencyCode": "USD",
+        "unitOfMeasure": "1M",
+        "retailPrice": 2.2,
+        "effectiveStartDate": "2025-08-01T00:00:00Z",
+        "armRegionName": "swedencentral",
+        "type": "Consumption"
+      },
+      {
+        "meterId": "ba8737fb-3392-5ead-80cf-14de6801f5fb",
+        "meterName": "GPT 5 Mini Inpt DZone 1M Tokens",
+        "skuName": "GPT 5 Mini Inpt DZone",
+        "currencyCode": "USD",
+        "unitOfMeasure": "1M",
+        "retailPrice": 0.275,
+        "effectiveStartDate": "2025-08-01T00:00:00Z",
+        "armRegionName": "swedencentral",
+        "type": "Consumption"
+      }
+    ],
+    "accountBillingPriceProvenScope": "operator-provided Helmut billing-profile extract, October 2026 planned run; native runtime route remains separately unapproved",
+    "accountBillingReaderFailureIsHistoricalObservation": true,
+    "historicalAccountPriceEvidence": {
+      "acceptedForSeptember2026": true,
+      "source": "operator-provided account-specific MCA JSON/CSV extract",
+      "billingProfileBinding": "operator-attested; not independently queried",
+      "csvJsonExactMatch": true,
+      "matchedRows": 2,
+      "periodStart": "2026-09-01",
+      "periodEnd": "2026-09-30",
+      "coversPlannedOctoberRun": false,
+      "pricingCurrency": "USD",
+      "billingCurrency": "EUR",
+      "inputPerMillion": "0.275",
+      "outputPerMillion": "2.20",
+      "unitBaseMarketPricesIdentical": true,
+      "matchesCurrentPublicMeterIdsUnitsAndPrices": true,
+      "sourceZipSHA256": "10fbd4c30783e96c4a7c1d745a3af530aa3b084fb383f294edd5b9db7ee47ddd",
+      "sourceZipHashIndependentlyRecomputed": false,
+      "originalCSVMemberAndFullScopeRetainedPrivately": true,
+      "uploadPins": [
+        {
+          "name": "helmut_gpt5mini_eu_price_evidence_sep2026.json",
+          "sha256": "84cc01c482b46521c901ebb80846213b8c729a1e14e1ee893594c53875d4a710",
+          "bytes": 1972
+        },
+        {
+          "name": "helmut_gpt5mini_eu_price_evidence_sep2026.csv",
+          "sha256": "47b2dd6a956852b04ddc3924fdd296669938d9df16f827dfb55e3eac36b642bd",
+          "bytes": 793
+        }
+      ]
+    },
+    "currentAccountPriceBinding": {
+      "proven": true,
+      "evidenceSource": "operator-provided account-specific MCA extract, CSV/JSON exact match",
+      "billingProfileBinding": "operator-attested Helmut billing profile",
+      "periodStart": "2026-10-01",
+      "periodEnd": "2026-10-31",
+      "coversPlannedOctoberRun": true,
+      "inputPerMillion": "0.275",
+      "outputPerMillion": "2.20",
+      "pricingCurrency": "USD",
+      "billingCurrency": "EUR",
+      "unitBaseMarketPricesIdentical": true,
+      "matchesCurrentPublicMeterIdsUnitsAndPrices": true,
+      "sourceZipSHA256": "8247482c6cdf686375ef90a9be5724063c0920d3d37b6231e387df9c2d7905de",
+      "sourceZipHashIndependentlyRecomputed": false,
+      "originalCSVMemberAndFullScopeRetainedPrivately": true,
+      "uploadPins": [
+        {
+          "name": "helmut_gpt5mini_eu_price_evidence_oct2026.json",
+          "sha256": "8fe06280c34f195bdd4598796d204723b92e48fe6a63131646c2a65cbca0334c",
+          "bytes": 1443
+        },
+        {
+          "name": "helmut_gpt5mini_eu_price_evidence_oct2026.csv",
+          "sha256": "ac83ef67c888efdd1a647186dff3d08f9f6c4540f32d2c60b329e64f207c8527",
+          "bytes": 648
+        }
+      ],
+      "septemberAndPublicOctoberDoNotExtendAccountPeriod": true,
+      "missingEvidence": null,
+      "eurExchangeRateRequiredForUSDBudget": false,
+      "monthlyEURInvoiceAmountProven": false
+    }
+  },
+  "modelServiceLimits": {
+    "contextTokens": 400000,
+    "inputTokens": 272000,
+    "outputTokensIncludingReasoning": 128000,
+    "routeVersionMatchesMicrosoftSpecification": true,
+    "schemaAndInternalFramingSmallCapProven": false,
+    "smallerPreSendProviderInputEnforcementProven": false,
+    "futureRUpperUnderProposedCapProven": false,
+    "notLocalTokenizerAsProviderCounter": true
+  },
+  "calls": {
+    "D": 500,
+    "R": 500,
+    "U": 0,
+    "otherProductionModelPaths": 0,
+    "total": 1000,
+    "maxAttemptsPerIntent": 1,
+    "modelConcurrency": 1,
+    "deployment": "gpt-5-mini-eu",
+    "outputTokensIncludingReasoning": {
+      "D": 3000,
+      "R": 3000
+    },
+    "reasoningEffort": "low",
+    "qualityAndAcceptanceUnchanged": true
+  },
+  "inputEvidenceReused": {
+    "b2Run": "38102593796",
+    "b2Complete": true,
+    "contextHandoffAccepted": true,
+    "nativePricingIntegritySHA256": "da2804ff489c610aa152ceac350b17275e9e6ce05ec802aea103c41937173f1d",
+    "nativePricingHandoffSHA256": "149a37f74ac41313e45aae0df23ff6c95809f915bb576640ab4a613c5ce270c1",
+    "merkleRoot": "ce7ee487274b39952d23dbb377647659f6c41b6684eb0406cbc1d8553df87c69",
+    "all500LeavesVerified": true,
+    "nativeHistoricalCapabilitiesVerified": 32,
+    "DPromptPlusSchemaLocalTokens": {
+      "min": 3413,
+      "median": 3468,
+      "max": 10486,
+      "sum": 1955057
+    },
+    "DWireLocalTokens": {
+      "min": 3548,
+      "median": 3604,
+      "max": 10755,
+      "sum": 2027471,
+      "scope": "historical global-model JSON; current EU values are euLocalWireRebind"
+    },
+    "DWireUTF8Bytes": {
+      "min": 14239,
+      "median": 14494,
+      "max": 34875,
+      "sum": 7887854,
+      "scope": "historical global-model JSON; current EU values are euLocalWireRebind"
+    },
+    "providerUsageMeasured": false,
+    "actualFutureRInputsKnown": false
+  },
+  "euLocalWireRebind": {
+    "version": "blocker3-eu500-D-wire-alias-rebind/1",
+    "model": "gpt-5-mini-eu",
+    "semanticInputsUnchanged": true,
+    "schemaOutputReasoningUnchanged": true,
+    "sourceWireSHA256": "2f9bca2155bfa97c62b61594abf1cb94ec47416fead0cbaa40ff6e1de8b66c5f",
+    "providerInputTokensMeasured": false,
+    "tokens": {
+      "min": 3550,
+      "median": 3606.0,
+      "max": 10757,
+      "sum": 2028471
+    },
+    "bytes": {
+      "min": 14242,
+      "median": 14497.0,
+      "max": 34878,
+      "sum": 7889354
+    },
+    "uniqueTokenDeltas": [
+      2
+    ],
+    "tokenizerVocabularySHA256": "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d"
+  },
+  "conditionalFinancialCalculation": {
+    "version": "blocker3-eu-cost-arithmetic/1",
+    "targetDeployment": "gpt-5-mini-eu",
+    "priceIsPublicNotAccountVerified": false,
+    "microUsdFormula": "ceil((275*inputTokens+2200*outputTokens)/1000) per call",
+    "providerInputCapsProven": false,
+    "caps": {
+      "D": 12288,
+      "R": 16384,
+      "output": 3000
+    },
+    "DPerCallMicroUSD": 9980,
+    "RPerCallMicroUSD": 11106,
+    "fullCapConformantMicroUSD": 10543000,
+    "HMicroUSD": 10743894,
+    "dayIncludingPrivateAtOldSpendZeroMicroUSD": 11379894,
+    "cumulativeIncludingPreservedBaselineMicroUSD": 18189258,
+    "minimumConditionalDayIntegerUSD": 12,
+    "existingCumulativeOrderUSD": 20,
+    "preservedStandardReserveMicroUSD": 212000,
+    "preservedPrivateReserveMicroUSD": 636000,
+    "preservedCumulativeBaselineMicroUSD": 7445364,
+    "unmeasuredComponentScenarios": [
+      {
+        "outputEstimatePerCall": 500,
+        "expectedNotBound": true,
+        "newCostMicroUSD": 2326449,
+        "HMicroUSD": 2536138,
+        "dayIncludingPrivateAtOldSpendZeroMicroUSD": 3172138,
+        "cumulativeIncludingPreservedBaselineMicroUSD": 9981502
+      },
+      {
+        "outputEstimatePerCall": 1000,
+        "expectedNotBound": true,
+        "newCostMicroUSD": 3495264,
+        "HMicroUSD": 3703715,
+        "dayIncludingPrivateAtOldSpendZeroMicroUSD": 4339715,
+        "cumulativeIncludingPreservedBaselineMicroUSD": 11149079
+      },
+      {
+        "outputEstimatePerCall": 3000,
+        "expectedNotBound": true,
+        "newCostMicroUSD": 8170264,
+        "HMicroUSD": 8373765,
+        "dayIncludingPrivateAtOldSpendZeroMicroUSD": 9009765,
+        "cumulativeIncludingPreservedBaselineMicroUSD": 15819129
+      }
+    ],
+    "generalServiceCeilingOnly": {
+      "inputPerCall": 272000,
+      "actualOutputCapPerCall": 3000,
+      "perCallMicroUSD": 81400,
+      "newFullCostMicroUSD": 81400000,
+      "HMicroUSD": 81530600,
+      "dayMicroUSD": 82166600,
+      "cumulativeMicroUSD": 88975964,
+      "notSmallestNecessaryRunBudget": true,
+      "notQualitySuccessProof": true
+    },
+    "accountPriceEvidencePeriod": {
+      "from": "2026-10-01",
+      "through": "2026-10-31",
+      "jsonSHA256": "8fe06280c34f195bdd4598796d204723b92e48fe6a63131646c2a65cbca0334c"
+    }
+  },
+  "budgetDecision": {
+    "twelvePerUTCdayAndExistingTwentyCumulativeProven": false,
+    "leastNecessaryRunBudgetProven": false,
+    "conditionalIntegerDayUSD": 12,
+    "existingCumulativeOrderUSD": 20,
+    "olderTwentyDailyTwentySevenCumulativeRecommended": false,
+    "sharedNewVersionImplemented": false,
+    "currentRuntimeDayUSD": 6,
+    "currentOrderCumulativeUSD": 20,
+    "currentEndValidatorDayUSD": 6,
+    "currentEndValidatorCumulativeUSD": 7
+  },
+  "globalCounterUnchanged": {
+    "fallback": 50,
+    "currentProductionProjectLimit": 2416,
+    "understandingReserve": 702,
+    "realPriorityReserve": 200,
+    "budgetFailClosed": 1,
+    "currentReaderProjectedUsed": 0,
+    "effectiveDRLimit": 1714,
+    "maximumStartUsedFor1000": 714,
+    "minimumRawLimitAtUsed0Preserving702": 1702,
+    "requestedChange": null,
+    "immutableRuntimeValuesMustBeBoundBeforeExecution": true,
+    "atomicPaidReservationTestExecuted": false
+  },
+  "timeContractUnchanged": {
+    "existingWindowSeconds": 14400,
+    "existingProviderFullResponseSeconds": 20,
+    "proposedUnitSeconds": 60,
+    "proposedSetupSeconds": 1200,
+    "proposedDispatchSeconds": 30000,
+    "proposedActiveSlackSeconds": 1200,
+    "proposedActiveWindowSeconds": 32400,
+    "proposedEndEvidenceSeconds": 1800,
+    "proposedCompleteDeadlineSeconds": 34200,
+    "exportReadOnlyRequests": 501,
+    "exportConcurrency": 8,
+    "exportFullRequestCapSeconds": 20,
+    "endReadbackSeconds": 60,
+    "offlineFinalizationSeconds": 300,
+    "forecastModelSeconds": 10000,
+    "forecastExtraUnitSeconds": 10,
+    "forecastTotalSeconds": 18000,
+    "forecastAssumptions": "10s per model,10s extra per unit,20min setup,30min end; not measured",
+    "completeProductionRuntimeMeasured": false,
+    "successfulCompleteRuntimeGuaranteed": false,
+    "nativeFourHourMigrationRequired": true,
+    "migrationApproved": false,
+    "originalBerlinCaptureDay": "2026-10-11",
+    "sameUtcExecutionDayRequiredByCurrentContract": true,
+    "proposedExecutionStartsAtUTC": null,
+    "separateTestGORequired": true,
+    "calendarCannotShiftAutomatically": true,
+    "latestNineHourStartOnCurrentCaptureDay": "strictly before 2026-10-11T13:00:00.000Z"
+  },
+  "reusedContextAdmission": {
+    "B2Final": true,
+    "acceptedContexts": 500,
+    "regular": 468,
+    "historical": 32,
+    "B1B2B4Repeated": false,
+    "routeSensitiveRequestAndPlanHashesMustBeRebound": true,
+    "semanticInputOrSourcesChanged": false
+  },
+  "routeSwitchProposal": {
+    "environment": "Vercel helmut-pilot Production only",
+    "projectId": "prj_xbZ6QzTkr7YoxQI71lW59FT03IR3",
+    "environmentKey": "AZURE_OPENAI_DEPLOYMENT",
+    "existingEnvironmentId": "US4stoZZY7AkOvV0",
+    "requiredValue": "gpt-5-mini-eu",
+    "existingType": "sensitive",
+    "target": [
+      "production"
+    ],
+    "metadataPreimageUpdatedAt": 1791203417901,
+    "currentPlaintextValueProven": false,
+    "needsControlledRedeploy": true,
+    "readOnlyRuntimeVerifierCurrentlyExpired": true,
+    "renewNarrowReadOnlyRuntimeAuthorizationBeforePostcheck": true,
+    "oldReadyRollbackDeploymentId": "dpl_76HSdbWhPMaDRJzQqQ1GsrGx3wcE",
+    "rollbackMustKeepPaidRunUnauthorizedAndNotUseGlobalAsReplacementRun": true,
+    "excluded": [
+      "budget and price-policy changes",
+      "profiles",
+      "command installation",
+      "journal changes",
+      "model calls",
+      "automatic global fallback"
+    ]
+  },
+  "externalDependencies": [
+    "Authoritative Microsoft complete billed-input tokenization/schema/framing upper relation for the exact Azure gpt-5-mini-eu Responses v1 route; current staff Q&A rules out the v1 input_tokens helper, and REST usage is post-response only. Then prove all unchanged permitted D-to-R bodies fit the financed envelope; a finite Canary cannot replace this universal proof."
+  ],
+  "originalPins": [
+    {
+      "name": "azure-account-original.json",
+      "sha256": "a0c986207d52a07a71af635b4493b8a068b142756b1d0a6d019e0078e8db36fc",
+      "bytes": 40957
+    },
+    {
+      "name": "azure-deployment-original.json",
+      "sha256": "996ba6a031225e3ed50ccd419671cdf069f345d5ceeaa38bef2892cce2601d8c",
+      "bytes": 1026
+    },
+    {
+      "name": "historical-global-deployment-original.json",
+      "sha256": "b312b5cf18f41ed64803d13ccb5f44a1c5d34907d8032cca484bc4317120db86",
+      "bytes": 1037
+    },
+    {
+      "name": "azure-billing-property-original.json",
+      "sha256": "4dd8eee162b9483342f17753c93edc2dab447e7ceb61be7a2ee710dd2a13300c",
+      "bytes": 450
+    },
+    {
+      "name": "runtime-route-readonly.json",
+      "sha256": "c72c307f23dae6cbb945aa6d3c11f9e759c842e203af92b0abb89550cd75d60e",
+      "bytes": 1574
+    },
+    {
+      "name": "azure-retail-eu-original.json",
+      "sha256": "9e2b05864e10d9c9376704cfe8ac1154cdec4ff837ce6070d62b98617e013d1f",
+      "bytes": 7563
+    },
+    {
+      "name": "eu-D-wire-localtokens.json",
+      "sha256": "ae4407c451bafe09464959367f63e8fdd17c51f95f73329cddae6248d533ad43",
+      "bytes": 152536
+    },
+    {
+      "name": "eu-cost-arithmetic.json",
+      "sha256": "7681e72ddab2efcb79e1e2b1d2740352505cd10ec15fd90015031d69468a7fbd",
+      "bytes": 1951
+    },
+    {
+      "name": "deepseek-contract-review.json",
+      "sha256": "81ce340b5a4df82cc0651cf78bce2d665d792e753cb4ec4a065b4e4b93388180",
+      "bytes": 1303
+    },
+    {
+      "name": "deepseek-cost-review.json",
+      "sha256": "a834fd56aab50201510b071ba3f886a4fa2bb2cbbebf15761e88aac825afa59b",
+      "bytes": 1290
+    },
+    {
+      "name": "helmut_gpt5mini_eu_price_evidence_sep2026.json",
+      "sha256": "84cc01c482b46521c901ebb80846213b8c729a1e14e1ee893594c53875d4a710",
+      "bytes": 1972
+    },
+    {
+      "name": "helmut_gpt5mini_eu_price_evidence_sep2026.csv",
+      "sha256": "47b2dd6a956852b04ddc3924fdd296669938d9df16f827dfb55e3eac36b642bd",
+      "bytes": 793
+    },
+    {
+      "name": "price-reconciliation-receipt.json",
+      "sha256": "c91ccb980f34998c12f3ed0fc8e2d8ccd61a09a561ec07c53f871f3f0637a310",
+      "bytes": 1187
+    },
+    {
+      "name": "deepseek-period-review.json",
+      "sha256": "0a89bbb8733609d0789ec2d652fec4fe8be1c8cafd4ee3dc8d8c88a170fbc6f9",
+      "bytes": 1252
+    },
+    {
+      "name": "helmut_gpt5mini_eu_price_evidence_oct2026.json",
+      "sha256": "8fe06280c34f195bdd4598796d204723b92e48fe6a63131646c2a65cbca0334c",
+      "bytes": 1443
+    },
+    {
+      "name": "helmut_gpt5mini_eu_price_evidence_oct2026.csv",
+      "sha256": "ac83ef67c888efdd1a647186dff3d08f9f6c4540f32d2c60b329e64f207c8527",
+      "bytes": 648
+    },
+    {
+      "name": "october-price-reconciliation-receipt.json",
+      "sha256": "60a6f3b26bd1f966573edfd716ffbd4ed60d7d56d5ac9034fce92419902daa17",
+      "bytes": 1135
+    },
+    {
+      "name": "current-main-input-code-receipt.json",
+      "sha256": "5cbdac9f202784191bd316d341a8f2bc975ab69a81dcc3209fb760519e692471",
+      "bytes": 1046
+    },
+    {
+      "name": "deepseek-R-transform-review.json",
+      "sha256": "5984eb54d7683c62394121bc2da377f6e49c916656946088cbb2379638d55987",
+      "bytes": 1357
+    },
+    {
+      "name": "deepseek-R-transform-completion.json",
+      "sha256": "01cd9fdd3b5c66c9aff28ed1ebae5889542b9f2850d4cf8f3a522e85dd1e752e",
+      "bytes": 1365
+    },
+    {
+      "name": "deepseek-provider-bound-review.json",
+      "sha256": "66d58a54615caa0cdf4916159572f8ecf797cc112b21bc016a8c0fc00c0214ab",
+      "bytes": 1340
+    }
+  ],
+  "publicReferencePins": [
+    {
+      "name": "azure-model-limits-original.md",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/includes/models-azure-direct-openai.md",
+      "readAtUTC": "2026-10-11T10:52:07.435418+00:00",
+      "sha256": "04b9b3d5098c276cd529a476b890caecafd540d33e2edca34cbd109a8c7251fe",
+      "bytes": 60204
+    },
+    {
+      "name": "azure-deployment-types-original.html",
+      "url": "https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/deployment-types",
+      "readAtUTC": "2026-10-11T10:52:07.843674+00:00",
+      "sha256": "6901d2ba4b4bc5a179cf4e5aa4529eadf6e42ff31ad4a98fcd3ed3bbc8f4d1ce",
+      "bytes": 70656
+    },
+    {
+      "name": "mca-pricesheet-terms-original.md",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-docs/main/articles/cost-management-billing/manage/mca-understand-pricesheet.md",
+      "sha256": "04fde76d52e403eb7d7544eebe8eb224a30e5bc80038ab0e09fb55cd59860d3d",
+      "bytes": 5717
+    },
+    {
+      "name": "mca-currency-faq-original.yml",
+      "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-docs/main/articles/cost-management-billing/microsoft-customer-agreement/microsoft-customer-agreement-faq.yml",
+      "sha256": "89a2466c5bc49910c031ff55144ea1fe7cf9552cc875786740d65ea158225bfc",
+      "bytes": 22015
+    },
+    {
+      "name": "mca-azure-product-terms-original.html",
+      "url": "https://www.microsoft.com/licensing/terms/productoffering/MicrosoftAzure/MCA",
+      "readAtUTC": "2026-10-11T11:49:44.099253+00:00",
+      "sha256": "fd60c7fa43d9abe0911ee23111ec3c78bf7401922d31b8d00aeee18e409993ef",
+      "bytes": 4308791
+    },
+    {
+      "name": "azure-responses-reference-current.html",
+      "url": "https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/azureopenai/responses",
+      "readUTC": "2026-10-11T12:08:46.880635+00:00",
+      "sha256": "7f2133af81319928071f21e986f2aa1be85805b4f5dd534e803f252494a7760f",
+      "bytes": 541405
+    },
+    {
+      "name": "azure-api-responses-index-current.html",
+      "url": "https://ai.azure.com/api-reference/responses/",
+      "readUTC": "2026-10-11T12:08:47.562832+00:00",
+      "sha256": "684bc2a2d7b1ee6cae35c16e00f14cde255f22879b9a612dfa8ebaf44484bbd9",
+      "bytes": 1951729
+    },
+    {
+      "name": "microsoft-qa.html",
+      "url": "https://learn.microsoft.com/en-us/answers/questions/5889782/404-response-when-executing-getinputtokencountasyn",
+      "readUTC": "2026-10-11T20:59:04.806602+00:00",
+      "bytes": 126594,
+      "sha256": "e6bc2b2de424b73d69ff2df548f4d9808765ffa57c01430a839bf6ab08f27863"
+    },
+    {
+      "name": "azure-responses-rest.html",
+      "url": "https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/azureopenai/responses",
+      "readUTC": "2026-10-11T20:59:04.520370+00:00",
+      "bytes": 541405,
+      "sha256": "7f2133af81319928071f21e986f2aa1be85805b4f5dd534e803f252494a7760f"
+    }
+  ],
+  "productionChanges": 0,
+  "productionModelCalls": 0,
+  "budgetsOrReservesChanged": false,
+  "supersedesTargetPlanning": [
+    "blocker3-voraussetzungen-kleinerer-vertrag-20261011.json",
+    "blocker3-freigabevertrag-20261011.json"
+  ],
+  "historicalEvidencePreserved": true,
+  "preservedBaselineDefinition": {
+    "nativeAndAlreadyIncludedExternalMicroUSD": 6809364,
+    "nativeSpentMicroUSD": 1614061,
+    "alreadyIncludedExternalMicroUSD": 5195303,
+    "privateUnresolvedMicroUSD": 636000,
+    "conservativeTotalMicroUSD": 7445364,
+    "privateIncludedInTotal": true,
+    "privateMustNotBeAddedAgainToCumulativeTotal": true
+  },
+  "historicalDeploymentComparisonForReuseOnly": {
+    "modelsAndVersionsEqual": true,
+    "raiPoliciesEqual": true,
+    "rateLimitsEqual": true,
+    "notATargetOrAlternativeRoute": true
+  },
+  "inputBoundaryAnalysis": {
+    "status": "blocked-on-one-external-Azure-provider-evidence-dependency",
+    "DInputProviderCapProven": false,
+    "RInputProviderCapProven": false,
+    "localDWireUpperReused": 10757,
+    "schemaAndInternalFramingUpperProven": false,
+    "currentMainCodeReceipt": "current-main-input-code-receipt.json",
+    "existingMainCodeUnchanged": true,
+    "RComponents": {
+      "known": "fixed review instructions, bound model-profile data, unchanged review schema, allowed source documents",
+      "variable": "2-4 future normalized D paragraphs and selection of at most 4 full source documents",
+      "privateSelectionNotesRetainedInDNotResentToR": true,
+      "pairwiseReviewsUnchangedUpTo": 6
+    },
+    "unchangedOutputTokensIncludingReasoning": 3000,
+    "unchangedWordLimit": 250,
+    "wordCountIsNotProviderTokenCount": true,
+    "DOutputTokenCountIsNotRInputTokenCount": true,
+    "freshAzureReferencesDocumentSmallerMaxInputTokens": false,
+    "freshAzureReferencesDocumentFullPreflightCounter": false,
+    "noUndocumentedProviderNonSupportClaim": true,
+    "noAssumed256TokenFrameAsBound": true,
+    "postUsageDoesNotEnforcePreSendInputBound": true,
+    "counterSupportDoesNotAloneProveAllPermittedFutureRFit": true,
+    "preSendEnforcementRequirements": [
+      "Authoritative route-specific complete billed-input semantics and applicable charges/quotas.",
+      "Bind model/deployment/version, complete sender body hash, schema hash and provider counting/rule version before generation reservation and sending.",
+      "Derive a universal envelope for all 500 fixed D and all unchanged permitted future D-to-R bodies; no new rejection/truncation rule for otherwise accepted responses.",
+      "No payload/route mutation between the bound preflight and the actual sender; absent evidence stops before sending."
+    ],
+    "protectedRuntimeChangesPerformed": false,
+    "providerCallsPerformed": 0,
+    "paidAdditionalProductionPathsIntroduced": 0,
+    "finalLeastCostContractProven": false,
+    "providerNonSupportNowBackedByMicrosoftStaffQA": true,
+    "officialRestPostResponseUsageProven": true
+  },
+  "freeMicrosoftAlternatives": {
+    "checkedUTC": "2026-10-11T12:35:22Z",
+    "completeInputBoundFound": false,
+    "documentationAbsenceIsNotNativeUnsupportedProof": true,
+    "operatorCommunityQuestionReportedPosted": true,
+    "communityAnswerReceived": false,
+    "paidSupportCaseOpened": false,
+    "supportPriceUSD": 29,
+    "results": [
+      {
+        "source": "microsoft-apim-tokenlimit.md",
+        "result": "Responses supported; prompt estimate before call and usage after call. Documented possible limit overshoot; not a complete billed-input upper bound."
+      },
+      {
+        "source": "microsoft-structured-outputs-content.md",
+        "result": "GPT-5-mini strict JSON schema support; no complete billed-input/schema/framing count guarantee."
+      },
+      {
+        "source": "microsoft-chat-python-content.md",
+        "result": "Chat-model local token estimate example; no full Azure Responses v1 schema/framing billing bound."
+      }
+    ],
+    "sourcePins": [
+      {
+        "name": "microsoft-apim-tokenlimit.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-docs/main/articles/api-management/llm-token-limit-policy.md",
+        "sha256": "4d3aa7f217b118df5878f1aad204ba53b93cdec7ac137137d2e0611501ca5a8e",
+        "bytes": 10989,
+        "readUTC": "2026-10-11T12:34:19.733452+00:00"
+      },
+      {
+        "name": "microsoft-structured-outputs.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/how-to/structured-outputs.md",
+        "sha256": "d8d69c8d55e22006aed581c1598419deda8bd5b6f17cdafbc0f189f3ef976c0d",
+        "bytes": 608,
+        "readUTC": "2026-10-11T12:34:20.073952+00:00"
+      },
+      {
+        "name": "microsoft-token-example.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/how-to/chatgpt.md",
+        "sha256": "3024cc4bd1fd0d323de9d63451d24d13fbce752e7880a7f7d07643038e77c0dd",
+        "bytes": 3499,
+        "readUTC": "2026-10-11T12:34:20.503587+00:00"
+      },
+      {
+        "name": "microsoft-structured-outputs-content.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/includes/how-to-structured-outputs-content.md",
+        "sha256": "8b8eca2cf09077ebca2918e7eb7561dc3322379ef27f74944abe755c1ba7c5c8",
+        "bytes": 11500,
+        "readUTC": "2026-10-11T12:35:21.530243+00:00"
+      },
+      {
+        "name": "microsoft-chat-python-content.md",
+        "url": "https://raw.githubusercontent.com/MicrosoftDocs/azure-ai-docs/main/articles/foundry/openai/includes/chat-completion-python.md",
+        "sha256": "7128cb01f3dfbae09edb26e6fbd3945e7c717f7eeeeb1b897e5e07c269a45c66",
+        "bytes": 22346,
+        "readUTC": "2026-10-11T12:35:21.991530+00:00"
+      }
+    ],
+    "newMicrosoftPartialProof": {
+      "path": "docs/betrieb/blocker3-microsoft-inputbeleg-und-canary-20261011.json",
+      "unsupportedAzureV1PreCountStaffEvidence": true,
+      "clientTokenizerAttributedToSeparateAIAnswer": true,
+      "postResponseUsageOfficiallyDocumented": true,
+      "completeSchemaFramingUpperProven": false,
+      "canaryPlannedOnly": true,
+      "paidCanaryCalls": 0
+    }
+  },
+  "offlinePreparation": {
+    "mode": "inert-not-imported-by-runtime",
+    "implementationPlan": "docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.json",
+    "documentation": "docs/betrieb/blocker3-eu-freigabevorbereitung-20261011.md",
+    "tool": "scripts/blocker3-eu-vorbereitung.js",
+    "focusedTests": "scripts/blocker3-eu-vorbereitung-test.js",
+    "reserveOrSendPossible": false,
+    "providerCounterImplemented": false,
+    "runtimeChangesImplemented": false,
+    "protectedActionsPerformed": false,
+    "remainingExternalProofs": 1,
+    "futureCounterRequestsFeesQuotasAndLatencyUnknown": true,
+    "localVerificationReceipt": "docs/betrieb/blocker3-eu-vorbereitungspruefung-20261011.json",
+    "independentReview": {
+      "model": "deepseek-flash",
+      "effort": "high",
+      "mode": "read",
+      "status": "ok-for-inert-conditional-preparation-only",
+      "sha256": "5ea7cf5dda8dda2cbfd65b009120880cbfaa573b461490bde131438746c299f5",
+      "bytes": 1296,
+      "reviewScope": "offline tool/tests and both EU JSONs plus preparation MD before Sol final assertion/hash-test strengthening",
+      "notProductionEnforcementOrBlockerAcceptance": true,
+      "solIntegration": "Preparation hash excluding self verified with repository canonical hasher; additional rejection assertions for Global fallback and false final money flags, no runtime integration."
+    }
+  }
+}

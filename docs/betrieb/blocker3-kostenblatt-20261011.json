@@ -278,5 +278,7 @@
     "Concrete whole-run time window and bounded processing/retention/end control; currently max4h, model-only cap5h33m20s.",
     "Separate operator approval for one closed scope contract propagated to plan/admission/CAS/sender/endvalidator; no protected change authorized here.",
     "Independent final review method; any separately paid examination is not silently counted as0."
-  ]
+  ],
+  "historicalOnly": true,
+  "supersededBy": "blocker3-freigabevertrag-20261011.json"
 }

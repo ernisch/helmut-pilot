@@ -5,6 +5,7 @@ function erzeugeEndwaechter(R, optionen = {}) {
 const envPrefix = optionen.synthetik ? "HELMUT_SYNTHETIK500_" : "HELMUT_REAL500_";
 const workflow = optionen.synthetik ? "synthetik-500-endwaechter.yml" : "realkohorte-500-endwaechter.yml";
 const K = require("../lib/helmut/testkosten-budget");
+const EU = require("../lib/helmut/synthetik-500-eu-service-contract");
 const PROJECT_URL = "https://ddckuvvpcytqbyfmbvie.supabase.co";
 const STATUS_URL = "https://helmut-pilot.vercel.app/api/cron/testnachweis-status";
 const REPO = "ernisch/helmut-pilot";
@@ -84,12 +85,14 @@ async function steuere({ auftrag, env, deps }) {
     if (status.zustand === "beendet")
       return endbericht({ zustand: "beendet-bestaetigt", schreibversuche: 0, lesung: status }, auftrag);
     const start = deps.jetzt(), ende = Date.parse(status.endeAm);
+    const eu = optionen.synthetik && status.serviceContractHash === EU.HASH;
+    const maximalFenster = eu ? EU.ACTIVE_MS : MAX_FENSTER_MS;
     // Ein spaet gestarteter Waechter muss bekannte aktive Profile trotzdem beenden.
     // Readinessfehler oder ein unzulaessig langes Fenster duerfen das Ende nicht sperren.
     if (status.zustand === "aktiv" && ende <= start) return await beendeEinmal("frist");
-    if (status.zustand === "aktiv" && ende - start > MAX_FENSTER_MS)
+    if (status.zustand === "aktiv" && ende - start > maximalFenster)
       return await beendeEinmal("notstopp");
-    fordere(ende > start && ende - start <= MAX_FENSTER_MS, "endfenster");
+    fordere(ende > start && ende - start <= maximalFenster, "endfenster");
     try { await deps.leseRuntime(); }
     catch (e) {
       if (status.zustand === "aktiv") return await beendeEinmal("notstopp");
@@ -115,8 +118,10 @@ async function steuere({ auftrag, env, deps }) {
           fordere(kosten.tag === new Date(deps.jetzt()).toISOString().slice(0, 10)
             && kosten.tag === status.endeAm.slice(0, 10), "kostentag");
           const auftragslimit = optionen.synthetik ? kosten.auftragslimitMikroUsd : K.AUFTRAG_V3_LIMIT_MICRO_USD;
-          fordere([K.AUFTRAG_V3_LIMIT_MICRO_USD, K.AUFTRAG_V4_LIMIT_MICRO_USD].includes(auftragslimit), "kostengrenzen");
-          if (kosten.gebundenMikroUsd >= 6000000 || kosten.auftragGebundenMikroUsd >= auftragslimit
+          fordere(eu ? kosten.serviceContractHash === EU.HASH && auftragslimit === EU.ORDER_MICRO_USD
+            : [K.AUFTRAG_V3_LIMIT_MICRO_USD, K.AUFTRAG_V4_LIMIT_MICRO_USD].includes(auftragslimit), "kostengrenzen");
+          if ((eu ? kosten.gebundenMikroUsd > EU.DAY_MICRO_USD : kosten.gebundenMikroUsd >= 6000000)
+            || (eu ? kosten.auftragGebundenMikroUsd > auftragslimit : kosten.auftragGebundenMikroUsd >= auftragslimit)
             || kosten.ungeklaert || kosten.frozen !== null) grund = "notstopp";
         } catch { grund = "notstopp"; }
       }
@@ -185,12 +190,15 @@ async function ausfuehren({ scharf = false, auftrag, env = process.env, fetchFn 
         fordere(Array.isArray(rows) && rows.length === 1 && rows[0].buecher && rows[0].auftrag, "kostenbuch-unlesbar");
         const auth = { [K.KEY]: rows[0].buecher, [K.AUFTRAG_KEY]: rows[0].auftrag };
         const tag = new Date(jetzt()).toISOString().slice(0, 10), k = K.kontrolliere(auth, tag), a = K.auftragsStand(auth, tag);
-        fordere(k.limitUsd === 6 && (optionen.synthetik
+        const eu = optionen.synthetik && K.euOrder(rows[0].auftrag);
+        fordere(eu ? k.limitUsd === EU.DAY_MICRO_USD / 1e6 && a?.limitMicroUsd === EU.ORDER_MICRO_USD
+          && a.grenzeInklusive : k.limitUsd === 6 && (optionen.synthetik
           ? [K.AUFTRAG_V3_LIMIT_MICRO_USD, K.AUFTRAG_V4_LIMIT_MICRO_USD].includes(a?.limitMicroUsd)
           : a?.limitMicroUsd === K.AUFTRAG_V3_LIMIT_MICRO_USD) && a.grenzeInklusive, "kostengrenzen");
         const t = auth[K.KEY][tag];
-        return { tag, gebundenMikroUsd: K.belegt(t), auftragGebundenMikroUsd: a.gebundenMicroUsd,
+        return { tag, gebundenMikroUsd: K.belegt(t) + (eu ? EU.PRIVATE_MICRO_USD : 0), auftragGebundenMikroUsd: a.gebundenMicroUsd,
           auftragslimitMikroUsd: a.limitMicroUsd,
+          ...(eu ? { serviceContractHash: EU.HASH } : {}),
           ungeklaert: Object.values(t.calls).some(c => c.status === "ungeklaert"), frozen: t.frozen };
       }
     } });

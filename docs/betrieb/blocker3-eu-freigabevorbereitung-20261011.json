@@ -1,0 +1,350 @@
+{
+  "version": "helmut-blocker3-EU-approval-preparation/1",
+  "state": "blocked-only-on-authoritative-Microsoft-full-input-evidence",
+  "preparationOnly": true,
+  "runtimeEnforcement": false,
+  "executionAuthorized": false,
+  "blocker3Complete": false,
+  "protectedChangesApproved": false,
+  "productionConfigurationChanged": false,
+  "budgetsOrReservesOrCallCapsChanged": false,
+  "sourceContract": "docs/betrieb/blocker3-eu-kostenvertrag-20261011.json",
+  "mainBasis": "fe00adf537d005a56cc6d6bc28604c433cdb810d",
+  "runtimeBasis": "1ad00cd464f88f37a1adc3417b2758ab1eb24e80",
+  "targetRoute": {
+    "provider": "azure",
+    "responsesURL": "https://helmut-resource.openai.azure.com/openai/v1/responses",
+    "deployment": "gpt-5-mini-eu",
+    "modelFamily": "gpt-5-mini",
+    "modelVersion": "2025-08-07",
+    "sku": "DataZoneStandard",
+    "region": "swedencentral",
+    "versionUpgradeOption": "NoAutoUpgrade"
+  },
+  "price": {
+    "inputPerMillionUSD": "0.275",
+    "outputPerMillionUSD": "2.20",
+    "from": "2026-10-01",
+    "through": "2026-10-31",
+    "accountEvidenceProven": true,
+    "csvSHA256": "ac83ef67c888efdd1a647186dff3d08f9f6c4540f32d2c60b329e64f207c8527"
+  },
+  "acceptedContextContract": {
+    "accepted": 500,
+    "regular": 468,
+    "historical": 32,
+    "U": 0,
+    "handoffSHA256": "149a37f74ac41313e45aae0df23ff6c95809f915bb576640ab4a613c5ce270c1",
+    "B1B2B4Repeated": false
+  },
+  "calls": {
+    "D": 500,
+    "R": 500,
+    "U": 0,
+    "otherProductionModelPaths": 0,
+    "total": 1000,
+    "maxAttemptsPerIntent": 1,
+    "modelConcurrency": 1,
+    "deployment": "gpt-5-mini-eu",
+    "outputTokensIncludingReasoning": {
+      "D": 3000,
+      "R": 3000
+    },
+    "reasoningEffort": "low",
+    "qualityAndAcceptanceUnchanged": true
+  },
+  "inputProtection": {
+    "candidateCapsOnly": {
+      "D": 12288,
+      "R": 16384
+    },
+    "finalProviderCaps": null,
+    "finalFullInputMethod": null,
+    "schemaAndFramingIncludedRequired": true,
+    "providerBoundProven": false,
+    "universalUnchangedDToRBoundProven": false,
+    "currentOfflineGuardAlwaysBlocksReserveAndSend": true,
+    "runtimeImported": false,
+    "requiredBoundObject": [
+      "exact UTF-8 request bytes/bodySHA256",
+      "full schemaSHA256",
+      "EU deployment/SKU/model version",
+      "authoritative Microsoft method/evidence hash",
+      "complete billed-input upper bound",
+      "expiry and final contract hash"
+    ],
+    "schemaBodyFeatures": [
+      "string input",
+      "text.format json_schema schema/name/strict",
+      "max_output_tokens3000",
+      "reasoning low",
+      "no tools/history/conversation/fallback"
+    ],
+    "futureCounterRequests": null,
+    "counterFeesUpperMicroUSD": null,
+    "counterQuotaEffect": null,
+    "counterLatencyUpperSeconds": null,
+    "counterChargingGuard": "Any charged preflight has its own atomic reservation before calling; never infer free or outside the contract.",
+    "noTruncationNoOutputReductionNoAcceptanceChange": true,
+    "implementationAfterEvidence": "Pure authoritative counter/bound adapter replaces blocked seam only after proof review; count exact frozen bytes before reserve/send; no TOCTOU; preserve full future R text.",
+    "azureV1InputTokensHelperPlanned": false,
+    "genericCounterPlaceholdersNotExternalDependencies": true
+  },
+  "conditionalMoney": {
+    "finalBudgetDecisionProven": false,
+    "candidateDayLimitMicroUSD": 12000000,
+    "existingOrderLimitMicroUSD": 20000000,
+    "newFullRunMaxMicroUSD": 10543000,
+    "serialFinancingPeakMicroUSD": 10743894,
+    "dayAtFreshlyProvenPriorZeroIncludingPrivateMicroUSD": 11379894,
+    "orderIncludingPreservedBaselineMicroUSD": 18189258,
+    "dayHeadroomForPriorChargesAndCounterFeesAt12MicroUSD": 620106,
+    "orderHeadroomAt20MicroUSD": 1810742,
+    "baselineMicroUSD": 7445364,
+    "privateReserveIncludedOnceMicroUSD": 636000,
+    "standardReservationPerCallUnchangedMicroUSD": 212000,
+    "nativeHistoricalOpenReservationsRetainedMicroUSD": 3176000,
+    "baselineIsFreshStartWitness": false,
+    "dayPriorSpendProvenZero": false,
+    "expectedNotMeasuredScenariosMicroUSD": [
+      2326449,
+      3495264,
+      8170264
+    ],
+    "formula": "ceil((275*input+2200*output)/1000) per call; H=max(total,max(prefixBeforeCall+212000)); add fresh day consumption/private once and cumulative baseline once, including any separately charged preflight.",
+    "minimumRule": "After Microsoft bound, compute exact per-intent bounds and H once; no empirical maxima or arbitrary margin. 12 is smallest whole-dollar day only under candidate caps/zero prior/no counter fee, not a proven final minimum.",
+    "higher20Daily27CumulativeRecommended": false,
+    "historicalBooksRepriced": false,
+    "missingDayBooksMayBeInventedOrReset": false
+  },
+  "globalCounter": {
+    "codeFallback": 50,
+    "historicallyDocumentedProductionLimit": 2416,
+    "currentRuntimeValueProven": false,
+    "protectedUReserve": 702,
+    "realPriorityReserve": 200,
+    "failClosedRequired": 1,
+    "requiredCalls": 1000,
+    "effectiveSyntheticDRAt2416": 1714,
+    "maximumFreshStartUsed": 714,
+    "minimumRawCapAtUsedZeroPreserving702": 1702,
+    "requestedChange": null,
+    "realPriority200DebitedAgainstSyntheticDR": false,
+    "atomicFreshWitnessRequired": true,
+    "noPaidAtomicReservationTestPerformed": true
+  },
+  "time": {
+    "forecastSeconds": 18000,
+    "forecastMeasured": false,
+    "successfulCompletionGuaranteed": false,
+    "providerFullResponseCapSeconds": 20,
+    "proposedUnitCapSeconds": 60,
+    "allNonInferenceWorkIncludingFutureCounterMustFitUnitSeconds": 20,
+    "setupSeconds": 1200,
+    "dispatchSeconds": 30000,
+    "slackSeconds": 1200,
+    "activeSeconds": 32400,
+    "endEvidenceSeconds": 1800,
+    "completeSeconds": 34200,
+    "exports": 501,
+    "exportConcurrency": 8,
+    "fullExportSeconds": 20,
+    "exportBoundSeconds": 1260,
+    "endReadbackSeconds": 60,
+    "offlineFinalizationSeconds": 300,
+    "endWorkBoundSeconds": 1620,
+    "runtimeUnitDeadlinesImplemented": false,
+    "originalCaptureUTCDate": "2026-10-11",
+    "latestStartUTCExclusive": "2026-10-11T13:00:00.000Z",
+    "activeEndBerlinDayBoundaryUTCExclusive": "2026-10-11T22:00:00.000Z",
+    "automaticCalendarShiftAllowed": false,
+    "unavailableStartWindowDoesNotAuthorizeFreshB2CaptureOrDifferentDay": true,
+    "deadlinePolicy": "Hard upper bound for authorized activity, not assurance of successful500 completion. Propagate deadline to DB/CAS/counter/I/O; unknown side effect retains reservation and stops. No next job/retry on timeout."
+  },
+  "commonContractIntegration": {
+    "implemented": false,
+    "authoritativeRuntimeContractHash": null,
+    "singleSourceRequired": "Exact new EU money/time/input/fees/version contract, canonical hash in every consumer; historical versions immutable. Approval-preparation hash is never a runtime authorization.",
+    "consumers": [
+      {
+        "path": "lib/helmut/ai.js",
+        "requiredDelta": "Vor vollständiger Geldreservierung/Inference exakten EU-Body einfrieren; autoritativer Vollinputnachweis, Schema-/Bodyhash und Regelversion; keine Kürzung, keine Repeats. Eventuell kostenpflichtiger Vorabzähler erst nach atomarer eigener Gebührenbindung.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-review-receipt.js",
+        "requiredDelta": "Zulässige unveränderte D→R-Transformation universell unter der finanzierten Hülle; vollständiges Schema und künftiger Prüftext.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/testkosten-budget.js",
+        "requiredDelta": "Neue nur laufgebundene EU-Preis-/Geldversion; private636000 im atomaren CAS genau einmal; bestehende212000 Standardreserve und historische Buchungen unverändert. Unknown/Timeout bleibt reserviert.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-production-adapter.js",
+        "requiredDelta": "Aktuell Auftrag7/20 akzeptiert, Tag6 verlangt. Neue EU-Laufversion verlangt denselben gesamten Vertragshash und dessen Tages-/Auftragswerte.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-financing-witness.js",
+        "requiredDelta": "Frische native Bücher/Baseline/Privatreserve/Tagesstand/Counter/Vertrag gemeinsam binden. Fehlendes Tagesbuch ist unbekannt, keine Nullannahme.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-kosten-intents.js",
+        "requiredDelta": "Aktuell7 kumulativ/6 täglich/4h. EU-Intentpreis, exakte1000, Output3000/low, eine serialisierte Durchführung, kompletter Vertragshash.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-kosten-plan.js",
+        "requiredDelta": "Aktuell7/6. Dieselbe EU-Route, Zählmethode, finalen Inputhüllen, Gebühren, Geld-/Zeitwerte und Version aus einer Quelle.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-kosten-admission.js",
+        "requiredDelta": "Aktuell alte0.5/4 Preis-/4h-Version. Neue EU-Preis-/Zeitklasse bindet native Meter/Route/Modell/Methodenbeleg und finalen Gesamthash.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-production-command.js",
+        "requiredDelta": "Frischer nativer Metadaten-/Startnachweis, vollständige Command-Transportgröße und CPU/Speicher sowie EU-/Budget-/Zeit-/Inputvertrag gemeinsam binden. Installation bleibt Test-GO.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-vertrag.js",
+        "requiredDelta": "Neue ausdrücklich benannte EU-Laufversion für9h plus30min, keine pauschale Änderung alter4h-Verträge.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-startschutz.js",
+        "requiredDelta": "Frische Gates, gleicher UTC-Tag/Berliner Briefingtag, Counter≤714, genau freigegebene500 synthetische Profile, gemeinsame Hashidentität.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-executor.js",
+        "requiredDelta": "Echte60s-Einheitsfrist einschließlich sämtlicher DB-/Counter-/Verarbeitungsschritte; weitergereichte/cancellierbare Fristen. Unklarer Effekt stoppt den Lauf, nicht erneut versuchen.",
+        "implemented": false
+      },
+      {
+        "path": "lib/helmut/synthetik-500-nachweis.js",
+        "requiredDelta": "Aktuell kumulativ7/täglich6/Fenster4h; muss neue ausdrücklich freigegebene EU-Version prüfen. Schon Baseline7.445364 überschreitet7; bloßes Erhöhen auf20 genügt nicht.",
+        "implemented": false
+      },
+      {
+        "path": "supabase/migrations/20261007104720_synthetik500_unabhaengiger_endwaechter.sql",
+        "requiredDelta": "Bestehende4h-CHECK/bind-Funktion erhalten. Künftige gezielte Migration für neue hashgebundene EU-Version9h; tick/30s/Notstopp aus B4 unverändert. Keine Migration erstellt/ausgeführt.",
+        "implemented": false
+      },
+      {
+        "path": "supabase/migrations/20261001172619_synthetik500_end_runtime.sql",
+        "requiredDelta": "Bestehende zwei4h-Prüfzweige in helmut_synthetik500_internal.pruefe erhalten; neue versionierte9h-Endprüfung mit identischem Vertrag. Keine globale Lockerung, keine Migration ausgeführt.",
+        "implemented": false
+      }
+    ]
+  },
+  "stopConditions": [
+    "Microsoft bound absent/unverifiable, universal permitted future R hull not financed, frozen body/schema/route/method drift.",
+    "Missing/unknown day books or reserve provenance; old baseline undercounted, private doubled/omitted, fresh day/cumulative atomically insufficient.",
+    "Charged counter outside budget, counter fee/quota/latency unknown or fails to fit monetary/time contract.",
+    "Native route/version/contract mismatch, global fallback, fresh used>714, hidden retry, concurrency>1, unexpected paid model path or U!=0.",
+    "Missing exact500 activation/command/Test-GO; UTC/Berlin date/window invalid; unit/start/end deadline expired; unknown side effect.",
+    "Any required D/R or1500-position receipt missing/invalid; endproof missing0-active/watchdog/journal/cost reconciliation."
+  ],
+  "laterApprovalTemplates": [
+    {
+      "id": "EU-contract-implementation-route-and-rollout",
+      "approved": false,
+      "approvalOriginal": null,
+      "change": "After Microsoft proof finalize exact EU input envelope/fees and shared cost/time version; implement scoped daily cap, same existing20USD order, atomic private/day proof, targeted versioned SQL time migration; set Production deployment EU and controlled merge/rollout after green checks.",
+      "environment": "Vercel helmut-pilot Production plus Helmut Supabase new explicitly bound EU-run time version; no other environment/order.",
+      "requiredLimit": "Conditional12USD/UTC day and unchanged20USD existing cumulative order; 2416 call cap unchanged. Final values/hash required before actual GO. 9h active+30min evidence only new approved run.",
+      "expectedMaximumCost": "Conditional new full10.543USD; financing H10.743894; day11.379894 at proven prior0; order18.189258 incl existing7.445364; counter fees and final caps must be included before GO.",
+      "expectedEffect": "EU-only deployment, common money/time/input contract through preflight/CAS/sender/endvalidator/native watchdog; no inference test in this scope.",
+      "risk": "Sensitive active ENV not readable in existing expired authorization; route/body hashes change. Incomplete native day evidence/SQL deadline propagation may block. No quality/output downgrade permitted.",
+      "readOnlyPostcheck": "Renew narrow valid readonly runtime authorization; bind native READY commit/deployment and actual EU model/SKU/version, same contract hash in all consumers; fresh budget/reserve/day/counter reads, SQL version/constraints/watchdog readonly inspection; no inference/profile/journal changes.",
+      "rollback": "Capture native config/deployment/SQL beforeimages; stop protected run path, restore previous READY/config and scoped prior policy/time version while preserving all books/reservations; no Global test/fallback. No rollback deletes or retroactively reprices bookings.",
+      "excluded": [
+        "command installation",
+        "profile activation",
+        "journal mutation",
+        "paid Production model/counter calls",
+        "call-limit change",
+        "reserve deletion",
+        "historical repricing"
+      ],
+      "requiredExecutionBindings": [
+        "operator exact GO original",
+        "final immutable contract hash",
+        "Microsoft method and fee evidence hash",
+        "reviewed implementation commit",
+        "green required CI",
+        "fresh config beforeimage and SQL scope",
+        "postcheck authorization window"
+      ]
+    },
+    {
+      "id": "one-protected-500-Production-run",
+      "approved": false,
+      "approvalOriginal": null,
+      "change": "Separate later Test-GO: install exact bound command; exactly500 simultaneously active synthetic profiles330/120/50; journal effects; one serial1000D/R run, U0, plus only explicitly financed provider preflight if necessary.",
+      "environment": "Same native verified Helmut Production EU route/READY/common contract; no real profile cohort.",
+      "requiredLimit": "Final approved common money/call/time/input/fees contract, fresh atomic gates; no reset/additional run.",
+      "expectedMaximumCost": "Reuse final bound costs from implementation GO, refresh true opening balances; no new ceiling inferred here.",
+      "expectedEffect": "Exactly500 complete accepted results and1500 audit positions with receipts; final0 active.",
+      "risk": "No success guaranteed by caps/deadlines; provider failures/unknown billing or incomplete receipt stop; calendar or runtime gates may prevent start.",
+      "readOnlyPostcheck": "Native0 active, complete immutable journal/ticket/usage/endwatchdog receipts,1500 acceptance positions; reconcile opening/spend/open/private/day/cumulative costs using native provider usage, all hashes and deadlines.",
+      "rollback": "Use previously bound protected native end/stop path, cancel future dispatch, preserve unknown-call reserves/history and evidence; no retry/second run or corrective data mutation outside GO.",
+      "requiredExecutionBindings": [
+        "operator exact Test-GO original",
+        "runId",
+        "final contract/plan/manifest/body/schema hashes",
+        "native READY runtime commit/deployment",
+        "fresh start/UTC/Berlin day and bounded end",
+        "fresh opening books/reserves/counter/config",
+        "complete command transport/CPU/memory proof",
+        "separate approved exactly500 activation and journal effect"
+      ]
+    }
+  ],
+  "endCostEvidence": {
+    "required": [
+      "shared final EU contract hash and Microsoft fullinput-method proof",
+      "run/intent/profile/stage/attempt and body/schema/route hashes",
+      "native opening/closing cumulative and UTC-day ledger versions",
+      "all1000 provider input/output/reasoning usage and computed per-call microUSD using pinned October meter tariff",
+      "any charged counter requests/fees",
+      "settlements or unresolved retained reservations and private636000 provenance counted once",
+      "opening7.445364 as historical dated witness versus actual fresh opening balance",
+      "global counter delta and no extraU/model paths",
+      "deadlines and native final0 active/independent stop proof",
+      "complete1500 acceptance positions and immutable original evidence hashes"
+    ],
+    "localForecastCanReplaceNativeUsage": false
+  },
+  "externalDependencies": [
+    "Authoritative Microsoft complete billed-input tokenization/schema/framing upper relation for the exact Azure gpt-5-mini-eu Responses v1 route; current staff Q&A rules out the v1 input_tokens helper, and REST usage is post-response only. Then prove all unchanged permitted D-to-R bodies fit the financed envelope; a finite Canary cannot replace this universal proof."
+  ],
+  "notExternalDependenciesButRequiredFreshStartBindings": [
+    "operator later two GO scopes",
+    "native day/cumulative/counter/config and deployment reads",
+    "calendar/window",
+    "common contract implementation/review/green CI/controlled rollout",
+    "exact bound command and500 activation/end receipts"
+  ],
+  "preparedLocalVerification": {
+    "tool": "scripts/blocker3-eu-vorbereitung.js",
+    "test": "scripts/blocker3-eu-vorbereitung-test.js",
+    "testCommand": "node --require ./scripts/run-offline-tests.js scripts/blocker3-eu-vorbereitung-test.js",
+    "guardCanReserveOrSend": false,
+    "futureImplementationTestsRequired": [
+      "fullinput authoritative adapter+schema/framing universalD→R proof without truncation",
+      "atomic private/day/cumulative boundaries incl unknown calls and no repricing",
+      "same new hash over all consumers; reject old mixed7/6/4h contracts",
+      "EU route/no Global fallback and single attempt",
+      "true deadline propagation60s/9h+30min and native scopedSQL constraints preserving old4h",
+      "500 command transport and full endvalidator evidence, no paid test"
+    ]
+  },
+  "preparationSHA256": "c9faddad62f6956462912e323e2c6c03edb88fc8d0073f2e93065818f5330c6c"
+}

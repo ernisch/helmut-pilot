@@ -1,0 +1,187 @@
+{
+  "version": "helmut-blocker3-Microsoft-partial-proof-and-EU-canary/1",
+  "mode": "offline-plan-only",
+  "readUTC": "2026-10-11T21:01:46.892992+00:00",
+  "approved": false,
+  "executionAuthorized": false,
+  "paidProductionCalls": 0,
+  "productionChanges": 0,
+  "budgetOrReserveChanges": 0,
+  "blocker3Accepted": false,
+  "scope": "Exact frozen 500 EU run; reuse final B2 and existing EU route/October tariff evidence; no new input capture.",
+  "sourcePins": [
+    {
+      "name": "microsoft-qa.html",
+      "url": "https://learn.microsoft.com/en-us/answers/questions/5889782/404-response-when-executing-getinputtokencountasyn",
+      "readUTC": "2026-10-11T20:59:04.806602+00:00",
+      "bytes": 126594,
+      "sha256": "e6bc2b2de424b73d69ff2df548f4d9808765ffa57c01430a839bf6ab08f27863"
+    },
+    {
+      "name": "azure-responses-rest.html",
+      "url": "https://learn.microsoft.com/en-us/rest/api/microsoft-foundry/azureopenai/responses",
+      "readUTC": "2026-10-11T20:59:04.520370+00:00",
+      "bytes": 541405,
+      "sha256": "7f2133af81319928071f21e986f2aa1be85805b4f5dd534e803f252494a7760f"
+    }
+  ],
+  "sourceFindings": {
+    "qaStaffAuthor": "Karnam Venkata Rajeswari",
+    "qaStaffRole": "Microsoft External Staff / Moderator",
+    "qaStaffAnswerUTC": "2026-05-19T20:17:14.8133333+00:00",
+    "staffConfirmsUnsupportedAzureV1InputTokensHelper": true,
+    "clientSideTokenizerWorkaroundAuthor": "separate AI answer, not the cited staff answer",
+    "officialRestDocumentsPostResponseInputTokens": true,
+    "officialRestUsageObjectOptionalAtResponseLevel": true,
+    "officialRestInputTokensRequiredWithinUsage": true,
+    "completeSchemaFramingPreSendUpperProven": false,
+    "smallProviderCapsProven": false,
+    "fullInputCountEndpointInReadRestReference": false,
+    "qaIsNotFreshNativeCapabilityProbe": true
+  },
+  "knownLocalRequests": {
+    "DCount": 500,
+    "DWireTokenSum": 2028471,
+    "DWireTokenMax": 10757,
+    "tokenizerVocabularySHA256": "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d",
+    "fullBodyTokenCountIsNotProviderUsage": true,
+    "allDReTokenizedAgain": false,
+    "RFixedSchemaBytes": 2957,
+    "RFixedSchemaLocalTokens": 720,
+    "RFutureCompleteRequestsKnown": false,
+    "unchangedRWordLimit": 250,
+    "outputTokensIncludingReasoning": 3000,
+    "reasoningEffort": "low",
+    "fullRSourceAndPairCriteriaRetained": true
+  },
+  "minimalDiagnosticCanary": {
+    "recommendedForClosingUniversalBound": false,
+    "diagnosticOnly": true,
+    "maxModelCalls": 2,
+    "maxDCalls": 1,
+    "maxRCalls": 1,
+    "UCalls": 0,
+    "retries": 0,
+    "concurrency": 1,
+    "targetDeployment": "gpt-5-mini-eu",
+    "endpoint": "https://helmut-resource.openai.azure.com/openai/v1/responses",
+    "modelVersion": "2025-08-07",
+    "sku": "DataZoneStandard",
+    "region": "swedencentral",
+    "maxOutputTokensIncludingReasoningPerCall": 3000,
+    "reasoningEffort": "low",
+    "schemaAndAcceptanceUnchanged": true,
+    "DSelection": {
+      "rule": "Maximum among already bound full EU D-wire local token counts, ties smallest position",
+      "position": 468,
+      "localWireTokens": 10757,
+      "wireBytes": 34878,
+      "bodySHA256": "538cb3f66684c657fda379538074d71afb31004fef8d60b5bd901d68a8f3c880"
+    },
+    "RSelection": {
+      "rule": "Same position468; exact canonical prepareLageReviewInput of locally retained full schema-valid D result and original frozen sources/profile; use unchanged R schema; no Production storage/journal. Seal exact R body before its reservation/send.",
+      "bodySHA256": null,
+      "canPresealBeforeD": false,
+      "GOAuthorizesOnlyThisDeterministicDerivation": true,
+      "largestPossibleFutureRProven": false,
+      "syntheticBoundaryRReplacesRealDOutput": false
+    },
+    "beforeFirstCall": [
+      "Exact written GO including source/contract hash, diagnostic scope, date, two calls, reserve/cost cap and bookkeeping authority. Clarify applicability of the legacy7USD cumulative mandate: existing20USD500 sender does not authorize diagnostic extras or override7 by itself.",
+      "Fresh native day/order/global-counter proof including preserved private reserve; no unknown as zero; reserve atomically before every permitted call.",
+      "Bind exact current EU deployment/model/SKU, auth endpoint without changing Helmut Production ENV; no fallback.",
+      "Bind all500 existing D membership/root proof, exact selected D body and both schema hashes, tokenizer vocabulary and unchanged output/reasoning.",
+      "Reuse existing full20s HTTP deadline; disable SDK/proxy/application retries; disclose that timeout is not evidence of provider cancellation.",
+      "Build diagnostic receipt writer/reservation path only after GO; do not invoke normal Helmut sender, install commands, activate profiles, write journal or migrate database."
+    ],
+    "afterFirstCallBeforeR": [
+      "Save immutable raw response bytes/hash, response ID, apim-request-id, observed model/version, status, returned settings, complete usage, cached_tokens and reasoning_tokens.",
+      "Validate D response by existing parsing/acceptance rules; incomplete/refused/invalid/usage missing stops; never shorten or repair accepted output.",
+      "Complete cost settlement on verified actual usage; an unknown effect keeps full reserve and stops before R.",
+      "Build complete canonical R using unchanged pure transformation, full required sources and schema; tokenize prompt/schema/full wire separately; pin all bytes and hashes without treating local count as provider count."
+    ],
+    "afterEachCall": [
+      "Record signed/authenticated provenance of raw provider response separately from locally computed hashes; a local trusted:true object is not a native receipt.",
+      "Compute integer-microUSD cost with October uncached tariff; no assumed cache discount.",
+      "Compare usage.input_tokens with local prompt/schema/full-wire counts; residual is observed discrepancy, not guaranteed framing constant.",
+      "Any route/schema/body/usage/output drift or unknown charge/side effect stops with preserved reserve and no replacement call."
+    ],
+    "provedIfSuccessful": [
+      "Provider accepts these exact complete EU D/R request shapes and returns usage for these two calls.",
+      "Observed input/output/total/cached/reasoning usage and resulting token-tariff cost for these exact immutable request/response bodies.",
+      "Any observed discrepancy relative to pinned local tokenization; candidate small caps may be falsified by an excess in a sampled call."
+    ],
+    "notProved": [
+      "Constant or universal upper bound for internal schema/framing across other500 requests or service revisions.",
+      "That every future accepted D output produces an R request within16384 provider-input tokens.",
+      "A small pre-send provider cap, complete500 financing, expected latency, Production route switch, native Senderabnahme, storage/journal effect or1500-position acceptance.",
+      "Invoice reconciliation or universally identical repeat usage; local hashes alone are not provider signatures."
+    ],
+    "financial": {
+      "pricingCurrency": "USD",
+      "inputPerMillion": "0.275",
+      "outputPerMillion": "2.20",
+      "costFormulaMicroUSD": "ceil((275*usage.input_tokens+2200*usage.output_tokens)/1000) per call; no cache discount",
+      "ceilingBasis": "Official model-version maximum total input272000; includes provider-counted input under the general service limit, not a smaller local/schema-derived cap. Same unchanged output3000; no tools/extra model paths. If this service-limit basis is not accepted, no numeric Canary GO is claimed.",
+      "modelMaximumInputTokensPerCall": 272000,
+      "maxTokenTariffCostPerCallMicroUSD": 81400,
+      "maxTwoCallTokenTariffCostMicroUSD": 162800,
+      "preservedReservationPerCallMicroUSD": 212000,
+      "serialFinancingPeakMicroUSD": 293400,
+      "grossSumOfTwoReservationsMicroUSD": 424000,
+      "grossSumIsNotSimultaneousNeed": true,
+      "unknownFirstCallStopsBeforeSecond": true,
+      "unknownLastCallPreservesReservation": true,
+      "preservedBaselineMicroUSD": 7445364,
+      "cumulativeCanaryPeakAtFreshBaselineScenarioMicroUSD": 7738764,
+      "dayCanaryPeakPlusPrivateAtProvenZeroPriorScenarioMicroUSD": 929400,
+      "freshNativeSpendProven": false,
+      "doesNotChangeExistingSixDayOrTwentyOrder": true,
+      "legacySevenCumulativeMandateAutomaticallyOverridden": false,
+      "existingTwentyOrderAlreadyAuthorizesCanary": false,
+      "diagnosticScopeMustBeExplicitlyAuthorizedWithinExistingOrder": true
+    },
+    "later500RunEffects": {
+      "paidCanaryResultsCountAs500Acceptance": false,
+      "fullRunModelCallsUnchanged": 1000,
+      "maximumCombinedDiagnosticPlusFullRunCalls": 1002,
+      "ifSameGlobalCounterBeforeCanaryMaximumUsed": 712,
+      "fullRunFreshStartMaximumUsedAfterCanary": 714,
+      "rawMinimumCounterAtUsedZeroIncludingPreserved702UReserve": 1704,
+      "conditionalFullRunPeakPlusCanaryCostMicroUSD": 10906694,
+      "conditionalSameUTCDayPlusPrivateAtProvenZeroPriorMicroUSD": 11542694,
+      "conditionalCumulativeWithPreservedBaselineAndCanaryMicroUSD": 18352058,
+      "remainingDayHeadroomAt12MicroUSD": 457306,
+      "remainingOrderHeadroomAt20MicroUSD": 1647942,
+      "stillConditionalOnSmallProviderCapsAndFreshSpend": true
+    },
+    "laterGOFields": {
+      "change": "At most two isolated diagnostic Azure Responses calls, D followed by canonical R, with atomic financial reservation and complete cost receipts; no support purchase.",
+      "environment": "Existing Azure helmut-resource EU DataZoneStandard deployment gpt-5-mini-eu; isolated workspace runner, not Helmut Production sender or ENV change.",
+      "neededLimit": "No numeric daily/order/global cap change. Bind an explicit diagnostic scope inside an operator-authorized20USD order; existing500 Sender20 is not Canary authorization. If the general7USD cumulative binding applies,7.445364 preserved baseline already blocks; do not bypass it. Fresh native remaining headroom must cover293400microUSD serial peak plus preserved obligations before any send.",
+      "maximumTokenTariffCostUSD": "0.162800",
+      "financialPeakUSD": "0.293400",
+      "effect": "Obtain two native usage measurements and route/schema compatibility observations; no universal full-input proof.",
+      "risk": "Paid failed/filtered/incomplete request or timeout; unknown effect retains full reserve and stops. Positive sample cannot justify500 coverage.",
+      "readOnlyRecheck": "Compare immutable exact request/response hashes, native usage/model/request IDs, complete fresh cost books and counter; verify no ENV/commands/profiles/journal changed.",
+      "rollback": "Abort runner; no retry or replacement call; preserve receipts, actual charges and unresolved reserves. No Production route to revert.",
+      "approvalOriginal": null,
+      "executionDay": null,
+      "requestPairHashBeforeFirstCall": null,
+      "RBodyHashAvailableOnlyAfterD": true
+    }
+  },
+  "remainingProof": "An authoritative route/model-version-specific relation usage.input_tokens <= F(complete unchanged request, fixed schema), including all billed framing. Then locally prove F fits for all500 fixed D and every permitted3000-output D-to-R transformation without extra rejection/truncation.",
+  "decision": "Partial external closure only. Two-call canary useful as diagnostic/falsification, not replacement proof under unchanged acceptance. Do not recommend paid Canary as a promised route to full Blocker3 acceptance;12/20 remains conditional; no29USD support required.",
+  "verification": {
+    "independentReviewSource": "/workspace/private/blocker3-microsoft-canary-20261011/deepseek-canary-review.json",
+    "independentReviewSHA256": "20c693e19a0ee9dc573d2250f1a3938ad262afe2cef05e5412fec6a16cadc4dc",
+    "reviewOutcome": "partial closure; finite samples cannot establish universal bound; service ceiling must not be mistaken for small pre-send count proof",
+    "targetedVerification": "pass:8 existing offline preparation groups; exact Canary microUSD/headroom/counter arithmetic and approval flags; source hashes and selectedD reproduction; current-state size; git diff --check.",
+    "previousPreparationReceiptRemainsHistorical": true,
+    "independentFinalReviewSource": "/workspace/private/blocker3-microsoft-canary-20261011/deepseek-final-canary-review.json",
+    "independentFinalReviewSHA256": "c42ecec9f5966c5dbf1562599e72205373d6be005b2db86921a06fbf03d32a39",
+    "independentFinalReviewOutcome": "Arithmetic and general service-ceiling deduction valid; finite sample cannot prove small bounds. Final Sol clarification:20USD500 sender is not diagnostic authorization; applicable7USD mandate cannot be overridden. Optional parent usage verified directly in full pinned REST table, not only the helper excerpt.",
+    "currentVerificationReceipt": "docs/betrieb/blocker3-microsoft-inputbeleg-und-canary-pruefung-20261011.json"
+  }
+}

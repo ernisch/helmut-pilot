@@ -18,6 +18,22 @@ Nur isolierte synthetische Negativfaelle zum Nachweis der Sperre sind erlaubt,
 niemals angelegte oder versorgte AfD-Testkunden. Diese Regel hat Vorrang vor
 aelteren Testplaenen mit AfD-Profilen. Details: `lib/helmut/profil-zulassung.js`.
 
+## Freigegebener Blocker3-EU-Vertrag vom11.10.2026UTC
+
+Ausdrückliches Betreiber-GO für ausschließlich den neuen hashgebundenen EU500-
+Servicevertrag:82,036000USD/UTC-Tag,88,845364USD kumulativ im selben Auftrag,
+0,081400USD nur für künftige EU-Tickets,`gpt-5-mini-eu`/DataZoneStandard/
+Sweden Central, notwendige versionsgebundene Buchkapazität≤47,9h+30min.
+Historische4/6/7/20-Versionen, Reserven und Kostenbelege bleiben erhalten.
+Umsetzung/Tests/Review sind freigegeben; Merge/Rollout nur nach aktuellen grünen
+Pflichtchecks und frischer vollständiger rein lesender Vorprüfung. Höherer oder
+ungeklärter Bestand/Widerspruch stoppt; keine automatische Erhöhung.
+Profilaktivierung, Command-Installation, Journalmutation und kostenpflichtige
+Modellaufrufe sind NICHT freigegeben; getrenntes Test-GO bleibt erforderlich.
+Details: `docs/betrieb/blocker3-eu-servicekostenvertrag-umsetzung-20261011.md`.
+Diese eng begrenzte freigegebene Version ist die Ausnahme von den nachfolgenden
+historischen6/7-Regeln; außerhalb dieser Version bleiben sie unverändert.
+
 ## Rolle und Produktziel
 
 Du arbeitest als technischer Umsetzer für Helmut.

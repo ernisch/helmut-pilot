@@ -7,6 +7,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 function erzeugeStartSql(V, S, optionen = {}) {
 const ROOT = path.resolve(__dirname, "..");
+const EU = require("../lib/helmut/synthetik-500-eu-service-contract");
 const VERSION = optionen.synthetik ? "helmut-synthetik500-runtime/1" : "helmut-realkohorte500-runtime/1";
 const MANIFEST_VERSION = optionen.synthetik ? "helmut-synthetik500-runtime-manifest/1" : "helmut-realkohorte500-runtime-manifest/1";
 const PAKET = optionen.paketPfad || path.resolve(__dirname, "../daten/mandatsprofile-bundestag-berlin-brandenburg-20260929.json");
@@ -47,7 +48,7 @@ function schreibePrivat(out, inhalt) {
 
 function baueRuntimeManifest({ manifest, snapshot, belege }, paketBytes, jetzt = Date.now()) {
   const p = S.pruefeVorbereitung({ manifest, snapshot, belege }, paketBytes, jetzt);
-  V.fordere(Date.parse(manifest.endeAm)-Date.parse(manifest.vorflugAm)<=4*3600000, "startsql-endwaechter-zeitfenster");
+  V.fordere(Date.parse(manifest.endeAm)-Date.parse(manifest.vorflugAm)<=(optionen.synthetik && EU.isManifest(manifest) ? EU.ACTIVE_MS : 4*3600000), "startsql-endwaechter-zeitfenster");
   return { version: MANIFEST_VERSION, profilManifestHash: V.hash(manifest),
     profilvertrag: manifest, startbelegeGrundlinie: p.startbelegeGrundlinie };
 }
@@ -69,7 +70,7 @@ function pruefeGo(go, runtimeManifest, jetzt) {
 function baueEnvelope({ runtimeManifest, snapshot, belege, schritt = "vorbereiten", aktivierungsGo = null }, paketBytes, jetzt = Date.now()) {
   V.fordere(["vorbereiten", "aktivieren"].includes(schritt), "startsql-schritt");
   const m = runtimeManifest.profilvertrag;
-  V.fordere(Date.parse(m.endeAm)-Date.parse(m.vorflugAm)<=4*3600000, "startsql-endwaechter-zeitfenster");
+  V.fordere(Date.parse(m.endeAm)-Date.parse(m.vorflugAm)<=(optionen.synthetik && EU.isManifest(m) ? EU.ACTIVE_MS : 4*3600000), "startsql-endwaechter-zeitfenster");
   let go = null, wach = null;
   if (schritt === "aktivieren") {
     S.pruefeRuntimeAktivierung({ runtimeManifest, snapshot, belege }, paketBytes, jetzt);
@@ -148,7 +149,7 @@ begin
   if n<>500 or (select count(*) from public.mandate_profiles where aktiv)<>500 then
     raise exception 'real500-startsql-aktivierung-nicht-vollstaendig';
   end if;
-  q := jsonb_build_object('version',${literal(V.VERSION)},'operationId',${literal(e.operationId)},
+  q := jsonb_build_object('version',${literal(e.manifest.profilvertrag.version)},'operationId',${literal(e.operationId)},
     'manifest',e->'manifest'->'profilvertrag','zustand','aktiv','bestaetigtAktiv',500,
     'aktiviertAm',to_char(clock_timestamp() at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'));
   e := e||jsonb_build_object('zustand','aktiv','quittung',q,'quittungSqlHash',${sqlHash("q")});
