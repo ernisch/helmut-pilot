@@ -311,7 +311,7 @@ jobs:
           docker exec "$HELMUT_END500_PG_CONTAINER" pg_isready -h 127.0.0.1 -U postgres
           node scripts/lokal.js -- node scripts/end500-unabhaengig-datenbank-test.js
 
-      - name: EU-Servicezeitvertrag und Rueckweg gegen isolierten PostgreSQL17
+      - name: EU-Servicezeitvertrag, Tagesbuch-Bootstrap und Rueckweg gegen isolierten PostgreSQL17
         if: steps.plan.outputs.database == 'true'
         timeout-minutes: 3
         run: |
@@ -330,6 +330,9 @@ jobs:
           # Die gebundenen Vorfunktionen kommen ausschliesslich aus den
           # Repository-Migrationen; keine Production-Daten oder Credentials.
           node scripts/lokal.js -- node scripts/synthetik-500-eu-time-datenbank-test.js
+          # Eigene Fixture-DB im selben nachweislich netzlosen Container.
+          export HELMUT_EU_DAY_INIT_PG_CONTAINER="$HELMUT_EU_PG_CONTAINER"
+          node scripts/lokal.js -- node scripts/synthetik-500-eu-daybook-init-datenbank-test.js
 
       - name: Schnelle Kernschutzprüfung
         if: steps.plan.outputs.core == 'true'

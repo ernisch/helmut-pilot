@@ -125,6 +125,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 const DENYLIST = new Set([
   "end500-unabhaengig-datenbank-test.js", // eigener CI-Schritt: echter netzloser PG17/pg_cron, kein Offline-Skip
   "synthetik-500-eu-time-datenbank-test.js", // eigener Pflichtschritt: netzloser PG17, reale EU-Zeitmigration und Rueckweg
+  "synthetik-500-eu-daybook-init-datenbank-test.js", // eigener Pflichtschritt: atomare Tagesbuchanlage, echter netzloser PG17
   "synthetik-500-native-d-new-datenbank-test.js", // eigener Pflichtschritt: netzloser PG17-Container, kein Offline-Scheinbeleg
   "synthetik-500-runtime-datenbank-test.js", // eigener Pflichtschritt: echtes Importjournal bis 500->0, kein Offline-Skip
   "realkohorte-500-runtime-datenbank-test.js", // eigener Pflichtschritt: isolierte PostgreSQL17, kein stiller Offline-Skip
@@ -234,6 +235,7 @@ const STANDARD = new Set([
   "synthetik-500-ab-review-v2-test.js",     // explizite Kostenplan-/Executorbindung an den gespeicherten D/R-Vertrag
   "synthetik-500-artikelkontext-kostenbindung-test.js", // identische Runtime-/Plan-/3-Bindung von Artikelprompt und40er Vertrag
   "synthetik-500-eu-service-contract-test.js", // approved closed EU financing/usage contract
+  "synthetik-500-eu-daybook-init-test.js", // reine Tagesbuchplanung ohne Reserve, Schreiber oder Laufautoritaet
   "synthetik-500-route-contract-test.js",   // opt-in Route/Deployment/Auth-Auswahl vor Reserve und nach Await-Gates binden
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
   "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist

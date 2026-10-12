@@ -19,6 +19,11 @@ const A = require(path.join(ROOT, "scripts", "bereichsauswahl.js"));
 
 const ALLE = R.collectSuites();
 const STANDARD = R.STANDARD;
+// Bewusst hinzugekommene Schutzvertraege seit der historischen 169er Menge.
+// Keine dynamische Selbstbestaetigung einer beliebig wachsenden Pflichtliste.
+const NEUE_PFLICHTVERTRAEGE = ["synthetik-500-eu-service-contract-test.js",
+  "synthetik-500-route-contract-test.js", "synthetik-500-eu-daybook-init-test.js"];
+const ERWARTETE_STANDARDANZAHL = 169 + NEUE_PFLICHTVERTRAEGE.length;
 
 // Modul nur LADEN (nicht scharfschalten) fuer eine saubere Kindprozess-Umgebung.
 process.env.HELMUT_LOKALER_SCHUTZ_NUR_LADEN = "ja";
@@ -65,8 +70,9 @@ function main() {
   const leere = Object.keys(A.BEREICHE).filter((b) => A.suitenFuerBereiche(ALLE, [b]).length === 0);
   check("A2 Kein Bereich ist leer (jeder Bereich trifft Suiten)", leere.length === 0,
     leere.join(", ") || "alle belegt");
-  check("A3 Die bestehende Standardmenge bleibt vollstaendig bei 169",
-    STANDARD.size === 169, `Standard ${STANDARD.size}`);
+  check("A3 Historische Standardmenge plus ausdrueckliche neue Schutzvertraege",
+    STANDARD.size === ERWARTETE_STANDARDANZAHL
+      && NEUE_PFLICHTVERTRAEGE.every(f => STANDARD.has(f)), `Standard ${STANDARD.size}`);
   check("A4 Die Sammlung waechst nur um bewusst ergaenzte Tests (>= 457) und der neue Auswahltest ist NICHT Standard",
     ALLE.length >= 457 && ALLE.includes("bereichsauswahl-test.js") && !STANDARD.has("bereichsauswahl-test.js"),
     `erweitert ${ALLE.length}`);
@@ -111,6 +117,12 @@ function main() {
   check("C-Themenplan Nur 500er Fachbereich, neue Schutzpruefung enthalten",
     JSON.stringify(themenplan.bereiche) === JSON.stringify(["500-nachweis"])
       && !themenplan.konservativ && themenplan.suiten.includes("500-themenplan-test.js"));
+  const tagesbuch = waehle(["lib/helmut/synthetik-500-eu-daybook-init.js"]);
+  check("C-Tagesbuch 500er Schutzbereich, reine Pflichtpruefung ohne Doppelung, Datenbanktest separat",
+    JSON.stringify(tagesbuch.bereiche) === JSON.stringify(["500-nachweis"])
+      && !tagesbuch.konservativ && STANDARD.has("synthetik-500-eu-daybook-init-test.js")
+      && !tagesbuch.suiten.includes("synthetik-500-eu-daybook-init-test.js")
+      && !ALLE.includes("synthetik-500-eu-daybook-init-datenbank-test.js"));
 
   // ── D · Fail closed und konservativ ───────────────────────────────────────────
   console.log("\n== D · Fail closed, konservativ, Kerndateien ==");
@@ -187,8 +199,11 @@ function main() {
   // ── G · Echte Runner-Aufrufe (--list, keine Ausfuehrung) ─────────────────────
   console.log("\n== G · Runner-Aufrufe ==");
   const gStd = runnerListe();
-  check("G1 Standardlauf bleibt bei 169 Suiten",
-    gStd.status === 0 && /^169 Offline-Suiten \(Standard = Pflichtlauf\)/m.test(gStd.aus), "");
+  check("G1 CLI listet alle ausdruecklichen Pflichtvertraege",
+    gStd.status === 0 && gStd.suiten.length === ERWARTETE_STANDARDANZAHL
+      && new Set(gStd.suiten).size === ERWARTETE_STANDARDANZAHL
+      && gStd.suiten.every(f => STANDARD.has(f))
+      && NEUE_PFLICHTVERTRAEGE.every(f => gStd.suiten.includes(f)), "");
   const gBriefing = runnerListe("--aendert", "lib/helmut/briefing-lauf.js", "--nur-bereich");
   check("G2 CLI: Briefing-Aenderung listet nur Bereichs-Suiten",
     gBriefing.status === 0 && /Bereich = automatische Fachregression/.test(gBriefing.aus)

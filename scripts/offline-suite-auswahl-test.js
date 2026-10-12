@@ -56,6 +56,7 @@ const MUSS_STANDARD = [
   "llm-budget-test.js",
   "llm-reservation-test.js",
   "testkosten-budget-test.js",
+  "synthetik-500-eu-daybook-init-test.js",
   // aktueller 500er-Schutzvertrag
   "verstehen-169-neuversuch-test.js",
   "verstehen-169-kosten-deckel-test.js",
