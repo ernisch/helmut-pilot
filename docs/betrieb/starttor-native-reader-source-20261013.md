@@ -30,6 +30,11 @@ unveränderten vollständigen Originalobjekte, ihre tatsächlichen Zeilenköpfe,
 die erhaltenen Kontrollobjekte und den Zähler. Quiet-Scans umfassen alle Zeilen
 der benannten Tabellen; lebende oder ungeklärte Arbeit schließt den Pfad.
 Die begrenzte Rückgabe enthält keine Originaldaten oder Startautorität.
+Der Caller muss vor dem äußeren RPC-Statement einen positiven Timeout bis15s
+setzen und diese tatsächliche Transaktionskonfiguration für die Root-Zulassung
+belegen. Funktions-Proconfig startet keinen Timer für ein schon laufendes
+Statement; die Quelle überschreibt `statement_timeout` deshalb nicht und
+verweigert einen fehlenden oder zu hohen Caller-Timeout vor Geschäftsfeldern.
 
 Die tatsächlichen Produktions-Katalog- und Rollenmetadaten wurden rein lesend
 aufgenommen und unabhängig akzeptiert. Der neue direkte PostgREST-Metadaten-
@@ -41,7 +46,7 @@ außerhalb des Repositorys. Die Faktenprüfung ersetzt keine Quellen-,
 Installations-, ursprüngliche spezifische Lese- oder Runtime-Abnahme.
 
 Gezielt lokal bestanden:16 Counter-Former-Gruppen,11 vollständige Reader-
-Integrationsgruppen,38 Auswahlprüfungen und sechs Gruppen gegen echten
+Integrationsgruppen,38 Auswahlprüfungen,12 CI-Plan-Prüfungen und sieben Gruppen gegen echten
 netzlosen PostgreSQL17.6. Die Datenbank-Fixture erzeugt ausschließlich
 synthetische Objekte, eigene lokale Katalogpins und keine Produktions-
 Leseberechtigung. CI führt die neue Datenbank-Fixture zusätzlich aus; der

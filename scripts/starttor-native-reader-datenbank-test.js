@@ -49,7 +49,8 @@ function main() {
   sql(source);
   const nonce = "11111111-2222-4333-8444-555555555555";
   const rpc = args => "select public.helmut_starttor_original_state_witness(" + args.map(quote).join(",") + ");";
-  const read = (args, readOnly = true, role = "service_role") => sql(`begin ${readOnly ? "read only" : "read write"};
+  const read = (args, readOnly = true, role = "service_role", timeout = "15s") => sql(`begin ${readOnly ? "read only" : "read write"};
+    set local statement_timeout=${quote(timeout)};
     set session authorization authenticator;set local role ${role};
     set local request.jwt.claims='{"role":"service_role"}';` + rpc(args) + "commit;");
   assert.throws(() => read([nonce, ...Array(3).fill("a".repeat(64))]), /permission denied/);
@@ -65,15 +66,20 @@ function main() {
     'owner',pg_get_userbyid(nspowner),'acl',nspacl::text,'usage',has_schema_privilege('service_role',oid,'USAGE'))
     order by nspname collate "C") from pg_namespace where nspname in ('pg_catalog','public','helmut_synthetik500_internal'))`;
   const descriptor = `item-array['observedAtUTC','caller','readOnly']||jsonb_build_object('namespaces',${namespaces})`;
-  const facts = JSON.parse(sql(catalogQuery + `select jsonb_build_object('descriptor',${descriptor},
+  const catalog = () => JSON.parse(sql(catalogQuery + `select jsonb_build_object('descriptor',${descriptor},
     'catalogNativeSha256',encode(sha256(convert_to((${descriptor})::text,'UTF8')),'hex')) from native_descriptor;`));
+  const facts = catalog();
   const serializer = facts.descriptor.functions.find(f => f.schema === "helmut_synthetik500_internal");
   const values = { expected_actor: "service_role", expected_session_actor: "authenticator", expected_jwt_role: "service_role",
     expected_catalog_native_sha256: facts.catalogNativeSha256, expected_serializer_oid: serializer.oid,
     expected_serializer_source_sha256: serializer.sourceSHA256 };
-  let installed = source;
-  for (const [key, value] of Object.entries(values)) installed = installed.replace(
-    new RegExp("(" + key + " (?:text|oid) := )NULL;"), "$1" + quote(value) + ";");
+  const materialize = facts => {
+    let result = source;
+    for (const [key, value] of Object.entries(facts)) result = result.replace(
+      new RegExp("(" + key + " (?:text|oid) := )NULL;"), "$1" + quote(value) + ";");
+    return result;
+  };
+  const installed = materialize(values);
   sql(installed);
   const abi = JSON.parse(sql(`select jsonb_build_object('oid',oid::text,'bodySha256',encode(sha256(convert_to(prosrc,'UTF8')),'hex'),
     'config',proconfig) from pg_proc where oid='public.helmut_starttor_original_state_witness(text,text,text,text)'::regprocedure;`));
@@ -142,8 +148,9 @@ function main() {
   assert.throws(() => read([nonce, "0".repeat(64), ...args(packet).slice(2)]), /starttor-original-state-closed/);
   assert.throws(() => read([nonce, V.hash(packet), "0".repeat(64), V.hash(mainObject)]), /starttor-original-state-closed/);
   assert.throws(() => read(args(packet), false), /starttor-original-state-closed/);
+  for (const timeout of ["0", "16s"]) assert.throws(() => read(args(packet), true, "service_role", timeout), /starttor-original-state-closed/);
   for (const role of ["anon", "authenticated"]) assert.throws(() => read(args(packet), true, role), /permission denied/);
-  ok("Missing/false gates, permission, packet/hash/source/control drift, stale finance and read-write transactions close");
+  ok("Missing/false gates, permission, hashes, stale finance, read-write and missing/excessive caller timeout close");
   sql(`insert into public.llm_budget_counters values (${quote(day)},'global',3);`);
   assert.throws(() => read(args(packet)), /starttor-original-state-closed/);
   const present = JSON.parse(sql(`select jsonb_build_object('day',day,'scope',scope,'tableOid',tableoid::oid::text,
@@ -170,8 +177,20 @@ function main() {
   // The accepted catalog pin remains closed after any DDL/ACL drift: no silent rebaseline.
   assert.throws(() => read(args(packet)), /starttor-original-state-closed/);
   sql("create domain public.fixture_counter_type as integer;alter table public.llm_budget_counters alter used type public.fixture_counter_type;");
+  // Rebind this LOCAL fixture's new descriptor; the old ACL xmin mismatch
+  // must not mask the independent stock-type barrier.
+  const domainCatalog = catalog();
+  assert(domainCatalog.descriptor.types.some(t => t.name === "fixture_counter_type" && t.kind === "d"));
+  sql(materialize({ ...values, expected_catalog_native_sha256: domainCatalog.catalogNativeSha256 }));
+  const domainPacket = structuredClone(packet);
+  domainPacket.nativeAbi.catalogNativeSha256 = domainCatalog.catalogNativeSha256;
+  domainPacket.nativeAbi.bodySha256 = sql("select encode(sha256(convert_to(prosrc,'UTF8')),'hex') from pg_proc where oid='public.helmut_starttor_original_state_witness(text,text,text,text)'::regprocedure;");
+  seed(domainPacket);
+  assert.throws(() => read(args(domainPacket)), /starttor-original-state-closed/);
+  ok("Newly rebound LOCAL domain catalog still fails independent stock-type barrier");
+  // The previously accepted stock packet cannot call the changed source.
   assert.throws(() => read(args(packet)), /starttor-original-state-closed/);
-  ok("Schema ACL/catalog drift and non-stock counter type close before serializer/business reads");
+  ok("Schema ACL/catalog drift and changed source cannot revive an old packet");
   console.log(`PASS ${passed}/${passed} local PostgreSQL17.6 groups; Production acceptance and 500 authority remain absent`);
 }
 if (require.main === module) { try { main(); } catch (e) { console.error(e.stack); process.exitCode = 1; } }

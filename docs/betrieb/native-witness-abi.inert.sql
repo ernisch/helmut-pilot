@@ -4,12 +4,15 @@
 -- functions after a separately approved install. Never alter its ownership list.
 -- Native catalog digest: SHA256(stock JSONB::text UTF8), not JS V.hash.
 -- No universal codec/binary/superuser-mutation attestation is claimed.
+-- Caller must set a positive <=15s statement_timeout BEFORE the outer RPC
+-- statement starts. Function proconfig cannot start that outer timer.
+-- Root read admission needs the actual caller/transaction setup evidence.
 BEGIN;
 CREATE OR REPLACE FUNCTION public.helmut_starttor_original_state_witness(
  p_nonce text,p_packet_hash text,p_auth_hash text,p_main_hash text
 ) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER
 SET search_path=pg_catalog SET timezone='UTC' SET datestyle='ISO,YMD'
-SET statement_timeout='15s' SET lock_timeout='3s'
+SET lock_timeout='3s'
 SET enable_seqscan=on SET enable_indexscan=off SET enable_indexonlyscan=off
 SET enable_bitmapscan=off SET enable_tidscan=off SET max_parallel_workers_per_gather=0
 AS $helmut_native_witness_body$
@@ -35,6 +38,7 @@ BEGIN
   OR expected_serializer_source_sha256 IS NULL THEN RAISE EXCEPTION 'starttor-original-state-closed'; END IF;
  IF current_setting('transaction_read_only')<>'on' OR current_database()<>'postgres'
   OR current_setting('server_version_num')<>'170006'
+  OR current_setting('statement_timeout')::interval NOT BETWEEN interval '0.001 seconds' AND interval '15 seconds'
   OR current_setting('transaction_isolation') NOT IN ('read committed','repeatable read','serializable')
   OR current_user::text<>expected_actor OR session_user::text<>expected_session_actor
   OR current_setting('role',true) IS DISTINCT FROM expected_actor
@@ -100,7 +104,7 @@ SELECT jsonb_build_object('observedAtUTC',clock_timestamp(),'caller',current_use
   OR v_self.prokind<>'f' OR pg_get_userbyid(v_self.proowner)<>'postgres'
   OR v_self.prolang<>(SELECT oid FROM pg_language WHERE lanname='plpgsql')
   OR v_self.proconfig IS DISTINCT FROM ARRAY['search_path=pg_catalog','TimeZone=UTC','DateStyle=ISO,YMD',
-   'statement_timeout=15s','lock_timeout=3s','enable_seqscan=on','enable_indexscan=off',
+   'lock_timeout=3s','enable_seqscan=on','enable_indexscan=off',
    'enable_indexonlyscan=off','enable_bitmapscan=off','enable_tidscan=off','max_parallel_workers_per_gather=0']
  THEN RAISE EXCEPTION 'starttor-original-state-closed'; END IF;
  -- Serializer is used only after its finite source/catalog/privilege barrier.

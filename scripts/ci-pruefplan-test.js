@@ -20,6 +20,14 @@ check("Dokumentation startet keine grosse CI", () => {
   assert.equal(p.area, false);
 });
 
+check("Ausfuehrbare inerte Reader-SQL allein startet echte DB-Pruefung", () => {
+  const p = P.plan(["docs/betrieb/native-witness-abi.inert.sql"]);
+  assert.equal(p.mode, "full");
+  assert.equal(p.standard, true);
+  assert.equal(p.database, true);
+  assert.equal(p.syntax, true);
+});
+
 check("Normale Fachdatei bekommt nur Bereichstests", () => {
   const p = P.plan(["lib/helmut/briefing-lauf.js"]);
   assert.equal(p.mode, "targeted");
