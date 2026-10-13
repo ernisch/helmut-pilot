@@ -4,6 +4,7 @@ const fs = require("fs");
 const A = require("./bereichsauswahl.js");
 
 const FULL_FILES = [
+  /^docs\/betrieb\/native-witness-abi\.inert\.sql$/i,
   /(^|\/)\.github\/workflows\//i,
   /(^|\/)scripts\/ci-pruefplan(?:-test)?\.js$/i,
   /(^|\/)scripts\/bereichsauswahl(?:-test)?\.js$/i,

@@ -123,6 +123,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
+  "starttor-native-reader-datenbank-test.js", // eigener Pflichtschritt: echter netzloser PG17.6, kein Offline-Scheinbeleg
   "end500-unabhaengig-datenbank-test.js", // eigener CI-Schritt: echter netzloser PG17/pg_cron, kein Offline-Skip
   "synthetik-500-eu-time-datenbank-test.js", // eigener Pflichtschritt: netzloser PG17, reale EU-Zeitmigration und Rueckweg
   "synthetik-500-eu-daybook-init-datenbank-test.js", // eigener Pflichtschritt: atomare Tagesbuchanlage, echter netzloser PG17
@@ -262,6 +263,7 @@ const STANDARD = new Set([
   "postgrest-actor-runtime-witness-test.js", // eigener Root-Zweck: genau ein Metadaten-RPC mit produktiver Key-Auswahl, kein Businessread
   "starttor-original-state-transport-test.js", // absolute Frist auch für Fetch, Stream und Cleanup; nur fiktiver Transport
   "starttor-original-state-witness-test.js", // kompletter Verbraucher, typisierter nativer Zaehler und geschlossener Legacy-/Opt-in-Pfad
+  "starttor-counter-head-test.js", // explizite native Null-Zeilen-Form ohne erfundenen xmin; alte Formen bleiben geschlossen
   "starttor-preserved-controls-test.js",     // ruhende hashgebundene Altzustände erhalten; keine Claims, Bereinigung oder Wiederholung
   "alarm-payload-test.js",                  // Alarmkanal ohne Inhalte/Secrets
   "login-eine-mutation-test.js",            // genau eine CAS-Mutation je Login
