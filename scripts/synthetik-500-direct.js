@@ -5,6 +5,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const { performance } = require("node:perf_hooks");
 const C = require("../lib/helmut/synthetik-500-production-command");
 const E = require("../lib/helmut/synthetik-500-executor");
 const P = require("../lib/helmut/synthetik-500-profile");
@@ -59,14 +60,24 @@ async function remote(command, action, index, { vercelAuth = null } = {}) {
     ...(action === "export" ? { index } : {}) });
   const url = "https://" + r.deploymentHost + require("../lib/helmut/synthetik-500-direct-entry").PATH;
   const protection = vercelAuth === null ? {} : require("./synthetik-500-direct-vercel").headers(vercelAuth);
+  const eu = require("../lib/helmut/synthetik-500-eu-service-contract").isPlan(command.slot.plan);
+  // Root observes the same response; server unit/provider/GO deadlines do not
+  // change. No longer observation for stop/status/export or legacy contracts.
+  const observeUnit = eu && ["start", "next"].includes(action);
   const result = await new Promise((resolve, reject) => {
-    let finished = false, response, bytes = 0, chunks = [];
+    const planEnd = observeUnit ? Date.parse(command.slot.plan.endsAtUTC) : null;
+    const remaining = observeUnit ? planEnd - Date.now() : null;
+    C.requireThat(!observeUnit || Number.isFinite(remaining) && remaining > 0, "direct-cli-observer-window-closed");
+    let deadline = observeUnit ? performance.now() + Math.min(120000, remaining) : null;
+    let finished = false, response, req, timer, bytes = 0, chunks = [];
     const finish = (error, value) => {
       if (finished) return; finished = true; clearTimeout(timer);
-      if (error) { response?.destroy(); req.destroy(); reject(Error("synthetik500-production-direct-remote-rejected-or-unknown")); }
+      // A busy event loop must not accept a late response before its timer runs.
+      if (observeUnit && performance.now() >= deadline) error = true;
+      if (error) { response?.destroy(); req?.destroy(); reject(Error("synthetik500-production-direct-remote-rejected-or-unknown")); }
       else resolve(value);
     };
-    const req = require("node:https").request(url,
+    req = require("node:https").request(url,
       { method: "POST", headers: { ...protection, Authorization: "Bearer " + token, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } }, res => {
         response = res;
         res.on("data", chunk => { if ((bytes += chunk.length) > 16 * 1024 * 1024) return finish(true); chunks.push(chunk); });
@@ -77,9 +88,16 @@ async function remote(command, action, index, { vercelAuth = null } = {}) {
             finish(false, value); } catch { finish(true); }
         });
       });
-    const timer = setTimeout(() => finish(true),
-      require("../lib/helmut/synthetik-500-eu-service-contract").isPlan(command.slot.plan) ? 60000 : 180000);
-    req.once("error", () => finish(true)); req.end(body);
+    req.once("error", () => finish(true));
+    if (observeUnit) {
+      // Recheck the real plan at sending. Construction time can only shorten
+      // the one monotonic deadline; no clock change or data chunk resets it.
+      const sendingAt = performance.now(), sendingRemaining = planEnd - Date.now();
+      deadline = Math.min(deadline, sendingAt + Math.min(120000, sendingRemaining));
+      if (!Number.isFinite(sendingRemaining) || sendingRemaining <= 0 || deadline <= sendingAt) return finish(true);
+      timer = setTimeout(() => finish(true), deadline - sendingAt);
+    } else timer = setTimeout(() => finish(true), eu ? 60000 : 180000);
+    req.end(body);
   });
   if (action === "export") result.result = Codec.decode(result.result);
   return result;

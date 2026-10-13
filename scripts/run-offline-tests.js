@@ -224,6 +224,8 @@ const STANDARD = new Set([
   "blocker2-d-historical-context-test.js",   // historische Ausnahme bleibt dem geschlossenen direkten Pfad vorbehalten
   "synthetik-500-direct-dictionary-test.js", // verlustfreie endliche gemeinsame Originaldaten, keine Quellenreduktion
   "streaming-canonical-hash-test.js",        // gleiche Hashwerte auch jenseits der V8-Stringgrenze
+  "synthetik-500-validation-reuse-test.js",  // Alias-Tiefe, mutable/proxy-Fallbacks, alle500 und aktueller Policywechsel
+  "synthetik-500-direct-observer-test.js",  // endlicher bestehender Start/Next-Observer, kein Retry/keine neue Sendefreigabe
   "synthetik-500-direct-vercel-test.js",     // geschuetzter Operatorzugang: bestehende Vercelheader, kein Tokenaufbau, Frist/keinRetry
   "synthetik-500-u-prestage-entry-test.js", // geschlossener Einzel-U Einstieg, ohne reale Effekte
   "synthetik-500-financing-witness-test.js", // echte reine JS-Hashes/Budgetbindung, synthetische Speicherleser
