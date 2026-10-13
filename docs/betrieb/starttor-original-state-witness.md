@@ -37,7 +37,10 @@ The backend makes at most four GET requests: private packet, original `main-auth
 original `main`, and one fixed native witness RPC. There is no retry, local fallback,
 normalization, default merge, cache or arbitrary endpoint. Packet response is at
 most 1 MiB, each original response 4 MiB, all responses together 8 MiB, and native/
-external output 8 KiB. The packet counts inside the aggregate bound. All requests
+external output 8 KiB. Only the exact explicit v3 packet-version header selects
+a 2 MiB packet and the derived aggregate of 2 MiB + twice 4 MiB + 8 KiB
+(10,493,952 bytes). Without that selection the default limits remain unchanged.
+The packet counts inside the aggregate bound. All requests
 share a 20-second backend deadline. These are new explicit response-byte limits;
 actual current fit and physical peak memory are unknown, and failures stay closed.
 Streaming bounds precede chunk retention; UTF-8, JSON and finite safe parsed values
