@@ -334,6 +334,25 @@ jobs:
           export HELMUT_EU_DAY_INIT_PG_CONTAINER="$HELMUT_EU_PG_CONTAINER"
           node scripts/lokal.js -- node scripts/synthetik-500-eu-daybook-init-datenbank-test.js
 
+      - name: Inerte Originalzustands-Reader-SQL gegen isolierten PostgreSQL17.6
+        if: steps.plan.outputs.database == 'true'
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
+          export HELMUT_STARTTOR_PG_CONTAINER="starttor-native-pg-$(date -u +%Y%m%d)"
+          export HELMUT_STARTTOR_PG_ISOLIERT="JA"
+          docker pull "$IMAGE"
+          docker tag "$IMAGE" postgres:17.6-bookworm
+          docker run -d --network none --name "$HELMUT_STARTTOR_PG_CONTAINER" -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17.6-bookworm
+          trap 'docker rm -fv "$HELMUT_STARTTOR_PG_CONTAINER" >/dev/null' EXIT
+          for attempt in {1..30}; do
+            if docker exec "$HELMUT_STARTTOR_PG_CONTAINER" pg_isready -U postgres; then break; fi
+            sleep 1
+          done
+          docker exec "$HELMUT_STARTTOR_PG_CONTAINER" pg_isready -U postgres
+          node scripts/lokal.js -- node scripts/starttor-native-reader-datenbank-test.js
+
       - name: Schnelle Kernschutzprüfung
         if: steps.plan.outputs.core == 'true'
         env:
