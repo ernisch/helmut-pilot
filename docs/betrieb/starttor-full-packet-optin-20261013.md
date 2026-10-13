@@ -15,18 +15,25 @@ Ohne Header bleiben1MiB wirksam; ungültige Auswahl, unpassende Version oder
 Paket-/Originalhashes, Review-Pins und vollständigen fachlichen Tore bleiben
 erhalten. Ein Header ist keine spezifische Original-Lesefreigabe.
 
-Unveränderte Grenzen:4MiB pro Originalobjekt,8MiB für alle Antworten zusammen,
-vier Backend-GETs, keine Wiederholungen,20s absolute Frist einschließlich
-Cleanup,8KiB Ausgabe. Der zusätzliche Rahmen gilt für das gespeicherte
-v3-Root-Paket; Finanzierung, Profilaktivierung und500er-Rechte bleiben `false`.
+Nur diese ausdrückliche v3-Auswahl erhält auch den aus den unveränderten
+Einzelgrenzen abgeleiteten Gesamtdeckel:2MiB Paket + zweimal4MiB Original +
+8KiB native Antwort =10.493.952Bytes. Ohne Header bleiben8MiB insgesamt wirksam.
+Die frühere gemeinsame8-MiB-Grenze konnte das vollständige Paket und beide
+vollständigen Originalantworten trotz zulässiger Einzelgrößen ausschließen.
+Unverändert bleiben4MiB pro Originalobjekt, vier Backend-GETs, keine
+Wiederholungen,20s absolute Frist einschließlich Cleanup und8KiB Ausgabe.
+Finanzierung, Profilaktivierung und500er-Rechte bleiben `false`.
 Die native Quelle bleibt außerhalb der Migrationen mit sechs `NULL`-Konstanten
 und ohne Execute-Grant inert; ihr v3-Paketdeckel beträgt ebenfalls2MiB.
 
 Der neue Integrationstest führt die vollständige500er-Fixture tatsächlich über
 den vorhandenen Storage-Reader mit JSON-Streams und anschließend durch den
-unveränderten vollständigen Startschutz. Fünf lokale Gruppen belegen den
-positiven ausdrücklichen Fall, unveränderten Default, Versions-/Auswahlfehler,
-Bytegrenze und HTTP-Zulassung. Acht Gruppen gegen netzlosen PostgreSQL17.6
+unveränderten vollständigen Startschutz. Acht lokale Gruppen belegen den
+positiven ausdrücklichen Fall auch oberhalb8MiB mit beiden vollständigen
+Originalen, den unveränderten Default, die exakten Gesamtgrenzen einschließlich
+Ablehnung eines zusätzlichen Bytes, die Vier-Aufrufe-Grenze,
+Versions-/Auswahlfehler, Paketbytegrenze und HTTP-Zulassung.
+Die vorhandenen acht Gruppen gegen netzlosen PostgreSQL17.6
 belegen zusätzlich einen nativen Paketinhalt über1MiB mit vor dem Statement
 gesetztem8s-Timeout sowie Ablehnung über2MiB. Alle Daten sind synthetisch;
 Native-Baustein und vollständiger Verbraucher sind getrennte lokale Belege.
