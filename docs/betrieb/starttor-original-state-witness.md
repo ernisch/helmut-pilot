@@ -2,8 +2,10 @@
 
 This is a dormant read-only preparation interface. It does not activate profiles,
 claim commands, create books, reserve costs, dispatch providers or authorize 500.
-Daily 6 USD and cumulative 7 USD remain unchanged. The Root executor is responsible
-for genuinely authorized current inputs and independent evidence review.
+The response reports the budget limits accepted by the complete unchanged
+Startschutz consumer: legacy limits remain legacy limits; the explicit EU contract
+keeps its approved limits. This reader cannot raise them. Root supplies genuinely
+authorized current inputs and independently reviewed evidence.
 
 ## Invocation and closed admission
 
@@ -121,7 +123,9 @@ Native aggregates cover all rows, with no latest-N/time-window shortcut: open jo
 live leases/locks, unfinished processes, open outbox and unknown/null control states.
 All must be exactly zero. Blob pipeline locks and every retained processRun are
 checked against the native witness time, with no missing-default substitute. An
-existing cost admission/dispatch journal stops this pre-start flow; it is not deleted.
+existing cost admission/dispatch journal stops the legacy `/1` pre-start flow;
+it is not deleted. The explicit `/2-preserved-controls` packet below can observe
+a narrowly reviewed dormant control history without altering it.
 This is point-in-time observed quiet for these scopes. Controlled future actors,
 paid routes, GitHub, cron and end-guard evidence remain separately Root-bound inputs.
 
@@ -135,6 +139,43 @@ worst-case cost, numeric funding decision, paid in-flight exclusions, end activa
 and 500 remain independently required. `fundingAccepted`, `globalFutureQuietAccepted`,
 `activation` and `paid500` are always false here.
 
-Source-only verification is limited to one authorized Node syntax check for each of
-the three newly touched JS files. No imports, helper/route execution, unit suites,
-native queries, Docker, provider calls or deployment is authorized in this lane.
+## Explicit preserved-control packet
+
+`helmut-original-state-witness-root-packet/2-preserved-controls` retains every
+existing `/1` field and gate and adds exactly `preservedControls`: `version`
+(`helmut-original-state-preserved-controls/1`), `controlHash`, and `actualReviewPin`
+(`sha256`, positive `bytes`). Root independently reviews the actual control history.
+The reader compares that binding with its complete Auth control hash before the
+native read and at native witness time. Both slot and journal must exist; partial
+or malformed controls stop. Legacy packets still refuse their presence.
+
+The active operation must be a fully expired, never-claimed single-U preparation
+with no entry, in-flight work, attempts, outputs or slot consumption. Existing
+admission validation checks the actual plan, hashes and unit binding. Historical
+closed/stopped states, stopped non-active unknown records and superseded
+never-claimed U installations remain byte-for-byte unchanged. They do not become
+evidence of zero past provider calls, installability, release of reservations or
+permission to retry. Running/continuing history and malformed states stop.
+Historical EU in-flight records use the existing writer's exact contract/deadline
+fields; a clipped deadline is allowed only after its claim and no later than the
+observation time. No entry timestamp is invented. Expiry never resolves the unknown
+provider outcome or releases its reservation.
+
+Packet/original hashes, native heads, readonly actor/ABI, specific read approval,
+paid-inflight scope, complete Finance and end-guard gates still apply. Native
+quiet counts must still all be zero. No empty-object fallback, journal cleanup or
+reinterpretation of an unresolved past outcome is used. Successful observation
+does not prove future quiet or grant installation, activation or paid-500 authority.
+
+After matching the genuine Finance head, the consumer receives the native counter
+as `{ok: true, tag: native.day, used: native.used}`. No missing row or `xmin` is
+fabricated: the existing head schema still requires real native evidence. New
+packet compatibility and actual native ABI/source/caller facts need independent
+acceptance before real invocation. No native function, staging packet, counter or
+credential is installed by this local repair.
+
+The reader-repair task authorizes targeted fictional offline tests covering the
+complete consumer, immutable dormant history, denial of active/unreviewed controls
+and unchanged nonce/auth/native/time boundaries. They establish no current native
+ABI or Production behavior. Earlier source-only and transport evidence remains
+historical; no paid test is repeated.
