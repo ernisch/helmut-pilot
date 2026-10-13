@@ -131,6 +131,20 @@ function main() {
   assert(!JSON.stringify(witness).includes(auth.privateSentinel)); assert(Buffer.byteLength(JSON.stringify(witness)) < 8192);
   assert.deepEqual(JSON.parse(sql("select data from public.helmut_store where id='main-auth';")), auth);
   ok("Single STABLE native absent-row witness binds actual local heads, source, roles and full original hashes");
+  const largePacket = structuredClone(packet);
+  largePacket.startschutz.paketUtf8 = "x".repeat(1500000);
+  assert(Buffer.byteLength(V.stabil(largePacket)) > 1048576);
+  assert(Buffer.byteLength(V.stabil(largePacket)) < 2097152);
+  seed(largePacket);
+  const largeWitness = JSON.parse(read(args(largePacket), true, "service_role", "8s"));
+  assert.equal(largeWitness.packetHash, V.hash(largePacket));
+  assert.deepEqual(largeWitness.counter, counter);
+  const oversizedPacket = structuredClone(packet);
+  oversizedPacket.startschutz.paketUtf8 = "x".repeat(2097152);
+  seed(oversizedPacket);
+  assert.throws(() => read(args(oversizedPacket)), /starttor-original-state-closed/);
+  seed(packet);
+  ok("Native v3 packet larger than1MiB succeeds with pre-statement8s timeout; over2MiB closes");
   const rejected = mutate => { const p = structuredClone(packet); mutate(p); seed(p);
     assert.throws(() => read(args(p)), /starttor-original-state-closed/); };
   for (const key of Object.keys(packet.gates).filter(k => k.endsWith("Accepted"))) {
