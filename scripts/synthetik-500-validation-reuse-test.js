@@ -17,7 +17,13 @@ function freeze(value, seen = new WeakSet()) {
   return value;
 }
 let checks = 0;
-const check = (name, test) => { test(); checks++; console.log("PASS " + name); };
+const compactionOnly = process.argv[2] === "--compaction-only";
+const compactionUnsafeOnly = process.argv[2] === "--compaction-unsafe-only";
+const check = (name, test) => {
+  if (compactionOnly && !name.startsWith("per-hash compaction")) return;
+  if (compactionUnsafeOnly && name !== "per-hash compaction retains original unsafe dependency and prototype order") return;
+  test(); checks++; console.log("PASS " + name);
+};
 check("every alias path retains the80-level depth ceiling", () => {
   const common = freeze({ child: { value: "same bytes" } });
   const nested = count => { let x = common; for (let i = 0; i < count; i++) x = freeze([x]); return x; };
@@ -357,6 +363,104 @@ check("proof and scalar metadata capacities never leave partial immutable parent
     assert.equal(Streaming.immutableInvocationData(later.child), false);
   });
 });
+// Trusted source-bound numeric observation only; production exports and digest
+// dependencies remain unchanged. No private Buffer or graph record is exposed.
+const compactionPath = require.resolve("../lib/helmut/streaming-canonical-hash");
+const compactionSource = require("node:fs").readFileSync(compactionPath, "utf8");
+const ReviewModule = require("node:module"), compactionReview = new ReviewModule(compactionPath, module);
+compactionReview.filename = compactionPath;
+compactionReview.paths = ReviewModule._nodeModulePaths(require("node:path").dirname(compactionPath));
+const instrumentedCompaction = compactionSource
+  .replace("temporaryBytes += record.size; compact = true;", "temporaryBytes += record.size; compact = true; observed.temporaryBytes = temporaryBytes; observed.temporaryEntries = temporaryEntries; observed.maximumBlock = Math.max(observed.maximumBlock, record.size); observed.maximumCombined = Math.max(observed.maximumCombined, observed.scopeBytes + temporaryBytes);")
+  .replace("if (json) jsonBytes += record.size; else bytes += record.size;", "if (json) jsonBytes += record.size; else bytes += record.size; observed.scopeBytes = bytes + jsonBytes; observed.maximumCombined = Math.max(observed.maximumCombined, observed.scopeBytes + observed.temporaryBytes);")
+  .replace("emit(value, chunk => digest.update(chunk), true);", "emit(value, chunk => { observed.updates++; digest.update(chunk); }, true);")
+  .replace("const digest = crypto.createHash(\"sha256\"), temporary = ownedWeakMap();", "observed.temporaryBytes = observed.temporaryEntries = 0; const digest = crypto.createHash(\"sha256\"), temporary = ownedWeakMap();");
+assert.notEqual(instrumentedCompaction, compactionSource);
+compactionReview._compile('"use strict"; let observed = { updates: 0, temporaryBytes: 0, temporaryEntries: 0, maximumBlock: 0, scopeBytes: 0, maximumCombined: 0 };\n'
+  + instrumentedCompaction + '\nmodule.exports.observe = () => ({ ...observed }); module.exports.resetObservation = () => { observed = { updates: 0, temporaryBytes: 0, temporaryEntries: 0, maximumBlock: 0, scopeBytes: 0, maximumCombined: 0 }; };\n', compactionPath);
+const LocalHash = compactionReview.exports;
+const localP = value => LocalHash.hash(value, P.kanonisch), localB = value => LocalHash.hashJson(value, oldB);
+check("per-hash compaction groups mutable and immutable singleton parents", () => {
+  for (const value of [{ a: Array.from({ length: 100 }, (_, i) => i), text: "😀\ud800" }, freeze({ a: [1, 2], text: "singleton" })]) {
+    LocalHash.resetObservation();
+    LocalHash.withImmutableInvocation(() => {
+      assert.equal(localP(value), crypto.createHash("sha256").update(P.kanonisch(value)).digest("hex"));
+      const observed = LocalHash.observe(); assert.equal(observed.updates, 1);
+      assert.equal(observed.temporaryBytes, Buffer.byteLength(P.kanonisch(value)));
+      assert.equal(LocalHash.immutableInvocationData(value), Object.isFrozen(value));
+    });
+  }
+});
+check("per-hash compaction re-proves mutable values and aliases on every hash", () => {
+  const child = { text: "before", n: 1 }, value = { first: child, second: child };
+  LocalHash.withImmutableInvocation(() => {
+    for (const n of [1, 2, 3]) {
+      child.n = n; child.text = "after" + n + "😀\ud800";
+      assert.equal(localP(value), crypto.createHash("sha256").update(P.kanonisch(value)).digest("hex"));
+      assert.equal(LocalHash.immutableInvocationData(value), false); assert.equal(LocalHash.immutableInvocationData(child), false);
+    }
+    LocalHash.withImmutableInvocation(() => { child.n = 4; assert.equal(localP(value), crypto.createHash("sha256").update(P.kanonisch(value)).digest("hex")); });
+    child.n = 5; assert.equal(localP(value), crypto.createHash("sha256").update(P.kanonisch(value)).digest("hex"));
+  });
+});
+check("per-hash compaction maintains exact Unicode numeric domains and size edge", () => {
+  const value = freeze({ "10": "ten", "2": "two", text: "ä😀\ud800", a: [null, -0, 3.5] });
+  LocalHash.withImmutableInvocation(() => {
+    LocalHash.primeImmutableInvocation(value);
+    assert.equal(localP(value), crypto.createHash("sha256").update(P.kanonisch(value)).digest("hex"));
+    assert.equal(localB(value), oldB(value)); assert.notEqual(localP(value), localB(value));
+  });
+  const below = { text: "x".repeat(65525) }, above = { text: "x".repeat(65526) };
+  assert.equal(Buffer.byteLength(P.kanonisch(below)), 65536); assert.equal(Buffer.byteLength(P.kanonisch(above)), 65537);
+  for (const [value, bytes] of [[below, 65536], [above, 0]]) {
+    LocalHash.resetObservation(); LocalHash.withImmutableInvocation(() => {
+      assert.equal(localP(value), crypto.createHash("sha256").update(P.kanonisch(value)).digest("hex"));
+      assert.equal(LocalHash.observe().temporaryBytes, bytes);
+    });
+  }
+});
+check("per-hash compaction reserves finite16MiB and never persists snapshots", () => {
+  const rows = Array.from({ length: 700 }, (_, i) => ({ i, text: ("😀" + i + "\ud800").repeat(3000) }));
+  const value = [...rows, ...rows];
+  LocalHash.resetObservation(); LocalHash.withImmutableInvocation(() => {
+    assert.equal(localP(value), crypto.createHash("sha256").update(P.kanonisch(value)).digest("hex"));
+    const observed = LocalHash.observe(); assert(observed.temporaryBytes > 15 * 1024 * 1024);
+    assert(observed.temporaryBytes <= 16 * 1024 * 1024); assert(observed.maximumBlock <= 65536); assert(observed.temporaryEntries <= 200000);
+    rows[0].text = "changed-after-hash"; assert.equal(localP(value), crypto.createHash("sha256").update(P.kanonisch(value)).digest("hex"));
+  });
+});
+check("per-hash compaction combined scope and current-hash reservation stays48MiB", () => {
+  const shared = freeze(Array.from({ length: 600 }, (_, i) => ({ i, text: ("😀" + i + "\ud800").repeat(3000) })));
+  const aliases = freeze([...shared, ...shared]);
+  const mutable = Array.from({ length: 600 }, (_, i) => ({ i, text: "mutable".repeat(5000) }));
+  LocalHash.resetObservation(); LocalHash.withImmutableInvocation(() => {
+    assert.equal(localP(aliases), crypto.createHash("sha256").update(P.kanonisch(aliases)).digest("hex"));
+    assert.equal(localB(aliases), oldB(aliases));
+    assert.equal(localP(mutable), crypto.createHash("sha256").update(P.kanonisch(mutable)).digest("hex"));
+    const observed = LocalHash.observe(); assert(observed.scopeBytes <= 32 * 1024 * 1024);
+    assert(observed.temporaryBytes <= 16 * 1024 * 1024); assert(observed.maximumCombined <= 48 * 1024 * 1024);
+    assert(observed.maximumCombined > 45 * 1024 * 1024);
+  });
+});
+check("per-hash compaction retains original unsafe dependency and prototype order", () => {
+  const unsafe = () => {
+    const order = [], value = { child: { n: 1 } };
+    Object.defineProperties(value, {
+      a: { enumerable: true, get() { order.push("a"); return "same"; } },
+      b: { enumerable: true, get() { order.push("b"); return order.length; } }
+    });
+    return { value, order };
+  };
+  const actual = unsafe(), expected = unsafe(); let actualHash;
+  LocalHash.withImmutableInvocation(() => { actualHash = localP(actual.value); });
+  assert.equal(actualHash, localP(expected.value));
+  assert.deepEqual(actual.order, expected.order); assert.deepEqual(actual.order, ["a", "b"]);
+  const sample = freeze({ n: 1 }); let calls = 0, scoped, unscoped, scopedCalls, unscopedCalls;
+  Object.defineProperty(Array.prototype, "1", { __proto__: null, configurable: true, get() { calls++; return "legacy"; }, set() { calls++; } });
+  try { LocalHash.withImmutableInvocation(() => { scoped = localP(sample); scopedCalls = calls; }); calls = 0; unscoped = localP(sample); unscopedCalls = calls; }
+  finally { delete Array.prototype["1"]; }
+  assert.equal(scoped, unscoped); assert.equal(scopedCalls, unscopedCalls);
+});
 const historicalPath = require.resolve("../lib/helmut/blocker2-d-historical-binding");
 const historicalSource = require("node:fs").readFileSync(historicalPath, "utf8");
 const Module = require("node:module"), historicalReview = new Module(historicalPath, module);
@@ -448,4 +552,4 @@ check("publication-policy mutation is never covered by earlier validation", () =
     if (before === undefined) delete process.env[Eligibility.ENV]; else process.env[Eligibility.ENV] = before;
   }
 });
-console.log(JSON.stringify({ status: "PASS", checks, helperSourceSHA256: crypto.createHash("sha256").update(historicalSource).digest("hex"), productionActions: 0, networkRequests: 0 }));
+console.log(JSON.stringify({ status: "PASS", checks, helperSourceSHA256: crypto.createHash("sha256").update(historicalSource).digest("hex"), compactionSourceSHA256: crypto.createHash("sha256").update(compactionSource).digest("hex"), productionActions: 0, networkRequests: 0 }));
