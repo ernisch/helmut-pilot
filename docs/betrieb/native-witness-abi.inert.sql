@@ -139,7 +139,7 @@ SELECT jsonb_build_object('observedAtUTC',clock_timestamp(),'caller',current_use
   OR jsonb_typeof(v_packet->'startschutz'->'paketUtf8') IS DISTINCT FROM 'string'
   OR v_packet->'startschutz'->>'paketUtf8'=''
  THEN RAISE EXCEPTION 'starttor-original-state-closed'; END IF;
- IF jsonb_typeof(v_packet) IS DISTINCT FROM 'object' OR octet_length(v_packet_compact)>1048576 OR encode(sha256(convert_to(v_packet_compact,'UTF8')),'hex')<>p_packet_hash
+ IF jsonb_typeof(v_packet) IS DISTINCT FROM 'object' OR octet_length(v_packet_compact)>2097152 OR encode(sha256(convert_to(v_packet_compact,'UTF8')),'hex')<>p_packet_hash
   OR v_packet->>'version' IS DISTINCT FROM 'helmut-original-state-witness-root-packet/3-counter-absence'
   OR v_packet->>'rootExecutor' IS DISTINCT FROM '/root' OR v_packet->>'operationNonce' IS DISTINCT FROM p_nonce
   OR v_packet->>'purpose' IS DISTINCT FROM 'original-auth-main-js-native-hash-and-quiet-bridge'

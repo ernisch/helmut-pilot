@@ -30,7 +30,7 @@ function fixture(preserved=false,absence=false){
  if(preserved)p.preservedControls={version:'helmut-original-state-preserved-controls/1',controlHash:C.controlHash(auth),actualReviewPin:pin()};
  const reads=[];let changeNative=()=>{};
  const storage={createStarttorOriginalStateReader:()=>({packet:async()=>{reads.push('packet');return p;},original:async key=>{reads.push(key);return key==='auth'?auth:main;},native:async q=>{reads.push('native');const w={version:absence?W.ABSENCE_RPC_VERSION:W.RPC_VERSION,operationNonce:NONCE,packetHash:q.packetHash,nativeAsOfUTC:new Date(NOW).toISOString(),snapshotContract:'single-stable-statement',signature:{actor:'service_role',sessionActor:'authenticator',jwtRole:'service_role',database:'postgres',serverVersionNum:'170006',readOnly:'on',isolation:'read committed',securityDefiner:false,bypassRls:true},abi:{oid:'1236',bodySha256:'a'.repeat(64)},catalogNativeSha256:'b'.repeat(64),serializer:{oid:'1237',bodySha256:'c'.repeat(64)},auth:{head:authHead,compactHash:q.authHash,compactBytes:Buffer.byteLength(JSON.stringify(auth))},main:{head:mainHead,compactHash:q.mainHash,compactBytes:Buffer.byteLength(JSON.stringify(main))},counter:clone(counter),quiet:{openJobs:0,liveLocks:0,liveLeases:0,runningProcesses:0,openOutbox:0,unknownRows:0}};changeNative(w);return w;},inventory:()=>({calls:4,retries:0})})};
- return {p,auth,main,runtime,storage,reads,changeNative:f=>{changeNative=f;},call:()=>W.witness({request:{nonce:NONCE,packetHash:V.hash(p)},runtime,storage})};
+ return {p,auth,main,runtime,storage,reads,changeNative:f=>{changeNative=f;},call:()=>W.witness({request:{nonce:NONCE,packetHash:V.hash(p),...(absence?{packetVersion:W.ABSENCE_PACKET_VERSION}:{})},runtime,storage})};
 }
 function freeze(x){if(x&&typeof x==='object'){Object.values(x).forEach(freeze);Object.freeze(x);}return x;}
 async function test(name,fn){if(process.argv[2]&&!name.includes(process.argv[2]))return;await fn();passed++;console.log('PASS '+name);}
@@ -52,3 +52,4 @@ async function main(){
  console.log('PASS starttor-original-state-witness '+passed+' groups; fictional offline only, no native/Production acceptance');
 }
 if(require.main===module)main().catch(e=>{console.error(e.stack);process.exitCode=1;});
+module.exports={fixture,NOW,NONCE};
