@@ -7,6 +7,9 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const proxyUtility = Object.freeze({
+  types: Object.freeze({ isProxy: require("node:util").types.isProxy })
+});
 const SHA = "469f3df0fc2b88187288389dbf56669e7712d03c";
 const HOST = "helmut-runtime-proof.vercel.app";
 const NONCE = "d4929cb2-83fb-465b-b038-c0eec3254275";
@@ -34,11 +37,11 @@ const dependencies = {
   "flags.js": ["fs", "path", "../../helmut-flags.json"],
   "azure-endpunkt.js": ["crypto"], "testkosten-budget.js": ["node:crypto", "./synthetik-500-eu-service-contract"],
   "synthetik-500-eu-service-contract.js": ["./synthetik-500-profile"], "synthetik-500-profile.js": ["node:crypto", "./streaming-canonical-hash"],
-  "streaming-canonical-hash.js": ["node:crypto"],
+  "streaming-canonical-hash.js": ["node:crypto", "node:util"],
   "anbieter-steuerung.js": ["crypto"], "verstehen-restzeit.js": []
 };
 const sandboxProcess = { env: {} }, loaded = new Map();
-const testCrypto = { createHash: (...args) => crypto.createHash(...args),
+const testCrypto = { Hash: crypto.Hash, createHash: (...args) => crypto.createHash(...args),
   timingSafeEqual(a, b) { comparisonLengths.push([a.length, b.length]); return crypto.timingSafeEqual(a, b); } };
 function loadPureModule(name) {
   if (loaded.has(name)) return loaded.get(name);
@@ -63,6 +66,7 @@ function loadPureModule(name) {
     assert(dependencies[name].includes(specifier), "unexpected dependency in " + name);
     imported.push(name + ":" + specifier);
     if (["crypto", "node:crypto"].includes(specifier)) return testCrypto;
+    if (specifier === "node:util") return proxyUtility;
     if (specifier === "path") return path;
     if (specifier === "fs") return { readFileSync(file, ...args) { assert.equal(path.resolve(file), path.resolve(__dirname, "../helmut-flags.json")); return fs.readFileSync(file, ...args); } };
     if (specifier === "../../helmut-flags.json") return JSON.parse(fs.readFileSync(path.join(__dirname, "../helmut-flags.json"), "utf8"));
