@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/synthetik500-full-validation-performance": false,
       "codex/dip-vorgangsfakten-20260920": false,
       "codex/prosa-faktenbindung-20260920": false,
       "codex/dip-dokumentidentitaet-20260920": false,

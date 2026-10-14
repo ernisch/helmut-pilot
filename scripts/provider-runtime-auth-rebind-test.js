@@ -10,6 +10,9 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const proxyUtility = Object.freeze({
+  types: Object.freeze({ isProxy: require("node:util").types.isProxy })
+});
 
 const LIB = path.join(__dirname, "../lib/helmut");
 const ATTESTATION = "provider-runtime-attestation.js";
@@ -49,7 +52,7 @@ const INVENTORY = {
   "provider-runtime-attestation.js": ["node:crypto", "./azure-endpunkt", "./testkosten-budget", "./synthetik-500-eu-service-contract"],
   "synthetik-500-eu-service-contract.js": ["./synthetik-500-profile"],
   "synthetik-500-profile.js": ["node:crypto", "./streaming-canonical-hash"],
-  "streaming-canonical-hash.js": ["node:crypto"]
+  "streaming-canonical-hash.js": ["node:crypto", "node:util"]
 };
 const loadedPure = new Map();
 const readSources = [];
@@ -78,6 +81,7 @@ function loadPureModule(name) {
   const requirePure = specifier => {
     assert.ok(INVENTORY[name].includes(specifier), "unexpected dependency in " + name);
     if (specifier === "node:crypto") return crypto;
+    if (specifier === "node:util") return proxyUtility;
     return loadPureModule(specifier.slice(2) + ".js");
   };
   vm.runInNewContext("(function(require, module, exports) {\n" + text + "\n})",

@@ -71,4 +71,71 @@ check("dangerous property names stay ordinary own JSON properties", () => {
   A.equal({}.polluted, undefined); A.equal(Object.getPrototypeOf(d.drafts[0].special), Object.prototype);
   A.equal(Object.hasOwn(d.drafts[0].special, "__proto__"), true);
 });
+check("nested large preimages keep exact bytes and the reserved cache bound", () => {
+  // Observe the private cache only in this isolated test module. Production
+  // exports and the wire envelope gain no inspection or cache-control fields.
+  const filename = require.resolve("../lib/helmut/synthetik-500-direct-codec");
+  const source = require("node:fs").readFileSync(filename, "utf8");
+  const marker = "cache.set(id, b); return write(b);";
+  A.equal(source.split(marker).length, 2);
+  const Module = require("node:module"), probe = new Module(filename, module);
+  probe.filename = filename; probe.paths = module.paths;
+  let peakReserved = 0, peakRetained = 0, observations = 0;
+  probe.cacheProbe = (cache, reserved) => {
+    const retained = [...cache.values()].reduce((sum, b) => sum + b.length, 0);
+    A(retained <= reserved && reserved <= 16 * 1024 * 1024);
+    peakReserved = Math.max(peakReserved, reserved); peakRetained = Math.max(peakRetained, retained); observations++;
+  };
+  probe._compile(source.replace(marker, "cache.set(id, b); module.cacheProbe(cache, cacheBytes); return write(b);"), filename);
+  // Each box has two direct DAG references. Unique wrappers need no retained
+  // preimage under the frequency gate, even inside an indirectly repeated row.
+  const rows = Array.from({ length: 4 }, (_, i) => {
+    const box = { text: String(i).repeat(3 * 1024 * 1024) }; return { left: box, right: box };
+  });
+  const nested = input(Array(8).fill(rows)), e = probe.exports.encode(nested);
+  const h = C.createHash("sha256"), prefix = '{"package":null,"executorInputs":{"version":"helmut-synthetik500-executor-eingaben/4-direct"},"drafts":[', suffix = '],"predecessors":[]}';
+  const row = JSON.stringify(rows); let expected = Buffer.byteLength(prefix) + Buffer.byteLength(suffix);
+  h.update(prefix); for (let i = 0; i < 8; i++) { if (i) { h.update(","); expected++; } h.update(row); expected += Buffer.byteLength(row); } h.update(suffix);
+  A.equal(e.bytes, expected); A.equal(e.sha256, h.digest("hex"));
+  const d = probe.exports.decode(e);
+  A.deepEqual(d.drafts[0], rows); A.equal(d.drafts[0], d.drafts[7]);
+  A(observations > 0 && peakReserved > 12 * 1024 * 1024 && peakRetained > 12 * 1024 * 1024);
+});
+check("single-use prefix cannot evict a later repeated UTF8 preimage", () => {
+  // Inspect only this separately compiled test module; keep Production exports
+  // and envelopes unchanged. No timing measurement or Production input is used.
+  const filename = require.resolve("../lib/helmut/synthetik-500-direct-codec");
+  const source = require("node:fs").readFileSync(filename, "utf8");
+  const marker = "cache.set(id, b); return write(b);", sink = "emit(root, chunk => hash.update(chunk));";
+  A.equal(source.split(marker).length, 2); A.equal(source.split(sink).length, 2);
+  const Module = require("node:module"), probe = new Module(filename, module);
+  probe.filename = filename; probe.paths = module.paths;
+  const hot = { text: "ä".repeat(1024 * 1024) + "😀\ud800", n: -0, yes: true, none: null };
+  const hotBytes = Buffer.from(JSON.stringify(hot)), seen = [];
+  let hotPreimages = 0, hotSinkChunks = 0, peakReserved = 0;
+  probe.cacheProbe = (id, cache, reserved, checked) => {
+    const retained = [...cache.values()].reduce((sum, b) => sum + b.length, 0), b = cache.get(id);
+    A(checked.incoming[id] > 1); A(b.length <= 4 * 1024 * 1024);
+    A(retained <= reserved && reserved <= 16 * 1024 * 1024);
+    peakReserved = Math.max(peakReserved, reserved); seen.push(id);
+    if (b.equals(hotBytes)) hotPreimages++;
+  };
+  probe.sinkProbe = chunk => { if (Buffer.isBuffer(chunk) && chunk.equals(hotBytes)) hotSinkChunks++; };
+  probe._compile(source.replace(marker,
+    "cache.set(id, b); module.cacheProbe(id, cache, cacheBytes, checked); return write(b);")
+    .replace(sink, "emit(root, chunk => { module.sinkProbe(chunk); hash.update(chunk); });"), filename);
+  const value = input(Array(40).fill(hot));
+  value.package = [{ box: { text: "a".repeat(3 * 1024 * 1024) } }, { box: { text: "b".repeat(3 * 1024 * 1024) } }];
+  const e = probe.exports.encode(value), h = C.createHash("sha256");
+  const prefix = '{"package":' + JSON.stringify(value.package)
+    + ',"executorInputs":{"version":"helmut-synthetik500-executor-eingaben/4-direct"},"drafts":[', suffix = '],"predecessors":[]}';
+  let expected = Buffer.byteLength(prefix) + Buffer.byteLength(suffix);
+  h.update(prefix); for (let i = 0; i < 40; i++) { if (i) { h.update(","); expected++; } h.update(hotBytes); expected += hotBytes.length; } h.update(suffix);
+  A.equal(e.version, T.DICTIONARY_VERSION); A.equal(e.bytes, expected); A.equal(e.sha256, h.digest("hex"));
+  A.equal(hotPreimages, 1); A.equal(hotSinkChunks, 40); A(seen.length > 0 && peakReserved < 4 * 1024 * 1024);
+  const d = probe.exports.decode(e); A.deepEqual(d.package, value.package);
+  A.deepEqual(d.drafts[0], { ...hot, n: 0 }); A.equal(d.drafts[0], d.drafts[39]);
+  A.equal(hotPreimages, 2); A.equal(hotSinkChunks, 80);
+  A.deepEqual(Object.keys(probe.exports).sort(), Object.keys(T).sort());
+});
 console.log(JSON.stringify({ passed: checks, v2ExpandedBytes: envelope.bytes, dictionaryBytes: envelope.dictionaryBytes, encodedBytes: Buffer.byteLength(JSON.stringify(envelope)) }));
