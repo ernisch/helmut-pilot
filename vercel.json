@@ -6,6 +6,7 @@
   "git": {
     "deploymentEnabled": {
       "codex/runtime-read-binding-diagnostic-20261015": false,
+      "codex/runtime-read-binding-fix-20261015": false,
       "codex/helmut-read-renewal-20261015": false,
       "codex/dip-vorgangsfakten-20260920": false,
       "codex/prosa-faktenbindung-20260920": false,
