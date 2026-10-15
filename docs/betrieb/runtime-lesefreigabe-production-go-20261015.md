@@ -15,12 +15,16 @@ Die vorhandene Vorbereitung ergänzt eine neue feste EU-Lese-Authority in
 - `?modus=provider-konfiguration`
 - `?modus=synthetik500-finanzbindung`
 
-Die neue Freigabe endet am **15.10.2026 um 18:00 UTC / 21:00 Europe/Istanbul**.
+Die neue Freigabe endet auf ausdrücklichen Betreiberwunsch nach einem Monat,
+am **15.11.2026 um 18:00 UTC / 21:00 Europe/Istanbul**.
 Die feste Nonce lautet `71a85d95-c883-458c-a945-e332d6a81e68`.
 Der dazugehörige vorhandene private Bearer bleibt außerhalb von Git und Ausgaben.
 Historische Authorities werden nicht wieder geöffnet. Nur der exakt gebundene
 EU-Servicevertrag wählt die neue Freigabe; andere Verträge behalten ihre Sperren.
 Das Anfragefenster bleibt exakt 20 Minuten, innerhalb der absoluten Freigabe.
+Bei späteren Abrufen kann es frisch gesetzt werden, ohne Codeänderung oder
+erneute Verlängerung. Die längere Lesefreigabe verlängert weder den bestehenden
+Finanzauftrag (bis 25.10.) noch einen Lauf oder eine Testfreigabe.
 Keine Secretänderung oder neue globale Autorisierung ist Teil dieses PRs.
 
 Am 15.10.2026 zu Beginn dieser Prüfung über die Vercel-Control-API gelesen:
@@ -64,6 +68,9 @@ Fenster. Der synthetische Zustand bleibt unverändert; keine echten Secrets,
 Netz-, Modell- oder Production-Aufrufe. Bestehende Provider- und Finanztests
 bleiben zusätzlich erforderlich. Die neue Prüfung läuft über die bereits
 verpflichtende Rebind-Suite im Standard-CI; kein neues CI-Gate nötig.
+Ein weiterer positiver Konfigurationsabruf mit frischem Fenster am letzten
+Freigabetag belegt die Wiederverwendung ohne Codeänderung. Er verlängert keine
+Lauf-/Finanzverträge.
 
 ## Konkreter Freigabetext
 
@@ -75,7 +82,7 @@ verpflichtende Rebind-Suite im Standard-CI; kein neues CI-Gate nötig.
 > Zeitbindung verifizieren. Keine Migration, Secret-/Environmentänderung,
 > Profilaktivierung, Commandinstallation, Journalmutation oder bezahlter
 > Modell-/500er-Test ist dadurch freigegeben. Beginn nur mit mindestens
-> 20 Minuten Restzeit bis 18:00 UTC am 15.10.2026.
+> 20 Minuten Restzeit bis 18:00 UTC am 15.11.2026.
 
 Dieser Text ist eine Vorlage; die Ausführung benötigt das ausdrückliche GO des
 Betreibers. Bei Ablauf keine automatische Verlängerung oder Wiederholung.
@@ -90,7 +97,7 @@ Redirect-Follow, ohne Query-Secrets und ohne Body. Header:
 - `x-vercel-protection-bypass` mit `VERCEL_AUTOMATION_BYPASS_SECRET`
 - `x-helmut-root-nonce` mit der oben gebundenen Nonce
 - `x-helmut-root-admitted-at` mit frischem UTC-Beginn, Millisekunden und `Z`
-- `x-helmut-root-deadline-at` exakt 20 Minuten später, spätestens 18:00 UTC
+- `x-helmut-root-deadline-at` exakt 20 Minuten später, spätestens 15.11.2026 18:00 UTC
 - `x-helmut-production-commit` mit dem neuen bestätigten Production-Commit
 - `x-helmut-deployment-host` mit dem neuen unveränderlichen Host aus der Control-API
 

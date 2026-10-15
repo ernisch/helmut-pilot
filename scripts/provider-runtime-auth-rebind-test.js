@@ -168,7 +168,9 @@ async function checkEuReadRenewal() {
   const K = require("../lib/helmut/testkosten-budget");
   const C = require("../lib/helmut/synthetik-500-production-command");
   const authority = JSON.parse(source.match(/const EU_PREPARATION_READ_OPERATION_AUTH = Object.freeze\((\{[^]*?\})\);/)[1]);
-  const at = new Date(Date.parse(authority.expiresAtUTC) - 30 * 60000).toISOString();
+  // Die Lese-Authority gilt einen Monat; der Finanzauftrag bleibt bis 25.10.
+  // Positive Finanz-Fixtures deshalb innerhalb des unveraenderten Auftrags.
+  const at = "2026-10-15T10:00:00.000Z";
   const deadline = new Date(Date.parse(at) + 20 * 60000).toISOString();
   const day = at.slice(0, 10), commit = "c".repeat(40), deployment = "synthetic-renewal.vercel.app";
   const runtimeEnv = { VERCEL_ENV: "production", VERCEL_GIT_COMMIT_SHA: commit, VERCEL_URL: deployment,
@@ -261,7 +263,14 @@ async function checkEuReadRenewal() {
       assert.notEqual(denied.code, 200); assert.equal(denied.reads, 0); assert.equal(denied.checks, 0);
     }
   }
+  // Ein frisches Fenster am letzten Freigabetag benoetigt keine Code-Erneuerung.
+  // Nur Konfiguration: die Lauf-/Finanzvertraege erhalten keine Verlaengerung.
+  const later = new Date(Date.parse(authority.expiresAtUTC) - 60 * 60000).toISOString();
+  const reused = await request("provider-konfiguration", { now: later, headers: {
+    "x-helmut-root-admitted-at": later,
+    "x-helmut-root-deadline-at": new Date(Date.parse(later) + 20 * 60000).toISOString() } });
+  assert.equal(reused.code, 200); assert.equal(reused.reads, 1);
   assert.equal(blockedEffectAttempts, 0);
-  console.log("EU runtime read renewal: 2 genuine handlers PASS; 20 negative bindings rejected before reads; zero writes/network/models.");
+  console.log("EU runtime read renewal: 2 genuine handlers and later fresh window PASS; 20 negative bindings rejected before reads; zero writes/network/models.");
 }
 checkEuReadRenewal().catch(() => { console.error("EU runtime read renewal: FAIL"); process.exitCode = 1; });
