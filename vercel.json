@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/helmut-read-renewal-20261015": false,
       "codex/dip-vorgangsfakten-20260920": false,
       "codex/prosa-faktenbindung-20260920": false,
       "codex/dip-dokumentidentitaet-20260920": false,
