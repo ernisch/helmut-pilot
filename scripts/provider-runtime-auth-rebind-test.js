@@ -274,3 +274,62 @@ async function checkEuReadRenewal() {
   console.log("EU runtime read renewal: 2 genuine handlers and later fresh window PASS; 20 negative bindings rejected before reads; zero writes/network/models.");
 }
 checkEuReadRenewal().catch(() => { console.error("EU runtime read renewal: FAIL"); process.exitCode = 1; });
+
+// Kurzlebige reine Diagnose: echte Hashes, Admin nur in diesem Zweig,
+// kein normaler Read-Fallback, keine Konfigurations-/Daten-/Anbieterleser.
+{
+  const EU = require("../lib/helmut/synthetik-500-eu-service-contract");
+  const admin = "synthetic-binding-admin-00000000000000000000000";
+  const bearer = "synthetic-binding-runtime-00000000000000000000000";
+  const runtime = { VERCEL_ENV: "production", VERCEL_GIT_COMMIT_SHA: "e".repeat(40),
+    VERCEL_URL: "binding-fixture.vercel.app", VERCEL_DEPLOYMENT_ID: "dpl_BindingFixture",
+    HELMUT_SYNTHETIK500_EU_SERVICE_CONTRACT: EU.HASH, HELMUT_ADMIN_SECRET: admin };
+  const R = require("../lib/helmut/provider-runtime-attestation");
+  const diagnostic = (o = {}) => {
+    const env = { ...runtime, ...o.env }, at = o.now || "2026-10-15T12:00:00.000Z";
+    const headers = { authorization: "Bearer " + bearer,
+      "x-helmut-read-binding-diagnostic": "1", "x-helmut-read-binding-admin": "Bearer " + admin,
+      "x-helmut-production-commit": runtime.VERCEL_GIT_COMMIT_SHA,
+      "x-helmut-deployment-host": runtime.VERCEL_URL,
+      "x-helmut-root-nonce": R.operationAuthority(runtime).operationNonce,
+      "x-helmut-root-admitted-at": "2026-10-15T12:00:00.000Z",
+      "x-helmut-root-deadline-at": "2026-10-15T12:20:00.000Z", ...o.headers };
+    let reads = 0;
+    const out = { writeHead(code) { this.code = code; }, end(body) { this.body = body; } };
+    R.handleRequest({ method: o.method || "GET", headers }, out,
+      new URL(o.url || "https://helmut-pilot.vercel.app/api/cron/testnachweis-status?modus=provider-konfiguration"),
+      { jsonHeaders: () => ({ "Cache-Control": "no-store" }), env, now: () => new Date(at),
+        readRuntimeConfiguration() { reads++; throw Error("diagnostic-must-not-read-configuration"); } });
+    assert.equal(reads, 0);
+    assert(!out.body.includes(admin)); assert(!out.body.includes(bearer));
+    return { code: out.code, body: JSON.parse(out.body) };
+  };
+  const good = diagnostic();
+  assert.equal(good.code, 200); assert.equal(good.body.reinLesend, true);
+  assert.equal(good.body.receivedBearerSha256, crypto.createHash("sha256").update(bearer).digest("hex"));
+  assert.equal(good.body.configuredReadVerifierMatches, false);
+  assert.equal(good.body.deploymentId, runtime.VERCEL_DEPLOYMENT_ID);
+  for (const negative of [
+    { method: "POST" }, { headers: { "x-helmut-read-binding-admin": undefined } },
+    { headers: { "x-helmut-read-binding-admin": "Bearer wrong-admin" } },
+    { env: { HELMUT_ADMIN_SECRET: undefined } }, { env: { VERCEL_ENV: "preview" } },
+    { env: { HELMUT_SYNTHETIK500_EU_SERVICE_CONTRACT: "wrong" } },
+    { headers: { "x-helmut-root-nonce": "00000000-0000-4000-8000-000000000000" } },
+    { headers: { "x-helmut-production-commit": "f".repeat(40) } },
+    { headers: { "x-helmut-deployment-host": "other.vercel.app" } },
+    { headers: { "x-helmut-read-binding-diagnostic": "other" } },
+    { headers: { "x-helmut-root-deadline-at": "2026-10-15T12:20:00.001Z" } },
+    { now: "2026-10-15T11:59:59.999Z" }, { now: "2026-10-15T12:20:00.000Z" },
+    { now: "2026-10-15T15:00:00.000Z", headers: {
+      "x-helmut-root-admitted-at": "2026-10-15T14:50:00.000Z", "x-helmut-root-deadline-at": "2026-10-15T15:10:00.000Z" } },
+    { url: "https://other.vercel.app/api/cron/testnachweis-status?modus=provider-konfiguration" },
+    { url: "https://helmut-pilot.vercel.app/api/cron/testnachweis-status?modus=provider-konfiguration&x=1" },
+    { headers: { "content-length": "1" } }, { headers: { "transfer-encoding": "chunked" } }
+  ]) assert.notEqual(diagnostic(negative).code, 200);
+  const invalid = diagnostic({ headers: { authorization: "Bearer short" } });
+  assert.equal(invalid.code, 200); assert.equal(invalid.body.bearerFormatValid, false);
+  assert.equal(invalid.body.receivedBearerSha256, null);
+  // Ohne Diagnosemarker autorisiert auch der korrekte Adminzusatz niemals den normalen Read.
+  assert.equal(diagnostic({ headers: { "x-helmut-read-binding-diagnostic": undefined } }).code, 403);
+  console.log("Private binding diagnostic: PASS, admin/nonce/runtime/window/body gates; 18 denials, no reads or normal-auth fallback.");
+}
