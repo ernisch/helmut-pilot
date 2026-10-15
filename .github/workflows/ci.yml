@@ -333,6 +333,8 @@ jobs:
           # Eigene Fixture-DB im selben nachweislich netzlosen Container.
           export HELMUT_EU_DAY_INIT_PG_CONTAINER="$HELMUT_EU_PG_CONTAINER"
           node scripts/lokal.js -- node scripts/synthetik-500-eu-daybook-init-datenbank-test.js
+          # Getrennter enger Nachfolger; alter Erstinitializer bleibt unveraendert.
+          node scripts/lokal.js -- node scripts/synthetik-500-eu-daybook-rollforward-datenbank-test.js
 
       - name: Inerte Originalzustands-Reader-SQL gegen isolierten PostgreSQL17.6
         if: steps.plan.outputs.database == 'true'
