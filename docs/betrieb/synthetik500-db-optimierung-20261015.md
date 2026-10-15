@@ -4,7 +4,7 @@ Status: lokal implementierter und mit tatsächlichem PostgreSQL/PostgREST geprü
 
 Der neue service_role-Leser bündelt die vollständigen 874 Source23-Dokumente und 500 KO60-Objekte in einen frischen, nur lesenden RPC. Alle ursprünglichen Quellen-, Batch-, ID-, Versions- und Hashprüfungen bleiben erhalten. Andere Eingaben verwenden synchron den ursprünglichen Pfad; nach begonnenem RPC erfolgt kein Wiederholungsversuch. Der Server und der optierte Client begrenzen die vollständige Antwort auf 16 MiB. Der allgemeine Storagepfad behält sein bisheriges Verhalten.
 
-Ein einziger privater positiver Objektverweis darf ausschließlich den neu hinzugefügten Nachweis der rekursiv eingefrorenen Eingabestruktur wiederverwenden. Globale Transportbedingungen werden bei jedem Aufruf geprüft. IDs, Nonce, Datenbanklesung und sämtliche ursprünglichen Sicherheitsprüfungen bleiben frisch.
+Eine einzige private schwache Referenz darf ausschließlich den neu hinzugefügten Nachweis der rekursiv eingefrorenen Eingabestruktur wiederverwenden. Sie hält den Eingabegraphen nach Ende des Aufrufs nicht im Speicher; ein eingesammelter Eintrag führt erneut zum vollständigen Strukturcheck. Globale Transportbedingungen werden bei jedem Aufruf geprüft. IDs, Nonce, Datenbanklesung und sämtliche ursprünglichen Sicherheitsprüfungen bleiben frisch.
 
 | Messung auf vollständigen Originaldaten | Vorher | Nachher | Beobachteter Unterschied |
 | --- | ---: | ---: | ---: |
@@ -12,7 +12,7 @@ Ein einziger privater positiver Objektverweis darf ausschließlich den neu hinzu
 | Zusätzlicher Strukturcheck, kalt gegen dieselbe positive Identität | 36,155 ms | 0,964 ms | 35,191 ms |
 | Neuer vollständiger Leser, kalte gegen warme Identität | 492,148 ms | 344,528 ms | 147,620 ms |
 
-Dies sind einzelne lokale Paare, keine garantierten Productionlaufzeiten. Die unterschiedlichen Unterschiede werden nicht addiert oder auf 500 Profile hochgerechnet. Das letzte Paar enthält zusätzlich JIT-/GC-/Datenbankvariation. Neue Command-Decodes können den einzelnen Cacheeintrag verdrängen. Die Antwort steigt von 2.836.290 auf 2.933.541 Bytes; der Gewinn ist kein Nachweis geringerer Antwortbytes.
+Dies sind einzelne lokale Paare, keine garantierten Productionlaufzeiten. Die unterschiedlichen Unterschiede werden nicht addiert oder auf 500 Profile hochgerechnet. Das letzte Paar enthält zusätzlich JIT-/GC-/Datenbankvariation. Neue Command-Decodes können den einzelnen Cacheeintrag verdrängen. Die Laufzeitbelege binden ihre damaligen Helperversionen; die anschließende reine Schwachreferenzänderung ist durch unabhängigen Deltareview und echten GC-Test am vollständigen Originalgraphen separat belegt. Unveränderte DB-Paare wurden dafür nicht wiederholt. Die Antwort steigt von 2.836.290 auf 2.933.541 Bytes; der Gewinn ist kein Nachweis geringerer Antwortbytes.
 
 Vollständige Ergebnisse und Originalhashes sind identisch. Tatsächliche ACL-/Read-only-/Commitfrischeprüfungen, ein serverseitiger Übergrößenfall, neun lokale HTTP-Capfälle und die unabhängigen gezielten Readerprüfungen sind belegt. Datenbank und Authzustand blieben bei den Zeitmessungen unverändert. Der isolierte Übergrößenfall wurde exakt restauriert; sein physischer TOAST-Zuwachs ist getrennt dokumentiert.
 
