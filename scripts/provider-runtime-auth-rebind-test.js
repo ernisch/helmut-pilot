@@ -85,6 +85,8 @@ function loadPureModule(name) {
   const text = readPureSource(name);
   const module = { exports: {} };
   const requirePure = specifier => {
+    if (name === ATTESTATION && specifier === "./synthetik-500-runtime-artifact-attestation")
+      return { read: () => ({ version: "helmut-s500-runtime-artifacts/1", scope: "EXPLICIT_TEST_STUB_NO_ARTIFACT_ACCEPTANCE", executionAuthority: false }) };
     if (name === CANONICAL_HASH && specifier === "./canonical-content-facts") return inactiveFacts;
     if (name === CANONICAL_HASH && specifier === "./synthetik-500-cpu-epoch") return inactiveEpoch;
     assert.ok(INVENTORY[name].includes(specifier), "unexpected dependency in " + name);
@@ -105,6 +107,8 @@ function loadAttestation(injectSyntheticVerifier) {
   }
   const module = { exports: {} };
   const requirePure = specifier => {
+    if (specifier === "./synthetik-500-runtime-artifact-attestation")
+      return { read: () => ({ version: "helmut-s500-runtime-artifacts/1", scope: "EXPLICIT_TEST_STUB_NO_ARTIFACT_ACCEPTANCE", executionAuthority: false }) };
     assert.ok(INVENTORY[ATTESTATION].includes(specifier), "unexpected dependency");
     if (specifier === "node:crypto") return crypto;
     if (specifier === "./azure-endpunkt" || specifier === "./testkosten-budget") return {};
@@ -137,6 +141,7 @@ function call(runtime, nonce, observedAt) {
   return out;
 }
 
+if (process.argv[2] !== "--eu-only") {
 const synthetic = loadAttestation(true);
 const accepted = call(synthetic, NONCE, AT);
 assert.equal(accepted.status, 200);
@@ -172,6 +177,7 @@ assert.equal(productionVerifier.status, 403);
 assert.equal(productionVerifier.reads, 0);
 assert.equal(blockedEffectAttempts, 0, "no forbidden fetch/timer/console effect inside the VM loader");
 console.log("Provider runtime auth rebind: 3 PASS; current fixed nonce, exact expiry boundary, synthetic verifier only; real EU/profile/canonical-hash pure inventory.");
+}
 
 // Beide EU-Lesewege muessen dieselbe erneuerte Authority wirklich verwenden.
 // Nur deren Hash wird im VM-Quelltext synthetisch ersetzt; kein Auth-Override.
@@ -196,6 +202,7 @@ async function checkEuReadRenewal() {
   assert.notEqual(injected, source);
   const module = { exports: {} };
   const pure = { "node:crypto": crypto, "./azure-endpunkt": {}, "./testkosten-budget": K,
+    "./synthetik-500-runtime-artifact-attestation": { read: () => ({ version: "helmut-s500-runtime-artifacts/1", scope: "EXPLICIT_TEST_STUB_NO_ARTIFACT_ACCEPTANCE", executionAuthority: false }) },
     "./synthetik-500-eu-service-contract": EU };
   vm.runInNewContext("(function(require,module,exports){\n" + injected + "\n})",
     sandboxGlobals(path.join(LIB, ATTESTATION)))(name => {

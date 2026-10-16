@@ -1,0 +1,284 @@
+{
+  "schema": "helmut-production500-complete-accounting-status/1",
+  "status": "ALLIN_COVERAGE_OPEN_NO_NUMERIC_TOTAL_PROVED",
+  "preparedAtUTC": "2026-10-16T13:56:32.675234+00:00",
+  "exactActiveProfiles": 500,
+  "profileDistribution": {
+    "Bundestag": 330,
+    "Berlin": 120,
+    "Brandenburg": 50
+  },
+  "newOwnerQuestions": [],
+  "ownerFacts": {
+    "schema": "helmut-owner-cost-addendum/1",
+    "recordedUTC": "2026-10-15T13:39:03.296366+00:00",
+    "source": "Latest explicit owner facts on15Oct2026 relayed by root; invoices/CSV/public tariffs and sole-project inventory adopted. No live billing or qualification repeated.",
+    "supersedesCostFieldsOnly": [
+      "owner-cost-new/ONLY_MISSING_DE.txt",
+      "owner-cost-new/OWNER_FIELD_MATRIX.UPDATED.json",
+      "CURRENT_START_GATE.json remainingMissingOwnerCostFields"
+    ],
+    "vercel": {
+      "infraCreditUSD": "20",
+      "consumedUSDAsGiven": "2",
+      "remainingUSDAsGiven": "18",
+      "remainingIsOwnerApproximation": true,
+      "additionalSpendCurrentUSD": "0",
+      "spendBudgetUSD": "200",
+      "automaticPause": false,
+      "spendBudgetIsHardStop": false,
+      "cycleExclusive": [
+        "2026-09-28",
+        "2026-10-28"
+      ],
+      "VATPercent": 19,
+      "productionFunction": {
+        "route": "api/index",
+        "memoryMB": 2048,
+        "maxDurationSeconds": 300,
+        "region": "fra1",
+        "runtime": "Node24.x",
+        "actualVCPU": "UNKNOWN"
+      },
+      "oct15TwelveHourObservations": {
+        "averageMemoryMB": 232,
+        "cpuThrottleP75Percent": "22.8",
+        "errorPercent": 0,
+        "timeoutPercent": 0,
+        "is500LoadProof": false
+      },
+      "buildConfigAdopted": {
+        "type": "standard",
+        "selection": "fixed",
+        "source": "restored owner-cost/OWNER_FIELD_MATRIX.json VC_PROJECT_RESOURCE; preserve unchanged in root application preflight"
+      }
+    },
+    "supabase": {
+      "upcomingInvoiceDate": "2026-10-15",
+      "plan": "Pro",
+      "planUSD": "25",
+      "soleProject": "ddckuvvpcytqbyfmbvie",
+      "currentProjectsInOrg": 1,
+      "computeClass": "Micro",
+      "computeCurrentUSD": "3.06",
+      "computeCreditAppliedUSD": "3.06",
+      "planComputeCreditUSD": "10",
+      "computeCreditRemainderDerivedUSD": "6.94",
+      "computeCreditRemainderIsMeasured": false,
+      "totalCurrentAndProjectedUSD": "25",
+      "otherPaidAddonsOrExceptions": "none per current owner upcoming invoice",
+      "cycleExclusive": [
+        "2026-10-06",
+        "2026-11-06"
+      ],
+      "egressGB": "5.62",
+      "includedEgressGB": 250,
+      "cachedEgressGB": "0",
+      "includedCachedEgressGB": 250,
+      "diskProvisionedGB": 2,
+      "diskIncludedGB": 8,
+      "logIngestionGB": "1.682",
+      "logQuotaGB": 20,
+      "logQueryGB": "0.135",
+      "currentLogBilling": "Upcoming only; billing/enforcement starts2027",
+      "spendCap": "ON per explicit owner dashboard statement15Oct",
+      "spendCapScope": "Over-quota restrictions possible; excludes a universal monetary stop or all-in cost guarantee; compute/plan and any charge exceptions remain separately accounted."
+    },
+    "ownerQuestionsRemaining": [],
+    "notEstablished": [
+      "Actual function vCPU allocation",
+      "A valid complete Auth30/Unit60/9h execution",
+      "Full500 infrastructure quantities and cost coverage",
+      "Future current credit balance under concurrent team use"
+    ],
+    "security": "No secrets, addresses, payment identifiers, tax IDs, or original invoice contents in this projection; no evidence sent to a model helper."
+  },
+  "observedSuccessfulLocalRun": {
+    "databaseHTTPRuntime": 82505,
+    "installation": 18,
+    "offline": 5,
+    "totalOfThoseStages": 82528,
+    "runtimeAuthMutations": 4000,
+    "installAuthMutations": 1,
+    "providerCalls": 1000,
+    "providerMockRequestBodies": {
+      "scope": "EXACT_RETAINED_LOCAL_MOCK_REQUEST_BODIES_NOT_RESPONSE_WIRE_OR_PRODUCTION_CEILING",
+      "phases": {
+        "D": {
+          "calls": 500,
+          "requestBodyBytes": 7865650,
+          "maxRequestBodyBytes": 17445
+        },
+        "R": {
+          "calls": 500,
+          "requestBodyBytes": 8752290,
+          "maxRequestBodyBytes": 18723
+        }
+      },
+      "allRequestBodyBytes": 16617940,
+      "httpHeaderBytesRetained": false,
+      "responseBodyWireBytesRetained": false,
+      "models": 0
+    },
+    "finalLocalDatabaseSizes": {
+      "scope": "TWO_LOCAL_READ_ONLY_SIZE_OBSERVATIONS_NO_TEST_OR_MUTATION",
+      "rows": [
+        {
+          "database": "helmut_fresh_input_fixture_d2e98984",
+          "storeRows": 6,
+          "observedAtUTC": "2026-10-16T13:28:20.937193+00:00",
+          "mainLogicalBytes": 3433317,
+          "storePhysicalBytes": 6791168,
+          "evidenceLogicalBytes": null,
+          "mainAuthLogicalBytes": 4188627,
+          "physicalDatabaseBytes": 20008083,
+          "commandMaxLogicalBytes": 4090187,
+          "storeLogicalDataTextBytes": 13739103,
+          "unloggedOrTemporaryTables": 0
+        },
+        {
+          "database": "helmut_fresh_runtime_fixture_b27c2026",
+          "storeRows": 1011,
+          "observedAtUTC": "2026-10-16T13:28:21.586109+00:00",
+          "mainLogicalBytes": 3433317,
+          "storePhysicalBytes": 141885440,
+          "evidenceLogicalBytes": 32312098,
+          "mainAuthLogicalBytes": 12141356,
+          "physicalDatabaseBytes": 165432467,
+          "commandMaxLogicalBytes": 4090187,
+          "storeLogicalDataTextBytes": 60143201,
+          "unloggedOrTemporaryTables": 0
+        }
+      ],
+      "logicalDeltaBytes": 46404098,
+      "physicalDeltaIsNotPeak": true,
+      "noWALPeakOrWireProof": true,
+      "productionCalls": 0
+    },
+    "observationsAreNotProductionCaps": true
+  },
+  "derivedQuotaSnapshot": {
+    "uncachedGB": "244.38",
+    "cachedGB": "250",
+    "logIngestionGB": "18.318",
+    "additionalProvisionedDiskBeforeIncluded8GB": "6",
+    "computeCreditUSD": "6.94",
+    "allDerivedNotFreshLedger": true
+  },
+  "prices": {
+    "region": "FRA1",
+    "activeCPUUSDPerVCPUHour": "0.184",
+    "memoryUSDPerGBHour": "0.0152",
+    "functionInvocationsUSDPerMillion": "0.60",
+    "originUSDPerGB": "0.06",
+    "dataUSDPerGB": "0.15",
+    "CDNRequestsUSDPerMillion": "2.60",
+    "CDNAdditionalCPUUSDPerHour": "0.39",
+    "observabilityEventsUSDPerMillion": "1.20",
+    "fixedStandardBuildUSDPerMinute": "0.014",
+    "VATFactor": "1.19",
+    "actualVCPU": "UNKNOWN",
+    "costOnlyPublicVCPUUpper": 2
+  },
+  "accounting": {
+    "vercelNet": "0.014*buildMinutes +0.184*activeVCPUSeconds/3600 +0.0152*provisionedGBSeconds/3600 +0.60*functionInvocations/1e6 +0.06*billableOriginGB +0.15*billableDataGB +2.60*billableCDNRequests/1e6 +0.39*billableAdditionalCDNCPUSeconds/3600 +1.20*billableObservabilityEvents/1e6 +applicableWAFAndOtherResourceMeters",
+    "vercelGrossConservative": "net*1.19; tax-credit ledger treatment not inferred",
+    "supabase": "Existing Pro25/month and sole Micro are separate covered baseline. Compare peak physical disk/WAL/TOAST/index/dead tuples and all uncached/cached wire egress with time-valid quotas; applicable exceptions are not removed by SpendCap.",
+    "github": "Existing CI/endwatcher runner minutes and current entitlement must cover the chosen finite plan; no runner purchase authorized.",
+    "modelUSDMaximum": "81.400000 for exactly500D+500R/U0; separate from Vercel credit",
+    "dayCeilingUSD": "82.036000",
+    "orderCeilingUSD": "88.845364"
+  },
+  "candidateFiniteOperatorPlan": {
+    "scope": "PROPOSAL_NOT_ADMITTED_OR_EXECUTED",
+    "start": 1,
+    "next": 499,
+    "exportManifest": 1,
+    "exportUnits": 500,
+    "configurationGET": 1,
+    "financeGET": 1,
+    "status": 1,
+    "contingencyStopMaximum": 1,
+    "totalFunctionRequests": 1005,
+    "endwatcherDatabasePollingAndCronAdditional": "Must be counted for exact chosen window; not included in1005",
+    "automaticRetry": 0
+  },
+  "unclosedTerms": [
+    {
+      "id": "COMPLETE_BILLED_LIFETIMES",
+      "need": "Bound complete CPU/GB-seconds, cold starts, pending/late work, actual control/export/cleanup/cardinality and concurrent instances. Unit scopes and9h+30min wall window alone do not bound all billed instance lifetimes."
+    },
+    {
+      "id": "NATIVE_AND_CONTROL_WIRE",
+      "need": "All actual response/header/error/transfer bytes and source-pinned growth bounds, including full Auth reads/writes, fresh guards, source paging, up to64confirmed CAS attempts and all exports. Existing82528 normal-path observations lack wire counters; old5001-mutation formula is historical, not current measured4001."
+    },
+    {
+      "id": "PHYSICAL_DB_PEAK",
+      "need": "Peak database/WAL/TOAST/index/dead tuples within current disk provision/included8GB. Final165432467B snapshot is not a peak bound;16MiB per private append permits too loose16.777GB across1000rows."
+    },
+    {
+      "id": "EVENTS_OTHER_WORK_AND_WATCHER",
+      "need": "Exact eligible Observability/CDN/WAF counts, endwatcher/cron traffic, GitHub runner entitlement and any applicable configured telemetry/backend; no unlisted item assumed zero."
+    },
+    {
+      "id": "FRESH_FINANCIAL_BINDING",
+      "need": "New actual run day/order/counter/route bound, finance witness succeeds internally, same tariff/credit/quota scope. Latest owner snapshots accepted; no accessrepair or409probe repeated here."
+    }
+  ],
+  "smallestRemainingEvidenceAction": "Existing records cannot retrospectively yield missing wire or peak counters. First close source-bound hard ceilings without changing checks. Where insufficient, a separately scoped passive native-transport/physical-peak evidence action and authority is required; no automatic500 rerun, no weaker caps or contract. Then reconcile actual execution plan with credits/quotas.",
+  "historical2_50USDAction": "The2.50USDgross envelope applies only to old PR914 finite finance action. It is not this integration or500-run admission and is not a measured debit.",
+  "productionGO": false,
+  "coarsePlatformLimitDiagnostics": [
+    {
+      "functionInvocations": 500,
+      "CPUOnlyLooseUpperNetUSD": "15.33333333333333333333333333",
+      "RAMOnlyLooseUpperNetUSD": "1.266666666666666666666666667",
+      "CPUPlusRAMGrossLooseUpperUSD": "19.75400000000000000000000000",
+      "meaning": "Only a loose product of platform limits; excludes all other terms. NOT a forecast, measured debit, complete cost upper, or proof actual credit is insufficient. This loose proof does not establish<=18USD."
+    },
+    {
+      "functionInvocations": 1005,
+      "CPUOnlyLooseUpperNetUSD": "30.820",
+      "RAMOnlyLooseUpperNetUSD": "2.5460",
+      "CPUPlusRAMGrossLooseUpperUSD": "39.705540",
+      "meaning": "Only a loose product of platform limits; excludes all other terms. NOT a forecast, measured debit, complete cost upper, or proof actual credit is insufficient. This loose proof does not establish<=18USD."
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/VERCEL_FRA_CURRENT_PUBLIC.txt",
+      "bytes": 5698,
+      "sha256": "4e4d501108e3ea3f1122f869f1bdc70ca29154d68854954ebd07099c8b66f615"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/OBSERVED_REQUEST_INVENTORY.SAFE.json",
+      "bytes": 4116,
+      "sha256": "e81922d133b3ba1710df8eb3d526590b146801d94914b3e1951c7b6255f0483d"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/OBSERVED_PROVIDER_REQUEST_BYTES.SAFE.json",
+      "bytes": 460,
+      "sha256": "c5fbc77671afe59113323262e9f2e2c411053480273e5cfe66a271e5fc6283ff"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/LOCAL_FINAL_SIZE_COMPARISON.SAFE.json",
+      "bytes": 1151,
+      "sha256": "264d4ff9260fa3d0ca2b420fff9bce03a43752e950bdbe169eee7f42c8842305"
+    },
+    {
+      "path": "/workspace/helmut-finance-20261015/cost-addendum-20261015/LATEST_OWNER_FACTS.SAFE.json",
+      "bytes": 3065,
+      "sha256": "cac334c6f846364cf351385bc0b4a3f9619a7c9a61fa37f34c663cb085f1f6c2"
+    },
+    {
+      "path": "/workspace/helmut-finance-20261015/owner-cost-new/NEW_COST_FACTS.SAFE.json",
+      "bytes": 8626,
+      "sha256": "d5967ea7889a94008401bf718154360c301affa940c1c24f24d3899ee8e80a42"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave2/finance_409/COST_ENVELOPE.json",
+      "bytes": 17373,
+      "sha256": "b77708f19d67a3c931d9b442e5695364c559b017f8787f8d355edbaa87d72c72"
+    }
+  ]
+}

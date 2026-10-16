@@ -1,0 +1,32 @@
+"use strict";
+// New metadata reader only. No Worker, DB, full-C, profile, network or model test.
+const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm"),assert=require("node:assert/strict"),crypto=require("node:crypto");
+const R=path.resolve(__dirname,".."),file=path.join(R,"lib/helmut/synthetik-500-runtime-artifact-attestation.js"),source=fs.readFileSync(file,"utf8");
+const PUB="HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY",PRIV="HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY";
+const results=[];
+function fixture({patchManifest=x=>x,patchFile=(p,b)=>b,version=process.version,missing=false,driftAfterRead=false}={}){
+ let reads=0,sourceBytesRead=0;const contents=new Map(),fds=new Map();
+ const content=p=>{if(!contents.has(String(p))){let b=fs.readFileSync(p);if(String(p).endsWith("synthetik-500-release-artifacts.json")){if(missing)throw Error("fixture-manifest-absent");b=Buffer.from(JSON.stringify(patchManifest(JSON.parse(b))));}else b=patchFile(p,b);contents.set(String(p),b);}return contents.get(String(p));};
+ const sized=(st,size)=>Object.assign(Object.create(Object.getPrototypeOf(st)),st,{size});
+ const mockFS={...fs,lstatSync(p){const st=fs.lstatSync(p);return sized(st,content(p).length);},
+   openSync(p,flags){reads++;const fd=fs.openSync(p,flags);fds.set(fd,{p,bytes:content(p),position:0});return fd;},
+   fstatSync(fd){const f=fds.get(fd),st=sized(fs.fstatSync(fd),f.bytes.length);if(driftAfterRead&&f.position>0&&!String(f.p).endsWith("synthetik-500-release-artifacts.json"))st.mtimeMs++;return st;},
+   readSync(fd,buffer,offset,length){const f=fds.get(fd),n=Math.min(length,f.bytes.length-f.position);f.bytes.copy(buffer,offset,f.position,f.position+n);f.position+=n;if(!String(f.p).endsWith("synthetik-500-release-artifacts.json"))sourceBytesRead+=n;return n;},
+   closeSync(fd){fds.delete(fd);fs.closeSync(fd);}};
+ const m={exports:{}};vm.runInThisContext("(function(require,module,exports,__dirname,process){"+source+"\n})",{filename:file})(name=>name==="node:fs"?mockFS:require(name),m,m.exports,path.dirname(file),{version,env:{}});
+ return {read:m.exports.read,reads:()=>reads,sourceBytesRead:()=>sourceBytesRead};
+}
+function test(name,f){f();results.push({name,pass:true});}
+test("actual-local84-pins-match-with-no-execution-authority",()=>{const r=fixture().read({});assert(r.sourceBytesMatchExpected);assert.equal(r.artifactAndNodeReadyInThisProcess,process.version==="v24.19.0");assert.equal(r.filesExpected,84);assert.equal(r.publicOnlyKeyReadyInThisProcess,false);assert.equal(r.actualWorkerStarted,false);assert.equal(r.databaseReads,0);assert.equal(r.modelCalls,0);assert.equal(r.executionAuthority,false);});
+test("node-patch-drift-does-not-inherit-local-qualification",()=>{const r=fixture({version:"v24.18.0"}).read({});assert(r.sourceBytesMatchExpected);assert.equal(r.nodePatchMatchesCurrentQualification,false);assert.equal(r.artifactAndNodeReadyInThisProcess,false);});
+test("one-emitted-source-byte-drift-is-reported-and-not-accepted",()=>{let done=false;const r=fixture({patchFile(p,b){if(!done&&String(p).endsWith("canonical-content-facts.js")){done=true;return Buffer.concat([b,Buffer.from("\n")]);}return b;}}).read({});assert(done);assert.equal(r.sourceBytesMatchExpected,false);assert.equal(r.mismatches,1);});
+test("malformed-outside-or-duplicate-manifest-paths-fail-closed",()=>{for(const mode of ["outside","duplicate"]){const r=fixture({patchManifest(x){if(mode==="outside")x.files[0].path="../outside";else x.files.push({...x.files[0]});return x;}}).read({});assert.equal(r.status,"ARTIFACT_EVIDENCE_UNAVAILABLE");assert.equal(r.sourceBytesMatchExpected,false);}});
+test("missing-manifest-remains-unavailable",()=>{const r=fixture({missing:true}).read({});assert.equal(r.status,"ARTIFACT_EVIDENCE_UNAVAILABLE");assert.equal(r.artifactAndNodeReadyInThisProcess,false);});
+test("rejected-drifting-files-still-consume-the-shared32MiB-read-budget",()=>{let changed=0;const x=fixture({driftAfterRead:true,patchFile(p,b){return changed++<3?Buffer.alloc(16*1024*1024):b;}});const r=x.read({});assert.equal(x.sourceBytesRead(),32*1024*1024);assert.equal(r.filesRead,0);assert.equal(r.sourceBytesMatchExpected,false);assert(r.missingOrUnsafeFiles>0);});
+// Existing local fixture PUBLIC key only, never its private key or any Production credential.
+const publicPEM="-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAwj2e/jhA+luLKjNZuxle7abiT063EPxeCSbfInjfyxQ=\n-----END PUBLIC KEY-----\n"; // Fixed public test fixture only; never a Production trust anchor.
+test("public-spki-fingerprint-only-private-key-name-presence-rejects",()=>{const expected=crypto.createHash("sha256").update(crypto.createPublicKey(publicPEM).export({type:"spki",format:"der"})).digest("hex");const x=fixture().read({[PUB]:publicPEM});assert.equal(x.publicKey.spkiSHA256,expected);assert(x.publicOnlyKeyReadyInThisProcess);const y=fixture().read({[PUB]:publicPEM,[PRIV]:"fictional-private-never-emit"});assert(y.privateSigningKeyNamePresent);assert.equal(y.publicOnlyKeyReadyInThisProcess,false);const text=JSON.stringify(y);assert(!text.includes("fictional-private")&&!text.includes("BEGIN PUBLIC"));});
+test("private-pem-in-public-variable-is-not-mistaken-for-public-only",()=>{const x=fixture().read({[PUB]:"-----BEGIN PRIVATE KEY-----\nAA==\n-----END PRIVATE KEY-----\n"});assert.equal(x.publicKey.status,"INVALID");assert.equal(x.publicKey.spkiSHA256,null);assert.equal(x.publicOnlyKeyReadyInThisProcess,false);});
+test("shared-model-configuration-keeps-artifact-io-outside-its-path",()=>{const r=require("../lib/helmut/provider-runtime-attestation").readConfiguration({},{enabled:false});assert(!Object.hasOwn(r,"contentPreparation"));const metadata=fixture().read({});assert(metadata.sourceBytesMatchExpected);assert(Buffer.byteLength(JSON.stringify({...r,contentPreparation:metadata}))<32768-2048);});
+test("unauthenticated-existing-reader-cannot-trigger-artifact-or-config-read",()=>{let reads=0,status=0;const P=require("../lib/helmut/provider-runtime-attestation");P.handleRequest({method:"GET",headers:{}},{writeHead(s){status=s;},end(){}},new URL("https://fixture.vercel.app/api/cron/testnachweis-status?modus=provider-konfiguration"),{jsonHeaders:()=>({}),readRuntimeConfiguration(){reads++;throw Error("unauthorized-read");},env:{}});assert.equal(status,403);assert.equal(reads,0);});
+console.log(JSON.stringify({scope:"NEW_METADATA_READER_ONLY_NOT500_OR_PRODUCTION",tests:results.length,results,workerStarts:0,databaseCalls:0,modelCalls:0,profileActivations:0}));
