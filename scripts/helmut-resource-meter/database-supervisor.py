@@ -4,7 +4,7 @@
 Must be launched on a private internal Docker network with its own PGDATA
 volume. Cleanly stops only this server and owned PostgREST children after the
 application signals normal measurement completion, then records final network
-counters. PG itself runs under the selected-syscall allocation tracer.
+counters. PG itself runs directly on the owned bounded filesystem.
 """
 import json
 import os
@@ -38,7 +38,7 @@ def main():
             name=(p/'comm').read_text().strip()
             if int(p.name) not in [os.getpid(),child.pid] and name!='postgres':os.kill(int(p.name),signal.SIGTERM)
         except (FileNotFoundError,ProcessLookupError):pass
-    # Signal the postgres tracee (not the tracer). No host or old-container PID.
+    # Signal only this postgres process. No host or old-container PID.
     pgpid=pgdata/'postmaster.pid'
     if child.poll() is None and pgpid.exists():os.kill(int(pgpid.read_text().splitlines()[0]),signal.SIGINT)
     code=child.wait(timeout=40);log.close()

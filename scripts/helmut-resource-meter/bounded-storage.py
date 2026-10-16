@@ -12,6 +12,12 @@ K=importlib.util.module_from_spec(s);s.loader.exec_module(K)
 BASE=Path('/workspace/helmut-parallel-20261015/wave19-resource-meter')
 TOOLS=Path('/tmp/helmut-meter-filesystem-tools')
 
+def retire_nodes(out):
+    # Also usable on failed setup: remove the retained volume's named device
+    # path without detaching or changing the owned kernel loop mapping.
+    out=Path(out)
+    if (out/'nodes').exists():os.rename(out/'nodes',out/'RETIRED-nodes')
+
 def create(out,size,minor,parent,hold=900):
     out=Path(out).resolve()
     if out.parent!=BASE or out.is_symlink() or type(size)is not int or not 128*1024*1024<=size<=8000000000 or size%4096:
@@ -61,6 +67,7 @@ def create(out,size,minor,parent,hold=900):
     K.docker(['volume','create','--driver','local','--opt','type=ext4','--opt','device='+str(out/'nodes/LOOP_DEVICE'),
               '--opt','o=noatime',volume])
     if K.docker(['inspect','--format','{{.State.Running}}|{{.State.ExitCode}}',cid]).stdout.strip()!='true|0':
+        retire_nodes(out)
         raise RuntimeError('helper exited while creating owned volume; do not mount or start any database')
     result={'schema':'helmut-owned-bounded-storage/1','out':str(out),'image':str(image),'bytes':size,'loopMinor':minor,
             'volume':volume,'name':name,'containerId':cid,'parent':parent,'filesystemUUID':uuid,
@@ -72,7 +79,7 @@ def finish(storage):
     out=Path(storage['out'])
     # Retire the named mount path even if the holder crashed. The image and
     # own mapping are retained; no future volume mount can follow a stale node.
-    if (out/'nodes').exists():os.rename(out/'nodes',out/'RETIRED-nodes')
+    retire_nodes(out)
     (out/'STOP').write_text('OWNED_TEST_INFRASTRUCTURE_FINISHED\n')
     code=int(K.docker(['wait',storage['containerId']],timeout=30).stdout.strip())
     final=json.loads((out/'STORAGE_FINAL.SAFE.json').read_text())
