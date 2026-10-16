@@ -403,6 +403,46 @@ check("Ueberlange valide Summary wird kompakt uebergeben statt verworfen", () =>
   assert.ok(charLength(JSON.stringify(visible)) <= 2000, "sichtbare Rueckgabe bleibt unter 2000 Zeichen");
 });
 
+check("Ueberlange Rueckgabe stoppt Write vor jeder Dateianderung", () => {
+  const p = project();
+  const target = path.join(p.root, "lib/example.js");
+  const original = fs.readFileSync(target, "utf8");
+  const oversized = summary({
+    result: Array.from({ length: 4 }, () => "\n".repeat(220)),
+    files: Array.from({ length: 10 }, () => ({
+      path: "\n".repeat(180), note: "\n".repeat(160),
+    })),
+    tests: Array.from({ length: 8 }, () => ({
+      name: "\n".repeat(140), result: "\n".repeat(120),
+    })),
+    risks: Array.from({ length: 4 }, () => "\n".repeat(220)),
+    next: "\n".repeat(240),
+  });
+  try {
+    assert.throws(() => router.finalVisibleResult(oversized,
+      { model: "deepseek-flash", effort: "high", mode: "write" },
+      { usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 }, contextChars: 50000 },
+      ["lib/example.js"]), /deepseek-visible-result-too-long/);
+    assert.throws(() => router.run({
+      argv: ["flash", "high", "write", "--task-file", p.task, "--file", "lib/example.js"],
+      cwd: p.root,
+      env: { DEEPSEEK_API_KEY: "placeholder" },
+      callDeepSeek: () => apiResult({
+        summary: oversized,
+        edits: [{
+          path: "lib/example.js",
+          expected_sha256: hash(original),
+          content: "module.exports = 2;\n",
+        }],
+      }),
+    }), /deepseek-visible-result-too-long/);
+    assert.equal(fs.readFileSync(target, "utf8"), original,
+      "abgewiesene Antwort darf keine Datei veraendern");
+  } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
+  }
+});
+
 check("Write Modus wendet nur hashgebundene explizite Repository Datei an", () => {
   const p = project();
   const target = path.join(p.root, "lib/example.js");
