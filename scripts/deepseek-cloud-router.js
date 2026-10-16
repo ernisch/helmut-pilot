@@ -599,14 +599,14 @@ function run(options = {}) {
   const payload = apiResult.payload;
   const summary = validateSummary(payload.summary);
 
-  let applied = [];
-  if (cfg.mode === "write") {
-    const prepared = prepareEdits(payload.edits, sources, cwd);
-    applyEdits(prepared);
-    applied = prepared.map((x) => x.source.label);
-  }
-
-  return finalVisibleResult(summary, cfg, apiResult, applied);
+  const prepared = cfg.mode === "write"
+    ? prepareEdits(payload.edits, sources, cwd)
+    : [];
+  // Validate the bounded visible receipt before any authorized file mutation.
+  const visible = finalVisibleResult(summary, cfg, apiResult,
+    prepared.map((x) => x.source.label));
+  if (cfg.mode === "write") applyEdits(prepared);
+  return visible;
 }
 
 function main() {
