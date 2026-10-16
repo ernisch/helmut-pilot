@@ -41,10 +41,15 @@ function fixture(options = {}) {
   const operationId = options.operationId || "synthetik500-local-signed-context-tests";
   function command() { const shared = { immutable: "é😀\ud800" }; return { version: "MOCK-CONTENT-NOT-FULL-C-VALIDATED",
     shared: [shared, shared], slot: { planHash: "b".repeat(64), plan: { operationId, endsAtUTC: new Date(state.planEnd).toISOString() } },
+    ...(options.runtimeShape ? { package: require("../lib/helmut/synthetik-500-profile").erzeuge(),
+      executor: { eingaben: { runtimeManifest: { immutableTestManifest: true } } } } : {}),
     ...(options.ordinaryLegacy ? { version: "helmut-synthetik500-production-command/2-direct", mode: "D-R-500",
       drafts: Array.from({ length: 500 }, () => ({ briefingEingabe: { version: 1 } })) } : {}) }; }
-  const selector = Object.freeze({ operationId, commandHash: sha(canonical(command())) });
-  state.body = JSON.stringify({ command: command(), admission: { oldEmbedded: "not-authority" }, testAuthority: { oldEmbeddedGO: true } });
+  const makeCommand = command;
+  function runtimeCommand() { const value = makeCommand();
+    if (options.runtimeShape) value.slot.plan.productionCommit = "c".repeat(40); return value; }
+  const selector = Object.freeze({ operationId, commandHash: sha(canonical(runtimeCommand())) });
+  state.body = JSON.stringify({ command: runtimeCommand(), admission: { oldEmbedded: "not-authority" }, testAuthority: { oldEmbeddedGO: true } });
   const fakeProcess = { env: state.env, version: process.version, resourceUsage: () => ({ maxRSS: 1 }) };
   const runner = { sourceBinding: () => state.sources,
     validateStoredContent: input => worker(input, "full"), restoreStoredContent: input => worker(input, "restore") };
@@ -52,7 +57,7 @@ function fixture(options = {}) {
     assert.equal(input.dataText, state.body); assert.equal(input.storedSHA256, sha(state.body));
     if (mode === "full") { state.fullWorkers++; state.clock += state.fullMS; }
     else { state.restoreWorkers++; state.clock += state.restoreMS; }
-    const root = command(); assert.equal(sha(canonical(root)), input.commandHash);
+    const root = runtimeCommand(); assert.equal(sha(canonical(root)), input.commandHash);
     const answer = { mode, storedSHA256: input.storedSHA256, commandHash: input.commandHash,
       operationId: input.operationId, packet: { command: root, admission: { embeddedIgnored: true }, testAuthority: { embeddedIgnored: true } },
       diagnostics: { commandCalls: mode === "full" ? 1 : 0, enteredCount: mode === "full" ? 1 : 0, codecEnteredCount: 1 }, phases: [] };
@@ -60,9 +65,16 @@ function fixture(options = {}) {
       { enteredCount: 0, qualifiedFalseCount: 1, lastFailure: "unsupported-command-dispatch" });
     if (state.workerPatch) state.workerPatch(answer, input, mode); return answer;
   }
+  state.runtimeBuilds = 0;
+  const runtimeModule = { erzeugeEndRuntime(bytes) { state.runtimeBuilds++;
+    return require("../lib/helmut/synthetik-500-end-runtime").erzeugeEndRuntime(bytes); } };
+  const profileModule = { kanonisch: canonical,
+    hash: require("../lib/helmut/synthetik-500-profile").hash,
+    serialisiere: require("../lib/helmut/synthetik-500-profile").serialisiere };
   const localRequire = name => name === "./synthetik-500-content-runner" ? runner
     : name === "./synthetik-500-stored-command-native-pins.json" ? pins
-      : name === "./synthetik-500-profile" ? { kanonisch: canonical }
+      : name === "./synthetik-500-profile" ? profileModule
+        : name === "./synthetik-500-end-runtime" ? runtimeModule
         : name === "node:perf_hooks" ? { performance: { now: () => state.clock } } : require(name);
   const actual = loadActual(source, sourceFile, localRequire, fakeProcess, ClockDate);
   async function request(url, options = {}) {
@@ -104,7 +116,7 @@ function fixture(options = {}) {
     const next = clone(value); mutation(next.payload); next.signature = crypto.sign(null, Buffer.from(JSON.stringify(next.payload)), privateKey).toString("base64"); return next;
   }
   const nativeCalls = () => state.calls.filter(x => x.kind === "native");
-  return { state, selector, backend, another, offline, install, ready, rowId, resign, nativeCalls, ClockDate };
+  return { state, selector, backend, another, offline, install, ready, rowId, resign, nativeCalls, ClockDate, profileModule, runtimeModule };
 }
 async function check(name, body) {
   if (filter && !filter.test(name)) return;
@@ -325,6 +337,102 @@ async function check(name, body) {
   await check("busy-read-or-readProof-contender-preserves-winning-read", async () => {
     const x=fixture(),p=await x.ready(),packet=await x.backend.read(p.token,x.selector);x.state.rpcGate=deferred();x.state.rpcEntered=deferred();const winning=x.backend.read(p.token,x.selector);await x.state.rpcEntered.promise;
     await assert.rejects(x.backend.read(p.token,x.selector),/busy/);await assert.rejects(x.backend.readProof(p.token,x.selector,packet),/busy/);x.state.rpcGate.resolve();assert.equal(await winning,packet);
+  });
+  await check("runtime-derivation-once-frozen-warm-and-cold-records", async () => {
+    const x=fixture({runtimeShape:true}),p=await x.ready(),packet=await x.backend.read(p.token,x.selector);
+    const a=x.backend.runtimeDerivation(p.token,x.selector,packet.command);
+    assert.equal(x.backend.runtimeDerivation(p.token,x.selector,packet.command),a);
+    assert.equal(x.state.runtimeBuilds,1);assert(Object.isFrozen(a)&&Object.isFrozen(a.E)&&Object.isFrozen(a.args));
+    assert.throws(()=>{a.args.manifestHash="forged";},TypeError);
+    assert.throws(()=>{a.E.READ_RPC_NAME="forged";},TypeError);
+    x.backend.release(p.token);const q=await x.backend.open(x.selector),same=await x.backend.read(q.token,x.selector);
+    assert.equal(x.backend.runtimeDerivation(q.token,x.selector,same.command),a);assert.equal(x.state.runtimeBuilds,1);
+    x.backend.release(q.token);const other=x.another(),r=await other.open(x.selector),restored=await other.read(r.token,x.selector);
+    const b=other.runtimeDerivation(r.token,x.selector,restored.command);
+    assert.notEqual(b,a);assert.deepEqual(b.args,a.args);assert.equal(x.state.runtimeBuilds,2);assert.equal(x.state.restoreWorkers,1);
+  });
+  await check("runtime-derivation-keeps10-loads-and6-admissions-fresh", async () => {
+    const x=fixture({runtimeShape:true}),p=await x.ready(),packet=await x.backend.read(p.token,x.selector);
+    const before=x.nativeCalls().length;
+    for(let i=0;i<16;i++){
+      if(i<10)assert.equal(await x.backend.read(p.token,x.selector),packet);
+      else{const proof=await x.backend.readProof(p.token,x.selector,packet);x.backend.consumeProof(p.token,x.selector,packet.command,proof);}
+      x.backend.runtimeDerivation(p.token,x.selector,packet.command);
+    }
+    const calls=x.nativeCalls().slice(before);assert.equal(calls.length,16);
+    assert.equal(new Set(calls.map(c=>c.args.p_nonce)).size,16);assert.equal(x.state.runtimeBuilds,1);
+  });
+  await check("runtime-derivation-clone-and-selector-mismatch-revoke", async () => {
+    for(const kind of ["clone","operation","hash"]){
+      const x=fixture({runtimeShape:true}),p=await x.ready(),packet=await x.backend.read(p.token,x.selector);
+      x.backend.runtimeDerivation(p.token,x.selector,packet.command);
+      const args={...x.selector};if(kind==="operation")args.operationId+="-other";if(kind==="hash")args.commandHash="0".repeat(64);
+      assert.throws(()=>x.backend.runtimeDerivation(p.token,args,kind==="clone"?Object.freeze(clone(packet.command)):packet.command));
+      assert.throws(()=>x.backend.runtimeDerivation(p.token,x.selector,packet.command));assert.equal(x.state.runtimeBuilds,1);
+    }
+  });
+  await check("runtime-derivation-closed-token-and-drift-cannot-reuse", async () => {
+    for(const kind of ["closed","source","target","key","expiry"]){
+      const x=fixture({runtimeShape:true}),p=await x.ready(),packet=await x.backend.read(p.token,x.selector);
+      x.backend.runtimeDerivation(p.token,x.selector,packet.command);
+      const original={sources:x.state.sources,target:x.state.target,key:x.state.env[PUB],clock:x.state.clock};
+      if(kind==="closed")x.backend.release(p.token);
+      if(kind==="source")x.state.sources+="-changed";
+      if(kind==="target")x.state.target+="-changed";
+      if(kind==="key")x.state.env[PUB]=pem(otherKeys.publicKey);
+      if(kind==="expiry")x.state.clock=8*3600000;
+      assert.throws(()=>x.backend.runtimeDerivation(p.token,x.selector,packet.command));assert.equal(x.state.runtimeBuilds,1);
+      x.state.sources=original.sources;x.state.target=original.target;x.state.env[PUB]=original.key;x.state.clock=original.clock;
+      assert.throws(()=>x.backend.runtimeDerivation(p.token,x.selector,packet.command),/context/);
+    }
+  });
+  await check("runtime-derivation-revoked-after-fresh-native-binding-rejection",async()=>{
+    for(const change of [r=>{r.xmin="999";},r=>{r.storedSHA256="0".repeat(64);},r=>{r.nonce="0".repeat(64);}]){
+      const x=fixture({runtimeShape:true}),p=await x.ready(),packet=await x.backend.read(p.token,x.selector);
+      x.backend.runtimeDerivation(p.token,x.selector,packet.command);x.state.patch=change;
+      await assert.rejects(x.backend.read(p.token,x.selector));
+      assert.throws(()=>x.backend.runtimeDerivation(p.token,x.selector,packet.command));assert.equal(x.state.runtimeBuilds,1);
+    }
+  });
+  // The actual readRuntime + ALS body, with the actual signed test backend.
+  // Only the fresh runtime HTTP response and Root/worker IO remain explicit mocks.
+  async function runtimeScopeFixture(){
+    const x=fixture({runtimeShape:true}),p=await x.ready();x.backend.release(p.token);
+    const start=storageSource.indexOf("async function loadSynthetik500ProductionCommand("),end=storageSource.indexOf("async function retainSynthetik500ProductionEvidence(",start);
+    const rs=storageSource.indexOf("async function readSynthetik500Runtime("),re=storageSource.indexOf("async function readSynthetik500RuntimeEnvelope(",rs);
+    assert(start>=0&&end>start&&rs>=0&&re>rs);
+    const names=["withSynthetik500PreparedCommand","readSynthetik500Runtime","loadSynthetik500ProductionCommand"];
+    const text=storageSource.slice(start,end)+storageSource.slice(rs,re)+"\nmodule.exports={"+names.join(",")+"};";
+    const m={exports:{}},state={reads:0,corrupt:false};const packet=JSON.parse(x.state.body);
+    const request=async url=>{const u=new URL(url,"http://mock.invalid");assert.equal(u.pathname,"/rest/v1/rpc/helmut_synthetik500_lesung");state.reads++;
+      return{version:"helmut-synthetik500-status/1",operationId:u.searchParams.get("p_operation_id"),manifestHash:u.searchParams.get("p_manifest_hash"),profilManifestHash:"f".repeat(64),productionCommit:u.searchParams.get("p_production_commit"),paketHash:packet.command.package.bindung.paketHash,idsHash:packet.command.package.bindung.idsHash,beobachtetAm:new Date(BASE+state.reads).toISOString(),zustand:"aktiv",gesamt:500,identitaeten:501,aktiv:500,fremdUnveraendert:true,fachfelderUnveraendert:!state.corrupt,quittungBindungBestaetigt:true,endeAm:new Date(x.state.planEnd).toISOString()};};
+    const req=n=>n==="node:async_hooks"?require(n):n==="./synthetik-500-stored-command"?{createBackend:()=>x.backend}:n==="./synthetik-500-profile"?x.profileModule:n==="./synthetik-500-end-runtime"?x.runtimeModule:(()=>{throw Error("unexpected-runtime-scope-module:"+n);})();
+    vm.runInThisContext("(function(require,module,crypto,process,synthetik500ProductionBackend,supabaseRequest,supabaseServiceRoleKey,supabaseStoreId){"+text+"})",{filename:storageFile})(req,m,crypto,{env:{}},()=>{},request,()=>"mock","mock");
+    return{x,S:m.exports,state,command:packet.command};
+  }
+  await check("ALS-runtime-derivation-every-RPC-and-fresh-response-validation",async()=>{
+    const h=await runtimeScopeFixture();await h.S.withSynthetik500PreparedCommand(h.x.selector,async()=>{
+      const packet=await h.S.loadSynthetik500ProductionCommand(h.x.selector.operationId,h.x.selector.commandHash);
+      const one=await h.S.readSynthetik500Runtime(packet.command),two=await h.S.readSynthetik500Runtime(packet.command);
+      assert.notEqual(one.beobachtetAm,two.beobachtetAm);assert.equal(h.state.reads,2);assert.equal(h.x.state.runtimeBuilds,1);
+      h.state.corrupt=true;await assert.rejects(h.S.readSynthetik500Runtime(packet.command),/runtime-lesung-zustand/);
+      assert.equal(h.state.reads,3);assert.equal(h.x.state.runtimeBuilds,1);
+    });
+  });
+  await check("ALS-runtime-no-scope-keeps-uncached-original-reconstruction",async()=>{
+    const h=await runtimeScopeFixture();await h.S.readSynthetik500Runtime(h.command);await h.S.readSynthetik500Runtime(h.command);
+    assert.equal(h.state.reads,2);assert.equal(h.x.state.runtimeBuilds,2);
+  });
+  await check("ALS-runtime-wrong-command-and-closed-late-work-before-RPC",async()=>{
+    let h=await runtimeScopeFixture();await h.S.withSynthetik500PreparedCommand(h.x.selector,async()=>{
+      const packet=await h.S.loadSynthetik500ProductionCommand(h.x.selector.operationId,h.x.selector.commandHash);
+      await assert.rejects(h.S.readSynthetik500Runtime(Object.freeze(clone(packet.command))),/runtime-command-identity/);assert.equal(h.state.reads,0);
+    });
+    h=await runtimeScopeFixture();const gate=deferred();let late;
+    await h.S.withSynthetik500PreparedCommand(h.x.selector,async()=>{
+      const packet=await h.S.loadSynthetik500ProductionCommand(h.x.selector.operationId,h.x.selector.commandHash);
+      late=gate.promise.then(()=>h.S.readSynthetik500Runtime(packet.command));
+    });gate.resolve();await assert.rejects(late,/execution-scope/);assert.equal(h.state.reads,0);
   });
   // Actual extracted ALS scope functions, explicit open-based backend mock.
   function scopeFixture(){
