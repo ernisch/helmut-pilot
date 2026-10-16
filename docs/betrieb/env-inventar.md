@@ -86,6 +86,9 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 | `NODE_ENV` / `PORT` / `VERCEL` / `VERCEL_ENV` / `VERCEL_GIT_COMMIT_SHA` / `VERCEL_GIT_COMMIT_REF` | (Plattform) | Von Vercel/Node gesetzt. `VERCEL_GIT_COMMIT_SHA` speist die Asset-Versionierung (ASSET_VERSION). | Plattform · automatisch · — · — |
 | `VERCEL_DEPLOYMENT_ID` | O (Plattform) | Optionale Deployment-ID im rein lesenden Provider-Konfigurationsnachweis: nur `dpl_` gefolgt von 1–100 alphanumerischen Zeichen wird ausgegeben, sonst `null`. Keine Authentscheidung; ohne ID ist damit keine Deployment-ID belegt. | provider-runtime-attestation.js · von Vercel, falls vorhanden · fehlend/ungültig = `null` · nicht manuell setzen |
 
+| `HELMUT_PUBLICATION_ELIGIBILITY_JSON` | O | Nicht geheime, ausdrücklich geprüfte Publikations-Hold-Policy. Fehlend/leer = keine Holds; kein automatisches Nachrichten- oder Fachurteil und keine automatische Freigabe. Ungültige Konfiguration verweigert den Pfad mit `PUBLICATION_ELIGIBILITY_UNAVAILABLE` (503). | publication-eligibility.js · alle · Default leer, Fehlwert fail-closed · Änderungen erfordern neue Inhaltsbindung |
+| `HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY` | O; Pflicht im Inhaltsnachweispfad | Vertrauenswürdig bereitgestellter öffentlicher Ed25519-Schlüssel als PEM zur Signaturprüfung von Inhaltsnachweis und separater Root-Authority. Kein privater Schlüssel in der Runtime; fehlender, ungültiger oder falscher Schlüssel erlaubt keine Nachweisannahme. | synthetik-500-stored-command.js/content-runner.js · alle · fail-closed im Nachweispfad · keine Aktivierung durch Dokumentation |
+
 ## 3. Kosten / KI-Budget
 
 | Variable | P/O | Zweck / Default | Merkmale |

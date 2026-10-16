@@ -117,5 +117,15 @@
       ],
       "contentFieldsChanged": false
     }
+  },
+  "ciFollowup": {
+    "failedRun": "https://github.com/ernisch/helmut-pilot/actions/runs/38837504579",
+    "failedHead": "5c238b6189a931ff8afb7c44c53b60e7467edd90",
+    "reportedFailedSuites": 5,
+    "targetedLocalSuitesPassed": 5,
+    "applicationCodeChangedByCIFix": false,
+    "fullGreenRemoteCI": false,
+    "gitHubAuthentication": "HTTP401; connector Transport closed",
+    "report": "500er-nacht-ci-folgekorrektur-20261016.md"
   }
 }
