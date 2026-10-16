@@ -364,6 +364,7 @@ check("end is idempotent and releases all active ownership bindings", () => { F.
 check("actual sealed gate rejects late bindings and grants no public lease", () => {
   const E = require("../lib/helmut/synthetik-500-cpu-epoch");
   E.seal(); assert.equal(Object.isFrozen(E), true);
+  assert.equal(E.verifyClosedModuleGraph(), false); assert.equal(E.isActive(), false);
   const original = () => E.isActive(); assert.equal(E.bindCommand(original), original); assert.equal(original(), false);
   let certificate;
   E.bindCodec(certify => { certificate = certify; return {}; });
@@ -371,5 +372,53 @@ check("actual sealed gate rejects late bindings and grants no public lease", () 
   E.bindFacts({ begin() { throw Error("must never enter"); }, end() {} });
   E.bindSelector(() => { throw Error("must never select"); });
   assert.equal(E.isActive(), false); assert.equal(E.bootstrap(), false);
+  assert.equal(E.verifyClosedModuleGraph(), false); assert.equal(E.isActive(), false);
+});
+function moduleObserverFixture() {
+  // Execute the complete actual module in an isolated closure with a fictional
+  // loader. Only this test copy seeds its private snapshot; no product hook.
+  const entry = { filename: "fictional-entry", loaded: true, exports: {}, children: [] };
+  const other = { filename: "fictional-pinned-child", loaded: true, exports: {}, children: [] };
+  const loader = { _cache: { entry, other }, _pathCache: { known: "fictional" }, _load() {} };
+  const m = { exports: {}, parent: entry };
+  const localRequire = name => name === "node:module" ? loader : require(name);
+  localRequire.main = entry;
+  const file = path.resolve(__dirname, "../lib/helmut/synthetik-500-cpu-epoch.js");
+  const seed = `
+    sealed=true; bootQualified=true;
+    expectedCache=Module._cache; expectedCacheKeys=ownKeys(expectedCache);
+    expectedCachePrototype=proto(expectedCache); expectedPathCache=snapshot(Module._pathCache);
+    expectedModules=new Set(Object.values(expectedCache));
+    records=[{loader:true,prototype:proto(Module),keys:ownKeys(Module),
+      slots:ownKeys(Module).map(key=>({key,slot:slot(Module,key)}))}];
+    moduleRecords=expectedCacheKeys.map(key=>{const instance=expectedCache[key];return {
+      key,cacheSlot:slot(expectedCache,key),instance,prototype:proto(instance),
+      keys:ownKeys(instance),slots:ownKeys(instance).map(key=>slot(instance,key))};});
+    module.exports=Object.freeze({check:verifyClosedModuleGraph,diagnostics});`;
+  vm.runInThisContext("(function(require,module,exports,__dirname){" + fs.readFileSync(file,"utf8") + seed + "\n})",
+    {filename:file})(localRequire,m,m.exports,path.dirname(file));
+  return { check:m.exports.check, loader, entry, other };
+}
+check("post-content module observer rejects late imports and loader tampering", () => {
+  for (const change of [
+    f => { f.loader._cache.unpinned={exports:{}}; },
+    f => { f.loader._cache={...f.loader._cache}; },
+    f => { f.loader._cache.other={...f.other}; },
+    f => { f.loader._pathCache.added="late-resolution"; },
+    f => { f.loader._load=()=>{}; },
+    f => { f.other.exports={}; },
+    f => { f.other.filename="replacement"; },
+    f => { f.entry.children.push({exports:{}}); },
+    f => { Object.setPrototypeOf(f.other,{}); },
+    f => { f.loader._cache=new Proxy(f.loader._cache,{}); }
+  ]) {
+    const f=moduleObserverFixture(); assert.equal(f.check(),true); change(f); assert.equal(f.check(),false);
+  }
+});
+check("post-content module observer accepts known imports and ordinary data changes", () => {
+  const f=moduleObserverFixture(), ordinary=/x/g;
+  assert.equal(f.check(),true); ordinary.exec("x"); assert.equal(ordinary.lastIndex,1);
+  f.entry.children.push(f.other); f.entry.loaded=false;
+  assert.equal(f.check(),true);
 });
 process.stdout.write(JSON.stringify({ passed, failed: 0, testedSourceSHA256, scope: "ISOLATED_MATHEMATICAL_MODULE_ONLY", productionCalls: 0, databaseCalls: 0, full60or30Proof: false }) + "\n");

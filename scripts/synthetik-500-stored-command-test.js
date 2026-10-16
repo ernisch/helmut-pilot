@@ -1,7 +1,9 @@
 "use strict";
 // Actual backend/ALS state machines with REAL temporary Ed25519 test keys.
-// Worker full-C/restore, native RPC, immutable rows and Root-FS gates are explicit
-// mocks. No database, full-C, Auth30, Unit60, owner-GO or Production acceptance.
+// Full-C/restore, native RPC, immutable rows and Root-FS gates are explicit
+// mocks. One separate check starts the actual source-pinned worker and rejects
+// invalid content only after its real bootstrap/seal. No database, full-C,
+// Auth30, Unit60, owner-GO or Production acceptance.
 const assert = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path");
 const vm = require("node:vm"), crypto = require("node:crypto");
 const sourceFile = path.resolve(__dirname, "../lib/helmut/synthetik-500-stored-command.js");
@@ -110,6 +112,23 @@ async function check(name, body) {
   catch (error) { results.push({ name, status: "FAIL", error: error.message, stack: error.stack }); process.stdout.write("FAIL " + name + ": " + error.message + "\n"); }
 }
 (async () => {
+  await check("actual-pinned-worker-seals-complete-module-graph-before-invalid-content", async () => {
+    const dataText = "{}";
+    await assert.rejects(require("../lib/helmut/synthetik-500-content-runner").validateStoredContent({
+      dataText, storedSHA256: sha(dataText), commandHash: "0".repeat(64),
+      operationId: "synthetik500-invalid-content-graph-regression"
+    }, 10000), error => {
+      const bootstrap = error.phases?.find(p => p.name === "closedBootstrap");
+      const seal = error.phases?.find(p => p.name === "closedSeal");
+      assert.equal(bootstrap?.diagnostics.bootQualified, true);
+      assert.equal(seal?.diagnostics.bootQualified, true);
+      assert.equal(seal?.diagnostics.sealed, true);
+      assert.equal(seal?.diagnostics.lastFailure, "none");
+      assert.equal(seal?.diagnostics.commandCalls, 0);
+      assert(!String(error.message).includes("worker-seal"));
+      return true;
+    });
+  });
   await check("signed90-offline-once-then-warm-cross-request-content", async () => {
     const x = fixture(); x.state.fullMS = 65000; const offline = await x.offline();
     assert.equal(offline.metrics.wallMs, 65000); assert.equal(offline.executionAuthorized, false);
