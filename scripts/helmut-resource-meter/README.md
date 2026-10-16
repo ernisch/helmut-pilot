@@ -83,12 +83,40 @@ One GLOBAL exclusive ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json is written before
 start; runtime verifies recipe SHA256, container ID and authority pins.
 Historical OWNER_LOCAL_GO is never reused. All original engine guards remain.
 
-The retained execution fixture is qualified16Oct2026. Its window ends before
-Berlin midnight22:00UTC. Last actual complete workflow took8089543.088ms.
-Later execution needs a genuinely current independently reviewed day binding;
-never silently redatestamp or relax day/price/quality rules. This creates no new
-owner-GO requirement: the operator's existing one-time resource GO remains unused
-until a valid actual run starts. No automatic full-run retries.
+The frozen wave15 fixture remains qualified16Oct2026 and is never replayed.
+`connect-local500.py` stages only its pinned existing harness with new owned
+target/container/operation literals; `finish-connection.py` binds exact inputs.
+`rebind-local-day.js` proposes day17 inputs without positive judgments, derives
+relative labels through original `ordneMeldungen`, and requires exact separate
+Root+Pro High semantic acceptance before original A/F/L validate every profile.
+No source publication date, profile, nonrelative fact or existing source-window
+start is changed. Old-day inputs and stale visible labels remain rejected.
+
+The complete connection includes read-only frozen-fixture capture as preexisting
+input, then MEASURED own seed restore, original preparation/activation, assembly,
+Offline90, unsigned/missing-authority negatives, Root authority, original install
+and U predecessor, all500 units and final ACKs. Native PostgREST is the pinned
+existing binary; original172-only gateway checks remain. Two explicit disjoint
+private172 prefixes avoid exhaustion of Docker's default address pool. Only
+selected original files mount readonly; the fresh case is writable. Model mock
+payload byte counters are separate from actual HTTP/network traffic.
+
+`full500-controller.py` has no default action. It needs complete independent
+connection acceptance, exact pins and fresh real original/source/link/target
+preflight. Optional waiting starts no test and consumes no GO. Real execution
+requires BOTH UTC and Berlin17Oct inside the independently reviewed00:00 through
+08:59:59.999UTC range and the last actual8089543.088ms workflow plus10min setup/
+close reserve. All original phase limits are unchanged. The original one-time GO
+remains unused until the global exclusive claim. Never use historical
+OWNER_LOCAL_GO or automatically retry a full attempt.
+
+Small connection smoke tests create zero profiles. Their isolated VM explicitly
+stubs only gateway admission to exercise actual native HTTP/JWT transport; they
+are not500 authorization or performance evidence. The complete actual attempt
+must still satisfy every original control and provide independent result review.
+Producer stdout/stderr bytes use raw streams; phase JSONL/error logs are included
+without counting the same file twice. Guest storage/WAL remain conservative
+kernel/native upper bounds; no exact allocation-peak or hosting overhead claim.
 
 Tiny tests cover Worker/exit tails, errors, concurrent foreign exclusion, HTTP
 framing/reset/callbacks, env scrubbing, closed receipt/claim guards, native PG

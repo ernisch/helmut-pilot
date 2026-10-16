@@ -52,15 +52,23 @@ def verify_full_authority(recipe):
     if {p['path'] for p in recipe['sourcePins']}!=set(expected):raise RuntimeError('complete accepted source set required')
     for p in recipe['sourcePins']:
         if p['path'] not in expected or p!=expected[p['path']]:raise RuntimeError('unaccepted resource source')
-        pin_json(p) if p['path'].endswith('.json') else None
     for p in acceptance['sourcePins']:
         b=Path(p['path']).read_bytes()
         if len(b)!=p['bytes'] or hashlib.sha256(b).hexdigest()!=p['sha256']:raise RuntimeError('accepted meter source drift')
+    if acceptance.get('fixtureConnectionPin')!=recipe['fixtureConnectionPin']:raise RuntimeError('unaccepted full500 fixture connection')
+    integration=pin_json(acceptance['fullConnectionReview'])
+    if integration.get('model')!='deepseek-v4-pro' or integration.get('route',{}).get('effort')!='high' or integration.get('payload',{}).get('summary',{}).get('status')!='ok':
+        raise RuntimeError('independent complete500 connection acceptance missing')
+    connection=pin_json(recipe['fixtureConnectionPin'])
+    if connection.get('schema')!='helmut-pinned-full500-connection/1' or connection.get('day')!='2026-10-17' or connection.get('production') is not False:
+        raise RuntimeError('exact local current500 connection missing')
     owner=pin_json(recipe['freshOwnerGO'])
     if owner.get('schema')!='helmut-owner-local-fixture-go/1' or owner.get('production') is not False or owner.get('syntheticProfiles')!=500:
         raise RuntimeError('fresh local owner GO missing')
     if '/wave19-resource-meter/' not in recipe['freshOwnerGO']['path'] or recipe.get('full500Attempts')!=1:
         raise RuntimeError('historical GO or non-single attempt prohibited')
+    if owner.get('targetDatabase')!=connection['targetDatabase'] or recipe['expectedFreshOperationId']!=connection['operationId']:
+        raise RuntimeError('GO/connection/operation binding mismatch')
     preflight=pin_json(recipe['freshStartPreflight'])
     if preflight.get('status')!='PASS_EXACT_UNUSED_LOCAL500_RESOURCE_START':raise RuntimeError('fresh exact start preflight missing')
     if not 0<=time.time()-preflight['checkedAtUnixSeconds']<=60:raise RuntimeError('start preflight no longer fresh')
@@ -68,10 +76,18 @@ def verify_full_authority(recipe):
     now=datetime.now(timezone.utc);end=datetime.fromisoformat(preflight['windowEndsAtUTC'].replace('Z','+00:00'))
     if now.date()!=end.date() or now.astimezone(ZoneInfo('Europe/Berlin')).date()!=end.astimezone(ZoneInfo('Europe/Berlin')).date():
         raise RuntimeError('same UTC and Berlin day required')
-    # The currently retained fixture has an explicit16Oct qualification. A
-    # later day needs an independently reviewed fresh day binding, never a
-    # silent redatestamp. This does not create a new owner-GO requirement.
-    if now.strftime('%Y-%m-%d')!='2026-10-16':raise RuntimeError('retained fixture day binding expired')
+    # Only the exact independently reviewed day17 proposal may qualify this
+    # connection. A caller-supplied day/version alone grants no authority.
+    day=pin_json(recipe['dayBindingAcceptance'])
+    if acceptance.get('dayBindingAcceptance')!=recipe['dayBindingAcceptance'] or day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER':
+        raise RuntimeError('independently adopted exact current-day binding missing')
+    if day.get('day')!='2026-10-17' or now.strftime('%Y-%m-%d')!=day['day'] or now.astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')!=day['day']:
+        raise RuntimeError('actual UTC/Berlin day outside reviewed binding')
+    independent=pin_json(day['independentReview'])
+    if independent.get('model')!='deepseek-v4-pro' or independent.get('route',{}).get('effort')!='high' or independent.get('payload',{}).get('summary',{}).get('status')!='ok':
+        raise RuntimeError('current-day independent semantic acceptance missing')
+    if now<datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00')) or end>datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00')):
+        raise RuntimeError('actual run window outside independent current-day scope')
     if (end-now).total_seconds()*1000 < 8089543.088:
         raise RuntimeError('remaining same-day window shorter than actual last complete workflow')
 
@@ -86,14 +102,21 @@ def claim_full_attempt(recipe,cid,recipe_path):
 def container_log_counts(ids):
     rows=[]
     for cid in ids:
-        r=K.docker(['logs',cid],check=False)
+        r=subprocess.run(K.DOCKER+['logs',cid],capture_output=True,timeout=30)
         if r.returncode:raise RuntimeError('complete container logs unavailable')
-        rows.append({'containerId':cid,'stdoutBytes':len(r.stdout.encode()),'stderrBytes':len(r.stderr.encode()),
+        rows.append({'containerId':cid,'stdoutBytes':len(r.stdout),'stderrBytes':len(r.stderr),
                      'scope':'Producer stdout/stderr payload, not unknown provider serialization overhead'})
     return rows
 
-def create_network(name):
-    K.docker(['network','create','--internal',name])
+def create_network(name,subnet=None):
+    args=['network','create','--internal']
+    if subnet is not None:
+        # Retain the original gateway's172-only address contract. Two small
+        # disjoint explicitly owned prefixes avoid Docker's exhausted default
+        # address pool without touching any retained network or host routes.
+        if subnet not in ['172.16.250.0/24','172.16.251.0/24']:raise RuntimeError('unreviewed local connection subnet')
+        args+=['--subnet',subnet]
+    K.docker(args+[name])
     data=json.loads(K.docker(['network','inspect',name]).stdout)[0]
     if not data['Internal'] or data.get('Containers'):raise RuntimeError('network not private and unused')
     return data['Id']
@@ -102,7 +125,30 @@ def infra_mounts(out):
     args=K.common_mounts(out)
     return args
 
-def create_database(out,name,parent,network,scope='small-meter-validation',storage=None):
+def fixture_mounts(fixture,role):
+    if fixture is None:return []
+    if role not in ['application','database']:raise RuntimeError('fixture mount role invalid')
+    case=Path(fixture['caseDirectory'])
+    area=Path('/workspace/helmut-parallel-20261015/wave20-resource-integration')
+    if case.parent!=area or case.resolve()!=case or case.is_symlink() or not case.is_dir() or not case.name.startswith('attempt-'):
+        raise RuntimeError('exact owned local fixture directory required')
+    args=[]
+    pins=fixture['databaseReadOnlyPins'] if role=='database' else fixture['applicationReadOnlyPins']
+    if role=='database' and (len(pins)!=1 or pins[0]['sha256']!='870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617'):
+        raise RuntimeError('only exact existing PostgREST binary mount allowed in database')
+    for p in pins:
+        source=Path(p['path'])
+        if source.resolve()!=source or source.is_symlink() or not source.is_file() or any(c in str(source) for c in [',','\n','\r']):raise RuntimeError('canonical regular fixture input required')
+        b=source.read_bytes()
+        if len(b)!=p['bytes'] or hashlib.sha256(b).hexdigest()!=p['sha256']:raise RuntimeError('fixture mount pin drift')
+        if source.name=='OWNER_LOCAL_GO.PRIVATE.json':raise RuntimeError('historical local GO excluded')
+        if not source.is_relative_to(Path('/workspace/helmut-parallel-20261015')):raise RuntimeError('fixture mount outside original evidence workspace')
+        destination='/tmp/helmut-unit-fixture-postgrest-03693bea' if role=='database' else str(source)
+        args+=['--mount','type=bind,src='+str(source)+',dst='+destination+',readonly']
+    if role=='application':args+=['--mount','type=bind,src='+str(case)+',dst='+str(case)]
+    return args
+
+def create_database(out,name,parent,network,scope='small-meter-validation',storage=None,fixture=None):
     if not storage:raise RuntimeError('native meter requires actual owned bounded filesystem')
     if scope=='owner-approved-local500-resources' and storage['bytes']!=8000000000:raise RuntimeError('full prepared local plan requires exact8GB owned device')
     fs=os.statvfs('/workspace')
@@ -143,6 +189,7 @@ def create_database(out,name,parent,network,scope='small-meter-validation',stora
           '--env','PATH='+str(K.NODE_ROOT/'bin')+':'+str(K.PYTHON_ROOT/'bin')+':/usr/lib/postgresql/17/bin:/usr/local/bin:/usr/bin:/bin',
           '--entrypoint',PYTHON]
     args+=infra_mounts(out)
+    args+=fixture_mounts(fixture,'database')
     if storage:args+=['--mount','type=bind,src='+storage['kernelReadyReceipt']['path']+',dst=/meter-storage-ready.SAFE.json,readonly']
     args+=[K.IMAGE,str(BIN/'database-supervisor.py'),'/meter-output/DATABASE_CONFIG.SAFE.json']
     cid=K.docker(args).stdout.strip();K.docker(['start',cid])
@@ -155,7 +202,7 @@ def create_database(out,name,parent,network,scope='small-meter-validation',stora
         time.sleep(.1)
     if not ready:
         raise RuntimeError('traced owned PG server not ready; no application attempt')
-    result={'name':name,'containerId':cid,'parent':parent,'network':network,'volume':volume,
+    result={'name':name,'containerId':cid,'parent':parent,'network':network,'volume':volume,'fixture':fixture,
             'ownedContainerNames':[initialize,name],
             'out':str(out),'scope':scope,'storage':storage,'publishedPorts':False,'originalDatabasesTouched':False}
     K.save_new(out/'DATABASE_FACTORY_READY.SAFE.json',result)
@@ -165,6 +212,12 @@ def launch_application(out,name,parent,network,recipe,database=None):
     if recipe['scope']=='owner-approved-local500-resources':
         verify_full_authority(recipe)
         if not database or not database.get('storage'):raise RuntimeError('actual bounded owned database required')
+        connection=pin_json(recipe['fixtureConnectionPin'])
+        if database.get('fixture')!=connection or database.get('name')!=connection['containerName'] or database.get('network')!=network:
+            raise RuntimeError('actual database fixture differs from accepted exact connection')
+        actual_id=K.docker(['inspect','--format','{{.Id}}',database['name']]).stdout.strip()
+        if database.get('containerId')!=actual_id or pin_json(recipe['freshStartPreflight']).get('actualEmptyDBContainerId')!=actual_id:
+            raise RuntimeError('actual owned database ID differs from fresh preflight')
     inspect_private_network(network)
     out=Path(out).resolve();out.mkdir(mode=0o700,parents=True,exist_ok=False)
     (out/'http').mkdir(mode=0o700)
@@ -207,6 +260,7 @@ def launch_application(out,name,parent,network,recipe,database=None):
           '--env','PATH=/meter-output/bin:'+str(K.PYTHON_ROOT/'bin')+':'+str(K.NODE_ROOT/'bin')+':/usr/local/bin:/usr/bin:/bin',
           '--entrypoint',PYTHON]
     args+=infra_mounts(out)
+    args+=fixture_mounts(database.get('fixture') if database else None,'application')
     if database:args+=['--mount','type=bind,src='+database['out']+',dst=/meter-database']
     if broker:args+=['--mount','type=bind,src='+broker['out']+',dst=/meter-broker,readonly']
     if recipe['scope']=='owner-approved-local500-resources':
@@ -254,10 +308,17 @@ def finalize(application,timeout=180):
             if any(parent==p or parent.startswith(p+'/') for p in parents) and cid not in expected_ids:
                 raise RuntimeError('foreign container found in dedicated measurement parent')
     logs=container_log_counts(owned)
+    recipe=json.loads((out/'RECIPE.PRIVATE.json').read_text())
     file_logs=[]
-    for directory in [out]+([Path(db['out'])] if db else []):
-        for p in directory.rglob('*.log'):
-            if p.is_file():file_logs.append({'role':'database' if db and directory==Path(db['out']) else 'application',
+    log_roots=[out]+([Path(db['out'])] if db else [])
+    if db and db.get('fixture'):
+        # One disjoint case root includes assembly errors, structured phase
+        # JSONL, application/DB/gateway logs. Never count the same file twice.
+        log_roots=[Path(db['fixture']['caseDirectory'])]
+    for directory in log_roots:
+        for p in directory.rglob('*'):
+            is_log=p.suffix in ['.log','.jsonl'] or p.name.endswith(('_FAILURE.PRIVATE.txt','_ERROR.PRIVATE.txt'))
+            if is_log and p.is_file():file_logs.append({'role':'database' if db and p.is_relative_to(Path(db['out'])) else 'application-or-workflow',
                 'relativeName':str(p.relative_to(directory)),'bytes':p.stat().st_size})
     result={'schema':'helmut-isolated-resource-final/1','application':result,
             'applicationExitCode':code,'applicationKernelAfterLastExit':app_kernel,
@@ -292,12 +353,17 @@ def finalize(application,timeout=180):
                     result['underUnchangedApplicationMemoryLimit'] and
                     app_kernel['memoryEvents']['oom_kill']==0 and
                     (not db or (db_code==0 and bool(db_final.get('storageBound',{}).get('provenUpperBytes')))))
-    recipe=json.loads((out/'RECIPE.PRIVATE.json').read_text())
     if recipe['scope']=='owner-approved-local500-resources':
         original_path=Path(recipe['originalSequenceResultPath'])
         original=json.loads(original_path.read_text()) if original_path.exists() else {}
-        if original.get('pass') is not True or original.get('all500FinalACK') is not True or original.get('mode')!='combined500' or original.get('selector')!=recipe['expectedFreshSelector']:
+        assembled_path=Path(recipe['assemblyResultPath'])
+        assembled=json.loads(assembled_path.read_text()) if assembled_path.exists() else {}
+        if original.get('pass') is not True or original.get('all500FinalACK') is not True or original.get('mode')!='combined500' or original.get('selector')!=assembled.get('selector') or original.get('selector',{}).get('operationId')!=recipe['expectedFreshOperationId'] or assembled.get('pass') is not True:
             result['pass']=False;result['originalWorkflowAcceptanceMissing']=True
-        else:result['originalAll500FinalACK']=True
+        else:
+            result['originalAll500FinalACK']=True
+            result['actualFreshSelector']=original['selector']
+            result['actualSelectorBoundThroughOriginalAssemblyAndInstall']=True
+        result['simultaneousAllOwnedUnder2048DecimalMB']=bool(result['simultaneousApplicationAndInfrastructureKernel'] and result['simultaneousApplicationAndInfrastructureKernel']['memoryPeakBytes']<2048000000)
     K.save_new(out/'COMPLETE_RESOURCE_RESULT.SAFE.json',result)
     return result

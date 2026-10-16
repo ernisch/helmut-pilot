@@ -1,0 +1,162 @@
+{
+  "schema": "helmut-frozen-local-harness-pins/1",
+  "originalsNeverModified": true,
+  "files": [
+    {
+      "relative": "native-end-preparation/assess-runtime.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/assess-runtime.js",
+      "bytes": 5836,
+      "sha256": "366d956089598d9d06b1a62b01614123d37a1a89343471a23d22f41857445aa5"
+    },
+    {
+      "relative": "native-end-preparation/build-command.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/build-command.js",
+      "bytes": 7264,
+      "sha256": "594e2d459b7c5f61174ec8e87c917098c4f27a032ad90e8e50edcbe28d9c93f2"
+    },
+    {
+      "relative": "native-end-preparation/contracts.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/contracts.js",
+      "bytes": 6100,
+      "sha256": "44210461f021f78df49bd17536d562d1125e8df16eb86360a2ed7af5a7765f46"
+    },
+    {
+      "relative": "native-end-preparation/http-entry.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/http-entry.js",
+      "bytes": 1132,
+      "sha256": "c4515410e947d0b65bc0b66a3bf8d45392c123a0276e0f07383428957d163ea7"
+    },
+    {
+      "relative": "native-end-preparation/local-io.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/local-io.js",
+      "bytes": 2342,
+      "sha256": "5c21c6e75c482c29fa327f079c2248e085d5abe383f40d4157e21d3be5ccc31e"
+    },
+    {
+      "relative": "native-end-preparation/local-provider.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/local-provider.js",
+      "bytes": 3920,
+      "sha256": "56992037a0c08f1208f53ba8f16f5e66d95efb1a7699d78881df90ab1f23d132"
+    },
+    {
+      "relative": "native-end-preparation/measure-install.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/measure-install.js",
+      "bytes": 2674,
+      "sha256": "7e5a0bdc3966fbd56620ac60dc6a758a11d00aa65ae46ec4c1b8053e7b244e13"
+    },
+    {
+      "relative": "native-end-preparation/measure-missing-authority.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/measure-missing-authority.js",
+      "bytes": 1981,
+      "sha256": "b811581b75b86c942abed8c9fc11d5aee579f224d89ac3b1ce64cf82c629ad66"
+    },
+    {
+      "relative": "native-end-preparation/measure-offline.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/measure-offline.js",
+      "bytes": 2044,
+      "sha256": "2ec3a874c4db48e9e5c4f34b341888717a72314c77ec51d3ccf0d71cb66fd4e5"
+    },
+    {
+      "relative": "native-end-preparation/measure-runtime.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/measure-runtime.js",
+      "bytes": 2498,
+      "sha256": "67287ef090c93a4bebfd2c39df259d2201795f8441950a40fb3268fa157c7e69"
+    },
+    {
+      "relative": "native-end-preparation/measure-unsigned-negative.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/measure-unsigned-negative.js",
+      "bytes": 1232,
+      "sha256": "7af6a32f962216a70c1c6d4fb3b1c5f051a871ab0ed14ef1fbcde3369ccb1005"
+    },
+    {
+      "relative": "native-end-preparation/observe-app.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/observe-app.js",
+      "bytes": 9109,
+      "sha256": "c065679dafb64c007b72782eac7cd9fdc246a4ae26c29714a3532f0faf612411"
+    },
+    {
+      "relative": "native-end-preparation/original-draft-request.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/original-draft-request.js",
+      "bytes": 1525,
+      "sha256": "d69eb7acd395416b83ba5a7b726b4c8123a481937410aded7f3820804708a3a2"
+    },
+    {
+      "relative": "native-end-preparation/prepare-current-local-runtime.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/prepare-current-local-runtime.js",
+      "bytes": 22554,
+      "sha256": "2e0df819f4eefd9e4e6b48e970fc5591cb55eb5c43a8bc198f55505d74186850"
+    },
+    {
+      "relative": "native-end-preparation/readonly-sql.py",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/readonly-sql.py",
+      "bytes": 2322,
+      "sha256": "482e63fe942788ab38149a93c16caf35561b6afdcb9a82948152397aca4cf9cb"
+    },
+    {
+      "relative": "native-end-preparation/root-io-bridge.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/root-io-bridge.js",
+      "bytes": 7168,
+      "sha256": "dfa92767d36f60039521c98b33635c6aaff1e8fe5e8f1749989eed97b94f7fdf"
+    },
+    {
+      "relative": "native-end-preparation/run-reviewed-sequence.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/run-reviewed-sequence.js",
+      "bytes": 4415,
+      "sha256": "a30dab4bcd11f9d5cd584256cd7159d8ddb8379ffd8b7558863097bd6ac5e8b0"
+    },
+    {
+      "relative": "native-end-preparation/unsigned-negative-child.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/unsigned-negative-child.js",
+      "bytes": 2718,
+      "sha256": "76bc3065b78230bb7e7e764e505e3fc3fd32667376beb05573b0bb54938ebf9d"
+    },
+    {
+      "relative": "native-end-preparation/runtime-candidates/assemble-config.candidate.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/runtime-candidates/assemble-config.candidate.js",
+      "bytes": 3502,
+      "sha256": "96f854fe0a96b177deb13e501ea1e3eab032d27b2d32adb0c11dd3e9a21fe876"
+    },
+    {
+      "relative": "native-end-preparation/runtime-candidates/common.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/runtime-candidates/common.js",
+      "bytes": 5315,
+      "sha256": "8db10cc479a0281a801c9f0209676ea423804e021af45bdc49bb0189f1342730"
+    },
+    {
+      "relative": "native-end-preparation/runtime-candidates/gateway.candidate.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/runtime-candidates/gateway.candidate.js",
+      "bytes": 1264,
+      "sha256": "07ad36675cc24707d2dbf82436bb5766f7860a6270b019139ced53567810ff76"
+    },
+    {
+      "relative": "native-end-preparation/runtime-candidates/prepare-materials.candidate.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/runtime-candidates/prepare-materials.candidate.js",
+      "bytes": 5125,
+      "sha256": "e2416db5df2fe6f7b37fd508b5bf0c00f7d5d3c30772925ab2a8f62af9210929"
+    },
+    {
+      "relative": "native-end-preparation/runtime-candidates/root-authority-stage.candidate.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/runtime-candidates/root-authority-stage.candidate.js",
+      "bytes": 6406,
+      "sha256": "145b944087be220c54397f06238e25d12f00fd756a746d528323d07077cc215b"
+    },
+    {
+      "relative": "native-end-preparation/runtime-candidates/start-services.candidate.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/runtime-candidates/start-services.candidate.js",
+      "bytes": 3498,
+      "sha256": "badc5c064b91d00c222e1031e8f039bc41834b732831200cfdf85398dc050a34"
+    },
+    {
+      "relative": "assemble-after-activation.js",
+      "path": "/workspace/helmut-parallel-20261015/wave15/assemble-after-activation.js",
+      "bytes": 14377,
+      "sha256": "3343f02050ef7d92cb4df85f7118a86064dd0bf9a7000c1b1606feebd507acb7"
+    },
+    {
+      "relative": "native-end-preparation/CONFIG.TEMPLATE.json",
+      "path": "/workspace/helmut-parallel-20261015/wave15/native-end-preparation/CONFIG.TEMPLATE.json",
+      "bytes": 1652,
+      "sha256": "5176769a0b884ea4c12a3ba2b1f62cf3f1486b5cf649474f0bc41aca1415eb22"
+    }
+  ]
+}
