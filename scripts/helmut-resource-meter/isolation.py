@@ -20,6 +20,7 @@ K=importlib.util.module_from_spec(spec);spec.loader.exec_module(K)
 PYTHON=str(K.PYTHON_ROOT/'bin/python')
 BIN=K.REPOSITORY/'scripts/helmut-resource-meter'
 ONCE=Path('/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json')
+SETUP_RESERVATION=ONCE.with_name('GLOBAL_RESOURCE_SETUP_RESERVATION.SAFE.json')
 
 def inspect_private_network(name):
     data=json.loads(K.docker(['network','inspect',name]).stdout)[0]
@@ -56,10 +57,25 @@ def verify_full_authority(recipe):
         b=Path(p['path']).read_bytes()
         if len(b)!=p['bytes'] or hashlib.sha256(b).hexdigest()!=p['sha256']:raise RuntimeError('accepted meter source drift')
     if acceptance.get('fixtureConnectionPin')!=recipe['fixtureConnectionPin']:raise RuntimeError('unaccepted full500 fixture connection')
-    integration=pin_json(acceptance['fullConnectionReview'])
-    if integration.get('model')!='deepseek-v4-pro' or integration.get('route',{}).get('effort')!='high' or integration.get('payload',{}).get('summary',{}).get('status')!='ok':
-        raise RuntimeError('independent complete500 connection acceptance missing')
+    if acceptance.get('recipeTemplatePin')!=recipe.get('recipeTemplatePin'):raise RuntimeError('unaccepted recipe template')
+    template=pin_json(recipe['recipeTemplatePin'])
+    if any(recipe.get(k)!=v for k,v in template.items()):raise RuntimeError('serialized recipe changed an accepted template field')
+    added={'sourcePins','independentMeterAcceptance','freshStartPreflight','recipeTemplatePin','setupReservation','databaseContainer','databaseStopFile','databaseFinalFile'}
+    if set(recipe)-set(template)-added:raise RuntimeError('unreviewed recipe extension')
+    reservation=pin_json(recipe['setupReservation'])
+    if recipe['setupReservation']['path']!=str(SETUP_RESERVATION) or reservation.get('schema')!='helmut-local-resource-setup-reservation/1' or any(reservation.get(k)!=recipe[k] for k in ['fixtureConnectionPin','recipeTemplatePin','independentMeterAcceptance','freshOwnerGO']):
+        raise RuntimeError('exact global setup reservation missing')
+    integrated=acceptance['fullConnectionReviews']
+    if set(integrated)!=set(['authority','bootstrap','coverage']):raise RuntimeError('all three independent connection scopes required')
+    for scope,pins in integrated.items():
+        pins=pins if isinstance(pins,list) else [pins]
+        if len(pins)!={'authority':1,'bootstrap':1,'coverage':2}[scope]:raise RuntimeError('complete scoped connection reviews required')
+        for p in pins:
+            integration=pin_json(p)
+            if integration.get('model')!='deepseek-v4-pro' or integration.get('route',{}).get('effort')!='high' or integration.get('payload',{}).get('summary',{}).get('status')!='ok':
+                raise RuntimeError('independent complete500 connection acceptance missing')
     connection=pin_json(recipe['fixtureConnectionPin'])
+    verify_connection_files(connection)
     if connection.get('schema')!='helmut-pinned-full500-connection/1' or connection.get('day')!='2026-10-17' or connection.get('production') is not False:
         raise RuntimeError('exact local current500 connection missing')
     owner=pin_json(recipe['freshOwnerGO'])
@@ -70,6 +86,8 @@ def verify_full_authority(recipe):
     if owner.get('targetDatabase')!=connection['targetDatabase'] or recipe['expectedFreshOperationId']!=connection['operationId']:
         raise RuntimeError('GO/connection/operation binding mismatch')
     preflight=pin_json(recipe['freshStartPreflight'])
+    if any(preflight.get(k)!=recipe[k] for k in ['freshOwnerGO','independentMeterAcceptance']) or preflight.get('connectionPin')!=recipe['fixtureConnectionPin']:
+        raise RuntimeError('fresh preflight authority binding mismatch')
     if preflight.get('status')!='PASS_EXACT_UNUSED_LOCAL500_RESOURCE_START':raise RuntimeError('fresh exact start preflight missing')
     if not 0<=time.time()-preflight['checkedAtUnixSeconds']<=60:raise RuntimeError('start preflight no longer fresh')
     if preflight.get('sufficientSameUTCAndBerlinDayWindow') is not True:raise RuntimeError('same-day time window not demonstrated')
@@ -98,6 +116,28 @@ def claim_full_attempt(recipe,cid,recipe_path):
         'freshOwnerGO':recipe['freshOwnerGO'],'independentMeterAcceptance':recipe['independentMeterAcceptance'],
         'containerId':cid,'recipeSHA256':hashlib.sha256(Path(recipe_path).read_bytes()).hexdigest(),
         'atUTC':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'noAutomaticRetry':True})
+
+def verify_connection_files(connection):
+    staged=pin_json(connection['stagedHarness'])
+    case=Path(connection['caseDirectory']);suffix=case.name.removeprefix('attempt-')
+    if connection['targetDatabase']!='helmut_resource_fixture_20261017_'+suffix or connection['containerName']!='helmut-meter-db-w20-'+suffix or connection['operationId']!='synthetik500-resources17-'+suffix:
+        raise RuntimeError('owned case/target/container/operation binding mismatch')
+    if staged['caseDirectory']!=str(case):raise RuntimeError('staged case mismatch')
+    for p in connection['immutableWorkflowPins']:
+        actual=Path(p['path'])
+        if actual.resolve()!=actual or not actual.is_relative_to(case):raise RuntimeError('noncanonical immutable workflow file')
+        b=actual.read_bytes()
+        if len(b)!=p['bytes'] or hashlib.sha256(b).hexdigest()!=p['sha256']:raise RuntimeError('immutable staged workflow drift')
+    required=[x['staged'] for x in staged['templateDeltas']]+[staged['action']]
+    expected={p['path']:p for p in connection['immutableWorkflowPins']}
+    if any(expected.get(p['path'])!=p for p in required):raise RuntimeError('complete staged workflow pins missing')
+
+def verify_final_recipe(recipe_path,cid):
+    b=Path(recipe_path).read_bytes();recipe=json.loads(b)
+    if recipe['scope']=='owner-approved-local500-resources':
+        claim=json.loads(ONCE.read_text())
+        if claim['containerId']!=cid or claim['recipeSHA256']!=hashlib.sha256(b).hexdigest():raise RuntimeError('final recipe drift after exclusive claim')
+    return recipe
 
 def container_log_counts(ids):
     rows=[]
@@ -133,7 +173,15 @@ def fixture_mounts(fixture,role):
     if case.parent!=area or case.resolve()!=case or case.is_symlink() or not case.is_dir() or not case.name.startswith('attempt-'):
         raise RuntimeError('exact owned local fixture directory required')
     args=[]
-    pins=fixture['databaseReadOnlyPins'] if role=='database' else fixture['applicationReadOnlyPins']
+    pins=list(fixture['databaseReadOnlyPins'] if role=='database' else fixture['applicationReadOnlyPins'])
+    if role=='application':
+        args+=['--mount','type=bind,src='+str(case)+',dst='+str(case)]
+        pins+=fixture.get('immutableWorkflowPins',[])
+        if fixture.get('schema')=='helmut-pinned-full500-connection/1':
+            verify_connection_files(fixture)
+            pins+=[fixture['stagedHarness']]
+            for source in [case/'FINAL_CONNECTION.SAFE.json',case/'RECIPE_TEMPLATE.PRIVATE.json']:
+                b=source.read_bytes();pins.append({'path':str(source),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
     if role=='database' and (len(pins)!=1 or pins[0]['sha256']!='870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617'):
         raise RuntimeError('only exact existing PostgREST binary mount allowed in database')
     for p in pins:
@@ -145,7 +193,6 @@ def fixture_mounts(fixture,role):
         if not source.is_relative_to(Path('/workspace/helmut-parallel-20261015')):raise RuntimeError('fixture mount outside original evidence workspace')
         destination='/tmp/helmut-unit-fixture-postgrest-03693bea' if role=='database' else str(source)
         args+=['--mount','type=bind,src='+str(source)+',dst='+destination+',readonly']
-    if role=='application':args+=['--mount','type=bind,src='+str(case)+',dst='+str(case)]
     return args
 
 def create_database(out,name,parent,network,scope='small-meter-validation',storage=None,fixture=None):
@@ -163,29 +210,13 @@ def create_database(out,name,parent,network,scope='small-meter-validation',stora
         raise RuntimeError('owned storage holder not live')
     K.save_new(Path(storage['out'])/'DATABASE_INITIALIZATION_STARTED.SAFE.json',{'container':name,'volume':volume,'oneInitializationOnly':True,'full500RunAuthority':False})
     pgdata='/var/lib/postgresql/data/pgdata'
-    initialize=name+'-initialization'
-    K.docker(['create','--name',initialize,'--network',network,'--cgroup-parent=/'+parent,
-              '--mount','type=volume,src='+volume+',dst=/var/lib/postgresql/data',
-              '--env','PGDATA='+pgdata,
-              '--env','POSTGRES_HOST_AUTH_METHOD=trust',K.IMAGE])
-    K.docker(['start',initialize])
-    ready=False
-    for _ in range(100):
-        result=K.docker(['exec','-u','postgres',initialize,'pg_isready','-q'],check=False)
-        main=K.docker(['exec',initialize,'cat','/proc/1/comm'],check=False)
-        if result.returncode==0 and main.stdout.strip()=='postgres':ready=True;break
-        time.sleep(.1)
-    if not ready:raise RuntimeError('owned empty PG bootstrap not ready; retain state')
-    # Initialization is an isolated meter fixture, not any original database.
-    K.docker(['stop','--time','40',initialize],timeout=45)
-    if K.docker(['inspect','--format','{{.State.ExitCode}}',initialize]).stdout.strip()!='0':
-        raise RuntimeError('empty PG initialization did not shut down cleanly; no measured run')
     cfg={'scope':scope,'pgdata':pgdata,'stopFile':'/meter-output/STOP_DATABASE',
          'finalFile':'/meter-output/DATABASE_FINAL.SAFE.json','freshInitdbVolume':True}
     if storage:cfg['storageReadyPin']={**storage['kernelReadyReceipt'],'path':'/meter-storage-ready.SAFE.json'}
     K.save_new(out/'DATABASE_CONFIG.SAFE.json',cfg)
     args=['create','--name',name,'--network',network,'--cgroup-parent=/'+parent,
           '--mount','type=volume,src='+volume+',dst=/var/lib/postgresql/data',
+          '--env','PGDATA='+pgdata,'--env','POSTGRES_HOST_AUTH_METHOD=trust',
           '--env','PATH='+str(K.NODE_ROOT/'bin')+':'+str(K.PYTHON_ROOT/'bin')+':/usr/lib/postgresql/17/bin:/usr/local/bin:/usr/bin:/bin',
           '--entrypoint',PYTHON]
     args+=infra_mounts(out)
@@ -196,14 +227,17 @@ def create_database(out,name,parent,network,scope='small-meter-validation',stora
     ready=False
     for _ in range(150):
         result=K.docker(['exec','-u','postgres',name,'pg_isready','-q'],check=False)
-        if result.returncode==0:ready=True;break
+        # pg_isready alone can see the temporary initdb bootstrap server.
+        # The direct entrypoint child becomes postgres only at its final exec.
+        final=K.docker(['exec',name,PYTHON,'-c',"from pathlib import Path;p=Path('/meter-output/DB_SUPERVISOR_READY');n=int(p.read_text());print(Path('/proc',str(n),'comm').read_text().strip())"],check=False)
+        if result.returncode==0 and final.stdout.strip()=='postgres':ready=True;break
         state=K.docker(['inspect','--format','{{.State.Running}}',name]).stdout.strip()
         if state!='true':break
         time.sleep(.1)
     if not ready:
         raise RuntimeError('traced owned PG server not ready; no application attempt')
     result={'name':name,'containerId':cid,'parent':parent,'network':network,'volume':volume,'fixture':fixture,
-            'ownedContainerNames':[initialize,name],
+            'ownedContainerNames':[name],
             'out':str(out),'scope':scope,'storage':storage,'publishedPorts':False,'originalDatabasesTouched':False}
     K.save_new(out/'DATABASE_FACTORY_READY.SAFE.json',result)
     return result
@@ -260,6 +294,7 @@ def launch_application(out,name,parent,network,recipe,database=None):
           '--env','PATH=/meter-output/bin:'+str(K.PYTHON_ROOT/'bin')+':'+str(K.NODE_ROOT/'bin')+':/usr/local/bin:/usr/bin:/bin',
           '--entrypoint',PYTHON]
     args+=infra_mounts(out)
+    args+=['--mount','type=bind,src='+str(out/'RECIPE.PRIVATE.json')+',dst=/meter-output/RECIPE.PRIVATE.json,readonly']
     args+=fixture_mounts(database.get('fixture') if database else None,'application')
     if database:args+=['--mount','type=bind,src='+database['out']+',dst=/meter-database']
     if broker:args+=['--mount','type=bind,src='+broker['out']+',dst=/meter-broker,readonly']
@@ -308,7 +343,7 @@ def finalize(application,timeout=180):
             if any(parent==p or parent.startswith(p+'/') for p in parents) and cid not in expected_ids:
                 raise RuntimeError('foreign container found in dedicated measurement parent')
     logs=container_log_counts(owned)
-    recipe=json.loads((out/'RECIPE.PRIVATE.json').read_text())
+    recipe=verify_final_recipe(out/'RECIPE.PRIVATE.json',application['containerId'])
     file_logs=[]
     log_roots=[out]+([Path(db['out'])] if db else [])
     if db and db.get('fixture'):

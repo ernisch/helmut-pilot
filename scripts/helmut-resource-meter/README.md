@@ -42,6 +42,11 @@ exact observed allocation peak. Host backing-filesystem overhead remains outside
 this guest scope. The prepared full500 plan requires exactly8000000000bytes;
 small calibration uses512MiB and no profiles.
 
+Initdb, its temporary bootstrap server and the final PostgreSQL server use the
+same existing database supervisor and namespace. Network counters therefore
+include initialization through clean shutdown. Readiness distinguishes the
+temporary bootstrap server from the final entrypoint exec.
+
 No autoclear, detach, reassign or mount/format API exists in the holder. Failed
 or expired holders leave the mapping bound to their OWN image for safe recovery.
 Before normal exit the device node is retired; the controller renames its node
@@ -81,6 +86,12 @@ independent Pro High reviews, exact source pins, a fresh owner authorization
 binding, a fresh actual start preflight and sufficient same UTC/Berlin-day time.
 One GLOBAL exclusive ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json is written before
 start; runtime verifies recipe SHA256, container ID and authority pins.
+An exclusive global setup reservation also precedes any resource creation;
+it never substitutes for or consumes the GO and is retained on setup failure.
+The accepted recipe template, archived preflight and historical source identity
+are pinned. Staged workflow code and fixed inputs overlay the writable case as
+readonly files. Phase and final checks reject drift, including serialized recipe
+drift after claim. Case/target/container/operation share one exact suffix.
 Historical OWNER_LOCAL_GO is never reused. All original engine guards remain.
 
 The frozen wave15 fixture remains qualified16Oct2026 and is never replayed.

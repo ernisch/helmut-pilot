@@ -14,13 +14,16 @@ def module(name,file):
 I=module('isolation','isolation.py');C=module('connection','connect-local500.py');S=module('source','capture-local-source.py')
 W=C.AREA;CLAIM=I.ONCE;UTC=datetime.timezone.utc
 
-def original_preflight():
-    archived=json.loads(Path('/workspace/helmut-resource-preflight-20261016/RESOURCE_START_PREFLIGHT.SAFE.json').read_text())
+def original_preflight(connection):
+    archived=C.read_pin(connection['originalPreflightPin'])
     for p in archived['verifiedReadOnly']['originalInputPins']:
         if C.pin(p['path'])!={k:p[k] for k in ['path','bytes','sha256']}:raise RuntimeError('original input pin drift')
     before=S.identity();expected=archived['verifiedReadOnly']['frozenSourceDatabase']
-    historic=json.loads((C.BASE/'wave15/native-end-preparation/LOCAL_ACTIVATION_RESULT.SAFE.json').read_text())['sourceBefore']
-    if any(before[k]!=historic[k] for k in before):raise RuntimeError('original frozen source drift')
+    before.update(S.sql('select jsonb_build_object(\'database\',current_database(),\'identities\',(select count(*)from profiles),\'profileFachHash\',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)-\'aktiv\'-\'updated_at\' order by user_id collate "C")::text,\'UTF8\')),\'hex\')from mandate_profiles p));'))
+    historic=C.read_pin(connection['historicalSourcePin'])['sourceBefore']
+    if set(before)!=set(expected['comparedFields']) or any(before[k]!=historic[k] for k in before):raise RuntimeError('original frozen source drift')
+    if before['database']!=expected['name'] or any(before[k]!=expected[k] for k in ['active','profiles','identities']) or expected['allOriginalStateFieldsEqualHistoricalSourceBefore'] is not True:
+        raise RuntimeError('live source differs from pinned archived preflight')
     native=json.loads(S.NATIVE.read_text());counts={}
     for key,table in [('kos','knowledge_objects'),('rawDocumentsRows','raw_documents')]:
         rows=native[key];fields=list(rows[0]);expr='||'.join('jsonb_build_object('+','.join(S.lit(k)+',d."'+k+'"' for k in fields[i:i+40])+')' for i in range(0,len(fields),40))
@@ -37,6 +40,9 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin):
     acceptance=C.read_pin(acceptance_pin);connection=C.read_pin(connection_pin);recipe=C.read_pin(recipe_template_pin)
     if acceptance.get('status')!='ROOT_ADOPTED_INDEPENDENT_COMPLETE_METER_ACCEPTANCE':raise RuntimeError('complete independent acceptance missing')
     if acceptance.get('fixtureConnectionPin')!=connection_pin or recipe.get('fixtureConnectionPin')!=connection_pin:raise RuntimeError('exact accepted connection differs')
+    if acceptance.get('recipeTemplatePin')!=recipe_template_pin:raise RuntimeError('exact accepted recipe template differs')
+    C.exact_case_binding(connection['caseDirectory'],connection['targetDatabase'],connection['containerName'],connection['operationId'])
+    I.verify_connection_files(connection)
     for p in acceptance['sourcePins']:
         if C.pin(p['path'])!=p:raise RuntimeError('accepted actual source drift')
     scopes=acceptance['independentReviews']
@@ -47,8 +53,14 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin):
         for p in pins if isinstance(pins,list) else [pins]:
             r=C.read_pin(p)
             if r.get('model')!='deepseek-v4-pro' or r.get('route',{}).get('effort')!='high' or r.get('payload',{}).get('summary',{}).get('status')!='ok':raise RuntimeError('accepted independent review missing')
-    r=C.read_pin(acceptance['fullConnectionReview'])
-    if r.get('model')!='deepseek-v4-pro' or r.get('route',{}).get('effort')!='high' or r.get('payload',{}).get('summary',{}).get('status')!='ok':raise RuntimeError('full connection independent review missing')
+    integrated=acceptance['fullConnectionReviews']
+    if set(integrated)!=set(['authority','bootstrap','coverage']):raise RuntimeError('all three independent connection scopes required')
+    for scope,pins in integrated.items():
+        pins=pins if isinstance(pins,list) else [pins]
+        if len(pins)!={'authority':1,'bootstrap':1,'coverage':2}[scope]:raise RuntimeError('complete scoped connection reviews required')
+        for p in pins:
+            r=C.read_pin(p)
+            if r.get('model')!='deepseek-v4-pro' or r.get('route',{}).get('effort')!='high' or r.get('payload',{}).get('summary',{}).get('status')!='ok':raise RuntimeError('full connection independent review missing')
     owner=C.read_pin(recipe['freshOwnerGO']);day=C.read_pin(recipe['dayBindingAcceptance'])
     if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!='2026-10-17' or day.get('positiveOriginalLAtBothWindowEnds')!=500:raise RuntimeError('owner or day binding invalid')
     for p in connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']:
@@ -57,6 +69,7 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin):
 
 def no_previous_attempt(connection):
     if CLAIM.exists():raise RuntimeError('one-time resources GO already claimed; never retry')
+    if I.SETUP_RESERVATION.exists():raise RuntimeError('one-time resources setup already reserved; no duplicate setup or automatic retry')
     case=Path(connection['caseDirectory']);n=case/'native-end-preparation'
     forbidden=[n/'LOCAL_ACTIVATION_STARTED.SAFE.json',n/'LOCAL_ACTIVATION_RESULT.SAFE.json',case/'FRESH_PACKET.PRIVATE.json',case/'LOCAL_ASSEMBLY_RESULT.SAFE.json',case/'CONTROLLER_STARTED.SAFE.json']
     if any(p.exists() for p in forbidden):raise RuntimeError('case already entered; no replay/retry')
@@ -79,7 +92,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
         acceptance,connection,recipe,day=accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin)
         no_previous_attempt(connection);valid,start,end=window(day)
     # From here, each setup/launch step is attempted ONCE, never a retry loop.
-    first=original_preflight()
+    first=original_preflight(connection)
     case=Path(connection['caseDirectory']);network='helmut-meter-net-w20-'+case.name.removeprefix('attempt-')
     parent='helmut-meter-resources17-'+case.name.removeprefix('attempt-')
     dbname=connection['containerName'];appname=dbname.replace('helmut-meter-db-','helmut-meter-app-',1)
@@ -90,7 +103,12 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     networks=json.loads(I.K.docker(['network','inspect',*network_ids]).stdout)
     if any(ipaddress.ip_network(subnet).overlaps(ipaddress.ip_network(p['Subnet'])) for n in networks for p in (n['IPAM'].get('Config') or []) if ':' not in p.get('Subnet','')):
         raise RuntimeError('reviewed exact private subnet already occupied; no deletion or automatic substitute')
-    I.K.save_new(case/'CONTROLLER_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'preflight':first,'singleSetupAttempt':True,'noAutomaticRetry':True,'GOClaimed':False})
+    # Exclusive GLOBAL setup reservation prevents competing controllers from
+    # creating any resources for the same unused GO. It is never deleted;
+    # setup failure remains retained and needs reviewed recovery, not a retry.
+    I.K.save_new(I.SETUP_RESERVATION,{'schema':'helmut-local-resource-setup-reservation/1','fixtureConnectionPin':connection_pin,'recipeTemplatePin':recipe_template_pin,'independentMeterAcceptance':acceptance_pin,'freshOwnerGO':recipe['freshOwnerGO'],'atUTC':datetime.datetime.now(UTC).isoformat(),'GOConsumed':False,'noAutomaticRetry':True})
+    reservation_pin=C.pin(I.SETUP_RESERVATION)
+    I.K.save_new(case/'CONTROLLER_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'preflight':first,'singleSetupAttempt':True,'noAutomaticRetry':True,'GOClaimed':False,'setupReservation':reservation_pin})
     storage_module=module('bounded','bounded-storage.py')
     # Choose one exact unbound minor with the previously accepted read-only
     # loop-control capability probe's kernel result. It is checked atomically
@@ -102,7 +120,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     I.create_network(network,subnet=connection['approvedInternalSubnet'])
     db=I.create_database(case/'database',dbname,parent+'/database',network,scope='owner-approved-local500-resources',storage=storage,fixture=connection)
     # Fresh actual prerequisites AFTER the empty owned server is ready.
-    second=original_preflight();valid,_,end=window(day)
+    second=original_preflight(connection);valid,_,end=window(day)
     if not valid or CLAIM.exists():raise RuntimeError('fresh day or unused GO lost before actual start')
     q="begin read only;select count(*)from pg_database where datname in('"+connection['sourceDatabase']+"','"+connection['targetDatabase']+"');rollback;"
     empty=I.K.docker(['exec','-i','-u','postgres',dbname,'psql','-X','-qAt','-d','postgres','-c',q]).stdout.strip()
@@ -113,7 +131,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
       'exactUnusedOwnedDatabaseVerified':True,'connectionPin':connection_pin,'independentMeterAcceptance':acceptance_pin,
       'actualEmptyDBContainerId':db['containerId'],'freshOwnerGO':recipe['freshOwnerGO'],'oneTimeGOUnused':True,'production':False}
     I.K.save_new(preflight_path,preflight)
-    recipe.update(sourcePins=acceptance['sourcePins'],independentMeterAcceptance=acceptance_pin,freshStartPreflight=C.pin(preflight_path))
+    recipe.update(sourcePins=acceptance['sourcePins'],independentMeterAcceptance=acceptance_pin,freshStartPreflight=C.pin(preflight_path),recipeTemplatePin=recipe_template_pin,setupReservation=reservation_pin)
     I.verify_full_authority(recipe)
     app=I.launch_application(case/'application',appname,parent+'/application',network,recipe,db)
     I.K.save_new(case/'ACTUAL_RESOURCE_ATTEMPT_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'application':app,'globalClaim':C.pin(CLAIM),'exactlyOneAttempt':True,'noRetry':True})
@@ -121,7 +139,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     result=I.finalize(app,timeout=max(60,int((end-datetime.datetime.now(UTC)).total_seconds())+180))
     I.K.save_new(case/'CONTROLLER_COMPLETE.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'pass':result['pass'],
       'completeResourceResult':C.pin(case/'application/COMPLETE_RESOURCE_RESULT.SAFE.json'),
-      'originalSourceAfter':original_preflight(),'globalGOClaimPreserved':True,'noAutomaticRetry':True,'production':False})
+      'originalSourceAfter':original_preflight(connection),'globalGOClaimPreserved':True,'noAutomaticRetry':True,'production':False})
     print(json.dumps({'status':'SINGLE_RESOURCE_ATTEMPT_COMPLETE','pass':result['pass'],'actualAllOwnedMemoryPeakBytes':result['simultaneousApplicationAndInfrastructureKernel']['memoryPeakBytes'],'CPUUsec':result['simultaneousApplicationAndInfrastructureKernel']['cpu']['usage_usec']}),flush=True)
     return result
 

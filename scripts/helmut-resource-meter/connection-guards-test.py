@@ -9,7 +9,7 @@ f=case/'TEST_ONLY_INPUT.txt';f.write_text('NO_OWNER_AUTHORITY_TEST_ONLY\n')
 def pin(p):
  b=p.read_bytes();return{'path':str(p),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}
 fixture={'caseDirectory':str(case),'applicationReadOnlyPins':[pin(f)],'databaseReadOnlyPins':[]};cases=[]
-args=I.fixture_mounts(fixture,'application');assert args[-1].endswith(',dst='+str(case));assert ',readonly' in args[1];cases.append('only own directory writable; exact selected file readonly')
+args=I.fixture_mounts(fixture,'application');assert args[1].endswith(',dst='+str(case));assert ',readonly' in args[3];cases.append('only own directory writable; exact selected file readonly')
 def reject(name,fn):
  try:fn()
  except RuntimeError:cases.append(name);return

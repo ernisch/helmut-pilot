@@ -146,6 +146,7 @@ def main():
     try:
         if meter_errors:raise RuntimeError('complete native database baseline missing; no stage launched')
         for stage in recipe['stages']:
+            if recipe['scope']=='owner-approved-local500-resources':authority.verify_connection_files(authority.pin_json(recipe['fixtureConnectionPin']))
             for pin in stage.get('pins',[]):pinned(pin)
             argv=stage['argv'];name=stage['name']
             if not isinstance(argv,list) or not argv or not all(isinstance(x,str) for x in argv):raise RuntimeError('stage argv invalid')
@@ -183,6 +184,9 @@ def main():
         while not final.exists() and time.monotonic()<until:time.sleep(.05)
         if not final.exists():status=1;failure='DATABASE_LAST_EXIT_NOT_CONFIRMED'
     for pin in recipe.get('sourcePins',[]):pinned(pin)
+    if recipe['scope']=='owner-approved-local500-resources':
+        authority.verify_connection_files(authority.pin_json(recipe['fixtureConnectionPin']))
+        assert_claim_identity(Path(sys.argv[1]).read_bytes(),recipe,json.loads(authority.ONCE.read_text()),socket.gethostname())
     rows=[];start_count=0
     needs_http=recipe['scope']=='owner-approved-local500-resources' or (bool(stages) and any(any(Path(a).name=='node' for a in s['argv']) for s in recipe['stages']))
     try:rows,start_count=validate_http_receipts(out/'http',required=needs_http,strict=recipe['scope']=='owner-approved-local500-resources')

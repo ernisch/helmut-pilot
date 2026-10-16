@@ -25,10 +25,14 @@ def main():
     if cfg['scope'] not in ['small-meter-validation','owner-approved-local500-resources']:raise RuntimeError('DB scope invalid')
     if cfg.get('freshInitdbVolume') is not True:raise RuntimeError('fresh initial database volume not established')
     pgdata=Path(cfg['pgdata'])
-    if not (pgdata/'PG_VERSION').exists():raise RuntimeError('PGDATA must be initialized before the measured server starts')
+    if pgdata.exists() and any(pgdata.iterdir()):raise RuntimeError('owned initial PGDATA must be empty; no reuse')
+    pgdata.mkdir(mode=0o700,exist_ok=True)
     before=network();log=Path('/meter-output/DATABASE_SERVER.PRIVATE.log').open('xb')
     initial_storage=verify_storage(pgdata,cfg['storageReadyPin'])
-    command=['gosu','postgres','postgres','-D',str(pgdata)]
+    # Keep initdb, its temporary bootstrap server and the final server inside
+    # THIS already measured PID/network/cgroup lifetime. The unchanged pinned
+    # image entrypoint performs initialization once, then execs final postgres.
+    command=['/usr/local/bin/docker-entrypoint.sh','postgres']
     child=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT)
     (out/'DB_SUPERVISOR_READY').write_text(str(child.pid)+'\n')
     while child.poll() is None and not Path(cfg['stopFile']).exists():time.sleep(.1)
@@ -75,6 +79,7 @@ def main():
     result={'schema':'helmut-isolated-database-final/1','scope':cfg['scope'],
             'serverExitCode':code,'storageBound':final_storage,'networkBefore':before,
             'freshInitdbVolume':True,
+            'initializationAndServerInSameMeasuredNamespace':True,
             'networkAfterServerAndClientsExited':network(),'networkTail':settled_network(),
             'logBytes':(out/'DATABASE_SERVER.PRIVATE.log').stat().st_size,
             'onlyOwnedPrivatePIDNamespace':True,'allocationMeasurementMethod':'kernel-enforced-exclusive-block-device-upper',

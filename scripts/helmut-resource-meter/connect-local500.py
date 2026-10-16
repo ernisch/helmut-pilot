@@ -28,8 +28,17 @@ def save(p,value):
     with p.open('x') as f:f.write(value if isinstance(value,str) else json.dumps(value,indent=2)+'\n')
     p.chmod(0o600);return pin(p)
 
+def exact_case_binding(case,target,container,operation):
+    case=Path(case)
+    if case.parent!=AREA or case.resolve()!=case or not re.fullmatch('attempt-[a-f0-9]{12}',case.name):
+        raise RuntimeError('exact fresh local case directory required')
+    suffix=case.name.removeprefix('attempt-')
+    if (target,container,operation)!=('helmut_resource_fixture_20261017_'+suffix,'helmut-meter-db-w20-'+suffix,'synthetik500-resources17-'+suffix):
+        raise RuntimeError('case/target/container/operation suffix mismatch')
+
 def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin):
     case=Path(case).resolve()
+    exact_case_binding(case,target,container,operation)
     if case.parent!=AREA or not re.fullmatch('attempt-[a-f0-9]{12}',case.name):raise RuntimeError('exact fresh local case directory required')
     if not re.fullmatch('helmut_resource_fixture_20261017_[a-f0-9]{12}',target):raise RuntimeError('new owned target required')
     if not re.fullmatch('helmut-meter-db-w20-[a-f0-9]{12}',container):raise RuntimeError('new owned container required')
