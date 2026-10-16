@@ -280,5 +280,186 @@
       "bytes": 17373,
       "sha256": "b77708f19d67a3c931d9b442e5695364c559b017f8787f8d355edbaa87d72c72"
     }
-  ]
+  ],
+  "continuationEvidence20261016": {
+    "status": "BLOCKED_RESOURCE_ENVIRONMENT_MISSING_AND_ALLIN_COVERAGE_OPEN",
+    "checkedAtUTC": "2026-10-16T18:15:19.764863+00:00",
+    "readOnlyProduction": {
+      "day": "2026-10-16",
+      "books": 37,
+      "runDay": "2026-10-14",
+      "authMD5": "919565e611a4572c10ff6f650e913dd6",
+      "mainMD5": "b7d042c7e0d90ef0096031820e57e784",
+      "capacity": "37",
+      "profiles": 500,
+      "readOnly": "on",
+      "globalUsed": 0,
+      "profilesMD5": "8a12fdd424ca99c9a96e1bf126b64d68",
+      "databaseBytes": 608169107,
+      "observedAtUTC": "2026-10-16T18:09:51.255724+00:00",
+      "activeProfiles": 0,
+      "watcherLastTick": "2026-10-16T18:09:41.273593+00:00",
+      "watcherActive30s": true,
+      "currentBookPresent": false,
+      "watcherSuccesses90s": 3
+    },
+    "exactCatalog": {
+      "readOnly": "on",
+      "triggers": [],
+      "functions": [],
+      "storeOwner": "postgres",
+      "observedAtUTC": "2026-10-16T18:12:43.673382+00:00",
+      "orderLimitMicroUSD": "88845364",
+      "privateReserveMicroUSD": "636000",
+      "orderExternalBoundMicroUSD": "5195303"
+    },
+    "providerConfigurationGET": {
+      "httpStatus": 200,
+      "observedAtUTC": "2026-10-16T18:13:56.512Z",
+      "commit": "b428fefa3accbcdc81ca781fd463ff0f5a7a4a53",
+      "activeModel": "gpt-5-mini-eu",
+      "provider": "azure",
+      "exactNodePatchNotReported": true,
+      "financialWitnessNotCalled": true,
+      "paidModelCalls": 0
+    },
+    "vercelBilling": {
+      "requestedFrom": "2026-10-16T00:00:00Z",
+      "requestedTo": "2026-10-17T00:00:00Z",
+      "scope": "TEAM_NOT_PROJECT_AND_NOT_CURRENT_CREDIT_BALANCE",
+      "summary": {
+        "recordCount": 793,
+        "periodStart": "2026-10-15T07:00:00.000Z",
+        "periodEnd": "2026-10-16T07:00:00.000Z",
+        "currency": "USD",
+        "totalBilledCost": 0.00057820376,
+        "totalEffectiveCost": 0.667244870427,
+        "totalsByCurrency": [
+          {
+            "currency": "USD",
+            "billedCost": 0.00057820376,
+            "effectiveCost": 0.667244870427,
+            "recordCount": 793
+          }
+        ]
+      },
+      "nonzeroServices": [
+        {
+          "serviceName": "Observability Events",
+          "serviceCategory": "Observability",
+          "currency": "USD",
+          "billedCost": 0.000228,
+          "effectiveCost": 0.000228,
+          "recordCount": 2
+        },
+        {
+          "serviceName": "Fluid Active CPU",
+          "serviceCategory": "Vercel Functions",
+          "currency": "USD",
+          "billedCost": 0.000208022222,
+          "effectiveCost": 0.000208022222,
+          "recordCount": 21
+        },
+        {
+          "serviceName": "Fluid Provisioned Memory",
+          "serviceCategory": "Vercel Functions",
+          "currency": "USD",
+          "billedCost": 9.8732715e-05,
+          "effectiveCost": 9.8732715e-05,
+          "recordCount": 21
+        },
+        {
+          "serviceName": "Function Invocations",
+          "serviceCategory": "Vercel Functions",
+          "currency": "USD",
+          "billedCost": 2.76e-05,
+          "effectiveCost": 2.76e-05,
+          "recordCount": 1
+        },
+        {
+          "serviceName": "Fast Origin Transfer",
+          "serviceCategory": "Vercel Functions",
+          "currency": "USD",
+          "billedCost": 8.01549e-06,
+          "effectiveCost": 8.01549e-06,
+          "recordCount": 21
+        },
+        {
+          "serviceName": "CDN Requests - Additional CPU Duration",
+          "serviceCategory": "Vercel Delivery Network",
+          "currency": "USD",
+          "billedCost": 7.833333e-06,
+          "effectiveCost": 7.833333e-06,
+          "recordCount": 21
+        }
+      ],
+      "context": {
+        "summaryIncludesAllRecords": true,
+        "totalRecords": 793,
+        "serviceGroupsTruncated": true
+      },
+      "currentCreditBalance": null
+    },
+    "supabasePlanRead": {
+      "organization": "mjxxyggtvbfxcbedofvy",
+      "plan": "pro",
+      "project": "ddckuvvpcytqbyfmbvie",
+      "status": "ACTIVE_HEALTHY",
+      "currentCreditBalanceUSD": null,
+      "currentSpendCapNotReconfirmed": true,
+      "microAndOwnerQuotaFiguresRemainDated15OctFacts": true
+    },
+    "vercelCreditRead": {
+      "currentCreditBalanceUSD": null,
+      "currentBudgetAndAutoPauseNotReconfirmed": true,
+      "reason": "Connected project/team metadata omit balances and spend controls; supplied VERCEL_TOKEN receives HTTP403 team_unauthorized on official team GET. No secret/role changes or bypass attempted. Billing charges do not establish remaining credits."
+    },
+    "localResourceAuthorization": {
+      "scope": "One new isolated local500 resource run in original environment only; non-additive",
+      "authorizedBy": "Current owner request16Oct2026",
+      "permittedRunsTotal": 1,
+      "runsStarted": 0,
+      "remainingRuns": 1,
+      "status": "BLOCKED_ORIGINAL_ENVIRONMENT_NOT_AVAILABLE",
+      "originalWorkspacesPresent": false,
+      "originalLocalDatabasesPresent": false,
+      "confidentialInputFilesMissing": 6,
+      "historicalOwnerGoReusable": false,
+      "measurementPlan": "500er-ressourcenlauf-messplan-20261016.md"
+    },
+    "handoff": {
+      "manifestURL": "https://drive.google.com/file/d/1DQxJt1EJOWasn9ZhnFj5Y6iJGnVatTE1/view",
+      "manifestSHA256": "a170791463c78b2840cd805a706fe7c506c2806f746b21999fda575217f90dad",
+      "archiveURL": "https://drive.google.com/file/d/1_yaGlXYrG2ExYbE2MFBq_ucE4YtgMFCm/view",
+      "archiveSHA256": "c979e18775f285ddf7af4328c8efc8f0642954eb6d0e52e50636d3b4ab902d15",
+      "payloadFilesHashVerified": 79,
+      "controlFilesHashVerified": 2,
+      "supplementURL": "https://drive.google.com/file/d/1elArhr-Vj9k2OGZMwcmqHNRTx2wTCkoZ/view",
+      "supplementSHA256": "186f0bba83cecdebf093ad4a3dfbbce48e25d0fd89e90c66e27a96e044c72503",
+      "supplementMetadataFilesHashVerified": 3,
+      "largeRuntimePrimaryReportAvailableHere": false,
+      "largeRuntimePrimaryReportSHA256": "ad82417bfc03e61b5a7041c46b774dc21676717b57149eb078880cbe48004489",
+      "historicalLocalSuccessAdoptedWithCSVConsistencyOnly": true
+    },
+    "notProved": [
+      "Current remaining infrastructure credits and usage quotas",
+      "Complete billed lifetimes and native/control/error/export wire/event ceilings",
+      "Physical database/WAL/temp peak and full application process memory",
+      "Production Nodepatch/bundle/worker/signer acceptance",
+      "Successful current-day financial witness and final operation/source/window binding"
+    ],
+    "integrationGORecommended": false,
+    "productionTestGORecommended": false,
+    "effects": {
+      "local500Runs": 0,
+      "localProfileActivations": 0,
+      "productionWrites": 0,
+      "productionMigrations": 0,
+      "merges": 0,
+      "deployments": 0,
+      "paidProductionModelCalls": 0,
+      "secretOrBudgetChanges": 0,
+      "newDriveUploads": 0
+    }
+  }
 }
