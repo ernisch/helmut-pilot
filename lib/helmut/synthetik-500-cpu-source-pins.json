@@ -143,8 +143,8 @@
     },
     {
       "path": "lib/helmut/quellen-zeitvertrag.js",
-      "bytes": 6414,
-      "sha256": "8d404342c004e62fa9d83c208493fe83acb7baec8e21a93817ca3c50bed02500"
+      "bytes": 7086,
+      "sha256": "229d58b671ad215ecf405d164be88b5c3a010b9ea6669c7c07f9b726da740cee"
     },
     {
       "path": "lib/helmut/quellenarchitektur/seeds/entities.js",

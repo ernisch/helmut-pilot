@@ -127,5 +127,22 @@
     "fullGreenRemoteCI": false,
     "gitHubAuthentication": "HTTP401; connector Transport closed",
     "report": "500er-nacht-ci-folgekorrektur-20261016.md"
+  },
+  "ciProsaFollowup": {
+    "failedRun": "https://github.com/ernisch/helmut-pilot/actions/runs/38840366852",
+    "failedHead": "0e7c504f6ebd14a15b1982c8bb0617d811ea8c33",
+    "standardOfflinePassed": true,
+    "browserPassed": true,
+    "areaReportedFailedSuites": 2,
+    "Z22Executed": false,
+    "rootCause": "Unconditional PDF-specific rule changed all frozen Understanding prompts",
+    "frozenOperationalProsaContractsChanged": false,
+    "original17PromptHashesRestoredExactly": true,
+    "approvedPDFPromptUnchangedSHA256": "43e4b630abda235f92d99bcc1d1bccba3951610ab82e511e1230206fc19a63fc",
+    "typedLageAndReviewPDFRulesPreserved": true,
+    "targetedLocalSuitesPassed": 7,
+    "freshFullEndrunMeasured": false,
+    "fullGreenRemoteCI": false,
+    "report": "500er-nacht-ci-folgekorrektur-20261016.md"
   }
 }
