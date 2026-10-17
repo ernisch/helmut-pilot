@@ -14,7 +14,26 @@ def module(name,file):
 I=module('isolation','isolation.py');C=module('connection','connect-local500.py');S=module('source','capture-local-source.py')
 W=C.AREA;CLAIM=I.ONCE;UTC=datetime.timezone.utc
 
-def original_preflight(connection):
+def financial_preflight(connection):
+    # This is a read-only projection of the ACTUAL frozen LOCAL source, not
+    # financing authority or a mutation of historical daybooks. Catch missing
+    # intervening days before any setup reservation or one-time GO claim.
+    day=connection['day']
+    if datetime.date.fromisoformat(day).isoformat()!=day:raise RuntimeError('financial projection day invalid')
+    stage=str(Path(connection['workflowDirectory'])/'prepare-current-local-runtime.js')
+    pins=[p for p in connection['immutableWorkflowPins'] if p['path']==stage]
+    if len(pins)!=1:raise RuntimeError('exact reviewed financial preparation module missing')
+    snapshot=S.sql("select jsonb_build_object('auth',(select data from helmut_store where id='main-auth'),'nativeAuthText',(select data::text from helmut_store where id='main-auth'),'authSHA',(select encode(sha256(convert_to(data::text,'UTF8')),'hex')from helmut_store where id='main-auth'),'counter',(select coalesce(sum(used),0)from llm_budget_counters where scope='global'and day="+S.lit(day)+"),'counterReadOK',true);")
+    proc=subprocess.run([str(I.K.NODE_ROOT/'bin/node'),str(BIN/'local-financial-preflight.js'),json.dumps(pins[0]),day],input=json.dumps(snapshot),capture_output=True,text=True,timeout=30)
+    try:result=json.loads(proc.stdout)
+    except ValueError:raise RuntimeError('local financial preflight did not return a safe result')
+    if proc.returncode!=0 or result.get('pass') is not True:
+        reason=result.get('reason','financial-preflight-rejected')
+        missing=','.join(result.get('missingDays',[]))
+        raise RuntimeError('local financial start preflight rejected: '+reason+'; missingDays='+missing)
+    return result
+
+def original_preflight(connection,*,check_financial=True):
     archived=C.read_pin(connection['originalPreflightPin'])
     for p in archived['verifiedReadOnly']['originalInputPins']:
         if C.pin(p['path'])!={k:p[k] for k in ['path','bytes','sha256']}:raise RuntimeError('original input pin drift')
@@ -34,7 +53,9 @@ def original_preflight(connection):
     actual=S.sql('select coalesce(jsonb_agg('+expr+'),\'[]\'::jsonb)from ko_document_links l where l.knowledge_object_id in('+','.join(S.lit(k['id']) for k in native['kos'])+');')
     sort=lambda a:sorted(a,key=lambda r:json.dumps(r,sort_keys=True))
     if sort(actual)!=sort(links):raise RuntimeError('complete actual native source-link set changed')
-    return {'originalPins':9,'originalFrozenSourceEqual':True,'nativePhysicalEquality':counts,'completeNativeLinks':len(links),'sourceWrites':0}
+    result={'originalPins':9,'originalFrozenSourceEqual':True,'nativePhysicalEquality':counts,'completeNativeLinks':len(links),'sourceWrites':0}
+    if check_financial:result['readOnlyFinancialProjection']=financial_preflight(connection)
+    return result
 
 def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin):
     acceptance=C.read_pin(acceptance_pin);connection=C.read_pin(connection_pin);recipe=C.read_pin(recipe_template_pin)
@@ -139,7 +160,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     result=I.finalize(app,timeout=max(60,int((end-datetime.datetime.now(UTC)).total_seconds())+180))
     I.K.save_new(case/'CONTROLLER_COMPLETE.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'pass':result['pass'],
       'completeResourceResult':C.pin(case/'application/COMPLETE_RESOURCE_RESULT.SAFE.json'),
-      'originalSourceAfter':original_preflight(connection),'globalGOClaimPreserved':True,'noAutomaticRetry':True,'production':False})
+      'originalSourceAfter':original_preflight(connection,check_financial=False),'globalGOClaimPreserved':True,'noAutomaticRetry':True,'production':False})
     print(json.dumps({'status':'SINGLE_RESOURCE_ATTEMPT_COMPLETE','pass':result['pass'],'actualAllOwnedMemoryPeakBytes':result['simultaneousApplicationAndInfrastructureKernel']['memoryPeakBytes'],'CPUUsec':result['simultaneousApplicationAndInfrastructureKernel']['cpu']['usage_usec']}),flush=True)
     return result
 
@@ -147,7 +168,9 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--accepted-bindings',required=True);parser.add_argument('--run-exactly-once',action='store_true');parser.add_argument('--wait-for-reviewed-window',action='store_true');args=parser.parse_args()
     if not args.run_exactly_once:raise SystemExit('EXPLICIT_EXISTING_ONCE_GO_ACTION_REQUIRED')
     bindings=json.loads(Path(args.accepted_bindings).read_text())
-    try:run(bindings['acceptance'],bindings['connection'],bindings['recipeTemplate'],wait=args.wait_for_reviewed_window)
+    try:
+        result=run(bindings['acceptance'],bindings['connection'],bindings['recipeTemplate'],wait=args.wait_for_reviewed_window)
+        if result['pass'] is not True:raise SystemExit(1)
     except Exception as error:
         print(json.dumps({'status':'STOP_NO_AUTOMATIC_RETRY','errorType':type(error).__name__,'reason':str(error) if isinstance(error,RuntimeError) else 'Inspect retained local evidence; do not replay any claimed attempt','globalGOClaimExists':CLAIM.exists(),'production':False}),flush=True)
         raise SystemExit(1)
