@@ -117,6 +117,15 @@ jobs:
       - name: Lokaler Ressourcenstart Vorabcheck (rein synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         run: |
+          # The runtime keeps its exact approved absolute module location.
+          # In this disposable GitHub runner, provide ONLY the same helper bytes
+          # before importing the synthetic tests. Never replace an existing file.
+          runtime_helper=/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/next-resource-authority.py
+          if [ "$GITHUB_WORKSPACE/scripts/helmut-resource-meter/next-resource-authority.py" != "$runtime_helper" ]; then
+            test ! -e "$runtime_helper"
+            sudo install -D -m 0644 scripts/helmut-resource-meter/next-resource-authority.py "$runtime_helper"
+            cmp scripts/helmut-resource-meter/next-resource-authority.py "$runtime_helper"
+          fi
           # Der echte Lauf bleibt an seinen freigegebenen /workspace-Pfad gebunden.
           # Nur die synthetischen CI-Mocks laden ihre Module aus dem Checkout.
           python3 -B - <<'PY'
