@@ -17,7 +17,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
           **{k:self.connection[k]for k in ['targetDatabase','operationId','caseDirectory']},
           'sourceCapturePin':self.connection['sourceCapture'],
           'previousConsumedMarkers':copy.deepcopy(A.PRESERVED_MARKER_PINS),
-          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE17_V3_000000000000.PRIVATE.json'),
+          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE17_V4_000000000000.PRIVATE.json'),
           'requiredConfirmation':'GO_LOCAL_ONLY_CREATE_'+self.connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'}
     def test_intent_is_only_technical_and_never_actual_go(self):
         with patch.object(A,'read',return_value={}):
@@ -50,5 +50,5 @@ class NextResourceAuthorityTest(unittest.TestCase):
             read.assert_not_called()
     def test_fixed_next_slot_never_aliases_any_consumed_claim(self):
         self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertNotIn(A.RESERVATION,A.OLD_MARKERS)
-        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.248.0/24')
+        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.247.0/24')
 if __name__=='__main__':unittest.main()

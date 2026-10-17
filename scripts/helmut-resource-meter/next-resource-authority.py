@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fixed next LOCAL resource slot; preparation is never execution authority.
 
-The two consumed attempts and the completed input correction are immutable.
+The three consumed attempts and the completed input correction are immutable.
 The corrected fixture is input provenance only, never a reusable owner GO.
 No effects on import. This module cannot reserve, activate, repair or run.
 """
@@ -14,15 +14,19 @@ from pathlib import Path
 BIN=Path(__file__).resolve().parent
 BASE=Path('/workspace/helmut-parallel-20261015')
 METER=BASE/'wave19-resource-meter'
-AUTHORIZATION='USER_GO_20261017_EXACT_ONE_RESOURCE_ONLY_V3'
-CLAIM=METER/'NEXT_RESOURCE17_V3_GO_CLAIM.SAFE.json'
-RESERVATION=METER/'NEXT_RESOURCE17_V3_SETUP_RESERVATION.SAFE.json'
-SUBNET='172.16.248.0/24'
+AUTHORIZATION='USER_GO_20261017_EXACT_ONE_RESOURCE_ONLY_V4'
+CLAIM=METER/'NEXT_RESOURCE17_V4_GO_CLAIM.SAFE.json'
+RESERVATION=METER/'NEXT_RESOURCE17_V4_SETUP_RESERVATION.SAFE.json'
+SUBNET='172.16.247.0/24'
 OLD_MARKERS=[METER/name for name in [
  'ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json','GLOBAL_RESOURCE_SETUP_RESERVATION.SAFE.json',
  'ONCE_ONLY_DAY16_INPUT_CORRECTION_CLAIM.SAFE.json','DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json',
- 'DAY16_REPAIR_RESOURCE_SETUP_RESERVATION.SAFE.json']]
+ 'DAY16_REPAIR_RESOURCE_SETUP_RESERVATION.SAFE.json',
+ 'NEXT_RESOURCE17_V3_GO_CLAIM.SAFE.json','NEXT_RESOURCE17_V3_SETUP_RESERVATION.SAFE.json']]
 PRESERVED_MARKER_PINS=[{'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json', 'bytes': 815, 'sha256': '92096d184adc88feaefa1393c3115840dd2e0960379d108de42be2d1e57005e5'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/GLOBAL_RESOURCE_SETUP_RESERVATION.SAFE.json', 'bytes': 1203, 'sha256': 'e0dfa98ab19d0ed917e7fca15817766a370a593005625b807f4474ff3a827cc4'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_DAY16_INPUT_CORRECTION_CLAIM.SAFE.json', 'bytes': 454, 'sha256': 'e01e8a20f8cded6a9285d07763fe40ce0cac7d279479c5faa05ad6a4a1de4e60'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json', 'bytes': 815, 'sha256': 'a376c1abf5541728b2e5c565c0b0576ee6a87723f8d06125d5a0ec574ddc8853'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_SETUP_RESERVATION.SAFE.json', 'bytes': 1203, 'sha256': '7ea29623fc80b6a75dd475463d1c1802e340e75b1c6509ebf7e6d45d21357088'}]
+PRESERVED_MARKER_PINS += [
+ {'path':str(METER/'NEXT_RESOURCE17_V3_GO_CLAIM.SAFE.json'),'bytes':799,'sha256':'8fe50e440b83c4f2a67225a1585c86997bc8fc60e04dcc0ef7bb997dff648a81'},
+ {'path':str(METER/'NEXT_RESOURCE17_V3_SETUP_RESERVATION.SAFE.json'),'bytes':1458,'sha256':'260b16e6e841c77ef814a7389ad0e0b883518c33cbba3ac9bc00a2fb54dcd036'}]
 CORRECTED_CAPTURE=BASE/'wave20-resource-integration/attempt-64a99d4ac9fb/corrected-input/READ_ONLY_SOURCE_CAPTURE.SAFE.json'
 CORRECTED_CAPTURE_SHA='37701d014b73311da59f3daf92d8344074a48aaea5586c7f73d1728026d185a3'
 
@@ -54,7 +58,7 @@ def validate_owner(owner,connection,*,planning=False):
     for p in claims:read(p)
     final=Path(owner.get('finalOwnerGOPath',''))
     suffix=Path(connection['caseDirectory']).name.removeprefix('attempt-')
-    require(final==METER/('OWNER_RESOURCE17_V3_'+suffix+'.PRIVATE.json'),'exact new owner GO path required')
+    require(final==METER/('OWNER_RESOURCE17_V4_'+suffix+'.PRIVATE.json'),'exact new owner GO path required')
     confirmation='GO_LOCAL_ONLY_CREATE_'+connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'
     require(owner.get('requiredConfirmation')==confirmation,'exact proposed confirmation required')
     if planning:

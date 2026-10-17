@@ -78,7 +78,7 @@ def finish_children():
         time.sleep(.05)
     raise RuntimeError('owned helper did not terminate; complete exit coverage not yet closed')
 
-def main():
+def run_workflow():
     out=Path('/meter-output');recipe_bytes=Path(sys.argv[1]).read_bytes();recipe=json.loads(recipe_bytes)
     if recipe['scope'] not in ['small-meter-validation','owner-approved-local500-resources']:raise RuntimeError('unknown recipe scope')
     if any(k not in ['PATH','LANG','HELMUT_RESOURCE_METER_DIR'] for k in recipe.get('localEnvironment',{})):
@@ -212,6 +212,45 @@ def main():
     save_new(out/'RUNNER_RESULT.SAFE.json',result)
     # The host reads the dedicated cgroup only after this process has exited.
     return status
+
+def stop_owned_database():
+    """Fixed owned mount, never a path or container name from invalid JSON."""
+    directory=Path('/meter-database')
+    if not directory.exists():return {'mounted':False}
+    if directory.resolve()!=directory or directory.is_symlink():raise RuntimeError('owned database mount invalid')
+    cfg=json.loads((directory/'DATABASE_CONFIG.SAFE.json').read_text())
+    if (cfg.get('scope')not in ['small-meter-validation','owner-approved-local500-resources']or
+        cfg.get('freshInitdbVolume')is not True or cfg.get('stopFile')!='/meter-output/STOP_DATABASE' or
+        cfg.get('finalFile')!='/meter-output/DATABASE_FINAL.SAFE.json'):
+        raise RuntimeError('owned database shutdown identity invalid')
+    target=directory/'STOP_DATABASE'
+    if target.is_symlink():raise RuntimeError('owned database stop symlink rejected')
+    if not target.exists():target.write_text('OWNED_APPLICATION_EXIT_INCLUDING_EARLY_AUTHORITY_FAILURE\n')
+    until=time.monotonic()+45
+    final=directory/'DATABASE_FINAL.SAFE.json'
+    while not final.exists()and time.monotonic()<until:time.sleep(.05)
+    if not final.exists():raise RuntimeError('owned database shutdown not confirmed')
+    result=json.loads(final.read_text())
+    if result.get('serverExitCode')!=0:raise RuntimeError('owned database clean shutdown failed')
+    return {'mounted':True,'cleanShutdownConfirmed':True}
+
+def main():
+    # Includes JSON parsing, pin/authority checks and observer initialization.
+    # No early exception may bypass owned-process and owned-DB cleanup again.
+    code=1;error=None;cleanup={}
+    try:code=run_workflow()
+    except Exception as exception:error=type(exception).__name__
+    finally:
+        try:cleanup['processes']=finish_children()
+        except Exception as exception:code=1;cleanup['processError']=type(exception).__name__
+        try:cleanup['database']=stop_owned_database()
+        except Exception as exception:code=1;cleanup['databaseError']=type(exception).__name__
+    if error or 'processError'in cleanup or 'databaseError'in cleanup:
+        path=Path('/meter-output/RUNNER_EARLY_FAILURE.SAFE.json')
+        if not path.exists():save_new(path,{'schema':'helmut-owned-runner-failure/1','pass':False,
+            'errorType':error,'cleanup':cleanup,'noAutomaticRetry':True,'production':False})
+        return 1
+    return code
 
 if __name__=='__main__':
     sys.exit(main())

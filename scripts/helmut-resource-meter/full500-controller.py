@@ -107,6 +107,20 @@ def window(day):
     return True,start,end
 
 def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_preflight_adoption_pin=None):
+    invocation_id=secrets.token_hex(16)
+    try:
+        return _run_once(acceptance_pin,connection_pin,recipe_template_pin,wait=wait,
+            start_preflight_adoption_pin=start_preflight_adoption_pin,invocation_id=invocation_id)
+    except Exception:
+        # A concurrent or historical reservation never belongs to this call.
+        # Preserve the original failure; record cleanup failure separately.
+        if I.SETUP_RESERVATION.exists():
+            reservation=C.read_pin(C.pin(I.SETUP_RESERVATION))
+            if reservation.get('controllerInvocationId')==invocation_id:
+                I.close_failed_owned_setup(connection_pin,invocation_id)
+        raise
+
+def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_preflight_adoption_pin=None,invocation_id):
     # A caller cannot skip the complete non-mutating consumer comparison.
     # This must precede ANY reservation, correction, resource or GO side effect.
     complete=module('complete_start_preflight','start-preflight.py')
@@ -145,7 +159,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_pre
     complete_path=case/'COMPLETE_START_PREFLIGHT.SAFE.json'
     I.K.save_new(complete_path,complete.freeze_ready_report(checked))
     complete_pin=C.pin(complete_path)
-    I.K.save_new(I.SETUP_RESERVATION,{'schema':'helmut-local-resource-setup-reservation/1','fixtureConnectionPin':connection_pin,'recipeTemplatePin':recipe_template_pin,'independentMeterAcceptance':acceptance_pin,'freshOwnerGO':recipe['freshOwnerGO'],'completeStartPreflight':complete_pin,'atUTC':datetime.datetime.now(UTC).isoformat(),'GOConsumed':False,'noAutomaticRetry':True})
+    I.K.save_new(I.SETUP_RESERVATION,{'schema':'helmut-local-resource-setup-reservation/1','fixtureConnectionPin':connection_pin,'recipeTemplatePin':recipe_template_pin,'independentMeterAcceptance':acceptance_pin,'freshOwnerGO':recipe['freshOwnerGO'],'completeStartPreflight':complete_pin,'controllerInvocationId':invocation_id,'atUTC':datetime.datetime.now(UTC).isoformat(),'GOConsumed':False,'noAutomaticRetry':True})
     reservation_pin=C.pin(I.SETUP_RESERVATION)
     I.K.save_new(case/'CONTROLLER_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'preflight':first,'singleSetupAttempt':True,'noAutomaticRetry':True,'GOClaimed':False,'setupReservation':reservation_pin})
     storage_module=module('bounded','bounded-storage.py')

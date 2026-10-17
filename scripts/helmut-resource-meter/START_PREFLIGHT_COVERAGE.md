@@ -124,10 +124,10 @@ controller and direct full-authority path always require the real GO schema,
 explicit new authorization, literal preservation, fresh timestamp/reference, exact
 confirmation and final owner path. No planning flag reaches the executable recipe.
 
-The fixed next claim/reservation are `NEXT_RESOURCE17_V3_*` in the existing meter
-area. The five consumed markers are hash-pinned to their preserved baseline and
+The fixed next claim/reservation are `NEXT_RESOURCE17_V4_*` in the existing meter
+area. All seven consumed markers (including the failed V3 start) are hash-pinned to their preserved baseline and
 never reset. This slot is prospective; its existence in code grants no GO. A new
-case and the fixed unused internal172.16.248/24 subnet keep old networks intact.
+case and the fixed unused internal172.16.247/24 subnet keep old networks intact.
 Loop allocation remains an atomic runtime check against the reviewed unbound minor.
 
 The successful16Oct correction is reused only as preexisting input: exact capture
@@ -144,3 +144,44 @@ complete default preflight must freshly pass before any reservation. The tempora
 acceptance, code inventory, prior reviews and unchanged source facts must remain
 exactly bound; preparation results are never promoted to runtime receipts. This
 is metadata finalization, not permission to activate during preparation.
+
+## Exact container file visibility and early failure closure
+
+The V3 attempt exposed a real completeness defect:32 host checks could PASS
+while three required authority/source files were absent in the application.
+`isolation.runtime_read_manifest` now defines one exact hash-bound input set:
+meter acceptance, all accepted and requested source pins, primitive/connection
+reviews, fixture/request/staged files, immutable workflow files, application
+assets, owner intent/GO, preserved consumed markers, actual corrected-input
+provenance and day/independent day review. Historical owner approvals mentioned
+only as provenance are not recursively imported.
+
+`application_mounts` consumes that list for BOTH the eventual application and
+the small visibility check. `mountInputs` starts only the existing pinned image's
+networkless Python read/hash checker. It opens all listed bytes and proves the
+effective longest matching `/proc/self/mountinfo` mount is read-only. It never
+imports a workflow entrypoint, runs a recipe, activates profiles, queries a
+database, reserves storage or consumes GO. Probe metadata/logs are retained;
+only that exact fresh ephemeral probe container is removed after exit.
+
+The pinned image and read-only repository/Node/Python mounts supply trusted
+platform code/libraries. Generated workflow files remain confined to the owned
+case, output and temporary directories. A new GO, global reservation/claim,
+fresh actual setup/empty-DB receipt, generated signing key and final immutable
+configuration do not exist during planning. No placeholders are manufactured.
+Their actual authority, byte binding, identity and freshness remain required at
+runtime. After the real GO changes metadata, the default full precheck hashes
+the actual new inputs again inside the same mount builder before reservation.
+
+Runner cleanup now surrounds recipe parsing and initial authority checking,
+in addition to the original stage cleanup. A failure still terminates only its
+owned private-PID children and the fixed `/meter-database` supervisor mount,
+without trusting a shutdown path in invalid recipe JSON. Host finalization also
+signals the exact new database after app exit. Controller setup failures close
+only resources matching its exclusive reservation invocation ID and dedicated
+case cgroup; concurrent/consumed reservations never qualify for cleanup.
+
+The container visibility check is a necessary actual observation, not a
+guarantee against later disk, scheduling or other I/O failures. Every full
+technical condition must still pass freshly; insufficient free disk remains a
+technical blocker, distinct from missing operator GO.

@@ -285,9 +285,9 @@ def assess(bindings,*,planning=False):
     report.check('preSetupAuthority','isolation.verify_pre_setup_authority / verify_full_authority',
         'Actual shared full authority predicates before setup; no fabricated reservation/CID/start receipt',
         lambda:C.I.verify_pre_setup_authority(planned_authority,planning=planning)and{'sharedActualAuthorityChecked':True})
-    report.check('mountInputs','isolation.fixture_mounts (HOST only)',
-        'Validate actual application and database mount inputs before setup; DB-only binary is NOT assumed present in app',
-        lambda:{'applicationMountArgs':len(C.I.fixture_mounts(connection,'application')),
+    report.check('mountInputs','isolation.runtime_read_manifest / application_mounts / actual isolated container',
+        'Open and SHA256-check EVERY shared runtime input inside the same application input mapping, read-only; no authority or activation',
+        lambda:{**C.I.check_container_visibility(connection,planned_authority),
                 'databaseMountArgs':len(C.I.fixture_mounts(connection,'database'))})
     report.check('caseBinding', 'connection.exact_case_binding', 'Exact local case/target/container/operation closure',
                  lambda:C.C.exact_case_binding(connection['caseDirectory'],connection['targetDatabase'],connection['containerName'],connection['operationId']) or {'exact':True})
