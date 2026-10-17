@@ -9,6 +9,7 @@ import importlib.util
 import hashlib
 import json
 import os
+import sys
 import subprocess
 import time
 from pathlib import Path
@@ -21,8 +22,10 @@ PYTHON=str(K.PYTHON_ROOT/'bin/python')
 BIN=K.REPOSITORY/'scripts/helmut-resource-meter'
 # A NEW explicit user authorization, never a reset/replay of the consumed GO.
 # Fixed globally for this authorization, NOT selected per case/environment.
-ONCE=Path('/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json')
-SETUP_RESERVATION=ONCE.with_name('DAY16_REPAIR_RESOURCE_SETUP_RESERVATION.SAFE.json')
+_spec=importlib.util.spec_from_file_location('next_resource_authority',BIN/'next-resource-authority.py')
+A=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(A)
+ONCE=A.CLAIM
+SETUP_RESERVATION=A.RESERVATION
 
 def inspect_private_network(name):
     data=json.loads(K.docker(['network','inspect',name]).stdout)[0]
@@ -44,7 +47,15 @@ def verify_fixture_owner_policy(owner):
     if owner.get('allowDispose') is not False:
         raise RuntimeError('owner GO requires explicit allowDispose=false before any setup or claim')
 
-def verify_full_authority(recipe):
+def verify_pre_setup_authority(recipe,*,planning=False):
+    """Shared actual authority predicates that require NO created resources.
+
+    Used before reservation AND by the original final authority check. Never
+    manufacture a reservation, empty-DB receipt, CID or fresh preflight here.
+    """
+    # The mount builder, host precheck and container use this SAME dependency
+    # closure. No separate, shorter list of "fixture assets" can qualify.
+    runtime_read_manifest(recipe)
     acceptance=pin_json(recipe['independentMeterAcceptance'])
     if acceptance.get('status')!='ROOT_ADOPTED_INDEPENDENT_COMPLETE_METER_ACCEPTANCE':
         raise RuntimeError('independent complete meter acceptance missing')
@@ -68,11 +79,8 @@ def verify_full_authority(recipe):
     if acceptance.get('recipeTemplatePin')!=recipe.get('recipeTemplatePin'):raise RuntimeError('unaccepted recipe template')
     template=pin_json(recipe['recipeTemplatePin'])
     if any(recipe.get(k)!=v for k,v in template.items()):raise RuntimeError('serialized recipe changed an accepted template field')
-    added={'sourcePins','independentMeterAcceptance','freshStartPreflight','recipeTemplatePin','setupReservation','databaseContainer','databaseStopFile','databaseFinalFile'}
+    added={'sourcePins','independentMeterAcceptance','freshStartPreflight','recipeTemplatePin','setupReservation','databaseContainer','databaseStopFile','databaseFinalFile','completeStartPreflight'}
     if set(recipe)-set(template)-added:raise RuntimeError('unreviewed recipe extension')
-    reservation=pin_json(recipe['setupReservation'])
-    if recipe['setupReservation']['path']!=str(SETUP_RESERVATION) or reservation.get('schema')!='helmut-local-resource-setup-reservation/1' or any(reservation.get(k)!=recipe[k] for k in ['fixtureConnectionPin','recipeTemplatePin','independentMeterAcceptance','freshOwnerGO']):
-        raise RuntimeError('exact global setup reservation missing')
     integrated=acceptance['fullConnectionReviews']
     if set(integrated)!=set(['authority','bootstrap','coverage']):raise RuntimeError('all three independent connection scopes required')
     for scope,pins in integrated.items():
@@ -88,19 +96,66 @@ def verify_full_authority(recipe):
         raise RuntimeError('exact local current500 connection missing')
     owner=pin_json(recipe['freshOwnerGO'])
     verify_fixture_owner_policy(owner)
-    repair=pin_json(connection['sourceCapture'])
-    if owner.get('authorizationId')!='USER_GO_20261017_EXACT_ONE_DAY16_CORRECTION_AND_RESOURCE_RUN_V1' or repair.get('freshOwnerGO')!=recipe['freshOwnerGO']:
-        raise RuntimeError('new exact zero-day/resource authorization missing')
-    pin_json(owner['previousConsumedClaimPin']);pin_json(owner['previousSetupReservationPin'])
-    corrected=pin_json(repair['correctionReceiptPin'])
-    if corrected.get('pass')is not True or corrected.get('freshOwnerGO')!=recipe['freshOwnerGO'] or corrected.get('historicalDaysAdded')!=['2026-10-16'] or corrected.get('correctionWrites')!=1:
-        raise RuntimeError('independently bound input correction missing')
-    if owner.get('schema')!='helmut-owner-local-fixture-go/1' or owner.get('production') is not False or owner.get('syntheticProfiles')!=500:
+    A.validate_owner(owner,connection,planning=planning)
+    action=pin_json(pin_json(connection['stagedHarness'])['action'])
+    if action.get('authorized')is not(not planning):raise RuntimeError('pending/executable action mismatch')
+    if not planning and recipe['freshOwnerGO']['path']!=owner['finalOwnerGOPath']:raise RuntimeError('actual owner GO path differs from approved fixed slot')
+    A.verify_preexisting_capture(connection['sourceCapture'],actual=False)
+    if not planning and (owner.get('schema')!='helmut-owner-local-fixture-go/1' or owner.get('production') is not False or owner.get('syntheticProfiles')!=500):
         raise RuntimeError('fresh local owner GO missing')
     if '/wave19-resource-meter/' not in recipe['freshOwnerGO']['path'] or recipe.get('full500Attempts')!=1:
         raise RuntimeError('historical GO or non-single attempt prohibited')
     if owner.get('targetDatabase')!=connection['targetDatabase'] or recipe['expectedFreshOperationId']!=connection['operationId']:
         raise RuntimeError('GO/connection/operation binding mismatch')
+    # Only the exact independently reviewed day17 proposal may qualify this
+    # connection. A caller-supplied day/version alone grants no authority.
+    day=pin_json(recipe['dayBindingAcceptance'])
+    now=datetime.now(timezone.utc);end=datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00'))
+    if now.date()!=end.date() or now.astimezone(ZoneInfo('Europe/Berlin')).date()!=end.astimezone(ZoneInfo('Europe/Berlin')).date():
+        raise RuntimeError('same UTC and Berlin day required')
+    if acceptance.get('dayBindingAcceptance')!=recipe['dayBindingAcceptance'] or day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER':
+        raise RuntimeError('independently adopted exact current-day binding missing')
+    if day.get('day')!='2026-10-17' or now.strftime('%Y-%m-%d')!=day['day'] or now.astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')!=day['day']:
+        raise RuntimeError('actual UTC/Berlin day outside reviewed binding')
+    independent=pin_json(day['independentReview'])
+    if independent.get('model')!='deepseek-v4-pro' or independent.get('route',{}).get('effort')!='high' or independent.get('payload',{}).get('summary',{}).get('status')!='ok':
+        raise RuntimeError('current-day independent semantic acceptance missing')
+    if now<datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00')) or end>datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00')):
+        raise RuntimeError('actual run window outside independent current-day scope')
+    if (end-now).total_seconds()*1000 < 8089543.088:
+        raise RuntimeError('remaining same-day window shorter than actual last complete workflow')
+    return {'acceptance':acceptance,'connection':connection,'day':day}
+
+def verify_full_authority(recipe):
+    checked=verify_pre_setup_authority(recipe)
+    # Every actual claim/start entrypoint requires the SAME complete pre-GO
+    # proof. No caller can bypass it by calling launch_application directly.
+    spec=importlib.util.spec_from_file_location('complete_pre_go_proof',BIN/'start-preflight.py')
+    complete=importlib.util.module_from_spec(spec);spec.loader.exec_module(complete)
+    reservation=pin_json(recipe['setupReservation'])
+    if recipe['setupReservation']['path']!=str(SETUP_RESERVATION) or reservation.get('schema')!='helmut-local-resource-setup-reservation/1' or any(reservation.get(k)!=recipe[k] for k in ['fixtureConnectionPin','recipeTemplatePin','independentMeterAcceptance','freshOwnerGO','completeStartPreflight']):
+        raise RuntimeError('exact global setup reservation missing')
+    proof=pin_json(recipe['completeStartPreflight']);complete.assert_reserved_ready(proof,reservation)
+    # Archive/request review documents are checked on the HOST before setup;
+    # they are not workload inputs and must not be assumed mounted in the app.
+    # Reuse the exact fresh, recipe-pinned Root assessment, then bind it AGAIN
+    # to every currently mounted source. No arbitrary positive receipt is read
+    # from a client/API. Only the controller issues this exclusive local file.
+    rows=proof['consumerSourcePins']
+    if not rows:raise RuntimeError('complete start proof source inventory missing')
+    coverage=next(c for c in proof['checks']if c['id']=='completeIndependentCoverage')['evidence']
+    if proof['consumerInventorySHA256']!=coverage['inventorySHA256']:raise RuntimeError('complete start proof inventory adoption differs')
+    actual={p['path']:p for p in rows}
+    required={p['path']for p in checked['acceptance']['sourcePins']if Path(p['path']).suffix in ['.js','.py']}
+    if len(actual)!=len(rows) or not required<=set(actual):raise RuntimeError('complete start proof source closure incomplete')
+    for p in rows:
+        file=Path(p['path']);b=file.read_bytes()
+        if file.resolve()!=file or file.is_symlink() or len(b)!=p['bytes']or hashlib.sha256(b).hexdigest()!=p['sha256']:
+            raise RuntimeError('complete start proof actual source drift')
+    for key,recipe_key in [('acceptance','independentMeterAcceptance'),('connection','fixtureConnectionPin'),('recipeTemplate','recipeTemplatePin')]:
+        if proof.get('bindings',{}).get(key)!=recipe[recipe_key]:raise RuntimeError('complete start proof binding mismatch')
+    if recipe['completeStartPreflight']['path']!=str(Path(checked['connection']['caseDirectory'])/'COMPLETE_START_PREFLIGHT.SAFE.json'):
+        raise RuntimeError('complete start proof exact case path required')
     preflight=pin_json(recipe['freshStartPreflight'])
     if any(preflight.get(k)!=recipe[k] for k in ['freshOwnerGO','independentMeterAcceptance']) or preflight.get('connectionPin')!=recipe['fixtureConnectionPin']:
         raise RuntimeError('fresh preflight authority binding mismatch')
@@ -110,16 +165,7 @@ def verify_full_authority(recipe):
     now=datetime.now(timezone.utc);end=datetime.fromisoformat(preflight['windowEndsAtUTC'].replace('Z','+00:00'))
     if now.date()!=end.date() or now.astimezone(ZoneInfo('Europe/Berlin')).date()!=end.astimezone(ZoneInfo('Europe/Berlin')).date():
         raise RuntimeError('same UTC and Berlin day required')
-    # Only the exact independently reviewed day17 proposal may qualify this
-    # connection. A caller-supplied day/version alone grants no authority.
-    day=pin_json(recipe['dayBindingAcceptance'])
-    if acceptance.get('dayBindingAcceptance')!=recipe['dayBindingAcceptance'] or day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER':
-        raise RuntimeError('independently adopted exact current-day binding missing')
-    if day.get('day')!='2026-10-17' or now.strftime('%Y-%m-%d')!=day['day'] or now.astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')!=day['day']:
-        raise RuntimeError('actual UTC/Berlin day outside reviewed binding')
-    independent=pin_json(day['independentReview'])
-    if independent.get('model')!='deepseek-v4-pro' or independent.get('route',{}).get('effort')!='high' or independent.get('payload',{}).get('summary',{}).get('status')!='ok':
-        raise RuntimeError('current-day independent semantic acceptance missing')
+    day=checked['day']
     if now<datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00')) or end>datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00')):
         raise RuntimeError('actual run window outside independent current-day scope')
     if (end-now).total_seconds()*1000 < 8089543.088:
@@ -170,7 +216,7 @@ def create_network(name,subnet=None):
         # Retain the original gateway's172-only address contract. Two small
         # disjoint explicitly owned prefixes avoid Docker's exhausted default
         # address pool without touching any retained network or host routes.
-        if subnet not in ['172.16.249.0/24','172.16.250.0/24','172.16.251.0/24']:raise RuntimeError('unreviewed local connection subnet')
+        if subnet not in [A.SUBNET,'172.16.249.0/24','172.16.250.0/24','172.16.251.0/24']:raise RuntimeError('unreviewed local connection subnet')
         args+=['--subnet',subnet]
     K.docker(args+[name])
     data=json.loads(K.docker(['network','inspect',name]).stdout)[0]
@@ -181,7 +227,88 @@ def infra_mounts(out):
     args=K.common_mounts(out)
     return args
 
-def fixture_mounts(fixture,role):
+def runtime_read_manifest(recipe):
+    """Exact static reads, not authority and not a fabricated future receipt.
+
+    Generated case outputs and claim/reservation files are reached through the
+    existing case/owned-meter mappings. Their genuine hashes/identities remain
+    mandatory at runtime. Historical owner approvals are never recursively
+    imported just because a provenance document mentions them.
+    """
+    pins={}
+    def add(p):
+        if not isinstance(p,dict) or set(p)!={'path','bytes','sha256'}:
+            raise RuntimeError('exact runtime file pin required')
+        source=Path(p['path'])
+        if source.name=='OWNER_LOCAL_GO.PRIVATE.json':raise RuntimeError('historical local GO excluded')
+        previous=pins.get(p['path'])
+        if previous is not None and previous!=p:raise RuntimeError('conflicting runtime file pins')
+        if A.pin(source)!=p:raise RuntimeError('runtime dependency drift')
+        pins[p['path']]=p
+    def document(p):add(p);return pin_json(p)
+    acceptance=document(recipe['independentMeterAcceptance'])
+    connection=document(recipe['fixtureConnectionPin'])
+    document(recipe['recipeTemplatePin'])
+    for key in ['sourcePins']:
+        for p in acceptance[key]:add(p)
+        for p in recipe[key]:add(p)
+    for scopes in ['independentReviews','fullConnectionReviews']:
+        for entries in acceptance[scopes].values():
+            for p in entries if isinstance(entries,list) else [entries]:add(p)
+    for key in ['immutableWorkflowPins','applicationReadOnlyPins']:
+        for p in connection[key]:add(p)
+    document(connection['stagedHarness'])
+    request=document(connection['runtimeRequest'])
+    for p in request['sourcePins']:add(p)
+    for p in request['primaries'].values():add(p)
+    for key in ['inputAcceptance','localExternalBelege','rootFinalCodeAcceptance','currentDayBinding']:
+        if key in request:add(request[key])
+    owner=document(recipe['freshOwnerGO'])
+    for p in owner['previousConsumedMarkers']:add(p)
+    capture=document(connection['sourceCapture'])
+    for key in ['correctionReceiptPin','sourceDump','localRolesSQL','correctedFinancialWitnessPin']:
+        add(capture[key])
+    day=document(recipe['dayBindingAcceptance']);add(day['independentReview'])
+    # These files do not exist at a pre-GO visibility check. Once created, the
+    # exact genuine pins are also overlaid read-only; no dummy file is created.
+    generated=[str(ONCE),str(SETUP_RESERVATION),str(Path(connection['caseDirectory'])/'COMPLETE_START_PREFLIGHT.SAFE.json')]
+    for key in ['freshStartPreflight','setupReservation','completeStartPreflight']:
+        if key in recipe:add(recipe[key])
+    if connection.get('preparedWithoutGO')is True:generated.append(owner['finalOwnerGOPath'])
+    rows=sorted(pins.values(),key=lambda p:p['path'])
+    payload={'schema':'helmut-shared-runtime-read-manifest/1','pins':rows,
+      'generatedInputsRequireFreshRuntimeBinding':sorted(set(generated)),
+      'mutableWorkflowOutputsConfinedToOwnedCase':connection['caseDirectory'],
+      'trustedPlatformFiles':'Pinned image and read-only Node/Python/repository mounts; unchanged platform libraries'}
+    payload['sha256']=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+    return payload
+
+def verify_visible_files(manifest):
+    """Open every original byte inside the actual mount namespace, no workflow."""
+    if manifest.get('schema')!='helmut-shared-runtime-read-manifest/1':raise RuntimeError('runtime read manifest schema invalid')
+    unsigned={k:v for k,v in manifest.items()if k!='sha256'}
+    if hashlib.sha256(json.dumps(unsigned,sort_keys=True,separators=(',',':')).encode()).hexdigest()!=manifest.get('sha256'):
+        raise RuntimeError('runtime read manifest digest differs')
+    # Longest mount point wins; an rw case parent cannot conceal an ro file
+    # overlay, nor can an ro ancestor conceal an unexpected rw nested mount.
+    mounts=[]
+    for line in Path('/proc/self/mountinfo').read_text().splitlines():
+        fields=line.split();mounts.append((Path(fields[4].replace('\\040',' ')),set(fields[5].split(','))))
+    seen=set();total=0
+    for p in manifest['pins']:
+        if p['path']in seen:raise RuntimeError('duplicate runtime file entry')
+        seen.add(p['path']);source=Path(p['path'])
+        if A.pin(source)!=p:raise RuntimeError('container runtime file drift')
+        covering=[(root,flags)for root,flags in mounts if source==root or source.is_relative_to(root)]
+        if not covering or 'ro'not in max(covering,key=lambda x:len(x[0].parts))[1]:
+            raise RuntimeError('runtime input is not read-only inside container')
+        total+=p['bytes']
+    return {'pass':True,'manifestSHA256':manifest['sha256'],'openedAndHashedFiles':len(seen),
+      'openedAndHashedBytes':total,'allInputsReadOnlyInActualNamespace':True,
+      'generatedInputsNotAssertedPresent':manifest['generatedInputsRequireFreshRuntimeBinding'],
+      'activation':False,'GOConsumed':False,'workflowStagesStarted':0}
+
+def fixture_mounts(fixture,role,*,recipe=None):
     if fixture is None:return []
     if role not in ['application','database']:raise RuntimeError('fixture mount role invalid')
     case=Path(fixture['caseDirectory'])
@@ -192,12 +319,13 @@ def fixture_mounts(fixture,role):
     pins=list(fixture['databaseReadOnlyPins'] if role=='database' else fixture['applicationReadOnlyPins'])
     if role=='application':
         args+=['--mount','type=bind,src='+str(case)+',dst='+str(case)]
-        pins+=fixture.get('immutableWorkflowPins',[])
         if fixture.get('schema')=='helmut-pinned-full500-connection/1':
+            if recipe is None:raise RuntimeError('shared full runtime read manifest required for application mounts')
             verify_connection_files(fixture)
-            pins+=[fixture['stagedHarness']]
-            for source in [case/'FINAL_CONNECTION.SAFE.json',case/'RECIPE_TEMPLATE.PRIVATE.json']:
-                b=source.read_bytes();pins.append({'path':str(source),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()})
+            if pin_json(recipe['fixtureConnectionPin'])!=fixture:raise RuntimeError('mount recipe/fixture mismatch')
+            pins=runtime_read_manifest(recipe)['pins']
+        else:pins+=fixture.get('immutableWorkflowPins',[])
+    pins=list({p['path']:p for p in pins}.values())
     if role=='database' and (len(pins)!=1 or pins[0]['sha256']!='870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617'):
         raise RuntimeError('only exact existing PostgREST binary mount allowed in database')
     for p in pins:
@@ -206,10 +334,52 @@ def fixture_mounts(fixture,role):
         b=source.read_bytes()
         if len(b)!=p['bytes'] or hashlib.sha256(b).hexdigest()!=p['sha256']:raise RuntimeError('fixture mount pin drift')
         if source.name=='OWNER_LOCAL_GO.PRIVATE.json':raise RuntimeError('historical local GO excluded')
+        if role=='application'and source.is_relative_to(K.REPOSITORY):continue # Same read-only common mount.
         if not source.is_relative_to(Path('/workspace/helmut-parallel-20261015')):raise RuntimeError('fixture mount outside original evidence workspace')
         destination='/tmp/helmut-unit-fixture-postgrest-03693bea' if role=='database' else str(source)
         args+=['--mount','type=bind,src='+str(source)+',dst='+destination+',readonly']
     return args
+
+def application_mounts(out,fixture,recipe):
+    """Shared exact input mapping for the harmless visibility check and launch."""
+    args=infra_mounts(out)+fixture_mounts(fixture,'application',recipe=recipe)
+    if recipe['scope']=='owner-approved-local500-resources':
+        args+=['--mount','type=bind,src='+str(ONCE.parent)+',dst='+str(ONCE.parent)+',readonly']
+    return args
+
+def check_container_visibility(fixture,recipe):
+    """Small networkless read/hash process. Never executes recipe or claims GO."""
+    import tempfile,uuid
+    manifest=runtime_read_manifest(recipe)
+    directory=tempfile.mkdtemp(prefix='helmut-read-visibility-',dir='/workspace')
+    out=Path(directory);name='helmut-read-visibility-'+uuid.uuid4().hex[:12]
+    K.save_new(out/'READ_MANIFEST.PRIVATE.json',manifest)
+    args=['create','-i','--name',name,'--network','none','--cap-drop','ALL',
+      '--security-opt','no-new-privileges','--user',str(os.getuid())+':'+str(os.getgid()),'--entrypoint',PYTHON]
+    args+=application_mounts(out,fixture,recipe)
+    args+=[K.IMAGE,str(BIN/'isolation.py'),'--verify-visible-files']
+    cid=K.docker(args).stdout.strip()
+    try:
+        r=subprocess.run(K.DOCKER+['start','--attach','--interactive',cid],input=json.dumps(manifest),
+            capture_output=True,text=True,timeout=40)
+        state=json.loads(K.docker(['inspect',cid]).stdout)[0]
+        K.save_new(out/'CONTAINER_READ_RESULT.PRIVATE.json',{
+          'containerId':cid,'state':state['State'],'mounts':state['Mounts'],
+          'exitCode':r.returncode,'stdout':r.stdout,'stderr':r.stderr})
+        if r.returncode or state['State']['ExitCode']!=0:raise RuntimeError('actual container input visibility/hash/read-only check failed')
+        result=json.loads(r.stdout)
+        if result.get('pass')is not True or result.get('manifestSHA256')!=manifest['sha256']:
+            raise RuntimeError('container visibility response binding differs')
+        result['sameApplicationInputMountBuilder']=True
+        result['retainedReadOnlyProbeEvidence']=str(out)
+        K.save_new(out/'VISIBILITY_RESULT.SAFE.json',result)
+        return result
+    finally:
+        state=json.loads(K.docker(['inspect',cid]).stdout)[0]
+        if state['State']['Running']:K.docker(['stop','--time','5',cid],timeout=15)
+        # Only this fresh ephemeral read-only probe; no volumes or old
+        # containers are removed. No original bytes were writable.
+        K.docker(['rm',cid])
 
 def create_database(out,name,parent,network,scope='small-meter-validation',storage=None,fixture=None):
     if not storage:raise RuntimeError('native meter requires actual owned bounded filesystem')
@@ -309,13 +479,10 @@ def launch_application(out,name,parent,network,recipe,database=None):
           '--user',str(os.getuid())+':'+str(os.getgid()),
           '--env','PATH=/meter-output/bin:'+str(K.PYTHON_ROOT/'bin')+':'+str(K.NODE_ROOT/'bin')+':/usr/local/bin:/usr/bin:/bin',
           '--entrypoint',PYTHON]
-    args+=infra_mounts(out)
+    args+=application_mounts(out,database.get('fixture') if database else None,recipe)
     args+=['--mount','type=bind,src='+str(out/'RECIPE.PRIVATE.json')+',dst=/meter-output/RECIPE.PRIVATE.json,readonly']
-    args+=fixture_mounts(database.get('fixture') if database else None,'application')
     if database:args+=['--mount','type=bind,src='+database['out']+',dst=/meter-database']
     if broker:args+=['--mount','type=bind,src='+broker['out']+',dst=/meter-broker,readonly']
-    if recipe['scope']=='owner-approved-local500-resources':
-        args+=['--mount','type=bind,src='+str(ONCE.parent)+',dst='+str(ONCE.parent)+',readonly']
     args+=[K.IMAGE,str(BIN/'process-runner.py'),'/meter-output/RECIPE.PRIVATE.json']
     cid=K.docker(args).stdout.strip()
     if recipe['scope']=='owner-approved-local500-resources':claim_full_attempt(recipe,cid,out/'RECIPE.PRIVATE.json')
@@ -325,6 +492,12 @@ def launch_application(out,name,parent,network,recipe,database=None):
 
 def finalize(application,timeout=180):
     code=int(K.docker(['wait',application['containerId']],timeout=timeout).stdout.strip())
+    # PID1 can fail before runner baseline/try-finally (or be killed). Always
+    # close only the exact newly owned DB after its application has exited.
+    db=application['database']
+    if db:
+        stop=Path(db['out'])/'STOP_DATABASE'
+        if not stop.exists():K.save_new(stop,{'ownedApplicationExited':True,'applicationExitCode':code})
     broker_final=None
     if application.get('broker'):
         broker=application['broker'];Path(broker['out'],'STOP').write_text('OWNED_RUNNER_EXITED\n')
@@ -418,3 +591,35 @@ def finalize(application,timeout=180):
         result['simultaneousAllOwnedUnder2048DecimalMB']=bool(result['simultaneousApplicationAndInfrastructureKernel'] and result['simultaneousApplicationAndInfrastructureKernel']['memoryPeakBytes']<2048000000)
     K.save_new(out/'COMPLETE_RESOURCE_RESULT.SAFE.json',result)
     return result
+
+def close_failed_owned_setup(connection_pin,invocation_id):
+    """Error-only close; exact new reservation owner, never an old attempt."""
+    reservation=pin_json(A.pin(SETUP_RESERVATION))
+    if reservation.get('controllerInvocationId')!=invocation_id or reservation.get('fixtureConnectionPin')!=connection_pin:
+        raise RuntimeError('refuse cleanup of another controller reservation')
+    connection=pin_json(connection_pin);case=Path(connection['caseDirectory']);suffix=case.name.removeprefix('attempt-')
+    if case.parent!=Path('/workspace/helmut-parallel-20261015/wave20-resource-integration') or len(suffix)!=12 or any(c not in '0123456789abcdef'for c in suffix):
+        raise RuntimeError('owned error cleanup case invalid')
+    parent='/helmut-meter-resources17-'+suffix
+    ids=K.docker(['ps','--all','--quiet']).stdout.split()
+    containers=json.loads(K.docker(['inspect',*ids]).stdout)if ids else []
+    owned=[row for row in containers if row['HostConfig']['CgroupParent']in [parent+'/application',parent+'/database',parent+'/storage']]
+    # Existing stop interfaces first. Fixed disjoint directories only.
+    for stop in [case/'application/broker/STOP',case/'database/STOP_DATABASE',A.METER/('full500-owned-storage17-'+suffix)/'STOP']:
+        if stop.parent.is_dir()and not stop.exists():K.save_new(stop,{'ownedFailureClose':True})
+    stopped=[]
+    for row in owned:
+        if row['State']['Running']:
+            K.docker(['stop','--time','10',row['Id']],timeout=20)
+        after=json.loads(K.docker(['inspect',row['Id']]).stdout)[0]
+        if after['State']['Running']:raise RuntimeError('owned error cleanup process still alive')
+        stopped.append({'containerId':row['Id'],'exitCode':after['State']['ExitCode']})
+    result={'schema':'helmut-owned-setup-error-close/1','controllerInvocationId':invocation_id,
+      'containers':stopped,'noOldContainerControlled':True,'noDeletionOrRetry':True,'production':False}
+    K.save_new(case/'OWNED_SETUP_ERROR_CLOSE.SAFE.json',result)
+    return result
+
+if __name__=='__main__':
+    if sys.argv[1:]!=['--verify-visible-files']:
+        raise SystemExit('ONLY_NON_ACTIVATING_FILE_VISIBILITY_CHECK_ALLOWED')
+    print(json.dumps(verify_visible_files(json.load(sys.stdin))))

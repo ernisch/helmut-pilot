@@ -421,9 +421,9 @@
     },
     {
       "path": "vercel.json",
-      "bytes": 7994,
-      "sha256": "2947a07442ea88ec5a66a1bd10f3f2e9d56bd1e9bac30213ac76d5e3f208932b"
+      "bytes": 8050,
+      "sha256": "1a1e340f6081fee71ed154dfadd6268f063ee98286af2b2a894e2257c7843f20"
     }
   ],
-  "sourceMappingSHA256": "0041f13d88fc3d1744d4faf215ee986c6ead67d9a2be45206432ef12f3a7b7d0"
+  "sourceMappingSHA256": "6194aa6430cf117363ca60589130854638d0450bce84fa1159a9338da785099d"
 }

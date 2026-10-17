@@ -24,7 +24,7 @@ def financial_preflight(connection):
     stage=str(Path(connection['workflowDirectory'])/'prepare-current-local-runtime.js')
     pins=[p for p in connection['immutableWorkflowPins'] if p['path']==stage]
     if len(pins)!=1:raise RuntimeError('exact reviewed financial preparation module missing')
-    actual=Z.verify_capture(connection['sourceCapture'],connection['freshOwnerGO'])
+    actual=I.A.verify_preexisting_capture(connection['sourceCapture'])
     snapshot={'auth':json.loads(actual['nativeAuthText']),'nativeAuthText':actual['nativeAuthText'],'authSHA':actual['nativeAuthSHA'],'counter':0,'counterReadOK':True}
     proc=subprocess.run([str(I.K.NODE_ROOT/'bin/node'),str(BIN/'local-financial-preflight.js'),json.dumps(pins[0]),day],input=json.dumps(snapshot),capture_output=True,text=True,timeout=30)
     try:result=json.loads(proc.stdout)
@@ -59,7 +59,7 @@ def original_preflight(connection,*,check_financial=True):
     if check_financial:result['readOnlyFinancialProjection']=financial_preflight(connection)
     return result
 
-def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin):
+def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin,*,planning=False):
     acceptance=C.read_pin(acceptance_pin);connection=C.read_pin(connection_pin);recipe=C.read_pin(recipe_template_pin)
     if acceptance.get('status')!='ROOT_ADOPTED_INDEPENDENT_COMPLETE_METER_ACCEPTANCE':raise RuntimeError('complete independent acceptance missing')
     if acceptance.get('fixtureConnectionPin')!=connection_pin or recipe.get('fixtureConnectionPin')!=connection_pin:raise RuntimeError('exact accepted connection differs')
@@ -86,6 +86,7 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin):
             if r.get('model')!='deepseek-v4-pro' or r.get('route',{}).get('effort')!='high' or r.get('payload',{}).get('summary',{}).get('status')!='ok':raise RuntimeError('full connection independent review missing')
     owner=C.read_pin(recipe['freshOwnerGO']);day=C.read_pin(recipe['dayBindingAcceptance'])
     I.verify_fixture_owner_policy(owner)
+    I.A.validate_owner(owner,connection,planning=planning)
     if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!='2026-10-17' or day.get('positiveOriginalLAtBothWindowEnds')!=500:raise RuntimeError('owner or day binding invalid')
     for p in connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']:
         if C.pin(p['path'])!=p:raise RuntimeError('fixture asset drift')
@@ -105,7 +106,28 @@ def window(day):
     if (end-now).total_seconds()<8089.543088+600:raise RuntimeError('full remaining window lacks last actual workflow plus10min setup/close reserve')
     return True,start,end
 
-def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
+def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_preflight_adoption_pin=None):
+    invocation_id=secrets.token_hex(16)
+    try:
+        return _run_once(acceptance_pin,connection_pin,recipe_template_pin,wait=wait,
+            start_preflight_adoption_pin=start_preflight_adoption_pin,invocation_id=invocation_id)
+    except Exception:
+        # A concurrent or historical reservation never belongs to this call.
+        # Preserve the original failure; record cleanup failure separately.
+        if I.SETUP_RESERVATION.exists():
+            reservation=C.read_pin(C.pin(I.SETUP_RESERVATION))
+            if reservation.get('controllerInvocationId')==invocation_id:
+                I.close_failed_owned_setup(connection_pin,invocation_id)
+        raise
+
+def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_preflight_adoption_pin=None,invocation_id):
+    # A caller cannot skip the complete non-mutating consumer comparison.
+    # This must precede ANY reservation, correction, resource or GO side effect.
+    complete=module('complete_start_preflight','start-preflight.py')
+    bindings={'acceptance':acceptance_pin,'connection':connection_pin,'recipeTemplate':recipe_template_pin}
+    if start_preflight_adoption_pin is not None:bindings['startPreflightIndependentAdoption']=start_preflight_adoption_pin
+    checked=complete.assess(bindings)
+    complete.assert_ready(checked)
     acceptance,connection,recipe,day=accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin)
     no_previous_attempt(connection)
     valid,start,end=window(day)
@@ -122,7 +144,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     dbname=connection['containerName'];appname=dbname.replace('helmut-meter-db-','helmut-meter-app-',1)
     if I.K.docker(['inspect',dbname],check=False).returncode==0 or I.K.docker(['network','inspect',network],check=False).returncode==0:raise RuntimeError('actual owned resources already exist; no reuse')
     subnet=connection.get('approvedInternalSubnet')
-    if subnet!='172.16.249.0/24':raise RuntimeError('exact new reviewed172 gateway subnet missing')
+    if subnet!=I.A.SUBNET:raise RuntimeError('exact new reviewed172 gateway subnet missing')
     network_ids=I.K.docker(['network','ls','-q']).stdout.split()
     networks=json.loads(I.K.docker(['network','inspect',*network_ids]).stdout)
     if any(ipaddress.ip_network(subnet).overlaps(ipaddress.ip_network(p['Subnet'])) for n in networks for p in (n['IPAM'].get('Config') or []) if ':' not in p.get('Subnet','')):
@@ -130,7 +152,14 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     # Exclusive GLOBAL setup reservation prevents competing controllers from
     # creating any resources for the same unused GO. It is never deleted;
     # setup failure remains retained and needs reviewed recovery, not a retry.
-    I.K.save_new(I.SETUP_RESERVATION,{'schema':'helmut-local-resource-setup-reservation/1','fixtureConnectionPin':connection_pin,'recipeTemplatePin':recipe_template_pin,'independentMeterAcceptance':acceptance_pin,'freshOwnerGO':recipe['freshOwnerGO'],'atUTC':datetime.datetime.now(UTC).isoformat(),'GOConsumed':False,'noAutomaticRetry':True})
+    # Recheck fresh prerequisites after any wait/read-only checks. Never use an
+    # externally supplied pass report or a stale early observation as authority.
+    checked=complete.assess(bindings)
+    complete.assert_ready(checked)
+    complete_path=case/'COMPLETE_START_PREFLIGHT.SAFE.json'
+    I.K.save_new(complete_path,complete.freeze_ready_report(checked))
+    complete_pin=C.pin(complete_path)
+    I.K.save_new(I.SETUP_RESERVATION,{'schema':'helmut-local-resource-setup-reservation/1','fixtureConnectionPin':connection_pin,'recipeTemplatePin':recipe_template_pin,'independentMeterAcceptance':acceptance_pin,'freshOwnerGO':recipe['freshOwnerGO'],'completeStartPreflight':complete_pin,'controllerInvocationId':invocation_id,'atUTC':datetime.datetime.now(UTC).isoformat(),'GOConsumed':False,'noAutomaticRetry':True})
     reservation_pin=C.pin(I.SETUP_RESERVATION)
     I.K.save_new(case/'CONTROLLER_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'preflight':first,'singleSetupAttempt':True,'noAutomaticRetry':True,'GOClaimed':False,'setupReservation':reservation_pin})
     storage_module=module('bounded','bounded-storage.py')
@@ -140,7 +169,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     minor=acceptance['approvedFreshLoopMinor']
     storage_out=I.ONCE.parent/('full500-owned-storage17-'+case.name.removeprefix('attempt-'))
     storage=storage_module.create(storage_out,8000000000,minor,parent+'/storage',hold=connection['storageHoldSeconds'])
-    if connection.get('approvedInternalSubnet')!='172.16.249.0/24':raise RuntimeError('exact new reviewed172 gateway subnet missing')
+    if connection.get('approvedInternalSubnet')!=I.A.SUBNET:raise RuntimeError('exact new reviewed172 gateway subnet missing')
     I.create_network(network,subnet=connection['approvedInternalSubnet'])
     db=I.create_database(case/'database',dbname,parent+'/database',network,scope='owner-approved-local500-resources',storage=storage,fixture=connection)
     # Fresh actual prerequisites AFTER the empty owned server is ready.
@@ -155,7 +184,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
       'exactUnusedOwnedDatabaseVerified':True,'connectionPin':connection_pin,'independentMeterAcceptance':acceptance_pin,
       'actualEmptyDBContainerId':db['containerId'],'freshOwnerGO':recipe['freshOwnerGO'],'oneTimeGOUnused':True,'production':False}
     I.K.save_new(preflight_path,preflight)
-    recipe.update(sourcePins=acceptance['sourcePins'],independentMeterAcceptance=acceptance_pin,freshStartPreflight=C.pin(preflight_path),recipeTemplatePin=recipe_template_pin,setupReservation=reservation_pin)
+    recipe.update(sourcePins=acceptance['sourcePins'],independentMeterAcceptance=acceptance_pin,freshStartPreflight=C.pin(preflight_path),recipeTemplatePin=recipe_template_pin,setupReservation=reservation_pin,completeStartPreflight=complete_pin)
     I.verify_full_authority(recipe)
     app=I.launch_application(case/'application',appname,parent+'/application',network,recipe,db)
     I.K.save_new(case/'ACTUAL_RESOURCE_ATTEMPT_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'application':app,'globalClaim':C.pin(CLAIM),'exactlyOneAttempt':True,'noRetry':True})
@@ -168,11 +197,18 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     return result
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--accepted-bindings',required=True);parser.add_argument('--run-exactly-once',action='store_true');parser.add_argument('--wait-for-reviewed-window',action='store_true');args=parser.parse_args()
-    if not args.run_exactly_once:raise SystemExit('EXPLICIT_EXISTING_ONCE_GO_ACTION_REQUIRED')
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--accepted-bindings',required=True)
+    action=parser.add_mutually_exclusive_group(required=True);action.add_argument('--run-exactly-once',action='store_true');action.add_argument('--check-only',action='store_true')
+    parser.add_argument('--wait-for-reviewed-window',action='store_true');parser.add_argument('--prepare-without-go',action='store_true');args=parser.parse_args()
+    if args.prepare_without_go and not args.check_only:parser.error('--prepare-without-go is restricted to --check-only')
     bindings=json.loads(Path(args.accepted_bindings).read_text())
     try:
-        result=run(bindings['acceptance'],bindings['connection'],bindings['recipeTemplate'],wait=args.wait_for_reviewed_window)
+        if args.check_only:
+            result=module('complete_start_preflight','start-preflight.py').assess(bindings,planning=args.prepare_without_go)
+            print(json.dumps(result),flush=True)
+            raise SystemExit(0 if result['pass'] else 2)
+        result=run(bindings['acceptance'],bindings['connection'],bindings['recipeTemplate'],wait=args.wait_for_reviewed_window,
+                   start_preflight_adoption_pin=bindings.get('startPreflightIndependentAdoption'))
         if result['pass'] is not True:raise SystemExit(1)
     except Exception as error:
         print(json.dumps({'status':'STOP_NO_AUTOMATIC_RETRY','errorType':type(error).__name__,'reason':str(error) if isinstance(error,RuntimeError) else 'Inspect retained local evidence; do not replay any claimed attempt','globalGOClaimExists':CLAIM.exists(),'production':False}),flush=True)

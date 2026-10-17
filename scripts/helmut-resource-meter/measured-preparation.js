@@ -13,7 +13,7 @@ function main(){
  assert.equal(plan.production,false);assert.equal(plan.operationId,recipe.expectedFreshOperationId);
  assert.equal(process.argv[2],recipe.fixtureConnectionPin.path);
  const owner=read(recipe.freshOwnerGO);assert.equal(owner.production,false);assert.equal(owner.syntheticProfiles,500);assert.equal(owner.targetDatabase,plan.targetDatabase);
- const claim=JSON.parse(fs.readFileSync('/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json'));
+ const claim=JSON.parse(fs.readFileSync('/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE17_V4_GO_CLAIM.SAFE.json'));
  assert.equal(claim.recipeSHA256,sha(fs.readFileSync('/meter-output/RECIPE.PRIVATE.json')));
  const source=read(plan.sourceCapture),q=x=>"'"+x.replaceAll("'","''")+"'";
  assert.equal(source.source,plan.sourceDatabase);assert.equal(source.sourceWrites,0);assert.deepEqual(source.before,source.after);
