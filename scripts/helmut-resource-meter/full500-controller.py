@@ -24,7 +24,7 @@ def financial_preflight(connection):
     stage=str(Path(connection['workflowDirectory'])/'prepare-current-local-runtime.js')
     pins=[p for p in connection['immutableWorkflowPins'] if p['path']==stage]
     if len(pins)!=1:raise RuntimeError('exact reviewed financial preparation module missing')
-    actual=Z.verify_capture(connection['sourceCapture'],connection['freshOwnerGO'])
+    actual=I.A.verify_preexisting_capture(connection['sourceCapture'])
     snapshot={'auth':json.loads(actual['nativeAuthText']),'nativeAuthText':actual['nativeAuthText'],'authSHA':actual['nativeAuthSHA'],'counter':0,'counterReadOK':True}
     proc=subprocess.run([str(I.K.NODE_ROOT/'bin/node'),str(BIN/'local-financial-preflight.js'),json.dumps(pins[0]),day],input=json.dumps(snapshot),capture_output=True,text=True,timeout=30)
     try:result=json.loads(proc.stdout)
@@ -59,7 +59,7 @@ def original_preflight(connection,*,check_financial=True):
     if check_financial:result['readOnlyFinancialProjection']=financial_preflight(connection)
     return result
 
-def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin):
+def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin,*,planning=False):
     acceptance=C.read_pin(acceptance_pin);connection=C.read_pin(connection_pin);recipe=C.read_pin(recipe_template_pin)
     if acceptance.get('status')!='ROOT_ADOPTED_INDEPENDENT_COMPLETE_METER_ACCEPTANCE':raise RuntimeError('complete independent acceptance missing')
     if acceptance.get('fixtureConnectionPin')!=connection_pin or recipe.get('fixtureConnectionPin')!=connection_pin:raise RuntimeError('exact accepted connection differs')
@@ -86,6 +86,7 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin):
             if r.get('model')!='deepseek-v4-pro' or r.get('route',{}).get('effort')!='high' or r.get('payload',{}).get('summary',{}).get('status')!='ok':raise RuntimeError('full connection independent review missing')
     owner=C.read_pin(recipe['freshOwnerGO']);day=C.read_pin(recipe['dayBindingAcceptance'])
     I.verify_fixture_owner_policy(owner)
+    I.A.validate_owner(owner,connection,planning=planning)
     if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!='2026-10-17' or day.get('positiveOriginalLAtBothWindowEnds')!=500:raise RuntimeError('owner or day binding invalid')
     for p in connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']:
         if C.pin(p['path'])!=p:raise RuntimeError('fixture asset drift')
@@ -129,7 +130,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_pre
     dbname=connection['containerName'];appname=dbname.replace('helmut-meter-db-','helmut-meter-app-',1)
     if I.K.docker(['inspect',dbname],check=False).returncode==0 or I.K.docker(['network','inspect',network],check=False).returncode==0:raise RuntimeError('actual owned resources already exist; no reuse')
     subnet=connection.get('approvedInternalSubnet')
-    if subnet!='172.16.249.0/24':raise RuntimeError('exact new reviewed172 gateway subnet missing')
+    if subnet!=I.A.SUBNET:raise RuntimeError('exact new reviewed172 gateway subnet missing')
     network_ids=I.K.docker(['network','ls','-q']).stdout.split()
     networks=json.loads(I.K.docker(['network','inspect',*network_ids]).stdout)
     if any(ipaddress.ip_network(subnet).overlaps(ipaddress.ip_network(p['Subnet'])) for n in networks for p in (n['IPAM'].get('Config') or []) if ':' not in p.get('Subnet','')):
@@ -154,7 +155,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_pre
     minor=acceptance['approvedFreshLoopMinor']
     storage_out=I.ONCE.parent/('full500-owned-storage17-'+case.name.removeprefix('attempt-'))
     storage=storage_module.create(storage_out,8000000000,minor,parent+'/storage',hold=connection['storageHoldSeconds'])
-    if connection.get('approvedInternalSubnet')!='172.16.249.0/24':raise RuntimeError('exact new reviewed172 gateway subnet missing')
+    if connection.get('approvedInternalSubnet')!=I.A.SUBNET:raise RuntimeError('exact new reviewed172 gateway subnet missing')
     I.create_network(network,subnet=connection['approvedInternalSubnet'])
     db=I.create_database(case/'database',dbname,parent+'/database',network,scope='owner-approved-local500-resources',storage=storage,fixture=connection)
     # Fresh actual prerequisites AFTER the empty owned server is ready.
@@ -184,11 +185,12 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_pre
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--accepted-bindings',required=True)
     action=parser.add_mutually_exclusive_group(required=True);action.add_argument('--run-exactly-once',action='store_true');action.add_argument('--check-only',action='store_true')
-    parser.add_argument('--wait-for-reviewed-window',action='store_true');args=parser.parse_args()
+    parser.add_argument('--wait-for-reviewed-window',action='store_true');parser.add_argument('--prepare-without-go',action='store_true');args=parser.parse_args()
+    if args.prepare_without_go and not args.check_only:parser.error('--prepare-without-go is restricted to --check-only')
     bindings=json.loads(Path(args.accepted_bindings).read_text())
     try:
         if args.check_only:
-            result=module('complete_start_preflight','start-preflight.py').assess(bindings)
+            result=module('complete_start_preflight','start-preflight.py').assess(bindings,planning=args.prepare_without_go)
             print(json.dumps(result),flush=True)
             raise SystemExit(0 if result['pass'] else 2)
         result=run(bindings['acceptance'],bindings['connection'],bindings['recipeTemplate'],wait=args.wait_for_reviewed_window,

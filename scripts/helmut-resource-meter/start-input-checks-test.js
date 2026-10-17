@@ -57,3 +57,17 @@ test('missing historical16 and unreadable/mismatched native finances fail before
     {auth:{...auth,llmUsage:[{changed:true}]}}])assert.equal(F.assess({...s,...delta},null,'2026-10-17').pass,false);
   assert.equal(JSON.stringify(s),before);
 });
+
+test('an unauthorized technical intent cannot pass the execution owner contract',()=>{
+  const owner={schema:'helmut-owner-local-fixture-intent/1',authorized:false,allowDispose:false,
+    requiredConfirmation:'TEST_ONLY_NEVER_A_GO',targetDatabase:'TEST_ONLY',production:false,
+    syntheticProfiles:500,paidProviderCallsAllowed:false,exactlyOneResourceAttempt:true,resourceOnly:true,
+    finalOwnerGOPath:'/tmp/NO_ACTUAL_GO_EXISTS_FOR_THIS_IN_MEMORY_TEST'};
+  const action={authorized:false,requiredGOConfirmation:owner.requiredConfirmation};
+  P.ownerIntentPolicy(owner,action,'TEST_ONLY');
+  assert.throws(()=>P.ownerPolicy(owner,action,'TEST_ONLY',Date.now()));
+  for(const value of [undefined,null,true,0,'false'])assert.throws(()=>P.ownerIntentPolicy({...owner,allowDispose:value},action,'TEST_ONLY'));
+  for(const key of ['approvedAtUTC','confirmation','ownerAuthorizationReference'])
+    assert.throws(()=>P.ownerIntentPolicy({...owner,[key]:'TEST_ONLY_NOT_AUTHORITY'},action,'TEST_ONLY'));
+  assert.throws(()=>P.ownerIntentPolicy(owner,{...action,authorized:true},'TEST_ONLY'));
+});

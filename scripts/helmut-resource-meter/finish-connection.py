@@ -14,7 +14,8 @@ def finish(staged_pin):
     owner_pin=staged['ownerGOPin'];day=C.read_pin(staged['dayAcceptance'])
     owner=C.read_pin(owner_pin)
     capture_pin=C.pin(owner['correctedSourceCapturePath']);capture=C.read_pin(capture_pin)
-    if capture.get('freshOwnerGO')!=owner_pin:raise RuntimeError('new corrected input owner binding differs')
+    C.A.verify_preexisting_capture(capture_pin,actual=False)
+    if owner['sourceCapturePin']!=capture_pin:raise RuntimeError('new input DATA binding differs')
     if capture['before']!=capture['after'] or capture['sourceWrites']!=0:raise RuntimeError('read-only source capture incomplete')
     original=json.loads((B/'wave15/ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json').read_text())
     content=json.loads((B/'wave15/ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json').read_text())
@@ -73,10 +74,10 @@ def finish(staged_pin):
       'databaseReadOnlyPins':[capture['postgrestBinary']],
       'stagedHarness':staged_pin,'full500RunStarted':False,'resourceGOConsumed':False,
       'storageHoldSeconds':9*3600+600,'storageCapacityBytes':8000000000,
-      'approvedInternalSubnet':'172.16.249.0/24',
+      'approvedInternalSubnet':C.A.SUBNET,
       'sourceCaptureIsPreexistingFixtureInputNotWorkflowCPU':True,
       'phases':['preparation','assembly','sequence'],'profiles':500,'controlsPerUnit':16,
-      'originalUUnchangedAndRequired':True,'noProfiler':True,'noPaidProviderCalls':True}
+      'originalUUnchangedAndRequired':True,'noProfiler':True,'noPaidProviderCalls':True,'preparedWithoutGO':staged.get('preparedWithoutGO',False)}
     connection=C.save(case/'FINAL_CONNECTION.SAFE.json',plan)
     # Recipe templates contain NO current preflight or final meter acceptance.
     # The controller adds those only after independent review, immediately

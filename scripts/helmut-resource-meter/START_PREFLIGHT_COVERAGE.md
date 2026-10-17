@@ -106,3 +106,41 @@ A future, separately approved attempt needs a newly reviewed exact binding and
 fixed global authorization namespace, never deletion or relabeling of old claims.
 The17Oct00:00..08:59:59.999UTC acceptance cannot be silently extended. Local
 mock/input success does not close Production memory or infrastructure cost proof.
+
+## Preparing a fresh candidate before a new GO
+
+`--check-only --prepare-without-go` runs the same32 groups, using the explicit
+`helmut-owner-local-fixture-intent/1` document for technical policy only. It must
+contain `authorized:false`, literal `allowDispose:false`, the exact new case,
+operation, preserved old marker pins, existing corrected input and proposed final
+owner path. Confirmation, approval time and user authorization reference are
+forbidden in an intent. The staged action is also unauthorized. The future owner
+file is absent; staged assembly already names that exact future file.
+
+A complete technical plan returns `technicalReady:true`, **`pass:false`**,
+`MISSING_NEW_OPERATOR_GO`. It cannot be frozen into an execution receipt, and
+`--prepare-without-go` cannot be combined with `--run-exactly-once`. The default
+controller and direct full-authority path always require the real GO schema,
+explicit new authorization, literal preservation, fresh timestamp/reference, exact
+confirmation and final owner path. No planning flag reaches the executable recipe.
+
+The fixed next claim/reservation are `NEXT_RESOURCE17_V3_*` in the existing meter
+area. The five consumed markers are hash-pinned to their preserved baseline and
+never reset. This slot is prospective; its existence in code grants no GO. A new
+case and the fixed unused internal172.16.248/24 subnet keep old networks intact.
+Loop allocation remains an atomic runtime check against the reviewed unbound minor.
+
+The successful16Oct correction is reused only as preexisting input: exact capture
+SHA, real old receipt/consumed-marker provenance, unchanged monetary limits, actual
+native original/corrected auth and entire counter table, plus dump/roles/binary
+pins. The historical correction GO grants no new resource authority. No correction
+is repeated. Host preflight reads the actual original databases; the application
+rechecks mounted provenance and the actual restored native bytes, without trying to
+query the original server through its deliberately restricted broker.
+
+After an explicit future GO, approval-dependent candidate metadata must be sealed
+with the genuine new GO and all pins regenerated, retaining this pending plan. The
+complete default preflight must freshly pass before any reservation. The temporal
+acceptance, code inventory, prior reviews and unchanged source facts must remain
+exactly bound; preparation results are never promoted to runtime receipts. This
+is metadata finalization, not permission to activate during preparation.

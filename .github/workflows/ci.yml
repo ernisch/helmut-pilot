@@ -129,6 +129,7 @@ jobs:
           result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromModule(tests))
           raise SystemExit(not result.wasSuccessful())
           PY
+          python scripts/helmut-resource-meter/next-resource-authority-test.py
           node --test scripts/helmut-resource-meter/start-input-checks-test.js
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
         if: steps.plan.outputs.database == 'true'

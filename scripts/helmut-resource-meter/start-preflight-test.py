@@ -26,6 +26,15 @@ class StartPreflightTest(unittest.TestCase):
         self.assertNotIn('PRIVATE_AUTH_OR_TOKEN',json.dumps(result))
         self.assertFalse(result['oneTimeGOConsumed'])
 
+    def test_complete_technical_plan_never_becomes_an_execution_receipt(self):
+        r=P.Report();r.planning=True
+        for id in P.REQUIRED_CHECKS:r.check(id,'test','test',lambda:{})
+        result=P.finish(r,[])
+        self.assertTrue(result['technicalReady']);self.assertFalse(result['pass'])
+        self.assertEqual(result['authorizationStatus'],'MISSING_NEW_OPERATOR_GO')
+        with self.assertRaises(RuntimeError):P.assert_ready(result)
+        with self.assertRaises(RuntimeError):P.freeze_ready_report(result)
+
     def test_no_empty_partial_stale_future_or_false_receipt_is_authority(self):
         now=time.time()
         good={'schema':'helmut-complete-local-start-preflight/1','status':'READY_FOR_SEPARATE_EXACT_LOCAL_GO',

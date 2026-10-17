@@ -26,10 +26,21 @@ function ownerPolicy(owner, action, target, now) {
   assert(Number.isFinite(Date.parse(owner.approvedAtUTC)) && Date.parse(owner.approvedAtUTC) <= now);
   assert(typeof owner.ownerAuthorizationReference === 'string' && owner.ownerAuthorizationReference.length >= 20);
 }
+function ownerIntentPolicy(owner, action, target) {
+  assert.equal(owner.schema,'helmut-owner-local-fixture-intent/1');
+  assert.equal(owner.authorized,false); assert.equal(action.authorized,false);
+  for(const k of ['confirmation','approvedAtUTC','ownerAuthorizationReference'])assert(!Object.hasOwn(owner,k));
+  assert.equal(owner.allowDispose,false);assert.equal(owner.requiredConfirmation,action.requiredGOConfirmation);
+  assert.equal(owner.targetDatabase,target);assert.equal(owner.production,false);
+  assert.equal(owner.syntheticProfiles,500);assert.equal(owner.paidProviderCallsAllowed,false);
+  assert.equal(owner.exactlyOneResourceAttempt,true);assert.equal(owner.resourceOnly,true);
+  assert(!fs.existsSync(owner.finalOwnerGOPath));
+}
 function ownerInputs(plan, now) {
   const staged = json(plan.stagedHarness), action = json(staged.action);
   const owner = json(plan.freshOwnerGO, true);
-  ownerPolicy(owner, action, plan.targetDatabase, now);
+  if(plan.planningWithoutGO===true)ownerIntentPolicy(owner,action,plan.targetDatabase);
+  else ownerPolicy(owner, action, plan.targetDatabase, now);
   return {explicitPreservation:true,localOnly:true,profiles:500,paidProviderCalls:false};
 }
 function preparationInputs(plan) {
@@ -262,5 +273,5 @@ if (require.main === module) {
   const plan = JSON.parse(fs.readFileSync(0,'utf8'));
   process.stdout.write(JSON.stringify(assess(plan))+'\n');
 }
-module.exports = { pinned, json, ownerPolicy, ownerInputs, preparationInputs, materialsInputs, profileInputs,
+module.exports = { pinned, json, ownerPolicy, ownerIntentPolicy, ownerInputs, preparationInputs, materialsInputs, profileInputs,
   providerInputs,staticInterfaces,initialSourceBinding,assess,installReadOnlyGuards };

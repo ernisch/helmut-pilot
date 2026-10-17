@@ -21,8 +21,10 @@ PYTHON=str(K.PYTHON_ROOT/'bin/python')
 BIN=K.REPOSITORY/'scripts/helmut-resource-meter'
 # A NEW explicit user authorization, never a reset/replay of the consumed GO.
 # Fixed globally for this authorization, NOT selected per case/environment.
-ONCE=Path('/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json')
-SETUP_RESERVATION=ONCE.with_name('DAY16_REPAIR_RESOURCE_SETUP_RESERVATION.SAFE.json')
+_spec=importlib.util.spec_from_file_location('next_resource_authority',BIN/'next-resource-authority.py')
+A=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(A)
+ONCE=A.CLAIM
+SETUP_RESERVATION=A.RESERVATION
 
 def inspect_private_network(name):
     data=json.loads(K.docker(['network','inspect',name]).stdout)[0]
@@ -44,7 +46,7 @@ def verify_fixture_owner_policy(owner):
     if owner.get('allowDispose') is not False:
         raise RuntimeError('owner GO requires explicit allowDispose=false before any setup or claim')
 
-def verify_pre_setup_authority(recipe):
+def verify_pre_setup_authority(recipe,*,planning=False):
     """Shared actual authority predicates that require NO created resources.
 
     Used before reservation AND by the original final authority check. Never
@@ -90,14 +92,12 @@ def verify_pre_setup_authority(recipe):
         raise RuntimeError('exact local current500 connection missing')
     owner=pin_json(recipe['freshOwnerGO'])
     verify_fixture_owner_policy(owner)
-    repair=pin_json(connection['sourceCapture'])
-    if owner.get('authorizationId')!='USER_GO_20261017_EXACT_ONE_DAY16_CORRECTION_AND_RESOURCE_RUN_V1' or repair.get('freshOwnerGO')!=recipe['freshOwnerGO']:
-        raise RuntimeError('new exact zero-day/resource authorization missing')
-    pin_json(owner['previousConsumedClaimPin']);pin_json(owner['previousSetupReservationPin'])
-    corrected=pin_json(repair['correctionReceiptPin'])
-    if corrected.get('pass')is not True or corrected.get('freshOwnerGO')!=recipe['freshOwnerGO'] or corrected.get('historicalDaysAdded')!=['2026-10-16'] or corrected.get('correctionWrites')!=1:
-        raise RuntimeError('independently bound input correction missing')
-    if owner.get('schema')!='helmut-owner-local-fixture-go/1' or owner.get('production') is not False or owner.get('syntheticProfiles')!=500:
+    A.validate_owner(owner,connection,planning=planning)
+    action=pin_json(pin_json(connection['stagedHarness'])['action'])
+    if action.get('authorized')is not(not planning):raise RuntimeError('pending/executable action mismatch')
+    if not planning and recipe['freshOwnerGO']['path']!=owner['finalOwnerGOPath']:raise RuntimeError('actual owner GO path differs from approved fixed slot')
+    A.verify_preexisting_capture(connection['sourceCapture'],actual=False)
+    if not planning and (owner.get('schema')!='helmut-owner-local-fixture-go/1' or owner.get('production') is not False or owner.get('syntheticProfiles')!=500):
         raise RuntimeError('fresh local owner GO missing')
     if '/wave19-resource-meter/' not in recipe['freshOwnerGO']['path'] or recipe.get('full500Attempts')!=1:
         raise RuntimeError('historical GO or non-single attempt prohibited')
@@ -212,7 +212,7 @@ def create_network(name,subnet=None):
         # Retain the original gateway's172-only address contract. Two small
         # disjoint explicitly owned prefixes avoid Docker's exhausted default
         # address pool without touching any retained network or host routes.
-        if subnet not in ['172.16.249.0/24','172.16.250.0/24','172.16.251.0/24']:raise RuntimeError('unreviewed local connection subnet')
+        if subnet not in [A.SUBNET,'172.16.249.0/24','172.16.250.0/24','172.16.251.0/24']:raise RuntimeError('unreviewed local connection subnet')
         args+=['--subnet',subnet]
     K.docker(args+[name])
     data=json.loads(K.docker(['network','inspect',name]).stdout)[0]

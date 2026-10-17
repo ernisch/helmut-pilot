@@ -7,6 +7,9 @@ independent review; no application/engine file is edited.
 """
 import hashlib,json,os,re,secrets
 from pathlib import Path
+import importlib.util
+_spec=importlib.util.spec_from_file_location('next_resource_stage',Path(__file__).with_name('next-resource-authority.py'))
+A=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(A)
 
 REPO=Path('/workspace/helmut-cpu-epoch-20261015')
 BASE=Path('/workspace/helmut-parallel-20261015')
@@ -79,7 +82,7 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
         deltas.append({'original':{k:template[k] for k in ['path','bytes','sha256']},'destination':str(destination),'text':text,'replacements':changes})
     return deltas
 
-def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin):
+def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin,prepare_only=False):
     case=Path(case).resolve()
     exact_case_binding(case,target,container,operation)
     if case.parent!=AREA or not re.fullmatch('attempt-[a-f0-9]{12}',case.name):raise RuntimeError('exact fresh local case directory required')
@@ -91,10 +94,11 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
     if day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER' or day.get('day')!='2026-10-17':raise RuntimeError('accepted actual day17 binding missing')
     if day.get('adoptedRowsPin')!=day_rows_pin:raise RuntimeError('accepted exact current inputs required')
     owner=read_pin(owner_go_pin)
+    A.validate_owner(owner,{'caseDirectory':str(case),'targetDatabase':target,'operationId':operation,'sourceCapture':owner['sourceCapturePin'],'preparedWithoutGO':prepare_only},planning=prepare_only)
     if owner.get('allowDispose') is not False:raise RuntimeError('explicit allowDispose=false required before staging')
     if owner.get('production') is not False or owner.get('syntheticProfiles')!=500 or owner.get('targetDatabase')!=target:
         raise RuntimeError('existing once GO exact new local binding required')
-    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin=owner_go_pin)
+    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin={'path':owner['finalOwnerGOPath']})
     case.mkdir(mode=0o700,exist_ok=False);n=case/'native-end-preparation';n.mkdir(mode=0o700);(n/'runtime-candidates').mkdir(mode=0o700)
     deltas=[]
     for item in rendered:
@@ -103,17 +107,17 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
     original_action=json.loads((BASE/'wave15/native-end-preparation/LOCAL_ACTIVATION_ACTION.SAFE.json').read_text())
     action={**original_action,'container':container,'sourceDatabaseReadOnly':SOURCE,'onlyNewTargetDatabase':target,
       'newOperationId':operation,'reviewedDayWindowEndUTC':day['endsAtUTC'],
-      'status':'BOUND_EXISTING_UNUSED_ONE_TIME_LOCAL_RESOURCES_GO_ONLY','requiredGOConfirmation':
-      'GO_LOCAL_ONLY_CREATE_'+target+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE','authorized':True,
+      'status':'AWAITING_NEW_RESOURCE_GO_NOT_AUTHORIZED'if prepare_only else'BOUND_EXISTING_UNUSED_ONE_TIME_LOCAL_RESOURCES_GO_ONLY','requiredGOConfirmation':
+      'GO_LOCAL_ONLY_CREATE_'+target+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE','authorized':not prepare_only,
       'allowedLocalEffectsAfterGO':[str(x).replace('16Oct','17Oct') for x in original_action['allowedLocalEffectsAfterGO']]}
     save(n/'LOCAL_ACTIVATION_ACTION.SAFE.json',action)
     plan={'schema':'helmut-exact-local500-connection/1','scope':'STAGED_NOT_EXECUTED','caseDirectory':str(case),
       'workflowDirectory':str(n),'sourceDatabase':SOURCE,'targetDatabase':target,'containerName':container,
       'operationId':operation,'day':'2026-10-17','dayAcceptance':day_acceptance_pin,'dayRows':day_rows_pin,
-      'ownerGOPath':owner_go_pin['path'],'ownerGOPin':owner_go_pin,'originalAction':pin(BASE/'wave15/native-end-preparation/LOCAL_ACTIVATION_ACTION.SAFE.json'),
+      'ownerGOPath':owner_go_pin['path'],'ownerGOPin':owner_go_pin,'executionOwnerGOPath':owner['finalOwnerGOPath'],'originalAction':pin(BASE/'wave15/native-end-preparation/LOCAL_ACTIVATION_ACTION.SAFE.json'),
       'action':pin(n/'LOCAL_ACTIVATION_ACTION.SAFE.json'),'templateDeltas':deltas,
       'freshSelectorComesFromPinnedActualAssembly':True,'full500RunStarted':False,'resourceGOConsumed':False,
-      'engineModified':False,'originalFilesModified':False,'production':False}
+      'engineModified':False,'originalFilesModified':False,'production':False,'preparedWithoutGO':prepare_only}
     save(case/'STAGED_CONNECTION.SAFE.json',plan);return plan
 
 if __name__=='__main__':

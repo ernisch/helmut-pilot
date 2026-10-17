@@ -123,9 +123,11 @@ def template_replay(connection):
     require(len(original)==26 and len(staged['templateDeltas'])==26 and
         {d['original']['path']for d in staged['templateDeltas']}==set(original),'complete exact26 original template set required')
     connector=module('pure_stage_renderer','connect-local500.py')
+    owner=read(connection['freshOwnerGO'])
+    require(staged['executionOwnerGOPath']==owner['finalOwnerGOPath'],'actual future owner path differs from intent/GO')
     rendered=connector.render_templates(connection['caseDirectory'],target=connection['targetDatabase'],
         container=connection['containerName'],operation=connection['operationId'],
-        day_rows_pin=staged['dayRows'],owner_go_pin=connection['freshOwnerGO'])
+        day_rows_pin=staged['dayRows'],owner_go_pin={'path':staged['executionOwnerGOPath']})
     expected_render={r['original']['path']:r for r in rendered}
     for delta in staged['templateDeltas']:
         p=delta['original'];expected={k:original[p['path']][k] for k in ['path','bytes','sha256']}
@@ -253,7 +255,7 @@ def coverage_adopted(bindings, rows):
     reviews=adoption['independentReviews']
     require(set(reviews)=={'infrastructure','consumerInputs'},'both complete independent review scopes required')
     required={
-        'infrastructure':{str(BIN/f)for f in ['start-preflight.py','full500-controller.py','isolation.py','connect-local500.py','start-guard-inventory.js','legacy-harness-pins.json']},
+        'infrastructure':{str(BIN/f)for f in ['start-preflight.py','full500-controller.py','isolation.py','connect-local500.py','start-guard-inventory.js','legacy-harness-pins.json','next-resource-authority.py','finish-connection.py','measured-preparation.js','process-runner.py']},
         'consumerInputs':{str(BIN/'start-input-checks.js'),str(BIN/'START_PREFLIGHT_COVERAGE.md')}}
     for scope,review_pin in reviews.items():
         pro=read(review_pin)
@@ -267,9 +269,9 @@ def coverage_adopted(bindings, rows):
     return dict(inventorySHA256=hashlib.sha256(raw).hexdigest(),files=len(rows),independentReviews=reviews)
 
 
-def assess(bindings):
+def assess(bindings,*,planning=False):
     C = module('precheck_controller', 'full500-controller.py')
-    report = Report(); report.bindings={k:v for k,v in bindings.items() if k in ['acceptance','connection','recipeTemplate','startPreflightIndependentAdoption']}; data = {}
+    report = Report(); report.planning=planning; report.bindings={k:v for k,v in bindings.items() if k in ['acceptance','connection','recipeTemplate','startPreflightIndependentAdoption']}; data = {}
     for key in ['acceptance','connection','recipeTemplate']:
         data[key] = report.check('binding.'+key, 'controller.accepted_metadata', 'Exact immutable '+key,
             lambda key=key:(private_pin(bindings[key])if'.PRIVATE.'in Path(bindings[key]['path']).name else read(bindings[key])))
@@ -277,12 +279,12 @@ def assess(bindings):
     if not all(isinstance(v,dict) for v in [connection,acceptance,recipe]):
         return finish(report, None)
     report.check('acceptedMetadata', 'controller.accepted_metadata/isolation.verify_full_authority', 'All independent primitive/connection reviews and immutable source/asset pins',
-                 lambda:C.accepted_metadata(bindings['acceptance'],bindings['connection'],bindings['recipeTemplate']) and {'exactMetadataAccepted':True})
+                 lambda:C.accepted_metadata(bindings['acceptance'],bindings['connection'],bindings['recipeTemplate'],planning=planning) and {'exactMetadataAccepted':True})
     report.check('allFilePins','All original pinned() and read_pin() consumers','Check ALL pinned code/assets despite earlier failures; collect every drift',lambda:all_file_pins(acceptance,connection))
     planned_authority={**recipe,'sourcePins':acceptance['sourcePins'],'independentMeterAcceptance':bindings['acceptance'],'recipeTemplatePin':bindings['recipeTemplate']}
     report.check('preSetupAuthority','isolation.verify_pre_setup_authority / verify_full_authority',
         'Actual shared full authority predicates before setup; no fabricated reservation/CID/start receipt',
-        lambda:C.I.verify_pre_setup_authority(planned_authority)and{'sharedActualAuthorityChecked':True})
+        lambda:C.I.verify_pre_setup_authority(planned_authority,planning=planning)and{'sharedActualAuthorityChecked':True})
     report.check('mountInputs','isolation.fixture_mounts (HOST only)',
         'Validate actual application and database mount inputs before setup; DB-only binary is NOT assumed present in app',
         lambda:{'applicationMountArgs':len(C.I.fixture_mounts(connection,'application')),
@@ -306,7 +308,7 @@ def assess(bindings):
     if bindings.get('startPreflightIndependentAdoption'):
         try:expected_source=read(bindings['startPreflightIndependentAdoption'])['expectedInitialSourceBindingSHA256']
         except Exception:pass # Dedicated coverage/source checks remain BLOCKED.
-    child = report.check('consumerChecksProcess', 'start-input-checks.js', 'Read-only fixed inputs for activation/materials/all500 request/profile scope', lambda:consumer_checks(node,connection,expected_source)) if templates else None
+    child = report.check('consumerChecksProcess', 'start-input-checks.js', 'Read-only fixed inputs for activation/materials/all500 request/profile scope', lambda:consumer_checks(node,connection,expected_source,planning=planning)) if templates else None
     if child:
         stamp=report.checks[-1]
         report.checks.extend(dict(id='consumer.'+r['id'],consumer=r['id'],purpose='Actual deterministic input requirement',
@@ -328,8 +330,8 @@ def window_evidence(C,day):
     return dict(qualifiedStartUTC=start.isoformat(), qualifiedEndUTC=end.isoformat(), requiredRemainingSeconds=8689.543088)
 
 
-def consumer_checks(node,connection,expected_source=None):
-    inputs={**connection,'expectedInitialSourceBindingSHA256':expected_source}
+def consumer_checks(node,connection,expected_source=None,*,planning=False):
+    inputs={**connection,'expectedInitialSourceBindingSHA256':expected_source,'planningWithoutGO':planning}
     p = subprocess.run([str(node),str(BIN/'start-input-checks.js')],input=json.dumps(inputs),capture_output=True,text=True,check=True,timeout=90,
         env={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'})
     return json.loads(p.stdout)
@@ -361,7 +363,7 @@ def resource_names(C,connection):
     network_exists=K.docker(['network','inspect',network],check=False).returncode==0
     cgroup_exists=(Path('/sys/fs/cgroup')/parent).exists()
     storage_exists=(C.I.ONCE.parent/('full500-owned-storage17-'+suffix)).exists()
-    subnet=connection['approvedInternalSubnet'];require(subnet=='172.16.249.0/24','approved subnet changed')
+    subnet=connection['approvedInternalSubnet'];require(subnet==C.I.A.SUBNET,'approved subnet changed')
     ids=K.docker(['network','ls','-q']).stdout.split()
     networks=json.loads(K.docker(['network','inspect',*ids]).stdout) if ids else []
     overlaps=[n['Name']for n in networks if any(ipaddress.ip_network(subnet).overlaps(ipaddress.ip_network(p['Subnet']))
@@ -395,8 +397,12 @@ def finish(report,rows):
     ids=[c['id']for c in checks]
     passed=set(ids)==REQUIRED_CHECKS and len(ids)==len(REQUIRED_CHECKS) and all(c['status']=='PASS' for c in checks)
     passed=passed and 0<=time.time()-report.started<=60
-    return dict(schema='helmut-complete-local-start-preflight/1',status='READY_FOR_SEPARATE_EXACT_LOCAL_GO' if passed else 'BLOCKED_DO_NOT_CONSUME_GO',
-        **{'pass':passed}, checkedAtUnixSeconds=time.time(), startedAtUnixSeconds=report.started,
+    technical_ready=passed
+    planning=getattr(report,'planning',False)
+    if planning:passed=False # A positive technical plan is NEVER an execution receipt.
+    status=('TECHNICALLY_PREPARED_MISSING_NEW_OPERATOR_GO'if technical_ready else'BLOCKED_TECHNICAL_PREREQUISITES')if planning else('READY_FOR_SEPARATE_EXACT_LOCAL_GO'if passed else'BLOCKED_DO_NOT_CONSUME_GO')
+    return dict(schema='helmut-complete-local-start-preflight/1',status=status,
+        **{'pass':passed}, technicalReady=technical_ready,planningWithoutGO=planning,authorizationStatus='MISSING_NEW_OPERATOR_GO'if planning else('EXPLICIT_GO_VALIDATED'if technical_ready else'GO_NOT_VALIDATED'), checkedAtUnixSeconds=time.time(), startedAtUnixSeconds=report.started,
         checks=checks, consumerInventory=rows, oneTimeGOConsumed=False, activation=False, resourceRunStarted=False,
         bindings=getattr(report,'bindings',{}),
         runtimeOnlyRequired=['Atomic loop/storage/database setup and container identity',
