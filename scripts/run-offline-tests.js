@@ -258,6 +258,7 @@ const STANDARD = new Set([
   "jobqueue-sicherheit-test.js",            // Sicherheit/Mandantentrennung der Warteschlange
   "admin-config-diagnose-test.js",          // Admin-Authz + keine Secrets in der Diagnose
   "provider-runtime-attestation-test.js",   // enger Cron-Bearer-Laufzeitbeleg ohne DB/Anbieter/Secrets
+  "synthetik-500-runtime-artifact-attestation-test.js", // begrenzte lokale Artefakt-/Public-Key-Metadaten, kein Worker/DB/Startrecht
   "provider-runtime-auth-rebind-test.js",   // neue Nonce/Verifier-Bindung, feste Frist; keine privaten Credentials
   "provider-runtime-single-probe-test.js", // feste Einzelprobe: Auth, echter Mehrprozess-CAS und Kostenriegel; lokaler Testtransport
   "relevanz-tage-runtime-witness-test.js",  // eigener Root-Zweck, echter Relevanzresolver/Fallback, keine Daten/Provider/Secrets

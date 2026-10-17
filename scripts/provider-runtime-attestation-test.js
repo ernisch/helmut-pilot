@@ -22,6 +22,11 @@ const plain = value => JSON.parse(JSON.stringify(value));
 let passed = 0, blockedEffectAttempts = 0;
 const comparisonLengths = [], imported = [];
 let productionVerifierHash;
+let inactiveEpochReads = 0, optimizerHashCalls = 0, artifactMetadataReads = 0;
+// These configuration/auth tests deliberately exercise the real canonical
+// fallback. They do not admit the opt-in epoch's FS/runtime graph into this VM.
+const inactiveEpoch = Object.freeze({ isActive() { inactiveEpochReads++; return false; } });
+const inactiveFacts = Object.freeze({ hash() { optimizerHashCalls++; throw Error("inactive-optimizer-hash-forbidden"); } });
 function check(name, fn) { fn(); passed += 1; console.log("PASS " + name); }
 function forbiddenEffect() { blockedEffectAttempts += 1; throw new Error("offline-effect-forbidden"); }
 
@@ -45,6 +50,10 @@ function loadPureModule(name) {
   assert(Object.hasOwn(dependencies, name), "module outside pure configuration inventory");
   const filename = path.join(__dirname, "../lib/helmut", name);
   let source = fs.readFileSync(filename, "utf8");
+  if (name === "streaming-canonical-hash.js") {
+    assert(source.includes('require("./canonical-content-facts")'));
+    assert(source.includes('require("./synthetik-500-cpu-epoch")'));
+  }
   if (name === "provider-runtime-attestation.js") {
     const hashDeclaration = /bearerSha256: "[a-f0-9]{64}"/g;
     assert.equal((source.match(hashDeclaration) || []).length, 1);
@@ -60,6 +69,10 @@ function loadPureModule(name) {
   }
   const module = { exports: {} };
   const requirePure = specifier => {
+    if (name === "provider-runtime-attestation.js" && specifier === "./synthetik-500-runtime-artifact-attestation")
+      return { read() { artifactMetadataReads++; return { version: "helmut-s500-runtime-artifacts/1", scope: "EXPLICIT_TEST_STUB_NO_ARTIFACT_OR_RUNTIME_ACCEPTANCE", executionAuthority: false }; } };
+    if (name === "streaming-canonical-hash.js" && specifier === "./canonical-content-facts") return inactiveFacts;
+    if (name === "streaming-canonical-hash.js" && specifier === "./synthetik-500-cpu-epoch") return inactiveEpoch;
     assert(dependencies[name].includes(specifier), "unexpected dependency in " + name);
     imported.push(name + ":" + specifier);
     if (["crypto", "node:crypto"].includes(specifier)) return testCrypto;
@@ -90,13 +103,13 @@ function call({ method = "GET", search = "?modus=provider-konfiguration", header
   const request = { method, headers: { authorization: "Bearer " + BEARER,
     "x-helmut-root-nonce": NONCE, "x-helmut-root-admitted-at": AT, "x-helmut-root-deadline-at": DEADLINE,
     "x-helmut-production-commit": SHA, "x-helmut-deployment-host": HOST, ...headers } };
-  let reads = 0, clockReads = 0;
+  let reads = 0, clockReads = 0; const artifactBefore = artifactMetadataReads;
   R.handleRequest(request, response, new URL("https://" + HOST + "/api/cron/testnachweis-status" + search), {
     jsonHeaders: extra => ({ "Cache-Control": "no-store", ...extra }), env,
     now: () => new Date(times[Math.min(clockReads++, times.length - 1)]),
     readRuntimeConfiguration: () => { reads += 1; return read(); }
   });
-  return { ...response, json: JSON.parse(response.body), reads };
+  return { ...response, json: JSON.parse(response.body), reads, artifactReads: artifactMetadataReads - artifactBefore };
 }
 
 check("shared sender resolver preserves model priorities and Understanding default", () => {
@@ -212,7 +225,7 @@ check("GET, exact query and fixed bearer reject before configuration reads", () 
     { search: "?modus=other" }, { headers: { authorization: undefined } },
     { headers: { authorization: "Bearer " + "wrong".repeat(16) } },
     { env: { ...runtime, CRON_SECRET: BEARER, HELMUT_ADMIN_SECRET: BEARER }, headers: { authorization: "Bearer " + "wrong".repeat(16) } }]) {
-    const r = call(options); assert.notEqual(r.code, 200); assert.equal(r.reads, 0); assert.equal(r.headers["Cache-Control"], "no-store");
+    const r = call(options); assert.notEqual(r.code, 200); assert.equal(r.reads, 0); assert.equal(r.artifactReads, 0); assert.equal(r.headers["Cache-Control"], "no-store");
   }
 });
 
@@ -236,6 +249,7 @@ check("nonce, exact 20-minute window, absolute expiry and runtime identity stop 
 
 check("bounded witness retains external acceptance, server-global one-use and tariff as false", () => {
   const r = call(); assert.equal(r.code, 200); assert.equal(r.reads, 1); assert.equal(r.headers["Cache-Control"], "no-store");
+  assert.equal(r.artifactReads, 1); assert.equal(r.json.configuration.contentPreparation.executionAuthority, false);
   assert.equal(r.json.rootNonce, NONCE); assert.equal(r.json.commit, SHA); assert.equal(r.json.deploymentHost, HOST);
   assert.equal(r.json.deploymentId, null); assert.equal(r.json.runtimeIdentityMatchesRequest, true);
   for (const field of ["externalDeploymentRuntimeAcceptance", "serverGlobalOneUseProven", "actualAzureDeploymentSkuProven", "currentAccountTariffProven", "productionCostGo"])
@@ -246,7 +260,16 @@ check("bounded witness retains external acceptance, server-global one-use and ta
   assert.equal(error.code, 500); assert(!error.body.includes("synthetic-secret-url"));
 });
 
-check("configuration entrypoint imports no DB and attempts no external effect", () => {
+check("inactive optimizer keeps the real canonical SHA fallback", () => {
+  const hash = loadPureModule("streaming-canonical-hash.js").hash;
+  const canonical = loadPureModule("synthetik-500-profile.js").kanonisch;
+  const before = inactiveEpochReads;
+  assert.equal(hash({ a: 1 }, canonical), crypto.createHash("sha256").update('{"a":1}').digest("hex"));
+  assert.equal(inactiveEpochReads, before + 1);
+  assert.equal(optimizerHashCalls, 0);
+});
+
+check("configuration entrypoint with explicitly inactive optimizer imports no DB and attempts no external effect", () => {
   assert.equal(blockedEffectAttempts, 0);
   assert(imported.every(x => !/storage|http:|https:|fetch|supabase/.test(x)));
   assert(comparisonLengths.every(([a, b]) => a === 32 && b === 32));
