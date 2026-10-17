@@ -156,3 +156,67 @@ den verbleibenden Datei-/WAL-Cacheanstieg anhand der gesicherten Phasendaten
 zuzuordnen; keine weitere CPU-Optimierung und keine automatische Testwiederholung.
 Die vollständige Abnahme von Offline90, Unit60, Auth30, allen 500 Abschlüssen
 und gemeinsamem Gesamtspeicher bleibt offen. Der alte Auftrag ist tabu.
+
+Der anschließend ausdrücklich beauftragte WAL-Vergleich verwendet zweimal den
+unveränderten RPC-Schreibweg mit 96 CAS-Aufrufen, einem zusätzlichen
+EXPLAIN-ANALYZE-Schreibvorgang und einem kontrollierten Checkpoint nach dem
+48. Aufruf. Neue isolierte PostgreSQL-17.6-Fixtures, Input- und Harnesshash,
+PostgREST 12.2.3, Node 24.19 und alle geprüften Einstellungen stimmen überein;
+einziger Konfigurationsunterschied ist `wal_compression=off` beziehungsweise
+`pglz`. Die vorgeschriebenen frischen UUID-Revisionen unterscheiden sich, die
+übrigen Inhalte und Anfragemengen sind identisch. Die Checkpoint-Pause ist in
+Phasenzeit und Kernel-CPU enthalten, jedoch kein einzelner HTTP-Aufruf.
+
+| Messgröße im WAL-Vergleich | Kompression aus | PGLZ |
+| --- | ---: | ---: |
+| Gemeinsamer Kernel-Speicherpeak | 661.753.856 B | 692.244.480 B |
+| Gemeinsame Kernel-CPU | 24,112979 s | 23,741727 s |
+| Langsamster der 96 Schreibaufrufe | 297,648 ms | 268,891 ms |
+| WAL-Fortschritt nach LSN | 93.154.448 B | 93.145.512 B |
+| Gemeldeter Anstieg `wal_bytes` | 91.806.148 B | 91.797.264 B |
+| Gemeldete neue Full-Page-Images | 112 | 112 |
+| TOAST-Gesamtgröße vor/nach Schreibphase | 950.272 / 88.113.152 B | 950.272 / 88.113.152 B |
+| Temporäre Dateien | 0 | 0 |
+
+Die gemessene WAL-Differenz beträgt 8.936 Byte, weniger als 0,01 Prozent. Ein
+relevanter Speichervorteil ist nicht belegt. Der höhere Peak im PGLZ-Fall ist
+eine Einzelbeobachtung und kein Beweis einer durch Kompression verursachten
+Regression. Der Kompressionsansatz wird zurückgestellt; weitere Varianten oder
+Wiederholungsläufe wurden nicht begonnen.
+
+Beide Fixtures wurden nach den Schreibvorgängen gezielt allein zum negativen
+Wiederherstellungsnachweis abgebrochen und ohne erneute Schreiblast wieder
+gestartet. PostgreSQL bestätigt Redo-Beginn und -Ende. Die vollständigen nativen
+Datenhashes sind vor/nach Recovery identisch; Inhalte ohne Revisionsfeld bleiben
+von Anfang bis Ende gleich. Originale Guard-Funktionshashes und ALWAYS-Trigger
+bleiben erhalten. `fsync`, `full_page_writes` und `synchronous_commit` stehen
+durchgehend auf `on`, WAL bleibt `replica`; kein OOM. Der gemeinsame Kernelpeak
+umfasst Initialisierung, Clients, Checkpoint, Recovery und letztes Prozessende.
+Host-Vorbereitung, Beobachter und Dockerdaemon liegen in beiden kleinen Fällen
+außerhalb dieses Messumfangs. Dies ist keine vollständige Unit60-/Auth30-Abnahme.
+
+Die zusätzliche Relationsmessung weist die fortgesetzte große Schreibarbeit
+direkt nach: Der Heap bleibt bei 8.192 Byte, der Hauptindex bei 16.384 Byte;
+der gesamte Zuwachs von 87.162.880 Byte entsteht in TOAST samt zugehörigem Index.
+Die Eingabe enthält unter anderem 5.000 Nutzungsbelege mit 2.431.242 JSON-Byte.
+Der bestehende relationale Nutzungslog-Schalter schreibt den Blob weiter mit;
+seine Aktivierung verkleinert den CAS-Wert nicht. Löschen von Historie oder
+Auslassen frischer Kosten-/Journal-/CAS-Schritte ist keine zugelassene Korrektur.
+
+DeepSeek V4 Pro High hat zunächst den begrenzten Plan und danach die tatsächlichen
+nativen Daten-, Kernel- und HTTP-Belege unabhängig geprüft. Es bestätigt die
+Ablehnung der Kompression und empfiehlt als Richtung weniger Schreibvolumen.
+Sol wählt innerhalb des Auftrags ohne neue Architektur stattdessen die eng
+begrenzte Prüfung der bestehenden Speicherhülle: Ein sicher entbehrlicher
+Pflichtschreibschritt ist nicht belegt; die vorgeschlagene Entkopplung der Logs
+würde den Speicher-/Lesepfad ändern und benötigt eigene Nachweise.
+
+Die vorhandene Loopback-Abbildung meldet rein lesend `dio=0`; der vorhandene
+Setup-Helfer konfiguriert gepufferte Backing-Datei-I/O. Ein zusätzlicher
+Cacheaufwand hier ist noch nicht quantifiziert. Genau der nächste Schritt ist
+ein kleiner isolierter Vergleich dieses bestehenden Loopback-Schreibwegs mit
+und ohne Direct I/O, einschließlich Datenintegrität, CPU, Laufzeit und vollständig
+weitergezähltem gemeinsamen Speicher. Es wurden weder Direct I/O noch ein
+Reclaim-/Speicherlimit eingerichtet. Der historische residente WAL-RAM-Anteil
+ist aus kumulierten WAL-Zählern, Dateigrößen und dem einzelnen Stoppsnapshot
+weiterhin nicht rekonstruierbar.
