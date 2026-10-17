@@ -337,6 +337,24 @@ Keine kosmetischen Änderungen ohne sachlichen Nutzen.
 
 Keine eigenmächtige Erweiterung des Arbeitsumfangs.
 
+## Bewährte technische Vorbilder
+
+Vor technischen Umbauten den tatsächlich belegten Engpass und die vorhandenen
+Helmut Komponenten prüfen. Danach gezielt bewährte, öffentlich dokumentierte
+Architekturprinzipien vergleichen. Beispiele: Meta und Instagram für gemeinsame
+Datenaufbereitung, begrenztes Caching und stufenweise Verarbeitung; Stripe für
+atomare, nachvollziehbare und idempotente Kostenbuchungen; Shopify für
+begrenzte Hintergrundaufträge; Uber und Cadence für zuverlässig fortsetzbare
+Abläufe. Auch andere geeignete Systeme berücksichtigen, wenn sie besser passen.
+
+Dies sind Anregungen, keine Kopiervorlagen oder Vorgaben für neue Anbieter.
+Nur die kleinste passende Lösung wählen; Nutzen, Prüfmaßstab, Aufwand, Kosten,
+Risiken und Rückweg vor Umsetzung nennen und den Vorteil anschließend gezielt
+messen. Bestehenden Code und geprüfte Ergebnisse bevorzugen. Keine neue
+Infrastruktur, große Architekturänderung oder neue Funktion allein wegen eines
+Vorbilds. Sicherheitsregeln, Quellenqualität, Kostenlimits und der geltende
+Prüfvertrag für exakt 500 Profile bleiben vorrangig.
+
 ## Sprintstart: kurz und rein lesend
 
 Vor jedem Sprint nur den aktuellen, benötigten Stand lesen:
@@ -499,6 +517,30 @@ notwendigen privaten Belege enthalten, soweit sie im aktuellen Workspace vorhand
 Fehlende oder außerhalb des Workspace liegende Belege werden separat und eindeutig
 ausgewiesen; sie dürfen nicht erfunden, nachgebaut oder still durch Zusammenfassungen
 ersetzt werden.
+
+Der führende Orchestrator bewertet den Wechselzeitpunkt anhand der obigen
+Gründe eigenständig und empfiehlt einen Wechsel rechtzeitig, nicht routinemäßig.
+GitHub bleibt die Quelle für versionierten Code. Notwendige private Belege und
+Dateien werden serverseitig in den bestehenden autorisierten privaten Google
+Drive Bereich übertragen, nicht in einen neuen öffentlichen Ordner. Nur für die
+Fortsetzung erforderliche, noch nicht gesicherte Dateien aufnehmen. Das Manifest
+nennt Herkunftspfad, Ablageort, Dateigröße, SHA256 und Vertraulichkeit je Datei.
+Neu übertragene Dateien vollständig zurückladen und Bytegleichheit sowie
+Prüfsummen prüfen. Bestehende Sicherungen nicht grundlos erneut hochladen.
+
+Keine Secrets, Tokens, privaten Schlüssel, verbrauchten Freigaben oder
+unverschlüsselten vertraulichen Originale übertragen. Vertrauliche Originale nur
+mit bestätigtem öffentlichen Empfängerschlüssel verschlüsselt sichern; andernfalls
+den fehlenden sicheren Übertragungsweg ausdrücklich als Blocker benennen.
+Berechtigungen nicht aufweichen und keine Dateien öffentlich freigeben.
+
+Ein Drive Archiv überträgt keine laufenden Prozesse, Datenbanken, Gateways,
+Container, Secrets oder Umgebungsvariablen. Vor dem Wechsel prüfen, ob der
+empfangende Workspace die notwendige Arbeitsumgebung tatsächlich erreichen oder
+sicher rekonstruieren kann. Andernfalls den konkreten Zugangsmangel benennen und
+notwendige lokale Arbeit im Ursprungsworkspace geordnet abschließen. Nach dem
+Wechsel zuerst Zugänge, Dateien und Hashes prüfen; keine Originale oder
+Testergebnisse nachbauen.
 
 Vor der Übergabe laufende Prozesse, Worktrees und noch nicht integrierte Änderungen
 prüfen und dokumentieren. Ein neuer Thread beendet keine laufenden Prozesse.
