@@ -1,5 +1,5 @@
 import pathlib,os,subprocess,json,time,uuid,hashlib,datetime,importlib.util
-B=pathlib.Path('/workspace/helmut-parallel-20261015/wave28-usage-decoupling')
+B=pathlib.Path('/workspace/helmut-parallel-20261015')/('wave29-atomic-meter-integration'if os.environ.get('HELMUT_USAGE_COMPARE_MODE')=='integration'else'wave28-usage-decoupling')
 REPO=pathlib.Path('/workspace/helmut-cpu-epoch-20261015')
 spec=importlib.util.spec_from_file_location('small_db_kernel',REPO/'scripts/helmut-resource-meter/kernel-meter.py');K=importlib.util.module_from_spec(spec);spec.loader.exec_module(K)
 ENV=os.environ.copy()
@@ -11,18 +11,19 @@ def docker(args,**kw):
   if 'out'in globals():
    p=out/'LAST_FAILURE.PRIVATE.json';p.write_text(json.dumps({'exitCode':e.returncode,'stdout':e.stdout.decode(errors='replace')if isinstance(e.stdout,bytes)else e.stdout,'stderr':e.stderr.decode(errors='replace')if isinstance(e.stderr,bytes)else e.stderr}));p.chmod(0o600)
   raise
-def sql(name,q,database='postgres'):return docker(['exec','-i','-u','postgres',name,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-d',database],input=q,text=True).stdout.strip()
+def sql(name,q,database=None):return docker(['exec','-i','-u','postgres',name,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-d',database or TARGET_DB],input=q,text=True).stdout.strip()
 def save(p,x):
  with os.fdopen(os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600),'w')as f:json.dump(x,f,indent=2);f.write('\n')
 source=pathlib.Path('/workspace/helmut-parallel-20261015/wave24-db-temp-cause/BENCH_SOURCE_AUTH.PRIVATE.json')
 assert source.is_file()
 assert hashlib.sha256(source.read_bytes()).hexdigest()=='c7563525e2f86e4b6c2a634a50a0a267a0365c9c7c57151713ca4850c7f49863'
 
-mode=os.environ['HELMUT_USAGE_COMPARE_MODE'];assert mode in ['baseline','atomic','security']
+mode=os.environ['HELMUT_USAGE_COMPARE_MODE'];assert mode in ['baseline','atomic','security','integration']
+integration=mode=='integration'
 variant='scalar-rpc'
-operations=96
+operations=0 if integration else 96
 trend=True
-wal_trial=mode!='security'
+wal_trial=mode in ['baseline','atomic']
 wal_compression='off'
 assert wal_compression in ['off','pglz']
 assert not wal_trial or (variant=='scalar-rpc' and operations==96 and trend)
@@ -31,7 +32,8 @@ security=mode=='security'
 assert not wal_trial or not security
 assert not security or variant=='scalar-rpc'
 assert variant in ['baseline','workmem8','scalar-rpc']
-tag=uuid.uuid4().hex[:10];name='helmut-usage-'+mode+'-'+tag;parent='helmut-meter-usage-'+mode+'-'+tag
+tag=uuid.uuid4().hex[:12 if integration else 10];name=('helmut-meter-db-w20-'if integration else'helmut-usage-'+mode+'-')+tag;parent='helmut-meter-usage-'+mode+'-'+tag
+TARGET_DB='helmut_resource_fixture_20261017_'+tag if integration else'postgres'
 out=B/(mode+'-'+tag);out.mkdir(mode=0o700)
 pg=out/'pgdata';pg.mkdir(mode=0o700)
 K.initialize_parent(parent,name)
@@ -43,14 +45,14 @@ args=['create','--name',name,'--network','none','--cgroup-parent=/'+parent,
  '--mount','type=bind,src='+str(K.PYTHON_ROOT)+',dst='+str(K.PYTHON_ROOT)+',readonly',
  '--mount','type=bind,src='+str(REPO)+',dst='+str(REPO)+',readonly',
  '--mount','type=bind,src=/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/postgrest-pinned,dst=/postgrest,readonly',
- '--env','POSTGRES_HOST_AUTH_METHOD=trust','--env','PGDATA=/var/lib/postgresql/data',
+ '--env','POSTGRES_HOST_AUTH_METHOD=trust','--env','POSTGRES_DB='+TARGET_DB,'--env','PGDATA=/var/lib/postgresql/data',
  K.IMAGE,'postgres','-c','helmut.local_usage_experiment=on','-c','shared_preload_libraries=pg_stat_statements','-c','pg_stat_statements.track=all',
  '-c','log_temp_files=0','-c','track_io_timing=on','-c','work_mem='+('8MB'if variant=='workmem8'else'4MB')]
 if wal_trial:
  # Same existing factory/namespace and image, one controlled setting differs.
  args+=['-c','wal_compression='+wal_compression,'-c','full_page_writes=on','-c','fsync=on','-c','synchronous_commit=on']
 cid=docker(args,text=True).stdout.strip()
-save(out/'STARTED.SAFE.json',{'scope':'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN','name':name,'cid':cid,'parent':parent,'variant':variant,'usageMode':mode,'operations':operations,'securityOnly':security,'walTrial':wal_trial,'walCompression':wal_compression if wal_trial else 'UNCHANGED','manualCheckpointAfter':48 if wal_trial else None,'originalInputSHA256':hashlib.sha256(source.read_bytes()).hexdigest(),'candidateSQLSHA256':hashlib.sha256((REPO/'supabase/proposals/auth_store_cas_scalar_jsonb.sql').read_bytes()).hexdigest()if variant=='scalar-rpc'else None,'harnessSHA256':hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),'activation':False,'GOClaimed':False,'production':False})
+save(out/'STARTED.SAFE.json',{'scope':'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN','name':name,'database':TARGET_DB,'cid':cid,'parent':parent,'variant':variant,'usageMode':mode,'operations':operations,'securityOnly':security,'walTrial':wal_trial,'walCompression':wal_compression if wal_trial else 'UNCHANGED','manualCheckpointAfter':48 if wal_trial else None,'originalInputSHA256':hashlib.sha256(source.read_bytes()).hexdigest(),'candidateSQLSHA256':hashlib.sha256((REPO/'supabase/proposals/auth_store_cas_scalar_jsonb.sql').read_bytes()).hexdigest()if variant=='scalar-rpc'else None,'harnessSHA256':hashlib.sha256(pathlib.Path(__file__).read_bytes()).hexdigest(),'activation':False,'GOClaimed':False,'production':False})
 native={}
 def native_snapshot():
  return json.loads(sql(name,"""BEGIN READ ONLY;select jsonb_build_object(
@@ -82,7 +84,7 @@ try:
  if variant=='scalar-rpc':
   proposal=REPO/'supabase/proposals/auth_store_cas_scalar_jsonb.sql'
   sql(name,'create role service_role nologin;grant service_role to bench_writer;'+proposal.read_text())
- if security or wal_trial:
+ if security or wal_trial or integration:
   sql(name,'create role anon nologin;create role authenticated nologin;'+(REPO/'supabase/proposals/synthetik500_stored_command_binding.sql').read_text())
  source_data=json.loads(source.read_text());body=json.dumps({'id':'main-auth','data':source_data['data'],'updated_at':source_data['updated_at']},separators=(',',':'))
  load="copy public.helmut_store(id,data,updated_at)from stdin with(format csv);\n"
@@ -91,13 +93,14 @@ try:
  sql(name,load)
  schema=(REPO/'supabase/schema.sql').read_text();a=schema.index('create table if not exists public.llm_usage (');b=schema.index(');',a)+2
  sql(name,schema[a:b])
- sql(name,(REPO/'supabase/proposals/auth_usage_atomic_local.sql').read_text())
- sql(name,"create policy local_usage_bench on public.llm_usage to bench_writer using(usage_store_id='main-auth')with check(usage_store_id='main-auth');")
+ if not integration:
+  sql(name,(REPO/'supabase/proposals/auth_usage_atomic_local.sql').read_text())
+  sql(name,"create policy local_usage_bench on public.llm_usage to bench_writer using(usage_store_id='main-auth')with check(usage_store_id='main-auth');")
  sql(name,"select pg_stat_statements_reset();")
- config='db-uri = "postgresql://postgres@127.0.0.1:5432/postgres"\ndb-anon-role = "bench_writer"\ndb-schemas = "public"\nserver-host = "127.0.0.1"\nserver-port = 38419\ndb-plan-enabled = true\ndb-pool = 1\nlog-level = "error"\n'
+ config='db-uri = "postgresql://postgres@127.0.0.1:5432/'+TARGET_DB+'"\ndb-anon-role = "bench_writer"\ndb-schemas = "public"\nserver-host = "127.0.0.1"\nserver-port = 38419\ndb-plan-enabled = true\ndb-pool = 1\nlog-level = "error"\n'
  if security:config=config.replace('db-pool = 1','db-pool = 2')
  cp=out/'postgrest.PRIVATE.conf';cp.write_text(config);cp.chmod(0o644)
- docker(['exec','-d',name,'/postgrest','/bench/postgrest.PRIVATE.conf'],text=True)
+ if not integration:docker(['exec','-d',name,'/postgrest','/bench/postgrest.PRIVATE.conf'],text=True)
  node=r'''const fs=require('fs'),{performance}=require('perf_hooks'),{randomUUID}=require('crypto');const variant=process.argv[2],operations=Number(process.argv[5]),walTrial=process.argv[6]==='wal-trial';
  if(walTrial&&process.version!=='v24.19.0')throw Error('Node patch drift');
  const input=JSON.parse(fs.readFileSync('/bench-input.json'));let data=input.data;
@@ -111,6 +114,7 @@ try:
  fs.writeFileSync('/bench/ACTUAL_PLAN.PRIVATE.json',JSON.stringify(plan.body,null,2),{mode:0o600});fs.writeFileSync('/bench/HTTP_RESULT.SAFE.json',JSON.stringify({scope:'SMALL_CAS_OPERATIONS_PLUS_ONE_PLAN_NO_ACTIVATION',requests:result,planHTTPStatus:plan.status,nodeMaxRSSBytes:process.resourceUsage().maxRSS*1024,paidProviderCalls:0,activation:false,production:false},null,2),{mode:0o600});for(const n of ['ACTUAL_PLAN.PRIVATE.json','HTTP_RESULT.SAFE.json'])fs.chownSync('/bench/'+n,Number(process.argv[3]),Number(process.argv[4]));})().catch(e=>{console.error(e.message);process.exitCode=1});'''
  np=out/'benchmark.js';np.write_text(node);np.chmod(0o644)
  prep=docker(['exec',name,str(K.NODE_ROOT/'bin/node'),str(REPO/'scripts/helmut-resource-meter/auth-usage-atomic-check.js'),'prepare',mode,str(os.getuid()),str(os.getgid())],text=True,timeout=80)
+ if integration:docker(['exec','-d',name,'/postgrest','/bench/postgrest.PRIVATE.conf'],text=True)
  start=time.monotonic()
  if wal_trial:
   native['beforeWorkload']=native_snapshot();settings=native['beforeWorkload']['settings']
@@ -125,6 +129,9 @@ try:
  if security:
   extra=['--rollback-only']if rollback_only else []
   result=docker(['exec',name,str(K.NODE_ROOT/'bin/node'),str(REPO/'scripts/helmut-resource-meter/auth-usage-atomic-check.js'),'security',mode,str(os.getuid()),str(os.getgid())],text=True,timeout=80)
+  print(result.stdout.strip(),flush=True)
+ elif integration:
+  result=docker(['exec',name,str(K.NODE_ROOT/'bin/node'),str(REPO/'scripts/helmut-resource-meter/auth-usage-atomic-check.js'),'integration',mode,str(os.getuid()),str(os.getgid())],text=True,timeout=80)
   print(result.stdout.strip(),flush=True)
  else:
   before=K.kernel_snapshot(parent);samples=[]
@@ -146,7 +153,7 @@ try:
   after=K.kernel_snapshot(parent)
   save(out/'WRITE_PHASE_KERNEL.SAFE.json',{'before':before,'after':after,'samples':samples,'unchangedExistingKernelMeter':True,'observerHostOutsideBothComparedFixtures':True})
  time.sleep(1.2)
- stats=sql(name,"select json_build_object('workMem',current_setting('work_mem'),'temporaryBytes',(select temp_bytes from pg_stat_database where datname='postgres'),'temporaryFiles',(select temp_files from pg_stat_database where datname='postgres'),'statements',(select json_agg(json_build_object('query',query,'calls',calls,'rows',rows,'execMS',total_exec_time,'tempWriteBlocks',temp_blks_written,'tempReadBlocks',temp_blks_read,'sharedHitBlocks',shared_blks_hit))from pg_stat_statements where query not like '%pg_stat_statements%'));" )
+ stats=sql(name,"select json_build_object('workMem',current_setting('work_mem'),'temporaryBytes',(select temp_bytes from pg_stat_database where datname=current_database()),'temporaryFiles',(select temp_files from pg_stat_database where datname=current_database()),'statements',(select json_agg(json_build_object('query',query,'calls',calls,'rows',rows,'execMS',total_exec_time,'tempWriteBlocks',temp_blks_written,'tempReadBlocks',temp_blks_read,'sharedHitBlocks',shared_blks_hit))from pg_stat_statements where query not like '%pg_stat_statements%'));" )
  save(out/'SQL_STATS.PRIVATE.json',json.loads(stats));save(out/'BENCHMARK_MEASURED.SAFE.json',{'variant':variant,'smallMeasuredWallMS':(time.monotonic()-start)*1000,'scope':'SMALL_OPERATIONS_NOT_UNIT60_AUTH30_OR_FULL500','noActivation':True,'noGOClaim':True,'noProduction':True})
  if wal_trial:
   assert checkpoint_done;native['afterWrites']=native_snapshot()

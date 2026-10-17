@@ -36,6 +36,15 @@ function main(){
  assert.equal(result.pass,true);assert.equal(result.target,plan.targetDatabase);assert.equal(result.operationId,plan.operationId);
  assert.equal(result.sourceProfileHashUnchanged,true);assert.equal(result.actualActiveAfter,500);assert.equal(result.sourceBefore.profileHash,source.before.profileHash);
  assert.equal(result.sourceBefore.identityHash,source.before.identityHash);assert.equal(result.sourceBefore.uSHA,source.before.uSHA);
+ if(plan.atomicUsageInput){
+  const AU=require('./atomic-usage-integration');AU.readDescriptor(plan.atomicUsageInput);
+  const output=plan.workflowDirectory+'/ATOMIC_USAGE_BOOTSTRAP.SAFE.json';assert(!fs.existsSync(output));
+  const targetSQL=text=>cp.execFileSync('docker',['--host=unix:///var/run/docker.sock','exec','-i',plan.containerName,
+   'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d',plan.targetDatabase,'-f','-'],
+   {input:text,encoding:'utf8',env:{PATH:process.env.PATH,LANG:'C.UTF-8'},timeout:30000,maxBuffer:16*1024*1024}).trim();
+  const receipt=AU.installAfterActivation({plan,candidatePin:plan.atomicUsageInput,targetSQL});
+  fs.writeFileSync(output,JSON.stringify(receipt,null,2)+'\n',{flag:'wx',mode:0o600});
+ }
  console.log(JSON.stringify({measuredOriginalPreparationComplete:true,onlyOwnedDatabase:true,sourceHashAndOriginalUBindingEqual:true,syntheticProfiles:500,production:false}));
 }
 if(require.main===module)main();

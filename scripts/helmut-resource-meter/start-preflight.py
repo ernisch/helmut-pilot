@@ -127,7 +127,7 @@ def template_replay(connection):
     require(staged['executionOwnerGOPath']==owner['finalOwnerGOPath'],'actual future owner path differs from intent/GO')
     rendered=connector.render_templates(connection['caseDirectory'],target=connection['targetDatabase'],
         container=connection['containerName'],operation=connection['operationId'],
-        day_rows_pin=staged['dayRows'],owner_go_pin={'path':staged['executionOwnerGOPath']})
+        day_rows_pin=staged['dayRows'],owner_go_pin={'path':staged['executionOwnerGOPath']},atomic_usage_pin=staged.get('atomicUsageInput'))
     expected_render={r['original']['path']:r for r in rendered}
     for delta in staged['templateDeltas']:
         p=delta['original'];expected={k:original[p['path']][k] for k in ['path','bytes','sha256']}
@@ -148,6 +148,8 @@ def template_replay(connection):
 def all_file_pins(acceptance,connection):
     request=read(connection['runtimeRequest'])
     pins=acceptance['sourcePins']+connection['immutableWorkflowPins']+connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']+request['sourcePins']
+    if 'atomicUsageInput' in connection:
+        candidate=read(connection['atomicUsageInput']);pins+=[connection['atomicUsageInput']]+candidate['sourcePins']
     checked={};bad=[]
     for p in pins:
         key=(p['path'],p['bytes'],p['sha256'])
@@ -179,6 +181,18 @@ def financial_data(C,connection):
         input=json.dumps(snapshot),capture_output=True,text=True,timeout=30)
     safe=json.loads(result.stdout)
     require(result.returncode==0 and safe.get('pass')is True,'actual original financial projection failed')
+    if 'atomicUsageInput' in connection:
+        # Read the actual still-frozen corrected INPUT catalog before any GO,
+        # setup or schema write. The same predicate is repeated on the target.
+        helper=str(BIN/'atomic-usage-integration.js')
+        query=subprocess.check_output([str(C.I.K.NODE_ROOT/'bin/node'),'-e',
+            "process.stdout.write(require(process.argv[1]).sourceReadySQL())",helper],text=True,env={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'},timeout=20)
+        native=C.Z.query(capture['capturedFromNewLocalInputDatabase'],query)
+        check=subprocess.run([str(C.I.K.NODE_ROOT/'bin/node'),'-e',
+            "require(process.argv[1]).assertSourceReady(JSON.parse(require('fs').readFileSync(0,'utf8')))",helper],
+            input=json.dumps(native),text=True,capture_output=True,env={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'},timeout=20)
+        require(check.returncode==0,'actual corrected source cannot accept exact atomic schema')
+        safe['actualAtomicSourceCatalogReady']=True
     return safe
 
 
@@ -209,6 +223,13 @@ def stage_contract(connection, recipe):
     require(config['policy']['providerHardLimitMS'] == 20000 and config['policy']['profiler'] is False
             and config['policy']['activation'] is False and config['policy']['production'] is False, 'original test policy changed')
     require(connection['storageCapacityBytes'] == 8000000000 and connection['storageHoldSeconds'] == 33000, 'storage scope changed')
+    staged=read(connection['stagedHarness'])
+    require(connection.get('atomicUsageInput')==staged.get('atomicUsageInput'),'atomic storage candidate differs from actual renderer')
+    if 'atomicUsageInput' in connection:
+        descriptor=read(connection['atomicUsageInput'])
+        require(descriptor['schema']=='helmut-local-atomic-usage-resource-input/1' and descriptor['mode']=='relational-atomic-v1'
+            and descriptor['production']is False and descriptor['fullContractUnchanged']is True,'local atomic scope differs')
+        for p in descriptor['sourcePins']:require(pin(p['path'])==p,'atomic storage source drift')
     return dict(stages=3, profiles=500, controlsPerUnit=16, profiler=False, paidProviderCalls=False)
 
 
@@ -257,6 +278,8 @@ def coverage_adopted(bindings, rows):
     required={
         'infrastructure':{str(BIN/f)for f in ['start-preflight.py','full500-controller.py','isolation.py','connect-local500.py','start-guard-inventory.js','legacy-harness-pins.json','next-resource-authority.py','finish-connection.py','measured-preparation.js','process-runner.py']},
         'consumerInputs':{str(BIN/'start-input-checks.js'),str(BIN/'START_PREFLIGHT_COVERAGE.md')}}
+    if str(BIN/'atomic-usage-integration.js') in {r['path'] for r in rows}:
+        required['infrastructure'].add(str(BIN/'atomic-usage-integration.js'))
     for scope,review_pin in reviews.items():
         pro=read(review_pin)
         require(pro.get('model')=='deepseek-v4-pro' and pro.get('route',{}).get('effort')=='high'

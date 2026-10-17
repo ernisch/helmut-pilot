@@ -6,8 +6,8 @@ const receipt = JSON.parse(fs.readFileSync("/bench/STARTED.SAFE.json"));
 assert.equal(require("node:os").hostname(), receipt.cid.slice(0, 12));
 assert.equal(receipt.scope, "SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN");
 const [phase, mode, uid, gid] = process.argv.slice(2);
-assert(["prepare", "measure", "security"].includes(phase));
-assert(["baseline", "atomic", "security"].includes(mode));
+assert(["prepare", "measure", "security", "integration"].includes(phase));
+assert(["baseline", "atomic", "security", "integration"].includes(mode));
 assert.equal(process.env.SUPABASE_URL, undefined);
 Object.assign(process.env, { HELMUT_STORAGE_BACKEND: "supabase", SUPABASE_URL: "http://127.0.0.1:38419",
   SUPABASE_SERVICE_ROLE_KEY: "local-fixture-not-a-secret", HELMUT_AUTH_STORE_CAS_TRANSPORT: "scalar-jsonb-rpc" });
@@ -28,7 +28,7 @@ global.fetch = async (url, options = {}) => {
 const storage = require("../../lib/helmut/storage"), U = require("../../lib/helmut/llm-usage-atomic");
 const copy = x => JSON.parse(JSON.stringify(x));
 const omitRevision = x => Object.fromEntries(Object.entries(copy(x)).filter(([k]) => k !== "_authStoreRevision"));
-function sql(q) { return execFileSync("psql", ["-U", "postgres", "-d", "postgres", "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=sqlstate"], { input: q, encoding: "utf8", maxBuffer: 32 * 1024 * 1024, stdio: ["pipe", "pipe", "pipe"] }).trim(); }
+function sql(q) { return execFileSync("psql", ["-U", "postgres", "-d", receipt.database || "postgres", "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=sqlstate"], { input: q, encoding: "utf8", maxBuffer: 32 * 1024 * 1024, stdio: ["pipe", "pipe", "pipe"] }).trim(); }
 function save(name, x) { const p = "/bench/" + name; fs.writeFileSync(p, JSON.stringify(x, null, 2), { mode: 0o600, flag: "wx" }); fs.chownSync(p, +uid, +gid); }
 async function rpc(name, body) {
   const r = await global.fetch("http://127.0.0.1:38419/rest/v1/rpc/" + name, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -41,7 +41,7 @@ async function ready() {
   } throw Error("local REST unavailable");
 }
 async function prepare() {
-  await ready();const before = JSON.parse(sql("select data::text from public.helmut_store where id='main-auth';"));
+  if(mode!=="integration")await ready();const before = JSON.parse(sql("select data::text from public.helmut_store where id='main-auth';"));
   const tick = performance.now(), cpu = process.cpuUsage();
   if (mode !== "baseline") {
     const expectedHash = sql("select encode(sha256(convert_to(data::text,'UTF8')),'hex')from public.helmut_store where id='main-auth';");
@@ -54,8 +54,19 @@ async function prepare() {
       assert.equal(sql("select encode(sha256(convert_to(data::text,'UTF8')),'hex')from public.helmut_store where id='main-auth';"),expectedHash);
       sql("delete from public.llm_usage where usage_store_id is null;");
     }
-    await rpc("helmut_auth_usage_bootstrap_v1", { id: "main-auth", expectedHash });
-    const raw = await rpc("helmut_auth_usage_read_v1", { id: "main-auth" });
+    if(mode==="integration"){
+      const AU=require('./atomic-usage-integration');save('ATOMIC_CANDIDATE.SAFE.json',AU.descriptor());
+      // Actual installation/one-time bootstrap helper, in a new network-none
+      // SMALL database with no profile table. This is not a full-run GO/receipt.
+      const result=AU.installAfterActivation({plan:{production:false,profiles:500,targetDatabase:receipt.database,containerName:receipt.name},
+        candidatePin:AU.pin('/bench/ATOMIC_CANDIDATE.SAFE.json'),targetSQL:sql});
+      assert.equal(result.pass,true);assert.equal(result.originalPhysicalHash,expectedHash);
+      assert.equal(sql("SELECT to_regclass('public.mandate_profiles')IS NULL;"),'t');
+      save('SMALL_BOOTSTRAP_HELPER.SAFE.json',{...result,scope:'SMALL_NO_PROFILE_TABLE_NO_GO_NOT_OPERATIONAL_RECEIPT',actualProfiles:0});
+      sql("create policy local_usage_bench on public.llm_usage to bench_writer using(usage_store_id='main-auth')with check(usage_store_id='main-auth');");
+    }else await rpc("helmut_auth_usage_bootstrap_v1", { id: "main-auth", expectedHash });
+    const raw = mode==="integration"?JSON.parse(sql("SELECT public.helmut_auth_usage_read_v1('{\"id\":\"main-auth\"}');")):
+      await rpc("helmut_auth_usage_read_v1", { id: "main-auth" });
     assert.deepEqual(omitRevision(raw.data), omitRevision(before));
     assert.equal(raw.proof.count, before.llmUsage.length);
     assert.equal(raw.proof.originalHash, expectedHash);
@@ -183,4 +194,25 @@ async function security() {
   });
   save("ATOMIC_SECURITY_RESULT.SAFE.json",{pass:true,checks,wire,activation:false,full500:false,GOClaimed:false,providerCalls:0});
 }
-(async()=>{if(phase==="prepare")await prepare();else if(phase==="measure")await measure();else await security();})().catch(e=>{console.error(JSON.stringify({error:e.name,code:e.code||null,message:String(e.message).slice(0,160)}));process.exitCode=1;});
+async function integration() {
+  const AU=require('./atomic-usage-integration');await ready();const catalog=JSON.parse(sql(AU.catalogSQL()));AU.assertCatalog(catalog);
+  const query="SELECT jsonb_build_object('count',jsonb_array_length(data->'llmUsage'),'revision',data->>'_authStoreRevision',"
+    +"'bookHash',encode(sha256(convert_to((data->'testKostenTage')::text,'UTF8')),'hex'),"
+    +"'logicalHash',encode(sha256(convert_to(data::text,'UTF8')),'hex'),'physical',"+AU.physicalWitnessExpression()+")FROM helmut_store WHERE id='main-auth';";
+  const result=JSON.parse(sql("BEGIN READ ONLY;SET LOCAL track_functions='all';"+AU.projectQuery(query)+"SELECT pg_stat_force_next_flush();ROLLBACK;"));
+  const calls=Number(sql("select calls from pg_stat_user_functions where funcname='helmut_auth_usage_read_v1';"));
+  assert.equal(calls,1,'Multiple native data fields must not reconstruct the same history repeatedly');
+  assert.equal(result.count,5000);assert.equal(result.physical.proof.count,5000);
+  const actual=await storage.readAuthStore({strict:true});assert.equal(actual._authStoreRevision,result.revision);
+  const nativeHash=sql("begin read only;select encode(sha256(convert_to((public.helmut_auth_usage_read_v1('{\"id\":\"main-auth\"}')->'data')::text,'UTF8')),'hex');rollback;");
+  assert.equal(result.logicalHash,nativeHash);assert.notEqual(result.logicalHash,result.physical.physicalAuthSHA256);
+  const withQuery=JSON.parse(sql("BEGIN READ ONLY;"+AU.projectQuery("WITH sample AS(SELECT data FROM helmut_store WHERE id='main-auth')SELECT jsonb_build_object('count',jsonb_array_length(data->'llmUsage'))FROM sample;")+"ROLLBACK;"));
+  assert.equal(withQuery.count,5000);
+  assert.throws(()=>sql("BEGIN READ ONLY;"+AU.projectQuery("WITH forbidden AS(DELETE FROM helmut_store RETURNING id)SELECT count(*)FROM forbidden;")+"ROLLBACK;"));
+  assert.equal(Number(sql("SELECT count(*)FROM public.helmut_store;")),1);
+  save('ATOMIC_RESOURCE_INTEGRATION.SAFE.json',{pass:true,catalog,logicalAndPhysicalHashesSeparatelyVerified:true,
+    historyCount:result.count,actualRuntimeRevisionMatchesNative:true,readOnlyTransactionEnforced:true,selectAndWithQueriesPassed:true,
+    nativeReconstructionsForMultiFieldQuery:calls,profileTableAbsent:sql("SELECT to_regclass('public.mandate_profiles')IS NULL;")==='t',
+    activation:false,full500:false,GOClaimed:false,providerCalls:0});
+}
+(async()=>{if(phase==="prepare")await prepare();else if(phase==="measure")await measure();else if(phase==="integration")await integration();else await security();})().catch(e=>{console.error(JSON.stringify({error:e.name,code:e.code||null,message:String(e.message).slice(0,160)}));process.exitCode=1;});

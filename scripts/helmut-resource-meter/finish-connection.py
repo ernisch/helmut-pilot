@@ -32,7 +32,17 @@ def finish(staged_pin):
     # window remains the preexisting13..16 window, also valid within day17.
     external_pin=C.save(case/'ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json',external)
     repo=Path('/workspace/helmut-cpu-epoch-20261015')
-    sources={p['path']:p for p in original['sourcePins'] if p['path'].startswith(str(repo)+'/')}
+    # A NEW command needs actual current code pins; old content acceptance is
+    # input provenance, never acceptance of historical runtime file hashes.
+    sources={p['path']:C.pin(p['path']) for p in original['sourcePins'] if p['path'].startswith(str(repo)+'/')}
+    atomic=staged.get('atomicUsageInput')
+    if atomic is not None:
+        descriptor=C.read_pin(atomic)
+        if descriptor.get('schema')!='helmut-local-atomic-usage-resource-input/1' or descriptor.get('production')is not False:
+            raise RuntimeError('local atomic candidate binding required')
+        for p in descriptor['sourcePins']:
+            if C.pin(p['path'])!=p:raise RuntimeError('atomic source pin drift')
+            sources[p['path']]=p
     for folder in [n,n/'runtime-candidates',BIN]:
         for p in folder.iterdir():
             if p.is_file() and p.suffix in ['.js','.py','.json'] and (folder!=BIN or not p.name.endswith(('-test.js','-test.py'))):sources[str(p.resolve())]=C.pin(p)
@@ -42,6 +52,7 @@ def finish(staged_pin):
       'inputAcceptance':content_pin,'sourcePins':list(sources.values()),'primaries':primaries,
       'localExternalBelege':external_pin,'newOperation':staged['operationId'],
       'rootFinalCodeAcceptance':staged['dayAcceptance'],'currentDayBinding':staged['dayAcceptance']}
+    if atomic is not None:request['atomicUsageInput']=atomic
     request_pin=C.save(case/'ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json',request)
     assets={}
     def add(p):
@@ -78,6 +89,7 @@ def finish(staged_pin):
       'sourceCaptureIsPreexistingFixtureInputNotWorkflowCPU':True,
       'phases':['preparation','assembly','sequence'],'profiles':500,'controlsPerUnit':16,
       'originalUUnchangedAndRequired':True,'noProfiler':True,'noPaidProviderCalls':True,'preparedWithoutGO':staged.get('preparedWithoutGO',False)}
+    if atomic is not None:plan['atomicUsageInput']=atomic
     connection=C.save(case/'FINAL_CONNECTION.SAFE.json',plan)
     # Recipe templates contain NO current preflight or final meter acceptance.
     # The controller adds those only after independent review, immediately

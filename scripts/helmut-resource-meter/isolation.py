@@ -259,6 +259,12 @@ def runtime_read_manifest(recipe):
         for p in connection[key]:add(p)
     document(connection['stagedHarness'])
     request=document(connection['runtimeRequest'])
+    if 'atomicUsageInput' in connection:
+        if request.get('atomicUsageInput')!=connection['atomicUsageInput']:raise RuntimeError('atomic usage request/connection differs')
+        candidate=document(connection['atomicUsageInput'])
+        if candidate.get('schema')!='helmut-local-atomic-usage-resource-input/1' or candidate.get('mode')!='relational-atomic-v1' or candidate.get('production')is not False:
+            raise RuntimeError('only exact local atomic usage candidate allowed')
+        for p in candidate['sourcePins']:add(p)
     for p in request['sourcePins']:add(p)
     for p in request['primaries'].values():add(p)
     for key in ['inputAcceptance','localExternalBelege','rootFinalCodeAcceptance','currentDayBinding']:
