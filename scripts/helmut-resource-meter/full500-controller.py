@@ -12,6 +12,7 @@ BIN=Path(__file__).parent
 def module(name,file):
     s=importlib.util.spec_from_file_location(name,BIN/file);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 I=module('isolation','isolation.py');C=module('connection','connect-local500.py');S=module('source','capture-local-source.py')
+Z=module('zero_day_input','local-zero-day-copy.py')
 W=C.AREA;CLAIM=I.ONCE;UTC=datetime.timezone.utc
 
 def financial_preflight(connection):
@@ -23,7 +24,8 @@ def financial_preflight(connection):
     stage=str(Path(connection['workflowDirectory'])/'prepare-current-local-runtime.js')
     pins=[p for p in connection['immutableWorkflowPins'] if p['path']==stage]
     if len(pins)!=1:raise RuntimeError('exact reviewed financial preparation module missing')
-    snapshot=S.sql("select jsonb_build_object('auth',(select data from helmut_store where id='main-auth'),'nativeAuthText',(select data::text from helmut_store where id='main-auth'),'authSHA',(select encode(sha256(convert_to(data::text,'UTF8')),'hex')from helmut_store where id='main-auth'),'counter',(select coalesce(sum(used),0)from llm_budget_counters where scope='global'and day="+S.lit(day)+"),'counterReadOK',true);")
+    actual=Z.verify_capture(connection['sourceCapture'],connection['freshOwnerGO'])
+    snapshot={'auth':json.loads(actual['nativeAuthText']),'nativeAuthText':actual['nativeAuthText'],'authSHA':actual['nativeAuthSHA'],'counter':0,'counterReadOK':True}
     proc=subprocess.run([str(I.K.NODE_ROOT/'bin/node'),str(BIN/'local-financial-preflight.js'),json.dumps(pins[0]),day],input=json.dumps(snapshot),capture_output=True,text=True,timeout=30)
     try:result=json.loads(proc.stdout)
     except ValueError:raise RuntimeError('local financial preflight did not return a safe result')
@@ -119,7 +121,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     dbname=connection['containerName'];appname=dbname.replace('helmut-meter-db-','helmut-meter-app-',1)
     if I.K.docker(['inspect',dbname],check=False).returncode==0 or I.K.docker(['network','inspect',network],check=False).returncode==0:raise RuntimeError('actual owned resources already exist; no reuse')
     subnet=connection.get('approvedInternalSubnet')
-    if subnet!='172.16.251.0/24':raise RuntimeError('exact original172 gateway subnet missing')
+    if subnet!='172.16.249.0/24':raise RuntimeError('exact new reviewed172 gateway subnet missing')
     network_ids=I.K.docker(['network','ls','-q']).stdout.split()
     networks=json.loads(I.K.docker(['network','inspect',*network_ids]).stdout)
     if any(ipaddress.ip_network(subnet).overlaps(ipaddress.ip_network(p['Subnet'])) for n in networks for p in (n['IPAM'].get('Config') or []) if ':' not in p.get('Subnet','')):
@@ -137,7 +139,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     minor=acceptance['approvedFreshLoopMinor']
     storage_out=I.ONCE.parent/('full500-owned-storage17-'+case.name.removeprefix('attempt-'))
     storage=storage_module.create(storage_out,8000000000,minor,parent+'/storage',hold=connection['storageHoldSeconds'])
-    if connection.get('approvedInternalSubnet')!='172.16.251.0/24':raise RuntimeError('exact unchanged172 gateway subnet missing')
+    if connection.get('approvedInternalSubnet')!='172.16.249.0/24':raise RuntimeError('exact new reviewed172 gateway subnet missing')
     I.create_network(network,subnet=connection['approvedInternalSubnet'])
     db=I.create_database(case/'database',dbname,parent+'/database',network,scope='owner-approved-local500-resources',storage=storage,fixture=connection)
     # Fresh actual prerequisites AFTER the empty owned server is ready.
@@ -160,7 +162,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     result=I.finalize(app,timeout=max(60,int((end-datetime.datetime.now(UTC)).total_seconds())+180))
     I.K.save_new(case/'CONTROLLER_COMPLETE.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'pass':result['pass'],
       'completeResourceResult':C.pin(case/'application/COMPLETE_RESOURCE_RESULT.SAFE.json'),
-      'originalSourceAfter':original_preflight(connection,check_financial=False),'globalGOClaimPreserved':True,'noAutomaticRetry':True,'production':False})
+      'originalSourceAfter':original_preflight(connection),'globalGOClaimPreserved':True,'noAutomaticRetry':True,'production':False})
     print(json.dumps({'status':'SINGLE_RESOURCE_ATTEMPT_COMPLETE','pass':result['pass'],'actualAllOwnedMemoryPeakBytes':result['simultaneousApplicationAndInfrastructureKernel']['memoryPeakBytes'],'CPUUsec':result['simultaneousApplicationAndInfrastructureKernel']['cpu']['usage_usec']}),flush=True)
     return result
 

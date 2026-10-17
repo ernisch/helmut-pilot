@@ -12,7 +12,9 @@ def finish(staged_pin):
     staged=C.read_pin(staged_pin);case=Path(staged['caseDirectory']);n=case/'native-end-preparation'
     if (case/'FINAL_CONNECTION.SAFE.json').exists():raise RuntimeError('never overwrite/rebind a staged case')
     owner_pin=staged['ownerGOPin'];day=C.read_pin(staged['dayAcceptance'])
-    capture_pin=C.pin(W/'source-capture/READ_ONLY_SOURCE_CAPTURE.SAFE.json');capture=C.read_pin(capture_pin)
+    owner=C.read_pin(owner_pin)
+    capture_pin=C.pin(owner['correctedSourceCapturePath']);capture=C.read_pin(capture_pin)
+    if capture.get('freshOwnerGO')!=owner_pin:raise RuntimeError('new corrected input owner binding differs')
     if capture['before']!=capture['after'] or capture['sourceWrites']!=0:raise RuntimeError('read-only source capture incomplete')
     original=json.loads((B/'wave15/ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json').read_text())
     content=json.loads((B/'wave15/ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json').read_text())
@@ -47,7 +49,7 @@ def finish(staged_pin):
         if C.pin(p['path'])!=p:raise RuntimeError('static fixture pin drift')
         if not Path(p['path']).is_relative_to(case):assets[p['path']]=p
     for p in primaries.values():add(p)
-    for p in [staged['dayRows'],staged['dayAcceptance'],day['independentReview'],capture_pin,capture['sourceDump'],capture['localRolesSQL'],
+    for p in [staged['dayRows'],staged['dayAcceptance'],day['independentReview'],capture_pin,capture['sourceDump'],capture['localRolesSQL'],capture['correctedFinancialWitnessPin'],capture['correctionReceiptPin'],
       C.pin(B/'wave13/input-extraction/ORIGINAL_PACKAGE.PRIVATE.json'),C.pin(B/'wave13/NATIVE_INVENTORY_TEMPLATE.PRIVATE.json'),
       C.pin(B/'wave12/native-pdf-inputs/ACTUAL_NATIVE_SOURCE23_KO60_WITH_PDF.PRIVATE.json'),
       C.pin(B/'wave12/ROOT_STATIC_LOCAL_R_TEMPLATE_ACCEPTANCE.SAFE.json'),
@@ -71,7 +73,7 @@ def finish(staged_pin):
       'databaseReadOnlyPins':[capture['postgrestBinary']],
       'stagedHarness':staged_pin,'full500RunStarted':False,'resourceGOConsumed':False,
       'storageHoldSeconds':9*3600+600,'storageCapacityBytes':8000000000,
-      'approvedInternalSubnet':'172.16.251.0/24',
+      'approvedInternalSubnet':'172.16.249.0/24',
       'sourceCaptureIsPreexistingFixtureInputNotWorkflowCPU':True,
       'phases':['preparation','assembly','sequence'],'profiles':500,'controlsPerUnit':16,
       'originalUUnchangedAndRequired':True,'noProfiler':True,'noPaidProviderCalls':True}

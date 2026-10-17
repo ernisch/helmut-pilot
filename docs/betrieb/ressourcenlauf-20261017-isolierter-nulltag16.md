@@ -1,0 +1,11 @@
+# Einmalige lokale Nulltagkorrektur16 vor Ressourcenlauf
+
+Ausdrückliches neues Betreiber-GO: genau eine fehlende Nulltag16-Korrektur in einer neuen isolierten lokalen Testkopie, danach genau ein Ressourcenlauf nach erneuter vollständiger Prüfung. Keine Wiederverwendung der verbrauchten Freigabe, keine Production-Wirkung.
+
+Die neue Eingabedatenbank `helmut_resource_input_20261017_64a99d4ac9fb` wird aus dem unveränderten Originaldump hergestellt. Vollständige native Auth- und Zählertexte werden vor und innerhalb der Transaktion gebunden. Ein SHARE-Tabellenlock und Auth-Zeilenlock verhindern konkurrierende Änderungen während der einzigen Korrektur. Nur das nachgewiesene Nullbuch16 und die bestehend genehmigte Buchkapazität ändern sich; alle37 Bücher, Limits, U und Journale bleiben erhalten. Die ursprüngliche Datenbank wird niemals geschrieben.
+
+Diese Aufbereitung von Testeingaben liegt ausdrücklich vor dem gemessenen Helmut-Ablauf; ihre tatsächliche Wandzeit wird separat ausgewiesen. Das ist keine Behauptung einer Kernelmessung dieser Eingabeaufbereitung. Die bereits geprüfte Messung erfasst weiterhin Wiederherstellung des gebundenen Inputs im neuen eigenen Server, neue Zielkopie, Vorbereitung, Root, Offline90, Installation, Original-U, alle500 Profile mit16 Kontrollpunkten sowie sämtliche beteiligten Prozesse bis zum Ende. Keine Motoränderung oder neue Messarchitektur.
+
+DeepSeek Pro High hat die konkrete Implementierung bedingt abgenommen. Vor einem Ressourcenstart bleiben verbindlich: vollständige Nachkontrolle der tatsächlichen Korrektur, Gleichheit sämtlicher nichtfinanziellen Datentabellen, unveränderte Originalbindungen, echter K/EU-Finanzprüfer, unabhängige Ergebnisprüfung, genaue aktuelle Quell-/Rezeptbindungen, freies privates Netz, freier Loop-Datenträger, vollständiges Zeitfenster und ungenutztes neues GO. Die alten verbrauchten Claim-/Reservierungsdateien bleiben unverändert; die neue ausdrückliche Freigabe besitzt eigene feste globale Einmalsperren. Fehler dürfen nicht automatisch wiederholt werden.
+
+Unit60≤60s, Auth30≤30s, Offline90≤90s und2048MB bleiben unverändert. Diese Implementierung und die Eingabekorrektur sind noch kein erfolgreicher500er Ressourcenbeleg und keine Production-Freigabe.

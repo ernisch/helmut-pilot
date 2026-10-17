@@ -13,7 +13,7 @@ function main(){
  assert.equal(plan.production,false);assert.equal(plan.operationId,recipe.expectedFreshOperationId);
  assert.equal(process.argv[2],recipe.fixtureConnectionPin.path);
  const owner=read(recipe.freshOwnerGO);assert.equal(owner.production,false);assert.equal(owner.syntheticProfiles,500);assert.equal(owner.targetDatabase,plan.targetDatabase);
- const claim=JSON.parse(fs.readFileSync('/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json'));
+ const claim=JSON.parse(fs.readFileSync('/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json'));
  assert.equal(claim.recipeSHA256,sha(fs.readFileSync('/meter-output/RECIPE.PRIVATE.json')));
  const source=read(plan.sourceCapture),q=x=>"'"+x.replaceAll("'","''")+"'";
  assert.equal(source.source,plan.sourceDatabase);assert.equal(source.sourceWrites,0);assert.deepEqual(source.before,source.after);
@@ -25,6 +25,10 @@ function main(){
  psql(bytes(source.localRolesSQL));psql('CREATE DATABASE "'+plan.sourceDatabase+'";');
  cp.execFileSync('docker',['--host=unix:///var/run/docker.sock','exec','-i',plan.containerName,'pg_restore','-U','postgres','--exit-on-error','-d',plan.sourceDatabase],
   {input:bytes(source.sourceDump),env:{PATH:process.env.PATH,LANG:'C.UTF-8'},timeout:120000,maxBuffer:32*1024*1024});
+ const corrected=read(source.correctedFinancialWitnessPin);
+ const observed=JSON.parse(cp.execFileSync('docker',['--host=unix:///var/run/docker.sock','exec','-i',plan.containerName,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d',plan.sourceDatabase,'-f','-'],{input:"BEGIN READ ONLY;SELECT jsonb_build_object('nativeAuthText',(select data::text from helmut_store where id='main-auth'),'nativeAuthSHA',(select encode(sha256(convert_to(data::text,'UTF8')),'hex')from helmut_store where id='main-auth'),'completeNativeCounterText',(select coalesce(jsonb_agg(to_jsonb(c)order by to_jsonb(c)::text),'[]'::jsonb)::text from llm_budget_counters c));ROLLBACK;",encoding:'utf8',env:{PATH:process.env.PATH,LANG:'C.UTF-8'},timeout:30000,maxBuffer:16*1024*1024}));
+ for(const key of ['nativeAuthText','nativeAuthSHA','completeNativeCounterText'])assert.equal(observed[key],corrected[key],'Restored corrected input must equal actual bound native data');
+ assert.equal(sha(observed.completeNativeCounterText),corrected.completeNativeCounterSHA);
  const request=read(plan.runtimeRequest);assert.equal(request.targetDatabase,plan.targetDatabase);assert.deepEqual(request.expectedOwnerGoPin,recipe.freshOwnerGO);
  cp.execFileSync('node',[plan.workflowDirectory+'/prepare-current-local-runtime.js','--apply-owner-local-go',recipe.freshOwnerGO.path,'--reviewed-input',plan.runtimeRequest.path],
   {stdio:'inherit',env:{PATH:process.env.PATH,LANG:'C.UTF-8'},timeout:240000});
