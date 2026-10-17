@@ -15,6 +15,11 @@
       "sha256": "1c043c6d677281adea70dc59c04260e5268944cd2db47a0c8d4b56b719d0e9e7"
     },
     {
+      "path": "lib/helmut/auth-store-cas.js",
+      "bytes": 3617,
+      "sha256": "92cba40816bb8cf8919db846d31b736a77b28e3e8d6d24712646bd0509755dd4"
+    },
+    {
       "path": "lib/helmut/berlin-artikelstand.js",
       "bytes": 22910,
       "sha256": "58be8bc840b64eb01a872f673c83e5d75be4b0c6f5a85290282d2a6d2a2ab890"
@@ -236,8 +241,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 543389,
-      "sha256": "28f67b93e4269e92193ca971327b072bd37b0113ceb506282809c95b0aa8c61c"
+      "bytes": 543626,
+      "sha256": "aab723c0cd04e035c4b335360f7f1a1e9062f287f245e06199a8894686c3d290"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -351,8 +356,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-runtime-artifact-attestation.js",
-      "bytes": 5459,
-      "sha256": "9c5c9f4ec86e10e7ddf30e58ba6d1ca2835517d8e1772a4e66a06c2d5bee8143"
+      "bytes": 5498,
+      "sha256": "04398c65b26f52c46bc17fec709361a9cdbce614390a9fd0eea33de098f57488"
     },
     {
       "path": "lib/helmut/synthetik-500-startschutz.js",
@@ -421,9 +426,15 @@
     },
     {
       "path": "vercel.json",
-      "bytes": 8050,
-      "sha256": "1a1e340f6081fee71ed154dfadd6268f063ee98286af2b2a894e2257c7843f20"
+      "bytes": 8101,
+      "sha256": "97b974c37064bce0bff57337c9b9d646c86c086b5e9ba326f8983b0145a34f48"
     }
   ],
-  "sourceMappingSHA256": "6194aa6430cf117363ca60589130854638d0450bce84fa1159a9338da785099d"
+  "sourceMappingSHA256": "8de4f5d3b521528cc5079eaca659864cf460c480ff709872b4d81c95826c271d",
+  "currentCandidateFull500Qualification": false,
+  "candidateQualificationScope": "LOCAL_AUTH_CAS_CANDIDATE_SOURCE_EXPECTATIONS_ONLY_NO_FULL500_REQUALIFICATION",
+  "priorManifestCommit": "4199c2d3d8e57127ee99092c252be1a8c242e037",
+  "priorManifestSHA256": "b2d07f7e421dc7b3eb68072e11dbb5330fc83869977347953d61d7f7f53d6670",
+  "priorSourceMappingSHA256": "6194aa6430cf117363ca60589130854638d0450bce84fa1159a9338da785099d",
+  "contentQualificationEvidenceIsHistoricalOnly": true
 }

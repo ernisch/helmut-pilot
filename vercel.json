@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/auth-cas-temp-spill-20261017": false,
       "codex/runtime-read-binding-diagnostic-20261015": false,
       "codex/runtime-read-binding-fix-20261015": false,
       "codex/helmut-read-renewal-20261015": false,
