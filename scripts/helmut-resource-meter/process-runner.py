@@ -63,6 +63,7 @@ def own_survivors():
     return result
 
 def finish_children():
+    if os.getpid()!=1:raise RuntimeError('owned cleanup requires private container PID1')
     pids=own_survivors()
     for pid in pids:
         try:os.kill(pid,signal.SIGTERM)
@@ -235,6 +236,9 @@ def stop_owned_database():
     return {'mounted':True,'cleanShutdownConfirmed':True}
 
 def main():
+    # Before even the error handler: never enumerate/signal host processes if
+    # someone invokes this container entrypoint directly on the host.
+    if os.getpid()!=1:raise RuntimeError('owned runner requires private container PID1')
     # Includes JSON parsing, pin/authority checks and observer initialization.
     # No early exception may bypass owned-process and owned-DB cleanup again.
     code=1;error=None;cleanup={}

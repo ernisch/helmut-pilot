@@ -181,6 +181,11 @@ signals the exact new database after app exit. Controller setup failures close
 only resources matching its exclusive reservation invocation ID and dedicated
 case cgroup; concurrent/consumed reservations never qualify for cleanup.
 
+The container runner and its child cleanup also require actual PID1 BEFORE
+entering any workflow or error-cleanup path. A direct host invocation fails
+without enumerating/signalling host processes or stopping a database. This
+private-namespace precondition is enforced, not just assumed by the cleanup.
+
 The container visibility check is a necessary actual observation, not a
 guarantee against later disk, scheduling or other I/O failures. Every full
 technical condition must still pass freshly; insufficient free disk remains a

@@ -64,7 +64,7 @@ class RuntimeReadContractTest(unittest.TestCase):
 
  def test_early_authority_or_parse_failure_always_cleans_processes_and_db(self):
   for error in [FileNotFoundError('PRIVATE'),ValueError('PRIVATE'),RuntimeError('PRIVATE')]:
-   with (self.subTest(error=type(error).__name__),patch.object(R,'run_workflow',side_effect=error),
+   with (self.subTest(error=type(error).__name__),patch.object(R.os,'getpid',return_value=1),patch.object(R,'run_workflow',side_effect=error),
       patch.object(R,'finish_children',return_value={'graceful':True})as processes,
       patch.object(R,'stop_owned_database',return_value={'mounted':True,'cleanShutdownConfirmed':True})as database,
       patch.object(R,'save_new')as save):
@@ -72,10 +72,19 @@ class RuntimeReadContractTest(unittest.TestCase):
     self.assertNotIn('PRIVATE',json.dumps(save.call_args.args[1]))
 
  def test_process_cleanup_failure_does_not_skip_database_stop(self):
-  with (patch.object(R,'run_workflow',side_effect=RuntimeError('test')),
+  with (patch.object(R.os,'getpid',return_value=1),patch.object(R,'run_workflow',side_effect=RuntimeError('test')),
      patch.object(R,'finish_children',side_effect=RuntimeError('test')),
      patch.object(R,'stop_owned_database',return_value={'mounted':False})as stop,patch.object(R,'save_new')):
    self.assertEqual(R.main(),1);stop.assert_called_once()
+
+ def test_host_invocation_never_enters_workflow_or_signals_any_process(self):
+  with (patch.object(R.os,'getpid',return_value=31337),patch.object(R,'run_workflow')as run,
+     patch.object(R,'finish_children')as processes,patch.object(R,'stop_owned_database')as database):
+   with self.assertRaisesRegex(RuntimeError,'private container PID1'):R.main()
+   run.assert_not_called();processes.assert_not_called();database.assert_not_called()
+  with patch.object(R.os,'getpid',return_value=31337),patch.object(R.os,'kill')as kill:
+   with self.assertRaisesRegex(RuntimeError,'private container PID1'):R.finish_children()
+   kill.assert_not_called()
 
  def test_controller_does_not_close_old_or_concurrent_reservation(self):
   reservation=self.root/'reservation.json';reservation.write_text(json.dumps({'controllerInvocationId':'ANOTHER_CONTROLLER'}))
