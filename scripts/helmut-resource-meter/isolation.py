@@ -44,7 +44,12 @@ def verify_fixture_owner_policy(owner):
     if owner.get('allowDispose') is not False:
         raise RuntimeError('owner GO requires explicit allowDispose=false before any setup or claim')
 
-def verify_full_authority(recipe):
+def verify_pre_setup_authority(recipe):
+    """Shared actual authority predicates that require NO created resources.
+
+    Used before reservation AND by the original final authority check. Never
+    manufacture a reservation, empty-DB receipt, CID or fresh preflight here.
+    """
     acceptance=pin_json(recipe['independentMeterAcceptance'])
     if acceptance.get('status')!='ROOT_ADOPTED_INDEPENDENT_COMPLETE_METER_ACCEPTANCE':
         raise RuntimeError('independent complete meter acceptance missing')
@@ -68,11 +73,8 @@ def verify_full_authority(recipe):
     if acceptance.get('recipeTemplatePin')!=recipe.get('recipeTemplatePin'):raise RuntimeError('unaccepted recipe template')
     template=pin_json(recipe['recipeTemplatePin'])
     if any(recipe.get(k)!=v for k,v in template.items()):raise RuntimeError('serialized recipe changed an accepted template field')
-    added={'sourcePins','independentMeterAcceptance','freshStartPreflight','recipeTemplatePin','setupReservation','databaseContainer','databaseStopFile','databaseFinalFile'}
+    added={'sourcePins','independentMeterAcceptance','freshStartPreflight','recipeTemplatePin','setupReservation','databaseContainer','databaseStopFile','databaseFinalFile','completeStartPreflight'}
     if set(recipe)-set(template)-added:raise RuntimeError('unreviewed recipe extension')
-    reservation=pin_json(recipe['setupReservation'])
-    if recipe['setupReservation']['path']!=str(SETUP_RESERVATION) or reservation.get('schema')!='helmut-local-resource-setup-reservation/1' or any(reservation.get(k)!=recipe[k] for k in ['fixtureConnectionPin','recipeTemplatePin','independentMeterAcceptance','freshOwnerGO']):
-        raise RuntimeError('exact global setup reservation missing')
     integrated=acceptance['fullConnectionReviews']
     if set(integrated)!=set(['authority','bootstrap','coverage']):raise RuntimeError('all three independent connection scopes required')
     for scope,pins in integrated.items():
@@ -101,6 +103,55 @@ def verify_full_authority(recipe):
         raise RuntimeError('historical GO or non-single attempt prohibited')
     if owner.get('targetDatabase')!=connection['targetDatabase'] or recipe['expectedFreshOperationId']!=connection['operationId']:
         raise RuntimeError('GO/connection/operation binding mismatch')
+    # Only the exact independently reviewed day17 proposal may qualify this
+    # connection. A caller-supplied day/version alone grants no authority.
+    day=pin_json(recipe['dayBindingAcceptance'])
+    now=datetime.now(timezone.utc);end=datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00'))
+    if now.date()!=end.date() or now.astimezone(ZoneInfo('Europe/Berlin')).date()!=end.astimezone(ZoneInfo('Europe/Berlin')).date():
+        raise RuntimeError('same UTC and Berlin day required')
+    if acceptance.get('dayBindingAcceptance')!=recipe['dayBindingAcceptance'] or day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER':
+        raise RuntimeError('independently adopted exact current-day binding missing')
+    if day.get('day')!='2026-10-17' or now.strftime('%Y-%m-%d')!=day['day'] or now.astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')!=day['day']:
+        raise RuntimeError('actual UTC/Berlin day outside reviewed binding')
+    independent=pin_json(day['independentReview'])
+    if independent.get('model')!='deepseek-v4-pro' or independent.get('route',{}).get('effort')!='high' or independent.get('payload',{}).get('summary',{}).get('status')!='ok':
+        raise RuntimeError('current-day independent semantic acceptance missing')
+    if now<datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00')) or end>datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00')):
+        raise RuntimeError('actual run window outside independent current-day scope')
+    if (end-now).total_seconds()*1000 < 8089543.088:
+        raise RuntimeError('remaining same-day window shorter than actual last complete workflow')
+    return {'acceptance':acceptance,'connection':connection,'day':day}
+
+def verify_full_authority(recipe):
+    checked=verify_pre_setup_authority(recipe)
+    # Every actual claim/start entrypoint requires the SAME complete pre-GO
+    # proof. No caller can bypass it by calling launch_application directly.
+    spec=importlib.util.spec_from_file_location('complete_pre_go_proof',BIN/'start-preflight.py')
+    complete=importlib.util.module_from_spec(spec);spec.loader.exec_module(complete)
+    reservation=pin_json(recipe['setupReservation'])
+    if recipe['setupReservation']['path']!=str(SETUP_RESERVATION) or reservation.get('schema')!='helmut-local-resource-setup-reservation/1' or any(reservation.get(k)!=recipe[k] for k in ['fixtureConnectionPin','recipeTemplatePin','independentMeterAcceptance','freshOwnerGO','completeStartPreflight']):
+        raise RuntimeError('exact global setup reservation missing')
+    proof=pin_json(recipe['completeStartPreflight']);complete.assert_reserved_ready(proof,reservation)
+    # Archive/request review documents are checked on the HOST before setup;
+    # they are not workload inputs and must not be assumed mounted in the app.
+    # Reuse the exact fresh, recipe-pinned Root assessment, then bind it AGAIN
+    # to every currently mounted source. No arbitrary positive receipt is read
+    # from a client/API. Only the controller issues this exclusive local file.
+    rows=proof['consumerSourcePins']
+    if not rows:raise RuntimeError('complete start proof source inventory missing')
+    coverage=next(c for c in proof['checks']if c['id']=='completeIndependentCoverage')['evidence']
+    if proof['consumerInventorySHA256']!=coverage['inventorySHA256']:raise RuntimeError('complete start proof inventory adoption differs')
+    actual={p['path']:p for p in rows}
+    required={p['path']for p in checked['acceptance']['sourcePins']if Path(p['path']).suffix in ['.js','.py']}
+    if len(actual)!=len(rows) or not required<=set(actual):raise RuntimeError('complete start proof source closure incomplete')
+    for p in rows:
+        file=Path(p['path']);b=file.read_bytes()
+        if file.resolve()!=file or file.is_symlink() or len(b)!=p['bytes']or hashlib.sha256(b).hexdigest()!=p['sha256']:
+            raise RuntimeError('complete start proof actual source drift')
+    for key,recipe_key in [('acceptance','independentMeterAcceptance'),('connection','fixtureConnectionPin'),('recipeTemplate','recipeTemplatePin')]:
+        if proof.get('bindings',{}).get(key)!=recipe[recipe_key]:raise RuntimeError('complete start proof binding mismatch')
+    if recipe['completeStartPreflight']['path']!=str(Path(checked['connection']['caseDirectory'])/'COMPLETE_START_PREFLIGHT.SAFE.json'):
+        raise RuntimeError('complete start proof exact case path required')
     preflight=pin_json(recipe['freshStartPreflight'])
     if any(preflight.get(k)!=recipe[k] for k in ['freshOwnerGO','independentMeterAcceptance']) or preflight.get('connectionPin')!=recipe['fixtureConnectionPin']:
         raise RuntimeError('fresh preflight authority binding mismatch')
@@ -110,16 +161,7 @@ def verify_full_authority(recipe):
     now=datetime.now(timezone.utc);end=datetime.fromisoformat(preflight['windowEndsAtUTC'].replace('Z','+00:00'))
     if now.date()!=end.date() or now.astimezone(ZoneInfo('Europe/Berlin')).date()!=end.astimezone(ZoneInfo('Europe/Berlin')).date():
         raise RuntimeError('same UTC and Berlin day required')
-    # Only the exact independently reviewed day17 proposal may qualify this
-    # connection. A caller-supplied day/version alone grants no authority.
-    day=pin_json(recipe['dayBindingAcceptance'])
-    if acceptance.get('dayBindingAcceptance')!=recipe['dayBindingAcceptance'] or day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER':
-        raise RuntimeError('independently adopted exact current-day binding missing')
-    if day.get('day')!='2026-10-17' or now.strftime('%Y-%m-%d')!=day['day'] or now.astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')!=day['day']:
-        raise RuntimeError('actual UTC/Berlin day outside reviewed binding')
-    independent=pin_json(day['independentReview'])
-    if independent.get('model')!='deepseek-v4-pro' or independent.get('route',{}).get('effort')!='high' or independent.get('payload',{}).get('summary',{}).get('status')!='ok':
-        raise RuntimeError('current-day independent semantic acceptance missing')
+    day=checked['day']
     if now<datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00')) or end>datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00')):
         raise RuntimeError('actual run window outside independent current-day scope')
     if (end-now).total_seconds()*1000 < 8089543.088:

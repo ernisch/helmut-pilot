@@ -114,6 +114,22 @@ jobs:
       - name: FinalContext Subject-Tupel-Codec (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
+      - name: Lokaler Ressourcenstart Vorabcheck (rein synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
+          # Der echte Lauf bleibt an seinen freigegebenen /workspace-Pfad gebunden.
+          # Nur die synthetischen CI-Mocks laden ihre Module aus dem Checkout.
+          python3 -B - <<'PY'
+          import importlib.util, pathlib, unittest
+          path = pathlib.Path('scripts/helmut-resource-meter/start-preflight-test.py').resolve()
+          spec = importlib.util.spec_from_file_location('local_precheck_tests', path)
+          tests = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(tests)
+          tests.C.I.BIN = path.parent
+          result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromModule(tests))
+          raise SystemExit(not result.wasSuccessful())
+          PY
+          node --test scripts/helmut-resource-meter/start-input-checks-test.js
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
         if: steps.plan.outputs.database == 'true'
         # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang

@@ -105,7 +105,14 @@ def window(day):
     if (end-now).total_seconds()<8089.543088+600:raise RuntimeError('full remaining window lacks last actual workflow plus10min setup/close reserve')
     return True,start,end
 
-def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
+def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_preflight_adoption_pin=None):
+    # A caller cannot skip the complete non-mutating consumer comparison.
+    # This must precede ANY reservation, correction, resource or GO side effect.
+    complete=module('complete_start_preflight','start-preflight.py')
+    bindings={'acceptance':acceptance_pin,'connection':connection_pin,'recipeTemplate':recipe_template_pin}
+    if start_preflight_adoption_pin is not None:bindings['startPreflightIndependentAdoption']=start_preflight_adoption_pin
+    checked=complete.assess(bindings)
+    complete.assert_ready(checked)
     acceptance,connection,recipe,day=accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin)
     no_previous_attempt(connection)
     valid,start,end=window(day)
@@ -130,7 +137,14 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     # Exclusive GLOBAL setup reservation prevents competing controllers from
     # creating any resources for the same unused GO. It is never deleted;
     # setup failure remains retained and needs reviewed recovery, not a retry.
-    I.K.save_new(I.SETUP_RESERVATION,{'schema':'helmut-local-resource-setup-reservation/1','fixtureConnectionPin':connection_pin,'recipeTemplatePin':recipe_template_pin,'independentMeterAcceptance':acceptance_pin,'freshOwnerGO':recipe['freshOwnerGO'],'atUTC':datetime.datetime.now(UTC).isoformat(),'GOConsumed':False,'noAutomaticRetry':True})
+    # Recheck fresh prerequisites after any wait/read-only checks. Never use an
+    # externally supplied pass report or a stale early observation as authority.
+    checked=complete.assess(bindings)
+    complete.assert_ready(checked)
+    complete_path=case/'COMPLETE_START_PREFLIGHT.SAFE.json'
+    I.K.save_new(complete_path,complete.freeze_ready_report(checked))
+    complete_pin=C.pin(complete_path)
+    I.K.save_new(I.SETUP_RESERVATION,{'schema':'helmut-local-resource-setup-reservation/1','fixtureConnectionPin':connection_pin,'recipeTemplatePin':recipe_template_pin,'independentMeterAcceptance':acceptance_pin,'freshOwnerGO':recipe['freshOwnerGO'],'completeStartPreflight':complete_pin,'atUTC':datetime.datetime.now(UTC).isoformat(),'GOConsumed':False,'noAutomaticRetry':True})
     reservation_pin=C.pin(I.SETUP_RESERVATION)
     I.K.save_new(case/'CONTROLLER_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'preflight':first,'singleSetupAttempt':True,'noAutomaticRetry':True,'GOClaimed':False,'setupReservation':reservation_pin})
     storage_module=module('bounded','bounded-storage.py')
@@ -155,7 +169,7 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
       'exactUnusedOwnedDatabaseVerified':True,'connectionPin':connection_pin,'independentMeterAcceptance':acceptance_pin,
       'actualEmptyDBContainerId':db['containerId'],'freshOwnerGO':recipe['freshOwnerGO'],'oneTimeGOUnused':True,'production':False}
     I.K.save_new(preflight_path,preflight)
-    recipe.update(sourcePins=acceptance['sourcePins'],independentMeterAcceptance=acceptance_pin,freshStartPreflight=C.pin(preflight_path),recipeTemplatePin=recipe_template_pin,setupReservation=reservation_pin)
+    recipe.update(sourcePins=acceptance['sourcePins'],independentMeterAcceptance=acceptance_pin,freshStartPreflight=C.pin(preflight_path),recipeTemplatePin=recipe_template_pin,setupReservation=reservation_pin,completeStartPreflight=complete_pin)
     I.verify_full_authority(recipe)
     app=I.launch_application(case/'application',appname,parent+'/application',network,recipe,db)
     I.K.save_new(case/'ACTUAL_RESOURCE_ATTEMPT_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'application':app,'globalClaim':C.pin(CLAIM),'exactlyOneAttempt':True,'noRetry':True})
@@ -168,11 +182,17 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False):
     return result
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--accepted-bindings',required=True);parser.add_argument('--run-exactly-once',action='store_true');parser.add_argument('--wait-for-reviewed-window',action='store_true');args=parser.parse_args()
-    if not args.run_exactly_once:raise SystemExit('EXPLICIT_EXISTING_ONCE_GO_ACTION_REQUIRED')
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--accepted-bindings',required=True)
+    action=parser.add_mutually_exclusive_group(required=True);action.add_argument('--run-exactly-once',action='store_true');action.add_argument('--check-only',action='store_true')
+    parser.add_argument('--wait-for-reviewed-window',action='store_true');args=parser.parse_args()
     bindings=json.loads(Path(args.accepted_bindings).read_text())
     try:
-        result=run(bindings['acceptance'],bindings['connection'],bindings['recipeTemplate'],wait=args.wait_for_reviewed_window)
+        if args.check_only:
+            result=module('complete_start_preflight','start-preflight.py').assess(bindings)
+            print(json.dumps(result),flush=True)
+            raise SystemExit(0 if result['pass'] else 2)
+        result=run(bindings['acceptance'],bindings['connection'],bindings['recipeTemplate'],wait=args.wait_for_reviewed_window,
+                   start_preflight_adoption_pin=bindings.get('startPreflightIndependentAdoption'))
         if result['pass'] is not True:raise SystemExit(1)
     except Exception as error:
         print(json.dumps({'status':'STOP_NO_AUTOMATIC_RETRY','errorType':type(error).__name__,'reason':str(error) if isinstance(error,RuntimeError) else 'Inspect retained local evidence; do not replay any claimed attempt','globalGOClaimExists':CLAIM.exists(),'production':False}),flush=True)

@@ -70,7 +70,8 @@
       "codex/dip-quellfelder-20260920": false,
       "codex/verstehen-169-actions-20260923": false,
       "codex/immutable-command-proof-20261015": false,
-      "codex/resource-meter-20261016": false
+      "codex/resource-meter-20261016": false,
+      "codex/complete-start-preflight-20261017": false
     }
   },
   "functions": {
