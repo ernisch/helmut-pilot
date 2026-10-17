@@ -101,9 +101,58 @@ Eine zusätzliche Cachebegrenzung wurde nicht integriert: Die bisherige
 Gesamtersparnis noch unveränderte Laufzeit unter Speicherdruck. Insbesondere darf
 die kleine Ersparnis nicht vom früheren 500er Peak abgezogen werden.
 
-Der Kandidat bleibt lokal und zuschaltbar vorbereitet. Die vollständige Abnahme
-von Offline90, Unit60, Auth30, allen 500 Abschlüssen und gemeinsamem Gesamtspeicher
-bleibt offen. Kein neuer 500er Ressourcenlauf, keine Aktivierung, kein neues GO,
-keine Production-Änderung und kein kostenpflichtiger Modelltest wurden ausgeführt.
-Der nächste Schritt ist die gebundene Endabnahme des zugeschalteten Kandidaten
-innerhalb einer separat erlaubten Testausführung; der alte Auftrag ist tabu.
+Die anschließende Qualifikation mit je 96 seriellen Schreibvorgängen und einem
+weiteren EXPLAIN-Schreibvorgang relativiert die Speicherersparnis deutlich.
+Sie verwendet dieselbe bestehende Kernelmessung und denselben vollständigen
+Originalwert; keine Profile oder Aufträge wurden aktiviert. Die aktuelle
+SQL-Proposal-Datei wurde unverändert verwendet. Zusätzliche Phasenbeobachtungen
+ändern weder Engine noch Speichergrenze und ersetzen keinen vollständigen Lauf.
+
+| Messgröße im 96er-Vergleich | Bisheriger PATCH | JSONB-RPC |
+| --- | ---: | ---: |
+| Gemeinsamer Kernel-Speicherhöchststand | 719.097.856 B | 715.456.512 B |
+| Vollständig geloggte temporäre Dateien / Byte | 97 / 427.227.382 B | 0 / 0 B |
+| Median der Schreibantworten | 237,214 ms | 196,650 ms |
+| Langsamste Schreibantwort | 331,653 ms | 244,151 ms |
+| Gesamte Kernel-CPU-Zeit | 27,269493 s | 23,395721 s |
+| CPU der Schreibphase einschließlich zusätzlichem Plan | 26,084216 s | 22,233997 s |
+| Node-Client maxRSS, separat | 192.966.656 B | 242.941.952 B |
+
+Die Peakdifferenz beträgt hier nur noch 3.641.344 Byte. Die früheren
+65.368.064 Byte sind folglich keine dauerhaft nachgewiesene Pauschalersparnis.
+Bei beiden Wegen steigen die gemeinsamen Peaks über alle vier Schreibblöcke;
+ein Plateau ist nicht belegt. In den zeitlich zugeordneten Kernelbeobachtungen
+wächst der Datei-/Cachezähler bei beiden Wegen weiter. Nach sauberem Shutdown
+sind jeweils 100.675.584 Byte WAL und rund 110,96 MB Datenbankdateien allokiert.
+Diese Dateigrößen sind keine Zerlegung des historischen Speicherpeaks. Der
+temporäre Materialisierungspfad ist beseitigt; die fortgesetzten vollständigen
+JSONB-Updates und deren Datenbank-/WAL-Dateien bleiben bestehen.
+
+Der frühere 916,790-ms-Ausreißer war der erste RPC-Schreibaufruf. Seine konkrete
+Ursache ist mangels damaliger Einzelphasenmessung offen; JIT oder Planung sind
+nicht nachgewiesen. Im 96er-Paar ist auch der erste RPC-Aufruf mit 244,151 ms
+der langsamste. Das ist eine einzelne zusätzliche Beobachtung, kein statistischer
+Nachweis einer Laufzeitobergrenze. Der frühere Mehrverbrauch der gesamten
+Kleintest-CPU belegt keine RPC-CPU-Regression; SQL-Zeit und CPU sind im neuen
+Vergleich geringer. Unit60-/Auth30-Reserve lässt sich daraus nicht ableiten.
+
+Die bestehende DeepSeek-Pro-High-Sicherheitsabnahme ist an unveränderte Quellbytes
+gebunden und bleibt gültig. Ein unabhängiger Sol-Prüfer hat die vorhandenen
+Sicherheitsbelege und die neuen Messungen getrennt lesend nachgerechnet; neue
+kostenpflichtige Modellaufrufe erfolgten nicht. Die ursprüngliche lokale Quelle
+besitzt den nicht aufschiebbaren Primärschlüssel `id`, wirksame RLS und die
+bestehenden Service-Rollenrechte. Ihr Auth-Originalhash ist unverändert. Rechte,
+Version und Schema-Cache eines noch nicht erzeugten Zielservers sind damit
+nicht vorweggenommen.
+
+Integrationsentscheidung: Kandidat und geprüfter Rückweg bleiben gezielt
+zuschaltbar; der bisherige Transport bleibt Standard. Keine neue Fallbindung,
+Aktivierung oder GO-Beanspruchung. Ein neuer vollständiger Ressourcenlauf wird
+noch nicht empfohlen: Der anhaltende gemeinsame Speicheranstieg ist nicht
+geschlossen, die neue ausführbare Runtime-/Codebindung und deren vollständige
+32-Punkte-Vorprüfung fehlen. Auch die vorhandene Plattenreserve reicht noch
+nicht für den unveränderten Startvertrag. Der nächste eng begrenzte Schritt ist,
+den verbleibenden Datei-/WAL-Cacheanstieg anhand der gesicherten Phasendaten
+zuzuordnen; keine weitere CPU-Optimierung und keine automatische Testwiederholung.
+Die vollständige Abnahme von Offline90, Unit60, Auth30, allen 500 Abschlüssen
+und gemeinsamem Gesamtspeicher bleibt offen. Der alte Auftrag ist tabu.
