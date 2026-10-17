@@ -48,6 +48,7 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
     if day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER' or day.get('day')!='2026-10-17':raise RuntimeError('accepted actual day17 binding missing')
     if day.get('adoptedRowsPin')!=day_rows_pin:raise RuntimeError('accepted exact current inputs required')
     owner=read_pin(owner_go_pin)
+    if owner.get('allowDispose') is not False:raise RuntimeError('explicit allowDispose=false required before staging')
     if owner.get('production') is not False or owner.get('syntheticProfiles')!=500 or owner.get('targetDatabase')!=target:
         raise RuntimeError('existing once GO exact new local binding required')
     templates=json.loads((BIN/'legacy-harness-pins.json').read_text())['files']

@@ -49,6 +49,7 @@ def witness(db):
 
 def owner(p):
     o=read(p)
+    if o.get('allowDispose') is not False:raise RuntimeError('explicit allowDispose=false required before input correction')
     if o.get('authorizationId')!=AUTHORIZATION or o.get('production')is not False or o.get('syntheticProfiles')!=500 or o.get('paidProviderCallsAllowed')is not False or o.get('exactlyOneResourceAttempt')is not True:raise RuntimeError('exact new user authorization required')
     suffix=o['targetDatabase'].removeprefix('helmut_resource_fixture_20261017_')
     if not re.fullmatch('[a-f0-9]{12}',suffix)or o.get('correctionDatabase')!='helmut_resource_input_20261017_'+suffix:raise RuntimeError('new local input/target binding invalid')

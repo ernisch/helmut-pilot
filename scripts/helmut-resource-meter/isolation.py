@@ -38,6 +38,12 @@ def pin_json(pin):
         raise RuntimeError('final meter acceptance/input drift')
     return json.loads(b)
 
+def verify_fixture_owner_policy(owner):
+    # Assembly already requires this exact value. Reject BEFORE setup/claim;
+    # never infer a missing safety declaration or repair a consumed GO.
+    if owner.get('allowDispose') is not False:
+        raise RuntimeError('owner GO requires explicit allowDispose=false before any setup or claim')
+
 def verify_full_authority(recipe):
     acceptance=pin_json(recipe['independentMeterAcceptance'])
     if acceptance.get('status')!='ROOT_ADOPTED_INDEPENDENT_COMPLETE_METER_ACCEPTANCE':
@@ -81,6 +87,7 @@ def verify_full_authority(recipe):
     if connection.get('schema')!='helmut-pinned-full500-connection/1' or connection.get('day')!='2026-10-17' or connection.get('production') is not False:
         raise RuntimeError('exact local current500 connection missing')
     owner=pin_json(recipe['freshOwnerGO'])
+    verify_fixture_owner_policy(owner)
     repair=pin_json(connection['sourceCapture'])
     if owner.get('authorizationId')!='USER_GO_20261017_EXACT_ONE_DAY16_CORRECTION_AND_RESOURCE_RUN_V1' or repair.get('freshOwnerGO')!=recipe['freshOwnerGO']:
         raise RuntimeError('new exact zero-day/resource authorization missing')

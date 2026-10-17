@@ -85,6 +85,7 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin):
             r=C.read_pin(p)
             if r.get('model')!='deepseek-v4-pro' or r.get('route',{}).get('effort')!='high' or r.get('payload',{}).get('summary',{}).get('status')!='ok':raise RuntimeError('full connection independent review missing')
     owner=C.read_pin(recipe['freshOwnerGO']);day=C.read_pin(recipe['dayBindingAcceptance'])
+    I.verify_fixture_owner_policy(owner)
     if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!='2026-10-17' or day.get('positiveOriginalLAtBothWindowEnds')!=500:raise RuntimeError('owner or day binding invalid')
     for p in connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']:
         if C.pin(p['path'])!=p:raise RuntimeError('fixture asset drift')
