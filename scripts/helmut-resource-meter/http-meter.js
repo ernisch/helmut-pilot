@@ -22,7 +22,7 @@ function install(directory) {
   const identity = process.pid + '_' + threadId;
   fs.writeFileSync(path.join(directory, 'HTTP_' + identity + '.STARTED.SAFE.json'),
     JSON.stringify({schema: 'helmut-local-http-meter-start/1', pid: process.pid, threadId}) + '\n', {flag: 'wx', mode: 0o600});
-  const stats = {schema: 'helmut-local-http-meter/1', pid: process.pid, threadId,
+  const stats = {schema: 'helmut-local-http-meter/2', pid: process.pid, threadId,
     requests: 0, finished: 0, aborted: 0, requestBodyBytes: 0, responseBodyBytes: 0,
     serverConnectionsOpened: 0, serverConnectionsClosed: 0,
     clientConnectionsOpened: 0, clientConnectionsClosed: 0,
@@ -31,6 +31,7 @@ function install(directory) {
     responseTCPDeliveredBytes: 0, responseHeaderBytes: 0, responseFramingBytes: 0,
     responseBodyReceivedBytes: 0, responses: 0, parseErrors: 0,
     unparsedResponseBytes: 0, incompleteResponses: 0, connectionResetErrors: 0,
+    idleConnectionResetErrors: 0, incompleteConnectionResetErrors: 0,
     routes: Object.create(null), noPayloadOrCredentialRetention: true};
   const servers = new Set(), clients = new Set();
   function observeSocket(socket, set, kind) {

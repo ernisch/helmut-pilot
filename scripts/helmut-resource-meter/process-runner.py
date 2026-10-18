@@ -18,7 +18,7 @@ import socket
 import importlib.util
 from pathlib import Path
 from network_meter import network,settled_network
-from http_receipts import validate as validate_http_receipts
+from http_receipts import HTTPReceiptValidationError,validate as validate_http_receipts
 
 REPO=Path('/workspace/helmut-cpu-epoch-20261015')
 NODE=Path('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node')
@@ -143,7 +143,12 @@ def run_workflow():
         if not ready.wait(timeout=15):
             stop.set();thread.join(timeout=20)
             meter_errors.append('BASELINE_NOT_READY_NO_STAGE_AUTHORIZED')
-    status=0;failure=None
+    status=0;failure=None;failures=[]
+    def record_failure(code):
+        nonlocal status,failure
+        status=1
+        if failure is None:failure=code
+        if code not in failures:failures.append(code)
     try:
         if meter_errors:raise RuntimeError('complete native database baseline missing; no stage launched')
         for stage in recipe['stages']:
@@ -162,15 +167,15 @@ def run_workflow():
                  'stdoutAndStderrBytes':(out/(name+'.PRIVATE.log')).stat().st_size}
             stages.append(row);save_new(out/(name+'.SAFE.json'),row)
             if child.returncode!=stage.get('expectedExitCode',0):
-                status=1;failure='STAGE_EXIT';break
-    except Exception as e:status=1;failure=type(e).__name__
+                record_failure('STAGE_EXIT');break
+    except Exception as e:record_failure(type(e).__name__)
     finally:
         stop.set()
         if thread:thread.join(timeout=20)
-        if thread and thread.is_alive():status=1;failure='METER_THREAD_NOT_EXITED'
+        if thread and thread.is_alive():record_failure('METER_THREAD_NOT_EXITED')
     try:cleanup=finish_children()
     except Exception:
-        status=1;failure='HELPER_SHUTDOWN_INCOMPLETE';cleanup={'graceful':False}
+        record_failure('HELPER_SHUTDOWN_INCOMPLETE');cleanup={'graceful':False}
     final_native=None
     if sql:
         try:
@@ -183,25 +188,33 @@ def run_workflow():
         until=time.monotonic()+45
         final=Path(recipe['databaseFinalFile'])
         while not final.exists() and time.monotonic()<until:time.sleep(.05)
-        if not final.exists():status=1;failure='DATABASE_LAST_EXIT_NOT_CONFIRMED'
+        if not final.exists():record_failure('DATABASE_LAST_EXIT_NOT_CONFIRMED')
     for pin in recipe.get('sourcePins',[]):pinned(pin)
     if recipe['scope']=='owner-approved-local500-resources':
         authority.verify_connection_files(authority.pin_json(recipe['fixtureConnectionPin']))
         assert_claim_identity(Path(sys.argv[1]).read_bytes(),recipe,json.loads(authority.ONCE.read_text()),socket.gethostname())
-    rows=[];start_count=0
+    rows=[];start_count=None;http_validation_passed=False;http_error=None
     needs_http=recipe['scope']=='owner-approved-local500-resources' or (bool(stages) and any(any(Path(a).name=='node' for a in s['argv']) for s in recipe['stages']))
-    try:rows,start_count=validate_http_receipts(out/'http',required=needs_http,strict=recipe['scope']=='owner-approved-local500-resources')
-    except Exception:status=1;failure='HTTP_RECEIPTS_INCOMPLETE_OR_INVALID'
+    try:
+        rows,start_count=validate_http_receipts(out/'http',required=needs_http,strict=recipe['scope']=='owner-approved-local500-resources')
+        http_validation_passed=True
+    except Exception as error:
+        if isinstance(error,HTTPReceiptValidationError):rows,start_count=error.rows,error.start_count
+        http_error=type(error).__name__
+        record_failure('HTTP_RECEIPTS_INCOMPLETE_OR_INVALID')
     network_tail=None
     try:network_tail=settled_network()
-    except Exception:status=1;failure='NETWORK_TAIL_INCOMPLETE'
-    if meter_errors:status=1;failure='DATABASE_SAMPLE_ERRORS'
+    except Exception:record_failure('NETWORK_TAIL_INCOMPLETE')
+    if meter_errors:record_failure('DATABASE_SAMPLE_ERRORS')
     result={'schema':'helmut-resource-process-runner/1','scope':recipe['scope'],'pass':status==0,
-            'failure':failure,'stages':stages,'wallMS':(time.monotonic()-start)*1000,
+            'failure':failure,'failures':failures,'stages':stages,'wallMS':(time.monotonic()-start)*1000,
             'networkBefore':net_before,'networkAfterAllOwnedClientsExited':network(),
             'networkTail':network_tail,'HTTPStartedReceiptCount':start_count,
             'networkMetricsArePerInterfaceDirectionsNotDoubleCountedTotals':True,
-            'httpProcessCounters':rows,'databaseSnapshotCount':samples['count'],
+            'httpProcessCounters':rows,'httpReceiptValidationPassed':http_validation_passed,
+            'httpReceiptValidationErrorType':http_error,
+            'httpReceiptCountersAvailable':start_count is not None,
+            'databaseSnapshotCount':samples['count'],
             'firstNativeDatabaseSnapshotBeforeAnyStage':first_native,
             'lastNativeDatabaseSnapshotAfterAllClientsExited':final_native,
             'databaseObserverErrors':meter_errors,'databaseObserverSQLBytes':samples['SQLBytes'],

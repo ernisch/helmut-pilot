@@ -251,8 +251,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 545087,
-      "sha256": "a06d7aa42e0a4395399d36fbdd42b3743501062154e2731e13c8cce9a3764e7d"
+      "bytes": 545253,
+      "sha256": "f413d1f608749bbbf9eba7e6ab512cf66b6cfa0bb15dd6195e349b4a29c81ad3"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -445,11 +445,11 @@
       "sha256": "0d4f52725c0273420c10ff3506f6135bb2232a47992ef10c7811962780b9ef41"
     }
   ],
-  "sourceMappingSHA256": "2e030880e67f59aafdcdace04bd2103888ad814fac70a9d081a1066eefb8626b",
+  "sourceMappingSHA256": "9be175599f653729a835debab376b9f6ca4f7d102a7ebb8e91ec59ff62d336cf",
   "currentCandidateFull500Qualification": false,
-  "candidateQualificationScope": "LOCAL_CALENDAR_BOUNDARY_AND_SOURCE_ONLY; FULL500_TIMING_MEMORY_PRODUCTION_NOT_QUALIFIED",
-  "priorManifestCommit": "d3c180e6363daa9a46570ce4a33d0f3aa3f2213f",
-  "priorManifestSHA256": "e4e32fbe5511e630e504f7fecc4cbdcfd56f8ddb4982b6776e981dda9a0dfe73",
-  "priorSourceMappingSHA256": "d1e444b779a9178f44f6606bac35b73688f1a14e66591b9c8368e15796a27320",
+  "candidateQualificationScope": "LOCAL_MOCK_CALENDAR_WRITER_AND_TARGETED_REJECTION_CASES_ONLY; FULL500_TIMING_MEMORY_PRODUCTION_NOT_QUALIFIED",
+  "priorManifestCommit": "9dba68cacb51d664a01a84d86a8548852d70d867",
+  "priorManifestSHA256": "d4ea8cca3deb09c945c6c697b070295bf24d719b82d00dc5ff7e5114d92a1583",
+  "priorSourceMappingSHA256": "2e030880e67f59aafdcdace04bd2103888ad814fac70a9d081a1066eefb8626b",
   "contentQualificationEvidenceIsHistoricalOnly": true
 }

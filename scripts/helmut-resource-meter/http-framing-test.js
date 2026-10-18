@@ -47,4 +47,35 @@ const validExtension=measure('HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\
 assert.equal(validExtension.parseErrors,0);assert.equal(validExtension.responseBodyReceivedBytes,1);cases++;
 const reset = measure('HTTP/1.0 200 OK\r\n\r\npartial', ['GET'], 2, true);
 assert.equal(reset.connectionResetErrors, 1); assert.equal(reset.incompleteResponses, 1); cases++;
+assert.equal(reset.idleConnectionResetErrors,0);assert.equal(reset.incompleteConnectionResetErrors,1);
+for(const [text,methods] of [
+  ['HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nabc',['GET']],
+  ['HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n',['GET']],
+  ['HTTP/1.1 200 OK\r\nContent-Length: 77\r\n\r\n',['HEAD']],
+  ['HTTP/1.1 204 No Content\r\n\r\n',['GET']],
+  ['HTTP/1.1 304 Not Modified\r\n\r\n',['GET']],
+]) {
+  const r=measure(text,methods,1,true);
+  assert.equal(r.connectionResetErrors,1);assert.equal(r.idleConnectionResetErrors,1);
+  assert.equal(r.incompleteConnectionResetErrors,0);assert.equal(r.incompleteResponses,0);cases++;
+}
+for(const [text,methods] of [
+  ['HTTP/1.1 200',['GET']],
+  ['HTTP/1.1 100 Continue\r\n\r\n',['POST']],
+  ['HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nabc',['GET']],
+  ['HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n0\r\nx: y\r\n',['GET']],
+  ['HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n',['GET','GET']],
+]) {
+  const r=measure(text,methods,2,true);
+  assert.equal(r.connectionResetErrors,1);assert.equal(r.idleConnectionResetErrors,0);
+  assert.equal(r.incompleteConnectionResetErrors,1);assert.equal(r.incompleteResponses,1);cases++;
+}
+const malformedReset=measure('INVALID\r\n\r\n',['GET'],1,true);
+assert.equal(malformedReset.parseErrors,1);assert.equal(malformedReset.incompleteConnectionResetErrors,1);
+assert.equal(malformedReset.idleConnectionResetErrors,0);cases++;
+const pendingAtEOF=measure('HTTP/1.0 200 OK\r\n\r\nbody',['GET','GET'],1);
+assert.equal(pendingAtEOF.incompleteResponses,1);cases++;
+const onceTotals={parseErrors:0,incompleteResponses:0,responseTCPDeliveredBytes:0,unparsedResponseBytes:0};
+const onceCounter=new ResponseCounter([],onceTotals);onceCounter.close(true);onceCounter.close(true);
+assert.equal(onceTotals.connectionResetErrors,1);assert.equal(onceTotals.idleConnectionResetErrors,1);cases++;
 console.log(JSON.stringify({pass: true, smallLocalFramingCases: cases, full500Runs: 0}));

@@ -13,9 +13,9 @@ const server = http.createServer((req,res) => {
     res.statusCode=404;res.end('{}');
   });
 });
-function request(port,method,path,body) {
+function request(port,method,path,body,agent=false) {
   return new Promise((resolve,reject)=>{
-    const req=http.request({hostname:'127.0.0.1',port,method,path,agent:false},res=>{
+    const req=http.request({hostname:'127.0.0.1',port,method,path,agent},res=>{
       const chunks=[];res.on('data',x=>chunks.push(x));
       res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(chunks).toString()}));
       res.on('aborted',()=>resolve({aborted:true,body:Buffer.concat(chunks).toString()}));
@@ -44,14 +44,29 @@ function request(port,method,path,body) {
     const rst=await request(raw.address().port,'GET','/reset');assert.equal(rst.body,'cut');
   } catch(error) {assert.equal(error.code,'ECONNRESET');}
   finally {await new Promise(r=>raw.close(r));}
+  // A separately framed complete body remains complete when its now-idle
+  // keep-alive connection is subsequently reset. The raw reset still counts.
+  const idleRaw=net.createServer(socket=>socket.once('data',()=>{
+    socket.write('HTTP/1.1 200 OK\r\nContent-Length: 3\r\nConnection: keep-alive\r\n\r\nend',
+      ()=>setTimeout(()=>{if(!socket.destroyed)socket.resetAndDestroy();},10));
+  }));
+  const agent=new http.Agent({keepAlive:true});
+  await new Promise(r=>idleRaw.listen(0,'127.0.0.1',r));
+  assert.deepEqual(await request(idleRaw.address().port,'GET','/idle-reset',undefined,agent),{status:200,body:'end'});
+  await new Promise(r=>idleRaw.close(r));agent.destroy();
   await new Promise(r=>server.close(r));
   await new Promise(r=>setTimeout(r,30));const s=meter.snapshot();
   assert.equal(s.requests,6);assert.equal(s.finished,5);assert.equal(s.aborted,1);
-  assert.equal(s.requestBodyBytes,4);assert.equal(s.responseBodyReceivedBytes,17);
+  assert.equal(s.requestBodyBytes,4);assert.equal(s.responseBodyReceivedBytes,20);
   assert.equal(s.parseErrors,0);assert.equal(s.incompleteResponses,2);assert(s.connectionResetErrors>=1);
+  assert(s.idleConnectionResetErrors>=1);assert(s.incompleteConnectionResetErrors>=1);
+  assert.equal(s.connectionResetErrors,s.idleConnectionResetErrors+s.incompleteConnectionResetErrors);
+  assert.equal(s.schema,'helmut-local-http-meter/2');
   assert(s.protocolErrors>=1);assert(s.clientTCPBytesRead>s.responseBodyReceivedBytes);
   assert.equal(s.openServerSockets,0);
-  console.log(JSON.stringify({pass:true,smallLiveHTTPCases:8,full500Runs:0,
+  console.log(JSON.stringify({pass:true,smallLiveHTTPCases:9,full500Runs:0,
     requestBodyBytes:s.requestBodyBytes,receivedResponseBodyBytes:s.responseBodyReceivedBytes,
-    clientTransportBytes:s.clientTCPBytesRead+s.clientTCPBytesWritten,protocolErrors:s.protocolErrors}));
+    clientTransportBytes:s.clientTCPBytesRead+s.clientTCPBytesWritten,protocolErrors:s.protocolErrors,
+    connectionResetErrors:s.connectionResetErrors,idleConnectionResetErrors:s.idleConnectionResetErrors,
+    incompleteConnectionResetErrors:s.incompleteConnectionResetErrors}));
 })().catch(error=>{console.error(error.code||error.name);process.exitCode=1;server.closeAllConnections();server.close();});

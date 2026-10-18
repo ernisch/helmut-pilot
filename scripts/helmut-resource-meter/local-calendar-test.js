@@ -32,12 +32,65 @@ function check(name, work) { work(); cases++; }
 function reject(name, change) {
   check(name, () => { configure(); const c = command(); change(c); assert.throws(() => Cal.withCommand(c, () => true)); });
 }
+function morning(day, at = "2026-10-18T22:30:00.000Z") {
+  const L = require("../../lib/helmut/briefing-lauf"), owner = "synthetic-calendar-owner";
+  const payload = L.quittung({ tenantId: owner, berlinTag: day, status: L.STATUS_ERFOLG,
+    ausloeser: L.AUSLOESER_NACHLAUF, erzeugtAm: at, fensterStart: "2026-10-18T21:00:00.000Z",
+    signatur: "a".repeat(32), ausgabeBeleg: { version: 1, mandat: owner, tag: day,
+      paketId: `bf-${owner}-mandatsbriefing-${day}`, profilHash: "b".repeat(64), briefingHash: "c".repeat(64) } });
+  return { id: L.laufId(owner, day), user_id: owner, slot: L.SLOT_ERFOLG, generated_at: at, payload };
+}
+async function morningWrite(entry, { rejects = false, corruptReadback = false } = {}) {
+  let calls = 0, row = null;
+  const work = () => require("../../lib/helmut/storage").insertSynthetik500MorningReceipt(entry,
+    { bereit: true, request: async (url, options) => {
+      calls++;
+      if (options) {
+        assert.equal(url, "/rest/v1/briefings?select=*");
+        assert.equal(options.method, "POST");
+        assert.equal(options.headers.Prefer, "return=representation");
+        row = JSON.parse(options.body);
+      } else {
+        assert(url.includes("user_id=eq." + entry.user_id));
+        assert(url.includes("id=eq." + encodeURIComponent(entry.id)));
+      }
+      return [{ ...structuredClone(row), ...(corruptReadback && !options ? { user_id: "foreign" } : {}) }];
+    } });
+  if (rejects) { await assert.rejects(work); assert.equal(calls, 0); }
+  else if (corruptReadback) { await assert.rejects(work, /morning-readback/); assert.equal(calls, 2); }
+  else { assert.deepEqual(await work(), { saved: true, id: entry.id }); assert.equal(calls, 2); assert.deepEqual(row, entry); }
+  cases++;
+}
 (async () => {
  try {
   delete process.env[Cal.ENV];
   check("default remains real Berlin", () => {
     assert.equal(Cal.outputDay(new Date("2026-10-18T22:30:00.000Z")), "2026-10-19");
     assert.equal(Cal.withCommand({}, () => 7), 7);
+  });
+  // Invoke the ACTUAL dedicated INSERT/readback writer, whose Berlin predicate
+  // caused the real terminal failure. No database or runtime is activated.
+  await morningWrite(morning("2026-10-19"));
+  await morningWrite(morning("2026-10-18"), { rejects: true });
+  configure();
+  await morningWrite(morning("2026-10-18"), { rejects: true }); // Bare env is no scoped authority.
+  await Cal.withCommand(command(), async () => {
+    await morningWrite(morning("2026-10-18"));
+    await morningWrite(morning("2026-10-19"), { rejects: true });
+    await morningWrite(morning("2026-10-18"), { corruptReadback: true });
+    const future = morning("2026-10-18", "2026-10-19T00:01:00.000Z");
+    await morningWrite(future, { rejects: true });
+  });
+  await morningWrite(morning("2026-10-18"), { rejects: true }); // No authority leaks after await.
+  configure();
+  await Cal.withCommand(command(), async () => {
+    Date.now = () => Date.parse("2026-10-19T00:00:00.000Z");
+    await morningWrite(morning("2026-10-18"), { rejects: true });
+  });
+  configure();
+  await Cal.withCommand(command(), async () => {
+    process.env[Cal.ENV] += " ";
+    await morningWrite(morning("2026-10-18"), { rejects: true });
   });
   check("cross Berlin midnight with real generation timestamp", () => {
     configure(); const c = command();

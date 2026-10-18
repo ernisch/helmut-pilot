@@ -8,6 +8,8 @@ class ResponseCounter {
     this.remaining = 0; this.failed = false;
     this.closed = false;
     this.totals.connectionResetErrors ??= 0;
+    this.totals.idleConnectionResetErrors ??= 0;
+    this.totals.incompleteConnectionResetErrors ??= 0;
   }
   fail() { this.failed = true; this.totals.parseErrors++; }
   line(buffer, offset, delimiter, limit) {
@@ -110,9 +112,16 @@ class ResponseCounter {
   close(hadError = false) {
     if (this.closed) return;
     this.closed = true;
-    if (hadError) this.totals.connectionResetErrors++;
+    if (hadError) {
+      this.totals.connectionResetErrors++;
+      // A reset cannot truncate an already completely framed response with no
+      // queued request. Keep the transport error, and classify at this exact
+      // close event; aggregate end-of-process totals cannot prove this later.
+      if (this.idle()) this.totals.idleConnectionResetErrors++;
+      else this.totals.incompleteConnectionResetErrors++;
+    }
     if (!this.failed && ((this.state === 'until-close' && hadError) ||
-        (this.state !== 'until-close' && (this.state !== 'header' || this.lineLength || this.methods.length)))) this.totals.incompleteResponses++;
+        this.methods.length || (this.state !== 'until-close' && (this.state !== 'header' || this.lineLength)))) this.totals.incompleteResponses++;
   }
   idle() { return !this.failed && this.state === 'header' && this.lineLength === 0 && this.methods.length === 0; }
 }
