@@ -56,6 +56,12 @@ Entfernen ausschließlich der vorgesehenen Änderung. Vor Anwendung braucht es
 eine neue konkrete lokale Korrekturfreigabe, frische Zustands-/Originalprüfungen
 und die unabhängige Abnahme der tatsächlichen Transaktion.
 
+Auch der konkrete Transaktionsvorschlag ist anschließend durch DeepSeek Pro High
+angenommen worden. Ein bedingter Reviewhinweis zu JSON-Zahl/String wurde durch
+eine native reine Leseabfrage geklärt: `'38'::jsonb` und `'39'::jsonb` sind Zahlen,
+ebenso die tatsächliche bisherige Buchkapazität. Die Vorlage bleibt unangewendet;
+ein einmaliger Aufrufer samt frischer Freigabebindung ist noch nicht ausgeführt.
+
 Weiter fehlen rund 7,3 GB der vorgeschriebenen freien Plattenreserve. Die
 vorhandenen stillgelegten kleinen PGDATA-Kopien belegen zusammen nur
 2.287.984.640 B; ihre Archivierung allein würde die Lücke nicht schließen.
