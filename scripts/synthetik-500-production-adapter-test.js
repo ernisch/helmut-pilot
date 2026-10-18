@@ -71,7 +71,7 @@ function setup() {
 async function main() {
   await test("20USD order installs an inert U-prestage with real financial validation; invalid pairing consumes nothing", async () => {
     const storagePath = require.resolve("../lib/helmut/storage"), oldCache = require.cache[storagePath];
-    const oldLoad = C.loadPacket, oldActive = K.aktiv, oldCommit = process.env.HELMUT_PRODUCTION_COMMIT, oldDate = global.Date;
+    const oldLoad = C.loadPacket, oldReadPin = C.readPin, oldActive = K.aktiv, oldCommit = process.env.HELMUT_PRODUCTION_COMMIT, oldDate = global.Date;
     try {
       // This fictional install uses the real same-UTC-day admission validator.
       // A fixed noon clock avoids wall-clock midnight and expiry races after awaits.
@@ -95,6 +95,7 @@ async function main() {
           admittedAtUTC: start, expiresAtUTC: end, controlHash: C.controlHash(f.auth), booksHash: C.booksHash(f.auth) });
         let auth = clone(f.auth), staged = 0;
         C.loadPacket = () => ({ command: f.command, admission: f.record });
+        C.readPin = () => Buffer.from(JSON.stringify(f.record)); // Same explicit fictional FS boundary.
         require.cache[storagePath] = { id: storagePath, filename: storagePath, loaded: true, exports: {
           synthetik500ProductionBackend() {}, leseLlmTageszaehler: async () => ({ ok: true, used: 0 }),
           stageSynthetik500ProductionCommand: async () => { staged++; },
@@ -115,7 +116,7 @@ async function main() {
     } finally {
       if (oldCache) require.cache[storagePath] = oldCache; else delete require.cache[storagePath];
       global.Date = oldDate;
-      C.loadPacket = oldLoad; K.aktiv = oldActive;
+      C.loadPacket = oldLoad; C.readPin = oldReadPin; K.aktiv = oldActive;
       if (oldCommit === undefined) delete process.env.HELMUT_PRODUCTION_COMMIT; else process.env.HELMUT_PRODUCTION_COMMIT = oldCommit;
     }
   });
