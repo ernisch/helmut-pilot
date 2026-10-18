@@ -15,6 +15,11 @@
       "sha256": "1c043c6d677281adea70dc59c04260e5268944cd2db47a0c8d4b56b719d0e9e7"
     },
     {
+      "path": "lib/helmut/auth-state-parts.js",
+      "bytes": 19497,
+      "sha256": "b0a2729a52b1ca0a543b642f458abc3425818e107653b0c88602978d515f7f26"
+    },
+    {
       "path": "lib/helmut/auth-store-cas.js",
       "bytes": 3617,
       "sha256": "92cba40816bb8cf8919db846d31b736a77b28e3e8d6d24712646bd0509755dd4"
@@ -161,8 +166,8 @@
     },
     {
       "path": "lib/helmut/llm-usage-atomic.js",
-      "bytes": 5766,
-      "sha256": "e7b5b2b93536990f95be4065be78b5347f5c8d9549a4f86d504a17f69fd59888"
+      "bytes": 9299,
+      "sha256": "1819cca84fb7ba83db90a3ab94904348eef9dd0181839a31c9d8cd79775351cd"
     },
     {
       "path": "lib/helmut/matching-begruendung.js",
@@ -246,8 +251,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 544988,
-      "sha256": "2fc6f3da1d9bc68db95a1f36dba054c6fe9cae2919ac4a19aa8ef34c3d8c96da"
+      "bytes": 545087,
+      "sha256": "a06d7aa42e0a4395399d36fbdd42b3743501062154e2731e13c8cce9a3764e7d"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -256,8 +261,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-content-runner.js",
-      "bytes": 4171,
-      "sha256": "12cc505b8382f2b1ddf52b065cf8ab5b03179b3b567c9fcc8001be12226adbe7"
+      "bytes": 4241,
+      "sha256": "123ee12f6b10efe42edb8971d2aeddc8f898bcd11cfb97ce28399ccf5cd6a452"
     },
     {
       "path": "lib/helmut/synthetik-500-content-worker.js",
@@ -431,13 +436,13 @@
     },
     {
       "path": "vercel.json",
-      "bytes": 8101,
-      "sha256": "97b974c37064bce0bff57337c9b9d646c86c086b5e9ba326f8983b0145a34f48"
+      "bytes": 8149,
+      "sha256": "0d4f52725c0273420c10ff3506f6135bb2232a47992ef10c7811962780b9ef41"
     }
   ],
-  "sourceMappingSHA256": "2ab4d931a3e2a36049084abff2d55195ca5ec03716ba87988c42d4bb9f750192",
+  "sourceMappingSHA256": "38e93e2aa1074f0e09d5eaaeda9ae220be1e8a16c69eedc48cd6ca09ccf73818",
   "currentCandidateFull500Qualification": false,
-  "candidateQualificationScope": "LOCAL_RELATIONAL_ATOMIC_USAGE_CANDIDATE_SOURCE_EXPECTATIONS_ONLY_NO_FULL500_REQUALIFICATION",
+  "candidateQualificationScope": "LOCAL_RELATIONAL_ATOMIC_USAGE_AND_IMMUTABLE_AUTH_PARTS_SOURCE_EXPECTATIONS_ONLY_NO_FULL500_REQUALIFICATION",
   "priorManifestCommit": "5cf3745b71c1aef64d78ba1eeb41618c84520ac6",
   "priorManifestSHA256": "79893268219aaf6b9b2567920d583f38c19da50a486fdc9d36011b8eb8489608",
   "priorSourceMappingSHA256": "8de4f5d3b521528cc5079eaca659864cf460c480ff709872b4d81c95826c271d",

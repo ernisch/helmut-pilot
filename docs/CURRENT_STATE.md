@@ -1,14 +1,24 @@
 # CURRENT STATE — Helmut
 
-**Lokale Fortschreibung: 18.10.2026 UTC / Europe/Istanbul; Production-Befund zuletzt 16.10.; historische Basis 13.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
+**Lokal18.10.2026 UTC/Istanbul; letzter Production-Befund16.10., historische Basis13.10.** Production gilt nur zum Prüfzeitpunkt. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`; weitere Historie und Belege folgen unten.
 
-## Lokal18.10.: Umgebung wieder erreichbar; heutige Eingaben angenommen, Ressourcenstart gesperrt
+## Lokal18.10.: Speicherkandidat qualifiziert, vollständiger Ressourcenlauf offen
 
-Bestehenden lokalen PostgreSQL-Container nach Workspace-Ausfall wieder aufgenommen; originale und korrigierte Finanzzeugen sowie17geschützte Dateibindungen unverändert. Der [atomare lokale Speicherkandidat](betrieb/llm-usage-atomic-local-20261017.md) ist [an den bestehenden Messablauf angebunden](betrieb/atomic-resource-integration-20261017.md); kein neuer vollständiger Lauf.120gezielte Prüfungen aus der vorherigen Welle übernommen.
+Der verbrauchte Lauf `5d168e3561a5` stoppte bei2.054.877.184 B mit26 Abschlüssen. Originale, alte Aufträge und Freigaben bleiben erhalten.
 
-**Alle500 Eingaben für den18.10. mit23.008 sichtbaren Positionen angenommen.**380relative Datumsanzeigen korrekt aus bestehenden Zeitstempeln berechnet; übrige Inhalte/Profile/Quellen unverändert, bestehende Veröffentlichungssperre erhalten. Unabhängiger DeepSeek-Pro-High-Review angenommen; danach exakter Neuaufbau und originale A/F/L-Prüfungen vollständig bestanden, L an beiden Fensterenden. Lokales Eingabefenster11:00–19:59:59,999Istanbul; rechnerischer letzter Start17:35:10,455912 unter unverändertem Gesamtzeitbedarf, keine Startzusage. [Belege, Grenzen und nächster Schritt](betrieb/local-resource-readiness-20261018.md).
+Der standardmäßig ausgeschaltete [lokale Speicherkandidat](betrieb/local-auth-state-parts-20261018.md) schreibt SHA256-gebundene unveränderliche Teile und einen atomaren kleinen Wurzelzustand. Kostenhistorie, Versionsvergleich, frische Sicherheitskontrollen und geprüfter nativer Rückweg bleiben erhalten.
 
-Offen: rund7,3GBfreie Plattenreserve; neue konkrete Freigabe für ausschließlich das belegte historische Nullbuch17.10. in einer neuen isolierten Eingangskopie; neue Fall-/Autoritätsbindung und unabhängige32Startprüfungen. Reiner Korrekturvorschlag unabhängig angenommen, nicht angewendet. VerbrauchterV4-Slot bleibt gesperrt. Gesamtspeicher/Unit60/Auth30/Offline90 und vollständige500Abschlüsse mit diesem Kandidaten bleiben offen; kein neues Ressourcen-GO, keine Aktivierung, kein Merge/Deployment oder Productioneingriff.
+Kleiner Referenzvergleich:96 logische Änderungen/120CAS/32Retentionsaufrufe/24Nullkostenbuchungen. Gemeinsamer Peak975.331.328→850.702.336 B; WAL-LSN114.742.888→6.091.128 B; langsamste Operation861,359→724,807 ms. Schreibfenster37,427360→39,377216 s, CPU43,383262→48,445973 s: Zeitrisiko bleibt. Keine500er Hochrechnung. Daten-/Historygleichheit,17/17 native Sicherheitsgruppen, Katalog aller14 Funktionen und getrennte Quellen-/Codec-Negativfälle bestanden.
+
+Nullbuch17.10. ausschließlich in Eingangskopie `helmut_resource_input_20261018_ab76c911dac8` korrigiert; Originale/Geldgrenzen unverändert. Nur eigene gestoppte Containerhüllen bereinigt, Datenbanken/Volumes/Belege erhalten. Frei17.191.202.816 B gegenüber Startboden16.589.934.592 B; vor Start frisch prüfen.
+
+Kandidat `4598bdb31782`:32/32 technische Vorbedingungen unabhängig bestätigt, ausdrücklich `MISSING_NEW_OPERATOR_GO`, keine Aktivierung/GO-Beanspruchung. CI-Korrekturen und sichere Übernahme der echten neuen GO-Bindung abschließen. Erst nach separatem kandidatgebundenem lokalem GO: vollständige500 Abschlüsse, Offline90, Unit60, Auth30 und gemeinsamer Speicher≤2.048.000.000 B. Kein neuer Gesamtlauf oder Production-Eingriff.
+
+## Lokale Eingaben18.10. und Zeitfenster
+
+Originale/korrigierte Finanzzeugen und17 geschützte Dateibindungen nach Workspace-Wiederaufnahme unverändert.120 gezielte Prüfungen der Vorwelle übernommen; V4/V5 verbraucht und gesperrt. [Atomarer Vorgänger](betrieb/llm-usage-atomic-local-20261017.md), [Messanbindung](betrieb/atomic-resource-integration-20261017.md).
+
+Alle500 Eingaben/23.008 sichtbare Positionen angenommen;380 relative Datumsanzeigen aus vorhandenen Zeitstempeln korrigiert. Übrige Inhalte/Profile/Quellen und Veröffentlichungssperre unverändert. Unabhängiger Pro-High-Review, exakter Neuaufbau und originale A/F/L-Prüfung einschließlich beider Fensterenden bestanden. Fenster11:00–19:59:59,999 Istanbul; rechnerisch letzter Start17:35:10,455912, keine Startzusage. [Tagesbelege](betrieb/local-resource-readiness-20261018.md). Fachabnahme nicht wiederholen; technische Bindungen, Freigabe und ausreichendes Restfenster bleiben erforderlich.
 
 ## Aktuell16.10.:500 lokal abgeschlossen; Productionpaket vorbereitet, Starttore offen
 

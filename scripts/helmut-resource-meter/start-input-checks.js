@@ -122,6 +122,28 @@ function servicesInputs(plan) {
   assert(!fs.existsSync(path.join(plan.workflowDirectory,'runtime-candidates/generated-services')));
   return {exactServiceInputs:true,newServicesStillRequired:true,servicesStarted:false};
 }
+function actualSourceBinding(plan) {
+  // The CLI has a deliberately empty runtime environment. Bind the mode that
+  // the exact pinned descriptor installs, as the actual assembly does. This
+  // synchronous source-only call cannot activate a storage reader or writer.
+  const keys = ['HELMUT_LLM_USAGE_STORAGE', 'HELMUT_AUTH_STATE_STORAGE'];
+  const before = keys.map(k => process.env[k]);
+  try {
+    if (plan.atomicUsageInput) {
+      const env = require('./atomic-usage-integration').environment({}, plan.atomicUsageInput);
+      for (const k of keys) {
+        if (env[k] === undefined) delete process.env[k];
+        else process.env[k] = env[k];
+      }
+    }
+    return require(ROOT+'/lib/helmut/synthetik-500-content-runner').sourceBinding();
+  } finally {
+    keys.forEach((k, i) => {
+      if (before[i] === undefined) delete process.env[k];
+      else process.env[k] = before[i];
+    });
+  }
+}
 function profileInputs(plan) {
   const request = json(plan.runtimeRequest), approval = json(request.inputAcceptance);
   const day = json(plan.dayBindingAcceptance), rows = json(approval.currentPolicyInput);
@@ -165,7 +187,7 @@ function profileInputs(plan) {
   assert.equal(day.allPositionsReviewed, true); assert.equal(day.currentTemporalJudgmentAccepted, true);
   assert.equal(day.rootAdoptsExactIndependentScope, true);
   // Invoke the real sourceBinding implementation, not a supplied hash claim.
-  const sourceBinding = require(ROOT+'/lib/helmut/synthetik-500-content-runner').sourceBinding();
+  const sourceBinding = actualSourceBinding(plan);
   assert(/^[a-f0-9:]+$/.test(sourceBinding));
   return { pinnedProfiles:500, exactOwnerSet:true, nativeKOs:6, nativeDocuments:native.documents.length,
     priorDayAcceptanceReused:true, actualCodeSourceBindingSHA256:sha(sourceBinding), newCommandValidated:false };
@@ -248,7 +270,7 @@ function staticInterfaces(plan) {
     originalUBytes:53018, directPurposes:supported.length, newRuntimeReceiptInvented:false};
 }
 function initialSourceBinding(plan) {
-  const actual=require(ROOT+'/lib/helmut/synthetik-500-content-runner').sourceBinding();
+  const actual=actualSourceBinding(plan);
   assert(/^[a-f0-9]{64}$/.test(plan.expectedInitialSourceBindingSHA256||''),'Independently pinned initial source identity missing');
   assert.equal(sha(actual),plan.expectedInitialSourceBindingSHA256);
   return {matchesIndependentlyPinnedInitialSourceIdentity:true,
@@ -283,5 +305,5 @@ if (require.main === module) {
   const plan = JSON.parse(fs.readFileSync(0,'utf8'));
   process.stdout.write(JSON.stringify(assess(plan))+'\n');
 }
-module.exports = { pinned, json, ownerPolicy, ownerIntentPolicy, ownerInputs, preparationInputs, materialsInputs, profileInputs,
+module.exports = { pinned, json, ownerPolicy, ownerIntentPolicy, ownerInputs, preparationInputs, materialsInputs, actualSourceBinding, profileInputs,
   providerInputs,staticInterfaces,initialSourceBinding,assess,installReadOnlyGuards };

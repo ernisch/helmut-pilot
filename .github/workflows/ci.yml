@@ -125,6 +125,10 @@ jobs:
             test ! -e "$runtime_helper"
             sudo install -D -m 0644 scripts/helmut-resource-meter/next-resource-authority.py "$runtime_helper"
             cmp scripts/helmut-resource-meter/next-resource-authority.py "$runtime_helper"
+            runtime_slot="${runtime_helper%/*}/local-resource-authority-slot.json"
+            test ! -e "$runtime_slot"
+            sudo install -D -m 0644 scripts/helmut-resource-meter/local-resource-authority-slot.json "$runtime_slot"
+            cmp scripts/helmut-resource-meter/local-resource-authority-slot.json "$runtime_slot"
           fi
           # Der echte Lauf bleibt an seinen freigegebenen /workspace-Pfad gebunden.
           # Nur die synthetischen CI-Mocks laden ihre Module aus dem Checkout.
@@ -139,8 +143,20 @@ jobs:
           raise SystemExit(not result.wasSuccessful())
           PY
           python scripts/helmut-resource-meter/next-resource-authority-test.py
+          node scripts/helmut-resource-meter/preparation-bindings-test.js
           python scripts/helmut-resource-meter/runtime-read-contract-test.py
           node --test scripts/helmut-resource-meter/start-input-checks-test.js
+      - name: Lokale Buchungsbestätigung (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
+          node scripts/auth-state-parts-codec-test.js
+          node scripts/auth-state-parts-graph-test.js
+          node scripts/auth-state-parts-write-reuse-test.js
+          for mode in usage parts; do
+            for ack_case in appended-old-head unchanged-new-head appended-new-head unchanged-old-head; do
+              node scripts/auth-state-parts-ack-case.js --local-mock-only --mode "$mode" --case "$ack_case"
+            done
+          done
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
         if: steps.plan.outputs.database == 'true'
         # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang
