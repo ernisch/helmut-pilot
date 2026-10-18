@@ -127,7 +127,7 @@ def template_replay(connection):
     require(staged['executionOwnerGOPath']==owner['finalOwnerGOPath'],'actual future owner path differs from intent/GO')
     rendered=connector.render_templates(connection['caseDirectory'],target=connection['targetDatabase'],
         container=connection['containerName'],operation=connection['operationId'],
-        day_rows_pin=staged['dayRows'],owner_go_pin={'path':staged['executionOwnerGOPath']})
+        day_rows_pin=staged['dayRows'],owner_go_pin={'path':staged['executionOwnerGOPath']},atomic_usage_pin=staged.get('atomicUsageInput'))
     expected_render={r['original']['path']:r for r in rendered}
     for delta in staged['templateDeltas']:
         p=delta['original'];expected={k:original[p['path']][k] for k in ['path','bytes','sha256']}
@@ -148,6 +148,8 @@ def template_replay(connection):
 def all_file_pins(acceptance,connection):
     request=read(connection['runtimeRequest'])
     pins=acceptance['sourcePins']+connection['immutableWorkflowPins']+connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']+request['sourcePins']
+    if 'atomicUsageInput' in connection:
+        candidate=read(connection['atomicUsageInput']);pins+=[connection['atomicUsageInput']]+candidate['sourcePins']
     checked={};bad=[]
     for p in pins:
         key=(p['path'],p['bytes'],p['sha256'])
@@ -161,24 +163,29 @@ def financial_data(C,connection):
     # Diagnose data separately from authority; old bad/consumed GO remains
     # BLOCKED. This branch cannot change, approve, capture, dump or repair input.
     template_replay(connection)
-    capture=read(connection['sourceCapture'])
-    actual_original=C.Z.witness(C.S.SOURCE)
-    original=private_pin(capture['originalFinancialWitnessPin'])
-    require(all(actual_original[k]==original[k] for k in actual_original),'original native finance drift')
-    actual=C.Z.witness(capture['capturedFromNewLocalInputDatabase'])
-    require(actual==private_pin(capture['correctedFinancialWitnessPin']),'corrected native finance drift')
-    C.Z.validate_change(original,actual)
-    for key in ['sourceDump','localRolesSQL','postgrestBinary']:require(pin(capture[key]['path'])==capture[key],'frozen fixture asset drift')
+    actual=C.I.A.verify_preexisting_capture(connection['sourceCapture'])
     stage=str(Path(connection['workflowDirectory'])/'prepare-current-local-runtime.js')
     pins=[p for p in connection['immutableWorkflowPins']if p['path']==stage]
     require(len(pins)==1,'exact original financial implementation required')
     snapshot={'auth':json.loads(actual['nativeAuthText']),'nativeAuthText':actual['nativeAuthText'],
         'authSHA':actual['nativeAuthSHA'],'counter':0,'counterReadOK':True}
-    # validate_change requires the ENTIRE actual native counter table ==[].
+    # The shared two-correction verifier requires the ENTIRE native table ==[].
     result=subprocess.run([str(C.I.K.NODE_ROOT/'bin/node'),str(BIN/'local-financial-preflight.js'),json.dumps(pins[0]),connection['day']],
         input=json.dumps(snapshot),capture_output=True,text=True,timeout=30)
     safe=json.loads(result.stdout)
     require(result.returncode==0 and safe.get('pass')is True,'actual original financial projection failed')
+    if 'atomicUsageInput' in connection:
+        # Read the actual still-frozen corrected INPUT catalog before any GO,
+        # setup or schema write. The same predicate is repeated on the target.
+        helper=str(BIN/'atomic-usage-integration.js')
+        query=subprocess.check_output([str(C.I.K.NODE_ROOT/'bin/node'),'-e',
+            "process.stdout.write(require(process.argv[1]).sourceReadySQL())",helper],text=True,env={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'},timeout=20)
+        native=C.I.A.query_input(query)
+        check=subprocess.run([str(C.I.K.NODE_ROOT/'bin/node'),'-e',
+            "require(process.argv[1]).assertSourceReady(JSON.parse(require('fs').readFileSync(0,'utf8')))",helper],
+            input=json.dumps(native),text=True,capture_output=True,env={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'},timeout=20)
+        require(check.returncode==0,'actual corrected source cannot accept exact atomic schema')
+        safe['actualAtomicSourceCatalogReady']=True
     return safe
 
 
@@ -191,6 +198,9 @@ def stage_contract(connection, recipe):
     require(recipe['scope'] == 'owner-approved-local500-resources' and recipe['full500Attempts'] == 1, 'one local attempt only')
     require(recipe['freshOwnerGO'] == connection['freshOwnerGO'] and recipe['dayBindingAcceptance'] == connection['dayBindingAcceptance'], 'recipe binding differs')
     require(recipe['expectedFreshOperationId'] == connection['operationId'], 'operation differs')
+    authority=module('stage_contract_authority','next-resource-authority.py')
+    require(connection['resourceClaimPath']==str(authority.CLAIM) and connection['sourceInputDatabase']==authority.INPUT_DATABASE,
+        'actual preparation claim/input binding differs from fixed next slot')
     require(recipe['databaseSampleIntervalSeconds'] == 1, 'continuous sampling unchanged')
     require(not set(recipe.get('localEnvironment', {}))-{'PATH', 'LANG', 'HELMUT_RESOURCE_METER_DIR'}, 'environment not allowed')
     n = Path(connection['workflowDirectory']); case = Path(connection['caseDirectory'])
@@ -209,6 +219,13 @@ def stage_contract(connection, recipe):
     require(config['policy']['providerHardLimitMS'] == 20000 and config['policy']['profiler'] is False
             and config['policy']['activation'] is False and config['policy']['production'] is False, 'original test policy changed')
     require(connection['storageCapacityBytes'] == 8000000000 and connection['storageHoldSeconds'] == 33000, 'storage scope changed')
+    staged=read(connection['stagedHarness'])
+    require(connection.get('atomicUsageInput')==staged.get('atomicUsageInput'),'atomic storage candidate differs from actual renderer')
+    if 'atomicUsageInput' in connection:
+        descriptor=read(connection['atomicUsageInput'])
+        require(descriptor['schema']=='helmut-local-atomic-usage-resource-input/1' and descriptor['mode']=='relational-atomic-v1'
+            and descriptor['production']is False and descriptor['fullContractUnchanged']is True,'local atomic scope differs')
+        for p in descriptor['sourcePins']:require(pin(p['path'])==p,'atomic storage source drift')
     return dict(stages=3, profiles=500, controlsPerUnit=16, profiler=False, paidProviderCalls=False)
 
 
@@ -257,6 +274,8 @@ def coverage_adopted(bindings, rows):
     required={
         'infrastructure':{str(BIN/f)for f in ['start-preflight.py','full500-controller.py','isolation.py','connect-local500.py','start-guard-inventory.js','legacy-harness-pins.json','next-resource-authority.py','finish-connection.py','measured-preparation.js','process-runner.py']},
         'consumerInputs':{str(BIN/'start-input-checks.js'),str(BIN/'START_PREFLIGHT_COVERAGE.md')}}
+    if str(BIN/'atomic-usage-integration.js') in {r['path'] for r in rows}:
+        required['infrastructure'].add(str(BIN/'atomic-usage-integration.js'))
     for scope,review_pin in reviews.items():
         pro=read(review_pin)
         require(pro.get('model')=='deepseek-v4-pro' and pro.get('route',{}).get('effort')=='high'
@@ -298,8 +317,8 @@ def assess(bindings,*,planning=False):
     if day:
         report.check('window', 'controller.window; preparation.window', 'Full original workflow plus setup/close reserve inside actual UTC/Berlin day', lambda:window_evidence(C,day))
     report.check('originals', 'controller.original_preflight', 'All nine original input hashes, original full source state, physical KO/RAW/link equality', lambda:C.original_preflight(connection,check_financial=False))
-    report.check('financialData', 'zero_day.validate_change; preparation.financialProposal; K.pruefeStart/auftragsStand', 'Read-only native complete counter/auth binding and all daybooks; NOT new authority', lambda:financial_data(C,connection))
-    report.check('financialAuthority', 'zero_day.verify_capture', 'Exact actual corrected capture and fresh explicit owner authority', lambda:C.financial_preflight(connection))
+    report.check('financialData', 'next_resource.verify_preexisting_capture; preparation.financialProposal; K.pruefeStart/auftragsStand', 'Read-only native complete counter/auth binding and all daybooks; NOT new authority', lambda:financial_data(C,connection))
+    report.check('financialAuthority', 'next_resource.verify_preexisting_capture', 'Completed input-correction provenance only; new resource GO remains a separate authority gate', lambda:C.financial_preflight(connection))
     # Independently collect fixed consumer predicates even when an earlier check
     # failed. Do NOT execute the assembly or sequence entrypoint IIFEs.
     node = C.I.K.NODE_ROOT/'bin/node'
@@ -357,12 +376,12 @@ def toolchain(C):
 
 def resource_names(C,connection):
     K=C.I.K; case=Path(connection['caseDirectory']); suffix=case.name.removeprefix('attempt-')
-    network='helmut-meter-net-w20-'+suffix;parent='helmut-meter-resources17-'+suffix
+    network='helmut-meter-net-w20-'+suffix;parent='helmut-meter-resources18-'+suffix
     db=connection['containerName'];names=[db,db.replace('helmut-meter-db-','helmut-meter-app-',1),db.replace('helmut-meter-db-','helmut-meter-app-',1)+'-broker']
     occupied=[n for n in names if K.docker(['inspect',n],check=False).returncode==0]
     network_exists=K.docker(['network','inspect',network],check=False).returncode==0
     cgroup_exists=(Path('/sys/fs/cgroup')/parent).exists()
-    storage_exists=(C.I.ONCE.parent/('full500-owned-storage17-'+suffix)).exists()
+    storage_exists=(C.I.ONCE.parent/('full500-owned-storage18-'+suffix)).exists()
     subnet=connection['approvedInternalSubnet'];require(subnet==C.I.A.SUBNET,'approved subnet changed')
     ids=K.docker(['network','ls','-q']).stdout.split()
     networks=json.loads(K.docker(['network','inspect',*ids]).stdout) if ids else []

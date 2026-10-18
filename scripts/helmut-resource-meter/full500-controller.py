@@ -87,7 +87,7 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin,*,planni
     owner=C.read_pin(recipe['freshOwnerGO']);day=C.read_pin(recipe['dayBindingAcceptance'])
     I.verify_fixture_owner_policy(owner)
     I.A.validate_owner(owner,connection,planning=planning)
-    if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!='2026-10-17' or day.get('positiveOriginalLAtBothWindowEnds')!=500:raise RuntimeError('owner or day binding invalid')
+    if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!='2026-10-18' or day.get('positiveOriginalLAtBothWindowEnds')!=500:raise RuntimeError('owner or day binding invalid')
     for p in connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']:
         if C.pin(p['path'])!=p:raise RuntimeError('fixture asset drift')
     return acceptance,connection,recipe,day
@@ -140,7 +140,7 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     # From here, each setup/launch step is attempted ONCE, never a retry loop.
     first=original_preflight(connection)
     case=Path(connection['caseDirectory']);network='helmut-meter-net-w20-'+case.name.removeprefix('attempt-')
-    parent='helmut-meter-resources17-'+case.name.removeprefix('attempt-')
+    parent='helmut-meter-resources18-'+case.name.removeprefix('attempt-')
     dbname=connection['containerName'];appname=dbname.replace('helmut-meter-db-','helmut-meter-app-',1)
     if I.K.docker(['inspect',dbname],check=False).returncode==0 or I.K.docker(['network','inspect',network],check=False).returncode==0:raise RuntimeError('actual owned resources already exist; no reuse')
     subnet=connection.get('approvedInternalSubnet')
@@ -167,7 +167,7 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     # loop-control capability probe's kernel result. It is checked atomically
     # by LOOP_CONFIGURE; no occupied mapping is detached or reassigned.
     minor=acceptance['approvedFreshLoopMinor']
-    storage_out=I.ONCE.parent/('full500-owned-storage17-'+case.name.removeprefix('attempt-'))
+    storage_out=I.ONCE.parent/('full500-owned-storage18-'+case.name.removeprefix('attempt-'))
     storage=storage_module.create(storage_out,8000000000,minor,parent+'/storage',hold=connection['storageHoldSeconds'])
     if connection.get('approvedInternalSubnet')!=I.A.SUBNET:raise RuntimeError('exact new reviewed172 gateway subnet missing')
     I.create_network(network,subnet=connection['approvedInternalSubnet'])

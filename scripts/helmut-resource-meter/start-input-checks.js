@@ -44,6 +44,7 @@ function ownerInputs(plan, now) {
   return {explicitPreservation:true,localOnly:true,profiles:500,paidProviderCalls:false};
 }
 function preparationInputs(plan) {
+  require('./measured-preparation').assertInputBindings(plan,json(plan.sourceCapture));
   const request = json(plan.runtimeRequest, true);
   assert.equal(request.status, 'ROOT_REVIEWED_LOCAL_RUNTIME_INITIALIZATION');
   assert.equal(request.targetDatabase, plan.targetDatabase);
@@ -59,6 +60,11 @@ function preparationInputs(plan) {
   for (const k of ['all500IndependentVisibleReview','sixIndependentKOFacts','actualNativeCapture','ordinaryAAndFEquality','genericU0Decision']) json(request.primaries[k]);
   assert(Array.isArray(request.sourcePins) && request.sourcePins.length > 0);
   request.sourcePins.forEach(p=>pinned(p));
+  if(plan.atomicUsageInput){
+    assert.deepEqual(request.atomicUsageInput,plan.atomicUsageInput);
+    const d=require('./atomic-usage-integration').readDescriptor(plan.atomicUsageInput);
+    for(const source of d.sourcePins)assert(request.sourcePins.some(p=>p.path===source.path&&p.sha256===source.sha256&&p.bytes===source.bytes));
+  }
   const external = json(request.localExternalBelege);
   assert.equal(external.scope, 'ROOT_REVIEWED_LOCAL_EXTERNAL_FIXTURE_PRECONDITIONS_NOT_PRODUCTION');
   assert.equal(external.inputAcceptanceSHA256, request.inputAcceptance.sha256);
@@ -88,6 +94,10 @@ function materialsInputs(plan) {
   assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID, 'main-auth');
   assert.equal(env.HELMUT_SUPABASE_STORE_ID, 'main');
   assert(!env.OPENAI_API_KEY && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
+  if(plan.atomicUsageInput){
+    require('./atomic-usage-integration').assertLocalTarget(plan);
+    require('./atomic-usage-integration').environment(env,plan.atomicUsageInput);
+  }
   const secret = pinned(asset(plan, 'jwt-secret.PRIVATE.txt'), true).toString('utf8').trim();
   assert(/^[a-f0-9]{64}$/.test(secret));
   // This existing function is import-safe and invokes the actual consumer's

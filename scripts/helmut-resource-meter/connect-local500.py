@@ -36,17 +36,17 @@ def exact_case_binding(case,target,container,operation):
     if case.parent!=AREA or case.resolve()!=case or not re.fullmatch('attempt-[a-f0-9]{12}',case.name):
         raise RuntimeError('exact fresh local case directory required')
     suffix=case.name.removeprefix('attempt-')
-    if (target,container,operation)!=('helmut_resource_fixture_20261017_'+suffix,'helmut-meter-db-w20-'+suffix,'synthetik500-resources17-'+suffix):
+    if (target,container,operation)!=('helmut_resource_fixture_20261018_'+suffix,'helmut-meter-db-w20-'+suffix,'synthetik500-resources18-'+suffix):
         raise RuntimeError('case/target/container/operation suffix mismatch')
 
-def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin):
+def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin,atomic_usage_pin=None):
     """Actual deterministic staging transformation, without creating/writing files."""
     templates=json.loads((BIN/'legacy-harness-pins.json').read_text())['files']
     for p in templates:
         if pin(p['path'])!={k:p[k] for k in ['path','bytes','sha256']}:raise RuntimeError('original harness drift')
     case=Path(case);n=case/'native-end-preparation'
     replacements=[('helmut_fresh_runtime_fixture_b27c2026',target),('helmut-boundary-pg-bd7dd5da',container),
-      ('synthetik500-localnative16-b27c20261016',operation),('2026-10-16','2026-10-17'),
+      ('synthetik500-localnative16-b27c20261016',operation),('2026-10-16','2026-10-18'),
       ("B+'/wave15/native-end-preparation'",repr(str(n))),
       ("B+'/wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json'",repr(day_rows_pin['path'])),
       ("O+'/OWNER_LOCAL_GO.PRIVATE.json'",repr(owner_go_pin['path'])),
@@ -78,27 +78,68 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             new="record.mockResponseDelivered=true;const reply=new EventEmitter();reply.statusCode=200;"
             if text.count(old)!=1:raise RuntimeError('original mock delivery point missing')
             text=text.replace(old,new);changes.append({'from':old,'to':new,'count':1})
+        if atomic_usage_pin is not None:
+            candidate=read_pin(atomic_usage_pin)
+            if candidate.get('schema')!='helmut-local-atomic-usage-resource-input/1' or candidate.get('mode')!='relational-atomic-v1' or candidate.get('production')is not False:
+                raise RuntimeError('exact local atomic usage descriptor required')
+            for p in candidate['sourcePins']:
+                if pin(p['path'])!=p:raise RuntimeError('atomic usage source drift')
+            helper=json.dumps(str(BIN/'atomic-usage-integration.js'))
+            descriptor=json.dumps(atomic_usage_pin,separators=(',',':'))
+            def change(old,new):
+                nonlocal text
+                if text.count(old)!=1:raise RuntimeError('exact atomic usage integration point missing: '+template['relative'])
+                text=text.replace(old,new);changes.append({'from':old,'to':new,'count':1})
+            relative=template['relative']
+            if relative=='native-end-preparation/root-io-bridge.js':
+                change('  const memory=[];', '  require('+helper+').readDescriptor('+descriptor+');\n  const memory=[];')
+                change('  function sql(query) {', '  function sql(query) {\n    query=require('+helper+').projectQuery(query);')
+                change("    assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID,'main-auth');",
+                    '    assert.deepEqual(config.atomicUsageInput,'+descriptor+');require('+helper+').readDescriptor(config.atomicUsageInput);\n'
+                    '    const receipt=G.json(config.atomicUsageReceipt);assert.equal(receipt.pass,true);assert.equal(receipt.targetDatabase,target.database);\n'
+                    '    assert.deepEqual(receipt.candidatePin,config.atomicUsageInput);assert.equal(receipt.originalPhysicalHash,receipt.proof.originalHash);\n'
+                    '    const catalog=read(require('+helper+').catalogSQL());require('+helper+').assertCatalog(catalog);\n'
+                    '    const bound=read("SELECT "+require('+helper+').physicalWitnessExpression()+";");\n'
+                    '    assert.equal(bound.proof.generation,receipt.proof.generation);assert.equal(bound.proof.originalHash,receipt.proof.originalHash);\n'
+                    "    env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';\n"
+                    "    assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID,'main-auth');")
+                change("'authRevision',data->'_authStoreRevision','journal'",
+                    "'nativeUsageBinding',\"+require("+helper+").physicalWitnessExpression()+\",'authRevision',data->'_authStoreRevision','journal'")
+            elif relative=='native-end-preparation/runtime-candidates/prepare-materials.candidate.js':
+                change('  Object.assign(env,localBudgets);',
+                    "  Object.assign(env,localBudgets);env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';")
+            elif relative=='native-end-preparation/runtime-candidates/root-authority-stage.candidate.js':
+                change("['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY']",
+                    "['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY','HELMUT_LLM_USAGE_STORAGE']")
+            elif relative=='native-end-preparation/runtime-candidates/assemble-config.candidate.js':
+                change('const config={...base,',
+                    'const config={...base,atomicUsageInput:r.atomicUsageInput,atomicUsageReceipt:r.atomicUsageReceipt,')
+            elif relative=='assemble-after-activation.js':
+                change(' const initialSourceBinding=',
+                    " process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';\n const initialSourceBinding=")
+                change(' const shared={status:',
+                    " const atomicUsageReceipt=pin(N+'/ATOMIC_USAGE_BOOTSTRAP.SAFE.json');\n const shared={atomicUsageInput:"+descriptor+",atomicUsageReceipt,status:")
         destination=case/template['relative']
         deltas.append({'original':{k:template[k] for k in ['path','bytes','sha256']},'destination':str(destination),'text':text,'replacements':changes})
     return deltas
 
-def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin,prepare_only=False):
+def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin,prepare_only=False,atomic_usage_pin=None):
     case=Path(case).resolve()
     exact_case_binding(case,target,container,operation)
     if case.parent!=AREA or not re.fullmatch('attempt-[a-f0-9]{12}',case.name):raise RuntimeError('exact fresh local case directory required')
-    if not re.fullmatch('helmut_resource_fixture_20261017_[a-f0-9]{12}',target):raise RuntimeError('new owned target required')
+    if not re.fullmatch('helmut_resource_fixture_20261018_[a-f0-9]{12}',target):raise RuntimeError('new owned target required')
     if not re.fullmatch('helmut-meter-db-w20-[a-f0-9]{12}',container):raise RuntimeError('new owned container required')
-    if not re.fullmatch('synthetik500-resources17-[a-f0-9]{12}',operation):raise RuntimeError('new operation required')
+    if not re.fullmatch('synthetik500-resources18-[a-f0-9]{12}',operation):raise RuntimeError('new operation required')
     read_pin(day_rows_pin)
     day=read_pin(day_acceptance_pin)
-    if day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER' or day.get('day')!='2026-10-17':raise RuntimeError('accepted actual day17 binding missing')
+    if day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER' or day.get('day')!='2026-10-18':raise RuntimeError('accepted actual day18 binding missing')
     if day.get('adoptedRowsPin')!=day_rows_pin:raise RuntimeError('accepted exact current inputs required')
     owner=read_pin(owner_go_pin)
     A.validate_owner(owner,{'caseDirectory':str(case),'targetDatabase':target,'operationId':operation,'sourceCapture':owner['sourceCapturePin'],'preparedWithoutGO':prepare_only},planning=prepare_only)
     if owner.get('allowDispose') is not False:raise RuntimeError('explicit allowDispose=false required before staging')
     if owner.get('production') is not False or owner.get('syntheticProfiles')!=500 or owner.get('targetDatabase')!=target:
         raise RuntimeError('existing once GO exact new local binding required')
-    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin={'path':owner['finalOwnerGOPath']})
+    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin={'path':owner['finalOwnerGOPath']},atomic_usage_pin=atomic_usage_pin)
     case.mkdir(mode=0o700,exist_ok=False);n=case/'native-end-preparation';n.mkdir(mode=0o700);(n/'runtime-candidates').mkdir(mode=0o700)
     deltas=[]
     for item in rendered:
@@ -109,15 +150,16 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
       'newOperationId':operation,'reviewedDayWindowEndUTC':day['endsAtUTC'],
       'status':'AWAITING_NEW_RESOURCE_GO_NOT_AUTHORIZED'if prepare_only else'BOUND_EXISTING_UNUSED_ONE_TIME_LOCAL_RESOURCES_GO_ONLY','requiredGOConfirmation':
       'GO_LOCAL_ONLY_CREATE_'+target+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE','authorized':not prepare_only,
-      'allowedLocalEffectsAfterGO':[str(x).replace('16Oct','17Oct') for x in original_action['allowedLocalEffectsAfterGO']]}
+      'allowedLocalEffectsAfterGO':[str(x).replace('16Oct','18Oct') for x in original_action['allowedLocalEffectsAfterGO']]}
     save(n/'LOCAL_ACTIVATION_ACTION.SAFE.json',action)
     plan={'schema':'helmut-exact-local500-connection/1','scope':'STAGED_NOT_EXECUTED','caseDirectory':str(case),
       'workflowDirectory':str(n),'sourceDatabase':SOURCE,'targetDatabase':target,'containerName':container,
-      'operationId':operation,'day':'2026-10-17','dayAcceptance':day_acceptance_pin,'dayRows':day_rows_pin,
+      'operationId':operation,'day':'2026-10-18','dayAcceptance':day_acceptance_pin,'dayRows':day_rows_pin,
       'ownerGOPath':owner_go_pin['path'],'ownerGOPin':owner_go_pin,'executionOwnerGOPath':owner['finalOwnerGOPath'],'originalAction':pin(BASE/'wave15/native-end-preparation/LOCAL_ACTIVATION_ACTION.SAFE.json'),
       'action':pin(n/'LOCAL_ACTIVATION_ACTION.SAFE.json'),'templateDeltas':deltas,
       'freshSelectorComesFromPinnedActualAssembly':True,'full500RunStarted':False,'resourceGOConsumed':False,
       'engineModified':False,'originalFilesModified':False,'production':False,'preparedWithoutGO':prepare_only}
+    if atomic_usage_pin is not None:plan['atomicUsageInput']=atomic_usage_pin
     save(case/'STAGED_CONNECTION.SAFE.json',plan);return plan
 
 if __name__=='__main__':

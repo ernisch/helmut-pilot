@@ -20,6 +20,9 @@ class RuntimeReadContractTest(unittest.TestCase):
   leaf=doc('required-historical-source.json',{})
   self.leaf=leaf
   capture=doc('capture.json',{k:leaf for k in ['correctionReceiptPin','sourceDump','localRolesSQL','correctedFinancialWitnessPin']})
+  self.correction_data=[doc('completed-book17-claim.json',{'TEST_ONLY':'NO_RESOURCE_GO'}),doc('previous-input-witness.json',{})]
+  provenance=patch.object(I.A,'capture_data_pins',return_value=[capture,leaf,*self.correction_data])
+  provenance.start();self.addCleanup(provenance.stop)
   owner=doc('intent.json',{'previousConsumedMarkers':[leaf],'finalOwnerGOPath':str(self.root/'FUTURE_GO.json')})
   day=doc('day.json',{'independentReview':leaf})
   request=doc('request.json',{'sourcePins':[leaf],'primaries':{'original':leaf}})
@@ -34,9 +37,14 @@ class RuntimeReadContractTest(unittest.TestCase):
  def test_authority_and_source_only_dependencies_are_not_omitted(self):
   manifest=I.runtime_read_manifest(self.recipe);paths={p['path']for p in manifest['pins']}
   for pin in [self.recipe['independentMeterAcceptance'],self.leaf,self.recipe['freshOwnerGO']]:self.assertIn(pin['path'],paths)
+  for pin in self.correction_data:self.assertIn(pin['path'],paths)
   self.assertEqual(len(paths),len(manifest['pins']))
   self.assertIn(str(self.root/'FUTURE_GO.json'),manifest['generatedInputsRequireFreshRuntimeBinding'])
   self.assertFalse((self.root/'FUTURE_GO.json').exists())
+
+ def test_missing_additional_completed_correction_provenance_fails_before_container(self):
+  Path(self.correction_data[0]['path']).unlink()
+  with self.assertRaises(RuntimeError):I.runtime_read_manifest(self.recipe)
 
  def test_conflicting_or_drifted_source_pin_is_rejected(self):
   for bad in [{**self.leaf,'sha256':'0'*64},{**self.leaf,'bytes':self.leaf['bytes']+1}]:

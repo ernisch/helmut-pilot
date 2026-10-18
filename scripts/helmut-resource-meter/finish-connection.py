@@ -21,7 +21,7 @@ def finish(staged_pin):
     content=json.loads((B/'wave15/ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json').read_text())
     # Historical approvals remain dependencies, never reused as the new owner GO.
     content.update(ownerGo=owner_pin,currentPolicyInput=staged['dayRows'],inputRows=staged['dayRows'],
-      currentDayAcceptance=staged['dayAcceptance'],reviewScope='Exact independently reviewed day17 relative-display transfer plus unchanged archived source/profile/nonrelative factual scope. No execution or performance acceptance.')
+      currentDayAcceptance=staged['dayAcceptance'],reviewScope='Exact independently reviewed day18 relative-display transfer plus unchanged archived source/profile/nonrelative factual scope. No execution or performance acceptance.')
     content.pop('inputBases',None)
     content['previouslyAttemptedOperationIds']=list(dict.fromkeys(content['previouslyAttemptedOperationIds']+[
        'synthetik500-localnative16-b27c20261016','synthetik500-authority16-41ca20261016']))
@@ -29,10 +29,20 @@ def finish(staged_pin):
     external=json.loads((B/'wave15/ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json').read_text())
     external['inputAcceptanceSHA256']=content_pin['sha256']
     # No source publication/capture timestamp is changed. The selected source
-    # window remains the preexisting13..16 window, also valid within day17.
+    # window remains the preexisting13..16 window, also valid within day18.
     external_pin=C.save(case/'ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json',external)
     repo=Path('/workspace/helmut-cpu-epoch-20261015')
-    sources={p['path']:p for p in original['sourcePins'] if p['path'].startswith(str(repo)+'/')}
+    # A NEW command needs actual current code pins; old content acceptance is
+    # input provenance, never acceptance of historical runtime file hashes.
+    sources={p['path']:C.pin(p['path']) for p in original['sourcePins'] if p['path'].startswith(str(repo)+'/')}
+    atomic=staged.get('atomicUsageInput')
+    if atomic is not None:
+        descriptor=C.read_pin(atomic)
+        if descriptor.get('schema')!='helmut-local-atomic-usage-resource-input/1' or descriptor.get('production')is not False:
+            raise RuntimeError('local atomic candidate binding required')
+        for p in descriptor['sourcePins']:
+            if C.pin(p['path'])!=p:raise RuntimeError('atomic source pin drift')
+            sources[p['path']]=p
     for folder in [n,n/'runtime-candidates',BIN]:
         for p in folder.iterdir():
             if p.is_file() and p.suffix in ['.js','.py','.json'] and (folder!=BIN or not p.name.endswith(('-test.js','-test.py'))):sources[str(p.resolve())]=C.pin(p)
@@ -42,6 +52,7 @@ def finish(staged_pin):
       'inputAcceptance':content_pin,'sourcePins':list(sources.values()),'primaries':primaries,
       'localExternalBelege':external_pin,'newOperation':staged['operationId'],
       'rootFinalCodeAcceptance':staged['dayAcceptance'],'currentDayBinding':staged['dayAcceptance']}
+    if atomic is not None:request['atomicUsageInput']=atomic
     request_pin=C.save(case/'ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json',request)
     assets={}
     def add(p):
@@ -50,6 +61,7 @@ def finish(staged_pin):
         if C.pin(p['path'])!=p:raise RuntimeError('static fixture pin drift')
         if not Path(p['path']).is_relative_to(case):assets[p['path']]=p
     for p in primaries.values():add(p)
+    for p in C.A.capture_data_pins(capture_pin):add(p)
     for p in [staged['dayRows'],staged['dayAcceptance'],day['independentReview'],capture_pin,capture['sourceDump'],capture['localRolesSQL'],capture['correctedFinancialWitnessPin'],capture['correctionReceiptPin'],
       C.pin(B/'wave13/input-extraction/ORIGINAL_PACKAGE.PRIVATE.json'),C.pin(B/'wave13/NATIVE_INVENTORY_TEMPLATE.PRIVATE.json'),
       C.pin(B/'wave12/native-pdf-inputs/ACTUAL_NATIVE_SOURCE23_KO60_WITH_PDF.PRIVATE.json'),
@@ -63,7 +75,8 @@ def finish(staged_pin):
       C.pin(B/'wave12/LOCAL_EXISTING_BUDGET_SCENARIO.PRIVATE.json'),C.pin(B/'wave13/build-native-inventory.js')]:add(p)
     templates=json.loads((B/'wave12/ROOT_STATIC_LOCAL_R_TEMPLATE_ACCEPTANCE.SAFE.json').read_text())
     for k in ['canonicalTemplates','package','independentSecurityReview','explicitThemenreinReview14of14','negativeTypeAndReasonEvidence','all500MappingEvidence']:add(templates[k])
-    plan={'schema':'helmut-pinned-full500-connection/1','day':'2026-10-17','production':False,
+    plan={'schema':'helmut-pinned-full500-connection/1','day':'2026-10-18','production':False,
+      'sourceInputDatabase':C.A.INPUT_DATABASE,'resourceClaimPath':str(C.A.CLAIM),
       'caseDirectory':str(case),'workflowDirectory':str(n),'sourceDatabase':staged['sourceDatabase'],
       'targetDatabase':staged['targetDatabase'],'containerName':staged['containerName'],'operationId':staged['operationId'],
       'freshOwnerGO':owner_pin,'runtimeRequest':request_pin,'sourceCapture':capture_pin,
@@ -78,6 +91,7 @@ def finish(staged_pin):
       'sourceCaptureIsPreexistingFixtureInputNotWorkflowCPU':True,
       'phases':['preparation','assembly','sequence'],'profiles':500,'controlsPerUnit':16,
       'originalUUnchangedAndRequired':True,'noProfiler':True,'noPaidProviderCalls':True,'preparedWithoutGO':staged.get('preparedWithoutGO',False)}
+    if atomic is not None:plan['atomicUsageInput']=atomic
     connection=C.save(case/'FINAL_CONNECTION.SAFE.json',plan)
     # Recipe templates contain NO current preflight or final meter acceptance.
     # The controller adds those only after independent review, immediately
