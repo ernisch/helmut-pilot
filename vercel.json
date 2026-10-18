@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/auth-state-parts-20261018": false,
       "codex/auth-cas-temp-spill-20261017": false,
       "codex/runtime-read-binding-diagnostic-20261015": false,
       "codex/runtime-read-binding-fix-20261015": false,

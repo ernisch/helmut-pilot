@@ -17,16 +17,17 @@ BASE=Path('/workspace/helmut-parallel-20261015')
 METER=BASE/'wave19-resource-meter'
 DAY='2026-10-18'
 DATE_TAG='20261018'
-AUTHORIZATION='USER_GO_20261018_EXACT_ONE_RESOURCE_ONLY_V5'
-CLAIM=METER/'NEXT_RESOURCE18_V5_GO_CLAIM.SAFE.json'
-RESERVATION=METER/'NEXT_RESOURCE18_V5_SETUP_RESERVATION.SAFE.json'
+AUTHORIZATION='USER_GO_20261018_EXACT_ONE_RESOURCE_ONLY_V6'
+CLAIM=METER/'NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json'
+RESERVATION=METER/'NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json'
 SUBNET='172.16.245.0/24'
 OLD_MARKERS=[METER/name for name in [
  'ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json','GLOBAL_RESOURCE_SETUP_RESERVATION.SAFE.json',
  'ONCE_ONLY_DAY16_INPUT_CORRECTION_CLAIM.SAFE.json','DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json',
  'DAY16_REPAIR_RESOURCE_SETUP_RESERVATION.SAFE.json',
  'NEXT_RESOURCE17_V3_GO_CLAIM.SAFE.json','NEXT_RESOURCE17_V3_SETUP_RESERVATION.SAFE.json',
- 'NEXT_RESOURCE17_V4_GO_CLAIM.SAFE.json','NEXT_RESOURCE17_V4_SETUP_RESERVATION.SAFE.json']]
+ 'NEXT_RESOURCE17_V4_GO_CLAIM.SAFE.json','NEXT_RESOURCE17_V4_SETUP_RESERVATION.SAFE.json',
+ 'NEXT_RESOURCE18_V5_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V5_SETUP_RESERVATION.SAFE.json']]
 PRESERVED_MARKER_PINS=[{'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json', 'bytes': 815, 'sha256': '92096d184adc88feaefa1393c3115840dd2e0960379d108de42be2d1e57005e5'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/GLOBAL_RESOURCE_SETUP_RESERVATION.SAFE.json', 'bytes': 1203, 'sha256': 'e0dfa98ab19d0ed917e7fca15817766a370a593005625b807f4474ff3a827cc4'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_DAY16_INPUT_CORRECTION_CLAIM.SAFE.json', 'bytes': 454, 'sha256': 'e01e8a20f8cded6a9285d07763fe40ce0cac7d279479c5faa05ad6a4a1de4e60'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json', 'bytes': 815, 'sha256': 'a376c1abf5541728b2e5c565c0b0576ee6a87723f8d06125d5a0ec574ddc8853'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_SETUP_RESERVATION.SAFE.json', 'bytes': 1203, 'sha256': '7ea29623fc80b6a75dd475463d1c1802e340e75b1c6509ebf7e6d45d21357088'}]
 PRESERVED_MARKER_PINS += [
  {'path':str(METER/'NEXT_RESOURCE17_V3_GO_CLAIM.SAFE.json'),'bytes':799,'sha256':'8fe50e440b83c4f2a67225a1585c86997bc8fc60e04dcc0ef7bb997dff648a81'},
@@ -34,6 +35,9 @@ PRESERVED_MARKER_PINS += [
 PRESERVED_MARKER_PINS += [
  {'path':str(METER/'NEXT_RESOURCE17_V4_GO_CLAIM.SAFE.json'),'bytes':796,'sha256':'6d51c4f9eab8bcb8d465c46ee21e7d926f428f6ec1ff1553840fcc7ef50e6481'},
  {'path':str(METER/'NEXT_RESOURCE17_V4_SETUP_RESERVATION.SAFE.json'),'bytes':1519,'sha256':'6f899ce4c4faff5635f6d1d6798be93c85f5681aee22ad44ae8046a0327a6ad5'}]
+PRESERVED_MARKER_PINS += [
+ {'path':str(METER/'NEXT_RESOURCE18_V5_GO_CLAIM.SAFE.json'),'bytes':808,'sha256':'d03997e1319ec12edcf5c536aaa35f1521462c48337f6cf694710336f63c45f1'},
+ {'path':str(METER/'NEXT_RESOURCE18_V5_SETUP_RESERVATION.SAFE.json'),'bytes':1531,'sha256':'870e9c1f2c06bebf2cb6ff9b539680f5741df6fca39c80b7443d679b8a02aaed'}]
 PREVIOUS_CAPTURE=BASE/'wave20-resource-integration/attempt-64a99d4ac9fb/corrected-input/READ_ONLY_SOURCE_CAPTURE.SAFE.json'
 PREVIOUS_CAPTURE_SHA='37701d014b73311da59f3daf92d8344074a48aaea5586c7f73d1728026d185a3'
 CORRECTED_CAPTURE=BASE/'wave30-resource-start-gaps/input18-ab76c911dac8/READ_ONLY_SOURCE_CAPTURE.SAFE.json'
@@ -70,7 +74,7 @@ def validate_owner(owner,connection,*,planning=False):
     for p in claims:read(p)
     final=Path(owner.get('finalOwnerGOPath',''))
     suffix=Path(connection['caseDirectory']).name.removeprefix('attempt-')
-    require(final==METER/('OWNER_RESOURCE18_V5_'+suffix+'.PRIVATE.json'),'exact new owner GO path required')
+    require(final==METER/('OWNER_RESOURCE18_V6_'+suffix+'.PRIVATE.json'),'exact new owner GO path required')
     confirmation='GO_LOCAL_ONLY_CREATE_'+connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'
     require(owner.get('requiredConfirmation')==confirmation,'exact proposed confirmation required')
     if planning:

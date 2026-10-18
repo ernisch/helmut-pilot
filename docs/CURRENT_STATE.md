@@ -2,13 +2,52 @@
 
 **Lokale Fortschreibung: 18.10.2026 UTC / Europe/Istanbul; Production-Befund zuletzt 16.10.; historische Basis 13.10.2026.** Dieses Cockpit enthält den entscheidungsrelevanten Stand. Frühere Stände sind [wortgleich archiviert](archive/project_state/2026_09_28_CURRENT_STATE_vor_komprimierung.md); historische Läufe und Einzelbelege stehen dort und in den verlinkten Dossiers. Production-Befunde gelten nur zum jeweiligen Prüfzeitpunkt. Die vollständige alte Fassung bleibt in Git auf Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63` erhalten; keine neue Archivdatei nötig.
 
-## Lokal18.10.: Umgebung wieder erreichbar; heutige Eingaben angenommen, Ressourcenstart gesperrt
+## Lokal18.10.: Speicherkandidat qualifiziert; vollständiger Ressourcenlauf weiterhin offen
+
+Der bereits verbrauchte Ressourcenlauf `5d168e3561a5` wurde bei
+2.054.877.184 Bytes gemeinsamem Speicher sicher gestoppt. 26 Profile waren
+abgeschlossen; daraus folgt kein vollständiger 500er Ressourcen- oder Zeitnachweis.
+Originale, historische Aufträge und verbrauchte Freigaben bleiben erhalten.
+
+Der neue [lokale Speicherkandidat](betrieb/local-auth-state-parts-20261018.md)
+vermeidet wiederholte große Kontenspeicher-Schreibvorgänge durch unveränderliche,
+aus tatsächlichen Bytes SHA256-gebundene Teile und einen atomaren kleinen
+Wurzelzustand. Er ist standardmäßig ausgeschaltet und auf die lokale Umgebung
+begrenzt. Kostenhistorie, Versionsvergleich und frische Sicherheitsprüfungen
+bleiben erhalten; der native Rückweg ist geprüft.
+
+Aktueller kleiner Vergleich mit 96 logischen Änderungen, 120 CAS, 32 tatsächlichen
+Retentionsaufrufen und 24 Nullkostenbuchungen: gemeinsamer Peak
+975.331.328 → 850.702.336 B, WAL-LSN-Differenz 114.742.888 → 6.091.128 B,
+langsamste Operation 861,359 → 724,807 ms. Schreibfenster 37,427360 → 39,377216 s,
+CPU 43,383262 → 48,445973 s; der Zeitaufschlag bleibt ein Risiko. Offengelegter
+Referenzvergleich, keine Hochrechnung auf 500. Vollständige Daten-/Historygleichheit,
+17/17 native Sicherheitsgruppen und strikter Katalog aller 14 Funktionen bestanden;
+getrennte Quellen-/Codecabnahme einschließlich negativer Fälle abgeschlossen.
+
+Die freigegebene Nullbuchkorrektur für den 17.10. ist ausschließlich in der neuen
+isolierten Eingangskopie `helmut_resource_input_20261018_ab76c911dac8` abgeschlossen;
+Originale und Geldgrenzen bleiben unverändert. Nur eigene gestoppte temporäre
+Containerhüllen wurden bereinigt; sämtliche Datenbanken, Volumes und Belege bleiben
+erhalten. Tatsächlich frei nach Bereinigung: 17.191.202.816 B, über dem technischen
+Startboden von 16.589.934.592 B. Vor einem Start erneut frisch prüfen.
+
+Offen: neue isolierte Fall-/Code-/Autoritätsbindung, vollständige 32 Vorabprüfungen
+und **neues ausdrückliches kandidatgebundenes lokales Ressourcen-GO**. Kein neuer
+vollständiger 500er Lauf, keine Aktivierung und keine Production-Aktion. Offline90,
+Unit60, Auth30, gemeinsamer Speicher ≤2.048.000.000 B und alle 500 Abschlüsse müssen
+im anschließend separat freizugebenden Gesamtlauf belegt werden.
+
+## Lokale Wiederaufnahme18.10.: angenommene Eingaben und unverändertes Tagesfenster
 
 Bestehenden lokalen PostgreSQL-Container nach Workspace-Ausfall wieder aufgenommen; originale und korrigierte Finanzzeugen sowie17geschützte Dateibindungen unverändert. Der [atomare lokale Speicherkandidat](betrieb/llm-usage-atomic-local-20261017.md) ist [an den bestehenden Messablauf angebunden](betrieb/atomic-resource-integration-20261017.md); kein neuer vollständiger Lauf.120gezielte Prüfungen aus der vorherigen Welle übernommen.
 
 **Alle500 Eingaben für den18.10. mit23.008 sichtbaren Positionen angenommen.**380relative Datumsanzeigen korrekt aus bestehenden Zeitstempeln berechnet; übrige Inhalte/Profile/Quellen unverändert, bestehende Veröffentlichungssperre erhalten. Unabhängiger DeepSeek-Pro-High-Review angenommen; danach exakter Neuaufbau und originale A/F/L-Prüfungen vollständig bestanden, L an beiden Fensterenden. Lokales Eingabefenster11:00–19:59:59,999Istanbul; rechnerischer letzter Start17:35:10,455912 unter unverändertem Gesamtzeitbedarf, keine Startzusage. [Belege, Grenzen und nächster Schritt](betrieb/local-resource-readiness-20261018.md).
 
-Offen: rund7,3GBfreie Plattenreserve; neue konkrete Freigabe für ausschließlich das belegte historische Nullbuch17.10. in einer neuen isolierten Eingangskopie; neue Fall-/Autoritätsbindung und unabhängige32Startprüfungen. Reiner Korrekturvorschlag unabhängig angenommen, nicht angewendet. VerbrauchterV4-Slot bleibt gesperrt. Gesamtspeicher/Unit60/Auth30/Offline90 und vollständige500Abschlüsse mit diesem Kandidaten bleiben offen; kein neues Ressourcen-GO, keine Aktivierung, kein Merge/Deployment oder Productioneingriff.
+Der frühere Mangel an Plattenreserve und das fehlende Nullbuch sind inzwischen
+wie oben beschrieben gezielt geschlossen. Verbrauchte V4- und V5-Slots bleiben
+gesperrt. Die fachliche Eingabeabnahme wird nicht wiederholt; ein neuer Start
+benötigt weiterhin frische technische Bindungen und ein ausreichendes Zeitfenster.
 
 ## Aktuell16.10.:500 lokal abgeschlossen; Productionpaket vorbereitet, Starttore offen
 
