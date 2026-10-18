@@ -190,3 +190,40 @@ The container visibility check is a necessary actual observation, not a
 guarantee against later disk, scheduling or other I/O failures. Every full
 technical condition must still pass freshly; insufficient free disk remains a
 technical blocker, distinct from missing operator GO.
+
+## Fixed day18/V5 continuation
+
+The next slot accepts only18October2026 and a newV5 owner document, global claim
+and reservation. ConsumedV4 markers join the immutable historical baseline;
+they are never reset. Unapproved intents remain planning inputs, and cannot
+satisfy an executable owner-policy check. Old cases are retained unchanged.
+
+The input source is the separately approved, completed book17 correction in
+`helmut_resource_input_20261018_ab76c911dac8`. The shared source verifier checks
+both correction receipts, native financial witnesses, the full empty counter
+table, and the exact book17/capacity38→39 delta. Historical approval references
+prove completed input provenance only; their owner documents are not opened or
+reused as resource authority. Current-day18 bookkeeping remains the original
+in-memory projection until genuinely authorized runtime preparation.
+
+`next-resource-authority.capture_data_pins` supplies the same explicit source
+dependencies to the verifier, staged input set and actual container visibility
+check. It includes prior witnesses/receipts and the completed input-only claim;
+it excludes historical owner approvals. `query_input` has no writable mode and
+can address only that fixed completed local input database.
+
+The new dedicated subnet is172.16.245.0/24, selected after a complete read-only
+overlap check. Earlier networks remain intact. Engine, local mocks, all500
+profiles/1500positions/16fresh controls, originalU, Offline90/Unit60/Auth30,
+joint2048000000-byte limit, filesystem reserve and runtime safeguards are unchanged.
+
+The actual preparation and its deterministic precheck now share
+`measured-preparation.assertInputBindings`: the physical corrected input,
+logical source namespace in the new owned server, exact18October target and
+newV5 claim path must agree before any real claim file is read. The connection
+also binds these fields to the Python authority constants. No future claim is
+created for the precheck. The actual atomic installer and materials precheck
+share `atomic-usage-integration.assertLocalTarget`, preserving its original
+production/profile/container guards with the current18October namespace.
+The entry regression stops at the first mocked SQL boundary and creates no
+database, activation, acceptance receipt or usable operator authority.

@@ -160,6 +160,11 @@
       "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
     },
     {
+      "path": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 5766,
+      "sha256": "e7b5b2b93536990f95be4065be78b5347f5c8d9549a4f86d504a17f69fd59888"
+    },
+    {
       "path": "lib/helmut/matching-begruendung.js",
       "bytes": 4664,
       "sha256": "db69a50ef5286d0fce62d3f703bc5b8a3c47734fad674cb5fe2c17ef2e50d689"
@@ -241,8 +246,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 543626,
-      "sha256": "aab723c0cd04e035c4b335360f7f1a1e9062f287f245e06199a8894686c3d290"
+      "bytes": 544988,
+      "sha256": "2fc6f3da1d9bc68db95a1f36dba054c6fe9cae2919ac4a19aa8ef34c3d8c96da"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -251,8 +256,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-content-runner.js",
-      "bytes": 4064,
-      "sha256": "24d248983147ab30c5745ae0a52e8bd362a9caa749f827495e8a54239d0a7806"
+      "bytes": 4171,
+      "sha256": "12cc505b8382f2b1ddf52b065cf8ab5b03179b3b567c9fcc8001be12226adbe7"
     },
     {
       "path": "lib/helmut/synthetik-500-content-worker.js",
@@ -267,7 +272,7 @@
     {
       "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
       "bytes": 11909,
-      "sha256": "9d4761cf4669fef43d38ee27dc6f24ed1c4ccf4a25c9660c78681d5efb716267"
+      "sha256": "c9713c76c2c7094e3d7729c964ddec8310820dbe41a21f229b7f9b37bdf8cd16"
     },
     {
       "path": "lib/helmut/synthetik-500-date-binding.js",
@@ -391,8 +396,8 @@
     },
     {
       "path": "lib/helmut/testkosten-budget.js",
-      "bytes": 32923,
-      "sha256": "1ebac21c100242c2838c2b55fefa0bdaa353b7d85281b9065c146146f193f393"
+      "bytes": 32969,
+      "sha256": "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e"
     },
     {
       "path": "lib/helmut/understanding-schema.js",
@@ -430,11 +435,11 @@
       "sha256": "97b974c37064bce0bff57337c9b9d646c86c086b5e9ba326f8983b0145a34f48"
     }
   ],
-  "sourceMappingSHA256": "8de4f5d3b521528cc5079eaca659864cf460c480ff709872b4d81c95826c271d",
+  "sourceMappingSHA256": "2ab4d931a3e2a36049084abff2d55195ca5ec03716ba87988c42d4bb9f750192",
   "currentCandidateFull500Qualification": false,
-  "candidateQualificationScope": "LOCAL_AUTH_CAS_CANDIDATE_SOURCE_EXPECTATIONS_ONLY_NO_FULL500_REQUALIFICATION",
-  "priorManifestCommit": "4199c2d3d8e57127ee99092c252be1a8c242e037",
-  "priorManifestSHA256": "b2d07f7e421dc7b3eb68072e11dbb5330fc83869977347953d61d7f7f53d6670",
-  "priorSourceMappingSHA256": "6194aa6430cf117363ca60589130854638d0450bce84fa1159a9338da785099d",
+  "candidateQualificationScope": "LOCAL_RELATIONAL_ATOMIC_USAGE_CANDIDATE_SOURCE_EXPECTATIONS_ONLY_NO_FULL500_REQUALIFICATION",
+  "priorManifestCommit": "5cf3745b71c1aef64d78ba1eeb41618c84520ac6",
+  "priorManifestSHA256": "79893268219aaf6b9b2567920d583f38c19da50a486fdc9d36011b8eb8489608",
+  "priorSourceMappingSHA256": "8de4f5d3b521528cc5079eaca659864cf460c480ff709872b4d81c95826c271d",
   "contentQualificationEvidenceIsHistoricalOnly": true
 }

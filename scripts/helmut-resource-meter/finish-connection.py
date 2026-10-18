@@ -21,7 +21,7 @@ def finish(staged_pin):
     content=json.loads((B/'wave15/ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json').read_text())
     # Historical approvals remain dependencies, never reused as the new owner GO.
     content.update(ownerGo=owner_pin,currentPolicyInput=staged['dayRows'],inputRows=staged['dayRows'],
-      currentDayAcceptance=staged['dayAcceptance'],reviewScope='Exact independently reviewed day17 relative-display transfer plus unchanged archived source/profile/nonrelative factual scope. No execution or performance acceptance.')
+      currentDayAcceptance=staged['dayAcceptance'],reviewScope='Exact independently reviewed day18 relative-display transfer plus unchanged archived source/profile/nonrelative factual scope. No execution or performance acceptance.')
     content.pop('inputBases',None)
     content['previouslyAttemptedOperationIds']=list(dict.fromkeys(content['previouslyAttemptedOperationIds']+[
        'synthetik500-localnative16-b27c20261016','synthetik500-authority16-41ca20261016']))
@@ -29,7 +29,7 @@ def finish(staged_pin):
     external=json.loads((B/'wave15/ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json').read_text())
     external['inputAcceptanceSHA256']=content_pin['sha256']
     # No source publication/capture timestamp is changed. The selected source
-    # window remains the preexisting13..16 window, also valid within day17.
+    # window remains the preexisting13..16 window, also valid within day18.
     external_pin=C.save(case/'ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json',external)
     repo=Path('/workspace/helmut-cpu-epoch-20261015')
     # A NEW command needs actual current code pins; old content acceptance is
@@ -61,6 +61,7 @@ def finish(staged_pin):
         if C.pin(p['path'])!=p:raise RuntimeError('static fixture pin drift')
         if not Path(p['path']).is_relative_to(case):assets[p['path']]=p
     for p in primaries.values():add(p)
+    for p in C.A.capture_data_pins(capture_pin):add(p)
     for p in [staged['dayRows'],staged['dayAcceptance'],day['independentReview'],capture_pin,capture['sourceDump'],capture['localRolesSQL'],capture['correctedFinancialWitnessPin'],capture['correctionReceiptPin'],
       C.pin(B/'wave13/input-extraction/ORIGINAL_PACKAGE.PRIVATE.json'),C.pin(B/'wave13/NATIVE_INVENTORY_TEMPLATE.PRIVATE.json'),
       C.pin(B/'wave12/native-pdf-inputs/ACTUAL_NATIVE_SOURCE23_KO60_WITH_PDF.PRIVATE.json'),
@@ -74,7 +75,8 @@ def finish(staged_pin):
       C.pin(B/'wave12/LOCAL_EXISTING_BUDGET_SCENARIO.PRIVATE.json'),C.pin(B/'wave13/build-native-inventory.js')]:add(p)
     templates=json.loads((B/'wave12/ROOT_STATIC_LOCAL_R_TEMPLATE_ACCEPTANCE.SAFE.json').read_text())
     for k in ['canonicalTemplates','package','independentSecurityReview','explicitThemenreinReview14of14','negativeTypeAndReasonEvidence','all500MappingEvidence']:add(templates[k])
-    plan={'schema':'helmut-pinned-full500-connection/1','day':'2026-10-17','production':False,
+    plan={'schema':'helmut-pinned-full500-connection/1','day':'2026-10-18','production':False,
+      'sourceInputDatabase':C.A.INPUT_DATABASE,'resourceClaimPath':str(C.A.CLAIM),
       'caseDirectory':str(case),'workflowDirectory':str(n),'sourceDatabase':staged['sourceDatabase'],
       'targetDatabase':staged['targetDatabase'],'containerName':staged['containerName'],'operationId':staged['operationId'],
       'freshOwnerGO':owner_pin,'runtimeRequest':request_pin,'sourceCapture':capture_pin,

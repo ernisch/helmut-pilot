@@ -44,6 +44,7 @@ function ownerInputs(plan, now) {
   return {explicitPreservation:true,localOnly:true,profiles:500,paidProviderCalls:false};
 }
 function preparationInputs(plan) {
+  require('./measured-preparation').assertInputBindings(plan,json(plan.sourceCapture));
   const request = json(plan.runtimeRequest, true);
   assert.equal(request.status, 'ROOT_REVIEWED_LOCAL_RUNTIME_INITIALIZATION');
   assert.equal(request.targetDatabase, plan.targetDatabase);
@@ -94,6 +95,7 @@ function materialsInputs(plan) {
   assert.equal(env.HELMUT_SUPABASE_STORE_ID, 'main');
   assert(!env.OPENAI_API_KEY && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
   if(plan.atomicUsageInput){
+    require('./atomic-usage-integration').assertLocalTarget(plan);
     require('./atomic-usage-integration').environment(env,plan.atomicUsageInput);
   }
   const secret = pinned(asset(plan, 'jwt-secret.PRIVATE.txt'), true).toString('utf8').trim();

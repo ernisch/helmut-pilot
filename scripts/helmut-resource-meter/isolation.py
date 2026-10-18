@@ -92,7 +92,7 @@ def verify_pre_setup_authority(recipe,*,planning=False):
                 raise RuntimeError('independent complete500 connection acceptance missing')
     connection=pin_json(recipe['fixtureConnectionPin'])
     verify_connection_files(connection)
-    if connection.get('schema')!='helmut-pinned-full500-connection/1' or connection.get('day')!='2026-10-17' or connection.get('production') is not False:
+    if connection.get('schema')!='helmut-pinned-full500-connection/1' or connection.get('day')!='2026-10-18' or connection.get('production') is not False:
         raise RuntimeError('exact local current500 connection missing')
     owner=pin_json(recipe['freshOwnerGO'])
     verify_fixture_owner_policy(owner)
@@ -107,7 +107,7 @@ def verify_pre_setup_authority(recipe,*,planning=False):
         raise RuntimeError('historical GO or non-single attempt prohibited')
     if owner.get('targetDatabase')!=connection['targetDatabase'] or recipe['expectedFreshOperationId']!=connection['operationId']:
         raise RuntimeError('GO/connection/operation binding mismatch')
-    # Only the exact independently reviewed day17 proposal may qualify this
+    # Only the exact independently reviewed day18 proposal may qualify this
     # connection. A caller-supplied day/version alone grants no authority.
     day=pin_json(recipe['dayBindingAcceptance'])
     now=datetime.now(timezone.utc);end=datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00'))
@@ -115,7 +115,7 @@ def verify_pre_setup_authority(recipe,*,planning=False):
         raise RuntimeError('same UTC and Berlin day required')
     if acceptance.get('dayBindingAcceptance')!=recipe['dayBindingAcceptance'] or day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER':
         raise RuntimeError('independently adopted exact current-day binding missing')
-    if day.get('day')!='2026-10-17' or now.strftime('%Y-%m-%d')!=day['day'] or now.astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')!=day['day']:
+    if day.get('day')!='2026-10-18' or now.strftime('%Y-%m-%d')!=day['day'] or now.astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')!=day['day']:
         raise RuntimeError('actual UTC/Berlin day outside reviewed binding')
     independent=pin_json(day['independentReview'])
     if independent.get('model')!='deepseek-v4-pro' or independent.get('route',{}).get('effort')!='high' or independent.get('payload',{}).get('summary',{}).get('status')!='ok':
@@ -182,7 +182,7 @@ def claim_full_attempt(recipe,cid,recipe_path):
 def verify_connection_files(connection):
     staged=pin_json(connection['stagedHarness'])
     case=Path(connection['caseDirectory']);suffix=case.name.removeprefix('attempt-')
-    if connection['targetDatabase']!='helmut_resource_fixture_20261017_'+suffix or connection['containerName']!='helmut-meter-db-w20-'+suffix or connection['operationId']!='synthetik500-resources17-'+suffix:
+    if connection['targetDatabase']!='helmut_resource_fixture_20261018_'+suffix or connection['containerName']!='helmut-meter-db-w20-'+suffix or connection['operationId']!='synthetik500-resources18-'+suffix:
         raise RuntimeError('owned case/target/container/operation binding mismatch')
     if staged['caseDirectory']!=str(case):raise RuntimeError('staged case mismatch')
     for p in connection['immutableWorkflowPins']:
@@ -272,8 +272,9 @@ def runtime_read_manifest(recipe):
     owner=document(recipe['freshOwnerGO'])
     for p in owner['previousConsumedMarkers']:add(p)
     capture=document(connection['sourceCapture'])
-    for key in ['correctionReceiptPin','sourceDump','localRolesSQL','correctedFinancialWitnessPin']:
-        add(capture[key])
+    # The same explicit data-provenance dependencies are read by the source
+    # verifier and mounted here. Historical owner approvals are excluded.
+    for p in A.capture_data_pins(connection['sourceCapture']):add(p)
     day=document(recipe['dayBindingAcceptance']);add(day['independentReview'])
     # These files do not exist at a pre-GO visibility check. Once created, the
     # exact genuine pins are also overlaid read-only; no dummy file is created.
@@ -606,12 +607,12 @@ def close_failed_owned_setup(connection_pin,invocation_id):
     connection=pin_json(connection_pin);case=Path(connection['caseDirectory']);suffix=case.name.removeprefix('attempt-')
     if case.parent!=Path('/workspace/helmut-parallel-20261015/wave20-resource-integration') or len(suffix)!=12 or any(c not in '0123456789abcdef'for c in suffix):
         raise RuntimeError('owned error cleanup case invalid')
-    parent='/helmut-meter-resources17-'+suffix
+    parent='/helmut-meter-resources18-'+suffix
     ids=K.docker(['ps','--all','--quiet']).stdout.split()
     containers=json.loads(K.docker(['inspect',*ids]).stdout)if ids else []
     owned=[row for row in containers if row['HostConfig']['CgroupParent']in [parent+'/application',parent+'/database',parent+'/storage']]
     # Existing stop interfaces first. Fixed disjoint directories only.
-    for stop in [case/'application/broker/STOP',case/'database/STOP_DATABASE',A.METER/('full500-owned-storage17-'+suffix)/'STOP']:
+    for stop in [case/'application/broker/STOP',case/'database/STOP_DATABASE',A.METER/('full500-owned-storage18-'+suffix)/'STOP']:
         if stop.parent.is_dir()and not stop.exists():K.save_new(stop,{'ownedFailureClose':True})
     stopped=[]
     for row in owned:

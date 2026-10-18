@@ -15,9 +15,9 @@ class AtomicIntegrationTest(unittest.TestCase):
         value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor()))",str(BIN/'atomic-usage-integration.js')],text=True)
         self.descriptor.write_text(value);self.p=C.pin(self.descriptor)
         self.case=C.AREA/'attempt-0123456789ab';self.assertFalse(self.case.exists())
-        self.args=dict(target='helmut_resource_fixture_20261017_0123456789ab',container='helmut-meter-db-w20-0123456789ab',
-          operation='synthetik500-resources17-0123456789ab',day_rows_pin={'path':str(C.BASE/'wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json')},
-          owner_go_pin={'path':str(self.root/'NEVER_CREATED_OWNER_GO')})
+        self.args=dict(target='helmut_resource_fixture_20261018_0123456789ab',container='helmut-meter-db-w20-0123456789ab',
+          operation='synthetik500-resources18-0123456789ab',day_rows_pin={'path':str(C.BASE/'wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json')},
+          owner_go_pin={'path':str(self.root/'NEVER_CREATED_OWNER_GO_V5')})
     def test_all26_consumers_replay_and_parse_without_running(self):
         plain=C.render_templates(self.case,**self.args)
         changed=C.render_templates(self.case,**self.args,atomic_usage_pin=self.p)

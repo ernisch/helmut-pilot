@@ -112,11 +112,14 @@ function bootstrapSQL(expectedHash) {
   assert(/^[a-f0-9]{64}$/.test(expectedHash));
   return "SELECT public.helmut_auth_usage_bootstrap_v1(jsonb_build_object('id','main-auth','expectedHash'," + literal(expectedHash) + "));";
 }
+function assertLocalTarget(plan) {
+  assert.equal(plan.production, false);assert.equal(plan.profiles, 500);
+  assert(/^helmut_resource_fixture_20261018_[a-f0-9]{12}$/.test(plan.targetDatabase));
+  assert(/^helmut-meter-db-w20-[a-f0-9]{12}$/.test(plan.containerName));
+}
 function installAfterActivation({ plan, candidatePin, targetSQL }) {
   readDescriptor(candidatePin);
-  assert.equal(plan.production, false);assert.equal(plan.profiles, 500);
-  assert(/^helmut_resource_fixture_20261017_[a-f0-9]{12}$/.test(plan.targetDatabase));
-  assert(/^helmut-meter-db-w20-[a-f0-9]{12}$/.test(plan.containerName));
+  assertLocalTarget(plan);
   const begin = performance.now(), read = q => JSON.parse(targetSQL("BEGIN READ ONLY;" + q + "ROLLBACK;"));
   assertSourceReady(read(sourceReadySQL()));
   const before = read("SELECT jsonb_build_object('database',current_database(),'hash',encode(sha256(convert_to(data::text,'UTF8')),'hex'),"
@@ -142,4 +145,4 @@ function installAfterActivation({ plan, candidatePin, targetSQL }) {
     activationByThisHelper: false, costsAndOriginalHistoryUnchanged: true, production: false };
 }
 module.exports = { MODE, SOURCE_FILES, pin, pinned, descriptor, readDescriptor, environment,
-  projectQuery, physicalWitnessExpression, catalogSQL, assertCatalog, sourceReadySQL, assertSourceReady, bootstrapSQL, installAfterActivation };
+  projectQuery, physicalWitnessExpression, catalogSQL, assertCatalog, sourceReadySQL, assertSourceReady, bootstrapSQL, assertLocalTarget, installAfterActivation };

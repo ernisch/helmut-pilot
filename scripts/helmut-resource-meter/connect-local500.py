@@ -36,7 +36,7 @@ def exact_case_binding(case,target,container,operation):
     if case.parent!=AREA or case.resolve()!=case or not re.fullmatch('attempt-[a-f0-9]{12}',case.name):
         raise RuntimeError('exact fresh local case directory required')
     suffix=case.name.removeprefix('attempt-')
-    if (target,container,operation)!=('helmut_resource_fixture_20261017_'+suffix,'helmut-meter-db-w20-'+suffix,'synthetik500-resources17-'+suffix):
+    if (target,container,operation)!=('helmut_resource_fixture_20261018_'+suffix,'helmut-meter-db-w20-'+suffix,'synthetik500-resources18-'+suffix):
         raise RuntimeError('case/target/container/operation suffix mismatch')
 
 def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin,atomic_usage_pin=None):
@@ -46,7 +46,7 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
         if pin(p['path'])!={k:p[k] for k in ['path','bytes','sha256']}:raise RuntimeError('original harness drift')
     case=Path(case);n=case/'native-end-preparation'
     replacements=[('helmut_fresh_runtime_fixture_b27c2026',target),('helmut-boundary-pg-bd7dd5da',container),
-      ('synthetik500-localnative16-b27c20261016',operation),('2026-10-16','2026-10-17'),
+      ('synthetik500-localnative16-b27c20261016',operation),('2026-10-16','2026-10-18'),
       ("B+'/wave15/native-end-preparation'",repr(str(n))),
       ("B+'/wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json'",repr(day_rows_pin['path'])),
       ("O+'/OWNER_LOCAL_GO.PRIVATE.json'",repr(owner_go_pin['path'])),
@@ -127,12 +127,12 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
     case=Path(case).resolve()
     exact_case_binding(case,target,container,operation)
     if case.parent!=AREA or not re.fullmatch('attempt-[a-f0-9]{12}',case.name):raise RuntimeError('exact fresh local case directory required')
-    if not re.fullmatch('helmut_resource_fixture_20261017_[a-f0-9]{12}',target):raise RuntimeError('new owned target required')
+    if not re.fullmatch('helmut_resource_fixture_20261018_[a-f0-9]{12}',target):raise RuntimeError('new owned target required')
     if not re.fullmatch('helmut-meter-db-w20-[a-f0-9]{12}',container):raise RuntimeError('new owned container required')
-    if not re.fullmatch('synthetik500-resources17-[a-f0-9]{12}',operation):raise RuntimeError('new operation required')
+    if not re.fullmatch('synthetik500-resources18-[a-f0-9]{12}',operation):raise RuntimeError('new operation required')
     read_pin(day_rows_pin)
     day=read_pin(day_acceptance_pin)
-    if day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER' or day.get('day')!='2026-10-17':raise RuntimeError('accepted actual day17 binding missing')
+    if day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER' or day.get('day')!='2026-10-18':raise RuntimeError('accepted actual day18 binding missing')
     if day.get('adoptedRowsPin')!=day_rows_pin:raise RuntimeError('accepted exact current inputs required')
     owner=read_pin(owner_go_pin)
     A.validate_owner(owner,{'caseDirectory':str(case),'targetDatabase':target,'operationId':operation,'sourceCapture':owner['sourceCapturePin'],'preparedWithoutGO':prepare_only},planning=prepare_only)
@@ -150,11 +150,11 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
       'newOperationId':operation,'reviewedDayWindowEndUTC':day['endsAtUTC'],
       'status':'AWAITING_NEW_RESOURCE_GO_NOT_AUTHORIZED'if prepare_only else'BOUND_EXISTING_UNUSED_ONE_TIME_LOCAL_RESOURCES_GO_ONLY','requiredGOConfirmation':
       'GO_LOCAL_ONLY_CREATE_'+target+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE','authorized':not prepare_only,
-      'allowedLocalEffectsAfterGO':[str(x).replace('16Oct','17Oct') for x in original_action['allowedLocalEffectsAfterGO']]}
+      'allowedLocalEffectsAfterGO':[str(x).replace('16Oct','18Oct') for x in original_action['allowedLocalEffectsAfterGO']]}
     save(n/'LOCAL_ACTIVATION_ACTION.SAFE.json',action)
     plan={'schema':'helmut-exact-local500-connection/1','scope':'STAGED_NOT_EXECUTED','caseDirectory':str(case),
       'workflowDirectory':str(n),'sourceDatabase':SOURCE,'targetDatabase':target,'containerName':container,
-      'operationId':operation,'day':'2026-10-17','dayAcceptance':day_acceptance_pin,'dayRows':day_rows_pin,
+      'operationId':operation,'day':'2026-10-18','dayAcceptance':day_acceptance_pin,'dayRows':day_rows_pin,
       'ownerGOPath':owner_go_pin['path'],'ownerGOPin':owner_go_pin,'executionOwnerGOPath':owner['finalOwnerGOPath'],'originalAction':pin(BASE/'wave15/native-end-preparation/LOCAL_ACTIVATION_ACTION.SAFE.json'),
       'action':pin(n/'LOCAL_ACTIVATION_ACTION.SAFE.json'),'templateDeltas':deltas,
       'freshSelectorComesFromPinnedActualAssembly':True,'full500RunStarted':False,'resourceGOConsumed':False,

@@ -163,20 +163,13 @@ def financial_data(C,connection):
     # Diagnose data separately from authority; old bad/consumed GO remains
     # BLOCKED. This branch cannot change, approve, capture, dump or repair input.
     template_replay(connection)
-    capture=read(connection['sourceCapture'])
-    actual_original=C.Z.witness(C.S.SOURCE)
-    original=private_pin(capture['originalFinancialWitnessPin'])
-    require(all(actual_original[k]==original[k] for k in actual_original),'original native finance drift')
-    actual=C.Z.witness(capture['capturedFromNewLocalInputDatabase'])
-    require(actual==private_pin(capture['correctedFinancialWitnessPin']),'corrected native finance drift')
-    C.Z.validate_change(original,actual)
-    for key in ['sourceDump','localRolesSQL','postgrestBinary']:require(pin(capture[key]['path'])==capture[key],'frozen fixture asset drift')
+    actual=C.I.A.verify_preexisting_capture(connection['sourceCapture'])
     stage=str(Path(connection['workflowDirectory'])/'prepare-current-local-runtime.js')
     pins=[p for p in connection['immutableWorkflowPins']if p['path']==stage]
     require(len(pins)==1,'exact original financial implementation required')
     snapshot={'auth':json.loads(actual['nativeAuthText']),'nativeAuthText':actual['nativeAuthText'],
         'authSHA':actual['nativeAuthSHA'],'counter':0,'counterReadOK':True}
-    # validate_change requires the ENTIRE actual native counter table ==[].
+    # The shared two-correction verifier requires the ENTIRE native table ==[].
     result=subprocess.run([str(C.I.K.NODE_ROOT/'bin/node'),str(BIN/'local-financial-preflight.js'),json.dumps(pins[0]),connection['day']],
         input=json.dumps(snapshot),capture_output=True,text=True,timeout=30)
     safe=json.loads(result.stdout)
@@ -187,7 +180,7 @@ def financial_data(C,connection):
         helper=str(BIN/'atomic-usage-integration.js')
         query=subprocess.check_output([str(C.I.K.NODE_ROOT/'bin/node'),'-e',
             "process.stdout.write(require(process.argv[1]).sourceReadySQL())",helper],text=True,env={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'},timeout=20)
-        native=C.Z.query(capture['capturedFromNewLocalInputDatabase'],query)
+        native=C.I.A.query_input(query)
         check=subprocess.run([str(C.I.K.NODE_ROOT/'bin/node'),'-e',
             "require(process.argv[1]).assertSourceReady(JSON.parse(require('fs').readFileSync(0,'utf8')))",helper],
             input=json.dumps(native),text=True,capture_output=True,env={'PATH':os.environ['PATH'],'LANG':'C.UTF-8'},timeout=20)
@@ -205,6 +198,9 @@ def stage_contract(connection, recipe):
     require(recipe['scope'] == 'owner-approved-local500-resources' and recipe['full500Attempts'] == 1, 'one local attempt only')
     require(recipe['freshOwnerGO'] == connection['freshOwnerGO'] and recipe['dayBindingAcceptance'] == connection['dayBindingAcceptance'], 'recipe binding differs')
     require(recipe['expectedFreshOperationId'] == connection['operationId'], 'operation differs')
+    authority=module('stage_contract_authority','next-resource-authority.py')
+    require(connection['resourceClaimPath']==str(authority.CLAIM) and connection['sourceInputDatabase']==authority.INPUT_DATABASE,
+        'actual preparation claim/input binding differs from fixed next slot')
     require(recipe['databaseSampleIntervalSeconds'] == 1, 'continuous sampling unchanged')
     require(not set(recipe.get('localEnvironment', {}))-{'PATH', 'LANG', 'HELMUT_RESOURCE_METER_DIR'}, 'environment not allowed')
     n = Path(connection['workflowDirectory']); case = Path(connection['caseDirectory'])
@@ -321,8 +317,8 @@ def assess(bindings,*,planning=False):
     if day:
         report.check('window', 'controller.window; preparation.window', 'Full original workflow plus setup/close reserve inside actual UTC/Berlin day', lambda:window_evidence(C,day))
     report.check('originals', 'controller.original_preflight', 'All nine original input hashes, original full source state, physical KO/RAW/link equality', lambda:C.original_preflight(connection,check_financial=False))
-    report.check('financialData', 'zero_day.validate_change; preparation.financialProposal; K.pruefeStart/auftragsStand', 'Read-only native complete counter/auth binding and all daybooks; NOT new authority', lambda:financial_data(C,connection))
-    report.check('financialAuthority', 'zero_day.verify_capture', 'Exact actual corrected capture and fresh explicit owner authority', lambda:C.financial_preflight(connection))
+    report.check('financialData', 'next_resource.verify_preexisting_capture; preparation.financialProposal; K.pruefeStart/auftragsStand', 'Read-only native complete counter/auth binding and all daybooks; NOT new authority', lambda:financial_data(C,connection))
+    report.check('financialAuthority', 'next_resource.verify_preexisting_capture', 'Completed input-correction provenance only; new resource GO remains a separate authority gate', lambda:C.financial_preflight(connection))
     # Independently collect fixed consumer predicates even when an earlier check
     # failed. Do NOT execute the assembly or sequence entrypoint IIFEs.
     node = C.I.K.NODE_ROOT/'bin/node'
@@ -380,12 +376,12 @@ def toolchain(C):
 
 def resource_names(C,connection):
     K=C.I.K; case=Path(connection['caseDirectory']); suffix=case.name.removeprefix('attempt-')
-    network='helmut-meter-net-w20-'+suffix;parent='helmut-meter-resources17-'+suffix
+    network='helmut-meter-net-w20-'+suffix;parent='helmut-meter-resources18-'+suffix
     db=connection['containerName'];names=[db,db.replace('helmut-meter-db-','helmut-meter-app-',1),db.replace('helmut-meter-db-','helmut-meter-app-',1)+'-broker']
     occupied=[n for n in names if K.docker(['inspect',n],check=False).returncode==0]
     network_exists=K.docker(['network','inspect',network],check=False).returncode==0
     cgroup_exists=(Path('/sys/fs/cgroup')/parent).exists()
-    storage_exists=(C.I.ONCE.parent/('full500-owned-storage17-'+suffix)).exists()
+    storage_exists=(C.I.ONCE.parent/('full500-owned-storage18-'+suffix)).exists()
     subnet=connection['approvedInternalSubnet'];require(subnet==C.I.A.SUBNET,'approved subnet changed')
     ids=K.docker(['network','ls','-q']).stdout.split()
     networks=json.loads(K.docker(['network','inspect',*ids]).stdout) if ids else []

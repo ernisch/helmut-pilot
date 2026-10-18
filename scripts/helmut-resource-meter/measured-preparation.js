@@ -6,6 +6,19 @@ const fs=require('node:fs'),assert=require('node:assert/strict'),cp=require('nod
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 function read(pin){const b=fs.readFileSync(pin.path);assert.equal(b.length,pin.bytes);assert.equal(sha(b),pin.sha256);return JSON.parse(b);}
 function bytes(pin){const b=fs.readFileSync(pin.path);assert.equal(b.length,pin.bytes);assert.equal(sha(b),pin.sha256);return b;}
+function assertInputBindings(plan,source){
+ assert.equal(plan.production,false);assert.equal(source.production,false);
+ assert(/^helmut_resource_fixture_20261018_[a-f0-9]{12}$/.test(plan.targetDatabase));
+ assert.equal(plan.resourceClaimPath,'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE18_V5_GO_CLAIM.SAFE.json');
+ assert.equal(plan.sourceInputDatabase,'helmut_resource_input_20261018_ab76c911dac8');
+ assert.equal(source.source,plan.sourceInputDatabase);
+ // Physical input provenance and the logical namespace in the NEW owned
+ // server are distinct. The actual restored bytes are verified below.
+ assert.equal(plan.sourceDatabase,'helmut_fresh_input_fixture_d2e98984');
+ assert.equal(source.sourceWrites,0);assert(source.before&&typeof source.before==='object');
+ assert.deepEqual(source.before,source.after);
+ return plan.resourceClaimPath;
+}
 function main(){
  const recipe=JSON.parse(fs.readFileSync('/meter-output/RECIPE.PRIVATE.json'));
  assert.equal(recipe.scope,'owner-approved-local500-resources');assert.equal(recipe.full500Attempts,1);
@@ -13,10 +26,10 @@ function main(){
  assert.equal(plan.production,false);assert.equal(plan.operationId,recipe.expectedFreshOperationId);
  assert.equal(process.argv[2],recipe.fixtureConnectionPin.path);
  const owner=read(recipe.freshOwnerGO);assert.equal(owner.production,false);assert.equal(owner.syntheticProfiles,500);assert.equal(owner.targetDatabase,plan.targetDatabase);
- const claim=JSON.parse(fs.readFileSync('/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE17_V4_GO_CLAIM.SAFE.json'));
+ const source=read(plan.sourceCapture);
+ const claim=JSON.parse(fs.readFileSync(assertInputBindings(plan,source)));
  assert.equal(claim.recipeSHA256,sha(fs.readFileSync('/meter-output/RECIPE.PRIVATE.json')));
- const source=read(plan.sourceCapture),q=x=>"'"+x.replaceAll("'","''")+"'";
- assert.equal(source.source,plan.sourceDatabase);assert.equal(source.sourceWrites,0);assert.deepEqual(source.before,source.after);
+ const q=x=>"'"+x.replaceAll("'","''")+"'";
  const argv=['--host=unix:///var/run/docker.sock','exec','-i',plan.containerName,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d','postgres','-f','-'];
  function psql(text){return cp.execFileSync('docker',argv,{input:text,encoding:'utf8',env:{PATH:process.env.PATH,LANG:'C.UTF-8'},timeout:30000,maxBuffer:8*1024*1024}).trim();}
  assert.equal(psql('begin read only;select count(*)from pg_database where datname in('+q(plan.sourceDatabase)+','+q(plan.targetDatabase)+');rollback;'),'0','Never reuse a source/target in this fresh owned server');
@@ -48,4 +61,4 @@ function main(){
  console.log(JSON.stringify({measuredOriginalPreparationComplete:true,onlyOwnedDatabase:true,sourceHashAndOriginalUBindingEqual:true,syntheticProfiles:500,production:false}));
 }
 if(require.main===module)main();
-module.exports={read,bytes};
+module.exports={read,bytes,assertInputBindings};

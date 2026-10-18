@@ -5,10 +5,12 @@ from pathlib import Path
 from unittest.mock import patch
 spec=importlib.util.spec_from_file_location('next_authority',Path(__file__).with_name('next-resource-authority.py'))
 A=importlib.util.module_from_spec(spec);spec.loader.exec_module(A)
+OLD_V4_AUTHORIZATION='USER_GO_20261017_EXACT_ONE_RESOURCE_ONLY_V4'
+OLD17_V4_OWNER_GO=str(A.METER/'OWNER_RESOURCE17_V4_000000000000.PRIVATE.json')
 class NextResourceAuthorityTest(unittest.TestCase):
     def setUp(self):
-        self.connection={'preparedWithoutGO':True,'targetDatabase':'helmut_resource_fixture_20261017_000000000000',
-          'operationId':'synthetik500-resources17-000000000000',
+        self.connection={'preparedWithoutGO':True,'targetDatabase':'helmut_resource_fixture_20261018_000000000000',
+          'operationId':'synthetik500-resources18-000000000000',
           'caseDirectory':'/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-000000000000',
           'sourceCapture':{'TEST_ONLY':'NO_OPERATIVE_AUTHORITY'}}
         self.intent={'schema':'helmut-owner-local-fixture-intent/1','authorized':False,
@@ -17,7 +19,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
           **{k:self.connection[k]for k in ['targetDatabase','operationId','caseDirectory']},
           'sourceCapturePin':self.connection['sourceCapture'],
           'previousConsumedMarkers':copy.deepcopy(A.PRESERVED_MARKER_PINS),
-          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE17_V4_000000000000.PRIVATE.json'),
+          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE18_V5_000000000000.PRIVATE.json'),
           'requiredConfirmation':'GO_LOCAL_ONLY_CREATE_'+self.connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'}
     def test_intent_is_only_technical_and_never_actual_go(self):
         with patch.object(A,'read',return_value={}):
@@ -43,12 +45,22 @@ class NextResourceAuthorityTest(unittest.TestCase):
         with patch.object(A,'read',return_value={}),patch.object(A.Path,'exists',return_value=True):
             with self.assertRaises(RuntimeError):A.validate_owner(self.intent,self.connection,planning=True)
         with patch.object(A,'read',return_value={}):
-            with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,'finalOwnerGOPath':str(A.OLD_MARKERS[0])},self.connection,planning=True)
+            for path in [str(A.OLD_MARKERS[0]),OLD17_V4_OWNER_GO]:
+                with self.subTest(path=path),self.assertRaises(RuntimeError):A.validate_owner({**self.intent,'finalOwnerGOPath':path},self.connection,planning=True)
+    def test_old_v4_authorization_cannot_authorize_new_intent(self):
+        with patch.object(A,'read',return_value={}):
+            with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,'authorizationId':OLD_V4_AUTHORIZATION},self.connection,planning=True)
+    def test_planning_and_execution_mode_types_do_not_cross_grant(self):
+        with patch.object(A,'read',return_value={}):
+            for planning,schema in [(False,'helmut-owner-local-fixture-intent/1'),(True,'helmut-owner-local-fixture-go/1')]:
+                with self.subTest(planning=planning,schema=schema),self.assertRaises(RuntimeError):
+                    A.validate_owner({**self.intent,'schema':schema},self.connection,planning=planning)
     def test_only_exact_completed_data_capture_is_reusable_before_any_read(self):
         for p in [{'path':str(A.CORRECTED_CAPTURE),'sha256':'0'*64},{'path':'/tmp/OTHER','sha256':A.CORRECTED_CAPTURE_SHA}]:
             with patch.object(A,'read')as read,self.assertRaises(RuntimeError):A.verify_preexisting_capture(p)
             read.assert_not_called()
     def test_fixed_next_slot_never_aliases_any_consumed_claim(self):
+        self.assertEqual((A.DAY,A.DATE_TAG),('2026-10-18','20261018'))
         self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertNotIn(A.RESERVATION,A.OLD_MARKERS)
-        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.247.0/24')
+        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.245.0/24')
 if __name__=='__main__':unittest.main()
