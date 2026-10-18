@@ -14,6 +14,10 @@
  * Write mode:
  *   node scripts/deepseek-cloud-router.js pro high write \
  *     --task-file /tmp/task.txt --file lib/helmut/example.js
+ * Optional small edits: --edit-format replacements
+ * Optional private artifact: --save-response /tmp/response.private.json
+ * Offline reuse of a completed response: replace --save-response with
+ * --replay-response and keep the exact same task, route and source contents.
  *
  * Only files passed with --file are editable in write mode. Core project rules
  * are added as read-only context automatically.
@@ -158,7 +162,7 @@ function summarySchema() {
   };
 }
 
-function modelOutputSchema(mode) {
+function modelOutputSchema(mode, editFormat = "full") {
   const schema = {
     type: "object",
     additionalProperties: false,
@@ -187,6 +191,22 @@ function modelOutputSchema(mode) {
       },
     };
   }
+  if (mode === "write" && editFormat === "replacements") {
+    const edit = schema.properties.edits.items;
+    edit.required = ["path", "expected_sha256", "replacements"];
+    delete edit.properties.content;
+    edit.properties.replacements = {
+      type: "array", minItems: 1, maxItems: 16,
+      items: {
+        type: "object", additionalProperties: false,
+        required: ["old_text", "new_text"],
+        properties: {
+          old_text: { type: "string", minLength: 1, maxLength: 12000 },
+          new_text: { type: "string", maxLength: 12000 },
+        },
+      },
+    };
+  }
   return schema;
 }
 
@@ -197,6 +217,9 @@ function parseArgs(argv) {
   }
 
   let taskFile = null;
+  let editFormat = "full";
+  let saveResponse = null;
+  let replayResponse = null;
   const files = [];
   for (let i = 0; i < rest.length; i += 1) {
     if (rest[i] === "--task-file") {
@@ -206,11 +229,23 @@ function parseArgs(argv) {
       const value = rest[++i];
       if (!value) throw new Error("file-path-required");
       files.push(value);
+    } else if (rest[i] === "--edit-format") {
+      editFormat = rest[++i];
+      if (mode !== "write" || !["full", "replacements"].includes(editFormat)) {
+        throw new Error("invalid-edit-format");
+      }
+    } else if (rest[i] === "--save-response" || rest[i] === "--replay-response") {
+      const flag = rest[i];
+      const value = rest[++i];
+      if (!value) throw new Error("response-path-required");
+      if (flag === "--save-response") saveResponse = path.resolve(value);
+      else replayResponse = path.resolve(value);
     } else {
       throw new Error(`unknown-argument:${rest[i]}`);
     }
   }
   if (!taskFile) throw new Error("task-file-required");
+  if (saveResponse && replayResponse) throw new Error("save-and-replay-exclusive");
   if (files.length > MAX_FILES) throw new Error(`too-many-files:${files.length}>${MAX_FILES}`);
 
   return {
@@ -219,6 +254,9 @@ function parseArgs(argv) {
     effort,
     mode,
     taskFile: path.resolve(taskFile),
+    editFormat,
+    saveResponse,
+    replayResponse,
     files,
   };
 }
@@ -365,7 +403,10 @@ function buildInstructions(cfg) {
     base.push(
       "You may propose replacements only for SOURCES marked editable=yes.",
       "Each edit path must exactly equal the supplied source path and expected_sha256 must exactly equal its supplied sha256.",
-      "Return complete replacement content for each edited text file. Do not propose edits to any other path."
+      cfg.editFormat === "replacements"
+        ? "Return only small exact old_text/new_text replacements. Each nonempty old_text must occur exactly once in the ORIGINAL source; replacements must not overlap. Do not return unchanged file content."
+        : "Return complete replacement content for each edited text file. Do not propose edits to any other path.",
+      "Keep the task to one small coherent change. If it cannot fit, return status=blocked and edits=[] with the next smaller task; never emit a partial implementation."
     );
   } else {
     base.push("This is read-only analysis. Do not return edits.");
@@ -384,7 +425,7 @@ function buildRequestBody(task, cfg, sources) {
       format: {
         type: "json_schema",
         name: "helmut_deepseek_worker",
-        schema: modelOutputSchema(cfg.mode),
+        schema: modelOutputSchema(cfg.mode, cfg.editFormat),
       },
     },
     stream: false,
@@ -405,7 +446,11 @@ function parseCurlResponse(raw) {
 
   if (response.status !== "completed") {
     const reason = response.incomplete_details?.reason || response.error?.code || response.status || "unknown";
-    throw new Error(`deepseek-response-not-completed:${reason}`);
+    const output = Number(response.usage?.output_tokens || 0);
+    const reasoning = Number(response.usage?.output_tokens_details?.reasoning_tokens || 0);
+    // Never expose provider error text or unfinished content in the visible error.
+    const safeReason = /^[a-zA-Z0-9_-]{1,80}$/.test(reason) ? reason : "unknown";
+    throw new Error(`deepseek-response-not-completed:${safeReason}:output_tokens=${output}:reasoning_tokens=${reasoning}; split-task; no-files-applied`);
   }
 
   const text = (response.output || [])
@@ -448,6 +493,7 @@ function callDeepSeek(body, options = {}) {
     maxBuffer: 16 * 1024 * 1024,
   });
 
+  if (options.saveRawResponse) options.saveRawResponse(String(result.stdout || ""));
   if (result.error) {
     if (result.error.code === "ETIMEDOUT") throw new Error("deepseek-worker-timeout");
     throw new Error(`deepseek-curl-start:${result.error.code || result.error.message}`);
@@ -477,17 +523,44 @@ function validateSummary(summary) {
   return summary;
 }
 
-function prepareEdits(edits, sources, cwd) {
+function replaceExact(original, replacements) {
+  if (!Array.isArray(replacements) || !replacements.length || replacements.length > 16) {
+    throw new Error("deepseek-replacements-invalid");
+  }
+  const spans = replacements.map((item) => {
+    if (!item || typeof item.old_text !== "string" || !item.old_text.length ||
+        typeof item.new_text !== "string" || charCount(item.old_text) > 12000 ||
+        charCount(item.new_text) > 12000) throw new Error("deepseek-replacement-invalid");
+    const start = original.indexOf(item.old_text);
+    if (start < 0 || original.indexOf(item.old_text, start + 1) >= 0) {
+      throw new Error("deepseek-replacement-not-unique");
+    }
+    return { start, end: start + item.old_text.length, text: item.new_text };
+  }).sort((a, b) => a.start - b.start);
+  let cursor = 0;
+  let result = "";
+  for (const span of spans) {
+    if (span.start < cursor) throw new Error("deepseek-replacements-overlap");
+    result += original.slice(cursor, span.start) + span.text;
+    cursor = span.end;
+  }
+  return result + original.slice(cursor);
+}
+
+function prepareEdits(edits, sources, cwd, editFormat = "full") {
   if (!Array.isArray(edits)) throw new Error("deepseek-edits-invalid");
   const editableByLabel = new Map(
     sources.filter((s) => s.editable).map((s) => [s.label, s])
   );
   const prepared = [];
+  const seen = new Set();
 
   for (const edit of edits) {
     if (!edit || typeof edit !== "object") throw new Error("deepseek-edit-invalid");
     const source = editableByLabel.get(edit.path);
     if (!source) throw new Error(`deepseek-edit-path-not-allowed:${edit.path}`);
+    if (seen.has(source.abs)) throw new Error("deepseek-edit-duplicate-path");
+    seen.add(source.abs);
     if (!inside(cwd, source.abs)) throw new Error(`deepseek-write-outside-repo:${edit.path}`);
     if (edit.expected_sha256 !== source.sha256) {
       throw new Error(`deepseek-edit-expected-hash-mismatch:${edit.path}`);
@@ -496,10 +569,14 @@ function prepareEdits(edits, sources, cwd) {
     if (sha256(current) !== source.sha256) {
       throw new Error(`deepseek-edit-current-hash-drift:${edit.path}`);
     }
-    if (typeof edit.content !== "string" || charCount(edit.content) > MAX_FILE_CHARS) {
+    if (editFormat === "replacements" ? "content" in edit : "replacements" in edit) {
+      throw new Error("deepseek-edit-format-mismatch");
+    }
+    const content = editFormat === "replacements" ? replaceExact(current, edit.replacements) : edit.content;
+    if (typeof content !== "string" || charCount(content) > MAX_FILE_CHARS) {
       throw new Error(`deepseek-edit-content-invalid:${edit.path}`);
     }
-    prepared.push({ source, content: edit.content });
+    prepared.push({ source, content });
   }
   return prepared;
 }
@@ -552,6 +629,7 @@ function finalVisibleResult(summary, cfg, apiResult, applied) {
   const compacted = compactSummary(summary);
   const result = {
     ...compacted.summary,
+    ...(apiResult.replayed ? { replayed: true } : {}),
     route: { model: cfg.model, effort: cfg.effort, mode: cfg.mode },
     usage: {
       input_tokens: Number(apiResult.usage.input_tokens || 0),
@@ -580,7 +658,7 @@ function run(options = {}) {
   const cwd = path.resolve(options.cwd || process.cwd());
   const cfg = parseArgs(argv);
 
-  if (!envSource.DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY-fehlt");
+  if (!cfg.replayResponse && !envSource.DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY-fehlt");
   const task = ensureTextFile(cfg.taskFile);
   if (!task.trim()) throw new Error("task-file-empty");
   if (charCount(task) > MAX_TASK_CHARS) {
@@ -589,24 +667,71 @@ function run(options = {}) {
 
   const sources = loadSources({ cwd, explicitFiles: cfg.files });
   const body = buildRequestBody(task, cfg, sources);
-  const apiResult = (options.callDeepSeek || callDeepSeek)(body, {
-    env: envSource,
-    spawnSync: options.spawnSync,
-    apiKey: options.apiKey,
-  });
+  const requestHash = sha256(JSON.stringify(body));
+  let apiResult;
+  if (cfg.replayResponse) {
+    const saved = JSON.parse(fs.readFileSync(privateResponsePath(cfg.replayResponse, cwd), "utf8"));
+    if (saved.version !== 1 || saved.request_sha256 !== requestHash || typeof saved.raw !== "string") {
+      throw new Error("deepseek-replay-request-mismatch");
+    }
+    apiResult = parseCurlResponse(saved.raw);
+    apiResult.replayed = true;
+  } else {
+    // Reserve before the paid call: refuse an existing path and never overwrite work.
+    const fd = cfg.saveResponse
+      ? fs.openSync(privateResponsePath(cfg.saveResponse, cwd), "wx", 0o600) : null;
+    try {
+      apiResult = (options.callDeepSeek || callDeepSeek)(body, {
+        env: envSource,
+        spawnSync: options.spawnSync,
+        apiKey: options.apiKey,
+        saveRawResponse: fd === null ? null : (raw) => {
+          fs.writeFileSync(fd, JSON.stringify({ version: 1, request_sha256: requestHash, raw }) + "\n");
+          fs.fsyncSync(fd);
+        },
+      });
+    } finally {
+      if (fd !== null) fs.closeSync(fd);
+    }
+  }
   apiResult.contextChars = charCount(body.input);
 
   const payload = apiResult.payload;
   const summary = validateSummary(payload.summary);
+  if (cfg.mode === "write" && summary.status !== "ok" && payload.edits?.length) {
+    throw new Error("deepseek-non-ok-edits");
+  }
 
   const prepared = cfg.mode === "write"
-    ? prepareEdits(payload.edits, sources, cwd)
+    ? prepareEdits(payload.edits, sources, cwd, cfg.editFormat)
     : [];
   // Validate the bounded visible receipt before any authorized file mutation.
   const visible = finalVisibleResult(summary, cfg, apiResult,
     prepared.map((x) => x.source.label));
   if (cfg.mode === "write") applyEdits(prepared);
   return visible;
+}
+
+function privateResponsePath(file, cwd) {
+  const parent = fs.realpathSync(path.dirname(file));
+  const resolved = path.join(parent, path.basename(file));
+  // Artifacts may contain source code and reasoning. Keep them out of every Git
+  // worktree, including siblings reached through symlinks.
+  for (let dir = parent; ; dir = path.dirname(dir)) {
+    const git = path.join(dir, ".git");
+    // Managed sandboxes can expose empty read-only .git placeholders at /tmp
+    // and /workspace. Only a real repository marker denotes a worktree.
+    const repository = fs.existsSync(git) && (fs.statSync(git).isFile()
+      ? /^gitdir:\s/m.test(fs.readFileSync(git, "utf8")) : fs.existsSync(path.join(git, "HEAD")));
+    if (repository || inside(fs.realpathSync(cwd), dir)) {
+      throw new Error("deepseek-response-must-be-outside-repo");
+    }
+    if (dir === path.dirname(dir)) break;
+  }
+  if (fs.existsSync(resolved) && fs.lstatSync(resolved).isSymbolicLink()) {
+    throw new Error("deepseek-response-symlink");
+  }
+  return resolved;
 }
 
 function main() {
@@ -644,6 +769,8 @@ module.exports = {
   callDeepSeek,
   validateSummary,
   prepareEdits,
+  replaceExact,
+  privateResponsePath,
   applyEdits,
   truncateText,
   compactSummary,

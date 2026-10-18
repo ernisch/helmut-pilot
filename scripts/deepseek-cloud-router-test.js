@@ -624,5 +624,228 @@ check("Ohne DeepSeek Key startet kein API Worker", () => {
   }
 });
 
+function recoveryFixture(fn) {
+  const p = project();
+  const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-router-recovery-"));
+  p.saved = path.join(privateDir, "response.json");
+  p.target = path.join(p.root, "lib/example.js");
+  p.original = fs.readFileSync(p.target, "utf8");
+  p.argv = ["flash", "high", "write", "--task-file", p.task,
+    "--file", "lib/example.js", "--edit-format", "replacements"];
+  p.payload = { summary: summary(), edits: [{ path: "lib/example.js",
+    expected_sha256: hash(p.original), replacements: [{ old_text: "= 1", new_text: "= 2" }] }] };
+  p.raw = (payload = p.payload) => JSON.stringify({ status: "completed",
+    output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(payload) }] }],
+    usage: { output_tokens: 80 } }) + "\n__HELMUT_HTTP_STATUS__:200";
+  p.run = (extra = [], opts = {}) => router.run({ cwd: p.root,
+    argv: [...p.argv, ...extra], env: { DEEPSEEK_API_KEY: "placeholder" },
+    spawnSync: () => ({ status: 0, stdout: p.raw() }), ...opts });
+  try { fn(p); } finally {
+    fs.rmSync(p.root, { recursive: true, force: true });
+    fs.rmSync(privateDir, { recursive: true, force: true });
+  }
+}
+
+check("Kleine Ersetzung statt vollstaendiger grosser Datei; Schema und Grenze bleiben gebunden", () => {
+  recoveryFixture((p) => {
+    const source = "// unveraendert\n".repeat(8000) + p.original;
+    fs.writeFileSync(p.target, source);
+    p.payload.edits[0].expected_sha256 = hash(source);
+    let request;
+    const result = p.run([], { spawnSync: (bin, args, opts) => {
+      request = JSON.parse(opts.input);
+      return { status: 0, stdout: p.raw() };
+    } });
+    assert.equal(request.max_output_tokens, 32768);
+    assert.ok(request.instructions.includes("ORIGINAL source"));
+    const editSchema = request.text.format.schema.properties.edits.items;
+    assert.ok(editSchema.required.includes("replacements"));
+    assert.ok(!("content" in editSchema.properties));
+    assert.ok(p.raw().length < source.length / 100);
+    assert.equal(fs.readFileSync(p.target, "utf8"), source.replace("= 1", "= 2"));
+    assert.deepEqual(result.applied_files, ["lib/example.js"]);
+    assert.ok(charLength(JSON.stringify(result)) <= 2000);
+    assert.ok(router.modelOutputSchema("write").properties.edits.items.required.includes("content"));
+  });
+});
+
+check("Ersetzungen sind eindeutig, nicht ueberlappend und beziehen sich auf Originalbytes", () => {
+  assert.equal(router.replaceExact("a 😀 b", [{ old_text: "😀", new_text: "ä" },
+    { old_text: "b", new_text: "😀" }]), "a ä 😀");
+  assert.equal(router.replaceExact("abc", [{ old_text: "b", new_text: "" }]), "ac");
+  for (const [src, replacements, error] of [
+    ["aaaa", [{ old_text: "aa", new_text: "x" }], /not-unique/],
+    ["abc", [{ old_text: "missing", new_text: "x" }], /not-unique/],
+    ["abc", [{ old_text: "ab", new_text: "x" }, { old_text: "bc", new_text: "y" }], /overlap/],
+    ["abc", [{ old_text: "", new_text: "x" }], /replacement-invalid/],
+    ["abc", [], /replacements-invalid/],
+    ["abc", [{ old_text: "a", new_text: "x".repeat(12001) }], /replacement-invalid/],
+  ]) assert.throws(() => router.replaceExact(src, replacements), error);
+});
+
+check("Kein teilweises Anwenden bei falschem Pfad, Hash, Format oder doppelter Datei", () => {
+  recoveryFixture((p) => {
+    const good = structuredClone(p.payload.edits[0]);
+    fs.writeFileSync(path.join(p.root, "lib/second.js"), p.original);
+    p.argv.push("--file", "lib/second.js");
+    for (const [bad, error] of [
+      [{ ...good, path: "lib/unknown.js" }, /path-not-allowed/],
+      [{ ...good, path: "lib/second.js", expected_sha256: "0".repeat(64) }, /hash-mismatch/],
+      [{ ...good, path: "lib/second.js", content: "wrong format" }, /format-mismatch/],
+      [{ ...good }, /duplicate-path/],
+    ]) {
+      p.payload.edits = [good, bad];
+      assert.throws(() => p.run(), error);
+      assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    }
+    p.payload.edits = [good];
+    p.payload.summary.status = "blocked";
+    assert.throws(() => p.run(), /non-ok-edits/);
+    assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+  });
+});
+
+check("Unvollstaendige Antwort wird privat gesichert, niemals angewandt oder automatisch wiederholt", () => {
+  recoveryFixture((p) => {
+    const raw = JSON.stringify({ status: "incomplete", incomplete_details: { reason: "max_output_tokens" },
+      output: [{ type: "message", content: [{ type: "output_text", text: '{"partial":' }] }],
+      usage: { output_tokens: 32768, output_tokens_details: { reasoning_tokens: 32000 } } }) +
+      "\n__HELMUT_HTTP_STATUS__:200";
+    let calls = 0;
+    const spawnSync = () => { calls++; return { status: 0, stdout: raw }; };
+    assert.throws(() => p.run(["--save-response", p.saved], { spawnSync }),
+      /max_output_tokens:output_tokens=32768:reasoning_tokens=32000/);
+    const saved = JSON.parse(fs.readFileSync(p.saved, "utf8"));
+    assert.equal(saved.raw, raw);
+    assert.equal(fs.statSync(p.saved).mode & 0o777, 0o600);
+    assert.ok(!fs.readFileSync(p.saved, "utf8").includes("placeholder"));
+    assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    assert.throws(() => p.run(["--save-response", p.saved], { spawnSync }), /EEXIST/);
+    assert.throws(() => p.run(["--replay-response", p.saved], { env: {}, spawnSync }), /not-completed/);
+    assert.equal(calls, 1);
+  });
+});
+
+check("Vollstaendige Arbeit nach Dateidrift bleibt erhalten und wird offline wiederaufgenommen", () => {
+  recoveryFixture((p) => {
+    let calls = 0;
+    assert.throws(() => p.run(["--save-response", p.saved], { spawnSync: () => {
+      calls++;
+      fs.writeFileSync(p.target, "concurrent work\n");
+      return { status: 0, stdout: p.raw() };
+    } }), /current-hash-drift/);
+    const noNetwork = () => { throw new Error("network-must-not-start"); };
+    assert.throws(() => p.run(["--replay-response", p.saved],
+      { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
+    // Only this test restores its own fixture; replay never restores user files.
+    fs.writeFileSync(p.target, p.original);
+    const taskBefore = fs.readFileSync(p.task, "utf8");
+    fs.writeFileSync(p.task, taskBefore + " changed");
+    assert.throws(() => p.run(["--replay-response", p.saved],
+      { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
+    fs.writeFileSync(p.task, taskBefore);
+    const result = p.run(["--replay-response", p.saved], { env: {}, spawnSync: noNetwork });
+    assert.equal(result.status, "ok");
+    assert.equal(result.replayed, true);
+    assert.equal(fs.readFileSync(p.target, "utf8"), "module.exports = 2;\n");
+    assert.equal(calls, 1);
+    assert.throws(() => p.run(["--replay-response", p.saved],
+      { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
+  });
+});
+
+check("Transportabbruch erhaelt empfangene Teilbytes ohne Anwendung", () => {
+  recoveryFixture((p) => {
+    assert.throws(() => p.run(["--save-response", p.saved], { spawnSync: () => ({
+      status: 28, stdout: '{"partial":', stderr: "timeout",
+    }) }), /curl-exit-28/);
+    assert.equal(JSON.parse(fs.readFileSync(p.saved, "utf8")).raw, '{"partial":');
+    assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+  });
+});
+
+check("Antwortablage lehnt Repository, fremden Worktree, Symlinks und bestehende Dateien vor API ab", () => {
+  recoveryFixture((p) => {
+    const noNetwork = () => { throw new Error("network-must-not-start"); };
+    assert.throws(() => p.run(["--save-response", p.target], { spawnSync: noNetwork }), /outside-repo/);
+    const sibling = path.join(path.dirname(p.saved), "sibling");
+    fs.mkdirSync(sibling);
+    fs.writeFileSync(path.join(sibling, ".git"), "gitdir: elsewhere");
+    assert.throws(() => p.run(["--save-response", path.join(sibling, "raw.json")],
+      { spawnSync: noNetwork }), /outside-repo/);
+    fs.symlinkSync(p.target, p.saved);
+    assert.throws(() => p.run(["--save-response", p.saved], { spawnSync: noNetwork }), /symlink/);
+    fs.unlinkSync(p.saved);
+    fs.writeFileSync(p.saved, "previous work");
+    assert.throws(() => p.run(["--save-response", p.saved], { spawnSync: noNetwork }), /EEXIST/);
+    assert.equal(fs.readFileSync(p.saved, "utf8"), "previous work");
+    assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+  });
+});
+
+check("Read-Antwort wird ohne Key und ohne Modellaufruf wiederverwendet; Kontextdrift sperrt", () => {
+  recoveryFixture((p) => {
+    p.argv[2] = "read";
+    p.argv.splice(-2);
+    p.run(["--save-response", p.saved]);
+    const noNetwork = () => { throw new Error("network-must-not-start"); };
+    assert.equal(p.run(["--replay-response", p.saved], { env: {}, spawnSync: noNetwork }).status, "ok");
+    fs.appendFileSync(path.join(p.root, "AGENTS.md"), "\n## Tests\nchanged policy\n");
+    // Modify a selected section (rather than an excluded historical section).
+    const agents = path.join(p.root, "AGENTS.md");
+    fs.writeFileSync(agents, fs.readFileSync(agents, "utf8").replace("grundregel", "new rule"));
+    assert.throws(() => p.run(["--replay-response", p.saved],
+      { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
+    assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+  });
+});
+
+check("Neue Optionen bleiben ausdruecklich und unvertraegliche Kombinationen stoppen", () => {
+  const base = ["flash", "high", "write", "--task-file", "/tmp/task"];
+  assert.equal(router.parseArgs(base).editFormat, "full");
+  assert.throws(() => router.parseArgs([...base, "--edit-format", "guess"]), /invalid-edit-format/);
+  assert.throws(() => router.parseArgs(["flash", "high", "read", "--task-file", "/tmp/task",
+    "--edit-format", "replacements"]), /invalid-edit-format/);
+  assert.throws(() => router.parseArgs([...base, "--save-response", "/tmp/a",
+    "--replay-response", "/tmp/b"]), /exclusive/);
+});
+
+check("HTTP-Fehler und Workerabbruch werden gesichert, bleiben beim Replay gesperrt", () => {
+  recoveryFixture((p) => {
+    const raw = '{"error":"provider-error"}\n__HELMUT_HTTP_STATUS__:500';
+    assert.throws(() => p.run(["--save-response", p.saved], {
+      spawnSync: () => ({ status: 0, stdout: raw }),
+    }), /http-500/);
+    assert.equal(JSON.parse(fs.readFileSync(p.saved, "utf8")).raw, raw);
+    assert.throws(() => p.run(["--replay-response", p.saved], { env: {},
+      spawnSync: () => { throw new Error("network-must-not-start"); } }), /http-500/);
+    const other = p.saved + ".timeout";
+    assert.throws(() => p.run(["--save-response", other], {
+      spawnSync: () => ({ error: { code: "ETIMEDOUT" }, stdout: "partial response" }),
+    }), /worker-timeout/);
+    assert.equal(JSON.parse(fs.readFileSync(other, "utf8")).raw, "partial response");
+    assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+  });
+});
+
+check("Wiederaufnahme mit anderer Route oder anderem Aenderungsformat startet kein Modell", () => {
+  recoveryFixture((p) => {
+    p.run(["--save-response", p.saved]);
+    fs.writeFileSync(p.target, p.original);
+    const originalArgs = [...p.argv];
+    const noNetwork = () => { throw new Error("network-must-not-start"); };
+    for (const args of [
+      ["pro", ...originalArgs.slice(1)],
+      [originalArgs[0], "max", ...originalArgs.slice(2)],
+      [...originalArgs.slice(0, -1), "full"],
+    ]) {
+      p.argv = args;
+      assert.throws(() => p.run(["--replay-response", p.saved],
+        { env: {}, spawnSync: noNetwork }), /replay-request-mismatch/);
+      assert.equal(fs.readFileSync(p.target, "utf8"), p.original);
+    }
+  });
+});
+
 console.log(`DeepSeek Cloud Router v2: ${pass} PASS, ${fail} FAIL`);
 if (fail) process.exit(1);
