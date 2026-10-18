@@ -13,6 +13,7 @@ def module(name,file):
     s=importlib.util.spec_from_file_location(name,BIN/file);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 I=module('isolation','isolation.py');C=module('connection','connect-local500.py');S=module('source','capture-local-source.py')
 Z=module('zero_day_input','local-zero-day-copy.py')
+Calendar=module('resource_calendar_binding','local-calendar-binding.py')
 W=C.AREA;CLAIM=I.ONCE;UTC=datetime.timezone.utc
 
 def financial_preflight(connection):
@@ -87,7 +88,9 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin,*,planni
     owner=C.read_pin(recipe['freshOwnerGO']);day=C.read_pin(recipe['dayBindingAcceptance'])
     I.verify_fixture_owner_policy(owner)
     I.A.validate_owner(owner,connection,planning=planning)
-    if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!='2026-10-18' or day.get('positiveOriginalLAtBothWindowEnds')!=500:raise RuntimeError('owner or day binding invalid')
+    descriptor=C.read_pin(connection['atomicUsageInput']) if connection.get('atomicUsageInput') else None
+    local=Calendar.admit(day,C.read_pin,descriptor=descriptor,operation=connection['operationId'])
+    if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!='2026-10-18' or (local is None and day.get('positiveOriginalLAtBothWindowEnds')!=500):raise RuntimeError('owner or day binding invalid')
     for p in connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']:
         if C.pin(p['path'])!=p:raise RuntimeError('fixture asset drift')
     return acceptance,connection,recipe,day
@@ -100,9 +103,8 @@ def no_previous_attempt(connection):
     if any(p.exists() for p in forbidden):raise RuntimeError('case already entered; no replay/retry')
 
 def window(day):
-    now=datetime.datetime.now(UTC);start=datetime.datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00'));end=datetime.datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00'))
+    now=datetime.datetime.now(UTC);valid,start,end=Calendar.current_window(day,now=now)
     if now<start:return False,start,end
-    if now.strftime('%Y-%m-%d')!=day['day'] or now.astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')!=day['day']:raise RuntimeError('real UTC/Berlin day mismatch')
     if (end-now).total_seconds()<8089.543088+600:raise RuntimeError('full remaining window lacks last actual workflow plus10min setup/close reserve')
     return True,start,end
 
@@ -180,7 +182,10 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     if empty!='0':raise RuntimeError('fresh source/target database names already used in owned server')
     preflight_path=I.ONCE.parent/('RESOURCES17_START_PREFLIGHT_'+case.name.removeprefix('attempt-')+'.SAFE.json')
     preflight={'status':'PASS_EXACT_UNUSED_LOCAL500_RESOURCE_START','checkedAtUnixSeconds':time.time(),'atUTC':datetime.datetime.now(UTC).isoformat(),
-      'windowEndsAtUTC':end.isoformat(),'sufficientSameUTCAndBerlinDayWindow':True,'originalSourcePreflight':second,
+      'windowEndsAtUTC':end.isoformat(),
+      **({'sufficientSameUTCFixtureWindow':True,'localCalendar':day['localCalendar']} if day.get('status')==Calendar.STATUS
+         else {'sufficientSameUTCAndBerlinDayWindow':True}),
+      'originalSourcePreflight':second,
       'exactUnusedOwnedDatabaseVerified':True,'connectionPin':connection_pin,'independentMeterAcceptance':acceptance_pin,
       'actualEmptyDBContainerId':db['containerId'],'freshOwnerGO':recipe['freshOwnerGO'],'oneTimeGOUnused':True,'production':False}
     I.K.save_new(preflight_path,preflight)

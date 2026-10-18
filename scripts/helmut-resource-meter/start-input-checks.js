@@ -126,7 +126,7 @@ function actualSourceBinding(plan) {
   // The CLI has a deliberately empty runtime environment. Bind the mode that
   // the exact pinned descriptor installs, as the actual assembly does. This
   // synchronous source-only call cannot activate a storage reader or writer.
-  const keys = ['HELMUT_LLM_USAGE_STORAGE', 'HELMUT_AUTH_STATE_STORAGE', 'HELMUT_AUTH_HISTORY_READ_REUSE'];
+  const keys = ['HELMUT_LLM_USAGE_STORAGE', 'HELMUT_AUTH_STATE_STORAGE', 'HELMUT_AUTH_HISTORY_READ_REUSE', 'HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'];
   const before = keys.map(k => process.env[k]);
   try {
     if (plan.atomicUsageInput) {
@@ -180,8 +180,12 @@ function profileInputs(plan) {
   // Day17 acceptance includes original A/F/L for all500 at BOTH endpoints.
   // Reuse only its exact pinned input/code
   // bindings; do not repeat that audit or pretend it proves a future command.
-  assert.equal(day.status, 'ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER');
-  assert.equal(day.positiveOriginalLAtBothWindowEnds, 500);
+  const descriptor=plan.atomicUsageInput?require('./atomic-usage-integration').readDescriptor(plan.atomicUsageInput):null;
+  const local=require('./local-calendar-admission').admit(day,json,{descriptor,operation:plan.operationId,rowsPin:approval.currentPolicyInput});
+  if(!local){
+    assert.equal(day.status, 'ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER');
+    assert.equal(day.positiveOriginalLAtBothWindowEnds, 500);
+  }
   assert.equal(day.positiveOriginalA, 500); assert.equal(day.positiveOriginalF, 500);
   assert.equal(day.profiles, 500);
   assert.equal(day.allPositionsReviewed, true); assert.equal(day.currentTemporalJudgmentAccepted, true);
@@ -195,6 +199,8 @@ function profileInputs(plan) {
 function providerInputs(plan) {
   const request=json(plan.runtimeRequest), approval=json(request.inputAcceptance), day=json(plan.dayBindingAcceptance);
   const rows=json(approval.currentPolicyInput), native=json(asset(plan,'NATIVE_INVENTORY_TEMPLATE.PRIVATE.json'));
+  const descriptor=plan.atomicUsageInput?require('./atomic-usage-integration').readDescriptor(plan.atomicUsageInput):null;
+  const local=require('./local-calendar-admission').admit(day,json,{descriptor,operation:plan.operationId,rowsPin:approval.currentPolicyInput});
   const candidates=json(asset(plan,'REVIEWED_LOCAL_PROVIDER_CANDIDATES.PRIVATE.json'));
   const accepted=json(asset(plan,'ROOT_STATIC_LOCAL_R_TEMPLATE_ACCEPTANCE.SAFE.json'));
   const templates=json(accepted.canonicalTemplates);
@@ -218,7 +224,7 @@ function providerInputs(plan) {
       assert.equal(t.binding.responseJSONSHA256,sha(JSON.stringify(t.response)));
       // These are pure endpoint input checks, NOT a run or a fabricated future
       // command/selector/receipt. The actual assembler repeats fresh bindings.
-      for(const briefingDatum of [day.startsAtUTC,day.endsAtUTC]) {
+      for(const briefingDatum of (local?[local.sourceViewAtUTC]:[day.startsAtUTC,day.endsAtUTC])) {
         const row={...raw,briefingDatum},p=prepare(row,route,native.routeId);
         const body=p.requestBody;assert.equal(JSON.stringify(JSON.parse(body)),body);
         require(ROOT+'/lib/helmut/synthetik-500-eu-service-contract').assertPayload(JSON.parse(body));
@@ -235,7 +241,7 @@ function providerInputs(plan) {
   } finally {
     for(const k of Object.keys(process.env))delete process.env[k];Object.assign(process.env,saved);
   }
-  return {profiles:500,pureEndpointChecks:checked, originalDPreparation:true, originalPreRAndQ:true,
+  return {profiles:500,...(local?{pureSourceSnapshotChecks:checked,executionEndpointFreshnessNotClaimed:true}:{pureEndpointChecks:checked}), originalDPreparation:true, originalPreRAndQ:true,
     freshCommandBindingStillRequired:true,providerCalls:0};
 }
 function staticInterfaces(plan) {

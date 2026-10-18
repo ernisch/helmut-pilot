@@ -24,6 +24,8 @@ BIN=K.REPOSITORY/'scripts/helmut-resource-meter'
 # Fixed globally for this authorization, NOT selected per case/environment.
 _spec=importlib.util.spec_from_file_location('next_resource_authority',BIN/'next-resource-authority.py')
 A=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(A)
+_cal_spec=importlib.util.spec_from_file_location('isolation_calendar_binding',BIN/'local-calendar-binding.py')
+Calendar=importlib.util.module_from_spec(_cal_spec);_cal_spec.loader.exec_module(Calendar)
 ONCE=A.CLAIM
 SETUP_RESERVATION=A.RESERVATION
 
@@ -110,17 +112,16 @@ def verify_pre_setup_authority(recipe,*,planning=False):
     # Only the exact independently reviewed day18 proposal may qualify this
     # connection. A caller-supplied day/version alone grants no authority.
     day=pin_json(recipe['dayBindingAcceptance'])
-    now=datetime.now(timezone.utc);end=datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00'))
-    if now.date()!=end.date() or now.astimezone(ZoneInfo('Europe/Berlin')).date()!=end.astimezone(ZoneInfo('Europe/Berlin')).date():
-        raise RuntimeError('same UTC and Berlin day required')
-    if acceptance.get('dayBindingAcceptance')!=recipe['dayBindingAcceptance'] or day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER':
+    descriptor=pin_json(connection['atomicUsageInput']) if connection.get('atomicUsageInput') else None
+    local=Calendar.admit(day,pin_json,descriptor=descriptor,operation=connection['operationId'])
+    now=datetime.now(timezone.utc);valid,start,end=Calendar.current_window(day,now=now)
+    if acceptance.get('dayBindingAcceptance')!=recipe['dayBindingAcceptance'] or (local is None and day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER'):
         raise RuntimeError('independently adopted exact current-day binding missing')
-    if day.get('day')!='2026-10-18' or now.strftime('%Y-%m-%d')!=day['day'] or now.astimezone(ZoneInfo('Europe/Berlin')).strftime('%Y-%m-%d')!=day['day']:
-        raise RuntimeError('actual UTC/Berlin day outside reviewed binding')
+    if day.get('day')!='2026-10-18':raise RuntimeError('actual accounting day outside reviewed binding')
     independent=pin_json(day['independentReview'])
     if independent.get('model')!='deepseek-v4-pro' or independent.get('route',{}).get('effort')!='high' or independent.get('payload',{}).get('summary',{}).get('status')!='ok':
         raise RuntimeError('current-day independent semantic acceptance missing')
-    if now<datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00')) or end>datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00')):
+    if not valid:
         raise RuntimeError('actual run window outside independent current-day scope')
     if (end-now).total_seconds()*1000 < 8089543.088:
         raise RuntimeError('remaining same-day window shorter than actual last complete workflow')
@@ -161,11 +162,15 @@ def verify_full_authority(recipe):
         raise RuntimeError('fresh preflight authority binding mismatch')
     if preflight.get('status')!='PASS_EXACT_UNUSED_LOCAL500_RESOURCE_START':raise RuntimeError('fresh exact start preflight missing')
     if not 0<=time.time()-preflight['checkedAtUnixSeconds']<=60:raise RuntimeError('start preflight no longer fresh')
-    if preflight.get('sufficientSameUTCAndBerlinDayWindow') is not True:raise RuntimeError('same-day time window not demonstrated')
+    day=checked['day'];local=day.get('status')==Calendar.STATUS
+    if local:
+        if preflight.get('sufficientSameUTCFixtureWindow') is not True or preflight.get('localCalendar')!=day['localCalendar'] or 'sufficientSameUTCAndBerlinDayWindow' in preflight:
+            raise RuntimeError('exact UTC fixture calendar window not demonstrated')
+    elif preflight.get('sufficientSameUTCAndBerlinDayWindow') is not True:raise RuntimeError('same-day time window not demonstrated')
     now=datetime.now(timezone.utc);end=datetime.fromisoformat(preflight['windowEndsAtUTC'].replace('Z','+00:00'))
-    if now.date()!=end.date() or now.astimezone(ZoneInfo('Europe/Berlin')).date()!=end.astimezone(ZoneInfo('Europe/Berlin')).date():
+    if now.date()!=end.date() or (not local and now.astimezone(ZoneInfo('Europe/Berlin')).date()!=end.astimezone(ZoneInfo('Europe/Berlin')).date()):
         raise RuntimeError('same UTC and Berlin day required')
-    day=checked['day']
+    Calendar.current_window(day,now=now)
     if now<datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00')) or end>datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00')):
         raise RuntimeError('actual run window outside independent current-day scope')
     if (end-now).total_seconds()*1000 < 8089543.088:
@@ -276,6 +281,8 @@ def runtime_read_manifest(recipe):
     # verifier and mounted here. Historical owner approvals are excluded.
     for p in A.capture_data_pins(connection['sourceCapture']):add(p)
     day=document(recipe['dayBindingAcceptance']);add(day['independentReview'])
+    if day.get('status')==Calendar.STATUS:
+        document(day['sourceDayAcceptance']);add(day['adoptedRowsPin'])
     # These files do not exist at a pre-GO visibility check. Once created, the
     # exact genuine pins are also overlaid read-only; no dummy file is created.
     generated=[str(ONCE),str(SETUP_RESERVATION),str(Path(connection['caseDirectory'])/'COMPLETE_START_PREFLIGHT.SAFE.json')]

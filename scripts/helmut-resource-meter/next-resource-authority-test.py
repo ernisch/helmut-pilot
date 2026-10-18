@@ -24,7 +24,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
           **{k:self.connection[k]for k in ['targetDatabase','operationId','caseDirectory']},
           'sourceCapturePin':self.connection['sourceCapture'],
           'previousConsumedMarkers':copy.deepcopy(A.PRESERVED_MARKER_PINS),
-          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE18_V6_000000000000.PRIVATE.json'),
+          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE18_V7_000000000000.PRIVATE.json'),
           'requiredConfirmation':'GO_LOCAL_ONLY_CREATE_'+self.connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'}
     def test_intent_is_only_technical_and_never_actual_go(self):
         with patch.object(A,'read',return_value={}):
@@ -67,10 +67,10 @@ class NextResourceAuthorityTest(unittest.TestCase):
     def test_fixed_next_slot_never_aliases_any_consumed_claim(self):
         self.assertEqual((A.DAY,A.DATE_TAG),('2026-10-18','20261018'))
         self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertNotIn(A.RESERVATION,A.OLD_MARKERS)
-        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.245.0/24')
-    def test_all_eleven_spent_markers_stay_pinned_including_both_v5(self):
-        self.assertEqual(len(A.OLD_MARKERS),11)
-        self.assertEqual(len(A.PRESERVED_MARKER_PINS),11)
+        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.244.0/24')
+    def test_all_thirteen_spent_markers_stay_pinned_including_both_v6(self):
+        self.assertEqual(len(A.OLD_MARKERS),13)
+        self.assertEqual(len(A.PRESERVED_MARKER_PINS),13)
         self.assertEqual({p['path'] for p in A.PRESERVED_MARKER_PINS},set(map(str,A.OLD_MARKERS)))
         by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
         for expected in SPENT_V5_PINS:
@@ -90,19 +90,19 @@ class NextResourceAuthorityTest(unittest.TestCase):
                   for p in self.intent['previousConsumedMarkers']]
                 with self.subTest(tampered=key),self.assertRaises(RuntimeError):
                     A.validate_owner({**self.intent,'previousConsumedMarkers':tampered},self.connection,planning=True)
-    def test_v6_slot_is_fixed_and_distinct_from_every_old_slot(self):
-        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-18','version':6})
-        self.assertEqual(A.SLOT_VERSION,6)
-        self.assertEqual(A.AUTHORIZATION,'USER_GO_20261018_EXACT_ONE_RESOURCE_ONLY_V6')
+    def test_v7_slot_is_fixed_and_distinct_from_every_old_slot(self):
+        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-18','version':7})
+        self.assertEqual(A.SLOT_VERSION,7)
+        self.assertEqual(A.AUTHORIZATION,'USER_GO_20261018_EXACT_ONE_RESOURCE_ONLY_V7')
         self.assertEqual(A.AUTHORIZATION,self.intent['authorizationId'])
         self.assertNotEqual(A.AUTHORIZATION,OLD_V4_AUTHORIZATION)
         self.assertNotEqual(A.AUTHORIZATION,OLD_V5_AUTHORIZATION)
-        self.assertEqual(A.CLAIM,A.METER/'NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json')
-        self.assertEqual(A.RESERVATION,A.METER/'NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json')
-        self.assertEqual(str(A.CLAIM),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json')
-        self.assertEqual(str(A.RESERVATION),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json')
+        self.assertEqual(A.CLAIM,A.METER/'NEXT_RESOURCE18_V7_GO_CLAIM.SAFE.json')
+        self.assertEqual(A.RESERVATION,A.METER/'NEXT_RESOURCE18_V7_SETUP_RESERVATION.SAFE.json')
+        self.assertEqual(str(A.CLAIM),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE18_V7_GO_CLAIM.SAFE.json')
+        self.assertEqual(str(A.RESERVATION),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE18_V7_SETUP_RESERVATION.SAFE.json')
         self.assertNotEqual(A.CLAIM,A.RESERVATION)
-        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,'OWNER_RESOURCE18_V6_000000000000.PRIVATE.json')
+        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,'OWNER_RESOURCE18_V7_000000000000.PRIVATE.json')
         old_names=set(map(str,A.OLD_MARKERS))
         self.assertNotIn(str(A.CLAIM),old_names)
         self.assertNotIn(str(A.RESERVATION),old_names)
@@ -119,4 +119,13 @@ class NextResourceAuthorityTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 A.validate_owner({**self.intent,'authorizationId':OLD_V5_AUTHORIZATION,
                   'finalOwnerGOPath':OLD18_V5_OWNER_GO},self.connection,planning=True)
+    def test_consumed_v6_cannot_be_reused_and_its_real_marker_bytes_are_preserved(self):
+        by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
+        for name in ['NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json']:
+            p=A.METER/name;self.assertEqual(A.pin(p),by_path[str(p)])
+        self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
+        with patch.object(A,'read',return_value={}):
+            for delta in [{'authorizationId':'USER_GO_20261018_EXACT_ONE_RESOURCE_ONLY_V6'},
+              {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE18_V6_000000000000.PRIVATE.json')}]:
+                with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**delta},self.connection,planning=True)
 if __name__=='__main__':unittest.main()

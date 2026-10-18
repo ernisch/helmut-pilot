@@ -15,6 +15,7 @@ ausschließlich aktueller Projektstatus neu aufgesetzt.
 
 | Datei | Inhalt |
 |---|---|
+| [`project_state/2026_10_18_abgeschlossene_lokale_zwischenstaende.md`](project_state/2026_10_18_abgeschlossene_lokale_zwischenstaende.md) | Zwei wörtlich unveränderte, abgeschlossene Tagesanlass-/499-Zwischenstände aus CURRENT_STATE vor der lokalen Kalenderanbindung; historische relative Links beziehen sich auf docs/. |
 | [`project_state/2026_10_16_CURRENT_STATE_before_night_ci_compaction.md`](project_state/2026_10_16_CURRENT_STATE_before_night_ci_compaction.md) | Bytegleicher Status vor der notwendigen CI-Größenkorrektur; SHA256 `d1262f8b7df129848d4f0d754b019754dd6a9cfe4457aed99864fc3de439e3a5`. Frühere Zeit-/Ursachenanalysen und Grenzen bleiben vollständig erhalten. |
 | [`project_state/2026_10_08_CURRENT_STATE_vor_blocker2_kandidatenschranke.md`](project_state/2026_10_08_CURRENT_STATE_vor_blocker2_kandidatenschranke.md) | Bytegleicher `main`-Stand `eaab008d` vor der Blocker2-Cockpitverdichtung; SHA256 `c53bbde6a0179b2775a854fe41e5737756c34c11d81bb3b14fcb16be68518b6a`. Alle früheren Blocker2-Stop-, Diagnose- und Quellenbilanzen unverändert erhalten. |
 | [`project_state/2026_10_07_CURRENT_STATE_vor_blocker1_komprimierung.md`](project_state/2026_10_07_CURRENT_STATE_vor_blocker1_komprimierung.md) | Bytegleicher `main`-Stand `416cb2f1` vor der für Blocker1 nötigen Größenverdichtung; SHA256 `1a0dcb4dcdfb2ee5ed06ff6693b9181d7a01002f9b9fc728f196682064b0fe6f`. Native-D-Betreiberentscheidung und Diagnose bleiben vollständig erhalten. |

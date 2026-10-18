@@ -38,6 +38,47 @@ class AtomicIntegrationTest(unittest.TestCase):
     def test_descriptor_drift_cannot_enter_renderer(self):
         d=json.loads(self.descriptor.read_text());d['sourcePins'][0]['sha256']='0'*64;self.descriptor.write_text(json.dumps(d))
         with self.assertRaisesRegex(RuntimeError,'source drift'):C.render_templates(self.case,**self.args,atomic_usage_pin=C.pin(self.descriptor))
+    def test_opt_in_fixture_calendar_reaches_all_real_consumers_without_changing_clocks(self):
+        policy={'version':C.Calendar.VERSION,'operationId':self.args['operation'],'sourceDay':'2026-10-18',
+            'sourceViewAtUTC':'2026-10-18T08:00:00.000Z','sourceInputsHash':'a'*64,'executionDayUTC':'2026-10-18',
+            'startsAtUTC':'2026-10-18T20:00:00.000Z','endsAtUTC':'2026-10-18T23:59:59.999Z'}
+        value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',localCalendar:JSON.parse(process.argv[2])})))",str(BIN/'atomic-usage-integration.js'),json.dumps(policy)],text=True)
+        self.descriptor.write_text(value);candidate=C.pin(self.descriptor)
+        rows=C.render_templates(self.case,**self.args,atomic_usage_pin=candidate)
+        self.assertEqual(len(rows),26)
+        files={Path(r['destination']).relative_to(self.case).as_posix():r['text']for r in rows}
+        for r in rows:
+            original=Path(r['original']['path']).read_text()
+            for d in r['replacements']:
+                self.assertEqual(original.count(d['from']),d['count']);original=original.replace(d['from'],d['to'])
+            self.assertEqual(original,r['text'])
+        for name in ['root-io-bridge.js','runtime-candidates/prepare-materials.candidate.js','runtime-candidates/root-authority-stage.candidate.js']:
+            self.assertIn('HELMUT_LOCAL_RESOURCE_CALENDAR_JSON',files['native-end-preparation/'+name])
+        assembly=files['assemble-after-activation.js']
+        self.assertIn('briefingDatum:"2026-10-18T08:00:00.000Z"',assembly)
+        self.assertNotIn('briefingDatum:runtime.start',assembly)
+        provider=files['native-end-preparation/local-provider.js']
+        self.assertIn('localCalendar.registerLocalMockTransport(https.request);',provider)
+        self.assertLess(provider.index('const localCalendar=require('),provider.index('function install('))
+        preparation=files['native-end-preparation/prepare-current-local-runtime.js']
+        self.assertIn("Math.min(now+EU.ACTIVE_MS,Date.parse(day+'T23:59:59.999Z'),Date.parse(ACTION.reviewedDayWindowEndUTC))",preparation)
+        self.assertNotIn("Date.parse(day+'T23:59:59.999Z'),berlinEnd,",preparation)
+        contract=files['native-end-preparation/contracts.js']
+        self.assertNotIn("assert.equal(berlin(times[1]),berlin(times[2])",contract)
+        self.assertIn('Exact accepted local UTC fixture window',contract)
+        # Execute ONLY the actual pure window consumer. No gates/owner/DB calls.
+        code="""const vm=require('vm'),assert=require('assert/strict'),fs=require('fs'),s=JSON.parse(fs.readFileSync(0,'utf8'));const context={require,module:{exports:{}},__dirname:'/TEST_ONLY_NO_DIRECTORY'};vm.runInNewContext(s,context);const C=context.module.exports;const now=new Date('2026-10-18T22:30:00.000Z');const w={startsAtUTC:'2026-10-18T21:00:00.000Z',endsAtUTC:'2026-10-18T23:59:59.999Z'};C.checkWindow(w,'2026-10-18T21:00:00.000Z',now);for(const bad of [{...w,endsAtUTC:'2026-10-19T00:00:00.000Z'},{...w,startsAtUTC:'2026-10-18T19:59:59.999Z'},{...w,endsAtUTC:'2026-10-18T22:29:59.999Z'}])assert.throws(()=>C.checkWindow(bad,'2026-10-18T19:00:00.000Z',now));"""
+        subprocess.run(['node','-e',code],input=json.dumps(contract),text=True,capture_output=True,check=True)
+        self.assertTrue(all('Date.now=' not in r['text'] and 'global.Date=' not in r['text'] for r in rows))
+        subprocess.run(['node','-e',"const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"],input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,check=True,capture_output=True)
+        code="""const assert=require('assert/strict'),P=require('./scripts/helmut-resource-meter/start-input-checks'),C=require('./lib/helmut/synthetik-500-content-runner');
+delete process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON;const base=C.sourceBinding();
+const pinned=P.actualSourceBinding({atomicUsageInput:JSON.parse(process.argv[1])});assert.notEqual(base,pinned);
+assert.equal(process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON,undefined);assert.equal(C.sourceBinding(),base);
+process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='UNADMITTED_AMBIENT_VALUE';P.actualSourceBinding({atomicUsageInput:JSON.parse(process.argv[1])});
+assert.equal(process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON,'UNADMITTED_AMBIENT_VALUE');"""
+        subprocess.run(['node','-e',code,json.dumps(candidate)],cwd=C.REPO,check=True,capture_output=True,text=True)
+        self.assertFalse(self.case.exists())
     def test_scope_cannot_be_promoted_to_production(self):
         d=json.loads(self.descriptor.read_text());d['production']=True;self.descriptor.write_text(json.dumps(d))
         with self.assertRaisesRegex(RuntimeError,'local atomic'):C.render_templates(self.case,**self.args,atomic_usage_pin=C.pin(self.descriptor))

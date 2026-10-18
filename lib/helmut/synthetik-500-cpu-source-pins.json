@@ -73,8 +73,8 @@
     },
     {
       "path": "lib/helmut/briefing-speicher.js",
-      "bytes": 12500,
-      "sha256": "0ac1a72f11580c56b3d8e282ca6861aa7961918cf5837fb6ae71db0bcffbea7e"
+      "bytes": 12539,
+      "sha256": "f3f52d034b3f8f93af29485a5816c3f64c1282d02b3d3662dfcaa2288cb26531"
     },
     {
       "path": "lib/helmut/briefingLanguage.js",
@@ -138,13 +138,13 @@
     },
     {
       "path": "lib/helmut/lage-textqualitaet.js",
-      "bytes": 24722,
-      "sha256": "efb6d4a512f84e74454d6ef1f93d3e00661c5b4ec560f7fb2c6256c41e4e9cd1"
+      "bytes": 24877,
+      "sha256": "2470bc52a18f4222b4efb76283ca47893b423f87d76acee206ca4f33352d13db"
     },
     {
       "path": "lib/helmut/lage.js",
-      "bytes": 56155,
-      "sha256": "b69d8abc8793be120980bfd86f3d4e65682a6f885ddd6d16b10671d4c67995b3"
+      "bytes": 56239,
+      "sha256": "a1f9f307544e747af1287c84c3e805ca3297263a6eb3a03ba735d44e143574d5"
     },
     {
       "path": "lib/helmut/matching-begruendung.js",
@@ -275,6 +275,11 @@
       "path": "lib/helmut/synthetik-500-kosten-plan.js",
       "bytes": 35886,
       "sha256": "0b8dfc354640159d20f88d3e563297187d0786a634a351e6af19da83ef09d50a"
+    },
+    {
+      "path": "lib/helmut/synthetik-500-local-calendar.js",
+      "bytes": 5976,
+      "sha256": "1f56a674a0e2c7ff986dddb58c331e3db70850124bed66fdd081a6b38bcf8c98"
     },
     {
       "path": "lib/helmut/synthetik-500-nachweis.js",

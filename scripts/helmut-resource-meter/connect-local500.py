@@ -10,6 +10,8 @@ from pathlib import Path
 import importlib.util
 _spec=importlib.util.spec_from_file_location('next_resource_stage',Path(__file__).with_name('next-resource-authority.py'))
 A=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(A)
+_cal_spec=importlib.util.spec_from_file_location('resource_calendar_binding',Path(__file__).with_name('local-calendar-binding.py'))
+Calendar=importlib.util.module_from_spec(_cal_spec);_cal_spec.loader.exec_module(Calendar)
 
 REPO=Path('/workspace/helmut-cpu-epoch-20261015')
 BASE=Path('/workspace/helmut-parallel-20261015')
@@ -52,6 +54,11 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
       ("O+'/OWNER_LOCAL_GO.PRIVATE.json'",repr(owner_go_pin['path'])),
       ('/tmp/helmut-fresh-runtime-fixture-b27c2026.conf','/tmp/helmut-resource-fixture.conf')]
     deltas=[]
+    candidate=read_pin(atomic_usage_pin) if atomic_usage_pin else None
+    calendar=candidate.get('localCalendar') if candidate else None
+    if calendar is not None:
+        Calendar.validate_policy(calendar)
+        if calendar['operationId']!=operation:raise RuntimeError('local calendar operation differs')
     for template in templates:
         original=Path(template['path']).read_text();text=original;changes=[]
         for old,new in replacements:
@@ -59,7 +66,7 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             if count:text=text.replace(old,new);changes.append({'from':old,'to':new,'count':count})
         if template['relative']=='native-end-preparation/prepare-current-local-runtime.js':
             old="Date.parse(day+'T23:59:59.999Z'),berlinEnd)"
-            new="Date.parse(day+'T23:59:59.999Z'),berlinEnd,Date.parse(ACTION.reviewedDayWindowEndUTC))"
+            new="Date.parse(day+'T23:59:59.999Z'),"+('' if calendar else 'berlinEnd,')+"Date.parse(ACTION.reviewedDayWindowEndUTC))"
             if text.count(old)!=1:raise RuntimeError('exact original window expression required')
             text=text.replace(old,new);changes.append({'from':old,'to':new,'count':1})
         if template['relative']=='native-end-preparation/runtime-candidates/start-services.candidate.js':
@@ -94,6 +101,8 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             state_options=',{stateStorage:'+json.dumps(state_mode)+'}' if state_mode else ''
             state_environment="env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else ''
             history_environment="env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else ''
+            calendar_json=json.dumps(json.dumps(calendar,separators=(',',':'))) if calendar else None
+            calendar_environment='env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else ''
             def change(old,new):
                 nonlocal text
                 if text.count(old)!=1:raise RuntimeError('exact atomic usage integration point missing: '+template['relative'])
@@ -114,23 +123,34 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                     "    env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';\n"
                     +('    '+state_environment+'\n' if state_mode else '')+
                     ('    '+history_environment+'\n' if history_mode else '')+
+                    ('    '+calendar_environment+'\n' if calendar else '')+
                     "    assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID,'main-auth');")
                 change("'authRevision',data->'_authStoreRevision','journal'",
                     "'nativeUsageBinding',\"+require("+helper+").physicalWitnessExpression("+state_options[1:]+")+\",'authRevision',data->'_authStoreRevision','journal'")
             elif relative=='native-end-preparation/runtime-candidates/prepare-materials.candidate.js':
                 change('  Object.assign(env,localBudgets);',
-                    "  Object.assign(env,localBudgets);env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+state_environment+history_environment)
+                    "  Object.assign(env,localBudgets);env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+state_environment+history_environment+calendar_environment)
             elif relative=='native-end-preparation/runtime-candidates/root-authority-stage.candidate.js':
                 change("['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY']",
-                    "['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY','HELMUT_LLM_USAGE_STORAGE'"+(",'HELMUT_AUTH_STATE_STORAGE'" if state_mode else '')+(",'HELMUT_AUTH_HISTORY_READ_REUSE'" if history_mode else '')+"]")
+                    "['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY','HELMUT_LLM_USAGE_STORAGE'"+(",'HELMUT_AUTH_STATE_STORAGE'" if state_mode else '')+(",'HELMUT_AUTH_HISTORY_READ_REUSE'" if history_mode else '')+(",'HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'" if calendar else '')+"]")
             elif relative=='native-end-preparation/runtime-candidates/assemble-config.candidate.js':
                 change('const config={...base,',
                     'const config={...base,atomicUsageInput:r.atomicUsageInput,atomicUsageReceipt:r.atomicUsageReceipt,')
             elif relative=='assemble-after-activation.js':
                 change(' const initialSourceBinding=',
-                    " process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else '')+"\n const initialSourceBinding=")
+                    " process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else '')+('process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else '')+"\n const initialSourceBinding=")
+                if calendar:
+                    change('briefingDatum:runtime.start','briefingDatum:'+json.dumps(calendar['sourceViewAtUTC']))
                 change(' const shared={status:',
                     " const atomicUsageReceipt=pin(N+'/ATOMIC_USAGE_BOOTSTRAP.SAFE.json');\n const shared={atomicUsageInput:"+descriptor+",atomicUsageReceipt,status:")
+            elif relative=='native-end-preparation/local-provider.js' and calendar:
+                # Load BEFORE the first hook so the helper captures native https.
+                change('function install(',"const localCalendar=require("+json.dumps(str(REPO/'lib/helmut/synthetik-500-local-calendar.js'))+");\nfunction install(")
+                change('  return{count:', '  localCalendar.registerLocalMockTransport(https.request);\n  return{count:')
+            elif relative=='native-end-preparation/contracts.js' and calendar:
+                change("  assert.equal(berlin(times[1]),berlin(times[2]),'No Berlin day crossing');",
+                    '  assert(times[1]>=Date.parse('+json.dumps(calendar['startsAtUTC'])+')'
+                    '&&times[2]<=Date.parse('+json.dumps(calendar['endsAtUTC'])+'),"Exact accepted local UTC fixture window");')
         destination=case/template['relative']
         deltas.append({'original':{k:template[k] for k in ['path','bytes','sha256']},'destination':str(destination),'text':text,'replacements':changes})
     return deltas
@@ -144,7 +164,9 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
     if not re.fullmatch('synthetik500-resources18-[a-f0-9]{12}',operation):raise RuntimeError('new operation required')
     read_pin(day_rows_pin)
     day=read_pin(day_acceptance_pin)
-    if day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER' or day.get('day')!='2026-10-18':raise RuntimeError('accepted actual day18 binding missing')
+    descriptor=read_pin(atomic_usage_pin) if atomic_usage_pin else None
+    local=Calendar.admit(day,read_pin,descriptor=descriptor,operation=operation,rows_pin=day_rows_pin)
+    if (local is None and day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER') or day.get('day')!='2026-10-18':raise RuntimeError('accepted actual day18 binding missing')
     if day.get('adoptedRowsPin')!=day_rows_pin:raise RuntimeError('accepted exact current inputs required')
     owner=read_pin(owner_go_pin)
     A.validate_owner(owner,{'caseDirectory':str(case),'targetDatabase':target,'operationId':operation,'sourceCapture':owner['sourceCapturePin'],'preparedWithoutGO':prepare_only},planning=prepare_only)
@@ -170,7 +192,7 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
       'ownerGOPath':owner_go_pin['path'],'ownerGOPin':owner_go_pin,'executionOwnerGOPath':owner['finalOwnerGOPath'],'originalAction':pin(BASE/'wave15/native-end-preparation/LOCAL_ACTIVATION_ACTION.SAFE.json'),
       'action':pin(n/'LOCAL_ACTIVATION_ACTION.SAFE.json'),'templateDeltas':deltas,
       'freshSelectorComesFromPinnedActualAssembly':True,'full500RunStarted':False,'resourceGOConsumed':False,
-      'engineModified':False,'originalFilesModified':False,'production':False,'preparedWithoutGO':prepare_only}
+      'engineModified':bool(local),'originalFilesModified':False,'production':False,'preparedWithoutGO':prepare_only}
     if atomic_usage_pin is not None:plan['atomicUsageInput']=atomic_usage_pin
     save(case/'STAGED_CONNECTION.SAFE.json',plan);return plan
 

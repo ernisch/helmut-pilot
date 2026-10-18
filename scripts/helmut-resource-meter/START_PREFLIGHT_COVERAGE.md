@@ -1,8 +1,11 @@
 # Complete start preflight: scope and consumer comparison
 
 This is a local development gate. It grants no GO and never activates a profile.
-The two historical resource attempts, their owner documents, claims, databases,
-receipts and inputs remain immutable. Neither namespace can be reset or replayed.
+All historical resource attempts, their owner documents, claims, databases,
+receipts and inputs remain immutable. No consumed namespace can be reset or replayed.
+The current prospective slot is V7 with 13 pinned historical markers; it is not
+a new operator GO. Its proposed dedicated internal subnet is 172.16.244.0/24;
+the old 172.16.245.0/24 network remains intact and occupied by its historical case.
 
 `full500-controller.py --check-only --accepted-bindings FILE` is the single
 read-only entry point. Its result reports every independent check group, including
@@ -21,18 +24,27 @@ all check IDs, freshness and exact binding pins. A direct launch cannot omit it.
 | controller accepted_metadata; isolation verify_full_authority | Exact acceptance/connection/recipe pins; primitive and integration reviews; allFilePins collects every missing/changed file; source closure inventoried | Fresh owned container ID, final serialized recipe SHA, exclusive setup reservation and GO claim |
 | connection.stage; preparation.checkOwnerGo; common.activated; assembly owner guard | Exact local target suffix, schema, confirmation, timestamp, owner reference, production=false,500, paid=false, exactlyOneResourceAttempt=true, **allowDispose must be literal false** | No inference or repair of an old/consumed owner document; actual activation receipt still required |
 | zero_day.verify_capture; preparation.financialProposal; K.historie/pruefeStart/auftragsStand | Original and corrected native auth/counter witness equality; ENTIRE counter table; all historical days; stock financialProjection; unaltered limits; authority evaluated separately from data | Exact restored input equality, original conditional auth update and fresh runtime cost controls |
-| controller.window; preparation.window; contracts.checkWindow | Exact reviewed17Oct UTC/Berlin day and window; last complete8089.543088s+600s reserve; no backdating or extension | Genuine current command timestamps and each fresh expiry check |
+| controller.window; preparation.window; contracts.checkWindow | Exact accepted day/window; default requires one UTC/Berlin day. Explicit local mock calendar may cross Berlin midnight within ONE real UTC accounting day; all three actual consumers enforce the bound execution window. Last complete8089.543088s+600s reserve; no backdating | Genuine current command timestamps and each fresh expiry check |
 | original_preflight; Gates.pinned; H.privateJSON | Nine original hashes; actual complete original DB identity/profile/U binding; all six native KOs, seven documents and complete link set; canonical paths, selected private modes; exact replay of26 staged transformations | New owned clone and inactive snapshot must actually equal input; native SQL0-to500 result |
 | preparation.reviewed/finishInactivePreparation | Request status, target, package, all primary pins, local external binding, end watcher, canonical state publication timestamps; actual package generator validation | Real snapshot/nullbestand/runtimeManifest/import/activation SQL are never replaced by projected positive receipts |
 | assembly/start-services | Pinned binary/config, exact config literals, fresh service/material output targets; actual common constants and bridge API | New DB IP, PostgREST/gateway readiness and HTTP health; no old gateway reuse |
 | prepare-materials.budgetScenario/prepare; local-io/root-io-bridge.environment | ACTUAL budgetScenario predicate (2416/702/200/1 and primary SHA); fictional env only, communication blocked, no external key/private signer; JWT source mode/format; original store IDs | Fresh signer, public/private separation, service token and generated environment bytes must really match |
-| build-command; original-draft-request; assembly mock loop | Exact500 owner set, active ordinary-v1 rows, native inventory/version fields/fencing, prior U pin, all original A/F/L day acceptance bindings; original D/preR/Q at both accepted endpoints for all500; template hash/variant completeness; actual sourceBinding; EU route, direct purposes | Fresh run/command/plan hashes,1000 genuine intents, original executor, exact D binder and packet metadata depend on newly generated command and stay mandatory |
+| build-command; original-draft-request; assembly mock loop | Exact500 owner set, active ordinary-v1 rows, native inventory/version fields/fencing, prior U pin, all original A/F/L acceptance bindings; default D/preR/Q at both accepted endpoints, explicit local mock mode at its separately accepted source view for all500; template hash/variant completeness; actual sourceBinding; EU route, direct purposes | Fresh run/command/plan hashes,1000 genuine intents, original executor, exact D binder and packet metadata depend on newly generated command and stay mandatory |
 | H.destination/save/mkdirFresh; sequence entry | Fresh case/output/run dirs; no previous packet/activation/assembly/failure/controller/sequence/material/service outputs; no overwrite/continuation | Exclusive creation remains atomic; future disk/I/O errors cannot be predicted |
 | process-runner; contracts.LIMITS; sequence | Exact three commands, pins/timeouts and CPU0; all500/16; worst cases0,499; Offline90/Preparation60/Unit60/Auth30/2048000000B unchanged; mock-only/no profiler | All original negative cases, actual16 fresh controls per500, ACK/result counts and timings |
 | bounded-storage/kernel-meter/isolation | Node24.19.0,Python3.12.14,pinned PG image,cgroupv2/vfs,CPU0,formatter availability; free space8GB+8GiB; approved minor observed unbound; all names/subnet/cgroup unused | Atomic loop configuration, owned8GB filesystem identity, PGDATA/WAL/no external tablespaces, all namespace IDs |
 | process/network/HTTP/WAL/finalization meters | Exact reviewed meter/source pins, continuous1s DB observer and full phase recipe; original scoped independent meter acceptance | Actual common kernel peak/CPU, WAL/DB/IO, network requests/bytes/errors/logs, every child/worker and final populated=0 |
 
 ## Coverage is a checked prerequisite
+
+The optional local fixture calendar has a distinct acceptance status. Its exact
+operation, 500 input-hash set, accepted source view, real UTC execution window and
+descriptor are bound together; a source-view proof is never labeled a proof at
+both execution endpoints. The raw policy and changed engine files enter the
+existing signed actual-row source binding. Private mock transport registration,
+all 16 fresh database/security controls, real timestamps and expiry checks remain
+mandatory. Default/Production retains its Berlin calendar. This local calendar
+contract change grants no execution authority, financial correction or test GO.
 
 `start-guard-inventory.js` parses JavaScript with the pinned Node's bundled Acorn.
 Python uses `ast`. Neither imports or runs a consumer. The inventory records code
@@ -100,12 +112,12 @@ blocked reviews remain retained and cannot serve as positive acceptance.
 
 ## Current authorization status
 
-No new GO exists. The current controller's claim namespace belongs to the
-**consumed**16Oct-correction/resource authorization; it must remain blocked.
-A future, separately approved attempt needs a newly reviewed exact binding and
-fixed global authorization namespace, never deletion or relabeling of old claims.
-The17Oct00:00..08:59:59.999UTC acceptance cannot be silently extended. Local
-mock/input success does not close Production memory or infrastructure cost proof.
+No new GO exists. The current V7 namespace is prospective and unused; all consumed
+namespaces through V6 remain blocked. A future attempt needs a separately approved
+exact binding, never deletion or relabeling of old claims. Historical day-window
+acceptances cannot be silently extended: the explicit local fixture calendar
+requires its own independent scope adoption. Local mock/input success does not
+close Production memory or infrastructure cost proof.
 
 ## Preparing a fresh candidate before a new GO
 
@@ -124,13 +136,14 @@ controller and direct full-authority path always require the real GO schema,
 explicit new authorization, literal preservation, fresh timestamp/reference, exact
 confirmation and final owner path. No planning flag reaches the executable recipe.
 
-The fixed next claim/reservation are `NEXT_RESOURCE17_V4_*` in the existing meter
-area. All seven consumed markers (including the failed V3 start) are hash-pinned to their preserved baseline and
-never reset. This slot is prospective; its existence in code grants no GO. A new
-case and the fixed unused internal172.16.247/24 subnet keep old networks intact.
+The fixed next claim/reservation are `NEXT_RESOURCE18_V7_*` in the existing meter
+area. All 13 consumed markers through V6 are hash-pinned to their preserved
+baseline and never reset. This slot is prospective; its existence in code grants
+no GO. A new case and the proposed unused internal172.16.244/24 subnet keep all
+old networks intact; the fresh preflight rechecks every actual subnet for overlap.
 Loop allocation remains an atomic runtime check against the reviewed unbound minor.
 
-The successful16Oct correction is reused only as preexisting input: exact capture
+The successful16Oct and17Oct corrections are reused only as preexisting input: exact capture
 SHA, real old receipt/consumed-marker provenance, unchanged monetary limits, actual
 native original/corrected auth and entire counter table, plus dump/roles/binary
 pins. The historical correction GO grants no new resource authority. No correction
@@ -191,11 +204,11 @@ guarantee against later disk, scheduling or other I/O failures. Every full
 technical condition must still pass freshly; insufficient free disk remains a
 technical blocker, distinct from missing operator GO.
 
-## Fixed day18/V5 continuation
+## Fixed day18/V7 continuation
 
-The next slot accepts only18October2026 and a newV5 owner document, global claim
-and reservation. ConsumedV4 markers join the immutable historical baseline;
-they are never reset. Unapproved intents remain planning inputs, and cannot
+The next slot accepts only18October2026 and a newV7 owner document, global claim
+and reservation. All 13 consumed markers through V6 remain in the immutable
+historical baseline; they are never reset. Unapproved intents cannot
 satisfy an executable owner-policy check. Old cases are retained unchanged.
 
 The input source is the separately approved, completed book17 correction in
@@ -212,15 +225,16 @@ check. It includes prior witnesses/receipts and the completed input-only claim;
 it excludes historical owner approvals. `query_input` has no writable mode and
 can address only that fixed completed local input database.
 
-The new dedicated subnet is172.16.245.0/24, selected after a complete read-only
-overlap check. Earlier networks remain intact. Engine, local mocks, all500
+The proposed dedicated subnet is172.16.244.0/24, selected after a complete read-only
+overlap check and checked again before setup. Earlier networks remain intact.
+The explicit local mock calendar is the only calendar-contract change; all500
 profiles/1500positions/16fresh controls, originalU, Offline90/Unit60/Auth30,
 joint2048000000-byte limit, filesystem reserve and runtime safeguards are unchanged.
 
 The actual preparation and its deterministic precheck now share
 `measured-preparation.assertInputBindings`: the physical corrected input,
 logical source namespace in the new owned server, exact18October target and
-newV5 claim path must agree before any real claim file is read. The connection
+newV7 claim path must agree before any real claim file is read. The connection
 also binds these fields to the Python authority constants. No future claim is
 created for the precheck. The actual atomic installer and materials precheck
 share `atomic-usage-integration.assertLocalTarget`, preserving its original

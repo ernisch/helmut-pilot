@@ -6,10 +6,12 @@ const fs = require("node:fs"), path = require("node:path"), assert = require("no
 const crypto = require("node:crypto"), { performance } = require("node:perf_hooks");
 const ROOT = path.resolve(__dirname, "../.."), MODE = "relational-atomic-v1";
 const SOURCE_FILES = ["lib/helmut/llm-usage-atomic.js", "lib/helmut/auth-store-cas.js", "lib/helmut/storage.js",
+  "lib/helmut/synthetik-500-local-calendar.js", "lib/helmut/lage-entwurfsbeleg.js",
   "lib/helmut/auth-state-parts.js", "supabase/proposals/auth_state_parts_local.sql",
   "lib/helmut/ai.js", "lib/helmut/testkosten-budget.js", "lib/helmut/synthetik-500-content-runner.js",
   "lib/helmut/synthetik-500-cpu-source-pins.json", "supabase/proposals/auth_usage_atomic_local.sql",
   "scripts/helmut-resource-meter/atomic-usage-integration.js",
+  "scripts/helmut-resource-meter/local-calendar-admission.js", "scripts/helmut-resource-meter/local-calendar-binding.py",
   "scripts/helmut-resource-meter/connect-local500.py", "scripts/helmut-resource-meter/start-input-checks.js"];
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const literal = s => "'" + String(s).replaceAll("'", "''") + "'";
@@ -32,26 +34,32 @@ function pin(file) {
   const b = fs.readFileSync(file);return { path: file, bytes: b.length, sha256: sha(b) };
 }
 function pinned(p) { assert.deepEqual(pin(p.path), p);return fs.readFileSync(p.path); }
-function descriptor({ stateStorage = null, historyReadReuse = null } = {}) {
+function descriptor({ stateStorage = null, historyReadReuse = null, localCalendar = null } = {}) {
   assert(stateStorage === null || stateStorage === "merkle-auth-v1");
   assert(historyReadReuse === null || (historyReadReuse === "verified-history-reuse-v1" && stateStorage === "merkle-auth-v1"));
+  if (localCalendar !== null) require(path.join(ROOT, "lib/helmut/synthetik-500-local-calendar")).validatePolicyData(localCalendar);
   return { schema: "helmut-local-atomic-usage-resource-input/1", mode: MODE, production: false,
     ...(stateStorage ? { stateStorage } : {}), ...(historyReadReuse ? { historyReadReuse } : {}),
-    originalHistoryPreserved: true, fullContractUnchanged: true,
+    ...(localCalendar ? { localCalendar } : {}),
+    originalHistoryPreserved: true, fullContractUnchanged: localCalendar === null,
+    ...(localCalendar ? { timingMemoryAndLiveSecurityContractUnchanged: true } : {}),
     sourcePins: SOURCE_FILES.map(f => pin(path.join(ROOT, f))) };
 }
 function readDescriptor(p) {
   const d = JSON.parse(pinned(p));assert.deepEqual(d, descriptor({ stateStorage: d.stateStorage ?? null,
-    historyReadReuse: d.historyReadReuse ?? null }));return d;
+    historyReadReuse: d.historyReadReuse ?? null, localCalendar: d.localCalendar ?? null }));return d;
 }
 function environment(env, p) {
   const d = readDescriptor(p);assert(!env.VERCEL && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
   assert(env.HELMUT_LLM_USAGE_STORAGE === undefined || env.HELMUT_LLM_USAGE_STORAGE === MODE);
   assert(!env.HELMUT_AUTH_STATE_STORAGE || env.HELMUT_AUTH_STATE_STORAGE === d.stateStorage);
   assert(env.HELMUT_AUTH_HISTORY_READ_REUSE === undefined || env.HELMUT_AUTH_HISTORY_READ_REUSE === d.historyReadReuse);
+  assert(env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON === undefined
+    || env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON === (d.localCalendar ? JSON.stringify(d.localCalendar) : undefined));
   return { ...env, HELMUT_LLM_USAGE_STORAGE: MODE,
     ...(d.stateStorage ? { HELMUT_AUTH_STATE_STORAGE: d.stateStorage } : {}),
-    ...(d.historyReadReuse ? { HELMUT_AUTH_HISTORY_READ_REUSE: d.historyReadReuse } : {}) };
+    ...(d.historyReadReuse ? { HELMUT_AUTH_HISTORY_READ_REUSE: d.historyReadReuse } : {}),
+    ...(d.localCalendar ? { HELMUT_LOCAL_RESOURCE_CALENDAR_JSON: JSON.stringify(d.localCalendar) } : {}) };
 }
 function projectQuery(query, { stateStorage = null } = {}) {
   assert(stateStorage === null || stateStorage === "merkle-auth-v1");

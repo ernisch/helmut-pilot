@@ -223,8 +223,11 @@ def stage_contract(connection, recipe):
     require(connection.get('atomicUsageInput')==staged.get('atomicUsageInput'),'atomic storage candidate differs from actual renderer')
     if 'atomicUsageInput' in connection:
         descriptor=read(connection['atomicUsageInput'])
+        day=read(connection['dayBindingAcceptance'])
+        calendar=module('stage_calendar_binding','local-calendar-binding.py')
+        local=calendar.admit(day,read,descriptor=descriptor,operation=connection['operationId'])
         require(descriptor['schema']=='helmut-local-atomic-usage-resource-input/1' and descriptor['mode']=='relational-atomic-v1'
-            and descriptor['production']is False and descriptor['fullContractUnchanged']is True,'local atomic scope differs')
+            and descriptor['production']is False and (local is not None or descriptor['fullContractUnchanged']is True),'local atomic scope differs')
         for p in descriptor['sourcePins']:require(pin(p['path'])==p,'atomic storage source drift')
     return dict(stages=3, profiles=500, controlsPerUnit=16, profiler=False, paidProviderCalls=False)
 
