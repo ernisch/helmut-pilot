@@ -91,6 +91,8 @@ class NextResourceAuthorityTest(unittest.TestCase):
                 with self.subTest(tampered=key),self.assertRaises(RuntimeError):
                     A.validate_owner({**self.intent,'previousConsumedMarkers':tampered},self.connection,planning=True)
     def test_v6_slot_is_fixed_and_distinct_from_every_old_slot(self):
+        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-18','version':6})
+        self.assertEqual(A.SLOT_VERSION,6)
         self.assertEqual(A.AUTHORIZATION,'USER_GO_20261018_EXACT_ONE_RESOURCE_ONLY_V6')
         self.assertEqual(A.AUTHORIZATION,self.intent['authorizationId'])
         self.assertNotEqual(A.AUTHORIZATION,OLD_V4_AUTHORIZATION)

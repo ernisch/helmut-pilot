@@ -177,6 +177,13 @@ Speicher höchstens 2.048.000.000 Bytes. Ein neuer vollständiger Lauf benötigt
 einen neuen gebundenen Kandidaten, den vollständigen Vorabcheck und ein separates
 ausdrückliches lokales GO. Keine bestehende verbrauchte Freigabe wird verwendet.
 
+Python-Controller und tatsächlich gemessene JS-Vorbereitung lesen denselben
+quellgebundenen lokalen Freigabeplatz aus `local-resource-authority-slot.json`.
+Ein reiner Regressionstest vergleicht beide tatsächlichen Eingangsprüfungen und
+weist den verbrauchten V5-Platz zurück. Er läuft vor Ressourcenanlage und gehört
+zur Pflicht-CI. Die Definition erteilt selbst keine Freigabe; unautorisierter
+Intent, tatsächliches Betreiber-GO und einmalige Beanspruchung bleiben getrennt.
+
 ## Herkunft der Prinzipien
 
 - [Instagram Explore](https://engineering.fb.com/2023/08/09/ml-applications/scaling-instagram-explore-recommendations-system/):

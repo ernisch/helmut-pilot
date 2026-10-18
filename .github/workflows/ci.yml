@@ -139,6 +139,7 @@ jobs:
           raise SystemExit(not result.wasSuccessful())
           PY
           python scripts/helmut-resource-meter/next-resource-authority-test.py
+          node scripts/helmut-resource-meter/preparation-bindings-test.js
           python scripts/helmut-resource-meter/runtime-read-contract-test.py
           node --test scripts/helmut-resource-meter/start-input-checks-test.js
       - name: Lokale Buchungsbestätigung (synthetisch/offline)

@@ -17,9 +17,17 @@ BASE=Path('/workspace/helmut-parallel-20261015')
 METER=BASE/'wave19-resource-meter'
 DAY='2026-10-18'
 DATE_TAG='20261018'
-AUTHORIZATION='USER_GO_20261018_EXACT_ONE_RESOURCE_ONLY_V6'
-CLAIM=METER/'NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json'
-RESERVATION=METER/'NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json'
+# Both real entrypoints read this same source-pinned local definition. Updating
+# a fixed slot must never leave the measured JS stage on a spent old claim.
+SLOT=json.loads((BIN/'local-resource-authority-slot.json').read_text())
+if (type(SLOT)is not dict or set(SLOT)!={'schema','day','version'}
+  or SLOT['schema']!='helmut-local-resource-authority-slot/1' or SLOT['day']!=DAY
+  or type(SLOT['version'])is not int or not 1<=SLOT['version']<=9999):
+    raise RuntimeError('invalid pinned local resource authority slot')
+SLOT_VERSION=SLOT['version']
+AUTHORIZATION=f'USER_GO_{DATE_TAG}_EXACT_ONE_RESOURCE_ONLY_V{SLOT_VERSION}'
+CLAIM=METER/f'NEXT_RESOURCE{DAY[-2:]}_V{SLOT_VERSION}_GO_CLAIM.SAFE.json'
+RESERVATION=METER/f'NEXT_RESOURCE{DAY[-2:]}_V{SLOT_VERSION}_SETUP_RESERVATION.SAFE.json'
 SUBNET='172.16.245.0/24'
 OLD_MARKERS=[METER/name for name in [
  'ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json','GLOBAL_RESOURCE_SETUP_RESERVATION.SAFE.json',
@@ -74,7 +82,7 @@ def validate_owner(owner,connection,*,planning=False):
     for p in claims:read(p)
     final=Path(owner.get('finalOwnerGOPath',''))
     suffix=Path(connection['caseDirectory']).name.removeprefix('attempt-')
-    require(final==METER/('OWNER_RESOURCE18_V6_'+suffix+'.PRIVATE.json'),'exact new owner GO path required')
+    require(final==METER/(f'OWNER_RESOURCE{DAY[-2:]}_V{SLOT_VERSION}_'+suffix+'.PRIVATE.json'),'exact new owner GO path required')
     confirmation='GO_LOCAL_ONLY_CREATE_'+connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'
     require(owner.get('requiredConfirmation')==confirmation,'exact proposed confirmation required')
     if planning:

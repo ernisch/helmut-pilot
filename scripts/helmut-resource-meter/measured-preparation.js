@@ -4,12 +4,19 @@
 // reviewed local preparation/activation implementation in its relocated copy.
 const fs=require('node:fs'),assert=require('node:assert/strict'),cp=require('node:child_process'),crypto=require('node:crypto');
 const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+const slot=require('./local-resource-authority-slot.json');
+assert.deepEqual(Object.keys(slot).sort(),['day','schema','version']);
+assert.equal(slot.schema,'helmut-local-resource-authority-slot/1');
+assert.equal(slot.day,'2026-10-18');
+assert(Number.isSafeInteger(slot.version)&&slot.version>=1&&slot.version<=9999);
+const resourceClaimPath='/workspace/helmut-parallel-20261015/wave19-resource-meter/'
+ +`NEXT_RESOURCE${slot.day.slice(-2)}_V${slot.version}_GO_CLAIM.SAFE.json`;
 function read(pin){const b=fs.readFileSync(pin.path);assert.equal(b.length,pin.bytes);assert.equal(sha(b),pin.sha256);return JSON.parse(b);}
 function bytes(pin){const b=fs.readFileSync(pin.path);assert.equal(b.length,pin.bytes);assert.equal(sha(b),pin.sha256);return b;}
 function assertInputBindings(plan,source){
  assert.equal(plan.production,false);assert.equal(source.production,false);
  assert(/^helmut_resource_fixture_20261018_[a-f0-9]{12}$/.test(plan.targetDatabase));
- assert.equal(plan.resourceClaimPath,'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE18_V5_GO_CLAIM.SAFE.json');
+ assert.equal(plan.resourceClaimPath,resourceClaimPath);
  assert.equal(plan.sourceInputDatabase,'helmut_resource_input_20261018_ab76c911dac8');
  assert.equal(source.source,plan.sourceInputDatabase);
  // Physical input provenance and the logical namespace in the NEW owned
