@@ -88,8 +88,12 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             descriptor=json.dumps(atomic_usage_pin,separators=(',',':'))
             state_mode=candidate.get('stateStorage')
             if state_mode not in (None,'merkle-auth-v1'):raise RuntimeError('unknown local auth state storage')
+            history_mode=candidate.get('historyReadReuse')
+            if history_mode is not None and (history_mode!='verified-history-reuse-v1' or state_mode!='merkle-auth-v1'):
+                raise RuntimeError('unknown or unbound local history reuse mode')
             state_options=',{stateStorage:'+json.dumps(state_mode)+'}' if state_mode else ''
             state_environment="env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else ''
+            history_environment="env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else ''
             def change(old,new):
                 nonlocal text
                 if text.count(old)!=1:raise RuntimeError('exact atomic usage integration point missing: '+template['relative'])
@@ -109,21 +113,22 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                     +('    assert(receipt.stateReceipt?.originalLogicalStatePreserved);assert.equal(bound.state.generation,receipt.stateReceipt.state.generation);assert.equal(bound.state.originalHash,receipt.stateReceipt.state.originalHash);\n' if state_mode else '')+
                     "    env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';\n"
                     +('    '+state_environment+'\n' if state_mode else '')+
+                    ('    '+history_environment+'\n' if history_mode else '')+
                     "    assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID,'main-auth');")
                 change("'authRevision',data->'_authStoreRevision','journal'",
                     "'nativeUsageBinding',\"+require("+helper+").physicalWitnessExpression("+state_options[1:]+")+\",'authRevision',data->'_authStoreRevision','journal'")
             elif relative=='native-end-preparation/runtime-candidates/prepare-materials.candidate.js':
                 change('  Object.assign(env,localBudgets);',
-                    "  Object.assign(env,localBudgets);env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+state_environment)
+                    "  Object.assign(env,localBudgets);env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+state_environment+history_environment)
             elif relative=='native-end-preparation/runtime-candidates/root-authority-stage.candidate.js':
                 change("['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY']",
-                    "['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY','HELMUT_LLM_USAGE_STORAGE'"+(",'HELMUT_AUTH_STATE_STORAGE'" if state_mode else '')+"]")
+                    "['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY','HELMUT_LLM_USAGE_STORAGE'"+(",'HELMUT_AUTH_STATE_STORAGE'" if state_mode else '')+(",'HELMUT_AUTH_HISTORY_READ_REUSE'" if history_mode else '')+"]")
             elif relative=='native-end-preparation/runtime-candidates/assemble-config.candidate.js':
                 change('const config={...base,',
                     'const config={...base,atomicUsageInput:r.atomicUsageInput,atomicUsageReceipt:r.atomicUsageReceipt,')
             elif relative=='assemble-after-activation.js':
                 change(' const initialSourceBinding=',
-                    " process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+"\n const initialSourceBinding=")
+                    " process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else '')+"\n const initialSourceBinding=")
                 change(' const shared={status:',
                     " const atomicUsageReceipt=pin(N+'/ATOMIC_USAGE_BOOTSTRAP.SAFE.json');\n const shared={atomicUsageInput:"+descriptor+",atomicUsageReceipt,status:")
         destination=case/template['relative']

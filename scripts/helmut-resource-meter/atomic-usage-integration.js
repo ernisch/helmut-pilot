@@ -9,7 +9,8 @@ const SOURCE_FILES = ["lib/helmut/llm-usage-atomic.js", "lib/helmut/auth-store-c
   "lib/helmut/auth-state-parts.js", "supabase/proposals/auth_state_parts_local.sql",
   "lib/helmut/ai.js", "lib/helmut/testkosten-budget.js", "lib/helmut/synthetik-500-content-runner.js",
   "lib/helmut/synthetik-500-cpu-source-pins.json", "supabase/proposals/auth_usage_atomic_local.sql",
-  "scripts/helmut-resource-meter/atomic-usage-integration.js"];
+  "scripts/helmut-resource-meter/atomic-usage-integration.js",
+  "scripts/helmut-resource-meter/connect-local500.py", "scripts/helmut-resource-meter/start-input-checks.js"];
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const literal = s => "'" + String(s).replaceAll("'", "''") + "'";
 // Native bodies from the accepted final PG17.6 candidate, not a caller claim.
@@ -31,21 +32,26 @@ function pin(file) {
   const b = fs.readFileSync(file);return { path: file, bytes: b.length, sha256: sha(b) };
 }
 function pinned(p) { assert.deepEqual(pin(p.path), p);return fs.readFileSync(p.path); }
-function descriptor({ stateStorage = null } = {}) {
+function descriptor({ stateStorage = null, historyReadReuse = null } = {}) {
   assert(stateStorage === null || stateStorage === "merkle-auth-v1");
+  assert(historyReadReuse === null || (historyReadReuse === "verified-history-reuse-v1" && stateStorage === "merkle-auth-v1"));
   return { schema: "helmut-local-atomic-usage-resource-input/1", mode: MODE, production: false,
-    ...(stateStorage ? { stateStorage } : {}), originalHistoryPreserved: true, fullContractUnchanged: true,
+    ...(stateStorage ? { stateStorage } : {}), ...(historyReadReuse ? { historyReadReuse } : {}),
+    originalHistoryPreserved: true, fullContractUnchanged: true,
     sourcePins: SOURCE_FILES.map(f => pin(path.join(ROOT, f))) };
 }
 function readDescriptor(p) {
-  const d = JSON.parse(pinned(p));assert.deepEqual(d, descriptor({ stateStorage: d.stateStorage ?? null }));return d;
+  const d = JSON.parse(pinned(p));assert.deepEqual(d, descriptor({ stateStorage: d.stateStorage ?? null,
+    historyReadReuse: d.historyReadReuse ?? null }));return d;
 }
 function environment(env, p) {
   const d = readDescriptor(p);assert(!env.VERCEL && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
   assert(env.HELMUT_LLM_USAGE_STORAGE === undefined || env.HELMUT_LLM_USAGE_STORAGE === MODE);
   assert(!env.HELMUT_AUTH_STATE_STORAGE || env.HELMUT_AUTH_STATE_STORAGE === d.stateStorage);
+  assert(env.HELMUT_AUTH_HISTORY_READ_REUSE === undefined || env.HELMUT_AUTH_HISTORY_READ_REUSE === d.historyReadReuse);
   return { ...env, HELMUT_LLM_USAGE_STORAGE: MODE,
-    ...(d.stateStorage ? { HELMUT_AUTH_STATE_STORAGE: d.stateStorage } : {}) };
+    ...(d.stateStorage ? { HELMUT_AUTH_STATE_STORAGE: d.stateStorage } : {}),
+    ...(d.historyReadReuse ? { HELMUT_AUTH_HISTORY_READ_REUSE: d.historyReadReuse } : {}) };
 }
 function projectQuery(query, { stateStorage = null } = {}) {
   assert(stateStorage === null || stateStorage === "merkle-auth-v1");

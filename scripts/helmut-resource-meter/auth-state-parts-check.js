@@ -4,13 +4,14 @@ const fs=require("node:fs"),assert=require("node:assert/strict"),crypto=require(
 const {performance}=require("node:perf_hooks"),{execFileSync}=require("node:child_process");
 const receipt=JSON.parse(fs.readFileSync("/bench/STARTED.SAFE.json"));
 const [phase,mode,uid,gid]=process.argv.slice(2);
-assert(["catalog","prepare","measure","security","native","native-leaf"].includes(phase));assert(["baseline","parts","security"].includes(mode));
+assert(["catalog","prepare","measure","security","native","native-leaf","history"].includes(phase));assert(["baseline","parts","security"].includes(mode));
 assert.equal(require("node:os").hostname(),receipt.cid.slice(0,12));
 assert.equal(receipt.scope,"SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN");
 assert.equal(process.env.SUPABASE_URL,undefined);
 Object.assign(process.env,{HELMUT_STORAGE_BACKEND:"supabase",SUPABASE_URL:"http://127.0.0.1:38419",SUPABASE_SERVICE_ROLE_KEY:"local-fixture-not-a-secret",HELMUT_AUTH_STORE_CAS_TRANSPORT:"scalar-jsonb-rpc",HELMUT_LLM_USAGE_STORAGE:"relational-atomic-v1"});
 if(mode!=="baseline")process.env.HELMUT_AUTH_STATE_STORAGE="merkle-auth-v1";
 else delete process.env.HELMUT_AUTH_STATE_STORAGE;
+if(receipt.historyReuse)process.env.HELMUT_AUTH_HISTORY_READ_REUSE="verified-history-reuse-v1";
 const rawFetch=global.fetch,wire=[];
 global.fetch=async(url,options={})=>{
  assert(String(url).startsWith("http://127.0.0.1:38419/rest/v1/"));
@@ -181,4 +182,13 @@ async function nativeSecurity(){
  const checks=Array.isArray(result)?result:result?.checks;assert(Array.isArray(checks)&&checks.length>0);assert(checks.every(x=>x.pass===true));
  save(phase==="native-leaf"?"NATIVE_LEAF_INFO_SECURITY_RESULT.SAFE.json":"NATIVE_STATE_SECURITY_RESULT.SAFE.json",{pass:true,checks,adapterResult:Array.isArray(result)?null:result,wire,sourcePins:pins(),onlyPreviouslyMissingNativeGroups:true,actualProfileTableAbsent:sql("SELECT to_regclass('public.mandate_profiles')IS NULL;")==="t",activation:false,full500:false,GOClaimed:false,providerCalls:0,unit60Auth30Acceptance:false});
 }
-(async()=>{if(phase==="catalog")captureStateCatalog("STATE_CATALOG_SOURCE_ONLY.SAFE.json",true);else if(phase==="prepare")await prepare();else if(phase==="measure")await measure();else if(phase==="native"||phase==="native-leaf")await nativeSecurity();else await security();})().catch(e=>{console.error(JSON.stringify({error:e.name,code:e.code||null,nativeCase:e.nativeCase||null,message:String(e.message).slice(0,200)}));process.exitCode=1;});
+async function historySecurity(){
+ await ready();assert.equal(mode,"security");assert.equal(receipt.testPhase,"history");
+ delete process.env.HELMUT_AUTH_HISTORY_READ_REUSE;
+ const legacy=await require("./auth-state-parts-native-check").runGraph({sql,rpc,storage,State,U,wire,copy,omitRevision});
+ process.env.HELMUT_AUTH_HISTORY_READ_REUSE="verified-history-reuse-v1";
+ const result=await require("./auth-history-reuse-native-check").run({sql,rpc,storage,State,U,wire,copy,omitRevision});
+ assert(legacy.length===6&&legacy.every(x=>x.pass)&&result.checks.length===8&&result.checks.every(x=>x.pass));
+ save("HISTORY_REUSE_NATIVE_SECURITY_RESULT.SAFE.json",{pass:true,legacyGraphChecks:legacy,historyChecks:result,sourcePins:[...pins(),{path:receipt.repository+"/scripts/helmut-resource-meter/auth-history-reuse-native-check.js",bytes:fs.statSync(__dirname+"/auth-history-reuse-native-check.js").size,sha256:sha(fs.readFileSync(__dirname+"/auth-history-reuse-native-check.js"))}],activation:false,full500:false,GOClaimed:false,paidProviderCalls:0,production:false,unit60Auth30Acceptance:false});
+}
+(async()=>{if(phase==="catalog")captureStateCatalog("STATE_CATALOG_SOURCE_ONLY.SAFE.json",true);else if(phase==="prepare")await prepare();else if(phase==="measure")await measure();else if(phase==="native"||phase==="native-leaf")await nativeSecurity();else if(phase==="history")await historySecurity();else await security();})().catch(e=>{console.error(JSON.stringify({error:e.name,code:e.code||null,nativeCase:e.nativeCase||null,message:String(e.message).slice(0,200)}));process.exitCode=1;});

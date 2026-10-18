@@ -4,7 +4,7 @@
 No execution on import. No profiles, command execution, activation or run GO.
 Fresh network-none container only. The kernel meter and limits are unchanged.
 """
-import csv, datetime, hashlib, importlib.util, io, json, os, pathlib, subprocess, time, uuid
+import csv, datetime, hashlib, importlib.util, io, json, os, pathlib, subprocess, sys, time, uuid
 
 REPO = pathlib.Path('/workspace/helmut-cpu-epoch-20261015')
 BASE = pathlib.Path('/workspace/helmut-parallel-20261015/wave35-auth-state-parts/meter')
@@ -45,8 +45,22 @@ def main():
     if mode not in ['baseline', 'parts', 'security']:
         raise ValueError('explicit small baseline|parts|security mode required')
     test_phase = os.environ.get('HELMUT_STATE_TEST_PHASE', 'security' if mode == 'security' else 'measure')
-    if test_phase not in (['security', 'native', 'native-leaf'] if mode == 'security' else ['measure']):
+    if test_phase not in (['security', 'native', 'native-leaf', 'history'] if mode == 'security' else (['measure', 'read-path'] if mode == 'parts' else ['measure'])):
         raise ValueError('explicit security|native phase requires security mode')
+    read_path = test_phase == 'read-path'
+    renderer_variant = os.environ.get('HELMUT_STATE_RENDERER_VARIANT', 'original')
+    if renderer_variant != 'original':
+        raise ValueError('descriptor renderer retired: no proven common memory improvement')
+    loop_mode = os.environ.get('HELMUT_STATE_READ_PATH_LOOP', '0')
+    repeat_writes = os.environ.get('HELMUT_STATE_READ_PATH_REPEAT_WRITES', '0')
+    if loop_mode not in ['0', '1'] or repeat_writes not in ['0', '32'] or ((loop_mode != '0' or repeat_writes != '0') and not read_path):
+        raise ValueError('explicit bounded storage/read repetitions only in small read-path diagnostic')
+    repeat_writes = int(repeat_writes)
+    history_reuse = os.environ.get('HELMUT_STATE_HISTORY_REUSE', '0')
+    if history_reuse not in ['0', '1'] or (history_reuse == '1' and mode == 'baseline'):
+        raise ValueError('history reuse only allowed in local parts/security diagnostics')
+    if test_phase == 'history' and history_reuse != '1':
+        raise ValueError('history security phase requires explicit local reuse mode')
     manifest = json.loads(MANIFEST.read_text())
     assert manifest['scope'] == 'DIAGNOSTIC_FIXTURE_DATA_ONLY_NO_ACTIVATION'
     assert pin(SOURCE) == manifest['sourcePin']
@@ -63,7 +77,7 @@ def main():
     if filesystem.f_bavail * filesystem.f_frsize < 2 * 1024 ** 3:
         raise RuntimeError('small-fixture free disk reserve below2GiB')
     tag = uuid.uuid4().hex[:10]
-    case_kind = test_phase if mode == 'security' else ('mixed-' + mode if workload == 'mixed-state-process-runs' else mode)
+    case_kind = test_phase if mode == 'security' or read_path else ('mixed-' + mode if workload == 'mixed-state-process-runs' else mode)
     name = 'helmut-auth-state-' + case_kind + '-' + tag
     parent = 'helmut-meter-auth-state-' + case_kind + '-' + tag
     out = BASE / (case_kind + '-' + tag)
@@ -72,6 +86,9 @@ def main():
     pg.mkdir(mode=0o700)
     K.initialize_parent(parent, name)
     cid = None
+    storage = None
+    bounded = None
+    storage_out = None
     native = {}
     failure = None
     cleanup = {'ownedContainerStopped': False, 'originalsUnmodified': False}
@@ -108,9 +125,26 @@ def main():
         return result
 
     try:
+        if loop_mode == '1':
+            probe_out = out / 'loop-capability'
+            subprocess.run([sys.executable, str(REPO / 'scripts/helmut-resource-meter/probe-loop-capability.py'), str(probe_out)], env=ENV, capture_output=True, text=True, check=True, timeout=60)
+            capability = json.loads((probe_out / 'LOOP_CAPABILITY.SAFE.json').read_text())
+            assert capability['exitCode'] == 0 and capability['native']['loopControlReadable'] is True
+            assert capability['native']['backingFileAttached'] is False and capability['native']['mountsOrFormats'] == 0
+            probe = json.loads(docker(['inspect', capability['containerId']], text=True, timeout=10).stdout)[0]
+            assert not probe['State']['Running'] and probe['State']['Pid'] == 0 and probe['Name'].startswith('/helmut-meter-loop-probe-')
+            assert probe['HostConfig']['CgroupParent'] == probe['Name'] and probe['Image'] == K.IMAGE
+            docker(['rm', probe['Id']], text=True, timeout=15)
+            save(out / 'PROBE_HULL_RETIRED.SAFE.json', {'containerId': probe['Id'], 'metadataAndKernelReceiptRetained': True, 'noForceNoVolumes': True})
+            bounded_spec = importlib.util.spec_from_file_location('read_path_existing_bounded', REPO / 'scripts/helmut-resource-meter/bounded-storage.py')
+            bounded = importlib.util.module_from_spec(bounded_spec)
+            bounded_spec.loader.exec_module(bounded)
+            storage_out = bounded.BASE / ('readpath-loop-' + tag)
+            storage = bounded.create(storage_out, 1073741824, capability['native']['freeLoopIndex'], parent + '/storage', hold=600)
+            save(out / 'BOUNDED_STORAGE.SAFE.json', storage)
         args = ['create', '--name', name, '--network', 'none', '--cgroup-parent=/' + parent,
                 '--security-opt', 'no-new-privileges',
-                '--mount', 'type=bind,src=' + str(pg) + ',dst=/var/lib/postgresql/data',
+                '--mount', ('type=volume,src=' + storage['volume'] if storage else 'type=bind,src=' + str(pg)) + ',dst=/var/lib/postgresql/data',
                 '--mount', 'type=bind,src=' + str(out) + ',dst=/bench',
                 '--mount', 'type=bind,src=' + str(SOURCE) + ',dst=/bench-input.json,readonly',
                 '--mount', 'type=bind,src=' + str(MANIFEST) + ',dst=/bench-input-manifest.json,readonly',
@@ -118,13 +152,13 @@ def main():
                 '--mount', 'type=bind,src=' + str(K.PYTHON_ROOT) + ',dst=' + str(K.PYTHON_ROOT) + ',readonly',
                 '--mount', 'type=bind,src=' + str(REPO) + ',dst=' + str(REPO) + ',readonly',
                 '--mount', 'type=bind,src=/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/postgrest-pinned,dst=/postgrest,readonly',
-                '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', '--env', 'POSTGRES_DB=postgres', '--env', 'PGDATA=/var/lib/postgresql/data',
+                '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', '--env', 'POSTGRES_DB=postgres', '--env', 'PGDATA=' + ('/var/lib/postgresql/data/pgdata' if storage else '/var/lib/postgresql/data'),
                 K.IMAGE, 'postgres', '-c', 'helmut.local_usage_experiment=on',
                 '-c', 'shared_preload_libraries=pg_stat_statements', '-c', 'pg_stat_statements.track=all',
                 '-c', 'log_temp_files=0', '-c', 'track_io_timing=on', '-c', 'work_mem=4MB',
                 '-c', 'wal_compression=off', '-c', 'full_page_writes=on', '-c', 'fsync=on', '-c', 'synchronous_commit=on']
         cid = docker(args, text=True).stdout.strip()
-        save(out / 'STARTED.SAFE.json', {'scope': 'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN', 'name': name, 'database': 'postgres', 'cid': cid, 'parent': parent, 'mode': mode, 'testPhase': test_phase, 'workload': workload, 'expectedLogicalOperations': 0 if mode == 'security' else 96, 'expectedCASRequests': 0 if mode == 'security' else (120 if workload == 'mixed-state-process-runs' else 96), 'operations': 0 if mode == 'security' else 96, 'repository': str(REPO), 'fixtureManifestPin': pin(MANIFEST), 'fixturePin': pin(SOURCE), 'harnessPin': pin(__file__), 'kernelMeterPin': pin(REPO / 'scripts/helmut-resource-meter/kernel-meter.py'), 'activation': False, 'GOClaimed': False, 'production': False})
+        save(out / 'STARTED.SAFE.json', {'scope': 'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN', 'name': name, 'database': 'postgres', 'cid': cid, 'parent': parent, 'mode': mode, 'testPhase': test_phase, 'workload': workload, 'rendererVariant': renderer_variant, 'historyReuse': history_reuse == '1', 'readPathLoopMode': loop_mode == '1', 'readPathRepeatWrites': repeat_writes, 'expectedLogicalOperations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'expectedCASRequests': 0 if mode == 'security' else (4 + repeat_writes if read_path else (120 if workload == 'mixed-state-process-runs' else 96)), 'operations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'repository': str(REPO), 'fixtureManifestPin': pin(MANIFEST), 'fixturePin': pin(SOURCE), 'harnessPin': pin(__file__), 'kernelMeterPin': pin(REPO / 'scripts/helmut-resource-meter/kernel-meter.py'), 'activation': False, 'GOClaimed': False, 'production': False})
         docker(['start', cid], text=True, timeout=15)
         for _ in range(100):
             log = docker(['logs', cid], timeout=10)
@@ -181,7 +215,8 @@ def main():
             before = K.kernel_snapshot(parent)
             samples = []
             workload_start = time.monotonic()
-            child = subprocess.Popen(DOCKER + ['exec', cid] + argv + ['measure', mode, str(os.getuid()), str(os.getgid())], env=ENV, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            phase_argv = [str(K.NODE_ROOT / 'bin/node'), str(REPO / 'scripts/helmut-resource-meter/auth-state-read-path-case.js')] if read_path else argv
+            child = subprocess.Popen(DOCKER + ['exec', cid] + phase_argv + [test_phase, mode, str(os.getuid()), str(os.getgid())], env=ENV, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             checkpoint_done = False
             try:
                 while child.poll() is None:
@@ -217,11 +252,12 @@ def main():
                     child.terminate()
                     child.communicate(timeout=10)
                 save(out / 'WRITE_PHASE_KERNEL.SAFE.json', {'before': before, 'after': K.kernel_snapshot(parent), 'samples': samples, 'clientExitCode': child.returncode, 'unchangedExistingKernelMeter': True, 'observerHostOutsideBothComparedFixtures': True})
-            assert checkpoint_done
+            assert read_path or checkpoint_done
             time.sleep(1.2)
             native['afterWrites'] = native_snapshot()
             native['networkAfterWorkload'] = network_snapshot()
-            native['logicalDataVerifiedByActualNativeReader'] = json.loads((out / 'HTTP_RESULT.SAFE.json').read_text())['nativeLogicalDataEqualsExpected']
+            result_file = 'READ_PATH_RESULT.SAFE.json' if read_path else 'HTTP_RESULT.SAFE.json'
+            native['logicalDataVerifiedByActualNativeReader'] = json.loads((out / result_file).read_text())['nativeLogicalDataEqualsExpected']
             assert native['logicalDataVerifiedByActualNativeReader'] is True
             save(out / 'NATIVE_WAL_INTEGRITY.SAFE.json', native)
             stats = json.loads(sql("SELECT json_build_object('temporaryBytes',(SELECT temp_bytes FROM pg_stat_database WHERE datname=current_database()),'temporaryFiles',(SELECT temp_files FROM pg_stat_database WHERE datname=current_database()),'statements',(SELECT json_agg(json_build_object('query',query,'calls',calls,'rows',rows,'execMS',total_exec_time,'tempWriteBlocks',temp_blks_written,'tempReadBlocks',temp_blks_read,'walBytes',wal_bytes,'walFPI',wal_fpi))FROM pg_stat_statements WHERE query NOT LIKE '%pg_stat_statements%'));"))
@@ -248,21 +284,52 @@ def main():
                 log_path.chmod(0o600)
                 cleanup['logBytes'] = len(payload)
                 cleanup['logSHA256'] = hashlib.sha256(payload).hexdigest()
-                if K.validated_parent(parent).exists():
-                    snap = K.kernel_snapshot(parent, require_empty=True)
-                    save(out / 'KERNEL_FINAL.SAFE.json', snap)
-                    cleanup['kernelEmpty'] = snap['events']['populated'] == 0
-                    cleanup['wholeCPUUsec'] = snap['cpu']['usage_usec']
-                    cleanup['jointMemoryPeakBytes'] = snap['memoryPeakBytes']
-                    cleanup['fullLastProcessExitCovered'] = snap['fullLastProcessExitCovered']
             except BaseException as error:
                 cleanup['error'] = {'name': type(error).__name__, 'message': str(error)[:200]}
                 if failure is None:
                     failure = error
+        try:
+            if storage is not None:
+                storage_final = bounded.finish(storage)
+                save(out / 'BOUNDED_STORAGE_FINAL.SAFE.json', storage_final)
+                cleanup['ownStorageHelperFinished'] = True
+                cleanup['loopIdentityUnchanged'] = storage_final['identityUnchanged']
+            elif storage_out is not None and storage_out.exists():
+                # B.create can fail after creating its own holder but before
+                # returning. Bind cleanup to this unique parent AND image.
+                bounded.retire_nodes(storage_out)
+                (storage_out / 'STOP').write_text('OWNED_SMALL_SETUP_FAILED\n')
+                own_ids = docker(['ps', '--all', '--quiet', '--filter', 'name=helmut-meter-storage-'], text=True, timeout=15).stdout.split()
+                owned = json.loads(docker(['inspect'] + own_ids, text=True, timeout=15).stdout) if own_ids else []
+                closed = []
+                for row in owned:
+                    if row['HostConfig']['CgroupParent'] != '/' + parent + '/storage':
+                        continue
+                    assert row['Image'] == K.IMAGE and any(m['Source'] == str(storage_out / 'image.raw') for m in row['Mounts'])
+                    if row['State']['Running']:
+                        docker(['stop', '--time', '15', row['Id']], text=True, timeout=25)
+                    state = json.loads(docker(['inspect', '--format', '{{json .State}}', row['Id']], text=True, timeout=10).stdout)
+                    assert not state['Running'] and state['Pid'] == 0
+                    closed.append(row['Id'])
+                save(out / 'OWN_PARTIAL_STORAGE_SETUP_CLOSED.SAFE.json', {'containerIds': closed, 'exactUniqueParentAndImageOnly': True, 'noDetachOrDeletion': True})
+            if K.validated_parent(parent).exists():
+                snap = K.kernel_snapshot(parent, require_empty=True)
+                save(out / 'KERNEL_FINAL.SAFE.json', snap)
+                cleanup['kernelEmpty'] = snap['events']['populated'] == 0
+                cleanup['wholeCPUUsec'] = snap['cpu']['usage_usec']
+                cleanup['jointMemoryPeakBytes'] = snap['memoryPeakBytes']
+                cleanup['fullLastProcessExitCovered'] = snap['fullLastProcessExitCovered']
+                cleanup['commonStorageIncluded'] = loop_mode == '1'
+        except BaseException as error:
+            cleanup['storageOrKernelError'] = {'name': type(error).__name__, 'message': str(error)[:200]}
+            if failure is None:
+                failure = error
         cleanup['originalsUnmodified'] = all(pin(manifest[key]['path']) == manifest[key] for key in ['originalSourcePin', 'packetPin'])
         cleanup['fixtureUnmodified'] = pin(SOURCE) == manifest['sourcePin']
         if failure is None and not all(cleanup.get(key) is True for key in ['ownedContainerStopped', 'kernelEmpty', 'fullLastProcessExitCovered', 'originalsUnmodified', 'fixtureUnmodified']):
             failure = RuntimeError('small fixture final exit/original integrity proof incomplete')
+        if failure is None and loop_mode == '1' and not all(cleanup.get(k) is True for k in ['ownStorageHelperFinished', 'loopIdentityUnchanged', 'commonStorageIncluded']):
+            failure = RuntimeError('small fixture storage/helper closure incomplete')
         cleanup['fullOwnedLifetimeMS'] = (time.monotonic() - started_at) * 1000
         cleanup['activation'] = cleanup['full500'] = cleanup['GOClaimed'] = cleanup['production'] = False
         save(out / 'CLEANUP_AND_ORIGINALS.SAFE.json', cleanup)
