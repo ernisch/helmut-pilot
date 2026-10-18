@@ -125,6 +125,10 @@ jobs:
             test ! -e "$runtime_helper"
             sudo install -D -m 0644 scripts/helmut-resource-meter/next-resource-authority.py "$runtime_helper"
             cmp scripts/helmut-resource-meter/next-resource-authority.py "$runtime_helper"
+            runtime_slot="${runtime_helper%/*}/local-resource-authority-slot.json"
+            test ! -e "$runtime_slot"
+            sudo install -D -m 0644 scripts/helmut-resource-meter/local-resource-authority-slot.json "$runtime_slot"
+            cmp scripts/helmut-resource-meter/local-resource-authority-slot.json "$runtime_slot"
           fi
           # Der echte Lauf bleibt an seinen freigegebenen /workspace-Pfad gebunden.
           # Nur die synthetischen CI-Mocks laden ihre Module aus dem Checkout.
