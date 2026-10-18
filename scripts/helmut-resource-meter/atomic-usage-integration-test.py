@@ -177,4 +177,53 @@ assert.equal(process.env.HELMUT_LLM_USAGE_STORAGE,'caller-sentinel');assert.equa
         result=subprocess.run(['node','-e',code,json.dumps(state_pin)],cwd=C.REPO,capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
+    def test_history_reuse_is_explicit_pinned_and_reaches_all26_consumers(self):
+        value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1'})))",str(BIN/'atomic-usage-integration.js')],text=True)
+        self.descriptor.write_text(value);history_pin=C.pin(self.descriptor)
+        rows=C.render_templates(self.case,**self.args,atomic_usage_pin=history_pin)
+        self.assertEqual(len(rows),26)
+        for row in rows:
+            text=Path(row['original']['path']).read_text()
+            for delta in row['replacements']:
+                self.assertEqual(text.count(delta['from']),delta['count']);text=text.replace(delta['from'],delta['to'])
+            self.assertEqual(text,row['text']);self.assertEqual(C.pin(row['original']['path']),row['original'])
+        files={Path(r['destination']).relative_to(self.case).as_posix():r['text']for r in rows}
+        for relative in ['native-end-preparation/root-io-bridge.js','native-end-preparation/runtime-candidates/prepare-materials.candidate.js']:
+            self.assertIn("env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';",files[relative])
+        self.assertIn("'HELMUT_AUTH_HISTORY_READ_REUSE'",files['native-end-preparation/runtime-candidates/root-authority-stage.candidate.js'])
+        assembly=files['assemble-after-activation.js']
+        self.assertLess(assembly.index("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';"),assembly.index('const initialSourceBinding='))
+        subprocess.run(['node','-e',"const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"],input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,check=True,capture_output=True)
+        code=r"""
+const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),S=require('./scripts/helmut-resource-meter/start-input-checks');
+const R=require('./lib/helmut/synthetik-500-content-runner'),assert=require('assert/strict'),fs=require('fs'),crypto=require('crypto');
+const p=JSON.parse(process.argv[1]),d=AU.readDescriptor(p),mode='verified-history-reuse-v1';assert.equal(d.historyReadReuse,mode);
+assert.equal(AU.environment({},p).HELMUT_AUTH_HISTORY_READ_REUSE,mode);
+assert.equal(AU.descriptor().historyReadReuse,undefined);
+for(const options of [{historyReadReuse:mode},{stateStorage:'merkle-auth-v1',historyReadReuse:'unknown'}])assert.throws(()=>AU.descriptor(options));
+for(const env of [{HELMUT_AUTH_HISTORY_READ_REUSE:'unknown'},{HELMUT_AUTH_HISTORY_READ_REUSE:'off'},{VERCEL:'1'},{HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY:'not-a-key'}])assert.throws(()=>AU.environment(env,p));
+const keys=['HELMUT_LLM_USAGE_STORAGE','HELMUT_AUTH_STATE_STORAGE','HELMUT_AUTH_HISTORY_READ_REUSE'];
+for(const k of keys)delete process.env[k];
+process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';
+const plain=R.sourceBinding();process.env.HELMUT_AUTH_HISTORY_READ_REUSE=mode;const expected=R.sourceBinding();assert.notEqual(expected,plain);
+for(const k of keys)delete process.env[k];process.env.HELMUT_AUTH_HISTORY_READ_REUSE='caller-sentinel';
+assert.equal(S.actualSourceBinding({atomicUsageInput:p}),expected);assert.equal(process.env.HELMUT_AUTH_HISTORY_READ_REUSE,'caller-sentinel');
+assert.equal(process.env.HELMUT_LLM_USAGE_STORAGE,undefined);assert.equal(process.env.HELMUT_AUTH_STATE_STORAGE,undefined);
+S.initialSourceBinding({atomicUsageInput:p,expectedInitialSourceBindingSHA256:crypto.createHash('sha256').update(expected).digest('hex')});
+assert.throws(()=>S.initialSourceBinding({atomicUsageInput:p,expectedInitialSourceBindingSHA256:crypto.createHash('sha256').update(plain).digest('hex')}));
+const real=fs.readFileSync;
+try{fs.readFileSync=function(file,...args){if(String(file).endsWith('/synthetik-500-cpu-source-pins.json')&&process.env.HELMUT_AUTH_HISTORY_READ_REUSE===mode)throw Error('history-source-read-failure');return real.call(this,file,...args);};assert.throws(()=>S.actualSourceBinding({atomicUsageInput:p}),/history-source-read-failure/);}
+finally{fs.readFileSync=real;}
+assert.equal(process.env.HELMUT_AUTH_HISTORY_READ_REUSE,'caller-sentinel');for(const k of keys.slice(0,2))assert.equal(process.env[k],undefined);
+const pin=()=>({path:p.path,bytes:fs.statSync(p.path).size,sha256:crypto.createHash('sha256').update(real(p.path)).digest('hex')});
+for(const delta of [{historyReadReuse:'unknown'},{stateStorage:undefined},{extra:'forged'}]){fs.writeFileSync(p.path,JSON.stringify({...d,...delta}));assert.throws(()=>AU.readDescriptor(pin()));}
+fs.writeFileSync(p.path,JSON.stringify(AU.descriptor()));const legacy=pin();
+assert.equal(AU.environment({},legacy).HELMUT_AUTH_HISTORY_READ_REUSE,undefined);assert.throws(()=>AU.environment({HELMUT_AUTH_HISTORY_READ_REUSE:mode},legacy));
+assert.equal(S.actualSourceBinding({atomicUsageInput:legacy}).split(':').length,expected.split(':').length);
+assert.equal(process.env.HELMUT_AUTH_HISTORY_READ_REUSE,'caller-sentinel');
+"""
+        result=subprocess.run(['node','-e',code,json.dumps(history_pin)],cwd=C.REPO,capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertFalse(self.case.exists());self.assertFalse(Path(self.args['owner_go_pin']['path']).exists())
+
 if __name__=='__main__':unittest.main()

@@ -166,8 +166,8 @@
     },
     {
       "path": "lib/helmut/llm-usage-atomic.js",
-      "bytes": 9299,
-      "sha256": "1819cca84fb7ba83db90a3ab94904348eef9dd0181839a31c9d8cd79775351cd"
+      "bytes": 13380,
+      "sha256": "f0a439ccfc965b331cf6a73552dbb3c3ab16596031ea53e9474fce90dfa345a4"
     },
     {
       "path": "lib/helmut/matching-begruendung.js",
@@ -261,8 +261,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-content-runner.js",
-      "bytes": 4241,
-      "sha256": "123ee12f6b10efe42edb8971d2aeddc8f898bcd11cfb97ce28399ccf5cd6a452"
+      "bytes": 4297,
+      "sha256": "2702e6add72f6a2c792bc58eab57e88caf659e5749933cd87c9814fdeaa8a97a"
     },
     {
       "path": "lib/helmut/synthetik-500-content-worker.js",
@@ -440,7 +440,7 @@
       "sha256": "0d4f52725c0273420c10ff3506f6135bb2232a47992ef10c7811962780b9ef41"
     }
   ],
-  "sourceMappingSHA256": "38e93e2aa1074f0e09d5eaaeda9ae220be1e8a16c69eedc48cd6ca09ccf73818",
+  "sourceMappingSHA256": "d1e444b779a9178f44f6606bac35b73688f1a14e66591b9c8368e15796a27320",
   "currentCandidateFull500Qualification": false,
   "candidateQualificationScope": "LOCAL_RELATIONAL_ATOMIC_USAGE_AND_IMMUTABLE_AUTH_PARTS_SOURCE_EXPECTATIONS_ONLY_NO_FULL500_REQUALIFICATION",
   "priorManifestCommit": "5cf3745b71c1aef64d78ba1eeb41618c84520ac6",

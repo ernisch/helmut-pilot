@@ -2,17 +2,13 @@
 
 **Lokal18.10.2026 UTC/Istanbul; letzter Production-Befund16.10., historische Basis13.10.** Production gilt nur zum Prüfzeitpunkt. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`; weitere Historie und Belege folgen unten.
 
-## Lokal18.10.: Speicherkandidat qualifiziert, vollständiger Ressourcenlauf offen
+## Lokal18.10.: Speicherabnahme offen, lokale Verbesserung qualifiziert
 
-Der verbrauchte Lauf `5d168e3561a5` stoppte bei2.054.877.184 B mit26 Abschlüssen. Originale, alte Aufträge und Freigaben bleiben erhalten.
+Lauf `4598bdb31782`:246 HTTP200-Antworten,247. Einheit begonnen; Peak2.048.897.024 B bei Limit2.048.000.000 B. GO **verbraucht**, sicher beendet; Originale erhalten. Vollständige500/1500-/Unit60-/Auth30-/Speicherabnahme offen. [Fehlversuchsbeleg, privat](https://drive.google.com/file/d/15IIHNVGjrkW5s57gzwvQMYduVIRCvhGy/view).
 
-Der standardmäßig ausgeschaltete [lokale Speicherkandidat](betrieb/local-auth-state-parts-20261018.md) schreibt SHA256-gebundene unveränderliche Teile und einen atomaren kleinen Wurzelzustand. Kostenhistorie, Versionsvergleich, frische Sicherheitskontrollen und geprüfter nativer Rückweg bleiben erhalten.
+Lokal standardmäßig AUS: `HELMUT_AUTH_HISTORY_READ_REUSE=verified-history-reuse-v1`. Nur unveränderliche Historie wiederverwenden; Graph/Sicherheitsprüfungen frisch.14 native Gruppen,11 reine Anbindungstests und getrennte Pro-High-Reviews angenommen.42 Diagnoseaufrufe: Peak957.796.352→921.849.856 B, CPU54,482110→49,233293s; langsamster Aufruf499,616928→533,708852ms schlechter. Kein500er-/Zeitnachweis. [Details und rückgeprüfte Belege](betrieb/local-history-read-reuse-20261018.md). [Draft-PR923](https://github.com/ernisch/helmut-pilot/pull/923); neue Pflicht-CI offen.
 
-Kleiner Referenzvergleich:96 logische Änderungen/120CAS/32Retentionsaufrufe/24Nullkostenbuchungen. Gemeinsamer Peak975.331.328→850.702.336 B; WAL-LSN114.742.888→6.091.128 B; langsamste Operation861,359→724,807 ms. Schreibfenster37,427360→39,377216 s, CPU43,383262→48,445973 s: Zeitrisiko bleibt. Keine500er Hochrechnung. Daten-/Historygleichheit,17/17 native Sicherheitsgruppen, Katalog aller14 Funktionen und getrennte Quellen-/Codec-Negativfälle bestanden.
-
-Nullbuch17.10. ausschließlich in Eingangskopie `helmut_resource_input_20261018_ab76c911dac8` korrigiert; Originale/Geldgrenzen unverändert. Nur eigene gestoppte Containerhüllen bereinigt, Datenbanken/Volumes/Belege erhalten. Frei17.191.202.816 B gegenüber Startboden16.589.934.592 B; vor Start frisch prüfen.
-
-Kandidat `4598bdb31782`:32/32 technische Vorbedingungen unabhängig bestätigt, ausdrücklich `MISSING_NEW_OPERATOR_GO`, keine Aktivierung/GO-Beanspruchung. CI-Korrekturen und sichere Übernahme der echten neuen GO-Bindung abschließen. Erst nach separatem kandidatgebundenem lokalem GO: vollständige500 Abschlüsse, Offline90, Unit60, Auth30 und gemeinsamer Speicher≤2.048.000.000 B. Kein neuer Gesamtlauf oder Production-Eingriff.
+Platte: rund12,37GB frei,16.589.934.592 B erforderlich; rund4,22GB fehlen. Nur9 optionale Caches/122.880 B belegt; `/tmp` ist RAM, kein weiterer zugänglicher freier Datenträger. DBs/Originale/alte Belege geschützt; zusätzliche Löschung braucht konkretes GO. Keine neue Infrastruktur/Kosten. Neue Tages-/Fallbindung,32 Vorbedingungen und separates Ressourcen-GO bleiben Pflicht. Keine Production-Aktion.
 
 ## Lokale Eingaben18.10. und Zeitfenster
 
@@ -123,5 +119,7 @@ Für die aktuelle Vorbereitung erlaubt der Betreiber gezielte Entwicklung, lokal
 Codex Cloud ist der direkte Arbeitsweg zum 500er-Starttor; Modell und Denkstufe wählt der Betreiber, das Repository setzt keinen Standard. Der geprüfte Cloud Router ist aktiv: Sol führt, DeepSeek übernimmt abgegrenzte Arbeit nach AGENTS.md. Es gibt keine zeitabhängige Peak-Sperre; Entwicklungsarbeit darf jederzeit starten. Production-Schutzgrenzen, das gesonderte GO vor Aktivierung/500er-Test und die Production-Kostenlimits bleiben unverändert. Parallele Schreibarbeit nur in klar getrennten Bereichen; bei Überschneidung nacheinander.
 
 ## Nächster notwendiger Schritt
+
+Zuerst eigenen Commit/PR/CI und sichere Belege abschließen, die eigene freie Festplattenreserve schließen und eine frische Kandidaten-/Quellen-/Tages-/Fensterbindung plus32 technische Prüfungen herstellen; erst danach ein neues ausdrückliches full500-GO anfordern. Das heutige18.10.-Vollfenster reicht nach dem jüngsten Start14:35UTC nicht aus; keinen heute lauffähigen Lauf implizieren. Weitere Quellen-/Tageskorrekturen können ein exakt begrenztes GO erfordern; nicht annehmen. Bereits bestandene Prüfungen nicht wiederholen und keine abschließenden Ressourcenobergrenzen erfinden.
 
 Den [konkreten Productionplan](betrieb/500er-production-vorbereitung-20261016.md) mit unveränderten Corepins festhalten. Vor einer Integration fehlen eigene Pflichtchecks des einzuliefernden Commits sowie gesondertes konkretes Integrations-/Migrations-/Deployment-GO. Danach tatsächliche Zielruntime/Schlüssel/Bundle/Schutzobjekte und alle offenen Kosten-, Speicher-, Fenster- und Finanzbelege schließen; erst dann getrenntes finales500er-Aktivierungs-/Productiontest-GO. Keine weitere Volltestwiederholung automatisch starten. Bereits abgeschlossene Prüfungen, Archiv und Zugangsreparatur bleiben übernommen.
