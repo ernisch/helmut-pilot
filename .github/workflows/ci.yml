@@ -154,7 +154,7 @@ jobs:
           node scripts/auth-state-parts-write-reuse-test.js
           for mode in usage parts; do
             for ack_case in appended-old-head unchanged-new-head appended-new-head unchanged-old-head; do
-              node scripts/auth-state-parts-ack-test.js --local-mock-only --mode "$mode" --case "$ack_case"
+              node scripts/auth-state-parts-ack-case.js --local-mock-only --mode "$mode" --case "$ack_case"
             done
           done
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
