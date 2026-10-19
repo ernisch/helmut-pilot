@@ -67,6 +67,47 @@ function run() {
     const input = { nested: Object.fromEntries(controls.map(k => [k, []])) }, g = C.build(input);
     assert.deepEqual(fresh().decode(g, g.root).data, input);
   });
+  check("verified-content-token-cannot-be-forged-rebound-or-restored-after-restart", () => {
+    const reader = fresh(), input = { current: { permitted: false }, rows: [1, 2, 3] }, g = reader.build(input);
+    const decoded = reader.decodeForReuse(g, g.root, "local|generation-a"), token = decoded.reuseToken;
+    assert(token && Object.isFrozen(token));assert.deepEqual(Object.keys(token), []);
+    for (const bad of [null, {}, Object.freeze({}), JSON.parse(JSON.stringify(token)), "hash-claim"])
+      assert.throws(() => reader.copyVerifiedContent(bad, g.root, "local|generation-a"), { code: "AUTH_STATE_VERIFIED_CONTENT_MISSING" });
+    assert.throws(() => reader.copyVerifiedContent(token, "0".repeat(64), "local|generation-a"), { code: "AUTH_STATE_VERIFIED_CONTENT_MISSING" });
+    assert.throws(() => reader.copyVerifiedContent(token, g.root, "foreign|generation-a"), { code: "AUTH_STATE_VERIFIED_CONTENT_MISSING" });
+    assert.throws(() => fresh().copyVerifiedContent(token, g.root, "local|generation-a"), { code: "AUTH_STATE_VERIFIED_CONTENT_MISSING" });
+    assert.equal(reader.decode(g, g.root, "local|generation-a").reuseToken, undefined);
+    const bad = { ...g, nodes: g.nodes.map((n, i) => i ? n : { ...n, payload: n.payload + " " }) };
+    assert.throws(() => reader.decodeForReuse(bad, g.root, "local|generation-a"), { code: "AUTH_STATE_PAYLOAD_HASH_MISMATCH" });
+  });
+  check("verified-copy-detaches-all-aliases-hash-sets-and-caller-mutations", () => {
+    const reader = fresh(), same = { nested: { text: "x".repeat(20000) } };
+    const input = { a: same, b: same, rows: [same, same], literal: JSON.parse('{"__proto__":{"own":true}}') }, g = reader.build(input);
+    const first = reader.decodeForReuse(g, g.root, "local|one"), token = first.reuseToken;
+    first.data.a.nested.text = "caller";first.hashes.clear();
+    const a = reader.copyVerifiedContent(token, g.root, "local|one");
+    assert.deepEqual(a.data, input);assert.deepEqual(a.hashes, g.hashes);
+    a.data.a.nested.text = "one-alias";assert.equal(a.data.b.nested.text, input.b.nested.text);
+    a.data.rows[0].nested.text = "row-only";assert.equal(a.data.rows[1].nested.text, input.a.nested.text);
+    a.data.literal.__proto__.own = false;assert.equal({}.own, undefined);a.hashes.clear();
+    const b = reader.copyVerifiedContent(token, g.root, "local|one");
+    assert.deepEqual(b.data, input);assert.deepEqual(b.hashes, g.hashes);
+  });
+  check("captured-verified-content-survives-replacement-without-using-new-global-state", () => {
+    const reader = fresh(), a = { value: "before" }, ga = reader.build(a);
+    const saved = reader.decodeForReuse(ga, ga.root, "local|a");
+    const b = { value: "after" }, gb = reader.build(b);reader.decodeForReuse(gb, gb.root, "local|b");
+    assert.deepEqual(reader.copyVerifiedContent(saved.reuseToken, ga.root, "local|a").data, a);
+    assert.throws(() => reader.copyVerifiedContent(saved.reuseToken, gb.root, "local|b"), { code: "AUTH_STATE_VERIFIED_CONTENT_MISSING" });
+  });
+  check("expanded-text-limit-is-independent-of-small-shared-wire-graph", () => {
+    const reader = fresh(), item = { text: "z".repeat(20000) }, input = { rows: Array(450).fill(item) }, g = reader.build(input);
+    assert(Buffer.byteLength(JSON.stringify(g)) < 8 * 1024 * 1024);
+    assert(Buffer.byteLength(JSON.stringify(input)) > 8 * 1024 * 1024);
+    const decoded = reader.decodeForReuse(g, g.root, "local|large");
+    assert.deepEqual(decoded.data, input);assert.equal(decoded.reuseToken, null);
+    assert.throws(() => reader.copyVerifiedContent(decoded.reuseToken, g.root, "local|large"), { code: "AUTH_STATE_VERIFIED_CONTENT_MISSING" });
+  });
   return { scope: "PURE_SYNTHETIC_GRAPH_READER_REGRESSION_ONLY", pass: true,
     atUTC: new Date().toISOString(), groups, moduleSHA256: sha(fs.readFileSync(modulePath)),
     activation: false, full500: false, GOClaimed: false, providerCalls: 0, production: false };

@@ -159,6 +159,16 @@ async function run({ sql, rpc, storage, U, copy, omitRevision }) {
       assert.throws(() => U.enabled({ ...env, ...delta }));
   });
   await check("oversize-content-uses-full-transport-and-protected-fields-preserved", async () => {
+    // A small wire DAG can still expand beyond the private text limit.
+    const shared = await storage.readAuthStore({ strict: true });
+    shared.localDiagnosticState.graphExpanded = Array(450).fill({ text: "z".repeat(20000) });
+    await storage.writeAuthStore(shared);
+    const expanded = await observe(async () => { await storage.readAuthStore({ strict: true });await storage.readAuthStore({ strict: true }); });
+    assert(Buffer.byteLength(JSON.stringify(expanded[0].value.graph)) < 8 * 1024 * 1024);
+    assert.equal(expanded[0].value.graphReuse.reused, false);assert.equal(expanded[1].request.knownGraph, null);
+    assert.equal(expanded[1].value.graphReuse.reused, false);
+    const undoExpanded = await storage.readAuthStore({ strict: true });delete undoExpanded.localDiagnosticState.graphExpanded;
+    await storage.writeAuthStore(undoExpanded);
     const a = await storage.readAuthStore({ strict: true });
     a.localDiagnosticState.graphOversize = Array.from({ length: 4 }, (_, i) => sha("oversize-graph-" + i).repeat(40000));
     await storage.writeAuthStore(a);
@@ -170,6 +180,7 @@ async function run({ sql, rpc, storage, U, copy, omitRevision }) {
     for (const key of ["users", "testKostenTage", "testKostenAuftrag", "synthetik500KostenAdmission", "llmUsage"])
       assert.deepEqual(copy(after[key]), copy(before[key]));
     return { cacheLimitBytes: 8 * 1024 * 1024, oversizedWireCacheNotRetained: true,
+      oversizedExpandedTextAlsoNotRetained: true,
       actualProfileTableAbsent: sql("SELECT to_regclass('public.mandate_profiles')IS NULL;") === "t" };
   });
   return checks;
