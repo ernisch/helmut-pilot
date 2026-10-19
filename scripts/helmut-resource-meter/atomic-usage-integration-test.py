@@ -8,6 +8,18 @@ spec=importlib.util.spec_from_file_location('atomic_staging_connector',BIN/'conn
 C=importlib.util.module_from_spec(spec);spec.loader.exec_module(C)
 
 class AtomicIntegrationTest(unittest.TestCase):
+    def test_unqualified_single_capture_cannot_enter_full_run_or_hide_source_drift(self):
+        code=r"""
+const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),S=require('./scripts/helmut-resource-meter/start-input-checks');
+const R=require('./lib/helmut/synthetik-500-content-runner'),assert=require('node:assert/strict');
+const p=JSON.parse(process.argv[1]),key='HELMUT_AUTH_SINGLE_WRITE_CAPTURE';
+for(const value of ['single-write-capture-v1','off','unknown'])assert.throws(()=>AU.environment({[key]:value},p),/no admitted full-run binding/);
+delete process.env[key];const plain=R.sourceBinding();process.env[key]='single-write-capture-v1';assert.notEqual(R.sourceBinding(),plain);
+process.env[key]='caller-capture-sentinel';const expected=S.actualSourceBinding({atomicUsageInput:p});
+assert.equal(process.env[key],'caller-capture-sentinel');delete process.env[key];assert.equal(S.actualSourceBinding({atomicUsageInput:p}),expected);
+"""
+        subprocess.run(['node','-e',code,json.dumps(self.p)],cwd=BIN.parents[1],check=True,capture_output=True,text=True)
+
     def test_unqualified_graph_mode_cannot_enter_full_run_or_hide_source_drift(self):
         code=r"""
 const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),S=require('./scripts/helmut-resource-meter/start-input-checks');

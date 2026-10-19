@@ -55,6 +55,7 @@ function readDescriptor(p) {
 function environment(env, p) {
   const d = readDescriptor(p);assert(!env.VERCEL && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
   assert(env.HELMUT_AUTH_GRAPH_READ_REUSE === undefined, "Graph reuse has no admitted full-run binding");
+  assert(env.HELMUT_AUTH_SINGLE_WRITE_CAPTURE === undefined, "Single write capture has no admitted full-run binding");
   assert(env.HELMUT_LLM_USAGE_STORAGE === undefined || env.HELMUT_LLM_USAGE_STORAGE === MODE);
   assert(!env.HELMUT_AUTH_STATE_STORAGE || env.HELMUT_AUTH_STATE_STORAGE === d.stateStorage);
   assert(env.HELMUT_AUTH_HISTORY_READ_REUSE === undefined || env.HELMUT_AUTH_HISTORY_READ_REUSE === d.historyReadReuse);
