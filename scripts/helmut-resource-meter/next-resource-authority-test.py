@@ -28,7 +28,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
           **{k:self.connection[k]for k in ['targetDatabase','operationId','caseDirectory']},
           'sourceCapturePin':self.connection['sourceCapture'],
           'previousConsumedMarkers':copy.deepcopy(A.PRESERVED_MARKER_PINS),
-          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V8_000000000000.PRIVATE.json'),
+          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V9_000000000000.PRIVATE.json'),
           'requiredConfirmation':'GO_LOCAL_ONLY_CREATE_'+self.connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'}
     def test_intent_is_only_technical_and_never_actual_go(self):
         with patch.object(A,'read',return_value={}):
@@ -73,14 +73,14 @@ class NextResourceAuthorityTest(unittest.TestCase):
         self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertNotIn(A.RESERVATION,A.OLD_MARKERS)
         self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.243.0/24')
     def test_spent_or_nonfixed_slot_config_is_rejected_on_import(self):
-        for change in [{'version':7},{'version':9},{'day':'2026-10-18'},{'day':'2026-10-20'}]:
+        for change in [{'version':8},{'version':10},{'day':'2026-10-18'},{'day':'2026-10-20'}]:
             other=importlib.util.spec_from_file_location('rejected_authority_slot',Path(A.__file__))
             module=importlib.util.module_from_spec(other)
             with self.subTest(change=change),patch.object(Path,'read_text',return_value=json.dumps({**A.SLOT,**change})):
                 with self.assertRaisesRegex(RuntimeError,'invalid pinned'):other.loader.exec_module(module)
-    def test_all_fifteen_spent_markers_stay_pinned_including_both_v7(self):
-        self.assertEqual(len(A.OLD_MARKERS),15)
-        self.assertEqual(len(A.PRESERVED_MARKER_PINS),15)
+    def test_all_seventeen_spent_markers_stay_pinned_including_both_v7(self):
+        self.assertEqual(len(A.OLD_MARKERS),17)
+        self.assertEqual(len(A.PRESERVED_MARKER_PINS),17)
         self.assertEqual({p['path'] for p in A.PRESERVED_MARKER_PINS},set(map(str,A.OLD_MARKERS)))
         by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
         for expected in SPENT_V5_PINS+SPENT_V7_PINS:
@@ -100,19 +100,19 @@ class NextResourceAuthorityTest(unittest.TestCase):
                   for p in self.intent['previousConsumedMarkers']]
                 with self.subTest(tampered=key),self.assertRaises(RuntimeError):
                     A.validate_owner({**self.intent,'previousConsumedMarkers':tampered},self.connection,planning=True)
-    def test_v8_slot_is_fixed_and_distinct_from_every_old_slot(self):
-        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-19','version':8})
-        self.assertEqual(A.SLOT_VERSION,8)
-        self.assertEqual(A.AUTHORIZATION,'USER_GO_20261019_EXACT_ONE_RESOURCE_ONLY_V8')
+    def test_v9_slot_is_fixed_and_distinct_from_every_old_slot(self):
+        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-19','version':9})
+        self.assertEqual(A.SLOT_VERSION,9)
+        self.assertEqual(A.AUTHORIZATION,'USER_GO_20261019_EXACT_ONE_RESOURCE_ONLY_V9')
         self.assertEqual(A.AUTHORIZATION,self.intent['authorizationId'])
         self.assertNotEqual(A.AUTHORIZATION,OLD_V4_AUTHORIZATION)
         self.assertNotEqual(A.AUTHORIZATION,OLD_V5_AUTHORIZATION)
-        self.assertEqual(A.CLAIM,A.METER/'NEXT_RESOURCE19_V8_GO_CLAIM.SAFE.json')
-        self.assertEqual(A.RESERVATION,A.METER/'NEXT_RESOURCE19_V8_SETUP_RESERVATION.SAFE.json')
-        self.assertEqual(str(A.CLAIM),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE19_V8_GO_CLAIM.SAFE.json')
-        self.assertEqual(str(A.RESERVATION),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE19_V8_SETUP_RESERVATION.SAFE.json')
+        self.assertEqual(A.CLAIM,A.METER/'NEXT_RESOURCE19_V9_GO_CLAIM.SAFE.json')
+        self.assertEqual(A.RESERVATION,A.METER/'NEXT_RESOURCE19_V9_SETUP_RESERVATION.SAFE.json')
+        self.assertEqual(str(A.CLAIM),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE19_V9_GO_CLAIM.SAFE.json')
+        self.assertEqual(str(A.RESERVATION),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE19_V9_SETUP_RESERVATION.SAFE.json')
         self.assertNotEqual(A.CLAIM,A.RESERVATION)
-        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,'OWNER_RESOURCE19_V8_000000000000.PRIVATE.json')
+        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,'OWNER_RESOURCE19_V9_000000000000.PRIVATE.json')
         old_names=set(map(str,A.OLD_MARKERS))
         self.assertNotIn(str(A.CLAIM),old_names)
         self.assertNotIn(str(A.RESERVATION),old_names)
@@ -138,7 +138,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
             for delta in [{'authorizationId':'USER_GO_20261018_EXACT_ONE_RESOURCE_ONLY_V6'},
               {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE18_V6_000000000000.PRIVATE.json')}]:
                 with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**delta},self.connection,planning=True)
-    def test_consumed_v7_is_preserved_and_cannot_authorize_day19_v8(self):
+    def test_consumed_v7_is_preserved_and_cannot_authorize_day19_v9(self):
         by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
         for p in SPENT_V7_PINS:
             self.assertEqual(by_path[p['path']],p);self.assertEqual(A.pin(p['path']),p)
@@ -150,13 +150,34 @@ class NextResourceAuthorityTest(unittest.TestCase):
                 pins=[{**p,key:value}if p['path']==SPENT_V7_PINS[0]['path']else p for p in self.intent['previousConsumedMarkers']]
                 with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,'previousConsumedMarkers':pins},self.connection,planning=True)
     def test_current_and_historical_native_read_paths_are_exact_and_readonly(self):
-        with patch.object(A.subprocess,'run',return_value=SimpleNamespace(stdout='{}'))as run:
+        with patch.object(A.subprocess,'run',return_value=SimpleNamespace(stdout='{}'))as run, patch.object(A.SOURCE_RUNTIME,'verify_runtime_binding'):
             A.query_input('SELECT 1;')
             self.assertEqual(run.call_args.args[0][run.call_args.args[0].index('-d')+1],A.INPUT_DATABASE)
             self.assertEqual(run.call_args.kwargs['input'],"BEGIN READ ONLY;SET LOCAL statement_timeout='20s';SELECT 1;ROLLBACK;")
             A._query_input_database('SELECT 1;',A.BOOK17_INPUT_DATABASE)
             self.assertEqual(run.call_args.args[0][run.call_args.args[0].index('-d')+1],A.BOOK17_INPUT_DATABASE)
             with self.assertRaises(RuntimeError):A._query_input_database('SELECT 1;','FOREIGN')
+    def test_spent_v8_is_preserved_and_cannot_authorize_the_new_slot(self):
+        expected=[
+          {'path':str(A.METER/'NEXT_RESOURCE19_V8_GO_CLAIM.SAFE.json'),'bytes':792,'sha256':'39323645802fe815cec4244b229f68ce265140e4186b5bddf99d03eee5154aa3'},
+          {'path':str(A.METER/'NEXT_RESOURCE19_V8_SETUP_RESERVATION.SAFE.json'),'bytes':1515,'sha256':'3beab4bfacc5835b4cedc5c214653e18ec719883f1ee73be37cad2383650141b'}]
+        by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
+        for p in expected:
+            self.assertEqual(by_path[p['path']],p);self.assertEqual(A.pin(p['path']),p)
+        with patch.object(A,'read',return_value={}):
+            for change in [{'authorizationId':'USER_GO_20261019_EXACT_ONE_RESOURCE_ONLY_V8'},
+              {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V8_000000000000.PRIVATE.json')}]:
+                with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**change},self.connection,planning=True)
+        self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
+    def test_restored_container_identity_fails_before_any_native_sql(self):
+        source=A.SOURCE_RUNTIME
+        expected='|'.join([source.CONTAINER,'/'+source.RUNTIME_BINDING['containerName'],source.RUNTIME_BINDING['imageId'],'none'])
+        with patch.object(source.subprocess,'run',return_value=SimpleNamespace(stdout=expected+'\n'))as run:
+            self.assertEqual(source.verify_runtime_binding(),source.RUNTIME_BINDING_PIN)
+            self.assertIn('inspect',run.call_args.args[0]);self.assertIn(source.CONTAINER,run.call_args.args[0])
+        with patch.object(source.subprocess,'run',return_value=SimpleNamespace(stdout='FOREIGN|/old|other|host'))as run:
+            with self.assertRaisesRegex(RuntimeError,'container differs'):source.sql('SELECT 1;')
+            self.assertEqual(run.call_count,1)
 
 class CompletedBook18DataTest(unittest.TestCase):
     """Bound immutable fixture data only; all native entrypoints stay mocked."""

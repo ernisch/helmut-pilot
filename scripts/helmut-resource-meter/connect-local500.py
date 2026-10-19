@@ -18,6 +18,50 @@ BASE=Path('/workspace/helmut-parallel-20261015')
 AREA=BASE/'wave20-resource-integration'
 BIN=REPO/'scripts/helmut-resource-meter'
 SOURCE='helmut_fresh_input_fixture_d2e98984'
+RESTORE_SCHEMA='helmut-restored-staging-inputs/1'
+RESTORE_TEMPLATES={
+ 'runtimeRequestTemplate':('ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json',38673,'a7fef926d30d51bc93d3872e1ddc46e847b8eb355acbdc7f2c15064d03f0fd3a'),
+ 'contentAcceptanceTemplate':('ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json',3730,'d94b3330464af749224b1b28f3e4fc40668ab437992da380c79b664e684c22bd'),
+ 'localExternalTemplate':('ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json',8840,'3f05996fdc5cb8bea88d3bff34c55760d8d97745335ebbb703662d7c6bf4b36c')}
+
+
+def read_restored_staging_inputs(p,case):
+    """Explicit migration inputs, never a replacement historical approval."""
+    if p is None:return None
+    case=Path(case)
+    def checked(q):
+        if not isinstance(q,dict)or set(q)!={'path','bytes','sha256'}:raise RuntimeError('exact restored staging pin required')
+        source=Path(q['path'])
+        if not source.is_absolute()or source.resolve()!=source or not source.is_relative_to(BASE)or source.is_relative_to(case):
+            raise RuntimeError('restored staging input must be canonical outside case within evidence basis')
+        if source.stat().st_mode&0o077:raise RuntimeError('private restored staging input required')
+        if pin(source)!=q:raise RuntimeError('restored staging input drift')
+    checked(p);d=read_pin(p)
+    required={'schema',*RESTORE_TEMPLATES,'originalPreflight','jwtSecret','sourcePostgrestConfig'}
+    if not isinstance(d,dict)or not required<=set(d)or set(d)-required-{'executionEnvironment'}or d['schema']!=RESTORE_SCHEMA:
+        raise RuntimeError('exact restored staging inputs required')
+    for key,q in d.items():
+        if key!='schema':checked(q)
+    for key,(name,size,digest)in RESTORE_TEMPLATES.items():
+        expected={'path':str(BASE/'wave20-resource-integration/attempt-a2521b52a505'/name),'bytes':size,'sha256':digest}
+        if d[key]!=expected:raise RuntimeError('exact preserved a252 staging template required')
+    preflight=read_pin(d['originalPreflight'])
+    if d['originalPreflight']['path']=='/workspace/helmut-resource-preflight-20261016/RESOURCE_START_PREFLIGHT.SAFE.json':
+        raise RuntimeError('new restored read-only preflight required')
+    if (preflight.get('schema')!='helmut-restored-original-resource-preflight/1'
+        or preflight.get('status')!='ACTUAL_RESTORED_FROZEN_SOURCE_READONLY_VERIFIED'
+        or not isinstance(preflight.get('verifiedReadOnly'),dict)):
+        raise RuntimeError('genuine restored read-only preflight missing')
+    verified=preflight['verifiedReadOnly']
+    if (not isinstance(verified.get('originalInputPins'),list)or not verified['originalInputPins']
+        or not isinstance(verified.get('frozenSourceDatabase'),dict)):
+        raise RuntimeError('restored read-only preflight binding structure missing')
+    for key,name in [('jwtSecret','jwt-secret.PRIVATE.txt'),('sourcePostgrestConfig','postgrest.PRIVATE.conf'),('executionEnvironment','EXECUTION_ENV.PRIVATE.json')]:
+        if key in d and Path(d[key]['path']).name!=name:raise RuntimeError('exact restored material basename required')
+    code="require(process.argv[1]).restoredServiceMaterials(JSON.parse(require('node:fs').readFileSync(0,'utf8')));"
+    result=subprocess.run(['node','-e',code,str(BIN/'start-input-checks.js')],input=json.dumps(d),text=True,capture_output=True,timeout=30)
+    if result.returncode:raise RuntimeError('restored service material contract rejected')
+    return d
 
 def pin(file):
     p=Path(file)
@@ -52,12 +96,13 @@ def exact_case_binding(case,target,container,operation):
     if (target,container,operation)!=('helmut_resource_fixture_'+A.DATE_TAG+'_'+suffix,'helmut-meter-db-w20-'+suffix,'synthetik500-resources'+A.DAY[-2:]+'-'+suffix):
         raise RuntimeError('case/target/container/operation suffix mismatch')
 
-def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin,atomic_usage_pin=None):
+def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin,atomic_usage_pin=None,restore_staging_inputs=None):
     """Actual deterministic staging transformation, without creating/writing files."""
     templates=json.loads((BIN/'legacy-harness-pins.json').read_text())['files']
     for p in templates:
         if pin(p['path'])!={k:p[k] for k in ['path','bytes','sha256']}:raise RuntimeError('original harness drift')
     case=Path(case);n=case/'native-end-preparation'
+    restored=read_restored_staging_inputs(restore_staging_inputs,case)
     replacements=[('helmut_fresh_runtime_fixture_b27c2026',target),('helmut-boundary-pg-bd7dd5da',container),
       ('synthetik500-localnative16-b27c20261016',operation),('2026-10-16',A.DAY),
       ("B+'/wave15/native-end-preparation'",repr(str(n))),
@@ -96,6 +141,20 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             new="record.mockResponseDelivered=true;const reply=new EventEmitter();reply.statusCode=200;"
             if text.count(old)!=1:raise RuntimeError('original mock delivery point missing')
             text=text.replace(old,new);changes.append({'from':old,'to':new,'count':1})
+        if restored is not None:
+            def migrate(old,new):
+                nonlocal text
+                if text.count(old)!=1:raise RuntimeError('exact restored staging integration point missing: '+template['relative'])
+                text=text.replace(old,new);changes.append({'from':old,'to':new,'count':1})
+            if template['relative']=='assemble-after-activation.js':
+                for old,key in [("B+'/wave9/native-fixture/postgrest.PRIVATE.conf'",'sourcePostgrestConfig'),
+                                ("B+'/wave2/db_proof_path/jwt-secret.PRIVATE.txt'",'jwtSecret')]:
+                    migrate(old,json.dumps(restored[key]['path']))
+                if 'executionEnvironment'in restored:
+                    migrate("B+'/wave8/native-fixture/EXECUTION_ENV.PRIVATE.json'",json.dumps(restored['executionEnvironment']['path']))
+            if template['relative']=='native-end-preparation/runtime-candidates/start-services.candidate.js':
+                migrate("H.assert.equal(r.sourcePostgrestConfig.sha256,'aa4acc62bed10bb23e07a041955ec5ae75b267f5c5d0f620d3a9274107581136');",
+                        'H.assert.equal(r.sourcePostgrestConfig.sha256,'+json.dumps(restored['sourcePostgrestConfig']['sha256'])+');')
         if atomic_usage_pin is not None:
             candidate=read_pin(atomic_usage_pin)
             if candidate.get('schema')!='helmut-local-atomic-usage-resource-input/1' or candidate.get('mode')!='relational-atomic-v1' or candidate.get('production')is not False:
@@ -172,8 +231,9 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
         deltas.append({'original':{k:template[k] for k in ['path','bytes','sha256']},'destination':str(destination),'text':text,'replacements':changes})
     return deltas
 
-def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin,prepare_only=False,atomic_usage_pin=None):
+def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin,prepare_only=False,atomic_usage_pin=None,restore_staging_inputs=None):
     case=Path(case).resolve()
+    restored=read_restored_staging_inputs(restore_staging_inputs,case)
     exact_case_binding(case,target,container,operation)
     if case.parent!=AREA or not re.fullmatch('attempt-[a-f0-9]{12}',case.name):raise RuntimeError('exact fresh local case directory required')
     if not re.fullmatch('helmut_resource_fixture_'+A.DATE_TAG+'_[a-f0-9]{12}',target):raise RuntimeError('new owned target required')
@@ -190,7 +250,7 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
     if owner.get('allowDispose') is not False:raise RuntimeError('explicit allowDispose=false required before staging')
     if owner.get('production') is not False or owner.get('syntheticProfiles')!=500 or owner.get('targetDatabase')!=target:
         raise RuntimeError('existing once GO exact new local binding required')
-    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin={'path':owner['finalOwnerGOPath']},atomic_usage_pin=atomic_usage_pin)
+    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin={'path':owner['finalOwnerGOPath']},atomic_usage_pin=atomic_usage_pin,restore_staging_inputs=restore_staging_inputs)
     case.mkdir(mode=0o700,exist_ok=False);n=case/'native-end-preparation';n.mkdir(mode=0o700);(n/'runtime-candidates').mkdir(mode=0o700)
     deltas=[]
     for item in rendered:
@@ -211,6 +271,7 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
       'freshSelectorComesFromPinnedActualAssembly':True,'full500RunStarted':False,'resourceGOConsumed':False,
       'engineModified':bool(local),'originalFilesModified':False,'production':False,'preparedWithoutGO':prepare_only}
     if atomic_usage_pin is not None:plan['atomicUsageInput']=atomic_usage_pin
+    if restored is not None:plan['restoreStagingInputs']=restore_staging_inputs
     save(case/'STAGED_CONNECTION.SAFE.json',plan);return plan
 
 if __name__=='__main__':

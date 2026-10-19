@@ -85,7 +85,53 @@ function asset(plan, name) {
   assert.equal(matches.length, 1, 'One exact mounted asset required: ' + name);
   return matches[0];
 }
+function restoredServiceMaterials(inputs) {
+  assert.equal(inputs.schema, 'helmut-restored-staging-inputs/1');
+  const secret = pinned(inputs.jwtSecret, true).toString('utf8').trim();
+  assert(/^[a-f0-9]{64}$/.test(secret), 'Fresh local JWT secret form required');
+  const text = pinned(inputs.sourcePostgrestConfig, true).toString('utf8'), config = {};
+  for (const line of text.split('\n').filter(x => x.trim())) {
+    const match = /^([a-z-]+) = (.+)$/.exec(line);
+    assert(match && !Object.hasOwn(config, match[1]), 'Exact unambiguous service config required');
+    config[match[1]] = match[2];
+  }
+  const expected = {'db-uri':'"postgresql://authenticator@/helmut_u_start_fixture_005821f5?host=/var/run/postgresql"',
+    'db-schemas':'"public"','db-anon-role':'"anon"','server-host':'"0.0.0.0"','server-port':'38410',
+    'db-pool':'2','log-level':'"error"'};
+  for (const [key,value] of Object.entries(expected)) assert(config[key] === value, 'Exact original local service template required');
+  assert(config['jwt-secret'] === JSON.stringify(secret), 'Fresh config and JWT secret must match');
+  for (const [key,value] of Object.entries(config)) {
+    assert(Object.hasOwn(expected,key) || key === 'jwt-secret', 'Unexpected service config field');
+  }
+  if (inputs.executionEnvironment) {
+    const env = json(inputs.executionEnvironment, true);
+    assert.equal(env.scope, 'FICTIONAL_LOCAL_ONLY');
+    assert.equal(env.HELMUT_TESTLAUF_KOMMUNIKATION, 'gesperrt');
+    assert(!env.OPENAI_API_KEY && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
+    if (env.SUPABASE_SERVICE_ROLE_KEY !== undefined) {
+      const token = env.SUPABASE_SERVICE_ROLE_KEY;
+      assert(typeof token === 'string', 'Local service JWT required');
+      const parts = token.split('.'); assert(parts.length === 3, 'Local service JWT required');
+      const header = JSON.parse(Buffer.from(parts[0], 'base64url'));
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url'));
+      assert(header.alg === 'HS256' && header.typ === 'JWT' && payload.role === 'service_role', 'Exact local JWT header/role required');
+      const expectedSignature = crypto.createHmac('sha256', secret).update(parts[0]+'.'+parts[1]).digest();
+      const signature = Buffer.from(parts[2], 'base64url');
+      assert(signature.length === expectedSignature.length && crypto.timingSafeEqual(signature,expectedSignature), 'Fresh local JWT binding required');
+    }
+  }
+  return inputs;
+}
+function restoredMaterials(plan) {
+  if (!plan.restoreStagingInputs) return null;
+  const inputs = restoredServiceMaterials(json(plan.restoreStagingInputs, true));
+  assert.deepEqual(asset(plan,'jwt-secret.PRIVATE.txt'), inputs.jwtSecret);
+  assert.deepEqual(asset(plan,'postgrest.PRIVATE.conf'), inputs.sourcePostgrestConfig);
+  if (inputs.executionEnvironment) assert.deepEqual(asset(plan,'EXECUTION_ENV.PRIVATE.json'), inputs.executionEnvironment);
+  return inputs;
+}
 function materialsInputs(plan) {
+  restoredMaterials(plan);
   const env = json(asset(plan, 'EXECUTION_ENV.PRIVATE.json'), true);
   assert.equal(env.scope, 'FICTIONAL_LOCAL_ONLY');
   assert.equal(env.HELMUT_TESTLAUF_KOMMUNIKATION, 'gesperrt');
@@ -109,8 +155,9 @@ function materialsInputs(plan) {
   return { localMaterialsInputsChecked:true, secretValuesReported:false, providerCalls:0 };
 }
 function servicesInputs(plan) {
+  const restored = restoredMaterials(plan);
   const pg = pinned(asset(plan, 'postgrest.PRIVATE.conf')).toString('utf8');
-  assert.equal(sha(pg), 'aa4acc62bed10bb23e07a041955ec5ae75b267f5c5d0f620d3a9274107581136');
+  assert.equal(sha(pg), restored ? restored.sourcePostgrestConfig.sha256 : 'aa4acc62bed10bb23e07a041955ec5ae75b267f5c5d0f620d3a9274107581136');
   assert.equal(pg.split('helmut_u_start_fixture_005821f5').length, 2);
   assert.equal(pg.split('server-port = 38410').length, 2);
   assert(pg.includes('db-uri = "postgresql://authenticator@/helmut_u_start_fixture_005821f5?host=/var/run/postgresql"'));
@@ -311,5 +358,5 @@ if (require.main === module) {
   const plan = JSON.parse(fs.readFileSync(0,'utf8'));
   process.stdout.write(JSON.stringify(assess(plan))+'\n');
 }
-module.exports = { pinned, json, ownerPolicy, ownerIntentPolicy, ownerInputs, preparationInputs, materialsInputs, actualSourceBinding, profileInputs,
+module.exports = { pinned, json, ownerPolicy, ownerIntentPolicy, ownerInputs, preparationInputs, materialsInputs, servicesInputs, restoredServiceMaterials, actualSourceBinding, profileInputs,
   providerInputs,staticInterfaces,initialSourceBinding,assess,installReadOnlyGuards };

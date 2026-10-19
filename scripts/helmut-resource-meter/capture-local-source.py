@@ -10,14 +10,38 @@ from pathlib import Path
 
 BASE=Path('/workspace/helmut-parallel-20261015')
 SOURCE='helmut_fresh_input_fixture_d2e98984'
-CONTAINER='helmut-boundary-pg-bd7dd5da'
-DOCKER=['docker','--host=unix:///var/run/docker.sock']
+# The live historical container did not migrate. Bind the actual restored
+# frozen-input server explicitly; its receipt links are provenance, never GO.
+_binding_path=Path(__file__).resolve().with_name('local-source-runtime-binding.json')
+if _binding_path.is_symlink() or not _binding_path.is_file():
+    raise RuntimeError('regular restored source runtime binding required')
+_binding_bytes=_binding_path.read_bytes()
+if hashlib.sha256(_binding_bytes).hexdigest()!='f0740d9dd94ebff52ee273e3f20f7d24bba552f11f0dd8004f52957a672cffa9':
+    raise RuntimeError('restored source runtime binding drift')
+RUNTIME_BINDING_PIN={'path':str(_binding_path),'bytes':len(_binding_bytes),'sha256':hashlib.sha256(_binding_bytes).hexdigest()}
+RUNTIME_BINDING=json.loads(_binding_bytes)
+if (RUNTIME_BINDING.get('schema')!='helmut-restored-local-source-runtime-binding/1'
+  or RUNTIME_BINDING.get('scope')!='READ_ONLY_RESTORED_FROZEN_INPUT_PROVENANCE_ONLY'
+  or RUNTIME_BINDING.get('sourceDatabase')!=SOURCE
+  or RUNTIME_BINDING.get('imageId')!='sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e'):
+    raise RuntimeError('exact restored frozen source required')
+CONTAINER=RUNTIME_BINDING['containerId']
+DOCKER=['env','-u','DOCKER_HOST','-u','DOCKER_CONTEXT','-u','DOCKER_TLS','-u','DOCKER_TLS_VERIFY',
+        '-u','DOCKER_CERT_PATH','docker','--host=unix:///var/run/docker.sock']
 NATIVE=BASE/'wave12/native-pdf-inputs/ACTUAL_NATIVE_SOURCE23_KO60_WITH_PDF.PRIVATE.json'
 BIN='/tmp/helmut-unit-fixture-postgrest-03693bea'
 BIN_SHA='870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617'
 def pin(p):
     b=Path(p).read_bytes();return {'path':str(p),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}
+def verify_runtime_binding():
+    if pin(_binding_path)!=RUNTIME_BINDING_PIN:raise RuntimeError('restored source binding changed')
+    r=subprocess.run(DOCKER+['inspect','--format','{{.Id}}|{{.Name}}|{{.Image}}|{{.HostConfig.NetworkMode}}',CONTAINER],
+       capture_output=True,text=True,check=True,timeout=15)
+    if r.stdout.strip().split('|')!=[CONTAINER,'/'+RUNTIME_BINDING['containerName'],RUNTIME_BINDING['imageId'],'none']:
+        raise RuntimeError('actual restored source container differs')
+    return RUNTIME_BINDING_PIN
 def sql(text):
+    verify_runtime_binding()
     r=subprocess.run(DOCKER+['exec','-i',CONTAINER,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d',SOURCE,'-f','-'],
        input="begin read only;set local statement_timeout='15s';\n"+text+'\nrollback;',text=True,capture_output=True,check=True,timeout=30)
     return json.loads(r.stdout)

@@ -8,7 +8,7 @@ const slot=require('./local-resource-authority-slot.json');
 assert.deepEqual(Object.keys(slot).sort(),['day','schema','version']);
 assert.equal(slot.schema,'helmut-local-resource-authority-slot/1');
 assert.equal(slot.day,'2026-10-19');
-assert.equal(slot.version,8);
+assert.equal(slot.version,9);
 const resourceClaimPath='/workspace/helmut-parallel-20261015/wave19-resource-meter/'
  +`NEXT_RESOURCE${slot.day.slice(-2)}_V${slot.version}_GO_CLAIM.SAFE.json`;
 function read(pin){const b=fs.readFileSync(pin.path);assert.equal(b.length,pin.bytes);assert.equal(sha(b),pin.sha256);return JSON.parse(b);}

@@ -602,7 +602,19 @@ def finalize(application,timeout=180):
             result['originalAll500FinalACK']=True
             result['actualFreshSelector']=original['selector']
             result['actualSelectorBoundThroughOriginalAssemblyAndInstall']=True
-        result['simultaneousAllOwnedUnder2048DecimalMB']=bool(result['simultaneousApplicationAndInfrastructureKernel'] and result['simultaneousApplicationAndInfrastructureKernel']['memoryPeakBytes']<2048000000)
+        common=result['simultaneousApplicationAndInfrastructureKernel']
+        common_exit=bool(common and common.get('fullLastProcessExitCovered') is True)
+        complete_run=bool(result['pass'] and common_exit)
+        result['simultaneousAllOwnedUnder2048DecimalMB']=bool(common_exit and common['memoryPeakBytes']<2048000000)
+        result['pass']=bool(result['pass'] and result['simultaneousAllOwnedUnder2048DecimalMB'])
+        # The requested buffer is reported separately from the unchanged hard
+        # limit. A partial workflow/exit cannot establish a full-run reserve.
+        buffer_pass=bool(complete_run and common['memoryPeakBytes']<=1548000000)
+        result['requestedMemoryBuffer']={'requestedBytes':500000000,'maximumCommonPeakBytes':1548000000,
+            'completeRunWithCommonExitEvidence':complete_run,
+            'reserveBytes':2048000000-common['memoryPeakBytes'] if complete_run else None,
+            'status':'PASS' if buffer_pass else 'FAIL',
+            'reason':'SUFFICIENT_BUFFER' if buffer_pass else ('INSUFFICIENT_BUFFER' if complete_run else 'INCOMPLETE_FULL_RUN')}
     K.save_new(out/'COMPLETE_RESOURCE_RESULT.SAFE.json',result)
     return result
 

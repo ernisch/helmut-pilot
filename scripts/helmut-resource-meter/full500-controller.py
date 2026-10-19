@@ -38,6 +38,10 @@ def financial_preflight(connection):
 
 def original_preflight(connection,*,check_financial=True):
     archived=C.read_pin(connection['originalPreflightPin'])
+    if archived.get('schema')=='helmut-restored-original-resource-preflight/1':
+        if (archived.get('status')!='ACTUAL_RESTORED_FROZEN_SOURCE_READONLY_VERIFIED'
+          or archived.get('sourceEnvironment',{}).get('runtimeBindingPin')!=S.verify_runtime_binding()):
+            raise RuntimeError('restored frozen source preflight identity differs')
     for p in archived['verifiedReadOnly']['originalInputPins']:
         if C.pin(p['path'])!={k:p[k] for k in ['path','bytes','sha256']}:raise RuntimeError('original input pin drift')
     before=S.identity();expected=archived['verifiedReadOnly']['frozenSourceDatabase']
@@ -56,7 +60,7 @@ def original_preflight(connection,*,check_financial=True):
     actual=S.sql('select coalesce(jsonb_agg('+expr+'),\'[]\'::jsonb)from ko_document_links l where l.knowledge_object_id in('+','.join(S.lit(k['id']) for k in native['kos'])+');')
     sort=lambda a:sorted(a,key=lambda r:json.dumps(r,sort_keys=True))
     if sort(actual)!=sort(links):raise RuntimeError('complete actual native source-link set changed')
-    result={'originalPins':9,'originalFrozenSourceEqual':True,'nativePhysicalEquality':counts,'completeNativeLinks':len(links),'sourceWrites':0}
+    result={'originalPins':len(archived['verifiedReadOnly']['originalInputPins']),'originalFrozenSourceEqual':True,'nativePhysicalEquality':counts,'completeNativeLinks':len(links),'sourceWrites':0}
     if check_financial:result['readOnlyFinancialProjection']=financial_preflight(connection)
     return result
 

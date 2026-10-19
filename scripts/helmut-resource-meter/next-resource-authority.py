@@ -22,9 +22,11 @@ DATE_TAG='20261019'
 SLOT=json.loads((BIN/'local-resource-authority-slot.json').read_text())
 if (type(SLOT)is not dict or set(SLOT)!={'schema','day','version'}
   or SLOT['schema']!='helmut-local-resource-authority-slot/1' or SLOT['day']!=DAY
-  or type(SLOT['version'])is not int or SLOT['version']!=8):
+  or type(SLOT['version'])is not int or SLOT['version']!=9):
     raise RuntimeError('invalid pinned local resource authority slot')
 SLOT_VERSION=SLOT['version']
+_source_spec=importlib.util.spec_from_file_location('bound_frozen_source_runtime',BIN/'capture-local-source.py')
+SOURCE_RUNTIME=importlib.util.module_from_spec(_source_spec);_source_spec.loader.exec_module(SOURCE_RUNTIME)
 AUTHORIZATION=f'USER_GO_{DATE_TAG}_EXACT_ONE_RESOURCE_ONLY_V{SLOT_VERSION}'
 CLAIM=METER/f'NEXT_RESOURCE{DAY[-2:]}_V{SLOT_VERSION}_GO_CLAIM.SAFE.json'
 RESERVATION=METER/f'NEXT_RESOURCE{DAY[-2:]}_V{SLOT_VERSION}_SETUP_RESERVATION.SAFE.json'
@@ -37,7 +39,8 @@ OLD_MARKERS=[METER/name for name in [
  'NEXT_RESOURCE17_V4_GO_CLAIM.SAFE.json','NEXT_RESOURCE17_V4_SETUP_RESERVATION.SAFE.json',
  'NEXT_RESOURCE18_V5_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V5_SETUP_RESERVATION.SAFE.json',
  'NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json',
- 'NEXT_RESOURCE18_V7_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V7_SETUP_RESERVATION.SAFE.json']]
+ 'NEXT_RESOURCE18_V7_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V7_SETUP_RESERVATION.SAFE.json',
+ 'NEXT_RESOURCE19_V8_GO_CLAIM.SAFE.json','NEXT_RESOURCE19_V8_SETUP_RESERVATION.SAFE.json']]
 PRESERVED_MARKER_PINS=[{'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json', 'bytes': 815, 'sha256': '92096d184adc88feaefa1393c3115840dd2e0960379d108de42be2d1e57005e5'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/GLOBAL_RESOURCE_SETUP_RESERVATION.SAFE.json', 'bytes': 1203, 'sha256': 'e0dfa98ab19d0ed917e7fca15817766a370a593005625b807f4474ff3a827cc4'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_DAY16_INPUT_CORRECTION_CLAIM.SAFE.json', 'bytes': 454, 'sha256': 'e01e8a20f8cded6a9285d07763fe40ce0cac7d279479c5faa05ad6a4a1de4e60'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json', 'bytes': 815, 'sha256': 'a376c1abf5541728b2e5c565c0b0576ee6a87723f8d06125d5a0ec574ddc8853'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_SETUP_RESERVATION.SAFE.json', 'bytes': 1203, 'sha256': '7ea29623fc80b6a75dd475463d1c1802e340e75b1c6509ebf7e6d45d21357088'}]
 PRESERVED_MARKER_PINS += [
  {'path':str(METER/'NEXT_RESOURCE17_V3_GO_CLAIM.SAFE.json'),'bytes':799,'sha256':'8fe50e440b83c4f2a67225a1585c86997bc8fc60e04dcc0ef7bb997dff648a81'},
@@ -54,6 +57,9 @@ PRESERVED_MARKER_PINS += [
 PRESERVED_MARKER_PINS += [
  {'path':str(METER/'NEXT_RESOURCE18_V7_GO_CLAIM.SAFE.json'),'bytes':797,'sha256':'29132c4c3dbf98593d4a2b49b5a752a0d18e0c0a621e31c5959abec05c73c3ba'},
  {'path':str(METER/'NEXT_RESOURCE18_V7_SETUP_RESERVATION.SAFE.json'),'bytes':1520,'sha256':'c7c721eaa11c2796e3ee7740c526e44e468ca96b989f63648ee5a50b0fc77524'}]
+PRESERVED_MARKER_PINS += [
+ {'path':str(METER/'NEXT_RESOURCE19_V8_GO_CLAIM.SAFE.json'),'bytes':792,'sha256':'39323645802fe815cec4244b229f68ce265140e4186b5bddf99d03eee5154aa3'},
+ {'path':str(METER/'NEXT_RESOURCE19_V8_SETUP_RESERVATION.SAFE.json'),'bytes':1515,'sha256':'3beab4bfacc5835b4cedc5c214653e18ec719883f1ee73be37cad2383650141b'}]
 PREVIOUS_CAPTURE=BASE/'wave20-resource-integration/attempt-64a99d4ac9fb/corrected-input/READ_ONLY_SOURCE_CAPTURE.SAFE.json'
 PREVIOUS_CAPTURE_SHA='37701d014b73311da59f3daf92d8344074a48aaea5586c7f73d1728026d185a3'
 BOOK17_CAPTURE=BASE/'wave30-resource-start-gaps/input18-ab76c911dac8/READ_ONLY_SOURCE_CAPTURE.SAFE.json'
@@ -138,6 +144,7 @@ def _verify_previous_capture(capture_pin,*,actual=True):
     for k in ['correctedFinancialWitnessPin','originalFinancialWitnessPin']:
         require(capture[k]==receipt[k],'historical witness binding differs')
     if not actual:return capture
+    SOURCE_RUNTIME.verify_runtime_binding()
     spec=importlib.util.spec_from_file_location('existing_zero_day_data',BIN/'local-zero-day-copy.py')
     Z=importlib.util.module_from_spec(spec);spec.loader.exec_module(Z)
     original=read(capture['originalFinancialWitnessPin']);actual_original=Z.witness(Z.S.SOURCE)
@@ -204,9 +211,8 @@ def capture_data_pins(capture_pin):
 def _query_input_database(sql,database):
     """Read only one of the two exact preserved local input databases."""
     require(database in [BOOK17_INPUT_DATABASE,INPUT_DATABASE],'fixed completed input database required')
-    command=['env','-u','DOCKER_HOST','-u','DOCKER_CONTEXT','-u','DOCKER_TLS','-u','DOCKER_TLS_VERIFY',
-      '-u','DOCKER_CERT_PATH','docker','--host=unix:///var/run/docker.sock','exec','-i',
-      'helmut-boundary-pg-bd7dd5da','psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d',database,'-f','-']
+    SOURCE_RUNTIME.verify_runtime_binding()
+    command=SOURCE_RUNTIME.DOCKER+['exec','-i',SOURCE_RUNTIME.CONTAINER,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d',database,'-f','-']
     text="BEGIN READ ONLY;SET LOCAL statement_timeout='20s';"+sql+'ROLLBACK;'
     result=subprocess.run(command,input=text,text=True,capture_output=True,timeout=40,check=True)
     return json.loads(result.stdout)

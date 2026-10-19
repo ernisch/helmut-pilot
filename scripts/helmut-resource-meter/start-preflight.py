@@ -117,6 +117,7 @@ def inventory(connection, node):
 
 def template_replay(connection):
     staged=read(connection['stagedHarness'])
+    require(connection.get('restoreStagingInputs')==staged.get('restoreStagingInputs'),'restored staging connection/template binding differs')
     baseline=BIN/'legacy-harness-pins.json'
     require(pin(baseline)['sha256']==LEGACY_MANIFEST_SHA256,'review-pinned legacy baseline drift')
     original={p['path']:p for p in json.loads(baseline.read_text())['files']}
@@ -127,7 +128,8 @@ def template_replay(connection):
     require(staged['executionOwnerGOPath']==owner['finalOwnerGOPath'],'actual future owner path differs from intent/GO')
     rendered=connector.render_templates(connection['caseDirectory'],target=connection['targetDatabase'],
         container=connection['containerName'],operation=connection['operationId'],
-        day_rows_pin=staged['dayRows'],owner_go_pin={'path':staged['executionOwnerGOPath']},atomic_usage_pin=staged.get('atomicUsageInput'))
+        day_rows_pin=staged['dayRows'],owner_go_pin={'path':staged['executionOwnerGOPath']},atomic_usage_pin=staged.get('atomicUsageInput'),
+        restore_staging_inputs=staged.get('restoreStagingInputs'))
     expected_render={r['original']['path']:r for r in rendered}
     for delta in staged['templateDeltas']:
         p=delta['original'];expected={k:original[p['path']][k] for k in ['path','bytes','sha256']}

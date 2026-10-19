@@ -8,8 +8,11 @@ s=importlib.util.spec_from_file_location('connector',BIN/'connect-local500.py')
 C=importlib.util.module_from_spec(s);s.loader.exec_module(C)
 B=C.BASE;W=C.AREA
 
-def finish(staged_pin):
+def finish(staged_pin,*,restore_staging_inputs=None):
     staged=C.read_pin(staged_pin);case=Path(staged['caseDirectory']);n=case/'native-end-preparation'
+    if restore_staging_inputs is None:restore_staging_inputs=staged.get('restoreStagingInputs')
+    elif staged.get('restoreStagingInputs')!=restore_staging_inputs:raise RuntimeError('staged restored inputs differ')
+    restored=C.read_restored_staging_inputs(restore_staging_inputs,case)
     if (case/'FINAL_CONNECTION.SAFE.json').exists():raise RuntimeError('never overwrite/rebind a staged case')
     owner_pin=staged['ownerGOPin'];day=C.read_pin(staged['dayAcceptance'])
     owner=C.read_pin(owner_pin)
@@ -17,16 +20,16 @@ def finish(staged_pin):
     C.A.verify_preexisting_capture(capture_pin,actual=False)
     if owner['sourceCapturePin']!=capture_pin:raise RuntimeError('new input DATA binding differs')
     if capture['before']!=capture['after'] or capture['sourceWrites']!=0:raise RuntimeError('read-only source capture incomplete')
-    original=json.loads((B/'wave15/ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json').read_text())
-    content=json.loads((B/'wave15/ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json').read_text())
+    original=C.read_pin(restored['runtimeRequestTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json').read_text())
+    content=C.read_pin(restored['contentAcceptanceTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json').read_text())
     # Historical approvals remain dependencies, never reused as the new owner GO.
     content.update(ownerGo=owner_pin,currentPolicyInput=staged['dayRows'],inputRows=staged['dayRows'],
       currentDayAcceptance=staged['dayAcceptance'],reviewScope='Exact independently reviewed day19 relative-display transfer plus unchanged archived source/profile/nonrelative factual scope. No execution or performance acceptance.')
     content.pop('inputBases',None)
     content['previouslyAttemptedOperationIds']=list(dict.fromkeys(content['previouslyAttemptedOperationIds']+[
-       'synthetik500-localnative16-b27c20261016','synthetik500-authority16-41ca20261016']))
+       'synthetik500-localnative16-b27c20261016','synthetik500-authority16-41ca20261016']+([original['newOperation']]if restored else[])))
     content_pin=C.save(case/'ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json',content)
-    external=json.loads((B/'wave15/ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json').read_text())
+    external=C.read_pin(restored['localExternalTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json').read_text())
     external['inputAcceptanceSHA256']=content_pin['sha256']
     # No source publication/capture timestamp is changed. The selected source
     # window remains the preexisting13..16 window; day19 validity requires the
@@ -53,6 +56,10 @@ def finish(staged_pin):
       'inputAcceptance':content_pin,'sourcePins':list(sources.values()),'primaries':primaries,
       'localExternalBelege':external_pin,'newOperation':staged['operationId'],
       'rootFinalCodeAcceptance':staged['dayAcceptance'],'currentDayBinding':staged['dayAcceptance']}
+    if restored:
+        request.pop('atomicUsageInput',None)
+        request['restoreStagingInputs']=restore_staging_inputs
+        request['totalRequestSourcePins']=len(sources)
     if atomic is not None:request['atomicUsageInput']=atomic
     request_pin=C.save(case/'ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json',request)
     assets={}
@@ -61,6 +68,10 @@ def finish(staged_pin):
         if Path(p['path']).name=='OWNER_LOCAL_GO.PRIVATE.json':raise RuntimeError('historical GO must not enter mounted inputs')
         if C.pin(p['path'])!=p:raise RuntimeError('static fixture pin drift')
         if not Path(p['path']).is_relative_to(case):assets[p['path']]=p
+    if restored:
+        add(restore_staging_inputs)
+        for key,p in restored.items():
+            if key!='schema':add(p)
     for p in primaries.values():add(p)
     for p in C.A.capture_data_pins(capture_pin):add(p)
     for p in [staged['dayRows'],staged['dayAcceptance'],day['independentReview'],capture_pin,capture['sourceDump'],capture['localRolesSQL'],capture['correctedFinancialWitnessPin'],capture['correctionReceiptPin'],
@@ -71,8 +82,8 @@ def finish(staged_pin):
       C.pin(B/'wave12/local-provider-candidates/exact-request-binder.PROPOSAL.js'),
       C.pin(B/'wave11/cohort-requirements/PROFILES.PRIVATE.json'),
       C.pin(B/'wave9/native-fixture/ORIGINAL_U_PACKET.PRIVATE.json'),C.pin(B/'wave9/native-fixture/ORIGINAL_U_EXISTING_REVIEW.PRIVATE.json'),
-      C.pin(B/'wave9/native-fixture/PREDECESSOR_BINDING.SAFE.json'),C.pin(B/'wave9/native-fixture/postgrest.PRIVATE.conf'),
-      C.pin(B/'wave8/native-fixture/EXECUTION_ENV.PRIVATE.json'),C.pin(B/'wave2/db_proof_path/jwt-secret.PRIVATE.txt'),
+      C.pin(B/'wave9/native-fixture/PREDECESSOR_BINDING.SAFE.json'),restored['sourcePostgrestConfig']if restored else C.pin(B/'wave9/native-fixture/postgrest.PRIVATE.conf'),
+      restored['executionEnvironment']if restored and 'executionEnvironment'in restored else C.pin(B/'wave8/native-fixture/EXECUTION_ENV.PRIVATE.json'),restored['jwtSecret']if restored else C.pin(B/'wave2/db_proof_path/jwt-secret.PRIVATE.txt'),
       C.pin(B/'wave12/LOCAL_EXISTING_BUDGET_SCENARIO.PRIVATE.json'),C.pin(B/'wave13/build-native-inventory.js')]:add(p)
     templates=json.loads((B/'wave12/ROOT_STATIC_LOCAL_R_TEMPLATE_ACCEPTANCE.SAFE.json').read_text())
     for k in ['canonicalTemplates','package','independentSecurityReview','explicitThemenreinReview14of14','negativeTypeAndReasonEvidence','all500MappingEvidence']:add(templates[k])
@@ -81,7 +92,7 @@ def finish(staged_pin):
       'caseDirectory':str(case),'workflowDirectory':str(n),'sourceDatabase':staged['sourceDatabase'],
       'targetDatabase':staged['targetDatabase'],'containerName':staged['containerName'],'operationId':staged['operationId'],
       'freshOwnerGO':owner_pin,'runtimeRequest':request_pin,'sourceCapture':capture_pin,
-      'originalPreflightPin':C.pin('/workspace/helmut-resource-preflight-20261016/RESOURCE_START_PREFLIGHT.SAFE.json'),
+      'originalPreflightPin':restored['originalPreflight']if restored else C.pin('/workspace/helmut-resource-preflight-20261016/RESOURCE_START_PREFLIGHT.SAFE.json'),
       'historicalSourcePin':C.pin(B/'wave15/native-end-preparation/LOCAL_ACTIVATION_RESULT.SAFE.json'),
       'immutableWorkflowPins':[x['staged'] for x in staged['templateDeltas']]+[staged['action'],content_pin,external_pin,request_pin],
       'dayBindingAcceptance':staged['dayAcceptance'],'applicationReadOnlyPins':list(assets.values()),
@@ -93,6 +104,7 @@ def finish(staged_pin):
       'phases':['preparation','assembly','sequence'],'profiles':500,'controlsPerUnit':16,
       'originalUUnchangedAndRequired':True,'noProfiler':True,'noPaidProviderCalls':True,'preparedWithoutGO':staged.get('preparedWithoutGO',False)}
     if atomic is not None:plan['atomicUsageInput']=atomic
+    if restored:plan['restoreStagingInputs']=restore_staging_inputs
     connection=C.save(case/'FINAL_CONNECTION.SAFE.json',plan)
     # Recipe templates contain NO current preflight or final meter acceptance.
     # The controller adds those only after independent review, immediately
