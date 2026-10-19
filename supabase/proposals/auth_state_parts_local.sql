@@ -361,6 +361,92 @@ begin
     raise exception 'auth-state-logical-root-invalid'; end if;
 end;$f$;
 
+-- LOCAL, opt-in CAS qualification only. No value cache and no caller claims.
+-- The old renderer remains the default and the independent differential oracle.
+create function public.helmut_auth_state_assert_graph_local_v1(s text,g text,h text) returns void
+language plpgsql stable security invoker set search_path=pg_catalog as $f$
+declare hashes text[]; bodies jsonb[]; lookup jsonb; keys jsonb[]; b jsonb; tag text;
+  i integer; child text; pairs bigint; unique_pairs bigint; labels jsonb;
+  root_i integer; cursor jsonb; field text; path text[]; actual text; expected text;
+begin
+  if current_setting('helmut.local_diagnostic_scope',true) is distinct from 'bounded-cas-qualification-v1' then
+    raise exception 'auth-state-projection-not-admitted';end if;
+  -- SAME native pass: all reachable actual payload SHAs, postorder, child types,
+  -- depth, payload/text/native expansion AND cumulative work bounds, fresh.
+  perform public.helmut_auth_state_expand_local_v1(s,g,h,true,true);
+  with recursive reach(hash) as(
+    select h union select unnest(t.children) from reach r
+      join public.helmut_auth_state_nodes_local t on t.store_id=s and t.generation=g and t.node_hash=r.hash
+  ) select array_agg(t.node_hash order by t.node_seq),array_agg(t.body order by t.node_seq)
+    into hashes,bodies from reach r join public.helmut_auth_state_nodes_local t
+      on t.store_id=s and t.generation=g and t.node_hash=r.hash;
+  select jsonb_object_agg(hash,ord) into lookup from unnest(hashes) with ordinality x(hash,ord);
+  keys:=array_fill(null::jsonb,array[cardinality(hashes)]);
+  -- Only object KEY SETS are materialized, never their logical values. Check
+  -- EVERY reachable object, including objects nested under arrays/other fields.
+  -- Repeated edges retain multiplicity: flattening the same nonempty object
+  -- twice is a duplicate too. Shared valid subtrees need checking only once.
+  for i in 1..cardinality(hashes) loop
+    b:=bodies[i];tag:=b->>0;
+    if tag='v' and jsonb_typeof(b->1)='object' then
+      select coalesce(jsonb_object_agg(k,true),'{}'::jsonb) into labels from jsonb_object_keys(b->1) x(k);
+      keys[i]:=labels;
+    elsif tag='o' then
+      select count(*),count(distinct (value->>0) collate "C"),coalesce(jsonb_object_agg(value->>0,true),'{}'::jsonb)
+        into pairs,unique_pairs,labels from jsonb_array_elements(b->1);
+      if pairs<>unique_pairs then raise exception 'auth-state-duplicate-key-or-invalid-json';end if;
+      keys[i]:=labels;
+    elsif tag='m' then
+      select count(*),count(distinct k collate "C"),coalesce(jsonb_object_agg(k,true),'{}'::jsonb)
+        into pairs,unique_pairs,labels from jsonb_array_elements(b->1) e
+        cross join lateral jsonb_object_keys(keys[(lookup->>(e.value->>1))::integer]) x(k);
+      if pairs<>unique_pairs then raise exception 'auth-state-duplicate-key-or-invalid-json';end if;
+      keys[i]:=labels;
+    end if;
+  end loop;
+  root_i:=(lookup->>h)::integer;b:=bodies[root_i];
+  if keys[root_i] is null or keys[root_i] ?| array['llmUsage','_llmUsageRef','_authStateRef','_authStoreRevision'] then
+    raise exception 'auth-state-logical-root-invalid';end if;
+  -- Exact #>> semantics for these two paths: a leaf may contain a compact
+  -- object, an object may be split into virtual map buckets, and numeric5 is
+  -- accepted exactly as by the original text comparison (5.0 remains different).
+  foreach field in array array['version','serviceContractHash'] loop
+    path:=array['testKostenAuftrag',field];cursor:=jsonb_build_object('hash',h);
+    foreach child in array path loop
+      if cursor ? 'value' then
+        cursor:=case when jsonb_typeof(cursor->'value')='object' and (cursor->'value')?child
+          then jsonb_build_object('value',cursor->'value'->child) else null end;
+      else
+        with recursive flat(hash) as(
+          select cursor->>'hash' union
+          select unnest(t.children) from flat f join public.helmut_auth_state_nodes_local t
+            on t.store_id=s and t.generation=g and t.node_hash=f.hash where t.body->>0='m'
+        ), selected as(
+          select jsonb_build_object('value',t.body->1->child) v from flat f
+            join public.helmut_auth_state_nodes_local t on t.store_id=s and t.generation=g and t.node_hash=f.hash
+            where t.body->>0='v' and jsonb_typeof(t.body->1)='object' and (t.body->1)?child
+          union all
+          select jsonb_build_object('hash',e.value->>1) from flat f
+            join public.helmut_auth_state_nodes_local t on t.store_id=s and t.generation=g and t.node_hash=f.hash
+            cross join lateral jsonb_array_elements(case when t.body->>0='o' then t.body->1 else '[]'::jsonb end) e
+            where (e.value->>0) collate "C"=child collate "C"
+        ) select v into cursor from selected;
+      end if;
+      exit when cursor is null;
+    end loop;
+    actual:=null;
+    if cursor ? 'value' then actual:=cursor->'value'#>>'{}';
+    elsif cursor ? 'hash' then
+      b:=bodies[(lookup->>(cursor->>'hash'))::integer];
+      if b->>0='v' then actual:=b->1#>>'{}';end if;
+    end if;
+    expected:=case when field='version' then '5' else '78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f' end;
+    if actual is distinct from expected then raise exception 'auth-state-logical-root-invalid';end if;
+  end loop;
+end;$f$;
+revoke all on function public.helmut_auth_state_assert_graph_local_v1(text,text,text) from public;
+grant execute on function public.helmut_auth_state_assert_graph_local_v1(text,text,text) to service_role;
+
 create function public.helmut_auth_state_auth_guard_local_v1() returns trigger
 language plpgsql security invoker set search_path=pg_catalog as $f$
 declare old_ref jsonb; new_ref jsonb; seal jsonb;
@@ -594,8 +680,12 @@ begin
     or (u-'version')is distinct from $1->'expectedProof' then return '[]'::jsonb;end if;
   perform set_config('helmut.atomic_state_seal',jsonb_build_object('id',s,'gen',m->>'generation','action','write')::text,true);
   perform public.helmut_auth_state_put_nodes_local_v1(s,m->>'generation',$1->'nodes');
-  select public.helmut_auth_state_expand_local_v1(s,m->>'generation',$1->>'root') into d;
-  perform public.helmut_auth_state_assert_data_local_v1(d);
+  if current_setting('helmut.local_auth_state_cas_projection',true)='on' then
+    perform public.helmut_auth_state_assert_graph_local_v1(s,m->>'generation',$1->>'root');
+  else
+    select public.helmut_auth_state_expand_local_v1(s,m->>'generation',$1->>'root') into d;
+    perform public.helmut_auth_state_assert_data_local_v1(d);
+  end if;
   n:=(u->>'count')::bigint;h:=u->>'head';
   perform set_config('helmut.atomic_usage_seal',jsonb_build_object('id',s,'gen',u->>'generation','action','write')::text,true);
   for r in select value from jsonb_array_elements($1->'additions')with ordinality e(value,ord)order by ord desc loop

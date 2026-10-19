@@ -45,7 +45,7 @@ def main():
     if mode not in ['baseline', 'parts', 'security']:
         raise ValueError('explicit small baseline|parts|security mode required')
     test_phase = os.environ.get('HELMUT_STATE_TEST_PHASE', 'security' if mode == 'security' else 'measure')
-    if test_phase not in (['security', 'native', 'native-leaf', 'history', 'graph'] if mode == 'security' else (['measure', 'read-path'] if mode == 'parts' else ['measure'])):
+    if test_phase not in (['security', 'native', 'native-leaf', 'history', 'graph', 'projection'] if mode == 'security' else (['measure', 'read-path'] if mode == 'parts' else ['measure'])):
         raise ValueError('explicit security|native phase requires security mode')
     read_path = test_phase == 'read-path'
     renderer_variant = os.environ.get('HELMUT_STATE_RENDERER_VARIANT', 'original')
@@ -66,6 +66,11 @@ def main():
         raise ValueError('graph reuse requires the explicit local parts/history modes')
     if test_phase == 'graph' and graph_reuse != '1':
         raise ValueError('graph security phase requires explicit local graph mode')
+    cas_projection = os.environ.get('HELMUT_STATE_CAS_PROJECTION', '0')
+    if cas_projection not in ['0', '1'] or (cas_projection == '1' and (mode == 'baseline' or graph_reuse != '0')):
+        raise ValueError('CAS projection requires explicit local parts/security and graph cache OFF')
+    if test_phase == 'projection' and cas_projection != '1':
+        raise ValueError('projection security requires explicit candidate')
     manifest = json.loads(MANIFEST.read_text())
     assert manifest['scope'] == 'DIAGNOSTIC_FIXTURE_DATA_ONLY_NO_ACTIVATION'
     assert pin(SOURCE) == manifest['sourcePin']
@@ -159,11 +164,13 @@ def main():
                 '--mount', 'type=bind,src=/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/postgrest-pinned,dst=/postgrest,readonly',
                 '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', '--env', 'POSTGRES_DB=postgres', '--env', 'PGDATA=' + ('/var/lib/postgresql/data/pgdata' if storage else '/var/lib/postgresql/data'),
                 K.IMAGE, 'postgres', '-c', 'helmut.local_usage_experiment=on',
+                '-c', 'helmut.local_auth_state_cas_projection=' + ('on' if cas_projection == '1' else 'off'),
+                '-c', 'helmut.local_diagnostic_scope=bounded-cas-qualification-v1',
                 '-c', 'shared_preload_libraries=pg_stat_statements', '-c', 'pg_stat_statements.track=all',
                 '-c', 'log_temp_files=0', '-c', 'track_io_timing=on', '-c', 'work_mem=4MB',
                 '-c', 'wal_compression=off', '-c', 'full_page_writes=on', '-c', 'fsync=on', '-c', 'synchronous_commit=on']
         cid = docker(args, text=True).stdout.strip()
-        save(out / 'STARTED.SAFE.json', {'scope': 'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN', 'name': name, 'database': 'postgres', 'cid': cid, 'parent': parent, 'mode': mode, 'testPhase': test_phase, 'workload': workload, 'rendererVariant': renderer_variant, 'historyReuse': history_reuse == '1', 'graphReuse': graph_reuse == '1', 'readPathLoopMode': loop_mode == '1', 'readPathRepeatWrites': repeat_writes, 'expectedLogicalOperations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'expectedCASRequests': 0 if mode == 'security' else (4 + repeat_writes if read_path else (120 if workload == 'mixed-state-process-runs' else 96)), 'operations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'repository': str(REPO), 'fixtureManifestPin': pin(MANIFEST), 'fixturePin': pin(SOURCE), 'harnessPin': pin(__file__), 'kernelMeterPin': pin(REPO / 'scripts/helmut-resource-meter/kernel-meter.py'), 'activation': False, 'GOClaimed': False, 'production': False})
+        save(out / 'STARTED.SAFE.json', {'scope': 'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN', 'name': name, 'database': 'postgres', 'cid': cid, 'parent': parent, 'mode': mode, 'testPhase': test_phase, 'workload': workload, 'rendererVariant': renderer_variant, 'historyReuse': history_reuse == '1', 'graphReuse': graph_reuse == '1', 'casProjection': cas_projection == '1', 'readPathLoopMode': loop_mode == '1', 'readPathRepeatWrites': repeat_writes, 'expectedLogicalOperations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'expectedCASRequests': 0 if mode == 'security' else (4 + repeat_writes if read_path else (120 if workload == 'mixed-state-process-runs' else 96)), 'operations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'repository': str(REPO), 'fixtureManifestPin': pin(MANIFEST), 'fixturePin': pin(SOURCE), 'harnessPin': pin(__file__), 'kernelMeterPin': pin(REPO / 'scripts/helmut-resource-meter/kernel-meter.py'), 'activation': False, 'GOClaimed': False, 'production': False})
         docker(['start', cid], text=True, timeout=15)
         for _ in range(100):
             log = docker(['logs', cid], timeout=10)
@@ -174,6 +181,7 @@ def main():
             time.sleep(.1)
         else:
             raise RuntimeError('fresh small server not ready')
+        assert sql("SELECT current_setting('helmut.local_auth_state_cas_projection');") == ('on' if cas_projection == '1' else 'off')
         sql("CREATE EXTENSION pg_stat_statements;CREATE ROLE bench_writer NOLOGIN;CREATE ROLE bench_denied NOLOGIN;CREATE ROLE service_role NOLOGIN;GRANT service_role TO bench_writer;CREATE ROLE anon NOLOGIN;CREATE ROLE authenticated NOLOGIN;CREATE TABLE public.helmut_store(id text PRIMARY KEY,data jsonb NOT NULL,updated_at timestamptz DEFAULT now());ALTER TABLE public.helmut_store ENABLE ROW LEVEL SECURITY;GRANT USAGE ON SCHEMA public TO bench_writer;GRANT SELECT,INSERT,UPDATE ON public.helmut_store TO bench_writer;CREATE POLICY bench_auth ON public.helmut_store TO bench_writer USING(id='main-auth')WITH CHECK(id='main-auth');")
         sql((REPO / 'supabase/proposals/auth_store_cas_scalar_jsonb.sql').read_text())
         sql((REPO / 'supabase/proposals/synthetik500_stored_command_binding.sql').read_text())

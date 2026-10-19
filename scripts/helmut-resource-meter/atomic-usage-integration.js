@@ -129,6 +129,7 @@ const STATE_FUNCTION_SHAPES = Object.freeze({
   helmut_auth_state_expand_local_v1: ["text, text, text, boolean, boolean", "jsonb", "s"],
   helmut_auth_state_assert_root_local_v1: ["jsonb", "jsonb", "i"],
   helmut_auth_state_assert_data_local_v1: ["jsonb", "void", "i"],
+  helmut_auth_state_assert_graph_local_v1: ["text, text, text", "void", "s"],
   helmut_auth_state_auth_guard_local_v1: ["", "trigger", "v"],
   helmut_auth_state_read_v1: ["jsonb", "jsonb", "s"],
   helmut_auth_state_graph_read_v1: ["jsonb", "jsonb", "s"],

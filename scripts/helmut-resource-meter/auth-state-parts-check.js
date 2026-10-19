@@ -4,7 +4,7 @@ const fs=require("node:fs"),assert=require("node:assert/strict"),crypto=require(
 const {performance}=require("node:perf_hooks"),{execFileSync}=require("node:child_process");
 const receipt=JSON.parse(fs.readFileSync("/bench/STARTED.SAFE.json"));
 const [phase,mode,uid,gid]=process.argv.slice(2);
-assert(["catalog","prepare","measure","security","native","native-leaf","history","graph"].includes(phase));assert(["baseline","parts","security"].includes(mode));
+assert(["catalog","prepare","measure","security","native","native-leaf","history","graph","projection"].includes(phase));assert(["baseline","parts","security"].includes(mode));
 assert.equal(require("node:os").hostname(),receipt.cid.slice(0,12));
 assert.equal(receipt.scope,"SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN");
 assert.equal(process.env.SUPABASE_URL,undefined);
@@ -34,7 +34,7 @@ function sql(q){return execFileSync("psql",["-U","postgres","-d",receipt.databas
 function save(name,x){const p="/bench/"+name;fs.writeFileSync(p,JSON.stringify(x,null,2),{mode:0o600,flag:"wx"});fs.chownSync(p,+uid,+gid);}
 async function rpc(name,body){const r=await global.fetch("http://127.0.0.1:38419/rest/v1/rpc/"+name,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const b=await r.json();if(!r.ok){const e=Error("local-rpc-failed");e.statusCode=r.status;e.code=b.code;throw e;}return b;}
 async function ready(){for(let i=0;i<60;i++){try{const r=await rawFetch("http://127.0.0.1:38419/helmut_store?select=id");await r.arrayBuffer();if(r.ok)return;}catch{}await new Promise(r=>setTimeout(r,100));}throw Error("local REST unavailable");}
-const dependencyFiles=["lib/helmut/storage.js","lib/helmut/auth-store-cas.js","lib/helmut/llm-usage-atomic.js","lib/helmut/auth-state-parts.js","supabase/proposals/auth_usage_atomic_local.sql","supabase/proposals/auth_state_parts_local.sql","scripts/helmut-resource-meter/auth-state-parts-check.js","scripts/helmut-resource-meter/auth-state-parts-small-fixture.py","scripts/helmut-resource-meter/kernel-meter.py","scripts/helmut-resource-meter/atomic-usage-integration.js","scripts/helmut-resource-meter/auth-state-parts-native-check.js"];
+const dependencyFiles=["lib/helmut/storage.js","lib/helmut/auth-store-cas.js","lib/helmut/llm-usage-atomic.js","lib/helmut/auth-state-parts.js","supabase/proposals/auth_usage_atomic_local.sql","supabase/proposals/auth_state_parts_local.sql","scripts/helmut-resource-meter/auth-state-parts-check.js","scripts/helmut-resource-meter/auth-state-parts-small-fixture.py","scripts/helmut-resource-meter/kernel-meter.py","scripts/helmut-resource-meter/atomic-usage-integration.js","scripts/helmut-resource-meter/auth-state-parts-native-check.js","scripts/helmut-resource-meter/auth-state-cas-projection-check.js"];
 function pins(){const root=receipt.repository;return dependencyFiles.map(name=>{const p=root+"/"+name,b=fs.readFileSync(p);return{path:p,bytes:b.length,sha256:sha(b)};});}
 function physicalHash(){return sql("SELECT encode(sha256(convert_to(data::text,'UTF8')),'hex')FROM public.helmut_store WHERE id='main-auth';");}
 function nativeReader(){return mode==="baseline"?"public.helmut_auth_usage_read_v1":"public.helmut_auth_state_read_v1";}
@@ -183,6 +183,14 @@ async function nativeSecurity(){
  const checks=Array.isArray(result)?result:result?.checks;assert(Array.isArray(checks)&&checks.length>0);assert(checks.every(x=>x.pass===true));
  save(phase==="native-leaf"?"NATIVE_LEAF_INFO_SECURITY_RESULT.SAFE.json":"NATIVE_STATE_SECURITY_RESULT.SAFE.json",{pass:true,checks,adapterResult:Array.isArray(result)?null:result,wire,sourcePins:pins(),onlyPreviouslyMissingNativeGroups:true,actualProfileTableAbsent:sql("SELECT to_regclass('public.mandate_profiles')IS NULL;")==="t",activation:false,full500:false,GOClaimed:false,providerCalls:0,unit60Auth30Acceptance:false});
 }
+async function projectionSecurity(){
+ await ready();assert.equal(mode,"security");assert.equal(receipt.testPhase,"projection");assert.equal(receipt.casProjection,true);
+ assert.equal(sql("SELECT current_setting('helmut.local_auth_state_cas_projection');"),"on");
+ const legacy=await require("./auth-state-parts-native-check").run({sql,rpc,storage,State,U,wire,copy,omitRevision});
+ const checks=await require("./auth-state-cas-projection-check").run({sql,rpc,storage,State,U,wire,copy,omitRevision});
+ assert(legacy.every(x=>x.pass)&&checks.every(x=>x.pass));
+ save("CAS_PROJECTION_SECURITY_RESULT.SAFE.json",{pass:true,legacy,checks,wire,sourcePins:pins(),activation:false,full500:false,GOClaimed:false,paidProviderCalls:0,production:false,unit60Auth30Acceptance:false});
+}
 async function historySecurity(){
  await ready();assert.equal(mode,"security");assert.equal(receipt.testPhase,"history");
  delete process.env.HELMUT_AUTH_HISTORY_READ_REUSE;
@@ -206,4 +214,4 @@ async function graphSecurity(){
  });
  save("GRAPH_REUSE_NATIVE_SECURITY_RESULT.SAFE.json",{pass:true,legacyGraphChecks:legacy,historyChecks:history,checks,sourcePins:[...pins(),...extraPins],activation:false,full500:false,GOClaimed:false,paidProviderCalls:0,production:false,unit60Auth30Acceptance:false});
 }
-(async()=>{if(phase==="catalog")captureStateCatalog("STATE_CATALOG_SOURCE_ONLY.SAFE.json",true);else if(phase==="prepare")await prepare();else if(phase==="measure")await measure();else if(phase==="native"||phase==="native-leaf")await nativeSecurity();else if(phase==="history")await historySecurity();else if(phase==="graph")await graphSecurity();else await security();})().catch(e=>{console.error(JSON.stringify({error:e.name,code:e.code||null,nativeCase:e.nativeCase||null,message:String(e.message).slice(0,200)}));process.exitCode=1;});
+(async()=>{if(phase==="catalog")captureStateCatalog("STATE_CATALOG_SOURCE_ONLY.SAFE.json",true);else if(phase==="prepare")await prepare();else if(phase==="measure")await measure();else if(phase==="native"||phase==="native-leaf")await nativeSecurity();else if(phase==="projection")await projectionSecurity();else if(phase==="history")await historySecurity();else if(phase==="graph")await graphSecurity();else await security();})().catch(e=>{console.error(JSON.stringify({error:e.name,code:e.code||null,nativeCase:e.nativeCase||null,message:String(e.message).slice(0,200)}));process.exitCode=1;});
