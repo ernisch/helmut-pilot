@@ -8,12 +8,12 @@ spec=importlib.util.spec_from_file_location('atomic_staging_connector',BIN/'conn
 C=importlib.util.module_from_spec(spec);spec.loader.exec_module(C)
 
 class AtomicIntegrationTest(unittest.TestCase):
-    def test_unqualified_control_view_is_fenced_and_source_bound(self):
+    def test_control_view_without_descriptor_opt_in_is_fenced_and_source_bound(self):
         code=r"""
 const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),S=require('./scripts/helmut-resource-meter/start-input-checks');
 const R=require('./lib/helmut/synthetik-500-content-runner'),assert=require('node:assert/strict');
 const p=JSON.parse(process.argv[1]),key='HELMUT_AUTH_CONTROL_READ';
-for(const value of ['verified-control-view-v1','off','unknown'])assert.throws(()=>AU.environment({[key]:value},p),/no admitted full-run binding/);
+for(const value of ['verified-control-view-v1','off','unknown'])assert.throws(()=>AU.environment({[key]:value},p),/exact descriptor opt-in/);
 delete process.env[key];const plain=R.sourceBinding();process.env[key]='verified-control-view-v1';assert.notEqual(R.sourceBinding(),plain);
 process.env[key]='caller-control-sentinel';const expected=S.actualSourceBinding({atomicUsageInput:p});
 assert.equal(process.env[key],'caller-control-sentinel');delete process.env[key];assert.equal(S.actualSourceBinding({atomicUsageInput:p}),expected);
@@ -81,6 +81,100 @@ assert.equal(process.env[key],'caller-graph-sentinel');delete process.env[key];a
         command="const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"
         subprocess.run(['node','-e',command],input=json.dumps(source),text=True,check=True,capture_output=True)
         self.assertFalse(self.case.exists());self.assertFalse(Path(self.args['owner_go_pin']['path']).exists())
+
+    def control_descriptor(self):
+        value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1'})))",str(BIN/'atomic-usage-integration.js')],text=True)
+        self.descriptor.write_text(value)
+        return C.pin(self.descriptor)
+
+    def test_control_descriptor_prerequisites_review_scope_and_source_drift(self):
+        candidate=self.control_descriptor()
+        code=r"""
+const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),assert=require('node:assert/strict');
+const fs=require('node:fs'),crypto=require('node:crypto'),p=JSON.parse(process.argv[1]),d=AU.readDescriptor(p);
+const options={stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1'};
+assert.equal(AU.descriptor().controlRead,undefined);assert.equal(d.controlRead,options.controlRead);
+assert.equal(d.controlSourceAcceptance.independentReview.sha256,'c2b66bc4abbcbe3b4220e72e88f8d715760f3ec9c1a2aeb7bc99b0376b68c5ac');
+assert.equal(d.controlSourceAcceptance.transportClosure.sha256,'8c70f8756cb56eae8b3b704025d0d27974792e5883ce620da3954907628d1531');
+assert.equal(d.controlSourceAcceptance.newGlueAccepted,false);assert.equal(d.controlSourceAcceptance.full500Accepted,false);
+for(const delta of [{stateStorage:null},{historyReadReuse:null},{controlRead:'off'},{controlRead:''},{controlRead:'unknown'},
+ {graphReadReuse:'verified-graph-reuse-v1'}])assert.throws(()=>AU.descriptor({...options,...delta}));
+const env=AU.environment({},p);assert.equal(env.HELMUT_AUTH_CONTROL_READ,options.controlRead);
+assert.equal(AU.environment(env,p).HELMUT_AUTH_CONTROL_READ,options.controlRead);
+for(const delta of [{HELMUT_AUTH_CONTROL_READ:'off'},{HELMUT_AUTH_CONTROL_READ:''},{HELMUT_AUTH_CONTROL_READ:'unknown'},
+ {HELMUT_AUTH_STATE_STORAGE:'other'},{HELMUT_AUTH_HISTORY_READ_REUSE:'off'},
+ {HELMUT_AUTH_GRAPH_READ_REUSE:'verified-graph-reuse-v1'},{HELMUT_AUTH_GRAPH_READ_REUSE:'off'},
+ {HELMUT_AUTH_SINGLE_WRITE_CAPTURE:'single-write-capture-v1'},{VERCEL:'1'},
+ {HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY:'not-a-key'}])assert.throws(()=>AU.environment({...env,...delta},p));
+const pin=()=>({path:p.path,bytes:fs.statSync(p.path).size,sha256:crypto.createHash('sha256').update(fs.readFileSync(p.path)).digest('hex')});
+for(const delta of [{controlRead:'unknown'},{historyReadReuse:undefined},{controlSourceAcceptance:{...d.controlSourceAcceptance,newGlueAccepted:true}},
+ {sourcePins:d.sourcePins.filter(x=>!x.path.endsWith('/synthetik-500-production-adapter.js'))},{production:true},{extra:'forged'}]){
+ fs.writeFileSync(p.path,JSON.stringify({...d,...delta}));assert.throws(()=>AU.readDescriptor(pin()));
+}
+fs.writeFileSync(p.path,JSON.stringify(d));
+// Even freshly repinning changed reader bytes cannot reuse W50 acceptance.
+const read=fs.readFileSync;
+for(const suffix of ['/llm-usage-atomic.js','/storage.js','/synthetik-500-production-adapter.js','/auth-state-parts.js',
+ '/auth-store-cas.js','/synthetik-500-dispatch-journal.js','/testkosten-budget.js','/auth_state_parts_local.sql','/auth_usage_atomic_local.sql']){
+ try{fs.readFileSync=function(file,...args){const b=read.call(this,file,...args);return String(file).endsWith(suffix)?Buffer.concat([b,Buffer.from('\n')]):b;};
+  assert.throws(()=>AU.descriptor(options),/Reviewed control source drift/);
+ }finally{fs.readFileSync=read;}
+}
+"""
+        subprocess.run(['node','-e',code,json.dumps(candidate)],cwd=C.REPO,check=True,capture_output=True,text=True)
+
+    def test_control_source_binding_matches_execution_and_restores_all_caller_flags(self):
+        candidate=self.control_descriptor()
+        code=r"""
+const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),S=require('./scripts/helmut-resource-meter/start-input-checks');
+const R=require('./lib/helmut/synthetik-500-content-runner'),assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
+const p=JSON.parse(process.argv[1]),keys=['HELMUT_LLM_USAGE_STORAGE','HELMUT_AUTH_STATE_STORAGE','HELMUT_AUTH_HISTORY_READ_REUSE',
+ 'HELMUT_AUTH_GRAPH_READ_REUSE','HELMUT_AUTH_SINGLE_WRITE_CAPTURE','HELMUT_AUTH_CONTROL_READ','HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'];
+for(const k of keys)delete process.env[k];
+Object.assign(process.env,AU.environment({},p));const expected=R.sourceBinding();
+delete process.env.HELMUT_AUTH_CONTROL_READ;assert.notEqual(R.sourceBinding(),expected);
+for(const k of keys)delete process.env[k];
+assert.equal(S.actualSourceBinding({atomicUsageInput:p}),expected);for(const k of keys)assert.equal(process.env[k],undefined);
+for(const k of keys)process.env[k]='caller-'+k;const before=keys.map(k=>process.env[k]);
+assert.equal(S.actualSourceBinding({atomicUsageInput:p}),expected);assert.deepEqual(keys.map(k=>process.env[k]),before);
+S.initialSourceBinding({atomicUsageInput:p,expectedInitialSourceBindingSHA256:crypto.createHash('sha256').update(expected).digest('hex')});
+assert.throws(()=>S.initialSourceBinding({atomicUsageInput:p,expectedInitialSourceBindingSHA256:'0'.repeat(64)}));
+assert.throws(()=>S.actualSourceBinding({atomicUsageInput:{...p,sha256:'0'.repeat(64)}}));
+assert.deepEqual(keys.map(k=>process.env[k]),before);
+const read=fs.readFileSync;
+try{fs.readFileSync=function(file,...args){
+ if(String(file).endsWith('/synthetik-500-cpu-source-pins.json')&&process.env.HELMUT_AUTH_CONTROL_READ==='verified-control-view-v1')throw Error('control-source-read-failure');
+ return read.call(this,file,...args);
+};assert.throws(()=>S.actualSourceBinding({atomicUsageInput:p}),/control-source-read-failure/);}
+finally{fs.readFileSync=read;}
+assert.deepEqual(keys.map(k=>process.env[k]),before);
+"""
+        subprocess.run(['node','-e',code,json.dumps(candidate)],cwd=C.REPO,check=True,capture_output=True,text=True)
+
+    def test_control_mode_reaches_exact26_original_consumers_and_rejects_descriptor_drift(self):
+        candidate=self.control_descriptor()
+        rows=C.render_templates(self.case,**self.args,atomic_usage_pin=candidate)
+        self.assertEqual(len(rows),26)
+        for row in rows:
+            text=Path(row['original']['path']).read_text()
+            for delta in row['replacements']:
+                self.assertEqual(text.count(delta['from']),delta['count']);text=text.replace(delta['from'],delta['to'])
+            self.assertEqual(text,row['text']);self.assertEqual(C.pin(row['original']['path']),row['original'])
+        files={Path(r['destination']).relative_to(self.case).as_posix():r['text']for r in rows}
+        for relative in ['native-end-preparation/root-io-bridge.js','native-end-preparation/runtime-candidates/prepare-materials.candidate.js']:
+            self.assertIn("env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';",files[relative])
+            self.assertIn('.environment(env,',files[relative])
+        self.assertIn("'HELMUT_AUTH_CONTROL_READ'",files['native-end-preparation/runtime-candidates/root-authority-stage.candidate.js'])
+        assembly=files['assemble-after-activation.js']
+        self.assertLess(assembly.index("process.env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';"),assembly.index('const initialSourceBinding='))
+        subprocess.run(['node','-e',"const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"],
+            input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,check=True,capture_output=True)
+        descriptor=json.loads(self.descriptor.read_text())
+        for delta in [{'controlRead':'unknown'},{'historyReadReuse':None},{'controlSourceAcceptance':{}},{'graphReadReuse':'verified-graph-reuse-v1'}]:
+            self.descriptor.write_text(json.dumps({**descriptor,**delta}))
+            with self.subTest(delta=delta),self.assertRaises(RuntimeError):
+                C.render_templates(self.case,**self.args,atomic_usage_pin=C.pin(self.descriptor))
+        self.assertFalse(self.case.exists());self.assertFalse(Path(self.args['owner_go_pin']['path']).exists())
     def test_descriptor_drift_cannot_enter_renderer(self):
         d=json.loads(self.descriptor.read_text());d['sourcePins'][0]['sha256']='0'*64;self.descriptor.write_text(json.dumps(d))
         with self.assertRaisesRegex(RuntimeError,'source drift'):C.render_templates(self.case,**self.args,atomic_usage_pin=C.pin(self.descriptor))
@@ -88,7 +182,7 @@ assert.equal(process.env[key],'caller-graph-sentinel');delete process.env[key];a
         policy={'version':C.Calendar.VERSION,'operationId':self.args['operation'],'sourceDay':'2026-10-19',
             'sourceViewAtUTC':'2026-10-19T08:00:00.000Z','sourceInputsHash':'a'*64,'executionDayUTC':'2026-10-19',
             'startsAtUTC':'2026-10-19T20:00:00.000Z','endsAtUTC':'2026-10-19T23:59:59.999Z'}
-        value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',localCalendar:JSON.parse(process.argv[2])})))",str(BIN/'atomic-usage-integration.js'),json.dumps(policy)],text=True)
+        value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localCalendar:JSON.parse(process.argv[2])})))",str(BIN/'atomic-usage-integration.js'),json.dumps(policy)],text=True)
         self.descriptor.write_text(value);candidate=C.pin(self.descriptor)
         rows=C.render_templates(self.case,**self.args,atomic_usage_pin=candidate)
         self.assertEqual(len(rows),26)
@@ -208,7 +302,7 @@ assert.throws(()=>AU.projectQuery('SELECT 1',{stateStorage:'unknown'}));
 const fs=require('fs'),assert=require('assert/strict'),AU=require('./scripts/helmut-resource-meter/atomic-usage-integration');
 const none=Object.fromEntries(['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'].map(k=>[k,false]));
 const seqNone={USAGE:false,SELECT:false,UPDATE:false},field=(type,notNull,generated='',expression=null,identity='')=>({type,notNull,identity,generated,expression});
-const c={serverVersion:'17.6',serverEncoding:'UTF8',clientEncoding:'UTF8',localGate:'on',functions:AU.stateFunctionSpecs(),functionCount:14,
+const c={serverVersion:'17.6',serverEncoding:'UTF8',clientEncoding:'UTF8',localGate:'on',functions:AU.stateFunctionSpecs(),functionCount:15,
  table:{kind:'r',owner:'postgres',rls:true,forceRls:false,publicPrivileges:false,service:{...none,SELECT:true,INSERT:true},anon:none,customer:none},
  sequence:{kind:'S',owner:'postgres',publicPrivileges:false,service:{...seqNone,USAGE:true},anon:seqNone,customer:seqNone},
  columns:{store_id:field('text',true),generation:field('text',true),payload:field('text',true),node_hash:field('text',true,'s','helmut_auth_state_payload_hash_local_v1(payload)'),body:field('jsonb',false,'s','(payload)::jsonb'),leaf_info:field('jsonb',false,'s','helmut_auth_state_leaf_info_local_v1(payload)'),children:field('text[]',false,'s','helmut_auth_state_children_local_v1(payload)'),node_seq:field('bigint',true,'',null,'a')},

@@ -5,7 +5,7 @@ No Docker, activation, database, model, GO claim or execution on import/stage.
 Original harness/data remain unchanged. Each textual delta is retained for
 independent review; no application/engine file is edited.
 """
-import hashlib,json,os,re,secrets
+import hashlib,json,os,re,secrets,subprocess
 from pathlib import Path
 import importlib.util
 _spec=importlib.util.spec_from_file_location('next_resource_stage',Path(__file__).with_name('next-resource-authority.py'))
@@ -27,6 +27,17 @@ def pin(file):
 def read_pin(p):
     if pin(p['path'])!=p:raise RuntimeError('input pin drift')
     return json.loads(Path(p['path']).read_text())
+
+def read_atomic_descriptor(p):
+    """Use the runtime's canonical validator before rendering ANY consumer."""
+    candidate=read_pin(p)
+    for source in candidate['sourcePins']:
+        if pin(source['path'])!=source:raise RuntimeError('atomic usage source drift')
+    code="const fs=require('node:fs');require(process.argv[1]).readDescriptor(JSON.parse(fs.readFileSync(0,'utf8')));"
+    result=subprocess.run(['node','-e',code,str(BIN/'atomic-usage-integration.js')],
+        input=json.dumps(p),text=True,capture_output=True,timeout=30)
+    if result.returncode:raise RuntimeError('exact current local atomic usage descriptor required')
+    return candidate
 
 def save(p,value):
     p=Path(p)
@@ -54,7 +65,7 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
       ("O+'/OWNER_LOCAL_GO.PRIVATE.json'",repr(owner_go_pin['path'])),
       ('/tmp/helmut-fresh-runtime-fixture-b27c2026.conf','/tmp/helmut-resource-fixture.conf')]
     deltas=[]
-    candidate=read_pin(atomic_usage_pin) if atomic_usage_pin else None
+    candidate=read_atomic_descriptor(atomic_usage_pin) if atomic_usage_pin else None
     calendar=candidate.get('localCalendar') if candidate else None
     if calendar is not None:
         Calendar.validate_policy(calendar)
@@ -98,9 +109,14 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             history_mode=candidate.get('historyReadReuse')
             if history_mode is not None and (history_mode!='verified-history-reuse-v1' or state_mode!='merkle-auth-v1'):
                 raise RuntimeError('unknown or unbound local history reuse mode')
+            control_mode=candidate.get('controlRead')
+            if control_mode is not None and (control_mode!='verified-control-view-v1' or state_mode!='merkle-auth-v1'
+                    or history_mode!='verified-history-reuse-v1'):
+                raise RuntimeError('unknown or unbound local control read mode')
             state_options=',{stateStorage:'+json.dumps(state_mode)+'}' if state_mode else ''
             state_environment="env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else ''
             history_environment="env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else ''
+            control_environment="env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';" if control_mode else ''
             calendar_json=json.dumps(json.dumps(calendar,separators=(',',':'))) if calendar else None
             calendar_environment='env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else ''
             def change(old,new):
@@ -112,7 +128,7 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                 change('  const memory=[];', '  require('+helper+').readDescriptor('+descriptor+');\n  const memory=[];')
                 change('  function sql(query) {', '  function sql(query) {\n    query=require('+helper+').projectQuery(query'+state_options+');')
                 change("    assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID,'main-auth');",
-                    '    assert.deepEqual(config.atomicUsageInput,'+descriptor+');require('+helper+').readDescriptor(config.atomicUsageInput);\n'
+                    '    assert.deepEqual(config.atomicUsageInput,'+descriptor+');require('+helper+').environment(env,config.atomicUsageInput);\n'
                     '    const receipt=G.json(config.atomicUsageReceipt);assert.equal(receipt.pass,true);assert.equal(receipt.targetDatabase,target.database);\n'
                     '    assert.deepEqual(receipt.candidatePin,config.atomicUsageInput);assert.equal(receipt.originalPhysicalHash,receipt.proof.originalHash);\n'
                     '    const catalog=read(require('+helper+').catalogSQL());require('+helper+').assertCatalog(catalog);\n'
@@ -123,22 +139,23 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                     "    env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';\n"
                     +('    '+state_environment+'\n' if state_mode else '')+
                     ('    '+history_environment+'\n' if history_mode else '')+
+                    ('    '+control_environment+'\n' if control_mode else '')+
                     ('    '+calendar_environment+'\n' if calendar else '')+
                     "    assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID,'main-auth');")
                 change("'authRevision',data->'_authStoreRevision','journal'",
                     "'nativeUsageBinding',\"+require("+helper+").physicalWitnessExpression("+state_options[1:]+")+\",'authRevision',data->'_authStoreRevision','journal'")
             elif relative=='native-end-preparation/runtime-candidates/prepare-materials.candidate.js':
                 change('  Object.assign(env,localBudgets);',
-                    "  Object.assign(env,localBudgets);env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+state_environment+history_environment+calendar_environment)
+                    "  Object.assign(env,localBudgets);require("+helper+").environment(env,"+descriptor+");env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+state_environment+history_environment+control_environment+calendar_environment)
             elif relative=='native-end-preparation/runtime-candidates/root-authority-stage.candidate.js':
                 change("['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY']",
-                    "['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY','HELMUT_LLM_USAGE_STORAGE'"+(",'HELMUT_AUTH_STATE_STORAGE'" if state_mode else '')+(",'HELMUT_AUTH_HISTORY_READ_REUSE'" if history_mode else '')+(",'HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'" if calendar else '')+"]")
+                    "['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY','HELMUT_LLM_USAGE_STORAGE'"+(",'HELMUT_AUTH_STATE_STORAGE'" if state_mode else '')+(",'HELMUT_AUTH_HISTORY_READ_REUSE'" if history_mode else '')+(",'HELMUT_AUTH_CONTROL_READ'" if control_mode else '')+(",'HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'" if calendar else '')+"]")
             elif relative=='native-end-preparation/runtime-candidates/assemble-config.candidate.js':
                 change('const config={...base,',
                     'const config={...base,atomicUsageInput:r.atomicUsageInput,atomicUsageReceipt:r.atomicUsageReceipt,')
             elif relative=='assemble-after-activation.js':
                 change(' const initialSourceBinding=',
-                    " process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else '')+('process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else '')+"\n const initialSourceBinding=")
+                    " process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else '')+("process.env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';" if control_mode else '')+('process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else '')+"\n const initialSourceBinding=")
                 if calendar:
                     change('briefingDatum:runtime.start','briefingDatum:'+json.dumps(calendar['sourceViewAtUTC']))
                 change(' const shared={status:',

@@ -15,6 +15,29 @@ const SOURCE_FILES = ["lib/helmut/llm-usage-atomic.js", "lib/helmut/auth-store-c
   "scripts/helmut-resource-meter/connect-local500.py", "scripts/helmut-resource-meter/start-input-checks.js"];
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const literal = s => "'" + String(s).replaceAll("'", "''") + "'";
+const CONTROL_READ = "verified-control-view-v1";
+// W50 accepted these reader/transport bytes, not this later integration. Keep
+// provenance as pinned metadata, without opening private evidence at runtime.
+const CONTROL_SOURCE_ACCEPTANCE = Object.freeze({
+  sourceCommit: "c6620c8393cda7a51a1182e13b83e7507de57b65",
+  independentReview: Object.freeze({ name: "ACTUAL_DEEPSEEK_CONTROL_SOURCE_ACCEPTANCE.SAFE.json", bytes: 12321,
+    sha256: "c2b66bc4abbcbe3b4220e72e88f8d715760f3ec9c1a2aeb7bc99b0376b68c5ac" }),
+  transportClosure: Object.freeze({ name: "SOL_STORAGE_TRANSPORT_AND_CALLERS_CLOSURE.SAFE.json", bytes: 4506,
+    sha256: "8c70f8756cb56eae8b3b704025d0d27974792e5883ce620da3954907628d1531" }),
+  scope: "Control reader plus separately reviewed transport and named callers only",
+  newGlueAccepted: false, full500Accepted: false
+});
+const CONTROL_SOURCE_HASHES = Object.freeze({
+  "lib/helmut/llm-usage-atomic.js": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0",
+  "lib/helmut/auth-state-parts.js": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9",
+  "lib/helmut/auth-store-cas.js": "92cba40816bb8cf8919db846d31b736a77b28e3e8d6d24712646bd0509755dd4",
+  "lib/helmut/storage.js": "88b6d2354d356e6f6f7ab8295c60a389f0efd0ed648e06a26248e1d1a3b2f96f",
+  "lib/helmut/synthetik-500-production-adapter.js": "124ed8275efd479ae922ee493d15186701afeaafdbcc1b6def014399e28d34f3",
+  "lib/helmut/testkosten-budget.js": "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e",
+  "lib/helmut/synthetik-500-dispatch-journal.js": "c9cf08100d63646e9c16f931b257b6ccc7fa65fc96e18f7bc6459e530bd5e4b8",
+  "supabase/proposals/auth_state_parts_local.sql": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61",
+  "supabase/proposals/auth_usage_atomic_local.sql": "5fdd3c81cf86c4f03208974bb9fd1f26d355dfaf53520f08de64292581a39e05"
+});
 // Native bodies from the accepted final PG17.6 candidate, not a caller claim.
 const FUNCTION_HASHES = Object.freeze({
   helmut_auth_usage_bootstrap_v1: "85a0c025017e8929c5034c2e55401516166e7795818749e24dc3f307b85b8e0a",
@@ -34,29 +57,40 @@ function pin(file) {
   const b = fs.readFileSync(file);return { path: file, bytes: b.length, sha256: sha(b) };
 }
 function pinned(p) { assert.deepEqual(pin(p.path), p);return fs.readFileSync(p.path); }
-function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReuse = null, localCalendar = null } = {}) {
+function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReuse = null, controlRead = null, localCalendar = null } = {}) {
   assert(stateStorage === null || stateStorage === "merkle-auth-v1");
   assert(historyReadReuse === null || (historyReadReuse === "verified-history-reuse-v1" && stateStorage === "merkle-auth-v1"));
   // The graph candidate is qualified only by isolated component fixtures so
   // far. No full-run descriptor may silently admit an unmeasured new mode.
   assert(graphReadReuse === null, "Graph reuse has no admitted full-run binding");
+  assert(controlRead === null || (controlRead === CONTROL_READ && stateStorage === "merkle-auth-v1"
+    && historyReadReuse === "verified-history-reuse-v1"), "Control view requires exact Merkle/history opt-in");
   if (localCalendar !== null) require(path.join(ROOT, "lib/helmut/synthetik-500-local-calendar")).validatePolicyData(localCalendar);
+  // This is also the sole runtime-file list for the added source reads: the
+  // existing shared manifest mounts every sourcePin and checks it in-container.
+  const files = controlRead ? [...new Set([...SOURCE_FILES, ...Object.keys(CONTROL_SOURCE_HASHES)])] : SOURCE_FILES;
+  const sourcePins = files.map(f => pin(path.join(ROOT, f)));
+  if (controlRead) for (const [file, hash] of Object.entries(CONTROL_SOURCE_HASHES))
+    assert.equal(sourcePins.find(p => p.path === path.join(ROOT, file)).sha256, hash, "Reviewed control source drift: " + file);
   return { schema: "helmut-local-atomic-usage-resource-input/1", mode: MODE, production: false,
     ...(stateStorage ? { stateStorage } : {}), ...(historyReadReuse ? { historyReadReuse } : {}),
+    ...(controlRead ? { controlRead, controlSourceAcceptance: CONTROL_SOURCE_ACCEPTANCE } : {}),
     ...(localCalendar ? { localCalendar } : {}),
     originalHistoryPreserved: true, fullContractUnchanged: localCalendar === null,
     ...(localCalendar ? { timingMemoryAndLiveSecurityContractUnchanged: true } : {}),
-    sourcePins: SOURCE_FILES.map(f => pin(path.join(ROOT, f))) };
+    sourcePins };
 }
 function readDescriptor(p) {
   const d = JSON.parse(pinned(p));assert.deepEqual(d, descriptor({ stateStorage: d.stateStorage ?? null,
-    historyReadReuse: d.historyReadReuse ?? null, localCalendar: d.localCalendar ?? null }));return d;
+    historyReadReuse: d.historyReadReuse ?? null, controlRead: d.controlRead ?? null,
+    localCalendar: d.localCalendar ?? null }));return d;
 }
 function environment(env, p) {
   const d = readDescriptor(p);assert(!env.VERCEL && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
   assert(env.HELMUT_AUTH_GRAPH_READ_REUSE === undefined, "Graph reuse has no admitted full-run binding");
   assert(env.HELMUT_AUTH_SINGLE_WRITE_CAPTURE === undefined, "Single write capture has no admitted full-run binding");
-  assert(env.HELMUT_AUTH_CONTROL_READ === undefined, "Control view has no admitted full-run binding");
+  assert(env.HELMUT_AUTH_CONTROL_READ === undefined || (d.controlRead === CONTROL_READ
+    && env.HELMUT_AUTH_CONTROL_READ === d.controlRead), "Control view requires exact descriptor opt-in");
   assert(env.HELMUT_LLM_USAGE_STORAGE === undefined || env.HELMUT_LLM_USAGE_STORAGE === MODE);
   assert(!env.HELMUT_AUTH_STATE_STORAGE || env.HELMUT_AUTH_STATE_STORAGE === d.stateStorage);
   assert(env.HELMUT_AUTH_HISTORY_READ_REUSE === undefined || env.HELMUT_AUTH_HISTORY_READ_REUSE === d.historyReadReuse);
@@ -65,6 +99,7 @@ function environment(env, p) {
   return { ...env, HELMUT_LLM_USAGE_STORAGE: MODE,
     ...(d.stateStorage ? { HELMUT_AUTH_STATE_STORAGE: d.stateStorage } : {}),
     ...(d.historyReadReuse ? { HELMUT_AUTH_HISTORY_READ_REUSE: d.historyReadReuse } : {}),
+    ...(d.controlRead ? { HELMUT_AUTH_CONTROL_READ: d.controlRead } : {}),
     ...(d.localCalendar ? { HELMUT_LOCAL_RESOURCE_CALENDAR_JSON: JSON.stringify(d.localCalendar) } : {}) };
 }
 function projectQuery(query, { stateStorage = null } = {}) {
@@ -292,5 +327,5 @@ function installAfterActivation({ plan, candidatePin, targetSQL }) {
     catalog, ...(stateReceipt ? { stateReceipt } : {}), wallMS: performance.now() - begin, includedInMeasuredPreparation: true,
     activationByThisHelper: false, costsAndOriginalHistoryUnchanged: true, production: false };
 }
-module.exports = { MODE, SOURCE_FILES, pin, pinned, descriptor, readDescriptor, environment,
+module.exports = { MODE, SOURCE_FILES, CONTROL_READ, CONTROL_SOURCE_ACCEPTANCE, pin, pinned, descriptor, readDescriptor, environment,
   projectQuery, physicalWitnessExpression, catalogSQL, assertCatalog, stateFunctionSpecs, stateCatalogSQL, assertStateCatalog, sourceReadySQL, assertSourceReady, bootstrapSQL, assertLocalTarget, installAfterActivation };

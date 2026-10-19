@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Targeted static read closure/early error regressions. No GO or activation."""
-import copy,hashlib,importlib.util,json,tempfile,unittest
+import copy,hashlib,importlib.util,json,subprocess,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
 
@@ -42,6 +42,27 @@ class RuntimeReadContractTest(unittest.TestCase):
   self.assertEqual(len(paths),len(manifest['pins']))
   self.assertIn(str(self.root/'FUTURE_GO.json'),manifest['generatedInputsRequireFreshRuntimeBinding'])
   self.assertFalse((self.root/'FUTURE_GO.json').exists())
+
+ def test_control_descriptor_uses_shared_runtime_manifest_without_review_file_reads(self):
+  code="process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1'})))"
+  descriptor=json.loads(subprocess.check_output(['node','-e',code,str(BIN/'atomic-usage-integration.js')],text=True))
+  candidate=self.doc('atomic-control-descriptor.json',descriptor)
+  request=self.doc('control-request.json',{'sourcePins':[self.leaf],'primaries':{'original':self.leaf},'atomicUsageInput':candidate})
+  connection={**self.connection,'atomicUsageInput':candidate,'runtimeRequest':request}
+  recipe={**self.recipe,'fixtureConnectionPin':self.doc('control-connection.json',connection)}
+  manifest=I.runtime_read_manifest(recipe);paths={p['path']:p for p in manifest['pins']}
+  self.assertEqual(paths[candidate['path']],candidate)
+  for source in descriptor['sourcePins']:self.assertEqual(paths[source['path']],source)
+  for name in ['synthetik-500-production-adapter.js','synthetik-500-dispatch-journal.js']:
+   self.assertTrue(any(Path(p).name==name for p in paths))
+  for review in ['independentReview','transportClosure']:
+   self.assertFalse(any(Path(p).name==descriptor['controlSourceAcceptance'][review]['name']for p in paths))
+  # Real visibility in the actual container remains a separate mandatory gate;
+  # this file-list assertion does not fabricate its result.
+  changed=self.doc('changed-descriptor.json',{**descriptor,'sourcePins':[{**descriptor['sourcePins'][0],'sha256':'0'*64}]})
+  bad_request=self.doc('bad-control-request.json',{'sourcePins':[],'primaries':{},'atomicUsageInput':changed})
+  bad_connection=self.doc('bad-control-connection.json',{**connection,'atomicUsageInput':changed,'runtimeRequest':bad_request})
+  with self.assertRaises(RuntimeError):I.runtime_read_manifest({**recipe,'fixtureConnectionPin':bad_connection})
 
  def test_missing_additional_completed_correction_provenance_fails_before_container(self):
   Path(self.correction_data[0]['path']).unlink()
