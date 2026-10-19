@@ -4,7 +4,7 @@ const fs=require("node:fs"),assert=require("node:assert/strict"),crypto=require(
 const {performance}=require("node:perf_hooks"),{execFileSync}=require("node:child_process");
 const receipt=JSON.parse(fs.readFileSync("/bench/STARTED.SAFE.json"));
 const [phase,mode,uid,gid]=process.argv.slice(2);
-assert(["catalog","prepare","measure","security","native","native-leaf","history","graph","projection","single-capture"].includes(phase));assert(["baseline","parts","security"].includes(mode));
+assert(["catalog","prepare","measure","security","native","native-leaf","history","graph","projection","single-capture","control"].includes(phase));assert(["baseline","parts","security"].includes(mode));
 assert.equal(require("node:os").hostname(),receipt.cid.slice(0,12));
 assert.equal(receipt.scope,"SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN");
 assert.equal(process.env.SUPABASE_URL,undefined);
@@ -14,6 +14,7 @@ else delete process.env.HELMUT_AUTH_STATE_STORAGE;
 if(receipt.historyReuse)process.env.HELMUT_AUTH_HISTORY_READ_REUSE="verified-history-reuse-v1";
 if(receipt.graphReuse)process.env.HELMUT_AUTH_GRAPH_READ_REUSE="verified-graph-reuse-v1";
 if(receipt.singleWriteCapture)process.env.HELMUT_AUTH_SINGLE_WRITE_CAPTURE="single-write-capture-v1";
+if(receipt.controlView)process.env.HELMUT_AUTH_CONTROL_READ="verified-control-view-v1";
 const rawFetch=global.fetch,wire=[];
 global.fetch=async(url,options={})=>{
  assert(String(url).startsWith("http://127.0.0.1:38419/rest/v1/"));
@@ -192,6 +193,12 @@ async function projectionSecurity(){
  assert(legacy.every(x=>x.pass)&&checks.every(x=>x.pass));
  save("CAS_PROJECTION_SECURITY_RESULT.SAFE.json",{pass:true,legacy,checks,wire,sourcePins:pins(),activation:false,full500:false,GOClaimed:false,paidProviderCalls:0,production:false,unit60Auth30Acceptance:false});
 }
+async function controlViewSecurity(){
+ await ready();assert.equal(mode,"security");assert.equal(receipt.controlView,true);
+ const result=await require("./auth-control-view-native-check").run({sql,rpc,storage,State,U,wire,copy,omitRevision});
+ assert(result.checks.every(x=>x.pass));
+ save("CONTROL_VIEW_NATIVE_SECURITY_RESULT.SAFE.json",{pass:true,...result,sourcePins:[...pins(),{path:receipt.repository+"/scripts/helmut-resource-meter/auth-control-view-native-check.js",bytes:fs.statSync(__dirname+"/auth-control-view-native-check.js").size,sha256:sha(fs.readFileSync(__dirname+"/auth-control-view-native-check.js"))}],wire,activation:false,full500:false,GOClaimed:false,paidProviderCalls:0,production:false,unit60Auth30Acceptance:false,commonMemoryBenefitAcceptance:false});
+}
 async function singleCaptureSecurity(){
  await ready();assert.equal(mode,"security");assert.equal(receipt.singleWriteCapture,true);
  const checks=await require("./auth-single-capture-native-check").run({sql,storage,State,copy,omitRevision});
@@ -221,4 +228,4 @@ async function graphSecurity(){
  });
  save("GRAPH_REUSE_NATIVE_SECURITY_RESULT.SAFE.json",{pass:true,legacyGraphChecks:legacy,historyChecks:history,checks,sourcePins:[...pins(),...extraPins],activation:false,full500:false,GOClaimed:false,paidProviderCalls:0,production:false,unit60Auth30Acceptance:false});
 }
-(async()=>{if(phase==="catalog")captureStateCatalog("STATE_CATALOG_SOURCE_ONLY.SAFE.json",true);else if(phase==="prepare")await prepare();else if(phase==="measure")await measure();else if(phase==="native"||phase==="native-leaf")await nativeSecurity();else if(phase==="single-capture")await singleCaptureSecurity();else if(phase==="projection")await projectionSecurity();else if(phase==="history")await historySecurity();else if(phase==="graph")await graphSecurity();else await security();})().catch(e=>{console.error(JSON.stringify({error:e.name,code:e.code||null,nativeCase:e.nativeCase||null,message:String(e.message).slice(0,200)}));process.exitCode=1;});
+(async()=>{if(phase==="catalog")captureStateCatalog("STATE_CATALOG_SOURCE_ONLY.SAFE.json",true);else if(phase==="prepare")await prepare();else if(phase==="measure")await measure();else if(phase==="native"||phase==="native-leaf")await nativeSecurity();else if(phase==="control")await controlViewSecurity();else if(phase==="single-capture")await singleCaptureSecurity();else if(phase==="projection")await projectionSecurity();else if(phase==="history")await historySecurity();else if(phase==="graph")await graphSecurity();else await security();})().catch(e=>{console.error(JSON.stringify({error:e.name,code:e.code||null,nativeCase:e.nativeCase||null,message:String(e.message).slice(0,200)}));process.exitCode=1;});

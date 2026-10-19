@@ -239,6 +239,7 @@ const STANDARD = new Set([
   "synthetik-500-eu-service-contract-test.js", // approved closed EU financing/usage contract
   "synthetik-500-eu-daybook-init-test.js", // reine Tagesbuchplanung ohne Reserve, Schreiber oder Laufautoritaet
   "synthetik-500-route-contract-test.js",   // opt-in Route/Deployment/Auth-Auswahl vor Reserve und nach Await-Gates binden
+  "auth-control-view-test.js",             // frische native Bindung; Kontrollsicht niemals Schreibautoritaet
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
   "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist
   "bb-quellen-cutover-operator-test.js",     // enger Landesquellen-Cutover und geschuetzter Rueckweg

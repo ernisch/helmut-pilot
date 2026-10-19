@@ -45,7 +45,7 @@ def main():
     if mode not in ['baseline', 'parts', 'security']:
         raise ValueError('explicit small baseline|parts|security mode required')
     test_phase = os.environ.get('HELMUT_STATE_TEST_PHASE', 'security' if mode == 'security' else 'measure')
-    if test_phase not in (['security', 'native', 'native-leaf', 'history', 'graph', 'projection', 'single-capture'] if mode == 'security' else (['measure', 'read-path'] if mode == 'parts' else ['measure'])):
+    if test_phase not in (['security', 'native', 'native-leaf', 'history', 'graph', 'projection', 'single-capture', 'control'] if mode == 'security' else (['measure', 'read-path'] if mode == 'parts' else ['measure'])):
         raise ValueError('explicit security|native phase requires security mode')
     read_path = test_phase == 'read-path'
     renderer_variant = os.environ.get('HELMUT_STATE_RENDERER_VARIANT', 'original')
@@ -78,6 +78,13 @@ def main():
         raise ValueError('single-capture negatives use their own bounded phase, not state-mode switch tests')
     if test_phase == 'single-capture' and single_capture != '1':
         raise ValueError('single-capture security requires explicit candidate')
+    control_view = os.environ.get('HELMUT_STATE_CONTROL_VIEW', '0')
+    if control_view not in ['0', '1'] or (control_view == '1' and
+            (mode != 'security' or test_phase != 'control' or history_reuse != '1'
+             or graph_reuse != '0' or cas_projection != '0' or single_capture != '0' or loop_mode != '0')):
+        raise ValueError('control view requires own native component phase, other candidates OFF')
+    if test_phase == 'control' and control_view != '1':
+        raise ValueError('control view phase requires explicit candidate')
     manifest = json.loads(MANIFEST.read_text())
     assert manifest['scope'] == 'DIAGNOSTIC_FIXTURE_DATA_ONLY_NO_ACTIVATION'
     assert pin(SOURCE) == manifest['sourcePin']
@@ -177,7 +184,7 @@ def main():
                 '-c', 'log_temp_files=0', '-c', 'track_io_timing=on', '-c', 'work_mem=4MB',
                 '-c', 'wal_compression=off', '-c', 'full_page_writes=on', '-c', 'fsync=on', '-c', 'synchronous_commit=on']
         cid = docker(args, text=True).stdout.strip()
-        save(out / 'STARTED.SAFE.json', {'scope': 'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN', 'name': name, 'database': 'postgres', 'cid': cid, 'parent': parent, 'mode': mode, 'testPhase': test_phase, 'workload': workload, 'rendererVariant': renderer_variant, 'historyReuse': history_reuse == '1', 'graphReuse': graph_reuse == '1', 'casProjection': cas_projection == '1', 'singleWriteCapture': single_capture == '1', 'readPathLoopMode': loop_mode == '1', 'readPathRepeatWrites': repeat_writes, 'expectedLogicalOperations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'expectedCASRequests': 0 if mode == 'security' else (4 + repeat_writes if read_path else (120 if workload == 'mixed-state-process-runs' else 96)), 'operations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'repository': str(REPO), 'fixtureManifestPin': pin(MANIFEST), 'fixturePin': pin(SOURCE), 'harnessPin': pin(__file__), 'kernelMeterPin': pin(REPO / 'scripts/helmut-resource-meter/kernel-meter.py'), 'activation': False, 'GOClaimed': False, 'production': False})
+        save(out / 'STARTED.SAFE.json', {'scope': 'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN', 'name': name, 'database': 'postgres', 'cid': cid, 'parent': parent, 'mode': mode, 'testPhase': test_phase, 'workload': workload, 'rendererVariant': renderer_variant, 'historyReuse': history_reuse == '1', 'graphReuse': graph_reuse == '1', 'casProjection': cas_projection == '1', 'singleWriteCapture': single_capture == '1', 'controlView': control_view == '1', 'readPathLoopMode': loop_mode == '1', 'readPathRepeatWrites': repeat_writes, 'expectedLogicalOperations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'expectedCASRequests': 0 if mode == 'security' else (4 + repeat_writes if read_path else (120 if workload == 'mixed-state-process-runs' else 96)), 'operations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'repository': str(REPO), 'fixtureManifestPin': pin(MANIFEST), 'fixturePin': pin(SOURCE), 'harnessPin': pin(__file__), 'kernelMeterPin': pin(REPO / 'scripts/helmut-resource-meter/kernel-meter.py'), 'activation': False, 'GOClaimed': False, 'production': False})
         docker(['start', cid], text=True, timeout=15)
         for _ in range(100):
             log = docker(['logs', cid], timeout=10)

@@ -16,8 +16,8 @@
     },
     {
       "path": "lib/helmut/auth-state-parts.js",
-      "bytes": 19497,
-      "sha256": "b0a2729a52b1ca0a543b642f458abc3425818e107653b0c88602978d515f7f26"
+      "bytes": 22149,
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
     },
     {
       "path": "lib/helmut/auth-store-cas.js",
@@ -166,8 +166,8 @@
     },
     {
       "path": "lib/helmut/llm-usage-atomic.js",
-      "bytes": 13380,
-      "sha256": "f0a439ccfc965b331cf6a73552dbb3c3ab16596031ea53e9474fce90dfa345a4"
+      "bytes": 23685,
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
     },
     {
       "path": "lib/helmut/matching-begruendung.js",
@@ -251,8 +251,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 545253,
-      "sha256": "f413d1f608749bbbf9eba7e6ab512cf66b6cfa0bb15dd6195e349b4a29c81ad3"
+      "bytes": 545627,
+      "sha256": "88b6d2354d356e6f6f7ab8295c60a389f0efd0ed648e06a26248e1d1a3b2f96f"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -261,8 +261,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-content-runner.js",
-      "bytes": 4453,
-      "sha256": "bd5baf2dafd1c9d25d9b90be7e68d05a8ac2f2a9f00104b78c4d040922b21618"
+      "bytes": 4615,
+      "sha256": "35c0317dfaede5c247fb5777c0515c4a3c7c9f949940bc8d4a33ad43d6d8b331"
     },
     {
       "path": "lib/helmut/synthetik-500-content-worker.js",
@@ -351,8 +351,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-production-adapter.js",
-      "bytes": 28187,
-      "sha256": "a554149bed8a66febb17273149e545d9ae3a88970a8dad8036fab6d6d89d4b5c"
+      "bytes": 28287,
+      "sha256": "124ed8275efd479ae922ee493d15186701afeaafdbcc1b6def014399e28d34f3"
     },
     {
       "path": "lib/helmut/synthetik-500-production-command.js",
@@ -445,11 +445,11 @@
       "sha256": "0d4f52725c0273420c10ff3506f6135bb2232a47992ef10c7811962780b9ef41"
     }
   ],
-  "sourceMappingSHA256": "9be175599f653729a835debab376b9f6ca4f7d102a7ebb8e91ec59ff62d336cf",
+  "sourceMappingSHA256": "159ef70fff25a8a4fe7b4475a8cf7e853369e7926e04bc96f245d551683d79cb",
   "currentCandidateFull500Qualification": false,
-  "candidateQualificationScope": "LOCAL_MOCK_CALENDAR_WRITER_AND_TARGETED_REJECTION_CASES_ONLY; FULL500_TIMING_MEMORY_PRODUCTION_NOT_QUALIFIED",
-  "priorManifestCommit": "9dba68cacb51d664a01a84d86a8548852d70d867",
-  "priorManifestSHA256": "d4ea8cca3deb09c945c6c697b070295bf24d719b82d00dc5ff7e5114d92a1583",
-  "priorSourceMappingSHA256": "2e030880e67f59aafdcdace04bd2103888ad814fac70a9d081a1066eefb8626b",
+  "candidateQualificationScope": "LOCAL_DEFAULT_OFF_CONTROL_VIEW_AND_NATIVE_COMPONENT_SECURITY_ONLY; COMMON_RAM_OFFLINE90_UNIT60_AUTH30_FULL500_PRODUCTION_NOT_QUALIFIED",
+  "priorManifestCommit": "c5e4d2d5a2ecf9b7766e3d32eb55a87db0e971b9",
+  "priorManifestSHA256": "d14bbb3f7e281cd815c6043814a0012810984d21ff15144bc9791c26628e6c34",
+  "priorSourceMappingSHA256": "9be175599f653729a835debab376b9f6ca4f7d102a7ebb8e91ec59ff62d336cf",
   "contentQualificationEvidenceIsHistoricalOnly": true
 }
