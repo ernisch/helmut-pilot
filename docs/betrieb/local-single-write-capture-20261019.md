@@ -2,7 +2,8 @@
 
 Arbeitsbranch: `codex/single-write-capture-20261019`, Basis
 `588a33d5ec595972f1ee0c13de62260237aef000`. Ausschließlich lokaler Kandidat;
-Standardpfad unverändert, Kandidat OFF. Keine Production-Freigabe oder500-Abnahme.
+Standardpfad unverändert, Kandidat OFF. **Auch W46 zeigt keinen gemeinsamen
+RAM-Gewinn.** Keine Production-Freigabe oder500-Abnahme.
 
 ## Belegter Ausgang und Grenze der Ursachenbestimmung
 
@@ -55,6 +56,7 @@ bleiben bei der vorgesehenen W46-Vergleichsmessung OFF.
 | Bisheriger Codec-Test |14Gruppen PASS | Root-/Typ-/Hash-/Grenz- und Änderungsfälle |
 | Bisheriger Write-Reuse-Test |11Gruppen PASS | Unveränderte Wiederverwendungs-/Fallback-/Manipulations-/Budgetregeln |
 | Neue gezielte Descriptor-/Quellbindungsprüfung |1Unittest PASS | Kandidat erreicht keinen500er Descriptor; keine versteckte Umgebungsdrift |
+| Kleine native W46-Sicherheitsfixture `single-capture-13db641253` |4Gruppen PASS | Echte lokale Datenbankzugriffe: In-flight-Änderung, veralteter CAS, manipulierte Bestätigung nach tatsächlichem Commit, vollständige logische Wiederherstellung |
 
 Die pure Zählprüfung zeigt **3→2 JSON.parse-Aufrufe einschließlich neuer
 Verbrauchseinträge**: genau eine vollständige Zustandskopie entfällt. Dies ist
@@ -63,11 +65,59 @@ Erfolg, CAS-Konflikt, unbekanntes Ergebnis und falschen ACK-Root. Änderungen an
 Aufruferzustand und Kostenobjekt während des Await ändern weder gesendete Inhalte
 noch bestätigte Daten; keine falsche Kostenquittung und kein automatischer Retry.
 
-Die vorhandene kleine native Fixture ist für vier neue Sicherheitsgruppen und
-das identische gemeinsame Ressourcenpaar verdrahtet. **Noch nicht ausgeführt**:
-echte native W46-Datenbankprüfung, W46-RAM-/CPU-/Temp-/WAL-/Langsamstaufrufmessung,
-vollständige Unit60/Auth30/Offline90,500Profile/1500Ergebnisse/8000Kontrollen.
-Keine500er-Freigabe wird beansprucht.
+Die native Fixture ist vollständig abgeschlossen, eigene Prozesse beendet,
+Originalpins und gesamte ursprüngliche Verbrauchshistorie erhalten. Ihr
+582.922.240B-Peak enthält kein gemeinsames Loopdateisystem und ist ausdrücklich
+kein Ressourcenvergleich. Der native CAS läuft dabei im bisherigen Modus;
+W45-Projektion und Graphcache bleiben aus.
+
+## Tatsächlich ausgeführtes gemeinsames W46-Vergleichspaar
+
+Baseline `read-path-b2fb398fed`, Kandidat `read-path-011551cdbc`. Bestehender
+Kernelmeter mit eigenem1GiB-Loopdateisystem, identischem Padding und32 zusätzlichen
+Schreibvorgängen; alle Prozesse, Datenbank, Helper, Dateicaches und letztes
+Prozessende bleiben in der gemeinsamen Gruppe. Kein Profiler, keine Änderung
+von Speicherhülle, WAL-Einstellungen, Originalen oder Sicherheitsvertrag.
+
+| Messwert | Kandidat OFF | Einzel-Snapshot ON |
+|---|---:|---:|
+| Vollständiger gemeinsamer Kernelpeak |890.748.928B|907.329.536B|
+| Gemeinsame CPU-Zeit |56,400522s|57,013037s|
+| Vollständige eigene Lebensdauer |66,716342367s|65,211216597s|
+| Summe42 gemessener Aufrufzeiten |12,963082s|12,493485s|
+| Summe34 gemessener Schreibaufrufe |10,131528s|10,079625s|
+| Median Schreibaufruf |292,413683ms|289,719561ms|
+| Langsamster Schreibaufruf |359,891855ms|426,550650ms|
+| Langsamster gemessener Aufruf |704,039242ms|536,261998ms|
+| Antwortbodybytes |505.304.460B|505.304.460B|
+| Beobachtete kumulierte DB-Tempbytes |458.960.409B|458.960.409B|
+| WAL-Statistikdifferenz im nativen Messfenster |1.113.867B|1.113.926B|
+
+**Kein RAM-Gewinn: +16.580.608B.** Eine vollständig entfernte JSON-Decodierung
+beweist keine niedrigere gemeinsame Speicherspitze. Keine Wiederholung des
+Paares, keine nachträgliche Addition unabhängiger Peaks und keine Hochrechnung
+auf500Profile. Die Lebensdauer dieses Diagnoseaufbaus ist weder Unit60 noch
+Auth30. Beide eigenen Metergruppen einschließlich Storagehelper sind am Ende
+leer; Datenintegrität und Originalbindungen bestanden.
+
+Die unabhängige lokale Abschlussprüfung bestätigt Belegintegrität **PASS** und
+RAM-Verbesserung **FAIL**: gleiche Quellen/Fixture,22nativeFunktionshashes und
+15State-Katalogfunktionen, je42Aufrufe/34gemesseneWrites/36CAS/120vollständige
+HTTP200-Bodies. Beide zusätzlichen Padding-CAS liegen außerhalb der einzelnen
+SQL-Fenster, aber vollständig im Wireprotokoll. Nur den inneren Materializer
+auswerten, keine inklusiven Elternzähler addieren. Tempstatistiken sind kumulativ,
+WAL-Werte kein RAM-Anteil. Langsamster Schreibaufruf+18,52%; auch die kürzere
+Gesamtlebensdauer beweist keine ausreichende Unit60-/Auth30-Reserve.
+
+Bericht `wave46-single-write-capture/INDEPENDENT_COMPLETION_AUDIT.SAFE.json`,
+SHA256 `10cd3529b19dd6242195905db495fac6876820d04adc370420291ed230ce1900`.
+Nur Beleg-/Runtime-/Cleanupprüfung, keine kritische DeepSeek-Codeabnahme.
+Source-only Nativekataloge sind strictAccepted; installierte Diagnosekataloge
+bleiben wegen der zusätzlichen restriktiven `bench_writer/main-auth`-Policy
+ehrlich strictAccepted=false. Daraus keine500er-Katalogabnahme ableiten.
+
+**Weiter nicht ausgeführt:** vollständige Unit60/Auth30/Offline90,
+500Profile/1500Ergebnisse/8000Kontrollen. Kein500er-GO beansprucht.
 
 ## Konkreter Plattenblocker und separat freizugebender Plan
 
@@ -102,27 +152,33 @@ auf dem vollständig gepinnten Root-Audit; der Prüfer hat diese wegen fehlender
 direkter Docker-Layerrechte nicht separat neu vermessen. Reihenfolgevariationen
 der Docker-Mountliste werden ausschließlich nach Zielpfad normalisiert.
 
-Nichts entfernt. Der Executor verlangt zuerst eine **tatsächliche neue
-Betreiberfreigabe für genau diese sieben IDs** und wiederholt vor der ersten
-Entfernung alle Identitäts-/Archiv-/Abhängigkeitsprüfungen. Frühere Freigaben
-für andere zehn/neun Hüllen gelten nicht für diese sieben.
+Nach tatsächlichem neuem Betreiber-`Go` auf genau diese Anfrage hat der unverändert
+geprüfte Executor sämtliche Identitäts-/Archiv-/Abhängigkeitsprüfungen frisch
+bestanden und **genau die sieben IDs einmal entfernt**. Archiv, alle Daten,
+Volumes/Images/Originale und laufende Original-PG mit PID2083 sind erhalten.
+Keine anderen Löschungen; die Freigabe gilt nicht für neue Diagnosehüllen.
 
-Im Plan waren9.855.721.472B frei. Rechnerisch wären anschließend16.236.388.352B
-frei; tatsächlichen Gewinn erst nach genehmigter Entfernung messen. Zur
-vollständigen500er Plattenreserve16.589.934.592B fehlen danach weiterhin
-**353.546.240B**. Der Plan ermöglicht die kleine Qualifizierung, keinen500er Start.
+Im Plan waren9.855.721.472B frei; seine Prognose war keine Ist-Zusage. Tatsächlich
+stieg die freie Kapazität bei der Entfernung von9.855.365.120 auf16.257.400.832B:
+**6.402.035.712B netto frei geworden**. Zur vollständigen500er Reserve fehlten
+zu diesem Zeitpunkt332.533.760B. Die anschließenden drei gezielten Fixtures
+erzeugten neue eigene Hüllen und Daten; danach11.417.579.520B frei, also
+5.172.355.072B unter der500er Reserve. Beide Werte sind zeitgebundene Beobachtungen.
+Neue Hüllen/Daten/Belege bleiben erhalten; keine pauschale weitere Löschung.
 
 ## Nächster notwendiger Schritt
 
-Genaues neues Lösch-GO einholen. Danach ausschließlich die sieben geprüften
-Hüllen frisch prüfen/entfernen und Ist-Kapazität messen. Anschließend mit der
-bestehenden Messinfrastruktur erst native Sicherheitsfälle, dann das identische
-kleine OFF/ON-Paar einschließlich gemeinsamem Kernelpeak, CPU, Temp/WAL,
-Antwortzeiten und tatsächlicher Datenintegrität durchführen. Kein neuer Motorumbau.
+Die konkrete Bereinigung und die vorbereitete kleine Qualifizierung sind
+abgeschlossen. Die Änderung bleibt OFF; **kein weiterer vollständiger Lauf auf
+dieser Grundlage empfohlen**. Der gewünschte gemeinsame RAM-Vorteil fehlt.
+Keine weitere Wiederholung und keine neue Cache-/WAL-/Speicherhüllenvariante.
 
-Vor einer Empfehlung für den vollständigen Lauf fehlen ein relevanter
-gemessener Vorteil, die unabhängige kritische Codeabnahme, ausreichende aktuelle
-Plattenreserve sowie neue Start-/Tages-/Codebindung und separates500er-GO.
+Vor einer Empfehlung für den vollständigen Lauf fehlen weiterhin ein relevanter
+gemessener RAM-Vorteil, die unabhängige kritische Codeabnahme, ausreichende aktuelle
+Plattenreserve sowie neue Start-/Tages-/Codebindung und separates500er-GO. Der
+verbleibende anonyme Speicher lässt sich aus den Altbelegen nicht einem exakten
+Allokationsobjekt am500er Peak zuordnen; diese Beleglücke nicht durch eine weitere
+unbewiesene Einsparungsbehauptung ersetzen.
 W45s einmaliger bezahlter DeepSeek-Pro-High-Aufruf endete am Ausgabelimit ohne
 Abnahme; keine Wiederholung und kein weiterer kostenpflichtiger Aufruf erfolgt.
 Die Codex-Planprüfung ersetzt diese kritische Codeabnahme ausdrücklich nicht.
