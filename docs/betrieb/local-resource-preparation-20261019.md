@@ -68,20 +68,41 @@ Der bestehende Vorabcheck verlangt passende tatsächliche DeepSeek-Pro-High-
 Reviewbelege für die neue Quellen-/Autoritätsbindung und vollständige Verbraucher-
 abdeckung. Alte Quellpins passen nicht zu geändertem Code. Codex-Abnahmen werden
 nicht als DeepSeek ausgegeben; Reviewer-/Statusprüfungen bleiben unverändert.
-Genau ein anschließend ausdrücklich freigegebener bezahlter Pro-High-Leseaufruf
-ist abgeschlossen, Status`blocked`,86.371 Eingabe-/13.779 Ausgabetokens. Keine
-automatische Wiederholung. Das noch aufV7/13 Marker/Subnetz244 bezogene
-Abdeckungsdokument ist auf den tatsächlichenV8/15/243-Stand korrigiert.
-Die zusätzliche Beanstandung8089 gegenüber8689 Sekunden ist anhand des gesamten
-Startpfads eingegrenzt: vollständiges8689,543088s-Prüftor vor Setup und erneut
-nach Datenbankbereitschaft, zusätzlich8089,543088s-Laufzeitprüfung in der
-finalen gebundenen Autorität. Vier gezielte Zeitgrenzfälle und drei bestehende
-Sicherheitsprüfungen bestanden. Ausführbarer Code und Vertrag unverändert.
-Die frühere blockierte Antwort wird nicht als Abnahme verwendet. Die konkrete
-frische Nachprüfung ist vorbereitet, jedoch ohne neues ausdrückliches Provider-GO
-nicht ausgeführt. Die neue vollständige32/32-Abnahme und ein separates ausdrücklich
-auf den neuen Kandidaten bezogenes Ressourcen-GO bleiben offen. Noch kein
-Startbereitschafts- oder vollständiger500er-/Zeit-/Speichernachweis.
+Drei jeweils separat ausdrücklich freigegebene Pro-High-Aufrufe sind beendet:
+1. Erster vollständiger Befundbericht`blocked`: veralteterV7-Dokumentstand und
+   Frage zur8689/8089-Sekunden-Reserve.
+2. Nachprüfung nach406,818s unvollständig am32768-Token-Limit; keine Abnahme.
+3. Auf genau diese zwei Befunde begrenzter Abschluss nach201,727s vollständig`ok`.
+Keine automatische Wiederholung und keine Modell-/Zeit-/Speichervertragsänderung.
+Die blockierte Antwort und der unvollständige Versuch bleiben aufbewahrt.
+Vier Zeitgrenzfälle und drei vorhandene Sicherheitsprüfungen positiv;
+ausführbarer Motor-/Messcode unverändert.
+
+Kandidat`a2521b52a505` mit neuem unautorisierten Intent vorbereitet,
+allowDispose ausdrücklichfalse.26 gepinnte Programmvorlagen,149 inventarisierte
+Codedateien und202 Quellen-/Belegdateien gebunden. Keine Laufautorität oder
+Ressourcenreservierung/Aktivierung.
+
+Vorprüfung zunächst31/32: nachCloudstart fehlte das Dateisystemwerkzeug.
+Historisches mke2fs-Binary SHA
+`86706a8f295ffc70ff52d2510decc49c15e91144622b17d02916e50d37187c7c`
+samt Konfiguration/fünf Bibliotheken aus vorhandener gepinnterPG-Instanz nur
+lesend kopiert,1034846B. Keine Installation/Downloads/Formatierung/DB-Änderung.
+Danach **32/32 in19,197s**;229 Dateien/140.746.041B in tatsächlicher Containersicht
+vollständig geöffnet/gehasht, alle Mounts nur lesbar. Finanzprüfung19.10. mit40
+Büchern/keinen fehlenden Tagen, Originalzustand erhalten. Node24.19.0,Python3.12.14,
+cgroupv2/vfs undPG-Image positiv.149 Dateien/26223 Guardstellen gebunden.
+
+Unabhängige Codex-Schlussabnahme bestätigt32 eindeutigePASS,249 Dateipins samt
+allen202 Abnahmequellen,149 Inventardateien/229 Inputs sowie ehrlich begrenzte
+historische Core-Abnahme. Um06:13:33UTC noch9986,29s gegenüber8689,543088s Pflicht.
+
+Ergebnis ausdrücklich`pass:false`, `technicalReady:true`, `MISSING_NEW_OPERATOR_GO`.
+Neues auf diesen Kandidaten begrenztes lokales Ressourcen-GO und frischer32-Check
+mit echter Freigabe sind vor jeder Reservierung/Aktivierung Pflicht. Fensterende
+08:59:59,999UTC; spätester Start06:35:10,455912UTC am19.10. (09:35Istanbul).
+Keine Verlängerung oder stillschweigende neue Freigabe. Noch kein neuer500er-/Zeit-/
+Gesamtspeichernachweis. Startvorschlag und unabhängige Ergebnisprüfung inW42.
 
 ## Belege
 
