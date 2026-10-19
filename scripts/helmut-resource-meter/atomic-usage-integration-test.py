@@ -8,6 +8,19 @@ spec=importlib.util.spec_from_file_location('atomic_staging_connector',BIN/'conn
 C=importlib.util.module_from_spec(spec);spec.loader.exec_module(C)
 
 class AtomicIntegrationTest(unittest.TestCase):
+    def test_unqualified_graph_mode_cannot_enter_full_run_or_hide_source_drift(self):
+        code=r"""
+const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),S=require('./scripts/helmut-resource-meter/start-input-checks');
+const R=require('./lib/helmut/synthetik-500-content-runner'),assert=require('node:assert/strict');
+const p=JSON.parse(process.argv[1]),mode='verified-graph-reuse-v1',key='HELMUT_AUTH_GRAPH_READ_REUSE';
+for(const value of [mode,'off','unknown'])assert.throws(()=>AU.environment({[key]:value},p),/no admitted full-run binding/);
+assert.throws(()=>AU.descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',graphReadReuse:mode}),/no admitted full-run binding/);
+assert.equal(AU.descriptor().graphReadReuse,undefined);
+delete process.env[key];const plain=R.sourceBinding();process.env[key]=mode;assert.notEqual(R.sourceBinding(),plain);
+process.env[key]='caller-graph-sentinel';const expected=S.actualSourceBinding({atomicUsageInput:p});
+assert.equal(process.env[key],'caller-graph-sentinel');delete process.env[key];assert.equal(S.actualSourceBinding({atomicUsageInput:p}),expected);
+"""
+        subprocess.run(['node','-e',code,json.dumps(self.p)],cwd=BIN.parents[1],check=True,capture_output=True,text=True)
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name)

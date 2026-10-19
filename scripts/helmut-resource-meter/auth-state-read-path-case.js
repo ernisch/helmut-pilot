@@ -14,6 +14,7 @@ Object.assign(process.env,{HELMUT_STORAGE_BACKEND:"supabase",SUPABASE_URL:"http:
 const DEADLINE_MS=120000,deadlineAt=Date.now()+DEADLINE_MS;
 function tick(){if(Date.now()>deadlineAt){const e=Error("read-path deadline exceeded");e.code="READ_PATH_DEADLINE";throw e;}}
 if(receipt.historyReuse)process.env.HELMUT_AUTH_HISTORY_READ_REUSE="verified-history-reuse-v1";
+if(receipt.graphReuse)process.env.HELMUT_AUTH_GRAPH_READ_REUSE="verified-graph-reuse-v1";
 const rawFetch=global.fetch,wire=[];
 global.fetch=async(url,options={})=>{
  const text=String(url);

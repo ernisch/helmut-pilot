@@ -126,7 +126,7 @@ function actualSourceBinding(plan) {
   // The CLI has a deliberately empty runtime environment. Bind the mode that
   // the exact pinned descriptor installs, as the actual assembly does. This
   // synchronous source-only call cannot activate a storage reader or writer.
-  const keys = ['HELMUT_LLM_USAGE_STORAGE', 'HELMUT_AUTH_STATE_STORAGE', 'HELMUT_AUTH_HISTORY_READ_REUSE', 'HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'];
+  const keys = ['HELMUT_LLM_USAGE_STORAGE', 'HELMUT_AUTH_STATE_STORAGE', 'HELMUT_AUTH_HISTORY_READ_REUSE', 'HELMUT_AUTH_GRAPH_READ_REUSE', 'HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'];
   const before = keys.map(k => process.env[k]);
   try {
     if (plan.atomicUsageInput) {

@@ -34,9 +34,12 @@ function pin(file) {
   const b = fs.readFileSync(file);return { path: file, bytes: b.length, sha256: sha(b) };
 }
 function pinned(p) { assert.deepEqual(pin(p.path), p);return fs.readFileSync(p.path); }
-function descriptor({ stateStorage = null, historyReadReuse = null, localCalendar = null } = {}) {
+function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReuse = null, localCalendar = null } = {}) {
   assert(stateStorage === null || stateStorage === "merkle-auth-v1");
   assert(historyReadReuse === null || (historyReadReuse === "verified-history-reuse-v1" && stateStorage === "merkle-auth-v1"));
+  // The graph candidate is qualified only by isolated component fixtures so
+  // far. No full-run descriptor may silently admit an unmeasured new mode.
+  assert(graphReadReuse === null, "Graph reuse has no admitted full-run binding");
   if (localCalendar !== null) require(path.join(ROOT, "lib/helmut/synthetik-500-local-calendar")).validatePolicyData(localCalendar);
   return { schema: "helmut-local-atomic-usage-resource-input/1", mode: MODE, production: false,
     ...(stateStorage ? { stateStorage } : {}), ...(historyReadReuse ? { historyReadReuse } : {}),
@@ -51,6 +54,7 @@ function readDescriptor(p) {
 }
 function environment(env, p) {
   const d = readDescriptor(p);assert(!env.VERCEL && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
+  assert(env.HELMUT_AUTH_GRAPH_READ_REUSE === undefined, "Graph reuse has no admitted full-run binding");
   assert(env.HELMUT_LLM_USAGE_STORAGE === undefined || env.HELMUT_LLM_USAGE_STORAGE === MODE);
   assert(!env.HELMUT_AUTH_STATE_STORAGE || env.HELMUT_AUTH_STATE_STORAGE === d.stateStorage);
   assert(env.HELMUT_AUTH_HISTORY_READ_REUSE === undefined || env.HELMUT_AUTH_HISTORY_READ_REUSE === d.historyReadReuse);
@@ -122,7 +126,7 @@ const STATE_FUNCTION_SHAPES = Object.freeze({
   helmut_auth_state_children_local_v1: ["text", "text[]", "i"],
   helmut_auth_state_nodes_guard_local_v1: ["", "trigger", "v"],
   helmut_auth_state_put_nodes_local_v1: ["text, text, jsonb", "void", "v"],
-  helmut_auth_state_expand_local_v1: ["text, text, text, boolean", "jsonb", "s"],
+  helmut_auth_state_expand_local_v1: ["text, text, text, boolean, boolean", "jsonb", "s"],
   helmut_auth_state_assert_root_local_v1: ["jsonb", "jsonb", "i"],
   helmut_auth_state_assert_data_local_v1: ["jsonb", "void", "i"],
   helmut_auth_state_auth_guard_local_v1: ["", "trigger", "v"],
