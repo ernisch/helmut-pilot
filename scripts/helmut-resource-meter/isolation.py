@@ -94,7 +94,7 @@ def verify_pre_setup_authority(recipe,*,planning=False):
                 raise RuntimeError('independent complete500 connection acceptance missing')
     connection=pin_json(recipe['fixtureConnectionPin'])
     verify_connection_files(connection)
-    if connection.get('schema')!='helmut-pinned-full500-connection/1' or connection.get('day')!='2026-10-18' or connection.get('production') is not False:
+    if connection.get('schema')!='helmut-pinned-full500-connection/1' or connection.get('day')!=A.DAY or connection.get('production') is not False:
         raise RuntimeError('exact local current500 connection missing')
     owner=pin_json(recipe['freshOwnerGO'])
     verify_fixture_owner_policy(owner)
@@ -109,7 +109,7 @@ def verify_pre_setup_authority(recipe,*,planning=False):
         raise RuntimeError('historical GO or non-single attempt prohibited')
     if owner.get('targetDatabase')!=connection['targetDatabase'] or recipe['expectedFreshOperationId']!=connection['operationId']:
         raise RuntimeError('GO/connection/operation binding mismatch')
-    # Only the exact independently reviewed day18 proposal may qualify this
+    # Only the exact independently reviewed current-day proposal may qualify this
     # connection. A caller-supplied day/version alone grants no authority.
     day=pin_json(recipe['dayBindingAcceptance'])
     descriptor=pin_json(connection['atomicUsageInput']) if connection.get('atomicUsageInput') else None
@@ -117,7 +117,7 @@ def verify_pre_setup_authority(recipe,*,planning=False):
     now=datetime.now(timezone.utc);valid,start,end=Calendar.current_window(day,now=now)
     if acceptance.get('dayBindingAcceptance')!=recipe['dayBindingAcceptance'] or (local is None and day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER'):
         raise RuntimeError('independently adopted exact current-day binding missing')
-    if day.get('day')!='2026-10-18':raise RuntimeError('actual accounting day outside reviewed binding')
+    if day.get('day')!=A.DAY:raise RuntimeError('actual accounting day outside reviewed binding')
     independent=pin_json(day['independentReview'])
     if independent.get('model')!='deepseek-v4-pro' or independent.get('route',{}).get('effort')!='high' or independent.get('payload',{}).get('summary',{}).get('status')!='ok':
         raise RuntimeError('current-day independent semantic acceptance missing')
@@ -187,7 +187,7 @@ def claim_full_attempt(recipe,cid,recipe_path):
 def verify_connection_files(connection):
     staged=pin_json(connection['stagedHarness'])
     case=Path(connection['caseDirectory']);suffix=case.name.removeprefix('attempt-')
-    if connection['targetDatabase']!='helmut_resource_fixture_20261018_'+suffix or connection['containerName']!='helmut-meter-db-w20-'+suffix or connection['operationId']!='synthetik500-resources18-'+suffix:
+    if connection['targetDatabase']!='helmut_resource_fixture_'+A.DATE_TAG+'_'+suffix or connection['containerName']!='helmut-meter-db-w20-'+suffix or connection['operationId']!='synthetik500-resources'+A.DAY[-2:]+'-'+suffix:
         raise RuntimeError('owned case/target/container/operation binding mismatch')
     if staged['caseDirectory']!=str(case):raise RuntimeError('staged case mismatch')
     for p in connection['immutableWorkflowPins']:
@@ -614,12 +614,12 @@ def close_failed_owned_setup(connection_pin,invocation_id):
     connection=pin_json(connection_pin);case=Path(connection['caseDirectory']);suffix=case.name.removeprefix('attempt-')
     if case.parent!=Path('/workspace/helmut-parallel-20261015/wave20-resource-integration') or len(suffix)!=12 or any(c not in '0123456789abcdef'for c in suffix):
         raise RuntimeError('owned error cleanup case invalid')
-    parent='/helmut-meter-resources18-'+suffix
+    parent='/helmut-meter-resources'+A.DAY[-2:]+'-'+suffix
     ids=K.docker(['ps','--all','--quiet']).stdout.split()
     containers=json.loads(K.docker(['inspect',*ids]).stdout)if ids else []
     owned=[row for row in containers if row['HostConfig']['CgroupParent']in [parent+'/application',parent+'/database',parent+'/storage']]
     # Existing stop interfaces first. Fixed disjoint directories only.
-    for stop in [case/'application/broker/STOP',case/'database/STOP_DATABASE',A.METER/('full500-owned-storage18-'+suffix)/'STOP']:
+    for stop in [case/'application/broker/STOP',case/'database/STOP_DATABASE',A.METER/('full500-owned-storage'+A.DAY[-2:]+'-'+suffix)/'STOP']:
         if stop.parent.is_dir()and not stop.exists():K.save_new(stop,{'ownedFailureClose':True})
     stopped=[]
     for row in owned:

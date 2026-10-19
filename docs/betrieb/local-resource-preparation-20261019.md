@@ -1,99 +1,90 @@
-# Lokale Vorbereitung für den19.10.2026
+# Lokale Ressourcen-Vorbereitung19.10.2026
 
-Stand18.10.,20:34UTC. Kein Ressourcenlauf, keine Profilaktivierung, kein neues
-Ressourcen-GO beansprucht. Production bleibt gesperrt.
+Stand19.10.UTC. Die zwei ausdrücklich freigegebenen Vorbereitungen sind erledigt.
+Kein neuer500er Ressourcenlauf, keine Profilaktivierung, kein Ressourcen-GO
+beansprucht. Production, Merge, Deployment und bezahlte Productiontests gesperrt.
 
-Die konkret genehmigte Speicherbereinigung ist abgeschlossen. Genau45
-historische PGDATA-Inhalte und vier beendete Dockerhüllen wurden nach frischem
-vollständigem Archiv-/Quellvergleich und Prüfung aller Prozess-/Mountabhängigkeiten
-entfernt. Tatsächlicher Gewinn7.750.991.872 B; anschließend18.553.761.792 B frei
-gegenüber16.589.934.592 B vorgeschriebener Reserve. Archiv, Originale, Original-PG
-PID1578, alle Volumes/Images/Loopbindungen und übrige Belege blieben erhalten.
-Neu erstellte notwendige19.10.-Eingabebelege beanspruchen danach zusätzlichen
-Platz; die Reserve ist vor einem Lauf erneut tatsächlich zu prüfen.
+## Tatsächlich abgeschlossene Maßnahmen
 
-## Eingaben, keine Ausführung
+Genau drei beendete Hüllen des Fehlversuchs20e nach frischen vollständigen
+Identitäts-/Sicherungs-/Diff-/Mountprüfungen entfernt: Storage `4fe244c69409`,
+Broker `74e59736a122`, App `99cbb1e8a61f`. Tatsächlich2.734.972.928B netto
+gewonnen, danach17.137.647.616B frei. Archiv mit13 Mitgliedern unverändert;
+Datenbankcontainer, alle Volumes/Images/Originale und Belege erhalten.
+Keine Force-/Volume-/Prune-Option und keine manuelle VFS-Löschung.
 
-Der bestehende Tagesbinder unterstützt zusätzlich ausschließlich19.10.;16→17/18
-bleiben erhalten. Der ursprüngliche Quellenbeginn13.10., maximal neun Stunden,
-UTC-/Berliner Tagesgleichheit, beide Fensterenden, alle500 Eingaben und sämtliche
-ursprünglichen Integritäts-/Quellen-/Fachprüfungen bleiben unverändert.
+Die ursprüngliche lokale PostgreSQL-Instanz war durch den Cloud-Neustart bereits
+mitExit255 beendet. PG17-Kontrolldaten und exaktes bestehendes Image/Volume/
+Loopbackbindungen rein lesend geprüft, dann dieselbe Instanz wieder aufgenommen.
+Keine Neuinitialisierung. Sämtliche Original-/Vorgängerbindungen danach nativ
+vollständig bestätigt.
 
-Tatsächlich erzeugter Vorschlag19.10.,00:00–08:59:59,999UTC (03:00–11:59:59,999
-Istanbul): alle500 Tagesanlässe an beiden Enden identisch aus vorhandenen Quellen
-hergeleitet. Alle500 vollständigen Eingaben sind gegenüber den unabhängig
-angenommenen18.10.-Eingaben nach Ausgleich nur der Tageskennung/Inputhashes und
-der vorläufig leeren Urteile exakt gleich.380 relative Anzeigen aus16.10. nutzen
-weiter ihre echten Publikationszeiten15.10. Keine neue Veröffentlichung oder
-kein neues Ereignis am19.10. wird behauptet.
+Genau eine neue Kopie `helmut_resource_input_20261019_e400dff25393` aus dem
+gepinten korrigierten18.10.-Dump hergestellt. Vor der Änderung alle13 öffentlichen
+Relationen, Profile, Identitäten, OriginalU und vollständigen Finanzzeugen
+verglichen. Ausschließlich das belegte Nullbuch18.10. plus Buchkapazität39→40
+atomar ergänzt; Geldgrenzen, bestehende Historie und vollständige Zähler unverändert.
+Vorher nativerAuth-SHA `5da973fb04fa285ff8c192de0beab8cc53b705179f2de46f91d659c83be57634`,
+nachher `f1a1bb64e96d854712ffa8a714a5eb5021b3b7ec65fd93aba42d054d3a8c61ef`.
+Nach Rücknahme nur dieses erlaubten Deltas ist der ganze vorherige Zustand gleich.
+Finanzprojektion19.10. besteht; das aktuelle19.10.-Buch ist ausschließlich die
+spätere normale Laufzeitprojektion, keine hier zusätzlich gebuchte Änderung.
+Kopier-/Korrekturvorbereitung11.937,629ms, außerhalb der gemessenen Motorlaufzeit.
+Nach der Kopie17.113.182.208B frei bei16.589.934.592B unveränderter Pflichtreserve.
 
-DeepSeek Flash High lieferte ausschließlich die zwei Datumserweiterungen und
-die zugehörige Fehlermeldung. Syntaxprüfung und drei gezielte Grenzfälle
-(20.10., mehr als neun Stunden, veränderter Quellenbeginn) bestanden. Der erste
-Aufrufer ohne die erforderliche Veröffentlichungspolitik wurde sicher
-zurückgewiesen. Der erfolgreiche Aufrufer lädt ausschließlich den unveränderten
-originalen Politikwert, keine Datenbankzugänge. Sperrhash
-`274033cdfdd5f1527d0e961a6c00482d61b7be317eeea03e736a6a5948aa6a04`,
-weiterhin eine zurückgehaltene Publikation.
+Aufrufer und Ergebnis unabhängig durch Codex geprüft, ohne bezahlten Modellaufruf.
+Ergebnisprüfung bestätigt74 Dateipins,13 Archivmitglieder und die vollständige
+native Finanzdifferenz. Schemen-/Sequenztreue des Restores stützt sich auf das
+exakte gepinnte Archiv und erfolgreichen transaktionalen pg_restore; separate
+Schema-/Sequenzfingerprints wurden nicht behauptet. Die13 Tabelleninhalte wurden
+vollständig verglichen. Alle vorhandenen Aktiv-Flags blieben gleich; keine neue
+Profilaktivierung oder Versorgung.
 
-Getrennter DeepSeek-Pro-High-Review der exakten Tagesübernahme positiv. Sol hat
-den Vorschlag vollständig neu aufgebaut und mit den ursprünglichen A/F/L-
-Prüfungen übernommen:500A,500F,500L an jedem Fensterende,23.008 Positionen.
-Das ist prospektive Eingabevorbereitung, kein aktueller 32-Punkte-Startnachweis.
+## Gültige Eingaben und neue feste Bindung
 
-## Konkrete Freigabegrenze
+500 Eingaben für19.10.,00:00–08:59:59,999UTC (03:00–11:59:59,999Istanbul) sind
+bereits mit den unveränderten A/F/L-Prüfungen angenommen:500A,500F,500L an beiden
+Fensterenden und23.008 Positionen. Keine erneute Fachabnahme, erfundene Quellen
+oder umgeschriebenen Publikationszeiten. Tages-/Inputhashes bleiben an den
+konkreten vollständig geprüften Vorschlag gebunden; Veröffentlichungssperre bleibt.
 
-Der bisher korrigierte lokale Eingang
-`helmut_resource_input_20261018_ab76c911dac8` enthält39 Bücher bis17.10.,5.000
-unveränderte Historienzeilen und eine vollständig leere native Zählertabelle.
-Die frische native RO-Prüfung stimmt mit allen vorherigen Korrekturbelegen
-überein. Die unveränderte Finanzprüfung für19.10. lehnt das fehlende historische
-18.10.-Buch ab; das aktuelle19.10.-Buch entsteht erst in der normalen späteren
-Laufzeitprojektion.
+Der lokale Harness bindet jetzt fest19.10./V8, den neuen korrigierten Eingang,
+Ressourcen-/Zielnamen19 und alle15 unveränderten alten verbrauchten Marker
+inklusiveV7. Die gemeinsame Dateiliste enthält18 Daten-/Provenienzdateien;
+keine alte Ownerfreigabe wird als neue Laufautorität geöffnet oder wiederverwendet.
+Tatsächliche reine Datenbankprüfung der gesamten16/17/18-Korrekturkette bestanden.
+Freies nächstes Subnetz172.16.243.0/24 gegen alle vorhandenen Docker-Netze und
+nichtstandardmäßigenIPv4-Routen nachgewiesen. Alte Netze bleiben erhalten.
 
-Ein exakt begrenzter, noch unangewendeter Vorschlag ergänzt ausschließlich das
-nachgewiesene Nullbuch18.10. in der neuen, bislang nicht vorhandenen Kopie
-`helmut_resource_input_20261019_e400dff25393`; Buchkapazität39→40 ist Metadatum,
-kein höheres Geldlimit. Vollständige Historie/Zähler belegen null Verbrauch.
-PostgreSQL berechnet im reinen SELECT den Sollhash
-`f1a1bb64e96d854712ffa8a714a5eb5021b3b7ec65fd93aba42d054d3a8c61ef`;
-nach Entfernen nur dieses Buchs und Rücksetzen der Anzahl bleibt der gesamte
-vorige Authzustand exakt gleich. Die ursprüngliche reine Finanzprojektion
-besteht auf genau diesem vorgeschlagenen nativen Ergebnis.
+Kandidatenvorschlag `a2521b52a505` ist nicht aufgebaut und nicht autorisiert.
+Keine Claim-/Reservierungs-/Ownerlaufdatei erstellt. Syntaxprüfung aller13
+geänderten Harness-/Testdateien bestanden; einmalige Standard-Offlineregression
+**177/177 grün in657s**. Motor, Ergebnislogik, alle32 Prüftore, alle16 frischen Kontrollen,
+Offline90, Unit60, Auth30 und2.048.000.000B gemeinsamer Peak bleiben unverändert.
 
-Die konkrete SQL-Vorlage prüft Ziel, tatsächliches UTC-Tagesende, vorherigen
-Authhash und vollständige Zählertabelle; sperrt Zähler und Authzeile, ändert
-atomar genau die zwei vorgesehenen Felder und prüft anschließend Sollhash und
-vollständige Rückvergleichsgleichheit. Jede Abweichung führt zum Rollback.
-Keine automatische Wiederholung. Getrennter Pro-High-Review der unangewendeten
-Vorlage positiv; ein tatsächlicher Aufrufer benötigt weiterhin frische
-Quell-/Kopier-/Code-/Freigabeprüfung und Rückprüfung des vollständigen Ergebnisses.
+## Tatsächliches nächstes Prüftor
 
-Die bisherige ausdrückliche Nulltagesfreigabe galt ausschließlich17.10.
-Deshalb fehlt hierfür ein neues konkretes Korrektur-GO. Anwendung frühestens
-19.10.,00:00UTC (03:00Istanbul), niemals in Originalen. Dieses GO würde keinen
-500er Lauf und keine Aktivierung erlauben.
+Der bestehende Vorabcheck verlangt passende tatsächliche DeepSeek-Pro-High-
+Reviewbelege für die neue Quellen-/Autoritätsbindung und vollständige Verbraucher-
+abdeckung. Alte Quellpins passen nicht zu geändertem Code. Codex-Abnahmen werden
+nicht als DeepSeek ausgegeben; Reviewer-/Statusprüfungen bleiben unverändert.
+Ein konkreter lesender Prüfauftrag und SHA-Quellmanifest werden vorbereitet.
+Im bisherigen Vorbereitungsumfang wurden keine bezahlten Provideraufrufe gemacht.
+Die neue vollständige32/32-Abnahme und ein separates ausdrücklich auf den neuen
+Kandidaten bezogenes Ressourcen-GO bleiben offen. Noch kein Startbereitschafts-
+oder vollständiger500er-/Zeit-/Speichernachweis.
 
-## Nächster notwendiger Ablauf
+## Belege
 
-Nach Freigabe und gültigem Zeitpunkt: ausschließlich neue Eingabekopie erzeugen,
-exakte Korrektur einmal durchführen, gesamte Quelle/Originale/Relationen und
-Finanzprojektion rückprüfen. Dann neue19.10.-Fall-/Code-/Autoritätsbindungen
-herstellen; alle alten verbrauchten Marker, insbesondere18.10.V6, unverändert
-erhalten. Alle32 tatsächlichen Startbedingungen frisch prüfen. Die aktuelle
-Zeit vor diesem Fenster kann kein positives operatives Fensterergebnis ergeben.
-Erst nach erfolgreicher unabhängiger Abnahme konkretes Ressourcen-GO einholen.
+Privater lokaler Evidenzbereich `/workspace/helmut-parallel-20261015/`:
 
-Offline90, Unit60, Auth30,2.048.000.000 B gemeinsamer Peak,8000 frische Kontrollen,
-500 Abschlüsse und1500 Ergebnispositionen bleiben unverändert und mit dem
-aktuellen Speicherkandidaten im vollständigen Ressourcenlauf weiter offen.
+- `wave41-approved-local-preparations/APPROVED_PREPARATIONS_COMPLETE.SAFE.json`
+- `wave41-approved-local-preparations/APPROVED_PREPARATIONS_SHA256_MANIFEST.SAFE.json`
+- `wave41-approved-local-preparations/INDEPENDENT_PREPARATION_OUTCOME_ACCEPTANCE.SAFE.json`
+- `wave41-approved-local-preparations/input19-e400dff25393/READ_ONLY_SOURCE_CAPTURE.SAFE.json`
+- `wave42-day19-resource-binding/ACTUAL_NATIVE_INPUT_REBIND_PROOF.SAFE.json`
+- `wave42-day19-resource-binding/CURRENT_CALENDAR_CANDIDATE_PROPOSAL.SAFE.json`
+- `wave42-day19-resource-binding/FRESH_SUBNET_READONLY_PROOF.SAFE.json`
 
-Lokale Primärbelege liegen ausschließlich im bestehenden privaten Bereich
-`/workspace/helmut-parallel-20261015/wave38-resource-readiness/`:
-`ROOT_DAY19_RUNTIME_BINDING_ACCEPTANCE.SAFE.json`,
-`DAY19_SOURCE_TRANSFER_REVIEW_BRIEF.SAFE.json`,
-`NEXT_DAY_NATIVE_INPUT_READONLY_ASSESSMENT.SAFE.json`,
-`BOOK18_CORRECTION_EXACT_PLAN.SAFE.json`,
-`BOOK18_CORRECTION_UNAPPLIED.PROPOSAL.sql`,
-`PRO_BOOK18_PROPOSAL_REVIEW.SAFE.json` und getrennte Tages-/Binderreviews.
-Private Eingaben/Originale werden nicht in Git übernommen oder neu übertragen.
+Private Originale, Finanzzeugen, Dumps und Wiederherstellungsarchiv bleiben lokal
+außerhalb von Git. Keine neue Übertragung oder öffentliche Freigabe.

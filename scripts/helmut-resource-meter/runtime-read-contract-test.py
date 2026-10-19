@@ -20,7 +20,8 @@ class RuntimeReadContractTest(unittest.TestCase):
   leaf=doc('required-historical-source.json',{})
   self.leaf=leaf
   capture=doc('capture.json',{k:leaf for k in ['correctionReceiptPin','sourceDump','localRolesSQL','correctedFinancialWitnessPin']})
-  self.correction_data=[doc('completed-book17-claim.json',{'TEST_ONLY':'NO_RESOURCE_GO'}),doc('previous-input-witness.json',{})]
+  self.correction_data=[doc('completed-book17-claim.json',{'TEST_ONLY':'NO_RESOURCE_GO'}),doc('previous-input-witness.json',{}),
+   doc('completed-book18-claim.json',{'TEST_ONLY':'NO_RESOURCE_GO'}),doc('current-input-witness.json',{})]
   provenance=patch.object(I.A,'capture_data_pins',return_value=[capture,leaf,*self.correction_data])
   provenance.start();self.addCleanup(provenance.stop)
   owner=doc('intent.json',{'previousConsumedMarkers':[leaf],'finalOwnerGOPath':str(self.root/'FUTURE_GO.json')})

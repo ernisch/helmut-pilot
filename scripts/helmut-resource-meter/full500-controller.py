@@ -90,7 +90,7 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin,*,planni
     I.A.validate_owner(owner,connection,planning=planning)
     descriptor=C.read_pin(connection['atomicUsageInput']) if connection.get('atomicUsageInput') else None
     local=Calendar.admit(day,C.read_pin,descriptor=descriptor,operation=connection['operationId'])
-    if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!='2026-10-18' or (local is None and day.get('positiveOriginalLAtBothWindowEnds')!=500):raise RuntimeError('owner or day binding invalid')
+    if owner['targetDatabase']!=connection['targetDatabase'] or day['day']!=I.A.DAY or (local is None and day.get('positiveOriginalLAtBothWindowEnds')!=500):raise RuntimeError('owner or day binding invalid')
     for p in connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']:
         if C.pin(p['path'])!=p:raise RuntimeError('fixture asset drift')
     return acceptance,connection,recipe,day
@@ -142,7 +142,7 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     # From here, each setup/launch step is attempted ONCE, never a retry loop.
     first=original_preflight(connection)
     case=Path(connection['caseDirectory']);network='helmut-meter-net-w20-'+case.name.removeprefix('attempt-')
-    parent='helmut-meter-resources18-'+case.name.removeprefix('attempt-')
+    parent='helmut-meter-resources'+I.A.DAY[-2:]+'-'+case.name.removeprefix('attempt-')
     dbname=connection['containerName'];appname=dbname.replace('helmut-meter-db-','helmut-meter-app-',1)
     if I.K.docker(['inspect',dbname],check=False).returncode==0 or I.K.docker(['network','inspect',network],check=False).returncode==0:raise RuntimeError('actual owned resources already exist; no reuse')
     subnet=connection.get('approvedInternalSubnet')
@@ -169,7 +169,7 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     # loop-control capability probe's kernel result. It is checked atomically
     # by LOOP_CONFIGURE; no occupied mapping is detached or reassigned.
     minor=acceptance['approvedFreshLoopMinor']
-    storage_out=I.ONCE.parent/('full500-owned-storage18-'+case.name.removeprefix('attempt-'))
+    storage_out=I.ONCE.parent/('full500-owned-storage'+I.A.DAY[-2:]+'-'+case.name.removeprefix('attempt-'))
     storage=storage_module.create(storage_out,8000000000,minor,parent+'/storage',hold=connection['storageHoldSeconds'])
     if connection.get('approvedInternalSubnet')!=I.A.SUBNET:raise RuntimeError('exact new reviewed172 gateway subnet missing')
     I.create_network(network,subnet=connection['approvedInternalSubnet'])
@@ -180,7 +180,7 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     q="begin read only;select count(*)from pg_database where datname in('"+connection['sourceDatabase']+"','"+connection['targetDatabase']+"');rollback;"
     empty=I.K.docker(['exec','-i','-u','postgres',dbname,'psql','-X','-qAt','-d','postgres','-c',q]).stdout.strip()
     if empty!='0':raise RuntimeError('fresh source/target database names already used in owned server')
-    preflight_path=I.ONCE.parent/('RESOURCES17_START_PREFLIGHT_'+case.name.removeprefix('attempt-')+'.SAFE.json')
+    preflight_path=I.ONCE.parent/('RESOURCES'+I.A.DAY[-2:]+'_START_PREFLIGHT_'+case.name.removeprefix('attempt-')+'.SAFE.json')
     preflight={'status':'PASS_EXACT_UNUSED_LOCAL500_RESOURCE_START','checkedAtUnixSeconds':time.time(),'atUTC':datetime.datetime.now(UTC).isoformat(),
       'windowEndsAtUTC':end.isoformat(),
       **({'sufficientSameUTCFixtureWindow':True,'localCalendar':day['localCalendar']} if day.get('status')==Calendar.STATUS

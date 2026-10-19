@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fixed next LOCAL resource slot; preparation is never execution authority.
 
-The three consumed attempts and the completed input correction are immutable.
+Consumed attempts and completed input corrections are immutable.
 The corrected fixture is input provenance only, never a reusable owner GO.
 No effects on import. This module cannot reserve, activate, repair or run.
 """
@@ -15,20 +15,20 @@ from pathlib import Path
 BIN=Path(__file__).resolve().parent
 BASE=Path('/workspace/helmut-parallel-20261015')
 METER=BASE/'wave19-resource-meter'
-DAY='2026-10-18'
-DATE_TAG='20261018'
+DAY='2026-10-19'
+DATE_TAG='20261019'
 # Both real entrypoints read this same source-pinned local definition. Updating
 # a fixed slot must never leave the measured JS stage on a spent old claim.
 SLOT=json.loads((BIN/'local-resource-authority-slot.json').read_text())
 if (type(SLOT)is not dict or set(SLOT)!={'schema','day','version'}
   or SLOT['schema']!='helmut-local-resource-authority-slot/1' or SLOT['day']!=DAY
-  or type(SLOT['version'])is not int or not 1<=SLOT['version']<=9999):
+  or type(SLOT['version'])is not int or SLOT['version']!=8):
     raise RuntimeError('invalid pinned local resource authority slot')
 SLOT_VERSION=SLOT['version']
 AUTHORIZATION=f'USER_GO_{DATE_TAG}_EXACT_ONE_RESOURCE_ONLY_V{SLOT_VERSION}'
 CLAIM=METER/f'NEXT_RESOURCE{DAY[-2:]}_V{SLOT_VERSION}_GO_CLAIM.SAFE.json'
 RESERVATION=METER/f'NEXT_RESOURCE{DAY[-2:]}_V{SLOT_VERSION}_SETUP_RESERVATION.SAFE.json'
-SUBNET='172.16.244.0/24'
+SUBNET='172.16.243.0/24'
 OLD_MARKERS=[METER/name for name in [
  'ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json','GLOBAL_RESOURCE_SETUP_RESERVATION.SAFE.json',
  'ONCE_ONLY_DAY16_INPUT_CORRECTION_CLAIM.SAFE.json','DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json',
@@ -36,7 +36,8 @@ OLD_MARKERS=[METER/name for name in [
  'NEXT_RESOURCE17_V3_GO_CLAIM.SAFE.json','NEXT_RESOURCE17_V3_SETUP_RESERVATION.SAFE.json',
  'NEXT_RESOURCE17_V4_GO_CLAIM.SAFE.json','NEXT_RESOURCE17_V4_SETUP_RESERVATION.SAFE.json',
  'NEXT_RESOURCE18_V5_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V5_SETUP_RESERVATION.SAFE.json',
- 'NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json']]
+ 'NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json',
+ 'NEXT_RESOURCE18_V7_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V7_SETUP_RESERVATION.SAFE.json']]
 PRESERVED_MARKER_PINS=[{'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_RESOURCES_GO_CLAIM.SAFE.json', 'bytes': 815, 'sha256': '92096d184adc88feaefa1393c3115840dd2e0960379d108de42be2d1e57005e5'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/GLOBAL_RESOURCE_SETUP_RESERVATION.SAFE.json', 'bytes': 1203, 'sha256': 'e0dfa98ab19d0ed917e7fca15817766a370a593005625b807f4474ff3a827cc4'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/ONCE_ONLY_DAY16_INPUT_CORRECTION_CLAIM.SAFE.json', 'bytes': 454, 'sha256': 'e01e8a20f8cded6a9285d07763fe40ce0cac7d279479c5faa05ad6a4a1de4e60'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_GO_CLAIM.SAFE.json', 'bytes': 815, 'sha256': 'a376c1abf5541728b2e5c565c0b0576ee6a87723f8d06125d5a0ec574ddc8853'}, {'path': '/workspace/helmut-parallel-20261015/wave19-resource-meter/DAY16_REPAIR_RESOURCE_SETUP_RESERVATION.SAFE.json', 'bytes': 1203, 'sha256': '7ea29623fc80b6a75dd475463d1c1802e340e75b1c6509ebf7e6d45d21357088'}]
 PRESERVED_MARKER_PINS += [
  {'path':str(METER/'NEXT_RESOURCE17_V3_GO_CLAIM.SAFE.json'),'bytes':799,'sha256':'8fe50e440b83c4f2a67225a1585c86997bc8fc60e04dcc0ef7bb997dff648a81'},
@@ -50,13 +51,21 @@ PRESERVED_MARKER_PINS += [
 PRESERVED_MARKER_PINS += [
  {'path':str(METER/'NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json'),'bytes':800,'sha256':'20fcaaa21241b24bca520dbfbee05c765c92e05ab44e2f30ff55c5e8937845bb'},
  {'path':str(METER/'NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json'),'bytes':1523,'sha256':'28ecd650cf8ea502eac2c0cb987b60a769c38dc2006aad6178c8aead5952bd78'}]
+PRESERVED_MARKER_PINS += [
+ {'path':str(METER/'NEXT_RESOURCE18_V7_GO_CLAIM.SAFE.json'),'bytes':797,'sha256':'29132c4c3dbf98593d4a2b49b5a752a0d18e0c0a621e31c5959abec05c73c3ba'},
+ {'path':str(METER/'NEXT_RESOURCE18_V7_SETUP_RESERVATION.SAFE.json'),'bytes':1520,'sha256':'c7c721eaa11c2796e3ee7740c526e44e468ca96b989f63648ee5a50b0fc77524'}]
 PREVIOUS_CAPTURE=BASE/'wave20-resource-integration/attempt-64a99d4ac9fb/corrected-input/READ_ONLY_SOURCE_CAPTURE.SAFE.json'
 PREVIOUS_CAPTURE_SHA='37701d014b73311da59f3daf92d8344074a48aaea5586c7f73d1728026d185a3'
-CORRECTED_CAPTURE=BASE/'wave30-resource-start-gaps/input18-ab76c911dac8/READ_ONLY_SOURCE_CAPTURE.SAFE.json'
-CORRECTED_CAPTURE_SHA='1c99ee530e83e65967ea723be857841b501ca8b13c6e783a4c8f3c99687f8cfc'
-INPUT_DATABASE='helmut_resource_input_20261018_ab76c911dac8'
+BOOK17_CAPTURE=BASE/'wave30-resource-start-gaps/input18-ab76c911dac8/READ_ONLY_SOURCE_CAPTURE.SAFE.json'
+BOOK17_CAPTURE_SHA='1c99ee530e83e65967ea723be857841b501ca8b13c6e783a4c8f3c99687f8cfc'
+BOOK17_INPUT_DATABASE='helmut_resource_input_20261018_ab76c911dac8'
+CORRECTED_CAPTURE=BASE/'wave41-approved-local-preparations/input19-e400dff25393/READ_ONLY_SOURCE_CAPTURE.SAFE.json'
+CORRECTED_CAPTURE_SHA='d77599a0e5178e7ecaad89c7da80c95b1aee83db0cbf4a30dd2782f4a44d5db0'
+INPUT_DATABASE='helmut_resource_input_20261019_e400dff25393'
 BOOK17_CLAIM_PIN={'path':str(BASE/'wave30-resource-start-gaps/ONCE_ONLY_BOOK17_INPUT_CORRECTION_CLAIM.SAFE.json'),
   'bytes':734,'sha256':'3b60362f7d92b5deee52b29d91e4420e1f72974a496122603d4b4237eb7c3dd3'}
+BOOK18_CLAIM_PIN={'path':str(BASE/'wave41-approved-local-preparations/ONCE_ONLY_BOOK18_INPUT_CORRECTION_CLAIM.SAFE.json'),
+  'bytes':1447,'sha256':'487bf4db5882589ad6f84c75673a0422d8011adce83941da236d4f2d20a326e5'}
 
 def require(ok,reason):
     if not ok:raise RuntimeError(reason)
@@ -140,13 +149,13 @@ def _verify_previous_capture(capture_pin,*,actual=True):
     return actual
 
 
-def capture_data_pins(capture_pin):
+def _book17_data_pins(capture_pin):
     """Shared exact source-data reads for host checks AND container mounts.
 
     Explicit provenance only: owner approvals mentioned by these documents are
     never opened, recursively mounted or reused as resource authority.
     """
-    require(capture_pin['path']==str(CORRECTED_CAPTURE)and capture_pin['sha256']==CORRECTED_CAPTURE_SHA,
+    require(capture_pin['path']==str(BOOK17_CAPTURE)and capture_pin['sha256']==BOOK17_CAPTURE_SHA,
       'only exact already corrected input may be reused')
     capture=read(capture_pin)
     previous_pin=capture['previousCorrectedCapturePin']
@@ -167,22 +176,53 @@ def capture_data_pins(capture_pin):
     return paths
 
 
-def query_input(sql):
-    """Read ONLY the fixed completed local input; no writable mode exists."""
+def capture_data_pins(capture_pin):
+    """Complete explicit new/previous DATA closure for checks and mounts.
+
+    freshOwnerGO/authorityPin values are compared as historical provenance
+    links only. Their owner-GO files are never opened or mounted here.
+    """
+    require(capture_pin['path']==str(CORRECTED_CAPTURE)and capture_pin['sha256']==CORRECTED_CAPTURE_SHA,
+      'only exact completed book18 input may be reused')
+    capture=read(capture_pin)
+    previous_pin=capture['previousCorrectedCapturePin']
+    require(previous_pin['path']==str(BOOK17_CAPTURE)and previous_pin['sha256']==BOOK17_CAPTURE_SHA,
+      'exact book17 input provenance required')
+    paths=_book17_data_pins(previous_pin)+[capture_pin,BOOK18_CLAIM_PIN]
+    paths += [capture[k] for k in ['correctedFinancialWitnessPin','correctionReceiptPin','sourceDump']]
+    # Shared original witness/roles/binary are already in the historical closure.
+    previous=read(previous_pin)
+    for key in ['originalSourceCapturePin','originalFinancialWitnessPin','localRolesSQL','postgrestBinary']:
+        require(capture[key]==previous[key],'prior input provenance changed')
+    require(capture['previousCorrectedFinancialWitnessPin']==previous['correctedFinancialWitnessPin'],
+      'prior native witness differs')
+    require(len({p['path']for p in paths})==len(paths),'unexpected duplicate source-data binding')
+    for p in paths:require(pin(p['path'])==p,'source-data dependency drift')
+    return paths
+
+
+def _query_input_database(sql,database):
+    """Read only one of the two exact preserved local input databases."""
+    require(database in [BOOK17_INPUT_DATABASE,INPUT_DATABASE],'fixed completed input database required')
     command=['env','-u','DOCKER_HOST','-u','DOCKER_CONTEXT','-u','DOCKER_TLS','-u','DOCKER_TLS_VERIFY',
       '-u','DOCKER_CERT_PATH','docker','--host=unix:///var/run/docker.sock','exec','-i',
-      'helmut-boundary-pg-bd7dd5da','psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d',INPUT_DATABASE,'-f','-']
+      'helmut-boundary-pg-bd7dd5da','psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','postgres','-d',database,'-f','-']
     text="BEGIN READ ONLY;SET LOCAL statement_timeout='20s';"+sql+'ROLLBACK;'
     result=subprocess.run(command,input=text,text=True,capture_output=True,timeout=40,check=True)
     return json.loads(result.stdout)
 
 
-def verify_preexisting_capture(capture_pin,*,actual=True):
+def query_input(sql):
+    """Read ONLY the current fixed completed19Oct input; never a writable mode."""
+    return _query_input_database(sql,INPUT_DATABASE)
+
+
+def _verify_book17_capture(capture_pin,*,actual=True):
     """Verify both completed corrections as DATA, never as reusable approval."""
-    capture_data_pins(capture_pin)
+    _book17_data_pins(capture_pin)
     capture=read(capture_pin);previous=read(capture['previousCorrectedCapturePin'])
     _verify_previous_capture(capture['previousCorrectedCapturePin'],actual=actual)
-    require(capture['source']==INPUT_DATABASE and capture['before']==capture['after']==previous['before']
+    require(capture['source']==BOOK17_INPUT_DATABASE and capture['before']==capture['after']==previous['before']
       and capture['sourceWrites']==0 and capture['newCopyFinancialWrites']==1
       and capture['resourceGOConsumed']is False and capture['production']is False,'local input correction scope differs')
     for key in ['originalSourceCapturePin','originalFinancialWitnessPin','localRolesSQL','postgrestBinary']:
@@ -191,11 +231,11 @@ def verify_preexisting_capture(capture_pin,*,actual=True):
       'prior native witness differs')
     receipt=read(capture['correctionReceiptPin']);claim=read(BOOK17_CLAIM_PIN)
     require(receipt['pass']is True and receipt['historicalDaysAdded']==['2026-10-17']and receipt['correctionWrites']==1
-      and receipt['database']==INPUT_DATABASE and receipt['monetaryLimitsUnchanged']is True
+      and receipt['database']==BOOK17_INPUT_DATABASE and receipt['monetaryLimitsUnchanged']is True
       and receipt['originalSourceUnchanged']is True and receipt['priorCorrectedSourceUnchanged']is True
       and receipt['resourceGOConsumed']is False and receipt['profileActivations']==0 and receipt['full500Runs']==0,
       'exact completed book17 correction required')
-    require(claim['targetDatabase']==INPUT_DATABASE and claim['exactlyOneInputCorrection']is True
+    require(claim['targetDatabase']==BOOK17_INPUT_DATABASE and claim['exactlyOneInputCorrection']is True
       and claim['resourceGOConsumed']is False and claim['freshOwnerGO']==capture['freshOwnerGO']==receipt['freshOwnerGO']
       and receipt['correctedFinancialWitnessPin']==capture['correctedFinancialWitnessPin'],'completed correction receipt/claim differs')
     before=read(capture['previousCorrectedFinancialWitnessPin']);after=read(capture['correctedFinancialWitnessPin'])
@@ -217,7 +257,62 @@ def verify_preexisting_capture(capture_pin,*,actual=True):
     if not actual:return capture
     spec=importlib.util.spec_from_file_location('existing_native_financial_sql',BIN/'local-zero-day-copy.py')
     Z=importlib.util.module_from_spec(spec);spec.loader.exec_module(Z)
-    native=query_input(Z.FINANCIAL)
+    native=_query_input_database(Z.FINANCIAL,BOOK17_INPUT_DATABASE)
     native['completeNativeCounterSHA']=hashlib.sha256(native['completeNativeCounterText'].encode()).hexdigest()
     require(native==after,'actual completed input finance changed')
+    return native
+
+
+def verify_preexisting_capture(capture_pin,*,actual=True):
+    """Verify exact16/17/18Oct completed corrections as DATA, never run GO."""
+    capture_data_pins(capture_pin)
+    capture=read(capture_pin)
+    previous=_verify_book17_capture(capture['previousCorrectedCapturePin'],actual=False)
+    require(capture['source']==INPUT_DATABASE and capture['before']==capture['after']==previous['before']
+      and capture['sourceWrites']==0 and capture['newCopyFinancialWrites']==1
+      and capture['historicalDaysAdded']==['2026-10-18']
+      and capture['resourceGOConsumed']is False and capture['production']is False,'book18 input correction scope differs')
+    receipt=read(capture['correctionReceiptPin']);claim=read(BOOK18_CLAIM_PIN)
+    require(receipt['pass']is True and receipt['database']==INPUT_DATABASE
+      and receipt['historicalDaysAdded']==['2026-10-18']and receipt['correctionWrites']==1
+      and receipt['existingBooksPreserved']==39 and receipt['resultHistoricalBooks']==40
+      and receipt['bookCapacityBefore']==39 and receipt['bookCapacityAfter']==40
+      and receipt['monetaryLimitsUnchanged']is True and receipt['onlySpecifiedDelta']is True
+      and receipt['originalSourceUnchanged']is True and receipt['priorCorrectedSourceUnchanged']is True
+      and receipt['fullCounterTableUnchanged']is True and receipt['allOtherRelationDataUnchanged']is True
+      and receipt['resourceGOConsumed']is False and receipt['profileActivations']==0
+      and receipt['full500Runs']==0 and receipt['production']is False,'exact completed book18 correction required')
+    require(claim['target']==INPUT_DATABASE and claim['correctionExactlyOnce']is True
+      and claim['automaticRetryAllowed']is False and claim['resourceGOConsumed']is False
+      and claim['authorityPin']==capture['freshOwnerGO']==receipt['freshOwnerGO']
+      and receipt['claimPin']==BOOK18_CLAIM_PIN
+      and receipt['correctedFinancialWitnessPin']==capture['correctedFinancialWitnessPin']
+      and receipt['sourceDump']==capture['sourceDump']
+      and receipt['sourceIdentityBeforeAndAfter']==capture['before'],
+      'completed book18 correction receipt/claim differs')
+    before=read(capture['previousCorrectedFinancialWitnessPin']);after=read(capture['correctedFinancialWitnessPin'])
+    for witness in [before,after]:
+        require(hashlib.sha256(witness['nativeAuthText'].encode()).hexdigest()==witness['nativeAuthSHA']
+          and witness['completeNativeCounterText']=='[]'
+          and hashlib.sha256(witness['completeNativeCounterText'].encode()).hexdigest()==witness['completeNativeCounterSHA'],
+          'native financial content binding differs')
+    require(before['nativeAuthSHA']=='5da973fb04fa285ff8c192de0beab8cc53b705179f2de46f91d659c83be57634'
+      and after['nativeAuthSHA']=='f1a1bb64e96d854712ffa8a714a5eb5021b3b7ec65fd93aba42d054d3a8c61ef'
+      and receipt['beforeNativeAuthSHA256']==before['nativeAuthSHA']
+      and receipt['afterNativeAuthSHA256']==after['nativeAuthSHA'],'reviewed book18 financial hashes differ')
+    a=json.loads(before['nativeAuthText']);b=json.loads(after['nativeAuthText'])
+    require('2026-10-18'not in a['testKostenTage']and len(a['testKostenTage'])==39
+      and set(b['testKostenTage'])==set(a['testKostenTage'])|{'2026-10-18'}
+      and a['testKostenAuftrag']['bookCapacity']==39 and b['testKostenAuftrag']['bookCapacity']==40,
+      'only approved historical book18/capacity delta required')
+    del b['testKostenTage']['2026-10-18'];b['testKostenAuftrag']['bookCapacity']=39
+    require(a==b,'other financial content changed')
+    if not actual:return capture
+    # Preserve both historical native verifiers, with their original DB names.
+    _verify_book17_capture(capture['previousCorrectedCapturePin'],actual=True)
+    spec=importlib.util.spec_from_file_location('current_native_financial_sql',BIN/'local-zero-day-copy.py')
+    Z=importlib.util.module_from_spec(spec);spec.loader.exec_module(Z)
+    native=query_input(Z.FINANCIAL)
+    native['completeNativeCounterSHA']=hashlib.sha256(native['completeNativeCounterText'].encode()).hexdigest()
+    require(native==after,'actual completed book18 input finance changed')
     return native

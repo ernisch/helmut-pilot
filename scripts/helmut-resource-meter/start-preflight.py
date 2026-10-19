@@ -169,7 +169,7 @@ def financial_data(C,connection):
     require(len(pins)==1,'exact original financial implementation required')
     snapshot={'auth':json.loads(actual['nativeAuthText']),'nativeAuthText':actual['nativeAuthText'],
         'authSHA':actual['nativeAuthSHA'],'counter':0,'counterReadOK':True}
-    # The shared two-correction verifier requires the ENTIRE native table ==[].
+    # The shared historical-correction verifier requires the ENTIRE native table ==[].
     result=subprocess.run([str(C.I.K.NODE_ROOT/'bin/node'),str(BIN/'local-financial-preflight.js'),json.dumps(pins[0]),connection['day']],
         input=json.dumps(snapshot),capture_output=True,text=True,timeout=30)
     safe=json.loads(result.stdout)
@@ -379,12 +379,12 @@ def toolchain(C):
 
 def resource_names(C,connection):
     K=C.I.K; case=Path(connection['caseDirectory']); suffix=case.name.removeprefix('attempt-')
-    network='helmut-meter-net-w20-'+suffix;parent='helmut-meter-resources18-'+suffix
+    network='helmut-meter-net-w20-'+suffix;parent='helmut-meter-resources'+C.I.A.DAY[-2:]+'-'+suffix
     db=connection['containerName'];names=[db,db.replace('helmut-meter-db-','helmut-meter-app-',1),db.replace('helmut-meter-db-','helmut-meter-app-',1)+'-broker']
     occupied=[n for n in names if K.docker(['inspect',n],check=False).returncode==0]
     network_exists=K.docker(['network','inspect',network],check=False).returncode==0
     cgroup_exists=(Path('/sys/fs/cgroup')/parent).exists()
-    storage_exists=(C.I.ONCE.parent/('full500-owned-storage18-'+suffix)).exists()
+    storage_exists=(C.I.ONCE.parent/('full500-owned-storage'+C.I.A.DAY[-2:]+'-'+suffix)).exists()
     subnet=connection['approvedInternalSubnet'];require(subnet==C.I.A.SUBNET,'approved subnet changed')
     ids=K.docker(['network','ls','-q']).stdout.split()
     networks=json.loads(K.docker(['network','inspect',*ids]).stdout) if ids else []
