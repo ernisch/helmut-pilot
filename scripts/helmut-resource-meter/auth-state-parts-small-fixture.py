@@ -56,6 +56,10 @@ def main():
     if loop_mode not in ['0', '1'] or repeat_writes not in ['0', '32'] or ((loop_mode != '0' or repeat_writes != '0') and not read_path):
         raise ValueError('explicit bounded storage/read repetitions only in small read-path diagnostic')
     repeat_writes = int(repeat_writes)
+    guard_reads = os.environ.get('HELMUT_STATE_READ_PATH_GUARD_READS', '0')
+    if guard_reads not in ['0', '16'] or (guard_reads != '0' and (not read_path or loop_mode != '1' or repeat_writes != 0)):
+        raise ValueError('sixteen read-only controls require own bounded loop read-path comparison, no repeated writes')
+    guard_reads = int(guard_reads)
     history_reuse = os.environ.get('HELMUT_STATE_HISTORY_REUSE', '0')
     if history_reuse not in ['0', '1'] or (history_reuse == '1' and mode == 'baseline'):
         raise ValueError('history reuse only allowed in local parts/security diagnostics')
@@ -79,10 +83,14 @@ def main():
     if test_phase == 'single-capture' and single_capture != '1':
         raise ValueError('single-capture security requires explicit candidate')
     control_view = os.environ.get('HELMUT_STATE_CONTROL_VIEW', '0')
+    control_component = mode == 'security' and test_phase == 'control' and loop_mode == '0'
+    control_comparison = mode == 'parts' and read_path and loop_mode == '1' and guard_reads == 16
     if control_view not in ['0', '1'] or (control_view == '1' and
-            (mode != 'security' or test_phase != 'control' or history_reuse != '1'
-             or graph_reuse != '0' or cas_projection != '0' or single_capture != '0' or loop_mode != '0')):
-        raise ValueError('control view requires own native component phase, other candidates OFF')
+            (not (control_component or control_comparison) or history_reuse != '1'
+             or graph_reuse != '0' or cas_projection != '0' or single_capture != '0')):
+        raise ValueError('control view requires own native component or bounded sixteen-read comparison, other candidates OFF')
+    if guard_reads and (history_reuse != '1' or graph_reuse != '0' or cas_projection != '0' or single_capture != '0'):
+        raise ValueError('both comparison sides require identical history mode and other candidates OFF')
     if test_phase == 'control' and control_view != '1':
         raise ValueError('control view phase requires explicit candidate')
     manifest = json.loads(MANIFEST.read_text())
@@ -184,7 +192,8 @@ def main():
                 '-c', 'log_temp_files=0', '-c', 'track_io_timing=on', '-c', 'work_mem=4MB',
                 '-c', 'wal_compression=off', '-c', 'full_page_writes=on', '-c', 'fsync=on', '-c', 'synchronous_commit=on']
         cid = docker(args, text=True).stdout.strip()
-        save(out / 'STARTED.SAFE.json', {'scope': 'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN', 'name': name, 'database': 'postgres', 'cid': cid, 'parent': parent, 'mode': mode, 'testPhase': test_phase, 'workload': workload, 'rendererVariant': renderer_variant, 'historyReuse': history_reuse == '1', 'graphReuse': graph_reuse == '1', 'casProjection': cas_projection == '1', 'singleWriteCapture': single_capture == '1', 'controlView': control_view == '1', 'readPathLoopMode': loop_mode == '1', 'readPathRepeatWrites': repeat_writes, 'expectedLogicalOperations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'expectedCASRequests': 0 if mode == 'security' else (4 + repeat_writes if read_path else (120 if workload == 'mixed-state-process-runs' else 96)), 'operations': 0 if mode == 'security' else (10 + repeat_writes if read_path else 96), 'repository': str(REPO), 'fixtureManifestPin': pin(MANIFEST), 'fixturePin': pin(SOURCE), 'harnessPin': pin(__file__), 'kernelMeterPin': pin(REPO / 'scripts/helmut-resource-meter/kernel-meter.py'), 'activation': False, 'GOClaimed': False, 'production': False})
+        read_path_operations = 10 + repeat_writes + 2 * (guard_reads - 2 if guard_reads else 0)
+        save(out / 'STARTED.SAFE.json', {'scope': 'SMALL_DATABASE_OPERATIONS_NO_ACTIVATION_NO_500_RUN', 'name': name, 'database': 'postgres', 'cid': cid, 'parent': parent, 'mode': mode, 'testPhase': test_phase, 'workload': workload, 'rendererVariant': renderer_variant, 'historyReuse': history_reuse == '1', 'graphReuse': graph_reuse == '1', 'casProjection': cas_projection == '1', 'singleWriteCapture': single_capture == '1', 'controlView': control_view == '1', 'readPathLoopMode': loop_mode == '1', 'readPathRepeatWrites': repeat_writes, 'readPathGuardReadsPerState': guard_reads, 'expectedLogicalOperations': 0 if mode == 'security' else (read_path_operations if read_path else 96), 'expectedCASRequests': 0 if mode == 'security' else (4 + repeat_writes if read_path else (120 if workload == 'mixed-state-process-runs' else 96)), 'operations': 0 if mode == 'security' else (read_path_operations if read_path else 96), 'repository': str(REPO), 'fixtureManifestPin': pin(MANIFEST), 'fixturePin': pin(SOURCE), 'harnessPin': pin(__file__), 'kernelMeterPin': pin(REPO / 'scripts/helmut-resource-meter/kernel-meter.py'), 'activation': False, 'GOClaimed': False, 'production': False})
         docker(['start', cid], text=True, timeout=15)
         for _ in range(100):
             log = docker(['logs', cid], timeout=10)

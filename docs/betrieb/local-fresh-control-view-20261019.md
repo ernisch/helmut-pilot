@@ -1,6 +1,8 @@
 # Lokale frische Kontrollsicht — 19.10.2026
 
 Branch `codex/bounded-working-set-research-20261019`, Basis `c5e4d2d5`.
+Historischer W49-Komponentenstand; anschließende Bereinigung und frisches
+gemeinsames Vergleichspaar: [W50](local-common-control-comparison-20261019.md).
 **Implementiert, Standard AUS; Komponentenprüfungen bestanden. Kein gemeinsamer
 RAM-Gewinn, keine500MB-Reserve und kein500er Gesamtnachweis belegt.**
 

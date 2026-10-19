@@ -16,6 +16,11 @@ function tick(){if(Date.now()>deadlineAt){const e=Error("read-path deadline exce
 if(receipt.historyReuse)process.env.HELMUT_AUTH_HISTORY_READ_REUSE="verified-history-reuse-v1";
 if(receipt.graphReuse)process.env.HELMUT_AUTH_GRAPH_READ_REUSE="verified-graph-reuse-v1";
 if(receipt.singleWriteCapture)process.env.HELMUT_AUTH_SINGLE_WRITE_CAPTURE="single-write-capture-v1";
+if(receipt.controlView)process.env.HELMUT_AUTH_CONTROL_READ="verified-control-view-v1";
+const guardReads=receipt.readPathGuardReadsPerState||0;
+assert([0,16].includes(guardReads));
+if(guardReads)assert(receipt.readPathLoopMode&&receipt.historyReuse&&!receipt.graphReuse&&!receipt.singleWriteCapture&&!receipt.casProjection);
+if(receipt.controlView)assert.equal(guardReads,16);
 const rawFetch=global.fetch,wire=[];
 global.fetch=async(url,options={})=>{
  const text=String(url);
@@ -61,7 +66,8 @@ function resetStats(){sql("SELECT pg_stat_statements_reset();");}
 function assertServerStats(){assert.equal(sql("SELECT current_setting('shared_preload_libraries')LIKE '%pg_stat_statements%';"),"t");assert.equal(sql("SELECT current_setting('pg_stat_statements.track');"),"all");}
 const measuredCalls=[],privateCalls=[];
 const repeatWrites=receipt.readPathRepeatWrites||0;assert([0,32].includes(repeatWrites));
-const expectedOperations=10+repeatWrites;
+const expectedOperations=10+repeatWrites+2*(guardReads?guardReads-2:0);
+assert.equal(receipt.expectedLogicalOperations,expectedOperations);
 async function measured(label,kind,fn,expectedPath){
  tick();
  const rootBefore=physicalHash(),tempBefore=databaseCounters();
@@ -81,7 +87,18 @@ async function measured(label,kind,fn,expectedPath){
  progress(measuredCalls.length,label);
  return metric;
 }
-async function readStorage(label,expected){return measured(label,"read",async()=>{const a=await storage.readAuthStore({strict:true});assert.deepEqual(omitRevision(a),expected);assert.equal(a.llmUsage.length,expected.llmUsage.length);return a;},"/rest/v1/rpc/helmut_auth_state_graph_read_v1");}
+const CONTROL_KEYS=["synthetik500DispatchJournal","synthetik500KostenAdmission","testKostenAuftrag","testKostenTage"];
+const project=x=>Object.fromEntries(CONTROL_KEYS.filter(k=>Object.hasOwn(x,k)).map(k=>[k,x[k]]));
+async function readStorage(label,expected){return measured(label,"read",async()=>{
+ const a=await(receipt.controlView?storage.readSynthetik500ControlStore():storage.readAuthStore({strict:true}));
+ // Identical consumer assertion on both comparison sides. Do not add a full
+ // diagnostic JSON clone to the baseline only and misreport it as reader cost.
+ // Native/full readers and the final restoration still check ALL fields.
+ if(guardReads){assert.deepEqual(copy(project(a)),copy(project(expected)));}
+ else{assert.deepEqual(omitRevision(a),expected);assert.equal(a.llmUsage.length,expected.llmUsage.length);}
+ if(receipt.controlView){assert.deepEqual(Object.keys(a).sort(),[...Object.keys(project(expected)),"_authStoreRevision"].sort());assert(Object.isFrozen(a));assert.equal(U.hasSnapshot(a),false);}
+ return a;
+},"/rest/v1/rpc/helmut_auth_state_graph_read_v1");}
 async function nativeStateRead(label,expected){return measured(label,"read",async()=>{const r=await rpc("helmut_auth_state_read_v1",{id:"main-auth"});assert.deepEqual(omitRevision(r.data),expected);assert.equal(r.proof.count,expected.llmUsage.length);assert.equal(State.build(r.data).root,r.state.root);return r;},"/rest/v1/rpc/helmut_auth_state_read_v1");}
 async function usageRead(label,expected){return measured(label,"read",async()=>{const r=await rpc("helmut_auth_usage_read_v1",{id:"main-auth"});assert.deepEqual(Object.keys(r.data).sort(),["_authStateRef","_authStoreRevision","llmUsage"]);assert.equal(r.data[State.MARKER].version,State.VERSION);assert.equal(r.data[State.MARKER].root,State.build(expected).root);assert.deepEqual(r.data.llmUsage,expected.llmUsage);assert.equal(r.proof.count,expected.llmUsage.length);return r;},"/rest/v1/rpc/helmut_auth_usage_read_v1");}
 async function noOpWrite(label,expected){
@@ -105,8 +122,7 @@ async function noOpWrite(label,expected){
  assert.equal(expectedBaseline.synthetik500KostenAdmission.plan.intents.length,1000);
  assert(Object.hasOwn(expectedBaseline,"users"));
  assert(Object.hasOwn(expectedBaseline,"testKostenTage"));
- await readStorage("original-graph-read-1",expectedBaseline);
- await readStorage("original-graph-read-2",expectedBaseline);
+ for(let i=1;i<=(guardReads||2);i++)await readStorage("original-graph-read-"+i,expectedBaseline);
  await nativeStateRead("original-native-state-read",expectedBaseline);
  await usageRead("original-usage-read",expectedBaseline);
  await noOpWrite("original-noop-write",expectedBaseline);
@@ -126,8 +142,7 @@ async function noOpWrite(label,expected){
  const paddedWithoutNew=copy(expectedPadded);
  delete paddedWithoutNew.localDiagnosticState.readPathSyntheticPayload;
  assert.deepEqual(paddedWithoutNew,expectedBaseline);
- await readStorage("padded-graph-read-1",expectedPadded);
- await readStorage("padded-graph-read-2",expectedPadded);
+ for(let i=1;i<=(guardReads||2);i++)await readStorage("padded-graph-read-"+i,expectedPadded);
  await nativeStateRead("padded-native-state-read",expectedPadded);
  await usageRead("padded-usage-read",expectedPadded);
  await noOpWrite("padded-noop-write",expectedPadded);
@@ -160,7 +175,10 @@ async function noOpWrite(label,expected){
  assert.equal(State.build(finalStorage).root,finalNative.state.root);
  assert.equal(measuredCalls.length,expectedOperations);
  assert.equal(privateCalls.length,expectedOperations);
- assert(wire.every(x=>x.bodyComplete&&!x.error&&x.status<400));
+ const expectedHTTPResponses=24+3*repeatWrites+2*(guardReads?guardReads-2:0);
+ assert.equal(wire.length,expectedHTTPResponses);
+ assert.equal(wire.filter(x=>x.path==="/rest/v1/rpc/helmut_auth_state_cas_v1").length,4+repeatWrites);
+ assert(wire.every(x=>x.bodyComplete&&!x.error&&x.status===200));
  save("READ_PATH_SQL_STATS.PRIVATE.json",{scope:"PRIVATE_RAW_NORMALIZED_QUERY_METADATA_NO_PAYLOADS",phase,mode,calls:privateCalls});
  save("READ_PATH_RESULT.SAFE.json",{
   scope:"SMALL_READ_PATH_ATTRIBUTION_NOT_UNIT60_AUTH30_OR500",
@@ -170,6 +188,12 @@ async function noOpWrite(label,expected){
   operations:expectedOperations,
   measuredOperations:expectedOperations,
   repeatedPaddedWrites:repeatWrites,
+  guardReadsPerState:guardReads,
+  controlView:receipt.controlView===true,
+  guardReaderComparisonOnlyNotActualSixteenAdapterCheckpoints:true,
+  expectedHTTPResponses,
+  actualCompleteHTTPResponses:wire.length,
+  actualCASRequests:wire.filter(x=>x.path==="/rest/v1/rpc/helmut_auth_state_cas_v1").length,
   measuredCalls,
   wire,
   wireMetadataNoBody:true,
