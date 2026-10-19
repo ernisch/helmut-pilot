@@ -113,13 +113,49 @@ sicher auf vollständige Inhaltsprüfung zurück; dessen500er Laufzeit ist offen
 
 Nach dem Paar rund8,281GB frei: unter dem kleinen9,664GB-Floor und dem
 Voll500-Floor16,590GB. Keine zusätzlichen Löschungen ohne neue konkrete Freigabe.
-Nächster Abnahmeschritt ist die begrenzte unabhängige kritische Quellenprüfung
-des konkreten Kontrolllesers; DeepSeek-Anbieteraufrufe brauchen nach Verbrauch
-der bisherigen Einzel-GOs ein neues ausdrücklich begrenztes GO. Eine lokale
-Codex-Belegprüfung ersetzt diese Abnahme nicht. Anschließend konkrete
-Vollpfadbindung, freie Ressourcen und32 frische Startbedingungen vorbereiten;
-ein vollständiger500er Ressourcenlauf benötigt weiterhin sein separates GO.
+Nach dem kleinen Paar ausdrücklich neu freigegeben und genau einmal ausgeführt:
+**DeepSeek V4 Pro High, read, HTTP200/completed, Summarystatus `ok`** für
+Code `c6620c83` (Motorbytes96bec54e unverändert). Zwölf ausdrücklich ausgewählte
+Dateien,15 Quellen einschließlich kanonischem Kontext, SHA-gebundenes Paket
+`0b0ca828…`. Tatsächlich236,535s,79.337 Eingabe-/21.981 Ausgabetokens,
+101.318 Tokens insgesamt; genauer APIpreis unbekannt. Kein Retry, keine
+Schreibänderung, kein500er-/Production-GO. Die freigegebene Einzelberechtigung
+ist verbraucht. Vollständige strukturierte Schlussantwort vor Verdichtung lokal
+erhalten; keine internen Modellgedanken gespeichert oder veröffentlicht.
+
+Kein konkreter Sicherheitsblocker in `CONTROL_READ`/`rememberControl`/
+`readControl`, vier vollständigen Verbraucherfeldern, privater Inhaltsbindung
+oder Schreibschutz gefunden. Unveränderte Kosten-, CAS- und
+Unbekannter-Ausgang-Semantik im geprüften Umfang bestätigt. **Begrenzte
+Quellenabnahme**, kein Testlauf durch DeepSeek und keine500er Abnahme.
+
+DeepSeek erhielt von der zu großen `storage.js` ausschließlich genaue Auszüge.
+Die offen gelassene Prüfung des zugehörigen Transport-/Aufruferpfads hat Sol
+anschließend am vollständigen lokalen Quellfile und sämtlichen benannten
+Aufrufern geschlossen: genau ein produktiver Aufrufer `adapter.controlGuard`,
+zwei lokale Diagnoseaufrufer. Interner, pro Request aktueller URL-/Rollenpfad,
+feste Auth-Zeilen-ID, kein fremdes Request-/Headerargument, lokale/private
+Modusgrenze und bestehende Antwortfrist; alle Writer bleiben Vollreader/CAS.
+Das ist keine nachträglich behauptete DeepSeek-Vollabnahme der545kB-Datei und
+kein allgemeines Storage-Audit.
+
+Präzisierung zur ersten Formulierung der Modellantwort: Ungültige Antworten
+werfen tatsächlich einen Fehler und löschen den eingefangenen Nachweis, ohne
+Retry. Gültige kalte/geänderte/fremde/zu große Inhalte werden vollständig
+verifiziert. Diese Fälle nicht als Fehler-Fallback verwechseln; Code und
+bereits ausgeführte Negativprüfungen sind unverändert, kein Fix erforderlich.
+
+Nächster notwendiger Schritt: den begrenzt angenommenen Leser im tatsächlichen
+lokalen Vollpfad mit expliziter neuer Fall-/Code-/Tagesbindung vorbereiten;
+der bisherige Descriptor sperrt ihn weiterhin. Fehlende Ressourcen und sämtliche
+32 Startbedingungen schließen. Ein vollständiger500er Ressourcenlauf benötigt
+danach ein separates GO. Keine neue bezahlte Wiederholung aus dieser Abnahme
+ableiten und keine fehlende500MB-/Zeitqualifikation als bereits erfüllt ausgeben.
+
+Primärbelege: `PAID_CONTROL_REVIEW_FULL_FINAL_SUMMARY.SAFE.json`,
+`ACTUAL_DEEPSEEK_CONTROL_SOURCE_ACCEPTANCE.SAFE.json` und getrennte
+`SOL_STORAGE_TRANSPORT_AND_CALLERS_CLOSURE.SAFE.json` unter W50.
 
 Belege lokal unter `wave50-common-control-comparison/`, Primärfälle unter
-`wave35-auth-state-parts/meter/`. Kein Upload, bezahlter Modellaufruf, Merge,
-Deployment oder Production-Eingriff in diesem Schritt.
+`wave35-auth-state-parts/meter/`. Genau ein oben abgegrenzter bezahlter
+Quellenlesecheck; kein Upload, Merge, Deployment oder Production-Eingriff.
