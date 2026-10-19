@@ -23,6 +23,9 @@ demselben JS-Prüfer wie die spätere Laufzeit. Er reicht das Flag an Brücke,
 Materialvorbereitung, Autoritätsprozess und initiale Assembly weiter; die
 Konfigurationsassembly übernimmt wie bisher Descriptor und Bootstrapquittung.
 Widersprüchliche Umgebungswerte werden vor dem Überschreiben zurückgewiesen.
+Das gilt auch für die initiale Assembly, bevor sie die Modusvariablen setzt.
+Explizit leere, null-, false- oder0-Werte für den Merkle-Modus sind keine
+fehlende Einstellung; nur Abwesenheit oder der exakt gebundene Modus ist erlaubt.
 Der unveränderte `actualSourceBinding`-Pfad erfasst den Kontrollmodus bereits und
 stellt sämtliche sieben betroffenen Aufrufervariablen auch bei Fehlern wieder her.
 
@@ -59,6 +62,13 @@ Descriptorfelder, alle sieben Aufrufervariablen bei Erfolg und Fehler,
 26 echte Vorlagen samt vollständigem Delta-Replay und die gemeinsame Dateiliste.
 Die bestehende Kalenderanbindungsprüfung deckt nun auch die Kombination mit
 Kontrollsicht ab.
+Die statische Nachprüfung hat außerdem alle26 hashgebundenen Quellenvorlagen in
+den vorhandenen sicheren Archiven zugeordnet (25 im Minimalarchiv, die exakte
+CONFIG.TEMPLATE.json im Ressourcen-Ergänzungsarchiv). Die neuen Eingriffspunkte
+wurden an den archivierten Aufruferquellen gelesen. Kein Renderer wurde dafür
+aufgerufen und keine Originaldatei in den fehlenden Workspace zurückgeschrieben.
+Diese Quellensicht ersetzt weder26 ausgeführte Anbindungstests noch die echte
+Containersichtbarkeit oder eine unabhängige Abnahme.
 Der veraltete native Funktionszähler im vorhandenen Test wurde auf die bereits
 vorhandenen15 Funktionsformen korrigiert; keine SQL-Änderung.
 

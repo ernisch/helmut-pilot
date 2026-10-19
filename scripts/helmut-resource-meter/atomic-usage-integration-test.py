@@ -102,7 +102,8 @@ for(const delta of [{stateStorage:null},{historyReadReuse:null},{controlRead:'of
 const env=AU.environment({},p);assert.equal(env.HELMUT_AUTH_CONTROL_READ,options.controlRead);
 assert.equal(AU.environment(env,p).HELMUT_AUTH_CONTROL_READ,options.controlRead);
 for(const delta of [{HELMUT_AUTH_CONTROL_READ:'off'},{HELMUT_AUTH_CONTROL_READ:''},{HELMUT_AUTH_CONTROL_READ:'unknown'},
- {HELMUT_AUTH_STATE_STORAGE:'other'},{HELMUT_AUTH_HISTORY_READ_REUSE:'off'},
+ {HELMUT_AUTH_STATE_STORAGE:'other'},{HELMUT_AUTH_STATE_STORAGE:''},{HELMUT_AUTH_STATE_STORAGE:null},
+ {HELMUT_AUTH_STATE_STORAGE:false},{HELMUT_AUTH_STATE_STORAGE:0},{HELMUT_AUTH_HISTORY_READ_REUSE:'off'},
  {HELMUT_AUTH_GRAPH_READ_REUSE:'verified-graph-reuse-v1'},{HELMUT_AUTH_GRAPH_READ_REUSE:'off'},
  {HELMUT_AUTH_SINGLE_WRITE_CAPTURE:'single-write-capture-v1'},{VERCEL:'1'},
  {HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY:'not-a-key'}])assert.throws(()=>AU.environment({...env,...delta},p));
@@ -166,6 +167,7 @@ assert.deepEqual(keys.map(k=>process.env[k]),before);
             self.assertIn('.environment(env,',files[relative])
         self.assertIn("'HELMUT_AUTH_CONTROL_READ'",files['native-end-preparation/runtime-candidates/root-authority-stage.candidate.js'])
         assembly=files['assemble-after-activation.js']
+        self.assertLess(assembly.index('.environment(process.env,'),assembly.index("process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"))
         self.assertLess(assembly.index("process.env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';"),assembly.index('const initialSourceBinding='))
         subprocess.run(['node','-e',"const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"],
             input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,check=True,capture_output=True)

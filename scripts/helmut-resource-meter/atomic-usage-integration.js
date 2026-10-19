@@ -92,7 +92,7 @@ function environment(env, p) {
   assert(env.HELMUT_AUTH_CONTROL_READ === undefined || (d.controlRead === CONTROL_READ
     && env.HELMUT_AUTH_CONTROL_READ === d.controlRead), "Control view requires exact descriptor opt-in");
   assert(env.HELMUT_LLM_USAGE_STORAGE === undefined || env.HELMUT_LLM_USAGE_STORAGE === MODE);
-  assert(!env.HELMUT_AUTH_STATE_STORAGE || env.HELMUT_AUTH_STATE_STORAGE === d.stateStorage);
+  assert(env.HELMUT_AUTH_STATE_STORAGE === undefined || env.HELMUT_AUTH_STATE_STORAGE === d.stateStorage);
   assert(env.HELMUT_AUTH_HISTORY_READ_REUSE === undefined || env.HELMUT_AUTH_HISTORY_READ_REUSE === d.historyReadReuse);
   assert(env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON === undefined
     || env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON === (d.localCalendar ? JSON.stringify(d.localCalendar) : undefined));

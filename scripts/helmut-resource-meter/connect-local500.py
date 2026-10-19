@@ -155,7 +155,7 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                     'const config={...base,atomicUsageInput:r.atomicUsageInput,atomicUsageReceipt:r.atomicUsageReceipt,')
             elif relative=='assemble-after-activation.js':
                 change(' const initialSourceBinding=',
-                    " process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else '')+("process.env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';" if control_mode else '')+('process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else '')+"\n const initialSourceBinding=")
+                    " require("+helper+").environment(process.env,"+descriptor+");\n process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else '')+("process.env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';" if control_mode else '')+('process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else '')+"\n const initialSourceBinding=")
                 if calendar:
                     change('briefingDatum:runtime.start','briefingDatum:'+json.dumps(calendar['sourceViewAtUTC']))
                 change(' const shared={status:',
