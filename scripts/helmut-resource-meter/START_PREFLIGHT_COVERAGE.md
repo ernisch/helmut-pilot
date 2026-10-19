@@ -3,9 +3,9 @@
 This is a local development gate. It grants no GO and never activates a profile.
 All historical resource attempts, their owner documents, claims, databases,
 receipts and inputs remain immutable. No consumed namespace can be reset or replayed.
-The current prospective slot is V7 with 13 pinned historical markers; it is not
-a new operator GO. Its proposed dedicated internal subnet is 172.16.244.0/24;
-the old 172.16.245.0/24 network remains intact and occupied by its historical case.
+The current prospective slot is V8 with 15 pinned historical markers; it is not
+a new operator GO. Its proposed dedicated internal subnet is 172.16.243.0/24;
+the old 172.16.244.0/24 and 172.16.245.0/24 networks remain intact.
 
 `full500-controller.py --check-only --accepted-bindings FILE` is the single
 read-only entry point. Its result reports every independent check group, including
@@ -112,8 +112,8 @@ blocked reviews remain retained and cannot serve as positive acceptance.
 
 ## Current authorization status
 
-No new GO exists. The current V7 namespace is prospective and unused; all consumed
-namespaces through V6 remain blocked. A future attempt needs a separately approved
+No new resource GO exists. The current V8 namespace is prospective and unused; all consumed
+namespaces through V7 remain blocked. A future attempt needs a separately approved
 exact binding, never deletion or relabeling of old claims. Historical day-window
 acceptances cannot be silently extended: the explicit local fixture calendar
 requires its own independent scope adoption. Local mock/input success does not
@@ -136,14 +136,14 @@ controller and direct full-authority path always require the real GO schema,
 explicit new authorization, literal preservation, fresh timestamp/reference, exact
 confirmation and final owner path. No planning flag reaches the executable recipe.
 
-The fixed next claim/reservation are `NEXT_RESOURCE18_V7_*` in the existing meter
-area. All 13 consumed markers through V6 are hash-pinned to their preserved
+The fixed next claim/reservation are `NEXT_RESOURCE19_V8_*` in the existing meter
+area. All 15 consumed markers through V7 are hash-pinned to their preserved
 baseline and never reset. This slot is prospective; its existence in code grants
-no GO. A new case and the proposed unused internal172.16.244/24 subnet keep all
+no GO. A new case and the proposed unused internal172.16.243/24 subnet keep all
 old networks intact; the fresh preflight rechecks every actual subnet for overlap.
 Loop allocation remains an atomic runtime check against the reviewed unbound minor.
 
-The successful16Oct and17Oct corrections are reused only as preexisting input: exact capture
+The successful16Oct,17Oct and18Oct corrections are reused only as preexisting input: exact capture
 SHA, real old receipt/consumed-marker provenance, unchanged monetary limits, actual
 native original/corrected auth and entire counter table, plus dump/roles/binary
 pins. The historical correction GO grants no new resource authority. No correction
@@ -204,19 +204,38 @@ guarantee against later disk, scheduling or other I/O failures. Every full
 technical condition must still pass freshly; insufficient free disk remains a
 technical blocker, distinct from missing operator GO.
 
-## Fixed day18/V7 continuation
+## Whole-run window and final runtime authority
 
-The next slot accepts only18October2026 and a newV7 owner document, global claim
-and reservation. All 13 consumed markers through V6 remain in the immutable
+`controller.window` and `start-preflight.window_evidence` require at least
+8689.543088 seconds:8089.543088 seconds for the last complete workflow plus600
+seconds for setup/close reserve. The actual controller calls this gate before
+setup and again after the owned database is ready. Its second complete
+32-condition assessment must pass immediately before the exclusive reservation.
+
+The shared and final isolation authority checks retain an additional
+8089.543088-second runtime-workflow floor. That floor is not a substitute for
+the complete whole-run gate: `verify_full_authority` also requires the exact
+reserved complete proof and a matching actual post-setup start receipt no older
+than60 seconds. `claim_full_attempt` and `launch_application` call that same
+final authority check. Neither a lower isolation floor nor a planning-only
+intent authorizes bypassing the complete8689.543088-second controller gate.
+These are existing separate checks; no window, reserve or runtime limit is
+changed by this explanation.
+
+## Fixed day19/V8 continuation
+
+The next slot accepts only19October2026 and a newV8 owner document, global claim
+and reservation. All 15 consumed markers through V7 remain in the immutable
 historical baseline; they are never reset. Unapproved intents cannot
 satisfy an executable owner-policy check. Old cases are retained unchanged.
 
-The input source is the separately approved, completed book17 correction in
-`helmut_resource_input_20261018_ab76c911dac8`. The shared source verifier checks
-both correction receipts, native financial witnesses, the full empty counter
-table, and the exact book17/capacity38→39 delta. Historical approval references
+The input source is the separately approved, completed book18 correction in
+`helmut_resource_input_20261019_e400dff25393`. The shared source verifier checks
+all three correction receipts, native financial witnesses, the full empty counter
+table, and the exact book18/capacity39→40 delta while preserving the earlier
+correction bindings. Historical approval references
 prove completed input provenance only; their owner documents are not opened or
-reused as resource authority. Current-day18 bookkeeping remains the original
+reused as resource authority. Current-day19 bookkeeping remains the original
 in-memory projection until genuinely authorized runtime preparation.
 
 `next-resource-authority.capture_data_pins` supplies the same explicit source
@@ -225,7 +244,7 @@ check. It includes prior witnesses/receipts and the completed input-only claim;
 it excludes historical owner approvals. `query_input` has no writable mode and
 can address only that fixed completed local input database.
 
-The proposed dedicated subnet is172.16.244.0/24, selected after a complete read-only
+The proposed dedicated subnet is172.16.243.0/24, selected after a complete read-only
 overlap check and checked again before setup. Earlier networks remain intact.
 The explicit local mock calendar is the only calendar-contract change; all500
 profiles/1500positions/16fresh controls, originalU, Offline90/Unit60/Auth30,
@@ -233,11 +252,11 @@ joint2048000000-byte limit, filesystem reserve and runtime safeguards are unchan
 
 The actual preparation and its deterministic precheck now share
 `measured-preparation.assertInputBindings`: the physical corrected input,
-logical source namespace in the new owned server, exact18October target and
-newV7 claim path must agree before any real claim file is read. The connection
+logical source namespace in the new owned server, exact19October target and
+newV8 claim path must agree before any real claim file is read. The connection
 also binds these fields to the Python authority constants. No future claim is
 created for the precheck. The actual atomic installer and materials precheck
 share `atomic-usage-integration.assertLocalTarget`, preserving its original
-production/profile/container guards with the current18October namespace.
+production/profile/container guards with the current19October namespace.
 The entry regression stops at the first mocked SQL boundary and creates no
 database, activation, acceptance receipt or usable operator authority.

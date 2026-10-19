@@ -68,11 +68,20 @@ Der bestehende Vorabcheck verlangt passende tatsächliche DeepSeek-Pro-High-
 Reviewbelege für die neue Quellen-/Autoritätsbindung und vollständige Verbraucher-
 abdeckung. Alte Quellpins passen nicht zu geändertem Code. Codex-Abnahmen werden
 nicht als DeepSeek ausgegeben; Reviewer-/Statusprüfungen bleiben unverändert.
-Ein konkreter lesender Prüfauftrag und SHA-Quellmanifest werden vorbereitet.
-Im bisherigen Vorbereitungsumfang wurden keine bezahlten Provideraufrufe gemacht.
-Die neue vollständige32/32-Abnahme und ein separates ausdrücklich auf den neuen
-Kandidaten bezogenes Ressourcen-GO bleiben offen. Noch kein Startbereitschafts-
-oder vollständiger500er-/Zeit-/Speichernachweis.
+Genau ein anschließend ausdrücklich freigegebener bezahlter Pro-High-Leseaufruf
+ist abgeschlossen, Status`blocked`,86.371 Eingabe-/13.779 Ausgabetokens. Keine
+automatische Wiederholung. Das noch aufV7/13 Marker/Subnetz244 bezogene
+Abdeckungsdokument ist auf den tatsächlichenV8/15/243-Stand korrigiert.
+Die zusätzliche Beanstandung8089 gegenüber8689 Sekunden ist anhand des gesamten
+Startpfads eingegrenzt: vollständiges8689,543088s-Prüftor vor Setup und erneut
+nach Datenbankbereitschaft, zusätzlich8089,543088s-Laufzeitprüfung in der
+finalen gebundenen Autorität. Vier gezielte Zeitgrenzfälle und drei bestehende
+Sicherheitsprüfungen bestanden. Ausführbarer Code und Vertrag unverändert.
+Die frühere blockierte Antwort wird nicht als Abnahme verwendet. Die konkrete
+frische Nachprüfung ist vorbereitet, jedoch ohne neues ausdrückliches Provider-GO
+nicht ausgeführt. Die neue vollständige32/32-Abnahme und ein separates ausdrücklich
+auf den neuen Kandidaten bezogenes Ressourcen-GO bleiben offen. Noch kein
+Startbereitschafts- oder vollständiger500er-/Zeit-/Speichernachweis.
 
 ## Belege
 
