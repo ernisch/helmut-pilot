@@ -14,6 +14,8 @@ class Config(ctypes.Structure):
     _fields_=[('fd',ctypes.c_uint32),('block_size',ctypes.c_uint32),('info',Info),('reserved',ctypes.c_uint64*8)]
 class CapHeader(ctypes.Structure):_fields_=[('version',ctypes.c_uint32),('pid',ctypes.c_int)]
 class CapData(ctypes.Structure):_fields_=[('effective',ctypes.c_uint32),('permitted',ctypes.c_uint32),('inheritable',ctypes.c_uint32)]
+LO_FLAGS_DIRECT_IO=0x10
+LO_FLAGS_AUTOCLEAR=0x4
 
 def save(path,data):
     fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o644)
@@ -33,10 +35,19 @@ def identity(fd):
     return {'imageDevice':int(i.device),'imageInode':int(i.inode),'loopMinor':int(i.number),
             'offset':int(i.offset),'sizeLimit':int(i.sizelimit),'capacityBytes':int.from_bytes(b,'little')}
 
+def io_mode(fd,requested):
+    flags=int(info(fd).flags)
+    if flags&LO_FLAGS_AUTOCLEAR or flags!=(LO_FLAGS_DIRECT_IO if requested else 0):
+        raise RuntimeError('actual owned loop IO flags differ; no buffered fallback')
+    return {'directIO':requested,'actualLoopFlags':flags,'autoclear':False,
+            'bufferedFallbackAllowed':False}
+
 def main():
     out=Path('/meter-setup');cfg=json.loads((out/'CONFIG.SAFE.json').read_text())
     if cfg['schema']!='helmut-owned-new-loop-setup/1' or cfg['production'] is not False:raise RuntimeError('local setup only')
     n=cfg['loopMinor'];size=cfg['bytes']
+    direct_io=cfg.get('directIO',False)
+    if type(direct_io)is not bool:raise RuntimeError('explicit boolean direct IO mode required')
     if type(n)is not int or not 0<=n<=4095 or type(size)is not int or size<128*1024*1024 or size>8000000000 or size%4096:
         raise RuntimeError('bounded image configuration invalid')
     if type(cfg['maximumHoldSeconds'])is not int or not 1<=cfg['maximumHoldSeconds']<=12*3600:
@@ -53,10 +64,11 @@ def main():
     # Never detach/reassign any mapping, even after a failed setup.
     # Keep the OWN mapping after crashes. Autoclear would allow minor reuse
     # while a retained Docker volume still names its old device path.
-    c=Config();c.fd=image;c.block_size=4096;c.info.sizelimit=size;c.info.flags=0
+    c=Config();c.fd=image;c.block_size=4096;c.info.sizelimit=size;c.info.flags=LO_FLAGS_DIRECT_IO if direct_io else 0
     c.info.file_name=b'HELMUT_OWN_NEW_LOCAL_METER'
     fcntl.ioctl(fd,0x4C0A,bytes(c))
     before=identity(fd)
+    mode_before=io_mode(fd,direct_io)
     if before!={'imageDevice':s.st_dev,'imageInode':s.st_ino,'loopMinor':n,'offset':0,'sizeLimit':size,'capacityBytes':size}:
         raise RuntimeError('kernel loop mapping/capacity mismatch')
     read_only=os.open(device,os.O_RDONLY|os.O_CLOEXEC);os.close(fd);os.close(image)
@@ -69,13 +81,16 @@ def main():
     caps=next(x.split(':',1)[1].strip() for x in Path('/proc/self/status').read_text().splitlines() if x.startswith('CapEff:'))
     if int(caps,16)!=0:raise RuntimeError('setup privileges not dropped')
     save_fd(ready_fd,{'schema':'helmut-kernel-owned-block-capacity/1',**before,
+         'ioMode':mode_before,
          'capsAfterSetup':caps,'boundIsCapacityNotMeasuredPeak':True,'backingFilesystemOverheadOutsideGuestScope':True,
          'ownedGuestFilesystemIncludesPGDATAWALAndFilesystemMetadata':True,'production':False})
     until=time.monotonic()+cfg['maximumHoldSeconds']
     while not (out/'STOP').exists() and time.monotonic()<until:time.sleep(.1)
     after=identity(read_only)
+    mode_after=io_mode(read_only,direct_io)
     os.unlink('LOOP_DEVICE',dir_fd=node_dir);os.close(node_dir)
     save_fd(final_fd,{'identityUnchanged':after==before,'identity':after,'ownerRequestedStop':(out/'STOP').exists(),
+         'ioMode':mode_after,'ioModeUnchanged':mode_after==mode_before,
          'deviceNodeRetiredBeforeExit':True,'ownedMappingRetainedForSafeRecovery':True,
          'boundIsCapacityNotMeasuredPeak':True,'full500RunAuthority':False,'production':False})
     os.close(read_only)

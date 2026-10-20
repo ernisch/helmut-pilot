@@ -34,14 +34,17 @@ const CONTROL_SOURCE_ACCEPTANCE = Object.freeze({
   localDiagnosticDelta: Object.freeze({ file: "lib/helmut/synthetik-500-production-adapter.js",
     originalSHA256: "124ed8275efd479ae922ee493d15186701afeaafdbcc1b6def014399e28d34f3",
     sha256: "4c4f18257942f37da4504da20614940f030e59803042cec357bfa275496f7bdb",
-    scope: "Nonenumerable Error.cause only; same public stop and no retry", requiresFreshIntegrationAcceptance: true })
+    scope: "Nonenumerable Error.cause only; same public stop and no retry", requiresFreshIntegrationAcceptance: true }),
+  // Separate source-only review for these later callers; W50 and V11 remain
+  // historical. Fresh complete integration admission is still mandatory.
+  localReadCallerDelta: Object.freeze({"baselineCommit":"5fae25be5068a278a88daca9a7508c7b9e4001a3","scope":"Additional read-only journal selectors only; full writer/accounting/receipt reads and native protocol unchanged","independentSourceReview":Object.freeze({"name":"REPORT.SAFE.json","bytes":7710,"sha256":"c06da6c2b64159fc834935e395aa5e83d0ba96fd8ce4dcb449ac42c44052ebda"}),"candidateSourceSHA256":Object.freeze({"lib/helmut/storage.js":"51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d","lib/helmut/synthetik-500-production-adapter.js":"1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4"}),"requiresFreshIntegrationAcceptance":true,"newGlueAccepted":false,"full500Accepted":false,"RAMOrTimeGainAccepted":false})
 });
 const CONTROL_SOURCE_HASHES = Object.freeze({
   "lib/helmut/llm-usage-atomic.js": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0",
   "lib/helmut/auth-state-parts.js": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9",
   "lib/helmut/auth-store-cas.js": "92cba40816bb8cf8919db846d31b736a77b28e3e8d6d24712646bd0509755dd4",
-  "lib/helmut/storage.js": "88b6d2354d356e6f6f7ab8295c60a389f0efd0ed648e06a26248e1d1a3b2f96f",
-  "lib/helmut/synthetik-500-production-adapter.js": "4c4f18257942f37da4504da20614940f030e59803042cec357bfa275496f7bdb",
+  "lib/helmut/storage.js": "51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d",
+  "lib/helmut/synthetik-500-production-adapter.js": "1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4",
   "lib/helmut/testkosten-budget.js": "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e",
   "lib/helmut/synthetik-500-dispatch-journal.js": "c9cf08100d63646e9c16f931b257b6ccc7fa65fc96e18f7bc6459e530bd5e4b8",
   "supabase/proposals/auth_state_parts_local.sql": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61",

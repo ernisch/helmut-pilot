@@ -38,11 +38,12 @@ def retire_nodes(out):
     out=Path(out)
     if (out/'nodes').exists():os.rename(out/'nodes',out/'RETIRED-nodes')
 
-def create(out,size,minor,parent,hold=900):
+def create(out,size,minor,parent,hold=900,*,direct_io=False):
     out=Path(out).resolve()
     if out.parent!=BASE or out.is_symlink() or type(size)is not int or not 128*1024*1024<=size<=8000000000 or size%4096:
         raise RuntimeError('new bounded workspace image only')
     if type(minor)is not int or not 0<=minor<=4095:raise RuntimeError('exact single loop device required')
+    if type(direct_io)is not bool:raise RuntimeError('explicit boolean direct IO mode required')
     fs=os.statvfs(BASE)
     if fs.f_bavail*fs.f_frsize<size+8*1024**3:raise RuntimeError('preserve8GiB free workspace reserve before fixture creation')
     out.mkdir(mode=0o755,exist_ok=False);out.chmod(0o755);image=out/'image.raw'
@@ -58,6 +59,7 @@ def create(out,size,minor,parent,hold=900):
         'discardDisabled':True,'allocationBefore':allocation_before,'allocationAfter':allocation_after,'production':False})
     cfg={'schema':'helmut-owned-new-loop-setup/1','production':False,'loopMinor':minor,'bytes':size,
         'imageInode':initial.st_ino,'imageDevice':initial.st_dev,'maximumHoldSeconds':hold}
+    if direct_io:cfg['directIO']=True
     K.save_new(out/'CONFIG.SAFE.json',cfg)
     name='helmut-meter-storage-'+secrets.token_hex(4);K.initialize_parent(parent,name+'-unused')
     args=['create','--name',name,'--network','none','--cap-drop','ALL','--cap-add','MKNOD','--cap-add','SYS_ADMIN','--cap-add','DAC_OVERRIDE',
@@ -78,6 +80,8 @@ def create(out,size,minor,parent,hold=900):
         time.sleep(.1)
     if r is None:raise RuntimeError('owned loop setup failed; retain evidence, never reassign or retry automatically')
     if r['capacityBytes']!=size or int(r['capsAfterSetup'],16)!=0:raise RuntimeError('kernel capacity/privilege receipt missing')
+    if direct_io and r.get('ioMode')!={'directIO':True,'actualLoopFlags':16,'autoclear':False,'bufferedFallbackAllowed':False}:
+        raise RuntimeError('actual direct IO required before any owned filesystem mount')
     if K.docker(['inspect','--format','{{.State.Running}}|{{.State.ExitCode}}',cid]).stdout.strip()!='true|0':
         raise RuntimeError('stale readiness receipt; helper is no longer live')
     volume=name+'-filesystem'
@@ -88,6 +92,7 @@ def create(out,size,minor,parent,hold=900):
         retire_nodes(out)
         raise RuntimeError('helper exited while creating owned volume; do not mount or start any database')
     result={'schema':'helmut-owned-bounded-storage/1','out':str(out),'image':str(image),'bytes':size,'loopMinor':minor,
+            'directIO':direct_io,
             'volume':volume,'name':name,'containerId':cid,'parent':parent,'filesystemUUID':uuid,
             'kernelReadyReceipt':{'path':str(ready),'bytes':ready.stat().st_size,'sha256':hashlib.sha256(ready.read_bytes()).hexdigest()},
             'actualPeakIsNotClaimedEqualToCapacity':True,'full500Runs':0,'resourceGOConsumed':False,'production':False}
@@ -102,6 +107,8 @@ def finish(storage):
     code=int(K.docker(['wait',storage['containerId']],timeout=30).stdout.strip())
     final=json.loads((out/'STORAGE_FINAL.SAFE.json').read_text())
     if code or not final['identityUnchanged']:raise RuntimeError('owned storage final identity/exit incomplete')
+    if storage.get('directIO')is True and(final.get('ioModeUnchanged')is not True or final.get('ioMode')!={'directIO':True,'actualLoopFlags':16,'autoclear':False,'bufferedFallbackAllowed':False}):
+        raise RuntimeError('owned direct IO mode changed before final holder exit')
     return final
 
 if __name__=='__main__':

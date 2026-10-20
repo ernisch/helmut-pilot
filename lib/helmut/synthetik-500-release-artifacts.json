@@ -251,8 +251,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 545627,
-      "sha256": "88b6d2354d356e6f6f7ab8295c60a389f0efd0ed648e06a26248e1d1a3b2f96f"
+      "bytes": 545779,
+      "sha256": "51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -351,8 +351,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-production-adapter.js",
-      "bytes": 28310,
-      "sha256": "4c4f18257942f37da4504da20614940f030e59803042cec357bfa275496f7bdb"
+      "bytes": 28589,
+      "sha256": "1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4"
     },
     {
       "path": "lib/helmut/synthetik-500-production-command.js",
@@ -445,11 +445,11 @@
       "sha256": "0d4f52725c0273420c10ff3506f6135bb2232a47992ef10c7811962780b9ef41"
     }
   ],
-  "sourceMappingSHA256": "cb08a6becfbaff206f4d3418f5b960216e9ce260ccc1424629ebdb150f1e5781",
+  "sourceMappingSHA256": "d2e784627807f848c83b242054f19f97f0ae8946d149c78331d8e9e828483609",
   "currentCandidateFull500Qualification": false,
   "candidateQualificationScope": "LOCAL_DEFAULT_OFF_CONTROL_VIEW_AND_NATIVE_COMPONENT_SECURITY_ONLY; COMMON_RAM_OFFLINE90_UNIT60_AUTH30_FULL500_PRODUCTION_NOT_QUALIFIED",
-  "priorManifestCommit": "c5e4d2d5a2ecf9b7766e3d32eb55a87db0e971b9",
-  "priorManifestSHA256": "d14bbb3f7e281cd815c6043814a0012810984d21ff15144bc9791c26628e6c34",
-  "priorSourceMappingSHA256": "9be175599f653729a835debab376b9f6ca4f7d102a7ebb8e91ec59ff62d336cf",
+  "priorManifestCommit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",
+  "priorManifestSHA256": "96683e0756f83840dfd2b281c770e8c5eace104bbd5d5be2e22c07d5d3264f6a",
+  "priorSourceMappingSHA256": "cb08a6becfbaff206f4d3418f5b960216e9ce260ccc1424629ebdb150f1e5781",
   "contentQualificationEvidenceIsHistoricalOnly": true
 }

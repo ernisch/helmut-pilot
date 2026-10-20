@@ -398,6 +398,8 @@ def check_container_visibility(fixture,recipe):
 def create_database(out,name,parent,network,scope='small-meter-validation',storage=None,fixture=None):
     if not storage:raise RuntimeError('native meter requires actual owned bounded filesystem')
     if scope=='owner-approved-local500-resources' and storage['bytes']!=2147483648:raise RuntimeError('V11 local plan requires exact2GiB owned device')
+    if scope=='owner-approved-local500-resources' and storage.get('directIO')is not True:
+        raise RuntimeError('new local resource candidate requires actual direct IO storage')
     fs=os.statvfs('/workspace')
     floor=(8 if scope=='owner-approved-local500-resources'else 4)*1024**3
     if fs.f_bavail*fs.f_frsize<floor:

@@ -176,7 +176,7 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     storage_out=I.ONCE.parent/('full500-owned-storage'+I.A.DAY[-2:]+'-'+case.name.removeprefix('attempt-'))
     # V11: stricter2GiB device upper bound, unchanged8GiB host reserve.
     # stage_contract checks this exact capacity before setup/GO is consumed.
-    storage=storage_module.create(storage_out,connection['storageCapacityBytes'],minor,parent+'/storage',hold=connection['storageHoldSeconds'])
+    storage=storage_module.create(storage_out,connection['storageCapacityBytes'],minor,parent+'/storage',hold=connection['storageHoldSeconds'],direct_io=True)
     if connection.get('approvedInternalSubnet')!=I.A.SUBNET:raise RuntimeError('exact new reviewed172 gateway subnet missing')
     I.create_network(network,subnet=connection['approvedInternalSubnet'])
     db=I.create_database(case/'database',dbname,parent+'/database',network,scope='owner-approved-local500-resources',storage=storage,fixture=connection)

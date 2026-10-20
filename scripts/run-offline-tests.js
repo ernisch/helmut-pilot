@@ -217,6 +217,7 @@ const STANDARD = new Set([
   "synthetik-500-kosten-admission-test.js", // dormante atomare Intentreserve, kein installierter Laufplan
   "synthetik-500-kosten-plan-test.js",      // vollstaendige endliche Kostenpositionen ohne Budgetfreigabe
   "synthetik-500-executor-test.js",         // gebundene Offline-Ablaufvorbereitung und absolute Laufzeitgrenze
+  "fresh-control-callers-test.js", // verifizierte frische Kontrollauswahl, Schreib-/Abrechnungszustand bleibt voll
   "synthetik-500-production-adapter-test.js", // neuer endlicher Adapter/CAS/Once, ausschliesslich lokale Fakes
   "synthetik-500-date-binding-test.js",     // neue reine Quellen-/Ausfuehrungszeitbindung, unveraenderlicher EU-Vertrag
   "synthetik-500-date-handoff-test.js",     // neue opaque Token-/D/R-/Belegtag-Integration, ausschliesslich lokale Fakes

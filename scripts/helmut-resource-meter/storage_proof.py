@@ -19,6 +19,12 @@ def verify(pgdata,pin):
     if pgdata.resolve()!=pgdata or pgdata.is_symlink():raise RuntimeError('PGDATA must be a real owned directory')
     device=pgdata.stat().st_dev
     if os.major(device)!=7 or os.minor(device)!=r['loopMinor']:raise RuntimeError('PGDATA is on a different block device')
+    direct=r.get('ioMode',{}).get('directIO')is True
+    if direct:
+        if r['ioMode']!={'directIO':True,'actualLoopFlags':16,'autoclear':False,'bufferedFallbackAllowed':False}:
+            raise RuntimeError('direct IO receipt mode differs')
+        if(Path('/sys/block')/('loop'+str(r['loopMinor']))/'loop/dio').read_text().strip()!='1':
+            raise RuntimeError('actual owned loop no longer uses direct IO')
     buf=ctypes.create_string_buffer(256);libc=ctypes.CDLL(None,use_errno=True)
     if libc.statfs(os.fsencode(pgdata),ctypes.byref(buf))!=0:raise OSError(ctypes.get_errno(),'statfs failed')
     fs_type=int.from_bytes(buf.raw[:8],'little',signed=True)
@@ -29,9 +35,11 @@ def verify(pgdata,pin):
         for name in dirs+files:
             q=Path(root)/name
             if q.is_symlink() or q.stat().st_dev!=device:raise RuntimeError('external PGDATA storage detected')
-    return {'schema':'helmut-verified-owned-storage-upper/1','provenUpperBytes':capacity,
+    result={'schema':'helmut-verified-owned-storage-upper/1','provenUpperBytes':capacity,
             'nativeFilesystemType':'ext4','nativeLoopMinor':r['loopMinor'],
             'nativeFilesystemBytes':fs.f_blocks*fs.f_frsize,
             'scope':'All blocks of this exclusive guest filesystem, including PGDATA,WAL and its filesystem metadata',
             'actualPeakIsNotClaimedEqualToUpper':True,'hostBackingFilesystemOverheadOutsideGuestScope':True,
             'externalPGDATASymlinksOrDevices':False}
+    if direct:result['actualDirectIO']=True
+    return result
