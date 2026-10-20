@@ -114,21 +114,54 @@ jobs:
       - name: FinalContext Subject-Tupel-Codec (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         run: python3 -B scripts/final_context_subject_tuple_codec_test.py
-      - name: Lokaler Ressourcenstart Vorabcheck (rein synthetisch/offline)
+      - name: Exakte Node-Version für den lokalen Heap-Nachweis
+        if: steps.plan.outputs.standard == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.19.0
+      - name: Native Speicher-/Workerbudgets (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
+          # The real short-child guard requires this exact runtime version/path.
+          # Provide the actual setup-node binary, never a shim or a version mock.
+          test "$(node --version)" = v24.19.0
+          runtime_node=/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node
+          test ! -e "$runtime_node"
+          test ! -L "$runtime_node"
+          sudo install -D -m 0755 "$(command -v node)" "$runtime_node"
+          cmp "$(command -v node)" "$runtime_node"
+          test "$("$runtime_node" --version)" = v24.19.0
+          # One budget test creates and removes its own temporary /workspace
+          # directory. Only a new disposable runner root is made writable.
+          test ! -e /workspace
+          test ! -L /workspace
+          sudo install -d -m 0755 -o "$(id -u)" -g "$(id -g)" /workspace
+          # These two suites use only synthetic receipts/mocked Docker and short
+          # local Node children. They precede checks requiring private originals.
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/native-memory-budget-test.py
+          node scripts/lokal.js -- node scripts/helmut-resource-meter/native-node-budget-test.js
+      - name: Node-Version der bestehenden Offline-Suiten wiederherstellen
+        if: steps.plan.outputs.standard == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Ressourcenstart und Originalbindungen (offline)
         if: steps.plan.outputs.standard == 'true'
         run: |
           # The runtime keeps its exact approved absolute module location.
-          # In this disposable GitHub runner, provide ONLY the same helper bytes
+          # In this disposable GitHub runner, provide ONLY the same import closure
           # before importing the synthetic tests. Never replace an existing file.
           runtime_helper=/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/next-resource-authority.py
           if [ "$GITHUB_WORKSPACE/scripts/helmut-resource-meter/next-resource-authority.py" != "$runtime_helper" ]; then
-            test ! -e "$runtime_helper"
-            sudo install -D -m 0644 scripts/helmut-resource-meter/next-resource-authority.py "$runtime_helper"
-            cmp scripts/helmut-resource-meter/next-resource-authority.py "$runtime_helper"
-            runtime_slot="${runtime_helper%/*}/local-resource-authority-slot.json"
-            test ! -e "$runtime_slot"
-            sudo install -D -m 0644 scripts/helmut-resource-meter/local-resource-authority-slot.json "$runtime_slot"
-            cmp scripts/helmut-resource-meter/local-resource-authority-slot.json "$runtime_slot"
+            for helper in next-resource-authority.py local-resource-authority-slot.json \
+              capture-local-source.py local-source-runtime-binding.json local-day20-input-binding.json \
+              local-calendar-binding.py native-memory-budget.py; do
+              runtime_file="${runtime_helper%/*}/$helper"
+              test ! -e "$runtime_file"
+              test ! -L "$runtime_file"
+              sudo install -D -m 0644 "scripts/helmut-resource-meter/$helper" "$runtime_file"
+              cmp "scripts/helmut-resource-meter/$helper" "$runtime_file"
+            done
           fi
           # Der echte Lauf bleibt an seinen freigegebenen /workspace-Pfad gebunden.
           # Nur die synthetischen CI-Mocks laden ihre Module aus dem Checkout.
@@ -139,6 +172,7 @@ jobs:
           tests = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(tests)
           tests.C.I.BIN = path.parent
+          tests.C.C.BIN = path.parent
           result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromModule(tests))
           raise SystemExit(not result.wasSuccessful())
           PY

@@ -96,7 +96,7 @@ def exact_case_binding(case,target,container,operation):
     if (target,container,operation)!=('helmut_resource_fixture_'+A.DATE_TAG+'_'+suffix,'helmut-meter-db-w20-'+suffix,'synthetik500-resources'+A.DAY[-2:]+'-'+suffix):
         raise RuntimeError('case/target/container/operation suffix mismatch')
 
-def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin,atomic_usage_pin=None,restore_staging_inputs=None):
+def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin,atomic_usage_pin=None,restore_staging_inputs=None,native_memory_budget=None):
     """Actual deterministic staging transformation, without creating/writing files."""
     templates=json.loads((BIN/'legacy-harness-pins.json').read_text())['files']
     for p in templates:
@@ -110,6 +110,9 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
       ("O+'/OWNER_LOCAL_GO.PRIVATE.json'",repr(owner_go_pin['path'])),
       ('/tmp/helmut-fresh-runtime-fixture-b27c2026.conf','/tmp/helmut-resource-fixture.conf')]
     deltas=[]
+    if native_memory_budget is not None:
+        spec=importlib.util.spec_from_file_location('rendered_native_budget',BIN/'native-memory-budget.py')
+        budget=importlib.util.module_from_spec(spec);spec.loader.exec_module(budget);budget.validate_policy(native_memory_budget)
     candidate=read_atomic_descriptor(atomic_usage_pin) if atomic_usage_pin else None
     calendar=candidate.get('localCalendar') if candidate else None
     if calendar is not None:
@@ -117,6 +120,10 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
         if calendar['operationId']!=operation:raise RuntimeError('local calendar operation differs')
     for template in templates:
         original=Path(template['path']).read_text();text=original;changes=[]
+        if native_memory_budget is not None and template['relative']=='native-end-preparation/run-reviewed-sequence.js':
+            old="'--max-old-space-size=1536'";new="'--max-old-space-size=384','--max-semi-space-size=16'"
+            if text.count(old)!=1:raise RuntimeError('exact original local Node heap option required')
+            text=text.replace(old,new);changes.append({'from':old,'to':new,'count':1})
         for old,new in replacements:
             count=text.count(old)
             if count:text=text.replace(old,new);changes.append({'from':old,'to':new,'count':count})
@@ -290,7 +297,7 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
         deltas.append({'original':{k:template[k] for k in ['path','bytes','sha256']},'destination':str(destination),'text':text,'replacements':changes})
     return deltas
 
-def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin,prepare_only=False,atomic_usage_pin=None,restore_staging_inputs=None):
+def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin,prepare_only=False,atomic_usage_pin=None,restore_staging_inputs=None,native_budget_runtime_pin=None):
     case=Path(case).resolve()
     restored=read_restored_staging_inputs(restore_staging_inputs,case)
     exact_case_binding(case,target,container,operation)
@@ -309,7 +316,12 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
     if owner.get('allowDispose') is not False:raise RuntimeError('explicit allowDispose=false required before staging')
     if owner.get('production') is not False or owner.get('syntheticProfiles')!=500 or owner.get('targetDatabase')!=target:
         raise RuntimeError('existing once GO exact new local binding required')
-    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin={'path':owner['finalOwnerGOPath']},atomic_usage_pin=atomic_usage_pin,restore_staging_inputs=restore_staging_inputs)
+    budget=None
+    if native_budget_runtime_pin is not None:
+        spec=importlib.util.spec_from_file_location('staged_native_budget',BIN/'native-memory-budget.py')
+        budget=importlib.util.module_from_spec(spec);spec.loader.exec_module(budget)
+        budget.validate_runtime(read_pin(native_budget_runtime_pin))
+    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin={'path':owner['finalOwnerGOPath']},atomic_usage_pin=atomic_usage_pin,restore_staging_inputs=restore_staging_inputs,native_memory_budget=budget.policy()if budget else None)
     case.mkdir(mode=0o700,exist_ok=False);n=case/'native-end-preparation';n.mkdir(mode=0o700);(n/'runtime-candidates').mkdir(mode=0o700)
     deltas=[]
     for item in rendered:
@@ -331,6 +343,7 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
       'engineModified':bool(local),'originalFilesModified':False,'production':False,'preparedWithoutGO':prepare_only}
     if atomic_usage_pin is not None:plan['atomicUsageInput']=atomic_usage_pin
     if restored is not None:plan['restoreStagingInputs']=restore_staging_inputs
+    if budget is not None:plan.update(nativeMemoryBudget=budget.policy(),nativeBudgetRuntimePin=native_budget_runtime_pin)
     save(case/'STAGED_CONNECTION.SAFE.json',plan);return plan
 
 if __name__=='__main__':

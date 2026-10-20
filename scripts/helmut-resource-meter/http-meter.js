@@ -18,6 +18,8 @@ function byteLength(value, encoding) {
 function install(directory) {
   if (installed) throw Error('RESOURCE_HTTP_METER_ALREADY_INSTALLED');
   if (!path.isAbsolute(directory) || !fs.statSync(directory).isDirectory()) throw Error('RESOURCE_HTTP_METER_OUTPUT');
+  if(process.env.HELMUT_NATIVE_NODE_OLD_SPACE_MIB!==undefined)
+    require('./native-node-budget').install(directory);
   installed = true;
   const identity = process.pid + '_' + threadId;
   fs.writeFileSync(path.join(directory, 'HTTP_' + identity + '.STARTED.SAFE.json'),

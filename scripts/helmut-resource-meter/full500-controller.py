@@ -14,6 +14,7 @@ def module(name,file):
 I=module('isolation','isolation.py');C=module('connection','connect-local500.py');S=module('source','capture-local-source.py')
 Z=module('zero_day_input','local-zero-day-copy.py')
 Calendar=module('resource_calendar_binding','local-calendar-binding.py')
+N=module('native_memory_budget','native-memory-budget.py')
 W=C.AREA;CLAIM=I.ONCE;UTC=datetime.timezone.utc
 
 def financial_preflight(connection):
@@ -66,6 +67,7 @@ def original_preflight(connection,*,check_financial=True):
 
 def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin,*,planning=False):
     acceptance=C.read_pin(acceptance_pin);connection=C.read_pin(connection_pin);recipe=C.read_pin(recipe_template_pin)
+    N.admit_metadata(acceptance,connection,recipe,C.read_pin)
     if acceptance.get('status')!='ROOT_ADOPTED_INDEPENDENT_COMPLETE_METER_ACCEPTANCE':raise RuntimeError('complete independent acceptance missing')
     if acceptance.get('fixtureConnectionPin')!=connection_pin or recipe.get('fixtureConnectionPin')!=connection_pin:raise RuntimeError('exact accepted connection differs')
     if acceptance.get('recipeTemplatePin')!=recipe_template_pin:raise RuntimeError('exact accepted recipe template differs')
@@ -117,13 +119,19 @@ def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_pre
     try:
         return _run_once(acceptance_pin,connection_pin,recipe_template_pin,wait=wait,
             start_preflight_adoption_pin=start_preflight_adoption_pin,invocation_id=invocation_id)
-    except Exception:
+    except BaseException:
         # A concurrent or historical reservation never belongs to this call.
         # Preserve the original failure; record cleanup failure separately.
-        if I.SETUP_RESERVATION.exists():
-            reservation=C.read_pin(C.pin(I.SETUP_RESERVATION))
-            if reservation.get('controllerInvocationId')==invocation_id:
-                I.close_failed_owned_setup(connection_pin,invocation_id)
+        try:
+            if I.SETUP_RESERVATION.exists():
+                reservation=C.read_pin(C.pin(I.SETUP_RESERVATION))
+                if reservation.get('controllerInvocationId')==invocation_id:
+                    I.close_failed_owned_setup(connection_pin,invocation_id)
+        except BaseException as cleanup_error:
+            try:
+                N.best_effort_save(Path(C.read_pin(connection_pin)['caseDirectory'])/'CONTROLLER_CLOSE_FAILURE.SAFE.json',
+                    {'errorType':type(cleanup_error).__name__,'originalErrorPreserved':True,'allOwnedExitNotConfirmed':True})
+            except BaseException:pass
         raise
 
 def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_preflight_adoption_pin=None,invocation_id):
@@ -168,6 +176,10 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     I.K.save_new(I.SETUP_RESERVATION,{'schema':'helmut-local-resource-setup-reservation/1','fixtureConnectionPin':connection_pin,'recipeTemplatePin':recipe_template_pin,'independentMeterAcceptance':acceptance_pin,'freshOwnerGO':recipe['freshOwnerGO'],'completeStartPreflight':complete_pin,'controllerInvocationId':invocation_id,'atUTC':datetime.datetime.now(UTC).isoformat(),'GOConsumed':False,'noAutomaticRetry':True})
     reservation_pin=C.pin(I.SETUP_RESERVATION)
     I.K.save_new(case/'CONTROLLER_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'preflight':first,'singleSetupAttempt':True,'noAutomaticRetry':True,'GOClaimed':False,'setupReservation':reservation_pin})
+    # The first descendants establish the lifetime meter, before storage,
+    # initdb, installation, preparation or application. Never reset its peak.
+    budget=N.start(case/'native-memory-budget',parent,C.read_pin(connection['nativeBudgetRuntimePin']),connection['nativeMemoryBudget'])
+    recipe['nativeBudgetSetupPin']=C.pin(case/'native-memory-budget/READY.SAFE.json')
     storage_module=module('bounded','bounded-storage.py')
     # Choose one exact unbound minor with the previously accepted read-only
     # loop-control capability probe's kernel result. It is checked atomically
@@ -197,10 +209,11 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     I.K.save_new(preflight_path,preflight)
     recipe.update(sourcePins=acceptance['sourcePins'],independentMeterAcceptance=acceptance_pin,freshStartPreflight=C.pin(preflight_path),recipeTemplatePin=recipe_template_pin,setupReservation=reservation_pin,completeStartPreflight=complete_pin)
     I.verify_full_authority(recipe)
+    N.verify(parent,budget)
     app=I.launch_application(case/'application',appname,parent+'/application',network,recipe,db)
     I.K.save_new(case/'ACTUAL_RESOURCE_ATTEMPT_STARTED.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'application':app,'globalClaim':C.pin(CLAIM),'exactlyOneAttempt':True,'noRetry':True})
     print(json.dumps({'status':'ACTUAL_SINGLE_LOCAL500_RESOURCE_ATTEMPT_STARTED','caseDirectory':str(case),'globalGOClaimExists':True,'applicationContainerId':app['containerId'],'production':False}),flush=True)
-    result=I.finalize(app,timeout=max(60,int((end-datetime.datetime.now(UTC)).total_seconds())+180))
+    result=I.finalize(app,timeout=max(60,int((end-datetime.datetime.now(UTC)).total_seconds())+180),native_memory_budget=budget)
     I.K.save_new(case/'CONTROLLER_COMPLETE.SAFE.json',{'atUTC':datetime.datetime.now(UTC).isoformat(),'pass':result['pass'],
       'completeResourceResult':C.pin(case/'application/COMPLETE_RESOURCE_RESULT.SAFE.json'),
       'originalSourceAfter':original_preflight(connection),'globalGOClaimPreserved':True,'noAutomaticRetry':True,'production':False})

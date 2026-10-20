@@ -2,7 +2,7 @@
 """Owned local infrastructure factory and final independent kernel readback.
 
 Never invokes a Helmut recipe automatically. No published ports, no host PID
-namespace, no privileged container, no cgroup writes and no existing-service
+namespace, no privileged container and no existing-service
 restart. All diagnostic containers/volumes/evidence are retained after exit.
 """
 import importlib.util
@@ -26,6 +26,8 @@ _spec=importlib.util.spec_from_file_location('next_resource_authority',BIN/'next
 A=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(A)
 _cal_spec=importlib.util.spec_from_file_location('isolation_calendar_binding',BIN/'local-calendar-binding.py')
 Calendar=importlib.util.module_from_spec(_cal_spec);_cal_spec.loader.exec_module(Calendar)
+_budget_spec=importlib.util.spec_from_file_location('isolation_native_budget',BIN/'native-memory-budget.py')
+N=importlib.util.module_from_spec(_budget_spec);_budget_spec.loader.exec_module(N)
 ONCE=A.CLAIM
 SETUP_RESERVATION=A.RESERVATION
 
@@ -81,7 +83,7 @@ def verify_pre_setup_authority(recipe,*,planning=False):
     if acceptance.get('recipeTemplatePin')!=recipe.get('recipeTemplatePin'):raise RuntimeError('unaccepted recipe template')
     template=pin_json(recipe['recipeTemplatePin'])
     if any(recipe.get(k)!=v for k,v in template.items()):raise RuntimeError('serialized recipe changed an accepted template field')
-    added={'sourcePins','independentMeterAcceptance','freshStartPreflight','recipeTemplatePin','setupReservation','databaseContainer','databaseStopFile','databaseFinalFile','completeStartPreflight'}
+    added={'sourcePins','independentMeterAcceptance','freshStartPreflight','recipeTemplatePin','setupReservation','databaseContainer','databaseStopFile','databaseFinalFile','completeStartPreflight','nativeBudgetSetupPin'}
     if set(recipe)-set(template)-added:raise RuntimeError('unreviewed recipe extension')
     integrated=acceptance['fullConnectionReviews']
     if set(integrated)!=set(['authority','bootstrap','coverage']):raise RuntimeError('all three independent connection scopes required')
@@ -93,6 +95,9 @@ def verify_pre_setup_authority(recipe,*,planning=False):
             if integration.get('model')!='deepseek-v4-pro' or integration.get('route',{}).get('effort')!='high' or integration.get('payload',{}).get('summary',{}).get('status')!='ok':
                 raise RuntimeError('independent complete500 connection acceptance missing')
     connection=pin_json(recipe['fixtureConnectionPin'])
+    # This same check also runs inside the restricted application namespace:
+    # validate immutable metadata here; daemon/image inspection stays on host.
+    N.admit_metadata(acceptance,connection,recipe,pin_json,actual=False)
     verify_connection_files(connection)
     if connection.get('schema')!='helmut-pinned-full500-connection/1' or connection.get('day')!=A.DAY or connection.get('production') is not False:
         raise RuntimeError('exact local current500 connection missing')
@@ -137,6 +142,7 @@ def verify_full_authority(recipe):
     if recipe['setupReservation']['path']!=str(SETUP_RESERVATION) or reservation.get('schema')!='helmut-local-resource-setup-reservation/1' or any(reservation.get(k)!=recipe[k] for k in ['fixtureConnectionPin','recipeTemplatePin','independentMeterAcceptance','freshOwnerGO','completeStartPreflight']):
         raise RuntimeError('exact global setup reservation missing')
     proof=pin_json(recipe['completeStartPreflight']);complete.assert_reserved_ready(proof,reservation)
+    N.bind_setup(checked['connection'],recipe,pin_json)
     # Archive/request review documents are checked on the HOST before setup;
     # they are not workload inputs and must not be assumed mounted in the app.
     # Reuse the exact fresh, recipe-pinned Root assessment, then bind it AGAIN
@@ -178,6 +184,9 @@ def verify_full_authority(recipe):
 
 def claim_full_attempt(recipe,cid,recipe_path):
     verify_full_authority(recipe)
+    connection=pin_json(recipe['fixtureConnectionPin'])
+    budget=N.bind_setup(connection,recipe,pin_json)
+    N.verify(budget['parent'],budget)
     # One GLOBAL marker, not one marker per output directory. Never delete it.
     K.save_new(ONCE,{'schema':'helmut-local-resource-attempt-claim/1',
         'freshOwnerGO':recipe['freshOwnerGO'],'independentMeterAcceptance':recipe['independentMeterAcceptance'],
@@ -253,6 +262,7 @@ def runtime_read_manifest(recipe):
     def document(p):add(p);return pin_json(p)
     acceptance=document(recipe['independentMeterAcceptance'])
     connection=document(recipe['fixtureConnectionPin'])
+    if 'nativeBudgetRuntimePin' in connection:document(connection['nativeBudgetRuntimePin'])
     document(recipe['recipeTemplatePin'])
     for key in ['sourcePins']:
         for p in acceptance[key]:add(p)
@@ -286,7 +296,8 @@ def runtime_read_manifest(recipe):
     # These files do not exist at a pre-GO visibility check. Once created, the
     # exact genuine pins are also overlaid read-only; no dummy file is created.
     generated=[str(ONCE),str(SETUP_RESERVATION),str(Path(connection['caseDirectory'])/'COMPLETE_START_PREFLIGHT.SAFE.json')]
-    for key in ['freshStartPreflight','setupReservation','completeStartPreflight']:
+    generated.append(str(Path(connection['caseDirectory'])/'native-memory-budget/READY.SAFE.json'))
+    for key in ['freshStartPreflight','setupReservation','completeStartPreflight','nativeBudgetSetupPin']:
         if key in recipe:add(recipe[key])
     if connection.get('preparedWithoutGO')is True:generated.append(owner['finalOwnerGOPath'])
     rows=sorted(pins.values(),key=lambda p:p['path'])
@@ -349,7 +360,8 @@ def fixture_mounts(fixture,role,*,recipe=None):
         if len(b)!=p['bytes'] or hashlib.sha256(b).hexdigest()!=p['sha256']:raise RuntimeError('fixture mount pin drift')
         if source.name=='OWNER_LOCAL_GO.PRIVATE.json':raise RuntimeError('historical local GO excluded')
         if role=='application'and source.is_relative_to(K.REPOSITORY):continue # Same read-only common mount.
-        if not source.is_relative_to(Path('/workspace/helmut-parallel-20261015')):raise RuntimeError('fixture mount outside original evidence workspace')
+        if not source.is_relative_to(Path('/workspace/helmut-parallel-20261015')) and p!=fixture.get('nativeBudgetRuntimePin'):
+            raise RuntimeError('fixture mount outside original evidence workspace')
         destination='/tmp/helmut-unit-fixture-postgrest-03693bea' if role=='database' else str(source)
         args+=['--mount','type=bind,src='+str(source)+',dst='+destination+',readonly']
     return args
@@ -450,6 +462,7 @@ def launch_application(out,name,parent,network,recipe,database=None):
         verify_full_authority(recipe)
         if not database or not database.get('storage'):raise RuntimeError('actual bounded owned database required')
         connection=pin_json(recipe['fixtureConnectionPin'])
+        N.verify(parent.rsplit('/',1)[0],N.bind_setup(connection,recipe,pin_json))
         if database.get('fixture')!=connection or database.get('name')!=connection['containerName'] or database.get('network')!=network:
             raise RuntimeError('actual database fixture differs from accepted exact connection')
         actual_id=K.docker(['inspect','--format','{{.Id}}',database['name']]).stdout.strip()
@@ -459,7 +472,10 @@ def launch_application(out,name,parent,network,recipe,database=None):
     out=Path(out).resolve();out.mkdir(mode=0o700,parents=True,exist_ok=False)
     (out/'http').mkdir(mode=0o700)
     (out/'bin').mkdir(mode=0o700)
-    shim=out/'bin/node';shim.write_text('#!/bin/sh\nexec '+str(K.NODE_ROOT/'bin/node')+' --require='+str(BIN/'http-meter.js')+' "$@"\n');shim.chmod(0o700)
+    budgeted=recipe['scope']=='owner-approved-local500-resources'
+    heap='export HELMUT_NATIVE_NODE_OLD_SPACE_MIB=384\n' if budgeted else ''
+    heap_flag=' --max-old-space-size=384 --max-semi-space-size=16' if budgeted else ''
+    shim=out/'bin/node';shim.write_text('#!/bin/sh\n'+heap+'exec '+str(K.NODE_ROOT/'bin/node')+heap_flag+' --require='+str(BIN/'http-meter.js')+' "$@"\n');shim.chmod(0o700)
     K.initialize_parent(parent,name+'-group-init')
     recipe=dict(recipe)
     broker=None
@@ -496,6 +512,7 @@ def launch_application(out,name,parent,network,recipe,database=None):
           '--user',str(os.getuid())+':'+str(os.getgid()),
           '--env','PATH=/meter-output/bin:'+str(K.PYTHON_ROOT/'bin')+':'+str(K.NODE_ROOT/'bin')+':/usr/local/bin:/usr/bin:/bin',
           '--entrypoint',PYTHON]
+    if budgeted:args+=['--env','HELMUT_NATIVE_NODE_OLD_SPACE_MIB=384']
     args+=application_mounts(out,database.get('fixture') if database else None,recipe)
     args+=['--mount','type=bind,src='+str(out/'RECIPE.PRIVATE.json')+',dst=/meter-output/RECIPE.PRIVATE.json,readonly']
     if database:args+=['--mount','type=bind,src='+database['out']+',dst=/meter-database']
@@ -507,7 +524,7 @@ def launch_application(out,name,parent,network,recipe,database=None):
     return {'out':str(out),'name':name,'containerId':cid,'parent':parent,'database':database,
             'broker':broker,'ownedContainerNames':[name]+([broker['name']] if broker else [])}
 
-def finalize(application,timeout=180):
+def finalize(application,timeout=180,*,native_memory_budget=None):
     code=int(K.docker(['wait',application['containerId']],timeout=timeout).stdout.strip())
     # PID1 can fail before runner baseline/try-finally (or be killed). Always
     # close only the exact newly owned DB after its application has exited.
@@ -540,6 +557,13 @@ def finalize(application,timeout=180):
     common_parent=None
     if db and application['parent'].rsplit('/',1)[0]==db['parent'].rsplit('/',1)[0]:
         common_parent=application['parent'].rsplit('/',1)[0]
+    native_budget_final=None
+    if native_memory_budget is not None:
+        if not common_parent:raise RuntimeError('native common budget requires actual shared parent')
+        native_budget_final=N.verify(common_parent,native_memory_budget,require_no_oom=False)
+        extra=list(native_memory_budget['helpers'].values())
+        owned += [x['name'] for x in extra]
+        expected_ids.update(x['id'] for x in extra)
     parents={'/'+common_parent} if common_parent else ({'/'+application['parent']}|({'/'+db['parent']} if db else set()))
     all_ids=K.docker(['ps','--all','--quiet']).stdout.split()
     if all_ids:
@@ -567,6 +591,7 @@ def finalize(application,timeout=180):
             'databaseFinal':db_final,'kernelCountersIncludeAllContainerDescendantsAndThreads':True,
             'restrictedDockerBroker':broker_final,
             'ownedBoundedStorageFinal':storage_final,'storageHolderKernelAfterExit':storage_kernel,
+            'nativeCommonMemoryBudget':native_budget_final,
             'simultaneousApplicationAndInfrastructureKernel':K.kernel_snapshot(common_parent,require_empty=True) if common_parent else None,
             'noForeignContainerInApplicationParent':True,'ownedContainerIDsVerified':sorted(expected_ids),
             'containerProducerLogs':logs,'retainedPrivateLogFiles':file_logs,
@@ -595,6 +620,12 @@ def finalize(application,timeout=180):
                     app_kernel['memoryEvents']['oom_kill']==0 and
                     (not db or (db_code==0 and bool(db_final.get('storageBound',{}).get('provenUpperBytes')))))
     if recipe['scope']=='owner-approved-local500-resources':
+        if native_memory_budget is None or N.bind_setup(pin_json(recipe['fixtureConnectionPin']),recipe,pin_json)!=native_memory_budget:
+            raise RuntimeError('full resource result requires exact native budget setup and final verification')
+        try:result['nativeNodeHeapBudget']=N.node_receipts(out/'http')
+        except Exception as error:
+            result['nativeNodeHeapBudget']={'pass_':False,'errorType':type(error).__name__}
+            result['pass']=False
         original_path=Path(recipe['originalSequenceResultPath'])
         original=json.loads(original_path.read_text()) if original_path.exists() else {}
         assembled_path=Path(recipe['assemblyResultPath'])
@@ -607,7 +638,9 @@ def finalize(application,timeout=180):
             result['actualSelectorBoundThroughOriginalAssemblyAndInstall']=True
         common=result['simultaneousApplicationAndInfrastructureKernel']
         common_exit=bool(common and common.get('fullLastProcessExitCovered') is True)
-        complete_run=bool(result['pass'] and common_exit)
+        budget_events=native_budget_final['memoryEvents']
+        no_budget_oom=not(budget_events.get('oom',0)or budget_events.get('oom_kill',0))
+        complete_run=bool(result['pass'] and common_exit and no_budget_oom)
         result['simultaneousAllOwnedUnder2048DecimalMB']=bool(common_exit and common['memoryPeakBytes']<2048000000)
         result['pass']=bool(result['pass'] and result['simultaneousAllOwnedUnder2048DecimalMB'])
         # The requested buffer is reported separately from the unchanged hard
@@ -618,6 +651,10 @@ def finalize(application,timeout=180):
             'reserveBytes':2048000000-common['memoryPeakBytes'] if complete_run else None,
             'status':'PASS' if buffer_pass else 'FAIL',
             'reason':'SUFFICIENT_BUFFER' if buffer_pass else ('INSUFFICIENT_BUFFER' if complete_run else 'INCOMPLETE_FULL_RUN')}
+        result['requestedMemoryBuffer']['nativeBudgetOOMFree']=no_budget_oom
+        if not no_budget_oom:
+            result['requestedMemoryBuffer'].update(status='FAIL',reason='NATIVE_MEMORY_OOM')
+        result['pass']=bool(result['pass'] and buffer_pass and no_budget_oom)
     K.save_new(out/'COMPLETE_RESOURCE_RESULT.SAFE.json',result)
     return result
 
@@ -630,21 +667,28 @@ def close_failed_owned_setup(connection_pin,invocation_id):
     if case.parent!=Path('/workspace/helmut-parallel-20261015/wave20-resource-integration') or len(suffix)!=12 or any(c not in '0123456789abcdef'for c in suffix):
         raise RuntimeError('owned error cleanup case invalid')
     parent='/helmut-meter-resources'+A.DAY[-2:]+'-'+suffix
+    try:native_close=N.close_case_helpers(case,parent.removeprefix('/'),pin_json(connection['nativeBudgetRuntimePin']))
+    except Exception as error:
+        native_close={'allKnownHelpersClosed':False,'errorType':type(error).__name__,'noUnverifiedContainerSignalled':True}
     ids=K.docker(['ps','--all','--quiet']).stdout.split()
     containers=json.loads(K.docker(['inspect',*ids]).stdout)if ids else []
     owned=[row for row in containers if row['HostConfig']['CgroupParent']in [parent+'/application',parent+'/database',parent+'/storage']]
     # Existing stop interfaces first. Fixed disjoint directories only.
     for stop in [case/'application/broker/STOP',case/'database/STOP_DATABASE',A.METER/('full500-owned-storage'+A.DAY[-2:]+'-'+suffix)/'STOP']:
-        if stop.parent.is_dir()and not stop.exists():K.save_new(stop,{'ownedFailureClose':True})
+        try:
+            if stop.parent.is_dir()and not stop.exists():N.best_effort_save(stop,{'ownedFailureClose':True})
+        except Exception:pass
     stopped=[]
     for row in owned:
-        if row['State']['Running']:
-            K.docker(['stop','--time','10',row['Id']],timeout=20)
-        after=json.loads(K.docker(['inspect',row['Id']]).stdout)[0]
-        if after['State']['Running']:raise RuntimeError('owned error cleanup process still alive')
-        stopped.append({'containerId':row['Id'],'exitCode':after['State']['ExitCode']})
+        try:
+            if row['State']['Running']:K.docker(['stop','--time','10',row['Id']],timeout=20)
+            after=json.loads(K.docker(['inspect',row['Id']]).stdout)[0]
+            stopped.append({'containerId':row['Id'],'closed':not after['State']['Running']and after['State']['Pid']==0,
+                'exitCode':after['State']['ExitCode']})
+        except Exception as error:stopped.append({'containerId':row['Id'],'closed':False,'errorType':type(error).__name__})
     result={'schema':'helmut-owned-setup-error-close/1','controllerInvocationId':invocation_id,
-      'containers':stopped,'noOldContainerControlled':True,'noDeletionOrRetry':True,'production':False}
+      'containers':stopped,'nativeBudgetHelpers':native_close,'noOldContainerControlled':True,'noDeletionOrRetry':True,'production':False}
+    result['allKnownOwnedContainersClosed']=native_close['allKnownHelpersClosed']and all(x['closed']for x in stopped)
     K.save_new(case/'OWNED_SETUP_ERROR_CLOSE.SAFE.json',result)
     return result
 
