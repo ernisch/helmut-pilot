@@ -154,6 +154,24 @@ class StartPreflightTest(unittest.TestCase):
         with patch.object(P.os,'statvfs',return_value=fake):
             self.assertFalse(P.filesystem_ready({'caseDirectory':'TEST_ONLY','storageCapacityBytes':8000000000})['pass'])
 
+    def test_v11_factory_requires_stricter2GiB_and_full8GiB_free_floor_before_any_effect(self):
+        I=C.I
+        def call(size):return I.create_database('/TEST_ONLY_NEVER_CREATED','TEST_ONLY_DB','TEST_ONLY_PARENT','TEST_ONLY_NETWORK',scope='owner-approved-local500-resources',storage={'bytes':size})
+        sentinel=RuntimeError('TEST_STOP_BEFORE_NETWORK_OR_OUTPUT')
+        with patch.object(I,'inspect_private_network',side_effect=sentinel)as network:
+            with self.assertRaisesRegex(RuntimeError,'exact2GiB'):call(4*1024**3)
+            network.assert_not_called()
+            fake=type('FS',(),{'f_bavail':8*1024**3-1,'f_frsize':1})()
+            with patch.object(I.os,'statvfs',return_value=fake):
+                with self.assertRaisesRegex(RuntimeError,'floor not met'):call(2*1024**3)
+            network.assert_not_called()
+            fake=type('FS',(),{'f_bavail':8*1024**3,'f_frsize':1})()
+            with patch.object(I.os,'statvfs',return_value=fake):
+                with self.assertRaises(RuntimeError)as caught:call(2*1024**3)
+            self.assertIs(caught.exception,sentinel)
+            self.assertEqual(network.call_count,1)
+        self.assertFalse(Path('/TEST_ONLY_NEVER_CREATED').exists())
+
     def test_inventory_finds_assert_raise_and_full_source_change(self):
         with tempfile.TemporaryDirectory()as td:
             p=Path(td)/'consumer.py';p.write_text('def run(owner):\n assert owner["safe"]\n verify_owner(owner)\n if not owner: raise RuntimeError("missing")\n')

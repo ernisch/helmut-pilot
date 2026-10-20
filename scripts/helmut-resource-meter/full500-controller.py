@@ -174,7 +174,7 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     # by LOOP_CONFIGURE; no occupied mapping is detached or reassigned.
     minor=acceptance['approvedFreshLoopMinor']
     storage_out=I.ONCE.parent/('full500-owned-storage'+I.A.DAY[-2:]+'-'+case.name.removeprefix('attempt-'))
-    # New20Oct case: a stricter4GiB device bound, unchanged8GiB host reserve.
+    # V11: stricter2GiB device upper bound, unchanged8GiB host reserve.
     # stage_contract checks this exact capacity before setup/GO is consumed.
     storage=storage_module.create(storage_out,connection['storageCapacityBytes'],minor,parent+'/storage',hold=connection['storageHoldSeconds'])
     if connection.get('approvedInternalSubnet')!=I.A.SUBNET:raise RuntimeError('exact new reviewed172 gateway subnet missing')

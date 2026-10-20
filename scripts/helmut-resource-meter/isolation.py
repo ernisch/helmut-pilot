@@ -397,10 +397,11 @@ def check_container_visibility(fixture,recipe):
 
 def create_database(out,name,parent,network,scope='small-meter-validation',storage=None,fixture=None):
     if not storage:raise RuntimeError('native meter requires actual owned bounded filesystem')
-    if scope=='owner-approved-local500-resources' and storage['bytes']!=4294967296:raise RuntimeError('new20Oct local plan requires exact4GiB owned device')
+    if scope=='owner-approved-local500-resources' and storage['bytes']!=2147483648:raise RuntimeError('V11 local plan requires exact2GiB owned device')
     fs=os.statvfs('/workspace')
-    if fs.f_bavail*fs.f_frsize<4*1024**3:
-        raise RuntimeError('shared workspace has less than4GiB free; preserve originals and do not create more fixture layers')
+    floor=(8 if scope=='owner-approved-local500-resources'else 4)*1024**3
+    if fs.f_bavail*fs.f_frsize<floor:
+        raise RuntimeError('shared workspace free-space floor not met; preserve originals and do not create more fixture layers')
     inspect_private_network(network)
     out=Path(out).resolve();out.mkdir(mode=0o700,parents=True,exist_ok=False)
     K.save_new(out/'DATABASE_FACTORY_STARTED.SAFE.json',{'scope':scope,'name':name,'parent':parent,'originalDatabasesTouched':False})

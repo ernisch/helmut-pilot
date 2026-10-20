@@ -98,7 +98,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
       'dayBindingAcceptance':staged['dayAcceptance'],'applicationReadOnlyPins':list(assets.values()),
       'databaseReadOnlyPins':[capture['postgrestBinary']],
       'stagedHarness':staged_pin,'full500RunStarted':False,'resourceGOConsumed':False,
-      'storageHoldSeconds':9*3600+600,'storageCapacityBytes':4294967296,
+      'storageHoldSeconds':9*3600+600,'storageCapacityBytes':2147483648,
       'approvedInternalSubnet':C.A.SUBNET,
       'sourceCaptureIsPreexistingFixtureInputNotWorkflowCPU':True,
       'phases':['preparation','assembly','sequence'],'profiles':500,'controlsPerUnit':16,

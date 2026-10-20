@@ -227,7 +227,7 @@ def stage_contract(connection, recipe):
     require(config['mode'] == 'combined500' and config['worstCaseUnitIndexes'] == [0,499], 'worst cases missing')
     require(config['policy']['providerHardLimitMS'] == 20000 and config['policy']['profiler'] is False
             and config['policy']['activation'] is False and config['policy']['production'] is False, 'original test policy changed')
-    require(connection['storageCapacityBytes'] == 4294967296 and connection['storageHoldSeconds'] == 33000, 'new20Oct exact4GiB storage scope changed')
+    require(connection['storageCapacityBytes'] == 2147483648 and connection['storageHoldSeconds'] == 33000, 'V11 exact2GiB storage scope changed')
     staged=read(connection['stagedHarness'])
     require(connection.get('atomicUsageInput')==staged.get('atomicUsageInput'),'atomic storage candidate differs from actual renderer')
     if 'atomicUsageInput' in connection:
@@ -349,7 +349,7 @@ def assess(bindings,*,planning=False):
         report.checks.extend(dict(id='consumer.'+r['id'],consumer=r['id'],purpose='Actual deterministic input requirement',
             startedAtUnixSeconds=stamp['startedAtUnixSeconds'],completedAtUnixSeconds=stamp['completedAtUnixSeconds'],
             **{k:v for k,v in r.items() if k!='id'}) for r in child['checks'])
-    report.check('filesystemReserve', 'bounded-storage.create', '4GiB new filesystem plus unchanged 8GiB free reserve', lambda:filesystem_ready(connection))
+    report.check('filesystemReserve', 'bounded-storage.create', '2GiB new filesystem plus unchanged8GiB floor, new4-container vfs and output margins', lambda:filesystem_ready(connection))
     report.check('toolchain', 'kernel-meter/create_database/runner/taskset', 'Exact local Node/Python/PG image, CPU affinity, kernel and formatter capabilities', lambda:toolchain(C))
     report.check('resourceNamesAndSubnet', 'controller.run/isolation.create_network', 'No reused container/network/cgroup/storage names or occupied private subnet', lambda:resource_names(C,connection))
     report.check('approvedLoopMinor', 'bounded-storage.create/LOOP_CONFIGURE', 'Approved exact loop minor currently unbound; setup still checks atomically', lambda:loop_ready(acceptance))

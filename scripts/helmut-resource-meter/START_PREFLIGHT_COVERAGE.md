@@ -4,7 +4,7 @@ This is a local development gate. It grants no GO and never activates a profile.
 All historical resource attempts, their owner documents, claims, databases,
 receipts and inputs remain immutable. No consumed namespace can be reset or replayed.
 The current prepared slot is day20/V10, with19 pinned historical spent markers,
-one fresh operator GO, a4GiB storage capacity, and the unchanged8GiB free host
+one fresh operator GO, a2GiB storage capacity, and the unchanged8GiB free host
 reserve. It has not started or consumed its claim/reservation. The bounded
 native reader requires fresh complete integration acceptance; component proofs
 do not establish the common500-profile RAM or timing result.
@@ -39,7 +39,7 @@ all check IDs, freshness and exact binding pins. A direct launch cannot omit it.
 | build-command; original-draft-request; assembly mock loop | Exact500 owner set, active ordinary-v1 rows, native inventory/version fields/fencing, prior U pin, all original A/F/L acceptance bindings; default D/preR/Q at both accepted endpoints, explicit local mock mode at its separately accepted source view for all500; template hash/variant completeness; actual sourceBinding; EU route, direct purposes | Fresh run/command/plan hashes,1000 genuine intents, original executor, exact D binder and packet metadata depend on newly generated command and stay mandatory |
 | H.destination/save/mkdirFresh; sequence entry | Fresh case/output/run dirs; no previous packet/activation/assembly/failure/controller/sequence/material/service outputs; no overwrite/continuation | Exclusive creation remains atomic; future disk/I/O errors cannot be predicted |
 | process-runner; contracts.LIMITS; sequence | Exact three commands, pins/timeouts and CPU0; all500/16; worst cases0,499; Offline90/Preparation60/Unit60/Auth30/2048000000B unchanged; mock-only/no profiler | All original negative cases, actual16 fresh controls per500, ACK/result counts and timings |
-| bounded-storage/kernel-meter/isolation | Node24.19.0,Python3.12.14,pinned PG image,cgroupv2/vfs,CPU0,formatter availability; free space4GiB+8GiB; approved minor observed unbound; all names/subnet/cgroup unused | Atomic loop configuration, owned4GiB filesystem identity, PGDATA/WAL/no external tablespaces, all namespace IDs |
+| bounded-storage/kernel-meter/isolation | Node24.19.0,Python3.12.14,pinned PG image,cgroupv2/vfs,CPU0,formatter availability; free space2GiB+8GiB plus4new-vfs-container/output margins; approved minor observed unbound; all names/subnet/cgroup unused | Atomic loop configuration, owned2GiB filesystem identity, PGDATA/WAL/no external tablespaces, all namespace IDs |
 | process/network/HTTP/WAL/finalization meters | Exact reviewed meter/source pins, continuous1s DB observer and full phase recipe; original scoped independent meter acceptance | Actual common kernel peak/CPU, WAL/DB/IO, network requests/bytes/errors/logs, every child/worker and final populated=0 |
 
 ## Coverage is a checked prerequisite
@@ -302,7 +302,7 @@ catalogs before runtime. CAS/writers/history and original full reader stay exact
 The old W50 acceptance is not relabeled as acceptance of this SQL/integration.
 The adapter's separate diagnostic-only source delta is explicitly identified.
 
-The new case binds exact4GiB device capacity with the unchanged8GiB free host
+The new case binds exact2GiB device capacity forV11 with the unchanged8GiB free host
 reserve and33000-second holder lifetime. This is a stricter physical disk upper
 bound, not a measured peak or a lower free reserve. Controller, factory and
 precheck must agree before setup. Actual whole lifetime bounds remain mandatory.
@@ -331,3 +331,12 @@ templates. Default and other descriptors retain the original JSON reader.
 Native SQL semantics proofs do not accept this separate JS integration. Actual
 all500 equality, parser negatives, bounded-component RAM comparison and current
 independent full source/guard adoption are required before the one full attempt.
+
+V11 retains the original8GB maximum and tightens its particular owned guest
+device to2GiB. The original full-run dataset and SQL semantics are unchanged;
+the known286909881B database-size sample and67108864B WAL-file sample are
+feasibility observations, not peak guarantees. Disk exhaustion remains a real
+possible terminal failure of the one authorized trial. No original/evidence
+deletion or reduced8GiB host floor is inferred. Preflight now additionally
+budgets four new Docker-vfs image/init copies plus64MiB each and512MiB retained
+output; the exact437457485B image size is checked against the pinned image.
