@@ -71,7 +71,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
     def test_fixed_next_slot_never_aliases_any_consumed_claim(self):
         self.assertEqual((A.DAY,A.DATE_TAG),('2026-10-20','20261020'))
         self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertNotIn(A.RESERVATION,A.OLD_MARKERS)
-        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.241.0/24')
+        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.242.0/24')
     def test_spent_or_nonfixed_slot_config_is_rejected_on_import(self):
         for change in [{'version':9},{'version':10},{'version':12},{'day':'2026-10-19'},{'day':'2026-10-21'}]:
             other=importlib.util.spec_from_file_location('rejected_authority_slot',Path(A.__file__))

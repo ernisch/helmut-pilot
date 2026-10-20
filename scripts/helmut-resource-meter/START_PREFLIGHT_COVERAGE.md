@@ -306,7 +306,7 @@ The new case binds exact2GiB device capacity forV11 with the unchanged8GiB free 
 reserve and33000-second holder lifetime. This is a stricter physical disk upper
 bound, not a measured peak or a lower free reserve. Controller, factory and
 precheck must agree before setup. Actual whole lifetime bounds remain mandatory.
-The new exact private subnet172.16.241.0/24 was checked for overlap; the old V9
+The new exact private subnet172.16.242.0/24 was checked for overlap; the old V9
 network remains retained. New20Oct source adoption and sameUTC execution-day
 calendar keep every real budget/security/deadline clock. The window floor is
 raised to the last actualV9 runner10685.884867seconds plus600seconds reserve.
