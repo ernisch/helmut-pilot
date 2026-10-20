@@ -27,7 +27,7 @@ with tempfile.TemporaryDirectory(prefix='helmut-meter-retirement-') as temporary
         return subprocess.CompletedProcess(argv,0,'','')
     with patch.object(B,'BASE',base),patch.object(B.os,'statvfs',return_value=Free()),\
          patch.object(B.os,'posix_fallocate',side_effect=lambda fd,offset,size:os.ftruncate(fd,size)),\
-         patch.object(B.subprocess,'run',return_value=subprocess.CompletedProcess([],0,b'',b'')),\
+         patch.object(B,'format_image',return_value=(subprocess.CompletedProcess([],0,b'',b''),{},{})),\
          patch.object(B.K,'save_new',side_effect=lambda p,v:Path(p).write_text(json.dumps(v))),\
          patch.object(B.K,'initialize_parent'),patch.object(B.K,'docker',side_effect=fake_docker):
         try:B.create(out,128*1024*1024,17,'TEST_NO_CGROUP')

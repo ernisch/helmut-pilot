@@ -175,6 +175,9 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             bounded_mode=candidate.get('boundedRead')
             if bounded_mode is not None and (bounded_mode!='bounded-native-read-v1' or control_mode!='verified-control-view-v1'):
                 raise RuntimeError('unknown or unbound bounded native reader')
+            sender_mode=candidate.get('senderClaimRead')
+            if sender_mode is not None and (sender_mode!='verified-control-claim-v1' or bounded_mode!='bounded-native-read-v1'):
+                raise RuntimeError('unknown or unbound sender control claim reader')
             catalog_options=',{boundedRead:'+json.dumps(bounded_mode)+'}' if bounded_mode else ''
             state_options=',{stateStorage:'+json.dumps(state_mode)+'}' if state_mode else ''
             state_environment="env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else ''
@@ -208,6 +211,15 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                     "    assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID,'main-auth');")
                 change("'authRevision',data->'_authStoreRevision','journal'",
                     "'nativeUsageBinding',\"+require("+helper+").physicalWitnessExpression("+state_options[1:]+")+\",'authRevision',data->'_authStoreRevision','journal'")
+                if sender_mode:
+                    # Only the extra sender observation changes. Baseline/final
+                    # readState, native witnesses and all provider asserts stay.
+                    start=text.index('  function readSenderClaim(selector,index,phase,body) {')
+                    end=text.index('  function readAllFinalEvidence(',start)
+                    change(text[start:end],
+                        '  const readSenderClaim=require('+json.dumps(str(BIN/'sender-control-claim.js'))+').create({descriptorPin:'
+                        +descriptor+',readControl:()=>require('+json.dumps(str(REPO/'lib/helmut/storage.js'))
+                        +').readSynthetik500ControlStore()});\n')
             elif relative=='native-end-preparation/runtime-candidates/prepare-materials.candidate.js':
                 change('  Object.assign(env,localBudgets);',
                     "  Object.assign(env,localBudgets);require("+helper+").environment(env,"+descriptor+");env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+state_environment+history_environment+control_environment+calendar_environment)
@@ -236,10 +248,33 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                         +json.dumps(day_rows_pin,separators=(',',':'))+')')
                 change(' const shared={status:',
                     " const atomicUsageReceipt=pin(N+'/ATOMIC_USAGE_BOOTSTRAP.SAFE.json');\n const shared={atomicUsageInput:"+descriptor+",atomicUsageReceipt,status:")
-            elif relative=='native-end-preparation/local-provider.js' and calendar:
-                # Load BEFORE the first hook so the helper captures native https.
-                change('function install(',"const localCalendar=require("+json.dumps(str(REPO/'lib/helmut/synthetik-500-local-calendar.js'))+");\nfunction install(")
-                change('  return{count:', '  localCalendar.registerLocalMockTransport(https.request);\n  return{count:')
+            elif relative=='native-end-preparation/local-provider.js':
+                if calendar:
+                    # Load BEFORE the first hook so the helper captures native https.
+                    change('function install(',"const localCalendar=require("+json.dumps(str(REPO/'lib/helmut/synthetik-500-local-calendar.js'))+");\nfunction install(")
+                    change('  return{count:', '  localCalendar.registerLocalMockTransport(https.request);\n  return{count:')
+                if sender_mode:
+                    # Count the awaited observation inside the original sender
+                    # interval. Cancellation settles once, including pre-timer
+                    # cancellation; original Error identity is emitted once.
+                    change('let destroyed=false,timer;', 'let destroyed=false,timer,ended=false,settled=false,errorSent=false;\n'
+                        '    const settle=()=>{if(!settled){settled=true;pending--;}};\n'
+                        "    const report=error=>{if(!errorSent){errorSent=true;queueMicrotask(()=>request.emit('error',error));}};")
+                    change("request.destroy=error=>{destroyed=true;if(timer)clearTimeout(timer);if(error)queueMicrotask(()=>request.emit('error',error));return request;};",
+                        'request.destroy=error=>{if(destroyed)return request;destroyed=true;if(timer)clearTimeout(timer);'
+                        'if(ended)settle();if(error)report(error);return request;};')
+                    change('    request.end=()=>{', '    request.end=()=>{\n'
+                        '      if(ended||destroyed)return request;ended=true;pending++;\n'
+                        '      const execute=async()=>{')
+                    change('const claim=readSenderClaim(selector,index,phase,body);',
+                        'const claim=await readSenderClaim(selector,index,phase,body);\n      if(destroyed)return;')
+                    change('providerPhases.push(record);pending++;', 'providerPhases.push(record);')
+                    change('      const deliver=()=>{', '      const deliver=()=>{\n        if(destroyed){settle();return;}')
+                    change('pending--;if(destroyed)return;', 'settle();if(destroyed)return;')
+                    change('    }; return request;',
+                        '      };\n      void execute().catch(error=>{if(destroyed)return;destroyed=true;'
+                        'if(timer)clearTimeout(timer);settle();report(error);});\n'
+                        '      return request;\n    }; return request;')
             elif relative=='native-end-preparation/contracts.js':
                 if calendar:
                     change("  assert.equal(berlin(times[1]),berlin(times[2]),'No Berlin day crossing');",

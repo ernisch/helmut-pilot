@@ -8,6 +8,60 @@ spec=importlib.util.spec_from_file_location('atomic_staging_connector',BIN/'conn
 C=importlib.util.module_from_spec(spec);spec.loader.exec_module(C)
 
 class AtomicIntegrationTest(unittest.TestCase):
+    def test_sender_claim_explicit_binding_all26_replay_and_transport(self):
+        options={'stateStorage':'merkle-auth-v1','historyReadReuse':'verified-history-reuse-v1',
+          'controlRead':'verified-control-view-v1','boundedRead':'bounded-native-read-v1'}
+        def render(opts):
+            code="process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor(JSON.parse(process.argv[2]))))"
+            self.descriptor.write_text(subprocess.check_output(['node','-e',code,str(BIN/'atomic-usage-integration.js'),json.dumps(opts)],text=True))
+            return C.render_templates(self.case,**self.args,atomic_usage_pin=C.pin(self.descriptor))
+        old=render(options)
+        new=render({**options,'senderClaimRead':'verified-control-claim-v1'})
+        changed={Path(a['destination']).relative_to(self.case).as_posix()for a,b in zip(new,old)if a['text']!=b['text']}
+        # Descriptor bytes/pin are embedded wherever previously embedded; only
+        # these two consumers gain executable statements beyond the new pin.
+        self.assertIn('native-end-preparation/root-io-bridge.js',changed)
+        self.assertIn('native-end-preparation/local-provider.js',changed)
+        self.assertEqual(len(new),26)
+        for row in new:
+            text=Path(row['original']['path']).read_text()
+            for d in row['replacements']:
+                self.assertEqual(text.count(d['from']),d['count']);text=text.replace(d['from'],d['to'])
+            self.assertEqual(text,row['text']);self.assertEqual(C.pin(row['original']['path']),row['original'])
+        files={Path(r['destination']).relative_to(self.case).as_posix():r['text']for r in new}
+        bridge=files['native-end-preparation/root-io-bridge.js']
+        self.assertIn('.readSynthetik500ControlStore()',bridge)
+        self.assertNotIn('function readSenderClaim(',bridge)
+        self.assertIn('function readState(selector)',bridge)
+        self.assertIn('function readAllFinalEvidence(selector,count)',bridge)
+        self.assertIn('.assertCatalog(catalog,{boundedRead:',bridge)
+        provider=files['native-end-preparation/local-provider.js']
+        subprocess.run(['node',str(BIN/'sender-control-provider-test.js')],input=provider,text=True,check=True)
+        subprocess.run(['node','-e',"const vm=require('vm');for(const s of JSON.parse(require('fs').readFileSync(0,'utf8')))new vm.Script(s)"],
+          input=json.dumps([r['text']for r in new if r['destination'].endswith('.js')]),text=True,capture_output=True,check=True)
+        # Opt-in also composes with the genuine local fixture calendar transform.
+        policy={'version':C.Calendar.VERSION,'operationId':self.args['operation'],'sourceDay':'2026-10-20',
+          'sourceViewAtUTC':'2026-10-20T08:00:00.000Z','sourceInputsHash':'a'*64,'executionDayUTC':'2026-10-20',
+          'startsAtUTC':'2026-10-20T20:00:00.000Z','endsAtUTC':'2026-10-20T23:59:59.999Z'}
+        calendar=render({**options,'senderClaimRead':'verified-control-claim-v1','localCalendar':policy})
+        provider=next(r['text']for r in calendar if r['destination'].endswith('/local-provider.js'))
+        self.assertIn('localCalendar.registerLocalMockTransport(https.request);',provider)
+        self.assertIn('await readSenderClaim(',provider)
+        self.assertFalse(self.case.exists());self.assertFalse(Path(self.args['owner_go_pin']['path']).exists())
+
+    def test_sender_claim_mode_default_off_prerequisites_and_source_closure(self):
+        code=r"""
+const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),assert=require('node:assert/strict');
+const o={stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',boundedRead:'bounded-native-read-v1'};
+const off=AU.descriptor(o),on=AU.descriptor({...o,senderClaimRead:'verified-control-claim-v1'});
+assert.equal(off.senderClaimRead,undefined);assert(!off.sourcePins.some(p=>p.path.endsWith('/sender-control-claim.js')));
+assert.equal(on.sourcePins.filter(p=>p.path.endsWith('/sender-control-claim.js')).length,1);
+for(const delta of [{senderClaimRead:'off'},{senderClaimRead:''},{senderClaimRead:'unknown'},
+ {stateStorage:null},{historyReadReuse:null},{controlRead:null},{boundedRead:null}])
+ assert.throws(()=>AU.descriptor({...o,senderClaimRead:'verified-control-claim-v1',...delta}));
+"""
+        subprocess.run(['node','-e',code],cwd=C.REPO,text=True,capture_output=True,check=True)
+
     def test_control_view_without_descriptor_opt_in_is_fenced_and_source_bound(self):
         code=r"""
 const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),S=require('./scripts/helmut-resource-meter/start-input-checks');

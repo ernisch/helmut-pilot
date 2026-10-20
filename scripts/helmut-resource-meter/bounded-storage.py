@@ -12,6 +12,26 @@ K=importlib.util.module_from_spec(s);s.loader.exec_module(K)
 BASE=Path('/workspace/helmut-parallel-20261015/wave19-resource-meter')
 TOOLS=Path('/tmp/helmut-meter-filesystem-tools')
 
+def allocation_witness(image,size,initial):
+    """Fail closed if format/discard lost the actual backing reservation."""
+    current=os.stat(image,follow_symlinks=False)
+    if (not stat.S_ISREG(current.st_mode) or current.st_nlink!=1 or current.st_size!=size
+        or(current.st_dev,current.st_ino)!=(initial.st_dev,initial.st_ino)):
+        raise RuntimeError('exclusive allocated image identity changed')
+    allocated=current.st_blocks*512
+    if allocated<size:raise RuntimeError('full host backing allocation lost; do not start owned storage')
+    return {'logicalBytes':size,'allocatedBytes':allocated,'fullyAllocated':True,
+            'imageInode':current.st_ino,'imageDevice':current.st_dev}
+
+def format_image(image,size,initial,uuid):
+    before=allocation_witness(image,size,initial)
+    fmt=subprocess.run([str(TOOLS/'mke2fs'),'-q','-t','ext4','-F','-b','4096','-m','0','-U',uuid,
+        '-E','nodiscard,lazy_itable_init=0,lazy_journal_init=0',str(image)],
+        env={'PATH':'/usr/bin:/bin','LD_LIBRARY_PATH':str(TOOLS/'lib'),'MKE2FS_CONFIG':str(TOOLS/'mke2fs.conf')},
+        capture_output=True,timeout=120,check=True)
+    after=allocation_witness(image,size,initial)
+    return fmt,before,after
+
 def retire_nodes(out):
     # Also usable on failed setup: remove the retained volume's named device
     # path without detaching or changing the owned kernel loop mapping.
@@ -31,13 +51,11 @@ def create(out,size,minor,parent,hold=900):
     finally:os.close(fd)
     if not stat.S_ISREG(initial.st_mode) or initial.st_nlink!=1:raise RuntimeError('new regular image only')
     uuid=secrets.token_hex(16);uuid=uuid[:8]+'-'+uuid[8:12]+'-'+uuid[12:16]+'-'+uuid[16:20]+'-'+uuid[20:]
-    fmt=subprocess.run([str(TOOLS/'mke2fs'),'-q','-t','ext4','-F','-b','4096','-m','0','-U',uuid,
-        '-E','lazy_itable_init=0,lazy_journal_init=0',str(image)],
-        env={'PATH':'/usr/bin:/bin','LD_LIBRARY_PATH':str(TOOLS/'lib'),'MKE2FS_CONFIG':str(TOOLS/'mke2fs.conf')},
-        capture_output=True,timeout=120,check=True)
+    fmt,allocation_before,allocation_after=format_image(image,size,initial,uuid)
     K.save_new(out/'FORMAT.SAFE.json',{'newImageOnly':True,'imageBytes':size,'filesystem':'ext4','filesystemUUID':uuid,
         'formatStdoutBytes':len(fmt.stdout),'formatStderrBytes':len(fmt.stderr),
-        'formatterSHA256':hashlib.sha256((TOOLS/'mke2fs').read_bytes()).hexdigest(),'production':False})
+        'formatterSHA256':hashlib.sha256((TOOLS/'mke2fs').read_bytes()).hexdigest(),
+        'discardDisabled':True,'allocationBefore':allocation_before,'allocationAfter':allocation_after,'production':False})
     cfg={'schema':'helmut-owned-new-loop-setup/1','production':False,'loopMinor':minor,'bytes':size,
         'imageInode':initial.st_ino,'imageDevice':initial.st_dev,'maximumHoldSeconds':hold}
     K.save_new(out/'CONFIG.SAFE.json',cfg)

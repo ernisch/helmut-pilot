@@ -17,6 +17,7 @@ const SOURCE_FILES = ["lib/helmut/llm-usage-atomic.js", "lib/helmut/auth-store-c
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const literal = s => "'" + String(s).replaceAll("'", "''") + "'";
 const CONTROL_READ = "verified-control-view-v1";
+const SENDER_CLAIM_READ = "verified-control-claim-v1";
 const BOUNDED = require("./bounded-read-integration");
 // W50 accepted these reader/transport bytes, not this later integration. Keep
 // provenance as pinned metadata, without opening private evidence at runtime.
@@ -65,7 +66,7 @@ function pin(file) {
   const b = fs.readFileSync(file);return { path: file, bytes: b.length, sha256: sha(b) };
 }
 function pinned(p) { assert.deepEqual(pin(p.path), p);return fs.readFileSync(p.path); }
-function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReuse = null, controlRead = null, boundedRead = null, localCalendar = null } = {}) {
+function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReuse = null, controlRead = null, boundedRead = null, senderClaimRead = null, localCalendar = null } = {}) {
   assert(stateStorage === null || stateStorage === "merkle-auth-v1");
   assert(historyReadReuse === null || (historyReadReuse === "verified-history-reuse-v1" && stateStorage === "merkle-auth-v1"));
   // The graph candidate is qualified only by isolated component fixtures so
@@ -75,12 +76,15 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
     && historyReadReuse === "verified-history-reuse-v1"), "Control view requires exact Merkle/history opt-in");
   assert(boundedRead === null || (boundedRead === BOUNDED.MODE && controlRead === CONTROL_READ),
     "Bounded native reader requires exact control/Merkle/history opt-in");
+  assert(senderClaimRead === null || (senderClaimRead === SENDER_CLAIM_READ && boundedRead === BOUNDED.MODE),
+    "Sender control claim requires exact bounded/control/Merkle/history opt-in");
   const boundedReadAcceptance = boundedRead ? BOUNDED.acceptance() : null;
   if (localCalendar !== null) require(path.join(ROOT, "lib/helmut/synthetik-500-local-calendar")).validatePolicyData(localCalendar);
   // This is also the sole runtime-file list for the added source reads: the
   // existing shared manifest mounts every sourcePin and checks it in-container.
   const files = [...new Set([...SOURCE_FILES, ...(controlRead ? Object.keys(CONTROL_SOURCE_HASHES) : []),
-    ...(boundedRead ? BOUNDED.FILES : [])])];
+    ...(boundedRead ? BOUNDED.FILES : []),
+    ...(senderClaimRead ? ["scripts/helmut-resource-meter/sender-control-claim.js"] : [])])];
   const sourcePins = files.map(f => pin(path.join(ROOT, f)));
   if (controlRead) for (const [file, hash] of Object.entries(CONTROL_SOURCE_HASHES))
     assert.equal(sourcePins.find(p => p.path === path.join(ROOT, file)).sha256, hash, "Reviewed control source drift: " + file);
@@ -88,6 +92,7 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
     ...(stateStorage ? { stateStorage } : {}), ...(historyReadReuse ? { historyReadReuse } : {}),
     ...(controlRead ? { controlRead, controlSourceAcceptance: CONTROL_SOURCE_ACCEPTANCE } : {}),
     ...(boundedRead ? { boundedRead, boundedReadAcceptance } : {}),
+    ...(senderClaimRead ? { senderClaimRead } : {}),
     ...(localCalendar ? { localCalendar } : {}),
     originalHistoryPreserved: true, fullContractUnchanged: localCalendar === null,
     ...(localCalendar ? { timingMemoryAndLiveSecurityContractUnchanged: true } : {}),
@@ -96,7 +101,7 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
 function readDescriptor(p) {
   const d = JSON.parse(pinned(p));assert.deepEqual(d, descriptor({ stateStorage: d.stateStorage ?? null,
     historyReadReuse: d.historyReadReuse ?? null, controlRead: d.controlRead ?? null, boundedRead: d.boundedRead ?? null,
-    localCalendar: d.localCalendar ?? null }));return d;
+    senderClaimRead: d.senderClaimRead ?? null, localCalendar: d.localCalendar ?? null }));return d;
 }
 function environment(env, p) {
   const d = readDescriptor(p);assert(!env.VERCEL && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
