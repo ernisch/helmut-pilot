@@ -170,6 +170,17 @@ declare reachable text[]; hashes text[]; bodies jsonb[]; refs jsonb[]; leaf_info
   b jsonb; tag text; child text; ch text[]; indexes integer[]; output_text text; output_value jsonb;
   projected bigint; work bigint:=0; depth_now integer; graph_now integer;
   components integer; actual_payloads boolean;
+  -- Only bounded traversal state and current-token/64KiB chunk buffers.
+  renderer_stack_node integer[]:=array_fill(0,array[64]);
+  renderer_stack_next integer[]:=array_fill(0,array[64]);
+  renderer_stack_phase integer[]:=array_fill(0,array[64]);
+  renderer_stack_flatten boolean[]:=array_fill(false,array[64]);
+  renderer_stack_emitted boolean[]:=array_fill(false,array[64]);
+  renderer_top integer; renderer_root integer; renderer_idx integer; renderer_child integer;
+  renderer_slot integer; renderer_tag text; renderer_token text; renderer_fragment text;
+  renderer_token_bytes bytea; renderer_bytepos integer; renderer_token_length integer; renderer_take integer;
+  renderer_buffer text[]:='{}'; renderer_buffer_bytes integer:=0;
+  renderer_chunks text[]:='{}';
 begin
   if current_setting('helmut.local_usage_experiment',true) is distinct from 'on'
     or current_setting('server_encoding')<>'UTF8' or current_setting('client_encoding')<>'UTF8' then raise exception 'auth-state-local-only';end if;
@@ -269,41 +280,102 @@ begin
       from public.helmut_auth_state_nodes_local
       where store_id=s and generation=g and node_hash=any(reachable));
   end if;
-  -- Every old type/depth/text/native-work bound has passed BEFORE expanding
-  -- occurrences. Shared nodes still occur at every required logical position.
-  -- Assemble text with one native aggregate instead of copying large decoded
-  -- JSONB parents into an ever-growing intermediate array. Leaf text is prepared
-  -- once per actual immutable node. The final UNIQUE KEYS check precedes the
-  -- JSONB cast, so neither flattened nor nested duplicate keys can be hidden.
-  with recursive leaf_texts as materialized(
-    select ord as idx,(bodies[ord]->1)::text as value_text
-      from generate_subscripts(bodies,1) as a(ord) where bodies[ord]->>0='v'
-  ), walk(idx,sort_path,flatten) as(
-    select (lookup->>h)::integer,array[]::integer[],false
-    union all
-    select (lookup->>e.hash)::integer,w.sort_path||array[1,e.ord::integer,1],bodies[w.idx]->>0 in ('m','l')
-      from walk w cross join lateral jsonb_array_elements_text(refs[w.idx])with ordinality as e(hash,ord)
-      where bodies[w.idx]->>0<>'v' and(bodies[w.idx]->>0 not in ('m','l') or sizes[(lookup->>e.hash)::integer]>2)
-  ), tokens(sort_path,token) as(
-    select w.sort_path||array[0],case when bodies[w.idx]->>0='v' then
-      case when w.flatten then substr(t.value_text,2,char_length(t.value_text)-2) else t.value_text end
-      else case when w.flatten then '' when kinds[w.idx]='object' then '{' else '[' end end
-      from walk w left join leaf_texts t on t.idx=w.idx
-    union all
-    select w.sort_path||array[2],case when w.flatten then '' when kinds[w.idx]='object' then '}' else ']' end
-      from walk w where bodies[w.idx]->>0<>'v'
-    union all
-    select w.sort_path||array[1,e.ord::integer,0],(bodies[w.idx]->1->(e.ord::integer-1)->0)::text||':'
-      from walk w cross join lateral jsonb_array_elements_text(refs[w.idx])with ordinality as e(hash,ord)
-      where bodies[w.idx]->>0='o'
-    union all
-    select w.sort_path||array[1,e.ord::integer,2],','
-      from walk w cross join lateral jsonb_array_elements_text(refs[w.idx])with ordinality as e(hash,ord)
-      where(bodies[w.idx]->>0 in ('o','a') and e.ord<jsonb_array_length(refs[w.idx]))
-      or(bodies[w.idx]->>0 in ('m','l') and sizes[(lookup->>e.hash)::integer]>2 and exists(
-        select from jsonb_array_elements_text(refs[w.idx])with ordinality as later(hash,ord)
-          where later.ord>e.ord and sizes[(lookup->>later.hash)::integer]>2))
-  ) select string_agg(token,'' order by sort_path) into output_text from tokens;
+  -- All original graph/type/depth/text/native/cumulative-work checks above
+  -- have completed. Traverse logical OCCURRENCES with a depth-64 stack;
+  -- shared nodes are intentionally rendered again at every required position.
+  -- A child's flatten flag belongs to its incoming edge: only m/l parents
+  -- flatten their nonempty children. Leaves use PostgreSQL-normalized text.
+  renderer_root:=(lookup->>h)::integer;
+  renderer_top:=1;renderer_stack_node[1]:=renderer_root;
+  while renderer_top>0 loop
+    renderer_idx:=renderer_stack_node[renderer_top];
+    renderer_tag:=bodies[renderer_idx]->>0;renderer_token:='';
+    if renderer_stack_phase[renderer_top]=0 then
+      if renderer_tag='v' then
+        renderer_token:=(bodies[renderer_idx]->1)::text;
+        if renderer_stack_flatten[renderer_top] then
+          renderer_token:=substr(renderer_token,2,char_length(renderer_token)-2);
+        end if;
+        renderer_top:=renderer_top-1;
+      else
+        if not renderer_stack_flatten[renderer_top] then
+          renderer_token:=case when kinds[renderer_idx]='object' then '{' else '[' end;
+        end if;
+        renderer_stack_phase[renderer_top]:=1;
+        renderer_stack_next[renderer_top]:=0;renderer_stack_emitted[renderer_top]:=false;
+      end if;
+    else
+      renderer_child:=null;
+      while renderer_stack_next[renderer_top]<jsonb_array_length(refs[renderer_idx]) loop
+        renderer_slot:=renderer_stack_next[renderer_top]+1;
+        renderer_stack_next[renderer_top]:=renderer_slot;
+        renderer_child:=(lookup->>(refs[renderer_idx]->>(renderer_slot-1)))::integer;
+        if renderer_child is null then raise exception 'auth-state-node-postorder';end if;
+        if renderer_tag not in ('m','l') or sizes[renderer_child]>2 then exit;end if;
+        renderer_child:=null;
+      end loop;
+      if renderer_child is null then
+        if not renderer_stack_flatten[renderer_top] then
+          renderer_token:=case when kinds[renderer_idx]='object' then '}' else ']' end;
+        end if;
+        renderer_top:=renderer_top-1;
+      else
+        -- Leading separators produce exactly the old sorted-token text. An
+        -- o/a parent counts empty values; only m/l skipped empty fragments.
+        if renderer_stack_emitted[renderer_top] then renderer_token:=',';end if;
+        renderer_stack_emitted[renderer_top]:=true;
+        if renderer_tag='o' then
+          renderer_token:=renderer_token||(bodies[renderer_idx]->1->(renderer_slot-1)->0)::text||':';
+        end if;
+        if renderer_top>=64 then raise exception 'auth-state-depth-limit';end if;
+        renderer_top:=renderer_top+1;renderer_stack_node[renderer_top]:=renderer_child;
+        renderer_stack_phase[renderer_top]:=0;
+        renderer_stack_flatten[renderer_top]:=renderer_tag in ('m','l');
+      end if;
+    end if;
+    if renderer_token='' then continue;end if;
+    -- Current-token bytea permits O(slice length) cuts even for a 4MiB scalar.
+    -- Positions are 1-based for substring; get_byte takes the 0-based FIRST
+    -- EXCLUDED byte. Move left at most three continuation bytes, retaining
+    -- complete codepoints without rescanning a growing text prefix.
+    renderer_token_bytes:=convert_to(renderer_token,'UTF8');
+    renderer_token:=null;renderer_bytepos:=1;
+    renderer_token_length:=octet_length(renderer_token_bytes);
+    while renderer_bytepos<=renderer_token_length loop
+      if renderer_buffer_bytes=65536 then
+        renderer_chunks:=array_append(renderer_chunks,array_to_string(renderer_buffer,''));
+        renderer_buffer:='{}';renderer_buffer_bytes:=0;
+      end if;
+      renderer_take:=least(renderer_token_length-renderer_bytepos+1,65536-renderer_buffer_bytes);
+      if renderer_bytepos+renderer_take<=renderer_token_length then
+        while get_byte(renderer_token_bytes,renderer_bytepos+renderer_take-1) between 128 and 191 loop
+          renderer_take:=renderer_take-1;
+        end loop;
+      end if;
+      if renderer_take=0 then
+        -- The <=3 free bytes cannot fit the next UTF8 codepoint. A fresh
+        -- 64KiB buffer always can, so this branch must consume a nonempty one.
+        if renderer_buffer_bytes=0 then raise exception 'auth-state-renderer-utf8-boundary';end if;
+        renderer_chunks:=array_append(renderer_chunks,array_to_string(renderer_buffer,''));
+        renderer_buffer:='{}';renderer_buffer_bytes:=0;
+        continue;
+      end if;
+      renderer_fragment:=convert_from(substring(renderer_token_bytes from renderer_bytepos for renderer_take),'UTF8');
+      -- Buffer logical bytes never exceed 64KiB. Fragment arrays avoid copying
+      -- a growing 64KiB string for every one-byte punctuation token.
+      renderer_buffer:=array_append(renderer_buffer,renderer_fragment);
+      renderer_buffer_bytes:=renderer_buffer_bytes+renderer_take;
+      renderer_bytepos:=renderer_bytepos+renderer_take;
+      renderer_fragment:=null;
+    end loop;
+    renderer_token_bytes:=null;
+  end loop;
+  if renderer_buffer_bytes>0 then
+    renderer_chunks:=array_append(renderer_chunks,array_to_string(renderer_buffer,''));
+  end if;
+  renderer_buffer:=null;renderer_token:=null;renderer_token_bytes:=null;renderer_fragment:=null;
+  output_text:=array_to_string(renderer_chunks,'');
+  renderer_chunks:=null;
   if output_text is null or not(output_text IS JSON WITH UNIQUE KEYS) then raise exception 'auth-state-duplicate-key-or-invalid-json';end if;
   if octet_length(output_text)>sizes[(lookup->>h)::integer] then raise exception 'auth-state-actual-text-limit';end if;
   output_value:=output_text::jsonb;

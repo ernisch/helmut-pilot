@@ -393,7 +393,9 @@ const c={serverVersion:'17.6',serverEncoding:'UTF8',clientEncoding:'UTF8',localG
  primaryKeys:[['store_id','generation','node_hash']],policies:{helmut_auth_state_nodes_service_local:{permissive:'PERMISSIVE',roles:['service_role'],command:'ALL',using:'true',check:'true'}},triggers:{}};
 for(const [name,table,fn,type]of[['helmut_auth_state_nodes_immutable_local','helmut_auth_state_nodes_local','helmut_auth_state_nodes_guard_local_v1',31],['helmut_auth_state_nodes_no_truncate_local','helmut_auth_state_nodes_local','helmut_auth_state_nodes_guard_local_v1',34],['helmut_auth_state_root_bound_local','helmut_store','helmut_auth_state_auth_guard_local_v1',31],['helmut_auth_state_root_no_truncate_local','helmut_store','helmut_auth_state_auth_guard_local_v1',34]])c.triggers[name]={state:'A',table:'public.'+table,function:'public.'+fn,type,condition:null,arguments:0};
 AU.assertStateCatalog(c);
-for(const mutate of[x=>x.functions.helmut_auth_state_read_v1.hash='0'.repeat(64),x=>x.functions.helmut_auth_state_cas_v1.definer=true,
+for(const mutate of[x=>x.functions.helmut_auth_state_read_v1.hash='0'.repeat(64),
+ x=>x.functions.helmut_auth_state_expand_local_v1.hash='b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a',
+ x=>x.functions.helmut_auth_state_cas_v1.definer=true,
  x=>x.functions.helmut_auth_state_expand_local_v1.volatility='v',x=>x.functions.helmut_auth_state_bootstrap_v1.publicExecute=true,
  x=>x.functions.helmut_auth_state_restore_v1.customerExecute=true,x=>x.functions.helmut_auth_state_payload_hash_local_v1.config=['search_path=public'],
  x=>x.functionCount++,x=>x.table.rls=false,x=>x.table.service.UPDATE=true,x=>x.table.anon.INSERT=true,

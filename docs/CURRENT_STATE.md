@@ -2,6 +2,34 @@
 
 **Lokal 20.10.2026 UTC/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
+## 20.10.: Vollständiger Auth-Renderer lokal ersetzt; 500er Abnahme offen
+
+Eigener Branch `codex/auth-state-working-set-20261020`, Basis `bdb2c2c3`,
+`c8624f7c` erhalten. PostgreSQLs materialisierte Vorkommens-/Sortier-/Tokenmengen
+im abschließenden Merkle-Renderer durch Tiefenstapel und UTF8-Fragmente ersetzt;
+Schutzprüfungen, ABI, CAS, ACK, History und Kontrollleser unverändert.
+Neue Quellenbindung separat von historischen Abnahmen, frische Integration
+weiter Pflicht. Kein Router-/DeepSeekaufruf in diesem SOL-Sprint.
+
+Echter OLD/NEW/NEW/OLD-Vergleich am unveränderten späten V11-Authzustand:
+alle nativen Ausgaben exakt gleich. Rund125MB weniger anonymer Speicher je
+Backend; zweites Paar621ms alt/294ms neu. Neue Authkomponente:11 bestätigte
+Mutationen,192 frische Kontrollen, CAS-Konflikt, verloreneBestätigung ohneRetry,
+zwei echte kostenfreie Ledgeranhänge mit vollständigem6000er Historysuffix PASS.
+Separat39 Fälle/95 native Differentialvergleiche,22 Integrationstests und6
+Startprüfungen PASS. KonservativeSQL-Regression179/179 in698s, Prozessende0;
+endgültigeDescriptorbindung separat gezielt und am echten Katalog geprüft.
+
+Vergleichssteuerung bleibt FAIL wegen PostgREST-Abschluss vor der dort geplanten
+Differentialphase; keine Umwertung. Gesamte eigene Lebenszeitgruppe bis letztem
+Exit1094455296B/OOM0, enthält OLD+NEW/Setup/RAM-PGDATA/JIT und ist kein exklusiver
+NEW- oder Voll500-Nachweis.64KiB ist nur logischer Fragmentpuffer, nicht GesamtRAM.
+Zwölf Runden mit GC-Wellen belegen kein langfristiges Plateau. Größter Gesamt-
+verursacher und vollständige500MB-/Zeit-/Ergebnisannahme bleiben offen.
+Plattenreserve weiterhin rund6,58GB zu klein,8GiB Boden unverändert.
+Kein neues vollständigesGO, keine Production/Migration/Merge/Deployment.
+[Änderung, tatsächliche Belege, Grenzen und genauer Haltepunkt](betrieb/local-streamed-renderer-20261020.md).
+
 ## 20.10.: V11 fehlgeschlagen; gemeinsame RAM- und Nodebudgets lokal eingebunden
 
 **V11 ist durchgeführt und verbraucht. Kein neues Voll500-GO.** Testcode5fae25be,
@@ -19,7 +47,7 @@ Der nachfolgende Motorstand2dba4317(inklusivec8624f7c) wurde vonV11 noch
 nicht getestet. Betreiberkosten und Offline90/Unit60/Auth30/16Kontrollen
 bleiben unverändert.
 
-Eigener aktueller Branch **codex/native-working-set-budget-20261020**, Basis
+Vorheriger Budgetbranch **codex/native-working-set-budget-20261020**, Basis
 2dba431716b5d1693b7039db9233b97f9db5db75: NativePolicy/2 setzt vorStorage/DB/
 Anwendung eine gemeinsame cgroup2-Grenze1547997184B, high1399996416B,
 swap0. Zwei kleine Setuphelfer zählen bis zum letzten Exit mit; keinPeakreset,

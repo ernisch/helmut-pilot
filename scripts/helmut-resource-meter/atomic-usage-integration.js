@@ -37,7 +37,21 @@ const CONTROL_SOURCE_ACCEPTANCE = Object.freeze({
     scope: "Nonenumerable Error.cause only; same public stop and no retry", requiresFreshIntegrationAcceptance: true }),
   // Separate source-only review for these later callers; W50 and V11 remain
   // historical. Fresh complete integration admission is still mandatory.
-  localReadCallerDelta: Object.freeze({"baselineCommit":"5fae25be5068a278a88daca9a7508c7b9e4001a3","scope":"Additional read-only journal selectors only; full writer/accounting/receipt reads and native protocol unchanged","independentSourceReview":Object.freeze({"name":"REPORT.SAFE.json","bytes":7710,"sha256":"c06da6c2b64159fc834935e395aa5e83d0ba96fd8ce4dcb449ac42c44052ebda"}),"candidateSourceSHA256":Object.freeze({"lib/helmut/storage.js":"51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d","lib/helmut/synthetik-500-production-adapter.js":"1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4"}),"requiresFreshIntegrationAcceptance":true,"newGlueAccepted":false,"full500Accepted":false,"RAMOrTimeGainAccepted":false})
+  localReadCallerDelta: Object.freeze({"baselineCommit":"5fae25be5068a278a88daca9a7508c7b9e4001a3","scope":"Additional read-only journal selectors only; full writer/accounting/receipt reads and native protocol unchanged","independentSourceReview":Object.freeze({"name":"REPORT.SAFE.json","bytes":7710,"sha256":"c06da6c2b64159fc834935e395aa5e83d0ba96fd8ce4dcb449ac42c44052ebda"}),"candidateSourceSHA256":Object.freeze({"lib/helmut/storage.js":"51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d","lib/helmut/synthetik-500-production-adapter.js":"1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4"}),"requiresFreshIntegrationAcceptance":true,"newGlueAccepted":false,"full500Accepted":false,"RAMOrTimeGainAccepted":false}),
+  // This separately qualified local renderer is outside the historical W50
+  // acceptance. No prior full-run authority or whole-run resource proof carries.
+  localRendererDelta: Object.freeze({
+    baselineCommit: "bdb2c2c3a369ebf175f02734c696b13f00733988",
+    file: "supabase/proposals/auth_state_parts_local.sql",
+    originalSHA256: "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61",
+    sha256: "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d",
+    nativeFunctionBodySHA256: "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+    nativeDifferential: Object.freeze({ name: "DIFFERENTIAL_RESULT.SAFE.json", bytes: 38509,
+      sha256: "846cb9ee89897acd9667320aac559f716ff0e7e6753e974a5132880f42be17ea" }),
+    scope: "Final full renderer only; ABI, integrity bounds, CAS and control readers unchanged",
+    requiresFreshIntegrationAcceptance: true, newGlueAccepted: false, full500Accepted: false,
+    fullResourceGainAccepted: false
+  })
 });
 const CONTROL_SOURCE_HASHES = Object.freeze({
   "lib/helmut/llm-usage-atomic.js": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0",
@@ -47,7 +61,7 @@ const CONTROL_SOURCE_HASHES = Object.freeze({
   "lib/helmut/synthetik-500-production-adapter.js": "1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4",
   "lib/helmut/testkosten-budget.js": "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e",
   "lib/helmut/synthetik-500-dispatch-journal.js": "c9cf08100d63646e9c16f931b257b6ccc7fa65fc96e18f7bc6459e530bd5e4b8",
-  "supabase/proposals/auth_state_parts_local.sql": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61",
+  "supabase/proposals/auth_state_parts_local.sql": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d",
   "supabase/proposals/auth_usage_atomic_local.sql": "5fdd3c81cf86c4f03208974bb9fd1f26d355dfaf53520f08de64292581a39e05"
 });
 // Native bodies from the accepted final PG17.6 candidate, not a caller claim.
