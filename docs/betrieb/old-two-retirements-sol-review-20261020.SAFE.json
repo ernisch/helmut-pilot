@@ -1,0 +1,277 @@
+{
+  "actors": [
+    {
+      "action": "check",
+      "actualPin": {
+        "bytes": 2877,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ACTUAL_CHECK.SAFE.json",
+        "sha256": "d2527c3511994f47acd0376ff40107db15df76be68385855c4bee623957d0ff0"
+      },
+      "cid": "22edb0fc7980d85565c0bb40582698df08ac1b8622cc3ebe60d10e6b878a498c",
+      "globalInventoryLogicalRawPin": {
+        "bytes": 3510769,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ALL_DOCKER_INSPECT.PRIVATE.json",
+        "sha256": "d7450fcff0ca30bded38acf792866863e1904526c1a53581c19e1ad679023e8f"
+      },
+      "globalInventoryResolvedViaExplicitLosslessMapping": true,
+      "groupClosuresCount": 8,
+      "nonce": "a75766d9710629bd136feda8",
+      "savedStoppedState": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T22:54:12.556557503Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T22:54:11.512620965Z",
+        "Status": "exited"
+      },
+      "sourcePin": {
+        "bytes": 50558,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/retire_old_two.py",
+        "sha256": "430a610aff0b4559450836cee615413de6a1234670910acfb9741befd3794c9e"
+      },
+      "target": "late-v9",
+      "windowClosedPin": {
+        "bytes": 1001,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ROOT_EXCLUSIVE_WINDOW_CLOSED.SAFE.json",
+        "sha256": "e616c78c121ea4cfe55cff0772f39119be131b65c3acfd60b523075692d29895"
+      }
+    },
+    {
+      "action": "retire",
+      "actualPin": {
+        "bytes": 2592,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ACTUAL_RETIRE.SAFE.json",
+        "sha256": "18b84069c000518dd61acb60f7a6f78f37875f7048bad4d4d571446e5ffde4d6"
+      },
+      "cid": "145d18daf0105c8a04e5964794cc2facafcb3bbd23fbe158b5873795894119ab",
+      "globalInventoryLogicalRawPin": {
+        "bytes": 3530482,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ALL_DOCKER_INSPECT.PRIVATE.json",
+        "sha256": "7d86fa29a99567caa49b685b9d5fd1d6e7b47f7707dd1c433f88073ffec5c400"
+      },
+      "globalInventoryResolvedViaExplicitLosslessMapping": true,
+      "groupClosuresCount": 8,
+      "nonce": "265af1f1c1dc6692373840c1",
+      "savedStoppedState": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T22:55:19.732580397Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T22:55:18.134095958Z",
+        "Status": "exited"
+      },
+      "sourcePin": {
+        "bytes": 50558,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/retire_old_two.py",
+        "sha256": "430a610aff0b4559450836cee615413de6a1234670910acfb9741befd3794c9e"
+      },
+      "target": "late-v9",
+      "windowClosedPin": {
+        "bytes": 1004,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ROOT_EXCLUSIVE_WINDOW_CLOSED.SAFE.json",
+        "sha256": "9f74ba30cf54cffc1559ba6af5b99dc176813b53d77be9f11f05bf0fd23a9e51"
+      }
+    },
+    {
+      "action": "check",
+      "actualPin": {
+        "bytes": 2879,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ACTUAL_CHECK.SAFE.json",
+        "sha256": "f93d1c92e75bc4dc3a020e243e02f3a9afa622f28563352c8148a1ea3cee30ec"
+      },
+      "cid": "adda9c1763e4b08af810c060cf5670d74d2d06f0255bcbb7b4d7d6faf6b7752a",
+      "globalInventoryLogicalRawPin": {
+        "bytes": 3549600,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ALL_DOCKER_INSPECT.PRIVATE.json",
+        "sha256": "eb17410a7a1c09914cd94ee31c157545be2d31ad1edc3ae6b67efe19ed6d3c0d"
+      },
+      "globalInventoryResolvedViaExplicitLosslessMapping": true,
+      "groupClosuresCount": 8,
+      "nonce": "8f8c01134bb12694ca8111a0",
+      "savedStoppedState": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T22:57:33.28665698Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T22:57:32.299656178Z",
+        "Status": "exited"
+      },
+      "sourcePin": {
+        "bytes": 50558,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/retire_old_two.py",
+        "sha256": "430a610aff0b4559450836cee615413de6a1234670910acfb9741befd3794c9e"
+      },
+      "target": "post-v10",
+      "windowClosedPin": {
+        "bytes": 1003,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ROOT_EXCLUSIVE_WINDOW_CLOSED.SAFE.json",
+        "sha256": "4f99f66226864b501ba60fd1eb43bd1ae26aa2e484b621b5d53255341a294eca"
+      }
+    },
+    {
+      "action": "retire",
+      "actualPin": {
+        "bytes": 2591,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ACTUAL_RETIRE.SAFE.json",
+        "sha256": "cafc3d275c8288e27f8ce75195652735a2a12d5d919d607893d0974cb1d64c05"
+      },
+      "cid": "ed23eae8ec8b3ecc06adfa30c3fe8d2c2909d90d78f94297d2de5547c4c67314",
+      "globalInventoryLogicalRawPin": {
+        "bytes": 3569344,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ALL_DOCKER_INSPECT.PRIVATE.json",
+        "sha256": "c992e40b0dcbfe380984ffa1ab90b18c2c308d6595bab13309ddf60c8d0c3e63"
+      },
+      "globalInventoryResolvedViaExplicitLosslessMapping": true,
+      "groupClosuresCount": 8,
+      "nonce": "a2c1aaf9249c63ef1aad46d5",
+      "savedStoppedState": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T23:01:23.088226098Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T23:01:21.643695856Z",
+        "Status": "exited"
+      },
+      "sourcePin": {
+        "bytes": 50558,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/retire_old_two.py",
+        "sha256": "430a610aff0b4559450836cee615413de6a1234670910acfb9741befd3794c9e"
+      },
+      "target": "post-v10",
+      "windowClosedPin": {
+        "bytes": 1003,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ROOT_EXCLUSIVE_WINDOW_CLOSED.SAFE.json",
+        "sha256": "3a31e4709cd877529d7fb9a41d144c4ce3d7944bb27970a12df44890ed8fa43b"
+      }
+    }
+  ],
+  "atUTC": "2026-10-20T23:04:31.457692+00:00",
+  "blockingFindings": [],
+  "canonicalSource827aCurrentRootMetadata": {
+    "allocatedBytes": 4096,
+    "bytes": 4096,
+    "ctime_ns": 1792487833623423814,
+    "device": 27,
+    "gid": 1000,
+    "inode": 169,
+    "links": 19,
+    "mode": 448,
+    "mtime_ns": 1792487833623423814,
+    "uid": 1000
+  },
+  "canonicalSourceOfflineMetadataOnly": true,
+  "endProofPinAudit": {
+    "explicitLosslessMappedRawPins": 4,
+    "freshLiveBytePins": 150,
+    "totalPins": 155,
+    "unchangedReusedBinaryPayloadNotRepeated": [
+      {
+        "currentMetadata": {
+          "allocatedBytes": 761856,
+          "bytes": 759032,
+          "ctime_ns": 1792530642512576995,
+          "device": 27,
+          "gid": 1000,
+          "inode": 262352,
+          "links": 1,
+          "mode": 365,
+          "mtime_ns": 1792530642512546599,
+          "uid": 1000
+        },
+        "pin": {
+          "bytes": 759032,
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation/parentstat-probe-preparation/parentstat-only.static",
+          "sha256": "02bbec3502f3529d23b3d92084e38f9f77864c54d624fe9b28c384642c2240f0"
+        },
+        "reason": "reused original helper executable; previously actual-build/ELF/source qualified, payload hash not repeated"
+      }
+    ]
+  },
+  "endVerifierActualPin": {
+    "bytes": 54156,
+    "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/old-two-retirement-end-verifier-v3-preparation-20261020/ACTUAL_REVIEW.SAFE.json",
+    "sha256": "c4aa0dab62277bce90629a86463ba12a061b148c661a8049d159c9d03b046709"
+  },
+  "fullArchiveCurrentMetadataOnly": [
+    {
+      "currentMetadata": {
+        "allocatedBytes": 135294976,
+        "bytes": 135292875,
+        "ctime_ns": 1792531972931691600,
+        "device": 27,
+        "gid": 1000,
+        "inode": 262607,
+        "links": 1,
+        "mode": 384,
+        "mtime_ns": 1792531972931691600,
+        "uid": 1000
+      },
+      "payloadRehashed": false,
+      "pin": {
+        "bytes": 135292875,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/archives/late-v9.PRIVATE.tar.gz",
+        "sha256": "340d9a945d6be92ed37f2b23d493816f2c10240eb50b3f82b7a1fdf00ed89832"
+      },
+      "target": "late-v9"
+    },
+    {
+      "currentMetadata": {
+        "allocatedBytes": 134955008,
+        "bytes": 134951882,
+        "ctime_ns": 1792532107206741676,
+        "device": 27,
+        "gid": 1000,
+        "inode": 262712,
+        "links": 1,
+        "mode": 384,
+        "mtime_ns": 1792532107206741676,
+        "uid": 1000
+      },
+      "payloadRehashed": false,
+      "pin": {
+        "bytes": 134951882,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/archives/post-v10.PRIVATE.tar.gz",
+        "sha256": "1df14cb4f026a1de412c86093c237f3b1aee607d35391b4152df900450fe659e"
+      },
+      "target": "post-v10"
+    }
+  ],
+  "independent": true,
+  "limits": {
+    "endVerifierFreshFourGETInspectsInheritedFromPinnedC4aaReportNoNewDockerRequests": true,
+    "globalFDMapsAndAllNamespaceAbsenceNotClaimed": true,
+    "noModelMemoryFull500ProductionQualification": true,
+    "noNewActorTestDBNativeOrResourceMutation": true,
+    "noOriginalPGDATARuntimeELFOrLargeArchivePayloadRead": true,
+    "outerRootCLIExitNotIndependentlyObserved": true,
+    "parentClaimBodiesNotReadableInThisNamespaceNotClaimedRead": true
+  },
+  "removedDirectoriesIncludingRoots": 60,
+  "removedRegularFiles": 3424,
+  "reviewer": "gpt-6.1-sol /root/sprint_shutdown",
+  "schema": "helmut-old-two-four-actor-independent-actual-review/1",
+  "status": "PASS_FOUR_GENUINE_ACTORS_AND_BOTH_EXACT_RETIRED_ROOTS",
+  "twoExactPGDATARootsFreshENOENT": true,
+  "twoFreshPreservedParentMetadataAndClaimsMatchEndReport": true,
+  "twoGNU1712FileSHAStreamsEqualActualCheckSnapshots": true
+}

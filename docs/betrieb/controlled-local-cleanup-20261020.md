@@ -208,8 +208,10 @@ Neue Momentaufnahme18:48UTC:15301251072B verfügbar,121471352B über der
 unveränderten Volladmission. Weitere Diagnosen verbrauchen erneut Platz; vor
 jedem Start frisch prüfen. Diese Angabe bewilligt keinen vollständigen Lauf.
 
-Die Bereinigung beweist keine RAM-Einsparung. Robuste gemeinsame RAM-Verbesserung,
-langfristiges Plateau, Zeit-/1500-Ergebnisannahme und500MB-Puffer bleiben offen.
+Die Bereinigung selbst beweist keine RAM-Einsparung. Der getrennte tatsächliche
+Combined-Auth-ABBA-Vergleich belegt154.886.144B/13,23% weniger gemeinsamen
+Lebenszeitpeak dieser Komponente. Langfristiges Plateau, vollständige Zeit-/
+1500-Ergebnisannahme und500MB-Puffer des gesamten Motors bleiben offen.
 Historischer PostgREST-Fall bleibt FAIL. Vor jedem späteren Voll500 zusätzlich32
 frische Startbedingungen, gültige Fall-/Zeitbindung, geklärter SOL-only-Reviewvertrag
 und neues konkretes Betreiber-GO. Keine Production, Migration, Aktivierung,
@@ -253,7 +255,160 @@ lstat/statfs der beiden Roots und eigene UID/GID-Maps: tatsächliche Owner999:10
 Gerät/Inodes/Mode/Zeitstempel unverändert, Exit0/PID0/kein OOM; Hülle erhalten.
 [Quellen-/Planprüfung](two-old-pgdata-root-metadata-sol-review-20261020.SAFE.json),
 [tatsächliche Metadaten](two-old-pgdata-root-metadata-actual-20261020.SAFE.json).
-Noch keine rekursive Inventur, Dateinutzdatenlesung, Archivierung oder Löschung
-dieser zwei Bestände; ihr weiterer Platzgewinn ist nicht behauptet.
+Dies beschreibt den damaligen ersten Metadatenschritt. Inzwischen sind3484
+Metadateneinträge sowie0owner- und0initial-userns-sichtbare xattrs qualifiziert.
+Die zwei älteren Kopien blieben an diesem Zwischenstand KEEP. Die spätere volle
+Sicherungsabnahme und tatsächliche gezielte Entfernung sind unten gesondert belegt.
 
 [Integrierter Cache und tatsächlicher nativer ALT/NEU-Vergleich](bounded-control-cache-local-integration-20261020.md).
+
+## Tatsächlicher Abschluss der sieben neuen PASS-Kopien
+
+Die zwei vorab entbehrlichen Ownership-PASS-Kopien und alle fünf Combined-Auth-
+PASS-Kopien sind separat nach frischen Root-Adoptionen entfernt.
+Ownership:3422 reguläre Dateien/739.643.392B Blöcke,321 Fallbelege unverändert
+([Actual-IR](ownership-two-pass-copies-retired-sol-review-20261020.SAFE.json)).
+Combined:8555 reguläre Dateien/1.849.147.392B Blöcke,460 Fallbelege unverändert
+([Actual-IR](combined-auth-five-copies-retired-sol-review-20261020.SAFE.json)).
+Fall-/Disk-Hüllen, Originale und Quelle827a bleiben erhalten. Die Blöcke sind
+geprüfte Zielinventare und kein addierter Gesamt-df-Nettogewinn.
+
+Die damalige Root-Momentaufnahme7d9478 zeigte14.550.601.728B frei,
+629.177.992B unter der Volladmission15.179.779.720B. Danach wurden drei eigene
+saubere Hilfsworktrees mittels Git-Docs-Sparse reduziert:1664 eingecheckte Dateien
+ausgelagert, je3 Pflichtdokumente und alle Nicht-Docs-Dateien erhalten.
+Refs, HEADs, Indexblobs, gemeinsame Gitkonfiguration und Gitobjekte bleiben gleich;
+alle ausgelagerten Dateien sind daraus bytegenau wiederherstellbar.
+[Unabhängige tatsächliche Nachprüfung](three-own-worktrees-docs-sparse-sol-review-20261020.SAFE.json)
+bestätigt4801 Nicht-Docs-Dateien und1664 ausgelagerte Pfade. Die drei getrennten
+df-Differenzen summieren sich auf100.339.712B; keine Behauptung eines isolierten
+Gesamt-df-Gewinns über gleichzeitig veränderte Belege hinweg.
+
+Eine weitere eigene Initial-Auth-PASS-Arbeitskopie wurde nach separater
+Entbehrlichkeits-/Quellenprüfung, echtem Check und frischer einmaliger Root-Adoption
+entfernt:1000 Dateien/45.789.184B belegte Blöcke, tatsächliche df-Differenz gleich.
+Alle37 erforderlichen Belege sowie Original, physische Kopie und Hüllen unverändert.
+Historischer Testvertrag hier5000 Historyzeilen/44 RPCs; nicht als heutiger
+6000-/27-RPC-Vergleich umgedeutet.
+[Unabhängige tatsächliche Nachprüfung](small-initial-auth-copy-retired-sol-review-20261020.SAFE.json).
+
+Die zwei älteren UID999-Kopien sind nun vollständig verlustlos gesichert:
+135.292.875B und134.951.882B private gzip-Archive, zusammen270.244.757B.
+Jeweils GNU-tar-Vollvergleich und unabhängiger vollständiger Quell-SHA-/Tarvergleich,
+danach alle3484 sichtbaren Metadateneinträge unverändert. Eine unabhängige SOL-
+Nachprüfung liest sämtliche Archivbytes/CRC/EOF und alle1712 Dateien je Archiv;
+UID/GID/Mode/Nanosekunden-PAX und die sechs echten abgeschlossenen Aktionen gebunden.
+Keine universelle Xattr-/Namespace-/Ctime-Wiederherstellungsgarantie behauptet.
+[Unabhängige vollständige Sicherungsabnahme](old-two-full-backups-sol-review-20261020.SAFE.json).
+An diesem Sicherungsstand blieb ihre tatsächliche Entfernung bis zu frischen
+Root-Nutzungs-/Abhängigkeits-/Prozessprüfungen offen. Die spätere Ausführung folgt
+unten; Quelle827a ist davon unabhängig weiter geschützt.
+
+Root-Momentaufnahme8ae4cb nach Archivierung:14.400.036.864B frei,
+779.742.856B unter der Volladmission. Historische Momentaufnahmen werden nicht
+als heutige Startkapazität verwendet. Der geprüfte temporäre GitHub-Logcache
+liegt auf tmpfs und würde0B persistente Kapazität freigeben; nicht entfernt.
+Alle älteren datierten Kapazitätsangaben bleiben historische Momentaufnahmen.
+Vor einem späteren Start sind die echte Kapazität und alle Startbedingungen neu
+zu prüfen. Keine neue Voll500-Freigabe oder Production-Aktion.
+
+Anschließend wurden in genau diesen drei eigenen sauberen Hilfsworktrees
+weitere2508 eingecheckte flache Skriptkopien sowie sechs Frontendkopien
+(`client.js`/`styles.css`) per Git-Sparse ausgelagert. Der Hauptarbeitsbaum bleibt
+vollständig. Laufzeit-/Auth-/Native-/Kontrollskripte, alle benötigten Unterverzeichnisse,
+Produktquellen und Pflichtdokumente bleiben verfügbar. HEADs/Branches/Refs,
+Indexblobs und gemeinsame Gitkonfiguration unverändert; ausgelagerte Inhalte
+bleiben aus den geprüften Gitobjekten bytegenau wiederherstellbar. Für historische
+vollständige Offline-/Frontend-Prüfungen in diesen Hilfsworktrees zuerst die
+betroffenen Pfade gezielt aus Git wiederherstellen.
+[Tatsächliche Skript-Sparse-Abnahme](three-own-worktrees-flat-scripts-sparse-sol-review-20261020.SAFE.json)
+und [Frontend-Sparse-Abnahme](three-own-worktrees-frontend-sparse-sol-review-20261020.SAFE.json)
+trennen frische ENOENT-/Gitprüfungen von übernommenen Root-Vollhashbelegen.
+Die getrennten df-Differenzen summieren sich auf47.460.352B und2.772.992B;
+kein isolierter Gesamtgewinn über zeitgleich entstehende Belege hinweg.
+
+## Tatsächlicher Abschluss der zwei älteren gesicherten Kopien
+
+Beide konkreten PGDATA-Verzeichnisse sind jetzt entfernt:3424 reguläre Dateien
+und60 Verzeichnisse, die privaten Parentverzeichnisse samt Einmalmarkern bleiben.
+Jedes Ziel zuerst separat vollständig gegen die gesicherten1712 Datei-SHAs
+geprüft; dann frische unabhängige Abhängigkeitsprüfung, aktuelle Docker-/Host-/
+Gruppenschlussprüfung, neue Root-Adoption und genau einmalige Entfernung.
+Nach der ersten Entfernung wurden die nun geänderten Parentmetadaten tatsächlich
+neu gemessen; keine alten Zeit-/Linkwerte für die zweite Aktion übernommen.
+Alle vier Aktionen endeten mit CLI0, beiden EOFs, beendetem Kindprozess, PID0
+und ohne OOM. Archive und sämtliche geschützten Belege danach unverändert.
+
+Ein separater rein lesender Endprüfer hat alle vier tatsächlichen Belegketten,
+Einmalmarker, vollständige historische Check-Dateihashes, beide ENOENTs,
+erhaltene Archive/Parentverzeichnisse und vier weiterhin beendete CIDs bestätigt.
+[Tatsächlicher Endprüfer](old-two-retirements-end-verifier-20261020.SAFE.json).
+Er wiederholt keine großen Archiv-/Originalnutzdaten-Hashes; diese stammen aus
+der vollen Sicherungsabnahme und den erneuten Helferprüfungen vor/nach Entfernung.
+[Unabhängige tatsächliche Nachprüfung](old-two-retirements-sol-review-20261020.SAFE.json)
+bestätigt154 frisch bytegeprüfte Belegpins; ein bereits qualifiziertes statisches
+ELF nur per Metadaten/Historie. Unlesbare Claimkörper bleiben als Grenze benannt.
+
+Die vorherigen Vorabfehler bleiben erhalten: Docker ließ `ReadOnly:false` in den
+zwei RW-HostConfig-Mounts weg; der erste Create-only-Versuch wurde deshalb vor
+jedem Start abgelehnt. Eine neue Quellenfassung erwartet exakt diese Darstellung,
+weiterhin vollständiger Dictvergleich und exakt zwei definierte RW-Parents.
+Das bei geschlossenen Helfern beobachtete explizite `OomKillDisable:false→null`
+wird ausschließlich im gespeicherten Created→Stopped-Metadatenvergleich behandelt;
+keine Kernelpolicygleichsetzung, kein Setter, keine Budget-/Friständerung.
+Die nie gestartete fehlerhafte Hülle wurde nach frischem Created/PID0/Nullstart-
+Nachweis, unverändertem Image und leerem RootFS-Diff gezielt ohne force/volumes
+entfernt. Fehlversuchsbelege bleiben; keine frühere Adoption wiederverwendet.
+
+Nach bestandener Endprüfung sind genau sechs abgeschlossene Dockerinventare
+verlustlos gzip-gesichert. Jede Rohfassung erst nach vollständigem SHA-/CRC-/EOF-
+Rückvergleich und dauerhaftem Rekonstruktionsmapping entfernt; alle logischen
+Rohpins unverändert. Vor einer späteren erneuten Prüfung, die physische Rohpfade
+liest, diese ausschließlich aus dem jeweils gebundenen gzip bytegleich herstellen.
+Das betrifft eigene abgeleitete Inventuren, keine Originale oder Messnutzdaten.
+Private Primärbelege: `old-two-qualified-copy-retirement-execution/<nonce>/`
+mit `CLOSED_INVENTORY_COMPACTION.SAFE.json` und `INVENTORY_COMPACTED.SAFE.json`.
+[Unabhängige Kompaktierungsnachprüfung](six-closed-inventory-compactions-sol-review-20261020.SAFE.json):
+alle sechs gzip-Dateien zusammen1.179.766B vollständig zurückgelesen, exakt
+21.126.293B ursprüngliche Rohdaten per SHA/CRC/EOF wiederherstellbar. Sie prüft
+Rekonstruktionsmappings; vor jedem erneuten Rohpfad-Consumer gezielt rehydrieren.
+
+Echte Root-Momentaufnahme719a00 danach:15.164.137.472B frei, weiterhin15.642.248B
+unter Volladmission15.179.779.720B. Noch keine ausreichende vollständige
+Plattenadmission; keine Kapazität aus bloßen Kandidaten oder Prognosen gezählt.
+
+
+## Volladmission nach drei verlustlos archivierten Vorabkontrollen
+
+Genau drei eigene historische BLOCKED-CHECK_ONLY-Berichte sind anschließend
+verlustlos archiviert:23.456.382B Rohbytes jetzt6.074.691B gzip, alle drei
+vollständig per SHA/CRC/EOF und exaktem Rückvergleich unabhängig geprüft.
+Die Berichte enthalten Quellinventare und Vorbedingungen; sie sind abgeleitete
+Kontrollen, keine primären V11-Messdaten. Ihre BLOCKED-/FAIL-/GO-Zustände bleiben
+unverändert. Andere Final-Vorabberichte sind weiterhin vorhanden; mangels
+gepinntem Before-Metadatenbeleg wird keine neue Pre/Post-Gleichheit behauptet.
+[Unabhängige tatsächliche Nachprüfung](three-blocked-preflight-compactions-sol-review-20261020.SAFE.json).
+Historische Rohpfad-Consumer benötigen vor erneutem Lesen die bytegleiche
+Rehydrierung aus dem jeweiligen Mapping. Kein altes GO wird dadurch gültig.
+
+Der letzte [Plattensnapshot vor dem Dokumentationscommit](cleanup-final-capacity-snapshot-20261020.SAFE.json)
+zeigt15.181.066.240B frei gegen unveränderte15.179.779.720B Volladmission,
+**1.286.520B darüber**. Damit an diesem Zeitpunkt knapp erfüllt; die
+Aufnahme ist keine Reservierung oder spätere Startfreigabe. Commit und spätere
+Belege können Platz verbrauchen; vor jedem Start aktuelle Kapazität samt allen
+32 Bedingungen und konkretem neuem GO prüfen. RAM-Puffer und vollständiger
+500er Nachweis bleiben unabhängig davon offen. Keine Reserve oder Kosten geändert.
+
+[Frische geschützte Ressourcenprüfung](cleanup-protected-resources-readback-20261020.SAFE.json):
+Originalbank weiterhin aktiv, alle vier V11-Hüllen vorhanden; fünf volle CIDs,
+Running/PID und sämtliche Mountquellen gleich der erhaltenen Baseline.
+Quelle827a: Rootmetadaten gleich, kein postmaster.pid. Das ist eine gezielte
+Metadatenprüfung, kein neuer Originalnutzdatenhash oder vollständiger HostConfig-
+Vergleich. Originale, Images, Volumes und Loopbindungen wurden nicht verändert.
+
+44 Root-Orchestrierungsquellen sind zusätzlich dauerhaft privat bytegleich
+archiviert:55752B gzip, kompletter Rückvergleich und Einzel-SHAs. Manifest
+`cleanup-20261020/root-orchestration-source-preservation-20261020/ACTUAL_SOURCE_PRESERVATION.SAFE.json`
+SHA8affcc278583efb546dc7b3561062afd36e06092a15ce5bc4467bc9c94650960;
+die spätere rein lesende Ressourcenprüfung ist ebenfalls als Quelle dort erhalten.
+Quellenwiederherstellung erlaubt keine Wiederholung verbrauchter Aktionen.

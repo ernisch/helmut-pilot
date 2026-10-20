@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Lokal 20.10.2026 UTC/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
+**Lokal 20.10.2026 UTC (21.10. Istanbul); letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
 ## 20.10.: Gemeinsame Auth-RAM-Ersparnis belegt;500er Ziel offen
 
@@ -37,15 +37,25 @@ unabhängige Source-/Einbindungsprüfung,4PythonAST/5NodeSyntax/20Auswahlguards 
 V6control-45a29158 und V8-Fall1ec969 bleiben FAIL. OriginalerPostgREST−2 nur
 unter enger geprüfter12.2.3-SIGTERM/Identitäts/EOF-Policy akzeptiert.
 
-Bereinigung bisher:2synthetische Dateien,2DIO-/8V9V10-Hüllen,21neuere archivierte
-Diagnose-PGDATA-Kopien entfernt;17Deltaarchive hängen dauerhaft von Quelle827a ab.
-Zusätzlich beide vorab entbehrlichen Ownership-PASS-Kopien nach frischen einzelnen
-Adoptionen entfernt:3422Dateien/739.643.392B Blöcke,321Belege/Hüllen unverändert.
-Fünf neue Vergleichskopien noch separat in kontrollierter Entsorgungsabnahme.
-Zwei ältereUID999-Kopien bleiben erhalten:3484Metadateneinträge unverändert,
-0owner- und0initial-userns-sichtbare xattrs; volle Archiv-/Inhaltsabnahme ausstehend.
-Originale, aktive Originalbank, Quelle827a, Belege/Images/Volumes/Loops/Git erhalten.
-Kein prune; Volladmission15.179.779.720B und tatsächlicher Platz separat frisch.
+Bereinigung bisher:2synthetische Dateien,2DIO-/8V9V10-Hüllen,21archivierte
+PGDATA-Kopien entfernt;17Deltaarchive benötigen dauerhaft Quelle827a.
+Zusätzlich2Ownership-PASS-Kopien entfernt:3422Dateien/739.643.392B Blöcke,
+321Belege unverändert (Actual-IR ec31739e). Alle5Combined-PASS-Kopien ebenfalls
+entfernt:8555Dateien/1.849.147.392B Blöcke,460Belege/Hüllen erhalten (ec6a660a).
+Die2älterenUID999-Kopien sind nach voller Sicherung270.244.757B, je2 unabhängigen
+Vergleichen und frischen Check-/Nutzungsprüfungen entfernt:3424Dateien/60Dirs.
+Vier echte Aktionen Exit0/EOF/PID0/noOOM; separater Endprüfer PASS(c4aa0dab).
+Zusätzlich3 eigene saubere Hilfsworktrees per Git-Docs-Sparse reduziert:
+1664Docs,2508flache Skripte und6Frontendkopien ausgelagert; Gitobjekte/Refs erhalten
+(e3ef8a3b/fb10ae37/b64a209c), Hauptarbeitsbaum vollständig.
+Kleine eigene Initial-Auth-PASS-Kopie entfernt:1000Dateien/45.789.184B;
+37Belege unverändert, keine Quelle verloren (6534e9e7).
+Originalbank, Quelle827a, Belege/Images/Volumes/Loops/Git bleiben; kein prune.
+6Dockerinventare und3frühere BLOCKED-Vorabberichte verlustlos archiviert.
+Plattensnapshot vorCommit:15.181.066.240B frei, 1.286.520B über Volladmission;
+knapp erfüllt, vor jedem Start frisch prüfen. Originale/Vollarchive geschützt.
+CI auf fba45ec0 rot: private gepinnte Originalvorlagen fehlen; Vercel separat rot,
+BrowserSmoke grün. Lokale179PASS sind kein grünerCI-Gesamtstatus.
 
 500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/500MBReserve
 weiterhin offen. Sprint teilweise abgeschlossen; kein Voll500 technisch empfohlen.

@@ -99,9 +99,12 @@ SQL-/JS-Paare. Die unabhängige Quell- und Root-Einbindungsprüfung bestanden.
 Root prüfte einmal4 Python-ASTs,5 Node-Syntaxfälle und20 Auswahlguards;
 keine Wiederholung der179 bereits bestandenen Produktsuiten.
 
-Die fünf PASS-Arbeitskopien sind vor Start ausdrücklich entbehrlich klassifiziert;
-ihre kontrollierte Entsorgung bleibt getrennt von Messung/Belegsicherung.
-Kanonische Quelle827a, Originale, alle Belege und Hüllen bleiben geschützt.
+Die fünf vor Start ausdrücklich entbehrlich klassifizierten PASS-Arbeitskopien
+sind nach gesonderter Prüfung und je frischer Root-Adoption entfernt:
+8555 reguläre Dateien/1.849.147.392B belegte Blöcke. Alle460 Fallbelege,
+Hüllen, Originale und die dauerhaft geschützte Quelle827a bleiben erhalten.
+Die unabhängige tatsächliche Nachprüfung ec6a660a bestätigt die Entfernung
+und unveränderten Belege. Hieraus folgt kein zusätzlicher RAM- oder Vollstartbeleg.
 Platten-Volladmission und genaue32 Startbedingungen sind separat frisch zu prüfen.
 Der unveränderte Vollstartvertrag bindet bisher DeepSeek; der Konflikt zur
 aktuellenSOL-Vorgabe wird nicht umgangen. Betreiberkosten/Reserven bleiben gleich.
@@ -112,6 +115,8 @@ Deployment/Migration. Im selben Thread mit Denkstufe Sehr hoch fortsetzen.
 
 - [Root-Zahlenvergleich mit40 Eingabepins](combined-auth-abba-actual-summary-20261020.SAFE.json).
 - [Unabhängige tatsächliche Vierarm-Abnahme](combined-auth-all-four-sol-review-20261020.SAFE.json).
+- [Unabhängige Zahlen- und Umfangsprüfung](combined-auth-abba-numbers-sol-review-20261020.SAFE.json).
+- [Fünf Arbeitskopien tatsächlich entfernt](combined-auth-five-copies-retired-sol-review-20261020.SAFE.json).
 - [Quellprüfung](combined-auth-source-sol-review-20261020.SAFE.json) und
   [Einbindungsprüfung](combined-auth-integration-sol-review-20261020.SAFE.json).
 - [Null-Auth-Lebenszeit](combined-auth-zero-lifecycle-actual-20261020.SAFE.json)
