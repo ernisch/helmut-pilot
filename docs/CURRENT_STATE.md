@@ -2,7 +2,26 @@
 
 **Lokal 20.10.2026 UTC/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 20.10.: Vollständiger Auth-Renderer lokal ersetzt; 500er Abnahme offen
+## 20.10.: Ursachenmessung vorbereitet; neue native Probe an Plattenreserve blockiert
+
+Aktiver Branch `codex/late-state-memory-diagnostics-20261020`, Basisf0d3b039
+(PR925 auf PR924); c8624f7c erhalten. Sechs parallele SOL-Helfer priorisieren
+anhand der Originalkurve zuerst DB-Wachstum, danach Node. Größte verbleibende
+vermeidbare Ursache noch nicht bewiesen; keine weitere Motoränderung auf Verdacht.
+Nächste enge Frage: vollständige Knotensortierung als Ursache des Temp-I/O
+(6212295B je Datei im Mittel); das ist kein RAM. Inerte SQL-Vorlagen, rein lesender
+Admissioninspektor und noch unverdrahteter Abschlusshelfer vorbereitet;
+12 reine Helfersimulationen PASS, native Qualifikation/Einbindung NOT RUN.
+Historischer PostgREST-Gesamtfehler bleibt FAIL mit unbekanntem Exitcode.
+Guardbeobachtung16:11:14UTC:8597049344B frei, nativeKomponente braucht8606711808B
+(9662464B fehlen); Volladmission15179779720B (6582730376B fehlen).
+8GiB Boden unverändert, keine Löschung/RAM-Ausweichlösung/Ressourcenstarts.
+Kein gemeinsamer neuer OLD/NEW-/Plateau-/500MB-Nachweis; kein neues Voll500-GO.
+Vollstartprüfer verlangt weiterhin DeepSeek-Pro-High; Konflikt mitSOL-only vor
+späterem Vollstart klären, Router/Prüfvertrag unverändert, keine Modellaufrufe.
+[Befund, Belege und konkrete nächste Messung](betrieb/late-state-memory-diagnostics-20261020.md).
+
+## 20.10.: Vorheriger Renderer-Sprint; 500er Abnahme offen
 
 Eigener Branch `codex/auth-state-working-set-20261020`, Basis `bdb2c2c3`,
 `c8624f7c` erhalten. PostgreSQLs materialisierte Vorkommens-/Sortier-/Tokenmengen
