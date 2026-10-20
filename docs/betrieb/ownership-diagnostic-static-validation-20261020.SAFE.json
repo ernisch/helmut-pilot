@@ -1,0 +1,68 @@
+{
+  "schema": "helmut-ownership-root-static-validation/1",
+  "status": "FIVE_STATIC_CHECKS_PASS",
+  "atUTC": "2026-10-20T19:57:46.074141+00:00",
+  "rootPreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/PREPARED.SAFE.json",
+    "bytes": 35991,
+    "sha256": "b8cf3abdb60c4acfe0582c34b8f6895d60958406a3c56902c1057cebc9929990"
+  },
+  "independentAuthorSourceReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/OWNERSHIP_DIAGNOSTIC_STATIC_SOURCE_REVIEW.SAFE.json",
+    "bytes": 29071,
+    "sha256": "48d8ea88909ac4cdf54cb93ebffce3c41ec8e6ad011c8a3ebc5d3252c92035da"
+  },
+  "checks": [
+    {
+      "kind": "AST_NO_EXECUTION",
+      "pin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/common.py",
+        "bytes": 18351,
+        "sha256": "f87e3a103b1fc10dfcc5cd522c2e578dc9bf2493dfb38512d7eb1207bff15d71"
+      },
+      "pass": true
+    },
+    {
+      "kind": "AST_NO_EXECUTION",
+      "pin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/run.py",
+        "bytes": 26972,
+        "sha256": "38530c004aa1241cff1f2e57cf1a2ecb6e020d424df92dc01579e425b1d62c2b"
+      },
+      "pass": true
+    },
+    {
+      "kind": "AST_NO_EXECUTION",
+      "pin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/worker.py",
+        "bytes": 39755,
+        "sha256": "a1cab4600b979ec9d29d509fc6c1cf0df1139fb3879283f2a347d3f0a5ae50e7"
+      },
+      "pass": true
+    },
+    {
+      "kind": "AST_NO_EXECUTION",
+      "pin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/ownership.py",
+        "bytes": 16103,
+        "sha256": "66dd34c724d330148407e222b54b5dcb556586f8063a0eb6ddc8a71d69bed6a1"
+      },
+      "pass": true
+    },
+    {
+      "kind": "NODE_SYNTAX_ONLY",
+      "pin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/control-driver.js",
+        "bytes": 20820,
+        "sha256": "589bdfb6cf39d1bba3b21e006878858923d834363b8a800e89492f5195b98bfa"
+      },
+      "pass": true
+    }
+  ],
+  "subjectImports": false,
+  "tests": false,
+  "native": false,
+  "DB": false,
+  "sourceOriginalRead": false,
+  "providerCalls": 0
+}
