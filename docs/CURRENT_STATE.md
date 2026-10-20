@@ -2,9 +2,39 @@
 
 **Lokal 20.10.2026 UTC/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 20.10.: Ursachenmessung vorbereitet; neue native Probe an Plattenreserve blockiert
+## 20.10.: Plattenblockade behoben; native kalte Kontrolle reproduziert Temp-I/O
 
-Aktiver Branch `codex/late-state-memory-diagnostics-20261020`, Basisf0d3b039
+Aktiver Branch `codex/controlled-cleanup-and-late-probe-20261020`, Basis0372500c
+(PR926 auf PR925/924); c8624f7c erhalten. Neue ausdrückliche Bereinigungsfreigabe:
+zwei reine16MiB-Synthetikdateien, zwei readonlyDIO-Hüllen und acht beendeteV9/V10-
+Ausführungshüllen kontrolliert entfernt. Letztere vorher doppelt exportiert,
+Dateinutzdaten/Metadaten vollständig archiviert und exakt rekonstruierbar;
+frische unabhängigeSOL-Review plus Live-Prüfung und Einmalmarker vorEntfernung.
+Originale/notwendigePGDATA/alleImages/Volumes/Loops/V11-Hüllen/aktiveOriginalbank,
+Gitänderungen und Belege erhalten. Keinprune, keinKosten-/Reservewechsel.
+Netto7599976448B zusätzlich frei; Beobachtung19:48Istanbul/16:48UTC:
+16196812800B verfügbar,15179779720B Volladmission,1017033080B darüber.
+Frischer unveränderter Komponenteninspektor nachBereinigung Exit0; diesistkeinGO.
+Native01 auf eigener persistenter später V11-Kopie PASS:1848Knoten,Quicksort878KiB,
+Temp0B/0Dateien,11,663ms. Gesamte eigene Lebenszeit653570048B Peak/16,823s,
+Setup/Kopie/JIT/Abschluss enthalten,OOM0,Quellen identisch,alleProzesse beendet.
+ErsterVersuch vorMessung wegenOID-Typprüfung FAIL; exaktkorrigiert/unabhängiggeprüft,
+neuerFall/neueAdoption. Native02 separatPASS:1113B Antwort,144,871ms,Temp0;
+Lebenszeit674652160B/17,666s,Quellenidentisch/allebeendet; keineJS-Cache/HTTP-Abnahme.
+Native03 separatPASS:kalterVierfeldaufruf mitknownGraph:null erzeugt1Tempdatei
+6212035B/248,065ms; Lebenszeit753774592B/18,515s,Quellenidentisch/allebeendet.
+Hashprojektion stattvollerKnoten-Digest-SRF in eigenemWT inArbeit;
+kausalerOLDNEW-/Sicherheitsnachweis noch offen. 2MiB-Viewgröße weiterunbewiesen.
+Alle4abgeschlossenen neuenPGDATA-Kopien verlustlosarchiviert/doppeltverglichen,
+frischadoptiert gezieltentfernt; alleOriginale/Belege/Hüllen behalten. Jetzt
+15603122176Bfrei/423342456B überVolladmission; weitereDiagnosen brauchenPlatz.
+Kein weiterer Motorumbau oder gemeinsamer OLDNEW-/Plateau-/500MB-Nachweis.
+HistorischerPostgREST-Fall bleibtFAIL; keinVoll500/Production/Merge/Deployment.
+[Bereinigung, Primärbelege und künftiges Vorgehen](betrieb/controlled-local-cleanup-20261020.md).
+
+## 20.10.: Vorheriger Diagnostikstand vor der neuen Bereinigungsfreigabe
+
+Vorheriger Branch `codex/late-state-memory-diagnostics-20261020`, Basisf0d3b039
 (PR925 auf PR924); c8624f7c erhalten. Sechs parallele SOL-Helfer priorisieren
 anhand der Originalkurve zuerst DB-Wachstum, danach Node. Größte verbleibende
 vermeidbare Ursache noch nicht bewiesen; keine weitere Motoränderung auf Verdacht.

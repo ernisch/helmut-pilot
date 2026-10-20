@@ -1,0 +1,163 @@
+{
+  "schema": "helmut-cold-digest-projection-prepared/1",
+  "status": "PREPARED_NOT_QUALIFIED",
+  "nativeQualification": "NOT_RUN",
+  "syntaxQualification": "NOT_RUN",
+  "testsExecuted": false,
+  "nativeSQLExecuted": false,
+  "containersStarted": false,
+  "modelCalls": 0,
+  "full500": false,
+  "production": false,
+  "ownWorktree": "/workspace/helmut-srf-fix-sol-20261020",
+  "branch": "codex/cold-read-hash-projection-20261020",
+  "baseCommit": "0372500c2d25d35e5c3d0816b80a55d92e8ca420",
+  "engineCommit": "c2b5a2596804eeabf737b1d038a567228c7d015d",
+  "sourceFiles": [
+    {
+      "path": "/workspace/helmut-srf-fix-sol-20261020/supabase/proposals/auth_read_bounded_local.sql",
+      "bytes": 18910,
+      "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5"
+    },
+    {
+      "path": "/workspace/helmut-srf-fix-sol-20261020/scripts/helmut-resource-meter/bounded-read-integration.js",
+      "bytes": 5604,
+      "sha256": "431767f6b3042a1719ac715b5ad5d35dc0b9ce85cc2b73d5d53fcf8e50215ff4"
+    },
+    {
+      "path": "/workspace/helmut-srf-fix-sol-20261020/scripts/helmut-resource-meter/bounded-read-cold-digest-source.json",
+      "bytes": 2081,
+      "sha256": "275d2511fba92ed1ccc64bbe22063ddea18dc265288352a1db83d6404eeb3a54"
+    }
+  ],
+  "privateInputs": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/BASELINE_AUTH_READ_BOUNDED.PRIVATE.sql",
+      "bytes": 18650,
+      "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/BASELINE_GRAPH_READ_ONLY.PRIVATE.sql",
+      "bytes": 8137,
+      "sha256": "613f0b4d0e26ea13bc7da9d79498018e4af5d7e1a67e6bc744e9a4bfbc69f3c7"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/CANDIDATE_GRAPH_READ_ONLY.sql",
+      "bytes": 8397,
+      "sha256": "eb2bace893fef12a722bf9b6a4397587f4eaf43f30968c4792976a94532c2428"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/CATALOG_REFERENCE_READONLY.sql",
+      "bytes": 12286,
+      "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/DIFFERENTIAL_ONE_REQUEST.sql",
+      "bytes": 32052,
+      "sha256": "5fc380df41b4c33b2f57db49029eb723ba9b29a658cf24ddb1163fe763a43c68"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/DIFFERENTIAL_REQUESTS.SAFE.json",
+      "bytes": 11522,
+      "sha256": "dba96b8109570fd0af1f8db8ebd117fe81564eb7a27689622c79ebd624c4ea3f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/INSTALL_NEW_ONLY.sql",
+      "bytes": 13400,
+      "sha256": "c740b463ce3b026eeb442a8c79a65f1fa95ebac2d08d7382ee31fb9d6b655f4d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/INSTALL_OLD_ONLY.sql",
+      "bytes": 13140,
+      "sha256": "fadb432bebe5d1201323cced4194c6554b29b6e681ae6fef4f927ce2160f845e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/INTERFACE.SAFE.json",
+      "bytes": 6852,
+      "sha256": "073253df7011901d0e8ec1fdfd7f6207e52fd26f4b57384a549209bb1685da15"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/MEASURE_COLD_03_VARIANT.sql",
+      "bytes": 13707,
+      "sha256": "67e371118f54a674f91e4dcd6be43523a8bb335078f453cc05ad5a7428f0578f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/MEASURE_NEW_03.sql",
+      "bytes": 11741,
+      "sha256": "8fedf6c25adb5742333309540b50308399934c0d282ba7dea539b235b0415f3a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/MEASURE_OLD_03.PRIVATE.sql",
+      "bytes": 11741,
+      "sha256": "3fedec81df9b85279ee385c4ee58604cc9c1e7dab8682306d2d222d6109ed729"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/README.md",
+      "bytes": 13214,
+      "sha256": "b5c15b9f503fd4bae19cdbbb12361547246730adf7fbb0909af443f18ca22cd3"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/RESTORE_BASELINE_BODY_ONLY.sql",
+      "bytes": 13140,
+      "sha256": "e59992b0f1e2111823b2575742077b106ac6dfe9a2ac3d93aac4eab2b1e24b3d"
+    }
+  ],
+  "historicalAcceptanceUnchanged": {
+    "path": "/workspace/helmut-srf-fix-sol-20261020/scripts/helmut-resource-meter/bounded-read-source-acceptance.json",
+    "bytes": 1418,
+    "sha256": "99e523bf222a584fe728571272d18d427bd015196a2f520f1c6e8931e864bccc"
+  },
+  "rollbackSourceUnchanged": {
+    "path": "/workspace/helmut-srf-fix-sol-20261020/supabase/proposals/auth_read_bounded_local.rollback.sql",
+    "bytes": 8946,
+    "sha256": "44825c2e5e51180d03c72d0e845f5da5670414af602445ca91f1b4d54ad69575"
+  },
+  "sourceOnlyQualification": false,
+  "normalBoundedAdmissionBlocked": true,
+  "currentQualifications": "All false/NOT_RUN in committed delta metadata; only actual new native+negative and independent SOL review proofs can qualify source; adapter/179 and memory comparison remain separate.",
+  "oldFunctionBodySHA256": "1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0",
+  "newFunctionBodySHA256": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0",
+  "differentialCaseCount": 19,
+  "differentialCaseIds": [
+    "legacy",
+    "history-warm",
+    "history-cold",
+    "graph-cold-history-warm",
+    "graph-cold-history-cold",
+    "graph-warm",
+    "graph-warm-history-stale",
+    "graph-changed",
+    "null",
+    "id-empty",
+    "nonce-bad",
+    "proof-bad",
+    "graph-bad-type",
+    "graph-bad-shape",
+    "graph-count-mismatch",
+    "graph-digest-mismatch",
+    "foreign-id",
+    "role-anon",
+    "role-authenticated"
+  ],
+  "definitionSetupStatementsPerVariant": 8,
+  "definitionSetupSymmetric": true,
+  "sourcePGDATAAccessed": false,
+  "originalDataWrites": false,
+  "existing03MeasurementUnchanged": {
+    "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/MEASURE_OLD_03.PRIVATE.sql",
+    "bytes": 11741,
+    "sha256": "3fedec81df9b85279ee385c4ee58604cc9c1e7dab8682306d2d222d6109ed729"
+  },
+  "interface": {
+    "path": "/workspace/helmut-ram-fix-20261020/cold-read-hash-projection-20261020/INTERFACE.SAFE.json",
+    "bytes": 6852,
+    "sha256": "073253df7011901d0e8ec1fdfd7f6207e52fd26f4b57384a549209bb1685da15"
+  },
+  "additionalObserverWork": "Identical full graph component hash/serialization and tiny key-shape checks; componentSemanticDigestSHA256 is not normalized whole-result JSONB hash.",
+  "resourceProof": "NOT_RUN; no temp or common lifetime RAM saving claimed",
+  "independentReview": "PENDING_ROOT_COORDINATED",
+  "sourceWhitespaceCheck": "git diff --check passed before commit; no program/syntax/native tests",
+  "newAdoptionAndNativeAdmissionRequired": true,
+  "automaticRetry": false,
+  "automaticDeletion": false
+}
