@@ -27,6 +27,13 @@ REQUIRED_CHECKS = frozenset([
     'consumer.ownerInputs','consumer.servicesInputs','consumer.initialSourceBinding','consumer.providerInputs',
     'consumer.staticInterfaces','allFilePins','preSetupAuthority','mountInputs','guardInventory','completeIndependentCoverage'])
 LEGACY_MANIFEST_SHA256='3fc7944cd2bc67a29e3acefbf4423139e2c3f1609a6a49a25dea914e8a9a686d'
+# Exact retained PG image, Docker-vfs image+init copies, four owned containers
+# (storage holder, DB, broker, application), and retained observer/result output.
+# These are additional admission margins; the8GiB free-host floor is unchanged.
+PINNED_IMAGE_BYTES=437457485
+NEW_CONTAINER_COUNT=4
+NEW_CONTAINER_OVERHEAD_BYTES=64*1024**2
+RETAINED_OUTPUT_BUDGET_BYTES=512*1024**2
 
 
 def module(name, file):
@@ -260,9 +267,13 @@ def output_freshness(connection):
 
 def filesystem_ready(connection):
     stat = os.statvfs(connection['caseDirectory']); free = stat.f_bavail*stat.f_frsize
-    required = connection['storageCapacityBytes']+8*1024**3
+    hulls=NEW_CONTAINER_COUNT*(2*PINNED_IMAGE_BYTES+NEW_CONTAINER_OVERHEAD_BYTES)
+    required = connection['storageCapacityBytes']+8*1024**3+hulls+RETAINED_OUTPUT_BUDGET_BYTES
     return dict(**{'pass':free>=required},availableBytes=free,requiredBytes=required,
-        shortageBytes=max(0,required-free))
+        shortageBytes=max(0,required-free),hostFreeFloorBytes=8*1024**3,
+        storageCapacityBytes=connection['storageCapacityBytes'],newContainerCount=NEW_CONTAINER_COUNT,
+        newContainerHullBudgetBytes=hulls,retainedOutputBudgetBytes=RETAINED_OUTPUT_BUDGET_BYTES,
+        continuousHostReserveNotClaimed=True)
 
 
 def coverage_adopted(bindings, rows):
@@ -369,6 +380,7 @@ def toolchain(C):
     require(py=='Python 3.12.14','exact Python patch required')
     image=json.loads(K.docker(['image','inspect',K.IMAGE]).stdout)[0]
     require(image['Id']==K.IMAGE,'pinned PG image required')
+    require(image['Size']==PINNED_IMAGE_BYTES,'pinned native image size differs from disk admission budget')
     require(0 in os.sched_getaffinity(0),'original CPU0 must be available')
     require(Path('/sys/fs/cgroup/cgroup.controllers').is_file(),'cgroupv2 required')
     info=json.loads(K.docker(['info','--format','{{json .}}']).stdout)

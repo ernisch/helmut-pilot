@@ -139,13 +139,20 @@ class StartPreflightTest(unittest.TestCase):
         self.assertFalse(P.finish(r,[])['pass'])
 
     def test_exact_filesystem_reserve_boundary_without_allocating_storage(self):
-        required=8000000000+8*1024**3
+        required=8000000000+8*1024**3+4*(2*437457485+64*1024**2)+512*1024**2
         for available,expected in [(required,True),(required-1,False)]:
             fake=type('FS',(),{'f_bavail':available,'f_frsize':1})()
             with patch.object(P.os,'statvfs',return_value=fake):
                 result=P.filesystem_ready({'caseDirectory':'TEST_ONLY','storageCapacityBytes':8000000000})
                 self.assertEqual(result['pass'],expected)
                 self.assertEqual(result['shortageBytes'],0 if expected else 1)
+                self.assertEqual(result['newContainerCount'],4)
+                self.assertEqual(result['hostFreeFloorBytes'],8*1024**3)
+        # Having room for the image alone cannot hide future vfs hull/output
+        # consumption and silently spend the unchanged host free-space floor.
+        fake=type('FS',(),{'f_bavail':8000000000+8*1024**3,'f_frsize':1})()
+        with patch.object(P.os,'statvfs',return_value=fake):
+            self.assertFalse(P.filesystem_ready({'caseDirectory':'TEST_ONLY','storageCapacityBytes':8000000000})['pass'])
 
     def test_inventory_finds_assert_raise_and_full_source_change(self):
         with tempfile.TemporaryDirectory()as td:
