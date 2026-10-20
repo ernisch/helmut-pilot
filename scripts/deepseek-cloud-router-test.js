@@ -229,14 +229,14 @@ check("Read Modus verarbeitet private Quellen ohne Dateianderung", () => {
   }
 });
 
-check("Read Modus verarbeitet Reasoning ueber dem alten 12000-Limit mit fester 32768-Obergrenze", () => {
+check("Read Modus verarbeitet45000Reasoning-Tokens mit fester65536-Grenze; Write bleibt32768", () => {
   const p = project();
   const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-router-reasoning-"));
   const privateFile = path.join(privateDir, "caller.json");
   fs.writeFileSync(privateFile, '{"caller":"original"}\n');
   const before = fs.readFileSync(privateFile, "utf8");
-  const reasoningTokens = 16000;
-  const READ_MAX_OUTPUT_TOKENS = 32768;
+  const reasoningTokens = 45000;
+  const READ_MAX_OUTPUT_TOKENS = 65536;
   const WRITE_MAX_OUTPUT_TOKENS = 32768;
   const responseText = JSON.stringify({
     summary: summary({ result: ["Quellenpruefung mit langem Reasoning"], next: "Sol prueft" }),
@@ -282,9 +282,9 @@ check("Read Modus verarbeitet Reasoning ueber dem alten 12000-Limit mit fester 3
     assert.equal(calls[0].bin, "curl");
     const request = JSON.parse(calls[0].options.input);
     assert.equal(request.max_output_tokens, READ_MAX_OUTPUT_TOKENS);
-    assert.equal(request.max_output_tokens, 32768, "feste Read-Obergrenze");
+    assert.equal(request.max_output_tokens, 65536, "feste Read-Obergrenze");
     assert.equal(request.reasoning.effort, "high");
-    assert.ok(reasoningTokens > 12000, "Reasoning liegt ueber dem alten 12000-Limit");
+    assert.ok(reasoningTokens > 32768, "Regression der tatsaechlich ausgeschoepften Read-Grenze");
     assert.ok(request.max_output_tokens > reasoningTokens, "Budget deckt Reasoning plus Antwort");
 
     const writeRequest = router.buildRequestBody("Pruefe.", {
