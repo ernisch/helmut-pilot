@@ -96,18 +96,26 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
   assert(senderClaimRead === null || (senderClaimRead === SENDER_CLAIM_READ && boundedRead === BOUNDED.MODE),
     "Sender control claim requires exact bounded/control/Merkle/history opt-in");
   const boundedReadAcceptance = boundedRead ? BOUNDED.acceptance() : null;
+  const controlCache = controlRead ? require("./control-cache-integration") : null;
+  const controlCacheSourceAcceptance = controlCache ? controlCache.acceptance() : null;
   if (localCalendar !== null) require(path.join(ROOT, "lib/helmut/synthetik-500-local-calendar")).validatePolicyData(localCalendar);
   // This is also the sole runtime-file list for the added source reads: the
   // existing shared manifest mounts every sourcePin and checks it in-container.
   const files = [...new Set([...SOURCE_FILES, ...(controlRead ? Object.keys(CONTROL_SOURCE_HASHES) : []),
+    ...(controlRead ? controlCache.FILES : []),
     ...(boundedRead ? BOUNDED.FILES : []),
     ...(senderClaimRead ? ["scripts/helmut-resource-meter/sender-control-claim.js"] : [])])];
   const sourcePins = files.map(f => pin(path.join(ROOT, f)));
-  if (controlRead) for (const [file, hash] of Object.entries(CONTROL_SOURCE_HASHES))
-    assert.equal(sourcePins.find(p => p.path === path.join(ROOT, file)).sha256, hash, "Reviewed control source drift: " + file);
+  if (controlRead) {
+    // Historical W50 hashes stay historical; only this separately qualified delta selects current U/Parts.
+    const expected = { ...CONTROL_SOURCE_HASHES, ...Object.fromEntries(
+      controlCacheSourceAcceptance.currentSources.map(p => [p.file, p.sha256])) };
+    for (const [file, hash] of Object.entries(expected))
+      assert.equal(sourcePins.find(p => p.path === path.join(ROOT, file)).sha256, hash, "Reviewed control source drift: " + file);
+  }
   return { schema: "helmut-local-atomic-usage-resource-input/1", mode: MODE, production: false,
     ...(stateStorage ? { stateStorage } : {}), ...(historyReadReuse ? { historyReadReuse } : {}),
-    ...(controlRead ? { controlRead, controlSourceAcceptance: CONTROL_SOURCE_ACCEPTANCE } : {}),
+    ...(controlRead ? { controlRead, controlSourceAcceptance: CONTROL_SOURCE_ACCEPTANCE, controlCacheSourceAcceptance } : {}),
     ...(boundedRead ? { boundedRead, boundedReadAcceptance } : {}),
     ...(senderClaimRead ? { senderClaimRead } : {}),
     ...(localCalendar ? { localCalendar } : {}),

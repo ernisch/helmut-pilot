@@ -1,0 +1,400 @@
+{
+  "schema": "helmut-control-cache-native-source-qualification/1",
+  "status": "passed",
+  "scope": "LOCAL_COMPONENT_ONLY",
+  "mode": "verified-control-view-v1",
+  "candidateCommit": "67b5c4ef8ccd482d726126f8bbc41a00ee4151a3",
+  "sourceFreezePin": {
+    "bytes": 4265,
+    "sha256": "5ce7e3658d7ef9e33631879992224d9cd78ac34b6ce09f01dd50580b330275b8"
+  },
+  "sourcePins": [
+    {
+      "file": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "file": "lib/helmut/auth-state-parts.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    }
+  ],
+  "baselineArmSources": [
+    {
+      "file": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 23685,
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "file": "lib/helmut/auth-state-parts.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    }
+  ],
+  "independentCodeReviewPin": {
+    "name": "bounded-control-cache-code-sol-review-20261020.SAFE.json",
+    "bytes": 8663,
+    "sha256": "8f6544d3ebbc6e0489d940056c053480313ae66daa4844721965a7cf356acee3"
+  },
+  "integrationGateSourceSHA256": "1398fe43a42110195d938bde5685e921819a1b3a6be67c0b04d376570557893d",
+  "integrationGateExecutionProven": false,
+  "privateActualPinsVerifiedByRoot": true,
+  "nativePreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+    "bytes": 37288,
+    "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+  },
+  "lifecycle": {
+    "caseId": "control-1acb43b4bd71962b621b161c",
+    "nativePreparedPin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+      "bytes": 37288,
+      "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+    },
+    "actualResultPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-1acb43b4bd71962b621b161c/ACTUAL_RESULT.SAFE.json",
+      "bytes": 7730,
+      "sha256": "525dae0fc0de0f867811ef6f53179192d4d31aef5641fe39bfc13881d4007117"
+    },
+    "workerResultPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-1acb43b4bd71962b621b161c/WORKER_RESULT.SAFE.json",
+      "bytes": 6651,
+      "sha256": "64fd5e901e7599dcf4a9acee7d47cfee106e2a236abbdb77958a765972612a06"
+    },
+    "stopReceiptPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-1acb43b4bd71962b621b161c/POSTGREST_STOP.SAFE.json",
+      "bytes": 2545,
+      "sha256": "1e13bb9e28116ebf2afbf3db05919b868d06d33f24bec69776479dc83c353df6"
+    },
+    "status": "PASS",
+    "workerPass": true,
+    "workerExitCode": 0,
+    "postgresExitCode": 0,
+    "postgrestRawReturnCode": -2,
+    "oomCount": 0,
+    "oomKillCount": 0,
+    "allOwnedProcessesExited": true,
+    "nativeGroupEmpty": true,
+    "fullLastProcessExitCovered": true,
+    "sourceUnchanged": true,
+    "postgrestStopQualified": true,
+    "catalogQualified": true,
+    "originalStateRestored": true,
+    "measurementMode": "lifecycle-only",
+    "variant": "NONE",
+    "authRPCCount": 0,
+    "nodeStarted": false
+  },
+  "comparisonCases": [
+    {
+      "caseId": "control-34fed1a1ec4fbdd8315cdfdd",
+      "nativePreparedPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+        "bytes": 37288,
+        "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+      },
+      "actualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-34fed1a1ec4fbdd8315cdfdd/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8267,
+        "sha256": "0333c240f1dae33be1ed73f14589fd39296232b2765e385356e97259d9ee60c9"
+      },
+      "workerResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-34fed1a1ec4fbdd8315cdfdd/WORKER_RESULT.SAFE.json",
+        "bytes": 6901,
+        "sha256": "e2642542de2fc2cc6636d35d626827a17df78d672125920f9d186cd82894e6d3"
+      },
+      "stopReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-34fed1a1ec4fbdd8315cdfdd/POSTGREST_STOP.SAFE.json",
+        "bytes": 2544,
+        "sha256": "f6ea84dc7fd1c01652c5c644dc4cb51cd23492c090567803524dae7016fb8d88"
+      },
+      "status": "PASS",
+      "workerPass": true,
+      "workerExitCode": 0,
+      "postgresExitCode": 0,
+      "postgrestRawReturnCode": -2,
+      "oomCount": 0,
+      "oomKillCount": 0,
+      "allOwnedProcessesExited": true,
+      "nativeGroupEmpty": true,
+      "fullLastProcessExitCovered": true,
+      "sourceUnchanged": true,
+      "postgrestStopQualified": true,
+      "catalogQualified": true,
+      "originalStateRestored": true,
+      "measurementMode": "control-cache",
+      "variant": "OLD",
+      "authRPCCount": 27,
+      "nodeStarted": true,
+      "sourcePins": [
+        {
+          "file": "lib/helmut/llm-usage-atomic.js",
+          "bytes": 23685,
+          "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+        },
+        {
+          "file": "lib/helmut/auth-state-parts.js",
+          "bytes": 22169,
+          "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+        }
+      ],
+      "lifecycleActualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-1acb43b4bd71962b621b161c/ACTUAL_RESULT.SAFE.json",
+        "bytes": 7730,
+        "sha256": "525dae0fc0de0f867811ef6f53179192d4d31aef5641fe39bfc13881d4007117"
+      },
+      "controlObservationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-34fed1a1ec4fbdd8315cdfdd/CONTROL_CACHE.SAFE.json",
+        "bytes": 89921,
+        "sha256": "c6a699d9e6c0d34284add5cbb7ee6e7c7b5a31dffbf319d05a216ad655aaa5a7"
+      },
+      "nodeExitCode": 0,
+      "nodeHeapAndExitReceiptsPassed": true,
+      "rpcResponsesCompleted": 27,
+      "nativeHTTPSendCount": 27,
+      "fullReadCount": 5,
+      "writeCount": 4,
+      "controlReadCount": 18,
+      "realWireAndSelectedUVerified": true,
+      "requestResponseBindingsVerified": true,
+      "freshNativeChecksAccepted": true,
+      "detachedControlViewsVerified": true,
+      "mutationAndRestorationVerified": true,
+      "authorizedRevisionDeltaQualified": true
+    },
+    {
+      "caseId": "control-f4fc95f8410c9093233f7213",
+      "nativePreparedPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+        "bytes": 37288,
+        "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+      },
+      "actualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-f4fc95f8410c9093233f7213/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8268,
+        "sha256": "9d130ee6d77b9225970ed644215da29fb8758e5db9cfc55154e587030b864279"
+      },
+      "workerResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-f4fc95f8410c9093233f7213/WORKER_RESULT.SAFE.json",
+        "bytes": 6895,
+        "sha256": "ea69cb0495efcab7b2102c12c0dfb44dfe322ddfb4187eaee79918e053a64d23"
+      },
+      "stopReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-f4fc95f8410c9093233f7213/POSTGREST_STOP.SAFE.json",
+        "bytes": 2545,
+        "sha256": "e7966bd713912392eac67c91a202b18468a606971e0995fff4ab36ecc7c722ab"
+      },
+      "status": "PASS",
+      "workerPass": true,
+      "workerExitCode": 0,
+      "postgresExitCode": 0,
+      "postgrestRawReturnCode": -2,
+      "oomCount": 0,
+      "oomKillCount": 0,
+      "allOwnedProcessesExited": true,
+      "nativeGroupEmpty": true,
+      "fullLastProcessExitCovered": true,
+      "sourceUnchanged": true,
+      "postgrestStopQualified": true,
+      "catalogQualified": true,
+      "originalStateRestored": true,
+      "measurementMode": "control-cache",
+      "variant": "NEW",
+      "authRPCCount": 27,
+      "nodeStarted": true,
+      "sourcePins": [
+        {
+          "file": "lib/helmut/llm-usage-atomic.js",
+          "bytes": 25446,
+          "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+        },
+        {
+          "file": "lib/helmut/auth-state-parts.js",
+          "bytes": 22169,
+          "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+        }
+      ],
+      "lifecycleActualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-1acb43b4bd71962b621b161c/ACTUAL_RESULT.SAFE.json",
+        "bytes": 7730,
+        "sha256": "525dae0fc0de0f867811ef6f53179192d4d31aef5641fe39bfc13881d4007117"
+      },
+      "controlObservationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-f4fc95f8410c9093233f7213/CONTROL_CACHE.SAFE.json",
+        "bytes": 84003,
+        "sha256": "eeff1a67f9d2eccff00d03dc72741b39df48b14aa58299a6e0750cf35fa087ee"
+      },
+      "nodeExitCode": 0,
+      "nodeHeapAndExitReceiptsPassed": true,
+      "rpcResponsesCompleted": 27,
+      "nativeHTTPSendCount": 27,
+      "fullReadCount": 5,
+      "writeCount": 4,
+      "controlReadCount": 18,
+      "realWireAndSelectedUVerified": true,
+      "requestResponseBindingsVerified": true,
+      "freshNativeChecksAccepted": true,
+      "detachedControlViewsVerified": true,
+      "mutationAndRestorationVerified": true,
+      "authorizedRevisionDeltaQualified": true
+    },
+    {
+      "caseId": "control-2aa650ba79de93befbf07c2f",
+      "nativePreparedPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+        "bytes": 37288,
+        "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+      },
+      "actualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-2aa650ba79de93befbf07c2f/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8275,
+        "sha256": "b34537e3b3b4e880017f03f0dc517de37abe0847d4247a8e89be8e0338f3ae96"
+      },
+      "workerResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-2aa650ba79de93befbf07c2f/WORKER_RESULT.SAFE.json",
+        "bytes": 6893,
+        "sha256": "c770681570c99e067d3eed746113ea448e90768829f5706e08d927a645748ea0"
+      },
+      "stopReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-2aa650ba79de93befbf07c2f/POSTGREST_STOP.SAFE.json",
+        "bytes": 2544,
+        "sha256": "366589ae9a49c6e27401aaa271019a54a22602d7d759238ea5741b717657803a"
+      },
+      "status": "PASS",
+      "workerPass": true,
+      "workerExitCode": 0,
+      "postgresExitCode": 0,
+      "postgrestRawReturnCode": -2,
+      "oomCount": 0,
+      "oomKillCount": 0,
+      "allOwnedProcessesExited": true,
+      "nativeGroupEmpty": true,
+      "fullLastProcessExitCovered": true,
+      "sourceUnchanged": true,
+      "postgrestStopQualified": true,
+      "catalogQualified": true,
+      "originalStateRestored": true,
+      "measurementMode": "control-cache",
+      "variant": "NEW",
+      "authRPCCount": 27,
+      "nodeStarted": true,
+      "sourcePins": [
+        {
+          "file": "lib/helmut/llm-usage-atomic.js",
+          "bytes": 25446,
+          "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+        },
+        {
+          "file": "lib/helmut/auth-state-parts.js",
+          "bytes": 22169,
+          "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+        }
+      ],
+      "lifecycleActualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-1acb43b4bd71962b621b161c/ACTUAL_RESULT.SAFE.json",
+        "bytes": 7730,
+        "sha256": "525dae0fc0de0f867811ef6f53179192d4d31aef5641fe39bfc13881d4007117"
+      },
+      "controlObservationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-2aa650ba79de93befbf07c2f/CONTROL_CACHE.SAFE.json",
+        "bytes": 83974,
+        "sha256": "90c381095560b7a0211aa83a9108d01b1df23e939f8a9cd8035694e8389c341c"
+      },
+      "nodeExitCode": 0,
+      "nodeHeapAndExitReceiptsPassed": true,
+      "rpcResponsesCompleted": 27,
+      "nativeHTTPSendCount": 27,
+      "fullReadCount": 5,
+      "writeCount": 4,
+      "controlReadCount": 18,
+      "realWireAndSelectedUVerified": true,
+      "requestResponseBindingsVerified": true,
+      "freshNativeChecksAccepted": true,
+      "detachedControlViewsVerified": true,
+      "mutationAndRestorationVerified": true,
+      "authorizedRevisionDeltaQualified": true
+    },
+    {
+      "caseId": "control-a11e080562d1d0fc384e0475",
+      "nativePreparedPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+        "bytes": 37288,
+        "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+      },
+      "actualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-a11e080562d1d0fc384e0475/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8300,
+        "sha256": "467d2e6e6fa5b421c844b26c33dbb80b8ab934ad69f27098c43a7fbf99098bc3"
+      },
+      "workerResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-a11e080562d1d0fc384e0475/WORKER_RESULT.SAFE.json",
+        "bytes": 6901,
+        "sha256": "ce7d8dd90a0fb68cf19c5106fd310011a7d06c042a6284a8c086bc5b88115f5a"
+      },
+      "stopReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-a11e080562d1d0fc384e0475/POSTGREST_STOP.SAFE.json",
+        "bytes": 2544,
+        "sha256": "056000076e16c762ed30211bfaf52ffcc20cd5e684bd6c57421f22bc2e2922de"
+      },
+      "status": "PASS",
+      "workerPass": true,
+      "workerExitCode": 0,
+      "postgresExitCode": 0,
+      "postgrestRawReturnCode": -2,
+      "oomCount": 0,
+      "oomKillCount": 0,
+      "allOwnedProcessesExited": true,
+      "nativeGroupEmpty": true,
+      "fullLastProcessExitCovered": true,
+      "sourceUnchanged": true,
+      "postgrestStopQualified": true,
+      "catalogQualified": true,
+      "originalStateRestored": true,
+      "measurementMode": "control-cache",
+      "variant": "OLD",
+      "authRPCCount": 27,
+      "nodeStarted": true,
+      "sourcePins": [
+        {
+          "file": "lib/helmut/llm-usage-atomic.js",
+          "bytes": 23685,
+          "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+        },
+        {
+          "file": "lib/helmut/auth-state-parts.js",
+          "bytes": 22169,
+          "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+        }
+      ],
+      "lifecycleActualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-1acb43b4bd71962b621b161c/ACTUAL_RESULT.SAFE.json",
+        "bytes": 7730,
+        "sha256": "525dae0fc0de0f867811ef6f53179192d4d31aef5641fe39bfc13881d4007117"
+      },
+      "controlObservationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-a11e080562d1d0fc384e0475/CONTROL_CACHE.SAFE.json",
+        "bytes": 89922,
+        "sha256": "cd526b6d345730244489c26e5a2cea177ce490f6fe710d1e053bc4aeac36c070"
+      },
+      "nodeExitCode": 0,
+      "nodeHeapAndExitReceiptsPassed": true,
+      "rpcResponsesCompleted": 27,
+      "nativeHTTPSendCount": 27,
+      "fullReadCount": 5,
+      "writeCount": 4,
+      "controlReadCount": 18,
+      "realWireAndSelectedUVerified": true,
+      "requestResponseBindingsVerified": true,
+      "freshNativeChecksAccepted": true,
+      "detachedControlViewsVerified": true,
+      "mutationAndRestorationVerified": true,
+      "authorizedRevisionDeltaQualified": true
+    }
+  ],
+  "providerCalls": 0,
+  "production": false,
+  "full500Accepted": false,
+  "ramBenefitClaimed": false,
+  "automaticRetry": false
+}
