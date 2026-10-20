@@ -214,8 +214,12 @@ begin
         raise exception 'auth-graph-reuse-content-mismatch';end if;
     else
       graph_count:=jsonb_array_length(graph->'nodes');
-      select encode(sha256(convert_to(string_agg(value->>'hash','|'order by ord),'UTF8')),'hex') into graph_digest
-        from jsonb_array_elements(graph->'nodes')with ordinality e(value,ord);
+      -- The checked graph has ordered objects with nonnull 64-byte hashes.
+      -- Project those scalars before the SRF; never spool full payload objects
+      -- merely to calculate the same node-order digest.
+      select encode(sha256(convert_to(string_agg(value,'|'order by ord),'UTF8')),'hex') into graph_digest
+        from jsonb_array_elements_text(jsonb_path_query_array(graph,'strict $.nodes[*].hash'))
+          with ordinality e(value,ord);
     end if;
   end if;
   -- Validate every actual record first, without aggregating a complete JSON
