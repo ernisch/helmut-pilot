@@ -2,50 +2,49 @@
 
 **Lokal 20.10.2026 UTC/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 20.10.: Plattenblockade behoben; native kalte Kontrolle reproduziert Temp-I/O
+## 20.10.: Kontrollcache eingebunden; gemeinsame RAM-Ersparnis weiterhin offen
 
-Aktiver Branch `codex/controlled-cleanup-and-late-probe-20261020`, Basis0372500c
-(PR926 auf PR925/924); c8624f7c erhalten. Neue ausdrückliche Bereinigungsfreigabe:
-zwei reine16MiB-Synthetikdateien, zwei readonlyDIO-Hüllen und acht beendeteV9/V10-
-Ausführungshüllen kontrolliert entfernt. Letztere vorher doppelt exportiert,
-Dateinutzdaten/Metadaten vollständig archiviert und exakt rekonstruierbar;
-frische unabhängigeSOL-Review plus Live-Prüfung und Einmalmarker vorEntfernung.
-Originale/notwendigePGDATA/alleImages/Volumes/Loops/V11-Hüllen/aktiveOriginalbank,
-Gitänderungen und Belege erhalten. Keinprune, keinKosten-/Reservewechsel.
-Netto7599976448B zusätzlich frei; Beobachtung19:48Istanbul/16:48UTC:
-16196812800B verfügbar,15179779720B Volladmission,1017033080B darüber.
-Frischer unveränderter Komponenteninspektor nachBereinigung Exit0; diesistkeinGO.
-Native01 auf eigener persistenter später V11-Kopie PASS:1848Knoten,Quicksort878KiB,
-Temp0B/0Dateien,11,663ms. Gesamte eigene Lebenszeit653570048B Peak/16,823s,
-Setup/Kopie/JIT/Abschluss enthalten,OOM0,Quellen identisch,alleProzesse beendet.
-ErsterVersuch vorMessung wegenOID-Typprüfung FAIL; exaktkorrigiert/unabhängiggeprüft,
-neuerFall/neueAdoption. Native02 separatPASS:1113B Antwort,144,871ms,Temp0;
-Lebenszeit674652160B/17,666s,Quellenidentisch/allebeendet; keineJS-Cache/HTTP-Abnahme.
-Native03 separatPASS:kalterVierfeldaufruf mitknownGraph:null erzeugt1Tempdatei
-6212035B/248,065ms; Lebenszeit753774592B/18,515s,Quellenidentisch/allebeendet.
-Hashprojektion stattvollerKnoten-Digest-SRF jetztlokalübernommen, aktuelleSQL
-e7530ffd/Body4e2b9015, Gate ee0c92ac (Autor360af181); Quellenabnahme19nativePaare
-PASS:8exakteAntworten/11identischeFehler; unabhängigeSOL-Abnahme/Originale/Katalog/
-ABI/ACL/Rollback/letzterExit/OOM0belegt. EchteProofbytes+QuellbindungimAdapter,
-sourceOnlyunqualifiziert; aktuelleProofsimechtenDescriptor. Kritische179nochpending.
-ALT/NEU/NEU/ALTjeeigeneLebenszeit:780918784/781803520/781750272/781455360B.
-NEUbeideTemp0stattALTje6212035B,aberKEINEgemeinsameRAMersparnis; keinPlateau.
-V7echt3RPCPASS:Controltext4856607B>2MiB,counts1/2/2,beideknownGraphnull/
-volle1848Knoten,Body10431730/6662644/6662644B;originalUakzeptiert/native0events/
-PG0/Node0/Quellengleich/allezu.Peak980570112BnurDiagnose/keinRAMvergleich.
-Kompakter2MiB-CacheKandidat67b5c4efimeigenenWT,UnitPASS,Nativevergleichpending.
-Alle4früherenDiagnosekopienverlustlosarchiviert/doppeltverglichen/frischadoptiert
-entfernt; Originale/Belege/Hüllenbehalten. FünfV5Kopienjetztebenfallsverlustlos
-deltaarchiviert/doppeltverglichen/frischadoptiertentfernt:107427091BArchive,
-kanonischeQuelle827aabjetztdauerhafteRekonstruktionsabhängigkeit.Beobachtung
-Auch3V6/V7Kopienverlustlosretired/35042832BDelta;Basisdauerhaftfür8Archiveerforderlich.
-18:48UTC15301251072Bfrei/121471352BüberVolladmission,VORnächstemNativevergleich.
-V6control-45a29158…bleibtFAIL.V7engeOriginalversionspolicy+Hostpfadfix17TestsPASS;
-neuer0Auth/keinNodeLifecycle691308…PASSunabhängigbestätigt(Rohcode−2bleibt).
-HistorischeFAILsbleibenFAIL;500MB/Unit60/Auth30/1500/500offen.
-KeinVoll500/Production/Merge/Deployment. [Bereinigung](betrieb/controlled-local-cleanup-20261020.md)
-und [gezielterUmbau/Vergleich](betrieb/local-cold-digest-comparison-20261020.md),
-[tatsächlicherKontrollcachebefund](betrieb/local-control-cache-baseline-20261020.md).
+Branch `codex/controlled-cleanup-and-late-probe-20261020`, Basis0372500c
+(PR926 auf PR925/924), c8624f7c erhalten; Entwurfs-PR927. Gezielte kalte
+Hashprojektion und kompakter Kontrollcache lokal integriert, Code-HEAD6d528425.
+Kalter Renderer:19 native Paare PASS,8 identische Antworten/11 identische Fehler;
+Tempdatei6.212.035B entfällt, gemeinsame Spitze unverändert ca.782MB.
+Kontrollcache: authentische späte Sicht4.856.607B passte nicht in2MiB;
+neuer eigener komprimierter Buffer behält dieselbe2MiB-Grenze, frische native
+Guards/Hash/Länge/UTF8 bleiben verpflichtend. U-Schreib-/ACK-/Konfliktregeln
+unverändert. Kein Router-/DeepSeek-Aufruf oder Kosten-/Reservewechsel.
+Tatsächlicher OLD–NEW–NEW–OLD-Vergleich:5 vollständige Reads,4 CAS,18Kontrollen
+je Fall;6000 historische Zeilen, alle Quell-/Logik-/Katalogprüfungen PASS,
+alle Prozesse beendet/OOM0. Lebenszeitspitzen OLD1/NEW1/NEW2/OLD2:
+1.019.572.224/1.002.266.624/1.016.721.408/1.014.566.912B. Bereiche überlappen,
+KEINE robuste gemeinsame RAM-Ersparnis und kein langfristiges Plateau belegt.
+HTTP157.016.193→57.089.403B, Serialisierungen41→5,15warmeKontrollen reproduziert;
+mittlereCPU36,405→33,057s. Übertragungsmengen sind kein RAM. Peak-Besitzer offen:
+OLD1 zeitlich Restore-Schreiben, NEW2/OLD2 Mutation, NEW1 mehrdeutig.
+34 Quellen-Gate-Prüfungen und22 Integrationsfälle PASS; vollständige179-Abnahme
+auf6d528425 einmalig PASS in653s. Historische179/95 werden nicht umdeklariert.
+Native SAFE-Bytes/aktuelle Quellpins erreichen echte Runtime-Deskriptoren;
+neue Gesamtmotor-/500er-Ausführung wird damit nicht behauptet.
+V6control-45a29158 und unvollständigerV8-Fall1ec969 bleiben FAIL. V7 enge originale
+PostgREST-Abschlusspolicy, V9 konservativer Marker-Race-Fix unabhängig geprüft.
+
+Kontrollierte Bereinigung: zwei synthetische Dateien, zwei DIO-Hüllen, acht
+abgeschlossene V9/V10-Hüllen sowie21 neuere Diagnose-PGDATA-Kopien entfernt;
+alle erforderlichen Nutzdaten vorher verlustlos archiviert, vollständig doppelt
+verglichen und frisch adoptiert. Originale, aktive Originalbank, Belege, Images,
+Volumes, Loops und Gitänderungen erhalten; kein prune. Die kanonische Quelle
+827a9872 ist jetzt dauerhafte Rekonstruktionsabhängigkeit aller17 Deltaarchive.
+Beobachtung19:36UTC:14.673.309.696B frei, Volladmission15.179.779.720B;
+ca.506MB fehlen wieder nach Erhalt neuer Vergleichsarchive. Zwei alte eigene
+abgeschlossene Kopien werden zunächst ausschließlich per RO-Metadaten geprüft;
+reine Root-Metadatenprüfung PASS: tatsächliche UID999/GID1000, keine Inhaltslesung;
+rekursive Inventur/Archivierung/Löschung noch nicht freigeprüft.
+500MB-Puffer/Unit60/Auth30/1500/500 offen; kein Voll500 technisch empfohlen.
+32 frische Startbedingungen, ausreichende Platte und neues konkretes GO nötig;
+alter Vollstartvertrag bindet weiter DeepSeek und wird nicht umgangen.
+Kein Production/Merge/Deployment. [Cache, Messwerte und Quellenintegration](betrieb/bounded-control-cache-local-integration-20261020.md),
+[Bereinigung](betrieb/controlled-local-cleanup-20261020.md),
+[kalter SQL-Umbau](betrieb/local-cold-digest-comparison-20261020.md).
 
 ## 20.10.: Vorheriger Diagnostikstand vor der neuen Bereinigungsfreigabe
 

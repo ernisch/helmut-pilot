@@ -149,7 +149,8 @@ Der kalte Pfad materialisierte vollständige Knoten nochmals für einen Hashdige
 Die inzwischen lokal übernommene Hashprojektion beseitigt diese Tempdatei in
 beiden neuen Vergleichsfällen, belegt aber keine gemeinsame RAM-Ersparnis.
 [Native19 und symmetrischer ALT/NEU/NEU/ALT-Vergleich](local-cold-digest-comparison-20261020.md).
-Die genaue Vierfeldgröße gegen die2MiB-Kontrollcachegrenze bleibt ungemessen.
+Die Vierfeldgröße war an diesem Haltepunkt noch ungemessen; später tatsächlich
+4.856.607B, siehe den nachfolgenden Cachebefund.
 
 Nach Abschluss der vier Diagnosefälle wurden ausschließlich ihre vier neuen,
 beendeten PGDATA-Kopien vollständig gzip-archiviert. Jeweils Python-Vollvergleich
@@ -207,9 +208,52 @@ Neue Momentaufnahme18:48UTC:15301251072B verfügbar,121471352B über der
 unveränderten Volladmission. Weitere Diagnosen verbrauchen erneut Platz; vor
 jedem Start frisch prüfen. Diese Angabe bewilligt keinen vollständigen Lauf.
 
-Die Bereinigung beweist keine RAM-Einsparung. Gemeinsamer OLD/NEW-Nachweis,
+Die Bereinigung beweist keine RAM-Einsparung. Robuste gemeinsame RAM-Verbesserung,
 langfristiges Plateau, Zeit-/1500-Ergebnisannahme und500MB-Puffer bleiben offen.
 Historischer PostgREST-Fall bleibt FAIL. Vor jedem späteren Voll500 zusätzlich32
 frische Startbedingungen, gültige Fall-/Zeitbindung, geklärter SOL-only-Reviewvertrag
 und neues konkretes Betreiber-GO. Keine Production, Migration, Aktivierung,
 Zusammenführung oder Bereitstellung aus dieser Bereinigung ableiten.
+
+
+## Weitere neun Kopien und aktuelle Plattenlücke,20.10.2026
+
+Auch die vier V8- und fünf V9-Kopien des tatsächlichen Cachevergleichs sind
+verlustlos gesichert und entfernt:15.399 reguläre Dateien aus exakt neun
+beendeten PGDATA-Verzeichnissen.18 vollständige tatsächliche PASS-Vergleiche
+und neun frische einzelne Root-Adoptionen gehen den Entfernungen voraus.
+Die erhaltenen neuen Deltaarchive belegen520.601.319Bytes. Alle Fallbelege,
+Parentverzeichnisse, Originale, Hüllen, Images, Volumes und Loops bleiben.
+Die kanonische Basis827a9872 ist für jetzt17 Deltaarchive dauerhaft notwendig.
+Die vier vorherigen vollständigen Archive bleiben ebenfalls erforderlich.
+
+Das erste V8-Skript stoppte korrekt, nachdem das zweite Archiv72.437.735B
+statt höchstens64MiB zusätzlichen Root-Limits belegte: vor Vergleichen und
+Entfernung dieser Kopie. Der Stopp/Exit1 bleibt erhalten. Ein frischer expliziter
+Root-Fortsetzungsplan mit128MiB Zusatzlimit verwendete dieses vorhandene Archiv,
+führte beide Vergleiche aus und adoptierte jedes verbleibende Ziel neu. Keine
+Wiederholung der Archivierung oder Wiederverwendung verbrauchter Adoptionen.
+Der V8-Fehlerfall bleibt FAIL; der nie gestartete V8-OLD2 ist nicht enthalten.
+
+[Unabhängige tatsächliche Nachprüfung mit sämtlichen Pins](nine-v8-v9-pgdata-retirements-sol-review-20261020.SAFE.json)
+prüft721 erhaltene Fallbelege, davon712 frisch per SHA/Bytes; neun geheime
+Konfigurationen nur per Metadaten. Große Archive und Originalnutzdaten wurden
+in dieser Nachprüfung nicht erneut gelesen. Der Bericht trennt das ausdrücklich
+von den bereits vollständig ausgeführten Vergleichen vor jeder Entfernung.
+
+Momentaufnahme19:36:46UTC:14.670.798.848B frei statt erforderlichen
+15.179.779.720B;508.980.872B fehlen. Die neuen erforderlichen Vergleichsarchive
+verbrauchen Platz. Historische df-Werte verschiedener Phasen werden nicht als
+aktueller Nettogewinn verrechnet. Der Komponentenboden bleibt8GiB; kein Voll-GO.
+
+Zwei ältere eigene abgeschlossene PGDATA-Kopien sind der nächste enge Kandidat.
+Wegen Host-UID-Overflow wurde zuerst ein neuer kleiner statischer Helfer ohne
+Netzwerk und ohne Fähigkeiten auf ausschließlich RO-Binds ausgeführt. Nur
+lstat/statfs der beiden Roots und eigene UID/GID-Maps: tatsächliche Owner999:1000,
+Gerät/Inodes/Mode/Zeitstempel unverändert, Exit0/PID0/kein OOM; Hülle erhalten.
+[Quellen-/Planprüfung](two-old-pgdata-root-metadata-sol-review-20261020.SAFE.json),
+[tatsächliche Metadaten](two-old-pgdata-root-metadata-actual-20261020.SAFE.json).
+Noch keine rekursive Inventur, Dateinutzdatenlesung, Archivierung oder Löschung
+dieser zwei Bestände; ihr weiterer Platzgewinn ist nicht behauptet.
+
+[Integrierter Cache und tatsächlicher nativer ALT/NEU-Vergleich](bounded-control-cache-local-integration-20261020.md).

@@ -1,0 +1,311 @@
+{
+  "schema": "helmut-v9-existing-four-case-operation-memory-attribution/1",
+  "status": "READ_ONLY_EXISTING_EVIDENCE_TEMPORAL_ASSOCIATION_OWNER_UNKNOWN",
+  "reviewerModel": "gpt-6.1-sol",
+  "createdUTC": "2026-10-20T19:30:43.908385+00:00",
+  "scope": "Only four completed V9 comparison cases from exact Root plan e667; whole-group peak timing, no new performance or execution qualification.",
+  "inputClosurePin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/v9-operation-memory-attribution-20261020/INPUT_PINS.SAFE.json",
+    "bytes": 12890,
+    "sha256": "54296a102c5125ece9c007f0ffdf2190cf442f8c9fe28246935e492decd93bc9"
+  },
+  "casePlanPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/ROOT_CASE_PLAN_V9.SAFE.json",
+    "bytes": 1801,
+    "sha256": "e6674a7d2259b2788d49f4355590bd89eb46149022333c4b271922300e13fc3f"
+  },
+  "nativePreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+    "bytes": 37288,
+    "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+  },
+  "priorMethodPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/V8_OPERATION_MEMORY_ATTRIBUTION.SAFE.json",
+    "bytes": 19290,
+    "sha256": "89a223b8048117dbef44e1f4a88915728e83e3f90e223b3ff3dfed2cc3816c2f"
+  },
+  "priorMethodCalibration": {
+    "priorOLDOffsetUTCSeconds": [
+      1792522955.96339,
+      1792522955.9846609
+    ],
+    "exactlyMatchesRecorded89aEndpoints": true,
+    "newV8MemoryAttributionPerformed": false
+  },
+  "cases": [
+    {
+      "label": "OLD1",
+      "caseId": "control-34fed1a1ec4fbdd8315cdfdd",
+      "variant": "OLD",
+      "exactWholeGroupLifetimePeakBytes": 1019572224,
+      "cycleEndLifetimePeakBytes": [
+        993427456,
+        1005813760,
+        1015795712
+      ],
+      "finalPeakAlreadyRecordedAtCycle6": false,
+      "classification": "RECORDED_PEAK_RISE_BRACKET_INSIDE_ONE_OPERATION_CORE",
+      "phase": "restore.write",
+      "method": "write",
+      "RPCOrdinal": 26,
+      "previousLowerPeakSnapshot": {
+        "utc": 1792523381.711218,
+        "peak": 1015795712,
+        "source": "NATIVE_TIMELINE.SAFE.json",
+        "index": 100
+      },
+      "firstSnapshotWithFinalPeak": {
+        "utc": 1792523381.991837,
+        "peak": 1019572224,
+        "source": "NATIVE_TIMELINE.SAFE.json",
+        "index": 101
+      },
+      "offsetUTCEpochSecondsMinMax": [
+        1792523368.0489655,
+        1792523368.0983999
+      ],
+      "cycleUnmeasuredSlackMilliseconds": [
+        75.26937100000097,
+        74.25720700000227,
+        54.2331450000022
+      ],
+      "restoreUnmeasuredSlackMilliseconds": 0.9004170000006528,
+      "possibleOperationWindows": [
+        {
+          "phase": "restore.write",
+          "method": "write",
+          "RPCOrdinal": 26,
+          "startUTCMin": 1792523381.6426253,
+          "startUTCMax": 1792523381.6929603,
+          "endUTCMin": 1792523382.1913867,
+          "endUTCMax": 1792523382.2417216
+        }
+      ],
+      "safeCoreMatches": 1,
+      "owner": "UNKNOWN",
+      "allocationStageCause": "UNKNOWN",
+      "recordedTimestampMarginsInsideSafeCoreMilliseconds": {
+        "previousAfterLatestStart": 18.257856369018555,
+        "firstBeforeEarliestEnd": 199.54967498779297
+      }
+    },
+    {
+      "label": "NEW1",
+      "caseId": "control-f4fc95f8410c9093233f7213",
+      "variant": "NEW",
+      "exactWholeGroupLifetimePeakBytes": 1002266624,
+      "cycleEndLifetimePeakBytes": [
+        979394560,
+        996392960,
+        1002266624
+      ],
+      "finalPeakAlreadyRecordedAtCycle6": true,
+      "classification": "AMBIGUOUS_OPERATION_WINDOW",
+      "phase": null,
+      "method": null,
+      "RPCOrdinal": null,
+      "previousLowerPeakSnapshot": {
+        "utc": 1792523447.3730462,
+        "peak": 996392960,
+        "source": "NATIVE_TIMELINE.SAFE.json",
+        "index": 81
+      },
+      "firstSnapshotWithFinalPeak": {
+        "utc": 1792523447.655449,
+        "peak": 1002266624,
+        "source": "NATIVE_TIMELINE.SAFE.json",
+        "index": 82
+      },
+      "offsetUTCEpochSecondsMinMax": [
+        1792523438.7368436,
+        1792523438.777072
+      ],
+      "cycleUnmeasuredSlackMilliseconds": [
+        59.36119699999942,
+        43.079377000002864,
+        68.08279600000056
+      ],
+      "restoreUnmeasuredSlackMilliseconds": 0.7593939999996913,
+      "possibleOperationWindows": [
+        {
+          "phase": "round2.fullRead",
+          "method": "read",
+          "RPCOrdinal": 17,
+          "startUTCMin": 1792523446.7958972,
+          "startUTCMax": 1792523446.9042084,
+          "endUTCMin": 1792523447.2716086,
+          "endUTCMax": 1792523447.3799198
+        },
+        {
+          "phase": "round2.mutation",
+          "method": "write",
+          "RPCOrdinal": 18,
+          "startUTCMin": 1792523447.2716086,
+          "startUTCMax": 1792523447.3799198,
+          "endUTCMin": 1792523447.8117156,
+          "endUTCMax": 1792523447.9200268
+        }
+      ],
+      "safeCoreMatches": 0,
+      "owner": "UNKNOWN",
+      "allocationStageCause": "UNKNOWN",
+      "unmeasuredInterStepObserverOrDispatchSlackPossible": true
+    },
+    {
+      "label": "NEW2",
+      "caseId": "control-2aa650ba79de93befbf07c2f",
+      "variant": "NEW",
+      "exactWholeGroupLifetimePeakBytes": 1016721408,
+      "cycleEndLifetimePeakBytes": [
+        989429760,
+        997568512,
+        1016721408
+      ],
+      "finalPeakAlreadyRecordedAtCycle6": true,
+      "classification": "RECORDED_PEAK_RISE_BRACKET_INSIDE_ONE_OPERATION_CORE",
+      "phase": "round2.mutation",
+      "method": "write",
+      "RPCOrdinal": 18,
+      "previousLowerPeakSnapshot": {
+        "utc": 1792523524.660608,
+        "peak": 1008603136,
+        "source": "NATIVE_TIMELINE.SAFE.json",
+        "index": 74
+      },
+      "firstSnapshotWithFinalPeak": {
+        "utc": 1792523524.9400709,
+        "peak": 1016721408,
+        "source": "NATIVE_TIMELINE.SAFE.json",
+        "index": 75
+      },
+      "offsetUTCEpochSecondsMinMax": [
+        1792523516.797999,
+        1792523516.8283858
+      ],
+      "cycleUnmeasuredSlackMilliseconds": [
+        30.386931999999867,
+        53.433948999999984,
+        73.43412400000027
+      ],
+      "restoreUnmeasuredSlackMilliseconds": 0.7737159999969823,
+      "possibleOperationWindows": [
+        {
+          "phase": "round2.mutation",
+          "method": "write",
+          "RPCOrdinal": 18,
+          "startUTCMin": 1792523524.3794417,
+          "startUTCMax": 1792523524.4832628,
+          "endUTCMin": 1792523524.954609,
+          "endUTCMax": 1792523525.05843
+        }
+      ],
+      "safeCoreMatches": 1,
+      "owner": "UNKNOWN",
+      "allocationStageCause": "UNKNOWN",
+      "recordedTimestampMarginsInsideSafeCoreMilliseconds": {
+        "previousAfterLatestStart": 177.34527587890625,
+        "firstBeforeEarliestEnd": 14.538049697875977
+      }
+    },
+    {
+      "label": "OLD2",
+      "caseId": "control-a11e080562d1d0fc384e0475",
+      "variant": "OLD",
+      "exactWholeGroupLifetimePeakBytes": 1014566912,
+      "cycleEndLifetimePeakBytes": [
+        1008508928,
+        1011470336,
+        1014566912
+      ],
+      "finalPeakAlreadyRecordedAtCycle6": true,
+      "classification": "RECORDED_PEAK_RISE_BRACKET_INSIDE_ONE_OPERATION_CORE",
+      "phase": "round2.mutation",
+      "method": "write",
+      "RPCOrdinal": 18,
+      "previousLowerPeakSnapshot": {
+        "utc": 1792523634.8161795,
+        "peak": 1011470336,
+        "source": "NATIVE_TIMELINE.SAFE.json",
+        "index": 82
+      },
+      "firstSnapshotWithFinalPeak": {
+        "utc": 1792523635.0950408,
+        "peak": 1014566912,
+        "source": "NATIVE_TIMELINE.SAFE.json",
+        "index": 83
+      },
+      "offsetUTCEpochSecondsMinMax": [
+        1792523625.4995556,
+        1792523625.5286863
+      ],
+      "cycleUnmeasuredSlackMilliseconds": [
+        40.41169,
+        57.787115000001776,
+        31.915563000001868
+      ],
+      "restoreUnmeasuredSlackMilliseconds": 0.715819999996592,
+      "possibleOperationWindows": [
+        {
+          "phase": "round2.mutation",
+          "method": "write",
+          "RPCOrdinal": 18,
+          "startUTCMin": 1792523634.6185253,
+          "startUTCMax": 1792523634.6795716,
+          "endUTCMin": 1792523635.1435359,
+          "endUTCMax": 1792523635.2045822
+        }
+      ],
+      "safeCoreMatches": 1,
+      "owner": "UNKNOWN",
+      "allocationStageCause": "UNKNOWN",
+      "recordedTimestampMarginsInsideSafeCoreMilliseconds": {
+        "previousAfterLatestStart": 136.60788536071777,
+        "firstBeforeEarliestEnd": 48.49505424499512
+      }
+    }
+  ],
+  "memoryFinding": {
+    "OLDObservedPeakRangeBytes": [
+      1014566912,
+      1019572224
+    ],
+    "NEWObservedPeakRangeBytes": [
+      1002266624,
+      1016721408
+    ],
+    "rangesOverlap": true,
+    "robustRAMSavingQualified": false,
+    "meaning": "Observed ranges overlap. This attribution does not reopen or expand the completed no-robust-RAM-saving result."
+  },
+  "timingMethod": {
+    "offsetPerCycle": "[nativeEndUTC - nodeEndMs/1000, nativeEndUTC - (nodeStartMs + sum8StepWallMs)/1000]",
+    "offsetCombination": "Intersection across all three cycle-end intervals. The prior89a OLD endpoints were reproduced exactly.",
+    "roundSlack": "nodeEndMs - nodeStartMs - sum8StepWallMs; keep every unmeasured marker/observer/callback millisecond as uncertainty, with no proportional allocation.",
+    "restoreSlack": "finalNodeWallMs - lastCycleEndMs - sumRestoreStepWallMs; retain all as uncertainty.",
+    "operationBounds": "For segment start S, prefix duration P, step duration D and slack U: start in [Omin+S+P, Omax+S+P+U], end in [Omin+S+P+D, Omax+S+P+D+U]. Safe core=[startMax,endMin].",
+    "classification": "Previous lower-peak and first final-peak recorded UTC timestamps must both be strictly inside one safe core. Otherwise AMBIGUOUS; possible envelopes include unmeasured inter-step work.",
+    "peakSamples": "Merged existing NATIVE_TIMELINE, PHASES and six cycle native observations, sorted by recorded UTC; all four sorted cumulative peak sequences were nondecreasing.",
+    "assumptionsAndLimits": "Same-host clock consistency and the existing recorded snapshot timestamps are assumed. Cgroup read duration and exact allocator-event time were not measured; labels are temporal associations, not allocation causality."
+  },
+  "ownershipLimits": [
+    "Lifetime group peak charges all descendants, file/shmem and kernel memory. Existing cycle process snapshots cover Node, PostgREST and the PostgreSQL postmaster, not all actual backend private allocations at the peak.",
+    "Selected-U step timing includes symmetric field/history hash observer work. It cannot isolate U.write snapshot, Parts.build, decoder/hash work, backend work, GC or retained memory.",
+    "A memory.stat endpoint is not an atomic peak decomposition. No process RSS/high-water values or file/shmem buckets were summed; shmem is already part of file.",
+    "V8 RPC26 timing is not generalized: only V9 OLD1 has its final rise in restore.write. V9 NEW1 is ambiguous; V9 NEW2 and OLD2 are associated with round2.mutation. Owner remains UNKNOWN in all four."
+  ],
+  "smallestConditionalOwnershipMeasurement": "Only if a further RAM decision needs ownership: one separately authorized, tightly instrumented existing arm, with exact before/after operation markers around RPC17/18 and26 and the same never-reset whole-lifetime kernel meter. Within those marked intervals take bounded, time-bracketed census/smaps_rollup of every actual descendant PID, including all PostgreSQL backends, plus Node heap/external/arrayBuffers and common memory.stat. This can distinguish private/process versus shared/file growth; it still does not turn sampled PSS/RSS into an exact decomposition of the lifetime peak. No implementation or run is performed or authorized by this review.",
+  "execution": {
+    "nativeStarts": 0,
+    "databaseCalls": 0,
+    "tests": 0,
+    "runtimeOrRCodeWrites": 0,
+    "originalPGDATAReads": 0,
+    "binaryRehashes": 0,
+    "providerCalls": 0,
+    "reviewDataFilesOnly": true
+  },
+  "newCompleteMotorExecutionClaimed": false,
+  "full500": false,
+  "production": false,
+  "newOptimizationOrFlagChangeRecommended": false
+}
