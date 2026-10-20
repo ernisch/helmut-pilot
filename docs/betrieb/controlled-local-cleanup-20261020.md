@@ -189,6 +189,24 @@ laut Upstream SIGTERM über UserInterrupt in RTS-SIGINT. Das erklärt den Befund
 ändert aber keinen alten Teststatus. Eine neue eng gebundene Abschlussqualifikation
 und die Korrektur einer Diagnose-Hostpfadbindung gehen den drei Motoraufrufen voraus.
 
+Diese neue V7-Abschlussqualifikation und anschließend die drei tatsächlichen
+Motorlesevorgänge sind inzwischen bestanden und unabhängig geprüft. Dabei wurde
+die4.856.607B große Kontrollsicht als tatsächlicher Auslöser des2MiB-Cachemiss
+belegt. [Baseline und Folgeumbau](local-control-cache-baseline-20261020.md).
+Die drei abgeschlossenen V6/V7-PGDATA-Kopien sind danach ebenfalls ausschließlich
+über ihre drei festen Zielpfade entfernt:5133 reguläre Dateien,35042832B
+verlustlose Deltaarchive, je zwei tatsächliche vollständige Vergleiche und frische
+einzelne Root-Adoptionen. Sämtliche Fallbelege, Hüllen und Originale bleiben;
+die kanonische Basis ist jetzt für **acht** Deltaarchive dauerhaft erforderlich.
+[Drei tatsächliche Entfernungen](three-control-delta-retirement-20261020.SAFE.json),
+[unabhängige Abschlussnachprüfung](three-control-delta-retirement-sol-review-20261020.SAFE.json).
+Alle zwölf getrennten Check-/Archiv-/Vergleichs-/Entfernungsaktionen Exit0;
+das exklusive Bereinigungsfenster ist geschlossen. Keine alten Freigaben wiederverwendet.
+
+Neue Momentaufnahme18:48UTC:15301251072B verfügbar,121471352B über der
+unveränderten Volladmission. Weitere Diagnosen verbrauchen erneut Platz; vor
+jedem Start frisch prüfen. Diese Angabe bewilligt keinen vollständigen Lauf.
+
 Die Bereinigung beweist keine RAM-Einsparung. Gemeinsamer OLD/NEW-Nachweis,
 langfristiges Plateau, Zeit-/1500-Ergebnisannahme und500MB-Puffer bleiben offen.
 Historischer PostgREST-Fall bleibt FAIL. Vor jedem späteren Voll500 zusätzlich32

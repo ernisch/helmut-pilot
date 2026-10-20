@@ -42,6 +42,7 @@ die tatsächliche Qualifikation liegt getrennt in diesen Belegen.
 Nächster gezielter Umbau: eine private kompakte Darstellung innerhalb der
 unveränderten2MiB-Grenze, mit den bestehenden logischen Authgrenzen und frischen
 nativen Prüfungen. Kandidat67b5c4ef liegt im getrennten Worktree, gezielte
-Unittests bestanden; noch keine native Wirkung oder Übernahme in den Rootmotor
+Unittests und [unabhängige Codeprüfung](bounded-control-cache-code-sol-review-20261020.SAFE.json)
+bestanden; noch keine native Wirkung oder Übernahme in den Rootmotor
 beansprucht. Ein symmetrischer Vergleich mit derselben Ausgangsbank und mehreren
 echten Zustandsänderungen wird vorbereitet. Keine neue Voll500-Freigabe.
