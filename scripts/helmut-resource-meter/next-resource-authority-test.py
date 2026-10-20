@@ -28,7 +28,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
           **{k:self.connection[k]for k in ['targetDatabase','operationId','caseDirectory']},
           'sourceCapturePin':self.connection['sourceCapture'],
           'previousConsumedMarkers':copy.deepcopy(A.PRESERVED_MARKER_PINS),
-          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE20_V10_000000000000.PRIVATE.json'),
+          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE20_V11_000000000000.PRIVATE.json'),
           'requiredConfirmation':'GO_LOCAL_ONLY_CREATE_'+self.connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'}
     def test_intent_is_only_technical_and_never_actual_go(self):
         with patch.object(A,'read',return_value={}):
@@ -73,14 +73,14 @@ class NextResourceAuthorityTest(unittest.TestCase):
         self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertNotIn(A.RESERVATION,A.OLD_MARKERS)
         self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.241.0/24')
     def test_spent_or_nonfixed_slot_config_is_rejected_on_import(self):
-        for change in [{'version':9},{'version':11},{'day':'2026-10-19'},{'day':'2026-10-21'}]:
+        for change in [{'version':9},{'version':10},{'version':12},{'day':'2026-10-19'},{'day':'2026-10-21'}]:
             other=importlib.util.spec_from_file_location('rejected_authority_slot',Path(A.__file__))
             module=importlib.util.module_from_spec(other)
             with self.subTest(change=change),patch.object(Path,'read_text',return_value=json.dumps({**A.SLOT,**change})):
                 with self.assertRaisesRegex(RuntimeError,'invalid pinned'):other.loader.exec_module(module)
-    def test_all_nineteen_spent_markers_stay_pinned_including_both_v7(self):
-        self.assertEqual(len(A.OLD_MARKERS),19)
-        self.assertEqual(len(A.PRESERVED_MARKER_PINS),19)
+    def test_all_twentyone_spent_markers_stay_pinned_including_both_v7(self):
+        self.assertEqual(len(A.OLD_MARKERS),21)
+        self.assertEqual(len(A.PRESERVED_MARKER_PINS),21)
         self.assertEqual({p['path'] for p in A.PRESERVED_MARKER_PINS},set(map(str,A.OLD_MARKERS)))
         by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
         for expected in SPENT_V5_PINS+SPENT_V7_PINS:
@@ -100,19 +100,19 @@ class NextResourceAuthorityTest(unittest.TestCase):
                   for p in self.intent['previousConsumedMarkers']]
                 with self.subTest(tampered=key),self.assertRaises(RuntimeError):
                     A.validate_owner({**self.intent,'previousConsumedMarkers':tampered},self.connection,planning=True)
-    def test_v10_slot_is_fixed_and_distinct_from_every_old_slot(self):
-        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-20','version':10})
-        self.assertEqual(A.SLOT_VERSION,10)
-        self.assertEqual(A.AUTHORIZATION,'USER_GO_20261020_EXACT_ONE_RESOURCE_ONLY_V10')
+    def test_v11_slot_is_fixed_and_distinct_from_every_old_slot(self):
+        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-20','version':11})
+        self.assertEqual(A.SLOT_VERSION,11)
+        self.assertEqual(A.AUTHORIZATION,'USER_GO_20261020_EXACT_ONE_RESOURCE_ONLY_V11')
         self.assertEqual(A.AUTHORIZATION,self.intent['authorizationId'])
         self.assertNotEqual(A.AUTHORIZATION,OLD_V4_AUTHORIZATION)
         self.assertNotEqual(A.AUTHORIZATION,OLD_V5_AUTHORIZATION)
-        self.assertEqual(A.CLAIM,A.METER/'NEXT_RESOURCE20_V10_GO_CLAIM.SAFE.json')
-        self.assertEqual(A.RESERVATION,A.METER/'NEXT_RESOURCE20_V10_SETUP_RESERVATION.SAFE.json')
-        self.assertEqual(str(A.CLAIM),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE20_V10_GO_CLAIM.SAFE.json')
-        self.assertEqual(str(A.RESERVATION),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE20_V10_SETUP_RESERVATION.SAFE.json')
+        self.assertEqual(A.CLAIM,A.METER/'NEXT_RESOURCE20_V11_GO_CLAIM.SAFE.json')
+        self.assertEqual(A.RESERVATION,A.METER/'NEXT_RESOURCE20_V11_SETUP_RESERVATION.SAFE.json')
+        self.assertEqual(str(A.CLAIM),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE20_V11_GO_CLAIM.SAFE.json')
+        self.assertEqual(str(A.RESERVATION),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE20_V11_SETUP_RESERVATION.SAFE.json')
         self.assertNotEqual(A.CLAIM,A.RESERVATION)
-        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,'OWNER_RESOURCE20_V10_000000000000.PRIVATE.json')
+        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,'OWNER_RESOURCE20_V11_000000000000.PRIVATE.json')
         old_names=set(map(str,A.OLD_MARKERS))
         self.assertNotIn(str(A.CLAIM),old_names)
         self.assertNotIn(str(A.RESERVATION),old_names)
@@ -169,7 +169,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
               {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V8_000000000000.PRIVATE.json')}]:
                 with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**change},self.connection,planning=True)
         self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
-    def test_spent_v9_exact_bytes_cannot_authorize_v10(self):
+    def test_spent_v9_exact_bytes_cannot_authorize_v11(self):
         expected=[
           {'path':str(A.METER/'NEXT_RESOURCE19_V9_GO_CLAIM.SAFE.json'),'bytes':866,'sha256':'3af635b8f5450ea4e0fc23cbaceab7c6f8261028b938c1a542c0a1a9498ad9f1'},
           {'path':str(A.METER/'NEXT_RESOURCE19_V9_SETUP_RESERVATION.SAFE.json'),'bytes':1589,'sha256':'32054d5a770a926c57688f6aad38feec06449999e18d24245f7ef31c60f02022'}]
@@ -181,6 +181,20 @@ class NextResourceAuthorityTest(unittest.TestCase):
               {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V9_000000000000.PRIVATE.json')}]:
                 with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**bad},self.connection,planning=True)
         self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
+    def test_spent_v10_exact_bytes_cannot_authorize_v11(self):
+        expected=[
+          {'path':str(A.METER/'NEXT_RESOURCE20_V10_GO_CLAIM.SAFE.json'),'bytes':875,'sha256':'6fdb6f4189d0a5150db693eff38935a2273c6b0eb373d1be101c87db50f45cfe'},
+          {'path':str(A.METER/'NEXT_RESOURCE20_V10_SETUP_RESERVATION.SAFE.json'),'bytes':1598,'sha256':'7e1d8938c585c6fc983eaf98f4d13c0f01d1cba66532204be2f8fa84323ce7c2'}]
+        by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
+        for p in expected:
+            self.assertEqual(by_path[p['path']],p);self.assertEqual(A.pin(p['path']),p)
+        with patch.object(A,'read',return_value={}):
+            for bad in [{'authorizationId':'USER_GO_20261020_EXACT_ONE_RESOURCE_ONLY_V10'},
+              {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE20_V10_000000000000.PRIVATE.json')}]:
+                with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**bad},self.connection,planning=True)
+            changed=[{**p,'sha256':'0'*64}if p['path']==expected[0]['path']else p for p in self.intent['previousConsumedMarkers']]
+            with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,'previousConsumedMarkers':changed},self.connection,planning=True)
+        self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
     def test_restored_container_identity_fails_before_any_native_sql(self):
         source=A.SOURCE_RUNTIME
         expected='|'.join([source.CONTAINER,'/'+source.RUNTIME_BINDING['containerName'],source.RUNTIME_BINDING['imageId'],'none'])

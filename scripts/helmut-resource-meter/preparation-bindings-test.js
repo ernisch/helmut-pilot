@@ -6,7 +6,7 @@ const plan={schema:'helmut-pinned-full500-connection/1',production:false,profile
   originalUUnchangedAndRequired:true,targetDatabase:'helmut_resource_fixture_20261020_0123456789ab',
   containerName:'helmut-meter-db-w20-0123456789ab',
   sourceDatabase:'helmut_fresh_input_fixture_d2e98984',sourceInputDatabase:'helmut_resource_input_20261020_4d77e2fe6616',
-  resourceClaimPath:'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE20_V10_GO_CLAIM.SAFE.json'};
+  resourceClaimPath:'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE20_V11_GO_CLAIM.SAFE.json'};
 const source={source:plan.sourceInputDatabase,sourceWrites:0,production:false,
   before:{TEST_ONLY:'NO_REAL_SOURCE'},after:{TEST_ONLY:'NO_REAL_SOURCE'}};
 assert.equal(M.assertInputBindings(plan,source),plan.resourceClaimPath);
@@ -15,9 +15,9 @@ assert.equal(M.assertInputBindings(plan,source),plan.resourceClaimPath);
 const python="import importlib.util,json,sys;from pathlib import Path;p=Path(sys.argv[1]);s=importlib.util.spec_from_file_location('entry_slot',p);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);print(json.dumps({'claim':str(m.CLAIM),'authorization':m.AUTHORIZATION,'version':m.SLOT_VERSION}))";
 const actual=JSON.parse(require('node:child_process').execFileSync('python3',[
  '-c',python,path.join(__dirname,'next-resource-authority.py')],{encoding:'utf8'}));
-assert.equal(actual.version,10);assert.equal(actual.authorization,'USER_GO_20261020_EXACT_ONE_RESOURCE_ONLY_V10');
+assert.equal(actual.version,11);assert.equal(actual.authorization,'USER_GO_20261020_EXACT_ONE_RESOURCE_ONLY_V11');
 assert.equal(M.assertInputBindings({...plan,resourceClaimPath:actual.claim},source),actual.claim);
-for(const delta of [{resourceClaimPath:'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE19_V9_GO_CLAIM.SAFE.json'},{targetDatabase:'helmut_resource_fixture_20261019_0123456789ab'},{sourceInputDatabase:'helmut_resource_input_20261019_e400dff25393'},{production:true},{targetDatabase:'helmut_resource_fixture_20261017_0123456789ab'},
+for(const delta of [{resourceClaimPath:'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE20_V10_GO_CLAIM.SAFE.json'},{resourceClaimPath:'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE19_V9_GO_CLAIM.SAFE.json'},{targetDatabase:'helmut_resource_fixture_20261019_0123456789ab'},{sourceInputDatabase:'helmut_resource_input_20261019_e400dff25393'},{production:true},{targetDatabase:'helmut_resource_fixture_20261017_0123456789ab'},
   {resourceClaimPath:'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE17_V4_GO_CLAIM.SAFE.json'},
   {resourceClaimPath:'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE18_V5_GO_CLAIM.SAFE.json'},
   {resourceClaimPath:'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json'},
