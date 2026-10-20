@@ -24,7 +24,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     content=C.read_pin(restored['contentAcceptanceTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json').read_text())
     # Historical approvals remain dependencies, never reused as the new owner GO.
     content.update(ownerGo=owner_pin,currentPolicyInput=staged['dayRows'],inputRows=staged['dayRows'],
-      currentDayAcceptance=staged['dayAcceptance'],reviewScope='Exact independently reviewed day19 relative-display transfer plus unchanged archived source/profile/nonrelative factual scope. No execution or performance acceptance.')
+      currentDayAcceptance=staged['dayAcceptance'],reviewScope='Exact independently reviewed '+day['day']+' relative-display transfer plus unchanged archived source/profile/nonrelative factual scope. No execution or performance acceptance.')
     content.pop('inputBases',None)
     content['previouslyAttemptedOperationIds']=list(dict.fromkeys(content['previouslyAttemptedOperationIds']+[
        'synthetik500-localnative16-b27c20261016','synthetik500-authority16-41ca20261016']+([original['newOperation']]if restored else[])))
@@ -32,8 +32,8 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     external=C.read_pin(restored['localExternalTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json').read_text())
     external['inputAcceptanceSHA256']=content_pin['sha256']
     # No source publication/capture timestamp is changed. The selected source
-    # window remains the preexisting13..16 window; day19 validity requires the
-    # separately pinned accepted day19 evidence, never a timestamp rewrite.
+    # window remains the preexisting13..16 window; current-day validity requires
+    # its separately pinned accepted evidence, never a timestamp rewrite.
     external_pin=C.save(case/'ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json',external)
     repo=Path('/workspace/helmut-cpu-epoch-20261015')
     # A NEW command needs actual current code pins; old content acceptance is
@@ -98,7 +98,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
       'dayBindingAcceptance':staged['dayAcceptance'],'applicationReadOnlyPins':list(assets.values()),
       'databaseReadOnlyPins':[capture['postgrestBinary']],
       'stagedHarness':staged_pin,'full500RunStarted':False,'resourceGOConsumed':False,
-      'storageHoldSeconds':9*3600+600,'storageCapacityBytes':8000000000,
+      'storageHoldSeconds':9*3600+600,'storageCapacityBytes':4294967296,
       'approvedInternalSubnet':C.A.SUBNET,
       'sourceCaptureIsPreexistingFixtureInputNotWorkflowCPU':True,
       'phases':['preparation','assembly','sequence'],'profiles':500,'controlsPerUnit':16,

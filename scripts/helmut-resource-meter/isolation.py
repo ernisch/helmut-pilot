@@ -123,7 +123,7 @@ def verify_pre_setup_authority(recipe,*,planning=False):
         raise RuntimeError('current-day independent semantic acceptance missing')
     if not valid:
         raise RuntimeError('actual run window outside independent current-day scope')
-    if (end-now).total_seconds()*1000 < 8089543.088:
+    if (end-now).total_seconds()*1000 < 10685884.867:
         raise RuntimeError('remaining same-day window shorter than actual last complete workflow')
     return {'acceptance':acceptance,'connection':connection,'day':day}
 
@@ -173,7 +173,7 @@ def verify_full_authority(recipe):
     Calendar.current_window(day,now=now)
     if now<datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00')) or end>datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00')):
         raise RuntimeError('actual run window outside independent current-day scope')
-    if (end-now).total_seconds()*1000 < 8089543.088:
+    if (end-now).total_seconds()*1000 < 10685884.867:
         raise RuntimeError('remaining same-day window shorter than actual last complete workflow')
 
 def claim_full_attempt(recipe,cid,recipe_path):
@@ -397,7 +397,7 @@ def check_container_visibility(fixture,recipe):
 
 def create_database(out,name,parent,network,scope='small-meter-validation',storage=None,fixture=None):
     if not storage:raise RuntimeError('native meter requires actual owned bounded filesystem')
-    if scope=='owner-approved-local500-resources' and storage['bytes']!=8000000000:raise RuntimeError('full prepared local plan requires exact8GB owned device')
+    if scope=='owner-approved-local500-resources' and storage['bytes']!=4294967296:raise RuntimeError('new20Oct local plan requires exact4GiB owned device')
     fs=os.statvfs('/workspace')
     if fs.f_bavail*fs.f_frsize<4*1024**3:
         raise RuntimeError('shared workspace has less than4GiB free; preserve originals and do not create more fixture layers')

@@ -3,7 +3,12 @@
 This is a local development gate. It grants no GO and never activates a profile.
 All historical resource attempts, their owner documents, claims, databases,
 receipts and inputs remain immutable. No consumed namespace can be reset or replayed.
-The measured slot is V9 with 17 pinned earlier consumed markers. Its separately
+The current prepared slot is day20/V10, with19 pinned historical spent markers,
+one fresh operator GO, a4GiB storage capacity, and the unchanged8GiB free host
+reserve. It has not started or consumed its claim/reservation. The bounded
+native reader requires fresh complete integration acceptance; component proofs
+do not establish the common500-profile RAM or timing result.
+The historical measured slot was V9 with17 pinned earlier consumed markers. Its separately
 approved single attempt68f480265d50 finished on19October2026 at23:47:24UTC with
 pass=false; its reservation and claim are now consumed and retained. This text
 grants no further GO. Its dedicated internal subnet is 172.16.243.0/24;
@@ -26,7 +31,7 @@ all check IDs, freshness and exact binding pins. A direct launch cannot omit it.
 | controller accepted_metadata; isolation verify_full_authority | Exact acceptance/connection/recipe pins; primitive and integration reviews; allFilePins collects every missing/changed file; source closure inventoried | Fresh owned container ID, final serialized recipe SHA, exclusive setup reservation and GO claim |
 | connection.stage; preparation.checkOwnerGo; common.activated; assembly owner guard | Exact local target suffix, schema, confirmation, timestamp, owner reference, production=false,500, paid=false, exactlyOneResourceAttempt=true, **allowDispose must be literal false** | No inference or repair of an old/consumed owner document; actual activation receipt still required |
 | zero_day.verify_capture; preparation.financialProposal; K.historie/pruefeStart/auftragsStand | Original and corrected native auth/counter witness equality; ENTIRE counter table; all historical days; stock financialProjection; unaltered limits; authority evaluated separately from data | Exact restored input equality, original conditional auth update and fresh runtime cost controls |
-| controller.window; preparation.window; contracts.checkWindow | Exact accepted day/window; default requires one UTC/Berlin day. Explicit local mock calendar may cross Berlin midnight within ONE real UTC accounting day; all three actual consumers enforce the bound execution window. Last complete8089.543088s+600s reserve; no backdating | Genuine current command timestamps and each fresh expiry check |
+| controller.window; preparation.window; contracts.checkWindow | Exact accepted day/window; default requires one UTC/Berlin day. Explicit local mock calendar may cross Berlin midnight within ONE real UTC accounting day; all three actual consumers enforce the bound execution window. Last actual10685.884867s+600s reserve; no backdating | Genuine current command timestamps and each fresh expiry check |
 | original_preflight; Gates.pinned; H.privateJSON | Nine original hashes; actual complete original DB identity/profile/U binding; all six native KOs, seven documents and complete link set; canonical paths, selected private modes; exact replay of26 staged transformations | New owned clone and inactive snapshot must actually equal input; native SQL0-to500 result |
 | preparation.reviewed/finishInactivePreparation | Request status, target, package, all primary pins, local external binding, end watcher, canonical state publication timestamps; actual package generator validation | Real snapshot/nullbestand/runtimeManifest/import/activation SQL are never replaced by projected positive receipts |
 | assembly/start-services | Pinned binary/config, exact config literals, fresh service/material output targets; actual common constants and bridge API | New DB IP, PostgREST/gateway readiness and HTTP health; no old gateway reuse |
@@ -34,7 +39,7 @@ all check IDs, freshness and exact binding pins. A direct launch cannot omit it.
 | build-command; original-draft-request; assembly mock loop | Exact500 owner set, active ordinary-v1 rows, native inventory/version fields/fencing, prior U pin, all original A/F/L acceptance bindings; default D/preR/Q at both accepted endpoints, explicit local mock mode at its separately accepted source view for all500; template hash/variant completeness; actual sourceBinding; EU route, direct purposes | Fresh run/command/plan hashes,1000 genuine intents, original executor, exact D binder and packet metadata depend on newly generated command and stay mandatory |
 | H.destination/save/mkdirFresh; sequence entry | Fresh case/output/run dirs; no previous packet/activation/assembly/failure/controller/sequence/material/service outputs; no overwrite/continuation | Exclusive creation remains atomic; future disk/I/O errors cannot be predicted |
 | process-runner; contracts.LIMITS; sequence | Exact three commands, pins/timeouts and CPU0; all500/16; worst cases0,499; Offline90/Preparation60/Unit60/Auth30/2048000000B unchanged; mock-only/no profiler | All original negative cases, actual16 fresh controls per500, ACK/result counts and timings |
-| bounded-storage/kernel-meter/isolation | Node24.19.0,Python3.12.14,pinned PG image,cgroupv2/vfs,CPU0,formatter availability; free space8GB+8GiB; approved minor observed unbound; all names/subnet/cgroup unused | Atomic loop configuration, owned8GB filesystem identity, PGDATA/WAL/no external tablespaces, all namespace IDs |
+| bounded-storage/kernel-meter/isolation | Node24.19.0,Python3.12.14,pinned PG image,cgroupv2/vfs,CPU0,formatter availability; free space4GiB+8GiB; approved minor observed unbound; all names/subnet/cgroup unused | Atomic loop configuration, owned4GiB filesystem identity, PGDATA/WAL/no external tablespaces, all namespace IDs |
 | process/network/HTTP/WAL/finalization meters | Exact reviewed meter/source pins, continuous1s DB observer and full phase recipe; original scoped independent meter acceptance | Actual common kernel peak/CPU, WAL/DB/IO, network requests/bytes/errors/logs, every child/worker and final populated=0 |
 
 ## Coverage is a checked prerequisite
@@ -112,9 +117,9 @@ Neither a generic independent `ok` nor this resolution text grants complete
 acceptance. The exact final inventory and changes require independent review;
 blocked reviews remain retained and cannot serve as positive acceptance.
 
-## Current authorization status
+## Historical V9 authorization status
 
-No unconsumed resource GO remains. V9 was used exactly once after32 fresh PASS
+At the V9 endpoint no unconsumed resource GO remained. V9 was used exactly once after32 fresh PASS
 groups and genuine independent scope adoption. It ended with499 native final
 ACKs, terminal index499 HTTP409, and common memoryPeakBytes2300071936 above the
 unchanged2048000000-byte limit. Its original source after-check passed; all
@@ -142,7 +147,7 @@ controller and direct full-authority path always require the real GO schema,
 explicit new authorization, literal preservation, fresh timestamp/reference, exact
 confirmation and final owner path. No planning flag reaches the executable recipe.
 
-The implemented claim/reservation are `NEXT_RESOURCE19_V9_*` in the existing
+The historical claim/reservation are `NEXT_RESOURCE19_V9_*` in the existing
 meter area. All17 earlier consumed markers through V8 were hash-pinned to their
 preserved baseline and never reset. V9's own two markers are now also spent and
 retained. No replacement prospective slot or future authority is created by this
@@ -214,24 +219,24 @@ technical blocker, distinct from missing operator GO.
 ## Whole-run window and final runtime authority
 
 `controller.window` and `start-preflight.window_evidence` require at least
-8689.543088 seconds:8089.543088 seconds for the last complete workflow plus600
+11285.884867 seconds:10685.884867 seconds for the last complete workflow plus600
 seconds for setup/close reserve. The actual controller calls this gate before
 setup and again after the owned database is ready. Its second complete
 32-condition assessment must pass immediately before the exclusive reservation.
 
 The shared and final isolation authority checks retain an additional
-8089.543088-second runtime-workflow floor. That floor is not a substitute for
+10685.884867-second runtime-workflow floor. That floor is not a substitute for
 the complete whole-run gate: `verify_full_authority` also requires the exact
 reserved complete proof and a matching actual post-setup start receipt no older
 than60 seconds. `claim_full_attempt` and `launch_application` call that same
 final authority check. Neither a lower isolation floor nor a planning-only
-intent authorizes bypassing the complete8689.543088-second controller gate.
+intent authorizes bypassing the complete11285.884867-second controller gate.
 These are existing separate checks; no window, reserve or runtime limit is
 changed by this explanation.
 
-## Measured day19/V9 continuation and closed authority
+## Historical measured day19/V9 continuation and closed authority
 
-The implemented slot accepts only19October2026 and the exactV9 owner document,
+The terminal historical slot accepted only19October2026 and the exactV9 owner document,
 global claim and reservation. All17 earlier consumed markers through V8 remained
 in the immutable historical baseline. The actualV9 attempt is now terminal;
 neither its owner document nor either marker can be reused or reset. Unapproved
@@ -240,7 +245,7 @@ unchanged. See the actual outcome in
 `docs/betrieb/local-control-resource-outcome-20261019.md`; the tested revision was
 80273b866594081a68777eeb318abf291b397beb before these documentation-only updates.
 
-The input source is the separately approved, completed book18 correction in
+That historical input source was the separately approved, completed book18 correction in
 `helmut_resource_input_20261019_e400dff25393`. The shared source verifier checks
 all three correction receipts, native financial witnesses, the full empty counter
 table, and the exact book18/capacity39→40 delta while preserving the earlier
@@ -271,3 +276,58 @@ share `atomic-usage-integration.assertLocalTarget`, preserving its original
 production/profile/container guards with the current19October namespace.
 The entry regression stops at the first mocked SQL boundary and creates no
 database, activation, acceptance receipt or usable operator authority.
+
+
+## New20Oct/V10 source and bounded reader delta
+
+The next unused slot is20October/V10; both terminalV9 markers are added to the
+19 immutable prior marker pins. All previous claims/reservations remain spent.
+The completed19Oct null-book correction in the newinput20 database is a fourth
+DATA layer above the unchanged16/17/18Oct verifiers. Its exact native auth and
+empty counter witnesses, source dump, receipt and once-only input claim join
+the same explicit capture_data_pins closure used by host and container reads.
+Historical owner documents remain excluded. The measured stage now checks the
+exact20Oct target/input/V10 claim before opening a claim file. No current-day20
+book exists until the actual measured original preparation creates it.
+
+The new independently reviewed SQL delta is admitted only by the explicit
+bounded-native-read-v1 descriptor combined with the original Merkle/history/
+control modes. SQL source hashes and exact native helper/reader bodies,
+signatures, STABLE/invoker/pg_catalog attributes and grants are checked. No
+unexpected function, body drift or policy is normalized away. The unchanged
+base bootstrap is checked first; the new overlay is applied only afterward to
+the owned new measured target, followed by complete candidate catalog checks
+and the original all-field logical hash. Root-IO checks those same candidate
+catalogs before runtime. CAS/writers/history and original full reader stay exact.
+The old W50 acceptance is not relabeled as acceptance of this SQL/integration.
+The adapter's separate diagnostic-only source delta is explicitly identified.
+
+The new case binds exact4GiB device capacity with the unchanged8GiB free host
+reserve and33000-second holder lifetime. This is a stricter physical disk upper
+bound, not a measured peak or a lower free reserve. Controller, factory and
+precheck must agree before setup. Actual whole lifetime bounds remain mandatory.
+The new exact private subnet172.16.241.0/24 was checked for overlap; the old V9
+network remains retained. New20Oct source adoption and sameUTC execution-day
+calendar keep every real budget/security/deadline clock. The window floor is
+raised to the last actualV9 runner10685.884867seconds plus600seconds reserve.
+
+Only the local observer formatter is changed for the new explicit mode; the
+original Error propagates unchanged. Extra causes are limited to four, prototype
+lookup to eight steps; unknown cause text is hashed and not emitted in clear.
+No stack/environment/credentials or added permission/ACK cache is introduced.
+These changes require fresh complete independent source/guard adoption and all
+32 entry groups; native component checks do not authorize or prove full500.
+
+## Bounded exact500 input loading within the explicit local candidate
+
+The bounded-native candidate also binds `bounded-profile-rows.js` in its exact
+source closure. Only its assembly and exact `contracts.json` day-row pin use
+this reader. All original raw bytes/SHA256,500 complete row values and original
+command decoder remain mandatory; no field projection or permission cache.
+One row is parsed at a time; exact repeated JSON subtrees may be shared only as
+immutable values, with bounded interning metadata. Unknown writes fail closed.
+Both renderer transformation sites are exact and replayed against all26 original
+templates. Default and other descriptors retain the original JSON reader.
+Native SQL semantics proofs do not accept this separate JS integration. Actual
+all500 equality, parser negatives, bounded-component RAM comparison and current
+independent full source/guard adoption are required before the one full attempt.

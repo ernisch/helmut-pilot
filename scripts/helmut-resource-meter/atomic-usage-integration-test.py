@@ -52,17 +52,17 @@ assert.equal(process.env[key],'caller-graph-sentinel');delete process.env[key];a
         value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor()))",str(BIN/'atomic-usage-integration.js')],text=True)
         self.descriptor.write_text(value);self.p=C.pin(self.descriptor)
         self.case=C.AREA/'attempt-0123456789ab';self.assertFalse(self.case.exists())
-        self.args=dict(target='helmut_resource_fixture_20261019_0123456789ab',container='helmut-meter-db-w20-0123456789ab',
-          operation='synthetik500-resources19-0123456789ab',day_rows_pin={'path':str(C.BASE/'wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json')},
+        self.args=dict(target='helmut_resource_fixture_20261020_0123456789ab',container='helmut-meter-db-w20-0123456789ab',
+          operation='synthetik500-resources20-0123456789ab',day_rows_pin={'path':str(C.BASE/'wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json')},
           owner_go_pin={'path':str(self.root/'NEVER_CREATED_OWNER_GO_V8')})
     def test_exact_current_case_binding_rejects_old_day_and_cross_suffix(self):
         current={k:self.args[k]for k in ['target','container','operation']}
         C.exact_case_binding(self.case,**current)
         for delta in [{'target':'helmut_resource_fixture_20261018_0123456789ab'},
           {'operation':'synthetik500-resources18-0123456789ab'},
-          {'target':'helmut_resource_fixture_20261019_ffffffffffff'},
+          {'target':'helmut_resource_fixture_20261020_ffffffffffff'},
           {'container':'helmut-meter-db-w20-ffffffffffff'},
-          {'operation':'synthetik500-resources19-ffffffffffff'}]:
+          {'operation':'synthetik500-resources20-ffffffffffff'}]:
             with self.subTest(delta=delta),self.assertRaises(RuntimeError):C.exact_case_binding(self.case,**{**current,**delta})
     def test_all26_consumers_replay_and_parse_without_running(self):
         plain=C.render_templates(self.case,**self.args)
@@ -180,10 +180,38 @@ assert.deepEqual(keys.map(k=>process.env[k]),before);
     def test_descriptor_drift_cannot_enter_renderer(self):
         d=json.loads(self.descriptor.read_text());d['sourcePins'][0]['sha256']='0'*64;self.descriptor.write_text(json.dumps(d))
         with self.assertRaisesRegex(RuntimeError,'source drift'):C.render_templates(self.case,**self.args,atomic_usage_pin=C.pin(self.descriptor))
+    def test_bounded_native_reader_requires_exact_optin_sources_and_reaches_catalog_and_observer(self):
+        code="process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',boundedRead:'bounded-native-read-v1'})))"
+        d=json.loads(subprocess.check_output(['node','-e',code,str(BIN/'atomic-usage-integration.js')],text=True))
+        self.descriptor.write_text(json.dumps(d));candidate=C.pin(self.descriptor)
+        rows=C.render_templates(self.case,**self.args,atomic_usage_pin=candidate)
+        files={Path(r['destination']).relative_to(self.case).as_posix():r['text']for r in rows}
+        self.assertEqual(len(rows),26)
+        bridge=files['native-end-preparation/root-io-bridge.js']
+        self.assertIn('.assertCatalog(catalog,{boundedRead:"bounded-native-read-v1"})',bridge)
+        self.assertIn('.assertStateCatalog(stateCatalog,{boundedRead:"bounded-native-read-v1"})',bridge)
+        self.assertIn('receipt.boundedReadReceipt.originalLogicalStatePreserved',bridge)
+        self.assertIn('runtime-failure-receipt.js',files['native-end-preparation/observe-app.js'])
+        self.assertNotIn('const failure=error=>',files['native-end-preparation/observe-app.js'])
+        self.assertIn('bounded-profile-rows.js',files['assemble-after-activation.js'])
+        self.assertIn('bounded-profile-rows.js',files['native-end-preparation/contracts.js'])
+        self.assertIn('assert.deepEqual(pin,',files['native-end-preparation/contracts.js'])
+        required={'auth_read_bounded_local.sql','auth_read_bounded_local.rollback.sql','bounded-read-integration.js',
+          'bounded-read-source-acceptance.json','runtime-failure-receipt.js','bounded-profile-rows.js'}
+        self.assertTrue(required<={Path(p['path']).name for p in d['sourcePins']})
+        for delta in [{'boundedRead':'unknown'},{'controlRead':None},{'boundedReadAcceptance':{}},
+          {'sourcePins':[p for p in d['sourcePins']if not p['path'].endswith('auth_read_bounded_local.sql')]},
+          {'sourcePins':[p for p in d['sourcePins']if not p['path'].endswith('bounded-profile-rows.js')]}]:
+            self.descriptor.write_text(json.dumps({**d,**delta}))
+            with self.subTest(delta=tuple(delta)),self.assertRaises(RuntimeError):
+                C.render_templates(self.case,**self.args,atomic_usage_pin=C.pin(self.descriptor))
+        subprocess.run(['node','-e',"const vm=require('vm');for(const s of JSON.parse(require('fs').readFileSync(0,'utf8')))new vm.Script(s)"],
+          input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,capture_output=True,check=True)
+        self.assertFalse(self.case.exists())
     def test_opt_in_fixture_calendar_reaches_all_real_consumers_without_changing_clocks(self):
-        policy={'version':C.Calendar.VERSION,'operationId':self.args['operation'],'sourceDay':'2026-10-19',
-            'sourceViewAtUTC':'2026-10-19T08:00:00.000Z','sourceInputsHash':'a'*64,'executionDayUTC':'2026-10-19',
-            'startsAtUTC':'2026-10-19T20:00:00.000Z','endsAtUTC':'2026-10-19T23:59:59.999Z'}
+        policy={'version':C.Calendar.VERSION,'operationId':self.args['operation'],'sourceDay':'2026-10-20',
+            'sourceViewAtUTC':'2026-10-20T08:00:00.000Z','sourceInputsHash':'a'*64,'executionDayUTC':'2026-10-20',
+            'startsAtUTC':'2026-10-20T20:00:00.000Z','endsAtUTC':'2026-10-20T23:59:59.999Z'}
         value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localCalendar:JSON.parse(process.argv[2])})))",str(BIN/'atomic-usage-integration.js'),json.dumps(policy)],text=True)
         self.descriptor.write_text(value);candidate=C.pin(self.descriptor)
         rows=C.render_templates(self.case,**self.args,atomic_usage_pin=candidate)
@@ -197,7 +225,7 @@ assert.deepEqual(keys.map(k=>process.env[k]),before);
         for name in ['root-io-bridge.js','runtime-candidates/prepare-materials.candidate.js','runtime-candidates/root-authority-stage.candidate.js']:
             self.assertIn('HELMUT_LOCAL_RESOURCE_CALENDAR_JSON',files['native-end-preparation/'+name])
         assembly=files['assemble-after-activation.js']
-        self.assertIn('briefingDatum:"2026-10-19T08:00:00.000Z"',assembly)
+        self.assertIn('briefingDatum:"2026-10-20T08:00:00.000Z"',assembly)
         self.assertNotIn('briefingDatum:runtime.start',assembly)
         provider=files['native-end-preparation/local-provider.js']
         self.assertIn('localCalendar.registerLocalMockTransport(https.request);',provider)
@@ -209,7 +237,7 @@ assert.deepEqual(keys.map(k=>process.env[k]),before);
         self.assertNotIn("assert.equal(berlin(times[1]),berlin(times[2])",contract)
         self.assertIn('Exact accepted local UTC fixture window',contract)
         # Execute ONLY the actual pure window consumer. No gates/owner/DB calls.
-        code="""const vm=require('vm'),assert=require('assert/strict'),fs=require('fs'),s=JSON.parse(fs.readFileSync(0,'utf8'));const context={require,module:{exports:{}},__dirname:'/TEST_ONLY_NO_DIRECTORY'};vm.runInNewContext(s,context);const C=context.module.exports;const now=new Date('2026-10-19T22:30:00.000Z');const w={startsAtUTC:'2026-10-19T21:00:00.000Z',endsAtUTC:'2026-10-19T23:59:59.999Z'};C.checkWindow(w,'2026-10-19T21:00:00.000Z',now);for(const bad of [{...w,endsAtUTC:'2026-10-20T00:00:00.000Z'},{...w,startsAtUTC:'2026-10-19T19:59:59.999Z'},{...w,endsAtUTC:'2026-10-19T22:29:59.999Z'}])assert.throws(()=>C.checkWindow(bad,'2026-10-19T19:00:00.000Z',now));"""
+        code="""const vm=require('vm'),assert=require('assert/strict'),fs=require('fs'),s=JSON.parse(fs.readFileSync(0,'utf8'));const context={require,module:{exports:{}},__dirname:'/TEST_ONLY_NO_DIRECTORY'};vm.runInNewContext(s,context);const C=context.module.exports;const now=new Date('2026-10-20T22:30:00.000Z');const w={startsAtUTC:'2026-10-20T21:00:00.000Z',endsAtUTC:'2026-10-20T23:59:59.999Z'};C.checkWindow(w,'2026-10-20T21:00:00.000Z',now);for(const bad of [{...w,endsAtUTC:'2026-10-21T00:00:00.000Z'},{...w,startsAtUTC:'2026-10-20T19:59:59.999Z'},{...w,endsAtUTC:'2026-10-20T22:29:59.999Z'}])assert.throws(()=>C.checkWindow(bad,'2026-10-20T19:00:00.000Z',now));"""
         subprocess.run(['node','-e',code],input=json.dumps(contract),text=True,capture_output=True,check=True)
         self.assertTrue(all('Date.now=' not in r['text'] and 'global.Date=' not in r['text'] for r in rows))
         subprocess.run(['node','-e',"const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"],input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,check=True,capture_output=True)

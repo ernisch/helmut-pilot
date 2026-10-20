@@ -172,6 +172,10 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             if control_mode is not None and (control_mode!='verified-control-view-v1' or state_mode!='merkle-auth-v1'
                     or history_mode!='verified-history-reuse-v1'):
                 raise RuntimeError('unknown or unbound local control read mode')
+            bounded_mode=candidate.get('boundedRead')
+            if bounded_mode is not None and (bounded_mode!='bounded-native-read-v1' or control_mode!='verified-control-view-v1'):
+                raise RuntimeError('unknown or unbound bounded native reader')
+            catalog_options=',{boundedRead:'+json.dumps(bounded_mode)+'}' if bounded_mode else ''
             state_options=',{stateStorage:'+json.dumps(state_mode)+'}' if state_mode else ''
             state_environment="env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else ''
             history_environment="env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else ''
@@ -190,8 +194,9 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                     '    assert.deepEqual(config.atomicUsageInput,'+descriptor+');require('+helper+').environment(env,config.atomicUsageInput);\n'
                     '    const receipt=G.json(config.atomicUsageReceipt);assert.equal(receipt.pass,true);assert.equal(receipt.targetDatabase,target.database);\n'
                     '    assert.deepEqual(receipt.candidatePin,config.atomicUsageInput);assert.equal(receipt.originalPhysicalHash,receipt.proof.originalHash);\n'
-                    '    const catalog=read(require('+helper+').catalogSQL());require('+helper+').assertCatalog(catalog);\n'
-                    +('    const stateCatalog=read(require('+helper+').stateCatalogSQL());require('+helper+').assertStateCatalog(stateCatalog);\n' if state_mode else '')+
+                    '    const catalog=read(require('+helper+').catalogSQL());require('+helper+').assertCatalog(catalog'+catalog_options+');\n'
+                    +('    const stateCatalog=read(require('+helper+').stateCatalogSQL());require('+helper+').assertStateCatalog(stateCatalog'+catalog_options+');\n' if state_mode else '')+
+                    ('    assert.equal(receipt.boundedReadReceipt?.mode,"bounded-native-read-v1");assert.equal(receipt.boundedReadReceipt.originalLogicalStatePreserved,true);\n' if bounded_mode else '')+
                     '    const bound=read("SELECT "+require('+helper+').physicalWitnessExpression('+state_options[1:]+')+";");\n'
                     '    assert.equal(bound.proof.generation,receipt.proof.generation);assert.equal(bound.proof.originalHash,receipt.proof.originalHash);\n'
                     +('    assert(receipt.stateReceipt?.originalLogicalStatePreserved);assert.equal(bound.state.generation,receipt.stateReceipt.state.generation);assert.equal(bound.state.originalHash,receipt.stateReceipt.state.originalHash);\n' if state_mode else '')+
@@ -212,21 +217,40 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             elif relative=='native-end-preparation/runtime-candidates/assemble-config.candidate.js':
                 change('const config={...base,',
                     'const config={...base,atomicUsageInput:r.atomicUsageInput,atomicUsageReceipt:r.atomicUsageReceipt,')
+            elif relative=='native-end-preparation/observe-app.js' and bounded_mode:
+                # Observation only; the original Error is rethrown unchanged.
+                # Additional cause fields are bounded and redact unknown text.
+                change("  const failure=error=>({name:error?.name||null,code:error?.code||null,message:String(error?.message||'unknown').slice(0,240)});",
+                    '  const failure=require('+json.dumps(str(BIN/'runtime-failure-receipt.js'))+').failure;')
             elif relative=='assemble-after-activation.js':
                 change(' const initialSourceBinding=',
                     " require("+helper+").environment(process.env,"+descriptor+");\n process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else '')+("process.env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';" if control_mode else '')+('process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else '')+"\n const initialSourceBinding=")
                 if calendar:
                     change('briefingDatum:runtime.start','briefingDatum:'+json.dumps(calendar['sourceViewAtUTC']))
+                if bounded_mode:
+                    # Exact same pinned500-row bytes and every original value.
+                    # Only the explicitly admitted local candidate uses bounded
+                    # decoding and immutable sharing; no source projection.
+                    change('const rawRows=read('+repr(day_rows_pin['path'])+')',
+                        'const rawRows=require('+json.dumps(str(BIN/'bounded-profile-rows.js'))+').readRows('
+                        +json.dumps(day_rows_pin,separators=(',',':'))+')')
                 change(' const shared={status:',
                     " const atomicUsageReceipt=pin(N+'/ATOMIC_USAGE_BOOTSTRAP.SAFE.json');\n const shared={atomicUsageInput:"+descriptor+",atomicUsageReceipt,status:")
             elif relative=='native-end-preparation/local-provider.js' and calendar:
                 # Load BEFORE the first hook so the helper captures native https.
                 change('function install(',"const localCalendar=require("+json.dumps(str(REPO/'lib/helmut/synthetik-500-local-calendar.js'))+");\nfunction install(")
                 change('  return{count:', '  localCalendar.registerLocalMockTransport(https.request);\n  return{count:')
-            elif relative=='native-end-preparation/contracts.js' and calendar:
-                change("  assert.equal(berlin(times[1]),berlin(times[2]),'No Berlin day crossing');",
-                    '  assert(times[1]>=Date.parse('+json.dumps(calendar['startsAtUTC'])+')'
-                    '&&times[2]<=Date.parse('+json.dumps(calendar['endsAtUTC'])+'),"Exact accepted local UTC fixture window");')
+            elif relative=='native-end-preparation/contracts.js':
+                if calendar:
+                    change("  assert.equal(berlin(times[1]),berlin(times[2]),'No Berlin day crossing');",
+                        '  assert(times[1]>=Date.parse('+json.dumps(calendar['startsAtUTC'])+')'
+                        '&&times[2]<=Date.parse('+json.dumps(calendar['endsAtUTC'])+'),"Exact accepted local UTC fixture window");')
+                if bounded_mode:
+                    change('function json(pin) { return JSON.parse(pinned(pin)); }',
+                        'function json(pin) { if(pin.path==='+json.dumps(day_rows_pin['path'])+') {'
+                        'assert.deepEqual(pin,'+json.dumps(day_rows_pin,separators=(',',':'))+');'
+                        'return require('+json.dumps(str(BIN/'bounded-profile-rows.js'))+').readRows(pin);'
+                        '} return JSON.parse(pinned(pin)); }')
         destination=case/template['relative']
         deltas.append({'original':{k:template[k] for k in ['path','bytes','sha256']},'destination':str(destination),'text':text,'replacements':changes})
     return deltas

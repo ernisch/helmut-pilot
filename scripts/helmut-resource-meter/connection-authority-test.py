@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Only new connection guards; no Docker, DB, real GO or workflow."""
-import concurrent.futures,hashlib,importlib.util,json,tempfile
+import argparse,concurrent.futures,hashlib,importlib.util,json,tempfile
 from pathlib import Path
 B=Path(__file__).parent
 
 def mod(name,file):
  s=importlib.util.spec_from_file_location(name,B/file);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
 I=mod('isolation','isolation.py');C=mod('connector','connect-local500.py');F=mod('controller','full500-controller.py')
-W=C.AREA;case=W/'attempt-c618dbcee5f4';plan=json.loads((case/'FINAL_CONNECTION.SAFE.json').read_text());checks=[]
+parser=argparse.ArgumentParser();parser.add_argument('--connection',required=True);parser.add_argument('--output',required=True);args=parser.parse_args()
+connection=Path(args.connection).resolve();plan=json.loads(connection.read_text());case=Path(plan['caseDirectory']);W=C.AREA
+assert connection==case/'FINAL_CONNECTION.SAFE.json' and case.parent==W and connection.is_file()
+checks=[]
 def rejected(name,fn):
  try:fn()
  except (RuntimeError,KeyError,FileExistsError):checks.append(name);return
@@ -38,4 +41,4 @@ with tempfile.TemporaryDirectory(prefix='helmut-connection-authority-test-')as d
  assert sum(results)==1;checks.append('eight concurrent setup reservations have exactly one winner')
 assert not I.ONCE.exists() and not I.SETUP_RESERVATION.exists()
 r={'pass':True,'pureCases':len(checks),'checks':checks,'DockerCalls':0,'databaseCalls':0,'realOwnerGOCreated':False,'globalSetupReserved':False,'resourceGOConsumed':False,'full500Runs':0}
-C.save(W/'CONNECTION_NEW_AUTHORITY_GUARDS.SAFE.json',r);print(json.dumps(r))
+C.save(Path(args.output).resolve(),r);print(json.dumps(r))

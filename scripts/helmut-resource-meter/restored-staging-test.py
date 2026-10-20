@@ -35,8 +35,8 @@ class RestoredStagingTest(unittest.TestCase):
             self.inputs[key]={'path':str(C.BASE/'wave20-resource-integration/attempt-a2521b52a505'/name),
                               'bytes':size,'sha256':digest}
         self.manifest=self.save('RESTORED_INPUTS.SAFE.json',self.inputs)
-        self.args={'target':'helmut_resource_fixture_20261019_0123456789ab',
-            'container':'helmut-meter-db-w20-0123456789ab','operation':'synthetik500-resources19-0123456789ab',
+        self.args={'target':'helmut_resource_fixture_20261020_0123456789ab',
+            'container':'helmut-meter-db-w20-0123456789ab','operation':'synthetik500-resources20-0123456789ab',
             'day_rows_pin':{'path':str(self.root/'NOT_CREATED_ROWS')},
             'owner_go_pin':{'path':str(self.root/'NEVER_CREATED_GO')}}
 
@@ -163,10 +163,10 @@ class RestoredStagingTest(unittest.TestCase):
             'targetDatabase':self.args['target'],'operationId':self.args['operation'],'caseDirectory':str(self.case),
             'sourceCapturePin':capture,'correctedSourceCapturePath':capture['path'],
             'previousConsumedMarkers':C.A.PRESERVED_MARKER_PINS,
-            'finalOwnerGOPath':str(C.A.METER/f'OWNER_RESOURCE19_V{C.A.SLOT_VERSION}_{suffix}.PRIVATE.json'),
+            'finalOwnerGOPath':str(C.A.METER/f'OWNER_RESOURCE20_V{C.A.SLOT_VERSION}_{suffix}.PRIVATE.json'),
             'requiredConfirmation':'GO_LOCAL_ONLY_CREATE_'+self.args['target']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'}
         intent=self.save('TEST_ONLY_UNAUTHORIZED_INTENT.json',owner)
-        day=C.pin(C.BASE/'wave38-resource-readiness/ROOT_DAY19_RUNTIME_BINDING_ACCEPTANCE.SAFE.json')
+        day=C.pin(C.BASE/'wave52-bounded-native-read-preparation/ROOT_DAY20_SOURCE_TRANSFER_ACCEPTANCE.SAFE.json')
         day_doc=C.read_pin(day);args={**self.args,'owner_go_pin':intent,'day_rows_pin':day_doc['adoptedRowsPin']}
         with patch.object(C,'AREA',self.root):
             staged=C.stage(self.case,**args,day_acceptance_pin=day,prepare_only=True,restore_staging_inputs=self.manifest)

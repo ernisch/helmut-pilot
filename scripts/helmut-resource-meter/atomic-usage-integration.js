@@ -12,10 +12,12 @@ const SOURCE_FILES = ["lib/helmut/llm-usage-atomic.js", "lib/helmut/auth-store-c
   "lib/helmut/synthetik-500-cpu-source-pins.json", "supabase/proposals/auth_usage_atomic_local.sql",
   "scripts/helmut-resource-meter/atomic-usage-integration.js",
   "scripts/helmut-resource-meter/local-calendar-admission.js", "scripts/helmut-resource-meter/local-calendar-binding.py",
-  "scripts/helmut-resource-meter/connect-local500.py", "scripts/helmut-resource-meter/start-input-checks.js"];
+  "scripts/helmut-resource-meter/connect-local500.py", "scripts/helmut-resource-meter/start-input-checks.js",
+  "scripts/helmut-resource-meter/bounded-read-integration.js"];
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const literal = s => "'" + String(s).replaceAll("'", "''") + "'";
 const CONTROL_READ = "verified-control-view-v1";
+const BOUNDED = require("./bounded-read-integration");
 // W50 accepted these reader/transport bytes, not this later integration. Keep
 // provenance as pinned metadata, without opening private evidence at runtime.
 const CONTROL_SOURCE_ACCEPTANCE = Object.freeze({
@@ -25,14 +27,20 @@ const CONTROL_SOURCE_ACCEPTANCE = Object.freeze({
   transportClosure: Object.freeze({ name: "SOL_STORAGE_TRANSPORT_AND_CALLERS_CLOSURE.SAFE.json", bytes: 4506,
     sha256: "8c70f8756cb56eae8b3b704025d0d27974792e5883ce620da3954907628d1531" }),
   scope: "Control reader plus separately reviewed transport and named callers only",
-  newGlueAccepted: false, full500Accepted: false
+  newGlueAccepted: false, full500Accepted: false,
+  // New local diagnostic delta; the W50 acceptance above does not cover it.
+  // Complete fresh integration review remains mandatory at the entrypoint.
+  localDiagnosticDelta: Object.freeze({ file: "lib/helmut/synthetik-500-production-adapter.js",
+    originalSHA256: "124ed8275efd479ae922ee493d15186701afeaafdbcc1b6def014399e28d34f3",
+    sha256: "4c4f18257942f37da4504da20614940f030e59803042cec357bfa275496f7bdb",
+    scope: "Nonenumerable Error.cause only; same public stop and no retry", requiresFreshIntegrationAcceptance: true })
 });
 const CONTROL_SOURCE_HASHES = Object.freeze({
   "lib/helmut/llm-usage-atomic.js": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0",
   "lib/helmut/auth-state-parts.js": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9",
   "lib/helmut/auth-store-cas.js": "92cba40816bb8cf8919db846d31b736a77b28e3e8d6d24712646bd0509755dd4",
   "lib/helmut/storage.js": "88b6d2354d356e6f6f7ab8295c60a389f0efd0ed648e06a26248e1d1a3b2f96f",
-  "lib/helmut/synthetik-500-production-adapter.js": "124ed8275efd479ae922ee493d15186701afeaafdbcc1b6def014399e28d34f3",
+  "lib/helmut/synthetik-500-production-adapter.js": "4c4f18257942f37da4504da20614940f030e59803042cec357bfa275496f7bdb",
   "lib/helmut/testkosten-budget.js": "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e",
   "lib/helmut/synthetik-500-dispatch-journal.js": "c9cf08100d63646e9c16f931b257b6ccc7fa65fc96e18f7bc6459e530bd5e4b8",
   "supabase/proposals/auth_state_parts_local.sql": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61",
@@ -57,7 +65,7 @@ function pin(file) {
   const b = fs.readFileSync(file);return { path: file, bytes: b.length, sha256: sha(b) };
 }
 function pinned(p) { assert.deepEqual(pin(p.path), p);return fs.readFileSync(p.path); }
-function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReuse = null, controlRead = null, localCalendar = null } = {}) {
+function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReuse = null, controlRead = null, boundedRead = null, localCalendar = null } = {}) {
   assert(stateStorage === null || stateStorage === "merkle-auth-v1");
   assert(historyReadReuse === null || (historyReadReuse === "verified-history-reuse-v1" && stateStorage === "merkle-auth-v1"));
   // The graph candidate is qualified only by isolated component fixtures so
@@ -65,16 +73,21 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
   assert(graphReadReuse === null, "Graph reuse has no admitted full-run binding");
   assert(controlRead === null || (controlRead === CONTROL_READ && stateStorage === "merkle-auth-v1"
     && historyReadReuse === "verified-history-reuse-v1"), "Control view requires exact Merkle/history opt-in");
+  assert(boundedRead === null || (boundedRead === BOUNDED.MODE && controlRead === CONTROL_READ),
+    "Bounded native reader requires exact control/Merkle/history opt-in");
+  const boundedReadAcceptance = boundedRead ? BOUNDED.acceptance() : null;
   if (localCalendar !== null) require(path.join(ROOT, "lib/helmut/synthetik-500-local-calendar")).validatePolicyData(localCalendar);
   // This is also the sole runtime-file list for the added source reads: the
   // existing shared manifest mounts every sourcePin and checks it in-container.
-  const files = controlRead ? [...new Set([...SOURCE_FILES, ...Object.keys(CONTROL_SOURCE_HASHES)])] : SOURCE_FILES;
+  const files = [...new Set([...SOURCE_FILES, ...(controlRead ? Object.keys(CONTROL_SOURCE_HASHES) : []),
+    ...(boundedRead ? BOUNDED.FILES : [])])];
   const sourcePins = files.map(f => pin(path.join(ROOT, f)));
   if (controlRead) for (const [file, hash] of Object.entries(CONTROL_SOURCE_HASHES))
     assert.equal(sourcePins.find(p => p.path === path.join(ROOT, file)).sha256, hash, "Reviewed control source drift: " + file);
   return { schema: "helmut-local-atomic-usage-resource-input/1", mode: MODE, production: false,
     ...(stateStorage ? { stateStorage } : {}), ...(historyReadReuse ? { historyReadReuse } : {}),
     ...(controlRead ? { controlRead, controlSourceAcceptance: CONTROL_SOURCE_ACCEPTANCE } : {}),
+    ...(boundedRead ? { boundedRead, boundedReadAcceptance } : {}),
     ...(localCalendar ? { localCalendar } : {}),
     originalHistoryPreserved: true, fullContractUnchanged: localCalendar === null,
     ...(localCalendar ? { timingMemoryAndLiveSecurityContractUnchanged: true } : {}),
@@ -82,7 +95,7 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
 }
 function readDescriptor(p) {
   const d = JSON.parse(pinned(p));assert.deepEqual(d, descriptor({ stateStorage: d.stateStorage ?? null,
-    historyReadReuse: d.historyReadReuse ?? null, controlRead: d.controlRead ?? null,
+    historyReadReuse: d.historyReadReuse ?? null, controlRead: d.controlRead ?? null, boundedRead: d.boundedRead ?? null,
     localCalendar: d.localCalendar ?? null }));return d;
 }
 function environment(env, p) {
@@ -141,9 +154,12 @@ function catalogSQL() {
     + "JOIN pg_proc p ON p.oid=t.tgfoid JOIN pg_namespace pn ON pn.oid=p.pronamespace WHERE NOT t.tgisinternal "
     + "AND t.tgname IN('helmut_usage_record_immutable_local','helmut_usage_auth_bound_local','helmut_usage_no_truncate_local','helmut_usage_auth_no_truncate_local')));";
 }
-function assertCatalog(c) {
+function assertCatalog(c, { boundedRead = null } = {}) {
+  const additions = boundedRead === null ? {} : BOUNDED.specs(boundedRead);
+  const extra = additions.helmut_auth_usage_checked_proof_local_v1;
   assert.equal(c.serverVersion.split(" ")[0], "17.6");assert.equal(c.serverEncoding, "UTF8");assert.equal(c.clientEncoding, "UTF8");
-  assert.equal(c.localGate, "on");assert.deepEqual(Object.keys(c.functions).sort(), Object.keys(FUNCTION_HASHES).sort());
+  assert.equal(c.localGate, "on");assert.deepEqual(Object.keys(c.functions).sort(),
+    [...Object.keys(FUNCTION_HASHES), ...(extra ? ["helmut_auth_usage_checked_proof_local_v1"] : [])].sort());
   for(const [name,hash]of Object.entries(FUNCTION_HASHES)){
     const guard=name==='helmut_auth_usage_guard_local_v1',insert=name==='helmut_auth_usage_insert_local_v1';
     assert.deepEqual(c.functions[name],{hash,definer:false,config:['search_path=pg_catalog'],
@@ -151,6 +167,7 @@ function assertCatalog(c) {
       volatility:name==='helmut_auth_usage_read_v1'?'s':'v',owner:'postgres',publicExecute:false,
       anonExecute:false,customerExecute:false,serviceExecute:!guard});
   }
+  if (extra) assert.deepEqual(c.functions.helmut_auth_usage_checked_proof_local_v1, extra);
   assert.deepEqual(c.generated, GENERATED);
   assert.equal(Object.keys(c.triggers).length, 4);
   for(const [name,table,type]of [['helmut_usage_record_immutable_local','llm_usage',31],['helmut_usage_auth_bound_local','helmut_store',31],
@@ -174,7 +191,7 @@ const STATE_FUNCTION_SHAPES = Object.freeze({
   helmut_auth_state_cas_v1: ["jsonb", "jsonb", "v"],
   helmut_auth_state_restore_v1: ["jsonb", "jsonb", "v"]
 });
-function stateFunctionSpecs() {
+function stateFunctionSpecs({ boundedRead = null } = {}) {
   // The descriptor pins this whole SQL source. Hash the exact native prosrc
   // preimage, including leading/trailing newlines inside its dollar quotes.
   const sql = fs.readFileSync(path.join(ROOT, "supabase/proposals/auth_state_parts_local.sql"), "utf8");
@@ -187,7 +204,10 @@ function stateFunctionSpecs() {
       result: type, volatility, owner: "postgres", publicExecute: false, anonExecute: false,
       customerExecute: false, serviceExecute: type !== "trigger" };
   }
-  assert.deepEqual(Object.keys(result).sort(), Object.keys(STATE_FUNCTION_SHAPES).sort());return result;
+  assert.deepEqual(Object.keys(result).sort(), Object.keys(STATE_FUNCTION_SHAPES).sort());
+  if (boundedRead !== null) for (const [name, spec] of Object.entries(BOUNDED.specs(boundedRead)))
+    if (name.startsWith("helmut_auth_state_")) result[name] = spec;
+  return result;
 }
 function stateCatalogSQL() {
   const relation = "to_regclass('public.helmut_auth_state_nodes_local')";
@@ -225,9 +245,9 @@ function stateCatalogSQL() {
     + "FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_proc p ON p.oid=t.tgfoid "
     + "JOIN pg_namespace pn ON pn.oid=p.pronamespace WHERE NOT t.tgisinternal AND (t.tgrelid=" + relation + " OR t.tgname LIKE 'helmut_auth_state_%')));";
 }
-function assertStateCatalog(c) {
+function assertStateCatalog(c, options = {}) {
   assert.equal(c.serverVersion.split(" ")[0], "17.6");assert.equal(c.serverEncoding, "UTF8");assert.equal(c.clientEncoding, "UTF8");assert.equal(c.localGate, "on");
-  const functions = stateFunctionSpecs();assert.equal(c.functionCount, Object.keys(functions).length);assert.deepEqual(c.functions, functions);
+  const functions = stateFunctionSpecs(options);assert.equal(c.functionCount, Object.keys(functions).length);assert.deepEqual(c.functions, functions);
   const none = Object.fromEntries(["SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"].map(k => [k, false]));
   assert.deepEqual(c.table, { kind: "r", owner: "postgres", rls: true, forceRls: false, publicPrivileges: false,
     service: { ...none, SELECT: true, INSERT: true }, anon: none, customer: none });
@@ -273,7 +293,7 @@ function bootstrapSQL(expectedHash) {
 }
 function assertLocalTarget(plan) {
   assert.equal(plan.production, false);assert.equal(plan.profiles, 500);
-  assert(/^helmut_resource_fixture_20261019_[a-f0-9]{12}$/.test(plan.targetDatabase));
+  assert(/^helmut_resource_fixture_20261020_[a-f0-9]{12}$/.test(plan.targetDatabase));
   assert(/^helmut-meter-db-w20-[a-f0-9]{12}$/.test(plan.containerName));
 }
 function installAfterActivation({ plan, candidatePin, targetSQL }) {
@@ -321,10 +341,22 @@ function installAfterActivation({ plan, candidatePin, targetSQL }) {
       logicalWithoutRevisionHash: observed.logicalWithoutRevisionHash,
       physicalAuthSHA256: observed.native.physicalAuthSHA256, originalLogicalStatePreserved: true };
   }
+  let boundedReadReceipt = null;
+  if (input.boundedRead) {
+    assert(stateReceipt, "Bounded native reader requires completed base state bootstrap");
+    targetSQL(fs.readFileSync(path.join(ROOT, BOUNDED.FILES[0]), "utf8"));
+    const options = { boundedRead: input.boundedRead }, usageCatalog = read(catalogSQL()), stateCatalog = read(stateCatalogSQL());
+    assertCatalog(usageCatalog, options);assertStateCatalog(stateCatalog, options);
+    const originalFieldsHash = read("SELECT to_jsonb(encode(sha256(convert_to("
+      + "((public.helmut_auth_state_read_v1('{\"id\":\"main-auth\"}')->'data')-'_authStoreRevision')::text,'UTF8')),'hex'));");
+    assert.equal(originalFieldsHash, before.withoutRevisionHash);
+    boundedReadReceipt = { mode: input.boundedRead, sourceAcceptance: input.boundedReadAcceptance,
+      usageCatalog, stateCatalog, originalLogicalStatePreserved: true, includedInMeasuredPreparation: true };
+  }
   return { schema: "helmut-measured-atomic-usage-bootstrap/1", pass: true, candidatePin,
     targetDatabase: plan.targetDatabase, originalPhysicalHash: before.hash, initialPhysicalHash: after.native.physicalAuthSHA256,
     logicalWithoutRevisionHash: before.withoutRevisionHash, proof: result.proof, originalHistoryCount: before.history,
-    catalog, ...(stateReceipt ? { stateReceipt } : {}), wallMS: performance.now() - begin, includedInMeasuredPreparation: true,
+    catalog, ...(stateReceipt ? { stateReceipt } : {}), ...(boundedReadReceipt ? { boundedReadReceipt } : {}), wallMS: performance.now() - begin, includedInMeasuredPreparation: true,
     activationByThisHelper: false, costsAndOriginalHistoryUnchanged: true, production: false };
 }
 module.exports = { MODE, SOURCE_FILES, CONTROL_READ, CONTROL_SOURCE_ACCEPTANCE, pin, pinned, descriptor, readDescriptor, environment,

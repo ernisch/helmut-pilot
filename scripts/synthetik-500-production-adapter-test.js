@@ -374,7 +374,13 @@ async function main() {
       assert.equal(J.current(auth).index, 2); assert.equal(J.current(auth).claimId, permanentClaim);
       // Unknown evidence INSERT blocks the entered unit forever, with no retry.
       const afterSecond = clone(auth); rejectEvidence = true;
-      await assert.rejects(Adapter.productionNext(selector), /stopped-or-unknown/);
+      await assert.rejects(Adapter.productionNext(selector), error => {
+        assert.equal(error.message, "synthetik500-production-stopped-or-unknown");
+        assert.equal(error.cause?.message, "fake-unknown-insert");
+        assert.equal(Object.getOwnPropertyDescriptor(error, "cause").enumerable, false);
+        assert.equal(JSON.stringify(error), "{}", "internal cause must not become a public JSON field");
+        return true;
+      });
       assert.equal(J.current(auth).state, "unknown"); const callsAfterUnknown = lageCalls;
       await assert.rejects(Adapter.productionNext(selector), /claim-or-window/);
       assert.equal(lageCalls, callsAfterUnknown); assert.equal(J.current(auth).claimId, permanentClaim);

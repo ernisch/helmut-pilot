@@ -18,8 +18,8 @@ SPENT_V7_PINS=[
  {'path':str(A.METER/'NEXT_RESOURCE18_V7_SETUP_RESERVATION.SAFE.json'),'bytes':1520,'sha256':'c7c721eaa11c2796e3ee7740c526e44e468ca96b989f63648ee5a50b0fc77524'}]
 class NextResourceAuthorityTest(unittest.TestCase):
     def setUp(self):
-        self.connection={'preparedWithoutGO':True,'targetDatabase':'helmut_resource_fixture_20261019_000000000000',
-          'operationId':'synthetik500-resources19-000000000000',
+        self.connection={'preparedWithoutGO':True,'targetDatabase':'helmut_resource_fixture_20261020_000000000000',
+          'operationId':'synthetik500-resources20-000000000000',
           'caseDirectory':'/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-000000000000',
           'sourceCapture':{'TEST_ONLY':'NO_OPERATIVE_AUTHORITY'}}
         self.intent={'schema':'helmut-owner-local-fixture-intent/1','authorized':False,
@@ -28,7 +28,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
           **{k:self.connection[k]for k in ['targetDatabase','operationId','caseDirectory']},
           'sourceCapturePin':self.connection['sourceCapture'],
           'previousConsumedMarkers':copy.deepcopy(A.PRESERVED_MARKER_PINS),
-          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V9_000000000000.PRIVATE.json'),
+          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE20_V10_000000000000.PRIVATE.json'),
           'requiredConfirmation':'GO_LOCAL_ONLY_CREATE_'+self.connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'}
     def test_intent_is_only_technical_and_never_actual_go(self):
         with patch.object(A,'read',return_value={}):
@@ -69,18 +69,18 @@ class NextResourceAuthorityTest(unittest.TestCase):
             with patch.object(A,'read')as read,self.assertRaises(RuntimeError):A.verify_preexisting_capture(p)
             read.assert_not_called()
     def test_fixed_next_slot_never_aliases_any_consumed_claim(self):
-        self.assertEqual((A.DAY,A.DATE_TAG),('2026-10-19','20261019'))
+        self.assertEqual((A.DAY,A.DATE_TAG),('2026-10-20','20261020'))
         self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertNotIn(A.RESERVATION,A.OLD_MARKERS)
-        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.243.0/24')
+        self.assertNotEqual(A.CLAIM,A.RESERVATION);self.assertEqual(A.SUBNET,'172.16.241.0/24')
     def test_spent_or_nonfixed_slot_config_is_rejected_on_import(self):
-        for change in [{'version':8},{'version':10},{'day':'2026-10-18'},{'day':'2026-10-20'}]:
+        for change in [{'version':9},{'version':11},{'day':'2026-10-19'},{'day':'2026-10-21'}]:
             other=importlib.util.spec_from_file_location('rejected_authority_slot',Path(A.__file__))
             module=importlib.util.module_from_spec(other)
             with self.subTest(change=change),patch.object(Path,'read_text',return_value=json.dumps({**A.SLOT,**change})):
                 with self.assertRaisesRegex(RuntimeError,'invalid pinned'):other.loader.exec_module(module)
-    def test_all_seventeen_spent_markers_stay_pinned_including_both_v7(self):
-        self.assertEqual(len(A.OLD_MARKERS),17)
-        self.assertEqual(len(A.PRESERVED_MARKER_PINS),17)
+    def test_all_nineteen_spent_markers_stay_pinned_including_both_v7(self):
+        self.assertEqual(len(A.OLD_MARKERS),19)
+        self.assertEqual(len(A.PRESERVED_MARKER_PINS),19)
         self.assertEqual({p['path'] for p in A.PRESERVED_MARKER_PINS},set(map(str,A.OLD_MARKERS)))
         by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
         for expected in SPENT_V5_PINS+SPENT_V7_PINS:
@@ -100,19 +100,19 @@ class NextResourceAuthorityTest(unittest.TestCase):
                   for p in self.intent['previousConsumedMarkers']]
                 with self.subTest(tampered=key),self.assertRaises(RuntimeError):
                     A.validate_owner({**self.intent,'previousConsumedMarkers':tampered},self.connection,planning=True)
-    def test_v9_slot_is_fixed_and_distinct_from_every_old_slot(self):
-        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-19','version':9})
-        self.assertEqual(A.SLOT_VERSION,9)
-        self.assertEqual(A.AUTHORIZATION,'USER_GO_20261019_EXACT_ONE_RESOURCE_ONLY_V9')
+    def test_v10_slot_is_fixed_and_distinct_from_every_old_slot(self):
+        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-20','version':10})
+        self.assertEqual(A.SLOT_VERSION,10)
+        self.assertEqual(A.AUTHORIZATION,'USER_GO_20261020_EXACT_ONE_RESOURCE_ONLY_V10')
         self.assertEqual(A.AUTHORIZATION,self.intent['authorizationId'])
         self.assertNotEqual(A.AUTHORIZATION,OLD_V4_AUTHORIZATION)
         self.assertNotEqual(A.AUTHORIZATION,OLD_V5_AUTHORIZATION)
-        self.assertEqual(A.CLAIM,A.METER/'NEXT_RESOURCE19_V9_GO_CLAIM.SAFE.json')
-        self.assertEqual(A.RESERVATION,A.METER/'NEXT_RESOURCE19_V9_SETUP_RESERVATION.SAFE.json')
-        self.assertEqual(str(A.CLAIM),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE19_V9_GO_CLAIM.SAFE.json')
-        self.assertEqual(str(A.RESERVATION),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE19_V9_SETUP_RESERVATION.SAFE.json')
+        self.assertEqual(A.CLAIM,A.METER/'NEXT_RESOURCE20_V10_GO_CLAIM.SAFE.json')
+        self.assertEqual(A.RESERVATION,A.METER/'NEXT_RESOURCE20_V10_SETUP_RESERVATION.SAFE.json')
+        self.assertEqual(str(A.CLAIM),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE20_V10_GO_CLAIM.SAFE.json')
+        self.assertEqual(str(A.RESERVATION),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE20_V10_SETUP_RESERVATION.SAFE.json')
         self.assertNotEqual(A.CLAIM,A.RESERVATION)
-        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,'OWNER_RESOURCE19_V9_000000000000.PRIVATE.json')
+        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,'OWNER_RESOURCE20_V10_000000000000.PRIVATE.json')
         old_names=set(map(str,A.OLD_MARKERS))
         self.assertNotIn(str(A.CLAIM),old_names)
         self.assertNotIn(str(A.RESERVATION),old_names)
@@ -169,6 +169,18 @@ class NextResourceAuthorityTest(unittest.TestCase):
               {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V8_000000000000.PRIVATE.json')}]:
                 with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**change},self.connection,planning=True)
         self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
+    def test_spent_v9_exact_bytes_cannot_authorize_v10(self):
+        expected=[
+          {'path':str(A.METER/'NEXT_RESOURCE19_V9_GO_CLAIM.SAFE.json'),'bytes':866,'sha256':'3af635b8f5450ea4e0fc23cbaceab7c6f8261028b938c1a542c0a1a9498ad9f1'},
+          {'path':str(A.METER/'NEXT_RESOURCE19_V9_SETUP_RESERVATION.SAFE.json'),'bytes':1589,'sha256':'32054d5a770a926c57688f6aad38feec06449999e18d24245f7ef31c60f02022'}]
+        by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
+        for p in expected:
+            self.assertEqual(by_path[p['path']],p);self.assertEqual(A.pin(p['path']),p)
+        with patch.object(A,'read',return_value={}):
+            for bad in [{'authorizationId':'USER_GO_20261019_EXACT_ONE_RESOURCE_ONLY_V9'},
+              {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V9_000000000000.PRIVATE.json')}]:
+                with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**bad},self.connection,planning=True)
+        self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
     def test_restored_container_identity_fails_before_any_native_sql(self):
         source=A.SOURCE_RUNTIME
         expected='|'.join([source.CONTAINER,'/'+source.RUNTIME_BINDING['containerName'],source.RUNTIME_BINDING['imageId'],'none'])
@@ -179,7 +191,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'container differs'):source.sql('SELECT 1;')
             self.assertEqual(run.call_count,1)
 
-class CompletedBook18DataTest(unittest.TestCase):
+class CompletedBook19DataTest(unittest.TestCase):
     """Bound immutable fixture data only; all native entrypoints stay mocked."""
     def setUp(self):
         self.capture_pin=A.pin(A.CORRECTED_CAPTURE)
@@ -195,17 +207,17 @@ class CompletedBook18DataTest(unittest.TestCase):
         native.start();self.addCleanup(native.stop)
     def changed(self,p,mutate):
         value=self.original_read(p);mutate(value);self.overrides[p['path']]=value
-    def test_exact_three_correction_chain_qualifies_only_as_data_and_reads_are_mounted(self):
+    def test_exact_four_correction_chain_qualifies_only_as_data_and_reads_are_mounted(self):
         paths=A.capture_data_pins(self.capture_pin)
         self.assertEqual(A.verify_preexisting_capture(self.capture_pin,actual=False),self.capture)
         allowed={p['path']for p in paths}
         self.assertTrue(set(self.seen)<=allowed)
-        self.assertIn(A.BOOK18_CLAIM_PIN,paths);self.assertIn(A.BOOK17_CLAIM_PIN,paths)
+        self.assertIn(A.BOOK19_CLAIM_PIN,paths);self.assertIn(A.BOOK18_CLAIM_PIN,paths);self.assertIn(A.BOOK17_CLAIM_PIN,paths)
         self.assertIn(self.capture['previousCorrectedCapturePin'],paths)
         self.assertNotIn(self.capture['freshOwnerGO']['path'],allowed)
         self.assertNotIn('OWNER_RESOURCE',json.dumps(sorted(allowed)))
         self.assertEqual(A.BOOK17_INPUT_DATABASE,'helmut_resource_input_20261018_ab76c911dac8')
-        self.assertEqual(A.INPUT_DATABASE,'helmut_resource_input_20261019_e400dff25393')
+        self.assertEqual(A.INPUT_DATABASE,'helmut_resource_input_20261020_4d77e2fe6616')
     def test_prior_capture_or_current_database_cannot_be_substituted(self):
         with self.assertRaises(RuntimeError):A.verify_preexisting_capture(self.capture['previousCorrectedCapturePin'],actual=False)
         for key,value in [('source',A.BOOK17_INPUT_DATABASE),('previousCorrectedCapturePin',self.capture['originalSourceCapturePin']),('sourceWrites',1)]:
@@ -215,14 +227,14 @@ class CompletedBook18DataTest(unittest.TestCase):
     def test_new_claim_shape_and_historical_authority_links_are_required(self):
         for key,value in [('target',A.BOOK17_INPUT_DATABASE),('correctionExactlyOnce',False),('automaticRetryAllowed',True),('authorityPin',{'TEST_ONLY':'NOT_A_NEW_RESOURCE_GO'})]:
             with self.subTest(key=key):
-                self.overrides={};self.changed(A.BOOK18_CLAIM_PIN,lambda c:c.update({key:value}))
+                self.overrides={};self.changed(A.BOOK19_CLAIM_PIN,lambda c:c.update({key:value}))
                 with self.assertRaises(RuntimeError):A.verify_preexisting_capture(self.capture_pin,actual=False)
         self.overrides={}
         def old_shape(c):c['targetDatabase']=c.pop('target');c['exactlyOneInputCorrection']=c.pop('correctionExactlyOnce')
-        self.changed(A.BOOK18_CLAIM_PIN,old_shape)
+        self.changed(A.BOOK19_CLAIM_PIN,old_shape)
         with self.assertRaises((RuntimeError,KeyError)):A.verify_preexisting_capture(self.capture_pin,actual=False)
     def test_receipt_run_or_money_expansion_is_rejected(self):
-        for key,value in [('historicalDaysAdded',['2026-10-19']),('correctionWrites',2),('bookCapacityAfter',41),('monetaryLimitsUnchanged',False),('resourceGOConsumed',True),('profileActivations',1),('full500Runs',1),('production',True),('sourceDump',{'TEST_ONLY':'WRONG_DUMP'}),('sourceIdentityBeforeAndAfter',{})]:
+        for key,value in [('historicalDaysAdded',['2026-10-20']),('correctionWrites',2),('bookCapacityAfter',42),('monetaryLimitsUnchanged',False),('resourceGOConsumed',True),('profileActivations',1),('full500Runs',1),('production',True),('sourceDump',{'TEST_ONLY':'WRONG_DUMP'}),('sourceIdentityBeforeAndAfter',{})]:
             with self.subTest(key=key):
                 self.overrides={};self.changed(self.capture['correctionReceiptPin'],lambda c:c.update({key:value}))
                 with self.assertRaises(RuntimeError):A.verify_preexisting_capture(self.capture_pin,actual=False)
@@ -240,7 +252,7 @@ class CompletedBook18DataTest(unittest.TestCase):
                         auth=json.loads(w['nativeAuthText'])
                         if mutation=='money':auth['testKostenAuftrag']['limit']+=1
                         elif mutation=='book':auth['testKostenTage']['2026-10-18']['spent']=1
-                        else:auth['testKostenAuftrag']['bookCapacity']=41
+                        else:auth['testKostenAuftrag']['bookCapacity']=42
                         w['nativeAuthText']=json.dumps(auth)
                         w['nativeAuthSHA']=hashlib.sha256(w['nativeAuthText'].encode()).hexdigest()
                 self.changed(witness,change)

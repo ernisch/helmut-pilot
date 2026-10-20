@@ -109,7 +109,7 @@ def no_previous_attempt(connection):
 def window(day):
     now=datetime.datetime.now(UTC);valid,start,end=Calendar.current_window(day,now=now)
     if now<start:return False,start,end
-    if (end-now).total_seconds()<8089.543088+600:raise RuntimeError('full remaining window lacks last actual workflow plus10min setup/close reserve')
+    if (end-now).total_seconds()<10685.884867+600:raise RuntimeError('full remaining window lacks last actual workflow plus10min setup/close reserve')
     return True,start,end
 
 def run(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,start_preflight_adoption_pin=None):
@@ -174,7 +174,9 @@ def _run_once(acceptance_pin,connection_pin,recipe_template_pin,*,wait=False,sta
     # by LOOP_CONFIGURE; no occupied mapping is detached or reassigned.
     minor=acceptance['approvedFreshLoopMinor']
     storage_out=I.ONCE.parent/('full500-owned-storage'+I.A.DAY[-2:]+'-'+case.name.removeprefix('attempt-'))
-    storage=storage_module.create(storage_out,8000000000,minor,parent+'/storage',hold=connection['storageHoldSeconds'])
+    # New20Oct case: a stricter4GiB device bound, unchanged8GiB host reserve.
+    # stage_contract checks this exact capacity before setup/GO is consumed.
+    storage=storage_module.create(storage_out,connection['storageCapacityBytes'],minor,parent+'/storage',hold=connection['storageHoldSeconds'])
     if connection.get('approvedInternalSubnet')!=I.A.SUBNET:raise RuntimeError('exact new reviewed172 gateway subnet missing')
     I.create_network(network,subnet=connection['approvedInternalSubnet'])
     db=I.create_database(case/'database',dbname,parent+'/database',network,scope='owner-approved-local500-resources',storage=storage,fixture=connection)
