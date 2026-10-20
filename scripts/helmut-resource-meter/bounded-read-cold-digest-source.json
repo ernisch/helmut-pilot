@@ -13,6 +13,14 @@
   "scope": "Cold graph digest hash projection only; ABI, roles, fresh guards, payloads, nonces, costs and all limits unchanged",
   "requiresFreshIntegrationAcceptance": true,
   "comparativeRAMGainClaimed": false,
+  "proofContract": {
+    "scope": "LOCAL_SOURCE_ONLY",
+    "nativeFile": "scripts/helmut-resource-meter/cold-digest-native-qualification-20261020.SAFE.json",
+    "nativeSchema": "helmut-cold-digest-native-qualification/1",
+    "reviewFile": "scripts/helmut-resource-meter/cold-digest-sol-review-20261020.SAFE.json",
+    "reviewSchema": "helmut-cold-digest-sol-review/1",
+    "requirements": "Actual regular non-symlink repo files, exact bytes/SHA, current SQL/actual prosrc/adapter plus original source/body binding; native 19-case equality/errors/negatives/catalog/original/exit flags; independent accepted SOL review binds exact native proofPin. No delta metadata self-hash. Adapter hash binds source target, not native execution of the adapter."
+  },
   "currentQualification": {
     "qualified": false,
     "nativeDifferential": {
