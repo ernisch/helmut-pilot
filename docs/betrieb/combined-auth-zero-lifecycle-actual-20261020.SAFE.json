@@ -1,0 +1,233 @@
+{
+  "schema": "helmut-control-cache-result/1",
+  "status": "PASS",
+  "forcedStop": null,
+  "errorType": null,
+  "parent": "helmut-meter-memorybudget-3cd12f53d04760826efaada6",
+  "rootAdoptionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-bd23264526494f6fcfab1715/ROOT_ADOPTION.SAFE.json",
+    "bytes": 4476,
+    "sha256": "cc3419502fefa037851ab9b8dbbfcefe47a0d3f5ca9062c3b70823df83b80bfc"
+  },
+  "preflightPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-bd23264526494f6fcfab1715/PREFLIGHT.SAFE.json",
+    "bytes": 257395,
+    "sha256": "c800d122f87d3cafb293ee9916c1f658634b96704f8cb7c0224ad28968b50d92"
+  },
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+    "bytes": 46155,
+    "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+  },
+  "kernelThroughLastOwnedExit": {
+    "parent": "helmut-meter-memorybudget-3cd12f53d04760826efaada6",
+    "memoryPeakBytes": 652660736,
+    "memoryCurrentBytes": 388325376,
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "cpu": {
+      "usage_usec": 16318784,
+      "user_usec": 14673932,
+      "system_usec": 1644852,
+      "nice_usec": 0,
+      "nr_periods": 0,
+      "nr_throttled": 0,
+      "throttled_usec": 0,
+      "nr_bursts": 0,
+      "burst_usec": 0
+    },
+    "events": {
+      "populated": 0,
+      "frozen": 0
+    },
+    "populatedSubgroups": [],
+    "ioStatRawNumericOnly": "254:0 rbytes=0 wbytes=305504256 rios=0 wios=1056 dbytes=0 dios=0",
+    "fullLastProcessExitCovered": true,
+    "scope": "All descendants charged to dedicated kernel group; no RSS polling substitution",
+    "memoryStat": {
+      "anon": 31866880,
+      "file": 549666816,
+      "kernel": 19107840,
+      "kernel_stack": 16384,
+      "pagetables": 196608,
+      "sec_pagetables": 0,
+      "percpu": 23996,
+      "sock": 0,
+      "vmalloc": 12288,
+      "shmem": 178294784,
+      "file_mapped": 0,
+      "file_dirty": 65900544,
+      "file_writeback": 0,
+      "swapcached": 0,
+      "anon_thp": 0,
+      "file_thp": 0,
+      "shmem_thp": 0,
+      "inactive_anon": 169762816,
+      "active_anon": 40435712,
+      "inactive_file": 358162432,
+      "active_file": 13209600,
+      "unevictable": 0,
+      "slab_reclaimable": 17604472,
+      "slab_unreclaimable": 1242712,
+      "slab": 18847184,
+      "workingset_refault_anon": 0,
+      "workingset_refault_file": 20,
+      "workingset_activate_anon": 0,
+      "workingset_activate_file": 0,
+      "workingset_restore_anon": 0,
+      "workingset_restore_file": 0,
+      "workingset_nodereclaim": 0,
+      "pgdemote_kswapd": 0,
+      "pgdemote_direct": 0,
+      "pgdemote_khugepaged": 0,
+      "pgdemote_proactive": 0,
+      "pgscan": 0,
+      "pgsteal": 0,
+      "pswpin": 0,
+      "pswpout": 0,
+      "pgscan_kswapd": 0,
+      "pgscan_direct": 0,
+      "pgscan_khugepaged": 0,
+      "pgscan_proactive": 0,
+      "pgsteal_kswapd": 0,
+      "pgsteal_direct": 0,
+      "pgsteal_khugepaged": 0,
+      "pgsteal_proactive": 0,
+      "pgfault": 87026,
+      "pgmajfault": 0,
+      "pgrefill": 0,
+      "pgactivate": 15575,
+      "pgdeactivate": 0,
+      "pglazyfree": 7,
+      "pglazyfreed": 0,
+      "swpin_zero": 0,
+      "swpout_zero": 0,
+      "thp_fault_alloc": 0,
+      "thp_collapse_alloc": 0,
+      "thp_swpout": 0,
+      "thp_swpout_fallback": 0
+    }
+  },
+  "nativeBudgetAfterLastExit": {
+    "settings": {
+      "memory.max": "1547997184",
+      "memory.high": "1399996416",
+      "memory.swap.max": "0"
+    },
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "memoryPeakBytes": 652660736,
+    "actualParentInode": 15748,
+    "setupHelpersExited": true,
+    "peakNeverReset": true
+  },
+  "actualContainerClosure": {
+    "id": "64442ee9d7d35e95cadb4ae7f7cb36445c79aa017004ffd810d9ee60cb8c3573",
+    "name": "helmut-control-cache-c9ad2cd041a263463f1853db",
+    "state": {
+      "Status": "exited",
+      "Running": false,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 0,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-10-20T20:35:00.277356837Z",
+      "FinishedAt": "2026-10-20T20:35:16.643965995Z"
+    },
+    "exitCode": 0,
+    "allOwnedWorkloadExited": true,
+    "containerPreserved": true,
+    "persistentCopyPreserved": true
+  },
+  "workerResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-bd23264526494f6fcfab1715/WORKER_RESULT.SAFE.json",
+    "bytes": 6896,
+    "sha256": "5b27608b3459004a376d37e83adb89ffe14319fb883ff21d9259bc856e447fe2"
+  },
+  "minimumSampledHostAvailableBytes": 14256242688,
+  "continuousHostFloorProven": false,
+  "wallSeconds": 18.203539067995735,
+  "measurementMode": "lifecycle-only",
+  "variant": "NONE",
+  "selection": {
+    "mode": "lifecycle-only",
+    "variant": "NONE",
+    "bodyVariant": "NEW",
+    "comparisonScope": "COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY",
+    "uOverlayPin": {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/NEW_U.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    "partsOverlayPin": {
+      "bytes": 22169,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/COMMON_PARTS.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    "adoptionSchema": "helmut-combined-auth-lifecycle-only-root-adoption/1",
+    "action": "ROOT START COMBINED AUTH NEW BODY LIFECYCLE ONLY",
+    "rendererInstallSQLPin": {
+      "bytes": 17398,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    "installSQLPin": {
+      "bytes": 13047,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_GRAPH.sql",
+      "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+    },
+    "expectedRendererBodySHA256": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+    "expectedBodySHA256": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0",
+    "authRPCCount": 0,
+    "nodeLaunchCount": 0,
+    "postgrestConfigSHA256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60",
+    "postgrestShutdownPolicy": {
+      "additionalSignedExitCode": -2,
+      "configBytes": 236,
+      "configSHA256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60",
+      "originalBinaryBytes": 17309560,
+      "originalBinarySHA256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+      "postgrestVersion": "12.2.3",
+      "requestedSignal": "SIGTERM",
+      "schema": "helmut-original-postgrest-12.2.3-sigterm-policy/1",
+      "upstreamEvidenceSHA256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+    },
+    "upstreamEvidencePin": {
+      "bytes": 4139,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/SOURCE_EVIDENCE.SAFE.json",
+      "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+    }
+  },
+  "lifecycleResultPin": null,
+  "sourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "authRPCCount": 0,
+  "comparisonScope": "COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY",
+  "ramComparisonPerformed": false,
+  "threeRPCPlateauClaimed": false,
+  "postgrestStarted": true,
+  "nodeStarted": false,
+  "nodeHeapAndExitReceipts": null,
+  "persistentDiskPGDATA": true,
+  "noColdCacheClaim": true,
+  "peakReset": false,
+  "nativeQualification": "ACTUAL",
+  "full500": false,
+  "production": false,
+  "providerCalls": 0,
+  "automaticRetry": false
+}

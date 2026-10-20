@@ -2,49 +2,61 @@
 
 **Lokal 20.10.2026 UTC/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 20.10.: Kontrollcache eingebunden; gemeinsame RAM-Ersparnis weiterhin offen
+## 20.10.: Gemeinsame Auth-RAM-Ersparnis belegt;500er Ziel offen
 
 Branch `codex/controlled-cleanup-and-late-probe-20261020`, Basis0372500c
-(PR926 auf PR925/924), c8624f7c erhalten; Entwurfs-PR927. Gezielte kalte
-Hashprojektion und kompakter Kontrollcache lokal integriert, Code-HEAD6d528425.
-Kalter Renderer:19 native Paare PASS,8 identische Antworten/11 identische Fehler;
-Tempdatei6.212.035B entfällt, gemeinsame Spitze unverändert ca.782MB.
-Kontrollcache: authentische späte Sicht4.856.607B passte nicht in2MiB;
-neuer eigener komprimierter Buffer behält dieselbe2MiB-Grenze, frische native
-Guards/Hash/Länge/UTF8 bleiben verpflichtend. U-Schreib-/ACK-/Konfliktregeln
-unverändert. Kein Router-/DeepSeek-Aufruf oder Kosten-/Reservewechsel.
-Tatsächlicher OLD–NEW–NEW–OLD-Vergleich:5 vollständige Reads,4 CAS,18Kontrollen
-je Fall;6000 historische Zeilen, alle Quell-/Logik-/Katalogprüfungen PASS,
-alle Prozesse beendet/OOM0. Lebenszeitspitzen OLD1/NEW1/NEW2/OLD2:
-1.019.572.224/1.002.266.624/1.016.721.408/1.014.566.912B. Bereiche überlappen,
-KEINE robuste gemeinsame RAM-Ersparnis und kein langfristiges Plateau belegt.
-HTTP157.016.193→57.089.403B, Serialisierungen41→5,15warmeKontrollen reproduziert;
-mittlereCPU36,405→33,057s. Übertragungsmengen sind kein RAM. Peak-Besitzer offen:
-OLD1 zeitlich Restore-Schreiben, NEW2/OLD2 Mutation, NEW1 mehrdeutig.
-34 Quellen-Gate-Prüfungen und22 Integrationsfälle PASS; vollständige179-Abnahme
-auf6d528425 einmalig PASS in653s. Historische179/95 werden nicht umdeklariert.
-Native SAFE-Bytes/aktuelle Quellpins erreichen echte Runtime-Deskriptoren;
-neue Gesamtmotor-/500er-Ausführung wird damit nicht behauptet.
-V6control-45a29158 und unvollständigerV8-Fall1ec969 bleiben FAIL. V7 enge originale
-PostgREST-Abschlusspolicy, V9 konservativer Marker-Race-Fix unabhängig geprüft.
+(PR926 auf PR925/924), c8624f7c erhalten; Entwurfs-PR927. Produktcode6d528425:
+begrenzter PG-Renderer, kalte Hashprojektion und kompakter Kontrollcache integriert.
+Der vorherige reine Cachevergleich hatte den neuen Renderer auf beiden Seiten
+und belegte keine robuste gemeinsame RAM-Ersparnis. Jetzt echter alter V11-
+Authpfad5fae25be gegen ALLE aktuellen Authkorrekturen, authentische späte Quelle
+827a9872, identische persistente Kopien/PG-Einstellungen/Budgets/27echteRPCs:
+OLD–NEW–NEW–OLD mit vollständigen Lebenszeitpeaks
+1.164.427.264/1.023.926.272/1.007.882.240/1.177.153.536B, alle PASS.
+Paarweise140.500.992/169.271.296B weniger; Mittel1.170.790.400→1.015.904.256B,
+**154.886.144B/13,23% gemeinsame Komponenten-RAM-Ersparnis**.
+Gesamtdauer34,228→31,584s, gemeinsameCPU35,165→31,312s;
+Geräteschreibmenge341.159.936→306.837.504B, HTTP157.016.193→57.089.403B,
+Kontrollserialisierungen41→5. Schreib-/HTTP-Mengen sind kein zusätzlicher RAM.
+Alle6000History-/Kontrollfelder/Originalhashes,606B physische Referenzen,
+Katalog/ABI/ACL und frischeCAS/Noncebindungen unabhängig PASS; nur finale
+bestätigte Revision geändert. Alle Prozesse beendet/high/max/OOM0, keinPeakreset,
+ZwangsGC oder Cacheeviction. Alle344 kleinen Fallbelege/108RPC/68Captures geprüft.
+Drei Änderungsrunden belegen KEIN langfristiges Plateau; kein voller Motorlauf.
 
-Kontrollierte Bereinigung: zwei synthetische Dateien, zwei DIO-Hüllen, acht
-abgeschlossene V9/V10-Hüllen sowie21 neuere Diagnose-PGDATA-Kopien entfernt;
-alle erforderlichen Nutzdaten vorher verlustlos archiviert, vollständig doppelt
-verglichen und frisch adoptiert. Originale, aktive Originalbank, Belege, Images,
-Volumes, Loops und Gitänderungen erhalten; kein prune. Die kanonische Quelle
-827a9872 ist jetzt dauerhafte Rekonstruktionsabhängigkeit aller17 Deltaarchive.
-Beobachtung19:36UTC:14.673.309.696B frei, Volladmission15.179.779.720B;
-ca.506MB fehlen wieder nach Erhalt neuer Vergleichsarchive. Zwei alte eigene
-abgeschlossene Kopien werden zunächst ausschließlich per RO-Metadaten geprüft;
-reine Root-Metadatenprüfung PASS: tatsächliche UID999/GID1000, keine Inhaltslesung;
-rekursive Inventur/Archivierung/Löschung noch nicht freigeprüft.
-500MB-Puffer/Unit60/Auth30/1500/500 offen; kein Voll500 technisch empfohlen.
-32 frische Startbedingungen, ausreichende Platte und neues konkretes GO nötig;
-alter Vollstartvertrag bindet weiter DeepSeek und wird nicht umgangen.
-Kein Production/Merge/Deployment. [Cache, Messwerte und Quellenintegration](betrieb/bounded-control-cache-local-integration-20261020.md),
-[Bereinigung](betrieb/controlled-local-cleanup-20261020.md),
-[kalter SQL-Umbau](betrieb/local-cold-digest-comparison-20261020.md).
+Vorherige Besitzerdiagnose separat PASS:129Frames/81Operationsgrenzen,
+1.032.052.736B/42,543s mit Sammlereinfluss. ErsterRead erhöht NodePSS24,2→233,4MB;
+Besitzer der ersten Lebenszeitspitze beiMutationRPC10 bleibt unbekannt.
+643Host-PermissionErrors begrenzen die vollständige PSS-Zuordnung.
+Größter isoliert belegter vermeidbarer Anteil weiterhin alterPG-Renderer≈124,8MB
+anonym/Backend; neue gemeinsame154,9MB nicht allein einer Änderung zugeschrieben.
+Keine weitere Snapshot-/Parts-Architektur auf Verdacht.
+34Quellen-Gates/22Integration und179/179Suiten einmalig auf unverändertem
+Produktcode6d528425 bestanden. Neuer Starter:30bytegleiche Körper/RootPREP7c32,
+unabhängige Source-/Einbindungsprüfung,4PythonAST/5NodeSyntax/20Auswahlguards PASS.
+V6control-45a29158 und V8-Fall1ec969 bleiben FAIL. OriginalerPostgREST−2 nur
+unter enger geprüfter12.2.3-SIGTERM/Identitäts/EOF-Policy akzeptiert.
+
+Bereinigung bisher:2synthetische Dateien,2DIO-/8V9V10-Hüllen,21neuere archivierte
+Diagnose-PGDATA-Kopien entfernt;17Deltaarchive hängen dauerhaft von Quelle827a ab.
+Zusätzlich beide vorab entbehrlichen Ownership-PASS-Kopien nach frischen einzelnen
+Adoptionen entfernt:3422Dateien/739.643.392B Blöcke,321Belege/Hüllen unverändert.
+Fünf neue Vergleichskopien noch separat in kontrollierter Entsorgungsabnahme.
+Zwei ältereUID999-Kopien bleiben erhalten:3484Metadateneinträge unverändert,
+0owner- und0initial-userns-sichtbare xattrs; volle Archiv-/Inhaltsabnahme ausstehend.
+Originale, aktive Originalbank, Quelle827a, Belege/Images/Volumes/Loops/Git erhalten.
+Kein prune; Volladmission15.179.779.720B und tatsächlicher Platz separat frisch.
+
+500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/500MBReserve
+weiterhin offen. Sprint teilweise abgeschlossen; kein Voll500 technisch empfohlen.
+32frische Bedingungen, ausreichende Platte und neues konkretesGO erforderlich;
+alter Vollstartvertrag bindet weiterDeepSeek, Konflikt zurSOL-only-Vorgabe bleibt
+unangetastet. DreiSOL-Helfer getrennt, Root integriert; keine Modell-/Routeraufrufe,
+Kosten-/Reservewechsel, Production/Merge/Deployment/Migration.
+[Gemeinsamer Vergleich und Belege](betrieb/combined-auth-memory-comparison-20261020.md),
+[Besitzerdiagnose](betrieb/native-auth-ownership-20261020.md),
+[Cacheintegration](betrieb/bounded-control-cache-local-integration-20261020.md),
+[Bereinigung](betrieb/controlled-local-cleanup-20261020.md).
 
 ## 20.10.: Vorheriger Diagnostikstand vor der neuen Bereinigungsfreigabe
 

@@ -1,0 +1,29 @@
+{
+  "schema": "helmut-root-observed-combined-validation/1",
+  "status": "PASS_OBSERVED_TOOL_RESULTS",
+  "atUTC": "2026-10-20T20:58:14.027272+00:00",
+  "notRawStdoutCapture": true,
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+    "bytes": 46155,
+    "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+  },
+  "guardScriptPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-selection-guards-test.py",
+    "bytes": 3367,
+    "sha256": "3f243843faa3cceb757e0d501a2cdd2fff7528e6cab9d13e7a87ed855febcb48"
+  },
+  "pythonASTFiles": 4,
+  "nodeSyntaxFiles": 5,
+  "syntaxToolChunk": "34a3b4",
+  "selectionGuardChecks": 20,
+  "selectionGuardToolChunk": "351282",
+  "selectionGuardPositive": 3,
+  "selectionGuardNegative": 17,
+  "wrapper": "node scripts/lokal.js --",
+  "noNativeOrSQLActionsByTheseGuards": true,
+  "productCodeUnchangedSince179Pass": true,
+  "full179Repeated": false,
+  "full500": false,
+  "production": false
+}
