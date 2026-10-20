@@ -49,12 +49,10 @@ Descriptor enthält28 Quellenpins einschließlich aller drei neuen Proofdateien.
 Die vollständige kritische179-Regression folgt einmal nach Abschluss des
 geänderten Umfangs. Das Voll500-Starttor bleibt unverändert gesperrt.
 
-Nächste eng begrenzte Frage: Die private Kontrollsicht verwirft Inhalte über
-2MiB. Ob genau der späte Zustand diese Grenze überschreitet und dadurch
-vollständige Graphantworten für Kontrolllesevorgänge erzwingt, ist noch nicht
-gemessen. Vor einer weiteren Motoränderung genau diese tatsächlichen Bytes und
-zwei echte Kontrollaufrufe auf isolierter Kopie nachweisen. Keine allgemeine
-Optimierungsanalyse und kein vollständiger500er-Hypothesentest.
+Die anschließende eng begrenzte Echtprüfung hat die Cachefrage beantwortet:
+4856607B überschreiten2MiB, beide Kontrollaufrufe liefern erneut vollständige
+Graphen. [Tatsächliche Baseline und gezielter Folgeumbau](local-control-cache-baseline-20261020.md).
+Keine allgemeine Optimierungsanalyse und kein vollständiger500er-Hypothesentest.
 
 Die fünf neuen Diagnosekopien sind nach zwei vollständigen Verlustlosigkeits-
 vergleichen, unabhängiger Prüfung und frischen einzelnen Root-Adoptionen gezielt

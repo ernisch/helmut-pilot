@@ -30,18 +30,21 @@ ABI/ACL/Rollback/letzterExit/OOM0belegt. EchteProofbytes+QuellbindungimAdapter,
 sourceOnlyunqualifiziert; aktuelleProofsimechtenDescriptor. Kritische179nochpending.
 ALT/NEU/NEU/ALTjeeigeneLebenszeit:780918784/781803520/781750272/781455360B.
 NEUbeideTemp0stattALTje6212035B,aberKEINEgemeinsameRAMersparnis; keinPlateau.
-2MiB-Kontrollviewgrößeweiterunbewiesen; kleinsterEchtaufrufzurKlärunginVorbereitung.
+V7echt3RPCPASS:Controltext4856607B>2MiB,counts1/2/2,beideknownGraphnull/
+volle1848Knoten,Body10431730/6662644/6662644B;originalUakzeptiert/native0events/
+PG0/Node0/Quellengleich/allezu.Peak980570112BnurDiagnose/keinRAMvergleich.
+Kompakter2MiB-CacheKandidat67b5c4efimeigenenWT,UnitPASS,Nativevergleichpending.
 Alle4früherenDiagnosekopienverlustlosarchiviert/doppeltverglichen/frischadoptiert
 entfernt; Originale/Belege/Hüllenbehalten. FünfV5Kopienjetztebenfallsverlustlos
 deltaarchiviert/doppeltverglichen/frischadoptiertentfernt:107427091BArchive,
 kanonischeQuelle827aabjetztdauerhafteRekonstruktionsabhängigkeit.Beobachtung
 18:18UTC15439728640Bfrei/259948920BüberVolladmission,VORnächsterDiagnosekopie.
-V6Abschlussfallcontrol-45a29158…FAIL:SIGTERM→signedrc−2;0Auth/keinNode,
-Quellengleich/PGsauber/alleProzessezu/OOM0.VersionübersetztlautUpstream
-SIGTERMinRTS-SIGINT;neueengeQualifikation+Hostpfadfixvor3Motoraufrufen.
+V6control-45a29158…bleibtFAIL.V7engeOriginalversionspolicy+Hostpfadfix17TestsPASS;
+neuer0Auth/keinNodeLifecycle691308…PASSunabhängigbestätigt(Rohcode−2bleibt).
 HistorischeFAILsbleibenFAIL;500MB/Unit60/Auth30/1500/500offen.
 KeinVoll500/Production/Merge/Deployment. [Bereinigung](betrieb/controlled-local-cleanup-20261020.md)
-und [gezielterUmbau/Vergleich](betrieb/local-cold-digest-comparison-20261020.md).
+und [gezielterUmbau/Vergleich](betrieb/local-cold-digest-comparison-20261020.md),
+[tatsächlicherKontrollcachebefund](betrieb/local-control-cache-baseline-20261020.md).
 
 ## 20.10.: Vorheriger Diagnostikstand vor der neuen Bereinigungsfreigabe
 
