@@ -2,26 +2,67 @@
 
 **Lokal 20.10.2026 UTC/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## Aktuell20.10.: V10 beendet und fehlgeschlagen; gezielte Senderkorrektur geprüft
+## 20.10.: V11 fehlgeschlagen; gemeinsame RAM- und Nodebudgets lokal eingebunden
 
-**Neues Betreiber-GO20.10. nach diesem Ergebnis:** genau ein weiterer vollständiger lokaler Mock500-VersuchV11 freigegeben. V11 technisch getrennt;21verbrauchte Marker inklusiveV10 bleiben gepinnt. Neues Setup/Claim/Lauf noch nicht gestartet. Plattenengpass gelöst: acht abgeschlossene Diagnosehüllen nach zwei vollständigen Exportvergleichen, frischem drittem Vergleich und echter ProHigh-Quellenprüfung freigegeben;7292579840B netto gewonnen. Alle9Original-/V9-/V10Container,30Volumes undLoop0–4 erhalten; vollständiges161574108B-Imagearchiv zusätzlich privat gesichert/geprüft. Downloadcachebereinigung brachte0B Platzgewinn, installierte Werkzeuge erhalten. NeueV11-Gastdatei strikt2GiB statt4GiB bei unverändert8GiB freiem Hostboden, zusätzlichem Budget für4neue VFS-Hüllen+512MiB Laufbelege. Aktuell etwa15,82GB frei gegenüber15,04GB Startbudget; kein vollständiger Reservenachweis daraus. Daten/Fristen/RAMgrenzen unverändert. Keine Production-/bezahlten HELMUT-Provider-/Merge-/Deployfreigabe.
+**V11 ist durchgeführt und verbraucht. Kein neues Voll500-GO.** Testcode5fae25be,
+Fall3b3bf56650bc:499ACKs,1497vorhandene Positionszeilen; fachliche Brauchbarkeit
+nicht nachträglich angenommen. Gemeinsamer nativer Peak2151936000B, harte
+2048000000B und1548000000B-Pufferziel verfehlt; fehlende Reserve603936000B.
+Die letzte Unit scheiterte an ihrer unveränderten60s-Frist. Alle eigenen
+Anwendungs-/DB-/Broker-/Holderprozesse beendet; Originale erhalten. Die
+V11-Endauswertung und52Konsistenzchecks bestätigen diesen Fehlbefund.
 
+Die tatsächliche gemeinsame Gruppe war unbeschränkt(max/high/swap=max).
+207Originalsamples zeigen steigende Anon- und DB-Dateicachebelegung, kein
+belegtes Plateau; exakte Heap-/PSS-/GC-Ursache im V11-Original ungeklärt.
+Der nachfolgende Motorstand2dba4317(inklusivec8624f7c) wurde vonV11 noch
+nicht getestet. Betreiberkosten und Offline90/Unit60/Auth30/16Kontrollen
+bleiben unverändert.
 
-Der ausdrücklich freigegebene eine nächste vollständige lokale Mock500-Versuch ist **durchgeführt und verbraucht**. Fall `3cd34019b9d7`, Laufcode `7d6d6679179968597738a16d2d56994b21bfd9b2`, getesteter Kopf `392e76cd4fb6e4e35437808f215be7e9f9ff4ccf` (zusätzlich nur Entwicklungsrouter). Start01:57:27UTC, Ende04:39:55UTC. **499/500 native FinalACKs**, letzter Index499HTTP409 mit erhaltener Ursache `synthetik500-dispatch-EU-unit-deadline`. Kein vollständiger500-/1500-Endnachweis. Alle8000 Kontrollen wurden beobachtet, davon7984 für499 erfolgreich abgeschlossene Units; die16 des fehlgeschlagenen letzten Profils ersetzen dessen FinalACK nicht.
+Eigener aktueller Branch **codex/native-working-set-budget-20261020**, Basis
+2dba431716b5d1693b7039db9233b97f9db5db75: NativePolicy/2 setzt vorStorage/DB/
+Anwendung eine gemeinsame cgroup2-Grenze1547997184B, high1399996416B,
+swap0. Zwei kleine Setuphelfer zählen bis zum letzten Exit mit; keinPeakreset,
+keine Altgruppe, keine zusätzlichen Capabilities. Exakte Policy-/Runtime-/
+Quellenbindung,32Startgruppen, einmaligeReservation und neueFreigabe bleiben
+Pflicht. Gesamtannahme verlangt jetzt zusätzlich den vollständigen500MB-Puffer.
 
-Gemeinsamer all-owned Kernelpeak **2262437888B**, harte Grenze2048000000B um214437888B überschritten.500.000.000B-Puffer verlangt Peak≤1548000000B: Defizit **714437888B**; `reserveBytes=null`. GegenüberV9 nur37634048B weniger Gesamtpeak. Die zuvor erzielte Eingaben-Laderersparnis484466688B ist ausschließlich ein Bausteinbefund. Maximale erfolgreiche Unit50980,947ms; letzter Scope62616,900ms nach nativem Beginn ohne FinalACK. Alle4000 Authmutationen einmal bestätigt, Maximum1367,315ms; Offline7619,724ms. Kein Grenzwert/Timer verändert, kein OOM; eigene Anwendung/DB/Broker/Holder beendet1/0/0/0, gemeinsame Gruppe leer. Originale8Pins/KO6/RAW7/Links7 gleich, Quellschreibzugriffe0.
+Node/Worker erhalten lokal explizit old384+Semi16; tatsächlich432MiB V8limit,
+keine Behauptung über gesamtenRSS. Ohne diese Optionen erkannte die neue
+Authkomponente die Elternkappe nicht. AlteV11-Vorlage hatte explizitold1536.
+Private Contentworker bleiben ohnePreload/Runtimecredentials und mit
+unveränderten Corequellen; Parent misst sie über öffentlichen Diagnosekanal
+und getHeapStatistics. Fehlende Messung/Exit oder Drift blockiert. Fehler-
+abschluss stoppt exakte eigene IDs auch bei Diagnose-I/O-Fehlern, wahrt
+ursprüngliche Fehler und verbrauchte Freigaben.
 
-Unabhängige Endauswertung: alle500 Antworten/Checkpoints/Scopes,4000 Authmutationen,1000 Mockphasen,8440 DBsamples und82483 Runtime-HTTP-Quittungen gelesen;58/58 Konsistenzprüfungen PASS bestätigen den **Fehlbefund**, keinen erfolgreichen500er Test. Separates echtes ProHigh-Lesereview bestätigt ihn anhand erreichbarer Primärbelege und kompakter Projektionen; dessen Scope enthält nicht den vollständigen AUTH4000-Vektor/27MB-Runtime/139MB-Samples. Canonical1500-Endabfrage nicht erreicht; Fehlend/leer/doppelt/unbrauchbar/fachlich nicht nachträglich erfunden. Belege: `/workspace/helmut-ram-fix-20261020/full500-independent-end-audit` und `full500-pro-high-end-review`.
+Echte getrennte Komponenten: Auth/PG/REST468185088B(initialer5000-History-Seed,
+256Kontrollreads/9CAS/Restore, noch ohneHeapdeckel); vollständiger Original-
+Eingabenleser83079168B unter384/Semi16,500Werte+Reihenfolge identisch;
+geschlossener OriginalContentWorker349401088B, alle500Inhalte/vollständiges
+Original-C/Bootstrap/Seal PASS. Alle eigenen Gruppen leer/OOM0. Keine dieser
+Proben ist ein500-Profil-/1500-Ergebnis-/Unit60-/500MB-Vollnachweis.
+PSS1189mal mangelsProzesszugriff nicht lesbar; keine PSS-Summe erfunden.
+26Budget-/19Start-/20Nodegruppen plus27Messguards PASS; erste179/179
+Standardregression in694s, finaleStandardregression nachNodeeinbindung
+179/179 in708s bestanden, Prozessende0.
 
-Gezielte Restkorrektur **`verified-control-claim-v1`**, lokal und Default AUS: nur der zusätzliche Senderbeobachter nutzt jetzt die vorhandene öffentliche `storage.readSynthetik500ControlStore()` im selben Prozess. Exakte Descriptorbindung nur mit bounded/control/Merkle/history, zusätzlicher Helper vollständig im Quellen-/Mountmanifest. Anfangs-/Endleser, neun akzeptierte Core-/SQL-Hashes, CAS/Writer/Decoder, native Claim-/Kosten-/Requesthash-Prüfungen unverändert. Async-Fehler bleiben identisch; Abbruch/Timer/Pending werden einmal beendet; ursprünglicher Beginn und19,9s-Delay einschließlich Lesezeit sowie20s-/60s-Fristen bleiben erhalten. **1000 synthetische Auswahlvergleiche/8 Gruppen,14 Transportgruppen,22 Integrationsgruppen mit26 echten Vorlagen/Replay PASS.** Frisches unabhängiges ProHigh-Quellenreview ohne Quellenblocker; geforderte zusätzliche Prüfung mit dem unveränderten alten Original-Funktionskörper ebenfalls PASS. Keine vollständige Ressourcenannahme daraus.
+**Offen:** später Authzustand/längere Stabilität, neue vollständige Zeit-/
+Ergebnis-/500MB-Abnahme, frische Gesamtquellen-/Fenster-/Fallbindung,
+unabhängige Gesamtannahme und neues konkretesGO. Plattenadmission braucht
+15179779720B, zuletzt8621735936B verfügbar:6558043784B fehlen. Unverändert
+8GiB Hostboden, alle alten Originale/Container/Volumes/Loops erhalten. Nur neu
+erzeugte temporäre Diagnose-PGDATA wurde nach zwei Archivvergleichen
+komprimiert erhalten; keine alte Löschfreigabe wiederverwendet.
 
-Native Gegenprüfung am verifiziert kopierten tatsächlichenV10-Endstand:1714 Dateien/370119236B gegen unabhängige Originalreads geprüft; ausschließlich Diagnoseableitung, kein Ersatzoriginal. Tatsächliche PostgreSQL17.6-Kataloge geprüft, alle14 öffentlichen Tabellen vor/nach beiden Phasen gleich; sämtliche D/R-Claimfelder gleich, anonymer Zugriff401. Vier warme alte Lesungen755,3–1005,6ms, neue294,0–317,6ms. Eigene Diagnosehülle nach vollständigem Ende erneut verwendet, um8GiB Hostreserve zu erhalten; nach der zusätzlichen Original-Funktionsprüfung **nur gemeinsamer kumulativer Peak1061187584B, kein getrennter neuer RAMpeak/keine RAMersparnis daraus**. Jede Phase umfasst echte kalte Kontrollinitialisierung. Kein Nachweis für proUnit geänderte Wurzeln oder Voll500/500MB/Unit60.
+[Architekturentscheidung, echte Messungen und Grenzen](betrieb/local-memory-architecture-20261020.md).
+[Finale Quellenpins und Primärbeleg-Prüfsummen](betrieb/local-memory-qualification-20261020.SAFE.json).
+Private Belege: /workspace/helmut-ram-fix-20261020/architecture-correction-20261020.
+Kein weiterer Volltest/Production/Merge/Deployment; dieser Auftrag gewährt
+nur lokale Änderungen, gezielte Prüfungen und einen prüfbaren eigenen PR.
 
-Plattenbefund: V10-Gastkapazität4294967296B ist obere Grenze; aktuelle448139264B Bildallokation ist kein Peak. Formatterdiscard hatte die ursprüngliche Hostreservierung ausgedünnt. Korrektur `nodiscard` plus echte Inode-/Vollallokationsprüfung vor/nach Formatierung implementiert;5 Allokations-/2 Holder-Abbruchfälle PASS. Tatsächliche16MiB-Formatkomponente behält16781312B Allokation, keine Loop-/Container-/Productionaktion. Unabhängiges FlashHigh-Quellenreview ohne Blocker; kein vollständiger kontinuierlicher Reservenachweis. Host nach Komponenten rund8,725GB frei über8GiB-Boden; **neue4GiB-Rohdatei plus8GiB-Boden bereits ohne neue Container nicht unterzubringen**. Keine Originale/Altcontainer/Belege gelöscht oder Loops umgebunden.
-
-VorV10 übernommen: begrenzter Eingabenleser erhält alle500 Originalwerte samt geordnetem Hash, 13 Parser-/Negativfälle PASS; gezielte numerische Korrektur für−0/Zahlenüberlauf. Bounded-SQL-Überlagerung semantisch/nativ geprüft (5 ganze Antworten/22 Negativfälle), Writer/ACL/Originale unverändert. Standardpflichtlauf178/178 in662s PASS, frühere176/178-Belege erhalten. Keine erneute allgemeine Optimierungsanalyse/W43–W50-Wiederholung. Quelle20-Kopie bleibt gebunden, nur19Oct-Nullbuch/Kapazität40→41; fachlicher Quellbestand und Betreiberkosten unverändert.
-
-Aktueller Codezweig `codex/control-integration-restored-20261019`, Commit `c8624f7c` samt sämtlichen Zieländerungen erhalten. Die alten Interimfälle `e0ac732c4e91`/`592f41b9631d` bleiben ungestartete Historie; der tatsächlich verbrauchteV10-Slot ist3cd34019b9d7. Neues separates V11-GO liegt vor und ist unverbraucht. [Ergebnis und Restkorrektur](betrieb/local-resource-v10-and-sender-fix-20261020.md).
+HistorischerV10-Fall3cd34019b9d7 ist ebenfalls verbraucht und fehlgeschlagen
+(499ACKs,2262437888B). [V10 und Senderkorrektur](betrieb/local-resource-v10-and-sender-fix-20261020.md).
 
 ## V9-Vollressourcenlauf19.10.:499ACKs, RAM- und letzter Grenzfall fehlgeschlagen
 
@@ -74,7 +115,7 @@ Sicherheitsgrenzen: AfD-zugehörige Abgeordnete sind ausgeschlossen, Prüfung vo
 
 ## Starttor und Schutzgrenzen
 
-Lokale notwendige RAM-/Integrationsänderungen und gezielte Komponentenprüfungen bleiben erlaubt. **Genau der freigegebene nächste vollständige Mock500-VersuchV10 ist verbraucht und als FAIL beendet.** Claim/Setup bleiben erhalten; kein neuer Slot, kein Löschen/Reset verbrauchter Marken und kein automatischer Retry aus alten Betreiberzitaten. Das neue separate Nutzer-GO für genau einen V11-Versuch ist erteilt und unverbraucht; neue konkrete Fall-/Tages-/Code-/Original-/Zeit-/Loop-/Plattenbindung, unabhängige Annahme und32frische Startgruppen bleiben Pflicht. Keine Ersatzoriginale.
+Lokale notwendige RAM-/Integrationsänderungen und gezielte Komponentenprüfungen bleiben erlaubt. **Genau der freigegebene nächste vollständige Mock500-VersuchV10 ist verbraucht und als FAIL beendet.** Claim/Setup bleiben erhalten; kein neuer Slot, kein Löschen/Reset verbrauchter Marken und kein automatischer Retry aus alten Betreiberzitaten. Auch V11 wurde inzwischen verbraucht und ist fehlgeschlagen; ein neuer Versuch braucht ein neues konkretes GO samt Fall-/Tages-/Code-/Original-/Zeit-/Loop-/Plattenbindung, unabhängiger Annahme und32frischen Startgruppen. Keine Ersatzoriginale.
 
 Production, Merge, Deployment, Production-Migrationen und bezahlte HELMUT-Provideraufrufe sind daraus nicht freigegeben. Für regulären Betrieb bleiben ein gesondertes konkretes Aktivierungs-/Productiontest-GO, aktuelle Paketbindung, Ebenen-/Landesversorgung bis zur sichtbaren Ausgabe, Kosten-/Zeitplan, lebender Endwächter und Rückweg erforderlich. Nur synthetische500Profile für Bundestag/Berlin/Brandenburg, keine AfD-Kunden; originale fachliche/security Prüfungen für alle500,1500Ergebnispositionen und8000frische Kontrollen. Fehlend/leer/doppelt/unbrauchbar/technischfehlerhaft getrennt bilanzieren. Bei unbekanntem Schreibausgang Stop und lesende Klärung, kein Retry. Originale und bisherige Belege erhalten.
 
@@ -86,4 +127,11 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-Frische vollständige Infrastruktur-/Eingangsreviews für V11 mit2GiB-Gastdatei, aktuellem Quellstand und Senderoption abschließen; danach32frische Startgruppen und genau den neuen einmaligen Vollversuch starten. Vollständiger500MB-/Unit60-/1500-Nachweis bleibt offen; Bausteinzeit ist kein Gesamtnachweis. Der frühere Plattenmangel ist mit gesicherter Diagnosehüllenfreigabe und strikterer2GiB-Gastgrenze gelöst; die tatsächliche Laufbilanz bleibt offen. Neues V11-GO unverbraucht; V10 nicht wiederverwenden. Nach sicher gelöstem Plattenengpass sämtliche Laufbindungen und Startgruppen frisch prüfen und genau einen neuen Vollversuch durchführen. Empfohlene Denkstufe Sehr hoch wegen Quellenbindung, asynchroner Zeitgrenzen und gemeinsamer Ressourcenbilanz. Der separate [Productionplan](betrieb/500er-production-vorbereitung-20261016.md) bleibt gesperrt.
+Keinen weiteren vollständigen Versuch empfehlen oder starten, solange später Zustand,
+Laufzeiten, Ergebnisqualität und ausreichende Plattenreserve unqualifiziert sind.
+Die neue native/Node-Budgeteinbindung lokal abschließen, Quellen-/Messbelege
+und frische Gesamtannahme vorbereiten. Erst danach neue Fall-/Quellen-/Zeitbindung,
+32Startgruppen und ein ausdrücklich neues konkretes500er-GO. Keine Wiederverwendung
+verbrauchterV11-/Altfreigaben. Hier fortsetzen; empfohlene Denkstufe Sehr hoch wegen
+nativer Gesamtgrenzen, Worker-Isolation, einmaliger Autorität und unveränderter
+Sicherheits-/Zeitregeln. Production bleibt gesperrt.

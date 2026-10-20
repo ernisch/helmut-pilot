@@ -136,7 +136,7 @@ def template_replay(connection):
     rendered=connector.render_templates(connection['caseDirectory'],target=connection['targetDatabase'],
         container=connection['containerName'],operation=connection['operationId'],
         day_rows_pin=staged['dayRows'],owner_go_pin={'path':staged['executionOwnerGOPath']},atomic_usage_pin=staged.get('atomicUsageInput'),
-        restore_staging_inputs=staged.get('restoreStagingInputs'))
+        restore_staging_inputs=staged.get('restoreStagingInputs'),native_memory_budget=staged.get('nativeMemoryBudget'))
     expected_render={r['original']['path']:r for r in rendered}
     for delta in staged['templateDeltas']:
         p=delta['original'];expected={k:original[p['path']][k] for k in ['path','bytes','sha256']}
@@ -159,6 +159,8 @@ def all_file_pins(acceptance,connection):
     pins=acceptance['sourcePins']+connection['immutableWorkflowPins']+connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']+request['sourcePins']
     if 'atomicUsageInput' in connection:
         candidate=read(connection['atomicUsageInput']);pins+=[connection['atomicUsageInput']]+candidate['sourcePins']
+    if 'nativeBudgetRuntimePin' in connection:
+        runtime=read(connection['nativeBudgetRuntimePin']);pins += [connection['nativeBudgetRuntimePin'],runtime['sourcePin'],pin(BIN/'native-memory-budget.py')]
     checked={};bad=[]
     for p in pins:
         key=(p['path'],p['bytes'],p['sha256'])
@@ -229,6 +231,8 @@ def stage_contract(connection, recipe):
             and config['policy']['activation'] is False and config['policy']['production'] is False, 'original test policy changed')
     require(connection['storageCapacityBytes'] == 2147483648 and connection['storageHoldSeconds'] == 33000, 'V11 exact2GiB storage scope changed')
     staged=read(connection['stagedHarness'])
+    require(connection.get('nativeMemoryBudget')==staged.get('nativeMemoryBudget') and
+        connection.get('nativeBudgetRuntimePin')==staged.get('nativeBudgetRuntimePin'),'native memory staging/connection differs')
     require(connection.get('atomicUsageInput')==staged.get('atomicUsageInput'),'atomic storage candidate differs from actual renderer')
     if 'atomicUsageInput' in connection:
         descriptor=read(connection['atomicUsageInput'])
@@ -257,7 +261,7 @@ def output_freshness(connection):
                'CURRENT_LOCAL_RUNTIME_CONTEXT.PRIVATE.json', 'LOCAL_NEW_FIXTURE.PRIVATE.json',
                'runtime-candidates/generated-services', 'runtime-candidates/generated-materials', 'runtime-candidates/FINAL_CONFIG.PRIVATE.json',
                'run-combined500-'+connection['operationId']]
-    outputs = [case/f for f in names]+[n/f for f in n_names]+[case/'application', case/'database']
+    outputs = [case/f for f in names]+[n/f for f in n_names]+[case/'application', case/'database',case/'native-memory-budget']
     collisions = [str(p.relative_to(case)) for p in outputs if p.exists() or p.is_symlink()]
     require(not collisions, 'output already used')
     for parent in [case,n,n/'runtime-candidates']:
@@ -268,10 +272,17 @@ def output_freshness(connection):
 def filesystem_ready(connection):
     stat = os.statvfs(connection['caseDirectory']); free = stat.f_bavail*stat.f_frsize
     hulls=NEW_CONTAINER_COUNT*(2*PINNED_IMAGE_BYTES+NEW_CONTAINER_OVERHEAD_BYTES)
+    # Two tiny helpers are created first and retained, with conservative vfs
+    # admission margins. No existing storage or reserve margin is removed.
+    runtime=read(connection['nativeBudgetRuntimePin'])
+    module('filesystem_native_budget','native-memory-budget.py').validate_runtime(runtime)
+    budget_hulls=2*(2*runtime['imageBytes']+NEW_CONTAINER_OVERHEAD_BYTES)
+    hulls+=budget_hulls
     required = connection['storageCapacityBytes']+8*1024**3+hulls+RETAINED_OUTPUT_BUDGET_BYTES
     return dict(**{'pass':free>=required},availableBytes=free,requiredBytes=required,
         shortageBytes=max(0,required-free),hostFreeFloorBytes=8*1024**3,
-        storageCapacityBytes=connection['storageCapacityBytes'],newContainerCount=NEW_CONTAINER_COUNT,
+        storageCapacityBytes=connection['storageCapacityBytes'],newContainerCount=NEW_CONTAINER_COUNT+2,
+        nativeBudgetHelperHullBytes=budget_hulls,
         newContainerHullBudgetBytes=hulls,retainedOutputBudgetBytes=RETAINED_OUTPUT_BUDGET_BYTES,
         continuousHostReserveNotClaimed=True)
 
@@ -288,7 +299,7 @@ def coverage_adopted(bindings, rows):
     reviews=adoption['independentReviews']
     require(set(reviews)=={'infrastructure','consumerInputs'},'both complete independent review scopes required')
     required={
-        'infrastructure':{str(BIN/f)for f in ['start-preflight.py','full500-controller.py','isolation.py','connect-local500.py','start-guard-inventory.js','legacy-harness-pins.json','next-resource-authority.py','finish-connection.py','measured-preparation.js','process-runner.py']},
+        'infrastructure':{str(BIN/f)for f in ['start-preflight.py','full500-controller.py','isolation.py','connect-local500.py','start-guard-inventory.js','legacy-harness-pins.json','next-resource-authority.py','finish-connection.py','measured-preparation.js','process-runner.py','native-memory-budget.py','native-memory-budget-helper.c','native-node-budget.js','http-meter.js']},
         'consumerInputs':{str(BIN/'start-input-checks.js'),str(BIN/'START_PREFLIGHT_COVERAGE.md')}}
     if str(BIN/'atomic-usage-integration.js') in {r['path'] for r in rows}:
         required['infrastructure'].add(str(BIN/'atomic-usage-integration.js'))

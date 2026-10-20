@@ -50,6 +50,8 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     for folder in [n,n/'runtime-candidates',BIN]:
         for p in folder.iterdir():
             if p.is_file() and p.suffix in ['.js','.py','.json'] and (folder!=BIN or not p.name.endswith(('-test.js','-test.py'))):sources[str(p.resolve())]=C.pin(p)
+    if 'nativeBudgetRuntimePin' in staged:
+        p=BIN/'native-memory-budget-helper.c';sources[str(p.resolve())]=C.pin(p)
     sources[str(case/'assemble-after-activation.js')]=C.pin(case/'assemble-after-activation.js')
     primaries={**original['primaries'],'all500IndependentVisibleReview':staged['dayAcceptance'],'ordinaryAAndFEquality':staged['dayAcceptance']}
     request={**original,'targetDatabase':staged['targetDatabase'],'expectedOwnerGoPin':owner_pin,
@@ -105,6 +107,8 @@ def finish(staged_pin,*,restore_staging_inputs=None):
       'originalUUnchangedAndRequired':True,'noProfiler':True,'noPaidProviderCalls':True,'preparedWithoutGO':staged.get('preparedWithoutGO',False)}
     if atomic is not None:plan['atomicUsageInput']=atomic
     if restored:plan['restoreStagingInputs']=restore_staging_inputs
+    for key in ['nativeMemoryBudget','nativeBudgetRuntimePin']:
+        if key in staged:plan[key]=staged[key]
     connection=C.save(case/'FINAL_CONNECTION.SAFE.json',plan)
     # Recipe templates contain NO current preflight or final meter acceptance.
     # The controller adds those only after independent review, immediately
@@ -118,6 +122,8 @@ def finish(staged_pin,*,restore_staging_inputs=None):
        {'name':'preparation','argv':['taskset','-c','0','node',str(BIN/'measured-preparation.js'),connection['path']],'timeoutSeconds':300,'pins':[connection]},
        {'name':'assembly','argv':['taskset','-c','0','node',str(case/'assemble-after-activation.js'),'--after-reviewed-local-activation'],'timeoutSeconds':300,'pins':[C.pin(case/'assemble-after-activation.js')]},
        {'name':'sequence','argv':['taskset','-c','0','node',str(n/'run-reviewed-sequence.js'),str(n/'runtime-candidates/FINAL_CONFIG.PRIVATE.json'),'root-approved-local-only'],'timeoutSeconds':9*3600,'pins':[C.pin(n/'run-reviewed-sequence.js')]}]}
+    for key in ['nativeMemoryBudget','nativeBudgetRuntimePin']:
+        if key in staged:recipe[key]=staged[key]
     recipe_pin=C.save(case/'RECIPE_TEMPLATE.PRIVATE.json',recipe)
     return {'connection':connection,'recipeTemplate':recipe_pin,'applicationStaticFiles':len(assets),'sourcePins':len(sources),
        'full500RunStarted':False,'resourceGOConsumed':False}

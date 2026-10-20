@@ -340,3 +340,40 @@ possible terminal failure of the one authorized trial. No original/evidence
 deletion or reduced8GiB host floor is inferred. Preflight now additionally
 budgets four new Docker-vfs image/init copies plus64MiB each and512MiB retained
 output; the exact437457485B image size is checked against the pinned image.
+
+### Native total-memory and Node/Worker budget (20.10.2026)
+
+Policy/2 is explicit in acceptance, connection and recipe; missing or old
+metadata fails `acceptedMetadata` before reservation. The helper runtime is
+physically image/source-pinned on the host. C, Python, Node guard and HTTP
+sources are required in the reviewed closure. `allFilePins`, deterministic
+26-template replay and `completeIndependentCoverage` include the new sources;
+`filesystemReserve` adds two retained tiny vfs helper hulls. The32 check groups
+are unchanged. `outputFreshness` also rejects an existing budget output.
+
+After exclusive reservation, before storage/initdb/installation, two cap-drop-ALL
+helpers establish a fresh exact native parent. Inode/cgroup2/default settings,
+actual helper identity and exclusive topology are runtime observations, not
+precomputed fictitious receipts. No ancestor/old-group resize, peak reset,
+reclaim command, loop change or extra capability is available. Actual max/high/
+swap readback and native peak/events remain mandatory through last owned exit.
+All six owned containers, including exited setup helpers, enter topology/log
+accounting. OOM, incomplete workflow or incomplete exit cannot prove a reserve.
+
+Local Node startup binds old384 and Semi16 (not NODE_OPTIONS) in the PATH shim,
+the absolute SQL helper and the exact staged sequence option. The existing HTTP
+preload invokes the opt-in budget guard; its original HTTP schema is unchanged.
+Private contentworkers retain their original empty env/execArgv and source graph.
+The parent observes the public worker diagnostic channel, performs one live
+`getHeapStatistics` at online, and binds discovery/measurement/exit by thread ID.
+Parent counts and all receipt identity sets must agree. Missing/rejected/late
+measurements fail; resourceLimits declarations never substitute for measured
+heap limits. Normal worker termination may produce exit1 without implying OOM.
+
+The restricted app verifies pinned metadata without host image access. Host
+admission, actual launch/claim and final readback perform actual runtime/kernel
+checks. Failure close retains the original error, treats report/STOP writes as
+best effort, and attempts every exact known owned CID; it never resets a claim
+or retries a workflow. These changes require NEW complete independent adoption,
+fresh32 gates, capacity and a new concrete GO. The committed qualification
+summary and component results provide no execution authority or full500 PASS.

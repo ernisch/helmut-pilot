@@ -102,7 +102,8 @@ def run_workflow():
     samples={'count':0,'SQLBytes':0,'answerBytes':0};first_native=None;previous_native=None
     sql=None
     if recipe.get('databaseContainer'):
-        sql=subprocess.run([str(NODE),'-e',"process.stdout.write(require(process.argv[1]).snapshotSQL())",str(REPO/'scripts/helmut-resource-meter/database-meter.js')],capture_output=True,text=True,check=True).stdout
+        budget_args=['--max-old-space-size=384','--max-semi-space-size=16','--require='+str(REPO/'scripts/helmut-resource-meter/http-meter.js')] if recipe['scope']=='owner-approved-local500-resources' else []
+        sql=subprocess.run([str(NODE),*budget_args,'-e',"process.stdout.write(require(process.argv[1]).snapshotSQL())",str(REPO/'scripts/helmut-resource-meter/database-meter.js')],capture_output=True,text=True,check=True).stdout
     def record(row,sent,received):
         nonlocal first_native,previous_native
         if row.get('schema')!='helmut-postgres-resource-snapshot/1' or not row.get('version','').startswith('17.'):
