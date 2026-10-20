@@ -241,6 +241,30 @@ Originalinhalte, Schlüssel oder Authdaten sind Bestandteil dieser Änderung.
 
 [Qualifikationsmanifest mit finalen Quellenpins und Primärbeleg-Prüfsummen](local-memory-qualification-20261020.SAFE.json).
 
+Code604aa5ed liegt im [Entwurfs-PR924](https://github.com/ernisch/helmut-pilot/pull/924)
+gegen die gesicherte Basis2dba4317. Die öffentliche CI kann die lokal vorhandenen
+privaten Originalvorlagen und fest gebundenen Finanzbelege nicht rücklesen.
+Run39418567135 scheiterte zunächst am unvollständigen Source-Importpfad;
+die weitere Originalabhängigkeit bleibt als Blocker sichtbar. Die lokalen
+Originalprüfungen und179/179 sind kein nachträgliches CI-PASS. Der Browser-/
+Mobile-Smoke desselben Runs bestand. Keine Assertion wird übersprungen.
+
+Die CI-Bereitstellung wurde auf den tatsächlichen Importabschluss aus sieben
+byteidentischen Quelldateien ergänzt. Der separate Budgetschritt verwendet
+echtesNode24.19.0 und kehrt danach für alle bisherigen Schritte zuNode22 zurück.
+Vorhandene Dateien/Verzeichnisse/Symlinks blockieren die Installation.
+Isolierte CI-Nachbildung:26Pythonfälle/20Nodegruppen PASS,7Importnegative,
+9Überschreibnegative/3Positive und YAML/Bashsyntax PASS. Bei fehlenden privaten
+Originalen bestehen18/19Startfälle und15/25Autoritätsfälle; die11Fehler bleiben
+sichtbar, keine Skips oder gemockten Ergebnisnachweise. Der Laufzeit-Lesevertrag
+bestand13/13. Diese Nachbildung ist kein GitHub-Gesamt-PASS.
+
+Die automatische Vercel-Preview brach bereits vor dem Build wegen eines
+3063Zeichen langen includeFiles-Eintrags ab (Schema höchstens256). Der
+vercel.json-Blob e5567a2b8fa9eb9a0eea9cd4e526ab7064196eaa ist in Basis2dba
+und604 identisch. Dieser vorhandene Konfigurationsblocker wird nicht als
+RAM-Regression ausgegeben. Keine manuelle Deployment-/Konfigurationsaktion.
+
 Die aktuelle konservative Plattenadmission benötigt15179779720B einschließlich
 unverändert8GiB Hostboden,2GiB Raw-Gastdatei,6neuen VFS-Hüllen und512MiB
 Ausgabebudget. Verfügbar waren8621735936B; Defizit6558043784B. Die sichere

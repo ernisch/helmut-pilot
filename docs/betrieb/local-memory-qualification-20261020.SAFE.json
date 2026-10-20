@@ -104,7 +104,6 @@
   "newFull500Runs": 0,
   "productionActions": 0,
   "merges": 0,
-  "deployments": 0,
   "full500MemoryBufferProven": false,
   "newFull500Recommended": false,
   "noOldResourceCleanup": true,
@@ -244,6 +243,74 @@
       "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/OFFLINE_FINAL_STANDARD.PRIVATE.log",
       "bytes": 8623,
       "sha256": "5391d111bff8a4bb27581f2d8b873883bf0d305a0bddc95127d411ebc92ed6ff"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/ci-import-qualification/QUALIFICATION.SAFE.json",
+      "bytes": 6898,
+      "sha256": "3d0a6bbb1a3a3997bdf0c3c5508bc017eaffdc6164beaedfb51b46ed3b7b499b"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/FIRST_PR_CHECKS.SAFE.json",
+      "bytes": 1122,
+      "sha256": "07d446ab00afbb1aeec243858f9fef635511d02eab6f3fd3b20c3efa33251d07"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/OFFLINE_FINAL_EXIT.SAFE.json",
+      "bytes": 563,
+      "sha256": "f2582c97c9a85b85e602ff7aed3adcc133f8dc477aac6ae65d3708482cc16ab6"
     }
-  ]
+  ],
+  "explicitDeploymentActions": 0,
+  "pullRequest": "https://github.com/ernisch/helmut-pilot/pull/924",
+  "implementationCommit": "604aa5eddbea1bf90a58501dfcde8e2aa34e61f9",
+  "firstPublicCIRun": {
+    "url": "https://github.com/ernisch/helmut-pilot/actions/runs/39418567135",
+    "offlineResult": "FAIL_REAL_SOURCE_IMPORT_CLOSURE_INCOMPLETE",
+    "browserMobileSmoke": "PASS",
+    "privateOriginalInputsAvailableOnGitHub": false,
+    "originalAssertionsPreserved": true,
+    "localTestsAreNotClaimedAsGitHubCIPass": true
+  },
+  "automaticPreview": {
+    "state": "ERROR_BEFORE_BUILD",
+    "error": "functions.api/index.js.includeFiles exceeds schema maximum256 characters",
+    "actualCharacters": 3063,
+    "sameVercelJsonGitBlobAtBaselineAndImplementation": "e5567a2b8fa9eb9a0eea9cd4e526ab7064196eaa",
+    "manualDeploymentOrConfigurationChange": false
+  },
+  "lastDocumentationUpdateUTC": "2026-10-20T12:05:18.253928+00:00",
+  "ciIntegration": {
+    "workflowPin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/.github/workflows/ci.yml",
+      "bytes": 31385,
+      "sha256": "9fef51ceffa8e65c841420282203ddbe94ab77eb212e65de8d0fbbe694d39c8e"
+    },
+    "isolatedQualificationPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/ci-import-qualification/QUALIFICATION.SAFE.json",
+      "bytes": 6898,
+      "sha256": "3d0a6bbb1a3a3997bdf0c3c5508bc017eaffdc6164beaedfb51b46ed3b7b499b"
+    },
+    "scope": "ISOLATED_REPRODUCTION_WITHOUT_PRIVATE_ORIGINALS",
+    "nativeBudgetCasesPassed": 26,
+    "nodeGroupsPassed": 20,
+    "importClosureFiles": 7,
+    "importOmissionNegativesPassed": 7,
+    "existingPathNegativesPassed": 9,
+    "absentPathPositivesPassed": 3,
+    "startPreflight": {
+      "passed": 18,
+      "errorsMissingPrivateOriginals": 1,
+      "total": 19
+    },
+    "authority": {
+      "passed": 15,
+      "errorsMissingPrivateOriginals": 10,
+      "total": 25
+    },
+    "runtimeReadContractPassed": 13,
+    "skips": 0,
+    "resultsMocked": false,
+    "newOriginalsCreated": 0,
+    "overallPublicCIPass": false
+  }
 }

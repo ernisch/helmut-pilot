@@ -47,6 +47,22 @@ PSS1189mal mangelsProzesszugriff nicht lesbar; keine PSS-Summe erfunden.
 Standardregression in694s, finaleStandardregression nachNodeeinbindung
 179/179 in708s bestanden, Prozessende0.
 
+Implementierung604aa5eddbea1bf90a58501dfcde8e2aa34e61f9 ist gepusht;
+[Entwurfs-PR924](https://github.com/ernisch/helmut-pilot/pull/924) richtet sich
+gegen die gesicherte Basis2dba4317. GitHub-CI ist **nicht grün**: Run39418567135
+zeigte einen unvollständigen festen Source-Importpfad, danach fehlen private
+Originalvorlagen/Finanzbelege auf dem Runner. Alle Assertions bleiben erhalten;
+lokale Originalprüfungen werden nicht als GitHub-Beleg ausgegeben. Browser-/
+Mobile-Smoke desselben Runs bestand. Die automatische Vercel-Preview scheitert
+vorBuild an includeFiles3063Zeichen>256; vercel.json hat denselben Blob wie
+Basis2dba. Keine Vercel-Konfigurationsänderung oder manuelles Deployment.
+Der CI-Importabschluss ist nun mit sieben byteidentischen Quelldateien
+vervollständigt. Neuer separater Budgetschritt nutzt exaktNode24.19.0 und
+stellt für bisherige PrüfungenNode22 wieder her. Isoliert26Budgetfälle/
+20Nodegruppen,7Importnegative,9Überschreibnegative/3Positive PASS. Ohne
+private Originale: Start18/19, Autorität15/25; Fehler bleiben sichtbar,
+0Skips/0Ersatzoriginale. Das ist keine bestandene öffentliche Gesamt-CI.
+
 **Offen:** später Authzustand/längere Stabilität, neue vollständige Zeit-/
 Ergebnis-/500MB-Abnahme, frische Gesamtquellen-/Fenster-/Fallbindung,
 unabhängige Gesamtannahme und neues konkretesGO. Plattenadmission braucht
