@@ -32,10 +32,14 @@ ALT/NEU/NEU/ALTjeeigeneLebenszeit:780918784/781803520/781750272/781455360B.
 NEUbeideTemp0stattALTje6212035B,aberKEINEgemeinsameRAMersparnis; keinPlateau.
 2MiB-Kontrollviewgrößeweiterunbewiesen; kleinsterEchtaufrufzurKlärunginVorbereitung.
 Alle4früherenDiagnosekopienverlustlosarchiviert/doppeltverglichen/frischadoptiert
-entfernt; Originale/Belege/Hüllenbehalten. Danach15603122176Bfrei/423342456Büber
-Volladmission. FünfneueV5KopienkostenerneutPlatz:13711437824Bfrei/1468341896B
-Fehlbetrag; kontrollierteverlustloseDeltaarchivegegendiegeschützteBasisvorbereiten.
-HistorischerPostgREST-Fall bleibtFAIL;500MB/Unit60/Auth30/1500/500offen.
+entfernt; Originale/Belege/Hüllenbehalten. FünfV5Kopienjetztebenfallsverlustlos
+deltaarchiviert/doppeltverglichen/frischadoptiertentfernt:107427091BArchive,
+kanonischeQuelle827aabjetztdauerhafteRekonstruktionsabhängigkeit.Beobachtung
+18:18UTC15439728640Bfrei/259948920BüberVolladmission,VORnächsterDiagnosekopie.
+V6Abschlussfallcontrol-45a29158…FAIL:SIGTERM→signedrc−2;0Auth/keinNode,
+Quellengleich/PGsauber/alleProzessezu/OOM0.VersionübersetztlautUpstream
+SIGTERMinRTS-SIGINT;neueengeQualifikation+Hostpfadfixvor3Motoraufrufen.
+HistorischeFAILsbleibenFAIL;500MB/Unit60/Auth30/1500/500offen.
 KeinVoll500/Production/Merge/Deployment. [Bereinigung](betrieb/controlled-local-cleanup-20261020.md)
 und [gezielterUmbau/Vergleich](betrieb/local-cold-digest-comparison-20261020.md).
 

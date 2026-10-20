@@ -49,7 +49,7 @@ identischer Gesamtwert ausgegeben werden. Der wesentliche Gewinn kam aus den
 beendeten VFS-Containerhüllen trotz ihrer zuvor gemeldeten Docker-RW-Größe0B.
 
 Unveränderter Hostboden8589934592B; Komponentenadmission8606711808B;
-Volladmission mit bestehendem2GiB Storage15179779720B. Die letzte Beobachtung
+Volladmission mit bestehendem2GiB Storage15179779720B. Diese erste Beobachtung
 liegt **1017033080B über der Volladmission**. Werte vor jedem neuen Start frisch
 prüfen; positiver Plattenbefund ist kein vollständiges Start-GO.
 
@@ -145,16 +145,11 @@ Lebenszeit einschließlich aller Phasen753774592B/18,515s, OOM/high/max0,
 Originalquelle unverändert, sämtliche eigenen Prozesse sauber beendet.
 `NATIVE03_ACTUAL_QUALIFICATION.SAFE.json` bindet tatsächliche Roh- und Exitbelege.
 
-Der kalte Pfad materialisiert im Code vollständige Knotenobjekte nochmals über
-`jsonb_array_elements`, obwohl für den Digest nur Hashes gebraucht werden.
-Warm02 überspringt diesen Zweig. Der gezielte Umbau soll dort zuerst nur Hashes
-projizieren. Erst der identische Ablauf mit diesem einen Funktionsdelta kann
-seinen kausalen Anteil und eine tatsächliche gemeinsame RAM-Ersparnis belegen;
-03 allein beweist noch nicht die alleinige Ursache dieses Temp-I/O.
-Auch die2MiB-Kontrollcachegrenze ist nur ein konkreter möglicher Auslöser:
-die exakte Größe der vier Felder im späten Zustand wurde bisher nicht erfasst.
-Der neue Funktionsumbau wird im getrennten Worktree auf derselben Basis vorbereitet;
-noch keine Übernahme oder Abnahme einer zusätzlichen Motoränderung.
+Der kalte Pfad materialisierte vollständige Knoten nochmals für einen Hashdigest.
+Die inzwischen lokal übernommene Hashprojektion beseitigt diese Tempdatei in
+beiden neuen Vergleichsfällen, belegt aber keine gemeinsame RAM-Ersparnis.
+[Native19 und symmetrischer ALT/NEU/NEU/ALT-Vergleich](local-cold-digest-comparison-20261020.md).
+Die genaue Vierfeldgröße gegen die2MiB-Kontrollcachegrenze bleibt ungemessen.
 
 Nach Abschluss der vier Diagnosefälle wurden ausschließlich ihre vier neuen,
 beendeten PGDATA-Kopien vollständig gzip-archiviert. Jeweils Python-Vollvergleich
@@ -162,10 +157,37 @@ und unabhängiger GNU-tar-Vergleich einschließlich Dateimetadaten PASS; erst da
 frische Root-Adoption und gezieltes Entfernen von je1711 Dateien. Alle Fallbelege,
 Containerhüllen, Originale, Images, Volumes und Loops bleiben erhalten.
 `FOUR_COMPLETED_PROBE_COPIES_RETIRED.SAFE.json` bindet sämtliche Archive,
-Vergleiche und tatsächlichen Entfernungsbelege. Aktuelle Beobachtung:
+Vergleiche und tatsächlichen Entfernungsbelege. damalige Beobachtung:
 15603122176B frei, 423342456B über der unveränderten Volladmission.
 Die vier Archive belegen zusammen489243917B; dieser Platzgewinn ist netto nach
 Archivkosten beobachtet und keine Garantie für Platz nach weiteren Diagnosen.
+
+Die fünf anschließend abgeschlossenen V5-Kopien sind ebenfalls kontrolliert
+entfernt:8555 reguläre Dateien, ausschließlich deren fünf konkreten PGDATA-Pfade.
+Verlustlose Deltaarchive belegen zusammen107427091B. Byteidentische Dateien
+referenzieren die geschützte kanonische Quelle; alle abweichenden Bytes und
+vollständigen Zielmetadaten sind archiviert. Python-Vollvergleich und unabhängig
+GNU-tar/cmp/stat einschließlich Nanosekundenmetadaten PASS, anschließend je Fall
+frische Root-Adoption, erneute Quellen-/Nutzungsprüfung und exakte Entfernung.
+Alle Fälle, Rohbelege, Containerhüllen, Images, Volumes, Loops und Originale bleiben.
+Die kanonische Quelle827a9872… ist nun **dauerhaft notwendige
+Rekonstruktionsabhängigkeit** dieser fünf Archive und darf nicht entsorgt werden.
+[Tatsächliche Entfernungsbelege](five-v5-delta-retirement-20261020.SAFE.json) und
+[unabhängige SOL-Nachprüfung](five-v5-delta-retirement-sol-review-20261020.SAFE.json).
+
+Beobachtung nach den fünf Entfernungen18:18UTC:15439728640B verfügbar,
+259948920B über der unveränderten Volladmission. Das ist eine Momentaufnahme
+**vor** der nächsten Diagnosekopie; kein aktuelles Vollstart-GO. Die unabhängige
+Nachprüfung verifiziert kleine Belege, Zielabwesenheit und erhaltene Ressourcen;
+sie behauptet keine erneute vollständige Hashprüfung großer Originale/Archive.
+
+Der folgende separate PostgREST-Abschlussfall `control-45a29158f86a93d8e76f090d`
+bleibt FAIL: SIGTERM gesendet, tatsächlich signierter Exitcode−2 statt erlaubtem
+0/−15. Originalquellen identisch, PG sauber beendet, alle eigenen Prozesse zu,
+keine OOM-Ereignisse,0Auth-Aufrufe/kein Node. Genau diese Originalversion übersetzt
+laut Upstream SIGTERM über UserInterrupt in RTS-SIGINT. Das erklärt den Befund,
+ändert aber keinen alten Teststatus. Eine neue eng gebundene Abschlussqualifikation
+und die Korrektur einer Diagnose-Hostpfadbindung gehen den drei Motoraufrufen voraus.
 
 Die Bereinigung beweist keine RAM-Einsparung. Gemeinsamer OLD/NEW-Nachweis,
 langfristiges Plateau, Zeit-/1500-Ergebnisannahme und500MB-Puffer bleiben offen.

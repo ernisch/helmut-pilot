@@ -56,8 +56,9 @@ gemessen. Vor einer weiteren Motoränderung genau diese tatsächlichen Bytes und
 zwei echte Kontrollaufrufe auf isolierter Kopie nachweisen. Keine allgemeine
 Optimierungsanalyse und kein vollständiger500er-Hypothesentest.
 
-Die fünf neuen Diagnosekopien kosten erneut persistenten Platz; die Bereinigung
-von vier früheren Kopien bleibt unverändert belegt. Weitere gezielte Entfernung
-erst nach vollständigem Verlustlosigkeitsnachweis, unabhängiger Prüfung und
-frischer Root-Adoption. Originale, Belege, alte Archive und fremde Ressourcen
-bleiben geschützt. Das500MB-Reserveziel ist offen; kein Erfolgsversprechen.
+Die fünf neuen Diagnosekopien sind nach zwei vollständigen Verlustlosigkeits-
+vergleichen, unabhängiger Prüfung und frischen einzelnen Root-Adoptionen gezielt
+entfernt. Deltaarchive107427091B plus geschützte dauerhafte kanonische Quelle
+erhalten alle Bytes und Zielmetadaten. [Bereinigung und aktuelle Grenzen](controlled-local-cleanup-20261020.md).
+Originale, Belege, alte Archive und fremde Ressourcen bleiben geschützt.
+Das500MB-Reserveziel ist offen; kein Erfolgsversprechen.
