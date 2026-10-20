@@ -22,29 +22,54 @@
     "requirements": "Actual regular non-symlink repo files, exact bytes/SHA, current SQL/actual prosrc/adapter plus original source/body binding; native 19-case equality/errors/negatives/catalog/original/exit flags; independent accepted SOL review binds exact native proofPin. No delta metadata self-hash. Adapter hash binds source target, not native execution of the adapter."
   },
   "currentQualification": {
-    "qualified": false,
+    "qualified": true,
+    "scope": "LOCAL_SOURCE_ONLY",
     "nativeDifferential": {
-      "status": "NOT_RUN",
-      "exactWholeResponsesEqual": false,
-      "identicalErrors": false,
-      "originalStateUnchanged": false,
-      "proofPin": null,
-      "requestedNegativesPassed": false
+      "status": "passed",
+      "exactWholeResponsesEqual": true,
+      "identicalErrors": true,
+      "originalStateUnchanged": true,
+      "requestedNegativesPassed": true,
+      "proofPin": {
+        "name": "cold-digest-native-qualification-20261020.SAFE.json",
+        "bytes": 14721,
+        "sha256": "6c8988e6ca763376554591d1244d574edb8bbf01586113402c452b1470937a15"
+      }
     },
     "independentSafetyReview": {
-      "status": "NOT_RUN",
-      "proofPin": null
+      "status": "accepted",
+      "model": "gpt-6.1-sol",
+      "proofPin": {
+        "name": "cold-digest-sol-review-20261020.SAFE.json",
+        "bytes": 17466,
+        "sha256": "b488ae4bec1a60bce3c4ce3f98facf487a6c4414d201d0d20af4b35007754609"
+      }
     }
   },
   "normalDescriptorIntegration": {
-    "status": "NOT_RUN",
-    "proofPin": null
+    "status": "passed",
+    "sourcePins": 28,
+    "tests": 22,
+    "gateNegativeAndPositiveTests": 18,
+    "proofPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/ACTUAL_DESCRIPTOR_AND_GATE_TESTS.SAFE.json",
+      "bytes": 2364,
+      "sha256": "082fe5c59ba97b5484ca1a25d2c13cca99510f2e3bbc58be50b8a0b8c50585b9"
+    },
+    "scope": "Local source/descriptor/template and offline gate checks only; no full-run or native Node/PostgREST acceptance"
   },
   "commonMemoryComparison": {
-    "status": "NOT_RUN",
-    "noTempFiles": false,
+    "status": "NO_RELIABLE_COMMON_RAM_SAVING",
+    "noTempFiles": true,
     "commonLifetimeRAMDeltaBytes": null,
-    "proofPin": null
+    "newMinusOldFirstPairBytes": 884736,
+    "newMinusOldCounterPairBytes": 294912,
+    "proofPin": {
+      "name": "ACTUAL_ABBA_COMPARISON.SAFE.json",
+      "bytes": 8600,
+      "sha256": "7f6ad9cfe5f6e3da98a95761e07636280da91f1c4deebce35d676c01216002e2",
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/ACTUAL_ABBA_COMPARISON.SAFE.json"
+    }
   },
   "historicalAcceptanceScope": "Original595b2530 SQL bytes only; no historical nativeProof or model review applies to this delta",
   "qualificationSequence": "Explicit localSourceOnly derivation and real native differential/requested negatives, then independent SOL safety review; qualify local source only after actual proofs. Normal descriptor/adapter integration and critical179 regression remain separately pending and run afterwards. No temporary true; all full-start gates remain.",

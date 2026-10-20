@@ -1,6 +1,6 @@
 {
   "schema": "helmut-controlled-cleanup-qualification/1",
-  "status": "CLEANUP_SUCCEEDED_NATIVE01_02_03_PASS_TARGETED_FIX_PREPARING",
+  "status": "INITIAL_CLEANUP_AND_NATIVE_DIAGNOSIS_COMPLETE_HASH_PROJECTION_INTEGRATED_NO_COMMON_RAM_SAVING",
   "branch": "codex/controlled-cleanup-and-late-probe-20261020",
   "baseCommit": "0372500c2d25d35e5c3d0816b80a55d92e8ca420",
   "preservedAncestor": "c8624f7c875a4f6f849d83951898c5e205833a6e",
@@ -186,7 +186,7 @@
     }
   ],
   "nativeDiagnosisExecuted": true,
-  "newMotorChange": false,
+  "newMotorChange": true,
   "newCommonMemorySavingProved": false,
   "full500MBReserveProved": false,
   "full500Authorized": false,
@@ -639,5 +639,30 @@
     "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/probe-retirement-review-20261020/ACTUAL_FOUR_RETIRED_REVIEW.SAFE.json",
     "bytes": 42109,
     "sha256": "a8b3c79739f5876b8c96b9b9c077b9ba387fa0d62fc8cd22d1452b74beecc4ce"
+  },
+  "currentMotorSQLSHA256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5",
+  "currentFunctionBodySHA256": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0",
+  "coldDigestNative19QualificationPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cold-digest-native-qualification-20261020.SAFE.json",
+    "bytes": 14721,
+    "sha256": "6c8988e6ca763376554591d1244d574edb8bbf01586113402c452b1470937a15"
+  },
+  "coldDigestIndependentSOLReviewPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cold-digest-sol-review-20261020.SAFE.json",
+    "bytes": 17466,
+    "sha256": "b488ae4bec1a60bce3c4ce3f98facf487a6c4414d201d0d20af4b35007754609"
+  },
+  "coldDigestABBAComparisonPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cold-digest-abba-comparison-20261020.SAFE.json",
+    "bytes": 8600,
+    "sha256": "7f6ad9cfe5f6e3da98a95761e07636280da91f1c4deebce35d676c01216002e2"
+  },
+  "postNewDiagnosticsCapacity": {
+    "availableBytes": 13711437824,
+    "fullAdmissionThresholdBytes": 15179779720,
+    "shortfallBytes": 1468341896,
+    "fiveCompletedTemporaryCopiesRetained": true,
+    "losslessDeltaRetirement": "PREPARING_NOT_EXECUTED",
+    "full500Authorized": false
   }
 }

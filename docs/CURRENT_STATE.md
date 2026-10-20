@@ -23,14 +23,21 @@ neuerFall/neueAdoption. Native02 separatPASS:1113B Antwort,144,871ms,Temp0;
 Lebenszeit674652160B/17,666s,Quellenidentisch/allebeendet; keineJS-Cache/HTTP-Abnahme.
 Native03 separatPASS:kalterVierfeldaufruf mitknownGraph:null erzeugt1Tempdatei
 6212035B/248,065ms; Lebenszeit753774592B/18,515s,Quellenidentisch/allebeendet.
-Hashprojektion stattvollerKnoten-Digest-SRF in eigenemWT inArbeit;
-kausalerOLDNEW-/Sicherheitsnachweis noch offen. 2MiB-Viewgröße weiterunbewiesen.
-Alle4abgeschlossenen neuenPGDATA-Kopien verlustlosarchiviert/doppeltverglichen,
-frischadoptiert gezieltentfernt; alleOriginale/Belege/Hüllen behalten. Jetzt
-15603122176Bfrei/423342456B überVolladmission; weitereDiagnosen brauchenPlatz.
-Kein weiterer Motorumbau oder gemeinsamer OLDNEW-/Plateau-/500MB-Nachweis.
-HistorischerPostgREST-Fall bleibtFAIL; keinVoll500/Production/Merge/Deployment.
-[Bereinigung, Primärbelege und künftiges Vorgehen](betrieb/controlled-local-cleanup-20261020.md).
+Hashprojektion stattvollerKnoten-Digest-SRF jetztlokalübernommen, aktuelleSQL
+e7530ffd/Body4e2b9015, Gate ee0c92ac (Autor360af181); Quellenabnahme19nativePaare
+PASS:8exakteAntworten/11identischeFehler; unabhängigeSOL-Abnahme/Originale/Katalog/
+ABI/ACL/Rollback/letzterExit/OOM0belegt. EchteProofbytes+QuellbindungimAdapter,
+sourceOnlyunqualifiziert; aktuelleProofsimechtenDescriptor. Kritische179nochpending.
+ALT/NEU/NEU/ALTjeeigeneLebenszeit:780918784/781803520/781750272/781455360B.
+NEUbeideTemp0stattALTje6212035B,aberKEINEgemeinsameRAMersparnis; keinPlateau.
+2MiB-Kontrollviewgrößeweiterunbewiesen; kleinsterEchtaufrufzurKlärunginVorbereitung.
+Alle4früherenDiagnosekopienverlustlosarchiviert/doppeltverglichen/frischadoptiert
+entfernt; Originale/Belege/Hüllenbehalten. Danach15603122176Bfrei/423342456Büber
+Volladmission. FünfneueV5KopienkostenerneutPlatz:13711437824Bfrei/1468341896B
+Fehlbetrag; kontrollierteverlustloseDeltaarchivegegendiegeschützteBasisvorbereiten.
+HistorischerPostgREST-Fall bleibtFAIL;500MB/Unit60/Auth30/1500/500offen.
+KeinVoll500/Production/Merge/Deployment. [Bereinigung](betrieb/controlled-local-cleanup-20261020.md)
+und [gezielterUmbau/Vergleich](betrieb/local-cold-digest-comparison-20261020.md).
 
 ## 20.10.: Vorheriger Diagnostikstand vor der neuen Bereinigungsfreigabe
 
