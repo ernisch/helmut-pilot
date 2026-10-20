@@ -1,7 +1,7 @@
 'use strict';
 // Inert, local-only exact-value loader. No admission, execution or IO on import.
 const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
-const { TextDecoder } = require('node:util');
+const { TextDecoder, isDeepStrictEqual } = require('node:util');
 const MODE = 'bounded-exact-profile-rows-v1';
 const LIMITS = Object.freeze({ rows: 500, fileBytes: 128 * 1024 ** 2,
   rowBytes: 4 * 1024 ** 2, depth: 128, chunkBytes: 65536,
@@ -22,7 +22,8 @@ function interner() {
     const key = kind + ':' + crypto.createHash('sha256').update(text).digest('hex');
     const previous = values.get(key);
     if (previous !== undefined) {
-      if (kind === 's' ? previous.value === value : JSON.stringify(previous.value) === text) return previous.value;
+      if (kind === 's' ? previous.value === value
+        : JSON.stringify(previous.value) === text && isDeepStrictEqual(previous.value, value)) return previous.value;
       return value;
     }
     const cost = Buffer.byteLength(key);

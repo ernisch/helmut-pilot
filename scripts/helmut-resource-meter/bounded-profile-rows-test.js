@@ -95,6 +95,21 @@ try {
     };
     try { assert.deepStrictEqual(readRows(p), rows); } finally { crypto.createHash = native; }
   });
+  test('JSON.parse signed zero and overflow cannot merge with zero or null', () => {
+    const copy = structuredClone(rows), padding = 'numeric equality boundary '.repeat(4);
+    copy[0].numbers = { padding, signed: 0 };
+    copy[1].numbers = { padding, signed: 0 };
+    copy[2].numbers = { padding, overflow: null };
+    copy[3].numbers = { padding, overflow: null };
+    let text = JSON.stringify(copy), seen = 0;
+    text = text.replace(/"signed":0/g, match => ++seen === 2 ? '"signed":-0' : match);
+    text = text.replace('"overflow":null', '"overflow":1e400');
+    const original = JSON.parse(text), actual = readRows(fixture(text));
+    assert(Object.is(original[1].numbers.signed, -0)); assert.equal(original[2].numbers.overflow, Infinity);
+    assert.deepStrictEqual(actual, original);
+    assert(Object.is(actual[1].numbers.signed, -0)); assert.equal(actual[2].numbers.overflow, Infinity);
+    assert.equal(actual[3].numbers.overflow, null);
+  });
   console.log(JSON.stringify({ scope: 'BOUNDED_EXACT_ROWS_PARSER_ONLY', cases, pass: true,
     sourceWrites: 0, databaseCalls: 0, profileActivations: 0, full500Runs: 0, providerCalls: 0 }));
 } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
