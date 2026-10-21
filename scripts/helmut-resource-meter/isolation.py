@@ -51,6 +51,12 @@ def verify_fixture_owner_policy(owner):
     if owner.get('allowDispose') is not False:
         raise RuntimeError('owner GO requires explicit allowDispose=false before any setup or claim')
 
+MINIMUM_REMAINING_MS=11285884.867
+
+def verify_remaining_window(now,end):
+    if (end-now).total_seconds()*1000 < MINIMUM_REMAINING_MS:
+        raise RuntimeError('remaining same-day window lacks workflow plus600second setup/close reserve')
+
 def verify_pre_setup_authority(recipe,*,planning=False):
     """Shared actual authority predicates that require NO created resources.
 
@@ -103,6 +109,8 @@ def verify_pre_setup_authority(recipe,*,planning=False):
         raise RuntimeError('exact local current500 connection missing')
     owner=pin_json(recipe['freshOwnerGO'])
     verify_fixture_owner_policy(owner)
+    if not planning and (owner.get('sourceCommit')!=acceptance.get('commit')or connection.get('sourceCommit')!=acceptance.get('commit')):
+        raise RuntimeError('current owner/evidence/connection source commit differs')
     A.validate_owner(owner,connection,planning=planning)
     action=pin_json(pin_json(connection['stagedHarness'])['action'])
     if action.get('authorized')is not(not planning):raise RuntimeError('pending/executable action mismatch')
@@ -128,8 +136,7 @@ def verify_pre_setup_authority(recipe,*,planning=False):
         raise RuntimeError('current-day independent semantic acceptance missing')
     if not valid:
         raise RuntimeError('actual run window outside independent current-day scope')
-    if (end-now).total_seconds()*1000 < 10685884.867:
-        raise RuntimeError('remaining same-day window shorter than actual last complete workflow')
+    verify_remaining_window(now,end)
     return {'acceptance':acceptance,'connection':connection,'day':day}
 
 def verify_full_authority(recipe):
@@ -179,8 +186,7 @@ def verify_full_authority(recipe):
     Calendar.current_window(day,now=now)
     if now<datetime.fromisoformat(day['startsAtUTC'].replace('Z','+00:00')) or end>datetime.fromisoformat(day['endsAtUTC'].replace('Z','+00:00')):
         raise RuntimeError('actual run window outside independent current-day scope')
-    if (end-now).total_seconds()*1000 < 10685884.867:
-        raise RuntimeError('remaining same-day window shorter than actual last complete workflow')
+    verify_remaining_window(now,end)
 
 def claim_full_attempt(recipe,cid,recipe_path):
     verify_full_authority(recipe)
@@ -285,6 +291,7 @@ def runtime_read_manifest(recipe):
     for key in ['inputAcceptance','localExternalBelege','rootFinalCodeAcceptance','currentDayBinding']:
         if key in request:add(request[key])
     owner=document(recipe['freshOwnerGO'])
+    if owner.get('schema')=='helmut-owner-local-fixture-go/1':document(owner['ownerAuthorizationEvidencePin'])
     for p in owner['previousConsumedMarkers']:add(p)
     capture=document(connection['sourceCapture'])
     # The same explicit data-provenance dependencies are read by the source
@@ -370,6 +377,8 @@ def fixture_mounts(fixture,role,*,recipe=None):
               and fixture.get('production')is False and fixture.get('day')=='2026-10-21'
               and A.DAY=='2026-10-21' and A.SLOT_VERSION==12
               and fixture.get('resourceClaimPath')==str(A.CLAIM)
+              and Path(fixture['caseDirectory']).name=='attempt-'+A.CASE_SUFFIX
+              and fixture.get('targetDatabase')=='helmut_resource_fixture_'+A.DATE_TAG+'_'+A.CASE_SUFFIX
               and source.is_relative_to(Path('/workspace/helmut-ram-fix-20261020/next-full500-20261021')))
             if not day21_evidence:raise RuntimeError('fixture mount outside original evidence workspace')
         destination='/tmp/helmut-unit-fixture-postgrest-03693bea' if role=='database' else str(source)

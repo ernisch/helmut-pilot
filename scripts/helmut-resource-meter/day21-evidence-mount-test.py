@@ -6,16 +6,17 @@ import copy,importlib.util,tempfile,unittest
 spec=importlib.util.spec_from_file_location('day21_mount_scope',Path(__file__).with_name('isolation.py'))
 I=importlib.util.module_from_spec(spec);spec.loader.exec_module(I)
 N=Path('/workspace/helmut-ram-fix-20261020/next-full500-20261021')
-CASE=Path('/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-86075a3a65e9')
+CASE=Path('/workspace/helmut-parallel-20261015/wave20-resource-integration')/('attempt-'+I.A.CASE_SUFFIX)
 
 class Day21EvidenceMountTest(unittest.TestCase):
     def setUp(self):
         self.file=I.A.pin(N/'ROOT_TARGETED_VALIDATION.SAFE.json')
         self.fixture={'schema':'helmut-pinned-full500-connection/1','caseDirectory':str(CASE),
           'production':False,'day':'2026-10-21','resourceClaimPath':str(I.A.CLAIM),
+          'targetDatabase':'helmut_resource_fixture_'+I.A.DATE_TAG+'_'+I.A.CASE_SUFFIX,
           'applicationReadOnlyPins':[self.file],'databaseReadOnlyPins':[]}
         self.recipe={'scope':'owner-approved-local500-resources','fixtureConnectionPin':{'TEST_ONLY':'NO_AUTHORITY'}}
-        for obj,name,value in [(I,'verify_connection_files',lambda f:None),
+        for obj,name,value in [(I.Path,'is_dir',lambda p:True),(I,'verify_connection_files',lambda f:None),
           (I,'pin_json',lambda p:self.fixture),
           (I,'runtime_read_manifest',lambda r:{'pins':[self.file]}),
           (I.K,'docker',lambda *a,**k:(_ for _ in ()).throw(AssertionError('NO_DOCKER')) )]:

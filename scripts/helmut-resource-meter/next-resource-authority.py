@@ -20,11 +20,14 @@ DATE_TAG='20261021'
 # Both real entrypoints read this same source-pinned local definition. Updating
 # a fixed slot must never leave the measured JS stage on a spent old claim.
 SLOT=json.loads((BIN/'local-resource-authority-slot.json').read_text())
-if (type(SLOT)is not dict or set(SLOT)!={'schema','day','version'}
-  or SLOT['schema']!='helmut-local-resource-authority-slot/1' or SLOT['day']!=DAY
-  or type(SLOT['version'])is not int or SLOT['version']!=12):
+if (type(SLOT)is not dict or set(SLOT)!={'schema','day','version','caseSuffix'}
+  or SLOT['schema']!='helmut-local-resource-authority-slot/2' or SLOT['day']!=DAY
+  or type(SLOT['version'])is not int or SLOT['version']!=12
+  or type(SLOT['caseSuffix'])is not str or len(SLOT['caseSuffix'])!=12
+  or not all(c in '0123456789abcdef'for c in SLOT['caseSuffix'])):
     raise RuntimeError('invalid pinned local resource authority slot')
 SLOT_VERSION=SLOT['version']
+CASE_SUFFIX=SLOT['caseSuffix']
 _source_spec=importlib.util.spec_from_file_location('bound_frozen_source_runtime',BIN/'capture-local-source.py')
 SOURCE_RUNTIME=importlib.util.module_from_spec(_source_spec);_source_spec.loader.exec_module(SOURCE_RUNTIME)
 AUTHORIZATION=f'USER_GO_{DATE_TAG}_EXACT_ONE_RESOURCE_ONLY_V{SLOT_VERSION}'
@@ -94,9 +97,54 @@ def read(p):
     require(pin(p['path'])==p,'next resource binding drift')
     return json.loads(Path(p['path']).read_text())
 
+def validate_operator_scope(owner,connection):
+    """Read the actual pinned Root record; it never substitutes an earlier GO."""
+    proof=owner.get('ownerAuthorizationEvidencePin')
+    require(type(proof)is dict and set(proof)=={'path','bytes','sha256'},'exact current operator evidence pin required')
+    evidence=read(proof)
+    require(evidence.get('schema')=='helmut-current-operator-local-full500-binding/2'
+      and evidence.get('production')is False,'versioned current operator binding required')
+    require(type(evidence.get('globalSlotVersion'))is int and evidence['globalSlotVersion']==SLOT_VERSION
+      and type(evidence.get('resourceAttemptGrantCount'))is int and evidence['resourceAttemptGrantCount']==1,
+      'same single current global resource slot required')
+    require(evidence.get('operatorMessageTimestampNotInvented')is True
+      and evidence.get('machineConfirmationIsRootTechnicalBindingNotVerbatimOperatorText')is True,
+      'operator provenance and Root binding must remain explicit')
+    message=evidence.get('actualUserMessageVerbatim')
+    require(type(message)is str and 20<=len(message)<=12000,'actual operator message evidence missing')
+    commit=owner.get('sourceCommit')
+    require(type(commit)is str and len(commit)==40 and all(c in '0123456789abcdef'for c in commit)
+      and connection.get('sourceCommit')==commit,'exact current source commit binding required')
+    expected={'day':DAY,'slotVersion':SLOT_VERSION,'caseSuffix':CASE_SUFFIX,'commit':commit,
+      'operationId':connection['operationId'],'caseDirectory':connection['caseDirectory'],
+      'targetDatabase':connection['targetDatabase'],'sourceCapturePin':connection['sourceCapture'],
+      'dayBindingAcceptancePin':connection['dayBindingAcceptance'],
+      'exactlyOneResourceAttempt':True,'syntheticProfiles':500,'targetUsablePositions':1500,
+      'controlsPerProfile':16,'requiresAll32FreshStartConditions':True,
+      'hardMemoryBytes':2048000000,'commonTargetBytes':1548000000,'reserveTargetBytes':500000000,
+      'paidProviderCallsAllowed':False,'production':False,'allowDispose':False,'automaticRetry':False}
+    scope=evidence.get('rootTechnicalScopeBinding')
+    require(type(scope)is dict and set(scope)==set(expected)
+      and all(type(scope[k])is type(v)and scope[k]==v for k,v in expected.items()),
+      'operator evidence differs from exact current case/code/input/limits')
+    require(owner.get('dayBindingAcceptancePin')==connection['dayBindingAcceptance'],
+      'owner current calendar evidence differs')
+    try:
+        recorded=datetime.datetime.fromisoformat(evidence['recordedAtUTC'].replace('Z','+00:00'))
+        adopted=datetime.datetime.fromisoformat(owner['approvedAtUTC'].replace('Z','+00:00'))
+    except (ValueError,KeyError,TypeError):raise RuntimeError('operator record timestamp invalid')
+    require(recorded.tzinfo is not None and recorded.utcoffset()==datetime.timedelta(0)
+      and recorded<=adopted<=datetime.datetime.now(datetime.timezone.utc),'operator/Root adoption time invalid')
+    return proof
+
+
 def validate_owner(owner,connection,*,planning=False):
     """Shared technical policy; a planning-only intent NEVER satisfies real GO."""
     require(type(planning)is bool,'planning must be an explicit boolean')
+    fixed={'targetDatabase':'helmut_resource_fixture_'+DATE_TAG+'_'+CASE_SUFFIX,
+      'operationId':'synthetik500-resources'+DAY[-2:]+'-'+CASE_SUFFIX,
+      'caseDirectory':str(BASE/'wave20-resource-integration'/('attempt-'+CASE_SUFFIX))}
+    require(all(connection.get(k)==v for k,v in fixed.items()),'only exact source-pinned current case may qualify')
     require(connection.get('preparedWithoutGO')is planning,'pending/executable candidate mode mismatch')
     expected={'allowDispose':False,'production':False,'syntheticProfiles':500,'paidProviderCallsAllowed':False,
       'exactlyOneResourceAttempt':True,'resourceOnly':True,'authorizationId':AUTHORIZATION,
@@ -129,6 +177,7 @@ def validate_owner(owner,connection,*,planning=False):
         require(approved.tzinfo is not None and approved<=datetime.datetime.now(datetime.timezone.utc),'new owner approval time invalid')
         require(isinstance(owner.get('ownerAuthorizationReference'),str)and len(owner['ownerAuthorizationReference'])>=20,
           'new explicit user authorization reference missing')
+        validate_operator_scope(owner,connection)
     return {'allPriorClaimsPreserved':len(claims),'allowDispose':False,'actualGO':not planning}
 
 def _verify_previous_capture(capture_pin,*,actual=True):

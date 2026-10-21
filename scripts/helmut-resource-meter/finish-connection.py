@@ -91,6 +91,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     for k in ['canonicalTemplates','package','independentSecurityReview','explicitThemenreinReview14of14','negativeTypeAndReasonEvidence','all500MappingEvidence']:add(templates[k])
     plan={'schema':'helmut-pinned-full500-connection/1','day':C.A.DAY,'production':False,
       'sourceInputDatabase':C.A.INPUT_DATABASE,'resourceClaimPath':str(C.A.CLAIM),
+      'sourceCommit':staged.get('sourceCommit'),
       'caseDirectory':str(case),'workflowDirectory':str(n),'sourceDatabase':staged['sourceDatabase'],
       'targetDatabase':staged['targetDatabase'],'containerName':staged['containerName'],'operationId':staged['operationId'],
       'freshOwnerGO':owner_pin,'runtimeRequest':request_pin,'sourceCapture':capture_pin,

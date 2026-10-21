@@ -93,6 +93,7 @@ def exact_case_binding(case,target,container,operation):
     if case.parent!=AREA or case.resolve()!=case or not re.fullmatch('attempt-[a-f0-9]{12}',case.name):
         raise RuntimeError('exact fresh local case directory required')
     suffix=case.name.removeprefix('attempt-')
+    if suffix!=A.CASE_SUFFIX:raise RuntimeError('only exact source-pinned current case required')
     if (target,container,operation)!=('helmut_resource_fixture_'+A.DATE_TAG+'_'+suffix,'helmut-meter-db-w20-'+suffix,'synthetik500-resources'+A.DAY[-2:]+'-'+suffix):
         raise RuntimeError('case/target/container/operation suffix mismatch')
 
@@ -347,7 +348,7 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
     if (local is None and day.get('status')!='ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER') or day.get('day')!=A.DAY:raise RuntimeError('accepted exact current-day binding missing')
     if day.get('adoptedRowsPin')!=day_rows_pin:raise RuntimeError('accepted exact current inputs required')
     owner=read_pin(owner_go_pin)
-    A.validate_owner(owner,{'caseDirectory':str(case),'targetDatabase':target,'operationId':operation,'sourceCapture':owner['sourceCapturePin'],'preparedWithoutGO':prepare_only},planning=prepare_only)
+    A.validate_owner(owner,{'caseDirectory':str(case),'targetDatabase':target,'operationId':operation,'sourceCapture':owner['sourceCapturePin'],'preparedWithoutGO':prepare_only,'sourceCommit':owner.get('sourceCommit'),'dayBindingAcceptance':day_acceptance_pin},planning=prepare_only)
     if owner.get('allowDispose') is not False:raise RuntimeError('explicit allowDispose=false required before staging')
     if owner.get('production') is not False or owner.get('syntheticProfiles')!=500 or owner.get('targetDatabase')!=target:
         raise RuntimeError('existing once GO exact new local binding required')
@@ -372,7 +373,7 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
     plan={'schema':'helmut-exact-local500-connection/1','scope':'STAGED_NOT_EXECUTED','caseDirectory':str(case),
       'workflowDirectory':str(n),'sourceDatabase':SOURCE,'targetDatabase':target,'containerName':container,
       'operationId':operation,'day':A.DAY,'dayAcceptance':day_acceptance_pin,'dayRows':day_rows_pin,
-      'ownerGOPath':owner_go_pin['path'],'ownerGOPin':owner_go_pin,'executionOwnerGOPath':owner['finalOwnerGOPath'],'originalAction':pin(BASE/'wave15/native-end-preparation/LOCAL_ACTIVATION_ACTION.SAFE.json'),
+      'ownerGOPath':owner_go_pin['path'],'ownerGOPin':owner_go_pin,'sourceCommit':owner.get('sourceCommit'),'executionOwnerGOPath':owner['finalOwnerGOPath'],'originalAction':pin(BASE/'wave15/native-end-preparation/LOCAL_ACTIVATION_ACTION.SAFE.json'),
       'action':pin(n/'LOCAL_ACTIVATION_ACTION.SAFE.json'),'templateDeltas':deltas,
       'freshSelectorComesFromPinnedActualAssembly':True,'full500RunStarted':False,'resourceGOConsumed':False,
       'engineModified':bool(local),'originalFilesModified':False,'production':False,'preparedWithoutGO':prepare_only}

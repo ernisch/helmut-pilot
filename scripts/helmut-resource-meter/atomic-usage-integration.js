@@ -13,7 +13,8 @@ const SOURCE_FILES = ["lib/helmut/llm-usage-atomic.js", "lib/helmut/auth-store-c
   "scripts/helmut-resource-meter/atomic-usage-integration.js",
   "scripts/helmut-resource-meter/local-calendar-admission.js", "scripts/helmut-resource-meter/local-calendar-binding.py",
   "scripts/helmut-resource-meter/connect-local500.py", "scripts/helmut-resource-meter/start-input-checks.js",
-  "scripts/helmut-resource-meter/bounded-read-integration.js"];
+  "scripts/helmut-resource-meter/bounded-read-integration.js",
+  "scripts/helmut-resource-meter/local-resource-authority-slot.json"];
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const literal = s => "'" + String(s).replaceAll("'", "''") + "'";
 const CONTROL_READ = "verified-control-view-v1";
@@ -323,8 +324,12 @@ function bootstrapSQL(expectedHash) {
 }
 function assertLocalTarget(plan) {
   assert.equal(plan.production, false);assert.equal(plan.profiles, 500);
-  assert(/^helmut_resource_fixture_20261021_[a-f0-9]{12}$/.test(plan.targetDatabase));
-  assert(/^helmut-meter-db-w20-[a-f0-9]{12}$/.test(plan.containerName));
+  const slot=require('./local-resource-authority-slot.json');
+  assert.equal(slot.schema,'helmut-local-resource-authority-slot/2');
+  assert.equal(slot.day,'2026-10-21');assert.equal(slot.version,12);
+  assert(/^[a-f0-9]{12}$/.test(slot.caseSuffix));
+  assert.equal(plan.targetDatabase,'helmut_resource_fixture_20261021_'+slot.caseSuffix);
+  assert.equal(plan.containerName,'helmut-meter-db-w20-'+slot.caseSuffix);
 }
 function installAfterActivation({ plan, candidatePin, targetSQL }) {
   const input = readDescriptor(candidatePin);

@@ -21,9 +21,9 @@ SPENT_V11_PINS=[
  {'path':str(A.METER/'NEXT_RESOURCE20_V11_SETUP_RESERVATION.SAFE.json'),'bytes':1599,'sha256':'2b7f529b850ceb9e812906a1a8497cb2ffc6f9e0c75e1a4673337b185574188a'}]
 class NextResourceAuthorityTest(unittest.TestCase):
     def setUp(self):
-        self.connection={'preparedWithoutGO':True,'targetDatabase':'helmut_resource_fixture_20261021_000000000000',
-          'operationId':'synthetik500-resources21-000000000000',
-          'caseDirectory':'/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-000000000000',
+        self.connection={'preparedWithoutGO':True,'targetDatabase':'helmut_resource_fixture_20261021_'+A.CASE_SUFFIX,
+          'operationId':'synthetik500-resources21-'+A.CASE_SUFFIX,
+          'caseDirectory':'/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-'+A.CASE_SUFFIX,
           'sourceCapture':{'TEST_ONLY':'NO_OPERATIVE_AUTHORITY'}}
         self.intent={'schema':'helmut-owner-local-fixture-intent/1','authorized':False,
           'allowDispose':False,'production':False,'syntheticProfiles':500,'paidProviderCallsAllowed':False,
@@ -31,7 +31,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
           **{k:self.connection[k]for k in ['targetDatabase','operationId','caseDirectory']},
           'sourceCapturePin':self.connection['sourceCapture'],
           'previousConsumedMarkers':copy.deepcopy(A.PRESERVED_MARKER_PINS),
-          'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE21_V12_000000000000.PRIVATE.json'),
+          'finalOwnerGOPath':str(A.METER/('OWNER_RESOURCE21_V12_'+A.CASE_SUFFIX+'.PRIVATE.json')),
           'requiredConfirmation':'GO_LOCAL_ONLY_CREATE_'+self.connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'}
     def test_intent_is_only_technical_and_never_actual_go(self):
         with patch.object(A,'read',return_value={}):
@@ -107,7 +107,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
                 with self.subTest(tampered=key),self.assertRaises(RuntimeError):
                     A.validate_owner({**self.intent,'previousConsumedMarkers':tampered},self.connection,planning=True)
     def test_v12_slot_is_fixed_and_distinct_from_every_old_slot(self):
-        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/1','day':'2026-10-21','version':12})
+        self.assertEqual(A.SLOT,{'schema':'helmut-local-resource-authority-slot/2','day':'2026-10-21','version':12,'caseSuffix':A.CASE_SUFFIX})
         self.assertEqual(A.SLOT_VERSION,12)
         self.assertEqual(A.AUTHORIZATION,'USER_GO_20261021_EXACT_ONE_RESOURCE_ONLY_V12')
         self.assertEqual(A.AUTHORIZATION,self.intent['authorizationId'])
@@ -118,7 +118,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
         self.assertEqual(str(A.CLAIM),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE21_V12_GO_CLAIM.SAFE.json')
         self.assertEqual(str(A.RESERVATION),'/workspace/helmut-parallel-20261015/wave19-resource-meter/NEXT_RESOURCE21_V12_SETUP_RESERVATION.SAFE.json')
         self.assertNotEqual(A.CLAIM,A.RESERVATION)
-        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,'OWNER_RESOURCE21_V12_000000000000.PRIVATE.json')
+        self.assertEqual(Path(self.intent['finalOwnerGOPath']).name,('OWNER_RESOURCE21_V12_'+A.CASE_SUFFIX+'.PRIVATE.json'))
         old_names=set(map(str,A.OLD_MARKERS))
         self.assertNotIn(str(A.CLAIM),old_names)
         self.assertNotIn(str(A.RESERVATION),old_names)

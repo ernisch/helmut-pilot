@@ -110,3 +110,26 @@ Prüfungen, Datenbankrolle und alle übrigen Pfadgrenzen bleiben erhalten.
 Sieben gezielte Fälle PASS; ein anfänglich falsch befüllter Negativtest bleibt
 als FAIL-Beleg erhalten. Die veränderten Codehashes benötigen eine neue
 Fallvorbereitung; die erste bleibt ungestartet und unverändert erhalten.
+
+Die korrigierte Vorprüfung bestanden29/32, einschließlich tatsächlicher
+RO-Lektüre von288Dateien/178.538.246B. Der unabhängige Infrastrukturreview
+blockierte die Gesamtabnahme: zwei gemeinsame Autoritätspfade enthielten noch
+die Laufzeit ohne die zusätzlichen600Sekunden Reserve; außerdem blieb der
+referenzierte Betreiberbeleg ungeprüfte Metadaten. Die Quellprüfung des gelieferten
+Motorpfads war positiv, verlangte jedoch ergänzende Hilfsdateien. Die neue
+Lebenszyklusprüfung verlangte fünf konkrete Netzwerk-/Abschlusskörper.
+Kein Ressourcenclaim und kein voller Test aus Teilprüfungen abgeleitet.
+
+Behoben: beide gemeinsamen Pfade verwenden jetzt dieselbe volle Reserve.
+Slotdefinition/2 bindet genau einen Fallbezeichner im unverändert einmaligen
+globalen Slot12. Der tatsächliche gepinnte Betreiberbeleg/2 muss Fall, Commit,
+Eingaben, Kalender,500/1500/16, Speichergrenzen und genau einen Versuch bestätigen.
+Er wird im gemeinsamen Autoritätspfad geöffnet und im RO-Manifest mitgeführt;
+Root-Technikbindung und echter Betreiberwortlaut bleiben ausdrücklich getrennt.
+Python-Stager und gemessener JS-/Installer-Einstieg erzwingen denselben Fall.
+Andere selbstkonsistente V12-Bezeichner sowie ungestartete Vorgänger sind gesperrt.
+
+Gezielt erneut31Autoritätsfälle,7Mountfälle und JS-Einstieg PASS; zusätzlich
+9neue Freigabe-/Zeitgrenzenfälle PASS. Keine nativen Aktionen in diesen Tests.
+Die Fälle und Quellen benötigen nun die neue Gesamtquellenabnahme und frische32;
+die zuvor blockierten Antworten bleiben unverändert als Belege erhalten.
