@@ -29,10 +29,11 @@ sind wederRSS noch Peakbesitz. VierVorgänge beweisen keinLeck/Plateau/500Skalie
 LetzterRestore: gemeinsameHighwater+18.530.304B imHTTPintervall; Serverframes
 liegen darin. NodeRSS269.086.720→264.679.424B, anonymerGruppenspeicher+16.318.464B,
 file/shmem anEndpunkten gleich. KeinProzess-/Allocatorbesitz bewiesen und keine
-Addition zu6,42MB. GroßeFileladung605.392.896B inklshmem233.881.600B weiterhin
-ohnezeitgebundeneInode-/Charge-/Enginezuordnung; numerischeDifferenz keinBesitzbeleg.
-Kein weiterer spekulativerMinifix/Nativefall empfohlen. Für großenUmbau fehlt
-jetzt dieserEigentumsbeleg, keine neue allgemeineOptimierungsanalyse.
+Addition zu6,42MB. JIT-Einrichtung jetztzugeordnet:974frischetmpfsDateien
+178.290.688Ballokiert,vorPG gleichgroßerfile/shmem-Anstieg. KeineMotorersparnis.
+SpäteFileladung605.392.896B inklshmem233.881.600B bleibt ohneexakteEnginecharge;
+spätererWorkerpunktfile605.753.344B istgetrennt. KeinPeakabzug. SechsMarker-
+Census schließtLückenicht, daherkeinweitererNativefall/Minifix.
 
 118neuegezielteGuards/6AST/beideechteSelectorModi/Host0,2,1 PASS. VorStart
 gefundene ABI-Metadatenbindung, LOG-Schlüssel und nativeOID-JSON-Strings korrigiert;
@@ -62,6 +63,8 @@ Volumes/Loops undFAIL/UNKNOWN KEEP. Root-END14.960.943.104Bfrei,
 218.836.616B unterVolladmission15.179.779.720B; SnapshotkeineReservierung/RAMersparnis.
 HistorischeOriginalcloud nichtdirektangebunden, authentifizierteQuelle lokal.
 PrivateCI-Originalvorlagen fehlen, Vercelseparatrot; übersprungen≠PASS.
+NeueCLI-Archividee blockiert:Overlay-Herkunft/tatsächlicherReclaim ungeklärt;
+0Bqualifiziert,keineArchive/Löschungen. Wiederaufnahmegap220.282.504B,Snapshot.
 
 500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/16frische
 KontrollenjeProfil/500MBReserve offen; Sprintteilweise. KeinFull500GO:
@@ -70,6 +73,7 @@ KeinVolltestalsHypothesenprobe. AlterDeepSeek-Vollvertrag/SOL-only-Konflikt blei
 unangetastet. NurSOL/Root+bis3Helfer; keineexternenModelle/Router-/Kosten-/
 Reserveänderung/Production/Merge/Deployment. GleicherThread, DenkstufeSehrhoch.
 [CAS-Heapbeleg](betrieb/cas-heap-20261021.md),
+[JIT-/Kapazitätszuordnung](betrieb/file-charge-20261021.md),
 [NativeGrößenformel/FAIL](betrieb/cas-native-size-20261021.md),
 [VorherigePhasenmessung](betrieb/auth-write-phase-20261021.md),
 [BewiesenerGesamtvergleich](betrieb/combined-auth-memory-comparison-20261020.md),

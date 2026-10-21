@@ -1,0 +1,178 @@
+{
+  "accountingRules": [
+    "memory.stat file already includes shmem. The stated late values605392896 and233881600 imply371511296B aggregate non-shmem filecache; file+shmem would double count.",
+    "shmem includes tmpfs, SystemV shared memory and shared anonymous mmap. /dev/shm size16MiB does not bound PostgreSQL shared anonymous mappings or all shmem.",
+    "file_mapped, file_dirty, file_writeback and shmem are overlapping views/subsets; kernel_stack/pagetables/slab are inside kernel. Do not sum these with their aggregates.",
+    "Logical file length, allocated filesystem blocks, resident mapped pages and memcg-charged memory are separate ledgers. st_blocks/statvfs alone do not prove resident pages or a per-inode memcg charge.",
+    "Deduplicate aliases by filesystem/superblock identity and by inode for inode allocation claims. Do not add a filesystem statvfs total to its per-file block totals or count /ram/jit-root as a second filesystem.",
+    "RSS repeats shared mappings; PSS apportions mapped resident pages according to sharing, not memcg charge ownership. Do not add process RSS/PSS to memory.stat or subtract postmaster RSS/PSS from shmem/file.",
+    "A process/file using a page need not own its charge. First instantiation, cgroup provenance and area lifetime matter; foreign pre-cached sourcepages may stay charged to an older group.",
+    "memory.current, memory.stat, filesystem and smaps observations are sequential. Record brackets/duration; do not turn endpoint categories into a same-instant decomposition of historical memory.peak."
+  ],
+  "actions": {
+    "AST": 0,
+    "Docker": 0,
+    "Git": 0,
+    "SQL": 0,
+    "liveProcReads": 0,
+    "modelOrProviderCalls": 0,
+    "nativeActions": 0,
+    "originalPayloadReads": 0,
+    "sourceChanges": 0,
+    "subjectImportsOrExecution": 0,
+    "tests": 0,
+    "writes": "Own evidence-review only; public official documentation fetched and hash-qualified, not executed."
+  },
+  "alreadyEstablished": {
+    "after": {
+      "fileBytes": 548601856,
+      "shmemBytes": 178290688
+    },
+    "before": {
+      "fileBytes": 370311168,
+      "shmemBytes": 0
+    },
+    "beforePostgreSQLAndSQL": true,
+    "conclusion": "The controlled diagnostic restoration produced this tmpfs allocation before any Motor request. It is genuine diagnostic setup attribution; neither all late shmem nor a Motor saving follows.",
+    "destination": "/ram/jit-root on a fresh private tmpfs",
+    "fileDeltaBytes": 178290688,
+    "independentNarrowVerification": "Rehashed this retained receipt against its already accepted evidence inventory; recomputed all recorded regular logical/allocated metadata sums and both counter deltas. Original runtime/archive payloads were not reread.",
+    "otherRetainedFactsReusedFromCapacityReview": [
+      "Buffered fresh PGDATA copy and complete verification precede JIT setup; file charge rises from724992 to370311168. This associates pagecache with staging, without assigning every late page to destination PGDATA or excluding sourcecache reads.",
+      "After PG shutdown shmem178294784 equals JIT regular allocation plus4096; source writes236B /ram/postgrest.conf. This supports lifetime/config plausibility, not an independently measured per-file charged-page split.",
+      "After all owned processes exit, anon/shmem/file_mapped are0 while file372420608 remains. A charged pagecache may outlive processes; this is not a live RSS total or proof of reclaimable peak saving."
+    ],
+    "proofLevel": "ACTUAL_DIAGNOSTIC_SETUP_ALLOCATION_WITH_SAME_GROUP_COUNTER_CORROBORATION",
+    "regularAllocatedBytes": 178290688,
+    "regularLogicalBytes": 176281648,
+    "sameOwnedGroup": "5167ca85c44668820c768b7ffbf6a6b8038d155e949c1c56012a7b8313dbb7c2",
+    "shmemDeltaBytes": 178290688
+  },
+  "decision": {
+    "RAMSavingClaim": false,
+    "avoidableLargeMotorPoolProven": false,
+    "capacityReservationClaim": false,
+    "exactLateFileShmemOwnershipAnswered": false,
+    "full500": false,
+    "globalUnknownUsersOrResourcesAbsentClaim": false,
+    "newRunOrActorApproved": false,
+    "newSettingsCacheJITAllocatorChangesRecommended": false,
+    "nextAction": "Keep the proven diagnostic setup explanation. Choose a narrowly falsifiable allocation question before any future source preparation; do not run a six-marker census to claim full late ownership or an avoidable Motor pool. No architecture/fix follows from the unassigned residual.",
+    "setupAttributionAlreadyAnswered": true,
+    "sixEarlierFramesSufficientForOriginalBroadQuestion": false
+  },
+  "inputPins": [
+    {
+      "bytes": 39335,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+      "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+    },
+    {
+      "bytes": 487279,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/RESTORED_ORIGINAL_JIT.SAFE.json",
+      "sha256": "134ee8e8f63a945444b3db6b192ef870678b9a2c5f750a469004368cffc9c831"
+    },
+    {
+      "bytes": 15946,
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/capacity-review/FILE_CHARGE_FINDINGS.SAFE.json",
+      "sha256": "1a211aac7bd2777248eeae7420ca1be84e47787af1a8641f1ccd74937cbc5ba5"
+    },
+    {
+      "bytes": 18746,
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/launcher-review/SOURCE_REVIEW.SAFE.json",
+      "sha256": "4a1894b31e14064dd91b7657ee2efb2633946dafc3fe1fb3ade7457605013b7d"
+    },
+    {
+      "bytes": 2057,
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/ROOT_RESUME_PROTECTION.SAFE.json",
+      "sha256": "c55bcce0b5281e738c317246eb8061d9e6b9988a13854ea10f866abfe214ddc0"
+    },
+    {
+      "bytes": 1562,
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/official-source/SOURCE_BINDING.SAFE.json",
+      "sha256": "43176b178df1a7df5fcda42139d4018667d0672c75974491da76f4a4b5e2b5ce"
+    }
+  ],
+  "minimumEvidenceContract": {
+    "PFNBoundary": "Official pagemap documentation describes CAP_SYS_ADMIN-restricted PFNs and optional CONFIG_MEMCG kpagecgroup lookup. Neither is required or requested. No actual host capability/kernel-version claim is made; no privilege grant, injected agent or privileged collector is recommended.",
+    "alreadySufficientForDiagnosticSetup": "Existing JIT source operation + fresh dedicated tmpfs + original-overlay verification + same-group pre-PG counters and exact allocated-byte delta. PFN/kpagecgroup is not required for this restricted causal claim.",
+    "forALaterPrivateFilesystemAllocationClaim": [
+      "Predeclare the exact fixed phase, source/case identity and question. Record current/peak/stat immediately before and after the bounded filesystem/mapping read, monotonic times/duration, group identity and required-key presence; never reset peak.",
+      "Bind mount ID, filesystem type, dev/inode and namespace identity for the three private tmpfs filesystems. Measure each superblock once. Reuse the verified original JIT allocated-byte plan and source-supported lifetime; distinguish observed filesystem totals from inferred file membership.",
+      "Fresh inode provenance, ordinary writes by the admitted owned group, an exclusive controlled private-filesystem lifecycle and corroborating charge changes may establish restricted setup causation without PFNs. A claim about specific late inodes additionally needs metadata covering those inodes/lifetime; a root-directory inode alone is insufficient.",
+      "Keep mapped-residency evidence separate. Any known-postmaster smaps result is about that process only; PID/starttime/cgroup/namespace and capped complete-read status must be bound. Missing backend or other process coverage remains explicit; no global host walk or privilege escalation.",
+      "Record observed swap/missing swap visibility, allocation changes, deleted/unknown mapping candidates and all unreadable/cap outcomes. Do not fill missing fields with0 or infer exact charge from an approximate matching byte count."
+    ],
+    "independentAxes": [
+      "allocation producer/provenance",
+      "resident mapping observed at a fixed boundary",
+      "charged group association",
+      "necessity/avoidability for the unchanged Motor workload"
+    ],
+    "observerCost": "New filesystem metadata and smaps reads have CPU/time/kernel/heap overhead, can perturb timing and residency, and must be bounded and identified as diagnostic. Existing native whole-scope CPU/wall/events/integrity/closure remain mandatory; no observer-induced difference can be credited as Motor saving.",
+    "sixMarkerAlternative": {
+      "cannotAnswer": [
+        "finalRestore/finalRead or measurement-complete values after marker6",
+        "whole PostgreSQL mapping ownership including uncaptured backend54",
+        "exact per-inode pagecache charge",
+        "whole historical peak ownership",
+        "avoidable Motor RAM"
+      ],
+      "frames": 6,
+      "frozenSamplerOrActorExists": false,
+      "knownPostmasterSmapsReadCapBytes": 262144,
+      "legitimateQuestion": "Whether private tmpfs allocation changes over these six post-setup boundaries and which shared mappings are resident in the directly owned postmaster.",
+      "maxSerializedBytesPerFrame": 12288,
+      "maxSerializedBytesTotal": 73728,
+      "maxSharedCandidateSummaries": 8,
+      "maxVMAs": 1024,
+      "noAutomaticScopeExpansion": "If the predeclared claim requires those missing answers, mark it UNKNOWN or do not start; do not silently add childwalks/frames, retry or substitute phases.",
+      "placement": "After existing marker validation, before existing cycleSQL/ACK; no extra request/SQL/marker.",
+      "sourceOnlyProposal": true
+    },
+    "smallestAlignedBoundaryForTheStatedLateNumbers": "The retained late numbers are at measurement-complete, after finalRestore/finalRead. If late allocation is the selected question, a single fixed bounded census at that existing phase before teardown is more directly aligned than six earlier markers. This is a source-review requirement for any future proposal, not an instruction to prepare/run it."
+  },
+  "officialSource": {
+    "actualRunningKernelVersionAsserted": false,
+    "bindingPin": {
+      "bytes": 1562,
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/official-source/SOURCE_BINDING.SAFE.json",
+      "sha256": "43176b178df1a7df5fcda42139d4018667d0672c75974491da76f4a4b5e2b5ce"
+    },
+    "commit": "adc218676eef25575469234709c2d87185ca223a",
+    "references": [
+      "cgroup-v2.rst1439\u20131496: file includes tmpfs/sharedmemory; shmem and file_mapped; kernel aggregate.",
+      "cgroup-v2.rst1812\u20131828: instantiation/lifetime charge ownership and shared-cgroup uncertainty. No cache-eviction instruction is adopted.",
+      "proc.rst266\u2013279,495\u2013621: RSS categories, PSS, COW, sequential smaps race and smaps_rollup.",
+      "pagemap.rst29\u201332,83\u201385: restricted PFNs and optional per-PFN memcg index."
+    ],
+    "tag": "v6.12"
+  },
+  "predeclaredInterpretation": {
+    "AVOIDABLE_MOTOR_RAM": "No census alone establishes this. Required work can use diagnostically placed pages; reclaimability and placement do not prove avoidability. A later concrete structural candidate would need its own fair unchanged-workload whole-group functional/time/resource evidence. None is selected or authorized by this review.",
+    "CONSISTENT_ONLY": "Aggregate correspondence without exclusive inode/page provenance, complete relevant mapping coverage or time alignment remains a qualified association. Preserve unexplained quantities; do not assign a residual owner.",
+    "FALSIFIED": "A predeclared narrow allocation hypothesis is contradicted by qualified measurements, e.g. private filesystem allocation is not retained or its change has the opposite predeclared direction. This does not prove a different owner or saving.",
+    "OBSERVED_LATE_ALLOCATION": "Identity-qualified filesystem/mapping metadata can establish allocation/residency at its own fixed bracket. It does not automatically identify charged pages or demand necessity.",
+    "PROVEN_DIAGNOSTIC_SETUP": "Fresh controlled operation, provenance and same-group counter corroboration establish the allocation in its actual setup interval. This threshold is already met for original JIT tmpfs restoration.",
+    "UNKNOWN": "Unreadable/capped data, identity or source drift, unobserved relevant backend/phase, unbounded non-atomic drift or missing required counter invalidates the affected ownership claim. Functional PASS may remain separate, but attribution must not be promoted to PASS."
+  },
+  "remainingGap": {
+    "arithmeticRemainderIsOwnerProof": false,
+    "avoidabilityAsMotorDemand": "UNPROVEN",
+    "derivedNonShmemFileBytes": 371511296,
+    "exactLatePeakOwner": "UNKNOWN",
+    "existingProcessSampler": "Only status/io for Node55, postmaster8 and PgREST37. Serving CAS backend54 is not captured. No retrospective whole-PG mapping or pagecache-inode attribution is available.",
+    "lateObservedFileBytes": 605392896,
+    "lateObservedShmemIncludedInFileBytes": 233881600,
+    "lateShmemMinusSetupAllocationBytes": 55590912,
+    "why": "No retained late per-inode residency/charge census connects the178290688B setup files to every late page. The arithmetic55590912B remainder is not a proven PostgreSQL pool."
+  },
+  "reviewerSourcePin": {
+    "bytes": 14546,
+    "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/write_method_review.py",
+    "sha256": "4e2426e3d03ae6bdd1741c2f188153dd48164c5155cd04517e607238b8a846e6"
+  },
+  "schema": "helmut-file-charge-independent-method-review/1",
+  "scope": "Accounting and falsifiable observation contract only; no new actor or actual-source acceptance.",
+  "status": "METHOD_REVIEW_COMPLETE_NO_NEW_ACTION"
+}
