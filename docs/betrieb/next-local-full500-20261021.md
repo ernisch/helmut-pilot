@@ -96,3 +96,17 @@ RAM-Nachweise sowie 500 gleichzeitig aktive Profile/1.500 Ergebnisse bleiben off
 Es folgen frische Gesamtintegration und sämtliche 32 Startbedingungen.
 Verbrauchte Freigaben bleiben
 gesperrt. Keine Production-Aktion, kein Merge und kein Deployment.
+
+Die erste tatsächliche vollständige Vorprüfung des ungestarteten Falls ergab
+28/32 PASS. Drei Gruppen benötigen die unabhängigen Gesamtabnahmen; der vierte
+Blocker war die feste Beschränkung der Mountquellen auf das alte Belegverzeichnis.
+Die neuen, bereits vollständig gepinnten Day21-Belege liegen im Sprintverzeichnis.
+Vor der Containererzeugung gestoppt, kein Ressourcenclaim verbraucht.
+
+Der Mount-Prüfer lässt dieses eine Sprintverzeichnis nun ausschließlich für den
+lokalen Day21-/Slot12-Anwendungspfad mit vollständigem Runtime-Manifest zu.
+Es entstehen einzelne schreibgeschützte Dateimounts. Canonical-/Symlink-/Hash-
+Prüfungen, Datenbankrolle und alle übrigen Pfadgrenzen bleiben erhalten.
+Sieben gezielte Fälle PASS; ein anfänglich falsch befüllter Negativtest bleibt
+als FAIL-Beleg erhalten. Die veränderten Codehashes benötigen eine neue
+Fallvorbereitung; die erste bleibt ungestartet und unverändert erhalten.

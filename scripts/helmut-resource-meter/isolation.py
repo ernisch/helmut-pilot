@@ -361,7 +361,17 @@ def fixture_mounts(fixture,role,*,recipe=None):
         if source.name=='OWNER_LOCAL_GO.PRIVATE.json':raise RuntimeError('historical local GO excluded')
         if role=='application'and source.is_relative_to(K.REPOSITORY):continue # Same read-only common mount.
         if not source.is_relative_to(Path('/workspace/helmut-parallel-20261015')) and p!=fixture.get('nativeBudgetRuntimePin'):
-            raise RuntimeError('fixture mount outside original evidence workspace')
+            # The completed Day21 input and genuine reviews live in this one
+            # private sprint directory. These are exact runtime-manifest pins,
+            # already checked above; no directory or writable overlay is added.
+            day21_evidence=(role=='application' and recipe is not None
+              and recipe.get('scope')=='owner-approved-local500-resources'
+              and fixture.get('schema')=='helmut-pinned-full500-connection/1'
+              and fixture.get('production')is False and fixture.get('day')=='2026-10-21'
+              and A.DAY=='2026-10-21' and A.SLOT_VERSION==12
+              and fixture.get('resourceClaimPath')==str(A.CLAIM)
+              and source.is_relative_to(Path('/workspace/helmut-ram-fix-20261020/next-full500-20261021')))
+            if not day21_evidence:raise RuntimeError('fixture mount outside original evidence workspace')
         destination='/tmp/helmut-unit-fixture-postgrest-03693bea' if role=='database' else str(source)
         args+=['--mount','type=bind,src='+str(source)+',dst='+destination+',readonly']
     return args
