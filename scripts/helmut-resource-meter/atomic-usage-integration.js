@@ -14,12 +14,14 @@ const SOURCE_FILES = ["lib/helmut/llm-usage-atomic.js", "lib/helmut/auth-store-c
   "scripts/helmut-resource-meter/local-calendar-admission.js", "scripts/helmut-resource-meter/local-calendar-binding.py",
   "scripts/helmut-resource-meter/connect-local500.py", "scripts/helmut-resource-meter/start-input-checks.js",
   "scripts/helmut-resource-meter/bounded-read-integration.js",
+  "scripts/helmut-resource-meter/pipeline-lock-lease-integration.js", "lib/helmut/local-pipeline-lock-lease.js",
   "scripts/helmut-resource-meter/local-resource-authority-slot.json"];
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const literal = s => "'" + String(s).replaceAll("'", "''") + "'";
 const CONTROL_READ = "verified-control-view-v1";
 const SENDER_CLAIM_READ = "verified-control-claim-v1";
 const BOUNDED = require("./bounded-read-integration");
+const LEASE = require("./pipeline-lock-lease-integration");
 // W50 accepted these reader/transport bytes, not this later integration. Keep
 // provenance as pinned metadata, without opening private evidence at runtime.
 const CONTROL_SOURCE_ACCEPTANCE = Object.freeze({
@@ -84,7 +86,8 @@ function pin(file) {
   const b = fs.readFileSync(file);return { path: file, bytes: b.length, sha256: sha(b) };
 }
 function pinned(p) { assert.deepEqual(pin(p.path), p);return fs.readFileSync(p.path); }
-function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReuse = null, controlRead = null, boundedRead = null, senderClaimRead = null, localCalendar = null } = {}) {
+function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReuse = null, controlRead = null, boundedRead = null,
+  senderClaimRead = null, localCalendar = null, pipelineLockLease = null, localSourceDeltaPin = null } = {}) {
   assert(stateStorage === null || stateStorage === "merkle-auth-v1");
   assert(historyReadReuse === null || (historyReadReuse === "verified-history-reuse-v1" && stateStorage === "merkle-auth-v1"));
   // The graph candidate is qualified only by isolated component fixtures so
@@ -99,18 +102,38 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
   const boundedReadAcceptance = boundedRead ? BOUNDED.acceptance() : null;
   const controlCache = controlRead ? require("./control-cache-integration") : null;
   const controlCacheSourceAcceptance = controlCache ? controlCache.acceptance() : null;
+  assert(localSourceDeltaPin === null || controlRead === CONTROL_READ, "Local source delta requires the explicit control contract");
+  const sourceDelta = localSourceDeltaPin === null ? null : LEASE.sourceDelta(localSourceDeltaPin);
+  let lease = null;
+  if (pipelineLockLease !== null) {
+    assert(controlRead === CONTROL_READ && sourceDelta, "Lease requires explicit control and current source delta");
+    assert.deepEqual(Object.keys(pipelineLockLease).sort(), ["acceptancePin", "mode"]);
+    assert.equal(pipelineLockLease.mode, LEASE.MODE);
+    lease = LEASE.acceptance(pipelineLockLease.acceptancePin);
+    const byFile = (a, b) => a.file.localeCompare(b.file);
+    assert.deepEqual(lease.acceptance.sourcePins.filter(p => p.file !== LEASE.SQL).sort(byFile), [...sourceDelta.acceptance.sourcePins].sort(byFile),
+      "Lease and current source-delta adoption differ");
+  }
   if (localCalendar !== null) require(path.join(ROOT, "lib/helmut/synthetik-500-local-calendar")).validatePolicyData(localCalendar);
   // This is also the sole runtime-file list for the added source reads: the
   // existing shared manifest mounts every sourcePin and checks it in-container.
   const files = [...new Set([...SOURCE_FILES, ...(controlRead ? Object.keys(CONTROL_SOURCE_HASHES) : []),
     ...(controlRead ? controlCache.FILES : []),
+    ...(sourceDelta || lease ? ["scripts/helmut-resource-meter/pipeline-lock-lease-integration.js"] : []),
+    ...(lease ? LEASE.FILES : []),
     ...(boundedRead ? BOUNDED.FILES : []),
     ...(senderClaimRead ? ["scripts/helmut-resource-meter/sender-control-claim.js"] : [])])];
   const sourcePins = files.map(f => pin(path.join(ROOT, f)));
+  for (const p of [...(sourceDelta?.sourcePins || []), ...(lease?.sourcePins || [])]) {
+    const existing = sourcePins.find(x => x.path === p.path);
+    if (existing) assert.deepEqual(existing, p);else sourcePins.push(p);
+  }
   if (controlRead) {
     // Historical W50 hashes stay historical; only this separately qualified delta selects current U/Parts.
     const expected = { ...CONTROL_SOURCE_HASHES, ...Object.fromEntries(
-      controlCacheSourceAcceptance.currentSources.map(p => [p.file, p.sha256])) };
+      controlCacheSourceAcceptance.currentSources.map(p => [p.file, p.sha256])),
+      ...(sourceDelta ? Object.fromEntries(sourceDelta.acceptance.sourcePins
+        .filter(p => Object.hasOwn(CONTROL_SOURCE_HASHES, p.file)).map(p => [p.file, p.sha256])) : {}) };
     for (const [file, hash] of Object.entries(expected))
       assert.equal(sourcePins.find(p => p.path === path.join(ROOT, file)).sha256, hash, "Reviewed control source drift: " + file);
   }
@@ -119,6 +142,8 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
     ...(controlRead ? { controlRead, controlSourceAcceptance: CONTROL_SOURCE_ACCEPTANCE, controlCacheSourceAcceptance } : {}),
     ...(boundedRead ? { boundedRead, boundedReadAcceptance } : {}),
     ...(senderClaimRead ? { senderClaimRead } : {}),
+    ...(sourceDelta ? { localSourceDeltaPin, localSourceDeltaAcceptance: sourceDelta.acceptance } : {}),
+    ...(lease ? { pipelineLockLease, pipelineLockLeaseAcceptance: lease.acceptance } : {}),
     ...(localCalendar ? { localCalendar } : {}),
     originalHistoryPreserved: true, fullContractUnchanged: localCalendar === null,
     ...(localCalendar ? { timingMemoryAndLiveSecurityContractUnchanged: true } : {}),
@@ -127,10 +152,14 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
 function readDescriptor(p) {
   const d = JSON.parse(pinned(p));assert.deepEqual(d, descriptor({ stateStorage: d.stateStorage ?? null,
     historyReadReuse: d.historyReadReuse ?? null, controlRead: d.controlRead ?? null, boundedRead: d.boundedRead ?? null,
-    senderClaimRead: d.senderClaimRead ?? null, localCalendar: d.localCalendar ?? null }));return d;
+    senderClaimRead: d.senderClaimRead ?? null, localCalendar: d.localCalendar ?? null,
+    pipelineLockLease: d.pipelineLockLease ?? null, localSourceDeltaPin: d.localSourceDeltaPin ?? null }));return d;
 }
 function environment(env, p) {
   const d = readDescriptor(p);assert(!env.VERCEL && !env.HELMUT_SYNTHETIK500_CONTENT_PRIVATE_KEY);
+  assert(!LEASE.isOn(env[LEASE.GLOBAL_ENV]), "Global atomic lock is not admitted by the full local contract");
+  assert(env[LEASE.ENV] === undefined || (d.pipelineLockLease?.mode === LEASE.MODE && env[LEASE.ENV] === LEASE.MODE),
+    "Pipeline lease requires exact descriptor opt-in");
   assert(env.HELMUT_AUTH_GRAPH_READ_REUSE === undefined, "Graph reuse has no admitted full-run binding");
   assert(env.HELMUT_AUTH_SINGLE_WRITE_CAPTURE === undefined, "Single write capture has no admitted full-run binding");
   assert(env.HELMUT_AUTH_CONTROL_READ === undefined || (d.controlRead === CONTROL_READ
@@ -141,6 +170,7 @@ function environment(env, p) {
   assert(env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON === undefined
     || env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON === (d.localCalendar ? JSON.stringify(d.localCalendar) : undefined));
   return { ...env, HELMUT_LLM_USAGE_STORAGE: MODE,
+    ...(d.pipelineLockLease ? { [LEASE.ENV]: LEASE.MODE, [LEASE.GLOBAL_ENV]: "off" } : {}),
     ...(d.stateStorage ? { HELMUT_AUTH_STATE_STORAGE: d.stateStorage } : {}),
     ...(d.historyReadReuse ? { HELMUT_AUTH_HISTORY_READ_REUSE: d.historyReadReuse } : {}),
     ...(d.controlRead ? { HELMUT_AUTH_CONTROL_READ: d.controlRead } : {}),
@@ -331,6 +361,21 @@ function assertLocalTarget(plan) {
   assert.equal(plan.targetDatabase,'helmut_resource_fixture_20261021_'+slot.caseSuffix);
   assert.equal(plan.containerName,'helmut-meter-db-w20-'+slot.caseSuffix);
 }
+function assertExpiredPipelineLocks(locks, observedMS = Date.now()) {
+  assert(Number.isSafeInteger(observedMS) && observedMS >= 0, "Fresh local lock observation required");
+  const object = value => value !== null && typeof value === "object" && !Array.isArray(value)
+    && [Object.prototype, null].includes(Object.getPrototypeOf(value));
+  assert(object(locks), "Legacy pipelineLocks must be an actual map before backend change");
+  for (const [name, value] of Object.entries(locks)) {
+    assert(name.length > 0 && name.length <= 256 && object(value), "Invalid legacy pipeline lock entry");
+    assert.deepEqual(Object.keys(value).sort(), ["expiresAt", "lockedAt"], "Unknown legacy pipeline lock fields");
+    assert(Number.isSafeInteger(value.lockedAt) && value.lockedAt >= 0
+      && Number.isSafeInteger(value.expiresAt) && value.expiresAt >= value.lockedAt,
+    "Invalid legacy pipeline lock timestamps");
+    assert(value.expiresAt <= observedMS, "Active legacy pipeline lock blocks backend change");
+  }
+  return Object.keys(locks).length;
+}
 function installAfterActivation({ plan, candidatePin, targetSQL }) {
   const input = readDescriptor(candidatePin);
   assertLocalTarget(plan);
@@ -338,8 +383,13 @@ function installAfterActivation({ plan, candidatePin, targetSQL }) {
   assertSourceReady(read(sourceReadySQL()));
   const before = read("SELECT jsonb_build_object('database',current_database(),'hash',encode(sha256(convert_to(data::text,'UTF8')),'hex'),"
     + "'withoutRevisionHash',encode(sha256(convert_to((data-'_authStoreRevision')::text,'UTF8')),'hex'),"
-    + "'history',jsonb_array_length(data->'llmUsage'),'bound',data?'_llmUsageRef')FROM public.helmut_store WHERE id='main-auth';");
+    + "'history',jsonb_array_length(data->'llmUsage'),'bound',data?'_llmUsageRef'"
+    + (input.pipelineLockLease ? ",'pipelineLocks',data->'pipelineLocks'" : "")
+    + ")FROM public.helmut_store WHERE id='main-auth';");
   assert.equal(before.database, plan.targetDatabase);assert.equal(before.bound, false);assert(Number.isSafeInteger(before.history));
+  // Inspect the actual unbound logical target BEFORE bootstrap/conversion. Old
+  // expired entries are preserved; an active/unknown entry never switches backend.
+  if (input.pipelineLockLease) assertExpiredPipelineLocks(before.pipelineLocks);
   // Only the new measured target is changed; all costs remain in this measured
   // first stage. PostgREST is started later, so no mixed old/new writer exists.
   targetSQL("ALTER DATABASE \"" + plan.targetDatabase + "\" SET helmut.local_usage_experiment='on';");
@@ -388,11 +438,26 @@ function installAfterActivation({ plan, candidatePin, targetSQL }) {
     boundedReadReceipt = { mode: input.boundedRead, sourceAcceptance: input.boundedReadAcceptance,
       usageCatalog, stateCatalog, originalLogicalStatePreserved: true, includedInMeasuredPreparation: true };
   }
+  let pipelineLockLeaseReceipt = null;
+  if (input.pipelineLockLease) {
+    // Only the new globally metered target. The descriptor already verified the
+    // genuine native/source acceptance; the SQL itself fences fixture/GUC/owner.
+    const witness = physicalWitnessExpression({ stateStorage: input.stateStorage ?? null });
+    const original = read("SELECT " + witness + ";");
+    targetSQL("ALTER DATABASE \"" + plan.targetDatabase + "\" SET helmut.local_pipeline_lock_mode='" + LEASE.MODE + "';");
+    targetSQL(fs.readFileSync(path.join(ROOT, LEASE.SQL), "utf8"));
+    const lockCatalog = read(LEASE.catalogSQL());LEASE.assertCatalog(lockCatalog);
+    assert.equal(lockCatalog.database, plan.targetDatabase);
+    assert.deepEqual(read("SELECT " + witness + ";"), original, "Lease installation changed native Auth/history");
+    pipelineLockLeaseReceipt = { mode: LEASE.MODE, acceptancePin: input.pipelineLockLease.acceptancePin,
+      catalog: lockCatalog, originalStatePreserved: true, includedInMeasuredPreparation: true };
+  }
   return { schema: "helmut-measured-atomic-usage-bootstrap/1", pass: true, candidatePin,
     targetDatabase: plan.targetDatabase, originalPhysicalHash: before.hash, initialPhysicalHash: after.native.physicalAuthSHA256,
     logicalWithoutRevisionHash: before.withoutRevisionHash, proof: result.proof, originalHistoryCount: before.history,
-    catalog, ...(stateReceipt ? { stateReceipt } : {}), ...(boundedReadReceipt ? { boundedReadReceipt } : {}), wallMS: performance.now() - begin, includedInMeasuredPreparation: true,
+    catalog, ...(stateReceipt ? { stateReceipt } : {}), ...(boundedReadReceipt ? { boundedReadReceipt } : {}),
+    ...(pipelineLockLeaseReceipt ? { pipelineLockLeaseReceipt } : {}), wallMS: performance.now() - begin, includedInMeasuredPreparation: true,
     activationByThisHelper: false, costsAndOriginalHistoryUnchanged: true, production: false };
 }
 module.exports = { MODE, SOURCE_FILES, CONTROL_READ, CONTROL_SOURCE_ACCEPTANCE, pin, pinned, descriptor, readDescriptor, environment,
-  projectQuery, physicalWitnessExpression, catalogSQL, assertCatalog, stateFunctionSpecs, stateCatalogSQL, assertStateCatalog, sourceReadySQL, assertSourceReady, bootstrapSQL, assertLocalTarget, installAfterActivation };
+  projectQuery, physicalWitnessExpression, catalogSQL, assertCatalog, stateFunctionSpecs, stateCatalogSQL, assertStateCatalog, sourceReadySQL, assertSourceReady, bootstrapSQL, assertLocalTarget, assertExpiredPipelineLocks, installAfterActivation };

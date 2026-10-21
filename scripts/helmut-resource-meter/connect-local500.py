@@ -221,13 +221,16 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
             sender_mode=candidate.get('senderClaimRead')
             if sender_mode is not None and (sender_mode!='verified-control-claim-v1' or bounded_mode!='bounded-native-read-v1'):
                 raise RuntimeError('unknown or unbound sender control claim reader')
+            lease=candidate.get('pipelineLockLease')
+            if lease is not None and (not isinstance(lease,dict)or set(lease)!={'mode','acceptancePin'}
+                    or lease['mode']!='invocation-lease-v1' or control_mode!='verified-control-view-v1'
+                    or not candidate.get('localSourceDeltaPin')):
+                raise RuntimeError('unknown or unbound local pipeline lease mode')
+            lease_helper=json.dumps(str(BIN/'pipeline-lock-lease-integration.js'))
+            lease_check=('const pipelineLeaseCatalog=read(require('+lease_helper+').catalogSQL());require('
+                         +lease_helper+').assertCatalog(pipelineLeaseCatalog);assert.equal(pipelineLeaseCatalog.database,target.database);' if lease else '')
             catalog_options=',{boundedRead:'+json.dumps(bounded_mode)+'}' if bounded_mode else ''
             state_options=',{stateStorage:'+json.dumps(state_mode)+'}' if state_mode else ''
-            state_environment="env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else ''
-            history_environment="env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else ''
-            control_environment="env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';" if control_mode else ''
-            calendar_json=json.dumps(json.dumps(calendar,separators=(',',':'))) if calendar else None
-            calendar_environment='env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else ''
             def change(old,new):
                 nonlocal text
                 if text.count(old)!=1:raise RuntimeError('exact atomic usage integration point missing: '+template['relative'])
@@ -237,21 +240,23 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                 change('  const memory=[];', '  require('+helper+').readDescriptor('+descriptor+');\n  const memory=[];')
                 change('  function sql(query) {', '  function sql(query) {\n    query=require('+helper+').projectQuery(query'+state_options+');')
                 change("    assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID,'main-auth');",
-                    '    assert.deepEqual(config.atomicUsageInput,'+descriptor+');require('+helper+').environment(env,config.atomicUsageInput);\n'
+                    '    assert.deepEqual(config.atomicUsageInput,'+descriptor+');Object.assign(env,require('+helper+').environment(env,config.atomicUsageInput));\n'
                     '    const receipt=G.json(config.atomicUsageReceipt);assert.equal(receipt.pass,true);assert.equal(receipt.targetDatabase,target.database);\n'
                     '    assert.deepEqual(receipt.candidatePin,config.atomicUsageInput);assert.equal(receipt.originalPhysicalHash,receipt.proof.originalHash);\n'
                     '    const catalog=read(require('+helper+').catalogSQL());require('+helper+').assertCatalog(catalog'+catalog_options+');\n'
                     +('    const stateCatalog=read(require('+helper+').stateCatalogSQL());require('+helper+').assertStateCatalog(stateCatalog'+catalog_options+');\n' if state_mode else '')+
                     ('    assert.equal(receipt.boundedReadReceipt?.mode,"bounded-native-read-v1");assert.equal(receipt.boundedReadReceipt.originalLogicalStatePreserved,true);\n' if bounded_mode else '')+
+                    ('    assert.equal(receipt.pipelineLockLeaseReceipt?.mode,"invocation-lease-v1");assert.deepEqual(receipt.pipelineLockLeaseReceipt.acceptancePin,'+json.dumps(lease['acceptancePin'],separators=(',',':'))+');assert.equal(receipt.pipelineLockLeaseReceipt.originalStatePreserved,true);'+lease_check+'\n' if lease else '')+
                     '    const bound=read("SELECT "+require('+helper+').physicalWitnessExpression('+state_options[1:]+')+";");\n'
                     '    assert.equal(bound.proof.generation,receipt.proof.generation);assert.equal(bound.proof.originalHash,receipt.proof.originalHash);\n'
                     +('    assert(receipt.stateReceipt?.originalLogicalStatePreserved);assert.equal(bound.state.generation,receipt.stateReceipt.state.generation);assert.equal(bound.state.originalHash,receipt.stateReceipt.state.originalHash);\n' if state_mode else '')+
-                    "    env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';\n"
-                    +('    '+state_environment+'\n' if state_mode else '')+
-                    ('    '+history_environment+'\n' if history_mode else '')+
-                    ('    '+control_environment+'\n' if control_mode else '')+
-                    ('    '+calendar_environment+'\n' if calendar else '')+
                     "    assert.equal(env.HELMUT_SUPABASE_AUTH_STORE_ID,'main-auth');")
+                if lease:
+                    # Baseline and final state are actual reads of the owned DB.
+                    # Successful full-run acceptance cannot omit the empty final
+                    # lease table or silently select an incompatible catalog.
+                    change('  function readState(selector) {','  function readState(selector) {\n    '+lease_check)
+                    change('  function readAllFinalEvidence(selector,count) {','  function readAllFinalEvidence(selector,count) {\n    '+lease_check)
                 change("'authRevision',data->'_authStoreRevision','journal'",
                     "'nativeUsageBinding',\"+require("+helper+").physicalWitnessExpression("+state_options[1:]+")+\",'authRevision',data->'_authStoreRevision','journal'")
                 if sender_mode:
@@ -265,10 +270,10 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                         +').readSynthetik500ControlStore()});\n')
             elif relative=='native-end-preparation/runtime-candidates/prepare-materials.candidate.js':
                 change('  Object.assign(env,localBudgets);',
-                    "  Object.assign(env,localBudgets);require("+helper+").environment(env,"+descriptor+");env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+state_environment+history_environment+control_environment+calendar_environment)
+                    "  Object.assign(env,localBudgets);Object.assign(env,require("+helper+").environment(env,"+descriptor+"));")
             elif relative=='native-end-preparation/runtime-candidates/root-authority-stage.candidate.js':
                 change("['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY']",
-                    "['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY','HELMUT_LLM_USAGE_STORAGE'"+(",'HELMUT_AUTH_STATE_STORAGE'" if state_mode else '')+(",'HELMUT_AUTH_HISTORY_READ_REUSE'" if history_mode else '')+(",'HELMUT_AUTH_CONTROL_READ'" if control_mode else '')+(",'HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'" if calendar else '')+"]")
+                    "['HELMUT_PUBLICATION_ELIGIBILITY_JSON','HELMUT_SYNTHETIK500_CONTENT_PUBLIC_KEY','HELMUT_LLM_USAGE_STORAGE','HELMUT_LOCAL_PIPELINE_LOCK_MODE','HELMUT_ATOMIC_LOCK'"+(",'HELMUT_AUTH_STATE_STORAGE'" if state_mode else '')+(",'HELMUT_AUTH_HISTORY_READ_REUSE'" if history_mode else '')+(",'HELMUT_AUTH_CONTROL_READ'" if control_mode else '')+(",'HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'" if calendar else '')+"]")
             elif relative=='native-end-preparation/runtime-candidates/assemble-config.candidate.js':
                 change('const config={...base,',
                     'const config={...base,atomicUsageInput:r.atomicUsageInput,atomicUsageReceipt:r.atomicUsageReceipt,')
@@ -279,7 +284,7 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                     '  const failure=require('+json.dumps(str(BIN/'runtime-failure-receipt.js'))+').failure;')
             elif relative=='assemble-after-activation.js':
                 change(' const initialSourceBinding=',
-                    " require("+helper+").environment(process.env,"+descriptor+");\n process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"+("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1';" if state_mode else '')+("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';" if history_mode else '')+("process.env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';" if control_mode else '')+('process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON='+calendar_json+';' if calendar else '')+"\n const initialSourceBinding=")
+                    " Object.assign(process.env,require("+helper+").environment(process.env,"+descriptor+"));\n const initialSourceBinding=")
                 if calendar:
                     change('briefingDatum:runtime.start','briefingDatum:'+json.dumps(calendar['sourceViewAtUTC']))
                 if bounded_mode:
