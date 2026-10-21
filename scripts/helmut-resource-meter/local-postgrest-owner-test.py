@@ -102,7 +102,8 @@ class OwnerTests(unittest.TestCase):
             'maximumLifecycleSeconds': 14520, 'binaryPin': binary, 'configPin': file(Path(self.m.CONFIG_PATH), config),
             'templatePin': file(self.root / 'template.conf', template), 'jwtSecretSHA256': self.m.sha(b'b' * 64),
             'sourcePins': sources, 'upstreamEvidencePin': ev, 'upstreamSourcePins': upstream,
-            'logLimitBytes': 65536, 'waitSeconds': 20, 'killWaitSeconds': 5, 'drainWaitSeconds': 3}
+            'logLimitBytes': 65536, 'waitSeconds': 20, 'killWaitSeconds': 5, 'drainWaitSeconds': 3,
+            'requestSHA256': self.m.sha(b'pure request fixture')}
         self.producer = {'containerId': self.scope['containerId'], 'controllerInvocationId': self.scope['controllerInvocationId'],
             'scopePin': file(self.root / 'scope.json', self.m.canonical(self.scope))}
         self.m.container_scope = lambda: (copy.deepcopy(self.scope), copy.deepcopy(self.producer))
@@ -317,6 +318,31 @@ class OwnerTests(unittest.TestCase):
         self.assertTrue(self.saved[0]['pass'])
         self.assertFalse(r['pass'] or r['acceptedExpectedTranslation'])
         self.assertEqual(r['returnCodeClassification'], 'UNQUALIFIED')
+
+    def test_persistence_cannot_outlive_close_deadline(self):
+        self.check_persistence_loss('deadline')
+
+    def test_persistence_cannot_hide_owner_interrupt(self):
+        self.check_persistence_loss('interrupt')
+
+    def test_persistence_cannot_hide_wall_clock_drift(self):
+        self.check_persistence_loss('clock')
+
+    def check_persistence_loss(self, change):
+        cap, _ = self.started()
+        e = self.m.entry(cap)
+        def persist(r):
+            self.saved.append(copy.deepcopy(r))
+            if change == 'deadline':
+                elapsed = e['deadline'] - self.mono + 1
+                self.now += elapsed; self.mono += elapsed
+            elif change == 'interrupt': e['interrupts'] += 1
+            else: self.now += 6
+        r = self.close(cap, persist=persist)
+        self.assertTrue(self.saved[-1]['pass'])
+        self.assertFalse(r['pass'] or r['acceptedExpectedTranslation'])
+        self.assertEqual(r['returnCodeClassification'], 'UNQUALIFIED')
+        self.assertEqual(r['ownerInterrupts'], int(change == 'interrupt'))
 
     def test_abnormal_owner_stop_never_passes(self):
         cap, child = self.started()

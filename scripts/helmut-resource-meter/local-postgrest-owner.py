@@ -1,16 +1,18 @@
 """Inert on import. New LOCAL container-owned PostgREST lifecycle only.
 
 The reviewed DB supervisor must produce DATABASE_CONFIG and its exact scope pin
-AFTER its existing GO/claim checks. This module issues no GO or claim. Integration
-is deliberately absent: without that new producer binding, --run rejects.
+AFTER its existing GO/claim checks. This module issues no GO or claim. Without
+the fresh optional supervisor producer binding, --run rejects.
 """
 import datetime
+import base64
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import signal
+import selectors
 import socket
 import stat
 import subprocess
@@ -19,12 +21,20 @@ import threading
 import time
 
 ROOT = Path('/workspace/helmut-cpu-epoch-20261015')
+BACKEND_DIR = Path('/meter-output/local-postgrest-backend')
 DATABASE_CONFIG = Path('/meter-output/DATABASE_CONFIG.SAFE.json')
-SCOPE_PATH = Path('/meter-output/LOCAL_POSTGREST_OWNER_SCOPE.SAFE.json')
-STOP_PATH = Path('/meter-output/LOCAL_POSTGREST_OWNER_STOP.SAFE.json')
-LOG_PATH = Path('/meter-output/LOCAL_POSTGREST_OWNER.PRIVATE.log')
-STARTED_PATH = Path('/meter-output/LOCAL_POSTGREST_OWNER_STARTED.SAFE.json')
-RESULT_PATH = Path('/meter-output/LOCAL_POSTGREST_OWNER_RESULT.SAFE.json')
+HOST_BINDING = Path('/meter-output/LOCAL_POSTGREST_BACKEND_HOST_BINDING.SAFE.json')
+KERNEL_BINDING = Path('/meter-output/LOCAL_POSTGREST_BACKEND_KERNEL_BINDING.SAFE.json')
+PRODUCER_PATH = BACKEND_DIR / 'PRODUCER.SAFE.json'
+REQUEST_PATH = BACKEND_DIR / 'REQUEST.PRIVATE.json'
+ACK_PATH = BACKEND_DIR / 'START_ACK.SAFE.json'
+SCOPE_PATH = BACKEND_DIR / 'SCOPE.SAFE.json'
+STOP_PATH = BACKEND_DIR / 'STOP.SAFE.json'
+LOG_PATH = BACKEND_DIR / 'output/OWNER.PRIVATE.log'
+STARTED_PATH = BACKEND_DIR / 'output/STARTED.SAFE.json'
+RESULT_PATH = BACKEND_DIR / 'output/RESULT.SAFE.json'
+CGROUP_VIEW = Path('/local-postgrest-cgroup-parent')
+ORIGINAL_BINARY_PATH = '/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/postgrest-pinned'
 BINARY_PATH = '/tmp/helmut-unit-fixture-postgrest-03693bea'
 CONFIG_PATH = '/tmp/helmut-resource-fixture.conf'
 BINARY_BYTES = 17309560
@@ -33,11 +43,49 @@ UPSTREAM_ROOT = Path('/workspace/helmut-ram-fix-20261020/combined-auth-baseline-
 EVIDENCE_BYTES = 4139
 EVIDENCE_SHA256 = '218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884'
 SOURCE_ROLES = ('local-postgrest-owner.py', 'database-supervisor.py', 'docker-broker.py',
-                'isolation.py', 'connect-local500.py', 'process-runner.py', 'start-preflight.py')
+                'isolation.py', 'connect-local500.py', 'process-runner.py', 'start-preflight.py',
+                'finish-connection.py', 'start-input-checks.js')
 ENV = {'PATH': '/usr/lib/postgresql/17/bin:/usr/bin:/bin', 'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8'}
 UTC = datetime.timezone.utc
 _issued, _nonces = {}, set()
 _lock = threading.RLock()
+
+
+def read_backend_plan(pin, *, case_directory, target_database, operation_id):
+    """Read-only optional backend admission; never creates authority or a scope."""
+    raw, _ = pinned(pin, 65536)
+    p = json.loads(raw)
+    keys = {'schema', 'mode', 'production', 'automaticRetry', 'day', 'caseDirectory', 'targetDatabase', 'operationId',
+        'ownerGoPin', 'sourcePostgrestConfigPin', 'sourcePins', 'binaryPin', 'upstreamEvidencePin', 'upstreamSourcePins',
+        'workEndsAtUTC', 'closeByUTC', 'maximumLifecycleSeconds', 'logLimitBytes', 'waitSeconds', 'killWaitSeconds',
+        'drainWaitSeconds', 'resourceClaimPath'}
+    require(set(p) == keys and p['schema'] == 'helmut-local-supervised-postgrest-backend-plan/1'
+            and p['mode'] == 'supervised-owner-v1' and p['production'] is False and p['automaticRetry'] is False,
+            'exact optional local backend plan required')
+    require((p['caseDirectory'], p['targetDatabase'], p['operationId']) == (str(case_directory), target_database, operation_id), 'backend case binding differs')
+    day = datetime.date.fromisoformat(p['day'])
+    case = Path(p['caseDirectory']); suffix = case.name.removeprefix('attempt-')
+    require(case.parent == Path('/workspace/helmut-parallel-20261015/wave20-resource-integration')
+        and re.fullmatch('[a-f0-9]{12}', suffix)
+        and p['targetDatabase'] == 'helmut_resource_fixture_' + day.strftime('%Y%m%d') + '_' + suffix
+        and p['operationId'] == 'synthetik500-resources' + day.strftime('%d') + '-' + suffix, 'backend target/operation differs')
+    require(p['binaryPin'] == {'path': ORIGINAL_BINARY_PATH, 'bytes': BINARY_BYTES, 'sha256': BINARY_SHA256}, 'backend binary differs')
+    expected = [str(ROOT / 'scripts/helmut-resource-meter' / n) for n in SOURCE_ROLES] + [str(ROOT / 'scripts/helmut-resource-meter/local-postgrest-services.js')]
+    require([q['path'] for q in p['sourcePins']] == expected, 'complete backend source closure required')
+    for q in [p['binaryPin'], p['sourcePostgrestConfigPin'], p['ownerGoPin'], *p['sourcePins'], p['upstreamEvidencePin'], *p['upstreamSourcePins']]:
+        pinned(q)
+    require(p['upstreamEvidencePin'] == {'path': str(UPSTREAM_ROOT / 'SOURCE_EVIDENCE.SAFE.json'), 'bytes': EVIDENCE_BYTES, 'sha256': EVIDENCE_SHA256}, 'backend upstream provenance differs')
+    evidence = json.loads(pinned(p['upstreamEvidencePin'])[0])
+    expected_upstream = [{'path': str(UPSTREAM_ROOT / q['localRelativePath']), 'bytes': q['bytes'], 'sha256': q['sha256']} for q in evidence['sources']]
+    require(len(expected_upstream) == 7 and p['upstreamSourcePins'] == expected_upstream, 'backend upstream closure differs')
+    require(Path(p['resourceClaimPath']).parent == Path('/workspace/helmut-parallel-20261015/wave19-resource-meter')
+            and Path(p['resourceClaimPath']).name.startswith('NEXT_RESOURCE' + day.strftime('%d') + '_V'), 'backend claim path differs')
+    work, close = instant(p['workEndsAtUTC']), instant(p['closeByUTC'])
+    require(datetime.datetime.fromtimestamp(work, UTC).date() == day and work <= close <= work + 180
+            and type(p['maximumLifecycleSeconds']) is int and 0 < p['maximumLifecycleSeconds'] <= 33000, 'backend end bounds differ')
+    for key, maximum in [('logLimitBytes', 16 * 1024 * 1024), ('waitSeconds', 30), ('killWaitSeconds', 10), ('drainWaitSeconds', 5)]:
+        require(type(p[key]) is int and 0 < p[key] <= maximum, 'backend close bounds differ')
+    return p
 
 
 def require(value, reason):
@@ -53,7 +101,7 @@ def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
-def regular(path, limit, *, private=False):
+def regular(path, limit, *, private=False, owner_uid=None):
     p = Path(path)
     require(p.is_absolute() and p.resolve() == p and not p.is_symlink(), 'canonical file required')
     before = p.lstat()
@@ -65,7 +113,7 @@ def regular(path, limit, *, private=False):
                 and first.st_ino == before.st_ino and first.st_dev == before.st_dev
                 and 0 < first.st_size <= limit, 'bounded single-link regular file required')
         if private:
-            require(stat.S_IMODE(first.st_mode) == 0o600 and first.st_uid == os.geteuid(), 'private owner file required')
+            require(stat.S_IMODE(first.st_mode) == 0o600 and first.st_uid == (os.geteuid() if owner_uid is None else owner_uid), 'private owner file required')
         with os.fdopen(fd, 'rb', closefd=False) as f:
             raw = f.read(limit + 1)
         fields = ('st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns')
@@ -77,11 +125,11 @@ def regular(path, limit, *, private=False):
         os.close(fd)
 
 
-def pinned(pin, limit=20 * 1024 * 1024, *, private=False):
+def pinned(pin, limit=20 * 1024 * 1024, *, private=False, owner_uid=None):
     require(type(pin) is dict and set(pin) == {'path', 'bytes', 'sha256'}
             and type(pin['bytes']) is int and pin['bytes'] > 0
             and type(pin['sha256']) is str and re.fullmatch('[a-f0-9]{64}', pin['sha256']), 'exact pin required')
-    raw, actual, identity = regular(pin['path'], limit, private=private)
+    raw, actual, identity = regular(pin['path'], limit, private=private, owner_uid=owner_uid)
     require(actual == pin, 'pin contents differ')
     return raw, identity
 
@@ -96,7 +144,8 @@ def instant(value):
 def process_identity(child):
     require(type(child.pid) is int and child.pid > 1, 'direct child PID required')
     base = Path('/proc') / str(child.pid)
-    require(os.readlink(base / 'ns/pid') == os.readlink('/proc/self/ns/pid'), 'child namespace differs')
+    parent = [line.split(':', 1)[1].strip() for line in (base / 'status').read_text().splitlines() if line.startswith('PPid:')]
+    require(parent == [str(os.getpid())], 'actual direct child parent differs')
     require(os.readlink(base / 'exe') == BINARY_PATH, 'child executable differs')
     st = os.stat(base / 'exe')
     binary = os.stat(BINARY_PATH)
@@ -107,8 +156,7 @@ def process_identity(child):
 
 def container_scope():
     """Only the fixed private DB supervisor can supply the launch scope."""
-    require(os.getpid() != 1 and re.fullmatch('[a-f0-9]{12}', socket.gethostname()), 'private container owner required')
-    require(os.readlink('/proc/self/ns/pid') == os.readlink('/proc/1/ns/pid'), 'private supervisor namespace required')
+    require(os.getpid() != 1 and os.getppid() == 1 and re.fullmatch('[a-f0-9]{12}', socket.gethostname()), 'direct private DB PID1 owner required')
     command = Path('/proc/1/cmdline').read_bytes().split(b'\0')
     require(len(command) == 4 and command[-1] == b''
             and command[0] == b'/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python'
@@ -117,23 +165,39 @@ def container_scope():
     cfg_raw, cfg_pin, cfg_id = regular(DATABASE_CONFIG, 65536, private=True)
     cfg = json.loads(cfg_raw)
     require(cfg.get('scope') == 'owner-approved-local500-resources' and cfg.get('freshInitdbVolume') is True
-            and cfg.get('stopFile') == '/meter-output/STOP_DATABASE'
+            and cfg.get('stopFile') == '/meter-output/control/STOP_DATABASE'
             and cfg.get('finalFile') == '/meter-output/DATABASE_FINAL.SAFE.json', 'owned DB producer required')
-    binding = cfg['localPostgrestOwner']
-    require(set(binding) == {'scopePin', 'containerId', 'controllerInvocationId'}
+    producer_raw, producer_pin, producer_id = regular(PRODUCER_PATH, 65536)
+    require(PRODUCER_PATH.stat().st_uid == 0 and stat.S_IMODE(PRODUCER_PATH.stat().st_mode) == 0o644, 'root-owned producer metadata required')
+    binding = json.loads(producer_raw)
+    require(binding['schema'] == 'helmut-local-postgrest-supervisor-producer/1'
+            and binding['databaseConfigPin'] == cfg_pin and binding['localPostgrestBackendPlanPin'] == cfg['localPostgrestBackendPlanPin']
+            and binding['pid1StartTicks'] == Path('/proc/1/stat').read_text().rsplit(')', 1)[1].split()[19]
             and re.fullmatch('[a-f0-9]{64}', binding['containerId'])
             and binding['containerId'].startswith(socket.gethostname())
             and re.fullmatch('[a-f0-9]{32}', binding['controllerInvocationId'])
             and binding['scopePin']['path'] == str(SCOPE_PATH), 'supervisor scope binding required')
-    raw, scope_id = pinned(binding['scopePin'], 65536, private=True)
-    return json.loads(raw), {'configPin': cfg_pin, 'configIdentity': cfg_id, 'scopeIdentity': scope_id, **binding}
+    host = json.loads(pinned(binding['hostBindingPin'], 65536, private=True)[0])
+    kernel = json.loads(pinned(binding['kernelBindingPin'], 65536, private=True)[0])
+    require(host['containerId'] == kernel['containerId'] == binding['containerId']
+            and host['privatePidMode'] == '' and binding['privatePidMode'] == ''
+            and kernel['hostPIDStartTicks'] == binding['pid1StartTicks']
+            and kernel['hostBindingPin'] == binding['hostBindingPin'], 'observed kernel container binding differs')
+    group = CGROUP_VIEW / kernel['relativeToCommonParent']
+    require(group.resolve() == group and group.is_relative_to(CGROUP_VIEW)
+            and (group.stat().st_dev, group.stat().st_ino) == (kernel['cgroupDevice'], kernel['cgroupInode'])
+            and {1, os.getpid()} <= {int(x) for x in (group / 'cgroup.procs').read_text().split()}, 'actual owner and PID1 kernel membership required')
+    raw, scope_id = pinned(binding['scopePin'], 65536)
+    require(SCOPE_PATH.stat().st_uid == 0 and stat.S_IMODE(SCOPE_PATH.stat().st_mode) == 0o644, 'root-owned scope metadata required')
+    return json.loads(raw), {'configPin': cfg_pin, 'configIdentity': cfg_id, 'scopeIdentity': scope_id,
+        'producerPin': producer_pin, 'producerIdentity': producer_id, **binding}
 
 
 def check_scope(scope, producer):
     keys = {'schema', 'production', 'automaticRetry', 'nonce', 'day', 'caseDirectory', 'targetDatabase', 'operationId',
             'containerId', 'controllerInvocationId', 'cgroupParent', 'createdAtUTC', 'launchByUTC', 'workEndsAtUTC',
             'closeByUTC', 'maximumLifecycleSeconds', 'binaryPin', 'configPin', 'templatePin', 'jwtSecretSHA256',
-            'sourcePins', 'upstreamEvidencePin', 'upstreamSourcePins', 'logLimitBytes', 'waitSeconds', 'killWaitSeconds', 'drainWaitSeconds'}
+            'sourcePins', 'upstreamEvidencePin', 'upstreamSourcePins', 'logLimitBytes', 'waitSeconds', 'killWaitSeconds', 'drainWaitSeconds', 'requestSHA256'}
     require(type(scope) is dict and set(scope) == keys and scope['schema'] == 'helmut-local-fullcase-postgrest-owner-scope/1'
             and scope['production'] is False and scope['automaticRetry'] is False, 'exact new local scope required')
     day = datetime.date.fromisoformat(scope['day'])
@@ -158,12 +222,13 @@ def check_scope(scope, producer):
     require(scope['binaryPin'] == {'path': BINARY_PATH, 'bytes': BINARY_BYTES, 'sha256': BINARY_SHA256}
             and scope['configPin']['path'] == CONFIG_PATH, 'fixed reviewed executable/config required')
     require(re.fullmatch('[a-f0-9]{64}', scope['jwtSecretSHA256']) is not None, 'secret digest required')
+    require(re.fullmatch('[a-f0-9]{64}', scope['requestSHA256']) is not None, 'request digest required')
     require([p['path'] for p in scope['sourcePins']] == [str(ROOT / 'scripts/helmut-resource-meter' / n) for n in SOURCE_ROLES], 'complete integration source roles required')
     require(scope['upstreamEvidencePin'] == {'path': str(UPSTREAM_ROOT / 'SOURCE_EVIDENCE.SAFE.json'), 'bytes': EVIDENCE_BYTES, 'sha256': EVIDENCE_SHA256}, 'reviewed upstream provenance required')
     return created, launch, work, close
 
 
-def content(scope):
+def content(scope, *, expected_config_uid=None):
     executed = Path(__file__)
     require(executed.is_absolute() and executed.resolve() == executed and not executed.is_symlink()
             and str(executed) == scope['sourcePins'][0]['path'], 'actual owner self-source path differs')
@@ -171,7 +236,7 @@ def content(scope):
     for p in [scope['binaryPin'], *scope['sourcePins']]:
         _, identity = pinned(p)
         identities.append(identity)
-    raw, identity = pinned(scope['configPin'], 16384, private=True)
+    raw, identity = pinned(scope['configPin'], 16384, private=True, owner_uid=expected_config_uid)
     identities.append(identity)
     template, template_id = pinned(scope['templatePin'], 16384)
     identities.append(template_id)
@@ -293,14 +358,38 @@ def _launch(cap):
         raise
 
 
-def save_new(path, value):
-    # The caller must require BOTH returned success and owner exit0, never a
-    # partially committed positive file alone after an IO failure.
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+def publish_bytes(path, raw, *, mode=0o600):
+    """Atomically expose a complete single-link file, without replacement.
+
+    Linux renameat2 is required. Unsupported platforms fail closed; neither
+    overwrite-rename nor a visible hardlink publication window is acceptable.
+    A failed publication retains only its own hidden temporary evidence.
+    """
+    import ctypes
+    import secrets
+    path = Path(path)
+    temporary = path.with_name('.' + path.name + '.' + secrets.token_hex(16) + '.pending')
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
     with os.fdopen(fd, 'wb') as f:
-        f.write(canonical(value) + b'\n')
+        f.write(raw)
+        os.fchmod(f.fileno(), mode)
         f.flush()
         os.fsync(f.fileno())
+    libc = ctypes.CDLL(None, use_errno=True)
+    rename = libc.renameat2
+    rename.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    rename.restype = ctypes.c_int
+    if rename(-100, os.fsencode(temporary), -100, os.fsencode(path), 1) != 0:
+        number = ctypes.get_errno()
+        raise OSError(number, os.strerror(number), str(path))
+    directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    try: os.fsync(directory)
+    finally: os.close(directory)
+
+
+def save_new(path, value):
+    # File success alone is never enough: callers also require owner exit0.
+    publish_bytes(path, canonical(value) + b'\n')
 
 
 def launch_record(cap):
@@ -309,6 +398,7 @@ def launch_record(cap):
     require(e['state'] == 'running' and e['child'].poll() is None
             and process_identity(e['child']) == e['process'], 'live launched child required')
     return {'schema': 'helmut-local-postgrest-owner-started/1', 'scopePin': e['producer']['scopePin'],
+        'requestSHA256': e['scope']['requestSHA256'], 'targetDatabase': e['scope']['targetDatabase'],
         'nonce': e['scope']['nonce'], 'containerId': e['scope']['containerId'],
         'controllerInvocationId': e['scope']['controllerInvocationId'], 'operationId': e['scope']['operationId'],
         'processIdentity': dict(e['process']), 'binaryPin': dict(e['scope']['binaryPin']),
@@ -323,6 +413,7 @@ def close(cap, *, persist=None, reason='NORMAL_BOUND_STOP'):
     scope, child = e['scope'], e['child']
     r = {'schema': 'helmut-local-fullcase-postgrest-owner-result/1', 'pass': False,
         'scopePin': e['producer']['scopePin'], 'nonce': scope['nonce'], 'containerId': scope['containerId'],
+        'configPin': scope['configPin'], 'binaryPin': scope['binaryPin'], 'requestSHA256': scope['requestSHA256'],
         'operationId': scope['operationId'], 'reason': reason, 'production': False, 'full500Qualification': False,
         'executionAuthority': False, 'automaticRetry': False, 'reproducibleBuildVerified': False,
         'actualProcessSelfSignalTraced': False, 'returnCode': None, 'preStopReturnCode': None,
@@ -400,6 +491,17 @@ def close(cap, *, persist=None, reason='NORMAL_BOUND_STOP'):
         error('persist', ex)
         r['pass'] = r['acceptedExpectedTranslation'] = False
         r['returnCodeClassification'] = 'UNQUALIFIED'
+    # Persistence (including filesystem flush) is inside the close lifetime.
+    # A previously written positive file cannot compensate for owner exit1.
+    try:
+        require(time.monotonic() <= e['deadline'] and not e['interrupts']
+            and abs((time.time() - e['wall']) - (time.monotonic() - e['mono'])) <= 5,
+            'bound close qualification lost during persistence')
+    except BaseException as ex:
+        error('post-persist-qualification', ex)
+        r['pass'] = r['acceptedExpectedTranslation'] = False
+        r['returnCodeClassification'] = 'UNQUALIFIED'
+    r['ownerInterrupts'] = e['interrupts']
     return r
 
 
@@ -420,7 +522,8 @@ def run():
             require(time.monotonic() < e['workDeadline'], 'work deadline reached without bound stop')
             require(not e['drain']['overflow'] and not e['drain']['errors'], 'log failure')
             if STOP_PATH.exists():
-                raw, _, _ = regular(STOP_PATH, 4096, private=True)
+                raw, _, _ = regular(STOP_PATH, 4096)
+                require(STOP_PATH.stat().st_uid == 0 and stat.S_IMODE(STOP_PATH.stat().st_mode) == 0o644, 'root-owned stop metadata required')
                 require(json.loads(raw) == {'schema': 'helmut-local-postgrest-owner-stop/1',
                     'scopePin': e['producer']['scopePin'], 'nonce': e['scope']['nonce'],
                     'containerId': e['scope']['containerId'], 'reason': 'NORMAL_BOUND_STOP'}, 'bound stop request differs')
@@ -434,6 +537,219 @@ def run():
     finally:
         for signum, handler in old_handlers.items():
             signal.signal(signum, handler)
+
+
+def root_metadata(path, value):
+    require(os.geteuid() == 0, 'DB PID1 root producer required')
+    publish_bytes(path, canonical(value) + b'\n', mode=0o644)
+
+
+def file_pin(path):
+    return regular(path, 1024 * 1024)[1]
+
+
+class SupervisedBackend:
+    """DB PID1 only. Caches immutable inputs before any app can request start."""
+    def __init__(self, cfg):
+        require(os.getpid() == 1 and os.geteuid() == 0, 'private DB PID1 required')
+        require(cfg['scope'] == 'owner-approved-local500-resources' and cfg['freshInitdbVolume'] is True, 'full local DB scope required')
+        self.cfg_pin = file_pin(DATABASE_CONFIG)
+        host_raw, self.host_pin, _ = regular(HOST_BINDING, 65536)
+        self.host = json.loads(host_raw)
+        require(self.host['schema'] == 'helmut-local-postgrest-backend-host-binding/1'
+            and self.host['databaseConfigPin'] == self.cfg_pin
+            and self.host['localPostgrestBackendPlanPin'] == cfg['localPostgrestBackendPlanPin']
+            and self.host['kernelObservedBeforeStart'] is False
+            and self.host['privatePidMode'] == ''
+            and self.host['containerId'].startswith(socket.gethostname()), 'exact pre-start host binding required')
+        plan_raw, _ = pinned(cfg['localPostgrestBackendPlanPin'], 65536)
+        p = json.loads(plan_raw)
+        self.plan = read_backend_plan(cfg['localPostgrestBackendPlanPin'], case_directory=p['caseDirectory'],
+            target_database=p['targetDatabase'], operation_id=p['operationId'])
+        require(self.host['configuredCgroupParent'] == '/helmut-meter-resources' + self.plan['day'][-2:] + '-'
+            + Path(self.plan['caseDirectory']).name.removeprefix('attempt-') + '/database', 'configured cgroup differs')
+        require(not BACKEND_DIR.exists(), 'backend output already exists; no retry')
+        BACKEND_DIR.mkdir(mode=0o755)
+        (BACKEND_DIR / 'output').mkdir(mode=0o700)
+        os.chown(BACKEND_DIR / 'output', 1000, 1000)
+        self.child = None
+        self.request_consumed = False
+        self.failure = None
+        self.kernel_pin = None
+        self.scope_pin = None
+        self.request_hash = None
+
+    def observe_kernel(self):
+        if self.kernel_pin is not None or not KERNEL_BINDING.exists(): return
+        raw, pin, _ = regular(KERNEL_BINDING, 65536)
+        k = json.loads(raw)
+        require(k['schema'] == 'helmut-local-postgrest-backend-kernel-binding/1'
+            and k['hostBindingPin'] == self.host_pin and k['containerId'] == self.host['containerId']
+            and k['hostPIDStartTicks'] == Path('/proc/1/stat').read_text().rsplit(')', 1)[1].split()[19], 'kernel binding differs')
+        group = CGROUP_VIEW / k['relativeToCommonParent']
+        require(group.resolve() == group and group.is_relative_to(CGROUP_VIEW)
+            and (group.stat().st_dev, group.stat().st_ino) == (k['cgroupDevice'], k['cgroupInode'])
+            and 1 in {int(x) for x in (group / 'cgroup.procs').read_text().split()}, 'actual DB PID1 kernel membership required')
+        self.kernel_pin = pin
+        root_metadata(BACKEND_DIR / 'SUPERVISOR_READY.SAFE.json', {'schema': 'helmut-local-postgrest-supervisor-ready/1',
+            'hostBindingPin': self.host_pin, 'kernelBindingPin': pin, 'containerId': self.host['containerId'], 'production': False})
+
+    def validate_request(self, r):
+        keys = {'schema','production','automaticRetry','nonce','requestedAtUTC','day','caseDirectory','targetDatabase','operationId',
+            'localPostgrestBackendPlanPin','ownerGoPin','activationResultPin','targetConfigPin','sourcePostgrestConfigPin',
+            'derivedConfigBase64','jwtSecretSHA256','sourceBinding','sourcePins','globalClaimPin','recipeSHA256','appContainerId','controllerInvocationId'}
+        p = self.plan
+        require(set(r) == keys and r['schema'] == 'helmut-local-supervised-postgrest-service-request/1'
+            and r['production'] is False and r['automaticRetry'] is False, 'exact service request required')
+        require(self.kernel_pin is not None and file_pin(HOST_BINDING) == self.host_pin and file_pin(KERNEL_BINDING) == self.kernel_pin
+            and file_pin(DATABASE_CONFIG) == self.cfg_pin, 'immutable producer inputs drifted')
+        for key in ('day', 'caseDirectory', 'targetDatabase', 'operationId', 'ownerGoPin', 'sourcePostgrestConfigPin'):
+            require(r[key] == p[key], 'service request plan field differs')
+        require(r['localPostgrestBackendPlanPin'] == self.host['localPostgrestBackendPlanPin']
+            and r['controllerInvocationId'] == self.host['controllerInvocationId']
+            and re.fullmatch('[a-f0-9]{32}', r['nonce']) and 0 <= time.time() - instant(r['requestedAtUTC']) <= 10,
+            'fresh service request and invocation required')
+        require(type(r['sourceBinding']) is str and re.fullmatch('[a-f0-9]{64}', r['sourceBinding']), 'real source binding required')
+        require(type(r['sourcePins']) is list and len({q['path'] for q in r['sourcePins']}) == len(r['sourcePins'])
+            and all(q in r['sourcePins'] for q in p['sourcePins']), 'backend sources absent from real service source set')
+        for q in p['sourcePins']: pinned(q)
+        require(r['globalClaimPin']['path'] == p['resourceClaimPath'], 'actual fixed claim path required')
+        claim = json.loads(pinned(r['globalClaimPin'], 65536)[0])
+        reservation = json.loads(pinned(self.host['setupReservationPin'], 65536)[0])
+        require(claim['schema'] == 'helmut-local-resource-attempt-claim/1' and claim['noAutomaticRetry'] is True
+            and claim['freshOwnerGO'] == p['ownerGoPin']
+            and claim['independentMeterAcceptance'] == self.host['independentMeterAcceptancePin']
+            and claim['containerId'] == r['appContainerId'] and re.fullmatch('[a-f0-9]{64}', r['appContainerId'])
+            and claim['recipeSHA256'] == r['recipeSHA256'] and re.fullmatch('[a-f0-9]{64}', r['recipeSHA256'])
+            and reservation['controllerInvocationId'] == self.host['controllerInvocationId']
+            and reservation['freshOwnerGO'] == p['ownerGoPin'], 'real GO/claim/reservation binding differs')
+        owner = json.loads(pinned(p['ownerGoPin'], 65536)[0])
+        require(owner['schema'] == 'helmut-owner-local-fixture-go/1' and owner['production'] is False
+            and owner['syntheticProfiles'] == 500 and owner['allowDispose'] is False
+            and owner['targetDatabase'] == p['targetDatabase'], 'existing real local owner GO required')
+        n = Path(p['caseDirectory']) / 'native-end-preparation'
+        require(r['activationResultPin']['path'] == str(n / 'LOCAL_ACTIVATION_RESULT.SAFE.json')
+            and r['targetConfigPin']['path'] == str(n / 'LOCAL_NEW_FIXTURE.PRIVATE.json'), 'exact fresh activation output paths required')
+        activated = json.loads(pinned(r['activationResultPin'], 65536)[0])
+        target = json.loads(pinned(r['targetConfigPin'], 65536)[0])
+        require(activated['pass'] is True and activated['target'] == p['targetDatabase']
+            and activated['actualInactive'] == activated['actualActiveAfter'] == 500
+            and activated['ownerGoPin'] == p['ownerGoPin'] and activated['sourceProfileHashUnchanged'] is True
+            and activated['newTargetProfileFachHashUnchanged'] is True
+            and target['database'] == p['targetDatabase'] and target['container'] == self.host['containerName']
+            and target['ownerGoPin'] == p['ownerGoPin'], 'real gated activation receipt differs')
+        derived = base64.b64decode(r['derivedConfigBase64'], validate=True)
+        require(0 < len(derived) <= 16384 and re.fullmatch('[a-f0-9]{64}', r['jwtSecretSHA256']), 'bounded derived config required')
+        return derived
+
+    def tick(self):
+        self.observe_kernel()
+        if self.child is not None:
+            require(self.child.poll() is None, 'owner exited before normal DB stop')
+            if STARTED_PATH.exists() and not ACK_PATH.exists():
+                started = json.loads(regular(STARTED_PATH, 65536, private=False)[0])
+                require(started['scopePin'] == self.scope_pin and started['requestSHA256'] == self.request_hash
+                    and started['containerId'] == self.host['containerId'], 'owner start identity differs')
+                root_metadata(ACK_PATH, {'schema': 'helmut-local-supervised-postgrest-start-ack/1',
+                    'requestSHA256': self.request_hash, 'started': started})
+            return
+        if self.request_consumed or not REQUEST_PATH.exists(): return
+        self.request_consumed = True  # before parsing or producing any child
+        raw, request_pin, _ = regular(REQUEST_PATH, 1024 * 1024)
+        self.request_hash = sha(raw)
+        root_metadata(BACKEND_DIR / 'REQUEST_CONSUMED.SAFE.json', {'requestPin': request_pin, 'production': False, 'automaticRetry': False})
+        r = json.loads(raw)
+        config = self.validate_request(r)
+        publish_bytes(CONFIG_PATH, config)
+        os.chown(CONFIG_PATH, 1000, 1000)
+        now = time.time()
+        stamp = lambda t: datetime.datetime.fromtimestamp(t, UTC).isoformat().replace('+00:00', 'Z')
+        p = self.plan
+        scope = {key: p[key] for key in ('production','automaticRetry','day','caseDirectory','targetDatabase','operationId',
+            'workEndsAtUTC','closeByUTC','maximumLifecycleSeconds','logLimitBytes','waitSeconds','killWaitSeconds','drainWaitSeconds',
+            'upstreamEvidencePin','upstreamSourcePins')}
+        scope.update(schema='helmut-local-fullcase-postgrest-owner-scope/1', nonce=r['nonce'], containerId=self.host['containerId'],
+            controllerInvocationId=self.host['controllerInvocationId'], cgroupParent=self.host['configuredCgroupParent'],
+            createdAtUTC=stamp(now), launchByUTC=stamp(now + 10), binaryPin={'path': BINARY_PATH, 'bytes': BINARY_BYTES, 'sha256': BINARY_SHA256},
+            configPin=file_pin(Path(CONFIG_PATH)), templatePin=p['sourcePostgrestConfigPin'], jwtSecretSHA256=r['jwtSecretSHA256'],
+            sourcePins=p['sourcePins'][:len(SOURCE_ROLES)], requestSHA256=self.request_hash)
+        producer = {'schema': 'helmut-local-postgrest-supervisor-producer/1', 'databaseConfigPin': self.cfg_pin,
+            'localPostgrestBackendPlanPin': self.host['localPostgrestBackendPlanPin'], 'hostBindingPin': self.host_pin,
+            'kernelBindingPin': self.kernel_pin, 'containerId': self.host['containerId'], 'controllerInvocationId': self.host['controllerInvocationId'],
+            'privatePidMode': self.host['privatePidMode'], 'pid1StartTicks': Path('/proc/1/stat').read_text().rsplit(')', 1)[1].split()[19]}
+        check_scope(scope, producer)
+        # UID1000 must be able to read the same inputs before Popen. The root
+        # producer validates identical content now; owner repeats after drop.
+        content(scope, expected_config_uid=1000)
+        root_metadata(SCOPE_PATH, scope)
+        self.scope = scope
+        self.scope_pin = file_pin(SCOPE_PATH)
+        producer['scopePin'] = self.scope_pin
+        root_metadata(PRODUCER_PATH, producer)
+        self.child = subprocess.Popen(['/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python',
+            str(ROOT / 'scripts/helmut-resource-meter/local-postgrest-owner.py'), '--run'],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            env=dict(ENV), user=1000, group=1000, extra_groups=[], close_fds=True)
+
+    def finish(self):
+        result = {'enabled': True, 'pass': False, 'ownerExitCode': None, 'failure': self.failure, 'production': False}
+        if self.child is None:
+            result['failure'] = result['failure'] or 'OWNER_NEVER_STARTED'
+            return result
+        result.update(scopePin=self.scope_pin, nonce=self.scope['nonce'], configPin=self.scope['configPin'],
+            containerId=self.host['containerId'], operationId=self.plan['operationId'], requestSHA256=self.request_hash)
+        try:
+            root_metadata(STOP_PATH, {'schema': 'helmut-local-postgrest-owner-stop/1', 'scopePin': self.scope_pin,
+                'nonce': json.loads(regular(SCOPE_PATH, 65536)[0])['nonce'], 'containerId': self.host['containerId'], 'reason': 'NORMAL_BOUND_STOP'})
+            result['ownerExitCode'] = self.child.wait(timeout=50)
+            receipt = json.loads(regular(RESULT_PATH, 65536)[0])
+            result['resultPin'] = file_pin(RESULT_PATH)
+            result['pass'] = bool(self.failure is None and result['ownerExitCode'] == 0 and receipt['pass'] is True
+                and receipt['scopePin'] == self.scope_pin and receipt['containerId'] == self.host['containerId']
+                and receipt['operationId'] == self.plan['operationId'] and receipt['nonce'] == self.scope['nonce']
+                and receipt['configPin'] == self.scope['configPin'] and receipt['requestSHA256'] == self.request_hash
+                and ACK_PATH.exists())
+        except BaseException as ex:
+            result['failure'] = type(ex).__name__
+            try:
+                if self.child.poll() is None: self.child.send_signal(signal.SIGTERM)
+                result['ownerExitCode'] = self.child.wait(timeout=10)
+            except BaseException:
+                try: self.child.kill(); result['ownerExitCode'] = self.child.wait(timeout=5)
+                except BaseException: pass
+        return result
+
+
+def submit_request():
+    require(os.geteuid() == 0 and os.getpid() != 1 and BACKEND_DIR.is_dir(), 'live DB supervisor backend required')
+    require(Path('/proc/1/cmdline').read_bytes().split(b'\0')[1].decode() == str(ROOT / 'scripts/helmut-resource-meter/database-supervisor.py'), 'fixed DB PID1 required')
+    chunks, count, until = [], 0, time.monotonic() + 10
+    selector = selectors.DefaultSelector()
+    os.set_blocking(sys.stdin.fileno(), False)
+    selector.register(sys.stdin.fileno(), selectors.EVENT_READ)
+    try:
+        while True:
+            remaining = until - time.monotonic()
+            require(remaining > 0 and selector.select(remaining), 'request input deadline exceeded')
+            data = os.read(sys.stdin.fileno(), min(65536, 1024 * 1024 + 1 - count))
+            if not data: break
+            chunks.append(data); count += len(data)
+            require(count <= 1024 * 1024, 'request input too large')
+    finally: selector.close()
+    raw = b''.join(chunks)
+    require(0 < len(raw) <= 1024 * 1024, 'bounded request required')
+    parsed = json.loads(raw)
+    require(type(parsed) is dict and parsed.get('schema') == 'helmut-local-supervised-postgrest-service-request/1', 'service request schema required')
+    publish_bytes(REQUEST_PATH, raw)
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        if ACK_PATH.exists():
+            ack = json.loads(regular(ACK_PATH, 65536)[0])
+            require(ack['requestSHA256'] == sha(raw), 'request acknowledgement differs')
+            return ack
+        require(not (BACKEND_DIR / 'FAILURE.SAFE.json').exists(), 'supervisor rejected service request')
+        time.sleep(.02)
+    raise TimeoutError('owner start acknowledgement missing')
 
 
 if __name__ == '__main__':
