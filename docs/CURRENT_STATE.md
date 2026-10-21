@@ -2,27 +2,33 @@
 
 **Lokal 21.10.2026 UTC; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 21.10.: V11-Storage-Hülle gesichert; Plattenfreigabe offen
+## 21.10.: Plattenengpass behoben; genau eine freigegebene Hülle entfernt
 
-Status: teilweise abgeschlossen. Gestoppte ursprüngliche Storage-Hülle `66d3…`
-einmalig nichtdestruktiv gesichert, unabhängig SOURCE und ACTUAL PASS.
-Zwei vollständige Exporte, je438.837.248B, gleiches Manifest und aufgezeichnete
-Streamhashes. 10.239 Manifestpfade; 7 neue reguläre Dateien mit0B Inhalt.
-Basis-/Delta-Rekonstruktion und elf Ausgabepins unabhängig geprüft.
-Sicherung am Ausführungsende7.778.304B, gesamtes Dossier unter64MiB.
-Keine Löschung, kein Container-/DB-Start, kein Ressourcenlauf.
+Status: RAM-Sprint teilweise abgeschlossen, Plattenbereinigung erfolgreich.
+Nach konkreter Nutzerfreigabe nur die zuvor gesicherte, gestoppte ursprüngliche
+Storage-Hülle `66d3…` entfernt. Neue unabhängige SOURCE-Abnahme,
+Syntax-/Hilfsqualifizierung, frische TTL-/Nonce-/Einmaladoption; genau1rm ohne
+Force/-v/Retry, tatsächlicher Exit0 und beideEOF. Keine weiteren Löschungen.
+Vier übrige Original-Identitäten/Zustände/PIDs/Mountbindungen erhalten,
+BankPID5993 aktiv; Images/Volumes/fünfMountquellen/image.raw/LoopsKEEP.
+Kanonische Verzeichnismetadaten/PID-Abwesenheit unverändert. 11Sicherungs-
+ausgaben/6Eingabepins vor und nach geprüft; keine OriginalDBpayloadlektüre.
+Alte KEEP-/Proposal-/Archivbelege bleiben historische Originale; spätere
+Freigabe betrifft nur diese eineHülle. Docker-ID/Created nicht wiederherstellbar.
 
-Alle fünf Original-Identitäten/Zustände/Mountbindungen unverändert;
-BankPID5993 bleibt aktiv, kanonische Metadaten und PID-Abwesenheit unverändert.
-Mountdaten, Images, Volumes, image.raw und Loops KEEP. Rootfs-Export sichert
-keine Mountinhalte/gesamteV11DB; alte Docker-ID/Created nicht wiederherstellbar.
-Private ROOT_RELEASE_PROPOSAL beschreibt ausschließlich die gesicherte Hülle,
-noch NICHT freigegeben. Die bestehende Bereinigungserlaubnis schützt Originale.
-Root-Endsnapshot14.947.823.616B frei gegen15.179.779.720B Volladmission,
-231.956.104B fehlen; keine Reservierung. Logische Rootfs437.457.485B beweist
-keinen tatsächlichen Reclaim. Andere geprüfte Worktrees/kleine Diagnosehüllen
-qualifizieren keinen weiteren relevanten Platz; CLI-Overlayoption blockiert.
-[Befund, Sicherungsnachweis und konkrete Option](betrieb/v11-storage-hull-20261021.md).
+Echter freierPlatz14.947.405.824→15.858.814.976B, Netto+911.409.152B im
+Ablaufintervall inklusiveBelegwrites. Volladmission unverändert15.179.779.720B,
+C-Livesnapshot15.858.626.560B, Abstand+678.846.840B; keine
+Kapazitätsreservierung oder exakteBlockbesitzbehauptung. 2GiB-neueDatei/8GiBHostfloor/6Hüllen/512MiBOutput
+bleiben eingeplant. Kein Ressourcenstart, kein RAMersparnisnachweis.
+[Befund, Sicherung und Entfernung](betrieb/v11-storage-hull-20261021.md).
+
+Vorherige Sicherung SOURCE/ACTUAL unabhängigPASS:2Exporteje438.837.248B,
+gleicheManifeste undaufgezeichneteStreamhashes,10.239Pfade/7leereDelta-Dateien.
+Rekonstruktion und11Ausgabepins geprüft. Sicherung7.778.304Ballokiert am
+Archivende; gesamtesneuesDossierunter64MiB. Rootfs-Export umfasstkeine
+Mountdaten/gesamteV11DB. Nachfolgende tatsächlicheEntfernungs-/Kapazitäts-
+abnahme ist in der verlinkten neuenZusammenfassung gebunden.
 
 Im geprüften aktuellen Startpfad keine zwingende Live66-Abhängigkeit gefunden:
 Originalgate bindet Bank22465, neuer Storage entsteht frisch. Künftige finale
@@ -61,7 +67,7 @@ W45OFF: Peak810.905.600→820.375.552B, keine Wiederholung/Aktivierung.
 NEW30 ohnePlateau/NEW8INCONCLUSIVE bleiben unverändert.
 
 CAS-PASSkopien zuvor3422Dateien/739.680.256BInventar kontrolliert entfernt,
-unabhängigEND PASS;199Belege/6HüllenKEEP. Alle Originale, kanonischer827a,
+unabhängigEND PASS;199Belege/6HüllenKEEP. Übrige Originale, kanonischer827a,
 17Archive/616Pflichtdateien/Git/FAIL/UNKNOWN bleibenKEEP. Historische
 Originalcloud nicht direkt angebunden, authentifizierte Quelle lokal verfügbar.
 PrivateCI-Originalvorlagen fehlen: CodeHEAD80d750c7 tatsächlicher CI-FAIL;
