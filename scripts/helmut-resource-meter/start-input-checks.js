@@ -65,6 +65,7 @@ function preparationInputs(plan) {
     const d=require('./atomic-usage-integration').readDescriptor(plan.atomicUsageInput);
     for(const source of d.sourcePins)assert(request.sourcePins.some(p=>p.path===source.path&&p.sha256===source.sha256&&p.bytes===source.bytes));
   }
+  backendInputs(plan,request);
   const external = json(request.localExternalBelege);
   assert.equal(external.scope, 'ROOT_REVIEWED_LOCAL_EXTERNAL_FIXTURE_PRECONDITIONS_NOT_PRODUCTION');
   assert.equal(external.inputAcceptanceSHA256, request.inputAcceptance.sha256);
@@ -84,6 +85,38 @@ function asset(plan, name) {
     .filter(p => path.basename(p.path) === name);
   assert.equal(matches.length, 1, 'One exact mounted asset required: ' + name);
   return matches[0];
+}
+function backendInputs(plan, request) {
+  // Static inputs only. Live Recipe/Claim/Host/ACK are checked by the real
+  // starter later; calling that starter here would consume authority.
+  const key='localPostgrestBackendPlanPin';
+  assert.equal(Object.hasOwn(plan,key),Object.hasOwn(request,key),'Backend presence differs');
+  if(!Object.hasOwn(plan,key))return null;
+  assert(plan[key]);assert.deepEqual(request[key],plan[key]);
+  const staged=json(plan.stagedHarness);assert.deepEqual(staged[key],plan[key]);
+  const backend=json(plan[key]);
+  assert.equal(backend.schema,'helmut-local-supervised-postgrest-backend-plan/1');
+  assert.equal(backend.mode,'supervised-owner-v1');assert.equal(backend.production,false);assert.equal(backend.automaticRetry,false);
+  for(const key of ['caseDirectory','targetDatabase','operationId','resourceClaimPath'])assert.equal(backend[key],plan[key]);
+  assert.deepEqual(backend.ownerGoPin,plan.freshOwnerGO);
+  const day=json(plan.dayBindingAcceptance);assert.equal(backend.day,day.day);
+  const start=Date.parse(day.startsAtUTC),work=Date.parse(backend.workEndsAtUTC),close=Date.parse(backend.closeByUTC),end=Date.parse(day.endsAtUTC);
+  assert(Number.isFinite(start)&&Number.isFinite(work)&&Number.isFinite(close)&&Number.isFinite(end));
+  assert(start<work&&work<close&&close<=end&&close-work<=180000);
+  assert(Number.isSafeInteger(backend.maximumLifecycleSeconds)&&backend.maximumLifecycleSeconds>0&&backend.maximumLifecycleSeconds<=33000);
+  assert.deepEqual(backend.sourcePostgrestConfigPin,asset(plan,'postgrest.PRIVATE.conf'));
+  assert.deepEqual(plan.databaseReadOnlyPins,[backend.binaryPin]);
+  assert(Array.isArray(backend.sourcePins)&&backend.sourcePins.length>0);
+  assert.equal(new Set(backend.sourcePins.map(p=>p.path)).size,backend.sourcePins.length);
+  for(const source of backend.sourcePins){
+    pinned(source);assert(request.sourcePins.some(p=>p.path===source.path&&p.bytes===source.bytes&&p.sha256===source.sha256),'Backend runtime source closure differs');
+  }
+  for(const input of [backend.binaryPin,backend.sourcePostgrestConfigPin,backend.upstreamEvidencePin,...backend.upstreamSourcePins]){
+    pinned(input);
+    const mounted=[...plan.applicationReadOnlyPins,...plan.databaseReadOnlyPins].filter(p=>p.path===input.path);
+    assert(mounted.length>0&&mounted.every(p=>p.bytes===input.bytes&&p.sha256===input.sha256),'Backend read-only input closure differs');
+  }
+  return backend;
 }
 function restoredServiceMaterials(inputs) {
   assert.equal(inputs.schema, 'helmut-restored-staging-inputs/1');
@@ -155,6 +188,7 @@ function materialsInputs(plan) {
   return { localMaterialsInputsChecked:true, secretValuesReported:false, providerCalls:0 };
 }
 function servicesInputs(plan) {
+  backendInputs(plan,json(plan.runtimeRequest,true));
   const restored = restoredMaterials(plan);
   const pg = pinned(asset(plan, 'postgrest.PRIVATE.conf')).toString('utf8');
   assert.equal(sha(pg), restored ? restored.sourcePostgrestConfig.sha256 : 'aa4acc62bed10bb23e07a041955ec5ae75b267f5c5d0f620d3a9274107581136');
@@ -358,5 +392,5 @@ if (require.main === module) {
   const plan = JSON.parse(fs.readFileSync(0,'utf8'));
   process.stdout.write(JSON.stringify(assess(plan))+'\n');
 }
-module.exports = { pinned, json, ownerPolicy, ownerIntentPolicy, ownerInputs, preparationInputs, materialsInputs, servicesInputs, restoredServiceMaterials, actualSourceBinding, profileInputs,
+module.exports = { pinned, json, ownerPolicy, ownerIntentPolicy, ownerInputs, preparationInputs, backendInputs, materialsInputs, servicesInputs, restoredServiceMaterials, actualSourceBinding, profileInputs,
   providerInputs,staticInterfaces,initialSourceBinding,assess,installReadOnlyGuards };

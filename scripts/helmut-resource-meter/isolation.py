@@ -168,6 +168,8 @@ def verify_full_authority(recipe):
     # proof. No caller can bypass it by calling launch_application directly.
     spec=importlib.util.spec_from_file_location('complete_pre_go_proof',BIN/'start-preflight.py')
     complete=importlib.util.module_from_spec(spec);spec.loader.exec_module(complete)
+    backend=local_postgrest_plan(checked['connection'])
+    if backend is not None:complete.backend_window(backend,checked['day'])
     reservation=pin_json(recipe['setupReservation'])
     if recipe['setupReservation']['path']!=str(SETUP_RESERVATION) or reservation.get('schema')!='helmut-local-resource-setup-reservation/1' or any(reservation.get(k)!=recipe[k] for k in ['fixtureConnectionPin','recipeTemplatePin','independentMeterAcceptance','freshOwnerGO','completeStartPreflight']):
         raise RuntimeError('exact global setup reservation missing')

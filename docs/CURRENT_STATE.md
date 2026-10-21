@@ -2,6 +2,18 @@
 
 **Lokal 21.10.2026 UTC; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
+## 21.10., 21:50UTC: Blocker bearbeitet, weiterhin kein Startgrün
+
+Optionaler PostgREST-Owner samt Quellen-/Recipe-/Abschlussbindung integriert;
+gezielte reine Integrationsprüfungen PASS, native Abnahme noch offen. CAS-Observer
+bestätigt nur erfolgreiche Mutationen. Vercel-Preview275c137f tatsächlich READY.
+Private CI-Originalbindung bleibt FAIL/HTTP403; sicherer Provisionierer vorbereitet.
+Nach geschützter Einzelbereinigung15.227.342.848B frei, Admission15.179.779.720B:
+Plattenlücke geschlossen; Originale/Belege/Arbeitsstände erhalten. Unit60 am
+späten V12 benötigt noch einen getrennten Ein-Unit-Prüfvertrag. Altes Fenster
+21:30UTC abgelaufen, alle GOs verbraucht; kein neuer Voll500, kein Production.
+[Reparaturen, Prüfgrenzen und nächster Schritt](betrieb/helmut-blocker-integration-20261021.md).
+
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
 Einmaliger Mock500 auf `cd1c4372`, Fall `f3375a7d5548`: 499 ACK/HTTP200,

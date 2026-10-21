@@ -145,18 +145,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Ressourcenstart und Originalbindungen (offline)
+      - name: Lokaler PostgREST-Owner und Eingabebindungen (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
         run: |
           # The runtime keeps its exact approved absolute module location.
           # In this disposable GitHub runner, provide ONLY the same import closure
-          # before importing the synthetic tests. Never replace an existing file.
+          # before importing the synthetic tests. The final authority negative
+          # also imports the actual start-preflight through this fixed BIN.
+          # These are public checkout files, never private original inputs.
+          # Never replace an existing file.
           runtime_helper=/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/next-resource-authority.py
           if [ "$GITHUB_WORKSPACE/scripts/helmut-resource-meter/next-resource-authority.py" != "$runtime_helper" ]; then
             for helper in next-resource-authority.py local-resource-authority-slot.json \
               capture-local-source.py local-source-runtime-binding.json local-day20-input-binding.json \
               local-day21-input-binding.json \
-              local-calendar-binding.py native-memory-budget.py; do
+              local-calendar-binding.py native-memory-budget.py start-preflight.py; do
               runtime_file="${runtime_helper%/*}/$helper"
               test ! -e "$runtime_file"
               test ! -L "$runtime_file"
@@ -164,6 +169,18 @@ jobs:
               cmp "scripts/helmut-resource-meter/$helper" "$runtime_file"
             done
           fi
+          # All children/receipts are mocked or TEST_ONLY temporary fixtures.
+          # Integration inherits the owner guards; do not run that base twice.
+          # These run before the unchanged checks requiring genuine originals.
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/local-postgrest-integration-test.py
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/process-runner-postgrest-close-test.py
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/backend-consumer-binding-test.py
+          node scripts/lokal.js -- node scripts/helmut-resource-meter/local-postgrest-services-test.js
+          node scripts/lokal.js -- node --test scripts/helmut-resource-meter/backend-consumer-binding-test.js
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/provision-private-ci-originals-test.py
+      - name: Ressourcenstart und Originalbindungen (offline)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
           # Der echte Lauf bleibt an seinen freigegebenen /workspace-Pfad gebunden.
           # Nur die synthetischen CI-Mocks laden ihre Module aus dem Checkout.
           python3 -B - <<'PY'
