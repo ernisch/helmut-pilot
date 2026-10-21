@@ -8,8 +8,9 @@ const vmAssert = Object.assign((...args) => assert(...args), assert, {
   deepEqual: (a, b) => assert.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))) });
 let checks = 0;
 function check(name, work) { work(); checks++; console.log("PASS " + name); }
-function fixture({ alterPlan = () => {}, alterAck = () => {} } = {}) {
+function fixture({ alterPlan = () => {}, alterAck = () => {}, ioFault = null } = {}) {
   const files = new Map(), handles = new Map(), directories = new Set(), calls = [], order = [];
+  const reads = { opens: 0, calls: 0, bytes: 0, maxRequested: 0, nonblocking: true };
   let ino = 1, fd = 10;
   const put = (file, bytes) => { files.set(file, { bytes: Buffer.from(bytes), ino: ino++, mode: 0o600 }); return pin(file); };
   const pin = file => { const entry = files.get(file); assert(entry, "Pure fixture file absent: " + file);
@@ -17,7 +18,8 @@ function fixture({ alterPlan = () => {}, alterAck = () => {} } = {}) {
   const doc = (file, value) => put(file, JSON.stringify(value));
   const read = file => { assert(files.has(file), "Pure fixture absent: " + file); return files.get(file).bytes; };
   const stat = file => { const e = files.get(file); assert(e, file); return { dev: 1, ino: e.ino, size: e.bytes.length,
-    mode: e.mode, mtimeMs: 0, ctimeMs: 0, isFile: () => true, isSymbolicLink: () => false }; };
+    nlink: ioFault === "hardlink" && file === "/pure/REVIEWED_PLAN.SAFE.json" ? 2 : 1,
+    mode: e.mode, mtimeMs: e.mtimeMs || 0, ctimeMs: 0, isFile: () => true, isSymbolicLink: () => false }; };
   const caseDirectory = "/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-0123456789ab";
   const OUT = caseDirectory + "/native-end-preparation", TARGET = "helmut_resource_fixture_20261021_0123456789ab";
   const ownerGo = doc(caseDirectory + "/FRESH_OWNER_GO.PRIVATE.json", { production: false, allowDispose: false,
@@ -57,8 +59,28 @@ function fixture({ alterPlan = () => {}, alterAck = () => {} } = {}) {
       return put(file, typeof value === "string" ? value : JSON.stringify(value)); } };
   const mockedFS = { constants: fs.constants, realpathSync: file => file, lstatSync: stat,
     openSync(file, flags) { if (typeof flags === "string") { assert.equal(flags, "wx"); assert(!files.has(file)); put(file, ""); }
-      else stat(file); const handle = fd++; handles.set(handle, file); return handle; },
-    fstatSync(handle) { return stat(handles.get(handle)); }, readFileSync(handle) { return read(typeof handle === "number" ? handles.get(handle) : handle); },
+      else { stat(file); reads.opens++; reads.nonblocking &&= Boolean(flags & fs.constants.O_NONBLOCK); }
+      const handle = fd++; handles.set(handle, { file, position: 0 }); return handle; },
+    fstatSync(handle) {
+      const { file } = handles.get(handle), actual = stat(file);
+      if (file === "/pure/REVIEWED_PLAN.SAFE.json" && ioFault === "fifo") actual.isFile = () => false;
+      if (file === "/pure/REVIEWED_PLAN.SAFE.json" && ioFault === "descriptor-hardlink") actual.nlink = 2;
+      if (file === "/pure/REVIEWED_PLAN.SAFE.json" && ioFault === "inode") actual.ino++;
+      return actual;
+    },
+    readSync(handle, buffer, offset, length) {
+      const entry = handles.get(handle), bytes = read(entry.file);
+      reads.calls++; reads.maxRequested = Math.max(reads.maxRequested, length);
+      assert(reads.nonblocking, "Potentially blocking descriptor open");
+      const fault = entry.file === "/pure/REVIEWED_PLAN.SAFE.json" ? ioFault : null;
+      assert.notEqual(fault, "fifo", "Nonregular descriptor was read");
+      let count = Math.min(length, Math.max(0, bytes.length - entry.position));
+      if (fault === "growing") { count = length; buffer.fill(120, offset, offset + count); }
+      else if (fault === "extra-byte" && entry.position === bytes.length) { count = 1; buffer[offset] = 120; }
+      else bytes.copy(buffer, offset, entry.position, entry.position + count);
+      if (fault === "metadata" && count) files.get(entry.file).mtimeMs = 1;
+      entry.position += count; reads.bytes += count; return count;
+    },
     closeSync(handle) { handles.delete(handle); } };
   const cp = { execFileSync(command, args, options) {
     assert.equal(command, "docker"); assert.equal(args[0], "--host=unix:///var/run/docker.sock"); calls.push(args); order.push(args[1]);
@@ -80,7 +102,7 @@ function fixture({ alterPlan = () => {}, alterAck = () => {} } = {}) {
     require(name) { assert(Object.hasOwn(modules, name)); return modules[name]; } };
   vm.runInNewContext(code.toString(), sandbox);
   return { run: () => sandbox.module.exports.start({ H, file: "PURE_REQUEST", dirname: OUT + "/runtime-candidates" }),
-    files, order, calls, plan, r, H, put, doc, read, claim, recipe, api: sandbox.module.exports };
+    files, order, calls, reads, plan, r, H, put, doc, read, claim, recipe, api: sandbox.module.exports };
 }
 check("confirmed supervisor start precedes gateway and shares one fresh JWT pin", () => {
   const f = fixture(), result = f.run(); assert.equal(result.healthAccepted, false);
@@ -122,5 +144,12 @@ check("only declared native config changes are derived", () => {
   const f = fixture(), template = f.read(f.r.sourcePostgrestConfig.path).toString();
   assert.throws(() => f.api.deriveConfig(template, f.H.TARGET, "1".repeat(64)));
   assert.throws(() => f.api.deriveConfig(template.replace("server-port = 38410", "server-port = 9"), f.H.TARGET, "2".repeat(64)));
+});
+for (const fault of ["fifo", "hardlink", "descriptor-hardlink", "inode", "growing", "extra-byte", "metadata"]) check(fault + " file race fails with bounded nonblocking IO", () => {
+  const f = fixture({ ioFault: fault }); assert.throws(f.run);
+  assert.equal(f.calls.length, 0); assert(!f.order.includes("mkdir"));
+  assert(f.reads.nonblocking); assert(f.reads.maxRequested <= 1024 * 1024 + 1);
+  if (["fifo", "hardlink", "descriptor-hardlink", "inode"].includes(fault)) assert.equal(f.reads.calls, 0);
+  if (fault === "growing") assert.equal(f.reads.bytes, 1024 * 1024 + 1);
 });
 console.log(JSON.stringify({ pass: true, checks, scope: "PURE_IN_MEMORY_SERVICE_PLUMBING_ONLY", nativeLaunches: 0, databaseCalls: 0, executionAuthorityCreated: false }));

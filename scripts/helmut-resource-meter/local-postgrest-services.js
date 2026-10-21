@@ -12,15 +12,22 @@ const same = (a, b) => assert.deepEqual(a, b);
 function exact(value, keys) { same(Object.keys(value).sort(), [...keys].sort()); }
 function regular(file, limit = 1024 * 1024) {
   assert(path.isAbsolute(file) && path.normalize(file) === file && fs.realpathSync(file) === file);
-  const before = fs.lstatSync(file); assert(before.isFile() && !before.isSymbolicLink());
-  const fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+  const before = fs.lstatSync(file); assert(before.isFile() && !before.isSymbolicLink() && before.nlink === 1);
+  // A path swapped to a FIFO after lstat must not block open before fstat.
+  const fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
   try {
-    const info = fs.fstatSync(fd); assert(info.size > 0 && info.size <= limit);
-    const bytes = fs.readFileSync(fd), after = fs.fstatSync(fd), current = fs.lstatSync(file);
-    for (const key of ["dev", "ino", "size", "mtimeMs", "ctimeMs"]) {
+    const info = fs.fstatSync(fd);
+    assert(info.isFile() && info.nlink === 1 && info.size > 0 && info.size <= limit);
+    for (const key of ["dev", "ino", "size", "nlink", "mtimeMs", "ctimeMs"]) assert.equal(info[key], before[key]);
+    const buffer = Buffer.alloc(limit + 1); let length = 0, got;
+    while (length < buffer.length && (got = fs.readSync(fd, buffer, length, buffer.length - length, null)) > 0) length += got;
+    assert(length <= limit && length === info.size && got === 0, "Bounded complete file read required");
+    const after = fs.fstatSync(fd), current = fs.lstatSync(file);
+    assert(after.isFile() && current.isFile() && !current.isSymbolicLink() && fs.realpathSync(file) === file);
+    for (const key of ["dev", "ino", "size", "nlink", "mtimeMs", "ctimeMs"]) {
       assert.equal(info[key], before[key]); assert.equal(after[key], info[key]); assert.equal(current[key], info[key]);
     }
-    assert.equal(bytes.length, info.size);
+    const bytes = buffer.subarray(0, length);
     return { bytes, pin: { path: file, bytes: bytes.length, sha256: sha(bytes) } };
   } finally { fs.closeSync(fd); }
 }
