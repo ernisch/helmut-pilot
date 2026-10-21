@@ -83,6 +83,13 @@ def read_atomic_descriptor(p):
     if result.returncode:raise RuntimeError('exact current local atomic usage descriptor required')
     return candidate
 
+def read_postgrest_backend_plan(p,case,target,operation):
+    """Optional explicit source/authority producer, checked before staging IO."""
+    if p is None:return None
+    spec=importlib.util.spec_from_file_location('stage_local_postgrest_backend',BIN/'local-postgrest-owner.py')
+    owner=importlib.util.module_from_spec(spec);spec.loader.exec_module(owner)
+    return owner.read_backend_plan(p,case_directory=str(case),target_database=target,operation_id=operation)
+
 def save(p,value):
     p=Path(p)
     with p.open('x') as f:f.write(value if isinstance(value,str) else json.dumps(value,indent=2)+'\n')
@@ -97,12 +104,13 @@ def exact_case_binding(case,target,container,operation):
     if (target,container,operation)!=('helmut_resource_fixture_'+A.DATE_TAG+'_'+suffix,'helmut-meter-db-w20-'+suffix,'synthetik500-resources'+A.DAY[-2:]+'-'+suffix):
         raise RuntimeError('case/target/container/operation suffix mismatch')
 
-def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin,atomic_usage_pin=None,restore_staging_inputs=None,native_memory_budget=None):
+def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin,atomic_usage_pin=None,restore_staging_inputs=None,native_memory_budget=None,local_postgrest_backend_plan_pin=None):
     """Actual deterministic staging transformation, without creating/writing files."""
     templates=json.loads((BIN/'legacy-harness-pins.json').read_text())['files']
     for p in templates:
         if pin(p['path'])!={k:p[k] for k in ['path','bytes','sha256']}:raise RuntimeError('original harness drift')
     case=Path(case);n=case/'native-end-preparation'
+    backend=read_postgrest_backend_plan(local_postgrest_backend_plan_pin,case,target,operation)
     restored=read_restored_staging_inputs(restore_staging_inputs,case)
     replacements=[('helmut_fresh_runtime_fixture_b27c2026',target),('helmut-boundary-pg-bd7dd5da',container),
       ('synthetik500-localnative16-b27c20261016',operation),('2026-10-16',A.DAY),
@@ -349,11 +357,31 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                         'assert.deepEqual(pin,'+json.dumps(day_rows_pin,separators=(',',':'))+');'
                         'return require('+json.dumps(str(BIN/'bounded-profile-rows.js'))+').readRows(pin);'
                         '} return JSON.parse(pinned(pin)); }')
+        if backend is not None:
+            def backend_change(old,new):
+                nonlocal text
+                if text.count(old)!=1:raise RuntimeError('exact optional supervised service integration point required: '+template['relative'])
+                text=text.replace(old,new);changes.append({'from':old,'to':new,'count':1})
+            if template['relative']=='native-end-preparation/runtime-candidates/start-services.candidate.js':
+                begin='function start(file){';end='\nif(require.main===module)'
+                if text.count(begin)!=1 or text.count(end)!=1:
+                    raise RuntimeError('complete original local service start required')
+                original_start=text[text.index(begin):text.index(end)]
+                backend_change(original_start,'function start(file){return require('+json.dumps(str(BIN/'local-postgrest-services.js'))+
+                    ').start({H,file,dirname:__dirname});}')
+            elif template['relative']=='assemble-after-activation.js':
+                backend_change(' const shared={',
+                    ' const shared={localPostgrestBackendPlanPin:'+json.dumps(local_postgrest_backend_plan_pin,separators=(',',':'))+',')
+                # Only the current-case generated secret signs the new app JWT.
+                # Original template credentials remain retained provenance.
+                old=('jwtSecret:pin('+json.dumps(restored['jwtSecret']['path'])+')' if restored
+                    else "jwtSecret:pin(B+'/wave2/db_proof_path/jwt-secret.PRIVATE.txt')")
+                backend_change(old,"jwtSecret:H.privateJSON(pin(N+'/runtime-candidates/generated-services/LOCAL_POSTGREST_SERVICES_STARTED.SAFE.json')).localJWTSecretPin")
         destination=case/template['relative']
         deltas.append({'original':{k:template[k] for k in ['path','bytes','sha256']},'destination':str(destination),'text':text,'replacements':changes})
     return deltas
 
-def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin,prepare_only=False,atomic_usage_pin=None,restore_staging_inputs=None,native_budget_runtime_pin=None):
+def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owner_go_pin,prepare_only=False,atomic_usage_pin=None,restore_staging_inputs=None,native_budget_runtime_pin=None,local_postgrest_backend_plan_pin=None):
     case=Path(case).resolve()
     restored=read_restored_staging_inputs(restore_staging_inputs,case)
     exact_case_binding(case,target,container,operation)
@@ -377,7 +405,7 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
         spec=importlib.util.spec_from_file_location('staged_native_budget',BIN/'native-memory-budget.py')
         budget=importlib.util.module_from_spec(spec);spec.loader.exec_module(budget)
         budget.validate_runtime(read_pin(native_budget_runtime_pin))
-    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin={'path':owner['finalOwnerGOPath']},atomic_usage_pin=atomic_usage_pin,restore_staging_inputs=restore_staging_inputs,native_memory_budget=budget.policy()if budget else None)
+    rendered=render_templates(case,target=target,container=container,operation=operation,day_rows_pin=day_rows_pin,owner_go_pin={'path':owner['finalOwnerGOPath']},atomic_usage_pin=atomic_usage_pin,restore_staging_inputs=restore_staging_inputs,native_memory_budget=budget.policy()if budget else None,local_postgrest_backend_plan_pin=local_postgrest_backend_plan_pin)
     case.mkdir(mode=0o700,exist_ok=False);n=case/'native-end-preparation';n.mkdir(mode=0o700);(n/'runtime-candidates').mkdir(mode=0o700)
     deltas=[]
     for item in rendered:
@@ -398,6 +426,7 @@ def stage(case,*,target,container,operation,day_rows_pin,day_acceptance_pin,owne
       'freshSelectorComesFromPinnedActualAssembly':True,'full500RunStarted':False,'resourceGOConsumed':False,
       'engineModified':bool(local),'originalFilesModified':False,'production':False,'preparedWithoutGO':prepare_only}
     if atomic_usage_pin is not None:plan['atomicUsageInput']=atomic_usage_pin
+    if local_postgrest_backend_plan_pin is not None:plan['localPostgrestBackendPlanPin']=local_postgrest_backend_plan_pin
     if restored is not None:plan['restoreStagingInputs']=restore_staging_inputs
     if budget is not None:plan.update(nativeMemoryBudget=budget.policy(),nativeBudgetRuntimePin=native_budget_runtime_pin)
     save(case/'STAGED_CONNECTION.SAFE.json',plan);return plan
