@@ -1,0 +1,56 @@
+{
+  "schema": "helmut-local-http-lock-independent-actual-review-record/1",
+  "reviewer": "/root/v12_deadline_actual_audit",
+  "recordedBy": "root coordinator from independent actual review messages",
+  "review": "PASS",
+  "scope": "INSTRUMENTED_WARM_LOCAL_HTTP_COMPONENT_ONLY",
+  "comparisonPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/COMPARISON_ACTUAL.SAFE.json",
+    "bytes": 27146,
+    "sha256": "eb492224ef9b1ca31cb099903ceecb392a3115899042652c04c4f022a9547957"
+  },
+  "collectorPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/collect-http-comparison.py",
+    "bytes": 8174,
+    "sha256": "345aa739496477e41174ee37ed5a6536bc03daf37f6ac1bfc0aa21d1772ddcd7"
+  },
+  "sourceAdoptionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/ROOT_HTTP_LOCK_SOURCE_ADOPTION.SAFE.json",
+    "bytes": 62994,
+    "sha256": "95e2bfd4301aeb91ea9276fe646bb7e44cebf6c4afdbd532462acb93279e2716"
+  },
+  "sourcePinsVerified": 298,
+  "perArmStartedSourcesEqualAdoption": true,
+  "resultEvidencePinsVerified": 48,
+  "confirmedHTTP200Replies": 84,
+  "freshWholeGroups": 4,
+  "allGroupsEmptyAndAllChildrenExitedAndEOF": true,
+  "allNativeEventsZero": true,
+  "nativeBusinessDataWithoutRevisionSHA256": "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93",
+  "historyCount": 6000,
+  "historicalBlobLockCount": 4,
+  "historicalBlobLockHash": "2afcf1bfd6f2fecaf0dc1049c0299f97f7013b3211dfea17eb9d0077e51e745a",
+  "commonPeakMeanSavingBytes": 77580288,
+  "pairedPeakSavingsBytes": [
+    80384000,
+    74776576
+  ],
+  "originalIFailurePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/COMPONENT_RESULT.SAFE.json",
+    "bytes": 16743,
+    "sha256": "e02af81fa7631997f6d75db3bf6b010d40d1eee8ad4fa0f3fc9e583cfebe1204"
+  },
+  "originalIFailureRemainsFail": true,
+  "caveats": [
+    "Shared warm OS cache and evolving physical working copy; physical starts are not identical",
+    "Nested phase wall/CPU values must not be added",
+    "Instrumentation overhead is included and occurs at different frequencies with RPC counts",
+    "Same-point samples do not decompose the true peak; separate peaks are not additive",
+    "WAL insertion windows end before PostgreSQL shutdown",
+    "No long-term plateau, complete motor, 500-profile, Unit60 or reserve proof"
+  ],
+  "full500": false,
+  "production": false,
+  "executionAuthority": false,
+  "full500ReserveOrUnit60Proven": false
+}

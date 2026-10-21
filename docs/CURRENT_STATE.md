@@ -49,7 +49,7 @@ WAL-Insertfenster222352→58732B vorShutdown; Graphrelation+45056→0B. SOURCE/A
 unabhängigPASS. E/H: warmer geteilter Cache, direktesSQL, fortgeschriebene physische
 COPY; kein HTTP-/Langzeitplateau-/500MB-Beweis. Ersparnisse nicht addieren.
 
-Bindingcommit6395887a plus enger Senderguard im Arbeitsstand: echte Receipts,
+Codecommitd6778b78 umfasst Binding6395887a und engen Senderguard: echte Receipts,
 50Runtimepins/26Vorlagen/3Umgebungen gebunden, alte Bloblocks vor Bootstrap frisch
 streng prüfen und erhalten. Bounded Sender-Control Pflicht; Katalogleerprüfung nur
 Start/Final. SOURCEPASS,28JS-/2Python-PurechecksPASS, RootgenuineDescriptorPASS;
@@ -59,23 +59,41 @@ in676s; nur Dokumentgröße/Env-InventarFAIL. Beide korrigiert, gezielt4/38Check
 kein umgedeuteter durchgehend grüner Lauf. Unbeabsichtigten --help-Start beendet.
 
 Unit60 UNQUALIFIZIERT: Index499 J.enter→409 exakt62,954656s inklusive Fehlercleanup.
-2,042s Komponenten-Sensitivität beider Fixes sind keine gemessene Fullmotorreserve.
-Nächste gezielte Prüfung: begrenzter echter Auth-Mutationszyklus über Gateway/
-PostgREST am späten Klon; Read/Decode/Callback/Write verschachtelt trennen.
+Komponenten-Zeitgewinne belegen keine gemessene Fullmotorreserve.
+Echter HTTP-Auth-Zyklus I:5Reads/2CAS/2Callbacks bestätigt, Datenhash ohne Revision/
+Root/History/4Altlocks wiederhergestellt; alle7HTTP200. GesamtFAIL wegen PostgREST
+TERM→−2 ohne passende Configqualifikation; kein Timeout/Kill/EOF-Fehler, Gruppeleer.
+675.733.504B Diagnosepeak/alleEvents0 kein Reservebeweis. Warme Reads6,67MB,
+Header201ms Median; CASHeader205/207ms, Callback0,065/0,029ms. Capture35/55ms,
+Build91/93ms; verschachtelte Zeiten nicht addieren. SOURCE/ACTUAL unabhängig geprüft.
+J-HTTP-Lockvergleich tatsächlichOLD/NEW/NEW/OLD je6ZyklenPASS: Peakmittel
+718.508.032→640.927.744B (−77.580.288B/10,797%); beidePaare80.384.000/74.776.576B
+positiv. CPU22,569→13,842s; Abschluss23,887→16,106s; Arm-Zyklusmediane1384→9,32ms.
+OLD15Fullreads/12CAS,NEW3Fullreads/12LeaseRPC/0CAS jeArm, 298Quellen gleich. Root/
+History6000/Altlocks/Datenhash ohneRevision gleich, Gruppenleer/EOF/alleEvents0.
+NeuePolicy VORStart: exakte frische304B-Config/Binary/8Upstreamdateien/Nonce,
+einmaliges privatesObjekt; rawPostgREST−2 nuralsbelegteTERM→UserInterrupt→SIGINT-
+Übersetzung gewertet. 28PuretestsPASS, Originalhelper/I-FAIL unverändert.
+Warmer geteilterCache/fortgeschriebeneCOPY/Instrumentierungsaufwand enthalten;
+keinPlateau/Fullmotor/Unit60/500MB-Pufferbeweis. Unabhängige SOURCE/ACTUAL-AbnahmePASS.
 
 Branch `codex/controlled-cleanup-and-late-probe-20261020`, DraftPR927 auf926/925/924;
 c8624f7c erhalten, U93917a57/Partsf30089e7 unverändert. Frühere Kombination
 1.170.790.400→1.015.904.256B/−13,23% kein500Beweis;95native/34Gates/22Integration
 nicht wiederholt. W45OFF/NEW30/NEW8/112B-Formel abgeschlossen.
-Platte rund9,00GB frei/8GiBFloor, volleAdmission15.179.779.720B weiterfehlend.
+Originalimage/8Inputs nachHTTPfrischSHA-unverändert, Originalprozesseleben.
+Platte20:52UTC8.965.083.136B frei/8GiBFloor, volleAdmission15.179.779.720B;
+Fehlbetrag6.214.696.584B. Alle benötigten Originale/DBstände/Belege bleibenKEEP.
 Frühere66d3Hülle konkret freigegeben entfernt/netto911.409.152B; sonst Originale,
 Archive/DBstände/Git/FAIL/UNKNOWN KEEP. HistorischeCloud nicht direkt angebunden,
-authentifizierte lokale Quelle real. CI39663520569 auf188b09cfFAIL: Day21Importfix
+authentifizierte lokale Quelle real. CI39671828506 aufd6778b78FAIL: Day21Importfix
 wirkt; private Originalharnessdatei fehlt(`regular pinned file required`). Browser/
 MobileSmokePASS, VercelPreviewFAIL separat. Keine Ersatzoriginale oder SkipsalsPASS.
 Router erlaubt/unverändert, aktuelle kritische Arbeit SOL, keine externen Modellaufrufe.
 Betreiberkosten unverändert. 500/1500/Offline90/Unit60/Auth30/16frischeKontrollen offen.
 Kein Production/Merge/Deploy/Reserveänderung/Voll500; alle altenGOs einschließlichV12verbraucht.
+Lokaler Umbau/HTTP-Komponentenbeleg abgeschlossen; Gesamtziel teilweiseoffen.
+[Nächster sicherer Schritt](betrieb/belege/local-lock-lease-20261021/NEXT_SAFE_STEP.SAFE.json).
 
 ## 20.10.: Vorheriger Diagnostikstand vor der neuen Bereinigungsfreigabe
 

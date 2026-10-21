@@ -1,0 +1,154 @@
+{
+  "schema": "helmut-local-http-auth-mutation-actual-interpretation/1",
+  "overallResult": "FAIL_POSTGREST_CLOSE_UNQUALIFIED",
+  "originalResultRetainedAsFailure": true,
+  "scope": "ONE_BOUNDED_LOCAL_HTTP_AUTH_COMPONENT",
+  "counts": {
+    "actualFreshReads": 5,
+    "actualCAS": 2,
+    "callbacks": 2,
+    "mutationsConfirmed": 2
+  },
+  "allSevenHTTPRequestsStatus200": true,
+  "logicalWitnessRestored": true,
+  "nativeWithoutRevisionSHA256": "b996084738a72e36a4edfececf66c1027bebf3148a93ed84c42295e025aaef93",
+  "nativeBeforeAfterSameExceptRevisionAndAuthSHA": true,
+  "phaseRows": [
+    {
+      "operation": "witness.before",
+      "operationMS": 1081.720476,
+      "partsBuildIsNestedWithinDecodeWhenCold": true,
+      "U.readMS": 1072.6647859999998,
+      "request.readMS": 487.17497899999995,
+      "Parts.decodeMS": 495.839254,
+      "U.rememberControlMS": 75.8980939999999,
+      "Parts.buildMS": 202.631393
+    },
+    {
+      "operation": "mutation.set",
+      "operationMS": 654.40479,
+      "partsBuildIsNestedWithinDecodeWhenCold": true,
+      "U.readMS": 306.60705400000006,
+      "request.readMS": 231.30063699999982,
+      "Parts.decodeMS": 74.44540899999993,
+      "U.rememberControlMS": 0.18375700000001416,
+      "U.writeMS": 346.91405399999985,
+      "U.captureMS": 35.272287000000006,
+      "Parts.buildMS": 90.602488,
+      "U.writeSerializationMS": 0.05396199999995588,
+      "request.writeMS": 205.28056200000015
+    },
+    {
+      "operation": "mutation.restore",
+      "operationMS": 818.2335950000002,
+      "partsBuildIsNestedWithinDecodeWhenCold": true,
+      "U.readMS": 451.6017589999999,
+      "request.readMS": 263.44251099999997,
+      "Parts.decodeMS": 106.36193800000001,
+      "U.rememberControlMS": 81.02561699999978,
+      "U.writeMS": 365.677678,
+      "U.captureMS": 54.55752600000005,
+      "Parts.buildMS": 93.28050499999972,
+      "U.writeSerializationMS": 0.0360249999998814,
+      "request.writeMS": 207.82709499999964
+    },
+    {
+      "operation": "witness.after",
+      "operationMS": 418.22536400000035,
+      "partsBuildIsNestedWithinDecodeWhenCold": true,
+      "U.readMS": 417.961096,
+      "request.readMS": 207.36460699999998,
+      "Parts.decodeMS": 133.00473199999988,
+      "U.rememberControlMS": 76.64553099999966
+    }
+  ],
+  "coldResponseBytes": 10435611,
+  "warmReadResponseBytes": [
+    6666193,
+    6666279,
+    6666193
+  ],
+  "warmHTTPHeadersMedianMS": 200.563537,
+  "warmBodyMedianMS": 18.18442899999991,
+  "CASHeadersMS": [
+    204.8704029999999,
+    207.31448200000023
+  ],
+  "callbackMS": [
+    0.06490699999994831,
+    0.02935399999978472
+  ],
+  "commonPeakBytes": 675733504,
+  "nativeEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "allOwnedProcessesEndedAndWholeGroupEmpty": true,
+  "commonPeakIsDiagnosticNotSuccessfulReserveProof": true,
+  "nestedTimesMustNotBeAdded": true,
+  "newStructuralRewriteJustifiedByThisSingleCycle": false,
+  "plateauProven": false,
+  "full500": false,
+  "providerCalls": 0,
+  "production": false,
+  "sourcePinsUnchanged": true,
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/COMPONENT_RESULT.SAFE.json",
+      "bytes": 16743,
+      "sha256": "e02af81fa7631997f6d75db3bf6b010d40d1eee8ad4fa0f3fc9e583cfebe1204"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/WORKER_RESULT.SAFE.json",
+      "bytes": 895,
+      "sha256": "ac19101e566584e6b446a91132b5600b7d5b0969e2b66f17c6092b10a5510441"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/BEFORE_WITNESS.SAFE.json",
+      "bytes": 8777,
+      "sha256": "37a178bbbc481f879556297b3d10f25fec45b4eadf2650bb858fd0d3b74e1276"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/ACTUAL_HTTP_AUTH_PHASES.SAFE.json",
+      "bytes": 38583,
+      "sha256": "59a13ed38715c678c201bca773c34c723369a506de80beb6f70016507443ce0e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/READONLY_NATIVE_BEFORE.SAFE.json",
+      "bytes": 916,
+      "sha256": "3bcc32a43639d35cbcbe49cfdbd6701ff37b439e19e7e56058301291bf510c8a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/READONLY_NATIVE_AFTER.SAFE.json",
+      "bytes": 916,
+      "sha256": "f7d891b4929e99e920f1e0b6d2bb25dc6ba80c212e92567e2208c752a493c4bb"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/ACTUAL_SETTINGS.SAFE.json",
+      "bytes": 220,
+      "sha256": "570c757b0769e5543f0b680b2eef5c73273a9f279f322e8c4429aad6cb131461"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/DATABASE_FOOTPRINT_BEFORE.SAFE.json",
+      "bytes": 133,
+      "sha256": "630fa004e8922963a1f2cdff9dd12492522b5dabd4eb97c199f2525b38da41fc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/DATABASE_FOOTPRINT_AFTER.SAFE.json",
+      "bytes": 133,
+      "sha256": "4a30c8183b196ca31191598d19181ba728627dbac3e4e7ad3bc83ac92d91b3f0"
+    }
+  ],
+  "independentActualReview": {
+    "reviewer": "/root/v12_ram_close_audit",
+    "recordedBy": "root coordinator from independent actual review message",
+    "review": "CONFIRMED_OVERALL_FAIL_WITH_SUCCESSFUL_HTTP_MUTATIONS",
+    "sourcePinsVerified": 288,
+    "postgrestCloseUnqualified": true,
+    "oldQualificationTransferred": false
+  }
+}
