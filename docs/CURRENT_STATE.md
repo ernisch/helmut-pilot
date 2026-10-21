@@ -2,7 +2,17 @@
 
 **Lokal 21.10.2026 UTC; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 21.10.: tatsächlicher CAS-Zweig und Heap gemessen,27RPC PASS
+## 21.10.: Vollpfad zugeordnet; echte Heapbeobachtung lokal vorbereitet
+
+V11 zeitgleich06:29→09:01: Appanon+264.921.088B/DBanon+258.625.536B;
+kein vermeidbarer Eigentümer bewiesen.83.483 Requestzeilen sind kein RAMnachweis;
+kein Replay/Minifix. Renderer/Kontrollleser sind im Vollpfad eingebunden.
+Neu nur lokale Beobachtung im echten Begin-/Endpfad:45 feste Frames,
+max100/1MiB, Heap/physical/external/GC/Sammlungsanzahlen, kein GCerzwingen.
+26 Nodefälle/31 Kurzchildren PASS; Staging18PASS+Importfehler, gezielter FixfallPASS;
+26 Vorlagen/24JS/2AST-KompositionPASS. Kein Profil-/Native-/500lauf/RAMgewinn.
+V11 Unit499 entered/GO verbraucht: kein legitimes Spätreplay. Ursache weiter offen.
+[Befund, Vorbereitung und Grenze](betrieb/fullpath-retention-20261021.md).
 
 Branch `codex/controlled-cleanup-and-late-probe-20261020`, Ausgang433cb2c9,
 Entwurfs-PR927 auf926/925/924; c8624f7c erhalten. Produkt6d528425 bleibt
@@ -35,19 +45,14 @@ SpäteFileladung605.392.896B inklshmem233.881.600B bleibt ohneexakteEnginecharge
 spätererWorkerpunktfile605.753.344B istgetrennt. KeinPeakabzug. SechsMarker-
 Census schließtLückenicht, daherkeinweitererNativefall/Minifix.
 
-118neuegezielteGuards/6AST/beideechteSelectorModi/Host0,2,1 PASS. VorStart
-gefundene ABI-Metadatenbindung, LOG-Schlüssel und nativeOID-JSON-Strings korrigiert;
-früheFreeze-/SelectorFAIL-BelegeKEEP, darauskeinRessourcenstart.25Parentdateien,
-U/Driver/Parts und kritischePG-/Rest-Abschlussspannen bytegleich. Temporär nur
-zwei lesendeObserverrechte inprivaterKopie; vollständige View-/ABI-/Namespace-
-PIDprüfung vorGRANT, anschließend roheACL/NULL/Reihenfolge/Grantor/Optionen/
-effektiveRechte/Mitgliedschaften exaktrestauriert. KeineSD-/Role-/PublicACLänderung.
-NurDiagnoseloggingterse+fatal. KeineGC-/Cache-/Peak-/Allocator-/Budgetänderung.
+CAS118Guards/6AST/beideSelectorModi/Host0,2,1 PASS; früheFreeze-/SelectorFAILsKEEP.
+25Parentdateien/U/Driver/Parts/Abschlüsse bytegleich. Zwei privateLeserechte nach
+ABI-/Viewprüfung exaktrestauriert; keineSD-/PublicACL-/GC-/Cache-/Budgetänderung.
+VollständigeQuellen-/ACL-/Fehlerbelege imverlinktenCAS-Dossier erhalten.
 
-Unabhängig:27Requests/23History-/18Graphbindungen,9volle6000Historyhashbelege,
-4CAS-ACKs/Revisionen,6Grenztripel,14Frames/8Heapframes,606BRoot/Katalog/Restore.
-Life77Belege/2.454.884B, Work122/2.835.869B unterje4MiB. EActualf7ef4bf4,
-RootActual0e0d4799; Interpretationsa503949e. Die neue reineDiagnostik ist abgeschlossen.
+Unabhängige CAS-Abnahme:27 Requests,4 ACKs,6000er History-/Graph-/Rootbindungen,
+14 Node-/8 Heapframes und Restore geprüft. Belegcaps eingehalten;
+EActualf7ef4bf4/RootActual0e0d4799. Diagnose abgeschlossen.
 
 NativeGrößenformel weiterhinwiderlegt: offiziellesPG17.6 undechtesSELECT
 A1032/B840/C147B, Formel2083B gegen merged2195B (112BUnterdeckung).
@@ -261,8 +266,8 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 Keinen weiteren vollständigen Versuch empfehlen oder starten, solange später Zustand,
 Laufzeiten, Ergebnisqualität und ausreichende Plattenreserve unqualifiziert sind.
-Die neue native/Node-Budgeteinbindung lokal abschließen, Quellen-/Messbelege
-und frische Gesamtannahme vorbereiten. Erst danach neue Fall-/Quellen-/Zeitbindung,
+Begrenzte echte Heapbeobachtung ist lokal vorbereitet; gleichphasige
+Eigentümerdaten bleiben vor weiterem Umbau offen. Erst danach Fall-/Quellen-/Zeitbindung,
 32Startgruppen und ein ausdrücklich neues konkretes500er-GO. Keine Wiederverwendung
 verbrauchterV11-/Altfreigaben. Hier fortsetzen; empfohlene Denkstufe Sehr hoch wegen
 nativer Gesamtgrenzen, Worker-Isolation, einmaliger Autorität und unveränderter

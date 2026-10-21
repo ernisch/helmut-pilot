@@ -171,6 +171,79 @@ try{
   assert(!r.files.some(n=>/^NODE_WORKER_.*\.STARTED\.SAFE\.json$/.test(n)));
   validateNative(r,false);
  });
+ test('runtime observations use real main-isolate scalars at exactly45 fixed boundaries',()=>{
+  const r=run('runtime-memory',{source:`
+   const fs=require('node:fs'),g=require(${JSON.stringify(GUARD)});g.install(process.argv[1]);
+   const counts=()=>Object.fromEntries(['requests','mutations','scopes','validations','predecessors','units','events','errors'].map(k=>[k,0]));
+   const o=g.observeRuntime(counts());
+   for(let i=0;i<500;i++){o.event('actual_J_enter',i,counts());o.event('unrelated',i,counts());o.event('local_unit_http_complete',i,counts());}
+   o.beforeExport(counts());fs.writeFileSync(process.argv[1]+'/TEST_ONLY_EXPORT.json','{}');o.exportCompleted();o.close(counts());o.close(counts());`});
+  assert.equal(r.result.status,0,r.result.stderr);
+  const file=r.files.find(x=>x.startsWith('RUNTIME_MEMORY_')),p=path.join(r.directory,file);
+  const frames=fs.readFileSync(p,'utf8').trim().split('\n').map(JSON.parse);
+  assert.equal(frames.length,45);assert(fs.statSync(p).size<=1024**2);assert.equal(fs.statSync(p).mode&0o777,0o600);
+  const indices=[0,24,49,74,99,124,149,174,199,224,249,274,299,324,349,374,399,424,449,474,499];
+  for(const phase of ['actual_J_enter','local_unit_http_complete'])assert.deepEqual(frames.filter(f=>f.phase===phase).map(f=>f.index),indices);
+  assert.equal(frames.at(-1).phase,'after-final-export');assert.equal(frames.at(-1).exportComplete,true);
+  for(const [i,f]of frames.entries()){
+   assert.equal(f.sequence,i);assert.equal(f.identity.threadId,0);assert.equal(f.identity.hostPIDMapping,'NOT_ESTABLISHED');
+   assert(f.heap.heap_size_limit<=448*1024**2);assert(f.heap.total_physical_size>0);assert(f.memory.rss>0);assert(f.spaces.length>0);
+   assert.equal(f.rssIncludesAllThreads,true);assert.equal(f.heapIsMainIsolateOnly,true);assert.equal(f.notCommonPeakOrSaving,true);
+   assert(Number.isSafeInteger(f.naturalGC.count));assert(!Object.hasOwn(f,'requests'),'collector retained or emitted workload rows');
+  }
+ });
+ test('missing export and rejected counts/index never become a completed export',()=>{
+  const r=run('runtime-invalid',{source:`
+   const a=require('node:assert/strict'),g=require(${JSON.stringify(GUARD)});g.install(process.argv[1]);
+   const c=Object.fromEntries(['requests','mutations','scopes','validations','predecessors','units','events','errors'].map(k=>[k,0]));
+   const o=g.observeRuntime(c);a.throws(()=>g.observeRuntime(c),/CONFIGURATION/);
+   a.throws(()=>o.beforeExport({...c,requests:{secret:'not retained'}}),/COUNTS/);a.throws(()=>o.event('actual_J_enter',500,c),/INDEX/);
+   a.throws(()=>o.close(c),/INCOMPLETE/);a.throws(()=>o.beforeExport(c),/CLOSED/);`});
+  assert.equal(r.result.status,0,r.result.stderr);
+  const f=r.files.find(x=>x.startsWith('RUNTIME_MEMORY_'));
+  const lines=fs.readFileSync(path.join(r.directory,f),'utf8').trim().split('\n').map(JSON.parse);
+  assert.equal(lines.length,1);assert.equal(lines.at(-1).phase,'initial');assert.equal(lines.at(-1).exportComplete,false);
+ });
+ test('preexisting runtime receipt is kept byte-identical instead of overwritten',()=>{
+  const r=run('runtime-exclusive',{source:`
+   const a=require('node:assert/strict'),fs=require('node:fs'),g=require(${JSON.stringify(GUARD)});g.install(process.argv[1]);
+   const p=process.argv[1]+'/RUNTIME_MEMORY_'+process.pid+'_0.SAFE.jsonl';fs.writeFileSync(p,'TEST_ONLY_EXISTING_PROOF');
+   a.throws(()=>g.observeRuntime({}),e=>e.code==='EEXIST');a.equal(fs.readFileSync(p,'utf8'),'TEST_ONLY_EXISTING_PROOF');`});
+  assert.equal(r.result.status,0,r.result.stderr);
+ });
+ test('short runtime write is attempted once and closes its actual file descriptor',()=>{
+  const r=run('runtime-short-write',{source:`
+   const a=require('node:assert/strict'),fs=require('node:fs'),g=require(${JSON.stringify(GUARD)});g.install(process.argv[1]);
+   const c=Object.fromEntries(['requests','mutations','scopes','validations','predecessors','units','events','errors'].map(k=>[k,0]));
+   const write=fs.writeSync;let calls=0,fd;fs.writeSync=(f,b)=>{calls++;fd=f;return b.length-1;};
+   try{a.throws(()=>g.observeRuntime(c),/SHORT_WRITE/);}finally{fs.writeSync=write;}
+   a.equal(calls,1);a.throws(()=>fs.fstatSync(fd),e=>e.code==='EBADF');`});
+  assert.equal(r.result.status,0,r.result.stderr);
+ });
+ test('runtime output cap stops beforewrite100plus and cleanup retains incomplete evidence',()=>{
+  const r=run('runtime-cap',{source:`
+   const a=require('node:assert/strict'),g=require(${JSON.stringify(GUARD)});g.install(process.argv[1]);
+   const c=Object.fromEntries(['requests','mutations','scopes','validations','predecessors','units','events','errors'].map(k=>[k,0]));
+   const o=g.observeRuntime(c);for(let i=0;i<99;i++)o.beforeExport(c);
+   a.throws(()=>o.beforeExport(c),/OUTPUT_LIMIT/);a.throws(()=>o.close(c),/INCOMPLETE/);`});
+  assert.equal(r.result.status,0,r.result.stderr);
+  const f=r.files.find(x=>x.startsWith('RUNTIME_MEMORY_')),p=path.join(r.directory,f);
+  assert.equal(fs.readFileSync(p,'utf8').trim().split('\n').length,100);assert(fs.statSync(p).size<=1024**2);
+ });
+ test('runtime GC codec accepts all five actual Node kinds including weak callbacks',()=>{
+  const r=run('runtime-gc-kinds',{source:`
+   const a=require('node:assert/strict'),fs=require('node:fs'),perf=require('node:perf_hooks'),g=require(${JSON.stringify(GUARD)});g.install(process.argv[1]);
+   const kinds=['MINOR','MINOR_MARK_SWEEP','MAJOR','INCREMENTAL','WEAKCB'].map(n=>perf.constants['NODE_PERFORMANCE_GC_'+n]);
+   a.deepEqual(kinds,[1,2,4,8,16]);let delivered=false,disconnected=0;const Original=perf.PerformanceObserver;
+   // Synthetic delivered records test the codec only; no GC is requested.
+   perf.PerformanceObserver=class{observe(){}disconnect(){disconnected++;}takeRecords(){if(delivered)return[];delivered=true;return kinds.map(kind=>({detail:{kind,flags:0},duration:1}));}};
+   const c=Object.fromEntries(['requests','mutations','scopes','validations','predecessors','units','events','errors'].map(k=>[k,0]));
+   try{const o=g.observeRuntime(c);o.beforeExport(c);o.exportCompleted();o.close(c);}finally{perf.PerformanceObserver=Original;}
+   a.equal(disconnected,1);const p=process.argv[1]+'/RUNTIME_MEMORY_'+process.pid+'_0.SAFE.jsonl';
+   const rows=fs.readFileSync(p,'utf8').trim().split('\\n').map(JSON.parse);a.equal(rows.length,3);
+   for(const row of rows){a.equal(row.naturalGC.count,5);a.equal(row.naturalGC.durationMS,5);a.equal(row.naturalGC.byKind[16].count,1);}`});
+  assert.equal(r.result.status,0,r.result.stderr);
+ });
  console.log(JSON.stringify({scope:'LOCAL_NODE_HEAP_GUARD_ONLY',cases,realShortNodeChildren:childCount,failed:failures.length,
   pass:failures.length===0,DockerCalls:0,databaseCalls:0,full500Runs:0,providerCalls:0}));
  if(failures.length)process.exitCode=1;

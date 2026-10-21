@@ -3,6 +3,7 @@
 import copy
 import importlib.util
 import json
+import subprocess
 import tempfile
 import time
 import unittest
@@ -153,7 +154,7 @@ class StartPreflightTest(unittest.TestCase):
                     self.assertFalse(closed['c'*64]['closed'],'nonzero remaining PID is not a confirmed exit')
         self.assertFalse(case.exists())
 
-    def test_native_policy_pure_renderer_changes_only_the_exact_sequence_heap_options(self):
+    def test_native_policy_pure_renderer_changes_only_heap_options_and_runtime_observation(self):
         connector=C.C;case=connector.AREA/'attempt-0123456789ab'
         owner={'path':str(case/'TEST_ONLY_NOT_A_GO_FILE')}
         args=dict(target='helmut_resource_fixture_'+connector.A.DATE_TAG+'_0123456789ab',
@@ -165,7 +166,8 @@ class StartPreflightTest(unittest.TestCase):
             budgeted=connector.render_templates(case,**args,native_memory_budget=C.N.policy())
             self.assertEqual(len(plain),26);self.assertEqual(len(budgeted),26)
             modified={str(Path(b['destination']).relative_to(case))for a,b in zip(plain,budgeted)if a['text']!=b['text']}
-            self.assertEqual(modified,{'native-end-preparation/run-reviewed-sequence.js'})
+            self.assertEqual(modified,{'native-end-preparation/run-reviewed-sequence.js',
+                'native-end-preparation/observe-app.js','native-end-preparation/measure-runtime.js'})
             for row in budgeted:
                 text=Path(row['original']['path']).read_text()
                 for change in row['replacements']:
@@ -175,6 +177,12 @@ class StartPreflightTest(unittest.TestCase):
             sequence=next(r for r in budgeted if r['destination'].endswith('/run-reviewed-sequence.js'))
             self.assertEqual(sequence['text'].count("'--max-old-space-size=384','--max-semi-space-size=16'"),1)
             self.assertNotIn('--max-old-space-size=1536',sequence['text'])
+            observed=next(r['text']for r in budgeted if r['destination'].endswith('/observe-app.js'))
+            measured=next(r['text']for r in budgeted if r['destination'].endswith('/measure-runtime.js'))
+            original=next(r['text']for r in plain if r['destination'].endswith('/observe-app.js'))
+            subprocess.run(['node',str(BIN/'runtime-memory-staging-test.js')],
+                input=json.dumps({'observed':observed,'original':original,'measured':measured}),
+                text=True,capture_output=True,check=True,timeout=10)
             docker.assert_not_called();save.assert_not_called()
         self.assertFalse(case.exists());self.assertFalse(Path(owner['path']).exists())
 

@@ -1,0 +1,16 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+............E......
+======================================================================
+ERROR: test_native_policy_pure_renderer_changes_only_heap_options_and_runtime_observation (__main__.StartPreflightTest.test_native_policy_pure_renderer_changes_only_heap_options_and_runtime_observation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/start-preflight-test.py", line 182, in test_native_policy_pure_renderer_changes_only_heap_options_and_runtime_observation
+    subprocess.run(['node',str(BIN/'runtime-memory-staging-test.js')],
+    ^^^^^^^^^^
+NameError: name 'subprocess' is not defined. Did you forget to import 'subprocess'
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.028s
+
+FAILED (errors=1)

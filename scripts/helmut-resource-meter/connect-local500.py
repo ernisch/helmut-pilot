@@ -127,6 +127,41 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
         for old,new in replacements:
             count=text.count(old)
             if count:text=text.replace(old,new);changes.append({'from':old,'to':new,'count':count})
+        if native_memory_budget is not None:
+            def observe_change(old,new):
+                nonlocal text
+                if text.count(old)!=1:raise RuntimeError('exact runtime memory observation point missing: '+template['relative'])
+                text=text.replace(old,new);changes.append({'from':old,'to':new,'count':1})
+            if template['relative']=='native-end-preparation/observe-app.js':
+                # Reuse the already admitted/installed native Node observer.
+                # Only the private staged template changes; no original rewrite.
+                observe_change('let activeMutation=null,blockedExternalHTTPSAttempts=0;',
+                    'let activeMutation=null,blockedExternalHTTPSAttempts=0;\n'
+                    '  const memoryCounts=()=>({requests:requests.length,mutations:mutations.length,scopes:scopes.length,'
+                    'validations:validations.length,predecessors:predecessors.length,units:units.length,events:events.length,errors:errors.length});\n'
+                    "  const runtimeMemory=stage==='RUNTIME'?require("+json.dumps(str(BIN/'native-node-budget.js'))+
+                    ').observeRuntime(memoryCounts()):null;')
+                observe_change('console.log(JSON.stringify(row));};',
+                    'console.log(JSON.stringify(row));if(runtimeMemory)runtimeMemory.event(name,details.index,memoryCounts());};')
+                observe_change('selector,event,failure,state,metadata,',
+                    'selector,event,closeRuntimeMemory:()=>runtimeMemory?.close(memoryCounts()),'
+                    'beforeRuntimeExport:()=>runtimeMemory?.beforeExport(memoryCounts()),'
+                    'runtimeMemoryExported:()=>runtimeMemory?.exportCompleted(),failure,state,metadata,')
+            elif template['relative']=='native-end-preparation/measure-runtime.js':
+                observe_change("  const result=require('./assess-runtime').assess(",
+                    "  obs.beforeRuntimeExport();\n  const result=require('./assess-runtime').assess(")
+                observe_change("obs.io.save('RUNTIME_RESULT.SAFE.json',result);",
+                    "obs.io.save('RUNTIME_RESULT.SAFE.json',result);obs.runtimeMemoryExported();")
+                observe_change('  const result={...obs.metadata(),pass:false,failure:obs.failure(error),responses,providerPhases,',
+                    "  const primaryFailure=obs.failure(error);process.exitCode=1;\n"
+                    "  process.stderr.write(JSON.stringify({failed:true,...primaryFailure})+'\\n');\n"
+                    '  obs.beforeRuntimeExport();\n'
+                    '  const result={...obs.metadata(),pass:false,failure:primaryFailure,responses,providerPhases,')
+                observe_change("obs.io.save('RUNTIME_FAILURE.SAFE.json',result);process.stderr.write(JSON.stringify({failed:true,...obs.failure(error)})+'\\n');process.exitCode=1;",
+                    "obs.io.save('RUNTIME_FAILURE.SAFE.json',result);obs.runtimeMemoryExported();")
+                observe_change('\n});\n',
+                    '\n}).finally(()=>{try{obs.closeRuntimeMemory();}'
+                    "catch{process.exitCode=1;process.stderr.write('LOCAL_RUNTIME_MEMORY_CLOSE_FAILED\\n');}});")
         if template['relative']=='native-end-preparation/prepare-current-local-runtime.js':
             old="Date.parse(day+'T23:59:59.999Z'),berlinEnd)"
             new="Date.parse(day+'T23:59:59.999Z'),"+('' if calendar else 'berlinEnd,')+"Date.parse(ACTION.reviewedDayWindowEndUTC))"
