@@ -323,7 +323,7 @@ function bootstrapSQL(expectedHash) {
 }
 function assertLocalTarget(plan) {
   assert.equal(plan.production, false);assert.equal(plan.profiles, 500);
-  assert(/^helmut_resource_fixture_20261020_[a-f0-9]{12}$/.test(plan.targetDatabase));
+  assert(/^helmut_resource_fixture_20261021_[a-f0-9]{12}$/.test(plan.targetDatabase));
   assert(/^helmut-meter-db-w20-[a-f0-9]{12}$/.test(plan.containerName));
 }
 function installAfterActivation({ plan, candidatePin, targetSQL }) {

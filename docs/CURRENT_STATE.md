@@ -23,19 +23,20 @@ Kapazitätsreservierung oder exakteBlockbesitzbehauptung. 2GiB-neueDatei/8GiBHos
 bleiben eingeplant. Kein Ressourcenstart, kein RAMersparnisnachweis.
 [Befund, Sicherung und Entfernung](betrieb/v11-storage-hull-20261021.md).
 
-Vorherige Sicherung SOURCE/ACTUAL unabhängigPASS:2Exporteje438.837.248B,
-gleicheManifeste undaufgezeichneteStreamhashes,10.239Pfade/7leereDelta-Dateien.
-Rekonstruktion und11Ausgabepins geprüft. Sicherung7.778.304Ballokiert am
-Archivende; gesamtesneuesDossierunter64MiB. Rootfs-Export umfasstkeine
-Mountdaten/gesamteV11DB. Nachfolgende tatsächlicheEntfernungs-/Kapazitäts-
-abnahme ist in der verlinkten neuenZusammenfassung gebunden.
+Sicherung SOURCE/ACTUAL unabhängigPASS:2Exporteje438.837.248B, gleiche
+Manifeste/Streamhashes,10.239Pfade/7leereDelta-Dateien; Rekonstruktion und
+11Ausgabepins geprüft. Export umfasstkeine Mountdaten/gesamteV11DB;
+vollständige Sicherungs-/Entfernungsbelege im verlinkten Bericht.
 
 Im geprüften aktuellen Startpfad keine zwingende Live66-Abhängigkeit gefunden:
-Originalgate bindet Bank22465, neuer Storage entsteht frisch. Künftige finale
-Startclosure noch UNKNOWN. Vier aktive Startgates verlangen weiter alte
-DeepSeek-Formate; konsistente SOL-Versionierung nur vorgeschlagen, nicht umgesetzt.
-Keine Providerprovenienz durch Selbstaussagen, keine umbenannten Altbelege.
-Nur SOL/Root+bis3Helfer, keine externen Modelle/Routerkonfiguration verändert.
+Originalgate bindet Bank22465, neuer Storage entsteht frisch. Finale Startclosure
+noch offen. Neueste Nutzerfreigabe erlaubt DeepSeek/Router wieder: echter
+FlashHigh-Leseaufruf und eng begrenzte21Oct-Whiteliständerung abgeschlossen,
+Routerkonfiguration unverändert. Aktuelle ProHigh-Reviews nutzen echte
+API-/Quellenbelege; keine SOL-Formatumstellung oder umbenannten Altbelege.
+Day21: SOURCE/Root-A/F/L500/KalenderPASS; Inputkopie echt erstellt/geprüft.
+Slot12/23Altmarker gebunden; Originale erhalten.31Autoritätsfälle/JS-EinstiegPASS.
+32Startgates offen; kein Ressourcenlauf. [Stand](betrieb/next-local-full500-20261021.md).
 
 Branch `codex/controlled-cleanup-and-late-probe-20261020`, Entwurfs-PR927
 auf926/925/924; c8624f7c erhalten. Sicherung bei RepositoryHEAD80d750c7,

@@ -1,0 +1,16 @@
+{
+  "schema": "helmut-completed-day21-local-input-binding/1",
+  "sourceInputDatabase": "helmut_resource_input_20261021_73c17fa1af90",
+  "capturePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/day21-input-preparation-v2/completed-input/READ_ONLY_SOURCE_CAPTURE.SAFE.json",
+    "bytes": 3807,
+    "sha256": "0bb42c165555de2723c787ef054001723d5ef7832d4b2bb53fda2547924ab77e"
+  },
+  "correctionClaimPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/day21-input-preparation-v2/ONCE_ONLY_BOOK20_INPUT_CORRECTION_CLAIM.SAFE.json",
+    "bytes": 1458,
+    "sha256": "414f104f2c4b083759ec04c9439f512be0041ce6f4b5271686a07aa50205ef0b"
+  },
+  "beforeNativeAuthSHA256": "b5c615212f5f887ddaa029b0e9b70a3b4a8fd793661fc2dd852f6c1ec93e06d4",
+  "afterNativeAuthSHA256": "b2780782d03981794069440ffd836e14a869074f271fbf114f4f8fb59a030f44"
+}
