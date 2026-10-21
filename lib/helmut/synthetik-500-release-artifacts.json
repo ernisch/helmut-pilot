@@ -446,11 +446,11 @@
     },
     {
       "path": "vercel.json",
-      "bytes": 8149,
-      "sha256": "0d4f52725c0273420c10ff3506f6135bb2232a47992ef10c7811962780b9ef41"
+      "bytes": 5315,
+      "sha256": "32e72dfd6e3e2bc2788c991cab29471af4e04ea7a1a57f7bb3e58a9ea92693d2"
     }
   ],
-  "sourceMappingSHA256": "24da66c466f2ef2e158814e3d957e803d5f484c179d5d67a782d15ade5636531",
+  "sourceMappingSHA256": "d2c2b816028c3169795cb62a6d5482485b2526ae6c0e995ceb5cf941760b0aaa",
   "currentCandidateFull500Qualification": false,
   "candidateQualificationScope": "LOCAL_DEFAULT_OFF_CONTROL_VIEW_AND_NATIVE_COMPONENT_SECURITY_ONLY; COMMON_RAM_OFFLINE90_UNIT60_AUTH30_FULL500_PRODUCTION_NOT_QUALIFIED",
   "priorManifestCommit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",
