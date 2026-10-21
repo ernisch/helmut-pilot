@@ -161,13 +161,18 @@
     },
     {
       "path": "lib/helmut/lage.js",
-      "bytes": 56239,
-      "sha256": "a1f9f307544e747af1287c84c3e805ca3297263a6eb3a03ba735d44e143574d5"
+      "bytes": 56857,
+      "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
     },
     {
       "path": "lib/helmut/llm-usage-atomic.js",
       "bytes": 25446,
       "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "path": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
     },
     {
       "path": "lib/helmut/matching-begruendung.js",
@@ -251,8 +256,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 546307,
-      "sha256": "3c265bf9aaafb735b12d408ff8914f67ac32560b38194e0bf27c4fdd6e3d8d74"
+      "bytes": 546974,
+      "sha256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -261,8 +266,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-content-runner.js",
-      "bytes": 4615,
-      "sha256": "35c0317dfaede5c247fb5777c0515c4a3c7c9f949940bc8d4a33ad43d6d8b331"
+      "bytes": 4748,
+      "sha256": "f632f019c9dd277cd09863ef18566416189226631af6e7ffc6014e0a117eee47"
     },
     {
       "path": "lib/helmut/synthetik-500-content-worker.js",
@@ -277,7 +282,7 @@
     {
       "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
       "bytes": 12086,
-      "sha256": "b9bd8e96880343ebcbd36263e3b93321ba1c60a4b0fdb1290bed984590ae47e6"
+      "sha256": "5c807f5607b5b0e97e1fc3364053a00b995d0efe857d9768b73509ceae33ff28"
     },
     {
       "path": "lib/helmut/synthetik-500-date-binding.js",
@@ -445,7 +450,7 @@
       "sha256": "0d4f52725c0273420c10ff3506f6135bb2232a47992ef10c7811962780b9ef41"
     }
   ],
-  "sourceMappingSHA256": "39af923e8af9cc9a5ba80d2d09225972a5439f968eaec6983bf47ea07c14a85a",
+  "sourceMappingSHA256": "24da66c466f2ef2e158814e3d957e803d5f484c179d5d67a782d15ade5636531",
   "currentCandidateFull500Qualification": false,
   "candidateQualificationScope": "LOCAL_DEFAULT_OFF_CONTROL_VIEW_AND_NATIVE_COMPONENT_SECURITY_ONLY; COMMON_RAM_OFFLINE90_UNIT60_AUTH30_FULL500_PRODUCTION_NOT_QUALIFIED",
   "priorManifestCommit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",

@@ -1,0 +1,36 @@
+{
+  "schema": "helmut-local-runtime-source-delta/1",
+  "production": false,
+  "full500Accepted": false,
+  "executionAuthority": false,
+  "historicalAcceptanceTransferred": false,
+  "requiresFreshIntegrationAcceptance": true,
+  "historicalStorageSHA256": "51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d",
+  "sourcePins": [
+    {
+      "file": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "bytes": 546974,
+      "sha256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f"
+    },
+    {
+      "file": "lib/helmut/lage.js",
+      "bytes": 56857,
+      "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
+    },
+    {
+      "file": "scripts/local-pipeline-lock-lease-test.js",
+      "bytes": 12354,
+      "sha256": "6307d98d794c2d6cb61fb409cef3448d36a598b6e9ff34a606869b924fdfef3a"
+    }
+  ],
+  "independentSourceReviewPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/INDEPENDENT_SOURCE_DELTA_REVIEW.SAFE.json",
+    "bytes": 1187,
+    "sha256": "15250fbbdff170582e630efe0779f7e90651c186ebce15881159c14f1d19eb45"
+  }
+}

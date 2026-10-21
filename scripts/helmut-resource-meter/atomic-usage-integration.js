@@ -106,7 +106,9 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
   const sourceDelta = localSourceDeltaPin === null ? null : LEASE.sourceDelta(localSourceDeltaPin);
   let lease = null;
   if (pipelineLockLease !== null) {
-    assert(controlRead === CONTROL_READ && sourceDelta, "Lease requires explicit control and current source delta");
+    assert(controlRead === CONTROL_READ && sourceDelta && boundedRead === BOUNDED.MODE
+      && senderClaimRead === SENDER_CLAIM_READ,
+    "Lease requires explicit bounded sender control and current source delta");
     assert.deepEqual(Object.keys(pipelineLockLease).sort(), ["acceptancePin", "mode"]);
     assert.equal(pipelineLockLease.mode, LEASE.MODE);
     lease = LEASE.acceptance(pipelineLockLease.acceptancePin);

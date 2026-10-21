@@ -1,0 +1,41 @@
+{
+  "schema": "helmut-local-pipeline-lock-lease-independent-review/1",
+  "pass": true,
+  "independent": true,
+  "production": false,
+  "full500Accepted": false,
+  "executionAuthority": false,
+  "kind": "SOURCE",
+  "sourcePins": [
+    {
+      "file": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "bytes": 546974,
+      "sha256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f"
+    },
+    {
+      "file": "lib/helmut/lage.js",
+      "bytes": 56857,
+      "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
+    },
+    {
+      "file": "supabase/proposals/pipeline_lock_lease_local.sql",
+      "bytes": 6035,
+      "sha256": "1c17f77e033a350b4274a3a0637ce8fe444d1f3e0fa1a0a6415bb5668041f9fb"
+    },
+    {
+      "file": "scripts/local-pipeline-lock-lease-test.js",
+      "bytes": 12354,
+      "sha256": "6307d98d794c2d6cb61fb409cef3448d36a598b6e9ff34a606869b924fdfef3a"
+    }
+  ],
+  "originalReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/INDEPENDENT_COMBINED_SOURCE_REVIEW_ORIGINAL.SAFE.json",
+    "bytes": 6151,
+    "sha256": "e7efec6b916aa3f01fe755f3e89566e6c2801e928d5e3484fe9cb053e749c6a8"
+  }
+}

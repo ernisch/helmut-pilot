@@ -1,0 +1,116 @@
+{
+  "schema": "helmut-local-pipeline-lock-lease-native-qualification/1",
+  "mode": "invocation-lease-v1",
+  "scope": "LOCAL_COMPONENT_ONLY",
+  "production": false,
+  "full500Accepted": false,
+  "executionAuthority": false,
+  "automaticRetry": false,
+  "ramBenefitClaimed": false,
+  "oldAuthorityReused": false,
+  "nonce": "2200a7e8ef81be268ba739132fca6abb",
+  "sourceCase": "local-lease-safety-2200a7e8ef81be268ba739132fca6abb",
+  "catalogPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/native-safety-v2/ACTUAL_LOCK_CATALOG.SAFE.json",
+    "bytes": 2759,
+    "sha256": "4f5fafa97141cd6aa1b40ee8bf2f5af47c92f482fa77c11a46cd36e62abd3fc7"
+  },
+  "sourcePins": [
+    {
+      "file": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "bytes": 546974,
+      "sha256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f"
+    },
+    {
+      "file": "lib/helmut/lage.js",
+      "bytes": 56857,
+      "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
+    },
+    {
+      "file": "supabase/proposals/pipeline_lock_lease_local.sql",
+      "bytes": 6035,
+      "sha256": "1c17f77e033a350b4274a3a0637ce8fe444d1f3e0fa1a0a6415bb5668041f9fb"
+    },
+    {
+      "file": "scripts/local-pipeline-lock-lease-test.js",
+      "bytes": 12354,
+      "sha256": "6307d98d794c2d6cb61fb409cef3448d36a598b6e9ff34a606869b924fdfef3a"
+    }
+  ],
+  "independentActualReviewPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/INDEPENDENT_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 2308,
+    "sha256": "0217f7f68049b580e2e21e1323997b7427e18b3d79280711346bef9cc8456c83"
+  },
+  "actualControllerPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/native-safety-v2/COMPONENT_RESULT.SAFE.json",
+    "bytes": 8504,
+    "sha256": "5c339dcd2dfc843bf8266e23179228b57008cebd73c0b71644f07bee6159c234"
+  },
+  "actualWorkerPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/native-safety-v2/WORKER_RESULT.SAFE.json",
+    "bytes": 682,
+    "sha256": "4e7c028d8a88bf0d184e6c1897157b4c0fbc9d0bc87932c3f0dffc665b56f732"
+  },
+  "nativeSafety": {
+    "pass": true,
+    "criticalCases": {
+      "acquireRelease": true,
+      "contentionDenied": true,
+      "expiredTakeover": true,
+      "staleTokenRejected": true,
+      "successorPreserved": true,
+      "authHistoryUnchanged": true
+    }
+  },
+  "before": {
+    "originalRootSHA256": "d241b4ed0c36611f394c7833297fc86d829a8285cf325296460aa37af3fb8602",
+    "currentRootSHA256": "51bba3f004a3c22b6ac2490f0db05d276d6a3e63214c6be6b4da87c2ef731aab",
+    "generation": "82b8452d-2675-4444-8985-01692fca32c6",
+    "historyProof": {
+      "generation": "c58616a1-ff0a-4535-ae26-60b7b6d35d03",
+      "count": 6000,
+      "head": "0afd253a6304a4327ce77ba4d30cdffea8573a896dfec478e4821a5e0791143c",
+      "originalHash": "a621d6cc841230a2ed074086fbddd6900a3a43abd9e6e48f585d3ab0b7c4511d"
+    },
+    "activeBlobLocks": 0,
+    "blobLockCount": 4,
+    "blobLockSHA256": "2afcf1bfd6f2fecaf0dc1049c0299f97f7013b3211dfea17eb9d0077e51e745a",
+    "tableRows": 0
+  },
+  "after": {
+    "originalRootSHA256": "d241b4ed0c36611f394c7833297fc86d829a8285cf325296460aa37af3fb8602",
+    "currentRootSHA256": "51bba3f004a3c22b6ac2490f0db05d276d6a3e63214c6be6b4da87c2ef731aab",
+    "generation": "82b8452d-2675-4444-8985-01692fca32c6",
+    "historyProof": {
+      "generation": "c58616a1-ff0a-4535-ae26-60b7b6d35d03",
+      "count": 6000,
+      "head": "0afd253a6304a4327ce77ba4d30cdffea8573a896dfec478e4821a5e0791143c",
+      "originalHash": "a621d6cc841230a2ed074086fbddd6900a3a43abd9e6e48f585d3ab0b7c4511d"
+    },
+    "activeBlobLocks": 0,
+    "blobLockCount": 4,
+    "blobLockSHA256": "2afcf1bfd6f2fecaf0dc1049c0299f97f7013b3211dfea17eb9d0077e51e745a",
+    "tableRows": 0
+  },
+  "lifecycle": {
+    "allOwnedProcessesExited": true,
+    "fullLastProcessExitCovered": true,
+    "groupsEmpty": true,
+    "postgresExitCode": 0,
+    "nodeExitCode": 0,
+    "oomCount": 0,
+    "oomKillCount": 0,
+    "memoryMaxCount": 0
+  },
+  "comparison": {
+    "status": "NOT_CLAIMED",
+    "ramBenefitClaimed": false
+  },
+  "actualHTTPTransport": false
+}

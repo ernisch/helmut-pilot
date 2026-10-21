@@ -254,6 +254,7 @@ const STANDARD = new Set([
   "store-read-integrity-test.js",           // Leseintegritaet des Stores
   "auth-store-cas-test.js",                 // CAS des Auth-Stores
   "pipeline-lock-atomic-test.js",           // atomarer Pipeline-Lock
+  "local-pipeline-lock-lease-test.js",      // lokaler Aufruf besitzt sein Token; kein veraltetes Release/Retry
   "profile-auth-decoupling-test.js",        // Profil/Auth entkoppelt
   "reset-timing-seitenkanal-test.js",       // kein Seitenkanal beim Passwort-Reset
   "saas-foundation-test.js",                // keine Personen-Fallbacks, Tenant-Kontext blockt

@@ -1,0 +1,60 @@
+{
+  "schema": "helmut-local-pipeline-lock-lease-acceptance/1",
+  "mode": "invocation-lease-v1",
+  "scope": "LOCAL_COMPONENT_ONLY",
+  "production": false,
+  "full500Accepted": false,
+  "executionAuthority": false,
+  "automaticRetry": false,
+  "ramBenefitClaimed": false,
+  "oldAuthorityReused": false,
+  "nonce": "2200a7e8ef81be268ba739132fca6abb",
+  "sourceCase": "local-lease-safety-2200a7e8ef81be268ba739132fca6abb",
+  "catalogPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/native-safety-v2/ACTUAL_LOCK_CATALOG.SAFE.json",
+    "bytes": 2759,
+    "sha256": "4f5fafa97141cd6aa1b40ee8bf2f5af47c92f482fa77c11a46cd36e62abd3fc7"
+  },
+  "sourcePins": [
+    {
+      "file": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "bytes": 546974,
+      "sha256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f"
+    },
+    {
+      "file": "lib/helmut/lage.js",
+      "bytes": 56857,
+      "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
+    },
+    {
+      "file": "supabase/proposals/pipeline_lock_lease_local.sql",
+      "bytes": 6035,
+      "sha256": "1c17f77e033a350b4274a3a0637ce8fe444d1f3e0fa1a0a6415bb5668041f9fb"
+    },
+    {
+      "file": "scripts/local-pipeline-lock-lease-test.js",
+      "bytes": 12354,
+      "sha256": "6307d98d794c2d6cb61fb409cef3448d36a598b6e9ff34a606869b924fdfef3a"
+    }
+  ],
+  "nativeProofPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/NATIVE_QUALIFICATION.SAFE.json",
+    "bytes": 4430,
+    "sha256": "d6276408f7f4b379a1201990baf67dd62a772e9649a16f25de86df7d750a8e5a"
+  },
+  "independentSourceReviewPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/INDEPENDENT_SOURCE_REVIEW.SAFE.json",
+    "bytes": 1370,
+    "sha256": "64e4f0e15f693d8559a6c807fc6ccaa6746e33b87091f919673ace7460944f48"
+  },
+  "independentActualReviewPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/INDEPENDENT_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 2308,
+    "sha256": "0217f7f68049b580e2e21e1323997b7427e18b3d79280711346bef9cc8456c83"
+  }
+}
