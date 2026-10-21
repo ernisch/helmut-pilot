@@ -2,83 +2,81 @@
 
 **Lokal 21.10.2026 UTC; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 21.10.: Später Schreibpfad eingegrenzt; kein zusätzlicher RAM-Fix bewiesen
+## 21.10.: CAS-Größenformel widerlegt; native Gesamtprobe FAIL
 
-Branch `codex/controlled-cleanup-and-late-probe-20261020`, Basis0372500c,
+Branch `codex/controlled-cleanup-and-late-probe-20261020`, Ausgang782ce141,
 Entwurfs-PR927 auf926/925/924; c8624f7c erhalten. Produkt6d528425 mit PG-Renderer,
-kalter Hashprojektion und kompaktem Kontrollcache: U93917a57/Partsf30089e7
-unverändert. Bereits fair gegen ursprünglichenV11 bewiesen:
-1.170.790.400→1.015.904.256B,154.886.144B/13,23% gemeinsam, CPU−10,96%/Wand−7,72%.
-Größter einzeln belegter vermeidbarer Anteil: alterRenderer≈124,8MB anonym/Backend.
-179Produktsuiten/95nativeSQL-Vergleiche/34Quellengates/22Integration dieses
-unveränderten Produktumfangs bereitsPASS; nicht lokal wiederholt. Kein Voll500.
+kalter Hashprojektion und kompaktem Kontrollcache unverändert:
+U93917a57/Partsf30089e7. Der faire kombinierte Vergleich bleibt gültig:
+1.170.790.400→1.015.904.256B, 154.886.144B/13,23% weniger gemeinsamer Speicher,
+CPU−10,96%/Wand−7,72%. Größter einzeln belegter vermeidbarer Anteil war der alte
+Renderer mit ≈124,8MB anonym/Backend. Die früheren179Produktsuiten/95nativeSQL/
+34Quellengates/22Integration sind PASS und wurden hier nicht wiederholt.
 
-Negativer Inflatevergleich3c7ca25c bleibt gültig: BEFORE–AFTER–AFTER–BEFORE
-1.037.365.248/1.019.125.760/1.018.159.104/1.005.346.816B. Mittelunterschied2.713.600B,
-Einzelwerte überlappen; festeRegelmax(AFTER)<min(BEFORE)FALSE. Kandidat40d7
-NICHT integriert, keine Wiederholung. 14Codecvektoren/19Kontrollgruppen+
-42Negativfälle/36Starterguards bestanden. Alle5Kopien entfernt,465Belege/15Hüllen
-erhalten; RootENDabfb2dde/IndependentENDa84261acPASS. Ein rein lesenderCheck
-äußererToolabschlussUNKNOWN bleibt ausdrücklichUNKNOWN; getrennte Löschungexit0.
+Die vorherige Phasenmessung ist abgeschlossen:27RPC/14Frames,
+Peak1.039.151.104B, vollständige Abschlüsse0/EOF/nativeEvents0 und strenger
+PostgREST-Abschluss PASS. Highwater stieg um3.436.544B im Snapshotintervall
+und8.060.928B zwischen Bodybeobachter und geparster RPC-Antwort. NodeRSS und
+V8physical blieben an den RPC-Endpunkten gleich. Diese asynchronen Endpunkte
+beweisen keinen exakten Speicherbesitzer/Allocator. Letzter Write: normaler
+CAS,2458B/2Knoten/0Historyergänzungen/567BACK; tatsächlicher CAS-GUC-Zweig offen.
 
-Neue vorab gebundene Phasenfrage tatsächlich abgeschlossen: V2-Intent0c00a065/
-Plan35fa26ca, finalerStarter1868119f/Host7d6d654e, frischer Null-Auth/Null-Node-
-Lebenszyklus653.615.104B/18,586201266s. Danach genau ein CURRENT27RPC-Fall
-auf authentischer später827a mit NEWSQL/f300:5Reads/4CAS/18Kontrollen/3Mutationen+
-Restore/6Grenzen, Peak1.039.151.104B/CPU32,250197s/Wand32,928936332sPASS.
-14exaktePhasenframes/20.251BZusatzmetadaten im letztenWrite/Read; keine
-Änderung der ursprünglichen Snapshot-/Parts-/Request-/Beobachter-/ACK-/Attach-
-oder Ergebnisarbeit. Nur skalare Diagnosehooks, kein neuer Produktweg.
+Die neue enge Sicherheitsfrage ist beantwortet: Die additive native-size-
+Formel für kompakte m-Blätter ist keine allgemeine Obergrenze. Offizielle
+PG17.6-Quelle7885b94d mit SHA/Gitblob-Bindung und tatsächliches SELECT in neuer
+synthetischer DB: A1032B/B840B/C147B, Formel2083B, zusammengeführt2195B;
+112B Unterdeckung. Alle32 Layoutfelder stimmen, Root gültig mit129Schlüsseln;
+Runtime170006/UTF8/readOnlyon/ProjektionNULL. Keine Originalprofil-/Authdaten,
+CAS-/Provideraufrufe. Der Vollrenderer behält seine tatsächliche Größenprüfung.
+Kein ausgeführter Renderer-Rejection-/Projektions-Acceptance-Test und kein
+Nachweis eines Fehlers im aktiven Motor. Keine zusätzliche RAM-Ersparnis.
 
-Root92ba732e/IndependentActuala05fc6b4:27RPC/23History-/18Graphbindungen,
-9volle6000Hashes/6Grenztripel/17Captures/102Workbelege+57Lifebelege korrekt.
-Originalhashes/606B/Katalog/ABI/ACL/CAS/ACK/Nonce/Restore erhalten, nur neueRevision.
-Node/PG/äußereStarter0/EOF, nativeEvents0, eigeneGruppen leer, strengePostgREST-
-Abschlussregel erfüllt. 55neueStarter-/Frameguards/5PythonAST/2NodeSyntax/
-5Hostfälle0/1/1/1/1PASS. Keine Budget-/Friständerung, ZwangsGC, Cacheleerung,
-Peakreset, Allocatorwechsel oder Provideraufrufe.
+Genau zwei native Versuche, beide insgesamt FAIL/KEEP. Erstens Clientexit2
+ohne erhaltenes stderr und ohne Layoutwert. Sourcebelegt ist PGSERVICE=''≠
+abwesend; PGPASSFILE=/dev/null würde zusätzlich warnen. Die erste konkrete
+Fehlermeldung bleibt unbekannt. Nachträgliche Root-Vollinspects überschritten
+die Beleggrenze:1.210.408B>1MiB; das bleibt dokumentierter FAIL.
+Zweitens korrigierter Starter028a519a/IntentV4e882bcbc/IR425ecc96,
+3AST/CLI0/2/1 PASS; SELECT1527B/d6317a14 liefert das Gegenbeispiel. Danach
+pg_ctl fast-w Exit137 und äußerer Starter1: strenger Befehlsabschluss verletzt.
+PG-Log erreicht FastShutdown/checkpoint/shutDown/EOF; separate Readbacks zeigen
+beide eigenen Container beendet0/PID0/noOOM. Docker-Ereignisse0da34e0f ordnen
+psql0→pg_ctl137→Container0 zu; die genaue Killquelle ist nicht direkt bewiesen.
+Kein Umdeuten zu GesamtPASS und kein dritter Versuch. Zweiter Fall778.519B<1MiB.
+Rootbfd67371/Independent10817ae7 bestätigen den getrennten Teilbefund/GesamtFAIL.
+END9145bd79:549Runtimefiles nach Abschluss gleich; fünf geschützte Container,
+Bank5993 und827a-Metadaten unverändert.
 
-Peak steigt zwischen Snapshotframes um3.436.544B und zwischen fertigem
-Bodybeobachter/geparsterRPC-Antwort um8.060.928B auf endgültig1.039.151.104B.
-Alle innerenFrameklammern0; Attach/verifyLogical/ganzerfinalRead/Abschluss
-keine weitereSpitze. BeimRPC NodeRSS269.144.064B/V8physical117.100.544B anbeiden
-Endpunkten gleich; beobachtetesanon344.674.304→363.290.624B/file605.020.160Bgleich.
-Beobachterarbeit eingeschlossen, asynchroneEndpunkte keine Peakzerlegung/
-exakterOwner/Allocatorbeweis; file enthältshmem/external enthältArrayBuffers.
+W45 bleibt OFF: vorher34Materialisierungen entfernt, Peak810.905.600→820.375.552B
+erhöht. Keine Aktivierung/Wiederholung/Grenzaufweichung. Die fehlende originale
+W45-Architekturdatei wurde nicht ersetzt. Negativer Inflatevergleich40d7,
+NEW30 ohne Plateau, NEW8 INCONCLUSIVE und JIT nur Diagnostik bleiben unverändert.
+Nächster enger Vorschlag: PostgreSQL-Heapbelege vor/nach Materialisierung im
+selben CAS-Backend mit tatsächlichem GUC und Quellbindung. Noch kein solcher
+Starter vorbereitet oder gestartet; kein weiterer Volltest als Hypothesenprobe.
 
-EngerServerquellenbefund780c0aab: letzterWrite normalerCAS,2458B/2übertrageneKnoten/
-0Historienergänzungen/567BACK. Defaultzweig kann Ganzzustand nur fürassert_data
-materialisieren. TatsächlicherCAS-GUC-Zweig mangelsSitzungsquittungUNBEWIESEN;
-fehlendeStartoption ersetzt keine Rollen-/DB-Konfiguration. W45 hatte bereits
-34Materialisierungen entfernt, aber Peak810.905.600→820.375.552B erhöht; bleibtOFF.
-Kein Einschalten/neuerVergleich: SOL620a352dNOT_APPROVED; native-size-Implikation
-offen, Original-W45-Architekturdatei fehlt. Kein langerPlateau-/500MB-Nachweis.
-NEW30 ohnePlateau, NEW8/festes4→8INCONCLUSIVE bleiben unverändert. JIT178.290.688B
-tmpfs nurDiagnostik, imVollmotorOriginalimage keinMount: keineMotorersparnis.
+Frühere zwei PASS-PGDATAkopien korrekt entfernt:3422Dateien/739.647.488B
+Inventarblöcke,159Belege/6Hüllen KEEP (Root00042460/Independent8fdd8af8).
+Neue zwei FAIL-Datenbanken/vier Hüllen/alle Belege KEEP; keine weitere Löschung.
+Originale,827a/17Deltaarchive/616Pflichtdateien,Gitobjekte/Refs/Images/Volumes/
+Loops geschützt. END-Snapshot14.988.963.840B frei;190.815.880B fehlen zur
+unveränderten Volladmission15.179.779.720B. Keine Reservierung oder weitere
+qualifizierte Rückgewinnung. Originalcloud weiterhin nicht direkt angebunden;
+autorisierte authentifizierte Quelle lokal. Bestehende private CI-Original-
+vorlagen fehlen, Vercel separat rot; übersprungen≠PASS. Keine Production-Prüfung.
 
-Beide neuen vorabentbehrlichenPASS-PGDATAkopien nach unabhängigerAbnahme/
-frischenChecks/Nonce/TTL/Once entfernt:3422Dateien/739.647.488BInventarblöcke;
-159Belege/6Hüllen bleiben, äußereLöschaufrufe3ac711/fac3f9wirklichexit0.
-RootEND00042460/IndependentEND8fdd8af8PASS. Originale,827a/17Deltaarchive/616Pflichtdateien/Gitobjekte/
-Refs/Images/Volumes/Loops geschützt, keineglobaleFreiheituneinsehbarerProzesse.
-END-Snapshot15.082.921.984Bfrei,96.857.736BunterVolladmission15.179.779.720B;
-weitereBelege brauchenPlatz, keineReservierung/weiterequalifizierteRückgewinnung.
-Originalcloud weiter nicht direktangebunden, autorisierteauthentifizierteQuelle
-lokal. CIfehlendeprivateOriginalvorlagen/Vercel separatrot; übersprungen≠PASS.
-
-500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/16frischeKontrollen
-jeProfil/500MBReserve offen, Sprint teilweiseabgeschlossen. AlteGOs verbraucht;
-32frischeBedingungen/Platte/neueskonkretesGO fürVoll500 nötig. AlterVollvertrag
-bindetDeepSeek, KonfliktzuSOL-only unangetastet. NurSOL/Root+bis3getrennteHelfer;
-keineexternenModelle/Router-/Kosten-/Reserveänderung/Production/Merge/Deployment.
-[NeuePhasenmessung/Belege](betrieb/auth-write-phase-20261021.md),
+500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/16frische
+Kontrollen je Profil und500MB Reserve offen; Sprint teilweise abgeschlossen.
+Alte GOs verbraucht; Voll500 braucht32frischeBedingungen, Platte und neues
+konkretes GO. Alter Vollvertrag bindet DeepSeek; Konflikt zu SOL-only bleibt
+unangetastet. Nur SOL/Root+bis3getrennteHelfer; keine externen Modelle,
+Router-/Kosten-/Reserveänderung, Production, Merge oder Deployment.
+[NativeGrößenformel/FAIL-Abschluss](betrieb/cas-native-size-20261021.md),
+[VorherigePhasenmessung](betrieb/auth-write-phase-20261021.md),
 [NegativerInflatevergleich](betrieb/control-inflate-20261021.md),
 [BewiesenerGesamtvergleich](betrieb/combined-auth-memory-comparison-20261020.md),
-[PhysischeV8-Diagnose](betrieb/auth-physical8-20261021.md),
 [LängererVerlauf](betrieb/auth-stability-30-rounds-20261021.md),
-[Cacheintegration](betrieb/bounded-control-cache-local-integration-20261020.md),
 [Bereinigung](betrieb/controlled-local-cleanup-20261020.md).
-
 
 
 ## 20.10.: Vorheriger Diagnostikstand vor der neuen Bereinigungsfreigabe

@@ -1,0 +1,394 @@
+{
+  "schema": "helmut-cas-native-size-independent-document-bundle-review/1",
+  "status": "PASS",
+  "blockingFindings": [],
+  "findings": [],
+  "reviewedAtUTC": "2026-10-21T08:25:18.843140+00:00",
+  "reviewer": "/root/stability_capacity_review, independent final documentation/bundle review; no external model or subagent",
+  "reviewedPins": {
+    "technicalDocument": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+      "bytes": 7956,
+      "sha256": "7ee279abbd066f3937a5c2aeec963e14d12f7c96a25896c9202bbb37b6c6fdb8"
+    },
+    "currentState": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/CURRENT_STATE.md",
+      "bytes": 29967,
+      "sha256": "4a53e3cee4162460cfc2adb386b67ca6a84c27ecae89e78d64e60bc453389102"
+    },
+    "bundleReadme": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/README.md",
+      "bytes": 1234,
+      "sha256": "23126acaa9b4233232aafea849ca6f223dcb6238918fe9957d84539e317f4e4d"
+    },
+    "reviewableCopiesManifest": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/REVIEWABLE_COPIES.SAFE.json",
+      "bytes": 13183,
+      "sha256": "fc9146ced00ed903672b5207f403d4613de600f0be389495a11b2410970e3f1d"
+    },
+    "keyActualProofs": [
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-native-row-20261021.SAFE.json",
+        "bytes": 1527,
+        "sha256": "d6317a14280790b8a1bfe79930ce37896470ebfb61015eb7a162d5392a71c244"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-failed-execution-20261021.SAFE.json",
+        "bytes": 1995,
+        "sha256": "0092dfb2bc11667abed9ee34019f9fc799393edaac0dd357e8df777cccb29694"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-actual-sol-review-20261021.SAFE.json",
+        "bytes": 26965,
+        "sha256": "10817ae7b9a413e14f006374e9ab22db2cc7c9ad5d58d3cc1baa665abc61651b"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-first-failure-sol-review-20261021.SAFE.json",
+        "bytes": 16026,
+        "sha256": "58df056d411a8a3742dcc67b97286337164e409cbadbe3624c77a0ea6068e0e7"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-shutdown-events-20261021.SAFE.json",
+        "bytes": 3377,
+        "sha256": "0da34e0f2884d5ecfe3690dd3fcfa30536d110b008cc432632da865b1664746c"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-events-sol-review-20261021.SAFE.json",
+        "bytes": 2796,
+        "sha256": "83017c85169f294dd9bb0c0804b689fa04512d652acc1f832617a90bcef0476e"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-root-readback-20261021.SAFE.json",
+        "bytes": 5047,
+        "sha256": "bfd67371733842b412dc6c12afae4a775f8005b32dd7d7bad1af54f340f25f33"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-protected-end-20261021.SAFE.json",
+        "bytes": 4085,
+        "sha256": "9145bd79fea986255cd1a266b6aad9fee499b38736ed54d9ecb18bc5b19d2884"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-final-containers-20261021.SAFE.json",
+        "bytes": 2448,
+        "sha256": "8762eb3a2632701974915de3999c416f9e78f59f702e2373458e1fa3bec01b74"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-starter-qualification-20261021.SAFE.json",
+        "bytes": 2154,
+        "sha256": "c7941fee0958de7598199158080df1ed6656e05476657b51a18ea4450c3f1656"
+      }
+    ]
+  },
+  "scope": "New technical document, CURRENT_STATE first section and global length/line bound, bundle README, all23 manifest source/destination pairs and linked copied proofs. No rerun of source architecture, prior179/95 suites or native diagnostics.",
+  "bundleCustody": {
+    "manifestCopies": 23,
+    "fullBytesAndSHA256BothOriginalAndCopyIndependentlyMatch": true,
+    "copyRows": [
+      {
+        "copy": "run_layout_select.py",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "parent-run_layout_select.py",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "layout-select.sql",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "PLAN.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "PREPARED.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "SOURCE_CAUSE.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "ROOT_LAYOUT_INTENT_V4.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "PG17_SOURCE_BINDING.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "LIBPQ_SOURCE_BINDING.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-layout-source-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-source-sol-review-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-first-failure-sol-review-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-actual-sol-review-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-events-sol-review-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-root-readback-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-protected-end-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-starter-qualification-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-shutdown-events-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-shutdown-source-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-next-decision-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-native-row-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-failed-execution-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      },
+      {
+        "copy": "cas-native-size-final-containers-20261021.SAFE.json",
+        "sourceAndDestinationFullPinMatch": true
+      }
+    ],
+    "copyDomainCounts": {
+      "bundleSourceMetadataFiles": 9,
+      "docsSAFEProofFiles": 14
+    },
+    "originalSourceProofFilesRetainedAtDeclaredPaths": true,
+    "privateAdoptionOrPGDATACopyClaimed": false,
+    "replicasExecuted": false,
+    "preparedStatusHistoricalAndActualResultsSeparatedByReadme": true,
+    "oldAdoptionsNotReusableExplained": true,
+    "scopeOfOriginalRetention": "All23 original source/proof files checked. Protected runtime/PGDATA custody assessed from pinned RootEND and independent actual review only; no duplicate runtime549 hashing, original PGDATA walk, Docker/process inspection or new global-use claim."
+  },
+  "claimChecks": [
+    {
+      "claim": "Native partial result and overall failure remain separate",
+      "status": "PASS",
+      "evidence": "Copied actual execution0092dfb2 is FAIL; Rootbfd67371 and independent10817ae7 are FAIL_KEEP_WITH_OBSERVED_NATIVE_LAYOUT_COUNTEREXAMPLE. Both docs and README explicitly FAIL/KEEP and no third attempt; neither command-exit rule nor whole-case PASS is waived."
+    },
+    {
+      "claim": "2195>2083 and112B are real native values",
+      "status": "PASS",
+      "evidence": "Exact1527B output d6317a14 contains32 layout fields, A1032/B840/C147/root2195/formula2083/under112, rootLogicalValid true and expected key ordering. Runtime170006/UTF8/layout_probe/postgres/readOnlyon/publicRelations0/projectionNULL/JITon. Independent actual report verifies all32 fields/types."
+    },
+    {
+      "claim": "Runtime/build-commit and graph behavior boundaries",
+      "status": "PASS",
+      "evidence": "Official source commit comes from pinned source plus reviewed SQL constant; docs do not claim the runtime queried its build commit. CURRENT explicitly states no executed renderer-rejection or projected-acceptance test. Mathematical m-bound counterexample is not a whole-state limit breach, active-motor defect or product fix."
+    },
+    {
+      "claim": "SQL0 then pg_ctl137 then container0",
+      "status": "PASS",
+      "evidence": "Events0da34e0f and independent addendum83017c85 retain distinct exec IDs and chronology psql0→pg_ctl137→server container0. Final exact two-container readback8762eb3a shows exited0/PID0/noOOM. Docs retain outer1/pg_ctl137 overallFAIL; exec killed as PID1 exits is stated compatible, not proven exact kill cause."
+    },
+    {
+      "claim": "First failure is preserved honestly",
+      "status": "PASS",
+      "evidence": "Independent first report58df056d: outer1/no native result and client2 without retained stderr. Docs preserve unknown concrete error, explain PGSERVICE empty via source rather than fabricated stderr, and retain1,210,408B>1MiB root-inspect evidence breach. No retrospective PASS."
+    },
+    {
+      "claim": "Second-case caps and prestart correction",
+      "status": "PASS",
+      "evidence": "Rootbfd67371 records778,519B<1,048,576B. Docs state intentV4 output-cap inconsistency corrected before second start; no changed actual starter caps or new third attempt represented."
+    },
+    {
+      "claim": "Product/current projection and RAM limits",
+      "status": "PASS",
+      "evidence": "Current phase actual CAS GUC remains explicitly unknown; projectionOFF is retained policy rather than retroactive branch proof. W45memory-negative comparison remains rejected. Product U939/Partsf300 unchanged per END9145bd79 and independent actual review; no extra RAM saving, shared plateau, full500, provider, production, merge or deployment claim. Existing154,886,144B earlier renderer saving is kept as historical measured result."
+    },
+    {
+      "claim": "Retention and protected originals",
+      "status": "PASS",
+      "evidence": "Both new failed databases/four hulls/whole evidence KEEP. END9145bd79 records549 runtime files unchanged, five protected container identities unchanged, canonical827a metadata unchanged and no original DB payload rehash; independent10817ae7 retains that scope and no global opaque-user absence claim. Documents protect827a/17 archives/616 helper files/Git objects and do not authorize new cleanup."
+    },
+    {
+      "claim": "Capacity is dated evidence, no reservation",
+      "status": "PASS",
+      "evidence": "Published14,988,963,840B free and190,815,880B gap exactly match pinned END;15179779720−14988963840=190815880. Docs label snapshot/no reservation and zero newly qualified reclaim. No fresh resource/admission assertion made by this review."
+    },
+    {
+      "claim": "Exactly one later diagnosis remains unprepared",
+      "status": "PASS",
+      "evidence": "Technical doc/CURRENT preserve the single bounded same-CAS-backend materialization heap proposal and actual GUC/source binding; explicitly no starter prepared or started. No ON or500 diagnosis prepared."
+    }
+  ],
+  "currentStateLimits": {
+    "unicodeCharacters": 29619,
+    "utf8Bytes": 29967,
+    "lines": 267,
+    "maximumCharacters": 30000,
+    "maximumLines": 350,
+    "charactersPass": true,
+    "linesPass": true,
+    "remainingCharacters": 381
+  },
+  "localProofLinks": {
+    "countChecked": 23,
+    "allTargetsExist": true,
+    "links": [
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "auth-write-phase-20261021.md",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-layout-source-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-source-sol-review-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-starter-qualification-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-first-failure-sol-review-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-failed-execution-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-native-row-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-actual-sol-review-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-root-readback-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-shutdown-events-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-events-sol-review-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-shutdown-source-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-protected-end-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "cas-native-size-next-decision-20261021.SAFE.json",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-20261021.md",
+        "target": "../../scripts/helmut-resource-meter/cas-native-size-qualification-20261021/README.md",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/README.md",
+        "target": "../../../docs/betrieb/cas-native-size-20261021.md",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/CURRENT_STATE.md",
+        "target": "archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/CURRENT_STATE.md",
+        "target": "betrieb/cas-native-size-20261021.md",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/CURRENT_STATE.md",
+        "target": "betrieb/auth-write-phase-20261021.md",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/CURRENT_STATE.md",
+        "target": "betrieb/control-inflate-20261021.md",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/CURRENT_STATE.md",
+        "target": "betrieb/combined-auth-memory-comparison-20261020.md",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/CURRENT_STATE.md",
+        "target": "betrieb/auth-stability-30-rounds-20261021.md",
+        "exists": true
+      },
+      {
+        "document": "/workspace/helmut-cpu-epoch-20261015/docs/CURRENT_STATE.md",
+        "target": "betrieb/controlled-local-cleanup-20261020.md",
+        "exists": true
+      }
+    ],
+    "externalLinksFetched": false
+  },
+  "actualOutcomeNotReperformed": {
+    "overallStatus": "FAIL_KEEP_WITH_OBSERVED_NATIVE_LAYOUT_COUNTEREXAMPLE",
+    "nativeScalarResultObservedInSavedReceipt": true,
+    "strictLifecycleContractSatisfied": false,
+    "thirdAttemptAllowed": false,
+    "allNewFailedDataHullsKEEP": true
+  },
+  "method": {
+    "adapter": "node scripts/lokal.js -- /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12 -I -S -B -",
+    "sourceAndProofBytesReadOnly": true,
+    "subjectImportsTestsASTCLI": false,
+    "nativeSQLDBDockerProcessActions": false,
+    "GitCommandsOrMutations": false,
+    "productFrozenSourceOrDocsEdits": false,
+    "originalPayloadInventoryOrRuntimeRehash": false,
+    "ownNewOutputOnly": true
+  },
+  "writeDomain": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/decision-review/DOC_REVIEW.SAFE.json",
+  "approvalMeaning": "PASS for the reviewed documentation and exact byte-copy bundle only. Native cases remain FAIL/KEEP; no run, product integration, cleanup,500 or release approval."
+}

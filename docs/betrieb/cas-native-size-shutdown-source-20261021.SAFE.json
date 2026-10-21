@@ -1,0 +1,136 @@
+{
+  "schema": "helmut-pg17-layout-shutdown-source-postmortem/1",
+  "status": "SOURCE_POSTMORTEM_COMPLETE_CASE_FAIL_KEEP",
+  "case": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7",
+  "sourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+    "bytes": 18568,
+    "sha256": "028a519a054849aa21bbfe7fd1ce2f35821d4b6cc5803d3ae6db37bc17b6e746"
+  },
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_SECOND_ATTEMPT_READBACK.SAFE.json",
+      "bytes": 5047,
+      "sha256": "bfd67371733842b412dc6c12afae4a775f8005b32dd7d7bad1af54f340f25f33"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/SECOND_ATTEMPT_DOCKER_EVENTS.SAFE.json",
+      "bytes": 3377,
+      "sha256": "0da34e0f2884d5ecfe3690dd3fcfa30536d110b008cc432632da865b1664746c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ACTUAL_EXECUTION.SAFE.json",
+      "bytes": 1995,
+      "sha256": "0092dfb2bc11667abed9ee34019f9fc799393edaac0dd357e8df777cccb29694"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_FINAL_CONTAINER_READBACK.SAFE.json",
+      "bytes": 2448,
+      "sha256": "8762eb3a2632701974915de3999c416f9e78f59f702e2373458e1fa3bec01b74"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/POSTGRES.log.txt",
+      "bytes": 1184,
+      "sha256": "931afe1760413bba335ec583c1f525672e87bac37223faddd82d1f3342014d10"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/FAILED_COMMAND.stdout.txt",
+      "bytes": 35,
+      "sha256": "fd1bbb34268436a18ce35ca0f5141c7c366ee2382ecd45fa75267b40f8a8af28"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/FAILED_COMMAND.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "sourceFindings": [
+    {
+      "lines": [
+        194,
+        205,
+        228,
+        235
+      ],
+      "fact": "Container entrypoint is the native postgres binary, without an init/supervisor wrapper. PostgreSQL log PID[1] independently confirms postgres is namespace PID1. Docker start --attach is the external host observer."
+    },
+    {
+      "lines": [
+        266,
+        267
+      ],
+      "fact": "Shutdown invokes docker exec in that same container: pg_ctl stop -m fast -w -t15. The controller requires this waiting exec to return0 before it accepts external attach/EOF/native closure."
+    },
+    {
+      "lines": [
+        268,
+        273,
+        302,
+        312
+      ],
+      "fact": "Normal success is strict: exec0 followed by attach0, full log EOF, exact native exited/PID0/exit0/noOOM state and deadline. A shutdown exec137 must remain overallFAIL."
+    },
+    {
+      "lines": [
+        90,
+        98,
+        274,
+        287
+      ],
+      "fact": "137 was returned by the already-waited Docker CLI and saved as CapturedCommandFailure. That path does not execute capture's kill-if-still-running branch after child.wait returned. The receipt records no forcedStops. It is not a source timeout exception."
+    }
+  ],
+  "observedSequence": {
+    "window": "2026-10-21T08:14:44Z..08:14:50Z",
+    "serverCID": "f2de3ed65f08764d1bdd8d20d70e5a1b083a6d149f1d7a6fa3cb2beb10e4ff41",
+    "psqlExecID": "ae5933a2b8c27fd72f368a030357133fe48eb068e8bd9bad82b13853e6f52719",
+    "pgCtlExecID": "c2ffdb647628baf1729fd430b9d1b455d618ba52263319e51c54f9fbe66ac357",
+    "events": [
+      "psql exec_die0",
+      "pg_ctl exec_start",
+      "pg_ctl exec_die137",
+      "container die0"
+    ],
+    "pgLog": "08:14:46.714 fast shutdown request; .720 checkpoint complete; .722 database system is shut down; bounded log EOF retained.",
+    "failedCommandOutput": "waiting for server to shut down....",
+    "finalNativeState": "Both exact new containers exited0/PID0/noOOM; no forcedStops. No OOM event in the bounded saved window.",
+    "wholeWorkSeconds": 1.6244205820257775
+  },
+  "mechanismAssessment": {
+    "sameContainerWaiterRaceExplainsEvidence": true,
+    "explanation": "The intended success event is exit of postgres/PID1, while pg_ctl -w remains inside that same PID namespace waiting for shutdown completion. Under ordinary Linux PID-namespace/container lifecycle semantics, termination of namespace init tears down remaining namespace processes; the waiting exec can be killed before it reports completion. Thus clean postmaster exit and exec137 are compatible. A Docker container die event is emitted after lifecycle processing and is not a kernel ordering proof.",
+    "confidence": "Source-demonstrated lifecycle hazard; observed event/log/state sequence is consistent. Exact causal attribution of this particular137 remains unproved.",
+    "notProven": [
+      "Exact SIGKILL issuer/path or raw kernel wait status",
+      "That absent OOM events exclude every possible kill source",
+      "A successful pg_ctl exit can be inferred from clean PostgreSQL/container closure"
+    ],
+    "implementationSourceBoundary": "No new PostgreSQL pg_ctl, Docker/containerd or kernel implementation source was fetched or audited here. Mechanism relies on reviewed actor structure, retained PID1/log/exec events, and standard Linux namespace semantics; it is not a version-specific kernel/runtime causal trace."
+  },
+  "futureHarnessPrerequisitesOnly": [
+    "Do not reuse this case, old actor/adoption/once, or perform a third same-method attempt. There is no new actor or permission to run in this report.",
+    "For a separately authorized later harness, separate the shutdown controller/waiter lifetime from target PID1 lifetime. A minimal design to source-review and prequalify is external exact-CID fast-shutdown signal dispatch, then external wait/attachEOF and exact native state verification; e.g. an explicitly reviewed Docker SIGINT dispatch to owned postgres/PID1. The fast-signal mapping and actual runtime command/exit semantics must be qualified before that future diagnostic.",
+    "Predeclare signal-dispatch exit0, external closure exit0, PostgreSQL shutdown/checkpoint evidence, complete bounded log EOF, exited/PID0/exit0/noOOM/no unexpected state, unchanged deadlines and no forced stop for success. Unknown/error remainsFAIL; do not bless137.",
+    "Changing only pg_ctl -w to -W leaves a same-container signal/exit race and is not a robust lifetime separation. An added supervisor/init is a different execution shape requiring its own pinned source/runtime review.",
+    "Preserve bounded per-command stdout/stderr and actual exit status for shutdown as well as SQL. Keep fresh synthetic disk-only inputs, exact ownership/mount guards and protected-original exclusions; retain all hulls/data until separately authorized exact cleanup."
+  ],
+  "acceptanceUnchanged": {
+    "overallStatus": "FAIL_KEEP",
+    "thirdAttemptAllowed": false,
+    "sourceEdited": false,
+    "caseOrOldEvidenceEdited": false,
+    "layoutOutput": "Root already records the1527B native row2195>2083/+112; this shutdown postmortem neither rederives nor upgrades its independent mathematical acceptance.",
+    "noRAMOrProjectionOrSafetyClaim": true
+  },
+  "activity": {
+    "sourceAndSavedEvidenceReadsOnly": true,
+    "ownNewReportOnly": true,
+    "subjectImports": false,
+    "tests": false,
+    "AST": false,
+    "CLI": false,
+    "DockerExecOrProcessScans": false,
+    "nativeDBResourceGitActions": false,
+    "PGDATAOrOriginalPayloadReads": false
+  }
+}

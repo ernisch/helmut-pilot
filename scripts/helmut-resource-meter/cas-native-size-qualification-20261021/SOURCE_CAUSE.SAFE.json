@@ -1,0 +1,94 @@
+{
+  "schema": "helmut-pg17-libpq-empty-service-source-cause/1",
+  "status": "SOURCE_CAUSE_ESTABLISHED_NO_NATIVE_RETRY_RUN",
+  "officialSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/libpq-source/fe-connect.c",
+    "bytes": 200893,
+    "sha256": "3d6d86498961f84be36b06061565c8ad21d9945d3b4bc2badfab4f4b439e8452",
+    "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+    "officialPath": "src/interfaces/libpq/fe-connect.c",
+    "gitBlobSHA1": "454d2ea3fb7c10510d5c781967640c24a978b0d0"
+  },
+  "v1SourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation/run_layout_select.py",
+    "bytes": 17710,
+    "sha256": "740f04ec01a51f83f3a3edc8c2e8d3b1f1ff755362657042105d11a2b1a7f8b9"
+  },
+  "serviceMechanism": [
+    {
+      "lines": [
+        5494,
+        5511
+      ],
+      "fact": "Service option falls back to getenv(PGSERVICE). Only NULL means no service. Present empty string is not NULL and is not bypassed."
+    },
+    {
+      "lines": [
+        5517,
+        5532
+      ],
+      "fact": "PGSERVICEFILE=/dev/null is selected because its environment variable is present. Empty file yields no matching service section."
+    },
+    {
+      "lines": [
+        5540,
+        5553
+      ],
+      "fact": "If no system service section exists either, emit definition of service \"\" not found and return3."
+    },
+    {
+      "lines": [
+        6194,
+        6200
+      ],
+      "fact": "Any parseServiceInfo error with real error buffer stops conninfo_add_defaults."
+    },
+    {
+      "lines": [
+        6163,
+        6168
+      ],
+      "fact": "conninfo_array_parse returns NULL when default processing fails."
+    },
+    {
+      "lines": [
+        810,
+        843
+      ],
+      "fact": "PQconnectStartParams returns CONNECTION_BAD at813-817 before pqConnectDBStart at843. No PostgreSQL FATAL or SQL row is required for this frontend failure."
+    }
+  ],
+  "boundary": "This establishes the deterministic failure mechanism under the stated empty-service environment and absent service definitions. The first failed command discarded stderr, so its exact emitted error text is not retrospectively recovered by this review. Root/E retain the actual failure/closure evidence separately.",
+  "requiredServiceCorrection": "Do not set PGSERVICE at all in the new container when pinned helper image Config.Env has no PGSERVICE. Omitting service from a connstring does not override an existing empty environment service. Preserve explicit Unix socket/port/user/database.",
+  "additionalPassfileHazard": {
+    "lines": [
+      [
+        1299,
+        1336
+      ],
+      [
+        7453,
+        7463
+      ]
+    ],
+    "fact": "Without an explicitly supplied password, libpq tries passwordFromFile. PGPASSFILE=/dev/null passes stat but fails S_ISREG, so libpq writes a warning to stderr. V1 runner requires empty stderr even on exit0; leaving this assignment can consume the last attempt with a predictable rejection.",
+    "recommendedMinimalCorrection": "Also omit PGPASSFILE when helper image has no PGPASSFILE and fresh HOME=/layout has no .pgpass. Default missing file is silently ignored at7453-7455. No credential, query or security gate changes required.",
+    "rootDecisionPendingAtReportCreation": false,
+    "rootApprovedAdditionalOmission": true,
+    "rootImageEnvAbsencePin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/HELPER_IMAGE_V2_ENV_ABSENCE.SAFE.json",
+      "bytes": 468,
+      "sha256": "b160d2ba5c2179a00d0730fc81be94bc6b15479c9bc692697c78ad52b1a7a87f"
+    },
+    "freshHomeGuard": "Before the sole psql invocation, disk contains only new pgdata and socket; .pgpass must not exist. Native HOME is fixed /layout."
+  },
+  "failureProofCorrection": "Capture nonzero command exit via exception carrying already capped stdout/stderr buffers; preserve both exact buffers and exit code before final FAIL receipt. Also save sole psql out/err immediately on exit0 before stderr/JSON acceptance, so warnings remain inspectable. Existing byte/time/resource limits remain.",
+  "notPerformed": [
+    "subject import/test/AST/native invocation",
+    "Docker/process/DB actions",
+    "first case/adoption/once/source changes",
+    "automatic retry",
+    "C layout arithmetic re-derivation"
+  ],
+  "oldFailure": "FAIL remains FAIL. It proves no layout result and is not reclassified as PASS."
+}

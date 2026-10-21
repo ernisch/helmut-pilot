@@ -1,0 +1,291 @@
+{
+  "schema": "helmut-cas-native-size-reviewable-byte-copies/1",
+  "nativeCaseOverallStatus": "FAIL_KEEP",
+  "nativeLayoutOutputObserved": true,
+  "nativeUnderestimationBytes": 112,
+  "production": false,
+  "full500": false,
+  "productChanged": false,
+  "replicaExecuted": false,
+  "originalActualPathsRemainAuthoritative": true,
+  "privateRootAdoptionsOrPGDATACopied": false,
+  "excludedOriginals": "Protected original runtime payloads, PGDATA, full container inspects, private adoptions and historical originals remain in place; no replacement originals.",
+  "copies": [
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+        "bytes": 18568,
+        "sha256": "028a519a054849aa21bbfe7fd1ce2f35821d4b6cc5803d3ae6db37bc17b6e746"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/run_layout_select.py",
+        "bytes": 18568,
+        "sha256": "028a519a054849aa21bbfe7fd1ce2f35821d4b6cc5803d3ae6db37bc17b6e746"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation/run_layout_select.py",
+        "bytes": 17710,
+        "sha256": "740f04ec01a51f83f3a3edc8c2e8d3b1f1ff755362657042105d11a2b1a7f8b9"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/parent-run_layout_select.py",
+        "bytes": 17710,
+        "sha256": "740f04ec01a51f83f3a3edc8c2e8d3b1f1ff755362657042105d11a2b1a7f8b9"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_NATIVE_LAYOUT_QUERY.sql",
+        "bytes": 4750,
+        "sha256": "0cc98e082c154b0e6511eafe7b532b9fa2fe39c0bf2bef0b55a8e8c16f673cd3"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/layout-select.sql",
+        "bytes": 4750,
+        "sha256": "0cc98e082c154b0e6511eafe7b532b9fa2fe39c0bf2bef0b55a8e8c16f673cd3"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/PLAN.SAFE.json",
+        "bytes": 8998,
+        "sha256": "c0a2002288c9fb123695675281ad70caa5bb2a1f5b59e2be98fe542d809f167f"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/PLAN.SAFE.json",
+        "bytes": 8998,
+        "sha256": "c0a2002288c9fb123695675281ad70caa5bb2a1f5b59e2be98fe542d809f167f"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/PREPARED.SAFE.json",
+        "bytes": 4351,
+        "sha256": "ff22284d8c3282fdd91291766f230e968e88eae0a2686c23302d948d2bfb673f"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/PREPARED.SAFE.json",
+        "bytes": 4351,
+        "sha256": "ff22284d8c3282fdd91291766f230e968e88eae0a2686c23302d948d2bfb673f"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/SOURCE_CAUSE.SAFE.json",
+        "bytes": 4420,
+        "sha256": "23befd83ad73f551b72d1a5f1d85c7050ee38e80b88ad745d1ea6a8b36fcff2f"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/SOURCE_CAUSE.SAFE.json",
+        "bytes": 4420,
+        "sha256": "23befd83ad73f551b72d1a5f1d85c7050ee38e80b88ad745d1ea6a8b36fcff2f"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_LAYOUT_INTENT_V4.SAFE.json",
+        "bytes": 8438,
+        "sha256": "e882bcbcb53bc344f99980b74a1c7f89a62d513957f58a6f1469d2822e9a7697"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/ROOT_LAYOUT_INTENT_V4.SAFE.json",
+        "bytes": 8438,
+        "sha256": "e882bcbcb53bc344f99980b74a1c7f89a62d513957f58a6f1469d2822e9a7697"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/SOURCE_BINDING.SAFE.json",
+        "bytes": 2657,
+        "sha256": "f24902ad8122f52184e870100f5d822dd7c6ebfd4f80b86583d950561c6a0531"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/PG17_SOURCE_BINDING.SAFE.json",
+        "bytes": 2657,
+        "sha256": "f24902ad8122f52184e870100f5d822dd7c6ebfd4f80b86583d950561c6a0531"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/libpq-source/SOURCE_BINDING.SAFE.json",
+        "bytes": 482,
+        "sha256": "0fa8431f0f898e1c2decd8eb1d9cae4c59b4a34c40c16b222051eeb4de12ea7a"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-native-size-qualification-20261021/LIBPQ_SOURCE_BINDING.SAFE.json",
+        "bytes": 482,
+        "sha256": "0fa8431f0f898e1c2decd8eb1d9cae4c59b4a34c40c16b222051eeb4de12ea7a"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/layout-proof/SOURCE_REVIEW.SAFE.json",
+        "bytes": 12549,
+        "sha256": "fd0ea027e30cc2acfd7079c3268ce7374bd378ffa45e2ea9f8c07b39cb3771dd"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-layout-source-20261021.SAFE.json",
+        "bytes": 12549,
+        "sha256": "fd0ea027e30cc2acfd7079c3268ce7374bd378ffa45e2ea9f8c07b39cb3771dd"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/SOURCE_REVIEW_V2.SAFE.json",
+        "bytes": 12622,
+        "sha256": "425ecc9621a02a31d7aa28adae9c34ab53024eb1c3eadd246fe60ae2c03ab1c1"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-source-sol-review-20261021.SAFE.json",
+        "bytes": 12622,
+        "sha256": "425ecc9621a02a31d7aa28adae9c34ab53024eb1c3eadd246fe60ae2c03ab1c1"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/FIRST_ATTEMPT_ACTUAL_REVIEW.SAFE.json",
+        "bytes": 16026,
+        "sha256": "58df056d411a8a3742dcc67b97286337164e409cbadbe3624c77a0ea6068e0e7"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-first-failure-sol-review-20261021.SAFE.json",
+        "bytes": 16026,
+        "sha256": "58df056d411a8a3742dcc67b97286337164e409cbadbe3624c77a0ea6068e0e7"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+        "bytes": 26965,
+        "sha256": "10817ae7b9a413e14f006374e9ab22db2cc7c9ad5d58d3cc1baa665abc61651b"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-actual-sol-review-20261021.SAFE.json",
+        "bytes": 26965,
+        "sha256": "10817ae7b9a413e14f006374e9ab22db2cc7c9ad5d58d3cc1baa665abc61651b"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/ACTUAL_EVENTS_ADDENDUM.SAFE.json",
+        "bytes": 2796,
+        "sha256": "83017c85169f294dd9bb0c0804b689fa04512d652acc1f832617a90bcef0476e"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-events-sol-review-20261021.SAFE.json",
+        "bytes": 2796,
+        "sha256": "83017c85169f294dd9bb0c0804b689fa04512d652acc1f832617a90bcef0476e"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_SECOND_ATTEMPT_READBACK.SAFE.json",
+        "bytes": 5047,
+        "sha256": "bfd67371733842b412dc6c12afae4a775f8005b32dd7d7bad1af54f340f25f33"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-root-readback-20261021.SAFE.json",
+        "bytes": 5047,
+        "sha256": "bfd67371733842b412dc6c12afae4a775f8005b32dd7d7bad1af54f340f25f33"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_END_READBACK.SAFE.json",
+        "bytes": 4085,
+        "sha256": "9145bd79fea986255cd1a266b6aad9fee499b38736ed54d9ecb18bc5b19d2884"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-protected-end-20261021.SAFE.json",
+        "bytes": 4085,
+        "sha256": "9145bd79fea986255cd1a266b6aad9fee499b38736ed54d9ecb18bc5b19d2884"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_SELECTED_QUALIFICATION_V3.SAFE.json",
+        "bytes": 2154,
+        "sha256": "c7941fee0958de7598199158080df1ed6656e05476657b51a18ea4450c3f1656"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-starter-qualification-20261021.SAFE.json",
+        "bytes": 2154,
+        "sha256": "c7941fee0958de7598199158080df1ed6656e05476657b51a18ea4450c3f1656"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/SECOND_ATTEMPT_DOCKER_EVENTS.SAFE.json",
+        "bytes": 3377,
+        "sha256": "0da34e0f2884d5ecfe3690dd3fcfa30536d110b008cc432632da865b1664746c"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-shutdown-events-20261021.SAFE.json",
+        "bytes": 3377,
+        "sha256": "0da34e0f2884d5ecfe3690dd3fcfa30536d110b008cc432632da865b1664746c"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/closure-review/SOURCE_REVIEW.SAFE.json",
+        "bytes": 7816,
+        "sha256": "d7d13624d383bf33d53c5b088f9e74987aba4faf5ba4eb4896de2ecedb4ee437"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-shutdown-source-20261021.SAFE.json",
+        "bytes": 7816,
+        "sha256": "d7d13624d383bf33d53c5b088f9e74987aba4faf5ba4eb4896de2ecedb4ee437"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/decision-review/NEXT_DECISION.SAFE.json",
+        "bytes": 8974,
+        "sha256": "e9487505e1a32636074ee161b75f961bfeeb43e7908cd08cbe092ce136bc8ba9"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-next-decision-20261021.SAFE.json",
+        "bytes": 8974,
+        "sha256": "e9487505e1a32636074ee161b75f961bfeeb43e7908cd08cbe092ce136bc8ba9"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/LAYOUT_SELECT.stdout.json",
+        "bytes": 1527,
+        "sha256": "d6317a14280790b8a1bfe79930ce37896470ebfb61015eb7a162d5392a71c244"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-native-row-20261021.SAFE.json",
+        "bytes": 1527,
+        "sha256": "d6317a14280790b8a1bfe79930ce37896470ebfb61015eb7a162d5392a71c244"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ACTUAL_EXECUTION.SAFE.json",
+        "bytes": 1995,
+        "sha256": "0092dfb2bc11667abed9ee34019f9fc799393edaac0dd357e8df777cccb29694"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-failed-execution-20261021.SAFE.json",
+        "bytes": 1995,
+        "sha256": "0092dfb2bc11667abed9ee34019f9fc799393edaac0dd357e8df777cccb29694"
+      }
+    },
+    {
+      "sourcePin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_FINAL_CONTAINER_READBACK.SAFE.json",
+        "bytes": 2448,
+        "sha256": "8762eb3a2632701974915de3999c416f9e78f59f702e2373458e1fa3bec01b74"
+      },
+      "destinationPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/cas-native-size-final-containers-20261021.SAFE.json",
+        "bytes": 2448,
+        "sha256": "8762eb3a2632701974915de3999c416f9e78f59f702e2373458e1fa3bec01b74"
+      }
+    }
+  ]
+}
