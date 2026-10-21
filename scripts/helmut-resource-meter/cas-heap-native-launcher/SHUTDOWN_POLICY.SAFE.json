@@ -1,0 +1,11 @@
+{
+  "schema": "helmut-original-postgrest-12.2.3-sigterm-policy/1",
+  "postgrestVersion": "12.2.3",
+  "originalBinarySHA256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+  "originalBinaryBytes": 17309560,
+  "configSHA256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60",
+  "configBytes": 236,
+  "upstreamEvidenceSHA256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884",
+  "requestedSignal": "SIGTERM",
+  "additionalSignedExitCode": -2
+}

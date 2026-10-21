@@ -1,0 +1,114 @@
+{
+  "schema": "helmut-cas-heap-diagnostic-sql-prepared/1",
+  "status": "SOURCE_ONLY_NOT_RUN_CUSTODY_RELEASED",
+  "heapContractPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/HEAP_CONTRACT.SAFE.json",
+    "bytes": 10426,
+    "sha256": "74f37ac8545dc4b692197bd051704be2c42150d4d28bd5c541a4763106ab19aa"
+  },
+  "scriptPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/INSTALL_CAS_HEAP_DIAGNOSTIC.sql",
+    "bytes": 30524,
+    "sha256": "4df66d34e79749867a582273702d8ecfe6cfd7fa4fefd96008178e9b825a1e2f"
+  },
+  "logContractPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/LOG_CONTRACT.SAFE.json",
+    "bytes": 3941,
+    "sha256": "da0aa0eb2763dd519a8287c5364a3369f3089154d7b9f41c247395b5ad35c346"
+  },
+  "catalogTargets": [
+    {
+      "function": "helmut_auth_state_expand_local_v1",
+      "identityArguments": "s text, g text, h text, as_graph boolean, omit_payloads boolean",
+      "beforeProsrcSHA256": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+      "afterProsrcBytes": 19784,
+      "afterProsrcSHA256": "4012154c41cc8b34a38d806e5f4c0741332467192363ec1c1df7b2692dc84252",
+      "volatility": "s",
+      "securityDefiner": false,
+      "proconfig": [
+        "search_path=pg_catalog"
+      ],
+      "returnType": "jsonb",
+      "ownerACLAndABIRetained": true
+    },
+    {
+      "function": "helmut_auth_state_cas_v1",
+      "identityArguments": "jsonb",
+      "beforeProsrcSHA256": "8a13952bee9f305074d6ad9f2c2ee27e129a7e20ce3babb1d8f3a971719fcf6c",
+      "afterProsrcBytes": 5976,
+      "afterProsrcSHA256": "f6f64a5039643798d67c5d25b43d8528a9c8acb6b2d92beb76620d9b917f5af8",
+      "volatility": "v",
+      "securityDefiner": false,
+      "proconfig": [
+        "search_path=pg_catalog"
+      ],
+      "returnType": "jsonb",
+      "ownerACLAndABIRetained": true
+    }
+  ],
+  "SQLPins": {
+    "overlay": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/INSTALL_CAS_HEAP_DIAGNOSTIC.sql",
+      "bytes": 30524,
+      "sha256": "4df66d34e79749867a582273702d8ecfe6cfd7fa4fefd96008178e9b825a1e2f"
+    },
+    "aclPrepare": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_PREPARE.sql",
+      "bytes": 15269,
+      "sha256": "2dc6eb8de5194e9b6a13af341f9e08938a70b0f674cefa4a17080b53236d9874"
+    },
+    "aclSelected": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_SELECTED.sql",
+      "bytes": 6539,
+      "sha256": "1df6e2561436225bfbfb6bcb2692dabe247549c73d7f5c9c585cbdd770b892bd"
+    },
+    "aclRestore": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_RESTORE.sql",
+      "bytes": 15100,
+      "sha256": "a7d32b7a1b2ce118f9e2749da07e416e64c2c5957247c4dad02749a654a8e91d"
+    }
+  },
+  "functionDeltaPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/FUNCTION_DELTA.PRIVATE.diff",
+    "bytes": 12784,
+    "sha256": "29b11c021bd6ea8b03dfd60f7b65b3345c825081a323e7b1cba33d81b37aaf2a"
+  },
+  "readmePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/README.md",
+    "bytes": 1910,
+    "sha256": "d13b48177f95b1e2d3d7034f9e2c69f0e34bb86dbcbf0df6053b6f32ec25b1c5"
+  },
+  "builderSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_BUILD_SOURCE.py",
+    "bytes": 11331,
+    "sha256": "50d61fba8bff74f52f82a1b6c317b82675d39ac297c8b5df3e1b54555053873e"
+  },
+  "methodReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/METHOD_REVIEW.SAFE.json",
+    "bytes": 19011,
+    "sha256": "ed1b079d3191cb54a557dc56cd0b45e891eb7e352fca85202d8ab844edc93ad5"
+  },
+  "inputPins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "bytes": 17398,
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "bytes": 51381,
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_READONLY_RESUME.SAFE.json",
+      "bytes": 1731,
+      "sha256": "37f445c5165a3a309d5900769509fd93110254da8d356d86783aa4bff95e5bbf"
+    }
+  ],
+  "independentSourceAndActualReviewPending": true,
+  "actualInputsOrResultPinsInvented": false,
+  "sourcePGDATAPayloadRead": false,
+  "resourceActionsTestsSubjectImports": false,
+  "soleWriteDomain": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation",
+  "releasedReadOnlyToRootAndIndependentReviewer": true
+}

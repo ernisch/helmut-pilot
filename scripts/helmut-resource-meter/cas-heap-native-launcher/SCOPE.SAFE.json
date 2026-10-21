@@ -1,0 +1,70 @@
+{
+  "caseRoot": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases",
+  "comparisonScope": "CAS_SERVER_MEMORY_CONTEXTS_ONLY",
+  "diagnosticOnlyLoggingSettings": {
+    "log_error_verbosity": "terse",
+    "log_min_error_statement": "fatal"
+  },
+  "exact4AcceptedCAS12LogRecords": true,
+  "fullViewAndBuiltinOutputABIBeforeAnyGrant": true,
+  "noAutomaticSequenceRetryCleanupOr500": true,
+  "observerMetadataSessionNamespace": "fixed SET search_path TO pg_catalog; guarded actual current_setting/backendPID before each C metadata script",
+  "parentPreparedPin": {
+    "bytes": 49491,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/PREPARED.SAFE.json",
+    "sha256": "1868119f68f6d27a67c26281b8a71db7c9cb5b6e7d878405bb16f8492f6f30b3"
+  },
+  "rootMeasurementIntentPin": {
+    "bytes": 8774,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_MEASUREMENT_INTENT.SAFE.json",
+    "sha256": "34f71d2eaad42706bfabc713ab34b8be6f011ecc7a24d5e0ce7da6c1d4579aa0"
+  },
+  "rootTwoCasePlanPin": {
+    "bytes": 820,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_TWO_CASE_PLAN.SAFE.json",
+    "sha256": "b4dfe25b96c3ff8160539da1993753ff228598692f66b191068e6fc82f58a833"
+  },
+  "sameFreezeFreshLifecycleRequired": true,
+  "schema": "helmut-cas-heap-scope/1",
+  "serverHeapABIProofPin": {
+    "bytes": 974,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/PG_CATALOG_ABI_BINDING.SAFE.json",
+    "sha256": "547032ba7a86dc7d6074ad526f79a254a85fb124922fa2087f6ec671c0cb82fc"
+  },
+  "serverHeapContractPin": {
+    "bytes": 10426,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/HEAP_CONTRACT.SAFE.json",
+    "sha256": "74f37ac8545dc4b692197bd051704be2c42150d4d28bd5c541a4763106ab19aa"
+  },
+  "serverHeapPreparedPin": {
+    "bytes": 4932,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/PREPARED.SAFE.json",
+    "sha256": "0cd77787b9a37046c6e5fd18ece5b91bf6b4cdf580439c443d4a3f495091ddff"
+  },
+  "sourceOnlyNoResourceActions": true,
+  "sourceScripts": {
+    "aclPrepare": {
+      "bytes": 15269,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_PREPARE.sql",
+      "sha256": "2dc6eb8de5194e9b6a13af341f9e08938a70b0f674cefa4a17080b53236d9874"
+    },
+    "aclRestore": {
+      "bytes": 15100,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_RESTORE.sql",
+      "sha256": "a7d32b7a1b2ce118f9e2749da07e416e64c2c5957247c4dad02749a654a8e91d"
+    },
+    "aclSelected": {
+      "bytes": 6539,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_SELECTED.sql",
+      "sha256": "1df6e2561436225bfbfb6bcb2692dabe247549c73d7f5c9c585cbdd770b892bd"
+    },
+    "overlay": {
+      "bytes": 30524,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/INSTALL_CAS_HEAP_DIAGNOSTIC.sql",
+      "sha256": "4df66d34e79749867a582273702d8ecfe6cfd7fa4fefd96008178e9b825a1e2f"
+    }
+  },
+  "status": "PREPARED_NOT_RUN",
+  "temporaryObserverACLIsExplicitExceptionNotGlobalCatalogEquality": true,
+  "unchangedCopiedFileCount": 25
+}

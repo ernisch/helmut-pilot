@@ -1,0 +1,459 @@
+{
+  "ASTByReviewer": 0,
+  "DockerOrProcessInspectionByReviewer": 0,
+  "RAMSavingClaim": false,
+  "SQLByReviewer": 0,
+  "SQLComponentReviewPin": {
+    "bytes": 9192,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/SQL_COMPONENT_REVIEW.SAFE.json",
+    "sha256": "e7eb336fc7960f4b51a269dd6ad1d5caca17c4bf2d78afb15aad3aa5ee428dba"
+  },
+  "actualLifecycleAccepted": false,
+  "actualWorkAccepted": false,
+  "adoptionGateReview": "Root exact pinned two-case plan,independent final source+Root qualification,8-minute fresh nonce,exclusive adoption/no STARTED; work requires fresh same-prepared lifecycle ACTUAL PASS+actual outer0+independent lifecycle PASS/resultPin. Each resource start remains a separate Root action.",
+  "authorConsumerCompatibilityReviewPin": {
+    "bytes": 9780,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/launcher-preparation/handoff/CONSUMER_COMPATIBILITY_REVIEW.SAFE.json",
+    "sha256": "a684a241eefe15f41ca5e1ea772dc2fa5d2840bfe3ff45947074a1b4d157034d"
+  },
+  "blockingFindings": [],
+  "byteEqualClosureSpans": [
+    {
+      "bytes": 1407,
+      "role": "PostgREST strict close",
+      "sha256": "44d45b31c868685b2204ebe2cbb283e5f10d376dba12c25541884fe00cd19a8a"
+    },
+    {
+      "bytes": 745,
+      "role": "external PG SIGINT/wait/EOF",
+      "sha256": "f35e2494594c18f56adc2d73c50691509a51d63c9ead7cd52154c0ca5a1be17c"
+    }
+  ],
+  "byteEqualParentFunctionBlocks": 27,
+  "canonicalMetadataPins": {
+    "guardEquivalencePin": {
+      "bytes": 20430,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/GUARD_EQUIVALENCE.SAFE.json",
+      "sha256": "945141c2f024164006bead2b8e986080d26a88fa6df3f80a5ac8babb51aa9079"
+    },
+    "hostEntryTemplatePin": {
+      "bytes": 2379,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/cas-heap.py.TEMPLATE",
+      "sha256": "c9231b207083639fe2df52d98e4a9b2a7184f3cc8945cd3ef4e8c03d545c124f"
+    },
+    "parentPreparedPin": {
+      "bytes": 49491,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/PREPARED.SAFE.json",
+      "sha256": "1868119f68f6d27a67c26281b8a71db7c9cb5b6e7d878405bb16f8492f6f30b3"
+    },
+    "rootMeasurementIntentPin": {
+      "bytes": 8774,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_MEASUREMENT_INTENT.SAFE.json",
+      "sha256": "34f71d2eaad42706bfabc713ab34b8be6f011ecc7a24d5e0ce7da6c1d4579aa0"
+    },
+    "rootTwoCasePlanPin": {
+      "bytes": 820,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_TWO_CASE_PLAN.SAFE.json",
+      "sha256": "b4dfe25b96c3ff8160539da1993753ff228598692f66b191068e6fc82f58a833"
+    },
+    "scopePin": {
+      "bytes": 3262,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/SCOPE.SAFE.json",
+      "sha256": "d6efd8a6c347f0845d85dfaf486a6bf5fedc3d393ca8d3948661397d79004d20"
+    },
+    "serverHeapABIProofPin": {
+      "bytes": 974,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/PG_CATALOG_ABI_BINDING.SAFE.json",
+      "sha256": "547032ba7a86dc7d6074ad526f79a254a85fb124922fa2087f6ec671c0cb82fc"
+    },
+    "serverHeapContractPin": {
+      "bytes": 10426,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/HEAP_CONTRACT.SAFE.json",
+      "sha256": "74f37ac8545dc4b692197bd051704be2c42150d4d28bd5c541a4763106ab19aa"
+    },
+    "serverHeapPreparedPin": {
+      "bytes": 4932,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/PREPARED.SAFE.json",
+      "sha256": "0cd77787b9a37046c6e5fd18ece5b91bf6b4cdf580439c443d4a3f495091ddff"
+    },
+    "sourceDeltaPin": {
+      "bytes": 181512,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/SOURCE_DELTA.PRIVATE.diff",
+      "sha256": "1f19eb98bfd8d534e435ceb7867ac198640ad62fdc09bc51e737a32d5ae01b1c"
+    }
+  },
+  "canonicalSourcePins": [
+    {
+      "bytes": 15269,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/ACL_PREPARE.sql",
+      "sha256": "2dc6eb8de5194e9b6a13af341f9e08938a70b0f674cefa4a17080b53236d9874"
+    },
+    {
+      "bytes": 15100,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/ACL_RESTORE.sql",
+      "sha256": "a7d32b7a1b2ce118f9e2749da07e416e64c2c5957247c4dad02749a654a8e91d"
+    },
+    {
+      "bytes": 6539,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/ACL_SELECTED.sql",
+      "sha256": "1df6e2561436225bfbfb6bcb2692dabe247549c73d7f5c9c585cbdd770b892bd"
+    },
+    {
+      "bytes": 3859,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/BODY_SOURCE_PROVENANCE.SAFE.json",
+      "sha256": "a2d2fa66469ac562f6ca75530bdab0c3e4134f75b9e95c1e698b91705cb99acf"
+    },
+    {
+      "bytes": 22169,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/COMMON_PARTS.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "bytes": 25987,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/CURRENT_U.js",
+      "sha256": "3b88a424d33e4630dd35411ee6e1660811cc753184fb99822e9ad47ab1332c66"
+    },
+    {
+      "bytes": 16087,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/FREEZE_SOURCE.py",
+      "sha256": "bdc0a239c3225604ed363a70fcc808e7f38b8f7ffe1235bda42fd37dabfa2a57"
+    },
+    {
+      "bytes": 2425,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/GUARD_REVIEW.md",
+      "sha256": "5abdbc96d22a311deb0e8ca3bf719eb29991332fcb7d9a1f17e8daf3bb18fb4a"
+    },
+    {
+      "bytes": 30524,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/INSTALL_CAS_HEAP_DIAGNOSTIC.sql",
+      "sha256": "4df66d34e79749867a582273702d8ecfe6cfd7fa4fefd96008178e9b825a1e2f"
+    },
+    {
+      "bytes": 13047,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/INSTALL_NEW_GRAPH.sql",
+      "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+    },
+    {
+      "bytes": 17398,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    {
+      "bytes": 12787,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/INSTALL_OLD_GRAPH.sql",
+      "sha256": "7bb6124122903387b721929f99310a8044291c5cc3e12b1f34b674c081eb72cd"
+    },
+    {
+      "bytes": 13841,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/INSTALL_OLD_RENDERER.sql",
+      "sha256": "f973ad6b1a617d8b73f3b92df2997a8be7313665c6b26856b8a3c333eb6277e1"
+    },
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/NEW_U.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 23685,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/OLD_U.PRIVATE.js",
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "bytes": 18650,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/ORIGINAL_AUTH_READ_SOURCE.PRIVATE.sql",
+      "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
+    },
+    {
+      "bytes": 51381,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    {
+      "bytes": 22149,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/ORIGINAL_PARTS.PRIVATE.js",
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+    },
+    {
+      "bytes": 5299,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/README.md",
+      "sha256": "1f7e331d3fd559ce5406cd832f3d2009a40c16b4bf1ec53dc6135bcc42991d3f"
+    },
+    {
+      "bytes": 499,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/SHUTDOWN_POLICY.SAFE.json",
+      "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+    },
+    {
+      "bytes": 2379,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/cas-heap.py.TEMPLATE",
+      "sha256": "c9231b207083639fe2df52d98e4a9b2a7184f3cc8945cd3ef4e8c03d545c124f"
+    },
+    {
+      "bytes": 12334,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/catalog.sql",
+      "sha256": "46adef3bd6d8b89ebf1094f8716b880e6d044d67fb5041c2a11a46e67e8e5c98"
+    },
+    {
+      "bytes": 33400,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/common.py",
+      "sha256": "9f242fd3f17e09ba23ab59c70a46c550bd4b7f477b593ac034476d0bb0d51542"
+    },
+    {
+      "bytes": 27664,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/control-driver.js",
+      "sha256": "bd044e5aa35efb0a69df8200b01337c8c9ad64b205af099690f20b98095c4c8f"
+    },
+    {
+      "bytes": 763,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/cycle-metrics.sql",
+      "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+    },
+    {
+      "bytes": 9220,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/postgrest_lifecycle.py",
+      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+    },
+    {
+      "bytes": 28237,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/run.py",
+      "sha256": "e6cffe4e91951ae943e50d8fedffb848d91b930b64fb8b09016886f34609b74b"
+    },
+    {
+      "bytes": 869,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/small-auth.sql",
+      "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+    },
+    {
+      "bytes": 4139,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/upstream/SOURCE_EVIDENCE.SAFE.json",
+      "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+    },
+    {
+      "bytes": 9858,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/upstream/ghc/libraries/base/GHC/TopHandler.hs",
+      "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+    },
+    {
+      "bytes": 19895,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/upstream/ghc/rts/RtsStartup.c",
+      "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+    },
+    {
+      "bytes": 5248,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/upstream/postgrest/default.nix",
+      "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+    },
+    {
+      "bytes": 7424,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/upstream/postgrest/src/PostgREST/App.hs",
+      "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+    },
+    {
+      "bytes": 18693,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/upstream/postgrest/src/PostgREST/AppState.hs",
+      "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+    },
+    {
+      "bytes": 8002,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/upstream/postgrest/src/PostgREST/CLI.hs",
+      "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+    },
+    {
+      "bytes": 1830,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/upstream/postgrest/src/PostgREST/Unix.hs",
+      "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+    },
+    {
+      "bytes": 74377,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+      "sha256": "9dfd5164fc4c95c56c8c60f29a959965e2c333d7b407173b98445b011df9d1d0"
+    }
+  ],
+  "causalPeakOwnerClaim": false,
+  "closedFindings": [
+    {
+      "code": "ABI_PROOF_KEY_OMITTED_FROM_V1_PREPARED",
+      "correctedFreezerPin": {
+        "bytes": 16087,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/FREEZE_SOURCE.py",
+        "sha256": "bdc0a239c3225604ed363a70fcc808e7f38b8f7ffe1235bda42fd37dabfa2a57"
+      },
+      "detail": "V1 freezer duplicated ABIproofkey in SCOPE and omitted it from final PREPARED while selector required it. Root and reviewer identified before tests/native; old bytes preserved. Correct metadata emission removes duplicate/adds actual PREPARED field. Final host binds corrected actual PREPARED.",
+      "oldPreparedSHA256": "818bda045c3d44706324e4c5aedeb53450f5c629164be1c1684cf9e0f6d37d70",
+      "resolvedBeforeNativeStart": true,
+      "v1WasNotActualPASS": true
+    },
+    {
+      "code": "CONSUMER_LOG_KEY_MISMATCH",
+      "correctedCommonPin": {
+        "bytes": 33400,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/common.py",
+        "sha256": "9f242fd3f17e09ba23ab59c70a46c550bd4b7f477b593ac034476d0bb0d51542"
+      },
+      "detail": "First resource-free actual Root selector failed on absent exactSuccessfulCAS; unchanged released C LOG contract uses successfulCASCount. Failed qualification kept. Only common key corrected,then final actual selector/guards must pass. No native case/start consumed.",
+      "resolvedBeforeNativeStart": true
+    },
+    {
+      "code": "CONSUMER_ASSUMED_NUMERIC_JSON_OIDS",
+      "correctedWorkerPin": {
+        "bytes": 74377,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+        "sha256": "9dfd5164fc4c95c56c8c60f29a959965e2c333d7b407173b98445b011df9d1d0"
+      },
+      "detail": "Official pinned PG17 json_categorize_type/jsonb datum conversion proves genuine uncasted OIDs are canonical decimal JSON strings. Worker now strictly accepts only those native representations,with PUBLIC zero only for ACLgrantee; numeric scalar fields remain strict integers. No receipt normalization or C SQL change; all other worker bytes unchanged.",
+      "officialTypeReviewPin": {
+        "bytes": 4042,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/JSON_TYPE_REVIEW.SAFE.json",
+        "sha256": "1f4c46cd092d168a63363e495c1790b0478920953dfe33f8e61067ceca862f65"
+      },
+      "resolvedBeforeNativeStart": true
+    }
+  ],
+  "consumerKeyReconciliation": {
+    "dynamicLogContractKeys": [
+      "successfulCASCount",
+      "exactCASSessionRecords",
+      "exactHeapRecords",
+      "exactDiagnosticRecords",
+      "maximumRecordJSONBytes",
+      "maximumDiagnosticJSONBytes"
+    ],
+    "literalDirectKeys": {
+      "heap_contract": [
+        "SQLPins",
+        "catalogTargets",
+        "logContractPin",
+        "loggingStartupOnly",
+        "schema",
+        "status"
+      ],
+      "log_contract": [
+        "prefix",
+        "schema"
+      ],
+      "sql_prepared": [
+        "SQLPins",
+        "catalogTargets",
+        "heapContractPin",
+        "schema",
+        "scriptPin",
+        "status"
+      ]
+    },
+    "manualSourceReview": "All consumed C HEAP/PREPARED/LOG keys, four SQL names,two catalog targets, ACL13/19 fields/state/receipt shapes reviewed against immutable source and official native JSON scalar types. Root separately executes real final selector for both modes and focused pure validators."
+  },
+  "dependencyVerificationScope": "Independent reviewer hashes new/released canonical files,generated metadata,host/current product source and existing review inputs; compares inherited dependency pin identity with accepted parent. Root resource-free qualification independently hashes prepared.files plus host and targeted selector-contract inputs. Full host prepare/start validates metadataAndCodeInputs/hostOnlyInputPins, and actual native worker will rehash runtime closure. No duplicate original PGDATA payload read or inherited binary-byte replay by reviewer.",
+  "fixedCaps": {
+    "caseEvidenceBytes": 4194304,
+    "combinedCaptureBytes": 262144,
+    "combinedServerJSONBytes": 24576,
+    "hostFloorBytes": 8589934592,
+    "nativeHighBytes": 1399996416,
+    "nativeMaxBytes": 1547997184,
+    "nodeBatchSeconds": 30,
+    "parentPhaseJSONBytes": 49152,
+    "parsedServerProofBytes": 32768,
+    "persistentCopyBytes": 805306368,
+    "recordJSONBytes": 2048,
+    "swapMaxBytes": 0,
+    "wholeCaseWithClosureSeconds": 360,
+    "workSeconds": 300
+  },
+  "fixedWorkload": {
+    "authRPCs": 27,
+    "boundaries": 6,
+    "confirmedCAS": 4,
+    "controls": 18,
+    "fullReads": 5,
+    "historyRows": 6000,
+    "parentNodeFrames": 14,
+    "rounds": 3,
+    "serverCASBinders": 4,
+    "serverHeapFrames": 8
+  },
+  "full500": false,
+  "fullOfficialViewQualificationFindingResolved": true,
+  "hostPin": {
+    "bytes": 2420,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap.py",
+    "sha256": "d1e4aec3c4327e20fafff7934ff52186c7ec54cec67dbdbbdb657d89958c19b3"
+  },
+  "launcherPrecheckPin": {
+    "bytes": 14677,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/LAUNCHER_SOURCE_PRECHECK.SAFE.json",
+    "sha256": "d657b0bf0b73eb162f6fa9296c1413b8d41dc0325e1fee8407b9a8d3fd73fa1d"
+  },
+  "methodLimits": [
+    "Exclusive context accounting is not resident memory,group peak or causal owner proof.",
+    "Net interval includes live chunks at first point,chunk release,text uniqueness/size checks,JSONB cast and both aggregate/SRF/LOG observers.",
+    "Context-count4096 is output guard,not hard SRF allocation bound; existing statement/native caps remain actual bounds.",
+    "Observer interval explicitly differs by exactly two catalog ACLs and two startup logging GUCs; no production permission-equivalence claim."
+  ],
+  "methodReviewPin": {
+    "bytes": 19011,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/METHOD_REVIEW.SAFE.json",
+    "sha256": "ed1b079d3191cb54a557dc56cd0b45e891eb7e352fca85202d8ab844edc93ad5"
+  },
+  "nativeActionsByReviewer": 0,
+  "officialCatalogABIReviewPin": {
+    "bytes": 3379,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/CATALOG_ABI_REVIEW.SAFE.json",
+    "sha256": "510cfa6687892d3115b692b3a0bfcf5102f8561d1fbdf2db5816c9a1e8d681d8"
+  },
+  "officialJSONTypeReviewPin": {
+    "bytes": 4042,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/JSON_TYPE_REVIEW.SAFE.json",
+    "sha256": "1f4c46cd092d168a63363e495c1790b0478920953dfe33f8e61067ceca862f65"
+  },
+  "originalPGDATAPayloadReadsByReviewer": 0,
+  "preparedPin": {
+    "bytes": 67996,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/PREPARED.SAFE.json",
+    "sha256": "a30bc1a726a5002e7f5b3f5e6e4d9c24dab26630bd3806d027d0c5e46ece63e8"
+  },
+  "productWritesByReviewer": 0,
+  "production": false,
+  "projectionEnabled": false,
+  "providerCalls": 0,
+  "retainedPriorFailedSelectorPin": {
+    "bytes": 1331,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/root-preparation/ROOT_SELECTION.SAFE.json",
+    "sha256": "b633ce61efa968a50ac696a04e9715169d63694e6cf1c4af3203ec5274cbd143"
+  },
+  "reviewRecorderPin": {
+    "bytes": 16486,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/finalize_source_review.py",
+    "sha256": "9e2568f581806fc9b277a89fdc035e8056f77cb0fa85e6345b8dabe7d5a5c22e"
+  },
+  "reviewedIntegration": {
+    "ACL": "Only missing SELECT/EXECUTE on two fixed pg_catalog objects to existing service_role, no options/member/owner/SD/publicAuth deltas. Needed right plus raw NULL fails before GRANT; effective NULL is no-op. Selected exact minimal state; full literal/null/order/grantor/options/effective/membership restoration.",
+    "beforeGrant": "Capture persists complete baseline stdout before parser qualification; full view/ABI/clone/logging/ACL state qualified before acl_prepare_entered and PREPARE. SQL requires unchanged exact baseline before GRANT.",
+    "builtinIdentity": "Observed pg_catalog namespaceOID11/functionOID2282/internal symbol/full official nine output type,mode,name arrays; full definition/source hashes verified.",
+    "closure": "Native controller and strict PostgREST helper retained, parent guard/capture and external PG signal/wait/EOF spans byte-identical; source manifest,emptygroups,all exits,zeroevents,caps/deadlines remain mandatory.",
+    "finally": "Restore at most once following attempted PREPARE, on success or error, while owned PG is available and before final catalog/normal strict PostgREST then PG close. Unknown restoration sets FAIL and KEEP; no blind retry.",
+    "freeze": "Metadata writer only: reviewed text/hash rebind preserves closure paths,generated source delta/guard metadata,exact C/Root/ABI inputs,hostOnly currentU/Parts separation and same-freeze lifecycle proof mounts. Final actual PREP/host pins still pending.",
+    "fullViewGrammar": "Entire bounded lexer input consumed; exact nine official projections and one own-backend builtin SRF only; quoted identifiers case-sensitive; no extra clauses/comments/literals/casts/statements.",
+    "hostVsNativePython": "Host template explicitly requires -I -S -B/optimize0 and authenticates actual common/run source before compile. Native Docker entry remains original Python /tools/worker.py with /tools common import, explicit PYTHONDONTWRITEBYTECODE/LANG/LC_ALL and readonly closure mounts; no claim all Python runs isolated.",
+    "logs": "Completed EOF PG log only; exactly four ordered CAS/beforeText/afterValue triplets; strict13/19 scalar keys,2048B each/24576B combined,PID/XID/accepted driver revisions/roles/rawGUCs/terse+fatal correlated. No missing-to-zero fallback.",
+    "sameSessionNamespace": "Only ACL_SELECTED/ACL_PREPARE/ACL_RESTORE metadata psql sessions prepend SET search_path TO pg_catalog and actual setting/backendPID SELECT before unchanged pinned -f SQL. No reconnect commands. Readback PID equals header PID for ACL_SELECTED.",
+    "workload": "Same exact parent Node U/driver/Parts; fixed27RPC,3round,4writes,5reads,18controls,6cycle handshakes,14bounded parent frames,6000history and source/restoration contracts."
+  },
+  "rootQualificationMeaning": "Only Root actual pure guard,source syntax,host/selector qualification. No native/SQL/lifecycle/work execution accepted here.",
+  "rootQualificationPin": {
+    "bytes": 3925,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_QUALIFICATION.SAFE.json",
+    "sha256": "6f2179b80bed8178276fc6484fe0bb453da8d340a52c2513cb75b3ef99cf4e24"
+  },
+  "schema": "helmut-cas-heap-independent-source-review/1",
+  "sourceOnly": true,
+  "sourceReleasePin": {
+    "bytes": 16196,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/launcher-preparation/handoff/SOURCE_RELEASE.SAFE.json",
+    "sha256": "8ceee51674e3be8ac818ac29e34810f28d0781399bbe9d1f20f4349c222e8273"
+  },
+  "status": "PASS_SOURCE_ONLY",
+  "subjectImportsByReviewer": 0,
+  "testsByReviewer": 0,
+  "unchangedDependencyPinCount": 35,
+  "unchangedParentFiles": 25
+}

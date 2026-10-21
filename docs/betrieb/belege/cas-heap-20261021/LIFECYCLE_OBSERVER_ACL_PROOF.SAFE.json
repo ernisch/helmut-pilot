@@ -1,0 +1,12 @@
+{
+  "schema": "helmut-cas-heap-observer-acl-proof/1",
+  "prepareAttempted": true,
+  "restoreAttempted": true,
+  "restoredExactly": true,
+  "restorationError": null,
+  "baselinePersistedBeforePrepare": true,
+  "selectedMinimalACLQualified": true,
+  "selectedPeriodIsExplicitTwoObjectException": true,
+  "automaticRestoreRetry": false,
+  "qualified": true
+}

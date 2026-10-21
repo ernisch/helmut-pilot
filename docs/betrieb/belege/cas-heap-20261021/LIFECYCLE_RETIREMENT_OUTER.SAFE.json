@@ -1,0 +1,23 @@
+{
+  "actualToolExitCode": 0,
+  "adoptionPin": {
+    "bytes": 2303,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+    "sha256": "27a697d73a8f312fa5e3e35643333db8cbb4ddf00edd098b98a382bbeab786e0"
+  },
+  "case": "heap-68bb54a5d546f714223e7bc9",
+  "full500": false,
+  "onceClaimPin": {
+    "bytes": 69008,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.RETIRE_ONCE_CLAIM.PRIVATE.json",
+    "sha256": "17e2f244eef1e22026d16e209ba55599c7b3946e6d397263873d50f0d8c502ba"
+  },
+  "production": false,
+  "retiredPin": {
+    "bytes": 1535,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.RETIRED.PRIVATE.json",
+    "sha256": "c9fa6eedefc7d8a830152d810dc5103f31660da4b18315a5ff1b951450be0f94"
+  },
+  "schema": "helmut-root-observed-retirement-tool-exit/1",
+  "toolCompletionChunk": "959662"
+}
