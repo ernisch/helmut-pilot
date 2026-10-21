@@ -2,71 +2,79 @@
 
 **Lokal 21.10.2026 UTC; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 21.10.: Auth-RAM-Ersparnis belegt; längerer Verlauf steigt,500er Ziel offen
+## 21.10.: Auth-RAM-Ersparnis belegt; physische V8-Zuordnung noch offen
 
 Branch `codex/controlled-cleanup-and-late-probe-20261020`, Basis0372500c
 (PR926 auf PR925/924), c8624f7c erhalten; Entwurfs-PR927. Produktcode6d528425:
 begrenzter PG-Renderer, kalte Hashprojektion und kompakter Kontrollcache integriert.
-Echter alter V11-Authpfad5fae25be gegen ALLE aktuellen Authkorrekturen, späte Quelle
-827a9872, identische persistente Kopien/PG-Einstellungen/Budgets/27echteRPCs:
-OLD–NEW–NEW–OLD mit vollständigen Lebenszeitpeaks
-1.164.427.264/1.023.926.272/1.007.882.240/1.177.153.536B, alle PASS.
-Paarweise140.500.992/169.271.296B weniger; Mittel1.170.790.400→1.015.904.256B,
+Alter V11-Authpfad5fae25be gegen ALLE aktuellen Authkorrekturen, späte Quelle827a,
+gleiche persistente Kopien/PG-Einstellungen/Budgets/27echteRPCs:
+OLD–NEW–NEW–OLD Lebenszeitpeaks1.164.427.264/1.023.926.272/1.007.882.240/1.177.153.536B,
+alle PASS. Mittel1.170.790.400→1.015.904.256B:
 **154.886.144B/13,23% gemeinsame Komponenten-RAM-Ersparnis**.
-Gesamtdauer34,228→31,584s, gemeinsameCPU35,165→31,312s;
-Schreib-/HTTP-Mengen sind kein zusätzlicher RAM.
-Alle6000History-/Kontrollfelder/Originalhashes/606B Referenzen/Katalog/ABI/ACL/
-CAS-/Noncebindungen unabhängig PASS;344Fallbelege/108RPC/68Captures geprüft.
-Nur finale bestätigte Revision geändert; gemeinsame Grenze kein Einsparbeleg.
+CPU35,165→31,312s/Wand34,228→31,584s; Schreibmengen sind kein RAM.
+Alle6000History-/Kontrollfelder/Originalhashes/606B/Katalog/ABI/ACL/CAS-/Noncebindungen
+unabhängig PASS,344Belege/108RPC/68Captures. Keine Hochrechnung auf Voll500.
 
-Jetzt neuer30-Runden-Starterfd846c43 im Repo, isolierter Hostadapter88142aed.
-24Produkt-/SQL-/Abschlusskörper unverändert. Frischer Null-Auth-Fall PASS:
-652.570.624B/19,844s; danach unabhängige tatsächliche Abnahme vor Workloadadoption.
-NEW30 PASS:1.047.896.064B gemeinsamer Lebenszeitpeak/127,134s einschließlich
-Setup/Kopie/JIT/Installation/Abschluss.243RPC=32Reads/31CAS/180Kontrollen,
-30Mutationen+Restore,60exakteMarker/ACK/SQL-Grenzen;212History-/180Graphbindungen,
-31frischeRevisionen/63volle6000Historyhashes unabhängig korrekt.
-Maximaler Authvorgang1.274,325ms inkl.Dekodierung/Hashbeobachter, keinMotorzeitbeleg.
-Node/PG/äußereStarterExit0,EOF/Gruppeleer/high/max/OOM0;PostgREST−2-Policy erfüllt.
-KeinPeakreset/ZwangsGC/Cacheeviction. Funktionale Abnahme ist kein Plateau.
-GemeinsamerMedian Runden1–10/11–20/21–30:950.446.080/964.362.240/973.484.032B.
-Später Block+9.121.792B; anonym+8.439.808/NodeRSS+8.019.968B, heapUsed−7.185.188B.
-OLS11–30:+1.127.930,61B/Runde. Kein stabilesPlateau/kausal isolierter neuerEngpass;
-kein Hochrechnen auf500 und kein weiterer Snapshot-/Parts-Umbau auf Verdacht.
+Voriger NEW30-Starterfd846c43/Host88142aed unverändert erhalten:
+Null-Auth652.570.624B/19,844s, NEW30 1.047.896.064B/127,134s PASS.
+243RPC/30Mutationen+Restore/60Grenzen;212History-/180Graphbindungen,
+31CAS/63volle6000Historyhashes korrekt. Später gemeinsamer Blockmedian+9.121.792B,
+anonym+8.439.808/NodeRSS+8.019.968B bei heapUsed−7.185.188B;
+OLS11–30:+1.127.930,61B/Runde, kein Plateau. Major-GC läuft weiter,
+vergleichbare späte26/30-Endpunkte heapUsed+135.192B/RSS+4.063.232B,
+external/buffers gleich. Kein neuer sicherer Parts-/Snapshot-Umbau daraus.
 
-Frühere Besitzerdiagnose separat PASS:1.032.052.736B/42,543s mit Sammlereinfluss;
-Peakbesitzer unbekannt, vollständige PSS-Zuordnung durch643PermissionErrors begrenzt.
-Größter isoliert belegter vermeidbarer Anteil weiterhin alterPG-Renderer≈124,8MB
-anonym/Backend; neue gemeinsame154,9MB nicht allein einer Änderung zugeschrieben.
-Keine weitere Snapshot-/Parts-Architektur auf Verdacht.
-34Quellen-Gates/22Integration und179/179Suiten einmalig auf unverändertem
-Produktcode6d528425 bestanden. NEW30:127Guards/5PythonAST/1NodeSyntax sowie
-isolierteHosthilfe/-O-Ablehnung PASS; keine Wiederholung der179/95.
-V6control-45a29158 und V8-Fall1ec969 bleiben FAIL.
+Jetzt genau8Runden/67RPC, vorher festgelegt:alle8Endpunkte/primärnur4→8,
+Starter2b8b40fd/isolierterHost2405fa41,24Produkt-/SQL-/Abschlusskörper gleich.
+Frischer Null-Auth PASS654.807.040B/19,563649018s, unabhängige Abnahme vor Workadoption.
+NEW8 PASS1.038.131.200B/48,892634344s/CPU50,909544s/301.572.096B Geräteschreiben.
+10Reads/9CAS/48Kontrollen,8Mutationen+Restore/16Grenzen,
+58History-/48Graphbindungen/9Revisionen/19volle6000Historyhashes unabhängig PASS.
+MaxAuth1.389,313454ms inkl.Beobachter; Nodephase25,687597309s, kein Motorzeitbeleg.
+Node/PG/äußereStarter0,EOF/Gruppeleer/high/max/OOM0;PostgREST−2-Policy erfüllt.
+Native Budgets/384+16MiB Node/Fristen unverändert; kein Peakreset/ZwangsGC/Cacheeviction.
 
-Bereinigungshistorie mit vollständigen Sicherungen/Prüfungen im eigenen Belegdoc.
-Neu beide NEW30-PASS-Arbeitskopien nach frischen Einzeladoptionen entfernt:
-3422Dateien/739.528.704B inventarisierte Blöcke;483Belege unverändert rehashgeprüft,
-6gestoppteHüllen erhalten. Unabhängige Endprüfungf7bf336a PASS, historische
-Adoptionsschreiber bytegenau erhalten. Originalbank,Quelle827a mit dauerhaft
-benötigten17Deltaarchiven,Belege/Images/Volumes/Loops/Git geschützt; kein prune.
-Danach1680saubere eingecheckte Hilfskopien perGitSparse ausgelagert; vollständige
-lokaleGitobjekte/Refs/Indexinhalte/Pflichtdocs/Auth-/Nativequellen erhalten.
-Unabhängige tatsächlicheSparse-Abnahme847280b6 PASS,1680ENOENT/616Dateien gleich.
-Platte15.184.449.536B,4.669.816B über Volladmission; Snapshot vorCommit,
-keine Reservierung. Vor jedem Start frisch prüfen.
-CI auf021b6e09 rot: private gepinnte Originalvorlagen fehlen; Vercel separat rot.
-Browserjob grün, eigentliche Browserschritte durch Changeplan übersprungen;
-kein frischerBrowser-PASS. Lokale179PASS sind kein grünerCI-Gesamtstatus.
+Festes Paar4→8:Current+16.306.176B/anonym+15.683.584B/File+262.144B,
+NodeRSS+17.072.128B, V8physisch−10.383.360B/used−7.334.488B,
+external+9.778.746B. malloced286.792B gleich. GC-Phasenscreen false,
+**Ursachenzuordnung INCONCLUSIVE**, kein Ersatzpaar/automatische Wiederholung.
+671natürlicheGCs/16physischeKlammern/36.248B Zusatzmetadaten innerhalb64KiB.
+Positive kurze RSS-Richtung reproduziert; spät30vergleichbareGC/konstantesexternal
+nicht reproduziert. Kein exakter nativer Restwert, Leck-/Plateau-/Fixnachweis.
+Eigener JIT-Restaurierer streamt128KiB;178.290.688B tmpfs nur Diagnostik,
+Vollmotor nutzt originalesPG-Image ohne diesenMount. Keine Motorersparnis abzuziehen.
 
-500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/500MBReserve
-weiterhin offen. Sprint teilweise abgeschlossen; kein Voll500 technisch empfohlen.
-32frische Bedingungen, ausreichende Platte und neues konkretesGO erforderlich;
-alter Vollstartvertrag bindet weiterDeepSeek, Konflikt zurSOL-only-Vorgabe bleibt
-unangetastet. DreiSOL-Helfer getrennt, Root integriert; keine Modell-/Routeraufrufe,
-Kosten-/Reservewechsel, Production/Merge/Deployment/Migration.
-[Gemeinsamer Vergleich und Belege](betrieb/combined-auth-memory-comparison-20261020.md),
-[Längerer Verlauf und Abnahme](betrieb/auth-stability-30-rounds-20261021.md),
+Größter isoliert belegter vermeidbarer Anteil bleibt alterPG-Renderer≈124,8MB
+anonym/Backend; gemeinsame154,9MB nicht allein einer Änderung zugeschrieben.
+Frühere Besitzerdiagnose1.032.052.736B/42,543s PASS mitSammlereinfluss;
+Peakbesitzer/PSS durch643PermissionErrors nichtvollständigbelegt.
+34Quellen-Gates/22Integration/179Produktsuiten auf6d528425 einmaligPASS.
+NEW8:208Python-/17GC-Guards,5PythonAST/1NodeSyntax/5Hostfälle PASS;
+keine179/95Wiederholung. V6control-45a29158/V8-Fall1ec969 bleiben FAIL.
+
+Vorherige kontrollierte Bereinigung und1680reversibleGitSparse-Dateien abgenommen;
+616Pflichtdateien/alleGitobjekte/Refs/Indexinhalte erhalten. Vor diesem neuen Fall
+nur rund4,3MB über Volladmission15.179.779.720B, keineReservierung.
+Jetzt beide neuenPASS-Kopien gezielt entfernt:3422Dateien/739.663.872B Blöcke,
+219Belege/6Hüllen erhalten. RootENDc21cd1e9/independentEND55b1eed9 PASS;Platte15.160.635.392B,
+19.144.328B unterVolladmission vorweiterenBelegen;keineReservierung. Originalbank,Quelle827a/17Deltaarchive,Belege/Images/Volumes/Loops/Git
+bleiben geschützt; kein pauschales prune. Keine zusätzlich qualifizierte Rückgewinnung.
+CI weiterhin fehlende private gepinnte Originalvorlagen; Vercel separat rot.
+Browserjob grün bei übersprungenen eigentlichenBrowserschritten, kein neuerBrowser-PASS.
+
+500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/16frischeKontrollen
+jeProfil/500MBReserve weiter offen. Sprint teilweise abgeschlossen;
+kein Voll500 zur bloßen Hypothesenprüfung empfohlen. Alle altenGOs verbraucht,
+32frische Bedingungen/Platte/neues konkretesGO erforderlich. AlterVollstartvertrag
+bindetweiterDeepSeek, Konflikt zurSOL-only-Vorgabe bleibt unangetastet.
+AusschließlichSOL-Helfer getrennt/Root integriert; keine externenModellaufrufe,
+Router-/Kosten-/Reservewechsel,Production/Merge/Deployment/Migration.
+NächsterSchritt:belegteAllokationszuordnung des Node-anonymen Restwachstums,
+keine neue allgemeineAnalyse oder ungestützteArchitekturänderung.
+[PhysischeV8-Diagnose/Belege](betrieb/auth-physical8-20261021.md),
+[GemeinsamerVergleich](betrieb/combined-auth-memory-comparison-20261020.md),
+[LängererVerlauf](betrieb/auth-stability-30-rounds-20261021.md),
 [Besitzerdiagnose](betrieb/native-auth-ownership-20261020.md),
 [Cacheintegration](betrieb/bounded-control-cache-local-integration-20261020.md),
 [Bereinigung](betrieb/controlled-local-cleanup-20261020.md).
