@@ -2,80 +2,83 @@
 
 **Lokal 21.10.2026 UTC; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 21.10.: Dekompressionskandidat ohne belastbaren gemeinsamen RAM-Gewinn
+## 21.10.: Später Schreibpfad eingegrenzt; kein zusätzlicher RAM-Fix bewiesen
 
 Branch `codex/controlled-cleanup-and-late-probe-20261020`, Basis0372500c,
-Entwurfs-PR927 auf926/925/924; c8624f7c erhalten. Produktcode6d528425 mit
-PG-Renderer, kalter Hashprojektion und kompaktem Kontrollcache bleibt aktiv:
-U93917a57/Partsf30089e7 unverändert. Frühere gemeinsame Auth-Komponentenersparnis
-gegen ursprünglichenV11: 1.170.790.400→1.015.904.256B,154.886.144B/13,23%,
-CPU−10,96%/Wand−7,72%, alle vier FällePASS. Größter einzeln belegter vermeidbarer
-Anteil: alterPG-Renderer≈124,8MB anonym/Backend. Kein Voll500-Beweis.
-179Produktsuiten/95nativeSQL-Vergleiche/34Quellen-Gates/22Integration auf diesem
-unveränderten Produktumfang bereitsPASS, nicht lokal wiederholt.
+Entwurfs-PR927 auf926/925/924; c8624f7c erhalten. Produkt6d528425 mit PG-Renderer,
+kalter Hashprojektion und kompaktem Kontrollcache: U93917a57/Partsf30089e7
+unverändert. Bereits fair gegen ursprünglichenV11 bewiesen:
+1.170.790.400→1.015.904.256B,154.886.144B/13,23% gemeinsam, CPU−10,96%/Wand−7,72%.
+Größter einzeln belegter vermeidbarer Anteil: alterRenderer≈124,8MB anonym/Backend.
+179Produktsuiten/95nativeSQL-Vergleiche/34Quellengates/22Integration dieses
+unveränderten Produktumfangs bereitsPASS; nicht lokal wiederholt. Kein Voll500.
 
-Neuer isolierter Kandidat40d7e584 vermeidet bei validierten komprimierten
-2MiB<Text<=8MiB Ansichten einen vollen Inflate-Buffer.concat; oberhalb Legacy.
-Tatsächlicher eingebetteter Node24.19-Quelltext399cb4e2 bestätigt den Mechanismus.
-Alle bisherigen Hash-/Längen-/Input-/UTF8-/Cache-/Logikgrenzen bleiben gleich.
-Beschädigter privater Zeuge kann vor Ablehnung8MiB+1 Arbeitspuffer belegen;
-kein Handle-Leck oder gemeinsamer RAM-Gewinn allein aus der Kopienzahl bewiesen.
+Negativer Inflatevergleich3c7ca25c bleibt gültig: BEFORE–AFTER–AFTER–BEFORE
+1.037.365.248/1.019.125.760/1.018.159.104/1.005.346.816B. Mittelunterschied2.713.600B,
+Einzelwerte überlappen; festeRegelmax(AFTER)<min(BEFORE)FALSE. Kandidat40d7
+NICHT integriert, keine Wiederholung. 14Codecvektoren/19Kontrollgruppen+
+42Negativfälle/36Starterguards bestanden. Alle5Kopien entfernt,465Belege/15Hüllen
+erhalten; RootENDabfb2dde/IndependentENDa84261acPASS. Ein rein lesenderCheck
+äußererToolabschlussUNKNOWN bleibt ausdrücklichUNKNOWN; getrennte Löschungexit0.
 
-Frischer Null-Auth/Null-Node-Lebenszyklus654.012.416B/19,213210082sPASS.
-Vergleich jetzt BEFORE=integrierterU939, AFTER=nur40d7; gleiche NEWSQL/Parts,
-späte Quelle827a, persistente Kopien, Runtime, Einstellungen und27echteRPC jeFall
-(5Reads/4CAS/18Kontrollen/3Mutationen+Restore/6Grenzen). Lebenszeitpeaks
-BEFORE–AFTER–AFTER–BEFORE:1.037.365.248/1.019.125.760/1.018.159.104/1.005.346.816B.
-Alle funktionalPASS; Mittel1.021.356.032→1.018.642.432B, Differenz nur2.713.600B.
-PaarweiseEinsparung+18.239.488/−12.812.288B, überlappende Einzelwerte:
-festeRegelmax(AFTER)<min(BEFORE)FALSE. CPU+0,115%/Wand−0,705%, LaufzeitregelPASS.
-**Kandidat NICHT im Motor integriert; keine belastbare gemeinsame Ersparnis.**
+Neue vorab gebundene Phasenfrage tatsächlich abgeschlossen: V2-Intent0c00a065/
+Plan35fa26ca, finalerStarter1868119f/Host7d6d654e, frischer Null-Auth/Null-Node-
+Lebenszyklus653.615.104B/18,586201266s. Danach genau ein CURRENT27RPC-Fall
+auf authentischer später827a mit NEWSQL/f300:5Reads/4CAS/18Kontrollen/3Mutationen+
+Restore/6Grenzen, Peak1.039.151.104B/CPU32,250197s/Wand32,928936332sPASS.
+14exaktePhasenframes/20.251BZusatzmetadaten im letztenWrite/Read; keine
+Änderung der ursprünglichen Snapshot-/Parts-/Request-/Beobachter-/ACK-/Attach-
+oder Ergebnisarbeit. Nur skalare Diagnosehooks, kein neuer Produktweg.
 
-Rootc9d19068/IndependentActuala8713af5:108WorkRPC/92History-/72Graphbindungen,
-36volle6000Hashes/24Grenztripel/68Captures unabhängig korrekt;606B/Originalhashes,
-Katalog/ABI/ACL/CAS/ACK/Nonce/Restore erhalten, nur erwartete frische Revision.
-Node/PG/äußereStarter0/EOF,high/max/OOM0, alle Gruppen leer, strengePostgREST−2Policy.
-Budgets/Fristen unverändert, kein ZwangsGC/Cacheleeren/Peakreset/Allocatorwechsel.
-14Codecvektoren/19Kontrollgruppen+42Negativfälle/36Starterguards/5PythonAST/
-1NodeSyntax/5Hostfälle0/1/1/1/1 bestanden; isolierter Repo-Codeccheck7420381e
-liefert dieselben14ErgebnissePASS und ist kein normaler Node22-CI-Test.
+Root92ba732e/IndependentActuala05fc6b4:27RPC/23History-/18Graphbindungen,
+9volle6000Hashes/6Grenztripel/17Captures/102Workbelege+57Lifebelege korrekt.
+Originalhashes/606B/Katalog/ABI/ACL/CAS/ACK/Nonce/Restore erhalten, nur neueRevision.
+Node/PG/äußereStarter0/EOF, nativeEvents0, eigeneGruppen leer, strengePostgREST-
+Abschlussregel erfüllt. 55neueStarter-/Frameguards/5PythonAST/2NodeSyntax/
+5Hostfälle0/1/1/1/1PASS. Keine Budget-/Friständerung, ZwangsGC, Cacheleerung,
+Peakreset, Allocatorwechsel oder Provideraufrufe.
 
-Neue Metadatenanalysef0b64349: alle4Peaks erst nach den Kontrollen,
-Einrichtung≈636,9–643,4MB, Abschluss keine neue Spitze. Zeitmodell ordnet drei
-Klammern restore.write zu; erstesBEFORE bleibt Write oder finalRead. Kein
-exakter Node-/Serveranteil am Peak, keine Doppelzählung späterer Statistiken.
-Nächste enge Frage: Snapshot/Parts/RPC/Attach gegen zusätzliche Diagnose-
-Requestbody-/verifyLogical-Prüfung abgrenzen. V2-Intent0c00a065/Plan35fa26ca:
-frischer Null-Auth+27RPC-Phasenprobe, genau14Frames/max48KiB, noch nicht gestartet.
-V1 erhalten; kein Retry des negativen Kandidaten, keine neue allgemeine Analyse.
-VorherigerNEW30 zeigte kein Plateau; NEW8/festes4→8 bleibt INCONCLUSIVE,
-kein Ersatzpaar oder Allocatorfix. JIT178.290.688Btmpfs nur eigeneDiagnostik,
-VollmotorOriginalimage ohne diesenMount: keine zusätzliche Motorersparnis abziehen.
+Peak steigt zwischen Snapshotframes um3.436.544B und zwischen fertigem
+Bodybeobachter/geparsterRPC-Antwort um8.060.928B auf endgültig1.039.151.104B.
+Alle innerenFrameklammern0; Attach/verifyLogical/ganzerfinalRead/Abschluss
+keine weitereSpitze. BeimRPC NodeRSS269.144.064B/V8physical117.100.544B anbeiden
+Endpunkten gleich; beobachtetesanon344.674.304→363.290.624B/file605.020.160Bgleich.
+Beobachterarbeit eingeschlossen, asynchroneEndpunkte keine Peakzerlegung/
+exakterOwner/Allocatorbeweis; file enthältshmem/external enthältArrayBuffers.
 
-Alle5neuenPASS-PGDATAkopien nach unabhängiger Abnahme/frischen Einzelprüfungen/
-Nonce/TTL/Once entfernt:8555Dateien/1.849.139.200BInventarblöcke,465Belege/15Hüllen
-erhalten. RootENDabfb2dde/IndependentENDa84261acPASS; alle Originale, Quelle827a/
-17Deltaarchive/616Pflichtdateien/Gitobjekte/Refs/Images/Volumes/Loops geschützt.
-LesenderCheck2äußererToolabschlussUNKNOWN erhalten, Kind-PASS0 belegt, keinRetry;
-getrennter Löschaufruf26dbf8 wirklichexit0. Keine globale Freiheit uneinsehbarer
-Prozesse behauptet. END-Plattensnapshot15.106.445.312Bfrei,73.334.408B unter
-Volladmission15.179.779.720B vor weiteren Belegen, keine Reservierung/weitere
-Rückgewinnung. Originalcloud weiter nicht direkt angebunden; autorisierte
-authentifizierte Quelle lokal. CI bekannte fehlende private Originalvorlagen,
-Vercel separat rot; übersprungene Browser-/andere Schritte kein neuerPASS.
+EngerServerquellenbefund780c0aab: letzterWrite normalerCAS,2458B/2übertrageneKnoten/
+0Historienergänzungen/567BACK. Defaultzweig kann Ganzzustand nur fürassert_data
+materialisieren. TatsächlicherCAS-GUC-Zweig mangelsSitzungsquittungUNBEWIESEN;
+fehlendeStartoption ersetzt keine Rollen-/DB-Konfiguration. W45 hatte bereits
+34Materialisierungen entfernt, aber Peak810.905.600→820.375.552B erhöht; bleibtOFF.
+Kein Einschalten/neuerVergleich: SOL620a352dNOT_APPROVED; native-size-Implikation
+offen, Original-W45-Architekturdatei fehlt. Kein langerPlateau-/500MB-Nachweis.
+NEW30 ohnePlateau, NEW8/festes4→8INCONCLUSIVE bleiben unverändert. JIT178.290.688B
+tmpfs nurDiagnostik, imVollmotorOriginalimage keinMount: keineMotorersparnis.
+
+Beide neuen vorabentbehrlichenPASS-PGDATAkopien nach unabhängigerAbnahme/
+frischenChecks/Nonce/TTL/Once entfernt:3422Dateien/739.647.488BInventarblöcke;
+159Belege/6Hüllen bleiben, äußereLöschaufrufe3ac711/fac3f9wirklichexit0.
+RootEND00042460/IndependentEND8fdd8af8PASS. Originale,827a/17Deltaarchive/616Pflichtdateien/Gitobjekte/
+Refs/Images/Volumes/Loops geschützt, keineglobaleFreiheituneinsehbarerProzesse.
+END-Snapshot15.082.921.984Bfrei,96.857.736BunterVolladmission15.179.779.720B;
+weitereBelege brauchenPlatz, keineReservierung/weiterequalifizierteRückgewinnung.
+Originalcloud weiter nicht direktangebunden, autorisierteauthentifizierteQuelle
+lokal. CIfehlendeprivateOriginalvorlagen/Vercel separatrot; übersprungen≠PASS.
 
 500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/16frischeKontrollen
-jeProfil/500MBReserve weiter offen, Sprint teilweise abgeschlossen. AlteGOs
-verbraucht;32frische Bedingungen/Platte/neues konkretesGO für Voll500 nötig.
-Alter Vollvertrag bindet DeepSeek; Konflikt zu SOL-only bleibt unangetastet.
-NurSOL, Root kritische Integration/bis3getrennteHelfer; keine externenModelle,
-Router-/Kosten-/Reserveänderung, Production/Merge/Deployment/Migration.
-[NeuerVergleich/Belege](betrieb/control-inflate-20261021.md),
+jeProfil/500MBReserve offen, Sprint teilweiseabgeschlossen. AlteGOs verbraucht;
+32frischeBedingungen/Platte/neueskonkretesGO fürVoll500 nötig. AlterVollvertrag
+bindetDeepSeek, KonfliktzuSOL-only unangetastet. NurSOL/Root+bis3getrennteHelfer;
+keineexternenModelle/Router-/Kosten-/Reserveänderung/Production/Merge/Deployment.
+[NeuePhasenmessung/Belege](betrieb/auth-write-phase-20261021.md),
+[NegativerInflatevergleich](betrieb/control-inflate-20261021.md),
 [BewiesenerGesamtvergleich](betrieb/combined-auth-memory-comparison-20261020.md),
 [PhysischeV8-Diagnose](betrieb/auth-physical8-20261021.md),
 [LängererVerlauf](betrieb/auth-stability-30-rounds-20261021.md),
 [Cacheintegration](betrieb/bounded-control-cache-local-integration-20261020.md),
 [Bereinigung](betrieb/controlled-local-cleanup-20261020.md).
+
 
 
 ## 20.10.: Vorheriger Diagnostikstand vor der neuen Bereinigungsfreigabe

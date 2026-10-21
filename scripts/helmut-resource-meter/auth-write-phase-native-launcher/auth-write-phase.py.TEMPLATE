@@ -1,0 +1,57 @@
+"""Pinned host entry for python -I -S -B; no sys.path or environment changes."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import stat
+import sys
+import types
+
+if not (sys.flags.isolated and sys.flags.no_site and sys.flags.dont_write_bytecode):
+    raise RuntimeError('Use python -I -S -B for the pinned auth-write-phase host entry.')
+if sys.flags.optimize:
+    raise RuntimeError('The pinned host entry requires Python optimization disabled.')
+
+BASE = Path('/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher')
+PREPARED_SHA = '@FINAL_PREPARED_SHA256@'
+
+
+def read_regular(path, maximum):
+    assert BASE.resolve() == BASE and path.parent == BASE and path.resolve() == path
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    with os.fdopen(fd, 'rb') as stream:
+        before = os.fstat(stream.fileno())
+        assert stat.S_ISREG(before.st_mode) and 0 < before.st_size <= maximum
+        raw = stream.read(maximum + 1)
+        after = os.fstat(stream.fileno())
+    assert (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns) == (
+        after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)
+    assert len(raw) == before.st_size
+    return raw
+
+
+def main():
+    raw = read_regular(BASE / 'PREPARED.SAFE.json', 128 * 1024)
+    assert hashlib.sha256(raw).hexdigest() == PREPARED_SHA, 'reviewed preparation drift'
+    prepared = json.loads(raw)
+    sources = {}
+    for name in ('common.py', 'run.py'):
+        path = BASE / name
+        expected = [p for p in prepared['files'] if p['path'] == str(path)]
+        assert len(expected) == 1
+        source = read_regular(path, 128 * 1024)
+        assert len(source) == expected[0]['bytes'] and hashlib.sha256(source).hexdigest() == expected[0]['sha256']
+        sources[name] = source
+    assert 'common' not in sys.modules
+    common = types.ModuleType('common')
+    common.__file__ = str(BASE / 'common.py')
+    common.__package__ = ''
+    common.__cached__ = None
+    exec(compile(sources['common.py'], common.__file__, 'exec'), common.__dict__)
+    sys.modules['common'] = common
+    namespace = {'__name__': '__main__', '__file__': str(BASE / 'run.py'), '__package__': ''}
+    exec(compile(sources['run.py'], namespace['__file__'], 'exec'), namespace)
+
+
+if __name__ == '__main__':
+    main()

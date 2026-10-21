@@ -1,0 +1,171 @@
+{
+  "schema": "helmut-auth-write-phase-root-retirement-end/1",
+  "status": "PASS",
+  "atUnix": 1792567800.8660169,
+  "rootReadbackSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/root-retirement-end-v1.py",
+    "bytes": 6895,
+    "sha256": "f13b7a56c23be454ac737801f91f14c69342b1f67b2e9315e449cc5592eb7a6a"
+  },
+  "contextPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/ROOT_PASS_CASES_CONTEXT.PRIVATE.json",
+    "bytes": 626241,
+    "sha256": "96a646a8aa7291fab7caeb94d50b7e92949b06211360fe40eec35e8fd92876c7"
+  },
+  "cases": [
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3",
+      "pgdataAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "retainedProofFiles": 102,
+      "allProofPinsUnchanged": true,
+      "stoppedContainerIDs": [
+        "56c07f6d79c85cff5ac6bdaadd4f3bbd217ac76d6a05fb13934f3dd89c74aa48",
+        "be5d680222621f8fc35d9ff3362a9bf727419ea476e124222281675e7e3a2478",
+        "e78a5310bb076f95ce42cfa909ffeeff4f2e35e1034b41d614e71d404a1e01f1"
+      ],
+      "exactMountIdentityRetained": true,
+      "nativeGroupEmpty": true,
+      "retiredResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.RETIRED.PRIVATE.json",
+        "bytes": 1569,
+        "sha256": "040305e388226e5590c16120508e01e4dd8c3cfdeff01bc5a670674fe02b0a59"
+      },
+      "rootAdoptionPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "bytes": 2365,
+        "sha256": "908d841f1a26f5150dc4a140bc3b5d4143c4d3ab80361e0e4e5d5ff7eca23568"
+      },
+      "onceClaimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 66539,
+        "sha256": "df49fd0c576e7e88d40bebd3f1beda2ef2435ce5df9244e5699da9624332347c"
+      },
+      "inventoryAllocatedBytes": 369840128,
+      "inventoryRegularFileAllocatedBytes": 369700864,
+      "removedRegularFiles": 1711
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-e1ef7b555c720e139e34cbf5",
+      "pgdataAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "retainedProofFiles": 57,
+      "allProofPinsUnchanged": true,
+      "stoppedContainerIDs": [
+        "74715e06a914e9ce1af23fceff5e016631a467e3a9cb972dc7e82d0c69f5a796",
+        "9a448542e62ba16417ed7d5103902959036896f10102a26c7f8d102393abfb15",
+        "d14e8c9c92984b00df339ee4b14c4ceac04345af34bfbe910b09eecdc220f98e"
+      ],
+      "exactMountIdentityRetained": true,
+      "nativeGroupEmpty": true,
+      "retiredResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.RETIRED.PRIVATE.json",
+        "bytes": 1569,
+        "sha256": "ab746c5df51f1b695c776a98b644db31f252c07974bc65cf62bd48f494f54c8b"
+      },
+      "rootAdoptionPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "bytes": 2363,
+        "sha256": "7fc781e75a627b61ce8c76a55e6e3bb6ca8845f8ab4da1050768d7eb333c6476"
+      },
+      "onceClaimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 66537,
+        "sha256": "041bb597516471bf8df55080ef988048a7817a4f6918768a26ea6faefd9ecd8b"
+      },
+      "inventoryAllocatedBytes": 369807360,
+      "inventoryRegularFileAllocatedBytes": 369668096,
+      "removedRegularFiles": 1711
+    }
+  ],
+  "retainedCaseProofFiles": 159,
+  "removedRegularFiles": 3422,
+  "retiredInventoryAllocatedBytes": 739647488,
+  "protectedPriorReadbackPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/PROTECTED_RESOURCE_READBACK.SAFE.json",
+    "bytes": 4433,
+    "sha256": "e35ed0db44bec4a8465aef2ccd693044c08141a2f497ba54259a6f32c3b191e2"
+  },
+  "protectedResources": [
+    {
+      "cid": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "c6f393f20781cad88518d5543126d642c4302141f3072393a10d5f0f9bf6a231",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "f375e6f73bff6c4f5238033c0db1de96c0fa9853c49e53056f86fc4f9a7dbaed",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "039f995f2454b4b87edf7b9fe9693d6861d92b15a126205277a51b86adbc80bf",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    }
+  ],
+  "canonicalMetadataUnchanged": true,
+  "sourcePayloadsReread": false,
+  "seventeenPermanentReconstructionDependenciesStillProtected": true,
+  "hostAvailableBytes": 15082921984,
+  "unchangedFullAdmissionBytes": 15179779720,
+  "fullAdmissionGapBytes": 96857736,
+  "capacitySnapshotNotReservation": true,
+  "globalAbsenceOfOpaqueUsersClaimed": false,
+  "additionalQualifiedReclaimBytes": 0,
+  "outerRetirementExits": [
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2365,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "908d841f1a26f5150dc4a140bc3b5d4143c4d3ab80361e0e4e5d5ff7eca23568"
+      },
+      "case": "writephase-cb6f5b59288add4d64037fb3",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 66539,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "df49fd0c576e7e88d40bebd3f1beda2ef2435ce5df9244e5699da9624332347c"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1569,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.RETIRED.PRIVATE.json",
+        "sha256": "040305e388226e5590c16120508e01e4dd8c3cfdeff01bc5a670674fe02b0a59"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "fac3f9"
+    },
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2363,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "7fc781e75a627b61ce8c76a55e6e3bb6ca8845f8ab4da1050768d7eb333c6476"
+      },
+      "case": "writephase-e1ef7b555c720e139e34cbf5",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 66537,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "041bb597516471bf8df55080ef988048a7817a4f6918768a26ea6faefd9ecd8b"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1569,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.RETIRED.PRIVATE.json",
+        "sha256": "ab746c5df51f1b695c776a98b644db31f252c07974bc65cf62bd48f494f54c8b"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "3ac711"
+    }
+  ],
+  "resourceMutationsByReadback": 0,
+  "full500": false,
+  "production": false
+}

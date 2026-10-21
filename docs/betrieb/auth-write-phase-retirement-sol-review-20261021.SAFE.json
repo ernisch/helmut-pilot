@@ -1,0 +1,821 @@
+{
+  "schema": "helmut-auth-write-phase-independent-retirement-end-review/1",
+  "status": "PASS",
+  "resultPins": [
+    {
+      "bytes": 8332,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-e1ef7b555c720e139e34cbf5/ACTUAL_RESULT.SAFE.json",
+      "sha256": "4ce63e58a76b6b6cbc4c0c161707fc5560a71072bdc9ce0a7d52df31f6cb5e83"
+    },
+    {
+      "bytes": 9112,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/ACTUAL_RESULT.SAFE.json",
+      "sha256": "d0b096b2dbc6c81221382e1bc0014a3bcba2cc321b249379551fd633c439ad99"
+    }
+  ],
+  "atUTC": "2026-10-21T07:32:06.039427+00:00",
+  "blockers": [],
+  "rootContextPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/ROOT_PASS_CASES_CONTEXT.PRIVATE.json",
+    "bytes": 626241,
+    "sha256": "96a646a8aa7291fab7caeb94d50b7e92949b06211360fe40eec35e8fd92876c7"
+  },
+  "actorPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/retire_two_auth_write_phase_pass_copies.py",
+    "bytes": 59338,
+    "sha256": "273c05398d2bbdd38b95beff4301152141b3eccd74dcac69d270012a011ef6d7"
+  },
+  "independentRetirerSourceReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/diagnostics/write-phase-retirement-20261021/SOURCE_REVIEW.SAFE.json",
+    "bytes": 24983,
+    "sha256": "5eba8463bfb79f0dc3f75b6214eaa625365bb988fe4d213205c9e6688f0b78a7"
+  },
+  "independentActualReviewPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/ACTUAL_REVIEW.SAFE.json",
+    "bytes": 37016,
+    "sha256": "a05fc6b458153e648d90dad4e7f96ae5b4e91c9b51ed28455df310cf9b22cec1"
+  },
+  "lifecycleIndependentActualReviewPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 4214,
+    "sha256": "e309ae7e09348c91765e7cb7fa29200d4677241b2ddb8be864738fbac910e33a"
+  },
+  "rootRetirementEndPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/ROOT_RETIREMENT_END.SAFE.json",
+    "bytes": 8026,
+    "sha256": "0004246059f3bc66dab682f1236e981ead6798362a3ac302faf06cccc1cac3af"
+  },
+  "rootOuterRetirementToolWitnesses": [
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2363,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "7fc781e75a627b61ce8c76a55e6e3bb6ca8845f8ab4da1050768d7eb333c6476"
+      },
+      "case": "writephase-e1ef7b555c720e139e34cbf5",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 66537,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "041bb597516471bf8df55080ef988048a7817a4f6918768a26ea6faefd9ecd8b"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1569,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.RETIRED.PRIVATE.json",
+        "sha256": "ab746c5df51f1b695c776a98b644db31f252c07974bc65cf62bd48f494f54c8b"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "3ac711"
+    },
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2365,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "908d841f1a26f5150dc4a140bc3b5d4143c4d3ab80361e0e4e5d5ff7eca23568"
+      },
+      "case": "writephase-cb6f5b59288add4d64037fb3",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 66539,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "df49fd0c576e7e88d40bebd3f1beda2ef2435ce5df9244e5699da9624332347c"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1569,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.RETIRED.PRIVATE.json",
+        "sha256": "040305e388226e5590c16120508e01e4dd8c3cfdeff01bc5a670674fe02b0a59"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "fac3f9"
+    }
+  ],
+  "rootReadbackSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/root-retirement-end-v1.py",
+    "bytes": 6895,
+    "sha256": "f13b7a56c23be454ac737801f91f14c69342b1f67b2e9315e449cc5592eb7a6a"
+  },
+  "retiredCopies": [
+    {
+      "case": "writephase-e1ef7b555c720e139e34cbf5",
+      "target": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-e1ef7b555c720e139e34cbf5/disk/pgdata",
+      "receiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.RETIRED.PRIVATE.json",
+        "bytes": 1569,
+        "sha256": "ab746c5df51f1b695c776a98b644db31f252c07974bc65cf62bd48f494f54c8b"
+      },
+      "checkedPin": {
+        "bytes": 635308,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.CHECKED_CASE.PRIVATE.json",
+        "sha256": "8c9aaff9ef509a4628094717d366d3a4e203480cba52f59284eed6fd8723d30e"
+      },
+      "rootAdoptionPin": {
+        "bytes": 2363,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "7fc781e75a627b61ce8c76a55e6e3bb6ca8845f8ab4da1050768d7eb333c6476"
+      },
+      "claimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 66537,
+        "sha256": "041bb597516471bf8df55080ef988048a7817a4f6918768a26ea6faefd9ecd8b"
+      },
+      "nonce": "ce6a418e8f9eb23200a7531b",
+      "checkNonce": "393f4cd46f0f44099184cf48",
+      "outerToolExitReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-e1ef7b555c720e139e34cbf5.ROOT_OBSERVED_RETIRE_TOOL_EXIT.SAFE.json",
+        "bytes": 1084,
+        "sha256": "4ecce021f2b01b263695afec8e37664c740d37a98eac1059f528d7f14079260d"
+      },
+      "outerToolExitCode": 0,
+      "outerToolCompletionChunk": "3ac711",
+      "regularFilesRemoved": 1711,
+      "previouslyInventoriedRegularAllocatedBytes": 369668096,
+      "previouslyInventoriedAllAllocatedBytes": 369807360,
+      "adoptionAgeAtClaimSeconds": 9.510732889175415,
+      "checkAgeAtClaimSeconds": 30.965461492538452,
+      "recordedFreeBeforeBytes": 14344040448,
+      "recordedFreeAfterBytes": 14713847808
+    },
+    {
+      "case": "writephase-cb6f5b59288add4d64037fb3",
+      "target": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/disk/pgdata",
+      "receiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.RETIRED.PRIVATE.json",
+        "bytes": 1569,
+        "sha256": "040305e388226e5590c16120508e01e4dd8c3cfdeff01bc5a670674fe02b0a59"
+      },
+      "checkedPin": {
+        "bytes": 635306,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.CHECKED_CASE.PRIVATE.json",
+        "sha256": "6e392ccbf9bd356b01ef45db0a958c3bdabd81b3385ad202e0462cb9549f3f26"
+      },
+      "rootAdoptionPin": {
+        "bytes": 2365,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "908d841f1a26f5150dc4a140bc3b5d4143c4d3ab80361e0e4e5d5ff7eca23568"
+      },
+      "claimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 66539,
+        "sha256": "df49fd0c576e7e88d40bebd3f1beda2ef2435ce5df9244e5699da9624332347c"
+      },
+      "nonce": "bc673ae2732090621a951f51",
+      "checkNonce": "4e3427a0500e4bc08cd420a6",
+      "outerToolExitReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/writephase-cb6f5b59288add4d64037fb3.ROOT_OBSERVED_RETIRE_TOOL_EXIT.SAFE.json",
+        "bytes": 1084,
+        "sha256": "ceff8a65ea7eddd5298fca748adbf655e947cc14d166b50f970e17492cef94bd"
+      },
+      "outerToolExitCode": 0,
+      "outerToolCompletionChunk": "fac3f9",
+      "regularFilesRemoved": 1711,
+      "previouslyInventoriedRegularAllocatedBytes": 369700864,
+      "previouslyInventoriedAllAllocatedBytes": 369840128,
+      "adoptionAgeAtClaimSeconds": 9.28600788116455,
+      "checkAgeAtClaimSeconds": 22.167543649673462,
+      "recordedFreeBeforeBytes": 14713090048,
+      "recordedFreeAfterBytes": 15082930176
+    }
+  ],
+  "exactBothPGDATAAbsencesIndependentlyObserved": true,
+  "caseAndDiskHullsRetained": true,
+  "caseEvidenceFilesRehashed": 159,
+  "caseEvidenceLogicalBytes": 5030865,
+  "verifiedPinsManifest": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/RETIREMENT_END_VERIFIED_PINS.PRIVATE.json",
+    "bytes": 102753,
+    "sha256": "fff2e4cf6192fb7dc18e9e61d5cfaf99649cd02a280a3f9270b81f85e6d25858"
+  },
+  "nativeResultAndActualReviewPinsUnchanged": true,
+  "immutableLocalLauncherClosurePinsRehashed": 37,
+  "canonicalRootProductSourcesUnchanged": true,
+  "phaseObservationDoesNotGrantProductFix": true,
+  "product939Unchanged": true,
+  "sixPreservedStoppedHulls": [
+    {
+      "id": "56c07f6d79c85cff5ac6bdaadd4f3bbd217ac76d6a05fb13934f3dd89c74aa48",
+      "name": "/helmut-auth-write-phase-7d92cf850b4d7c373f86c8f9",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "cgroupParent": "/helmut-meter-memorybudget-627b0b079c7cb30d0708c317",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-21T07:23:33.967699581Z",
+        "FinishedAt": "2026-10-21T07:24:04.369516407Z"
+      },
+      "fullUnorderedMountsSHA256": "2073faecf4d51a81e29666eb5ecf64c92faa649aee3424607345919541ced479"
+    },
+    {
+      "id": "74715e06a914e9ce1af23fceff5e016631a467e3a9cb972dc7e82d0c69f5a796",
+      "name": "/helmut-auth-write-phase-337a0193a00767815925d689",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "cgroupParent": "/helmut-meter-memorybudget-fc329fe8a31921a355eabb2f",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-21T07:18:53.591145057Z",
+        "FinishedAt": "2026-10-21T07:19:09.75233868Z"
+      },
+      "fullUnorderedMountsSHA256": "50bd59c6b479c487a62f3190dbaedc772e469c6fe0093a92a04800f467abd766"
+    },
+    {
+      "id": "9a448542e62ba16417ed7d5103902959036896f10102a26c7f8d102393abfb15",
+      "name": "/helmut-native-budget-setter-762bfce3729f",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "cgroupParent": "/helmut-meter-memorybudget-fc329fe8a31921a355eabb2f",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-21T07:18:52.586580618Z",
+        "FinishedAt": "2026-10-21T07:18:52.657106163Z"
+      },
+      "fullUnorderedMountsSHA256": "f06fa1f862e5b8cbff4bddd9301927063c90f44044333bfdd22a0a7679ec5b49"
+    },
+    {
+      "id": "be5d680222621f8fc35d9ff3362a9bf727419ea476e124222281675e7e3a2478",
+      "name": "/helmut-native-budget-holder-78106c342bb6",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "cgroupParent": "/helmut-meter-memorybudget-627b0b079c7cb30d0708c317",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-21T07:23:32.01048873Z",
+        "FinishedAt": "2026-10-21T07:23:33.801349905Z"
+      },
+      "fullUnorderedMountsSHA256": "a4c5627efe3eea012db70d1478fc240aefa660acf4f9a9f001680a039a55783d"
+    },
+    {
+      "id": "d14e8c9c92984b00df339ee4b14c4ceac04345af34bfbe910b09eecdc220f98e",
+      "name": "/helmut-native-budget-holder-5ce7d1b88dbc",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "cgroupParent": "/helmut-meter-memorybudget-fc329fe8a31921a355eabb2f",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-21T07:18:51.666194484Z",
+        "FinishedAt": "2026-10-21T07:18:53.437577315Z"
+      },
+      "fullUnorderedMountsSHA256": "ddbbe260134011486ba31f001fb9e382a7b3ab133d68c07ba33f7ada6b0a1763"
+    },
+    {
+      "id": "e78a5310bb076f95ce42cfa909ffeeff4f2e35e1034b41d614e71d404a1e01f1",
+      "name": "/helmut-native-budget-setter-7f101792093b",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "cgroupParent": "/helmut-meter-memorybudget-627b0b079c7cb30d0708c317",
+      "state": {
+        "Status": "exited",
+        "Running": false,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 0,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-21T07:23:32.874270267Z",
+        "FinishedAt": "2026-10-21T07:23:32.941986348Z"
+      },
+      "fullUnorderedMountsSHA256": "2d300adb9f7aa6845845db0f9f1b61775c1197107cee84bd86fead890096a3d3"
+    }
+  ],
+  "twoCurrentEmptyNativeGroups": [
+    {
+      "path": "/sys/fs/cgroup/helmut-meter-memorybudget-fc329fe8a31921a355eabb2f",
+      "inode": 20948,
+      "events": {
+        "populated": "0",
+        "frozen": "0"
+      },
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "settings": {
+        "memory.max": "1547997184",
+        "memory.high": "1399996416",
+        "memory.swap.max": "0"
+      },
+      "memoryPeakBytes": 653615104
+    },
+    {
+      "path": "/sys/fs/cgroup/helmut-meter-memorybudget-627b0b079c7cb30d0708c317",
+      "inode": 21208,
+      "events": {
+        "populated": "0",
+        "frozen": "0"
+      },
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "settings": {
+        "memory.max": "1547997184",
+        "memory.high": "1399996416",
+        "memory.swap.max": "0"
+      },
+      "memoryPeakBytes": 1039151104
+    }
+  ],
+  "fiveProtectedIdentities": [
+    {
+      "id": "039f995f2454b4b87edf7b9fe9693d6861d92b15a126205277a51b86adbc80bf",
+      "label": "v11-db",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "pid": 0,
+      "running": false,
+      "status": "exited",
+      "mountSourceCount": 7,
+      "sortedAllMountSourcesSHA256": "85e793c823afc9a43faa7da2505efa8a413a2be13f7a6537c1c199a63895a234"
+    },
+    {
+      "id": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+      "label": "original-bank",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "pid": 5993,
+      "running": true,
+      "status": "running",
+      "mountSourceCount": 5,
+      "sortedAllMountSourcesSHA256": "410001d6317196dba8f608dc5254beb8ed3cf09613c7562fcfaaa145ed27eea6"
+    },
+    {
+      "id": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+      "label": "v11-storage",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "pid": 0,
+      "running": false,
+      "status": "exited",
+      "mountSourceCount": 5,
+      "sortedAllMountSourcesSHA256": "27d6dd1b96a998054c0ed61531ab3cf9f7db2240348a28f678b8dda9a2d4fe4f"
+    },
+    {
+      "id": "c6f393f20781cad88518d5543126d642c4302141f3072393a10d5f0f9bf6a231",
+      "label": "v11-app",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "pid": 0,
+      "running": false,
+      "status": "exited",
+      "mountSourceCount": 128,
+      "sortedAllMountSourcesSHA256": "e9503a01e431daf8e81b3680bead662bebcf1ddb4784153737952761e64ede3d"
+    },
+    {
+      "id": "f375e6f73bff6c4f5238033c0db1de96c0fa9853c49e53056f86fc4f9a7dbaed",
+      "label": "v11-broker",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "pid": 0,
+      "running": false,
+      "status": "exited",
+      "mountSourceCount": 7,
+      "sortedAllMountSourcesSHA256": "4bfa4518e76bf49c54c1715d97ffe1a9179ac8b7fea84e0eeb639fc938e51e7e"
+    }
+  ],
+  "canonicalSource": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL",
+    "rootIdentity": {
+      "device": 27,
+      "inode": 169,
+      "mode": 448,
+      "uid": 1000,
+      "gid": 1000,
+      "links": 19,
+      "bytes": 4096,
+      "allocatedBytes": 4096,
+      "mtime_ns": 1792487833623423814,
+      "ctime_ns": 1792487833623423814
+    },
+    "fileCount": 1709,
+    "fileBytes": 369399611,
+    "acceptedFullManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "currentRootMetadataMatches": true,
+    "sourcePayloadPathWalkRepeated": false,
+    "acceptedCompleteManifestsRetainedAndHashesUnchanged": true,
+    "originalPayloadFilesOpenedOrRehashed": false,
+    "atimeNotCompared": true
+  },
+  "dependencyArchiveLocatorPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/physical8-review-20261021/DEPENDENCY_ARCHIVE_LOCATOR.PRIVATE.json",
+    "bytes": 15426,
+    "sha256": "3613fabec494196c1c667047d7071f18e0246072d2f151f3b68a428c40063384"
+  },
+  "permanentSourceAndSeventeenArchiveRetentionIntentPin": {
+    "bytes": 6870,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/ROOT_MEASUREMENT_INTENT_V2.SAFE.json",
+    "sha256": "0c00a06569ff3e79b7d94920a9e3080138c7722699003251e6ce0cadadd47368"
+  },
+  "dependencyArchivesMetadataRetained": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-c3e412f438593433fd1f6c2a/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 144181,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 21471666,
+        "allocatedBytes": 21475328,
+        "mtime_ns": 1792519863251493052,
+        "ctime_ns": 1792519863251493052
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-ed63e083f528a38a1acf58aa/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 134486,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 21488459,
+        "allocatedBytes": 21491712,
+        "mtime_ns": 1792519981850176406,
+        "ctime_ns": 1792519981850176406
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-4682602730b5cb53f0ce7b86/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 132710,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 21489232,
+        "allocatedBytes": 21491712,
+        "mtime_ns": 1792520132397571668,
+        "ctime_ns": 1792520132397571668
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-739a92b8b769a80efd820f14/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 132773,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 21489292,
+        "allocatedBytes": 21491712,
+        "mtime_ns": 1792520211799708092,
+        "ctime_ns": 1792520211799708092
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-6517e47c8e1299322ad72247/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 132821,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 21488442,
+        "allocatedBytes": 21491712,
+        "mtime_ns": 1792520230636179912,
+        "ctime_ns": 1792520230636179912
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-45a29158f86a93d8e76f090d/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 143316,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 6776782,
+        "allocatedBytes": 6778880,
+        "mtime_ns": 1792521971992313228,
+        "ctime_ns": 1792521971992313228
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-691308195082cdee46ff279b/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 135521,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 6776830,
+        "allocatedBytes": 6778880,
+        "mtime_ns": 1792521990496718040,
+        "ctime_ns": 1792521990496718040
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-81c274b505a2ee40e25ab03e/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 136699,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 21489220,
+        "allocatedBytes": 21491712,
+        "mtime_ns": 1792522011581196084,
+        "ctime_ns": 1792522011581196084
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-comparison-four-copy-retirement-preparation/control-1d2f4018c911a6108159788a/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 266550,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 6776846,
+        "allocatedBytes": 6778880,
+        "mtime_ns": 1792523721664388502,
+        "ctime_ns": 1792523721664388502
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-comparison-four-copy-retirement-preparation/control-1ec969439403214106f99167/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 132884,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 72420761,
+        "allocatedBytes": 72421376,
+        "mtime_ns": 1792524021815161159,
+        "ctime_ns": 1792524021815161159
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-comparison-four-copy-retirement-preparation/control-40ece41a5360c1733c0a5e92/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 266558,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 72437735,
+        "allocatedBytes": 72437760,
+        "mtime_ns": 1792523754313120731,
+        "ctime_ns": 1792523754313120731
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-comparison-four-copy-retirement-preparation/control-9614fe10360052d706a7d53f/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 266577,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 72437818,
+        "allocatedBytes": 72441856,
+        "mtime_ns": 1792523986510364383,
+        "ctime_ns": 1792523986510364383
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-comparison-v9-five-copy-retirement-preparation/control-1acb43b4bd71962b621b161c/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 266592,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 6776898,
+        "allocatedBytes": 6778880,
+        "mtime_ns": 1792524086036612745,
+        "ctime_ns": 1792524086036612745
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-comparison-v9-five-copy-retirement-preparation/control-2aa650ba79de93befbf07c2f/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 266635,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 72437681,
+        "allocatedBytes": 72441856,
+        "mtime_ns": 1792524190958989549,
+        "ctime_ns": 1792524190958989549
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-comparison-v9-five-copy-retirement-preparation/control-34fed1a1ec4fbdd8315cdfdd/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 266607,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 72437893,
+        "allocatedBytes": 72441856,
+        "mtime_ns": 1792524119353366262,
+        "ctime_ns": 1792524119353366262
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-comparison-v9-five-copy-retirement-preparation/control-a11e080562d1d0fc384e0475/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 266648,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 72437762,
+        "allocatedBytes": 72441856,
+        "mtime_ns": 1792524226259788878,
+        "ctime_ns": 1792524226259788878
+      }
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-comparison-v9-five-copy-retirement-preparation/control-f4fc95f8410c9093233f7213/PGDATA_DELTA.PRIVATE.tar.gz",
+      "metadata": {
+        "device": 27,
+        "inode": 266622,
+        "mode": 384,
+        "uid": 1000,
+        "gid": 1000,
+        "links": 1,
+        "bytes": 72437925,
+        "allocatedBytes": 72441856,
+        "mtime_ns": 1792524155238181208,
+        "ctime_ns": 1792524155238181208
+      }
+    }
+  ],
+  "dependencyArchivePayloadsOpenedOrRehashed": false,
+  "recordedActorOpaqueProcessInspection": [
+    {
+      "case": "writephase-e1ef7b555c720e139e34cbf5",
+      "phase": "checked",
+      "unreadableProcessRecords": 309,
+      "unreadableFieldKinds": [
+        "cwd",
+        "fd",
+        "maps",
+        "root"
+      ],
+      "visiblePIDsAttempted": 312,
+      "readableCmdlines": 312,
+      "readableCgroups": 312,
+      "completeGlobalFDMapsInspectionClaimed": false,
+      "globalAbsenceOfUnobservableUsersProven": false
+    },
+    {
+      "case": "writephase-e1ef7b555c720e139e34cbf5",
+      "phase": "claimed",
+      "unreadableProcessRecords": 309,
+      "unreadableFieldKinds": [
+        "cwd",
+        "fd",
+        "maps",
+        "root"
+      ],
+      "visiblePIDsAttempted": 311,
+      "readableCmdlines": 311,
+      "readableCgroups": 311,
+      "completeGlobalFDMapsInspectionClaimed": false,
+      "globalAbsenceOfUnobservableUsersProven": false
+    },
+    {
+      "case": "writephase-cb6f5b59288add4d64037fb3",
+      "phase": "checked",
+      "unreadableProcessRecords": 309,
+      "unreadableFieldKinds": [
+        "cwd",
+        "fd",
+        "maps",
+        "root"
+      ],
+      "visiblePIDsAttempted": 312,
+      "readableCmdlines": 312,
+      "readableCgroups": 312,
+      "completeGlobalFDMapsInspectionClaimed": false,
+      "globalAbsenceOfUnobservableUsersProven": false
+    },
+    {
+      "case": "writephase-cb6f5b59288add4d64037fb3",
+      "phase": "claimed",
+      "unreadableProcessRecords": 309,
+      "unreadableFieldKinds": [
+        "cwd",
+        "fd",
+        "maps",
+        "root"
+      ],
+      "visiblePIDsAttempted": 311,
+      "readableCmdlines": 311,
+      "readableCgroups": 311,
+      "completeGlobalFDMapsInspectionClaimed": false,
+      "globalAbsenceOfUnobservableUsersProven": false
+    }
+  ],
+  "DockerObservation": {
+    "exactIDs": [
+      "039f995f2454b4b87edf7b9fe9693d6861d92b15a126205277a51b86adbc80bf",
+      "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+      "56c07f6d79c85cff5ac6bdaadd4f3bbd217ac76d6a05fb13934f3dd89c74aa48",
+      "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+      "74715e06a914e9ce1af23fceff5e016631a467e3a9cb972dc7e82d0c69f5a796",
+      "9a448542e62ba16417ed7d5103902959036896f10102a26c7f8d102393abfb15",
+      "be5d680222621f8fc35d9ff3362a9bf727419ea476e124222281675e7e3a2478",
+      "c6f393f20781cad88518d5543126d642c4302141f3072393a10d5f0f9bf6a231",
+      "d14e8c9c92984b00df339ee4b14c4ceac04345af34bfbe910b09eecdc220f98e",
+      "e78a5310bb076f95ce42cfa909ffeeff4f2e35e1034b41d614e71d404a1e01f1",
+      "f375e6f73bff6c4f5238033c0db1de96c0fa9853c49e53056f86fc4f9a7dbaed"
+    ],
+    "inspectCalls": 1,
+    "stdoutBytes": 1270984,
+    "stdoutSHA256": "8e6f6c0759b4adf9dfa27742e37ba20852db208ba44ed569c66c84320b380444",
+    "protectedComparisonScope": "Id/image/state/PID/all mount sources match pinned prior readback; no full protected HostConfig/destination/RW mount equivalence claim."
+  },
+  "currentAvailableHostBytes": 15082790912,
+  "fullAdmissionBytes": 15179779720,
+  "fullAdmissionMarginBytes": -96988808,
+  "fullAdmissionMetAtSnapshot": false,
+  "fullAdmissionOrReservationProven": false,
+  "verifierSourcePin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/verify_retirement_end.py",
+    "bytes": 31655,
+    "sha256": "e39dc940bb138dc2734cc2bdf0e24bde7e35d209d6b5c05ac9ba302e2686b4e5"
+  },
+  "existingActualReportsRewritten": false,
+  "spentActorsImportedOrExecuted": false,
+  "resourceMutationsByReviewer": 0,
+  "subjectImports": 0,
+  "tests": 0,
+  "SQL": 0,
+  "providerCalls": 0,
+  "full500": false,
+  "production": false,
+  "extraRAMSavingClaimed": false,
+  "backupOrArchiveQualificationClaimed": false,
+  "limits": [
+    "END PASS covers exact two accepted disposable working-copy retirements and retained evidence/source/hulls only.",
+    "Original source payload paths were not rewalked or opened; current root metadata and accepted retained full-manifest bindings were checked. Seventeen archive presences/lengths match saved metadata; their payload hashes were not repeated.",
+    "The actor recorded unreadable unrelated process fields. No current broad host-process sweep or global absence-of-unobservable-users claim is made by this reviewer.",
+    "Only exact6 fresh hulls and5 protected CIDs were inspected; known Stage3 NSFS handling remains the pinned actor/source-review limitation, not a new independent global inventory.",
+    "Free space is a snapshot before this report; retirement is no RAM saving, allocator cause, plateau, full500 or full-motor reserve proof."
+  ]
+}

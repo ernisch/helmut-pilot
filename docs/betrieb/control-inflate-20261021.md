@@ -94,12 +94,12 @@ Eine exakte Node-/Server-Aufteilung am Peak ist nicht belegt. Später gelesene
 `memory.stat`-Werte liegen unter dem echten Highwater und werden nicht als
 dessen Zerlegung ausgegeben. File enthält shmem; external enthält ArrayBuffers.
 
-Nächste notwendige Eingrenzung ist deshalb der vollständige späte Schreibpfad:
-Snapshot, Parts, RPC, Attach oder die zusätzliche `verifyLogical`-Ergebnisprüfung.
-Vorbereitet wird ein frischer isolierter Null-Auth-/27-RPC-Fall mit höchstens
-14 Phasenframes/48KiB Zusatzmetadaten nur am letzten Write/Read. Er ist eine neue
-Diagnosefrage, kein Wiederholungsversuch des Dekompressionskandidaten und kein
-Nachweis für ein Plateau oder den langen 30-Runden-Verlauf.
+Diese enge Frage wurde anschließend im [separaten Phasenfall](auth-write-phase-20261021.md)
+tatsächlich geprüft:14 vollständige Frames, neuer Lebenszyklus und27RPC.
+Die zusätzliche Spitze entsteht bei Snapshot-Erfassung und atomarer RPC;
+Attach und Ergebnisprüfungen erhöhen sie dort nicht. Der tatsächliche CAS-GUC-
+Zweig und ein genauer Allokationsverursacher bleiben unbewiesen. Dies ist kein
+Wiederholungsversuch des Dekompressionskandidaten und kein Plateau-Nachweis.
 
 ## Kontrollierte Entfernung der Arbeitskopien
 

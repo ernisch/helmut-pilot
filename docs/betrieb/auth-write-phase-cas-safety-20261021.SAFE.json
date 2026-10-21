@@ -1,0 +1,218 @@
+{
+  "schema": "helmut-w45-current-renderer-independent-source-equivalence-review/1",
+  "status": "NOT_APPROVED",
+  "decision": "Do not enable CAS projection and do not measure ON. Retain current qualified legacy full-expand+assert_data path and explicit projection-OFF policy. This is a specific unclosed native-size equivalence implication, not a finding that all existing paths are unsafe.",
+  "reviewedAtUTC": "2026-10-21T07:35:06.665977+00:00",
+  "reviewer": "/root/stability_capacity_review; independent SOL source reasoning only; no external model/router",
+  "scope": "Existing W45 bounded CAS graph assertion versus full expansion+assert_data, composed with the exact current frozen NEW renderer. No launcher preparation, source edit, resource action or fresh experiment.",
+  "inputPins": {
+    "existingW45Doc": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/local-cas-bounded-validation-20261019.md",
+      "bytes": 9454,
+      "sha256": "d61b6bfec9b9d84414690043c81b64e4673a02a158d95fd177e9568c9fcb3513"
+    },
+    "currentProposalSource": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+      "bytes": 54938,
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    "frozenOriginalProposalSource": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "bytes": 51381,
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    "frozenNEWRendererInstall": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "bytes": 17398,
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    "frozenNEWGraphInstall": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_GRAPH.sql",
+      "bytes": 13047,
+      "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+    },
+    "frozenBodyProvenance": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/BODY_SOURCE_PROVENANCE.SAFE.json",
+      "bytes": 3859,
+      "sha256": "a2d2fa66469ac562f6ca75530bdab0c3e4134f75b9e95c1e698b91705cb99acf"
+    },
+    "currentFrozenPrepared": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/PREPARED.SAFE.json",
+      "bytes": 49491,
+      "sha256": "1868119f68f6d27a67c26281b8a71db7c9cb5b6e7d878405bb16f8492f6f30b3"
+    }
+  },
+  "missingHistoricalEvidence": {
+    "originalArchitecturePath": "/workspace/helmut-parallel-20261015/wave45-cas-bounded-validation/ARCHITECTURE_AND_EQUIVALENCE.SAFE.md",
+    "status": "MISSING_FROM_ATTACHED_WORKSPACE",
+    "prior55GroupsAnd37Comparisons": "Historical claims in the retained W45 doc only; not reaudited and not rerun. Original proof pins/files unavailable in the bounded locations examined.",
+    "currentSourceIsNotReplacementOriginal": true,
+    "searchBoundary": "Stopped after Root confirmed original historical Cloud evidence was not directly attached; no further broad payload/archive search.",
+    "historicalExternalReview": "Doc records no completed valid DeepSeek security review. Current user SOL-only instruction supersedes an external-model requirement, but does not establish the missing native representation bound."
+  },
+  "blockingFindings": [
+    {
+      "id": "NATIVE_SIZE_DOMINATION_FOR_FLATTENED_COMPACT_VALUES_UNPROVEN",
+      "severity": "P1",
+      "kind": "Unclosed safety/equivalence proof obligation; not a reproduced counterexample",
+      "source": {
+        "proposal": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+        "projectionLine": 438,
+        "renderer": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_RENDERER.sql"
+      },
+      "finding": "Projection calls expand(s,g,h,true,true) and returns before actual output_text/JSONB materialization. Thus it omits the default branch actual octet_length(output_text)<=sizes[root] and pg_column_size(output_value)<=native_sizes[root] confirmations. The native recurrence is leaf actual nativeBytes, otherwise16+sum(child native bound+16+explicit-object key bytes). Its sufficiency for m/l flattening has not been established from attached authentic PostgreSQL17 evidence.",
+      "concreteRiskClass": "Merge compact v-object children with many numeric values in one child and short string values in another, using disjoint interleaving sorted keys. Global object key/value ordering can interleave the children differently from each separately measured compact object; resulting Numeric alignment padding may occur at value boundaries rather than only child boundaries. Constant16 per incoming edge does not by inspection prove domination of this changed padding. Both children can have valid unique keys and allowed sizes, so duplicate checks do not settle the size implication.",
+      "hypothesisBoundary": "This report contains no PostgreSQL17 layout investigation, no constructed/executed graph, no measured byte counts, and no claim that this class actually violates the bound. It identifies the exact missing implication. A future authentic layout proof may close it or reveal that a bound change is needed.",
+      "defaultPathImpact": "Current full renderer retains the actual native-size confirmation and remains the default qualified path. No default-path regression is asserted."
+    },
+    {
+      "id": "ORIGINAL_W45_GENERAL_ARGUMENT_UNAVAILABLE",
+      "severity": "EVIDENCE_BOUNDARY",
+      "kind": "Missing requested historical architecture evidence",
+      "finding": "The requested original ARCHITECTURE_AND_EQUIVALENCE.SAFE.md is absent. Historical55 safety groups/37 old-new comparisons cannot be treated as general proof or freshly accepted under the NEW renderer. Current available source supports the static partial checks below but does not replace the original architecture artifact."
+    }
+  ],
+  "staticSourceChecks": {
+    "result": "PARTIAL_EQUIVALENCE_SUPPORTED_NO_CONCRETE_SEMANTIC_COUNTEREXAMPLE_IDENTIFIED",
+    "exactNEWRendererProsrc": {
+      "sha256": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+      "bytes": 13335
+    },
+    "exactOriginalRendererProsrc": {
+      "sha256": "b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a",
+      "bytes": 9778
+    },
+    "sharedCompleteBoundsAndAsGraphBlock": {
+      "byteEqualOldAndNEW": true,
+      "bytes": 6296,
+      "sha256": "7d1b70e370da0d5583123d7b4442390f0c88f6c9c65161f27f705f32d9fbfe72",
+      "boundary": "begin through complete as_graph return branch, before either renderer materialization implementation"
+    },
+    "relevantFunctionsByteEqualFrozenOriginalAndCurrentProposal": [
+      {
+        "function": "helmut_auth_state_leaf_info_local_v1",
+        "currentLine": 18,
+        "bodyBytes": 1207,
+        "bodySHA256": "d49d456dd15bfbc2c24f0fb3313604216bf5294770fd8617995db6c8bbb1f97f",
+        "byteEqual": true
+      },
+      {
+        "function": "helmut_auth_state_children_local_v1",
+        "currentLine": 42,
+        "bodyBytes": 1809,
+        "bodySHA256": "3a36d41d28a3a28d3c9cb61f7b9dc767ed1738ce331618bb70623c3ca68121d6",
+        "byteEqual": true
+      },
+      {
+        "function": "helmut_auth_state_nodes_guard_local_v1",
+        "currentLine": 105,
+        "bodyBytes": 1206,
+        "bodySHA256": "aa0141c6a9776c31cb184ead3b182e368d5fc66cc82df4a80c9556c4a7b51f30",
+        "byteEqual": true
+      },
+      {
+        "function": "helmut_auth_state_put_nodes_local_v1",
+        "currentLine": 133,
+        "bodyBytes": 2198,
+        "bodySHA256": "558edc1b8f840d9886b6cc119a8a75e85e84ab8855b4b031e47262fd91246ce1",
+        "byteEqual": true
+      },
+      {
+        "function": "helmut_auth_state_assert_root_local_v1",
+        "currentLine": 404,
+        "bodyBytes": 1159,
+        "bodySHA256": "5748e17648b694151aaf72cdc7097e02b5d9e16b431a41f385f7a081ed925d82",
+        "byteEqual": true
+      },
+      {
+        "function": "helmut_auth_state_assert_data_local_v1",
+        "currentLine": 426,
+        "bodyBytes": 407,
+        "bodySHA256": "d9b53506e00e4a8d9c1305f2ed5381b7af7e00706b333b3d6ff430691676ebab",
+        "byteEqual": true
+      },
+      {
+        "function": "helmut_auth_state_assert_graph_local_v1",
+        "currentLine": 438,
+        "bodyBytes": 4983,
+        "bodySHA256": "cae41814102572ecc6a8533ecd76b043c148f3d6deaa8b1250af706ed5ddb015",
+        "byteEqual": true
+      },
+      {
+        "function": "helmut_auth_state_cas_v1",
+        "currentLine": 732,
+        "bodyBytes": 3141,
+        "bodySHA256": "8a13952bee9f305074d6ad9f2c2ee27e129a7e20ce3babb1d8f3a971719fcf6c",
+        "byteEqual": true
+      },
+      {
+        "function": "helmut_auth_state_auth_guard_local_v1",
+        "currentLine": 522,
+        "bodyBytes": 1795,
+        "bodySHA256": "f096377bafe6d793f4d12d51ba7e53970f541372c251d541f5e13f8ca80da643",
+        "byteEqual": true
+      }
+    ],
+    "freshStructuralPass": "Projection uses the same exact NEW expander as_graph=true,omit_payloads=true. Before return it freshly bounds <=20000 reachable unique nodes, complete reachability, <=32MiB stored payload, actual reachable payload SHA, generated immutable body/children/leaf metadata, child-before-parent sequence, child types, graph/logical depth<=64, per-node and cumulative projected text/native work<=268435456. This is not a trusted caller digest or cached validation.",
+    "duplicateKeys": "For v-object leaves, raw payload parser already requires JSON WITH UNIQUE KEYS, including nested compact objects. o keys are counted under binary C collation. m flattens key sets over each actual edge using jsonb_array_elements rather than deduplicated child reachability; repeated nonempty shared children therefore count duplicate keys. Every reachable object is checked, including objects reached under arrays. Shared valid subgraphs need one validation; incoming-edge multiplicity remains in m duplicate counts.",
+    "rootAndContractProjection": "Root object key set must exist and exclude llmUsage/_llmUsageRef/_authStateRef/_authStoreRevision. testKostenAuftrag.version and serviceContractHash are projected through compact values, explicit o fields and flattened m buckets. C-collated exact key comparisons and final #>> text preserve string/numeric text semantics such as5 versus5.0. m path reachability uses UNION, but prior edge-multiplicity key validation makes more than one nonempty occurrence of the selected key invalid; empty repeated maps cannot contribute a selected field.",
+    "CASAtomicity": "FOR UPDATE, expected revision/state/usage proof conflict return, immutable node insertion, transaction seals, usage ledger booking, root update and trigger path are outside the changed validation branch. Available current CAS/assert_graph/assert_data/guards are byte-equal to frozen original proposal functions. No reduction of original expected-state or usage acceptance guard was identified.",
+    "NEWRendererInteraction": "The NEW renderer changes the full output materialization implementation and retains its final UNIQUE KEYS, actual text length and actual native-size checks. The graph-projection branch returns before renderer output generation, but shares its complete bounds prefix. Accordingly new renderer compatibility is partly compositional; it does not by itself prove omitted final size confirmations redundant.",
+    "textBoundReasoning": "Leaf text size is measured from the actual normalized JSONB value. o/a recurrence includes container delimiters, child sizes, key quoted text and conservative separators; m/l removes child outer delimiters and adds separators only between nonempty children. NEW renderer uses the same child flatten/empty predicates and normalized leaf tokens. This supports text-size domination structurally, but no general native layout bound is certified here.",
+    "resourceRiskNotBenefit": "Projection still materializes all reachable bodies and arrays of object key sets. Shared subtrees and key-set aggregates may have their own work/memory cost. Avoiding one logical output value is not evidence of a reduced full-group memory peak."
+  },
+  "nativeBoundObligation": {
+    "leaf": "N(v)=pg_column_size(actual leaf JSONB), generated immutably at insertion.",
+    "explicitObjectOrArray": "N(o/a)=16+sum(N(child)+16+[UTF8 key bytes for o]).",
+    "flatteningMapOrList": "N(m/l)=16+sum(N(child)+16), with child-kind checks and edge multiplicity.",
+    "requiredImplication": "For every admissible generated immutable DAG accepted by projection, actual PostgreSQL17 JSONB rendering has pg_column_size(rendered_root)<=N(root), including compact object/array leaves, flattening, sorted object values, Numeric alignment, strings/escaped Unicode, empty containers and shared-edge occurrences. Bounds must also imply the unchanged per-node/cumulative caps.",
+    "whyHistoricalCaseCountsInsufficient": "Finite valid/invalid examples do not imply this statement for all admitted graphs; no genuine narrow counterexample was executed in this review.",
+    "nextMinimalStep": "Resolve this specific implication against authentic pinned PostgreSQL17 representation evidence and a bounded structural argument. If it cannot be proven with the current formula, keep OFF and determine the required conservative correction before any ON measurement. Any later narrow differential validation would require a separate Root instruction and must use current exact renderer/projection/CAS source pins; no old GO or historical case is reusable."
+  },
+  "memoryEvidenceBoundary": {
+    "historicalPairFromRetainedDocOnly": {
+      "OFFWholeGroupPeakBytes": 810905600,
+      "ONWholeGroupPeakBytes": 820375552,
+      "deltaBytes": 9469952,
+      "conclusion": "Memory-negative historical pair; projection remained OFF. Temp-I/O reduction is not RAM saving. No old acceptance reused."
+    },
+    "freshWritePhaseObservationFromRootTaskOnly": {
+      "wholeLifetimePeakBytes": 1039151104,
+      "increaseInsideRestoreCASHTTPBytes": 8060928,
+      "requestBodyBytes": 2458,
+      "nodeCount": 2,
+      "additions": 0,
+      "nodeRSS": "Reported stable",
+      "notIndependentlyReadHere": true
+    },
+    "interpretation": "A fresh bounded interval may motivate investigation but does not identify an allocator, actual active server branch, or remove the native-size obligation. Small CAS node delta still refers to the existing full reachable graph. Stable Node RSS does not prove all growth is PostgreSQL validation; no separate peaks are added and no current counters decompose the peak.",
+    "historicalLargestCall": "The old W45 doc calls padded-native-state-read the slowest call; latency maximum is not necessarily the whole-group memory peak phase.",
+    "separateRouteReviewReportedByRoot": {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/server-write-source-attribution/READONLY_FINDINGS.SAFE.json",
+      "bytes": 16766,
+      "sha256": "780c0aabd8792e771ca6e6e338f6e12e3f5834aa83e74818548cf68fbf44c035",
+      "actualGUC": "UNBEWIESEN",
+      "newReasonToRepeatEstablished": false,
+      "custody": "Root-supplied result/pin; not reaudited here to avoid overlap with launcher helper."
+    }
+  },
+  "minimalPrerequisitesBeforeConsideringONMeasurement": [
+    "Close the specific native-size domination implication above using authentic PostgreSQL17 evidence; no ON measurement can substitute for this safety argument.",
+    "Bind the conclusion to exact current projection/CAS/shared validator/generated-column guards and NEW renderer bodies; preserve default full-materialization oracle and immutable original source.",
+    "Any new technical reason and actual current branch/route must be established independently; Root reports the separate source/GUC review currently leaves this unproven.",
+    "Only after static safety closure and separate Root decision could a genuinely narrow current-source equivalence check or fair full-group comparison be considered. No preparation or start is authorized or supplied here."
+  ],
+  "actions": {
+    "subjectImports": false,
+    "syntaxASTOrTests": false,
+    "PostgreSQLLayoutInvestigation": false,
+    "newCaseOrLauncherPrepared": false,
+    "sourceOrGUCChanged": false,
+    "DockerPGNativeSQLGitProcessActions": false,
+    "originalPayloadRead": false,
+    "oldSafetyOrComparisonRerun": false,
+    "externalModelCalls": false,
+    "sourceOnlyOwnReportWrite": true
+  },
+  "custody": "Read-only source/evidence inputs; original files and all actual proofs preserved. Report creates no cleanup or measurement authority."
+}
