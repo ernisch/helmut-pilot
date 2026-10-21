@@ -1,5 +1,46 @@
 # Private Originalbindungen für CI vorbereiten
 
+## Wiederaufnahme22.10.2026 Europe/Istanbul
+
+**Weiter blockiert; noch kein geschützter Original-CI-Lauf.** Remote-main
+`1eb3cbff`, DraftPR927 unverändert `1c505ea1`; CI39682280922 scheitert weiterhin
+beim echten Renderer18/19, Browser/MobilePASS. Die neue Zielcloud enthält die83
+Originale noch nicht. Übergabepaket, Bericht und Rückdownloadbeleg sind vollständig
+SHA256-geprüft, alle18 Metadatendateien stimmen. Ein eigener Ziel-GPG-Empfänger
+wurde erzeugt; nur öffentlicher Schlüssel/Zielbericht wurden owner-only im bestehenden
+Driveordner gespeichert und bytegleich zurückgeladen. Private Schlüssel/Passphrase
+bleiben im Ziel. Originaltransfer und Datenbankwiederherstellung sind nicht bestätigt.
+Der Quellchat benötigt den öffentlichen Empfänger; im Ziel ist kein Werkzeug zum
+Senden eines Quellchat-Auftrags verfügbar.
+
+`HELMUT_GITHUB_CI_ADMIN_TOKEN` ist cloudseitig aktuell ready. Direkte HTTP-Abfragen
+mit diesem Zugang liefern auch nach gemeldeter Betreiberkorrektur403 bei
+Actionspermissions, main-Branchschutz und Environmentsecrets. Das belegt fehlende
+wirksame Rechte, weder die genaue Ursache noch den Tokentyp. Noch keine neue
+GitHub-Environment-/Secret-/Reviewer-Konfiguration und kein Originalupload zur CI.
+
+**Enger Schutzfix:** Vor der Wiederaufnahme erbten lokale Kindprozesse zusätzliche
+Cloud-Zugänge. Die zentrale Liste in `scripts/lokaler-netzschutz.js` entfernt nun auch
+`HELMUT_GITHUB_CI_ADMIN_TOKEN`, `GITHUB_TOKEN`, `GH_TOKEN`, `DEEPSEEK_API_KEY`,
+`HELMUT_ADMIN_SECRET`, `HELMUT_RUNTIME_READ_BEARER`,
+`VERCEL_AUTOMATION_BYPASS_SECRET` und `CRON_SECRET` über den bestehenden Starter.
+Die gezielte netzlose Schutzsuite besteht111/111Checks, darunter19 neue Prüfungen
+mit Attrappen: direkter Preload verweigert den Lauf, echte Kindprozesse erhalten
+keine dieser Kennungen, Meldungen enthalten keine Werte und die aufrufende
+Umgebung bleibt erhalten. Beide JS-SyntaxprüfungenPASS; unabhängiger begrenzter
+Diffreview ohne Befund. Das erteilt keine Freigabe für ungeprüften Code oder
+Originalbytes und ersetzt keine Originalverbraucher-/Pflicht-CI-Abnahme.
+
+Ein späterer geschützter Job kann den bereits vorhandenen `pull_request`-Trigger
+von `ci.yml` nutzen, ohne Workflowcode nach main zu mergen. Vor Freigabe müssen
+Revieweridentität, konkreter PR-Ref, tatsächlicher Run-/Workflow-/PR-Head-/Checkout-SHA
+und Manifesthash gebunden sein. Standard-PR-Checkout ist der synthetische Mergecommit,
+nicht automatisch der PR-Head. Ein bloßer Branchname oder ein isolierter
+`workflow_dispatch`-Erfolg ist kein vollständiger Pflichtchecknachweis. Die konkrete
+Konfiguration und Ergebnisbindung bleiben offen; die bisherigen Schutzgrenzen gelten.
+
+## Vorbereiteter Stand21.10.2026
+
 Stand21.10.2026: **Bereitstellung vorbereitet, GitHub-CI weiterhin blockiert.**
 Keine Workflowänderung, kein Upload, keine Secret-/Environmentänderung und kein
 neuer CI-Lauf gehören zu dieser Vorbereitung. Die bestehenden Prüfregeln bleiben

@@ -1,18 +1,22 @@
 # CURRENT STATE — Helmut
 
-**Lokal 21.10.2026 UTC; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
+**Lokal 22.10.2026 Europe/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 21.10., 21:50UTC: Blocker bearbeitet, weiterhin kein Startgrün
+## 22.10.: CI-Zielcloud vorbereitet, Originaltransfer offen
 
-Optionaler PostgREST-Owner samt Quellen-/Recipe-/Abschlussbindung integriert;
-gezielte reine Integrationsprüfungen PASS, native Abnahme noch offen. CAS-Observer
-bestätigt nur erfolgreiche Mutationen. Vercel-Preview275c137f tatsächlich READY.
-Private CI-Originalbindung bleibt FAIL/HTTP403; sicherer Provisionierer vorbereitet.
-Nach geschützter Einzelbereinigung15.227.342.848B frei, Admission15.179.779.720B:
-Plattenlücke geschlossen; Originale/Belege/Arbeitsstände erhalten. Unit60 am
-späten V12 benötigt noch einen getrennten Ein-Unit-Prüfvertrag. Altes Fenster
-21:30UTC abgelaufen, alle GOs verbraucht; kein neuer Voll500, kein Production.
-[Reparaturen, Prüfgrenzen und nächster Schritt](betrieb/helmut-blocker-integration-20261021.md).
+Neue Cloud: Übergabe/SHA256 geprüft; eigener GPG-Empfänger, öffentlicher
+Schlüssel/Zielbericht owner-only in Drive bytegleich zurückgeladen.
+83CI-Originale hier noch nicht übernommen. Cloud-Admin-Token ready, direkte
+GitHub-Admin-/Environmentabfragen weiter403, auch nach Betreiberkorrektur.
+Lokaler Credential-Erbschutz erweitert:111/111gezielte ChecksPASS, SyntaxPASS,
+unabhängiger Diffreview ohne Befund. Kein echter Originalverbraucher-/CI-Erfolg.
+[Schutzfix und Transferstand](betrieb/private-ci-original-provisioning-20261021.md).
+
+Owner-/Quellen-/Recipe-/Abschlussbindung integriert, native Abnahme offen.
+Quellstand21.10.:15.227.342.848B frei/15.179.779.720B Admission nach Einzelbereinigung;
+kein aktueller Ziel-Admissionbeleg. Unit60 spätV12 braucht getrennten Ein-Unit-Vertrag.
+Alle GOs verbraucht; kein Voll500/Production/Merge.
+[Vorheriger Integrationsstand](betrieb/helmut-blocker-integration-20261021.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
