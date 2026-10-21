@@ -1,0 +1,448 @@
+{
+  "atUTC": "2026-10-21T05:22:00.409553+00:00",
+  "blockers": [],
+  "capacity": {
+    "conservativeEstimateAfter2MiBProofBudgetBytes": 30158848,
+    "currentPreparationAndReviewRegularAllocatedBytesBeforeReport": 1155072,
+    "filesystem": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/git-helper-sparse-actual-review",
+    "freeBytes": 15184416768,
+    "fullAdmissionBytes": 15179779720,
+    "grossHistoricalSelectedAllocatedBytes": 32256000,
+    "hostFloorBytes": 8589934592,
+    "isolatedGlobalNetGainClaim": false,
+    "limit": "Free space is a concurrent filesystem snapshot, before writing this report; narrow full-admission comparison does not authorize or establish a future full500 run.",
+    "marginBytes": 4637048,
+    "meetsFullAdmissionAtSnapshot": true,
+    "preparationBudgetBytes": 2097152,
+    "recordedPerActionGlobalDfDeltaBytes": [
+      10850304,
+      10850304,
+      10850304
+    ],
+    "snapshotAtUTC": "2026-10-21T05:22:00.409553+00:00",
+    "sustainedCapacityOrReserveProof": false
+  },
+  "checks": {
+    "all10ClosureAndMainFixturePinsUnchanged": true,
+    "all1680SelectedPathsAbsent": true,
+    "all616RetainedFilesFullBytesModesAndMetadataUnchanged": true,
+    "allForeignIndexTransitionsMatchOrderedActions": true,
+    "allHEADsBranchesRefsAndLogicalIndexesPreserved": true,
+    "allLocalRecoveryBlobHeadersPresent": true,
+    "checkNonceAndOnceClaimPins": true,
+    "distinctFresh180SecondAdoptions": true,
+    "exactOnlySkipFlagsAndPatternsChanged": true,
+    "exactThreeTargets": true,
+    "mainAndHelperIndexesUnchangedDuringReview": true,
+    "mainRIndexConfigAndHEADByteUnchanged": true,
+    "noIndexLockLeft": true
+  },
+  "currentLiveClosurePins": [
+    {
+      "bytes": 49735,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/PREPARED.SAFE.json",
+      "sha256": "fd846c435352b0280c8607995f3d55a690f72094a0bfde17949cdef04c7375ad"
+    },
+    {
+      "bytes": 46155,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+      "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+    },
+    {
+      "bytes": 22169,
+      "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/auth-state-parts.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/llm-usage-atomic.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 142381,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/fixtures/b055-storage-e7501a4b.js.gz",
+      "sha256": "7c7441af2fc98590e0d41b99a0ea0d881cf49bf7507b7c9422a4047e4bcbad05"
+    },
+    {
+      "bytes": 40113,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/fixtures/berlin-rbmskzl-baergpt-1720589-20261001.html",
+      "sha256": "5e31bcfc52bc102e90eb82d20f11e39e00ff3a4f515ba9b89845d78ab01db2cc"
+    },
+    {
+      "bytes": 92070,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/fixtures/brandenburg-landtag-termine-50253-20261002.html",
+      "sha256": "d7f599680e256e61dceaec974a3bb08ea033867e3976d4c72bf941f09d2122e3"
+    },
+    {
+      "bytes": 116656,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/fixtures/embedding-testset-22b.json",
+      "sha256": "94f6ad8c81f265d0236781daa8662ce4af34511a728646bc4fe53983ec607dc6"
+    },
+    {
+      "bytes": 98982,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/fixtures/seeds-vor-pr118/20260713_source_architecture_seed.sql",
+      "sha256": "afcf4edd5540cb1d96e3a92db8dfa4fd643baebe0fed4b8847e2efa079e245ea"
+    },
+    {
+      "bytes": 13897,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/fixtures/seeds-vor-pr118/20260717_landesmodul_be_bb_seed.sql",
+      "sha256": "dd02286811730d0fa2f74bb07a61542551f30d692b5c245da84faa13bbf57db5"
+    }
+  ],
+  "executed": {
+    "caseProofPayloadReads": 0,
+    "networkOrModelCalls": 0,
+    "queries": 0,
+    "readOnlyGitCommands": {
+      "branch": 3,
+      "cat-file": 3,
+      "ls-files": 6,
+      "ls-tree": 3,
+      "rev-parse": 12,
+      "show-ref": 3
+    },
+    "repositoryWrites": 0,
+    "resourceStarts": 0,
+    "sparseMutations": 0,
+    "subjectImports": 0,
+    "subjectSourceExecutions": 0,
+    "tests": 0
+  },
+  "full500": false,
+  "independentSourceReviewPin": {
+    "bytes": 5146,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-independent-review/V2_SOURCE_REVIEW.SAFE.json",
+    "sha256": "a82995f40b284990f129854e5553bd96cc87def659f6cb0f0de9087145ac05ed"
+  },
+  "inventoryPin": {
+    "bytes": 853848,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation/INVENTORY.PRIVATE.json",
+    "sha256": "ce80c721885d4752d5b34d0440022597fcc09e0357befdcdc134c4f9c8067ee3"
+  },
+  "planPin": {
+    "bytes": 3623,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/PLAN.SAFE.json",
+    "sha256": "0205d4ab8a8d40a57769d4a829cb0ed689bef76dbe100549dc30b611c18cc4e2"
+  },
+  "poisonedSelectorCheck": {
+    "actualSparseCommandPoisoningClaimed": false,
+    "keys": [
+      "GIT_INDEX_FILE",
+      "GIT_CONFIG_COUNT",
+      "GIT_WORK_TREE"
+    ],
+    "recordedChecks": 3,
+    "result": "All three pinned Root adoptions record actual fresh child checks exit0 and external selector path remaining absent. Actor and Root writer bytes bind the check. Random external paths are not recorded; their historical absence is receipt-backed, not independently rediscovered.",
+    "reviewerReplayedChecks": false
+  },
+  "preparedPin": {
+    "bytes": 3039,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/PREPARED.SAFE.json",
+    "sha256": "c1a330d232a338e9e743fb2f9d471128a19572c231816881a2f0f15e51b515a2"
+  },
+  "preservedMainGitPins": [
+    {
+      "bytes": 275180,
+      "path": "/workspace/helmut-pilot/.git/worktrees/helmut-cpu-epoch-20261015/index",
+      "sha256": "17d5b28084c10ae013bdbea66436e83cee03a0b02f66d0955e08da1c2211f5fa"
+    },
+    {
+      "bytes": 83,
+      "path": "/workspace/helmut-pilot/.git/worktrees/helmut-cpu-epoch-20261015/config.worktree",
+      "sha256": "443a5f645c23c3d0c0aa09f634b2ad111d46ef61946b598a2fb311678ab47454"
+    },
+    {
+      "bytes": 65,
+      "path": "/workspace/helmut-pilot/.git/worktrees/helmut-cpu-epoch-20261015/HEAD",
+      "sha256": "1f39c1db2d392d827145312a9265157d55f647d1af1df5f13c3a0c62d1c66f23"
+    }
+  ],
+  "priorEndReviewPin": {
+    "bytes": 273241,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/END_REVIEW.SAFE.json",
+    "sha256": "f7bf336a83e6ae82e3bbdc9d84a3bf619b0b1621bd868dceaea357c4c0080700"
+  },
+  "priorEndReviewReuse": "Previously accepted 483 case proofs, native evidence and retirement state were not reread; this bounded cleanup review changes no earlier acceptance or limit.",
+  "production": false,
+  "receiptChains": [
+    {
+      "actualPin": {
+        "bytes": 3431,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-0.ACTUAL.SAFE.json",
+        "sha256": "de23b06ceef1f8ec6667f9af74ea3e530810c489998d9e79f6559ad85ca36446"
+      },
+      "adoptionPin": {
+        "bytes": 2587,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-0.ROOT_ADOPTION.SAFE.json",
+        "sha256": "4691ff18cef6925e6209ee3b4ee215e8a759ee9e598629dd1e38a4861aadba34"
+      },
+      "adoptionToActualSeconds": 3.510895013809204,
+      "checkToActualSeconds": 3.5266082286834717,
+      "checkedNonce": "3c9c933727dd430c8639fca45dea3fd0",
+      "checkedPin": {
+        "bytes": 3520,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-0.CHECKED.SAFE.json",
+        "sha256": "8ef5d1caf280349efa1522886a260538b0cc7f1e14d5051abfcbd5934be9a245"
+      },
+      "gitResultPin": {
+        "bytes": 79,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-0.GIT_RESULT.SAFE.json",
+        "sha256": "8e28c94fc490c0337a9cb6a0cc09a5c5a7c4db87d4bb19bcc519f312029ef81d"
+      },
+      "head": "67b5c4ef8ccd482d726126f8bbc41a00ee4151a3",
+      "index": 0,
+      "nonce": "1ded62f313df4ff8b197f75b1028658b",
+      "oncePin": {
+        "bytes": 3270,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-0.ONCE_CLAIM.SAFE.json",
+        "sha256": "470f0302d8541218ddb7b18449b96416d84e3449a087d0cc422a94903f7bb6b6"
+      },
+      "recordedFreeAfterBytes": 15162777600,
+      "recordedFreeBeforeBytes": 15151927296,
+      "recordedGlobalDfDeltaBytes": 10850304,
+      "recordedTTLSeconds": 180,
+      "worktree": "/workspace/helmut-control-cache-sol-20261020"
+    },
+    {
+      "actualPin": {
+        "bytes": 3443,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-1.ACTUAL.SAFE.json",
+        "sha256": "166ffa4950767c8b048e6ef65fed86241ba50797603c925310ea25bd0dc5f49a"
+      },
+      "adoptionPin": {
+        "bytes": 2581,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-1.ROOT_ADOPTION.SAFE.json",
+        "sha256": "d4998fb89568a8983fdf5d7aa383c8870919d26a7bae9fb0b92ca9d885f96555"
+      },
+      "adoptionToActualSeconds": 3.4225149154663086,
+      "checkToActualSeconds": 3.4338219165802,
+      "checkedNonce": "1d8e6ff2952744a28f87ad7af575e433",
+      "checkedPin": {
+        "bytes": 3532,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-1.CHECKED.SAFE.json",
+        "sha256": "e24f3ccdb3ea1af8e03382105ea73b196dfd8bba558b800a2ff65a11095922c2"
+      },
+      "gitResultPin": {
+        "bytes": 79,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-1.GIT_RESULT.SAFE.json",
+        "sha256": "8e28c94fc490c0337a9cb6a0cc09a5c5a7c4db87d4bb19bcc519f312029ef81d"
+      },
+      "head": "227a9fafafa928c664fd380ad8860176d4422556",
+      "index": 1,
+      "nonce": "772bcd3a00064779a6769b16253a3e5e",
+      "oncePin": {
+        "bytes": 3288,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-1.ONCE_CLAIM.SAFE.json",
+        "sha256": "aea9ecf85123cb8542455f3e9c9aa2662fb663f002402e6d41e45860f71a4fc6"
+      },
+      "recordedFreeAfterBytes": 15173615616,
+      "recordedFreeBeforeBytes": 15162765312,
+      "recordedGlobalDfDeltaBytes": 10850304,
+      "recordedTTLSeconds": 180,
+      "worktree": "/workspace/helmut-srf-fix-sol-20261020"
+    },
+    {
+      "actualPin": {
+        "bytes": 3427,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-2.ACTUAL.SAFE.json",
+        "sha256": "67b5b58e7379cb0d06c81284c033afd7ed2390d106312b03a846f090e6006368"
+      },
+      "adoptionPin": {
+        "bytes": 2587,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-2.ROOT_ADOPTION.SAFE.json",
+        "sha256": "f6597bceada9509d3b14d0c779b4ecd46c2f53152f9be1870102b4ef0651eff8"
+      },
+      "adoptionToActualSeconds": 3.290645122528076,
+      "checkToActualSeconds": 3.3004605770111084,
+      "checkedNonce": "df872e3501a84a58a0f32d0ec55dc5aa",
+      "checkedPin": {
+        "bytes": 3516,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-2.CHECKED.SAFE.json",
+        "sha256": "09b482ecbec6b61515d6952ed631f26a8b04c723b4644e39253c77b61eb74576"
+      },
+      "gitResultPin": {
+        "bytes": 79,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-2.GIT_RESULT.SAFE.json",
+        "sha256": "8e28c94fc490c0337a9cb6a0cc09a5c5a7c4db87d4bb19bcc519f312029ef81d"
+      },
+      "head": "c8624f7c875a4f6f849d83951898c5e205833a6e",
+      "index": 2,
+      "nonce": "25aea9cb0ec24c0bb7d5b3a260de8610",
+      "oncePin": {
+        "bytes": 3264,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-2.ONCE_CLAIM.SAFE.json",
+        "sha256": "feed973de8253ee20e0f6f001b7677f9ff15c29e237082a99d0ee2b1eb02eb32"
+      },
+      "recordedFreeAfterBytes": 15184453632,
+      "recordedFreeBeforeBytes": 15173603328,
+      "recordedGlobalDfDeltaBytes": 10850304,
+      "recordedTTLSeconds": 180,
+      "worktree": "/workspace/helmut-control-integration-20261019"
+    }
+  ],
+  "recovery": {
+    "historicalActorsRepeated": false,
+    "independentlyVerified": "Current path/blob/mode mapping against HEAD and full logical index; local object type/size availability with lazy fetch disabled; retained working-file payload SHA256 and Git blob hashes.",
+    "mapping": "Each selected row gives worktree-relative path,immutable blob/gitMode,SHA256/size/metadata. Before any historical rerun,explicitly restore chosen path by a separately reviewed sparse inclusion at the recorded HEAD or by exclusive materialization from the exact retained local blob and verify the recorded SHA/size/mode. Never repeat spent historical actors.",
+    "restorationExecuted": false,
+    "reusedRootActualVerification": "The pinned reviewed actor rehashed every selected local blob payload before and after each action against inventory SHA256, size and Git blob ID. These full selected-object payload rehashes are reused, not duplicated by this reviewer.",
+    "uniqueSelectedBlobBytes": 10163329,
+    "uniqueSelectedBlobs": 564
+  },
+  "resultPins": [
+    {
+      "bytes": 3431,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-0.ACTUAL.SAFE.json",
+      "sha256": "de23b06ceef1f8ec6667f9af74ea3e530810c489998d9e79f6559ad85ca36446"
+    },
+    {
+      "bytes": 3443,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-1.ACTUAL.SAFE.json",
+      "sha256": "166ffa4950767c8b048e6ef65fed86241ba50797603c925310ea25bd0dc5f49a"
+    },
+    {
+      "bytes": 3427,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/worktree-2.ACTUAL.SAFE.json",
+      "sha256": "67b5b58e7379cb0d06c81284c033afd7ed2390d106312b03a846f090e6006368"
+    }
+  ],
+  "reviewScope": "Independent read-only actual receipt chain and current live helper metadata/bytes/Git state for exactly three completed sparse actions.",
+  "rootOuterToolReceipts": {
+    "chunks": [
+      "e15b56",
+      "cf3644",
+      "c8e4d9"
+    ],
+    "exits": [
+      0,
+      0,
+      0
+    ],
+    "provenance": "Root-provided completion observations; reviewer independently verified pinned GIT_RESULT exit0 and live postconditions."
+  },
+  "schema": "helmut-three-helper-sparse-independent-actual-review/1",
+  "sourcePin": {
+    "bytes": 18524,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/git-helper-sparse-preparation-v2/sparse_three_completed_helpers.py",
+    "sha256": "5e49341fe7df5561626bfd57f7fbdd484803f4607b88fdb77205b29860c6a287"
+  },
+  "status": "PASS",
+  "verifierSourcePin": {
+    "bytes": 23796,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/git-helper-sparse-actual-review/verify_actual.py",
+    "sha256": "c6f813a97bcb44b26decbd6f40b59150686c2fd4aac2766168ed89d4a7a12a2a"
+  },
+  "worktrees": [
+    {
+      "allRefsSHA256": "85cb8781f1312ae6612a502864e511dc61d58a16ac978e68f272b7ddc21b692b",
+      "branch": "codex/bounded-control-cache-20261020",
+      "commonConfigPin": {
+        "bytes": 806,
+        "path": "/workspace/helmut-pilot/.git/config",
+        "sha256": "99cdcd7dc681596eede0c9bd5e6bc284df838993a634be02ed8d83291db124ae"
+      },
+      "currentFlagsSHA256": "6a8df522cc4b2b302c10fc452da8df0bbaf6a2d3a1de7fb29c0e2663311d0513",
+      "currentPatternsPin": {
+        "bytes": 58264,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-cache-sol-20261020/info/sparse-checkout",
+        "sha256": "080650873996685213c8d2d0724920d878fa76d30a880a0409c31b4cd46e8b9b"
+      },
+      "currentPhysicalIndexPin": {
+        "bytes": 248782,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-cache-sol-20261020/index",
+        "sha256": "27aeab51a38e2637caf0693abb7459ea5e25e9079eef14b21b8c41e20e3f7cd4"
+      },
+      "currentSkipFiles": 1960,
+      "head": "67b5c4ef8ccd482d726126f8bbc41a00ee4151a3",
+      "index": 0,
+      "localRecoveryBlobHeadersVerified": 560,
+      "logicalIndexEntries": 2209,
+      "logicalIndexSHA256": "ad1fb1739fa7611270e44eb923286dc2a447c911342cbbf38caa9650037349df",
+      "originalSkipFiles": 1400,
+      "privateConfigPin": {
+        "bytes": 82,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-cache-sol-20261020/config.worktree",
+        "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+      },
+      "retainedBytesAndFullMetadataVerifiedFiles": 249,
+      "retainedFileBytes": 2927226,
+      "selectedAbsentFiles": 560,
+      "selectedHistoricalAllocatedBytes": 10752000,
+      "worktree": "/workspace/helmut-control-cache-sol-20261020"
+    },
+    {
+      "allRefsSHA256": "85cb8781f1312ae6612a502864e511dc61d58a16ac978e68f272b7ddc21b692b",
+      "branch": "codex/cold-read-hash-projection-20261020",
+      "commonConfigPin": {
+        "bytes": 806,
+        "path": "/workspace/helmut-pilot/.git/config",
+        "sha256": "99cdcd7dc681596eede0c9bd5e6bc284df838993a634be02ed8d83291db124ae"
+      },
+      "currentFlagsSHA256": "3c3713cc67771b6ff599132f044f657ba6705f709ff74a11f8eb07186780e791",
+      "currentPatternsPin": {
+        "bytes": 58264,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-srf-fix-sol-20261020/info/sparse-checkout",
+        "sha256": "080650873996685213c8d2d0724920d878fa76d30a880a0409c31b4cd46e8b9b"
+      },
+      "currentPhysicalIndexPin": {
+        "bytes": 240636,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-srf-fix-sol-20261020/index",
+        "sha256": "8ccb6201cb24031cb4367ef50a725e57e8faa7d1dd35e8cb7c80a1e3765a0dc7"
+      },
+      "currentSkipFiles": 1954,
+      "head": "227a9fafafa928c664fd380ad8860176d4422556",
+      "index": 1,
+      "localRecoveryBlobHeadersVerified": 560,
+      "logicalIndexEntries": 2154,
+      "logicalIndexSHA256": "01481d8cf5a1fa1261d3950627cc6933a5df20f9113222d34c38d4cc028098cd",
+      "originalSkipFiles": 1394,
+      "privateConfigPin": {
+        "bytes": 82,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-srf-fix-sol-20261020/config.worktree",
+        "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+      },
+      "retainedBytesAndFullMetadataVerifiedFiles": 200,
+      "retainedFileBytes": 2128843,
+      "selectedAbsentFiles": 560,
+      "selectedHistoricalAllocatedBytes": 10752000,
+      "worktree": "/workspace/helmut-srf-fix-sol-20261020"
+    },
+    {
+      "allRefsSHA256": "85cb8781f1312ae6612a502864e511dc61d58a16ac978e68f272b7ddc21b692b",
+      "branch": "codex/control-fullpath-integration-20261019",
+      "commonConfigPin": {
+        "bytes": 806,
+        "path": "/workspace/helmut-pilot/.git/config",
+        "sha256": "99cdcd7dc681596eede0c9bd5e6bc284df838993a634be02ed8d83291db124ae"
+      },
+      "currentFlagsSHA256": "6831cfb5c84ca43af295f6d1d93afb5a54d5685aa145dfe034a6579ac08a8094",
+      "currentPatternsPin": {
+        "bytes": 58264,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-integration-20261019/info/sparse-checkout",
+        "sha256": "080650873996685213c8d2d0724920d878fa76d30a880a0409c31b4cd46e8b9b"
+      },
+      "currentPhysicalIndexPin": {
+        "bytes": 235219,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-integration-20261019/index",
+        "sha256": "06f65d85e475efa742c895f5d6a5e1cf3d9b702059cdb2ee79c7d1f6eafbb9e8"
+      },
+      "currentSkipFiles": 1944,
+      "head": "c8624f7c875a4f6f849d83951898c5e205833a6e",
+      "index": 2,
+      "localRecoveryBlobHeadersVerified": 560,
+      "logicalIndexEntries": 2111,
+      "logicalIndexSHA256": "e2810dd752749d8d2dd529ed7aeb7fd90a63a3306e33889d96b423d099f6ba5c",
+      "originalSkipFiles": 1384,
+      "privateConfigPin": {
+        "bytes": 82,
+        "path": "/workspace/helmut-pilot/.git/worktrees/helmut-control-integration-20261019/config.worktree",
+        "sha256": "3d99a66c75b1dc4cc16501fcc80895a021ecda8892b3bf2925d783c503d42a1b"
+      },
+      "retainedBytesAndFullMetadataVerifiedFiles": 167,
+      "retainedFileBytes": 1796738,
+      "selectedAbsentFiles": 560,
+      "selectedHistoricalAllocatedBytes": 10752000,
+      "worktree": "/workspace/helmut-control-integration-20261019"
+    }
+  ]
+}

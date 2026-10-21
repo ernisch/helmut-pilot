@@ -1,0 +1,986 @@
+{
+  "actualCanonicalLoadedBytesCheckedBy": [
+    "worker",
+    "Node"
+  ],
+  "automaticDeletion": false,
+  "automaticRetry": false,
+  "automaticSequenceExecution": false,
+  "bodySourceProvenancePin": {
+    "bytes": 3859,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/BODY_SOURCE_PROVENANCE.SAFE.json",
+    "sha256": "a2d2fa66469ac562f6ca75530bdab0c3e4134f75b9e95c1e698b91705cb99acf"
+  },
+  "candidateCommit": "67b5c4ef8ccd482d726126f8bbc41a00ee4151a3",
+  "candidatePreparedPin": {
+    "bytes": 4265,
+    "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/PREPARED.SAFE.json",
+    "sha256": "5ce7e3658d7ef9e33631879992224d9cd78ac34b6ce09f01dd50580b330275b8"
+  },
+  "canonicalSourcePaths": {
+    "Parts": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/auth-state-parts.js",
+    "U": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js"
+  },
+  "caseRoot": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases",
+  "casesOutsideGitWorktrees": true,
+  "comparisonScope": "COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY",
+  "conservativeDiskAdmissionBytes": 822083584,
+  "containersStarted": 0,
+  "controlContract": {
+    "authRPCCount": 27,
+    "automaticRetry": false,
+    "compressedCodecExtraObservation": false,
+    "controlKeys": [
+      "synthetik500DispatchJournal",
+      "synthetik500KostenAdmission",
+      "testKostenAuftrag",
+      "testKostenTage"
+    ],
+    "controlRead": "verified-control-view-v1",
+    "controlReadCount": 18,
+    "controlViewsHaveSnapshot": false,
+    "controlsPerCycle": 6,
+    "cycles": 3,
+    "driverRetainsFullAuthAcrossControls": false,
+    "expandedLogicalBoundBytes": 268435456,
+    "extraFullAuthSerialization": false,
+    "fullReadCount": 5,
+    "graphReuse": "off",
+    "historyReuse": "verified-history-reuse-v1",
+    "historyRows": 6000,
+    "observer": "exact controlText function name plus pinned canonical module frame; no source-line dependency",
+    "observerCallsOriginalOnceSameArgumentsReturn": true,
+    "probeField": "localWorkingSetProbe",
+    "probeMutations": 3,
+    "probeScope": "LOCAL_CONTROL_CACHE_COMPARISON",
+    "providerCalls": 0,
+    "realHTTP": "exact27 selected-U accepted callbacks;27 passive real sends;27 complete passive responses",
+    "restoreWrites": 1,
+    "retainedPayloadCapBytes": 2097152,
+    "singleCapture": "off",
+    "symmetricAdditionalLogicalFieldHistoryHashWorkIncluded": true,
+    "writeCount": 4
+  },
+  "cycleObservation": {
+    "atomicPublication": true,
+    "combinedClientCaptureBytes": 262144,
+    "exactFields": [
+      "schema",
+      "sequence",
+      "round",
+      "edge",
+      "nodePID"
+    ],
+    "forcedGC": false,
+    "forcedStatsFlush": false,
+    "group": [
+      "memory.current",
+      "memory.peak",
+      "memory.stat",
+      "memory.events",
+      "cpu.stat",
+      "io.stat"
+    ],
+    "lockTimeoutSeconds": 1,
+    "markers": 6,
+    "metricsSQLPin": {
+      "bytes": 763,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/cycle-metrics.sql",
+      "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+    },
+    "nodeNaturalGCObserved": true,
+    "overheadIncluded": true,
+    "perFetchMaxSeconds": 20,
+    "postgresStatisticsMayLag": true,
+    "processes": [
+      "captured Node PID",
+      "owned postgres PID",
+      "owned PostgREST PID"
+    ],
+    "sameCapturedNodePIDRequired": true,
+    "separateProcessMemoryNotSummed": true,
+    "sqlInsideUnchangedClient30Seconds": true,
+    "statementTimeoutSeconds": 30,
+    "unreadableProcessData": "explicit unknown, never zero"
+  },
+  "derivedPGDATAClassification": {
+    "FAILOrUnknownRetained": true,
+    "automaticDeletion": false,
+    "cleanupCodeAdded": false,
+    "eligibleForDeletionNow": false,
+    "fullPhysicalWALArchiveForEveryPASSRequired": false,
+    "futureBaselineOrInput": false,
+    "harnessPreservesTargetByDefault": true,
+    "kind": "EXPENDABLE_LOCAL_WORKING_COPY",
+    "necessaryArtifactPreservationDeterminedByRoot": true,
+    "original": false,
+    "schema": "helmut-ephemeral-local-working-pgdata/1",
+    "separateRootCleanupOnlyAfter": [
+      "actual PASS",
+      "complete retained measurement and integrity evidence",
+      "full Auth/history/catalog restoration evidence",
+      "all owned process closure and unchanged source proof",
+      "Root dependency and unknown-use review with no needed state or sole evidence lost",
+      "fresh exact-target Root action"
+    ],
+    "sourceCanonicalManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "sourceEvidenceHullsImagesVolumesLoopsProtected": true,
+    "sourcePermanentRetention": true
+  },
+  "engineSourcePin": {
+    "bytes": 18910,
+    "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_read_bounded_local.sql",
+    "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5"
+  },
+  "expectedRootOrder": [
+    "lifecycle-only:NONE",
+    "control-cache:OLD",
+    "control-cache:NEW",
+    "control-cache:NEW",
+    "control-cache:OLD"
+  ],
+  "explicitModes": [
+    "lifecycle-only",
+    "control-cache"
+  ],
+  "explicitVariants": [
+    "NONE",
+    "OLD",
+    "NEW"
+  ],
+  "files": [
+    {
+      "bytes": 3859,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/BODY_SOURCE_PROVENANCE.SAFE.json",
+      "sha256": "a2d2fa66469ac562f6ca75530bdab0c3e4134f75b9e95c1e698b91705cb99acf"
+    },
+    {
+      "bytes": 22169,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/COMMON_PARTS.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "bytes": 13047,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_GRAPH.sql",
+      "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+    },
+    {
+      "bytes": 17398,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    {
+      "bytes": 12787,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_GRAPH.sql",
+      "sha256": "7bb6124122903387b721929f99310a8044291c5cc3e12b1f34b674c081eb72cd"
+    },
+    {
+      "bytes": 13841,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_RENDERER.sql",
+      "sha256": "f973ad6b1a617d8b73f3b92df2997a8be7313665c6b26856b8a3c333eb6277e1"
+    },
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/NEW_U.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 23685,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/OLD_U.PRIVATE.js",
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "bytes": 18650,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_AUTH_READ_SOURCE.PRIVATE.sql",
+      "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
+    },
+    {
+      "bytes": 51381,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    {
+      "bytes": 22149,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_PARTS.PRIVATE.js",
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+    },
+    {
+      "bytes": 9170,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/README.md",
+      "sha256": "2cf4d0960a0da2a00b12cb78dded83c206ce6ec77b1e062baaebf13c98de99c2"
+    },
+    {
+      "bytes": 3426,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/SCOPE.SAFE.json",
+      "sha256": "45545d04ffa56baf1c0d7b778c9676699eaa48d8f850b69912f97f5b35f30cb7"
+    },
+    {
+      "bytes": 499,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/SHUTDOWN_POLICY.SAFE.json",
+      "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+    },
+    {
+      "bytes": 12286,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/catalog.sql",
+      "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+    },
+    {
+      "bytes": 19607,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/common.py",
+      "sha256": "79029bfcf02e4f6029a9730d6f855cc93206592632ee245c4e72a73e6c6e1a26"
+    },
+    {
+      "bytes": 18175,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/control-driver.js",
+      "sha256": "c612e2b7f5b047fb2630486c242fddf09d765add84d2fb4157d60d98b12d4b51"
+    },
+    {
+      "bytes": 763,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/cycle-metrics.sql",
+      "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+    },
+    {
+      "bytes": 9220,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/postgrest_lifecycle.py",
+      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+    },
+    {
+      "bytes": 24627,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/run.py",
+      "sha256": "aaaf5a5843a29b2413273bd202044716db176e8fedea72e93d7584affda3eaba"
+    },
+    {
+      "bytes": 869,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/small-auth.sql",
+      "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+    },
+    {
+      "bytes": 38023,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/worker.py",
+      "sha256": "6e899a9ea1f7f685777797ed65b0c32e189469e6e2e6673f77ef28dbb48c6996"
+    }
+  ],
+  "freshSeparateRootAdoptionPerCase": true,
+  "full500": false,
+  "historicalCasesAndEvidenceChanged": false,
+  "hostFreeFloorBytes": 8589934592,
+  "hostOnlyInputPins": [
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 22169,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/auth-state-parts.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    }
+  ],
+  "independentReview": "PENDING_ROOT_COORDINATED_CRITICAL_REVIEW",
+  "jitSocketOnlyTmpfsBytes": 268435456,
+  "largeRuntimePinsInheritedStatOnly": [
+    {
+      "bytes": 30894944,
+      "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+      "sha256": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7"
+    },
+    {
+      "bytes": 125989464,
+      "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+    },
+    {
+      "bytes": 17309560,
+      "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/postgrest-pinned",
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617"
+    }
+  ],
+  "lifecycleBodyVariant": "NEW",
+  "lifecycleHostMapping": {
+    "actualResult": "exact CASES/control-24hex/ACTUAL_RESULT.SAFE.json",
+    "crossCasePath": false,
+    "fallbackPath": false,
+    "globalBenchAlias": false,
+    "readonlyMountsAndWorkerValidation": "three exact HOST proof pins returned by lifecycle_file_pins",
+    "sameFrozenPolicySelectionRequiredInActualResultAndWorker": true,
+    "storedWorkerStopPath": "/bench/POSTGREST_STOP.SAFE.json",
+    "symlinkAllowed": false,
+    "translatedHostStop": "exact SAME adopted case/POSTGREST_STOP.SAFE.json; identical bytes/SHA",
+    "workerResult": "exact SAME adopted case/WORKER_RESULT.SAFE.json"
+  },
+  "measurementClaims": {
+    "ABBAExecuted": false,
+    "coldOSCacheClaimed": false,
+    "forcedGC": false,
+    "full500OrReserveProven": false,
+    "integration179Qualified": false,
+    "nativePeakIsWholeLifetimeDiagnostic": true,
+    "peakReset": false,
+    "plateauClaimed": false,
+    "ramSavingClaimed": false
+  },
+  "metadataAndCodeInputs": [
+    {
+      "bytes": 125989464,
+      "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+    },
+    {
+      "bytes": 30894944,
+      "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+      "sha256": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7"
+    },
+    {
+      "bytes": 22169,
+      "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/auth-state-parts.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/llm-usage-atomic.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 3617,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/auth-store-cas.js",
+      "sha256": "92cba40816bb8cf8919db846d31b736a77b28e3e8d6d24712646bd0509755dd4"
+    },
+    {
+      "bytes": 44900,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/canonical-content-facts.js",
+      "sha256": "6b76d6637195dedb7c7c304ba42cc1627c8f798d0110c603b10c16259f1406d3"
+    },
+    {
+      "bytes": 3619,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/canonical-sha-byte-writer.js",
+      "sha256": "59f8b86d5533b3e6770259b79a42382b8bcfbb3a62586da032b664c48a1a9c08"
+    },
+    {
+      "bytes": 3921,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/streaming-canonical-hash.js",
+      "sha256": "c33f6002e047041b69f9c37c6eae0c9bbd59db5c05ce2b97285f42d03162ec20"
+    },
+    {
+      "bytes": 29127,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/synthetik-500-cpu-epoch.js",
+      "sha256": "4d4e840b41a9cf077830c3234b69a274213d62f1dd20609df82b53392209490a"
+    },
+    {
+      "bytes": 4913,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/synthetik-500-eu-service-contract.js",
+      "sha256": "a122b6c1eebe1b29f7f2a0a423d7417ab643d93e8a22085ab98e790a225711d5"
+    },
+    {
+      "bytes": 5466,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/synthetik-500-profile.js",
+      "sha256": "079e104ee46da4e9e68fdd34435d4d2ac331e2261b88aa42389434e1e24ac4ba"
+    },
+    {
+      "bytes": 6927,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/http-framing.js",
+      "sha256": "4bf65bcc29d5baa0a952ee58e5d8942ece0ac6ce0aaf11a19632142b66fb07f4"
+    },
+    {
+      "bytes": 7988,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/http-meter.js",
+      "sha256": "21674e42939824e7886a41b62d906bb5b6ecb8cd46e3cd544241615cf6302652"
+    },
+    {
+      "bytes": 6447,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/kernel-meter.py",
+      "sha256": "e1f05e4a38d7cbe508a43d8532c4eb06adc2d4581de4c68ec43bc4011776bc44"
+    },
+    {
+      "bytes": 2998,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget-helper.c",
+      "sha256": "4ed3d5a0f5cf7be074445a14884565b6e43453981a2d3bfc666ecb54a02c037a"
+    },
+    {
+      "bytes": 19434,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget.py",
+      "sha256": "66b4c432f687445763074a6b2432533c9305cadc09a17a94bf45507d419fd4af"
+    },
+    {
+      "bytes": 3537,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget.js",
+      "sha256": "09a00f44d94c512fca22bb6a7447adf8a139e8967c618acb72166a29132ff329"
+    },
+    {
+      "bytes": 18910,
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_read_bounded_local.sql",
+      "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5"
+    },
+    {
+      "bytes": 54938,
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    {
+      "bytes": 17538,
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_usage_atomic_local.sql",
+      "sha256": "5fdd3c81cf86c4f03208974bb9fd1f26d355dfaf53520f08de64292581a39e05"
+    },
+    {
+      "bytes": 17309560,
+      "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/postgrest-pinned",
+      "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617"
+    },
+    {
+      "bytes": 828,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-component-shell/SOURCE.SAFE.json",
+      "sha256": "ba4f22caca93194c0343c00edab9c6e628d13d7755486f64f237b4fcad9c3a23"
+    },
+    {
+      "bytes": 207733,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/READONLY_RUNTIME_BINDINGS.SAFE.json",
+      "sha256": "71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475"
+    },
+    {
+      "bytes": 481,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-budget-implementation-qualification-v2/runtime/RUNTIME.SAFE.json",
+      "sha256": "a16d045b223ef8b9f7525d97ede4596468501510f0ce71263a5ce2bddf42127e"
+    },
+    {
+      "bytes": 35837,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "sha256": "d3e4dde9d2873f892e3ae5a8140fed3966eadca80d85fb2ac629e4a4833e7345"
+    },
+    {
+      "bytes": 327232,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "bytes": 398471,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/jit-closure-v2/JIT_CLOSURE_PLAN.SAFE.json",
+      "sha256": "556be080d95fbe11dc1c001eabe2f3551bbe65c713f0ef3453cfae3a9779db7a"
+    },
+    {
+      "bytes": 25801,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/jit-closure-v2/restore_original_jit.py",
+      "sha256": "d4b6e421ceae15481c5b544c4ed959b16d9ad1992ea96ce1770d0a82da5eff2c"
+    },
+    {
+      "bytes": 4265,
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/PREPARED.SAFE.json",
+      "sha256": "5ce7e3658d7ef9e33631879992224d9cd78ac34b6ce09f01dd50580b330275b8"
+    },
+    {
+      "bytes": 22169,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/COMMON_PARTS.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "bytes": 13047,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_GRAPH.sql",
+      "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+    },
+    {
+      "bytes": 17398,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    {
+      "bytes": 12787,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_GRAPH.sql",
+      "sha256": "7bb6124122903387b721929f99310a8044291c5cc3e12b1f34b674c081eb72cd"
+    },
+    {
+      "bytes": 13841,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_RENDERER.sql",
+      "sha256": "f973ad6b1a617d8b73f3b92df2997a8be7313665c6b26856b8a3c333eb6277e1"
+    },
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/NEW_U.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 23685,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/OLD_U.PRIVATE.js",
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "bytes": 18650,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_AUTH_READ_SOURCE.PRIVATE.sql",
+      "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
+    },
+    {
+      "bytes": 51381,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    {
+      "bytes": 22149,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_PARTS.PRIVATE.js",
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+    },
+    {
+      "bytes": 499,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/SHUTDOWN_POLICY.SAFE.json",
+      "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+    },
+    {
+      "bytes": 72079,
+      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/SOURCE_DELTA.PRIVATE.diff",
+      "sha256": "9eeb9d8717372971e0b5c7135eaf97ad89b758f47366c127fe320ad86e8287ae"
+    },
+    {
+      "bytes": 4139,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/SOURCE_EVIDENCE.SAFE.json",
+      "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+    },
+    {
+      "bytes": 9858,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/ghc/libraries/base/GHC/TopHandler.hs",
+      "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+    },
+    {
+      "bytes": 19895,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/ghc/rts/RtsStartup.c",
+      "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+    },
+    {
+      "bytes": 5248,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/default.nix",
+      "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+    },
+    {
+      "bytes": 7424,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/App.hs",
+      "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+    },
+    {
+      "bytes": 18693,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/AppState.hs",
+      "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+    },
+    {
+      "bytes": 8002,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/CLI.hs",
+      "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+    },
+    {
+      "bytes": 1830,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/Unix.hs",
+      "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+    },
+    {
+      "bytes": 1687,
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/dio-component-python-compat-runtime/SOURCE_COMPAT_FILES.SAFE.json",
+      "sha256": "b899687bfd9170473a1a446c8a4bf1d9112d3ce77318e5ec9e28a3ffb82b507c"
+    }
+  ],
+  "nativeLimits": {
+    "memory.high": 1399996416,
+    "memory.max": 1547997184,
+    "memory.swap.max": 0
+  },
+  "nativePeakScope": "one fresh group lifetime from before actual file verification/source copy/JIT/setup to last owned exit; observer overhead included; unchanged in V7",
+  "nativeQualification": "NOT_RUN",
+  "nodeBinaryPin": {
+    "bytes": 125989464,
+    "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+  },
+  "nodeHeap": {
+    "actualStartedAndExitedReceiptsAndExit0Required": true,
+    "capturedPIDMustMatchHeapReceipt": true,
+    "exactOneIsolateNoWorkers": true,
+    "oldSpaceMiB": 384,
+    "semiSpaceMiB": 16
+  },
+  "originalCommit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",
+  "overallClosureTargetSeconds": 360,
+  "ownershipSamplerIncluded": false,
+  "persistentDiskCopyLimitBytes": 805306368,
+  "physicalRestoration": {
+    "actualLedgerRowsAndReferencedRows": 6000,
+    "allOtherFullCatalogABIACLFieldsExact": true,
+    "beforeOriginalPhysicalBytes": 606,
+    "beforeOriginalPhysicalSHA256": "9b62ab352733025f1b752e637f6360d7813b10ea86f134168698e8f4f0d11bc9",
+    "bothModesBeforeAfter": true,
+    "entireOtherPhysicalJSONExact": true,
+    "entireStateAndUsageReferencesExact": true,
+    "lifecycleCompletelyUnchanged": true,
+    "observerSQLPin": {
+      "bytes": 869,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/small-auth.sql",
+      "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+    },
+    "onlyCatalogException": "store SHA independently measured by small after SQL",
+    "soleComparisonChange": "_authStoreRevision is fresh UUIDv4 and matches final selected U read"
+  },
+  "postgrestBinaryPin": {
+    "bytes": 17309560,
+    "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/postgrest-pinned",
+    "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617"
+  },
+  "postgrestClosure": {
+    "additionalConditionalExpectedTranslation": {
+      "actualInternalSignalSyscallOrAppStateDestroyTraced": false,
+      "allExistingLiveDirectPIDSIGTERMSentReapNoTimeoutKillErrorEOFDrainClosePersistenceGuardsRequired": true,
+      "otherBinariesConfigVersionsOrUpstreamEvidenceNeverQualifyMinusTwo": true,
+      "policy": {
+        "additionalSignedExitCode": -2,
+        "configBytes": 236,
+        "configSHA256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60",
+        "originalBinaryBytes": 17309560,
+        "originalBinarySHA256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+        "postgrestVersion": "12.2.3",
+        "requestedSignal": "SIGTERM",
+        "schema": "helmut-original-postgrest-12.2.3-sigterm-policy/1",
+        "upstreamEvidenceSHA256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+      },
+      "rawCodeNeverRewritten": true,
+      "rawSignedReturnCode": -2,
+      "receiptField": "acceptedExpectedTranslation"
+    },
+    "explicitSIGTERM": true,
+    "helperSourcePin": {
+      "bytes": 9220,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/postgrest_lifecycle.py",
+      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+    },
+    "historicalExitCodeInferred": false,
+    "initiallyLiveRequired": true,
+    "logCapBytes": 262144,
+    "parentLogClosedRequired": true,
+    "persistBeforeAcceptance": true,
+    "pipeEOFAndDrainEndedRequired": true,
+    "retainedTailCapBytes": 16384,
+    "signedAcceptedReturnCodes": [
+      0,
+      -15
+    ],
+    "timeoutOrKillOrAnyErrorFails": true
+  },
+  "postgrestConfigSHA256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60",
+  "postgrestShutdownPolicy": {
+    "additionalSignedExitCode": -2,
+    "configBytes": 236,
+    "configSHA256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60",
+    "originalBinaryBytes": 17309560,
+    "originalBinarySHA256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+    "postgrestVersion": "12.2.3",
+    "requestedSignal": "SIGTERM",
+    "schema": "helmut-original-postgrest-12.2.3-sigterm-policy/1",
+    "upstreamEvidenceSHA256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+  },
+  "postgrestShutdownPolicyPin": {
+    "bytes": 499,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/SHUTDOWN_POLICY.SAFE.json",
+    "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+  },
+  "preparationVerification": "Source byte copying, exact Git original definition/prosrc extraction, small-source SHA/byte checks and static text/diff reading only; no Subject import/AST/syntax/tests/SQL/native/Docker execution.",
+  "preparedOnly": true,
+  "preservedV9": {
+    "historicalBytesNotReadoptedAsLiveRootInputs": true,
+    "preparedPin": {
+      "bytes": 37288,
+      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/PREPARED.SAFE.json",
+      "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+    },
+    "sourcePins": [
+      {
+        "bytes": 22169,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/COMMON_PARTS.js",
+        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      },
+      {
+        "bytes": 13400,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/INSTALL_NEW_ONLY.sql",
+        "sha256": "c740b463ce3b026eeb442a8c79a65f1fa95ebac2d08d7382ee31fb9d6b655f4d"
+      },
+      {
+        "bytes": 25446,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/NEW_U.js",
+        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      },
+      {
+        "bytes": 23685,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/OLD_U.PRIVATE.js",
+        "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+      },
+      {
+        "bytes": 22149,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/ORIGINAL_PARTS.PRIVATE.js",
+        "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+      },
+      {
+        "bytes": 37288,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/PREPARED.SAFE.json",
+        "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+      },
+      {
+        "bytes": 11174,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/README.md",
+        "sha256": "1a182d4b9aa690fe0b7fb96d6af5dd4dae7516ce79d2046d42f093fd3331eccc"
+      },
+      {
+        "bytes": 499,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/SHUTDOWN_POLICY.SAFE.json",
+        "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+      },
+      {
+        "bytes": 54787,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/SOURCE_DELTA.PRIVATE.diff",
+        "sha256": "3b2529cac31b51523e71c8c95d376fdf0d7dfd546efccc93c1943bfc00356031"
+      },
+      {
+        "bytes": 12286,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/catalog.sql",
+        "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+      },
+      {
+        "bytes": 17878,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/common.py",
+        "sha256": "aafc8866adad96ba2cb06d07f11e38c585d734891bdeeac18b9cabd7ee555174"
+      },
+      {
+        "bytes": 18175,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/control-driver.js",
+        "sha256": "c612e2b7f5b047fb2630486c242fddf09d765add84d2fb4157d60d98b12d4b51"
+      },
+      {
+        "bytes": 763,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/cycle-metrics.sql",
+        "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+      },
+      {
+        "bytes": 14547,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/install-reviewed-renderer.sql",
+        "sha256": "0b99e5870d67c9b0d616283bd2eefb0df361620067c8bf610d57c65861ba29e5"
+      },
+      {
+        "bytes": 9220,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/postgrest_lifecycle.py",
+        "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+      },
+      {
+        "bytes": 24005,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/run.py",
+        "sha256": "6b6b369511576b6bce2050445e27816e9a537b78b97290be5fec27021306cea8"
+      },
+      {
+        "bytes": 869,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/small-auth.sql",
+        "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+      },
+      {
+        "bytes": 4139,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/upstream/SOURCE_EVIDENCE.SAFE.json",
+        "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+      },
+      {
+        "bytes": 9858,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/upstream/ghc/libraries/base/GHC/TopHandler.hs",
+        "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+      },
+      {
+        "bytes": 19895,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/upstream/ghc/rts/RtsStartup.c",
+        "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+      },
+      {
+        "bytes": 5248,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/upstream/postgrest/default.nix",
+        "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+      },
+      {
+        "bytes": 7424,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/upstream/postgrest/src/PostgREST/App.hs",
+        "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+      },
+      {
+        "bytes": 18693,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/upstream/postgrest/src/PostgREST/AppState.hs",
+        "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+      },
+      {
+        "bytes": 8002,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/upstream/postgrest/src/PostgREST/CLI.hs",
+        "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+      },
+      {
+        "bytes": 1830,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/upstream/postgrest/src/PostgREST/Unix.hs",
+        "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+      },
+      {
+        "bytes": 37768,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/baseline-v9/worker.py",
+        "sha256": "bffb0c0687d730f9bd6757dbf85d57e883f2b675791c6f0092fd0b0585b37499"
+      }
+    ]
+  },
+  "production": false,
+  "providerCalls": 0,
+  "queryCombinedOutputCapBytes": 262144,
+  "rendererSourcePin": {
+    "bytes": 54938,
+    "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+    "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+  },
+  "retainedNativeGuards": [
+    "full readonly source and independent persistent-copy manifests",
+    "original runtime/JIT closure and explicit clone PG config",
+    "native policy before source/copy through kernel last exit",
+    "client deadline/EOF/bounded capture/exception receipt",
+    "exact fresh CID recovery/closure",
+    "PG exit0/log EOF/no errors/drain ended/offline shutdown",
+    "complete unchanged source after closure",
+    "host floor/disk/output caps and no automatic deletion"
+  ],
+  "revision": "COMBINED_AUTH_EXACT_ORIGINAL_VS_ALL_CORRECTIONS_SOURCE_ONLY",
+  "rootFreshAdoptionRequired": true,
+  "rootIntegration": {
+    "byteIdenticalLocalFiles": 30,
+    "changes": "only existing copied-file pin paths rebound; historical provenance and private source delta retained; no executable body edits",
+    "independentReviewPending": true,
+    "nativeExecuted": false,
+    "sourcePreparedPin": {
+      "bytes": 44624,
+      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/PREPARED.SAFE.json",
+      "sha256": "7b8472143e28327dc7cde7e76959a76e5629eb58eb9df8caa7ef22debf85eae7"
+    }
+  },
+  "sameFinalPreparedLifecycleRequired": true,
+  "schema": "helmut-combined-auth-baseline-prepared/1",
+  "scopePin": {
+    "bytes": 3426,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/SCOPE.SAFE.json",
+    "sha256": "45545d04ffa56baf1c0d7b778c9676699eaa48d8f850b69912f97f5b35f30cb7"
+  },
+  "setup": {
+    "GUCsUnchanged": true,
+    "additionalCycleMetricSessionsControlMode": 6,
+    "additionalSmallPhysicalSessionsBothModes": 2,
+    "installations": "both variants renderer6/graph8, including OLD exact no-ops, identical clone/settings guards",
+    "postOperationCatalogSessions": 1,
+    "setupSQLBytesUnchanged": false,
+    "setupSessionsAndStatementsUnchanged": true,
+    "unchangedSetupSessions": 5,
+    "unchangedSetupStatements": 29
+  },
+  "sourceDeltaPin": {
+    "bytes": 72079,
+    "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/SOURCE_DELTA.PRIVATE.diff",
+    "sha256": "9eeb9d8717372971e0b5c7135eaf97ad89b758f47366c127fe320ad86e8287ae"
+  },
+  "sourceOverlays": "readonly OLD U31a+Parts6b or NEW U939+Partsf300; canonical host inputs separately current939/f300",
+  "sourcePGDATA": {
+    "completeManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "fileBytes": 369399611,
+    "fileCount": 1709,
+    "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL",
+    "readDuringPreparation": false
+  },
+  "sqlExecuted": 0,
+  "syntaxQualification": "NOT_RUN",
+  "testsExecuted": 0,
+  "totalEvidenceCapBytes": 4194304,
+  "upstreamEvidencePin": {
+    "bytes": 4139,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/SOURCE_EVIDENCE.SAFE.json",
+    "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+  },
+  "upstreamSourcePins": [
+    {
+      "bytes": 9858,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/ghc/libraries/base/GHC/TopHandler.hs",
+      "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+    },
+    {
+      "bytes": 19895,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/ghc/rts/RtsStartup.c",
+      "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+    },
+    {
+      "bytes": 5248,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/default.nix",
+      "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+    },
+    {
+      "bytes": 7424,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/App.hs",
+      "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+    },
+    {
+      "bytes": 18693,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/AppState.hs",
+      "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+    },
+    {
+      "bytes": 8002,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/CLI.hs",
+      "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+    },
+    {
+      "bytes": 1830,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/Unix.hs",
+      "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+    }
+  ],
+  "variantBodies": {
+    "NEW": {
+      "graph": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0",
+      "renderer": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32"
+    },
+    "OLD": {
+      "graph": "1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0",
+      "renderer": "b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a"
+    }
+  },
+  "variantInstallations": {
+    "NEW": {
+      "graph": {
+        "bytes": 13047,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_GRAPH.sql",
+        "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+      },
+      "renderer": {
+        "bytes": 17398,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_RENDERER.sql",
+        "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+      }
+    },
+    "OLD": {
+      "graph": {
+        "bytes": 12787,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_GRAPH.sql",
+        "sha256": "7bb6124122903387b721929f99310a8044291c5cc3e12b1f34b674c081eb72cd"
+      },
+      "renderer": {
+        "bytes": 13841,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_RENDERER.sql",
+        "sha256": "f973ad6b1a617d8b73f3b92df2997a8be7313665c6b26856b8a3c333eb6277e1"
+      }
+    }
+  },
+  "variantParts": {
+    "NEW": {
+      "bytes": 22169,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/COMMON_PARTS.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    "OLD": {
+      "bytes": 22149,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_PARTS.PRIVATE.js",
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+    }
+  },
+  "variantSources": {
+    "NEW": {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/NEW_U.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    "OLD": {
+      "bytes": 23685,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/OLD_U.PRIVATE.js",
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    }
+  },
+  "workDeadlineSeconds": 300
+}

@@ -1,6 +1,6 @@
 # Kontrollierte Bereinigung und anschließende Motordiagnose
 
-Stand20.10.2026. Aktueller Arbeitsbranch
+Stand21.10.2026 UTC. Aktueller Arbeitsbranch
 `codex/controlled-cleanup-and-late-probe-20261020`, Basis0372500c (PR926),
 darunter PR925/f0d3b039 und PR924/bdb2c2c3; c8624f7c erhalten.
 
@@ -9,6 +9,61 @@ die Entsorgung eindeutig entbehrlicher eigener temporärer Testressourcen
 freigegeben. Originaldaten, notwendige DB-Stände, Belege, Gitänderungen sowie
 aktive/fremde Ressourcen bleiben geschützt. Keine allgemeine Dockerbereinigung,
 keine kostenpflichtige Infrastruktur, unveränderte Reserven, kein Voll500.
+
+## Aktueller Zusatz: längere Authdiagnose am21.10.
+
+Die neue [30-Runden-Prüfung](auth-stability-30-rounds-20261021.md) und ihr
+Null-Auth-Abschlussfall sind tatsächlich mit vollständiger Lebenszeitmessung,
+Integrität und Prozessende bestanden. Erst nach unabhängiger tatsächlicher
+Abnahme wurden die beiden vorher als nachPASS entbehrlich eingestuften neuen
+PGDATA-Kopien einzeln entfernt. Neue fallgebundene Checks und jeweils frische
+Root-Adoption/Einmalmarker; keine Wiederverwendung alter Freigaben.
+
+3422 reguläre Dateien/739.528.704B inventarisierte Blöcke entfernt. Die
+unabhängige Endprüfungf7bf336a rehashte alle483 Fallbelege unverändert und
+bestätigte beide fehlenden Arbeitswurzeln. Sechs genaue gestoppte Containerhüllen,
+Images/Volumes/Loops, Originalbank und Quelle827a bleiben erhalten. Keine neue
+vollständige WAL-/Archivrekonstruktion für diese vorab entbehrlichen PASS-Kopien
+beansprucht. Historische ausgeführte Hostschreiber bytegenau anhand ihrer Pins
+gesichert; unveränderliche Adoptionsbelege nicht umgeschrieben.
+
+Aufnahme nach diesem Abschluss:15.153.389.568B verfügbar,26.390.152B unter
+unveränderter Volladmission15.179.779.720B. Neu erhaltene Diagnose-/Reviewbelege
+verbrauchen Platz. Die frühere knappe positive Aufnahme ist daher historisch.
+Noch keine neue vollständige Plattenadmission; keine Reserveabsenkung und kein
+Vollstart. Die [Root-Qualifikation](auth-stability30-qualification-20261021.SAFE.json)
+bindet tatsächliche Prüfberichte und Grenzen. Die nachfolgende Historie bleibt
+mit ihren jeweiligen damaligen Kapazitätsständen erhalten.
+
+Anschließend wurden genau1680 weitere saubere eingecheckte Dateien aus den drei
+eigenen abgeschlossenen Hilfsworktrees per Git-Sparse ausgelagert,560 je Worktree.
+32.256.000B inventarisierte Dateiblöcke; tatsächliche einzelne df-Differenzen
+je10.850.304B. Das ist kein addierter isolierter Gesamtgewinn über gleichzeitige
+Belegschreibvorgänge. Alle ausgewählten Bytes gegen HEAD, logischen Index und
+vollständig lokal gelesene Gitobjekte geprüft; Wiederherstellungsmapping erhalten.
+Pflichtdokumente, benötigte Auth-/Native-/Ressourcenquellen, aktuelle Quellenpins,
+Hauptarbeitsbaum, Gitobjekte und Referenzen bleiben erhalten. Keine ungetrackten,
+ignorierten oder geänderten Dateien betroffen. Für historische Vollprüfungen in
+diesen Hilfsworktrees zuerst die konkret benötigten Pfade aus Git wiederherstellen.
+
+Die erste rein vorbereitete Fassung bliebBLOCKED: Ambient-Gitvariablen hätten
+den Index umleiten können. Nur der separat erhaltene V2-Actor mit bereinigtem
+Git-Kindprozessumfeld wurde nach unabhängiger Quellenprüfung verwendet. Drei
+frische Checks liefen zusätzlich unter absichtlich ungültigen Git-Selektoren;
+die externe Index-/Worktree-Zieladresse blieb abwesend. Je Fall frische
+Nonce-/TTL-Adoption und Einmalmarker, alle drei äußeren Exitcodes0. Kein Retry.
+
+Neue Root-Aufnahme nach den Aktionen:15.184.449.536B frei,4.669.816B über der
+unveränderten Volladmission. Die vollständige Plattenanforderung ist an diesem
+Zeitpunkt knapp erfüllt. Commit/Belege und spätere Arbeit können diese Marge
+verbrauchen; vor jedem Start frisch prüfen. Kein500er-GO und kein RAM-Nachweis
+aus diesem Kapazitätsbefund abgeleitet. Die
+[unabhängige tatsächliche Sparse-Nachprüfung](three-own-worktrees-further-sparse-sol-review-20261021.SAFE.json)
+istPASS: alle1680 Pfade abwesend,616 erhaltene Dateien byte-/metadatengleich,
+HEADs/Refs/logische Indizes und Hauptarbeitsbaum-Git erhalten. Sie prüft lokale
+Gitobjekt-Header; vollständige Payload-Rückvergleiche sind ausdrücklich aus den
+gepinnten tatsächlichen Root-Aktionen übernommen. Nachprüferaufnahme vor Bericht:
+15.184.416.768B frei,4.637.048B Marge. Alte Aufnahmen bleiben historisch.
 
 ## Tatsächlich freigegebener Speicher
 
