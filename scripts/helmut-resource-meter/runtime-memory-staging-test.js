@@ -1,7 +1,7 @@
 'use strict';
 // Execute literal rendered observer/runtime sources with inert dependencies.
 // This checks lexical hooks, schema and failure propagation, not engine/500 acceptance.
-const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const input=JSON.parse(fs.readFileSync(0,'utf8'));
 const R='/workspace/helmut-cpu-epoch-20261015',deadline='2099-01-01T00:00:00.000Z';
 class FixedDate extends Date{constructor(...args){super(...(args.length?args:['2026-10-21T00:00:00.000Z']));}}
@@ -14,6 +14,7 @@ function fixture(source,{closeError=false,saveError=false,beforeError=false}={})
   const memory={event(name,index,c){countsCheck(c);observations.push({name,index,counts:{...c}});},
     beforeExport(c){countsCheck(c);observations.push({name:'beforeExport'});if(beforeError)throw Error('TEST_ONLY_OBSERVER_WRITE');},
     exportCompleted(){exportsDone.push(true);},close(c){countsCheck(c);observations.push({name:'close'});if(closeError)throw Error('TEST_ONLY_OBSERVER_CLOSE');}};
+  const nativeBudget={observeRuntime(c){countsCheck(c);return memory;}};
   const storage={synthetik500PreparedDiagnostics:()=>({checkpoints:[]})};
   for(const name of ['mutateAuthStore','withSynthetik500PreparedCommand','withSynthetik500InstallationCommand',
     'readSynthetik500Runtime','readSynthetik500CurrentInputs','getProfileFromDb','synthetik500ReviewStorageContract',
@@ -26,13 +27,16 @@ function fixture(source,{closeError=false,saveError=false,beforeError=false}={})
     api:{readState:()=>({}),memoryAccounting:()=>({}),readAllFinalEvidence:async()=>[]}};
   const io={configure:()=>context,file:n=>n,environment:()=>({SUPABASE_URL:'http://127.0.0.1:7439'}),sha:()=>'',
     save(name,value){if(saveError&&serial++===0)throw Object.assign(Error('TEST_ONLY_SAVE'),{code:'TEST_ONLY_SAVE'});saved.push({name,value});}};
+  // Trust the native memory helper only from the canonical checkout and the
+  // current checkout selected by the CI launcher; both map to one inert stub.
   const modules={'node:fs':{appendFileSync(){}},'node:assert/strict':assert,
     'node:perf_hooks':{performance:{now:()=>1000}},'./local-io':io,
     'node:http':{request(){},globalAgent:{}},'node:https':{},
     [R+'/lib/helmut/synthetik-500-content-runner']:{sourceBinding:()=> 'TEST_ONLY_SOURCE'},
     [R+'/lib/helmut/storage']:storage,[R+'/lib/helmut/synthetik-500-production-command']:{validate(){}},
     [R+'/lib/helmut/synthetik-500-dispatch-journal']:J,[R+'/lib/helmut/synthetik-500-profile']:{hash:()=>''},
-    [R+'/scripts/helmut-resource-meter/native-node-budget.js']:{observeRuntime(c){countsCheck(c);return memory;}}};
+    [R+'/scripts/helmut-resource-meter/native-node-budget.js']:nativeBudget,
+    [path.join(__dirname,'native-node-budget.js')]:nativeBudget};
   const sandbox={module:{exports:{}},process:proc,URL,Date:FixedDate,console:{log(){}},global:{fetch:async()=>{}},
     require(name){assert(Object.hasOwn(modules,name),'unexpected dependency '+name);return modules[name];}};
   vm.runInNewContext(source,sandbox,{timeout:1000});

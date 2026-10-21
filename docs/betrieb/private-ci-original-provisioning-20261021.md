@@ -1,150 +1,134 @@
 # Private Originalbindungen für CI vorbereiten
 
-## Wiederaufnahme22.10.2026 Europe/Istanbul
+**Stand 22.10.2026 Europe/Istanbul. GitHub-Pflicht-CI bleibt blockiert; kein
+geschützter Original-CI-Lauf. Kein Production/Merge/Voll500, keine
+Profilaktivierung; alle alten GOs sind verbraucht.**
 
-**Weiter blockiert; noch kein geschützter Original-CI-Lauf.** Remote-main
-`1eb3cbff`, DraftPR927 unverändert `1c505ea1`; CI39682280922 scheitert weiterhin
-beim echten Renderer18/19, Browser/MobilePASS. Die neue Zielcloud enthält die83
-Originale noch nicht. Übergabepaket, Bericht und Rückdownloadbeleg sind vollständig
-SHA256-geprüft, alle18 Metadatendateien stimmen. Ein eigener Ziel-GPG-Empfänger
-wurde erzeugt; nur öffentlicher Schlüssel/Zielbericht wurden owner-only im bestehenden
-Driveordner gespeichert und bytegleich zurückgeladen. Private Schlüssel/Passphrase
-bleiben im Ziel. Originaltransfer und Datenbankwiederherstellung sind nicht bestätigt.
-Der Quellchat benötigt den öffentlichen Empfänger; im Ziel ist kein Werkzeug zum
-Senden eines Quellchat-Auftrags verfügbar.
+## Originalrestore: geprüft, aber nicht vollständig
 
-`HELMUT_GITHUB_CI_ADMIN_TOKEN` ist cloudseitig aktuell ready. Direkte HTTP-Abfragen
-mit diesem Zugang liefern auch nach gemeldeter Betreiberkorrektur403 bei
-Actionspermissions, main-Branchschutz und Environmentsecrets. Das belegt fehlende
-wirksame Rechte, weder die genaue Ursache noch den Tokentyp. Noch keine neue
-GitHub-Environment-/Secret-/Reviewer-Konfiguration und kein Originalupload zur CI.
+15 Cipherteile und der Gesamtcipherhash wurden unabhängig geprüft; entschlüsselt
+wurde ausschließlich im Ziel. Danach wurden 13.527 ausgewählte Dateien einzeln
+geprüft. Alle 83 bisherigen CI-Originale und 24 exakte Git-Patches sind
+vorhanden. 7.370 Dateien wurden explizit ausgeschlossen. Physische
+Datenbankkopien und das volle Git-Bundle wurden nicht übertragen; die Quelle bleibt
+erhalten. Es wurde kein Patch angewendet. Eine vollständige Umgebung ist damit
+nicht belegt.
 
-**Enger Schutzfix:** Vor der Wiederaufnahme erbten lokale Kindprozesse zusätzliche
-Cloud-Zugänge. Die zentrale Liste in `scripts/lokaler-netzschutz.js` entfernt nun auch
-`HELMUT_GITHUB_CI_ADMIN_TOKEN`, `GITHUB_TOKEN`, `GH_TOKEN`, `DEEPSEEK_API_KEY`,
-`HELMUT_ADMIN_SECRET`, `HELMUT_RUNTIME_READ_BEARER`,
-`VERCEL_AUTOMATION_BYPASS_SECRET` und `CRON_SECRET` über den bestehenden Starter.
-Die gezielte netzlose Schutzsuite besteht111/111Checks, darunter19 neue Prüfungen
-mit Attrappen: direkter Preload verweigert den Lauf, echte Kindprozesse erhalten
-keine dieser Kennungen, Meldungen enthalten keine Werte und die aufrufende
-Umgebung bleibt erhalten. Beide JS-SyntaxprüfungenPASS; unabhängiger begrenzter
-Diffreview ohne Befund. Das erteilt keine Freigabe für ungeprüften Code oder
-Originalbytes und ersetzt keine Originalverbraucher-/Pflicht-CI-Abnahme.
+## Manifest: 84 echte Dateien, nur Metadaten in Git
 
-Ein späterer geschützter Job kann den bereits vorhandenen `pull_request`-Trigger
-von `ci.yml` nutzen, ohne Workflowcode nach main zu mergen. Vor Freigabe müssen
-Revieweridentität, konkreter PR-Ref, tatsächlicher Run-/Workflow-/PR-Head-/Checkout-SHA
-und Manifesthash gebunden sein. Standard-PR-Checkout ist der synthetische Mergecommit,
-nicht automatisch der PR-Head. Ein bloßer Branchname oder ein isolierter
-`workflow_dispatch`-Erfolg ist kein vollständiger Pflichtchecknachweis. Die konkrete
-Konfiguration und Ergebnisbindung bleiben offen; die bisherigen Schutzgrenzen gelten.
+Bisheriges Manifest: 83 Dateien, 83.490.369B, SHA256
+`49c2d5f6f66baf5a693377b82a73e3849319fd484797be71a46faf1cec892655`. Eine
+echte Quellenfreigabe für den korrigierten Controlread-Test verlangt einen weiteren
+Originalpfad:
 
-## Vorbereiteter Stand21.10.2026
+`/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/INDEPENDENT_COMBINED_SOURCE_REVIEW_ORIGINAL.SAFE.json`
+– 6.151B, SHA256
+`e7efec6b916aa3f01fe755f3e89566e6c2801e928d5e3484fe9cb053e749c6a8`,
+tatsächlich restauriert. Die Quelle ist im verifizierten Manifest als
+`NO_FINDINGS_WITHIN_RECORDED_SCOPE` markiert; ein zusätzlicher begrenzter
+Credentialscan fand 0 Befunde und 0 unklare Kandidaten. Die Bytes bleiben
+privat.
 
-Stand21.10.2026: **Bereitstellung vorbereitet, GitHub-CI weiterhin blockiert.**
-Keine Workflowänderung, kein Upload, keine Secret-/Environmentänderung und kein
-neuer CI-Lauf gehören zu dieser Vorbereitung. Die bestehenden Prüfregeln bleiben
-unverändert. Der Provisioner führt keine Originale oder Verbrauchertests aus.
+Neues Manifest: 84 Dateien, 83.496.520B, SHA256
+`b2e3584818b16fed2f4bfd845f9379732d9f9eb045c83f59ad94034d9e6c46ef`. Die
+bisherigen 83 Einträge sind byteidentisch unverändert, keine Mocks. Nur
+Metadaten liegen in Git. Die 26 Harnessvorlagen mit 127.973B sind unverändert;
+die übrigen 58 Dateien umfassen 83.368.547B.
 
-Run39674469071 aufccd3cb1d scheitert beim echten Originalrenderer:18/19Starttests
-PASS,1ERROR`regular pinned file required`; Browser/MobilePASS. Der Renderer
-prüft bewusst26echte Vorlagen und den vollständigen Replacement-Replay.
-Ein Ersatz durch erfundene Originale oder ein Skip würde den Nachweis verlieren.
+## Öffentliche Begleitdateien unverändert
 
-## Exakte vorbereitete Schließung
+Die bestehenden öffentlichen `ROOT_LOCAL_SOURCE_DELTA.SAFE.json` und
+`INDEPENDENT_SOURCE_DELTA_REVIEW.SAFE.json` werden unverändert verwendet. Die CI
+stellt den öffentlichen Review als reguläre byteidentische Datei am
+eingebetteten historischen CPU-Repopfad bereit. Der Test `localSourceDeltaPin`
+bindet die echten Vier-Quellpins; keine historischen Hashkonstanten wurden
+geändert, kein `pipelineLockLease` aktiviert und keine neuen nativen Abnahmen
+behauptet.
 
-`scripts/helmut-resource-meter/private-original-ci-manifest.json` enthält nur
-absolute Pfade, Größen und SHA256:26Harnessvorlagen/127.973B und57eindeutige
-Datenschließungs-/Verbrauchsmarkerdateien/83.362.396B, insgesamt83Dateien/
-83.490.369B. Die Metadaten wurden gegen die vorhandenen echten Dateien geprüft.
-Keine Originalbytes, Schlüssel oder Approvaldateien werden neu in Git abgelegt.
-Die historischen Marker sind Daten; sie erteilen keine neue Testfreigabe.
+## Lokaler Provisionernachweis
 
-`provision-private-ci-originals.py` akzeptiert ausschließlich ein bereits lokal
-entschlüsseltes privates Bundle. Dessen Verzeichnisstruktur entspricht den
-kanonischen Pfaden relativ zu`/workspace`; etwa beginnt ein Harnesspfad unter
-`<bundle>/helmut-parallel-20261015/wave15/`. Das Bundlewurzelverzeichnis gehört
-dem ausführenden Benutzer und hat keine Gruppen-/Fremdrechte; die Quelldateien
-sind ebenfalls privat. Der Provisioner erstellt dieses Bundle nicht.
+84 echte Dateien wurden privat kopiert, auf eine neue leere private Zielwurzel
+mit `--write` bereitgestellt und danach 84/84 verifiziert. Die echten
+Hostoriginale blieben unverändert. 9 Negativgruppen sind PASS. Unverändert
+gelten: 8GiB Boden, 16MiB Provisionierungsspielraum, 90MiB Gesamtmaximum, 20MiB
+je Datei, `O_NOFOLLOW`, `O_EXCL`, private Rechte, keine überschriebenen Ziele und
+verbleibende Teildateien ohne Cleanup.
 
-Nur in einer bereits vertrauenswürdigen Umgebung nach Prüfung des exakten
-Verbrauchercommits verwenden:
+Der Provisioner lädt nichts herunter, entschlüsselt nichts und führt keine
+Originale aus. Er erwartet ein bereits entschlüsseltes privates Bundle mit
+kanonischen Pfaden relativ zu `/workspace`, etwa
+`<bundle>/helmut-parallel-20261015/wave15/`. Bundlewurzel und Dateien müssen dem
+ausführenden Benutzer gehören und ohne Gruppen-/Fremdrechte vorliegen. Erst
+nach Prüfung des exakten Verbrauchercodes in einer vertrauenswürdigen Umgebung:
 
 ```sh
 node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/provision-private-ci-originals.py \
   --bundle /private/already-decrypted-originals --destination-workspace /workspace
 ```
 
-Der Standardlauf verifiziert ohne Schreiben. Erst das explizite`--write`stellt
-die bereits verifizierten Bytes bereit. Eine andere absolute Zielwurzel bildet
-ausschließlich den kanonischen`/workspace`-Präfix ab; alle relativen Pfade bleiben
-unverändert. Der unveränderte Verbraucher benötigt weiterhin seine kanonischen
-absoluten Pfade. Ein Remap allein ist keine Verbraucherabnahme.
+Ohne `--write` wird ausschließlich geprüft. Das zusätzliche `--write` erstellt
+nur zuvor freie Ziele; vorhandene Dateien werden auch bei gleichen Bytes
+abgewiesen. Eine andere Zielwurzel bildet nur den `/workspace`-Präfix ab und
+belegt noch keinen Verbraucher unter seinen festen absoluten Pfaden.
 
-Der feste Manifesthash,83Dateien,83.490.369B,20MiBjeDatei und90MiBgesamt sind
-hart gebunden. Vor dem ersten Schreiben werden alle Originalbytes, alle freien
-Ziele und8GiBfreien Boden plus16MiBProvisionierungsspielraum geprüft. Nach dem
-Schreiben wird der tatsächliche8GiB-Boden erneut geprüft. Verzeichnisse
-werden ohne Symlinkfolge geöffnet; reguläre Dateien mit genau einem Hardlink,
-kanonische absolute Pfade, SHA/Größe und private Rechte sind Pflicht. Vorhandene
-Ziele werden auch bei identischem Inhalt abgewiesen. Dateien entstehen exklusiv
-mit0600, neue Verzeichnisse mit0700. Danach werden die kanonischen Dateinamen
-erneut gelesen und verifiziert. Bei Schreibfehler bleiben mögliche Teildateien
-erhalten; es gibt keinen automatischen Retry, Überschreibpfad oder Cleanup.
+## Echter Startpreflight 19/19 PASS
 
-## Bestehender Kanal und noch notwendige Ownerkonfiguration
+Der echte Startpreflight besteht 19/19 nach dem Fix des inerten VM-Helperpfads,
+inklusive 26 Originalhashes und Replacement-Replay; preparation bindings sind
+PASS, startinputs 6/6 PASS. Die VM hat nur zwei fest erlaubte Helperpfade auf
+denselben inerten Stub; der Guard für unbekannte Dependencies bleibt. Der
+Runtime-read-contract besteht nach Ergänzung des echten Sourceadoptionspins
+13/13. Die historische Storagebindung und alle Fehlerprüfungen bleiben erhalten.
+Workflow-YAML und Shellsyntax des ergänzten Bereitstellungsschritts sind geprüft.
 
-Das GitHub-Repository ist öffentlich. Seine60vorhandenen Actionsartefakte
-enthalten keine aktuelle83erSchließung; die neueren Cipherartefakte stammen vom
-08.10., vor den hier benötigten Originalen. Releases sind leer. Die erfolgreiche
-Ausführung von Run39674469071 belegt verfügbare GitHub-hosted Runner, aber keine
-private Runnerbereitstellung. Die API meldet Repositoryrechte
-admin/maintain/push/pull; Secrets-, Runner-, Actionspermissions- und
-Branchprotectionmetadaten antworten trotzdem403. Das belegt eingeschränkte
-APIberechtigungen, keine allgemeine technische Unmöglichkeit.
+## next-resource-authority: 25 PASS, 5 FAIL, 1 ERROR
 
-Ein bestehender privater Transport ist im lokalen
-`/workspace/helmut-migration-restore-20261019-01a15550/CONTROL.SAFE.json`belegt:
-owner-onlyDriveordner,443Originalziele,7Cipherteile/111.247.647B,9Credential-/
-Approvaldateien ausgeschlossen. Dieser19.10.Transport enthält die späteren
-Day20/21Dateien nicht. Die bestehenden Preview-/Production-Environments haben
-laut lesbarer API keine Protectionregeln. Ein für diese Originale geschützter
-CI-Kanal ist damit noch nicht eingerichtet.
+Im vollen Restore liefen 31 Tests: 25 PASS, 5 FAIL, 1 ERROR. 5 Assertions
+verlangen den fehlenden aktuellen V12-CLAIM, 1 korrekter Guard lehnt den
+vorhandenen V12-Owner-GO ab. Alle Marker bleiben echt unverändert; kein Reset,
+kein neues GO, kein Umgehen von Tests. Das CI-Minimalmanifest mit 84 Dateien
+enthält V12-CLAIM/RESERVATION/OWNER nicht. Ein frischer isolierter
+CI-Verbrauchernachweis ist offen; `bwrap` scheitert hier vor Teststart mit
+uid-map-EROFS. Das ist nicht als CI-grün zu deuten.
 
-Konkreter nächster Aufbau: aus den vorhandenen83Originalen ein enges privates
-Bundle über den bestehenden owner-onlyServertransport bereitstellen; verschlüsselte
-Fassung, Dateimetadaten und vollständigen SHA-Readback getrennt binden. Den
-Download/Entschlüsselungsjob ausschließlich auf einem geprüften vertrauenswürdigen
-Branch und exaktem geprüftem Commit hinter einem geschützten Environment
-ausführen. Den vorliegenden Provisioner dort auf das bereits entschlüsselte Bundle
-anwenden. Vor einer Konfigurationsänderung müssen Kanal, Environment, Reviewer,
-Commitbindung und die Zuordnung des echten Prüfergebnisses zum PR-Kopf konkret
-feststehen. Diese Vorbereitung stellt keinen solchen Job bereit.
+## Schutzfix und Authdiagnose
 
-Klartext gehört weder in Git noch in Artefakte/Releases des öffentlichen
-Repositories oder ungeprüfte PR-Jobs. Ein bloßes Entfernen von Jobcredentials vor
-den Tests reicht nicht: ungeprüfter Code hätte weiterhin die privaten Originalbytes
-und könnte sie über Logs oder Netz ausgeben. Der bestehende tokenlose PR-CI-Vertrag
-wird hier nicht verändert. Es werden keine übersprungenen oder lokalen Tests als
-grüne GitHub-CI ausgegeben.
+Der lokale Credential-Schutzfix besteht 111/111 inklusive 19 neuer Assertions;
+Kindzugänge sind entfernt, es werden keine Werte geloggt.
 
-Ein lokaler Klassifikationsscan der83Dateien fand0parsebareJWT,0PEM-Schlüssel,
-0Postgres-Passwortverifier und0Credential-Literalfelder im lesbaren Text.
-4Postgres-Customdumps und1ELF-Datei wurden nicht dekomprimiert; die Prüfung
-erteilt ausdrücklich keine Credential-frei-Freigabe für diese privaten Dateien.
+`HELMUT_GITHUB_CI_ADMIN_TOKEN` ist konfiguriert und ready; der Betreiber
+bestätigt einen neuen fine-grained PAT mit owner/repo, Administration-RW,
+Environments-RW und Actions-RW. Die normale Proxy-/TLS-Route ist unverändert.
+Direkte Python- und `gh`-Abfragen auf Administration/Environments liefern
+weiterhin 403. Zwei unabhängige Negativkontrollen (Python und curl) mit
+absichtlich ungültigem NICHT-SECRET-Bearer erhielten dagegen 200 und einen
+authentifizierten Kontext. GitHub-App-User-Endpunkte weisen auf
+`chatgpt-codex-connector`; die App-Installation hat Actions-RW, aber kein
+Administration/Environments. Das belegt eine nachgelagerte Ersetzung bzw.
+Übersteuerung der gesendeten Authentifizierung. Das genaue Proxy- oder
+Cloud-Modul ist nicht belegt, der PAT selbst nicht als falsch bewiesen. Es
+werden keine weiteren Tokens angefordert und keine Safety umgangen. Die
+verfügbaren Cloudtools sind nur drei Status-/Diagnoseleser und führen keine
+Credential-Präzedenzmutation aus. Nötig ist eine unterstützte Korrektur der
+ausgehenden Credential-Zuordnung für `api.github.com` mit dem bestehenden PAT;
+ein unbelegter UI-Schalter wird nicht genannt.
 
-## Gezielte Prüfung
+## GitHub-CI bleibt blockiert
 
-Der kleine Negativtest verwendet ausschließlich erfundene kurze Bytes für
-Verifierfehler. Diese Fixtures ersetzen keine der83Originaldateien:
+Der letzte Run `39689399857` auf `4a43e76c` scheitert an den fehlenden privaten
+Originalen für Renderer 18/19; Syntax ist PASS, der Browserjob ist PASS, aber
+der Smoke wurde laut Plan übersprungen. Es wurde kein privater CI-Kanal
+geschaffen, nichts an Environment/Secrets/Reviewer/Branchschutz geändert und
+keine privaten Originale an GitHub hochgeladen.
 
-```sh
-node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/provision-private-ci-originals-test.py
-```
+## Geschützter Kanal weiter erforderlich
 
-Geprüft werden unter anderem Manifestdrift, Pfadausbruch, Symlinks, Hardlinks,
-FIFO, öffentliche Quellrechte, belegte Ziele, unzureichender Plattenboden und
-eine spät fehlende Quelle ohne vorherige Zielmutation.9NegativgruppenPASS;
-ein Rennen nach der Vorprüfung überschreibt keine inzwischen angelegte Datei.
-Ein vollständiger
-Bereitstellungs-/Originalverbraucher-/CI-Nachweis bleibt offen.
+Weiter nötig ist ein geprüfter exakter Workflow-/PR-Head-/Checkout-Merge-SHA
+plus Manifesthash plus Bindung an Reviewer und PR-Ref. Ein Code-Merge ist für
+den bestehenden `pull_request`-Trigger nicht erforderlich. Es entsteht kein
+öffentliches Klartextartefakt, es gehen keine privaten Bytes an ungeprüften
+PR-Code, und es wird kein manuelles grünes Statuslabel gesetzt. Kein
+Production/Merge/Voll500 oder Profilaktivierung.
+
+Historische Runs (Provisionierung vom 21.10., CI 39674469071 auf `ccd3cb1d`,
+39682280922) bleiben als Historie vermerkt und begründen keine neue Abnahme.

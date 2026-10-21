@@ -44,8 +44,9 @@ class RuntimeReadContractTest(unittest.TestCase):
   self.assertFalse((self.root/'FUTURE_GO.json').exists())
 
  def test_control_descriptor_uses_shared_runtime_manifest_without_review_file_reads(self):
-  code="process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1'})))"
-  descriptor=json.loads(subprocess.check_output(['node','-e',code,str(BIN/'atomic-usage-integration.js')],text=True))
+  local_source_delta=I.A.pin(BIN.parents[1]/'docs/betrieb/belege/local-lock-lease-20261021/ROOT_LOCAL_SOURCE_DELTA.SAFE.json')
+  code="process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localSourceDeltaPin:JSON.parse(process.argv[2])})))"
+  descriptor=json.loads(subprocess.check_output(['node','-e',code,str(BIN/'atomic-usage-integration.js'),json.dumps(local_source_delta)],text=True))
   candidate=self.doc('atomic-control-descriptor.json',descriptor)
   request=self.doc('control-request.json',{'sourcePins':[self.leaf],'primaries':{'original':self.leaf},'atomicUsageInput':candidate})
   connection={**self.connection,'atomicUsageInput':candidate,'runtimeRequest':request}

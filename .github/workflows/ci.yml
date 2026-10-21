@@ -169,6 +169,17 @@ jobs:
               cmp "scripts/helmut-resource-meter/$helper" "$runtime_file"
             done
           fi
+          # The shared runtime descriptor also binds this unchanged public review
+          # file at its historical fixed path. Copy only the tracked checkout
+          # file; never create or replace an existing target or symlink.
+          review_source="docs/betrieb/belege/local-lock-lease-20261021/INDEPENDENT_SOURCE_DELTA_REVIEW.SAFE.json"
+          review_target="/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/INDEPENDENT_SOURCE_DELTA_REVIEW.SAFE.json"
+          if [ "$GITHUB_WORKSPACE/$review_source" != "$review_target" ]; then
+            test ! -e "$review_target"
+            test ! -L "$review_target"
+            sudo install -D -m 0644 "$review_source" "$review_target"
+            cmp "$review_source" "$review_target"
+          fi
           # All children/receipts are mocked or TEST_ONLY temporary fixtures.
           # Integration inherits the owner guards; do not run that base twice.
           # These run before the unchanged checks requiring genuine originals.

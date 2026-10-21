@@ -2,21 +2,18 @@
 
 **Lokal 22.10.2026 Europe/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.10.: CI-Zielcloud vorbereitet, Originaltransfer offen
+## 22.10.: Originale übernommen, CI weiter blockiert
 
-Neue Cloud: Übergabe/SHA256 geprüft; eigener GPG-Empfänger, öffentlicher
-Schlüssel/Zielbericht owner-only in Drive bytegleich zurückgeladen.
-83CI-Originale hier noch nicht übernommen. Cloud-Admin-Token ready, direkte
-GitHub-Admin-/Environmentabfragen weiter403, auch nach Betreiberkorrektur.
-Lokaler Credential-Erbschutz erweitert:111/111gezielte ChecksPASS, SyntaxPASS,
-unabhängiger Diffreview ohne Befund. Kein echter Originalverbraucher-/CI-Erfolg.
-[Schutzfix und Transferstand](betrieb/private-ci-original-provisioning-20261021.md).
-
-Owner-/Quellen-/Recipe-/Abschlussbindung integriert, native Abnahme offen.
-Quellstand21.10.:15.227.342.848B frei/15.179.779.720B Admission nach Einzelbereinigung;
-kein aktueller Ziel-Admissionbeleg. Unit60 spätV12 braucht getrennten Ein-Unit-Vertrag.
-Alle GOs verbraucht; kein Voll500/Production/Merge.
-[Vorheriger Integrationsstand](betrieb/helmut-blocker-integration-20261021.md).
+Restore: 13.527 ausgewählte Dateien, alle 83 bisherigen CI-Originale und 24 exakte
+Git-Patches restauriert und hashverifiziert; Datenbankkopien und volles Gitbundle
+fehlen weiter. Echter Startpreflight 19/19 PASS inkl. 26 Renderer-Originalen nach
+inertem VM-Helperpfadfix; Runtime-read-contract 13/13 PASS. Privates Manifest 84 echte Dateien (83 unverändert
++ 6151B Source-Review), Provisionierung 84/84 und 9 Negativgruppen PASS. GitHub 403
+erklärt: ungültiger literaler Bearer ergibt trotzdem authentifizierten
+Codex-App-Kontext; dort fehlen Administration/Environments. Kein PAT-Fehlerbeleg,
+genaue Substitutionsstelle offen, Cloudtools nur lesend. Pflicht-CI weiter
+blockiert. Alle GOs verbraucht; kein Voll500/Production/Merge.
+[Provisionierung](betrieb/private-ci-original-provisioning-20261021.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
@@ -283,9 +280,9 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-180erOffline-Schlussprüfung nachfinalerSperreinbindung abnehmen; danach kleinsten
-gebundenenGateway/PostgREST-Authmutationszyklus amspätenKlon qualifizieren,
-Read/Decode/Callback/CAS undMesswrapper ohneDoppelzählung trennen. Keine weitere
-Finanzprüfung oderallgemeineOptimierungsrunde. Voll500erstmitPlatte,32frischen
-Startgruppen,Fall-/Zeitbindung undneuemkonkretemGO. AllealtenGOsverbraucht.
+Zuerst ausgehende GitHub-Credential-Zuordnung korrigieren und geschützte84er
+Original-CI anbinden. Danach180erOffline-Schlussprüfung und kleinsten gebundenen
+Gateway/PostgREST-Authzyklus amspätenKlon abnehmen; Read/Decode/Callback/CAS
+ohneDoppelzählung trennen. Voll500erstmitPlatte,32frischenStartgruppen,
+Fall-/Zeitbindung undneuemkonkretemGO. AllealtenGOsverbraucht.
 Hierfortsetzen,Sehrhoch wegenCAS/ACK/Originalschutz;kostentragendeProductionbleibtgesperrt.
