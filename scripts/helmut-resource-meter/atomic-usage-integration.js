@@ -123,6 +123,7 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
     ...(controlRead ? controlCache.FILES : []),
     ...(sourceDelta || lease ? ["scripts/helmut-resource-meter/pipeline-lock-lease-integration.js"] : []),
     ...(lease ? LEASE.FILES : []),
+    ...(lease ? ["scripts/helmut-resource-meter/cas-unit-observer.js"] : []),
     ...(boundedRead ? BOUNDED.FILES : []),
     ...(senderClaimRead ? ["scripts/helmut-resource-meter/sender-control-claim.js"] : [])])];
   const sourcePins = files.map(f => pin(path.join(ROOT, f)));

@@ -303,6 +303,8 @@ def coverage_adopted(bindings, rows):
         'consumerInputs':{str(BIN/'start-input-checks.js'),str(BIN/'START_PREFLIGHT_COVERAGE.md')}}
     if str(BIN/'atomic-usage-integration.js') in {r['path'] for r in rows}:
         required['infrastructure'].add(str(BIN/'atomic-usage-integration.js'))
+    if str(BIN/'cas-unit-observer.js') in {r['path'] for r in rows}:
+        required['infrastructure'].add(str(BIN/'cas-unit-observer.js'))
     for scope,review_pin in reviews.items():
         pro=read(review_pin)
         require(pro.get('model')=='deepseek-v4-pro' and pro.get('route',{}).get('effort')=='high'
