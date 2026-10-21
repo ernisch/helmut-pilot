@@ -2,87 +2,82 @@
 
 **Lokal 21.10.2026 UTC; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 21.10.: Vollpfad zugeordnet; echte Heapbeobachtung lokal vorbereitet
+## 21.10.: V11-Storage-Hülle gesichert; Plattenfreigabe offen
 
-V11 zeitgleich06:29→09:01: Appanon+264.921.088B/DBanon+258.625.536B;
-kein vermeidbarer Eigentümer bewiesen.83.483 Requestzeilen sind kein RAMnachweis;
-kein Replay/Minifix. Renderer/Kontrollleser sind im Vollpfad eingebunden.
-Neu nur lokale Beobachtung im echten Begin-/Endpfad:45 feste Frames,
-max100/1MiB, Heap/physical/external/GC/Sammlungsanzahlen, kein GCerzwingen.
-26 Nodefälle/31 Kurzchildren PASS; Staging18PASS+Importfehler, gezielter FixfallPASS;
-26 Vorlagen/24JS/2AST-KompositionPASS. Kein Profil-/Native-/500lauf/RAMgewinn.
-V11 Unit499 entered/GO verbraucht: kein legitimes Spätreplay. Ursache weiter offen.
-[Befund, Vorbereitung und Grenze](betrieb/fullpath-retention-20261021.md).
+Status: teilweise abgeschlossen. Gestoppte ursprüngliche Storage-Hülle `66d3…`
+einmalig nichtdestruktiv gesichert, unabhängig SOURCE und ACTUAL PASS.
+Zwei vollständige Exporte, je438.837.248B, gleiches Manifest und aufgezeichnete
+Streamhashes. 10.239 Manifestpfade; 7 neue reguläre Dateien mit0B Inhalt.
+Basis-/Delta-Rekonstruktion und elf Ausgabepins unabhängig geprüft.
+Sicherung am Ausführungsende7.778.304B, gesamtes Dossier unter64MiB.
+Keine Löschung, kein Container-/DB-Start, kein Ressourcenlauf.
 
-Branch `codex/controlled-cleanup-and-late-probe-20261020`, Ausgang433cb2c9,
-Entwurfs-PR927 auf926/925/924; c8624f7c erhalten. Produkt6d528425 bleibt
+Alle fünf Original-Identitäten/Zustände/Mountbindungen unverändert;
+BankPID5993 bleibt aktiv, kanonische Metadaten und PID-Abwesenheit unverändert.
+Mountdaten, Images, Volumes, image.raw und Loops KEEP. Rootfs-Export sichert
+keine Mountinhalte/gesamteV11DB; alte Docker-ID/Created nicht wiederherstellbar.
+Private ROOT_RELEASE_PROPOSAL beschreibt ausschließlich die gesicherte Hülle,
+noch NICHT freigegeben. Die bestehende Bereinigungserlaubnis schützt Originale.
+Root-Endsnapshot14.947.823.616B frei gegen15.179.779.720B Volladmission,
+231.956.104B fehlen; keine Reservierung. Logische Rootfs437.457.485B beweist
+keinen tatsächlichen Reclaim. Andere geprüfte Worktrees/kleine Diagnosehüllen
+qualifizieren keinen weiteren relevanten Platz; CLI-Overlayoption blockiert.
+[Befund, Sicherungsnachweis und konkrete Option](betrieb/v11-storage-hull-20261021.md).
+
+Im geprüften aktuellen Startpfad keine zwingende Live66-Abhängigkeit gefunden:
+Originalgate bindet Bank22465, neuer Storage entsteht frisch. Künftige finale
+Startclosure noch UNKNOWN. Vier aktive Startgates verlangen weiter alte
+DeepSeek-Formate; konsistente SOL-Versionierung nur vorgeschlagen, nicht umgesetzt.
+Keine Providerprovenienz durch Selbstaussagen, keine umbenannten Altbelege.
+Nur SOL/Root+bis3Helfer, keine externen Modelle/Routerkonfiguration verändert.
+
+Branch `codex/controlled-cleanup-and-late-probe-20261020`, Entwurfs-PR927
+auf926/925/924; c8624f7c erhalten. Sicherung bei RepositoryHEAD80d750c7,
+privater Archiver separat per SHA gebunden. Motorprodukt6d528425 bleibt
 U93917a57/Partsf30089e7. Belegter kombinierter Vergleich unverändert:
 1.170.790.400→1.015.904.256B,154.886.144B/13,23% weniger gemeinsamer Speicher,
 CPU−10,96%/Wand−7,72%. Größter einzeln belegter vermeidbarer Anteil war der
 ersetzte alte Renderer.179Produktsuiten/95nativeSQL/34Quellengates/22Integration
-zuvorPASS; hier nicht wiederholt. Keine neue Produktoptimierung oder A/B-Ersparnis.
+zuvorPASS, hier nicht wiederholt. Keine neue Produktoptimierung oder RAMersparnis.
 
-Neue enge Diagnose unabhängigPASS: frischer0Auth/0Node-Lebenszyklus657.543.168B,
-danach27RPC/14Nodeframes/4CASbinder/8Heapframes1.036.963.840B. WorkCPU33,031932s,
-gesamt33,431031s; Authbatch11,159177s innerhalb30s. Installation bis letztes
-Prozessende gemessen. PG/Node/äußereStarter0, nativeEvents0, Gruppenleer/Helferexit,
-strenger ursprünglicherPostgREST-SIGTERM/-2-Abschluss mitEOF. Originalbank5993,
-fünf geschützteContainer und827a-Metadaten unverändert.
+Renderer/Kontrollleser im Vollpfad eingebunden. Echte Heapbeobachtung vorbereitet:
+45 feste Frames/max100/1MiB an Begin/End; kein GCerzwingen oder Peakreset.
+Zuvor26Nodefälle/31KurzchildrenPASS; Staging18PASS+Importfehler, FixfallPASS;
+26Vorlagen/24JS/2AST-KompositionPASS. Kein500lauf und keinPlateaunachweis.
+V11 zeitgleich06:29→09:01 Appanon+264.921.088B/DBanon+258.625.536B;
+kein vermeidbarer Eigentümer bewiesen. 83.483 Requestzeilen sind kein RAMbeleg.
+V11FAIL:499ACK/1497Positionen, Unit499 entered, altesGO verbraucht;
+kein legitimes Spätreplay/keine Wiederholung als Hypothesenprobe.
+[Vollpfadbeobachtung](betrieb/fullpath-retention-20261021.md).
 
-Servingbackend54/XID11668–11671 bindet echteCAS-Revisionen. Rohe Projektions-/
-Scope-GUCs alleNULL: normaler Vollrendererzweig erstmals tatsächlichbelegt.
-Keine künstliche GUC-Wahl. Belegte Kontexte wachsen zwischen den Messpunkten jeCAS um
-6.526.320/6.416.896/6.416.896/6.416.800B; maxTotal33.291.920B/used29.006.704B.
-Diese nichtatomaren Kontextsummen enthalten Observer-/Plan-/Logarbeit und
-sind wederRSS noch Peakbesitz. VierVorgänge beweisen keinLeck/Plateau/500Skalierung.
+Zuvor unabhängig abgenommene enge Diagnose:0Auth/0Node657.543.168B,
+27RPC/14Nodeframes/4CAS/8Heapframes1.036.963.840B, alle nativenEvents0;
+Auth11,159177s innerhalb30s, strenger PostgREST-Abschluss mitEOF/Gruppenleer.
+Servingbackend54/XID11668–11671 im echten Vollrenderer,6000History erhalten.
+Kontexte jeCAS etwa6,42MB Wachstum sind keine RSS-/Peakbesitzmessung.
+Filecharge/JIT974tmpfsDateien178.290.688B zugeordnet, keine Motorersparnis.
+NativeGrößenformel bleibt um112B widerlegt, zweiFAILsKEEP/kein dritterVersuch;
+W45OFF: Peak810.905.600→820.375.552B, keine Wiederholung/Aktivierung.
+NEW30 ohnePlateau/NEW8INCONCLUSIVE bleiben unverändert.
 
-LetzterRestore: gemeinsameHighwater+18.530.304B imHTTPintervall; Serverframes
-liegen darin. NodeRSS269.086.720→264.679.424B, anonymerGruppenspeicher+16.318.464B,
-file/shmem anEndpunkten gleich. KeinProzess-/Allocatorbesitz bewiesen und keine
-Addition zu6,42MB. JIT-Einrichtung jetztzugeordnet:974frischetmpfsDateien
-178.290.688Ballokiert,vorPG gleichgroßerfile/shmem-Anstieg. KeineMotorersparnis.
-SpäteFileladung605.392.896B inklshmem233.881.600B bleibt ohneexakteEnginecharge;
-spätererWorkerpunktfile605.753.344B istgetrennt. KeinPeakabzug. SechsMarker-
-Census schließtLückenicht, daherkeinweitererNativefall/Minifix.
+CAS-PASSkopien zuvor3422Dateien/739.680.256BInventar kontrolliert entfernt,
+unabhängigEND PASS;199Belege/6HüllenKEEP. Alle Originale, kanonischer827a,
+17Archive/616Pflichtdateien/Git/FAIL/UNKNOWN bleibenKEEP. Historische
+Originalcloud nicht direkt angebunden, authentifizierte Quelle lokal verfügbar.
+PrivateCI-Originalvorlagen fehlen: CodeHEAD80d750c7 tatsächlicher CI-FAIL;
+Vercel getrennt rot. Übersprungene Prüfungen sind keinPASS.
 
-CAS118Guards/6AST/beideSelectorModi/Host0,2,1 PASS; früheFreeze-/SelectorFAILsKEEP.
-25Parentdateien/U/Driver/Parts/Abschlüsse bytegleich. Zwei privateLeserechte nach
-ABI-/Viewprüfung exaktrestauriert; keineSD-/PublicACL-/GC-/Cache-/Budgetänderung.
-VollständigeQuellen-/ACL-/Fehlerbelege imverlinktenCAS-Dossier erhalten.
-
-Unabhängige CAS-Abnahme:27 Requests,4 ACKs,6000er History-/Graph-/Rootbindungen,
-14 Node-/8 Heapframes und Restore geprüft. Belegcaps eingehalten;
-EActualf7ef4bf4/RootActual0e0d4799. Diagnose abgeschlossen.
-
-NativeGrößenformel weiterhinwiderlegt: offiziellesPG17.6 undechtesSELECT
-A1032/B840/C147B, Formel2083B gegen merged2195B (112BUnterdeckung).
-Zwei frühereLayoutversuche insgesamtFAIL/KEEP, kein dritter. W45bleibtOFF:
-34Materialisierungen entfernt, gemeinsamerPeak810.905.600→820.375.552B erhöht.
-Keine Wiederholung/Aktivierung/Grenzaufweichung. NegativerInflate40d7,
-NEW30ohnePlateau/NEW8INCONCLUSIVE/JITnurDiagnostik bleibenunverändert.
-
-Auch neuezweiCAS-PASSkopien nachSource-/10Guardprüfung undfrischenEinzeladoptionen
-entfernt:3422Dateien/739.680.256BInventar; unabhängigerEND PASS,199Belege/6HüllenKEEP.
-AlleOriginale,827a/17Archive/616Pflichtdateien/Gitobjekte/Refs/Belege/Hüllen/Images/
-Volumes/Loops undFAIL/UNKNOWN KEEP. Root-END14.960.943.104Bfrei,
-218.836.616B unterVolladmission15.179.779.720B; SnapshotkeineReservierung/RAMersparnis.
-HistorischeOriginalcloud nichtdirektangebunden, authentifizierteQuelle lokal.
-PrivateCI-Originalvorlagen fehlen, Vercelseparatrot; übersprungen≠PASS.
-NeueCLI-Archividee blockiert:Overlay-Herkunft/tatsächlicherReclaim ungeklärt;
-0Bqualifiziert,keineArchive/Löschungen. Wiederaufnahmegap220.282.504B,Snapshot.
-
-500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/16frische
-KontrollenjeProfil/500MBReserve offen; Sprintteilweise. KeinFull500GO:
-32frischeBedingungen,PlatteundneueskonkretesGOerforderlich, alteGOsverbraucht.
-KeinVolltestalsHypothesenprobe. AlterDeepSeek-Vollvertrag/SOL-only-Konflikt bleibt
-unangetastet. NurSOL/Root+bis3Helfer; keineexternenModelle/Router-/Kosten-/
-Reserveänderung/Production/Merge/Deployment. GleicherThread, DenkstufeSehrhoch.
-[CAS-Heapbeleg](betrieb/cas-heap-20261021.md),
-[JIT-/Kapazitätszuordnung](betrieb/file-charge-20261021.md),
-[NativeGrößenformel/FAIL](betrieb/cas-native-size-20261021.md),
-[VorherigePhasenmessung](betrieb/auth-write-phase-20261021.md),
-[BewiesenerGesamtvergleich](betrieb/combined-auth-memory-comparison-20261020.md),
-[Verlauf](betrieb/auth-stability-30-rounds-20261021.md),
+500aktiveProfile/1500brauchbarePositionen/Offline90/Unit60/Auth30/
+16frischeKontrollenjeProfil und500.000.000B Reserve weiter offen.
+Harte Grenze2.048.000.000B; gemeinsames Ziel höchstens1.548.000.000B.
+Kein Voll500GO aus Sicherung oder Bereinigung:32frischeBedingungen,
+ausreichendPlatte, gültigeFall-/Zeitbindung und neueskonkretesGO erforderlich;
+alteGOsverbraucht. Keine Production/Merge/Deploy/Kosten-/Reserveänderung.
+Gleicher Thread, Denkstufe sehr hoch.
+[CAS-Beleg](betrieb/cas-heap-20261021.md),
+[File-/JIT-Befund](betrieb/file-charge-20261021.md),
+[GrößenformelFAIL](betrieb/cas-native-size-20261021.md),
+[BelegterGesamtvergleich](betrieb/combined-auth-memory-comparison-20261020.md),
 [Bereinigung](betrieb/controlled-local-cleanup-20261020.md).
 
 
