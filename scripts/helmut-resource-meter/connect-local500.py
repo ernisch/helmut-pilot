@@ -282,6 +282,21 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
                 # Additional cause fields are bounded and redact unknown text.
                 change("  const failure=error=>({name:error?.name||null,code:error?.code||null,message:String(error?.message||'unknown').slice(0,240)});",
                     '  const failure=require('+json.dumps(str(BIN/'runtime-failure-receipt.js'))+').failure;')
+                if lease:
+                    # Only the explicitly admitted new lease case changes its
+                    # observer. Original templates and native writer stay intact.
+                    begin='  const originalMutate=storage.mutateAuthStore;\n'
+                    end='  const expired=J.expiredUnclaimedPredecessor;'
+                    if text.count(begin)!=1 or text.count(end)!=1:
+                        raise RuntimeError('exact original CAS observer block required')
+                    block=text[text.index(begin):text.index(end)]
+                    if block.count('units.push(')!=1 or block.count('const finish=J.finish;')!=1:
+                        raise RuntimeError('complete original CAS observer block required')
+                    change(block,'  const casObserver=require('+json.dumps(str(BIN/'cas-unit-observer.js'))+
+                        ').install({storage,J,mutations,units,event,failure});\n')
+                    change('mutation:activeMutation?.index??null','mutation:casObserver.currentMutation()?.index??null')
+                    change('let activeMutation=null,blockedExternalHTTPSAttempts=0;',
+                        'let blockedExternalHTTPSAttempts=0;')
             elif relative=='assemble-after-activation.js':
                 change(' const initialSourceBinding=',
                     " Object.assign(process.env,require("+helper+").environment(process.env,"+descriptor+"));\n const initialSourceBinding=")
