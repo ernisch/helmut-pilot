@@ -1,0 +1,339 @@
+{
+  "OLDVariantPerformanceAssertionsPresentInParentDriver": false,
+  "all27RPCCountsCapsNativeOriginalCloneRestorationAndRawProofRetentionPreserved": true,
+  "byteEqualFunctionBlocks": [
+    {
+      "bytes": 76,
+      "file": "common.py",
+      "function": "require",
+      "sha256": "171487dfcbb6fb954c3e8c3d38eee883bf7a9fca2ca46e25100daf21a4ed1822"
+    },
+    {
+      "bytes": 80,
+      "file": "common.py",
+      "function": "lifecycle_file_pins",
+      "sha256": "a2ac3226880e71aacc3c9da67cfd586d338e3ee0408f6379a75964d26181ced3"
+    },
+    {
+      "bytes": 323,
+      "file": "common.py",
+      "function": "validate_run_inputs",
+      "sha256": "ca76c0dbb940a36e8cf6fc6dfe7e54cafb0a387ea8d4c98df0742d4e0fa77b11"
+    },
+    {
+      "bytes": 1578,
+      "file": "common.py",
+      "function": "load",
+      "sha256": "3e57df5f1674e0d4a00e5fe82dfa058524ca11a55e3a72a3b5fae878cd8252fa"
+    },
+    {
+      "bytes": 394,
+      "file": "common.py",
+      "function": "pin",
+      "sha256": "740f3a45d34d0f6bd2b642ec49628b9cc24cbed399ef594c94830b743b890179"
+    },
+    {
+      "bytes": 109,
+      "file": "common.py",
+      "function": "checked",
+      "sha256": "98a2ca03b3cb68b0f7c4d5739a10ccac82f97705aedf40a20d0647c74d2f15bb"
+    },
+    {
+      "bytes": 66,
+      "file": "common.py",
+      "function": "read",
+      "sha256": "ce5f67732e23532b3204ae5758977f4022aec327d5280d1cc08fdb798d5c8521"
+    },
+    {
+      "bytes": 80,
+      "file": "common.py",
+      "function": "available",
+      "sha256": "6783aeaff2959af8041489bf99778e0d11a1944ebff7d194e6388d34bebcd471"
+    },
+    {
+      "bytes": 131,
+      "file": "common.py",
+      "function": "floor",
+      "sha256": "f091f0aba8265c3df71a3ca13e5e2b8117bb3ea635ff65fdd327e992f4c81de0"
+    },
+    {
+      "bytes": 1222,
+      "file": "common.py",
+      "function": "output_bytes",
+      "sha256": "7f50861b7f30c19b69314cf94e3f112ad53a23f9844ee015aa3665e0062e559c"
+    },
+    {
+      "bytes": 380,
+      "file": "common.py",
+      "function": "save_bytes",
+      "sha256": "9c294a0cdda55c8f16f4d3ca9b1461331a5571579aa746074b509ff105323bd1"
+    },
+    {
+      "bytes": 134,
+      "file": "common.py",
+      "function": "save",
+      "sha256": "501d31d8a96f839bec05690555a07ac6881d3f750572d26f226b9b4bbe9b36ba"
+    },
+    {
+      "bytes": 1327,
+      "file": "common.py",
+      "function": "runtime_bindings",
+      "sha256": "94dc11cd16940abe1ac4321019037b86fe9f038e157de250a0531f0c1b7cdda1"
+    },
+    {
+      "bytes": 1287,
+      "file": "common.py",
+      "function": "manifest",
+      "sha256": "193eb92337aa04e29f27efc973155b00eec6c11cc6d7278a3bb9cbb0685ef54e"
+    },
+    {
+      "bytes": 438,
+      "file": "run.py",
+      "function": "modules",
+      "sha256": "d1fc66b1f869df034f2afafb753c9f30ce70b65e9ed79082343fdfa9e5d27bd9"
+    },
+    {
+      "bytes": 511,
+      "file": "run.py",
+      "function": "source_not_live",
+      "sha256": "d77a60aab68a180961dfcfc930c458dc0f0b3110d30ffc427ed8ca7cd9a44752"
+    },
+    {
+      "bytes": 218,
+      "file": "run.py",
+      "function": "utc",
+      "sha256": "6f0235cf31e60c0691b133080d62f69d0168bd8c76a4db05143f82eba1ccff02"
+    },
+    {
+      "bytes": 311,
+      "file": "worker.py",
+      "function": "mount",
+      "sha256": "1c5dff033cfc0a9434213ba39b15064c03743245d29912b1c9a2b179e878c0e2"
+    },
+    {
+      "bytes": 1145,
+      "file": "worker.py",
+      "function": "guard",
+      "sha256": "f09f33446f62fbb1224a5d847bc566c43b6dc758b767fc8798c1e1a3941f15e9"
+    },
+    {
+      "bytes": 536,
+      "file": "worker.py",
+      "function": "snapshot",
+      "sha256": "5585360fcf4b715cc5f2ec16ac0918fe7e8d2d9a7a9a2dbed9e9bc6a0027c522"
+    },
+    {
+      "bytes": 288,
+      "file": "worker.py",
+      "function": "env",
+      "sha256": "4c66b13230cc8ddcd99058d22365f11e6dffdc9ffc2716a25390e1a1157f5ced"
+    },
+    {
+      "bytes": 4415,
+      "file": "worker.py",
+      "function": "capture",
+      "sha256": "311dc6b72d46c5366b9516f5f05d93a1227189b589dcfb5e887d4c54609af381"
+    },
+    {
+      "bytes": 323,
+      "file": "worker.py",
+      "function": "psql",
+      "sha256": "4b6bbd348129848a1efc044c9019b73e50288f55e481a0ad965aec695bf773ca"
+    },
+    {
+      "bytes": 1228,
+      "file": "worker.py",
+      "function": "rest_logger",
+      "sha256": "09931b87ebd354c124c0541c427dd1ea3c3dd0b5d92872296bf2e24f603ad42a"
+    },
+    {
+      "bytes": 317,
+      "file": "worker.py",
+      "function": "rest_eof",
+      "sha256": "a134f28325443fc29a29c6baa6d7256af4b551bd29d27ea7d77333ca9be52db4"
+    },
+    {
+      "bytes": 677,
+      "file": "worker.py",
+      "function": "copy_complete",
+      "sha256": "bdd819146bae35eae321c06f5b93b1a92d7e1c6156193225b4580ca8bea7b5a5"
+    },
+    {
+      "bytes": 574,
+      "file": "worker.py",
+      "function": "proc_diagnostic",
+      "sha256": "ba1842af55ae19c16077fd06ad1a4a8d70b57a5263c9c8fbc4dbd7f6e53b5d6e"
+    },
+    {
+      "bytes": 543,
+      "file": "worker.py",
+      "function": "physical_auth",
+      "sha256": "89bd1df957133648869dfc7ac8db2014863fa8d057d2938e07cce778b9ba6b27"
+    },
+    {
+      "bytes": 61,
+      "file": "control-driver.js",
+      "function": "requireThat",
+      "sha256": "98da5f363e1c1e293b51befdf4b1d757a53b42e4d8d285311baa58ee14e68f71"
+    },
+    {
+      "bytes": 127,
+      "file": "control-driver.js",
+      "function": "uuid",
+      "sha256": "c0120e0487471c417216c50ad580124cc319449c71d561cbb5e3e8433784f89d"
+    },
+    {
+      "bytes": 78,
+      "file": "control-driver.js",
+      "function": "hash",
+      "sha256": "82e161327619b2a5767407acd333f978df9e4602e7879ab680ad9189942a9f57"
+    },
+    {
+      "bytes": 425,
+      "file": "control-driver.js",
+      "function": "smallStable",
+      "sha256": "9fd95aa70db7aa654dabd66c1d6ae505d438810c8b4bd92a0c2d84693ffa4424"
+    },
+    {
+      "bytes": 60,
+      "file": "control-driver.js",
+      "function": "same",
+      "sha256": "14093cd6a6aaba7bdc40e4d315c7e18b9418871188c35abfb97f8244cbb9df76"
+    },
+    {
+      "bytes": 111,
+      "file": "control-driver.js",
+      "function": "proofOf",
+      "sha256": "3fa6119befd77e5bd30a677f4d8e09b9ea29e802ebbd1fb9633d3b194e764bf0"
+    },
+    {
+      "bytes": 113,
+      "file": "control-driver.js",
+      "function": "stateOf",
+      "sha256": "031484fd4fe2c990b35d32e9446a7f069e2f498a183facb3bc8f4606b19cfd79"
+    },
+    {
+      "bytes": 542,
+      "file": "control-driver.js",
+      "function": "memory",
+      "sha256": "84f33ee71c7c31f6adb1e3962453b6f05337e34c93d687913bdaf6ffea75bb41"
+    },
+    {
+      "bytes": 98,
+      "file": "control-driver.js",
+      "function": "wire",
+      "sha256": "1afabbbdb1395d042a9dced0f5c1e691d89d8df3d9d3734552372311bfac63d3"
+    },
+    {
+      "bytes": 134,
+      "file": "control-driver.js",
+      "function": "delta",
+      "sha256": "c0c50c20a006ca65331dbafae3d349823e5ed2c1b304b5d8400b085c74627e4c"
+    },
+    {
+      "bytes": 220,
+      "file": "control-driver.js",
+      "function": "sentHeaders",
+      "sha256": "915763dbed96da59eb78b96af518bcdb55da5a8b2b95619697425bc73d6987f8"
+    },
+    {
+      "bytes": 955,
+      "file": "control-driver.js",
+      "function": "installObserver",
+      "sha256": "e1424e8058eaebd5b77687f19c1294bced3249a62521b0595fb4bca84a74a11a"
+    },
+    {
+      "bytes": 494,
+      "file": "control-driver.js",
+      "function": "validateProof",
+      "sha256": "f9836f1379c6dea26ef60e208f68ff189a616ea164e30d10589b5c62e03c7a79"
+    },
+    {
+      "bytes": 3943,
+      "file": "control-driver.js",
+      "function": "request",
+      "sha256": "1fdaa9394221e257e6e209ffe3175d05b0b00178189ae037ef86b78511ab4015"
+    },
+    {
+      "bytes": 1200,
+      "file": "control-driver.js",
+      "function": "verifyLogical",
+      "sha256": "7f3ec18500f13d0db4dfb7160bdd18276ba5e92f8ee1f42b0886c4fa7fd72a38"
+    },
+    {
+      "bytes": 1550,
+      "file": "control-driver.js",
+      "function": "invoke",
+      "sha256": "4b2de2c45c26b5d27a7680003a630226ea1719c65ed1a622716d093f68544adb"
+    }
+  ],
+  "changedFunctionBlocks": {
+    "common.py": [
+      "uuid4",
+      "selected_measurement",
+      "lifecycle_proof"
+    ],
+    "control-driver.js": [
+      "boundary",
+      "main"
+    ],
+    "run.py": [
+      "prepared",
+      "safe_case",
+      "prepare",
+      "start",
+      "main"
+    ],
+    "worker.py": [
+      "main"
+    ]
+  },
+  "onlyDriverChanges": "Header,receipt/marker schema,receipt filename and BEFORE/AFTER labels. Probe/request/invoke/hashes/observer/naturalGC unchanged; boundary algorithm unchanged with new marker schema.",
+  "parentCorePins": [
+    {
+      "bytes": 19607,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/common.py",
+      "sha256": "79029bfcf02e4f6029a9730d6f855cc93206592632ee245c4e72a73e6c6e1a26"
+    },
+    {
+      "bytes": 24627,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/run.py",
+      "sha256": "aaaf5a5843a29b2413273bd202044716db176e8fedea72e93d7584affda3eaba"
+    },
+    {
+      "bytes": 38023,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/worker.py",
+      "sha256": "6e899a9ea1f7f685777797ed65b0c32e189469e6e2e6673f77ef28dbb48c6996"
+    },
+    {
+      "bytes": 18175,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/control-driver.js",
+      "sha256": "c612e2b7f5b047fb2630486c242fddf09d765add84d2fb4157d60d98b12d4b51"
+    }
+  ],
+  "preparedCorePins": [
+    {
+      "bytes": 22865,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/common.py",
+      "sha256": "78ddb55f47d9398669e62a98f9fa7c32cb5482c02a03ec69a21566c3dafe4c45"
+    },
+    {
+      "bytes": 24892,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/run.py",
+      "sha256": "b613346b29d45bef1adbc58064feb4a9e3b01ec810bc44c8fed9ea1b50b24a7f"
+    },
+    {
+      "bytes": 38070,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/worker.py",
+      "sha256": "06c28e6c7e35cc510fc97a702a2238f8715a2c48560a8d6385093449b7bd9683"
+    },
+    {
+      "bytes": 18222,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/control-driver.js",
+      "sha256": "c199dbd4912c09ed73e4727de4c031cc3dc1a7355e047091eda9889085972962"
+    }
+  ],
+  "schema": "helmut-control-inflate-source-guard-equivalence/1",
+  "sourceOnlyNoSubjectImportsASTTestsOrResources": true,
+  "status": "SOURCE_ONLY_NOT_RUN"
+}

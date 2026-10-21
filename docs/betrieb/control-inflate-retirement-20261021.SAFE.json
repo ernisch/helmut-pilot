@@ -1,0 +1,336 @@
+{
+  "schema": "helmut-control-inflate-root-retirement-end/1",
+  "status": "PASS",
+  "atUnix": 1792565738.3838758,
+  "rootReadbackSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/root-retirement-end-v1.py",
+    "bytes": 6894,
+    "sha256": "b38137da1fef3b9cb8019c77180bc6d51ac0fa3a882e822a2ae82c4f01244742"
+  },
+  "contextPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/ROOT_PASS_CASES_CONTEXT.PRIVATE.json",
+    "bytes": 1579391,
+    "sha256": "2089dbdcfd3eb2572a9b69d8e763539792b8c562258d810371b0237361fdbb16"
+  },
+  "cases": [
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a",
+      "pgdataAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "retainedProofFiles": 102,
+      "allProofPinsUnchanged": true,
+      "stoppedContainerIDs": [
+        "3ea6b193244b6c27f5536229c2fe11092a06759792edb37445884f0107afc06f",
+        "b4054bbaa07332992be117a5794b4f5a2ab369d7bafa49914f918a8cff00d084",
+        "f428003cb667cf26bc0030f1f965fb1b01f1ba55518e24f621dd45336a63502a"
+      ],
+      "exactMountIdentityRetained": true,
+      "nativeGroupEmpty": true,
+      "retiredResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-4523976844cb460adc39e47a.RETIRED.PRIVATE.json",
+        "bytes": 1553,
+        "sha256": "176c268791a916e579737f00bf1838543a14ef80b6fbe0fb04c455ddc7a1e6f6"
+      },
+      "rootAdoptionPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-4523976844cb460adc39e47a.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "bytes": 2336,
+        "sha256": "68f767115bdd27c101b8114d1c60db4d363b53e72d83aacf75ece2efd80776f4"
+      },
+      "onceClaimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-4523976844cb460adc39e47a.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 66787,
+        "sha256": "3506c230e1de7c49210abc4abd89c4844dec31648fcec1dbb67acb84708d1013"
+      },
+      "inventoryAllocatedBytes": 369836032,
+      "inventoryRegularFileAllocatedBytes": 369696768,
+      "removedRegularFiles": 1711
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2",
+      "pgdataAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "retainedProofFiles": 102,
+      "allProofPinsUnchanged": true,
+      "stoppedContainerIDs": [
+        "12dd559e67a00130f1dd0673ee80733ebc1defee44a539e964fafc13a60a999a",
+        "9304550652edcef829ee46a324b9d32ef1dcd0a1a6ef6a3edb328bf058b70d3d",
+        "a790adf834855b4bb540f661e2b0e3add0b03b3cf88e6822d1ade0bb9eb44442"
+      ],
+      "exactMountIdentityRetained": true,
+      "nativeGroupEmpty": true,
+      "retiredResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-77ea98765d654521e3f426e2.RETIRED.PRIVATE.json",
+        "bytes": 1553,
+        "sha256": "86c4533f43b99f8dddac0633c2b7281d939b5e317ae0bebdf93a673146664bac"
+      },
+      "rootAdoptionPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-77ea98765d654521e3f426e2.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "bytes": 2338,
+        "sha256": "2d89137653bf2a3a8936bdbfbb98589c9de06775e701a898275f5fab56a603bf"
+      },
+      "onceClaimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-77ea98765d654521e3f426e2.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 66790,
+        "sha256": "e31a347796175a08cf7b00995c301a5113195a87f6c4ffe22edf686d09c6580a"
+      },
+      "inventoryAllocatedBytes": 369831936,
+      "inventoryRegularFileAllocatedBytes": 369692672,
+      "removedRegularFiles": 1711
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d",
+      "pgdataAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "retainedProofFiles": 102,
+      "allProofPinsUnchanged": true,
+      "stoppedContainerIDs": [
+        "774fc922d4fd618664ac96e971bfa1ae3d8400ecd25cb0d90fb982be70ccbaff",
+        "7fcc53dcbebfc54ddd9bdc57c674035bb4e6f60888c0fcb3b08f0a0a79e3cd07",
+        "8a7b81a40e55cc11455f6a9198c2cd1933ef8321173f4dd3ee4af3591bc0be64"
+      ],
+      "exactMountIdentityRetained": true,
+      "nativeGroupEmpty": true,
+      "retiredResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-7c633959579530d10211eb3d.RETIRED.PRIVATE.json",
+        "bytes": 1553,
+        "sha256": "c9bb452cd1f80e9bd3e4130d4be041752756ed1d8c50285c45b3d78130f51873"
+      },
+      "rootAdoptionPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-7c633959579530d10211eb3d.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "bytes": 2336,
+        "sha256": "b0d3f391b3dfdf65a30f865ccb2c9dcaffb68e6f4a77a0d1634e6b9629ccbc77"
+      },
+      "onceClaimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-7c633959579530d10211eb3d.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 66788,
+        "sha256": "6de3de507471394b173c06dc11e915e27d5b4c3c4c05c9d73badefa5b2261a2d"
+      },
+      "inventoryAllocatedBytes": 369831936,
+      "inventoryRegularFileAllocatedBytes": 369692672,
+      "removedRegularFiles": 1711
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55",
+      "pgdataAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "retainedProofFiles": 102,
+      "allProofPinsUnchanged": true,
+      "stoppedContainerIDs": [
+        "27a47a4cce28d94b83f30b1fee414799e67258bf0f928a4d579ac3c211b057cd",
+        "3d12dc692103deb986e470bcf9f74bc85f28d2d90a428899664172d3b805de02",
+        "42c409acf8cc681b38dccc605e6fedad00ac0c5327469c5eb618ca89b511d450"
+      ],
+      "exactMountIdentityRetained": true,
+      "nativeGroupEmpty": true,
+      "retiredResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-a5f471e46098179961dc0b55.RETIRED.PRIVATE.json",
+        "bytes": 1553,
+        "sha256": "b54fd6ad39f6e89b0671931e0cf5837f56e243b577c8ee493a81e6ce468a1357"
+      },
+      "rootAdoptionPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-a5f471e46098179961dc0b55.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "bytes": 2336,
+        "sha256": "f3cdcf125f32982cc50ee151ecc584a59110f8b5accca873039c8365b7de1009"
+      },
+      "onceClaimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-a5f471e46098179961dc0b55.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 66789,
+        "sha256": "5a39800eb75314019bbcb88ddb8f9b9900cfade36b14409d50bb94deeddee24c"
+      },
+      "inventoryAllocatedBytes": 369831936,
+      "inventoryRegularFileAllocatedBytes": 369692672,
+      "removedRegularFiles": 1711
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-ecda0cd673313ed20dfd14c8",
+      "pgdataAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "retainedProofFiles": 57,
+      "allProofPinsUnchanged": true,
+      "stoppedContainerIDs": [
+        "10baa56de98689798cee5f959d4ef44d04ec2358a51bf85db8c2177615807acd",
+        "6c0bc5f7d024b70e886af2f2cb2ec162620d2fb6ec533c3179d5435cbdf020c0",
+        "f41b7e55d978d71326c9463ed82739816dde9b56f4dfcfca35499c37a642fece"
+      ],
+      "exactMountIdentityRetained": true,
+      "nativeGroupEmpty": true,
+      "retiredResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-ecda0cd673313ed20dfd14c8.RETIRED.PRIVATE.json",
+        "bytes": 1553,
+        "sha256": "f6885165c9cfadefac9f966a4302c93722c0c8906fb6189603fbc2dd54aae069"
+      },
+      "rootAdoptionPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-ecda0cd673313ed20dfd14c8.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "bytes": 2336,
+        "sha256": "d20ce5834211f3a581861ce3074137c00750d076da3017dd4caae9ce1388f996"
+      },
+      "onceClaimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-ecda0cd673313ed20dfd14c8.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 66789,
+        "sha256": "4e95b2705000dff46de9239143a47a581274c2d60cffaca768d625e3a33af77b"
+      },
+      "inventoryAllocatedBytes": 369807360,
+      "inventoryRegularFileAllocatedBytes": 369668096,
+      "removedRegularFiles": 1711
+    }
+  ],
+  "retainedCaseProofFiles": 465,
+  "removedRegularFiles": 8555,
+  "retiredInventoryAllocatedBytes": 1849139200,
+  "protectedPriorReadbackPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/PROTECTED_RESOURCE_READBACK.SAFE.json",
+    "bytes": 4433,
+    "sha256": "e35ed0db44bec4a8465aef2ccd693044c08141a2f497ba54259a6f32c3b191e2"
+  },
+  "protectedResources": [
+    {
+      "cid": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "c6f393f20781cad88518d5543126d642c4302141f3072393a10d5f0f9bf6a231",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "f375e6f73bff6c4f5238033c0db1de96c0fa9853c49e53056f86fc4f9a7dbaed",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "039f995f2454b4b87edf7b9fe9693d6861d92b15a126205277a51b86adbc80bf",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    }
+  ],
+  "canonicalMetadataUnchanged": true,
+  "sourcePayloadsReread": false,
+  "seventeenPermanentReconstructionDependenciesStillProtected": true,
+  "hostAvailableBytes": 15106498560,
+  "unchangedFullAdmissionBytes": 15179779720,
+  "fullAdmissionGapBytes": 73281160,
+  "capacitySnapshotNotReservation": true,
+  "globalAbsenceOfOpaqueUsersClaimed": false,
+  "additionalQualifiedReclaimBytes": 0,
+  "outerRetirementExits": [
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2336,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-4523976844cb460adc39e47a.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "68f767115bdd27c101b8114d1c60db4d363b53e72d83aacf75ece2efd80776f4"
+      },
+      "case": "inflate-4523976844cb460adc39e47a",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 66787,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-4523976844cb460adc39e47a.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "3506c230e1de7c49210abc4abd89c4844dec31648fcec1dbb67acb84708d1013"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1553,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-4523976844cb460adc39e47a.RETIRED.PRIVATE.json",
+        "sha256": "176c268791a916e579737f00bf1838543a14ef80b6fbe0fb04c455ddc7a1e6f6"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "a134d2"
+    },
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2338,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-77ea98765d654521e3f426e2.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "2d89137653bf2a3a8936bdbfbb98589c9de06775e701a898275f5fab56a603bf"
+      },
+      "case": "inflate-77ea98765d654521e3f426e2",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 66790,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-77ea98765d654521e3f426e2.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "e31a347796175a08cf7b00995c301a5113195a87f6c4ffe22edf686d09c6580a"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1553,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-77ea98765d654521e3f426e2.RETIRED.PRIVATE.json",
+        "sha256": "86c4533f43b99f8dddac0633c2b7281d939b5e317ae0bebdf93a673146664bac"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "b76673"
+    },
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2336,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-7c633959579530d10211eb3d.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "b0d3f391b3dfdf65a30f865ccb2c9dcaffb68e6f4a77a0d1634e6b9629ccbc77"
+      },
+      "case": "inflate-7c633959579530d10211eb3d",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 66788,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-7c633959579530d10211eb3d.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "6de3de507471394b173c06dc11e915e27d5b4c3c4c05c9d73badefa5b2261a2d"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1553,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-7c633959579530d10211eb3d.RETIRED.PRIVATE.json",
+        "sha256": "c9bb452cd1f80e9bd3e4130d4be041752756ed1d8c50285c45b3d78130f51873"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "b10ee5"
+    },
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2336,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-a5f471e46098179961dc0b55.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "f3cdcf125f32982cc50ee151ecc584a59110f8b5accca873039c8365b7de1009"
+      },
+      "case": "inflate-a5f471e46098179961dc0b55",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 66789,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-a5f471e46098179961dc0b55.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "5a39800eb75314019bbcb88ddb8f9b9900cfade36b14409d50bb94deeddee24c"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1553,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-a5f471e46098179961dc0b55.RETIRED.PRIVATE.json",
+        "sha256": "b54fd6ad39f6e89b0671931e0cf5837f56e243b577c8ee493a81e6ce468a1357"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "26dbf8"
+    },
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2336,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-ecda0cd673313ed20dfd14c8.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "d20ce5834211f3a581861ce3074137c00750d076da3017dd4caae9ce1388f996"
+      },
+      "case": "inflate-ecda0cd673313ed20dfd14c8",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 66789,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-ecda0cd673313ed20dfd14c8.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "4e95b2705000dff46de9239143a47a581274c2d60cffaca768d625e3a33af77b"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1553,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/retirement-preparation/inflate-ecda0cd673313ed20dfd14c8.RETIRED.PRIVATE.json",
+        "sha256": "f6885165c9cfadefac9f966a4302c93722c0c8906fb6189603fbc2dd54aae069"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "af7417"
+    }
+  ],
+  "resourceMutationsByReadback": 0,
+  "full500": false,
+  "production": false
+}

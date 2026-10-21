@@ -1,0 +1,704 @@
+{
+  "acceptedLifecycleReuse": "Life result/review pins checked unchanged; full prior57proof and native runtime payload replay is unnecessary. Fresh work proof files and current74-pin source drift readback are directly verified.",
+  "adjacentPairedDifferences": [
+    {
+      "AFTERindex": 2,
+      "AFTERminusBEFOREpeakBytes": -18239488,
+      "BEFOREindex": 1
+    },
+    {
+      "AFTERindex": 3,
+      "AFTERminusBEFOREpeakBytes": 12812288,
+      "BEFOREindex": 4
+    }
+  ],
+  "allFiveRetainedCaseProofFiles": 465,
+  "allNativeRequiredCountersPresentZeroAndFullClosureVerified": true,
+  "allSourceManifests827aAndHistory6000AndCatalogRestorationVerified": true,
+  "blockingFindings": [],
+  "cases": [
+    {
+      "NodePGWorkloadExit0StrictPostgRESTAndEOFVerified": true,
+      "actualResultPin": {
+        "bytes": 8726,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/ACTUAL_RESULT.SAFE.json",
+        "sha256": "f9afca2e8f24b5b89b030bc82ba29ef02aab3a4e6738ed1b167539101798a454"
+      },
+      "allNativeEventsZero": true,
+      "captures": 17,
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a",
+      "confirmedCASWrites": 4,
+      "controlReads": 18,
+      "cycleEndObservations": [
+        {
+          "nativeCurrentBytes": 942379008,
+          "nativeLifetimePeakBytes": 993845248,
+          "nativeMemoryStat": {
+            "anon": 309047296,
+            "file": 604835840,
+            "kernel": 27238400,
+            "shmem": 233725952
+          },
+          "naturalGC": {
+            "count": 105,
+            "durationMilliseconds": 179.13521502912045,
+            "kinds": {
+              "1": 83,
+              "4": 11,
+              "8": 11
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 5439938,
+            "heapTotal": 109391872,
+            "heapUsed": 58756488,
+            "rss": 235991040
+          },
+          "round": 1
+        },
+        {
+          "nativeCurrentBytes": 954408960,
+          "nativeLifetimePeakBytes": 1008402432,
+          "nativeMemoryStat": {
+            "anon": 321118208,
+            "file": 604884992,
+            "kernel": 27213824,
+            "shmem": 233725952
+          },
+          "naturalGC": {
+            "count": 181,
+            "durationMilliseconds": 313.6420139968395,
+            "kinds": {
+              "1": 145,
+              "4": 18,
+              "8": 18
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1590449,
+            "external": 15152497,
+            "heapTotal": 105340928,
+            "heapUsed": 81034232,
+            "rss": 245923840
+          },
+          "round": 2
+        },
+        {
+          "nativeCurrentBytes": 973934592,
+          "nativeLifetimePeakBytes": 1012715520,
+          "nativeMemoryStat": {
+            "anon": 340611072,
+            "file": 604983296,
+            "kernel": 27267072,
+            "shmem": 233758720
+          },
+          "naturalGC": {
+            "count": 259,
+            "durationMilliseconds": 439.6089209318161,
+            "kinds": {
+              "1": 207,
+              "4": 26,
+              "8": 26
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 5439938,
+            "heapTotal": 109129728,
+            "heapUsed": 59479400,
+            "rss": 265408512
+          },
+          "round": 3
+        }
+      ],
+      "entireCatalogABIACLExceptAuthorizedRevisionSHA": true,
+      "finalGroupEmptyThroughLastOwnedExit": true,
+      "fullLogical6000HistoryHashes": 9,
+      "fullReads": 5,
+      "genuineRPCs": 27,
+      "graphBindingsRecomputed": 18,
+      "historyBindingsRecomputed": 23,
+      "index": 1,
+      "logicalFieldAndHistoryHashes": {
+        "controls": {
+          "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+          "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+          "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+          "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+        },
+        "history": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68"
+      },
+      "markerObservationACKTriplets": 6,
+      "maximumAuthOperationMilliseconds": 1378.291645,
+      "nativeAndReferencedHistoryRows": 6000,
+      "nativeFinalEvents": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0
+      },
+      "nativeGroup": "helmut-meter-memorybudget-8727eb4e6119a0019c618565",
+      "nativeLifetimePeakBytes": 1037365248,
+      "nodeWallMilliseconds": 11126.557838,
+      "originalSourceManifestSHA256Recomputed": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+      "outerCompletionChunk": "1a8886",
+      "parentInode": 19908,
+      "physicalAuthBytes": 606,
+      "restoredStateAndHistory": true,
+      "retainedProofBytes": 2664338,
+      "retainedProofFiles": 102,
+      "rootAdoptionUTC": "2026-10-21T06:44:23.041214+00:00",
+      "startUTC": "2026-10-21T06:44:25.996918+00:00",
+      "variant": "BEFORE",
+      "wholeLifetimeCPUUsec": 32256723,
+      "wholeLifetimeWallSeconds": 32.66737330600154,
+      "workloadFinishedAtUTC": "2026-10-21T06:44:58.265957127Z"
+    },
+    {
+      "NodePGWorkloadExit0StrictPostgRESTAndEOFVerified": true,
+      "actualResultPin": {
+        "bytes": 8731,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/ACTUAL_RESULT.SAFE.json",
+        "sha256": "fb36649542f17f89e136d5e70f2fff17de673bfe8ecd53f00e32418c7a14dd35"
+      },
+      "allNativeEventsZero": true,
+      "captures": 17,
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55",
+      "confirmedCASWrites": 4,
+      "controlReads": 18,
+      "cycleEndObservations": [
+        {
+          "nativeCurrentBytes": 924672000,
+          "nativeLifetimePeakBytes": 995315712,
+          "nativeMemoryStat": {
+            "anon": 292249600,
+            "file": 604839936,
+            "kernel": 26873856,
+            "shmem": 233725952
+          },
+          "naturalGC": {
+            "count": 107,
+            "durationMilliseconds": 195.41884304583073,
+            "kinds": {
+              "1": 83,
+              "4": 12,
+              "8": 12
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 10164831,
+            "heapTotal": 102838272,
+            "heapUsed": 58704464,
+            "rss": 219267072
+          },
+          "round": 1
+        },
+        {
+          "nativeCurrentBytes": 949637120,
+          "nativeLifetimePeakBytes": 1007915008,
+          "nativeMemoryStat": {
+            "anon": 316772352,
+            "file": 604889088,
+            "kernel": 27136000,
+            "shmem": 233725952
+          },
+          "naturalGC": {
+            "count": 186,
+            "durationMilliseconds": 344.34931798279285,
+            "kinds": {
+              "1": 146,
+              "4": 20,
+              "8": 20
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 10164169,
+            "heapTotal": 104411136,
+            "heapUsed": 59309272,
+            "rss": 241614848
+          },
+          "round": 2
+        },
+        {
+          "nativeCurrentBytes": 957906944,
+          "nativeLifetimePeakBytes": 1015889920,
+          "nativeMemoryStat": {
+            "anon": 324689920,
+            "file": 604987392,
+            "kernel": 27471872,
+            "shmem": 233758720
+          },
+          "naturalGC": {
+            "count": 265,
+            "durationMilliseconds": 503.2144869416952,
+            "kinds": {
+              "1": 207,
+              "4": 29,
+              "8": 29
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 10164831,
+            "heapTotal": 104148992,
+            "heapUsed": 59424128,
+            "rss": 249208832
+          },
+          "round": 3
+        }
+      ],
+      "entireCatalogABIACLExceptAuthorizedRevisionSHA": true,
+      "finalGroupEmptyThroughLastOwnedExit": true,
+      "fullLogical6000HistoryHashes": 9,
+      "fullReads": 5,
+      "genuineRPCs": 27,
+      "graphBindingsRecomputed": 18,
+      "historyBindingsRecomputed": 23,
+      "index": 2,
+      "logicalFieldAndHistoryHashes": {
+        "controls": {
+          "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+          "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+          "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+          "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+        },
+        "history": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68"
+      },
+      "markerObservationACKTriplets": 6,
+      "maximumAuthOperationMilliseconds": 1388.070954,
+      "nativeAndReferencedHistoryRows": 6000,
+      "nativeFinalEvents": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0
+      },
+      "nativeGroup": "helmut-meter-memorybudget-355b1562ec6381983620770a",
+      "nativeLifetimePeakBytes": 1019125760,
+      "nodeWallMilliseconds": 12367.825564,
+      "originalSourceManifestSHA256Recomputed": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+      "outerCompletionChunk": "52ce31",
+      "parentInode": 20168,
+      "physicalAuthBytes": 606,
+      "restoredStateAndHistory": true,
+      "retainedProofBytes": 2672578,
+      "retainedProofFiles": 102,
+      "rootAdoptionUTC": "2026-10-21T06:45:37.964378+00:00",
+      "startUTC": "2026-10-21T06:45:41.104055+00:00",
+      "variant": "AFTER",
+      "wholeLifetimeCPUUsec": 34029183,
+      "wholeLifetimeWallSeconds": 34.11383401599596,
+      "workloadFinishedAtUTC": "2026-10-21T06:46:14.897178977Z"
+    },
+    {
+      "NodePGWorkloadExit0StrictPostgRESTAndEOFVerified": true,
+      "actualResultPin": {
+        "bytes": 8723,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/ACTUAL_RESULT.SAFE.json",
+        "sha256": "e0b243b9c32c812c178772c3cd85d93b797f72c713b1520d7374dabc0f4bcc72"
+      },
+      "allNativeEventsZero": true,
+      "captures": 17,
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d",
+      "confirmedCASWrites": 4,
+      "controlReads": 18,
+      "cycleEndObservations": [
+        {
+          "nativeCurrentBytes": 941531136,
+          "nativeLifetimePeakBytes": 994476032,
+          "nativeMemoryStat": {
+            "anon": 308371456,
+            "file": 604946432,
+            "kernel": 26980352,
+            "shmem": 233725952
+          },
+          "naturalGC": {
+            "count": 109,
+            "durationMilliseconds": 188.8974220007658,
+            "kinds": {
+              "1": 85,
+              "4": 12,
+              "8": 12
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 10164831,
+            "heapTotal": 102838272,
+            "heapUsed": 58751512,
+            "rss": 234827776
+          },
+          "round": 1
+        },
+        {
+          "nativeCurrentBytes": 954544128,
+          "nativeLifetimePeakBytes": 1012826112,
+          "nativeMemoryStat": {
+            "anon": 321548288,
+            "file": 604995584,
+            "kernel": 27250688,
+            "shmem": 233725952
+          },
+          "naturalGC": {
+            "count": 188,
+            "durationMilliseconds": 325.6450749784708,
+            "kinds": {
+              "1": 146,
+              "4": 21,
+              "8": 21
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 10164831,
+            "heapTotal": 103100416,
+            "heapUsed": 59335800,
+            "rss": 245936128
+          },
+          "round": 2
+        },
+        {
+          "nativeCurrentBytes": 956641280,
+          "nativeLifetimePeakBytes": 1013911552,
+          "nativeMemoryStat": {
+            "anon": 322990080,
+            "file": 605093888,
+            "kernel": 27447296,
+            "shmem": 233758720
+          },
+          "naturalGC": {
+            "count": 266,
+            "durationMilliseconds": 471.708157941699,
+            "kinds": {
+              "1": 208,
+              "4": 29,
+              "8": 29
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 10164169,
+            "heapTotal": 103624704,
+            "heapUsed": 59440440,
+            "rss": 246464512
+          },
+          "round": 3
+        }
+      ],
+      "entireCatalogABIACLExceptAuthorizedRevisionSHA": true,
+      "finalGroupEmptyThroughLastOwnedExit": true,
+      "fullLogical6000HistoryHashes": 9,
+      "fullReads": 5,
+      "genuineRPCs": 27,
+      "graphBindingsRecomputed": 18,
+      "historyBindingsRecomputed": 23,
+      "index": 3,
+      "logicalFieldAndHistoryHashes": {
+        "controls": {
+          "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+          "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+          "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+          "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+        },
+        "history": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68"
+      },
+      "markerObservationACKTriplets": 6,
+      "maximumAuthOperationMilliseconds": 1280.3479590000002,
+      "nativeAndReferencedHistoryRows": 6000,
+      "nativeFinalEvents": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0
+      },
+      "nativeGroup": "helmut-meter-memorybudget-466bc758453c4899b10ed6e5",
+      "nativeLifetimePeakBytes": 1018159104,
+      "nodeWallMilliseconds": 11425.682396,
+      "originalSourceManifestSHA256Recomputed": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+      "outerCompletionChunk": "8769eb",
+      "parentInode": 20428,
+      "physicalAuthBytes": 606,
+      "restoredStateAndHistory": true,
+      "retainedProofBytes": 2664436,
+      "retainedProofFiles": 102,
+      "rootAdoptionUTC": "2026-10-21T06:46:48.390080+00:00",
+      "startUTC": "2026-10-21T06:46:51.630458+00:00",
+      "variant": "AFTER",
+      "wholeLifetimeCPUUsec": 32513580,
+      "wholeLifetimeWallSeconds": 32.55887310201069,
+      "workloadFinishedAtUTC": "2026-10-21T06:47:23.807655448Z"
+    },
+    {
+      "NodePGWorkloadExit0StrictPostgRESTAndEOFVerified": true,
+      "actualResultPin": {
+        "bytes": 8735,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/ACTUAL_RESULT.SAFE.json",
+        "sha256": "eb31ca291ab962712edac0971c90307cbe7797ed9819e5569b189677ada04f29"
+      },
+      "allNativeEventsZero": true,
+      "captures": 17,
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2",
+      "confirmedCASWrites": 4,
+      "controlReads": 18,
+      "cycleEndObservations": [
+        {
+          "nativeCurrentBytes": 931057664,
+          "nativeLifetimePeakBytes": 985018368,
+          "nativeMemoryStat": {
+            "anon": 298381312,
+            "file": 604954624,
+            "kernel": 26914816,
+            "shmem": 233725952
+          },
+          "naturalGC": {
+            "count": 107,
+            "durationMilliseconds": 207.6583240479231,
+            "kinds": {
+              "1": 83,
+              "4": 12,
+              "8": 12
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 5439295,
+            "heapTotal": 104148992,
+            "heapUsed": 58720912,
+            "rss": 224808960
+          },
+          "round": 1
+        },
+        {
+          "nativeCurrentBytes": 942186496,
+          "nativeLifetimePeakBytes": 997920768,
+          "nativeMemoryStat": {
+            "anon": 309301248,
+            "file": 605003776,
+            "kernel": 27140096,
+            "shmem": 233725952
+          },
+          "naturalGC": {
+            "count": 186,
+            "durationMilliseconds": 361.4578400105238,
+            "kinds": {
+              "1": 144,
+              "4": 21,
+              "8": 21
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 5439295,
+            "heapTotal": 104673280,
+            "heapUsed": 59324800,
+            "rss": 233668608
+          },
+          "round": 2
+        },
+        {
+          "nativeCurrentBytes": 946688000,
+          "nativeLifetimePeakBytes": 1004269568,
+          "nativeMemoryStat": {
+            "anon": 313155584,
+            "file": 605102080,
+            "kernel": 27299840,
+            "shmem": 233758720
+          },
+          "naturalGC": {
+            "count": 265,
+            "durationMilliseconds": 513.266883045435,
+            "kinds": {
+              "1": 205,
+              "4": 30,
+              "8": 30
+            }
+          },
+          "nodeProcess": {
+            "arrayBuffers": 1457402,
+            "external": 5439295,
+            "heapTotal": 104673280,
+            "heapUsed": 59555144,
+            "rss": 237490176
+          },
+          "round": 3
+        }
+      ],
+      "entireCatalogABIACLExceptAuthorizedRevisionSHA": true,
+      "finalGroupEmptyThroughLastOwnedExit": true,
+      "fullLogical6000HistoryHashes": 9,
+      "fullReads": 5,
+      "genuineRPCs": 27,
+      "graphBindingsRecomputed": 18,
+      "historyBindingsRecomputed": 23,
+      "index": 4,
+      "logicalFieldAndHistoryHashes": {
+        "controls": {
+          "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+          "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+          "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+          "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+        },
+        "history": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68"
+      },
+      "markerObservationACKTriplets": 6,
+      "maximumAuthOperationMilliseconds": 1325.005428,
+      "nativeAndReferencedHistoryRows": 6000,
+      "nativeFinalEvents": {
+        "high": 0,
+        "low": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_group_kill": 0,
+        "oom_kill": 0
+      },
+      "nativeGroup": "helmut-meter-memorybudget-5dc44a706ce2a36192ddec8c",
+      "nativeLifetimePeakBytes": 1005346816,
+      "nodeWallMilliseconds": 11780.245185,
+      "originalSourceManifestSHA256Recomputed": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+      "outerCompletionChunk": "d21e71",
+      "parentInode": 20688,
+      "physicalAuthBytes": 606,
+      "restoredStateAndHistory": true,
+      "retainedProofBytes": 2677687,
+      "retainedProofFiles": 102,
+      "rootAdoptionUTC": "2026-10-21T06:48:06.951510+00:00",
+      "startUTC": "2026-10-21T06:48:10.223124+00:00",
+      "variant": "BEFORE",
+      "wholeLifetimeCPUUsec": 34209588,
+      "wholeLifetimeWallSeconds": 34.478523783007404,
+      "workloadFinishedAtUTC": "2026-10-21T06:48:44.50075234Z"
+    }
+  ],
+  "comparatorSourceReviewPin": {
+    "bytes": 17860,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/COMPARATOR_SOURCE_REVIEW.SAFE.json",
+    "sha256": "4ecc05db4005f8231a47ca2f5859b42bf558967d17cd58a875ceda64d71609b5"
+  },
+  "exactNativeAllocationCauseProven": false,
+  "fiveDistinctGroupsInodesNonces": true,
+  "full500": false,
+  "fullMotorReserveProven": false,
+  "functionalEvidencePASS": true,
+  "genuineWorkRPCs": 108,
+  "hostPin": {
+    "bytes": 2434,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate.py",
+    "sha256": "9e95ca77673d2c3b55bc917c0852c32c5d4c92a2c91b443b8410b5ff6e701c4d"
+  },
+  "integrationDecision": "DO_NOT_AUTOMATICALLY_INTEGRATE_PREDECLARED_GATE_NOT_MET",
+  "integrationGatePassed": false,
+  "lifecycleProofFilesPreviouslyVerified": 57,
+  "lifecycleReviewPin": {
+    "bytes": 4230,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+    "sha256": "b8b38fcec3c85ad8a1bde29397fadb0bd0f069a182bf1ff3cf274bbcb6fd5960"
+  },
+  "limits": [
+    "PASS is acceptance of genuine complete bounded functional measurement evidence, not automatic product integration.",
+    "Measured four-case separation is a finite-window common-memory result if its strict rule passes. It is not a plateau, full500,500MB-reserve, full-motor or1500-output proof.",
+    "The source and actual codec vectors prove avoided final concat in their qualified decoded control cases. Whole-group memory benefit is determined separately by all four genuine native peaks; no exact allocator/native-owner cause is inferred.",
+    "Per-process RSS, JS heap, external/arrayBuffers and native memory.stat are related sequential observations and cannot be added. file includes shmem; no PSS or exact peak-owner claim.",
+    "SQL/WAL/write counters may lag and do not measure RAM. Native lifetime includes original runtime qualification, PGDATA copy, JIT, setup, observers, workload and closure; no cold-cache or reset assumption.",
+    "Host free floor is sampled and planning/free snapshots are not reservations or full500 disk admission.",
+    "No original PGDATA/archive/runtime payload replay, subject imports/tests, SQL, Docker, sampler, native starts, provider actions, forcedGC, eviction or new experiment in this review.",
+    "All raw proofs/case hulls remain protected; this review grants no retirement action or500GO."
+  ],
+  "meanCPURegressionFraction": 0.0011502368470548419,
+  "meanWallRegressionFraction": -0.0070471911392444575,
+  "memoryRule": "Strict max(AFTER)<min(BEFORE) over all four whole-native-group never-reset lifetime peaks; no peak/reset or setup subtraction.",
+  "plateauProven": false,
+  "preparedPin": {
+    "bytes": 47700,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/PREPARED.SAFE.json",
+    "sha256": "ba4358e30778ce0366446439f46016b44dadc5565302988289f8a55efcb69549"
+  },
+  "production": false,
+  "providerCalls": 0,
+  "rawWorkPeaksBytesInOrder": [
+    1037365248,
+    1019125760,
+    1018159104,
+    1005346816
+  ],
+  "resultPins": [
+    {
+      "bytes": 8199,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-ecda0cd673313ed20dfd14c8/ACTUAL_RESULT.SAFE.json",
+      "sha256": "efe9a9ef6549ac91135e8a4a5d19c2a8259d6543f9cb1f88dd5807a29e449c82"
+    },
+    {
+      "bytes": 8726,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/ACTUAL_RESULT.SAFE.json",
+      "sha256": "f9afca2e8f24b5b89b030bc82ba29ef02aab3a4e6738ed1b167539101798a454"
+    },
+    {
+      "bytes": 8731,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/ACTUAL_RESULT.SAFE.json",
+      "sha256": "fb36649542f17f89e136d5e70f2fff17de673bfe8ecd53f00e32418c7a14dd35"
+    },
+    {
+      "bytes": 8723,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/ACTUAL_RESULT.SAFE.json",
+      "sha256": "e0b243b9c32c812c178772c3cd85d93b797f72c713b1520d7374dabc0f4bcc72"
+    },
+    {
+      "bytes": 8735,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/ACTUAL_RESULT.SAFE.json",
+      "sha256": "eb31ca291ab962712edac0971c90307cbe7797ed9819e5569b189677ada04f29"
+    }
+  ],
+  "retainedDistinctHullIdentities": 15,
+  "retainedWorkProofFilesRehashed": 408,
+  "retirementAuthorizedByThisReview": false,
+  "rootAnnouncedCompletionsPin": {
+    "bytes": 2269,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/ROOT_ANNOUNCED_WORK_COMPLETIONS.SAFE.json",
+    "sha256": "afbd3243dc8ecd93152b721d150ddbd2e9ccb0577eaf9bac50adce9ff1e55dac"
+  },
+  "runtimeRule": "Neither whole-native-group final CPU usage_usec mean nor ACTUAL_RESULT whole-lifetime wall mean may regress >10percent. Fixed per-operation/whole-client/native deadlines independently verified.",
+  "runtimeRuleMet": true,
+  "schema": "helmut-control-inflate-independent-actual-review/1",
+  "scope": "Exactly fresh same-freeze zeroAuth lifecycle plus BEFORE/AFTER/AFTER/BEFORE3round27RPC cases; functional evidence acceptance is separate from measured benefit/integration.",
+  "sharedMemoryRuleMet": false,
+  "sourceClosurePinsCurrentDriftChecked": 74,
+  "status": "PASS",
+  "verifiedPinsManifest": {
+    "bytes": 420405,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/ACTUAL_VERIFIED_PINS.PRIVATE.json",
+    "sha256": "537040b23c072f13c33ce603c745766b59b30601ccc1d87c4a0a05bf6adfd85a"
+  },
+  "verifierSourcePin": {
+    "bytes": 44707,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/verify_all_actual.py",
+    "sha256": "702633bc8fd59591be7b83f9bc5f820be5efcf7a21d18d9bc38bd9d7a0f0e86c"
+  },
+  "wholeLifetimeArithmeticMeans": {
+    "AFTER": {
+      "nativeLifetimePeakBytes": 1018642432,
+      "wholeLifetimeCPUUsec": 33271381.5,
+      "wholeLifetimeWallSeconds": 33.33635355900333
+    },
+    "BEFORE": {
+      "nativeLifetimePeakBytes": 1021356032,
+      "wholeLifetimeCPUUsec": 33233155.5,
+      "wholeLifetimeWallSeconds": 33.57294854450447
+    }
+  },
+  "workBoundaryTriplets": 24,
+  "workCASWrites": 16,
+  "workCaptures": 68,
+  "workControlReads": 72,
+  "workFullLogical6000Hashes": 36,
+  "workFullReads": 20,
+  "workGraphBindingsRecomputed": 72,
+  "workHistoryBindingsRecomputed": 92
+}
