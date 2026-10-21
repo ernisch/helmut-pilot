@@ -2,7 +2,7 @@
 
 Stand 21.10.2026, laufende Arbeit auf
 `codex/controlled-cleanup-and-late-probe-20261020`, Entwurfs-PR
-[#927](https://github.com/ernisch/helmut-pilot/pull/927). Kein Ressourcenlauf gestartet.
+[#927](https://github.com/ernisch/helmut-pilot/pull/927). Der einmalig freigegebene lokale Lauf V12 auf `cd1c4372` ist mit FAIL beendet; Slot12 ist verbraucht.
 
 Die aktuelle Nutzerfreigabe erlaubt DeepSeek und den bestehenden Router wieder.
 Echte Flash-High-Lese- und Schreibaufrufe sind abgeschlossen. Der Schreibauftrag
@@ -133,3 +133,121 @@ Gezielt erneut31Autoritätsfälle,7Mountfälle und JS-Einstieg PASS; zusätzlich
 9neue Freigabe-/Zeitgrenzenfälle PASS. Keine nativen Aktionen in diesen Tests.
 Die Fälle und Quellen benötigen nun die neue Gesamtquellenabnahme und frische32;
 die zuvor blockierten Antworten bleiben unverändert als Belege erhalten.
+
+
+## Tatsächliches Laufende: 499 ACK, letzte Einheit an Unit60 gescheitert
+
+Nach allen32frischen Startgruppen und drei positiven aktuellen SOURCE-Abnahmen
+wurde genau der Fall `f3375a7d5548` ausgeführt. Um18:39:04UTC bestätigte der
+Controller FAIL:499HTTP200/finaleACKs, letzterIndex499HTTP409 wegen
+`synthetik500-dispatch-EU-unit-deadline`. 1497 sind die erwarteten Positionen der
+499beendeten Einheiten; die abschließende vollständige Brauchbarkeitsprüfung
+wurde nicht erreicht. Kein erfolgreicher500er-/Productionnachweis.
+[Hashgebundener Ergebnisbeleg](belege/next-local-full500-20261021/V12_ACTUAL_TERMINAL.SAFE.json).
+
+Gemeinsamer Lebenszeitpeak1.400.479.744B, high374/max0/OOM0; sämtliche eigenen
+Gruppen bis zum letzten Prozessende leer, Originale unverändert. Die rechnerisch
+verbleibenden647.520.256B gehören zu diesem fehlgeschlagenen, bereits durch
+memory.high beeinflussten Fall. Sie beweisen weder einen erfolgreichen500MB-
+Puffer noch ein unbeeinflusstes Plateau. Der Ergebnisvertrag meldet folgerichtig
+`INCOMPLETE_FULL_RUN` und keine Reserve. Kein neuer PostgREST-Abschlussfehler
+gefunden; eine separate strenge PostgREST-Quittung liegt hier nicht vor.
+
+Die vollständige Zeitprüfung umfasst83.476Requests/4.000Mutationen/24.492Events.
+Median der Motorzeit ohne Anbieterphasen:12,412s bei1–99, zuletzt24,543s bei400–498;
+spätester Spitzenwert31,361s. Die echten beiden Anbieterphasen499beanspruchen
+39,802s und lassen20,198s für den Motor. Je nach beobachtetem spätem Ablauf
+fehlen etwa6,5–11,2s allein zum Einhalten der60s, zusätzlich ist Betriebsabstand
+nötig. Verschachtelte Messzeiten werden nicht addiert oder alsCPU ausgegeben.
+38Graphlesevorgänge/12CAS je erfolgreicher Einheit; zwei Verbrauchsprotokolle
+allein können den Fehler nicht lösen (zusammen höchstens1,826s bei499).
+
+Die erste Phasenmessung an vollständiger Auth-Rekonstruktion, Kopie,
+Graphbildung, Kontrollkodierung und Serialisierung ist tatsächlich abgeschlossen.
+Die sichere nichtoriginale Arbeitskopie ist tatsächlich
+übernommen:1714Dateien/372.011.391B; ursprünglicher Abbild-SHA vor/nach identisch.
+Keine Wiederholung oder Reparatur des alten Profils, kein nativer Schreib-RPC,
+kein Dispatcher/Anbieteraufruf in dieser Diagnose. Vier frische native Reads und
+zwei vor Transport gestoppte Captures PASS; nativer Zustand/History6000 identisch,
+PostgreSQL-/Containerexit0/EOF/Gruppenleer/Events0. Warmer Vollread519,662ms,
+Kontrollreads258,698/264,213ms; Captures122,490/123,795ms. Kalter JS-Decode
+712,421ms mit137.986.048B RSS-Endpunktanstieg; kein Retentions-/Peakbeweis.
+Direktes natives SQL erlaubt Phasenzuordnung, keine HTTP-Laufzeitgleichheit.
+Zwei frühere technische HTTP-Versuche bleiben FAIL; kein dritter HTTP-Versuch.
+Diese Phasendiagnose allein ist keine Optimierung und kein RAMvergleich.
+U93917a57/Partsf30089e7 unverändert.
+
+## Konkrete Motoränderung: inerte Tenantbudgets laden keinen ganzen Authzustand
+
+Alle500 gebundenen Profile enthalten keine Tages-/Monatsbudgetfelder. Lage
+übergibt deshalb explizit null/null; die vorhandene Storage-Normalisierung macht
+daraus0/0. Die reine Budgetpolitik behandelt beides bereits als inaktiv. Bisher
+lud Storage trotzdem zwei komplette Authzustände für unbenutzte Kostenwerte.
+
+`canSpendLlmForTenant` führt diese beiden Reads jetzt nur bei mindestens einem
+positiven Tenantlimit aus. Der globale Check läuft weiterhin bei jedem Aufruf
+frisch und global; positive Limits behalten beide Kostenfenster und dieselbe
+Fehlersperre. Normalisierung und vollständige Rückgabeformen bleiben identisch.
+Genau ein solcher Aufruf je tatsächlichem D/R-Profil: zwei Reads weniger je
+Einheit. Keine Änderung an Budgetwerten, Reserven, CAS, Journal oder Sendefreigaben.
+
+67 gezielte Budgetassertions und1352 direkte Alt-Neu-Fälle PASS. Unabhängige
+SOL-Quellen- und tatsächliche Belegprüfung PASS. Der faire OLD/NEW/NEW/OLD-Vergleich
+nutzt denselben authentischen späten Zustand, gleiche Datenbankeinstellungen,
+sechs tatsächliche globale Prüfungen je Arm und jeweils neue native Gruppen.
+
+| Fall | Gemeinsamer Gruppenpeak | Gruppen-CPU | Verifizierte Reads |
+| --- | ---: | ---: | ---: |
+| OLD1 |607.662.080B|17,862052s|18|
+| NEW1 |528.060.416B|13,112227s|6|
+| NEW2 |549.588.992B|12,850067s|6|
+| OLD2 |580.616.192B|17,708855s|18|
+
+Mittel594.139.136→538.824.704B:55.314.432B/9,31% weniger; beide Paarungen positiv,
+mindestens31.027.200B Unterschied. Gesamtgruppen-CPU−27,01%; Median warmer
+Prüfungen737,201→331,474ms. Setup und Abschluss bleiben in Gruppenpeak/CPU.
+Alle Entscheidungen identisch gesperrt: tatsächlicher globaler Verbrauch1000 bei
+unverändertem lokalen Defaultlimit50. Der globale Schutz wurde nicht umgangen.
+Alle nativen Bindungen/History6000 gleich, alle Reads erfolgreich verifiziert,
+alle Speicherereignisse0 und alle eigenen Prozesse/Gruppen sauber beendet.
+[Hashgebundene Messbelege und Grenzen](belege/next-local-full500-20261021/V12_TENANT_BUDGET_COMPARISON.SAFE.json).
+
+Warmer geteilter Dateicache, direkte SQL-Sitzungen und zwei Beobachtungen je
+Variante begrenzen den Vergleich. Kein kalter DB-Nachweis, keine HTTP-Gleichheit,
+keine Hochrechnung auf500 und kein500MB-Pufferbeweis. Die wiederholte vollständige
+Authverarbeitung bleibt der größere verbleibende Pfad; diese Änderung allein
+beseitigt die beobachtete Unit60-Lücke voraussichtlich nicht. Nächste enge Diagnose
+trennt frisches Kontrolllesen, tatsächliches financial und kontrolliere. Kein
+Profilreplay oder Dispatcherstart. Offline-Pflichtprüfung wegen Storageänderung
+endete178/179 in688s; der einzige Fehler war der noch alte erwartete Storagehash
+im Artefaktmanifest. Nur Größe/Hash/exakte Quellenzuordnung aktualisiert; die
+betroffene Suite danach10/10PASS. Voll500-Qualifikation weiterhinfalse; kein
+zweiter großer Lauf für diese reine Metadatenkorrektur. Keine neue native
+CAS-/Rendererqualifizierung ohne sachlichen Grund.
+
+## Kontroll- und Finanzphasen am tatsächlichen späten Zustand
+
+Sechs echte frische Kontrollreads und anschließend jeweils unverändertes
+financial/kontrolliere tatsächlichPASS; Authbindung/History6000/Kontrolltexte
+identisch,0CAS/Anbieter/Profilreplay, alleExits0/EOF/Gruppenleer. Warme Mediane:
+Kontrolllesen186,095ms, financial6,404ms, kontrolliere1,970ms. Diese Finanzlogik
+ist damit kein sinnvoller nächster Hauptumbau. DirekteSQL-Phasendiagnose, keine
+HTTP-Gleichheit oder500Hochrechnung.
+
+Rein lesender Katalog: Tabelle pipeline_locks vorhanden, Acquire-/Release-RPC
+fehlen. Die bestehende alternative SQL-Sperre kann nicht einfach eingeschaltet
+werden. Der alte Client hat zusätzlich einen belegten Besitzfehler bei TTL-
+Nachfolge in derselben Job-Map. Ein nächster gezielter lokaler Kandidat benötigt
+installierten qualifizierten SQL-/Rechteumfang, private Besitzbindung je Aufruf
+und vollständige Modus-/Quellenbindung; globale Flags bleiben unverändert.
+[Phasen und Katalogbeleg](belege/next-local-full500-20261021/V12_CONTROL_FINANCIAL_PHASES.SAFE.json).
+Originalabbild und alle8Originaleingaben nach sämtlichen Diagnosen frisch
+gehasht und unverändert. Kein weiterer Voll500 ohne neue konkrete Freigabe.
+
+Der öffentliche CI-Importfehler von Lauf39627396935 (fehlende bereits öffentliche
+Day21-Bindung im festen Testimportverzeichnis) ist lokal minimal korrigiert.
+Das ist vom früheren Fehlen privater SQL-Originale und Vercel getrennt; neue
+CI-Abnahme steht aus. Kein Ersatzoriginal und keine Schutzlockerung.
+
+Alle Claims/Reservierungen/Originale und Container bleiben erhalten. Kein weiterer
+Voll500 aus diesem GO; neue konkreteFreigabe und32frischeStartgruppen bleiben nötig.

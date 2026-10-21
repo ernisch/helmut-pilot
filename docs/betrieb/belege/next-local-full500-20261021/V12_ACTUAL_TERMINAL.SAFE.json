@@ -1,0 +1,91 @@
+{
+  "schema": "helmut-v12-actual-terminal-summary/1",
+  "atUTC": "2026-10-21T18:54:26.100293+00:00",
+  "sourceCommit": "cd1c43722e0be42e753028d7153ec300c2185b9d",
+  "scope": "FINISHED_LOCAL_MOCK500_V12",
+  "pass": false,
+  "completeACKs": 499,
+  "expectedCompletedPositions": 1497,
+  "all1500UsabilityAccepted": false,
+  "lastIndex": 499,
+  "lastHTTP": 409,
+  "failure": "synthetik500-dispatch-EU-unit-deadline",
+  "nativeCommonLifetimePeakBytes": 1400479744,
+  "nativeEvents": {
+    "high": 374,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0
+  },
+  "arithmeticHardLimitMinusFailedPeakBytes": 647520256,
+  "successful500ReserveProven": false,
+  "unconstrainedPlateauProven": false,
+  "allOwnedGroupsEmpty": true,
+  "allOriginalPinsUnchanged": 8,
+  "sourceWrites": 0,
+  "paidProviderCalls": 0,
+  "production": false,
+  "slot12GOConsumed": true,
+  "anotherFull500Authorized": false,
+  "runtimeCollections": {
+    "requests": 83476,
+    "mutations": 4000,
+    "events": 24492,
+    "providerPhases": 1000
+  },
+  "lateIndex499ProviderWallMS": 39802.04,
+  "lateIndex499EngineBudgetMS": 20197.96,
+  "twoUsageEventsEntireWallMS": {
+    "index498": 1707,
+    "index499": 1826
+  },
+  "smallUsageOnlyFixSufficient": false,
+  "engineMedianMSByIndexRange": {
+    "1-99": 12412,
+    "100-199": 14785,
+    "200-299": 18202,
+    "300-399": 21527,
+    "400-498": 24543
+  },
+  "worstLateEngineWallMS": 31361,
+  "nestedWallIntervalsNotAdditive": true,
+  "evidence": [
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-f3375a7d5548/CONTROLLER_COMPLETE.SAFE.json",
+      "bytes": 954,
+      "sha256": "0eaa91fe7f49d8797f1576e3460360b186202835b29cee73c9eb481b09d183c1"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-f3375a7d5548/application/COMPLETE_RESOURCE_RESULT.SAFE.json",
+      "bytes": 92877,
+      "sha256": "23acfb8be7e4beebfd75c05acda3cfe4d76c8c428ad7f01d258760dbd3b98d68"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-f3375a7d5548/application/RUNNER_RESULT.SAFE.json",
+      "bytes": 74205,
+      "sha256": "c1d3d59d8bf51cff717412c45a522b5c50787aff2b887e055c5a00ae9a1f2f12"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-f3375a7d5548/database/DATABASE_FINAL.SAFE.json",
+      "bytes": 2735,
+      "sha256": "d12841ad562d82dc8abecfb92090f756d2fdc25cae368cf39cac8b9370a917a7"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-f3375a7d5548/native-end-preparation/run-combined500-synthetik500-resources21-f3375a7d5548/RUNTIME_FAILURE.SAFE.json",
+      "bytes": 27254960,
+      "sha256": "3ff55615be8a3c5a179bebe9458d1b3b70d5ce5b025e578f7750e35ceea1b68d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-postrun-readback/EXTRACTION_VERIFIED.SAFE.json",
+      "bytes": 607,
+      "sha256": "54b633881c6c51b0a3d5a11ed6fd5aece495645477e13486832e8a982fffdb72"
+    }
+  ],
+  "nextScope": "SMALL_READONLY_LATE_STATE_PHASES_BEFORE_STRUCTURAL_CHANGE",
+  "cloneExtraction": {
+    "files": 1714,
+    "bytes": 372011391,
+    "sourceImageSHA256BeforeAndAfter": "54df2ecc0e4fdc22adf75f2ce3491d3c921e38296510543dcdadd48db3f37693",
+    "workingCopyIsNotOriginal": true
+  }
+}

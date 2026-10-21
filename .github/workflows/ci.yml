@@ -155,6 +155,7 @@ jobs:
           if [ "$GITHUB_WORKSPACE/scripts/helmut-resource-meter/next-resource-authority.py" != "$runtime_helper" ]; then
             for helper in next-resource-authority.py local-resource-authority-slot.json \
               capture-local-source.py local-source-runtime-binding.json local-day20-input-binding.json \
+              local-day21-input-binding.json \
               local-calendar-binding.py native-memory-budget.py; do
               runtime_file="${runtime_helper%/*}/$helper"
               test ! -e "$runtime_file"
