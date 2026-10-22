@@ -149,10 +149,11 @@ jobs:
           # Basis-Commit im flachen Checkout.
           fetch-depth: 0
           persist-credentials: false
-      - name: Echte Freigabe fuer Lauf, PR und Checkout pruefen
+      - name: CI-Zugang fuer Lauf, PR und Checkout pruefen
         if: needs.plan.outputs.standard == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          HELMUT_CI_ORIGINALS_ACCESS_POLICY: ${{ vars.HELMUT_CI_ORIGINALS_ACCESS_POLICY || 'owner-automatic-v1' }}
         run: python3 -B scripts/helmut-resource-meter/private_ci_channel.py check-approval --receipt "$RUNNER_TEMP/helmut-ci-original-approval.json"
       - uses: actions/setup-node@v4
         with:
@@ -282,6 +283,7 @@ jobs:
         if: steps.plan.outputs.standard == 'true'
         env:
           HELMUT_CI_ORIGINALS_KEY: ${{ secrets.HELMUT_CI_ORIGINALS_KEY }}
+          HELMUT_CI_ORIGINALS_ACCESS_POLICY: ${{ vars.HELMUT_CI_ORIGINALS_ACCESS_POLICY || 'owner-automatic-v1' }}
         run: python3 -B scripts/helmut-resource-meter/private_ci_channel.py provision --receipt "$RUNNER_TEMP/helmut-ci-original-approval.json"
       - name: Ressourcenstart und Originalbindungen (offline)
         if: steps.plan.outputs.standard == 'true'

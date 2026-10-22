@@ -20,17 +20,35 @@ atime ist vom Vergleich ausgenommen. Physische Datenbankkopien gehören nicht zu
 diesem CI-Minimum und werden dadurch nicht als übertragen behauptet.
 
 Der Workflow ermittelt zuerst ohne private Zugänge seinen Prüfbedarf. Für den
-vollen Lauf verwendet er die Environment `helmut-ci-originals`. Nach deren
-Freigabe prüft ein Leser mit dem kurzlebigen, rein lesenden `GITHUB_TOKEN`:
-Lauf/Versuch, Workflow, Reviewer`ernisch`/ID273344519, PR-Ref, aktueller PR-Head
-und ausgecheckter Merge-Commit. Ein öffentlicher Preflight bindet dessen echte
+vollen Lauf verwendet er die Environment `helmut-ci-originals`. Ein Leser mit
+dem kurzlebigen, rein lesenden `GITHUB_TOKEN` prüft Lauf/Versuch, Workflow,
+PR-Ref, aktuellen PR-Head und ausgecheckten Merge-Commit. Ein öffentlicher Preflight bindet dessen echte
 zwei Git-Eltern an Event-Basis/Head, statt den eventuell veralteten Mergezeiger
 des Webhooks zu verwenden. Der aktuelle PR-API-Stand wird zusätzlich geprüft.
-Fremde Forks, abweichende PR-Stände und fehlende
-GitHub-Reviewhistorie werden abgewiesen. Ein fehlgeschlagener öffentlicher
+Fremde Forks und abweichende PR-Stände werden abgewiesen. Ein fehlgeschlagener öffentlicher
 Prüfplan lässt den bestehenden Pflichtjob fehlschlagen, nicht überspringen.
 Der Job verwendet `!cancelled()`: fehlgeschlagene Pläne werden weiterhin rot,
 überholte Läufe können jedoch ihren Parallelitätsslot durch Abbruch freigeben.
+
+Ohne zusätzliche Konfiguration gilt im neuen Code `owner-automatic-v1`.
+Dieser Modus erlaubt die automatische Bereitstellung nur, wenn die
+GitHub-API sowohl den ursprünglichen als auch den aktuellen Auslöser als
+`ernisch` mit dieser ID bestätigt. Beide Repository-IDs und -Namen müssen zum
+fest gebundenen Repository gehören. Bei PRs müssen zusätzlich Autor,
+Quell-/Zielrepository, aktueller Kopf und Merge-Checkout übereinstimmen;
+Main-Pushes und manuelle Workflowstarts bleiben auf `main` begrenzt.
+Unbekannte Regeln, andere Auslöser und unvollständige Metadaten sperren den
+Zugriff. Die Automatik erzeugt einen eigenen Zugangsbeleg und behauptet keine
+persönliche Reviewfreigabe. Ein Beleg ist nicht zwischen den Regeln austauschbar.
+Optional wählt die Environment-Variable `HELMUT_CI_ORIGINALS_ACCESS_POLICY`
+den bisherigen Modus `manual`: Dann ist eine echte persönliche Freigabe von
+`ernisch`/ID273344519 für genau diesen Lauf erforderlich.
+
+Die Automatik vertraut damit dem Code und den Workflows, die der Eigentümer
+selbst in diesem Repository auslöst. Sie ist keine Freigabe privater Originale
+für fremden PR-Code. Der Betreiber hat am22.10.2026 den automatischen Ablauf
+für seine eigenen Änderungen verlangt. Wirksam wird er nach der bewussten
+Umstellung der Environment; die Codeänderung allein entfernt keinen Reviewer.
 
 Erst danach erhält ein einzelner Bereitstellungsschritt den CI-Paketschlüssel.
 Er prüft Cipher- und Archivhash, extrahiert ausschließlich die84 erlaubten
@@ -46,32 +64,36 @@ die Logs separat verschlüsselt und ausschließlich als `.gpg`-Artefakt mit7Tage
 Aufbewahrung gesichert. Keine Klartextlogs/-originale oder Schlüsselartefakte.
 Gezielte öffentliche Läufe behalten ihre normale Ausgabe.
 
-## Einmalige Einrichtung durch den Repository-Eigentümer
+## Einmalige Umstellung auf automatische CI
 
 Die verfügbaren Cloudwerkzeuge können keine GitHub-Environment oder Secrets
 einrichten; ein steuerbarer Browser ist in diesem Task nicht verfügbar.
 Es ist kein neuer GitHub-PAT erforderlich.
 
+Erst nach Veröffentlichung und öffentlicher Prüfung des neuen CI-Codes umstellen:
+
 1. [GitHub → Settings → Environments](https://github.com/ernisch/helmut-pilot/settings/environments)
-   öffnen und die Environment **`helmut-ci-originals`** erstellen.
-2. Unter **Deployment protection rules → Required reviewers** den Benutzer
-   **`ernisch`** eintragen und speichern. Die manuelle Freigabe muss eingerichtet
-   sein; eine automatische oder administrative Umgehung liefert dem Leser keinen
-   zulässigen Reviewbeleg.
-3. Unter **Environment secrets → Add environment secret** den Namen
-   **`HELMUT_CI_ORIGINALS_KEY`** anlegen. Als Wert ausschließlich den Inhalt der
-   privaten, separat bereitgestellten CI-Schlüsseldatei direkt in GitHub einfügen.
-   Das ist ein neu erzeugter Paketschlüssel, kein GitHub-Token und nicht der
-   Schlüssel des vollständigen Originaltransfers. Nicht im Chat, in Git oder als
-   unverschlüsseltes Workflowartefakt ablegen.
-   Der Name darf ausschließlich in dieser geschützten Environment liegen.
-   Falls zusätzlich ein gleichnamiges **Repository secret** existiert, nur diesen
-   zusätzlichen Eintrag entfernen; den Environment-Eintrag behalten.
-4. Den aktuellen PR-/CI-Lauf prüfen. Die Environment verweist auf den exakten
-   Checkout-Commit. Unter **Review deployments** nur diesen geprüften Stand für
-   **`helmut-ci-originals`** freigeben. Ein neuer PR-Commit braucht eine neue
-   Freigabe. Falls ein Lauf schon ohne Einrichtung beendet wurde: erst nach der
-   Einrichtung erneut starten und den neuen Lauf prüfen/freigeben.
+   öffnen und **`helmut-ci-originals`** auswählen.
+2. Unter **Deployment protection rules → Required reviewers** die Pflicht zur
+   persönlichen Freigabe entfernen und die Schutzregeln speichern. Andere
+   Branch-/Zugriffsregeln beibehalten.
+3. **`HELMUT_CI_ORIGINALS_KEY`** unter **Environment secrets** beibehalten.
+   Ein bereits korrekt eingerichteter Schlüssel muss weder neu erzeugt noch
+   erneut eingegeben werden. Er bleibt ausschließlich in dieser Environment.
+   Eine neue Variable wird für die Automatik nicht benötigt.
+
+Ein frischer Lauf mit dem neuen Code muss anschließend seinen echten automatischen
+Zugang und die vollständige CI bestehen. Alte Workflows besitzen diese neue
+Regel noch nicht; sie werden durch eine GitHub-Einstellungsänderung nicht umgebaut.
+Bereits wartende Läufe gegebenenfalls durch einen neuen Lauf mit aktuellem Code
+ersetzen. GitHubs Bezeichnung „Deployment“ meint hier ausschließlich den
+CI-Schlüsselzugriff und keine Veröffentlichung von Helmut.
+
+Für den bisherigen manuellen Modus die Variable auf `manual` setzen und
+`ernisch` wieder als Required reviewer eintragen. Dann gilt weiterhin die
+persönliche Freigabe je Lauf über „Review deployments“. Der kurzlebige
+`GITHUB_TOKEN` wird in beiden Modi nur lesend verwendet; es werden keine
+Reviews automatisch im Namen des Benutzers eingetragen.
 
 Die öffentliche Environment `helmut-ci-public` braucht keinen Schlüssel und
 keinen privaten Zugang. Sie dient nur dem unveränderten Jobnamen für Läufe ohne
@@ -86,7 +108,7 @@ auf3424469c ist vollständig grün: Freigabe/Lauf/PR/Checkoutprüfung,84Original
 180Standardsuiten,335Bereichssuiten, alle angeforderten isolierten Datenbankchecks
 und Browser/Mobile PASS. Die Diagnosen wurden ausschließlich verschlüsselt gesichert.
 PR930 ist als eb4bfd61 im Entwicklungszweig übernommen; dessen Quellbaum stimmt
-exakt mit dem geprüften Stand überein. Neue Integrationsläufe brauchen ihre eigene
+exakt mit dem geprüften Stand überein. Im manuellen Modus brauchen neue Integrationsläufe ihre eigene
 Freigabe. [Bereinigter Echtbeleg](belege/private-ci-channel-20261022/GITHUB_ACCEPTANCE_39745628626.SAFE.json).
 Auch die Integrationsläufe39750868037/c303790b und39751014111/d2d1f7ad sind
 vollständig grün: je84Originale,180Standard- und335Bereichssuiten sowie alle
@@ -96,5 +118,5 @@ im Entwicklungszweig übernommen; sein Quellbaum ist gleich zum geprüften d2d1f
 [Integrationsbeleg](belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
 Die zusätzliche Views-Hashwiederverwendung hat26gezielte lokale Checks und eine
 gesonderte Pro-High-Leseprüfung bestanden. Alle frischen Guards bleiben erhalten;
-der gemeinsame neue Kopf benötigt seine eigene CI-Freigabe und vollständige Prüfung.
+der gemeinsame neue Kopf benötigt seinen eigenen Zugangsbeleg und die vollständige Prüfung.
 Kein500er Lauf, keine Unit60-Qualifikation und keine Production-Aktion daraus.

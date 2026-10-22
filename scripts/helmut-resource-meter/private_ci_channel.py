@@ -16,9 +16,11 @@ import urllib.request
 
 BIN = Path(__file__).resolve().parent
 REPO = 'ernisch/helmut-pilot'
+REPO_ID = 1274160979
 ENVIRONMENT = 'helmut-ci-originals'
 REVIEWER = 'ernisch'
 REVIEWER_ID = 273344519
+AUTOMATIC_POLICY = 'owner-automatic-v1'
 MANIFEST_SHA = 'b2e3584818b16fed2f4bfd845f9379732d9f9eb045c83f59ad94034d9e6c46ef'
 TRANSPORT_SHA = 'fd9eac76ded846b2474c1ec85eaa72d5e7b023ff7cf7204e9cb62fb0401664fe'
 TRANSPORT_PATH = BIN / 'private-ci-transport.json'
@@ -174,13 +176,103 @@ def validate_review(ctx, run, reviews, current_pr=None):
             'executionGO': False, 'ciPassed': False}
 
 
+def access_policy():
+    # Operator22.10.: own changes should run automatically. GitHub's Environment
+    # protection remains effective until its owner explicitly changes it.
+    value = os.environ.get('HELMUT_CI_ORIGINALS_ACCESS_POLICY', AUTOMATIC_POLICY)
+    require(value in ['manual', AUTOMATIC_POLICY])
+    return value
+
+
+def owned_actor(value):
+    return (isinstance(value, dict) and value.get('login') == REVIEWER
+            and type(value.get('id')) is int and value['id'] == REVIEWER_ID)
+
+
+def same_repository(value):
+    return (isinstance(value, dict) and value.get('full_name') == REPO
+            and type(value.get('id')) is int and value['id'] == REPO_ID)
+
+
+def validate_owner_access(ctx, run, current_pr=None):
+    require(isinstance(ctx, dict) and isinstance(run, dict)
+            and ctx.get('repository') == REPO
+            and ctx.get('event') in ['pull_request', 'push', 'workflow_dispatch']
+            and type(ctx.get('runID')) is int and ctx['runID'] > 0
+            and type(ctx.get('runAttempt')) is int and ctx['runAttempt'] > 0
+            and all(isinstance(ctx.get(k), str) and COMMIT.fullmatch(ctx[k])
+                    for k in ['headSHA', 'checkoutSHA', 'workflowSHA'])
+            and ctx['workflowSHA'] == ctx['checkoutSHA'])
+    require(run.get('head_sha') == ctx['headSHA'] and run.get('event') == ctx['event']
+            and type(run.get('run_attempt')) is int and run['run_attempt'] == ctx['runAttempt']
+            and type(run.get('id')) is int and run['id'] == ctx['runID']
+            and isinstance(run.get('path'), str)
+            and run['path'].split('@')[0] == '.github/workflows/ci.yml'
+            and same_repository(run.get('repository'))
+            and same_repository(run.get('head_repository'))
+            and owned_actor(run.get('actor')) and owned_actor(run.get('triggering_actor')))
+    if ctx['event'] == 'pull_request':
+        require(type(ctx.get('prNumber')) is int and ctx['prNumber'] > 0
+                and ctx.get('ref') == f"refs/pull/{ctx['prNumber']}/merge"
+                and isinstance(current_pr, dict))
+        head, base = current_pr.get('head'), current_pr.get('base')
+        require(isinstance(head, dict) and isinstance(base, dict)
+                and current_pr.get('state') == 'open'
+                and type(current_pr.get('number')) is int
+                and current_pr['number'] == ctx['prNumber']
+                and owned_actor(current_pr.get('user'))
+                and same_repository(head.get('repo')) and head['repo'].get('fork') is False
+                and same_repository(base.get('repo'))
+                and head.get('sha') == ctx['headSHA']
+                and current_pr.get('merge_commit_sha') == ctx['checkoutSHA']
+                and isinstance(head.get('ref'), str) and bool(head['ref'])
+                and run.get('head_branch') == head['ref'])
+    else:
+        require(ctx.get('prNumber') is None and current_pr is None
+                and ctx.get('ref') == 'refs/heads/main' and run.get('head_branch') == 'main'
+                and ctx['headSHA'] == ctx['checkoutSHA'])
+    return {**ctx, 'schema': 'helmut-private-ci-owner-access/1',
+            'accessPolicy': AUTOMATIC_POLICY, 'environment': ENVIRONMENT,
+            'authorizedActor': REVIEWER, 'authorizedActorID': REVIEWER_ID,
+            'executionGO': False, 'ciPassed': False}
+
+
+def validate_receipt(approved, ctx, policy):
+    require(isinstance(approved, dict) and policy in ['manual', AUTOMATIC_POLICY]
+            and all(type(approved.get(k)) is type(v) and approved.get(k) == v
+                    for k, v in ctx.items())
+            and approved.get('environment') == ENVIRONMENT
+            and approved.get('executionGO') is False and approved.get('ciPassed') is False)
+    common = set(ctx) | {'schema', 'environment', 'executionGO', 'ciPassed'}
+    if policy == 'manual':
+        require(set(approved) == common | {'environmentID', 'reviewer', 'reviewerID'}
+                and approved.get('schema') == 'helmut-private-ci-reviewed-access/1'
+                and approved.get('reviewer') == REVIEWER
+                and type(approved.get('reviewerID')) is int
+                and approved['reviewerID'] == REVIEWER_ID
+                and type(approved.get('environmentID')) is int and approved['environmentID'] > 0)
+    else:
+        require(set(approved) == common | {'accessPolicy', 'authorizedActor', 'authorizedActorID'}
+                and approved.get('schema') == 'helmut-private-ci-owner-access/1'
+                and approved.get('accessPolicy') == AUTOMATIC_POLICY
+                and approved.get('authorizedActor') == REVIEWER
+                and type(approved.get('authorizedActorID')) is int
+                and approved['authorizedActorID'] == REVIEWER_ID)
+    return approved
+
+
 def check_approval(receipt):
+    policy = access_policy()
     ctx = context()
     load_transport()
     run = api(f"/actions/runs/{ctx['runID']}")
-    reviews = api(f"/actions/runs/{ctx['runID']}/approvals")
-    current = api(f"/pulls/{ctx['prNumber']}") if ctx['prNumber'] is not None else None
-    value = validate_review(ctx, run, reviews, current)
+    if policy == 'manual':
+        reviews = api(f"/actions/runs/{ctx['runID']}/approvals")
+        current = api(f"/pulls/{ctx['prNumber']}") if ctx['prNumber'] is not None else None
+        value = validate_review(ctx, run, reviews, current)
+    else:
+        current = api(f"/pulls/{ctx['prNumber']}") if ctx['prNumber'] is not None else None
+        value = validate_owner_access(ctx, run, current)
     save(receipt, value)
     return value
 
@@ -218,12 +310,10 @@ def extract_archive(archive, destination, rows):
 
 
 def provision(receipt):
+    policy = access_policy()
     ctx = context()
     approved = json.loads(read_file(receipt, 4096, private=True))
-    require(all(approved.get(k) == v for k, v in ctx.items())
-            and approved.get('schema') == 'helmut-private-ci-reviewed-access/1'
-            and approved.get('environment') == ENVIRONMENT and approved.get('reviewer') == REVIEWER
-            and approved.get('reviewerID') == REVIEWER_ID and approved.get('executionGO') is False)
+    validate_receipt(approved, ctx, policy)
     transport = load_transport()
     spec = importlib.util.spec_from_file_location('ci_original_provisioner', BIN / 'provision-private-ci-originals.py')
     original = importlib.util.module_from_spec(spec)
