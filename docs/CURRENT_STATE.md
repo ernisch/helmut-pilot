@@ -4,21 +4,22 @@
 
 ## 22.10.: Restore und lokale CI-Prüfung
 
-13.527Dateien/83CI-Originale/24Patches hashverifiziert; physische DB-Kopien fehlen.
-84erOriginalmanifest+Provisionierung84/84+9Negativgruppen PASS. Netzlose CI84-
-Verbraucher19/31/13/6+Vorbereitung PASS(Node24.19/Python3.12.15), kein GitHubbeleg.
-STANDARD180/180 PASS auf87c439; danach Store-Nebenwirkung des Contracttests entdeckt.
-Testfix4isolierte Fälle PASS, Store bytegenau restauriert; Zeitmetadaten erklärt
-geändert.88/88Bytepins unabhängig PASS,84CI+3V12 auch metadatengetreu unverändert.
-7Ressourcenpakete PASS; Observer am wegen Credentialfeld ausgeschlossenen Katalog
-blockiert. PR928/51a45: Browser grün, Offline am privaten Originalpin rot.
-GitHub403 im Codex-App-Kontext; genaue Übersteuerungsstelle offen, Cloudtools nur
-lesend. Geschützter Originalkanal fehlt; kein Voll500/Merge.
-[Prüfungen/Grenzen](betrieb/private-ci-original-provisioning-20261021.md).
-
-Einzelunit-Vorbereitung499→0:43/43Synthetik+Originalinspektion PASS, weiterhin inerte
-Vorbereitung. POSTRUN-Auth/Journal, vorbereitete Requests und native Verbraucher bleiben
-offen; kein Rücksetzen alter Freigaben. [Umfang/Abnahme](betrieb/local-unit-diagnostic-preparation-20261022.md).
+13.527Dateien hashverifiziert; physische DB-Kopien fehlen.84erManifest+Provisionierung
+und9Negativgruppen PASS. CI84-Verbraucher19/31/13/6+Vorbereitung lokal PASS.
+STANDARD180/180 auf87c439 PASS; danach Contracttest-Storemutation entdeckt.
+Testfix4Fälle PASS, Store bytegenau restauriert; Zeitmetadaten erklärt geändert.
+88/88Bytepins unabhängig PASS;84CI+3V12 auch metadatengetreu unverändert.
+7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld nicht übertragen.
+[Restore/Prüfungen](betrieb/private-ci-original-provisioning-20261021.md).
+PR929/d8ca7465: Diagnosevorbereitung499→0 lokal+GitHub43/43 PASS, Browser grün;
+Offline39739166451 danach am Originalgate rot. Originalinspektion PASS, weiter inert.
+POSTRUN-Auth/Journal, Requests und native Verbraucher offen; alte GOs verbraucht.
+[Diagnoseumfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
+CI-Originalkanal lokal vorbereitet: Cipher84, echter Roundtrip84/84,22Schutztests PASS.
+GitHub-Environment/Secret/echter Freigabelauf noch offen.
+[Einrichtung](betrieb/private-ci-original-channel-20261022.md).
+GitHub403 im Codex-App-Kontext; genaue Übersteuerungsstelle offen.
+Kein GHA-Originalnachweis/Voll500/Merge.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
