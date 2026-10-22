@@ -643,6 +643,7 @@ jobs:
         # wird sichtbar gemeldet. Dieselbe kanonische Zuordnung benutzt auch der Runner.
         env:
           HELMUT_SOURCE_MODE: "off"
+          HELMUT_CI_PUBLIC_SUITE_METADATA: "offline-runner-v1"
         shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -e

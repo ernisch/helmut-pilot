@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """TEST_ONLY fixtures: no GitHub requests, real review grants, private inputs or GO."""
 import copy
-from contextlib import redirect_stdout
+from contextlib import nullcontext, redirect_stdout
 import hashlib
 import importlib.util
 import io
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import tarfile
@@ -20,6 +21,9 @@ HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location('private_ci_channel', HERE / 'private_ci_channel.py')
 C = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(C)
+shell_spec = importlib.util.spec_from_file_location('private_ci_shell', HERE / 'private_ci_shell.py')
+S = importlib.util.module_from_spec(shell_spec)
+shell_spec.loader.exec_module(S)
 
 
 def fixtures():
@@ -560,6 +564,156 @@ class FileTests(unittest.TestCase):
         archive = self.archive([('synthetic/fixture', b'test', tarfile.REGTYPE)])
         dest = self.root / 'bundle'; dest.mkdir()
         with self.assertRaises(FileExistsError): C.extract_archive(archive, dest, self.rows())
+
+
+class SuiteMetadataShellTests(unittest.TestCase):
+    SUITE = 'offline-suite-auswahl-test.js'
+    OTHER = 'bereichsauswahl-test.js'
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+
+    def line(self, suite=None, code='7'):
+        return 'FAIL  ' + (suite or self.SUITE) + ' (12ms, exit=' + code + ')\n'
+
+    def parse(self, payload, **limits):
+        path = self.root / 'TEST_ONLY.log'
+        path.write_bytes(payload.encode('utf8')); path.chmod(0o600)
+        with mock.patch.object(S, 'tracked_test_basenames', return_value={self.SUITE, self.OTHER}), \
+                (mock.patch.multiple(S, **limits) if limits else nullcontext()):
+            output = S.suite_failure_metadata(path)
+        rows = output.splitlines()
+        return json.loads(rows[0]), rows[1:]
+
+    def run_shell(self, payload, opt_in=S.SUITE_METADATA_MODE, code=7):
+        script = self.root / 'TEST_ONLY.sh'
+        blocked = [S.SUITE_METADATA_ENV, 'HELMUT_CI_ORIGINALS_KEY', 'GITHUB_TOKEN',
+                   'GH_TOKEN', 'GITHUB_STEP_SUMMARY', 'GITHUB_OUTPUT', 'ACTIONS_RUNTIME_TOKEN']
+        checks = ''.join('test -z "${' + name + ':-}"\n' for name in blocked)
+        script.write_text(checks + "printf '%s' " + shlex.quote(payload) + '\nexit ' + str(code) + '\n')
+        env = {'PATH': '/usr/bin:/bin', 'RUNNER_TEMP': str(self.root),
+               'HELMUT_CI_PRIVATE_LOGS': 'true', 'HELMUT_CI_ORIGINALS_KEY': 'TEST_ONLY_NO_KEY',
+               'GITHUB_TOKEN': 'TEST_ONLY_NO_TOKEN', 'GH_TOKEN': 'TEST_ONLY_NO_TOKEN',
+               'GITHUB_STEP_SUMMARY': 'TEST_ONLY', 'GITHUB_OUTPUT': 'TEST_ONLY',
+               'ACTIONS_RUNTIME_TOKEN': 'TEST_ONLY'}
+        if opt_in is not None:
+            env[S.SUITE_METADATA_ENV] = opt_in
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'private_ci_shell.py'), str(script)],
+                                env=env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, code)
+        self.assertEqual(result.stderr, '')
+        rows = result.stdout.splitlines()
+        metadata = json.loads(rows[0])
+        self.assertEqual(metadata['scope'], 'PRIVATE_CI_LOG_METADATA_ONLY')
+        self.assertEqual(metadata['exitCode'], code)
+        log = self.root / 'helmut-ci-private-logs' / metadata['log']
+        self.assertEqual(log.read_bytes(), payload.encode('utf8'))
+        self.assertEqual(metadata['sha256'], hashlib.sha256(log.read_bytes()).hexdigest())
+        self.assertEqual(log.stat().st_mode & 0o777, 0o600)
+        return result, rows[1:]
+
+    def test_opt_in_real_shell_emits_only_closed_metadata_and_strips_own_flag_and_secrets(self):
+        payload = 'TEST_ONLY_PRIVATE_SENTINEL\n::warning::TEST_ONLY_PRIVATE_COMMAND\n' + self.line()
+        result, rows = self.run_shell(payload)
+        self.assertNotIn('TEST_ONLY_PRIVATE', result.stdout)
+        self.assertEqual(json.loads(rows[0]), {'schema': S.SUITE_METADATA_SCHEMA,
+                                             'failures': [{'suite': self.SUITE, 'exitCode': 7}]})
+        self.assertEqual(rows[1:], ['::error title=Offline suite failed::' + self.SUITE + '; exit=7'])
+
+    def test_default_shell_output_remains_metadata_only_without_opt_in(self):
+        result, rows = self.run_shell('TEST_ONLY_PRIVATE_SENTINEL\n' + self.line(), opt_in=None)
+        self.assertEqual(rows, [])
+        self.assertNotIn(self.SUITE, result.stdout)
+
+    def test_unknown_opt_in_is_rejected_before_child(self):
+        script = self.root / 'TEST_ONLY.sh'
+        script.write_text('printf TEST_ONLY_CHILD_MUST_NOT_RUN\n')
+        env = {'PATH': '/usr/bin:/bin', 'RUNNER_TEMP': str(self.root), S.SUITE_METADATA_ENV: 'true'}
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'private_ci_shell.py'), str(script)],
+                                env=env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(json.loads(result.stdout), {'code': 'PRIVATE_CI_LOG_REJECTED'})
+        self.assertFalse((self.root / 'helmut-ci-private-logs').exists())
+
+    def test_known_head_tests_only_and_git_child_has_closed_environment(self):
+        actual_run = subprocess.run
+        with mock.patch.object(S.subprocess, 'run', wraps=actual_run) as run:
+            names = S.tracked_test_basenames()
+        self.assertIn(self.SUITE, names)
+        self.assertNotIn('TEST_ONLY_UNTRACKED-test.js', names)
+        self.assertEqual(run.call_args.args[0][-5:], ['ls-tree', '-rz', 'HEAD', '--', 'scripts'])
+        self.assertEqual(set(run.call_args.kwargs['env']), {'PATH', 'LANG', 'LC_ALL'})
+        self.assertEqual(run.call_args.kwargs['timeout'], 5)
+
+    def test_only_complete_unindented_runner_records_are_public(self):
+        invalid = [
+            'TEST_ONLY_PRIVATE_SENTINEL\n', '      ' + self.line(), '\t' + self.line(),
+            self.line().rstrip('\n') + ' TEST_ONLY_PRIVATE\n',
+            'prefix ' + self.line(), self.line('TEST_ONLY_UNTRACKED-test.js'),
+            self.line('../' + self.SUITE), self.line('scripts/' + self.SUITE),
+            self.line().replace('\n', '\r\n'), self.line().replace('FAIL  ', 'FAIL  \r'),
+            self.line().replace('FAIL  ', 'FAIL  \x00'), self.line().rstrip('\n'),
+            '::error title=Offline suite failed::TEST_ONLY_PRIVATE\n']
+        for value in invalid:
+            with self.subTest(case=invalid.index(value)):
+                data, annotations = self.parse(value)
+                self.assertEqual(data, {'schema': S.SUITE_METADATA_SCHEMA, 'failures': []})
+                self.assertEqual(annotations, [])
+
+    def test_exit_code_is_exact_canonical_integer_or_null_not_free_text(self):
+        for code in ('true', 'false', '"7"', '7.0', '-1', '0', '256', '01', 'NaN', '7;TEST_ONLY_PRIVATE'):
+            with self.subTest(code=code):
+                self.assertEqual(self.parse(self.line(code=code))[0]['failures'], [])
+        for code, expected in [('1', 1), ('255', 255), ('null', None)]:
+            with self.subTest(code=code):
+                self.assertEqual(self.parse(self.line(code=code))[0]['failures'], [{'suite': self.SUITE, 'exitCode': expected}])
+
+    def test_oversized_physical_line_tail_never_becomes_runner_record(self):
+        payload = 'TEST_ONLY_PRIVATE' * 40 + self.line() + self.line(self.OTHER)
+        data, annotations = self.parse(payload)
+        self.assertEqual(data['failures'], [{'suite': self.OTHER, 'exitCode': 7}])
+        self.assertEqual(len(annotations), 1)
+
+    def test_duplicate_count_byte_and_scan_bounds_reject_without_partial_metadata(self):
+        for payload, limits in [(self.line() * 2, {}),
+                                (self.line() + self.line(self.OTHER), {'MAX_SUITE_METADATA': 1}),
+                                (self.line(), {'MAX_PUBLIC_BYTES': 8}),
+                                (self.line(), {'MAX_SCAN_BYTES': 8})]:
+            with self.subTest(limits=limits):
+                with self.assertRaisesRegex(RuntimeError, '^PRIVATE_CI_SUITE_METADATA_REJECTED$'):
+                    self.parse(payload, **limits)
+
+    def test_metadata_read_or_public_write_failure_never_masks_child_exit(self):
+        class FailMetadataOutput(io.StringIO):
+            def write(self, value):
+                if value.startswith('{"schema":'):
+                    raise BrokenPipeError('TEST_ONLY_PRIVATE_ERROR')
+                return super().write(value)
+        for write_failure in (False, True):
+            with self.subTest(write_failure=write_failure):
+                script = self.root / 'TEST_ONLY.sh'; script.write_text('exit 7\n')
+                output = FailMetadataOutput() if write_failure else io.StringIO()
+                child = mock.Mock(); child.wait.return_value = child.poll.return_value = 7
+                env = {'RUNNER_TEMP': str(self.root), S.SUITE_METADATA_ENV: S.SUITE_METADATA_MODE}
+                metadata = {'return_value': '{"schema":"' + S.SUITE_METADATA_SCHEMA + '","failures":[]}\n'} if write_failure else {'side_effect': RuntimeError('TEST_ONLY_PRIVATE_ERROR')}
+                with mock.patch.dict(os.environ, env, clear=True), \
+                        mock.patch.object(S.sys, 'argv', ['shell', str(script)]), \
+                        mock.patch.object(S.subprocess, 'Popen', return_value=child), \
+                        mock.patch.object(S.signal, 'signal'), \
+                        mock.patch.object(S, 'suite_failure_metadata', **metadata), redirect_stdout(output):
+                    self.assertEqual(S.main(), 7)
+                self.assertNotIn('TEST_ONLY_PRIVATE_ERROR', output.getvalue())
+                self.assertEqual(json.loads(output.getvalue())['exitCode'], 7)
+
+    def test_workflow_opt_in_is_exclusive_to_area_step_without_command_changes(self):
+        text = (HERE.parents[1] / '.github/workflows/ci.yml').read_text()
+        area = text.split('      - name: Bereichs-Regression (nur geänderte Fachbereiche)', 1)[1].split('      - name:', 1)[0]
+        self.assertEqual(text.count(S.SUITE_METADATA_ENV + ':'), 1)
+        self.assertIn(S.SUITE_METADATA_ENV + ': "' + S.SUITE_METADATA_MODE + '"', area)
+        self.assertIn('node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "$CHANGED" --nur-bereich', area)
+        self.assertIn("shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'", area)
 
 
 if __name__ == '__main__':

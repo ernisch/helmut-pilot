@@ -1,0 +1,38 @@
+{
+  "schema": "helmut-private-ci-suite-metadata-source-review/1",
+  "atUTC": "2026-10-22T23:07:58.400034+00:00",
+  "sourcePins": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "bytes": 44516,
+      "sha256": "66ef1aeb1a1a547a460b3bd77027159c0ce9adae49ab2434403064f4e392f3a1"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/private_ci_shell.py",
+      "bytes": 8529,
+      "sha256": "7ddd51268c020ad91188bdb929437040d5340d5a1d2fc00222d4dd44f02ab275"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/private_ci_channel_test.py",
+      "bytes": 43512,
+      "sha256": "798015c93194e446ef9cfca58ed95c778fca70171004c9d71fd5e4ff142e1a17"
+    }
+  ],
+  "independentRootReadReviewPassed": true,
+  "authorTargetedChecksQualified": 14,
+  "newMetadataTests": 10,
+  "initialFixtureErrors": 4,
+  "onlyAffectedFourTestsRepeatedAfterFixtureCorrection": true,
+  "fullFourteenUninterruptedRerunClaimed": false,
+  "publicFields": [
+    "suite basename in regular tracked HEAD tests",
+    "integer exitCode 1..255 or null"
+  ],
+  "optInOnlyAreaRegression": true,
+  "privateLogsAndEncryptionUnchanged": true,
+  "childExitUnchangedByMetadataFailure": true,
+  "rawOutputOrFreeTextReemitted": false,
+  "realCIQualificationPending": true,
+  "oldRunIndividualSuiteNamesStillUnknown": true,
+  "full500OrNativeQualification": false
+}
