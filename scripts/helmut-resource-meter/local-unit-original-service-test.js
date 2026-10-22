@@ -40,7 +40,7 @@ function fakeClock() {
 }
 function fixture(options = {}) {
   const clock = fakeClock(), events = [], files = new Map(), descriptors = new Map(), offsets = new Map(), reads = new Map(), logs = [];
-  let nextFD = 10, nextInode = 100, configStats = 0, groupStats = 0;
+  let nextFD = 10, nextInode = 100, configStats = 0, groupStats = 0, selfChanged = false;
   function add(name, bytes, props = {}) { files.set(name, { data: Buffer.from(bytes), kind: "file", uid: 1000, gid: 1000, mode: 0o600,
     dev: 1, ino: nextInode++, nlink: 1, mtimeNs: 1, ctimeNs: 1, ...props }); }
   const transactionPath = path.join(path.dirname(filename), "local-unit-original-transaction.js");
@@ -94,7 +94,7 @@ function fixture(options = {}) {
       if (/^\/proc\/(?:self|42|7)\/cgroup$/.test(name)) return "0::/\n";
       if (/^\/proc\/(?:42|7)\/stat$/.test(name)) {
         if (options.readyIdentityFailure && name === "/proc/7/stat") throw Error("synthetic-process-identity-failed");
-        return "42 (synthetic process) " + Array.from({ length: 20 }, (_, i) => i === 0 ? "S" : i === 19 ? "345" : "0").join(" ");
+        return "42 (synthetic process) " + Array.from({ length: 20 }, (_, i) => i === 0 ? "S" : i === 19 ? selfChanged && name === "/proc/7/stat" ? "346" : "345" : "0").join(" ");
       }
       throw Error("unexpected real-style read forbidden");
     },
@@ -139,18 +139,19 @@ function fixture(options = {}) {
     transactionStats.accept++; assert.equal(prepared.database, database); assert.equal(raw, JSON.stringify(result));
     if (options.rejectResult) throw Error("synthetic-result-unconfirmed"); return result;
   } };
-  const processStub = { getuid: () => 1000, version: "v24.19.0", env: {}, pid: 7, exitCode: 0,
-    execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"], umask: value => assert.equal(value, 0o077),
+  const processStub = { getuid: () => 1000, version: options.nodeVersion || "v24.19.0", env: options.env || {}, pid: 7, exitCode: 0,
+    execArgv: options.execArgv || ["--max-old-space-size=384", "--max-semi-space-size=16"], umask: value => assert.equal(value, 0o077),
     hrtime: { bigint: () => BigInt(clock.now) * 1000000n } };
   const buffer = Object.create(Buffer);
   buffer.from = (value, encoding) => {
     if (options.virtualBodyCap && encoding === "base64" && value === "AA==") return { length: 36 * 1024 * 1024 + 1 };
     return Buffer.from(value, encoding);
   };
-  const modules = { "node:fs": fsStub, "node:net": netStub, "node:path": path, "node:crypto": crypto, "node:child_process": childStub, [transactionPath]: transaction };
+  const modules = { "node:fs": fsStub, "node:net": netStub, "node:path": path, "node:crypto": crypto, "node:child_process": childStub,
+    "node:v8": { getHeapStatistics: () => ({ heap_size_limit: options.heapLimit || 400000000 }) }, [transactionPath]: transaction };
   const module = { exports: {} }, localRequire = name => { assert(Object.hasOwn(modules, name), "only synthetic dependencies may load"); return modules[name]; };
   localRequire.main = {};
-  const api = vm.runInNewContext(code + "\n({parse,mac,privateConfig,file,checkConfig,psql,start,BODY_CAP,FRAME_CAP});", {
+  const api = vm.runInNewContext(code + "\n({parse,mac,privateConfig,file,checkConfig,psql,start,nodeBudget,BODY_CAP,FRAME_CAP});", {
     require: localRequire, module, __filename: filename, __dirname: path.dirname(filename), process: processStub, Buffer: buffer, Date,
     setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout, setInterval: clock.setInterval, clearInterval: clock.clearInterval
   }, { filename });
@@ -166,7 +167,8 @@ function fixture(options = {}) {
     value.send = bytes => Promise.all(value.listeners("data").map(listener => listener(bytes)));
     server.connect(value); return value;
   }
-  return { api, config, configBytes, key, frame, clock, files, reads, logs, events, children, spawns, server, process: processStub, transactionStats, result, socket };
+  return { api, config, configBytes, key, frame, clock, files, reads, logs, events, children, spawns, server, process: processStub, transactionStats, result, socket,
+    changeSelf: () => { selfChanged = true; } };
 }
 function complete(child, { code = 0, stdout = null, stderr = null, outEOF = true, errEOF = true, close = true } = {}) {
   if (stdout !== null) child.stdout.emit("data", Buffer.from(stdout)); if (stderr !== null) child.stderr.emit("data", Buffer.from(stderr));
@@ -221,6 +223,11 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
   await check("an array-shaped key cannot weaken HMAC configuration", async () => {
     const s = fixture(); s.config.secretHex = [s.config.secretHex]; assert.throws(() => s.api.checkConfig(s.config));
   });
+  for (const [name, options] of [["extra startup flag", { execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16", "--require=unrelated"] }],
+    ["empty NODE_OPTIONS", { env: { NODE_OPTIONS: "" } }], ["wrong Node version", { nodeVersion: "v24.18.0" }],
+    ["ineffective actual heap limit", { heapLimit: 512 * 1024 * 1024 }]]) await check(name + " cannot produce a node budget", async () => {
+      const s = fixture(options); assert.throws(() => s.api.nodeBudget()); assert.equal(s.spawns.length, 0);
+    });
   await check("a growing pinned file aborts after the first excess bytes", async () => {
     const s = fixture(), name = "/synthetic-growth";
     s.files.set(name, { ...s.files.get(CONFIG), data: Buffer.from("abcd"), size: 3 });
@@ -264,6 +271,8 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
     assert.equal(response.status, 200); assert.equal(response.hmacSHA256, crypto.createHmac("sha256", s.key).update(JSON.stringify(unsigned)).digest("hex"));
     assert(s.socket().destroyed); socket.emit("finish"); const after = s.socket(); assert(!after.destroyed); after.destroy(); await service.close();
     assert.equal(service.ready.unitExecutionQualified, false); assert.equal(service.ready.full500Qualified, false); assert.equal(service.ready.databaseConnectionObserved, false);
+    assert.equal(JSON.stringify(service.ready.actualNodeBudget), JSON.stringify({ nodeVersion: "v24.19.0",
+      execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"], oldSpaceMiB: 384, semiSpaceMiB: 16, heapSizeLimitBytes: 400000000 }));
   });
   await check("socket loss before response makes the owner terminal even if the child later closes0", async () => {
     const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
@@ -286,6 +295,10 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
   await check("runtime identity drift closes the service with a failure exit code", async () => {
     const s = fixture(), service = await s.api.start(); s.files.get(CONFIG).data[0] ^= 1;
     await s.clock.advance(500); assert.equal(s.process.exitCode, 1); assert.equal(s.server.listening, false); await service.close();
+  });
+  await check("the frozen service identity is rechecked independently of PostgreSQL", async () => {
+    const s = fixture(), service = await s.api.start(); s.changeSelf(); await s.clock.advance(500);
+    assert.equal(s.process.exitCode, 1); assert.equal(s.server.listening, false); await service.close();
   });
   const after = sourceSnapshot(); assert.equal(after.sha256, snapshot.sha256, "reviewed source changed while testing");
   process.stdout.write("Original service VM checks PASS: " + checks + "; source bytes=" + snapshot.bytes.length + "; SHA256=" + snapshot.sha256 + "; stable before/after.\n");

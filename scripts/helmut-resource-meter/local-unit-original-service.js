@@ -4,6 +4,7 @@
 // this socket, HMAC key or administrator connection. No default execution.
 const fs = require("node:fs"), net = require("node:net"), path = require("node:path");
 const crypto = require("node:crypto"), childProcess = require("node:child_process");
+const v8 = require("node:v8");
 const CONFIG = "/bench/ORIGINAL_SERVICE_CONFIG.PRIVATE.json";
 const SOCKET = "/ram/helmut-original-write-bridge.sock";
 const BODY_CAP = 36 * 1024 * 1024, FRAME_CAP = 50 * 1024 * 1024;
@@ -62,10 +63,17 @@ function processIdentity(pid) {
   return { pid, startTicks: fields[19], exe: fs.readlinkSync(`/proc/${pid}/exe`),
     membership: fs.readFileSync(`/proc/${pid}/cgroup`, "utf8") };
 }
+function nodeBudget() {
+  need(process.version === "v24.19.0" && process.execArgv.length === 2
+    && process.execArgv[0] === "--max-old-space-size=384" && process.execArgv[1] === "--max-semi-space-size=16"
+    && !Object.hasOwn(process.env, "NODE_OPTIONS"), "node-budget");
+  const heapSizeLimitBytes = v8.getHeapStatistics().heap_size_limit;
+  need(Number.isSafeInteger(heapSizeLimitBytes) && heapSizeLimitBytes > 0 && heapSizeLimitBytes <= 448 * 1024 * 1024, "actual-heap-limit");
+  return { nodeVersion: process.version, execArgv: [...process.execArgv], oldSpaceMiB: 384, semiSpaceMiB: 16, heapSizeLimitBytes };
+}
 function checkConfig(c) {
   need(process.getuid() === 1000 && !process.env.VERCEL && process.version === "v24.19.0", "local-owner-only");
-  need(!process.env.NODE_OPTIONS && process.execArgv.includes("--max-old-space-size=384")
-    && process.execArgv.includes("--max-semi-space-size=16"), "node-budget");
+  nodeBudget();
   need(exact(c, ["schema", "operationId", "commandHash", "database", "issuedAtUTC", "expiresAtUTC", "measuredCgroup",
     "postgres", "psqlPin", "servicePin", "transactionCodePin", "secretHex", "qualification", "libraryPath"])
     && c.schema === "helmut-local-unit-original-service/1" && /^localUnitDiagnostic-[a-f0-9]{32}$/.test(c.operationId)
@@ -174,10 +182,13 @@ async function start() {
   const read = privateConfig(), configPin = read.pin;
   const c = checkConfig(read.value), key = Buffer.from(c.secretHex, "hex"); need(key.length === 32, "private-key-bytes");
   const transaction = require(c.transactionCodePin.path), begin = process.hrtime.bigint();
+  const self = Object.freeze(processIdentity(process.pid)), actualNodeBudget = nodeBudget();
   need(typeof transaction.prepare === "function" && typeof transaction.acceptResult === "function", "transaction-builder");
   const observed = new Set(), children = new Set(), sockets = new Set();
   let stopping = false, writing = false, terminal = false, closing = null, observer = null, deadline = null;
   const groupIdentity = () => {
+    const actual = processIdentity(process.pid);
+    need(Object.keys(self).every(key => actual[key] === self[key]), "self-process-drift");
     file(configPin, { privateFile: true });
     const s = fs.statSync(c.measuredCgroup.path);
     need(s.dev === c.measuredCgroup.device && s.ino === c.measuredCgroup.inode
@@ -249,7 +260,7 @@ async function start() {
   };
   let readyProcess;
   try {
-    readyProcess = processIdentity(process.pid);
+    readyProcess = self;
     await new Promise((resolve, reject) => {
       const failed = error => { server.removeListener("listening", listening); reject(error); };
       const listening = () => { server.removeListener("error", failed); resolve(); };
@@ -261,7 +272,7 @@ async function start() {
   observer = setInterval(() => { try { groupIdentity(); } catch { process.exitCode = 1; void close().catch(() => { process.exitCode = 1; }); } }, 500);
   deadline = setTimeout(() => { process.exitCode = 1; void close().catch(() => { process.exitCode = 1; }); }, Math.max(1, Date.parse(c.expiresAtUTC) - Date.now() - 6000));
   return { close, ready: { schema: "helmut-local-unit-original-service-ready/1", ...readyProcess,
-    database: c.database, commandHash: c.commandHash, configPin, configuredInitialDatabaseRole: "postgres", databaseConnectionObserved: false,
+    database: c.database, commandHash: c.commandHash, configPin, actualNodeBudget, configuredInitialDatabaseRole: "postgres", databaseConnectionObserved: false,
     unitExecutionQualified: false, full500Qualified: false } };
 }
 module.exports = Object.freeze({ start });
