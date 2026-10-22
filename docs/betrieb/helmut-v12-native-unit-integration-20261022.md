@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand20:59UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand21:05UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -95,10 +95,25 @@ keine Datenbank, kein Seed, kein Motor und kein Anbieter.
 
 Die unabhängige Quellprüfung fand sechs Diagnose-Delegationen hinter nicht
 passenden Production-Readinessguards und einen weiteren V3-Eingangsriegel in
-`lage.js`. Diese konkreten Anbindungsfehler werden vor dem nächsten frischen
-Einzelunit-Fall korrigiert und unabhängig geprüft. Globale Production-Guards,
+`lage.js`. Diese konkreten Anbindungsfehler sind korrigiert und unabhängig
+geprüft;26gezielte VM-Prüfgruppen bestehen. Globale Production-Guards,
 Tenant-/Subject-/Inputbindungen und das Verbot unbekannter Schreibwiederholungen
 bleiben bestehen.
+
+Die anschließende Kostenprüfung fand einen weiteren konkreten Fehler: das
+Usage-/Tenant-Vorabgate verwendet im Diagnose-Scope noch einen Legacy-Reader
+ohne die dort absichtlich fehlenden Zugangsschlüssel. Der alte globale
+Fehlerfallback würde dabei `allowed:true` liefern. Die gezielte Korrektur muss
+echte verifizierte Originalhistory nativ lesen und scoped Fehler geschlossen
+ablehnen; bis dahin bleibt der Motorstart gesperrt.
+
+Die zwei privaten Fixture-Tickets und ihre eigene Mikro-USD-Reserve sind ein
+frischer, begrenzter Diagnosevertrag. Sie sind kein Nachweis der alten atomaren
+Global-/Tenant-Callreservierung über `llm_budget_counters`. Die16frischen
+Diagnose-Kontrollgruppen prüfen Laufzeit/Quellen/Profil/Kalender, die unveränderte
+Originalkontrollsicht sowie das eigene Journal und eigene Finanzen. Eine
+Gleichsetzung mit sämtlichen Finanz-/Globalzählerprüfungen des vollständigen
+500er-Pfads ist damit nicht belegt und bleibt für dessen Admission offen.
 
 ## Eingaben, Tests und Messgrenzen
 

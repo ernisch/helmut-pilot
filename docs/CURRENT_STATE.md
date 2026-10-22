@@ -17,7 +17,8 @@ Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt 
 Vorbereitung gemeinsam1.024.176.128B/Events0, noch0Motoreinheiten. Unit60/Reserve offen.
 Native Diagnose verdrahtet; Host/Alias/Beobachter und Root-Runtime nativ PASS, noch kein Motorentry.
 Zwei spätere Starts blieben vorSeed/Motor FAIL; Pfadabbildung und Root-ELF-Zugriff korrigiert.
-Sechs Storage-Routen und ein Lage-Eingangsriegel werden vor echter Motorprüfung gezielt abgesichert.
+Sechs Storage-Routen und Lage-Eingangsriegel korrigiert/quergeprüft; gezielteVM26Gruppen PASS.
+Native Kostenlesung/failclosed wird repariert; eigene2Fixturetickets ersetzen keinen500er-Globalzählernachweis.
 [PR936/aktueller Umfang](betrieb/helmut-v12-native-unit-integration-20261022.md).
 Volladmission braucht15,18GB, verfügbar rund10,80GB; rund4,38GB fehlen. Alte GOs verbraucht.
 [Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
