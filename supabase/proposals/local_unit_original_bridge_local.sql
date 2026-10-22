@@ -27,10 +27,15 @@ begin
     or current_setting('server_encoding')<>'UTF8' or current_setting('client_encoding')<>'UTF8'
     or current_user<>session_user or not exists(select from pg_roles where rolname=current_user and rolsuper)
     or not exists(select from pg_namespace where nspname='helmut_unit_diagnostic' and nspowner=(select oid from pg_roles where rolname=owner_name))
-    or (select count(*) from pg_class where oid in ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass) and relrowsecurity and relkind='r')<>3
+    or (select count(*) from pg_class where oid in ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass) and relrowsecurity and relkind='r')<>4
     or exists(select from pg_roles where rolname=writer)
     or exists(select from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='helmut_unit_diagnostic' and p.proname like 'original_bridge_%') then
     raise exception 'original-bridge-new-owned-copy-required';end if;
+  if not exists(select from pg_constraint fk where fk.conrelid='public.briefings'::regclass and fk.confrelid='public.profiles'::regclass
+    and fk.contype='f' and fk.convalidated and not fk.condeferrable and not fk.condeferred
+    and fk.conkey=array[(select attnum from pg_attribute where attrelid=fk.conrelid and attname='user_id' and not attisdropped)]::smallint[]
+    and fk.confkey=array[(select attnum from pg_attribute where attrelid=fk.confrelid and attname='id' and not attisdropped)]::smallint[]) then
+    raise exception 'original-bridge-actual-briefing-profile-fk-required';end if;
   q:=nullif(current_setting('helmut.local_unit_original_bridge_install',true),'')::jsonb;
   if not helmut_unit_diagnostic.exact(q,array['schema','database','operationId','commandHash','originalSources'])
     or q->>'schema' is distinct from 'helmut-local-unit-original-bridge-install/1'
@@ -46,7 +51,7 @@ begin
       join pg_language l on l.oid=p0.prolang where p0.oid=(r->>'oid')::oid;
     if p.nspname<>'public' or p.proname=any(seen)
       or (p.proname<>all(needed) and not exists(select from pg_trigger t where not t.tgisinternal and t.tgfoid=p.oid
-        and t.tgrelid in ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass)))
+        and t.tgrelid in ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass)))
       or r->>'name' is distinct from 'public.'||p.proname or oidvectortypes(p.proargtypes) is distinct from r->>'identityArguments'
       or encode(sha256(convert_to(p.prosrc,'UTF8')),'hex') is distinct from r->>'prosrcSHA256'
       or p.prosecdef or to_jsonb(p.proconfig) is distinct from nullif(r->'config','null'::jsonb)
@@ -58,7 +63,7 @@ begin
   end loop;
   if not seen@>needed then raise exception 'original-bridge-qualified-closure-incomplete';end if;
   if exists(select from pg_trigger t where not t.tgisinternal and t.tgrelid in
-    ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass)
+    ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass)
     and not exists(select from jsonb_array_elements(q->'originalSources') r0 where (r0->>'oid')::oid=t.tgfoid)) then
     raise exception 'original-bridge-qualified-trigger-closure-incomplete';end if;
   execute format('create role %I nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls',writer);
@@ -241,6 +246,134 @@ begin
   if actual_own is distinct from expected_own then raise exception 'original-bridge-own-projection-mismatch';end if;
 end;$f$;
 
+-- Catalog JSON is an actual native structure, not a purported JS byte hash.
+-- Root captures it privately after installation and binds it in qualification.
+create function helmut_unit_diagnostic.original_bridge_relations_v1() returns jsonb
+language plpgsql stable security invoker set search_path=pg_catalog as $f$
+declare answer jsonb;
+begin
+  select jsonb_agg(jsonb_build_object('name','public.'||c.relname,'oid',c.oid::text,'owner',c.relowner::text,
+    'kind',c.relkind::text,'rls',c.relrowsecurity,'forceRls',c.relforcerowsecurity,'persistence',c.relpersistence::text,
+    'partition',c.relispartition,'acl',to_jsonb(c.relacl),
+    'columns',(select coalesce(jsonb_agg(jsonb_build_object('number',a.attnum,'name',a.attname,'type',a.atttypid::text,
+      'modifier',a.atttypmod,'notNull',a.attnotnull,'dropped',a.attisdropped,'identity',a.attidentity::text,
+      'generated',a.attgenerated::text,'collation',a.attcollation::text,'acl',to_jsonb(a.attacl),
+      'default',pg_get_expr(d.adbin,d.adrelid)) order by a.attnum),'[]'::jsonb)
+      from pg_attribute a left join pg_attrdef d on d.adrelid=a.attrelid and d.adnum=a.attnum where a.attrelid=c.oid and a.attnum>0),
+    'constraints',(select coalesce(jsonb_agg(jsonb_build_object('oid',x.oid::text,'name',x.conname,'type',x.contype::text,
+      'validated',x.convalidated,'deferrable',x.condeferrable,'deferred',x.condeferred,'definition',pg_get_constraintdef(x.oid,false)) order by x.oid),'[]'::jsonb)
+      from pg_constraint x where x.conrelid=c.oid),
+    'policies',(select coalesce(jsonb_agg(jsonb_build_object('oid',x.oid::text,'name',x.polname,'command',x.polcmd::text,
+      'permissive',x.polpermissive,'roles',to_jsonb(x.polroles),'using',pg_get_expr(x.polqual,x.polrelid),
+      'check',pg_get_expr(x.polwithcheck,x.polrelid)) order by x.oid),'[]'::jsonb) from pg_policy x where x.polrelid=c.oid),
+    'triggers',(select coalesce(jsonb_agg(jsonb_build_object('oid',x.oid::text,'name',x.tgname,'functionOid',x.tgfoid::text,
+      'enabled',x.tgenabled::text,'internal',x.tgisinternal,'type',x.tgtype,'arguments',encode(x.tgargs,'hex'),
+      'source',(select jsonb_build_object('args',oidvectortypes(f.proargtypes),'sha256',encode(sha256(convert_to(f.prosrc,'UTF8')),'hex'),
+        'config',to_jsonb(f.proconfig),'definer',f.prosecdef,'volatility',f.provolatile::text,'result',format_type(f.prorettype,null),
+        'language',(select lanname from pg_language where oid=f.prolang)) from pg_proc f where f.oid=x.tgfoid),
+      'definition',pg_get_triggerdef(x.oid,false)) order by x.oid),'[]'::jsonb) from pg_trigger x where x.tgrelid=c.oid),
+    'parents',(select coalesce(jsonb_agg(i.inhparent::text order by i.inhseqno),'[]'::jsonb) from pg_inherits i where i.inhrelid=c.oid))
+    order by c.relname collate "C") into answer from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relname=any(array['helmut_store','helmut_auth_state_nodes_local','llm_usage','briefings','profiles']);
+  if jsonb_array_length(answer) is distinct from 5 or exists(select from jsonb_array_elements(answer) x
+    where x->>'kind'<>'r' or x->>'persistence'<>'p' or x->>'partition'<>'false' or x->'parents'<>'[]'::jsonb) then
+    raise exception 'original-bridge-actual-original-relations';end if;
+  return answer;
+end;$f$;
+
+-- Fixed kind-to-table mapping and original public ID formulas. No caller can
+-- choose a table, original row ID, private operation or unbound output owner.
+create function helmut_unit_diagnostic.original_bridge_row_v1(s text,kind text,logical_id text,body jsonb) returns jsonb
+language plpgsql stable security invoker set search_path=pg_catalog as $f$
+declare a helmut_unit_diagnostic.authority%rowtype; c jsonb; owner_id text; day text; run_id text; expected_id text; slot_name text; phase text;
+begin
+  select * into strict a from helmut_unit_diagnostic.authority where scope_hash=s;c:=a.command_canonical::jsonb;
+  if a.operation_id is distinct from 'localUnitDiagnostic-'||right(current_database(),32) or kind is null or logical_id is null
+    or jsonb_typeof(body) is distinct from 'object' then raise exception 'original-bridge-original-row-scope';end if;
+  owner_id:=c#>>'{units,0,subject}';day:=c#>>'{calendar,executionDayUTC}';run_id:=c#>>'{slot,plan,runId}';
+  if kind in ('immutable-D','evidence') then
+    if kind='immutable-D' then
+      if logical_id is distinct from c#>>'{slot,plan,intents,0,id}' then raise exception 'original-bridge-private-D-intent';end if;
+      expected_id:='local-unit-diagnostic-'||a.operation_id||'-immutable-D-'||logical_id;
+    else
+      if logical_id is distinct from 'diagnostic-result' or body->>'schema' is distinct from 'helmut-local-unit-diagnostic-evidence/1'
+        or body->>'operationId' is distinct from a.operation_id or body->>'commandHash' is distinct from s then raise exception 'original-bridge-private-evidence-scope';end if;
+      expected_id:='local-unit-diagnostic-'||a.operation_id||'-evidence-0';
+    end if;
+    return jsonb_build_object('table','helmut_store','id',expected_id,'body',jsonb_build_object('id',expected_id,'data',body));
+  end if;
+  if kind in ('draft','review') then
+    phase:=case when kind='draft' then 'entwurf' else 'pruefung' end;slot_name:='lage-pruefentwurf';
+    expected_id:='bf-'||owner_id||'-lage-pruefentwurf-'||day||'-'||run_id||'-'||phase;
+    if body#>>'{payload,phase}' is distinct from phase or body#>>'{payload,runId}' is distinct from run_id
+      or body#>>'{payload,tag}' is distinct from day or body#>'{payload,auslieferbar}' is distinct from 'false'::jsonb
+      or body#>'{payload,qualitaetBestanden}' is distinct from 'false'::jsonb then raise exception 'original-bridge-original-draft-body';end if;
+  elsif kind in ('lage','mandatsbriefing','morgenbriefing') then
+    slot_name:=case when kind='morgenbriefing' then 'morgenlage' else kind end;
+    expected_id:='bf-'||owner_id||'-'||slot_name||'-'||day;
+  else raise exception 'original-bridge-seven-original-row-kinds';end if;
+  if not helmut_unit_diagnostic.exact(body,array['id','user_id','slot','generated_at','payload'])
+    or body->>'id' is distinct from expected_id or logical_id is distinct from expected_id or body->>'user_id' is distinct from owner_id
+    or body->>'slot' is distinct from slot_name or jsonb_typeof(body->'payload') is distinct from 'object'
+    or helmut_unit_diagnostic.utc(body->'generated_at')<helmut_unit_diagnostic.utc(c#>'{slot,plan,startsAtUTC}')
+    or helmut_unit_diagnostic.utc(body->'generated_at')>=helmut_unit_diagnostic.utc(c#>'{slot,plan,endsAtUTC}')
+    or left(body->>'generated_at',10) is distinct from day then raise exception 'original-bridge-original-briefing-body';end if;
+  return jsonb_build_object('table','briefings','id',expected_id,'body',body);
+end;$f$;
+
+-- Retained/closed state requires actual original rows as well as immutable own
+-- artifacts and full native controls. A failed evidence row never qualifies.
+create function helmut_unit_diagnostic.original_bridge_result_v1(s text,next_own jsonb) returns void
+language plpgsql stable security invoker set search_path=pg_catalog as $f$
+declare a helmut_unit_diagnostic.authority%rowtype; k text; result jsonb; x record; row_dto jsonb; actual_body jsonb; actual_time timestamptz; evidence jsonb; position_row jsonb;
+begin
+  select * into strict a from helmut_unit_diagnostic.authority where scope_hash=s;k:='localUnitDiagnostic:'||right(a.operation_id,32)||':';
+  result:=next_own->(k||'result');
+  if result->>'state'='pending' then return;end if;
+  if result->>'state' is distinct from 'retained-unreviewed' then raise exception 'original-bridge-final-result-state';end if;
+  perform helmut_unit_diagnostic.validate_state(s,next_own);
+  select body into strict evidence from helmut_unit_diagnostic.artifacts where scope_hash=s and kind='evidence' and body_hash=result->>'evidenceHash';
+  if evidence?'failure' then raise exception 'original-bridge-no-failure-final-result';end if;
+  perform helmut_unit_diagnostic.verify_controls(evidence->'verification',s,next_own#>>array[k||'journal','claimId']);
+  if evidence->>'schema' is distinct from 'helmut-local-unit-diagnostic-evidence/1' or evidence->>'operationId' is distinct from a.operation_id
+    or evidence->>'commandHash' is distinct from s or evidence->'sourceIndex' is distinct from '499'::jsonb
+    or evidence->'diagnosticUnit' is distinct from '0'::jsonb or evidence->'production' is distinct from 'false'::jsonb
+    or evidence->'full500Accepted' is distinct from 'false'::jsonb or evidence->'independentFinalAcceptance' is distinct from 'false'::jsonb
+    or evidence#>'{result,available}' is distinct from 'true'::jsonb
+    or evidence#>'{result,fromCache}'='true'::jsonb or jsonb_typeof(evidence->'positions') is distinct from 'array'
+    or jsonb_array_length(evidence->'positions')<>3
+    or (select count(distinct value->>'bereich') from jsonb_array_elements(evidence->'positions'))<>3 then
+    raise exception 'original-bridge-success-evidence-three-positions';end if;
+  for position_row in select value from jsonb_array_elements(evidence->'positions') loop
+    if not helmut_unit_diagnostic.exact(position_row,array['mandatsId','bereich','status','row','ergebnisHash','fachstatus'])
+      or position_row->>'bereich' not in ('lage','mandatsbriefing','morgenbriefing')
+      or position_row->>'mandatsId' is distinct from a.command_canonical::jsonb#>>'{units,0,subject}'
+      or position_row->>'status' is distinct from 'stored-unreviewed' or position_row->>'fachstatus' is distinct from 'ausstehend'
+      or not exists(select from helmut_unit_diagnostic.artifacts x where x.scope_hash=s and x.kind=position_row->>'bereich'
+        and x.body=position_row->'row' and x.body_hash=position_row->>'ergebnisHash')
+      or not exists(select from jsonb_array_elements(result->'positions') p where p->>'bereich'=position_row->>'bereich'
+        and p->>'owner'=position_row->>'mandatsId' and p->>'hash'=position_row->>'ergebnisHash') then
+      raise exception 'original-bridge-success-evidence-position_row-row';end if;
+  end loop;
+  if (select count(*) from helmut_unit_diagnostic.artifacts where scope_hash=s and kind in
+    ('draft','immutable-D','review','lage','mandatsbriefing','morgenbriefing','evidence'))<>7 then raise exception 'original-bridge-seven-original-results-required';end if;
+  for x in select * from helmut_unit_diagnostic.artifacts where scope_hash=s and kind in
+    ('draft','immutable-D','review','lage','mandatsbriefing','morgenbriefing','evidence') loop
+    if x.body is distinct from x.canonical_text::jsonb or encode(sha256(convert_to(x.canonical_text,'UTF8')),'hex') is distinct from x.body_hash then
+      raise exception 'original-bridge-final-actual-artifact-hash';end if;
+    row_dto:=helmut_unit_diagnostic.original_bridge_row_v1(s,x.kind,x.logical_id,x.body);
+    if row_dto->>'table'='briefings' then
+      select jsonb_build_object('id',t.id,'user_id',t.user_id,'slot',t.slot,
+        'generated_at',to_char(t.generated_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'payload',t.payload),t.generated_at
+        into strict actual_body,actual_time from public.briefings t where t.id=row_dto->>'id';
+      if actual_time is distinct from helmut_unit_diagnostic.utc(x.body->'generated_at') then raise exception 'original-bridge-final-native-time';end if;
+    else
+      select jsonb_build_object('id',t.id,'data',t.data) into strict actual_body from public.helmut_store t where t.id=row_dto->>'id';
+    end if;
+    if actual_body is distinct from row_dto->'body' then raise exception 'original-bridge-final-original-row-readback';end if;
+  end loop;
+end;$f$;
+
 -- A name, JSON value or session GUC is never a receipt. Only the fresh private
 -- Root-created temporary relations, immutable arguments, role-separated INSERT
 -- policies and an actual main-auth tuple written by this backend transaction
@@ -253,10 +386,12 @@ declare args_oid oid; results_oid oid; temp_oid oid; root_oid oid; writer_oid oi
   request_text text; request_hash text; q jsonb; r jsonb; c jsonb; n text; receipt_pid integer; receipt_tx xid8; ack jsonb;
   backend_tx xid8; auth_data jsonb; auth_xmin text; auth_state jsonb; auth_usage jsonb; actual_own jsonb; next_own jsonb;
   own_row helmut_unit_diagnostic.state%rowtype; s jsonb; proc record; native_oids oid[]; expected_oids oid[]; prefix text; usage_row record;
+  receipt_phase text:=case when p_mode='artifact' then 'originalRowAck' else 'authAck' end; row_dto jsonb; actual_body jsonb; original_xmin text;
+  actual_time timestamptz; actual_meta jsonb; row_ack jsonb;
 begin
   perform helmut_unit_diagnostic.runtime_role();
   if db!~'^helmut_unit_diagnostic_[a-f0-9]{32}$' or session_user<>'helmut_ud_authenticator_'||suffix
-    or current_user<>runtime_name or p_mode is null or p_mode not in ('state','usage')
+    or current_user<>runtime_name or p_mode is null or p_mode not in ('state','usage','artifact')
     or p_scope is null or p_scope!~'^[a-f0-9]{64}$' or p_claim_hash is null or p_claim_hash!~'^[a-f0-9]{64}$'
     or p_old_hash is null or p_old_hash!~'^[a-f0-9]{64}$' or p_old_revision is null or p_old_revision<0
     or p_hash is null or p_hash!~'^[a-f0-9]{64}$' or p_canonical is null or octet_length(p_canonical)>4194304
@@ -302,7 +437,7 @@ begin
         or not exists(select from pg_policy where polrelid=target and polname='original_bridge_read' and polcmd='r' and polpermissive
           and cardinality(polroles)=2 and polroles@>array[writer_oid,runtime_oid] and pg_get_expr(polqual,polrelid)='true' and polwithcheck is null)
         or not exists(select from pg_policy where polrelid=target and polname='original_bridge_auth_insert' and polcmd='a' and polpermissive
-          and polroles=array[writer_oid] and polqual is null and pg_get_expr(polwithcheck,polrelid)='(phase = ''authAck''::text)')
+          and polroles=array[writer_oid] and polqual is null and pg_get_expr(polwithcheck,polrelid)=case when p_mode='artifact' then '(phase = ''originalRowAck''::text)' else '(phase = ''authAck''::text)' end)
         or not exists(select from pg_policy where polrelid=target and polname='original_bridge_own_insert' and polcmd='a' and polpermissive
           and polroles=array[runtime_oid] and polqual is null and pg_get_expr(polwithcheck,polrelid)='(phase = ''ownAck''::text)') then
         raise exception 'original-bridge-temp-results-policy-shape';end if;
@@ -319,7 +454,7 @@ begin
     if actual_acl is distinct from expected_acl then raise exception 'original-bridge-temp-table-acl';end if;
   end loop;
   if (select count(*) from pg_temp.original_bridge_args)<>1 or (select count(*) from pg_temp.original_bridge_results)<>1
-    or not exists(select from pg_temp.original_bridge_results where phase='authAck') then raise exception 'original-bridge-pre-own-receipt-count';end if;
+    or not exists(select from pg_temp.original_bridge_results where phase=receipt_phase) then raise exception 'original-bridge-pre-own-receipt-count';end if;
   select a.request_text,a.request_hash,a.qualification,a.nonce,a.backend_pid,a.transaction_id
     into strict request_text,request_hash,q,n,receipt_pid,receipt_tx from pg_temp.original_bridge_args a;
   backend_tx:=pg_current_xact_id_if_assigned();
@@ -332,10 +467,11 @@ begin
     or r->>'commandHash' is distinct from p_scope or r->>'mode' is distinct from p_mode
     or encode(sha256(convert_to(r->>'claimId','UTF8')),'hex') is distinct from p_claim_hash
     or r#>>'{ownBefore,hash}' is distinct from p_old_hash or r#>>'{ownBefore,revision}' is distinct from p_old_revision::text
-    or not helmut_unit_diagnostic.exact(c,array['id','expectedRevision','expectedProof','expectedState','revision','root','nodes','additions'])
-    or c->>'id' is distinct from 'main-auth' or c->>'revision' is not distinct from c->>'expectedRevision'
+    or (p_mode<>'artifact' and (not helmut_unit_diagnostic.exact(c,array['id','expectedRevision','expectedProof','expectedState','revision','root','nodes','additions'])
+      or c->>'id' is distinct from 'main-auth' or c->>'revision' is not distinct from c->>'expectedRevision'))
+    or (p_mode='artifact' and c is distinct from 'null'::jsonb)
     or encode(sha256(convert_to(r#>>'{ownNext,canonical}','UTF8')),'hex') is distinct from r#>>'{ownNext,hash}'
-    or not helmut_unit_diagnostic.exact(q,array['schema','database','operationId','commandHash','originalSources','helperSources','nativeSources'])
+    or not helmut_unit_diagnostic.exact(q,array['schema','database','operationId','commandHash','originalSources','helperSources','nativeSources','originalRelations'])
     or q->>'schema' is distinct from 'helmut-local-unit-original-bridge-qualification/1'
     or q->>'database' is distinct from db or q->>'operationId' is distinct from r->>'operationId' or q->>'commandHash' is distinct from p_scope then
     raise exception 'original-bridge-receipt-dto-scope';end if;
@@ -354,10 +490,48 @@ begin
       'local_unit_diagnostic_runtime_read_v1','local_unit_diagnostic_state_read_v1','local_unit_diagnostic_state_cas_v1',
       'local_unit_diagnostic_artifact_insert_v1','local_unit_diagnostic_artifact_read_v1','local_unit_diagnostic_lease_acquire_v1','local_unit_diagnostic_lease_release_v1']));
   if native_oids is distinct from expected_oids or exists(select from pg_trigger t where not t.tgisinternal and t.tgrelid in
-    ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass)
+    ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass)
     and not exists(select from jsonb_array_elements(q->'originalSources') sp where (sp->>'oid')::oid=t.tgfoid)) then
     raise exception 'original-bridge-receipt-complete-sources';end if;
-  select value into strict ack from pg_temp.original_bridge_results where phase='authAck';
+  if helmut_unit_diagnostic.original_bridge_relations_v1() is distinct from q->'originalRelations' then
+    raise exception 'original-bridge-receipt-native-relations-changed';end if;
+  select value into strict ack from pg_temp.original_bridge_results where phase=receipt_phase;
+  if p_mode='artifact' then
+    select * into strict own_row from helmut_unit_diagnostic.state where scope_hash=p_scope;
+    if own_row.body_hash is distinct from p_old_hash or own_row.revision<>p_old_revision
+      or own_row.body is distinct from next_own or own_row.body_hash is distinct from r#>>'{ownNext,hash}'
+      or own_row.canonical_text is distinct from r#>>'{ownNext,canonical}'
+      or own_row.body#>>array[prefix||'journal','claimId'] is distinct from r->>'claimId'
+      or p_canonical is distinct from r#>>'{artifact,canonical}' or p_hash is distinct from r#>>'{artifact,sha256}'
+      or p_kind is distinct from r#>>'{artifact,kind}' or p_logical_id is distinct from r#>>'{artifact,logicalId}'
+      or p_parent_hash is distinct from r#>>'{artifact,parentHash}' then raise exception 'original-bridge-artifact-receipt-scope';end if;
+    row_dto:=helmut_unit_diagnostic.original_bridge_row_v1(p_scope,p_kind,p_logical_id,p_canonical::jsonb);
+    if row_dto->>'table'='briefings' then
+      select jsonb_build_object('id',t.id,'user_id',t.user_id,'slot',t.slot,
+        'generated_at',to_char(t.generated_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'payload',t.payload),t.generated_at,t.xmin::text
+        into strict actual_body,actual_time,original_xmin from public.briefings t where t.id=row_dto->>'id';
+      if actual_time is distinct from helmut_unit_diagnostic.utc(p_canonical::jsonb->'generated_at') then raise exception 'original-bridge-artifact-native-time';end if;
+    else
+      select jsonb_build_object('id',t.id,'data',t.data),t.xmin::text into strict actual_body,original_xmin from public.helmut_store t where t.id=row_dto->>'id';
+    end if;
+    if actual_body is distinct from row_dto->'body' or original_xmin is distinct from mod(backend_tx::text::numeric,4294967296)::text
+      or not helmut_unit_diagnostic.exact(ack,array['ack','authBefore','authAfter','originalXmin'])
+      or ack->>'originalXmin' is distinct from original_xmin then raise exception 'original-bridge-artifact-real-original-row';end if;
+    row_ack:=ack->'ack';
+    if not helmut_unit_diagnostic.exact(row_ack,array['version','scopeHash','kind','id','hash','stateRevision','nonce'])
+      or row_ack->>'version' is distinct from 'helmut-local-unit-diagnostic-original-row-ack/1'
+      or row_ack->>'scopeHash' is distinct from p_scope or row_ack->>'kind' is distinct from p_kind or row_ack->>'id' is distinct from row_dto->>'id'
+      or row_ack->>'hash' is distinct from p_hash or row_ack->>'stateRevision' is distinct from p_old_revision::text
+      or row_ack->>'nonce' is distinct from n then raise exception 'original-bridge-artifact-original-row-ack';end if;
+    select data,xmin::text into strict auth_data,auth_xmin from public.helmut_store where id='main-auth';
+    auth_state:=public.helmut_auth_state_assert_root_local_v1(auth_data);auth_usage:=public.helmut_auth_usage_checked_proof_local_v1('main-auth');
+    actual_meta:=jsonb_build_object('revision',auth_data->>'_authStoreRevision','state',auth_state,'proof',auth_usage->'proof','xmin',auth_xmin);
+    if actual_meta is distinct from ack->'authBefore' or actual_meta is distinct from ack->'authAfter'
+      or auth_usage->>'revision' is distinct from auth_data->>'_authStoreRevision'
+      or helmut_unit_diagnostic.original_bridge_own_projection_v1('main-auth',auth_state->>'generation',auth_state->>'root',r->>'operationId') is distinct from own_row.body then
+      raise exception 'original-bridge-artifact-main-auth-must-be-unchanged';end if;
+    return;
+  end if;
   select data,xmin::text into strict auth_data,auth_xmin from public.helmut_store where id='main-auth';
   if auth_xmin is distinct from mod(backend_tx::text::numeric,4294967296)::text then raise exception 'original-bridge-auth-not-written-in-this-transaction';end if;
   auth_state:=public.helmut_auth_state_assert_root_local_v1(auth_data);auth_usage:=public.helmut_auth_usage_checked_proof_local_v1('main-auth');
@@ -379,6 +553,7 @@ begin
     or next_own#>>array[prefix||'journal','state']='closed' or next_own->(prefix||'result') is distinct from '{"state":"pending","evidenceHash":null,"positions":[]}'::jsonb then
     raise exception 'original-bridge-receipt-real-own-projection';end if;
   if p_mode='state' then
+    perform helmut_unit_diagnostic.original_bridge_result_v1(p_scope,next_own);
     if p_canonical is distinct from r#>>'{ownNext,canonical}' or p_hash is distinct from r#>>'{ownNext,hash}'
       or p_kind is not null or p_logical_id is not null or p_parent_hash is not null or c->'additions' is distinct from '[]'::jsonb
       or next_own is not distinct from own_row.body or ack#>>'{0,proof,head}' is distinct from c#>>'{expectedProof,head}' then
@@ -400,6 +575,9 @@ begin
   end if;
 end;$f$;
 
+revoke all on function helmut_unit_diagnostic.original_bridge_relations_v1() from public;
+revoke all on function helmut_unit_diagnostic.original_bridge_row_v1(text,text,text,jsonb) from public;
+revoke all on function helmut_unit_diagnostic.original_bridge_result_v1(text,jsonb) from public;
 revoke all on function helmut_unit_diagnostic.original_bridge_top_map_v1(text,text,text) from public;
 revoke all on function helmut_unit_diagnostic.original_bridge_value_v1(text,text,text,jsonb,boolean) from public;
 revoke all on function helmut_unit_diagnostic.original_bridge_own_projection_v1(text,text,text,text) from public;
@@ -428,11 +606,16 @@ begin
   end loop;
   for p in select f.oid from pg_proc f join pg_namespace n on n.oid=f.pronamespace
     where n.nspname='helmut_unit_diagnostic' and f.proname in ('original_bridge_top_map_v1','original_bridge_value_v1',
-      'original_bridge_own_projection_v1','original_bridge_compare_delta_v1','original_bridge_receipt_v1','exact') loop
+      'original_bridge_own_projection_v1','original_bridge_compare_delta_v1','original_bridge_receipt_v1',
+      'original_bridge_relations_v1','original_bridge_row_v1','original_bridge_result_v1','exact','utc') loop
     execute format('grant execute on function %s to %I,%I',p::regprocedure,writer,runtime_name);
   end loop;
   execute format('grant execute on function helmut_unit_diagnostic.original_bridge_compare_seed_v1(text,text,text,text,text,jsonb) to %I',writer);
-  execute format('grant select on helmut_unit_diagnostic.authority,helmut_unit_diagnostic.state to %I',writer);
+  for p in select f.oid from pg_proc f join pg_namespace n on n.oid=f.pronamespace
+    where n.nspname='helmut_unit_diagnostic' and f.proname in ('validate_state','verify_controls','verification_canonical','sha','parse','object_count') loop
+    execute format('grant execute on function %s to %I',p::regprocedure,writer);
+  end loop;
+  execute format('grant select on helmut_unit_diagnostic.authority,helmut_unit_diagnostic.state,helmut_unit_diagnostic.artifacts to %I',writer);
   execute format('grant update(scope_hash) on helmut_unit_diagnostic.state to %I',writer);
   execute format('create policy original_bridge_auth_read on public.helmut_store for select to %I using(id=''main-auth'')',writer);
   execute format('create policy original_bridge_auth_write on public.helmut_store for update to %I using(id=''main-auth'') with check(id=''main-auth'')',writer);
@@ -443,6 +626,38 @@ begin
   execute format('create policy original_bridge_authority_read on helmut_unit_diagnostic.authority for select to %I using(scope_hash=%L)',writer,scope);
   execute format('create policy original_bridge_state_read on helmut_unit_diagnostic.state for select to %I using(scope_hash=%L)',writer,scope);
   execute format('create policy original_bridge_state_lock on helmut_unit_diagnostic.state for update to %I using(scope_hash=%L) with check(false)',writer,scope);
+  execute format('create policy original_bridge_artifacts_read on helmut_unit_diagnostic.artifacts for select to %I using(scope_hash=%L)',writer,scope);
+  execute format('grant select(id,user_id,slot,generated_at,payload),insert(id,user_id,slot,generated_at,payload) on public.briefings to %I',writer);
+  execute format('grant insert(id,data) on public.helmut_store to %I',writer);
+  execute format('grant select(id,data) on public.helmut_store to %I',runtime_name);
+  execute format('grant select(id,user_id,slot,generated_at,payload) on public.briefings to %I',runtime_name);
+  -- Fixed ID predicates depend on the genuine native authority, not a caller
+  -- table or caller-selected original row. There is no UPDATE/DELETE grant.
+  execute format($policy$create policy original_bridge_private_read on public.helmut_store for select to %I,%I using(exists(
+    select from helmut_unit_diagnostic.authority a where a.scope_hash=%L and id=any(array[
+      'local-unit-diagnostic-'||a.operation_id||'-immutable-D-'||(a.command_canonical::jsonb#>>'{slot,plan,intents,0,id}'),
+      'local-unit-diagnostic-'||a.operation_id||'-evidence-0'])))$policy$,writer,runtime_name,scope);
+  execute format($policy$create policy original_bridge_private_insert on public.helmut_store for insert to %I with check(exists(
+    select from helmut_unit_diagnostic.authority a where a.scope_hash=%L and id=any(array[
+      'local-unit-diagnostic-'||a.operation_id||'-immutable-D-'||(a.command_canonical::jsonb#>>'{slot,plan,intents,0,id}'),
+      'local-unit-diagnostic-'||a.operation_id||'-evidence-0'])))$policy$,writer,scope);
+  for p in select oid from pg_roles where rolname in(writer,runtime_name) loop
+    execute format($policy$create policy original_bridge_briefings_read_%s on public.briefings for select to %I using(exists(
+      select from helmut_unit_diagnostic.authority a where a.scope_hash=%L and user_id=a.command_canonical::jsonb#>>'{units,0,subject}'
+      and id=any(array['bf-'||user_id||'-lage-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}'),
+        'bf-'||user_id||'-mandatsbriefing-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}'),
+        'bf-'||user_id||'-morgenlage-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}'),
+        'bf-'||user_id||'-lage-pruefentwurf-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}')||'-'||(a.command_canonical::jsonb#>>'{slot,plan,runId}')||'-entwurf',
+        'bf-'||user_id||'-lage-pruefentwurf-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}')||'-'||(a.command_canonical::jsonb#>>'{slot,plan,runId}')||'-pruefung'])))$policy$,
+        p,(select rolname from pg_roles where oid=p),scope);
+  end loop;
+  execute format($policy$create policy original_bridge_briefings_insert on public.briefings for insert to %I with check(exists(
+    select from helmut_unit_diagnostic.authority a where a.scope_hash=%L and user_id=a.command_canonical::jsonb#>>'{units,0,subject}'
+      and id=any(array['bf-'||user_id||'-lage-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}'),
+        'bf-'||user_id||'-mandatsbriefing-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}'),
+        'bf-'||user_id||'-morgenlage-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}'),
+        'bf-'||user_id||'-lage-pruefentwurf-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}')||'-'||(a.command_canonical::jsonb#>>'{slot,plan,runId}')||'-entwurf',
+        'bf-'||user_id||'-lage-pruefentwurf-'||(a.command_canonical::jsonb#>>'{calendar,executionDayUTC}')||'-'||(a.command_canonical::jsonb#>>'{slot,plan,runId}')||'-pruefung'])))$policy$,writer,scope);
   -- No role membership, BYPASSRLS, ownership or legacy mutation reaches runtime.
   if exists(select from pg_auth_members where member=(select oid from pg_roles where rolname=runtime_name)
     or roleid=(select oid from pg_roles where rolname=writer)) then raise exception 'original-bridge-role-membership-forbidden';end if;

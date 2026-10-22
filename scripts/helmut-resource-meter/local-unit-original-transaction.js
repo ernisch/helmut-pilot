@@ -24,7 +24,10 @@ const HELPERS = Object.freeze({
   original_bridge_own_projection_v1: Object.freeze({ args: "text, text, text, text", sha: "8074531ee40f7fa2858dc7b82f4e7e455dd34254e3489d1c53c0c8347e874622", result: "jsonb" }),
   original_bridge_compare_delta_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "563ca8e1000bfc253e8ef9deee1805d23481f681781db4715fccf2159f52820b", result: "void" }),
   original_bridge_compare_seed_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "3a7142913b89e4255fcc622dda5a2ea28412befcdaa9cdca20186e2fdae14b62", result: "void" }),
-  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "7546b33c570717038e3ec54f4b9d5ba027b7fda05cec4d8526cb59cd4d497068", result: "void" }),
+  original_bridge_relations_v1: Object.freeze({ args: "", sha: "91505921dd30cbadb259fc439fede86c1f47b062ebcd690238dbd83d9f53797a", result: "jsonb" }),
+  original_bridge_row_v1: Object.freeze({ args: "text, text, text, jsonb", sha: "290c60f33dc595e7ca7d4e893ed980fdc2a722b1513af00df51230c51b131480", result: "jsonb" }),
+  original_bridge_result_v1: Object.freeze({ args: "text, jsonb", sha: "e5c513ac1d84e0e8fe989dc16e0b1d75d07358d23b9be305948ecd407c604207", result: "void" }),
+  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "e48839cdb5eeec19e4d79baa36216d1521e053f3145a45a981e882a678aed719", result: "void" }),
 });
 const NATIVE = Object.freeze(["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"]);
 function need(ok, code) { if (!ok) throw Error("local-unit-original-transaction-" + code); }
@@ -63,11 +66,16 @@ function sourceShape(s, kind) {
   if (kind !== "original") need(s.config !== null, "native-helper-search-path");
 }
 function qualification(q, r) {
-  need(exact(q, ["schema", "database", "operationId", "commandHash", "originalSources", "helperSources", "nativeSources"])
+  need(exact(q, ["schema", "database", "operationId", "commandHash", "originalSources", "helperSources", "nativeSources", "originalRelations"])
     && q.schema === "helmut-local-unit-original-bridge-qualification/1"
     && q.database === "helmut_unit_diagnostic_" + r.operationId.slice(-32)
     && q.operationId === r.operationId && q.commandHash === r.commandHash, "qualified-owned-target");
-  for (const [key, minimum, maximum] of [["originalSources", 15, 32], ["helperSources", 6, 6], ["nativeSources", 15, 128]]) {
+  const relations = ["briefings", "helmut_auth_state_nodes_local", "helmut_store", "llm_usage", "profiles"].map(n => "public." + n);
+  need(Array.isArray(q.originalRelations) && q.originalRelations.length === 5
+    && isDeepStrictEqual(q.originalRelations.map(x => x?.name).sort(), relations.sort())
+    && q.originalRelations.every(x => typeof x.oid === "string" && /^[1-9][0-9]{0,9}$/.test(x.oid))
+    && Buffer.byteLength(canonical(q.originalRelations)) <= 512 * 1024, "actual-original-relation-catalog-required");
+  for (const [key, minimum, maximum] of [["originalSources", 15, 32], ["helperSources", 9, 9], ["nativeSources", 18, 128]]) {
     need(Array.isArray(q[key]) && q[key].length >= minimum && q[key].length <= maximum, "source-pin-count");
     const oids = new Set(), names = new Set();
     for (const s of q[key]) { sourceShape(s, key === "originalSources" ? "original" : "native");
@@ -90,7 +98,7 @@ function validate(r, q) {
   const seed = r?.mode === "seed";
   need(exact(r, ["schema", "mode", "operationId", "commandHash", "claimId", "originalCAS", "ownBefore", "ownNext", "artifact",
     ...(seed ? ["privateOwnerInitialization"] : [])])
-    && r.schema === "helmut-local-unit-original-write/1" && ["seed", "state", "usage"].includes(r.mode)
+    && r.schema === "helmut-local-unit-original-write/1" && ["seed", "state", "usage", "artifact"].includes(r.mode)
     && typeof r.operationId === "string" && /^localUnitDiagnostic-[a-f0-9]{32}$/.test(r.operationId)
     && typeof r.commandHash === "string" && HASH.test(r.commandHash)
     && (seed ? r.claimId === null : typeof r.claimId === "string"
@@ -102,9 +110,26 @@ function validate(r, q) {
   const next = parsedCanonical(r.ownNext.canonical, r.ownNext.hash, OWN_CAP), keys = ownKeys(r.operationId);
   need(exact(next, keys), "own-seven-only");
   const p = "localUnitDiagnostic:" + r.operationId.slice(-32) + ":";
-  need(next[p + "journal"]?.claimId === r.claimId && isDeepStrictEqual(next[p + "result"], { state: "pending", evidenceHash: null, positions: [] })
-    && next[p + "journal"]?.state !== "closed", "result-transition-blocked");
+  need(next[p + "journal"]?.claimId === r.claimId, "own-current-claim");
+  validateResult(r, next, p);
   if (seed) validateInitialization(r, next, p);
+  if (r.mode === "artifact") {
+    need(r.originalCAS === null && r.ownNext.hash === r.ownBefore.hash, "artifact-no-main-auth-cas");
+    const a = r.artifact;
+    need(exact(a, ["kind", "logicalId", "canonical", "sha256", "parentHash"])
+      && ["draft", "immutable-D", "review", "lage", "mandatsbriefing", "morgenbriefing", "evidence"].includes(a.kind)
+      && typeof a.logicalId === "string" && /^[A-Za-z0-9_-]{1,256}$/.test(a.logicalId)
+      && (a.parentHash === null || typeof a.parentHash === "string" && HASH.test(a.parentHash)), "seven-original-artifact-kinds");
+    const body = parsedCanonical(a.canonical, a.sha256, 2097152);
+    if (["draft", "evidence"].includes(a.kind)) need(a.parentHash === null, "original-artifact-root-parent");
+    else need(HASH.test(a.parentHash || ""), "original-artifact-parent-required");
+    if (!["immutable-D", "evidence"].includes(a.kind)) need(exact(body, ["id", "user_id", "slot", "generated_at", "payload"])
+      && body.id === a.logicalId, "actual-original-briefing-body");
+    if (a.kind === "evidence") need(a.logicalId === "diagnostic-result" && body.schema === "helmut-local-unit-diagnostic-evidence/1"
+      && body.operationId === r.operationId && body.commandHash === r.commandHash, "actual-original-evidence-body");
+    need(Buffer.byteLength(canonical(r)) <= CAP && Buffer.byteLength(canonical(q)) <= 1024 * 1024, "bounded-request");
+    return next;
+  }
   const cas = r.originalCAS;
   need(exact(cas, ["id", "expectedRevision", "expectedProof", "expectedState", "revision", "root", "nodes", "additions"])
     && cas.id === "main-auth" && UUID.test(cas.expectedRevision || "") && UUID.test(cas.revision || "")
@@ -135,6 +160,20 @@ function validate(r, q) {
   }
   need(Buffer.byteLength(canonical(r)) <= CAP && Buffer.byteLength(canonical(q)) <= 1024 * 1024, "bounded-request");
   return next;
+}
+function validateResult(r, next, p) {
+  const result = next[p + "result"], journal = next[p + "journal"];
+  if (isDeepStrictEqual(result, { state: "pending", evidenceHash: null, positions: [] })) {
+    need(journal?.state !== "closed", "close-requires-retained-result"); return;
+  }
+  need(r.mode === "state" && exact(result, ["state", "evidenceHash", "positions"]) && result.state === "retained-unreviewed"
+    && HASH.test(result.evidenceHash || "") && Array.isArray(result.positions) && result.positions.length === 3
+    && new Set(result.positions.map(x => x?.bereich)).size === 3 && result.positions.every(x => exact(x, ["bereich", "owner", "hash"])
+      && ["lage", "mandatsbriefing", "morgenbriefing"].includes(x.bereich) && typeof x.owner === "string" && HASH.test(x.hash || "")), "retained-native-artifacts-required");
+  if (journal?.state === "closed") need(journal.index === 1 && journal.inFlight === null && journal.stopRequested === false
+    && exact(journal.verification, ["authorizationHash", "controlsHash", "controlCount"])
+    && journal.verification.controlCount === 16 && HASH.test(journal.verification.authorizationHash || "")
+    && HASH.test(journal.verification.controlsHash || ""), "closed-native-verification-required");
 }
 function validateInitialization(r, next, p) {
   const init = r.privateOwnerInitialization;
@@ -231,10 +270,59 @@ END;$seedown$;
 RESET SESSION AUTHORIZATION;
 `;
 }
+function artifactOriginal(writer) {
+  return `SET SESSION AUTHORIZATION ${writer};
+DO $originalrow$
+DECLARE r jsonb; n text; row_dto jsonb; a jsonb; before_meta jsonb; after_meta jsonb; m jsonb; u jsonb; auth_xmin text;
+  actual_body jsonb; actual_time timestamptz; original_xmin text; ack jsonb; own_row helmut_unit_diagnostic.state%rowtype;
+  authority_row helmut_unit_diagnostic.authority%rowtype; own_next jsonb; prefix text;
+BEGIN
+  IF session_user<>${literal(writer)} OR current_user<>session_user THEN RAISE EXCEPTION 'original-bridge-writer-principal';END IF;
+  SELECT request_text::jsonb,nonce INTO STRICT r,n FROM pg_temp.original_bridge_args;own_next:=(r#>>'{ownNext,canonical}')::jsonb;
+  IF r->>'mode' IS DISTINCT FROM 'artifact' OR r->'originalCAS' IS DISTINCT FROM 'null'::jsonb THEN RAISE EXCEPTION 'original-bridge-artifact-no-auth-cas';END IF;
+  SELECT * INTO STRICT own_row FROM helmut_unit_diagnostic.state WHERE scope_hash=r->>'commandHash' FOR UPDATE;
+  SELECT data,xmin::text INTO STRICT a,auth_xmin FROM public.helmut_store WHERE id='main-auth' FOR UPDATE;
+  SELECT * INTO STRICT authority_row FROM helmut_unit_diagnostic.authority WHERE scope_hash=r->>'commandHash';
+  prefix:='localUnitDiagnostic:'||right(r->>'operationId',32)||':';
+  IF authority_row.operation_id IS DISTINCT FROM r->>'operationId'
+    OR own_row.body_hash IS DISTINCT FROM r#>>'{ownBefore,hash}' OR own_row.revision::text IS DISTINCT FROM r#>>'{ownBefore,revision}'
+    OR own_row.body_hash IS DISTINCT FROM r#>>'{ownNext,hash}' OR own_row.canonical_text IS DISTINCT FROM r#>>'{ownNext,canonical}'
+    OR own_row.body IS DISTINCT FROM own_next OR encode(sha256(convert_to(own_row.canonical_text,'UTF8')),'hex') IS DISTINCT FROM own_row.body_hash
+    OR own_row.body#>>ARRAY[prefix||'journal','claimId'] IS DISTINCT FROM r->>'claimId' THEN RAISE EXCEPTION 'original-bridge-artifact-own-current-state';END IF;
+  m:=public.helmut_auth_state_assert_root_local_v1(a);u:=public.helmut_auth_usage_checked_proof_local_v1('main-auth');
+  IF u->>'revision' IS DISTINCT FROM a->>'_authStoreRevision'
+    OR helmut_unit_diagnostic.original_bridge_own_projection_v1('main-auth',m->>'generation',m->>'root',r->>'operationId') IS DISTINCT FROM own_row.body THEN
+    RAISE EXCEPTION 'original-bridge-artifact-old-auth-mirror';END IF;
+  before_meta:=jsonb_build_object('revision',a->>'_authStoreRevision','state',m,'proof',u->'proof','xmin',auth_xmin);
+  row_dto:=helmut_unit_diagnostic.original_bridge_row_v1(r->>'commandHash',r#>>'{artifact,kind}',r#>>'{artifact,logicalId}',(r#>>'{artifact,canonical}')::jsonb);
+  IF row_dto->>'table'='briefings' THEN
+    INSERT INTO public.briefings(id,user_id,slot,generated_at,payload) VALUES(row_dto->>'id',row_dto#>>'{body,user_id}',
+      row_dto#>>'{body,slot}',helmut_unit_diagnostic.utc(row_dto#>'{body,generated_at}'),row_dto#>'{body,payload}');
+    SELECT jsonb_build_object('id',t.id,'user_id',t.user_id,'slot',t.slot,
+      'generated_at',to_char(t.generated_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'payload',t.payload),t.generated_at,t.xmin::text
+      INTO STRICT actual_body,actual_time,original_xmin FROM public.briefings t WHERE t.id=row_dto->>'id';
+    IF actual_time IS DISTINCT FROM helmut_unit_diagnostic.utc(row_dto#>'{body,generated_at}') THEN RAISE EXCEPTION 'original-bridge-artifact-original-timestamp';END IF;
+  ELSE
+    INSERT INTO public.helmut_store(id,data) VALUES(row_dto->>'id',row_dto#>'{body,data}');
+    SELECT jsonb_build_object('id',t.id,'data',t.data),t.xmin::text INTO STRICT actual_body,original_xmin FROM public.helmut_store t WHERE t.id=row_dto->>'id';
+  END IF;
+  IF actual_body IS DISTINCT FROM row_dto->'body' OR original_xmin IS DISTINCT FROM mod(pg_current_xact_id()::text::numeric,4294967296)::text THEN
+    RAISE EXCEPTION 'original-bridge-artifact-original-insert-readback';END IF;
+  SELECT data,xmin::text INTO STRICT a,auth_xmin FROM public.helmut_store WHERE id='main-auth';
+  m:=public.helmut_auth_state_assert_root_local_v1(a);u:=public.helmut_auth_usage_checked_proof_local_v1('main-auth');
+  after_meta:=jsonb_build_object('revision',a->>'_authStoreRevision','state',m,'proof',u->'proof','xmin',auth_xmin);
+  IF after_meta IS DISTINCT FROM before_meta OR u->>'revision' IS DISTINCT FROM a->>'_authStoreRevision' THEN RAISE EXCEPTION 'original-bridge-artifact-no-main-auth-change';END IF;
+  ack:=jsonb_build_object('version','helmut-local-unit-diagnostic-original-row-ack/1','scopeHash',own_row.scope_hash,
+    'kind',r#>>'{artifact,kind}','id',row_dto->>'id','hash',r#>>'{artifact,sha256}','stateRevision',own_row.revision,'nonce',n);
+  INSERT INTO pg_temp.original_bridge_results VALUES('originalRowAck',jsonb_build_object('ack',ack,'authBefore',before_meta,'authAfter',after_meta,'originalXmin',original_xmin));
+END;$originalrow$;
+`;
+}
 function compile(r, q, nonce) {
   const suffix = r.operationId.slice(-32), writer = "helmut_ud_bridge_writer_" + suffix;
   const auth = "helmut_ud_authenticator_" + suffix, runtime = "helmut_ud_runtime_" + suffix;
-  const owner = "helmut_ud_owner_" + suffix, seed = r.mode === "seed", ownActor = seed ? owner : runtime;
+  const owner = "helmut_ud_owner_" + suffix, seed = r.mode === "seed", artifact = r.mode === "artifact", ownActor = seed ? owner : runtime;
+  const closed = r.mode === "state" && JSON.parse(r.ownNext.canonical)["localUnitDiagnostic:" + suffix + ":journal"]?.state === "closed";
   const requestText = canonical(r), qualificationText = canonical(q);
   return `BEGIN;
 SET LOCAL standard_conforming_strings=on;
@@ -286,12 +374,13 @@ BEGIN
   SELECT array_agg(p.oid ORDER BY p.oid) INTO actual_native FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
     WHERE n.nspname='helmut_unit_diagnostic' OR (n.nspname='public' AND p.proname=ANY(ARRAY[${NATIVE.map(n => literal("local_unit_diagnostic_" + n + "_v1")).join(",")} ]));
   IF actual_native IS DISTINCT FROM expected_native THEN RAISE EXCEPTION 'original-bridge-complete-native-source-set';END IF;
+  IF helmut_unit_diagnostic.original_bridge_relations_v1() IS DISTINCT FROM q->'originalRelations' THEN RAISE EXCEPTION 'original-bridge-native-original-relations-changed';END IF;
   IF EXISTS(SELECT FROM pg_trigger t WHERE NOT t.tgisinternal AND t.tgrelid IN
-    ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass)
+    ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass)
     AND NOT EXISTS(SELECT FROM jsonb_array_elements(q->'originalSources') s0 WHERE (s0->>'oid')::oid=t.tgfoid)) THEN
     RAISE EXCEPTION 'original-bridge-complete-original-trigger-set';END IF;
-  IF (SELECT count(*) FROM pg_class WHERE oid IN ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass)
-    AND relrowsecurity AND relkind='r')<>3 THEN RAISE EXCEPTION 'original-bridge-legacy-rls-required';END IF;
+  IF (SELECT count(*) FROM pg_class WHERE oid IN ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass)
+    AND relrowsecurity AND relkind='r')<>4 THEN RAISE EXCEPTION 'original-bridge-legacy-rls-required';END IF;
   SELECT nspname INTO STRICT temp_name FROM pg_namespace WHERE oid=pg_my_temp_schema();
   FOR acl_entry IN SELECT DISTINCT a.grantee FROM pg_namespace ns CROSS JOIN LATERAL aclexplode(coalesce(ns.nspacl,acldefault('n',ns.nspowner))) a
     WHERE ns.oid=pg_my_temp_schema() AND a.grantee<>ns.nspowner LOOP
@@ -315,14 +404,14 @@ BEGIN
   ALTER TABLE pg_temp.original_bridge_results ENABLE ROW LEVEL SECURITY;
   ALTER TABLE pg_temp.original_bridge_results FORCE ROW LEVEL SECURITY;
   EXECUTE format('CREATE POLICY original_bridge_read ON pg_temp.original_bridge_results FOR SELECT TO %I,%I USING(true)',${literal(writer)},${literal(ownActor)});
-  EXECUTE format('CREATE POLICY original_bridge_auth_insert ON pg_temp.original_bridge_results FOR INSERT TO %I WITH CHECK(phase=''authAck'')',${literal(writer)});
+  EXECUTE format('CREATE POLICY original_bridge_auth_insert ON pg_temp.original_bridge_results FOR INSERT TO %I WITH CHECK(phase=''${artifact ? "originalRowAck" : "authAck"}'')',${literal(writer)});
   EXECUTE format('CREATE POLICY original_bridge_own_insert ON pg_temp.original_bridge_results FOR INSERT TO %I WITH CHECK(phase=''ownAck'')',${literal(ownActor)});
 END;$root$;
 ${seed ? seedInitialization(owner) : ""}
-SET SESSION AUTHORIZATION ${writer};
+${artifact ? artifactOriginal(writer) : `SET SESSION AUTHORIZATION ${writer};
 DO $original$
 DECLARE r jsonb; c jsonb; d jsonb; a jsonb; m jsonb; u jsonb; old_own jsonb; ack jsonb; after_root jsonb; after_usage jsonb;
-  own_row helmut_unit_diagnostic.state%rowtype; authority_row helmut_unit_diagnostic.authority%rowtype; prefix text; phase text; ticket text; usage_row record; top_map jsonb; k text;
+  own_row helmut_unit_diagnostic.state%rowtype; authority_row helmut_unit_diagnostic.authority%rowtype; prefix text; phase text; ticket text; usage_row record; top_map jsonb; k text; terminal_stop boolean:=false;
 BEGIN
   IF session_user<>${literal(writer)} OR current_user<>session_user THEN RAISE EXCEPTION 'original-bridge-writer-principal';END IF;
   SELECT request_text::jsonb INTO STRICT r FROM pg_temp.original_bridge_args;c:=r->'originalCAS';d:=(r#>>'{ownNext,canonical}')::jsonb;
@@ -337,7 +426,11 @@ BEGIN
     OR own_row.body IS DISTINCT FROM own_row.canonical_text::jsonb
     OR encode(sha256(convert_to(own_row.canonical_text,'UTF8')),'hex') IS DISTINCT FROM own_row.body_hash THEN
     RAISE EXCEPTION 'original-bridge-own-before-or-next-mismatch';END IF;`}
-  IF authority_row.operation_id IS DISTINCT FROM r->>'operationId' OR clock_timestamp()>=authority_row.expires_at
+  ${seed ? "" : `terminal_stop:=coalesce(r->>'mode'='state' AND d-(prefix||'journal')=own_row.body-(prefix||'journal')
+    AND (d->(prefix||'journal'))-ARRAY['state','stopRequested','reason']=(own_row.body->(prefix||'journal'))-ARRAY['state','stopRequested','reason']
+    AND d#>>ARRAY[prefix||'journal','state'] IN('unknown','stopped') AND d#>ARRAY[prefix||'journal','stopRequested']='true'::jsonb
+    AND coalesce(d#>>ARRAY[prefix||'journal','reason'],'')~'^[a-z0-9-]{1,80}$',false);`}
+  IF authority_row.operation_id IS DISTINCT FROM r->>'operationId' OR (clock_timestamp()>=authority_row.expires_at AND NOT terminal_stop)
     OR encode(sha256(convert_to(r#>>'{ownNext,canonical}','UTF8')),'hex') IS DISTINCT FROM r#>>'{ownNext,hash}' THEN
     RAISE EXCEPTION 'original-bridge-own-before-or-next-mismatch';END IF;
   ${seed ? "" : `IF own_row.body#>>ARRAY[prefix||'journal','claimId'] IS DISTINCT FROM r->>'claimId' THEN
@@ -356,6 +449,7 @@ BEGIN
   `}
   IF r->>'mode' IN('state','seed') THEN
     IF c->'additions'<>'[]'::jsonb ${seed ? "" : "OR d IS NOT DISTINCT FROM own_row.body"} THEN RAISE EXCEPTION 'original-bridge-no-state-noop-or-usage';END IF;
+    ${seed ? "" : "PERFORM helmut_unit_diagnostic.original_bridge_result_v1(r->>'commandHash',d);"}
   ELSE
     IF jsonb_array_length(c->'additions')<>1 OR d IS DISTINCT FROM own_row.body OR c->>'root' IS DISTINCT FROM m->>'root'
       OR c->'nodes'<>'[]'::jsonb OR c#>'{additions,0}' IS DISTINCT FROM (r#>>'{artifact,canonical}')::jsonb THEN
@@ -400,6 +494,7 @@ BEGIN
   END IF;
   INSERT INTO pg_temp.original_bridge_results VALUES('authAck',ack);
 END;$original$;
+`}
 RESET SESSION AUTHORIZATION;
 ${seed ? seedOwn(owner) : `SET SESSION AUTHORIZATION ${auth};
 SET LOCAL ROLE ${runtime};
@@ -413,22 +508,23 @@ BEGIN
     ack:=public.local_unit_diagnostic_state_cas_v1(r->>'commandHash',claim_hash,r#>>'{ownBefore,hash}',
       (r#>>'{ownBefore,revision}')::bigint,r#>>'{ownNext,canonical}',r#>>'{ownNext,hash}',n);
     SELECT body,body_hash,revision INTO STRICT current_body,current_hash,current_revision FROM helmut_unit_diagnostic.state WHERE scope_hash=r->>'commandHash';
-    IF NOT helmut_unit_diagnostic.exact(ack,ARRAY['version','scopeHash','hash','revision','claimHash','nonce'])
+    IF NOT helmut_unit_diagnostic.exact(ack,ARRAY['version','scopeHash','hash','revision','claimHash','nonce']${closed ? "||ARRAY['authorizationHash','controlsHash','controlCount']" : ""})
       OR ack->>'version' IS DISTINCT FROM 'helmut-local-unit-diagnostic-state-ack/1' OR ack->>'claimHash' IS DISTINCT FROM claim_hash
       OR coalesce(ack->>'revision','')!~'^(0|[1-9][0-9]{0,15})$'
       OR ack->>'hash' IS DISTINCT FROM r#>>'{ownNext,hash}' OR (ack->>'revision')::bigint<>(r#>>'{ownBefore,revision}')::bigint+1
       OR current_body IS DISTINCT FROM (r#>>'{ownNext,canonical}')::jsonb OR current_hash IS DISTINCT FROM ack->>'hash'
-      OR current_revision IS DISTINCT FROM (ack->>'revision')::bigint THEN RAISE EXCEPTION 'original-bridge-own-cas-ack';END IF;
+      OR current_revision IS DISTINCT FROM (ack->>'revision')::bigint ${closed ? `OR (ack-'version'-'scopeHash'-'hash'-'revision'-'claimHash'-'nonce')
+        IS DISTINCT FROM current_body#>ARRAY['localUnitDiagnostic:'||right(r->>'operationId',32)||':journal','verification']` : ""} THEN RAISE EXCEPTION 'original-bridge-own-cas-ack';END IF;
   ELSE
     ack:=public.local_unit_diagnostic_artifact_insert_v1(r->>'commandHash',claim_hash,r#>>'{artifact,kind}',r#>>'{artifact,logicalId}',
-      r#>>'{artifact,canonical}',r#>>'{artifact,sha256}',null,n);
+      r#>>'{artifact,canonical}',r#>>'{artifact,sha256}',r#>>'{artifact,parentHash}',n);
     IF NOT helmut_unit_diagnostic.exact(ack,ARRAY['version','scopeHash','kind','logicalId','hash','stateRevision','nonce'])
       OR ack->>'version' IS DISTINCT FROM 'helmut-local-unit-diagnostic-artifact-ack/1'
       OR coalesce(ack->>'stateRevision','')!~'^(0|[1-9][0-9]{0,15})$'
       OR ack->>'kind' IS DISTINCT FROM r#>>'{artifact,kind}' OR ack->>'logicalId' IS DISTINCT FROM r#>>'{artifact,logicalId}'
       OR ack->>'hash' IS DISTINCT FROM r#>>'{artifact,sha256}' OR (ack->>'stateRevision')::bigint<>(r#>>'{ownBefore,revision}')::bigint
       OR NOT EXISTS(SELECT FROM helmut_unit_diagnostic.artifacts WHERE scope_hash=r->>'commandHash' AND kind=r#>>'{artifact,kind}'
-        AND logical_id=r#>>'{artifact,logicalId}' AND body_hash=r#>>'{artifact,sha256}' AND parent_hash IS NULL
+        AND logical_id=r#>>'{artifact,logicalId}' AND body_hash=r#>>'{artifact,sha256}' AND parent_hash IS NOT DISTINCT FROM r#>>'{artifact,parentHash}'
         AND canonical_text=r#>>'{artifact,canonical}' AND body=(r#>>'{artifact,canonical}')::jsonb) THEN RAISE EXCEPTION 'original-bridge-own-usage-artifact-ack';END IF;
   END IF;
   IF ack->>'scopeHash' IS DISTINCT FROM r->>'commandHash' OR ack->>'nonce' IS DISTINCT FROM n THEN RAISE EXCEPTION 'original-bridge-own-ack-scope';END IF;
@@ -444,7 +540,7 @@ BEGIN
 END;$final$;
 COMMIT;
 SELECT jsonb_build_object('schema','helmut-local-unit-original-write-result/1',
-  'authAck',(SELECT value FROM pg_temp.original_bridge_results WHERE phase='authAck'),
+  '${artifact ? "originalRowAck" : "authAck"}',(SELECT ${artifact ? "value->'ack'" : "value"} FROM pg_temp.original_bridge_results WHERE phase='${artifact ? "originalRowAck" : "authAck"}'),
   'ownAck',(SELECT value FROM pg_temp.original_bridge_results WHERE phase='ownAck'));
 `;
 }
@@ -455,7 +551,7 @@ function prepare(request, inputQualification) {
     database: q.database, sql, sqlSHA256: SHA(sql), requestSHA256: SHA(canonical(requestCopy)), qualificationSHA256: SHA(canonical(q)),
     requiredInitialRole: "postgres", requiredInitialSuperuser: true, originallyUnprivileged: false,
     preparedOnly: true, privateOwnerInitialization: requestCopy.mode === "seed", publicSeedBlocked: true,
-    resultTransitionBlocked: true, unitExecutionAuthorized: false, full500: false });
+    resultTransitionBlocked: false, nativeResultProofRequired: true, unitExecutionAuthorized: false, full500: false });
   prepared.set(packet, { request: requestCopy, nonce }); return packet;
 }
 function acceptResult(packet, raw) {
@@ -468,20 +564,35 @@ function acceptResult(packet, raw) {
   need(typeof raw === "string" && Buffer.byteLength(raw) <= 65536, "result-bytes");
   let value; try { value = JSON.parse(raw); } catch { need(false, "result-json"); }
   const r = d.request, c = r.originalCAS;
-  need(exact(value, ["schema", "authAck", "ownAck"]) && value.schema === "helmut-local-unit-original-write-result/1"
-    && Array.isArray(value.authAck) && value.authAck.length === 1, "result-shape");
-  const a = value.authAck[0], w = value.ownAck;
-  need(exact(a, ["id", "revision", "proof", "state"]) && a.id === "main-auth" && a.revision === c.revision && proof(a.proof) && state(a.state)
-    && a.proof.generation === c.expectedProof.generation && a.proof.originalHash === c.expectedProof.originalHash
-    && a.proof.count === c.expectedProof.count + c.additions.length
-    && (r.mode === "usage" ? a.proof.head !== c.expectedProof.head : a.proof.head === c.expectedProof.head)
-    && isDeepStrictEqual(a.state, { ...c.expectedState, root: c.root }), "result-original-ack");
+  const artifact = r.mode === "artifact", w = value?.ownAck;
+  need(exact(value, ["schema", artifact ? "originalRowAck" : "authAck", "ownAck"])
+    && value.schema === "helmut-local-unit-original-write-result/1", "result-shape");
+  if (artifact) {
+    const a = value.originalRowAck, expectedId = ["immutable-D", "evidence"].includes(r.artifact.kind)
+      ? "local-unit-diagnostic-" + r.operationId + (r.artifact.kind === "evidence" ? "-evidence-0" : "-immutable-D-" + r.artifact.logicalId) : r.artifact.logicalId;
+    need(exact(a, ["version", "scopeHash", "kind", "id", "hash", "stateRevision", "nonce"])
+      && a.version === "helmut-local-unit-diagnostic-original-row-ack/1" && a.scopeHash === r.commandHash && a.kind === r.artifact.kind
+      && a.id === expectedId && a.hash === r.artifact.sha256 && a.stateRevision === r.ownBefore.revision && a.nonce === d.nonce, "result-original-row-ack");
+  } else {
+    need(Array.isArray(value.authAck) && value.authAck.length === 1, "result-shape");
+    const a = value.authAck[0];
+    need(exact(a, ["id", "revision", "proof", "state"]) && a.id === "main-auth" && a.revision === c.revision && proof(a.proof) && state(a.state)
+      && a.proof.generation === c.expectedProof.generation && a.proof.originalHash === c.expectedProof.originalHash
+      && a.proof.count === c.expectedProof.count + c.additions.length
+      && (r.mode === "usage" ? a.proof.head !== c.expectedProof.head : a.proof.head === c.expectedProof.head)
+      && isDeepStrictEqual(a.state, { ...c.expectedState, root: c.root }), "result-original-ack");
+  }
   if (r.mode === "seed") need(exact(w, ["version", "scopeHash", "operationId", "revision", "hash", "nonce"])
     && w.version === "helmut-local-unit-diagnostic-seed-ack/1" && w.hash === r.ownNext.hash
     && w.revision === 0 && w.operationId === r.operationId, "result-native-seed-ack");
-  else if (r.mode === "state") need(exact(w, ["version", "scopeHash", "hash", "revision", "claimHash", "nonce"])
-    && w.version === "helmut-local-unit-diagnostic-state-ack/1" && w.hash === r.ownNext.hash
-    && w.revision === r.ownBefore.revision + 1 && w.claimHash === SHA(r.claimId), "result-native-state-ack");
+  else if (r.mode === "state") {
+    const next = JSON.parse(r.ownNext.canonical), journal = next["localUnitDiagnostic:" + r.operationId.slice(-32) + ":journal"], closed = journal?.state === "closed";
+    need(exact(w, ["version", "scopeHash", "hash", "revision", "claimHash", "nonce", ...(closed ? ["authorizationHash", "controlsHash", "controlCount"] : [])])
+      && w.version === "helmut-local-unit-diagnostic-state-ack/1" && w.hash === r.ownNext.hash
+      && w.revision === r.ownBefore.revision + 1 && w.claimHash === SHA(r.claimId), "result-native-state-ack");
+    if (closed) need(w.authorizationHash === journal.verification.authorizationHash && w.controlsHash === journal.verification.controlsHash
+      && w.controlCount === 16, "result-native-final-verification-ack");
+  }
   else need(exact(w, ["version", "scopeHash", "kind", "logicalId", "hash", "stateRevision", "nonce"])
     && w.version === "helmut-local-unit-diagnostic-artifact-ack/1" && w.kind === r.artifact.kind
     && w.logicalId === r.artifact.logicalId && w.hash === r.artifact.sha256 && w.stateRevision === r.ownBefore.revision, "result-native-artifact-ack");

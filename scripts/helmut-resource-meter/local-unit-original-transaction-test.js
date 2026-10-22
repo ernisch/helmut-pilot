@@ -18,6 +18,7 @@ const nativeNames = ["contract", "authority_read", "runtime_read", "state_read",
 const helperArgs = { original_bridge_top_map_v1: "text, text, text", original_bridge_value_v1: "text, text, text, jsonb, boolean",
   original_bridge_own_projection_v1: "text, text, text, text", original_bridge_compare_delta_v1: "text, text, text, text, text, jsonb",
   original_bridge_compare_seed_v1: "text, text, text, text, text, jsonb",
+  original_bridge_relations_v1: "", original_bridge_row_v1: "text, text, text, jsonb", original_bridge_result_v1: "text, jsonb",
   original_bridge_receipt_v1: "text, text, text, text, bigint, text, text, text, text, text" };
 const helperBodies = [...proposal.matchAll(/create function helmut_unit_diagnostic\.(original_bridge_[a-z0-9_]+)\([^;]+?as \$f\$([\s\S]*?)\$f\$;/g)];
 let count = 0;
@@ -27,9 +28,10 @@ function source(name, oid) { return { name, oid: String(oid), identityArguments:
   volatility: "v", returnType: "jsonb", language: "plpgsql", config: ["search_path=pg_catalog"] }; }
 function qualification() {
   const helperSources = helperBodies.map((m, i) => ({ ...source("helmut_unit_diagnostic." + m[1], 2000 + i),
-    identityArguments: helperArgs[m[1]], prosrcSHA256: hash(m[2]), volatility: "s", returnType: /compare_delta|compare_seed|receipt/.test(m[1]) ? "void" : "jsonb" }));
+    identityArguments: helperArgs[m[1]], prosrcSHA256: hash(m[2]), volatility: "s", returnType: /compare_delta|compare_seed|receipt|result_v1/.test(m[1]) ? "void" : "jsonb" }));
   return { schema: "helmut-local-unit-original-bridge-qualification/1", database: "helmut_unit_diagnostic_" + suffix,
-    operationId: op, commandHash: "c".repeat(64), originalSources: originalNames.map((n, i) => source(n, 1000 + i)), helperSources,
+    operationId: op, commandHash: "c".repeat(64),
+    originalRelations: ["briefings", "helmut_auth_state_nodes_local", "helmut_store", "llm_usage", "profiles"].map((n,i)=>({name:"public."+n,oid:String(4000+i)})), originalSources: originalNames.map((n, i) => source(n, 1000 + i)), helperSources,
     nativeSources: [...helperSources, ...nativeNames.map((n, i) => source("public.local_unit_diagnostic_" + n + "_v1", 3000 + i))] };
 }
 function request(mode = "state") {
@@ -75,27 +77,57 @@ function seedRequest() {
   r.ownNext.canonical = can(next); r.ownNext.hash = hash(r.ownNext.canonical);
   return { r, q };
 }
+function artifactRequest(kind = "draft") {
+  const r = request(); r.mode = "artifact"; r.originalCAS = null; r.ownBefore.hash = r.ownNext.hash;
+  const owner = "test-kohorte-synthetik-bt-001", day = "2026-10-22", run = "nachlauf500-1234567890123";
+  const id = ["draft", "review"].includes(kind) ? `bf-${owner}-lage-pruefentwurf-${day}-${run}-${kind === "draft" ? "entwurf" : "pruefung"}`
+    : `bf-${owner}-${kind === "morgenbriefing" ? "morgenlage" : kind}-${day}`;
+  const body = kind === "immutable-D" ? { version: "shape-only", contractHash: "a".repeat(64), entry: {}, completion: {}, usage: {} }
+    : kind === "evidence" ? { schema: "helmut-local-unit-diagnostic-evidence/1", operationId: op, commandHash: r.commandHash, failure: "unit-not-confirmed" }
+      : { id, user_id: owner, slot: ["draft", "review"].includes(kind) ? "lage-pruefentwurf" : kind === "morgenbriefing" ? "morgenlage" : kind,
+        generated_at: "2026-10-22T12:00:00.000Z", payload: {} };
+  const logicalId = kind === "immutable-D" ? "intent-D" : kind === "evidence" ? "diagnostic-result" : id;
+  r.artifact = { kind, logicalId, canonical: can(body), sha256: hash(can(body)), parentHash: ["draft", "evidence"].includes(kind) ? null : "9".repeat(64) };
+  return r;
+}
+function finalRequest(closed = true) {
+  const r = request(), v = JSON.parse(r.ownNext.canonical);
+  v[prefix + "result"] = { state: "retained-unreviewed", evidenceHash: "1".repeat(64), positions: ["lage", "mandatsbriefing", "morgenbriefing"].map(bereich => ({
+    bereich, owner: "test-kohorte-synthetik-bt-001", hash: "2".repeat(64) })) };
+  if (closed) Object.assign(v[prefix + "journal"], { state: "closed", index: 1, inFlight: null, stopRequested: false,
+    verification: { authorizationHash: "3".repeat(64), controlsHash: "4".repeat(64), controlCount: 16 } });
+  r.ownNext = { canonical: can(v), hash: hash(can(v)) }; return r;
+}
 function response(r, packet) {
   const nonce = /,'([a-f0-9]{64})',pg_backend_pid\(\),pg_current_xact_id\(\)\);\nDO \$root\$/.exec(packet.sql)?.[1]; assert.ok(Boolean(nonce), "closed request nonce absent");
+  if (r.mode === "artifact") return { schema: "helmut-local-unit-original-write-result/1",
+    originalRowAck: { version: "helmut-local-unit-diagnostic-original-row-ack/1", scopeHash: r.commandHash, kind: r.artifact.kind,
+      id: r.artifact.kind === "evidence" ? "local-unit-diagnostic-" + r.operationId + "-evidence-0" : r.artifact.kind === "immutable-D"
+        ? "local-unit-diagnostic-" + r.operationId + "-immutable-D-" + r.artifact.logicalId : r.artifact.logicalId,
+      hash: r.artifact.sha256, stateRevision: r.ownBefore.revision, nonce },
+    ownAck: { version: "helmut-local-unit-diagnostic-artifact-ack/1", scopeHash: r.commandHash, kind: r.artifact.kind,
+      logicalId: r.artifact.logicalId, hash: r.artifact.sha256, stateRevision: r.ownBefore.revision, nonce } };
+  const verification = JSON.parse(r.ownNext.canonical)[prefix + "journal"].state === "closed"
+    ? JSON.parse(r.ownNext.canonical)[prefix + "journal"].verification : {};
   return { schema: "helmut-local-unit-original-write-result/1", authAck: [{ id: "main-auth", revision: r.originalCAS.revision,
     proof: { ...r.originalCAS.expectedProof, count: r.originalCAS.expectedProof.count + (r.mode === "usage" ? 1 : 0),
       head: r.mode === "usage" ? "1".repeat(64) : r.originalCAS.expectedProof.head }, state: { ...r.originalCAS.expectedState, root: r.originalCAS.root } }],
     ownAck: r.mode === "seed" ? { version: "helmut-local-unit-diagnostic-seed-ack/1", scopeHash: r.commandHash,
       operationId: r.operationId, revision: 0, hash: r.ownNext.hash, nonce } : r.mode === "state" ? { version: "helmut-local-unit-diagnostic-state-ack/1", scopeHash: r.commandHash,
-      hash: r.ownNext.hash, revision: r.ownBefore.revision + 1, claimHash: hash(r.claimId), nonce }
+      hash: r.ownNext.hash, revision: r.ownBefore.revision + 1, claimHash: hash(r.claimId), nonce, ...verification }
       : { version: "helmut-local-unit-diagnostic-artifact-ack/1", scopeHash: r.commandHash, kind: r.artifact.kind,
         logicalId: r.artifact.logicalId, hash: r.artifact.sha256, stateRevision: r.ownBefore.revision, nonce } };
 }
 check("pure state and usage compilation with explicit privileged origin", () => {
   for (const mode of ["state", "usage"]) { const r = request(mode), packet = transaction.prepare(r, qualification());
     assert.ok(packet.preparedOnly && packet.requiredInitialSuperuser && packet.requiredInitialRole === "postgres" && !packet.originallyUnprivileged
-      && !packet.unitExecutionAuthorized && !packet.full500 && packet.publicSeedBlocked && packet.resultTransitionBlocked);
+      && !packet.unitExecutionAuthorized && !packet.full500 && packet.publicSeedBlocked && !packet.resultTransitionBlocked && packet.nativeResultProofRequired);
     assert.ok(packet.sqlSHA256 === hash(packet.sql) && packet.requestSHA256 === hash(can(r)));
     assert.ok(transaction.acceptResult(packet, JSON.stringify(response(r, packet))).schema === "helmut-local-unit-original-write-result/1");
   }
 });
 check("helper native prosrc pins are actual exact proposal body hashes", () => {
-  assert.ok(helperBodies.length === 6);
+  assert.ok(helperBodies.length === 9);
   for (const m of helperBodies) assert.ok(code.includes(hash(m[2])), "helper source pin drift");
   const q = qualification(); q.helperSources[0].prosrcSHA256 = "0".repeat(64); rejects(() => transaction.prepare(request(), q));
 });
@@ -151,6 +183,93 @@ check("seed ACK cannot acknowledge any old scope claim hash revision or history 
     const { r, q } = seedRequest(), packet = transaction.prepare(r, q), value = response(r, packet); mutate(value);
     rejects(() => transaction.acceptResult(packet, JSON.stringify(value)));
   }
+});
+check("seven fixed original artifact kinds use one transaction and zero main auth CAS", () => {
+  for (const kind of ["draft", "immutable-D", "review", "lage", "mandatsbriefing", "morgenbriefing", "evidence"]) {
+    const r = artifactRequest(kind), packet = transaction.prepare(r, qualification()), sql = packet.sql;
+    assert.ok((sql.match(/^BEGIN;/gm) || []).length === 1 && (sql.match(/^COMMIT;/gm) || []).length === 1);
+    assert.ok(!sql.includes("ack:=public.helmut_auth_state_cas_v1(c)") && sql.includes("INSERT INTO public.briefings") && sql.includes("INSERT INTO public.helmut_store"));
+    assert.ok(sql.indexOf("WHERE scope_hash=r->>'commandHash' FOR UPDATE;") < sql.indexOf("WHERE id='main-auth' FOR UPDATE;"));
+    assert.ok(sql.indexOf("INSERT INTO public.briefings") < sql.indexOf("ack:=public.local_unit_diagnostic_artifact_insert_v1"));
+    assert.ok(sql.includes("WITH CHECK(phase=''originalRowAck'')") && sql.includes("parent_hash IS NOT DISTINCT FROM r#>>'{artifact,parentHash}'"));
+    assert.ok(sql.includes("after_meta IS DISTINCT FROM before_meta") && sql.includes("original-bridge-artifact-original-insert-readback"));
+    assert.ok(sql.includes("'originalRowAck',(SELECT value->'ack'") && sql.indexOf("COMMIT;") < sql.indexOf("SELECT jsonb_build_object('schema'"));
+    const value = response(r, packet); assert.ok(transaction.acceptResult(packet, JSON.stringify(value)).originalRowAck.kind === kind);
+  }
+});
+check("artifact DTO cannot select original rows tables mutate auth or smuggle legacy usage", () => {
+  for (const mutate of [r => { r.originalRow = { table: "profiles", id: "arbitrary" }; }, r => { r.originalCAS = request().originalCAS; },
+    r => { r.ownBefore.hash = "0".repeat(64); }, r => { r.artifact.table = "briefings"; }, r => { r.artifact.kind = "usage-D"; },
+    r => { r.artifact.kind = "arbitrary"; }, r => { r.artifact.parentHash = "0".repeat(64); }, r => { r.artifact.logicalId += "'"; },
+    r => { r.artifact.sha256 = "0".repeat(64); }]) {
+    const r = artifactRequest(); mutate(r); rejects(() => transaction.prepare(r, qualification()));
+  }
+  const r = artifactRequest("review"); r.artifact.parentHash = null; rejects(() => transaction.prepare(r, qualification()));
+});
+check("native original catalog binds actual columns defaults FK RLS policies and triggers", () => {
+  const body = helperBodies.find(x => x[1] === "original_bridge_relations_v1")[2];
+  for (const text of ["pg_attribute", "pg_attrdef", "pg_constraint", "pg_policy", "pg_trigger", "relrowsecurity", "relforcerowsecurity",
+    "pg_get_constraintdef", "pg_get_triggerdef", "pg_get_expr", "'profiles'", "'briefings'", "jsonb_array_length(answer) is distinct from 5"])
+    assert.ok(body.includes(text));
+  assert.ok(proposal.includes("original-bridge-actual-briefing-profile-fk-required") && proposal.includes("not fk.condeferrable"));
+  for (const mutate of [q => { delete q.originalRelations; }, q => { q.originalRelations.pop(); },
+    q => { q.originalRelations[0].name = "public.unrelated"; }, q => { q.originalRelations[0].oid = "0"; }]) {
+    const q = qualification(); mutate(q); rejects(() => transaction.prepare(artifactRequest(), q));
+  }
+});
+check("native row mapping uses original IDs exact five fields and timestamp instant and UTC text", () => {
+  const rowBody = helperBodies.find(x => x[1] === "original_bridge_row_v1")[2], sql = transaction.prepare(artifactRequest(), qualification()).sql;
+  for (const text of ["local-unit-diagnostic-", "'-immutable-D-'", "'-evidence-0'", "'-lage-pruefentwurf-'", "'-pruefung'",
+    "'morgenlage'", "'id','user_id','slot','generated_at','payload'", "original-bridge-seven-original-row-kinds"])
+    assert.ok((rowBody + proposal).includes(text));
+  assert.ok(sql.includes("actual_time IS DISTINCT FROM helmut_unit_diagnostic.utc") && sql.includes('YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'));
+  assert.ok(!sql.includes("ON CONFLICT") && !sql.includes("UPDATE public.briefings") && !sql.includes("UPDATE public.helmut_store"));
+});
+check("native artifact receipt requires physical own transaction row unchanged auth and enforced writer receipt phase", () => {
+  const body = helperBodies.find(x => x[1] === "original_bridge_receipt_v1")[2];
+  for (const text of ["p_mode not in ('state','usage','artifact')", "phase=receipt_phase", "originalRowAck", "original-bridge-artifact-real-original-row",
+    "original_xmin is distinct from mod(backend_tx::text::numeric,4294967296)::text", "actual_meta is distinct from ack->'authBefore'",
+    "actual_meta is distinct from ack->'authAfter'", "original-bridge-artifact-main-auth-must-be-unchanged", "original-bridge-receipt-native-relations-changed",
+    "original-bridge-artifact-native-time"]) assert.ok(body.includes(text));
+  assert.ok(!body.includes("current_setting("));
+});
+check("artifact output ACK binds both original and own rows separately without fake auth ACK", () => {
+  for (const mutate of [v => { v.authAck = []; }, v => { v.originalRowAck.id = "main-auth"; },
+    v => { v.originalRowAck.hash = "0".repeat(64); }, v => { v.originalRowAck.nonce = "0".repeat(64); },
+    v => { v.originalRowAck.kind = "review"; }, v => { v.originalRowAck.stateRevision++; },
+    v => { v.ownAck.logicalId = "old"; }, v => { v.ownAck.hash = "0".repeat(64); }, v => { v.ownAck.nonce = "0".repeat(64); }]) {
+    const r = artifactRequest(), packet = transaction.prepare(r, qualification()), value = response(r, packet); mutate(value);
+    rejects(() => transaction.acceptResult(packet, JSON.stringify(value)));
+  }
+});
+check("retained and closed states require native actual seven rows successful evidence and sixteen controls", () => {
+  const body = helperBodies.find(x => x[1] === "original_bridge_result_v1")[2];
+  for (const text of ["validate_state(s,next_own)", "verify_controls(evidence->'verification'", "if evidence?'failure'", "<>7",
+    "original-bridge-final-original-row-readback", "original-bridge-final-native-time", "original-bridge-final-actual-artifact-hash"])
+    assert.ok(body.includes(text));
+  for (const closed of [false, true]) {
+    const r = finalRequest(closed), packet = transaction.prepare(r, qualification());
+    assert.ok(packet.nativeResultProofRequired && !packet.resultTransitionBlocked);
+    assert.ok(packet.sql.indexOf("PERFORM helmut_unit_diagnostic.original_bridge_result_v1") < packet.sql.indexOf("ack:=public.helmut_auth_state_cas_v1(c)"));
+    assert.ok(transaction.acceptResult(packet, JSON.stringify(response(r, packet))).ownAck.hash === r.ownNext.hash);
+  }
+  for (const mutate of [v => { v[prefix + "result"].positions.pop(); }, v => { v[prefix + "result"].positions[0].bereich = "other"; },
+    v => { v[prefix + "journal"].verification.controlCount = 15; }, v => { v[prefix + "journal"].inFlight = {}; },
+    v => { v[prefix + "journal"].stopRequested = true; }]) {
+    const r = finalRequest(), v = JSON.parse(r.ownNext.canonical); mutate(v); r.ownNext = { canonical: can(v), hash: hash(can(v)) };
+    rejects(() => transaction.prepare(r, qualification()));
+  }
+  for (const mutate of [v => { delete v.ownAck.controlsHash; }, v => { v.ownAck.authorizationHash = "0".repeat(64); }, v => { v.ownAck.controlCount = 15; }]) {
+    const r = finalRequest(), packet = transaction.prepare(r, qualification()), value = response(r, packet); mutate(value);
+    rejects(() => transaction.acceptResult(packet, JSON.stringify(value)));
+  }
+});
+check("compiler has narrowly compared native stop delta without replacing native deadlines", () => {
+  const sql = transaction.prepare(request(), qualification()).sql;
+  for (const text of ["terminal_stop:=coalesce(", "d-(prefix||'journal')=own_row.body-(prefix||'journal')",
+    "-ARRAY['state','stopRequested','reason']", "IN('unknown','stopped')", "AND NOT terminal_stop", "'^[a-z0-9-]{1,80}$',false)"])
+    assert.ok(sql.includes(text));
+  assert.ok(!transaction.prepare(artifactRequest("evidence"), qualification()).sql.includes("clock_timestamp()>=authority_row.expires_at"));
 });
 check("target mode seed result and field smuggling rejected", () => {
   for (const mutate of [r => { r.mode = "seed"; }, r => { r.mode = "result"; }, r => { r.operationId = "production"; },
@@ -220,8 +339,8 @@ check("structured argument quoting prevents caller SQL interpolation", () => {
   assert.ok((sql.match(/^COMMIT;/gm) || []).length === 1);
 });
 check("native read helpers remain SECINV bounded and never copy complete auth", () => {
-  assert.ok((proposal.match(/create function helmut_unit_diagnostic\.original_bridge_/g) || []).length === 6);
-  assert.ok((proposal.match(/language plpgsql stable security invoker set search_path=pg_catalog/g) || []).length === 6);
+  assert.ok((proposal.match(/create function helmut_unit_diagnostic\.original_bridge_/g) || []).length === 9);
+  assert.ok((proposal.match(/language plpgsql stable security invoker set search_path=pg_catalog/g) || []).length === 9);
   assert.ok(!/security\s+definer|create\s+or\s+replace|disable\s+trigger|drop\s+trigger/i.test(proposal));
   for (const required of ["current_hash=any(seen)", "result?k", "original-bridge-mixed-leaf-required", "native_work+native_size>16777216",
     "original-bridge-outside-child-hash-changed", "original-bridge-own-key-missing-seed-blocked", "with check(false)", "pg_depend", "d.deptype='i'",
@@ -231,7 +350,7 @@ check("private receipt pins native temp identity ACLs columns roles backend and 
   const m = helperBodies.find(x => x[1] === "original_bridge_receipt_v1"); assert.ok(Boolean(m)); const body = m[2];
   for (const required of ["pg_my_temp_schema()", "rel.relowner<>root_oid", "rel.relpersistence<>'t'", "acldefault('r',root_oid)",
     "original-bridge-temp-schema-acl", "attacl is not null", "original-bridge-temp-results-policy-shape", "original-bridge-temp-args-shape",
-    "pg_get_expr(polwithcheck,polrelid)='(phase = ''authAck''::text)'", "pg_get_expr(polwithcheck,polrelid)='(phase = ''ownAck''::text)'",
+    "pg_get_expr(polwithcheck,polrelid)=case when p_mode='artifact'", "pg_get_expr(polwithcheck,polrelid)='(phase = ''ownAck''::text)'",
     "receipt_pid<>pg_backend_pid()", "receipt_tx is distinct from backend_tx", "pg_current_xact_id_if_assigned()",
     "auth_xmin is distinct from mod(backend_tx::text::numeric,4294967296)::text", "original-bridge-pre-own-receipt-count",
     "original-bridge-receipt-complete-sources", "original-bridge-receipt-real-original-ack", "original-bridge-receipt-real-own-projection",
