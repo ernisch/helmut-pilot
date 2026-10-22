@@ -24,8 +24,9 @@ DATA = Path('/bench/PGDATA_CODEC_NOT_ORIGINAL')
 RAM = Path('/ram')
 RAM_OPTIONS = 'rw,nosuid,nodev,size=16777216,uid=1000,gid=1000,mode=0700'
 MODE = 'helmut-native-read-registry-codec/1'
-# Reviewed input aa9004c4, not a claim about the later target engine commit.
-READ_CLOSURE_SHA256 = '471500dce8a5fbd3a779f851cba65daa315358e4ec3403e685ec537696a3b0a5'
+# Reviewed exact read-closure input, including qualified bool type fix.
+# This pin does not qualify a later target engine commit.
+READ_CLOSURE_SHA256 = 'ff7109f18ae964da495809f459c9c6feb3bf146ec3b33d900f06cffcb785b827'
 
 
 def need(ok, code):
@@ -81,12 +82,13 @@ def unique_json(raw):
 
 def validate_probe(value):
     need(type(value) is dict and set(value) == {'schema', 'serverVersionNum', 'oidJSON', 'oidJSONType', 'bigintJSON',
-                                              'bigintJSONType', 'explicitProjectionMatches', 'maxOIDPreserved'}, 'probe-shape')
+                                              'bigintJSONType', 'explicitProjectionMatches', 'maxOIDPreserved', 'qualifiedBooleanTypeMatches'}, 'probe-shape')
     need(value['schema'] == 'helmut-native-registry-json-codec/1'
          and type(value['serverVersionNum']) is int and value['serverVersionNum'] == 170006
          and type(value['oidJSON']) is str and value['oidJSON'] == '1' and value['oidJSONType'] == 'string'
          and type(value['bigintJSON']) is int and value['bigintJSON'] == 1 and value['bigintJSONType'] == 'number'
-         and value['explicitProjectionMatches'] is True and value['maxOIDPreserved'] is True, 'actual-pg17-codec')
+         and value['explicitProjectionMatches'] is True and value['maxOIDPreserved'] is True
+         and value['qualifiedBooleanTypeMatches'] is True, 'actual-pg17-codec')
     return value
 
 

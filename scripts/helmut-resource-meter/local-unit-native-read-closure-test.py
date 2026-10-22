@@ -249,6 +249,8 @@ class ReadClosureChecks(unittest.TestCase):
             self.assertIn('read-closure-exact-registry-columns', sql)
             self.assertIn("'helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND attnum>0)<>6", sql)
             self.assertIn("(3,'function_oid','pg_catalog.oid'::regtype)", sql)
+            self.assertIn("(2,'http_exposed','pg_catalog.bool'::regtype)", sql)
+            self.assertNotIn("'pg_catalog.boolean'::regtype", sql)
             for marker in ('a.attname IS DISTINCT FROM e.nam', 'a.atttypid IS DISTINCT FROM e.typ',
                            'a.atttypmod IS DISTINCT FROM -1', 'a.attnotnull IS DISTINCT FROM true',
                            'a.attisdropped IS DISTINCT FROM false', "a.attidentity IS DISTINCT FROM ''", "a.attgenerated IS DISTINCT FROM ''"):

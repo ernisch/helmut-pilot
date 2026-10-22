@@ -268,6 +268,10 @@ def main():
                 'temp_file_limit': '128MB', 'max_parallel_workers_per_gather': '0', 'jit': 'on',
                 'autovacuum': 'off', 'statement_timeout': '30s', 'lock_timeout': '1s',
                 'logging_collector': 'off', 'log_statement': 'none', 'log_min_duration_statement': '-1',
+                # Keep genuine psql failures in bounded private captures. A
+                # failed statement can contain a complete private command;
+                # duplicating it in the server log exhausts its independent cap.
+                'log_min_error_statement': 'panic', 'log_error_verbosity': 'terse',
                 'helmut.local_usage_experiment': 'on', 'helmut.local_pipeline_lock_mode': 'invocation-lease-v1'}
     for key, value in settings.items():
         pgargs += ['-c', key + '=' + value]

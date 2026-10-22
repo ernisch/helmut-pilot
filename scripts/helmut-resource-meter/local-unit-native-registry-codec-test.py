@@ -24,7 +24,7 @@ def load():
 def probe():
     return {'schema': 'helmut-native-registry-json-codec/1', 'serverVersionNum': 170006,
             'oidJSON': '1', 'oidJSONType': 'string', 'bigintJSON': 1, 'bigintJSONType': 'number',
-            'explicitProjectionMatches': True, 'maxOIDPreserved': True}
+            'explicitProjectionMatches': True, 'maxOIDPreserved': True, 'qualifiedBooleanTypeMatches': True}
 
 
 class Child:
@@ -70,7 +70,7 @@ class CodecChecks(unittest.TestCase):
     def test_only_exact_actual_pg17_codec_is_accepted(self):
         self.assertEqual(self.m.validate_probe(probe()), probe())
         for key, value in [('serverVersionNum', True), ('serverVersionNum', 170005), ('oidJSON', 1), ('oidJSONType', 'number'),
-                           ('bigintJSON', True), ('bigintJSON', '1'), ('bigintJSONType', 'string'), ('explicitProjectionMatches', False), ('maxOIDPreserved', False)]:
+                           ('bigintJSON', True), ('bigintJSON', '1'), ('bigintJSONType', 'string'), ('explicitProjectionMatches', False), ('maxOIDPreserved', False), ('qualifiedBooleanTypeMatches', False)]:
             wrong = probe(); wrong[key] = value
             with self.assertRaises(RuntimeError): self.m.validate_probe(wrong)
         wrong = probe(); wrong['qualified'] = True

@@ -184,7 +184,8 @@ SELECT jsonb_build_object('schema','helmut-native-registry-json-codec/1',
  'oidJSON',to_jsonb(1::oid),'oidJSONType',jsonb_typeof(to_jsonb(1::oid)),
  'bigintJSON',to_jsonb((1::oid)::bigint),'bigintJSONType',jsonb_typeof(to_jsonb((1::oid)::bigint)),
  'explicitProjectionMatches',jsonb_build_object('function_oid',(1::oid)::bigint)='{"function_oid":1}'::jsonb,
- 'maxOIDPreserved',jsonb_build_object('function_oid',('4294967295'::oid)::bigint)='{"function_oid":4294967295}'::jsonb);
+ 'maxOIDPreserved',jsonb_build_object('function_oid',('4294967295'::oid)::bigint)='{"function_oid":4294967295}'::jsonb,
+ 'qualifiedBooleanTypeMatches','pg_catalog.bool'::regtype='boolean'::regtype);
 COMMIT;
 """
 
@@ -254,7 +255,7 @@ END;$guard$;
                     'OWNER': _q(owner), 'RUNTIME': _q(runtime), 'QUALIFIER_SHA': _q(QUALIFIER_SHA),
                     'TABLE_NAMES': ','.join(_q('public.' + t) + '::regclass' for t in TABLES),
                     'COLUMNS': _values(COLUMNS), 'EXPECTED': _values(_expected()),
-                    'REGISTRY_COLUMNS_EXPECTED': ','.join('(' + str(i) + ',' + _q(name) + ',' + _q('pg_catalog.' + typ) + '::regtype)'
+                    'REGISTRY_COLUMNS_EXPECTED': ','.join('(' + str(i) + ',' + _q(name) + ',' + _q('pg_catalog.' + ('bool' if typ == 'boolean' else typ)) + '::regtype)'
                                                          for i, (name, typ) in enumerate(REGISTRY_COLUMNS, 1))}
     replacements['AUTH_HASH_GUARD'] = ("IF (SELECT encode(sha256(convert_to(data::text,'UTF8')),'hex') FROM public.helmut_store WHERE id='main-auth') IS DISTINCT FROM " + _q(auth_hash) + " THEN RAISE EXCEPTION 'read-closure-original-auth-drift';END IF;") if auth_hash else ''
     if not installed:
