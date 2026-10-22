@@ -333,7 +333,9 @@ async function start() {
   }
 }
 module.exports = Object.freeze({ start });
-if (require.main === module) start().catch(() => {
+if (require.main === module) start().catch(error => {
+  const match = /^local-unit-native-prepare-([a-z0-9-]{1,96})$/.exec(error?.message || "");
   process.exitCode = 1; process.stderr.write(JSON.stringify({ schema: "helmut-local-unit-native-prepare-failure/1", phase,
+    code: match ? match[1] : "internal-failure",
     state: "preparation-not-confirmed", authorityInstalled: false, retryAllowed: false }) + "\n");
 });

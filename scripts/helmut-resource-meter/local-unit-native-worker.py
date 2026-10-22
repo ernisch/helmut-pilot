@@ -339,6 +339,9 @@ COMMIT;"""
                       'nativeContractCatalogACLNegativeChecksPassed': True,
                       'nativeRoleAndStateCASQualified': False, 'nativeEndpointQualified': False,
                       'motorCalls': 0, 'providerCalls': 0, 'full500': False, 'unit60Qualified': False}
+            if config.get('qualifyNativeBindings') is True:
+                binding = load('local_unit_native_binding_preparation', config['bindingPreparationPin'])
+                result.update(binding.qualify(sys.modules[__name__], config, pg, catalog))
         except BaseException as error:
             failure = type(error).__name__ + ': ' + str(error)[:200]
         finally:

@@ -119,10 +119,11 @@ def identity(docker, cid, parent, runtime, mounts):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--qualify-native-store', action='store_true')
+    modes = parser.add_mutually_exclusive_group(required=True)
+    modes.add_argument('--qualify-native-store', action='store_true')
+    modes.add_argument('--qualify-native-bindings', action='store_true',
+                       help='qualify genuine source inputs and native read/write bindings; no seed or motor')
     args = parser.parse_args()
-    if not args.qualify_native_store:
-        parser.error('explicit --qualify-native-store required; no motor/full500 entry')
     if not (sys.flags.isolated and sys.flags.no_site and sys.flags.dont_write_bytecode):
         raise RuntimeError('use python -I -S -B')
     if available() < FLOOR + 2 * 1024**3:
@@ -185,8 +186,33 @@ def main():
               'helperSourcePathReboundOnly': True,
               'sources': sources, 'runtimeBindings': runtime_rows, 'full500': False,
               'motorCalls': 0, 'paidProviderCalls': 0, 'oldAuthorityReused': False}
+    if args.qualify_native_bindings:
+        status = subprocess.run(['git', 'status', '--porcelain', '--untracked-files=all'], cwd=REPO,
+                                capture_output=True, text=True, check=True)
+        if status.stdout:
+            raise RuntimeError('native bindings require a committed clean integration worktree')
+        code_commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=REPO, capture_output=True,
+                                     text=True, check=True).stdout.strip()
+        code_paths = sorted(set(REPO.glob('lib/**/*.js')) | set(REPO.glob('lib/**/*.json'))
+                            | set((BIN).glob('*.js')))
+        code_pins = [pin(p) for p in code_paths]
+        if not 0 < len(code_pins) <= 3000:
+            raise RuntimeError('bounded source code closure required')
+        extra_sources = [BIN / 'local-unit-native-binding-preparation.py', BIN / 'local-unit-native-read-closure.py',
+                         BIN / 'local-unit-native-bridge-qualification.py',
+                         REPO / 'supabase/proposals/local_unit_original_bridge_local.sql',
+                         REPO / 'supabase/proposals/auth_state_parts_local.sql',
+                         REPO / 'supabase/proposals/auth_usage_atomic_local.sql',
+                         REPO / 'supabase/proposals/auth_read_bounded_local.sql']
+        extra_pins = [pin(p) for p in extra_sources]
+        config.update(qualifyNativeBindings=True, originalSourceDirectory=str(SOURCE), nodePin=pin(NODE / 'bin/node'),
+                      codeCommit=code_commit, sourceCodePins=code_pins, bindingPreparationPin=extra_pins[0],
+                      readClosurePin=extra_pins[1], bridgeQualifierPin=extra_pins[2], bridgeProposalPin=extra_pins[3])
+        config['sources'] = [*sources, *extra_pins, *code_pins]
     save(case / 'STARTED.SAFE.json', {**config, 'availableBefore': available(),
-                                      'purpose': 'Fresh source-local readonly extraction and native DDL qualification only',
+                                      'purpose': ('Fresh source-local genuine source and native binding qualification only'
+                                                  if args.qualify_native_bindings else
+                                                  'Fresh source-local readonly extraction and native DDL qualification only'),
                                       'authorization': 'Operator request 2026-10-22: qualify originals/runtime/native single-unit integration',
                                       'controlDeadlineSeconds': 300, 'privateTestSecretsRemainLocal': True,
                                       'originalResourcesModified': False, 'newFull500Authority': False,
@@ -208,6 +234,11 @@ def main():
                   (Path(plan['archive']['path']), plan['archive']['path'], True),
                   (Path(plan['rootManifest']['path']), plan['rootManifest']['path'], True)]
         mounts.extend((Path(row['source']['path']), row['imagePath'], True) for row in runtime_rows)
+        if args.qualify_native_bindings:
+            preparation = load('native_source_binding_preflight', config['bindingPreparationPin']['path'])
+            required_originals = [SOURCE / row[0] for row in preparation.PRIVATE_SOURCES.values()]
+            required_originals.append(SOURCE / preparation.ENV_SOURCE)
+            mounts.extend((p, str(p), True) for p in required_originals)
         destinations = [str(target) for _, target, _ in mounts]
         if len(set(destinations)) != len(destinations):
             raise RuntimeError('duplicate mount target')
@@ -249,6 +280,11 @@ def main():
         result = json.loads((case / 'NATIVE_QUALIFICATION.SAFE.json').read_text())
         if result.get('pass') is not True or result.get('motorCalls') != 0 or result.get('full500') is not False:
             raise RuntimeError('native qualification incomplete')
+        if args.qualify_native_bindings and (result.get('genuineSourceInputsQualified') is not True
+                                             or result.get('readClosureQualified') is not True
+                                             or result.get('originalBridgeQualified') is not True
+                                             or result.get('executionAuthorityInstalled') is not False):
+            raise RuntimeError('genuine native binding qualification incomplete')
     except BaseException as error:
         failure = type(error).__name__ + ': ' + str(error)[:240]
     finally:
@@ -289,6 +325,9 @@ def main():
                    'motorCalls': 0, 'unit60Qualified': False, 'full500ReserveQualified': False,
                    'originalPostrunSHA256': RAW_SHA, 'originalMountedReadonly': mounts_observed,
                    'sourcePreflightMayWarmSharedCache': True, 'noCacheOrGCManipulation': True}
+        if args.qualify_native_bindings:
+            receipt.update(bindingQualificationRequested=True,
+                           genuineNativeBindingsQualified=accepted, executionAuthorityInstalled=False)
         save(case / 'RESULT.SAFE.json', receipt)
         print(json.dumps({'pass': accepted, 'case': str(case), 'failure': failure,
                           'closureErrors': close_errors, 'full500': False, 'motorCalls': 0}))
