@@ -1,0 +1,84 @@
+{
+  "schema": "helmut-native-host-observe-early-intake-insufficient/1",
+  "candidateCommit": "eb141aef2c02f7a098b4a3ab1f5cad870fd59c0e",
+  "case": "/workspace/helmut-unit-diagnostic-native/93e1bd82b2594baab389976d4867e124",
+  "resultFile": {
+    "path": "/workspace/helmut-unit-diagnostic-native/93e1bd82b2594baab389976d4867e124/RESULT.SAFE.json",
+    "bytes": 2156,
+    "sha256": "ae55c49163edac0ade9b53e55e3bc6a730e6d3f215084ea96ace68f30e25c67a"
+  },
+  "failedAttemptRemainsFailed": true,
+  "positiveSeed": {
+    "resultPin": {
+      "path": "/workspace/helmut-unit-diagnostic-native/93e1bd82b2594baab389976d4867e124/ORIGINAL_SEED.STDOUT.PRIVATE.log",
+      "bytes": 1104,
+      "sha256": "6c7da6ed5e10de584b171ceb65ac799a514c0f91ad3afbf2b6c2da8d33985eda"
+    },
+    "nativeSeed": true,
+    "originalWrites": 1,
+    "revision": 0,
+    "oldHistoryPreserved": true,
+    "historyBaselineCount": 6000,
+    "claimConsumed": false,
+    "actualSeedExitZeroAndBothEOF": "Actual controller reached line535 after NodeChild.finish528 and _node_closed529.",
+    "ownerSQLLedger": {
+      "path": "/workspace/helmut-unit-diagnostic-native/93e1bd82b2594baab389976d4867e124/ORIGINAL_SERVICE_CHILDREN.SAFE.jsonl",
+      "bytes": 1074,
+      "sha256": "6432b5a1bc8f965a2ba78c9f2945f6ce1a5b6e1d4d7c508415114969be090b7b"
+    },
+    "ownerSQLExitCode": 0,
+    "ownerSQLBothEOF": true,
+    "ownerSQLConfirmed": true
+  },
+  "request04": {
+    "issuedAtUTC": "2026-10-22T21:58:12.027Z",
+    "expiresAtUTC": "2026-10-22T21:58:15.027Z",
+    "replyPublished": false
+  },
+  "actualSourceObserverClosedAtUTC": "2026-10-22T21:58:13.433Z",
+  "lastCompletedOuterSampleAtUTC": "2026-10-22T21:58:13.517Z",
+  "sourceDeadlineFailureAtUTC": "2026-10-22T21:58:15.038Z",
+  "serviceCleanupAtUTC": "2026-10-22T21:58:15.041Z",
+  "secondaryHostMappingFailureAtUTC": "2026-10-22T21:58:15.387Z",
+  "earlyIntakeTimeNotPersisted": true,
+  "midInventoryArrivalNotClaimedDirectlyMeasured": true,
+  "earlyIntakeFixNativeTimeQualification": false,
+  "sameFailedSingleUnitMethodAttempts": 2,
+  "furtherSameMethodAttemptBlockedUntilSeparateNativeHostTransportQualification": true,
+  "separateIndependentPostSeedReadbackReached": false,
+  "recordedOriginalPreservationFlags": {
+    "originalPostrunPreserved": false,
+    "originalSourcePinsUnchanged": false
+  },
+  "independentFreshIntegrityRead": {
+    "observedAtUTC": "2026-10-22T22:00:29Z",
+    "rawBytes": 2147483648,
+    "rawSHA256": "54df2ecc0e4fdc22adf75f2ce3491d3c921e38296510543dcdadd48db3f37693",
+    "sourcePins": 432,
+    "sourceBytes": 39546953,
+    "allMatchAndFDStable": true,
+    "finalFalseFlagExactCauseNotPersisted": true
+  },
+  "inheritedOriginalAuthRowUnchangedIsNotPostSeedProof": true,
+  "commonMemoryPeakBytes": 1125826560,
+  "memoryEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "kernelGroupEmptyAndLastExitCovered": true,
+  "databaseExitCode": 0,
+  "hostCleanClosure": false,
+  "motorEntryRequested": false,
+  "motorCalls": 0,
+  "unit60Qualified": false,
+  "auth30Qualified": false,
+  "independentFinalAcceptance": false,
+  "full500ReserveQualified": false,
+  "full500Qualified": false,
+  "caseReplayed": false,
+  "positiveSeedDatabaseCopyAndOriginalsPreserved": true
+}

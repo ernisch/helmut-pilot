@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand21:56UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand22:10UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -151,6 +151,20 @@ Später während der Inventur eintreffende Anfragen können weiterhin einen
 Folgezyklus benötigen; die native Antwortfrist bleibt erneut nachzuweisen.
 [Quellreview](belege/v12-native-unit-integration-20261022/HOST_OBSERVE_SAME_TICK_SOURCE_REVIEW.SAFE.json).
 
+Der folgende Fall `93e1bd82b2594baab389976d4867e124` auf `eb141aef` blieb erneut
+vorMotor an derselben3s-HOST_OBSERVE-Antwort FAIL. Seed und Historyschutz waren
+erneut nativ bestätigt. Ein echter Beobachterabschluss lag innerhalb der Frist;
+die Antwort fehlte dennoch. Der genaue frühe Intakezeitpunkt wurde nicht
+persistiert. Der Early-Intakefix genügt damit nicht für die native Zeitabnahme.
+Peak1.125.826.560B/Ereignisse0, Kernelgruppe leer, PostgreSQL0; weiterhin kein
+Unit60-/Reservenachweis. OriginalRAW und432Sourcepins anschließend frisch
+FD-stabil unverändert geprüft. Die geänderte COPY-Authrow ist das erwartete
+Seedergebnis; ein geerbtes originalAuthRowUnchanged-Feld belegt keinen Postseedhash.
+Nach zwei gleichen Fehlschlägen erfolgt kein weiterer gleicher Einzelunitstart:
+zuerst geteilter enger Antwortkern und getrennte echte Host-Transportvorprüfung,
+ohne PG/Seed/Motor/Authority. Kein alter Snapshot, keine neue Datierung und keine
+Fristlockerung. [Bereinigter Befund](belege/v12-native-unit-integration-20261022/NATIVE_EARLY_INTAKE_INSUFFICIENT.SAFE.json).
+
 Die unabhängige Quellprüfung fand sechs Diagnose-Delegationen hinter nicht
 passenden Production-Readinessguards und einen weiteren V3-Eingangsriegel in
 `lage.js`. Diese konkreten Anbindungsfehler sind korrigiert und unabhängig
@@ -210,6 +224,11 @@ Lauf ist noch nicht vollständig abgeschlossen. Diese CI ist keine Motorabnahme.
 [gezielte Vertragsprüfung](belege/v12-native-unit-integration-20261022/CURRENT_SOURCE_CALLER_FINAL_CHECKS.SAFE.json).
 Der frühere Standardlauf
 blieb177/180; drei gezielte Korrekturen sind separat bestanden, kein behaupteter
+Der neue CI-Lauf39859073760 auf `1e5fdfba` scheitert im Standard-Offlinelauf.
+Ein lokal sicher reproduzierbarer Fehler ist die überschrittene Statusgröße:
+31.076Zeichen am CI-Commit statt maximal30.000. Der vollständige alte Status
+ist bytegleich archiviert; die kompakte aktuelle Fassung besteht4/4Größenchecks.
+Die vollständige CI-Freigabe bleibt bis zum neuen erfolgreichen Lauf offen.
 durchgehend grüner Wiederholungslauf. Der geschützte84Originale-Kanal bleibt
 unverändert obligatorisch. Keine privaten Logs, PGDATA oder Secrets im Git.
 

@@ -15,6 +15,7 @@ ausschließlich aktueller Projektstatus neu aufgesetzt.
 
 | Datei | Inhalt |
 |---|---|
+| [`project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md`](project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md) | Bytegleicher Status vor Kürzung im nativen Host-Transportabschluss; SHA256 `8493636202b09a72de36145c0740172ba45d4ed8153b152cbc1a3e45672685d5`. Relative Links beziehen sich auf docs/. |
 | [`project_state/2026_10_21_abgeschlossene_lokale_untersuchungen_vor_lease.md`](project_state/2026_10_21_abgeschlossene_lokale_untersuchungen_vor_lease.md) | Wortgleicher historischer Untersuchungsabschnitt aus CURRENT_STATE; relative Links beziehen sich auf docs/. SHA256 `aa7159830d658dda7f27cbbd67ad2092fb6307eb06d13a59ada6a12954e2d6c0`. |
 | [`project_state/2026_10_18_abgeschlossene_lokale_zwischenstaende.md`](project_state/2026_10_18_abgeschlossene_lokale_zwischenstaende.md) | Zwei wörtlich unveränderte, abgeschlossene Tagesanlass-/499-Zwischenstände aus CURRENT_STATE vor der lokalen Kalenderanbindung; historische relative Links beziehen sich auf docs/. |
 | [`project_state/2026_10_16_CURRENT_STATE_before_night_ci_compaction.md`](project_state/2026_10_16_CURRENT_STATE_before_night_ci_compaction.md) | Bytegleicher Status vor der notwendigen CI-Größenkorrektur; SHA256 `d1262f8b7df129848d4f0d754b019754dd6a9cfe4457aed99864fc3de439e3a5`. Frühere Zeit-/Ursachenanalysen und Grenzen bleiben vollständig erhalten. |

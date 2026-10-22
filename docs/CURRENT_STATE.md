@@ -4,40 +4,28 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.10.: Restore und geschützter CI-Originalkanal
+## 22.10.: Originale wiederhergestellt, native Einzelunit noch offen
 
-13.527Dateien hashverifiziert; physische DB-Kopien fehlen. Manifest+9Negativgruppen PASS.
-Contracttest-Storemutation: Fix4Fälle PASS, Store bytegenau restauriert;
-Zeitmetadaten erklärt geändert.88/88Bytepins PASS,84CI+3V12 auch Metadaten gleich.
-7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld ausgeschlossen.
-[Restore](betrieb/private-ci-original-provisioning-20261021.md).
-Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weiter inert.
-Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
-548Runtimebindungen und echte Source-/DB-Bindungen nativ PASS (22.10.); Quell-DB gestoppt.
-Vorbereitung gemeinsam1.024.176.128B/Events0, noch0Motoreinheiten. Unit60/Reserve offen.
-Native Diagnose verdrahtet; Host/Alias/Beobachter und Root-Runtime nativ PASS, noch kein Motorentry.
-Zwei spätere Starts blieben vorSeed/Motor FAIL; Pfadabbildung und Root-ELF-Zugriff korrigiert.
-Storage-/Lage-Routen und Kostenlesung/failclosed korrigiert/quergeprüft; VM16/13/32Gruppen PASS.
-Eigene2Fixturetickets ersetzen keinen500er-Globalzählernachweis; noch0Motoreinheiten.
-Kosten-Hook separat quergeprüft; CI-Vertragsprüfung14/14, Startinputs6/6, Artefakt10/10 lokal PASS.
-Frischer nativer Start vorSeed/Motor FAIL: Docker sortierte exakt gleicheEnv-Einträge anders; Vergleich korrigiert.
-Nächster Fall b09 bestand HTTP-Vorprüfung, scheiterte aber am Owner-SeedSQL: mehrdeutiges p.pronamespace.
-SQL-Aliase korrigiert/quergeprüft,29reine Compilerchecks PASS; folgender frischer Seed nativ PASS.
-3e75 stoppte danach vorMotor an3sHOST_OBSERVE-Antwort; enger Ablauffix integriert/quergeprüft,95PurechecksPASS.
-OriginalRAW+432Sourcepins anschließend frisch unverändert; Gesamtfall bleibtFAIL, Unit60/Reserve offen.
-[PR936/aktueller Umfang](betrieb/helmut-v12-native-unit-integration-20261022.md).
-3abgeschlossene eigene Worktrees nach vollständigerGit-Blobsicherung entfernt: netto320.372.736B frei.
-Weitere4eigene abgeschlosseneCheckouts gesichert/entfernt: netto396.722.176B, alle45Refs erhalten.
-Volladmission braucht15,18GB, rund10,75GB frei; rund4,43GB fehlen. Einzelunit-Startmarge nur13,91MB.
-Alte GOs verbraucht.
-[Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
-[PR933](https://github.com/ernisch/helmut-pilot/pull/933) nach voller
-[CI39783955460](https://github.com/ernisch/helmut-pilot/actions/runs/39783955460) integriert.
-84Originale für eigene Änderungen automatisch nach Lauf-/PR-/Checkoutprüfung;
-Schlüssel weiter in `helmut-ci-originals`, keine persönliche Einzelfreigabe.
-Kernel-PSI/Reclaim opt-in:22Purefälle PASS, alter Snapshot gleich; kein Zeit-/Reservebeleg.
-[Historische CI-Belege](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
-Unit60/Voll500/Production/App403 offen.
+13.527Dateien hashverifiziert; geschützter84Originale-Kanal in PR933 nach voller
+CI39783955460 integriert. Source besitzt echten V12-POSTRUN,548Runtimebindungen;
+ursprüngliche DB gestoppt. [Restore/CI](betrieb/private-ci-original-provisioning-20261021.md).
+Source/Readonly/Bridge nativ PASS:35,700s/1.024.176.128B/Events0. Storage/Lage/
+Kostenlesung korrigiert/quergeprüft; VM16/13/32, Vertragsprüfung14/14, Startinput6,
+Artefakt10 PASS. Eigene2Fixturetickets beweisen keine500er-Globalzähleräquivalenz.
+Owner-SQL-Aliase korrigiert; echte atomare Seeds in3e75/93e1 PASS, History6000
+bewahrt. Beide Fälle vorMotor an HOST_OBSERVE3s FAIL; Early-Intakefix reicht nicht.
+Späte Antwort und separate echte Transportvorprüfung in Arbeit; keine dritte
+Wiederholung derselben erfolglosen Methode. Noch0neueMotoreinheiten, Unit60/
+Auth30/Qualität/500MB-Reserve offen. RAW+432Quellen frisch unverändert geprüft.
+7abgeschlossene eigene Checkouts gesichert/entfernt; Branches/Gitobjekte bleiben.
+Nach neuer Copy10,34GB frei; rund4,84GB zur15,18GB-Volladmission fehlen. Lokale
+Archivierung abgeschlossener COPYs wird verlustfrei geprüft; Originale bleiben.
+CI1e5 scheitert im Offlinelauf; dokumentierter Größenfehler hier korrigiert,
+komplette neue CI-Abnahme offen. App403 bleibt gesondert offen.
+[PR936, aktuelle Belege und Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
+[Historischer Vollstand vor Kürzung](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
+Keine alten GOs/Claims wiederverwenden; kein Voll500 ohne32frische Bedingungen
+und neues konkretesGO, kein Merge und keine Production-Aktion.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
@@ -141,33 +129,17 @@ Dieser historische Stand wurde durch die oben belegte Bereinigung, Einbindung
 und tatsächlichen Diagnosen abgelöst; alte PostgREST-FAILs bleiben FAIL.
 [Befund, Belege und konkrete nächste Messung](betrieb/late-state-memory-diagnostics-20261020.md).
 
-## 20.10.: Vorheriger Renderer-Sprint; 500er Abnahme offen
+## 20.10.: Renderer-Sprint; 500er Abnahme offen
 
-Eigener Branch `codex/auth-state-working-set-20261020`, Basis `bdb2c2c3`,
-`c8624f7c` erhalten. PostgreSQLs materialisierte Vorkommens-/Sortier-/Tokenmengen
-im abschließenden Merkle-Renderer durch Tiefenstapel und UTF8-Fragmente ersetzt;
-Schutzprüfungen, ABI, CAS, ACK, History und Kontrollleser unverändert.
-Neue Quellenbindung separat von historischen Abnahmen, frische Integration
-weiter Pflicht. Kein Router-/DeepSeekaufruf in diesem SOL-Sprint.
-
-Echter OLD/NEW/NEW/OLD-Vergleich am unveränderten späten V11-Authzustand:
-alle nativen Ausgaben exakt gleich. Rund125MB weniger anonymer Speicher je
-Backend; zweites Paar621ms alt/294ms neu. Neue Authkomponente:11 bestätigte
-Mutationen,192 frische Kontrollen, CAS-Konflikt, verloreneBestätigung ohneRetry,
-zwei echte kostenfreie Ledgeranhänge mit vollständigem6000er Historysuffix PASS.
-Separat39 Fälle/95 native Differentialvergleiche,22 Integrationstests und6
-Startprüfungen PASS. KonservativeSQL-Regression179/179 in698s, Prozessende0;
-endgültigeDescriptorbindung separat gezielt und am echten Katalog geprüft.
-
-Vergleichssteuerung bleibt FAIL wegen PostgREST-Abschluss vor der dort geplanten
-Differentialphase; keine Umwertung. Gesamte eigene Lebenszeitgruppe bis letztem
-Exit1094455296B/OOM0, enthält OLD+NEW/Setup/RAM-PGDATA/JIT und ist kein exklusiver
-NEW- oder Voll500-Nachweis.64KiB ist nur logischer Fragmentpuffer, nicht GesamtRAM.
-Zwölf Runden mit GC-Wellen belegen kein langfristiges Plateau. Größter Gesamt-
-verursacher und vollständige500MB-/Zeit-/Ergebnisannahme bleiben offen.
-Plattenreserve weiterhin rund6,58GB zu klein,8GiB Boden unverändert.
-Kein neues vollständigesGO, keine Production/Migration/Merge/Deployment.
-[Änderung, tatsächliche Belege, Grenzen und genauer Haltepunkt](betrieb/local-streamed-renderer-20261020.md).
+PR925/f0d3b039 baut auf PR924/bdb2c2c3 auf; c8624f7c erhalten. Tiefenstapel und
+UTF8-Fragmente ersetzen materialisierte Renderer-Vorkommen/Sortier-/Tokenmengen.
+Am echten späten V11-Zustand OLD/NEW/NEW/OLD bytegleiche Ausgaben; rund125MB
+weniger Backend-anon, zweites Paar621→294ms.39Fälle/95native Differentiale,
+11bestätigteMutationen/192Kontrollen und179SQL-Suiten PASS; CAS/ACK/History
+unverändert. Vergleichssteuerung bleibt wegen PostgREST-Abschluss FAIL;
+1.094.455.296B gemeinsamer OLD+NEW-Lebenszeitpeak ist kein NEW-/500er-Beweis.
+Kein Langzeitplateau, keine Voll500-Reserve-/Zeit-/Ergebnisabnahme belegt.
+[Bericht und vollständige Grenzen](betrieb/local-streamed-renderer-20261020.md).
 
 ## 20.10.: V11 fehlgeschlagen; gemeinsame RAM- und Nodebudgets lokal eingebunden
 
