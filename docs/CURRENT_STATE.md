@@ -1,24 +1,28 @@
 # CURRENT STATE — Helmut
 
-**Lokal 22.10.2026 Europe/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
+**Stand22.10.2026 Europe/Istanbul.** Letzter Production-Befund16.10.2026 13:07:32UTC,
+nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
+[Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.10.: Restore und lokale CI-Prüfung
+## 22.10.: Restore und geschützter CI-Originalkanal
 
-13.527 Dateien/83 bisherige CI-Originale/24 Git-Patches hashverifiziert; physische
-DB-Kopien fehlen. Manifest84 echte Dateien, Provisionierung84/84+9Negativgruppen
-PASS. Isolierte CI84-Verbraucher:19/31/13/6 Tests+Vorbereitung PASS; Node24.19,
-Python3.12.15, netzlos. Kein GitHub-CI-Nachweis. Authority-Testfix auch mit echten
-verbrauchten V12-Markern31/31 PASS; Runtimewächter unverändert.
-STANDARD180/180 PASS in686s auf87c439; danach Store-Nebenwirkung entdeckt:
-Contracttest änderte zwei Profilzeitstempel; beide Zustände privat gesichert.
-Testfix mit4isolierten Zustandsfällen PASS; Store bytegenau restauriert,
-Zeitmetadaten erklärt geändert.88/88Bytepins unabhängig bestätigt;
-84CI-Originale+3V12-Dateien einschließlich Metadaten unverändert.
-7weitere Ressourcenpakete PASS; Observer blockiert am ausdrücklich wegen
-Credentialfeld ausgeschlossenen privaten Katalog, keine Ersatzquittung.
-GitHub403 bleibt Credential-Übersteuerung im Codex-App-Kontext; genaue Stelle
-offen, Cloudtools nur lesend. Geschützter Originalkanal fehlt; kein Voll500/Merge.
-[Prüfungen und Grenzen](betrieb/private-ci-original-provisioning-20261021.md).
+13.527Dateien hashverifiziert; physische DB-Kopien fehlen. Manifest+9Negativgruppen PASS.
+Contracttest-Storemutation: Fix4Fälle PASS, Store bytegenau restauriert;
+Zeitmetadaten erklärt geändert.88/88Bytepins PASS,84CI+3V12 auch Metadaten gleich.
+7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld ausgeschlossen.
+[Restore](betrieb/private-ci-original-provisioning-20261021.md).
+Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weiter inert.
+Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
+Runtimebindungen/native Verbraucher offen; alte GOs verbraucht, Quell-DB gestoppt.
+[Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
+PR930 und Integrationen929/931 grün: je84Originale,180Standard-/335Bereichssuiten,
+angeforderte DB-Checks PASS. Browser929 PASS,931 bewusst übersprungen; Logs verschlüsselt.
+PR931 als57a64670 in929 übernommen; Quellbaum gleich zum geprüften d2d1f7ad.
+[CI-Beleg](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
+Views-Hashwiederverwendung26gezielte Checks+Pro-Review PASS, frische Guards erhalten.
+CI39760002592: Originale/Runtime/Browser+erster DB-BlockPASS; Standard179/180.
+89Pins/10Fälle+BundlePASS; öffentlicheCodeprüfung vor Freigabe; frischeCIoffen.
+Unit60/Voll500/Production/App403 offen.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

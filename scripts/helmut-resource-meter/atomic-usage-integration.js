@@ -41,6 +41,19 @@ const CONTROL_SOURCE_ACCEPTANCE = Object.freeze({
   // Separate source-only review for these later callers; W50 and V11 remain
   // historical. Fresh complete integration admission is still mandatory.
   localReadCallerDelta: Object.freeze({"baselineCommit":"5fae25be5068a278a88daca9a7508c7b9e4001a3","scope":"Additional read-only journal selectors only; full writer/accounting/receipt reads and native protocol unchanged","independentSourceReview":Object.freeze({"name":"REPORT.SAFE.json","bytes":7710,"sha256":"c06da6c2b64159fc834935e395aa5e83d0ba96fd8ce4dcb449ac42c44052ebda"}),"candidateSourceSHA256":Object.freeze({"lib/helmut/storage.js":"51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d","lib/helmut/synthetik-500-production-adapter.js":"1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4"}),"requiresFreshIntegrationAcceptance":true,"newGlueAccepted":false,"full500Accepted":false,"RAMOrTimeGainAccepted":false}),
+  // A new source-only caller review; none of the historical acceptances above
+  // covers these bytes or grants fresh native integration authority.
+  localViewBindingCallerDelta: Object.freeze({
+    baselineCommit: "d2d1f7ad19b2269616324355a346e8fe1a9424bf",
+    file: "lib/helmut/synthetik-500-production-adapter.js",
+    originalSHA256: "1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4",
+    sha256: "31fa8e05742ba8f2618f01bf8f4c24b29b9edc1fe36ab25e0fb49a6f39bc3804",
+    independentSourceReview: Object.freeze({ name: "SOURCE_REVIEW.SAFE.json", bytes: 2697,
+      sha256: "98a48a3095f4d01c7c818dcd208a4c169a4d5f191b1a44c320cb7b659e5e3aaa" }),
+    scope: "Scalar briefing hash from the same fresh views guard; all fresh checkpoints retained",
+    requiresFreshIntegrationAcceptance: true, newGlueAccepted: false,
+    full500Accepted: false, RAMOrTimeGainAccepted: false
+  }),
   // This separately qualified local renderer is outside the historical W50
   // acceptance. No prior full-run authority or whole-run resource proof carries.
   localRendererDelta: Object.freeze({
@@ -133,10 +146,17 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
   }
   if (controlRead) {
     // Historical W50 hashes stay historical; only this separately qualified delta selects current U/Parts.
+    const callerDelta = CONTROL_SOURCE_ACCEPTANCE.localViewBindingCallerDelta;
+    assert.equal(CONTROL_SOURCE_HASHES[callerDelta.file], callerDelta.originalSHA256,
+      "Reviewed view-binding caller baseline drift");
+    for (const source of [...(sourceDelta?.acceptance.sourcePins || []), ...(lease?.acceptance.sourcePins || [])])
+      if (source.file === callerDelta.file) assert.equal(source.sha256, callerDelta.sha256,
+        "Conflicting reviewed view-binding caller source");
     const expected = { ...CONTROL_SOURCE_HASHES, ...Object.fromEntries(
       controlCacheSourceAcceptance.currentSources.map(p => [p.file, p.sha256])),
       ...(sourceDelta ? Object.fromEntries(sourceDelta.acceptance.sourcePins
-        .filter(p => Object.hasOwn(CONTROL_SOURCE_HASHES, p.file)).map(p => [p.file, p.sha256])) : {}) };
+        .filter(p => Object.hasOwn(CONTROL_SOURCE_HASHES, p.file)).map(p => [p.file, p.sha256])) : {}),
+      [callerDelta.file]: callerDelta.sha256 };
     for (const [file, hash] of Object.entries(expected))
       assert.equal(sourcePins.find(p => p.path === path.join(ROOT, file)).sha256, hash, "Reviewed control source drift: " + file);
   }
