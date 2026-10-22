@@ -201,13 +201,19 @@ FROM public.profiles p JOIN public.mandate_profiles m ON m.user_id=p.id WHERE p.
   const actualSources = {};
   for (const [key, table, fields] of [["documents", "raw_documents", inventory.SOURCE_VERSION_FIELDS], ["knowledgeObjects", "knowledge_objects", KO.VERSION_FIELDS]]) {
     need(fields.length > 0 && fields.length <= 80 && fields.every(k => typeof k === "string" && /^[a-z][a-z0-9_]*$/.test(k)), "native-projection-fields");
-    const expression = fields.map(k => {
+    const pairs = fields.map(k => {
       const value = table === "raw_documents" && Object.hasOwn(aliases, k) ? `t.raw->'${aliases[k]}'`
         : table === "raw_documents" && ["bundestag_abgerufen_at", "berlin_abgerufen_at", "brandenburg_abgerufen_at"].includes(k) ? "to_jsonb(t.retrieved_at)" : `to_jsonb(t.${k})`;
       return `'${k}',${value}`;
-    }).join(",");
+    });
+    // PostgreSQL accepts at most100 function arguments. KO60 needs120; retain
+    // all fields in disjoint bounded objects and concatenate their JSONB maps.
+    const objects = [];
+    for (let offset = 0; offset < pairs.length; offset += 40)
+      objects.push(`jsonb_build_object(${pairs.slice(offset, offset + 40).join(",")})`);
+    const expression = "(" + objects.join("||") + ")";
     const expected = selected.draft.sources[key], ids = expected.map(row => row.id);
-    const actual = await psqlRead(c, `SELECT coalesce(jsonb_agg(jsonb_build_object(${expression}) ORDER BY t.id COLLATE "C"),'[]'::jsonb)
+    const actual = await psqlRead(c, `SELECT coalesce(jsonb_agg(${expression} ORDER BY t.id COLLATE "C"),'[]'::jsonb)
 FROM public.${table} t WHERE t.id IN(${idsSQL(ids)});`, guard, children);
     need(Array.isArray(actual) && actual.length === ids.length && new Set(actual.map(row => row?.id)).size === ids.length
       && actual.every(row => ids.includes(row.id)), "native-source-cardinality");

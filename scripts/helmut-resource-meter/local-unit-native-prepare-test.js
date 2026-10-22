@@ -63,8 +63,10 @@ function fixture(options = {}) {
   add(CONFIG, JSON.stringify(config), { ...(options.fifo ? { kind: "fifo" } : {}), ...(options.hardlink ? { nlink: 2 } : {}),
     ...(options.wrongMode ? { mode: 0o640 } : {}), ...(options.oversize ? { size: 1048577 } : {}) });
   const selectedProfile = { id: "test-kohorte-synthetik-bt-001", fullName: "VM synthetic profile" };
+  const koFields = ["id", "headline", ...Array.from({ length: options.fullKO60 ? 58 : 0 }, (_, i) => "field_" + i)];
+  const knowledgeObject = Object.fromEntries(koFields.map(key => [key, key === "id" ? "ko-a" : key === "headline" ? "VM KO" : "VM " + key]));
   const selected = { sourceIndex: 499, diagnosticUnit: 0, draft: { profile: selectedProfile,
-    sources: { documents: [{ id: "doc-z", title: "VM document" }, { id: "doc-a", title: "VM other document" }], knowledgeObjects: [{ id: "ko-a", headline: "VM KO" }] } } };
+    sources: { documents: [{ id: "doc-z", title: "VM document" }, { id: "doc-a", title: "VM other document" }], knowledgeObjects: [knowledgeObject] } } };
   const sourceBinding = { schema: "VM-only-source-binding", selectionSHA256: sha("VM selection") }, sourceHandle = Object.freeze({});
   const derived = { sourceIndex: 499, diagnosticUnit: 0, phases: Object.fromEntries(["D", "R"].map(p => [p, {
     requestBytes: Buffer.from(JSON.stringify({ vmRequest: p })), responseBytes: Buffer.from(JSON.stringify({ vmResponse: p })),
@@ -86,7 +88,7 @@ function fixture(options = {}) {
       return request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { method: "POST", body: JSON.stringify({ id: "main-auth" }) }); } },
     profile: { hash: x => sha(canonical(x)), kanonisch: canonical },
     storage: { fromMandateProfileRow(p, m) { normalizerCalls++; assert.equal(p.id, selectedProfile.id); assert.equal(m.user_id, selectedProfile.id); return { ...selectedProfile, ...(options.profileDrift ? { changed: true } : {}) }; } },
-    ko: { VERSION_FIELDS: ["id", "headline"], pruefe(row) { assert.equal(row.id, "ko-a"); } }, inventory: { SOURCE_VERSION_FIELDS: ["id", "title"] }
+    ko: { VERSION_FIELDS: koFields, pruefe(row) { assert.equal(row.id, "ko-a"); assert.deepEqual(Object.keys(row).sort(), [...koFields].sort()); } }, inventory: { SOURCE_VERSION_FIELDS: ["id", "title"] }
   };
   function stat(name, big = false) {
     const x = files.get(name) || { kind: "directory", data: Buffer.alloc(0), mode: 0o700, uid: 1000, gid: 1000, dev: 1, ino: 2, nlink: 1, mtimeNs: 1, ctimeNs: 1 };
@@ -166,6 +168,18 @@ async function check(name, fn) { current = name; await fn(); count++; }
     for (const p of Object.values(ready.derivedPins).flatMap(x => Object.values(x))) assert(p.path.startsWith("/workspace/helmut-unit-diagnostic-native/") && !p.path.includes("/client/"));
     assert(!s.lines[0].includes("VM synthetic profile") && !s.lines[0].includes("VM document") && !s.lines[0].includes("testKostenAuftrag"));
     await assert.rejects(s.api.start()); assert.equal(s.spawns.length, 4);
+  });
+  await check("KO60 retains every actual field within PostgreSQL's100-argument limit", async () => {
+    const s = fixture({ fullKO60: true }); await s.api.start();
+    const sql = s.spawns.find(text => text.includes("FROM public.knowledge_objects"));
+    assert(sql); const chunks = [...sql.matchAll(/jsonb_build_object\(([^()]*(?:to_jsonb\(t\.[a-z0-9_]+\)[^()]*)*)\)/g)];
+    assert.equal(chunks.length, 2);
+    const fields = chunks.flatMap(match => [...match[1].matchAll(/'([a-z0-9_]+)',to_jsonb\(t\.([a-z0-9_]+)\)/g)].map(pair => {
+      assert.equal(pair[1], pair[2]); return pair[1]; }));
+    assert.equal(fields.length, 60); assert.equal(new Set(fields).size, 60);
+    assert.deepEqual([...fields].sort(), Object.keys(s.selected.draft.sources.knowledgeObjects[0]).sort());
+    assert(chunks.every(match => [...match[1].matchAll(/to_jsonb\(/g)].length * 2 <= 100));
+    assert.equal(JSON.parse(s.lines[0]).selectedSourcesHash, sha(canonical(s.selected.draft.sources)));
   });
   for (const [name, options] of [["FIFO", { fifo: true }], ["hardlink", { hardlink: true }], ["mode", { wrongMode: true }],
     ["oversize", { oversize: true }], ["symlink", { symlink: true }], ["unlisted code", { missingCode: true }], ["changed code", { wrongCode: true }],
