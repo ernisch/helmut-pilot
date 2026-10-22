@@ -111,6 +111,13 @@ def audit(text):
     need("s.body_hash is distinct from p_old_hash" in code, "old-hash CAS")
     need("s.revision is distinct from p_old_revision" in code and "revision=p_old_revision" in code, "revision prevents ABA before mutation")
     need("returning * into strict s" in code, "persisted state ACK")
+    need("or new.body is not distinct from old.body" in code, "logical state no-op rejected")
+    need("helmut_unit_diagnostic.sha(nj->>'claimId'),'state',old.body_hash,old.revision" in code,
+         "state mutation requires genuine original transaction receipt")
+    need("helmut_unit_diagnostic.sha(j->>'claimId'),'usage',own_row.body_hash,own_row.revision" in code,
+         "usage artifact requires genuine original transaction receipt")
+    need(code.count("perform helmut_unit_diagnostic.original_bridge_receipt_v1(") == 2,
+         "both original persistence hooks are present")
     need("local-unit-store-no-reopen-or-reclaim" in code and "local-unit-store-native-once-claim" in code, "claim lifecycle")
     need("local-unit-store-call-once" in code and "local-unit-store-native-deadline" in code, "phase lifecycle")
     need("local-unit-store-reserve-running-window" in code and "local-unit-store-send-running-window" in code, "no reserve/send after stop")
@@ -169,6 +176,10 @@ class StaticStoreContract(unittest.TestCase):
             ("s.body_hash is distinct from p_old_hash", "false"),
             ("s.revision is distinct from p_old_revision", "false"),
             ("returning * into strict s", "returning * into s"),
+            ("or new.body is not distinct from old.body", "or false"),
+            ("helmut_unit_diagnostic.sha(nj->>'claimId'),'state',old.body_hash,old.revision", "null,'state',null,null"),
+            ("helmut_unit_diagnostic.sha(j->>'claimId'),'usage',own_row.body_hash,own_row.revision", "null,'usage',null,null"),
+            ("perform helmut_unit_diagnostic.original_bridge_receipt_v1(", "perform helmut_unit_diagnostic.unchecked_receipt_v1("),
             ("local-unit-store-no-reopen-or-reclaim", "unchecked-reopen"),
             ("local-unit-store-native-deadline", "unchecked-time"),
             ("revoke execute on all routines in schema %I from public", "select 1"),

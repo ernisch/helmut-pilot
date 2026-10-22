@@ -644,6 +644,7 @@ begin
   end if;
   perform helmut_unit_diagnostic.runtime_role();
   if new.scope_hash is distinct from old.scope_hash or new.revision<>old.revision+1 or new.body_hash=old.body_hash
+    or new.body is not distinct from old.body
     or new.body->(k||'reservation') is distinct from old.body->(k||'reservation')
     or new.body->'localUnitDiagnosticConsumedGrantsV1' is distinct from old.body->'localUnitDiagnosticConsumedGrantsV1' then raise exception 'local-unit-store-immutable-grant';end if;
   oj:=old.body->(k||'journal');oc:=old.body->(k||'costs');
@@ -716,6 +717,11 @@ begin
     and (clock_timestamp()>=a.expires_at or clock_timestamp()>=helmut_unit_diagnostic.utc(case when nj->>'state'='closed' then oj#>'{inFlight,deadlineAtUTC}' else nj#>'{inFlight,deadlineAtUTC}' end)) then
     if exists(select from jsonb_each(nj->'attempts') e where e.value->>'status' in ('reserved','sent')) or nj->>'state'='closed' then raise exception 'local-unit-store-native-deadline';end if;
   end if;
+  -- The real original CAS must already have completed in this same owner
+  -- transaction. A raw PostgREST own-state write cannot mint this receipt.
+  perform helmut_unit_diagnostic.original_bridge_receipt_v1(new.scope_hash,
+    helmut_unit_diagnostic.sha(nj->>'claimId'),'state',old.body_hash,old.revision,
+    new.canonical_text,new.body_hash,null,null,null);
   return new;
 end;$f$;
 create trigger state_validate before insert or update on helmut_unit_diagnostic.state
@@ -725,12 +731,13 @@ alter table helmut_unit_diagnostic.state enable always trigger state_validate;
 create function helmut_unit_diagnostic.artifact_guard() returns trigger
 language plpgsql security invoker set search_path=pg_catalog
 as $f$
-declare a helmut_unit_diagnostic.authority%rowtype; d jsonb; k text; j jsonb; co jsonb; c jsonb; phase text; t jsonb; expected_parent text;
+declare a helmut_unit_diagnostic.authority%rowtype; own_row helmut_unit_diagnostic.state%rowtype;
+  d jsonb; k text; j jsonb; co jsonb; c jsonb; phase text; t jsonb; expected_parent text;
 begin
   perform helmut_unit_diagnostic.runtime_role();
   perform helmut_unit_diagnostic.parse(new.canonical_text,new.body_hash,2097152);
   select * into strict a from helmut_unit_diagnostic.authority where scope_hash=new.scope_hash;
-  select body into strict d from helmut_unit_diagnostic.state where scope_hash=new.scope_hash for update;
+  select * into strict own_row from helmut_unit_diagnostic.state where scope_hash=new.scope_hash for update;d:=own_row.body;
   k:='localUnitDiagnostic:'||right(a.operation_id,32)||':';j:=d->(k||'journal');co:=d->(k||'costs');c:=a.command_canonical::jsonb;
   if new.owner_id is distinct from c#>>'{units,0,subject}' or j->>'state' not in ('running','unknown','stopped')
     or new.created_at < clock_timestamp()-interval '5 seconds' or new.created_at>clock_timestamp() then raise exception 'local-unit-store-artifact-scope';end if;
@@ -763,6 +770,9 @@ begin
       or (new.body->>'estimatedCost')::numeric*1000000 is distinct from
         ceil((275*(new.body->>'promptTokens')::numeric+2200*(new.body->>'completionTokens')::numeric)/1000) then
       raise exception 'local-unit-store-usage-arithmetic';end if;
+    perform helmut_unit_diagnostic.original_bridge_receipt_v1(new.scope_hash,
+      helmut_unit_diagnostic.sha(j->>'claimId'),'usage',own_row.body_hash,own_row.revision,
+      new.canonical_text,new.body_hash,new.kind,new.logical_id,new.parent_hash);
     return new;
   end if;
   if new.kind<>'evidence' and (j->>'state'<>'running' or j->>'stopRequested'<>'false'
