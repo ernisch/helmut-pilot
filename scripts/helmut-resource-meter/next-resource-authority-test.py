@@ -33,10 +33,46 @@ class NextResourceAuthorityTest(unittest.TestCase):
           'previousConsumedMarkers':copy.deepcopy(A.PRESERVED_MARKER_PINS),
           'finalOwnerGOPath':str(A.METER/('OWNER_RESOURCE21_V12_'+A.CASE_SUFFIX+'.PRIVATE.json')),
           'requiredConfirmation':'GO_LOCAL_ONLY_CREATE_'+self.connection['targetDatabase']+'_AND_ACTIVATE_EXACTLY500_SYNTHETIC_ONCE'}
+    def slotState(self,path):
+        path=Path(path)
+        if path.is_symlink():return {'path':str(path),'exists':True,'symlink':True,'regularFile':False,'bytes':None,'sha256':None}
+        if not path.exists():return {'path':str(path),'exists':False,'symlink':False,'regularFile':False,'bytes':None,'sha256':None}
+        if not path.is_file():return {'path':str(path),'exists':True,'symlink':False,'regularFile':False,'bytes':None,'sha256':None}
+        data=path.read_bytes()
+        return {'path':str(path),'exists':True,'symlink':False,'regularFile':True,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+    def assertSlotStateHermetic(self,state):
+        self.assertFalse(state['symlink'],'current slot must never be a symlink: '+state['path'])
+        if state['exists']:self.assertTrue(state['regularFile'],'current slot must be a regular file: '+state['path'])
+    def assertSlotStateUnchanged(self,baseline):
+        for path,expected in baseline.items():
+            current=self.slotState(path)
+            self.assertFalse(current['symlink'],'current slot must never be a symlink: '+path)
+            self.assertEqual(current,expected,'current slot changed during this unit test: '+path)
+    def setUpBaseline(self,paths=None):
+        baseline={}
+        for path in (A.CLAIM,A.RESERVATION)if paths is None else paths:
+            state=self.slotState(path);self.assertSlotStateHermetic(state);baseline[state['path']]=state
+        self.addCleanup(self.assertSlotStateUnchanged,baseline)
+        return baseline
+    def finalGOState(self):
+        final=Path(self.intent['finalOwnerGOPath'])
+        if final.is_symlink():return ('symlink',str(final))
+        if not final.exists():return ('absent',str(final))
+        return ('file' if final.is_file() else 'other',str(final))
+    def pathBoundExists(self,target,value):
+        target=str(Path(target));original=Path.exists
+        def exists(path,*args,**kwargs):
+            return value if str(path)==target else original(path,*args,**kwargs)
+        return patch.object(A.Path,'exists',exists)
     def test_intent_is_only_technical_and_never_actual_go(self):
+        final=Path(self.intent['finalOwnerGOPath']);baseline=self.finalGOState()
         with patch.object(A,'read',return_value={}):
-            self.assertFalse(A.validate_owner(self.intent,self.connection,planning=True)['actualGO'])
+            with self.pathBoundExists(final,False):
+                self.assertFalse(A.validate_owner(self.intent,self.connection,planning=True)['actualGO'])
+            with self.pathBoundExists(final,True):
+                with self.assertRaises(RuntimeError):A.validate_owner(self.intent,self.connection,planning=True)
             with self.assertRaises(RuntimeError):A.validate_owner(self.intent,self.connection)
+        self.assertEqual(self.finalGOState(),baseline,'synthetic exists fiction must never change the real final GO state')
     def test_literal_preservation_and_all_local_scope_fields_remain_required(self):
         with patch.object(A,'read',return_value={}):
             for v in [None,True,0,'false']:
@@ -54,7 +90,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
         with patch.object(A,'read',side_effect=RuntimeError('DRIFT')):
             with self.assertRaisesRegex(RuntimeError,'DRIFT'):A.validate_owner(self.intent,self.connection,planning=True)
     def test_existing_final_go_and_nonfixed_paths_are_not_reused(self):
-        with patch.object(A,'read',return_value={}),patch.object(A.Path,'exists',return_value=True):
+        with patch.object(A,'read',return_value={}),self.pathBoundExists(self.intent['finalOwnerGOPath'],True):
             with self.assertRaises(RuntimeError):A.validate_owner(self.intent,self.connection,planning=True)
         with patch.object(A,'read',return_value={}):
             for path in [str(A.OLD_MARKERS[0]),OLD17_V4_OWNER_GO]:
@@ -136,10 +172,11 @@ class NextResourceAuthorityTest(unittest.TestCase):
                 A.validate_owner({**self.intent,'authorizationId':OLD_V5_AUTHORIZATION,
                   'finalOwnerGOPath':OLD18_V5_OWNER_GO},self.connection,planning=True)
     def test_consumed_v6_cannot_be_reused_and_its_real_marker_bytes_are_preserved(self):
+        baseline=self.setUpBaseline()
         by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
         for name in ['NEXT_RESOURCE18_V6_GO_CLAIM.SAFE.json','NEXT_RESOURCE18_V6_SETUP_RESERVATION.SAFE.json']:
             p=A.METER/name;self.assertEqual(A.pin(p),by_path[str(p)])
-        self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
+        self.assertEqual(sorted(baseline),sorted([str(A.CLAIM),str(A.RESERVATION)]))
         with patch.object(A,'read',return_value={}):
             for delta in [{'authorizationId':'USER_GO_20261018_EXACT_ONE_RESOURCE_ONLY_V6'},
               {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE18_V6_000000000000.PRIVATE.json')}]:
@@ -164,6 +201,7 @@ class NextResourceAuthorityTest(unittest.TestCase):
             self.assertEqual(run.call_args.args[0][run.call_args.args[0].index('-d')+1],A.BOOK17_INPUT_DATABASE)
             with self.assertRaises(RuntimeError):A._query_input_database('SELECT 1;','FOREIGN')
     def test_spent_v8_is_preserved_and_cannot_authorize_the_new_slot(self):
+        baseline=self.setUpBaseline()
         expected=[
           {'path':str(A.METER/'NEXT_RESOURCE19_V8_GO_CLAIM.SAFE.json'),'bytes':792,'sha256':'39323645802fe815cec4244b229f68ce265140e4186b5bddf99d03eee5154aa3'},
           {'path':str(A.METER/'NEXT_RESOURCE19_V8_SETUP_RESERVATION.SAFE.json'),'bytes':1515,'sha256':'3beab4bfacc5835b4cedc5c214653e18ec719883f1ee73be37cad2383650141b'}]
@@ -174,8 +212,9 @@ class NextResourceAuthorityTest(unittest.TestCase):
             for change in [{'authorizationId':'USER_GO_20261019_EXACT_ONE_RESOURCE_ONLY_V8'},
               {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V8_000000000000.PRIVATE.json')}]:
                 with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**change},self.connection,planning=True)
-        self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
+        self.assertEqual(sorted(baseline),sorted([str(A.CLAIM),str(A.RESERVATION)]))
     def test_spent_v9_exact_bytes_cannot_authorize_v12(self):
+        baseline=self.setUpBaseline()
         expected=[
           {'path':str(A.METER/'NEXT_RESOURCE19_V9_GO_CLAIM.SAFE.json'),'bytes':866,'sha256':'3af635b8f5450ea4e0fc23cbaceab7c6f8261028b938c1a542c0a1a9498ad9f1'},
           {'path':str(A.METER/'NEXT_RESOURCE19_V9_SETUP_RESERVATION.SAFE.json'),'bytes':1589,'sha256':'32054d5a770a926c57688f6aad38feec06449999e18d24245f7ef31c60f02022'}]
@@ -186,8 +225,10 @@ class NextResourceAuthorityTest(unittest.TestCase):
             for bad in [{'authorizationId':'USER_GO_20261019_EXACT_ONE_RESOURCE_ONLY_V9'},
               {'finalOwnerGOPath':str(A.METER/'OWNER_RESOURCE19_V9_000000000000.PRIVATE.json')}]:
                 with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**bad},self.connection,planning=True)
-        self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
+        self.assertNotIn(A.CLAIM,A.OLD_MARKERS)
+        self.assertEqual(sorted(baseline),sorted([str(A.CLAIM),str(A.RESERVATION)]))
     def test_spent_v10_exact_bytes_cannot_authorize_v12(self):
+        baseline=self.setUpBaseline()
         expected=[
           {'path':str(A.METER/'NEXT_RESOURCE20_V10_GO_CLAIM.SAFE.json'),'bytes':875,'sha256':'6fdb6f4189d0a5150db693eff38935a2273c6b0eb373d1be101c87db50f45cfe'},
           {'path':str(A.METER/'NEXT_RESOURCE20_V10_SETUP_RESERVATION.SAFE.json'),'bytes':1598,'sha256':'7e1d8938c585c6fc983eaf98f4d13c0f01d1cba66532204be2f8fa84323ce7c2'}]
@@ -200,8 +241,9 @@ class NextResourceAuthorityTest(unittest.TestCase):
                 with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,**bad},self.connection,planning=True)
             changed=[{**p,'sha256':'0'*64}if p['path']==expected[0]['path']else p for p in self.intent['previousConsumedMarkers']]
             with self.assertRaises(RuntimeError):A.validate_owner({**self.intent,'previousConsumedMarkers':changed},self.connection,planning=True)
-        self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
+        self.assertEqual(sorted(baseline),sorted([str(A.CLAIM),str(A.RESERVATION)]))
     def test_spent_v11_exact_bytes_cannot_authorize_v12(self):
+        baseline=self.setUpBaseline()
         by_path={p['path']:p for p in A.PRESERVED_MARKER_PINS}
         for p in SPENT_V11_PINS:
             self.assertEqual(by_path[p['path']],p);self.assertEqual(A.pin(p['path']),p)
@@ -213,7 +255,8 @@ class NextResourceAuthorityTest(unittest.TestCase):
                 pins=[{**p,key:value}if p['path']==SPENT_V11_PINS[0]['path']else p for p in self.intent['previousConsumedMarkers']]
                 with self.subTest(tampered=key),self.assertRaises(RuntimeError):
                     A.validate_owner({**self.intent,'previousConsumedMarkers':pins},self.connection,planning=True)
-        self.assertNotIn(A.CLAIM,A.OLD_MARKERS);self.assertFalse(A.CLAIM.exists());self.assertFalse(A.RESERVATION.exists())
+        self.assertNotIn(A.CLAIM,A.OLD_MARKERS)
+        self.assertEqual(sorted(baseline),sorted([str(A.CLAIM),str(A.RESERVATION)]))
     def test_restored_container_identity_fails_before_any_native_sql(self):
         source=A.SOURCE_RUNTIME
         expected='|'.join([source.CONTAINER,'/'+source.RUNTIME_BINDING['containerName'],source.RUNTIME_BINDING['imageId'],'none'])

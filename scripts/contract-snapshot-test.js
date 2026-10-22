@@ -43,6 +43,176 @@ const root = path.join(__dirname, "..");
 const SNAPSHOT_PATH = path.join(__dirname, "contract", "app-start.contract.json");
 const UPDATE = process.argv.slice(2).includes("--update");
 
+// ---------------------------------------------------------------------------
+// Testlokaler Schreibschutz für die von dieser Suite angefasste Datendatei
+// ---------------------------------------------------------------------------
+// Die Suite schreibt über storage.readStore/writeStore/saveProfile in den
+// lokalen Store (.helmut-data/store.json). Der Snapshot unter
+// scripts/contract/app-start.contract.json ist dagegen ein bewusstes
+// Testartefakt (--update bzw. erster Lauf) und wird hier nicht zurückgesetzt.
+//
+// Vor dem ersten require von server.js/storage.js wird der Ist-Zustand der
+// Store-Datei roh gesichert. Existiert sie nicht, wird bei der Wiederherstellung
+// nur eine von diesem Test neu angelegte reguläre Datei entfernt. Symlinks,
+// Hardlinks (nlink > 1), fremde Typen und nicht sichere Elternpfade werden
+// fail-closed abgelehnt. Es werden keine Originalbytes/Profilwerte ausgegeben.
+const STORE_PATH = path.join(root, ".helmut-data", "store.json");
+
+function lstatIfExists(filePath) {
+  try {
+    return fs.lstatSync(filePath);
+  } catch (error) {
+    if (error && error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function assertSafeParent(parentPath) {
+  const parentStat = lstatIfExists(parentPath);
+  if (!parentStat) return null;
+  if (parentStat.isSymbolicLink()) {
+    throw new Error(`Elternverzeichnis ist ein Symlink: ${parentPath}`);
+  }
+  if (!parentStat.isDirectory()) {
+    throw new Error(`Elternpfad ist kein Verzeichnis: ${parentPath}`);
+  }
+  return parentStat;
+}
+
+function captureFileState(filePath) {
+  const parentPath = path.dirname(filePath);
+  const parentStat = assertSafeParent(parentPath);
+  const current = lstatIfExists(filePath);
+  if (!current) {
+    return { path: filePath, existed: false, bytes: null, mode: null, parentExisted: Boolean(parentStat) };
+  }
+  if (current.isSymbolicLink()) {
+    throw new Error(`Datendatei ist ein Symlink und wird nicht angefasst: ${filePath}`);
+  }
+  if (!current.isFile()) {
+    throw new Error(`Datendatei ist kein reguläres File: ${filePath}`);
+  }
+  if (current.nlink > 1) {
+    throw new Error(`Datendatei hat nlink>1 und wird nicht angefasst: ${filePath}`);
+  }
+  const fd = fs.openSync(filePath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+  try {
+    const opened = fs.fstatSync(fd);
+    if (!opened.isFile() || opened.nlink !== 1 || opened.dev !== current.dev || opened.ino !== current.ino) {
+      throw new Error(`Datendatei änderte ihre Identität vor der Sicherung: ${filePath}`);
+    }
+    return {
+      path: filePath,
+      existed: true,
+      bytes: fs.readFileSync(fd),
+      mode: opened.mode & 0o7777,
+      parentExisted: Boolean(parentStat)
+    };
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+let guardedFileStates = [];
+try {
+  guardedFileStates = [captureFileState(STORE_PATH)];
+} catch (error) {
+  console.error("Contract-Snapshot-Test: Testdaten-Schutz konnte nicht initialisiert werden:", error.message);
+  process.exit(1);
+}
+
+let restoreCompleted = false;
+
+function restoreFileState(state) {
+  const parentPath = path.dirname(state.path);
+  const parentStat = lstatIfExists(parentPath);
+  if (parentStat) {
+    if (parentStat.isSymbolicLink()) {
+      throw new Error(`Elternverzeichnis ist jetzt ein Symlink: ${parentPath}`);
+    }
+    if (!parentStat.isDirectory()) {
+      throw new Error(`Elternpfad ist jetzt kein Verzeichnis: ${parentPath}`);
+    }
+  }
+  const current = lstatIfExists(state.path);
+
+  if (state.existed) {
+    if (current && current.isSymbolicLink()) {
+      throw new Error(`Datendatei ist jetzt ein Symlink; Ziel wird nicht überschrieben: ${state.path}`);
+    }
+    if (current && !current.isFile()) {
+      throw new Error(`Datendatei ist jetzt kein reguläres File: ${state.path}`);
+    }
+    if (current && current.nlink > 1) {
+      throw new Error(`Datendatei hat jetzt nlink>1; wird nicht überschrieben: ${state.path}`);
+    }
+    if (!parentStat) fs.mkdirSync(parentPath, { recursive: true });
+    const flags = fs.constants.O_RDWR | fs.constants.O_NOFOLLOW
+      | (current ? 0 : fs.constants.O_CREAT | fs.constants.O_EXCL);
+    const fd = fs.openSync(state.path, flags, state.mode);
+    try {
+      const opened = fs.fstatSync(fd);
+      if (!opened.isFile() || opened.nlink !== 1 || (current && (opened.dev !== current.dev || opened.ino !== current.ino))) {
+        throw new Error(`Datendatei änderte ihre Identität vor der Wiederherstellung: ${state.path}`);
+      }
+      fs.writeFileSync(fd, state.bytes);
+      fs.ftruncateSync(fd, state.bytes.length);
+      fs.fchmodSync(fd, state.mode);
+      fs.fsyncSync(fd);
+      const restored = Buffer.alloc(state.bytes.length);
+      if (fs.readSync(fd, restored, 0, restored.length, 0) !== restored.length || !restored.equals(state.bytes)) {
+        throw new Error(`Wiederhergestellte Bytes weichen vom Ausgangszustand ab: ${state.path}`);
+      }
+      const restoredStat = fs.lstatSync(state.path);
+      if (!restoredStat.isFile() || restoredStat.isSymbolicLink() || restoredStat.nlink !== 1
+        || restoredStat.dev !== opened.dev || restoredStat.ino !== opened.ino
+        || (restoredStat.mode & 0o7777) !== state.mode) {
+        throw new Error(`Wiederhergestellte Dateirechte/Identität weichen vom Ausgangszustand ab: ${state.path}`);
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
+    return;
+  }
+
+  if (!current) return;
+  if (current.isSymbolicLink()) {
+    throw new Error(`Neu angelegter Pfad ist ein Symlink; wird nicht entfernt: ${state.path}`);
+  }
+  if (!current.isFile()) {
+    throw new Error(`Neu angelegter Pfad ist kein reguläres File; wird nicht entfernt: ${state.path}`);
+  }
+  if (current.nlink > 1) {
+    throw new Error(`Neu angelegte Datei hat nlink>1; wird nicht entfernt: ${state.path}`);
+  }
+  fs.unlinkSync(state.path);
+}
+
+function restoreGuardedFiles() {
+  if (restoreCompleted) return;
+  const errors = [];
+  for (const state of guardedFileStates) {
+    try {
+      restoreFileState(state);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+  if (errors.length) {
+    throw new Error(`Testdaten-Wiederherstellung fehlgeschlagen: ${errors.join(" | ")}`);
+  }
+  restoreCompleted = true;
+}
+
+process.on("exit", () => {
+  try {
+    restoreGuardedFiles();
+  } catch (error) {
+    process.exitCode = 1;
+    console.error("Contract-Snapshot-Test: Wiederherstellung im exit-Handler fehlgeschlagen:", error.message);
+  }
+});
+
 // --- Vertrags-Vokabular (Quelle der Wahrheit: aktueller Client + Server) -----
 const DECISION_ENUM = ["Sofort reagieren", "Beobachten", "Ignorieren"];
 const PRIORITY_TYPE_ENUM = ["action", "watch", "chance", "risk", "ignore", "high"];
@@ -80,6 +250,7 @@ process.env.HELMUT_AUTH_MODE = "pilot";        // nicht "accounts" -> Legacy-Pil
 process.env.PILOT_SECRET = TEST_PILOT_SECRET;   // bekannt -> Bearer-Auth im Test
 process.env.HELMUT_STORAGE_BACKEND = "local";   // nicht "supabase" -> lokaler Datei-Store
 
+// Der Store-Schutz steht bewusst VOR dem ersten require von server.js/storage.js.
 const handler = require(path.join(root, "server.js"));
 const storage = require(path.join(root, "lib", "helmut", "storage.js"));
 const { testPoliticianOne } = require(path.join(__dirname, "fixtures", "test-profiles.js"));
@@ -381,16 +552,31 @@ function countBy(arr) {
 }
 
 function finish() {
+  let restoreError = null;
+  try {
+    restoreGuardedFiles();
+  } catch (error) {
+    restoreError = error;
+    console.error("Contract-Snapshot-Test:", error.message);
+  }
   const failed = results.filter((r) => !r.ok);
   console.log(`\n${results.length - failed.length}/${results.length} Vertrags-Checks bestanden, ${warnings.length} Warnungen.`);
   if (failed.length) {
     console.log("Fehlgeschlagen:", failed.map((f) => f.name).join("; "));
+  }
+  if (restoreError) {
+    console.log("Testdaten-Wiederherstellung fehlgeschlagen — Test FAIL.");
     process.exit(1);
   }
-  process.exit(0);
+  process.exit(failed.length ? 1 : 0);
 }
 
 main().catch((error) => {
   console.error("Contract-Snapshot-Test abgestürzt:", error);
+  try {
+    restoreGuardedFiles();
+  } catch (restoreError) {
+    console.error("Contract-Snapshot-Test: Testdaten-Wiederherstellung fehlgeschlagen:", restoreError.message);
+  }
   process.exit(1);
 });

@@ -2,18 +2,23 @@
 
 **Lokal 22.10.2026 Europe/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.10.: Originale übernommen, CI weiter blockiert
+## 22.10.: Restore und lokale CI-Prüfung
 
-Restore: 13.527 ausgewählte Dateien, alle 83 bisherigen CI-Originale und 24 exakte
-Git-Patches restauriert und hashverifiziert; Datenbankkopien und volles Gitbundle
-fehlen weiter. Echter Startpreflight 19/19 PASS inkl. 26 Renderer-Originalen nach
-inertem VM-Helperpfadfix; Runtime-read-contract 13/13 PASS. Privates Manifest 84 echte Dateien (83 unverändert
-+ 6151B Source-Review), Provisionierung 84/84 und 9 Negativgruppen PASS. GitHub 403
-erklärt: ungültiger literaler Bearer ergibt trotzdem authentifizierten
-Codex-App-Kontext; dort fehlen Administration/Environments. Kein PAT-Fehlerbeleg,
-genaue Substitutionsstelle offen, Cloudtools nur lesend. Pflicht-CI weiter
-blockiert. Alle GOs verbraucht; kein Voll500/Production/Merge.
-[Provisionierung](betrieb/private-ci-original-provisioning-20261021.md).
+13.527 Dateien/83 bisherige CI-Originale/24 Git-Patches hashverifiziert; physische
+DB-Kopien fehlen. Manifest84 echte Dateien, Provisionierung84/84+9Negativgruppen
+PASS. Isolierte CI84-Verbraucher:19/31/13/6 Tests+Vorbereitung PASS; Node24.19,
+Python3.12.15, netzlos. Kein GitHub-CI-Nachweis. Authority-Testfix auch mit echten
+verbrauchten V12-Markern31/31 PASS; Runtimewächter unverändert.
+STANDARD180/180 PASS in686s auf87c439; danach Store-Nebenwirkung entdeckt:
+Contracttest änderte zwei Profilzeitstempel; beide Zustände privat gesichert.
+Testfix mit4isolierten Zustandsfällen PASS; Store bytegenau restauriert,
+Zeitmetadaten erklärt geändert.88/88Bytepins unabhängig bestätigt;
+84CI-Originale+3V12-Dateien einschließlich Metadaten unverändert.
+7weitere Ressourcenpakete PASS; Observer blockiert am ausdrücklich wegen
+Credentialfeld ausgeschlossenen privaten Katalog, keine Ersatzquittung.
+GitHub403 bleibt Credential-Übersteuerung im Codex-App-Kontext; genaue Stelle
+offen, Cloudtools nur lesend. Geschützter Originalkanal fehlt; kein Voll500/Merge.
+[Prüfungen und Grenzen](betrieb/private-ci-original-provisioning-20261021.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
@@ -268,7 +273,7 @@ Historische abgeschlossene Befunde bleiben [wortgleich archiviert](archive/proje
 
 ## Starttor und Schutzgrenzen
 
-Lokale notwendige RAM-/Integrationsänderungen und gezielte Komponentenprüfungen bleiben erlaubt. **Genau der freigegebene nächste vollständige Mock500-VersuchV10 ist verbraucht und als FAIL beendet.** Claim/Setup bleiben erhalten; kein neuer Slot, kein Löschen/Reset verbrauchter Marken und kein automatischer Retry aus alten Betreiberzitaten. Auch V11 und V12 sind verbraucht und fehlgeschlagen; ein neuer Versuch braucht ein neues konkretes GO samt Fall-/Tages-/Code-/Original-/Zeit-/Loop-/Plattenbindung, unabhängiger Annahme und32frischen Startgruppen. Keine Ersatzoriginale.
+Betreibersteuerung22.10.: autonome Fehlerbehebung mit allen nötigen Freigaben; Voll500 erst nach Behebung aller Fehler. V10/V11/V12 bleiben verbraucht und fehlgeschlagen; kein Reset oder Retry aus alten Quittungen. Ein neuer Versuch braucht frische Fall-/Tages-/Code-/Original-/Zeit-/Loop-/Plattenbindungen, einmalige Autorität, unabhängige Annahme und32echte Startgruppen. Fehlende Quellruntime, ausgeschlossene Daten und Unit60 sind technische Blocker; keine Ersatzoriginale.
 
 Production, Merge, Deployment, Production-Migrationen und bezahlte HELMUT-Provideraufrufe sind daraus nicht freigegeben. Für regulären Betrieb bleiben ein gesondertes konkretes Aktivierungs-/Productiontest-GO, aktuelle Paketbindung, Ebenen-/Landesversorgung bis zur sichtbaren Ausgabe, Kosten-/Zeitplan, lebender Endwächter und Rückweg erforderlich. Nur synthetische500Profile für Bundestag/Berlin/Brandenburg, keine AfD-Kunden; originale fachliche/security Prüfungen für alle500,1500Ergebnispositionen und8000frische Kontrollen. Fehlend/leer/doppelt/unbrauchbar/technischfehlerhaft getrennt bilanzieren. Bei unbekanntem Schreibausgang Stop und lesende Klärung, kein Retry. Originale und bisherige Belege erhalten.
 
@@ -280,9 +285,7 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-Zuerst ausgehende GitHub-Credential-Zuordnung korrigieren und geschützte84er
-Original-CI anbinden. Danach180erOffline-Schlussprüfung und kleinsten gebundenen
-Gateway/PostgREST-Authzyklus amspätenKlon abnehmen; Read/Decode/Callback/CAS
-ohneDoppelzählung trennen. Voll500erstmitPlatte,32frischenStartgruppen,
-Fall-/Zeitbindung undneuemkonkretemGO. AllealtenGOsverbraucht.
-Hierfortsetzen,Sehrhoch wegenCAS/ACK/Originalschutz;kostentragendeProductionbleibtgesperrt.
+Cloud-Authrouting, geschützten84erCI-Kanal und echte Quellruntime über unterstützte
+Wege herstellen. Separaten HTTP-Ein-Unit-Vertrag ausarbeiten; vorhandene Voll500-
+Verträge lassen keine Index499-Wiederholung zu. Unit60/32Startgruppen offen.
+Hier fortsetzen, Sehr hoch wegen CAS/ACK/Originalschutz; kein Voll500 vor Klärung.

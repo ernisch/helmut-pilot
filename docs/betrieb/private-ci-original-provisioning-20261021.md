@@ -81,15 +81,57 @@ Runtime-read-contract besteht nach Ergänzung des echten Sourceadoptionspins
 13/13. Die historische Storagebindung und alle Fehlerprüfungen bleiben erhalten.
 Workflow-YAML und Shellsyntax des ergänzten Bereitstellungsschritts sind geprüft.
 
-## next-resource-authority: 25 PASS, 5 FAIL, 1 ERROR
+## Autoritätstests: 31/31 auf Host und isoliert
 
-Im vollen Restore liefen 31 Tests: 25 PASS, 5 FAIL, 1 ERROR. 5 Assertions
-verlangen den fehlenden aktuellen V12-CLAIM, 1 korrekter Guard lehnt den
-vorhandenen V12-Owner-GO ab. Alle Marker bleiben echt unverändert; kein Reset,
-kein neues GO, kein Umgehen von Tests. Das CI-Minimalmanifest mit 84 Dateien
-enthält V12-CLAIM/RESERVATION/OWNER nicht. Ein frischer isolierter
-CI-Verbrauchernachweis ist offen; `bwrap` scheitert hier vor Teststart mit
-uid-map-EROFS. Das ist nicht als CI-grün zu deuten.
+Der volle Restore enthielt bereits verbrauchte V12-Marker. Der frühere Lauf
+25 PASS/5 FAIL/1 ERROR bleibt als Fehlerbefund erhalten. Die fünf historischen
+Negativfälle prüfen jetzt den unveränderten aktuellen Claim-/Reservierungszustand
+mit Größe/Hash. Die synthetische Planungsfixture modelliert ausschließlich den
+festen erwarteten Owner-GO-Pfad; der vorhandene-GO-Negativfall bleibt. Kein
+Runtimewächter wurde geändert. Host31/31 PASS in37,025s, kein Markerreset.
+
+Eine echte wegwerfbare Docker-Sicht auf Git-Export87c439 und84 streng
+provisionierte Originale bestand alle fünf CI-Verbraucherbefehle: Startpreflight
+19/19, Autorität31/31, Vorbereitung PASS, Runtime-read13/13, Startinputs6/6.
+Anschließend wurde ausschließlich die neue Autoritätstestdatei isoliert geprüft:
+31/31 PASS. Zusammen100 Testausführungen ohne Skip plus Vorbereitung. Netzwerk
+aus, Root/Quellen readonly, keine Cloudcredentials, Datenbank oder Engine.
+Runtime: tatsächliches Node24.19.0/Python3.12.15; kein GitHub-Node22-Nachweis.
+Der erste Zusatz-Auswerter endete wegen des Node24-Zählformats mit Exit1;
+alle fünf eigentlichen Testbefehle hatten Exit0. Die vorhandene Ausgabe wurde
+geprüft, keine Suite dafür wiederholt. Zwei eigene Container nach Audit entfernt.
+Der frühere `bwrap`-Fehler bleibt historisch, GitHub-CI bleibt offen.
+
+## STANDARD und zusätzliche Grenzen
+
+STANDARD auf87c439:180/180 Suiteprozesse, Exit0,685,998s; kein Extended und
+keine vom Runner übersprungene Suite. Innere Assertion-Skipzahlen erfolgreicher
+Suiten gibt der Runner nicht aus. Die anschließende Originalprüfung fand84CI-
+Originale und3V12-Dateien vollständig einschließlich Metadaten unverändert.
+Die lokale `store.json` hatte jedoch zwei geänderte Profilzeitstempel: Der
+Contract-Snapshot-Test schrieb die Fixture ohne Rückstellung. Vorherige und
+veränderte Bytes bleiben privat gesichert. Der rein testlokale Restoreguard
+bestand vier isolierte Zustandsfälle: vorhandene Bytes/Rechte erhalten,
+fehlender Store bleibt fehlend, Vertragsfehler Exit1 mit Rückstellung und
+Symlink beim Zurückstellen Exit1 ohne Änderung des fremden Ziels. Die beiden
+Erfolgsfälle hatten19/19 Checks; je5 bestehende Warnungen sind keine vollständige
+Briefingabnahme. Kein Runtime-/Sollsnapshot wurde geändert.
+
+Die echte lokale Datei wurde anschließend kontrolliert aus den verifizierten
+vorherigen Bytes restauriert. Unabhängiger Abschluss:88/88 Größen-/Hashpins
+bestätigt,87 Dateien auch mit sämtlichen aufgezeichneten Metadaten unverändert.
+Beim Store sind nur mtime/ctime durch die dokumentierte Rückstellung geändert;
+kein unveränderter Store wird aus dem ursprünglichen STANDARD-Ausgang behauptet.
+Fehlerbeleg und Baseline bleiben erhalten. Alle fünf ausschließlich eigenen
+Container dieser Zusatzprüfung wurden nach Audit entfernt.
+
+Sieben zusätzliche reine PostgREST-/Backend-/Pipelinepakete sind PASS. Die
+Observer-Suite blieb blockiert: drei Negativtests PASS, fünf GenuineDescriptor-
+Tests nicht admittiert. Fünf öffentliche Begleitdateien wurden exakt aus Git
+ohne Überschreiben am kanonischen Pfad bereitgestellt. Der private
+`ACTUAL_LOCK_CATALOG.SAFE.json` ist laut Transfermanifest wegen eines gefüllten
+Credentialfelds ausgeschlossen, gehört nicht zu84CI-Originalen und wurde nicht
+ersetzt. Daraus wird keine native Annahme oder vollständige Umgebung abgeleitet.
 
 ## Schutzfix und Authdiagnose
 
@@ -115,9 +157,9 @@ ein unbelegter UI-Schalter wird nicht genannt.
 
 ## GitHub-CI bleibt blockiert
 
-Der letzte Run `39689399857` auf `4a43e76c` scheitert an den fehlenden privaten
-Originalen für Renderer 18/19; Syntax ist PASS, der Browserjob ist PASS, aber
-der Smoke wurde laut Plan übersprungen. Es wurde kein privater CI-Kanal
+Run `39695390536` auf `87c439` scheitert an den fehlenden privaten
+Originalen für Renderer18/19; Syntax und Importclosure sind PASS, Browser/Mobile
+und beide Vorschauen wurden tatsächlich erfolgreich ausgeführt. Kein privater CI-Kanal wurde
 geschaffen, nichts an Environment/Secrets/Reviewer/Branchschutz geändert und
 keine privaten Originale an GitHub hochgeladen.
 
