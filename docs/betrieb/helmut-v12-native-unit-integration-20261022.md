@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand21:45UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand21:56UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -142,6 +142,15 @@ Defaultflags wurde nicht persistiert und wird nicht als bekannt ausgegeben.
 Positive Seedkopie und Belege bleiben erhalten, alte Rechte werden nicht erneut
 verwendet. [Bereinigter Befund](belege/v12-native-unit-integration-20261022/NATIVE_POSITIVE_SEED_HOST_OBSERVATION_FAILURE.SAFE.json).
 
+Der enge Hostfix ist jetzt integriert und unabhängig geprüft: ausschließlich
+HOST_OBSERVE wird ohne ausstehende Anfrage in QUALIFIED/ENTRY/DONE vor der
+vollständigen frischen Inventur angenommen und im selben Zyklus beantwortet.
+Alle anderen Stufen und die festen3s-Grenzen bleiben erhalten.95reine
+Hostprüfgruppen bestehen. Kein alter Snapshot wird umdatiert oder ersetzt.
+Später während der Inventur eintreffende Anfragen können weiterhin einen
+Folgezyklus benötigen; die native Antwortfrist bleibt erneut nachzuweisen.
+[Quellreview](belege/v12-native-unit-integration-20261022/HOST_OBSERVE_SAME_TICK_SOURCE_REVIEW.SAFE.json).
+
 Die unabhängige Quellprüfung fand sechs Diagnose-Delegationen hinter nicht
 passenden Production-Readinessguards und einen weiteren V3-Eingangsriegel in
 `lage.js`. Diese konkreten Anbindungsfehler sind korrigiert und unabhängig
@@ -211,16 +220,18 @@ beweist weder500gleichzeitige Profile noch ein Speicherplateau oder500MB Reserve
 für den vollständigen Ablauf. Ziel bleibt höchstens1.548.000.000B gemeinsam.
 
 Die gebundene Volladmission verlangt15.179.779.720B persistenten freien Platz.
-Nach kontrollierter lokaler Archivierung eigener geschlossener Diagnosekopien
-sind nach drei weiteren abgeschlossenen eigenen Codecheckouts rund10,77GB
-verfügbar; rund4,41GB fehlen weiterhin. Deren8537Dateien wurden vollständig gegen
-Git-Blobs und unabhängige Objektinhalte geprüft; Branches und Commitobjekte
-bleiben für den Rückweg erhalten. Tatsächlicher Nettogewinn320.372.736B,
-Startmarge für die Einzelunit30.302.208B vor weiteren Dateien. Der folgende
-geschützte positive Seedfall belegt erneut etwa0,41GB; aktuell sind rund10,36GB
-frei, rund4,82GB fehlen zur Volladmission und eine weitere Einzelunit benötigt
-erneut kontrolliert qualifizierte Kapazität. Originale, erforderliche
-Belege, aktive/fremde Ressourcen und geheime lokale Archive bleiben erhalten.
+Eine erste Serie von drei abgeschlossenen eigenen Codecheckouts brachte nach
+vollständiger Prüfung von8537Dateien netto320.372.736B zusätzlichen Platz.
+Der folgende geschützte positive Seedfall belegt erneut etwa0,41GB.
+Vier weitere eindeutig eigene abgeschlossene Checkouts sind inzwischen
+kontrolliert entfernt:11.405Dateien gegen erhaltene Git-Blobs geprüft,45Refs
+erhalten, zwei regenerierbare PYC-Dateien aus Quellen bytegleich rekonstruiert.
+Diese zweite Serie brachte netto396.722.176B. Verfügbar sind10.751.328.256B,
+13.910.016B über der Einzelunit-Startgrenze; zur Volladmission fehlen4.428.451.464B.
+Die untersuchten alten Docker-Volumes sind tmpfs und bieten keinen belegten
+Plattengewinn. [Cleanupbeleg](belege/v12-native-unit-integration-20261022/FOUR_CLOSED_WORKTREE_CLEANUP.SAFE.json).
+Originale, erforderliche Belege, aktive/fremde Ressourcen und geheime lokale
+Archive bleiben erhalten; Branches und Gitobjekte sichern die Code-Rückwege.
 Die bekannten weiteren sicheren Kandidaten schließen diese Lücke nicht.
 [Bereinigter Cleanupbeleg](belege/v12-native-unit-integration-20261022/OWN_CLOSED_WORKTREE_CLEANUP.SAFE.json).
 `/tmp` ist RAM und darf diese Plattenanforderung nicht ersetzen.
