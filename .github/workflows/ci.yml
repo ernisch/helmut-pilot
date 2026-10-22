@@ -228,7 +228,8 @@ jobs:
       - name: Isolierte Einzelunit-Integration (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         run: |
-          # Only pure/mocked boundary suites. These flags never start Docker,
+          # Pure/mocked boundaries and short isolated Python lifecycle children.
+          # These suites never start Docker,
           # PostgreSQL, the engine, a provider, or consume an execution grant.
           for suite in \
             scripts/local-unit-diagnostic-*-test.js \
