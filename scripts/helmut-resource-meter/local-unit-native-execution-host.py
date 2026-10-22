@@ -16,6 +16,7 @@ import secrets
 import stat
 import subprocess
 import time
+import traceback
 
 DOCKER = ['/usr/local/bin/docker', '--host=unix:///var/run/docker.sock']
 ENV = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8', 'TZ': 'UTC'}
@@ -393,9 +394,10 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group):
     cid = native.docker(argv, timeout=8).stdout.strip(); need(HASH.fullmatch(cid), 'installer-id')
     # Publish this identity before start, even if native setup later fails.
     publish_once(alias_dir.parent / 'ALIAS_INSTALLER_CREATED.SAFE.json', encode({'containerId': cid}))
-    child = _PipeChild([*DOCKER, 'start', '--attach', '--interactive', cid], lifetime=20, deferred=True)
+    child = None
     observed, supplied = None, False
     try:
+        child = _PipeChild([*DOCKER, 'start', '--attach', '--interactive', cid], lifetime=20, deferred=True)
         while True:
             done = child.tick()
             row = json.loads(native.docker(['inspect', cid], timeout=3).stdout)[0]; h = row['HostConfig']
@@ -423,23 +425,34 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group):
                     'files': [{'path': '/output/' + key, 'bytes': p['bytes'], 'sha256': p['sha256']} for key, p, _, _ in public]}, 'actual-installer-result')
                 return {'containerId': cid, 'process': observed, **close}
             time.sleep(.02)
-    except BaseException:
+    except BaseException as error:
+        try:
+            publish_once(alias_dir.parent / 'ALIAS_INSTALLER_FAILURE.PRIVATE.json', encode({
+                'schema': 'helmut-local-unit-native-alias-installer-failure/1',
+                'containerId': cid, 'supplied': supplied,
+                'exceptionType': type(error).__name__, 'privateTraceback': traceback.format_exc()[:32768],
+                'stdout': bytes(child.output[0]).decode('utf8', errors='replace') if child else '',
+                'stderr': bytes(child.output[1]).decode('utf8', errors='replace') if child else '',
+                'retryAllowed': False}))
+        except BaseException:
+            pass
         # Never adopt/retry a copy with an unknown result. Keep the CID/evidence
         # for final common-parent accounting; stop only this newly owned child.
         try:
             native.docker(['stop', '--time', '2', cid], timeout=4)
             until = time.monotonic() + 2
-            while time.monotonic() < until and not child.tick():
+            while child is not None and time.monotonic() < until and not child.tick():
                 time.sleep(.02)
         except BaseException:
-            if child.child.poll() is None:
+            if child is not None and child.child.poll() is None:
                 child.child.kill(); child.child.wait(timeout=1)
         raise RuntimeError('native-execution-host-alias-installation-unknown') from None
     finally:
-        child.selector.close()
-        for stream in (child.child.stdin, child.child.stdout, child.child.stderr):
-            if stream and not stream.closed:
-                stream.close()
+        if child is not None:
+            child.selector.close()
+            for stream in (child.child.stdin, child.child.stdout, child.child.stderr):
+                if stream and not stream.closed:
+                    stream.close()
 
 
 # This fixed program is passed as code, with every secret exclusively in stdin.
