@@ -235,9 +235,9 @@ IF encode(sha256(convert_to(p.prosrc,'UTF8')),'hex')<>QUALIFIER_SHA OR p.prosecd
  OR NOT EXISTS(SELECT FROM pg_trigger WHERE tgrelid='helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND tgname='qualified_read_source' AND tgfoid=p.oid AND tgenabled='A' AND tgtype=7 AND tgnargs=0 AND tgqual IS NULL AND NOT tgisinternal)
  THEN RAISE EXCEPTION 'read-closure-native-source-insert-guard';END IF;
 IF (SELECT count(*) FROM pg_attribute WHERE attrelid='helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND attnum>0)<>6
- OR EXISTS(SELECT FROM (VALUES REGISTRY_COLUMNS_EXPECTED) e(num,nam,typ)
-  LEFT JOIN pg_attribute a ON a.attrelid='helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND a.attnum=e.num
-  WHERE a.attname IS DISTINCT FROM e.nam OR a.atttypid IS DISTINCT FROM e.typ OR a.atttypmod IS DISTINCT FROM -1
+ OR EXISTS(SELECT FROM (VALUES REGISTRY_COLUMNS_EXPECTED) registry_column_expected(num,nam,typ)
+  LEFT JOIN pg_attribute a ON a.attrelid='helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND a.attnum=registry_column_expected.num
+  WHERE a.attname IS DISTINCT FROM registry_column_expected.nam OR a.atttypid IS DISTINCT FROM registry_column_expected.typ OR a.atttypmod IS DISTINCT FROM -1
    OR a.attnotnull IS DISTINCT FROM true OR a.attisdropped IS DISTINCT FROM false
    OR a.attidentity IS DISTINCT FROM '' OR a.attgenerated IS DISTINCT FROM '' OR a.attacl IS NOT NULL)
  THEN RAISE EXCEPTION 'read-closure-exact-registry-columns';END IF;

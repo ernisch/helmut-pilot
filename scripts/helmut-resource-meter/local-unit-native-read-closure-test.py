@@ -251,7 +251,12 @@ class ReadClosureChecks(unittest.TestCase):
             self.assertIn("(3,'function_oid','pg_catalog.oid'::regtype)", sql)
             self.assertIn("(2,'http_exposed','pg_catalog.bool'::regtype)", sql)
             self.assertNotIn("'pg_catalog.boolean'::regtype", sql)
-            for marker in ('a.attname IS DISTINCT FROM e.nam', 'a.atttypid IS DISTINCT FROM e.typ',
+            # The guard also has a PL/pgSQL record `e`, whose last shape is
+            # (nam,args,sha,vol). A SQL alias e(num,nam,typ) binds to that record
+            # and fails before any registry check can run on PostgreSQL 17.
+            self.assertIn('registry_column_expected(num,nam,typ)', sql)
+            self.assertNotIn(' e(num,nam,typ)', sql)
+            for marker in ('a.attname IS DISTINCT FROM registry_column_expected.nam', 'a.atttypid IS DISTINCT FROM registry_column_expected.typ',
                            'a.atttypmod IS DISTINCT FROM -1', 'a.attnotnull IS DISTINCT FROM true',
                            'a.attisdropped IS DISTINCT FROM false', "a.attidentity IS DISTINCT FROM ''", "a.attgenerated IS DISTINCT FROM ''"):
                 self.assertIn(marker, sql)
