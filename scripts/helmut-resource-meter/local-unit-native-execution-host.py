@@ -1602,6 +1602,16 @@ class NativeExecutionHost:
             for c in self.children:
                 c.tick()
             self._poll_probes(); self._owner_messages()
+            # Read-only observations need one fresh inventory after admission,
+            # not another outer supervisor cycle before their reply. Other
+            # stages retain their intake below, after Source identity exists.
+            if self.pending is None and self.state in ('QUALIFIED', 'ENTRY', 'DONE'):
+                need(self.seq <= 128, 'request-count')
+                p = self.case / ('HOST_REQUEST_%02d.PRIVATE.json' % self.seq)
+                if p.exists():
+                    raw, pin = read_file(p); request = unique(raw)
+                    if type(request) is dict and request.get('stage') == 'HOST_OBSERVE':
+                        self._accept(request, pin['sha256'])
             try:
                 observation = self._observe(); self.last_observation = observation
             except ObservationPending:

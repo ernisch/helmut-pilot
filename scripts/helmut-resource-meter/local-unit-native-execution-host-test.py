@@ -203,6 +203,130 @@ class PureHost(unittest.TestCase):
         self.assertTrue(reply['selection'] == self.selection and reply['nonce'] == r['nonce'] and reply['requestSHA256'] == '1' * 64)
         M.window(reply); self.assertTrue(self.host.seq == 2 and self.host.pending is None)
 
+    def test_queued_observation_is_admitted_then_freshly_measured_and_replied_in_one_tick(self):
+        real_datetime = datetime.datetime
+        epoch = real_datetime.now(datetime.timezone.utc)
+        epoch = epoch.replace(microsecond=epoch.microsecond // 1000 * 1000)
+        clock = {'seconds': 0.0}; phases = []
+        class ClockDatetime(real_datetime):
+            @classmethod
+            def now(cls, tz=None):
+                value = epoch + datetime.timedelta(seconds=clock['seconds'])
+                return value.astimezone(tz) if tz else value.replace(tzinfo=None)
+        original_read = M.read_file
+        def read_as_synthetic_actor(path, *args, **kwargs):
+            return original_read(path, *args, **{**kwargs, 'uid': os.getuid()})
+        with (patch.object(M.datetime, 'datetime', ClockDatetime),
+              patch.object(M.time, 'time', lambda: (epoch + datetime.timedelta(seconds=clock['seconds'])).timestamp()),
+              patch.object(M.time, 'monotonic', lambda: 1000 + clock['seconds']),
+              patch.object(M, 'read_file', read_as_synthetic_actor)):
+            self.host.started_at = 1000
+            for index, state in enumerate(('QUALIFIED', 'ENTRY', 'DONE'), 1):
+                self.host.state = state
+                self.host.last_observation = {'observedAtUTC': '2000-01-01T00:00:00.000Z', 'stale': True}
+                request = self.request(seq=index); request['nonce'] = str(index) * 64
+                request['expiresAtUTC'] = (ClockDatetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=3)).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+                request_pin = M.write_once(self.case / ('HOST_REQUEST_%02d.PRIVATE.json' % index), M.encode(request))
+                began = clock['seconds']
+                def observe():
+                    self.assertEqual(self.host.pending['request'], request)
+                    self.assertIn(request['nonce'], self.host.seen)
+                    phases.append(('fresh-observe', state))
+                    clock['seconds'] += 1.8
+                    return {'observedAtUTC': M.utc(), 'freshSequence': index}
+                self.host._observe = observe
+                with patch.object(self.host, '_accept', wraps=self.host._accept) as accept:
+                    result = self.host.tick()
+                reply = M.unique((self.case / ('HOST_REPLY_%02d.PRIVATE.json' % index)).read_bytes())
+                self.assertEqual(accept.call_count, 1)
+                self.assertEqual(reply['requestSHA256'], request_pin['sha256'])
+                self.assertEqual(reply['nonce'], request['nonce'])
+                self.assertEqual(reply['selection'], request['selection'])
+                self.assertEqual(reply['result'], {'observedAtUTC': M.utc(), 'freshSequence': index})
+                M.window(reply)
+                self.assertTrue(result['pending'] is None and self.host.seq == index + 1 and self.host.failure is None)
+                self.assertLess(clock['seconds'] - began, 3)
+                # The historical second 1.8s inventory plus supervisor pause
+                # would already exceed the unchanged Source 3s call budget.
+                self.assertGreater(2 * (clock['seconds'] - began) + .25, 3)
+            self.assertEqual(phases, [('fresh-observe', s) for s in ('QUALIFIED', 'ENTRY', 'DONE')])
+
+    def test_early_observation_pending_consumes_once_without_cached_reply(self):
+        self.host.state = 'QUALIFIED'; request = self.request()
+        M.write_once(self.case / 'HOST_REQUEST_01.PRIVATE.json', M.encode(request))
+        previous = {'observedAtUTC': '2000-01-01T00:00:00.000Z', 'stale': True}
+        self.host.last_observation = previous
+        original_read = M.read_file
+        with (patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})),
+              patch.object(self.host, '_accept', wraps=self.host._accept) as accept):
+            self.host._observe = lambda: (_ for _ in ()).throw(M.ObservationPending())
+            result = self.host.tick()
+            self.assertTrue(result['observation'] is None and result['pending'] == 'HOST_OBSERVE')
+            self.assertTrue(self.host.last_observation is previous and self.host.failure is None)
+            self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+            self.host._observe = lambda: {'observedAtUTC': M.utc(), 'fresh': True}
+            self.host.tick()
+            self.assertEqual(accept.call_count, 1)
+        reply = M.unique((self.case / 'HOST_REPLY_01.PRIVATE.json').read_bytes())
+        self.assertTrue(reply['result']['fresh'] and 'stale' not in reply['result'])
+
+    def test_early_observation_keeps_window_scope_sequence_nonce_body_and_replay_guards(self):
+        original_read = M.read_file
+        for label in ('expired', 'future', 'over-three-seconds', 'scope', 'sequence', 'nonce', 'body', 'replay'):
+            host = M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {'helpers': {}}, 'd' * 64, self.mounts, self.plan)
+            host.state = 'QUALIFIED'; host.selection = self.selection
+            request = copy.deepcopy(self.request())
+            if label == 'expired': request.update(issuedAtUTC='2000-01-01T00:00:00.000Z', expiresAtUTC='2000-01-01T00:00:03.000Z')
+            elif label == 'future': request.update(issuedAtUTC='2100-01-01T00:00:00.000Z', expiresAtUTC='2100-01-01T00:00:03.000Z')
+            elif label == 'over-three-seconds': request['expiresAtUTC'] = '2100-01-01T00:00:00.000Z'
+            elif label == 'scope': request['selection']['commandHash'] = '0' * 64
+            elif label == 'sequence': request['seq'] = 2
+            elif label == 'nonce': request['nonce'] = 'invalid'
+            elif label == 'body': request['body'] = {'inventedAuthority': True}
+            elif label == 'replay': host.seen.add(request['nonce'])
+            path = self.case / 'HOST_REQUEST_01.PRIVATE.json'; M.write_once(path, M.encode(request))
+            observed = []
+            host._observe = lambda: observed.append('unexpected-measurement') or {'fresh': True}
+            with (self.subTest(case=label), patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})),
+                  self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$')):
+                host.tick()
+            self.assertIsNotNone(host.failure)
+            self.assertEqual(observed, [])
+            self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+            path.unlink(); (self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json').unlink()
+
+    def test_other_stages_keep_intake_after_fresh_source_identity(self):
+        original_read = M.read_file
+        for stage, state, body in (('OWNER_START', 'INIT', {'handoff': {}}), ('ENTRY_START', 'QUALIFIED', {})):
+            host = M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {'helpers': {}}, 'd' * 64, self.mounts, self.plan)
+            host.state = state; host.selection = self.selection; host.observed_at = M.time.monotonic(); phases = []
+            request = self.request(stage, body)
+            path = self.case / 'HOST_REQUEST_01.PRIVATE.json'; M.write_once(path, M.encode(request))
+            def observe():
+                self.assertIsNone(host.pending); phases.append('observe'); host.source_identity = {'synthetic': 'source'}
+                return {'fresh': True}
+            def action(*args):
+                self.assertEqual(phases, ['observe']); self.assertIsNotNone(host.source_identity); phases.append('stage-action')
+            host._observe = observe; host._handoff = action; host._client = action
+            with patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})):
+                host.tick()
+            self.assertEqual(phases, ['observe', 'stage-action'])
+            self.assertEqual(host.pending['request']['stage'], stage)
+            self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+            path.unlink()
+
+    def test_existing_pending_stage_does_not_consume_another_request_early(self):
+        self.host.state = 'ENTRY'
+        request = self.request('ENTRY_RESULT'); self.host._accept(request, '1' * 64)
+        next_request = self.request(seq=2); next_request['nonce'] = '2' * 64
+        M.write_once(self.case / 'HOST_REQUEST_02.PRIVATE.json', M.encode(next_request))
+        self.host._observe = lambda: {'fresh': True}; self.host._client_result = lambda: None
+        with patch.object(self.host, '_accept', wraps=self.host._accept) as accept:
+            self.host.tick()
+        self.assertEqual(accept.call_count, 0)
+        self.assertNotIn(next_request['nonce'], self.host.seen)
+        self.assertEqual(self.host.pending['request']['stage'], 'ENTRY_RESULT')
+
     def test_host_observation_is_allowed_while_entry_live(self):
         self.host.state = 'ENTRY'; self.host._observe = lambda: {'metadata': 1}
         self.host._accept(self.request(), '1' * 64)
