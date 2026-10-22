@@ -244,7 +244,9 @@ def prepare_execution(native, supervisor, config, case):
         need(r == allowed.get((r['source']['path'], r['imagePath'])) and r['readonly'] is True, 'runtime-closure')
         pin_shape(r['source'])
         target = r['imagePath']
-        need(target.startswith(('/usr/', '/lib/', '/lib64/', '/bin/', '/sbin/')) and not any(x in target for x in (',', '\0', '..')), 'public-runtime-target')
+        need((target.startswith(('/usr/', '/lib/', '/lib64/', '/bin/', '/sbin/'))
+              or target in {'/etc/group', '/etc/nsswitch.conf', '/etc/passwd'})
+             and not any(x in target for x in (',', '\0', '..')), 'public-runtime-target')
         runtime_mounts.append((r['source']['path'], target, True))
     public_mounts, python_mount = public_source_mounts(supervisor, config)
     setup = _install_aliases(native, supervisor, config, alias_dir, public, group)

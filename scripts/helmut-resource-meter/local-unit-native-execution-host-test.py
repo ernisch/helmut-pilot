@@ -282,6 +282,10 @@ class PureHost(unittest.TestCase):
             pins.append(self.pin(str(p), p.read_bytes()))
         self.config.update(sourceCodePins=pins[:2], nodePin=pins[3])
         self.config['executionHost']['postgrestPin'] = pins[2]
+        nss = [{'imagePath': target, 'source': pins[0], 'readonly': True}
+               for target in ('/etc/group', '/etc/nsswitch.conf', '/etc/passwd')]
+        self.config['runtimeBindings'] = nss
+        self.config['executionHost']['clientRuntimePins'] = nss
         group = self.base / 'group'; group.mkdir(); g = group.stat()
         self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
         volumes = {}; commands = []
@@ -316,6 +320,19 @@ class PureHost(unittest.TestCase):
         self.assertTrue(all(c[:2] in (['volume', 'inspect'], ['volume', 'create']) for c in commands))
         self.assertTrue(len(installed) == 1 and installed[0][1] == group and plan['knownSetupContainerIds'] == ['9' * 64])
         self.assertTrue(len(plan['clientPublicSourceMounts']) == 6 and plan['pythonMount'] == (self.config['pythonExecutable'], self.config['pythonExecutable'], True))
+        self.assertEqual({target for _, target, _ in plan['clientRuntimeMounts']}, {r['imagePath'] for r in nss})
+
+    def test_runtime_nss_exception_does_not_allow_other_etc_inputs(self):
+        group = self.base / 'group'; group.mkdir(); g = group.stat()
+        self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
+        self.config['sourceCodePins'] = [self.pin('/repo/local-unit-native-owner.js'), self.pin('/repo/local-unit-diagnostic-broker.js')]
+        native = types.SimpleNamespace(parent_path=lambda _: group, docker=lambda *a, **k: self.fail('no Docker on rejected input'))
+        for target in ('/etc/shadow', '/etc/passwd.extra', '/etc/../etc/passwd'):
+            row = {'imagePath': target, 'source': self.pin('/public/runtime'), 'readonly': True}
+            self.config['runtimeBindings'] = [row]; self.config['executionHost']['clientRuntimePins'] = [row]
+            with self.subTest(target=target), self.assertRaisesRegex(RuntimeError, 'public-runtime-target'):
+                M.prepare_execution(native, self.supervisor, self.config, self.case)
+            (self.case / 'owner-public').rmdir()
 
     def test_only_six_public_external_sources_and_exact_python_pin_allowed(self):
         self.public_sources()
