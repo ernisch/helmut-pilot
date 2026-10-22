@@ -42,6 +42,51 @@ const callWitness = async env => {
       A.throws(() => P.parse(raw), e => e.statusCode === 503);
     const double = JSON.parse(policyText); double.holds.push(double.holds[0]); A.throws(() => P.parse(JSON.stringify(double)));
   });
+  await test("Recorded scalar policy accepts all six JSON field orders without mutation", () => {
+    const policy = P.parse(policyText), expected = P.publicInfo(policy);
+    const orders = [["version", "hash", "heldPublications"], ["version", "heldPublications", "hash"],
+      ["hash", "version", "heldPublications"], ["hash", "heldPublications", "version"],
+      ["heldPublications", "version", "hash"], ["heldPublications", "hash", "version"]];
+    A.equal(new Set(orders.map(keys => keys.join(","))).size, 6);
+    for (const keys of orders) {
+      const stored = JSON.parse(JSON.stringify(Object.fromEntries(keys.map(key => [key, expected[key]]))));
+      const before = JSON.stringify(stored);
+      P.assertRecorded(stored, policy);
+      A.equal(JSON.stringify(stored), before);
+      A.equal(P.parse(policyText).hash, policy.hash);
+    }
+    // The real stored v1 binding arrives sorted by its storage representation.
+    const binding = { eingabe: { publicationEligibilityPolicy: { hash: expected.hash,
+      heldPublications: expected.heldPublications, version: expected.version } },
+      briefing: { publicationEligibilityPolicy: { hash: expected.hash,
+        heldPublications: expected.heldPublications, version: expected.version } } };
+    A.notEqual(JSON.stringify(binding.briefing.publicationEligibilityPolicy), JSON.stringify(expected));
+    for (const part of [binding.eingabe, binding.briefing]) P.assertRecorded(part.publicationEligibilityPolicy, policy);
+  });
+  await test("Recorded policy keeps exact scalar types, closed fields and null-policy denial", () => {
+    const policy = P.parse(policyText), expected = P.publicInfo(policy);
+    const denied = info => A.throws(() => P.assertRecorded(info, policy), error =>
+      error.name === "PublicationEligibilityError" && error.code === "PUBLICATION_ELIGIBILITY_UNAVAILABLE"
+      && error.statusCode === 503 && error.message === "publication-eligibility-stored-policy-stale");
+    for (const invalid of [undefined, null, false, true, 1, "policy", [], Object.values(expected)]) denied(invalid);
+    const changes = { version: [0, 2, "1", true, null, undefined, NaN, new Number(1)],
+      hash: ["f".repeat(64), expected.hash.toUpperCase(), "", null, undefined, 1, new String(expected.hash)],
+      heldPublications: [0, 2, "1", true, null, undefined, NaN, Infinity, new Number(1)] };
+    for (const key of Object.keys(expected)) {
+      const missing = { ...expected }; delete missing[key]; denied(missing);
+      for (const value of changes[key]) denied({ ...expected, [key]: value });
+      // Reordering nested objects never makes them valid scalar DTO values.
+      for (const value of [{ value: expected[key], marker: 1 }, { marker: 1, value: expected[key] }, [expected[key]]])
+        denied({ ...expected, [key]: value });
+    }
+    for (const extra of [false, null, undefined, { b: 2, a: 1 }, { a: 1, b: 2 }]) denied({ ...expected, extra });
+    denied({ ...expected, toJSON() { return expected; } });
+    const empty = P.parse(undefined);
+    P.assertRecorded(undefined, empty); P.assertRecorded(null, empty);
+    for (const info of [{}, expected, { version: 1, hash: null, heldPublications: 0 }, false, 0, "", [],
+      { toJSON() { return null; } }]) A.throws(() => P.assertRecorded(info, empty), error =>
+        error.message === "publication-eligibility-stored-policy-stale");
+  });
   await test("Complete link read sees held secondary source beyond40; no source/KO mutation", async () => {
     activate(); const k = Object.freeze(ko("mixed", "https://other.example/safe")), original = JSON.stringify(k);
     const rows = Array.from({ length: 41 }, (_, i) => ({ knowledge_object_id: k.id, raw_document_id: "rd-" + i,
