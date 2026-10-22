@@ -615,6 +615,7 @@ class _Controller:
              and header['ownerPID'] == self.host_ready['ownerPID'] and header['ownerStartTicks'] == self.host_ready['ownerStartTicks']
              and header['pidNamespace'] == self.observer.binding['pidNamespace']
              and header['timeNamespace'] == self.last_host['source']['namespaces']['time']
+             and header['clockDomain'] == self.last_host['source']['namespaces']['clockDomain']
              and header['brokerCodeSHA256'] == self.host_ready['brokerCodePin']['sha256']
              and header['sourceBindingSHA256'] == sha(canonical(self.observer.binding))
              and header['trustSHA256'] == self.client_report['rootTrustSHA256'] and trace['value']['footer']['complete'] is True, 'actual-root-trace')

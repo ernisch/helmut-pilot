@@ -120,7 +120,9 @@ class Fixture:
         c.service = None
         c.host_ready = {'ownerPID': 2, 'ownerStartTicks': '5', 'brokerCodePin': pin('/broker')}
         c.client_report = {'rootTrustSHA256': 'd' * 64}
-        c.last_host = {'source': {'namespaces': {'time': 'time:[8]'}}}
+        self.clock_domain = {'schema': 'helmut-local-unit-monotonic-domain/1', 'kind': 'time-namespace',
+                             'namespace': 'time:[8]', 'bootId': '00000000-0000-0000-0000-000000000001'}
+        c.last_host = {'source': {'namespaces': {'time': 'time:[8]', 'clockDomain': self.clock_domain}}}
         self.saved, self.calls, self.append_calls = {}, [], []
         c.w = types.SimpleNamespace(OUT=MemoryPath('/bench'), PGBIN=MemoryPath('/pg'), LIBRARY_PATH='/lib',
             pin=lambda path: pin(str(path)), save=self.save, query=lambda *a: self.fail('query-unexpected'), guard=lambda conf: None)
@@ -189,6 +191,7 @@ class Fixture:
             return {'ownerStop': {'cleanShutdown': True, 'failed': False}, 'ownerProcessClose': {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True},
                 'controlReadTrace': {'pin': pin('/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl'), 'identity': identity,
                     'value': {'header': {**self.c.selection, 'ownerPID': 2, 'ownerStartTicks': '5', 'pidNamespace': 'pid:[4]', 'timeNamespace': 'time:[8]',
+                        'clockDomain': copy.deepcopy(self.clock_domain),
                         'brokerCodeSHA256': pin('/broker')['sha256'], 'sourceBindingSHA256': self.m.sha(self.m.canonical(self.c.observer.binding)),
                         'trustSHA256': 'd' * 64}, 'footer': {'complete': True}}}}
         return {}
