@@ -42,6 +42,33 @@ def save(name, value):
         os.fsync(stream.fileno())
 
 
+def capture_final_original_failure(error, phase, source_index, checked_count):
+    """Private metadata only; checked_count counts matched source pins, not RAW."""
+    try:
+        frames = []
+        frame = error.__traceback__
+        while frame is not None and len(frames) < 12:
+            code = frame.tb_frame.f_code
+            frames.append({'file': Path(code.co_filename).name[:160],
+                           'function': code.co_name[:96], 'line': frame.tb_lineno})
+            frame = frame.tb_next
+        number = error.errno if isinstance(error, OSError) else None
+        save('FINAL_ORIGINAL_CHECK_FAILURE.PRIVATE.json', {
+            'schema': 'helmut-local-unit-final-original-check-failure/1',
+            'phase': phase, 'sourceIndex': source_index, 'checkedCount': checked_count,
+            'exceptionType': type(error).__name__[:96],
+            'errno': number if type(number) is int and -(2**31) <= number < 2**31 else None,
+            'stack': frames, 'stackTruncated': frame is not None})
+    except BaseException:
+        # The original failure is already recorded and remains terminal. This
+        # fixed code neither exposes the failed write nor claims a saved file.
+        try:
+            sys.stderr.write('{"schema":"helmut-local-unit-final-original-capture-failure/1",'
+                             '"code":"private-capture-not-persisted"}\n')
+        except BaseException:
+            pass  # Secondary output failures cannot mask the original failure.
+
+
 def pin(path):
     path = Path(path)
     before = path.lstat()
@@ -384,14 +411,23 @@ COMMIT;"""
             with os.fdopen(fd, 'wb') as output:
                 output.write(row['data'])
     original_preserved, sources_preserved = False, False
+    final_phase, source_index, checked_count = 'raw-pin', None, 0
     try:
-        assert pin(config['raw']['path']) == original_before
+        actual = pin(config['raw']['path'])
+        final_phase = 'raw-compare'
+        assert actual == original_before
         original_preserved = True
-        for item in config['sources']:
-            assert pin(item['path']) == item
+        final_phase = 'source-pin'
+        for source_index, item in enumerate(config['sources']):
+            final_phase = 'source-pin'
+            actual = pin(item['path'])
+            final_phase = 'source-compare'
+            assert actual == item
+            checked_count += 1
         sources_preserved = True
     except BaseException as error:
         failure = failure or 'final source verification failed: ' + type(error).__name__
+        capture_final_original_failure(error, final_phase, source_index, checked_count)
     accepted = failure is None and result is not None and codes.get('postgres') == 0 and all(p.poll() is not None for p in CHILDREN)
     requested = bool(config.get('executeNativeSingleUnit') and (OUT / 'MOTOR_ENTRY_REQUESTED.SAFE.json').exists())
     actual_motor_calls = (result or {}).get('motorCalls', None if requested else 0)

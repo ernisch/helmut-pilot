@@ -1,0 +1,34 @@
+{
+  "schema": "helmut-host-observe-late-reply-source-review/1",
+  "reviewedCommit": "ab0da98720331618cf314df538e9e471ae2a775e",
+  "atUTC": "2026-10-22T22:18:18.229037+00:00",
+  "hostPin": {
+    "path": "scripts/helmut-resource-meter/local-unit-native-execution-host.py",
+    "bytes": 122517,
+    "sha256": "bef9c401cad1f4dfc422457c25ef33c77d7c64b3bb8ac9db82c5892fc37ae519"
+  },
+  "testPin": {
+    "path": "scripts/helmut-resource-meter/local-unit-native-execution-host-test.py",
+    "bytes": 117565,
+    "sha256": "eda5549a0fafa2a643bd5ffa6e298f36b776b03c31617322157a6234f2b71a5e"
+  },
+  "pureGroupsPassed": 101,
+  "independentSourceReviewPassed": true,
+  "nativeTransportQualified": false,
+  "unit60Qualified": false,
+  "reserveQualified": false,
+  "full500Qualified": false,
+  "changes": [
+    "Share actual request/sample/frame publication core with the native transport component.",
+    "Accept late HOST_OBSERVE and reply with the actual completed sample in the same tick.",
+    "Recheck original request identity, sample age and request deadline immediately before non-overwriting publication."
+  ],
+  "unchangedBoundaries": [
+    "Original three-second request/reply and sample age windows.",
+    "Actual observation timestamps; no redating or stale sample substitution.",
+    "Other production stage admissions, owner and SourceService authority.",
+    "Actual process exit and two natural EOF requirements.",
+    "No retry after unknown write result."
+  ],
+  "nativeNextStep": "Separate genuine HostChannel and complete production observation component; no PG, seed, motor or claims."
+}

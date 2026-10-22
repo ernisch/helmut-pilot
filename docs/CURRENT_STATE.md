@@ -14,12 +14,15 @@ Kostenlesung korrigiert/quergeprüft; VM16/13/32, Vertragsprüfung14/14, Startin
 Artefakt10 PASS. Eigene2Fixturetickets beweisen keine500er-Globalzähleräquivalenz.
 Owner-SQL-Aliase korrigiert; echte atomare Seeds in3e75/93e1 PASS, History6000
 bewahrt. Beide Fälle vorMotor an HOST_OBSERVE3s FAIL; Early-Intakefix reicht nicht.
-Späte Antwort und separate echte Transportvorprüfung in Arbeit; keine dritte
-Wiederholung derselben erfolglosen Methode. Noch0neueMotoreinheiten, Unit60/
+Später Antwortkern aufab0 integriert,101reine Hostgruppen/QuellreviewPASS.
+Getrennte echte Transportprüfung149bPASS:2,406/2,133/2,335s unter3s; stale/
+expired/replay korrekt gesperrt,5Handles Exit0/2EOF, Peak37.130.240B/Events0.
+Keine PG-/Owner-/Unitfreigabe daraus. Noch0neueMotoreinheiten, Unit60/
 Auth30/Qualität/500MB-Reserve offen. RAW+432Quellen frisch unverändert geprüft.
 7abgeschlossene eigene Checkouts gesichert/entfernt; Branches/Gitobjekte bleiben.
-Nach neuer Copy10,34GB frei; rund4,84GB zur15,18GB-Volladmission fehlen. Lokale
-Archivierung abgeschlossener COPYs wird verlustfrei geprüft; Originale bleiben.
+Zwei abgeschlossene COPYs vollständig archiviert/restauriert geprüft, nur deren
+entpackte Form entfernt;288Belegdateien/Archive/Originale/93 bleiben. Danach
+10,83GB frei;4,35GB zur15,18GB-Volladmission fehlen, Einzelunitadmission reicht.
 CI1e5 scheitert im Offlinelauf; dokumentierter Größenfehler hier korrigiert,
 komplette neue CI-Abnahme offen. App403 bleibt gesondert offen.
 [PR936, aktuelle Belege und Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).

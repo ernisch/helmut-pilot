@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand22:10UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand22:25UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -165,6 +165,41 @@ zuerst geteilter enger Antwortkern und getrennte echte Host-Transportvorprüfung
 ohne PG/Seed/Motor/Authority. Kein alter Snapshot, keine neue Datierung und keine
 Fristlockerung. [Bereinigter Befund](belege/v12-native-unit-integration-20261022/NATIVE_EARLY_INTAKE_INSUFFICIENT.SAFE.json).
 
+Der folgende enge Umbau auf `ab0da987` verwendet einen gemeinsamen Antwortkern:
+auch spät im Zyklus angenommene HOST_OBSERVE-Anfragen werden mit der tatsächlich
+abgeschlossenen frischen Probe beantwortet. Originalanfrage, unveränderte
+Probenzeit und Frist werden unmittelbar vor dem atomaren No-overwrite-Publish
+erneut geprüft.101reine Hostgruppen und unabhängiger Quellreview bestehen.
+[Quellreview](belege/v12-native-unit-integration-20261022/HOST_OBSERVE_LATE_REPLY_SOURCE_REVIEW.SAFE.json).
+Die getrennte echte Transportprüfung im Fall `149b4a9222a8ffd79f64467c4e902a8a`
+bestand anschließend: frühe Anfrage2,406s, Anfrage nach Probenstart2,133s und
+Replayfall2,335s, jeweils innerhalb der unveränderten3s. Veraltete und abgelaufene
+Anfragen bleiben ohne Antwort versiegelt; ein Replay überschreibt die erste
+Antwort nicht. Peak37.130.240B, alle Speicherereignisse0, Gruppe bis zum letzten
+Exit leer. Source und vier echte Beobachter endeten mit0/beiden natürlichen
+Pipe-Enden; alle fünf lokalen Handles sind tatsächlich gereapt, kein Stop nötig.
+Der Fall nutzt748einzeln gepinnte öffentliche Pythondateien und553weitere
+Laufzeitbindungen. Ein vorangehender reiner Preflightfehler verwarf gültiges
+`reuseExisting:false`; der Typcheck akzeptiert jetzt ausschließlich echte
+Booleanwerte oder Abwesenheit, Readonly bleibt zwingend. Kein Original geändert.
+Diese Prüfung startet keine Datenbank, keinen Seed oder Motor und verbraucht
+keinen Unitclaim. Sie qualifiziert weder Production-Stufen noch Owner,
+SourceService, Unit60 oder die500er-Reserve. Der Midfall misst Anfrage nach
+echtem Probenstartmarker und vor vollständiger Inventur, keine Ankunft während
+eines bereits laufenden Docker-Popen. Der unabhängige Readonly-Review bestätigt
+Driver/Input/Code-/Framepins, echte Abschlüsse und die frisch leere Gruppe.
+[Nativer Transportbeleg](belege/v12-native-unit-integration-20261022/NATIVE_HOST_OBSERVE_TRANSPORT.SAFE.json).
+
+Eine zusätzliche Lücke im Fehlerabschluss ist eng korrigiert: früher verdeckte
+ein bereits vorhandener Primärfehler die Exception der abschließenden RAW- oder
+Quellenprüfung. Der Worker bewahrt jetzt einen festen privaten600/OEXCL-Beleg
+mit Prüfphase, Quellenindex, bestätigter Anzahl und begrenzten Stackmetadaten.
+Keine Exceptiontexte, Locals oder Nutzdaten werden ausgegeben. Scheitern Beleg
+und Stderr, bleiben Primärfehler und Abschlussberechnung erhalten; keine
+Erfolgsheilung. Originalpinprüfungen, Reihenfolge, Cleanup und Annahmebedingungen
+bleiben unverändert.7gezielte reine AST-Tests bestehen. Der konkrete frühere
+RAW-Finalfehler bleibt unbekannt; diese Änderung ersetzt keinen Originalnachweis.
+
 Die unabhängige Quellprüfung fand sechs Diagnose-Delegationen hinter nicht
 passenden Production-Readinessguards und einen weiteren V3-Eingangsriegel in
 `lage.js`. Diese konkreten Anbindungsfehler sind korrigiert und unabhängig
@@ -223,13 +258,16 @@ Lauf ist noch nicht vollständig abgeschlossen. Diese CI ist keine Motorabnahme.
 [Kosten-Hook-Review](belege/local-unit-cost-caller-source-20261022/SOURCE_REVIEW.SAFE.json),
 [gezielte Vertragsprüfung](belege/v12-native-unit-integration-20261022/CURRENT_SOURCE_CALLER_FINAL_CHECKS.SAFE.json).
 Der frühere Standardlauf
-blieb177/180; drei gezielte Korrekturen sind separat bestanden, kein behaupteter
+blieb177/180; drei gezielte Korrekturen sind separat bestanden. Kein durchgehend
+grüner Wiederholungslauf wird daraus abgeleitet.
 Der neue CI-Lauf39859073760 auf `1e5fdfba` scheitert im Standard-Offlinelauf.
 Ein lokal sicher reproduzierbarer Fehler ist die überschrittene Statusgröße:
 31.076Zeichen am CI-Commit statt maximal30.000. Der vollständige alte Status
 ist bytegleich archiviert; die kompakte aktuelle Fassung besteht4/4Größenchecks.
 Die vollständige CI-Freigabe bleibt bis zum neuen erfolgreichen Lauf offen.
-durchgehend grüner Wiederholungslauf. Der geschützte84Originale-Kanal bleibt
+CI39863022179 auf `ab0da987` läuft noch; native Offline-Integration, geschützter
+84Originale-Kanal und Browserprüfung sind bereits erfolgreich.
+Der geschützte84Originale-Kanal bleibt
 unverändert obligatorisch. Keine privaten Logs, PGDATA oder Secrets im Git.
 
 Vorab-Hashprüfungen außerhalb der Arbeitsgruppe können gemeinsamen Dateicache
@@ -245,8 +283,19 @@ Der folgende geschützte positive Seedfall belegt erneut etwa0,41GB.
 Vier weitere eindeutig eigene abgeschlossene Checkouts sind inzwischen
 kontrolliert entfernt:11.405Dateien gegen erhaltene Git-Blobs geprüft,45Refs
 erhalten, zwei regenerierbare PYC-Dateien aus Quellen bytegleich rekonstruiert.
-Diese zweite Serie brachte netto396.722.176B. Verfügbar sind10.751.328.256B,
-13.910.016B über der Einzelunit-Startgrenze; zur Volladmission fehlen4.428.451.464B.
+Diese zweite Serie brachte netto396.722.176B. Nach dem folgenden Diagnosefall
+wurden ausschließlich die beiden abgeschlossenen eigenen COPY-Verzeichnisse
+von b09/3e75 entfernt: beide zuvor privat lokal archiviert, vollständig
+zurückgelesen und in frische Verzeichnisse byte-/metadatengleich wiederhergestellt.
+Root prüfte14Sicherungs-/Restorepins unabhängig.288Case-Dateien bleiben
+unverändert, beide Archive und sämtliche Originale/93 erhalten; kein alter
+Claim wird geöffnet. Erwartete Metadatenänderungen der Case-Eltern sind erfasst.
+Netto bringt diese Löschserie744.091.648B, einschließlich Archivkosten492.445.696B.
+Danach tatsächlich frei10.831.294.464B:93.876.224B über der10GiB-Einzelunitgrenze,
+zur Volladmission fehlen4.348.485.256B. Weitere Diagnosebelege reduzieren den
+aktuellen freien Platz geringfügig. Die geheimen Archive bleiben ausschließlich
+lokal; der Rückweg erstellt ein neues Verzeichnis und gewährt keine Laufrechte.
+[Sicherungs-/Cleanupbeleg](belege/v12-native-unit-integration-20261022/VERIFIED_PRIVATE_COPY_CLEANUP.SAFE.json).
 Die untersuchten alten Docker-Volumes sind tmpfs und bieten keinen belegten
 Plattengewinn. [Cleanupbeleg](belege/v12-native-unit-integration-20261022/FOUR_CLOSED_WORKTREE_CLEANUP.SAFE.json).
 Originale, erforderliche Belege, aktive/fremde Ressourcen und geheime lokale
