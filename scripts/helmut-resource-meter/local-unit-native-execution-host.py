@@ -24,6 +24,7 @@ FLAGS = ['--max-old-space-size=384', '--max-semi-space-size=16']
 TRACE = '/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl'
 PUBLIC = '/run/helmut-local-unit-diagnostic'
 BASE = Path('/workspace/helmut-unit-diagnostic-native')
+CGROUP_ROOT = Path('/sys/fs/cgroup')
 HASH = re.compile('[a-f0-9]{64}')
 CAP = 256 * 1024
 POLICY_SHA = '274033cdfdd5f1527d0e961a6c00482d61b7be317eeea03e736a6a5948aa6a04'
@@ -197,6 +198,53 @@ class ObservationPending(Exception):
     """An actual bounded observer is still running; never a successful proof."""
 
 
+def host_cgroup(config, pid, membership):
+    """Namespace spelling is evidence, not authority to resolve traversal."""
+    parent = config['parent']
+    need(type(parent) is str and re.fullmatch('helmut-meter-memorybudget-[a-f0-9]{24}', parent), 'exact-host-parent-name')
+    match = re.fullmatch(r'0::/(?:\.\./)?' + re.escape(parent) + r'/([a-f0-9]{64})\n', membership)
+    need(match is not None, 'actual-common-parent')
+    cid = match[1]
+    # Never resolve the proc string. Only the validated parent and hex CID name
+    # construct a path under the independently mounted cgroup filesystem.
+    group = canonical(CGROUP_ROOT / parent)
+    parent_fd = os.open(group, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    leaf_fd = member_fd = None
+    try:
+        before = os.fstat(parent_fd)
+        need(stat.S_ISDIR(before.st_mode) and (before.st_dev, before.st_ino) == (config['parentDevice'], config['parentInode']),
+             'host-parent-inode')
+        leaf_fd = os.open(cid, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent_fd)
+        leaf = os.fstat(leaf_fd)
+        need(stat.S_ISDIR(leaf.st_mode) and leaf.st_dev == before.st_dev, 'host-leaf-cgroup-device')
+        member_fd = os.open('cgroup.procs', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=leaf_fd)
+        file = os.fstat(member_fd)
+        need(stat.S_ISREG(file.st_mode) and file.st_dev == before.st_dev, 'host-leaf-members-file')
+        chunks, size = [], 0
+        while block := os.read(member_fd, min(4096, 65537 - size)):
+            chunks.append(block); size += len(block); need(size <= 65536, 'host-cgroup-members-cap')
+        raw = b''.join(chunks)
+        need(re.fullmatch(rb'(?:[1-9][0-9]{0,9}\n)*', raw) is not None, 'host-cgroup-members-format')
+        members = [int(x) for x in raw.splitlines()]
+        need(len(set(members)) == len(members) and members.count(pid) == 1, 'host-pid-in-exact-leaf')
+        parent_after = os.stat(group, follow_symlinks=False)
+        leaf_after = os.stat(cid, dir_fd=parent_fd, follow_symlinks=False)
+        member_after = os.stat('cgroup.procs', dir_fd=leaf_fd, follow_symlinks=False)
+        need(stat.S_ISDIR(parent_after.st_mode) and stat.S_ISDIR(leaf_after.st_mode) and stat.S_ISREG(member_after.st_mode)
+             and (before.st_dev, before.st_ino) == (os.fstat(parent_fd).st_dev, os.fstat(parent_fd).st_ino)
+                 == (parent_after.st_dev, parent_after.st_ino)
+             and (leaf.st_dev, leaf.st_ino) == (os.fstat(leaf_fd).st_dev, os.fstat(leaf_fd).st_ino)
+                 == (leaf_after.st_dev, leaf_after.st_ino)
+             and (file.st_dev, file.st_ino) == (os.fstat(member_fd).st_dev, os.fstat(member_fd).st_ino)
+                 == (member_after.st_dev, member_after.st_ino), 'host-cgroup-identity-drift')
+        return {'containerId': cid, 'parent': {'device': before.st_dev, 'inode': before.st_ino},
+                'leaf': {'device': leaf.st_dev, 'inode': leaf.st_ino}}
+    finally:
+        for descriptor in (member_fd, leaf_fd, parent_fd):
+            if descriptor is not None:
+                os.close(descriptor)
+
+
 def host_process(config, pid):
     """Only files the operator can genuinely read; no ptrace-gated symlinks."""
     need(type(pid) is int and pid > 0, 'host-process-pid')
@@ -209,16 +257,17 @@ def host_process(config, pid):
          and all(rows.get(k) and int(rows[k], 16) == 0 for k in ('CapInh', 'CapPrm', 'CapEff', 'CapBnd', 'CapAmb')),
          'actual-process-privileges')
     membership = (root / 'cgroup').read_text()
-    need(membership.startswith('0::/' + config['parent'] + '/') and len(membership.splitlines()) == 1, 'actual-common-parent')
+    witness = host_cgroup(config, pid, membership)
     nspid = [int(x) for x in rows.get('NSpid', '').split()]
     need(nspid and nspid[0] == pid and all(x > 0 for x in nspid), 'actual-namespace-pid')
     with open(root / 'cmdline', 'rb') as stream:
         cmdline = stream.read(16385)
     need(0 < len(cmdline) <= 16384 and cmdline.endswith(b'\0'), 'bounded-process-command')
     command = [x.decode('utf8') for x in cmdline[:-1].split(b'\0')]
-    need((root / 'stat').read_text().rsplit(')', 1)[1].split()[19] == fields[19], 'process-reused')
+    need((root / 'stat').read_text().rsplit(')', 1)[1].split()[19] == fields[19]
+         and (root / 'cgroup').read_text() == membership and host_cgroup(config, pid, membership) == witness, 'process-reused')
     return {'hostPID': pid, 'namespacePID': nspid[-1], 'startTicks': fields[19], 'nspid': nspid,
-            'membership': membership, 'command': command}
+            'membership': membership, 'command': command, 'cgroupIdentity': witness}
 
 
 def group_members(native, config):
@@ -562,7 +611,7 @@ class ProcessObserver:
                  and any(p['path'] == worker for p in config['sources']), 'observer-source-fixed-exec-command')
         else:
             need(self.init['command'] == [row['Path'], *row['Args']], 'observer-direct-command')
-        need(self.init['namespacePID'] == 1
+        need(self.init['namespacePID'] == 1 and self.init['cgroupIdentity']['containerId'] == self.cid
              and (self.cid in self.init['membership'].strip().split('/')
                   or 'docker-' + self.cid + '.scope' in self.init['membership'].strip().split('/')), 'observer-container-init-pid')
         self.before = targets; self.allow_gone = allow_gone

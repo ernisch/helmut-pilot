@@ -437,7 +437,7 @@ class PureHost(unittest.TestCase):
             def __str__(self): return self.name
             def read_text(self):
                 if self.name.endswith('/stat'): return text
-                if self.name.endswith('/cgroup'): return '0::/' + (parent if fault['key'] != 'parent' else 'foreign') + '/source\n'
+                if self.name.endswith('/cgroup'): return '0::/' + ('../' if fault['key']=='namespace-presentation' else '') + (parent if fault['key'] != 'parent' else 'foreign') + '/source\n'
                 if self.name.endswith('/status'):
                     return '\n'.join(['Uid:\t' + ('0' if fault['key'] == 'uid' else '1000') + '\t1000\t1000\t1000',
                                       'Gid:\t1000\t1000\t1000\t' + ('0' if fault['key'] == 'gid' else '1000'),
@@ -447,21 +447,83 @@ class PureHost(unittest.TestCase):
         def link(p):
             name = str(p)
             return '/opt/original/bin/node' if name.endswith('/exe') else name.rsplit('/', 1)[-1] + ':[42]'
+        def witness(c, pid, membership):
+            M.need(membership in ('0::/' + parent + '/source\n','0::/../'+parent+'/source\n'), 'actual-common-parent')
+            return {'containerId':'7'*64,'parent':{'device':1,'inode':2},'leaf':{'device':1,'inode':3}}
         with (patch.object(M, 'Path', ProcPath), patch.object(M.os, 'readlink', side_effect=AssertionError('host-must-not-read-ns-exe')),
-              patch('builtins.open', return_value=io.BytesIO(b'/opt/original/bin/node\0'))):
+              patch('builtins.open', side_effect=lambda *a,**k: io.BytesIO(b'/opt/original/bin/node\0')),
+              patch.object(M,'host_cgroup',witness)):
             result = M.host_process(self.config, 91)
             self.assertTrue(result['hostPID'] == 91 and result['namespacePID'] == 7 and result['startTicks'] == '123')
+            fault['key']='namespace-presentation'
+            self.assertEqual(M.host_process(self.config,91)['membership'],'0::/../'+parent+'/source\n')
             for key in ('uid', 'gid', 'nnp', 'cap', 'parent'):
                 fault['key'] = key
                 with self.assertRaises(RuntimeError):
                     M.host_process(self.config, 91)
+
+    def cgroup_fixture(self):
+        root = self.base / 'synthetic-cgroup'; root.mkdir()
+        group = root / self.config['parent']; group.mkdir()
+        cid = '7' * 64; leaf = group / cid; leaf.mkdir(); (leaf / 'cgroup.procs').write_bytes(b'91\n92\n')
+        s = group.stat(); self.config.update(parentDevice=s.st_dev,parentInode=s.st_ino)
+        patch.object(M,'CGROUP_ROOT',root).start()
+        return group,leaf,cid
+
+    def test_cgroup_namespace_optional_single_parent_component_requires_real_pid_leaf(self):
+        group,leaf,cid = self.cgroup_fixture()
+        a=M.host_cgroup(self.config,91,'0::/'+self.config['parent']+'/'+cid+'\n')
+        b=M.host_cgroup(self.config,91,'0::/../'+self.config['parent']+'/'+cid+'\n')
+        self.assertTrue(a==b and a['containerId']==cid and a['parent']['inode']==group.stat().st_ino
+                        and a['leaf']['inode']==leaf.stat().st_ino)
+
+    def test_cgroup_namespace_rejects_all_other_traversal_foreign_or_extra_components(self):
+        group,leaf,cid = self.cgroup_fixture(); p=self.config['parent']
+        invalid=('0::/../../'+p+'/'+cid+'\n','0::/../foreign/'+cid+'\n','0::/'+p+'/extra/'+cid+'\n',
+                 '0::/'+p+'/'+cid+'/extra\n','0::/'+p+'//'+cid+'\n','0::/'+p+'/'+cid+'\n0::/\n',
+                 '0::/'+p+'/'+cid,'0::/./'+p+'/'+cid+'\n','0::/\n','0::/'+p+'/'+('G'*64)+'\n')
+        for membership in invalid:
+            with self.subTest(caseSHA=M.sha(membership)),self.assertRaisesRegex(RuntimeError,'actual-common-parent'):
+                M.host_cgroup(self.config,91,membership)
+
+    def test_cgroup_host_pid_must_be_in_exact_leaf_and_parent_inode(self):
+        group,leaf,cid=self.cgroup_fixture(); membership='0::/../'+self.config['parent']+'/'+cid+'\n'
+        with self.assertRaisesRegex(RuntimeError,'host-pid-in-exact-leaf'): M.host_cgroup(self.config,93,membership)
+        self.config['parentInode']+=1
+        with self.assertRaisesRegex(RuntimeError,'host-parent-inode'): M.host_cgroup(self.config,91,membership)
+
+    def test_cgroup_member_read_is_bounded_numeric_and_unique(self):
+        group,leaf,cid=self.cgroup_fixture(); membership='0::/'+self.config['parent']+'/'+cid+'\n'
+        for raw in (b'91\n91\n',b'0\n91\n',b'91 other\n',b'91',b'91\n'+b'2\n'*32768):
+            (leaf/'cgroup.procs').write_bytes(raw)
+            with self.subTest(size=len(raw)),self.assertRaises(RuntimeError): M.host_cgroup(self.config,91,membership)
+
+    def test_cgroup_leaf_and_members_symlinks_are_not_followed(self):
+        group,leaf,cid=self.cgroup_fixture(); membership='0::/'+self.config['parent']+'/'+cid+'\n'
+        moved=group/'held-leaf'; leaf.rename(moved); leaf.symlink_to(moved,target_is_directory=True)
+        with self.assertRaises(OSError): M.host_cgroup(self.config,91,membership)
+        leaf.unlink(); moved.rename(leaf)
+        (leaf/'cgroup.procs').rename(leaf/'held-members'); (leaf/'cgroup.procs').symlink_to(leaf/'held-members')
+        with self.assertRaises(OSError): M.host_cgroup(self.config,91,membership)
+
+    def test_cgroup_leaf_replacement_during_pid_read_fails(self):
+        group,leaf,cid=self.cgroup_fixture(); membership='0::/'+self.config['parent']+'/'+cid+'\n'
+        original=M.os.read; changed=[]
+        def read(fd,n):
+            raw=original(fd,n)
+            if raw and not changed:
+                leaf.rename(group/'held-leaf'); leaf.mkdir(); (leaf/'cgroup.procs').write_bytes(b'91\n'); changed.append(True)
+            return raw
+        with patch.object(M.os,'read',read):
+            with self.assertRaisesRegex(RuntimeError,'host-cgroup-identity-drift'): M.host_cgroup(self.config,91,membership)
 
     def observer_fixture(self):
         cid = '7' * 64; command = [self.config['nodePin']['path'], *M.FLAGS, '-e', M.PROCESS_OBSERVER]
         membership = '0::/' + self.config['parent'] + '/' + cid + '\n'
         def host(pid, namespace, start, cmd):
             return {'hostPID': pid, 'namespacePID': namespace, 'startTicks': start, 'nspid': [pid, namespace],
-                    'membership': membership, 'command': cmd}
+                    'membership': membership, 'command': cmd,
+                    'cgroupIdentity':{'containerId':cid,'parent':{'device':1,'inode':2},'leaf':{'device':1,'inode':3}}}
         initial = host(91, 1, '123', ['/fixed/source'])
         remote = host(92, 44, '124', command)
         clock = {'schema': 'helmut-local-unit-monotonic-domain/1', 'kind': 'kernel-without-time-namespaces',
@@ -519,6 +581,13 @@ class PureHost(unittest.TestCase):
             probe.tick()
         self.assertIsNone(probe.child.supplied)
 
+    def test_observer_requires_filesystem_witness_cid_equal_actual_docker_cid(self):
+        probe,initial,remote,ready,inside,finish,clock=self.observer_fixture()
+        initial['cgroupIdentity']['containerId']='8'*64
+        row={'Id':probe.cid,'Path':'/fixed/source','Args':[],'State':{'Running':True,'Pid':91}}
+        with self.assertRaisesRegex(RuntimeError,'observer-container-init-pid'):
+            M.ProcessObserver(self.native,self.config,self.host.directory,row,[copy.deepcopy(initial)])
+
     def test_only_exact_source_shell_exec_transition_is_accepted(self):
         probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
         cid = self.config['actualSourceContainerId']; python = '/fixed/python'
@@ -526,6 +595,7 @@ class PureHost(unittest.TestCase):
         self.config.update(pythonExecutable=python, sources=[self.pin(worker)])
         initial['command'] = [python, '-I', '-S', '-B', worker]
         initial['membership'] = '0::/' + self.config['parent'] + '/' + cid + '\n'
+        initial['cgroupIdentity']['containerId'] = cid
         shell = 'exec ' + python + ' -I -S -B ' + worker + ' > /bench/BOOTSTRAP.PRIVATE.log 2>&1'
         row = {'Id': cid, 'Path': '/bin/sh', 'Args': ['-c', shell], 'State': {'Running': True, 'Pid': 91}}
         M.ProcessObserver(self.native, self.config, self.host.directory, row, [copy.deepcopy(initial)])
