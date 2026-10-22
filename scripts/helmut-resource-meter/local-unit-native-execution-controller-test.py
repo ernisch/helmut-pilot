@@ -190,7 +190,7 @@ class Fixture:
             identity = dict(zip(self.m.META, (1, 2, stat.S_IFREG | 0o600, 0, 0, 1, 3, 1, 1)))
             return {'ownerStop': {'cleanShutdown': True, 'failed': False}, 'ownerProcessClose': {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True},
                 'controlReadTrace': {'pin': pin('/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl'), 'identity': identity,
-                    'value': {'header': {**self.c.selection, 'ownerPID': 2, 'ownerStartTicks': '5', 'pidNamespace': 'pid:[4]', 'timeNamespace': 'time:[8]',
+                    'value': {'header': {**self.c.selection, 'ownerPID': 2, 'ownerStartTicks': '5', 'pidNamespace': 'pid:[4]', 'timeNamespace': self.c.last_host['source']['namespaces']['time'],
                         'clockDomain': copy.deepcopy(self.clock_domain),
                         'brokerCodeSHA256': pin('/broker')['sha256'], 'sourceBindingSHA256': self.m.sha(self.m.canonical(self.c.observer.binding)),
                         'trustSHA256': 'd' * 64}, 'footer': {'complete': True}}}}
@@ -278,7 +278,7 @@ class Tests(unittest.TestCase):
         self.assertNotIn('OWNER_STOP', f.calls); self.assertNotIn('FINAL_ACCEPTANCE.PRIVATE.json', f.saved)
 
     def test_root_trace_private_identity_and_binding_drift_block_snapshot(self):
-        for mutation in ('uid', 'mode', 'source', 'broker', 'footer'):
+        for mutation in ('uid', 'mode', 'source', 'broker', 'footer', 'clockBoot', 'clockKind'):
             f = Fixture(); original = f.host_call
             def changed(stage, body, **kwargs):
                 value = original(stage, body, **kwargs)
@@ -288,6 +288,8 @@ class Tests(unittest.TestCase):
                     if mutation == 'mode': trace['identity']['st_mode'] = stat.S_IFREG | 0o644
                     if mutation == 'source': trace['value']['header']['sourceBindingSHA256'] = '0' * 64
                     if mutation == 'broker': trace['value']['header']['brokerCodeSHA256'] = '0' * 64
+                    if mutation == 'clockBoot': trace['value']['header']['clockDomain']['bootId'] = '00000000-0000-0000-0000-000000000002'
+                    if mutation == 'clockKind': trace['value']['header']['clockDomain']['kind'] = 'kernel-without-time-namespaces'
                     if mutation == 'footer': trace['value']['footer']['complete'] = False
                 return value
             f.c.host.call = changed

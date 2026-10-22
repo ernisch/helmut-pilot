@@ -310,12 +310,17 @@ def main():
         else:
             for volume_mount in execution_plan['sourceVolumeMounts']:
                 argv += ['--mount', volume_mount]
+            # A Docker deletion marker removes its automatic HOSTNAME. The
+            # scoped closed CLI environment must not resolve a host value.
+            argv += ['--env', 'HOSTNAME']
         for source, target, readonly in mounts:
             argv += ['--mount', 'type=bind,src=' + str(source) + ',dst=' + str(target) + (',readonly' if readonly else '')]
         worker = str(BIN / 'local-unit-native-worker.py')
         command = 'exec ' + str(PYTHON / 'bin/python3.12') + ' -I -S -B ' + worker + ' > /bench/BOOTSTRAP.PRIVATE.log 2>&1'
         argv += [runtime['imageId'], '-c', command]
-        cid = native.docker(argv).stdout.strip()
+        created = (execution_module.owned_docker(native, execution_plan['dockerConfigDirectory'], argv)
+                   if execution_plan is not None else native.docker(argv))
+        cid = created.stdout.strip()
         if not re.fullmatch('[a-f0-9]{64}', cid):
             raise RuntimeError('new container identity missing')
         # Publish the source CID once, after create and before its first
