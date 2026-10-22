@@ -1057,6 +1057,69 @@ class PureHost(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'actual-parent-directory'):
             self.host._observe()
 
+    def test_closed_environment_permutations_preserve_exact_entries(self):
+        expected = ['HOSTNAME', 'PATH=/usr/bin:/bin', 'LANG=C.UTF-8', 'LC_ALL=C.UTF-8', 'TZ=UTC',
+                    'HOME=/tmp', 'TMPDIR=/tmp', 'HELMUT_STORAGE_BACKEND=supabase',
+                    'SUPABASE_URL=http://127.0.0.1:3000', 'HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE=helmut_unit_diagnostic_' + self.nonce,
+                    'HELMUT_NATIVE_NODE_OLD_SPACE_MIB=384']
+        for values in (expected, [*expected, 'HELMUT_PUBLICATION_ELIGIBILITY_JSON={"synthetic":"a=b"}']):
+            original = values[:]
+            for offset in range(len(values)):
+                actual = values[offset:] + values[:offset]
+                before = actual[:]
+                self.assertTrue(M.closed_environment(actual, values))
+                self.assertTrue(M.closed_environment(list(reversed(actual)), values))
+                self.assertEqual(actual, before)
+            self.assertEqual(values, original)
+
+    def test_closed_environment_rejects_missing_extra_changed_duplicate_and_marker(self):
+        expected = ['HOSTNAME', 'PATH=/usr/bin:/bin', 'HOME=/tmp', 'TZ=UTC']
+        cases = {
+            'missing': expected[:-1], 'extra': [*expected, 'HTTP_PROXY=http://synthetic.invalid'],
+            'value-change': ['HOSTNAME', 'PATH=/bin', 'HOME=/tmp', 'TZ=UTC'],
+            'duplicate-same': [*expected, 'PATH=/usr/bin:/bin'],
+            'duplicate-name-different-value': ['HOSTNAME', 'PATH=/usr/bin:/bin', 'HOME=/tmp', 'PATH=/bin'],
+            'duplicate-marker': [*expected, 'HOSTNAME'], 'marker-empty-value': ['HOSTNAME=', *expected[1:]],
+            'marker-value': ['HOSTNAME=synthetic', *expected[1:]], 'marker-and-value': [*expected, 'HOSTNAME='],
+            'other-bare-name': ['HOSTNAME', 'PATH', 'HOME=/tmp', 'TZ=UTC'],
+            'invalid-name': ['HOSTNAME', '=value', 'HOME=/tmp', 'TZ=UTC'],
+            'nul': ['HOSTNAME', 'PATH=/usr/bin:/bin\0', 'HOME=/tmp', 'TZ=UTC'],
+            'non-string': ['HOSTNAME', 1, 'HOME=/tmp', 'TZ=UTC'], 'non-list': tuple(expected), 'null': None,
+        }
+        for label, actual in cases.items():
+            with self.subTest(case=label):
+                self.assertFalse(M.closed_environment(actual, expected))
+                self.assertFalse(M.closed_environment(expected, actual))
+                if label not in ('missing', 'extra', 'value-change'):
+                    self.assertFalse(M.closed_environment(actual, actual))
+        self.assertFalse(M.closed_environment([], []))
+        self.assertFalse(M.closed_environment(expected[1:], expected[1:]))
+
+    def test_live_client_inspection_accepts_reordering_but_keeps_command_binding(self):
+        group = self.base / 'group'; group.mkdir(); g = group.stat()
+        self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
+        cid = '7' * 64
+        environment = ['HOSTNAME', 'PATH=/usr/bin:/bin', 'HOME=/tmp']
+        args = [*M.FLAGS, '/public/qualifier.js', '--selector', '/public/SELECTION.SAFE.json']
+        source = {'Id': self.host.source_id, 'HostConfig': {'CgroupParent': '/' + self.config['parent']},
+                  'State': {'Running': True, 'Pid': 91}}
+        client = {'Id': cid, 'HostConfig': {'CgroupParent': '/' + self.config['parent']},
+                  'State': {'Running': False, 'ExitCode': 0}, 'Config': {'Env': list(reversed(environment))},
+                  'Path': self.config['nodePin']['path'], 'Args': args[:]}
+        self.host.clients[cid] = {'mode': 'qualifier', 'mounts': [], 'environment': environment, 'args': args}
+        self.host._docker = lambda argv, **k: types.SimpleNamespace(stdout=('\n'.join([source['Id'], cid]))
+            if argv[0] == 'ps' else json.dumps([source, client]))
+        with (patch.object(self.host, '_container'), patch.object(self.host, '_mounts'),
+              patch.object(self.host, '_probe'), patch.object(self.host, '_proc', return_value={'hostPID': 91}),
+              patch.object(M, 'host_process', return_value={'hostPID': 91})):
+            self.host._observe()
+            for field, value in (('Config', {'Env': ['HOSTNAME=', *environment[1:]]}),
+                                 ('Path', '/unbound/node'), ('Args', [*args, '--extra'])):
+                original = client[field]; client[field] = value
+                with self.subTest(field=field), self.assertRaisesRegex(RuntimeError, 'actual-client-command-environment'):
+                    self.host._observe()
+                client[field] = original
+
     def test_client_environment_modes_and_mounts_are_closed(self):
         repo = Path(self.config['repository'])
         for name in ('local-unit-native-endpoint-qualification.js', 'local-unit-native-run.js'):

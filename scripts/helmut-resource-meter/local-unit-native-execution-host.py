@@ -69,6 +69,27 @@ def unique(raw):
     return json.loads(raw, object_pairs_hook=pairs, parse_constant=lambda _: need(False, 'nonfinite-json'))
 
 
+def closed_environment(actual, expected):
+    # Docker may reorder Env. Compare exact entries by unique name, preserving
+    # the bare HOSTNAME deletion marker as distinct from HOSTNAME= or a value.
+    def entries(values):
+        if type(values) is not list:
+            return None
+        out = {}
+        for value in values:
+            if type(value) is not str or '\0' in value:
+                return None
+            name, separator, _ = value.partition('=')
+            if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', name) or name in out:
+                return None
+            if not separator and value != 'HOSTNAME':
+                return None
+            out[name] = value
+        return out if out.get('HOSTNAME') == 'HOSTNAME' else None
+    a, e = entries(actual), entries(expected)
+    return a is not None and e is not None and len(actual) == len(expected) and a == e
+
+
 def utc():
     return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
 
@@ -1217,7 +1238,7 @@ class NativeExecutionHost:
         for cid, c in self.clients.items():
             row = owned[cid]; self._container(row, '1000:1000', 'container:' + self.source_id)
             self._mounts(row, c['mounts'], {PUBLIC: (self.plan['volumes']['run'], True), '/ram/jit-root': (self.plan['volumes']['ram'], True)})
-            need(row['Config']['Env'] == c['environment'] and row['Path'] == self.config['nodePin']['path']
+            need(closed_environment(row['Config']['Env'], c['environment']) and row['Path'] == self.config['nodePin']['path']
                  and row['Args'] == c['args'], 'actual-client-command-environment')
             if row['State']['Running']:
                 exit_ready = ('ENTRY' if c['mode'] == 'entry' else 'ENDPOINT') + '_OBSERVATION_EXIT_READY.SAFE.json'
