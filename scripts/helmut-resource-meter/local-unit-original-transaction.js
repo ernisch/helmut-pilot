@@ -23,6 +23,7 @@ const HELPERS = Object.freeze({
   original_bridge_value_v1: Object.freeze({ args: "text, text, text, jsonb, boolean", sha: "7de36453e5e664d1040649d73d537be7b9ab0fd00429ad31e7ea19ca1bf4ac50", result: "jsonb" }),
   original_bridge_own_projection_v1: Object.freeze({ args: "text, text, text, text", sha: "8074531ee40f7fa2858dc7b82f4e7e455dd34254e3489d1c53c0c8347e874622", result: "jsonb" }),
   original_bridge_compare_delta_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "563ca8e1000bfc253e8ef9deee1805d23481f681781db4715fccf2159f52820b", result: "void" }),
+  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "7546b33c570717038e3ec54f4b9d5ba027b7fda05cec4d8526cb59cd4d497068", result: "void" }),
 });
 const NATIVE = Object.freeze(["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"]);
 function need(ok, code) { if (!ok) throw Error("local-unit-original-transaction-" + code); }
@@ -65,7 +66,7 @@ function qualification(q, r) {
     && q.schema === "helmut-local-unit-original-bridge-qualification/1"
     && q.database === "helmut_unit_diagnostic_" + r.operationId.slice(-32)
     && q.operationId === r.operationId && q.commandHash === r.commandHash, "qualified-owned-target");
-  for (const [key, minimum, maximum] of [["originalSources", 15, 32], ["helperSources", 4, 4], ["nativeSources", 13, 128]]) {
+  for (const [key, minimum, maximum] of [["originalSources", 15, 32], ["helperSources", 5, 5], ["nativeSources", 14, 128]]) {
     need(Array.isArray(q[key]) && q[key].length >= minimum && q[key].length <= maximum, "source-pin-count");
     const oids = new Set(), names = new Set();
     for (const s of q[key]) { sourceShape(s, key === "originalSources" ? "original" : "native");
@@ -145,11 +146,12 @@ SET LOCAL idle_in_transaction_session_timeout='2s';
 SET LOCAL helmut.local_usage_experiment='on';
 SET LOCAL helmut.local_auth_state_cas_projection='on';
 SET LOCAL helmut.local_diagnostic_scope='bounded-cas-qualification-v1';
-CREATE TEMP TABLE original_bridge_args(request_text text not null,request_hash text not null,qualification jsonb not null,nonce text not null) ON COMMIT DROP;
+CREATE TEMP TABLE original_bridge_args(request_text text not null,request_hash text not null,qualification jsonb not null,nonce text not null,backend_pid integer not null,transaction_id xid8 not null) ON COMMIT DROP;
 CREATE TEMP TABLE original_bridge_results(phase text primary key,value jsonb not null) ON COMMIT PRESERVE ROWS;
-INSERT INTO pg_temp.original_bridge_args VALUES(${literal(requestText)},${literal(SHA(requestText))},${literal(qualificationText)}::jsonb,${literal(nonce)});
+INSERT INTO pg_temp.original_bridge_args VALUES(${literal(requestText)},${literal(SHA(requestText))},${literal(qualificationText)}::jsonb,${literal(nonce)},pg_backend_pid(),pg_current_xact_id());
 DO $root$
 DECLARE q jsonb; r jsonb; s jsonb; p record; scope text; t record; roles_safe integer; expected_native oid[]; actual_native oid[];
+  acl_target oid; acl_entry record; temp_name name;
 BEGIN
   IF current_database()<>${literal(q.database)} OR session_user<>'postgres' OR current_user<>session_user
     OR NOT EXISTS(SELECT FROM pg_roles WHERE rolname=session_user AND rolsuper) THEN RAISE EXCEPTION 'original-bridge-initial-superuser-origin-required';END IF;
@@ -182,9 +184,31 @@ BEGIN
     RAISE EXCEPTION 'original-bridge-complete-original-trigger-set';END IF;
   IF (SELECT count(*) FROM pg_class WHERE oid IN ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass)
     AND relrowsecurity AND relkind='r')<>3 THEN RAISE EXCEPTION 'original-bridge-legacy-rls-required';END IF;
-  EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I,%I',(SELECT nspname FROM pg_namespace WHERE oid=pg_my_temp_schema()),${literal(writer)},${literal(runtime)});
+  SELECT nspname INTO STRICT temp_name FROM pg_namespace WHERE oid=pg_my_temp_schema();
+  FOR acl_entry IN SELECT DISTINCT a.grantee FROM pg_namespace ns CROSS JOIN LATERAL aclexplode(coalesce(ns.nspacl,acldefault('n',ns.nspowner))) a
+    WHERE ns.oid=pg_my_temp_schema() AND a.grantee<>ns.nspowner LOOP
+    IF acl_entry.grantee=0 THEN EXECUTE format('REVOKE ALL ON SCHEMA %I FROM PUBLIC',temp_name);
+    ELSE EXECUTE format('REVOKE ALL ON SCHEMA %I FROM %I',temp_name,(SELECT rolname FROM pg_roles WHERE oid=acl_entry.grantee));END IF;
+  END LOOP;
+  EXECUTE format('REVOKE ALL ON SCHEMA %I FROM postgres',temp_name);
+  EXECUTE format('GRANT ALL ON SCHEMA %I TO postgres',temp_name);
+  FOREACH acl_target IN ARRAY ARRAY['pg_temp.original_bridge_args'::regclass::oid,'pg_temp.original_bridge_results'::regclass::oid] LOOP
+    FOR acl_entry IN SELECT DISTINCT a.grantee FROM pg_class cl CROSS JOIN LATERAL aclexplode(coalesce(cl.relacl,acldefault('r',cl.relowner))) a
+      WHERE cl.oid=acl_target AND a.grantee<>cl.relowner LOOP
+      IF acl_entry.grantee=0 THEN EXECUTE format('REVOKE ALL ON TABLE %s FROM PUBLIC',acl_target::regclass);
+      ELSE EXECUTE format('REVOKE ALL ON TABLE %s FROM %I',acl_target::regclass,(SELECT rolname FROM pg_roles WHERE oid=acl_entry.grantee));END IF;
+    END LOOP;
+    EXECUTE format('REVOKE ALL ON TABLE %s FROM postgres',acl_target::regclass);
+    EXECUTE format('GRANT ALL ON TABLE %s TO postgres',acl_target::regclass);
+  END LOOP;
+  EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I,%I',temp_name,${literal(writer)},${literal(runtime)});
   EXECUTE format('GRANT SELECT ON pg_temp.original_bridge_args TO %I,%I',${literal(writer)},${literal(runtime)});
   EXECUTE format('GRANT SELECT,INSERT ON pg_temp.original_bridge_results TO %I,%I',${literal(writer)},${literal(runtime)});
+  ALTER TABLE pg_temp.original_bridge_results ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE pg_temp.original_bridge_results FORCE ROW LEVEL SECURITY;
+  EXECUTE format('CREATE POLICY original_bridge_read ON pg_temp.original_bridge_results FOR SELECT TO %I,%I USING(true)',${literal(writer)},${literal(runtime)});
+  EXECUTE format('CREATE POLICY original_bridge_auth_insert ON pg_temp.original_bridge_results FOR INSERT TO %I WITH CHECK(phase=''authAck'')',${literal(writer)});
+  EXECUTE format('CREATE POLICY original_bridge_own_insert ON pg_temp.original_bridge_results FOR INSERT TO %I WITH CHECK(phase=''ownAck'')',${literal(runtime)});
 END;$root$;
 SET SESSION AUTHORIZATION ${writer};
 DO $original$

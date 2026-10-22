@@ -16,7 +16,8 @@ const originalNames = ["state_cas_v1", "state_payload_hash_local_v1", "state_lea
   "usage_guard_local_v1", "usage_insert_local_v1", "usage_checked_proof_local_v1"].map(x => "public.helmut_auth_" + x);
 const nativeNames = ["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"];
 const helperArgs = { original_bridge_top_map_v1: "text, text, text", original_bridge_value_v1: "text, text, text, jsonb, boolean",
-  original_bridge_own_projection_v1: "text, text, text, text", original_bridge_compare_delta_v1: "text, text, text, text, text, jsonb" };
+  original_bridge_own_projection_v1: "text, text, text, text", original_bridge_compare_delta_v1: "text, text, text, text, text, jsonb",
+  original_bridge_receipt_v1: "text, text, text, text, bigint, text, text, text, text, text" };
 const helperBodies = [...proposal.matchAll(/create function helmut_unit_diagnostic\.(original_bridge_[a-z0-9_]+)\([^;]+?as \$f\$([\s\S]*?)\$f\$;/g)];
 let count = 0;
 function check(name, work) { work(); count++; }
@@ -25,7 +26,7 @@ function source(name, oid) { return { name, oid: String(oid), identityArguments:
   volatility: "v", returnType: "jsonb", language: "plpgsql", config: ["search_path=pg_catalog"] }; }
 function qualification() {
   const helperSources = helperBodies.map((m, i) => ({ ...source("helmut_unit_diagnostic." + m[1], 2000 + i),
-    identityArguments: helperArgs[m[1]], prosrcSHA256: hash(m[2]), volatility: "s", returnType: m[1].includes("compare_delta") ? "void" : "jsonb" }));
+    identityArguments: helperArgs[m[1]], prosrcSHA256: hash(m[2]), volatility: "s", returnType: /compare_delta|receipt/.test(m[1]) ? "void" : "jsonb" }));
   return { schema: "helmut-local-unit-original-bridge-qualification/1", database: "helmut_unit_diagnostic_" + suffix,
     operationId: op, commandHash: "c".repeat(64), originalSources: originalNames.map((n, i) => source(n, 1000 + i)), helperSources,
     nativeSources: [...helperSources, ...nativeNames.map((n, i) => source("public.local_unit_diagnostic_" + n + "_v1", 3000 + i))] };
@@ -51,7 +52,7 @@ function request(mode = "state") {
     artifact: mode === "usage" ? { kind: "usage-D", logicalId: "ticket-D", canonical: can(body), sha256: hash(can(body)), parentHash: null } : null };
 }
 function response(r, packet) {
-  const nonce = /,'([a-f0-9]{64})'\);\nDO \$root\$/.exec(packet.sql)?.[1]; assert.ok(Boolean(nonce), "closed request nonce absent");
+  const nonce = /,'([a-f0-9]{64})',pg_backend_pid\(\),pg_current_xact_id\(\)\);\nDO \$root\$/.exec(packet.sql)?.[1]; assert.ok(Boolean(nonce), "closed request nonce absent");
   return { schema: "helmut-local-unit-original-write-result/1", authAck: [{ id: "main-auth", revision: r.originalCAS.revision,
     proof: { ...r.originalCAS.expectedProof, count: r.originalCAS.expectedProof.count + (r.mode === "usage" ? 1 : 0),
       head: r.mode === "usage" ? "1".repeat(64) : r.originalCAS.expectedProof.head }, state: { ...r.originalCAS.expectedState, root: r.originalCAS.root } }],
@@ -69,7 +70,7 @@ check("pure state and usage compilation with explicit privileged origin", () => 
   }
 });
 check("helper native prosrc pins are actual exact proposal body hashes", () => {
-  assert.ok(helperBodies.length === 4);
+  assert.ok(helperBodies.length === 5);
   for (const m of helperBodies) assert.ok(code.includes(hash(m[2])), "helper source pin drift");
   const q = qualification(); q.helperSources[0].prosrcSHA256 = "0".repeat(64); rejects(() => transaction.prepare(request(), q));
 });
@@ -141,12 +142,32 @@ check("structured argument quoting prevents caller SQL interpolation", () => {
   assert.ok((sql.match(/^COMMIT;/gm) || []).length === 1);
 });
 check("native read helpers remain SECINV bounded and never copy complete auth", () => {
-  assert.ok((proposal.match(/create function helmut_unit_diagnostic\.original_bridge_/g) || []).length === 4);
-  assert.ok((proposal.match(/language plpgsql stable security invoker set search_path=pg_catalog/g) || []).length === 4);
+  assert.ok((proposal.match(/create function helmut_unit_diagnostic\.original_bridge_/g) || []).length === 5);
+  assert.ok((proposal.match(/language plpgsql stable security invoker set search_path=pg_catalog/g) || []).length === 5);
   assert.ok(!/security\s+definer|create\s+or\s+replace|disable\s+trigger|drop\s+trigger/i.test(proposal));
   for (const required of ["current_hash=any(seen)", "result?k", "original-bridge-mixed-leaf-required", "native_work+native_size>16777216",
     "original-bridge-outside-child-hash-changed", "original-bridge-own-key-missing-seed-blocked", "with check(false)", "pg_depend", "d.deptype='i'",
     "original-bridge-qualified-trigger-closure-incomplete"]) assert.ok(proposal.includes(required));
+});
+check("private receipt pins native temp identity ACLs columns roles backend and original tuple", () => {
+  const m = helperBodies.find(x => x[1] === "original_bridge_receipt_v1"); assert.ok(Boolean(m)); const body = m[2];
+  for (const required of ["pg_my_temp_schema()", "rel.relowner<>root_oid", "rel.relpersistence<>'t'", "acldefault('r',root_oid)",
+    "original-bridge-temp-schema-acl", "attacl is not null", "original-bridge-temp-results-policy-shape", "original-bridge-temp-args-shape",
+    "pg_get_expr(polwithcheck,polrelid)='(phase = ''authAck''::text)'", "pg_get_expr(polwithcheck,polrelid)='(phase = ''ownAck''::text)'",
+    "receipt_pid<>pg_backend_pid()", "receipt_tx is distinct from backend_tx", "pg_current_xact_id_if_assigned()",
+    "auth_xmin is distinct from mod(backend_tx::text::numeric,4294967296)::text", "original-bridge-pre-own-receipt-count",
+    "original-bridge-receipt-complete-sources", "original-bridge-receipt-real-original-ack", "original-bridge-receipt-real-own-projection",
+    "original-bridge-receipt-exact-usage-row", "next_own is not distinct from own_row.body"]) assert.ok(body.includes(required), "required native receipt guard missing");
+  assert.ok(!body.includes("current_setting("), "receipt must not use an authorization GUC");
+});
+check("compiler prevents runtime authAck fabrication with root-owned enforced insert policies", () => {
+  const sql = transaction.prepare(request(), qualification()).sql;
+  for (const required of ["backend_pid integer not null,transaction_id xid8 not null", "pg_backend_pid(),pg_current_xact_id()",
+    "ALTER TABLE pg_temp.original_bridge_results ENABLE ROW LEVEL SECURITY", "ALTER TABLE pg_temp.original_bridge_results FORCE ROW LEVEL SECURITY",
+    "CREATE POLICY original_bridge_auth_insert", "WITH CHECK(phase=''authAck'')", "CREATE POLICY original_bridge_own_insert",
+    "WITH CHECK(phase=''ownAck'')", "REVOKE ALL ON TABLE %s FROM PUBLIC", "REVOKE ALL ON SCHEMA %I FROM PUBLIC"])
+    assert.ok(sql.includes(required), "required compiler receipt policy missing");
+  assert.ok(sql.indexOf("CREATE POLICY original_bridge_auth_insert") < sql.indexOf("SET SESSION AUTHORIZATION helmut_ud_bridge_writer_"));
 });
 check("result rejects stale native ACKs malformed output and synthetic original metadata", () => {
   for (const mode of ["state", "usage"]) for (const mutate of [v => { v.authAck = []; }, v => { v.authAck[0].revision = generation; },
