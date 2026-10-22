@@ -11,30 +11,43 @@ function check(name, work) { work(); tests++; }
 function rejected(work) { let caught = false; try { work(); } catch (e) { caught = /^local-unit-native-owner-[a-z0-9-]+$/.test(e.message); } assert.ok(caught, "expected bounded symbolic rejection"); }
 function load({ filesystem = fs, processStub = {}, childModule = null, brokerModule = null, hooks = null } = {}) {
   let spawns = 0;
-  const fakeProcess = { execPath: "/opt/node-pinned", pid: 123, env: {}, hrtime: process.hrtime,
+  const fakeProcess = { execPath: "/opt/node-pinned", pid: 123, env: {}, hrtime: process.hrtime, version: "v24.19.0",
+    execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"],
     umask() {}, once() {}, removeListener() {}, ...processStub };
   const mod = { exports: {} };
   const sandbox = { Buffer, URL, setTimeout, clearTimeout, setInterval, clearInterval, console: { log() {}, error() {} },
     process: fakeProcess, module: mod, __filename: "/opt/local-unit-native-owner.js", __testHooks: hooks,
     require(name) {
       if (name === "node:fs") return filesystem;
+      if (name === "node:v8") return { getHeapStatistics: () => ({ heap_size_limit: 432 * 1048576 }) };
       if (name === "node:child_process") return childModule || { spawn() { spawns++; throw Error("offline-spawn-forbidden"); } };
       if (name === "/opt/local-unit-diagnostic-broker.js" && brokerModule) return brokerModule;
       if (["node:path", "node:crypto", "node:util"].includes(name)) return require(name);
       throw Error("offline-unexpected-require");
     } };
   const patch = hooks ? "\n({privateJSON,readFile,writePrivate,environmentCheck,processInfo,ownListener,actualGroup,unchanged}=__testHooks);" : "";
-  vm.runInNewContext(source + patch + "\nmodule.exports={start,validateConfig,restConfig,runtimeJWT,pinShape,mountRows,mountFor,readFile:(filename,cap,options)=>readFile(filename,cap,JSON.parse(JSON.stringify(options))),environmentCheck,bounded,safeError};", sandbox);
+  vm.runInNewContext(source + patch + "\nmodule.exports={start,validateConfig,restConfig,runtimeJWT,pinShape,mountRows,mountFor,readFile:(filename,cap,options)=>readFile(filename,cap,JSON.parse(JSON.stringify(options))),environmentCheck,bounded,safeError,nodeBudget,sourceQualification};", sandbox);
   return { api: mod.exports, get spawns() { return spawns; } };
 }
 function configuration() {
   const pin = (file, h) => ({ path: file, bytes: 120, sha256: h.repeat(64) });
-  return { schema: "helmut-local-unit-native-owner-start/1", mode: "owner-local-no500",
+  const operationId = "localUnitDiagnostic-" + suffix, commandHash = "a".repeat(64), database = "helmut_unit_diagnostic_" + suffix;
+  const publicSourceBinding = { schema: "helmut-local-unit-original-source-binding/1", operationId, commandHash, database,
+    socketPath: "/ram/helmut-original-write-bridge.sock", containerId: "9".repeat(64), pidNamespace: "pid:[99]",
+    supervisor: { uid: 1000, pid: 77, startTicks: "10" }, service: { uid: 1000, pid: 78, startTicks: "11",
+      exePin: pin("/opt/node-pinned", "f"), codePin: pin("/bench/local-unit-original-service.js", "c"),
+      configPin: pin("/bench/ORIGINAL_SERVICE_CONFIG.PRIVATE.json", "d"),
+      nodeBudget: { nodeVersion: "v24.19.0", execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"],
+        oldSpaceMiB: 384, semiSpaceMiB: 16, heapSizeLimitBytes: 432 * 1048576 } },
+    measuredCgroup: { device: 29, inode: 12345, procMembership: "0::/\n" }, hmacKeySHA256: "6".repeat(64) };
+  return { schema: "helmut-local-unit-native-owner-start/2", mode: "owner-local-no500",
     operationId: "localUnitDiagnostic-" + suffix, commandHash: "a".repeat(64), database: "helmut_unit_diagnostic_" + suffix,
     issuedAtUTC: new Date(now).toISOString(), expiresAtUTC: new Date(now + 180000).toISOString(),
     measuredCgroup: { path: "/sys/fs/cgroup/owned", device: 29, inode: 12345, procMembership: "0::/\n" },
     pins: { owner: pin("/opt/local-unit-native-owner.js", "c"), broker: pin("/opt/local-unit-diagnostic-broker.js", "d"),
       postgrest: pin("/opt/postgrest-pinned", "e"), node: pin("/opt/node-pinned", "f") },
+    originalService: { hmacKeyPath: "/run/bootstrap/ORIGINAL_HMAC.PRIVATE.bin",
+      sourceQualificationPin: pin("/run/bootstrap/SOURCE_QUALIFICATION.PRIVATE.json", "8"), publicSourceBinding },
     authenticator: { username: "helmut_ud_authenticator_" + suffix,
       passwordHex: "12".repeat(32), jwtSecretHex: "ab".repeat(32) }, postgrestPort: 3456, legacy: { tables: ["profiles"], rpcs: [] } };
 }
@@ -45,6 +58,35 @@ check("strict start keys and no broad owner role", () => {
     c => { c.operationId = "localUnitDiagnostic-" + "c".repeat(32); }, c => { c.commandHash = "bad"; },
     c => { c.extra = true; }, c => { c.authenticator.username = "postgres"; },
     c => { c.authenticator.role = "owner"; }]) { const c = configuration(); mutate(c); rejected(() => api.validateConfig(c, now)); }
+});
+check("v2 binds observed UID1000 service without assuming root process access", () => {
+  for (const change of [c => { c.schema = "helmut-local-unit-native-owner-start/1"; }, c => { delete c.originalService; },
+    c => { c.originalService.hmacKeyPath = "/tmp/key"; }, c => { c.originalService.sourceQualificationPin.path = "/tmp/qualification"; },
+    c => { c.originalService.publicSourceBinding.commandHash = "0".repeat(64); },
+    c => { c.originalService.publicSourceBinding.service.uid = 0; }, c => { c.originalService.publicSourceBinding.supervisor.uid = 0; },
+    c => { c.originalService.publicSourceBinding.measuredCgroup.inode++; },
+    c => { c.originalService.publicSourceBinding.service.nodeBudget.heapSizeLimitBytes = 1024 * 1048576; }]) {
+    const c = configuration(); change(c); rejected(() => api.validateConfig(c, now));
+  }
+});
+check("actual heap receipt and exact startup budgets required for both Node configurations", () => {
+  assert.ok(api.nodeBudget().heapSizeLimitBytes === 432 * 1048576);
+  const valid = configuration().originalService.publicSourceBinding.service.nodeBudget;
+  assert.ok(api.nodeBudget(valid));
+  for (const change of [x => { x.heapSizeLimitBytes = 0; }, x => { x.heapSizeLimitBytes = 449 * 1048576; },
+    x => { x.nodeVersion = "v22.0.0"; }, x => { x.execArgv.push("--max-old-space-size=4096"); }, x => { x.semiSpaceMiB = 0; }]) {
+    const value = structuredClone(valid); change(value); rejected(() => api.nodeBudget(value));
+  }
+  rejected(() => load({ processStub: { execArgv: [] } }).api.nodeBudget());
+});
+check("source qualification is fresh scoped immutable and cannot extend its deadline", () => {
+  const c = configuration(), q = { schema: "helmut-local-unit-source-supervisor-qualification/1", operationId: c.operationId,
+    commandHash: c.commandHash, database: c.database, issuedAtUTC: c.issuedAtUTC, expiresAtUTC: c.expiresAtUTC,
+    publicSourceBinding: c.originalService.publicSourceBinding };
+  assert.ok(api.sourceQualification(c, q, now, true) === now + 180000);
+  for (const [value, at] of [[q, now + 15001], [q, now + 180000], [{ ...q, commandHash: "0".repeat(64) }, now],
+    [{ ...q, publicSourceBinding: { ...q.publicSourceBinding, containerId: "0".repeat(64) } }, now],
+    [{ ...q, expiresAtUTC: new Date(now + 180001).toISOString() }, now]]) rejected(() => api.sourceQualification(c, value, at, true));
 });
 check("fresh finite UTC window", () => {
   for (const [issued, expires, current] of [[now + 1, now + 180000, now], [now - 10001, now + 120000, now],
@@ -162,10 +204,13 @@ function lifecycle({ noEOF = false, heldBroker = false } = {}) {
   const runningBroker = { close: async () => { state.brokerClosed++; } };
   const brokerModule = { start(conf) { state.brokerConfig = conf; announceBroker();
     return heldBroker ? new Promise(resolve => { state.releaseBroker = () => resolve(runningBroker); }) : Promise.resolve(runningBroker); } };
-  const hooks = { privateJSON: () => ({ ...record("/run/bootstrap/START.PRIVATE.json"), value: c }),
-    readFile: (file, cap, options) => ({ ...record(file), pin: options.expected }),
+  const sourceQ = { schema: "helmut-local-unit-source-supervisor-qualification/1", operationId: c.operationId, commandHash: c.commandHash,
+    database: c.database, issuedAtUTC: c.issuedAtUTC, expiresAtUTC: c.expiresAtUTC, publicSourceBinding: c.originalService.publicSourceBinding };
+  const hooks = { privateJSON: file => ({ ...record(file), value: file.endsWith("START.PRIVATE.json") ? c : sourceQ }),
+    readFile: (file, cap, options) => ({ ...record(file), pin: file.endsWith("ORIGINAL_HMAC.PRIVATE.bin")
+      ? { path: file, bytes: 32, sha256: c.originalService.publicSourceBinding.hmacKeySHA256 } : options.expected }),
     writePrivate: (file, text) => { state.writes.push({ file, text }); return record(file, text); },
-    environmentCheck: () => ({ self: proc(123), noNewPrivilegesObserved: true }), processInfo: proc,
+    environmentCheck: () => ({ self: proc(123), nodeBudget: c.originalService.publicSourceBinding.service.nodeBudget, noNewPrivilegesObserved: true }), processInfo: proc,
     ownListener: () => !state.childEnded, actualGroup() {}, unchanged() {} };
   const instance = load({ hooks, brokerModule, processStub: { once: p.once.bind(p), removeListener: p.removeListener.bind(p) },
     childModule: { spawn(binary, args, options) {
@@ -189,9 +234,13 @@ function lifecycle({ noEOF = false, heldBroker = false } = {}) {
     assert.ok(!readyText.includes(f.c.authenticator.passwordHex) && !readyText.includes(f.c.authenticator.jwtSecretHex)
       && !readyText.includes(f.c.authenticator.username), "ready must contain no credential material");
     assert.ok(running.ready.ownerPID === 123 && running.ready.upstreamPID === 456
+      && running.ready.schema === "helmut-local-unit-native-owner-ready/2" && running.ready.nodeBudget.heapSizeLimitBytes === 432 * 1048576
+      && running.ready.originalService.service.uid === 1000
       && running.ready.databaseAuthorityQualified === false && running.ready.databaseConnectionConfirmed === false
       && running.ready.unitExecutionAuthorized === false);
     assert.ok(f.state.brokerConfig.upstream.pid === 456 && f.state.brokerConfig.upstream.startTicks === "22");
+    assert.ok(f.state.brokerConfig.schema === "helmut-local-unit-diagnostic-broker-config/2"
+      && f.state.brokerConfig.originalService.sourceQualificationPin.path.endsWith("SOURCE_QUALIFICATION.PRIVATE.json"));
     assert.ok(f.state.writes.length === 3 && f.state.spawns === 1);
     const result = await running.close(); assert.ok(result.cleanShutdown && !result.failed && result.childStdoutEOF && result.childStderrEOF);
     assert.ok(f.state.signals.join("|") === "SIGTERM" && f.state.brokerClosed === 1 && f.p.listenerCount("SIGTERM") === 0); tests++;

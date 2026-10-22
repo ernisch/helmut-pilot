@@ -5,12 +5,14 @@
 // run SQL, qualify a source, call a provider or execute a diagnostic unit.
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
 const { spawn } = require("node:child_process"), { isDeepStrictEqual } = require("node:util");
+const v8 = require("node:v8");
 const START = "/run/bootstrap/START.PRIVATE.json", BOOT = "/run/bootstrap";
 const OWNER = "/opt/local-unit-native-owner.js", BROKER = "/opt/local-unit-diagnostic-broker.js";
 const POSTGREST = "/opt/postgrest-pinned", PUBLIC = "/run/helmut-local-unit-diagnostic";
 const PRIVATE = "/run/helmut-local-unit-diagnostic-owner";
 const TOKEN = BOOT + "/RUNTIME_TOKEN.PRIVATE", REST_CONFIG = BOOT + "/POSTGREST.PRIVATE.conf";
 const QUALIFICATION = BOOT + "/OWNER_QUALIFICATION.PRIVATE.json";
+const SOURCE_QUALIFICATION = BOOT + "/SOURCE_QUALIFICATION.PRIVATE.json", HMAC_KEY = BOOT + "/ORIGINAL_HMAC.PRIVATE.bin";
 const MAX_LOG = 128 * 1024, MAX_LIFETIME = 180000, STARTUP_MS = 15000, STOP_MS = 4500;
 let startConsumed = false;
 const exact = (value, keys) => value !== null && typeof value === "object" && !Array.isArray(value)
@@ -29,10 +31,50 @@ function utc(value) {
     && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value, "utc");
   return Date.parse(value);
 }
+function nodeBudget(value = { nodeVersion: process.version, execArgv: [...process.execArgv], oldSpaceMiB: 384,
+  semiSpaceMiB: 16, heapSizeLimitBytes: v8.getHeapStatistics().heap_size_limit }) {
+  need(exact(value, ["nodeVersion", "execArgv", "oldSpaceMiB", "semiSpaceMiB", "heapSizeLimitBytes"])
+    && value.nodeVersion === "v24.19.0" && Array.isArray(value.execArgv) && value.execArgv.length === 2
+    && value.execArgv.includes("--max-old-space-size=384") && value.execArgv.includes("--max-semi-space-size=16")
+    && value.oldSpaceMiB === 384 && value.semiSpaceMiB === 16 && Number.isSafeInteger(value.heapSizeLimitBytes)
+    && value.heapSizeLimitBytes >= 384 * 1048576 && value.heapSizeLimitBytes <= 448 * 1048576, "actual-node-budget");
+  return value;
+}
+function sourceBinding(c) {
+  const o = c.originalService, b = o?.publicSourceBinding;
+  need(exact(o, ["hmacKeyPath", "sourceQualificationPin", "publicSourceBinding"])
+    && o.hmacKeyPath === HMAC_KEY && o.sourceQualificationPin?.path === SOURCE_QUALIFICATION, "original-private-paths");
+  pinShape(o.sourceQualificationPin, SOURCE_QUALIFICATION);
+  need(exact(b, ["schema", "operationId", "commandHash", "database", "socketPath", "containerId", "pidNamespace", "supervisor", "service", "measuredCgroup", "hmacKeySHA256"])
+    && b.schema === "helmut-local-unit-original-source-binding/1" && b.operationId === c.operationId
+    && b.commandHash === c.commandHash && b.database === c.database && b.socketPath === "/ram/helmut-original-write-bridge.sock"
+    && /^[a-f0-9]{64}$/.test(b.containerId) && /^pid:\[[1-9][0-9]*\]$/.test(b.pidNamespace)
+    && /^[a-f0-9]{64}$/.test(b.hmacKeySHA256), "original-source-binding");
+  for (const p of [b.supervisor, b.service]) need(p?.uid === 1000 && Number.isSafeInteger(p.pid) && p.pid > 0
+    && /^[0-9]+$/.test(p.startTicks), "source-observed-process");
+  need(exact(b.supervisor, ["uid", "pid", "startTicks"]) && b.supervisor.pid !== b.service.pid
+    && exact(b.service, ["uid", "pid", "startTicks", "exePin", "codePin", "configPin", "nodeBudget"]), "source-process-shape");
+  for (const p of [b.service.exePin, b.service.codePin, b.service.configPin]) pinShape(p);
+  nodeBudget(b.service.nodeBudget);
+  need(exact(b.measuredCgroup, ["device", "inode", "procMembership"])
+    && b.measuredCgroup.device === c.measuredCgroup.device && b.measuredCgroup.inode === c.measuredCgroup.inode
+    && typeof b.measuredCgroup.procMembership === "string" && /^0::\/[^\0\r\n]*\n$/.test(b.measuredCgroup.procMembership), "source-measured-cgroup");
+  return b;
+}
+function sourceQualification(c, q, now = Date.now(), fresh = false) {
+  need(exact(q, ["schema", "operationId", "commandHash", "database", "issuedAtUTC", "expiresAtUTC", "publicSourceBinding"])
+    && q.schema === "helmut-local-unit-source-supervisor-qualification/1" && q.operationId === c.operationId
+    && q.commandHash === c.commandHash && q.database === c.database
+    && isDeepStrictEqual(q.publicSourceBinding, c.originalService.publicSourceBinding), "source-supervisor-qualification");
+  const issued = utc(q.issuedAtUTC), expires = utc(q.expiresAtUTC);
+  need(issued <= now && now < expires && expires > issued && expires - issued <= MAX_LIFETIME
+    && (!fresh || now - issued <= 15000), "source-qualification-window");
+  return expires;
+}
 function validateConfig(value, now = Date.now()) {
   need(exact(value, ["schema", "mode", "operationId", "commandHash", "database", "issuedAtUTC", "expiresAtUTC",
-    "measuredCgroup", "pins", "authenticator", "postgrestPort", "legacy"])
-    && value.schema === "helmut-local-unit-native-owner-start/1" && value.mode === "owner-local-no500"
+    "measuredCgroup", "pins", "authenticator", "postgrestPort", "legacy", "originalService"])
+    && value.schema === "helmut-local-unit-native-owner-start/2" && value.mode === "owner-local-no500"
     && typeof value.operationId === "string" && /^localUnitDiagnostic-[a-f0-9]{32}$/.test(value.operationId)
     && typeof value.commandHash === "string" && /^[a-f0-9]{64}$/.test(value.commandHash)
     && value.database === "helmut_unit_diagnostic_" + value.operationId.slice(-32), "start-scope");
@@ -72,7 +114,7 @@ function validateConfig(value, now = Date.now()) {
       && ![START, TOKEN, REST_CONFIG, QUALIFICATION].includes(r.qualificationPin.path), "qualified-read-private-path");
     names.add(r.name);
   }
-  return value;
+  sourceBinding(value); return value;
 }
 function identity(s) { return [s.dev, s.ino, s.mode, s.uid, s.gid, s.nlink, s.size, s.mtimeNs, s.ctimeNs].map(String); }
 function secureParents(filename) {
@@ -163,6 +205,7 @@ function actualGroup(c) {
 function environmentCheck(c) {
   need(process.getuid() === 0 && process.geteuid() === 0 && process.getgid() === 0 && process.getegid() === 0, "owner-root-only");
   need(!process.env.NODE_OPTIONS && !process.env.NODE_PATH && !Object.keys(process.env).some(k => k.startsWith("PGRST_")), "injected-runtime-environment");
+  const budget = nodeBudget();
   const status = fs.readFileSync("/proc/self/status", "utf8");
   for (const key of ["CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"]) need(new RegExp("^" + key + ":\\s*0+\\s*$", "m").test(status), "capabilities-must-be-dropped");
   const interfaces = fs.readFileSync("/proc/net/dev", "utf8").trim().split("\n").slice(2).map(x => x.split(":")[0].trim());
@@ -182,7 +225,7 @@ function environmentCheck(c) {
     && c.pins.node.path === process.execPath && __filename === OWNER, "actual-owner-process");
   const pg = listeners(5432); need(pg.length === 1 && pg[0].address === "0100007F", "fixed-local-postgres-listener");
   need(listeners(c.postgrestPort).length === 0, "fresh-upstream-port");
-  return { self, noNewPrivilegesObserved: /^NoNewPrivs:\s*1\s*$/m.test(status) };
+  return { self, nodeBudget: budget, noNewPrivilegesObserved: /^NoNewPrivs:\s*1\s*$/m.test(status) };
 }
 function restConfig(c) {
   const runtime = "helmut_ud_runtime_" + c.operationId.slice(-32);
@@ -256,7 +299,13 @@ async function start(configPath = START) {
   try {
     need(configPath === START, "fixed-start-path"); process.umask(0o077);
     const startRecord = privateJSON(START); c = validateConfig(startRecord.value); records.push(startRecord);
-    const remainingLifetime = Math.min(MAX_LIFETIME, utc(c.expiresAtUTC) - Date.now());
+    const sourceRecord = privateJSON(c.originalService.sourceQualificationPin.path, c.originalService.sourceQualificationPin);
+    const sourceExpires = sourceQualification(c, sourceRecord.value, Date.now(), true); records.push(sourceRecord);
+    const keyRecord = readFile(c.originalService.hmacKeyPath, 32, { privateFile: true });
+    need(keyRecord.pin.bytes === 32 && keyRecord.pin.sha256 === c.originalService.publicSourceBinding.hmacKeySHA256, "original-key-binding");
+    records.push(keyRecord);
+    const remainingLifetime = Math.min(MAX_LIFETIME, utc(c.expiresAtUTC) - Date.now(), sourceExpires - Date.now());
+    need(remainingLifetime >= STARTUP_MS + STOP_MS, "source-remaining-window");
     const lifetimeEnd = process.hrtime.bigint() + BigInt(Math.floor(remainingLifetime)) * 1000000n;
     const observed = environmentCheck(c);
     for (const [key, mode] of [["owner", "js"], ["broker", "js"], ["postgrest", "rest"], ["node", "node"]])
@@ -298,13 +347,13 @@ async function start(configPath = START) {
       procMembership: { broker: observed.self.membership, upstream: upstream.membership } };
     const endpoint = { port: c.postgrestPort, pid: upstream.pid, startTicks: upstream.startTicks,
       exePin: c.pins.postgrest, configPin: configuration.pin, runtimeTokenPath: TOKEN };
-    records.push(writePrivate(QUALIFICATION, JSON.stringify({ schema: "helmut-local-unit-diagnostic-owner-qualification/1",
+    records.push(writePrivate(QUALIFICATION, JSON.stringify({ schema: "helmut-local-unit-diagnostic-owner-qualification/2",
       operationId: c.operationId, commandHash: c.commandHash, database: c.database, brokerCodeSHA256: c.pins.broker.sha256,
-      upstream: endpoint, measuredCgroup: group, legacy: c.legacy }) + "\n"));
+      upstream: endpoint, measuredCgroup: group, legacy: c.legacy, originalService: c.originalService }) + "\n"));
     const Broker = require(BROKER);
-    const brokerStarting = Broker.start({ schema: "helmut-local-unit-diagnostic-broker-config/1", operationId: c.operationId,
+    const brokerStarting = Broker.start({ schema: "helmut-local-unit-diagnostic-broker-config/2", operationId: c.operationId,
       commandHash: c.commandHash, database: c.database, upstream: endpoint, measuredCgroup: group,
-      legacy: c.legacy, ownerQualificationPin: records[records.length - 1].pin });
+      legacy: c.legacy, originalService: c.originalService, ownerQualificationPin: records[records.length - 1].pin });
     // A late listen result is closed, never adopted or retried after cancellation.
     void brokerStarting.then(value => { if (closing) void value.close().catch(() => {}); }, () => {});
     const brokerResult = await bounded(brokerStarting, Math.max(1, startupLeft()), cancelled);
@@ -317,13 +366,15 @@ async function start(configPath = START) {
         && p.startTicks === upstream.startTicks && p.exe === POSTGREST && p.membership === upstream.membership
         && ownListener(child.pid, c.postgrestPort), "active-process-binding");
       need(Date.now() < utc(c.expiresAtUTC) && process.hrtime.bigint() < lifetimeEnd, "owner-window-expired");
+      sourceQualification(c, sourceRecord.value);
     }
     check(); guard = setInterval(() => { try { check(); } catch { failed("active-runtime-binding"); } }, 250);
     timer = setTimeout(() => { void close(); }, Math.max(0, Number(lifetimeEnd - process.hrtime.bigint()) / 1000000 - STOP_MS));
-    const ready = Object.freeze({ schema: "helmut-local-unit-native-owner-ready/1", ownerPID: process.pid,
+    const ready = Object.freeze({ schema: "helmut-local-unit-native-owner-ready/2", ownerPID: process.pid,
       ownerStartTicks: observed.self.startTicks, upstreamPID: upstream.pid, upstreamStartTicks: upstream.startTicks,
       measuredCgroup: group, ownerCodePin: c.pins.owner, brokerCodePin: c.pins.broker, upstreamExePin: c.pins.postgrest,
       upstreamConfigPin: configuration.pin, nodeExePin: c.pins.node, trustPublicPath: PUBLIC + "/trust.json",
+      nodeBudget: observed.nodeBudget, originalService: c.originalService.publicSourceBinding,
       noNewPrivilegesObserved: observed.noNewPrivilegesObserved, databaseAuthorityQualified: false,
       databaseConnectionConfirmed: false, unitExecutionAuthorized: false, full500: false });
     return Object.freeze({ ready, close, done });

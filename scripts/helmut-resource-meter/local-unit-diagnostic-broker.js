@@ -2,9 +2,12 @@
 
 // Run only in the new root-owned measured owner container. This broker never
 // accepts a URL, credential, SQL statement or alternate upstream from a client.
-const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), http = require("node:http");
+const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), http = require("node:http"), net = require("node:net");
 const { isDeepStrictEqual } = require("node:util");
+const v8 = require("node:v8");
 const ROOT = "/run/helmut-local-unit-diagnostic", PRIVATE = "/run/helmut-local-unit-diagnostic-owner";
+const ORIGINAL_SOCKET = "/ram/helmut-original-write-bridge.sock", ORIGINAL_WRITE = "/rest/v1/rpc/local_unit_diagnostic_original_write_v1";
+const SOURCE_QUALIFICATION = "/run/bootstrap/SOURCE_QUALIFICATION.PRIVATE.json", HMAC_KEY = "/run/bootstrap/ORIGINAL_HMAC.PRIVATE.bin";
 const CAP = 36 * 1024 * 1024, sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const exact = (x, keys) => x && typeof x === "object" && !Array.isArray(x) && Object.keys(x).sort().join("|") === [...keys].sort().join("|");
 const RPC = Object.freeze({ contract: [], authority_read: ["p_scope_hash", "p_nonce"], runtime_read: ["p_scope_hash", "p_nonce"],
@@ -51,10 +54,49 @@ function processInfo(pid) {
   need(!["Z", "X"].includes(fields[0]) && /^[0-9]+$/.test(fields[19]), "live-process");
   return { pid, startTicks: fields[19], exe: fs.readlinkSync(`/proc/${pid}/exe`), membership: fs.readFileSync(`/proc/${pid}/cgroup`, "utf8") };
 }
+function nodeBudget(b) {
+  need(exact(b, ["nodeVersion", "execArgv", "oldSpaceMiB", "semiSpaceMiB", "heapSizeLimitBytes"])
+    && b.nodeVersion === "v24.19.0" && Array.isArray(b.execArgv) && b.execArgv.length === 2
+    && b.execArgv.includes("--max-old-space-size=384") && b.execArgv.includes("--max-semi-space-size=16")
+    && b.oldSpaceMiB === 384 && b.semiSpaceMiB === 16 && Number.isSafeInteger(b.heapSizeLimitBytes)
+    && b.heapSizeLimitBytes >= 384 * 1048576 && b.heapSizeLimitBytes <= 448 * 1048576, "actual-node-budget");
+}
+function sourceBinding(c) {
+  const o = c.originalService, b = o?.publicSourceBinding;
+  need(exact(o, ["hmacKeyPath", "sourceQualificationPin", "publicSourceBinding"])
+    && o.hmacKeyPath === HMAC_KEY && o.sourceQualificationPin?.path === SOURCE_QUALIFICATION, "original-private-paths");
+  pinShape(o.sourceQualificationPin);
+  need(exact(b, ["schema", "operationId", "commandHash", "database", "socketPath", "containerId", "pidNamespace", "supervisor", "service", "measuredCgroup", "hmacKeySHA256"])
+    && b.schema === "helmut-local-unit-original-source-binding/1" && b.operationId === c.operationId
+    && b.commandHash === c.commandHash && b.database === c.database && b.socketPath === ORIGINAL_SOCKET
+    && /^[a-f0-9]{64}$/.test(b.containerId) && /^pid:\[[1-9][0-9]*\]$/.test(b.pidNamespace)
+    && /^[a-f0-9]{64}$/.test(b.hmacKeySHA256), "original-source-binding");
+  for (const p of [b.supervisor, b.service]) need(p?.uid === 1000 && Number.isSafeInteger(p.pid) && p.pid > 0
+    && /^[0-9]+$/.test(p.startTicks), "source-observed-process");
+  need(exact(b.supervisor, ["uid", "pid", "startTicks"]) && b.supervisor.pid !== b.service.pid
+    && exact(b.service, ["uid", "pid", "startTicks", "exePin", "codePin", "configPin", "nodeBudget"]), "source-process-shape");
+  for (const p of [b.service.exePin, b.service.codePin, b.service.configPin]) pinShape(p);
+  nodeBudget(b.service.nodeBudget);
+  need(exact(b.measuredCgroup, ["device", "inode", "procMembership"])
+    && b.measuredCgroup.device === c.measuredCgroup.device && b.measuredCgroup.inode === c.measuredCgroup.inode
+    && typeof b.measuredCgroup.procMembership === "string" && /^0::\/[^\0\r\n]*\n$/.test(b.measuredCgroup.procMembership), "source-measured-cgroup");
+  return b;
+}
+function sourceQualification(c, value, now = Date.now(), fresh = false) {
+  need(exact(value, ["schema", "operationId", "commandHash", "database", "issuedAtUTC", "expiresAtUTC", "publicSourceBinding"])
+    && value.schema === "helmut-local-unit-source-supervisor-qualification/1" && value.operationId === c.operationId
+    && value.commandHash === c.commandHash && value.database === c.database
+    && isDeepStrictEqual(value.publicSourceBinding, c.originalService.publicSourceBinding), "source-supervisor-qualification");
+  const issued = Date.parse(value.issuedAtUTC), expires = Date.parse(value.expiresAtUTC);
+  need(Number.isFinite(issued) && Number.isFinite(expires) && new Date(issued).toISOString() === value.issuedAtUTC
+    && new Date(expires).toISOString() === value.expiresAtUTC && issued <= now && now < expires
+    && expires > issued && expires - issued <= 180000 && (!fresh || now - issued <= 15000), "source-qualification-window");
+  return expires;
+}
 function validateConfig(c) {
   need(process.getuid() === 0 && !process.env.VERCEL, "root-owned-only");
-  need(exact(c, ["schema", "operationId", "commandHash", "database", "upstream", "measuredCgroup", "legacy", "ownerQualificationPin"])
-    && c.schema === "helmut-local-unit-diagnostic-broker-config/1" && /^localUnitDiagnostic-[a-f0-9]{32}$/.test(c.operationId)
+  need(exact(c, ["schema", "operationId", "commandHash", "database", "upstream", "measuredCgroup", "legacy", "ownerQualificationPin", "originalService"])
+    && c.schema === "helmut-local-unit-diagnostic-broker-config/2" && /^localUnitDiagnostic-[a-f0-9]{32}$/.test(c.operationId)
     && /^[a-f0-9]{64}$/.test(c.commandHash) && c.database === "helmut_unit_diagnostic_" + c.operationId.slice(-32), "config-scope");
   need(exact(c.upstream, ["port", "pid", "startTicks", "exePin", "configPin", "runtimeTokenPath"])
     && Number.isSafeInteger(c.upstream.port) && c.upstream.port >= 1024 && c.upstream.port <= 65535
@@ -77,7 +119,7 @@ function validateConfig(c) {
       && r.requestKeys.every(k => /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(k)), "qualified-read-rpc");
     pinShape(r.qualificationPin); names.add(r.name);
   }
-  return c;
+  sourceBinding(c); return c;
 }
 function authorize(c, m) {
   need(exact(m, ["operationId", "commandHash", "database", "nonce", "method", "path", "bodyBase64"])
@@ -90,9 +132,22 @@ function authorize(c, m) {
   need(m.path.startsWith("/rest/v1/") && parsed.origin === "http://127.0.0.1"
     && parsed.pathname === m.path.split("?")[0] && !parsed.pathname.includes("%"), "request-path");
   const native = /^\/rest\/v1\/rpc\/local_unit_diagnostic_([a-z_]+)_v1$/.exec(m.path);
-  if (native) {
+  if (m.path === ORIGINAL_WRITE) {
+    let args; try { args = JSON.parse(body.toString("utf8")); } catch { need(false, "original-json"); }
+    need(m.method === "POST" && Buffer.from(body.toString("utf8")).equals(body) && JSON.stringify(args) === body.toString("utf8")
+      && exact(args, ["schema", "mode", "operationId", "commandHash", "claimId", "originalCAS", "ownBefore", "ownNext", "artifact"])
+      && args.schema === "helmut-local-unit-original-write/1" && ["state", "usage"].includes(args.mode)
+      && args.operationId === c.operationId && args.commandHash === c.commandHash
+      && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(args.claimId)
+      && exact(args.originalCAS, ["id", "expectedRevision", "expectedProof", "expectedState", "revision", "root", "nodes", "additions"])
+      && args.originalCAS.id === "main-auth" && exact(args.ownBefore, ["hash", "revision"])
+      && exact(args.ownNext, ["canonical", "hash"])
+      && (args.mode === "state" ? args.artifact === null : exact(args.artifact, ["kind", "logicalId", "canonical", "sha256", "parentHash"])
+        && ["usage-D", "usage-R"].includes(args.artifact.kind)), "closed-original-write");
+  } else if (native) {
     let args; try { args = JSON.parse(body.toString("utf8")); } catch { need(false, "native-json"); }
-    need(m.method === "POST" && Object.hasOwn(RPC, native[1]) && exact(args, RPC[native[1]])
+    need(m.method === "POST" && !["state_cas", "artifact_insert"].includes(native[1])
+      && Object.hasOwn(RPC, native[1]) && exact(args, RPC[native[1]])
       && (!RPC[native[1]].includes("p_scope_hash") || args.p_scope_hash === c.commandHash)
       && (!RPC[native[1]].includes("p_nonce") || /^[a-f0-9]{64}$/.test(args.p_nonce)), "native-abi");
   } else if (m.method === "GET") {
@@ -138,16 +193,87 @@ async function upstream(c, m, bytes, token, remainingMs = 28000) {
     req.once("error", () => finish(null, "upstream-request-unknown")); req.end(bytes);
   });
 }
+function originalResponse(frame, key, nonce) {
+  need(Buffer.from(frame.toString("utf8")).equals(frame), "original-response-utf8");
+  let r; try { r = JSON.parse(frame.toString("utf8")); } catch { need(false, "original-response-json"); }
+  need(exact(r, ["schema", "nonce", "status", "bodyBase64", "hmacSHA256"])
+    && JSON.stringify(r) === frame.toString("utf8") && r.schema === "helmut-local-original-owner-response/1"
+    && r.nonce === nonce && [200, 500].includes(r.status) && typeof r.bodyBase64 === "string"
+    && /^[a-f0-9]{64}$/.test(r.hmacSHA256), "original-response-bindings");
+  const unsigned = { schema: r.schema, nonce: r.nonce, status: r.status, bodyBase64: r.bodyBase64 };
+  const mac = crypto.createHmac("sha256", key).update(JSON.stringify(unsigned)).digest();
+  need(crypto.timingSafeEqual(mac, Buffer.from(r.hmacSHA256, "hex")), "original-response-hmac");
+  const bytes = Buffer.from(r.bodyBase64, "base64");
+  need(bytes.length <= CAP && bytes.toString("base64") === r.bodyBase64 && r.status === 200, "original-write-unconfirmed");
+  return { status: r.status, bytes };
+}
+async function originalUpstream(m, bytes, key, remainingMs) {
+  need(Number.isFinite(remainingMs) && remainingMs > 0 && remainingMs <= 28000, "original-total-deadline");
+  const until = process.hrtime.bigint() + BigInt(Math.floor(remainingMs * 1000000));
+  const unsigned = { version: "helmut-local-original-owner-request/1", nonce: m.nonce,
+    atUTC: new Date().toISOString(), bodyBase64: bytes.toString("base64") };
+  const payload = Buffer.from(JSON.stringify({ ...unsigned,
+    hmacSHA256: crypto.createHmac("sha256", key).update(JSON.stringify(unsigned)).digest("hex") }) + "\n");
+  const left = Number(until - process.hrtime.bigint()) / 1000000;
+  need(left > 0, "original-preparation-deadline");
+  return new Promise((resolve, reject) => {
+    let socket, done = false, eof = false, size = 0; const blocks = [];
+    const timer = setTimeout(() => finish(null, "original-outcome-unknown"), left);
+    function finish(value, code) {
+      if (done) return; done = true; clearTimeout(timer);
+      if (code) { socket?.destroy(); reject(Error("local-unit-broker-" + code)); } else resolve(value);
+    }
+    try {
+      socket = net.createConnection({ path: ORIGINAL_SOCKET });
+      // Keep our writable half open until the service ends its response. Its
+      // async psql work must not be cancelled by net's default half-close rule.
+      socket.once("connect", () => {
+        if (done) return;
+        if (process.hrtime.bigint() >= until) { finish(null, "original-before-write-deadline"); return; }
+        try { socket.write(payload); } catch { finish(null, "original-transport-unknown"); }
+      });
+      socket.on("data", b => { size += b.length; if (size > CAP * 4 / 3 + 65536) finish(null, "original-response-cap-unknown"); else blocks.push(b); });
+      socket.once("end", () => { eof = true; });
+      socket.once("error", () => finish(null, "original-transport-unknown"));
+      socket.once("close", hadError => {
+        if (done) return;
+        try {
+          const frame = Buffer.concat(blocks);
+          need(eof && !hadError && frame.at(-1) === 10 && frame.indexOf(10) === frame.length - 1, "original-response-eof");
+          const value = originalResponse(frame.subarray(0, -1), key, m.nonce);
+          need(process.hrtime.bigint() < until, "original-response-deadline"); finish(value);
+        } catch { finish(null, "original-response-unconfirmed"); }
+      });
+    } catch { finish(null, "original-transport-unknown"); }
+  });
+}
 async function start(configuration) {
   const c = validateConfig(structuredClone(configuration));
+  nodeBudget({ nodeVersion: process.version, execArgv: [...process.execArgv], oldSpaceMiB: 384, semiSpaceMiB: 16,
+    heapSizeLimitBytes: v8.getHeapStatistics().heap_size_limit });
   process.umask(0o077);
   const self = processInfo(process.pid), code = readRegular(__filename, 1024 * 1024), owner = readRegular(c.ownerQualificationPin.path, 1024 * 1024, { rootPrivate: true, expected: c.ownerQualificationPin });
   const qualification = JSON.parse(owner.bytes.toString("utf8"));
-  need(qualification.schema === "helmut-local-unit-diagnostic-owner-qualification/1"
+  need(exact(qualification, ["schema", "operationId", "commandHash", "database", "brokerCodeSHA256", "upstream", "measuredCgroup", "legacy", "originalService"])
+    && qualification.schema === "helmut-local-unit-diagnostic-owner-qualification/2"
     && qualification.operationId === c.operationId && qualification.commandHash === c.commandHash && qualification.database === c.database
     && qualification.brokerCodeSHA256 === code.pin.sha256
     && isDeepStrictEqual(qualification.upstream, c.upstream) && isDeepStrictEqual(qualification.measuredCgroup, c.measuredCgroup)
-    && isDeepStrictEqual(qualification.legacy, c.legacy), "actual-root-qualification");
+    && isDeepStrictEqual(qualification.legacy, c.legacy)
+    && isDeepStrictEqual(qualification.originalService, c.originalService), "actual-root-qualification");
+  const originalKey = readRegular(c.originalService.hmacKeyPath, 32, { rootPrivate: true });
+  need(originalKey.bytes.length === 32 && originalKey.pin.sha256 === c.originalService.publicSourceBinding.hmacKeySHA256, "original-key-binding");
+  const sourceRecord = readRegular(c.originalService.sourceQualificationPin.path, 1048576,
+    { rootPrivate: true, expected: c.originalService.sourceQualificationPin });
+  const sourceExpires = sourceQualification(c, JSON.parse(sourceRecord.bytes.toString("utf8")), Date.now(), true);
+  const sourceEnd = process.hrtime.bigint() + BigInt(Math.max(0, sourceExpires - Date.now())) * 1000000n;
+  const originalSocket = () => {
+    need(fs.realpathSync(ORIGINAL_SOCKET) === ORIGINAL_SOCKET, "original-socket-path");
+    const s = fs.lstatSync(ORIGINAL_SOCKET, { bigint: true });
+    need(s.isSocket() && s.uid === 1000n && s.nlink === 1n && (s.mode & 0o777n) === 0o666n, "original-source-socket");
+    return statIdentity(s);
+  };
+  const socketIdentity = originalSocket();
   const tokenRead = readRegular(c.upstream.runtimeTokenPath, 65536, { rootPrivate: true });
   const token = tokenRead.bytes.toString("utf8").trim(); need(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token), "runtime-token");
   const claim = JSON.parse(Buffer.from(token.split(".")[1], "base64url"));
@@ -171,6 +297,15 @@ async function start(configuration) {
     readRegular(c.upstream.configPin.path, 1024 * 1024, { expected: c.upstream.configPin });
     need(isDeepStrictEqual(readRegular(__filename, 1024 * 1024).identity, code.identity), "broker-code-drift");
     need(isDeepStrictEqual(readRegular(c.upstream.runtimeTokenPath, 65536, { rootPrivate: true }).identity, tokenRead.identity), "runtime-token-drift");
+    // SourceSupervisor owns UID1000 process observation. Root has no ptrace/DAC
+    // capability and must not pretend it can inspect that service's /proc/exe.
+    need(isDeepStrictEqual(readRegular(c.ownerQualificationPin.path, 1048576, { rootPrivate: true, expected: c.ownerQualificationPin }).identity, owner.identity)
+      && isDeepStrictEqual(readRegular(c.originalService.hmacKeyPath, 32, { rootPrivate: true }).identity, originalKey.identity)
+      && isDeepStrictEqual(originalSocket(), socketIdentity), "original-private-or-socket-drift");
+    const q = readRegular(c.originalService.sourceQualificationPin.path, 1048576,
+      { rootPrivate: true, expected: c.originalService.sourceQualificationPin });
+    need(isDeepStrictEqual(q.identity, sourceRecord.identity) && process.hrtime.bigint() < sourceEnd, "source-qualification-drift-or-deadline");
+    sourceQualification(c, JSON.parse(q.bytes.toString("utf8")));
     for (const r of c.legacy.rpcs) {
       const q = JSON.parse(readRegular(r.qualificationPin.path, 1024 * 1024, { rootPrivate: true, expected: r.qualificationPin }).bytes.toString("utf8"));
       need(q.schema === "helmut-local-unit-diagnostic-read-rpc-qualification/1" && q.database === c.database
@@ -187,9 +322,10 @@ async function start(configuration) {
   fs.writeFileSync(PRIVATE + "/signing-key.pem", keys.privateKey.export({ type: "pkcs8", format: "pem" }), { flag: "wx", mode: 0o600 });
   const broker = { uid: 0, pid: process.pid, startTicks: self.startTicks, codeSHA256: code.pin.sha256 };
   const actualUpstream = { pid: c.upstream.pid, startTicks: c.upstream.startTicks, exePin: c.upstream.exePin, configPin: c.upstream.configPin };
-  const anchor = { schema: "helmut-local-unit-diagnostic-root-anchor/1", operationId: c.operationId, commandHash: c.commandHash,
+  const anchor = { schema: "helmut-local-unit-diagnostic-root-anchor/2", operationId: c.operationId, commandHash: c.commandHash,
     database: c.database, publicKeyPEM: keys.publicKey.export({ type: "spki", format: "pem" }), broker, upstream: actualUpstream,
-    measuredCgroup: c.measuredCgroup, legacy: c.legacy, ownerQualificationPin: c.ownerQualificationPin };
+    measuredCgroup: c.measuredCgroup, legacy: c.legacy, ownerQualificationPin: c.ownerQualificationPin,
+    originalService: c.originalService.publicSourceBinding };
   const used = new Set(), gate = serialGate(); let closed = false;
   const server = http.createServer(async (req, res) => {
     if (closed || req.method !== "POST" || req.url !== "/v1/execute") { res.writeHead(409).end(); return; }
@@ -212,11 +348,15 @@ async function start(configuration) {
         need(catalog.database === c.database && catalog.version === "helmut-local-unit-diagnostic-native-store/1"
           && isDeepStrictEqual(catalog.legacyReadRPCs, expected), "actual-qualified-read-catalog");
       }
-      const answer = await upstream(c, m, bytes, token, remaining()); check(); need(remaining() > 0, "total-deadline");
-      const attestation = { schema: "helmut-local-unit-diagnostic-signed-response/1", operationId: c.operationId,
+      const isOriginal = m.path === ORIGINAL_WRITE;
+      const answer = isOriginal ? await originalUpstream(m, bytes, originalKey.bytes, remaining())
+        : await upstream(c, m, bytes, token, remaining());
+      check(); need(remaining() > 0, "total-deadline");
+      const attestation = { schema: "helmut-local-unit-diagnostic-signed-response/2", operationId: c.operationId,
         commandHash: c.commandHash, database: c.database, nonce: m.nonce, method: m.method, path: m.path,
         requestSHA256: sha(bytes), bodySHA256: sha(answer.bytes), status: answer.status,
-        observedAtUTC: new Date().toISOString(), broker, upstream: actualUpstream, measuredCgroup: c.measuredCgroup };
+        observedAtUTC: new Date().toISOString(), broker, backendKind: isOriginal ? "owner-psql" : "postgrest",
+        upstream: isOriginal ? c.originalService.publicSourceBinding : actualUpstream, measuredCgroup: c.measuredCgroup };
       const result = { attestation, bodyBase64: answer.bytes.toString("base64"),
         signatureBase64: crypto.sign(null, Buffer.from(JSON.stringify(attestation)), keys.privateKey).toString("base64") };
       const output = Buffer.from(JSON.stringify(result)); res.writeHead(200, { "Content-Type": "application/json", "Content-Length": output.length }); res.end(output); done = true;
