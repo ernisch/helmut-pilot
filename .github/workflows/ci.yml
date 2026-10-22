@@ -69,13 +69,26 @@ jobs:
           node scripts/lokal.js -- node scripts/synthetik-500-runtime-artifact-attestation-test.js
           node - <<'JS'
           const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
-          const root=process.cwd(),read=fs.readFileSync;
-          fs.readFileSync=function(file,...args){const p=path.resolve(String(file));assert(p.startsWith(root+path.sep),'public checkout files only');return read.call(this,file,...args);};
-          const file='docs/betrieb/belege/local-lock-lease-20261021/ROOT_LOCAL_SOURCE_DELTA.SAFE.json',bytes=fs.readFileSync(file);
-          const pin={path:path.resolve(file),bytes:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex')};
-          const d=require('./scripts/helmut-resource-meter/atomic-usage-integration.js').descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localSourceDeltaPin:pin});
-          assert.equal(d.controlSourceAcceptance.localViewBindingCallerDelta.full500Accepted,false);
-          console.log('PASS public reviewed control source bindings; no execution authority');
+          const root=fs.realpathSync(process.cwd()),read=fs.readFileSync,open=fs.openSync,close=fs.closeSync,fds=new Set();
+          const allowed=file=>{assert.equal(typeof file,'string');const p=path.resolve(file),st=fs.lstatSync(p);assert(p.startsWith(root+path.sep)&&st.isFile()&&!st.isSymbolicLink()&&fs.realpathSync(p)===p,'public checkout regular files only');};
+          fs.readFileSync=function(file,...args){if(typeof file==='number')assert(fds.has(file),'untracked read descriptor');else allowed(file);return read.call(this,file,...args);};
+          fs.openSync=function(file,...args){allowed(file);const fd=open.call(this,file,...args);fds.add(fd);return fd;};
+          fs.closeSync=function(fd){fds.delete(fd);return close.call(this,fd);};
+          assert.throws(()=>fs.readFileSync(0),/untracked read descriptor/);
+          // Inspect public caller metadata only. The full descriptor requires
+          // private original review evidence and remains behind the real gate.
+          const acceptance=require('./scripts/helmut-resource-meter/atomic-usage-integration.js').CONTROL_SOURCE_ACCEPTANCE;
+          const delta=acceptance.localViewBindingCallerDelta,sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+          assert.equal(delta.file,'lib/helmut/synthetik-500-production-adapter.js');
+          assert.equal(delta.originalSHA256,acceptance.localReadCallerDelta.candidateSourceSHA256[delta.file]);
+          const bytes=fs.readFileSync('docs/betrieb/belege/local-view-binding-20261022/'+delta.independentSourceReview.name);
+          assert.equal(bytes.length,delta.independentSourceReview.bytes);assert.equal(sha(bytes),delta.independentSourceReview.sha256);
+          const review=JSON.parse(bytes);assert.equal(review.baselineAdapter.sha256,delta.originalSHA256);
+          for(const key of ['executionAuthority','historicalAcceptanceTransferred','full500Accepted','nativeUnit60Qualified'])assert.equal(review[key],false);
+          assert.equal(delta.full500Accepted,false);assert.equal(delta.requiresFreshIntegrationAcceptance,true);
+          const current=review.sourcePins.filter(p=>p.file===delta.file);assert.equal(current.length,1);assert.equal(current[0].sha256,delta.sha256);
+          for(const pin of review.sourcePins){const b=fs.readFileSync(pin.file);assert.equal(b.length,pin.bytes);assert.equal(sha(b),pin.sha256);}
+          console.log(JSON.stringify({reviewedPublicSourceFiles:review.sourcePins.length,executionAuthority:false,fullDescriptorExecuted:false}));
           JS
   offline-suite:
     name: Syntax + Offline-Suiten

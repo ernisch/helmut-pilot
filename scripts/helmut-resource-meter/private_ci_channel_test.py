@@ -158,11 +158,41 @@ class ReviewTests(unittest.TestCase):
         public = text.split('  offline-suite:')[0]
         self.assertIn('Oeffentliche Codebindungen vor privater Freigabe pruefen', public)
         self.assertIn('scripts/synthetik-500-runtime-artifact-attestation-test.js', public)
-        self.assertIn("require('./scripts/helmut-resource-meter/atomic-usage-integration.js').descriptor", public)
+        self.assertIn("require('./scripts/helmut-resource-meter/atomic-usage-integration.js').CONTROL_SOURCE_ACCEPTANCE", public)
+        self.assertNotIn('.descriptor(', public)
+        self.assertIn('fs.openSync=function', public)
+        self.assertIn('untracked read descriptor', public)
         self.assertNotIn('secrets.HELMUT_CI_ORIGINALS_KEY', public)
+        self.assertIn('fs.realpathSync(p)===p', public)
         self.assertEqual(text.count('secrets.HELMUT_CI_ORIGINALS_KEY'), 2)
         self.assertIn('path: ${{ runner.temp }}/helmut-ci-private-logs.tar.gz.gpg', offline)
         self.assertNotIn('.PRIVATE.txt', text)
+
+    def test_actual_public_preflight_rejects_leaf_parent_symlinks_and_untracked_descriptors(self):
+        repo = HERE.parents[1]
+        public = (repo / '.github/workflows/ci.yml').read_text().split('  offline-suite:')[0]
+        raw = public.split("          node - <<'JS'\n", 1)[1].split('          JS\n', 1)[0]
+        code = '\n'.join(line[10:] for line in raw.splitlines()) + '\n'
+        with tempfile.TemporaryDirectory(prefix='helmut-public-outside-') as outside, \
+                tempfile.TemporaryDirectory(prefix='.helmut-public-scope-', dir=repo) as inside:
+            marker = Path(outside) / 'marker'
+            marker.write_text('TEST_ONLY_SCOPE_SENTINEL')
+            leaf = Path(inside) / 'leaf'
+            leaf.symlink_to(marker)
+            parent = Path(inside) / 'parent'
+            parent.symlink_to(outside, target_is_directory=True)
+            negative = """
+for(const file of process.argv.slice(2)){
+ assert.throws(()=>fs.readFileSync(file),/public checkout regular files only/);
+ assert.throws(()=>fs.openSync(file,'r'),/public checkout regular files only/);
+}
+assert.throws(()=>fs.readFileSync(0),/untracked read descriptor/);
+"""
+            result = subprocess.run(['node', '-', str(leaf), str(parent / 'marker')],
+                                    input=code + negative, cwd=repo, env=C.child_env(),
+                                    capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn('TEST_ONLY_SCOPE_SENTINEL', result.stdout + result.stderr)
 
     def test_children_cannot_inherit_key_or_github_token(self):
         with mock.patch.dict(os.environ, {'HELMUT_CI_ORIGINALS_KEY': 'TEST_ONLY',

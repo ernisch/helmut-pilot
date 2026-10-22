@@ -166,15 +166,40 @@
       "publicPreflight": {
         "beforePrivateEnvironmentApproval": true,
         "existingArtifactAttestationTest": true,
-        "existingControlDescriptorFactory": true,
-        "controlFactoryPublicCheckoutFilesRead": 31,
-        "controlDescriptorSourcePins": 32,
-        "outsideCheckoutReadsRejected": true,
+        "publicAdapterMetadataAndReviewPinsOnly": true,
+        "publicReviewedSourceFiles": 4,
+        "fullPrivateDescriptorExecuted": false,
+        "privateOriginalReviewRemainsBehindGate": true,
+        "syncReadAndOpenPathsRestrictedToCheckout": true,
+        "numericReadDescriptorsMustBeTracked": true,
         "approvalRuleUnchanged": true,
         "planFailureStillFailsMandatoryOfflineJob": true,
-        "rootWorkflowProtectionTestsPassed": 28,
+        "rootWorkflowProtectionTestsPassed": 29,
         "newRunBlockBashSyntax": "pass",
-        "actualGitHubExecution": "pending"
+        "actualCorrectedGitHubExecution": "pending",
+        "leafAndParentSymlinkControls": "pass_actual_public_command",
+        "initialFullDescriptorPublicScopeClaimWasInvalid": true,
+        "independentBoundaryReview": {
+          "model": "deepseek-v4-pro",
+          "effort": "high",
+          "mode": "read",
+          "completed": true,
+          "fullDescriptorNotExecutedPublicly": "confirmed",
+          "lexicalSymlinkFinding": "fixed_with_regular_file_realpath_validation_and_leaf_parent_negative_cases",
+          "publishedCipherHashFinding": "Not accepted as a private original read: operator explicitly authorized encrypted84 package publication; checksum only, no key or decryption",
+          "testsRunByReviewer": false
+        }
+      },
+      "initialPublicPreflightRun": {
+        "run": 39764697039,
+        "headSHA": "eb6ef9989bf07df2ff272d4d7c0b45cad4e673dd",
+        "publicArtifactCasesPassed": 10,
+        "publicControlFactory": "failed_on_absent_review_evidence",
+        "mandatoryOfflineJob": "failed_before_checkout_after_public_plan_failure",
+        "privateEnvironmentApprovalRequested": false,
+        "privateOriginalsProvided": false,
+        "cause": "Full descriptor requires both public canonical review and private original review; moved full descriptor back behind unchanged private gate",
+        "initialClaimOfPublicOnlyFullDescriptorReadSuperseded": true
       }
     }
   },
