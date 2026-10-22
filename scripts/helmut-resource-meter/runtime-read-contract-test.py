@@ -99,6 +99,54 @@ try{fs.readFileSync=function(file,...args){const b=read.call(this,file,...args);
 assert.throws(()=>AU.descriptor({...options,localSourceDeltaPin:JSON.parse(process.argv[4])}),e=>e.code==='ERR_ASSERTION');
 """
   subprocess.run(['node','-e',check,str(BIN/'atomic-usage-integration.js'),'unused',json.dumps(local_source_delta),json.dumps(conflicting_pin)],check=True,capture_output=True,text=True)
+  # The separately reviewed cost caller is a SOURCE-only allowance. Keep its
+  # historical baseline and every old native-acceptance boundary explicit.
+  cost=acceptance['localCostCallerDelta']
+  self.assertEqual(cost['file'],'lib/helmut/testkosten-budget.js')
+  self.assertEqual(cost['baselineCommit'],'d6778b7805adc7ebe0b466b1604947d4a86114d9')
+  self.assertEqual(cost['originalSHA256'],'9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e')
+  budget=next(p for p in descriptor['sourcePins'] if p['path'].endswith('/'+cost['file']))
+  self.assertEqual(cost['sha256'],budget['sha256']);self.assertNotEqual(cost['sha256'],cost['originalSHA256'])
+  for key in ['sourceOnly','requiresFreshIntegrationAcceptance']:self.assertIs(cost[key],True)
+  no_acceptance=['historicalAcceptanceTransferred','nativeLeaseAcceptanceTransferred','historicalGlobalCounterOrFinancialEquivalence',
+                 'executionAuthority','nativeUnit60Qualified','production','newGlueAccepted','full500Accepted','RAMOrTimeGainAccepted']
+  for key in no_acceptance:self.assertIs(cost[key],False)
+  cost_review_pin=cost['independentSourceReview']
+  cost_review_path=BIN.parents[1]/'docs/betrieb/belege/local-unit-cost-caller-source-20261022'/cost_review_pin['name']
+  cost_review_bytes=cost_review_path.read_bytes()
+  self.assertEqual(len(cost_review_bytes),cost_review_pin['bytes'])
+  self.assertEqual(hashlib.sha256(cost_review_bytes).hexdigest(),cost_review_pin['sha256'])
+  cost_review=json.loads(cost_review_bytes)
+  self.assertEqual(cost_review['schema'],'helmut-local-unit-cost-caller-source-review/1')
+  self.assertEqual(cost_review['baselineCommit'],cost['baselineCommit'])
+  self.assertEqual(cost_review['baselineSource'],{'file':cost['file'],'bytes':32969,'sha256':cost['originalSHA256']})
+  self.assertEqual(cost_review['sourcePins'],[{'file':cost['file'],'bytes':budget['bytes'],'sha256':cost['sha256']}])
+  for key in ['sourceOnly','independent','pass','requiresFreshIntegrationAcceptance']:self.assertIs(cost_review[key],True)
+  for key in no_acceptance:self.assertIs(cost_review[key],False)
+  self.assertNotIn(str(cost_review_path),paths)
+  for kind in ['missing-cost-review','forged-cost-source-hash','forged-cost-review-pin','forged-cost-authority']:
+   bad=copy.deepcopy(descriptor)
+   if kind=='missing-cost-review':del bad['controlSourceAcceptance']['localCostCallerDelta']
+   elif kind=='forged-cost-source-hash':bad['controlSourceAcceptance']['localCostCallerDelta']['sha256']='0'*64
+   elif kind=='forged-cost-review-pin':bad['controlSourceAcceptance']['localCostCallerDelta']['independentSourceReview']['sha256']='0'*64
+   else:bad['controlSourceAcceptance']['localCostCallerDelta']['full500Accepted']=True
+   altered=self.doc(kind+'-descriptor.json',bad)
+   with self.subTest(kind=kind):subprocess.run(['node','-e',reject,str(BIN/'atomic-usage-integration.js'),json.dumps(altered)],check=True,capture_output=True,text=True)
+  cost_conflicting=json.loads(Path(local_source_delta['path']).read_bytes())
+  cost_conflicting['sourcePins'].append({'file':cost['file'],'bytes':32969,'sha256':cost['originalSHA256']})
+  cost_conflicting_pin=self.doc('conflicting-cost-source-delta.SAFE.json',cost_conflicting)
+  cost_check=r"""
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const AU=require(process.argv[1]);
+const options={stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localSourceDeltaPin:JSON.parse(process.argv[2])};
+const d=AU.descriptor(options),cost=d.controlSourceAcceptance.localCostCallerDelta,read=fs.readFileSync;
+assert(Object.isFrozen(d.controlSourceAcceptance));assert(Object.isFrozen(cost));assert(Object.isFrozen(cost.independentSourceReview));
+try{fs.readFileSync=function(file,...args){const b=read.call(this,file,...args);return String(file).endsWith('/'+cost.file)?Buffer.concat([b,Buffer.from('\n')]):b;};
+ assert.throws(()=>AU.descriptor(options),/Reviewed control source drift/);
+}finally{fs.readFileSync=read;}
+assert.throws(()=>AU.descriptor({...options,localSourceDeltaPin:JSON.parse(process.argv[3])}),e=>e.code==='ERR_ASSERTION');
+"""
+  subprocess.run(['node','-e',cost_check,str(BIN/'atomic-usage-integration.js'),json.dumps(local_source_delta),json.dumps(cost_conflicting_pin)],check=True,capture_output=True,text=True)
   # Real visibility in the actual container remains a separate mandatory gate;
   # this file-list assertion does not fabricate its result.
   changed=self.doc('changed-descriptor.json',{**descriptor,'sourcePins':[{**descriptor['sourcePins'][0],'sha256':'0'*64}]})
