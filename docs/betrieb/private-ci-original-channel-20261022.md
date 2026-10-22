@@ -34,8 +34,8 @@ müssen frei sein; private Rechte, `O_NOFOLLOW`, `O_EXCL`, Originalhashes und
 der bestehende freie Plattenboden gelten weiter. Der Schlüssel wird keinem
 Git-/GPG-Kindprozess als Umgebungsvariable und keiner Testsuite mitgegeben.
 
-Ausgaben der21 folgenden Shellschritte bleiben bei vollem Lauf in privaten
-Runnerdateien; öffentlich erscheinen nur Exitcode, Größe und Loghash. Jeder
+Die21 folgenden Schritte nutzen eine feste Wrapper-Shell. Bei vollem Lauf
+bleiben ihre Ausgaben in privaten Runnerdateien; öffentlich erscheinen nur Exitcode, Größe und Loghash. Jeder
 ursprüngliche Befehl und seine Zeitgrenze bleiben erhalten. Nach Testende werden
 die Logs separat verschlüsselt und ausschließlich als `.gpg`-Artefakt mit7Tagen
 Aufbewahrung gesichert. Keine Klartextlogs/-originale oder Schlüsselartefakte.
@@ -71,7 +71,7 @@ Originalbedarf. Die Environment-Freigabe ist keine Freigabe eines500er Tests.
 
 ## Abnahmegrenzen
 
-Lokal22 Schutztests einschließlich Fehler-/Archiv-/Logfällen und echtem
+Lokal24 Schutztests einschließlich Fehler-/Archiv-/Logfällen und echtem
 Log-GPG-Roundtrip PASS. Workflow-YAML, Python- und eingebettete Shellsyntax PASS.
 Die echte Environment-Konfiguration, ein tatsächlicher GitHub-Review und die
 anschließende vollständige Pflicht-CI sind vor Einrichtung noch offen. Ein

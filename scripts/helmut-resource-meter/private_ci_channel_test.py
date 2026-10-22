@@ -111,10 +111,9 @@ class ReviewTests(unittest.TestCase):
         shell_lines = [line for line in private.splitlines() if line.startswith('        shell:')]
         self.assertEqual(len(shell_lines), 21)
         for line in shell_lines:
-            self.assertIn('needs.plan.outputs.standard', line)
-            self.assertNotIn('steps.', line)
-        self.assertEqual(text.count("shell: ${{ needs.plan.outputs.standard"), 21)
-        self.assertNotIn("shell: ${{ steps.", text)
+            self.assertEqual(line.strip(), "shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'")
+        self.assertNotIn('shell: ${{', text)
+        self.assertIn('HELMUT_CI_PRIVATE_LOGS: ${{ needs.plan.outputs.standard }}', offline)
         self.assertIn('name: Syntax + Offline-Suiten', offline)
         self.assertIn('if: ${{ always() }}', offline)
         self.assertIn('run: test "$PLAN_RESULT" = success', offline)
@@ -196,6 +195,31 @@ class FileTests(unittest.TestCase):
 
     def test_shell_retains_exit_and_hides_test_only_private_values(self):
         self.run_shell_fixture()
+
+    def test_explicit_public_shell_retains_output_and_exit_without_private_files(self):
+        script = self.root / 'public.sh'
+        script.write_text('test -z "${HELMUT_CI_ORIGINALS_KEY:-}"\ntest -z "${GITHUB_TOKEN:-}"\n'
+                          'test -z "${GITHUB_OUTPUT:-}"\ntest -z "${ACTIONS_RUNTIME_TOKEN:-}"\n'
+                          'printf TEST_ONLY_PUBLIC_STDOUT\nprintf TEST_ONLY_PUBLIC_STDERR >&2\nexit 7\n')
+        env = dict(os.environ, HELMUT_CI_PRIVATE_LOGS='false', HELMUT_CI_ORIGINALS_KEY='TEST_ONLY',
+                   GITHUB_TOKEN='TEST_ONLY', GITHUB_OUTPUT='TEST_ONLY', ACTIONS_RUNTIME_TOKEN='TEST_ONLY')
+        env.pop('RUNNER_TEMP', None)
+        result = subprocess.run([sys.executable, str(HERE / 'private_ci_shell.py'), str(script)],
+                                env=env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 7)
+        self.assertEqual(result.stdout, 'TEST_ONLY_PUBLIC_STDOUT')
+        self.assertEqual(result.stderr, 'TEST_ONLY_PUBLIC_STDERR')
+        self.assertFalse((self.root / 'helmut-ci-private-logs').exists())
+
+    def test_unknown_shell_output_mode_rejects_before_running_child(self):
+        script = self.root / 'rejected.sh'
+        script.write_text('printf TEST_ONLY_CHILD_MUST_NOT_RUN\n')
+        env = dict(os.environ, HELMUT_CI_PRIVATE_LOGS='unknown', RUNNER_TEMP=str(self.root))
+        result = subprocess.run([sys.executable, str(HERE / 'private_ci_shell.py'), str(script)],
+                                env=env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 1)
+        self.assertNotIn('TEST_ONLY_CHILD_MUST_NOT_RUN', result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout)['code'], 'PRIVATE_CI_LOG_REJECTED')
 
     def test_test_only_log_encryption_and_real_gpg_decryption(self):
         log = self.run_shell_fixture()

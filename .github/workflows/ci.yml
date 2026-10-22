@@ -70,6 +70,8 @@ jobs:
       contents: read
       actions: read
       pull-requests: read
+    env:
+      HELMUT_CI_PRIVATE_LOGS: ${{ needs.plan.outputs.standard }}
     runs-on: ubuntu-latest
     # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
     # und Kontoschutz am15-Minuten-Jobende abgebrochen; Z22 wurde uebersprungen.
@@ -250,7 +252,7 @@ jobs:
         run: python3 -B scripts/helmut-resource-meter/private_ci_channel.py provision --receipt "$RUNNER_TEMP/helmut-ci-original-approval.json"
       - name: Ressourcenstart und Originalbindungen (offline)
         if: steps.plan.outputs.standard == 'true'
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           # Der echte Lauf bleibt an seinen freigegebenen /workspace-Pfad gebunden.
           # Nur die synthetischen CI-Mocks laden ihre Module aus dem Checkout.
@@ -271,7 +273,7 @@ jobs:
           node --test scripts/helmut-resource-meter/start-input-checks-test.js
       - name: Lokale Buchungsbestätigung (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           node scripts/auth-state-parts-codec-test.js
           node scripts/auth-state-parts-graph-test.js
@@ -288,7 +290,7 @@ jobs:
         # Binary JEDEN Merge blockieren, ohne dass jemand Code angefasst hat. Die
         # Voraussetzung wird deshalb ausgesprochen statt vorausgesetzt. Ist psql schon da,
         # kostet der Schritt nichts.
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           if command -v psql >/dev/null 2>&1; then
             echo "psql vorhanden: $(psql --version)"
@@ -307,7 +309,7 @@ jobs:
         # verändern kann (gleiche Begründung wie der Playwright-Pin unten). Der Download
         # wird bis zu dreimal versucht; ein dauerhaft unerreichbares GitHub-Release ist
         # ein sichtbarer FEHLSCHLAG, kein stiller Skip.
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -e
           for i in 1 2 3; do
@@ -334,7 +336,7 @@ jobs:
           HELMUT_TEST_PG_USER: "helmut"
           HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/auth-store-cas-datenbank-test.js
 
       - name: Lage-Quellenvertrag gegen isolierte PostgreSQL und PostgREST
@@ -346,7 +348,7 @@ jobs:
           HELMUT_TEST_PG_USER: "helmut"
           HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/lage-quellen-rest-datenbank-test.js
 
       - name: Null auf 500 auf Null gegen echte isolierte PostgreSQL
@@ -357,7 +359,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/testfenster-null500-datenbank.js
 
       - name: Vierer-Nacharbeit gegen isolierte PostgreSQL (Atomarik und kein Retry)
@@ -368,7 +370,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/verstehen-vier-datenbank.js
 
       - name: Realkohorten-Endweg gegen echte isolierte PostgreSQL
@@ -382,7 +384,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/realkohorte-500-endweg-datenbank-test.js
 
       - name: Realkohorten-Runtime gegen echte isolierte PostgreSQL17
@@ -396,7 +398,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/realkohorte-500-runtime-datenbank-test.js
 
       - name: Synthetik500 Import gegen echte isolierte PostgreSQL17
@@ -409,7 +411,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/synthetik-500-import-test.js --postgres-local
 
       - name: Synthetik500 Import bis Abschaltung gegen echte isolierte PostgreSQL17
@@ -422,7 +424,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/synthetik-500-runtime-datenbank-test.js
 
       - name: Synthetik500 nativer Vollbackup und Rueckweg gegen isolierte PostgreSQL17
@@ -435,7 +437,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/synthetik-500-native-import-test.js --postgres-local
 
       - name: Neue inerte Native-D-Ablage gegen echte isolierte PostgreSQL17
@@ -443,7 +445,7 @@ jobs:
         timeout-minutes: 3
         env:
           HELMUT_SYNTHETIK500_PG_ISOLIERT: "JA"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -euo pipefail
           IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
@@ -472,7 +474,7 @@ jobs:
         timeout-minutes: 5
         env:
           HELMUT_END500_PG_ISOLIERT: "JA"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -euo pipefail
           docker build -f scripts/fixtures/end500-pg17.Dockerfile -t helmut-end500-pg17:1 scripts/fixtures
@@ -494,7 +496,7 @@ jobs:
       - name: EU-Servicezeitvertrag, Tagesbuch-Bootstrap und Rueckweg gegen isolierten PostgreSQL17
         if: steps.plan.outputs.database == 'true'
         timeout-minutes: 3
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -euo pipefail
           IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
@@ -520,7 +522,7 @@ jobs:
       - name: Inerte Originalzustands-Reader-SQL gegen isolierten PostgreSQL17.6
         if: steps.plan.outputs.database == 'true'
         timeout-minutes: 2
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -euo pipefail
           IMAGE="postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3"
@@ -541,7 +543,7 @@ jobs:
         if: steps.plan.outputs.core == 'true'
         env:
           HELMUT_SOURCE_MODE: "off"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/run-offline-tests.js --fast-core
 
       - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
@@ -560,7 +562,7 @@ jobs:
         # ausdrücklich, was hier ohnehin gilt — dieser Lauf ist offline.
         env:
           HELMUT_SOURCE_MODE: "off"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js -- node scripts/run-offline-tests.js
 
       - name: Bereichs-Regression (nur geänderte Fachbereiche)
@@ -572,7 +574,7 @@ jobs:
         # wird sichtbar gemeldet. Dieselbe kanonische Zuordnung benutzt auch der Runner.
         env:
           HELMUT_SOURCE_MODE: "off"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -e
           BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
@@ -618,7 +620,7 @@ jobs:
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
-        shell: ${{ needs.plan.outputs.standard == 'true' && 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}' || 'bash --noprofile --norc -e -o pipefail {0}' }}
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: node scripts/lokal.js scripts/vorbedingung-mandatsfilter-datenbank-test.js
 
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Run the unchanged CI shell script; expose only exit/hash metadata, never logs."""
+"""Keep private CI output local; explicitly public jobs retain normal output."""
+from contextlib import nullcontext
 import hashlib
 import json
 import os
@@ -34,17 +35,25 @@ def main():
         script = Path(sys.argv[1])
         if not script.is_absolute() or script.resolve() != script or not script.is_file() or script.stat().st_size > 512 * 1024:
             raise RuntimeError('PRIVATE_CI_LOG_REJECTED')
-        output = log_directory() / ('step-' + secrets.token_hex(12) + '.log')
-        fd = os.open(output, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+        mode = os.environ.get('HELMUT_CI_PRIVATE_LOGS', 'true')
+        if mode not in ('true', 'false'):
+            raise RuntimeError('PRIVATE_CI_LOG_REJECTED')
+        output = None
+        log_context = nullcontext(None)
+        if mode == 'true':
+            output = log_directory() / ('step-' + secrets.token_hex(12) + '.log')
+            fd = os.open(output, os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+            log_context = os.fdopen(fd, 'wb')
         env = os.environ.copy()
-        blocked = {'HELMUT_CI_ORIGINALS_KEY', 'GITHUB_TOKEN', 'GH_TOKEN',
+        blocked = {'HELMUT_CI_ORIGINALS_KEY', 'HELMUT_CI_PRIVATE_LOGS', 'GITHUB_TOKEN', 'GH_TOKEN',
                    'GITHUB_ENV', 'GITHUB_PATH', 'GITHUB_OUTPUT', 'GITHUB_STEP_SUMMARY', 'GITHUB_STATE'}
         for name in list(env):
             if name in blocked or name.startswith('ACTIONS_'):
                 env.pop(name)
-        with os.fdopen(fd, 'wb') as log:
+        with log_context as log:
             child = subprocess.Popen(['bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', str(script)],
-                                     env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                                     env=env, stdout=log, stderr=subprocess.STDOUT if log else None,
+                                     start_new_session=True)
             def stop(signum, frame):
                 if child.poll() is None:
                     os.killpg(child.pid, signum)
@@ -57,11 +66,12 @@ def main():
             signal.signal(signal.SIGTERM, stop)
             signal.signal(signal.SIGINT, stop)
             code = child.wait()
-        digest = hashlib.sha256()
-        with output.open('rb') as handle:
-            while block := handle.read(65536): digest.update(block)
-        print(json.dumps({'scope': 'PRIVATE_CI_LOG_METADATA_ONLY', 'exitCode': code,
-                          'log': output.name, 'bytes': output.stat().st_size, 'sha256': digest.hexdigest()}))
+        if output is not None:
+            digest = hashlib.sha256()
+            with output.open('rb') as handle:
+                while block := handle.read(65536): digest.update(block)
+            print(json.dumps({'scope': 'PRIVATE_CI_LOG_METADATA_ONLY', 'exitCode': code,
+                              'log': output.name, 'bytes': output.stat().st_size, 'sha256': digest.hexdigest()}))
         return code if 0 <= code <= 255 else 1
     except Exception:
         if child is not None and child.poll() is None:
