@@ -211,6 +211,36 @@ begin
   if actual_own is distinct from expected_own then raise exception 'original-bridge-own-projection-mismatch';end if;
 end;$f$;
 
+-- Seed is private Owner initialization only: all seven names must be absent
+-- before the unchanged original CAS. Normal state/usage never use this helper.
+create function helmut_unit_diagnostic.original_bridge_compare_seed_v1(s text,g text,old_root text,new_root text,operation_id text,expected_own jsonb) returns void
+language plpgsql stable security invoker set search_path=pg_catalog as $f$
+declare old_map jsonb; new_map jsonb; actual_own jsonb:='{}'; k text; prefix text; own_keys text[]; a jsonb; b jsonb;
+begin
+  if operation_id is distinct from 'localUnitDiagnostic-'||right(current_database(),32) then raise exception 'original-bridge-seed-operation';end if;
+  prefix:='localUnitDiagnostic:'||right(operation_id,32)||':';
+  own_keys:=array['localUnitDiagnosticConsumedGrantsV1',prefix||'journal',prefix||'costs',prefix||'reservation',prefix||'sendClaim',prefix||'review',prefix||'result'];
+  if not helmut_unit_diagnostic.exact(expected_own,own_keys) or octet_length(expected_own::text)>4194304 then raise exception 'original-bridge-exact-own-seven';end if;
+  old_map:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,old_root);
+  new_map:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,new_root);
+  if (select array_agg(key collate "C" order by key collate "C") from jsonb_object_keys(old_map) key where not(key=any(own_keys)))
+    is distinct from (select array_agg(key collate "C" order by key collate "C") from jsonb_object_keys(new_map) key where not(key=any(own_keys))) then
+    raise exception 'original-bridge-outside-keyset-changed';end if;
+  for k in select key from jsonb_object_keys(old_map) key where not(key=any(own_keys)) loop
+    a:=old_map->k;b:=new_map->k;
+    if a=b then continue;end if;
+    if a->'inline'='false'::jsonb and b->'inline'='false'::jsonb then raise exception 'original-bridge-outside-child-hash-changed';end if;
+    if helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,a,false) is distinct from
+      helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,b,false) then raise exception 'original-bridge-outside-inline-value-changed';end if;
+  end loop;
+  foreach k in array own_keys loop
+    if old_map?k or not(new_map?k) then raise exception 'original-bridge-seed-all-seven-must-be-new';end if;
+    actual_own:=actual_own||jsonb_build_object(k,helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,new_map->k,true));
+    if octet_length(actual_own::text)>4194304 then raise exception 'original-bridge-own-projection-limit';end if;
+  end loop;
+  if actual_own is distinct from expected_own then raise exception 'original-bridge-own-projection-mismatch';end if;
+end;$f$;
+
 -- A name, JSON value or session GUC is never a receipt. Only the fresh private
 -- Root-created temporary relations, immutable arguments, role-separated INSERT
 -- policies and an actual main-auth tuple written by this backend transaction
@@ -374,6 +404,7 @@ revoke all on function helmut_unit_diagnostic.original_bridge_top_map_v1(text,te
 revoke all on function helmut_unit_diagnostic.original_bridge_value_v1(text,text,text,jsonb,boolean) from public;
 revoke all on function helmut_unit_diagnostic.original_bridge_own_projection_v1(text,text,text,text) from public;
 revoke all on function helmut_unit_diagnostic.original_bridge_compare_delta_v1(text,text,text,text,text,jsonb) from public;
+revoke all on function helmut_unit_diagnostic.original_bridge_compare_seed_v1(text,text,text,text,text,jsonb) from public;
 revoke all on function helmut_unit_diagnostic.original_bridge_receipt_v1(text,text,text,text,bigint,text,text,text,text,text) from public;
 reset role;
 
@@ -400,6 +431,7 @@ begin
       'original_bridge_own_projection_v1','original_bridge_compare_delta_v1','original_bridge_receipt_v1','exact') loop
     execute format('grant execute on function %s to %I,%I',p::regprocedure,writer,runtime_name);
   end loop;
+  execute format('grant execute on function helmut_unit_diagnostic.original_bridge_compare_seed_v1(text,text,text,text,text,jsonb) to %I',writer);
   execute format('grant select on helmut_unit_diagnostic.authority,helmut_unit_diagnostic.state to %I',writer);
   execute format('grant update(scope_hash) on helmut_unit_diagnostic.state to %I',writer);
   execute format('create policy original_bridge_auth_read on public.helmut_store for select to %I using(id=''main-auth'')',writer);

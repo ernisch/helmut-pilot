@@ -1,7 +1,7 @@
 "use strict";
 
 // Pure, private Owner-service transaction compiler. No process, connection,
-// filesystem, HTTP, token, seed, result installation or execution entry point.
+// filesystem, HTTP, token, result installation or execution entry point.
 // Root must load the qualification from its genuine private verifier boundary.
 // The initial authenticated PostgreSQL session is deliberately privileged;
 // SET SESSION AUTHORIZATION does not erase that origin or confer independence.
@@ -23,6 +23,7 @@ const HELPERS = Object.freeze({
   original_bridge_value_v1: Object.freeze({ args: "text, text, text, jsonb, boolean", sha: "7de36453e5e664d1040649d73d537be7b9ab0fd00429ad31e7ea19ca1bf4ac50", result: "jsonb" }),
   original_bridge_own_projection_v1: Object.freeze({ args: "text, text, text, text", sha: "8074531ee40f7fa2858dc7b82f4e7e455dd34254e3489d1c53c0c8347e874622", result: "jsonb" }),
   original_bridge_compare_delta_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "563ca8e1000bfc253e8ef9deee1805d23481f681781db4715fccf2159f52820b", result: "void" }),
+  original_bridge_compare_seed_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "3a7142913b89e4255fcc622dda5a2ea28412befcdaa9cdca20186e2fdae14b62", result: "void" }),
   original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "7546b33c570717038e3ec54f4b9d5ba027b7fda05cec4d8526cb59cd4d497068", result: "void" }),
 });
 const NATIVE = Object.freeze(["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"]);
@@ -66,7 +67,7 @@ function qualification(q, r) {
     && q.schema === "helmut-local-unit-original-bridge-qualification/1"
     && q.database === "helmut_unit_diagnostic_" + r.operationId.slice(-32)
     && q.operationId === r.operationId && q.commandHash === r.commandHash, "qualified-owned-target");
-  for (const [key, minimum, maximum] of [["originalSources", 15, 32], ["helperSources", 5, 5], ["nativeSources", 14, 128]]) {
+  for (const [key, minimum, maximum] of [["originalSources", 15, 32], ["helperSources", 6, 6], ["nativeSources", 15, 128]]) {
     need(Array.isArray(q[key]) && q[key].length >= minimum && q[key].length <= maximum, "source-pin-count");
     const oids = new Set(), names = new Set();
     for (const s of q[key]) { sourceShape(s, key === "originalSources" ? "original" : "native");
@@ -86,20 +87,24 @@ function qualification(q, r) {
     || NATIVE.some(n => s.name === "public.local_unit_diagnostic_" + n + "_v1"), "native-source-namespace");
 }
 function validate(r, q) {
-  need(exact(r, ["schema", "mode", "operationId", "commandHash", "claimId", "originalCAS", "ownBefore", "ownNext", "artifact"])
-    && r.schema === "helmut-local-unit-original-write/1" && ["state", "usage"].includes(r.mode)
+  const seed = r?.mode === "seed";
+  need(exact(r, ["schema", "mode", "operationId", "commandHash", "claimId", "originalCAS", "ownBefore", "ownNext", "artifact",
+    ...(seed ? ["privateOwnerInitialization"] : [])])
+    && r.schema === "helmut-local-unit-original-write/1" && ["seed", "state", "usage"].includes(r.mode)
     && typeof r.operationId === "string" && /^localUnitDiagnostic-[a-f0-9]{32}$/.test(r.operationId)
     && typeof r.commandHash === "string" && HASH.test(r.commandHash)
-    && typeof r.claimId === "string" && /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(r.claimId), "request-scope-seed-result-blocked");
+    && (seed ? r.claimId === null : typeof r.claimId === "string"
+      && /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(r.claimId)), "request-scope-private-seed-only");
   qualification(q, r);
-  need(exact(r.ownBefore, ["hash", "revision"]) && HASH.test(r.ownBefore.hash || "")
-    && Number.isSafeInteger(r.ownBefore.revision) && r.ownBefore.revision >= 0
+  need((seed ? r.ownBefore === null : exact(r.ownBefore, ["hash", "revision"]) && HASH.test(r.ownBefore.hash || "")
+    && Number.isSafeInteger(r.ownBefore.revision) && r.ownBefore.revision >= 0)
     && exact(r.ownNext, ["canonical", "hash"]), "own-compare-and-swap");
   const next = parsedCanonical(r.ownNext.canonical, r.ownNext.hash, OWN_CAP), keys = ownKeys(r.operationId);
   need(exact(next, keys), "own-seven-only");
   const p = "localUnitDiagnostic:" + r.operationId.slice(-32) + ":";
   need(next[p + "journal"]?.claimId === r.claimId && isDeepStrictEqual(next[p + "result"], { state: "pending", evidenceHash: null, positions: [] })
     && next[p + "journal"]?.state !== "closed", "result-transition-blocked");
+  if (seed) validateInitialization(r, next, p);
   const cas = r.originalCAS;
   need(exact(cas, ["id", "expectedRevision", "expectedProof", "expectedState", "revision", "root", "nodes", "additions"])
     && cas.id === "main-auth" && UUID.test(cas.expectedRevision || "") && UUID.test(cas.revision || "")
@@ -112,8 +117,9 @@ function validate(r, q) {
       && Buffer.byteLength(n.payload) <= 4194304 && SHA(n.payload) === n.hash && !seen.has(n.hash), "actual-original-node-bytes");
     seen.add(n.hash); nodeBytes += Buffer.byteLength(n.payload); need(nodeBytes <= 33554432, "actual-original-node-cap");
   }
-  if (r.mode === "state") {
-    need(r.artifact === null && cas.additions.length === 0 && r.ownNext.hash !== r.ownBefore.hash && cas.root !== cas.expectedState.root, "state-delta-only");
+  if (r.mode === "state" || seed) {
+    need(r.artifact === null && cas.additions.length === 0 && (seed || r.ownNext.hash !== r.ownBefore.hash)
+      && cas.root !== cas.expectedState.root, "state-delta-only");
   } else {
     const a = r.artifact;
     need(exact(a, ["kind", "logicalId", "canonical", "sha256", "parentHash"]) && ["usage-D", "usage-R"].includes(a.kind)
@@ -130,11 +136,105 @@ function validate(r, q) {
   need(Buffer.byteLength(canonical(r)) <= CAP && Buffer.byteLength(canonical(q)) <= 1024 * 1024, "bounded-request");
   return next;
 }
+function validateInitialization(r, next, p) {
+  const init = r.privateOwnerInitialization;
+  need(exact(init, ["authority", "observation"]), "private-initialization-shape");
+  const a = init.authority, o = init.observation;
+  need(exact(a, ["grantId", "commandCanonical", "admissionCanonical", "admissionHash", "sourceHash", "targetHash", "postrunHash", "sourceProofHash",
+    "codeManifestPin", "runtimeManifestPin", "gateHashes", "verifierCodeHash", "requestModels", "verifiedAtUTC", "expiresAtUTC"])
+    && exact(o, ["proofCanonical", "proofHash", "observedAtUTC"]), "private-initialization-fields");
+  for (const key of ["grantId", "admissionHash", "sourceHash", "targetHash", "postrunHash", "sourceProofHash", "verifierCodeHash"])
+    need(typeof a[key] === "string" && HASH.test(a[key]), "private-initialization-pins");
+  const command = parsedCanonical(a.commandCanonical, r.commandHash, 16 * 1024 * 1024);
+  const admission = parsedCanonical(a.admissionCanonical, a.admissionHash, 65536);
+  const observation = parsedCanonical(o.proofCanonical, o.proofHash, 65536);
+  for (const utc of [a.verifiedAtUTC, a.expiresAtUTC, o.observedAtUTC]) need(typeof utc === "string"
+    && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(utc) && Number.isFinite(Date.parse(utc))
+    && new Date(utc).toISOString() === utc, "private-initialization-utc");
+  for (const pin of [a.codeManifestPin, a.runtimeManifestPin]) need(exact(pin, ["path", "bytes", "sha256"])
+    && typeof pin.path === "string" && Number.isSafeInteger(pin.bytes) && pin.bytes > 0 && HASH.test(pin.sha256 || ""), "private-manifest-pin");
+  const gates = ["source", "runtime", "owner", "calendar", "costs", "reservation", "sender", "review", "result", "independentAcceptance"];
+  need(exact(a.gateHashes, gates) && gates.every(k => HASH.test(a.gateHashes[k] || ""))
+    && exact(a.requestModels, ["D", "R"]) && ["gpt-5-mini", "gpt-5-mini-eu"].includes(a.requestModels.D)
+    && a.requestModels.R === a.requestModels.D, "private-runtime-source-binding-shape");
+  need(admission.grantId === a.grantId && admission.commandHash === r.commandHash && admission.expiresAtUTC === a.expiresAtUTC
+    && observation.operationId === r.operationId && observation.commandHash === r.commandHash && observation.observedAtUTC === o.observedAtUTC,
+    "private-initialization-scope");
+  need(isDeepStrictEqual(next[p + "journal"], { operationId: r.operationId, commandHash: r.commandHash, state: "installed", claimId: null,
+    index: 0, inFlight: null, attempts: {}, stopRequested: false, reason: null })
+    && exact(next.localUnitDiagnosticConsumedGrantsV1, [a.grantId])
+    && isDeepStrictEqual(next[p + "costs"]?.calls, {}) && next[p + "costs"]?.spent === 0
+    && isDeepStrictEqual(next[p + "costs"]?.slot, command.slot)
+    && isDeepStrictEqual(next[p + "sendClaim"], {}) && isDeepStrictEqual(next[p + "review"], {}), "private-initial-state-no-claim");
+}
 function literal(value) { need(typeof value === "string" && !value.includes("\0"), "sql-text"); return "'" + value.replace(/'/g, "''") + "'"; }
 
+function seedInitialization(owner) {
+  return `SET SESSION AUTHORIZATION ${owner};
+DO $initialize$
+DECLARE r jsonb; a jsonb; o jsonb;
+BEGIN
+  IF session_user<>${literal(owner)} OR current_user<>session_user THEN RAISE EXCEPTION 'original-bridge-seed-owner-principal';END IF;
+  SELECT request_text::jsonb INTO STRICT r FROM pg_temp.original_bridge_args;
+  a:=r#>'{privateOwnerInitialization,authority}';o:=r#>'{privateOwnerInitialization,observation}';
+  IF r->>'mode' IS DISTINCT FROM 'seed' OR r->'claimId' IS DISTINCT FROM 'null'::jsonb OR r->'ownBefore' IS DISTINCT FROM 'null'::jsonb
+    OR encode(sha256(convert_to(a->>'commandCanonical','UTF8')),'hex') IS DISTINCT FROM r->>'commandHash'
+    OR EXISTS(SELECT FROM helmut_unit_diagnostic.authority WHERE scope_hash=r->>'commandHash' OR operation_id=r->>'operationId')
+    OR EXISTS(SELECT FROM helmut_unit_diagnostic.state WHERE scope_hash=r->>'commandHash')
+    OR EXISTS(SELECT FROM helmut_unit_diagnostic.runtime_observations WHERE scope_hash=r->>'commandHash')
+    OR EXISTS(SELECT FROM helmut_unit_diagnostic.artifacts WHERE scope_hash=r->>'commandHash')
+    OR EXISTS(SELECT FROM helmut_unit_diagnostic.leases WHERE scope_hash=r->>'commandHash') THEN
+    RAISE EXCEPTION 'original-bridge-seed-fresh-private-initialization-required';END IF;
+  -- Native unchanged owner-only triggers validate command/admission/source/
+  -- runtime bindings. JSON is not an independent source-verifier authority.
+  INSERT INTO helmut_unit_diagnostic.authority(scope_hash,operation_id,grant_id,command_canonical,admission_canonical,admission_hash,
+    source_hash,target_hash,postrun_hash,source_proof_hash,code_manifest_pin,runtime_manifest_pin,gate_hashes,verifier_code_hash,
+    request_models,verified_at,expires_at)
+  VALUES(r->>'commandHash',r->>'operationId',a->>'grantId',a->>'commandCanonical',a->>'admissionCanonical',a->>'admissionHash',
+    a->>'sourceHash',a->>'targetHash',a->>'postrunHash',a->>'sourceProofHash',a->'codeManifestPin',a->'runtimeManifestPin',a->'gateHashes',
+    a->>'verifierCodeHash',a->'requestModels',helmut_unit_diagnostic.utc(a->'verifiedAtUTC'),helmut_unit_diagnostic.utc(a->'expiresAtUTC'));
+  INSERT INTO helmut_unit_diagnostic.runtime_observations(scope_hash,proof_canonical,proof_hash,observed_at)
+  VALUES(r->>'commandHash',o->>'proofCanonical',o->>'proofHash',helmut_unit_diagnostic.utc(o->'observedAtUTC'));
+  -- No state exists yet. The fresh authority row is the own-scope lock, held
+  -- through original CAS and the later owner-only revision-zero state INSERT.
+  PERFORM 1 FROM helmut_unit_diagnostic.authority WHERE scope_hash=r->>'commandHash' FOR UPDATE;
+END;$initialize$;
+RESET SESSION AUTHORIZATION;
+`;
+}
+function seedOwn(owner) {
+  return `SET SESSION AUTHORIZATION ${owner};
+DO $seedown$
+DECLARE r jsonb; n text; inserted helmut_unit_diagnostic.state%rowtype; persisted helmut_unit_diagnostic.state%rowtype; ack jsonb;
+BEGIN
+  IF session_user<>${literal(owner)} OR current_user<>session_user THEN RAISE EXCEPTION 'original-bridge-seed-owner-principal';END IF;
+  SELECT request_text::jsonb,nonce INTO STRICT r,n FROM pg_temp.original_bridge_args;
+  IF (SELECT count(*) FROM pg_temp.original_bridge_results)<>1 OR NOT EXISTS(SELECT FROM pg_temp.original_bridge_results WHERE phase='authAck')
+    OR EXISTS(SELECT FROM helmut_unit_diagnostic.state WHERE scope_hash=r->>'commandHash') THEN RAISE EXCEPTION 'original-bridge-seed-pre-own-ack-required';END IF;
+  INSERT INTO helmut_unit_diagnostic.state(scope_hash,revision,canonical_text,body_hash,body)
+    VALUES(r->>'commandHash',0,r#>>'{ownNext,canonical}',r#>>'{ownNext,hash}',(r#>>'{ownNext,canonical}')::jsonb)
+    RETURNING * INTO STRICT inserted;
+  SELECT * INTO STRICT persisted FROM helmut_unit_diagnostic.state WHERE scope_hash=inserted.scope_hash;
+  IF inserted IS DISTINCT FROM persisted OR persisted.scope_hash IS DISTINCT FROM r->>'commandHash' OR persisted.revision<>0
+    OR persisted.body_hash IS DISTINCT FROM r#>>'{ownNext,hash}' OR persisted.canonical_text IS DISTINCT FROM r#>>'{ownNext,canonical}'
+    OR persisted.body IS DISTINCT FROM (r#>>'{ownNext,canonical}')::jsonb
+    OR encode(sha256(convert_to(persisted.canonical_text,'UTF8')),'hex') IS DISTINCT FROM persisted.body_hash
+    OR NOT EXISTS(SELECT FROM helmut_unit_diagnostic.authority WHERE scope_hash=persisted.scope_hash AND operation_id=r->>'operationId')
+    OR (SELECT count(*) FROM helmut_unit_diagnostic.runtime_observations WHERE scope_hash=persisted.scope_hash)<>1
+    OR EXISTS(SELECT FROM helmut_unit_diagnostic.artifacts WHERE scope_hash=persisted.scope_hash)
+    OR EXISTS(SELECT FROM helmut_unit_diagnostic.leases WHERE scope_hash=persisted.scope_hash) THEN
+    RAISE EXCEPTION 'original-bridge-seed-persisted-state-unconfirmed';END IF;
+  ack:=jsonb_build_object('version','helmut-local-unit-diagnostic-seed-ack/1','scopeHash',persisted.scope_hash,
+    'operationId',r->>'operationId','revision',persisted.revision,'hash',persisted.body_hash,'nonce',n);
+  INSERT INTO pg_temp.original_bridge_results VALUES('ownAck',ack);
+END;$seedown$;
+RESET SESSION AUTHORIZATION;
+`;
+}
 function compile(r, q, nonce) {
   const suffix = r.operationId.slice(-32), writer = "helmut_ud_bridge_writer_" + suffix;
   const auth = "helmut_ud_authenticator_" + suffix, runtime = "helmut_ud_runtime_" + suffix;
+  const owner = "helmut_ud_owner_" + suffix, seed = r.mode === "seed", ownActor = seed ? owner : runtime;
   const requestText = canonical(r), qualificationText = canonical(q);
   return `BEGIN;
 SET LOCAL standard_conforming_strings=on;
@@ -165,6 +265,14 @@ BEGIN
     OR EXISTS(SELECT FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=${literal(writer)}))
     OR EXISTS(SELECT FROM pg_auth_members WHERE roleid=(SELECT oid FROM pg_roles WHERE rolname=${literal(writer)}))
     OR pg_has_role(${literal(auth)},${literal(writer)},'MEMBER') THEN RAISE EXCEPTION 'original-bridge-no-privileged-role-bridge';END IF;
+  ${seed ? `IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname=${literal(owner)}
+      AND NOT(rolsuper OR rolbypassrls OR rolcreatedb OR rolcreaterole OR rolinherit OR rolcanlogin OR rolreplication))
+    OR NOT EXISTS(SELECT FROM pg_namespace WHERE nspname='helmut_unit_diagnostic' AND nspowner=(SELECT oid FROM pg_roles WHERE rolname=${literal(owner)}))
+    OR EXISTS(SELECT FROM pg_class cl JOIN pg_namespace ns ON ns.oid=cl.relnamespace WHERE ns.nspname='helmut_unit_diagnostic'
+      AND cl.relowner<>(SELECT oid FROM pg_roles WHERE rolname=${literal(owner)}))
+    OR EXISTS(SELECT FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=${literal(owner)}))
+    OR pg_has_role(${literal(auth)},${literal(owner)},'MEMBER') OR pg_has_role(${literal(runtime)},${literal(owner)},'MEMBER') THEN
+    RAISE EXCEPTION 'original-bridge-seed-exact-private-owner-required';END IF;` : ""}
   FOR s IN SELECT value FROM jsonb_array_elements(q->'originalSources') UNION ALL SELECT value FROM jsonb_array_elements(q->'nativeSources') LOOP
     SELECT p0.*,n.nspname,l.lanname INTO STRICT p FROM pg_proc p0 JOIN pg_namespace n ON n.oid=p0.pronamespace
       JOIN pg_language l ON l.oid=p0.prolang WHERE p0.oid=(s->>'oid')::oid;
@@ -201,45 +309,53 @@ BEGIN
     EXECUTE format('REVOKE ALL ON TABLE %s FROM postgres',acl_target::regclass);
     EXECUTE format('GRANT ALL ON TABLE %s TO postgres',acl_target::regclass);
   END LOOP;
-  EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I,%I',temp_name,${literal(writer)},${literal(runtime)});
-  EXECUTE format('GRANT SELECT ON pg_temp.original_bridge_args TO %I,%I',${literal(writer)},${literal(runtime)});
-  EXECUTE format('GRANT SELECT,INSERT ON pg_temp.original_bridge_results TO %I,%I',${literal(writer)},${literal(runtime)});
+  EXECUTE format('GRANT USAGE ON SCHEMA %I TO %I,%I',temp_name,${literal(writer)},${literal(ownActor)});
+  EXECUTE format('GRANT SELECT ON pg_temp.original_bridge_args TO %I,%I',${literal(writer)},${literal(ownActor)});
+  EXECUTE format('GRANT SELECT,INSERT ON pg_temp.original_bridge_results TO %I,%I',${literal(writer)},${literal(ownActor)});
   ALTER TABLE pg_temp.original_bridge_results ENABLE ROW LEVEL SECURITY;
   ALTER TABLE pg_temp.original_bridge_results FORCE ROW LEVEL SECURITY;
-  EXECUTE format('CREATE POLICY original_bridge_read ON pg_temp.original_bridge_results FOR SELECT TO %I,%I USING(true)',${literal(writer)},${literal(runtime)});
+  EXECUTE format('CREATE POLICY original_bridge_read ON pg_temp.original_bridge_results FOR SELECT TO %I,%I USING(true)',${literal(writer)},${literal(ownActor)});
   EXECUTE format('CREATE POLICY original_bridge_auth_insert ON pg_temp.original_bridge_results FOR INSERT TO %I WITH CHECK(phase=''authAck'')',${literal(writer)});
-  EXECUTE format('CREATE POLICY original_bridge_own_insert ON pg_temp.original_bridge_results FOR INSERT TO %I WITH CHECK(phase=''ownAck'')',${literal(runtime)});
+  EXECUTE format('CREATE POLICY original_bridge_own_insert ON pg_temp.original_bridge_results FOR INSERT TO %I WITH CHECK(phase=''ownAck'')',${literal(ownActor)});
 END;$root$;
+${seed ? seedInitialization(owner) : ""}
 SET SESSION AUTHORIZATION ${writer};
 DO $original$
 DECLARE r jsonb; c jsonb; d jsonb; a jsonb; m jsonb; u jsonb; old_own jsonb; ack jsonb; after_root jsonb; after_usage jsonb;
-  own_row helmut_unit_diagnostic.state%rowtype; authority_row helmut_unit_diagnostic.authority%rowtype; prefix text; phase text; ticket text; usage_row record;
+  own_row helmut_unit_diagnostic.state%rowtype; authority_row helmut_unit_diagnostic.authority%rowtype; prefix text; phase text; ticket text; usage_row record; top_map jsonb; k text;
 BEGIN
   IF session_user<>${literal(writer)} OR current_user<>session_user THEN RAISE EXCEPTION 'original-bridge-writer-principal';END IF;
   SELECT request_text::jsonb INTO STRICT r FROM pg_temp.original_bridge_args;c:=r->'originalCAS';d:=(r#>>'{ownNext,canonical}')::jsonb;
   prefix:='localUnitDiagnostic:'||right(r->>'operationId',32)||':';
-  -- Fixed shared lock order: own state, main-auth, then usage/artifact/results.
-  SELECT * INTO STRICT own_row FROM helmut_unit_diagnostic.state WHERE scope_hash=r->>'commandHash' FOR UPDATE;
+  -- Fixed lock order: own state (seed: already locked new authority), main-auth,
+  -- then usage/artifact/results. No runtime role can initialize a seed.
+  ${seed ? `IF EXISTS(SELECT FROM helmut_unit_diagnostic.state WHERE scope_hash=r->>'commandHash') THEN
+    RAISE EXCEPTION 'original-bridge-seed-own-state-already-present';END IF;` : `SELECT * INTO STRICT own_row FROM helmut_unit_diagnostic.state WHERE scope_hash=r->>'commandHash' FOR UPDATE;`}
   SELECT data INTO STRICT a FROM public.helmut_store WHERE id='main-auth' FOR UPDATE;
   SELECT * INTO STRICT authority_row FROM helmut_unit_diagnostic.authority WHERE scope_hash=r->>'commandHash';
-  IF own_row.body_hash IS DISTINCT FROM r#>>'{ownBefore,hash}' OR own_row.revision::text IS DISTINCT FROM r#>>'{ownBefore,revision}'
+  ${seed ? "" : `IF own_row.body_hash IS DISTINCT FROM r#>>'{ownBefore,hash}' OR own_row.revision::text IS DISTINCT FROM r#>>'{ownBefore,revision}'
     OR own_row.body IS DISTINCT FROM own_row.canonical_text::jsonb
-    OR encode(sha256(convert_to(own_row.canonical_text,'UTF8')),'hex') IS DISTINCT FROM own_row.body_hash
-    OR authority_row.operation_id IS DISTINCT FROM r->>'operationId' OR clock_timestamp()>=authority_row.expires_at
+    OR encode(sha256(convert_to(own_row.canonical_text,'UTF8')),'hex') IS DISTINCT FROM own_row.body_hash THEN
+    RAISE EXCEPTION 'original-bridge-own-before-or-next-mismatch';END IF;`}
+  IF authority_row.operation_id IS DISTINCT FROM r->>'operationId' OR clock_timestamp()>=authority_row.expires_at
     OR encode(sha256(convert_to(r#>>'{ownNext,canonical}','UTF8')),'hex') IS DISTINCT FROM r#>>'{ownNext,hash}' THEN
     RAISE EXCEPTION 'original-bridge-own-before-or-next-mismatch';END IF;
-  IF own_row.body#>>ARRAY[prefix||'journal','claimId'] IS DISTINCT FROM r->>'claimId' THEN
+  ${seed ? "" : `IF own_row.body#>>ARRAY[prefix||'journal','claimId'] IS DISTINCT FROM r->>'claimId' THEN
     IF (r->>'mode'='state' AND own_row.body#>>ARRAY[prefix||'journal','state']='installed'
       AND own_row.body#>ARRAY[prefix||'journal','claimId']='null'::jsonb) IS NOT TRUE THEN RAISE EXCEPTION 'original-bridge-own-current-claim';END IF;
-  END IF;
+  END IF;`}
   m:=public.helmut_auth_state_assert_root_local_v1(a);u:=public.helmut_auth_usage_checked_proof_local_v1('main-auth');
   IF a->>'_authStoreRevision' IS DISTINCT FROM c->>'expectedRevision' OR m IS DISTINCT FROM c->'expectedState'
     OR u->'proof' IS DISTINCT FROM c->'expectedProof' OR u->>'revision' IS DISTINCT FROM c->>'expectedRevision' THEN
     RAISE EXCEPTION 'original-bridge-original-before-stale';END IF;
-  old_own:=helmut_unit_diagnostic.original_bridge_own_projection_v1('main-auth',m->>'generation',m->>'root',r->>'operationId');
+  ${seed ? `top_map:=helmut_unit_diagnostic.original_bridge_top_map_v1('main-auth',m->>'generation',m->>'root');
+  FOREACH k IN ARRAY ARRAY['localUnitDiagnosticConsumedGrantsV1',prefix||'journal',prefix||'costs',prefix||'reservation',prefix||'sendClaim',prefix||'review',prefix||'result'] LOOP
+    IF top_map?k THEN RAISE EXCEPTION 'original-bridge-seed-old-own-key-present';END IF;
+  END LOOP;` : `old_own:=helmut_unit_diagnostic.original_bridge_own_projection_v1('main-auth',m->>'generation',m->>'root',r->>'operationId');
   IF old_own IS DISTINCT FROM own_row.body THEN RAISE EXCEPTION 'original-bridge-old-full-auth-mirror';END IF;
-  IF r->>'mode'='state' THEN
-    IF c->'additions'<>'[]'::jsonb OR d IS NOT DISTINCT FROM own_row.body THEN RAISE EXCEPTION 'original-bridge-no-state-noop-or-usage';END IF;
+  `}
+  IF r->>'mode' IN('state','seed') THEN
+    IF c->'additions'<>'[]'::jsonb ${seed ? "" : "OR d IS NOT DISTINCT FROM own_row.body"} THEN RAISE EXCEPTION 'original-bridge-no-state-noop-or-usage';END IF;
   ELSE
     IF jsonb_array_length(c->'additions')<>1 OR d IS DISTINCT FROM own_row.body OR c->>'root' IS DISTINCT FROM m->>'root'
       OR c->'nodes'<>'[]'::jsonb OR c#>'{additions,0}' IS DISTINCT FROM (r#>>'{artifact,canonical}')::jsonb THEN
@@ -265,7 +381,7 @@ BEGIN
     OR ack#>>'{0,proof,originalHash}' IS DISTINCT FROM u#>>'{proof,originalHash}'
     OR (ack#>>'{0,proof,count}')::bigint<>(u#>>'{proof,count}')::bigint+jsonb_array_length(c->'additions') THEN
     RAISE EXCEPTION 'original-bridge-original-ack-unconfirmed';END IF;
-  IF (r->>'mode'='state' AND ack#>>'{0,proof,head}' IS DISTINCT FROM u#>>'{proof,head}')
+  IF (r->>'mode' IN('state','seed') AND ack#>>'{0,proof,head}' IS DISTINCT FROM u#>>'{proof,head}')
     OR (r->>'mode'='usage' AND ack#>>'{0,proof,head}' IS NOT DISTINCT FROM u#>>'{proof,head}') THEN
     RAISE EXCEPTION 'original-bridge-original-history-head';END IF;
   SELECT data INTO STRICT a FROM public.helmut_store WHERE id='main-auth';
@@ -274,7 +390,7 @@ BEGIN
     OR after_usage->>'revision' IS DISTINCT FROM c->>'revision' OR a->>'_authStoreRevision' IS DISTINCT FROM c->>'revision'
     OR coalesce(current_setting('helmut.atomic_state_seal',true),'')<>'' OR coalesce(current_setting('helmut.atomic_usage_seal',true),'')<>'' THEN
     RAISE EXCEPTION 'original-bridge-original-readback-unconfirmed';END IF;
-  PERFORM helmut_unit_diagnostic.original_bridge_compare_delta_v1('main-auth',m->>'generation',m->>'root',after_root->>'root',r->>'operationId',d);
+  PERFORM helmut_unit_diagnostic.${seed ? "original_bridge_compare_seed_v1" : "original_bridge_compare_delta_v1"}('main-auth',m->>'generation',m->>'root',after_root->>'root',r->>'operationId',d);
   IF r->>'mode'='usage' THEN
     SELECT * INTO STRICT usage_row FROM public.llm_usage WHERE usage_store_id='main-auth' AND usage_generation=u#>>'{proof,generation}'
       AND usage_ordinal=(u#>>'{proof,count}')::bigint+1;
@@ -285,7 +401,7 @@ BEGIN
   INSERT INTO pg_temp.original_bridge_results VALUES('authAck',ack);
 END;$original$;
 RESET SESSION AUTHORIZATION;
-SET SESSION AUTHORIZATION ${auth};
+${seed ? seedOwn(owner) : `SET SESSION AUTHORIZATION ${auth};
 SET LOCAL ROLE ${runtime};
 DO $own$
 DECLARE r jsonb; n text; ack jsonb; claim_hash text; current_body jsonb; current_hash text; current_revision bigint;
@@ -320,6 +436,7 @@ BEGIN
 END;$own$;
 RESET ROLE;
 RESET SESSION AUTHORIZATION;
+`}
 DO $final$
 BEGIN
   IF session_user<>'postgres' OR current_user<>session_user OR (SELECT count(*) FROM pg_temp.original_bridge_results)<>2 THEN
@@ -337,7 +454,8 @@ function prepare(request, inputQualification) {
   const sql = compile(requestCopy, q, nonce), packet = Object.freeze({ schema: "helmut-local-unit-original-transaction-plan/1",
     database: q.database, sql, sqlSHA256: SHA(sql), requestSHA256: SHA(canonical(requestCopy)), qualificationSHA256: SHA(canonical(q)),
     requiredInitialRole: "postgres", requiredInitialSuperuser: true, originallyUnprivileged: false,
-    preparedOnly: true, seedBlocked: true, resultTransitionBlocked: true, unitExecutionAuthorized: false, full500: false });
+    preparedOnly: true, privateOwnerInitialization: requestCopy.mode === "seed", publicSeedBlocked: true,
+    resultTransitionBlocked: true, unitExecutionAuthorized: false, full500: false });
   prepared.set(packet, { request: requestCopy, nonce }); return packet;
 }
 function acceptResult(packet, raw) {
@@ -356,9 +474,12 @@ function acceptResult(packet, raw) {
   need(exact(a, ["id", "revision", "proof", "state"]) && a.id === "main-auth" && a.revision === c.revision && proof(a.proof) && state(a.state)
     && a.proof.generation === c.expectedProof.generation && a.proof.originalHash === c.expectedProof.originalHash
     && a.proof.count === c.expectedProof.count + c.additions.length
-    && (r.mode === "state" ? a.proof.head === c.expectedProof.head : a.proof.head !== c.expectedProof.head)
+    && (r.mode === "usage" ? a.proof.head !== c.expectedProof.head : a.proof.head === c.expectedProof.head)
     && isDeepStrictEqual(a.state, { ...c.expectedState, root: c.root }), "result-original-ack");
-  if (r.mode === "state") need(exact(w, ["version", "scopeHash", "hash", "revision", "claimHash", "nonce"])
+  if (r.mode === "seed") need(exact(w, ["version", "scopeHash", "operationId", "revision", "hash", "nonce"])
+    && w.version === "helmut-local-unit-diagnostic-seed-ack/1" && w.hash === r.ownNext.hash
+    && w.revision === 0 && w.operationId === r.operationId, "result-native-seed-ack");
+  else if (r.mode === "state") need(exact(w, ["version", "scopeHash", "hash", "revision", "claimHash", "nonce"])
     && w.version === "helmut-local-unit-diagnostic-state-ack/1" && w.hash === r.ownNext.hash
     && w.revision === r.ownBefore.revision + 1 && w.claimHash === SHA(r.claimId), "result-native-state-ack");
   else need(exact(w, ["version", "scopeHash", "kind", "logicalId", "hash", "stateRevision", "nonce"])

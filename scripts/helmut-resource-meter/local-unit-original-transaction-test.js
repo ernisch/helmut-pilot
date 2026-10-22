@@ -17,6 +17,7 @@ const originalNames = ["state_cas_v1", "state_payload_hash_local_v1", "state_lea
 const nativeNames = ["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"];
 const helperArgs = { original_bridge_top_map_v1: "text, text, text", original_bridge_value_v1: "text, text, text, jsonb, boolean",
   original_bridge_own_projection_v1: "text, text, text, text", original_bridge_compare_delta_v1: "text, text, text, text, text, jsonb",
+  original_bridge_compare_seed_v1: "text, text, text, text, text, jsonb",
   original_bridge_receipt_v1: "text, text, text, text, bigint, text, text, text, text, text" };
 const helperBodies = [...proposal.matchAll(/create function helmut_unit_diagnostic\.(original_bridge_[a-z0-9_]+)\([^;]+?as \$f\$([\s\S]*?)\$f\$;/g)];
 let count = 0;
@@ -26,7 +27,7 @@ function source(name, oid) { return { name, oid: String(oid), identityArguments:
   volatility: "v", returnType: "jsonb", language: "plpgsql", config: ["search_path=pg_catalog"] }; }
 function qualification() {
   const helperSources = helperBodies.map((m, i) => ({ ...source("helmut_unit_diagnostic." + m[1], 2000 + i),
-    identityArguments: helperArgs[m[1]], prosrcSHA256: hash(m[2]), volatility: "s", returnType: /compare_delta|receipt/.test(m[1]) ? "void" : "jsonb" }));
+    identityArguments: helperArgs[m[1]], prosrcSHA256: hash(m[2]), volatility: "s", returnType: /compare_delta|compare_seed|receipt/.test(m[1]) ? "void" : "jsonb" }));
   return { schema: "helmut-local-unit-original-bridge-qualification/1", database: "helmut_unit_diagnostic_" + suffix,
     operationId: op, commandHash: "c".repeat(64), originalSources: originalNames.map((n, i) => source(n, 1000 + i)), helperSources,
     nativeSources: [...helperSources, ...nativeNames.map((n, i) => source("public.local_unit_diagnostic_" + n + "_v1", 3000 + i))] };
@@ -51,12 +52,36 @@ function request(mode = "state") {
     ownBefore: { hash: mode === "usage" ? nextHash : "d".repeat(64), revision: 7 }, ownNext: { canonical, hash: nextHash },
     artifact: mode === "usage" ? { kind: "usage-D", logicalId: "ticket-D", canonical: can(body), sha256: hash(can(body)), parentHash: null } : null };
 }
+function seedRequest() {
+  // Shape-only private verifier fixture. Its source metadata is deliberately
+  // synthetic, and is never presented to a native DB as qualification.
+  const r = request(), q = qualification(), grantId = "9".repeat(64), commandCanonical = can({ slot: { plan: { operationId: op } } });
+  r.commandHash = q.commandHash = hash(commandCanonical); r.mode = "seed"; r.claimId = null; r.ownBefore = null;
+  const verifiedAtUTC = "2026-10-22T12:00:00.000Z", expiresAtUTC = "2026-10-22T12:02:00.000Z";
+  const admissionCanonical = can({ grantId, commandHash: r.commandHash, expiresAtUTC });
+  const proofCanonical = can({ operationId: op, commandHash: r.commandHash, observedAtUTC: verifiedAtUTC });
+  r.privateOwnerInitialization = { authority: { grantId, commandCanonical, admissionCanonical, admissionHash: hash(admissionCanonical),
+    sourceHash: "1".repeat(64), targetHash: "2".repeat(64), postrunHash: "3".repeat(64), sourceProofHash: "4".repeat(64),
+    codeManifestPin: { path: "/shape-only/CODE_MANIFEST.SAFE.json", bytes: 2, sha256: "5".repeat(64) },
+    runtimeManifestPin: { path: "/shape-only/RUNTIME_MANIFEST.SAFE.json", bytes: 2, sha256: "6".repeat(64) },
+    gateHashes: Object.fromEntries(["source", "runtime", "owner", "calendar", "costs", "reservation", "sender", "review", "result", "independentAcceptance"].map(k => [k, "7".repeat(64)])),
+    verifierCodeHash: "8".repeat(64), requestModels: { D: "gpt-5-mini", R: "gpt-5-mini" }, verifiedAtUTC, expiresAtUTC },
+    observation: { proofCanonical, proofHash: hash(proofCanonical), observedAtUTC: verifiedAtUTC } };
+  const next = JSON.parse(r.ownNext.canonical);
+  next.localUnitDiagnosticConsumedGrantsV1 = { [grantId]: {} };
+  next[prefix + "journal"] = { operationId: op, commandHash: r.commandHash, state: "installed", claimId: null,
+    index: 0, inFlight: null, attempts: {}, stopRequested: false, reason: null };
+  next[prefix + "costs"] = { calls: {}, spent: 0, slot: JSON.parse(commandCanonical).slot };
+  r.ownNext.canonical = can(next); r.ownNext.hash = hash(r.ownNext.canonical);
+  return { r, q };
+}
 function response(r, packet) {
   const nonce = /,'([a-f0-9]{64})',pg_backend_pid\(\),pg_current_xact_id\(\)\);\nDO \$root\$/.exec(packet.sql)?.[1]; assert.ok(Boolean(nonce), "closed request nonce absent");
   return { schema: "helmut-local-unit-original-write-result/1", authAck: [{ id: "main-auth", revision: r.originalCAS.revision,
     proof: { ...r.originalCAS.expectedProof, count: r.originalCAS.expectedProof.count + (r.mode === "usage" ? 1 : 0),
       head: r.mode === "usage" ? "1".repeat(64) : r.originalCAS.expectedProof.head }, state: { ...r.originalCAS.expectedState, root: r.originalCAS.root } }],
-    ownAck: r.mode === "state" ? { version: "helmut-local-unit-diagnostic-state-ack/1", scopeHash: r.commandHash,
+    ownAck: r.mode === "seed" ? { version: "helmut-local-unit-diagnostic-seed-ack/1", scopeHash: r.commandHash,
+      operationId: r.operationId, revision: 0, hash: r.ownNext.hash, nonce } : r.mode === "state" ? { version: "helmut-local-unit-diagnostic-state-ack/1", scopeHash: r.commandHash,
       hash: r.ownNext.hash, revision: r.ownBefore.revision + 1, claimHash: hash(r.claimId), nonce }
       : { version: "helmut-local-unit-diagnostic-artifact-ack/1", scopeHash: r.commandHash, kind: r.artifact.kind,
         logicalId: r.artifact.logicalId, hash: r.artifact.sha256, stateRevision: r.ownBefore.revision, nonce } };
@@ -64,15 +89,68 @@ function response(r, packet) {
 check("pure state and usage compilation with explicit privileged origin", () => {
   for (const mode of ["state", "usage"]) { const r = request(mode), packet = transaction.prepare(r, qualification());
     assert.ok(packet.preparedOnly && packet.requiredInitialSuperuser && packet.requiredInitialRole === "postgres" && !packet.originallyUnprivileged
-      && !packet.unitExecutionAuthorized && !packet.full500 && packet.seedBlocked && packet.resultTransitionBlocked);
+      && !packet.unitExecutionAuthorized && !packet.full500 && packet.publicSeedBlocked && packet.resultTransitionBlocked);
     assert.ok(packet.sqlSHA256 === hash(packet.sql) && packet.requestSHA256 === hash(can(r)));
     assert.ok(transaction.acceptResult(packet, JSON.stringify(response(r, packet))).schema === "helmut-local-unit-original-write-result/1");
   }
 });
 check("helper native prosrc pins are actual exact proposal body hashes", () => {
-  assert.ok(helperBodies.length === 5);
+  assert.ok(helperBodies.length === 6);
   for (const m of helperBodies) assert.ok(code.includes(hash(m[2])), "helper source pin drift");
   const q = qualification(); q.helperSources[0].prosrcSHA256 = "0".repeat(64); rejects(() => transaction.prepare(request(), q));
+});
+check("private seed compiles actual original CAS and owner-only revision-zero insert", () => {
+  const { r, q } = seedRequest(), packet = transaction.prepare(r, q), sql = packet.sql;
+  assert.ok(packet.privateOwnerInitialization && packet.publicSeedBlocked && packet.preparedOnly && !packet.unitExecutionAuthorized);
+  assert.ok((sql.match(/^BEGIN;/gm) || []).length === 1 && (sql.match(/^COMMIT;/gm) || []).length === 1);
+  const authority = sql.indexOf("INSERT INTO helmut_unit_diagnostic.authority"), observation = sql.indexOf("INSERT INTO helmut_unit_diagnostic.runtime_observations");
+  const original = sql.indexOf("ack:=public.helmut_auth_state_cas_v1(c)"), own = sql.indexOf("INSERT INTO helmut_unit_diagnostic.state");
+  assert.ok(authority > sql.indexOf("original-bridge-complete-native-source-set") && authority < observation && observation < original && original < own);
+  assert.ok(sql.indexOf("scope_hash=r->>'commandHash' FOR UPDATE;") < sql.indexOf("WHERE id='main-auth' FOR UPDATE;"));
+  assert.ok(!sql.includes("SET SESSION AUTHORIZATION helmut_ud_authenticator_") && !sql.includes("SET LOCAL ROLE helmut_ud_runtime_"));
+  for (const text of ["original-bridge-seed-old-own-key-present", "original_bridge_compare_seed_v1", "original-bridge-seed-exact-private-owner-required",
+    "original-bridge-seed-fresh-private-initialization-required", "RETURNING * INTO STRICT inserted", "inserted IS DISTINCT FROM persisted",
+    "original-bridge-seed-persisted-state-unconfirmed", "helmut-local-unit-diagnostic-seed-ack/1"])
+    assert.ok(sql.includes(text), "seed binding missing");
+  const result = transaction.acceptResult(packet, JSON.stringify(response(r, packet)));
+  assert.deepEqual(Object.keys(result.ownAck).sort(), ["hash", "nonce", "operationId", "revision", "scopeHash", "version"]);
+});
+check("seed private input cannot claim consume replay inject roles or change initial own state", () => {
+  for (const mutate of [r => { r.claimId = claim; }, r => { r.ownBefore = { hash: "0".repeat(64), revision: 0 }; },
+    r => { r.privateOwnerInitialization.qualified = true; }, r => { r.privateOwnerInitialization.authority.scopeHash = r.commandHash; },
+    r => { r.privateOwnerInitialization.observation.ordinal = 1; }, r => { r.privateOwnerInitialization.authority.commandCanonical += " "; },
+    r => { r.privateOwnerInitialization.authority.admissionHash = "0".repeat(64); },
+    r => { r.privateOwnerInitialization.observation.proofHash = "0".repeat(64); }, r => { r.privateOwnerInitialization.authority.verifiedAtUTC = "invalid"; },
+    r => { r.originalCAS.additions = [{}]; }, r => { r.artifact = {}; }]) {
+    const { r, q } = seedRequest(); mutate(r); rejects(() => transaction.prepare(r, q));
+  }
+  for (const mutate of [v => { v[prefix + "journal"].claimId = claim; }, v => { v[prefix + "journal"].attempts.D = {}; },
+    v => { v[prefix + "journal"].state = "running"; }, v => { v[prefix + "costs"].spent = 1; },
+    v => { v[prefix + "costs"].calls.ticket = {}; }, v => { v[prefix + "sendClaim"].D = {}; },
+    v => { v.localUnitDiagnosticConsumedGrantsV1.oldGrant = {}; }]) {
+    const { r, q } = seedRequest(), v = JSON.parse(r.ownNext.canonical); mutate(v);
+    r.ownNext.canonical = can(v); r.ownNext.hash = hash(r.ownNext.canonical); rejects(() => transaction.prepare(r, q));
+  }
+  const r = request(); r.privateOwnerInitialization = seedRequest().r.privateOwnerInitialization;
+  rejects(() => transaction.prepare(r, qualification()));
+});
+check("seed new-key native comparison never weakens normal delta or opens runtime seed execute", () => {
+  const body = helperBodies.find(x => x[1] === "original_bridge_compare_seed_v1")[2];
+  assert.ok(body.includes("if old_map?k or not(new_map?k)"));
+  for (const text of ["original-bridge-outside-keyset-changed", "original-bridge-outside-child-hash-changed", "original-bridge-outside-inline-value-changed",
+    "original-bridge-own-projection-mismatch", "original_bridge_top_map_v1"]) assert.ok(body.includes(text));
+  assert.ok(proposal.includes("if not(old_map?k) or not(new_map?k)"));
+  assert.ok(proposal.includes("original_bridge_compare_seed_v1(text,text,text,text,text,jsonb) to %I',writer"));
+  assert.ok(!proposal.includes("'original_bridge_compare_seed_v1','original_bridge_receipt_v1'"));
+});
+check("seed ACK cannot acknowledge any old scope claim hash revision or history change", () => {
+  for (const mutate of [v => { v.authAck = []; }, v => { v.authAck[0].proof.head = "0".repeat(64); },
+    v => { v.authAck[0].proof.count++; }, v => { v.ownAck.version = "helmut-local-unit-diagnostic-state-ack/1"; },
+    v => { v.ownAck.operationId = "old"; }, v => { v.ownAck.revision = 1; }, v => { v.ownAck.claimHash = "0".repeat(64); },
+    v => { v.ownAck.nonce = "0".repeat(64); }, v => { v.ownAck.hash = "0".repeat(64); }]) {
+    const { r, q } = seedRequest(), packet = transaction.prepare(r, q), value = response(r, packet); mutate(value);
+    rejects(() => transaction.acceptResult(packet, JSON.stringify(value)));
+  }
 });
 check("target mode seed result and field smuggling rejected", () => {
   for (const mutate of [r => { r.mode = "seed"; }, r => { r.mode = "result"; }, r => { r.operationId = "production"; },
@@ -142,8 +220,8 @@ check("structured argument quoting prevents caller SQL interpolation", () => {
   assert.ok((sql.match(/^COMMIT;/gm) || []).length === 1);
 });
 check("native read helpers remain SECINV bounded and never copy complete auth", () => {
-  assert.ok((proposal.match(/create function helmut_unit_diagnostic\.original_bridge_/g) || []).length === 5);
-  assert.ok((proposal.match(/language plpgsql stable security invoker set search_path=pg_catalog/g) || []).length === 5);
+  assert.ok((proposal.match(/create function helmut_unit_diagnostic\.original_bridge_/g) || []).length === 6);
+  assert.ok((proposal.match(/language plpgsql stable security invoker set search_path=pg_catalog/g) || []).length === 6);
   assert.ok(!/security\s+definer|create\s+or\s+replace|disable\s+trigger|drop\s+trigger/i.test(proposal));
   for (const required of ["current_hash=any(seen)", "result?k", "original-bridge-mixed-leaf-required", "native_work+native_size>16777216",
     "original-bridge-outside-child-hash-changed", "original-bridge-own-key-missing-seed-blocked", "with check(false)", "pg_depend", "d.deptype='i'",
