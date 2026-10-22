@@ -51,8 +51,22 @@ function pinShape(p) { need(exact(p, ["path", "bytes", "sha256"]) && path.isAbso
 function processInfo(pid) {
   need(Number.isSafeInteger(pid) && pid > 0, "pid");
   const text = fs.readFileSync(`/proc/${pid}/stat`, "utf8"), fields = text.slice(text.lastIndexOf(")") + 2).trim().split(/\s+/);
-  need(!["Z", "X"].includes(fields[0]) && /^[0-9]+$/.test(fields[19]), "live-process");
-  return { pid, startTicks: fields[19], exe: fs.readlinkSync(`/proc/${pid}/exe`), membership: fs.readFileSync(`/proc/${pid}/cgroup`, "utf8") };
+  need(Number(text.slice(0, text.indexOf(" "))) === pid && !["Z", "X"].includes(fields[0]) && /^[0-9]+$/.test(fields[19])
+    && /^[0-9]+$/.test(fields[1]), "live-process");
+  const status = fs.readFileSync(`/proc/${pid}/status`, "utf8"), ids = label => {
+    const m = new RegExp("^" + label + ":[\\t ]+([0-9\\t ]+)$", "m").exec(status), values = m?.[1].trim().split(/\s+/).map(Number);
+    need(values?.length === 4 && values.every(value => value === 0), "actual-root-uid-gid"); return Object.freeze(values);
+  };
+  const uids = ids("Uid"), gids = ids("Gid");
+  for (const name of ["CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"])
+    need(new RegExp("^" + name + ":\\s*0+\\s*$", "m").test(status), "actual-root-capabilities");
+  need(/^NoNewPrivs:\s*1\s*$/m.test(status), "actual-root-no-new-privileges");
+  const pidNamespace = fs.readlinkSync(`/proc/${pid}/ns/pid`); need(/^pid:\[[1-9][0-9]*\]$/.test(pidNamespace), "actual-root-pid-namespace");
+  const observed = { pid, parentPID: Number(fields[1]), startTicks: fields[19], exe: fs.readlinkSync(`/proc/${pid}/exe`),
+    membership: fs.readFileSync(`/proc/${pid}/cgroup`, "utf8"), pidNamespace, uids, gids, capabilitiesZero: true, noNewPrivileges: true };
+  const after = fs.readFileSync(`/proc/${pid}/stat`, "utf8"), tail = after.slice(after.lastIndexOf(")") + 2).trim().split(/\s+/);
+  need(Number(after.slice(0, after.indexOf(" "))) === pid && !["Z", "X"].includes(tail[0])
+    && tail[1] === fields[1] && tail[19] === fields[19], "actual-root-process-drift"); return Object.freeze(observed);
 }
 function nodeBudget(b) {
   need(exact(b, ["nodeVersion", "execArgv", "oldSpaceMiB", "semiSpaceMiB", "heapSizeLimitBytes"])
@@ -286,9 +300,11 @@ async function start(configuration) {
   const token = tokenRead.bytes.toString("utf8").trim(); need(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token), "runtime-token");
   const claim = JSON.parse(Buffer.from(token.split(".")[1], "base64url"));
   need(claim.role === "helmut_ud_runtime_" + c.operationId.slice(-32), "runtime-token-role");
+  const initialUpstream = processInfo(c.upstream.pid); let signingKeyRecord = null;
+  need(initialUpstream.parentPID === self.pid && initialUpstream.pidNamespace === self.pidNamespace, "actual-root-upstream-parent-namespace");
   const check = () => {
     const a = processInfo(process.pid), p = processInfo(c.upstream.pid);
-    need(a.startTicks === self.startTicks && a.exe === self.exe && a.membership === c.measuredCgroup.procMembership.broker
+    need(isDeepStrictEqual(a, self) && isDeepStrictEqual(p, initialUpstream) && a.membership === c.measuredCgroup.procMembership.broker
       && p.startTicks === c.upstream.startTicks && p.exe === c.upstream.exePin.path
       && p.membership === c.measuredCgroup.procMembership.upstream, "actual-process-binding");
     const ownedSockets = new Set(fs.readdirSync(`/proc/${p.pid}/fd`).flatMap(name => {
@@ -320,7 +336,9 @@ async function start(configuration) {
         && q.name === r.name && q.oid === r.oid && q.identityArguments === r.identityArguments
         && q.prosrcSHA256 === r.prosrcSHA256 && q.readOnly === true && q.sourceReviewAccepted === true, "readonly-semantic-qualification");
     }
-    return true;
+    if (signingKeyRecord) need(isDeepStrictEqual(readRegular(PRIVATE + "/signing-key.pem", 65536,
+      { rootPrivate: true, expected: signingKeyRecord.pin, contents: false }).identity, signingKeyRecord.identity), "root-signing-key-drift");
+    return { broker: a, upstream: p };
   };
   check();
   for (const [dir, mode] of [[ROOT, 0o755], [PRIVATE, 0o700]]) {
@@ -328,6 +346,7 @@ async function start(configuration) {
   }
   const keys = crypto.generateKeyPairSync("ed25519");
   fs.writeFileSync(PRIVATE + "/signing-key.pem", keys.privateKey.export({ type: "pkcs8", format: "pem" }), { flag: "wx", mode: 0o600 });
+  signingKeyRecord = readRegular(PRIVATE + "/signing-key.pem", 65536, { rootPrivate: true, contents: false });
   const broker = { uid: 0, pid: process.pid, startTicks: self.startTicks, codeSHA256: code.pin.sha256 };
   const actualUpstream = { pid: c.upstream.pid, startTicks: c.upstream.startTicks, exePin: c.upstream.exePin, configPin: c.upstream.configPin };
   const anchor = { schema: "helmut-local-unit-diagnostic-root-anchor/2", operationId: c.operationId, commandHash: c.commandHash,
@@ -373,10 +392,30 @@ async function start(configuration) {
   });
   server.requestTimeout = 30000; server.headersTimeout = 10000; server.maxHeadersCount = 16;
   await new Promise((resolve, reject) => { server.once("error", reject); server.listen(ROOT + "/broker.sock", resolve); });
+  try {
   fs.chmodSync(ROOT + "/broker.sock", 0o666);
   fs.writeFileSync(ROOT + "/trust.json", JSON.stringify(anchor) + "\n", { flag: "wx", mode: 0o444 });
   fs.chmodSync(ROOT + "/trust.json", 0o444);
-  return Object.freeze({ anchor, close: () => new Promise((resolve, reject) => { closed = true; gate.close(); server.close(error => error ? reject(error) : resolve()); }) });
+  const trustRecord = readRegular(ROOT + "/trust.json", 65536, { contents: false });
+  const brokerSocketIdentity = statIdentity(fs.lstatSync(ROOT + "/broker.sock", { bigint: true }));
+  function observe() {
+    try {
+      need(arguments.length === 0 && !closed && server.listening && server.address() === ROOT + "/broker.sock", "live-broker-listener-required");
+      const actual = check();
+      need(isDeepStrictEqual(readRegular(ROOT + "/trust.json", 65536, { expected: trustRecord.pin, contents: false }).identity, trustRecord.identity)
+        && isDeepStrictEqual(statIdentity(fs.lstatSync(ROOT + "/broker.sock", { bigint: true })), brokerSocketIdentity), "live-root-trust-drift");
+      const value = Object.freeze({ schema: "helmut-local-unit-diagnostic-broker-observation/1", observedAtUTC: new Date().toISOString(),
+        ...actual, measuredCgroup: Object.freeze({ path: c.measuredCgroup.path, device: c.measuredCgroup.device, inode: c.measuredCgroup.inode }),
+        brokerCodeSHA256: code.pin.sha256, upstreamExeSHA256: c.upstream.exePin.sha256,
+        upstreamConfigSHA256: c.upstream.configPin.sha256, listenerObserved: true, unitExecutionQualified: false });
+      need(Buffer.byteLength(JSON.stringify(value)) <= 2048, "private-observation-cap"); return value;
+    } catch (error) { closed = true; gate.close(); throw error; }
+  }
+  observe();
+  return Object.freeze({ anchor, observe, close: () => new Promise((resolve, reject) => { closed = true; gate.close(); server.close(error => error ? reject(error) : resolve()); }) });
+  } catch (error) {
+    closed = true; gate.close(); if (server.listening) await new Promise(resolve => server.close(() => resolve())); throw error;
+  }
 }
 module.exports = Object.freeze({ start });
 if (require.main === module) {

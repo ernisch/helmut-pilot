@@ -173,12 +173,22 @@ function writePrivate(filename, text) {
 function processInfo(pid) {
   need(Number.isSafeInteger(pid) && pid > 0, "pid");
   const s = fs.readFileSync(`/proc/${pid}/stat`, "utf8"), f = s.slice(s.lastIndexOf(")") + 2).trim().split(/\s+/);
-  need(!["Z", "X"].includes(f[0]) && /^[0-9]+$/.test(f[19]), "live-process");
+  need(Number(s.slice(0, s.indexOf(" "))) === pid && !["Z", "X"].includes(f[0]) && /^[0-9]+$/.test(f[19]) && /^[0-9]+$/.test(f[1]), "live-process");
   const status = fs.readFileSync(`/proc/${pid}/status`, "utf8");
-  need(/^Uid:\s*0\s+0\s+0\s+0\s*$/m.test(status), "actual-process-root");
+  const ids = label => {
+    const m = new RegExp("^" + label + ":[\\t ]+([0-9\\t ]+)$", "m").exec(status), values = m?.[1].trim().split(/\s+/).map(Number);
+    need(values?.length === 4 && values.every(value => value === 0), "actual-process-root-uid-gid"); return Object.freeze(values);
+  };
+  const uids = ids("Uid"), gids = ids("Gid");
   for (const key of ["CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"])
     need(new RegExp("^" + key + ":\\s*0+\\s*$", "m").test(status), "actual-process-capdrop");
-  return { pid, startTicks: f[19], exe: fs.readlinkSync(`/proc/${pid}/exe`), membership: fs.readFileSync(`/proc/${pid}/cgroup`, "utf8") };
+  need(/^NoNewPrivs:\s*1\s*$/m.test(status), "actual-process-no-new-privileges");
+  const pidNamespace = fs.readlinkSync(`/proc/${pid}/ns/pid`); need(/^pid:\[[1-9][0-9]*\]$/.test(pidNamespace), "actual-process-pid-namespace");
+  const observed = { pid, parentPID: Number(f[1]), startTicks: f[19], exe: fs.readlinkSync(`/proc/${pid}/exe`),
+    membership: fs.readFileSync(`/proc/${pid}/cgroup`, "utf8"), pidNamespace, uids, gids, capabilitiesZero: true, noNewPrivileges: true };
+  const after = fs.readFileSync(`/proc/${pid}/stat`, "utf8"), fields = after.slice(after.lastIndexOf(")") + 2).trim().split(/\s+/);
+  need(Number(after.slice(0, after.indexOf(" "))) === pid && !["Z", "X"].includes(fields[0])
+    && fields[1] === f[1] && fields[19] === f[19], "actual-process-read-drift"); return Object.freeze(observed);
 }
 function listeners(port) {
   const rows = [];
@@ -255,7 +265,7 @@ async function bounded(promise, ms, cancelled = null) {
 async function start(configPath = START) {
   need(!startConsumed, "owner-start-already-consumed"); startConsumed = true;
   const began = process.hrtime.bigint();
-  let child = null, broker = null, upstream = null, c = null, timer = null, guard = null, closing = false, stopPromise = null;
+  let child = null, broker = null, upstream = null, c = null, timer = null, guard = null, heartbeat = null, closing = false, stopPromise = null;
   let failure = null, forced = false, childClosed = false, childExited = false, exitCode = null, exitSignal = null;
   let stdoutEOF = false, stderrEOF = false, logBytes = 0, logOverflow = false, streamError = false;
   let resolveDone; const done = new Promise(resolve => { resolveDone = resolve; });
@@ -266,7 +276,7 @@ async function start(configPath = START) {
   process.once("SIGTERM", onSignal); process.once("SIGINT", onSignal);
   async function close() {
     if (stopPromise) return stopPromise;
-    closing = true; resolveCancelled(); clearTimeout(timer); clearInterval(guard);
+    closing = true; resolveCancelled(); clearTimeout(timer); clearInterval(guard); clearInterval(heartbeat);
     stopPromise = (async () => {
       const brokerStop = broker ? Promise.resolve().then(() => broker.close()).catch(() => { failure ||= "broker-close"; }) : Promise.resolve();
       function signal(sig) {
@@ -337,7 +347,8 @@ async function start(configPath = START) {
       Number(lifetimeEnd - process.hrtime.bigint()) / 1000000 - STOP_MS);
     while (!spawned) { need(!failure && !closing && startupLeft() > 0, "spawn-deadline-or-failure"); await pause(20); }
     upstream = processInfo(child.pid);
-    need(upstream.exe === POSTGREST && upstream.membership === c.measuredCgroup.procMembership, "actual-upstream-process");
+    need(upstream.exe === POSTGREST && upstream.membership === c.measuredCgroup.procMembership
+      && upstream.parentPID === observed.self.pid && upstream.pidNamespace === observed.self.pidNamespace, "actual-upstream-process");
     while (!ownListener(child.pid, c.postgrestPort)) {
       need(!failure && !closing && !childExited && startupLeft() > 0, "listener-deadline-or-exit");
       const p = processInfo(child.pid); need(p.startTicks === upstream.startTicks && p.exe === POSTGREST
@@ -362,13 +373,30 @@ async function start(configPath = START) {
     function check() {
       for (const r of records) unchanged(r);
       actualGroup(c.measuredCgroup); const self = processInfo(process.pid), p = processInfo(child.pid);
-      need(self.startTicks === observed.self.startTicks && self.exe === observed.self.exe && self.membership === observed.self.membership
-        && p.startTicks === upstream.startTicks && p.exe === POSTGREST && p.membership === upstream.membership
+      need(isDeepStrictEqual(self, observed.self) && isDeepStrictEqual(p, upstream)
         && ownListener(child.pid, c.postgrestPort), "active-process-binding");
       need(Date.now() < utc(c.expiresAtUTC) && process.hrtime.bigint() < lifetimeEnd, "owner-window-expired");
       sourceQualification(c, sourceRecord.value);
+      return { owner: self, upstream: p };
     }
-    check(); guard = setInterval(() => { try { check(); } catch { failed("active-runtime-binding"); } }, 250);
+    function observe() {
+      try {
+        need(arguments.length === 0 && !closing && !failure && typeof broker.observe === "function", "live-observation-required");
+        const actual = check(), proof = broker.observe(), budget = nodeBudget();
+        need(isDeepStrictEqual(proof.broker, actual.owner) && isDeepStrictEqual(proof.upstream, actual.upstream)
+          && proof.listenerObserved === true && proof.brokerCodeSHA256 === c.pins.broker.sha256
+          && proof.upstreamExeSHA256 === c.pins.postgrest.sha256 && proof.upstreamConfigSHA256 === configuration.pin.sha256
+          && isDeepStrictEqual({ ...proof.measuredCgroup }, { path: c.measuredCgroup.path, device: c.measuredCgroup.device, inode: c.measuredCgroup.inode }), "actual-broker-observation-binding");
+        const value = Object.freeze({ schema: "helmut-local-unit-native-owner-observation/1", operationId: c.operationId,
+          commandHash: c.commandHash, observedAtUTC: new Date().toISOString(), ...actual,
+          measuredCgroup: proof.measuredCgroup, actualNodeBudget: Object.freeze({ ...budget, execArgv: Object.freeze([...budget.execArgv]) }),
+          pins: Object.freeze({ owner: c.pins.owner.sha256, broker: c.pins.broker.sha256, node: c.pins.node.sha256,
+            upstreamExe: c.pins.postgrest.sha256, upstreamConfig: configuration.pin.sha256 }),
+          brokerListenerObserved: true, unitExecutionQualified: false, full500Qualified: false });
+        need(Buffer.byteLength(JSON.stringify(value)) <= 2048, "private-observation-cap"); return value;
+      } catch (error) { if (!closing) failed("live-observation-failed"); throw safeError(error); }
+    }
+    observe(); guard = setInterval(() => { try { check(); } catch { failed("active-runtime-binding"); } }, 250);
     timer = setTimeout(() => { void close(); }, Math.max(0, Number(lifetimeEnd - process.hrtime.bigint()) / 1000000 - STOP_MS));
     const ready = Object.freeze({ schema: "helmut-local-unit-native-owner-ready/2", ownerPID: process.pid,
       ownerStartTicks: observed.self.startTicks, upstreamPID: upstream.pid, upstreamStartTicks: upstream.startTicks,
@@ -377,7 +405,10 @@ async function start(configPath = START) {
       nodeBudget: observed.nodeBudget, originalService: c.originalService.publicSourceBinding,
       noNewPrivilegesObserved: observed.noNewPrivilegesObserved, databaseAuthorityQualified: false,
       databaseConnectionConfirmed: false, unitExecutionAuthorized: false, full500: false });
-    return Object.freeze({ ready, close, done });
+    if (require.main === module) heartbeat = setInterval(() => {
+      try { process.stdout.write(JSON.stringify(observe()) + "\n"); } catch { failed("heartbeat-observation-failed"); }
+    }, 5000);
+    return Object.freeze({ ready, close, done, observe });
   } catch (error) { failure ||= "startup-failed"; await close(); throw safeError(error); }
 }
 module.exports = Object.freeze({ start });
@@ -387,6 +418,6 @@ if (require.main === module) {
     const running = await start();
     process.stdout.write(JSON.stringify(running.ready) + "\n");
     const stopped = await running.done;
-    process.stdout.write(JSON.stringify(stopped) + "\n"); process.exit(stopped.cleanShutdown ? 0 : 1);
-  })().catch(() => { process.stderr.write("local-unit-native-owner-start-or-runtime-failed\n"); process.exit(1); });
+    process.stdout.write(JSON.stringify(stopped) + "\n"); process.exitCode = stopped.cleanShutdown ? 0 : 1;
+  })().catch(() => { process.stderr.write("local-unit-native-owner-start-or-runtime-failed\n"); process.exitCode = 1; });
 }

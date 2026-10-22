@@ -9,13 +9,14 @@ const now = Date.parse("2026-10-22T12:00:00.000Z"), suffix = "b".repeat(32);
 let tests = 0;
 function check(name, work) { work(); tests++; }
 function rejected(work) { let caught = false; try { work(); } catch (e) { caught = /^local-unit-native-owner-[a-z0-9-]+$/.test(e.message); } assert.ok(caught, "expected bounded symbolic rejection"); }
-function load({ filesystem = fs, processStub = {}, childModule = null, brokerModule = null, hooks = null } = {}) {
+function load({ filesystem = fs, processStub = {}, childModule = null, brokerModule = null, hooks = null, timers = null, mainToggle = null } = {}) {
   let spawns = 0;
   const fakeProcess = { execPath: "/opt/node-pinned", pid: 123, env: {}, hrtime: process.hrtime, version: "v24.19.0",
     execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"],
     umask() {}, once() {}, removeListener() {}, ...processStub };
   const mod = { exports: {} };
-  const sandbox = { Buffer, URL, setTimeout, clearTimeout, setInterval, clearInterval, console: { log() {}, error() {} },
+  const sandbox = { Buffer, URL, setTimeout: timers?.setTimeout || setTimeout, clearTimeout: timers?.clearTimeout || clearTimeout,
+    setInterval: timers?.setInterval || setInterval, clearInterval: timers?.clearInterval || clearInterval, console: { log() {}, error() {} },
     process: fakeProcess, module: mod, __filename: "/opt/local-unit-native-owner.js", __testHooks: hooks,
     require(name) {
       if (name === "node:fs") return filesystem;
@@ -25,8 +26,9 @@ function load({ filesystem = fs, processStub = {}, childModule = null, brokerMod
       if (["node:path", "node:crypto", "node:util"].includes(name)) return require(name);
       throw Error("offline-unexpected-require");
     } };
+  Object.defineProperty(sandbox.require, "main", { get: () => mainToggle?.enabled ? mod : null });
   const patch = hooks ? "\n({privateJSON,readFile,writePrivate,environmentCheck,processInfo,ownListener,actualGroup,unchanged}=__testHooks);" : "";
-  vm.runInNewContext(source + patch + "\nmodule.exports={start,validateConfig,restConfig,runtimeJWT,pinShape,mountRows,mountFor,readFile:(filename,cap,options)=>readFile(filename,cap,JSON.parse(JSON.stringify(options))),environmentCheck,bounded,safeError,nodeBudget,sourceQualification};", sandbox);
+  vm.runInNewContext(source + patch + "\nmodule.exports={start,validateConfig,restConfig,runtimeJWT,pinShape,mountRows,mountFor,readFile:(filename,cap,options)=>readFile(filename,cap,JSON.parse(JSON.stringify(options))),environmentCheck,bounded,safeError,nodeBudget,sourceQualification,processInfo};", sandbox);
   return { api: mod.exports, get spawns() { return spawns; } };
 }
 function configuration() {
@@ -190,18 +192,48 @@ check("safe errors never expose callback or credential contents", () => {
   const e = api.safeError(Error("synthetic-private-content-must-not-escape"));
   assert.ok(e.message === "local-unit-native-owner-start-or-runtime-failed");
 });
-function lifecycle({ noEOF = false, heldBroker = false } = {}) {
+function processFixture(options = {}) {
+  let statReads = 0;
+  const filesystem = { readFileSync(name) {
+    if (name.endsWith("/stat")) return "123 (root owner) " + Array.from({ length: 20 }, (_, i) => i === 0 ? "S"
+      : i === 1 ? "1" : i === 19 ? options.drift && ++statReads > 1 ? "99" : "11" : "0").join(" ");
+    if (name.endsWith("/cgroup")) return "0::/\n";
+    if (name.endsWith("/status")) return (options.noUID ? "" : "Uid:\t" + (options.uid ? "1000" : "0") + "\t0\t0\t0\n")
+      + (options.noGID ? "" : "Gid:\t0\t0\t0\t" + (options.gid ? "1000" : "0") + "\n")
+      + ["CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"].map(key => key + ":\t" + (options.cap && key === "CapBnd" ? "1" : "0000") + "\n").join("")
+      + "NoNewPrivs:\t" + (options.nnp ? "0" : "1") + "\n";
+    throw Error("offline-proc-only");
+  }, readlinkSync: name => name.endsWith("/ns/pid") ? options.ns ? "unbound" : "pid:[99]" : "/opt/node-pinned" };
+  return load({ filesystem }).api;
+}
+check("root process observation reads exact real UID GID cap NNP namespace and stable stat", () => {
+  const value = processFixture().processInfo(123);
+  assert.ok(value.pid === 123 && value.parentPID === 1 && value.startTicks === "11" && value.pidNamespace === "pid:[99]");
+  assert.ok(value.uids.join() === "0,0,0,0" && value.gids.join() === "0,0,0,0" && value.capabilitiesZero && value.noNewPrivileges);
+  assert.ok(Object.isFrozen(value) && Object.isFrozen(value.uids));
+});
+for (const fault of ["noUID", "uid", "noGID", "gid", "cap", "nnp", "ns", "drift"])
+  check("root process " + fault + " cannot become a live observation", () => rejected(() => processFixture({ [fault]: true }).processInfo(123)));
+function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } = {}) {
   const p = new EventEmitter(), child = new EventEmitter(); child.pid = 456; child.stdout = new EventEmitter(); child.stderr = new EventEmitter();
   const c = configuration(), realNow = Date.now();
   c.issuedAtUTC = new Date(realNow).toISOString(); c.expiresAtUTC = new Date(realNow + 180000).toISOString();
-  const state = { spawns: 0, signals: [], writes: [], brokerClosed: 0, brokerConfig: null, childEnded: false, releaseBroker: null, brokerStarting: null };
+  const state = { spawns: 0, signals: [], writes: [], brokerClosed: 0, brokerConfig: null, childEnded: false, releaseBroker: null, brokerStarting: null,
+    observations: 0, brokerUnknown: false, procDrift: false, lines: [], intervals: new Map() };
   let announceBroker; state.brokerStarting = new Promise(resolve => { announceBroker = resolve; });
   function end(code = 0) { if (state.childEnded) return; state.childEnded = true; child.emit("exit", code, null);
     if (!noEOF) { child.stdout.emit("end"); child.stderr.emit("end"); } child.emit("close"); }
   child.kill = sig => { state.signals.push(sig); queueMicrotask(() => end(0)); return true; };
   const record = (file, text = "offline") => ({ pin: { path: file, bytes: Buffer.byteLength(text), sha256: crypto.createHash("sha256").update(text).digest("hex") }, identity: ["stable"] });
-  const proc = pid => ({ pid, startTicks: pid === 123 ? "11" : "22", exe: pid === 123 ? "/opt/node-pinned" : "/opt/postgrest-pinned", membership: "0::/\n" });
-  const runningBroker = { close: async () => { state.brokerClosed++; } };
+  const proc = pid => ({ pid, parentPID: pid === 123 ? 1 : 123, startTicks: state.procDrift ? "999" : pid === 123 ? "11" : "22",
+    exe: pid === 123 ? "/opt/node-pinned" : "/opt/postgrest-pinned", membership: "0::/\n", pidNamespace: "pid:[99]",
+    uids: [0, 0, 0, 0], gids: [0, 0, 0, 0], capabilitiesZero: true, noNewPrivileges: true });
+  const runningBroker = { close: async () => { state.brokerClosed++; }, observe() {
+    state.observations++; if (state.brokerUnknown) throw Error("local-unit-broker-offline-unknown");
+    return { broker: proc(123), upstream: proc(456), listenerObserved: true, brokerCodeSHA256: c.pins.broker.sha256,
+      upstreamExeSHA256: c.pins.postgrest.sha256, upstreamConfigSHA256: state.brokerConfig.upstream.configPin.sha256,
+      measuredCgroup: { path: c.measuredCgroup.path, device: c.measuredCgroup.device, inode: c.measuredCgroup.inode } };
+  } };
   const brokerModule = { start(conf) { state.brokerConfig = conf; announceBroker();
     return heldBroker ? new Promise(resolve => { state.releaseBroker = () => resolve(runningBroker); }) : Promise.resolve(runningBroker); } };
   const sourceQ = { schema: "helmut-local-unit-source-supervisor-qualification/1", operationId: c.operationId, commandHash: c.commandHash,
@@ -212,12 +244,17 @@ function lifecycle({ noEOF = false, heldBroker = false } = {}) {
     writePrivate: (file, text) => { state.writes.push({ file, text }); return record(file, text); },
     environmentCheck: () => ({ self: proc(123), nodeBudget: c.originalService.publicSourceBinding.service.nodeBudget, noNewPrivilegesObserved: true }), processInfo: proc,
     ownListener: () => !state.childEnded, actualGroup() {}, unchanged() {} };
-  const instance = load({ hooks, brokerModule, processStub: { once: p.once.bind(p), removeListener: p.removeListener.bind(p) },
+  const mainToggle = { enabled: false }; let intervalId = 0;
+  const timers = { setInterval(fn, delay) { const id = ++intervalId; state.intervals.set(id, { fn, delay }); return id; },
+    clearInterval(id) { state.intervals.delete(id); } };
+  const instance = load({ hooks, brokerModule, timers, mainToggle, processStub: { once: p.once.bind(p), removeListener: p.removeListener.bind(p),
+    stdout: { write: bytes => { state.lines.push(bytes); return true; } } },
     childModule: { spawn(binary, args, options) {
       assert.ok(binary === "/opt/postgrest-pinned" && args.length === 1 && args[0] === "/run/bootstrap/POSTGREST.PRIVATE.conf");
       assert.ok(Object.keys(options.env).sort().join("|") === ["LANG", "LC_ALL", "TZ", "PATH"].sort().join("|"));
       assert.ok(options.stdio.join("|") === "ignore|pipe|pipe"); state.spawns++; queueMicrotask(() => child.emit("spawn")); return child;
     } } });
+  mainToggle.enabled = cliHeartbeat;
   return { instance, c, state, child, p, end };
 }
 (async () => {
@@ -264,5 +301,44 @@ function lifecycle({ noEOF = false, heldBroker = false } = {}) {
     f.state.releaseBroker(); await new Promise(resolve => setTimeout(resolve, 0));
     assert.ok(f.state.spawns === 1 && f.state.brokerClosed === 1 && f.state.childEnded); tests++;
   }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(), before = f.state.observations, value = running.observe();
+    assert.ok(Object.isFrozen(running) && Object.isFrozen(value) && f.state.observations === before + 1);
+    assert.ok(value.schema === "helmut-local-unit-native-owner-observation/1" && Buffer.byteLength(JSON.stringify(value)) <= 2048);
+    assert.ok(value.owner.pid === 123 && value.upstream.pid === 456 && value.owner.gids.join() === "0,0,0,0"
+      && value.owner.pidNamespace === value.upstream.pidNamespace && value.actualNodeBudget.oldSpaceMiB === 384
+      && value.unitExecutionQualified === false && value.full500Qualified === false);
+    const text = JSON.stringify(value);
+    for (const privateValue of [f.c.authenticator.passwordHex, f.c.authenticator.jwtSecretHex, f.c.authenticator.username,
+      "runtimeTokenPath", "publicSourceBinding", "hmacKeyPath", "ownerQualificationPin", "publicKeyPEM"])
+      assert.ok(!text.includes(privateValue), "private observation must omit credential and qualification material");
+    await running.close(); rejected(() => running.observe()); assert.ok(f.state.intervals.size === 0); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.brokerUnknown = true;
+    rejected(() => running.observe()); const stopped = await running.done;
+    assert.ok(!stopped.cleanShutdown && stopped.failed && f.state.brokerClosed === 1 && f.state.intervals.size === 0); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.procDrift = true;
+    rejected(() => running.observe()); const stopped = await running.done;
+    assert.ok(!stopped.cleanShutdown && stopped.failed && f.state.intervals.size === 0); tests++;
+  }
+  {
+    const f = lifecycle({ cliHeartbeat: true }), running = await f.instance.api.start();
+    const beats = [...f.state.intervals.values()].filter(job => job.delay === 5000); assert.ok(beats.length === 1 && f.state.lines.length === 0);
+    const count = f.state.observations; beats[0].fn(); beats[0].fn();
+    assert.ok(f.state.observations === count + 2 && f.state.lines.length === 2);
+    assert.ok(f.state.lines.every(line => line.endsWith("\n") && line.indexOf("\n") === line.length - 1
+      && JSON.parse(line).schema === "helmut-local-unit-native-owner-observation/1"));
+    await running.close(); assert.ok(f.state.intervals.size === 0); tests++;
+  }
+  {
+    const f = lifecycle({ cliHeartbeat: true }), running = await f.instance.api.start(), beat = [...f.state.intervals.values()].find(job => job.delay === 5000);
+    f.state.brokerUnknown = true; beat.fn(); const stopped = await running.done;
+    assert.ok(stopped.failed && !stopped.cleanShutdown && f.state.lines.length === 0 && f.state.intervals.size === 0); tests++;
+  }
+  assert.ok(!source.includes("process.exit("), "CLI drains natural EOF after timer cleanup"); tests++;
+  assert.ok(fs.readFileSync(filename, "utf8") === source, "reviewed owner code stayed stable");
   console.log("local-unit-native-owner offline: " + tests + " checks passed; native starts=0");
 })().catch(() => { console.error("local-unit-native-owner offline test failed"); process.exitCode = 1; });
