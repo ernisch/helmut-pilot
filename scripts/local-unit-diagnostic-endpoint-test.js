@@ -54,7 +54,7 @@ for (const [field, replacement] of Object.entries({ nonce: "f".repeat(64), metho
   bodySHA256: "0".repeat(64), requestSHA256: "0".repeat(64), observedAtUTC: "2020-01-01T00:00:00.000Z", broker: { ...anchor.broker, pid: 777 }, upstream: {}, measuredCgroup: {} })) {
   rejects(() => endpoint.verifyEnvelope(envelope({ ...attestation, [field]: replacement }), trust, request, Date.now() - 5000));
 }
-const broker = load("scripts/helmut-resource-meter/local-unit-diagnostic-broker.js", {}, ["authorize", "validateConfig"]);
+const broker = load("scripts/helmut-resource-meter/local-unit-diagnostic-broker.js", {}, ["authorize", "validateConfig", "serialGate"]);
 uid = 0;
 const pin = { path: "/run/bootstrap/qualified.json", bytes: 10, sha256: "f".repeat(64) };
 const config = { schema: "helmut-local-unit-diagnostic-broker-config/1", ...scope, database,
@@ -77,4 +77,15 @@ for (const bad of [msg("POST", "/rest/v1/mandate_profiles", {}), msg("GET", "/re
 rejects(() => broker.validateConfig({ ...config, upstream: { ...config.upstream, hostname: "external" } }));
 rejects(() => broker.validateConfig({ ...config, legacy: { tables: [], rpcs: [{ ...config.legacy.rpcs[0], name: "helmut_any_write" }] } }));
 assert.equal(JSON.stringify(trust.anchor.broker), JSON.stringify(anchor.broker));
-process.stdout.write(JSON.stringify({ checks, syntheticRootFilesystem: true, realEd25519: true, sockets: 0, database: 0, nativeAcceptance: false }) + "\n");
+(async () => {
+  const gate = broker.serialGate(), release = await gate.acquire(), order = [];
+  const a = gate.acquire().then(done => { order.push("a"); done(); });
+  const b = gate.acquire().then(done => { order.push("b"); done(); });
+  assert.equal(order.length, 0); release(); await Promise.all([a, b]);
+  assert.deepEqual(order, ["a", "b"]); rejects(() => release()); checks++;
+  const first = await gate.acquire(), waiting = Array.from({ length: 32 }, () => gate.acquire().catch(e => e));
+  await assert.rejects(gate.acquire(), /bounded-queue/); checks++;
+  gate.close(); first();
+  assert((await Promise.all(waiting)).every(value => String(value).includes("queue-closed"))); checks++;
+  process.stdout.write(JSON.stringify({ checks, syntheticRootFilesystem: true, realEd25519: true, sockets: 0, database: 0, nativeAcceptance: false }) + "\n");
+})().catch(() => { process.stderr.write("synthetic-endpoint-or-queue-check-failed\n"); process.exitCode = 1; });

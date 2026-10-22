@@ -107,6 +107,20 @@ function authorize(c, m) {
   }
   return body;
 }
+function serialGate() {
+  let active = false, stopped = false; const waiting = [];
+  function grant(resolve) {
+    active = true; let released = false;
+    resolve(() => {
+      need(!released, "queue-release-once"); released = true;
+      const next = waiting.shift(); if (next) grant(next.resolve); else active = false;
+    });
+  }
+  return Object.freeze({ acquire: () => new Promise((resolve, reject) => {
+    if (stopped || waiting.length >= 32) { reject(Error("local-unit-broker-bounded-queue")); return; }
+    if (active) waiting.push({ resolve, reject }); else grant(resolve);
+  }), close: () => { stopped = true; for (const item of waiting.splice(0)) item.reject(Error("local-unit-broker-queue-closed")); } });
+}
 async function upstream(c, m, bytes, token, remainingMs = 28000) {
   need(Number.isFinite(remainingMs) && remainingMs > 0 && remainingMs <= 28000, "upstream-total-deadline");
   return new Promise((resolve, reject) => {
@@ -176,14 +190,15 @@ async function start(configuration) {
   const anchor = { schema: "helmut-local-unit-diagnostic-root-anchor/1", operationId: c.operationId, commandHash: c.commandHash,
     database: c.database, publicKeyPEM: keys.publicKey.export({ type: "spki", format: "pem" }), broker, upstream: actualUpstream,
     measuredCgroup: c.measuredCgroup, legacy: c.legacy, ownerQualificationPin: c.ownerQualificationPin };
-  const used = new Set(); let busy = false, closed = false;
+  const used = new Set(), gate = serialGate(); let closed = false;
   const server = http.createServer(async (req, res) => {
-    if (closed || busy || req.method !== "POST" || req.url !== "/v1/execute") { res.writeHead(409).end(); return; }
-    busy = true; let size = 0, done = false; const blocks = [];
+    if (closed || req.method !== "POST" || req.url !== "/v1/execute") { res.writeHead(409).end(); return; }
+    let size = 0, done = false, release; const blocks = [];
     const began = process.hrtime.bigint();
     const remaining = () => 28000 - Number(process.hrtime.bigint() - began) / 1000000;
     const timer = setTimeout(() => req.destroy(), 30000);
     try {
+      release = await gate.acquire(); need(!closed && remaining() > 0, "queued-deadline-or-close");
       for await (const b of req) { size += b.length; need(size <= CAP * 4 / 3 + 65536, "incoming-cap"); blocks.push(b); }
       const m = JSON.parse(Buffer.concat(blocks).toString("utf8")), bytes = authorize(c, m);
       need(used.size < 4096 && !used.has(m.nonce), "nonce-reuse-or-cap"); used.add(m.nonce);
@@ -206,14 +221,14 @@ async function start(configuration) {
         signatureBase64: crypto.sign(null, Buffer.from(JSON.stringify(attestation)), keys.privateKey).toString("base64") };
       const output = Buffer.from(JSON.stringify(result)); res.writeHead(200, { "Content-Type": "application/json", "Content-Length": output.length }); res.end(output); done = true;
     } catch { if (!res.headersSent) res.writeHead(502); res.end(); }
-    finally { clearTimeout(timer); busy = false; if (!done) closed = true; }
+    finally { clearTimeout(timer); if (!done) { closed = true; gate.close(); } release?.(); }
   });
   server.requestTimeout = 30000; server.headersTimeout = 10000; server.maxHeadersCount = 16;
   await new Promise((resolve, reject) => { server.once("error", reject); server.listen(ROOT + "/broker.sock", resolve); });
   fs.chmodSync(ROOT + "/broker.sock", 0o666);
   fs.writeFileSync(ROOT + "/trust.json", JSON.stringify(anchor) + "\n", { flag: "wx", mode: 0o444 });
   fs.chmodSync(ROOT + "/trust.json", 0o444);
-  return Object.freeze({ anchor, close: () => new Promise((resolve, reject) => { closed = true; server.close(error => error ? reject(error) : resolve()); }) });
+  return Object.freeze({ anchor, close: () => new Promise((resolve, reject) => { closed = true; gate.close(); server.close(error => error ? reject(error) : resolve()); }) });
 }
 module.exports = Object.freeze({ start });
 if (require.main === module) {
