@@ -1,0 +1,36 @@
+{
+  "schema": "helmut-local-pipeline-lock-lease-independent-review/1",
+  "pass": true,
+  "independent": true,
+  "production": false,
+  "full500Accepted": false,
+  "executionAuthority": false,
+  "kind": "SOURCE",
+  "sourcePins": [
+    {
+      "file": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "bytes": 556772,
+      "sha256": "dbb3d98f834731ff67ff209fe9499150ce9e92813af76786567a432cc63c776f"
+    },
+    {
+      "file": "lib/helmut/lage.js",
+      "bytes": 57463,
+      "sha256": "613ea950dcedc16cfbff14829b7437b3160b16bc49dc5afeec8d5be8c0f10649"
+    },
+    {
+      "file": "scripts/local-pipeline-lock-lease-test.js",
+      "bytes": 12354,
+      "sha256": "6307d98d794c2d6cb61fb409cef3448d36a598b6e9ff34a606869b924fdfef3a"
+    }
+  ],
+  "originalReviewPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-unit-storage-source-20261022/CURRENT_SOURCE_REVIEW_REPORT.SAFE.json",
+    "bytes": 6420,
+    "sha256": "fec4b77855831d001bf8ed494a0272292b28eac12cb8a274b364cafa2d21b291"
+  }
+}

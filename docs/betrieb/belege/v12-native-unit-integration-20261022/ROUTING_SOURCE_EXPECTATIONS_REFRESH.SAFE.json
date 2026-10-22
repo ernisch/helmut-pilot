@@ -1,0 +1,40 @@
+{
+  "schema": "helmut-v12-reviewed-routing-source-expectations-refresh/1",
+  "scope": "CURRENT_EXPECTATIONS_ONLY_NOT_DEPLOYMENT_OR_EXECUTION_AUTHORITY",
+  "implementationCommit": "678fb118cf4632d45a31ead8516acf6343ee8587",
+  "previousManifestArchive": "docs/betrieb/belege/v12-native-unit-integration-20261022/BEFORE_ROUTING_RELEASE_MANIFEST.SAFE.json",
+  "previousManifestBytes": 16089,
+  "previousManifestSHA256": "c3a54831479eca2152a0ab481d1eaa34bf8ea00564396401d43b3ef672edb423",
+  "currentManifestBytes": 16089,
+  "currentManifestSHA256": "223610dc52d5f89eb3298a06597c0f104dc48cb35d3b18d020afc8b21143fb52",
+  "changedFiles": [
+    {
+      "previous": {
+        "path": "lib/helmut/lage.js",
+        "bytes": 56857,
+        "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
+      },
+      "current": {
+        "path": "lib/helmut/lage.js",
+        "bytes": 57463,
+        "sha256": "613ea950dcedc16cfbff14829b7437b3160b16bc49dc5afeec8d5be8c0f10649"
+      }
+    },
+    {
+      "previous": {
+        "path": "lib/helmut/storage.js",
+        "bytes": 551810,
+        "sha256": "e0c3d63cabc6973ca3d26e3edaef254c843a21a4346deca3abfa061182e168ee"
+      },
+      "current": {
+        "path": "lib/helmut/storage.js",
+        "bytes": 556772,
+        "sha256": "dbb3d98f834731ff67ff209fe9499150ce9e92813af76786567a432cc63c776f"
+      }
+    }
+  ],
+  "independentCurrentSourceReview": "docs/betrieb/belege/local-unit-storage-source-20261022/INDEPENDENT_CURRENT_SOURCE_REVIEW.SAFE.json",
+  "historicalEvidencePreserved": true,
+  "executionAuthority": false,
+  "currentCandidateFull500Qualification": false
+}

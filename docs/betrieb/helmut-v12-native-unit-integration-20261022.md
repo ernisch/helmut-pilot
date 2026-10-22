@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand21:05UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand21:16UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -96,16 +96,19 @@ keine Datenbank, kein Seed, kein Motor und kein Anbieter.
 Die unabhängige Quellprüfung fand sechs Diagnose-Delegationen hinter nicht
 passenden Production-Readinessguards und einen weiteren V3-Eingangsriegel in
 `lage.js`. Diese konkreten Anbindungsfehler sind korrigiert und unabhängig
-geprüft;26gezielte VM-Prüfgruppen bestehen. Globale Production-Guards,
+geprüft; Storage16 und Lage13gezielte VM-Prüfgruppen bestehen. Globale Production-Guards,
 Tenant-/Subject-/Inputbindungen und das Verbot unbekannter Schreibwiederholungen
 bleiben bestehen.
 
 Die anschließende Kostenprüfung fand einen weiteren konkreten Fehler: das
-Usage-/Tenant-Vorabgate verwendet im Diagnose-Scope noch einen Legacy-Reader
-ohne die dort absichtlich fehlenden Zugangsschlüssel. Der alte globale
-Fehlerfallback würde dabei `allowed:true` liefern. Die gezielte Korrektur muss
-echte verifizierte Originalhistory nativ lesen und scoped Fehler geschlossen
-ablehnen; bis dahin bleibt der Motorstart gesperrt.
+Usage-/Tenant-Vorabgate verwendete im Diagnose-Scope einen Legacy-Reader ohne
+die dort absichtlich fehlenden Zugangsschlüssel. Der alte globale Fehlerfallback
+würde dabei `allowed:true` liefern. Die unabhängig geprüfte Korrektur liest echte
+verifizierte Originalhistory über den nativen Reader und lehnt scoped Fehler
+geschlossen ab.32neue VM-Gruppen,67bestehende Budgetassertions sowie16Storage-
+und15Originalstore-Gruppen bestehen. Bei Budget-Deny wird kein ticketloser
+Usage-Record erzeugt; Lease-Freigabe und Adapter-Fehlerpfad bleiben erreichbar.
+[Neuer Quellreview](belege/local-unit-storage-source-20261022/CURRENT_SOURCE_REVIEW_REPORT.SAFE.json).
 
 Die zwei privaten Fixture-Tickets und ihre eigene Mikro-USD-Reserve sind ein
 frischer, begrenzter Diagnosevertrag. Sie sind kein Nachweis der alten atomaren
@@ -134,6 +137,11 @@ Prüfungen. Die neue Integrationsstufe und der geschützte84Originale-Kanal auf
 Der Ressourcenstart-Schritt lehnt den veränderten Storage-Code am historischen
 Quellreview-Pin korrekt ab. Ein ergänzender neuer unabhängiger Quellreview ist
 erforderlich; alte Belege und deren Ablehnung bleiben unverändert erhalten.
+Der neue explizite Vier-Quellreview besteht; die gezielte Vertragsprüfung bleibt
+13/14, weil zusätzlich der bereits vorhandene Own2-Hook in `testkosten-budget.js`
+einen separaten unabhängigen Quellreview benötigt. Der vollständige Vergleich
+aller9Kontrollquellen fand nach den bestehenden Overrides genau diese eine
+Restabweichung. Startinput6/6 und Artefakt10/10 bestehen.
 Der frühere Standardlauf
 blieb177/180; drei gezielte Korrekturen sind separat bestanden, kein behaupteter
 durchgehend grüner Wiederholungslauf. Der geschützte84Originale-Kanal bleibt
