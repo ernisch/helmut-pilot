@@ -48,6 +48,46 @@ check("missing inputs and arrays cannot masquerade as the producer arguments", (
   assert.throws(() => Producer.derive([]), /producer-arguments/);
   for (const key of Object.keys(input)) { const args = { ...input }; delete args[key]; assert.throws(() => Producer.derive(args), /producer-arguments/); }
 });
+const ai = require("../lib/helmut/ai"), Q = require("../lib/helmut/lage-textqualitaet");
+const fictionalSources = [{ vorgang_id: "vg-fictional", quellenbelege: [{ quelle_id: "q-fictional",
+  url: "https://example.org/fictional", quelle: "Offlinefixture", veroeffentlichtAm: "2026-10-21T10:00:00.000Z",
+  titel: "Die Quelle berichtet ueber einen Entwurf. Ein Termin ist noch nicht benannt." }] }];
+const fictionalProfile = { id: "fictional-owner", committees: ["Arbeit und Soziales"] };
+const fictionalRaw = { paragraphs: ["Die Quelle berichtet ueber einen Entwurf.", "Ein Termin ist noch nicht benannt."].map(text => ({
+  text, vorgang_ids: ["vg-fictional"], quelle_id: "q-fictional", auswahlbegruendung: "Arbeit und Soziales: institutionelle Passung.",
+  mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } })) };
+check("native review defaults retain their existing calendar path", () => {
+  const prepared = ai.prepareLageReviewInput(fictionalRaw, fictionalSources, fictionalProfile);
+  assert.equal(prepared.prompt, Q.prompt(prepared.paragraphs, fictionalSources, fictionalProfile));
+  assert.equal(prepared.prompt, ai.prepareLageReviewInput(fictionalRaw, fictionalSources, fictionalProfile, undefined).prompt);
+});
+check("an explicit UTC source date reaches the real prompt and relative-source check", () => {
+  const at = "2026-10-21T14:07:08.254Z", next = "2026-10-22T14:07:08.254Z";
+  const prepared = ai.prepareLageReviewInput(fictionalRaw, fictionalSources, fictionalProfile, { sourceViewAtUTC: at });
+  assert(prepared.prompt.includes("Briefingdatum (Europe/Berlin): 2026-10-21"));
+  assert.equal(prepared.prompt, Q.prompt(prepared.paragraphs, fictionalSources, fictionalProfile, new Date(at)));
+  const sources = structuredClone(fictionalSources), raw = structuredClone(fictionalRaw);
+  sources[0].quellenbelege[0].titel = "Heute berichtet die Quelle ueber einen Entwurf. Ein Termin ist noch nicht benannt.";
+  raw.paragraphs[0].text = "Heute berichtet die Quelle ueber einen Entwurf.";
+  assert(ai.prepareLageReviewInput(raw, sources, fictionalProfile, { sourceViewAtUTC: at }).paragraphs.length === 2);
+  assert.throws(() => ai.prepareLageReviewInput(raw, sources, fictionalProfile, { sourceViewAtUTC: next }), /ai-text-source-support/);
+  // Existing cache readers pass generatedAt as an ISO string or null. The
+  // validated Date used by the new pure builder does not change that ABI.
+  const paragraphs = raw.paragraphs.map(p => ({ ...p, quellen_ids: [p.quelle_id] })), quellen = Q.pruefQuellen(raw.paragraphs, sources);
+  assert.equal(Q.sachdetailsGebunden(paragraphs, quellen, at), true);
+  assert.equal(Q.sachdetailsGebunden(paragraphs, quellen, next), false);
+  assert.equal(Q.sachdetailsGebunden(paragraphs, quellen, null), false);
+});
+check("source dates require canonical UTC strings and real valid Date arguments", () => {
+  for (const options of [null, {}, [], "2026-10-21T14:07:08.254Z", { sourceViewAtUTC: new Date() },
+    { sourceViewAtUTC: "2026-10-21T14:07:08Z" }, { sourceViewAtUTC: "2026-10-21T14:07:08.254+00:00" },
+    { sourceViewAtUTC: "2026-02-30T14:07:08.254Z" }, { sourceViewAtUTC: "2026-10-21T25:07:08.254Z" },
+    { sourceViewAtUTC: "2026-10-21T14:07:08.254Z", trust: true }])
+    assert.throws(() => ai.prepareLageReviewInput(fictionalRaw, fictionalSources, fictionalProfile, options), /ai-review-source-time/);
+  for (const value of [null, 0, "2026-10-21T14:07:08.254Z", new Date(NaN), { getTime: () => 0 }]) {
+    assert.throws(() => Q.prompt([], [], {}, value), /lage-review-source-date-invalid/);
+  }
+});
 
 const args = process.argv.slice(2);
 need(args.length === 0 || args.length === 1 && args[0] === "--qualify-originals", "unknown-argument");
@@ -74,8 +114,10 @@ function producerForSelection(selection, handle) {
   const module = { exports: {} };
   const source = { readSelection: h => { need(h === handle, "test-source-handle"); return selection; },
     commandSource: Source.commandSource, sourceBinding: Source.sourceBinding };
-  vm.runInNewContext(fs.readFileSync(filename, "utf8"), { module, exports: module.exports, Buffer, Object, URL, structuredClone,
-    require: name => name === "./local-unit-diagnostic-source" ? source : localRequire(name) }, { filename });
+  // Keep ordinary JSON/Object prototypes in the real module's realm. The only
+  // synthetic seam is Source selection; schema and deep-equality stay real.
+  const load = vm.runInThisContext("(function(require,module,exports){\n" + fs.readFileSync(filename, "utf8") + "\n})", { filename });
+  load(name => name === "./local-unit-diagnostic-source" ? source : localRequire(name), module, module.exports);
   return module.exports;
 }
 if (args.length) {
