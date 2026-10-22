@@ -1,5 +1,6 @@
 """Pure host/pipe/DTO cases. No Docker, native child, database or engine starts."""
 import copy
+import base64
 import datetime
 import importlib.util
 import io
@@ -239,6 +240,55 @@ class PureHost(unittest.TestCase):
         before = raw
         with self.assertRaises(RuntimeError): self.host.tick()
         self.assertTrue(path.read_bytes() == before)
+
+    def test_transport_capture_is_private_bounded_and_close_never_exports_bytes(self):
+        sentinel = os.urandom(32).hex().encode()
+        snapshot = {'schema': 'helmut-local-unit-native-pipe-failure-private/1', 'registeredHostPID': 75,
+                    'transportFailure': {'type': 'BrokenPipeError', 'errno': 32}, 'localExitCode': 255,
+                    'stdoutNaturalEOF': True, 'stderrNaturalEOF': True, 'remoteExitConfirmed': False,
+                    'stdoutBase64': '', 'stderrBase64': base64.b64encode(sentinel).decode()}
+        class FailedPipe:
+            transport_failure = {'type': 'BrokenPipeError', 'errno': 32}
+            eof = [True, True]
+            child = FakePopen(['fixed'], stdin=M.subprocess.PIPE)
+            selector = FakeSelector()
+            def tick(this): raise BrokenPipeError(32, 'pipe-closed')
+            def failure_snapshot(this, drain=True): return copy.deepcopy(snapshot)
+            def close_metadata(this): return {'exitCode': 255, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True, 'registeredHostPID': 75}
+        child = FailedPipe(); child.child.returncode = 255
+        self.host.children = [child]; self.host.owner = child
+        with self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$') as context:
+            self.host.tick()
+        path = self.case / 'EXECUTION_HOST_CHILD_FAILURE_000.PRIVATE.json'
+        raw, pin = M.read_file(path, 600 * 1024, uid=os.getuid()); value = M.unique(raw)
+        self.assertTrue(base64.b64decode(value['stderrBase64']) == sentinel and value['localExitCode'] == 255)
+        report = M.unique((self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json').read_bytes())
+        self.assertTrue(report['privateChildCaptures'] == [{'childIndex': 0, 'pin': pin}])
+        self.assertTrue(path.stat().st_nlink == 1 and path.stat().st_mode & 0o777 == 0o600)
+        close = self.host.close(); public = M.encode(close)
+        self.assertTrue(close['clean'] is False and close['children'][0]['exitCode'] == 255)
+        self.assertTrue(sentinel not in public and value['stderrBase64'].encode() not in public and 'Base64' not in str(close))
+        final = self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_000.PRIVATE.json'
+        self.assertTrue(M.unique(final.read_bytes()) == snapshot and not list(self.case.glob('*FAILURE*.SAFE.*')))
+        self.assertTrue(sentinel.decode() not in str(context.exception))
+        self.assertTrue(self.host.close() is close and path.read_bytes() == raw)
+
+    def test_constructor_capture_and_publication_error_do_not_heal_failure(self):
+        sentinel = os.urandom(24).hex()
+        error = OSError(5, 'constructor-io')
+        error.nativePipePrivateCapture = {'stderrBase64': base64.b64encode(sentinel.encode()).decode()}
+        def failed(): raise error
+        self.host._observe = failed
+        with self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$'):
+            self.host.tick()
+        captured = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_000.PRIVATE.json').read_bytes())
+        self.assertTrue(base64.b64decode(captured['stderrBase64']).decode() == sentinel)
+        # The existing private file cannot be replaced by another capture.
+        result = self.host._private_pipe_captures(error)
+        self.assertTrue(result[0]['captureError']['type'] == 'FileExistsError' and result[0]['captureError']['errno'] == 17
+                        and self.host.failure is not None)
+        huge = OSError(); huge.nativePipePrivateCapture = {'stderrBase64': 'a' * (600 * 1024)}
+        self.assertTrue(self.host._private_pipe_captures(huge)[0]['captureError']['type'] == 'RuntimeError')
 
     def test_source_exit_after_confirmed_owner_stop_is_not_live_failure(self):
         self.host.state = 'STOPPED'; self.host.last_observation = {'observedAtUTC': '2026-10-22T00:00:00.000Z'}
@@ -1028,14 +1078,50 @@ class PurePipes(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'child-stream-cap'):
                 c.tick()
             self.assertTrue(len(c.output[0]) <= M.CAP and len(c.output[1]) <= 128 * 1024)
+            self.assertTrue(c.capture_truncated[0 if fd == 10 else 1])
+            self.assertTrue(len(M.encode(c.failure_snapshot(drain=False))) <= 600 * 1024)
 
     def test_registered_child_identity_and_deadline_fail_closed(self):
         c = M._PipeChild(['fixed']); c.child.pid = 99
         with self.assertRaisesRegex(RuntimeError, 'registered-child-identity'):
             c.tick()
-        c.child.pid = 75; c.deadline = 0
+        self.blocks = {10: [b'output', b''], 11: [b'']}
+        c = M._PipeChild(['fixed']); c.deadline = 0
         with self.assertRaisesRegex(RuntimeError, 'child-deadline'):
             c.tick()
+
+    def test_broken_pipe_preserves_original_error_and_drains_actual_stderr_once(self):
+        sentinel = os.urandom(32)
+        self.blocks = {10: [b'', b''], 11: [sentinel, b'']}
+        c = M._PipeChild(['fixed-root-bootstrap'], b'private-input-not-exported')
+        c.child.returncode = 255
+        write = unittest.mock.Mock(side_effect=BrokenPipeError(32, 'pipe-closed'))
+        with patch.object(M.os, 'write', write):
+            with self.assertRaises(BrokenPipeError) as context: c.tick()
+            self.assertTrue(context.exception.errno == 32)
+            with self.assertRaisesRegex(RuntimeError, 'child-transport-failed'): c.tick()
+        snapshot = c.failure_snapshot(drain=False)
+        self.assertTrue(write.call_count == 1 and c.child.stdin.closed)
+        self.assertTrue(base64.b64decode(snapshot['stderrBase64']) == sentinel and snapshot['localExitCode'] == 255)
+        self.assertTrue(snapshot['stdoutNaturalEOF'] and snapshot['stderrNaturalEOF'] and snapshot['remoteExitConfirmed'] is False)
+        self.assertTrue(snapshot['inputWrittenBytes'] == 0 and 'inputBase64' not in snapshot)
+        with self.assertRaisesRegex(RuntimeError, 'actual-exit-and-two-eof-required'): c.close_metadata()
+
+    def test_transport_capture_never_invents_exit_or_missing_eof(self):
+        c = M._PipeChild(['fixed'], b'private-input')
+        with (patch.object(M.os, 'read', side_effect=BlockingIOError()),
+              patch.object(M.os, 'write', side_effect=BrokenPipeError(32, 'pipe-closed'))):
+            with self.assertRaises(BrokenPipeError): c.tick()
+        snapshot = c.failure_snapshot(drain=False)
+        self.assertTrue(snapshot['localExitCode'] is None and not snapshot['stdoutNaturalEOF']
+                        and not snapshot['stderrNaturalEOF'] and not snapshot['remoteExitConfirmed'])
+
+    def test_capture_failure_does_not_mask_original_broken_pipe(self):
+        c = M._PipeChild(['fixed'], b'private-input')
+        with (patch.object(M.os, 'write', side_effect=BrokenPipeError(32, 'pipe-closed')),
+              patch.object(c, 'failure_snapshot', side_effect=OSError(5, 'capture-unavailable'))):
+            with self.assertRaises(BrokenPipeError) as context: c.tick()
+        self.assertTrue(context.exception.errno == 32 and c.capture_error == {'type': 'OSError', 'errno': 5})
 
     def test_selector_allocation_failure_happens_before_popen(self):
         with patch.object(M.selectors, 'DefaultSelector', side_effect=OSError('selector-unavailable')):
@@ -1051,6 +1137,9 @@ class PurePipes(unittest.TestCase):
         self.assertTrue(p.returncode == -15 and p.stdin.closed and p.stdout.closed and p.stderr.closed)
         self.assertTrue(metadata['registeredHostPID'] == 75 and metadata['exitCode'] == -15 and metadata['startupFailed']
                         and metadata['stdoutNaturalEOF'] and metadata['stderrNaturalEOF'] and not metadata['remoteExitConfirmed'])
+        private = context.exception.nativePipePrivateCapture
+        self.assertTrue(base64.b64decode(private['stdoutBase64']) == b'output'
+                        and private['transportFailure']['type'] == 'OSError' and private['localExitCode'] == -15)
 
     def test_constructor_kill_path_does_not_invent_eof_or_remote_zero(self):
         class Broken(FakeSelector):

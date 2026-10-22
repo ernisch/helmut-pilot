@@ -6,6 +6,7 @@ Docker exec credentials and Root bootstrap material travel on stdin only.
 """
 import datetime
 import ctypes
+import base64
 import hashlib
 import json
 import os
@@ -420,6 +421,7 @@ class _PipeChild:
     def __init__(self, argv, data=None, lifetime=20, deferred=False):
         self.selector = selectors.DefaultSelector(); self.output = [bytearray(), bytearray()]
         self.eof = [False, False]; self.input = memoryview(data or b''); self.input_size = len(self.input); self.offset = 0
+        self.transport_failure = None; self.capture_truncated = [False, False]; self.capture_error = None
         self.deadline = time.monotonic() + lifetime; self.finished = False; self.deferred = deferred
         self.child = None; self.registeredPID = None
         try:
@@ -431,9 +433,11 @@ class _PipeChild:
             if self.child.stdin and not deferred:
                 os.set_blocking(self.child.stdin.fileno(), False); self.selector.register(self.child.stdin, selectors.EVENT_WRITE, 2)
         except BaseException as error:
+            self.transport_failure = {'type': type(error).__name__, 'errno': getattr(error, 'errno', None)}
             metadata = self._abort_startup()
             try:
                 error.nativePipeFailure = metadata
+                error.nativePipePrivateCapture = self.failure_snapshot(drain=False)
             except BaseException:
                 pass
             raise
@@ -471,6 +475,8 @@ class _PipeChild:
                             else:
                                 room = (CAP if i == 0 else 128 * 1024) - len(self.output[i])
                                 self.output[i].extend(raw[:max(room, 0)])
+                                if len(raw) > room:
+                                    self.capture_truncated[i] = True
                         except (BlockingIOError, InterruptedError):
                             pass
                         except BaseException:
@@ -511,6 +517,74 @@ class _PipeChild:
         os.set_blocking(self.child.stdin.fileno(), False); self.selector.register(self.child.stdin, selectors.EVENT_WRITE, 2)
 
     def tick(self):
+        if self.transport_failure is not None:
+            raise RuntimeError('native-execution-host-child-transport-failed')
+        try:
+            return self._tick()
+        except BaseException as error:
+            self.transport_failure = {'type': type(error).__name__, 'errno': getattr(error, 'errno', None)}
+            try:
+                self.failure_snapshot()
+            except BaseException as capture_error:
+                self.capture_error = {'type': type(capture_error).__name__, 'errno': getattr(capture_error, 'errno', None)}
+            raise
+
+    def failure_snapshot(self, drain=True):
+        """PRIVATE only. Never retry stdin or infer a remote process exit."""
+        if self.child is not None and self.child.stdin and not self.child.stdin.closed:
+            try:
+                self.selector.unregister(self.child.stdin)
+            except BaseException:
+                pass
+            try:
+                self.child.stdin.close()
+            except BaseException:
+                pass
+        if drain and self.child is not None:
+            until = time.monotonic() + .1
+            while time.monotonic() < until:
+                progress = False
+                for i, stream in enumerate((self.child.stdout, self.child.stderr)):
+                    if stream is None or stream.closed or self.eof[i]:
+                        continue
+                    try:
+                        os.set_blocking(stream.fileno(), False)
+                        raw = os.read(stream.fileno(), 16384)
+                    except (BlockingIOError, InterruptedError):
+                        continue
+                    except BaseException:
+                        continue
+                    progress = True
+                    if raw:
+                        room = (CAP if i == 0 else 128 * 1024) - len(self.output[i])
+                        self.output[i].extend(raw[:max(0, room)])
+                        if len(raw) > room:
+                            self.capture_truncated[i] = True
+                    else:
+                        self.eof[i] = True
+                        try:
+                            self.selector.unregister(stream)
+                        except BaseException:
+                            pass
+                        try:
+                            stream.close()
+                        except BaseException:
+                            pass
+                if all(self.eof):
+                    break
+                if not progress:
+                    time.sleep(.005)
+        return {'schema': 'helmut-local-unit-native-pipe-failure-private/1',
+                'registeredHostPID': self.registeredPID, 'transportFailure': self.transport_failure, 'captureError': self.capture_error,
+                'localExitCode': None if self.child is None else self.child.poll(),
+                'stdoutNaturalEOF': self.eof[0], 'stderrNaturalEOF': self.eof[1],
+                'inputWrittenBytes': self.offset, 'inputTotalBytes': self.input_size,
+                'stdoutBytes': len(self.output[0]), 'stderrBytes': len(self.output[1]),
+                'stdoutTruncated': self.capture_truncated[0], 'stderrTruncated': self.capture_truncated[1],
+                'stdoutBase64': base64.b64encode(self.output[0]).decode('ascii'),
+                'stderrBase64': base64.b64encode(self.output[1]).decode('ascii'), 'remoteExitConfirmed': False}
+
+    def _tick(self):
         need(self.child.pid == self.registeredPID, 'registered-child-identity')
         if self.finished:
             return True
@@ -528,8 +602,11 @@ class _PipeChild:
                 except BlockingIOError:
                     continue
                 if raw:
-                    need(len(self.output[key.data]) + len(raw) <= (CAP if key.data == 0 else 128 * 1024), 'child-stream-cap')
-                    self.output[key.data].extend(raw)
+                    room = (CAP if key.data == 0 else 128 * 1024) - len(self.output[key.data])
+                    self.output[key.data].extend(raw[:max(0, room)])
+                    if len(raw) > room:
+                        self.capture_truncated[key.data] = True
+                        need(False, 'child-stream-cap')
                 else:
                     self.eof[key.data] = True; self.selector.unregister(key.fileobj); key.fileobj.close()
         code = self.child.poll()
@@ -1399,6 +1476,31 @@ class NativeExecutionHost:
                      actualClientNamespacePID=c['process']['namespacePID'], clientContainerId=self.active_client, process=c['process'])
         return close
 
+    def _private_pipe_captures(self, error=None, after_close=False):
+        """Bounded failure bytes stay in dedicated PRIVATE files, never replies."""
+        captures, candidates = [], []
+        attached = getattr(error, 'nativePipePrivateCapture', None)
+        if attached is not None:
+            candidates.append((None, attached))
+        for index, child in enumerate(self.children):
+            if (getattr(child, 'transport_failure', None) is not None or child is self.owner) and hasattr(child, 'failure_snapshot'):
+                candidates.append((index, child))
+        for ordinal, (index, value) in enumerate(candidates):
+            try:
+                snapshot = value if index is None else value.failure_snapshot(drain=not after_close)
+                raw = encode(snapshot)
+                need(len(raw) <= 600 * 1024, 'private-pipe-capture-cap')
+                suffix = '_CLOSE_' if after_close else '_'
+                path = self.case / ('EXECUTION_HOST_CHILD_FAILURE' + suffix + '%03d.PRIVATE.json' % ordinal)
+                publish_once(path, raw)
+                pin = {'path': str(path), 'bytes': len(raw), 'sha256': sha(raw)}
+                captures.append({'childIndex': index, 'pin': pin})
+            except BaseException as capture_error:
+                # No capture failure replaces the original transport outcome.
+                captures.append({'childIndex': index, 'captureError': {'type': type(capture_error).__name__[:128],
+                                                                     'errno': getattr(capture_error, 'errno', None)}})
+        return captures
+
     def tick(self):
         need(not self.closed and self.failure is None, 'sealed-host')
         try:
@@ -1487,12 +1589,14 @@ class NativeExecutionHost:
             try:
                 # PRIVATE diagnostics preserve the cause, never enter a SAFE
                 # reply/receipt or reopen an unknown workload for another try.
+                private_captures = self._private_pipe_captures(error)
                 publish_once(self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json', encode({
                     'schema': 'helmut-local-unit-native-execution-host-failure/1', 'observedAtUTC': utc(),
                     'selection': self.selection, 'state': self.state,
                     'stage': None if self.pending is None else self.pending['request']['stage'],
                     'exception': {'type': type(error).__name__[:128], 'message': str(error)[:4096]},
                     'pipeChildFailure': getattr(error, 'nativePipeFailure', None),
+                    'privateChildCaptures': private_captures,
                     'processObserverFailure': getattr(error, 'nativeProcessObserverFailure', None)}))
             except BaseException:
                 self.failure = 'sealed-native-host-failure-without-private-diagnostic'
@@ -1525,7 +1629,12 @@ class NativeExecutionHost:
             done = True
             for c in self.children:
                 try:
-                    done = c.tick() and done
+                    if getattr(c, 'transport_failure', None) is not None:
+                        # Drain only; failed stdin is never supplied again.
+                        c.failure_snapshot(); clean = False
+                        done = c.child.poll() is not None and all(c.eof) and done
+                    else:
+                        done = c.tick() and done
                 except BaseException:
                     clean = False; done = False
             if done:
@@ -1546,10 +1655,19 @@ class NativeExecutionHost:
                     except BaseException:
                         pass
             finally:
+                if getattr(c, 'transport_failure', None) is not None:
+                    try:
+                        c.failure_snapshot()
+                    except BaseException:
+                        clean = False
                 c.selector.close()
                 for stream in (c.child.stdin, c.child.stdout, c.child.stderr):
                     if stream and not stream.closed:
                         stream.close()
+        if self.failure is not None:
+            # Completion captures preserve later real exit/EOF observations;
+            # they are never added to the SAFE close DTO below.
+            self._private_pipe_captures(after_close=True)
         self.closed = True; self.close_result = {'state': self.state, 'clean': clean, 'children': metadata,
                                                'knownClientContainerIds': sorted(self.clients), 'sourceStopRequested': False,
                                                'processObserverChildren': self.observer_closes,
