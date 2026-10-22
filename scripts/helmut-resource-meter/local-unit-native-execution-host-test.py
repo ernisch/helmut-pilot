@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import shutil
+import subprocess
 import types
 import unittest
 from unittest.mock import patch
@@ -53,10 +55,19 @@ class FakePopen:
     def poll(self):
         return self.returncode
 
+    def terminate(self):
+        self.returncode = -15
+
+    def kill(self):
+        self.returncode = -9
+
+    def wait(self, timeout=None):
+        return self.returncode
+
 
 class FakeChild:
-    def __init__(self, argv=None, data=None, lifetime=None):
-        self.argv = argv; self.data = data; self.output = [bytearray(), bytearray()]
+    def __init__(self, argv=None, data=None, lifetime=None, deferred=False):
+        self.argv = argv; self.data = data; self.deferred = deferred; self.output = [bytearray(), bytearray()]
         self.child = types.SimpleNamespace(poll=lambda: None)
 
     def tick(self):
@@ -72,6 +83,7 @@ class PureHost(unittest.TestCase):
         self.nonce = 'a' * 32; self.case = self.base / self.nonce; self.case.mkdir(mode=0o700)
         (self.case / 'client').mkdir(mode=0o700)
         self.addCleanup(patch.stopall); patch.object(M, 'BASE', self.base).start()
+        patch.object(M.subprocess, 'Popen', side_effect=AssertionError('pure-tests-no-process-start')).start()
         self.config = {'nonce': self.nonce, 'repository': str(self.base / 'repo'), 'runtime': {'imageId': 'sha256:' + 'b' * 64},
                        'parent': 'helmut-meter-memorybudget-' + 'c' * 24, 'parentDevice': 1, 'parentInode': 2,
                        'nodePin': self.pin('/opt/original/bin/node'), 'actualSourceContainerId': 'd' * 64, 'sourceCodePins': [],
@@ -82,12 +94,18 @@ class PureHost(unittest.TestCase):
                      'sourceAliasMounts': [(str(self.case / k), v['path'], True) for k, v in self.aliases.items()],
                      'nodeMount': (self.config['nodePin']['path'], self.config['nodePin']['path'], True), 'clientRuntimeMounts': [], 'knownSetupContainerIds': [],
                      'clientPublicSourceMounts': [], 'pythonMount': ('/opt/python/bin/python3.12', '/opt/python/bin/python3.12', True)}
+        self.plan['dockerConfigDirectory'] = M.docker_config(self.case)
         self.mounts = [*self.plan['sourceAliasMounts'], self.plan['nodeMount']]
         self.native = types.SimpleNamespace(parent_path=lambda _: self.base / 'group')
         self.supervisor = types.SimpleNamespace(PYTHON=Path('/opt/python'))
         self.host = M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {'helpers': {}}, 'd' * 64, self.mounts, self.plan)
         self.selection = {'operationId': 'localUnitDiagnostic-' + self.nonce, 'commandHash': 'e' * 64}
         self.host.selection = self.selection
+
+    def remove_config(self):
+        directory = self.case / 'docker-empty-config'
+        if directory.exists():
+            (directory / 'config.json').unlink(); directory.rmdir()
 
     def pin(self, path, raw=b'public-bytes'):
         return {'path': path, 'bytes': len(raw), 'sha256': M.sha(raw)}
@@ -176,6 +194,7 @@ class PureHost(unittest.TestCase):
     def test_success_reply_binds_exact_request_scope_hash_and_nonce(self):
         self.host.state = 'QUALIFIED'; r = self.request(); self.host._observe = lambda: {'metadata': 1}
         self.host._accept(r, '1' * 64)
+        self.host.tick()
         raw, _ = M.read_file(self.case / 'HOST_REPLY_01.PRIVATE.json', uid=os.getuid()); reply = M.unique(raw)
         self.assertTrue(set(reply) == {'schema', 'seq', 'stage', 'nonce', 'selection', 'requestSHA256', 'issuedAtUTC', 'expiresAtUTC', 'result'})
         self.assertTrue(reply['selection'] == self.selection and reply['nonce'] == r['nonce'] and reply['requestSHA256'] == '1' * 64)
@@ -242,7 +261,7 @@ class PureHost(unittest.TestCase):
             child = self.host._root(M.BOOTSTRAP, {'private': 'not-for-argv'})
         self.assertTrue(child.data == M.encode({'private': 'not-for-argv'}))
         self.assertTrue(not any('not-for-argv' in x for x in child.argv))
-        self.assertTrue(child.argv[:6] == [*M.DOCKER, 'exec', '-i', '--user', '0:0'])
+        self.assertTrue(child.argv[:8] == [*M.DOCKER, '--config', self.host.directory, 'exec', '-i', '--user', '0:0'])
         self.assertTrue(child.argv[-1] == M.BOOTSTRAP)
 
     def test_root_programs_are_syntax_checked_without_running(self):
@@ -291,6 +310,7 @@ class PureHost(unittest.TestCase):
         self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
         volumes = {}; commands = []
         def docker(argv, **opts):
+            self.assertEqual(argv[:2], ['--config', str(self.case / 'docker-empty-config')]); argv = argv[2:]
             commands.append(argv)
             if argv[:2] == ['volume', 'create']:
                 recorded = M.unique((self.case / 'VOLUME_PREPARATION.SAFE.json').read_bytes())
@@ -304,12 +324,13 @@ class PureHost(unittest.TestCase):
             return types.SimpleNamespace(returncode=0 if name in volumes else 1, stdout=json.dumps([volumes[name]]) if name in volumes else '',
                 stderr='' if name in volumes else 'Error response from daemon: get ' + name + ': no such volume\n')
         installed = []
-        def install(native, supervisor, config, alias_dir, public, actual_group):
+        def install(native, supervisor, config, alias_dir, public, actual_group, directory):
             installed.append((public, actual_group))
             for key, p, _, mode in public:
                 M.write_once(alias_dir / key, Path(p['path']).read_bytes(), mode)
             return {'containerId': '9' * 64, 'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True}
         native = types.SimpleNamespace(docker=docker, parent_path=lambda _: group)
+        self.remove_config()
         with patch.object(M, '_install_aliases', install):
             plan = M.prepare_execution(native, self.supervisor, self.config, self.case)
         self.assertTrue(len(volumes) == 2 and len(plan['sourceAliasMounts']) == 3 and plan['nodeMount'] == (pins[3]['path'], pins[3]['path'], True))
@@ -329,6 +350,7 @@ class PureHost(unittest.TestCase):
         self.config['sourceCodePins'] = [self.pin('/repo/local-unit-native-owner.js'), self.pin('/repo/local-unit-diagnostic-broker.js')]
         native = types.SimpleNamespace(parent_path=lambda _: group, docker=lambda *a, **k: self.fail('no Docker on rejected input'))
         for target in ('/etc/shadow', '/etc/passwd.extra', '/etc/../etc/passwd'):
+            self.remove_config()
             row = {'imagePath': target, 'source': self.pin('/public/runtime'), 'readonly': True}
             self.config['runtimeBindings'] = [row]; self.config['executionHost']['clientRuntimePins'] = [row]
             with self.subTest(target=target), self.assertRaisesRegex(RuntimeError, 'public-runtime-target'):
@@ -363,6 +385,7 @@ class PureHost(unittest.TestCase):
             calls.append(argv)
             return types.SimpleNamespace(returncode=1, stdout='', stderr='permission denied')
         native = types.SimpleNamespace(parent_path=lambda _: group, docker=docker)
+        self.remove_config()
         with (patch.object(M, 'public_source_mounts', lambda *a: ([], ('/python', '/python', True))),
               patch.object(M, '_install_aliases', lambda *a: {'containerId': '9' * 64})):
             with self.assertRaisesRegex(RuntimeError, 'volume-absence-not-established'):
@@ -424,13 +447,349 @@ class PureHost(unittest.TestCase):
         def link(p):
             name = str(p)
             return '/opt/original/bin/node' if name.endswith('/exe') else name.rsplit('/', 1)[-1] + ':[42]'
-        with patch.object(M, 'Path', ProcPath), patch.object(M.os, 'readlink', link):
-            result = self.host._proc(91, 1000)
+        with (patch.object(M, 'Path', ProcPath), patch.object(M.os, 'readlink', side_effect=AssertionError('host-must-not-read-ns-exe')),
+              patch('builtins.open', return_value=io.BytesIO(b'/opt/original/bin/node\0'))):
+            result = M.host_process(self.config, 91)
             self.assertTrue(result['hostPID'] == 91 and result['namespacePID'] == 7 and result['startTicks'] == '123')
             for key in ('uid', 'gid', 'nnp', 'cap', 'parent'):
                 fault['key'] = key
                 with self.assertRaises(RuntimeError):
-                    self.host._proc(91, 1000)
+                    M.host_process(self.config, 91)
+
+    def observer_fixture(self):
+        cid = '7' * 64; command = [self.config['nodePin']['path'], *M.FLAGS, '-e', M.PROCESS_OBSERVER]
+        membership = '0::/' + self.config['parent'] + '/' + cid + '\n'
+        def host(pid, namespace, start, cmd):
+            return {'hostPID': pid, 'namespacePID': namespace, 'startTicks': start, 'nspid': [pid, namespace],
+                    'membership': membership, 'command': cmd}
+        initial = host(91, 1, '123', ['/fixed/source'])
+        remote = host(92, 44, '124', command)
+        clock = {'schema': 'helmut-local-unit-monotonic-domain/1', 'kind': 'kernel-without-time-namespaces',
+                 'namespace': None, 'bootId': '11111111-1111-1111-1111-111111111111'}
+        def inside(h):
+            return {'pid': h['namespacePID'], 'startTicks': h['startTicks'], 'uids': [1000] * 4, 'gids': [1000] * 4,
+                    'capabilitiesZero': True, 'noNewPrivileges': True, 'nspid': [h['namespacePID']], 'exe': h['command'][0],
+                    'namespaces': {**{k: k + ':[42]' for k in ('pid', 'net', 'mnt', 'cgroup')}, 'time': None, 'clockDomain': clock},
+                    'membership': '0::/\n'}
+        ready = {'schema': 'helmut-local-unit-native-process-observer-ready/1', 'self': inside(remote), 'nodeVersion': 'v24.19.0',
+                 'execArgvSHA256': M.sha(M.encode([*M.FLAGS, '-e', M.PROCESS_OBSERVER])), 'heapSizeLimitBytes': 432 * 1024**2}
+        class Pipe:
+            def __init__(self, argv, **options):
+                self.argv = argv; self.options = options; self.output = [bytearray(M.encode(ready) + b'\n'), bytearray()]
+                self.done = False; self.supplied = None
+            def tick(self): return self.done
+            def supply(self, raw):
+                if self.supplied is not None: raise AssertionError('double-input')
+                self.supplied = M.unique(raw)
+            def close_metadata(self):
+                if not self.done: raise AssertionError('premature-close')
+                return {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True, 'registeredHostPID': 88}
+        row = {'Id': cid, 'Path': '/fixed/source', 'Args': [], 'State': {'Running': True, 'Pid': 91, 'OOMKilled': False, 'ExitCode': 0}}
+        self.addCleanup(patch.stopall)
+        patch.object(M, 'host_process', lambda c, p: copy.deepcopy({91: initial, 92: remote}[p])).start()
+        patch.object(M, 'group_members', lambda *a: {91, 92}).start()
+        patch.object(M, 'host_clock_domain', lambda: clock).start()
+        patch.object(M, '_PipeChild', Pipe).start()
+        patch.object(M, 'owned_docker', lambda *a, **k: types.SimpleNamespace(stdout=json.dumps([row]))).start()
+        probe = M.ProcessObserver(self.native, self.config, self.host.directory, row, [initial])
+        def finish():
+            result = {'schema': 'helmut-local-unit-native-process-observer-result/1', 'requestNonceSHA256': M.sha(probe.nonce),
+                      'observedAtUTC': M.utc(), 'self': inside(remote), 'targets': [inside(initial)]}
+            probe.child.output[0].extend(M.encode(result) + b'\n'); probe.child.done = True
+            return result
+        return probe, initial, remote, ready, inside, finish, clock
+
+    def test_observer_binds_live_host_process_before_input_then_actual_close(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        self.assertIsNone(probe.tick())
+        self.assertTrue(probe.child.supplied['targets'] == [{'pid': 1, 'startTicks': '123'}])
+        self.assertTrue(probe.remote == remote and probe.child.options['deferred'] is True)
+        self.assertTrue(probe.child.argv[:6] == [*M.DOCKER, '--config', self.host.directory, 'exec', '-i'])
+        finish(); result = probe.tick()
+        self.assertTrue(result['close']['exitCode'] == 0 and result['close']['stdoutNaturalEOF'] and result['close']['stderrNaturalEOF'])
+        p = result['processes'][0]
+        self.assertTrue(set(p) == {'hostPID', 'namespacePID', 'startTicks', 'exe', 'namespaces', 'membership'}
+                        and p['hostPID'] == 91 and p['namespaces']['time'] is None and p['namespaces']['clockDomain'] == clock)
+        self.assertNotIn(probe.nonce, json.dumps(result))
+
+    def test_observer_cannot_supply_with_foreign_live_pid_or_command(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        remote['command'] = ['/foreign']
+        with self.assertRaisesRegex(RuntimeError, 'observer-unique-live-host-mapping'):
+            probe.tick()
+        self.assertIsNone(probe.child.supplied)
+
+    def test_only_exact_source_shell_exec_transition_is_accepted(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        cid = self.config['actualSourceContainerId']; python = '/fixed/python'
+        worker = str(Path(self.config['repository']) / 'scripts/helmut-resource-meter/local-unit-native-worker.py')
+        self.config.update(pythonExecutable=python, sources=[self.pin(worker)])
+        initial['command'] = [python, '-I', '-S', '-B', worker]
+        initial['membership'] = '0::/' + self.config['parent'] + '/' + cid + '\n'
+        shell = 'exec ' + python + ' -I -S -B ' + worker + ' > /bench/BOOTSTRAP.PRIVATE.log 2>&1'
+        row = {'Id': cid, 'Path': '/bin/sh', 'Args': ['-c', shell], 'State': {'Running': True, 'Pid': 91}}
+        M.ProcessObserver(self.native, self.config, self.host.directory, row, [copy.deepcopy(initial)])
+        for args in (['-c', shell + '; other'], ['-c', shell.replace('2>&1', '2>/other')]):
+            with self.subTest(argsHash=M.sha(M.encode(args))), self.assertRaisesRegex(RuntimeError, 'source-fixed-exec-command'):
+                M.ProcessObserver(self.native, self.config, self.host.directory, {**row, 'Args': args}, [copy.deepcopy(initial)])
+        with self.assertRaisesRegex(RuntimeError, 'observer-direct-command'):
+            M.ProcessObserver(self.native, self.config, self.host.directory,
+                              {**row, 'Id': '8' * 64}, [copy.deepcopy(initial)])
+
+    def test_observer_rejects_changed_target_after_genuine_response(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        probe.tick(); finish(); initial['startTicks'] = '999'
+        with self.assertRaisesRegex(RuntimeError, 'observer-container-drift'):
+            probe.tick()
+
+    def test_observer_eof_and_nonzero_exit_cannot_be_repaired(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        probe.tick(); finish()
+        probe.child.close_metadata = lambda: {'exitCode': 137, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True}
+        with self.assertRaisesRegex(RuntimeError, 'observer-actual-success-close'):
+            probe.tick()
+
+    def test_observer_missing_natural_eof_is_never_accepted(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        probe.tick(); finish()
+        probe.child.close_metadata = lambda: {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': False}
+        with self.assertRaisesRegex(RuntimeError, 'observer-actual-success-close'): probe.tick()
+
+    def test_only_real_missing_time_namespace_allows_kernel_clock_witness(self):
+        boot = '11111111-1111-1111-1111-111111111111'
+        with patch.object(M.Path, 'read_text', return_value=boot + '\n'):
+            with patch.object(M.os, 'readlink', side_effect=FileNotFoundError()):
+                clock = M.host_clock_domain()
+                self.assertTrue(clock['namespace'] is None and clock['kind'] == 'kernel-without-time-namespaces' and clock['bootId'] == boot)
+            with patch.object(M.os, 'readlink', side_effect=PermissionError()):
+                with self.assertRaises(PermissionError): M.host_clock_domain()
+            with patch.object(M.os, 'readlink', return_value='time:[42]'):
+                self.assertTrue(M.host_clock_domain()['namespace'] == 'time:[42]')
+
+    def test_installer_mounts_node_and_waits_for_actual_observer_before_supply(self):
+        group = self.base / 'group'; group.mkdir(); g = group.stat()
+        self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
+        alias_dir = self.case / 'owner-public'; alias_dir.mkdir()
+        cid = '9' * 64; snapshots = {}; calls = []; events = []
+        public = [(key, pin, self.aliases[key]['path'], 0o555 if key == 'postgrest' else 0o444)
+                  for key, pin in [('owner', self.pin('/fixed/owner')), ('broker', self.pin('/fixed/broker')),
+                                   ('postgrest', self.pin('/fixed/postgrest'))]]
+        observed = {'hostPID': 91, 'namespacePID': 1, 'startTicks': '123', 'exe': '/opt/python/bin/python3.12',
+                    'namespaces': {'pid': 'pid:[42]'}, 'membership': '0::/' + self.config['parent'] + '/' + cid + '\n'}
+        class Installer:
+            def __init__(this, argv, **options):
+                this.argv = argv; this.options = options; this.done = False; this.supplied = None
+                this.output = [bytearray(M.encode({'schema': 'helmut-local-unit-alias-installer-ready/1', 'pid': 1,
+                    'startTicks': '123', 'pidNamespace': 'pid:[42]'}) + b'\n'), bytearray()]
+                this.child = types.SimpleNamespace(poll=lambda: 0 if this.done else None, stdin=None, stdout=None, stderr=None)
+                this.selector = types.SimpleNamespace(close=lambda: None); snapshots['pipe'] = this
+            def tick(this): return this.done
+            def supply(this, raw):
+                events.append('supply'); this.supplied = M.unique(raw); this.done = True
+                this.output[0].extend(M.encode({'schema': 'helmut-local-unit-alias-installer-result/1',
+                    'files': [{'path': '/output/' + key, 'bytes': p['bytes'], 'sha256': p['sha256']} for key,p,_,_ in public]}) + b'\n')
+            def close_metadata(this): return {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True}
+        class Observer:
+            def __init__(this, *args): this.calls = 0
+            def tick(this):
+                this.calls += 1
+                if this.calls == 1: events.append('pending'); return None
+                events.append('observed-zero-two-eof')
+                return {'processes': [observed], 'close': {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True}}
+        def docker(native, directory, argv, **options):
+            calls.append(argv)
+            if argv[0] == 'create':
+                mounts = []
+                for i, item in enumerate(argv):
+                    if item == '--mount':
+                        parts = argv[i+1].split(','); parts_dict = dict(p.split('=',1) for p in parts if '=' in p)
+                        mounts.append({'Destination': parts_dict['dst'], 'Source': parts_dict['src'], 'Type': 'bind',
+                                       'RW': 'readonly' not in parts, 'Propagation': 'rprivate'})
+                snapshots['mounts'] = mounts
+                return types.SimpleNamespace(stdout=cid)
+            if argv[0] == 'inspect':
+                done = snapshots['pipe'].done
+                return types.SimpleNamespace(stdout=json.dumps([{'Id': cid, 'Image': self.config['runtime']['imageId'],
+                    'Config': {'User': '1000:1000', 'Env': ['HOSTNAME']}, 'HostConfig': {'CgroupParent': '/' + self.config['parent'],
+                    'CgroupnsMode': 'private', 'NetworkMode': 'none', 'ReadonlyRootfs': True, 'CapDrop': ['ALL'], 'CapAdd': None,
+                    'Privileged': False, 'SecurityOpt': ['no-new-privileges']}, 'Mounts': snapshots['mounts'],
+                    'State': {'Running': not done, 'Pid': 91 if not done else 0, 'ExitCode': 0, 'OOMKilled': False}}]))
+            raise AssertionError('unexpected-command')
+        with (patch.object(M, 'owned_docker', docker), patch.object(M, '_PipeChild', Installer),
+              patch.object(M, 'ProcessObserver', Observer), patch.object(M, 'dispose_observer', lambda *a: True),
+              patch.object(M, 'host_process', lambda *a: {'command': ['/opt/python/bin/python3.12','-I','-S','-B','-c',M.INSTALLER]}),
+              patch.object(M.time, 'sleep', lambda *a: None)):
+            result = M._install_aliases(self.native, self.supervisor, self.config, alias_dir, public, group, self.host.directory)
+        self.assertTrue(events == ['pending', 'observed-zero-two-eof', 'supply'] and result['observerProcessClose']['exitCode'] == 0)
+        self.assertTrue(any(m['Source'] == self.config['nodePin']['path'] and not m['RW'] for m in snapshots['mounts']))
+        self.assertTrue('--interactive' in snapshots['pipe'].argv and '--config' in snapshots['pipe'].argv and 'HOSTNAME' in calls[0])
+
+    def test_observer_rejects_wrong_clock_boot_and_fake_namespace(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        for key in ('boot', 'fake-time', 'uid', 'cap'):
+            value = inside(initial); value['namespaces'] = copy.deepcopy(value['namespaces'])
+            if key == 'boot': value['namespaces']['clockDomain']['bootId'] = '22222222-2222-2222-2222-222222222222'
+            if key == 'fake-time': value['namespaces']['time'] = 'time:[1]'
+            if key == 'uid': value['uids'][-1] = 0
+            if key == 'cap': value['capabilitiesZero'] = False
+            with self.subTest(key=key), self.assertRaises(RuntimeError): probe._inside(value, initial)
+
+    def test_observer_unknown_or_unqualified_target_gone_fails(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        probe.tick(); result = finish(); result['targets'] = [{'pid': 1, 'startTicks': '123', 'gone': True}]
+        probe.child.output[0] = bytearray(M.encode(ready) + b'\n' + M.encode(result) + b'\n')
+        with self.assertRaisesRegex(RuntimeError, 'observer-unqualified-target-gone'):
+            probe.tick()
+
+    def test_process_cache_requires_current_host_metadata_and_three_second_ttl(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        value = probe._inside(inside(initial), initial)
+        self.host.process_cache[91] = {'host': copy.deepcopy(initial), 'value': value, 'at': M.time.monotonic(), 'cid': probe.cid}
+        self.assertEqual(self.host._proc(91, 1000), value)
+        self.host.process_cache[91]['at'] -= 3
+        with self.assertRaises(M.ObservationPending): self.host._proc(91, 1000)
+        self.host.process_cache[91]['at'] = M.time.monotonic(); initial['command'] = ['/changed']
+        with self.assertRaises(M.ObservationPending): self.host._proc(91, 1000)
+
+    def test_reap_never_restarts_cache_freshness(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        probe.tick(); probe.began = M.time.monotonic() - 2.8; finish()
+        result = probe.tick()
+        self.assertEqual(result['observedAt'], probe.began)
+        self.host.process_cache[91] = {'host': initial, 'value': result['processes'][0], 'at': result['observedAt'], 'cid': probe.cid}
+        with patch.object(M.time, 'monotonic', return_value=probe.began + 3.01):
+            with self.assertRaises(M.ObservationPending): self.host._proc(91, 1000)
+
+    def test_current_result_utc_cannot_rescue_expired_probe(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        probe.tick(); probe.began -= 3.1; finish()
+        with self.assertRaisesRegex(RuntimeError, 'observer-total-freshness'): probe.tick()
+
+    def owner_handoff_fixture(self):
+        self.host.source_identity = {'namespaces': {'pid': 'pid:[42]'}}
+        binding = {'containerId': self.host.source_id, 'pidNamespace': 'pid:[42]', 'hmacKeySHA256': M.sha(bytes.fromhex('a' * 64))}
+        q = {**self.selection, 'database': 'helmut_unit_diagnostic_' + self.nonce, 'publicSourceBinding': binding}
+        files = [{'path': '/run/bootstrap/READ_' + key + '.PRIVATE.json', 'text': '{"public":true}'} for key in ('A','B','C','D','E','F')]
+        rpcs = [{'name': name, 'qualificationPin': self.pin(row['path'], row['text'].encode())} for name, row in zip(
+                ('helmut_auth_state_graph_read_v1','helmut_auth_usage_read_v1'), files)]
+        start = {**self.selection, 'database': q['database'], 'originalService': {'publicSourceBinding': binding,
+                 'sourceQualificationPin': self.pin('/run/bootstrap/SOURCE_QUALIFICATION.PRIVATE.json', M.encode(q))},
+                 'pins': {**self.aliases, 'node': self.config['nodePin']},
+                 'measuredCgroup': {'path':'/owned-group','device':1,'inode':2,'procMembership':'0::/\n'}, 'legacy':{'rpcs':rpcs}}
+        handoff = {'start':start,'sourceQualification':q,'hmacKeyHex':'a'*64,'readQualifications':files,
+                   'publicationPolicy':'p'*493,'immutableClientPins':[]}
+        patch.object(M, 'POLICY_SHA', M.sha(handoff['publicationPolicy'])).start()
+        self.host._client_files = lambda *a: None
+        return handoff
+
+    def test_first_owner_start_waits_for_real_service_observation_without_replay(self):
+        handoff = self.owner_handoff_fixture(); calls = []
+        self.host._root = lambda *a, **k: calls.append(a) or FakeChild()
+        self.host._source_service = lambda *a: (_ for _ in ()).throw(M.ObservationPending())
+        request = self.request('OWNER_START', {'handoff':handoff})
+        self.host._accept(request, '1' * 64)
+        self.assertTrue(self.host.pending_handoff is handoff and self.host.handoff is None and not calls)
+        self.host._observe = lambda: (_ for _ in ()).throw(M.ObservationPending())
+        self.host.tick(); self.assertTrue(self.host.failure is None and not calls and self.host.owner is None)
+        with self.assertRaisesRegex(RuntimeError, 'request-already-pending'): self.host._accept(request, '1' * 64)
+        self.host._observe = lambda: {'sourceService':{'genuine':'simulated-actual-zero-two-eof'}}
+        self.host._source_service = lambda *a: {'genuine':'simulated-actual-zero-two-eof'}
+        self.host.tick(); self.host.tick()
+        self.assertTrue(len(calls)==1 and self.host.handoff is handoff and self.host.pending_handoff is None and self.host.failure is None)
+
+    def test_first_owner_start_unknown_service_never_bootstraps(self):
+        handoff = self.owner_handoff_fixture(); calls = []
+        self.host._root = lambda *a, **k: calls.append(a) or FakeChild()
+        self.host._accept(self.request('OWNER_START',{'handoff':handoff}), '1' * 64)
+        self.host._observe = lambda: M.need(False, 'source-service-host-mapping')
+        with self.assertRaisesRegex(RuntimeError, 'sealed-failure'): self.host.tick()
+        self.assertTrue(not calls and self.host.handoff is None and self.host.owner is None)
+
+    def test_pending_owner_handoff_queues_source_and_service_in_one_probe(self):
+        handoff = self.owner_handoff_fixture()
+        self.host._accept(self.request('OWNER_START', {'handoff':handoff}), '1' * 64)
+        group = self.base / 'group'; group.mkdir(); g = group.stat()
+        self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
+        self.native.parent_path = lambda *a: group
+        row = {'Id':self.host.source_id,'HostConfig':{'CgroupParent':'/'+self.config['parent']},'State':{'Running':True,'Pid':91}}
+        self.host._docker = lambda args, **kw: types.SimpleNamespace(stdout=self.host.source_id if args[0]=='ps' else json.dumps([row]))
+        self.host._container = self.host._mounts = lambda *a: None
+        source, service = {'hostPID':91}, {'hostPID':92}; queued=[]
+        self.host._service_host = lambda binding: service
+        self.host._probe = lambda row, targets: queued.append(targets)
+        self.host._proc = lambda *a: (_ for _ in ()).throw(M.ObservationPending())
+        with patch.object(M,'host_process',return_value=source):
+            with self.assertRaises(M.ObservationPending): self.host._observe()
+        self.assertTrue(queued==[[source,service]] and self.host.handoff is None and self.host.owner is None)
+
+    def test_pending_observer_is_not_failure_and_does_not_accept_request(self):
+        self.host._observe = lambda: (_ for _ in ()).throw(M.ObservationPending())
+        result = self.host.tick()
+        self.assertTrue(result['observation'] is None and self.host.failure is None)
+
+    def test_refresh_is_bounded_and_reuses_fresh_identity(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        row = {'Id': probe.cid}
+        self.host.process_cache[91] = {'host': copy.deepcopy(initial), 'value': {}, 'at': M.time.monotonic(), 'cid': probe.cid}
+        with patch.object(M, 'ProcessObserver', side_effect=AssertionError('no-extra-exec')):
+            self.host._probe(row, [initial]); self.assertTrue(not self.host.probes)
+        self.host.process_cache[91]['at'] -= 2
+        with patch.object(M, 'ProcessObserver', return_value=probe):
+            self.host._probe(row, [initial]); self.host._probe(row, [initial])
+        self.assertTrue(self.host.observer_count == 1 and self.host.probes[probe.cid] is probe)
+
+    def test_owned_create_has_closed_env_and_empty_config_not_host_proxy(self):
+        captured = []
+        with patch.object(M.subprocess, 'run', lambda argv, **kw: captured.append((argv, kw)) or 'created'):
+            result = M.owned_docker(self.native, self.host.directory, ['create', '--env', 'HOSTNAME', 'fixed-image'], timeout=7)
+        argv, options = captured[0]
+        self.assertEqual(result, 'created')
+        self.assertTrue(argv == [*M.DOCKER, '--config', self.host.directory, 'create', '--env', 'HOSTNAME', 'fixed-image']
+                        and options['env'] == M.ENV and 'HOSTNAME' not in options['env'] and options['check'] is True)
+        self.assertTrue(options['timeout'] == 7 and options['capture_output'] and options['text'])
+
+    def test_owned_docker_config_is_fresh_exact_private_and_immutable_shape(self):
+        directory = Path(self.host.directory)
+        self.assertTrue(directory.stat().st_mode & 0o777 == 0o700 and (directory / 'config.json').read_bytes() == b'{}')
+        with self.assertRaises(FileExistsError): M.docker_config(self.case)
+        (directory / 'config.json').write_bytes(b'{"proxies":{}}')
+        with self.assertRaises(RuntimeError): M.docker_prefix(directory)
+
+    def test_initial_gate_is_once_after_observer_close_and_fixed_wire_order(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        value = probe._inside(inside(initial), initial); delivered = []
+        child = types.SimpleNamespace(supply=lambda raw: delivered.append(raw))
+        self.host.selection = dict(reversed(list(self.selection.items())))
+        self.host.clients[probe.cid] = {'process': value, 'child': child}
+        self.host.process_cache[91] = {'host': initial, 'value': value, 'at': M.time.monotonic(), 'cid': probe.cid}
+        self.host.probes[probe.cid] = probe; self.host._release_clients(); self.assertTrue(not delivered)
+        self.host.probes.clear(); self.host._release_clients(); self.host._release_clients()
+        frame = M.unique(delivered[0]); self.assertTrue(len(delivered) == 1 and delivered[0].endswith(b'\n'))
+        self.assertEqual(list(frame['selection']), ['operationId', 'commandHash'])
+        self.assertTrue(frame['process'] == {'pid': 1, 'startTicks': '123'} and frame['schema'].endswith('/1'))
+
+    def test_exit_release_waits_for_marker_and_all_real_observer_closes(self):
+        probe, initial, remote, ready, inside, finish, clock = self.observer_fixture()
+        value = probe._inside(inside(initial), initial)
+        self.host.clients[probe.cid] = {'mode': 'entry', 'process': value, 'gateReleased': True}
+        self.host.process_cache[91] = {'host': initial, 'value': value, 'at': M.time.monotonic(), 'cid': probe.cid}
+        now = datetime.datetime.now(datetime.timezone.utc)
+        ready_frame = {'schema': 'helmut-local-unit-native-observation-exit-ready/1', 'selection': self.selection,
+                       'process': {'pid': 1, 'startTicks': '123'}, 'issuedAtUTC': now.isoformat(timespec='milliseconds').replace('+00:00','Z'),
+                       'expiresAtUTC': (now + datetime.timedelta(seconds=8)).isoformat(timespec='milliseconds').replace('+00:00','Z'), 'nonce': 'f' * 64}
+        path = self.case / 'client/ENTRY_OBSERVATION_EXIT_READY.SAFE.json'
+        M.write_once(path, M.encode(ready_frame) + b'\n')
+        with patch.object(M, 'exit_published', return_value=False): self.host._quiesce_clients()
+        self.assertNotIn('exitReady', self.host.clients[probe.cid])
+        self.host.probes[probe.cid] = probe
+        with (patch.object(M, 'exit_published', return_value=True),
+              patch.object(M, 'read_file', return_value=(path.read_bytes(), self.pin(str(path), path.read_bytes())))):
+            self.host._quiesce_clients(); self.assertEqual(self.host.quiescing_client, probe.cid)
+            self.assertFalse((path.parent / 'ENTRY_OBSERVATION_EXIT_RELEASE.SAFE.json').exists())
+            self.host.probes.clear(); self.host._quiesce_clients()
+        release = M.unique((path.parent / 'ENTRY_OBSERVATION_EXIT_RELEASE.SAFE.json').read_bytes())
+        self.assertTrue(release['readyNonceSHA256'] == M.sha('f' * 64) and self.host.quiescing_client is None
+                        and self.host.clients[probe.cid]['exitReleased'])
 
     def test_client_immutable_files_cannot_select_source_private_environment(self):
         p = self.pin(str(M.SOURCE / 'native-end-preparation/runtime-candidates/generated-materials/EXECUTION_ENV.PRIVATE.json'))
@@ -569,6 +928,82 @@ class PurePipes(unittest.TestCase):
         c.child.pid = 75; c.deadline = 0
         with self.assertRaisesRegex(RuntimeError, 'child-deadline'):
             c.tick()
+
+    def test_selector_allocation_failure_happens_before_popen(self):
+        with patch.object(M.selectors, 'DefaultSelector', side_effect=OSError('selector-unavailable')):
+            with self.assertRaises(OSError): M._PipeChild(['fixed'])
+        self.assertTrue(not self.created)
+
+    def test_constructor_post_popen_failure_reaps_real_handle_and_natural_eof(self):
+        class Broken(FakeSelector):
+            def register(self, *a, **k): raise OSError('capture-failed')
+        with patch.object(M.selectors, 'DefaultSelector', Broken):
+            with self.assertRaises(OSError) as context: M._PipeChild(['fixed'], deferred=True)
+        p = self.created[0]; metadata = context.exception.nativePipeFailure
+        self.assertTrue(p.returncode == -15 and p.stdin.closed and p.stdout.closed and p.stderr.closed)
+        self.assertTrue(metadata['registeredHostPID'] == 75 and metadata['exitCode'] == -15 and metadata['startupFailed']
+                        and metadata['stdoutNaturalEOF'] and metadata['stderrNaturalEOF'] and not metadata['remoteExitConfirmed'])
+
+    def test_constructor_kill_path_does_not_invent_eof_or_remote_zero(self):
+        class Broken(FakeSelector):
+            def register(self, *a, **k): raise OSError('capture-failed')
+        counter = {'t': 0}
+        def now(): counter['t'] += .1; return counter['t']
+        original = FakePopen.terminate
+        with (patch.object(M.selectors, 'DefaultSelector', Broken), patch.object(FakePopen, 'terminate', lambda *a: None),
+              patch.object(M.time, 'monotonic', now), patch.object(M.time, 'sleep', lambda *a: None),
+              patch.object(M.os, 'read', side_effect=BlockingIOError())):
+            with self.assertRaises(OSError) as context: M._PipeChild(['fixed'], deferred=True)
+        metadata = context.exception.nativePipeFailure
+        self.assertTrue(metadata['termSent'] and metadata['killSent'] and metadata['exitCode'] == -9
+                        and metadata['stdoutNaturalEOF'] is False and metadata['stderrNaturalEOF'] is False
+                        and metadata['remoteExitConfirmed'] is False)
+
+
+class PureObserverVM(unittest.TestCase):
+    def test_fixed_node_observer_with_synthetic_proc_only(self):
+        # Only a Node VM executes here. Every filesystem/process view in the
+        # observer is synthetic; this cannot call Docker, a DB or an engine.
+        program = r'''
+const vm=require('node:vm'),crypto=require('node:crypto'),EventEmitter=require('node:events');
+const source=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const flags=['--max-old-space-size=384','--max-semi-space-size=16'];
+function run(fault){
+ const stdin=new EventEmitter(),output=[],timers=new Set();let nonce='a'.repeat(64);
+ const proc={pid:44,version:'v24.19.0',execArgv:[...flags,'-e',source],stdin,exitCode:0,exit:c=>{proc.exitCode=c;throw Error('exit');}};
+ const fs={readFileSync(p){
+  if(p==='/proc/sys/kernel/random/boot_id')return'11111111-1111-1111-1111-111111111111\n';
+  const m=p.match(/^\/proc\/(1|44)\/(stat|status|cgroup)$/);if(!m)throw Error('unexpected-path');
+  const id=Number(m[1]);if(fault==='gone'&&id===1){let e=Error('gone');e.code='ENOENT';throw e;}
+  if(m[2]==='cgroup')return fault==='foreignCG'?'0::/foreign\n':'0::/\n';
+  if(m[2]==='stat'){const f=Array(20).fill('0');f[0]='S';f[19]=id===1?'123':'124';return id+' (node) '+f.join(' ');}
+  return ['Uid: '+(fault==='uid'?'0':'1000')+' 1000 1000 1000','Gid: 1000 1000 1000 1000','NSpid: '+id,'NoNewPrivs: '+(fault==='nnp'?'0':'1'),
+   ...['CapInh','CapPrm','CapEff','CapBnd','CapAmb'].map(k=>k+': '+(fault==='cap'&&k==='CapEff'?'1':'0'))].join('\n');
+ },readlinkSync(p){if(p.endsWith('/exe'))return'/fixed/node';const k=p.split('/').at(-1);
+  if(k==='time'){if(fault==='timePermission'){let e=Error('denied');e.code='EACCES';throw e;}if(fault!=='timeExists'){let e=Error('absent');e.code='ENOENT';throw e;}}
+  return k+':[42]';},statSync:p=>{if(p!=='/owned-group')throw Error('unexpected-stat');return{dev:1,ino:2};}};
+ const box={require:n=>{if(n==='node:fs')return fs;if(n==='node:crypto')return crypto;if(n==='node:v8')return{getHeapStatistics:()=>({heap_size_limit:432*1024**2})};throw Error('unexpected-module');},
+  process:proc,console:{log:x=>output.push(JSON.parse(x))},Buffer,setTimeout:f=>{timers.add(f);return f;},clearTimeout:f=>timers.delete(f)};
+ vm.runInNewContext(source,box,{timeout:1000});
+ if(proc.exitCode===0){const q={schema:'helmut-local-unit-native-process-observer-request/1',nonce,init:{pid:1,startTicks:'123'},targets:[{pid:1,startTicks:'123'}],group:{device:1,inode:2}};
+  stdin.emit('data',Buffer.from(JSON.stringify(q)));stdin.emit('end');}
+ return{output,code:proc.exitCode,timers:timers.size};
+}
+for(const fault of ['none','timeExists','gone','uid','cap','nnp','foreignCG','timePermission']){
+ const r=run(fault),success=['none','timeExists','gone'].includes(fault);
+ if(success){if(r.code!==0||r.output.length!==2||r.timers!==0)throw Error('positive-failed');
+  const target=r.output[1].targets[0];
+  if(fault==='gone'){if(target.gone!==true)throw Error('gone-unobserved');}
+  else if((target.namespaces.time===null)!==(fault==='none'))throw Error('clock-witness');
+  if(r.output[1].requestNonceSHA256!==crypto.createHash('sha256').update('a'.repeat(64)).digest('hex'))throw Error('nonce-binding');
+ }else if(r.code===0||r.timers!==0)throw Error('negative-accepted');
+}
+process.stdout.write('observer-vm-cases=8\n');
+'''
+        node = shutil.which('node'); self.assertIsNotNone(node)
+        result = subprocess.run([node, '-e', program], input=json.dumps(M.PROCESS_OBSERVER), text=True,
+                                capture_output=True, timeout=10, env=M.ENV)
+        self.assertTrue(result.returncode == 0 and result.stdout == 'observer-vm-cases=8\n' and result.stderr == '')
 
 
 if __name__ == '__main__':

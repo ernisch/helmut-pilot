@@ -155,6 +155,97 @@ def host_user():
          and rows.get('Uid', '').split() == rows.get('Gid', '').split() == ['1000'] * 4, 'actual-host-uid-gid-1000')
 
 
+def docker_config(case):
+    """Fresh, owned CLI config: Docker must not inject the operator's proxies."""
+    directory = canonical(case) / 'docker-empty-config'
+    directory.mkdir(mode=0o700)
+    write_once(directory / 'config.json', b'{}')
+    return str(directory)
+
+
+def docker_prefix(directory):
+    path = canonical(directory); s = path.lstat()
+    need(stat.S_ISDIR(s.st_mode) and s.st_uid == os.getuid() and stat.S_IMODE(s.st_mode) == 0o700,
+         'owned-docker-config-directory')
+    raw, _ = read_file(path / 'config.json', 2, uid=os.getuid())
+    need(raw == b'{}' and {p.name for p in path.iterdir()} == {'config.json'}, 'empty-docker-config')
+    return ['--config', str(path)]
+
+
+def owned_docker(native, directory, args, **options):
+    if args and args[0] == 'create':
+        return subprocess.run([*DOCKER, *docker_prefix(directory), *args], env=ENV,
+                              capture_output=True, text=True, timeout=options.pop('timeout', 8),
+                              check=options.pop('check', True), **options)
+    return native.docker([*docker_prefix(directory), *args], **options)
+
+
+def host_clock_domain():
+    boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+    need(re.fullmatch('[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', boot), 'actual-boot-id')
+    try:
+        namespace = os.readlink('/proc/self/ns/time')
+        need(re.fullmatch(r'time:\[\d+\]', namespace), 'actual-time-namespace')
+    except FileNotFoundError:
+        namespace = None
+    return {'schema': 'helmut-local-unit-monotonic-domain/1',
+            'kind': 'kernel-without-time-namespaces' if namespace is None else 'time-namespace',
+            'namespace': namespace, 'bootId': boot}
+
+
+class ObservationPending(Exception):
+    """An actual bounded observer is still running; never a successful proof."""
+
+
+def host_process(config, pid):
+    """Only files the operator can genuinely read; no ptrace-gated symlinks."""
+    need(type(pid) is int and pid > 0, 'host-process-pid')
+    root = Path('/proc') / str(pid)
+    before = (root / 'stat').read_text(); fields = before.rsplit(')', 1)[1].split()
+    need(before.split()[0] == str(pid) and fields[0] not in ('Z', 'X') and fields[19].isdigit(), 'live-process')
+    rows = dict(line.split(':', 1) for line in (root / 'status').read_text().splitlines())
+    need(rows.get('Uid', '').split() == rows.get('Gid', '').split() == ['1000'] * 4
+         and rows.get('NoNewPrivs', '').strip() == '1'
+         and all(rows.get(k) and int(rows[k], 16) == 0 for k in ('CapInh', 'CapPrm', 'CapEff', 'CapBnd', 'CapAmb')),
+         'actual-process-privileges')
+    membership = (root / 'cgroup').read_text()
+    need(membership.startswith('0::/' + config['parent'] + '/') and len(membership.splitlines()) == 1, 'actual-common-parent')
+    nspid = [int(x) for x in rows.get('NSpid', '').split()]
+    need(nspid and nspid[0] == pid and all(x > 0 for x in nspid), 'actual-namespace-pid')
+    with open(root / 'cmdline', 'rb') as stream:
+        cmdline = stream.read(16385)
+    need(0 < len(cmdline) <= 16384 and cmdline.endswith(b'\0'), 'bounded-process-command')
+    command = [x.decode('utf8') for x in cmdline[:-1].split(b'\0')]
+    need((root / 'stat').read_text().rsplit(')', 1)[1].split()[19] == fields[19], 'process-reused')
+    return {'hostPID': pid, 'namespacePID': nspid[-1], 'startTicks': fields[19], 'nspid': nspid,
+            'membership': membership, 'command': command}
+
+
+def group_members(native, config):
+    group = native.parent_path(config['parent']); s = group.lstat()
+    need(stat.S_ISDIR(s.st_mode) and not group.is_symlink()
+         and (s.st_dev, s.st_ino) == (config['parentDevice'], config['parentInode']), 'observer-common-parent')
+    members = set()
+    for file in group.rglob('cgroup.procs'):
+        members.update(int(x) for x in file.read_text().split())
+    return members
+
+
+def exit_published(path):
+    marker = Path(str(path) + '.PUBLISHED')
+    if not marker.exists():
+        return False
+    canonical(marker)
+    fd = os.open(marker, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        s = os.fstat(fd)
+        need(stat.S_ISDIR(s.st_mode) and s.st_uid == 1000 and stat.S_IMODE(s.st_mode) == 0o700
+             and not any(marker.iterdir()) and identity(s) == identity(marker.lstat()), 'exit-publication-marker')
+    finally:
+        os.close(fd)
+    return True
+
+
 def publish_once(path, raw):
     """No reader can observe a partial success reply or a two-link interval."""
     p = Path(path); stage = p.parent / ('.' + p.name + '.stage-' + secrets.token_hex(16))
@@ -219,11 +310,12 @@ def prepare_execution(native, supervisor, config, case):
 
     Add sourceVolumeMounts/sourceAliasMounts/nodeMount to the Source create args;
     replace the former /ram tmpfs and whole Node-directory bind, never stack them.
-    The caller must clean plan.volumes after every known container has exited.
+    The caller retains plan.volumes and setup identities for final accounting.
     """
     nonce, case = config['nonce'], canonical(case)
     host_user()
     need(re.fullmatch('[a-f0-9]{32}', nonce) and case == BASE / nonce, 'fresh-case')
+    directory = docker_config(case)
     e = config['executionHost']
     need(set(e) == {'postgrestPin', 'clientRuntimePins'}, 'preparation-config')
     group = native.parent_path(config['parent']); g = group.stat()
@@ -250,12 +342,12 @@ def prepare_execution(native, supervisor, config, case):
              and not any(x in target for x in (',', '\0', '..')), 'public-runtime-target')
         runtime_mounts.append((r['source']['path'], target, True))
     public_mounts, python_mount = public_source_mounts(supervisor, config)
-    setup = _install_aliases(native, supervisor, config, alias_dir, public, group)
+    setup = _install_aliases(native, supervisor, config, alias_dir, public, group, directory)
     volumes = {'ram': 'helmut-unitdiag-ram-' + nonce, 'run': 'helmut-unitdiag-run-' + nonce}
     volume_rows = []
     for key, size, uid, mode in [('ram', 268435456, 1000, '0711'), ('run', 16777216, 0, '0755')]:
         name = volumes[key]
-        inspected = native.docker(['volume', 'inspect', name], timeout=3, check=False)
+        inspected = owned_docker(native, directory, ['volume', 'inspect', name], timeout=3, check=False)
         missing = (r'(?:Error response from daemon: get ' + re.escape(name) + r': no such volume|Error: No such volume: ' + re.escape(name) + r')\n?')
         need(inspected.returncode == 1 and re.fullmatch(missing, getattr(inspected, 'stderr', '')), 'volume-absence-not-established')
         opts = 'rw,exec,nosuid,nodev,size=' + str(size) + ',uid=' + str(uid) + ',gid=' + str(uid) + ',mode=' + mode
@@ -263,11 +355,11 @@ def prepare_execution(native, supervisor, config, case):
     publish_once(case / 'VOLUME_PREPARATION.SAFE.json', encode({'schema': 'helmut-local-unit-native-owned-volumes/1', 'nonce': nonce, 'volumes': volume_rows}))
     for item in volume_rows:
         name, opts = item['name'], item['options']['o']
-        result = native.docker(['volume', 'create', '--driver', 'local', '--opt', 'type=tmpfs', '--opt', 'device=tmpfs', '--opt', 'o=' + opts, name], timeout=5)
+        result = owned_docker(native, directory, ['volume', 'create', '--driver', 'local', '--opt', 'type=tmpfs', '--opt', 'device=tmpfs', '--opt', 'o=' + opts, name], timeout=5)
         need(result.stdout.strip() == name, 'volume-create-outcome')
-        row = json.loads(native.docker(['volume', 'inspect', name], timeout=3).stdout)[0]
+        row = json.loads(owned_docker(native, directory, ['volume', 'inspect', name], timeout=3).stdout)[0]
         need(row['Name'] == name and row['Driver'] == 'local' and row['Options'] == {'type': 'tmpfs', 'device': 'tmpfs', 'o': opts}, 'volume-native-options')
-    return {'schema': 'helmut-local-unit-native-execution-plan/1', 'nonce': nonce, 'volumes': volumes, 'aliasPins': aliases,
+    return {'schema': 'helmut-local-unit-native-execution-plan/1', 'dockerConfigDirectory': directory, 'nonce': nonce, 'volumes': volumes, 'aliasPins': aliases,
             'sourceVolumeMounts': ['type=volume,src=' + volumes['ram'] + ',dst=/ram', 'type=volume,src=' + volumes['run'] + ',dst=/run'],
             'sourceAliasMounts': mounts, 'nodeMount': (node['path'], node['path'], True), 'clientRuntimeMounts': runtime_mounts,
             'clientPublicSourceMounts': public_mounts, 'pythonMount': python_mount,
@@ -277,16 +369,92 @@ def prepare_execution(native, supervisor, config, case):
 class _PipeChild:
     """Real Popen handle: natural EOF and exit are independent observations."""
     def __init__(self, argv, data=None, lifetime=20, deferred=False):
-        self.child = subprocess.Popen(argv, env=ENV, stdin=subprocess.PIPE if data is not None or deferred else subprocess.DEVNULL,
-                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
         self.selector = selectors.DefaultSelector(); self.output = [bytearray(), bytearray()]
         self.eof = [False, False]; self.input = memoryview(data or b''); self.input_size = len(self.input); self.offset = 0
         self.deadline = time.monotonic() + lifetime; self.finished = False; self.deferred = deferred
-        for i, stream in enumerate((self.child.stdout, self.child.stderr)):
-            os.set_blocking(stream.fileno(), False); self.selector.register(stream, selectors.EVENT_READ, i)
-        if self.child.stdin and not deferred:
-            os.set_blocking(self.child.stdin.fileno(), False); self.selector.register(self.child.stdin, selectors.EVENT_WRITE, 2)
-        self.registeredPID = self.child.pid
+        self.child = None; self.registeredPID = None
+        try:
+            self.child = subprocess.Popen(argv, env=ENV, stdin=subprocess.PIPE if data is not None or deferred else subprocess.DEVNULL,
+                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+            self.registeredPID = self.child.pid
+            for i, stream in enumerate((self.child.stdout, self.child.stderr)):
+                os.set_blocking(stream.fileno(), False); self.selector.register(stream, selectors.EVENT_READ, i)
+            if self.child.stdin and not deferred:
+                os.set_blocking(self.child.stdin.fileno(), False); self.selector.register(self.child.stdin, selectors.EVENT_WRITE, 2)
+        except BaseException as error:
+            metadata = self._abort_startup()
+            try:
+                error.nativePipeFailure = metadata
+            except BaseException:
+                pass
+            raise
+
+    def _abort_startup(self):
+        """Own a post-Popen failure even when no handle can be returned."""
+        sent_term = sent_kill = False
+        child = self.child
+        if child is not None:
+            if child.stdin and not child.stdin.closed:
+                try:
+                    child.stdin.close()
+                except BaseException:
+                    pass
+            readable = []
+            for i, stream in enumerate((child.stdout, child.stderr)):
+                if stream and not stream.closed:
+                    try:
+                        os.set_blocking(stream.fileno(), False); readable.append((i, stream))
+                    except BaseException:
+                        pass
+            try:
+                if child.poll() is None:
+                    child.terminate(); sent_term = True
+                until = time.monotonic() + .5
+                kill_at = until - .25
+                while time.monotonic() < until:
+                    for i, stream in readable:
+                        if self.eof[i]:
+                            continue
+                        try:
+                            raw = os.read(stream.fileno(), 16384)
+                            if raw == b'':
+                                self.eof[i] = True
+                            else:
+                                room = (CAP if i == 0 else 128 * 1024) - len(self.output[i])
+                                self.output[i].extend(raw[:max(room, 0)])
+                        except (BlockingIOError, InterruptedError):
+                            pass
+                        except BaseException:
+                            readable = [(n, s) for n, s in readable if s is not stream]
+                    if child.poll() is not None and all(self.eof):
+                        break
+                    if child.poll() is None and not sent_kill and time.monotonic() >= kill_at:
+                        child.kill(); sent_kill = True
+                    time.sleep(.005)
+                if child.poll() is None and not sent_kill:
+                    child.kill(); sent_kill = True
+                child.wait(timeout=.25)
+            except BaseException:
+                try:
+                    if child.poll() is None:
+                        child.kill(); sent_kill = True
+                    child.wait(timeout=.25)
+                except BaseException:
+                    pass
+        try:
+            self.selector.close()
+        except BaseException:
+            pass
+        if child is not None:
+            for stream in (child.stdin, child.stdout, child.stderr):
+                if stream and not stream.closed:
+                    try:
+                        stream.close()
+                    except BaseException:
+                        pass
+        return {'registeredHostPID': self.registeredPID, 'exitCode': None if child is None else child.poll(),
+                'stdoutNaturalEOF': self.eof[0], 'stderrNaturalEOF': self.eof[1],
+                'termSent': sent_term, 'killSent': sent_kill, 'startupFailed': True, 'remoteExitConfirmed': False}
 
     def supply(self, data):
         need(self.deferred and self.child.stdin and not self.child.stdin.closed and self.offset == 0, 'single-deferred-input')
@@ -326,6 +494,183 @@ class _PipeChild:
         need(self.child.poll() is not None and all(self.eof) and not self.deferred and self.offset == self.input_size, 'actual-exit-and-two-eof-required')
         return {'exitCode': self.child.returncode, 'stdoutNaturalEOF': self.eof[0], 'stderrNaturalEOF': self.eof[1],
                 'registeredHostPID': self.registeredPID}
+
+
+PROCESS_OBSERVER = r'''
+"use strict";
+const fs=require('node:fs'), crypto=require('node:crypto'), v8=require('node:v8');
+const hash=x=>crypto.createHash('sha256').update(x).digest('hex');
+const need=x=>{if(!x)throw Error('observer-guard');};
+const read=p=>fs.readFileSync(p,'utf8');
+const tick=()=>new Date().toISOString();
+function proc(pid){
+ need(Number.isSafeInteger(pid)&&pid>0);
+ const root='/proc/'+pid, raw=read(root+'/stat'), f=raw.slice(raw.lastIndexOf(')')+2).trim().split(/\s+/);
+ need(raw.split(' ')[0]===String(pid)&&!['Z','X'].includes(f[0])&&/^\d+$/.test(f[19]));
+ const d=Object.fromEntries(read(root+'/status').trim().split('\n').map(x=>{const i=x.indexOf(':');return[x.slice(0,i),x.slice(i+1).trim()];}));
+ const ids=k=>d[k].split(/\s+/).map(Number);
+ need(ids('Uid').length===4&&ids('Gid').length===4&&[...ids('Uid'),...ids('Gid')].every(x=>x===1000));
+ need(['CapInh','CapPrm','CapEff','CapBnd','CapAmb'].every(k=>/^[0-9a-f]+$/i.test(d[k])&&BigInt('0x'+d[k])===0n)&&d.NoNewPrivs==='1');
+ const namespaces=Object.fromEntries(['pid','net','mnt','cgroup'].map(k=>[k,fs.readlinkSync(root+'/ns/'+k)]));
+ let time=null;
+ try{time=fs.readlinkSync(root+'/ns/time');need(/^time:\[\d+\]$/.test(time));}catch(e){if(e.code!=='ENOENT')throw e;}
+ const bootId=read('/proc/sys/kernel/random/boot_id').trim();need(/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(bootId));
+ namespaces.time=time;namespaces.clockDomain={schema:'helmut-local-unit-monotonic-domain/1',kind:time===null?'kernel-without-time-namespaces':'time-namespace',namespace:time,bootId};
+ const membership=read(root+'/cgroup');need(membership==='0::/\n');
+ const nspid=ids('NSpid');need(nspid.length>0&&nspid.at(-1)===pid&&nspid.every(x=>Number.isSafeInteger(x)&&x>0));
+ const exe=fs.readlinkSync(root+'/exe');
+ need(read(root+'/stat').slice(read(root+'/stat').lastIndexOf(')')+2).trim().split(/\s+/)[19]===f[19]);
+ return {pid,startTicks:f[19],uids:ids('Uid'),gids:ids('Gid'),capabilitiesZero:true,noNewPrivileges:true,nspid,exe,namespaces,membership};
+}
+const timer=setTimeout(()=>process.exit(74),2500);
+try{
+ need(process.version==='v24.19.0'&&process.execArgv.length===4&&process.execArgv[0]==='--max-old-space-size=384'&&process.execArgv[1]==='--max-semi-space-size=16'&&process.execArgv[2]==='-e');
+ const heap=v8.getHeapStatistics().heap_size_limit;need(heap>=384*1024**2&&heap<=448*1024**2);
+ const self=proc(process.pid);
+ console.log(JSON.stringify({schema:'helmut-local-unit-native-process-observer-ready/1',self,nodeVersion:process.version,execArgvSHA256:hash(JSON.stringify(process.execArgv)),heapSizeLimitBytes:heap}));
+ let chunks=[],size=0;
+ process.stdin.on('data',b=>{size+=b.length;if(size>4096)process.exit(75);chunks.push(b);});
+ process.stdin.once('error',()=>process.exit(75));
+ process.stdin.once('end',()=>{try{
+  const q=JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  need(JSON.stringify(Object.keys(q).sort())===JSON.stringify(['group','init','nonce','schema','targets'])&&q.schema==='helmut-local-unit-native-process-observer-request/1'&&/^[a-f0-9]{64}$/.test(q.nonce));
+  need(Array.isArray(q.targets)&&q.targets.length>=1&&q.targets.length<=2&&new Set(q.targets.map(x=>x.pid)).size===q.targets.length);
+  const g=fs.statSync('/owned-group');need(g.dev===q.group.device&&g.ino===q.group.inode);
+  need(q.init.pid===1);
+  try{const init=proc(1);need(q.init.startTicks===init.startTicks&&init.namespaces.pid===self.namespaces.pid);}catch(e){if(e.code!=='ENOENT')throw e;}
+  const targets=q.targets.map(t=>{need(Object.keys(t).length===2&&Object.hasOwn(t,'pid')&&Object.hasOwn(t,'startTicks'));try{const p=proc(t.pid);need(p.startTicks===t.startTicks&&p.namespaces.pid===self.namespaces.pid);return p;}catch(e){if(e.code!=='ENOENT')throw e;return{pid:t.pid,startTicks:t.startTicks,gone:true};}});
+  console.log(JSON.stringify({schema:'helmut-local-unit-native-process-observer-result/1',requestNonceSHA256:hash(q.nonce),observedAtUTC:tick(),self:proc(process.pid),targets}));
+  clearTimeout(timer);
+ }catch(e){process.exitCode=75;clearTimeout(timer);}});
+}catch(e){process.exitCode=75;clearTimeout(timer);}
+'''
+
+
+class ProcessObserver:
+    """One immutable Node exec, held live until independent host mapping."""
+    def __init__(self, native, config, directory, row, targets, allow_gone=False):
+        self.began = time.monotonic()
+        self.native, self.config, self.directory = native, config, directory
+        self.cid, self.init_pid = row['Id'], row['State']['Pid']
+        need(HASH.fullmatch(self.cid) and row['State']['Running'], 'observer-live-container')
+        self.init = host_process(config, self.init_pid)
+        if self.cid == config.get('actualSourceContainerId'):
+            python = config['pythonExecutable']; worker = str(Path(config['repository']) / 'scripts/helmut-resource-meter/local-unit-native-worker.py')
+            command = 'exec ' + python + ' -I -S -B ' + worker + ' > /bench/BOOTSTRAP.PRIVATE.log 2>&1'
+            need(row['Path'] == '/bin/sh' and row['Args'] == ['-c', command]
+                 and self.init['command'] == [python, '-I', '-S', '-B', worker]
+                 and any(p['path'] == worker for p in config['sources']), 'observer-source-fixed-exec-command')
+        else:
+            need(self.init['command'] == [row['Path'], *row['Args']], 'observer-direct-command')
+        need(self.init['namespacePID'] == 1
+             and (self.cid in self.init['membership'].strip().split('/')
+                  or 'docker-' + self.cid + '.scope' in self.init['membership'].strip().split('/')), 'observer-container-init-pid')
+        self.before = targets; self.allow_gone = allow_gone
+        need(1 <= len(targets) <= 2 and len({p['namespacePID'] for p in targets}) == len(targets)
+             and all(p['membership'] == self.init['membership'] for p in targets), 'observer-target-container')
+        self.nonce = secrets.token_hex(32); self.remote = None; self.result = None
+        argv = [*DOCKER, *docker_prefix(directory), 'exec', '-i', '--user', '1000:1000', self.cid,
+                config['nodePin']['path'], *FLAGS, '-e', PROCESS_OBSERVER]
+        self.child = _PipeChild(argv, lifetime=3, deferred=True)
+
+    def _inside(self, value, host):
+        need(type(value) is dict and set(value) == {'pid', 'startTicks', 'uids', 'gids', 'capabilitiesZero', 'noNewPrivileges',
+              'nspid', 'exe', 'namespaces', 'membership'} and value['pid'] == host['namespacePID']
+             and value['startTicks'] == host['startTicks'] and value['uids'] == value['gids'] == [1000] * 4
+             and value['capabilitiesZero'] is True and value['noNewPrivileges'] is True and value['membership'] == '0::/\n'
+             and type(value['nspid']) is list and value['nspid'] and value['nspid'][-1] == host['namespacePID'], 'observer-inside-process')
+        ns = value['namespaces']; clock = ns['clockDomain']
+        need(set(ns) == {'pid', 'net', 'mnt', 'cgroup', 'time', 'clockDomain'}
+             and all(type(ns[k]) is str and re.fullmatch(k + r':\[\d+\]', ns[k]) for k in ('pid', 'net', 'mnt', 'cgroup')),
+             'observer-real-namespaces')
+        need(type(clock) is dict and set(clock) == {'schema', 'kind', 'namespace', 'bootId'}
+             and clock['schema'] == 'helmut-local-unit-monotonic-domain/1'
+             and clock['bootId'] == host_clock_domain()['bootId'] and clock['namespace'] == ns['time']
+             and ((ns['time'] is None and clock['kind'] == 'kernel-without-time-namespaces'
+                   and host_clock_domain()['namespace'] is None)
+                  or (type(ns['time']) is str and re.fullmatch(r'time:\[\d+\]', ns['time']) and clock['kind'] == 'time-namespace')),
+             'observer-clock-domain')
+        need(value['exe'] == host['command'][0], 'observer-actual-executable')
+        return {'hostPID': host['hostPID'], 'namespacePID': host['namespacePID'], 'startTicks': host['startTicks'],
+                'exe': value['exe'], 'namespaces': ns, 'membership': host['membership']}
+
+    def tick(self):
+        if self.result is not None:
+            return self.result
+        done = self.child.tick(); raw = bytes(self.child.output[0]); lines = raw.split(b'\n')[:-1]
+        need(len(raw) <= 16384 and len(self.child.output[1]) == 0 and len(lines) <= 2, 'observer-output-closure')
+        if self.remote is None and lines:
+            ready = unique(lines[0])
+            need(set(ready) == {'schema', 'self', 'nodeVersion', 'execArgvSHA256', 'heapSizeLimitBytes'}
+                 and ready['schema'] == 'helmut-local-unit-native-process-observer-ready/1' and ready['nodeVersion'] == 'v24.19.0'
+                 and ready['execArgvSHA256'] == sha(encode([*FLAGS, '-e', PROCESS_OBSERVER]))
+                 and 384 * 1024**2 <= ready['heapSizeLimitBytes'] <= 448 * 1024**2, 'observer-ready-budget')
+            command = [self.config['nodePin']['path'], *FLAGS, '-e', PROCESS_OBSERVER]
+            matches = []
+            for pid in group_members(self.native, self.config):
+                try:
+                    p = host_process(self.config, pid)
+                except (FileNotFoundError, ProcessLookupError, RuntimeError):
+                    continue
+                if (p['namespacePID'], p['startTicks'], p['membership'], p['command']) == (
+                        ready['self']['pid'], ready['self']['startTicks'], self.init['membership'], command):
+                    matches.append(p)
+            need(len(matches) == 1 and matches[0]['hostPID'] not in {p['hostPID'] for p in self.before}, 'observer-unique-live-host-mapping')
+            self.remote = matches[0]; self.remote_process = self._inside(ready['self'], self.remote)
+            need(host_process(self.config, self.init_pid) == self.init, 'observer-init-drift')
+            self.child.supply(encode({'schema': 'helmut-local-unit-native-process-observer-request/1', 'nonce': self.nonce,
+                'init': {'pid': 1, 'startTicks': self.init['startTicks']},
+                'targets': [{'pid': p['namespacePID'], 'startTicks': p['startTicks']} for p in self.before],
+                'group': {'device': self.config['parentDevice'], 'inode': self.config['parentInode']}}))
+        if not done:
+            return None
+        close = self.child.close_metadata()
+        need(self.remote is not None and close['exitCode'] == 0 and close['stdoutNaturalEOF'] is True
+             and close['stderrNaturalEOF'] is True and len(lines) == 2 and raw.endswith(b'\n'), 'observer-actual-success-close')
+        result = unique(lines[1])
+        need(set(result) == {'schema', 'requestNonceSHA256', 'observedAtUTC', 'self', 'targets'}
+             and result['schema'] == 'helmut-local-unit-native-process-observer-result/1'
+             and result['requestNonceSHA256'] == sha(self.nonce) and abs(time.time() - instant(result['observedAtUTC'])) < 3
+             and len(result['targets']) == len(self.before), 'observer-result-binding')
+        need(time.monotonic() - self.began < 3, 'observer-total-freshness')
+        need(self._inside(result['self'], self.remote) == self.remote_process, 'observer-self-drift')
+        row = json.loads(owned_docker(self.native, self.directory, ['inspect', self.cid], timeout=3).stdout)[0]
+        target_gone = any(p.get('gone') is True for p in result['targets'])
+        need(row['Id'] == self.cid and not row['State']['OOMKilled'] and
+             ((row['State']['Running'] and row['State']['Pid'] == self.init_pid and host_process(self.config, self.init_pid) == self.init)
+              or (target_gone and self.allow_gone and not row['State']['Running'] and row['State']['ExitCode'] == 0)), 'observer-container-drift')
+        values, gone = [], []
+        for before, inside in zip(self.before, result['targets']):
+            if inside.get('gone') is True:
+                need(self.allow_gone and set(inside) == {'pid', 'startTicks', 'gone'}
+                     and inside['pid'] == before['namespacePID'] and inside['startTicks'] == before['startTicks'], 'observer-unqualified-target-gone')
+                gone.append(before['hostPID']); continue
+            need(host_process(self.config, before['hostPID']) == before, 'observer-target-drift')
+            p = self._inside(inside, before)
+            need(p['namespaces']['pid'] == self.remote_process['namespaces']['pid'], 'observer-target-namespace')
+            values.append(p)
+        self.result = {'processes': values, 'gone': gone, 'observedAt': self.began,
+                       'close': {**close, 'containerId': self.cid, 'observerProcess': self.remote_process,
+                                 'observerCodeSHA256': sha(PROCESS_OBSERVER), 'nodePin': self.config['nodePin'],
+                                 'requestNonceSHA256': sha(self.nonce), 'observedAtUTC': result['observedAtUTC']}}
+        return self.result
+
+
+def dispose_observer(observer):
+    child = observer.child
+    clean = observer.result is not None
+    if child.child.poll() is None:
+        clean = False
+        child.child.kill()
+        try:
+            child.child.wait(timeout=1)
+        except BaseException:
+            pass
+    child.selector.close()
+    for stream in (child.child.stdin, child.child.stdout, child.child.stderr):
+        if stream and not stream.closed:
+            stream.close()
+    return clean
 
 
 INSTALLER = r'''
@@ -374,10 +719,11 @@ print(json.dumps({'schema':'helmut-local-unit-alias-installer-result/1','files':
 '''
 
 
-def _install_aliases(native, supervisor, config, alias_dir, public, group):
+def _install_aliases(native, supervisor, config, alias_dir, public, group, directory):
     """The host handles bounded metadata only; all new content/cache is owned."""
     mounts = {str(target): (str(source), bool(ro)) for source, target, ro in
-              [(alias_dir, '/output', False), (supervisor.PYTHON, supervisor.PYTHON, True), (group, '/owned-group', True)]}
+              [(alias_dir, '/output', False), (supervisor.PYTHON, supervisor.PYTHON, True), (group, '/owned-group', True),
+               (config['nodePin']['path'], config['nodePin']['path'], True)]}
     for row in config['runtimeBindings']:
         need(row['readonly'] is True, 'installer-readonly-runtime')
         target, source = row['imagePath'], row['source']['path']
@@ -386,22 +732,23 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group):
         source = pin['path']; need(source not in mounts or mounts[source] == (source, True), 'installer-source-collision'); mounts[source] = (source, True)
     argv = ['create', '--interactive', '--name', 'helmut-unitdiag-aliases-' + config['nonce'], '--network', 'none', '--read-only', '--cap-drop', 'ALL',
             '--security-opt', 'no-new-privileges', '--user', '1000:1000', '--cgroup-parent=/' + config['parent'], '--cgroupns', 'private',
-            '--log-driver', 'none', '--entrypoint', str(supervisor.PYTHON / 'bin/python3.12')]
+            '--log-driver', 'none', '--env', 'HOSTNAME', '--entrypoint', str(supervisor.PYTHON / 'bin/python3.12')]
     for target, (source, ro) in mounts.items():
         need(not any(x in source + target for x in (',', '\0', '\n')), 'installer-mount-path')
         argv += ['--mount', 'type=bind,src=' + source + ',dst=' + target + (',readonly' if ro else '')]
     argv += [config['runtime']['imageId'], '-I', '-S', '-B', '-c', INSTALLER]
-    cid = native.docker(argv, timeout=8).stdout.strip(); need(HASH.fullmatch(cid), 'installer-id')
+    cid = owned_docker(native, directory, argv, timeout=8).stdout.strip(); need(HASH.fullmatch(cid), 'installer-id')
     # Publish this identity before start, even if native setup later fails.
     publish_once(alias_dir.parent / 'ALIAS_INSTALLER_CREATED.SAFE.json', encode({'containerId': cid}))
     child = None
-    observed, supplied = None, False
+    observed, supplied, observer = None, False, None
     try:
-        child = _PipeChild([*DOCKER, 'start', '--attach', '--interactive', cid], lifetime=20, deferred=True)
+        child = _PipeChild([*DOCKER, *docker_prefix(directory), 'start', '--attach', '--interactive', cid], lifetime=20, deferred=True)
         while True:
             done = child.tick()
-            row = json.loads(native.docker(['inspect', cid], timeout=3).stdout)[0]; h = row['HostConfig']
+            row = json.loads(owned_docker(native, directory, ['inspect', cid], timeout=3).stdout)[0]; h = row['HostConfig']
             need(row['Id'] == cid and row['Image'] == config['runtime']['imageId'] and row['Config']['User'] == '1000:1000'
+                 and row['Config'].get('Env') == ['HOSTNAME']
                  and h['CgroupParent'] == '/' + config['parent'] and h['CgroupnsMode'] == 'private' and h['NetworkMode'] == 'none'
                  and h['ReadonlyRootfs'] and h['CapDrop'] == ['ALL'] and not h['CapAdd'] and not h['Privileged']
                  and h['SecurityOpt'] == ['no-new-privileges'] and not row['State']['OOMKilled'], 'actual-installer-container')
@@ -411,8 +758,14 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group):
             lines = bytes(child.output[0]).split(b'\n')[:-1]
             if not supplied and lines:
                 ready = unique(lines[0]); need(ready['schema'] == 'helmut-local-unit-alias-installer-ready/1' and row['State']['Running'], 'installer-live-ready')
-                probe = NativeExecutionHost.__new__(NativeExecutionHost); probe.config = config
-                observed = probe._proc(row['State']['Pid'], 1000)
+                if observer is None:
+                    target = host_process(config, row['State']['Pid'])
+                    need(target['command'] == [str(supervisor.PYTHON / 'bin/python3.12'), '-I', '-S', '-B', '-c', INSTALLER], 'installer-command')
+                    observer = ProcessObserver(native, config, directory, row, [target])
+                sample = observer.tick()
+                if sample is None:
+                    time.sleep(.01); continue
+                observed = sample['processes'][0]
                 need(ready['pid'] == observed['namespacePID'] and ready['startTicks'] == observed['startTicks']
                      and ready['pidNamespace'] == observed['namespaces']['pid'] and observed['exe'] == str(supervisor.PYTHON / 'bin/python3.12'), 'actual-installer-process')
                 child.supply(encode({'files': [{'source': p, 'target': '/output/' + key, 'mode': mode} for key, p, _, mode in public],
@@ -423,7 +776,7 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group):
                      and len(lines) == 2 and bytes(child.output[0]).endswith(b'\n'), 'actual-installer-close')
                 result = unique(lines[1]); need(result == {'schema': 'helmut-local-unit-alias-installer-result/1',
                     'files': [{'path': '/output/' + key, 'bytes': p['bytes'], 'sha256': p['sha256']} for key, p, _, _ in public]}, 'actual-installer-result')
-                return {'containerId': cid, 'process': observed, **close}
+                return {'containerId': cid, 'process': observed, **close, 'observerProcessClose': sample['close']}
             time.sleep(.02)
     except BaseException as error:
         try:
@@ -431,6 +784,7 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group):
                 'schema': 'helmut-local-unit-native-alias-installer-failure/1',
                 'containerId': cid, 'supplied': supplied,
                 'exceptionType': type(error).__name__, 'privateTraceback': traceback.format_exc()[:32768],
+                'pipeChildFailure': getattr(error, 'nativePipeFailure', None),
                 'stdout': bytes(child.output[0]).decode('utf8', errors='replace') if child else '',
                 'stderr': bytes(child.output[1]).decode('utf8', errors='replace') if child else '',
                 'retryAllowed': False}))
@@ -439,7 +793,7 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group):
         # Never adopt/retry a copy with an unknown result. Keep the CID/evidence
         # for final common-parent accounting; stop only this newly owned child.
         try:
-            native.docker(['stop', '--time', '2', cid], timeout=4)
+            owned_docker(native, directory, ['stop', '--time', '2', cid], timeout=4)
             until = time.monotonic() + 2
             while child is not None and time.monotonic() < until and not child.tick():
                 time.sleep(.02)
@@ -448,6 +802,8 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group):
                 child.child.kill(); child.child.wait(timeout=1)
         raise RuntimeError('native-execution-host-alias-installation-unknown') from None
     finally:
+        if observer is not None:
+            dispose_observer(observer)
         if child is not None:
             child.selector.close()
             for stream in (child.child.stdin, child.child.stdout, child.child.stderr):
@@ -530,35 +886,52 @@ class NativeExecutionHost:
         self.state = 'INIT'; self.failure = None; self.closed = False
         self.children = []; self.owner = None; self.owner_ready = None; self.heartbeat = None
         self.owner_lines = 0; self.last_heartbeat = 0; self.source_identity = None
-        self.clients = {}; self.active_client = None; self.client_pins = []; self.handoff = None
+        self.clients = {}; self.active_client = None; self.client_pins = []; self.handoff = None; self.pending_handoff = None
+        self.directory = plan['dockerConfigDirectory']
+        need(self.directory == str(self.case / 'docker-empty-config'), 'case-docker-config-binding')
+        docker_prefix(self.directory)
+        self.probes = {}; self.process_cache = {}; self.observer_closes = []; self.observer_count = 0
+        self.stop_observers = False; self.quiescing_client = None
         self.observed_at = 0; self.started_at = time.monotonic(); self.last_observation = None
 
     def _docker(self, args, **options):
-        return self.native.docker(args, timeout=options.pop('timeout', 3), **options)
+        return owned_docker(self.native, self.directory, args, timeout=options.pop('timeout', 3), **options)
 
-    def _child(self, argv, data=None, lifetime=20):
-        c = _PipeChild(argv, data, lifetime); self.children.append(c); return c
+    def _child(self, argv, data=None, lifetime=20, deferred=False):
+        c = _PipeChild(argv, data, lifetime, deferred=deferred); self.children.append(c); return c
 
     def _root(self, code, value, lifetime=8):
         python = str(self.supervisor.PYTHON / 'bin/python3.12')
-        return self._child([*DOCKER, 'exec', '-i', '--user', '0:0', self.source_id, python, '-I', '-S', '-B', '-c', code], encode(value), lifetime)
+        return self._child([*DOCKER, *docker_prefix(self.directory), 'exec', '-i', '--user', '0:0', self.source_id, python, '-I', '-S', '-B', '-c', code], encode(value), lifetime)
+
+    def _probe(self, row, targets):
+        cid = row['Id']
+        if cid not in self.probes and not self.stop_observers and self.quiescing_client is None:
+            cached = [self.process_cache.get(p['hostPID']) for p in targets]
+            if not all(c and c['host'] == p and time.monotonic() - c['at'] < 1.5 for c, p in zip(cached, targets)):
+                need(self.observer_count < 256, 'observer-count')
+                probe = ProcessObserver(self.native, self.config, self.directory, row, targets, cid in self.clients)
+                self.probes[cid] = probe; self.children.append(probe.child); self.observer_count += 1
+
+    def _poll_probes(self):
+        for cid, probe in list(self.probes.items()):
+            result = probe.tick()
+            if result is None:
+                continue
+            if result['gone']:
+                need(cid in self.clients and self.clients[cid].get('process'), 'observer-gone-before-initial-client')
+                self.clients[cid]['observerGone'] = True
+            for p in result['processes']:
+                before = next(v for v in probe.before if v['hostPID'] == p['hostPID'])
+                self.process_cache[p['hostPID']] = {'host': before, 'value': p, 'at': result['observedAt'], 'cid': cid}
+            self.observer_closes.append(result['close']); dispose_observer(probe); del self.probes[cid]
 
     def _proc(self, pid, uid):
-        root = Path('/proc') / str(pid)
-        before = (root / 'stat').read_text(); f = before.rsplit(')', 1)[1].split()
-        need(before.split()[0] == str(pid) and f[0] not in ('Z', 'X') and f[19].isdigit(), 'live-process')
-        rows = dict(line.split(':', 1) for line in (root / 'status').read_text().splitlines())
-        need(rows.get('Uid', '').split() == rows.get('Gid', '').split() == [str(uid)] * 4
-             and rows.get('NoNewPrivs', '').strip() == '1'
-             and all(rows.get(k) and int(rows[k], 16) == 0 for k in ('CapInh', 'CapPrm', 'CapEff', 'CapBnd', 'CapAmb')), 'actual-process-privileges')
-        ns = {k: os.readlink(root / 'ns' / k) for k in ('pid', 'net', 'mnt', 'cgroup', 'time')}
-        membership = (root / 'cgroup').read_text()
-        need(membership.startswith('0::/' + self.config['parent'] + '/') and len(membership.splitlines()) == 1, 'actual-common-parent')
-        nspid = [int(x) for x in rows.get('NSpid', '').split()]
-        need(nspid and nspid[0] == pid and all(x > 0 for x in nspid), 'actual-namespace-pid')
-        value = {'hostPID': pid, 'namespacePID': nspid[-1], 'startTicks': f[19], 'exe': os.readlink(root / 'exe'), 'namespaces': ns, 'membership': membership}
-        need((root / 'stat').read_text().rsplit(')', 1)[1].split()[19] == f[19], 'process-reused')
-        return value
+        need(uid == 1000, 'observer-target-uid')
+        actual = host_process(self.config, pid); cached = self.process_cache.get(pid)
+        if cached is None or cached['host'] != actual or time.monotonic() - cached['at'] >= 3:
+            raise ObservationPending()
+        return cached['value']
 
     def _mounts(self, row, expected, volumes):
         binds = {m['Destination']: m for m in row['Mounts'] if m['Type'] == 'bind'}
@@ -607,6 +980,11 @@ class NativeExecutionHost:
         source = owned[self.source_id]; self._container(source, '1000:1000', 'none')
         self._mounts(source, self.source_mounts, {'/ram': (self.plan['volumes']['ram'], False), '/run': (self.plan['volumes']['run'], False)})
         need(source['State']['Running'], 'source-runtime-exited')
+        targets = [host_process(self.config, source['State']['Pid'])]
+        handoff = self.handoff or self.pending_handoff
+        if handoff:
+            targets.append(self._service_host(handoff['sourceQualification']['publicSourceBinding']))
+        self._probe(source, targets)
         process = self._proc(source['State']['Pid'], 1000)
         if self.source_identity:
             need(process == self.source_identity, 'source-process-drift')
@@ -617,20 +995,24 @@ class NativeExecutionHost:
             need(row['Config']['Env'] == c['environment'] and row['Path'] == self.config['nodePin']['path']
                  and row['Args'] == c['args'], 'actual-client-command-environment')
             if row['State']['Running']:
+                exit_ready = ('ENTRY' if c['mode'] == 'entry' else 'ENDPOINT') + '_OBSERVATION_EXIT_READY.SAFE.json'
+                if not (c.get('process') and exit_published(self.case / 'client' / exit_ready)):
+                    self._probe(row, [host_process(self.config, row['State']['Pid'])])
                 p = self._proc(row['State']['Pid'], 1000)
                 need(p['exe'] == self.config['nodePin']['path'] and p['namespaces']['pid'] != process['namespaces']['pid']
-                     and p['namespaces']['net'] == process['namespaces']['net'], 'actual-client-namespace')
+                     and p['namespaces']['net'] == process['namespaces']['net']
+                     and p['namespaces']['clockDomain'] == process['namespaces']['clockDomain'], 'actual-client-namespace')
                 if c.get('process'):
                     need(p == c['process'], 'client-process-drift')
                 c['process'] = p
             c['row'] = row
         if self.owner_ready and self.state != 'STOPPED' and (self.heartbeat is not None or self.state != 'INIT'):
             need(self.heartbeat and time.monotonic() - self.last_heartbeat <= 15, 'owner-heartbeat-stale')
-        service = self._source_service(self.handoff['sourceQualification']['publicSourceBinding']) if self.handoff and self.state != 'STOPPED' else None
+        service = self._source_service(handoff['sourceQualification']['publicSourceBinding']) if handoff and self.state != 'STOPPED' else None
         return {'observedAtUTC': utc(), 'source': process, 'sourceService': service, 'sourceContainerId': self.source_id,
                 'knownContainerIds': sorted(known), 'ownerObservation': self.heartbeat}
 
-    def _source_service(self, binding):
+    def _service_host(self, binding):
         expected = binding['service']; supervisor = binding['supervisor']; actual = self.source_identity
         need(supervisor == {'uid': 1000, 'pid': actual['namespacePID'], 'startTicks': actual['startTicks']}
              and expected['uid'] == 1000 and expected['exePin'] == self.config['nodePin'], 'actual-source-supervisor-binding')
@@ -647,18 +1029,23 @@ class NativeExecutionHost:
                 values = dict(line.split(':', 1) for line in status.splitlines())
                 if values.get('Uid', '').split() != ['1000'] * 4 or not values.get('NSpid') or int(values['NSpid'].split()[-1]) != expected['pid']:
                     continue
-                observed = self._proc(pid, 1000)
-                if observed['namespaces']['pid'] != actual['namespaces']['pid']:
+                observed = host_process(self.config, pid)
+                if observed['membership'] != actual['membership']:
                     continue
-                need(observed['startTicks'] == expected['startTicks'] and observed['exe'] == self.config['nodePin']['path'], 'actual-source-service-process')
-                with open('/proc/' + str(pid) + '/cmdline', 'rb') as stream:
-                    cmdline = stream.read(16385)
-                need(cmdline == b'\0'.join(x.encode() for x in [self.config['nodePin']['path'], *FLAGS, p['path'], '--serve-original-writes']) + b'\0', 'actual-source-service-command')
+                need(observed['startTicks'] == expected['startTicks'] and observed['command'] ==
+                     [self.config['nodePin']['path'], *FLAGS, p['path'], '--serve-original-writes'], 'actual-source-service-process')
                 matches.append(observed)
             except (FileNotFoundError, ProcessLookupError, PermissionError):
                 continue
         need(len(matches) == 1, 'source-service-host-mapping')
         return matches[0]
+
+    def _source_service(self, binding):
+        target = self._service_host(binding)
+        value = self._proc(target['hostPID'], 1000)
+        need(value['namespaces']['pid'] == self.source_identity['namespaces']['pid']
+             and value['namespaces']['clockDomain'] == self.source_identity['namespaces']['clockDomain'], 'service-observer-namespace')
+        return value
 
     def _owner_messages(self):
         if not self.owner:
@@ -704,7 +1091,6 @@ class NativeExecutionHost:
         binding = s['originalService']['publicSourceBinding']
         need(binding == q['publicSourceBinding'] and binding['containerId'] == self.source_id
              and binding['pidNamespace'] == self.source_identity['namespaces']['pid'], 'actual-source-binding')
-        self._source_service(binding)
         need(type(h['hmacKeyHex']) is str and HASH.fullmatch(h['hmacKeyHex']) and sha(bytes.fromhex(h['hmacKeyHex'])) == binding['hmacKeySHA256'], 'hmac-binding')
         need(s['pins'] == {**self.plan['aliasPins'], 'node': self.config['nodePin']}
              and s['measuredCgroup'] == {'path': '/owned-group', 'device': self.config['parentDevice'], 'inode': self.config['parentInode'], 'procMembership': '0::/\n'}, 'owner-native-pins')
@@ -720,7 +1106,22 @@ class NativeExecutionHost:
         for r in s['legacy']['rpcs']:
             p = r['qualificationPin']; need(p['path'] in files and p == {'path': p['path'], 'bytes': len(files[p['path']].encode()), 'sha256': sha(files[p['path']])}, 'read-qualification-pin')
         policy = h['publicationPolicy']; need(type(policy) is str and len(policy.encode()) == 493 and sha(policy) == POLICY_SHA, 'original-policy-field')
-        self._client_files(h['immutableClientPins']); self.handoff = h
+        self._client_files(h['immutableClientPins']); self.pending_handoff = h
+
+    def _advance_owner_start(self):
+        if self.owner is not None:
+            return
+        need(self.pending_handoff is not None, 'owner-private-pending-handoff')
+        h = self.pending_handoff
+        try:
+            self._source_service(h['sourceQualification']['publicSourceBinding'])
+        except ObservationPending:
+            return
+        env = {**ENV, 'HOME': '/run/bootstrap', 'TMPDIR': '/run/bootstrap', 'HELMUT_NATIVE_NODE_OLD_SPACE_MIB': '384'}
+        payload = {k: h[k] for k in ('start', 'sourceQualification', 'hmacKeyHex', 'readQualifications')}; payload['ownerEnvironment'] = env
+        need(len(encode(payload)) <= CAP, 'owner-private-input-cap')
+        self.owner = self._root(BOOTSTRAP, payload, lifetime=180)
+        self.handoff = h; self.pending_handoff = None
 
     def _client_files(self, rows):
         need(type(rows) is list and 10 <= len(rows) <= 128, 'client-file-closure')
@@ -767,9 +1168,13 @@ class NativeExecutionHost:
         names = {Path(p['physical']['path']).name for p in self.client_pins if Path(p['physical']['path']).parent == self.case / 'client'}
         names |= {'ENDPOINT_QUALIFICATION_CONFIG.PRIVATE.json'}
         if mode == 'entry':
-            names |= {'ENDPOINT_QUALIFICATION.SAFE.json'}
+            names |= {'ENDPOINT_QUALIFICATION.SAFE.json', 'ENDPOINT_OBSERVATION_GATE.SAFE.json',
+                      'ENDPOINT_OBSERVATION_EXIT_READY.SAFE.json', 'ENDPOINT_OBSERVATION_EXIT_RELEASE.SAFE.json'}
         folder = self.case / 'client'; canonical(folder)
-        need(all(p.name in names and stat.S_ISREG(p.lstat().st_mode) and p.lstat().st_nlink == 1 for p in folder.iterdir()), 'unqualified-client-directory-content')
+        marker_name = 'ENDPOINT_OBSERVATION_EXIT_READY.SAFE.json.PUBLISHED'
+        need(all((p.name in names and stat.S_ISREG(p.lstat().st_mode) and p.lstat().st_nlink == 1)
+                 or (mode == 'entry' and p.name == marker_name and exit_published(folder / marker_name.removesuffix('.PUBLISHED')))
+                 for p in folder.iterdir()), 'unqualified-client-directory-content')
         extra = []
         if mode == 'qualifier':
             extra.append((str(folder / 'ENDPOINT_QUALIFICATION_CONFIG.PRIVATE.json'), str(BASE / self.config['nonce'] / 'ENDPOINT_QUALIFICATION_CONFIG.PRIVATE.json'), True))
@@ -781,7 +1186,7 @@ class NativeExecutionHost:
                   *self.client_immutable_mounts, *extra]
         need(len({t for _, t, _ in mounts}) == len(mounts), 'client-mount-duplicate')
         args = [*FLAGS, script, '--selector', str(BASE / self.config['nonce'] / 'SELECTION.SAFE.json')]
-        argv = ['create', '--name', 'helmut-unitdiag-' + mode + '-' + self.config['nonce'], '--network', 'container:' + self.source_id,
+        argv = ['create', '--interactive', '--name', 'helmut-unitdiag-' + mode + '-' + self.config['nonce'], '--network', 'container:' + self.source_id,
                 '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--user', '1000:1000',
                 '--cgroup-parent=/' + self.config['parent'], '--cgroupns', 'private', '--log-driver', 'none', '--shm-size', str(16 * 1024**2),
                 '--tmpfs', '/tmp:rw,nosuid,nodev,noexec,size=2097152,uid=1000,gid=1000,mode=0700', '--entrypoint', self.config['nodePin']['path']]
@@ -793,13 +1198,14 @@ class NativeExecutionHost:
         # are exact below and the inspected resulting array is checked live.
         image = json.loads(self._docker(['image', 'inspect', self.config['runtime']['imageId']]).stdout)[0]
         need(not image['Config'].get('Env'), 'image-inherited-environment')
-        env_list = [k + '=' + v for k, v in environment.items()]
+        env_list = ['HOSTNAME', *[k + '=' + v for k, v in environment.items()]]
         for value in env_list:
             argv += ['--env', value]
         argv += [self.config['runtime']['imageId'], *args]
         cid = self._docker(argv, timeout=8).stdout.strip(); need(HASH.fullmatch(cid) and cid not in self.clients, 'new-client-id')
         self.clients[cid] = {'mode': mode, 'mounts': mounts, 'environment': env_list, 'args': args}
-        child = self._child([*DOCKER, 'start', '--attach', cid], lifetime=35 if mode == 'qualifier' else 90)
+        child = self._child([*DOCKER, *docker_prefix(self.directory), 'start', '--attach', '--interactive', cid],
+                            lifetime=35 if mode == 'qualifier' else 90, deferred=True)
         self.clients[cid]['child'] = child; self.active_client = cid
 
     def _reply(self, result):
@@ -811,7 +1217,62 @@ class NativeExecutionHost:
         publish_once(self.case / ('HOST_REPLY_%02d.PRIVATE.json' % self.seq), encode(value))
         self.seq += 1; self.pending = None
 
+    def _release_clients(self):
+        for cid, client in self.clients.items():
+            if client.get('gateReleased') or not client.get('process') or cid in self.probes:
+                continue
+            try:
+                process = self._proc(client['process']['hostPID'], 1000)
+            except ObservationPending:
+                continue
+            need(process == client['process'] and process['namespacePID'] == 1, 'gate-current-client-process')
+            now = datetime.datetime.now(datetime.timezone.utc)
+            nonce = secrets.token_hex(32)
+            selection = {k: self.selection[k] for k in ('operationId', 'commandHash')}
+            frame = {'schema': 'helmut-local-unit-native-observation-gate/1', 'selection': selection,
+                     'process': {'pid': process['namespacePID'], 'startTicks': process['startTicks']},
+                     'issuedAtUTC': now.isoformat(timespec='milliseconds').replace('+00:00', 'Z'),
+                     'expiresAtUTC': (now + datetime.timedelta(seconds=3)).isoformat(timespec='milliseconds').replace('+00:00', 'Z'),
+                     'nonce': nonce}
+            raw = encode(frame) + b'\n'; need(len(raw) <= 4096, 'gate-frame-cap')
+            client['child'].supply(raw)
+            client['gateReleased'] = {'nonceSHA256': sha(nonce), 'frameSHA256': sha(raw), 'byteCount': len(raw)}
+
+    def _quiesce_clients(self):
+        for cid, client in self.clients.items():
+            if not client.get('gateReleased') or client.get('exitReleased'):
+                continue
+            stem = ('ENTRY' if client['mode'] == 'entry' else 'ENDPOINT') + '_OBSERVATION_EXIT_'
+            path = self.case / 'client' / (stem + 'READY.SAFE.json')
+            if not exit_published(path):
+                continue
+            if not client.get('exitReady'):
+                raw, pin = read_file(path, 4096); ready = unique(raw)
+                need(raw == encode(ready) + b'\n' and set(ready) == {'schema', 'selection', 'process', 'issuedAtUTC', 'expiresAtUTC', 'nonce'}
+                     and ready['schema'] == 'helmut-local-unit-native-observation-exit-ready/1'
+                     and ready['selection'] == self.selection and type(ready['nonce']) is str and HASH.fullmatch(ready['nonce'])
+                     and ready['process'] == {'pid': client['process']['namespacePID'], 'startTicks': client['process']['startTicks']}, 'client-exit-ready')
+                a, b = instant(ready['issuedAtUTC']), instant(ready['expiresAtUTC'])
+                need(a <= time.time() < b and 0 < b - a <= 8.000001, 'client-exit-ready-window')
+                client['exitReady'] = ready; client['exitReadyPin'] = pin
+                self.quiescing_client = cid
+            ready = client['exitReady']
+            need(time.time() < instant(ready['expiresAtUTC']), 'client-exit-quiescence-deadline')
+            if self.probes:
+                continue
+            before = self.process_cache[client['process']['hostPID']]['host']
+            need(host_process(self.config, before['hostPID']) == before, 'client-exit-live-binding')
+            now = datetime.datetime.now(datetime.timezone.utc)
+            selection = {k: self.selection[k] for k in ('operationId', 'commandHash')}
+            release = {'schema': 'helmut-local-unit-native-observation-exit-release/1', 'selection': selection,
+                       'process': ready['process'], 'issuedAtUTC': now.isoformat(timespec='milliseconds').replace('+00:00', 'Z'),
+                       'expiresAtUTC': (now + datetime.timedelta(seconds=3)).isoformat(timespec='milliseconds').replace('+00:00', 'Z'),
+                       'readyNonceSHA256': sha(ready['nonce']), 'nonce': secrets.token_hex(32)}
+            client['exitReleased'] = publish_once(self.case / 'client' / (stem + 'RELEASE.SAFE.json'), encode(release) + b'\n') or True
+            self.quiescing_client = None
+
     def _accept(self, request, digest):
+        need(self.pending is None, 'request-already-pending')
         need(set(request) == {'schema', 'seq', 'stage', 'nonce', 'selection', 'issuedAtUTC', 'expiresAtUTC', 'body'}
              and request['schema'] == 'helmut-local-unit-native-host-request/1' and type(request['seq']) is int and request['seq'] == self.seq
              and type(request['nonce']) is str and HASH.fullmatch(request['nonce']) and request['nonce'] not in self.seen, 'private-request-envelope')
@@ -823,18 +1284,13 @@ class NativeExecutionHost:
         if stage == 'OWNER_START':
             need(self.state == 'INIT' and set(body) == {'handoff'}, 'owner-start-order')
             self._handoff(body['handoff'])
-            h = self.handoff
-            env = {**ENV, 'HOME': '/run/bootstrap', 'TMPDIR': '/run/bootstrap', 'HELMUT_NATIVE_NODE_OLD_SPACE_MIB': '384'}
-            payload = {k: h[k] for k in ('start', 'sourceQualification', 'hmacKeyHex', 'readQualifications')}; payload['ownerEnvironment'] = env
-            need(len(encode(payload)) <= CAP, 'owner-private-input-cap')
-            self.owner = self._root(BOOTSTRAP, payload, lifetime=180)
         elif stage == 'CLIENT_QUALIFY':
             need(self.state == 'OWNER' and set(body) == {'configuration'}, 'client-qualify-order')
             q = body['configuration']; need(q['selection'] == self.selection and q['publicSourceBinding'] == self.handoff['sourceQualification']['publicSourceBinding'], 'qualifier-config-scope')
             write_once(self.case / 'client/ENDPOINT_QUALIFICATION_CONFIG.PRIVATE.json', encode(q)); self._client('qualifier')
         elif stage == 'HOST_OBSERVE':
             need(self.state in ('QUALIFIED', 'ENTRY', 'DONE') and body == {}, 'observation-order')
-            value = self._observe(); self.observed_at = time.monotonic(); self._reply(value)
+            self.observed_at = 0
         elif stage == 'ENTRY_START':
             need(self.state == 'QUALIFIED' and body == {} and time.monotonic() - self.observed_at < 3, 'entry-start-order-or-fresh-observation')
             self._client('entry'); self.state = 'ENTRY'
@@ -850,10 +1306,12 @@ class NativeExecutionHost:
         c = self.clients[self.active_client]; child = c['child']
         if not child.tick():
             return None
+        if self.active_client in self.probes:
+            return None
         close = child.close_metadata(); row = c['row']
         if row['State']['Running']:
             return None
-        need(close['exitCode'] == 0 and c.get('process') and row['State']['ExitCode'] == 0
+        need(close['exitCode'] == 0 and c.get('process') and c.get('exitReleased') and row['State']['ExitCode'] == 0
              and not row['State']['OOMKilled'], 'actual-client-success-close')
         close.update(actualClientPID=c['process']['hostPID'], actualClientStartTicks=c['process']['startTicks'],
                      actualClientNamespacePID=c['process']['namespacePID'], clientContainerId=self.active_client, process=c['process'])
@@ -872,15 +1330,24 @@ class NativeExecutionHost:
             need(time.monotonic() - self.started_at < 240, 'whole-lifetime')
             for c in self.children:
                 c.tick()
-            self._owner_messages(); observation = self._observe(); self.last_observation = observation
+            self._poll_probes(); self._owner_messages()
+            try:
+                observation = self._observe(); self.last_observation = observation
+            except ObservationPending:
+                observation = None
+            self._release_clients(); self._quiesce_clients()
             if self.owner and self.state != 'STOPPED' and self.owner.child.poll() is not None and not (self.pending and self.pending['request']['stage'] == 'OWNER_STOP'):
                 need(False, 'unexpected-owner-exit')
             if self.pending:
                 stage = self.pending['request']['stage']
                 need(time.monotonic() - self.pending['began'] < {'OWNER_START': 18, 'CLIENT_QUALIFY': 35, 'ENTRY_RESULT': 90, 'OWNER_STOP': 12}.get(stage, 5), 'stage-deadline')
-                if stage == 'OWNER_START' and self.owner_ready and self.heartbeat:
+                if stage == 'OWNER_START' and observation is not None:
+                    self._advance_owner_start()
+                if stage == 'HOST_OBSERVE' and observation is not None:
+                    self.observed_at = time.monotonic(); self._reply(observation)
+                elif stage == 'OWNER_START' and self.owner_ready and self.heartbeat and observation is not None:
                     self.state = 'OWNER'; self._reply({'ready': self.owner_ready, 'observation': observation})
-                elif stage == 'ENTRY_START' and self.clients[self.active_client].get('process'):
+                elif stage == 'ENTRY_START' and self.clients[self.active_client].get('gateReleased') and observation is not None:
                     self._reply({'containerId': self.active_client, 'startedAtUTC': utc()})
                 elif stage in ('CLIENT_QUALIFY', 'ENTRY_RESULT'):
                     close = self._client_result()
@@ -917,13 +1384,17 @@ class NativeExecutionHost:
                                 need(header['operationId'] == self.selection['operationId'] and header['commandHash'] == self.selection['commandHash']
                                      and header['ownerPID'] == self.owner_ready['ownerPID'] and header['ownerStartTicks'] == self.owner_ready['ownerStartTicks']
                                      and header['pidNamespace'] == self.source_identity['namespaces']['pid'] and header['timeNamespace'] == self.source_identity['namespaces']['time']
+                                     and header['clockDomain'] == self.source_identity['namespaces']['clockDomain']
                                      and header['brokerCodeSHA256'] == self.plan['aliasPins']['broker']['sha256']
                                      and header['trustSHA256'] == self.qualifier_report['rootTrustSHA256']
                                      and header['sourceBindingSHA256'] == self.qualifier_report['publicSourceBindingCanonicalSHA256']
                                      and header['database'] == 'helmut_unit_diagnostic_' + self.config['nonce']
                                      and trace['value']['footer']['complete'] is True, 'actual-root-trace-binding')
+                                self.stop_observers = True
+                                if self.probes:
+                                    return {'state': self.state, 'pending': stage, 'observation': observation}
                                 self.state = 'STOPPED'; self._reply({'ownerStop': self.owner_stop, 'ownerProcessClose': self.owner.close_metadata(), 'controlReadTrace': trace})
-            if not self.pending and self.state != 'STOPPED':
+            if not self.pending and self.state != 'STOPPED' and observation is not None:
                 need(self.seq <= 128, 'request-count')
                 p = self.case / ('HOST_REQUEST_%02d.PRIVATE.json' % self.seq)
                 if p.exists():
@@ -938,7 +1409,8 @@ class NativeExecutionHost:
                     'schema': 'helmut-local-unit-native-execution-host-failure/1', 'observedAtUTC': utc(),
                     'selection': self.selection, 'state': self.state,
                     'stage': None if self.pending is None else self.pending['request']['stage'],
-                    'exception': {'type': type(error).__name__[:128], 'message': str(error)[:4096]}}))
+                    'exception': {'type': type(error).__name__[:128], 'message': str(error)[:4096]},
+                    'pipeChildFailure': getattr(error, 'nativePipeFailure', None)}))
             except BaseException:
                 self.failure = 'sealed-native-host-failure-without-private-diagnostic'
             raise RuntimeError('native-execution-host-sealed-failure') from None
@@ -996,5 +1468,10 @@ class NativeExecutionHost:
                     if stream and not stream.closed:
                         stream.close()
         self.closed = True; self.close_result = {'state': self.state, 'clean': clean, 'children': metadata,
-                                               'knownClientContainerIds': sorted(self.clients), 'sourceStopRequested': False}
+                                               'knownClientContainerIds': sorted(self.clients), 'sourceStopRequested': False,
+                                               'processObserverChildren': self.observer_closes,
+                                               'unknownProcessObservers': [
+                                                   {'containerId': cid, 'observerProcess': getattr(p, 'remote_process', None),
+                                                    'registeredHostPID': p.child.registeredPID, 'remoteExitConfirmed': False}
+                                                   for cid, p in self.probes.items()]}
         return self.close_result
