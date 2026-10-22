@@ -1,0 +1,63 @@
+{
+  "scope": "LOCAL_CODE_AND_PARTIAL_NATIVE_SQL_MOCK_FLOW_NOT_500_END_ACCEPTANCE",
+  "atUTC": "2026-10-16T06:14:50.135862+00:00",
+  "pinnedContentSources": 67,
+  "workerEntryPins": 1,
+  "sourceFiles": {
+    "lib/helmut/synthetik-500-cpu-epoch.js": {
+      "file": "synthetik-500-cpu-epoch.js",
+      "bytes": 29127,
+      "sha256": "4d4e840b41a9cf077830c3234b69a274213d62f1dd20609df82b53392209490a"
+    },
+    "lib/helmut/synthetik-500-content-worker.js": {
+      "file": "synthetik-500-content-worker.js",
+      "bytes": 5169,
+      "sha256": "201a4f8ba027011a091bd82d0039a481c7796a2615bfdd6fec35e7b44b44779d"
+    },
+    "lib/helmut/synthetik-500-cpu-source-pins.json": {
+      "file": "synthetik-500-cpu-source-pins.json",
+      "bytes": 11909,
+      "sha256": "9d4761cf4669fef43d38ee27dc6f24ed1c4ccf4a25c9660c78681d5efb716267"
+    }
+  },
+  "independentDeepSeekProHigh": {
+    "file": "FULL_RESULT.json",
+    "bytes": 2836,
+    "sha256": "5a61f9e2884828a4e247784b29b53a3b8fe63decc170a5fc1c59ba98077bcf1c"
+  },
+  "existingCPUQualificationByteIdentical": true,
+  "targetedStoredProofTests": 73,
+  "targetedMathAndModuleGuardTests": 33,
+  "postContentTamperCases": 10,
+  "actualOfflineMS": 7665.869786,
+  "actualOfflinePeakBytes": 457261056,
+  "originalFullContentCalls": 1,
+  "actualInstallMS": 3004.0945349999997,
+  "installationPassed": true,
+  "originalPredecessorChecks": 2,
+  "profileActivationScope": "ONE_OWNER_APPROVED_LOCAL_ONLY_0_TO500_SYNTHETIC_COPY",
+  "productionActions": 0,
+  "paidProductionModelCalls": 0,
+  "full500FinalACK": false,
+  "Unit60Accepted": false,
+  "Auth30Accepted": false,
+  "entireEndMemoryAccepted": false,
+  "localFlowRunning": true,
+  "privatePrimaryReceipts": {
+    "offline": {
+      "file": "OFFLINE_RESULT.SAFE.json",
+      "bytes": 31030,
+      "sha256": "e8ba2da1f444e8d56d7476dc68818d5d13834e9ae2d1f540d9a2cafe689e784d"
+    },
+    "installation": {
+      "file": "INSTALL_RESULT.SAFE.json",
+      "bytes": 34216,
+      "sha256": "926fcfe6d3fc7d358e7603e402f64ae0b64318ddb4a5c72b123805fcf37befa4"
+    },
+    "rootGraphAcceptance": {
+      "file": "ROOT_MODULE_OBSERVER_ACCEPTANCE.SAFE.json",
+      "bytes": 4268,
+      "sha256": "11df15e51d7a341661e6db2ed33d3f8843039860d943c8cc7f0e1152d410e673"
+    }
+  }
+}

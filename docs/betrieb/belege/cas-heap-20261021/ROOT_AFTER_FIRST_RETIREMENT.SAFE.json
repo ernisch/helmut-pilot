@@ -1,0 +1,20 @@
+{
+  "schema": "helmut-cas-heap-root-first-retirement-readback/1",
+  "removedRootAbsent": true,
+  "secondRootStillPresent": true,
+  "retainedProofFiles": 199,
+  "allProofPinsUnchanged": true,
+  "retiredResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.RETIRED.PRIVATE.json",
+    "bytes": 1535,
+    "sha256": "c9fa6eedefc7d8a830152d810dc5103f31660da4b18315a5ff1b951450be0f94"
+  },
+  "outerPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.ROOT_OBSERVED_RETIRE_TOOL_EXIT.SAFE.json",
+    "bytes": 1066,
+    "sha256": "f56bded4cf7583e0886a3d1da6f4df3523e99ac8a8447b6c060e5eb8e5471a15"
+  },
+  "atUTC": "2026-10-21T10:01:25.731Z",
+  "removedRegularFiles": 1711,
+  "resourceMutationsByReadback": 0
+}

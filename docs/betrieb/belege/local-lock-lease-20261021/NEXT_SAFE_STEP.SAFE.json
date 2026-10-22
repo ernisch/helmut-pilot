@@ -1,0 +1,102 @@
+{
+  "schema": "helmut-local-memory-sprint-next-safe-step/1",
+  "atUTC": "2026-10-21T20:55:12.570881+00:00",
+  "status": "PARTIALLY_COMPLETED_FULL500_GOAL_OPEN",
+  "codeCommit": "d6778b7805adc7ebe0b466b1604947d4a86114d9",
+  "branch": "codex/controlled-cleanup-and-late-probe-20261020",
+  "draftPR": "https://github.com/ernisch/helmut-pilot/pull/927",
+  "localStructuralChanges": [
+    "Elide only inert tenant cost reads; fresh global check retained",
+    "Local invocation-bound SQL lease replaces lock full-state read/CAS; default off"
+  ],
+  "actualHTTPComparison": {
+    "allFourArmsPass": true,
+    "oldMeanCommonPeakBytes": 718508032,
+    "newMeanCommonPeakBytes": 640927744,
+    "savingBytes": 77580288,
+    "pairedSavingsBytes": [
+      80384000,
+      74776576
+    ],
+    "independentActualReview": "PASS",
+    "instrumentedWarmComponentOnly": true
+  },
+  "contractUnchanged": {
+    "simultaneouslyActiveSyntheticProfiles": 500,
+    "fullyCheckedUsablePositions": 1500,
+    "hardCommonBytes": 2048000000,
+    "reserveBytes": 500000000,
+    "targetCommonMaximumBytes": 1548000000,
+    "Offline90": true,
+    "Unit60": true,
+    "Auth30": true,
+    "freshSecurityControlsPerProfile": 16,
+    "inheritExistingOperatorCostBindings": true
+  },
+  "open": [
+    "Full motor execution with new mode and all 16 controls",
+    "Unit60 under representative complete motor load",
+    "Stable memory plateau",
+    "Full lifetime common RAM including setup/installation/close with exactly500 active profiles",
+    "1500 fully checked usable positions",
+    "500000000-byte reserve at full load",
+    "Persistent disk admission",
+    "Private original CI harness input and separate Vercel Preview configuration"
+  ],
+  "nextConcreteDecision": "Qualify the fresh complete motor path and Unit60 before recommending another full500 run; no speculative architectural rewrite from this component result",
+  "futureFull500Conditions": {
+    "newExplicitConcreteGORequired": true,
+    "all32FreshStartConditionsRequired": true,
+    "freshCaseAndTimeBindingRequired": true,
+    "sufficientPersistentDiskRequired": true,
+    "fullAdmissionRequiredBytes": 15179779720,
+    "observedFreePersistentBytesAt2052UTC": 8965083136,
+    "missingBytesAt2052UTC": 6214696584,
+    "priorV12Slot12Consumed": true,
+    "oldApprovalsReusable": false
+  },
+  "preserve": [
+    "All original source pins and image",
+    "Needed database states and working copy",
+    "Historical failures and raw statuses",
+    "Current Git work and source bindings",
+    "Protected active/foreign resources"
+  ],
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/HTTP_LOCK_COMPONENT_COMPARISON.SAFE.json",
+      "bytes": 27146,
+      "sha256": "eb492224ef9b1ca31cb099903ceecb392a3115899042652c04c4f022a9547957"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/HTTP_COMPARISON_INDEPENDENT_ACTUAL_REVIEW.SAFE.json",
+      "bytes": 2593,
+      "sha256": "6b2bf0b625a06787d1df64e6971b6b39796860d4fbf7c68785422662f064c804"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/HTTP_CLOSE_POLICY_QUALIFICATION.SAFE.json",
+      "bytes": 6935,
+      "sha256": "b9ec002fade8e84bd74f4a902d5581e9ec39fa4d29cc7876f9f2afbe4b641a4a"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/POST_HTTP_ORIGINALS_AND_CAPACITY.SAFE.json",
+      "bytes": 17093,
+      "sha256": "25f62da2e2bd8779f8fff23b226ee6f8f17e42652d4b363d25a33633e9b7d094"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/local-lock-lease-20261021/OFFLINE_QUALIFICATION.SAFE.json",
+      "bytes": 1503,
+      "sha256": "3fe4e716fa9e9c4d001923936598c5213361432f83068e3ff97ae5bc114d7609"
+    }
+  ],
+  "routerAndDeepSeekConfigurationChanged": false,
+  "externalModelCalls": 0,
+  "productionActions": false,
+  "mergeOrDeploy": false,
+  "newPaidInfrastructure": false,
+  "executionAuthority": false,
+  "full500Accepted": false,
+  "500MBReserveProven": false,
+  "threadRecommendation": "Continue this thread at this evidence-backed halt point",
+  "reasoningEffortRecommendation": "Very high"
+}

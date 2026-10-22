@@ -369,6 +369,50 @@ function main() {
     check("16.3 Aufrufende Umgebung bleibt unveraendert", namen.every(n => env[n] === marker));
   }
 
+  abschnitt("17 · Kindprozess-Leck: acht neue Cloud-/CI-Kennungen");
+  {
+    // Bewusst eine EIGENE, feste Acht-Namen-Liste — unabhaengig von der Produktionsliste,
+    // damit dieser Nachweis nicht still mitwandert, wenn die zentrale Liste waechst.
+    const neueKennungen = [
+      "HELMUT_GITHUB_CI_ADMIN_TOKEN", "GITHUB_TOKEN", "GH_TOKEN", "DEEPSEEK_API_KEY",
+      "HELMUT_ADMIN_SECRET", "HELMUT_RUNTIME_READ_BEARER",
+      "VERCEL_AUTOMATION_BYPASS_SECRET", "CRON_SECRET"
+    ];
+    const marker = "OFFLINE-ATTRAPPE-17-KEIN-ECHTES-CREDENTIAL";
+    for (const name of neueKennungen) {
+      const r = starte('console.log("UNZULAESSIG-GESTARTET")', sauber({ [name]: marker }));
+      check(`17.1 ${name}: direkter Preload bricht vor dem Code ab`,
+        r.abgebrochen && !r.aus.includes("UNZULAESSIG-GESTARTET"), `exit ${r.status}`);
+      check(`17.2 ${name}: Diagnose nennt den Namen, nie den Wert`,
+        r.fehler.includes(name) && !r.fehler.includes(marker) && !r.aus.includes(marker));
+    }
+
+    const LOKAL = path.join(ROOT, "scripts/lokal.js");
+    const kontrollName = "HELMUT_LOKALER_SCHUTZ_KONTROLLE";
+    const kontrollWert = "KONTROLLWERT-17";
+    const env = sauber(Object.fromEntries(neueKennungen.map((n) => [n, marker])));
+    env[kontrollName] = kontrollWert;
+    const kindCode = 'console.log(JSON.stringify({'
+      + 'kennungen: ' + JSON.stringify(neueKennungen)
+      + '.map(function(n){return Object.hasOwn(process.env,n);}),'
+      + 'kontrolle: Object.hasOwn(process.env,' + JSON.stringify(kontrollName) + ')}));';
+    const r = spawnSync(process.execPath,
+      [LOKAL, "--", process.execPath, "-e", kindCode],
+      { encoding: "utf8", env, timeout: 30000 });
+    let gesehen = null;
+    try { gesehen = JSON.parse(String(r.stdout || "").trim().split("\n").pop() || "null"); } catch { gesehen = null; }
+    check("17.3 scripts/lokal.js entfernt alle acht Kennungen im echten Kindprozess",
+      r.status === 0 && gesehen && Array.isArray(gesehen.kennungen)
+        && gesehen.kennungen.length === neueKennungen.length
+        && gesehen.kennungen.every((x) => x === false), `exit ${r.status}`);
+    check("17.4 Der Kindprozess meldet nur Anwesenheits-Booleans, keine Werte",
+      r.status === 0 && !String(r.stdout).includes(marker) && !String(r.stderr).includes(marker)
+        && !String(r.stdout).includes(kontrollWert) && !String(r.stderr).includes(kontrollWert));
+    check("17.5 Die uebrige aufrufende Umgebung bleibt erhalten",
+      r.status === 0 && gesehen && gesehen.kontrolle === true
+        && neueKennungen.every((n) => env[n] === marker) && env[kontrollName] === kontrollWert);
+  }
+
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   console.log("\nKein einziger echter Netzzugriff: alle nicht-lokalen Ziele sind `.invalid`-Namen,");
   console.log("und der Schutz greift ohnehin vor der Namensaufloesung.");

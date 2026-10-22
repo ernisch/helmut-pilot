@@ -1,0 +1,26 @@
+{
+  "schema": "helmut-private-ci-channel-preparation-summary/1",
+  "scope": "LOCAL_PREPARATION_NO_GITHUB_APPROVAL_CLAIM",
+  "manifestSHA256": "b2e3584818b16fed2f4bfd845f9379732d9f9eb045c83f59ad94034d9e6c46ef",
+  "transportSHA256": "fd9eac76ded846b2474c1ec85eaa72d5e7b023ff7cf7204e9cb62fb0401664fe",
+  "cipherSHA256": "0e2c02bee106af05d1d7a272e364dd2f2865d67756c512f1304177480996f8a4",
+  "cipherBytes": 30165381,
+  "files": 84,
+  "originalBytes": 83496520,
+  "originalsUnchangedFromPackagePreparation": true,
+  "genuinePackageRoundtripVerified": 84,
+  "tamperedCipherRejected": true,
+  "realExtractorAndProvisionerRoundtripVerified": 84,
+  "syntheticProtectionUnitTests": 22,
+  "unitTestFailures": 0,
+  "reviewFixturesAreTestOnly": true,
+  "githubEnvironmentConfigured": false,
+  "genuineGitHubReviewVerified": false,
+  "githubPrivateCIPassed": false,
+  "productionActions": false,
+  "full500Run": false,
+  "privateEvidenceSHA256": {
+    "packagePreparation": "001ab5af54823c00571268f485d95f51fff6ec72676bb52d9964b0b6418ab701",
+    "actualHelperRoundtrip": "45317f21d4b286a392a4100ebc981295c2415ed660acb5d78163466934c4bde3"
+  }
+}

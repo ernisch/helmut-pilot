@@ -1,0 +1,83 @@
+{
+  "schema": "helmut-postgrest-12.2.3-signal-source-evidence/1",
+  "sources": [
+    {
+      "repository": "PostgREST/postgrest",
+      "commit": "519615d5fbe3c19218baf0aeff8f5e3920d390e5",
+      "repositoryPath": "src/PostgREST/Unix.hs",
+      "url": "https://raw.githubusercontent.com/PostgREST/postgrest/519615d5fbe3c19218baf0aeff8f5e3920d390e5/src/PostgREST/Unix.hs",
+      "localRelativePath": "postgrest/src/PostgREST/Unix.hs",
+      "bytes": 1830,
+      "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+    },
+    {
+      "repository": "PostgREST/postgrest",
+      "commit": "519615d5fbe3c19218baf0aeff8f5e3920d390e5",
+      "repositoryPath": "src/PostgREST/App.hs",
+      "url": "https://raw.githubusercontent.com/PostgREST/postgrest/519615d5fbe3c19218baf0aeff8f5e3920d390e5/src/PostgREST/App.hs",
+      "localRelativePath": "postgrest/src/PostgREST/App.hs",
+      "bytes": 7424,
+      "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+    },
+    {
+      "repository": "PostgREST/postgrest",
+      "commit": "519615d5fbe3c19218baf0aeff8f5e3920d390e5",
+      "repositoryPath": "src/PostgREST/CLI.hs",
+      "url": "https://raw.githubusercontent.com/PostgREST/postgrest/519615d5fbe3c19218baf0aeff8f5e3920d390e5/src/PostgREST/CLI.hs",
+      "localRelativePath": "postgrest/src/PostgREST/CLI.hs",
+      "bytes": 8002,
+      "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+    },
+    {
+      "repository": "PostgREST/postgrest",
+      "commit": "519615d5fbe3c19218baf0aeff8f5e3920d390e5",
+      "repositoryPath": "src/PostgREST/AppState.hs",
+      "url": "https://raw.githubusercontent.com/PostgREST/postgrest/519615d5fbe3c19218baf0aeff8f5e3920d390e5/src/PostgREST/AppState.hs",
+      "localRelativePath": "postgrest/src/PostgREST/AppState.hs",
+      "bytes": 18693,
+      "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+    },
+    {
+      "repository": "PostgREST/postgrest",
+      "commit": "519615d5fbe3c19218baf0aeff8f5e3920d390e5",
+      "repositoryPath": "default.nix",
+      "url": "https://raw.githubusercontent.com/PostgREST/postgrest/519615d5fbe3c19218baf0aeff8f5e3920d390e5/default.nix",
+      "localRelativePath": "postgrest/default.nix",
+      "bytes": 5248,
+      "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+    },
+    {
+      "repository": "ghc/ghc",
+      "commit": "8e9ea0f91305d9e4bb9df3d89f6a9e223ecb4dd3",
+      "repositoryPath": "libraries/base/GHC/TopHandler.hs",
+      "url": "https://raw.githubusercontent.com/ghc/ghc/8e9ea0f91305d9e4bb9df3d89f6a9e223ecb4dd3/libraries/base/GHC/TopHandler.hs",
+      "localRelativePath": "ghc/libraries/base/GHC/TopHandler.hs",
+      "bytes": 9858,
+      "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+    },
+    {
+      "repository": "ghc/ghc",
+      "commit": "8e9ea0f91305d9e4bb9df3d89f6a9e223ecb4dd3",
+      "repositoryPath": "rts/RtsStartup.c",
+      "url": "https://raw.githubusercontent.com/ghc/ghc/8e9ea0f91305d9e4bb9df3d89f6a9e223ecb4dd3/rts/RtsStartup.c",
+      "localRelativePath": "ghc/rts/RtsStartup.c",
+      "bytes": 19895,
+      "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+    }
+  ],
+  "postgrestTag": "v12.2.3",
+  "postgrestCommit": "519615d5fbe3c19218baf0aeff8f5e3920d390e5",
+  "ghcTag": "ghc-9.4.8-release",
+  "ghcCommit": "8e9ea0f91305d9e4bb9df3d89f6a9e223ecb4dd3",
+  "chain": [
+    "Unix.hs24-31 SIGTERM/SIGINT -> Main UserInterrupt",
+    "App.hs72 installs handlers",
+    "CLI.hs40-50 bracket cleanup; AppState.hs171-172,279-281 releases pool",
+    "TopHandler.hs176,238,253-257,265-272,280-282 -> safeExit(-SIGINT)",
+    "RtsStartup.c674-680,697-715 -> hs_exit_, restore/unblock signal, kill(getpid(),SIGINT)"
+  ],
+  "binaryCompilerEvidence": "Read-only strings of unchanged original870a binary contained9.4.8 and GHC9.4.8; default.nix3 selectsghc948.",
+  "reproducibleBuildVerified": false,
+  "actualProcessSelfSignalTraced": false,
+  "scope": "Version-specific documented shutdown classification; no historical FAIL or raw exit code changes."
+}

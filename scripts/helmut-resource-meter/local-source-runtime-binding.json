@@ -1,0 +1,27 @@
+{
+  "schema": "helmut-restored-local-source-runtime-binding/1",
+  "scope": "READ_ONLY_RESTORED_FROZEN_INPUT_PROVENANCE_ONLY",
+  "cloud": "ccarenv_b64_Y2NhcmVudl8yOTU4NWEyOWM5NjA4MTkxYjhjNTkwOTY0ZGZkYjllOQ",
+  "containerId": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+  "containerName": "helmut-meter-db-w20-01a15550c862",
+  "imageId": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+  "sourceDatabase": "helmut_fresh_input_fixture_d2e98984",
+  "databases": [
+    "helmut_fresh_input_fixture_d2e98984",
+    "helmut_resource_input_20261017_64a99d4ac9fb",
+    "helmut_resource_input_20261018_ab76c911dac8",
+    "helmut_resource_input_20261019_e400dff25393"
+  ],
+  "restoreReceiptPins": [
+    {
+      "path": "/workspace/helmut-migration-restore-20261019-01a15550/local-runtime/RESTORE.SAFE.json",
+      "bytes": 2069,
+      "sha256": "3df15ea83e2b955c8f3888134d7a58083c067ca8ac6fadf5c285d4aa04e9f08c"
+    },
+    {
+      "path": "/workspace/helmut-ram-preparation-20261019/FROZEN_PROVENANCE_RESTORE.SAFE.json",
+      "bytes": 1682,
+      "sha256": "a6f74c01a656f52e5988656229a305253306ae76a3e474f49e1a9d421863f98d"
+    }
+  ]
+}

@@ -85,7 +85,13 @@ const REINE_ZUGANGSDATEN = [
   // Cloud-Managementzugang gehoert ebenfalls nie in Offline-Testkindprozesse.
   "HELMUT_AZURE_TENANT_ID", "HELMUT_AZURE_CLIENT_ID", "HELMUT_AZURE_CLIENT_SECRET",
   "SUPABASE_ACCESS_TOKEN",
-  "VERCEL_TOKEN", "BLOB_READ_WRITE_TOKEN", "VAPID_PRIVATE_KEY"
+  "VERCEL_TOKEN", "BLOB_READ_WRITE_TOKEN", "VAPID_PRIVATE_KEY",
+  // Cloud-/CI-Zugaenge und ihre Standardaliase gehoeren vor der privaten Original-CI
+  // ebenfalls aus lokalen Kindprozessen entfernt. `scripts/lokal.js` nutzt dafuer
+  // dieselbe zentrale Liste PRODUCTION_KENNUNGEN.
+  "HELMUT_GITHUB_CI_ADMIN_TOKEN", "GITHUB_TOKEN", "GH_TOKEN", "DEEPSEEK_API_KEY",
+  "HELMUT_ADMIN_SECRET", "HELMUT_RUNTIME_READ_BEARER",
+  "VERCEL_AUTOMATION_BYPASS_SECRET", "CRON_SECRET"
 ];
 // Bleibt als Gesamtliste erhalten: `scripts/lokal.js` entfernt genau diese Namen aus der
 // Umgebung des Kindprozesses. Adressvariablen gehoeren dazu, weil eine geerbte fremde

@@ -1,0 +1,59 @@
+{
+  "CLIRefusalBeforeBindingsDockerOrCaseCreationVerifiedBySourceOrdering": true,
+  "CLIcases": [
+    {
+      "actualExitCode": 0,
+      "label": "help",
+      "stderrBytes": 0,
+      "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutBytes": 244
+    },
+    {
+      "actualExitCode": 2,
+      "label": "invalid-CLI",
+      "stderrBytes": 146,
+      "stderrSHA256": "5590faf7efb222cd606f2c12a394f5d13b435d422a9f75e7084a2522de806cff",
+      "stdoutBytes": 0
+    },
+    {
+      "actualExitCode": 1,
+      "label": "missing-fixed-adoption",
+      "stderrBytes": 1089,
+      "stderrSHA256": "f6cc3903dd762147334b99a985353ec923be884a31719e4862be5ef8f77f3146",
+      "stdoutBytes": 0
+    }
+  ],
+  "SQLInvocations": 0,
+  "controllerPin": {
+    "bytes": 18568,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+    "sha256": "028a519a054849aa21bbfe7fd1ce2f35821d4b6cc5803d3ae6db37bc17b6e746"
+  },
+  "full500": false,
+  "independentSourceReviewPin": {
+    "bytes": 12622,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/SOURCE_REVIEW_V2.SAFE.json",
+    "sha256": "425ecc9621a02a31d7aa28adae9c34ab53024eb1c3eadd246fe60ae2c03ab1c1"
+  },
+  "intentPin": {
+    "bytes": 8438,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_LAYOUT_INTENT_V4.SAFE.json",
+    "sha256": "e882bcbcb53bc344f99980b74a1c7f89a62d513957f58a6f1469d2822e9a7697"
+  },
+  "nativeActions": 0,
+  "pass": true,
+  "production": false,
+  "pythonASTs": 3,
+  "queryPin": {
+    "bytes": 4750,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_NATIVE_LAYOUT_QUERY.sql",
+    "sha256": "0cc98e082c154b0e6511eafe7b532b9fa2fe39c0bf2bef0b55a8e8c16f673cd3"
+  },
+  "schema": "helmut-cas-native-size-root-selected-qualification/1",
+  "sourcePin": {
+    "bytes": 2880,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/root-qualify-selected-layout-v3.py",
+    "sha256": "095506eede4b288749b9306d19ceb452dc98a0b57c5b569e325dd09f5f7989c1"
+  },
+  "unusedControllerInvoked": false
+}

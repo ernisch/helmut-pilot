@@ -1,0 +1,97 @@
+{
+  "schema": "helmut-local-unit-diagnostic-readonly-verification/1",
+  "scope": "PREPARATION_ONLY_NO_ENGINE_EXECUTION",
+  "production": false,
+  "full500Run": false,
+  "unit60FixedOrQualified": false,
+  "githubCIRun": false,
+  "nodeVersion": "v24.19.0",
+  "githubNode22EquivalenceClaimed": false,
+  "syntheticTests": {
+    "passed": 43,
+    "failed": 0,
+    "skipped": 0
+  },
+  "originalSelection": {
+    "schema": "helmut-local-unit-diagnostic-preparation/1",
+    "status": "PREPARATION_ONLY_EXECUTION_BLOCKED",
+    "sourceIndex": 499,
+    "diagnosticUnit": 0,
+    "preparedAtUTC": "2026-10-22T07:13:23.244Z",
+    "sourceLogicalBytes": 106057409,
+    "sourceDay": "2026-10-21",
+    "executionDayUTC": "2026-10-22",
+    "sourceSelectionBindingSHA256": "e18f95c1c5040a7e3d1cafb4ba207db2db44874e8b8efff5d881d89c1b148863",
+    "sourceQualification": "IDENTITY_AND_STRUCTURE_ONLY",
+    "namespaceInstalled": false,
+    "diagnosticIdReserved": false,
+    "production": false,
+    "executionAuthority": false,
+    "full500Accepted": false,
+    "paidProviderCallsAllowed": false,
+    "fullCommandValidated": false,
+    "expandedSHA256Verified": false,
+    "executionBlockedBy": [
+      "postrunAuthJournalMissing",
+      "preparedRequestBindingsMissing",
+      "nativeNamespaceMissing",
+      "freshSourceRuntimeMissing",
+      "freshOwnerScopeMissing",
+      "calendarConsumerMissing",
+      "costAdmissionMissing",
+      "exclusiveReservationMissing",
+      "sendClaimConsumerMissing",
+      "reviewResultConsumersMissing",
+      "independentAcceptanceMissing"
+    ]
+  },
+  "sourcePacketPin": {
+    "bytes": 1233928,
+    "sha256": "29cf691713b875c5a720882644963f9c2ca2dc39c51a4c284588d815c863cf44"
+  },
+  "sourceDictionaryPin": {
+    "bytes": 11812791,
+    "sha256": "8998daff5bf96cf2ef7451295446bc78b6d80978271a2a87fee4add0c0ce750d"
+  },
+  "sourceInstallPin": {
+    "bytes": 586,
+    "sha256": "3ccf05233f012f42224abe97f5ec7e50c929df319c4bf6b7ddedd294d9ed268b"
+  },
+  "terminalPin": {
+    "path": "docs/betrieb/belege/next-local-full500-20261021/V12_ACTUAL_TERMINAL.SAFE.json",
+    "bytes": 3336,
+    "sha256": "1781a7b1b7acd5dc15368865eb2c262fb9ca058f4cd3a89dfd8f6a0108f88a8b"
+  },
+  "isolation": {
+    "network": "none",
+    "readonlyRoot": true,
+    "allBindMountsReadonly": true,
+    "privateMountsSynthetic": 0,
+    "privateMountsOriginal": 2,
+    "memoryLimitBytes": 805306368,
+    "nodeHeapLimitMiB": 512,
+    "native500MemoryReserveProven": false
+  },
+  "runs": [
+    {
+      "scope": "synthetic",
+      "exitCode": 0,
+      "wallSeconds": 2.127344,
+      "sourcePinsAndMetadataUnchanged": true,
+      "atimeNotBound": true,
+      "OOMKilled": false,
+      "ownContainerRemovedAfterAudit": true,
+      "privateReceiptSHA256": "2ce112915e4697f5d05b9c58bdfbdb908b6bf68d868b2df2776a1bbb34f581fd"
+    },
+    {
+      "scope": "originalReadonly",
+      "exitCode": 0,
+      "wallSeconds": 0.866837,
+      "sourcePinsAndMetadataUnchanged": true,
+      "atimeNotBound": true,
+      "OOMKilled": false,
+      "ownContainerRemovedAfterAudit": true,
+      "privateReceiptSHA256": "b512b343b2bcaf54d913f75352abec8289680c1d2bab98fd507903c032f5d908"
+    }
+  ]
+}

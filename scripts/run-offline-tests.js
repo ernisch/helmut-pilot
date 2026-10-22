@@ -217,6 +217,7 @@ const STANDARD = new Set([
   "synthetik-500-kosten-admission-test.js", // dormante atomare Intentreserve, kein installierter Laufplan
   "synthetik-500-kosten-plan-test.js",      // vollstaendige endliche Kostenpositionen ohne Budgetfreigabe
   "synthetik-500-executor-test.js",         // gebundene Offline-Ablaufvorbereitung und absolute Laufzeitgrenze
+  "fresh-control-callers-test.js", // verifizierte frische Kontrollauswahl, Schreib-/Abrechnungszustand bleibt voll
   "synthetik-500-production-adapter-test.js", // neuer endlicher Adapter/CAS/Once, ausschliesslich lokale Fakes
   "synthetik-500-date-binding-test.js",     // neue reine Quellen-/Ausfuehrungszeitbindung, unveraenderlicher EU-Vertrag
   "synthetik-500-date-handoff-test.js",     // neue opaque Token-/D/R-/Belegtag-Integration, ausschliesslich lokale Fakes
@@ -239,6 +240,7 @@ const STANDARD = new Set([
   "synthetik-500-eu-service-contract-test.js", // approved closed EU financing/usage contract
   "synthetik-500-eu-daybook-init-test.js", // reine Tagesbuchplanung ohne Reserve, Schreiber oder Laufautoritaet
   "synthetik-500-route-contract-test.js",   // opt-in Route/Deployment/Auth-Auswahl vor Reserve und nach Await-Gates binden
+  "auth-control-view-test.js",             // frische native Bindung; Kontrollsicht niemals Schreibautoritaet
   "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
   "supabase-request-limit-test.js",         // echte Requestfrist <=20s, nur verkuerzbare Aufruffrist
   "bb-quellen-cutover-operator-test.js",     // enger Landesquellen-Cutover und geschuetzter Rueckweg
@@ -252,12 +254,14 @@ const STANDARD = new Set([
   "store-read-integrity-test.js",           // Leseintegritaet des Stores
   "auth-store-cas-test.js",                 // CAS des Auth-Stores
   "pipeline-lock-atomic-test.js",           // atomarer Pipeline-Lock
+  "local-pipeline-lock-lease-test.js",      // lokaler Aufruf besitzt sein Token; kein veraltetes Release/Retry
   "profile-auth-decoupling-test.js",        // Profil/Auth entkoppelt
   "reset-timing-seitenkanal-test.js",       // kein Seitenkanal beim Passwort-Reset
   "saas-foundation-test.js",                // keine Personen-Fallbacks, Tenant-Kontext blockt
   "jobqueue-sicherheit-test.js",            // Sicherheit/Mandantentrennung der Warteschlange
   "admin-config-diagnose-test.js",          // Admin-Authz + keine Secrets in der Diagnose
   "provider-runtime-attestation-test.js",   // enger Cron-Bearer-Laufzeitbeleg ohne DB/Anbieter/Secrets
+  "synthetik-500-runtime-artifact-attestation-test.js", // begrenzte lokale Artefakt-/Public-Key-Metadaten, kein Worker/DB/Startrecht
   "provider-runtime-auth-rebind-test.js",   // neue Nonce/Verifier-Bindung, feste Frist; keine privaten Credentials
   "provider-runtime-single-probe-test.js", // feste Einzelprobe: Auth, echter Mehrprozess-CAS und Kostenriegel; lokaler Testtransport
   "relevanz-tage-runtime-witness-test.js",  // eigener Root-Zweck, echter Relevanzresolver/Fallback, keine Daten/Provider/Secrets

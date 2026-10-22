@@ -1,0 +1,19 @@
+{
+  "schema": "helmut-cas-heap-parsed-server-proof/1",
+  "qualified": true,
+  "mode": "lifecycle-only",
+  "diagnosticRecords": 0,
+  "CASBinderRecords": 0,
+  "heapRecords": 0,
+  "diagnosticJSONBytes": 0,
+  "maximumRecordJSONBytes": 2048,
+  "maximumDiagnosticJSONBytes": 24576,
+  "completePGLogEOFRequired": true,
+  "logParseAfterClosure": true,
+  "records": [],
+  "snapshotsAtomic": false,
+  "observerMaterializationIncluded": true,
+  "contextCountersAreProcessRSS": false,
+  "groupPeakOwnerClaimed": false,
+  "causalityOrSavingsClaimed": false
+}

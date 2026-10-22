@@ -1,0 +1,11 @@
+{
+  "schema": "helmut-pg17-libpq-official-source-binding/1",
+  "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+  "officialPath": "src/interfaces/libpq/fe-connect.c",
+  "gitBlobSHA1": "454d2ea3fb7c10510d5c781967640c24a978b0d0",
+  "bytes": 200893,
+  "sha256": "3d6d86498961f84be36b06061565c8ad21d9945d3b4bc2badfab4f4b439e8452",
+  "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/libpq-source/fe-connect.c",
+  "sourceExecution": false,
+  "nativeActions": 0
+}

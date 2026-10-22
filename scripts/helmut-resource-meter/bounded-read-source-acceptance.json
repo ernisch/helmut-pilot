@@ -1,0 +1,35 @@
+{
+  "schema": "helmut-bounded-native-read-source-acceptance/1",
+  "mode": "bounded-native-read-v1",
+  "production": false,
+  "full500Accepted": false,
+  "comparativeRAMGainClaimed": false,
+  "sqlSHA256": {
+    "supabase/proposals/auth_read_bounded_local.sql": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561",
+    "supabase/proposals/auth_read_bounded_local.rollback.sql": "44825c2e5e51180d03c72d0e845f5da5670414af602445ca91f1b4d54ad69575"
+  },
+  "independentReview": {
+    "model": "deepseek-v4-pro",
+    "effort": "high",
+    "status": "ok",
+    "resultPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-sql-delta-review/ACTUAL_RESULT.SAFE.json",
+      "bytes": 3672,
+      "sha256": "77fc5af0f270db7b25234bae3481bde806a9a8ace8957133435bbe2d8ba1fb34"
+    }
+  },
+  "nativeProof": {
+    "resultPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/native-read-proof/case-3fc272494d/NATIVE_RESULT.SAFE.json",
+      "bytes": 5416,
+      "sha256": "674a66ff393217bd8844ff45ad02dd2c6105a6b21632056213729bf05f201b08"
+    },
+    "exactWholeResponsesEqual": true,
+    "rollbackExactlyRestoresFunctionBodiesAndACLs": true,
+    "historyRows": 5000,
+    "nativeNegativeCases": 22,
+    "reviewRequestedNegativesPassed": true,
+    "allOwnedProcessesExited": true
+  },
+  "scope": "Exact SQL delta source only. Fresh full integration/guard coverage and actual resource proof remain required."
+}

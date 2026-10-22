@@ -1,0 +1,156 @@
+{
+  "schema": "helmut-cas-heap-root-actual-review/1",
+  "status": "PASS_BOUNDED_DIAGNOSTIC_ONLY",
+  "atUTC": "2026-10-21T09:48:31.501Z",
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/PREPARED.SAFE.json",
+    "bytes": 67996,
+    "sha256": "a30bc1a726a5002e7f5b3f5e6e4d9c24dab26630bd3806d027d0c5e46ece63e8"
+  },
+  "hostPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap.py",
+    "bytes": 2420,
+    "sha256": "d1e4aec3c4327e20fafff7934ff52186c7ec54cec67dbdbbdb657d89958c19b3"
+  },
+  "resultPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9/ACTUAL_RESULT.SAFE.json",
+      "bytes": 11372,
+      "sha256": "40bd0d0074915f7404ad6d1d2137361d9703e39c83c66ca114160076ead69ff9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/ACTUAL_RESULT.SAFE.json",
+      "bytes": 12128,
+      "sha256": "8cf6cb28631d2a180ae0c56a7d7afbd4f313b3b6550a441988fd35b65f9d5617"
+    }
+  ],
+  "independentActualReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+    "bytes": 39335,
+    "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+  },
+  "driverPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/AUTH_WRITE_PHASE.SAFE.json",
+    "bytes": 104265,
+    "sha256": "c1c44e5ce1711c72a75ce73120435c3cbe3ff8de0a5202a1df77fd43f16db2f7"
+  },
+  "heapPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/SERVER_HEAP.SAFE.json",
+    "bytes": 9449,
+    "sha256": "98bb3c1d59c4b53c84dfc038f06493d3ef1dcbb6f6d4ab301bbb9f476609774d"
+  },
+  "interpretationPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/heap-interpretation/READONLY_FINDINGS.SAFE.json",
+    "bytes": 37501,
+    "sha256": "a503949e8b4235f931305749bfe2cca49e269274e7c3be2af80e908185d88b97"
+  },
+  "protectionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_END_PROTECTION.SAFE.json",
+    "bytes": 2051,
+    "sha256": "4c4ae45dda8a615e9508f6e43dca45c73732beb9776445700c1a62107f7665fb"
+  },
+  "productPins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/auth-state-parts.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    }
+  ],
+  "metrics": [
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9",
+      "authRPCCount": 0,
+      "memoryPeakBytes": 657543168,
+      "CPUSeconds": 18.700343,
+      "wallSeconds": 21.462346740008797,
+      "kernelAnonymousAfterAllExitsBytes": 0,
+      "kernelFileAfterAllExitsBytes": 371851264,
+      "noPeakDecompositionFromPostExitCounters": true
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042",
+      "authRPCCount": 27,
+      "memoryPeakBytes": 1036963840,
+      "CPUSeconds": 33.031932,
+      "wallSeconds": 33.4310312079906,
+      "kernelAnonymousAfterAllExitsBytes": 0,
+      "kernelFileAfterAllExitsBytes": 372420608,
+      "noPeakDecompositionFromPostExitCounters": true
+    }
+  ],
+  "intervals": [
+    {
+      "phase": "round0.mutation",
+      "backendPID": 54,
+      "xid": "11668",
+      "usedBeforeBytes": 21692056,
+      "usedAfterBytes": 28218376,
+      "netUsedContextIncreaseBytes": 6526320,
+      "totalBeforeBytes": 25549984,
+      "totalAfterBytes": 32090272,
+      "outputTextUTF8Bytes": 6127455,
+      "outputNativeJSONBBytes": 6397988
+    },
+    {
+      "phase": "round1.mutation",
+      "backendPID": 54,
+      "xid": "11669",
+      "usedBeforeBytes": 22569440,
+      "usedAfterBytes": 28986336,
+      "netUsedContextIncreaseBytes": 6416896,
+      "totalBeforeBytes": 26862032,
+      "totalAfterBytes": 33250768,
+      "outputTextUTF8Bytes": 6127455,
+      "outputNativeJSONBBytes": 6397992
+    },
+    {
+      "phase": "round2.mutation",
+      "backendPID": 54,
+      "xid": "11670",
+      "usedBeforeBytes": 22576304,
+      "usedAfterBytes": 28993200,
+      "netUsedContextIncreaseBytes": 6416896,
+      "totalBeforeBytes": 26870224,
+      "totalAfterBytes": 33258960,
+      "outputTextUTF8Bytes": 6127455,
+      "outputNativeJSONBBytes": 6397992
+    },
+    {
+      "phase": "restore.write",
+      "backendPID": 54,
+      "xid": "11671",
+      "usedBeforeBytes": 22589904,
+      "usedAfterBytes": 29006704,
+      "netUsedContextIncreaseBytes": 6416800,
+      "totalBeforeBytes": 26903280,
+      "totalAfterBytes": 33291920,
+      "outputTextUTF8Bytes": 6127376,
+      "outputNativeJSONBBytes": 6397892
+    }
+  ],
+  "closedAndOriginalDataIntact": true,
+  "servingDefaultCASBranchConfirmed": true,
+  "maximumObservedBackendContextTotalBytes": 33291920,
+  "backendContextCountersAreRSS": false,
+  "contextAndGroupIncreasesMayBeAdded": false,
+  "priorAcceptedCommonRAMSavingBytes": 154886144,
+  "additionalCommonRAMSavingProvenBytes": 0,
+  "productChanged": false,
+  "plateauProven": false,
+  "reserve500MBAt500Proven": false,
+  "noFurtherSpeculativeNativeCaseRecommended": true,
+  "originalCloudDirectlyAccessible": false,
+  "full500": false,
+  "newFull500GO": false,
+  "production": false,
+  "reviewerPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/root-preparation/review-actual.js",
+    "bytes": 9204,
+    "sha256": "25e8d4d3396c8fec167e9ae33df31112ea752c6c97e38906ab105776bf10374c"
+  }
+}

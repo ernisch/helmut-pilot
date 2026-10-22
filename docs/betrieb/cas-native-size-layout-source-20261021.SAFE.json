@@ -1,0 +1,306 @@
+{
+  "schema": "helmut-cas-native-size-pg17-layout-proof/1",
+  "status": "SOURCE_DERIVED_COUNTEREXAMPLE_NATIVE_UNTESTED",
+  "decision": "General N(m/l)=16+sum(N(child)+16) domination is false under the pinned PG17.6 source layout for the exhibited compact-object m class. Keep projection OFF. This source derivation is not a native receipt and does not authorize projection ON, formula/product edits or any resource action.",
+  "createdAtUTC": "2026-10-21T07:49:58.685868+00:00",
+  "reviewer": "/root/stability_capacity_review; existing SOL configuration; no router or external model",
+  "inputPins": {
+    "priorNOT_APPROVED": {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cas-equivalence-review/SOURCE_REVIEW.SAFE.json",
+      "bytes": 16948,
+      "sha256": "620a352dd4cbcdc55c3d30b43092765667795a0924e1b9cbdb23b545c6e9fc1c"
+    },
+    "officialSourceBinding": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/SOURCE_BINDING.SAFE.json",
+      "bytes": 2657,
+      "sha256": "f24902ad8122f52184e870100f5d822dd7c6ebfd4f80b86583d950561c6a0531"
+    },
+    "officialSources": [
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/jsonb_util.c",
+        "bytes": 55666,
+        "sha256": "2353ef5a015de9ef9864565efc276b83355e6cc183889c8f1667efb6a627018d"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/jsonb.h",
+        "bytes": 16290,
+        "sha256": "e3dd7cd11c2096de31a2de7874d6067b126e68666c3ce3da55f43404f308fbd1"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/c.h",
+        "bytes": 45867,
+        "sha256": "63485d15b91a706e20ebaf4cd8270c93a3d7b37b37ba619225c2a415e45bfe81"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/varatt.h",
+        "bytes": 14008,
+        "sha256": "1e8161d01943e8ebebe86d2b41e68cbe3edbdf30b9b5d06ae2fe7ae4b0474c7a"
+      }
+    ],
+    "currentProposalSource": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+      "bytes": 54938,
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    "frozenOriginalProposalSource": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "bytes": 51381,
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    "frozenNEWRendererInstall": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "bytes": 17398,
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    }
+  },
+  "officialIdentity": {
+    "repository": "postgres/postgres",
+    "tag": "REL_17_6",
+    "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+    "allFourBytesAndSHA256Rechecked": true,
+    "allFourGitBlobSHA1IndependentlyRecomputed": true,
+    "sourceFetchAndTagVerificationBy": "Root SOURCE_BINDING; reviewer did not access network"
+  },
+  "sourceReferences": [
+    {
+      "file": "jsonb_util.c",
+      "startLine": 1554,
+      "endLine": 1580,
+      "fact": "reserve4B varlena header; convert root; SET_VARSIZE to used buffer.len; root JEntry discarded"
+    },
+    {
+      "file": "jsonb_util.c",
+      "startLine": 1533,
+      "endLine": 1547,
+      "fact": "padBufferToInt adds INTALIGN(len)-len bytes"
+    },
+    {
+      "file": "jsonb_util.c",
+      "startLine": 1621,
+      "endLine": 1651,
+      "fact": "array including empty array aligns to4; adds4B uint32 header plus4B per element JEntry"
+    },
+    {
+      "file": "jsonb_util.c",
+      "startLine": 1705,
+      "endLine": 1803,
+      "fact": "object aligns;4B header;8B per pair entries; serializes all keys then all values"
+    },
+    {
+      "file": "jsonb_util.c",
+      "startLine": 1821,
+      "endLine": 1845,
+      "fact": "string contributes exact raw string length with no alignment; Numeric path also pads toInt but no Numeric assumption used"
+    },
+    {
+      "file": "jsonb_util.c",
+      "startLine": 1905,
+      "endLine": 1910,
+      "fact": "keys sort by length then memcmp"
+    },
+    {
+      "file": "jsonb_util.c",
+      "startLine": 1949,
+      "endLine": 1957,
+      "fact": "object pairs sorted by the key comparator"
+    },
+    {
+      "file": "jsonb_util.c",
+      "startLine": 687,
+      "endLine": 695,
+      "fact": "WJB_END_OBJECT invokes object sorting/uniqueness"
+    },
+    {
+      "file": "jsonb_util.c",
+      "startLine": 535,
+      "endLine": 541,
+      "fact": "container extraction removes leading alignment padding"
+    },
+    {
+      "file": "jsonb_util.c",
+      "startLine": 113,
+      "endLine": 123,
+      "fact": "binary container converted to independent Jsonb with4B varlena plus actual container bytes"
+    },
+    {
+      "file": "jsonb.h",
+      "startLine": 136,
+      "endLine": 136,
+      "fact": "JEntry is uint32"
+    },
+    {
+      "file": "jsonb.h",
+      "startLine": 180,
+      "endLine": 216,
+      "fact": "keys before values; root contains int32 varlena header and uint32 container header"
+    },
+    {
+      "file": "c.h",
+      "startLine": 692,
+      "endLine": 692,
+      "fact": "VARHDRSZ is sizeof(int32)"
+    },
+    {
+      "file": "c.h",
+      "startLine": 804,
+      "endLine": 808,
+      "fact": "TYPEALIGN/INTALIGN definitions"
+    },
+    {
+      "file": "varatt.h",
+      "startLine": 279,
+      "endLine": 279,
+      "fact": "VARSIZE is4B datum size accessor"
+    },
+    {
+      "file": "varatt.h",
+      "startLine": 305,
+      "endLine": 305,
+      "fact": "SET_VARSIZE uses4B header"
+    }
+  ],
+  "exactSyntheticClass": {
+    "n": 64,
+    "A": {
+      "definition": "Object with k000,k002,...,k126, every value empty JSON array[]",
+      "pairs": 64,
+      "keys": "k + exactly3 zero-padded decimal digits, even0..126",
+      "eachKeyUTF8Bytes": 4,
+      "standaloneNativeSizeFormula": "8+16n",
+      "predictedNativeBytes": 1032,
+      "payloadConcept": "[\"v\",A]",
+      "nodePayloadUTF8Bytes": 647
+    },
+    "B": {
+      "definition": "Object with k001,k003,...,k127, every value JSON string\"x\"",
+      "pairs": 64,
+      "keys": "k + exactly3 zero-padded decimal digits, odd1..127",
+      "eachKeyUTF8Bytes": 4,
+      "eachStringDataBytes": 1,
+      "standaloneNativeSizeFormula": "8+13n",
+      "predictedNativeBytes": 840,
+      "payloadConcept": "[\"v\",B]",
+      "nodePayloadUTF8Bytes": 711
+    },
+    "C": {
+      "definition": {
+        "testKostenAuftrag": {
+          "version": "5",
+          "serviceContractHash": "78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f"
+        }
+      },
+      "rootPairs": 1,
+      "rootKeyUTF8Bytes": 17,
+      "innerKeyUTF8Bytes": [
+        7,
+        19
+      ],
+      "innerValueDataBytes": [
+        1,
+        64
+      ],
+      "innerContainerBytes": 111,
+      "rootPrefixBytesBeforeNestedValue": 33,
+      "nestedValuePaddingBytes": 3,
+      "predictedNativeBytes": 147,
+      "payloadConcept": "[\"v\",C]",
+      "nodePayloadUTF8Bytes": 132
+    },
+    "m": {
+      "definition": "[\"m\",[[\"0\",H(A)],[\"1\",H(B)],[\"2\",H(C)]]] where each H is SHA256 of the complete actual UTF8 v-node payload",
+      "children": 3,
+      "reachableNodes": 4,
+      "postorder": "A,B,C,m",
+      "logicalRootPairs": 129,
+      "allLogicalKeysDisjoint": true,
+      "logicalRootValidByUnchangedAssertDataTextRules": true,
+      "graphOrHashesCreated": false,
+      "nodePayloadUTF8Bytes": 226
+    },
+    "subjectIdentity": "Exact constructors are bound by COUNTEREXAMPLE_LAYOUT.sql pin; no actual materialized leaf bytes or generated graph artifacts exist from this review."
+  },
+  "arithmetic": {
+    "mergedKeyOrder": "k000,k001,...,k127,testKostenAuftrag; all4B keys sort before17B contract key",
+    "rootPrefix": "4 varlena+4 container+8*(2n+1) entries+8n+17 key bytes =33+24n =1569 atn64; congruent1 mod4",
+    "arrayStringSequence": "First empty array receives3 padding bytes; each of the next63 arrays follows one1B string and receives3 bytes. Array bodies add4n; strings addn. Sequence total3n+4n+n=8n=512 bytes.",
+    "positionBeforeContract": "33+32n=2081, congruent1 mod4; add3 padding and111 container bytes",
+    "renderedRootFormula": "147+32n",
+    "predictedRenderedRootNativeBytes": 2195,
+    "W45Formula": "16+(N_A+16)+(N_B+16)+(N_C+16)=227+29n",
+    "predictedW45NativeBoundBytes": 2083,
+    "differenceFormula": "3n-80",
+    "predictedUnderestimateBytes": 112,
+    "firstPositiveN": 27,
+    "textSizes": {
+      "A": 768,
+      "B": 832,
+      "C": 130,
+      "rootProjected": 1730,
+      "cumulativeProjected": 3460
+    },
+    "cumulativeNativeWorkBytes": 4102,
+    "nodePayloadBytesTotal": 1716,
+    "graphDepth": 2,
+    "logicalDepth": 2,
+    "allValues": "Source/math-derived predictions only; no native pg_column_size result has been observed by reviewer."
+  },
+  "projectionEquivalenceConsequence": {
+    "sourcePredictedDefault": "Full NEW renderer emits valid unique-key JSON; text-size check passes; actual native-size confirmation should reject2195>2083 with auth-state-actual-native-limit.",
+    "sourcePredictedProjection": "Fresh structural/hash/type/depth/payload/cumulative pass accepts tiny valid graph; key/contract projection accepts disjoint fields and correct version/hash. Early return omits actual2195>2083 confirmation.",
+    "notClaimed": [
+      "Actual observed OFF/ON behavior",
+      "A256MiB cap overrun, data corruption or exploit",
+      "Memory reduction or faster execution",
+      "General unsafe default path"
+    ],
+    "existingDefaultGuardPreserved": true,
+    "projectionRemainsOFF": true
+  },
+  "lArrayFlatteningBoundary": {
+    "status": "LOCAL_BOUND_SUPPORTED_CONDITIONED_ON_VALID_CHILD_BOUNDS",
+    "argument": "Unlike m object merge, l concatenation preserves element order and each child value block. Changing its starting residue can add at most3 bytes before the first aligned value of that block; after that aligned start subsequent internal residues match. String-only/empty blocks add no alignment. Child root varlena+header8 bytes are removed; JEntry totals remain additive.",
+    "inequality": "For r direct array children with actual flat sizesS_i<=N_i: S_l<=8+sum(S_i-8)+3r=8+sum(S_i)-5r <=16+sum(N_i)+16r.",
+    "limitation": "This local composition proof cannot repair a child whose own bound already fails through an m merge; combined general m/l assertion is disproved by m class."
+  },
+  "preparedOutputPins": {
+    "argument": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/layout-proof/LAYOUT_ARGUMENT.SAFE.md",
+      "bytes": 5618,
+      "sha256": "c4ccced54dfef92375e63c4b1f59f366e6bae0925748a2148da8e31d87b23dc2"
+    },
+    "unexecutedReadOnlySQLTemplate": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/layout-proof/COUNTEREXAMPLE_LAYOUT.sql",
+      "bytes": 3738,
+      "sha256": "fda0b2d55ed212cfcb8d15434dec4670e543e7fbd2f7bc6a278bcfb0a3ad3e07"
+    }
+  },
+  "SQLTemplateContract": {
+    "statements": "One WITH ... SELECT statement; no DDL or table relation",
+    "syntheticLeavesOnly": "A64/B64/C plus merged A||B||C",
+    "nativeMeasurementsPlanned": [
+      "pg_column_size(A)",
+      "pg_column_size(B)",
+      "pg_column_size(C)",
+      "pg_column_size(A||B||C)"
+    ],
+    "normalReceiptFieldCount": 32,
+    "maximumOutputBytes": 4096,
+    "overCapResult": "Small explicit OUTPUT_CAP_EXCEEDED receipt",
+    "projectionCASOrUserHelperCalled": false,
+    "GUCSetterOrTransactionCommand": false,
+    "executedByAuthor": false,
+    "qualificationAndAnyExecutionOwner": "Root; separate concrete approval/instructions"
+  },
+  "custody": {
+    "releasedReadOnly": true,
+    "originalUpstreamAndProductSourcesChanged": false,
+    "onlyWriteDomain": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/layout-proof",
+    "sourceImportsCompilationTestsFixtures": false,
+    "nativeDBDockerSQLProcessGitResourceActions": false,
+    "originalBankOrPGDATAAccess": false,
+    "externalModelOrNetworkCalls": false,
+    "historicalW45SafetyRerun": false,
+    "full500": false,
+    "nextStep": "Root integrates this exact source derivation and may separately qualify the bounded read-only synthetic size SELECT. No projection ON, formula change, launcher or resource action follows from source custody."
+  }
+}

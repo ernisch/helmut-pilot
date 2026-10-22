@@ -1,0 +1,414 @@
+{
+  "schema": "helmut-auth-stability30-root-publication/1",
+  "publicationRole": "Root summary of pinned independent reviews; not a new independent review",
+  "functionalSafetyCompletionStatus": "PASS",
+  "sprintStatus": "PARTIALLY_COMPLETE",
+  "productCodeUnchangedSince": "6d528425",
+  "branch": "codex/controlled-cleanup-and-late-probe-20261020",
+  "draftPR": "https://github.com/ernisch/helmut-pilot/pull/927",
+  "lifecycle": {
+    "status": "PASS",
+    "nativeLifetimePeakBytes": 652570624,
+    "authRPCs": 0,
+    "independentReviewPin": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+      "bytes": 207957,
+      "sha256": "a4a8ac69fecaf0edec4c65f78e0e5ba6e548a24fe5e11e642d2b4ee6c0e652c2"
+    }
+  },
+  "thirtyRounds": {
+    "genuineRPCs": 243,
+    "fullReads": 32,
+    "confirmedCASWrites": 31,
+    "controlReads": 180,
+    "freshHistoryBindingsIndependentlyRecomputed": 212,
+    "freshGraphBindingsIndependentlyRecomputed": 180,
+    "freshConfirmedCASRevisions": 31,
+    "fullLogical6000HistoryHashes": 63,
+    "exactBoundaryTriplets": 60,
+    "boundedCaptures": 71,
+    "physicalAuthBytes": 606,
+    "nativeAndReferencedHistoryRows": 6000,
+    "originalSourceManifestSHA256IndependentlyRecomputed": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "sourceFiles": 1709,
+    "sourceFileBytes": 369399611,
+    "fullCatalogABIACLAndOriginalRootRestored": true,
+    "strictOriginalPostgrestStopVerified": true,
+    "pgExitCode": 0,
+    "nodeExitCode": 0,
+    "outerToolExitCode": 0,
+    "finalMeasuredGroupEmpty": true,
+    "nativeLifetimePeakBytes": 1047896064,
+    "nativeFinalEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "wallSeconds": 127.134092074004,
+    "maxAuthOperationMilliseconds": 1274.324819
+  },
+  "finiteWindow": {
+    "blocks": [
+      {
+        "rounds": [
+          1,
+          10
+        ],
+        "statistics": {
+          "nativeCurrent": {
+            "minimum": 933298176,
+            "median": 950446080.0,
+            "maximum": 966361088
+          },
+          "anon": {
+            "minimum": 300417024,
+            "median": 317083648.0,
+            "maximum": 332574720
+          },
+          "file": {
+            "minimum": 604823552,
+            "median": 605118464.0,
+            "maximum": 605396992
+          },
+          "shmem": {
+            "minimum": 233725952,
+            "median": 233775104.0,
+            "maximum": 233807872
+          },
+          "kernel": {
+            "minimum": 26976256,
+            "median": 27293696.0,
+            "maximum": 27389952
+          },
+          "node_rss": {
+            "minimum": 226590720,
+            "median": 241858560.0,
+            "maximum": 257589248
+          },
+          "node_heapUsed": {
+            "minimum": 58831808,
+            "median": 70481028.0,
+            "maximum": 89789560
+          },
+          "node_heapTotal": {
+            "minimum": 104411136,
+            "median": 105531392.0,
+            "maximum": 119394304
+          },
+          "node_external": {
+            "minimum": 5373089,
+            "median": 5439295.0,
+            "maximum": 15152497
+          },
+          "node_arrayBuffers": {
+            "minimum": 1457402,
+            "median": 1490822.5,
+            "maximum": 1590449
+          }
+        },
+        "lifetimePeakAtBlockEnd": 1019920384,
+        "lifetimePeakIncreaseSincePreviousBlockEnd": null,
+        "naturalGCEndCount": 795,
+        "naturalGCEndDurationMilliseconds": 1439.4346150904894
+      },
+      {
+        "rounds": [
+          11,
+          20
+        ],
+        "statistics": {
+          "nativeCurrent": {
+            "minimum": 955834368,
+            "median": 964362240.0,
+            "maximum": 973553664
+          },
+          "anon": {
+            "minimum": 321646592,
+            "median": 329431040.0,
+            "maximum": 338108416
+          },
+          "file": {
+            "minimum": 605462528,
+            "median": 605782016.0,
+            "maximum": 606109696
+          },
+          "shmem": {
+            "minimum": 233816064,
+            "median": 233885696.0,
+            "maximum": 233971712
+          },
+          "kernel": {
+            "minimum": 27430912,
+            "median": 27826176.0,
+            "maximum": 28102656
+          },
+          "node_rss": {
+            "minimum": 246407168,
+            "median": 253995008.0,
+            "maximum": 262803456
+          },
+          "node_heapUsed": {
+            "minimum": 59890424,
+            "median": 89374484.0,
+            "maximum": 90978480
+          },
+          "node_heapTotal": {
+            "minimum": 105459712,
+            "median": 119912448.0,
+            "maximum": 122802176
+          },
+          "node_external": {
+            "minimum": 5373089,
+            "median": 5373089.0,
+            "maximum": 5439938
+          },
+          "node_arrayBuffers": {
+            "minimum": 1457402,
+            "median": 1524243.0,
+            "maximum": 1524243
+          }
+        },
+        "lifetimePeakAtBlockEnd": 1031856128,
+        "lifetimePeakIncreaseSincePreviousBlockEnd": 11935744,
+        "naturalGCEndCount": 1553,
+        "naturalGCEndDurationMilliseconds": 2819.0480241030455
+      },
+      {
+        "rounds": [
+          21,
+          30
+        ],
+        "statistics": {
+          "nativeCurrent": {
+            "minimum": 969605120,
+            "median": 973484032.0,
+            "maximum": 980992000
+          },
+          "anon": {
+            "minimum": 333533184,
+            "median": 337870848.0,
+            "maximum": 344297472
+          },
+          "file": {
+            "minimum": 606191616,
+            "median": 606502912.0,
+            "maximum": 606797824
+          },
+          "shmem": {
+            "minimum": 233988096,
+            "median": 234049536.0,
+            "maximum": 234094592
+          },
+          "kernel": {
+            "minimum": 28131328,
+            "median": 28418048.0,
+            "maximum": 28745728
+          },
+          "node_rss": {
+            "minimum": 256528384,
+            "median": 262014976.0,
+            "maximum": 268161024
+          },
+          "node_heapUsed": {
+            "minimum": 60727032,
+            "median": 82189296.0,
+            "maximum": 90830288
+          },
+          "node_heapTotal": {
+            "minimum": 105984000,
+            "median": 111429632.0,
+            "maximum": 122015744
+          },
+          "node_external": {
+            "minimum": 5373089,
+            "median": 5439938.0,
+            "maximum": 15152497
+          },
+          "node_arrayBuffers": {
+            "minimum": 1457402,
+            "median": 1524243.0,
+            "maximum": 1590449
+          }
+        },
+        "lifetimePeakAtBlockEnd": 1045962752,
+        "lifetimePeakIncreaseSincePreviousBlockEnd": 14106624,
+        "naturalGCEndCount": 2311,
+        "naturalGCEndDurationMilliseconds": 4224.379831939936
+      }
+    ],
+    "thirdBlockMinusSecondBlockBytes": {
+      "nativeCurrent": {
+        "minimum": 13770752,
+        "median": 9121792.0,
+        "maximum": 7438336
+      },
+      "anon": {
+        "minimum": 11886592,
+        "median": 8439808.0,
+        "maximum": 6189056
+      },
+      "file": {
+        "minimum": 729088,
+        "median": 720896.0,
+        "maximum": 688128
+      },
+      "shmem": {
+        "minimum": 172032,
+        "median": 163840.0,
+        "maximum": 122880
+      },
+      "kernel": {
+        "minimum": 700416,
+        "median": 591872.0,
+        "maximum": 643072
+      },
+      "node_rss": {
+        "minimum": 10121216,
+        "median": 8019968.0,
+        "maximum": 5357568
+      },
+      "node_heapUsed": {
+        "minimum": 836608,
+        "median": -7185188.0,
+        "maximum": -148192
+      },
+      "node_heapTotal": {
+        "minimum": 524288,
+        "median": -8482816.0,
+        "maximum": -786432
+      },
+      "node_external": {
+        "minimum": 0,
+        "median": 66849.0,
+        "maximum": 9712559
+      },
+      "node_arrayBuffers": {
+        "minimum": 0,
+        "median": 0.0,
+        "maximum": 66206
+      }
+    },
+    "tailOLSBytesPerRound11Through30": {
+      "nativeCurrent": 1127930.6105263159,
+      "anon": 996695.3864661654,
+      "file": 71122.57443609023,
+      "shmem": 15373.858646616542,
+      "kernel": 64399.59097744361,
+      "node_rss": 929268.4511278196,
+      "node_heapUsed": -263636.7939849624,
+      "node_heapTotal": -242920.51729323308,
+      "node_external": 294224.1864661654,
+      "node_arrayBuffers": 1584.0684210526315
+    }
+  },
+  "focusedChecks": {
+    "guardChecks": 127,
+    "pythonASTs": 5,
+    "changedNodeSyntaxFiles": 1,
+    "isolatedHostHelpExitCode": 0,
+    "optimizedPythonRejectedExitCode": 1
+  },
+  "retirement": {
+    "disposablePASSCopiesRemoved": 2,
+    "regularFilesRemoved": 3422,
+    "inventoriedRegularAllocationBytes": 739528704,
+    "retainedCaseProofFilesRehashedUnchanged": 483,
+    "stoppedContainerHullsRetained": 6,
+    "independentEndReviewPin": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/END_REVIEW.SAFE.json",
+      "bytes": 273241,
+      "sha256": "f7bf336a83e6ae82e3bbdc9d84a3bf619b0b1621bd868dceaea357c4c0080700"
+    }
+  },
+  "plateauProven": false,
+  "memoryContract": {
+    "hardBytes": 2048000000,
+    "reserveBytes": 500000000,
+    "maximumCommonBytes": 1548000000
+  },
+  "full500Proof": false,
+  "full500Authorized": false,
+  "productionActions": 0,
+  "providerCalls": 0,
+  "limitations": [
+    "Thirty constant-history Auth mutation rounds, not 500 profiles or ledger growth.",
+    "Shmem is included in file; arrayBuffers in external; separate RSS and peaks are not added.",
+    "All exact cycle endpoints used. The trimmed native timeline is not a uniform complete series.",
+    "No forced GC, cache eviction or peak reset. Owner attribution remains incomplete.",
+    "No full motor, Offline90, Unit60, 1500-position or 500MB reserve proof.",
+    "Rising common/RSS tail is observed; no specific retained allocation or leak mechanism has been isolated.",
+    "Auth per-operation time includes decoding and logical-hash observer; it does not prove full-motor Auth30 or Unit60.",
+    "The earlier fair OLD/NEW comparison remains separate; no repeated OLD/NEW benefit is inferred from this longer NEW-only run.",
+    "Disk qualification is a fresh observation, not a reservation or full-start permission."
+  ],
+  "inputPins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/PREPARED.SAFE.json",
+      "bytes": 49735,
+      "sha256": "fd846c435352b0280c8607995f3d55a690f72094a0bfde17949cdef04c7375ad"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/cases/stability-6c5de4967c25879d40ef74d5/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8723,
+      "sha256": "26b003a7a2872bb629d32a213dea5667c71ee4f438c457b1ca0abe1f3aae9336"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/cases/stability-9554f8879915b2483999e354/ACTUAL_RESULT.SAFE.json",
+      "bytes": 9263,
+      "sha256": "8ffd360bc24c7011ee6d1722c13f150651109bf3552b69b9f1c56a8e5dd06fe4"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/ROOT_FINITE_WINDOW_NUMBERS.SAFE.json",
+      "bytes": 29948,
+      "sha256": "b9a8765c565b7b7241b36d1b27ed5da7d4504fd21847d239c61ddb8f96728d6e"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/SOURCE_REVIEW.SAFE.json",
+      "bytes": 6545,
+      "sha256": "6b66007c6fc21fce1ba6ef2031dee09d2261322bdb04ab40a7b51cca726479a9"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/HOST_ENTRY_REVIEW.SAFE.json",
+      "bytes": 3324,
+      "sha256": "832d66e386646394f8a2798030cf4fd7d6a9b84d759f2198d601f5311af8d878"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+      "bytes": 207957,
+      "sha256": "a4a8ac69fecaf0edec4c65f78e0e5ba6e548a24fe5e11e642d2b4ee6c0e652c2"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/ACTUAL_REVIEW.SAFE.json",
+      "bytes": 371388,
+      "sha256": "ea8056d20c5bbdfa56166a3f27445d9471574b1c794fa594dd827fcba1b616cf"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/stability30-review-20261021/END_REVIEW.SAFE.json",
+      "bytes": 273241,
+      "sha256": "f7bf336a83e6ae82e3bbdc9d84a3bf619b0b1621bd868dceaea357c4c0080700"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/executed-host-source-preservation/SOURCE_VERSION_MAPPING.SAFE.json",
+      "bytes": 2382,
+      "sha256": "a84cc620779141f453373f23b66abf94de4262542ebc0f9c24f04bf8c511cfd5"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/ROOT_TARGETED_GUARDS_ACTUAL.SAFE.json",
+      "bytes": 5394,
+      "sha256": "de43cac6212474253153623704c63d60253cab86a1c2fbfac614b39efa230aac"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/HOST_ENTRY_CHECKS_ACTUAL.SAFE.json",
+      "bytes": 722,
+      "sha256": "431ca040df36e5bcba3634da359cc6169a345c917631413c6ef0af639377d8c4"
+    }
+  ],
+  "publicationSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/publish-qualification-v1.py",
+    "bytes": 6164,
+    "sha256": "cbcc4d22f8a2fc0a17b378e5e1b9211f75fb4d1de50ae46c32e13a140eda6393"
+  }
+}

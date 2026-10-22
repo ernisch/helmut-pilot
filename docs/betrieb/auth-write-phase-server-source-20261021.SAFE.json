@@ -1,0 +1,325 @@
+{
+  "schema": "helmut-auth-write-phase-server-source-attribution/1",
+  "status": "READONLY_SOURCE_FINDINGS_NO_IMPLEMENTATION_SELECTED",
+  "conclusion": "The CAS can reconstruct a complete logical state solely to validate it; current NEW rendering still creates full output text and JSONB after bounded graph metadata. This is a known structural redundancy, not a demonstrated new RAM fix. The actual projection GUC was not retained, so the exact materializer branch for this completed run is UNBEWIESEN. Prior W45 already removed CAS materialization without shared-RAM benefit; no repeat/enable/candidate comparison is recommended from this observation.",
+  "actualFixSupported": false,
+  "actualPeakOwnerProven": false,
+  "allocatorCauseProven": false,
+  "productOrHarnessChanged": false,
+  "binding": {
+    "currentProductU": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b",
+    "diagnosticOverlayU": "3b88a424d33e4630dd35411ee6e1660811cc753184fb99822e9ad47ab1332c66",
+    "preparedPin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/PREPARED.SAFE.json",
+      "bytes": 49491,
+      "sha256": "1868119f68f6d27a67c26281b8a71db7c9cb5b6e7d878405bb16f8492f6f30b3"
+    },
+    "actualResultPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/ACTUAL_RESULT.SAFE.json",
+      "bytes": 9112,
+      "sha256": "d0b096b2dbc6c81221382e1bc0014a3bcba2cc321b249379551fd633c439ad99"
+    },
+    "phaseResultPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/AUTH_WRITE_PHASE.SAFE.json",
+      "bytes": 104245,
+      "sha256": "a47f6147465350180e6a5d897113ff62c0ac3d310a97f48835c60b19c0da688b"
+    },
+    "catalogPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/CATALOG_SELECTED.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    "functionBodies": "Text-only extraction SHA matches actual catalog: CAS8a13952bee9f305074d6ad9f2c2ee27e129a7e20ce3babb1d8f3a971719fcf6c; assertGraph cae41814102572ecc6a8533ecd76b043c148f3d6deaa8b1250af706ed5ddb015; usage trigger07456f2ec9b043d220a18c035a5c0430eda9c5b1f1f82ca30bd3794b4359676d."
+  },
+  "validatedInputMetadata": {
+    "phase": "restore.write",
+    "route": "/rpc/helmut_auth_state_cas_v1",
+    "requestUTF8Bytes": 2458,
+    "newNodeCount": 2,
+    "additions": 0,
+    "completedAcceptedRPCs": 1,
+    "responseBodyReceivedBytes": 567,
+    "responseTCPDeliveredBytes": 759,
+    "restoreInvokeMilliseconds": 543.2694570000003,
+    "compactFourControlFieldsUTF8Bytes": 4856607,
+    "meaning": "The two transmitted nodes are a delta relative to the private read snapshot. They do not bound the entire reachable native graph. Compact control-field bytes are not an exact PostgreSQL rendered-root size. No input node payloads or original data exported."
+  },
+  "httpFrameEvidence": {
+    "labels": [
+      "driver.request.afterBodyObserverBeforeHTTP",
+      "driver.request.afterRPCJSONParsed"
+    ],
+    "peakBeforeIntervalBytes": 1031090176,
+    "peakAfterIntervalBytes": 1039151104,
+    "peakIncreaseBytes": 8060928,
+    "endpointNodeRSSBytes": [
+      269144064,
+      269144064
+    ],
+    "endpointNodeHeapUsedBytes": [
+      84843104,
+      85197096
+    ],
+    "endpointGroupAnonBytes": [
+      344674304,
+      363290624
+    ],
+    "endpointGroupFileBytes": [
+      605020160,
+      605020160
+    ],
+    "limits": "Sequential endpoint snapshots, not an atomic peak decomposition or continuous Node RSS trace. Includes PostgreSQL, PostgREST, HTTP/JSON and probe overhead. Endpoint anonymous growth cannot identify a process or allocation; unchanged endpoint Node RSS does not exclude transient interval changes."
+  },
+  "callgraph": [
+    {
+      "step": "Private U snapshot -> delta CAS",
+      "source": "llm-usage-atomic.js336-371",
+      "finding": "Full private sentData and graph are computed client-side; only missing-node delta and zero additions are serialized into this RPC. Final restore.write is a phase label for the normal CAS RPC, not helmut_auth_state_restore_v1."
+    },
+    {
+      "step": "Lock and stale-state check",
+      "source": "ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql660-680",
+      "finding": "Validate exact8-field input; lock606B physical root FOR UPDATE, validate physical state, expected revision/state/usage proof. Conflict returns empty ACK without retry."
+    },
+    {
+      "step": "Validate/insert supplied2 nodes",
+      "source": "same SQL133-163,681-682",
+      "finding": "Whole delta batch preflight, payload SHA/size/children checks, ordered immutable insert or exact collision comparison; table generated metadata and trigger remain. No whole-graph wire input is required."
+    },
+    {
+      "step": "Either complete-graph validation path",
+      "source": "same SQL683-688",
+      "finding": "Only exact current_setting(projection,true)=on selects assert_graph. Otherwise call NEW expand(...defaults as_graph=false,omit_payloads=false), assign complete JSONB d and assert_data(d). d has no later consumer in CAS."
+    },
+    {
+      "step": "Native graph metadata",
+      "source": "INSTALL_NEW_RENDERER.sql96-173",
+      "finding": "Both paths traverse all reachable stored nodes, cap20000 nodes/32MiB payload, load node-ordered hashes/bodies/refs/leaf-info arrays and lookup, then types/depth/text/native/cumulative-work arrays. These are request/function-local working representations, not a persistent cross-call cache."
+    },
+    {
+      "step": "Commit and small ACK",
+      "source": "original SQL689-697 plus triggers",
+      "finding": "Zero additions skips ledger insert loop; update only revision/usage-ref/state-ref physical root, preserve seals/triggers, return small id/revision/proof/state array. The shown root-update triggers validate small bindings, not a full6000-history aggregation. Dedicated graph_read and full history read are separate functions."
+    }
+  ],
+  "materializationAndLifetime": {
+    "baselineRenderer": "Original SQL272-310 adds materialized leaf_texts, recursive occurrence walk/sort_path/tokens and ordered string_agg, then entire output_text, UNIQUE KEYS validation, output_value JSONB and actual-size confirmation.",
+    "currentNEWRenderer": "Same graph arrays and conservative checks. Replaces recursive token/path sorting with fixed depth64 stacks and current-token bytea/<=64KiB fragment buffer. renderer_chunks still accumulates all chunks; array_to_string creates full output_text before chunks are cleared. output_text is then cast into complete output_value JSONB; text is not explicitly cleared before return. Those are logical live representations, not measured resident byte totals.",
+    "casLifetime": "Default CAS assigns output_value to local d, uses d only in assert_data, then retains the local value through the remaining successful function path unless runtime memory management releases/reuses storage. The code proves no full output is required by ACK/storage semantics; it does not prove an allocator leak, exact free time, resident size or cause of the observed peak.",
+    "projectionLifetime": "assert_graph first performs the same expand(...true,true) metadata/size pass plus fresh actual payload SHAs and early digest return, then makes another reachable hashes/bodies/lookup pass and per-object key sets. It omits full rendered values but can still allocate substantial graph/key metadata. Do not equate removed output with a guaranteed lower group peak."
+  },
+  "gucFinding": {
+    "actualProjectionValue": "UNBEWIESEN_NOT_RECORDED",
+    "actualDiagnosticScopeValue": "UNBEWIESEN_NOT_RECORDED",
+    "intendedDefault": "OFF per current W45 decision; unchanged CAS fallback reconstructs logical data whenever projection is not exactly on.",
+    "evidence": "Worker fixed environment excludes ambient PGOPTIONS/PGRST options; explicit PostgreSQL settings only set local_usage_experiment, not projection or diagnostic_scope. Fixed PostgREST config has no custom GUC/pre-request setting. Setup changes only renderer and graph_read, not CAS. Actual CAS proconfig only search_path=pg_catalog.",
+    "gap": "catalog.sql records selected pg_settings and role privileges; projection/diagnostic_scope, rolconfig and pg_db_role_setting are absent. Inherited database/role/cluster configuration is not excluded by these receipts. No PGDATA/config payload read performed.",
+    "consequence": "Cannot promote intended/defaultOFF into proof of this actual session branch. PASS implies any selected projection branch also satisfied its diagnostic-scope gate; it does not choose which branch was selected."
+  },
+  "securityComparison": {
+    "assertData": "After full expander bounds, full text UNIQUE KEYS check, JSONB cast and actual text/native-size confirmation: assert_data checks object root, absence of four reserved root fields and exact #>> text values of EU version/service hash.",
+    "assertGraph": "Additional explicit bounded-cas diagnostic gate; complete fresh native reachability/SHA/postorder/type/depth/payload/text/native/cumulative-work pass; every reachable object key set including nested objects, repeated-edge multiplicity and C-collation duplicates; reserved root keys and two EU paths with original #>>/5-versus5.0 semantics.",
+    "difference": "Projection omits final actual expanded-text/JSONB construction and its actual-size confirmations, relying on the unchanged conservative recurrences and structural equivalence argument. General independent safety equivalence remains unaccepted in W45 despite55 groups/37 direct comparisons. It is not safe to skip all graph validation or simply enable the flag as a proven fix.",
+    "unchanged": "FOR UPDATE, fresh revision/state/proof CAS, node immutability/collision checks, seals, ledger/physical update, triggers, invoker/search_path/ACL and no automatic retry."
+  },
+  "priorDecision": {
+    "source": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/local-cas-bounded-validation-20261019.md",
+    "safetyGroups": 55,
+    "directComparisons": 37,
+    "removedMeasuredCASMaterializers": 34,
+    "sharedPeakBeforeBytes": 810905600,
+    "sharedPeakProjectionBytes": 820375552,
+    "increaseBytes": 9469952,
+    "interpretation": "Reduced DB materialization/tempbytes and faster write samples did not reduce shared RAM. Candidate remains OFF; independent general safety equivalence is open. Current NEW renderer has already removed the old token-sorting mechanism, so old materialization/tempbyte savings cannot be reused as a new gain claim.",
+    "newReasonToRepeatEstablished": false
+  },
+  "recommendedDecision": {
+    "motorChange": "None. Preserve current product, flags, gates, budgets, frozen evidence and accepted negative comparison.",
+    "newTestsOrComparisons": "None prepared or recommended from this source/HTTP observation. Do not repeat W45/95 tests or enable projection solely because the peak appeared during HTTP.",
+    "metadataGapOnly": "If another independently justified isolated native run is later authorized, record scalar projection/diagnostic_scope values in the actual CAS-serving session and bind them to the accepted request/final freeze. A separate psql session is insufficient to prove PostgREST session settings. Do not start a run only to resurrect the negative candidate.",
+    "structuralCandidateStatus": "Validation without constructing discarded d is source-supported in principle and already embodied by the gated W45 function; it is neither a new fix nor a demonstrated safe/shared-memory improvement for late827a. No source alteration or test preparation selected."
+  },
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "bytes": 51381,
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61",
+      "lines": {
+        "nodePut": [
+          133,
+          163
+        ],
+        "nodeRowsAndGeneratedMetadata": [
+          78,
+          87
+        ],
+        "expanderBaseline": [
+          165,
+          312
+        ],
+        "assertData": [
+          354,
+          362
+        ],
+        "assertGraph": [
+          366,
+          446
+        ],
+        "stateRootTrigger": [
+          450,
+          490
+        ],
+        "cas": [
+          660,
+          698
+        ]
+      }
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "bytes": 17398,
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72",
+      "lines": {
+        "fullGraphMetadataAndBounds": [
+          96,
+          173
+        ],
+        "earlyGraphReturn": [
+          178,
+          189
+        ],
+        "boundedTraversalAndChunks": [
+          190,
+          283
+        ],
+        "fullTextAndJSONB": [
+          284,
+          290
+        ]
+      }
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_GRAPH.sql",
+      "bytes": 13047,
+      "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa",
+      "lines": {
+        "replacedFunctionIsReadOnly": [
+          74,
+          186
+        ]
+      }
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/worker.py",
+      "bytes": 47908,
+      "sha256": "311e4298075e5f46234d2d328e9fc3fc4478c2127ada3d4480e1c3b0b946590a",
+      "lines": {
+        "fixedEnvironment": [
+          73,
+          79
+        ],
+        "psql": [
+          181,
+          186
+        ],
+        "nativePGSettings": [
+          514,
+          527
+        ],
+        "onlyRendererAndGraphReadChanges": [
+          557,
+          577
+        ]
+      }
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/common.py",
+      "bytes": 25215,
+      "sha256": "864ec9f3612a61d7f83f18512ab7de0986e419555c32f419dde66d6ce2655701",
+      "lines": {
+        "fixedPostgRESTConfig": [
+          32,
+          34
+        ]
+      }
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/catalog.sql",
+      "bytes": 12286,
+      "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8",
+      "lines": {
+        "recordedRolesAndSettings": [
+          37,
+          44
+        ]
+      }
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b",
+      "lines": {
+        "privateSnapshotAndDeltaCAS": [
+          336,
+          371
+        ],
+        "ACKAndAttach": [
+          372,
+          395
+        ]
+      }
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 17538,
+      "sha256": "5fdd3c81cf86c4f03208974bb9fd1f26d355dfaf53520f08de64292581a39e05",
+      "lines": {
+        "usageRootUpdateTrigger": [
+          27,
+          88
+        ],
+        "separateFullHistoryRead": [
+          157,
+          185
+        ]
+      }
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/local-cas-bounded-validation-20261019.md",
+      "bytes": 9454,
+      "sha256": "d61b6bfec9b9d84414690043c81b64e4673a02a158d95fd177e9568c9fcb3513",
+      "lines": {
+        "scopeAndGates": [
+          9,
+          39
+        ],
+        "priorSafetyCases": [
+          44,
+          61
+        ],
+        "negativeMemoryResult": [
+          63,
+          102
+        ],
+        "offDecisionAndMissingGeneralSafetyReview": [
+          110,
+          128
+        ]
+      }
+    }
+  ],
+  "instructionBinding": {
+    "agentsPath": "/workspace/helmut-cpu-epoch-20261015/AGENTS.md",
+    "agentsSHA256": "8df5bf6fc96d58a1f0aa83373b2bfd91bae640702c69959636832ec65c43427d",
+    "userScope": "GPT6.1SOL only; focused read-only current CAS path, retained metadata only; no new source or resource/test actions."
+  },
+  "notPerformed": [
+    "DB/query/start",
+    "subject imports/tests/benchmarks",
+    "process/resource/Git actions",
+    "PGDATA/config/original payload reads or hashes",
+    "original contents export",
+    "W45/W46/general memory investigation or old case comparisons",
+    "source edits or candidate enablement"
+  ]
+}

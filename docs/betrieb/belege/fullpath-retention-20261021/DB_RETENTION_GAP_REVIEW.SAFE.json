@@ -1,0 +1,576 @@
+{
+  "actions": {
+    "originalPGDATAOrArchivePayloadReads": 0,
+    "rendererOrOldSuiteReanalysis": 0,
+    "sourceOrCaseChanges": 0,
+    "testsASTSubjectImportsSQLDockerProcNativeGit": 0,
+    "writes": "Own fullpath-retention/evidence-review source and report only; stdlib parses/hashes of existing metadata/source."
+  },
+  "actualDatabaseIdentity": {
+    "dataDirectory": "/disk/pgdata",
+    "database": "helmut_resource_fixture_20261020_3b3bf56650bc",
+    "hbaFile": "/disk/pgdata/pg_hba.conf",
+    "identFile": "/disk/pgdata/pg_ident.conf",
+    "oid": "18405",
+    "readOnly": "on",
+    "versionNum": "170006"
+  },
+  "actualRelationIdentityBridge": {
+    "importantBoundary": "Relation OID is not a proven physical filename/filenode. The369399611B PGDATA file manifest includes unrelated relations, indexes, catalogs and WAL; it is not a bloat or per-relation-size measurement.",
+    "missing": "No retained relfilenode/tablespace/path/fork, heap/TOAST/index sizes or relation-level live/dead counts in this catalog.",
+    "namespace": "public",
+    "phase": "CATALOG_BEFORE, same admitted late canonical clone before temporary diagnostic overlay",
+    "relations": [
+      {
+        "columnNames": [
+          "id",
+          "data",
+          "updated_at"
+        ],
+        "heapTOASTIndexBytes": null,
+        "liveDeadTupleCounts": null,
+        "name": "public.helmut_store",
+        "relationFilenode": null,
+        "relationOID": "18437"
+      },
+      {
+        "columnNames": [
+          "id",
+          "tenant_id",
+          "profile_id",
+          "run_id",
+          "pipeline_step",
+          "politician_id",
+          "user_id",
+          "model",
+          "call_type",
+          "prompt_tokens",
+          "completion_tokens",
+          "total_tokens",
+          "estimated_cost",
+          "duration_ms",
+          "success",
+          "error",
+          "created_at",
+          "usage_store_id",
+          "usage_generation",
+          "usage_ordinal",
+          "usage_record",
+          "usage_prev_hash",
+          "usage_record_hash",
+          "usage_chain_hash"
+        ],
+        "heapTOASTIndexBytes": null,
+        "liveDeadTupleCounts": null,
+        "name": "public.llm_usage",
+        "relationFilenode": null,
+        "relationOID": "18489"
+      },
+      {
+        "columnNames": [
+          "last_value",
+          "log_cnt",
+          "is_called"
+        ],
+        "heapTOASTIndexBytes": null,
+        "liveDeadTupleCounts": null,
+        "name": "public.helmut_auth_state_nodes_local_node_seq_seq",
+        "relationFilenode": null,
+        "relationOID": "20452"
+      },
+      {
+        "columnNames": [
+          "store_id",
+          "generation",
+          "payload",
+          "node_hash",
+          "body",
+          "leaf_info",
+          "children",
+          "node_seq"
+        ],
+        "heapTOASTIndexBytes": null,
+        "liveDeadTupleCounts": null,
+        "name": "public.helmut_auth_state_nodes_local",
+        "relationFilenode": null,
+        "relationOID": "20453"
+      }
+    ]
+  },
+  "baselineHEADReportedByRoot": "ea760a70, docs-only; product unchanged. No Git command executed.",
+  "currentBodyFidelity": [
+    {
+      "actualBeforeDiagnosticOverlayBodySHA256": "aa0141c6a9776c31cb184ead3b182e368d5fc66cc82df4a80c9556c4a7b51f30",
+      "byteHashMatches": true,
+      "currentProposalBodySHA256": "aa0141c6a9776c31cb184ead3b182e368d5fc66cc82df4a80c9556c4a7b51f30",
+      "function": "helmut_auth_state_nodes_guard_local_v1"
+    },
+    {
+      "actualBeforeDiagnosticOverlayBodySHA256": "558edc1b8f840d9886b6cc119a8a75e85e84ab8855b4b031e47262fd91246ce1",
+      "byteHashMatches": true,
+      "currentProposalBodySHA256": "558edc1b8f840d9886b6cc119a8a75e85e84ab8855b4b031e47262fd91246ce1",
+      "function": "helmut_auth_state_put_nodes_local_v1"
+    },
+    {
+      "actualBeforeDiagnosticOverlayBodySHA256": "8a13952bee9f305074d6ad9f2c2ee27e129a7e20ce3babb1d8f3a971719fcf6c",
+      "byteHashMatches": true,
+      "currentProposalBodySHA256": "8a13952bee9f305074d6ad9f2c2ee27e129a7e20ce3babb1d8f3a971719fcf6c",
+      "function": "helmut_auth_state_cas_v1"
+    },
+    {
+      "actualBeforeDiagnosticOverlayBodySHA256": "f2490208b0b35b42cc3125739cb4f38e5fdbe7a255845d8dbd70adbf4bb82468",
+      "byteHashMatches": true,
+      "currentProposalBodySHA256": "f2490208b0b35b42cc3125739cb4f38e5fdbe7a255845d8dbd70adbf4bb82468",
+      "function": "helmut_auth_state_restore_v1"
+    },
+    {
+      "actualBeforeDiagnosticOverlayBodySHA256": "07456f2ec9b043d220a18c035a5c0430eda9c5b1f1f82ca30bd3794b4359676d",
+      "byteHashMatches": true,
+      "currentProposalBodySHA256": "07456f2ec9b043d220a18c035a5c0430eda9c5b1f1f82ca30bd3794b4359676d",
+      "function": "helmut_auth_usage_guard_local_v1"
+    },
+    {
+      "actualBeforeDiagnosticOverlayBodySHA256": "2b17b64b896b753d6e4ccde7f0b1082b63f2c5fac5dd093de9c7bf3148430f5f",
+      "byteHashMatches": true,
+      "currentProposalBodySHA256": "2b17b64b896b753d6e4ccde7f0b1082b63f2c5fac5dd093de9c7bf3148430f5f",
+      "function": "helmut_auth_usage_insert_local_v1"
+    },
+    {
+      "actualBeforeDiagnosticOverlayBodySHA256": "c7395fad4c68780261e00f05aaabe4e78128148f1cbbbbe745eec96309d27a94",
+      "byteHashMatches": true,
+      "currentProposalBodySHA256": "c7395fad4c68780261e00f05aaabe4e78128148f1cbbbbe745eec96309d27a94",
+      "function": "helmut_auth_usage_read_v1"
+    }
+  ],
+  "currentSourcePins": [
+    {
+      "bytes": 54938,
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    {
+      "bytes": 17538,
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_usage_atomic_local.sql",
+      "sha256": "5fdd3c81cf86c4f03208974bb9fd1f26d355dfaf53520f08de64292581a39e05"
+    },
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 12334,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/catalog.sql",
+      "sha256": "46adef3bd6d8b89ebf1094f8716b880e6d044d67fb5041c2a11a46e67e8e5c98"
+    },
+    {
+      "bytes": 763,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/cycle-metrics.sql",
+      "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+    },
+    {
+      "bytes": 869,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/small-auth.sql",
+      "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+    },
+    {
+      "bytes": 27664,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/control-driver.js",
+      "sha256": "bd044e5aa35efb0a69df8200b01337c8c9ad64b205af099690f20b98095c4c8f"
+    }
+  ],
+  "decision": {
+    "GCOrVACUUMOrRetentionChangeRecommended": false,
+    "actualRelationGrowthBytesKnown": false,
+    "actualUnreachableNodeBytesKnown": false,
+    "candidateSelected": null,
+    "full500Approved": false,
+    "mandatoryActive6000HistoryDeletionAllowed": false,
+    "newQueryActorOrNativeRunApproved": false,
+    "noChangeRationale": "The retained results do not connect a large physical relation or proven unneeded row set to growing Motor demand. Preserve existing originals, histories, graph rows and output/journal proofs; do not implement speculative cleanup or a schema change.",
+    "provenNewStructuralCandidate": false,
+    "sourceShowsPotentialHistoricalRetention": true
+  },
+  "hypothesesStillUnproven": [
+    {
+      "evidence": "Insert-only retention and current-root replacement make historical accumulation possible.",
+      "hypothesis": "Unreachable immutable graph nodes dominate persistent growth",
+      "missing": "Actual total-versus-live-root reachability counts/bytes plus complete retained/pinned-root lifetime set. No measured orphan bytes."
+    },
+    {
+      "evidence": "The actual table schema retains these distinct generated/regular representations.",
+      "hypothesis": "Generated payload/body/leaf_info/children representations dominate physical storage",
+      "missing": "Their real heap/TOAST/index footprints and required consumer/ABI use. Logical string lengths do not prove redundant physical bytes or a safe schema change."
+    },
+    {
+      "evidence": "CAS updates a Store row, so MVCC versions are possible; other Store rows are not measured by the main-auth-only scalar.",
+      "hypothesis": "MVCC dead Store/TOAST versions or old large Store rows drive growing demand",
+      "missing": "Relation/fork size progression, actual live/dead support and snapshot/transaction lifetime. n_dead_tup would be an estimate, not exact bytes or proof VACUUM is required."
+    },
+    {
+      "evidence": "Retained counters record finite writes/spill.",
+      "hypothesis": "WAL/temp growth proves cache bloat or a RAM-saving opportunity",
+      "missing": "No inference from cumulative I/O to charge/residency/necessity is valid. These counters alone cannot select a cache/VACUUM/GC/retention fix."
+    }
+  ],
+  "minimumMissingObservableContract": {
+    "RAMBoundary": "Even a proven removable disk pool is not a proven common-memory saving. Any later structural candidate needs its own authentic unchanged-workload whole-scope functional/time/resource evidence. No peak subtraction or unrelated paired peak is allowed.",
+    "graphRetentionBridge": "Scalar total row/payload/storage sizes versus the union reachable from the explicitly declared live root set, including current/pinned/original/restore/audit and relevant concurrent-read roots. Separate generations. Export no payload; declare traversal/time/output bounds and UNKNOWN on incomplete coverage. Reachable-from-current alone is insufficient deletion eligibility.",
+    "onlyIfDeadVersionMechanismSelected": "Then additionally require live/dead tuple support and the transaction/snapshot lifetime that may retain versions. Do not infer exact bloat from estimates, relation allocated size or an autovacuum setting alone; no VACUUM/GC/configuration proposal follows without that narrower evidence.",
+    "otherStoreAndLedgerBridge": "Known main-auth row plus bounded aggregate other-Store live rows/bytes and selected ledger generation counts/byte sizes, so required results/history are not confused with metadata. Full active-chain invariants and final output proofs stay mandatory.",
+    "physicalRelationBridge": "For only the relevant Store/ledger/node relations: actual relation OID/name, tablespace/relfilenode/path and fork sizes, including associated TOAST and indexes. Preserve whether a reported total already includes TOAST/indexes; do not double count. A file manifest without this mapping remains UNKNOWN.",
+    "purpose": "A future explicitly selected narrow retention question, not a new actor/query/test authorization or recommendation to rerun full500.",
+    "samePhaseIdentity": "Bind database OID/name/runtime/source root, store ID/generation/root/revision and completed-profile/history progression at both compared existing/naturally authorized phases. A fixed late27RPC probe is not a temporal replacement for historical V11."
+  },
+  "priorIndependentActualReviewPin": {
+    "bytes": 39335,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+    "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+  },
+  "retainedCounterEvidence": {
+    "attributionBoundary": "WAL is cluster-wide and database statistics include all tables/TOAST and observer work.15inserted/3updated tuples cannot be equated with15 graph nodes or dead rows, and14FPI is not14 resident pages. Blocks hit/read, cumulative temp/WAL writes and LSN progress are not RAM peak or live cache bytes.",
+    "firstToLastDatabaseDelta": {
+      "blocksHit": 896285,
+      "blocksRead": 4490,
+      "tempBytes": 4046848,
+      "tempFiles": 1,
+      "tuplesDeleted": 0,
+      "tuplesInserted": 15,
+      "tuplesUpdated": 3
+    },
+    "firstToLastWALDelta": {
+      "wal_buffers_full": 0,
+      "wal_bytes": 98284,
+      "wal_fpi": 14,
+      "wal_records": 51,
+      "wal_sync": 9,
+      "wal_sync_time": 0,
+      "wal_write": 9,
+      "wal_write_time": 0
+    },
+    "inheritedCounterWarning": "The first point already has62187886257 temp bytes/13197 files and WAL415238941B with Oct20 reset; the last62191933105 temp bytes is not61GB generated by this run.",
+    "perRoundDeltas": [
+      {
+        "databaseDeletedDelta": 0,
+        "databaseInsertedDelta": 5,
+        "databaseUpdatedDelta": 1,
+        "round": 0,
+        "tempBytesDelta": 4046848,
+        "tempFilesDelta": 1,
+        "walBytesDelta": 49920
+      },
+      {
+        "databaseDeletedDelta": 0,
+        "databaseInsertedDelta": 5,
+        "databaseUpdatedDelta": 1,
+        "round": 1,
+        "tempBytesDelta": 0,
+        "tempFilesDelta": 0,
+        "walBytesDelta": 23347
+      },
+      {
+        "databaseDeletedDelta": 0,
+        "databaseInsertedDelta": 5,
+        "databaseUpdatedDelta": 1,
+        "round": 2,
+        "tempBytesDelta": 0,
+        "tempFilesDelta": 0,
+        "walBytesDelta": 25017
+      }
+    ],
+    "profileProgressionBoundary": "This fixed late-state diagnostic changes a small probe value while control hashes/history stay unchanged. It does not execute the full499-profile progression or1000 provider-ledger appends. Small deltas do not falsify historical V11 growth or predict full500.",
+    "samples": [
+      {
+        "edge": "start",
+        "postgresStatsMayLag": true,
+        "round": 0,
+        "sequence": 1,
+        "sql": {
+          "at": "2026-10-21T09:40:49.655652+00:00",
+          "database": {
+            "blocksHit": 584346135,
+            "blocksRead": 17983,
+            "statsReset": null,
+            "tempBytes": 62187886257,
+            "tempFiles": 13197,
+            "tuplesDeleted": 3607,
+            "tuplesInserted": 177431,
+            "tuplesUpdated": 8916
+          },
+          "wal": {
+            "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+            "wal_buffers_full": 484,
+            "wal_bytes": 415238941,
+            "wal_fpi": 24088,
+            "wal_records": 528617,
+            "wal_sync": 16862,
+            "wal_sync_time": 0,
+            "wal_write": 18114,
+            "wal_write_time": 0
+          },
+          "walInsertLSN": "0/19DF30F8",
+          "walLSN": "0/19DF30F8"
+        }
+      },
+      {
+        "edge": "end",
+        "postgresStatsMayLag": true,
+        "round": 0,
+        "sequence": 2,
+        "sql": {
+          "at": "2026-10-21T09:40:53.376983+00:00",
+          "database": {
+            "blocksHit": 584648084,
+            "blocksRead": 22471,
+            "statsReset": null,
+            "tempBytes": 62191933105,
+            "tempFiles": 13198,
+            "tuplesDeleted": 3607,
+            "tuplesInserted": 177436,
+            "tuplesUpdated": 8917
+          },
+          "wal": {
+            "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+            "wal_buffers_full": 484,
+            "wal_bytes": 415288861,
+            "wal_fpi": 24096,
+            "wal_records": 528635,
+            "wal_sync": 16866,
+            "wal_sync_time": 0,
+            "wal_write": 18118,
+            "wal_write_time": 0
+          },
+          "walInsertLSN": "0/19DFF4C8",
+          "walLSN": "0/19DFF4C8"
+        }
+      },
+      {
+        "edge": "start",
+        "postgresStatsMayLag": true,
+        "round": 1,
+        "sequence": 3,
+        "sql": {
+          "at": "2026-10-21T09:40:53.447458+00:00",
+          "database": {
+            "blocksHit": 584648419,
+            "blocksRead": 22471,
+            "statsReset": null,
+            "tempBytes": 62191933105,
+            "tempFiles": 13198,
+            "tuplesDeleted": 3607,
+            "tuplesInserted": 177436,
+            "tuplesUpdated": 8917
+          },
+          "wal": {
+            "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+            "wal_buffers_full": 484,
+            "wal_bytes": 415288861,
+            "wal_fpi": 24096,
+            "wal_records": 528635,
+            "wal_sync": 16866,
+            "wal_sync_time": 0,
+            "wal_write": 18118,
+            "wal_write_time": 0
+          },
+          "walInsertLSN": "0/19DFF4C8",
+          "walLSN": "0/19DFF4C8"
+        }
+      },
+      {
+        "edge": "end",
+        "postgresStatsMayLag": true,
+        "round": 1,
+        "sequence": 4,
+        "sql": {
+          "at": "2026-10-21T09:40:56.250859+00:00",
+          "database": {
+            "blocksHit": 584827039,
+            "blocksRead": 22471,
+            "statsReset": null,
+            "tempBytes": 62191933105,
+            "tempFiles": 13198,
+            "tuplesDeleted": 3607,
+            "tuplesInserted": 177441,
+            "tuplesUpdated": 8918
+          },
+          "wal": {
+            "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+            "wal_buffers_full": 484,
+            "wal_bytes": 415312208,
+            "wal_fpi": 24099,
+            "wal_records": 528652,
+            "wal_sync": 16869,
+            "wal_sync_time": 0,
+            "wal_write": 18121,
+            "wal_write_time": 0
+          },
+          "walInsertLSN": "0/19E05068",
+          "walLSN": "0/19E05068"
+        }
+      },
+      {
+        "edge": "start",
+        "postgresStatsMayLag": true,
+        "round": 2,
+        "sequence": 5,
+        "sql": {
+          "at": "2026-10-21T09:40:56.321615+00:00",
+          "database": {
+            "blocksHit": 584827374,
+            "blocksRead": 22471,
+            "statsReset": null,
+            "tempBytes": 62191933105,
+            "tempFiles": 13198,
+            "tuplesDeleted": 3607,
+            "tuplesInserted": 177441,
+            "tuplesUpdated": 8918
+          },
+          "wal": {
+            "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+            "wal_buffers_full": 484,
+            "wal_bytes": 415312208,
+            "wal_fpi": 24099,
+            "wal_records": 528652,
+            "wal_sync": 16869,
+            "wal_sync_time": 0,
+            "wal_write": 18121,
+            "wal_write_time": 0
+          },
+          "walInsertLSN": "0/19E05068",
+          "walLSN": "0/19E05068"
+        }
+      },
+      {
+        "edge": "end",
+        "postgresStatsMayLag": true,
+        "round": 2,
+        "sequence": 6,
+        "sql": {
+          "at": "2026-10-21T09:40:59.170201+00:00",
+          "database": {
+            "blocksHit": 585242420,
+            "blocksRead": 22473,
+            "statsReset": null,
+            "tempBytes": 62191933105,
+            "tempFiles": 13198,
+            "tuplesDeleted": 3607,
+            "tuplesInserted": 177446,
+            "tuplesUpdated": 8919
+          },
+          "wal": {
+            "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+            "wal_buffers_full": 484,
+            "wal_bytes": 415337225,
+            "wal_fpi": 24102,
+            "wal_records": 528668,
+            "wal_sync": 16871,
+            "wal_sync_time": 0,
+            "wal_write": 18123,
+            "wal_write_time": 0
+          },
+          "walInsertLSN": "0/19E0B290",
+          "walLSN": "0/19E0B290"
+        }
+      }
+    ],
+    "scope": "Six fixed round markers, sequence1\u20136, before final restore/full final read;24 round RPCs rather than the full27RPC case. Includes existing observer queries; counters may lag.",
+    "walInsertLSNByteAdvance": 98712,
+    "walLSNByteAdvance": 98712
+  },
+  "retainedInputPins": [
+    {
+      "bytes": 37062,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/CATALOG_BEFORE.stdout.PRIVATE.txt",
+      "sha256": "40099b6231257332dc00ec658371b079484d67df2ea10040cb74d75e40f753e2"
+    },
+    {
+      "bytes": 775,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+      "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+    },
+    {
+      "bytes": 775,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+      "sha256": "4aaf062fa4323d7e53cf51213298713308c309edce7cd28ba9e699f7b78b4392"
+    },
+    {
+      "bytes": 4569,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/CYCLE_1.OBSERVATION.SAFE.json",
+      "sha256": "3a151ff4a5dd45a68bb63daa31c5e2e9e50213d0b9eedcb0fcab2642edeb9d75"
+    },
+    {
+      "bytes": 4580,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/CYCLE_2.OBSERVATION.SAFE.json",
+      "sha256": "08acb2e074a2ae66ffebdc1594b03437c17d7ce34274ef68ac307328e2e492e1"
+    },
+    {
+      "bytes": 4584,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/CYCLE_3.OBSERVATION.SAFE.json",
+      "sha256": "36d7f6978ca82826c077fed61dca067aa19dea7e2cc8ce61527b5459b0a114eb"
+    },
+    {
+      "bytes": 4580,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/CYCLE_4.OBSERVATION.SAFE.json",
+      "sha256": "6d51b96533405dbff5b8835fedee734944deab011e6d6ab22e64e539b75e8d42"
+    },
+    {
+      "bytes": 4585,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/CYCLE_5.OBSERVATION.SAFE.json",
+      "sha256": "170b99e9cd937baee28dc84148dc00895be9af6b576d882748d86ad4130e669e"
+    },
+    {
+      "bytes": 4583,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/CYCLE_6.OBSERVATION.SAFE.json",
+      "sha256": "8d54d96c53da841665c10e2df32201613e046949d0849bf857443e5e6036bfa7"
+    }
+  ],
+  "reviewerSourcePin": {
+    "bytes": 16628,
+    "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/evidence-review/review_db_retention.py",
+    "sha256": "87a63f6c04fddc733d0551d0a8d6d653dc7e0166515ebe905508212da084bdc0"
+  },
+  "rootAndHistoryScalars": {
+    "beforeAfterPhysicalBytesField": 606,
+    "boundary": "606B describes the live serialized root-reference value, not all Auth/history/graph data or all Store rows. The revision changes on accepted writes/restoration; no whole row SHA equality is invented.",
+    "fieldDefinition": "octet_length(helmut_store.data::text) for main-auth",
+    "fieldIsPhysicalHeapTOASTOrRelationBytes": false,
+    "ledgerRowsBeforeAfter": 6000,
+    "mainAuthLiveRowsBeforeAfter": 1,
+    "referencedLedgerRowsBeforeAfter": 6000,
+    "stateRootReferenceRestored": true,
+    "usageGenerationCountHeadReferenceRestored": true,
+    "wholeStoreRelationOrOtherStoreRowBytesKnown": false
+  },
+  "schema": "helmut-fullpath-database-retention-independent-gap-audit/1",
+  "scope": "Retained query results and current mutation/retention SQL only. No fullrenderer/CAS-materialization/W45/native-size/ACL/JIT or old179/95 suite reanalysis.",
+  "sourceBackedRetention": [
+    {
+      "facts": "U builds a tree but transmits only node hashes absent from the previously bound current graph. SQL inserts into(store_id,generation,node_hash) ON CONFLICT DO NOTHING and validates duplicate payload identity. Nodes have stored payload/body/leaf_info/children/hash metadata. UPDATE/DELETE/TRUNCATE are rejected by the immutable guard; no reclamation operation is present.",
+      "mechanism": "Content-addressed graph delta and append-only rows",
+      "source": "llm-usage-atomic.js366; auth_state_parts_local.sql78\u2013163,732\u2013770",
+      "whatThisDoesNotProve": "Actual total/unreachable rows, their physical bytes, whether an old node is referenced by a retained/pinned root or future proof, and avoidability are unmeasured. Identity sequence gaps/max are not inserted-row counts; ON CONFLICT may consume identity values.",
+      "whatThisProves": "Retaining previous inserted graph nodes and reusing shared content is a deliberate source behavior. It is not a full-DAG rewrite for every CAS."
+    },
+    {
+      "facts": "Successful CAS updates one root-reference Store row in the same generation after guarded insertion; stale CAS returns before insertion. Restore returns nodesRetained:true and removes the graph root reference only through the original guarded restore path.",
+      "mechanism": "Current root replacement and explicit retained historical nodes",
+      "source": "auth_state_parts_local.sql696\u2013800",
+      "whatThisDoesNotProve": "An old root or node is dead/unused under all required proof/restore/concurrent-read contracts, or that MVCC versions constitute significant bloat. Current-source retention is not authority to delete original rows.",
+      "whatThisProves": "Old immutable graph storage can outlive the newest root pointer; ordinary mutable Store updates can create MVCC versions."
+    },
+    {
+      "facts": "Usage rows are append-only and bound by generation/ordinal/previous/record/chain hashes. The actual matched reader verifies count, minordinal1, max=count and chain head, and aggregates all rows in the active generation. The retained late generation has6000 rows and all6000 remain referenced before/after this case.",
+      "mechanism": "Mandatory active-generation ledger chain",
+      "source": "auth_usage_atomic_local.sql27\u2013100,104\u2013125,157\u2013185",
+      "whatThisDoesNotProve": "The on-disk byte cost of this ledger or the necessity of every unrelated generation/table row. Those require actual identity/size/root-liveness facts.",
+      "whatThisProves": "Dropping old rows or retaining only a recent suffix would break this current proof/read contract.6000 is not a measured maximum lifetime policy or permission to purge older data."
+    },
+    {
+      "facts": "Completed profile results, per-operation evidence and journal proof bindings cannot be declared garbage just because work completed. Required output/financial/history/fresh-control acceptance must survive.",
+      "mechanism": "Persisted outputs and journal/proof requirements",
+      "source": "Existing500/1500 final-acceptance contract; detailed fullpath Store/object lifetime review belongs to the launcher reviewer.",
+      "whatThisDoesNotProve": "Any particular large Store row or old graph generation is needed forever; nor that a persisted row count/JSON byte total equals retained process RAM."
+    }
+  ],
+  "status": "GAP_AUDIT_COMPLETE_NO_PROVEN_STRUCTURAL_CHANGE"
+}

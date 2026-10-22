@@ -1,0 +1,27 @@
+{
+  "schema": "helmut-root-observed-v7-guard-tests/1",
+  "status": "PASS",
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/PREPARED.SAFE.json",
+    "bytes": 26924,
+    "sha256": "a09c91e4d70e1b6f7b656e7b51f932c0133ce51b1fd8c43535d456dd71a24666"
+  },
+  "testFilePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/v7-guard-test-preparation/v7_guard_negative_test.py",
+    "bytes": 19806,
+    "sha256": "e4ca6349b3551b4a8484a9e7f654addab33a672e9ca494394e6c6231ef1826b6"
+  },
+  "tests": 17,
+  "failures": 0,
+  "errors": 0,
+  "exitCode": 0,
+  "runner": "scripts/lokal.js; Python -B",
+  "toolExecutionChunk": "87efa0",
+  "testReportedSeconds": 0.027,
+  "evidenceKind": "ROOT_OBSERVED_ACTUAL_TOOL_OUTPUT",
+  "rawOutputSeparateFileClaimed": false,
+  "fakeReceiptsAreNativeEvidence": false,
+  "nativeExecuted": false,
+  "full500": false,
+  "production": false
+}

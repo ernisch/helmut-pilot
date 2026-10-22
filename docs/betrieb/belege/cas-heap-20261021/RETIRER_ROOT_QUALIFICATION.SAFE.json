@@ -1,0 +1,65 @@
+{
+  "CLI": [
+    {
+      "actualExitCode": 0,
+      "expectedExitCode": 0,
+      "label": "help",
+      "stderr": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) \u2014 Werte bleiben in dieser Sitzung unveraendert.\n",
+      "stdout": "usage: retire_two_cas_heap_pass_copies.py [-h] --case\n                                          {heap-68bb54a5d546f714223e7bc9,heap-c35697a3832dc8dd58b21042}\n                                          [--action {check,retire}]\n                                          [--root-adoption ROOT_ADOPTION]\n\nPREPARATION ONLY: exactly two preclassified disposable CAS heap PASS copies.\nDefault check prints a report; retirement needs separate fresh exact Root\nadoption. No archive/backup qualification. Never deletes source, evidence or\ncontainer hulls.\n\noptions:\n  -h, --help            show this help message and exit\n  --case {heap-68bb54a5d546f714223e7bc9,heap-c35697a3832dc8dd58b21042}\n  --action {check,retire}\n  --root-adoption ROOT_ADOPTION\n"
+    },
+    {
+      "actualExitCode": 1,
+      "expectedExitCode": 1,
+      "label": "missing-context",
+      "stderr": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) \u2014 Werte bleiben in dieser Sitzung unveraendert.\nTraceback (most recent call last):\n  File \"/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py\", line 1084, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py\", line 1076, in main\n    print(json.dumps(checked(args.case), sort_keys=True))\n                     ^^^^^^^^^^^^^^^^^^\n  File \"/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py\", line 1001, in checked\n    (root, candidate, result), closures = verified_cases(name)\n                                          ^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py\", line 993, in verified_cases\n    prepared = load_context()\n               ^^^^^^^^^^^^^^\n  File \"/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py\", line 399, in load_context\n    s = CTX.lstat()\n        ^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py\", line 847, in lstat\n    return self.stat(follow_symlinks=False)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py\", line 840, in stat\n    return os.stat(self, follow_symlinks=follow_symlinks)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/ROOT_PASS_CASES_CONTEXT.PRIVATE.json'\n",
+      "stdout": ""
+    },
+    {
+      "actualExitCode": 2,
+      "expectedExitCode": 2,
+      "label": "invalid-case",
+      "stderr": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) \u2014 Werte bleiben in dieser Sitzung unveraendert.\nusage: retire_two_cas_heap_pass_copies.py [-h] --case\n                                          {heap-68bb54a5d546f714223e7bc9,heap-c35697a3832dc8dd58b21042}\n                                          [--action {check,retire}]\n                                          [--root-adoption ROOT_ADOPTION]\nretire_two_cas_heap_pass_copies.py: error: argument --case: invalid choice: 'wrong' (choose from heap-68bb54a5d546f714223e7bc9, heap-c35697a3832dc8dd58b21042)\n",
+      "stdout": ""
+    }
+  ],
+  "actorModuleImported": false,
+  "actorPin": {
+    "bytes": 78105,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py",
+    "sha256": "7afd64da0a87d104819de7f3115dfe44907b964c08e9a01c6b8c3d0ad306d9cb"
+  },
+  "deleteActions": 0,
+  "deleteCodeExecuted": false,
+  "full500": false,
+  "independentSourceReviewPin": {
+    "bytes": 12592,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-review/SOURCE_REVIEW.SAFE.json",
+    "sha256": "6b3954b8b63684f2c1b19618c3f8000a8919cb1879f301abdb58fa9e4a317268"
+  },
+  "newProofNegativeLabels": [
+    "unqualified server heap",
+    "missing observer restoration",
+    "worker/host proof pin divergence",
+    "failed raw ACL restoration",
+    "failed actual outer exit",
+    "unknown retry history",
+    "stored heap does not equal complete log",
+    "truncated metadata readback"
+  ],
+  "newReadOnlyProofChecks": 10,
+  "pass": true,
+  "preparedPin": {
+    "bytes": 6762,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/PREPARED.SAFE.json",
+    "sha256": "7ae1554aa5498e582cf82dd48570655203532b024c7974334539d4d9816949d4"
+  },
+  "pythonASTs": 1,
+  "qualificationSourcePin": {
+    "bytes": 6588,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/root-preparation/qualify-retirer.py",
+    "sha256": "181b6c2c6b4074534cc21c82fb2b5df1a753b545b1d49dd88fde9f322e63560a"
+  },
+  "resourceActions": 0,
+  "schema": "helmut-cas-heap-retirer-root-source-qualification/1",
+  "sqlActions": 0
+}

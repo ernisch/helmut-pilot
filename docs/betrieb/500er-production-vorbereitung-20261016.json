@@ -1,0 +1,394 @@
+{
+  "schema": "helmut-production500-release-preparation/1",
+  "status": "LOCAL_RELEASE_PREPARATION_ACCEPTED_PRODUCTION_GATES_OPEN",
+  "preparedAtUTC": "2026-10-16T13:56:32.675822+00:00",
+  "branch": "codex/immutable-command-proof-20261015",
+  "qualificationBaseCommit": "11ca02dbea72603ccdabc3560edf93f45caabe3a",
+  "PR": "https://github.com/ernisch/helmut-pilot/pull/915",
+  "actualProductionCommitLastRead": "b428fefa3accbcdc81ca781fd463ff0f5a7a4a53",
+  "productionReadAtUTC": "2026-10-16T13:07:32Z",
+  "old500CoreSourcesUnchanged": 80,
+  "originalNativeProposalSHA256": "29c1ef679f3d887a7888a508d466b1e696733e352262a8f8278add1aa2184a3c",
+  "runtimeExpectedManifestSHA256": "1cd3020b7db97853039add34828cdc995af13da2dbc9a8b48c4741f85e371ea7",
+  "runtimeExpectedSourceMappingSHA256": "b72636831505875ef47d5e848be6b20874079ae2b5cc35482ba972cb5c9ffebc",
+  "requiredActualNodePatch": "v24.19.0",
+  "localReleaseSQL": {
+    "status": "PASS_TEN_NEW_RELEASE_TRANSITIONS_WITH_RECORDED_HARNESS_FORMAT_FAILURES",
+    "atUTC": "2026-10-16T13:35:37.282384+00:00",
+    "database": "helmut_release_guards_62e12026",
+    "checks": [
+      {
+        "name": "missing-quiescence-marker-rejected",
+        "pass_": true
+      },
+      {
+        "name": "partial-or-overloaded-install-rejected",
+        "pass_": true
+      },
+      {
+        "name": "forward-native-install-preserves-original-sentinels",
+        "pass_": true
+      },
+      {
+        "name": "repeat-install-fail-closed",
+        "pass_": true
+      },
+      {
+        "name": "proof-row-prevents-suspend",
+        "pass_": true
+      },
+      {
+        "name": "authority-row-prevents-suspend",
+        "pass_": true
+      },
+      {
+        "name": "protected-history-prevents-full-drop",
+        "pass_": true
+      },
+      {
+        "name": "unexpected-execute-grantee-prevents-suspend",
+        "pass_": true
+      },
+      {
+        "name": "exclusive-lock-blocks-actual-concurrent-insert-and-empty-undo-completes",
+        "pass_": true
+      },
+      {
+        "name": "safe-suspend-preserves-three-functions-two-always-guards-history-and-revokes-reader",
+        "pass_": true
+      }
+    ],
+    "testCount": 10,
+    "originalNativeFunctionHashesUnchanged": true,
+    "finalReadOnlyVerification": {
+      "rows": 3,
+      "atUTC": "2026-10-16T13:35:37.282384+00:00",
+      "profiles": 0,
+      "authOriginal": true,
+      "mainOriginal": true,
+      "triggerCount": 2,
+      "nativeSources": {
+        "helmut_s500_command_no_truncate_v1": "e911523512516397afab7b79b8393fe662e13abd89bedf14847efcf84be9e0f2",
+        "helmut_s500_read_command_binding_v1": "e690c13a70c791e1fc07ee7fe532b646ecb1da1f863f8d14dfbc9d1303865641",
+        "helmut_s500_command_immutable_row_v1": "eca91f5d879cc5e0811370f769aa98bf7dfbaba8941a6bf14644f22913fb1826"
+      },
+      "historyPreserved": true,
+      "readerExecutable": false,
+      "alwaysTriggerCount": 2
+    },
+    "sourcePins": [
+      {
+        "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/test-release-guards-local.py",
+        "bytes": 8762,
+        "sha256": "265d7f37a15e5136c90e9ab708a7fc129a626ffddc5e586944ebead8374dbbab"
+      },
+      {
+        "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/continue-release-suspend-only.py",
+        "bytes": 5605,
+        "sha256": "99c0dfd94b27a254ee99edb70295aef18f8ea749e99369586c436e59c47f3233"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/synthetik-500-release-sql.js",
+        "bytes": 9605,
+        "sha256": "8035de8d1ef8dd666220a166d1469cce9054386f63e9f6e58eacd72136f1e907"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/synthetik500_stored_command_binding.sql",
+        "bytes": 7850,
+        "sha256": "29c1ef679f3d887a7888a508d466b1e696733e352262a8f8278add1aa2184a3c"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/synthetik500_stored_command_binding_rollback.sql",
+        "bytes": 632,
+        "sha256": "055b6d9214f60df762a17a250575b3075ad28f0f6851e28cfeb4ea0ce07bcaaa"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/synthetik500_stored_command_install_guarded.sql",
+        "bytes": 15086,
+        "sha256": "17e41c0448fb82e8e2e99421bc7f7c8d2e3f85ad202552a56c2fc44482b8cdf3"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/synthetik500_stored_command_remove_if_empty.sql",
+        "bytes": 8170,
+        "sha256": "7d812c61df9fb1b6b1166c956bd53f3de8fc40066777f85b4813695e8515c31e"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/synthetik500_stored_command_suspend_reader.sql",
+        "bytes": 10853,
+        "sha256": "6b65ed567e26b330ca12c355c4031d955aebcd57d27e895149e140d2b49babd7"
+      }
+    ],
+    "executionHistory": [
+      "Original run executed nine successful transition assertions, then failed to parse a plain SHA text scalar asJSON before the suspension transition.",
+      "Continuation verified the retained checkpoint, executed suspension exactly once, verified unchanged counts/sentinels/history, then failed to parse the plain PostgreSQL boolean f asJSON.",
+      "Final single bounded SELECT returned one JSON object and verified read privilege false, exact native hashes and retained always guards/history. No mutation/test/installation repeated in this final read."
+    ],
+    "harnessFormatErrors": 2,
+    "completedTransitionChecksRepeated": false,
+    "oldThirtyNativeTestsRepeated": false,
+    "profileRowsEverCreated": 0,
+    "profileActivations": 0,
+    "combined500Runs": 0,
+    "models": 0,
+    "productionActions": 0,
+    "externalQuiescenceEstablished": false,
+    "localMarkerExplicitlyFictional": true,
+    "localDBRetained": true
+  },
+  "runtimeReaderTests": {
+    "scope": "FINAL_TEST_PORTABILITY_DELTA_NO_PRODUCT_SOURCE_CHANGE",
+    "reason": "CI Node22 must correctly assert qualified patch false; Production qualification remains exactv24.19.0.",
+    "atUTC": "2026-10-16T13:55:30.523075+00:00",
+    "hostNode": "v24.19.0",
+    "exitCode": 0,
+    "result": {
+      "scope": "NEW_METADATA_READER_ONLY_NOT500_OR_PRODUCTION",
+      "tests": 10,
+      "results": [
+        {
+          "name": "actual-local84-pins-match-with-no-execution-authority",
+          "pass": true
+        },
+        {
+          "name": "node-patch-drift-does-not-inherit-local-qualification",
+          "pass": true
+        },
+        {
+          "name": "one-emitted-source-byte-drift-is-reported-and-not-accepted",
+          "pass": true
+        },
+        {
+          "name": "malformed-outside-or-duplicate-manifest-paths-fail-closed",
+          "pass": true
+        },
+        {
+          "name": "missing-manifest-remains-unavailable",
+          "pass": true
+        },
+        {
+          "name": "rejected-drifting-files-still-consume-the-shared32MiB-read-budget",
+          "pass": true
+        },
+        {
+          "name": "public-spki-fingerprint-only-private-key-name-presence-rejects",
+          "pass": true
+        },
+        {
+          "name": "private-pem-in-public-variable-is-not-mistaken-for-public-only",
+          "pass": true
+        },
+        {
+          "name": "shared-model-configuration-keeps-artifact-io-outside-its-path",
+          "pass": true
+        },
+        {
+          "name": "unauthenticated-existing-reader-cannot-trigger-artifact-or-config-read",
+          "pass": true
+        }
+      ],
+      "workerStarts": 0,
+      "databaseCalls": 0,
+      "modelCalls": 0,
+      "profileActivations": 0
+    },
+    "stderr": "",
+    "pins": {
+      "scripts/synthetik-500-runtime-artifact-attestation-test.js": "7d55b29831ca328d4e1efb8afe064d4dab689daf3803d064c28688a9a4e71930",
+      "lib/helmut/synthetik-500-runtime-artifact-attestation.js": "9c5c9f4ec86e10e7ddf30e58ba6d1ca2835517d8e1772a4e66a06c2d5bee8143",
+      "lib/helmut/synthetik-500-release-artifacts.json": "1cd3020b7db97853039add34828cdc995af13da2dbc9a8b48c4741f85e371ea7"
+    }
+  },
+  "localArtifacts": {
+    "scope": "FINAL_LOCAL_SOURCE_PINS_AND_INCLUDE_DECLARATION_NOT_EMITTED_BUNDLE",
+    "atUTC": "2026-10-16T13:54:06.807801+00:00",
+    "node": "v24.19.0",
+    "pinnedLocalFiles": 84,
+    "sourceBytes": 2289608,
+    "sourceMappingSHA256": "b72636831505875ef47d5e848be6b20874079ae2b5cc35482ba972cb5c9ffebc",
+    "manifest": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/synthetik-500-release-artifacts.json",
+      "bytes": 14684,
+      "sha256": "1cd3020b7db97853039add34828cdc995af13da2dbc9a8b48c4741f85e371ea7"
+    },
+    "originalActual500CorePinsUnchanged": 80,
+    "forcedIncludeCovered": 81,
+    "staticallyImportedNotForced": [
+      "api/index.js",
+      "lib/helmut/provider-runtime-attestation.js",
+      "server.js"
+    ],
+    "workerSourceByteIdentical": true,
+    "localOnly": true,
+    "actualProductionNodePatch": "UNKNOWN",
+    "actualProductionEmittedBundleBytes": "UNKNOWN",
+    "actualProductionKeys": "UNKNOWN",
+    "workerStarts": 0,
+    "full500Runs": 0,
+    "builds": 0,
+    "productionActions": 0
+  },
+  "independentSecurityReview": {
+    "status": "INDEPENDENT_SECURITY_SOURCE_AND_RETAINED_LOCAL_STATE_ACCEPTED_WITH_EXPLICIT_PRODUCTION_PREREQUISITES",
+    "reviewedAtUTC": "2026-10-16T13:53:58.617100+00:00",
+    "reviews": [
+      {
+        "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/independent-final/SQL_GUARD_REVIEW.SAFE.json",
+        "bytes": 6995,
+        "sha256": "3d8f8f44854dec986e45ec2fea88c04ebf928a7ce0bc8c084cf21e98503be0cc"
+      },
+      {
+        "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/independent-final/RUNTIME_ARTIFACT_FINAL_REVIEW.SAFE.json",
+        "bytes": 6039,
+        "sha256": "bbd92c49c5b18a5f2031bd04bdac81c541323367734567f7c427e3cd6f5dccc0"
+      }
+    ],
+    "sourceFreezeReadback": {
+      "SQLSourcesStillMatchRecordedTransitions": true,
+      "runtimeSourceTestAndManifestPinsMatchFinalExecutedReceipt": true,
+      "actual84ManifestPinsAndMappingMatch": true
+    },
+    "blockingCodeFindingsRemaining": [],
+    "resolvedCodeFindings": [
+      "Shared actual byte budget now charges failed/drifting reads before catch."
+    ],
+    "localSQLChecksAdopted": 10,
+    "newRuntimeReaderChecksAdopted": 10,
+    "independentTinyDBROTransactions": 1,
+    "unchangedNativeProposalSHA256": "29c1ef679f3d887a7888a508d466b1e696733e352262a8f8278add1aa2184a3c",
+    "actualTinyDBZeroProfilesThreeFunctionsTwoAlwaysReaderExecFalse": true,
+    "requiredBeforeAnyProductionAction": [
+      "Separately authorized exact operation; no merge/deploy/migration/profile activation/costly Production test authorized by this review.",
+      "Fresh genuine external worker/writer quiescence covering the complete SQL transaction, COMMIT and readback. SQL receipt hash format is not proof of quiescence; queued writers can resume after lock release.",
+      "Fresh actual Production owner/role/ACL/source/trigger/table shape, inactive profile state and no proof/authority/prepared-context state, plus specific preserved snapshot/rollback evidence.",
+      "Use only approved guarded install/suspend/remove-if-empty files; empty-only full drop must not remove any protected history or cascade.",
+      "Exact deployed commit/artifacts mapping must be bound to independently accepted manifest and mapping hashes; current local metadata is no deployment acceptance.",
+      "All remaining required CI/current source regressions and operational cost/start gates must be accepted separately by Root. This review does not relabel missing evidence green."
+    ],
+    "historicalW15WholePeak": "Unchanged: old Authority process exact concurrent peak remains unmeasured. This review makes no retrospective memory claim.",
+    "executionEffectsByReviewer": {
+      "testsRun": 0,
+      "WorkersStarted": 0,
+      "ModelsCalled": 0,
+      "DDL": 0,
+      "ProductionActions": 0,
+      "otherDBsQueried": 0,
+      "readOnlyTinyDBSELECTs": 1,
+      "writes": "Only wave17-production-preparation/independent-final review artifacts"
+    }
+  },
+  "timeRisk": {
+    "unitMaxMS": "58950.35593799967",
+    "reserveMS": "1049.6440620003268",
+    "nonProviderLastUnitMS": "19147.701344999485",
+    "reserveIfBothProviderWaitsReach20sWithEverythingElseIdenticalMS": "852.298655000515",
+    "fiveSecondReserveProved": false,
+    "fiveSecondsIsNotNewAcceptanceCriterion": true,
+    "mockSenderClaimOverheadWithinWorst19900MSWait": true,
+    "productionTimingProven": false,
+    "contractUnchanged": true
+  },
+  "memory": {
+    "limitBytes": 2048000000,
+    "runtimeNodeMeasuredPeakBytes": 709988352,
+    "rootNodeSeparatelyMeasuredPeakBytes": 234057728,
+    "conservativeSequentialComponentBoundBytes": 1703567360,
+    "strictHistoricalSameRunWholePeakProved": false,
+    "source": "wave16-authority-memory/ROOT_MEMORY_COMPOSITION.SAFE.json",
+    "automaticFullRunRepeatAuthorized": false
+  },
+  "operationalWindow": {
+    "activeContractMaximumSeconds": 32400,
+    "endEvidenceMaximumSeconds": 1800,
+    "githubEndwatcherJobMaximumMinutes": 270,
+    "fullNineHourWindowCoveredByThisJob": false,
+    "existingPersistentCronIsAdditionalHistoricalEvidenceNotFreshWholeWindowQualification": true,
+    "concreteCandidate": "Bind<=4hactive plus30minend within actual watcher lifetime including setup/poll/cleanup, or separately qualify a watcher covering the actual chosen longer window. No timer/contract/workflow changed and no proof500realcalls finish4h."
+  },
+  "productionApprovalsStillRequired": [
+    "Exact integration/migration/deployment/key-public-distribution operation with independently pinned sources and a finite cost/rollback plan; presently forbidden.",
+    "Production adoption of the explicitly local90sOffline/reusable-content contract and exact native/runtime/key trust binding.",
+    "Separate final exact500simultaneously-active synthetic profile activation and1000paidD/RProductioncalls GO after every gate is proved."
+  ],
+  "openGates": [
+    "New release candidate mandatoryCI to be acquired by authorized own-branch push; old11caCI green only for old head. No merge/deployment permitted.",
+    "Production3functions/2ALWAYSguards installed and exact sources/roles verified after fresh real writerquiescence.",
+    "Actual deployed exact Nodepatch, closed worker/source graph, emitted bundle bytes and offline/public-only key distribution independently verified.",
+    "Strict same-run allprocess memory receipt cannot be reconstructed from historical run; retain independent phase evidence without relabeling.",
+    "Complete all-in infrastructure quantities/coverage and fresh financial witness remain open; see cost ledger.",
+    "Exact current source/day/order/window/profile/stop/end proof including watcher lifetime and thin Unit reserve risk; no real provider timing/factual outputs yet."
+  ],
+  "modelUse": {
+    "coordinator": "Sol current configuration",
+    "independentFinal": "Separate existing Sol agent; actual final product hashes reviewed",
+    "deepseekCompleted": [
+      {
+        "model": "deepseek-v4-pro",
+        "effort": "high",
+        "task": "Initial DBreturn safety"
+      },
+      {
+        "model": "deepseek-flash",
+        "effort": "high",
+        "task": "Cost tariff/accounting boundary"
+      },
+      {
+        "model": "deepseek-flash",
+        "effort": "high",
+        "task": "Artifact reader safety"
+      }
+    ],
+    "deepseekFailed": {
+      "model": "deepseek-v4-pro",
+      "effort": "high",
+      "task": "Final release review",
+      "reason": "max_output_tokens",
+      "automaticRetry": false,
+      "notAnAcceptance": true
+    },
+    "productionModelCallsThisSprint": 0
+  },
+  "noProductionEffects": true,
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/LOCAL_RELEASE_GUARDS_RESULT.SAFE.json",
+      "bytes": 4680,
+      "sha256": "a775f1898cf43b22fde6204ab251f70be49bbeedc5d0610dd9086b3ceaab1fdf"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/FINAL_RUNTIME_TEST_PORTABILITY_RESULT.SAFE.json",
+      "bytes": 2074,
+      "sha256": "d05ae841e80626e487847183c40bbbbfbf355945306bd98bc700e4d1ddc4f0dc"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/FINAL_ARTIFACT_AUDIT.SAFE.json",
+      "bytes": 990,
+      "sha256": "647e9342a5b6e4d0defda2819786399ecc8976b402b0d00c0e8a4ea4640bba97"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave17-production-preparation/independent-final/INDEPENDENT_FINAL_SECURITY_REVIEW.SAFE.json",
+      "bytes": 2876,
+      "sha256": "30db35e40e38a72f7b4a72426f1c6a9103915a1ebb542023b40b35fd31abc2fe"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave15/ROOT_FINAL_LOCAL500_REVIEW.SAFE.json",
+      "bytes": 6936,
+      "sha256": "f348b00eb51249fe8852e89bfedc7f4ff81fb4062fae8174cd35180606105560"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave16-authority-memory/ROOT_MEMORY_COMPOSITION.SAFE.json",
+      "bytes": 4937,
+      "sha256": "9b65f74460c947c58d6957d4bb19490d0cb4440d12f6b2aedb92518a7474d511"
+    },
+    {
+      "path": "/workspace/helmut-parallel-20261015/wave16-authority-memory/PRODUCTION_METADATA_READ.SAFE.json",
+      "bytes": 3802,
+      "sha256": "5823372a040edc8a68efdeeab3952778a8ddaf82c677e2e42a0eecfcb0ece0cb"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/500er-production-kostennachweis-20261016.json",
+      "bytes": 12522,
+      "sha256": "dfd0a53aa2c243651c55e034fd12b32f3a724cbeb22c69caa4238d38b6eaa607"
+    }
+  ],
+  "testSelectionDelta": "One new10-case metadata reader suite added to existing STANDARD; no existing tests removed or criteria weakened."
+}

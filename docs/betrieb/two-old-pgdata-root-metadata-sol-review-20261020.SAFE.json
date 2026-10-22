@@ -1,0 +1,191 @@
+{
+  "schema": "helmut-two-derived-pgdata-rootstat-source-plan-independent-sol-review/1",
+  "status": "NO_BLOCKING_FINDINGS_IN_REVIEWED_METADATA_PRESTART_SCOPE",
+  "independent": true,
+  "blockingFindings": [],
+  "reviewer": "/root/sprint_pg_transport",
+  "model": "GPT-6.1 SOL",
+  "effort": "xhigh",
+  "atUTC": "2026-10-20T19:36:52.959496+00:00",
+  "scope": "Independent read-only review of exact rootstat-only C source and planned stage1 container contract, plus Root-provided static-build/ELF and created-container artifacts. No compiler/helper/container/DB execution by reviewer; no target PGDATA content, directory walk, xattr or target metadata query by reviewer. No other concurrent assignment performed.",
+  "preparedPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/PREPARED.SAFE.json",
+    "bytes": 1850,
+    "sha256": "c47e974fa46fd4858238221695dbc1436813cbfe6cf811c5124f2838d21fc234"
+  },
+  "sourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/rootstat-only.c",
+    "bytes": 4337,
+    "sha256": "da745f25f9e21d67df7fc94e1f4f87ea24b75662a653728e8c2474d932ae2aa9"
+  },
+  "planPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/PLAN.SAFE.json",
+    "bytes": 10296,
+    "sha256": "76807aa60a8f6d819fa3ee87d4931083999f4ab6e6b5c0d42e8f1bcf061717ab"
+  },
+  "proofPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/PREPARED.SAFE.json",
+      "bytes": 1850,
+      "sha256": "c47e974fa46fd4858238221695dbc1436813cbfe6cf811c5124f2838d21fc234"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/rootstat-only.c",
+      "bytes": 4337,
+      "sha256": "da745f25f9e21d67df7fc94e1f4f87ea24b75662a653728e8c2474d932ae2aa9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/PLAN.SAFE.json",
+      "bytes": 10296,
+      "sha256": "76807aa60a8f6d819fa3ee87d4931083999f4ab6e6b5c0d42e8f1bcf061717ab"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/README.md",
+      "bytes": 4575,
+      "sha256": "b1aa7c9a2d129f48672685c95d901edcea1ed45000669ffa196078b1c6650a73"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/ROOT_BUILD_ACTUAL.SAFE.json",
+      "bytes": 1597,
+      "sha256": "08b6f8f4dda7a78ad80a2682dccdc329cefa1fd83440f9db05d0a2fc63db829f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/rootstat-only.static",
+      "bytes": 759032,
+      "sha256": "1dccc14396bd58455aa40a12e7540cd96ad8cd0f62366f5188100b762f7ce705"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/ROOT_ELF_REVIEW.PRIVATE.txt",
+      "bytes": 3224,
+      "sha256": "a8eefc1afdc449fb744b9cec07da0a1b8220e5cd398292d35dfa2e981955ec9d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/ROOT_CREATED_CID.SAFE.json",
+      "bytes": 160,
+      "sha256": "4be334e4ae205a6f5ce3ef7138d42fb10509e447a6080f56b9577ad009d867c9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/ROOT_CREATED_INSPECT.PRIVATE.json",
+      "bytes": 9472,
+      "sha256": "701ba9a537f75e589cd98acc56b97f8f0ad680a59f80164f3890682cd8ee2fec"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/ROOT_FRESH_HOST_METADATA.SAFE.json",
+      "bytes": 1753,
+      "sha256": "6098d0f1c55adf486c01ea1123125692f0624b65b6a860e2914afd31eb780429"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-budget-implementation-qualification-v2/runtime/RUNTIME.SAFE.json",
+      "bytes": 481,
+      "sha256": "a16d045b223ef8b9f7525d97ede4596468501510f0ce71263a5ce2bddf42127e"
+    }
+  ],
+  "createdContainerId": "0eaf2eb397e286e54603466c1008a8b7e3ff4f1aacd4c4c9281fbce15f91e17d",
+  "recordedContainerState": "created/PID0/not started",
+  "binaryPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/rootstat-only.static",
+    "bytes": 759032,
+    "sha256": "1dccc14396bd58455aa40a12e7540cd96ad8cd0f62366f5188100b762f7ce705"
+  },
+  "exactTargetBindings": [
+    {
+      "source": "/workspace/helmut-ram-fix-20261020/late-state-comparison-20261020/derived-pgdata/pgdata",
+      "destination": "/subject-late-v9",
+      "type": "bind",
+      "readOnly": true,
+      "propagation": "rprivate",
+      "recursive": "disabled"
+    },
+    {
+      "source": "/workspace/helmut-ram-fix-20261020/post-v10-sender-native-20261020-v2/DERIVED_PGDATA_NOT_AN_ORIGINAL/pgdata",
+      "destination": "/subject-post-v10",
+      "type": "bind",
+      "readOnly": true,
+      "propagation": "rprivate",
+      "recursive": "disabled"
+    }
+  ],
+  "verification": {
+    "full4337ByteSource10296BytePlan4575ByteREADMERead": true,
+    "all11SourceRuntimeBuildCreatedArtifactPinsSHAAndBytesChecked": true,
+    "sourceBeforeAfterMatchesDa745": true,
+    "rootBuildArgvMatchesPlanExitZero": true,
+    "actualBinaryRegularNonSymlinkNlink1UID1000Mode0555SHAAndSizeChecked": true,
+    "savedStaticELFReviewNoPTINTERPNoDynamicSection": true,
+    "createdInspectExactCIDNameImageEntrypointNoArgs": true,
+    "exact3ROPrivateNonrecursiveBindSourcesAndDestinations": true,
+    "networkNoneRootfsROCapsAllDropNoAddNoNewPrivileges": true,
+    "memory64MiBTotalSwap64MiBPids16NoRestart": true,
+    "privatePIDIPCCgroupNamespacesNoUsernsOverride": true,
+    "newSourceLabelMatchesDa745": true,
+    "oldImageNativeBudgetLabelsUsedAsHelperQualification": false,
+    "liveDockerOrHostTargetQueriesByReviewer": false,
+    "actualRootstatExecutionObserved": false
+  },
+  "criticalChecks": [
+    {
+      "check": "Fixed metadata-only target surface",
+      "evidence": "C fixed roots[] has only /subject-late-v9 and /subject-post-v10. main rejects argc!=1 or nonzero real/effectiveUID/GID. Each root gets only lstat directory check and statfs requiring ST_RDONLY. No open/read of PGDATA file, directory enumeration, xattr, chmod/chown, fork/exec, network, target traversal or environment-value output exists in source."
+    },
+    {
+      "check": "Strict bounded proc-map inputs and JSON output",
+      "evidence": "read_map opens only /proc/self/uid_map and gid_map with O_RDONLY|O_CLOEXEC|O_NOFOLLOW, reads<=1024B plus one EOF-only byte, rejects empty/oversize/read/close failures and all bytes except ASCII digits/space/tab/newline. map_json escapes allowed controls. append guards fixed4096B output before final emission; success<=4095B includingnewline, failure emits fixed51Bstderr and Exit2. No partial JSON is written before complete assembly. Root external15s wall timeout remains required."
+    },
+    {
+      "check": "No namespace/ownership guess",
+      "evidence": "GetUID/GID and actual maps are observed, not inferred from Dockeruser0. Host saved owners65534 do not identify actual archive-owner UID. Real map shape/namespace consistency plus fresh dev/inode/mode/time matches before/after are necessary; ambiguous/overflow owners/maps => preserve copies and stop. This review grants no owner-inventory or archival authority."
+    },
+    {
+      "check": "Constrained new helper container",
+      "evidence": "Saved exact created inspect has networknone,rootfsRO,CapDropALL/noCapAdd,no-new-privileges,64MiB memory/no swap allowance,Pids16,no privileged/restart/foreign PID-IPC-cgroup namespace,rootuser0:0,exact new static overlay entrypoint/noargs. Only two exact subjects and helperbinary are userbinds; all RO/rprivate/NonRecursive true. No broad workspace/Docker socket/source alias in declared binds. Normal Dockerproc/dev/system mounts retain defaults; no syscall allowlist or traced library-startup claim."
+    },
+    {
+      "check": "Actual binary/image provenance kept separate",
+      "evidence": "Root reports one static build with source pins unchanged,actual759032B1dccc ELF and saved readelf. Reviewer hashes source/binary/artifacts but does not execute. Compiler/toolchain bytes were not pinned and bitwise reproducibility is not asserted. Inherited image native-budget labels describe original image helper, not this overlaid executable; only new Csource label, binarypin and exact mount bind this helper."
+    },
+    {
+      "check": "Actual acceptance is still stage1 only",
+      "evidence": "Root must fresh-adopt actual source/binary/createdinspect/targets before single start, external deadline/bounded captures,one complete expected JSON,exit0/stoppedPID0/noOOM/error and fresh identity/maps/readonly checks. Timeout/forcedstop/unexpectedstate cannot qualify; retain hull/logs/outputs, no retry. No DB/native/performance/full500/allocated-size/net-recovery/archive/compare/delete authority."
+    }
+  ],
+  "recordedTargetHostMetadata": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/late-state-comparison-20261020/derived-pgdata/pgdata",
+      "device": 27,
+      "inode": 2019320,
+      "uid": 65534,
+      "gid": 1000,
+      "modePermissions": 448,
+      "mtimeNs": 1792458418433956365,
+      "ctimeNs": 1792458418433956365
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/post-v10-sender-native-20261020-v2/DERIVED_PGDATA_NOT_AN_ORIGINAL/pgdata",
+      "device": 27,
+      "inode": 2021297,
+      "uid": 65534,
+      "gid": 1000,
+      "modePermissions": 448,
+      "mtimeNs": 1792472715133159722,
+      "ctimeNs": 1792472715133159722
+    }
+  ],
+  "limitations": [
+    "Source-plan and saved prestart artifact review only; helper has not been executed as part of this review.",
+    "Target lexical/resolved source identity and unknown-use checks remain Root actual prestart obligations. This reviewer reads saved metadata only and does not probe the targets.",
+    "ContainerrootUID0 and readonly mounts do not resolve overflowUID65534; actual maps/owner interpretation required, no archive-helper UID guess.",
+    "No global FD absence or runtime seccomp/syscall trace claim. Program/static-libc startup can make ordinary runtime syscalls; reviewed target IO surface remains metadata-only.",
+    "No static toolchain reproducible-build guarantee; binary bytes and saved ELF review are explicitly pinned."
+  ],
+  "testsCompilationImportsASTSyntaxOrHelperExecutionByReviewer": false,
+  "dockerDBNativeOrResourceActionsByReviewer": false,
+  "targetPGDATAFileContentOrDirectoryWalkByReviewer": false,
+  "repositoryWrites": false,
+  "ownReviewReceiptOnlyWrite": true,
+  "ownerUIDQualified": false,
+  "cleanupOrArchiveQualification": false,
+  "nativeOrRAMFull500Qualification": false,
+  "providerCalls": 0,
+  "full500": false,
+  "production": false
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "helmut-controlled-cleanup-admission-capacity-snapshot/1",
+  "status": "PASS_DISK_ADMISSION_AT_SNAPSHOT_ONLY_NOT_FULL500_GO",
+  "atUTC": "2026-10-20T23:18:54.994372+00:00",
+  "phase": "after independent actual reviews and source preservation; before final documentation commit",
+  "measurement": "statvfs f_bavail * f_frsize on persistent /workspace, before writing this snapshot",
+  "freePersistentBytes": 15181066240,
+  "unchangedFullAdmissionBytes": 15179779720,
+  "observedMarginBytes": 1286520,
+  "unchangedHostFloorBytes": 8589934592,
+  "originalsAndCanonicalReconstructionDependenciesRetained": true,
+  "protectedResourceReadbackPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/FINAL_PROTECTED_RESOURCES_READBACK.SAFE.json",
+    "bytes": 4558,
+    "sha256": "fe1450e4459caf3b3f7c93b6d974c143eed271b0f9ca7b37856751d49a415ab9"
+  },
+  "threePreflightCompactionsActualReviewPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/v11-checkonly-compactor-independent-review-20261020/ACTUAL_THREE_BLOCKED_CHECKONLY_COMPACTIONS_REVIEW.SAFE.json",
+    "bytes": 22939,
+    "sha256": "dc7c8ea30459decc8955d0d56226573b9a8d553f5a85ab8803323617c75a2274"
+  },
+  "sourcePreservationPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/root-orchestration-source-preservation-20261020/ACTUAL_SOURCE_PRESERVATION.SAFE.json",
+    "bytes": 13882,
+    "sha256": "8affcc278583efb546dc7b3561062afd36e06092a15ce5bc4467bc9c94650960"
+  },
+  "allActualChecksPassedWithinTheirDocumentedScope": true,
+  "full500": false,
+  "newFull500GO": false,
+  "production": false,
+  "paidInfrastructureCreated": false,
+  "ramReserveProofClaimed": false,
+  "requiresFreshAll32ConditionsAndCapacityBeforeAnyLaterFullStart": true
+}

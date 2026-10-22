@@ -1,0 +1,1750 @@
+{
+  "schema": "helmut-physical8-independent-actual-review/1",
+  "status": "PASS",
+  "resultPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/cases/physical8-2b6988878a75c902ebe90966/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8847,
+      "sha256": "ba798e654eb67819f53d729d66c1714d16025686c1c33322b7d3d698799a0476"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/cases/physical8-239eaf771f67490b11e020a3/ACTUAL_RESULT.SAFE.json",
+      "bytes": 9377,
+      "sha256": "57e19665396bec54e0ea5b730754147d43bed8303fb05a9e0278f12f15a483d8"
+    }
+  ],
+  "blockers": [],
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-physical8-native-launcher/PREPARED.SAFE.json",
+    "bytes": 53575,
+    "sha256": "2b8b40fdb62a5b69b98325e3538fd45dea84b3b5a95bde3b186cfd7256b52875"
+  },
+  "lifecycleReviewPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/physical8-review-20261021/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 3727,
+    "sha256": "ffe1309170376418affd6e89d6ec82ccaeb7e16c834f1c9670634fd94f1b4fe3"
+  },
+  "verifierPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/physical8-review-20261021/verify_actual.py",
+    "bytes": 42167,
+    "sha256": "e8e42e1a643fd08c48a6789a5c323369c9fa0e01b865d0dfa0633010cd0e0bd5"
+  },
+  "genuineRPCs": 67,
+  "fullReads": 10,
+  "confirmedCASWrites": 9,
+  "controlReads": 48,
+  "freshHistoryBindingsIndependentlyRecomputed": 58,
+  "freshGraphBindingsIndependentlyRecomputed": 48,
+  "freshConfirmedCASRevisions": 9,
+  "fullLogical6000HistoryHashes": 19,
+  "exactBoundaryTriplets": 16,
+  "boundedCaptures": 27,
+  "physicalAuthBytes": 606,
+  "nativeAndReferencedHistoryRows": 6000,
+  "originalSourceManifestSHA256IndependentlyRecomputed": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "sourceFiles": 1709,
+  "sourceFileBytes": 369399611,
+  "sourcePayloadsReread": false,
+  "fullCatalogABIACLAndOriginalRootRestored": true,
+  "strictOriginalPostgrestStopVerified": true,
+  "pgExitCode": 0,
+  "nodeExitCode": 0,
+  "outerToolExitCode": 0,
+  "outerCompletionChunk": "c663be",
+  "finalMeasuredGroupEmpty": true,
+  "nativeLifetimePeakBytes": 1038131200,
+  "nativeFinalEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "wallSeconds": 48.89263434399618,
+  "maxAuthOperationMilliseconds": 1389.313454,
+  "functionalSafetyCompletion": "PASS",
+  "functionalPASSIsSeparateFromPhysicalAttribution": true,
+  "physicalAttributionStatus": "INCONCLUSIVE",
+  "operationalGCStageCompatible": false,
+  "attributionReason": "fixed4/8 GC stage missing,incompatible or overlapping",
+  "earlier30TailReproductionAssessment": "POSITIVE_FIXED4_TO8_RSS_AND_COMMON_DIRECTION; THIS_EARLY8_WINDOW_DOES_NOT_ESTABLISH_REPRODUCTION_OF_THE_LATE30_TAIL",
+  "fixed4To8PhysicalDirection": "RSS increased while reported V8 physical capacity did not; the unassigned footprint narrows without identifying native residency or its cause.",
+  "allEightEndPoints": [
+    {
+      "round": 1,
+      "commonCurrentBytes": 946130944,
+      "commonLifetimePeakBytes": 994168832,
+      "nativeAnonBytes": 313069568,
+      "nativeFileBytes": 604831744,
+      "nativeKernelBytes": 27058176,
+      "nativeShmemBytes": 233725952,
+      "nodeProcessBefore": {
+        "rss": 238059520,
+        "heapTotal": 104148992,
+        "heapUsed": 58803896,
+        "external": 5438633,
+        "arrayBuffers": 1457402
+      },
+      "nodeProcessAfter": {
+        "rss": 238059520,
+        "heapTotal": 104148992,
+        "heapUsed": 58826224,
+        "external": 5438633,
+        "arrayBuffers": 1457402
+      },
+      "v8Heap": {
+        "physical": 104419328,
+        "total": 104148992,
+        "used": 58804384,
+        "available": 383226200,
+        "limit": 452984832,
+        "executable": 1048576,
+        "malloced": 286792,
+        "peakMalloced": 28786760,
+        "nativeContexts": 1,
+        "detachedContexts": 0,
+        "handlesTotal": 114688,
+        "handlesUsed": 3488,
+        "external": 5438633
+      },
+      "workerNodeProcess": {
+        "pid": 46,
+        "readable": true,
+        "status": {
+          "VmRSS": "233040 kB",
+          "RssAnon": "202172 kB",
+          "RssFile": "30868 kB",
+          "RssShmem": "0 kB",
+          "VmSwap": "0 kB",
+          "Threads": "7"
+        },
+        "ioRaw": "rchar: 17413797\nwchar: 63582\nsyscr: 7197\nsyscw: 6792\nread_bytes: 0\nwrite_bytes: 16384\ncancelled_write_bytes: 0\n"
+      },
+      "workerNodeMemoryKiB": {
+        "VmRSS": 233040,
+        "RssAnon": 202172,
+        "RssFile": 30868,
+        "RssShmem": 0,
+        "VmSwap": 0
+      },
+      "naturalGC": {
+        "count": 109,
+        "durationMilliseconds": 213.79538588225842,
+        "kinds": {
+          "1": 83,
+          "4": 13,
+          "8": 13
+        }
+      },
+      "sampleBefore": 3891.028673,
+      "sampleAfter": 3891.138708,
+      "perCallTimes": {
+        "processBeforeStart": 3891.035863,
+        "processBeforeEnd": 3891.049404,
+        "heapStart": 3891.049734,
+        "heapEnd": 3891.052779,
+        "spacesStart": 3891.076054,
+        "spacesEnd": 3891.116625,
+        "processAfterStart": 3891.131638,
+        "processAfterEnd": 3891.138388
+      },
+      "gcReconciled": {
+        "countAtSample": 109,
+        "latestBefore": {
+          "kind": 4,
+          "flags": 64,
+          "startTime": 3837.033183,
+          "duration": 1.8236079961061478,
+          "deliveredAt": 3838.963472
+        },
+        "overlapCount": 0,
+        "overlaps": []
+      },
+      "spaces": [
+        {
+          "name": "read_only_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_space",
+          "size": 33554432,
+          "used": 140160,
+          "available": 16636032,
+          "physical": 33554432
+        },
+        {
+          "name": "old_space",
+          "size": 42610688,
+          "used": 31735456,
+          "available": 228568,
+          "physical": 42729472
+        },
+        {
+          "name": "code_space",
+          "size": 1048576,
+          "used": 783040,
+          "available": 0,
+          "physical": 1048576
+        },
+        {
+          "name": "shared_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_space",
+          "size": 1683456,
+          "used": 948032,
+          "available": 734024,
+          "physical": 1835008
+        },
+        {
+          "name": "shared_trusted_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 16777216,
+          "physical": 0
+        },
+        {
+          "name": "large_object_space",
+          "size": 25251840,
+          "used": 25212216,
+          "available": 0,
+          "physical": 25251840
+        },
+        {
+          "name": "code_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        }
+      ],
+      "nativeAtUnixSeconds": 1792562010.1131592,
+      "sqlAt": "2026-10-21T05:53:30.122656+00:00"
+    },
+    {
+      "round": 2,
+      "commonCurrentBytes": 955977728,
+      "commonLifetimePeakBytes": 1013030912,
+      "nativeAnonBytes": 322740224,
+      "nativeFileBytes": 604880896,
+      "nativeKernelBytes": 27238400,
+      "nativeShmemBytes": 233725952,
+      "nodeProcessBefore": {
+        "rss": 244744192,
+        "heapTotal": 105197568,
+        "heapUsed": 59403640,
+        "external": 5439295,
+        "arrayBuffers": 1457402
+      },
+      "nodeProcessAfter": {
+        "rss": 244744192,
+        "heapTotal": 105197568,
+        "heapUsed": 59420424,
+        "external": 5439295,
+        "arrayBuffers": 1457402
+      },
+      "v8Heap": {
+        "physical": 105467904,
+        "total": 105197568,
+        "used": 59404128,
+        "available": 382344584,
+        "limit": 452984832,
+        "executable": 1572864,
+        "malloced": 286792,
+        "peakMalloced": 28786760,
+        "nativeContexts": 1,
+        "detachedContexts": 0,
+        "handlesTotal": 114688,
+        "handlesUsed": 3488,
+        "external": 5439295
+      },
+      "workerNodeProcess": {
+        "pid": 46,
+        "readable": true,
+        "status": {
+          "VmRSS": "240364 kB",
+          "RssAnon": "209376 kB",
+          "RssFile": "30988 kB",
+          "RssShmem": "0 kB",
+          "VmSwap": "0 kB",
+          "Threads": "7"
+        },
+        "ioRaw": "rchar: 30808289\nwchar: 127522\nsyscr: 14270\nsyscw: 13638\nread_bytes: 0\nwrite_bytes: 24576\ncancelled_write_bytes: 0\n"
+      },
+      "workerNodeMemoryKiB": {
+        "VmRSS": 240364,
+        "RssAnon": 209376,
+        "RssFile": 30988,
+        "RssShmem": 0,
+        "VmSwap": 0
+      },
+      "naturalGC": {
+        "count": 188,
+        "durationMilliseconds": 359.1118498444557,
+        "kinds": {
+          "1": 144,
+          "4": 22,
+          "8": 22
+        }
+      },
+      "sampleBefore": 6794.253345,
+      "sampleAfter": 6794.366355,
+      "perCallTimes": {
+        "processBeforeStart": 6794.259564,
+        "processBeforeEnd": 6794.311803,
+        "heapStart": 6794.312173,
+        "heapEnd": 6794.315418,
+        "spacesStart": 6794.339014,
+        "spacesEnd": 6794.347617,
+        "processAfterStart": 6794.359815,
+        "processAfterEnd": 6794.366055
+      },
+      "gcReconciled": {
+        "countAtSample": 188,
+        "latestBefore": {
+          "kind": 4,
+          "flags": 64,
+          "startTime": 6770.103447,
+          "duration": 8.148260995745659,
+          "deliveredAt": 6778.424448
+        },
+        "overlapCount": 0,
+        "overlaps": []
+      },
+      "spaces": [
+        {
+          "name": "read_only_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_space",
+          "size": 33554432,
+          "used": 112280,
+          "available": 16663912,
+          "physical": 33554432
+        },
+        {
+          "name": "old_space",
+          "size": 42872832,
+          "used": 31893088,
+          "available": 234232,
+          "physical": 42991616
+        },
+        {
+          "name": "code_space",
+          "size": 1572864,
+          "used": 1124416,
+          "available": 0,
+          "physical": 1572864
+        },
+        {
+          "name": "shared_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_space",
+          "size": 1945600,
+          "used": 1071224,
+          "available": 872864,
+          "physical": 2097152
+        },
+        {
+          "name": "shared_trusted_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 16777216,
+          "physical": 0
+        },
+        {
+          "name": "large_object_space",
+          "size": 25251840,
+          "used": 25212216,
+          "available": 0,
+          "physical": 25251840
+        },
+        {
+          "name": "code_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        }
+      ],
+      "nativeAtUnixSeconds": 1792562013.0103488,
+      "sqlAt": "2026-10-21T05:53:33.020849+00:00"
+    },
+    {
+      "round": 3,
+      "commonCurrentBytes": 951992320,
+      "commonLifetimePeakBytes": 1013030912,
+      "nativeAnonBytes": 318418944,
+      "nativeFileBytes": 604979200,
+      "nativeKernelBytes": 27422720,
+      "nativeShmemBytes": 233758720,
+      "nodeProcessBefore": {
+        "rss": 241082368,
+        "heapTotal": 109654016,
+        "heapUsed": 59529720,
+        "external": 5439938,
+        "arrayBuffers": 1457402
+      },
+      "nodeProcessAfter": {
+        "rss": 241082368,
+        "heapTotal": 109654016,
+        "heapUsed": 59546504,
+        "external": 5439938,
+        "arrayBuffers": 1457402
+      },
+      "v8Heap": {
+        "physical": 109924352,
+        "total": 109654016,
+        "used": 59530208,
+        "available": 377862944,
+        "limit": 452984832,
+        "executable": 1572864,
+        "malloced": 286792,
+        "peakMalloced": 28786760,
+        "nativeContexts": 1,
+        "detachedContexts": 0,
+        "handlesTotal": 114688,
+        "handlesUsed": 3488,
+        "external": 5439938
+      },
+      "workerNodeProcess": {
+        "pid": 46,
+        "readable": true,
+        "status": {
+          "VmRSS": "236084 kB",
+          "RssAnon": "205080 kB",
+          "RssFile": "31004 kB",
+          "RssShmem": "0 kB",
+          "VmSwap": "0 kB",
+          "Threads": "7"
+        },
+        "ioRaw": "rchar: 44169877\nwchar: 158566\nsyscr: 17229\nsyscw: 16372\nread_bytes: 0\nwrite_bytes: 36864\ncancelled_write_bytes: 0\n"
+      },
+      "workerNodeMemoryKiB": {
+        "VmRSS": 236084,
+        "RssAnon": 205080,
+        "RssFile": 31004,
+        "RssShmem": 0,
+        "VmSwap": 0
+      },
+      "naturalGC": {
+        "count": 264,
+        "durationMilliseconds": 482.529649913311,
+        "kinds": {
+          "1": 206,
+          "4": 29,
+          "8": 29
+        }
+      },
+      "sampleBefore": 9792.778743,
+      "sampleAfter": 9792.855168,
+      "perCallTimes": {
+        "processBeforeStart": 9792.786365,
+        "processBeforeEnd": 9792.799545,
+        "heapStart": 9792.799925,
+        "heapEnd": 9792.802429,
+        "spacesStart": 9792.827136,
+        "spacesEnd": 9792.835569,
+        "processAfterStart": 9792.849029,
+        "processAfterEnd": 9792.854658
+      },
+      "gcReconciled": {
+        "countAtSample": 264,
+        "latestBefore": {
+          "kind": 4,
+          "flags": 64,
+          "startTime": 9767.504566,
+          "duration": 3.5139870047569275,
+          "deliveredAt": 9771.205194
+        },
+        "overlapCount": 0,
+        "overlaps": []
+      },
+      "spaces": [
+        {
+          "name": "read_only_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_space",
+          "size": 33554432,
+          "used": 98000,
+          "available": 16678192,
+          "physical": 33554432
+        },
+        {
+          "name": "old_space",
+          "size": 47329280,
+          "used": 31942904,
+          "available": 231928,
+          "physical": 47448064
+        },
+        {
+          "name": "code_space",
+          "size": 1572864,
+          "used": 1177792,
+          "available": 0,
+          "physical": 1572864
+        },
+        {
+          "name": "shared_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_space",
+          "size": 1945600,
+          "used": 1108392,
+          "available": 835696,
+          "physical": 2097152
+        },
+        {
+          "name": "shared_trusted_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 16777216,
+          "physical": 0
+        },
+        {
+          "name": "large_object_space",
+          "size": 25251840,
+          "used": 25212216,
+          "available": 0,
+          "physical": 25251840
+        },
+        {
+          "name": "code_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        }
+      ],
+      "nativeAtUnixSeconds": 1792562016.0095365,
+      "sqlAt": "2026-10-21T05:53:36.018948+00:00"
+    },
+    {
+      "round": 4,
+      "commonCurrentBytes": 953757696,
+      "commonLifetimePeakBytes": 1013030912,
+      "nativeAnonBytes": 320061440,
+      "nativeFileBytes": 605028352,
+      "nativeKernelBytes": 27389952,
+      "nativeShmemBytes": 233758720,
+      "nodeProcessBefore": {
+        "rss": 242655232,
+        "heapTotal": 121229312,
+        "heapUsed": 88620504,
+        "external": 5373089,
+        "arrayBuffers": 1524243
+      },
+      "nodeProcessAfter": {
+        "rss": 242655232,
+        "heapTotal": 121229312,
+        "heapUsed": 88637288,
+        "external": 5373089,
+        "arrayBuffers": 1524243
+      },
+      "v8Heap": {
+        "physical": 121499648,
+        "total": 121229312,
+        "used": 88620992,
+        "available": 364215592,
+        "limit": 452984832,
+        "executable": 1572864,
+        "malloced": 286792,
+        "peakMalloced": 28786760,
+        "nativeContexts": 1,
+        "detachedContexts": 0,
+        "handlesTotal": 114688,
+        "handlesUsed": 3584,
+        "external": 5373089
+      },
+      "workerNodeProcess": {
+        "pid": 46,
+        "readable": true,
+        "status": {
+          "VmRSS": "237600 kB",
+          "RssAnon": "206592 kB",
+          "RssFile": "31008 kB",
+          "RssShmem": "0 kB",
+          "VmSwap": "0 kB",
+          "Threads": "7"
+        },
+        "ioRaw": "rchar: 57526985\nwchar: 185114\nsyscr: 19629\nsyscw: 18544\nread_bytes: 0\nwrite_bytes: 45056\ncancelled_write_bytes: 0\n"
+      },
+      "workerNodeMemoryKiB": {
+        "VmRSS": 237600,
+        "RssAnon": 206592,
+        "RssFile": 31008,
+        "RssShmem": 0,
+        "VmSwap": 0
+      },
+      "naturalGC": {
+        "count": 338,
+        "durationMilliseconds": 613.2809329032898,
+        "kinds": {
+          "1": 266,
+          "4": 36,
+          "8": 36
+        }
+      },
+      "sampleBefore": 12662.876365,
+      "sampleAfter": 12662.956886,
+      "perCallTimes": {
+        "processBeforeStart": 12662.884417,
+        "processBeforeEnd": 12662.897036,
+        "heapStart": 12662.897427,
+        "heapEnd": 12662.89988,
+        "spacesStart": 12662.92641,
+        "spacesEnd": 12662.935133,
+        "processAfterStart": 12662.948654,
+        "processAfterEnd": 12662.956626
+      },
+      "gcReconciled": {
+        "countAtSample": 338,
+        "latestBefore": {
+          "kind": 1,
+          "flags": 0,
+          "startTime": 12606.358784,
+          "duration": 1.3351020067930222,
+          "deliveredAt": 12607.789671
+        },
+        "overlapCount": 0,
+        "overlaps": []
+      },
+      "spaces": [
+        {
+          "name": "read_only_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_space",
+          "size": 33554432,
+          "used": 2517720,
+          "available": 14258472,
+          "physical": 33554432
+        },
+        {
+          "name": "old_space",
+          "size": 57028608,
+          "used": 56706120,
+          "available": 257168,
+          "physical": 57147392
+        },
+        {
+          "name": "code_space",
+          "size": 1572864,
+          "used": 1213696,
+          "available": 358976,
+          "physical": 1572864
+        },
+        {
+          "name": "shared_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_space",
+          "size": 1945600,
+          "used": 1144928,
+          "available": 799144,
+          "physical": 2097152
+        },
+        {
+          "name": "shared_trusted_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 16777216,
+          "physical": 0
+        },
+        {
+          "name": "large_object_space",
+          "size": 27127808,
+          "used": 27047624,
+          "available": 0,
+          "physical": 27127808
+        },
+        {
+          "name": "code_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        }
+      ],
+      "nativeAtUnixSeconds": 1792562018.8812263,
+      "sqlAt": "2026-10-21T05:53:38.891558+00:00"
+    },
+    {
+      "round": 5,
+      "commonCurrentBytes": 951091200,
+      "commonLifetimePeakBytes": 1013030912,
+      "nativeAnonBytes": 317427712,
+      "nativeFileBytes": 605077504,
+      "nativeKernelBytes": 27336704,
+      "nativeShmemBytes": 233758720,
+      "nodeProcessBefore": {
+        "rss": 240091136,
+        "heapTotal": 105197568,
+        "heapUsed": 59789352,
+        "external": 5439295,
+        "arrayBuffers": 1457402
+      },
+      "nodeProcessAfter": {
+        "rss": 240091136,
+        "heapTotal": 105197568,
+        "heapUsed": 59806136,
+        "external": 5439295,
+        "arrayBuffers": 1457402
+      },
+      "v8Heap": {
+        "physical": 105467904,
+        "total": 105197568,
+        "used": 59789840,
+        "available": 382186608,
+        "limit": 452984832,
+        "executable": 1572864,
+        "malloced": 286792,
+        "peakMalloced": 28786760,
+        "nativeContexts": 1,
+        "detachedContexts": 0,
+        "handlesTotal": 114688,
+        "handlesUsed": 3488,
+        "external": 5439295
+      },
+      "workerNodeProcess": {
+        "pid": 46,
+        "readable": true,
+        "status": {
+          "VmRSS": "234956 kB",
+          "RssAnon": "203944 kB",
+          "RssFile": "31012 kB",
+          "RssShmem": "0 kB",
+          "VmSwap": "0 kB",
+          "Threads": "7"
+        },
+        "ioRaw": "rchar: 70913956\nwchar: 241527\nsyscr: 25760\nsyscw: 24449\nread_bytes: 0\nwrite_bytes: 53248\ncancelled_write_bytes: 0\n"
+      },
+      "workerNodeMemoryKiB": {
+        "VmRSS": 234956,
+        "RssAnon": 203944,
+        "RssFile": 31012,
+        "RssShmem": 0,
+        "VmSwap": 0
+      },
+      "naturalGC": {
+        "count": 416,
+        "durationMilliseconds": 769.8323359191418,
+        "kinds": {
+          "1": 328,
+          "4": 44,
+          "8": 44
+        }
+      },
+      "sampleBefore": 15680.888418,
+      "sampleAfter": 15680.972745,
+      "perCallTimes": {
+        "processBeforeStart": 15680.896821,
+        "processBeforeEnd": 15680.914167,
+        "heapStart": 15680.914788,
+        "heapEnd": 15680.918013,
+        "spacesStart": 15680.944363,
+        "spacesEnd": 15680.953046,
+        "processAfterStart": 15680.966776,
+        "processAfterEnd": 15680.972485
+      },
+      "gcReconciled": {
+        "countAtSample": 416,
+        "latestBefore": {
+          "kind": 4,
+          "flags": 64,
+          "startTime": 15621.199327,
+          "duration": 1.9770499914884567,
+          "deliveredAt": 15623.359974
+        },
+        "overlapCount": 0,
+        "overlaps": []
+      },
+      "spaces": [
+        {
+          "name": "read_only_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_space",
+          "size": 33554432,
+          "used": 208896,
+          "available": 16567296,
+          "physical": 33554432
+        },
+        {
+          "name": "old_space",
+          "size": 42872832,
+          "used": 32021328,
+          "available": 237856,
+          "physical": 42991616
+        },
+        {
+          "name": "code_space",
+          "size": 1572864,
+          "used": 1220288,
+          "available": 0,
+          "physical": 1572864
+        },
+        {
+          "name": "shared_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_space",
+          "size": 1945600,
+          "used": 1136208,
+          "available": 807880,
+          "physical": 2097152
+        },
+        {
+          "name": "shared_trusted_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 16777216,
+          "physical": 0
+        },
+        {
+          "name": "large_object_space",
+          "size": 25251840,
+          "used": 25212216,
+          "available": 0,
+          "physical": 25251840
+        },
+        {
+          "name": "code_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        }
+      ],
+      "nativeAtUnixSeconds": 1792562021.8958745,
+      "sqlAt": "2026-10-21T05:53:41.906219+00:00"
+    },
+    {
+      "round": 6,
+      "commonCurrentBytes": 966160384,
+      "commonLifetimePeakBytes": 1026048000,
+      "nativeAnonBytes": 331808768,
+      "nativeFileBytes": 605175808,
+      "nativeKernelBytes": 27955200,
+      "nativeShmemBytes": 233791488,
+      "nodeProcessBefore": {
+        "rss": 255680512,
+        "heapTotal": 104411136,
+        "heapUsed": 59701328,
+        "external": 5439295,
+        "arrayBuffers": 1457402
+      },
+      "nodeProcessAfter": {
+        "rss": 255680512,
+        "heapTotal": 104411136,
+        "heapUsed": 59718112,
+        "external": 5439295,
+        "arrayBuffers": 1457402
+      },
+      "v8Heap": {
+        "physical": 104681472,
+        "total": 104411136,
+        "used": 59701816,
+        "available": 383129656,
+        "limit": 452984832,
+        "executable": 1572864,
+        "malloced": 286792,
+        "peakMalloced": 28786760,
+        "nativeContexts": 1,
+        "detachedContexts": 0,
+        "handlesTotal": 114688,
+        "handlesUsed": 3488,
+        "external": 5439295
+      },
+      "workerNodeProcess": {
+        "pid": 46,
+        "readable": true,
+        "status": {
+          "VmRSS": "250324 kB",
+          "RssAnon": "219312 kB",
+          "RssFile": "31012 kB",
+          "RssShmem": "0 kB",
+          "VmSwap": "0 kB",
+          "Threads": "7"
+        },
+        "ioRaw": "rchar: 84274320\nwchar: 271317\nsyscr: 28563\nsyscw: 27026\nread_bytes: 0\nwrite_bytes: 61440\ncancelled_write_bytes: 0\n"
+      },
+      "workerNodeMemoryKiB": {
+        "VmRSS": 250324,
+        "RssAnon": 219312,
+        "RssFile": 31012,
+        "RssShmem": 0,
+        "VmSwap": 0
+      },
+      "naturalGC": {
+        "count": 491,
+        "durationMilliseconds": 905.3016198724508,
+        "kinds": {
+          "1": 389,
+          "4": 51,
+          "8": 51
+        }
+      },
+      "sampleBefore": 18510.867637,
+      "sampleAfter": 18510.944102,
+      "perCallTimes": {
+        "processBeforeStart": 18510.875519,
+        "processBeforeEnd": 18510.887847,
+        "heapStart": 18510.888208,
+        "heapEnd": 18510.890511,
+        "spacesStart": 18510.915389,
+        "spacesEnd": 18510.923481,
+        "processAfterStart": 18510.937893,
+        "processAfterEnd": 18510.943792
+      },
+      "gcReconciled": {
+        "countAtSample": 491,
+        "latestBefore": {
+          "kind": 4,
+          "flags": 64,
+          "startTime": 18449.16508,
+          "duration": 2.6323979943990707,
+          "deliveredAt": 18451.929077
+        },
+        "overlapCount": 0,
+        "overlaps": []
+      },
+      "spaces": [
+        {
+          "name": "read_only_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_space",
+          "size": 33554432,
+          "used": 43808,
+          "available": 16732384,
+          "physical": 33554432
+        },
+        {
+          "name": "old_space",
+          "size": 42086400,
+          "used": 32077768,
+          "available": 238048,
+          "physical": 42205184
+        },
+        {
+          "name": "code_space",
+          "size": 1572864,
+          "used": 1232256,
+          "available": 0,
+          "physical": 1572864
+        },
+        {
+          "name": "shared_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_space",
+          "size": 1945600,
+          "used": 1144864,
+          "available": 799216,
+          "physical": 2097152
+        },
+        {
+          "name": "shared_trusted_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 16777216,
+          "physical": 0
+        },
+        {
+          "name": "large_object_space",
+          "size": 25251840,
+          "used": 25212216,
+          "available": 0,
+          "physical": 25251840
+        },
+        {
+          "name": "code_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        }
+      ],
+      "nativeAtUnixSeconds": 1792562024.72663,
+      "sqlAt": "2026-10-21T05:53:44.736357+00:00"
+    },
+    {
+      "round": 7,
+      "commonCurrentBytes": 967057408,
+      "commonLifetimePeakBytes": 1033482240,
+      "nativeAnonBytes": 332976128,
+      "nativeFileBytes": 605224960,
+      "nativeKernelBytes": 27983872,
+      "nativeShmemBytes": 233791488,
+      "nodeProcessBefore": {
+        "rss": 256819200,
+        "heapTotal": 104935424,
+        "heapUsed": 59753328,
+        "external": 5439295,
+        "arrayBuffers": 1457402
+      },
+      "nodeProcessAfter": {
+        "rss": 256819200,
+        "heapTotal": 104935424,
+        "heapUsed": 59770112,
+        "external": 5439295,
+        "arrayBuffers": 1457402
+      },
+      "v8Heap": {
+        "physical": 105205760,
+        "total": 104935424,
+        "used": 59753816,
+        "available": 382600088,
+        "limit": 452984832,
+        "executable": 1572864,
+        "malloced": 286792,
+        "peakMalloced": 28786760,
+        "nativeContexts": 1,
+        "detachedContexts": 0,
+        "handlesTotal": 114688,
+        "handlesUsed": 3488,
+        "external": 5439295
+      },
+      "workerNodeProcess": {
+        "pid": 46,
+        "readable": true,
+        "status": {
+          "VmRSS": "251404 kB",
+          "RssAnon": "220364 kB",
+          "RssFile": "31040 kB",
+          "RssShmem": "0 kB",
+          "VmSwap": "0 kB",
+          "Threads": "7"
+        },
+        "ioRaw": "rchar: 97630884\nwchar: 297307\nsyscr: 30892\nsyscw: 29128\nread_bytes: 0\nwrite_bytes: 73728\ncancelled_write_bytes: 0\n"
+      },
+      "workerNodeMemoryKiB": {
+        "VmRSS": 251404,
+        "RssAnon": 220364,
+        "RssFile": 31040,
+        "RssShmem": 0,
+        "VmSwap": 0
+      },
+      "naturalGC": {
+        "count": 567,
+        "durationMilliseconds": 1026.6404069960117,
+        "kinds": {
+          "1": 451,
+          "4": 58,
+          "8": 58
+        }
+      },
+      "sampleBefore": 21337.162293,
+      "sampleAfter": 21337.242924,
+      "perCallTimes": {
+        "processBeforeStart": 21337.170195,
+        "processBeforeEnd": 21337.186249,
+        "heapStart": 21337.18664,
+        "heapEnd": 21337.189634,
+        "spacesStart": 21337.214552,
+        "spacesEnd": 21337.223034,
+        "processAfterStart": 21337.236705,
+        "processAfterEnd": 21337.242564
+      },
+      "gcReconciled": {
+        "countAtSample": 567,
+        "latestBefore": {
+          "kind": 4,
+          "flags": 64,
+          "startTime": 21291.114333,
+          "duration": 2.7997200042009354,
+          "deliveredAt": 21294.034965
+        },
+        "overlapCount": 0,
+        "overlaps": []
+      },
+      "spaces": [
+        {
+          "name": "read_only_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_space",
+          "size": 33554432,
+          "used": 39944,
+          "available": 16736248,
+          "physical": 33554432
+        },
+        {
+          "name": "old_space",
+          "size": 42610688,
+          "used": 32116496,
+          "available": 236888,
+          "physical": 42729472
+        },
+        {
+          "name": "code_space",
+          "size": 1572864,
+          "used": 1241408,
+          "available": 0,
+          "physical": 1572864
+        },
+        {
+          "name": "shared_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_space",
+          "size": 1945600,
+          "used": 1152848,
+          "available": 791232,
+          "physical": 2097152
+        },
+        {
+          "name": "shared_trusted_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 16777216,
+          "physical": 0
+        },
+        {
+          "name": "large_object_space",
+          "size": 25251840,
+          "used": 25212216,
+          "available": 0,
+          "physical": 25251840
+        },
+        {
+          "name": "code_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        }
+      ],
+      "nativeAtUnixSeconds": 1792562027.5515618,
+      "sqlAt": "2026-10-21T05:53:47.561532+00:00"
+    },
+    {
+      "round": 8,
+      "commonCurrentBytes": 970063872,
+      "commonLifetimePeakBytes": 1035517952,
+      "nativeAnonBytes": 335745024,
+      "nativeFileBytes": 605290496,
+      "nativeKernelBytes": 28041216,
+      "nativeShmemBytes": 233799680,
+      "nodeProcessBefore": {
+        "rss": 259727360,
+        "heapTotal": 110845952,
+        "heapUsed": 81286016,
+        "external": 15151835,
+        "arrayBuffers": 1589787
+      },
+      "nodeProcessAfter": {
+        "rss": 259727360,
+        "heapTotal": 110845952,
+        "heapUsed": 81302800,
+        "external": 15151835,
+        "arrayBuffers": 1589787
+      },
+      "v8Heap": {
+        "physical": 111116288,
+        "total": 110845952,
+        "used": 81286504,
+        "available": 371581456,
+        "limit": 452984832,
+        "executable": 1572864,
+        "malloced": 286792,
+        "peakMalloced": 31633136,
+        "nativeContexts": 1,
+        "detachedContexts": 0,
+        "handlesTotal": 114688,
+        "handlesUsed": 3552,
+        "external": 15151835
+      },
+      "workerNodeProcess": {
+        "pid": 46,
+        "readable": true,
+        "status": {
+          "VmRSS": "254080 kB",
+          "RssAnon": "222996 kB",
+          "RssFile": "31084 kB",
+          "RssShmem": "0 kB",
+          "VmSwap": "0 kB",
+          "Threads": "7"
+        },
+        "ioRaw": "rchar: 110982520\nwchar: 318369\nsyscr: 32604\nsyscw: 30614\nread_bytes: 0\nwrite_bytes: 81920\ncancelled_write_bytes: 0\n"
+      },
+      "workerNodeMemoryKiB": {
+        "VmRSS": 254080,
+        "RssAnon": 222996,
+        "RssFile": 31084,
+        "RssShmem": 0,
+        "VmSwap": 0
+      },
+      "naturalGC": {
+        "count": 642,
+        "durationMilliseconds": 1165.8722639530897,
+        "kinds": {
+          "1": 514,
+          "4": 64,
+          "8": 64
+        }
+      },
+      "sampleBefore": 24228.221588,
+      "sampleAfter": 24228.295309,
+      "perCallTimes": {
+        "processBeforeStart": 24228.22977,
+        "processBeforeEnd": 24228.242299,
+        "heapStart": 24228.242709,
+        "heapEnd": 24228.245103,
+        "spacesStart": 24228.268899,
+        "spacesEnd": 24228.27656,
+        "processAfterStart": 24228.2897,
+        "processAfterEnd": 24228.295048
+      },
+      "gcReconciled": {
+        "countAtSample": 642,
+        "latestBefore": {
+          "kind": 1,
+          "flags": 0,
+          "startTime": 24155.762096,
+          "duration": 1.3936109989881516,
+          "deliveredAt": 24166.60362
+        },
+        "overlapCount": 0,
+        "overlaps": []
+      },
+      "spaces": [
+        {
+          "name": "read_only_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_space",
+          "size": 33554432,
+          "used": 11857456,
+          "available": 4918736,
+          "physical": 33554432
+        },
+        {
+          "name": "old_space",
+          "size": 47853568,
+          "used": 41184624,
+          "available": 6606600,
+          "physical": 47972352
+        },
+        {
+          "name": "code_space",
+          "size": 1572864,
+          "used": 1233664,
+          "available": 339008,
+          "physical": 1572864
+        },
+        {
+          "name": "shared_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_space",
+          "size": 1945600,
+          "used": 1152160,
+          "available": 791920,
+          "physical": 2097152
+        },
+        {
+          "name": "shared_trusted_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "new_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 16777216,
+          "physical": 0
+        },
+        {
+          "name": "large_object_space",
+          "size": 25919488,
+          "used": 25867696,
+          "available": 0,
+          "physical": 25919488
+        },
+        {
+          "name": "code_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "shared_trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        },
+        {
+          "name": "trusted_large_object_space",
+          "size": 0,
+          "used": 0,
+          "available": 0,
+          "physical": 0
+        }
+      ],
+      "nativeAtUnixSeconds": 1792562030.4426856,
+      "sqlAt": "2026-10-21T05:53:50.453116+00:00"
+    }
+  ],
+  "endpointProcessMetricChoice": "nodeProcessBefore is the first process.memoryUsage in the physical V8-read bracket, paired with subsequent V8 heap and space readings; processAfter also reported. Earlier old memory() and worker/native readings are sequential observations, not atomic equivalents.",
+  "fixedPairOneBased": [
+    4,
+    8
+  ],
+  "fixed4To8SignedDeltas": {
+    "commonCurrentBytes": 16306176,
+    "nativeAnonBytes": 15683584,
+    "nativeFileBytes": 262144,
+    "nativeKernelBytes": 651264,
+    "nativeShmemBytes": 40960,
+    "nodeProcessBefore": {
+      "arrayBuffers": 65544,
+      "rss": 17072128,
+      "heapUsed": -7334488,
+      "heapTotal": -10383360,
+      "external": 9778746
+    },
+    "nodeProcessAfter": {
+      "arrayBuffers": 65544,
+      "rss": 17072128,
+      "heapUsed": -7334488,
+      "heapTotal": -10383360,
+      "external": 9778746
+    },
+    "v8Heap": {
+      "handlesTotal": 0,
+      "external": 9778746,
+      "total": -10383360,
+      "limit": 0,
+      "peakMalloced": 2846376,
+      "malloced": 0,
+      "executable": 0,
+      "detachedContexts": 0,
+      "physical": -10383360,
+      "used": -7334488,
+      "available": 7365864,
+      "handlesUsed": -32,
+      "nativeContexts": 0
+    },
+    "workerNodeMemoryKiB": {
+      "VmRSS": 16480,
+      "RssAnon": 16404,
+      "RssFile": 76,
+      "RssShmem": 0,
+      "VmSwap": 0
+    }
+  },
+  "fixed4To8EachV8SpaceSignedDeltas": {
+    "code_large_object_space": {
+      "size": 0,
+      "used": 0,
+      "available": 0,
+      "physical": 0
+    },
+    "code_space": {
+      "size": 0,
+      "used": 19968,
+      "available": -19968,
+      "physical": 0
+    },
+    "large_object_space": {
+      "size": -1208320,
+      "used": -1179928,
+      "available": 0,
+      "physical": -1208320
+    },
+    "new_large_object_space": {
+      "size": 0,
+      "used": 0,
+      "available": 0,
+      "physical": 0
+    },
+    "new_space": {
+      "size": 0,
+      "used": 9339736,
+      "available": -9339736,
+      "physical": 0
+    },
+    "old_space": {
+      "size": -9175040,
+      "used": -15521496,
+      "available": 6349432,
+      "physical": -9175040
+    },
+    "read_only_space": {
+      "size": 0,
+      "used": 0,
+      "available": 0,
+      "physical": 0
+    },
+    "shared_large_object_space": {
+      "size": 0,
+      "used": 0,
+      "available": 0,
+      "physical": 0
+    },
+    "shared_space": {
+      "size": 0,
+      "used": 0,
+      "available": 0,
+      "physical": 0
+    },
+    "shared_trusted_large_object_space": {
+      "size": 0,
+      "used": 0,
+      "available": 0,
+      "physical": 0
+    },
+    "shared_trusted_space": {
+      "size": 0,
+      "used": 0,
+      "available": 0,
+      "physical": 0
+    },
+    "trusted_large_object_space": {
+      "size": 0,
+      "used": 0,
+      "available": 0,
+      "physical": 0
+    },
+    "trusted_space": {
+      "size": 0,
+      "used": 7232,
+      "available": -7224,
+      "physical": 0
+    }
+  },
+  "fixedStage4": null,
+  "fixedStage8": null,
+  "fixedLatestGC4": {
+    "kind": 1,
+    "flags": 0,
+    "startTime": 12606.358784,
+    "duration": 1.3351020067930222,
+    "deliveredAt": 12607.789671
+  },
+  "fixedLatestGC8": {
+    "kind": 1,
+    "flags": 0,
+    "startTime": 24155.762096,
+    "duration": 1.3936109989881516,
+    "deliveredAt": 24166.60362
+  },
+  "physicalClock": {
+    "timeOrigin": 1792562006238.236,
+    "startedAt": 58.160459,
+    "uptimeAtStart": 0.057602097,
+    "clock": "same-process performance.now milliseconds",
+    "snapshotsAtomic": false
+  },
+  "gcKinds": {
+    "1": 539,
+    "4": 66,
+    "8": 66
+  },
+  "gcEventsObserved": 671,
+  "physicalMetadataReportedBytes": 36248,
+  "physicalMetadataIndependentCompactBytes": 36248,
+  "GCReconciliationVerified": "All16 bracket schemas/clock orders/latest preceding intervals/retained overlap examples checked. Available final-ring delayed entries independently checked against all earlier brackets. Full event history and unobserved events are not recoverable from the bounded ring; no exact absence claim.",
+  "caseEvidenceFilesRehashed": 162,
+  "caseEvidenceLogicalBytes": 3217549,
+  "newOrMandatoryPinsRehashed": 172,
+  "unchangedDependencyPinsReused": 657,
+  "limits": [
+    "Exactly all8 end samples reported; fixed4/8 is the sole comparison, with no substitute pair.",
+    "The250ms/kind/flags screen is an operational convention; even a match leaves attribution INCONCLUSIVE under undelivered GC/live-object uncertainty.",
+    "V8 physical heap/space counters are related capacity views, not exact RSS residency. No adding to RSS or exact RSS-minus-physical attribution; external includes arrayBuffers and file includes shmem.",
+    "Worker/native/SQL/process/V8 samples are sequential and the retained timeline is nonuniform; no exact peak owner or PSS claim.",
+    "Existing30 rising-tail evidence is unchanged;8 rounds do not establish a global plateau, leak or safe structural fix.",
+    "History remains6000; no500-profile/ledger-growth/full-motor/1500-position/Offline90/Unit60/500MB-reserve proof.",
+    "No new experiment, forced GC, cache eviction, peak reset, SQL, sampler, subject import or resource action occurred in this review."
+  ],
+  "plateauProven": false,
+  "leakMechanismProven": false,
+  "structuralMemoryFixSupported": false,
+  "fullMotorReserveProven": false,
+  "full500": false,
+  "production": false,
+  "providerCalls": 0,
+  "retirementAuthorizedByThisReview": false,
+  "sourceIndependentActualReportPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/physical8-review-20261021/ACTUAL_REVIEW.SAFE.json",
+    "bytes": 49591,
+    "sha256": "fd87099c008aaa1dcf4f66e624bce0c34042421e0bc208eb97013ba655de381f"
+  },
+  "retentionNote": "Selected fields copied without alteration from independent private report; complete pin inventory and raw final16 GC events retained at source."
+}

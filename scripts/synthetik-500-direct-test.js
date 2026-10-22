@@ -208,6 +208,7 @@ async function main() {
   });
   await test("operator accepts only protected bounded selectors on exact immutable deployment", async () => {
     const oldLoad = storage.loadSynthetik500ProductionCommand, oldValidate = C.validate;
+    const oldPrepared = storage.withSynthetik500PreparedCommand;
     const names = ["productionStart", "productionNext", "requestStop", "status", "exportEvidence"];
     const old = Object.fromEntries(names.map(k => [k, Adapter[k]])), calls = [];
     const route = command.slot.plan.routeContract.route, env = { VERCEL_ENV: "production", HELMUT_ADMIN_SECRET: "fictional-admin-secret",
@@ -221,6 +222,9 @@ async function main() {
       await work; return res;
     };
     try {
+      // This group tests the HTTP boundary with a fictional command. The real
+      // prepared database scope is covered separately by native integration.
+      storage.withSynthetik500PreparedCommand = async (_args, work) => work();
       storage.loadSynthetik500ProductionCommand = async () => ({ command }); C.validate = () => ({ plan: command.slot.plan });
       for (const n of names) Adapter[n] = async (...a) => { calls.push([n, a]); return { fictional: true }; };
       const body = { action: "status", operationId: command.slot.plan.operationId, commandHash: hash(command) };
@@ -236,7 +240,8 @@ async function main() {
         await invoke(body, {}, "", { VERCEL_DEPLOYMENT_ID: "dpl_Foreign" }),
         await invoke({ ...body, action: "export", index: 500 }), await invoke({ ...body, huge: "x".repeat(1024) })]) assert.notEqual(r.status, 200);
       assert.equal(calls.length, before);
-    } finally { storage.loadSynthetik500ProductionCommand = oldLoad; C.validate = oldValidate; Object.assign(Adapter, old); }
+    } finally { storage.withSynthetik500PreparedCommand = oldPrepared;
+      storage.loadSynthetik500ProductionCommand = oldLoad; C.validate = oldValidate; Object.assign(Adapter, old); }
   });
   assert.equal(network, 0);
   console.log(JSON.stringify({ groups, networkCalls: network, modelCalls: 0, production: false, nativeD: false }));

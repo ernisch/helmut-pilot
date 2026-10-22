@@ -1,0 +1,190 @@
+{
+  "schema": "helmut-fullpath-observation-reviewable-copies/1",
+  "meaning": "Byte-identical source/attribution/test/protection summaries and new local unit-test logs only. Original database, raw runtime payload, credentials and full traces remain private.",
+  "copies": [
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/ROOT_OBSERVER_TESTS.SAFE.json",
+        "bytes": 4445,
+        "sha256": "9ad13979389611d434354f17ed38a9ab858b36d176f2c91746472113efdbe1f2"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/ROOT_OBSERVER_TESTS.SAFE.json",
+        "bytes": 4445,
+        "sha256": "9ad13979389611d434354f17ed38a9ab858b36d176f2c91746472113efdbe1f2"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/ROOT_SOURCE_INTEGRATION_TRACE.SAFE.json",
+        "bytes": 3619,
+        "sha256": "c2c4bd3fa7956f51fd404f0a360b1af0da4d799191a73f146f87ae3e3e1d8708"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/ROOT_SOURCE_INTEGRATION_TRACE.SAFE.json",
+        "bytes": 3619,
+        "sha256": "c2c4bd3fa7956f51fd404f0a360b1af0da4d799191a73f146f87ae3e3e1d8708"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/ROOT_END_PROTECTION.SAFE.json",
+        "bytes": 2077,
+        "sha256": "60815cece2fea64916b2f23bcd040f3952fddf28076b50ce56d919df6e641af5"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/ROOT_END_PROTECTION.SAFE.json",
+        "bytes": 2077,
+        "sha256": "60815cece2fea64916b2f23bcd040f3952fddf28076b50ce56d919df6e641af5"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/capacity-review/READONLY_FINDINGS.SAFE.json",
+        "bytes": 25018,
+        "sha256": "29b5ffae957576ca0b677c089bbd51cd3bcf7fad499e1124a464f85522de0fd7"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/V11_MEMORY_GAP.SAFE.json",
+        "bytes": 25018,
+        "sha256": "29b5ffae957576ca0b677c089bbd51cd3bcf7fad499e1124a464f85522de0fd7"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/capacity-review/TELEMETRY_COLLECTION_SIZES.SAFE.json",
+        "bytes": 8143,
+        "sha256": "50dce7c83b5d8d253ceaafb9c848151bef35fb580ad6031bc1c69ff59a987dfe"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/TELEMETRY_COLLECTION_SIZES.SAFE.json",
+        "bytes": 8143,
+        "sha256": "50dce7c83b5d8d253ceaafb9c848151bef35fb580ad6031bc1c69ff59a987dfe"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/launcher-review/MINIMAL_REAL_HANDLER_FEASIBILITY.SAFE.json",
+        "bytes": 16408,
+        "sha256": "ffa3bcd2e01b10cc23b3ca859e6c2d1268d0291bcac60350abdf3b8f1c52905a"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/MINIMAL_REAL_HANDLER_FEASIBILITY.SAFE.json",
+        "bytes": 16408,
+        "sha256": "ffa3bcd2e01b10cc23b3ca859e6c2d1268d0291bcac60350abdf3b8f1c52905a"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/evidence-review/DB_RETENTION_GAP_REVIEW.SAFE.json",
+        "bytes": 26645,
+        "sha256": "6c4072e7ff1c34a34005a84e107e3bbdadec3936293f0f0bc96e821ba04d2462"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/DB_RETENTION_GAP_REVIEW.SAFE.json",
+        "bytes": 26645,
+        "sha256": "6c4072e7ff1c34a34005a84e107e3bbdadec3936293f0f0bc96e821ba04d2462"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/launcher-review/RUNTIME_OBSERVER_SOURCE_REVIEW.SAFE.json",
+        "bytes": 9532,
+        "sha256": "4ad14b064197cca6e7486b33597a2e19d1a2fa74f967613b89f8685075a39102"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/OBSERVER_SOURCE_INITIAL_REVIEW.SAFE.json",
+        "bytes": 9532,
+        "sha256": "4ad14b064197cca6e7486b33597a2e19d1a2fa74f967613b89f8685075a39102"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/launcher-review/RUNTIME_OBSERVER_SOURCE_ADDENDUM.SAFE.json",
+        "bytes": 10958,
+        "sha256": "5af858f47ee6f773a3a4349ab0191f0907fc7391f69ca9c07ec93e1e23ae9659"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/OBSERVER_SOURCE_ADDENDUM.SAFE.json",
+        "bytes": 10958,
+        "sha256": "5af858f47ee6f773a3a4349ab0191f0907fc7391f69ca9c07ec93e1e23ae9659"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/evidence-review/RUNTIME_OBSERVER_QUALIFICATION_REVIEW.SAFE.json",
+        "bytes": 12417,
+        "sha256": "81131727696fcb61d34024b282e0f689fda3b247a0c5fb11ebbe19fe190b539b"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/OBSERVER_QUALIFICATION_REVIEW.SAFE.json",
+        "bytes": 12417,
+        "sha256": "81131727696fcb61d34024b282e0f689fda3b247a0c5fb11ebbe19fe190b539b"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/NODE_GUARDS.log",
+        "bytes": 2362,
+        "sha256": "bd794a8c5b4e1ea8114966426d576b5dcbfa22aef73540d38606bceb164dfa3a"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/NODE_GUARDS.log",
+        "bytes": 2362,
+        "sha256": "bd794a8c5b4e1ea8114966426d576b5dcbfa22aef73540d38606bceb164dfa3a"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/STAGING_GUARDS.log",
+        "bytes": 1270,
+        "sha256": "e4a3cc104ef7b4ae157e8dc014fccc511efeb95a741dd594f102814227ec4f9b"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/STAGING_GUARDS.log",
+        "bytes": 1270,
+        "sha256": "e4a3cc104ef7b4ae157e8dc014fccc511efeb95a741dd594f102814227ec4f9b"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/STAGING_ONE_AFTER_IMPORT_FIX.log",
+        "bytes": 488,
+        "sha256": "4f820f7ba0dc6c12f2ec85f65b43852fef776906893caae4e6297b575e2c6802"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/STAGING_ONE_AFTER_IMPORT_FIX.log",
+        "bytes": 488,
+        "sha256": "4f820f7ba0dc6c12f2ec85f65b43852fef776906893caae4e6297b575e2c6802"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/NODE_GUARDS_AFTER_GC_KIND_FIX.log",
+        "bytes": 2444,
+        "sha256": "1abbd6399cd818d7ff8948f241ccb711c4ea23a7f844a5497b150fabc7ba26fe"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/NODE_GUARDS_AFTER_GC_KIND_FIX.log",
+        "bytes": 2444,
+        "sha256": "1abbd6399cd818d7ff8948f241ccb711c4ea23a7f844a5497b150fabc7ba26fe"
+      }
+    },
+    {
+      "originalPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/BOUNDED_COMPOSITION.log",
+        "bytes": 806,
+        "sha256": "135b132b6aa5852e1757d5d699bc6cf413f33fafd4e9e514e2ec68752d87fde6"
+      },
+      "reviewableCopy": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/fullpath-retention-20261021/BOUNDED_COMPOSITION.log",
+        "bytes": 806,
+        "sha256": "135b132b6aa5852e1757d5d699bc6cf413f33fafd4e9e514e2ec68752d87fde6"
+      }
+    }
+  ],
+  "sourceDecision": "Local diagnostic preparation only; no new major avoidable owner, motor saving, stability plateau or500MB/500profile acceptance.",
+  "originalsModified": false,
+  "full500GO": false,
+  "production": false
+}

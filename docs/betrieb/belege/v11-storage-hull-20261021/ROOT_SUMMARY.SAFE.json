@@ -1,0 +1,89 @@
+{
+  "archiverSourceSHA256": "a06c22aabbd2a6c9fb55bfae3b965ab5801791e9812e1b92be01440705678dec",
+  "atUnix": 1792584400.7939546,
+  "backup": {
+    "changedRegularContentBytes": 0,
+    "changedRegularContentPaths": 7,
+    "deletedBasePaths": 1,
+    "deltaTarBytes": 10240,
+    "fullExportBytesEach": 438837248,
+    "fullExportManifestEqualityEnforced": true,
+    "independentActualReview": "PASS_ROOTFS_ARCHIVE_ONLY_NO_RETIREMENT",
+    "independentSourceReview": "PASS_SOURCE_ONLY",
+    "manifestEntries": 10239,
+    "mountPayloadsBackedUp": false,
+    "newManifestPaths": 14,
+    "outerExitCode": 0,
+    "rawExportReceiptsHappenToMatch": true,
+    "rawStreamsRetained": false,
+    "wholeV11OrDatabaseBackup": false
+  },
+  "capacity": {
+    "newBackupArtifactsActorEndAllocatedBytes": 7778304,
+    "proposalBudgetBytes": 67108864,
+    "qualifiedReclaimBytes": 0,
+    "snapshotAvailableBytes": 14947823616,
+    "snapshotGapBytes": 231956104,
+    "snapshotNotReservation": true,
+    "unchangedFullAdmissionBytes": 15179779720
+  },
+  "derivedPrivateRootSummarySHA256": "b04016f2ace239df06bb57c5249d6c6a47f55ea78380f368381c9ddc1ae8a398",
+  "limits": {
+    "containersRemoved": 0,
+    "full500": false,
+    "newRAMSavingClaim": false,
+    "production": false,
+    "reserve500MBBewiesen": false,
+    "retirementAuthorized": false
+  },
+  "nextDecision": "Explicit release of the protected original hull is needed before considering its exact removal. No full500 authority is conveyed.",
+  "originalHullCID": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+  "policy": {
+    "SOLStartPolicyProposalOnly": true,
+    "gateFilesRequireConsistentVersioning": 4,
+    "noRouterOrProviderCalls": true,
+    "oldProReceiptsUnchanged": true
+  },
+  "preservation": {
+    "allFiveOriginalIdentityStateAndMountBindingsUnchanged": true,
+    "canonicalOriginalDBPayloadsRead": false,
+    "canonicalRootMetadataUnchanged": true,
+    "imagesVolumesLoopsRetained": true
+  },
+  "productCodeCommit": "6d528425",
+  "proofPins": {
+    "archive": {
+      "bytes": 3788096,
+      "file": "ACTUAL_ARCHIVE_VERIFICATION.SAFE.json",
+      "sha256": "2d667a3ab55f694ca9d4681f0b87734745e615b647fde8d14a3912fb1575a44f"
+    },
+    "independentActualReview": {
+      "bytes": 12732,
+      "file": "ARCHIVE_ACTUAL_REVIEW.SAFE.json",
+      "sha256": "285a32c307986a4e5dd68e7bd5a33b860627fe8f892fd49644e87867a71e52b2"
+    },
+    "liveConsumerReview": {
+      "bytes": 15172,
+      "file": "LIVE_CONSUMER_REVIEW.SAFE.json",
+      "sha256": "f49137ab8cefa32c23a73489de544eefd0ab2bb581844b50a7049f0f1dc231ca"
+    },
+    "releaseProposal": {
+      "bytes": 4736,
+      "file": "ROOT_RELEASE_PROPOSAL.SAFE.json",
+      "sha256": "e45ee30a6b27a1152a805cf553923c9a08012f9ba456a1da4c1a58db7af86c46"
+    },
+    "rootEnd": {
+      "bytes": 2083,
+      "file": "ROOT_END_PROTECTION.SAFE.json",
+      "sha256": "8f78fb74c60604579a48f71d115393eeaf26363ebed2d4fc20731ebd345b6f7d"
+    },
+    "sourceReview": {
+      "bytes": 10951,
+      "file": "ARCHIVER_SOURCE_REVIEW.SAFE.json",
+      "sha256": "6e91e7e56e655bc5e74b3c3a669985962abf8ce3c0d528233f292122330bbbd7"
+    }
+  },
+  "repositoryHEADAtBackup": "80d750c7859fea95ac5901afe7bf8d172c5624a3",
+  "schema": "helmut-v11-storage-hull-root-summary/1",
+  "status": "PARTIAL_BACKUP_ACCEPTED_PROTECTED_RELEASE_OPEN"
+}

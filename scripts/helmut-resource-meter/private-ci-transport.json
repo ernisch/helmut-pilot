@@ -1,0 +1,16 @@
+{
+  "schema": "helmut-private-ci-transport/1",
+  "manifestSHA256": "b2e3584818b16fed2f4bfd845f9379732d9f9eb045c83f59ad94034d9e6c46ef",
+  "cipher": {
+    "path": ".github/ci-originals/CI84_ORIGINALS.tar.gz.gpg",
+    "bytes": 30165381,
+    "sha256": "0e2c02bee106af05d1d7a272e364dd2f2865d67756c512f1304177480996f8a4"
+  },
+  "archive": {
+    "path": "CI84_ORIGINALS.tar.gz",
+    "bytes": 30165287,
+    "sha256": "282684b17d9316240b231ae8f3ccc03ec8aa243b435284ca806188141e022d46"
+  },
+  "files": 84,
+  "totalBytes": 83496520
+}
