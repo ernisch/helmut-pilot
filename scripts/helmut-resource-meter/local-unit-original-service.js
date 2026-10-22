@@ -1,0 +1,276 @@
+"use strict";
+
+// Source-owner service for a NEW isolated copy. The application never receives
+// this socket, HMAC key or administrator connection. No default execution.
+const fs = require("node:fs"), net = require("node:net"), path = require("node:path");
+const crypto = require("node:crypto"), childProcess = require("node:child_process");
+const CONFIG = "/bench/ORIGINAL_SERVICE_CONFIG.PRIVATE.json";
+const SOCKET = "/ram/helmut-original-write-bridge.sock";
+const BODY_CAP = 36 * 1024 * 1024, FRAME_CAP = 50 * 1024 * 1024;
+const exact = (x, keys) => x && typeof x === "object" && !Array.isArray(x)
+  && Object.keys(x).sort().join("|") === [...keys].sort().join("|");
+const sha = b => crypto.createHash("sha256").update(b).digest("hex");
+const need = (ok, code) => { if (!ok) throw Error("original-owner-service-" + code); };
+function file(pin, { privateFile = false, bytes = false } = {}) {
+  need(exact(pin, ["path", "bytes", "sha256"]) && path.isAbsolute(pin.path)
+    && path.normalize(pin.path) === pin.path && /^[a-f0-9]{64}$/.test(pin.sha256)
+    && Number.isSafeInteger(pin.bytes) && pin.bytes > 0 && pin.bytes <= 256 * 1024 * 1024, "file-pin");
+  need(fs.realpathSync(pin.path) === pin.path, "file-path");
+  const fd = fs.openSync(pin.path, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+  try {
+    const a = fs.fstatSync(fd, { bigint: true }), h = crypto.createHash("sha256");
+    need(a.isFile() && a.nlink === 1n && a.size === BigInt(pin.bytes)
+      && (!privateFile || a.uid === 1000n && (a.mode & 0o777n) === 0o600n), "file-metadata");
+    const buffer = Buffer.alloc(Math.min(pin.bytes, 65536)), blocks = []; let n, count = 0;
+    while ((n = fs.readSync(fd, buffer, 0, buffer.length, null)) > 0) {
+      count += n; need(count <= pin.bytes, "file-grew"); h.update(buffer.subarray(0, n));
+      if (bytes) blocks.push(Buffer.from(buffer.subarray(0, n)));
+    }
+    const b = fs.fstatSync(fd, { bigint: true }), named = fs.lstatSync(pin.path, { bigint: true });
+    need(count === pin.bytes && h.digest("hex") === pin.sha256
+      && ["dev", "ino", "mode", "uid", "gid", "nlink", "size", "mtimeNs", "ctimeNs"].every(k => a[k] === b[k] && b[k] === named[k]), "file-drift");
+    return bytes ? Buffer.concat(blocks) : null;
+  } finally { fs.closeSync(fd); }
+}
+function privateConfig() {
+  need(fs.realpathSync(CONFIG) === CONFIG, "config-path");
+  const fd = fs.openSync(CONFIG, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+  try {
+    const a = fs.fstatSync(fd, { bigint: true });
+    need(a.isFile() && a.nlink === 1n && a.uid === 1000n && (a.mode & 0o7777n) === 0o600n
+      && a.size > 0n && a.size <= 1048576n, "config-metadata");
+    const buffer = Buffer.alloc(Number(a.size) + 1); let total = 0;
+    while (total < buffer.length) {
+      const n = fs.readSync(fd, buffer, total, buffer.length - total, null); if (!n) break; total += n;
+    }
+    const b = fs.fstatSync(fd, { bigint: true }), named = fs.lstatSync(CONFIG, { bigint: true });
+    need(total === Number(a.size) && named.isFile() && fs.realpathSync(CONFIG) === CONFIG
+      && ["dev", "ino", "mode", "uid", "gid", "nlink", "size", "mtimeNs", "ctimeNs"].every(k => a[k] === b[k] && b[k] === named[k]), "config-drift");
+    const bytes = buffer.subarray(0, total);
+    need(Buffer.from(bytes.toString("utf8")).equals(bytes), "config-utf8");
+    const value = JSON.parse(bytes.toString("utf8"));
+    need(JSON.stringify(value) === bytes.toString("utf8"), "config-unique-json");
+    return { value, pin: { path: CONFIG, bytes: total, sha256: sha(bytes) } };
+  } finally { fs.closeSync(fd); }
+}
+function utc(x) { return typeof x === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(x)
+  && Number.isFinite(Date.parse(x)) && new Date(x).toISOString() === x; }
+function processIdentity(pid) {
+  need(Number.isSafeInteger(pid) && pid > 0, "process-id");
+  const text = fs.readFileSync(`/proc/${pid}/stat`, "utf8"), fields = text.slice(text.lastIndexOf(")") + 2).trim().split(/\s+/);
+  need(!["Z", "X"].includes(fields[0]) && /^[0-9]+$/.test(fields[19]), "process-live");
+  return { pid, startTicks: fields[19], exe: fs.readlinkSync(`/proc/${pid}/exe`),
+    membership: fs.readFileSync(`/proc/${pid}/cgroup`, "utf8") };
+}
+function checkConfig(c) {
+  need(process.getuid() === 1000 && !process.env.VERCEL && process.version === "v24.19.0", "local-owner-only");
+  need(!process.env.NODE_OPTIONS && process.execArgv.includes("--max-old-space-size=384")
+    && process.execArgv.includes("--max-semi-space-size=16"), "node-budget");
+  need(exact(c, ["schema", "operationId", "commandHash", "database", "issuedAtUTC", "expiresAtUTC", "measuredCgroup",
+    "postgres", "psqlPin", "servicePin", "transactionCodePin", "secretHex", "qualification", "libraryPath"])
+    && c.schema === "helmut-local-unit-original-service/1" && /^localUnitDiagnostic-[a-f0-9]{32}$/.test(c.operationId)
+    && c.database === "helmut_unit_diagnostic_" + c.operationId.slice(-32) && /^[a-f0-9]{64}$/.test(c.commandHash), "configuration");
+  need(utc(c.issuedAtUTC) && utc(c.expiresAtUTC) && Date.now() >= Date.parse(c.issuedAtUTC)
+    && Date.now() - Date.parse(c.issuedAtUTC) <= 10000 && Date.parse(c.expiresAtUTC) - Date.parse(c.issuedAtUTC) <= 180000
+    && Date.parse(c.expiresAtUTC) > Date.now(), "configuration-window");
+  need(typeof c.secretHex === "string" && /^[a-f0-9]{64}$/.test(c.secretHex), "private-key");
+  need(c.servicePin.path === __filename && c.transactionCodePin.path === path.join(__dirname, "local-unit-original-transaction.js")
+    && c.psqlPin.path === "/usr/lib/postgresql/17/bin/psql", "fixed-code");
+  for (const p of [c.servicePin, c.transactionCodePin, c.psqlPin, c.postgres.exePin]) file(p);
+  need(exact(c.postgres, ["pid", "startTicks", "exePin"])
+    && c.postgres.exePin.path === "/usr/lib/postgresql/17/bin/postgres", "fixed-postgres");
+  need(exact(c.measuredCgroup, ["path", "device", "inode", "procMembership"])
+    && c.measuredCgroup.path === "/owned-group" && Number.isSafeInteger(c.measuredCgroup.device)
+    && Number.isSafeInteger(c.measuredCgroup.inode) && c.measuredCgroup.inode > 0
+    && c.measuredCgroup.procMembership === "0::/\n", "measured-group");
+  need(typeof c.libraryPath === "string" && c.libraryPath.length <= 1024 && c.libraryPath.split(":").every(p =>
+    /^\/(?:ram\/jit-root|jit-root\/tree|usr\/lib\/x86_64-linux-gnu)(?:\/[a-zA-Z0-9_.-]+)*$/.test(p)), "library-path");
+  need(c.qualification && c.qualification.database === c.database && c.qualification.operationId === c.operationId
+    && c.qualification.commandHash === c.commandHash, "qualification-scope");
+  return c;
+}
+function mac(key, object) { return crypto.createHmac("sha256", key).update(JSON.stringify(object)).digest("hex"); }
+function parse(frame, key, observed, now = Date.now()) {
+  need(Buffer.isBuffer(frame) && frame.length > 0 && frame.length <= FRAME_CAP
+    && Buffer.from(frame.toString("utf8")).equals(frame), "frame-bytes");
+  const p = JSON.parse(frame.toString("utf8"));
+  need(exact(p, ["version", "nonce", "atUTC", "bodyBase64", "hmacSHA256"])
+    && p.version === "helmut-local-original-owner-request/1" && typeof p.nonce === "string" && /^[a-f0-9]{64}$/.test(p.nonce)
+    && typeof p.bodyBase64 === "string" && typeof p.hmacSHA256 === "string"
+    && !observed.has(p.nonce) && observed.size < 256 && utc(p.atUTC)
+    && Math.abs(now - Date.parse(p.atUTC)) <= 3000 && /^[a-f0-9]{64}$/.test(p.hmacSHA256)
+    && Buffer.from(JSON.stringify(p)).equals(frame), "frame-binding");
+  const { hmacSHA256 } = p, unsigned = { version: p.version, nonce: p.nonce, atUTC: p.atUTC, bodyBase64: p.bodyBase64 };
+  need(crypto.timingSafeEqual(Buffer.from(hmacSHA256, "hex"), Buffer.from(mac(key, unsigned), "hex")), "frame-authentication");
+  const body = Buffer.from(p.bodyBase64, "base64");
+  need(body.length > 0 && body.length <= BODY_CAP && body.toString("base64") === p.bodyBase64
+    && Buffer.from(body.toString("utf8")).equals(body), "request-bytes");
+  const request = JSON.parse(body.toString("utf8"));
+  need(Buffer.from(JSON.stringify(request)).equals(body), "request-unique-json");
+  observed.add(p.nonce); // Consume before any database interaction. No replay.
+  return { nonce: p.nonce, request };
+}
+function saveError(label, bytes) {
+  const directory = "/bench/OriginalBridgeErrors";
+  if (!fs.existsSync(directory)) fs.mkdirSync(directory, { mode: 0o700 });
+  const row = { schema: "helmut-local-original-owner-stderr/1", bytes: bytes.length, sha256: sha(bytes), contentsRetained: false };
+  fs.writeFileSync(path.join(directory, label + ".SAFE.json"), JSON.stringify(row) + "\n", { mode: 0o600, flag: "wx" });
+}
+async function psql(c, sql, children) {
+  need(typeof sql === "string" && Buffer.byteLength(sql) <= BODY_CAP, "sql-size");
+  file(c.psqlPin);
+  const child = childProcess.spawn(c.psqlPin.path, ["-X", "-qAt", "-w", "-h", "/ram/socket", "-p", "5432", "-U", "postgres",
+    "-d", c.database, "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=terse", "-f", "-"], {
+    env: { PATH: "/usr/lib/postgresql/17/bin:/usr/bin:/bin", LANG: "C.UTF-8", LC_ALL: "C.UTF-8",
+      LD_LIBRARY_PATH: c.libraryPath, PGCONNECT_TIMEOUT: "3", HOME: "/ram", TMPDIR: "/ram" }, stdio: ["pipe", "pipe", "pipe"] });
+  children.add(child);
+  return new Promise((resolve, reject) => {
+    const out = [], err = []; let outBytes = 0, errBytes = 0, failure = null, exited = false, outEOF = false, errEOF = false;
+    let done = false;
+    const timer = setTimeout(() => abort("transaction-deadline-unknown"), 28000);
+    const terminalTimer = setTimeout(() => {
+      if (done) return;
+      done = true; failure ||= "transaction-close-not-observed";
+      child.kill("SIGKILL");
+      for (const stream of [child.stdin, child.stdout, child.stderr]) stream.destroy();
+      clearTimeout(timer); clearTimeout(killer);
+      // Keep this child registered until its actual close. The controller must
+      // close/observe the owner group; a timeout never pretends EOF or exit.
+      reject(Error("original-owner-service-" + failure));
+    }, 34000);
+    let killer;
+    function abort(code) {
+      if (done) return;
+      failure ||= code;
+      if (!exited) { child.kill("SIGTERM"); killer ||= setTimeout(() => child.kill("SIGKILL"), 3000); }
+    }
+    function finish(code, signal) {
+      clearTimeout(timer); clearTimeout(terminalTimer); clearTimeout(killer); children.delete(child);
+      if (done) return; done = true;
+      if (errBytes) {
+        try { saveError(crypto.randomBytes(12).toString("hex"), Buffer.concat(err)); }
+        catch { failure ||= "private-error-retention-failed"; }
+      }
+      if (failure || code !== 0 || signal || !outEOF || !errEOF) {
+        reject(Error("original-owner-service-" + (failure || "transaction-not-confirmed"))); return;
+      }
+      // psql's close with code0 and both EOFs includes the final COMMIT. Rows
+      // printed before a later failed commit cannot become an acceptance.
+      resolve(Buffer.concat(out));
+    }
+    child.once("error", () => abort("transaction-process-error"));
+    child.stdout.on("data", b => { if (outBytes + b.length > 1024 * 1024) abort("transaction-output-cap");
+      else { outBytes += b.length; out.push(b); } });
+    child.stderr.on("data", b => { if (errBytes + b.length > 131072) abort("transaction-error-cap");
+      else { errBytes += b.length; err.push(b); } });
+    child.stdout.once("end", () => { outEOF = true; }); child.stderr.once("end", () => { errEOF = true; });
+    child.stdout.once("error", () => abort("transaction-stdout-error")); child.stderr.once("error", () => abort("transaction-stderr-error"));
+    child.stdin.once("error", () => abort("transaction-stdin-error"));
+    child.once("exit", () => { exited = true; }); child.once("close", finish); child.stdin.end(sql);
+  });
+}
+async function start() {
+  process.umask(0o077);
+  const read = privateConfig(), configPin = read.pin;
+  const c = checkConfig(read.value), key = Buffer.from(c.secretHex, "hex"); need(key.length === 32, "private-key-bytes");
+  const transaction = require(c.transactionCodePin.path), begin = process.hrtime.bigint();
+  need(typeof transaction.prepare === "function" && typeof transaction.acceptResult === "function", "transaction-builder");
+  const observed = new Set(), children = new Set(), sockets = new Set();
+  let stopping = false, writing = false, terminal = false, closing = null, observer = null, deadline = null;
+  const groupIdentity = () => {
+    file(configPin, { privateFile: true });
+    const s = fs.statSync(c.measuredCgroup.path);
+    need(s.dev === c.measuredCgroup.device && s.ino === c.measuredCgroup.inode
+      && fs.readFileSync("/proc/self/cgroup", "utf8") === c.measuredCgroup.procMembership, "cgroup-drift");
+    const pg = processIdentity(c.postgres.pid);
+    need(pg.startTicks === c.postgres.startTicks && pg.exe === c.postgres.exePin.path
+      && pg.membership === c.measuredCgroup.procMembership, "postgres-drift");
+    need(Date.now() < Date.parse(c.expiresAtUTC) && process.hrtime.bigint() - begin < 180000000000n, "expired");
+  };
+  groupIdentity();
+  need(!fs.existsSync(SOCKET), "new-owner-socket-required");
+  // This socket is inside the owner container only; its path is never mounted
+  // into the application. The root broker additionally authenticates every frame.
+  const server = net.createServer({ allowHalfOpen: true }, socket => {
+    if (stopping || terminal || sockets.size >= 2 || writing) { socket.destroy(); return; }
+    sockets.add(socket);
+    let blocks = [], size = 0, consumed = false, ownsWrite = false, responseFinished = false;
+    socket.once("finish", () => { responseFinished = true; if (ownsWrite) writing = false; });
+    socket.once("close", () => {
+      sockets.delete(socket);
+      if (ownsWrite && !responseFinished) terminal = true; // Unknown outcome: never reopen for a subsequent write.
+    });
+    const timer = setTimeout(() => socket.destroy(), 30000);
+    socket.once("close", () => clearTimeout(timer)); socket.on("error", () => {});
+    socket.on("data", async block => {
+      if (consumed || stopping) { socket.destroy(); return; }
+      size += block.length;
+      if (size > FRAME_CAP + 1) { socket.destroy(); return; }
+      blocks.push(block);
+      if (!block.includes(10)) return;
+      consumed = true;
+      let message, status = 500, body = Buffer.from('{"error":"original-write-not-confirmed"}');
+      try {
+        const frame = Buffer.concat(blocks); blocks = [];
+        need(frame.at(-1) === 10 && frame.indexOf(10) === frame.length - 1, "single-frame");
+        message = parse(frame.subarray(0, -1), key, observed); groupIdentity();
+        need(!terminal && !writing && message.request.operationId === c.operationId && message.request.commandHash === c.commandHash, "request-scope");
+        writing = true; ownsWrite = true;
+        const prepared = transaction.prepare(message.request, c.qualification);
+        need(prepared.database === c.database && prepared.sqlSHA256 === sha(Buffer.from(prepared.sql)), "prepared-transaction");
+        body = await psql(c, prepared.sql, children); groupIdentity();
+        const result = transaction.acceptResult(prepared, body.toString("utf8"));
+        need(exact(result, ["schema", "authAck", "ownAck"]) && result.schema === "helmut-local-unit-original-write-result/1" && Array.isArray(result.authAck)
+          && result.authAck.length === 1 && result.ownAck && typeof result.ownAck === "object", "confirmed-result");
+        body = Buffer.from(JSON.stringify(result)); status = 200;
+      } catch { if (ownsWrite) terminal = true; body = Buffer.from('{"error":"original-write-not-confirmed"}'); }
+      if (!message || stopping || socket.destroyed) { if (ownsWrite) terminal = true; socket.destroy(); return; }
+      const response = { schema: "helmut-local-original-owner-response/1", nonce: message.nonce, status, bodyBase64: body.toString("base64") };
+      socket.end(JSON.stringify({ ...response, hmacSHA256: mac(key, response) }) + "\n");
+    });
+  });
+  server.maxConnections = 2;
+  const close = () => {
+    if (closing) return closing;
+    stopping = true;
+    closing = (async () => {
+    clearInterval(observer); clearTimeout(deadline);
+    for (const socket of sockets) socket.destroy();
+    const serverClosed = new Promise(resolve => server.close(resolve));
+    await Promise.all([...children].map(child => new Promise((resolve, reject) => {
+      const kill = setTimeout(() => child.kill("SIGKILL"), 3000);
+      const limit = setTimeout(() => { clearTimeout(kill); reject(Error("original-owner-service-child-close-deadline")); }, 6000);
+      child.once("close", () => { clearTimeout(kill); clearTimeout(limit); resolve(); }); child.kill("SIGTERM");
+    })));
+    await serverClosed;
+    need(children.size === 0, "children-exit-open");
+    })();
+    return closing;
+  };
+  let readyProcess;
+  try {
+    readyProcess = processIdentity(process.pid);
+    await new Promise((resolve, reject) => {
+      const failed = error => { server.removeListener("listening", listening); reject(error); };
+      const listening = () => { server.removeListener("error", failed); resolve(); };
+      server.once("error", failed); server.once("listening", listening); server.listen(SOCKET);
+    });
+    fs.chmodSync(SOCKET, 0o666); groupIdentity();
+  } catch (error) { await close(); throw error; }
+  server.on("error", () => { process.exitCode = 1; void close().catch(() => { process.exitCode = 1; }); });
+  observer = setInterval(() => { try { groupIdentity(); } catch { process.exitCode = 1; void close().catch(() => { process.exitCode = 1; }); } }, 500);
+  deadline = setTimeout(() => { process.exitCode = 1; void close().catch(() => { process.exitCode = 1; }); }, Math.max(1, Date.parse(c.expiresAtUTC) - Date.now() - 6000));
+  return { close, ready: { schema: "helmut-local-unit-original-service-ready/1", ...readyProcess,
+    database: c.database, commandHash: c.commandHash, configPin, configuredInitialDatabaseRole: "postgres", databaseConnectionObserved: false,
+    unitExecutionQualified: false, full500Qualified: false } };
+}
+module.exports = Object.freeze({ start });
+if (require.main === module) {
+  if (process.argv.length !== 3 || process.argv[2] !== "--serve-original-writes") throw Error("original-owner-service-explicit-start-required");
+  start().then(service => {
+    process.stdout.write(JSON.stringify(service.ready) + "\n");
+    for (const signal of ["SIGTERM", "SIGINT"]) process.once(signal, () => {
+      void service.close().catch(() => { process.exitCode = 1; });
+    });
+  }).catch(() => { process.stderr.write("original-owner-service-start-not-confirmed\n"); process.exitCode = 1; });
+}
