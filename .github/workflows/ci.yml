@@ -64,8 +64,9 @@ jobs:
   offline-suite:
     name: Syntax + Offline-Suiten
     needs: plan
-    # A failed prerequisite must fail the required job, never turn it into a skip.
-    if: ${{ always() }}
+    # Run after a failed plan so the required check fails, but allow obsolete
+    # workflows to be cancelled instead of holding the concurrency slot forever.
+    if: ${{ !cancelled() }}
     environment:
       name: ${{ needs.plan.result == 'success' && needs.plan.outputs.standard == 'true' && 'helmut-ci-originals' || 'helmut-ci-public' }}
       url: https://github.com/${{ github.repository }}/commit/${{ github.sha }}

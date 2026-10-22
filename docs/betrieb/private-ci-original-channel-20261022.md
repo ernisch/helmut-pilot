@@ -29,6 +29,8 @@ des Webhooks zu verwenden. Der aktuelle PR-API-Stand wird zusätzlich geprüft.
 Fremde Forks, abweichende PR-Stände und fehlende
 GitHub-Reviewhistorie werden abgewiesen. Ein fehlgeschlagener öffentlicher
 Prüfplan lässt den bestehenden Pflichtjob fehlschlagen, nicht überspringen.
+Der Job verwendet `!cancelled()`: fehlgeschlagene Pläne werden weiterhin rot,
+überholte Läufe können jedoch ihren Parallelitätsslot durch Abbruch freigeben.
 
 Erst danach erhält ein einzelner Bereitstellungsschritt den CI-Paketschlüssel.
 Er prüft Cipher- und Archivhash, extrahiert ausschließlich die84 erlaubten
