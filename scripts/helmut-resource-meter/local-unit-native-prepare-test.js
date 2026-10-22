@@ -34,6 +34,7 @@ function observed(promise) { const x = { state: "pending" }; promise.then(value 
 function fixture(options = {}) {
   const timer = clock(), files = new Map(), fds = new Map(), offsets = new Map(), spawns = [], children = [], writes = [], events = [], lines = [];
   let inode = 50, fdNext = 1, pidDrift = false, builderCalls = 0, normalizerCalls = 0;
+  const sourceHandles = new WeakMap(), extracted = [], produced = [], retainedOutputs = new Map();
   const add = (name, data, extra = {}) => files.set(name, { data: Buffer.from(data), kind: "file", mode: 0o600, uid: 1000, gid: 1000,
     dev: 1, ino: inode++, nlink: 1, mtimeNs: 1, ctimeNs: 1, ...extra });
   const pin = name => ({ path: name, bytes: files.get(name).data.length, sha256: sha(files.get(name).data) });
@@ -67,7 +68,6 @@ function fixture(options = {}) {
   const knowledgeObject = Object.fromEntries(koFields.map(key => [key, key === "id" ? "ko-a" : key === "headline" ? "VM KO" : "VM " + key]));
   const selected = { sourceIndex: 499, diagnosticUnit: 0, draft: { profile: selectedProfile,
     sources: { documents: [{ id: "doc-z", title: "VM document" }, { id: "doc-a", title: "VM other document" }], knowledgeObjects: [knowledgeObject] } } };
-  const sourceBinding = { schema: "VM-only-source-binding", selectionSHA256: sha("VM selection") }, sourceHandle = Object.freeze({});
   const derived = { sourceIndex: 499, diagnosticUnit: 0, phases: Object.fromEntries(["D", "R"].map(p => [p, {
     requestBytes: Buffer.from(JSON.stringify({ vmRequest: p })), responseBytes: Buffer.from(JSON.stringify({ vmResponse: p })),
     latencyBytes: Buffer.from(JSON.stringify({ vmLatency: p })), responseStatus: 200, latencyMs: 19900 }])),
@@ -76,14 +76,28 @@ function fixture(options = {}) {
   const moduleObjects = {
     source: { extractPinnedSource(args) { events.push("source"); assert.equal(processStub.env.HELMUT_PUBLICATION_ELIGIBILITY_JSON, policy.toString());
       assert.equal(args.diagnosticNonce, nonce); assert.equal(args.packetPath, originalPins.packet.path); assert(args.packetBytes.equals(files.get(originalPins.packet.path).data));
-      assert.equal(args.preparedAtUTC, new Date(timer.wall).toISOString()); if (options.sourceFailure) throw Error("VM-source-rejected"); return sourceHandle; },
-    readSelection(handle) { assert.equal(handle, sourceHandle); return selected; }, sourceBinding(handle) { assert.equal(handle, sourceHandle); return sourceBinding; } },
-    producer: { derive(args) { events.push("producer"); assert.equal(args.sourceHandle, sourceHandle);
-      assert(args.preparedBytes.equals(files.get(originalPins.preparedRequests.path).data)); return derived; } },
-    command: { build(args) { builderCalls++; events.push("command"); assert.equal(args.sourceHandle, sourceHandle); assert.equal(args.producerResult, derived);
+      assert.equal(args.preparedAtUTC, new Date(timer.wall).toISOString()); if (options.sourceFailure) throw Error("VM-source-rejected");
+      const handle = Object.freeze({}), binding = { schema: "VM-only-source-binding", selectionSHA256: sha("VM selection"), preparation: { preparedAtUTC: args.preparedAtUTC } };
+      sourceHandles.set(handle, binding); extracted.push({ handle, binding }); return handle; },
+    readSelection(handle) { assert(sourceHandles.has(handle)); return selected; }, sourceBinding(handle) { assert(sourceHandles.has(handle)); return sourceHandles.get(handle); } },
+    producer: { derive(args) { events.push("producer"); assert(sourceHandles.has(args.sourceHandle));
+      assert.equal(args.sourceHandle, extracted.at(-1).handle); assert(args.preparedBytes.equals(files.get(originalPins.preparedRequests.path).data));
+      assert(args.bindingBytes.equals(files.get(originalPins.actualRequestBindings.path).data)); assert(args.fixtureBytes.equals(files.get(originalPins.providerFixtures.path).data));
+      let result = { ...derived, phases: Object.fromEntries(Object.entries(derived.phases).map(([p, value]) => [p, { ...value,
+        ...Object.fromEntries(["requestBytes", "responseBytes", "latencyBytes"].map(k => [k, Buffer.from(value[k])])) }])) };
+      if (produced.length && options.lateDrift) {
+        if (options.aliasEarlierProducer) result = produced[0];
+        const { phase, field } = options.lateDrift;
+        result.phases[phase][field] = field.endsWith("Bytes") ? Buffer.concat([result.phases[phase][field], Buffer.from(" VM drift")]) : result.phases[phase][field] + 1;
+      }
+      produced.push(result); return result; } },
+    command: { build(args) { builderCalls++; events.push("command"); assert.equal(extracted.length, 2); assert.equal(produced.length, 2);
+      assert.equal(args.sourceHandle, extracted[1].handle); assert.notEqual(args.sourceHandle, extracted[0].handle); assert.equal(args.producerResult, produced[1]);
       assert.equal(args.nonce, nonce); assert.equal(args.runId, config.runId); assert.equal(args.nowUTC, new Date(timer.wall).toISOString());
-      const command = { target: { database }, vm: "prepared only" }; return { command, admission: {}, initialState: {}, selection: { operationId,
-        commandHash: options.wrongBuiltHash ? sha("VM wrong command") : sha(canonical(command)) }, sourceBinding }; } },
+      assert.equal(sourceHandles.get(args.sourceHandle).preparation.preparedAtUTC, args.nowUTC);
+      const command = { target: { database }, vm: "prepared only" }; return { command, admission: { authorizedAtUTC: args.nowUTC }, initialState: {}, selection: { operationId,
+        commandHash: options.wrongBuiltHash ? sha("VM wrong command") : sha(canonical(command)) },
+        sourceBinding: sourceHandles.get(extracted[options.earlyBuiltBinding ? 0 : 1].handle) }; } },
     usage: { enabled: () => true, controlReadEnabled: () => true, async readControl({ rowId, target, request }) {
       assert.equal(rowId, "main-auth"); assert.equal(target, "http://127.0.0.1:54321|main-auth");
       return request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { method: "POST", body: JSON.stringify({ id: "main-auth" }) }); } },
@@ -137,7 +151,10 @@ function fixture(options = {}) {
   const processStub = { pid: 7, version: options.nodeVersion || "v24.19.0", getuid: () => 1000, geteuid: () => 1000, umask: () => {}, env,
     execPath: "/synthetic/node", execArgv: options.execArgv || ["--max-old-space-size=384", "--max-semi-space-size=16"], argv: ["/synthetic/node", filename, "--prepare-own-native-copy"],
     hrtime: { bigint: () => BigInt(timer.now) * 1000000n }, stdout: { write(text) {
-      lines.push(text); events.push("ready"); const ready = JSON.parse(text); if (options.noCommand) return;
+      lines.push(text); events.push("ready"); const ready = JSON.parse(text);
+      for (const name of writes) retainedOutputs.set(name, Buffer.from(files.get(name).data));
+      if (options.noCommand) return;
+      const publishCommand = () => {
       const gate = Buffer.from(JSON.stringify({ schema: "helmut-local-unit-native-source-gate/1", originalControlHash: options.wrongGate ? sha("VM wrong control") : ready.originalControlHash }, null, 2) + "\n");
       add(CLIENT + "/SOURCE.SAFE.json", gate); const gatePin = { ...pin(CLIENT + "/SOURCE.SAFE.json"), path: logical + "SOURCE.SAFE.json" };
       const input = { schema: "helmut-local-unit-native-command-input/1", nowUTC: new Date(timer.wall - (options.staleCommand ? 4000 : 0)).toISOString(),
@@ -145,7 +162,10 @@ function fixture(options = {}) {
       if (options.spoofHandle) input.sourceHandle = {};
       if (options.codeDriftAfterReady) files.get(config.sourceCodePins[0].path).data = Buffer.from("VM changed source");
       if (options.originalDriftAfterReady) files.get(config.originalPins.packet.path).data = Buffer.from("VM changed original");
+      if (options.outputDriftAfterReady) files.get(CLIENT + "/R_RESPONSE.PRIVATE.json").data = Buffer.from("VM changed retained response");
       add(INPUT, JSON.stringify(input), options.inputMode ? { mode: 0o640 } : {});
+      };
+      if (options.commandDelayMs) timer.setTimeout(publishCommand, options.commandDelayMs); else publishCommand();
     } } };
   class VMDate extends Date { constructor(...args) { super(...(args.length ? args : [timer.wall])); } static now() { return timer.wall; } }
   const builtins = { "node:fs": fsStub, "node:path": path, "node:crypto": crypto, "node:v8": { getHeapStatistics: () => ({ heap_size_limit: options.heap || 400000000 }) },
@@ -154,7 +174,7 @@ function fixture(options = {}) {
   const module = { exports: {} }, api = vm.runInNewContext(code + "\n({start,readFile,jsonFile,nodeBudget,checkConfig,rpcSQL,commandInput,sourceGate});", {
     require: localRequire, module, __filename: filename, __dirname, process: processStub, Buffer, URL, Date: VMDate, setTimeout: timer.setTimeout, clearTimeout: timer.clearTimeout
   }, { filename });
-  return { api, timer, files, config, selected, spawns, children, writes, events, lines, process: processStub,
+  return { api, timer, files, config, selected, spawns, children, writes, events, lines, extracted, produced, retainedOutputs, process: processStub,
     get builderCalls() { return builderCalls; }, get normalizerCalls() { return normalizerCalls; } };
 }
 let count = 0, current = "initialization";
@@ -171,6 +191,36 @@ async function check(name, fn) { current = name; await fn(); count++; }
     for (const p of Object.values(ready.derivedPins).flatMap(x => Object.values(x))) assert(p.path.startsWith("/workspace/helmut-unit-diagnostic-native/") && !p.path.includes("/client/"));
     assert(!s.lines[0].includes("VM synthetic profile") && !s.lines[0].includes("VM document") && !s.lines[0].includes("testKostenAuftrag"));
     await assert.rejects(s.api.start()); assert.equal(s.spawns.length, 4);
+  });
+  await check("late opaque source binding uses admission UTC while early READY and six outputs stay unchanged", async () => {
+    const s = fixture({ commandDelayMs: 1000 }), outcome = observed(s.api.start()); await flush();
+    assert.equal(outcome.state, "pending"); assert.equal(s.lines.length, 1); const readyLine = s.lines[0], ready = JSON.parse(readyLine);
+    await s.timer.advance(1000); assert.equal(outcome.state, "resolved");
+    assert.equal(s.extracted.length, 2); assert.equal(s.produced.length, 2); assert.notEqual(s.extracted[0].handle, s.extracted[1].handle);
+    assert.notEqual(s.extracted[0].binding.preparation.preparedAtUTC, s.extracted[1].binding.preparation.preparedAtUTC);
+    const built = JSON.parse(s.files.get(CLIENT + "/PREPARED_COMMAND.PRIVATE.json").data);
+    assert.equal(built.admission.authorizedAtUTC, "2026-10-22T12:00:01.000Z");
+    assert.equal(built.sourceBinding.preparation.preparedAtUTC, built.admission.authorizedAtUTC);
+    assert.deepEqual(built.sourceBinding, s.extracted[1].binding);
+    assert.equal(ready.sourceProofHash, sha(canonical(s.extracted[0].binding)));
+    assert.notEqual(sha(canonical(built.sourceBinding)), ready.sourceProofHash); assert.equal(s.lines[0], readyLine);
+    assert.equal(s.writes.length, 7); assert.equal(s.retainedOutputs.size, 6);
+    for (const [name, bytes] of s.retainedOutputs) assert(s.files.get(name).data.equals(bytes));
+  });
+  await check("every late D/R byte and metadata drift rejects including mutation of an aliased early result", async () => {
+    for (const phase of ["D", "R"]) for (const field of ["requestBytes", "responseBytes", "latencyBytes", "responseStatus", "latencyMs"]) {
+      const s = fixture({ lateDrift: { phase, field }, aliasEarlierProducer: true }); await assert.rejects(s.api.start());
+      assert.equal(s.produced.length, 2); assert.equal(s.produced[0], s.produced[1]);
+      assert.equal(s.builderCalls, 0); assert.equal(s.lines.length, 1); assert.equal(s.writes.length, 6);
+      assert(!s.files.has(CLIENT + "/PREPARED_COMMAND.PRIVATE.json"));
+      for (const [name, bytes] of s.retainedOutputs) assert(s.files.get(name).data.equals(bytes));
+    }
+  });
+  await check("early binding substitution and retained-file changes cannot bypass late derivation", async () => {
+    const s = fixture({ commandDelayMs: 1000, earlyBuiltBinding: true }), outcome = observed(s.api.start()); await flush();
+    await s.timer.advance(1000); assert.equal(outcome.state, "rejected"); assert.equal(s.builderCalls, 1); assert.equal(s.writes.length, 6);
+    const changed = fixture({ outputDriftAfterReady: true }); await assert.rejects(changed.api.start());
+    assert.equal(changed.builderCalls, 0); assert.equal(changed.writes.length, 6);
   });
   await check("KO60 retains every actual field within PostgreSQL's100-argument limit", async () => {
     const s = fixture({ fullKO60: true }); await s.api.start();

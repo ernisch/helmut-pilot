@@ -327,11 +327,33 @@ async function start() {
     const input = await waitCommand(guard); guard();
     for (const p of [c.selfPin, c.nodePin, c.psqlPin, c.postgres.exePin, ...c.sourceCodePins, ...Object.values(c.originalPins), c.originalPublicationPolicyPin])
       readFile(p.path, { pin: p, cap: PIN_CAP, keep: false });
-    phase = "command-build";
     const { schema, ...args } = commandInput(c, input.value); sourceGate(c, input.value, originalControlHash);
-    const built = modules.command.build({ ...args, sourceHandle, producerResult }); guard();
+    phase = "admission-source-derivation";
+    // The native authority reader reconstructs this binding with the admission's
+    // authorizedAtUTC. Keep READY's earlier provenance intact and derive a new
+    // opaque handle with that exact real input time, never patch a binding hash.
+    const admissionSourceHandle = modules.source.extractPinnedSource({ packetBytes: original.packet, packetPath: c.originalPins.packet.path,
+      installPinsBytes: original.install, installPin: c.originalPins.install, terminalBytes: original.terminal,
+      diagnosticNonce: c.nonce, preparedAtUTC: args.nowUTC });
+    const admissionProducer = modules.producer.derive({ sourceHandle: admissionSourceHandle,
+      preparedBytes: original.preparedRequests, bindingBytes: original.actualRequestBindings, fixtureBytes: original.providerFixtures });
+    const admissionSourceBinding = modules.source.sourceBinding(admissionSourceHandle);
+    need(admissionSourceBinding.preparation?.preparedAtUTC === args.nowUTC && exact(admissionProducer.phases, ["D", "R"]), "admission-source-time");
+    for (const phase of ["D", "R"]) {
+      const actual = admissionProducer.phases[phase], earlier = producerTransport.phases[phase];
+      need(exact(actual, ["requestBytes", "responseBytes", "latencyBytes", "responseStatus", "latencyMs"])
+        && actual.responseStatus === earlier.responseStatus && actual.latencyMs === earlier.latencyMs, "admission-producer-phase-drift");
+      for (const kind of ["request", "response", "latency"]) {
+        const name = path.join(CLIENT, phase + "_" + kind.toUpperCase() + ".PRIVATE.json"), p = derivedPins[phase][kind];
+        const retained = readFile(name, { pin: { ...p, path: name }, privateFile: true, cap: 16 * 1024 * 1024 }).bytes;
+        need(Buffer.isBuffer(actual[kind + "Bytes"]) && actual[kind + "Bytes"].equals(retained), "admission-producer-output-drift");
+      }
+    }
+    guard(); phase = "command-build";
+    const built = modules.command.build({ ...args, sourceHandle: admissionSourceHandle, producerResult: admissionProducer }); guard();
     need(built?.selection?.operationId === "localUnitDiagnostic-" + c.nonce && built.command?.target?.database === c.database
-      && P.hash(built.command) === built.selection.commandHash && P.hash(built.sourceBinding) === ready.sourceProofHash
+      && built.admission?.authorizedAtUTC === args.nowUTC && P.hash(built.command) === built.selection.commandHash
+      && P.hash(built.sourceBinding) === P.hash(admissionSourceBinding)
       && Buffer.byteLength(P.kanonisch(built.initialState)) <= 4 * 1024 * 1024, "prepared-command-binding");
     readFile(INPUT, { pin: input.pin, privateFile: true, cap: 8 * 1024 * 1024, keep: false });
     writeClient(c, "PREPARED_COMMAND.PRIVATE.json", Buffer.from(JSON.stringify(built))); guard();
