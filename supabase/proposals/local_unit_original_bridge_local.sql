@@ -549,17 +549,22 @@ begin
     or own_row.body is distinct from own_row.canonical_text::jsonb
     or encode(sha256(convert_to(own_row.canonical_text,'UTF8')),'hex') is distinct from own_row.body_hash then raise exception 'original-bridge-receipt-real-own-before';end if;
   actual_own:=helmut_unit_diagnostic.original_bridge_own_projection_v1('main-auth',auth_state->>'generation',auth_state->>'root',r->>'operationId');
-  if actual_own is distinct from next_own or next_own#>>array[prefix||'journal','claimId'] is distinct from r->>'claimId'
-    or next_own#>>array[prefix||'journal','state']='closed' or next_own->(prefix||'result') is distinct from '{"state":"pending","evidenceHash":null,"positions":[]}'::jsonb then
+  if actual_own is distinct from next_own or next_own#>>array[prefix||'journal','claimId'] is distinct from r->>'claimId' then
     raise exception 'original-bridge-receipt-real-own-projection';end if;
   if p_mode='state' then
+    -- State includes normal mutations, exact terminal stop and the final CAS.
+    -- The unchanged state trigger validates the transition; retained/closed
+    -- results additionally require all seven actual rows and sixteen controls.
     perform helmut_unit_diagnostic.original_bridge_result_v1(p_scope,next_own);
     if p_canonical is distinct from r#>>'{ownNext,canonical}' or p_hash is distinct from r#>>'{ownNext,hash}'
       or p_kind is not null or p_logical_id is not null or p_parent_hash is not null or c->'additions' is distinct from '[]'::jsonb
       or next_own is not distinct from own_row.body or ack#>>'{0,proof,head}' is distinct from c#>>'{expectedProof,head}' then
       raise exception 'original-bridge-receipt-state-mutation';end if;
   else
-    if p_canonical is distinct from r#>>'{artifact,canonical}' or p_hash is distinct from r#>>'{artifact,sha256}'
+    -- Usage still cannot introduce a retained result or close the unit.
+    if next_own#>>array[prefix||'journal','state']='closed'
+      or next_own->(prefix||'result') is distinct from '{"state":"pending","evidenceHash":null,"positions":[]}'::jsonb
+      or p_canonical is distinct from r#>>'{artifact,canonical}' or p_hash is distinct from r#>>'{artifact,sha256}'
       or r#>>'{ownNext,hash}' is distinct from p_old_hash or r#>>'{ownNext,canonical}' is distinct from own_row.canonical_text
       or p_kind is distinct from r#>>'{artifact,kind}' or p_kind not in ('usage-D','usage-R') or p_logical_id is distinct from r#>>'{artifact,logicalId}'
       or p_parent_hash is not null or r#>'{artifact,parentHash}' is distinct from 'null'::jsonb or jsonb_array_length(c->'additions')<>1

@@ -27,7 +27,7 @@ const HELPERS = Object.freeze({
   original_bridge_relations_v1: Object.freeze({ args: "", sha: "91505921dd30cbadb259fc439fede86c1f47b062ebcd690238dbd83d9f53797a", result: "jsonb" }),
   original_bridge_row_v1: Object.freeze({ args: "text, text, text, jsonb", sha: "290c60f33dc595e7ca7d4e893ed980fdc2a722b1513af00df51230c51b131480", result: "jsonb" }),
   original_bridge_result_v1: Object.freeze({ args: "text, jsonb", sha: "e5c513ac1d84e0e8fe989dc16e0b1d75d07358d23b9be305948ecd407c604207", result: "void" }),
-  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "e48839cdb5eeec19e4d79baa36216d1521e053f3145a45a981e882a678aed719", result: "void" }),
+  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "05a9f5675fb1d82511f0c37832cd455d70effd280b055912d04acd2faa040026", result: "void" }),
 });
 const NATIVE = Object.freeze(["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"]);
 function need(ok, code) { if (!ok) throw Error("local-unit-original-transaction-" + code); }
@@ -428,8 +428,11 @@ BEGIN
     RAISE EXCEPTION 'original-bridge-own-before-or-next-mismatch';END IF;`}
   ${seed ? "" : `terminal_stop:=coalesce(r->>'mode'='state' AND d-(prefix||'journal')=own_row.body-(prefix||'journal')
     AND (d->(prefix||'journal'))-ARRAY['state','stopRequested','reason']=(own_row.body->(prefix||'journal'))-ARRAY['state','stopRequested','reason']
-    AND d#>>ARRAY[prefix||'journal','state'] IN('unknown','stopped') AND d#>ARRAY[prefix||'journal','stopRequested']='true'::jsonb
-    AND coalesce(d#>>ARRAY[prefix||'journal','reason'],'')~'^[a-z0-9-]{1,80}$',false);`}
+    AND own_row.body#>>ARRAY[prefix||'journal','state'] IN('running','unknown','stopped')
+    AND d#>>ARRAY[prefix||'journal','state']=CASE WHEN EXISTS(SELECT FROM jsonb_each(own_row.body#>ARRAY[prefix||'costs','calls']) call
+      WHERE call.value->>'status' IN('reserved','sent','unknown')) THEN 'unknown' ELSE 'stopped' END
+    AND d#>ARRAY[prefix||'journal','stopRequested']='true'::jsonb
+    AND d#>>ARRAY[prefix||'journal','reason']='unit-not-confirmed',false);`}
   IF authority_row.operation_id IS DISTINCT FROM r->>'operationId' OR (clock_timestamp()>=authority_row.expires_at AND NOT terminal_stop)
     OR encode(sha256(convert_to(r#>>'{ownNext,canonical}','UTF8')),'hex') IS DISTINCT FROM r#>>'{ownNext,hash}' THEN
     RAISE EXCEPTION 'original-bridge-own-before-or-next-mismatch';END IF;

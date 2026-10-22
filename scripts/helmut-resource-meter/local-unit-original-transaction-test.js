@@ -267,9 +267,26 @@ check("retained and closed states require native actual seven rows successful ev
 check("compiler has narrowly compared native stop delta without replacing native deadlines", () => {
   const sql = transaction.prepare(request(), qualification()).sql;
   for (const text of ["terminal_stop:=coalesce(", "d-(prefix||'journal')=own_row.body-(prefix||'journal')",
-    "-ARRAY['state','stopRequested','reason']", "IN('unknown','stopped')", "AND NOT terminal_stop", "'^[a-z0-9-]{1,80}$',false)"])
+    "-ARRAY['state','stopRequested','reason']", "IN('running','unknown','stopped')", "AND NOT terminal_stop",
+    "WHERE call.value->>'status' IN('reserved','sent','unknown')", "THEN 'unknown' ELSE 'stopped' END", "'reason']='unit-not-confirmed',false)"])
     assert.ok(sql.includes(text));
+  assert.ok(!sql.includes("'^[a-z0-9-]{1,80}$',false)"), "an arbitrary stop reason cannot exempt expiration");
   assert.ok(!transaction.prepare(artifactRequest("evidence"), qualification()).sql.includes("clock_timestamp()>=authority_row.expires_at"));
+});
+check("receipt permits native final result validation without either obsolete shared result barrier", () => {
+  const body = helperBodies.find(x => x[1] === "original_bridge_receipt_v1")[2];
+  const projection = body.slice(body.indexOf("actual_own:=helmut_unit_diagnostic.original_bridge_own_projection_v1", body.indexOf("if p_mode='artifact'")), body.indexOf("if p_mode='state' then"));
+  assert.ok(projection.includes("actual_own is distinct from next_own") && projection.includes("'claimId'"));
+  assert.ok(!projection.includes("'state']='closed'") && !projection.includes("prefix||'result'"), "closed and retained results must reach the native state proof");
+  const state = body.slice(body.indexOf("if p_mode='state' then"), body.indexOf("-- Usage still cannot"));
+  assert.ok(state.includes("perform helmut_unit_diagnostic.original_bridge_result_v1(p_scope,next_own)"));
+  assert.ok(state.includes("c->'additions' is distinct from '[]'::jsonb") && state.includes("next_own is not distinct from own_row.body"));
+  const usage = body.slice(body.indexOf("-- Usage still cannot"));
+  assert.ok(usage.includes("next_own#>>array[prefix||'journal','state']='closed'")
+    && usage.includes("next_own->(prefix||'result') is distinct from '{\"state\":\"pending\",\"evidenceHash\":null,\"positions\":[]}'::jsonb"));
+  const q = qualification(); q.helperSources.find(x => x.name.endsWith(".original_bridge_receipt_v1")).prosrcSHA256 =
+    "e48839cdb5eeec19e4d79baa36216d1521e053f3145a45a981e882a678aed719";
+  rejects(() => transaction.prepare(finalRequest(), q));
 });
 check("target mode seed result and field smuggling rejected", () => {
   for (const mutate of [r => { r.mode = "seed"; }, r => { r.mode = "result"; }, r => { r.operationId = "production"; },
