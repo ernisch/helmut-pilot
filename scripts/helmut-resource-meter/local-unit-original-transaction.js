@@ -371,13 +371,13 @@ BEGIN
       OR p.lanname IS DISTINCT FROM s->>'language' THEN RAISE EXCEPTION 'original-bridge-actual-qualified-source-mismatch';END IF;
   END LOOP;
   SELECT array_agg((value->>'oid')::oid ORDER BY (value->>'oid')::oid) INTO expected_native FROM jsonb_array_elements(q->'nativeSources');
-  SELECT array_agg(p.oid ORDER BY p.oid) INTO actual_native FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-    WHERE n.nspname='helmut_unit_diagnostic' OR (n.nspname='public' AND p.proname=ANY(ARRAY[${NATIVE.map(n => literal("local_unit_diagnostic_" + n + "_v1")).join(",")} ]));
+  SELECT array_agg(actual_proc.oid ORDER BY actual_proc.oid) INTO actual_native FROM pg_proc actual_proc JOIN pg_namespace n ON n.oid=actual_proc.pronamespace
+    WHERE n.nspname='helmut_unit_diagnostic' OR (n.nspname='public' AND actual_proc.proname=ANY(ARRAY[${NATIVE.map(n => literal("local_unit_diagnostic_" + n + "_v1")).join(",")} ]));
   IF actual_native IS DISTINCT FROM expected_native THEN RAISE EXCEPTION 'original-bridge-complete-native-source-set';END IF;
   IF helmut_unit_diagnostic.original_bridge_relations_v1() IS DISTINCT FROM q->'originalRelations' THEN RAISE EXCEPTION 'original-bridge-native-original-relations-changed';END IF;
-  IF EXISTS(SELECT FROM pg_trigger t WHERE NOT t.tgisinternal AND t.tgrelid IN
+  IF EXISTS(SELECT FROM pg_trigger actual_trigger WHERE NOT actual_trigger.tgisinternal AND actual_trigger.tgrelid IN
     ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass)
-    AND NOT EXISTS(SELECT FROM jsonb_array_elements(q->'originalSources') s0 WHERE (s0->>'oid')::oid=t.tgfoid)) THEN
+    AND NOT EXISTS(SELECT FROM jsonb_array_elements(q->'originalSources') s0 WHERE (s0->>'oid')::oid=actual_trigger.tgfoid)) THEN
     RAISE EXCEPTION 'original-bridge-complete-original-trigger-set';END IF;
   IF (SELECT count(*) FROM pg_class WHERE oid IN ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass)
     AND relrowsecurity AND relkind='r')<>4 THEN RAISE EXCEPTION 'original-bridge-legacy-rls-required';END IF;

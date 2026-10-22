@@ -118,6 +118,47 @@ function response(r, packet) {
       : { version: "helmut-local-unit-diagnostic-artifact-ack/1", scopeHash: r.commandHash, kind: r.artifact.kind,
         logicalId: r.artifact.logicalId, hash: r.artifact.sha256, stateRevision: r.ownBefore.revision, nonce } };
 }
+check("all four root DO scopes keep catalog aliases separate from PLpgSQL variables and retain every source guard", () => {
+  // Lexical regression for this fixed compiler scope, not a PostgreSQL parser
+  // or native execution proof. Relation aliases are compared to DECLARE names.
+  function bindings(sql) {
+    const root = /DO \$root\$\s*DECLARE ([\s\S]*?)\nBEGIN\n([\s\S]*?)END;\$root\$;/.exec(sql);
+    assert.ok(root, "root DO scope missing");
+    const variables = new Set(root[1].split(";").map(s => /^\s*([a-z_][a-z0-9_]*)/i.exec(s)?.[1]).filter(Boolean));
+    const body = root[2].replace(/--[^\n]*/g, "").replace(/'(?:[^']|'')*'/g, "''");
+    const keywords = new Set(["where", "join", "cross", "left", "right", "inner", "full", "on", "into", "union", "order", "group"]);
+    const aliases = [...body.matchAll(/\b(?:FROM|JOIN)\s+(?:[a-z_][a-z0-9_]*\.)*[a-z_][a-z0-9_]*\s+(?:AS\s+)?([a-z_][a-z0-9_]*)/gi)]
+      .map(m => m[1]).filter(alias => !keywords.has(alias.toLowerCase()));
+    return { body: root[2], variables, aliases, collisions: aliases.filter(alias => variables.has(alias)) };
+  }
+  const seed = seedRequest();
+  for (const [mode, r, q] of [["seed", seed.r, seed.q], ["state", request(), qualification()],
+    ["usage", request("usage"), qualification()], ["artifact", artifactRequest(), qualification()]]) {
+    const packet = transaction.prepare(r, q), scope = bindings(packet.sql);
+    assert.ok(scope.variables.has("p") && scope.variables.has("t"), mode + " record declarations omitted from scope analysis");
+    assert.equal(scope.collisions.length, 0, mode + " catalog alias collides with a PLpgSQL variable");
+    const proc = /FROM pg_proc ([a-z_]+) JOIN pg_namespace n ON n\.oid=([a-z_]+)\.pronamespace/.exec(scope.body);
+    const trigger = /FROM pg_trigger ([a-z_]+) WHERE NOT ([a-z_]+)\.tgisinternal/.exec(scope.body);
+    assert.ok(proc && trigger); assert.equal(proc[1], proc[2]); assert.equal(trigger[1], trigger[2]);
+    assert.ok(scope.body.includes(`array_agg(${proc[1]}.oid ORDER BY ${proc[1]}.oid)`));
+    assert.ok(scope.body.includes(`${proc[1]}.proname=ANY(ARRAY[`));
+    assert.ok(scope.body.includes(`${trigger[1]}.tgrelid IN`) && scope.body.includes(`(s0->>'oid')::oid=${trigger[1]}.tgfoid`));
+    for (const text of ["p0.oid=(s->>'oid')::oid", "oidvectortypes(p.proargtypes)", "encode(sha256(convert_to(p.prosrc,'UTF8')),'hex')",
+      "p.prosecdef", "to_jsonb(p.proconfig)", "p.provolatile::text", "format_type(p.prorettype,null)", "p.lanname",
+      "actual_native IS DISTINCT FROM expected_native", "original_bridge_relations_v1() IS DISTINCT FROM q->'originalRelations'",
+      "original-bridge-complete-original-trigger-set", "relrowsecurity AND relkind='r')<>4"])
+      assert.ok(scope.body.includes(text), mode + " original source/catalog guard missing");
+    for (const name of nativeNames) assert.ok(scope.body.includes("'local_unit_diagnostic_" + name + "_v1'"));
+    for (const name of ["helmut_store", "helmut_auth_state_nodes_local", "llm_usage", "briefings"])
+      assert.ok(scope.body.includes("'public." + name + "'::regclass"));
+    // Reinstate each original collision independently: the regression must
+    // detect both the actual failing JOIN and the later trigger guard alias.
+    for (const [alias, variable] of [[proc[1], "p"], [trigger[1], "t"]]) {
+      const changed = packet.sql.replace(new RegExp("\\b" + alias + "\\b", "g"), variable);
+      assert.ok(bindings(changed).collisions.includes(variable), mode + " historical alias collision escaped the regression");
+    }
+  }
+});
 check("pure state and usage compilation with explicit privileged origin", () => {
   for (const mode of ["state", "usage"]) { const r = request(mode), packet = transaction.prepare(r, qualification());
     assert.ok(packet.preparedOnly && packet.requiredInitialSuperuser && packet.requiredInitialRole === "postgres" && !packet.originallyUnprivileged
