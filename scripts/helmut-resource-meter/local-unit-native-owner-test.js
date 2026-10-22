@@ -228,7 +228,8 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
   const proc = pid => ({ pid, parentPID: pid === 123 ? 1 : 123, startTicks: state.procDrift ? "999" : pid === 123 ? "11" : "22",
     exe: pid === 123 ? "/opt/node-pinned" : "/opt/postgrest-pinned", membership: "0::/\n", pidNamespace: "pid:[99]",
     uids: [0, 0, 0, 0], gids: [0, 0, 0, 0], capabilitiesZero: true, noNewPrivileges: true });
-  const runningBroker = { close: async () => { state.brokerClosed++; }, observe() {
+  const runningBroker = { close: async () => { state.brokerClosed++; if (state.traceFailure) throw Error("VM trace unconfirmed"); },
+    controlReadTracePin: () => ({ path: "/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl", bytes: 120, sha256: "a".repeat(64), complete: !state.traceFailure }), observe() {
     state.observations++; if (state.brokerUnknown) throw Error("local-unit-broker-offline-unknown");
     return { broker: proc(123), upstream: proc(456), listenerObserved: true, brokerCodeSHA256: c.pins.broker.sha256,
       upstreamExeSHA256: c.pins.postgrest.sha256, upstreamConfigSHA256: state.brokerConfig.upstream.configPin.sha256,
@@ -337,6 +338,16 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
     const f = lifecycle({ cliHeartbeat: true }), running = await f.instance.api.start(), beat = [...f.state.intervals.values()].find(job => job.delay === 5000);
     f.state.brokerUnknown = true; beat.fn(); const stopped = await running.done;
     assert.ok(stopped.failed && !stopped.cleanShutdown && f.state.lines.length === 0 && f.state.intervals.size === 0); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); rejected(() => running.controlReadTracePin());
+    const stopped = await running.close(), pin = running.controlReadTracePin();
+    assert.ok(stopped.cleanShutdown && pin.path === "/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl" && pin.complete === true); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.traceFailure = true;
+    const stopped = await running.close(); assert.ok(stopped.failed && !stopped.cleanShutdown && running.controlReadTracePin().complete === false);
+    assert.ok(stopped.childStdoutEOF && stopped.childStderrEOF && f.state.intervals.size === 0); tests++;
   }
   assert.ok(!source.includes("process.exit("), "CLI drains natural EOF after timer cleanup"); tests++;
   assert.ok(fs.readFileSync(filename, "utf8") === source, "reviewed owner code stayed stable");

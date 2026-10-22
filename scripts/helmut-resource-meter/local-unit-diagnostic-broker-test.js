@@ -76,9 +76,10 @@ function rootProcessFixture(fault = null) {
 function brokerLifecycle() {
   const state = { observations: 0, reads: [], handler: null, closeCalls: 0, listenerLost: false, addressChanged: false,
     rootDrift: false, upstreamDrift: false, sourceDrift: false, signingKeyDrift: false, trustDrift: false, socketDrift: false };
-  const files = new Map(), publicDir = "/run/helmut-local-unit-diagnostic", privateDir = publicDir + "-owner";
+  const files = new Map(), descriptors = new Map(), publicDir = "/run/helmut-local-unit-diagnostic", privateDir = publicDir + "-owner";
+  const tracePath = "/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl"; let nextFD = 20;
   const pin = (name, data) => ({ path: name, bytes: Buffer.byteLength(data), sha256: crypto.createHash("sha256").update(data).digest("hex") });
-  const put = (name, data) => { const bytes = Buffer.from(data); files.set(name, { bytes, pin: pin(name, bytes), identity: [name, "stable"] }); return files.get(name); };
+  const put = (name, data) => { const bytes = Buffer.from(data); files.set(name, { bytes, pin: pin(name, bytes), identity: [name, "stable"], revision: 1 }); return files.get(name); };
   const op = "localUnitDiagnostic-" + "b".repeat(32), commandHash = "a".repeat(64), database = "helmut_unit_diagnostic_" + "b".repeat(32);
   const exe = put("/opt/postgrest-pinned", "VM PostgREST byte pin"), config = put("/run/bootstrap/REST.PRIVATE.conf", "VM private config byte pin");
   const nodePin = pin("/opt/node-pinned", "VM Node code"), servicePin = pin("/bench/local-unit-original-service.js", "VM source service code");
@@ -94,10 +95,15 @@ function brokerLifecycle() {
     schema: "helmut-local-unit-source-supervisor-qualification/1", operationId: op, commandHash, database,
     issuedAtUTC: new Date(now).toISOString(), expiresAtUTC: new Date(now + 180000).toISOString(), publicSourceBinding: original }));
   const brokerCode = put(filename, source), token = put("/run/bootstrap/TOKEN.PRIVATE", "e30." + Buffer.from(JSON.stringify({ role: "helmut_ud_runtime_" + "b".repeat(32) })).toString("base64url") + ".e30");
+  const graphName = "helmut_auth_state_graph_read_v1", graphSHA = crypto.createHash("sha256").update("VM qualified graph reader").digest("hex");
+  const graphQ = put("/run/bootstrap/READ_GRAPH.PRIVATE.json", JSON.stringify({ schema: "helmut-local-unit-diagnostic-read-rpc-qualification/1",
+    database, name: graphName, oid: "123", identityArguments: "jsonb", prosrcSHA256: graphSHA, readOnly: true, sourceReviewAccepted: true }));
   const c = { schema: "helmut-local-unit-diagnostic-broker-config/2", operationId: op, commandHash, database,
     upstream: { port: 3456, pid: 456, startTicks: "22", exePin: exe.pin, configPin: config.pin, runtimeTokenPath: token.pin.path },
     measuredCgroup: { path: "/owned-group", device: 1, inode: 2, procMembership: { broker: "0::/\n", upstream: "0::/\n" } },
-    legacy: { tables: [], rpcs: [] }, originalService: { hmacKeyPath: hmac.pin.path, sourceQualificationPin: sourceQ.pin, publicSourceBinding: original } };
+    legacy: { tables: [], rpcs: [{ name: graphName, oid: "123", identityArguments: "jsonb", prosrcSHA256: graphSHA,
+      qualificationPin: graphQ.pin, requestKeys: ["id", "knownProof", "readNonce", "knownGraph"] }] },
+    originalService: { hmacKeyPath: hmac.pin.path, sourceQualificationPin: sourceQ.pin, publicSourceBinding: original } };
   const ownerQ = put("/run/bootstrap/OWNER.PRIVATE.json", JSON.stringify({ schema: "helmut-local-unit-diagnostic-owner-qualification/2",
     operationId: op, commandHash, database, brokerCodeSHA256: brokerCode.pin.sha256, upstream: c.upstream,
     measuredCgroup: c.measuredCgroup, legacy: c.legacy, originalService: c.originalService })); c.ownerQualificationPin = ownerQ.pin;
@@ -108,8 +114,11 @@ function brokerLifecycle() {
   server.listen = (name, callback) => { assert.equal(name, publicDir + "/broker.sock"); server.listening = true; queueMicrotask(callback); };
   server.address = () => state.addressChanged ? "/wrong/socket" : publicDir + "/broker.sock";
   server.close = callback => { state.closeCalls++; server.listening = false; queueMicrotask(() => callback()); };
-  const fsStub = { realpathSync: x => x,
+  function traceStat() { const row = files.get(tracePath); return { dev: 1n, ino: state.traceReplaced ? 51n : 50n, mode: 0o100600n,
+    uid: 0n, gid: 0n, nlink: 1n, size: BigInt(row.bytes.length), mtimeNs: BigInt(row.revision), ctimeNs: BigInt(row.revision), isFile: () => true }; }
+  const fsStub = { constants: fs.constants, realpathSync: x => x,
     lstatSync(name, options) {
+      if (name === tracePath) return traceStat();
       if (name === "/owned-group") return { isDirectory: () => true, isSymbolicLink: () => false, dev: 1, ino: 2 };
       if (name.endsWith(".sock")) {
         const n = x => options?.bigint ? BigInt(x) : x;
@@ -117,9 +126,18 @@ function brokerLifecycle() {
           uid: n(name === original.socketPath ? 1000 : 0), gid: n(0), nlink: n(1), size: n(0), mtimeNs: n(1), ctimeNs: n(1), isSocket: () => true };
       }
       return { isDirectory: () => true, isSymbolicLink: () => false, uid: 0, mode: 0o40755 };
-    }, statfsSync: () => ({ type: 0x63677270 }), readdirSync: () => ["7"], readlinkSync: () => "socket:[9]",
+    }, statfsSync: () => ({ type: 0x63677270 }), readdirSync: () => ["7"], readlinkSync: name => name === "/proc/self/ns/time" ? "time:[42]" : "socket:[9]",
     readFileSync(name) { assert.equal(name, "/proc/net/tcp"); return "header\n0: 0100007F:0D80 00000000:0000 0A 0 0 0 0 0 9\n"; },
-    existsSync: name => files.has(name), mkdirSync: name => put(name, "VM dir"), chmodSync() {}, writeFileSync: (name, bytes) => { assert(!files.has(name)); put(name, bytes); } };
+    existsSync: name => files.has(name), mkdirSync: name => put(name, "VM dir"), chmodSync() {}, writeFileSync: (name, bytes) => { assert(!files.has(name)); put(name, bytes); },
+    openSync(name, flags, mode) {
+      assert.equal(name, tracePath); assert(flags & fs.constants.O_EXCL); assert(flags & fs.constants.O_NOFOLLOW); assert(flags & fs.constants.O_NONBLOCK); assert.equal(mode, 0o600);
+      if (files.has(name)) throw Error("VM existing trace"); put(name, ""); const fd = nextFD++; descriptors.set(fd, name); return fd;
+    }, fstatSync(fd) { assert(descriptors.has(fd)); return traceStat(); },
+    writeSync(fd, buffer, offset, length) {
+      assert(descriptors.has(fd)); if (state.traceWriteFailure) throw Error("VM trace write failure");
+      const row = files.get(tracePath); row.bytes = Buffer.concat([row.bytes, buffer.subarray(offset, offset + length)]); row.pin = pin(tracePath, row.bytes); row.revision++; return length;
+    }, fsyncSync() { if (state.traceSyncFailure) throw Error("VM trace sync failure"); }, closeSync(fd) { assert(descriptors.delete(fd)); }
+  };
   const hooks = { processInfo(pid) { state.observations++; return proc(pid); }, readRegular(name, cap, options = {}) {
     state.reads.push(name); const record = name === "/proc/456/exe" ? exe : files.get(name); assert(record, "VM closed file list");
     if (state.sourceDrift && name === sourceQ.pin.path || state.signingKeyDrift && name.endsWith("signing-key.pem") || state.trustDrift && name.endsWith("trust.json"))
@@ -131,13 +149,45 @@ function brokerLifecycle() {
     setTimeout, clearTimeout, process: { env: {}, getuid: () => 0, pid: 123, version: "v24.19.0",
       execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"], hrtime: process.hrtime, umask() {} }, require(name) {
       if (name === "node:fs") return fsStub;
-      if (name === "node:http") return { createServer(handler) { state.handler = handler; return server; }, request() { throw Error("offline-upstream-forbidden"); } };
-      if (name === "node:net") return { createConnection() { throw Error("offline-original-forbidden"); } };
+      if (name === "node:http") return { createServer(handler) { state.handler = handler; return server; }, request(options, onResponse) {
+        const req = new EventEmitter(); req.destroy = () => {}; req.end = body => {
+          queueMicrotask(() => {
+            req.emit("finish"); const res = new EventEmitter(); res.complete = !state.incompleteHTTP; res.destroy = () => {};
+            res.statusCode = 200; onResponse(res); const route = options.path;
+            const value = route === "/rpc/local_unit_diagnostic_contract_v1" ? { database, version: "helmut-local-unit-diagnostic-native-store/1",
+              legacyReadRPCs: c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) => ({ name, oid, identityArguments, prosrcSHA256, qualificationPin })) }
+              : route === "/rpc/local_unit_diagnostic_state_read_v1" ? state.stateWitness : { VM: "control response payload" };
+            res.emit("data", Buffer.from(JSON.stringify(value))); if (!state.noHTTPEnd) res.emit("end");
+          });
+        }; return req;
+      } };
+      if (name === "node:net") return { createConnection() {
+        const socket = new EventEmitter(); socket.destroy = () => {}; queueMicrotask(() => socket.emit("connect"));
+        socket.write = data => { const request = JSON.parse(data.toString()), response = { schema: "helmut-local-original-owner-response/1",
+          nonce: request.nonce, status: 200, bodyBase64: Buffer.from(JSON.stringify(state.originalResult)).toString("base64") };
+          queueMicrotask(() => { const unsigned = JSON.stringify(response); socket.emit("data", Buffer.from(JSON.stringify({ ...response,
+            hmacSHA256: crypto.createHmac("sha256", hmac.bytes).update(unsigned).digest("hex") }) + "\n")); socket.emit("end"); socket.emit("close", false); });
+        }; return socket;
+      } };
       if (name === "node:v8") return { getHeapStatistics: () => ({ heap_size_limit: 432 * 1048576 }) };
       return require(name);
     } };
   vm.runInNewContext(source + "\nstructuredClone=value=>JSON.parse(JSON.stringify(value));({readRegular,processInfo}=__hooks);", sandbox);
-  return { start: () => mod.exports.start(c), state, files, c, server, async unknown() {
+  let requestIndex = 0;
+  async function request(pathname, body) {
+    const m = { operationId: op, commandHash, database, nonce: crypto.createHash("sha256").update("VM request " + requestIndex++).digest("hex"),
+      method: "POST", path: pathname, bodyBase64: Buffer.from(JSON.stringify(body)).toString("base64") };
+    const req = { method: "POST", url: "/v1/execute", complete: true, async *[Symbol.asyncIterator]() { yield Buffer.from(JSON.stringify(m)); }, destroy() {} };
+    const res = new EventEmitter(); res.headersSent = false; res.writableFinished = false;
+    res.writeHead = status => { res.headersSent = true; res.statusCode = status; return res; };
+    res.end = output => { res.output = output; queueMicrotask(() => { if (state.lostDownstream) { res.emit("close"); return; }
+      res.writableFinished = true; res.emit("finish"); res.emit("close"); }); };
+    await state.handler(req, res); return { m, res };
+  }
+  const readNonce = i => "00000000-0000-4000-8000-" + String(i).padStart(12, "0");
+  return { start: () => mod.exports.start(c), state, files, c, server, descriptors, request, readNonce,
+    graph: i => request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "main-auth", knownProof: null, readNonce: readNonce(i), knownGraph: null }),
+    rows: () => files.get(tracePath).bytes.toString().trim().split("\n").map(JSON.parse), async unknown() {
     const req = { method: "POST", url: "/v1/execute", async *[Symbol.asyncIterator]() { yield Buffer.from("[]"); }, destroy() {} };
     const res = { headersSent: false, writeHead() { this.headersSent = true; return this; }, end() {} };
     await state.handler(req, res);
@@ -180,15 +230,72 @@ function brokerLifecycle() {
   for (const fault of ["rootDrift", "upstreamDrift", "sourceDrift", "signingKeyDrift", "trustDrift", "socketDrift", "addressChanged", "listenerLost"]) {
     const f = brokerLifecycle(), running = await f.start(); f.state[fault] = true; if (fault === "listenerLost") f.server.listening = false;
     assert.throws(() => running.observe()); f.state[fault] = false; assert.throws(() => running.observe(), "lost observation stays terminal");
-    await running.close(); checks++;
+    await assert.rejects(running.close()); checks++;
   }
   {
     const f = brokerLifecycle(), running = await f.start(); await f.unknown(); const before = f.state.observations;
-    assert.throws(() => running.observe()); assert.equal(f.state.observations, before); await running.close(); checks++;
+    assert.throws(() => running.observe()); assert.equal(f.state.observations, before); await assert.rejects(running.close()); checks++;
   }
   {
     const f = brokerLifecycle(); f.state.addressChanged = true; await assert.rejects(f.start());
     assert.equal(f.server.listening, false); assert.equal(f.state.closeCalls, 1); checks++;
+  }
+  {
+    const f = brokerLifecycle(), running = await f.start(), requests = [];
+    assert.throws(() => running.controlReadTracePin());
+    // Three-key ordinary U.read is deliberately excluded from the control trace.
+    await f.request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "main-auth", knownProof: null, readNonce: f.readNonce(99) });
+    for (let i = 1; i <= 16; i++) requests.push(await f.graph(i));
+    const claim = "00000000-0000-4000-8000-000000000100", h = x => crypto.createHash("sha256").update(x).digest("hex");
+    const verification = { authorizationHash: h("VM authorization"), controlsHash: h("VM controls"), controlCount: 16 };
+    const prefix = "localUnitDiagnostic:" + f.c.operationId.slice(-32) + ":", state = { [prefix + "journal"]: {
+      state: "closed", index: 1, inFlight: null, claimId: claim, verification }, [prefix + "result"]: { state: "retained-unreviewed", evidenceHash: h("VM evidence") } };
+    const canonical = JSON.stringify(state), bodyHash = h(canonical), ownNonce = h("VM own ACK nonce");
+    f.state.originalResult = { schema: "helmut-local-unit-original-write-result/1", authAck: [{ VM: "unexported old auth ACK" }],
+      ownAck: { version: "helmut-local-unit-diagnostic-state-ack/1", scopeHash: f.c.commandHash, hash: bodyHash, revision: 17,
+        claimHash: h(claim), nonce: ownNonce, ...verification } };
+    requests.push(await f.request("/rest/v1/rpc/local_unit_diagnostic_original_write_v1", { schema: "helmut-local-unit-original-write/1", mode: "state",
+      operationId: f.c.operationId, commandHash: f.c.commandHash, claimId: claim,
+      originalCAS: { id: "main-auth", expectedRevision: 1, expectedProof: {}, expectedState: {}, revision: 2, root: {}, nodes: [], additions: [] },
+      ownBefore: { hash: h("VM old own state"), revision: 16 }, ownNext: { canonical, hash: bodyHash }, artifact: null }));
+    const stateNonce = h("VM state read nonce");
+    f.state.stateWitness = { version: "helmut-local-unit-diagnostic-state-witness/1", scopeHash: f.c.commandHash,
+      canonical, hash: bodyHash, revision: 17, nonce: stateNonce };
+    for (let i = 0; i < 2; i++) requests.push(await f.request("/rest/v1/rpc/local_unit_diagnostic_state_read_v1", { p_scope_hash: f.c.commandHash, p_nonce: stateNonce }));
+    await running.close(); const rows = f.rows(), records = rows.slice(1, -1), footer = rows.at(-1), pin = running.controlReadTracePin();
+    assert.equal(rows[0].header.timeNamespace, "time:[42]"); assert.equal(rows[0].schema, "helmut-local-unit-native-control-read-trace/1");
+    assert.equal(records.length, 19); assert.equal(footer.controlCount, 16); assert.equal(footer.finalAckCount, 1); assert.equal(footer.closedReadbackCount, 2); assert.equal(footer.complete, true);
+    assert.equal(pin.bytes, f.files.get(pin.path).bytes.length); assert.equal(pin.sha256, h(f.files.get(pin.path).bytes)); assert(pin.bytes <= 65536 && f.descriptors.size === 0);
+    for (let i = 0; i < records.length; i++) {
+      const row = records[i]; assert.equal(row.seq, i + 1); assert.equal(row.requestNonceSHA256, h(requests[i].m.nonce));
+      const result = JSON.parse(requests[i].res.output); assert.equal(row.envelopeSHA256, h(requests[i].res.output));
+      assert.equal(row.attestationSHA256, h(JSON.stringify(result.attestation))); assert.equal(row.responseBodySHA256, h(Buffer.from(result.bodyBase64, "base64")));
+      assert.equal(row.signatureSHA256, h(Buffer.from(result.signatureBase64, "base64"))); assert.equal(row.io.downstreamFinish, true);
+      const t = row.timing; assert(BigInt(t.sendNs) <= BigInt(t.upstreamEndNs) && BigInt(t.upstreamEndNs) <= BigInt(t.signedNs) && BigInt(t.signedNs) <= BigInt(t.finishNs));
+      if (i) assert(BigInt(records[i - 1].timing.finishNs) < BigInt(t.sendNs));
+    }
+    assert.equal(records[16].ownAck.nonceSHA256, h(ownNonce)); assert.equal(records[16].ownAck.claimHash, h(claim));
+    assert.equal(records[17].readback.claimIdSHA256, h(claim)); assert.equal(records[17].readback.hash, bodyHash); assert.equal(records[18].readback.controlCount, 16);
+    assert.equal(records[16].io.upstreamResponseEnd, null); assert.equal(records[16].io.ownerSocketClose, true); assert.equal(records[0].io.upstreamResponseEnd, true);
+    const text = f.files.get(pin.path).bytes.toString();
+    for (const hidden of [claim, ownNonce, stateNonce, f.readNonce(1), requests[0].m.nonce, "VM control response payload", "unexported old auth ACK", '"canonical"', '"bodyBase64"'])
+      assert(!text.includes(hidden)); checks++;
+  }
+  for (const fault of ["incompleteHTTP", "lostDownstream", "traceWriteFailure", "traceSyncFailure", "traceReplaced"]) {
+    const f = brokerLifecycle(), running = await f.start(); f.state[fault] = true; await f.graph(1);
+    assert.throws(() => running.observe()); await assert.rejects(running.close()); assert.equal(f.descriptors.size, 0); checks++;
+  }
+  {
+    const f = brokerLifecycle(), running = await f.start();
+    for (let i = 1; i <= 33; i++) await f.graph(i);
+    assert.throws(() => running.observe()); await assert.rejects(running.close());
+    const footer = f.rows().at(-1); assert.equal(footer.recordCount, 32); assert.equal(footer.complete, false);
+    assert.equal(f.descriptors.size, 0); assert(f.files.get("/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl").bytes.length <= 65536); checks++;
+  }
+  {
+    const f = brokerLifecycle(); f.files.set("/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl", { bytes: Buffer.from("preexisting trace") });
+    await assert.rejects(f.start()); assert.equal(f.files.get("/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl").bytes.toString(), "preexisting trace");
+    assert.equal(f.server.listening, false); checks++;
   }
   assert.equal(fs.readFileSync(filename, "utf8"), source, "reviewed broker source stayed stable");
   console.log("local-unit-diagnostic-broker offline: " + checks + " checks passed; native sockets=0; database=0");

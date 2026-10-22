@@ -408,7 +408,11 @@ async function start(configPath = START) {
     if (require.main === module) heartbeat = setInterval(() => {
       try { process.stdout.write(JSON.stringify(observe()) + "\n"); } catch { failed("heartbeat-observation-failed"); }
     }, 5000);
-    return Object.freeze({ ready, close, done, observe });
+    function controlReadTracePin() {
+      need(arguments.length === 0 && closing && typeof broker.controlReadTracePin === "function", "private-trace-not-closed");
+      return broker.controlReadTracePin();
+    }
+    return Object.freeze({ ready, close, done, observe, controlReadTracePin });
   } catch (error) { failure ||= "startup-failed"; await close(); throw safeError(error); }
 }
 module.exports = Object.freeze({ start });

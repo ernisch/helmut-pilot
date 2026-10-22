@@ -9,6 +9,8 @@ const ROOT = "/run/helmut-local-unit-diagnostic", PRIVATE = "/run/helmut-local-u
 const ORIGINAL_SOCKET = "/ram/helmut-original-write-bridge.sock", ORIGINAL_WRITE = "/rest/v1/rpc/local_unit_diagnostic_original_write_v1";
 const SOURCE_QUALIFICATION = "/run/bootstrap/SOURCE_QUALIFICATION.PRIVATE.json", HMAC_KEY = "/run/bootstrap/ORIGINAL_HMAC.PRIVATE.bin";
 const CAP = 36 * 1024 * 1024, sha = b => crypto.createHash("sha256").update(b).digest("hex");
+const TRACE = "/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl", TRACE_CAP = 65536;
+const HASH = /^[a-f0-9]{64}$/, UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const exact = (x, keys) => x && typeof x === "object" && !Array.isArray(x) && Object.keys(x).sort().join("|") === [...keys].sort().join("|");
 const RPC = Object.freeze({ contract: [], authority_read: ["p_scope_hash", "p_nonce"], runtime_read: ["p_scope_hash", "p_nonce"],
   state_read: ["p_scope_hash", "p_nonce"], state_cas: ["p_scope_hash", "p_claim_hash", "p_old_hash", "p_old_revision", "p_next_canonical", "p_next_hash", "p_nonce"],
@@ -135,7 +137,7 @@ function validateConfig(c) {
   }
   sourceBinding(c); return c;
 }
-function authorize(c, m) {
+function authorize(c, m, traceMeta = null) {
   need(exact(m, ["operationId", "commandHash", "database", "nonce", "method", "path", "bodyBase64"])
     && m.operationId === c.operationId && m.commandHash === c.commandHash && m.database === c.database
     && typeof m.nonce === "string" && /^[a-f0-9]{64}$/.test(m.nonce) && ["GET", "POST"].includes(m.method)
@@ -160,12 +162,14 @@ function authorize(c, m) {
       && (args.mode === "state" ? args.artifact === null : exact(args.artifact, ["kind", "logicalId", "canonical", "sha256", "parentHash"])
         && (args.mode === "usage" ? ["usage-D", "usage-R"]
           : ["draft", "immutable-D", "review", "lage", "mandatsbriefing", "morgenbriefing", "evidence"]).includes(args.artifact.kind)), "closed-original-write");
+    if (traceMeta && args.mode === "state") traceMeta.candidate = "state-write";
   } else if (native) {
     let args; try { args = JSON.parse(body.toString("utf8")); } catch { need(false, "native-json"); }
     need(m.method === "POST" && !["state_cas", "artifact_insert"].includes(native[1])
       && Object.hasOwn(RPC, native[1]) && exact(args, RPC[native[1]])
       && (!RPC[native[1]].includes("p_scope_hash") || args.p_scope_hash === c.commandHash)
       && (!RPC[native[1]].includes("p_nonce") || /^[a-f0-9]{64}$/.test(args.p_nonce)), "native-abi");
+    if (traceMeta && native[1] === "state_read") traceMeta.candidate = "state-read";
   } else if (m.method === "GET") {
     need(body.length === 0 && /^\/rest\/v1\/[a-z][a-z0-9_]*(?:\?|$)/.test(m.path)
       && c.legacy.tables.includes(parsed.pathname.slice("/rest/v1/".length)), "qualified-table-read");
@@ -181,6 +185,11 @@ function authorize(c, m) {
       && [...r.requestKeys].sort().join("|") === ["id", "knownProof", "readNonce", "knownGraph"].sort().join("|")
       && exact(args, ["id", "knownProof", "readNonce"]);
     need(r && (exact(args, r.requestKeys) || graphHistory) && args.id === "main-auth", "qualified-readonly-rpc");
+    if (traceMeta && r.name === "helmut_auth_state_graph_read_v1" && exact(args, ["id", "knownProof", "readNonce", "knownGraph"])) {
+      need(typeof args.readNonce === "string" && UUID.test(args.readNonce) && Buffer.from(body.toString("utf8")).equals(body)
+        && JSON.stringify(args) === body.toString("utf8"), "trace-control-request");
+      traceMeta.candidate = "control-graph-4"; traceMeta.readNonceSHA256 = sha(args.readNonce);
+    }
   }
   return body;
 }
@@ -201,7 +210,7 @@ function serialGate() {
 async function upstream(c, m, bytes, token, remainingMs = 28000) {
   need(Number.isFinite(remainingMs) && remainingMs > 0 && remainingMs <= 28000, "upstream-total-deadline");
   return new Promise((resolve, reject) => {
-    let req, res, done = false, size = 0; const blocks = [];
+    let req, res, done = false, requestFinish = false, size = 0; const blocks = [];
     const timer = setTimeout(() => finish(null, "upstream-deadline-unknown"), remainingMs);
     function finish(value, error) { if (done) return; done = true; clearTimeout(timer); if (error) { req?.destroy(); res?.destroy(); reject(Error(error)); } else resolve(value); }
     req = http.request({ hostname: "127.0.0.1", port: c.upstream.port, path: m.path.replace(/^\/rest\/v1/, ""),
@@ -210,8 +219,13 @@ async function upstream(c, m, bytes, token, remainingMs = 28000) {
       incoming.on("data", b => { size += b.length; if (size > CAP) finish(null, "upstream-cap-unknown"); else blocks.push(b); });
       incoming.once("error", () => finish(null, "upstream-error-unknown"));
       incoming.once("aborted", () => finish(null, "upstream-aborted-unknown"));
-      incoming.once("end", () => finish({ status: incoming.statusCode, bytes: Buffer.concat(blocks) }));
+      incoming.once("end", () => {
+        if (!requestFinish || incoming.complete !== true) return finish(null, "upstream-incomplete-unknown");
+        finish({ status: incoming.statusCode, bytes: Buffer.concat(blocks), traceIO: { upstreamRequestFinish: true,
+          upstreamResponseEnd: true, upstreamMessageComplete: true, ownerSocketEnd: null, ownerSocketClose: null } });
+      });
     });
+    req.once("finish", () => { requestFinish = true; });
     req.once("error", () => finish(null, "upstream-request-unknown")); req.end(bytes);
   });
 }
@@ -263,10 +277,121 @@ async function originalUpstream(m, bytes, key, remainingMs) {
           const frame = Buffer.concat(blocks);
           need(eof && !hadError && frame.at(-1) === 10 && frame.indexOf(10) === frame.length - 1, "original-response-eof");
           const value = originalResponse(frame.subarray(0, -1), key, m.nonce);
-          need(process.hrtime.bigint() < until, "original-response-deadline"); finish(value);
+          need(process.hrtime.bigint() < until, "original-response-deadline"); finish({ ...value, traceIO: {
+            upstreamRequestFinish: null, upstreamResponseEnd: null, upstreamMessageComplete: null, ownerSocketEnd: true, ownerSocketClose: true } });
         } catch { finish(null, "original-response-unconfirmed"); }
       });
     } catch { finish(null, "original-transport-unknown"); }
+  });
+}
+function canonical(value) {
+  if (Array.isArray(value)) return "[" + value.map(canonical).join(",") + "]";
+  if (value && typeof value === "object") return "{" + Object.keys(value).sort().map(k => JSON.stringify(k) + ":" + canonical(value[k])).join(",") + "}";
+  return JSON.stringify(value);
+}
+function controlReadTrace(c, self, codePin, trustPin, unknown) {
+  rootParents(TRACE);
+  const timeNamespace = fs.readlinkSync("/proc/self/ns/time"); need(/^time:\[[1-9][0-9]*\]$/.test(timeNamespace), "trace-time-namespace");
+  const fd = fs.openSync(TRACE, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK, 0o600);
+  let bytes = 0, records = 0, controls = 0, acks = 0, reads = 0, broken = false, publicationFailed = false, sealed = false, prior = null, finalPin = null;
+  const pending = new Set(), digest = crypto.createHash("sha256");
+  const mark = () => { broken = true; unknown(); };
+  const stamp = () => ({ utc: new Date().toISOString(), ns: process.hrtime.bigint().toString() });
+  function identity() {
+    const a = fs.fstatSync(fd, { bigint: true }), b = fs.lstatSync(TRACE, { bigint: true });
+    need(a.isFile() && a.uid === 0n && a.gid === 0n && a.nlink === 1n && (a.mode & 0o7777n) === 0o600n
+      && a.size === BigInt(bytes) && fs.realpathSync(TRACE) === TRACE && isDeepStrictEqual(statIdentity(a), statIdentity(b)), "trace-file-identity"); return statIdentity(a);
+  }
+  function append(value) {
+    try {
+      need(!sealed && !publicationFailed, "trace-sealed"); const before = identity(); need(!prior || isDeepStrictEqual(before, prior), "trace-file-drift");
+      const raw = Buffer.from(JSON.stringify(value) + "\n"); need(raw.length <= 4096 && bytes + raw.length <= TRACE_CAP, "trace-cap");
+      let offset = 0; while (offset < raw.length) { const n = fs.writeSync(fd, raw, offset, raw.length - offset, null); need(n > 0, "trace-short-write"); offset += n; }
+      bytes += raw.length; fs.fsyncSync(fd); prior = identity(); need(before.slice(0, 6).join() === prior.slice(0, 6).join(), "trace-write-identity"); digest.update(raw);
+    } catch (error) { publicationFailed = true; mark(); throw error; }
+  }
+  try { append({ schema: "helmut-local-unit-native-control-read-trace/1", header: { operationId: c.operationId, commandHash: c.commandHash,
+    database: c.database, ownerPID: self.pid, ownerStartTicks: self.startTicks, pidNamespace: self.pidNamespace, timeNamespace,
+    brokerCodeSHA256: codePin.sha256, trustSHA256: trustPin.sha256, sourceBindingSHA256: sha(canonical(c.originalService.publicSourceBinding)) } }); }
+  catch (error) { fs.closeSync(fd); throw error; }
+  function settle(t) {
+    if (t.settled || !t.handlerDone || !t.finished && !t.closed) return; t.settled = true;
+    pending.delete(t);
+    if (t.failed || broken || !t.finished) { mark(); t.reject(Error("local-unit-broker-trace-outcome-unknown")); return; }
+    try {
+      if (t.record) {
+        need(records < 32 && t.finishedAt, "trace-record-cap-or-finish"); const at = t.finishedAt;
+        append({ seq: records + 1, ...t.record, timing: { ...t.record.timing, finishUTC: at.utc, finishNs: at.ns },
+          io: { ...t.record.io, downstreamFinish: true } }); records++;
+        if (t.record.kind === "control-graph-4") controls++; else if (t.record.kind === "final-own-ack") acks++; else reads++;
+      }
+      t.resolve();
+    } catch (error) { mark(); t.reject(error); }
+  }
+  return Object.freeze({ unknown: mark,
+    begin(meta, m, body, res, req) {
+      if (!meta.candidate) return null;
+      need(!broken && !sealed && pending.size < 32 && req.complete === true, "trace-request-complete");
+      const t = { candidate: meta.candidate, control: meta.readNonceSHA256 ? { readNonceSHA256: meta.readNonceSHA256 } : null,
+        requestNonceSHA256: sha(m.nonce), requestBodySHA256: sha(body), handlerDone: false, finished: false, closed: false, failed: false, record: null };
+      t.promise = new Promise((resolve, reject) => { t.resolve = resolve; t.reject = reject; }); t.promise.catch(() => {}); pending.add(t);
+      res.once("finish", () => { t.finishedAt = stamp(); t.finished = res.writableFinished === true; if (!t.finished) { t.failed = true; mark(); } settle(t); });
+      res.once("close", () => { t.closed = true; if (!t.finished) { t.failed = true; mark(); } settle(t); }); return t;
+    },
+    sent(t) { if (t) t.sent = stamp(); },
+    ended(t) { if (t) t.ended = stamp(); },
+    signed(t, answer, attestation, envelope, output) {
+      if (!t) return; need(answer.status === 200 && t.sent && t.ended && answer.traceIO, "trace-upstream-success");
+      let kind = t.candidate, ownAck = null, readback = null;
+      if (kind !== "control-graph-4") {
+        need(answer.bytes.length <= 9 * 1024 * 1024, "trace-response-cap"); const value = JSON.parse(answer.bytes.toString("utf8"));
+        if (kind === "state-write") {
+          const w = value?.ownAck;
+          if (!Object.hasOwn(w || {}, "controlCount")) { t.ignored = true; return; }
+          need(exact(value, ["schema", "authAck", "ownAck"]) && value.schema === "helmut-local-unit-original-write-result/1"
+            && Array.isArray(value.authAck) && value.authAck.length === 1
+            && exact(w, ["version", "scopeHash", "hash", "revision", "claimHash", "nonce", "authorizationHash", "controlsHash", "controlCount"])
+            && w.version === "helmut-local-unit-diagnostic-state-ack/1" && w.scopeHash === c.commandHash
+            && [w.hash, w.claimHash, w.nonce, w.authorizationHash, w.controlsHash].every(x => typeof x === "string" && HASH.test(x))
+            && Number.isSafeInteger(w.revision) && w.revision > 0 && w.controlCount === 16, "trace-final-ack");
+          ownAck = { version: w.version, scopeHash: w.scopeHash, hash: w.hash, revision: w.revision, claimHash: w.claimHash,
+            nonceSHA256: sha(w.nonce), authorizationHash: w.authorizationHash, controlsHash: w.controlsHash, controlCount: w.controlCount }; kind = "final-own-ack";
+        } else {
+          const w = value; need(exact(w, ["version", "scopeHash", "canonical", "hash", "revision", "nonce"])
+            && w.version === "helmut-local-unit-diagnostic-state-witness/1" && w.scopeHash === c.commandHash
+            && [w.hash, w.nonce].every(x => typeof x === "string" && HASH.test(x))
+            && Number.isSafeInteger(w.revision) && w.revision >= 0 && typeof w.canonical === "string"
+            && Buffer.byteLength(w.canonical) <= 4 * 1024 * 1024 && sha(w.canonical) === w.hash, "trace-state-witness");
+          const state = JSON.parse(w.canonical), k = "localUnitDiagnostic:" + c.operationId.slice(-32) + ":", j = state[k + "journal"], r = state[k + "result"];
+          if (j?.state !== "closed") { t.ignored = true; return; }
+          const v = j.verification;
+          need(typeof j.claimId === "string" && UUID.test(j.claimId) && j.index === 1 && j.inFlight === null && r?.state === "retained-unreviewed"
+            && exact(v, ["authorizationHash", "controlsHash", "controlCount"])
+            && [r.evidenceHash, v.authorizationHash, v.controlsHash].every(x => typeof x === "string" && HASH.test(x))
+            && v.controlCount === 16, "trace-closed-state");
+          readback = { version: w.version, scopeHash: w.scopeHash, hash: w.hash, revision: w.revision, nonceSHA256: sha(w.nonce),
+            claimIdSHA256: sha(j.claimId), journalState: j.state, journalIndex: j.index, journalInFlightNull: true,
+            resultState: r.state, evidenceHash: r.evidenceHash, authorizationHash: v.authorizationHash, controlsHash: v.controlsHash, controlCount: v.controlCount }; kind = "closed-state-readback";
+        }
+      }
+      const at = stamp(); t.record = { kind, requestNonceSHA256: t.requestNonceSHA256, requestBodySHA256: t.requestBodySHA256,
+        responseBodySHA256: sha(answer.bytes), attestationSHA256: sha(JSON.stringify(attestation)), envelopeSHA256: sha(output),
+        signatureSHA256: sha(Buffer.from(envelope.signatureBase64, "base64")), status: answer.status,
+        timing: { sendUTC: t.sent.utc, sendNs: t.sent.ns, upstreamEndUTC: t.ended.utc, upstreamEndNs: t.ended.ns, signedUTC: at.utc, signedNs: at.ns },
+        io: answer.traceIO, control: t.control, ownAck, readback };
+    },
+    finish(t) { if (!t) return Promise.resolve(); t.handlerDone = true; need(t.record || t.ignored, "trace-signed-response-required"); settle(t); return t.promise; },
+    abort(t) { mark(); if (t) { t.failed = true; t.handlerDone = true; settle(t); } },
+    seal() {
+      try {
+        need(!sealed && pending.size === 0, "trace-pending-at-close"); append({ event: "closed", recordCount: records, controlCount: controls,
+          finalAckCount: acks, closedReadbackCount: reads, complete: !broken });
+        const pin = { path: TRACE, bytes, sha256: digest.copy().digest("hex") };
+        readRegular(TRACE, TRACE_CAP, { rootPrivate: true, expected: pin, contents: false }); finalPin = Object.freeze({ ...pin, complete: !broken });
+        need(!broken, "trace-closed-unknown");
+      } finally { sealed = true; fs.closeSync(fd); }
+    },
+    pin() { need(sealed && finalPin, "trace-not-sealed"); return finalPin; }
   });
 }
 async function start(configuration) {
@@ -353,18 +478,19 @@ async function start(configuration) {
     database: c.database, publicKeyPEM: keys.publicKey.export({ type: "spki", format: "pem" }), broker, upstream: actualUpstream,
     measuredCgroup: c.measuredCgroup, legacy: c.legacy, ownerQualificationPin: c.ownerQualificationPin,
     originalService: c.originalService.publicSourceBinding };
-  const used = new Set(), gate = serialGate(); let closed = false;
+  const used = new Set(), gate = serialGate(); let closed = false, trace = null, closePromise = null;
   const server = http.createServer(async (req, res) => {
     if (closed || req.method !== "POST" || req.url !== "/v1/execute") { res.writeHead(409).end(); return; }
-    let size = 0, done = false, release; const blocks = [];
+    let size = 0, done = false, release, traceAttempt = null; const blocks = [];
     const began = process.hrtime.bigint();
     const remaining = () => 28000 - Number(process.hrtime.bigint() - began) / 1000000;
     const timer = setTimeout(() => req.destroy(), 30000);
     try {
       release = await gate.acquire(); need(!closed && remaining() > 0, "queued-deadline-or-close");
       for await (const b of req) { size += b.length; need(size <= CAP * 4 / 3 + 65536, "incoming-cap"); blocks.push(b); }
-      const m = JSON.parse(Buffer.concat(blocks).toString("utf8")), bytes = authorize(c, m);
+      const m = JSON.parse(Buffer.concat(blocks).toString("utf8")), traceMeta = {}, bytes = authorize(c, m, traceMeta);
       need(used.size < 4096 && !used.has(m.nonce), "nonce-reuse-or-cap"); used.add(m.nonce);
+      need(trace, "private-trace-required"); traceAttempt = trace.begin(traceMeta, m, bytes, res, req);
       check();
       if (!/^\/rest\/v1\/rpc\/local_unit_diagnostic_/.test(m.path)) {
         const contract = await upstream(c, { method: "POST", path: "/rest/v1/rpc/local_unit_diagnostic_contract_v1" }, Buffer.from("{}"), token, remaining());
@@ -376,8 +502,10 @@ async function start(configuration) {
           && isDeepStrictEqual(catalog.legacyReadRPCs, expected), "actual-qualified-read-catalog");
       }
       const isOriginal = m.path === ORIGINAL_WRITE;
+      trace.sent(traceAttempt);
       const answer = isOriginal ? await originalUpstream(m, bytes, originalKey.bytes, remaining())
         : await upstream(c, m, bytes, token, remaining());
+      trace.ended(traceAttempt);
       check(); need(remaining() > 0, "total-deadline");
       const attestation = { schema: "helmut-local-unit-diagnostic-signed-response/2", operationId: c.operationId,
         commandHash: c.commandHash, database: c.database, nonce: m.nonce, method: m.method, path: m.path,
@@ -386,8 +514,10 @@ async function start(configuration) {
         upstream: isOriginal ? c.originalService.publicSourceBinding : actualUpstream, measuredCgroup: c.measuredCgroup };
       const result = { attestation, bodyBase64: answer.bytes.toString("base64"),
         signatureBase64: crypto.sign(null, Buffer.from(JSON.stringify(attestation)), keys.privateKey).toString("base64") };
-      const output = Buffer.from(JSON.stringify(result)); res.writeHead(200, { "Content-Type": "application/json", "Content-Length": output.length }); res.end(output); done = true;
-    } catch { if (!res.headersSent) res.writeHead(502); res.end(); }
+      const output = Buffer.from(JSON.stringify(result)); trace.signed(traceAttempt, answer, attestation, result, output);
+      res.writeHead(200, { "Content-Type": "application/json", "Content-Length": output.length }); res.end(output);
+      await trace.finish(traceAttempt); done = true;
+    } catch { trace?.abort(traceAttempt); if (!res.headersSent) res.writeHead(502); res.end(); }
     finally { clearTimeout(timer); if (!done) { closed = true; gate.close(); } release?.(); }
   });
   server.requestTimeout = 30000; server.headersTimeout = 10000; server.maxHeadersCount = 16;
@@ -398,6 +528,7 @@ async function start(configuration) {
   fs.chmodSync(ROOT + "/trust.json", 0o444);
   const trustRecord = readRegular(ROOT + "/trust.json", 65536, { contents: false });
   const brokerSocketIdentity = statIdentity(fs.lstatSync(ROOT + "/broker.sock", { bigint: true }));
+  trace = controlReadTrace(c, self, code.pin, trustRecord.pin, () => { closed = true; gate.close(); });
   function observe() {
     try {
       need(arguments.length === 0 && !closed && server.listening && server.address() === ROOT + "/broker.sock", "live-broker-listener-required");
@@ -409,12 +540,18 @@ async function start(configuration) {
         brokerCodeSHA256: code.pin.sha256, upstreamExeSHA256: c.upstream.exePin.sha256,
         upstreamConfigSHA256: c.upstream.configPin.sha256, listenerObserved: true, unitExecutionQualified: false });
       need(Buffer.byteLength(JSON.stringify(value)) <= 2048, "private-observation-cap"); return value;
-    } catch (error) { closed = true; gate.close(); throw error; }
+    } catch (error) { trace?.unknown(); closed = true; gate.close(); throw error; }
   }
   observe();
-  return Object.freeze({ anchor, observe, close: () => new Promise((resolve, reject) => { closed = true; gate.close(); server.close(error => error ? reject(error) : resolve()); }) });
+  return Object.freeze({ anchor, observe, controlReadTracePin: () => trace.pin(), close() {
+    if (closePromise) return closePromise; closed = true; gate.close();
+    closePromise = new Promise((resolve, reject) => server.close(error => {
+      try { need(!error, "broker-server-close"); trace.seal(); resolve(); } catch (failure) { reject(failure); }
+    })); return closePromise;
+  } });
   } catch (error) {
-    closed = true; gate.close(); if (server.listening) await new Promise(resolve => server.close(() => resolve())); throw error;
+    closed = true; gate.close(); trace?.unknown(); if (server.listening) await new Promise(resolve => server.close(() => resolve()));
+    try { trace?.seal(); } catch { /* failed preparation never becomes a complete trace */ } throw error;
   }
 }
 module.exports = Object.freeze({ start });
