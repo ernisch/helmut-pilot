@@ -54,12 +54,15 @@ def key_values(path):
 
 def kernel_snapshot(parent, *, require_empty=False):
     group = validated_parent(parent)
+    before = group.stat(follow_symlinks=False)
+    if group.resolve() != group or not stat.S_ISDIR(before.st_mode):
+        raise RuntimeError('canonical kernel group required')
     events = key_values(group / 'cgroup.events')
     if require_empty and events['populated'] != 0:
         raise RuntimeError('workflow group still populated; exit coverage open')
     children = [str(p.relative_to(group)) for p in group.rglob('cgroup.procs')
                 if p.read_text().strip()]
-    return {
+    result = {
         'parent': parent,
         'memoryPeakBytes': int((group / 'memory.peak').read_text()),
         'memoryCurrentBytes': int((group / 'memory.current').read_text()),
@@ -68,9 +71,24 @@ def kernel_snapshot(parent, *, require_empty=False):
         'events': events,
         'populatedSubgroups': children,
         'ioStatRawNumericOnly': (group / 'io.stat').read_text().strip(),
-        'fullLastProcessExitCovered': require_empty and events['populated'] == 0,
+        'fullLastProcessExitCovered': False,
         'scope': 'All descendants charged to dedicated kernel group; no RSS polling substitution',
     }
+    # A process may enter after the first events read. Final exit coverage needs
+    # another membership/events observation AFTER reading the charged counters.
+    final_children = [str(p.relative_to(group)) for p in group.rglob('cgroup.procs')
+                      if p.read_text().strip()]
+    final_events = key_values(group / 'cgroup.events')
+    after = group.stat(follow_symlinks=False)
+    if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+        raise RuntimeError('kernel group identity changed during snapshot')
+    if require_empty and (children or final_children or final_events['populated'] != 0):
+        raise RuntimeError('workflow group became populated; exit coverage open')
+    result.update(finalEvents=final_events, finalPopulatedSubgroups=final_children,
+                  groupIdentity={'device': after.st_dev, 'inode': after.st_ino},
+                  fullLastProcessExitCovered=require_empty and not children and not final_children
+                  and final_events['populated'] == 0)
+    return result
 
 
 PRESSURE_SCHEMA = 'helmut-kernel-pressure-snapshot/1'
