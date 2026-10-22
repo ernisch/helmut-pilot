@@ -208,6 +208,8 @@ def prepare(worker, config, pg, catalog):
         need(sha(command_text) == prepared['selection']['commandHash']
              and prepared['selection']['operationId'] == 'localUnitDiagnostic-' + nonce, 'genuine-js-canonical-command')
         worker.save('GENUINE_SOURCE_PREPARATION.SAFE.json', {**ready, 'preparedCommandPin': prepared_pin,
+            'admissionSourceProofHash': sha(canonical(prepared['sourceBinding'])),
+            'admissionAuthorizedAtUTC': prepared['admission']['authorizedAtUTC'],
             'actualChildExitCode': child.returncode, 'actualStdoutEOF': True, 'actualStderrEOF': True,
             'executionAuthority': False, 'motorCalls': 0, 'full500': False})
         return {'prepared': prepared, 'canonical': command_text, 'originalPins': originals, 'ready': ready}

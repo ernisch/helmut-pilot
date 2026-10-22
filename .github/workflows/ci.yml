@@ -225,6 +225,24 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/native-memory-budget-test.py
           node scripts/lokal.js -- node scripts/helmut-resource-meter/native-node-budget-test.js
           node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/kernel-pressure-snapshot-test.py
+      - name: Isolierte Einzelunit-Integration (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
+          # Only pure/mocked boundary suites. These flags never start Docker,
+          # PostgreSQL, the engine, a provider, or consume an execution grant.
+          for suite in \
+            scripts/local-unit-diagnostic-*-test.js \
+            scripts/local-unit-native-*-test.js \
+            scripts/helmut-resource-meter/local-unit-original-*-test.js \
+            scripts/helmut-resource-meter/local-unit-native-*-test.js \
+            scripts/helmut-resource-meter/local-unit-diagnostic-*-test.js; do
+            node scripts/lokal.js -- node "$suite"
+          done
+          for suite in \
+            scripts/helmut-resource-meter/local-unit-native-*-test.py \
+            scripts/helmut-resource-meter/local-unit-diagnostic-store-test.py; do
+            node scripts/lokal.js -- python3 -I -S -B "$suite"
+          done
       - name: Node-Version der bestehenden Offline-Suiten wiederherstellen
         if: steps.plan.outputs.standard == 'true'
         uses: actions/setup-node@v4
