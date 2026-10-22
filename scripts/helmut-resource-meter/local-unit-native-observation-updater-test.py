@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import sys
 import tempfile
+import types
 import unittest
 from unittest import mock
 
@@ -45,6 +46,14 @@ def pin(path):
     return {'path': str(path), 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
 
 
+class LedgerStat:
+    def __init__(self, actual, uid):
+        self.actual, self.st_uid = actual, uid
+
+    def __getattr__(self, key):
+        return getattr(self.actual, key)
+
+
 class Fixture:
     def __init__(self):
         global HOST_RETURN, HOST_ERROR
@@ -56,6 +65,7 @@ class Fixture:
         self.root = Path(self.temporary.name)
         self.ledger = self.root / 'ledger'
         self.ledger.mkdir(mode=0o700)
+        self.ledger_uid = self.ledger_entry_uid = 1000
         self.at = datetime.datetime(2026, 10, 22, 12, 0, 10, 100000, datetime.timezone.utc)
         self.previous = {'ordinal': 7, 'proofHash': 'f' * 64, 'observedAtUTC': '2026-10-22T12:00:05.100Z'}
         self.b = {'schema': 'helmut-local-unit-observation-baseline/1',
@@ -139,7 +149,28 @@ class Fixture:
 
     def run(self, *, previous=None, host=None, source=None, **changes):
         self.b.update(changes)
-        with mock.patch.multiple(self.m.os, getuid=lambda: 1000, geteuid=lambda: 1000, getgid=lambda: 1000, getegid=lambda: 1000), \
+        # CI's tempfile owner need not be the SOURCE actor. Model only this
+        # synthetic ledger's owner; retain real inode/mode/link/byte metadata
+        # and leave every file outside the ledger untouched.
+        def ledger_stat(value):
+            key = (value.st_dev, value.st_ino)
+            directory = self.ledger.lstat()
+            if key == (directory.st_dev, directory.st_ino):
+                return LedgerStat(value, self.ledger_uid)
+            for path in self.ledger.iterdir():
+                entry = path.lstat()
+                if key == (entry.st_dev, entry.st_ino):
+                    return LedgerStat(value, self.ledger_entry_uid)
+            return value
+        class ActorPath(type(Path())):
+            def lstat(path, *args, **kwargs):
+                return ledger_stat(super().lstat(*args, **kwargs))
+        actor_os = types.SimpleNamespace(**vars(os))
+        actor_os.getuid = actor_os.geteuid = actor_os.getgid = actor_os.getegid = lambda: 1000
+        actor_os.fstat = lambda *a, **k: ledger_stat(os.fstat(*a, **k))
+        actor_os.stat = lambda *a, **k: ledger_stat(os.stat(*a, **k))
+        with mock.patch.object(self.m, 'os', actor_os), \
+             mock.patch.object(self.m, 'Path', ActorPath), \
              mock.patch.object(self.m, '_now', return_value=self.at), \
              mock.patch.object(self.m, '_source', side_effect=source or (lambda *_: 'a' * 64)), \
              mock.patch.object(self.worker, 'capture', side_effect=self.capture):
@@ -204,6 +235,20 @@ class ObservationChecks(unittest.TestCase):
         f.unknown = False
         self.rejects(f)
         self.assertEqual(len(f.calls), 1)
+
+    def test_foreign_ledger_directory_or_entry_owner_is_rejected(self):
+        for uid in (0, 1001):
+            with self.subTest(uid=uid, kind='directory'):
+                f = self.fixture(); f.ledger_uid = uid
+                self.rejects(f)
+                self.assertFalse(f.calls)
+            with self.subTest(uid=uid, kind='entry'):
+                f = self.fixture(); first = f.run()
+                f.m = load('local-unit-native-observation-updater.py', 'observation_foreign_owner')
+                f.at += datetime.timedelta(seconds=5)
+                f.ledger_entry_uid = uid
+                self.rejects(f, previous=first['tip'])
+                self.assertEqual(len(f.calls), 1)
 
     def test_partial_ack_duplicate_json_and_wrong_binding_are_terminal(self):
         mutations = [lambda v: '', lambda v: '{}', lambda v: 'true',
