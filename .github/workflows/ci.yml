@@ -224,6 +224,7 @@ jobs:
           # local Node children. They precede checks requiring private originals.
           node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/native-memory-budget-test.py
           node scripts/lokal.js -- node scripts/helmut-resource-meter/native-node-budget-test.js
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/kernel-pressure-snapshot-test.py
       - name: Node-Version der bestehenden Offline-Suiten wiederherstellen
         if: steps.plan.outputs.standard == 'true'
         uses: actions/setup-node@v4
