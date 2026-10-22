@@ -302,7 +302,35 @@ def main():
             role_result = qualifier.qualify(query, database, config['nonce'])
             assert role_result['executedChecksPassed'] is True
             save('NATIVE_ROLE_QUALIFICATION.SAFE.json', role_result)
-            catalog_sql = "BEGIN READ ONLY;select jsonb_build_object('database',current_database(),'databaseOID',(select oid::text from pg_database where datname=current_database()),'functions',(select jsonb_agg(jsonb_build_object('name',p.proname,'oid',p.oid,'identityArguments',pg_get_function_identity_arguments(p.oid),'prosrcSHA256',encode(sha256(convert_to(p.prosrc,'UTF8')),'hex'),'securityDefiner',p.prosecdef,'volatility',p.provolatile))from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'helmut%'),'ownTables',(select jsonb_agg(c.relname order by c.relname)from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='helmut_unit_diagnostic' and c.relkind='r'));COMMIT;"
+            catalog_sql = """BEGIN READ ONLY;
+WITH original_rel AS (
+  SELECT unnest(ARRAY['public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,
+    'public.llm_usage'::regclass]) AS oid
+), original_proc AS (
+  SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE n.nspname='public' AND p.proname LIKE 'helmut_auth_%'
+  UNION SELECT t.tgfoid FROM pg_trigger t JOIN original_rel r ON r.oid=t.tgrelid WHERE NOT t.tgisinternal
+), sources AS (
+  SELECT p.oid,n.nspname,p.proname,jsonb_build_object('oid',p.oid::text,'name',n.nspname||'.'||p.proname,
+    'identityArguments',oidvectortypes(p.proargtypes),'prosrcSHA256',encode(sha256(convert_to(p.prosrc,'UTF8')),'hex'),
+    'volatility',p.provolatile,'returnType',format_type(p.prorettype,null),'language',l.lanname,'config',p.proconfig) AS pin,
+    p.prosecdef FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace JOIN pg_language l ON l.oid=p.prolang
+)
+SELECT jsonb_build_object('database',current_database(),
+  'databaseOID',(SELECT oid::text FROM pg_database WHERE datname=current_database()),
+  'functions',(SELECT jsonb_agg(pin||jsonb_build_object('securityDefiner',prosecdef) ORDER BY oid) FROM sources
+    WHERE nspname='public' AND proname LIKE 'helmut%'),
+  'originalSources',(SELECT jsonb_agg(pin||jsonb_build_object('securityDefiner',prosecdef) ORDER BY oid) FROM sources
+    WHERE oid IN(SELECT oid FROM original_proc)),
+  'originalTriggers',(SELECT jsonb_agg(jsonb_build_object('oid',t.oid::text,'table',t.tgrelid::regclass::text,
+    'name',t.tgname,'functionOID',t.tgfoid::text,'enabled',t.tgenabled,'type',t.tgtype,
+    'definitionSHA256',encode(sha256(convert_to(pg_get_triggerdef(t.oid),'UTF8')),'hex')) ORDER BY t.oid)
+    FROM pg_trigger t JOIN original_rel r ON r.oid=t.tgrelid WHERE NOT t.tgisinternal),
+  'nativeSources',(SELECT jsonb_agg(pin||jsonb_build_object('securityDefiner',prosecdef) ORDER BY oid) FROM sources
+    WHERE nspname='helmut_unit_diagnostic' OR (nspname='public' AND proname ~ '^local_unit_diagnostic_.*_v1$')),
+  'ownTables',(SELECT jsonb_agg(c.relname ORDER BY c.relname) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='helmut_unit_diagnostic' AND c.relkind='r'));
+COMMIT;"""
             catalog = json.loads(query(database, catalog_sql, 'NATIVE_CATALOG'))
             save('NATIVE_CATALOG.SAFE.json', catalog)
             result = {'pass': True, 'schema': 'helmut-local-unit-native-DDL-qualification/1', 'database': database,
