@@ -4,21 +4,21 @@
 
 ## 22.10.: Restore und lokale CI-Prüfung
 
-13.527 Dateien/83 bisherige CI-Originale/24 Git-Patches hashverifiziert; physische
-DB-Kopien fehlen. Manifest84 echte Dateien, Provisionierung84/84+9Negativgruppen
-PASS. Isolierte CI84-Verbraucher:19/31/13/6 Tests+Vorbereitung PASS; Node24.19,
-Python3.12.15, netzlos. Kein GitHub-CI-Nachweis. Authority-Testfix auch mit echten
-verbrauchten V12-Markern31/31 PASS; Runtimewächter unverändert.
-STANDARD180/180 PASS in686s auf87c439; danach Store-Nebenwirkung entdeckt:
-Contracttest änderte zwei Profilzeitstempel; beide Zustände privat gesichert.
-Testfix mit4isolierten Zustandsfällen PASS; Store bytegenau restauriert,
-Zeitmetadaten erklärt geändert.88/88Bytepins unabhängig bestätigt;
-84CI-Originale+3V12-Dateien einschließlich Metadaten unverändert.
-7weitere Ressourcenpakete PASS; Observer blockiert am ausdrücklich wegen
-Credentialfeld ausgeschlossenen privaten Katalog, keine Ersatzquittung.
-GitHub403 bleibt Credential-Übersteuerung im Codex-App-Kontext; genaue Stelle
-offen, Cloudtools nur lesend. Geschützter Originalkanal fehlt; kein Voll500/Merge.
-[Prüfungen und Grenzen](betrieb/private-ci-original-provisioning-20261021.md).
+13.527Dateien/83CI-Originale/24Patches hashverifiziert; physische DB-Kopien fehlen.
+84erOriginalmanifest+Provisionierung84/84+9Negativgruppen PASS. Netzlose CI84-
+Verbraucher19/31/13/6+Vorbereitung PASS(Node24.19/Python3.12.15), kein GitHubbeleg.
+STANDARD180/180 PASS auf87c439; danach Store-Nebenwirkung des Contracttests entdeckt.
+Testfix4isolierte Fälle PASS, Store bytegenau restauriert; Zeitmetadaten erklärt
+geändert.88/88Bytepins unabhängig PASS,84CI+3V12 auch metadatengetreu unverändert.
+7Ressourcenpakete PASS; Observer am wegen Credentialfeld ausgeschlossenen Katalog
+blockiert. PR928/51a45: Browser grün, Offline am privaten Originalpin rot.
+GitHub403 im Codex-App-Kontext; genaue Übersteuerungsstelle offen, Cloudtools nur
+lesend. Geschützter Originalkanal fehlt; kein Voll500/Merge.
+[Prüfungen/Grenzen](betrieb/private-ci-original-provisioning-20261021.md).
+
+Einzelunit-Vorbereitung499→0:43/43Synthetik+Originalinspektion PASS, weiterhin inerte
+Vorbereitung. POSTRUN-Auth/Journal, vorbereitete Requests und native Verbraucher bleiben
+offen; kein Rücksetzen alter Freigaben. [Umfang/Abnahme](betrieb/local-unit-diagnostic-preparation-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

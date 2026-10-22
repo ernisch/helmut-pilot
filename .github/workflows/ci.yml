@@ -189,6 +189,11 @@ jobs:
           node scripts/lokal.js -- node scripts/helmut-resource-meter/local-postgrest-services-test.js
           node scripts/lokal.js -- node --test scripts/helmut-resource-meter/backend-consumer-binding-test.js
           node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/provision-private-ci-originals-test.py
+      - name: Einzelunit-Diagnosevorbereitung (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        # Uses synthetic packet bytes and the public historical terminal only.
+        # Runs before the checks requiring private originals; grants no execution.
+        run: node scripts/lokal.js -- node scripts/synthetik-500-unit-diagnostic-contract-test.js
       - name: Ressourcenstart und Originalbindungen (offline)
         if: steps.plan.outputs.standard == 'true'
         run: |
