@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import stat
 import time
+import traceback
 
 BIN = Path(__file__).resolve().parent
 GATES = ('source', 'runtime', 'owner', 'calendar', 'costs', 'reservation', 'sender',
@@ -338,10 +339,12 @@ class _Controller:
             need(heartbeat['owner']['pid'] == self.host_ready['ownerPID'] and heartbeat['owner']['startTicks'] == self.host_ready['ownerStartTicks']
                  and heartbeat['upstream']['pid'] == self.host_ready['upstreamPID'] and heartbeat['upstream']['startTicks'] == self.host_ready['upstreamStartTicks'], 'owner-heartbeat-identity')
         need(value['source']['namespacePID'] == os.getpid() and value['source']['startTicks'] == self.observer.supervisor['startTicks']
-             and value['source']['namespaces']['pid'] == self.observer.binding['pidNamespace'], 'host-source-pid-map')
+             and value['source']['namespaces']['pid'] == self.observer.binding['pidNamespace']
+             and value['source']['membership'].startswith('0::/' + self.c['parent'] + '/')
+             and len(value['source']['membership'].splitlines()) == 1, 'host-source-pid-map')
         service = value['sourceService']
         need(service['namespacePID'] == self.observer.service['pid'] and service['startTicks'] == self.observer.service['startTicks']
-             and service['exe'] == self.c['nodePin']['path'] and service['membership'] == '0::/\n'
+             and service['exe'] == self.c['nodePin']['path'] and service['membership'] == value['source']['membership']
              and service['namespaces']['pid'] == value['source']['namespaces']['pid'], 'host-service-pid-map')
         self.last_host = value
         return value
@@ -644,9 +647,19 @@ def run_single_unit(worker, config, pg, catalog, preparation, read_result, bridg
     try:
         controller = _Controller(worker, config, pg, catalog, preparation, read_result, bridge_result)
         return controller.run()
-    except BaseException:
+    except BaseException as error:
         if controller is not None:
             controller.host.sealed = True
+            # Keep the actual cause on SOURCE for bounded diagnosis. It must
+            # never become a public receipt or a reason to repeat this claim.
+            try:
+                _compact(worker, 'EXECUTION_FAILURE.PRIVATE.json', {
+                    'schema': 'helmut-local-unit-native-execution-failure/1',
+                    'selection': controller.selection, 'stageNumber': controller.stage_number,
+                    'exceptionType': type(error).__name__, 'privateTraceback': traceback.format_exc()[:32768],
+                    'retryAllowed': False})
+            except BaseException:
+                pass
             # Shutdown is cleanup only. It cannot restore acceptance or reopen
             # an unknown write. The worker independently closes all PG children.
             if controller.service is not None:

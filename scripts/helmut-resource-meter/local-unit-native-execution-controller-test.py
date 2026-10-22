@@ -293,7 +293,7 @@ class Tests(unittest.TestCase):
 
     def test_host_source_service_and_root_heartbeat_are_bound_to_real_ids(self):
         m = module(); c = object.__new__(m._Controller)
-        c.c = {'nodePin': pin('/node'), 'actualSourceContainerId': 'a' * 64}
+        c.c = {'nodePin': pin('/node'), 'actualSourceContainerId': 'a' * 64, 'parent': 'helmut-meter-memorybudget-'+'c'*24}
         c.selection = {'operationId': 'VM', 'commandHash': 'b' * 64}
         c.observer = types.SimpleNamespace(binding={'pidNamespace': 'pid:[4]'}, supervisor={'startTicks': '4'}, service={'pid': 8, 'startTicks': '5'})
         c.source = types.SimpleNamespace(parse_utc=lambda s: __import__('datetime').datetime.fromisoformat(s.replace('Z', '+00:00')))
@@ -301,18 +301,21 @@ class Tests(unittest.TestCase):
         at = '2026-10-22T12:00:00.000Z'
         root = {'uids': [0]*4, 'gids': [0]*4, 'capabilitiesZero': True, 'noNewPrivileges': True, 'membership': '0::/\n', 'pidNamespace': 'pid:[4]'}
         value = {'observedAtUTC': at, 'sourceContainerId': 'a'*64, 'knownContainerIds': ['a'*64],
-            'source': {'namespacePID': os.getpid(), 'startTicks': '4', 'namespaces': {'pid': 'pid:[4]'}},
-            'sourceService': {'namespacePID': 8, 'startTicks': '5', 'exe': '/node', 'membership': '0::/\n', 'namespaces': {'pid': 'pid:[4]'}},
+            'source': {'namespacePID': os.getpid(), 'startTicks': '4', 'namespaces': {'pid': 'pid:[4]'}, 'membership': '0::/'+c.c['parent']+'/source\n'},
+            'sourceService': {'namespacePID': 8, 'startTicks': '5', 'exe': '/node', 'membership': '0::/'+c.c['parent']+'/source\n', 'namespaces': {'pid': 'pid:[4]'}},
             'ownerObservation': {'schema': 'helmut-local-unit-native-owner-observation/1', **c.selection, 'observedAtUTC': at,
                 'owner': {**root, 'pid': 10, 'startTicks': '6'}, 'upstream': {**root, 'pid': 11, 'startTicks': '7'}}}
         with mock.patch.object(m, 'utc', return_value=at):
             c.host_observation(value)
-            for change in ('service', 'root', 'stale', 'container'):
+            for change in ('service', 'root', 'stale', 'container', 'privateNamespace', 'foreignParent', 'sibling'):
                 bad = copy.deepcopy(value)
                 if change == 'service': bad['sourceService']['startTicks'] = '9'
                 if change == 'root': bad['ownerObservation']['owner']['uids'] = [1000]*4
                 if change == 'stale': bad['ownerObservation']['observedAtUTC'] = '2026-10-22T11:59:44.000Z'
                 if change == 'container': bad['sourceContainerId'] = 'c'*64
+                if change == 'privateNamespace': bad['sourceService']['membership'] = '0::/\n'
+                if change == 'foreignParent': bad['source']['membership'] = bad['sourceService']['membership'] = '0::/foreign/source\n'
+                if change == 'sibling': bad['sourceService']['membership'] = '0::/'+c.c['parent']+'/sibling\n'
                 with self.assertRaises(m.ExecutionError): c.host_observation(bad)
 
     def test_initial_usage_checks_all_empty_namespace_counts(self):

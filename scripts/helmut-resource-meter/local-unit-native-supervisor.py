@@ -117,6 +117,24 @@ def identity(docker, cid, parent, runtime, mounts):
     return row
 
 
+def registered_setup_children(execution_module, native, case, parent, runtime):
+    """Recover actual setup identities even when preparation returned no plan."""
+    path = case / 'ALIAS_INSTALLER_CREATED.SAFE.json'
+    if not path.exists():
+        return set()
+    if execution_module is None:
+        raise RuntimeError('unexpected setup child registry')
+    raw, _ = execution_module.read_file(path, 4096)
+    record = execution_module.unique(raw)
+    if set(record) != {'containerId'} or not re.fullmatch('[a-f0-9]{64}', record['containerId']):
+        raise RuntimeError('invalid setup child registry')
+    row = json.loads(native.docker(['inspect', record['containerId']]).stdout)[0]
+    if (row['Id'] != record['containerId'] or row['HostConfig']['CgroupParent'] != '/' + parent
+            or row['Image'] != runtime['imageId'] or row['State']['Running']):
+        raise RuntimeError('setup child did not close in measured parent')
+    return {record['containerId']}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     modes = parser.add_mutually_exclusive_group(required=True)
@@ -228,6 +246,7 @@ def main():
                       database='helmut_unit_diagnostic_' + nonce,
                       pythonExecutable=str(PYTHON / 'bin/python3.12'))
         config['sources'].extend(execution_pins.values())
+        config['sources'].append(pin(config['pythonExecutable']))
         rest = SOURCE.parent / 'source-capture/postgrest-pinned'
         rest_pin = pin(rest)
         if rest_pin['bytes'] != 17309560 or rest_pin['sha256'] != '870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617':
@@ -372,6 +391,9 @@ def main():
                 final = kernel.kernel_snapshot(parent, require_empty=True)
                 native.verify(parent, budget)
                 known = {entry['id'] for entry in budget['helpers'].values()} | ({cid} if cid else set())
+                # Setup can fail after Docker create and before returning a
+                # plan. Its O_EXCL registry still binds that actual child.
+                known.update(registered_setup_children(execution_module, native, case, parent, runtime))
                 if execution_plan is not None:
                     known.update(execution_plan['knownSetupContainerIds'])
                 if execution_host is not None:

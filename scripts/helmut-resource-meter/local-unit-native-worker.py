@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Fresh readonly V12 extraction and native PG17 store qualification only.
+"""Fresh V12 copy and native PG17 qualification under one measured parent.
 
-This worker cannot execute a diagnostic command. A successful exit establishes
-clone/runtime/DDL facts, never Unit60, profile completion or full500 reserve.
+Only an explicitly bound single-unit mode can call the once-only coordinator.
+Preparation alone establishes no Unit60, profile or full500 acceptance.
 """
 import datetime
 import hashlib
