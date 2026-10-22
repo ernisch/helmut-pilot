@@ -26,7 +26,7 @@ const HELPERS = Object.freeze({
   original_bridge_compare_seed_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "3a7142913b89e4255fcc622dda5a2ea28412befcdaa9cdca20186e2fdae14b62", result: "void" }),
   original_bridge_relations_v1: Object.freeze({ args: "", sha: "91505921dd30cbadb259fc439fede86c1f47b062ebcd690238dbd83d9f53797a", result: "jsonb" }),
   original_bridge_row_v1: Object.freeze({ args: "text, text, text, jsonb", sha: "290c60f33dc595e7ca7d4e893ed980fdc2a722b1513af00df51230c51b131480", result: "jsonb" }),
-  original_bridge_result_v1: Object.freeze({ args: "text, jsonb", sha: "e5c513ac1d84e0e8fe989dc16e0b1d75d07358d23b9be305948ecd407c604207", result: "void" }),
+  original_bridge_result_v1: Object.freeze({ args: "text, jsonb", sha: "28ab1470b561bae4fa339efc678fe1ae07ff2a13d0ed58723bea9613a4d953cb", result: "void" }),
   original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "05a9f5675fb1d82511f0c37832cd455d70effd280b055912d04acd2faa040026", result: "void" }),
 });
 const NATIVE = Object.freeze(["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"]);

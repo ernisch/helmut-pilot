@@ -29,7 +29,7 @@ begin
     or not exists(select from pg_namespace where nspname='helmut_unit_diagnostic' and nspowner=(select oid from pg_roles where rolname=owner_name))
     or (select count(*) from pg_class where oid in ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass) and relrowsecurity and relkind='r')<>4
     or exists(select from pg_roles where rolname=writer)
-    or exists(select from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='helmut_unit_diagnostic' and p.proname like 'original_bridge_%') then
+    or exists(select from pg_proc proc_src join pg_namespace n on n.oid=proc_src.pronamespace where n.nspname='helmut_unit_diagnostic' and proc_src.proname like 'original_bridge_%') then
     raise exception 'original-bridge-new-owned-copy-required';end if;
   if not exists(select from pg_constraint fk where fk.conrelid='public.briefings'::regclass and fk.confrelid='public.profiles'::regclass
     and fk.contype='f' and fk.convalidated and not fk.condeferrable and not fk.condeferred
@@ -349,8 +349,8 @@ begin
       or position_row->>'bereich' not in ('lage','mandatsbriefing','morgenbriefing')
       or position_row->>'mandatsId' is distinct from a.command_canonical::jsonb#>>'{units,0,subject}'
       or position_row->>'status' is distinct from 'stored-unreviewed' or position_row->>'fachstatus' is distinct from 'ausstehend'
-      or not exists(select from helmut_unit_diagnostic.artifacts x where x.scope_hash=s and x.kind=position_row->>'bereich'
-        and x.body=position_row->'row' and x.body_hash=position_row->>'ergebnisHash')
+      or not exists(select from helmut_unit_diagnostic.artifacts artifact_row where artifact_row.scope_hash=s and artifact_row.kind=position_row->>'bereich'
+        and artifact_row.body=position_row->'row' and artifact_row.body_hash=position_row->>'ergebnisHash')
       or not exists(select from jsonb_array_elements(result->'positions') p where p->>'bereich'=position_row->>'bereich'
         and p->>'owner'=position_row->>'mandatsId' and p->>'hash'=position_row->>'ergebnisHash') then
       raise exception 'original-bridge-success-evidence-position_row-row';end if;
