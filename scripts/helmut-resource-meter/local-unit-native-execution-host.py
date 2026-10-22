@@ -961,10 +961,43 @@ class NativeExecutionHost:
                 need(self.observer_count < 256, 'observer-count')
                 probe = ProcessObserver(self.native, self.config, self.directory, row, targets, cid in self.clients)
                 self.probes[cid] = probe; self.children.append(probe.child); self.observer_count += 1
+                self._pump_probe(cid)
+
+    def _pump_probe(self, cid):
+        # Only fixed process-observer execs are pumped here. Their small
+        # READY -> deferred stdin -> result -> natural EOF handshake must not
+        # wait for another global Docker inventory between each phase.
+        try:
+            while cid in self.probes:
+                need(time.monotonic() - self.probes[cid].began < 3, 'observer-total-freshness')
+                self._poll_probes()
+                if cid in self.probes:
+                    time.sleep(.005)
+        except BaseException as error:
+            if cid in self.probes:
+                self._observer_failure(cid, self.probes[cid], error)
+            raise
+
+    def _observer_failure(self, cid, probe, error):
+        try:
+            error.nativeProcessObserverFailure = {
+                'containerId': cid, 'registeredHostPID': probe.child.registeredPID,
+                'observerProcess': getattr(probe, 'remote_process', None),
+                'probeElapsedNs': str(max(0, int((time.monotonic() - probe.began) * 1000000000))),
+                'inputWrittenBytes': probe.child.offset, 'inputTotalBytes': probe.child.input_size,
+                'stdoutBytes': len(probe.child.output[0]), 'stderrBytes': len(probe.child.output[1]),
+                'stdoutNaturalEOF': probe.child.eof[0], 'stderrNaturalEOF': probe.child.eof[1],
+                'localExitCode': probe.child.child.poll(), 'remoteExitConfirmed': False}
+        except BaseException:
+            pass
 
     def _poll_probes(self):
         for cid, probe in list(self.probes.items()):
-            result = probe.tick()
+            try:
+                result = probe.tick()
+            except BaseException as error:
+                self._observer_failure(cid, probe, error)
+                raise
             if result is None:
                 continue
             if result['gone']:
@@ -1459,7 +1492,8 @@ class NativeExecutionHost:
                     'selection': self.selection, 'state': self.state,
                     'stage': None if self.pending is None else self.pending['request']['stage'],
                     'exception': {'type': type(error).__name__[:128], 'message': str(error)[:4096]},
-                    'pipeChildFailure': getattr(error, 'nativePipeFailure', None)}))
+                    'pipeChildFailure': getattr(error, 'nativePipeFailure', None),
+                    'processObserverFailure': getattr(error, 'nativeProcessObserverFailure', None)}))
             except BaseException:
                 self.failure = 'sealed-native-host-failure-without-private-diagnostic'
             raise RuntimeError('native-execution-host-sealed-failure') from None

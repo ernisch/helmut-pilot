@@ -804,9 +804,47 @@ class PureHost(unittest.TestCase):
         with patch.object(M, 'ProcessObserver', side_effect=AssertionError('no-extra-exec')):
             self.host._probe(row, [initial]); self.assertTrue(not self.host.probes)
         self.host.process_cache[91]['at'] -= 2
-        with patch.object(M, 'ProcessObserver', return_value=probe):
+        pumps=[]
+        with patch.object(M, 'ProcessObserver', return_value=probe),patch.object(self.host,'_pump_probe',pumps.append):
             self.host._probe(row, [initial]); self.host._probe(row, [initial])
-        self.assertTrue(self.host.observer_count == 1 and self.host.probes[probe.cid] is probe)
+        self.assertTrue(self.host.observer_count == 1 and self.host.probes[probe.cid] is probe and pumps==[probe.cid])
+
+    def test_fixed_observer_handshake_finishes_before_slow_outer_inventory(self):
+        probe,initial,remote,ready,inside,finish,clock=self.observer_fixture()
+        now={'t':probe.began}; phases=[]
+        self.host.probes[probe.cid]=probe
+        def pause(seconds):
+            self.assertEqual(seconds,.005); now['t']+=seconds
+            self.assertTrue(probe.child.supplied is not None)
+            phases.append('nonce-written-next-fixed-pump'); finish()
+        with (patch.object(M.time,'monotonic',lambda:now['t']),patch.object(M.time,'sleep',pause),
+              patch.object(M,'dispose_observer',lambda *a:True)):
+            self.host._pump_probe(probe.cid)
+            self.assertTrue(probe.cid not in self.host.probes and len(self.host.observer_closes)==1)
+            self.assertEqual(self.host.process_cache[91]['at'],probe.began)
+            phases.append('slow-outer-inventory');now['t']+=1.8
+            self.assertTrue(self.host._proc(91,1000)['startTicks']=='123')
+        self.assertEqual(phases,['nonce-written-next-fixed-pump','slow-outer-inventory'])
+
+    def test_fixed_observer_pump_keeps_original_three_second_deadline(self):
+        probe,initial,remote,ready,inside,finish,clock=self.observer_fixture()
+        self.host.probes[probe.cid]=probe
+        with patch.object(M.time,'monotonic',return_value=probe.began+3):
+            with self.assertRaisesRegex(RuntimeError,'observer-total-freshness'):self.host._pump_probe(probe.cid)
+        self.assertTrue(not self.host.process_cache and not self.host.observer_closes and probe.cid in self.host.probes)
+
+    def test_fixed_observer_nonzero_pump_retains_metadata_and_never_caches(self):
+        probe,initial,remote,ready,inside,finish,clock=self.observer_fixture()
+        probe.tick();finish()
+        probe.child.registeredPID=88;probe.child.offset=0;probe.child.input_size=99;probe.child.eof=[True,True]
+        probe.child.child=types.SimpleNamespace(poll=lambda:137)
+        probe.child.close_metadata=lambda:{'exitCode':137,'stdoutNaturalEOF':True,'stderrNaturalEOF':True}
+        self.host.probes[probe.cid]=probe
+        with self.assertRaisesRegex(RuntimeError,'observer-actual-success-close') as context:self.host._pump_probe(probe.cid)
+        metadata=context.exception.nativeProcessObserverFailure
+        self.assertTrue(metadata['localExitCode']==137 and metadata['remoteExitConfirmed'] is False
+                        and metadata['registeredHostPID']==88 and metadata['inputWrittenBytes']==0)
+        self.assertTrue(not self.host.process_cache and not self.host.observer_closes)
 
     def test_owned_create_has_closed_env_and_empty_config_not_host_proxy(self):
         captured = []
