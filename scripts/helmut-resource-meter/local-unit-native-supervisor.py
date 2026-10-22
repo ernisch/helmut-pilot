@@ -33,6 +33,14 @@ COPY_MANIFEST = BASE / 'next-full500-20261021/v12-postrun-readback/COPIED_PGDATA
 PYTHON = Path('/opt/codex/runtimes/codex-primary-runtime/dependencies/python')
 NODE = Path('/opt/codex/runtimes/codex-primary-runtime/dependencies/node')
 FLOOR = 8 * 1024**3
+OWNER_RUNTIME_TARGETS = (
+    '/lib64/ld-linux-x86-64.so.2',
+    '/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2',
+    '/usr/lib/x86_64-linux-gnu/libc.so.6',
+    '/usr/lib/x86_64-linux-gnu/libgcc_s.so.1',
+    '/usr/lib/x86_64-linux-gnu/libm.so.6',
+    '/usr/lib/x86_64-linux-gnu/libstdc++.so.6',
+)
 
 
 def pin(path, *, single_link=True):
@@ -76,6 +84,45 @@ def load(name, path):
 def available():
     v = os.statvfs('/workspace')
     return v.f_bavail * v.f_frsize
+
+
+def owner_runtime_bindings(rows):
+    """Exact public ELF closure; original private runtime files keep their modes."""
+    indexed = {row['imagePath']: row for row in rows}
+    if len(indexed) != len(rows) or not set(OWNER_RUNTIME_TARGETS) <= set(indexed):
+        raise RuntimeError('complete unique original owner runtime bindings required')
+    return [indexed[target] for target in OWNER_RUNTIME_TARGETS]
+
+
+def source_runtime_mounts(rows, plan, case):
+    """Consume only measured, byte-identical copies at their original ABI paths."""
+    originals = {row['imagePath']: row for row in rows}
+    if len(originals) != len(rows) or any(row.get('readonly') is not True for row in rows):
+        raise RuntimeError('duplicate source runtime target')
+    replacements = {}
+    if plan is not None:
+        expected = {row['imagePath']: row for row in owner_runtime_bindings(rows)}
+        copies, mounts = plan['ownerRuntimeCopies'], plan['sourceOwnerRuntimeMounts']
+        if (len(copies) != len(expected) or len(mounts) != len(expected)
+                or len({record['copy']['path'] for record in copies}) != len(copies)):
+            raise RuntimeError('complete measured owner runtime copies required')
+        for record in copies:
+            if set(record) != {'originalSource', 'copy', 'imagePath', 'mode', 'installerContainerId'}:
+                raise RuntimeError('exact owner runtime provenance required')
+            target, copy = record['imagePath'], record['copy']
+            if target not in expected or target in replacements or record['originalSource'] != expected[target]['source']:
+                raise RuntimeError('owner runtime copy outside original closure')
+            name = Path(copy['path'])
+            if (set(copy) != {'path', 'bytes', 'sha256'} or name.parent != case / 'owner-public'
+                    or not re.fullmatch('runtime-[0-9]{3}', name.name)
+                    or (copy['bytes'], copy['sha256']) != (record['originalSource']['bytes'], record['originalSource']['sha256'])
+                    or record['mode'] != (0o555 if target.endswith('/ld-linux-x86-64.so.2') else 0o444)
+                    or record['installerContainerId'] not in plan['knownSetupContainerIds']):
+                raise RuntimeError('own measured owner runtime copy binding required')
+            replacements[target] = copy['path']
+        if {tuple(row) for row in mounts} != {(source, target, True) for target, source in replacements.items()}:
+            raise RuntimeError('owner runtime mount provenance mismatch')
+    return [(Path(replacements.get(row['imagePath'], row['source']['path'])), row['imagePath'], True) for row in rows]
 
 
 def bindings():
@@ -254,7 +301,8 @@ def main():
         rest_pin = pin(rest)
         if rest_pin['bytes'] != 17309560 or rest_pin['sha256'] != '870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617':
             raise RuntimeError('original pinned PostgREST executable missing')
-        config['executionHost'] = {'postgrestPin': rest_pin, 'clientRuntimePins': runtime_rows}
+        config['executionHost'] = {'postgrestPin': rest_pin, 'clientRuntimePins': runtime_rows,
+                                   'ownerRuntimeBindings': owner_runtime_bindings(runtime_rows)}
     save(case / 'STARTED.SAFE.json', {**config, 'availableBefore': available(),
                                       'purpose': ('Fresh source-local once-only genuine native fixture unit'
                                                   if args.run_native_single_unit else
@@ -287,7 +335,7 @@ def main():
                   (LEGACY, str(LEGACY), True), (JIT, str(JIT), True),
                   (Path(plan['archive']['path']), plan['archive']['path'], True),
                   (Path(plan['rootManifest']['path']), plan['rootManifest']['path'], True)]
-        mounts.extend((Path(row['source']['path']), row['imagePath'], True) for row in runtime_rows)
+        mounts.extend(source_runtime_mounts(runtime_rows, execution_plan, case))
         if bindings_mode:
             preparation = load('native_source_binding_preflight', config['bindingPreparationPin']['path'])
             required_originals = [SOURCE / row[0] for row in preparation.PRIVATE_SOURCES.values()]
