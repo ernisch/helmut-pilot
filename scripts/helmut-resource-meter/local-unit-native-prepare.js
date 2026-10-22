@@ -1,11 +1,15 @@
 "use strict";
 
-// Private SOURCE supervisor, preparation only. The only database statements
+// Private SOURCE supervisor, preparation and read-only source verification.
+// Verification returns metadata; the owner must separately observe exit/EOF.
+// The only database statements
 // this entry can submit are fixed read-only statements. No seed, admission
 // installation, engine, model, HTTP transport or caller callback is exposed.
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), v8 = require("node:v8");
 const childProcess = require("node:child_process"), Module = require("node:module");
 const ROOT = path.resolve(__dirname, "../.."), CONFIG = "/bench/PREPARE_CONFIG.PRIVATE.json", INPUT = "/bench/COMMAND_INPUT.PRIVATE.json";
+const VERIFY_CONFIG = "/bench/VERIFY_CONFIG.PRIVATE.json", VERIFY_EXPECTED = "/bench/VERIFY_EXPECTED.PRIVATE.json", VERIFICATION = "/bench/SOURCE_VERIFICATION.SAFE.json";
+const SOURCE_COMMAND = "/bench/PREPARED_COMMAND.PRIVATE.json";
 const CLIENT = "/bench/client", CAP = 36 * 1024 * 1024, PIN_CAP = 256 * 1024 * 1024;
 const READERS = ["helmut_auth_state_graph_read_v1", "helmut_auth_usage_read_v1"];
 const CONTROL = ["synthetik500DispatchJournal", "synthetik500KostenAdmission", "testKostenAuftrag", "testKostenTage"];
@@ -80,10 +84,10 @@ function nodeBudget() {
   need(Number.isSafeInteger(heapSizeLimitBytes) && heapSizeLimitBytes > 0 && heapSizeLimitBytes <= 448 * 1024 * 1024, "actual-heap-limit");
   return { nodeVersion: process.version, execArgv: [...process.execArgv], oldSpaceMiB: 384, semiSpaceMiB: 16, heapSizeLimitBytes };
 }
-function checkConfig(c) {
+function checkConfig(c, verify = false) {
   need(exact(c, ["schema", "nonce", "runId", "database", "issuedAtUTC", "expiresAtUTC", "selfPin", "nodePin", "psqlPin", "sourceCodePins", "readRPCPins",
-    "postgres", "measuredCgroup", "libraryPath", "originalPins", "originalPublicationPolicyPin"])
-    && c.schema === "helmut-local-unit-native-prepare/1" && typeof c.nonce === "string" && /^[a-f0-9]{32}$/.test(c.nonce)
+    "postgres", "measuredCgroup", "libraryPath", "originalPins", "originalPublicationPolicyPin", ...(verify ? ["expectedPin"] : [])])
+    && c.schema === (verify ? "helmut-local-unit-native-source-verify/1" : "helmut-local-unit-native-prepare/1") && typeof c.nonce === "string" && /^[a-f0-9]{32}$/.test(c.nonce)
     && typeof c.runId === "string" && /^nachlauf500-[0-9]{5,20}$/.test(c.runId) && c.database === "helmut_unit_diagnostic_" + c.nonce, "configuration");
   need(utc(c.issuedAtUTC) && utc(c.expiresAtUTC) && Date.parse(c.issuedAtUTC) <= Date.now() && Date.now() - Date.parse(c.issuedAtUTC) <= 10000
     && Date.parse(c.expiresAtUTC) > Date.now() && Date.parse(c.expiresAtUTC) - Date.parse(c.issuedAtUTC) <= 180000, "configuration-window");
@@ -120,6 +124,7 @@ function checkConfig(c) {
     && READERS.some(n => p.name === "public." + n) && p.identityArguments === "jsonb" && hash(p.prosrcSHA256)
     && ["i", "s"].includes(p.volatility) && p.returnType === "jsonb" && ["sql", "plpgsql"].includes(p.language)
     && Array.isArray(p.config) && p.config.length === 1 && p.config[0] === "search_path=pg_catalog", "read-source-pin");
+  if (verify) { pinShape(c.expectedPin, 1048576); need(c.expectedPin.path === VERIFY_EXPECTED, "fixed-expected-file"); }
   return origin.origin + "|main-auth";
 }
 function sourceLoader(c) {
@@ -137,6 +142,15 @@ function sourceLoader(c) {
   return { check() { need(Module._load === pinnedLoad, "loader-drift"); for (const name of Object.keys(Module._cache)) need(name === __filename || pins.has(name), "cache-drift"); },
     close() { need(Module._load === pinnedLoad, "loader-drift"); Module._load = original; } };
 }
+function readPinSQL(p) {
+  const name = p.name.slice(7);
+  return `DO $pin$ BEGIN IF NOT EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace JOIN pg_language l ON l.oid=p.prolang
+WHERE p.oid=${p.oid}::oid AND n.nspname='public' AND p.proname='${name}' AND p.prokind='f' AND NOT p.prosecdef AND oidvectortypes(p.proargtypes)='jsonb'
+AND format_type(p.prorettype,null)='jsonb' AND p.provolatile='${p.volatility}' AND l.lanname='${p.language}'
+AND p.proconfig=ARRAY['search_path=pg_catalog']::text[] AND encode(sha256(convert_to(p.prosrc,'UTF8')),'hex')='${p.prosrcSHA256}')
+OR (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname='${name}')<>1
+THEN RAISE EXCEPTION 'native-prepare-read-source-drift';END IF;END;$pin$;`;
+}
 function rpcSQL(c, endpoint, options) {
   const name = endpoint.startsWith("/rest/v1/rpc/") ? endpoint.slice(13) : null;
   need(READERS.includes(name) && exact(options, ["method", "body"]) && options.method === "POST" && typeof options.body === "string"
@@ -146,11 +160,7 @@ function rpcSQL(c, endpoint, options) {
     && ["knownProof", "knownGraph"].every(k => !Object.hasOwn(args, k) || Object.hasOwn(args, "readNonce"))
     && (!Object.hasOwn(args, "readNonce") || typeof args.readNonce === "string" && /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(args.readNonce)), "fixed-read-row");
   const p = c.readRPCPins.find(p => p.name === "public." + name), encoded = Buffer.from(options.body).toString("base64"); need(p, "missing-read-pin");
-  return `DO $pin$ BEGIN IF NOT EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace JOIN pg_language l ON l.oid=p.prolang
-WHERE p.oid=${p.oid}::oid AND n.nspname='public' AND p.proname='${name}' AND NOT p.prosecdef AND oidvectortypes(p.proargtypes)='jsonb'
-AND format_type(p.prorettype,null)='jsonb' AND p.provolatile='${p.volatility}' AND l.lanname='${p.language}'
-AND p.proconfig=ARRAY['search_path=pg_catalog']::text[] AND encode(sha256(convert_to(p.prosrc,'UTF8')),'hex')='${p.prosrcSHA256}')
-THEN RAISE EXCEPTION 'native-prepare-read-source-drift';END IF;END;$pin$;
+  return `${readPinSQL(p)}
 SELECT public.${name}(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb);`;
 }
 function psqlRead(c, statement, guard, children) {
@@ -227,24 +237,66 @@ FROM public.${table} t WHERE t.id IN(${idsSQL(ids)});`, guard, children);
   }
   return { selectedProfileHash: P.hash(actualProfile), selectedSourcesHash: P.hash(actualSources) };
 }
-function clientDirectory() {
-  canonicalPath(CLIENT); const s = fs.lstatSync(CLIENT, { bigint: true });
+function privateDirectory(name) {
+  canonicalPath(name); const s = fs.lstatSync(name, { bigint: true });
   need(s.isDirectory() && s.uid === 1000n && (s.mode & 0o022n) === 0n, "private-client-directory"); return s;
+}
+function clientDirectory() { return privateDirectory(CLIENT); }
+function writePrivate(name, bytes) {
+  const parent = path.dirname(name), directory = privateDirectory(parent);
+  const fd = fs.openSync(name, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK, 0o600);
+  try {
+    const a = fs.fstatSync(fd, { bigint: true }); need(a.isFile() && a.nlink === 1n && a.uid === 1000n && (a.mode & 0o7777n) === 0o600n && a.size === 0n, "output-metadata");
+    let written = 0; while (written < bytes.length) { const n = fs.writeSync(fd, bytes, written, bytes.length - written, null); need(n > 0, "output-short-write"); written += n; }
+    fs.fsyncSync(fd); const b = fs.fstatSync(fd, { bigint: true }), named = fs.lstatSync(name, { bigint: true }), after = privateDirectory(parent);
+    need(b.size === BigInt(bytes.length) && ["dev", "ino", "mode", "uid", "gid", "nlink"].every(k => a[k] === b[k])
+      && META.every(k => b[k] === named[k]) && directory.dev === after.dev && directory.ino === after.ino, "output-drift");
+  } finally { fs.closeSync(fd); }
+  const pin = { path: name, bytes: bytes.length, sha256: sha(bytes) }; readFile(name, { pin, privateFile: true, cap: 16 * 1024 * 1024, keep: false }); return pin;
 }
 function writeClient(c, name, bytes) {
   need(/^(?:[DR]_(?:REQUEST|RESPONSE|LATENCY)|PREPARED_COMMAND)\.PRIVATE\.json$/.test(name)
     && Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= 16 * 1024 * 1024, "closed-output");
-  const directory = clientDirectory(), filename = path.join(CLIENT, name);
-  const fd = fs.openSync(filename, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK, 0o600);
-  try {
-    const a = fs.fstatSync(fd, { bigint: true }); need(a.isFile() && a.nlink === 1n && a.uid === 1000n && (a.mode & 0o7777n) === 0o600n && a.size === 0n, "output-metadata");
-    let written = 0; while (written < bytes.length) { const n = fs.writeSync(fd, bytes, written, bytes.length - written, null); need(n > 0, "output-short-write"); written += n; }
-    fs.fsyncSync(fd); const b = fs.fstatSync(fd, { bigint: true }), named = fs.lstatSync(filename, { bigint: true }), after = clientDirectory();
-    need(b.size === BigInt(bytes.length) && ["dev", "ino", "mode", "uid", "gid", "nlink"].every(k => a[k] === b[k])
-      && META.every(k => b[k] === named[k]) && directory.dev === after.dev && directory.ino === after.ino, "output-drift");
-  } finally { fs.closeSync(fd); }
-  const pin = { path: filename, bytes: bytes.length, sha256: sha(bytes) }; readFile(filename, { pin, privateFile: true, cap: 16 * 1024 * 1024, keep: false });
+  const pin = writePrivate(path.join(CLIENT, name), bytes);
   return { ...pin, path: "/workspace/helmut-unit-diagnostic-native/" + c.nonce + "/" + name };
+}
+function retainedPin(c, pin, name) {
+  pinShape(pin, 16 * 1024 * 1024);
+  need(pin.path === "/workspace/helmut-unit-diagnostic-native/" + c.nonce + "/" + name, "retained-output-path");
+  return { ...pin, path: path.join(CLIENT, name) };
+}
+function preparedCommandPin(pin) {
+  pinShape(pin, 16 * 1024 * 1024); need(pin.path === SOURCE_COMMAND, "source-private-command-path"); return pin;
+}
+function compareProducer(c, actual, derivedPins, transport) {
+  need(exact(actual.phases, ["D", "R"]) && exact(derivedPins, ["D", "R"])
+    && exact(transport, ["sourceIntentIds", "phases"]) && exact(transport.sourceIntentIds, ["D", "R"])
+    && Object.values(transport.sourceIntentIds).every(hash) && exact(transport.phases, ["D", "R"])
+    && exact(actual.proof?.sourceIntentIds, ["D", "R"])
+    && ["D", "R"].every(phase => actual.proof.sourceIntentIds[phase] === transport.sourceIntentIds[phase]), "producer-transport");
+  for (const phase of ["D", "R"]) {
+    const value = actual.phases[phase], expected = transport.phases[phase];
+    need(exact(value, ["requestBytes", "responseBytes", "latencyBytes", "responseStatus", "latencyMs"])
+      && exact(expected, ["responseStatus", "latencyMs"]) && Number.isSafeInteger(expected.responseStatus)
+      && expected.responseStatus >= 100 && expected.responseStatus <= 599 && Number.isSafeInteger(expected.latencyMs)
+      && expected.latencyMs >= 0 && expected.latencyMs < 60000 && value.responseStatus === expected.responseStatus
+      && value.latencyMs === expected.latencyMs && exact(derivedPins[phase], ["request", "response", "latency"]), "admission-producer-phase-drift");
+    for (const kind of ["request", "response", "latency"]) {
+      const pin = retainedPin(c, derivedPins[phase][kind], phase + "_" + kind.toUpperCase() + ".PRIVATE.json");
+      const retained = readFile(pin.path, { pin, privateFile: true, cap: 16 * 1024 * 1024 }).bytes;
+      need(Buffer.isBuffer(value[kind + "Bytes"]) && value[kind + "Bytes"].equals(retained), "admission-producer-output-drift");
+    }
+  }
+}
+function verifyExpected(c) {
+  const { value: e } = jsonFile(VERIFY_EXPECTED, { pin: c.expectedPin, privateFile: true });
+  need(exact(e, ["schema", "operationId", "commandHash", "authorizedAtUTC", "preparedCommandPin", "sourceProofHash", "selectionHash",
+    "selectedProfileHash", "selectedSourcesHash", "originalControlHash", "producerProofHash", "producerTransport", "derivedPins"])
+    && e.schema === "helmut-local-unit-native-source-verify-expected/1" && e.operationId === "localUnitDiagnostic-" + c.nonce
+    && utc(e.authorizedAtUTC) && Date.parse(e.authorizedAtUTC) <= Date.now()
+    && ["commandHash", "sourceProofHash", "selectionHash", "selectedProfileHash", "selectedSourcesHash", "originalControlHash", "producerProofHash"].every(k => hash(e[k])), "verify-expectations");
+  const pin = preparedCommandPin(e.preparedCommandPin);
+  return { expected: e, built: jsonFile(pin.path, { pin, privateFile: true, cap: 16 * 1024 * 1024 }).value };
 }
 async function waitCommand(guard) {
   const started = process.hrtime.bigint();
@@ -272,10 +324,14 @@ function sourceGate(c, input, originalControlHash) {
 async function start() {
   need(!attempted && arguments.length === 0, "once-only"); attempted = true;
   phase = "configuration";
-  need(process.argv.length === 3 && process.argv[2] === "--prepare-own-native-copy" && require.main?.filename === __filename, "explicit-cli");
+  need(process.argv.length === 3 && ["--prepare-own-native-copy", "--verify-own-native-source"].includes(process.argv[2])
+    && require.main?.filename === __filename, "explicit-cli");
+  const verify = process.argv[2] === "--verify-own-native-source", configPath = verify ? VERIFY_CONFIG : CONFIG;
   process.umask(0o077);
-  const actualNodeBudget = nodeBudget(), { value: c, pin: configPin } = jsonFile(CONFIG, { privateFile: true }), target = checkConfig(c);
-  need(!fs.existsSync(INPUT), "new-command-input-required"); clientDirectory();
+  const actualNodeBudget = nodeBudget(), { value: c, pin: configPin } = jsonFile(configPath, { privateFile: true }), target = checkConfig(c, verify);
+  if (!verify) need(!fs.existsSync(INPUT), "new-command-input-required"); clientDirectory();
+  if (verify) need(!fs.existsSync(VERIFICATION), "new-verification-required");
+  const verification = verify ? verifyExpected(c) : null;
   const self = processIdentity(process.pid), began = process.hrtime.bigint(), children = new Set();
   need(self.exe === c.nodePin.path && self.membership === c.measuredCgroup.procMembership, "self-binding");
   for (const p of [c.selfPin, c.nodePin, c.psqlPin, c.postgres.exePin]) readFile(p.path, { pin: p, cap: PIN_CAP, keep: false });
@@ -291,17 +347,34 @@ async function start() {
       && group.dev === c.measuredCgroup.device && group.ino === c.measuredCgroup.inode
       && Date.now() < Date.parse(c.expiresAtUTC) && process.hrtime.bigint() - began < 180000000000n
       && process.env.HELMUT_PUBLICATION_ELIGIBILITY_JSON === policy.toString("utf8"), "native-source-drift");
-    readFile(CONFIG, { pin: configPin, privateFile: true, keep: false });
+    readFile(configPath, { pin: configPin, privateFile: true, keep: false });
+    if (verify) readFile(VERIFY_EXPECTED, { pin: c.expectedPin, privateFile: true, keep: false });
   };
   try {
     phase = "source-derivation";
-    const modules = Object.fromEntries(Object.entries(ENTRY).map(([key, name]) => [key, require(path.join(ROOT, name))])); guard();
+    const modules = Object.fromEntries(Object.entries(ENTRY).filter(([key]) => !verify || key !== "command")
+      .map(([key, name]) => [key, require(path.join(ROOT, name))])); guard();
     const original = Object.fromEntries(Object.entries(c.originalPins).map(([key, pin]) => [key, readFile(pin.path, { pin, cap: 16 * 1024 * 1024 }).bytes]));
     const sourceHandle = modules.source.extractPinnedSource({ packetBytes: original.packet, packetPath: c.originalPins.packet.path,
-      installPinsBytes: original.install, installPin: c.originalPins.install, terminalBytes: original.terminal, diagnosticNonce: c.nonce, preparedAtUTC: new Date().toISOString() });
+      installPinsBytes: original.install, installPin: c.originalPins.install, terminalBytes: original.terminal, diagnosticNonce: c.nonce,
+      preparedAtUTC: verify ? verification.expected.authorizedAtUTC : new Date().toISOString() });
     const producerResult = modules.producer.derive({ sourceHandle, preparedBytes: original.preparedRequests, bindingBytes: original.actualRequestBindings, fixtureBytes: original.providerFixtures });
     const selected = modules.source.readSelection(sourceHandle), sourceBinding = modules.source.sourceBinding(sourceHandle), P = modules.profile;
     need(selected.sourceIndex === 499 && selected.diagnosticUnit === 0 && producerResult.sourceIndex === 499 && producerResult.diagnosticUnit === 0, "selected-source-unit");
+    if (verify) {
+      const { expected: e, built } = verification;
+      need(built?.selection?.operationId === e.operationId && built.selection.commandHash === e.commandHash
+        && built.command?.target?.database === c.database && built.admission?.commandHash === e.commandHash
+        && built.admission.authorizedAtUTC === e.authorizedAtUTC && P.hash(built.command) === e.commandHash
+        && sourceBinding.preparation?.preparedAtUTC === e.authorizedAtUTC && P.hash(sourceBinding) === e.sourceProofHash
+        && P.hash(built.sourceBinding) === e.sourceProofHash && sourceBinding.selectionSHA256 === e.selectionHash
+        && P.hash(producerResult.proof) === e.producerProofHash, "verify-source-binding");
+      need(P.hash(modules.source.verifyCommandSource(built.command, sourceHandle)) === e.sourceProofHash, "verify-command-source");
+      compareProducer(c, producerResult, e.derivedPins, e.producerTransport); guard();
+      phase = "native-read-catalog";
+      const catalog = await psqlRead(c, c.readRPCPins.map(readPinSQL).join("\n") + "\nSELECT jsonb_build_object('readRPCs',2);", guard, children);
+      need(exact(catalog, ["readRPCs"]) && catalog.readRPCs === 2, "fresh-read-catalog");
+    }
     need(modules.usage.enabled() === true && modules.usage.controlReadEnabled() === true, "genuine-control-mode"); let reads = 0;
     const control = await modules.usage.readControl({ rowId: "main-auth", target, request: (endpoint, options) => {
       need(++reads <= 3, "control-read-count"); return psqlRead(c, rpcSQL(c, endpoint, options), guard, children);
@@ -310,6 +383,27 @@ async function start() {
     const originalControlHash = P.hash(Object.fromEntries(CONTROL.map(k => [k, control[k]])));
     phase = "native-source-read";
     const selectedHashes = await nativeSelection(c, selected, modules, guard, children); guard();
+    if (verify) {
+      const e = verification.expected;
+      need(originalControlHash === e.originalControlHash && selectedHashes.selectedProfileHash === e.selectedProfileHash
+        && selectedHashes.selectedSourcesHash === e.selectedSourcesHash, "verify-native-source-hashes");
+      // Re-read every immutable after the native queries. No earlier result or
+      // caller hash substitutes for these actual stable FDs and opaque handle.
+      for (const p of [c.selfPin, c.nodePin, c.psqlPin, c.postgres.exePin, ...c.sourceCodePins, ...Object.values(c.originalPins), c.originalPublicationPolicyPin])
+        readFile(p.path, { pin: p, cap: PIN_CAP, keep: false });
+      const preparedPin = preparedCommandPin(e.preparedCommandPin);
+      readFile(preparedPin.path, { pin: preparedPin, privateFile: true, cap: 16 * 1024 * 1024, keep: false });
+      compareProducer(c, producerResult, e.derivedPins, e.producerTransport); guard(); need(children.size === 0, "children-exit-open");
+      const result = { schema: "helmut-local-unit-native-source-verification/1", nonce: c.nonce, runId: c.runId, database: c.database,
+        operationId: e.operationId, commandHash: e.commandHash, authorizedAtUTC: e.authorizedAtUTC, checkedAtUTC: new Date().toISOString(), process: self,
+        configPin, expectedPin: c.expectedPin, preparedCommandPin: e.preparedCommandPin, sourceProofHash: P.hash(sourceBinding),
+        producerProofHash: P.hash(producerResult.proof), selectionHash: sourceBinding.selectionSHA256, ...selectedHashes,
+        originalControlHash, derivedPins: e.derivedPins, producerTransport: e.producerTransport, actualNodeBudget,
+        configuredReadRole: "postgres", originallyUnprivileged: false };
+      const bytes = Buffer.from(JSON.stringify(result)); need(bytes.length <= 65536, "verification-result-cap");
+      phase = "source-verification-publication"; writePrivate(VERIFICATION, bytes); guard();
+      phase = "source-verified"; return result;
+    }
     const derivedPins = {};
     for (const phase of ["D", "R"]) {
       const value = producerResult.phases?.[phase]; need(exact(value, ["requestBytes", "responseBytes", "latencyBytes", "responseStatus", "latencyMs"]), "producer-phase");
@@ -339,16 +433,7 @@ async function start() {
       preparedBytes: original.preparedRequests, bindingBytes: original.actualRequestBindings, fixtureBytes: original.providerFixtures });
     const admissionSourceBinding = modules.source.sourceBinding(admissionSourceHandle);
     need(admissionSourceBinding.preparation?.preparedAtUTC === args.nowUTC && exact(admissionProducer.phases, ["D", "R"]), "admission-source-time");
-    for (const phase of ["D", "R"]) {
-      const actual = admissionProducer.phases[phase], earlier = producerTransport.phases[phase];
-      need(exact(actual, ["requestBytes", "responseBytes", "latencyBytes", "responseStatus", "latencyMs"])
-        && actual.responseStatus === earlier.responseStatus && actual.latencyMs === earlier.latencyMs, "admission-producer-phase-drift");
-      for (const kind of ["request", "response", "latency"]) {
-        const name = path.join(CLIENT, phase + "_" + kind.toUpperCase() + ".PRIVATE.json"), p = derivedPins[phase][kind];
-        const retained = readFile(name, { pin: { ...p, path: name }, privateFile: true, cap: 16 * 1024 * 1024 }).bytes;
-        need(Buffer.isBuffer(actual[kind + "Bytes"]) && actual[kind + "Bytes"].equals(retained), "admission-producer-output-drift");
-      }
-    }
+    compareProducer(c, admissionProducer, derivedPins, producerTransport);
     guard(); phase = "command-build";
     const built = modules.command.build({ ...args, sourceHandle: admissionSourceHandle, producerResult: admissionProducer }); guard();
     need(built?.selection?.operationId === "localUnitDiagnostic-" + c.nonce && built.command?.target?.database === c.database
@@ -367,7 +452,8 @@ async function start() {
 module.exports = Object.freeze({ start });
 if (require.main === module) start().catch(error => {
   const match = /^local-unit-native-prepare-([a-z0-9-]{1,96})$/.exec(error?.message || "");
+  const verify = process.argv[2] === "--verify-own-native-source";
   process.exitCode = 1; process.stderr.write(JSON.stringify({ schema: "helmut-local-unit-native-prepare-failure/1", phase,
     code: match ? match[1] : "internal-failure",
-    state: "preparation-not-confirmed", authorityInstalled: false, retryAllowed: false }) + "\n");
+    state: verify ? "source-verification-not-confirmed" : "preparation-not-confirmed", ...(verify ? {} : { authorityInstalled: false }), retryAllowed: false }) + "\n");
 });
