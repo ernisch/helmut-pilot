@@ -8,12 +8,16 @@ const sha = value => crypto.createHash("sha256").update(value).digest("hex");
 const operationId = "localUnitDiagnostic-" + "c".repeat(32), claimId = "11111111-1111-4111-8111-111111111111";
 let count = 0;
 async function check(name, work) { await work(); count++; }
-function setup({ active = false, usageConfirmed = true, writerFails = false } = {}) {
-  const command = { mode: "D-R-1-local-fixture", units: [{ subject: "synthetic-profile" }], slot: { plan: { runId: "new-own-run" } } };
+function setup({ active = false, usageConfirmed = true, writerFails = false, controlEnabled = true, controlDrift = false, wrongBaseline = false,
+  artifactReadbackUnknown = false, stateReadbackUnknown = false, noAdmission = false, wrongGateSchema = false } = {}) {
+  const original = { synthetik500DispatchJournal: {}, synthetik500KostenAdmission: {}, testKostenAuftrag: { synthetic: true }, testKostenTage: {} };
+  const sourcePin = { path: "/synthetic/SOURCE_GATE.SAFE.json", bytes: 123, sha256: sha("synthetic private source gate") };
+  const gate = { schema: wrongGateSchema ? "unqualified" : "helmut-local-unit-native-source-gate/1", originalControlHash: wrongBaseline ? sha("foreign baseline") : P.hash(original) };
+  const command = { mode: "D-R-1-local-fixture", gatePins: { source: sourcePin }, units: [{ subject: "synthetic-profile" }], slot: { plan: { runId: "new-own-run" } } };
   const selection = { operationId, commandHash: P.hash(command) }, admission = { schema: "synthetic-test-only" };
   let stored = { journal: { state: active ? "running" : "installed", claimId: active ? claimId : null }, marker: 0 }, revision = 0;
-  const calls = { state: 0, claim: 0, usage: 0, rawRPC: 0, legacy: 0, validation: 0 };
-  let capability, claimValue, usageArgs, instance;
+  const calls = { state: 0, claim: 0, usage: 0, rawRPC: 0, legacy: 0, validation: 0, artifacts: 0, readbacks: 0, seals: 0, controls: 0, gates: 0 };
+  let capability, claimValue, usageArgs, artifactArgs, instance; const artifacts = new Map();
   const scope = { currentVerified: () => active ? { selection, command } : null, assertTicket() {} };
   const authority = { keys: () => ({ journal: "journal" }), current: value => ({ journal: value.journal }),
     validateAdmission() { calls.validation++; } };
@@ -26,12 +30,20 @@ function setup({ active = false, usageConfirmed = true, writerFails = false } = 
       stored = structuredClone(args.nextState); revision++; return ack(args);
     },
     async mutateState(args) { calls.state++; stored = structuredClone(args.nextState); revision++; return ack(args); },
-    async appendUsage(args) { calls.usage++; usageArgs = args; return usageConfirmed ? { receipt: Object.freeze({}), ownAck: { hash: P.hash(args.record) } } : { receipt: null }; }
+    async appendUsage(args) { calls.usage++; usageArgs = args; return usageConfirmed ? { receipt: Object.freeze({}), ownAck: { hash: P.hash(args.record) } } : { receipt: null }; },
+    async appendArtifact(args) { calls.artifacts++; artifactArgs = args; artifacts.set(args.kind + ":" + args.logicalId, args.body);
+      return { originalRowAck: { synthetic: true }, ownAck: { version: "helmut-local-unit-diagnostic-artifact-ack/1", kind: args.kind,
+        logicalId: args.logicalId, hash: P.hash(args.body), stateRevision: args.before.revision } }; },
+    sealUnknown() { calls.seals++; }
   };
   const mod = { exports: {} }, target = { database: "helmut_unit_diagnostic_" + operationId.slice(-32), origin: "http://127.0.0.1:34001" };
   const sandbox = { module: mod, Buffer, URL, structuredClone, __dirname: path.dirname(filename),
     process: { env: { HELMUT_STORAGE_BACKEND: "supabase", HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE: target.database, SUPABASE_URL: target.origin }, getuid: () => 1000 },
-    __test: { read() { return { state: structuredClone(stored), revision }; }, admitted: { selection, command, admission, target } },
+    __test: { noAdmission, read() { if (stateReadbackUnknown && revision > 0) throw Error("synthetic-state-readback-unknown");
+      return { state: structuredClone(stored), revision }; }, admitted: { selection, command, admission, target, witness: { gateHashes: { source: sourcePin.sha256 } } },
+      gate(pin) { calls.gates++; assert.deepEqual(pin, sourcePin); return gate; },
+      artifact(kind, id, expectedHash) { calls.readbacks++; if (artifactReadbackUnknown) throw Error("synthetic-readback-unknown");
+        const value = artifacts.get(kind + ":" + id); assert.equal(P.hash(value), expectedHash); return value; } },
     require(name) {
       if (name === "node:fs") return { existsSync: () => true };
       if (["node:path", "node:crypto", "node:util"].includes(name)) return require(name);
@@ -39,18 +51,24 @@ function setup({ active = false, usageConfirmed = true, writerFails = false } = 
       if (name === "./local-unit-diagnostic-authority") return authority;
       if (name === "./local-unit-diagnostic-scope" || name === path.join(path.dirname(filename), "local-unit-diagnostic-scope.js")) return scope;
       if (name === "./local-unit-diagnostic-original-writer") return writer;
+      if (name === "./llm-usage-atomic") return { controlReadEnabled: () => controlEnabled, async readControl({ request, rowId, target: origin }) {
+        calls.controls++; assert.equal(rowId, "main-auth"); assert.equal(origin, target.origin + "|main-auth");
+        await request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { method: "POST", body: '{"id":"main-auth"}' });
+        return { ...original, ...(controlDrift ? { testKostenTage: { changed: true } } : {}), _authStoreRevision: "revision-" + calls.controls }; } };
       if (name === "./local-unit-diagnostic-transport") return { assertTicket() {}, model: () => "synthetic-pinned-model" };
       if (name === "./local-unit-diagnostic-endpoint") return { async request() { calls.legacy++; return { status: 200, body: Buffer.from("{}") }; } };
       throw Error("offline-unexpected-module");
     } };
   vm.runInNewContext(source + `
     __test.admitted.target=JSON.parse(JSON.stringify(__test.admitted.target));
-    admitted.set(__test.admitted.selection.commandHash,__test.admitted);
+    if(!__test.noAdmission)admitted.set(__test.admitted.selection.commandHash,__test.admitted);
+    jsonPin=pin=>__test.gate(pin);
     readState=async selection=>{const r=__test.read();stateProofs.set(r.state,{selection,hash:P.hash(r.state),revision:r.revision});return r.state;};
+    readArtifact=async(selection,kind,id,hash)=>__test.artifact(kind,id,hash);
     rpc=async()=>{throw Error('offline-raw-write-forbidden');};
   `, sandbox, { filename });
   instance = mod.exports;
-  return { api: instance, selection, calls, get capability() { return capability; }, get claimValue() { return claimValue; }, get usageArgs() { return usageArgs; } };
+  return { api: instance, selection, calls, get capability() { return capability; }, get claimValue() { return claimValue; }, get usageArgs() { return usageArgs; }, get artifactArgs() { return artifactArgs; } };
 }
 (async () => {
   await check("unminted claim JSON never creates a capability", () => {
@@ -96,6 +114,37 @@ function setup({ active = false, usageConfirmed = true, writerFails = false } = 
       assert.equal(s.calls.usage, 1); assert.equal(s.usageArgs.record.costPhase, "R"); assert.equal(s.usageArgs.record.totalTokens, 200);
       assert.equal(s.usageArgs.record.costBasis, "local-fixture-simulation-not-provider-charge");
     }
+  });
+  await check("artifact append uses the original writer and requires own immutable readback", async () => {
+    const s = setup({ active: true }), body = { operationId, commandHash: s.selection.commandHash, failure: "unit-not-confirmed" };
+    const result = await s.api.insertArtifact(s.selection, "evidence", "diagnostic-result", body);
+    assert.equal(result.saved, true); assert.equal(s.calls.artifacts, 1); assert.equal(s.calls.readbacks, 1); assert.equal(s.calls.rawRPC, 0);
+    assert.equal(s.artifactArgs.before.hash, P.hash(s.artifactArgs.before.state)); assert.equal(s.artifactArgs.before.revision, 0);
+  });
+  await check("unknown artifact readback seals the shared original writer", async () => {
+    const s = setup({ active: true, artifactReadbackUnknown: true }); await assert.rejects(s.api.insertArtifact(s.selection, "evidence", "diagnostic-result", {}));
+    assert.equal(s.calls.artifacts, 1); assert.equal(s.calls.seals, 1);
+  });
+  await check("unknown state readback also seals the shared original writer", async () => {
+    const s = setup({ active: true, stateReadbackUnknown: true }); await assert.rejects(s.api.mutateState(s.selection, state => { state.marker++; }));
+    assert.equal(s.calls.state, 1); assert.equal(s.calls.seals, 1);
+  });
+  await check("every original control read uses genuine U and private gate; revision is excluded", async () => {
+    const s = setup({ active: true }), first = await s.api.readOriginalControl(s.selection), second = await s.api.readOriginalControl(s.selection);
+    assert.equal(P.hash(first), P.hash(second)); assert.equal(Object.keys(first).length, 4); assert.equal(Object.hasOwn(first, "_authStoreRevision"), false);
+    assert.equal(s.calls.controls, 2); assert.equal(s.calls.legacy, 2); assert.equal(s.calls.gates, 2);
+  });
+  for (const option of ["controlDrift", "wrongBaseline"]) await check(option + " cannot replace the genuine original baseline", async () => {
+    const s = setup({ active: true, [option]: true }); await assert.rejects(s.api.readOriginalControl(s.selection, "caller-hash-is-not-proof"), /original-control-drift/);
+    assert.equal(s.calls.controls, 1);
+  });
+  await check("disabled original control mode has no fallback", async () => {
+    const s = setup({ active: true, controlEnabled: false }); await assert.rejects(s.api.readOriginalControl(s.selection), /original-control-mode-required/);
+    assert.equal(s.calls.controls, 0); assert.equal(s.calls.legacy, 0);
+  });
+  for (const option of ["noAdmission", "wrongGateSchema"]) await check(option + " cannot open original control I/O", async () => {
+    const s = setup({ active: true, [option]: true }); await assert.rejects(s.api.readOriginalControl(s.selection));
+    assert.equal(s.calls.controls, 0); assert.equal(s.calls.legacy, 0);
   });
   process.stdout.write(JSON.stringify({ schema: "helmut-local-store-original-offline-checks/1", passed: count,
     nativeExecutions: 0, unitExecutionQualified: false }) + "\n");

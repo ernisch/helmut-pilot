@@ -14,7 +14,7 @@ const P = { kanonisch: canonical, hash: value => digest(canonical(value)) }, cop
 let checks = 0;
 function setup(options = {}) {
   const operationId = "localUnitDiagnostic-" + "a".repeat(32), database = "helmut_unit_diagnostic_" + "a".repeat(32);
-  const command = { mode: "D-R-1-local-fixture", target: { database }, units: [{ subject: "synthetic-owner" }],
+  const command = { mode: "D-R-1-local-fixture", target: { database }, calendar: { executionDayUTC: "2026-10-22" }, units: [{ subject: "synthetic-owner" }],
     slot: { planHash: digest("synthetic-plan"), plan: { runId: "nachlauf500-12345", intents: [{ phase: "D", id: "draft-intent" }, { phase: "R", id: "review-intent" }] } } };
   const selection = { operationId, commandHash: P.hash(command) }, keys = Object.fromEntries(["journal", "costs", "reservation", "sendClaim", "review", "result"].map(key => [key, "own:" + key]));
   const claimId = "11111111-1111-4111-8111-111111111111", revision = "22222222-2222-4222-8222-222222222222", phase = options.phase || "D";
@@ -31,6 +31,8 @@ function setup(options = {}) {
   const before = { state, canonical: P.kanonisch(state), hash: P.hash(state), revision: 3 }, nextState = copy(state);
   if (options.claim) { nextState[keys.journal].state = "running"; nextState[keys.journal].claimId = claimId; nextState[keys.journal].inFlight = { index: 0, enteredAtUTC }; }
   else nextState[keys.costs].spent = 1;
+  if (options.terminalStop) { nextState[keys.costs].spent = 0; nextState[keys.journal].state = "unknown";
+    nextState[keys.journal].stopRequested = true; nextState[keys.journal].reason = "unit-not-confirmed"; }
   const record = { id: "33333333-3333-4333-8333-333333333333", createdAt: new Date().toISOString(), model: "gpt-5-mini", promptTokens: 10,
     completionTokens: 20, totalTokens: 30, estimatedCost: Math.ceil((275 * 10 + 2200 * 20) / 1000) / 1000000, success: true,
     scopeHash: selection.commandHash, budgetTicketId: ticket.id, costIntentId: ticket.admission.intentId, costPlanHash: ticket.admission.planHash,
@@ -45,14 +47,18 @@ function setup(options = {}) {
   if (options.drift) auth[keys.result].state = "changed";
   const genuineTickets = new WeakSet([ticket]), genuineTransportTickets = new WeakSet([ticket]), snapshots = new WeakSet([auth]);
   const commits = new WeakMap(), brandedReceipts = new WeakSet(), capabilities = new WeakMap();
-  const stats = { reads: 0, writes: 0, requests: 0, receipts: 0, persisted: 0, consumes: 0, capReads: 0 }, events = [];
+  const stats = { reads: 0, writes: 0, requests: 0, receipts: 0, persisted: 0, consumes: 0, capReads: 0, clocks: 0 }, events = [];
   const scope = { selection, command }; let current = options.noScope || options.claim ? null : scope;
   function required(ok, code) { if (!ok) throw Error("synthetic-" + code); }
   const A = { GRANTS_KEY: "grants", EXECUTION_VERSION: "synthetic-execution/1", LIMITS: { maxOutputTokens: { D: 3000, R: 6000 } }, keys: () => keys,
     selection: selected => required(canonical(selected) === canonical(selection), "selection"),
     current: input => ({ record: input[keys.reservation], journal: input[keys.journal], costs: input[keys.costs], sends: input[keys.sendClaim] }),
+    stop: (input, selected, id, reason) => { required(input[keys.journal].claimId === id && input[keys.journal].state !== "closed", "stop-owner");
+      input[keys.journal].stopRequested = true; input[keys.journal].reason = reason; input[keys.journal].state = "unknown"; },
     bind: (input, selected, id) => required(input[keys.journal].state === "running" && input[keys.journal].claimId === id, "claim") };
-  const Scope = { currentVerified: () => current, assertClock: () => required(!options.expired, "clock"),
+  const Scope = { currentVerified: () => current, assertClock: () => { stats.clocks++; required(!options.expired && !options.failedControl, "clock"); },
+    assertClaimOwner: input => required(current && !options.foreignClaim && input[keys.journal].claimId === claimId
+      && ["running", "unknown", "stopped"].includes(input[keys.journal].state), "private-claim"),
     assertTicket: value => required(genuineTickets.has(value), "ticket-capability"),
     guard: input => required(current && input[keys.journal].state === "running" && input[keys.journal].claimId === claimId, "scope-guard") };
   const Transport = { assertTicket: value => required(genuineTransportTickets.has(value), "transport-ticket"), model: () => "gpt-5-mini" };
@@ -97,9 +103,22 @@ function setup(options = {}) {
     stats.requests++; events.push("closed.request"); assert.equal(canonical(selected), canonical(selection)); assert.equal(db, database);
     assert.equal(method, "POST"); assert.equal(endpointPath, "/rest/v1/rpc/local_unit_diagnostic_original_write_v1");
     observedBody = JSON.parse(bytes); assert.equal(observedBody.schema, "helmut-local-unit-original-write/1");
-    assert.equal(observedBody.mode, options.usage ? "usage" : "state"); assert.deepEqual(observedBody.originalCAS, body);
+    assert.equal(observedBody.mode, options.artifact ? "artifact" : options.usage ? "usage" : "state");
+    assert.deepEqual(observedBody.originalCAS, options.artifact ? null : body);
     assert.deepEqual(observedBody.ownBefore, { hash: before.hash, revision: before.revision }); assert.equal(observedBody.claimId, claimId);
     if (options.endpointUnknown) throw Error("synthetic-endpoint-outcome-unknown");
+    if (options.artifact) {
+      assert.equal(Object.keys(observedBody).length, 9); assert.deepEqual(observedBody.ownNext, { canonical: before.canonical, hash: before.hash });
+      const artifact = observedBody.artifact, nonce = "c".repeat(64), rowId = artifact.kind === "immutable-D"
+        ? "local-unit-diagnostic-" + operationId + "-immutable-D-" + artifact.logicalId : artifact.kind === "evidence"
+          ? "local-unit-diagnostic-" + operationId + "-evidence-0" : artifact.logicalId;
+      const originalRowAck = { version: "helmut-local-unit-diagnostic-original-row-ack/1", scopeHash: selection.commandHash, kind: artifact.kind,
+        id: options.badOriginalAck ? "foreign-row" : rowId, hash: artifact.sha256, stateRevision: before.revision, nonce };
+      const ownAck = { version: "helmut-local-unit-diagnostic-artifact-ack/1", scopeHash: selection.commandHash, kind: artifact.kind,
+        logicalId: artifact.logicalId, hash: options.badOwnAck ? digest("different") : artifact.sha256, stateRevision: before.revision,
+        nonce: options.badNonce ? "d".repeat(64) : nonce };
+      return { status: 200, body: Buffer.from(JSON.stringify({ schema: "helmut-local-unit-original-write-result/1", originalRowAck, ownAck })) };
+    }
     const ownAck = options.usage ? { version: "helmut-local-unit-diagnostic-artifact-ack/1", scopeHash: selection.commandHash,
       kind: "usage-" + phase, logicalId: ticket.id, hash: P.hash(record), stateRevision: before.revision }
       : { version: "helmut-local-unit-diagnostic-state-ack/1", scopeHash: selection.commandHash,
@@ -119,7 +138,16 @@ function setup(options = {}) {
   capabilities.set(capability, { selection, before: { hash: options.badCapability ? digest("different") : before.hash, revision: before.revision },
     ownNext: { canonical: P.kanonisch(nextState), hash: P.hash(nextState) }, command,
     legacyRead: async (...args) => { stats.capReads++; return reader(...args); } });
-  return { writer: module.exports, selection, before, nextState, record, ticket, capability, stats, events, auth, history, snapshot, snapshotValue,
+  function artifactArgs(kind = "draft", failure = false) {
+    const parentHash = ["draft", "evidence"].includes(kind) ? null : digest("parent"), day = command.calendar.executionDayUTC;
+    const draft = ["draft", "review"].includes(kind), slot = draft ? "lage-pruefentwurf" : kind === "morgenbriefing" ? "morgenlage" : kind;
+    const logicalId = kind === "immutable-D" ? "draft-intent" : kind === "evidence" ? "diagnostic-result" : draft
+      ? `bf-synthetic-owner-${slot}-${day}-${command.slot.plan.runId}-${kind === "draft" ? "entwurf" : "pruefung"}` : `bf-synthetic-owner-${slot}-${day}`;
+    const artifactBody = kind === "immutable-D" ? { entry: {}, completion: {} } : kind === "evidence"
+      ? { ...selection, ...(failure ? { failure: "unit-not-confirmed" } : {}) } : { id: logicalId, user_id: "synthetic-owner", slot, generated_at: enteredAtUTC, payload: {} };
+    return { selection, before, kind, logicalId, body: artifactBody, parentHash };
+  }
+  return { writer: module.exports, selection, before, nextState, record, ticket, capability, stats, events, auth, history, snapshot, snapshotValue, artifactArgs,
     get body() { return observedBody; }, get authAck() { return observedAuthAck; }, revoke: () => { current = null; },
     args: () => options.usage ? { selection, before, record, ticket } : { selection, before, nextState } };
 }
@@ -190,6 +218,51 @@ const fails = async action => assert.rejects(async () => action());
     let release; const readHold = new Promise(resolve => { release = resolve; }), s = setup({ readHold });
     const first = s.writer.mutateState(s.args()); await fails(() => s.writer.mutateState(s.args()));
     assert.equal(s.stats.reads, 1); release(); await first; assert.equal(s.stats.requests, 1);
+  });
+  for (const kind of ["draft", "immutable-D", "review", "lage", "mandatsbriefing", "morgenbriefing", "evidence"]) await check(kind + " writes exact original rows and own artifacts without auth mutation", async () => {
+    const s = setup({ artifact: true }), args = s.artifactArgs(kind), result = await s.writer.appendArtifact(args);
+    assert.equal(result.ownAck.hash, P.hash(args.body)); assert.equal(s.stats.reads, 0); assert.equal(s.stats.writes, 0); assert.equal(s.stats.requests, 1);
+    assert.equal(s.body.originalCAS, null); assert.equal(s.auth.llmUsage, s.history); await fails(() => s.writer.appendArtifact(args)); assert.equal(s.stats.requests, 1);
+  });
+  for (const mode of ["expired", "failedControl"]) await check("exact terminal stop survives " + mode + " without altering finances or grants", async () => {
+    const s = setup({ [mode]: true, terminalStop: true }); await s.writer.mutateState(s.args()); assert.equal(s.stats.clocks, 0); assert.equal(s.stats.requests, 1);
+    assert.equal(s.nextState["own:costs"].spent, 0); assert.deepEqual(s.body.originalCAS.additions, []);
+  });
+  await check("terminal stop cannot smuggle any other own-field change or private claim", async () => {
+    for (const changed of ["costs", "result", "sendClaim"]) {
+      const s = setup({ expired: true, terminalStop: true }); s.nextState["own:" + changed].extra = true;
+      await fails(() => s.writer.mutateState(s.args())); assert.equal(s.stats.reads, 0);
+    }
+    const s = setup({ expired: true, terminalStop: true, foreignClaim: true }); await fails(() => s.writer.mutateState(s.args())); assert.equal(s.stats.reads, 0);
+  });
+  await check("only failure evidence retains the postdeadline artifact path", async () => {
+    const s = setup({ artifact: true, expired: true, failedControl: true }); await s.writer.appendArtifact(s.artifactArgs("evidence", true)); assert.equal(s.stats.clocks, 0);
+    for (const kind of ["draft", "evidence"]) {
+      const s = setup({ artifact: true, expired: true }); await fails(() => s.writer.appendArtifact(s.artifactArgs(kind))); assert.equal(s.stats.requests, 0);
+    }
+  });
+  for (const option of ["badOriginalAck", "badOwnAck", "badNonce", "endpointUnknown"]) await check("artifact " + option + " seals every later writer mode", async () => {
+    const s = setup({ artifact: true, [option]: true }); await fails(() => s.writer.appendArtifact(s.artifactArgs()));
+    await fails(() => s.writer.appendArtifact(s.artifactArgs("evidence", true))); await fails(() => s.writer.mutateState(s.args())); assert.equal(s.stats.requests, 1);
+  });
+  await check("own-readback unknown sealing cannot be reopened by terminal failure evidence", async () => {
+    const s = setup({ artifact: true }); s.writer.sealUnknown(s.selection); // No operation exists before any attempt.
+    await s.writer.appendArtifact(s.artifactArgs()); s.writer.sealUnknown(s.selection);
+    await fails(() => s.writer.appendArtifact(s.artifactArgs("evidence", true))); assert.equal(s.stats.requests, 1);
+  });
+  await check("unknown original state write blocks even exact stop and failure evidence", async () => {
+    const s = setup({ endpointUnknown: true }); await fails(() => s.writer.mutateState(s.args())); const reads = s.stats.reads;
+    const nextState = copy(s.before.state); nextState["own:journal"].stopRequested = true;
+    nextState["own:journal"].reason = "unit-not-confirmed"; nextState["own:journal"].state = "unknown";
+    await fails(() => s.writer.mutateState({ selection: s.selection, before: s.before, nextState }));
+    await fails(() => s.writer.appendArtifact(s.artifactArgs("evidence", true)));
+    assert.equal(s.stats.requests, 1); assert.equal(s.stats.reads, reads);
+  });
+  await check("artifact namespace, full row shape and cap are closed before I/O", async () => {
+    for (const alter of [a => a.kind = "usage-D", a => a.logicalId = "foreign", a => a.body.extra = true,
+      a => a.body.payload = { huge: "x".repeat(2 * 1024 * 1024) }, a => a.body.failure = "unit-not-confirmed"]) {
+      const s = setup({ artifact: true }), args = s.artifactArgs(); alter(args); await fails(() => s.writer.appendArtifact(args)); assert.equal(s.stats.requests, 0);
+    }
   });
   process.stdout.write("Original writer synthetic checks PASS: " + checks + "; no actual U/endpoint/database or native qualification.\n");
 })().catch(() => { process.stderr.write("Original writer synthetic tests FAIL; no native execution occurred.\n"); process.exitCode = 1; });

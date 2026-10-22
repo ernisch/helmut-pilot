@@ -12,7 +12,7 @@ const source = fs.readFileSync(path.resolve(__dirname, "../lib/helmut/local-unit
 let checks = 0;
 function harness(mode = "normal") {
   const f = H.fixture(); let state = clone(f.auth), wall = Date.parse(H.at), monotonic = 0n, changes = 0;
-  const calls = { authority: 0, runtime: 0, inputs: 0, profiles: 0, states: 0, artifacts: 0 }, artifacts = new Map();
+  const calls = { authority: 0, runtime: 0, originalControls: 0, inputs: 0, profiles: 0, states: 0, artifacts: 0 }, artifacts = new Map();
   const advance = (wallMs = 1, monoMs = wallMs) => { wall += wallMs; monotonic += BigInt(monoMs) * 1000000n; };
   class Clock extends Date { constructor(value) { super(arguments.length ? value : wall); } static now() { return wall; } }
   const store = {
@@ -26,6 +26,11 @@ function harness(mode = "normal") {
     consumeLocalUnitDiagnosticAuthority() { return { command: f.command, admission: f.admission, sourceHandle: Object.freeze({}) }; },
     async readLocalUnitDiagnosticRuntime() { calls.runtime++; advance(); return Object.freeze({}); },
     consumeLocalUnitDiagnosticRuntime() { return { ...f.selection, sourceHash: P.hash(f.command.source), targetHash: P.hash(f.command.target), observedAtUTC: new Clock().toISOString() }; },
+    async readLocalUnitDiagnosticOriginalControl() {
+      calls.originalControls++; advance(); if (mode === "original-control-drift") throw Error("SYNTHETIC_ORIGINAL_CONTROL_DRIFT");
+      return { synthetik500DispatchJournal: {}, synthetik500KostenAdmission: {}, testKostenAuftrag: {}, testKostenTage: {},
+        ...(mode === "original-control-own-view" ? { ownStateMustNeverAppear: {} } : {}) };
+    },
     async readLocalUnitDiagnosticState() {
       calls.states++; advance();
       if (mode === "auth-readback-delayed" && changes === 1) advance(30000);
@@ -127,6 +132,7 @@ async function main() {
     const h = harness(), { ack, verification } = await fullControls(h);
     assert.equal(ack.controlCount, 16); assert.equal(ack.full500Accepted, false);
     assert.equal(h.calls.inputs, 16); assert.equal(h.calls.profiles, 16); assert.equal(h.calls.runtime, 17);
+    assert.equal(h.calls.originalControls, 16);
     assert.equal(h.calls.artifacts, 3);
     assert.deepEqual(Array.from(verification.controls, x => x.stage), [...A.CONTROL_STAGES]);
     assert.deepEqual(A.current(h.state(), h.f.selection).journal.verification,
@@ -140,7 +146,7 @@ async function main() {
       assert.throws(() => s.verification());
     }); assert.equal(h.calls.inputs, 0);
   });
-  for (const mode of ["source-drift", "profile-drift", "calendar-drift"]) {
+  for (const mode of ["source-drift", "profile-drift", "calendar-drift", "original-control-drift", "original-control-own-view"]) {
     await test(mode + " cannot produce a control receipt", async () => {
       const h = harness(mode); await h.run(async s => {
         await assert.rejects(s.checkControl("unit-enter"));
@@ -149,6 +155,20 @@ async function main() {
       });
     });
   }
+  await test("expired or failed controls retain only private claim ownership for terminal stop", async () => {
+    for (const mode of ["normal", "original-control-drift"]) {
+      const h = harness(mode); await h.run(async s => {
+        if (mode === "normal") h.advance(60000); else await assert.rejects(s.checkControl("unit-enter"));
+        assert.throws(() => s.assertClock()); const before = clone(h.state()), own = A.current(before, h.f.selection);
+        assert.equal(s.assertClaimOwner(before).claimId, own.journal.claimId);
+        const foreign = clone(before); foreign[A.keys(h.f.selection.operationId).journal].claimId = "22222222-2222-4222-8222-222222222222";
+        assert.throws(() => s.assertClaimOwner(foreign)); assert.throws(() => s.stop(clone(before), "different-reason"));
+        await s.mutateState(state => s.stop(state, "unit-not-confirmed"));
+        const after = A.current(h.state(), h.f.selection); assert.equal(after.journal.stopRequested, true); assert.equal(after.journal.reason, "unit-not-confirmed");
+        assert.equal(P.hash(after.costs), P.hash(own.costs)); assert.equal(P.hash(after.sends), P.hash(own.sends));
+      });
+    }
+  });
   await test("missing accounted D cannot advance to before-R", async () => {
     const h = harness(); await h.run(async s => {
       await s.checkControl("unit-enter"); await s.checkControl("before-D");

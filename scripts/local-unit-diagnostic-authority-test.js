@@ -201,6 +201,7 @@ async function main() {
       getProfileFromDb: async () => copy(g.command.drafts[0].profile),
       getLageEntwurfsbeleg: async () => { throw Error("unexpected synthetic artifact"); },
       readLocalUnitDiagnosticArtifact: async () => { throw Error("unexpected synthetic artifact"); },
+      readLocalUnitDiagnosticOriginalControl: async () => ({ synthetik500DispatchJournal: {}, synthetik500KostenAdmission: {}, testKostenAuftrag: {}, testKostenTage: {} }),
       readLocalUnitDiagnosticState: async () => {
         if (mode === "delayed-claim-readback" && mutations === 1) clock += 61000;
         if (mode === "delayed-final-readback" && A.current(state, g.selection).journal.state === "closed") clock += 61000;
