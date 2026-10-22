@@ -25,22 +25,41 @@ Object.defineProperty(module.exports, "__test", { enumerable: false, value: {
   control: () => {
     const c = controlCache;
     if (!c) return null;
-    const parsed = JSON.parse(c.text);
+    const encoded = Buffer.isBuffer(c.encoded);
+    const text = encoded ? require("node:zlib").inflateRawSync(c.encoded,
+      { maxOutputLength: c.textBytes }).toString("utf8") : c.text;
+    const parsed = JSON.parse(text);
     return { keys: Object.keys(c).sort(), controlKeys: Object.keys(parsed).sort(),
-      bytes: c.bytes, actualBytes: Buffer.byteLength(c.text, "utf8"),
+      bytes: c.bytes, actualBytes: encoded ? c.encoded.length : Buffer.byteLength(text, "utf8"),
+      encoded, textRetained: Object.hasOwn(c, "text"), logicalBytes: Buffer.byteLength(text, "utf8"),
+      logicalHashMatches: !encoded || sha(text) === c.textSHA256,
+      backingBytes: encoded ? c.encoded.buffer.byteLength : null,
       target: c.target, rowId: c.rowId, root: c.state.root, nodeCount: c.nodeCount,
       nodeDigest: c.nodeDigest, token: Boolean(c.token), frozen: Object.isFrozen(c),
       retainedObjects: Object.entries(c).filter(([k,v]) => v !== null && typeof v === "object"
-        && !["state", "token"].includes(k)).map(([k]) => k),
+        && !["state", "token", "encoded"].includes(k)).map(([k]) => k),
       stateKeys: Object.keys(c.state).sort(), graphCachePresent: graphCache !== null };
+  },
+  corrupt: kind => {
+    const c = controlCache;
+    if (!c || !Buffer.isBuffer(c.encoded)) throw Error("encoded fixture required");
+    let delta;
+    if (kind === "bytes") { const encoded = Buffer.from(c.encoded); encoded[0] ^= 255; delta = { encoded }; }
+    if (kind === "length") delta = { textBytes: c.textBytes - 1 };
+    if (kind === "bound") delta = { textBytes: CONTROL_TEXT_MAX_BYTES + 1 };
+    if (kind === "hash") delta = { textSHA256: "0".repeat(64) };
+    if (kind === "trailer") { const encoded = Buffer.concat([c.encoded, Buffer.from([0])]); delta = { encoded, bytes: encoded.length }; }
+    if (!delta) throw Error("unknown isolated corruption");
+    controlCache = Object.freeze({ ...c, ...delta });
   }
 } });
 `;
 
-function compile(source, filename, parts) {
+function compile(source, filename, parts, zlib) {
   const m = new Module(filename, module); m.filename = filename;
   m.paths = Module._nodeModulePaths(path.dirname(filename));
-  if (parts) { const real = m.require.bind(m); m.require = name => name === "./auth-state-parts" ? parts : real(name); }
+  if (parts || zlib) { const real = m.require.bind(m); m.require = name =>
+    name === "./auth-state-parts" && parts ? parts : name === "node:zlib" && zlib ? zlib : real(name); }
   m._compile(source, filename); return m.exports;
 }
 function deferred() { let resolve, reject; const promise = new Promise((a,b) => { resolve=a; reject=b; }); return { promise, resolve, reject }; }
@@ -62,6 +81,11 @@ function fixture(label = "a") {
     llmUsage: [{ id: "historical-a", createdAt: "2026-10-18T10:00:00.000Z" }, { id: "historical-b", createdAt: "2026-10-18T11:00:00.000Z" }],
     unrelatedPrivateContent: { text: "not-control-".repeat(2200), nested: { unchanged: true } }
   };
+}
+function oversized(label = "large") {
+  const value = fixture(label);
+  value.synthetik500DispatchJournal.largeSyntheticMarker = "ä😀".repeat(Math.ceil(CAP / 6) + 32);
+  return value;
 }
 
 // Construct the existing native response format, independently of Atomic's
@@ -128,23 +152,29 @@ function server(_clientParts, initial = fixture()) {
 
 async function run() {
   const sources = { parts: fs.readFileSync(PARTS_FILE, "utf8"), atomic: fs.readFileSync(ATOMIC_FILE, "utf8") };
-  assert.equal(sha(sources.parts), "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9", "original Parts decoder must remain unchanged");
+  const originalParts = sources.parts.replace("VERSION, MARKER, MAX_EXPANDED_BYTES, build", "VERSION, MARKER, build");
+  assert.equal(sha(originalParts), "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9",
+    "Parts decoder is unchanged apart from exporting its existing logical bound");
   const envKeys = [...Object.keys(ENV), "HELMUT_AUTH_GRAPH_READ_REUSE", "HELMUT_AUTH_SINGLE_WRITE_CAPTURE", "HELMUT_AUTH_DECODE_RETENTION", "VERCEL"];
   const saved = envKeys.map(k => [k, process.env[k]]);
   for (const k of envKeys) delete process.env[k]; Object.assign(process.env, ENV);
   const results = []; let negativeCases = 0;
-  function fresh() {
+  function fresh(zlib) {
     const parts = compile(sources.parts, PARTS_FILE), count = { decode: 0 };
     const decode = parts.decode; parts.decode = (...args) => { count.decode++; return decode(...args); };
-    const u = compile(sources.atomic + PROBE, ATOMIC_FILE, parts);
+    assert.equal(parts.MAX_EXPANDED_BYTES, 256 * 1024 * 1024);
+    const u = compile(sources.atomic + PROBE, ATOMIC_FILE, parts, zlib);
     assert.equal(typeof u.readControl, "function"); return { parts, u, count };
   }
   const opts = (s, extra = {}) => ({ request: s.request, rowId: "main-auth", target: "local-test|main-auth", ...extra });
   const check = async (name, fn) => { await fn(); results.push({ name, pass: true }); };
-  function cache(u) {
+  function cache(u, encoded = false) {
     const p = u.__test.control(); assert(p); assert(p.bytes <= CAP); assert.equal(p.bytes, p.actualBytes);
     assert.deepEqual(p.controlKeys, [...KEYS].sort()); assert.deepEqual(p.retainedObjects, []);
-    assert.deepEqual(p.keys, ["target", "rowId", "state", "nodeCount", "nodeDigest", "token", "text", "bytes"].sort());
+    assert.deepEqual(p.keys, ["target", "rowId", "state", "nodeCount", "nodeDigest", "token", "bytes",
+      ...(encoded ? ["encoded", "textBytes", "textSHA256"] : ["text"])].sort());
+    assert.equal(p.encoded, encoded); assert.equal(p.textRetained, !encoded); assert(p.logicalHashMatches);
+    if (encoded) { assert(p.logicalBytes > CAP); assert(p.backingBytes <= CAP); }
     assert.deepEqual(p.stateKeys, ["version", "generation", "root", "originalHash"].sort());
     assert(p.token && p.frozen && !p.graphCachePresent); return p;
   }
@@ -272,8 +302,83 @@ async function run() {
       const large = fixture(); large.synthetik500DispatchJournal.largeSyntheticMarker = "x".repeat(CAP + 128);
       const l = server(parts, large), isolated = fresh();
       const one = await isolated.u.readControl(opts(l)); assert.deepEqual(one, expectedView(large, l.revision()));
-      assert.equal(isolated.u.__test.control(), null); await isolated.u.readControl(opts(l));
-      assert.equal(l.events.at(-1).body.knownGraph, null); assert.equal(isolated.count.decode, 2);
+      cache(isolated.u, true); await isolated.u.readControl(opts(l));
+      assert(l.events.at(-1).body.knownGraph); assert.equal(isolated.count.decode, 1);
+    });
+    await check("oversized-UTF8-control-uses-bounded-private-buffer-and-fresh-native-checks", async () => {
+      const { u, parts, count } = fresh(), initial = oversized(), s = server(parts, initial), o = opts(s);
+      const full = await u.read(o); const seeded = cache(u, true); assert.equal(count.decode, 1);
+      full.synthetik500DispatchJournal.largeSyntheticMarker = "caller-mutation";
+      let previous;
+      for (let i = 0; i < 2; i++) {
+        s.bumpRevision(); const view = await u.readControl(o);
+        assert.deepEqual(view, expectedView(initial, s.revision())); assertFrozen(view);
+        assert(!u.hasSnapshot(view)); assert.equal(Object.getOwnPropertySymbols(view).length, 0);
+        assert.notStrictEqual(view.synthetik500DispatchJournal, previous?.synthetik500DispatchJournal);
+        previous = view; assert(s.events.at(-1).body.knownGraph); assert.equal(count.decode, 1);
+        assert.equal(cache(u, true).root, seeded.root);
+        const requests = s.events.length;
+        for (const candidate of [view, { ...view }, copy(view)])
+          await assert.rejects(u.write(candidate, o), { code: "AUTH_STORE_SNAPSHOT_MISSING" });
+        assert.equal(s.events.length, requests);
+      }
+      const nonces = s.events.map(e => e.body.readNonce); assert.equal(new Set(nonces).size, 3);
+    });
+    await check("incompressible-control-falls-back-without-second-cold-serialization", async () => {
+      const { u, parts, count } = fresh(), initial = fixture("incompressible");
+      initial.synthetik500DispatchJournal.largeSyntheticMarker = crypto.randomBytes(CAP + CAP / 8).toString("base64");
+      const s = server(parts, initial), o = opts(s), original = JSON.stringify; let serializations = 0;
+      JSON.stringify = function (...args) {
+        const result = original.apply(this, args);
+        if (new Error().stack.includes("at controlText ")) serializations++;
+        return result;
+      };
+      try {
+        for (let i = 0; i < 2; i++) {
+          const view = await u.readControl(o); assert.deepEqual(view, expectedView(initial, s.revision()));
+          assertFrozen(view); assert.equal(u.__test.control(), null); assert.equal(s.events.at(-1).body.knownGraph, null);
+        }
+      } finally { JSON.stringify = original; }
+      assert.equal(count.decode, 2); assert.equal(serializations, 2); assert.equal(s.events.length, 2);
+    });
+    await check("encoder-failure-is-cache-miss-with-no-valid-Auth-rejection-or-retry", async () => {
+      const zlib = require("node:zlib"), { u, parts } = fresh({ ...zlib, deflateRawSync() { throw Error("isolated codec failure"); } });
+      const initial = oversized(), s = server(parts, initial), o = opts(s);
+      assert.deepEqual(await u.readControl(o), expectedView(initial, s.revision()));
+      assert.equal(u.__test.control(), null); assert.equal(s.events.length, 1);
+    });
+    await check("compressed-cache-corruption-limits-hashes-and-trailing-data-fail-closed-without-retry", async () => {
+      for (const kind of ["bytes", "length", "bound", "hash", "trailer"]) {
+        const { u, parts } = fresh(), s = server(parts, oversized()), o = opts(s); await u.read(o);
+        cache(u, true); u.__test.corrupt(kind); const requests = s.events.length;
+        await assert.rejects(u.readControl(o), undefined, kind); negativeCases++;
+        assert.equal(s.events.length, requests + 1); assert.equal(u.__test.control(), null);
+        assert.deepEqual(await u.readControl(o), expectedView(s.auth(), s.revision()));
+        assert.equal(s.events.at(-1).body.knownGraph, null);
+      }
+    });
+    await check("compressed-hints-retain-native-nonce-history-state-digest-and-origin-guards", async () => {
+      for (const [name, mutate] of tamper.filter(([name]) => ["history-nonce", "history-binding", "graph-nonce",
+        "proof-original-hash", "state-root", "graph-digest", "actual-payloads-not-checked", "foreign-row-binding"].includes(name))) {
+        const { u, parts } = fresh(), s = server(parts, oversized()), o = opts(s); await u.read(o);
+        cache(u, true); let calls = 0;
+        await assert.rejects(u.readControl({ ...o, request: async (endpoint, options) => {
+          calls++; const b = JSON.parse(options.body), r = await s.request(endpoint, options); mutate(r, b, s); return r;
+        } }), undefined, name); negativeCases++;
+        assert.equal(calls, 1); assert.equal(u.__test.control(), null);
+      }
+    });
+    await check("compressed-cache-changed-root-target-row-and-disabled-mode-require-fresh-decode", async () => {
+      const { u, parts, count } = fresh(), s = server(parts, oversized()), o = opts(s); await u.read(o);
+      const next = s.auth(); next.testKostenTage["2026-10-19"].spent = 17; s.change(next);
+      assert.deepEqual(await u.readControl(o), expectedView(next, s.revision())); assert.equal(count.decode, 2); cache(u, true);
+      await u.readControl(opts(s, { target: "foreign-target" })); assert.equal(s.events.at(-1).body.knownGraph, null);
+      await u.readControl(opts(s, { target: "foreign-target", rowId: "foreign-row" })); assert.equal(s.events.at(-1).body.knownGraph, null);
+      assert.equal(count.decode, 4);
+      process.env.HELMUT_AUTH_CONTROL_READ = "off";
+      try { await assert.rejects(u.readControl(o), { code: "AUTH_CONTROL_READ_MODE_REQUIRED" }); assert.equal(u.__test.control(), null); }
+      finally { process.env.HELMUT_AUTH_CONTROL_READ = CONTROL; }
+      await u.readControl(o); assert.equal(s.events.at(-1).body.knownGraph, null); assert.equal(count.decode, 5);
     });
     await check("captured-private-hint-survives-concurrent-other-root-response", async () => {
       const { u, parts } = fresh(), a = server(parts, fixture("a")), b = server(parts, fixture("b")), gate = deferred();

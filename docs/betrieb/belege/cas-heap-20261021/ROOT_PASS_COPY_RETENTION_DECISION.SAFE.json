@@ -1,0 +1,37 @@
+{
+  "schema": "helmut-cas-heap-pass-copy-retention-decision/1",
+  "status": "ONLY_TWO_NEW_PASS_PGDATA_COPIES_DISPOSABLE_AFTER_RETIRER_QUALIFICATION",
+  "atUTC": "2026-10-21T09:48:47.832Z",
+  "rootActualReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 5842,
+    "sha256": "0e0d47998242e787316eb504ba8136b468aaca39dd89404e37cb836057625d32"
+  },
+  "independentActualReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+    "bytes": 39335,
+    "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+  },
+  "targets": [
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9",
+      "target": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9/disk/pgdata",
+      "stillNeededForCurrentDiagnostic": false,
+      "independentlyAcceptedPASS": true
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042",
+      "target": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/disk/pgdata",
+      "stillNeededForCurrentDiagnostic": false,
+      "independentlyAcceptedPASS": true
+    }
+  ],
+  "reason": "CAS heap diagnostic is complete. All logical/native/original/closure proofs are retained. These newly created working copies are not original inputs, are not future full500 admission inputs and are not needed by the active source-only interpretation. Authenticated canonical827a remains available and protected.",
+  "originalsCanonicalArchivesHelperFilesGitAndAllProofsKEEP": true,
+  "allContainerHullsImagesVolumesLoopsKEEP": true,
+  "allFAILUNKNOWNKEEP": true,
+  "automaticDeletionAuthorized": false,
+  "requiresQualifiedRetirerFreshIndividualPreflightAndRootNonceTTLOnce": true,
+  "full500": false,
+  "production": false
+}

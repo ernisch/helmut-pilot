@@ -1,0 +1,265 @@
+{
+  "AST": 0,
+  "CLI": 0,
+  "DockerOrProcessScans": 0,
+  "PGDATAPayloadReads": 0,
+  "SQL": 0,
+  "actualRetirementAccepted": false,
+  "additionalByteIdenticalFunctions": 4,
+  "blockingFindings": [],
+  "byteIdenticalInheritedGuards": 21,
+  "deletions": 0,
+  "filesystemInventoryScans": 0,
+  "finalLauncherPin": {
+    "bytes": 67996,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/PREPARED.SAFE.json",
+    "sha256": "a30bc1a726a5002e7f5b3f5e6e4d9c24dab26630bd3806d027d0c5e46ece63e8"
+  },
+  "full500": false,
+  "guardEquivalencePin": {
+    "bytes": 6539,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/SOURCE_GUARD_EQUIVALENCE.SAFE.json",
+    "sha256": "eecbc903a77ece95a201fb5533472dab690b3dd1e94af7e78f5fbb3ebc744eb8"
+  },
+  "hostPin": {
+    "bytes": 2420,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap.py",
+    "sha256": "d1e4aec3c4327e20fafff7934ff52186c7ec54cec67dbdbbdb657d89958c19b3"
+  },
+  "independentActualReviewPin": {
+    "bytes": 39335,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+    "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+  },
+  "independentlyComparedFunctionBlocks": [
+    {
+      "byteIdenticalToParent": true,
+      "function": "canonical",
+      "sha256": "fd0c3d5f7bd6a8faef428a7f82a2429aca55ef642abcfed25bdee1e9926cbbaf"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "digest_stream",
+      "sha256": "1d279293809a7544fdcdedcd70ad63124e7559ecfa6d168c04ca45d282b1ea90"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "pin",
+      "sha256": "41fcdb288b8b68d8bc353731dfeb1d35c56172836f6c76d9303310b362e6f9b3"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "read_pin",
+      "sha256": "087878e021d0d4b3cc79030d97acad93cfda36c01b724aecca6521fe6db9f154"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "free",
+      "sha256": "2afd677b69afa7790aa40ae74723f917c8cef0266e7d672cf71ca1e773f70f9a"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "save_new",
+      "sha256": "96341573c30a08d8f6a59dac730f4d9b8b28689e86c73639dbfb40aeaead8fa3"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "docker",
+      "sha256": "8d2ff8657dc9f8448735f6430cd897cb1fbe8ca328e460f1dbd56c22ae515661"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "overlaps",
+      "sha256": "efe71a403340d72c52cb7a9cc20e1ceaa3bc3663602e678606a20e1bf2bba8ed"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "canonical_mounts",
+      "sha256": "08ca5969a25968375e3bdbf285d4d27311f202640eee8d759966b36cf35cc104"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "metadata",
+      "sha256": "3f1be865701b71d76bb8f9472132b3a81a9c573d0606fe17de8a2e53524e2e04"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "identity_equal",
+      "sha256": "c05d851643c56edd7ce5dd20cef67c8e455b6e5f9857bb2c29bfb44514d01eaa"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "snapshot",
+      "sha256": "44b806fed1dfdfb94c57d13db1c2f0d615f5c5b5c40c03883fb4cadc2b82509d"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "same_snapshot",
+      "sha256": "17f9c3724eff9df7561d462671bee1b572c8d5981b4a537145e7afe365a7e3f4"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "qualified_stage3_nsfs",
+      "sha256": "cf65d2f8bbb0eb8264221d6f750583378fd6c599e95f3ed5d429bc2eb0e60ebe"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "unlink_exact",
+      "sha256": "e02ae2e051c72440fa07bd5af1b1b296bfb5543877c84532996092548c0d82b1"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "spec_for",
+      "sha256": "01288ff9309aae2ff6dc99b2ca5afba9181c8a8e4382dc6e184b3171555c68f8"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "contains_pin",
+      "sha256": "fe6ca93b442e807935202dcfdcb7a1281d1a4133b531439476b4fbb015b1e7d0"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "evidence_files",
+      "sha256": "44efbaf0a1ab0c40f3f33005d222327dde528cd34c0eede04564ff42bc1c2b5e"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "proof_by_name",
+      "sha256": "2197903ab5738e38f315a0c643d5b78d060d19b1782beda7f3bff3ddc6983cb9"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "source_identity",
+      "sha256": "0327d28ee08f1cb2a74a6a4e6ff31261416ee1cce2706300cb82059f647ede1a"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "physical_auth",
+      "sha256": "08070db0a871806037a81be4ee33266d7a8dfc5dff2d3480d8f544c100af10e8"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "host_users_many",
+      "sha256": "2b74263ad52274df2f0844739830ee283302622af0fee8a748c3ef7749049a01"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "quiescent_all",
+      "sha256": "825c8d9122b91bef9fd838a0874d4202792055e734c5137828cc28c16a4ad17b"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "verified_cases",
+      "sha256": "121e11752cc896dab254adfac6b0a44ee44da9f8f0f497af006f0c8a646b3b3b"
+    },
+    {
+      "byteIdenticalToParent": true,
+      "function": "main",
+      "sha256": "6d7b98b7c3e24da08b880a0adcd194418a58730ff31f67558b7713ea5b7df0cd"
+    }
+  ],
+  "lifecycleIndependentActualReviewPin": {
+    "bytes": 26117,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+    "sha256": "563028c75c2c48eefc23669479e35bdcc6b4f653c0a19864a68c58602592a969"
+  },
+  "limitations": [
+    "Existing inherited host sweep reports unreadable metadata explicitly; it does not prove global absence of unobservable users or classify by UID alone.",
+    "Single inherited pin-bound stopped Stage3 NSFS object exception is unchanged; no general mount or permission bypass.",
+    "Source-only review contains no current resource/PGDATA inventory,process/Docker scan,test/import/AST/CLI or actual deletion acceptance.",
+    "Disk-free snapshots after later cleanup cannot prove reserved full500 capacity."
+  ],
+  "nativeActions": 0,
+  "newProofOnlyFunctions": [
+    "validate_server_heap",
+    "prove_heap_and_acl"
+  ],
+  "onlyChangedFunctionBlocks": [
+    "checked",
+    "load_context",
+    "proof_context",
+    "prove_restoration",
+    "retire"
+  ],
+  "parentActorPin": {
+    "bytes": 59338,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/retire_two_auth_write_phase_pass_copies.py",
+    "sha256": "273c05398d2bbdd38b95beff4301152141b3eccd74dcac69d270012a011ef6d7"
+  },
+  "planPin": {
+    "bytes": 11557,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/PLAN.SAFE.json",
+    "sha256": "acbf49aee71cf945fbcbd5544fbe8ed1ffc4283c8a06f787a0fdbd526908c266"
+  },
+  "preparedPin": {
+    "bytes": 6762,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/PREPARED.SAFE.json",
+    "sha256": "7ae1554aa5498e582cf82dd48570655203532b024c7974334539d4d9816949d4"
+  },
+  "production": false,
+  "remainingPrerequisites": [
+    "Root actual syntax/CLI/focused new-proof qualification PASS.",
+    "Fresh trusted Root context including complete199proof bridge,current6closedidentities/2emptygroups,originalsource/protectedlineage/dependency/unknown-use/no-needed-state review.",
+    "Per-target current check followed by separate Root nonce/TTL/exclusive adoption and unused once claim; no source-only report authorizes execution.",
+    "Independent actual END review only after Root explicitly confirms both exact retirement actions and actual outer exits."
+  ],
+  "requiredRootContextWriterBridge": {
+    "detail": "Root fresh context writer must compare its77 life and122 work retained proof pins exactly against the already accepted independent review inventories,then pin/freeze the context. The actor independently enforces subsequent equality with that trusted Root context. The actor does not itself compare its proof map to E full inventories; this bridge remains Root-owned metadata preparation,not an actor mutation or source blocker.",
+    "expectedProofCount": 199,
+    "lifePinField": "LIFECYCLE_ACTUAL_REVIEW.retainedEvidencePins",
+    "requiredBeforeRetirement": true,
+    "workPinField": "ACTUAL_REVIEW.retainedWorkEvidencePins"
+  },
+  "resultPins": [
+    {
+      "bytes": 11372,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9/ACTUAL_RESULT.SAFE.json",
+      "sha256": "40bd0d0074915f7404ad6d1d2137361d9703e39c83c66ca114160076ead69ff9"
+    },
+    {
+      "bytes": 12128,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/ACTUAL_RESULT.SAFE.json",
+      "sha256": "8cf6cb28631d2a180ae0c56a7d7afbd4f313b3b6550a441988fd35b65f9d5617"
+    }
+  ],
+  "reviewRecorderPin": {
+    "bytes": 10695,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-review/record_source_review.py",
+    "sha256": "f0a9c40d56d5b1b27b544979abff4c74f20990920344128ea4df522bba0384e3"
+  },
+  "reviewedScope": [
+    "Exactly the two new heap case/disk/pgdata targets, current fixed result digests and E-Life/E-Both/Root actual pins. FAIL/UNKNOWN or old case contexts/adoptions cannot qualify.",
+    "Separate Root no-longer-needed retention decision7a94af required; it is not deletion adoption. Functional complete evidence/restoration only; no RAM-saving or causal inference gate.",
+    "load_context binds source/current2-case intent/plan/freeze/host, exact accepted ordered results and all three actual reviews. No mutable Root U/Parts historical-file dependency.",
+    "proof_context binds all current case evidence and immutable launcher-local sources, exact diagnostic body hashes, native budget/zeroevents/last exit/strict child and log closure, complete physical/catalog/6000history restoration.",
+    "Work requires the five exact same-freeze lifecycle proof mounts readonly;4CAS/8heap strict raw-log reparse equals saved proof, all13/19 keys/caps/PID/XID/ACK revisions/rawGUC/logging contract retained.",
+    "Retained before/prepare/selected/restore receipts and actual namespace/PID bindings prove only2minimal observer privileges; full rawACL/null/order/grantor/options/effective/role/membership state restored. Original independent reports additionally qualify full official view/ABI.",
+    "All21 inherited guards and4functions byte-identical. Restoration changes only work-mode literal; check/retire changes only action/schema literals. No new namespace,permission,opaque-process or deletion exception.",
+    "Root-only check enumerates/hashes exact selected copy; separate fresh exact source/context/check/checkNonce adoption<=300s and distinct24hex nonce required. Both cases/use/closure refresh after inventory comparison,closure age<=10s plus final TTL/source/context/8GiBfloor.",
+    "Exclusive once claim precedes inherited FD-relative,NOFOLLOW,mode/device/inode/content/xattr/hardlink guards and exact regular-file unlink/inventoried-directory removal. Case/disk parent,evidence,sixhulls,images,volumes,loops,allFAILUNKNOWN and originals/canonical827a17archives/Git/helper files KEEP."
+  ],
+  "rootActualVerificationPin": {
+    "bytes": 5842,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_ACTUAL_REVIEW.SAFE.json",
+    "sha256": "0e0d47998242e787316eb504ba8136b468aaca39dd89404e37cb836057625d32"
+  },
+  "rootRetentionDecisionPin": {
+    "bytes": 1981,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_PASS_COPY_RETENTION_DECISION.SAFE.json",
+    "sha256": "7a94af355507dea80ce32e1896695f692b0381d3799225a075cad18214d76e46"
+  },
+  "schema": "helmut-cas-heap-independent-retirer-source-review/1",
+  "scriptPin": {
+    "bytes": 78105,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py",
+    "sha256": "7afd64da0a87d104819de7f3115dfe44907b964c08e9a01c6b8c3d0ad306d9cb"
+  },
+  "sourceDeltaPin": {
+    "bytes": 45219,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/SOURCE_DELTA.PRIVATE.diff",
+    "sha256": "39c73e98d9d0ec093ce717b8891739e9ee58979c8a2adeacad216b7273a7c421"
+  },
+  "status": "PASS_SOURCE_ONLY",
+  "subjectImports": 0,
+  "tests": 0
+}

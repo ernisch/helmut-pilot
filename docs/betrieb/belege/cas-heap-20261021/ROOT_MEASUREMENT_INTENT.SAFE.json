@@ -1,0 +1,195 @@
+{
+  "schema": "helmut-cas-heap-predeclared-intent/1",
+  "status": "PREDECLARED_NO_START_ADOPTION",
+  "scope": "CAS_SERVER_MEMORY_CONTEXTS_ONLY",
+  "continuationHead": "433cb2c9c1209dc4f5ee3aeade52002c2526f6a8",
+  "reason": "Measure the known complete default-CAS materialization interval in the actual serving backend. Prior Node/group endpoint frames cannot identify its allocator contribution. No W45 repeat, projection activation or new RAM-saving claim.",
+  "parentIntentPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/ROOT_MEASUREMENT_INTENT_V2.SAFE.json",
+    "bytes": 6870,
+    "sha256": "0c00a06569ff3e79b7d94920a9e3080138c7722699003251e6ce0cadadd47368"
+  },
+  "priorCompletionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_LOCAL_STAGE_COMPLETION.SAFE.json",
+    "bytes": 6594,
+    "sha256": "e014fa6841463d3cd7212e1fbdebb3e43a7c8d0eeeb89764d74b62c986484492"
+  },
+  "methodReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/METHOD_REVIEW.SAFE.json",
+    "bytes": 19011,
+    "sha256": "ed1b079d3191cb54a557dc56cd0b45e891eb7e352fca85202d8ab844edc93ad5"
+  },
+  "atUnix": 1792573639.813,
+  "baseComparatorPreparedPin": {
+    "bytes": 47700,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/PREPARED.SAFE.json",
+    "sha256": "ba4358e30778ce0366446439f46016b44dadc5565302988289f8a55efcb69549"
+  },
+  "basePhasePreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/PREPARED.SAFE.json",
+    "bytes": 49491,
+    "sha256": "1868119f68f6d27a67c26281b8a71db7c9cb5b6e7d878405bb16f8492f6f30b3"
+  },
+  "baseProductUPin": {
+    "bytes": 25446,
+    "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+    "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+  },
+  "commonPartsSHA256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63",
+  "sourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "baseRendererSHA256": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+  "newGraphSHA256": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0",
+  "orderedSeparatelyAdoptedCases": [
+    "lifecycle-only:NONE",
+    "cas-heap:CURRENT"
+  ],
+  "sameFreezeIndependentlyAcceptedLifecycleRequired": true,
+  "noAutomaticSequenceRetriesOrExtraCases": true,
+  "unchangedLimits": {
+    "ancillaryAdmissionBytes": 16777216,
+    "authMilliseconds": 30000,
+    "caseEvidenceBytes": 4194304,
+    "fetchSeconds": 20,
+    "hostFreeFloorBytes": 8589934592,
+    "lockSeconds": 1,
+    "nativeHighBytes": 1399996416,
+    "nativeMaxBytes": 1547997184,
+    "nodeBatchSeconds": 30,
+    "nodeCaptureBytes": 262144,
+    "nodeOldMiB": 384,
+    "nodeSemiMiB": 16,
+    "persistentCopyBytes": 805306368,
+    "sqlSeconds": 30,
+    "swapMaxBytes": 0,
+    "totalIncludingClosureSeconds": 360,
+    "workSeconds": 300
+  },
+  "workload": {
+    "authRPCs": 27,
+    "boundaries": 6,
+    "confirmedCAS": 4,
+    "controls": 18,
+    "fullReads": 5,
+    "historyRows": 6000,
+    "mutations": 3,
+    "restoreCount": 1,
+    "rounds": 3
+  },
+  "probe": {
+    "exactAcceptedFrames": 14,
+    "groupReadOnly": [
+      "memory.current",
+      "memory.peak",
+      "memory.stat",
+      "cpu.stat",
+      "io.stat"
+    ],
+    "inputObjectsGraphsTransportStringsRetainedByProbe": false,
+    "maximumExtraJSONBytes": 49152,
+    "maximumFrames": 14,
+    "missingUnreadableInvalidFieldsFailClosedNotZero": true,
+    "noCurrentCountersAsPeakDecomposition": true,
+    "noSnapshotSerializationRefactorOrLifetimeExtension": true,
+    "node": [
+      "process.memoryUsage",
+      "resourceUsage.maxRSS",
+      "v8.getHeapStatistics"
+    ],
+    "nonAtomicReadbackAndObserverEffectsExplicit": true,
+    "peakSampling": "Read memory.peak first and last in every frame as peakBefore/peakAfter. Intra-frame increases include observer allocation; between-frame changes still include read/finalization overhead and are not exact causal ownership proof.",
+    "perFrameMonotonicAndUTCBeginEndBracketsRequired": true,
+    "plannedLabels": [
+      "driver.restore.beforeU",
+      "U.beforeSnapshotCapture",
+      "U.afterSnapshotCapture",
+      "U.afterPartsBuild",
+      "driver.request.afterSerializationBeforeHTTP",
+      "driver.request.afterBodyObserverBeforeHTTP",
+      "driver.request.afterRPCJSONParsed",
+      "U.beforeAttach",
+      "U.afterAttach",
+      "U.beforeReturn",
+      "driver.afterU.beforeVerifyLogical",
+      "driver.afterVerifyLogical",
+      "driver.beforeFinalRead",
+      "driver.afterFinalRead"
+    ],
+    "requestEntryPosition": "afterSerializationBeforeHTTP at request entry before existing JSON.parse(options.body); afterBodyObserverBeforeHTTP after original input=null and before unchanged fetch; preserve entire observer.",
+    "snapshotEndPosition": "After sentData,sentAdditions,recordContents,sentHistory; immediately before unchanged tree/Parts.build expression.",
+    "synchronousCallbacksOnly": true,
+    "targetOnly": "restore.write and bracketing final full read"
+  },
+  "serverHeapProbe": {
+    "contractPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/HEAP_CONTRACT.SAFE.json",
+      "bytes": 10426,
+      "sha256": "74f37ac8545dc4b692197bd051704be2c42150d4d28bd5c541a4763106ab19aa"
+    },
+    "expectedCASBinders": 4,
+    "expectedFrames": 8,
+    "maximumLogRecords": 12,
+    "maximumRecordBytes": 2048,
+    "maximumCombinedRecordBytes": 24576,
+    "exactFramePositions": [
+      "before output_text:=array_to_string(renderer_chunks)",
+      "after output_value:=output_text::jsonb"
+    ],
+    "sameRequestBindings": [
+      "actual backend PID",
+      "already assigned XID",
+      "expected revision",
+      "new revision",
+      "raw projection and diagnostic-scope GUCs"
+    ],
+    "onlyActualDefaultBranchAllowed": true,
+    "projectionOnFailsBeforeBranch": true,
+    "rawNullableGUCsNotForcedOrNormalized": true,
+    "directOrInheritedReadstatsAccessObservedBeforeAuthWork": true,
+    "outputContentsContextNamesAndStacksExported": false,
+    "optionalO1RenderedTextAndNativeLengthsOnly": true,
+    "temporalBoundary": "Two sequential context traversals, aggregate/SRF/log observer allocation and plan effects remain included. The interval also clears renderer_chunks and validates JSON. It is not a per-representation byte decomposition or proof of the owner of a prior group peak.",
+    "memoryContextBytesAreNotRSSOrWholeGroupRAM": true,
+    "transientPeaksOutsideSamplesRemainPossible": true
+  },
+  "diagnosticObserverACL": {
+    "selectedIntervalExplicitlyDiffersFromOriginalPgCatalogACL": true,
+    "onlyObjects": [
+      "pg_catalog.pg_backend_memory_contexts:SELECT",
+      "pg_catalog.pg_get_backend_memory_contexts():EXECUTE"
+    ],
+    "onlyGrantee": "service_role",
+    "grantOnlyMissingRights": true,
+    "grantOptions": false,
+    "roleMembershipOwnerPublicAuthACLOrSecurityDefinerChanges": false,
+    "exactRawACLNullOrderGrantorOptionsEffectiveRightsAndMembershipBeforeSelectedAfter": true,
+    "unsupportedLiteralNULLRestorationFailsBeforeGrant": true,
+    "restoreOnSuccessAndErrorBeforeFinalCatalogAndShutdown": true,
+    "unknownRestoreFailsKeepWithoutBlindRetry": true,
+    "originalClusterAndOriginalPGDATAChanged": false,
+    "noProductionRolePermissionEquivalenceClaim": true
+  },
+  "diagnosticStartupLogging": {
+    "log_error_verbosity": "terse",
+    "log_min_error_statement": "fatal",
+    "actualSameSessionValuesRequired": true
+  },
+  "acceptance": "Same original public ABI/ACL/RLS/hash/CAS/ACK/6000-history/restoration, exactly27RPC and14 parent Node frames plus4 binders/8 bounded heap frames. Exact observer-ACL restoration; all normal exits/EOF/native event checks and strict PostgREST closure required. Missing/drift/unknown/timeout/OOM/closure errors are FAIL/KEEP, never an improvement.",
+  "workingCopyRetention": {
+    "FAILUnknownKeep": true,
+    "allContainerHullsImagesVolumesLoopsKeep": true,
+    "allOriginalsCanonical827a17Archives616HelperFilesGitObjectsRefsKeep": true,
+    "allRawProofsAndFrozenSourcesKeep": true,
+    "newRetainedPlanningBytes": 33554432,
+    "preclassifiedDisposableOnlyAfterActualPASSAndIndependentReview": true
+  },
+  "noForcedGCCacheEvictionOrPeakReset": true,
+  "noNativeAddonInstallAllocatorFlags": true,
+  "onlyInstrumentedDiagnosticOverlayNotProductIntegration": true,
+  "budgetReserveRouterModelConfigurationChanges": false,
+  "providerCalls": 0,
+  "full500": false,
+  "production": false,
+  "originalCloudDirectlyAccessible": false,
+  "oldFull500GOsSpent": true,
+  "newFull500GO": false
+}

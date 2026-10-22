@@ -1,0 +1,216 @@
+{
+  "schema": "helmut-local-known-blocker-checkpoint/1",
+  "checkedAtUTC": "2026-10-21T21:49:31.564976+00:00",
+  "status": "PARTIAL_DO_NOT_START_FULL500",
+  "sourceReviewOnlyForNewOptionalBackend": true,
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/local-postgrest-owner.py",
+      "bytes": 47343,
+      "sha256": "e79eb74ffc281f649d25f36933b52ff40e575d272f5359fca37b45d8942362c2"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/database-supervisor.py",
+      "bytes": 7397,
+      "sha256": "2c3eee3a9aef9dc779caf4ce89e5734eb6a75e4087a7968a958e4b256ba3bce0"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/docker-broker.py",
+      "bytes": 8531,
+      "sha256": "17c4457e158cd27a739a9b734f140c59c577c92aae35b1fe3aa9049dbf9b6f4f"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/isolation.py",
+      "bytes": 60657,
+      "sha256": "3a67cdf382adc6c1a27beaedd7060676c71c7f127f069ef3264ff2f5c1ab5849"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/connect-local500.py",
+      "bytes": 37715,
+      "sha256": "26eb2ec0d093b9f86265b756faf08f340db95a8743961108c5117ba5e3fe6233"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/process-runner.py",
+      "bytes": 24001,
+      "sha256": "d06a49629cf8d8c5ac17fc346a07fb3d434351294e7e651be2e7df86d3dcab58"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/start-preflight.py",
+      "bytes": 41066,
+      "sha256": "65c313cc47a120bae53ce90693b7daf60e6bb09b6cf52472b787c8fd0366c733"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/finish-connection.py",
+      "bytes": 13183,
+      "sha256": "d9184ec002ceb4df858e71fda182fb26b24192c77198b88ca3a34ffc01877a4c"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/start-input-checks.js",
+      "bytes": 27022,
+      "sha256": "08d15df5787079b9dc685b566359cb4eddfcab635c234c233942d22917b11e2e"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/local-postgrest-services.js",
+      "bytes": 13108,
+      "sha256": "c34e81e4aaaa04fefe91554e30738513d70e3fd23234fde2193f6b4263d06b5b"
+    }
+  ],
+  "pureChecks": [
+    {
+      "name": "owner",
+      "pass": true,
+      "exitCode": 0,
+      "wallSeconds": 0.6643245099985506,
+      "logPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/blocker-integration-20261021/owner.PRIVATE.log",
+        "bytes": 4304,
+        "sha256": "41fc16fc423901a375d1795f7d094468b7021a00ebcee38a82df6304fe56ffbc"
+      }
+    },
+    {
+      "name": "supervisor-integration",
+      "pass": true,
+      "exitCode": 0,
+      "wallSeconds": 0.970845603995258,
+      "logPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/blocker-integration-20261021/supervisor-integration.PRIVATE.log",
+        "bytes": 6305,
+        "sha256": "5bbb871e5cc4979c45dd2147142c125b77d8ed33391eed5787009a447331ea90"
+      }
+    },
+    {
+      "name": "broker-renderer",
+      "pass": true,
+      "exitCode": 0,
+      "wallSeconds": 0.26081893499940634,
+      "logPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/blocker-integration-20261021/broker-renderer.PRIVATE.log",
+        "bytes": 495,
+        "sha256": "85c4c8b919dd6101bb3d744d079d18973d7f8a40164321a5fa3255ef9d84bf51"
+      }
+    },
+    {
+      "name": "runner-close",
+      "pass": true,
+      "exitCode": 0,
+      "wallSeconds": 0.16645963198971003,
+      "logPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/blocker-integration-20261021/runner-close.PRIVATE.log",
+        "bytes": 503,
+        "sha256": "fc9a205c57d8ced262779dc47e5ae97efea10b5d8291a825d5c809c29f2fa960"
+      }
+    },
+    {
+      "name": "consumer-chain",
+      "pass": true,
+      "exitCode": 0,
+      "wallSeconds": 0.21248781000031158,
+      "logPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/blocker-integration-20261021/consumer-chain.PRIVATE.log",
+        "bytes": 498,
+        "sha256": "57c37344baacc7f9b9b10b3eb853da5c1d55515b43340f8cfab89ed2e6798225"
+      }
+    },
+    {
+      "name": "service-js",
+      "pass": true,
+      "exitCode": 0,
+      "wallSeconds": 0.15222821797942743,
+      "logPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/blocker-integration-20261021/service-js.PRIVATE.log",
+        "bytes": 1837,
+        "sha256": "67e1704724797343bb11ef102093fe340d0c3f8360b37428fb33e6267150111c"
+      }
+    },
+    {
+      "name": "consumer-js",
+      "pass": true,
+      "exitCode": 0,
+      "wallSeconds": 0.1774265920103062,
+      "logPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/blocker-integration-20261021/consumer-js.PRIVATE.log",
+        "bytes": 831,
+        "sha256": "c8d59167d709f6308910387cafb71edeabf14fc79a0a30a576a82929269e8e19"
+      }
+    }
+  ],
+  "disk": {
+    "availableBytes": 15227342848,
+    "requiredBytes": 15179779720,
+    "capacityAdmissionOnly": true,
+    "headroomBytes": 47563128,
+    "unchangedHostFloorBytes": 8589934592,
+    "unchangedRetainedOutputBudgetBytes": 536870912,
+    "sevenClosedHullsObservedFreedBytes": 6381715456,
+    "ownCIWorktreeObservedFreedBytes": 76365824,
+    "ownObserverWorktreeObservedFreedBytes": 76718080,
+    "independentMeasurementWindowsNotNetSum": true,
+    "observerReceiptPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-blockers-20261021/OBSERVER_WORKTREE_RETIREMENT/AFTER_EXACT_OBSERVER_WORKTREE_REMOVAL.SAFE.json",
+      "bytes": 32400,
+      "sha256": "c67b18e759f23e24977f848eca2c84a76fcc19216374cf94b08077a6fe1c8a37"
+    },
+    "originalsAndWorkingStatesPreservedAtEachRecordedRemoval": true,
+    "previewWorktreeKept": true
+  },
+  "verifiedPreview": {
+    "commit": "275c137f40289db072f84b20e2b2ecbde01c74ce",
+    "deploymentId": "dpl_EiKs2SxXv131qEktcRhE1Ntgwgry",
+    "state": "READY",
+    "target": null,
+    "url": "https://helmut-pilot-21up9pz4p-nohut.vercel.app",
+    "latestUnpushedChangesNotCovered": true
+  },
+  "privateCI": {
+    "runId": 39677801111,
+    "originals": 83,
+    "originalBytes": 83490369,
+    "publicRepository": true,
+    "browserMobile": "PASS",
+    "offline": "FAIL_GENUINE_PRIVATE_ORIGINAL_BINDING_MISSING",
+    "provisioningPrepared": true,
+    "protectedPrivateChannelConfigured": false,
+    "secretAndRunnerAdministrationAccess": "HTTP403",
+    "substituteOriginalsCreated": false,
+    "checksSkipped": false
+  },
+  "lateV12": {
+    "completedACKs": 499,
+    "requiredProfiles": 500,
+    "requiredPositions": 1500,
+    "Unit60Passed": false,
+    "index499": "ALREADY_ENTERED_UNKNOWN_OR_FAILED_DO_NOT_RETRY",
+    "genuinePreIndex499SnapshotAvailable": false,
+    "originalSlot12GOAndClaim": "CONSUMED_KEEP",
+    "windowEndsAtUTC": "2026-10-21T21:30:00.000Z",
+    "windowExpiredAtCheckpoint": true
+  },
+  "existingHTTPComparison": {
+    "oldMeanCommonPeakBytes": 718508032,
+    "newMeanCommonPeakBytes": 640927744,
+    "reductionBytes": 77580288,
+    "pairsReducedBytes": [
+      80384000,
+      74776576
+    ],
+    "scope": "FOUR_LOCAL_HTTP_COMPONENT_ARMS_ONLY",
+    "shared500MBReserveProven": false,
+    "fullMotorUnit60Proven": false,
+    "plateauProven": false
+  },
+  "remaining": [
+    "Separate legitimate one-unit late-state HTTP motor contract/native execution proof",
+    "Native optional backend mount/UID/kernel/close qualification",
+    "Private protected CI original provisioning and green actual Offline workflow",
+    "Fresh source/calendar bindings and all32 fresh start conditions",
+    "500-profile 1500-position time/memory/quality evidence and separate new explicit GO"
+  ],
+  "full500Ready": false,
+  "full500Started": false,
+  "freshGOIssued": false,
+  "production": false,
+  "paidInfrastructureCreated": false,
+  "merge": false,
+  "routerConfigurationChanged": false,
+  "externalModelsCalled": false
+}

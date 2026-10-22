@@ -1,0 +1,84 @@
+{
+  "currentGraphSourcePin": {
+    "bytes": 18910,
+    "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_read_bounded_local.sql",
+    "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5"
+  },
+  "currentRendererSourcePin": {
+    "bytes": 54938,
+    "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+    "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+  },
+  "noDatabaseOrSubjectExecution": true,
+  "originalCatalogEvidencePin": {
+    "bytes": 35837,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/ACTUAL_NATIVE_CATALOG.SAFE.json",
+    "sha256": "d3e4dde9d2873f892e3ae5a8140fed3966eadca80d85fb2ac629e4a4833e7345"
+  },
+  "originalCommit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",
+  "originalDefinitionExtraction": "Entire exact CREATE FUNCTION definition from original commit; only CREATE changed to CREATE OR REPLACE, prosrc bytes unaltered; never execute whole historical proposal",
+  "originalSourcePins": [
+    {
+      "bytes": 51381,
+      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    {
+      "bytes": 18650,
+      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/ORIGINAL_AUTH_READ_SOURCE.PRIVATE.sql",
+      "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
+    }
+  ],
+  "schema": "helmut-combined-auth-body-source-provenance/1",
+  "status": "FROZEN_SOURCE_ONLY_NOT_EXECUTED",
+  "variantBodies": {
+    "NEW": {
+      "graph": {
+        "definitionCount": 1,
+        "function": "helmut_auth_state_graph_read_v1",
+        "installSQLPin": {
+          "bytes": 13047,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/INSTALL_NEW_GRAPH.sql",
+          "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+        },
+        "prosrcBytes": 8231,
+        "prosrcSHA256": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0"
+      },
+      "renderer": {
+        "definitionCount": 1,
+        "function": "helmut_auth_state_expand_local_v1",
+        "installSQLPin": {
+          "bytes": 17398,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/INSTALL_NEW_RENDERER.sql",
+          "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+        },
+        "prosrcBytes": 13335,
+        "prosrcSHA256": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32"
+      }
+    },
+    "OLD": {
+      "graph": {
+        "definitionCount": 1,
+        "function": "helmut_auth_state_graph_read_v1",
+        "installSQLPin": {
+          "bytes": 12787,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/INSTALL_OLD_GRAPH.sql",
+          "sha256": "7bb6124122903387b721929f99310a8044291c5cc3e12b1f34b674c081eb72cd"
+        },
+        "prosrcBytes": 7971,
+        "prosrcSHA256": "1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0"
+      },
+      "renderer": {
+        "definitionCount": 1,
+        "function": "helmut_auth_state_expand_local_v1",
+        "installSQLPin": {
+          "bytes": 13841,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/INSTALL_OLD_RENDERER.sql",
+          "sha256": "f973ad6b1a617d8b73f3b92df2997a8be7313665c6b26856b8a3c333eb6277e1"
+        },
+        "prosrcBytes": 9778,
+        "prosrcSHA256": "b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a"
+      }
+    }
+  }
+}

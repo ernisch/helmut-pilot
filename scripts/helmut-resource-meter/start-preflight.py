@@ -122,6 +122,41 @@ def inventory(connection, node):
     return sorted(rows, key=lambda x:x['path'])
 
 
+def backend_window(backend,day,*,now=None):
+    """Admit the existing full workflow floor inside the backend's real window."""
+    now=time.time() if now is None else now
+    at=lambda value:datetime.datetime.fromisoformat(value.replace('Z','+00:00')).timestamp()
+    start,work,close,end=map(at,[day['startsAtUTC'],backend['workEndsAtUTC'],backend['closeByUTC'],day['endsAtUTC']])
+    require(start<work<close<=end,'backend lifetime outside accepted day')
+    require(work-now>=10685.884867+600,'backend window lacks unchanged full workflow plus setup/close reserve')
+    require(type(backend['maximumLifecycleSeconds'])is int and 0<backend['maximumLifecycleSeconds']<=33000
+        and close-now<=backend['maximumLifecycleSeconds'],'backend lifecycle cannot cover configured close')
+    return {'fullWorkflowAndReserveSeconds':10685.884867+600,'backendWorkEndsAtUTC':backend['workEndsAtUTC'],
+        'backendCloseByUTC':backend['closeByUTC'],'noExecutionAuthorityCreated':True}
+
+def backend_plan(connection,*,recipe=None):
+    """Close the optional source/input chain without creating start authority."""
+    key='localPostgrestBackendPlanPin'
+    documents=[connection,read(connection['stagedHarness']),read(connection['runtimeRequest'])]
+    if recipe is not None:documents.append(recipe)
+    present=[key in d for d in documents]
+    require(all(present) or not any(present),'backend plan presence differs between consumers')
+    if not any(present):return None
+    p=connection[key]
+    require(p is not None and all(d[key]==p for d in documents),'exact non-null backend plan differs')
+    connector=module('backend_plan_connector','connect-local500.py')
+    backend=connector.read_postgrest_backend_plan(p,connection['caseDirectory'],connection['targetDatabase'],connection['operationId'])
+    day=read(connection['dayBindingAcceptance'])
+    configs=[q for q in connection['applicationReadOnlyPins'] if Path(q['path']).name=='postgrest.PRIVATE.conf']
+    require(backend['ownerGoPin']==connection['freshOwnerGO'] and backend['day']==day['day']==connector.A.DAY
+        and backend['resourceClaimPath']==connection['resourceClaimPath']==str(connector.A.CLAIM), 'backend owner/day/claim differs')
+    require(configs==[backend['sourcePostgrestConfigPin']] and connection['databaseReadOnlyPins']==[backend['binaryPin']], 'backend original materials differ')
+    backend_window(backend,day)
+    sources=documents[2]['sourcePins']
+    require(all(q in sources for q in backend['sourcePins']),'backend sources absent from runtime request')
+    return backend
+
+
 def template_replay(connection):
     staged=read(connection['stagedHarness'])
     require(connection.get('restoreStagingInputs')==staged.get('restoreStagingInputs'),'restored staging connection/template binding differs')
@@ -136,7 +171,8 @@ def template_replay(connection):
     rendered=connector.render_templates(connection['caseDirectory'],target=connection['targetDatabase'],
         container=connection['containerName'],operation=connection['operationId'],
         day_rows_pin=staged['dayRows'],owner_go_pin={'path':staged['executionOwnerGOPath']},atomic_usage_pin=staged.get('atomicUsageInput'),
-        restore_staging_inputs=staged.get('restoreStagingInputs'),native_memory_budget=staged.get('nativeMemoryBudget'))
+        restore_staging_inputs=staged.get('restoreStagingInputs'),native_memory_budget=staged.get('nativeMemoryBudget'),
+        local_postgrest_backend_plan_pin=connection.get('localPostgrestBackendPlanPin'))
     expected_render={r['original']['path']:r for r in rendered}
     for delta in staged['templateDeltas']:
         p=delta['original'];expected={k:original[p['path']][k] for k in ['path','bytes','sha256']}
@@ -159,6 +195,13 @@ def all_file_pins(acceptance,connection):
     pins=acceptance['sourcePins']+connection['immutableWorkflowPins']+connection['applicationReadOnlyPins']+connection['databaseReadOnlyPins']+request['sourcePins']
     if 'atomicUsageInput' in connection:
         candidate=read(connection['atomicUsageInput']);pins+=[connection['atomicUsageInput']]+candidate['sourcePins']
+    backend=backend_plan(connection)
+    if backend is not None:
+        require(acceptance.get('localPostgrestBackendPlanPin')==connection['localPostgrestBackendPlanPin'], 'backend acceptance differs')
+        require(all(p in acceptance['sourcePins'] for p in backend['sourcePins']), 'backend sources not independently adopted')
+        pins += [connection['localPostgrestBackendPlanPin'],backend['binaryPin'],backend['ownerGoPin'],backend['sourcePostgrestConfigPin'],
+            backend['upstreamEvidencePin'],*backend['upstreamSourcePins'],*backend['sourcePins']]
+    else:require('localPostgrestBackendPlanPin' not in acceptance,'unbound backend acceptance')
     if 'nativeBudgetRuntimePin' in connection:
         runtime=read(connection['nativeBudgetRuntimePin']);pins += [connection['nativeBudgetRuntimePin'],runtime['sourcePin'],pin(BIN/'native-memory-budget.py')]
     checked={};bad=[]
@@ -209,6 +252,7 @@ def stage_contract(connection, recipe):
     require(recipe['scope'] == 'owner-approved-local500-resources' and recipe['full500Attempts'] == 1, 'one local attempt only')
     require(recipe['freshOwnerGO'] == connection['freshOwnerGO'] and recipe['dayBindingAcceptance'] == connection['dayBindingAcceptance'], 'recipe binding differs')
     require(recipe['expectedFreshOperationId'] == connection['operationId'], 'operation differs')
+    backend_plan(connection,recipe=recipe)
     authority=module('stage_contract_authority','next-resource-authority.py')
     require(connection['resourceClaimPath']==str(authority.CLAIM) and connection['sourceInputDatabase']==authority.INPUT_DATABASE,
         'actual preparation claim/input binding differs from fixed next slot')
@@ -303,6 +347,11 @@ def coverage_adopted(bindings, rows):
         'consumerInputs':{str(BIN/'start-input-checks.js'),str(BIN/'START_PREFLIGHT_COVERAGE.md')}}
     if str(BIN/'atomic-usage-integration.js') in {r['path'] for r in rows}:
         required['infrastructure'].add(str(BIN/'atomic-usage-integration.js'))
+    if str(BIN/'cas-unit-observer.js') in {r['path'] for r in rows}:
+        required['infrastructure'].add(str(BIN/'cas-unit-observer.js'))
+    backend_sources={'local-postgrest-owner.py','database-supervisor.py','docker-broker.py','local-postgrest-services.js'}
+    if str(BIN/'local-postgrest-owner.py') in {r['path'] for r in rows}:
+        required['infrastructure'].update(str(BIN/f) for f in backend_sources)
     for scope,review_pin in reviews.items():
         pro=read(review_pin)
         require(pro.get('model')=='deepseek-v4-pro' and pro.get('route',{}).get('effort')=='high'

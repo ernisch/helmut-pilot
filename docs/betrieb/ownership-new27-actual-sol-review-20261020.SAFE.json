@@ -1,0 +1,1560 @@
+{
+  "schema": "helmut-independent-new27-ownership-actual-review/1",
+  "atUTC": "2026-10-20T20:13:05.238313+00:00",
+  "status": "ACTUAL_NEW27_FUNCTIONAL_INTEGRITY_AND_CAPTURE_PASS_WITH_NAMESPACE_LIMIT",
+  "findingsStatus": "NO_BLOCKING_FUNCTIONAL_OR_CLOSURE_FINDINGS",
+  "independent": true,
+  "reviewerModel": "gpt-6.1-sol",
+  "blockingFindings": [],
+  "case": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8",
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/PREPARED.SAFE.json",
+    "bytes": 35991,
+    "sha256": "b8cf3abdb60c4acfe0582c34b8f6895d60958406a3c56902c1057cebc9929990"
+  },
+  "actualResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/ACTUAL_RESULT.SAFE.json",
+    "bytes": 9975,
+    "sha256": "b178e8a5cb25e5731d2072186424c4207366ab005246a62d7cd7b47d91f2a897"
+  },
+  "workerResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/WORKER_RESULT.SAFE.json",
+    "bytes": 8098,
+    "sha256": "9289f60eedd7450bb0263a0a75feb377ee539ada327452d703a7abc35f244b23"
+  },
+  "sourceIntegrationReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/OWNERSHIP_ROOT_INTEGRATION_STATIC_REVIEW.SAFE.json",
+    "bytes": 10215,
+    "sha256": "6928dce24df0284a3db16e956a3d2a429aa4eb04c48d658b0a4f08d9f8cbf35f"
+  },
+  "sameFreezeLifecycleResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-41fd40deb27ebb9fecd60384/ACTUAL_RESULT.SAFE.json",
+    "bytes": 7969,
+    "sha256": "d9b8460b34b0e343f00f79952dea45b62b9d880e36830653372c0c72bde2aa4f"
+  },
+  "independentLifecycleReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/OWNERSHIP_ZERO_AUTH_LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 22160,
+    "sha256": "046aed1b065f878d1a0677be6c561327ccdfc7feb0036747d3cfe508cf9953e5"
+  },
+  "freshBinding": {
+    "mode": "control-cache",
+    "variant": "NEW",
+    "oneFreshRootAdoption": true,
+    "selectionAndNonceAndPreparedEqualAcrossProofs": true,
+    "preflightAgeAtStartSeconds": 156.571321,
+    "withinUnchanged900SecondSourceGuard": true,
+    "lifecycleExactCurrentB8cfAndPreviouslyReviewed": true
+  },
+  "functionalIntegrity": {
+    "genuineAcceptedRPCs": 27,
+    "fullReads": 5,
+    "CASWrites": 4,
+    "controls": 18,
+    "mutations": 3,
+    "restores": 1,
+    "uniqueFreshNativeReadNoncesWithRecomputedHistoryBindings": 23,
+    "uniqueNewConfirmedCASRevisions": 4,
+    "controlGraphNonceBindingsRecomputed": 18,
+    "coldControls": 3,
+    "warmControls": 15,
+    "actualControlTextUTF8Bytes": 4856607,
+    "retainedPayloadCapBytesUnchanged": 2097152,
+    "controlTextStringifyObservations": 5,
+    "responseBodyBytes": 57089403,
+    "fullAuthAndACKLogicalHistory6000HashesEqual": 9,
+    "allFourControlFieldHashesEqualAcross27Outputs": true,
+    "fullPhysicalRefsAndLogicalOriginalStateRestored": true,
+    "solePhysicalDifferenceFreshConfirmedRevision": true,
+    "physicalBytesBeforeAfter": 606,
+    "physicalBeforeSHA256": "9b62ab352733025f1b752e637f6360d7813b10ea86f134168698e8f4f0d11bc9",
+    "physicalAfterSHA256": "b93ed03a1001129e07bba838645e6038895e0c0e87650d5d2a6aa4601580c253",
+    "ledgerRows": 6000,
+    "catalogABIACLAndEverythingExceptExactPhysicalStoreSHABranchEqual": true,
+    "sourceSavedBeforeAfterByteIdentical": true,
+    "sourceSavedManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "sourceFiles": 1709,
+    "sourceFileBytes": 369399611,
+    "SQLSetupSessions": 5,
+    "SQLSetupStatements": 29,
+    "SQLSmallPhysicalSessions": 2,
+    "SQLCycleMetricSessions": 6,
+    "SQLPostOperationCatalogSessions": 1,
+    "all17CapturesExit0EOFReapedWithin30SecondsAnd256KiB": true,
+    "NodeClientWallSeconds": 15.457214045993169,
+    "NodeOneIsolateNoWorkers384Plus16MiBExit0": true,
+    "extraAuthOrControlPayloadRetainedByHarness": false
+  },
+  "operationCaptureQualification": {
+    "capturePin": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OWNERSHIP_CAPTURE.SAFE.json",
+      "bytes": 787,
+      "sha256": "74702761916e5321b2d89b07bc7eed305eab67ad3d289f2ac11c37b406e12f8e"
+    },
+    "logPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OWNERSHIP.PRIVATE.jsonl",
+      "bytes": 418693,
+      "sha256": "1d7a7adc0848663c07e807a9e5b1d7f0e209c5b9b7902f09b4c33803941c736b"
+    },
+    "logClosedAndNewlineComplete": true,
+    "logBytes": 418693,
+    "maximumLogBytes": 1048576,
+    "frames": 129,
+    "maximumFrames": 256,
+    "boundaryFrames": 81,
+    "periodicFrames": 48,
+    "periodicRPCs": [
+      1,
+      17,
+      18,
+      26,
+      27
+    ],
+    "all81ActualMarkerAndACKPairsHashedAndBoundToExactFrames": true,
+    "nodeAndWorkerMarkersEqual": true,
+    "exactRootNoncePreparedPIDMethodsOrderAndEdges": true,
+    "allMonotonicClockAndNodeACKCausalOrdersChecked": true,
+    "eachUStartReturnAndVerifierEndMatchesCorrespondingStep": true,
+    "samplesAreBracketedNonAtomicAndMayStraddleEdges": true,
+    "partialVisibleFrames": 0,
+    "workerProcessReadErrors": 0,
+    "workerProcessRows": 1290,
+    "uniqueWorkerPIDStartNamespaceIdentities": 10,
+    "maximumVisiblePIDs": 10,
+    "maximumCensusGroups": 2,
+    "roleObservationCounts": {
+      "observer-worker": 129,
+      "postgres": 129,
+      "postgres-descendant": 774,
+      "postgrest": 129,
+      "node": 129
+    },
+    "workerPrivatePIDNamespace": "pid:[4026532380]",
+    "workerBootId": "83caaf76-2bf6-44ec-88d6-c728076fc11d",
+    "workerKnownDirectPIDs": {
+      "node": 45,
+      "postgres": 8,
+      "postgrest": 27,
+      "observer-worker": 1
+    },
+    "allVisibleProcessRowsPIDStarttimeNamespaceCgroupShapeAndPGAncestryConsistent": true,
+    "maximumFrameReadNs": "16107041",
+    "totalFrameReadNs": "979021235",
+    "totalLogAppendNs": "278786738",
+    "workerAndNodeObserverOverheadIncluded": true
+  },
+  "namespaceQuality": {
+    "workerStableReadableVisibleFrames": 129,
+    "workerNamespaceCompleteClaimed": false,
+    "workerPrivateCgroupPaths": "0::/; not an absolute host-cgroup path",
+    "hostCensuses": 145,
+    "maximumHostFrames": 220,
+    "hostCensusMembershipReadErrors": 0,
+    "hostUnstableMembershipFrames": 0,
+    "hostProcessIdentityRows": 643,
+    "hostUnknownIdentityErrors": {
+      "PermissionError": 643
+    },
+    "hostProcessIdentityRowsWithNamespaceOrStarttime": 0,
+    "hostWorkerBootAndTickRateAndDedicatedCgroupInodeAgree": true,
+    "hostWorkerProcessNamespaceReconciliationActuallyAvailable": false,
+    "completeAllDescendantMemoryCoverageProven": false,
+    "reason": "Every643 host process identity read was PermissionError. Host census retains membership but cannot bind its PIDs to worker NSpid/namespace/starttime. Worker samples remain valid for their readable visible set; unseen namespaces/helpers or transients cannot be declared absent.",
+    "scope": "This is the source contract's explicit UNKNOWN limit, not a reclassification of the functional27RPC/closed-capture PASS."
+  },
+  "nonBlockingQualificationFindings": [
+    {
+      "id": "NS1",
+      "finding": "Host process provenance unavailable:643PermissionError identities across145censuses.",
+      "impact": "No complete host-to-worker/all-descendant memory reconciliation or exact kernel-peak decomposition; owner remains UNKNOWN pending actual analysis constrained to visible evidence.",
+      "doesNotInvalidate": "The explicitly scoped functional/integrity/capture PASS and process closure."
+    }
+  ],
+  "closure": {
+    "parent": "helmut-meter-memorybudget-e88e5c760674d9d4b4a6b051",
+    "parentInode": 15488,
+    "workloadCID": "41fea5bc96fe3809bd2068b0bc83805a0b8d670256737f7b33b9c982c63e63ed",
+    "PostgresExitCode": 0,
+    "PostgRESTSignedExitCode": -2,
+    "PostgRESTNarrowOriginalPolicyAndLogEOFQualified": true,
+    "NodeExitCode": 0,
+    "workloadContainerExitCode": 0,
+    "workloadPIDAfterExit": 0,
+    "allOwnedDescendantsEmptyThroughLastExit": true,
+    "allMemoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "sourceFullManifestPreserved": true,
+    "setupHelpersExitedBeforeWorkAndAfterLastExit": true,
+    "lifetimePeakBytes": 1032052736,
+    "peakNeverReset": true,
+    "wallSeconds": 42.54281223000726,
+    "cpuUsageMicroseconds": 41084965,
+    "afterExitMemoryCurrentBytes": 390524928,
+    "residualFileKernelChargeDoesNotMeanLiveProcesses": true,
+    "minimumSampledHostAvailableBytes": 13900759040,
+    "continuousHostFloorProven": false
+  },
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 175061,
+      "sha256": "f9c8bed05e9cc9b3646bdf3555fa2d9aa7ba122a3d3a2f36a4403f28d3e086a9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/ACTUAL_RESULT.SAFE.json",
+      "bytes": 9975,
+      "sha256": "b178e8a5cb25e5731d2072186424c4207366ab005246a62d7cd7b47d91f2a897"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_AFTER.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "5d6a0736241c969fe8f88cda877a4f6e6775fcb9e41fb4833291251d653a4070"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_AFTER.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "2c3567ca0887434f6cb48e88f8c1529e004dac8bccaea2d31bbfd3b5613daa73"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "ff4f49a835a38157c8eb4100bd49a08dcc684d51f8002ac12cde3f3c93fea405"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "ad5a2ab1743e23087315ce28a4679121cb76c56d3fe8313ec35ef76fe829f4c7"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "053ba373bd1ebd6827fc4905e594fa283137337ed5f1d3bd1ede57100d546940"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+      "bytes": 59470,
+      "sha256": "04907186c542f8c80c21231244410581f4f9b9c07d07350d62e0cbf33f47fa63"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_SELECTED.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "64e833afdfc32b0bccd29d1540598dd1fc6183043e7f281ea66715f1c941ff96"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_SELECTED.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CATALOG_SELECTED.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CLIENT_CONFIG.SAFE.json",
+      "bytes": 677,
+      "sha256": "d8fc477b3f0473c1fdc3a101974cf05d8904da2fa66351a37051fda9de2456d6"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CONTROL_CACHE.SAFE.json",
+      "bytes": 131679,
+      "sha256": "f69ec76385c168207011f80eddfbed032b7956354204f7336c38e1e6b31b3264"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/COPIED_MANIFEST_VERIFIED.SAFE.json",
+      "bytes": 192,
+      "sha256": "73c31131babaaa03713986672e191bfbe79d04e045d78cbefa219cb57ff416dc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CREATED.SAFE.json",
+      "bytes": 204,
+      "sha256": "d372bec231eaf0268ca7446a5fdf5c6c6d5bddf5045e869d639bd9934086265e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_1.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "4c692dcb8ed1fc302fc45fcef99f383b0e363c04b2e7f3aa86b98409b089fcbd"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_1.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "a7e01774515140e54dbd2b8fad5d50e628a7438f6377f5cabd60865ee49d2b6c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_1.OBSERVATION.SAFE.json",
+      "bytes": 4564,
+      "sha256": "966beaaeaabadbaf070892e1cbd902d4fefc417831066cf76fe8f9563575f5e9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_1_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "c32db393e6002e93582ebbb14cfed8a066002eb7774ff1fe8c83b7357757e434"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_1_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_1_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "290c7a513784b4115dd72aea88578833cb09f233733db31a7864bf9768c45c63"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_2.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "e04f8fb7a44a2cff75877d84a643db7a2c1dba0d8198ca28111af031bd31b5dd"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_2.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "66f94e6d65dc57a88dc554edcd9a7f431d6da06e9569b0ff83e52baa137c7463"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_2.OBSERVATION.SAFE.json",
+      "bytes": 4576,
+      "sha256": "62b858b1388f3b08c44f5d7e246da2481a7da9ad7d1e16a613c67fc58ca3c859"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_2_SQL.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "9886adb46602a22f2758dcdcb8d6f55884f88e912f4d263635617ba87dc7f2bc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_2_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_2_SQL.stdout.PRIVATE.txt",
+      "bytes": 523,
+      "sha256": "5b162526fbea5002d2575f3b576e123b2a9a69dd071afddc0dab21e327529c8f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_3.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "de573b5041b007d8ed0d01e921f2bbf538ea4e42e5c00f44f566e8260fa641c8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_3.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "d3476855f3af1daf89deec41f659891f11b2430d8f3e3396ade1791034025449"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_3.OBSERVATION.SAFE.json",
+      "bytes": 4579,
+      "sha256": "17f459c632b5f061b07a28054fded6c6ea515c7c0f4d40a23aa804517baaf294"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_3_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "f45ce945ba41defc06e3d10ae8d53a930b662b306e26cca51ce602c5530cc6ac"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_3_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_3_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "a8324531396eecece0d48bfe4c4fa30a5312611570fc788601dc19793a56a10a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_4.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "2654c026f25acdadef62e79c180ccbcd9b237f846d45a25a7d93a2e167700fe1"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_4.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "6cc593ad397c87e6fd4d28f754c8674702a67b1df90ebfa37ea9ea82ad260aec"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_4.OBSERVATION.SAFE.json",
+      "bytes": 4578,
+      "sha256": "6a2a8d1134fa390e59e17991b6b0fe949a39c5af85a9875a0326e4df75a73593"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_4_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "8d38cc176cc9726ce49bf4c09c83ef85e0a1d0156e40fc82cdf4e5ae57d33838"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_4_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_4_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "78fcd179232a29018a2977cd1f289a7677033a264b6d4f2b3a5ccc1e9068fc1c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_5.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "8d664d63f382d90fc7e396ef1496aa008ad0798953cf92b835b25d7ec608f2d1"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_5.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "c55ee65f042a6e1752079982528599f73d67762318d5d0d3f837bfc31aafbd60"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_5.OBSERVATION.SAFE.json",
+      "bytes": 4582,
+      "sha256": "92baa19854063c9529bd5a5a80f9d194c028aa7147f1d4eea51d89327a58fd85"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_5_SQL.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "d9abdba112338a15df25e5c07fd8e13542e92d33cd8bb85189f9738e8b4ceb5e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_5_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_5_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "c63a967d201abe950a8c5aa526d393993d8ae2f86d091b86d1b83abc1b7b83de"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_6.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "b94976cab5917f88002bab3812feb6d0a29c6d9bac298ce095e5eecd916d70e9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_6.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "755147320123afb3f9e7f2b27569dbb29372267337d730ad75441dad92d97617"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_6.OBSERVATION.SAFE.json",
+      "bytes": 4583,
+      "sha256": "98e156125da02cba8835872382ce4935e9786747743fd0ad5b53bf4b3dec4369"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_6_SQL.CAPTURE.SAFE.json",
+      "bytes": 292,
+      "sha256": "890146e34caf35d0a51782a7055d7ecec3c869b807978a7af679f3f218e76d6d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_6_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/CYCLE_6_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "071a16140aafc0d7c7206418caec203cb868c12838ad80c26194c469501221f8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/GRAPH_SETUP_NEW.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "8a9f4e64cc5589231b0028f7c16cbc338df1b8a761f04723a9de05965061475d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/GRAPH_SETUP_NEW.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/GRAPH_SETUP_NEW.stdout.PRIVATE.txt",
+      "bytes": 490,
+      "sha256": "04d4d662040647e0956a1a57dee893d4b08c2832f722842c7d07c751c7955844"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/NATIVE_TIMELINE.SAFE.json",
+      "bytes": 658115,
+      "sha256": "1fc58d20eb7e53eb1aacafdb7cfd09cd7b596a3c999818e25292cb923f8e5b0b"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/NODE_CONTROL.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "0b40172fc13f8038b6ac61d4be0445e4c24f42fc209ef7a5f078ac9f1cf0daa5"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/NODE_CONTROL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/NODE_CONTROL.stdout.PRIVATE.txt",
+      "bytes": 131679,
+      "sha256": "f69ec76385c168207011f80eddfbed032b7956354204f7336c38e1e6b31b3264"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OFFLINE_AFTER.CAPTURE.SAFE.json",
+      "bytes": 295,
+      "sha256": "0514132b00e8831708724bc4952eb1faa63148bd922cfc0e4ae86f89340627a9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OFFLINE_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OFFLINE_AFTER.stdout.PRIVATE.txt",
+      "bytes": 2272,
+      "sha256": "f32ed73bafe920650e153a0426f26aa3afd398520ba5978614232a09b8bbe168"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OFFLINE_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 295,
+      "sha256": "7e5d2629ac25f185f77378f2798895e95c3710fc741c4719269752cd6ff21256"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OFFLINE_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OFFLINE_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 2272,
+      "sha256": "5f55f06d598a16cf87c740ffef56c5ac1b12f020d5f672c5a18cb6ca395a95d6"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_1.ACK.SAFE.json",
+      "bytes": 229,
+      "sha256": "d72eaf6dfc2e48a8bca6551258142611921a2a4ce43ec2ec8a56c704a4136ffb"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_1.MARKER.SAFE.json",
+      "bytes": 237,
+      "sha256": "954282c02d53ae3388e6f4d482affea5d560a130745b388998c6f18a03775cbc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_10.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "9a630aa668287a4803ce363a1561e9896f82675985db837b765d2b265e9c9818"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_10.MARKER.SAFE.json",
+      "bytes": 245,
+      "sha256": "2b582b47066bc6773803cd513419e3b93ef5d73edb8ab01ae41511e46641e035"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_11.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "7729e613fefe4a4a30c60c9345520840ca32ade38a2cc63508802909f7f3908a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_11.MARKER.SAFE.json",
+      "bytes": 307,
+      "sha256": "de5687d72199e5d7e0a0283ddf4ec1cb0eb46dc8c2939eb09a66c0a1dd1d56d0"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_12.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "486abdee222eef7a0b5f648a64007c8683b1b446fda49730b2fdc2c57fafc473"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_12.MARKER.SAFE.json",
+      "bytes": 341,
+      "sha256": "bd6345f901d9a77ca156e94fb2e1adf504c9a7d428daf343c13b1716c38a1fff"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_13.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "f2b88144cef52d9a05632e6df3c0b499f714c5ace6a9e55bd19009e5fef44ddc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_13.MARKER.SAFE.json",
+      "bytes": 245,
+      "sha256": "696e4575517dfbc83fe89320bfcade6b840abb27f16244b89a576d04f3bbc9f2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_14.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "3f205497b65ea0f4277a6a36df2c6bbddb3e1a63f5fa5397de007c25f40efe4d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_14.MARKER.SAFE.json",
+      "bytes": 307,
+      "sha256": "5c998e446986ef3451dfd5b011b8b8b46f9cb94d98070a65207891ae2565d473"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_15.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "96414a985104ae9b080a71f8c0b1610f0f656ab1b5ed7288670743ee0d2f5ca2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_15.MARKER.SAFE.json",
+      "bytes": 341,
+      "sha256": "96cff4425dcca53b5cc5780303cfc3f1812f80c9671078bed7fb4f638c83fc4f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_16.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "666b02614c3cd846ab8e520dc1c711bd34d29cf86d0b4ae2041ba230dbc6c8d4"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_16.MARKER.SAFE.json",
+      "bytes": 245,
+      "sha256": "5fa360a9b5dc3020452a179342a15b25d4d5f3f5bdbc493d647574d6c69a0fd8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_17.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "ba4f324422e9c2e47f6427dd0c3bbe4347491429f6e04dcdeb3e7915a60237ea"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_17.MARKER.SAFE.json",
+      "bytes": 307,
+      "sha256": "9f58bd96e4324b88ec8f38ea9f0cdffe21dca6039e33c5bc445ef389ffa2adf2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_18.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "76b331fce71ae7a9ee7f64adddde8396b7478288d5d6a7ac46b0529a12092316"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_18.MARKER.SAFE.json",
+      "bytes": 341,
+      "sha256": "afbc70bb9b67a29ae3119cae1c7760a66855c6198404660ab4a1a71795a33b96"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_19.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "4a45fc35a66a1e5bf115a0dbc4d39e40853121c80f7a074f060d4b7b303b65f8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_19.MARKER.SAFE.json",
+      "bytes": 245,
+      "sha256": "fad8736243c5f0cb1acbf6c89632778417cb7d7f05c75ba2457072e79cef8a07"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_2.ACK.SAFE.json",
+      "bytes": 230,
+      "sha256": "4b51b17dbec71c02788fa5fecd4ed7097d69adc9854e05fb5f7d65d462bddc72"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_2.MARKER.SAFE.json",
+      "bytes": 299,
+      "sha256": "e920930426ac88b75955a584cd3b5f1cb4bcae6c919a8c6292b52c59d52163a2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_20.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "08d7f5ebc7733d9cfdf767f8d6b906329ef44235024caa8625c9d67e9c6b65c0"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_20.MARKER.SAFE.json",
+      "bytes": 307,
+      "sha256": "e142ffdf705ea884b9de3a731e3ed1190f7adf4e6198233ab4ed55f8a162a9e2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_21.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "13302defaf039085928f2d2dad063dfb748e1ac7448273b37ba32596d89ad064"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_21.MARKER.SAFE.json",
+      "bytes": 341,
+      "sha256": "643ca3ed997d7866021d7ab932862d9ddc6ed080e66a2f02da0cdc167416ba64"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_22.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "20f426e880fe62da548810976b5b43ca2dc88f390ad1861598ba30aad652b46f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_22.MARKER.SAFE.json",
+      "bytes": 245,
+      "sha256": "350ae0d9341e3837f572470820e490c451730b1ce8da9e7aee48a44130b0b105"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_23.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "967afa5a48d24e8f733e39e0df344852248d886352e2e91f3a5044ab40221377"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_23.MARKER.SAFE.json",
+      "bytes": 307,
+      "sha256": "4bfdbf61fc94216cc33e1fafa7ddc4822dc25718118471431089483afb0688e6"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_24.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "aa2e0abb8aef3334f0d791f0d356e097b3c63572b87bd1e4572978b391d83490"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_24.MARKER.SAFE.json",
+      "bytes": 341,
+      "sha256": "957989af966833b0be1b2e12ab345a486d31ed069cfd9ae53e13816b62043da9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_25.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "2a92ee41e287207a73b53aa991037a33608322255b0b8f8c94f1fcb0db05a6f8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_25.MARKER.SAFE.json",
+      "bytes": 238,
+      "sha256": "a3efc92a5afff577ef2d4dedbc00ff81ae910be9fbdc3825bb7816bbfd73730a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_26.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "6aa04e4c1a0cbce762f8be4a8e2ab435cc7dda0643d4a43b0b315f632ab382e7"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_26.MARKER.SAFE.json",
+      "bytes": 300,
+      "sha256": "10e97c0faab86a1a6a10dee926a427ddeaa860f38b4f4b25ffc447129140717c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_27.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "b749900fa1d365a741533972131a113197a53467e25a6af12d97467106ab21af"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_27.MARKER.SAFE.json",
+      "bytes": 334,
+      "sha256": "f39126a055c5c5ab0a15bcdc16e10d51bbfd5c1e103fbffaad99a9ae34c13ea0"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_28.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "f2da6696d05211fcb387602617835f88cf84d54f82cf64d1843ca1c1f20119c9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_28.MARKER.SAFE.json",
+      "bytes": 240,
+      "sha256": "a372f1bd3df29437816f1a89a973548c262c6898e0362e7889dcd8b011969980"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_29.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "d3b93faaf3a3cc639b32018a5c119f38e8aabe21fbc7b26ac754c2e18b300382"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_29.MARKER.SAFE.json",
+      "bytes": 302,
+      "sha256": "8fe2cf6fdea3d00d910b660d5cfec6d9b01a60586629f729898461561695e008"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_3.ACK.SAFE.json",
+      "bytes": 230,
+      "sha256": "022ef4051ed9f4d092d62166fac8a5e194281664e3b9e5ab672b051f1ac72e4e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_3.MARKER.SAFE.json",
+      "bytes": 333,
+      "sha256": "75132184141faed2aa3d47472af716ff08341eae8d1ee4937d6d103084d70367"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_30.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "4977cae6dc18e5e78097d426a3a09675b03307ec1e5803fd394998348ce939c0"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_30.MARKER.SAFE.json",
+      "bytes": 336,
+      "sha256": "c3b0bef055c9929fc8dd70a27445d350fabbd6f1480c81df102c05b3f0c94320"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_31.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "6cd153196f64f2ff821f2603b6d3e65ef051bb0f05240cf1e976d6e74ae747d6"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_31.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "a6e273928fb9efa70226911233a88804b2b8c345325070c23725eee8bb53e39e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_32.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "db195eb59f97211dbb037c6781ab3622ad9f48a2d89c679b9194078c45b6bf5b"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_32.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "c6e226b8e45817c7ac79060c7635329d1cafd6efd3daf60517d74c3f93145a4c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_33.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "5292774978a1deba10172c0684e9884979e2e7fc268aa64bc8eb343c9248d331"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_33.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "a9b6d8fe22447544b843493e39736360143d42b865b5a537c063db662da7ccf3"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_34.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "a77dffc1b3e6f7d2153507a009d75bf9f0d1cf63594f7ce2f1f332e570ccee7d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_34.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "c7462ebe8acf0096f513aaac0e46bb39764c8b07e22141e34d6bddc3fe065007"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_35.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "15e7e226fa50225a3bd9e6e5380ee46370387f5b45b55ec060f2662ea55c7983"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_35.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "aeb243edc191c78acc955ef8886233155289194e3d9c59eac625eb7dfe84ecd0"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_36.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "90b08745d90e1a8333717f0d4df0904b5d2ec735a5050bd07d320c48d9a27d3c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_36.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "879932103fa6984dd6024d7603b1a5f09790e53bc23bacde1f2489830d16f291"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_37.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "2bc632c969598533dff76fd2fd49b48dd6b28ad69484536ca12b8e1159a7b800"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_37.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "9800c67773758401bf82d0a5a2245d57880c230ccba91dfda03de5f0047d951b"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_38.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "57a2dc78593634f82e4e43b20c1eccc416468dea03efd333c7fa7f9330d30e50"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_38.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "e3017394486dbd0fbf51debafb1dac1f8d8277c74d642c71b1e1841dae1257fb"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_39.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "66728a53e348c6ca588c47f197f7e387effe767fb02fc5b9d7641b6ecc4c5eb5"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_39.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "0d87c773b398311a32ccc7a2f57bb31534738e6ace236c4d59d62577e7bbf15d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_4.ACK.SAFE.json",
+      "bytes": 230,
+      "sha256": "88534302140831e93f39c8355efd407c8d1705cd45d34d6bb385c18fcb154450"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_4.MARKER.SAFE.json",
+      "bytes": 238,
+      "sha256": "5b9a119eea9abcab042ce501e94de53a4dc1a507fc3c0267d2adfff922c5ac59"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_40.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "008a5ad51e79efe0bb04db93980ced72d97e15b903a23492d152532c0fa08dbf"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_40.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "56c7c85fc24612832fbb4e3727bf0e8bdcc638d94580cd5b25d22000c52e5824"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_41.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "771762a0ca9650c982b7f8fd23cd60e7b6cdd65a9124f5ad859cc6db8a092ae8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_41.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "2a18d9b1d35b875e4945a5a4c77d32f3f305240909d2cfc89531a4f76bfe74ad"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_42.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "56f78e1614116ca72dce653e2c6d6eecafcb3b9dc0db843cbd4d57ea9f460d18"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_42.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "0a252a0f0683446185a6bd9499bda96fb67b8a26513249a695dc67402e628d77"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_43.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "fd408254d170f7bd752fce564f6122f98d23b51c1bd481a15f1e3f4716692d1f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_43.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "f0b81c9a605d7ea6c43598665ef1de61db61c10babd95b05eada0cf8c855b980"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_44.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "e539fdca13c064bee1522c0dbda2fd2291c60fb50e603e0e8c6b4a026f6e2e7d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_44.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "15d0d6cb281727414d45ad569dd6165ae0701e05ee756946b41375523ed1e50f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_45.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "5760c490ad9d30b990621a5f9507858ebb496566ffdde8e037b9d5466a4347a2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_45.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "dc55f56d646a65a1075e783f1ecae43ac710e128263f38f073e44c36cd808642"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_46.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "c2e2bb184394ff66fd3d47480ca268333f4fabccd7057219286b4f11cfb72746"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_46.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "2501b5950530bf0909ef1c69caeb0cec11fc8e2fbbfe626a03dd35de432ef5f3"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_47.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "3fd519b01d79956f18f6faff5f15d0c1b1c14a7f8b6c997d390b855303846082"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_47.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "4dd2893d61b861a0afd698f15a98727c9731b27357d7537fb36d0d5321e3d59f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_48.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "36ce27e3308bfdf14f305b369f8760e9db74b0746ae0b94f036d91a6ef547e65"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_48.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "1826d051417a5d6825646a2b10d4d691cc060172122686a5a164b701e4a35576"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_49.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "ab235ec6eafb18ebc48fe16801ee748df47278475b3e26e65ab51e8049f94fee"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_49.MARKER.SAFE.json",
+      "bytes": 239,
+      "sha256": "311e9e1997ccd0374a577b1ba633e8f3e67b3a8835e58149aaa05a13c8910efa"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_5.ACK.SAFE.json",
+      "bytes": 230,
+      "sha256": "1875f9e41e7dd4d9af7671e0fc0ae222d03e2db307f76f5fcea56890beb49e74"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_5.MARKER.SAFE.json",
+      "bytes": 300,
+      "sha256": "650f582bd1609fc0b34846226b03d8eb4fb9c24481ed59398dbd7bcbbbba482a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_50.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "ca972c3a2ae9b588c53adbb63777ff774fae60b2247d7299727be4d951a29ccc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_50.MARKER.SAFE.json",
+      "bytes": 301,
+      "sha256": "8f801a304d3d89aea0f2a0319400a43b55e4e4d8c313e3a140650d77b3f2c959"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_51.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "8d1a7e86a280b22bcf55089c938e7cb224a152aca43c5bacf61ab7fd5731ff6e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_51.MARKER.SAFE.json",
+      "bytes": 335,
+      "sha256": "1694afc64dcc7d84f156973319b7a4118f3d72d9eafe82d842921dbc1eca49fc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_52.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "5a5a1fe917a79e10e76ff5c7ed8d6685bdd35f60575c616b108e746764cffbeb"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_52.MARKER.SAFE.json",
+      "bytes": 240,
+      "sha256": "fe3c7f8a36fb133c930e0ff4664a6d44700cf85ed0908264c7b90f9f15ab1145"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_53.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "f04b37b5ca41367193f567d4a5f872e4e7e1854bcf97014e38f131ce6db044f4"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_53.MARKER.SAFE.json",
+      "bytes": 302,
+      "sha256": "b22dcbbf626ce986754f2a4381f4b43dc0a67e819f7190a90d1de45964ce4b7c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_54.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "a2a959638cf9d70bdd0e5a65c61cdb88904f705d10946c2e4a7a46fe416036a8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_54.MARKER.SAFE.json",
+      "bytes": 336,
+      "sha256": "36ee062d3334d0ea98efd64a895993ddc4b850d089a22ecd0423dc345e9ce03d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_55.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "a8f477a2232a2a51d22fb9c8d58594af544663cb77eaa2deab234451ad68f8a2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_55.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "9086d1d7b4549a93631b76acf1972f64309547b8cfb1cafcdff7cda30dcdaf66"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_56.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "ee7f762f9bcd6b37602ff9da9bfa00e13ab5561c432b347e649982c6247ee4e3"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_56.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "54d199689d16ba1ed12a8fe1a00132d05034cc3baaa4a39cc71820f48f76b192"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_57.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "ef17f90f68f6eac0525bd8e857342fe521de47c34f839f49b1f9977de819de0c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_57.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "c75d60c3b306839473cf43166e20865159df559bd4e878257b7a1a23321fdeae"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_58.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "9564e1ecec47a9e00fc696906883e0977ad7ad48bdd13403289aff45d0ed4cd8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_58.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "923a0d5075773386406e84b6079036a628123fc25c32c18357108d5c2fb53b5d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_59.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "dee49343735d63e65de7408a9b9ea15efc69016b102402c07bd895c339f08ff6"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_59.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "4c3cd152b594edc2eb2459dfb870624f4038125f35e2d73712f9aac19d6f2497"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_6.ACK.SAFE.json",
+      "bytes": 230,
+      "sha256": "9a903ebf8e172f2edae552dccf88f986540a03275ac5cff26f37e0c77b9a4537"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_6.MARKER.SAFE.json",
+      "bytes": 334,
+      "sha256": "0a6a36c9a9f69716eace517c7b44976e1f044550f19bb704b7dfa9d1f681d170"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_60.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "6f048bf44fb33ef7909a78a217e7e3c8726a61e4a529277f0581147aae8c18d0"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_60.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "56afb34ee7f6ddee676cfd90241b2af7f35cedc9a492006dec0dd4fa261974ca"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_61.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "314e5b1a5e684891eaa746e05d2f35592729c0a89adf56f7944c2ed8983ff5c2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_61.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "4a3c97281ff2adba79f80f72ca32257b31519a2741c0b2a45bf113aa1c69b3aa"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_62.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "03954d97b7d233ca671c2274e7e73934de1c695ccf62e630fadc34bcbf3c946e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_62.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "1e833244233fbd2156466de3ab0810d60a384c65caf64ad6a7ca24a1525fc85c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_63.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "e95a259a8ef23c339c92dc598e408cf2ea4ad0f124a43d5ffa2c0cd698ba469c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_63.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "ee1081eb2912e39237d1145766107c8b3f1c979c6afe36a6956f8383d4800417"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_64.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "d4767a317bdad952b8a76e4bb57bc33707d6208acc10456abff5f77799653f4c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_64.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "673efcf7e54525a1033c9f80d6e692e9a76125ad18bcefafbf685c301cce7dd5"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_65.ACK.SAFE.json",
+      "bytes": 231,
+      "sha256": "1e342518f39613e437a7d24a2a21565a0c008e815889a5e6ad7de0e8e7f94348"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_65.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "a18244833eb93a672a5dec7b15c7c0f4e25bd4ab0fc0ee362affcd73112088d6"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_66.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "55e63c49d77f10b54a5235c3e7471eb6d81acbd20840e777d527f953412859b1"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_66.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "2b3b4ef47fe4a5db5a1ee284e6c49df00180e34bf78f9e070ad25ba391dcdbb3"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_67.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "26542c6fc124c72483f0c6efb998b33f4667660531d15ccd2d87fd0363781039"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_67.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "a37d6883c8d22189b1bd9c2e6bd7f9ff137afbdb6111f1bdf9470cba648ea1bb"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_68.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "85a6d44b72c7b6c9f46581f0eb38b46e95f4370636fa65c802e9f53fb9fa9f98"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_68.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "f907ad7b52dbedf6cd0b61e892c347b722db10340a28a5de2cd70612e99eeaa7"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_69.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "7e9910ad9ef21acb3bdd8c46e5744fa34bbc6a64a228d1149c9ca73447ea88fd"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_69.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "527c88fddf6f2dd22e2149223deb9b97c555a853d04483ac6d1a5f0fcc9a342a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_7.ACK.SAFE.json",
+      "bytes": 230,
+      "sha256": "211e7adcd1c514ce0c2f8f46d02c68edf9b1be8f95402a4e1865821809213468"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_7.MARKER.SAFE.json",
+      "bytes": 244,
+      "sha256": "ad36f9cdd47632301cf2156634060ad99baf5a681935325eb905c2425e033a1f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_70.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "e963cfaf80949494b7b2017173ad5014c8842da567428d9057b50539b519565d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_70.MARKER.SAFE.json",
+      "bytes": 246,
+      "sha256": "1f1625bed7cf564b4c10bca3224dbd5b5bd04222b573afbaeb01d76a536285c9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_71.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "db319af0d9d4a4c762cc9f0ce01be9fe04866f874d134761ab2997ef2c2e0d74"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_71.MARKER.SAFE.json",
+      "bytes": 308,
+      "sha256": "692f7767c18648a2214b8d8e52b833c0fb7f9156df1180a036553003a250f1dc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_72.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "f52923ef864bdcf14b04c912369a59ea0881c99f8bf15b94c4e16fdfa37d958c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_72.MARKER.SAFE.json",
+      "bytes": 342,
+      "sha256": "a50d3129f1baafe85ca9d8ff2e7efabeada40340033c85e245199fce4839b2cb"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_73.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "da6fd5220317b783cadb360d79b7df751b7e40eaf74550b29b57647a2a9538b2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_73.MARKER.SAFE.json",
+      "bytes": 239,
+      "sha256": "17abcf968aa8d290d3632564f230d7a2f37db40ea06b5d9282a53e910c14b545"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_74.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "c0dee8d96106dcf2ea303dc0e839a8938a0bdc6c2c3f0cdf8b3fb787059b3180"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_74.MARKER.SAFE.json",
+      "bytes": 301,
+      "sha256": "23eee6621ce016ae9967ddc209f5cc9b0c83a18db7d4148323e4d69157a717a5"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_75.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "31b40db5da802abdd834efe3c8e8efc682653ac7bf2819cd8e1d1f82d7726bfe"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_75.MARKER.SAFE.json",
+      "bytes": 335,
+      "sha256": "9cfd7656e0836303bec25bb8609a31084e45ae70816cb2d0e2f43d8a1973ae9e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_76.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "9dbb4a18aeb1abc41f7b8d379f7dd52b119fda37b603f47f718c1bbd4bdf9ba9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_76.MARKER.SAFE.json",
+      "bytes": 240,
+      "sha256": "85bc8220dd6b4df2995052b18f806824de171a49a80f73b40428518fdcf95447"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_77.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "b667645930505c1d4d30820f63750866a38617fbf0801a5e601b015b335b14b1"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_77.MARKER.SAFE.json",
+      "bytes": 302,
+      "sha256": "3463ca93ff5a9404dca6f1a623afd68fc5ed0759d0530d9b073f1b5eb6630ab2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_78.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "fd7e7ff2451def37b4999c21b663fe27baf21c0ddc0ccac9cb325ecd31d8e7d3"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_78.MARKER.SAFE.json",
+      "bytes": 336,
+      "sha256": "ff701dfe5c4019d58d21f7b24c2910355118d9d98154d7db862497eb2bdd0143"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_79.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "ab3c1762130358299ac4b544a0f6ceddd503c34a1422f86c0f3f65670b06b575"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_79.MARKER.SAFE.json",
+      "bytes": 239,
+      "sha256": "725eadccadca7f5a37be9514defbc556f544e1491ffaccfb71bba7ae023ade1c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_8.ACK.SAFE.json",
+      "bytes": 230,
+      "sha256": "b4778cedc0c77f336b85cd9518b275b0def48747a02a9c532eba90dbdac1514a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_8.MARKER.SAFE.json",
+      "bytes": 306,
+      "sha256": "a338bc689301ec2a7d85f591451683f5a767e8396af21be8342dbad42c410be0"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_80.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "04a28eb8f10ea66bd36916ff9416f2d08c61921b63f6ad0d86f7ce2fbb8a8a2d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_80.MARKER.SAFE.json",
+      "bytes": 301,
+      "sha256": "6547b08a5952e3e3965029f416faaa735d80d49590f073d851419c5189474409"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_81.ACK.SAFE.json",
+      "bytes": 232,
+      "sha256": "a88e232fd1181e475575525459bc614ebf2b9565ea026c9c04b6c70d9f7da255"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_81.MARKER.SAFE.json",
+      "bytes": 335,
+      "sha256": "997eee9742a996128eb455223ceb159f6eb901095d2371c45ed84ea3d9c29774"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_9.ACK.SAFE.json",
+      "bytes": 230,
+      "sha256": "833489515cfd3a47296444493a2953dfc5a87a3e4b9991436942c72b8477b5ef"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OP_9.MARKER.SAFE.json",
+      "bytes": 340,
+      "sha256": "7b290141dadc64d3294447341fc5e9970a3d7bc042d845e024233d274a52ee03"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OWNERSHIP.PRIVATE.jsonl",
+      "bytes": 418693,
+      "sha256": "1d7a7adc0848663c07e807a9e5b1d7f0e209c5b9b7902f09b4c33803941c736b"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/OWNERSHIP_CAPTURE.SAFE.json",
+      "bytes": 787,
+      "sha256": "74702761916e5321b2d89b07bc7eed305eab67ad3d289f2ac11c37b406e12f8e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/PG_LOG.PRIVATE.txt",
+      "bytes": 1193,
+      "sha256": "83d6e32e3e52ee6356b4145e5b0c911bbf9fca27ae52322e98414b1ec384f46c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/PG_LOG.SAFE.json",
+      "bytes": 348,
+      "sha256": "39df10882a4cd1e38d1e40afc128561b5ce9fd0ea82490d98a579afc0c68b3ac"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/PHASES.SAFE.json",
+      "bytes": 23300,
+      "sha256": "cf749494e808645e052311ddbcb5c9c4ddc1b018907a4e3f285ffedb7d060132"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/POSTGREST_CONFIG.PRIVATE.txt",
+      "bytes": 236,
+      "sha256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/POSTGREST_LOG.PRIVATE.txt",
+      "bytes": 632,
+      "sha256": "4ed6c19d5f17421018a78cac6c96ffebdc4ae4900df283c2f21b3e6a8b793551"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/POSTGREST_STOP.SAFE.json",
+      "bytes": 2543,
+      "sha256": "a92b6b10813936c91dc7aff860d33170ad0967cd4ae37633eba5d2ad11aa9cdd"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/PREFLIGHT.SAFE.json",
+      "bytes": 257207,
+      "sha256": "ac397f9d99d77bafaa368735bddd7ea169c5959ca3bbef70b3f1a43b0f14bf10"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/RENDERER_SETUP.CAPTURE.SAFE.json",
+      "bytes": 290,
+      "sha256": "20a689fbae15634f452b81b106041bd1bb97c7a91da02481ab37ca03b27cc35f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/RENDERER_SETUP.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/RENDERER_SETUP.stdout.PRIVATE.txt",
+      "bytes": 2,
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/RESTORED_ORIGINAL_JIT.SAFE.json",
+      "bytes": 487279,
+      "sha256": "e798edc8ff97a71af85c9167488266903c6ee13ea62a318a74dcff15939ce153"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/RETIREMENT_CANDIDATES.SAFE.json",
+      "bytes": 10300,
+      "sha256": "8745fe590aa9d072383b45e6a2891cf627b7dfee1b64dadd5b4f878bc47c3315"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/ROOT_ADOPTION.SAFE.json",
+      "bytes": 4312,
+      "sha256": "06832d800a4726b7a30b412f5bf83a48e630a3a8d0d5893d56c14d4d7a967517"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "ebda6a02a443f66302ce52777f404d424d878827ac6ca730a59109b97e97ccad"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "0145b6cb8aaf75004e20f7378775724cf1317a21e8bc2c1520e3bd951904a87c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "c63adae5a5ee01010506d8161a5f0a3e2d029717ca0a0c40c698307060b08132"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/STARTED.SAFE.json",
+      "bytes": 3710,
+      "sha256": "136ce182af9955df7a3dac173ccf37a2e954db44b83fa349d0e088d60893274f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/WORKER_CONFIG.SAFE.json",
+      "bytes": 293627,
+      "sha256": "039d45700c1ce6f544ff7515a04db68b1a87aa4a50798bc3ef31a1606f5e39e5"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/WORKER_RESULT.SAFE.json",
+      "bytes": 8098,
+      "sha256": "9289f60eedd7450bb0263a0a75feb377ee539ada327452d703a7abc35f244b23"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/native-budget-setup/HOLDER_CREATED.SAFE.json",
+      "bytes": 133,
+      "sha256": "8f6f2d13ada5ad2576c43ed40b19a19c51d331418d52b810b1ef9bf494393a6e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/native-budget-setup/READY.SAFE.json",
+      "bytes": 1848,
+      "sha256": "06572c0ab38ad048e13d7e00b8603b703302c67bea47012ac373078a028e5504"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/native-budget-setup/SETTER_CREATED.SAFE.json",
+      "bytes": 133,
+      "sha256": "1cbf0b6dd09e66a692321fc2035e416d05562f1e48e0a1dfa432bee417ef88e6"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/native-budget-setup/STARTED.SAFE.json",
+      "bytes": 1085,
+      "sha256": "02a97b8086217a24295e564ea35a8b7ee8577f6bf15fa7a7ede8c60cd6eb531a"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/native-budget-setup/STOP",
+      "bytes": 39,
+      "sha256": "b48ae18c51f17485a61b94b482836748f0cbd48c6ea20cae71f3a792402895a8"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/node-observations/HTTP_45_0.SAFE.json",
+      "bytes": 1286,
+      "sha256": "e7d01f45405d1c07674dfda425079de3753fe30f595a4f47215c9e2269e77014"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/node-observations/HTTP_45_0.STARTED.SAFE.json",
+      "bytes": 67,
+      "sha256": "ae0fcc98acc7721f31040d394d93db4660cfd12001ee013f6a90f374d32c4a0d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/node-observations/NODE_HEAP_45_0.EXITED.SAFE.json",
+      "bytes": 248,
+      "sha256": "389917a9a1e6fd30327d2c1ef04d48035a2200c3bd391c7952fd5a3270cc676e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/node-observations/NODE_HEAP_45_0.STARTED.SAFE.json",
+      "bytes": 249,
+      "sha256": "7acf0f84593519de31f8e120e6c064852210e67e8f16565b988d3bd0cc657923"
+    }
+  ],
+  "proofCounts": {
+    "smallClosedCaseAndBudgetAndNodeFilesHashed": 265,
+    "sumBytes": 3573051,
+    "operationMarkerAndACKFiles": 162,
+    "captures": 17
+  },
+  "acceptanceLimits": [
+    "Functional/integrity/81-boundary capture and saved-proof closure review only. No causal allocation owner is assigned. Root owns temporal/process analysis separately.",
+    "Common current/peak is not a sum of RSS/PSS/per-process HWMs; file includes shmem. No peak subtraction/comparison/RAM saving/plateau or exact decomposition is inferred.",
+    "50ms target is not continuous sample coverage. Reads, observers, ACK pauses, hash verification and natural GC can affect timing/retention; actual brackets and overhead remain evidence.",
+    "Source/lib/engine acceptance,179/fullmotor/full500/Production and any new test/workload scope are not granted by this receipt. All previous failures stay unchanged.",
+    "No deletion/archive authorization: separate actualPASS dependency/unknown-use/exact-target Root review remains required; canonical827a/originals/evidence/hulls stay protected."
+  ],
+  "actionsByReviewer": {
+    "readOnlySavedClosedSmallProofsAndSmallSourceBindingFormula": true,
+    "OriginalOrDerivedPGDATAReadWalkHash": false,
+    "binaryRehash": false,
+    "subjectImportsTestsBuild": false,
+    "SQLDBDockerOrNativeExecution": false,
+    "archiveIO": false,
+    "codeOrPriorReceiptWrites": false,
+    "writeOnlyThisNewPrivateReceipt": true
+  },
+  "ownerConclusion": "UNKNOWN_PENDING_ACTUAL_SAMPLE_ANALYSIS",
+  "kernelPeakDecomposed": false,
+  "ramBenefitClaimed": false,
+  "production": false,
+  "full500": false,
+  "eligibleForDeletion": false,
+  "resourceActionGo": false
+}

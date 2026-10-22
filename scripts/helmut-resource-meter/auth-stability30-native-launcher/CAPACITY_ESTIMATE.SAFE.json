@@ -1,0 +1,83 @@
+{
+  "SQLCapBytesUnchanged": 262144,
+  "admissionBytesUnchanged": 822083584,
+  "dedicatedNodeCapBytes": 1048576,
+  "estimatedMaxTimelineLogicalBytes": 1000000,
+  "evidenceCapIsNotMotorMemoryBudget": true,
+  "expectedCompleteCaseLogicalBytesRange": [
+    4800000,
+    5200000
+  ],
+  "expectedSixtyBoundaryFilesLogicalBytes": 336850,
+  "expectedThirtyRoundNodeJSONBytesRange": [
+    700000,
+    800000
+  ],
+  "historicalScalarInputs": [
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9",
+      "inputPins": [
+        {
+          "bytes": 8829,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/ACTUAL_RESULT.SAFE.json",
+          "sha256": "48e838ba4d974c7578f42ffe9895ad4cef693804f5fcfa815bdc45218144c9f5"
+        },
+        {
+          "bytes": 296,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/NODE_CONTROL.CAPTURE.SAFE.json",
+          "sha256": "a72779c2f1790d59d70790f3a29ad9ce2604b298c62dc4f716a3c255acb6bf0e"
+        },
+        {
+          "bytes": 83987,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CONTROL_CACHE.SAFE.json",
+          "sha256": "c6d518da20b5ee0152312564f21b79d65231e8a0c6d82e46a79cab4da74f7eba"
+        }
+      ],
+      "nodeJSONBytes": 83987,
+      "nonDiskLogicalBytes": 2655464,
+      "sixBoundaryFilesBytes": 33685,
+      "status": "historicalPASS27RPC_notNewEvidence"
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2",
+      "inputPins": [
+        {
+          "bytes": 8822,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/ACTUAL_RESULT.SAFE.json",
+          "sha256": "93cc3a247ff458275b815075592be30573ed91383ec3905cacb1938894b7999c"
+        },
+        {
+          "bytes": 296,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/NODE_CONTROL.CAPTURE.SAFE.json",
+          "sha256": "d3bdce128351e50009f37d05bc168f96b1669a4587e67209c637b5d7dd0e26ad"
+        },
+        {
+          "bytes": 83999,
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CONTROL_CACHE.SAFE.json",
+          "sha256": "e08fe5c0117a3de8524287edfeaacbd99c2ece1354f00db19388828cd9a54bbc"
+        }
+      ],
+      "nodeJSONBytes": 83999,
+      "nonDiskLogicalBytes": 2652839,
+      "sixBoundaryFilesBytes": 33680,
+      "status": "historicalPASS27RPC_notNewEvidence"
+    }
+  ],
+  "hostFloorBytesUnchanged": 8589934592,
+  "maximumHostTimelineSamplesUnchanged": 220,
+  "measurementNotRuntimeTest": true,
+  "nativeRAMHeapCacheAndDiskLimitsUnchanged": true,
+  "newCaseCapBytes": 8388608,
+  "oldCaseCapBytes": 4194304,
+  "oldNodeCapBytes": 262144,
+  "overflowPolicy": "FAIL; retain bounded available evidence; no automatic cap increase or retry",
+  "remainingFixedAndSourceManifestLogicalBytes": 2166323,
+  "resourcesStarted": 0,
+  "schema": "helmut-auth-stability30-capacity-estimate/1",
+  "sourcePGDATAPayloadRead": false,
+  "status": "READ_ONLY_ESTIMATE_NOT_ACTUAL30ROUND_RESULT",
+  "twoCompleteNodeJSONCopiesBytesRange": [
+    1400000,
+    1600000
+  ]
+}

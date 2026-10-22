@@ -82,12 +82,20 @@ async function main() {
       startsAtUTC: start, endsAtUTC: end, routeContract: {}, intents: [{ id: ids[0], inputVersionHash: P.hash("fictional-input") }, { id: ids[1], maxOutputTokens: 3000 }] } };
     const command = { mode: "D-R-500", slot, units: [{ kind: "DR", subject: owner, intentIds: ids }], drafts: [input], predecessors: [] };
     let auth = {}, stored = null, insertCalls = 0, generatorCalls = 0, retained = 0;
+    let counts = {}, events = [], fault = null, materializations = 0;
+    const bindingHash = P.hash("fictional-binding");
+    function observe(kind) {
+      counts[kind] = (counts[kind] || 0) + 1; events.push(kind);
+      if (fault?.kind === kind && counts[kind] === 5) throw Error("fixture-view-" + kind + "-rejected");
+    }
     const admission = { booksHash: C.booksHash(auth) }; J.install(auth, command, P.hash(command), C.controlHash(auth));
+    const installedAuth = copy(auth);
     const row = area => ({ id: `bf-${owner}-${area}-${today}`, user_id: owner, slot: area, generated_at: new Date().toISOString(), payload: {} });
     const fakeStorage = { synthetik500ProductionBackend() {}, loadSynthetik500ProductionCommand: async () => ({ command, admission }),
-      leseLlmTageszaehler: async () => ({ ok: true, used: 0 }), readAuthStore: async () => copy(auth),
+      leseLlmTageszaehler: async () => ({ ok: true, used: 0 }), readAuthStore: async () => { observe("control"); return copy(auth); },
       mutateAuthStore: async fn => { const next = copy(auth), result = await fn(next); auth = next; return result; },
-      readSynthetik500CurrentInputs: async x => x, getProfileFromDb: async () => input.profile, synthetik500ReviewStorageContract: async () => ({}),
+      readSynthetik500CurrentInputs: async x => { observe("source"); return x; },
+      getProfileFromDb: async () => { observe("profile"); return input.profile; }, synthetik500ReviewStorageContract: async () => ({}),
       getRenderedBriefingV3: async (_owner, area) => area === L.SLOT_ERFOLG ? stored : row(area),
       insertRenderedBriefingV3: async () => { throw Error("old slot-limited writer must not be used"); },
       insertSynthetik500MorningReceipt: async entry => Storage.insertSynthetik500MorningReceipt(entry, { bereit: true,
@@ -104,8 +112,8 @@ async function main() {
     try {
       C.admission = () => "fictional-boundary-only"; K.aktiv = () => true; K.pruefeStart = K.kontrolliere = () => ({});
       K.pruefeTag = () => ({ limit: 6000000 }); K.auftragsStand = () => ({ limitMicroUsd: 7000000 });
-      const modules = [fakeStorage, fakeLage, { pruefe: () => ({ eingabeHash: P.hash("fictional-binding") }) },
-        { materialisiere: async () => {}, lese: async () => fakePacket }, { ausPaket: () => ({ version: 1, mandat: owner, tag: today,
+      const modules = [fakeStorage, fakeLage, { pruefe: () => { observe("binding"); return { eingabeHash: bindingHash }; } },
+        { materialisiere: async opts => { events.push("materialize"); materializations++; assert.equal(opts.aussagenEingabeHash, bindingHash); }, lese: async () => fakePacket }, { ausPaket: () => ({ version: 1, mandat: owner, tag: today,
           paketId: fakePacket.id, profilHash: "b".repeat(64), briefingHash: "c".repeat(64) }) }];
       paths.forEach((p, i) => { require.cache[p] = { id: p, filename: p, loaded: true, exports: modules[i] }; });
       const result = await Adapter.productionStart({ operationId: op, commandHash: P.hash(command) });
@@ -113,6 +121,24 @@ async function main() {
       assert.equal(stored.slot, L.SLOT_ERFOLG); assert.equal(stored.id, L.laufId(owner, today));
       assert.equal(stored.payload.ausgabeBeleg.paketId, fakePacket.id);
       assert.equal(J.current(auth).outputs[0].positions.find(p => p.bereich === "morgenbriefing").status, "stored-unreviewed");
+      assert.deepEqual(counts, { source: 6, profile: 6, binding: 6, control: 6 });
+      const checkpoint = ["source", "profile", "binding", "control"];
+      assert.deepEqual(events, [...Array.from({ length: 5 }, () => checkpoint).flat(), "materialize", ...checkpoint]);
+      assert.equal(materializations, 1);
+      // A changed source, profile, binding or control at the VIEWS checkpoint
+      // must still stop before materialization, despite the preceding guard.
+      for (const kind of ["source", "profile", "binding", "control"]) {
+        auth = copy(installedAuth); stored = null; counts = {}; events = [];
+        insertCalls = 0; materializations = 0; fault = { kind };
+        await assert.rejects(Adapter.productionStart({ operationId: op, commandHash: P.hash(command) }),
+          e => e.message === "synthetik500-production-stopped-or-unknown"
+            && e.cause?.message === "fixture-view-" + kind + "-rejected");
+        assert.equal(counts[kind], 5); assert.equal(materializations, 0); assert.equal(insertCalls, 0);
+        assert(!events.includes("materialize"));
+        assert.equal(J.current(auth).state, "unknown");
+        assert.equal(J.current(auth).stopRequested, true);
+        assert.equal(J.current(auth).units[0].entered, true);
+      }
     } finally {
       paths.forEach((p, i) => { if (cache[i]) require.cache[p] = cache[i]; else delete require.cache[p]; });
       [C.admission, K.aktiv, K.pruefeStart, K.kontrolliere, K.pruefeTag, K.auftragsStand] = originals;

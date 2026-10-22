@@ -1,0 +1,247 @@
+{
+  "schema": "helmut-cold-digest-private-interface/1",
+  "nativeQualification": "NOT_RUN",
+  "differential": {
+    "file": "DIFFERENTIAL_ONE_REQUEST.sql",
+    "variables": [
+      "root_clone_receipt_sha256",
+      "diff_case_id",
+      "diff_pair_nonce",
+      "diff_role",
+      "diff_expected_outcome",
+      "diff_request_json"
+    ],
+    "caseFile": "DIFFERENTIAL_REQUESTS.SAFE.json",
+    "caseCount": 19,
+    "requestNonceMarker": "__ROOT_FRESH_PAIR_NONCE__",
+    "caseIdRoleOutcome": [
+      {
+        "caseId": "legacy",
+        "role": "service_role",
+        "expectedOutcome": "ok"
+      },
+      {
+        "caseId": "history-warm",
+        "role": "service_role",
+        "expectedOutcome": "ok"
+      },
+      {
+        "caseId": "history-cold",
+        "role": "service_role",
+        "expectedOutcome": "ok"
+      },
+      {
+        "caseId": "graph-cold-history-warm",
+        "role": "service_role",
+        "expectedOutcome": "ok"
+      },
+      {
+        "caseId": "graph-cold-history-cold",
+        "role": "service_role",
+        "expectedOutcome": "ok"
+      },
+      {
+        "caseId": "graph-warm",
+        "role": "service_role",
+        "expectedOutcome": "ok"
+      },
+      {
+        "caseId": "graph-warm-history-stale",
+        "role": "service_role",
+        "expectedOutcome": "ok"
+      },
+      {
+        "caseId": "graph-changed",
+        "role": "service_role",
+        "expectedOutcome": "ok"
+      },
+      {
+        "caseId": "null",
+        "role": "service_role",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "id-empty",
+        "role": "service_role",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "nonce-bad",
+        "role": "service_role",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "proof-bad",
+        "role": "service_role",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "graph-bad-type",
+        "role": "service_role",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "graph-bad-shape",
+        "role": "service_role",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "graph-count-mismatch",
+        "role": "service_role",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "graph-digest-mismatch",
+        "role": "service_role",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "foreign-id",
+        "role": "service_role",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "role-anon",
+        "role": "anon",
+        "expectedOutcome": "error"
+      },
+      {
+        "caseId": "role-authenticated",
+        "role": "authenticated",
+        "expectedOutcome": "error"
+      }
+    ],
+    "outputKinds": [
+      "bound-original-state",
+      "cold-digest-native-differential",
+      "candidate-ABI-ACL-and-data-unchanged",
+      "baseline-body-restored"
+    ],
+    "outputKeys": [
+      [
+        "kind",
+        "qualified",
+        "database",
+        "databaseOID",
+        "backendPID",
+        "cloneReceiptSHA256"
+      ],
+      [
+        "kind",
+        "qualified",
+        "role",
+        "expectedOutcome",
+        "caseId",
+        "pairNonce",
+        "requestInputSHA256",
+        "oldFunctionBodySHA256",
+        "newFunctionBodySHA256",
+        "onlyFunctionBodyCatalogDelta",
+        "catalogBeforeSHA256",
+        "catalogCandidateSHA256",
+        "exactWholeResponsesEqual",
+        "identicalErrors",
+        "errorSQLSTATE",
+        "errorMessage",
+        "resultTextBytes",
+        "resultNativeBytes",
+        "resultTextSHA256",
+        "historyReuse",
+        "graphReuse",
+        "proof",
+        "state",
+        "revision"
+      ],
+      [
+        "kind",
+        "functionBodySHA256",
+        "qualified"
+      ],
+      [
+        "kind",
+        "fullCatalogRestored",
+        "qualified"
+      ]
+    ],
+    "checks": "All four qualified int1. Row1 caseId,pairNonce,role,expectedOutcome and requestInputSHA256 equal adopted concrete inputs. Old/new function hashes match1644/4e2b. onlyFunctionBodyCatalogDelta=true. If expectedok exactWholeResponsesEqual=true,identicalErrors=null,error fieldsnull; if expectederror identicalErrors=true,exactWholeResponsesEqual=null,successful-result fieldsnull. Row3 fullCatalogRestored=true.",
+    "pairRequestHashEncoding": "SHA256 of exact UTF8 diff_request_json string, before JSONB canonicalization",
+    "largeResultsExported": false
+  },
+  "resource": {
+    "file": "MEASURE_COLD_03_VARIANT.sql",
+    "variables": [
+      "root_clone_receipt_sha256",
+      "read_nonce",
+      "expected_graph_read_sha256"
+    ],
+    "outputKinds": [
+      "bound-original-state",
+      "reachable-metadata",
+      "native-cold-control-result",
+      "target-transaction-temp-observation"
+    ],
+    "outputKeys": [
+      [
+        "kind",
+        "qualified",
+        "database",
+        "databaseOID",
+        "backendPID",
+        "cloneReceiptSHA256",
+        "expectedGraphReadBodySHA256"
+      ],
+      [
+        "kind",
+        "qualified",
+        "reachableNodes",
+        "payloadBytes",
+        "hashesOnlySHA256"
+      ],
+      [
+        "kind",
+        "qualified",
+        "resultNativeBytes",
+        "resultTextBytes",
+        "resultTextSHA256",
+        "graphSHA256",
+        "dataSHA256",
+        "stateSHA256",
+        "proofSHA256",
+        "componentSemanticDigestSHA256",
+        "requestTextBytes",
+        "requestTextSHA256",
+        "payloadOmitted",
+        "historyReused",
+        "graphReused",
+        "actualPayloadsChecked",
+        "graphNodeCount",
+        "graphNodeDigest",
+        "nonceEchoVerified",
+        "clientTokenAcceptanceProven",
+        "httpTransportMeasured"
+      ],
+      [
+        "kind",
+        "qualified",
+        "backendPID",
+        "invoker",
+        "deltaTempBytes",
+        "deltaTempFiles",
+        "targetWallMS",
+        "beforeObserverMS",
+        "afterObserverMS",
+        "counterScope",
+        "observerTimingScope",
+        "nativeQualification",
+        "full500",
+        "production",
+        "providerCalls"
+      ]
+    ],
+    "componentSemanticDigestDefinition": "SHA256(UTF8(jsonb_build_object(dataSHA256,graphSHA256,proofSHA256,stateSHA256,historyReuse minusnonce/binding,graphReuse minusnonce/binding)::text)); field names/JSONB canonical order exactly as frozen SQL. NOT normalized whole-result hash.",
+    "observerAdditionalWork": "Full graph component text serialization/hash and tiny key-only shape checks, identical both variants; no full normalized JSONB copy; extra scalar OFFSET0 hash projection.",
+    "rawWholeResultHashField": "resultTextSHA256"
+  },
+  "oldFunctionBodySHA256": "1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0",
+  "newFunctionBodySHA256": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0"
+}

@@ -1,0 +1,1091 @@
+{
+  "CASPairs": [
+    {
+      "additions": 0,
+      "after": {
+        "contextCount": 1796,
+        "freeBytes": 3871896,
+        "outputTextBytes": 6127455,
+        "outputValueBytes": 6397988,
+        "serverLogUTC": "2026-10-21 09:40:51.271 UTC",
+        "totalBytes": 32090272,
+        "usedBytes": 28218376
+      },
+      "afterOutputLogicalSizesSumBytes_NotAdditionalRAM": 12525443,
+      "assignedXID": "11668",
+      "backendPID": 54,
+      "before": {
+        "contextCount": 1744,
+        "freeBytes": 3857928,
+        "outputTextBytes": null,
+        "outputValueBytes": null,
+        "serverLogUTC": "2026-10-21 09:40:51.207 UTC",
+        "totalBytes": 25549984,
+        "usedBytes": 21692056
+      },
+      "binderUTC": "2026-10-21 09:40:51.087 UTC",
+      "expectedRevision": "603ee863-ecaf-43be-8b3a-8d6c5ca76d0d",
+      "netAfterMinusBefore": {
+        "contextCount": 52,
+        "freeBytes": 13968,
+        "totalBytes": 6540288,
+        "usedBytes": 6526320
+      },
+      "newNodeCount": 3,
+      "newRevision": "cb4d6e7f-e03b-4fd3-88f4-476cffd5bf91",
+      "ordinal": 1,
+      "phase": "round0.mutation",
+      "rawDiagnosticScope": null,
+      "rawProjection": null,
+      "requestUTF8Bytes": 2709,
+      "usedDeltaMinusOutputValueSizeBytes_NotAllocationIdentity": 128332
+    },
+    {
+      "additions": 0,
+      "after": {
+        "contextCount": 2064,
+        "freeBytes": 4264432,
+        "outputTextBytes": 6127455,
+        "outputValueBytes": 6397992,
+        "serverLogUTC": "2026-10-21 09:40:54.232 UTC",
+        "totalBytes": 33250768,
+        "usedBytes": 28986336
+      },
+      "afterOutputLogicalSizesSumBytes_NotAdditionalRAM": 12525447,
+      "assignedXID": "11669",
+      "backendPID": 54,
+      "before": {
+        "contextCount": 2065,
+        "freeBytes": 4292592,
+        "outputTextBytes": null,
+        "outputValueBytes": null,
+        "serverLogUTC": "2026-10-21 09:40:54.168 UTC",
+        "totalBytes": 26862032,
+        "usedBytes": 22569440
+      },
+      "binderUTC": "2026-10-21 09:40:54.050 UTC",
+      "expectedRevision": "cb4d6e7f-e03b-4fd3-88f4-476cffd5bf91",
+      "netAfterMinusBefore": {
+        "contextCount": -1,
+        "freeBytes": -28160,
+        "totalBytes": 6388736,
+        "usedBytes": 6416896
+      },
+      "newNodeCount": 3,
+      "newRevision": "2f8f6761-dcbb-4992-96e2-a1285bad0ee0",
+      "ordinal": 2,
+      "phase": "round1.mutation",
+      "rawDiagnosticScope": null,
+      "rawProjection": null,
+      "requestUTF8Bytes": 2709,
+      "usedDeltaMinusOutputValueSizeBytes_NotAllocationIdentity": 18904
+    },
+    {
+      "additions": 0,
+      "after": {
+        "contextCount": 2065,
+        "freeBytes": 4265760,
+        "outputTextBytes": 6127455,
+        "outputValueBytes": 6397992,
+        "serverLogUTC": "2026-10-21 09:40:57.105 UTC",
+        "totalBytes": 33258960,
+        "usedBytes": 28993200
+      },
+      "afterOutputLogicalSizesSumBytes_NotAdditionalRAM": 12525447,
+      "assignedXID": "11670",
+      "backendPID": 54,
+      "before": {
+        "contextCount": 2066,
+        "freeBytes": 4293920,
+        "outputTextBytes": null,
+        "outputValueBytes": null,
+        "serverLogUTC": "2026-10-21 09:40:57.040 UTC",
+        "totalBytes": 26870224,
+        "usedBytes": 22576304
+      },
+      "binderUTC": "2026-10-21 09:40:56.917 UTC",
+      "expectedRevision": "2f8f6761-dcbb-4992-96e2-a1285bad0ee0",
+      "netAfterMinusBefore": {
+        "contextCount": -1,
+        "freeBytes": -28160,
+        "totalBytes": 6388736,
+        "usedBytes": 6416896
+      },
+      "newNodeCount": 3,
+      "newRevision": "63d1cac7-0041-48a9-bc26-b68e514508f5",
+      "ordinal": 3,
+      "phase": "round2.mutation",
+      "rawDiagnosticScope": null,
+      "rawProjection": null,
+      "requestUTF8Bytes": 2709,
+      "usedDeltaMinusOutputValueSizeBytes_NotAllocationIdentity": 18904
+    },
+    {
+      "additions": 0,
+      "after": {
+        "contextCount": 2074,
+        "freeBytes": 4285216,
+        "outputTextBytes": 6127376,
+        "outputValueBytes": 6397892,
+        "serverLogUTC": "2026-10-21 09:40:59.976 UTC",
+        "totalBytes": 33291920,
+        "usedBytes": 29006704
+      },
+      "afterOutputLogicalSizesSumBytes_NotAdditionalRAM": 12525268,
+      "assignedXID": "11671",
+      "backendPID": 54,
+      "before": {
+        "contextCount": 2075,
+        "freeBytes": 4313376,
+        "outputTextBytes": null,
+        "outputValueBytes": null,
+        "serverLogUTC": "2026-10-21 09:40:59.902 UTC",
+        "totalBytes": 26903280,
+        "usedBytes": 22589904
+      },
+      "binderUTC": "2026-10-21 09:40:59.767 UTC",
+      "expectedRevision": "63d1cac7-0041-48a9-bc26-b68e514508f5",
+      "netAfterMinusBefore": {
+        "contextCount": -1,
+        "freeBytes": -28160,
+        "totalBytes": 6388640,
+        "usedBytes": 6416800
+      },
+      "newNodeCount": 2,
+      "newRevision": "1eaac9f2-b0fd-447f-813b-d92a6dd0bd4f",
+      "ordinal": 4,
+      "phase": "restore.write",
+      "rawDiagnosticScope": null,
+      "rawProjection": null,
+      "requestUTF8Bytes": 2458,
+      "usedDeltaMinusOutputValueSizeBytes_NotAllocationIdentity": 18908
+    }
+  ],
+  "authorActions": {
+    "GitMutations": 0,
+    "nativeSQLDockerOrProcessActions": 0,
+    "originalOrRuntimePayloadReads": 0,
+    "sourceEdits": 0,
+    "tests": 0,
+    "writes": "Only new T/heap-interpretation/READONLY_FINDINGS.SAFE.json"
+  },
+  "contextTrend": {
+    "afterFirstToLast": {
+      "contextCount": 278,
+      "freeBytes": 413320,
+      "totalBytes": 1201648,
+      "usedBytes": 788328
+    },
+    "beforeFirstToLast": {
+      "contextCount": 331,
+      "freeBytes": 455448,
+      "totalBytes": 1353296,
+      "usedBytes": 897848
+    },
+    "interpretation": "Small positive within-case endpoint drift across four CAS in the same backend; most first-to-last difference is first-use versus later snapshots. Three rounds plus restore do not prove a leak, a plateau, per-profile scaling or an unlimited-run bound.",
+    "lastBeforeUsedGrowthOverPreviousBytes": 13600,
+    "laterMutationAfterUsedGrowthBytes": 6864
+  },
+  "createdUTC": "2026-10-21T09:45:30.525326+00:00",
+  "decision": {
+    "RAMSavingEstablished": false,
+    "anotherW45ComparisonJustified": false,
+    "new500MBScaleBottleneckIdentified": false,
+    "oneNextDecisionStep": {
+      "action": "Root should close the current CAS heap investigation as diagnostic-only and reject a new CAS mini-fix/W45 repeat as a500MB strategy. The only next feasibility gate is the missing authentic-engine file/shmem ownership observation; current retained evidence does not provide it, and no new observer/run is requested or qualified by this report.",
+      "concreteEvidence": "The largest observed backend context total is33,291,920B; per-CAS net used growth is6,416,800\u20136,526,320B. The remaining whole-group1,036,963,840B peak is not decomposed by process at its instant.",
+      "existingEvidenceCanSupplyThatObservation": false,
+      "newNativeOrProductActionProposed": false,
+      "preciseMissingOwnershipObservation": "A time-bound accounting/provenance observation at the authentic engine peak identifying how many charged-resident file/shmem bytes belong to engine-required allocations, separately from diagnostic copy/JIT/cache scaffolding. This must preserve shared-page accounting and include unmapped pagecache; another Node/backend RSS endpoint alone cannot supply it.",
+      "reasonNoAdditionalNativeTestProposed": "There is no observed500MB owner or frozen candidate lifetime change to test. The18,530,304B group peak increment and6,416,800B restore context delta overlap in time and accounting and cannot be added. Proposing another native run now would add an observer before a justified material redesign target exists.",
+      "type": "STOP_GATE_NO_NEW_MEASUREMENT_FROM_THIS_RESULT"
+    },
+    "productChangeJustified": false,
+    "projectionEnablementJustified": false
+  },
+  "historicalConstraintsCarriedWithoutReanalysis": {
+    "earlierIntegratedRendererSavingBytes": 154886144,
+    "priorW45CandidatePeakBytes": 820375552,
+    "priorW45ParentPeakBytes": 810905600,
+    "priorW45Result": "negative; projection remains OFF; no repeat or enablement justified here",
+    "target500MB": "No new500MB-scale authentic allocation cause or recoverable saving established. Diagnostic-only tmpfs/JIT/copy/cache costs cannot be credited as Motor/500 savings."
+  },
+  "independentActualAcceptancePin": {
+    "bytes": 39335,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+    "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+  },
+  "inputPins": [
+    {
+      "bytes": 12128,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/ACTUAL_RESULT.SAFE.json",
+      "sha256": "8cf6cb28631d2a180ae0c56a7d7afbd4f313b3b6550a441988fd35b65f9d5617"
+    },
+    {
+      "bytes": 9449,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/SERVER_HEAP.SAFE.json",
+      "sha256": "98bb3c1d59c4b53c84dfc038f06493d3ef1dcbb6f6d4ab301bbb9f476609774d"
+    },
+    {
+      "bytes": 104265,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/AUTH_WRITE_PHASE.SAFE.json",
+      "sha256": "c1c44e5ce1711c72a75ce73120435c3cbe3ff8de0a5202a1df77fd43f16db2f7"
+    },
+    {
+      "bytes": 297990,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/NATIVE_TIMELINE.SAFE.json",
+      "sha256": "4609486d075a34d069f7453e6a3fbbd33fd5eb96c4cf6904222cd8d29070487e"
+    },
+    {
+      "bytes": 23303,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/PHASES.SAFE.json",
+      "sha256": "7698c927e17657fde8ba9524deffc76d452db0ecdb3f2ce9a48385a0df95dea9"
+    }
+  ],
+  "interpretation": {
+    "whatIsNewlySupported": [
+      "All four successful CAS are bound to the same serving backend PID54 with distinct assigned XIDs11668\u201311671 and exact request revisions. Their actual raw projection/scope settings are NULL at the emitted records; no projection ON outcome is inferred.",
+      "Across each before/after pair the retained backend context accounting rises by about6.4\u20136.5MB used. Later three after totals are33,250,768 /33,258,960 /33,291,920B, a small increase within this short case.",
+      "The restore whole-group peak rises18,530,304B between two adjacent Node frames surrounding the RPC. Node endpoint RSS and heapUsed fall; cgroup anon rises while endpoint file/shmem are unchanged.",
+      "The final peak is already recorded before attach, verifyLogical and finalRead frames; those later bounded frames do not set a higher retained group peak."
+    ],
+    "whatIsNotProven": [
+      "Backend MemoryContext total/used/free are allocator accounting, not backend RSS/PSS, cgroup anon or whole-group charged memory. Unobserved allocations can peak outside the two snapshots.",
+      "Memory context aggregation is a non-atomic traversal. The official SRF materializes a tuplestore and internally allocates context name/identifier text even though only scalar sums are exported. Both SRF and LOG instrumentation may alter the measured workload; no control arm quantifies their memory/CPU contribution.",
+      "The interval also frees renderer_chunks and performs existing JSON uniqueness/size work. It adds output_text and output_value, but endpoint delta is a net lifetime difference plus observer effects, not the isolated cost of either representation.",
+      "Output text length and JSONB pg_column_size are logical representation sizes; their sum must not be added to context totals, Node RSS or the cgroup peak. Similarity of net context growth to JSONB size is not allocation identity.",
+      "Node heapUsed, heapTotal, external and RSS overlap. external includes arrayBuffers; file includes shmem and file_mapped is a subset/overlap. Separate maxima cannot be added, and endpoint current counters do not decompose historical peak.",
+      "No same-instant process ownership was recorded at the parent peak. Endpoint Node RSS falling does not rule out a transient Node allocation or peak; rising group anon does not identify PostgreSQL rather than another owned process.",
+      "Context count changing1744\u21922075 at before points and small byte drift do not establish retained objects, a leak, a long-run plateau or per-profile scaling.",
+      "One CURRENT diagnostic with an observer ACL/logging exception is not a fair performance/RAM comparison and does not overturn historical W45 negative shared-memory evidence.",
+      "The18,530,304B restore peak increment and6,416,800B restore net used-context change are overlapping observations and must never be added as distinct memory or savings."
+    ]
+  },
+  "largePoolOwnershipBoundary": {
+    "IOEndpointAfter": [
+      {
+        "dbytes": "0",
+        "device": "254:0",
+        "dios": "0",
+        "rbytes": "0",
+        "rios": "0",
+        "wbytes": "306339840",
+        "wios": "1048"
+      }
+    ],
+    "IOEndpointBefore": [
+      {
+        "dbytes": "0",
+        "device": "254:0",
+        "dios": "0",
+        "rbytes": "0",
+        "rios": "0",
+        "wbytes": "306327552",
+        "wios": "1045"
+      }
+    ],
+    "IOEndpointDifference": [
+      {
+        "dbytes": 0,
+        "device": "254:0",
+        "dios": 0,
+        "rbytes": 0,
+        "rios": 0,
+        "wbytes": 12288,
+        "wios": 3
+      }
+    ],
+    "arithmeticFileMinusShmemBytes": 371511296,
+    "bindingAbsent": [
+      "No per-inode charge/residency attribution of file/shmem to authentic engine state versus diagnostic copy/JIT/runtime scaffolding",
+      "No same-instant process RSS/PSS/allocator provenance at physical whole-group peak",
+      "Device IO has no file/inode or process ownership; zero rbytes does not mean no logical database reads or no existing cached pages",
+      "Existing historical V11/late identities and IO records do not establish current-case charge provenance or simultaneity. No historical payload/source audit was repeated."
+    ],
+    "bindingAvailable": [
+      "NodeprocessPID55 and its own process counters",
+      "servingCASbackendPID54 plus assignedXID and revision-bound allocator contexts",
+      "whole owned group inode21988 with anon/file/kernel/shmem counters",
+      "block-device254:0 aggregate IO counters"
+    ],
+    "interpretation": "The large retained file pool is a visible accounting category rather than an established redesign cause. These numbers neither prove disposable cache nor show engine-savings potential. Unmapped pagecache is absent from process PSS; shared mappings can be double-counted by summed RSS.",
+    "recordedFileBytes": 605392896,
+    "recordedShmemBytesIncludedInFile": 233881600,
+    "referenceFrame": "driver.request.afterBodyObserverBeforeHTTP",
+    "referenceIsHistoricalPeakDecomposition": false,
+    "referenceUTC": "2026-10-21T09:40:59.758Z"
+  },
+  "methodReviewPin": {
+    "bytes": 19011,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/METHOD_REVIEW.SAFE.json",
+    "sha256": "ed1b079d3191cb54a557dc56cd0b45e891eb7e352fca85202d8ab844edc93ad5"
+  },
+  "nodeAndCgroupFrames": [
+    {
+      "beginMonotonicMilliseconds": 10035.08989,
+      "beginUTC": "2026-10-21T09:40:59.630Z",
+      "endMonotonicMilliseconds": 10036.980849,
+      "endUTC": "2026-10-21T09:40:59.632Z",
+      "groupCurrentBytes": 974954496,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 341069824,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27377664,
+        "kernel_stack": 573440,
+        "pagetables": 6283264,
+        "shmem": 233881600,
+        "slab": 20453632,
+        "sock": 0
+      },
+      "index": 0,
+      "label": "driver.restore.beforeU",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1505124,
+        "external": 5353970,
+        "heapTotal": 123330560,
+        "heapUsed": 102484440,
+        "rss": 265265152
+      },
+      "peakAfterBytes": 1018433536,
+      "peakBeforeBytes": 1018433536
+    },
+    {
+      "beginMonotonicMilliseconds": 10037.264617,
+      "beginUTC": "2026-10-21T09:40:59.632Z",
+      "endMonotonicMilliseconds": 10039.003958,
+      "endUTC": "2026-10-21T09:40:59.634Z",
+      "groupCurrentBytes": 974950400,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 341069824,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27377664,
+        "kernel_stack": 573440,
+        "pagetables": 6283264,
+        "shmem": 233881600,
+        "slab": 20453632,
+        "sock": 0
+      },
+      "index": 1,
+      "label": "U.beforeSnapshotCapture",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1529706,
+        "external": 5378552,
+        "heapTotal": 123330560,
+        "heapUsed": 102610952,
+        "rss": 265265152
+      },
+      "peakAfterBytes": 1018433536,
+      "peakBeforeBytes": 1018433536
+    },
+    {
+      "beginMonotonicMilliseconds": 10070.762539,
+      "beginUTC": "2026-10-21T09:40:59.666Z",
+      "endMonotonicMilliseconds": 10071.285648,
+      "endUTC": "2026-10-21T09:40:59.666Z",
+      "groupCurrentBytes": 986746880,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 352792576,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27406336,
+        "kernel_stack": 573440,
+        "pagetables": 6311936,
+        "shmem": 233881600,
+        "slab": 20454016,
+        "sock": 0
+      },
+      "index": 2,
+      "label": "U.afterSnapshotCapture",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1517415,
+        "external": 5366261,
+        "heapTotal": 135049216,
+        "heapUsed": 107068968,
+        "rss": 276930560
+      },
+      "peakAfterBytes": 1018433536,
+      "peakBeforeBytes": 1018433536
+    },
+    {
+      "beginMonotonicMilliseconds": 10160.799427,
+      "beginUTC": "2026-10-21T09:40:59.756Z",
+      "endMonotonicMilliseconds": 10161.627895,
+      "endUTC": "2026-10-21T09:40:59.757Z",
+      "groupCurrentBytes": 978796544,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 344915968,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27529216,
+        "kernel_stack": 573440,
+        "pagetables": 6426624,
+        "shmem": 233881600,
+        "slab": 20453560,
+        "sock": 0
+      },
+      "index": 3,
+      "label": "U.afterPartsBuild",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1505124,
+        "external": 5353970,
+        "heapTotal": 139304960,
+        "heapUsed": 105780728,
+        "rss": 269086720
+      },
+      "peakAfterBytes": 1018433536,
+      "peakBeforeBytes": 1018433536
+    },
+    {
+      "beginMonotonicMilliseconds": 10162.106576,
+      "beginUTC": "2026-10-21T09:40:59.757Z",
+      "endMonotonicMilliseconds": 10162.53415,
+      "endUTC": "2026-10-21T09:40:59.757Z",
+      "groupCurrentBytes": 978796544,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 344915968,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27529216,
+        "kernel_stack": 573440,
+        "pagetables": 6426624,
+        "shmem": 233881600,
+        "slab": 20453560,
+        "sock": 0
+      },
+      "index": 4,
+      "label": "driver.request.afterSerializationBeforeHTTP",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1529706,
+        "external": 5378552,
+        "heapTotal": 139304960,
+        "heapUsed": 105855024,
+        "rss": 269086720
+      },
+      "peakAfterBytes": 1018433536,
+      "peakBeforeBytes": 1018433536
+    },
+    {
+      "beginMonotonicMilliseconds": 10162.681963,
+      "beginUTC": "2026-10-21T09:40:59.758Z",
+      "endMonotonicMilliseconds": 10162.858619,
+      "endUTC": "2026-10-21T09:40:59.758Z",
+      "groupCurrentBytes": 978796544,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 344915968,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27529216,
+        "kernel_stack": 573440,
+        "pagetables": 6426624,
+        "shmem": 233881600,
+        "slab": 20453560,
+        "sock": 0
+      },
+      "index": 5,
+      "label": "driver.request.afterBodyObserverBeforeHTTP",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1554288,
+        "external": 5403134,
+        "heapTotal": 139304960,
+        "heapUsed": 105956672,
+        "rss": 269086720
+      },
+      "peakAfterBytes": 1018433536,
+      "peakBeforeBytes": 1018433536
+    },
+    {
+      "beginMonotonicMilliseconds": 10386.775999,
+      "beginUTC": "2026-10-21T09:40:59.982Z",
+      "endMonotonicMilliseconds": 10387.260569,
+      "endUTC": "2026-10-21T09:40:59.982Z",
+      "groupCurrentBytes": 995180544,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 361234432,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27463680,
+        "kernel_stack": 573440,
+        "pagetables": 6373376,
+        "shmem": 233881600,
+        "slab": 20453192,
+        "sock": 0
+      },
+      "index": 6,
+      "label": "driver.request.afterRPCJSONParsed",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1465283,
+        "external": 5314129,
+        "heapTotal": 129052672,
+        "heapUsed": 74112128,
+        "rss": 264679424
+      },
+      "peakAfterBytes": 1036963840,
+      "peakBeforeBytes": 1036963840
+    },
+    {
+      "beginMonotonicMilliseconds": 10387.355442,
+      "beginUTC": "2026-10-21T09:40:59.982Z",
+      "endMonotonicMilliseconds": 10387.575874,
+      "endUTC": "2026-10-21T09:40:59.982Z",
+      "groupCurrentBytes": 995180544,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 361234432,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27463680,
+        "kernel_stack": 573440,
+        "pagetables": 6373376,
+        "shmem": 233881600,
+        "slab": 20453192,
+        "sock": 0
+      },
+      "index": 7,
+      "label": "U.beforeAttach",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1489865,
+        "external": 5338711,
+        "heapTotal": 129052672,
+        "heapUsed": 74197864,
+        "rss": 264679424
+      },
+      "peakAfterBytes": 1036963840,
+      "peakBeforeBytes": 1036963840
+    },
+    {
+      "beginMonotonicMilliseconds": 10387.707452,
+      "beginUTC": "2026-10-21T09:40:59.983Z",
+      "endMonotonicMilliseconds": 10387.875476,
+      "endUTC": "2026-10-21T09:40:59.983Z",
+      "groupCurrentBytes": 995180544,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 361234432,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27463680,
+        "kernel_stack": 573440,
+        "pagetables": 6373376,
+        "shmem": 233881600,
+        "slab": 20453192,
+        "sock": 0
+      },
+      "index": 8,
+      "label": "U.afterAttach",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1514447,
+        "external": 5363293,
+        "heapTotal": 129052672,
+        "heapUsed": 74354920,
+        "rss": 264679424
+      },
+      "peakAfterBytes": 1036963840,
+      "peakBeforeBytes": 1036963840
+    },
+    {
+      "beginMonotonicMilliseconds": 10397.759148,
+      "beginUTC": "2026-10-21T09:40:59.993Z",
+      "endMonotonicMilliseconds": 10398.25179,
+      "endUTC": "2026-10-21T09:40:59.993Z",
+      "groupCurrentBytes": 994914304,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 361234432,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27463680,
+        "kernel_stack": 573440,
+        "pagetables": 6373376,
+        "shmem": 233881600,
+        "slab": 20453192,
+        "sock": 0
+      },
+      "index": 9,
+      "label": "U.beforeReturn",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1539029,
+        "external": 5387875,
+        "heapTotal": 129052672,
+        "heapUsed": 78477656,
+        "rss": 264679424
+      },
+      "peakAfterBytes": 1036963840,
+      "peakBeforeBytes": 1036963840
+    },
+    {
+      "beginMonotonicMilliseconds": 10398.308305,
+      "beginUTC": "2026-10-21T09:40:59.993Z",
+      "endMonotonicMilliseconds": 10398.59047,
+      "endUTC": "2026-10-21T09:40:59.993Z",
+      "groupCurrentBytes": 994914304,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 361234432,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27463680,
+        "kernel_stack": 573440,
+        "pagetables": 6373376,
+        "shmem": 233881600,
+        "slab": 20453192,
+        "sock": 0
+      },
+      "index": 10,
+      "label": "driver.afterU.beforeVerifyLogical",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1563611,
+        "external": 5412457,
+        "heapTotal": 129052672,
+        "heapUsed": 78545816,
+        "rss": 264679424
+      },
+      "peakAfterBytes": 1036963840,
+      "peakBeforeBytes": 1036963840
+    },
+    {
+      "beginMonotonicMilliseconds": 10595.164456,
+      "beginUTC": "2026-10-21T09:41:00.190Z",
+      "endMonotonicMilliseconds": 10595.720384,
+      "endUTC": "2026-10-21T09:41:00.191Z",
+      "groupCurrentBytes": 997220352,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 363307008,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27459584,
+        "kernel_stack": 573440,
+        "pagetables": 6369280,
+        "shmem": 233881600,
+        "slab": 20454512,
+        "sock": 0
+      },
+      "index": 11,
+      "label": "driver.afterVerifyLogical",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1464716,
+        "external": 5313562,
+        "heapTotal": 131321856,
+        "heapUsed": 89606016,
+        "rss": 266727424
+      },
+      "peakAfterBytes": 1036963840,
+      "peakBeforeBytes": 1036963840
+    },
+    {
+      "beginMonotonicMilliseconds": 10596.004312,
+      "beginUTC": "2026-10-21T09:41:00.191Z",
+      "endMonotonicMilliseconds": 10596.158895,
+      "endUTC": "2026-10-21T09:41:00.191Z",
+      "groupCurrentBytes": 997220352,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 363307008,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27459584,
+        "kernel_stack": 573440,
+        "pagetables": 6369280,
+        "shmem": 233881600,
+        "slab": 20454512,
+        "sock": 0
+      },
+      "index": 12,
+      "label": "driver.beforeFinalRead",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 1489298,
+        "external": 5338144,
+        "heapTotal": 131321856,
+        "heapUsed": 89708760,
+        "rss": 266727424
+      },
+      "peakAfterBytes": 1036963840,
+      "peakBeforeBytes": 1036963840
+    },
+    {
+      "beginMonotonicMilliseconds": 11195.64303,
+      "beginUTC": "2026-10-21T09:41:00.791Z",
+      "endMonotonicMilliseconds": 11196.024285,
+      "endUTC": "2026-10-21T09:41:00.791Z",
+      "groupCurrentBytes": 988196864,
+      "groupInode": 21988,
+      "groupStat": {
+        "anon": 354484224,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27451392,
+        "kernel_stack": 573440,
+        "pagetables": 6361088,
+        "shmem": 233881600,
+        "slab": 20454896,
+        "sock": 0
+      },
+      "index": 13,
+      "label": "driver.afterFinalRead",
+      "nodeLifetimeMaxRSSKiB": 289572,
+      "nodePID": 55,
+      "nodeProcess": {
+        "arrayBuffers": 2632297,
+        "external": 6481143,
+        "heapTotal": 134254592,
+        "heapUsed": 112787264,
+        "rss": 278577152
+      },
+      "peakAfterBytes": 1036963840,
+      "peakBeforeBytes": 1036963840
+    }
+  ],
+  "phaseEndpoints": [
+    {
+      "atUnixSeconds": 1792575635.9981463,
+      "groupCurrentBytes": 16994304,
+      "groupPeakBytes": 19030016,
+      "groupStat": {
+        "anon": 13737984,
+        "file": 397312,
+        "kernel": 2383872,
+        "shmem": 0
+      },
+      "phase": "source-before-hash"
+    },
+    {
+      "atUnixSeconds": 1792575637.0735383,
+      "groupCurrentBytes": 20279296,
+      "groupPeakBytes": 21766144,
+      "groupStat": {
+        "anon": 16437248,
+        "file": 724992,
+        "kernel": 2400256,
+        "shmem": 0
+      },
+      "phase": "persistent-copy"
+    },
+    {
+      "atUnixSeconds": 1792575639.733647,
+      "groupCurrentBytes": 405467136,
+      "groupPeakBytes": 407302144,
+      "groupStat": {
+        "anon": 17338368,
+        "file": 370311168,
+        "kernel": 17121280,
+        "shmem": 0
+      },
+      "phase": "original-JIT-restoration"
+    },
+    {
+      "atUnixSeconds": 1792575649.2219353,
+      "groupCurrentBytes": 603283456,
+      "groupPeakBytes": 607727616,
+      "groupStat": {
+        "anon": 34299904,
+        "file": 549097472,
+        "kernel": 19206144,
+        "shmem": 178290688
+      },
+      "phase": "start-PG"
+    },
+    {
+      "atUnixSeconds": 1792575649.273844,
+      "groupCurrentBytes": 621604864,
+      "groupPeakBytes": 621604864,
+      "groupStat": {
+        "anon": 38133760,
+        "file": 561393664,
+        "kernel": 20660224,
+        "shmem": 190730240
+      },
+      "phase": "original-catalog-qualification"
+    },
+    {
+      "atUnixSeconds": 1792575649.326931,
+      "groupCurrentBytes": 627875840,
+      "groupPeakBytes": 635117568,
+      "groupStat": {
+        "anon": 38133760,
+        "file": 567537664,
+        "kernel": 21172224,
+        "shmem": 196628480
+      },
+      "phase": "install-selected-renderer"
+    },
+    {
+      "atUnixSeconds": 1792575649.571671,
+      "groupCurrentBytes": 628572160,
+      "groupPeakBytes": 639864832,
+      "groupStat": {
+        "anon": 38137856,
+        "file": 568369152,
+        "kernel": 20959232,
+        "shmem": 197054464
+      },
+      "phase": "start-owned-PostgREST"
+    },
+    {
+      "atUnixSeconds": 1792575649.5906212,
+      "groupCurrentBytes": 632258560,
+      "groupPeakBytes": 639864832,
+      "groupStat": {
+        "anon": 41525248,
+        "file": 568381440,
+        "kernel": 21823488,
+        "shmem": 197058560
+      },
+      "phase": "PostgREST-socket-ready-no-HTTP-probe"
+    },
+    {
+      "atUnixSeconds": 1792575660.9520779,
+      "groupCurrentBytes": 736833536,
+      "groupPeakBytes": 1036963840,
+      "groupStat": {
+        "anon": 107470848,
+        "file": 605753344,
+        "kernel": 22454272,
+        "shmem": 233881600
+      },
+      "phase": "measurement-complete"
+    },
+    {
+      "atUnixSeconds": 1792575666.4466786,
+      "groupCurrentBytes": 605294592,
+      "groupPeakBytes": 1036963840,
+      "groupStat": {
+        "anon": 34414592,
+        "file": 550658048,
+        "kernel": 19427328,
+        "shmem": 178294784
+      },
+      "phase": "close-PostgREST-then-PG-and-prove-source"
+    }
+  ],
+  "reportedRun": {
+    "CASBinders": 4,
+    "actualStatus": "PASS",
+    "allCASBackendPID": 54,
+    "allObservedRawDiagnosticScope": null,
+    "allObservedRawProjection": null,
+    "authRPCCount": 27,
+    "comparisonPerformed": false,
+    "full500": false,
+    "nodePhaseExtraJSONBytes": 20243,
+    "parentCPUSeconds": 33.031932,
+    "parentNativePeakBytes": 1036963840,
+    "parentWallSeconds": 33.4310312079906,
+    "phaseFrames": 14,
+    "production": false,
+    "serverDiagnosticJSONBytes": 5932,
+    "serverHeapFrames": 8,
+    "sourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396"
+  },
+  "restoreHTTPInterval": {
+    "betweenLabels": [
+      "driver.request.afterBodyObserverBeforeHTTP",
+      "driver.request.afterRPCJSONParsed"
+    ],
+    "groupCurrentEndpointDeltaBytes": 16384000,
+    "groupStatEndpointDeltaBytes": {
+      "anon": 16318464,
+      "file": 0,
+      "file_mapped": 0,
+      "kernel": -65536,
+      "shmem": 0
+    },
+    "monotonicGapEndBeforeToBeginAfterMilliseconds": 223.91737999999896,
+    "nodeLifetimeMaxRSSUnchanged": true,
+    "nodeProcessEndpointDeltaBytes": {
+      "arrayBuffers": -89005,
+      "external": -89005,
+      "heapTotal": -10252288,
+      "heapUsed": -31844544,
+      "rss": -4407296
+    },
+    "peakIncrementBytes": 18530304,
+    "timingConclusion": "Final parent peak first observed by frame6 is higher than frame5. Its physical instant and process owner are not recorded. Server before/after log completion timestamps fall within this HTTP interval, but do not prove that peak occurred strictly between the two server snapshots."
+  },
+  "restoreTimelineSamples": [
+    {
+      "groupCurrentBytes": 974430208,
+      "groupPeakBytes": 1018433536,
+      "groupStat": {
+        "anon": 340664320,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27328512,
+        "shmem": 233881600
+      },
+      "index": 85,
+      "utc": "2026-10-21T09:40:59.582447+00:00"
+    },
+    {
+      "groupCurrentBytes": 987418624,
+      "groupPeakBytes": 1018433536,
+      "groupStat": {
+        "anon": 353628160,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27348992,
+        "shmem": 233881600
+      },
+      "index": 86,
+      "utc": "2026-10-21T09:40:59.874439+00:00"
+    },
+    {
+      "groupCurrentBytes": 996757504,
+      "groupPeakBytes": 1036963840,
+      "groupStat": {
+        "anon": 362905600,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27435008,
+        "shmem": 233881600
+      },
+      "index": 87,
+      "utc": "2026-10-21T09:41:00.155547+00:00"
+    },
+    {
+      "groupCurrentBytes": 980504576,
+      "groupPeakBytes": 1036963840,
+      "groupStat": {
+        "anon": 346996736,
+        "file": 605392896,
+        "file_mapped": 54300672,
+        "kernel": 27439104,
+        "shmem": 233881600
+      },
+      "index": 88,
+      "utc": "2026-10-21T09:41:00.441572+00:00"
+    }
+  ],
+  "schema": "helmut-cas-heap-readonly-interpretation/1",
+  "scope": "One newly closed CURRENT/default CAS work case only; mathematical interpretation of retained scalar metadata. Functional/source/security/ACL acceptance is independently supplied by E/Root; it is not repeated here.",
+  "sizeScale": {
+    "NodeLifetimeMaxRSSBytes": 296521728,
+    "largestAfterContextTotalBytes": 33291920,
+    "largestAfterContextTotalFractionOf500000000B": 0.06658384,
+    "largestAfterContextTotalFractionOf500MiB": 0.06349929809570312,
+    "largestAfterContextUsedBytes": 29006704,
+    "largestNetUsedContextGrowthBytes": 6526320,
+    "warning": "These are measured values at specific points or one process lifetime maximum; none is a bound on all possible backend/RSS/native allocations and none is a saving claim."
+  },
+  "status": "INTERPRETATION_COMPLETE_NO_500MB_BOTTLENECK_ESTABLISHED",
+  "writeEndpointMetadata": [
+    {
+      "naturalGCCountAfter": 46,
+      "naturalGCCountBefore": 4,
+      "naturalGCDurationDeltaMilliseconds": 96.19914302229881,
+      "nodeAfter": {
+        "arrayBuffers": 1538282,
+        "external": 5392241,
+        "heapTotal": 129490944,
+        "heapUsed": 102449376,
+        "rss": 235970560
+      },
+      "nodeBefore": {
+        "arrayBuffers": 1406455,
+        "external": 5260414,
+        "heapTotal": 125222912,
+        "heapUsed": 106862896,
+        "rss": 242778112
+      },
+      "phase": "round0.mutation",
+      "wallMilliseconds": 524.6768550000002
+    },
+    {
+      "naturalGCCountAfter": 125,
+      "naturalGCCountBefore": 106,
+      "naturalGCDurationDeltaMilliseconds": 28.82485595345497,
+      "nodeAfter": {
+        "arrayBuffers": 1460870,
+        "external": 5309716,
+        "heapTotal": 125554688,
+        "heapUsed": 89375072,
+        "rss": 239542272
+      },
+      "nodeBefore": {
+        "arrayBuffers": 1473192,
+        "external": 5322038,
+        "heapTotal": 114802688,
+        "heapUsed": 90720992,
+        "rss": 216514560
+      },
+      "phase": "round1.mutation",
+      "wallMilliseconds": 506.5657820000006
+    },
+    {
+      "naturalGCCountAfter": 200,
+      "naturalGCCountBefore": 183,
+      "naturalGCDurationDeltaMilliseconds": 27.866253942251205,
+      "nodeAfter": {
+        "arrayBuffers": 1501786,
+        "external": 5350632,
+        "heapTotal": 127787008,
+        "heapUsed": 97305632,
+        "rss": 239644672
+      },
+      "nodeBefore": {
+        "arrayBuffers": 17250993,
+        "external": 34424955,
+        "heapTotal": 132939776,
+        "heapUsed": 111562568,
+        "rss": 283021312
+      },
+      "phase": "round2.mutation",
+      "wallMilliseconds": 506.1978530000006
+    },
+    {
+      "naturalGCCountAfter": 279,
+      "naturalGCCountBefore": 260,
+      "naturalGCDurationDeltaMilliseconds": 34.044105023145676,
+      "nodeAfter": {
+        "arrayBuffers": 1485201,
+        "external": 5334047,
+        "heapTotal": 131321856,
+        "heapUsed": 89698952,
+        "rss": 266727424
+      },
+      "nodeBefore": {
+        "arrayBuffers": 1501027,
+        "external": 5349873,
+        "heapTotal": 123330560,
+        "heapUsed": 102464496,
+        "rss": 264871936
+      },
+      "phase": "restore.write",
+      "wallMilliseconds": 561.1069619999998
+    }
+  ]
+}

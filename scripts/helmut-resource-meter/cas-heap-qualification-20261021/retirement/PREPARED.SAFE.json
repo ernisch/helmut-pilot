@@ -1,0 +1,111 @@
+{
+  "schema": "helmut-two-cas-heap-retirer-prepared/1",
+  "status": "SOURCE_ONLY_NOT_RUN_CUSTODY_RELEASED",
+  "sourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py",
+    "bytes": 78105,
+    "sha256": "7afd64da0a87d104819de7f3115dfe44907b964c08e9a01c6b8c3d0ad306d9cb"
+  },
+  "parentSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/retire_two_auth_write_phase_pass_copies.py",
+    "bytes": 59338,
+    "sha256": "273c05398d2bbdd38b95beff4301152141b3eccd74dcac69d270012a011ef6d7"
+  },
+  "finalLauncherPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/PREPARED.SAFE.json",
+    "bytes": 67996,
+    "sha256": "a30bc1a726a5002e7f5b3f5e6e4d9c24dab26630bd3806d027d0c5e46ece63e8"
+  },
+  "hostPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap.py",
+    "bytes": 2420,
+    "sha256": "d1e4aec3c4327e20fafff7934ff52186c7ec54cec67dbdbbdb657d89958c19b3"
+  },
+  "measurementIntentPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_MEASUREMENT_INTENT.SAFE.json",
+    "bytes": 8774,
+    "sha256": "34f71d2eaad42706bfabc713ab34b8be6f011ecc7a24d5e0ce7da6c1d4579aa0"
+  },
+  "twoCasePlanPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_TWO_CASE_PLAN.SAFE.json",
+    "bytes": 820,
+    "sha256": "b4dfe25b96c3ff8160539da1993753ff228598692f66b191068e6fc82f58a833"
+  },
+  "lifecycleIndependentActualReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 26117,
+    "sha256": "563028c75c2c48eefc23669479e35bdcc6b4f653c0a19864a68c58602592a969"
+  },
+  "independentActualReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+    "bytes": 39335,
+    "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+  },
+  "rootActualVerificationPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 5842,
+    "sha256": "0e0d47998242e787316eb504ba8136b468aaca39dd89404e37cb836057625d32"
+  },
+  "rootPassCopyRetentionDecisionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_PASS_COPY_RETENTION_DECISION.SAFE.json",
+    "bytes": 1981,
+    "sha256": "7a94af355507dea80ce32e1896695f692b0381d3799225a075cad18214d76e46"
+  },
+  "resultPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9/ACTUAL_RESULT.SAFE.json",
+      "bytes": 11372,
+      "sha256": "40bd0d0074915f7404ad6d1d2137361d9703e39c83c66ca114160076ead69ff9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/ACTUAL_RESULT.SAFE.json",
+      "bytes": 12128,
+      "sha256": "8cf6cb28631d2a180ae0c56a7d7afbd4f313b3b6550a441988fd35b65f9d5617"
+    }
+  ],
+  "planPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/PLAN.SAFE.json",
+    "bytes": 11557,
+    "sha256": "acbf49aee71cf945fbcbd5544fbe8ed1ffc4283c8a06f787a0fdbd526908c266"
+  },
+  "deltaPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/SOURCE_DELTA.PRIVATE.diff",
+    "bytes": 45219,
+    "sha256": "39c73e98d9d0ec093ce717b8891739e9ee58979c8a2adeacad216b7273a7c421"
+  },
+  "guardSourceEquivalencePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/SOURCE_GUARD_EQUIVALENCE.SAFE.json",
+    "bytes": 6539,
+    "sha256": "eecbc903a77ece95a201fb5533472dab690b3dd1e94af7e78f5fbb3ebc744eb8"
+  },
+  "readmePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/README.md",
+    "bytes": 3299,
+    "sha256": "8f07ac5ef5160e0d69d25f9a7229c16cce00bbd894bf32e191c8ab4ceb62edb8"
+  },
+  "exactCaseNames": [
+    "heap-68bb54a5d546f714223e7bc9",
+    "heap-c35697a3832dc8dd58b21042"
+  ],
+  "onlyDeletionTargets": "Only the selected one of the two exact new case/disk/pgdata inventories; all case/disk parents/evidence/hulls retained.",
+  "frozenSelection": "PREPa30bc1/hostd1e4ae; CURRENT diagnosticU3b88/Partsf300/baseNEW SQL, CAS+renderer heap body overlaysf6f64a/401215; lifecycle0Auth then27RPC/3round/6boundaries/14Nodeframes/4CASbinders+8serverheapframes.",
+  "actualPASSAndNoLongerNeededDecisionExist": true,
+  "runtimeContextCreated": false,
+  "checkAdoptionOnceOrDeletionCreated": false,
+  "independentRetirerSourceReviewPending": true,
+  "rootSyntaxCLIAndGuardQualificationPending": true,
+  "sourcePlaceholdersRemain": false,
+  "rootContextAdditionalRequiredField": "rootPassCopyRetentionDecisionPin equals exact7a94af3555... decision; prior Root contexts/adoptions/claims are never reused.",
+  "guardEquivalence": "All21 inherited guardblocks plus host_users_many/quiescent_all/verified_cases/main literalbyte-identical to qualified273c0539 parent. prove_restoration changes only work-mode literal. checked/retire change only schemas/action literals. New proof-only functions add immutable exact5lifecycle/12serverrecord/ACL/outer0 acceptance.",
+  "sourceSafety": "Original canonical827a root metadata/protected lineage unchanged; no payload read/hash by preparer. All17archives/all616helperGit/allhulls/images/volumes/loops/frozen/FAILUNKNOWN preserved. Unknown use is not cleared by UID/cmdline nonmatch; no new process policy or privileges.",
+  "freshness": "Each case needs new exact inventory/checkNonce plus separate Root adoption/24hex distinct nonce/<=300sTTL/exclusive window. Both-case use/source/evidence guards refresh after full selected inventory hash pass; finalclosure<=10s and source/context/TTL/floor rechecked before exclusive once/exactFDunlink.",
+  "cleanupAcceptance": "Functional completeness and no-needed-state/evidence/unknown-use review only. No causal-owner/RSS/saving/plateau/full500 condition. Missing/drift/unknown diagnostic/restore/closure proof is FAILKEEP.",
+  "handoff": "All six files are now immutable to preparer; custody released for Root independent source review/qualification and later separately adopted operations. No further edits absent a recorded new-version correction.",
+  "oldActorContextAdoptionClaimsCopiedOrInvoked": false,
+  "subjectImportsASTTestsCLINativeDockerSQLGitProcessScansDeletionsExecuted": false,
+  "originalOrCopyPGDATAPayloadRead": false,
+  "opaqueProcessClearanceOrPrivilegesAdded": false,
+  "fullAdmissionOrMemoryReserveClaim": false,
+  "full500": false,
+  "production": false
+}

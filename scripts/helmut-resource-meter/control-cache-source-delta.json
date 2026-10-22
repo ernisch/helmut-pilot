@@ -1,0 +1,67 @@
+{
+  "schema": "helmut-control-cache-source-delta/1",
+  "mode": "verified-control-view-v1",
+  "candidateCommit": "67b5c4ef8ccd482d726126f8bbc41a00ee4151a3",
+  "production": false,
+  "full500Accepted": false,
+  "requiresFreshIntegrationAcceptance": true,
+  "ramBenefitClaimed": false,
+  "historicalSources": [
+    {
+      "file": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 23685,
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "file": "lib/helmut/auth-state-parts.js",
+      "bytes": 22149,
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+    }
+  ],
+  "currentSources": [
+    {
+      "file": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "file": "lib/helmut/auth-state-parts.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    }
+  ],
+  "nativeBaselineArmSources": [
+    {
+      "file": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 23685,
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "file": "lib/helmut/auth-state-parts.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    }
+  ],
+  "retainedControlPayloadCapBytes": 2097152,
+  "maxDecodedTextBytes": 268435456,
+  "integrationGateSourceSHA256": "1398fe43a42110195d938bde5685e921819a1b3a6be67c0b04d376570557893d",
+  "currentQualification": {
+    "qualified": true,
+    "status": "QUALIFIED_NATIVE_COMPONENT_SOURCE_DELTA",
+    "nativeProofPin": {
+      "name": "control-cache-native-qualification-20261020.SAFE.json",
+      "bytes": 16830,
+      "sha256": "ba16be78cea1e1cc223615c0ccfb34efadabdf49ff58e5fba688657f9f5029e6"
+    },
+    "nativePreparedPin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+      "bytes": 37288,
+      "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+    },
+    "independentCodeReviewPin": {
+      "name": "bounded-control-cache-code-sol-review-20261020.SAFE.json",
+      "bytes": 8663,
+      "sha256": "8f6544d3ebbc6e0489d940056c053480313ae66daa4844721965a7cf356acee3"
+    }
+  }
+}

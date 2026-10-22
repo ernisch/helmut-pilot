@@ -1,0 +1,171 @@
+{
+  "schema": "helmut-cas-heap-root-retirement-end/1",
+  "status": "PASS",
+  "atUnix": 1792576959.2148943,
+  "rootReadbackSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/root-preparation/root-retirement-end.py",
+    "bytes": 6926,
+    "sha256": "8d9478a5b5c77d4a68431a8b7cd4435ed07da25fdc63d0da59933dd8e10956a1"
+  },
+  "contextPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/ROOT_PASS_CASES_CONTEXT.PRIVATE.json",
+    "bytes": 649440,
+    "sha256": "59f0a8c974112e50dc7c10e336e618753ba00f292f556d1e4b1f16b6d4ddc9f8"
+  },
+  "cases": [
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9",
+      "pgdataAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "retainedProofFiles": 77,
+      "allProofPinsUnchanged": true,
+      "stoppedContainerIDs": [
+        "0a6a67169e6a0f79dfccd46da24949e63a8356d0204a775d1409eeb4baf97bc4",
+        "0f864fa668440ec309fca548deea8e64985426ec7f8d8996969a2a84c98d0bb4",
+        "cfef24b65400b213abb33b45e8e90786c5a7d86d01e34267afb8972c0660bec2"
+      ],
+      "exactMountIdentityRetained": true,
+      "nativeGroupEmpty": true,
+      "retiredResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.RETIRED.PRIVATE.json",
+        "bytes": 1535,
+        "sha256": "c9fa6eedefc7d8a830152d810dc5103f31660da4b18315a5ff1b951450be0f94"
+      },
+      "rootAdoptionPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "bytes": 2303,
+        "sha256": "27a697d73a8f312fa5e3e35643333db8cbb4ddf00edd098b98a382bbeab786e0"
+      },
+      "onceClaimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 69008,
+        "sha256": "17e2f244eef1e22026d16e209ba55599c7b3946e6d397263873d50f0d8c502ba"
+      },
+      "inventoryAllocatedBytes": 369827840,
+      "inventoryRegularFileAllocatedBytes": 369688576,
+      "removedRegularFiles": 1711
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042",
+      "pgdataAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "retainedProofFiles": 122,
+      "allProofPinsUnchanged": true,
+      "stoppedContainerIDs": [
+        "5167ca85c44668820c768b7ffbf6a6b8038d155e949c1c56012a7b8313dbb7c2",
+        "60fe88eac4bc01a4f1d4b0574dfdbd4f3c604946d4b83622467044d77c2abf11",
+        "71e5cac13a5b52952f04390c94bb237992f04d2ce13e9c2a403e634a46ce0ef6"
+      ],
+      "exactMountIdentityRetained": true,
+      "nativeGroupEmpty": true,
+      "retiredResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-c35697a3832dc8dd58b21042.RETIRED.PRIVATE.json",
+        "bytes": 1535,
+        "sha256": "401c8b9d72a8a76454376cd6e0e43557380992084be92ce4090e707c1a6fd251"
+      },
+      "rootAdoptionPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-c35697a3832dc8dd58b21042.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "bytes": 2303,
+        "sha256": "325f35ceae8f23562d7c1204f3221aeb914a9b654e6dacca2c69997632ca2347"
+      },
+      "onceClaimPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-c35697a3832dc8dd58b21042.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "bytes": 69008,
+        "sha256": "6a0a6ddc102830903857d7057156a9269e35c2f43df5ad262f1dd8557fe89f51"
+      },
+      "inventoryAllocatedBytes": 369852416,
+      "inventoryRegularFileAllocatedBytes": 369713152,
+      "removedRegularFiles": 1711
+    }
+  ],
+  "retainedCaseProofFiles": 199,
+  "removedRegularFiles": 3422,
+  "retiredInventoryAllocatedBytes": 739680256,
+  "protectedPriorReadbackPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/PROTECTED_RESOURCE_READBACK.SAFE.json",
+    "bytes": 4433,
+    "sha256": "e35ed0db44bec4a8465aef2ccd693044c08141a2f497ba54259a6f32c3b191e2"
+  },
+  "protectedResources": [
+    {
+      "cid": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "c6f393f20781cad88518d5543126d642c4302141f3072393a10d5f0f9bf6a231",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "f375e6f73bff6c4f5238033c0db1de96c0fa9853c49e53056f86fc4f9a7dbaed",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "039f995f2454b4b87edf7b9fe9693d6861d92b15a126205277a51b86adbc80bf",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+      "identityImageStatePIDAndMountSourcesUnchanged": true
+    }
+  ],
+  "canonicalMetadataUnchanged": true,
+  "sourcePayloadsReread": false,
+  "seventeenPermanentReconstructionDependenciesStillProtected": true,
+  "hostAvailableBytes": 14960943104,
+  "unchangedFullAdmissionBytes": 15179779720,
+  "fullAdmissionGapBytes": 218836616,
+  "capacitySnapshotNotReservation": true,
+  "globalAbsenceOfOpaqueUsersClaimed": false,
+  "additionalQualifiedReclaimBytes": 0,
+  "outerRetirementExits": [
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2303,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "27a697d73a8f312fa5e3e35643333db8cbb4ddf00edd098b98a382bbeab786e0"
+      },
+      "case": "heap-68bb54a5d546f714223e7bc9",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 69008,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "17e2f244eef1e22026d16e209ba55599c7b3946e6d397263873d50f0d8c502ba"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1535,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-68bb54a5d546f714223e7bc9.RETIRED.PRIVATE.json",
+        "sha256": "c9fa6eedefc7d8a830152d810dc5103f31660da4b18315a5ff1b951450be0f94"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "959662"
+    },
+    {
+      "actualToolExitCode": 0,
+      "adoptionPin": {
+        "bytes": 2303,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-c35697a3832dc8dd58b21042.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "325f35ceae8f23562d7c1204f3221aeb914a9b654e6dacca2c69997632ca2347"
+      },
+      "case": "heap-c35697a3832dc8dd58b21042",
+      "full500": false,
+      "onceClaimPin": {
+        "bytes": 69008,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-c35697a3832dc8dd58b21042.RETIRE_ONCE_CLAIM.PRIVATE.json",
+        "sha256": "6a0a6ddc102830903857d7057156a9269e35c2f43df5ad262f1dd8557fe89f51"
+      },
+      "production": false,
+      "retiredPin": {
+        "bytes": 1535,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-c35697a3832dc8dd58b21042.RETIRED.PRIVATE.json",
+        "sha256": "401c8b9d72a8a76454376cd6e0e43557380992084be92ce4090e707c1a6fd251"
+      },
+      "schema": "helmut-root-observed-retirement-tool-exit/1",
+      "toolCompletionChunk": "75af99"
+    }
+  ],
+  "resourceMutationsByReadback": 0,
+  "full500": false,
+  "production": false
+}

@@ -1,0 +1,986 @@
+{
+  "allRequiredNativeEventsPresentZeroAndCompleteClosuresVerified": true,
+  "allRetainedCaseProofFiles": 159,
+  "allSourceManifests827aAnd6000HistoryAndCatalogRestorationVerified": true,
+  "allocatorOrLiveRetentionCauseProven": false,
+  "blockingFindings": [],
+  "boundaryTriplets": 6,
+  "confirmedCASWrites": 4,
+  "controlReads": 18,
+  "currentSourceClosureDriftPins": 75,
+  "exactFrameCount": 14,
+  "exactLabelsValidated": true,
+  "existingActualReportsRewritten": false,
+  "full500": false,
+  "fullLogical6000Hashes": 9,
+  "fullReads": 5,
+  "functionalEvidencePASS": true,
+  "functionalPassSeparateFromPeakLocalization": true,
+  "genuineRPCs": 27,
+  "graphBindingsRecomputed": 18,
+  "historyBindingsRecomputed": 23,
+  "hostPin": {
+    "bytes": 2436,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase.py",
+    "sha256": "7d6d654eddcdd9a84e9da07e9106db59b64005bcf03e16a7af5238752a6a09d5"
+  },
+  "lifecycle57ProofsPreviouslyIndependentlyVerified": true,
+  "lifecycleReviewPin": {
+    "bytes": 4214,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+    "sha256": "e309ae7e09348c91765e7cb7fa29200d4677241b2ddb8be864738fbac910e33a"
+  },
+  "limits": [
+    "Phase brackets locate sampled lifetime-counter advances only. Clock/read/parsing/recording/finalization allocations and existing test-observer work are included.",
+    "Within-frame advances are observer-ambiguous; between-frame advances include adjoining observer overhead. Later current/RSS/V8 metrics are not simultaneous peak decomposition.",
+    "Snapshot capture includes existing sentData/sentAdditions/recordContents/sentHistory; request entry/body-observer/HTTP-JSON phases preserve the original diagnostic body parse. Final-read bracket covers full invoke including verifyLogical/wire/memory bookkeeping.",
+    "Final lifetime peak beyond every frame is UNLOCALIZED_OUTSIDE_OR_AFTER_FRAMES and does not invalidate complete functional evidence.",
+    "file includes shmem; external includes arrayBuffers; process RSS/heap/native metrics cannot be added or exactly subtracted for ownership. SQL/WAL/write counters do not measure RAM.",
+    "The negative inflate comparison is unchanged. No effect, saving, plateau, late30 repetition, allocator cause, fix, full500/full-motor/1500-output or500MB-reserve proof follows.",
+    "Source and closed evidence only; no subject imports/tests, SQL, Docker, new samplers/resources, provider calls, GC forcing, eviction or peak reset. Original PGDATA/archive/runtime payloads were not replayed.",
+    "All raw proofs, source and hulls remain retained. This report grants no retirement action or500GO."
+  ],
+  "memorySavingProven": false,
+  "phasePeakAttribution": "BOUNDED_FRAME_INCREMENTS_ONLY",
+  "preparedPin": {
+    "bytes": 49491,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/PREPARED.SAFE.json",
+    "sha256": "1868119f68f6d27a67c26281b8a71db7c9cb5b6e7d878405bb16f8492f6f30b3"
+  },
+  "production": false,
+  "providerCalls": 0,
+  "resultPins": [
+    {
+      "bytes": 8332,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-e1ef7b555c720e139e34cbf5/ACTUAL_RESULT.SAFE.json",
+      "sha256": "4ce63e58a76b6b6cbc4c0c161707fc5560a71072bdc9ce0a7d52df31f6cb5e83"
+    },
+    {
+      "bytes": 9112,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/ACTUAL_RESULT.SAFE.json",
+      "sha256": "d0b096b2dbc6c81221382e1bc0014a3bcba2cc321b249379551fd633c439ad99"
+    }
+  ],
+  "retainedHullIdentities": 6,
+  "retirementAuthorizedByReview": false,
+  "rootAnnouncedCompletionPin": {
+    "bytes": 633,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/ROOT_ANNOUNCED_WORK_COMPLETIONS.SAFE.json",
+    "sha256": "203572ba300fa965c964a89bd43723124a7e8ad9c46f5079c948d11e5f99635d"
+  },
+  "schema": "helmut-auth-write-phase-independent-actual-review/1",
+  "scope": "Fresh same-freeze zeroAuth lifecycle plus exactly one CURRENT3round27RPC case with14 bounded scalar frames.",
+  "sourceReviewPin": {
+    "bytes": 17415,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/SOURCE_REVIEW.SAFE.json",
+    "sha256": "610206b44c757f602150d3462aa4957d9210fbccfd24d6edc4b8d48f0d5fa2ea"
+  },
+  "status": "PASS",
+  "structuralFixSupportedByScalarCountersAlone": false,
+  "twoUniqueGroupsInodesNonces": true,
+  "verifiedPinsManifest": {
+    "bytes": 260540,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/ACTUAL_VERIFIED_PINS.PRIVATE.json",
+    "sha256": "a0980f87066841335ad6c4bffd7d0a0537092b340af918eae4177b13164fb845"
+  },
+  "verifierSourcePin": {
+    "bytes": 49363,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/verify_actual.py",
+    "sha256": "112b51175174ae19bcb137b3bb98e9c9ef40f7a165ce1ea880a3763fde2780a1"
+  },
+  "workCaptures": 17,
+  "workCase": {
+    "NodePGWorkloadExit0StrictPostgRESTAndEOFVerified": true,
+    "actualResultPin": {
+      "bytes": 9112,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/ACTUAL_RESULT.SAFE.json",
+      "sha256": "d0b096b2dbc6c81221382e1bc0014a3bcba2cc321b249379551fd633c439ad99"
+    },
+    "allNativeEventsZero": true,
+    "captures": 17,
+    "case": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3",
+    "confirmedCASWrites": 4,
+    "controlReads": 18,
+    "cycleEndObservations": [
+      {
+        "nativeCurrentBytes": 950366208,
+        "nativeLifetimePeakBytes": 995037184,
+        "nativeMemoryStat": {
+          "anon": 317296640,
+          "file": 604852224,
+          "kernel": 27111424,
+          "shmem": 233725952
+        },
+        "naturalGC": {
+          "count": 104,
+          "durationMilliseconds": 231.73778307437897,
+          "kinds": {
+            "1": 82,
+            "4": 11,
+            "8": 11
+          }
+        },
+        "nodeProcess": {
+          "arrayBuffers": 1457402,
+          "external": 5439938,
+          "heapTotal": 109129728,
+          "heapUsed": 58750888,
+          "rss": 243716096
+        },
+        "round": 1
+      },
+      {
+        "nativeCurrentBytes": 956383232,
+        "nativeLifetimePeakBytes": 1012248576,
+        "nativeMemoryStat": {
+          "anon": 323469312,
+          "file": 604901376,
+          "kernel": 27156480,
+          "shmem": 233725952
+        },
+        "naturalGC": {
+          "count": 180,
+          "durationMilliseconds": 354.4517840743065,
+          "kinds": {
+            "1": 142,
+            "4": 19,
+            "8": 19
+          }
+        },
+        "nodeProcess": {
+          "arrayBuffers": 1457402,
+          "external": 5439938,
+          "heapTotal": 108343296,
+          "heapUsed": 59346224,
+          "rss": 247730176
+        },
+        "round": 2
+      },
+      {
+        "nativeCurrentBytes": 962170880,
+        "nativeLifetimePeakBytes": 1027653632,
+        "nativeMemoryStat": {
+          "anon": 328536064,
+          "file": 604999680,
+          "kernel": 27815936,
+          "shmem": 233758720
+        },
+        "naturalGC": {
+          "count": 256,
+          "durationMilliseconds": 500.7923312485218,
+          "kinds": {
+            "1": 204,
+            "4": 26,
+            "8": 26
+          }
+        },
+        "nodeProcess": {
+          "arrayBuffers": 1590449,
+          "external": 15152497,
+          "heapTotal": 104165376,
+          "heapUsed": 81193824,
+          "rss": 252723200
+        },
+        "round": 3
+      }
+    ],
+    "entireCatalogABIACLExceptAuthorizedRevisionSHA": true,
+    "finalGroupEmptyThroughLastOwnedExit": true,
+    "fullLogical6000HistoryHashes": 9,
+    "fullReads": 5,
+    "genuineRPCs": 27,
+    "graphBindingsRecomputed": 18,
+    "historyBindingsRecomputed": 23,
+    "index": 1,
+    "logicalFieldAndHistoryHashes": {
+      "controls": {
+        "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+        "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+        "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+        "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+      },
+      "history": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68"
+    },
+    "markerObservationACKTriplets": 6,
+    "maximumAuthOperationMilliseconds": 1451.025477,
+    "nativeAndReferencedHistoryRows": 6000,
+    "nativeFinalEvents": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "nativeGroup": "helmut-meter-memorybudget-627b0b079c7cb30d0708c317",
+    "nativeLifetimePeakBytes": 1039151104,
+    "nodeWallMilliseconds": 11417.526875000001,
+    "originalSourceManifestSHA256Recomputed": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "outerCompletionChunk": "b8edcc",
+    "parentInode": 21208,
+    "phaseAnalysis": {
+      "all14FrameTable": [
+        {
+          "begin": {
+            "monotonicMilliseconds": 10364.109453,
+            "utcISO": "2026-10-21T07:23:58.148Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10366.088716,
+            "utcISO": "2026-10-21T07:23:58.150Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": null,
+          "index": 1,
+          "label": "driver.restore.beforeU",
+          "nativeCurrentBytes": 1017720832,
+          "nativeLifetimePeakAfterBytes": 1027653632,
+          "nativeLifetimePeakBeforeBytes": 1027653632,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 383541248,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27983872,
+            "kernel_stack": 573440,
+            "pagetables": 6959104,
+            "shmem": 233758720,
+            "slab": 20388816,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 17255090,
+            "external": 34429052,
+            "heapTotal": 132677632,
+            "heapUsed": 111468680,
+            "rss": 308097024
+          },
+          "processLifetimeMaxRSSKiB": 301220,
+          "v8SelectedScalars": {
+            "external_memory": 34429052,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 286792,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 341368264,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 132677632,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 132947968,
+            "used_global_handles_size": 62848,
+            "used_heap_size": 111471528
+          },
+          "wholeGroupCPUUsec": 25829297,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10366.292683,
+            "utcISO": "2026-10-21T07:23:58.150Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10366.660408,
+            "utcISO": "2026-10-21T07:23:58.150Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 2,
+          "label": "U.beforeSnapshotCapture",
+          "nativeCurrentBytes": 1017720832,
+          "nativeLifetimePeakAfterBytes": 1027653632,
+          "nativeLifetimePeakBeforeBytes": 1027653632,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 383541248,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27983872,
+            "kernel_stack": 573440,
+            "pagetables": 6959104,
+            "shmem": 233758720,
+            "slab": 20388816,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 17279672,
+            "external": 34453634,
+            "heapTotal": 132939776,
+            "heapUsed": 111595192,
+            "rss": 308097024
+          },
+          "processLifetimeMaxRSSKiB": 301220,
+          "v8SelectedScalars": {
+            "external_memory": 34453634,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 286792,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 341242584,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 132939776,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 133210112,
+            "used_global_handles_size": 62848,
+            "used_heap_size": 111597112
+          },
+          "wholeGroupCPUUsec": 25830592,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10409.38758,
+            "utcISO": "2026-10-21T07:23:58.193Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10410.016969,
+            "utcISO": "2026-10-21T07:23:58.194Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 3436544,
+          "index": 3,
+          "label": "U.afterSnapshotCapture",
+          "nativeCurrentBytes": 968876032,
+          "nativeLifetimePeakAfterBytes": 1031090176,
+          "nativeLifetimePeakBeforeBytes": 1031090176,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 334536704,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 28012544,
+            "kernel_stack": 573440,
+            "pagetables": 6987776,
+            "shmem": 233758720,
+            "slab": 20384784,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1505124,
+            "external": 5353970,
+            "heapTotal": 121712640,
+            "heapUsed": 73903824,
+            "rss": 259121152
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5353970,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 286792,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 364648888,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 121712640,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 114757632,
+            "used_global_handles_size": 3488,
+            "used_heap_size": 73905560
+          },
+          "wholeGroupCPUUsec": 25931068,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10490.197704,
+            "utcISO": "2026-10-21T07:23:58.274Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10490.725119,
+            "utcISO": "2026-10-21T07:23:58.274Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 4,
+          "label": "U.afterPartsBuild",
+          "nativeCurrentBytes": 978604032,
+          "nativeLifetimePeakAfterBytes": 1031090176,
+          "nativeLifetimePeakBeforeBytes": 1031090176,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 344674304,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27901952,
+            "kernel_stack": 573440,
+            "pagetables": 6877184,
+            "shmem": 233758720,
+            "slab": 20384784,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1505124,
+            "external": 5353970,
+            "heapTotal": 124055552,
+            "heapUsed": 84678648,
+            "rss": 269144064
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5353970,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 286792,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 365844312,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 124055552,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 117100544,
+            "used_global_handles_size": 63872,
+            "used_heap_size": 84680384
+          },
+          "wholeGroupCPUUsec": 26021694,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10491.029148,
+            "utcISO": "2026-10-21T07:23:58.275Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10491.273836,
+            "utcISO": "2026-10-21T07:23:58.275Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 5,
+          "label": "driver.request.afterSerializationBeforeHTTP",
+          "nativeCurrentBytes": 978604032,
+          "nativeLifetimePeakAfterBytes": 1031090176,
+          "nativeLifetimePeakBeforeBytes": 1031090176,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 344674304,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27901952,
+            "kernel_stack": 573440,
+            "pagetables": 6877184,
+            "shmem": 233758720,
+            "slab": 20384784,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1529706,
+            "external": 5378552,
+            "heapTotal": 124055552,
+            "heapUsed": 84752976,
+            "rss": 269144064
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5378552,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 557200,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 365769976,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 124055552,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 117100544,
+            "used_global_handles_size": 63872,
+            "used_heap_size": 84754712
+          },
+          "wholeGroupCPUUsec": 26022413,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10491.34926,
+            "utcISO": "2026-10-21T07:23:58.275Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10491.751376,
+            "utcISO": "2026-10-21T07:23:58.275Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 6,
+          "label": "driver.request.afterBodyObserverBeforeHTTP",
+          "nativeCurrentBytes": 978604032,
+          "nativeLifetimePeakAfterBytes": 1031090176,
+          "nativeLifetimePeakBeforeBytes": 1031090176,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 344674304,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27901952,
+            "kernel_stack": 573440,
+            "pagetables": 6877184,
+            "shmem": 233758720,
+            "slab": 20384784,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1554288,
+            "external": 5403134,
+            "heapTotal": 124055552,
+            "heapUsed": 84843104,
+            "rss": 269144064
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5403134,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 589976,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 365679848,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 124055552,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 117100544,
+            "used_global_handles_size": 63872,
+            "used_heap_size": 84844840
+          },
+          "wholeGroupCPUUsec": 26023685,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10703.855144,
+            "utcISO": "2026-10-21T07:23:58.488Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10704.345714,
+            "utcISO": "2026-10-21T07:23:58.488Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 8060928,
+          "index": 7,
+          "label": "driver.request.afterRPCJSONParsed",
+          "nativeCurrentBytes": 997367808,
+          "nativeLifetimePeakAfterBytes": 1039151104,
+          "nativeLifetimePeakBeforeBytes": 1039151104,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 363290624,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27975680,
+            "kernel_stack": 573440,
+            "pagetables": 6946816,
+            "shmem": 233758720,
+            "slab": 20386328,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1582654,
+            "external": 5431500,
+            "heapTotal": 124055552,
+            "heapUsed": 85197096,
+            "rss": 269144064
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5431500,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 286792,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 365325776,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 124055552,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 117100544,
+            "used_global_handles_size": 63872,
+            "used_heap_size": 85198832
+          },
+          "wholeGroupCPUUsec": 26243236,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10704.446095,
+            "utcISO": "2026-10-21T07:23:58.488Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10704.715481,
+            "utcISO": "2026-10-21T07:23:58.488Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 8,
+          "label": "U.beforeAttach",
+          "nativeCurrentBytes": 997367808,
+          "nativeLifetimePeakAfterBytes": 1039151104,
+          "nativeLifetimePeakBeforeBytes": 1039151104,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 363290624,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27975680,
+            "kernel_stack": 573440,
+            "pagetables": 6946816,
+            "shmem": 233758720,
+            "slab": 20386328,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1607236,
+            "external": 5456082,
+            "heapTotal": 124055552,
+            "heapUsed": 85272968,
+            "rss": 269144064
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5456082,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 360544,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 365249904,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 124055552,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 117100544,
+            "used_global_handles_size": 63872,
+            "used_heap_size": 85274704
+          },
+          "wholeGroupCPUUsec": 26244056,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10704.905898,
+            "utcISO": "2026-10-21T07:23:58.489Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10705.08627,
+            "utcISO": "2026-10-21T07:23:58.489Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 9,
+          "label": "U.afterAttach",
+          "nativeCurrentBytes": 997367808,
+          "nativeLifetimePeakAfterBytes": 1039151104,
+          "nativeLifetimePeakBeforeBytes": 1039151104,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 363290624,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27975680,
+            "kernel_stack": 573440,
+            "pagetables": 6946816,
+            "shmem": 233758720,
+            "slab": 20386328,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1631818,
+            "external": 5480664,
+            "heapTotal": 124055552,
+            "heapUsed": 85434840,
+            "rss": 269144064
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5480664,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 286792,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 365088032,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 124055552,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 117100544,
+            "used_global_handles_size": 63872,
+            "used_heap_size": 85436576
+          },
+          "wholeGroupCPUUsec": 26244523,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10714.890688,
+            "utcISO": "2026-10-21T07:23:58.499Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10715.165742,
+            "utcISO": "2026-10-21T07:23:58.499Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 10,
+          "label": "U.beforeReturn",
+          "nativeCurrentBytes": 997101568,
+          "nativeLifetimePeakAfterBytes": 1039151104,
+          "nativeLifetimePeakBeforeBytes": 1039151104,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 363290624,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27975680,
+            "kernel_stack": 573440,
+            "pagetables": 6946816,
+            "shmem": 233758720,
+            "slab": 20386328,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1656400,
+            "external": 5505246,
+            "heapTotal": 124055552,
+            "heapUsed": 89481688,
+            "rss": 269144064
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5505246,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 944200,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 361041152,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 124055552,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 117100544,
+            "used_global_handles_size": 63872,
+            "used_heap_size": 89483456
+          },
+          "wholeGroupCPUUsec": 26256557,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10715.273194,
+            "utcISO": "2026-10-21T07:23:58.499Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10715.433496,
+            "utcISO": "2026-10-21T07:23:58.499Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 11,
+          "label": "driver.afterU.beforeVerifyLogical",
+          "nativeCurrentBytes": 997101568,
+          "nativeLifetimePeakAfterBytes": 1039151104,
+          "nativeLifetimePeakBeforeBytes": 1039151104,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 363290624,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27975680,
+            "kernel_stack": 573440,
+            "pagetables": 6946816,
+            "shmem": 233758720,
+            "slab": 20386328,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1680982,
+            "external": 5529828,
+            "heapTotal": 124055552,
+            "heapUsed": 89549848,
+            "rss": 269144064
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5529828,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 944200,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 360973024,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 124055552,
+            "total_heap_size_executable": 1310720,
+            "total_physical_size": 117100544,
+            "used_global_handles_size": 63872,
+            "used_heap_size": 89551584
+          },
+          "wholeGroupCPUUsec": 26256879,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10906.561958,
+            "utcISO": "2026-10-21T07:23:58.690Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10906.969312,
+            "utcISO": "2026-10-21T07:23:58.691Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 12,
+          "label": "driver.afterVerifyLogical",
+          "nativeCurrentBytes": 996802560,
+          "nativeLifetimePeakAfterBytes": 1039151104,
+          "nativeLifetimePeakBeforeBytes": 1039151104,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 362741760,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27926528,
+            "kernel_stack": 573440,
+            "pagetables": 6909952,
+            "shmem": 233758720,
+            "slab": 20384000,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1505883,
+            "external": 5354729,
+            "heapTotal": 128176128,
+            "heapUsed": 97875720,
+            "rss": 268951552
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5354729,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 286792,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 354947536,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 128176128,
+            "total_heap_size_executable": 1835008,
+            "total_physical_size": 128446464,
+            "used_global_handles_size": 3584,
+            "used_heap_size": 97877456
+          },
+          "wholeGroupCPUUsec": 26488099,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 10907.245778,
+            "utcISO": "2026-10-21T07:23:58.691Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 10907.486822,
+            "utcISO": "2026-10-21T07:23:58.691Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 13,
+          "label": "driver.beforeFinalRead",
+          "nativeCurrentBytes": 996802560,
+          "nativeLifetimePeakAfterBytes": 1039151104,
+          "nativeLifetimePeakBeforeBytes": 1039151104,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 362741760,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27926528,
+            "kernel_stack": 573440,
+            "pagetables": 6909952,
+            "shmem": 233758720,
+            "slab": 20384000,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 1530465,
+            "external": 5379311,
+            "heapTotal": 128176128,
+            "heapUsed": 97967472,
+            "rss": 268951552
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 5379311,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 286792,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 354855784,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 128176128,
+            "total_heap_size_executable": 1835008,
+            "total_physical_size": 128446464,
+            "used_global_handles_size": 3584,
+            "used_heap_size": 97969208
+          },
+          "wholeGroupCPUUsec": 26488721,
+          "withinFramePeakAdvanceBytes": 0
+        },
+        {
+          "begin": {
+            "monotonicMilliseconds": 11460.160775,
+            "utcISO": "2026-10-21T07:23:59.244Z"
+          },
+          "end": {
+            "monotonicMilliseconds": 11460.734269,
+            "utcISO": "2026-10-21T07:23:59.244Z"
+          },
+          "fromPreviousFramePeakAfterToThisBeforeBytes": 0,
+          "index": 14,
+          "label": "driver.afterFinalRead",
+          "nativeCurrentBytes": 990027776,
+          "nativeLifetimePeakAfterBytes": 1039151104,
+          "nativeLifetimePeakBeforeBytes": 1039151104,
+          "nativeSelectedMemoryStatBytes": {
+            "anon": 355762176,
+            "file": 605020160,
+            "file_mapped": 54104064,
+            "kernel": 27922432,
+            "kernel_stack": 573440,
+            "pagetables": 6901760,
+            "shmem": 233758720,
+            "slab": 20385392,
+            "sock": 0
+          },
+          "nodeProcessBytes": {
+            "arrayBuffers": 2630258,
+            "external": 6479104,
+            "heapTotal": 143167488,
+            "heapUsed": 112418648,
+            "rss": 280477696
+          },
+          "processLifetimeMaxRSSKiB": 314060,
+          "v8SelectedScalars": {
+            "external_memory": 6479104,
+            "heap_size_limit": 452984832,
+            "malloced_memory": 286792,
+            "number_of_detached_contexts": 0,
+            "number_of_native_contexts": 1,
+            "peak_malloced_memory": 31308776,
+            "total_available_size": 340428608,
+            "total_global_handles_size": 131072,
+            "total_heap_size": 143167488,
+            "total_heap_size_executable": 1572864,
+            "total_physical_size": 143437824,
+            "used_global_handles_size": 3584,
+            "used_heap_size": 112420384
+          },
+          "wholeGroupCPUUsec": 27146547,
+          "withinFramePeakAdvanceBytes": 0
+        }
+      ],
+      "betweenFrameAdvancesIncludeAdjoiningObserverOverhead": true,
+      "exactFrameCount": 14,
+      "exactLabelsValidated": true,
+      "exactPeakOwnerOrAllocatorCauseProven": false,
+      "expectedWorkerSummary": {
+        "allocatorOrRetainedObjectCauseProven": false,
+        "capturedNodePID": 45,
+        "currentCountersDecomposePeak": false,
+        "frames": 14,
+        "groupInode": 21208,
+        "maximumFramePeakAfterBytes": 1039151104,
+        "serializedAddedMetadataBytes": 20251
+      },
+      "finalGroupLifetimePeakBytes": 1039151104,
+      "finalPeakBeyondAllFramesBytes": 0,
+      "finalReadBracketIncludesFullExistingDiagnosticInvocation": true,
+      "maximumFramePeakAfterBytes": 1039151104,
+      "peakAttribution": "BOUNDED_FRAME_INCREMENTS_ONLY",
+      "serializedAddedMetadataBytes": 20251,
+      "snapshotsAtomic": false,
+      "withinFrameAdvancesObserverAmbiguous": true
+    },
+    "physicalAuthBytes": 606,
+    "restoredStateAndHistory": true,
+    "retainedProofBytes": 2707845,
+    "retainedProofFiles": 102,
+    "rootAdoptionUTC": "2026-10-21T07:23:28.546420+00:00",
+    "startUTC": "2026-10-21T07:23:31.857585+00:00",
+    "variant": "CURRENT",
+    "wholeLifetimeCPUUsec": 32250197,
+    "wholeLifetimeWallSeconds": 32.92893633199856,
+    "workloadFinishedAtUTC": "2026-10-21T07:24:04.369516407Z"
+  },
+  "workProofFilesIndependentlyHashed": 102
+}

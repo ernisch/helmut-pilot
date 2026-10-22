@@ -1,0 +1,89 @@
+{
+  "schema": "helmut-cas-heap-log-contract/1",
+  "status": "SOURCE_ONLY_CUSTODY_RELEASED_NOT_RUN",
+  "prefix": "HELMUT_CAS_HEAP_V1 ",
+  "logSchema": "helmut-cas-heap-log/1",
+  "commonExactKeys": [
+    "schema",
+    "kind",
+    "point",
+    "backendPID",
+    "xid",
+    "expectedRevision",
+    "newRevision",
+    "currentUser",
+    "sessionUser",
+    "rawProjection",
+    "rawDiagnosticScope",
+    "logErrorVerbosity",
+    "logMinErrorStatement"
+  ],
+  "binderExactFieldCount": 13,
+  "heapExtraExactKeys": [
+    "contextCount",
+    "totalBytes",
+    "usedBytes",
+    "freeBytes",
+    "outputTextBytes",
+    "outputValueBytes"
+  ],
+  "heapExactFieldCount": 19,
+  "binderKindPoint": [
+    "cas",
+    "session"
+  ],
+  "heapKindPoints": [
+    [
+      "heap",
+      "beforeOutputText"
+    ],
+    [
+      "heap",
+      "afterOutputValue"
+    ]
+  ],
+  "successfulCASCount": 4,
+  "exactCASSessionRecords": 4,
+  "exactHeapRecords": 8,
+  "exactDiagnosticRecords": 12,
+  "maximumRecordJSONBytes": 2048,
+  "maximumDiagnosticJSONBytes": 24576,
+  "maximumContextGUCBytes": 3072,
+  "maximumRawGUCBytes": 128,
+  "maximumRoleUTF8Bytes": 63,
+  "contextCountRange": [
+    1,
+    4096
+  ],
+  "counterRange": [
+    0,
+    9223372036854775807
+  ],
+  "backendPIDRange": [
+    1,
+    2147483647
+  ],
+  "xid": "positive decimal string1..20digits; assignedXID only, no forced assignment",
+  "revisionPattern": "[a-f0-9-]{36}; expected!=new; bind exact accepted original driver write steps in order",
+  "rawGUCPolicy": "NULL stays NULL; otherwise stringUTF8<=128B. Projection exactly on forbidden before branch; every other short value preserves original default branch. No forced NULL/OFF or diagnostic scope value.",
+  "requiredActualLogging": {
+    "logErrorVerbosity": "terse",
+    "logMinErrorStatement": "fatal"
+  },
+  "recordMatching": "Triplets share backendPID/xid/expectedRevision/newRevision/roles/rawGUC/logging values. Exactly4 unique accepted CAS revision pairs, each followed by beforeOutputText then afterOutputValue; no read/control triplets or duplicate/missing/extra records. Parse only after actual PostgreSQL log EOF.",
+  "memoryCounters": "Strict integer count/total/used/free; total=used+free; missing/invalid is failure, never default0.",
+  "outputLengthScalars": "Both JSONnull beforeOutputText. AfterOutputValue: O(1)octet_length(output_text),pg_column_size(output_value) nonnegative integers; no payload/traversal. Original actual-size guard remains in its original position.",
+  "observerLimits": [
+    "The first point has renderer_chunks retaining the complete text. Between points chunks are cleared, full output_text is joined, uniqueness/text-size checks run and JSONB is cast. Delta is net across those changes plus observer; it is not isolated text+JSONB allocation cost.",
+    "The memory-context SRF itself traverses/materializes all context names/ident internally even though only four scalar aggregates leave the query. Count4096 rejects result only; it does not bound internal SRF allocation.",
+    "Exclusive per-context counters are summed, not inclusive parents/children or separate peaks. Traversal is not atomic and observer allocations affect the results.",
+    "Logging, scalar encoding, query/SRF state, GUC correlation and two additional O(1)length calls are measured observer work; no reset/cache eviction/GC tuning.",
+    "Context allocated/used/free are allocator bookkeeping, not RSS/group peak decomposition or a saving claim."
+  ],
+  "logEnvelope": "2048 cap measures JSON text excluding fixed prefix and server envelope. At most12 prefix/envelope lines; inherited PG/case capture caps remain unchanged. terse+fatal suppress CONTEXT and STATEMENT for these LOG records.",
+  "methodReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/METHOD_REVIEW.SAFE.json",
+    "bytes": 19011,
+    "sha256": "ed1b079d3191cb54a557dc56cd0b45e891eb7e352fca85202d8ab844edc93ad5"
+  }
+}

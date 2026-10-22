@@ -1,0 +1,473 @@
+{
+  "atUTC": "2026-10-21T10:57:02.124752+00:00",
+  "currentComparisonBoundary": {
+    "acceptedCurrentAuthComponent": {
+      "CAS": 4,
+      "acceptedRPCs": 27,
+      "authBatchSeconds": 11.159176514,
+      "controls": 18,
+      "full500Executions": 0,
+      "historyAdditions": 0,
+      "nativeSource": "Permanent canonical827a late6000-row state",
+      "ordinaryMutationRounds": 3,
+      "reads": 5,
+      "restoreCAS": 1,
+      "wholeCPUSeconds": 33.031932,
+      "wholeNativePeakBytes": 1036963840,
+      "wholeWallSeconds": 33.431031
+    },
+    "acceptedEarlierRendererBenefitBytes": 154886144,
+    "benefitLimit": "That prior fair shared Auth saving is already integrated. Do not subtract it or the current component peak from historical V11, forecast a current full peak, or call the residual a measured Motor gap. Budgets, source freeze, inputs, stage populations and durations differ.",
+    "currentFullNativePolicy": {
+      "executedFull500AtCurrentIntegratedFreeze": false,
+      "memoryHighBytes": 1399996416,
+      "memoryMaxBytes": 1547997184,
+      "nodeOldSpaceMiB": 384,
+      "nodeSemiSpaceMiB": 16,
+      "swapMaxBytes": 0
+    },
+    "currentFullPathSourcePinsReusedFromL": [
+      {
+        "bytes": 19434,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget.py",
+        "sha256": "66b4c432f687445763074a6b2432533c9305cadc09a17a94bf45507d419fd4af"
+      },
+      {
+        "bytes": 3537,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget.js",
+        "sha256": "09a00f44d94c512fca22bb6a7447adf8a139e8967c618acb72166a29132ff329"
+      },
+      {
+        "bytes": 30268,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/connect-local500.py",
+        "sha256": "bb93d8caf29015e935536cbb1446783291aee9be8fcf5f21d86e3660bf04ea07"
+      },
+      {
+        "bytes": 1175,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/local-source-runtime-binding.json",
+        "sha256": "f0740d9dd94ebff52ee273e3f20f7d24bba552f11f0dd8004f52957a672cffa9"
+      }
+    ],
+    "historicalActualLimits": {
+      "groupMemoryHigh": "max",
+      "groupMemoryMax": "max",
+      "groupSwapMax": "max",
+      "runtimeNodeOldSpaceMiB": 1536
+    }
+  },
+  "decision": {
+    "greatestAvoidableOwnerIdentified": false,
+    "newNativeOrFull500GO": false,
+    "productChangeSupported": false,
+    "proven500MBSaving": false,
+    "provenEngineLeak": false,
+    "summary": "The accepted current27RPC Auth component does not exercise the full runtime workload that coexisted with historical V11 application and database anonymous growth. Existing retained evidence quantifies the gap but does not identify a large avoidable owner. No structural Motor change follows from serialized telemetry size or isolated component peaks.",
+    "terminalMetadataReplayQualifiedForActualRanking": false,
+    "unmatchedLongLivedWorkExists": true
+  },
+  "evidencePins": {
+    "acceptedCurrentAuthActual": {
+      "bytes": 39335,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+      "scope": "Previously accepted current component, not re-audited here.",
+      "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+    },
+    "currentFullpathSourceReview": {
+      "bytes": 32114,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/launcher-review/SOURCE_REVIEW.SAFE.json",
+      "sha256": "633c0f04c8d1cfbfbc942e84190c5c15894c44b7321255dae6458e6b1fd38072"
+    },
+    "currentTelemetryInterfaceReview": {
+      "bytes": 13188,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/launcher-review/TELEMETRY_INTERFACE_REVIEW.SAFE.json",
+      "sha256": "ed86606cc7514e00c937e8502275b4fe1fb127814d6bc8711e7f310744da9342"
+    },
+    "dbRetentionReviewHandoff": {
+      "bytes": 26645,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/evidence-review/DB_RETENTION_GAP_REVIEW.SAFE.json",
+      "scope": "Independent E SQL/physical-retention gap analysis; not duplicated here.",
+      "sha256": "6c4072e7ff1c34a34005a84e107e3bbdadec3936293f0f0bc96e821ba04d2462"
+    },
+    "independentReplayMethodHandoff": {
+      "bytes": 12083,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/evidence-review/TELEMETRY_REPLAY_METHOD.SAFE.json",
+      "scope": "Independent E method review reaches same unqualified terminal-row replay boundary; no new execution requirement.",
+      "sha256": "54cebe9e78d6543f0b4f15123367343594ef6c4588f60c6a5bdec32f9b8e1b42"
+    },
+    "priorCurrentAuthInterpretation": {
+      "bytes": 37501,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/heap-interpretation/READONLY_FINDINGS.SAFE.json",
+      "scope": "Prior current CAS context/peak limitations reused without repeating them.",
+      "sha256": "a503949e8b4235f931305749bfe2cca49e269274e7c3be2af80e908185d88b97"
+    },
+    "v11CurveSummary": {
+      "bytes": 51590,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/v11-curve-evidence/CURVE_SUMMARY.SAFE.json",
+      "pinProvenance": "Previously inspected retained V11 curve metadata; source measurements not rerun.",
+      "sha256": "f57014bf614a56e1efc10887683012f242d10fb3475a8eefd240a629c159bcb9"
+    },
+    "v11MemoryTimeline": {
+      "bytes": 589860,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/v11-curve-evidence/MEMORY_TIMELINE.SAFE.json",
+      "pinProvenance": "Previously inspected retained V11 curve metadata; source measurements not rerun.",
+      "sha256": "b0e1198f70a2e40a9c3c6f023fd4c38b82641acc34dcab8a4948a59e780b3246"
+    },
+    "v11ProcessRolesAndSettings": {
+      "bytes": 54283,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/v11-curve-evidence/PROCESS_ROLES_AND_SETTINGS.SAFE.json",
+      "pinProvenance": "Previously inspected retained V11 curve metadata; source measurements not rerun.",
+      "sha256": "6bc6b03dd36c2ffa942d29a9ddac989a4207599548a43220fc180914409a77e7"
+    },
+    "v11ProcessTracks": {
+      "bytes": 116906,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/v11-curve-evidence/PROCESS_RSS_TRACKS.SAFE.json",
+      "pinProvenance": "Previously inspected retained V11 curve metadata; source measurements not rerun.",
+      "sha256": "61e86caa90e5e993c8531157ee1fcf70e0458f72fd25723db26aec03f145a7cc"
+    },
+    "v11RuntimeScalarExtract": {
+      "bytes": 4802,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/capacity-review/V11_RUNTIME_SCALAR_EXTRACT.SAFE.json",
+      "sha256": "934a4846e0399ef7729da2fa7abca82d2fd184bf0e024f9a8a42db6ab1c3032c"
+    },
+    "v11TelemetrySizes": {
+      "bytes": 8143,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/capacity-review/TELEMETRY_COLLECTION_SIZES.SAFE.json",
+      "sha256": "50dce7c83b5d8d253ceaafb9c848151bef35fb580ad6031bc1c69ff59a987dfe"
+    }
+  },
+  "existingRuntimeTimingAndHeapAvailability": {
+    "historicalHeapExternalNaturalGCAvailable": false,
+    "notSufficientForReplay": "These real boundaries are not the complete original allocation/async row mutation/alias/finalconsumer chronology and cannot reconstruct a literal current collector memory ranking.",
+    "phasePin": {
+      "bytes": 4802,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/capacity-review/V11_RUNTIME_SCALAR_EXTRACT.SAFE.json",
+      "sha256": "934a4846e0399ef7729da2fa7abca82d2fd184bf0e024f9a8a42db6ab1c3032c"
+    },
+    "phaseSourcePin": {
+      "bytes": 223948,
+      "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-3b3bf56650bc/native-end-preparation/run-combined500-synthetik500-resources20-3b3bf56650bc/RUNTIME_PHASES.SAFE.jsonl",
+      "sha256": "e4d6633de9cca55ead431772c9958b94ce8f10d15a399f4d5123dc5a25f39541"
+    },
+    "retainedRuntimeBoundaries": {
+      "HTTPCompleteRows": 500,
+      "clocks": "elapsedMS and utc present in every phase row; completed HTTP rows also index/action/status/wallMS/providerCalls.",
+      "journalEnterRows": 500,
+      "labels": [
+        "actual_request_scope_open",
+        "actual_J_enter",
+        "local_unit_http_complete"
+      ],
+      "rows": 1500,
+      "scopeOpenRows": 500
+    },
+    "stepExactHandlerMemoryAlignment": false,
+    "whatDoesNotExist": "Historical V11 native/Runtime evidence does not contain application-isolate heapUsed/heapTotal/external/arrayBuffers, naturalGC sequence/afterGC heap, retained-object owners, or an exact memory snapshot at every real handler inner-step. Runtime maxRSS is one process lifetime high watermark; host status/kernel snapshots are sparse independent samples. The current27RPC V8 frames cannot be transplanted into the missing full-runtime isolate.",
+    "whatExists": "Actual profile-level scope opening, J.enter index and terminal HTTP completion can bracket the coarse native timeline. Terminal requests/events include additional operation/transport timings, and current27RPC has14 Node/cgroup frames only for that short Auth case.",
+    "wholeProfileBoundaryTimingAvailable": true
+  },
+  "finalLimits": [
+    "No proven500MB avoidable pool, fullpath acceptance, memory budget sufficiency or performance gain.",
+    "The current report does not authorize a native replay/full500, source change, garbage collection, archive/delete or resource action.",
+    "All originals, canonical827a/17archives, runtime inputs, evidence, existing hulls and protected resources remain KEEP."
+  ],
+  "fullpathPopulationMissingFromComponent": [
+    {
+      "component": "Bounded500-row input preparation and complete command assembly",
+      "implication": "Can affect its own whole-stage peak; source does not support its collection remaining live in late runtime.",
+      "lifetime": "Separate prep/assembly processes before sequence runtime; assembly exits before long profile loop."
+    },
+    {
+      "component": "One full stored command/current immutable graph plus derived runtime",
+      "implication": "Legitimate fixed input population absent from27Auth. No evidence of one full copy added perprofile; unchanged stored-command/content-worker code predates accepted Auth optimization.",
+      "lifetime": "Retained across500 requests in storage backend; request release closes session, not current."
+    },
+    {
+      "component": "Full application runtime and HTTP entry/proxy/request orchestration",
+      "implication": "Current27Auth has native Node/PG/PgREST but omits full application processing and this process population; count/charge gap is real, exact owner map unavailable.",
+      "lifetime": "One live runtime Node plus controller/proxy and native DB/gateway throughout profile loop."
+    },
+    {
+      "component": "Transient Content worker plus provider D/R bodies/timers",
+      "implication": "Potential transient overlap is not a retained500-Worker accumulation. Separate loader/Worker probe peaks cannot be added to fullpath.",
+      "lifetime": "Worker is awaited and terminated in finally; provider settles pending0 eachprofile. Warm profiles reuse existing decoded command."
+    },
+    {
+      "component": "Observe-app requests/events/mutations/scopes/units and runtime response/provider-phase collections",
+      "implication": "Source-backed growing diagnostic retention candidate, not proven V8 footprint or Motor defect. Exact terminal counts/JSON sizes are retained in the separate telemetry report.",
+      "lifetime": "Wrappers close over collections until runtime child exits; mutable records finalized at actualresponse/callback/ACK/scope events."
+    },
+    {
+      "component": "Full profile progression persisted journal/results/history and final500 evidence materialization",
+      "implication": "Three tiny Auth mutations+restore with0history additions do not exercise whole progression. No final evidence peak can be retroactively assigned to an earlier failed profile-loop peak.",
+      "lifetime": "Required perprofile state during loop; final500 evidence read only after loop success."
+    }
+  ],
+  "historicalTrajectory": {
+    "alignmentLimits": [
+      "Kernel/host-status sampling is sequential, not atomic; normal source skew is about30ms.",
+      "There is a long retained-sampling gap around08:24–08:30 (host about418s/kernel about380s); no interpolation or missing interior peak composition is inferred.",
+      "memory.stat file includes shmem; do not add shmem to file. Parent groups include children; no parent+child sum.",
+      "RssAnon may include shared mappings, processRSS is not private heap and separate process highs do not establish simultaneous common charge.",
+      "HTTP cumulative wire bytes and DATABASE_SAMPLES file bytes are I/O/evidence sizes, not retained memory."
+    ],
+    "finalParentPeak": {
+      "bytes": 2151936000,
+      "compositionKnown": false,
+      "interpretation": "The parent historical watermark precedes terminal failure JSON serialization. It is not the sum of the sampled component/process maxima and its exact anonymous/file/kernel mixture is unobserved.",
+      "largestSampledCurrentBytes": 2079178752,
+      "peakBracketUTC": [
+        "2026-10-20T09:02:44.763978+00:00",
+        "2026-10-20T09:03:29.820075+00:00"
+      ],
+      "terminalHTTP409UTC": "2026-10-20T09:04:13.263Z"
+    },
+    "lastHTTPIndexMeaning": "Progress context from previously retained HTTP records, not accepted profile/ACK counts. Unit timeout, response status and all500 acceptance remain separate.",
+    "selectedActualSamplesBytes": [
+      {
+        "applicationAnon": 543100928,
+        "atUTC": "2026-10-20T06:29:18.713155+00:00",
+        "databaseAnon": 231559168,
+        "lastHTTPIndex": 3,
+        "sample": 8,
+        "storageAnon": 5644288,
+        "wholeAnon": 780304384,
+        "wholeCurrent": 987381760,
+        "wholeFile": 181522432,
+        "wholeKernel": 23470080,
+        "wholeShmem": 74539008
+      },
+      {
+        "applicationAnon": 651575296,
+        "atUTC": "2026-10-20T06:50:20.439022+00:00",
+        "databaseAnon": 240304128,
+        "lastHTTPIndex": 102,
+        "sample": 36,
+        "wholeAnon": 897523712,
+        "wholeCurrent": 1287065600,
+        "wholeFile": 357920768
+      },
+      {
+        "applicationAnon": 691228672,
+        "atUTC": "2026-10-20T07:15:52.602085+00:00",
+        "databaseAnon": 303497216,
+        "lastHTTPIndex": 202,
+        "sample": 70,
+        "wholeAnon": 1000370176,
+        "wholeCurrent": 1478631424,
+        "wholeFile": 443502592
+      },
+      {
+        "applicationAnon": 700547072,
+        "atUTC": "2026-10-20T07:45:55.246053+00:00",
+        "databaseAnon": 352305152,
+        "lastHTTPIndex": 300,
+        "sample": 110,
+        "wholeAnon": 1058496512,
+        "wholeCurrent": 1620856832,
+        "wholeFile": 523845632
+      },
+      {
+        "applicationAnon": 759468032,
+        "atUTC": "2026-10-20T08:22:43.448015+00:00",
+        "databaseAnon": 411066368,
+        "lastHTTPIndex": 400,
+        "sample": 159,
+        "wholeAnon": 1176178688,
+        "wholeCurrent": 1848881152,
+        "wholeFile": 624144384
+      },
+      {
+        "applicationAnon": 808022016,
+        "atUTC": "2026-10-20T09:01:59.692883+00:00",
+        "databaseAnon": 490184704,
+        "lastHTTPIndex": 495,
+        "sample": 203,
+        "storageAnon": 5644288,
+        "wholeAnon": 1303851008,
+        "wholeCurrent": 2079178752,
+        "wholeFile": 731328512,
+        "wholeKernel": 42127360,
+        "wholeShmem": 146919424
+      },
+      {
+        "applicationAnon": 770035712,
+        "atUTC": "2026-10-20T09:03:29.820075+00:00",
+        "databaseAnon": 490229760,
+        "lastHTTPIndex": 498,
+        "sample": 205,
+        "wholeAnon": 1265909760,
+        "wholeCurrent": 2044502016,
+        "wholeFile": 734056448
+      }
+    ],
+    "selectedPair": {
+      "deltaBytes": {
+        "applicationAnon": 264921088,
+        "databaseAnon": 258625536,
+        "storageAnon": 0,
+        "wholeAnon": 523546624,
+        "wholeCurrent": 1091796992,
+        "wholeFile": 549806080,
+        "wholeKernel": 18657280,
+        "wholeShmem": 72380416
+      },
+      "elapsedSeconds": 9160.979728,
+      "fromSample": 8,
+      "meaning": "Sustained growth spans the long profile progression. The application and database charges coexist; no ownership or avoidability is implied.",
+      "samePairPartition": "applicationAnon +264921088 and databaseAnon +258625536 account for wholeAnon +523546624; storageAnon unchanged. These are same-time sibling group counter deltas, not summed RSS or summed maxima.",
+      "toSample": 203
+    },
+    "v11TestedRevision": "5fae25be5068a278a88daca9a7508c7b9e4001a3"
+  },
+  "oneSmallestDecisiveMissingDatum": {
+    "decisionUse": "Only a materially growing source-owned pool would justify a narrow structural change or a later fair comparator. Stable post-natural-GC heap/small pool ownership would reject telemetry as the large cause. External/native/DB growth requires its own evidenced owner before a rewrite.",
+    "existingRecordsSuffice": false,
+    "newCaseOrMeasurementAuthorizedByThisReport": false,
+    "required": "Actual PID/starttime/isolate/cgroup and clock; heapUsed/heapTotal/external/arrayBuffers plus observed natural-GC position; exact source-owned collection cardinalities/current-record presence at that same boundary. A common group charge observation must cover the same interval. No forcedGC/peak reset/cache eviction or altered workload.",
+    "type": "Paired identity-aligned full-runtime isolate ownership records at the same completed-profile boundary, early and late.",
+    "why": "Existing V11 cgroup/status establishes when and where charges grew but not whether the live runtime growth is V8-retained objects, transient/native allocator retention or another process. Terminal JSON and four short CAS frames cannot reconstruct this missing owner bridge."
+  },
+  "processIdentityGap": {
+    "crossRecordCorroboration": {
+      "hostStatusMatches": [
+        {
+          "Name": "MainThread",
+          "VmHWMLateBytes": 118501376,
+          "hostPID": 801064,
+          "numericHWMMachesNamespaceCounterPID": 166
+        },
+        {
+          "Name": "MainThread",
+          "VmHWMLateBytes": 743796736,
+          "hostPID": 803580,
+          "numericHWMMachesNamespaceCounterPID": 390
+        }
+      ],
+      "identityConclusion": "Exact matchingHWM plus meterHTTProles corroborate separate smallerproxy and larger500entry/runtime process. MissingNSpid/exe/starttime prevents asserting exacthost-to-namespacePIDidentity or soleallocatorownership.",
+      "namespaceCounterRows": [
+        {
+          "maxRSSBytes": 118501376,
+          "maxRSSKiB": 115724,
+          "pid": 166,
+          "requests": 83512,
+          "responses": 83512,
+          "threadId": 0
+        },
+        {
+          "maxRSSBytes": 743796736,
+          "maxRSSKiB": 726364,
+          "pid": 390,
+          "requests": 500,
+          "responses": 83983,
+          "threadId": 0
+        }
+      ],
+      "sourcePin": {
+        "bytes": 89350,
+        "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-3b3bf56650bc/application/COMPLETE_RESOURCE_RESULT.SAFE.json",
+        "sha256": "022952364d6748123024b4e43fb2194730225c82dc4deddb4a7bf35bb6d51af5"
+      }
+    },
+    "exeCmdlineNSpidStarttimeAbsent": true,
+    "genericNamesOnly": true,
+    "largestApplicationCandidate": {
+      "Name": "MainThread",
+      "hostPID": 803580,
+      "hostPPID": 801898,
+      "lateVmHWMBytes": 743796736,
+      "samePairRssAnonDeltaBytes": 240857088,
+      "sample203RssAnonBytes": 628998144,
+      "sample205RssAnonBytes": 591011840,
+      "sample8RssAnonBytes": 388141056,
+      "strictModuleOwnership": "UNKNOWN"
+    },
+    "postgresCaution": "Database group anon growth is actual, but postgres labels,8–10 process counts, selected client pool settings and per-process RSS do not identify backend-private ownership; shared131MB-scale pages are not addable. E finds no relation-size/liveness bridge permitting cleanup.",
+    "whatCorroborationSupports": "Exact743796736 HWM matches the saved full runtime maxRSS and namespace HTTP-counter process390 serving500 entry calls. Separate118501376 HWM matches namespace proxy-counter process166. This favors runtime versus proxy roles, but missing NSpid/exe/starttime prevents treating host803580 as a proven isolate/module identity."
+  },
+  "replayDecision": {
+    "basisPin": {
+      "bytes": 13188,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/launcher-review/TELEMETRY_INTERFACE_REVIEW.SAFE.json",
+      "sha256": "ed86606cc7514e00c937e8502275b4fe1fb127814d6bc8711e7f310744da9342"
+    },
+    "losslessSpoolIsUnqualifiedImplementation": "Requests mutate after append; some never call response.text. Events have2producer paths, only one emitted into existing PHASES. Mutations/units/scopes participate in live ACK/index/final acceptance. Complete original schema/order/failure proofs and finalwriter cost would require a separately qualified protocol, not row dropping or returning spool references.",
+    "noActorOrReplayPrepared": true,
+    "qualified": false,
+    "reason": "Original observe-app setup wraps real async storage/J/C/fetch; no literal finished-row ingest API exists. Terminal JSON omits exact object creation/update/alias/async response/consumer/GC ordering. A parser plus copied terminalrows would rank a constructed representation, not actual current collector retention."
+  },
+  "schema": "helmut-fullpath-v11-current-component-memory-gap-review/1",
+  "scopeAndActions": {
+    "childAgentsOrExternalModels": false,
+    "closed17995RendererCASJITW45AnalysesRepeated": false,
+    "inputs": "Retained native V11 scalar timelines/process accounting, existing current-source review and current Auth acceptance. No original database/image/runtime executable payload read. No new measurement.",
+    "ownWritesOnly": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/capacity-review",
+    "productOrFrozenSourceEdits": false,
+    "testsNativeSQLDockerProcGitAST": false
+  },
+  "status": "READ_ONLY_GAP_CONFIRMED_MAJOR_OWNER_AND_FIX_UNPROVEN",
+  "telemetryCandidateAndRejectedBridgeClaim": {
+    "actualRootIOSamples": 4,
+    "mainTerminalCollections": [
+      {
+        "compactLogicalJSONBytes": 13408116,
+        "elementTypes": [
+          "dict"
+        ],
+        "entries": 83483,
+        "jsonPointer": "/requests",
+        "matchesExistingEndAuditLogicalBytes": true
+      },
+      {
+        "compactLogicalJSONBytes": 3183910,
+        "elementTypes": [
+          "dict"
+        ],
+        "entries": 24495,
+        "jsonPointer": "/events",
+        "matchesExistingEndAuditLogicalBytes": true
+      },
+      {
+        "compactLogicalJSONBytes": 1339149,
+        "elementTypes": [
+          "dict"
+        ],
+        "entries": 4000,
+        "jsonPointer": "/mutations",
+        "matchesExistingEndAuditLogicalBytes": true
+      },
+      {
+        "compactLogicalJSONBytes": 589151,
+        "elementTypes": [
+          "dict"
+        ],
+        "entries": 500,
+        "jsonPointer": "/scopes"
+      }
+    ],
+    "memoryLimit": "13.4MB requests plus3.18MB events are logical serialization sizes only. They do not upper-bound/lower-bound original V8 heap, closure/transient/native bytes or avoidable common RAM. Scope diagnostics do not dominate the file. No trace-array500MB saving is established.",
+    "otherObservers": "Python database sampler retains first/latest only and streams its135585225-byte private log. Its on-disk file size is not evidence of a135MB live Python array.",
+    "rootIO82kCollectorHypothesis": "CONTRADICTED_BY_ACTUAL_SCALAR_AND_SELECTED_SOURCE_PATH",
+    "rootIOArrayExported": false,
+    "runtimeFailureRawFileBytes": 27245555,
+    "scopeDiagnostics": {
+      "aggregateDiagnosticsBytesIncludingArray": 509829,
+      "canonicalMultiplicitySummary": {
+        "distinctValues": 500,
+        "duplicateValueClasses": 0,
+        "maximumMultiplicity": 1,
+        "singletonValues": 500
+      },
+      "diagnosticEntries": 500,
+      "diagnosticsFractionOfCompactWholeRoot": 0.026532892566112482,
+      "diagnosticsFractionOfRawPrettyFile": 0.01871237344954067,
+      "dominates27MBFailureArtifact": false,
+      "exactCanonicalValueDistinctCount": 500,
+      "parsedAuditValueIdentityNotOriginalRuntimeObjectIdentity": true,
+      "scopeEntries": 500,
+      "scopesFractionOfCompactWholeRoot": 0.030661025928728523,
+      "warning": "Equal parsed canonical values do not prove originalV8 internedstrings/sharedreferences, retainedclosure size or actualmemoryavoidableby deduplication. The logicaldiagnosticcopies are small relative to requests/events; no V8saving is derived.",
+      "wholeScopesBytes": 589151
+    },
+    "wholeCompactLogicalJSONBytes": 19214980
+  }
+}

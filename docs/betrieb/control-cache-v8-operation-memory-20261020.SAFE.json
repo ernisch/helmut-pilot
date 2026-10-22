@@ -1,0 +1,504 @@
+{
+  "schema": "helmut-v8-existing-operation-memory-attribution/1",
+  "status": "READ_ONLY_EXISTING_TWO_CASE_DIAGNOSTIC",
+  "reviewerModel": "gpt-6.1-sol",
+  "createdUTC": "2026-10-20T19:11:39.683694+00:00",
+  "caseBase": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases",
+  "scope": "Existing V8 OLD1/NEW1 only; no V9 data or live resources touched",
+  "newMeasurementOrRuntimeOrOriginalPGDATAReads": false,
+  "nativeRAMSavingQualified": false,
+  "ABBAQualified": false,
+  "cases": {
+    "OLD": {
+      "case": "control-40ece41a5360c1733c0a5e92",
+      "inputPins": {
+        "CONTROL_CACHE.SAFE.json": {
+          "bytes": 89919,
+          "sha256": "7e9dbbfc701a1e8e3734f00cafae2aa3d0d5343d96df911e0db569d55d53cd03"
+        },
+        "ACTUAL_RESULT.SAFE.json": {
+          "bytes": 8247,
+          "sha256": "700cad11e6ad1f1f0c0b6e6bb89616db7a2f4c2fadd2fb39b9e0d28d9fcd8a30"
+        },
+        "NATIVE_TIMELINE.SAFE.json": {
+          "bytes": 311676,
+          "sha256": "3f36134bf5f5afad90a87581c82d2546636583863b887ac79acb58f3961d9357"
+        },
+        "PHASES.SAFE.json": {
+          "bytes": 23324,
+          "sha256": "d3011a0a0eb9cddb364e482e3db66ee32d4c0d8df5aee3967b0a7db1838441b2"
+        },
+        "CYCLE_2.OBSERVATION.SAFE.json": {
+          "bytes": 4578,
+          "sha256": "3eb474c3c303304e04a1b5900c74fd22fb09879933cc3b9ab46e867dc9b6511d"
+        },
+        "CYCLE_4.OBSERVATION.SAFE.json": {
+          "bytes": 4580,
+          "sha256": "a5461148dc1cbaeb27b4264e8e052fe6443cdbe58bc4492cfc7de8c5cc118812"
+        },
+        "CYCLE_6.OBSERVATION.SAFE.json": {
+          "bytes": 4582,
+          "sha256": "ba1a805f6632c15ba7ca1b6fb6e5bcdb02ca6bf17715aa3d1f8ff96edb4d2a48"
+        }
+      },
+      "exactWholeNativePeakBytes": 1018499072,
+      "finalNodeLifetimeHWMBytes": 283127808,
+      "nodeHighWaterIncreaseOperations": [
+        {
+          "phase": "round0.fullRead",
+          "method": "read",
+          "rssBefore": 33394688,
+          "rssAfter": 233025536,
+          "heapUsedAfter": 87470024,
+          "externalAfter": 4136049,
+          "HWMBeforeBytes": 43024384,
+          "HWMAfterBytes": 242212864,
+          "HWMIncreaseBytes": 199188480
+        },
+        {
+          "phase": "round0.mutation",
+          "method": "write",
+          "rssBefore": 233025536,
+          "rssAfter": 233623552,
+          "heapUsedAfter": 93277184,
+          "externalAfter": 4189448,
+          "HWMBeforeBytes": 242212864,
+          "HWMAfterBytes": 248033280,
+          "HWMIncreaseBytes": 5820416
+        },
+        {
+          "phase": "round0.control0",
+          "method": "readControl",
+          "rssBefore": 233623552,
+          "rssAfter": 267841536,
+          "heapUsedAfter": 117992168,
+          "externalAfter": 4236787,
+          "HWMBeforeBytes": 248033280,
+          "HWMAfterBytes": 272289792,
+          "HWMIncreaseBytes": 24256512
+        },
+        {
+          "phase": "round0.control1",
+          "method": "readControl",
+          "rssBefore": 267841536,
+          "rssAfter": 229273600,
+          "heapUsedAfter": 98185152,
+          "externalAfter": 4227709,
+          "HWMBeforeBytes": 272289792,
+          "HWMAfterBytes": 276238336,
+          "HWMIncreaseBytes": 3948544
+        },
+        {
+          "phase": "round2.control1",
+          "method": "readControl",
+          "rssBefore": 266588160,
+          "rssAfter": 236109824,
+          "heapUsedAfter": 99562272,
+          "externalAfter": 4224824,
+          "HWMBeforeBytes": 276238336,
+          "HWMAfterBytes": 283127808,
+          "HWMIncreaseBytes": 6889472
+        }
+      ],
+      "sampledAfterMemoryMaxima": {
+        "rss": {
+          "phase": "restore.finalRead",
+          "method": "read",
+          "rssBefore": 250404864,
+          "rssAfter": 273920000,
+          "heapUsedAfter": 110822616,
+          "externalAfter": 4224237,
+          "HWMBeforeBytes": 283127808,
+          "HWMAfterBytes": 283127808,
+          "HWMIncreaseBytes": 0
+        },
+        "heapUsed": {
+          "phase": "round0.control0",
+          "method": "readControl",
+          "rssBefore": 233623552,
+          "rssAfter": 267841536,
+          "heapUsedAfter": 117992168,
+          "externalAfter": 4236787,
+          "HWMBeforeBytes": 248033280,
+          "HWMAfterBytes": 272289792,
+          "HWMIncreaseBytes": 24256512
+        },
+        "external": {
+          "phase": "round0.control0",
+          "method": "readControl",
+          "rssBefore": 233623552,
+          "rssAfter": 267841536,
+          "heapUsedAfter": 117992168,
+          "externalAfter": 4236787,
+          "HWMBeforeBytes": 248033280,
+          "HWMAfterBytes": 272289792,
+          "HWMIncreaseBytes": 24256512
+        }
+      },
+      "operationClassSampleMaxima": {
+        "read": {
+          "count": 5,
+          "maxSampledRSSAfterBytes": 273920000,
+          "maxSampledHeapUsedAfterBytes": 110822616
+        },
+        "write": {
+          "count": 4,
+          "maxSampledRSSAfterBytes": 250404864,
+          "maxSampledHeapUsedAfterBytes": 96593632
+        },
+        "readControl": {
+          "count": 18,
+          "maxSampledRSSAfterBytes": 267841536,
+          "maxSampledHeapUsedAfterBytes": 117992168
+        }
+      },
+      "cycleEndpoints": [
+        {
+          "round": 0,
+          "commonCurrentBytes": 948150272,
+          "commonLifetimePeakBytes": 996077568,
+          "commonAnonSampleBytes": 315154432,
+          "commonFileSampleBytes": 604573696,
+          "commonKernelSampleBytes": 27025408,
+          "NodeRSSBytes": 240828416,
+          "NodeHeapUsedBytes": 83140512,
+          "NodeNaturalGCCount": 118
+        },
+        {
+          "round": 1,
+          "commonCurrentBytes": 952094720,
+          "commonLifetimePeakBytes": 1009500160,
+          "commonAnonSampleBytes": 319295488,
+          "commonFileSampleBytes": 604618752,
+          "commonKernelSampleBytes": 27119616,
+          "NodeRSSBytes": 243126272,
+          "NodeHeapUsedBytes": 83903496,
+          "NodeNaturalGCCount": 208
+        },
+        {
+          "round": 2,
+          "commonCurrentBytes": 958799872,
+          "commonLifetimePeakBytes": 1011159040,
+          "commonAnonSampleBytes": 325386240,
+          "commonFileSampleBytes": 604717056,
+          "commonKernelSampleBytes": 27136000,
+          "NodeRSSBytes": 249495552,
+          "NodeHeapUsedBytes": 82230032,
+          "NodeNaturalGCCount": 300
+        }
+      ],
+      "responseBodyBytes": 157016193,
+      "controlTextStringifyCalls": 41,
+      "nativePeakWindow": {
+        "operation": "restore.write",
+        "RPCOrdinal": 26,
+        "reconstructedWindow": {
+          "phase": "restore.write",
+          "startUTCMin": 1792522968.216633,
+          "startUTCMax": 1792522968.2386107,
+          "endUTCMin": 1792522968.7213132,
+          "endUTCMax": 1792522968.743291
+        },
+        "previousNativeSampleUTC": 1792522968.2951207,
+        "previousNativePeakBytes": 1011159040,
+        "firstNativeSampleWithFinalPeakUTC": 1792522968.577389,
+        "sampleCurrentBytes": 976437248,
+        "sampleMemoryStat": {
+          "anon": 343363584,
+          "file": 604741632,
+          "kernel": 27144192
+        },
+        "bothRecordedSampleTimestampsInsideWriteWindow": true,
+        "nodePerfToUTCEpochOffsetBracket": {
+          "min": 1792522955.96339,
+          "max": 1792522955.9846609
+        },
+        "restoreUnmeasuredSlackMilliseconds": 0.7069169999977021
+      },
+      "preNodeCommonSnapshot": {
+        "memoryCurrentBytes": 629993472,
+        "memoryPeakBytes": 637198336
+      }
+    },
+    "NEW": {
+      "case": "control-9614fe10360052d706a7d53f",
+      "inputPins": {
+        "CONTROL_CACHE.SAFE.json": {
+          "bytes": 84010,
+          "sha256": "23f164e09a939bc7c7016cbf5d6288f483e44347b5f7913b5567c047910e8b39"
+        },
+        "ACTUAL_RESULT.SAFE.json": {
+          "bytes": 8246,
+          "sha256": "7f9a20f4811791a8fd79c3c487ab1819c6e64c0f98832841de49e568bc751bdb"
+        },
+        "NATIVE_TIMELINE.SAFE.json": {
+          "bytes": 287940,
+          "sha256": "53ea9f51e8dad3501b4ca9752e6c1861b19f59d2e8b766c50c6238007a5ea9b5"
+        },
+        "PHASES.SAFE.json": {
+          "bytes": 23303,
+          "sha256": "34484bb248a7a4b3e5222cff90259d23fd5a89bab731f506bbf7b156af6a48f7"
+        },
+        "CYCLE_2.OBSERVATION.SAFE.json": {
+          "bytes": 4579,
+          "sha256": "2b4a06a4905857dc541b868ee72f301191af91b77bf49d807eb5f74d6d1d86f9"
+        },
+        "CYCLE_4.OBSERVATION.SAFE.json": {
+          "bytes": 4580,
+          "sha256": "d7cb3cb220770a758dda9e4c2c74e169c179f4c8864f7101d9d6860642534a16"
+        },
+        "CYCLE_6.OBSERVATION.SAFE.json": {
+          "bytes": 4583,
+          "sha256": "c52a79978337a29ae812af2413ba1cc44ff63b61bddba30a74a747e8c679ed06"
+        }
+      },
+      "exactWholeNativePeakBytes": 1028075520,
+      "finalNodeLifetimeHWMBytes": 312303616,
+      "nodeHighWaterIncreaseOperations": [
+        {
+          "phase": "round0.fullRead",
+          "method": "read",
+          "rssBefore": 33275904,
+          "rssAfter": 239607808,
+          "heapUsedAfter": 93445680,
+          "externalAfter": 5260414,
+          "HWMBeforeBytes": 42950656,
+          "HWMAfterBytes": 241635328,
+          "HWMIncreaseBytes": 198684672
+        },
+        {
+          "phase": "round0.mutation",
+          "method": "write",
+          "rssBefore": 239607808,
+          "rssAfter": 231178240,
+          "heapUsedAfter": 92817848,
+          "externalAfter": 5380365,
+          "HWMBeforeBytes": 241635328,
+          "HWMAfterBytes": 258281472,
+          "HWMIncreaseBytes": 16646144
+        },
+        {
+          "phase": "round0.control0",
+          "method": "readControl",
+          "rssBefore": 231178240,
+          "rssAfter": 258551808,
+          "heapUsedAfter": 120570304,
+          "externalAfter": 6480601,
+          "HWMBeforeBytes": 258281472,
+          "HWMAfterBytes": 263290880,
+          "HWMIncreaseBytes": 5009408
+        },
+        {
+          "phase": "round1.fullRead",
+          "method": "read",
+          "rssBefore": 232235008,
+          "rssAfter": 280076288,
+          "heapUsedAfter": 111506992,
+          "externalAfter": 37833170,
+          "HWMBeforeBytes": 263290880,
+          "HWMAfterBytes": 280076288,
+          "HWMIncreaseBytes": 16785408
+        },
+        {
+          "phase": "round1.mutation",
+          "method": "write",
+          "rssBefore": 280076288,
+          "rssAfter": 240795648,
+          "heapUsedAfter": 97364488,
+          "externalAfter": 5351187,
+          "HWMBeforeBytes": 280076288,
+          "HWMAfterBytes": 293576704,
+          "HWMIncreaseBytes": 13500416
+        },
+        {
+          "phase": "round2.control0",
+          "method": "readControl",
+          "rssBefore": 260730880,
+          "rssAfter": 256589824,
+          "heapUsedAfter": 106055264,
+          "externalAfter": 6475594,
+          "HWMBeforeBytes": 293576704,
+          "HWMAfterBytes": 305098752,
+          "HWMIncreaseBytes": 11522048
+        },
+        {
+          "phase": "restore.finalRead",
+          "method": "read",
+          "rssBefore": 258957312,
+          "rssAfter": 261693440,
+          "heapUsedAfter": 118751776,
+          "externalAfter": 6475007,
+          "HWMBeforeBytes": 305098752,
+          "HWMAfterBytes": 312303616,
+          "HWMIncreaseBytes": 7204864
+        }
+      ],
+      "sampledAfterMemoryMaxima": {
+        "rss": {
+          "phase": "round1.fullRead",
+          "method": "read",
+          "rssBefore": 232235008,
+          "rssAfter": 280076288,
+          "heapUsedAfter": 111506992,
+          "externalAfter": 37833170,
+          "HWMBeforeBytes": 263290880,
+          "HWMAfterBytes": 280076288,
+          "HWMIncreaseBytes": 16785408
+        },
+        "heapUsed": {
+          "phase": "round2.mutation",
+          "method": "write",
+          "rssBefore": 219684864,
+          "rssAfter": 260730880,
+          "heapUsedAfter": 127362600,
+          "externalAfter": 5350632,
+          "HWMBeforeBytes": 293576704,
+          "HWMAfterBytes": 293576704,
+          "HWMIncreaseBytes": 0
+        },
+        "external": {
+          "phase": "round1.fullRead",
+          "method": "read",
+          "rssBefore": 232235008,
+          "rssAfter": 280076288,
+          "heapUsedAfter": 111506992,
+          "externalAfter": 37833170,
+          "HWMBeforeBytes": 263290880,
+          "HWMAfterBytes": 280076288,
+          "HWMIncreaseBytes": 16785408
+        }
+      },
+      "operationClassSampleMaxima": {
+        "read": {
+          "count": 5,
+          "maxSampledRSSAfterBytes": 280076288,
+          "maxSampledHeapUsedAfterBytes": 118751776
+        },
+        "write": {
+          "count": 4,
+          "maxSampledRSSAfterBytes": 260730880,
+          "maxSampledHeapUsedAfterBytes": 127362600
+        },
+        "readControl": {
+          "count": 18,
+          "maxSampledRSSAfterBytes": 262119424,
+          "maxSampledHeapUsedAfterBytes": 120570304
+        }
+      },
+      "cycleEndpoints": [
+        {
+          "round": 0,
+          "commonCurrentBytes": 939266048,
+          "commonLifetimePeakBytes": 993955840,
+          "commonAnonSampleBytes": 306352128,
+          "commonFileSampleBytes": 604946432,
+          "commonKernelSampleBytes": 26988544,
+          "NodeRSSBytes": 232235008,
+          "NodeHeapUsedBytes": 80405064,
+          "NodeNaturalGCCount": 101
+        },
+        {
+          "round": 1,
+          "commonCurrentBytes": 944713728,
+          "commonLifetimePeakBytes": 1010905088,
+          "commonAnonSampleBytes": 311779328,
+          "commonFileSampleBytes": 604995584,
+          "commonKernelSampleBytes": 26988544,
+          "NodeRSSBytes": 235941888,
+          "NodeHeapUsedBytes": 59357488,
+          "NodeNaturalGCCount": 180
+        },
+        {
+          "round": 2,
+          "commonCurrentBytes": 967680000,
+          "commonLifetimePeakBytes": 1021411328,
+          "commonAnonSampleBytes": 333725696,
+          "commonFileSampleBytes": 605093888,
+          "commonKernelSampleBytes": 27815936,
+          "NodeRSSBytes": 256622592,
+          "NodeHeapUsedBytes": 59415504,
+          "NodeNaturalGCCount": 255
+        }
+      ],
+      "responseBodyBytes": 57089403,
+      "controlTextStringifyCalls": 5,
+      "nativePeakWindow": {
+        "operation": "restore.write",
+        "RPCOrdinal": 26,
+        "reconstructedWindow": {
+          "phase": "restore.write",
+          "startUTCMin": 1792523007.7857525,
+          "startUTCMax": 1792523007.814395,
+          "endUTCMin": 1792523008.3112319,
+          "endUTCMax": 1792523008.3398745
+        },
+        "previousNativeSampleUTC": 1792523007.8509884,
+        "previousNativePeakBytes": 1021411328,
+        "firstNativeSampleWithFinalPeakUTC": 1792523008.1328049,
+        "sampleCurrentBytes": 1028075520,
+        "sampleMemoryStat": {
+          "anon": 369668096,
+          "file": 605114368,
+          "kernel": 27918336
+        },
+        "bothRecordedSampleTimestampsInsideWriteWindow": true,
+        "nodePerfToUTCEpochOffsetBracket": {
+          "min": 1792522997.8144941,
+          "max": 1792522997.8423755
+        },
+        "restoreUnmeasuredSlackMilliseconds": 0.7610780000031809
+      },
+      "preNodeCommonSnapshot": {
+        "memoryCurrentBytes": 644689920,
+        "memoryPeakBytes": 644689920
+      }
+    }
+  },
+  "pairedFacts": {
+    "nativePeakNewMinusOldBytes": 9576448,
+    "nodeLifetimeHWMNewMinusOldBytes": 29175808,
+    "responseBodyBytesOldNew": [
+      157016193,
+      57089403
+    ],
+    "stringifyCallsOldNew": [
+      41,
+      5
+    ],
+    "largestInitialRamp": "Initial full U.read: Node HWM rises199188480B OLD /198684672B NEW; includes verification and symmetric field/history hash observer.",
+    "remainingCommonPeak": "Both final native peaks are associated with RPC26 restore.write, not the warm control-only sequence.",
+    "largestFinalNodeHWM": "OLD first reaches276492KiB in round2.control1; NEW first reaches304984KiB in restore.finalRead.",
+    "largestSampledAfterRSS": "OLD273920000B restore.finalRead; NEW280076288B round1.fullRead.",
+    "cycleEndCommonGrowthRound0To2Bytes": {
+      "OLD": 10649600,
+      "NEW": 28413952
+    }
+  },
+  "narrowSourceObservation": {
+    "frozenSourceBase": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-launcher",
+    "pins": {
+      "NEW_U.js": {
+        "bytes": 25446,
+        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      },
+      "COMMON_PARTS.js": {
+        "bytes": 22169,
+        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      }
+    },
+    "NEW_UWriteLines": "335-371; capture flag is off in both cases. U clones transport data with JSON.parse(JSON.stringify(data)), builds Parts tree, retains sentData/tree for real CAS ACK and attaches the confirmed result.",
+    "PartsBuildLines": "43-64 and85-95: buildInternal(owned=false) independently JSON-normalizes the history-excluded state; private reuse lookup also serializes actual normalized values.",
+    "scope": "These explicit full-write operations are a justified next narrow audit target. Existing evidence does not isolate their allocations from each other, decoder/hash observer, server/backend allocations or GC; it does not quantify an optimization gain.",
+    "historyClarification": "llmUsage is excluded from state normalization; do not describe this as serializing the6000 ledger rows in the write snapshot."
+  },
+  "timingMethod": "Intersect UTC-offset brackets from three cycle-end native observations and Node monotonic step totals; retain all measured marker/observer slack. Reconstruct restore step windows conservatively. Both native samples straddling the final peak rise lie strictly inside the reconstructed restore.write window. Peak counters are sampled, not exact allocator event timestamps; same-host clock consistency is assumed and no stage-level attribution is claimed.",
+  "limits": [
+    "One OLD and one NEW actual PASS only; V8 ABBA incomplete and V9 is separate.",
+    "Operation memoryAfter includes selected U work AND equal field/history hashing; Node HWM is lifetime process RSS, not heap retained bytes.",
+    "No RSS values, process peaks or file/shmem counters are added. memory.stat fields are batched samples, not an atomic allocation decomposition; shmem is already included within file.",
+    "Only Node plus Postgres postmaster/PostgREST boundary diagnostics exist; PostgreSQL backend per-operation allocations are not isolated.",
+    "Natural GC timing and release affect endpoints. Three round endpoints cannot prove a leak, steady retained cache growth or plateau.",
+    "Codec output bytes and heap allocation stacks were not measured. Lower body/stringify counts do not prove lower whole-group RAM."
+  ],
+  "recommendation": "No additional implementation or flag/cap change now. Finish the already authorized V9 comparison. If a subsequent RAM decision remains necessary, prioritize the unchanged full read / U.write transport snapshot and Parts.build lifetime, especially restore.write; preserve fresh snapshot/CAS/ACK/alias isolation. Current evidence supports that inspection priority, not a guaranteed saving or automatic switch to single-write capture."
+}

@@ -1,0 +1,529 @@
+{
+  "schema": "helmut-independent-ownership-diagnostic-static-review/1",
+  "atUTC": "2026-10-20T19:57:14.838080+00:00",
+  "status": "INDEPENDENT_STATIC_SOURCE_REVIEW_ACCEPTED_WITH_LIMITS",
+  "findingsStatus": "NO_BLOCKING_FINDINGS",
+  "independent": true,
+  "reviewerModel": "gpt-6.1-sol",
+  "authorModel": "gpt-6.1-sol; separate author agent sprint_shutdown",
+  "reviewerAgent": "sprint_pg_transport",
+  "blockingFindings": [],
+  "scope": "Full new ownership.py and every Common/Run/Worker/Driver code delta, current README and PREPARED/freeze/provenance/limits; byte-level direct V9 correspondence and bounded small source closure. No current Root launcher integration has been supplied or accepted by this receipt.",
+  "notCandidateLibrarySelfApproval": "Reviewer authored candidate U/Parts earlier; this receipt independently reviews the separate Shutdown ownership harness changes only. No fresh independent library/SRF/renderer acceptance is granted.",
+  "sourcePins": {
+    "prepared": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/PREPARED.SAFE.json",
+      "bytes": 34824,
+      "sha256": "75d87960d97be89899855f1830120fd00c200a2270a8e909b8c64c559ab18176"
+    },
+    "freeze": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/FREEZE_PINS.SAFE.json",
+      "bytes": 5769,
+      "sha256": "7d0e968a9c8396d449002d0c0acfbfac8055d496e7a6818b2d31a0323af87f56"
+    },
+    "delta": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/SOURCE_DELTA.PRIVATE.diff",
+      "bytes": 64685,
+      "sha256": "ebd0dbe69768d4543d1beadcc7fe46b2d4f9b11cec862d1bc928c7e0d8d574c7"
+    },
+    "parentPrepared": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+      "bytes": 37288,
+      "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+    },
+    "ownershipPlan": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/ownership-probe-plan-20261020/OWNERSHIP_DIAGNOSTIC_PLAN.SAFE.json",
+      "bytes": 5475,
+      "sha256": "9e00e264a50a99852871e63b357a36d789812bf60e19d6f36f16431c6926ccd5"
+    },
+    "temporalContext": {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/v9-operation-memory-attribution-20261020/V9_OPERATION_MEMORY_ATTRIBUTION.SAFE.json",
+      "bytes": 12379,
+      "sha256": "826446cef42a9d834d83475625a323ff32f17d236913cff7441ff43f0fc4029a"
+    }
+  },
+  "operativeFilePins": [
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/ownership.py",
+      "bytes": 16103,
+      "sha256": "66dd34c724d330148407e222b54b5dcb556586f8063a0eb6ddc8a71d69bed6a1"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/common.py",
+      "bytes": 18351,
+      "sha256": "f87e3a103b1fc10dfcc5cd522c2e578dc9bf2493dfb38512d7eb1207bff15d71"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/run.py",
+      "bytes": 26972,
+      "sha256": "38530c004aa1241cff1f2e57cf1a2ecb6e020d424df92dc01579e425b1d62c2b"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/worker.py",
+      "bytes": 39755,
+      "sha256": "a1cab4600b979ec9d29d509fc6c1cf0df1139fb3879283f2a347d3f0a5ae50e7"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/control-driver.js",
+      "bytes": 20820,
+      "sha256": "589bdfb6cf39d1bba3b21e006878858923d834363b8a800e89492f5195b98bfa"
+    },
+    {
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/README.md",
+      "bytes": 9319,
+      "sha256": "bd672a522908ae4a7574cdc073be3d39871d6be62d232b5dd4ade4922420e122"
+    }
+  ],
+  "byteCorrespondence": {
+    "fullDeltaExactlyDirectHistoricalV9ToCurrentSources": true,
+    "changedCodeFiles": [
+      "ownership.py(new)",
+      "common.py",
+      "run.py",
+      "worker.py",
+      "control-driver.js"
+    ],
+    "unchangedOperativePins": [
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/COMMON_PARTS.js",
+        "bytes": 22169,
+        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/INSTALL_NEW_ONLY.sql",
+        "bytes": 13400,
+        "sha256": "c740b463ce3b026eeb442a8c79a65f1fa95ebac2d08d7382ee31fb9d6b655f4d"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/NEW_U.js",
+        "bytes": 25446,
+        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/catalog.sql",
+        "bytes": 12286,
+        "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/cycle-metrics.sql",
+        "bytes": 763,
+        "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/install-reviewed-renderer.sql",
+        "bytes": 14547,
+        "sha256": "0b99e5870d67c9b0d616283bd2eefb0df361620067c8bf610d57c65861ba29e5"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/postgrest_lifecycle.py",
+        "bytes": 9220,
+        "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/small-auth.sql",
+        "bytes": 869,
+        "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+      }
+    ],
+    "unchangedPreparedFields": [
+      "nativeLimits",
+      "conservativeDiskAdmissionBytes",
+      "persistentDiskCopyLimitBytes",
+      "jitSocketOnlyTmpfsBytes",
+      "hostFreeFloorBytes",
+      "queryCombinedOutputCapBytes",
+      "totalEvidenceCapBytes",
+      "workDeadlineSeconds",
+      "overallClosureTargetSeconds",
+      "nodeHeap",
+      "engineSourcePin",
+      "graphBodySHA256",
+      "rendererBodySHA256",
+      "postgrestConfigSHA256",
+      "postgrestShutdownPolicy",
+      "retainedNativeGuards",
+      "sourcePGDATA",
+      "setup",
+      "controlContract"
+    ],
+    "uniqueSmallInputsChecked": 53,
+    "smallInputBytes": 1702138,
+    "allSmallInputsCanonicalRegularNonSymlinkAndExact": true,
+    "smallInputPins": [
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/COMMON_PARTS.js",
+        "bytes": 22169,
+        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/INSTALL_NEW_ONLY.sql",
+        "bytes": 13400,
+        "sha256": "c740b463ce3b026eeb442a8c79a65f1fa95ebac2d08d7382ee31fb9d6b655f4d"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/NEW_U.js",
+        "bytes": 25446,
+        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/README.md",
+        "bytes": 9319,
+        "sha256": "bd672a522908ae4a7574cdc073be3d39871d6be62d232b5dd4ade4922420e122"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/SHUTDOWN_POLICY.SAFE.json",
+        "bytes": 499,
+        "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/catalog.sql",
+        "bytes": 12286,
+        "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/common.py",
+        "bytes": 18351,
+        "sha256": "f87e3a103b1fc10dfcc5cd522c2e578dc9bf2493dfb38512d7eb1207bff15d71"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/control-driver.js",
+        "bytes": 20820,
+        "sha256": "589bdfb6cf39d1bba3b21e006878858923d834363b8a800e89492f5195b98bfa"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/cycle-metrics.sql",
+        "bytes": 763,
+        "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/install-reviewed-renderer.sql",
+        "bytes": 14547,
+        "sha256": "0b99e5870d67c9b0d616283bd2eefb0df361620067c8bf610d57c65861ba29e5"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/postgrest_lifecycle.py",
+        "bytes": 9220,
+        "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/run.py",
+        "bytes": 26972,
+        "sha256": "38530c004aa1241cff1f2e57cf1a2ecb6e020d424df92dc01579e425b1d62c2b"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/small-auth.sql",
+        "bytes": 869,
+        "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/worker.py",
+        "bytes": 39755,
+        "sha256": "a1cab4600b979ec9d29d509fc6c1cf0df1139fb3879283f2a347d3f0a5ae50e7"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/ownership.py",
+        "bytes": 16103,
+        "sha256": "66dd34c724d330148407e222b54b5dcb556586f8063a0eb6ddc8a71d69bed6a1"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget.py",
+        "bytes": 19434,
+        "sha256": "66b4c432f687445763074a6b2432533c9305cadc09a17a94bf45507d419fd4af"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget-helper.c",
+        "bytes": 2998,
+        "sha256": "4ed3d5a0f5cf7be074445a14884565b6e43453981a2d3bfc666ecb54a02c037a"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/kernel-meter.py",
+        "bytes": 6447,
+        "sha256": "e1f05e4a38d7cbe508a43d8532c4eb06adc2d4581de4c68ec43bc4011776bc44"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+        "bytes": 54938,
+        "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_read_bounded_local.sql",
+        "bytes": 18910,
+        "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_usage_atomic_local.sql",
+        "bytes": 17538,
+        "sha256": "5fdd3c81cf86c4f03208974bb9fd1f26d355dfaf53520f08de64292581a39e05"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-budget-implementation-qualification-v2/runtime/RUNTIME.SAFE.json",
+        "bytes": 481,
+        "sha256": "a16d045b223ef8b9f7525d97ede4596468501510f0ce71263a5ce2bddf42127e"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/READONLY_RUNTIME_BINDINGS.SAFE.json",
+        "bytes": 207733,
+        "sha256": "71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-component-shell/SOURCE.SAFE.json",
+        "bytes": 828,
+        "sha256": "ba4f22caca93194c0343c00edab9c6e628d13d7755486f64f237b4fcad9c3a23"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/dio-component-python-compat-runtime/SOURCE_COMPAT_FILES.SAFE.json",
+        "bytes": 1687,
+        "sha256": "b899687bfd9170473a1a446c8a4bf1d9112d3ce77318e5ec9e28a3ffb82b507c"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/jit-closure-v2/restore_original_jit.py",
+        "bytes": 25801,
+        "sha256": "d4b6e421ceae15481c5b544c4ed959b16d9ad1992ea96ce1770d0a82da5eff2c"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/jit-closure-v2/JIT_CLOSURE_PLAN.SAFE.json",
+        "bytes": 398471,
+        "sha256": "556be080d95fbe11dc1c001eabe2f3551bbe65c713f0ef3453cfae3a9779db7a"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/ACTUAL_NATIVE_CATALOG.SAFE.json",
+        "bytes": 35837,
+        "sha256": "d3e4dde9d2873f892e3ae5a8140fed3966eadca80d85fb2ac629e4a4833e7345"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+        "bytes": 327232,
+        "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/auth-store-cas.js",
+        "bytes": 3617,
+        "sha256": "92cba40816bb8cf8919db846d31b736a77b28e3e8d6d24712646bd0509755dd4"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/synthetik-500-eu-service-contract.js",
+        "bytes": 4913,
+        "sha256": "a122b6c1eebe1b29f7f2a0a423d7417ab643d93e8a22085ab98e790a225711d5"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/synthetik-500-profile.js",
+        "bytes": 5466,
+        "sha256": "079e104ee46da4e9e68fdd34435d4d2ac331e2261b88aa42389434e1e24ac4ba"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/streaming-canonical-hash.js",
+        "bytes": 3921,
+        "sha256": "c33f6002e047041b69f9c37c6eae0c9bbd59db5c05ce2b97285f42d03162ec20"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/canonical-content-facts.js",
+        "bytes": 44900,
+        "sha256": "6b76d6637195dedb7c7c304ba42cc1627c8f798d0110c603b10c16259f1406d3"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/canonical-sha-byte-writer.js",
+        "bytes": 3619,
+        "sha256": "59f8b86d5533b3e6770259b79a42382b8bcfbb3a62586da032b664c48a1a9c08"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/synthetik-500-cpu-epoch.js",
+        "bytes": 29127,
+        "sha256": "4d4e840b41a9cf077830c3234b69a274213d62f1dd20609df82b53392209490a"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/http-meter.js",
+        "bytes": 7988,
+        "sha256": "21674e42939824e7886a41b62d906bb5b6ecb8cd46e3cd544241615cf6302652"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/http-framing.js",
+        "bytes": 6927,
+        "sha256": "4bf65bcc29d5baa0a952ee58e5d8942ece0ac6ce0aaf11a19632142b66fb07f4"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget.js",
+        "bytes": 3537,
+        "sha256": "09a00f44d94c512fca22bb6a7447adf8a139e8967c618acb72166a29132ff329"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/upstream/SOURCE_EVIDENCE.SAFE.json",
+        "bytes": 4139,
+        "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/upstream/ghc/libraries/base/GHC/TopHandler.hs",
+        "bytes": 9858,
+        "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/upstream/ghc/rts/RtsStartup.c",
+        "bytes": 19895,
+        "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/upstream/postgrest/default.nix",
+        "bytes": 5248,
+        "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/upstream/postgrest/src/PostgREST/App.hs",
+        "bytes": 7424,
+        "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/upstream/postgrest/src/PostgREST/AppState.hs",
+        "bytes": 18693,
+        "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/upstream/postgrest/src/PostgREST/CLI.hs",
+        "bytes": 8002,
+        "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/upstream/postgrest/src/PostgREST/Unix.hs",
+        "bytes": 1830,
+        "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+      },
+      {
+        "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/PREPARED.SAFE.json",
+        "bytes": 4265,
+        "sha256": "5ce7e3658d7ef9e33631879992224d9cd78ac34b6ce09f01dd50580b330275b8"
+      },
+      {
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-native-preparation-20261020/SOURCE_DELTA.PRIVATE.diff",
+        "bytes": 64685,
+        "sha256": "ebd0dbe69768d4543d1beadcc7fe46b2d4f9b11cec862d1bc928c7e0d8d574c7"
+      },
+      {
+        "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/llm-usage-atomic.js",
+        "bytes": 25446,
+        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      },
+      {
+        "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/auth-state-parts.js",
+        "bytes": 22169,
+        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+        "bytes": 25446,
+        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/auth-state-parts.js",
+        "bytes": 22169,
+        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      }
+    ],
+    "inheritedLargePinsNotRehashedByReviewer": [
+      {
+        "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+        "bytes": 30894944,
+        "sha256": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7"
+      },
+      {
+        "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+      },
+      {
+        "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/postgrest-pinned",
+        "bytes": 17309560,
+        "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617"
+      }
+    ],
+    "historicalV9HostOnly31a6bNotAppliedToCurrent939f300": true
+  },
+  "acceptedChecks": [
+    {
+      "topic": "Scope/current sources/fresh native admission",
+      "evidence": "common.py:57-103;run.py:22-29,50-143,187-256;PREPARED controlContract/sourceOverlays",
+      "conclusion": "Only lifecycle-only:NONE or control-cache:NEW, dedicated outside-Git cases, current canonical U93917 and PartsF300 separately authenticated on host and RO overlays. Explicit ownership action/schema, fresh preflight/adoption/nonce, one-shot START. No OLD branch, automatic sequence, retry, provider or engine/SQL/source-byte alteration."
+    },
+    {
+      "topic": "Lifecycle/closure/auth integrity remain strict",
+      "evidence": "common.py:105-177;worker.py:581-607,617-727;run.py:280-371",
+      "conclusion": "Same-final-PREPARED actual0RPC/noNode lifecycle required on both host/worker before NEW27. Exact same-case Host/Worker/Stop mapping and original5afe signed-exit policy unchanged. Runtime/JIT, persistent source-copy/whole manifests, native before-setup through last-owned-exit and full catalog/ABI/ACL/6000-history/physical revision-only restoration remain required.0OOM/heap+exit0/group-empty/source-after guards preserved."
+    },
+    {
+      "topic": "27 genuine U/RPC workload unchanged",
+      "evidence": "control-driver.js code delta;worker.py:550-579;PREPARED controlContract/setup",
+      "conclusion": "Still5fullreads+4realCAS+18controls,3mutations+restore and27genuine accepted sends/completed responses.81added markers carry metadata only. Existing6cycleSQL observers and original SQL/GUCs unchanged; no added SQL/process/thread, Auth rendering/stringification, cache edit/flush, forcedGC, peak reset or fabricated success."
+    },
+    {
+      "topic": "Causal boundary protocol",
+      "evidence": "control-driver.js:94-119,205-226;ownership.py:249-299",
+      "conclusion": "PRE/U_RETURN/VERIFIED_END81exact markers bind actual captured NodePID, Rootnonce, PREPARED SHA, exact method/order/edge and bounded monotonic times. Worker samples then ACKs exact marker SHA/frame/read bracket; Node validates ACK causal order in shared monotonic domain. Actual U await timing is separate from verifier hashing. No incompatible clock fallback."
+    },
+    {
+      "topic": "Bounded process/cgroup metadata",
+      "evidence": "ownership.py:9-106,108-114,167-247",
+      "conclusion": "Only exact dedicated cgroup tree and its visible TGIDs: bounded proc stat/status/smaps_rollup/cgroup and namespace links; no global foreign scan, commandlines, environment, Auth/query payload or capabilities/PIDns changes. PID/starttime/ppid checked before/after memory read; PG descendants follow actual parent ancestry.32groups/32PIDs/256workerframes/1MiBlog and50ms target only RPC1/17/18/26/27. Overflow fails; unreadable/churning rows keep errors/null/UNKNOWN."
+    },
+    {
+      "topic": "Namespace/measurement honesty",
+      "evidence": "ownership.py:86-106,230-238,310-318;run.py:258-266,380-385;README",
+      "conclusion": "Host existing-controller census adds only namespace/cgroup provenance outside workload, no memory sample. Worker explicitly namespaceComplete=false, host reconciliation required, all-descendant memory readability false, owner UNKNOWN_PENDING actual analysis. Group current/never-reset peak is separate from RSS/PSS; no sums or file+shmem double counting. Functional PASS is not exact peak decomposition or memory-owner proof. Actual bracket/cadence/read+append overhead retained, all worker/Node sampling cost included."
+    },
+    {
+      "topic": "Persistence/cap/deadline failure paths",
+      "evidence": "ownership.py:131-165,204-205,301-319;worker.py:80-177,541-565,608-616;common.py:240-278;run.py:258-266,332-371",
+      "conclusion": "Fresh0600 log, bounded read/write captures and unchanged shared4MiB/floor; collector flush/close/pin on ordinary capture failure, error cannot become accepted pass. Node30s includes callbacks/SQL/pipeEOF/exit wait; cap/deadline errors kill/reap and fail. Host220frame overflow now fails instead of silently dropping. Narrow atomic-rename exception only root CYCLE1..6markers and OP1..81 marker/ACK .tmp, requires regular published<=512B and charges512; unknown missing remains FAIL."
+    },
+    {
+      "topic": "Exact receipt path closure",
+      "evidence": "run.py:332-350;common.py:179-229;worker.py:506-508,712-716",
+      "conclusion": "Ownership helper compiled only from authenticated bytes, no pycache source selection. Host translates ONLY exact /bench/OWNERSHIP_CAPTURE.SAFE.json and /bench/OWNERSHIP.PRIVATE.jsonl into this exact case, retaining SHA/bytes, checking actual saved receipt equality/closed81markers/framebounds/loglength. No cross-case/global /bench alias or caller supplied alternate basename."
+    },
+    {
+      "topic": "Ephemeral-copy classification grants no deletion",
+      "evidence": "PREPARED derivedPGDATAClassification;run.py:400-428;README",
+      "conclusion": "Only fresh derived working copy of permanently protected source827a; not an original/future baseline. Receipt always eligibleForDeletion=false, automaticCleanup=false/deletionExecuted=false. A future separate Root exact-target/dependency/unknown-use review must establish actualPASS plus retained complete measurement/integrity/full restoration/closure/source proofs and necessary artifact preservation. FAIL/UNKNOWN/source/canonical/evidence/hulls/images/loops remain protected. No cleanup code added."
+    }
+  ],
+  "limits": {
+    "nativeMaxBytes": 1547997184,
+    "nativeHighBytes": 1399996416,
+    "swapMaxBytes": 0,
+    "nodeOldSpaceMiB": 384,
+    "nodeSemiSpaceMiB": 16,
+    "nodeWholeWallSeconds": 30,
+    "queryCombinedCapBytes": 262144,
+    "totalEvidenceCapBytes": 4194304,
+    "ownershipLogBytes": 1048576,
+    "ownershipWorkerFrameCap": 256,
+    "ownershipHostFrameCap": 220,
+    "groupAndProcessCaps": 32,
+    "hostFloorBytes": 8589934592,
+    "workSeconds": 300,
+    "overallClosureSeconds": 360,
+    "SQLStatementSeconds": 30,
+    "SQLLockSeconds": 1,
+    "allUnchangedOrAdditionalTighterObserverCaps": true
+  },
+  "qualificationLimits": [
+    "Static source acceptance only. Native/syntax/inert guard qualifications remain NOT_RUN by reviewer; Root must actually perform selected checks and provide evidence.",
+    "No Root integrated path/source rebinding has been accepted by this author-path receipt; integrated copies and new Root PREPARED require byte/path closure review.",
+    "Actual fresh same-freeze lifecycle0 followed by a separately Root-adopted single NEW27 can generate ownership evidence; old V9/V8 PASS or FAIL is never reclassified or transferred.",
+    "Bounded polling is not atomic or continuous coverage. Slow/missing samples, hidden namespaces or unreadable process memory can leave ownership UNKNOWN despite functional PASS; no allocation-cause/RAM/full500/complete-motor acceptance.",
+    "No source/library/SQL/budget/reserve/cachecap/full500 gate change is approved here."
+  ],
+  "actionsByReviewer": {
+    "subjectImports": false,
+    "ASTOrSyntaxChecks": false,
+    "tests": false,
+    "builds": false,
+    "nativeDockerDBStarts": false,
+    "liveDockerInspect": false,
+    "PGDATAWalkReadHash": false,
+    "RootOrAuthorSourceWrites": false,
+    "writesOnlyThisPrivateReviewReceipt": true,
+    "readOnlyDiffAndSmallFileSHA": true
+  },
+  "nativeQualification": "NOT_RUN",
+  "archiveOrCleanupQualification": false,
+  "resourceActionGo": false,
+  "production": false,
+  "full500": false
+}

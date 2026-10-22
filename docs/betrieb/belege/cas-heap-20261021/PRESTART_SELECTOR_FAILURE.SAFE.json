@@ -1,0 +1,13 @@
+{
+  "label": "ROOT_SELECTION",
+  "arguments": [
+    "-c",
+    "import json,types,sys; from pathlib import Path; b=Path(sys.argv[1]); c=types.ModuleType('common'); c.__file__=str(b/'common.py'); exec(compile((b/'common.py').read_bytes(),c.__file__,'exec'),c.__dict__); p=json.loads((b/'PREPARED.SAFE.json').read_text()); rows=[c.selected_measurement(p,'lifecycle-only','NONE'),c.selected_measurement(p,'cas-heap','CURRENT')]; assert [x['authRPCCount'] for x in rows]==[0,27]; assert [x['nodeLaunchCount'] for x in rows]==[0,1]; print(json.dumps({'pass':True,'selections':rows,'nativeStarts':0,'sqlExecuted':0}))",
+    "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher"
+  ],
+  "actualExitCode": 1,
+  "signal": null,
+  "expectedExitCode": 0,
+  "stdout": "",
+  "stderr": "[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/common.py\", line 206, in selected_measurement\n    [log_contract[k] for k in ('exactSuccessfulCAS','exactCASSessionRecords','exactHeapRecords',\n     ~~~~~~~~~~~~^^^\nKeyError: 'exactSuccessfulCAS'\n"
+}

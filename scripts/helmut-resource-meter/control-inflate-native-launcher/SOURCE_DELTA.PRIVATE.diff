@@ -1,0 +1,760 @@
+--- accepted-combined-auth27/common.py
++++ control-inflate/common.py
+@@ -1,4 +1,4 @@
+-"""Combined Auth: same-freeze NEW lifecycle, separately adopted full OLD/NEW arms."""
++"""Control inflate only: same-freeze lifecycle and separately adopted BEFORE/AFTER arms."""
+ import hashlib
+ import json
+ import os
+@@ -10,7 +10,7 @@
+ from pathlib import Path
+ 
+ HERE = Path(__file__).resolve().parent
+-CASES = Path('/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases')
++CASES = Path('/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases')
+ REPO = Path('/workspace/helmut-cpu-epoch-20261015')
+ BIN = REPO/'scripts/helmut-resource-meter'
+ D = Path('/workspace/helmut-ram-fix-20261020/auth-working-set-20261020')
+@@ -53,15 +53,46 @@
+ 
+ CANONICAL_U = REPO/'lib/helmut/llm-usage-atomic.js'
+ CANONICAL_PARTS = REPO/'lib/helmut/auth-state-parts.js'
++EXPECTED_INTENT_PIN = {'path':'/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_COMPARISON_INTENT.SAFE.json','bytes':5192,'sha256':'e0d224b3620cc10de99c35c5e98780dc4762c718ea310fe08ea3438c4f3074aa'}
++EXPECTED_CASE_PLAN_PIN = {'path':'/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_FIVE_CASE_PLAN.SAFE.json','bytes':1575,'sha256':'13b65a073b1c5b25ef850491dc94f6c84e4bea7a6ae6cd326c299f76f2d0d0c1'}
++CASE_SPECS = {
++    'inflate-ecda0cd673313ed20dfd14c8':('lifecycle-only','NONE'),
++    'inflate-4523976844cb460adc39e47a':('control-inflate','BEFORE'),
++    'inflate-a5f471e46098179961dc0b55':('control-inflate','AFTER'),
++    'inflate-7c633959579530d10211eb3d':('control-inflate','AFTER'),
++    'inflate-77ea98765d654521e3f426e2':('control-inflate','BEFORE')}
+ 
+ def selected_measurement(closure, mode, variant=None):
+-    require(mode in ('lifecycle-only','control-cache'),'exactly two separately adopted modes')
+-    require(closure['comparisonScope']=='COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY' and
+-            closure['originalCommit']=='5fae25be5068a278a88daca9a7508c7b9e4001a3' and
+-            closure['lifecycleBodyVariant']=='NEW','exact combined baseline and NEW-body lifecycle')
++    require(mode in ('lifecycle-only','control-inflate'),'exactly two separately adopted modes')
++    require(closure['rootComparisonIntentPin']==EXPECTED_INTENT_PIN and
++            EXPECTED_INTENT_PIN in closure['metadataAndCodeInputs'],'exact fresh Root comparison intent')
++    intent=read(EXPECTED_INTENT_PIN)
++    require(intent['schema']=='helmut-control-inflate-predeclared-comparison-intent/1' and
++            intent['status']=='PREDECLARED_NO_TEST_OR_START_ADOPTION' and
++            intent['scope']=='CONTROL_INFLATE_SINGLE_BUFFER_ONLY' and
++            intent['orderedSeparatelyAdoptedCases']==closure['expectedRootOrder']==[
++                'lifecycle-only:NONE','control-inflate:BEFORE','control-inflate:AFTER',
++                'control-inflate:AFTER','control-inflate:BEFORE'] and
++            intent['sameFreezeLifecycleMustIndependentlyPassBeforeWorkAdoption'] is True and
++            intent['noAutomaticSequenceOrRetries'] is True and
++            intent['workload']=={'rounds':3,'authRPCs':27,'fullReads':5,'confirmedCAS':4,
++                'controls':18,'mutations':3,'restoreCount':1,'boundaries':6,'historyRows':6000},
++            'fixed five separate lifecycle/BEFORE-AFTER-AFTER-BEFORE cases only')
++    require(closure['rootFiveCasePlanPin']==EXPECTED_CASE_PLAN_PIN and
++            EXPECTED_CASE_PLAN_PIN in closure['metadataAndCodeInputs'],'exact five-case plan pin')
++    plan=read(EXPECTED_CASE_PLAN_PIN)
++    require(plan['schema']=='helmut-control-inflate-five-case-plan/1' and
++            plan['intentPin']==EXPECTED_INTENT_PIN and plan['noAutomaticStartOrSequence'] is True and
++            plan['full500'] is False and plan['production'] is False and
++            plan['cases']==[{'index':i,'case':str(CASES/name),'measurementMode':pair[0],
++                'variant':pair[1],'authRPCs':0 if i==0 else 27}
++                for i,(name,pair) in enumerate(CASE_SPECS.items())],
++            'exact five fresh cases and fixed per-case variant binding')
++    require(closure['comparisonScope']=='CONTROL_INFLATE_SINGLE_BUFFER_ONLY' and
++            closure['lifecycleBodyVariant']=='BEFORE','exact current integrated U versus bounded inflate candidate')
+     require(closure['variantBodies']=={
+-        'OLD':{'renderer':OLD_RENDERER,'graph':OLD_GRAPH},
+-        'NEW':{'renderer':NEW_RENDERER,'graph':NEW_GRAPH}},'two exact complete SQL body pairs')
++        'BEFORE':{'renderer':NEW_RENDERER,'graph':NEW_GRAPH},
++        'AFTER':{'renderer':NEW_RENDERER,'graph':NEW_GRAPH}},'identical current NEW SQL bodies in both arms')
+     for key in ('engineSourcePin','rendererSourcePin','nodeBinaryPin','postgrestBinaryPin'):
+         require(closure[key] in closure['metadataAndCodeInputs'],'selected input outside adopted closure')
+     require(closure['engineSourcePin']['sha256']=='e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5'
+@@ -76,7 +107,7 @@
+             'exact local shutdown policy/upstream evidence pins')
+     variant = 'NONE' if mode=='lifecycle-only' and variant is None else variant
+     require((mode=='lifecycle-only' and variant=='NONE') or
+-            (mode=='control-cache' and variant in ('OLD','NEW')),'exact separately adopted variant')
++            (mode=='control-inflate' and variant in ('BEFORE','AFTER')),'exact separately adopted variant')
+     require(not any(x['path'] in (str(CANONICAL_U),str(CANONICAL_PARTS))
+                     for x in closure['metadataAndCodeInputs']),
+             'variable canonical overlay paths cannot carry historical worker-byte expectations')
+@@ -84,33 +115,40 @@
+             {x['path']:x['sha256'] for x in closure['hostOnlyInputPins']}=={
+                 str(CANONICAL_U):'93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b',
+                 str(CANONICAL_PARTS):'f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63'},
+-            'authenticate actual current Root sources separately on host')
++            'authenticate unchanged current Root sources separately on host')
+     require(set(closure['variantSources'])==set(closure['variantParts'])==
+-            set(closure['variantInstallations'])=={'OLD','NEW'},'exact two combined arms')
+-    require(closure['variantSources']['OLD']['sha256']=='31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0'
+-            and closure['variantSources']['NEW']['sha256']=='93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b'
+-            and closure['variantParts']['OLD']['sha256']=='6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9'
+-            and closure['variantParts']['NEW']['sha256']=='f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63',
+-            'exact complete original/corrected U and Parts')
+-    for arm in ('OLD','NEW'):
++            set(closure['variantInstallations'])=={'BEFORE','AFTER'},'exact two integrated comparator arms')
++    require(closure['variantSources']['BEFORE']['sha256']=='93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b'
++            and closure['variantSources']['AFTER']['sha256']=='40d7e584e7856ea893a491d0598ca55b071fc9a07d2dfeb72d55cd10b14b9d1a'
++            and Path(closure['variantSources']['BEFORE']['path']).name=='BEFORE_U.js'
++            and Path(closure['variantSources']['AFTER']['path']).name=='AFTER_U.js'
++            and closure['variantParts']['BEFORE']==closure['variantParts']['AFTER']
++            and closure['variantParts']['BEFORE']['sha256']=='f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63',
++            'only frozen integrated U inflate buffer differs; identical common Parts')
++    for arm in ('BEFORE','AFTER'):
+         installs=closure['variantInstallations'][arm]
+-        require(set(installs)=={'renderer','graph'},'exactly two symmetric SQL installations')
++        require(set(installs)=={'renderer','graph'} and
++                installs==closure['variantInstallations']['BEFORE'],'same two SQL installations in each arm')
+         for kind in ('renderer','graph'):
+             item=installs[kind]
++            expected_sql={'renderer':'81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72',
++                          'graph':'d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa'}
+             require(item in closure['files'] and item in closure['metadataAndCodeInputs'] and
+-                    Path(item['path']).name=='INSTALL_'+arm+'_'+kind.upper()+'.sql',
+-                    'exact frozen selected SQL wrapper outside closure')
+-        require(closure['variantSources'][arm] in closure['metadataAndCodeInputs'] and
++                    Path(item['path']).name=='INSTALL_NEW_'+kind.upper()+'.sql' and
++                    item['sha256']==expected_sql[kind],
++                    'exact identical frozen current NEW SQL wrapper outside closure')
++        require(closure['variantSources'][arm] in closure['files'] and
++                closure['variantSources'][arm] in closure['metadataAndCodeInputs'] and
+                 closure['variantParts'][arm] in closure['metadataAndCodeInputs'],
+-                'selected readonly original/corrected overlays outside common closure')
+-    arm='NEW' if variant=='NONE' else variant
++                'selected readonly integrated overlays outside common closure')
++    arm='BEFORE' if variant=='NONE' else variant
+     installs=closure['variantInstallations'][arm]
+     return {'mode':mode,'variant':variant,'bodyVariant':arm,
+-        'comparisonScope':'COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY',
++        'comparisonScope':'CONTROL_INFLATE_SINGLE_BUFFER_ONLY',
+         'uOverlayPin':closure['variantSources'][arm],'partsOverlayPin':closure['variantParts'][arm],
+-        'adoptionSchema':'helmut-combined-auth-'+mode+'-root-adoption/1',
+-        'action':('ROOT START COMBINED AUTH NEW BODY LIFECYCLE ONLY' if mode=='lifecycle-only' else
+-                  'ROOT START COMBINED AUTH BASELINE 27 RPC COMPARISON ONLY'),
++        'adoptionSchema':'helmut-control-inflate-'+mode+'-root-adoption/1',
++        'action':('ROOT START CONTROL INFLATE CURRENT BODY LIFECYCLE ONLY' if mode=='lifecycle-only' else
++                  'ROOT START CONTROL INFLATE SINGLE BUFFER 27 RPC COMPARISON ONLY'),
+         'rendererInstallSQLPin':installs['renderer'],'installSQLPin':installs['graph'],
+         'expectedRendererBodySHA256':closure['variantBodies'][arm]['renderer'],
+         'expectedBodySHA256':closure['variantBodies'][arm]['graph'],
+@@ -120,6 +158,7 @@
+         'postgrestShutdownPolicy':closure['postgrestShutdownPolicy'],
+         'upstreamEvidencePin':closure['upstreamEvidencePin']}
+ 
++
+ def lifecycle_proof(item, frozen):
+     # This exact HOST case path also exists readonly at the same absolute path
+     # in the new worker. Never use current /bench or a global path alias.
+@@ -127,10 +166,11 @@
+     actual=Path(item['path'])
+     case=actual.parent
+     require(actual.is_absolute() and actual.resolve()==actual and actual.name=='ACTUAL_RESULT.SAFE.json'
+-            and case.parent==CASES and re.fullmatch('control-[a-f0-9]{24}',case.name),
++            and case.parent==CASES and case.name==next(iter(CASE_SPECS))
++            and re.fullmatch('inflate-[a-f0-9]{24}',case.name),
+             'lifecycle result must be inside the exact adopted host case')
+     value=read(item)
+-    require(value['schema']=='helmut-control-cache-result/1' and value['status']=='PASS'
++    require(value['schema']=='helmut-control-inflate-result/1' and value['status']=='PASS'
+             and value['preparedPin']==frozen and value['measurementMode']=='lifecycle-only'
+             and value['authRPCCount']==0 and value['nodeStarted'] is False
+             and value['sourceManifestSHA256']==SOURCE_SHA,
+--- accepted-combined-auth27/run.py
++++ control-inflate/run.py
+@@ -22,7 +22,7 @@
+ def prepared():
+     p = C.HERE/'PREPARED.SAFE.json'
+     value = json.loads(p.read_text())
+-    C.require(value['schema']=='helmut-combined-auth-baseline-prepared/1'
++    C.require(value['schema']=='helmut-control-inflate-prepared/1'
+               and value['nativeQualification']=='NOT_RUN','prepared source closure')
+     for item in value['files']+value['metadataAndCodeInputs']+value['hostOnlyInputPins']:
+         C.checked(item)
+@@ -31,7 +31,8 @@
+ def safe_case(path, absent=False):
+     path = Path(path)
+     C.require(path.is_absolute() and path.resolve()==path and
+-              path.parent==C.CASES and re.fullmatch(r'control-[a-f0-9]{24}',path.name),
++              path.parent==C.CASES and path.name in C.CASE_SPECS and
++              re.fullmatch(r'inflate-[a-f0-9]{24}',path.name),
+               'new dedicated case path required')
+     if absent:
+         C.require(not path.exists(),'case must be new; never reuse')
+@@ -53,6 +54,7 @@
+     C.floor(C.HERE,C.ADMISSION)
+     C.CASES.mkdir(mode=0o700,parents=True,exist_ok=True)
+     case = safe_case(case,absent=True)
++    C.require(C.CASE_SPECS[case.name]==(mode,selected['variant']),'exact predeclared case mode/variant')
+     lifecycle=C.pin(lifecycle_path) if lifecycle_path else None
+     C.validate_run_inputs(value,selected,lifecycle,frozen)
+     N,K = modules(value)
+@@ -66,7 +68,7 @@
+               'known local storage driver')
+     bindings = C.runtime_bindings()
+     case.mkdir(mode=0o700)
+-    result = {'schema':'helmut-control-cache-preflight/1','status':'READY_FOR_ROOT_ADOPTION_ONLY',
++    result = {'schema':'helmut-control-inflate-preflight/1','status':'READY_FOR_ROOT_ADOPTION_ONLY',
+         'atUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'case':str(case),
+         'preparedPin':frozen,'runtimePin':C.pin(C.RUNTIME),'bindings':bindings,
+         'nativePolicy':N.policy(),'hostAvailableBytes':C.available(case),
+@@ -110,8 +112,9 @@
+               'fresh exact bounded Root START adoption')
+     pf = C.read(adoption['preflightPin'])
+     case = safe_case(pf['case'])
++    C.require(C.CASE_SPECS[case.name]==(mode,selected['variant']),'exact predeclared case mode/variant')
+     C.require(adoption['preflightPin']['path']==str(case/'PREFLIGHT.SAFE.json') and
+-              pf['schema']=='helmut-control-cache-preflight/1' and
++              pf['schema']=='helmut-control-inflate-preflight/1' and
+               pf['preparedPin']==frozen and pf['source']==str(C.SOURCE) and
+               pf['measurementMode']==mode and pf['selection']==selected and
+               pf['lifecycleResultPin']==lifecycle and
+@@ -128,7 +131,7 @@
+               'runtime/native policy closure drift')
+     source_not_live(N)
+     parent = 'helmut-meter-memorybudget-'+secrets.token_hex(12)
+-    name = 'helmut-control-cache-'+secrets.token_hex(12)
++    name = 'helmut-control-inflate-'+secrets.token_hex(12)
+     started = time.monotonic()
+     deadline = started+C.WORK_SECONDS
+     final_deadline = started+C.TOTAL_SECONDS
+@@ -314,7 +317,7 @@
+         wp=case/'WORKER_RESULT.SAFE.json'
+         if wp.exists():
+             worker=json.loads(wp.read_text())
+-        if mode=='control-cache' and worker and worker.get('nodeStarted'):
++        if mode=='control-inflate' and worker and worker.get('nodeStarted'):
+             try:
+                 node_receipts=N.node_receipts(case/'node-observations')
+                 C.require(node_receipts['httpMeteredIsolates']==1 and node_receipts['privateWorkers']==0,
+@@ -333,7 +336,7 @@
+             and worker.get('authRPCCount')==selected['authRPCCount']
+             and worker.get('postgrestStopQualified') is True and worker.get('catalogUnchangedAfterOperation') is True
+             and ((mode=='lifecycle-only' and worker.get('nodeStarted') is False)
+-                 or (mode=='control-cache' and node_receipts and node_receipts['pass_']
++                 or (mode=='control-inflate' and node_receipts and node_receipts['pass_']
+                      and worker.get('nodeStarted') is True and worker.get('nodeExitCode')==0))
+             and final_kernel and final_kernel['fullLastProcessExitCovered'] and final_budget
+             and not final_kernel['memoryEvents'].get('oom',0)
+@@ -341,7 +344,7 @@
+             and minimum_free>=C.FLOOR and time.monotonic()<=final_deadline
+             and prepared()[0]==frozen)
+         C.save(case,'NATIVE_TIMELINE.SAFE.json',samples)
+-        result={'schema':'helmut-control-cache-result/1','status':'PASS' if passed else 'FAIL',
++        result={'schema':'helmut-control-inflate-result/1','status':'PASS' if passed else 'FAIL',
+             'forcedStop':forced,'errorType':failure,'parent':parent,'rootAdoptionPin':adoption_pin,
+             'preflightPin':adoption['preflightPin'],'preparedPin':frozen,
+             'kernelThroughLastOwnedExit':final_kernel,'nativeBudgetAfterLastExit':final_budget,
+@@ -350,7 +353,7 @@
+             'wallSeconds':time.monotonic()-started,
+             'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+             'sourceManifestSHA256':C.SOURCE_SHA,'authRPCCount':worker.get('authRPCCount') if worker else None,
+-            'comparisonScope':'COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY',
++            'comparisonScope':'CONTROL_INFLATE_SINGLE_BUFFER_ONLY',
+             'ramComparisonPerformed':False,'threeRPCPlateauClaimed':False,
+             'postgrestStarted':worker.get('postgrestStarted') if worker else None,
+             'nodeStarted':worker.get('nodeStarted') if worker else None,'nodeHeapAndExitReceipts':node_receipts,
+@@ -369,13 +372,13 @@
+         proofs={}
+         for label in ('SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json','SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json',
+                       'WORKER_RESULT.SAFE.json','PG_LOG.SAFE.json','OFFLINE_AFTER.CAPTURE.SAFE.json',
+-                      'PG_LOG.PRIVATE.txt','NATIVE_TIMELINE.SAFE.json','CONTROL_CACHE.SAFE.json',
++                      'PG_LOG.PRIVATE.txt','NATIVE_TIMELINE.SAFE.json','CONTROL_INFLATE.SAFE.json',
+                       'POSTGREST_STOP.SAFE.json','POSTGREST_LOG.PRIVATE.txt','NODE_CONTROL.CAPTURE.SAFE.json'):
+             p=case/label
+             if p.exists():
+                 proofs[label]=C.pin(p)
+         C.save(case,'RETIREMENT_CANDIDATES.SAFE.json',{
+-            'schema':'helmut-control-cache-retirement-candidates/1','case':str(case),
++            'schema':'helmut-control-inflate-retirement-candidates/1','case':str(case),
+             'parent':parent,'containers':candidates,'freshDerivedPGDATAPath':str(case/'disk/pgdata'),
+             'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+             'sourceProofExitLogAndPlanPins':proofs,'resultPin':result_pin,
+@@ -402,9 +405,9 @@
+     sub=p.add_subparsers(dest='action',required=True)
+     pre=sub.add_parser('prepare')
+     pre.add_argument('--case',type=Path,required=True)
+-    pre.add_argument('--measurement',choices=('lifecycle-only','control-cache'),required=True)
++    pre.add_argument('--measurement',choices=('lifecycle-only','control-inflate'),required=True)
+     pre.add_argument('--lifecycle-result',type=Path)
+-    pre.add_argument('--variant',choices=('NONE','OLD','NEW'),required=True)
++    pre.add_argument('--variant',choices=('NONE','BEFORE','AFTER'),required=True)
+     sub.add_parser('start').add_argument('--root-adoption',type=Path,required=True)
+     args=p.parse_args()
+     if args.action=='prepare':
+--- accepted-combined-auth27/worker.py
++++ control-inflate/worker.py
+@@ -1,4 +1,4 @@
+-"""Combined Auth worker: NEW-body lifecycle or complete OLD/NEW 27-RPC arm."""
++"""Control inflate worker: same current SQL/Parts, separately adopted BEFORE/AFTER U."""
+ import copy
+ import hashlib
+ import json
+@@ -457,10 +457,10 @@
+         graph_qualified=True
+         C.save(OUT,'ACTUAL_NATIVE_CATALOG.SAFE.json',{'before':catalog_before,'installed':catalog_after,
+             'rendererInstalled':catalog_renderer,'fullOriginalCatalogQualified':True,
+-            'onlyReviewedRendererAndSelectedGraphBodyChanged':True,'selection':selected,'comparisonScope':'COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY',
++            'onlyReviewedRendererAndSelectedGraphBodyChanged':True,'selection':selected,'comparisonScope':'CONTROL_INFLATE_SINGLE_BUFFER_ONLY',
+             'setupSQLSessions':5,'setupSQLStatements':29,
+             'additionalV8ObservationSQL':'two small physical roots; six cycle metrics in comparison only; final catalog separately',
+-            'setupStatementCountScope':'three catalog files x5, selected renderer install6, selected graph install8; symmetric including OLD no-ops'})
++            'setupStatementCountScope':'three catalog files x5, selected renderer install6, selected graph install8; identical current NEW wrappers in both comparator arms'})
+         C.require(not log_overflow.is_set(),'PG log cap')
+         record('start-owned-PostgREST')
+         helper_pin=next(x for x in CONFIG['preparation']['files']
+@@ -496,7 +496,7 @@
+                 time.sleep(.05)
+         C.require(REST_STATE['versionSeen'],'actual pinned PostgREST 12.2.3 startup banner')
+         record('PostgREST-socket-ready-no-HTTP-probe')
+-        if mode=='control-cache':
++        if mode=='control-inflate':
+             (OUT/'node-observations').mkdir(mode=0o700)
+             node_started=True
+             C.save(OUT,'CLIENT_CONFIG.SAFE.json',{'variant':selected['variant'],
+@@ -511,7 +511,7 @@
+                 C.require(index<=6 and not marker.is_symlink() and marker.stat().st_size<=512,
+                           'bounded exact cycle marker')
+                 item=json.loads(marker.read_text())
+-                expected={'schema':'helmut-control-cache-cycle-marker/1','sequence':index,
++                expected={'schema':'helmut-control-inflate-cycle-marker/1','sequence':index,
+                     'round':(index-1)//2,'edge':'start' if index%2 else 'end','nodePID':child.pid}
+                 C.require(item==expected,'exact cycle order/round/known Node PID')
+                 native=snapshot()
+@@ -548,7 +548,7 @@
+                     'HELMUT_AUTH_GRAPH_READ_REUSE':'off','HELMUT_AUTH_SINGLE_WRITE_CAPTURE':'off'},observer=observe_cycle)
+             node_exit=0
+             observed=json.loads(node_text)
+-            C.require(observed['schema']=='helmut-control-cache-comparison-27-rpc/1' and observed['variant']==selected['variant'] and observed['pass'] is True
++            C.require(observed['schema']=='helmut-control-inflate-comparison-27-rpc/1' and observed['variant']==selected['variant'] and observed['pass'] is True
+                       and observed['authRPCCount']==27 and observed['fullReadCount']==5 and observed['writeCount']==4
+                       and observed['controlReadCount']==18 and observed['mutations']==3 and observed['restoreCount']==1
+                       and observed['uCalls']==(['read','write']+['readControl']*6)*3+['read','write','read']
+@@ -557,14 +557,14 @@
+                       and observed['nodeVersion']=='v24.19.0' and observed['noExtraFullAuthSerialization'] is True
+                       and observed['freshNativeChecksAcceptedBySelectedU'] is True,
+                       'actual deterministic 27-RPC selected U acceptance')
+-            C.require(json.loads((OUT/'CONTROL_CACHE.SAFE.json').read_text())==observed,
++            C.require(json.loads((OUT/'CONTROL_INFLATE.SAFE.json').read_text())==observed,
+                       'Node stdout/persisted receipt identity')
+             auth_rpc_count=27
+         small_after=json.loads(psql(Path('/tools/small-auth.sql'),'SMALL_AUTH_AFTER'))
+         before_data=physical_auth(small_before)
+         after_data=physical_auth(small_after)
+         target_after=copy.deepcopy(small_before)
+-        if mode=='control-cache':
++        if mode=='control-inflate':
+             C.require(C.uuid4(after_data['_authStoreRevision']) and
+                       after_data['_authStoreRevision']!=before_data['_authStoreRevision'] and
+                       after_data['_authStoreRevision']==observed['finalRevision'],
+@@ -577,13 +577,13 @@
+         small_qualified=True
+         catalog_final=json.loads(psql(Path('/tools/catalog.sql'),'CATALOG_AFTER_OPERATION'))
+         expected_final=copy.deepcopy(catalog_after)
+-        if mode=='control-cache':
++        if mode=='control-inflate':
+             expected_final['store']={k:small_after[k] for k in ('rows','physicalBytes','sha')}
+         C.require(catalog_final==expected_final,'complete catalog/ABI/ACL/Auth exact except independently measured revision SHA')
+         C.save(OUT,'CATALOG_OPERATION_UNCHANGED.SAFE.json',{'unchangedExceptAuthorizedRevision':True,
+             'actual':catalog_final,'authRPCCount':auth_rpc_count,
+             'smallBefore':small_before,'smallAfter':small_after,
+-            'revisionChanged':mode=='control-cache','allOtherPhysicalFieldsExact':True})
++            'revisionChanged':mode=='control-inflate','allOtherPhysicalFieldsExact':True})
+         catalog_unchanged=True
+         operations_done=True
+         record('measurement-complete')
+@@ -623,7 +623,7 @@
+                 node_status=json.loads((OUT/'NODE_CONTROL.CAPTURE.SAFE.json').read_text())
+                 node_exit=node_status['exitCode']
+                 node_pid=node_status['childPID']
+-                node_observed=json.loads((OUT/'CONTROL_CACHE.SAFE.json').read_text())
++                node_observed=json.loads((OUT/'CONTROL_INFLATE.SAFE.json').read_text())
+                 auth_rpc_count=node_observed['authRPCCount']
+             except BaseException as error:
+                 failed=failed or type(error).__name__
+@@ -670,7 +670,7 @@
+         except BaseException as error:
+             failed=failed or type(error).__name__
+         C.save(OUT,'PHASES.SAFE.json',phases)
+-        result={'schema':'helmut-control-cache-worker-result/1',
++        result={'schema':'helmut-control-inflate-worker-result/1',
+             'pass':bool(not failed and copied_verified and source_unchanged and clean_pg
+                         and operations_done and jit_report and graph_qualified and catalog_unchanged and small_qualified
+                         and stop_receipt and stop_receipt['pass'] and stop_receipt_pin
+--- accepted-combined-auth27/control-driver.js
++++ control-inflate/control-driver.js
+@@ -1,6 +1,6 @@
+ 'use strict';
+-// V8 prepared only. Real U: 5 reads, 4 confirmed CAS writes, 18 controls.
+-// Readonly canonical overlays select U; identical PartsNEW in BOTH variants.
++// Control inflate prepared only. Real U: 5 reads, 4 confirmed CAS writes, 18 controls.
++// Readonly canonical overlays select BEFORE/AFTER integrated U; identical common Parts and NEW SQL.
+ const fs=require('node:fs'),crypto=require('node:crypto'),v8=require('node:v8');
+ const {PerformanceObserver}=require('node:perf_hooks'),dc=require('node:diagnostics_channel');
+ const root='/workspace/helmut-cpu-epoch-20261015',modulePath=root+'/lib/helmut/llm-usage-atomic.js';
+@@ -20,7 +20,7 @@
+ let phase='initial',observing=false,expectedMethod=null,baselineFields=null,baselineHistorySHA=null;
+ let baselineProof=null,baselineState=null,expectedRevision=physical.data[revision],lastState=null,sequence=0;
+ const seenRevisions=new Set([expectedRevision]);
+-const result={schema:'helmut-control-cache-comparison-27-rpc/1',pass:false,variant:cfg.variant,
++const result={schema:'helmut-control-inflate-comparison-27-rpc/1',pass:false,variant:cfg.variant,
+   nodeVersion:process.version,uCalls:[],authRPCCount:0,rpcResponsesCompleted:0,nativeHTTPSendCount:0,
+   steps,requests,nativeHTTPRequests:sends,controlTextStringifyObservations:calls,cycles,
+   fullReadCount:0,writeCount:0,controlReadCount:0,mutations:0,restoreCount:0,
+@@ -78,7 +78,7 @@
+ }
+ async function boundary(round,edge){
+   requireThat(performance.now()<deadline,'unchanged whole-client 30s budget');
+-  const item={schema:'helmut-control-cache-cycle-marker/1',sequence:++sequence,round,edge,nodePID:process.pid};
++  const item={schema:'helmut-control-inflate-cycle-marker/1',sequence:++sequence,round,edge,nodePID:process.pid};
+   const name='/bench/CYCLE_'+sequence+'.MARKER.SAFE.json';
+   fs.writeFileSync(name+'.tmp',original(item)+'\n',{flag:'wx',mode:0o600});
+   fs.renameSync(name+'.tmp',name); // Publish one complete bounded marker atomically.
+@@ -195,7 +195,7 @@
+ }
+ async function main(){
+   try{
+-    requireThat(['OLD','NEW'].includes(cfg.variant)&&process.version==='v24.19.0'&&meter&&U.enabled()&&U.controlReadEnabled(),
++    requireThat(['BEFORE','AFTER'].includes(cfg.variant)&&process.version==='v24.19.0'&&meter&&U.enabled()&&U.controlReadEnabled(),
+       'selected real runtime/control flags');
+     for(const [p,item] of [[modulePath,cfg.uOverlayPin],[partsPath,cfg.partsOverlayPin]]){
+       const raw=fs.readFileSync(p);requireThat(raw.length===item.bytes&&hash(raw)===item.sha256,'actual canonical loaded bytes');
+@@ -249,7 +249,7 @@
+       gc.count++;gc.durationMilliseconds+=e.duration;const k=String(e.detail?.kind??'unknown');gc.kinds[k]=(gc.kinds[k]||0)+1;
+     }
+     gcObserver.disconnect();result.final={memory:memory(),wire:meter?wire():null,wallMilliseconds:performance.now()-started};
+-    fs.writeFileSync('/bench/CONTROL_CACHE.SAFE.json',original(result)+'\n',{flag:'wx',mode:0o600});
++    fs.writeFileSync('/bench/CONTROL_INFLATE.SAFE.json',original(result)+'\n',{flag:'wx',mode:0o600});
+     process.stdout.write(original(result)+'\n');if(!result.pass)process.exitCode=1;
+   }
+ }
+--- accepted-combined-auth27/README.md
++++ control-inflate/README.md
+@@ -1,39 +1,57 @@
+-# Combined Auth baseline comparison — PREPARED, NOT RUN
++# Control inflate single-buffer comparison — prepared, not run
+ 
+-This new isolated harness answers one missing comparison: the complete original Auth pair of JS modules and two original SQL bodies versus the complete corrected pair of modules and SQL bodies. It uses the already reviewed V9 27-RPC workload without Ownership81 instrumentation. It is not another cache-only comparison, a full motor profile, a 179 integration acceptance, a Full500 run or production authorization. No performance, reserve or plateau benefit is claimed. The author has not imported, AST/syntax checked, tested or executed any subject, database, container or native resource.
++BEFORE is the current integrated U93917a57; AFTER is the frozen candidate
++40d7e584. This comparison makes no original-V11 OLD/NEW claim. Both arms use
++COMMON_PARTS f30089e7, NEW renderer d02ac484 and NEW graph4e2b9015, with the exact
++same SQL wrapper bytes, original canonical827a source, database and settings.
++Original OLD SQL/U/Parts files among24 copied bodies remain historical protected
++provenance only; they are never selected by this launcher.
+ 
+-## Exact two arms
++The sole product-code delta is cachedControlText inflateRawSync chunkSize=textBytes+1
++for already validated private compressed views with2MiB<textBytes<=8MiB. Existing
++maxOutputLength/info, complete input consumption, expanded SHA/length, fatal UTF8,
++encoded2MiB and logical256MiB bounds remain. Above8MiB keeps legacy chunking.
++The embedded actual Node source is mechanism evidence; no addon, allocator flag,
++GC tuning, cache eviction, peak reset or measurement-boundary change is introduced.
++No component or Motor/500 saving is claimed by this source preparation.
+ 
+-OLD is commit5fae25be5068a278a88daca9a7508c7b9e4001a3: U31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0; Parts6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9; renderer prosrc b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a; graph_read prosrc1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0. Both original prosrc hashes were checked against the retained original ACTUAL_NATIVE_CATALOG.before. The entire two historical proposal files are frozen as provenance; no whole migration is executed. The original function definitions, including full signatures/language/volatility/security/search_path, are extracted exactly; only CREATE becomes CREATE OR REPLACE for same-OID installation.
++Root intent e0d224b3 predeclares one fresh zero-Auth/no-Node lifecycle and four
++fresh separately adopted work cases BEFORE–AFTER–AFTER–BEFORE. Every work
++preflight and adoption requires that same final-freeze lifecycle actual PASS pin.
++There is no sequence executor or default case, variant, retry or cleanup.
++The user-facing host entry is control-inflate.py.TEMPLATE, which requires
++python -I -S -B and optimization disabled. Root must copy the prepared closure
++into the canonical sibling, produce/review the final PREPARED pin, and replace
++ONLY @FINAL_PREPARED_SHA256@ in the host template before any entry can succeed.
++FREEZE_SOURCE.py only generates local metadata and a full source delta; it does
++not import any subject, inspect processes, touch Git or start resources.
+ 
+-NEW is U93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b; PartsF30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63; renderer prosrc d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32; graph_read prosrc4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0. The current reviewed Root proposal source bodies and the exact V9 installed definitions agree. Candidate JS provenance remains author commit67b5c4ef8ccd482d726126f8bbc41a00ee4151a3. BODY_SOURCE_PROVENANCE records the exact source files, body sizes/hashes, wrappers and historical catalog proof.
++Each work case keeps the parent27 accepted RPCs:5 full reads,4 confirmed CAS,
++18 controls,3 mutations plus restoration,6 same-PID boundary handshakes.
++The entire original request/invoke/logical-field/history hashing and JSON
++stringify observer functions remain byte-identical. Original probe values and
++streaming hash work are unchanged in both arms. Natural GC observer behavior is
++unchanged. Only arm bindings and distinct case/receipt schemas were adapted.
+ 
+-Current canonical Root U/Parts already contain NEW939/f300. Host-only pins authenticate these actual current bytes before/after start. They are absent from worker metadata expectations. Readonly overlays select OLD U+OLD Parts or NEW U+NEW Parts at the canonical require paths; worker and unchanged Node driver independently verify loaded bytes against selected pins. Original Root files are never rewritten/restored. Every other small external input still matches V9. Three large runtime binaries carry V9 pins and matching stat sizes; author did not reread them. The normal host/worker runtime authentication remains mandatory before any actual PASS.
++Resource caps stay unchanged: Node384+16MiB, native max1547997184/high1399996416/
++swap0, Auth30s/fetch20s/SQL30s/lock1s, whole Node batch30s, combined capture256KiB,
++case evidence4MiB, persistent copy768MiB+16MiB admission, host floor8GiB,
++work300s/closure360s. The original runtime/JIT, full manifests, catalogs/ABI/ACL,
++Auth6000/revision restoration, strict PostgREST stop and kernel-through-last-exit
++guards remain. Source827a, all originals, frozen sources and raw proofs stay KEEP.
+ 
+-## Symmetric clone installation and proof
++All fresh PGDATA copies are preclassified expendable only after complete actual
++PASS, independent acceptance, retained necessary evidence, full closure,
++dependency/unknown-use review and a fresh separate exact Root retirement action.
++This launcher never removes PGDATA, evidence, hulls, images, volumes or loops.
++Unreadable process metadata is not clearance. No old actor/adoption is reused.
+ 
+-Both arms install exactly two individual SQL definitions in the fresh clone, renderer then graph_read, including the OLD no-ops. Each renderer wrapper has six SQL statements; each graph wrapper has eight. Both retain BEGIN, SET LOCAL statement_timeout30s, lock_timeout1s and Root-adoption/PG17.6/database18405/original606B Auth/clone-only path/localSocket/GUC/helper-function hash guards. Renderer preconditions bind originalb315 and originalgraph1644; graph preconditions bind the selected renderer and originalgraph1644. Graph installation additionally preserves the complete pg_proc record except prosrc. No whole proposal, schema/data migration, ACL exception or catalog exclusion is allowed.
++Root's benefit gate requires all four raw common-lifetime peaks and
++max(AFTER)<min(BEFORE), both adjacent paired differences and arithmetic means.
++More than10percent mean CPU or wall regression blocks automatic integration.
++Overlapping peaks or any failure stay inconclusive/failed with no extra cases.
++Valid and invalid codec differentials and independent actual/source reviews are
++separate required gates. Source preparation, copy elimination and a mechanism
++hypothesis do not demonstrate shared RAM savings or authorize a500 run.
+ 
+-The original full catalog must match the retained original catalog before any install. CATALOG_AFTER may differ only at the exact selected renderer prosrc; CATALOG_SELECTED may differ only at the two exact selected prosrc hashes. All ABI/ACL/roles/settings/store fields remain exact. Setup stays five sessions/29 statements: three catalog files x5, renderer6, graph8. The strengthened renderer guard uses the same already reviewed graph clone guard symmetrically; installation work is included in the native lifetime. OLD retains both original bodies after no-op installations.
+-
+-## One common freeze, explicit separate Root cases
+-
+-The only case root is `/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases`. CLI requires each fresh explicit control-24hex path and mode/variant. There is no generated five-case default, automatic sequence or retry. Root first prepares/adopts a new lifecycle-only:NONE case on this exact final PREPARED. Its selected bodyVariant is explicitly NEW, with NEW renderer+graph installations, zero Auth HTTP calls and no Node process. Its actual complete PASS/three exact Host proof pins are required before each separately adopted control-cache arm and again inside the worker. No prior V9 or other-PREPARED lifecycle can qualify.
+-
+-Root then separately prepares/adopts OLD/NEW/NEW/OLD, using fresh TTL/nonce one-shot adoptions for each. Adoption schema is helmut-combined-auth-lifecycle-only-root-adoption/1 or helmut-combined-auth-control-cache-root-adoption/1. Actions are ROOT START COMBINED AUTH NEW BODY LIFECYCLE ONLY or ROOT START COMBINED AUTH BASELINE 27 RPC COMPARISON ONLY. In addition to the inherited exact selection/preflight/source/nonce/TTL fields, installSelectedRendererAndGraph must be true. Root owns order, exclusivity and later fair aggregation. This preparation contains no populated Root adoption, cases or fabricated results.
+-
+-## Identical workload, metrics and bounds
+-
+-control-driver.js is an exact bytecopy of V9. Its historical introductory comment says common PartsNEW in both variants; this is no longer the comparison design. Actual module selection and byte checks are dynamic cfg.partsOverlayPin, now OLD6b or NEWf300, and no executable driver change was made. Its internal LOCAL_CONTROL_CACHE_COMPARISON probe label and output schema remain unchanged for workload identity; PREPARED/selection/results explicitly identify the combined scope.
+-
+-There are three rounds of fresh U.read, one confirmed U.write mutating only localWorkingSetProbe, then six genuine U.readControl calls, followed by fresh full read, confirmed restoration write and final full read. Exactly27 accepted Auth RPCs:5 full reads/4 CAS writes/18 controls,6000 history, no ledger append, no retries/provider calls. Field/history hashes, actual request/response nonce and CAS lineage, real passive sends/framed responses, JSON.stringify observer, temporary request-parse scalar detachment, six boundary handshakes and naturalGC observations remain byte-identical in the driver. No Auth graph is retained by the harness across control phases. There is no Ownership81 sampler.
+-
+-Native common-group current/never-reset lifetime peak/anon/file/kernel/CPU/IO and the six bounded metrics SQL sessions remain identical. Process RSS/shared diagnostics are separate, unknown stays unknown, no summation of separate peaks. The whole Node client has unchanged30s including observer SQL/pipeEOF/processwait,256KiB combined capture, fetch<=20s; SQL30s/lock1s. Node384MiB old+16MiB semi, one isolate/no private workers; native max1547997184/high1399996416/swap0;300s work/360s including closure;768MiB persistent-copy cap,256MiB JIT/socket tmpfs,4MiB evidence and8GiB host reserve all remain unchanged. V9's exact atomic marker accounting race fix is retained.
+-
+-Independent small SQL before/after is included in both modes. Physical root remains exactly606B/one row and6000 actual/referenced ledger rows. Lifecycle physical state is identical. Comparison changes only a fresh UUIDv4 _authStoreRevision matching the genuine final selected-U read, using the independently measured small after SHA. Full state root24bea/proof references/history6000 are restored and identical; every other final catalog/ABI/ACL field equals CATALOG_SELECTED. No broad SHA/store exception or source restoration is allowed. Strict persisted PostgREST policy5afe/helper and f467 policy, version-bound expected-2 handling, PG0/logEOF/last-owned-exit/source-full-manifest proof remain unchanged.
+-
+-## Preclassified temporary working copies
+-
+-Each fresh case is preclassified EXPENDABLE_LOCAL_WORKING_COPY, never an original/future baseline/input. Harness always preserves copies, hulls and proofs. A later separate Root cleanup may remove only actual PASS copies after complete necessary measurement/restoration/source/closure evidence is retained and independent/dependency/unknown-use review plus a fresh exact action establishes no necessary state or sole evidence is lost. No full physical WAL archive of every such disposable PASS working copy is required. FAIL/UNKNOWN remain. This harness deletes nothing. Canonical source827a, all original states, old cases/FAILs, all old full/delta archives, images/loops and historical evidence remain protected.
+-
+-The original V9 preparation/source bytes are preserved under baseline-v9 and bound as historical provenance. SOURCE_DELTA is the limited common/run/worker selection/setup/classification delta plus four exact body wrappers; SCOPE records unchanged source bytes. Root must independently review, integrate with only path rebinding, perform its own appropriate syntax/guard checks and decide each actual adoption. Native qualification remains NOT_RUN until real results exist.
++All syntax/import/test/native/SQL/Docker/model/provider qualifications are NOT_RUN.
+--- /dev/null
++++ control-inflate/FREEZE_SOURCE.py
+@@ -0,0 +1,137 @@
++#!/usr/bin/env python3
++"""Local source/metadata freeze only; no subject imports,tests,Git or resources."""
++import difflib
++import hashlib
++import json
++import re
++from pathlib import Path
++if not __debug__:
++    raise RuntimeError('Source freeze requires optimization disabled')
++HERE=Path(__file__).resolve().parent
++PARENT=Path('/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher')
++CANONICAL=PARENT.parent/'control-inflate-native-launcher'
++PRIVATE=Path('/workspace/helmut-ram-fix-20261020/control-inflate-20261021/preparation')
++CASES='/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases'
++PARENT_SHA='7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266'
++INTENT={'path':'/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_COMPARISON_INTENT.SAFE.json','bytes':5192,'sha256':'e0d224b3620cc10de99c35c5e98780dc4762c718ea310fe08ea3438c4f3074aa'}
++PLAN={'path':'/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_FIVE_CASE_PLAN.SAFE.json','bytes':1575,'sha256':'13b65a073b1c5b25ef850491dc94f6c84e4bea7a6ae6cd326c299f76f2d0d0c1'}
++BEFORE_SHA='93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b'
++AFTER_SHA='40d7e584e7856ea893a491d0598ca55b071fc9a07d2dfeb72d55cd10b14b9d1a'
++CORE=('common.py','run.py','worker.py','control-driver.js')
++BODIES=('BODY_SOURCE_PROVENANCE.SAFE.json','COMMON_PARTS.js','INSTALL_NEW_GRAPH.sql','INSTALL_NEW_RENDERER.sql','INSTALL_OLD_GRAPH.sql','INSTALL_OLD_RENDERER.sql','NEW_U.js','OLD_U.PRIVATE.js','ORIGINAL_AUTH_READ_SOURCE.PRIVATE.sql','ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql','ORIGINAL_PARTS.PRIVATE.js','SHUTDOWN_POLICY.SAFE.json','catalog.sql','cycle-metrics.sql','postgrest_lifecycle.py','small-auth.sql','upstream/SOURCE_EVIDENCE.SAFE.json','upstream/ghc/libraries/base/GHC/TopHandler.hs','upstream/ghc/rts/RtsStartup.c','upstream/postgrest/default.nix','upstream/postgrest/src/PostgREST/App.hs','upstream/postgrest/src/PostgREST/AppState.hs','upstream/postgrest/src/PostgREST/CLI.hs','upstream/postgrest/src/PostgREST/Unix.hs')
++def pin(path):
++    p=Path(path)
++    assert p.is_absolute() and p.resolve()==p and p.is_file() and not p.is_symlink()
++    z=p.read_bytes();return {'path':str(p),'bytes':len(z),'sha256':hashlib.sha256(z).hexdigest()}
++def save(name,value):
++    p=HERE/name;assert p.parent==HERE and not p.is_symlink()
++    p.write_text(json.dumps(value,sort_keys=True,indent=2)+'\n');p.chmod(0o600)
++def rebind(value):
++    if isinstance(value,dict):
++        if set(value)=={'path','bytes','sha256'}:
++            p=Path(value['path'])
++            if p.is_relative_to(PARENT) and (HERE/p.relative_to(PARENT)).is_file():return pin(HERE/p.relative_to(PARENT))
++        return {k:rebind(v) for k,v in value.items()}
++    if isinstance(value,list):return [rebind(v) for v in value]
++    return value
++def blocks(t,js=False):
++    pat=r'^(?:async )?function ([A-Za-z_][A-Za-z_0-9]*)\(' if js else r'^def ([A-Za-z_][A-Za-z_0-9]*)\('
++    matches=list(re.finditer(pat,t,re.M));out={}
++    for i,m in enumerate(matches):
++        end=matches[i+1].start() if i+1<len(matches) else (t.index('if __name__',m.start()) if not js and 'if __name__' in t[m.start():] else len(t))
++        out[m.group(1)]=t[m.start():end]
++    return out
++def freeze():
++    assert HERE in (PRIVATE,CANONICAL) and HERE.resolve()==HERE,'exact own preparation or canonical integration only'
++    parent_pin=pin(PARENT/'PREPARED.SAFE.json');assert parent_pin['sha256']==PARENT_SHA
++    assert pin(INTENT['path'])==INTENT and pin(PLAN['path'])==PLAN
++    old=json.loads((PARENT/'PREPARED.SAFE.json').read_text());assert old['schema']=='helmut-combined-auth-baseline-prepared/1'
++    unchanged=[]
++    for name in BODIES:
++        a,b=pin(PARENT/name),pin(HERE/name)
++        assert (a['bytes'],a['sha256'])==(b['bytes'],b['sha256']),'protected body drift'
++        unchanged.append({'parent':a,'candidate':b})
++    assert len(unchanged)==24
++    assert pin(HERE/'BEFORE_U.js')['sha256']==BEFORE_SHA and pin(HERE/'AFTER_U.js')['sha256']==AFTER_SHA
++    same=[];changed={}
++    for name in CORE:
++        a,b=blocks((PARENT/name).read_text(),name.endswith('.js')),blocks((HERE/name).read_text(),name.endswith('.js'))
++        assert set(a)==set(b);changed[name]=[]
++        for k,v in a.items():
++            if v==b[k]:same.append({'file':name,'function':k,'bytes':len(v.encode()),'sha256':hashlib.sha256(v.encode()).hexdigest()})
++            else:changed[name].append(k)
++    for name in ('installObserver','request','verifyLogical','invoke','memory','validateProof'):
++        assert any(x['file']=='control-driver.js' and x['function']==name for x in same)
++    for name in ('guard','capture','copy_complete','proc_diagnostic'):
++        assert any(x['file']=='worker.py' and x['function']==name for x in same)
++    save('GUARD_EQUIVALENCE.SAFE.json',{'schema':'helmut-control-inflate-source-guard-equivalence/1','status':'SOURCE_ONLY_NOT_RUN',
++        'parentCorePins':[pin(PARENT/x) for x in CORE],'preparedCorePins':[pin(HERE/x) for x in CORE],
++        'byteEqualFunctionBlocks':same,'changedFunctionBlocks':changed,
++        'all27RPCCountsCapsNativeOriginalCloneRestorationAndRawProofRetentionPreserved':True,
++        'OLDVariantPerformanceAssertionsPresentInParentDriver':False,
++        'onlyDriverChanges':'Header,receipt/marker schema,receipt filename and BEFORE/AFTER labels. Probe/request/invoke/hashes/observer/naturalGC unchanged; boundary algorithm unchanged with new marker schema.',
++        'sourceOnlyNoSubjectImportsASTTestsOrResources':True})
++    save('SCOPE.SAFE.json',{'schema':'helmut-control-inflate-scope/1','status':'PREPARED_NOT_RUN',
++        'comparisonScope':'CONTROL_INFLATE_SINGLE_BUFFER_ONLY','parentPreparedPin':parent_pin,
++        'rootComparisonIntentPin':INTENT,'rootFiveCasePlanPin':PLAN,'caseRoot':CASES,
++        'changedExecutableFiles':list(CORE),'unchangedBodyCount':24,'unchangedFiles':unchanged,
++        'sameNEWSQLAndCommonPartsBothArms':True,'originalV11ComparisonClaim':False,
++        'sameFreezeZeroAuthLifecycleRequiredBeforeEveryWorkAdoption':True,
++        'noAutoSequenceRetriesCleanupOr500':True,'noNativeAddonOrObserverExpansion':True,
++        'subjectImportsASTSyntaxTestsGitResourcesOrSourcePGDATAPayloadReads':False})
++    chunks=[]
++    for name in (*CORE,'README.md'):
++        chunks.extend(difflib.unified_diff((PARENT/name).read_text().splitlines(True),(HERE/name).read_text().splitlines(True),
++            fromfile='accepted-combined-auth27/'+name,tofile='control-inflate/'+name))
++    for name in ('FREEZE_SOURCE.py','GUARD_REVIEW.md','control-inflate.py.TEMPLATE'):
++        chunks.extend(difflib.unified_diff([],(HERE/name).read_text().splitlines(True),fromfile='/dev/null',tofile='control-inflate/'+name))
++    chunks.extend(difflib.unified_diff((HERE/'BEFORE_U.js').read_text().splitlines(True),(HERE/'AFTER_U.js').read_text().splitlines(True),
++        fromfile='control-inflate/BEFORE_U.js',tofile='control-inflate/AFTER_U.js'))
++    (HERE/'SOURCE_DELTA.PRIVATE.diff').write_text(''.join(chunks));(HERE/'SOURCE_DELTA.PRIVATE.diff').chmod(0o600)
++    value=rebind(old)
++    value.pop('preservedV9',None);value.pop('candidatePreparedPin',None);value.pop('candidateCommit',None)
++    value['historicalOriginalCommitProvenance']=value.pop('originalCommit')
++    value['schema']='helmut-control-inflate-prepared/1'
++    value['revision']='INTEGRATED_CONTROL_INFLATE_SINGLE_BUFFER_SOURCE_ONLY'
++    value['comparisonScope']='CONTROL_INFLATE_SINGLE_BUFFER_ONLY';value['caseRoot']=CASES
++    value['rootComparisonIntentPin']=INTENT;value['rootFiveCasePlanPin']=PLAN;value['parentPreparedPin']=parent_pin
++    value['expectedRootOrder']=['lifecycle-only:NONE','control-inflate:BEFORE','control-inflate:AFTER','control-inflate:AFTER','control-inflate:BEFORE']
++    value['explicitModes']=['lifecycle-only','control-inflate'];value['explicitVariants']=['NONE','BEFORE','AFTER'];value['lifecycleBodyVariant']='BEFORE'
++    value['variantSources']={'BEFORE':pin(HERE/'BEFORE_U.js'),'AFTER':pin(HERE/'AFTER_U.js')}
++    value['variantParts']={arm:pin(HERE/'COMMON_PARTS.js') for arm in ('BEFORE','AFTER')}
++    value['variantInstallations']={arm:{'renderer':pin(HERE/'INSTALL_NEW_RENDERER.sql'),'graph':pin(HERE/'INSTALL_NEW_GRAPH.sql')} for arm in ('BEFORE','AFTER')}
++    value['variantBodies']={arm:old['variantBodies']['NEW'] for arm in ('BEFORE','AFTER')}
++    value['sourceOverlays']='Readonly BEFORE U939 or AFTER U40d7; identical COMMON_PARTS f300 and NEW SQL; host R939/f300 checked separately.'
++    value['sourceDeltaPin']=pin(HERE/'SOURCE_DELTA.PRIVATE.diff');value['scopePin']=pin(HERE/'SCOPE.SAFE.json')
++    value['guardEquivalencePin']=pin(HERE/'GUARD_EQUIVALENCE.SAFE.json');value['hostEntryTemplatePin']=pin(HERE/'control-inflate.py.TEMPLATE')
++    value['mechanismEvidencePin']=json.loads(Path(INTENT['path']).read_text())['actualEmbeddedSourcePin']
++    value['setup']['installations']='identical NEW renderer6/graph8 in both integrated U arms; same clone/settings'
++    value['setup']['setupSQLBytesUnchanged']=True
++    value['lifecycleHostMapping']['actualResult']='exact declared first CASES/inflate-ecda0cd673313ed20dfd14c8/ACTUAL_RESULT.SAFE.json'
++    value['actualCanonicalLoadedBytesCheckedBy']='Same selected frozen U/Parts bytes verified at canonical readonly overlays by worker and actual Node; common Parts and SQL identical.'
++    value['postgrestClosure']['helperSourcePin']=pin(HERE/'postgrest_lifecycle.py')
++    value['rootIntegration']={'installedAtCanonicalRoot':HERE==CANONICAL,'canonicalLauncherPath':str(CANONICAL),
++        'candidateSourceDirectory':str(HERE),'independentReviewPending':True,'nativeExecuted':False,
++        'parentPreparedPin':parent_pin,'unchangedCopiedBodies':24,'changedExecutableBodies':list(CORE),
++        'changes':'Only integrated U buffer option differs; binding/assertion/schema changes preserve original27RPC workload and all caps.'}
++    value['capacityPlanning']={'fiveWorstCaseFloorBytes':12700352512,'newRetainedEvidencePlanningBytes':67108864,
++        'additionalQualifiedReclaimBytes':0,'fullAdmissionAuthorization':False,
++        'actualPreparationAllocation':'Printed after this local freeze; never a reservation or RAM saving.'}
++    value['preparationVerification']='Local source copy/edit/text/byte/hash and metadata generation only; no subject import/AST/syntax/tests/Git/resources/network/models/source PGDATA payload reads.'
++    value['files']=[pin(x) for x in sorted(HERE.iterdir()) if x.is_file() and x.name!='PREPARED.SAFE.json']
++    value['metadataAndCodeInputs']=[x for x in value['metadataAndCodeInputs'] if not Path(x['path']).is_relative_to(PARENT)]
++    for x in [*value['files'],parent_pin,INTENT,PLAN,value['mechanismEvidencePin']]:
++        if x not in value['metadataAndCodeInputs']:value['metadataAndCodeInputs'].append(x)
++    seen={}
++    for x in value['files']+value['metadataAndCodeInputs']+value['hostOnlyInputPins']:
++        assert seen.setdefault(x['path'],x)==x,'contradictory source pin'
++    save('PREPARED.SAFE.json',value)
++    allfiles=[x for x in HERE.rglob('*') if x.is_file()]
++    print(json.dumps({'status':'PREPARED_NOT_RUN','preparedPin':pin(HERE/'PREPARED.SAFE.json'),
++        'sourceDeltaPin':pin(HERE/'SOURCE_DELTA.PRIVATE.diff'),'unchangedCopiedBodies':24,
++        'byteEqualFunctionBlocks':len(same),'canonicalIntegration':HERE==CANONICAL,
++        'preparationFiles':len(allfiles),'preparationLogicalBytes':sum(x.stat().st_size for x in allfiles),
++        'preparationAllocatedBytes':sum(x.stat().st_blocks*512 for x in allfiles),
++        'subjectImportsTestsGitResourcesExecuted':False},sort_keys=True))
++if __name__=='__main__':
++    freeze()
+--- /dev/null
++++ control-inflate/GUARD_REVIEW.md
+@@ -0,0 +1,24 @@
++# Source guard map — no execution qualification
++
++GUARD_EQUIVALENCE.SAFE.json records literal function-block equivalence against
++combined-auth-baseline-native-launcher. Common changes select BEFORE/AFTER from
++the same integrated SQL/Parts and require the fresh Root intent. Lifecycle proof
++only changes exact new case/receipt identities. Run and worker changes are mode,
++case path,scope/schema/source-selection labels; native policy/setup/control and
++capture functions stay byte-identical. The27RPC driver changes only arm labels,
++receipt/marker schemas and receipt filename; its actual workload, probe objects,
++field/history hashes, one-call stringify observer, timing and naturalGC behavior
++are unchanged. The boundary uses a distinct schema with identical handshake logic.
++No OLD-cache-behavior branch existed in this inherited driver.
++
++Both overlay Us and common Parts are immutable, readonly and independently
++pinned; host R939/f300 input checks stay separate from candidate overlays.
++Both selections require the exact NEW install wrapper and body SHA values.
++Neither changes SQL statements, session counts,process controls or resource caps.
++The source snapshot827a and full-manifest/source guards remain unchanged.
++
++This map is source evidence only. Root owns independent review, final canonical
++freeze, -I -S -B host adapter binding, targeted syntax/CLI/caller checks, actual
++codec safety differentials, all fresh preflights/adoptions,5 actual cases,
++independent actual acceptance and any later separately reviewed retirement.
++No opaque-use clearance, global process absence or deletion authority is inferred.
+--- /dev/null
++++ control-inflate/control-inflate.py.TEMPLATE
+@@ -0,0 +1,57 @@
++"""Pinned host entry for python -I -S -B; no sys.path or environment changes."""
++import hashlib
++import json
++import os
++from pathlib import Path
++import stat
++import sys
++import types
++
++if not (sys.flags.isolated and sys.flags.no_site and sys.flags.dont_write_bytecode):
++    raise RuntimeError('Use python -I -S -B for the pinned control-inflate host entry.')
++if sys.flags.optimize:
++    raise RuntimeError('The pinned host entry requires Python optimization disabled.')
++
++BASE = Path('/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher')
++PREPARED_SHA = '@FINAL_PREPARED_SHA256@'
++
++
++def read_regular(path, maximum):
++    assert BASE.resolve() == BASE and path.parent == BASE and path.resolve() == path
++    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
++    with os.fdopen(fd, 'rb') as stream:
++        before = os.fstat(stream.fileno())
++        assert stat.S_ISREG(before.st_mode) and 0 < before.st_size <= maximum
++        raw = stream.read(maximum + 1)
++        after = os.fstat(stream.fileno())
++    assert (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns) == (
++        after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns)
++    assert len(raw) == before.st_size
++    return raw
++
++
++def main():
++    raw = read_regular(BASE / 'PREPARED.SAFE.json', 128 * 1024)
++    assert hashlib.sha256(raw).hexdigest() == PREPARED_SHA, 'reviewed preparation drift'
++    prepared = json.loads(raw)
++    sources = {}
++    for name in ('common.py', 'run.py'):
++        path = BASE / name
++        expected = [p for p in prepared['files'] if p['path'] == str(path)]
++        assert len(expected) == 1
++        source = read_regular(path, 128 * 1024)
++        assert len(source) == expected[0]['bytes'] and hashlib.sha256(source).hexdigest() == expected[0]['sha256']
++        sources[name] = source
++    assert 'common' not in sys.modules
++    common = types.ModuleType('common')
++    common.__file__ = str(BASE / 'common.py')
++    common.__package__ = ''
++    common.__cached__ = None
++    exec(compile(sources['common.py'], common.__file__, 'exec'), common.__dict__)
++    sys.modules['common'] = common
++    namespace = {'__name__': '__main__', '__file__': str(BASE / 'run.py'), '__package__': ''}
++    exec(compile(sources['run.py'], namespace['__file__'], 'exec'), namespace)
++
++
++if __name__ == '__main__':
++    main()
+--- control-inflate/BEFORE_U.js
++++ control-inflate/AFTER_U.js
+@@ -186,7 +186,10 @@
+     || !Number.isSafeInteger(cache.textBytes) || cache.textBytes <= CONTROL_CACHE_BYTES
+     || cache.textBytes > CONTROL_TEXT_MAX_BYTES || !/^[a-f0-9]{64}$/.test(cache.textSHA256))
+     fail("AUTH_CONTROL_CACHE_INVALID");
+-  const inflated = inflateRawSync(cache.encoded, { maxOutputLength: cache.textBytes, info: true });
++  const options = { maxOutputLength: cache.textBytes, info: true };
++  // One spare byte avoids an exact-full output chunk; larger views keep legacy chunking.
++  if (cache.textBytes <= 8 * 1024 * 1024) options.chunkSize = cache.textBytes + 1;
++  const inflated = inflateRawSync(cache.encoded, options);
+   if (inflated.buffer.length !== cache.textBytes || inflated.engine.bytesWritten !== cache.encoded.length
+     || sha(inflated.buffer) !== cache.textSHA256) fail("AUTH_CONTROL_CACHE_INVALID");
+   return new TextDecoder("utf-8", { fatal: true }).decode(inflated.buffer);

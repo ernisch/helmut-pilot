@@ -1,0 +1,306 @@
+{
+  "schema": "helmut-v12-tenant-budget-component-public-evidence/1",
+  "atUTC": "2026-10-21T19:26:32.684318+00:00",
+  "status": "ACTUAL_PASS_COMPONENT_ONLY",
+  "change": "Elide two full Auth cost reads only when both existing tenant limits are inactive. Existing global gate always fresh; positive tenant budgets unchanged.",
+  "sourceStorageSHA256Old": "51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d",
+  "sourceStorageSHA256New": "3c265bf9aaafb735b12d408ff8914f67ac32560b38194e0bf27c4fdd6e3d8d74",
+  "rootActualArtifact": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/COMPARISON_ACTUAL.SAFE.json",
+    "bytes": 10649,
+    "sha256": "e23194b691c058eb6403ba309ed7f155669e42812819d01223df6f39e20c04fa"
+  },
+  "order": [
+    "01-old",
+    "02-new",
+    "03-new",
+    "04-old"
+  ],
+  "rows": [
+    {
+      "case": "01-old",
+      "arm": "old",
+      "commonPeakBytes": 607662080,
+      "wholeGroupCPUUsec": 17862052,
+      "throughClosureSeconds": 18.514041351008927,
+      "guardsWallMS": [
+        1515.926579,
+        684.7250469999999,
+        738.9846969999999,
+        702.3117910000001,
+        721.9500819999998,
+        776.5494140000001
+      ],
+      "allGuardsWallMS": 5141.750237,
+      "nodeCPUUsec": 3393451,
+      "verifiedReads": 18,
+      "globalChecks": 6,
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "pins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/01-old/COMPONENT_RESULT.SAFE.json",
+          "bytes": 9852,
+          "sha256": "bf80a40837faa9e9091d4acfb4071d1af9c488d83df6a2b3ec7ef5700a6927d9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/01-old/ACTUAL_PHASES.SAFE.json",
+          "bytes": 7276,
+          "sha256": "221270ae41b00cecad6a1ee2d3e04eb54925fb3eded64f34573120eba1170809"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/01-old/READONLY_NATIVE_BEFORE.SAFE.json",
+          "bytes": 821,
+          "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/01-old/READONLY_NATIVE_AFTER.SAFE.json",
+          "bytes": 821,
+          "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/01-old/ACTUAL_SETTINGS.SAFE.json",
+          "bytes": 219,
+          "sha256": "e9ca03ec633732763699d9bff0416488c7bf994c4b5e07013c6aa0c4f9928966"
+        }
+      ]
+    },
+    {
+      "case": "02-new",
+      "arm": "new",
+      "commonPeakBytes": 528060416,
+      "wholeGroupCPUUsec": 13112227,
+      "throughClosureSeconds": 15.650569694000296,
+      "guardsWallMS": [
+        1060.3378129999999,
+        364.554124,
+        340.739198,
+        302.74204699999973,
+        322.2084970000001,
+        307.639009
+      ],
+      "allGuardsWallMS": 2699.675102,
+      "nodeCPUUsec": 1710848,
+      "verifiedReads": 6,
+      "globalChecks": 6,
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "pins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/02-new/COMPONENT_RESULT.SAFE.json",
+          "bytes": 8546,
+          "sha256": "06346686f839ea7a36e59f2366914b2c7c4995ad8fc795beef31cafbaf2f3320"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/02-new/ACTUAL_PHASES.SAFE.json",
+          "bytes": 5192,
+          "sha256": "472ef74ee021f1723401e083e3ecf110d080a33e82a5bf4cf54001b36437b187"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/02-new/READONLY_NATIVE_BEFORE.SAFE.json",
+          "bytes": 821,
+          "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/02-new/READONLY_NATIVE_AFTER.SAFE.json",
+          "bytes": 821,
+          "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/02-new/ACTUAL_SETTINGS.SAFE.json",
+          "bytes": 219,
+          "sha256": "e9ca03ec633732763699d9bff0416488c7bf994c4b5e07013c6aa0c4f9928966"
+        }
+      ]
+    },
+    {
+      "case": "03-new",
+      "arm": "new",
+      "commonPeakBytes": 549588992,
+      "wholeGroupCPUUsec": 12850067,
+      "throughClosureSeconds": 15.011166749987751,
+      "guardsWallMS": [
+        984.728389,
+        371.5575660000002,
+        387.67306800000006,
+        310.2458710000001,
+        361.33600000000024,
+        286.19766100000015
+      ],
+      "allGuardsWallMS": 2702.7923570000003,
+      "nodeCPUUsec": 1605152,
+      "verifiedReads": 6,
+      "globalChecks": 6,
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "pins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/03-new/COMPONENT_RESULT.SAFE.json",
+          "bytes": 8294,
+          "sha256": "b8734644caeee14ca9d21a5d712c153f4e5333bcde964e9eeb8770ab902d7a1c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/03-new/ACTUAL_PHASES.SAFE.json",
+          "bytes": 5228,
+          "sha256": "7fd23b01b86460fe93e7fdff5d0ee105b7f05922583a9c20401b58f115199917"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/03-new/READONLY_NATIVE_BEFORE.SAFE.json",
+          "bytes": 821,
+          "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/03-new/READONLY_NATIVE_AFTER.SAFE.json",
+          "bytes": 821,
+          "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/03-new/ACTUAL_SETTINGS.SAFE.json",
+          "bytes": 219,
+          "sha256": "e9ca03ec633732763699d9bff0416488c7bf994c4b5e07013c6aa0c4f9928966"
+        }
+      ]
+    },
+    {
+      "case": "04-old",
+      "arm": "old",
+      "commonPeakBytes": 580616192,
+      "wholeGroupCPUUsec": 17708855,
+      "throughClosureSeconds": 18.244533935998334,
+      "guardsWallMS": [
+        1472.7881810000001,
+        757.464933,
+        735.4166540000001,
+        743.1515880000002,
+        716.3760490000004,
+        785.298538
+      ],
+      "allGuardsWallMS": 5211.869356,
+      "nodeCPUUsec": 3312401,
+      "verifiedReads": 18,
+      "globalChecks": 6,
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "pins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/04-old/COMPONENT_RESULT.SAFE.json",
+          "bytes": 9852,
+          "sha256": "c745328acf3e49a46977701b4ee33ea570a76adf27d5fd92f115d3db2be522b8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/04-old/ACTUAL_PHASES.SAFE.json",
+          "bytes": 7284,
+          "sha256": "8bc71f84d1feef86125b88cab550d7a42aacc5851969eeb47713098ffd6a3ee7"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/04-old/READONLY_NATIVE_BEFORE.SAFE.json",
+          "bytes": 821,
+          "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/04-old/READONLY_NATIVE_AFTER.SAFE.json",
+          "bytes": 821,
+          "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/04-old/ACTUAL_SETTINGS.SAFE.json",
+          "bytes": 219,
+          "sha256": "e9ca03ec633732763699d9bff0416488c7bf994c4b5e07013c6aa0c4f9928966"
+        }
+      ]
+    }
+  ],
+  "means": {
+    "meanOldPeakBytes": 594139136,
+    "meanNewPeakBytes": 538824704,
+    "meanPeakSavingBytes": 55314432,
+    "minimumPairedPeakSavingBytes": 31027200,
+    "warmGuardMedianOldMS": 737.2006755,
+    "warmGuardMedianNewMS": 331.47384750000003,
+    "meanWholeGroupCPUOldUsec": 17785453.5,
+    "meanWholeGroupCPUNewUsec": 12981147,
+    "meanThroughClosureOldSeconds": 18.37928764350363,
+    "meanThroughClosureNewSeconds": 15.330868221994024
+  },
+  "historyCount": 6000,
+  "sameNativeBindingInAllArms": true,
+  "sameSettingsInAllArms": true,
+  "sameDecisionSHA256": "d94f2cb6022e5f52483f35531f48d84b2bade3d96ba0d34ca983e96c7b8e5f1e",
+  "actualDecision": "DENIED_IDENTICALLY_IN_ALL_FOUR_ARMS",
+  "actualGlobalUsed": 1000,
+  "actualGlobalLimit": 50,
+  "globalChecksPerArm": 6,
+  "originalImageUnchangedThroughPriorReadOnlyDiagnostic": true,
+  "sourceReview": "Independent SOL SOURCE PASS; Root exact adoption",
+  "actualReview": "Independent SOL ACTUAL PASS; all20 artifact pins and280 source pins confirmed",
+  "targetedBudgetAssertions": 67,
+  "differentialCases": 1352,
+  "offlineStandard": {
+    "initialStandardResult": "178/179 passed in688s",
+    "initialFailure": "runtime-artifact-attestation expected old storage source hash",
+    "correction": "Refresh onlystorage size/hash and exact source mapping; full500Qualification remainsfalse",
+    "affectedSuiteAfterCorrection": "10/10 assertions PASS",
+    "fullStandardRepeatedAfterMetadataOnlyCorrection": false
+  },
+  "nativeCASCalls": 0,
+  "providerCalls": 0,
+  "forcedGC": false,
+  "cacheClear": false,
+  "peakReset": false,
+  "full500": false,
+  "production": false,
+  "reserve500MBProven": false,
+  "limitations": [
+    "Warm shared file cache and direct native SQL transport; no cold DB or HTTP equivalence claim.",
+    "Two observations per variant; report both pairs, no extrapolation to500.",
+    "All four global decisions denied identically at unchanged default local limit; no budget was bypassed.",
+    "Observed savings belong to this read-only component lifetime including setup/close; full500 reserve remains open."
+  ],
+  "testEvidencePins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/BUDGET_TEST_CORRECTED.ACTUAL.log",
+      "bytes": 4869,
+      "sha256": "450727f0b4e162ec40660b1f6ac0769437a9028ba19f3c228290d831ce58da2f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/DIFFERENTIAL.ACTUAL.log",
+      "bytes": 739,
+      "sha256": "197ee4130235a31351620e0ab30d7f2adef3fa66d28e333923372d708fe8f5ec"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/OFFLINE_STANDARD.ACTUAL.log",
+      "bytes": 9313,
+      "sha256": "27ead72ee5604d2307824ebfaf12844d7dc788f8708976f8d4e859b8f26268c5"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-tenant-budget-read-elision/ARTIFACT_METADATA_CORRECTED.ACTUAL.log",
+      "bytes": 1394,
+      "sha256": "36c397451506a18191c91a591be0da47c958dcf9e17cee5d3a38f1da81ee8361"
+    }
+  ],
+  "originalImageAnd8InputsFreshlyRehashed": true
+}

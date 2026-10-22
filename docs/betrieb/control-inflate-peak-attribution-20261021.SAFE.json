@@ -1,0 +1,3025 @@
+{
+  "accountingRules": [
+    "memory.peak is a lifetime high-water and memory.current/stat at later reads describe another instant; no exact peak decomposition is inferred.",
+    "memory.stat.file already includes shmem; report shmem as a subset. fileMinusShmem is an arithmetic display of recorded counters, not proof of a particular engine allocation.",
+    "Node external includes ArrayBuffers; never add external+arrayBuffers. heapUsed/heapTotal are V8 allocation metrics, not an additive partition of RSS or group memory.",
+    "Process RSS includes shared/mapped pages. Do not sum process RSS or separate process lifetime peaks into a group peak. Parent postgres RSS is not all database children.",
+    "Node callbacks/heap snapshots at before/after/ACK are natural-GC-stage dependent; live retained bytes or allocator capacity do not follow from these snapshots.",
+    "Group native snapshot precedes metric SQL/ACK; the associated Node boundary snapshot is after ACK. They are explicitly sequential, not simultaneous."
+  ],
+  "actions": {
+    "onlyNewOwnReportWritten": true,
+    "originalsSourcesArchivesHullsEvidenceTouched": false,
+    "readOnlyFreshCaseMetadata": true,
+    "subjectImportsTestsCodeChangesDockerSQLProcessGitNativeDeletionOrCompaction": false
+  },
+  "atUTC": "2026-10-21T06:54:20.197969+00:00",
+  "cases": [
+    {
+      "boundaryFrames": [
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 64757760,
+            "atUnixSeconds": 1792565082.1482418,
+            "fileBytesIncludesShmem": 568987648,
+            "kernelBytes": 22814720,
+            "lifetimePeakBytes": 657612800,
+            "memoryCurrentBytes": 657612800,
+            "origin": "CYCLE_1.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 197910528
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 0,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 146099,
+              "external": 2403035,
+              "heapTotal": 10743808,
+              "heapUsed": 6005160,
+              "rss": 33521664
+            },
+            "processLifetimeMaxRSSBytes": 42942464
+          },
+          "nodeAfterACKRelativeMilliseconds": 28.081648,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 33710080,
+            "postgres": 30941184,
+            "postgrest": 18378752
+          },
+          "round": 0,
+          "sequence": 1
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 309047296,
+            "atUnixSeconds": 1792565085.8063073,
+            "fileBytesIncludesShmem": 604835840,
+            "kernelBytes": 27238400,
+            "lifetimePeakBytes": 993845248,
+            "memoryCurrentBytes": 942379008,
+            "origin": "CYCLE_2.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 105,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 5439938,
+              "heapTotal": 109391872,
+              "heapUsed": 58756488,
+              "rss": 235991040
+            },
+            "processLifetimeMaxRSSBytes": 264654848
+          },
+          "nodeAfterACKRelativeMilliseconds": 3682.2626680000003,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 236597248,
+            "postgres": 30941184,
+            "postgrest": 53739520
+          },
+          "round": 0,
+          "sequence": 2
+        },
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 309047296,
+            "atUnixSeconds": 1792565085.8740387,
+            "fileBytesIncludesShmem": 604860416,
+            "kernelBytes": 27111424,
+            "lifetimePeakBytes": 993845248,
+            "memoryCurrentBytes": 942370816,
+            "origin": "CYCLE_3.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 105,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 5439938,
+              "heapTotal": 109391872,
+              "heapUsed": 58819672,
+              "rss": 235991040
+            },
+            "processLifetimeMaxRSSBytes": 264654848
+          },
+          "nodeAfterACKRelativeMilliseconds": 3753.523212,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 236597248,
+            "postgres": 30941184,
+            "postgrest": 53739520
+          },
+          "round": 1,
+          "sequence": 3
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 321118208,
+            "atUnixSeconds": 1792565088.749587,
+            "fileBytesIncludesShmem": 604884992,
+            "kernelBytes": 27213824,
+            "lifetimePeakBytes": 1008402432,
+            "memoryCurrentBytes": 954408960,
+            "origin": "CYCLE_4.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 181,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1590449,
+              "external": 15152497,
+              "heapTotal": 105340928,
+              "heapUsed": 81034232,
+              "rss": 245923840
+            },
+            "processLifetimeMaxRSSBytes": 279425024
+          },
+          "nodeAfterACKRelativeMilliseconds": 6628.522699,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 246599680,
+            "postgres": 30941184,
+            "postgrest": 54042624
+          },
+          "round": 1,
+          "sequence": 4
+        },
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 321118208,
+            "atUnixSeconds": 1792565088.8201268,
+            "fileBytesIncludesShmem": 604909568,
+            "kernelBytes": 27230208,
+            "lifetimePeakBytes": 1008402432,
+            "memoryCurrentBytes": 954306560,
+            "origin": "CYCLE_5.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 181,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1590449,
+              "external": 15152497,
+              "heapTotal": 105340928,
+              "heapUsed": 81067056,
+              "rss": 245923840
+            },
+            "processLifetimeMaxRSSBytes": 279425024
+          },
+          "nodeAfterACKRelativeMilliseconds": 6696.308755,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 246599680,
+            "postgres": 30941184,
+            "postgrest": 54042624
+          },
+          "round": 2,
+          "sequence": 5
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 340611072,
+            "atUnixSeconds": 1792565091.7057571,
+            "fileBytesIncludesShmem": 604983296,
+            "kernelBytes": 27267072,
+            "lifetimePeakBytes": 1012715520,
+            "memoryCurrentBytes": 973934592,
+            "origin": "CYCLE_6.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233758720
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 259,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 5439938,
+              "heapTotal": 109129728,
+              "heapUsed": 59479400,
+              "rss": 265408512
+            },
+            "processLifetimeMaxRSSBytes": 301371392
+          },
+          "nodeAfterACKRelativeMilliseconds": 9588.354458,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 265854976,
+            "postgres": 30941184,
+            "postgrest": 54300672
+          },
+          "round": 2,
+          "sequence": 6
+        }
+      ],
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a",
+      "derivedOperationTimingModel": {
+        "assumptions": [
+          "Same stable host Unix versus Node monotonic clock relationship over this case; no clock step/drift correction established.",
+          "Retained marker/native/SQL/ACK ordering and serial measured call durations are respected; positive unrecorded gaps are retained as slack.",
+          "Timestamps surround sequential kernel/stat reads with no recorded complete read brackets; physical instant alignment is not certified."
+        ],
+        "directPerOperationUnixTimestampExists": false,
+        "inferenceIsConditionalNotDirectSuboperationPeakReceipt": true,
+        "modeledOriginIntervalWidthMilliseconds": 17.839431762695312,
+        "nodeClockOriginIntervalUnixSeconds": [
+          1792565082.1344974,
+          1792565082.1523368
+        ],
+        "peakCompatibleOperationsUnderModel": [
+          "restore.write",
+          "restore.finalRead"
+        ],
+        "restorePostBoundarySlackMilliseconds": 0.766795000000986,
+        "restoreWindows": [
+          {
+            "couldOverlapFinalPeakReadBracket": false,
+            "modeledEndRangeUnixSeconds": [
+              1792565092.187794,
+              1792565092.2064004
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565091.7228518,
+              1792565091.7414582
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 259,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1501027,
+                "external": 5349873,
+                "heapTotal": 121098240,
+                "heapUsed": 102187888,
+                "rss": 270327808
+              },
+              "processLifetimeMaxRSSBytes": 301371392
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 259,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1457402,
+                "external": 5439938,
+                "heapTotal": 109129728,
+                "heapUsed": 59509192,
+                "rss": 265408512
+              },
+              "processLifetimeMaxRSSBytes": 301371392
+            },
+            "phase": "restore.fullRead"
+          },
+          {
+            "couldOverlapFinalPeakReadBracket": true,
+            "modeledEndRangeUnixSeconds": [
+              1792565092.7061703,
+              1792565092.7247767
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565092.187794,
+              1792565092.2064004
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 277,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1458161,
+                "external": 5307007,
+                "heapTotal": 125292544,
+                "heapUsed": 89244336,
+                "rss": 270295040
+              },
+              "processLifetimeMaxRSSBytes": 301371392
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 259,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1501027,
+                "external": 5349873,
+                "heapTotal": 121098240,
+                "heapUsed": 102202264,
+                "rss": 270327808
+              },
+              "processLifetimeMaxRSSBytes": 301371392
+            },
+            "phase": "restore.write"
+          },
+          {
+            "couldOverlapFinalPeakReadBracket": true,
+            "modeledEndRangeUnixSeconds": [
+              1792565093.2602882,
+              1792565093.2788947
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565092.7061703,
+              1792565092.7247767
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 288,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 2626161,
+                "external": 6475007,
+                "heapTotal": 133341184,
+                "heapUsed": 98726224,
+                "rss": 281989120
+              },
+              "processLifetimeMaxRSSBytes": 301371392
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 277,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1458161,
+                "external": 5307007,
+                "heapTotal": 125292544,
+                "heapUsed": 89256984,
+                "rss": 270295040
+              },
+              "processLifetimeMaxRSSBytes": 301371392
+            },
+            "phase": "restore.finalRead"
+          }
+        ]
+      },
+      "finalPeakReadBracket": {
+        "exactCounterReadTimestampAndDurationAbsent": true,
+        "firstFinalHighWaterRead": {
+          "anonBytes": 364212224,
+          "atUnixSeconds": 1792565092.7595704,
+          "fileBytesIncludesShmem": 605003776,
+          "kernelBytes": 27426816,
+          "lifetimePeakBytes": 1037365248,
+          "memoryCurrentBytes": 997625856,
+          "origin": "NATIVE_TIMELINE.SAFE.json/88",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        "groupStatsAreAtReadNotAtPeak": true,
+        "lastLowerHighWaterRead": {
+          "anonBytes": 368144384,
+          "atUnixSeconds": 1792565092.4808557,
+          "fileBytesIncludesShmem": 605003776,
+          "kernelBytes": 27340800,
+          "lifetimePeakBytes": 1012715520,
+          "memoryCurrentBytes": 1001713664,
+          "origin": "NATIVE_TIMELINE.SAFE.json/87",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        "peakMinusCurrentAtFirstReadBytes": 39739392,
+        "recordedTimestampGapMilliseconds": 278.714656829834
+      },
+      "label": "BEFORE1",
+      "largestObservedCurrentFrame": {
+        "anonBytes": 368144384,
+        "atUnixSeconds": 1792565092.4808557,
+        "fileBytesIncludesShmem": 605003776,
+        "kernelBytes": 27340800,
+        "lifetimePeakBytes": 1012715520,
+        "memoryCurrentBytes": 1001713664,
+        "origin": "NATIVE_TIMELINE.SAFE.json/87",
+        "sequentialNonAtomicRead": true,
+        "shmemBytesSubsetOfFile": 233758720
+      },
+      "largestStoredHighWaterEqualsRootPeak": true,
+      "nodeReceiptSummary": {
+        "NodeLifetimeRSSHighWaterHasNoExactGroupTimestamp": true,
+        "actualControlTextUTF8Bytes": 4856607,
+        "categoryEndpointRanges": {
+          "cold-control": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1460870,
+                16216252
+              ],
+              "external": [
+                5309716,
+                33390878
+              ],
+              "heapTotal": [
+                122925056,
+                145178624
+              ],
+              "heapUsed": [
+                88495696,
+                121760096
+              ],
+              "rss": [
+                232017920,
+                278216704
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "After",
+              "phase": "round2.control0"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 3,
+            "wallMillisecondsSum": 1478.2719690000006
+          },
+          "full-read": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                146099,
+                17250993
+              ],
+              "external": [
+                2403035,
+                34424955
+              ],
+              "heapTotal": [
+                10743808,
+                133341184
+              ],
+              "heapUsed": [
+                6019368,
+                111310720
+              ],
+              "rss": [
+                33521664,
+                287870976
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "After",
+              "phase": "round2.fullRead"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 5,
+            "wallMillisecondsSum": 3314.5851230000007
+          },
+          "hot-control": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1458707,
+                16216252
+              ],
+              "external": [
+                5307553,
+                33390878
+              ],
+              "heapTotal": [
+                105340928,
+                145178624
+              ],
+              "heapUsed": [
+                79683336,
+                121852000
+              ],
+              "rss": [
+                231514112,
+                278216704
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "Before",
+              "phase": "round2.control1"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 15,
+            "wallMillisecondsSum": 3938.059006000002
+          },
+          "write": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1406455,
+                17250993
+              ],
+              "external": [
+                5260414,
+                34424955
+              ],
+              "heapTotal": [
+                121098240,
+                132939776
+              ],
+              "heapUsed": [
+                88484696,
+                111321984
+              ],
+              "rss": [
+                218140672,
+                287870976
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "Before",
+              "phase": "round2.mutation"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 4,
+            "wallMillisecondsSum": 2062.6763789999986
+          }
+        },
+        "endpointMaxima": {
+          "arrayBuffers": {
+            "bytes": 17250993,
+            "edge": "After",
+            "phase": "round2.fullRead"
+          },
+          "external": {
+            "bytes": 34424955,
+            "edge": "After",
+            "phase": "round2.fullRead"
+          },
+          "heapTotal": {
+            "bytes": 145178624,
+            "edge": "After",
+            "phase": "round0.control0"
+          },
+          "heapUsed": {
+            "bytes": 121852000,
+            "edge": "Before",
+            "phase": "round0.control1"
+          },
+          "rss": {
+            "bytes": 287870976,
+            "edge": "After",
+            "phase": "round2.fullRead"
+          }
+        },
+        "final": {
+          "naturalGCCallbackCount": 288,
+          "notWholeGroup": true,
+          "process": {
+            "arrayBuffers": 2626161,
+            "external": 6475007,
+            "heapTotal": 133341184,
+            "heapUsed": 98744576,
+            "rss": 281989120
+          },
+          "processLifetimeMaxRSSBytes": 301371392
+        },
+        "forcedGC": false,
+        "wallMilliseconds": 11126.557838
+      },
+      "peakMinusLargestObservedCurrentBytes": 35651584,
+      "phaseFrames": [
+        {
+          "anonBytes": 10993664,
+          "atUnixSeconds": 1792565068.409676,
+          "fileBytesIncludesShmem": 364544,
+          "kernelBytes": 2285568,
+          "lifetimePeakBytes": 16986112,
+          "memoryCurrentBytes": 15114240,
+          "origin": "PHASES.SAFE.json/0:source-before-hash",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 14131200,
+          "atUnixSeconds": 1792565069.5193796,
+          "fileBytesIncludesShmem": 692224,
+          "kernelBytes": 2306048,
+          "lifetimePeakBytes": 19537920,
+          "memoryCurrentBytes": 18489344,
+          "origin": "PHASES.SAFE.json/1:persistent-copy",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 14569472,
+          "atUnixSeconds": 1792565071.9709244,
+          "fileBytesIncludesShmem": 370163712,
+          "kernelBytes": 17076224,
+          "lifetimePeakBytes": 404934656,
+          "memoryCurrentBytes": 402968576,
+          "origin": "PHASES.SAFE.json/2:original-JIT-restoration",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 31956992,
+          "atUnixSeconds": 1792565081.856325,
+          "fileBytesIncludesShmem": 548950016,
+          "kernelBytes": 19140608,
+          "lifetimePeakBytes": 605749248,
+          "memoryCurrentBytes": 601288704,
+          "origin": "PHASES.SAFE.json/3:start-PG",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 178290688
+        },
+        {
+          "anonBytes": 35819520,
+          "atUnixSeconds": 1792565081.909516,
+          "fileBytesIncludesShmem": 561246208,
+          "kernelBytes": 20463616,
+          "lifetimePeakBytes": 618729472,
+          "memoryCurrentBytes": 618463232,
+          "origin": "PHASES.SAFE.json/4:original-catalog-qualification",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 190730240
+        },
+        {
+          "anonBytes": 35819520,
+          "atUnixSeconds": 1792565081.9551184,
+          "fileBytesIncludesShmem": 567390208,
+          "kernelBytes": 21131264,
+          "lifetimePeakBytes": 632606720,
+          "memoryCurrentBytes": 625561600,
+          "origin": "PHASES.SAFE.json/5:install-selected-renderer",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196628480
+        },
+        {
+          "anonBytes": 35819520,
+          "atUnixSeconds": 1792565082.0742352,
+          "fileBytesIncludesShmem": 567885824,
+          "kernelBytes": 20885504,
+          "lifetimePeakBytes": 637112320,
+          "memoryCurrentBytes": 625946624,
+          "origin": "PHASES.SAFE.json/6:start-owned-PostgREST",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196833280
+        },
+        {
+          "anonBytes": 38735872,
+          "atUnixSeconds": 1792565082.0922697,
+          "fileBytesIncludesShmem": 567898112,
+          "kernelBytes": 21471232,
+          "lifetimePeakBytes": 637112320,
+          "memoryCurrentBytes": 629469184,
+          "origin": "PHASES.SAFE.json/7:PostgREST-socket-ready-no-HTTP-probe",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196837376
+        },
+        {
+          "anonBytes": 106708992,
+          "atUnixSeconds": 1792565093.351757,
+          "fileBytesIncludesShmem": 605302784,
+          "kernelBytes": 22679552,
+          "lifetimePeakBytes": 1037365248,
+          "memoryCurrentBytes": 735965184,
+          "origin": "PHASES.SAFE.json/8:measurement-complete",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        {
+          "anonBytes": 32026624,
+          "atUnixSeconds": 1792565098.2377424,
+          "fileBytesIncludesShmem": 550330368,
+          "kernelBytes": 19320832,
+          "lifetimePeakBytes": 1037365248,
+          "memoryCurrentBytes": 603045888,
+          "origin": "PHASES.SAFE.json/9:close-PostgREST-then-PG-and-prove-source",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 178294784
+        }
+      ],
+      "rootReportedWholeLifetimePeakBytes": 1037365248,
+      "startToLastControlBoundaryCounterChanges": {
+        "anonBytes": 275853312,
+        "differencesOfSequentialCountersNotExactPeakCausalAllocation": true,
+        "fileBytesIncludesShmem": 35995648,
+        "fileMinusShmemEndBytes": 371224576,
+        "fileMinusShmemStartBytes": 371077120,
+        "kernelBytes": 4452352,
+        "shmemBytesSubsetOfFile": 35848192
+      },
+      "strictRecordedLocalization": {
+        "closureHighWaterBytes": 1037365248,
+        "lastControlBoundaryHighWaterBytes": 1012715520,
+        "latePeakIncrementBytes": 24649728,
+        "measurementCompleteHighWaterBytes": 1037365248,
+        "possibleDirectlyUnseparatedTailWork": [
+          "last boundary SQL/ACK overhead",
+          "restore.fullRead",
+          "restore.write",
+          "restore.finalRead",
+          "Node final receipts/exit",
+          "small physical and final catalog observation"
+        ],
+        "setupOrClosureSetsFinalPeak": false,
+        "setupPreNodeHighWaterBytes": 637112320,
+        "stage": "AFTER_LAST_CONTROL_BOUNDARY_SNAPSHOT_BEFORE_MEASUREMENT_COMPLETE"
+      },
+      "timelineSamples": 109,
+      "variant": "BEFORE"
+    },
+    {
+      "boundaryFrames": [
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 64667648,
+            "atUnixSeconds": 1792565157.2222748,
+            "fileBytesIncludesShmem": 568991744,
+            "kernelBytes": 22786048,
+            "lifetimePeakBytes": 657440768,
+            "memoryCurrentBytes": 657440768,
+            "origin": "CYCLE_1.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 197910528
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 0,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 146099,
+              "external": 2403035,
+              "heapTotal": 10743808,
+              "heapUsed": 6007224,
+              "rss": 33124352
+            },
+            "processLifetimeMaxRSSBytes": 42864640
+          },
+          "nodeAfterACKRelativeMilliseconds": 28.255562000000005,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 33632256,
+            "postgres": 31211520,
+            "postgrest": 18399232
+          },
+          "round": 0,
+          "sequence": 1
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 292249600,
+            "atUnixSeconds": 1792565161.3447194,
+            "fileBytesIncludesShmem": 604839936,
+            "kernelBytes": 26873856,
+            "lifetimePeakBytes": 995315712,
+            "memoryCurrentBytes": 924672000,
+            "origin": "CYCLE_2.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 107,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164831,
+              "heapTotal": 102838272,
+              "heapUsed": 58704464,
+              "rss": 219267072
+            },
+            "processLifetimeMaxRSSBytes": 278634496
+          },
+          "nodeAfterACKRelativeMilliseconds": 4148.524864,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 219607040,
+            "postgres": 31211520,
+            "postgrest": 53714944
+          },
+          "round": 0,
+          "sequence": 2
+        },
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 292249600,
+            "atUnixSeconds": 1792565161.4119282,
+            "fileBytesIncludesShmem": 604864512,
+            "kernelBytes": 26898432,
+            "lifetimePeakBytes": 995315712,
+            "memoryCurrentBytes": 924708864,
+            "origin": "CYCLE_3.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 107,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164831,
+              "heapTotal": 102838272,
+              "heapUsed": 58776536,
+              "rss": 219267072
+            },
+            "processLifetimeMaxRSSBytes": 278634496
+          },
+          "nodeAfterACKRelativeMilliseconds": 4221.039561,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 219607040,
+            "postgres": 31211520,
+            "postgrest": 53714944
+          },
+          "round": 1,
+          "sequence": 3
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 316772352,
+            "atUnixSeconds": 1792565164.6526875,
+            "fileBytesIncludesShmem": 604889088,
+            "kernelBytes": 27136000,
+            "lifetimePeakBytes": 1007915008,
+            "memoryCurrentBytes": 949637120,
+            "origin": "CYCLE_4.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 186,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164169,
+              "heapTotal": 104411136,
+              "heapUsed": 59309272,
+              "rss": 241614848
+            },
+            "processLifetimeMaxRSSBytes": 278634496
+          },
+          "nodeAfterACKRelativeMilliseconds": 7460.982844,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 242155520,
+            "postgres": 31211520,
+            "postgrest": 53915648
+          },
+          "round": 1,
+          "sequence": 4
+        },
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 316772352,
+            "atUnixSeconds": 1792565164.721813,
+            "fileBytesIncludesShmem": 604913664,
+            "kernelBytes": 27164672,
+            "lifetimePeakBytes": 1007915008,
+            "memoryCurrentBytes": 949809152,
+            "origin": "CYCLE_5.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 186,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164169,
+              "heapTotal": 104411136,
+              "heapUsed": 59365968,
+              "rss": 241614848
+            },
+            "processLifetimeMaxRSSBytes": 278634496
+          },
+          "nodeAfterACKRelativeMilliseconds": 7528.712931,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 242155520,
+            "postgres": 31211520,
+            "postgrest": 53915648
+          },
+          "round": 2,
+          "sequence": 5
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 324689920,
+            "atUnixSeconds": 1792565167.8901746,
+            "fileBytesIncludesShmem": 604987392,
+            "kernelBytes": 27471872,
+            "lifetimePeakBytes": 1015889920,
+            "memoryCurrentBytes": 957906944,
+            "origin": "CYCLE_6.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233758720
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 265,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164831,
+              "heapTotal": 104148992,
+              "heapUsed": 59424128,
+              "rss": 249208832
+            },
+            "processLifetimeMaxRSSBytes": 282767360
+          },
+          "nodeAfterACKRelativeMilliseconds": 10706.065772,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 249700352,
+            "postgres": 31211520,
+            "postgrest": 54300672
+          },
+          "round": 2,
+          "sequence": 6
+        }
+      ],
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55",
+      "derivedOperationTimingModel": {
+        "assumptions": [
+          "Same stable host Unix versus Node monotonic clock relationship over this case; no clock step/drift correction established.",
+          "Retained marker/native/SQL/ACK ordering and serial measured call durations are respected; positive unrecorded gaps are retained as slack.",
+          "Timestamps surround sequential kernel/stat reads with no recorded complete read brackets; physical instant alignment is not certified."
+        ],
+        "directPerOperationUnixTimestampExists": false,
+        "inferenceIsConditionalNotDirectSuboperationPeakReceipt": true,
+        "modeledOriginIntervalWidthMilliseconds": 24.322032928466797,
+        "nodeClockOriginIntervalUnixSeconds": [
+          1792565157.2059593,
+          1792565157.2302814
+        ],
+        "peakCompatibleOperationsUnderModel": [
+          "restore.write"
+        ],
+        "restorePostBoundarySlackMilliseconds": 0.7441320000007856,
+        "restoreWindows": [
+          {
+            "couldOverlapFinalPeakReadBracket": false,
+            "modeledEndRangeUnixSeconds": [
+              1792565168.4081569,
+              1792565168.4332232
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565167.912025,
+              1792565167.9370914
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 265,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1497433,
+                "external": 5346279,
+                "heapTotal": 122281984,
+                "heapUsed": 102079720,
+                "rss": 229310464
+              },
+              "processLifetimeMaxRSSBytes": 282767360
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 265,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1457402,
+                "external": 10164831,
+                "heapTotal": 104148992,
+                "heapUsed": 59458216,
+                "rss": 249208832
+              },
+              "processLifetimeMaxRSSBytes": 282767360
+            },
+            "phase": "restore.fullRead"
+          },
+          {
+            "couldOverlapFinalPeakReadBracket": true,
+            "modeledEndRangeUnixSeconds": [
+              1792565168.978128,
+              1792565169.003194
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565168.4081569,
+              1792565168.433223
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 283,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1460619,
+                "external": 5309465,
+                "heapTotal": 127651840,
+                "heapUsed": 88456696,
+                "rss": 251998208
+              },
+              "processLifetimeMaxRSSBytes": 282767360
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 265,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1497433,
+                "external": 5346279,
+                "heapTotal": 122281984,
+                "heapUsed": 102099864,
+                "rss": 229310464
+              },
+              "processLifetimeMaxRSSBytes": 282767360
+            },
+            "phase": "restore.write"
+          },
+          {
+            "couldOverlapFinalPeakReadBracket": false,
+            "modeledEndRangeUnixSeconds": [
+              1792565169.5730407,
+              1792565169.5981069
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565168.978128,
+              1792565169.003194
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 294,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 2627070,
+                "external": 6475916,
+                "heapTotal": 140034048,
+                "heapUsed": 117118976,
+                "rss": 250920960
+              },
+              "processLifetimeMaxRSSBytes": 302067712
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 283,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1460619,
+                "external": 5309465,
+                "heapTotal": 127651840,
+                "heapUsed": 88469344,
+                "rss": 251998208
+              },
+              "processLifetimeMaxRSSBytes": 282767360
+            },
+            "phase": "restore.finalRead"
+          }
+        ]
+      },
+      "finalPeakReadBracket": {
+        "exactCounterReadTimestampAndDurationAbsent": true,
+        "firstFinalHighWaterRead": {
+          "anonBytes": 343994368,
+          "atUnixSeconds": 1792565168.7776017,
+          "fileBytesIncludesShmem": 605007872,
+          "kernelBytes": 27557888,
+          "lifetimePeakBytes": 1019125760,
+          "memoryCurrentBytes": 977342464,
+          "origin": "NATIVE_TIMELINE.SAFE.json/90",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        "groupStatsAreAtReadNotAtPeak": true,
+        "lastLowerHighWaterRead": {
+          "anonBytes": 350560256,
+          "atUnixSeconds": 1792565168.4962335,
+          "fileBytesIncludesShmem": 605007872,
+          "kernelBytes": 27586560,
+          "lifetimePeakBytes": 1015889920,
+          "memoryCurrentBytes": 984121344,
+          "origin": "NATIVE_TIMELINE.SAFE.json/89",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        "peakMinusCurrentAtFirstReadBytes": 41783296,
+        "recordedTimestampGapMilliseconds": 281.3682556152344
+      },
+      "label": "AFTER1",
+      "largestObservedCurrentFrame": {
+        "anonBytes": 372412416,
+        "atUnixSeconds": 1792565165.62739,
+        "fileBytesIncludesShmem": 604983296,
+        "kernelBytes": 27533312,
+        "lifetimePeakBytes": 1007915008,
+        "memoryCurrentBytes": 1005666304,
+        "origin": "NATIVE_TIMELINE.SAFE.json/79",
+        "sequentialNonAtomicRead": true,
+        "shmemBytesSubsetOfFile": 233758720
+      },
+      "largestStoredHighWaterEqualsRootPeak": true,
+      "nodeReceiptSummary": {
+        "NodeLifetimeRSSHighWaterHasNoExactGroupTimestamp": true,
+        "actualControlTextUTF8Bytes": 4856607,
+        "categoryEndpointRanges": {
+          "cold-control": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1458161,
+                2637825
+              ],
+              "external": [
+                5307007,
+                6486671
+              ],
+              "heapTotal": [
+                123195392,
+                137580544
+              ],
+              "heapUsed": [
+                87953984,
+                109004168
+              ],
+              "rss": [
+                213123072,
+                273813504
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "After",
+              "phase": "round2.control0"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 3,
+            "wallMillisecondsSum": 1677.5828899999992
+          },
+          "full-read": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                146099,
+                2627070
+              ],
+              "external": [
+                2403035,
+                10164831
+              ],
+              "heapTotal": [
+                10743808,
+                140804096
+              ],
+              "heapUsed": [
+                6021432,
+                120431792
+              ],
+              "rss": [
+                33124352,
+                251998208
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "Before",
+              "phase": "restore.finalRead"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 5,
+            "wallMillisecondsSum": 3559.787443999998
+          },
+          "hot-control": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1458707,
+                7423108
+              ],
+              "external": [
+                5307553,
+                20985156
+              ],
+              "heapTotal": [
+                103505920,
+                137580544
+              ],
+              "heapUsed": [
+                80001712,
+                118388368
+              ],
+              "rss": [
+                213123072,
+                273813504
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "Before",
+              "phase": "round2.control1"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 15,
+            "wallMillisecondsSum": 4377.257336999999
+          },
+          "write": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1406455,
+                1538282
+              ],
+              "external": [
+                5260414,
+                5392241
+              ],
+              "heapTotal": [
+                120311808,
+                140804096
+              ],
+              "heapUsed": [
+                87942984,
+                120465224
+              ],
+              "rss": [
+                214806528,
+                251998208
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "After",
+              "phase": "restore.write"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 4,
+            "wallMillisecondsSum": 2403.6631670000024
+          }
+        },
+        "endpointMaxima": {
+          "arrayBuffers": {
+            "bytes": 7423108,
+            "edge": "After",
+            "phase": "round0.control1"
+          },
+          "external": {
+            "bytes": 20985156,
+            "edge": "After",
+            "phase": "round0.control1"
+          },
+          "heapTotal": {
+            "bytes": 140804096,
+            "edge": "After",
+            "phase": "round0.fullRead"
+          },
+          "heapUsed": {
+            "bytes": 120465224,
+            "edge": "Before",
+            "phase": "round0.mutation"
+          },
+          "rss": {
+            "bytes": 273813504,
+            "edge": "After",
+            "phase": "round2.control0"
+          }
+        },
+        "final": {
+          "naturalGCCallbackCount": 294,
+          "notWholeGroup": true,
+          "process": {
+            "arrayBuffers": 2627070,
+            "external": 6475916,
+            "heapTotal": 140034048,
+            "heapUsed": 117137328,
+            "rss": 251052032
+          },
+          "processLifetimeMaxRSSBytes": 302067712
+        },
+        "forcedGC": false,
+        "wallMilliseconds": 12367.825564
+      },
+      "peakMinusLargestObservedCurrentBytes": 13459456,
+      "phaseFrames": [
+        {
+          "anonBytes": 10989568,
+          "atUnixSeconds": 1792565143.5117617,
+          "fileBytesIncludesShmem": 368640,
+          "kernelBytes": 2318336,
+          "lifetimePeakBytes": 16449536,
+          "memoryCurrentBytes": 14553088,
+          "origin": "PHASES.SAFE.json/0:source-before-hash",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 14127104,
+          "atUnixSeconds": 1792565144.6025186,
+          "fileBytesIncludesShmem": 696320,
+          "kernelBytes": 2338816,
+          "lifetimePeakBytes": 19005440,
+          "memoryCurrentBytes": 17952768,
+          "origin": "PHASES.SAFE.json/1:persistent-copy",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 14565376,
+          "atUnixSeconds": 1792565146.5831711,
+          "fileBytesIncludesShmem": 370167808,
+          "kernelBytes": 17051648,
+          "lifetimePeakBytes": 404488192,
+          "memoryCurrentBytes": 402522112,
+          "origin": "PHASES.SAFE.json/2:original-JIT-restoration",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 31907840,
+          "atUnixSeconds": 1792565156.8770418,
+          "fileBytesIncludesShmem": 548954112,
+          "kernelBytes": 19140608,
+          "lifetimePeakBytes": 605044736,
+          "memoryCurrentBytes": 600608768,
+          "origin": "PHASES.SAFE.json/3:start-PG",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 178290688
+        },
+        {
+          "anonBytes": 35749888,
+          "atUnixSeconds": 1792565156.9288638,
+          "fileBytesIncludesShmem": 561250304,
+          "kernelBytes": 20430848,
+          "lifetimePeakBytes": 618921984,
+          "memoryCurrentBytes": 618655744,
+          "origin": "PHASES.SAFE.json/4:original-catalog-qualification",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 190730240
+        },
+        {
+          "anonBytes": 35749888,
+          "atUnixSeconds": 1792565156.9744103,
+          "fileBytesIncludesShmem": 567394304,
+          "kernelBytes": 20815872,
+          "lifetimePeakBytes": 632168448,
+          "memoryCurrentBytes": 625209344,
+          "origin": "PHASES.SAFE.json/5:install-selected-renderer",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196628480
+        },
+        {
+          "anonBytes": 35749888,
+          "atUnixSeconds": 1792565157.0976222,
+          "fileBytesIncludesShmem": 567889920,
+          "kernelBytes": 20836352,
+          "lifetimePeakBytes": 636616704,
+          "memoryCurrentBytes": 625348608,
+          "origin": "PHASES.SAFE.json/6:start-owned-PostgREST",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196833280
+        },
+        {
+          "anonBytes": 51908608,
+          "atUnixSeconds": 1792565157.1673253,
+          "fileBytesIncludesShmem": 568975360,
+          "kernelBytes": 21778432,
+          "lifetimePeakBytes": 643379200,
+          "memoryCurrentBytes": 643366912,
+          "origin": "PHASES.SAFE.json/7:PostgREST-socket-ready-no-HTTP-probe",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 197910528
+        },
+        {
+          "anonBytes": 106614784,
+          "atUnixSeconds": 1792565169.690115,
+          "fileBytesIncludesShmem": 605306880,
+          "kernelBytes": 22323200,
+          "lifetimePeakBytes": 1019125760,
+          "memoryCurrentBytes": 735256576,
+          "origin": "PHASES.SAFE.json/8:measurement-complete",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        {
+          "anonBytes": 31977472,
+          "atUnixSeconds": 1792565174.8665278,
+          "fileBytesIncludesShmem": 550334464,
+          "kernelBytes": 19329024,
+          "lifetimePeakBytes": 1019125760,
+          "memoryCurrentBytes": 602304512,
+          "origin": "PHASES.SAFE.json/9:close-PostgREST-then-PG-and-prove-source",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 178294784
+        }
+      ],
+      "rootReportedWholeLifetimePeakBytes": 1019125760,
+      "startToLastControlBoundaryCounterChanges": {
+        "anonBytes": 260022272,
+        "differencesOfSequentialCountersNotExactPeakCausalAllocation": true,
+        "fileBytesIncludesShmem": 35995648,
+        "fileMinusShmemEndBytes": 371228672,
+        "fileMinusShmemStartBytes": 371081216,
+        "kernelBytes": 4685824,
+        "shmemBytesSubsetOfFile": 35848192
+      },
+      "strictRecordedLocalization": {
+        "closureHighWaterBytes": 1019125760,
+        "lastControlBoundaryHighWaterBytes": 1015889920,
+        "latePeakIncrementBytes": 3235840,
+        "measurementCompleteHighWaterBytes": 1019125760,
+        "possibleDirectlyUnseparatedTailWork": [
+          "last boundary SQL/ACK overhead",
+          "restore.fullRead",
+          "restore.write",
+          "restore.finalRead",
+          "Node final receipts/exit",
+          "small physical and final catalog observation"
+        ],
+        "setupOrClosureSetsFinalPeak": false,
+        "setupPreNodeHighWaterBytes": 643379200,
+        "stage": "AFTER_LAST_CONTROL_BOUNDARY_SNAPSHOT_BEFORE_MEASUREMENT_COMPLETE"
+      },
+      "timelineSamples": 113,
+      "variant": "AFTER"
+    },
+    {
+      "boundaryFrames": [
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 64774144,
+            "atUnixSeconds": 1792565227.1981413,
+            "fileBytesIncludesShmem": 569098240,
+            "kernelBytes": 22900736,
+            "lifetimePeakBytes": 657260544,
+            "memoryCurrentBytes": 657260544,
+            "origin": "CYCLE_1.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 197910528
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 0,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 146099,
+              "external": 2403035,
+              "heapTotal": 11005952,
+              "heapUsed": 6031880,
+              "rss": 33116160
+            },
+            "processLifetimeMaxRSSBytes": 43036672
+          },
+          "nodeAfterACKRelativeMilliseconds": 33.513746000000005,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 33538048,
+            "postgres": 31289344,
+            "postgrest": 18370560
+          },
+          "round": 0,
+          "sequence": 1
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 308371456,
+            "atUnixSeconds": 1792565230.9596038,
+            "fileBytesIncludesShmem": 604946432,
+            "kernelBytes": 26980352,
+            "lifetimePeakBytes": 994476032,
+            "memoryCurrentBytes": 941531136,
+            "origin": "CYCLE_2.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 109,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164831,
+              "heapTotal": 102838272,
+              "heapUsed": 58751512,
+              "rss": 234827776
+            },
+            "processLifetimeMaxRSSBytes": 270876672
+          },
+          "nodeAfterACKRelativeMilliseconds": 3798.769296,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 235188224,
+            "postgres": 31289344,
+            "postgrest": 54083584
+          },
+          "round": 0,
+          "sequence": 2
+        },
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 308379648,
+            "atUnixSeconds": 1792565231.027137,
+            "fileBytesIncludesShmem": 604971008,
+            "kernelBytes": 27004928,
+            "lifetimePeakBytes": 994476032,
+            "memoryCurrentBytes": 941539328,
+            "origin": "CYCLE_3.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 109,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164831,
+              "heapTotal": 102838272,
+              "heapUsed": 58822704,
+              "rss": 234827776
+            },
+            "processLifetimeMaxRSSBytes": 270876672
+          },
+          "nodeAfterACKRelativeMilliseconds": 3865.858735,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 235188224,
+            "postgres": 31289344,
+            "postgrest": 54091776
+          },
+          "round": 1,
+          "sequence": 3
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 321548288,
+            "atUnixSeconds": 1792565233.9551501,
+            "fileBytesIncludesShmem": 604995584,
+            "kernelBytes": 27250688,
+            "lifetimePeakBytes": 1012826112,
+            "memoryCurrentBytes": 954544128,
+            "origin": "CYCLE_4.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 188,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164831,
+              "heapTotal": 103100416,
+              "heapUsed": 59335800,
+              "rss": 245936128
+            },
+            "processLifetimeMaxRSSBytes": 280068096
+          },
+          "nodeAfterACKRelativeMilliseconds": 6796.567624,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 246439936,
+            "postgres": 31289344,
+            "postgrest": 54239232
+          },
+          "round": 1,
+          "sequence": 4
+        },
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 321548288,
+            "atUnixSeconds": 1792565234.0231352,
+            "fileBytesIncludesShmem": 605020160,
+            "kernelBytes": 27275264,
+            "lifetimePeakBytes": 1012826112,
+            "memoryCurrentBytes": 954888192,
+            "origin": "CYCLE_5.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 188,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164831,
+              "heapTotal": 103100416,
+              "heapUsed": 59392736,
+              "rss": 245936128
+            },
+            "processLifetimeMaxRSSBytes": 280068096
+          },
+          "nodeAfterACKRelativeMilliseconds": 6863.798521000001,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 246439936,
+            "postgres": 31289344,
+            "postgrest": 54239232
+          },
+          "round": 2,
+          "sequence": 5
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 322990080,
+            "atUnixSeconds": 1792565236.9590342,
+            "fileBytesIncludesShmem": 605093888,
+            "kernelBytes": 27447296,
+            "lifetimePeakBytes": 1013911552,
+            "memoryCurrentBytes": 956641280,
+            "origin": "CYCLE_6.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233758720
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 266,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 10164169,
+              "heapTotal": 103624704,
+              "heapUsed": 59440440,
+              "rss": 246464512
+            },
+            "processLifetimeMaxRSSBytes": 282517504
+          },
+          "nodeAfterACKRelativeMilliseconds": 9799.091145,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 247685120,
+            "postgres": 31289344,
+            "postgrest": 54452224
+          },
+          "round": 2,
+          "sequence": 6
+        }
+      ],
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d",
+      "derivedOperationTimingModel": {
+        "assumptions": [
+          "Same stable host Unix versus Node monotonic clock relationship over this case; no clock step/drift correction established.",
+          "Retained marker/native/SQL/ACK ordering and serial measured call durations are respected; positive unrecorded gaps are retained as slack.",
+          "Timestamps surround sequential kernel/stat reads with no recorded complete read brackets; physical instant alignment is not certified."
+        ],
+        "directPerOperationUnixTimestampExists": false,
+        "inferenceIsConditionalNotDirectSuboperationPeakReceipt": true,
+        "modeledOriginIntervalWidthMilliseconds": 13.988733291625977,
+        "nodeClockOriginIntervalUnixSeconds": [
+          1792565227.1735382,
+          1792565227.187527
+        ],
+        "peakCompatibleOperationsUnderModel": [
+          "restore.write"
+        ],
+        "restorePostBoundarySlackMilliseconds": 0.9545790000000665,
+        "restoreWindows": [
+          {
+            "couldOverlapFinalPeakReadBracket": false,
+            "modeledEndRangeUnixSeconds": [
+              1792565237.4817958,
+              1792565237.4967391
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565236.9726293,
+              1792565236.9875727
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 266,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1501027,
+                "external": 5349873,
+                "heapTotal": 120836096,
+                "heapUsed": 101176848,
+                "rss": 228085760
+              },
+              "processLifetimeMaxRSSBytes": 282517504
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 266,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1457402,
+                "external": 10164169,
+                "heapTotal": 103624704,
+                "heapUsed": 59569096,
+                "rss": 246464512
+              },
+              "processLifetimeMaxRSSBytes": 282517504
+            },
+            "phase": "restore.fullRead"
+          },
+          {
+            "couldOverlapFinalPeakReadBracket": true,
+            "modeledEndRangeUnixSeconds": [
+              1792565237.9901416,
+              1792565238.005085
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565237.4817958,
+              1792565237.4967391
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 284,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1458161,
+                "external": 5307007,
+                "heapTotal": 128700416,
+                "heapUsed": 88453608,
+                "rss": 250765312
+              },
+              "processLifetimeMaxRSSBytes": 282517504
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 266,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1501027,
+                "external": 5349873,
+                "heapTotal": 120836096,
+                "heapUsed": 101191224,
+                "rss": 228085760
+              },
+              "processLifetimeMaxRSSBytes": 282517504
+            },
+            "phase": "restore.write"
+          },
+          {
+            "couldOverlapFinalPeakReadBracket": false,
+            "modeledEndRangeUnixSeconds": [
+              1792565238.598266,
+              1792565238.6132092
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565237.9901416,
+              1792565238.005085
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 295,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 2626161,
+                "external": 6475007,
+                "heapTotal": 133738496,
+                "heapUsed": 99805984,
+                "rss": 249151488
+              },
+              "processLifetimeMaxRSSBytes": 298082304
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 284,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1458161,
+                "external": 5307007,
+                "heapTotal": 128700416,
+                "heapUsed": 88466256,
+                "rss": 250765312
+              },
+              "processLifetimeMaxRSSBytes": 282517504
+            },
+            "phase": "restore.finalRead"
+          }
+        ]
+      },
+      "finalPeakReadBracket": {
+        "exactCounterReadTimestampAndDurationAbsent": true,
+        "firstFinalHighWaterRead": {
+          "anonBytes": 346976256,
+          "atUnixSeconds": 1792565237.8675456,
+          "fileBytesIncludesShmem": 605114368,
+          "kernelBytes": 27598848,
+          "lifetimePeakBytes": 1018159104,
+          "memoryCurrentBytes": 977137664,
+          "origin": "NATIVE_TIMELINE.SAFE.json/86",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        "groupStatsAreAtReadNotAtPeak": true,
+        "lastLowerHighWaterRead": {
+          "anonBytes": 346976256,
+          "atUnixSeconds": 1792565237.5866623,
+          "fileBytesIncludesShmem": 605114368,
+          "kernelBytes": 27598848,
+          "lifetimePeakBytes": 1013911552,
+          "memoryCurrentBytes": 980197376,
+          "origin": "NATIVE_TIMELINE.SAFE.json/85",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        "peakMinusCurrentAtFirstReadBytes": 41021440,
+        "recordedTimestampGapMilliseconds": 280.8833122253418
+      },
+      "label": "AFTER2",
+      "largestObservedCurrentFrame": {
+        "anonBytes": 349777920,
+        "atUnixSeconds": 1792565232.4844306,
+        "fileBytesIncludesShmem": 604991488,
+        "kernelBytes": 27316224,
+        "lifetimePeakBytes": 1012826112,
+        "memoryCurrentBytes": 982810624,
+        "origin": "NATIVE_TIMELINE.SAFE.json/67",
+        "sequentialNonAtomicRead": true,
+        "shmemBytesSubsetOfFile": 233725952
+      },
+      "largestStoredHighWaterEqualsRootPeak": true,
+      "nodeReceiptSummary": {
+        "NodeLifetimeRSSHighWaterHasNoExactGroupTimestamp": true,
+        "actualControlTextUTF8Bytes": 4856607,
+        "categoryEndpointRanges": {
+          "cold-control": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1458161,
+                2626748
+              ],
+              "external": [
+                5307007,
+                6480707
+              ],
+              "heapTotal": [
+                120303616,
+                146751488
+              ],
+              "heapUsed": [
+                88533616,
+                124415552
+              ],
+              "rss": [
+                232603648,
+                271224832
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "After",
+              "phase": "round2.control0"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 3,
+            "wallMillisecondsSum": 1543.5943349999995
+          },
+          "full-read": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                146099,
+                2626161
+              ],
+              "external": [
+                2403035,
+                10164831
+              ],
+              "heapTotal": [
+                11005952,
+                133738496
+              ],
+              "heapUsed": [
+                6046088,
+                108380568
+              ],
+              "rss": [
+                33116160,
+                250765312
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "Before",
+              "phase": "restore.finalRead"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 5,
+            "wallMillisecondsSum": 3334.7729830000007
+          },
+          "hot-control": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1458707,
+                6381521
+              ],
+              "external": [
+                5307553,
+                19943569
+              ],
+              "heapTotal": [
+                103505920,
+                146751488
+              ],
+              "heapUsed": [
+                79768256,
+                124443496
+              ],
+              "rss": [
+                235200512,
+                271224832
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "Before",
+              "phase": "round2.control1"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 15,
+            "wallMillisecondsSum": 3997.9395090000016
+          },
+          "write": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1432055,
+                1526406
+              ],
+              "external": [
+                5286014,
+                5380365
+              ],
+              "heapTotal": [
+                120303616,
+                128700416
+              ],
+              "heapUsed": [
+                88453608,
+                108391832
+              ],
+              "rss": [
+                216961024,
+                250765312
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "After",
+              "phase": "restore.write"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 4,
+            "wallMillisecondsSum": 2235.0747490000003
+          }
+        },
+        "endpointMaxima": {
+          "arrayBuffers": {
+            "bytes": 6381521,
+            "edge": "After",
+            "phase": "round1.control1"
+          },
+          "external": {
+            "bytes": 19943569,
+            "edge": "After",
+            "phase": "round1.control1"
+          },
+          "heapTotal": {
+            "bytes": 146751488,
+            "edge": "After",
+            "phase": "round0.control0"
+          },
+          "heapUsed": {
+            "bytes": 124443496,
+            "edge": "Before",
+            "phase": "round0.control1"
+          },
+          "rss": {
+            "bytes": 271224832,
+            "edge": "After",
+            "phase": "round2.control0"
+          }
+        },
+        "final": {
+          "naturalGCCallbackCount": 295,
+          "notWholeGroup": true,
+          "process": {
+            "arrayBuffers": 2626161,
+            "external": 6475007,
+            "heapTotal": 133738496,
+            "heapUsed": 99819168,
+            "rss": 249151488
+          },
+          "processLifetimeMaxRSSBytes": 298082304
+        },
+        "forcedGC": false,
+        "wallMilliseconds": 11425.682396
+      },
+      "peakMinusLargestObservedCurrentBytes": 35348480,
+      "phaseFrames": [
+        {
+          "anonBytes": 10989568,
+          "atUnixSeconds": 1792565213.999415,
+          "fileBytesIncludesShmem": 368640,
+          "kernelBytes": 2293760,
+          "lifetimePeakBytes": 16654336,
+          "memoryCurrentBytes": 14725120,
+          "origin": "PHASES.SAFE.json/0:source-before-hash",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 14131200,
+          "atUnixSeconds": 1792565215.1491432,
+          "fileBytesIncludesShmem": 696320,
+          "kernelBytes": 2314240,
+          "lifetimePeakBytes": 19329024,
+          "memoryCurrentBytes": 18149376,
+          "origin": "PHASES.SAFE.json/1:persistent-copy",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 14442496,
+          "atUnixSeconds": 1792565217.6450243,
+          "fileBytesIncludesShmem": 370266112,
+          "kernelBytes": 17076224,
+          "lifetimePeakBytes": 404910080,
+          "memoryCurrentBytes": 402944000,
+          "origin": "PHASES.SAFE.json/2:original-JIT-restoration",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 32051200,
+          "atUnixSeconds": 1792565226.9092119,
+          "fileBytesIncludesShmem": 549056512,
+          "kernelBytes": 19156992,
+          "lifetimePeakBytes": 605724672,
+          "memoryCurrentBytes": 601489408,
+          "origin": "PHASES.SAFE.json/3:start-PG",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 178290688
+        },
+        {
+          "anonBytes": 35897344,
+          "atUnixSeconds": 1792565226.961232,
+          "fileBytesIncludesShmem": 561352704,
+          "kernelBytes": 20672512,
+          "lifetimePeakBytes": 618991616,
+          "memoryCurrentBytes": 618991616,
+          "origin": "PHASES.SAFE.json/4:original-catalog-qualification",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 190730240
+        },
+        {
+          "anonBytes": 35897344,
+          "atUnixSeconds": 1792565227.0067377,
+          "fileBytesIncludesShmem": 567496704,
+          "kernelBytes": 20852736,
+          "lifetimePeakBytes": 632504320,
+          "memoryCurrentBytes": 625258496,
+          "origin": "PHASES.SAFE.json/5:install-selected-renderer",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196628480
+        },
+        {
+          "anonBytes": 35897344,
+          "atUnixSeconds": 1792565227.1251223,
+          "fileBytesIncludesShmem": 567992320,
+          "kernelBytes": 20901888,
+          "lifetimePeakBytes": 636948480,
+          "memoryCurrentBytes": 625807360,
+          "origin": "PHASES.SAFE.json/6:start-owned-PostgREST",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196833280
+        },
+        {
+          "anonBytes": 38608896,
+          "atUnixSeconds": 1792565227.143709,
+          "fileBytesIncludesShmem": 568004608,
+          "kernelBytes": 21766144,
+          "lifetimePeakBytes": 636948480,
+          "memoryCurrentBytes": 629108736,
+          "origin": "PHASES.SAFE.json/7:PostgREST-socket-ready-no-HTTP-probe",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196837376
+        },
+        {
+          "anonBytes": 106934272,
+          "atUnixSeconds": 1792565238.7018218,
+          "fileBytesIncludesShmem": 605413376,
+          "kernelBytes": 22708224,
+          "lifetimePeakBytes": 1018159104,
+          "memoryCurrentBytes": 736026624,
+          "origin": "PHASES.SAFE.json/8:measurement-complete",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        {
+          "anonBytes": 32120832,
+          "atUnixSeconds": 1792565243.7802405,
+          "fileBytesIncludesShmem": 550105088,
+          "kernelBytes": 19316736,
+          "lifetimePeakBytes": 1018159104,
+          "memoryCurrentBytes": 602820608,
+          "origin": "PHASES.SAFE.json/9:close-PostgREST-then-PG-and-prove-source",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 178294784
+        }
+      ],
+      "rootReportedWholeLifetimePeakBytes": 1018159104,
+      "startToLastControlBoundaryCounterChanges": {
+        "anonBytes": 258215936,
+        "differencesOfSequentialCountersNotExactPeakCausalAllocation": true,
+        "fileBytesIncludesShmem": 35995648,
+        "fileMinusShmemEndBytes": 371335168,
+        "fileMinusShmemStartBytes": 371187712,
+        "kernelBytes": 4546560,
+        "shmemBytesSubsetOfFile": 35848192
+      },
+      "strictRecordedLocalization": {
+        "closureHighWaterBytes": 1018159104,
+        "lastControlBoundaryHighWaterBytes": 1013911552,
+        "latePeakIncrementBytes": 4247552,
+        "measurementCompleteHighWaterBytes": 1018159104,
+        "possibleDirectlyUnseparatedTailWork": [
+          "last boundary SQL/ACK overhead",
+          "restore.fullRead",
+          "restore.write",
+          "restore.finalRead",
+          "Node final receipts/exit",
+          "small physical and final catalog observation"
+        ],
+        "setupOrClosureSetsFinalPeak": false,
+        "setupPreNodeHighWaterBytes": 636948480,
+        "stage": "AFTER_LAST_CONTROL_BOUNDARY_SNAPSHOT_BEFORE_MEASUREMENT_COMPLETE"
+      },
+      "timelineSamples": 109,
+      "variant": "AFTER"
+    },
+    {
+      "boundaryFrames": [
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 64684032,
+            "atUnixSeconds": 1792565307.4815269,
+            "fileBytesIncludesShmem": 569106432,
+            "kernelBytes": 22843392,
+            "lifetimePeakBytes": 657117184,
+            "memoryCurrentBytes": 657117184,
+            "origin": "CYCLE_1.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 197910528
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 0,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 146099,
+              "external": 2403035,
+              "heapTotal": 11005952,
+              "heapUsed": 6050312,
+              "rss": 33120256
+            },
+            "processLifetimeMaxRSSBytes": 42971136
+          },
+          "nodeAfterACKRelativeMilliseconds": 33.074983,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 33628160,
+            "postgres": 30728192,
+            "postgrest": 18366464
+          },
+          "round": 0,
+          "sequence": 1
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 298381312,
+            "atUnixSeconds": 1792565311.3382297,
+            "fileBytesIncludesShmem": 604954624,
+            "kernelBytes": 26914816,
+            "lifetimePeakBytes": 985018368,
+            "memoryCurrentBytes": 931057664,
+            "origin": "CYCLE_2.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 107,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 5439295,
+              "heapTotal": 104148992,
+              "heapUsed": 58720912,
+              "rss": 224808960
+            },
+            "processLifetimeMaxRSSBytes": 263860224
+          },
+          "nodeAfterACKRelativeMilliseconds": 3886.8924650000004,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 225300480,
+            "postgres": 30728192,
+            "postgrest": 54247424
+          },
+          "round": 0,
+          "sequence": 2
+        },
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 298381312,
+            "atUnixSeconds": 1792565311.4171262,
+            "fileBytesIncludesShmem": 604979200,
+            "kernelBytes": 26935296,
+            "lifetimePeakBytes": 985018368,
+            "memoryCurrentBytes": 931303424,
+            "origin": "CYCLE_3.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 107,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 5439295,
+              "heapTotal": 104148992,
+              "heapUsed": 58787464,
+              "rss": 224808960
+            },
+            "processLifetimeMaxRSSBytes": 263860224
+          },
+          "nodeAfterACKRelativeMilliseconds": 3964.5296810000004,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 225300480,
+            "postgres": 30728192,
+            "postgrest": 54247424
+          },
+          "round": 1,
+          "sequence": 3
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 309301248,
+            "atUnixSeconds": 1792565314.458567,
+            "fileBytesIncludesShmem": 605003776,
+            "kernelBytes": 27140096,
+            "lifetimePeakBytes": 997920768,
+            "memoryCurrentBytes": 942186496,
+            "origin": "CYCLE_4.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 186,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 5439295,
+              "heapTotal": 104673280,
+              "heapUsed": 59324800,
+              "rss": 233668608
+            },
+            "processLifetimeMaxRSSBytes": 272392192
+          },
+          "nodeAfterACKRelativeMilliseconds": 7011.863172,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 234299392,
+            "postgres": 30728192,
+            "postgrest": 54394880
+          },
+          "round": 1,
+          "sequence": 4
+        },
+        {
+          "edge": "start",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 309301248,
+            "atUnixSeconds": 1792565314.527715,
+            "fileBytesIncludesShmem": 605028352,
+            "kernelBytes": 27160576,
+            "lifetimePeakBytes": 997920768,
+            "memoryCurrentBytes": 942407680,
+            "origin": "CYCLE_5.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233725952
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 186,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 5439295,
+              "heapTotal": 104673280,
+              "heapUsed": 59381496,
+              "rss": 233668608
+            },
+            "processLifetimeMaxRSSBytes": 272392192
+          },
+          "nodeAfterACKRelativeMilliseconds": 7077.74251,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 234299392,
+            "postgres": 30728192,
+            "postgrest": 54394880
+          },
+          "round": 2,
+          "sequence": 5
+        },
+        {
+          "edge": "end",
+          "groupBeforeMetricSQLAndACK": {
+            "anonBytes": 313155584,
+            "atUnixSeconds": 1792565317.6333914,
+            "fileBytesIncludesShmem": 605102080,
+            "kernelBytes": 27299840,
+            "lifetimePeakBytes": 1004269568,
+            "memoryCurrentBytes": 946688000,
+            "origin": "CYCLE_6.OBSERVATION.SAFE.json/native",
+            "sequentialNonAtomicRead": true,
+            "shmemBytesSubsetOfFile": 233758720
+          },
+          "nodeAfterACK": {
+            "naturalGCCallbackCount": 265,
+            "notWholeGroup": true,
+            "process": {
+              "arrayBuffers": 1457402,
+              "external": 5439295,
+              "heapTotal": 104673280,
+              "heapUsed": 59555144,
+              "rss": 237490176
+            },
+            "processLifetimeMaxRSSBytes": 276045824
+          },
+          "nodeAfterACKRelativeMilliseconds": 10187.783298,
+          "notAtomicGroupNodeOrCrossProcessSnapshot": true,
+          "processStatusRSSAtEarlierObserverReadBytes": {
+            "node": 238055424,
+            "postgres": 30728192,
+            "postgrest": 54509568
+          },
+          "round": 2,
+          "sequence": 6
+        }
+      ],
+      "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2",
+      "derivedOperationTimingModel": {
+        "assumptions": [
+          "Same stable host Unix versus Node monotonic clock relationship over this case; no clock step/drift correction established.",
+          "Retained marker/native/SQL/ACK ordering and serial measured call durations are respected; positive unrecorded gaps are retained as slack.",
+          "Timestamps surround sequential kernel/stat reads with no recorded complete read brackets; physical instant alignment is not certified."
+        ],
+        "directPerOperationUnixTimestampExists": false,
+        "inferenceIsConditionalNotDirectSuboperationPeakReceipt": true,
+        "modeledOriginIntervalWidthMilliseconds": 36.68522834777832,
+        "nodeClockOriginIntervalUnixSeconds": [
+          1792565307.4625573,
+          1792565307.4992425
+        ],
+        "peakCompatibleOperationsUnderModel": [
+          "restore.write"
+        ],
+        "restorePostBoundarySlackMilliseconds": 0.6842229999959315,
+        "restoreWindows": [
+          {
+            "couldOverlapFinalPeakReadBracket": false,
+            "modeledEndRangeUnixSeconds": [
+              1792565318.120697,
+              1792565318.1580667
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565317.6503406,
+              1792565317.6877103
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 265,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1500840,
+                "external": 5349686,
+                "heapTotal": 120836096,
+                "heapUsed": 102195048,
+                "rss": 215285760
+              },
+              "processLifetimeMaxRSSBytes": 276045824
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 265,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1457402,
+                "external": 5439295,
+                "heapTotal": 104673280,
+                "heapUsed": 59594264,
+                "rss": 237490176
+              },
+              "processLifetimeMaxRSSBytes": 276045824
+            },
+            "phase": "restore.fullRead"
+          },
+          {
+            "couldOverlapFinalPeakReadBracket": true,
+            "modeledEndRangeUnixSeconds": [
+              1792565318.673342,
+              1792565318.7107117
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565318.120697,
+              1792565318.1580667
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 283,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1460619,
+                "external": 5309465,
+                "heapTotal": 126078976,
+                "heapUsed": 89278816,
+                "rss": 237830144
+              },
+              "processLifetimeMaxRSSBytes": 276045824
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 265,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1500840,
+                "external": 5349686,
+                "heapTotal": 120836096,
+                "heapUsed": 102209424,
+                "rss": 215285760
+              },
+              "processLifetimeMaxRSSBytes": 276045824
+            },
+            "phase": "restore.write"
+          },
+          {
+            "couldOverlapFinalPeakReadBracket": false,
+            "modeledEndRangeUnixSeconds": [
+              1792565319.2421181,
+              1792565319.2794878
+            ],
+            "modeledStartRangeUnixSeconds": [
+              1792565318.673342,
+              1792565318.7107117
+            ],
+            "nodeAfter": {
+              "naturalGCCallbackCount": 294,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 2626161,
+                "external": 6475007,
+                "heapTotal": 133341184,
+                "heapUsed": 113896328,
+                "rss": 236752896
+              },
+              "processLifetimeMaxRSSBytes": 289996800
+            },
+            "nodeBefore": {
+              "naturalGCCallbackCount": 283,
+              "notWholeGroup": true,
+              "process": {
+                "arrayBuffers": 1460619,
+                "external": 5309465,
+                "heapTotal": 126078976,
+                "heapUsed": 89291464,
+                "rss": 237830144
+              },
+              "processLifetimeMaxRSSBytes": 276045824
+            },
+            "phase": "restore.finalRead"
+          }
+        ]
+      },
+      "finalPeakReadBracket": {
+        "exactCounterReadTimestampAndDurationAbsent": true,
+        "firstFinalHighWaterRead": {
+          "anonBytes": 331829248,
+          "atUnixSeconds": 1792565318.604377,
+          "fileBytesIncludesShmem": 605122560,
+          "kernelBytes": 27410432,
+          "lifetimePeakBytes": 1005346816,
+          "memoryCurrentBytes": 965124096,
+          "origin": "NATIVE_TIMELINE.SAFE.json/92",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        "groupStatsAreAtReadNotAtPeak": true,
+        "lastLowerHighWaterRead": {
+          "anonBytes": 311439360,
+          "atUnixSeconds": 1792565318.325428,
+          "fileBytesIncludesShmem": 605122560,
+          "kernelBytes": 27303936,
+          "lifetimePeakBytes": 1004269568,
+          "memoryCurrentBytes": 944791552,
+          "origin": "NATIVE_TIMELINE.SAFE.json/91",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        "peakMinusCurrentAtFirstReadBytes": 40222720,
+        "recordedTimestampGapMilliseconds": 278.9490222930908
+      },
+      "label": "BEFORE2",
+      "largestObservedCurrentFrame": {
+        "anonBytes": 335302656,
+        "atUnixSeconds": 1792565315.7776513,
+        "fileBytesIncludesShmem": 605097984,
+        "kernelBytes": 27418624,
+        "lifetimePeakBytes": 1004269568,
+        "memoryCurrentBytes": 968511488,
+        "origin": "NATIVE_TIMELINE.SAFE.json/82",
+        "sequentialNonAtomicRead": true,
+        "shmemBytesSubsetOfFile": 233758720
+      },
+      "largestStoredHighWaterEqualsRootPeak": true,
+      "nodeReceiptSummary": {
+        "NodeLifetimeRSSHighWaterHasNoExactGroupTimestamp": true,
+        "actualControlTextUTF8Bytes": 4856607,
+        "categoryEndpointRanges": {
+          "cold-control": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1458161,
+                2626748
+              ],
+              "external": [
+                5307007,
+                6480707
+              ],
+              "heapTotal": [
+                120045568,
+                146616320
+              ],
+              "heapUsed": [
+                89075456,
+                122530480
+              ],
+              "rss": [
+                224276480,
+                258068480
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "After",
+              "phase": "round1.control0"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 3,
+            "wallMillisecondsSum": 1632.3185
+          },
+          "full-read": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                146099,
+                2626161
+              ],
+              "external": [
+                2403035,
+                6475007
+              ],
+              "heapTotal": [
+                11005952,
+                133341184
+              ],
+              "heapUsed": [
+                6064520,
+                113896328
+              ],
+              "rss": [
+                33120256,
+                237830144
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "Before",
+              "phase": "restore.finalRead"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 5,
+            "wallMillisecondsSum": 3333.4233160000017
+          },
+          "hot-control": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1524913,
+                2626748
+              ],
+              "external": [
+                6475594,
+                15152497
+              ],
+              "heapTotal": [
+                104951808,
+                146616320
+              ],
+              "heapUsed": [
+                82896416,
+                122558424
+              ],
+              "rss": [
+                225587200,
+                258068480
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "Before",
+              "phase": "round1.control1"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 15,
+            "wallMillisecondsSum": 4186.740925
+          },
+          "write": {
+            "endpointRangesBytes": {
+              "arrayBuffers": [
+                1420791,
+                1526406
+              ],
+              "external": [
+                5274750,
+                5380365
+              ],
+              "heapTotal": [
+                120045568,
+                132554752
+              ],
+              "heapUsed": [
+                89064456,
+                113902992
+              ],
+              "rss": [
+                211230720,
+                237830144
+              ]
+            },
+            "maxEndpointRSSWitness": {
+              "edge": "After",
+              "phase": "restore.write"
+            },
+            "notTransientPeakOrLiveObjectSet": true,
+            "operationCount": 4,
+            "wallMillisecondsSum": 2261.478264000001
+          }
+        },
+        "endpointMaxima": {
+          "arrayBuffers": {
+            "bytes": 2626748,
+            "edge": "After",
+            "phase": "round0.control0"
+          },
+          "external": {
+            "bytes": 15152497,
+            "edge": "After",
+            "phase": "round0.control2"
+          },
+          "heapTotal": {
+            "bytes": 146616320,
+            "edge": "After",
+            "phase": "round0.control0"
+          },
+          "heapUsed": {
+            "bytes": 122558424,
+            "edge": "Before",
+            "phase": "round0.control1"
+          },
+          "rss": {
+            "bytes": 258068480,
+            "edge": "After",
+            "phase": "round1.control0"
+          }
+        },
+        "final": {
+          "naturalGCCallbackCount": 294,
+          "notWholeGroup": true,
+          "process": {
+            "arrayBuffers": 2626161,
+            "external": 6475007,
+            "heapTotal": 133341184,
+            "heapUsed": 113909488,
+            "rss": 236752896
+          },
+          "processLifetimeMaxRSSBytes": 289996800
+        },
+        "forcedGC": false,
+        "wallMilliseconds": 11780.245185
+      },
+      "peakMinusLargestObservedCurrentBytes": 36835328,
+      "phaseFrames": [
+        {
+          "anonBytes": 10989568,
+          "atUnixSeconds": 1792565292.8070254,
+          "fileBytesIncludesShmem": 339968,
+          "kernelBytes": 2281472,
+          "lifetimePeakBytes": 16351232,
+          "memoryCurrentBytes": 14462976,
+          "origin": "PHASES.SAFE.json/0:source-before-hash",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 14131200,
+          "atUnixSeconds": 1792565294.1269236,
+          "fileBytesIncludesShmem": 667648,
+          "kernelBytes": 2301952,
+          "lifetimePeakBytes": 18931712,
+          "memoryCurrentBytes": 17883136,
+          "origin": "PHASES.SAFE.json/1:persistent-copy",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 14532608,
+          "atUnixSeconds": 1792565296.7441735,
+          "fileBytesIncludesShmem": 370278400,
+          "kernelBytes": 17088512,
+          "lifetimePeakBytes": 404533248,
+          "memoryCurrentBytes": 402698240,
+          "origin": "PHASES.SAFE.json/2:original-JIT-restoration",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 0
+        },
+        {
+          "anonBytes": 31952896,
+          "atUnixSeconds": 1792565307.1866822,
+          "fileBytesIncludesShmem": 549064704,
+          "kernelBytes": 19144704,
+          "lifetimePeakBytes": 605220864,
+          "memoryCurrentBytes": 601014272,
+          "origin": "PHASES.SAFE.json/3:start-PG",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 178290688
+        },
+        {
+          "anonBytes": 35786752,
+          "atUnixSeconds": 1792565307.2384021,
+          "fileBytesIncludesShmem": 561360896,
+          "kernelBytes": 20455424,
+          "lifetimePeakBytes": 618569728,
+          "memoryCurrentBytes": 618303488,
+          "origin": "PHASES.SAFE.json/4:original-catalog-qualification",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 190730240
+        },
+        {
+          "anonBytes": 35786752,
+          "atUnixSeconds": 1792565307.288138,
+          "fileBytesIncludesShmem": 567504896,
+          "kernelBytes": 20840448,
+          "lifetimePeakBytes": 632078336,
+          "memoryCurrentBytes": 625229824,
+          "origin": "PHASES.SAFE.json/5:install-selected-renderer",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196628480
+        },
+        {
+          "anonBytes": 35786752,
+          "atUnixSeconds": 1792565307.4070892,
+          "fileBytesIncludesShmem": 568000512,
+          "kernelBytes": 20877312,
+          "lifetimePeakBytes": 636887040,
+          "memoryCurrentBytes": 625770496,
+          "origin": "PHASES.SAFE.json/6:start-owned-PostgREST",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196833280
+        },
+        {
+          "anonBytes": 38936576,
+          "atUnixSeconds": 1792565307.4263601,
+          "fileBytesIncludesShmem": 568012800,
+          "kernelBytes": 21745664,
+          "lifetimePeakBytes": 636887040,
+          "memoryCurrentBytes": 629493760,
+          "origin": "PHASES.SAFE.json/7:PostgREST-socket-ready-no-HTTP-probe",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 196837376
+        },
+        {
+          "anonBytes": 106864640,
+          "atUnixSeconds": 1792565319.3273687,
+          "fileBytesIncludesShmem": 605421568,
+          "kernelBytes": 22679552,
+          "lifetimePeakBytes": 1005346816,
+          "memoryCurrentBytes": 735780864,
+          "origin": "PHASES.SAFE.json/8:measurement-complete",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 233758720
+        },
+        {
+          "anonBytes": 32022528,
+          "atUnixSeconds": 1792565324.4737284,
+          "fileBytesIncludesShmem": 550449152,
+          "kernelBytes": 19329024,
+          "lifetimePeakBytes": 1005346816,
+          "memoryCurrentBytes": 602587136,
+          "origin": "PHASES.SAFE.json/9:close-PostgREST-then-PG-and-prove-source",
+          "sequentialNonAtomicRead": true,
+          "shmemBytesSubsetOfFile": 178294784
+        }
+      ],
+      "rootReportedWholeLifetimePeakBytes": 1005346816,
+      "startToLastControlBoundaryCounterChanges": {
+        "anonBytes": 248471552,
+        "differencesOfSequentialCountersNotExactPeakCausalAllocation": true,
+        "fileBytesIncludesShmem": 35995648,
+        "fileMinusShmemEndBytes": 371343360,
+        "fileMinusShmemStartBytes": 371195904,
+        "kernelBytes": 4456448,
+        "shmemBytesSubsetOfFile": 35848192
+      },
+      "strictRecordedLocalization": {
+        "closureHighWaterBytes": 1005346816,
+        "lastControlBoundaryHighWaterBytes": 1004269568,
+        "latePeakIncrementBytes": 1077248,
+        "measurementCompleteHighWaterBytes": 1005346816,
+        "possibleDirectlyUnseparatedTailWork": [
+          "last boundary SQL/ACK overhead",
+          "restore.fullRead",
+          "restore.write",
+          "restore.finalRead",
+          "Node final receipts/exit",
+          "small physical and final catalog observation"
+        ],
+        "setupOrClosureSetsFinalPeak": false,
+        "setupPreNodeHighWaterBytes": 636887040,
+        "stage": "AFTER_LAST_CONTROL_BOUNDARY_SNAPSHOT_BEFORE_MEASUREMENT_COMPLETE"
+      },
+      "timelineSamples": 114,
+      "variant": "BEFORE"
+    }
+  ],
+  "comparisonDecision": {
+    "candidate40d7MotorIntegrationSupported": false,
+    "maxAfterBytes": 1019125760,
+    "meanAfterBytes": 1018642432.0,
+    "meanBeforeBytes": 1021356032.0,
+    "meansAloneDoNotEstablishBenefit": true,
+    "minBeforeBytes": 1005346816,
+    "orderedWholeLifetimePeaksBytes": [
+      1037365248,
+      1019125760,
+      1018159104,
+      1005346816
+    ],
+    "overlapBytes": 13778944,
+    "sharedGateMaxAfterStrictlyBelowMinBefore": false
+  },
+  "conclusion": "The unchanged remaining whole-group high-water occurs in the post-control tail, after all18 control calls. Conditional retained-duration mapping puts AFTER1,AFTER2,BEFORE2 in restore.write; BEFORE1 spans restore.write and restore.finalRead. There is no exact simultaneous process/group-at-peak decomposition.",
+  "full500": false,
+  "inputPins": [
+    {
+      "bytes": 292508,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/NATIVE_TIMELINE.SAFE.json",
+      "sha256": "eb21f0276075d660dcb49c9e90cfbe2f227e0ea852c850c9b9467df0624fa49a"
+    },
+    {
+      "bytes": 23301,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/PHASES.SAFE.json",
+      "sha256": "49bc7cd4368523c95dfd2bafbb4e07edb77a2baa640934512025b4e0887d2756"
+    },
+    {
+      "bytes": 83994,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/CONTROL_INFLATE.SAFE.json",
+      "sha256": "c05c57b13a4a442656e9d716939f7dfe619b84cb60b8f9fb65821ba5b63b9c79"
+    },
+    {
+      "bytes": 4566,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/CYCLE_1.OBSERVATION.SAFE.json",
+      "sha256": "3882d096fdcc78cf773e743e70c7ac867ee13b4bd4fad6d4ee3d2e253f3dbbcd"
+    },
+    {
+      "bytes": 4577,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/CYCLE_2.OBSERVATION.SAFE.json",
+      "sha256": "9290064bfd03f4a4ea075df6e348625e354c0fd5782c1d56561e28335ac74da6"
+    },
+    {
+      "bytes": 4582,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/CYCLE_3.OBSERVATION.SAFE.json",
+      "sha256": "23468f6003ab6e572b312ae3f6c4a9133c720690da1fcd8db7050ae21d452222"
+    },
+    {
+      "bytes": 4578,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/CYCLE_4.OBSERVATION.SAFE.json",
+      "sha256": "9d2808b5ba1126cff44aa8353fb3412d4cfc907c03f7e41e8422973ad01238d3"
+    },
+    {
+      "bytes": 4583,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/CYCLE_5.OBSERVATION.SAFE.json",
+      "sha256": "5fce11bbcae9a59e3f12b6d2ab57972ee0a2dbba06a5c78ff1bae3bc49c007d6"
+    },
+    {
+      "bytes": 4579,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a/CYCLE_6.OBSERVATION.SAFE.json",
+      "sha256": "db35242c3ece9d6ae42e50b45981c914405c176b36fc732f06ab957d55c21ac6"
+    },
+    {
+      "bytes": 300801,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/NATIVE_TIMELINE.SAFE.json",
+      "sha256": "196485e66f3305151c58517096e80ddc165e519990e1effb7adab9b509eba9a4"
+    },
+    {
+      "bytes": 23284,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/PHASES.SAFE.json",
+      "sha256": "004a2f3cfd3e7211bf5a1dba11a71f500d2614d37ab866b6af68f9f3db32b6ed"
+    },
+    {
+      "bytes": 84005,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/CONTROL_INFLATE.SAFE.json",
+      "sha256": "ba4f65d3e46d72c30225050dd0cbbfb56f062ce9249cd9c1f8e75d09b4e3fbdd"
+    },
+    {
+      "bytes": 4559,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/CYCLE_1.OBSERVATION.SAFE.json",
+      "sha256": "552ee91d3b8e985b1bcbea0303d0a09a3b6ec537615ab897bb08957aed0da282"
+    },
+    {
+      "bytes": 4572,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/CYCLE_2.OBSERVATION.SAFE.json",
+      "sha256": "30340b48fb430c64dc2c5f0b47fc527128bfc6b534cae3ed8be9c9ea0abe504b"
+    },
+    {
+      "bytes": 4576,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/CYCLE_3.OBSERVATION.SAFE.json",
+      "sha256": "02cab2dc3074e3fa3f6387e70a58a6872145d6c3cf5929000fa274bb5f5aff27"
+    },
+    {
+      "bytes": 4573,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/CYCLE_4.OBSERVATION.SAFE.json",
+      "sha256": "d288c850001627b9753acdaf03eec11b9f232f04ef78bf5dda35df7f91c25e42"
+    },
+    {
+      "bytes": 4576,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/CYCLE_5.OBSERVATION.SAFE.json",
+      "sha256": "4b7256025bb60a2fa2497031283b05869da87e033900dc91bf98b7ae633e88ea"
+    },
+    {
+      "bytes": 4577,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55/CYCLE_6.OBSERVATION.SAFE.json",
+      "sha256": "5558f6ff6e8e338100cd56fcdd9292b25ccd371c3af2afc14f4c39bd0d2a1cae"
+    },
+    {
+      "bytes": 292590,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/NATIVE_TIMELINE.SAFE.json",
+      "sha256": "7d5aec67884aaad45c7c8b57b8b15df3db46fd52792ba16269e4866dcd9235d6"
+    },
+    {
+      "bytes": 23302,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/PHASES.SAFE.json",
+      "sha256": "cc4c2157d63090dfacd7d78014f0f50d17f15527444c60bf16e0db4757339b5a"
+    },
+    {
+      "bytes": 84011,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/CONTROL_INFLATE.SAFE.json",
+      "sha256": "c891ee51fb0c17008c4b534e1a4c8cadd357ba589bc716ef4a1446d4fe7b69b5"
+    },
+    {
+      "bytes": 4567,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/CYCLE_1.OBSERVATION.SAFE.json",
+      "sha256": "5910249333cbb34b22363ef98bc2d3d4c21faf7e0177e7eec97549a648d58cd8"
+    },
+    {
+      "bytes": 4579,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/CYCLE_2.OBSERVATION.SAFE.json",
+      "sha256": "ea75bfa9aa927948c92e8b0ba42ada6b34b94f8c7e9f28039a30c62a284c2e88"
+    },
+    {
+      "bytes": 4581,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/CYCLE_3.OBSERVATION.SAFE.json",
+      "sha256": "e741c192dd9340ff01732e265246fc2b71452329578632458846127ed3985a7b"
+    },
+    {
+      "bytes": 4583,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/CYCLE_4.OBSERVATION.SAFE.json",
+      "sha256": "956088c77ca1a2b11b08b1b99d1749d8ebe1424cd34a561614a94918162f7eeb"
+    },
+    {
+      "bytes": 4587,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/CYCLE_5.OBSERVATION.SAFE.json",
+      "sha256": "862e73a14a223f61bf7a65d3c8509c925d063fcfd46be84e080d185386f26412"
+    },
+    {
+      "bytes": 4583,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d/CYCLE_6.OBSERVATION.SAFE.json",
+      "sha256": "e38041e70f7069574b802c6623142209748b4dc62b09ab22863342d0717eb5a1"
+    },
+    {
+      "bytes": 305886,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/NATIVE_TIMELINE.SAFE.json",
+      "sha256": "7c8edba25ff52fbbf00f392afa6329186a47ecd065e9c066827bc23e9b8ac5f8"
+    },
+    {
+      "bytes": 23302,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/PHASES.SAFE.json",
+      "sha256": "7e53eba2568b86042b9724510fdd09c564b925f8e4fbbd03d5cc7bdc82063069"
+    },
+    {
+      "bytes": 83971,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/CONTROL_INFLATE.SAFE.json",
+      "sha256": "a19af0aaa9217e13e92fc3da2ad3adba1d0a8683f72a4fd4b498b71bab9331eb"
+    },
+    {
+      "bytes": 4567,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/CYCLE_1.OBSERVATION.SAFE.json",
+      "sha256": "648d8dc47c10ebd8ad40a28ecfef248edaf9ffa33068e53d7fd76f576fed0c16"
+    },
+    {
+      "bytes": 4579,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/CYCLE_2.OBSERVATION.SAFE.json",
+      "sha256": "038fc99f883cba316644fc46e582f9c1057bcead9c80f81007a1ec9f2b45a533"
+    },
+    {
+      "bytes": 4583,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/CYCLE_3.OBSERVATION.SAFE.json",
+      "sha256": "a7b1d10d960d8fe5fa5b35943200400a1d2d1f81c5c58a1570c5c3ba4ccf66da"
+    },
+    {
+      "bytes": 4580,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/CYCLE_4.OBSERVATION.SAFE.json",
+      "sha256": "05c43ac2c137812ffb73c02df234a5ec78c11c223f9c745cce5360d507455d0d"
+    },
+    {
+      "bytes": 4585,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/CYCLE_5.OBSERVATION.SAFE.json",
+      "sha256": "6d56ff2524b6a5c202b3e3a7e0f90a59f625343833fe4f6dd60509b517048201"
+    },
+    {
+      "bytes": 4583,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2/CYCLE_6.OBSERVATION.SAFE.json",
+      "sha256": "4860a2d460ee9a2479e55eced5e3dafff2f0dd018a1c225453f8ffc0adcd5435"
+    }
+  ],
+  "nextBottleneckDecision": {
+    "candidateRemainsOutsideMotor": true,
+    "evidence": "All final high-waters exceed the sixth-boundary value; setup and closure have lower/no newer high-waters. Three duration models isolate restoring write, while Node own RSS high-water often advances later in final read.",
+    "narrowLimit": "This is a component diagnostic restoration call using the real write path; it does not establish the full500 peak phase or authorize omitting/restaging restoration. No product rewrite or RAM saving is selected by this report.",
+    "noAutomaticNewCasesOrMeasurements": true,
+    "preciseRemainingQuestion": "Which simultaneous group/process allocation reaches the high-water inside restore.write (or write-to-finalRead transition in BEFORE1)? Current receipts lack a direct complete group/Node/native-allocator frame at that instant.",
+    "priority": "Full-state/CAS post-control restoration path and its shared lifetime overlap, before further hot-control inflate tuning."
+  },
+  "production": false,
+  "schema": "helmut-control-inflate-fresh-abba-readonly-attribution/1",
+  "scope": "Only36 exact newly completed four-work-case NATIVE_TIMELINE/PHASES/six CYCLE OBSERVATION/CONTROL_INFLATE files. No lifecycle/old V11/stability30/physical8 payload or source reanalysis.",
+  "status": "PASS_READONLY_ANALYSIS_WITH_EXPLICIT_ATTRIBUTION_LIMITS",
+  "verificationLimits": [
+    "No active resources or processes were inspected. No original payload,source,SQL or Git was read or changed.",
+    "All functional PASS and full lifetime root peaks were supplied by Root; stored high-waters independently match the four supplied peaks. This report is not independent full actual acceptance,retirement qualification or END review.",
+    "The report preserves raw evidence and makes no cleanup entitlement,opaque-use clearance,whole-Motor memory saving or full500 authorization."
+  ]
+}

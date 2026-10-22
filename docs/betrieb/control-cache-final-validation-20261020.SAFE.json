@@ -1,0 +1,88 @@
+{
+  "schema": "helmut-bounded-control-cache-final-root-validation/1",
+  "status": "OFFLINE179_AND_TARGETED_SOURCE_INTEGRATION_PASS",
+  "atUTC": "2026-10-20T19:38:06.107001+00:00",
+  "testedCodeCommit": "6d528425c5fbcda32ddde6f394b65bb07da3e98c",
+  "rawOfflineLogPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-final-validation-20261020/FINAL_OFFLINE179_ACTUAL.PRIVATE.log",
+    "bytes": 8228,
+    "sha256": "0cfff5723f07b262138d6de1ad3b32f393494051dc2af8518b266b00897086bd"
+  },
+  "actualOffline": {
+    "toolSession": 78135,
+    "completionToolChunk": "f643ec",
+    "processExitCode": 0,
+    "passedSuites": 179,
+    "failedSuites": 0,
+    "elapsedSeconds": 653,
+    "runs": 1
+  },
+  "otherActualRootChecks": [
+    {
+      "scope": "34 source gate positive and negative checks",
+      "passed": 34,
+      "toolChunk": "0817b3",
+      "rawLogSaved": false,
+      "witness": "actual Root tool output, not a generated rerun"
+    },
+    {
+      "scope": "22 existing atomic integration Python tests",
+      "passed": 22,
+      "elapsedSeconds": 4.389,
+      "session": 97281,
+      "completionToolChunk": "225729",
+      "rawLogSaved": false
+    }
+  ],
+  "currentCriticalFilePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/auth-state-parts.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/atomic-usage-integration.js",
+      "bytes": 35244,
+      "sha256": "66bb12e07850e058a8004cf1372c8733ef42f7fa995444b716084bc8f50534b4"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-integration.js",
+      "bytes": 10298,
+      "sha256": "1398fe43a42110195d938bde5685e921819a1b3a6be67c0b04d376570557893d"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-source-delta.json",
+      "bytes": 2377,
+      "sha256": "224798b0408f75900eae4808d4967b6d08813fb56bbda7be3bb9532f985ed4a0"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-qualification-20261020.SAFE.json",
+      "bytes": 16830,
+      "sha256": "ba16be78cea1e1cc223615c0ccfb34efadabdf49ff58e5fba688657f9f5029e6"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/synthetik-500-release-artifacts.json",
+      "bytes": 15892,
+      "sha256": "bfb3220ad4e2b22fd3b754cec884ee0da4d19930a865516c4a4036e44a3ff995"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/control-cache-source-integration-test.js",
+      "bytes": 7488,
+      "sha256": "ef760a45c0aaeb36fafb1a98c3a3cc76c5f82672552107902d8cd7a5215b20cb"
+    }
+  ],
+  "remainingClaims": {
+    "sharedRAMSavingQualified": false,
+    "plateauQualified": false,
+    "newCompleteMotorExecution": false,
+    "full500": false,
+    "production": false,
+    "500MBReserve": false
+  },
+  "docChangesAfterTestStart": "documentation-only; tested critical source bytes remain at exact commit6d528425"
+}

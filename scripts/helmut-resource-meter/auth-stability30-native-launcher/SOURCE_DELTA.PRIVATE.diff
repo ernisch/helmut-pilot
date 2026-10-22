@@ -1,0 +1,1183 @@
+--- accepted-baseline/common.py
++++ auth-stability30/common.py
+@@ -1,4 +1,4 @@
+-"""Combined Auth: same-freeze NEW lifecycle, separately adopted full OLD/NEW arms."""
++"""Fixed NEW-only 30-round Auth stability diagnostic; fresh same-freeze lifecycle."""
+ import hashlib
+ import json
+ import os
+@@ -10,7 +10,7 @@
+ from pathlib import Path
+ 
+ HERE = Path(__file__).resolve().parent
+-CASES = Path('/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases')
++CASES = Path('/workspace/helmut-ram-fix-20261020/auth-stability-20261021/cases')
+ REPO = Path('/workspace/helmut-cpu-epoch-20261015')
+ BIN = REPO/'scripts/helmut-resource-meter'
+ D = Path('/workspace/helmut-ram-fix-20261020/auth-working-set-20261020')
+@@ -34,7 +34,16 @@
+     'server-host = "127.0.0.1"\nserver-port = 38419\ndb-pool = 2\nlog-level = "error"\n')
+ MIB = 1024**2
+ FLOOR = 8*1024**3
+-OUTPUT_LIMIT = 4*MIB
++OUTPUT_LIMIT = 8*MIB
++NODE_CAPTURE_LIMIT = MIB
++NODE_CLIENT_SECONDS = 180
++STABILITY_CONTRACT = {
++    'rounds':30,'controlsPerRound':6,'authRPCCount':243,'fullReadCount':32,
++    'writeCount':31,'controlReadCount':180,'mutations':30,'restoreCount':1,
++    'boundaries':60,'clientWallSeconds':180,'nodeCaptureLimitBytes':1048576,
++    'sqlCaptureLimitBytes':262144,'totalEvidenceCapBytes':8388608,
++    'fetchMaxSeconds':20,'sqlMaxSeconds':30,'lockMaxSeconds':1,'authOperationMaxMilliseconds':30000
++}
+ QUERY_LIMIT = 256*1024
+ DISK_LIMIT = 768*MIB
+ ADMISSION = DISK_LIMIT+16*MIB
+@@ -47,6 +56,13 @@
+     if not ok:
+         raise RuntimeError(reason)
+ 
++def memory_events_clear(events):
++    required = {'high','max','oom','oom_kill'}
++    return (type(events) is dict and required<=set(events)
++            and all(type(events[k]) is int and events[k]==0 for k in required)
++            and ('oom_group_kill' not in events or
++                 (type(events['oom_group_kill']) is int and events['oom_group_kill']==0)))
++
+ def uuid4(value):
+     return type(value) is str and re.fullmatch(
+         '[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}',value)
+@@ -55,13 +71,17 @@
+ CANONICAL_PARTS = REPO/'lib/helmut/auth-state-parts.js'
+ 
+ def selected_measurement(closure, mode, variant=None):
+-    require(mode in ('lifecycle-only','control-cache'),'exactly two separately adopted modes')
+-    require(closure['comparisonScope']=='COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY' and
++    require(mode in ('lifecycle-only','control-stability'),'exactly two separately adopted modes')
++    require(closure['comparisonScope']=='INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY' and
+             closure['originalCommit']=='5fae25be5068a278a88daca9a7508c7b9e4001a3' and
+             closure['lifecycleBodyVariant']=='NEW','exact combined baseline and NEW-body lifecycle')
+-    require(closure['variantBodies']=={
+-        'OLD':{'renderer':OLD_RENDERER,'graph':OLD_GRAPH},
+-        'NEW':{'renderer':NEW_RENDERER,'graph':NEW_GRAPH}},'two exact complete SQL body pairs')
++    contract = closure['stabilityContract']
++    require(type(contract) is dict and set(contract)==set(STABILITY_CONTRACT)
++            and all(type(value) is int for value in contract.values())
++            and contract==STABILITY_CONTRACT,
++            'fixed diagnostic contract requires exact integer counts and limits')
++    require(closure['variantBodies']=={'NEW':{'renderer':NEW_RENDERER,'graph':NEW_GRAPH}},
++            'fixed exact NEW SQL pair and diagnostic workload/caps/deadlines')
+     for key in ('engineSourcePin','rendererSourcePin','nodeBinaryPin','postgrestBinaryPin'):
+         require(closure[key] in closure['metadataAndCodeInputs'],'selected input outside adopted closure')
+     require(closure['engineSourcePin']['sha256']=='e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5'
+@@ -76,7 +96,7 @@
+             'exact local shutdown policy/upstream evidence pins')
+     variant = 'NONE' if mode=='lifecycle-only' and variant is None else variant
+     require((mode=='lifecycle-only' and variant=='NONE') or
+-            (mode=='control-cache' and variant in ('OLD','NEW')),'exact separately adopted variant')
++            (mode=='control-stability' and variant=='NEW'),'exact separately adopted variant')
+     require(not any(x['path'] in (str(CANONICAL_U),str(CANONICAL_PARTS))
+                     for x in closure['metadataAndCodeInputs']),
+             'variable canonical overlay paths cannot carry historical worker-byte expectations')
+@@ -86,13 +106,11 @@
+                 str(CANONICAL_PARTS):'f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63'},
+             'authenticate actual current Root sources separately on host')
+     require(set(closure['variantSources'])==set(closure['variantParts'])==
+-            set(closure['variantInstallations'])=={'OLD','NEW'},'exact two combined arms')
+-    require(closure['variantSources']['OLD']['sha256']=='31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0'
+-            and closure['variantSources']['NEW']['sha256']=='93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b'
+-            and closure['variantParts']['OLD']['sha256']=='6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9'
++            set(closure['variantInstallations'])=={'NEW'},'NEW is the sole runnable arm')
++    require(closure['variantSources']['NEW']['sha256']=='93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b'
+             and closure['variantParts']['NEW']['sha256']=='f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63',
+-            'exact complete original/corrected U and Parts')
+-    for arm in ('OLD','NEW'):
++            'exact integrated U93917a and Partsf30089 bytes')
++    for arm in ('NEW',):
+         installs=closure['variantInstallations'][arm]
+         require(set(installs)=={'renderer','graph'},'exactly two symmetric SQL installations')
+         for kind in ('renderer','graph'):
+@@ -106,15 +124,16 @@
+     arm='NEW' if variant=='NONE' else variant
+     installs=closure['variantInstallations'][arm]
+     return {'mode':mode,'variant':variant,'bodyVariant':arm,
+-        'comparisonScope':'COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY',
++        'comparisonScope':'INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY',
+         'uOverlayPin':closure['variantSources'][arm],'partsOverlayPin':closure['variantParts'][arm],
+-        'adoptionSchema':'helmut-combined-auth-'+mode+'-root-adoption/1',
+-        'action':('ROOT START COMBINED AUTH NEW BODY LIFECYCLE ONLY' if mode=='lifecycle-only' else
+-                  'ROOT START COMBINED AUTH BASELINE 27 RPC COMPARISON ONLY'),
++        'adoptionSchema':'helmut-auth-stability-'+mode+'-root-adoption/1',
++        'action':('ROOT START NEW AUTH STABILITY LIFECYCLE ONLY' if mode=='lifecycle-only' else
++                  'ROOT START NEW AUTH STABILITY 30 ROUNDS 243 RPC ONLY'),
++        'workload':dict(STABILITY_CONTRACT),
+         'rendererInstallSQLPin':installs['renderer'],'installSQLPin':installs['graph'],
+         'expectedRendererBodySHA256':closure['variantBodies'][arm]['renderer'],
+         'expectedBodySHA256':closure['variantBodies'][arm]['graph'],
+-        'authRPCCount':0 if mode=='lifecycle-only' else 27,
++        'authRPCCount':0 if mode=='lifecycle-only' else 243,
+         'nodeLaunchCount':0 if mode=='lifecycle-only' else 1,
+         'postgrestConfigSHA256':closure['postgrestConfigSHA256'],
+         'postgrestShutdownPolicy':closure['postgrestShutdownPolicy'],
+@@ -127,17 +146,17 @@
+     actual=Path(item['path'])
+     case=actual.parent
+     require(actual.is_absolute() and actual.resolve()==actual and actual.name=='ACTUAL_RESULT.SAFE.json'
+-            and case.parent==CASES and re.fullmatch('control-[a-f0-9]{24}',case.name),
++            and case.parent==CASES and re.fullmatch('stability-[a-f0-9]{24}',case.name),
+             'lifecycle result must be inside the exact adopted host case')
+     value=read(item)
+-    require(value['schema']=='helmut-control-cache-result/1' and value['status']=='PASS'
++    require(value['schema']=='helmut-auth-stability-result/1' and value['status']=='PASS'
+             and value['preparedPin']==frozen and value['measurementMode']=='lifecycle-only'
+             and value['authRPCCount']==0 and value['nodeStarted'] is False
+             and value['sourceManifestSHA256']==SOURCE_SHA,
+             'actual matching lifecycle PASS required before any control start')
+     kernel=value['kernelThroughLastOwnedExit']
+     require(kernel['fullLastProcessExitCovered'] and not kernel['populatedSubgroups']
+-            and not kernel['memoryEvents'].get('oom',0) and not kernel['memoryEvents'].get('oom_kill',0)
++            and memory_events_clear(kernel['memoryEvents'])
+             and value['nativeBudgetAfterLastExit']['setupHelpersExited']
+             and value['actualContainerClosure']['exitCode']==0
+             and value['actualContainerClosure']['allOwnedWorkloadExited'], 'lifecycle native last exit')
+@@ -266,11 +285,11 @@
+             try:
+                 size = (Path(current)/name).stat().st_size
+             except FileNotFoundError:
+-                # The pinned Node writer publishes exactly six root markers by
+-                # atomic rename. Count their published bytes conservatively;
++                # Only the pinned Node markers and worker ACKs 1..60 may be
++                # atomically renamed. Count published bytes conservatively;
+                 # never ignore an unknown missing file or relax the output cap.
+                 require(Path(current)==Path(root) and
+-                        re.fullmatch(r'CYCLE_[1-6]\.MARKER\.SAFE\.json\.tmp',name),
++                        re.fullmatch(r'CYCLE_(?:[1-9]|[1-5][0-9]|60)\.(?:MARKER|ACK)\.SAFE\.json\.tmp',name),
+                         'unknown file disappeared during evidence accounting')
+                 published = Path(current)/name[:-4]
+                 info = published.lstat()
+@@ -284,7 +303,7 @@
+     root = Path(root)
+     p = root/relative
+     require(p.parent==root and not p.exists() and not p.is_symlink(), 'new owned evidence only')
+-    require(output_bytes(root)+len(data)<=OUTPUT_LIMIT, '4MiB total evidence cap')
++    require(output_bytes(root)+len(data)<=OUTPUT_LIMIT, '8MiB total diagnostic evidence cap')
+     floor(root,len(data))
+     with p.open('xb') as f:
+         p.chmod(0o600)
+--- accepted-baseline/run.py
++++ auth-stability30/run.py
+@@ -22,8 +22,10 @@
+ def prepared():
+     p = C.HERE/'PREPARED.SAFE.json'
+     value = json.loads(p.read_text())
+-    C.require(value['schema']=='helmut-combined-auth-baseline-prepared/1'
+-              and value['nativeQualification']=='NOT_RUN','prepared source closure')
++    C.require(value['schema']=='helmut-combined-auth-new-stability-prepared/1'
++              and value['nativeQualification']=='NOT_RUN'
++              and C.HERE==C.REPO/'scripts/helmut-resource-meter/auth-stability30-native-launcher',
++              'source closure must be frozen at the integrated Root launcher path')
+     for item in value['files']+value['metadataAndCodeInputs']+value['hostOnlyInputPins']:
+         C.checked(item)
+     return C.pin(p),value
+@@ -31,7 +33,7 @@
+ def safe_case(path, absent=False):
+     path = Path(path)
+     C.require(path.is_absolute() and path.resolve()==path and
+-              path.parent==C.CASES and re.fullmatch(r'control-[a-f0-9]{24}',path.name),
++              path.parent==C.CASES and re.fullmatch(r'stability-[a-f0-9]{24}',path.name),
+               'new dedicated case path required')
+     if absent:
+         C.require(not path.exists(),'case must be new; never reuse')
+@@ -66,7 +68,7 @@
+               'known local storage driver')
+     bindings = C.runtime_bindings()
+     case.mkdir(mode=0o700)
+-    result = {'schema':'helmut-control-cache-preflight/1','status':'READY_FOR_ROOT_ADOPTION_ONLY',
++    result = {'schema':'helmut-auth-stability-preflight/1','status':'READY_FOR_ROOT_ADOPTION_ONLY',
+         'atUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'case':str(case),
+         'preparedPin':frozen,'runtimePin':C.pin(C.RUNTIME),'bindings':bindings,
+         'nativePolicy':N.policy(),'hostAvailableBytes':C.available(case),
+@@ -75,7 +77,7 @@
+         'sourceFileCount':1709,'sourceFileBytes':369399611,
+         'runtimeActualFilesVerifiedInsideNewGroup':False,
+         'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,'setupRendererInstallationRequired':True,'setupSelectedGraphInstallationRequired':True,
+-        'ramComparisonPerformed':False,'threeRPCPlateauClaimed':False,
++        'ramComparisonPerformed':False,'plateauClaimed':False,
+         'postgrestStarted':False,'nodeStarted':False,'full500':False,'production':False,
+         'providerCalls':0,'containersStarted':0,'sqlExecuted':0,'automaticRetry':False}
+     C.save(case,'PREFLIGHT.SAFE.json',result)
+@@ -111,7 +113,7 @@
+     pf = C.read(adoption['preflightPin'])
+     case = safe_case(pf['case'])
+     C.require(adoption['preflightPin']['path']==str(case/'PREFLIGHT.SAFE.json') and
+-              pf['schema']=='helmut-control-cache-preflight/1' and
++              pf['schema']=='helmut-auth-stability-preflight/1' and
+               pf['preparedPin']==frozen and pf['source']==str(C.SOURCE) and
+               pf['measurementMode']==mode and pf['selection']==selected and
+               pf['lifecycleResultPin']==lifecycle and
+@@ -128,7 +130,7 @@
+               'runtime/native policy closure drift')
+     source_not_live(N)
+     parent = 'helmut-meter-memorybudget-'+secrets.token_hex(12)
+-    name = 'helmut-control-cache-'+secrets.token_hex(12)
++    name = 'helmut-auth-stability-'+secrets.token_hex(12)
+     started = time.monotonic()
+     deadline = started+C.WORK_SECONDS
+     final_deadline = started+C.TOTAL_SECONDS
+@@ -264,7 +266,7 @@
+             if free<C.FLOOR: forced='HOST_FREE_FLOOR'
+             elif C.output_bytes(case)>C.OUTPUT_LIMIT: forced='OUTPUT_CAP'
+             elif time.monotonic()>=deadline: forced='WORK_DEADLINE'
+-            elif snap['memoryEvents'].get('oom',0) or snap['memoryEvents'].get('oom_kill',0): forced='NATIVE_OOM'
++            elif not C.memory_events_clear(snap['memoryEvents']): forced='NATIVE_MEMORY_EVENT_OR_MISSING_COUNTER'
+             if forced: break
+             time.sleep(.25)
+     except BaseException as error:
+@@ -314,7 +316,7 @@
+         wp=case/'WORKER_RESULT.SAFE.json'
+         if wp.exists():
+             worker=json.loads(wp.read_text())
+-        if mode=='control-cache' and worker and worker.get('nodeStarted'):
++        if mode=='control-stability' and worker and worker.get('nodeStarted'):
+             try:
+                 node_receipts=N.node_receipts(case/'node-observations')
+                 C.require(node_receipts['httpMeteredIsolates']==1 and node_receipts['privateWorkers']==0,
+@@ -333,15 +335,14 @@
+             and worker.get('authRPCCount')==selected['authRPCCount']
+             and worker.get('postgrestStopQualified') is True and worker.get('catalogUnchangedAfterOperation') is True
+             and ((mode=='lifecycle-only' and worker.get('nodeStarted') is False)
+-                 or (mode=='control-cache' and node_receipts and node_receipts['pass_']
++                 or (mode=='control-stability' and node_receipts and node_receipts['pass_']
+                      and worker.get('nodeStarted') is True and worker.get('nodeExitCode')==0))
+             and final_kernel and final_kernel['fullLastProcessExitCovered'] and final_budget
+-            and not final_kernel['memoryEvents'].get('oom',0)
+-            and not final_kernel['memoryEvents'].get('oom_kill',0)
++            and C.memory_events_clear(final_kernel['memoryEvents'])
+             and minimum_free>=C.FLOOR and time.monotonic()<=final_deadline
+             and prepared()[0]==frozen)
+         C.save(case,'NATIVE_TIMELINE.SAFE.json',samples)
+-        result={'schema':'helmut-control-cache-result/1','status':'PASS' if passed else 'FAIL',
++        result={'schema':'helmut-auth-stability-result/1','status':'PASS' if passed else 'FAIL',
+             'forcedStop':forced,'errorType':failure,'parent':parent,'rootAdoptionPin':adoption_pin,
+             'preflightPin':adoption['preflightPin'],'preparedPin':frozen,
+             'kernelThroughLastOwnedExit':final_kernel,'nativeBudgetAfterLastExit':final_budget,
+@@ -350,8 +351,8 @@
+             'wallSeconds':time.monotonic()-started,
+             'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+             'sourceManifestSHA256':C.SOURCE_SHA,'authRPCCount':worker.get('authRPCCount') if worker else None,
+-            'comparisonScope':'COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY',
+-            'ramComparisonPerformed':False,'threeRPCPlateauClaimed':False,
++            'comparisonScope':'INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY',
++            'ramComparisonPerformed':False,'plateauClaimed':False,
+             'postgrestStarted':worker.get('postgrestStarted') if worker else None,
+             'nodeStarted':worker.get('nodeStarted') if worker else None,'nodeHeapAndExitReceipts':node_receipts,
+             'persistentDiskPGDATA':True,'noColdCacheClaim':True,'peakReset':False,
+@@ -369,13 +370,13 @@
+         proofs={}
+         for label in ('SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json','SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json',
+                       'WORKER_RESULT.SAFE.json','PG_LOG.SAFE.json','OFFLINE_AFTER.CAPTURE.SAFE.json',
+-                      'PG_LOG.PRIVATE.txt','NATIVE_TIMELINE.SAFE.json','CONTROL_CACHE.SAFE.json',
++                      'PG_LOG.PRIVATE.txt','NATIVE_TIMELINE.SAFE.json','AUTH_STABILITY.SAFE.json',
+                       'POSTGREST_STOP.SAFE.json','POSTGREST_LOG.PRIVATE.txt','NODE_CONTROL.CAPTURE.SAFE.json'):
+             p=case/label
+             if p.exists():
+                 proofs[label]=C.pin(p)
+         C.save(case,'RETIREMENT_CANDIDATES.SAFE.json',{
+-            'schema':'helmut-control-cache-retirement-candidates/1','case':str(case),
++            'schema':'helmut-auth-stability-retirement-candidates/1','case':str(case),
+             'parent':parent,'containers':candidates,'freshDerivedPGDATAPath':str(case/'disk/pgdata'),
+             'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+             'sourceProofExitLogAndPlanPins':proofs,'resultPin':result_pin,
+@@ -402,9 +403,9 @@
+     sub=p.add_subparsers(dest='action',required=True)
+     pre=sub.add_parser('prepare')
+     pre.add_argument('--case',type=Path,required=True)
+-    pre.add_argument('--measurement',choices=('lifecycle-only','control-cache'),required=True)
++    pre.add_argument('--measurement',choices=('lifecycle-only','control-stability'),required=True)
+     pre.add_argument('--lifecycle-result',type=Path)
+-    pre.add_argument('--variant',choices=('NONE','OLD','NEW'),required=True)
++    pre.add_argument('--variant',choices=('NONE','NEW'),required=True)
+     sub.add_parser('start').add_argument('--root-adoption',type=Path,required=True)
+     args=p.parse_args()
+     if args.action=='prepare':
+--- accepted-baseline/worker.py
++++ auth-stability30/worker.py
+@@ -1,4 +1,4 @@
+-"""Combined Auth worker: NEW-body lifecycle or complete OLD/NEW 27-RPC arm."""
++"""Fixed NEW Auth stability worker: zero-Auth lifecycle or 30 rounds/243 RPCs."""
+ import copy
+ import hashlib
+ import json
+@@ -47,10 +47,9 @@
+     C.require(time.monotonic()<(CONFIG['finalDeadlineMonotonic'] if CLOSING
+                                else CONFIG['workDeadlineMonotonic']),'probe deadline')
+     C.floor(OUT)
+-    C.require(C.output_bytes(OUT)<=C.OUTPUT_LIMIT,'total 4MiB output cap')
+-    events=dict(line.split() for line in (GROUP/'memory.events').read_text().splitlines())
+-    if not CLOSING:
+-        C.require(not int(events.get('oom',0)) and not int(events.get('oom_kill',0)),'native OOM')
++    C.require(C.output_bytes(OUT)<=C.OUTPUT_LIMIT,'total 8MiB diagnostic output cap')
++    events={k:int(v) for k,v in (line.split() for line in (GROUP/'memory.events').read_text().splitlines())}
++    C.require(C.memory_events_clear(events),'native high/max/OOM counters must exist and remain zero')
+     if time.monotonic()-LAST_DISK_CHECK>=.5:
+         allocated=0
+         for p in DISK.rglob('*'):
+@@ -77,7 +76,11 @@
+         result['LD_LIBRARY_PATH']=LIBRARY_PATH
+     return result
+ 
+-def capture(argv,label,timeout=30,extra_env=None,observer=None):
++def capture(argv,label,timeout=30,extra_env=None,observer=None,capture_limit=None):
++    limit=C.QUERY_LIMIT if capture_limit is None else capture_limit
++    C.require((label=='NODE_CONTROL' and timeout==C.NODE_CLIENT_SECONDS and limit==C.NODE_CAPTURE_LIMIT)
++              or (label!='NODE_CONTROL' and 0<timeout<=30 and limit==C.QUERY_LIMIT),
++              'only fixed diagnostic Node may use 180s/1MiB; SQL/default remains <=30s/256KiB')
+     child=None
+     sel=None
+     buffers=[bytearray(),bytearray()]
+@@ -98,7 +101,7 @@
+         while sel.get_map():
+             guard()
+             if time.monotonic()>=deadline:
+-                failed='CLIENT_30S_DEADLINE'
++                failed='CLIENT_CAPTURE_DEADLINE'
+                 raise TimeoutError(failed)
+             if observer is not None:
+                 observer(child,deadline)
+@@ -109,24 +112,24 @@
+                     key.fileobj.close()
+                     continue
+                 observed+=len(block)
+-                if sum(map(len,buffers))+len(block)>C.QUERY_LIMIT:
+-                    failed='COMBINED_256KIB_OUTPUT_CAP'
++                if sum(map(len,buffers))+len(block)>limit:
++                    failed='COMBINED_CAPTURE_OUTPUT_CAP'
+                     raise RuntimeError(failed)
+                 buffers[key.data].extend(block)
+         if observer is not None:
+             observer(child,deadline)
+         remaining=deadline-time.monotonic()
+         if remaining<=0:
+-            failed='CLIENT_30S_DEADLINE'
++            failed='CLIENT_CAPTURE_DEADLINE'
+             raise TimeoutError(failed)
+         # Pipe EOF is not process exit. Exit wait consumes the SAME wall budget.
+         code=child.wait(timeout=remaining)
+         if time.monotonic()>=deadline:
+-            failed='CLIENT_30S_DEADLINE'
++            failed='CLIENT_CAPTURE_DEADLINE'
+             raise TimeoutError(failed)
+     except BaseException as error:
+         primary=error
+-        failed=failed or ('CLIENT_30S_DEADLINE' if time.monotonic()>=deadline
++        failed=failed or ('CLIENT_CAPTURE_DEADLINE' if time.monotonic()>=deadline
+                           else type(error).__name__)
+     finally:
+         if sel is not None:
+@@ -151,7 +154,7 @@
+                     primary=primary or error
+                     failed=failed or type(error).__name__
+         if time.monotonic()>=deadline:
+-            failed=failed or 'CLIENT_30S_DEADLINE'
++            failed=failed or 'CLIENT_CAPTURE_DEADLINE'
+         evidence_errors=[]
+         # Guard/selector/read/wait failures still retain bounded buffers and
+         # the observed exit code after closing the known child. Evidence writes
+@@ -165,7 +168,7 @@
+         C.save(OUT,label+'.CAPTURE.SAFE.json',{'exitCode':code,'childPID':child.pid if child else None,'failure':failed,
+             'exceptionType':type(primary).__name__ if primary else None,
+             'stdoutBytes':len(buffers[0]),'stderrBytes':len(buffers[1]),
+-            'combinedBytesObserved':observed,'combinedCapBytes':C.QUERY_LIMIT,
++            'combinedBytesObserved':observed,'combinedCapBytes':limit,'wallBudgetSeconds':timeout,
+             'wallBeforeStatusSaveSeconds':time.monotonic()-started,
+             'childReaped':child is None or child.poll() is not None,
+             'bufferEvidenceErrors':evidence_errors})
+@@ -174,7 +177,7 @@
+     text=bytes(buffers[0]).decode('utf8')
+     C.require(code==0 and failed is None and not evidence_errors,
+               'bounded child failed: '+label)
+-    C.require(time.monotonic()<deadline,'CLIENT_30S_DEADLINE_AT_RETURN: '+label)
++    C.require(time.monotonic()<deadline,'CLIENT_CAPTURE_DEADLINE_AT_RETURN: '+label)
+     return text
+ 
+ def psql(file,label,variables=None,timeout=30):
+@@ -457,10 +460,10 @@
+         graph_qualified=True
+         C.save(OUT,'ACTUAL_NATIVE_CATALOG.SAFE.json',{'before':catalog_before,'installed':catalog_after,
+             'rendererInstalled':catalog_renderer,'fullOriginalCatalogQualified':True,
+-            'onlyReviewedRendererAndSelectedGraphBodyChanged':True,'selection':selected,'comparisonScope':'COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY',
++            'onlyReviewedRendererAndSelectedGraphBodyChanged':True,'selection':selected,'comparisonScope':'INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY',
+             'setupSQLSessions':5,'setupSQLStatements':29,
+-            'additionalV8ObservationSQL':'two small physical roots; six cycle metrics in comparison only; final catalog separately',
+-            'setupStatementCountScope':'three catalog files x5, selected renderer install6, selected graph install8; symmetric including OLD no-ops'})
++            'additionalStabilityObservationSQL':'two small physical roots; sixty cycle metrics in stability only; final catalog separately',
++            'setupStatementCountScope':'three catalog files x5, NEW renderer install6, NEW graph install8; unchanged setup guards'})
+         C.require(not log_overflow.is_set(),'PG log cap')
+         record('start-owned-PostgREST')
+         helper_pin=next(x for x in CONFIG['preparation']['files']
+@@ -496,22 +499,23 @@
+                 time.sleep(.05)
+         C.require(REST_STATE['versionSeen'],'actual pinned PostgREST 12.2.3 startup banner')
+         record('PostgREST-socket-ready-no-HTTP-probe')
+-        if mode=='control-cache':
++        if mode=='control-stability':
+             (OUT/'node-observations').mkdir(mode=0o700)
+             node_started=True
+             C.save(OUT,'CLIENT_CONFIG.SAFE.json',{'variant':selected['variant'],
+-                'uOverlayPin':selected['uOverlayPin'],'partsOverlayPin':selected['partsOverlayPin']})
++                'uOverlayPin':selected['uOverlayPin'],'partsOverlayPin':selected['partsOverlayPin'],
++                'workload':selected['workload']})
+             def observe_cycle(child,outer_deadline):
+                 # Handshake metadata is tiny, exact, same order/overhead in both
+-                # variants. All SQL/EOF/wait work consumes the SAME Node 30s.
++                # rounds. SQL/EOF/wait work shares the diagnostic Node 180s.
+                 index=len(cycle_records)+1
+                 marker=OUT/('CYCLE_'+str(index)+'.MARKER.SAFE.json')
+                 if not marker.exists():
+                     return
+-                C.require(index<=6 and not marker.is_symlink() and marker.stat().st_size<=512,
++                C.require(index<=60 and not marker.is_symlink() and marker.stat().st_size<=512,
+                           'bounded exact cycle marker')
+                 item=json.loads(marker.read_text())
+-                expected={'schema':'helmut-control-cache-cycle-marker/1','sequence':index,
++                expected={'schema':'helmut-auth-stability-cycle-marker/1','sequence':index,
+                     'round':(index-1)//2,'edge':'start' if index%2 else 'end','nodePID':child.pid}
+                 C.require(item==expected,'exact cycle order/round/known Node PID')
+                 native=snapshot()
+@@ -535,7 +539,8 @@
+                 cycle_records.append(row)
+             node_text=capture([str(C.NODE_ROOT/'bin/node'),'--max-old-space-size=384',
+                 '--max-semi-space-size=16','--require='+str(C.BIN/'http-meter.js'),
+-                '/tools/control-driver.js'],'NODE_CONTROL',extra_env={
++                '/tools/control-driver.js'],'NODE_CONTROL',timeout=C.NODE_CLIENT_SECONDS,
++                capture_limit=C.NODE_CAPTURE_LIMIT,extra_env={
+                     'HELMUT_NATIVE_NODE_OLD_SPACE_MIB':'384',
+                     'HELMUT_RESOURCE_METER_DIR':'/bench/node-observations',
+                     'HELMUT_STORAGE_BACKEND':'supabase','SUPABASE_URL':'http://127.0.0.1:38419',
+@@ -548,23 +553,29 @@
+                     'HELMUT_AUTH_GRAPH_READ_REUSE':'off','HELMUT_AUTH_SINGLE_WRITE_CAPTURE':'off'},observer=observe_cycle)
+             node_exit=0
+             observed=json.loads(node_text)
+-            C.require(observed['schema']=='helmut-control-cache-comparison-27-rpc/1' and observed['variant']==selected['variant'] and observed['pass'] is True
+-                      and observed['authRPCCount']==27 and observed['fullReadCount']==5 and observed['writeCount']==4
+-                      and observed['controlReadCount']==18 and observed['mutations']==3 and observed['restoreCount']==1
+-                      and observed['uCalls']==(['read','write']+['readControl']*6)*3+['read','write','read']
+-                      and observed['rpcResponsesCompleted']==27 and observed['nativeHTTPSendCount']==27
+-                      and len(cycle_records)==6
++            C.require(observed['schema']=='helmut-auth-stability-243-rpc/1' and observed['variant']==selected['variant'] and observed['pass'] is True
++                      and observed['authRPCCount']==243 and observed['fullReadCount']==32 and observed['writeCount']==31
++                      and observed['controlReadCount']==180 and observed['mutations']==30 and observed['restoreCount']==1
++                      and observed['uCalls']==(['read','write']+['readControl']*6)*30+['read','write','read']
++                      and observed['rpcResponsesCompleted']==243 and observed['nativeHTTPSendCount']==243
++                      and observed['workload']==selected['workload']
++                      and len(observed['steps'])==243 and all(0<=r['wallMilliseconds']<=30000
++                          and r['selectedUAcceptance'] is True for r in observed['steps'])
++                      and all(r['authOperation30SecondsMet'] is True and
++                          0<=r['authOperationWallMilliseconds']<=30000 for r in observed['requests'])
++                      and len(observed['cycles'])==30 and len(observed['controlTextStringifyObservations'])==32
++                      and len(cycle_records)==60
+                       and observed['nodeVersion']=='v24.19.0' and observed['noExtraFullAuthSerialization'] is True
+                       and observed['freshNativeChecksAcceptedBySelectedU'] is True,
+-                      'actual deterministic 27-RPC selected U acceptance')
+-            C.require(json.loads((OUT/'CONTROL_CACHE.SAFE.json').read_text())==observed,
++                      'actual deterministic NEW-only 30-round 243-RPC selected U acceptance')
++            C.require(json.loads((OUT/'AUTH_STABILITY.SAFE.json').read_text())==observed,
+                       'Node stdout/persisted receipt identity')
+-            auth_rpc_count=27
++            auth_rpc_count=243
+         small_after=json.loads(psql(Path('/tools/small-auth.sql'),'SMALL_AUTH_AFTER'))
+         before_data=physical_auth(small_before)
+         after_data=physical_auth(small_after)
+         target_after=copy.deepcopy(small_before)
+-        if mode=='control-cache':
++        if mode=='control-stability':
+             C.require(C.uuid4(after_data['_authStoreRevision']) and
+                       after_data['_authStoreRevision']!=before_data['_authStoreRevision'] and
+                       after_data['_authStoreRevision']==observed['finalRevision'],
+@@ -577,13 +588,13 @@
+         small_qualified=True
+         catalog_final=json.loads(psql(Path('/tools/catalog.sql'),'CATALOG_AFTER_OPERATION'))
+         expected_final=copy.deepcopy(catalog_after)
+-        if mode=='control-cache':
++        if mode=='control-stability':
+             expected_final['store']={k:small_after[k] for k in ('rows','physicalBytes','sha')}
+         C.require(catalog_final==expected_final,'complete catalog/ABI/ACL/Auth exact except independently measured revision SHA')
+         C.save(OUT,'CATALOG_OPERATION_UNCHANGED.SAFE.json',{'unchangedExceptAuthorizedRevision':True,
+             'actual':catalog_final,'authRPCCount':auth_rpc_count,
+             'smallBefore':small_before,'smallAfter':small_after,
+-            'revisionChanged':mode=='control-cache','allOtherPhysicalFieldsExact':True})
++            'revisionChanged':mode=='control-stability','allOtherPhysicalFieldsExact':True})
+         catalog_unchanged=True
+         operations_done=True
+         record('measurement-complete')
+@@ -623,7 +634,7 @@
+                 node_status=json.loads((OUT/'NODE_CONTROL.CAPTURE.SAFE.json').read_text())
+                 node_exit=node_status['exitCode']
+                 node_pid=node_status['childPID']
+-                node_observed=json.loads((OUT/'CONTROL_CACHE.SAFE.json').read_text())
++                node_observed=json.loads((OUT/'AUTH_STABILITY.SAFE.json').read_text())
+                 auth_rpc_count=node_observed['authRPCCount']
+             except BaseException as error:
+                 failed=failed or type(error).__name__
+@@ -670,7 +681,7 @@
+         except BaseException as error:
+             failed=failed or type(error).__name__
+         C.save(OUT,'PHASES.SAFE.json',phases)
+-        result={'schema':'helmut-control-cache-worker-result/1',
++        result={'schema':'helmut-auth-stability-worker-result/1',
+             'pass':bool(not failed and copied_verified and source_unchanged and clean_pg
+                         and operations_done and jit_report and graph_qualified and catalog_unchanged and small_qualified
+                         and stop_receipt and stop_receipt['pass'] and stop_receipt_pin
+@@ -696,7 +707,7 @@
+             'postgrestStopQualified':bool(stop_receipt and stop_receipt['pass'] and stop_receipt_pin),
+             'postgrestStopReceiptPin':stop_receipt_pin,'postgrestStopReturnedReceipt':stop_receipt,
+             'nodeStarted':node_started,'nodeExitCode':node_exit,'nodePID':node_pid,
+-            'wallSeconds':time.monotonic()-started,'ramComparisonPerformed':False,'threeRPCPlateauClaimed':False,
++            'wallSeconds':time.monotonic()-started,'ramComparisonPerformed':False,'plateauClaimed':False,
+             'full500':False,'production':False,'providerCalls':0,'automaticRetry':False}
+         C.save(OUT,'WORKER_RESULT.SAFE.json',result)
+     return 0 if result['pass'] else 1
+--- accepted-baseline/control-driver.js
++++ auth-stability30/control-driver.js
+@@ -1,6 +1,6 @@
+ 'use strict';
+-// V8 prepared only. Real U: 5 reads, 4 confirmed CAS writes, 18 controls.
+-// Readonly canonical overlays select U; identical PartsNEW in BOTH variants.
++// Prepared diagnostic only. Real integrated NEW U: 32 reads,31 confirmed CAS,180 controls.
++// Product U/Parts are unchanged readonly canonical overlays; fixed30rounds.
+ const fs=require('node:fs'),crypto=require('node:crypto'),v8=require('node:v8');
+ const {PerformanceObserver}=require('node:perf_hooks'),dc=require('node:diagnostics_channel');
+ const root='/workspace/helmut-cpu-epoch-20261015',modulePath=root+'/lib/helmut/llm-usage-atomic.js';
+@@ -12,7 +12,11 @@
+ const keys=['synthetik500DispatchJournal','synthetik500KostenAdmission','testKostenAuftrag','testKostenTage'];
+ const revision='_authStoreRevision',probe='localWorkingSetProbe';
+ const original=JSON.stringify,steps=[],requests=[],calls=[],sends=[],cycles=[];
+-const started=performance.now(),deadline=started+30000;
++const workload={rounds:30,controlsPerRound:6,authRPCCount:243,fullReadCount:32,writeCount:31,
++  controlReadCount:180,mutations:30,restoreCount:1,boundaries:60,clientWallSeconds:180,
++  nodeCaptureLimitBytes:1048576,sqlCaptureLimitBytes:262144,totalEvidenceCapBytes:8388608,
++  fetchMaxSeconds:20,sqlMaxSeconds:30,lockMaxSeconds:1,authOperationMaxMilliseconds:30000};
++const started=performance.now(),deadline=started+180000;
+ const gc={count:0,durationMilliseconds:0,kinds:{}};
+ const gcObserver=new PerformanceObserver(list=>{for(const e of list.getEntries()){
+   gc.count++;gc.durationMilliseconds+=e.duration;const k=String(e.detail?.kind??'unknown');gc.kinds[k]=(gc.kinds[k]||0)+1;
+@@ -20,8 +24,8 @@
+ let phase='initial',observing=false,expectedMethod=null,baselineFields=null,baselineHistorySHA=null;
+ let baselineProof=null,baselineState=null,expectedRevision=physical.data[revision],lastState=null,sequence=0;
+ const seenRevisions=new Set([expectedRevision]);
+-const result={schema:'helmut-control-cache-comparison-27-rpc/1',pass:false,variant:cfg.variant,
+-  nodeVersion:process.version,uCalls:[],authRPCCount:0,rpcResponsesCompleted:0,nativeHTTPSendCount:0,
++const result={schema:'helmut-auth-stability-243-rpc/1',pass:false,variant:cfg.variant,
++  workload,nodeVersion:process.version,uCalls:[],authRPCCount:0,rpcResponsesCompleted:0,nativeHTTPSendCount:0,
+   steps,requests,nativeHTTPRequests:sends,controlTextStringifyObservations:calls,cycles,
+   fullReadCount:0,writeCount:0,controlReadCount:0,mutations:0,restoreCount:0,
+   controlCacheLimitBytes:2097152,forcedGC:false,providerCalls:0,full500:false,
+@@ -55,7 +59,7 @@
+ const sent=dc.channel('undici:client:sendHeaders');
+ function sentHeaders({request}){
+   result.nativeHTTPSendCount++;
+-  requireThat(sends.length<28,'bounded real native sends');
++  requireThat(sends.length<243,'bounded real native sends');
+   sends.push({phase,method:request.method,path:request.path,origin:String(request.origin)});
+ }
+ function installObserver(){
+@@ -77,14 +81,14 @@
+   };
+ }
+ async function boundary(round,edge){
+-  requireThat(performance.now()<deadline,'unchanged whole-client 30s budget');
+-  const item={schema:'helmut-control-cache-cycle-marker/1',sequence:++sequence,round,edge,nodePID:process.pid};
++  requireThat(performance.now()<deadline,'fixed diagnostic whole-Node 180s batch budget');
++  const item={schema:'helmut-auth-stability-cycle-marker/1',sequence:++sequence,round,edge,nodePID:process.pid};
+   const name='/bench/CYCLE_'+sequence+'.MARKER.SAFE.json';
+   fs.writeFileSync(name+'.tmp',original(item)+'\n',{flag:'wx',mode:0o600});
+   fs.renameSync(name+'.tmp',name); // Publish one complete bounded marker atomically.
+   const ack='/bench/CYCLE_'+sequence+'.ACK.SAFE.json';
+   while(!fs.existsSync(ack)){
+-    requireThat(performance.now()<deadline,'30s cycle observation deadline');
++    requireThat(performance.now()<deadline,'diagnostic 180s cycle observation deadline');
+     await new Promise(resolve=>setTimeout(resolve,5));
+   }
+   requireThat(same(JSON.parse(fs.readFileSync(ack,'utf8')),item),'exact round/edge/PID metric ACK');
+@@ -101,7 +105,7 @@
+   lastState=t;return q;
+ }
+ async function request(path,options){
+-  requireThat(requests.length<27&&expectedMethod&&options?.method==='POST'&&typeof options.body==='string',
++  requireThat(requests.length<243&&expectedMethod&&options?.method==='POST'&&typeof options.body==='string',
+     'one bounded direct selected U invocation');
+   const write=expectedMethod==='write',control=expectedMethod==='readControl';
+   const route=write?'helmut_auth_state_cas_v1':'helmut_auth_state_graph_read_v1';
+@@ -180,7 +184,7 @@
+   let value=method==='write'?await U.write(input,{request,rowId:'main-auth',target:'http://127.0.0.1:38419|main-auth'}):
+     await U[method]({request,rowId:'main-auth',target:'http://127.0.0.1:38419|main-auth'});
+   requireThat(requests.length===n+1,'exactly one RPC, no automatic retries');
+-  requests[n].selectedUAccepted=true;expectedMethod=null;
++  expectedMethod=null;
+   const logical=verifyLogical(value,method!=='readControl');
+   const afterWire=wire(),change=delta(beforeWire,afterWire);
+   requireThat(result.nativeHTTPSendCount===n+1&&sends[n]?.method==='POST'
+@@ -188,14 +192,18 @@
+     &&change.responses===1&&afterWire.parseErrors===0&&afterWire.unparsedResponseBytes===0
+     &&afterWire.incompleteResponses===0&&afterWire.unfinishedActiveHTTPParsers===0&&afterWire.protocolErrors===0,
+     'one genuine send and complete passive framed response per U call');
+-  steps.push({phase,uMethod:method,wallMilliseconds:performance.now()-t,memoryBefore:beforeMemory,memoryAfter:memory(),
+-    wireDelta:change,controlTextStringifyCount:calls.length-c,selectedUAcceptance:true,...logical});
++  const wallMilliseconds=performance.now()-t,withinAuth30=wallMilliseconds<=30000;
++  requests[n].authOperationWallMilliseconds=wallMilliseconds;requests[n].authOperation30SecondsMet=withinAuth30;
++  steps.push({phase,uMethod:method,wallMilliseconds,memoryBefore:beforeMemory,memoryAfter:memory(),
++    wireDelta:change,controlTextStringifyCount:calls.length-c,selectedUAcceptance:withinAuth30,...logical});
++  requireThat(withinAuth30,'observed individual Auth operation exceeds unchanged 30s limit; no retry');
++  requests[n].selectedUAccepted=true;
+   result.uCalls.push(method);result[method==='read'?'fullReadCount':method==='write'?'writeCount':'controlReadCount']++;
+   return value;
+ }
+ async function main(){
+   try{
+-    requireThat(['OLD','NEW'].includes(cfg.variant)&&process.version==='v24.19.0'&&meter&&U.enabled()&&U.controlReadEnabled(),
++    requireThat(cfg.variant==='NEW'&&same(cfg.workload,workload)&&process.version==='v24.19.0'&&meter&&U.enabled()&&U.controlReadEnabled(),
+       'selected real runtime/control flags');
+     for(const [p,item] of [[modulePath,cfg.uOverlayPin],[partsPath,cfg.partsOverlayPin]]){
+       const raw=fs.readFileSync(p);requireThat(raw.length===item.bytes&&hash(raw)===item.sha256,'actual canonical loaded bytes');
+@@ -207,7 +215,7 @@
+       &&uuid(expectedRevision)&&physical.data._llmUsageRef.count===6000,'independent original physical Auth606 proof');
+     gcObserver.observe({entryTypes:['gc']});installObserver();observing=true;sent.subscribe(sentHeaders);
+     result.baseline={memory:memory(),wire:wire()};
+-    for(let round=0;round<3;round++){
++    for(let round=0;round<30;round++){
+       const start=await boundary(round,'start');
+       let auth=await invoke('read','round'+round+'.fullRead');
+       requireThat(round===0?!Object.hasOwn(auth,probe):same(auth[probe],{scope:'LOCAL_CONTROL_CACHE_COMPARISON',round:round-1}),
+@@ -225,18 +233,18 @@
+       const end=await boundary(round,'end');cycles.push({round,start,end});
+     }
+     let auth=await invoke('read','restore.fullRead');
+-    requireThat(same(auth[probe],{scope:'LOCAL_CONTROL_CACHE_COMPARISON',round:2}),'last probe confirmed by fresh full U');
++    requireThat(same(auth[probe],{scope:'LOCAL_CONTROL_CACHE_COMPARISON',round:29}),'last probe confirmed by fresh full U');
+     delete auth[probe];let accepted=await invoke('write','restore.write',auth);
+     requireThat(!Object.hasOwn(accepted,probe)&&same(lastState,baselineState),'ACK restores original immutable root/proof');
+     result.restoreCount++;auth=null;accepted=null;
+     let final=await invoke('read','restore.finalRead');
+     requireThat(!Object.hasOwn(final,probe)&&same(lastState,baselineState),'fresh final full read confirms original root restored');
+     final=null;
+-    requireThat(result.authRPCCount===27&&result.fullReadCount===5&&result.writeCount===4&&result.controlReadCount===18
+-      &&result.mutations===3&&result.restoreCount===1&&cycles.length===3&&sequence===6
+-      &&requests.every(r=>r.responseReceived&&r.selectedUAccepted)&&result.nativeHTTPSendCount===27,
+-      'exact deterministic 27 genuine accepted RPC workload');
+-    requireThat(calls.length>0&&calls.every(c=>c.utf8Bytes===calls[0].utf8Bytes),'same actual control text byte size');
++    requireThat(result.authRPCCount===243&&result.fullReadCount===32&&result.writeCount===31&&result.controlReadCount===180
++      &&result.mutations===30&&result.restoreCount===1&&cycles.length===30&&sequence===60
++      &&requests.every(r=>r.responseReceived&&r.selectedUAccepted)&&result.nativeHTTPSendCount===243,
++      'exact deterministic NEW-only 30-round 243 genuine accepted RPC workload');
++    requireThat(calls.length===32&&calls.every(c=>c.utf8Bytes===calls[0].utf8Bytes),'same actual control text byte size');
+     result.actualControlTextUTF8Bytes=calls[0].utf8Bytes;
+     result.initialControlFieldSHA256=baselineFields;result.unchangedLogicalHistorySHA256=baselineHistorySHA;
+     result.originalStateRestored=baselineState;result.unchangedNativeProof=baselineProof;
+@@ -249,7 +257,7 @@
+       gc.count++;gc.durationMilliseconds+=e.duration;const k=String(e.detail?.kind??'unknown');gc.kinds[k]=(gc.kinds[k]||0)+1;
+     }
+     gcObserver.disconnect();result.final={memory:memory(),wire:meter?wire():null,wallMilliseconds:performance.now()-started};
+-    fs.writeFileSync('/bench/CONTROL_CACHE.SAFE.json',original(result)+'\n',{flag:'wx',mode:0o600});
++    fs.writeFileSync('/bench/AUTH_STABILITY.SAFE.json',original(result)+'\n',{flag:'wx',mode:0o600});
+     process.stdout.write(original(result)+'\n');if(!result.pass)process.exitCode=1;
+   }
+ }
+--- accepted-baseline/README.md
++++ auth-stability30/README.md
+@@ -1,39 +1,45 @@
+-# Combined Auth baseline comparison — PREPARED, NOT RUN
++# Integrated NEW Auth: fixed 30-round stability diagnostic — PREPARED, NOT RUN
+ 
+-This new isolated harness answers one missing comparison: the complete original Auth pair of JS modules and two original SQL bodies versus the complete corrected pair of modules and SQL bodies. It uses the already reviewed V9 27-RPC workload without Ownership81 instrumentation. It is not another cache-only comparison, a full motor profile, a 179 integration acceptance, a Full500 run or production authorization. No performance, reserve or plateau benefit is claimed. The author has not imported, AST/syntax checked, tested or executed any subject, database, container or native resource.
++This is a new frozen diagnostic derived from the accepted combined-Auth launcher. It runs only the integrated NEW product bytes. It does not alter `lib/helmut/llm-usage-atomic.js`, `lib/helmut/auth-state-parts.js`, SQL function bodies, production configuration or the old frozen launchers. The four old comparison arms remain historical evidence of their original 27-RPC workload; they cannot stand in for this new workload. No plateau, full-motor reserve, full500, production, merge or deployment qualification is claimed.
+ 
+-## Exact two arms
++## Fixed workload and exact acceptance counts
+ 
+-OLD is commit5fae25be5068a278a88daca9a7508c7b9e4001a3: U31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0; Parts6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9; renderer prosrc b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a; graph_read prosrc1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0. Both original prosrc hashes were checked against the retained original ACTUAL_NATIVE_CATALOG.before. The entire two historical proposal files are frozen as provenance; no whole migration is executed. The original function definitions, including full signatures/language/volatility/security/search_path, are extracted exactly; only CREATE becomes CREATE OR REPLACE for same-OID installation.
++There are exactly 30 serial rounds. Each has one real `U.read`, one real `U.write` changing only `localWorkingSetProbe`, and six real `U.readControl` calls. The final three calls are a fresh full read, one confirmed restoration write and a fresh final full read. The probe's existing local scope string remains `LOCAL_CONTROL_CACHE_COMPARISON` so its shape and mutation semantics do not change.
+ 
+-NEW is U93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b; PartsF30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63; renderer prosrc d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32; graph_read prosrc4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0. The current reviewed Root proposal source bodies and the exact V9 installed definitions agree. Candidate JS provenance remains author commit67b5c4ef8ccd482d726126f8bbc41a00ee4151a3. BODY_SOURCE_PROVENANCE records the exact source files, body sizes/hashes, wrappers and historical catalog proof.
++The required totals are 243 accepted Auth RPCs, 32 full reads, 31 confirmed CAS writes (30 mutations and one restoration), 180 controls and 60 ordered start/end handshakes. The exact U-call sequence is `([read, write] + 6 controls) * 30 + [read, write, read]`. Every callback has one genuine native HTTP send and one complete passively metered response; no retries. There are 212 unique fresh read/history nonces, 180 fresh control graph bindings, 31 unique confirmed CAS revisions and 63 full logical history hashes (32 reads plus 31 accepted ACKs). Each full logical history contains all 6000 original records. All 243 native proofs retain the original 6000-row lineage. The authenticated NEW code is expected to perform exactly 32 observed `controlText` serializations, each of the same authentic 4,856,607-byte projection.
+ 
+-Current canonical Root U/Parts already contain NEW939/f300. Host-only pins authenticate these actual current bytes before/after start. They are absent from worker metadata expectations. Readonly overlays select OLD U+OLD Parts or NEW U+NEW Parts at the canonical require paths; worker and unchanged Node driver independently verify loaded bytes against selected pins. Original Root files are never rewritten/restored. Every other small external input still matches V9. Three large runtime binaries carry V9 pins and matching stat sizes; author did not reread them. The normal host/worker runtime authentication remains mandatory before any actual PASS.
++The request observer still detaches the parsed CAS tree before awaiting HTTP; the driver retains no full Auth object across controls. The actual U/Parts decoder, CAS and ACK paths, fresh nonce/state/proof checks, detached control view guards, full field/history hashes and final restore remain the real integrated code. No provider or paid model call is allowed.
+ 
+-## Symmetric clone installation and proof
++## Exact product and database setup
+ 
+-Both arms install exactly two individual SQL definitions in the fresh clone, renderer then graph_read, including the OLD no-ops. Each renderer wrapper has six SQL statements; each graph wrapper has eight. Both retain BEGIN, SET LOCAL statement_timeout30s, lock_timeout1s and Root-adoption/PG17.6/database18405/original606B Auth/clone-only path/localSocket/GUC/helper-function hash guards. Renderer preconditions bind originalb315 and originalgraph1644; graph preconditions bind the selected renderer and originalgraph1644. Graph installation additionally preserves the complete pg_proc record except prosrc. No whole proposal, schema/data migration, ACL exception or catalog exclusion is allowed.
++NEW U SHA256 is `93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b`; Parts is `f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63`. Both host canonical files and both readonly canonical overlays remain independently authenticated. The NEW renderer prosrc is `d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32`; graph_read is `4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0`. The four product/SQL artifacts and the shutdown helper/policy are byte-identical to the original combined launcher.
+ 
+-The original full catalog must match the retained original catalog before any install. CATALOG_AFTER may differ only at the exact selected renderer prosrc; CATALOG_SELECTED may differ only at the two exact selected prosrc hashes. All ABI/ACL/roles/settings/store fields remain exact. Setup stays five sessions/29 statements: three catalog files x5, renderer6, graph8. The strengthened renderer guard uses the same already reviewed graph clone guard symmetrically; installation work is included in the native lifetime. OLD retains both original bodies after no-op installations.
++Each new derived persistent clone installs only NEW renderer and graph_read, using the unchanged guarded wrappers. Setup stays five sessions/29 statements (three full catalog captures x5, renderer6, graph8). The complete original catalog, database18405/PG17.6, role/ACL/ABI, settings and physical606-byte root are checked before installation. Only the exact two selected prosrc fields may differ afterward. Sixty separate bounded metrics SQL sessions supply the cycle observations; the two small physical reads and final full catalog are retained.
+ 
+-## One common freeze, explicit separate Root cases
++The after-state must restore the exact original Auth state/root/reference/history and all four control-field hashes. The sole physical exception is the fresh UUIDv4 `_authStoreRevision` matching the accepted final real U read; its physical SHA is measured independently by the small native SQL reader. All 6000 actual and referenced ledger rows remain unchanged; no ledger append or broad store exception is allowed.
+ 
+-The only case root is `/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases`. CLI requires each fresh explicit control-24hex path and mode/variant. There is no generated five-case default, automatic sequence or retry. Root first prepares/adopts a new lifecycle-only:NONE case on this exact final PREPARED. Its selected bodyVariant is explicitly NEW, with NEW renderer+graph installations, zero Auth HTTP calls and no Node process. Its actual complete PASS/three exact Host proof pins are required before each separately adopted control-cache arm and again inside the worker. No prior V9 or other-PREPARED lifecycle can qualify.
++## Diagnostic bounds
+ 
+-Root then separately prepares/adopts OLD/NEW/NEW/OLD, using fresh TTL/nonce one-shot adoptions for each. Adoption schema is helmut-combined-auth-lifecycle-only-root-adoption/1 or helmut-combined-auth-control-cache-root-adoption/1. Actions are ROOT START COMBINED AUTH NEW BODY LIFECYCLE ONLY or ROOT START COMBINED AUTH BASELINE 27 RPC COMPARISON ONLY. In addition to the inherited exact selection/preflight/source/nonce/TTL fields, installSelectedRendererAndGraph must be true. Root owns order, exclusivity and later fair aggregation. This preparation contains no populated Root adoption, cases or fabricated results.
++This longer batch has an explicit whole-Node ceiling of **180 seconds**, including all 60 observer SQL handshakes, pipe EOF and the captured Node process wait. This is a diagnostic batch ceiling. Each HTTP fetch remains at most20s; each SQL child/statement remains at most30s and lock wait1s. Each complete `invoke` also records and enforces the unchanged Auth30 ceiling (<=30,000ms, including logical field/history observation work); the worker independently checks all243 operation receipts. An observed overrun fails before operation acceptance and never retries. This is measured acceptance, not synchronous CPU preemption. These are Auth operations only: full Unit60/Offline90 and the full motor time contract remain open.
+ 
+-## Identical workload, metrics and bounds
++Only the known `NODE_CONTROL` capture has a dedicated1MiB combined stdout/stderr cap. Every SQL/default capture stays256KiB and<=30s; any other label or larger capture/deadline is rejected. The evidence cap for this new diagnostic is8MiB. Retained NEW three-round receipts measured83,987/83,999 bytes for each complete Node JSON and2,655,464/2,652,839 non-disk case bytes. Retaining both full Node copies, all60 boundary groups and the unchanged maximum220 timeline samples projects about4.8–5.2MB, so the old4MiB case cap cannot hold the required complete proofs. `CAPACITY_ESTIMATE.SAFE.json` preserves the scalar calculation and input pins. No truncation or emergency budget increase is allowed if a cap is reached; the case fails and retains available evidence.
+ 
+-control-driver.js is an exact bytecopy of V9. Its historical introductory comment says common PartsNEW in both variants; this is no longer the comparison design. Actual module selection and byte checks are dynamic cfg.partsOverlayPin, now OLD6b or NEWf300, and no executable driver change was made. Its internal LOCAL_CONTROL_CACHE_COMPARISON probe label and output schema remain unchanged for workload identity; PREPARED/selection/results explicitly identify the combined scope.
++All memory and storage bounds stay unchanged: Node384MiB old space/16MiB semi, one isolate/no private workers; native max1,547,997,184B/high1,399,996,416B/swap0; work300s/total360s including closure;768MiB persistent copy plus16MiB conservative admission overhead;256MiB JIT/socket tmpfs;8GiB host free floor. Required native `high`, `max`, `oom`, `oom_kill` counters must exist and remain0 at worker guards and final empty-group acceptance; `oom_group_kill` must be0 when present. Missing required counters fail closed.
+ 
+-There are three rounds of fresh U.read, one confirmed U.write mutating only localWorkingSetProbe, then six genuine U.readControl calls, followed by fresh full read, confirmed restoration write and final full read. Exactly27 accepted Auth RPCs:5 full reads/4 CAS writes/18 controls,6000 history, no ledger append, no retries/provider calls. Field/history hashes, actual request/response nonce and CAS lineage, real passive sends/framed responses, JSON.stringify observer, temporary request-parse scalar detachment, six boundary handshakes and naturalGC observations remain byte-identical in the driver. No Auth graph is retained by the harness across control phases. There is no Ownership81 sampler.
++Natural GC is observed without forcing a collection. There is no cache eviction, peak reset or addition of separate process peaks. The shared group starts before source verification/copy/JIT/SQL setup and is read through last owned process exit. The60 complete boundary frames are the primary repeated-round trend evidence. The existing host timeline retains its cap220 and removes interior samples after the cap; it must not be described as a complete uniformly spaced curve. Process RSS/anon/file/shmem are diagnostics and are not summed into a shared peak; shmem already belongs to file. A functional/safety PASS does not automatically assert a memory plateau or the full500 reserve.
+ 
+-Native common-group current/never-reset lifetime peak/anon/file/kernel/CPU/IO and the six bounded metrics SQL sessions remain identical. Process RSS/shared diagnostics are separate, unknown stays unknown, no summation of separate peaks. The whole Node client has unchanged30s including observer SQL/pipeEOF/processwait,256KiB combined capture, fetch<=20s; SQL30s/lock1s. Node384MiB old+16MiB semi, one isolate/no private workers; native max1547997184/high1399996416/swap0;300s work/360s including closure;768MiB persistent-copy cap,256MiB JIT/socket tmpfs,4MiB evidence and8GiB host reserve all remain unchanged. V9's exact atomic marker accounting race fix is retained.
++## Fresh freeze, lifecycle, cases and adoption
+ 
+-Independent small SQL before/after is included in both modes. Physical root remains exactly606B/one row and6000 actual/referenced ledger rows. Lifecycle physical state is identical. Comparison changes only a fresh UUIDv4 _authStoreRevision matching the genuine final selected-U read, using the independently measured small after SHA. Full state root24bea/proof references/history6000 are restored and identical; every other final catalog/ABI/ACL field equals CATALOG_SELECTED. No broad SHA/store exception or source restoration is allowed. Strict persisted PostgREST policy5afe/helper and f467 policy, version-bound expected-2 handling, PG0/logEOF/last-owned-exit/source-full-manifest proof remain unchanged.
++Root first copies this prepared source to `scripts/helmut-resource-meter/auth-stability30-native-launcher` in the canonical repository, runs the metadata-only `FREEZE_SOURCE.py` there, and independently reviews that final closure. The launcher refuses even preparation at any other directory. The builder uses only standard-library file reads/hashes/JSON/diffs and never imports the harness, reads source PGDATA payloads or starts a resource. Its own source is pinned by the generated PREPARED. Old launchers and their PREPARED files are never overwritten.
+ 
+-## Preclassified temporary working copies
++The only fresh case root is `/workspace/helmut-ram-fix-20261020/auth-stability-20261021/cases`; every explicit case name is `stability-` plus24 lowercase hex digits and must be absent before preparation. No generated case sequence, automatic retry or prepared adoption is supplied.
+ 
+-Each fresh case is preclassified EXPENDABLE_LOCAL_WORKING_COPY, never an original/future baseline/input. Harness always preserves copies, hulls and proofs. A later separate Root cleanup may remove only actual PASS copies after complete necessary measurement/restoration/source/closure evidence is retained and independent/dependency/unknown-use review plus a fresh exact action establishes no necessary state or sole evidence is lost. No full physical WAL archive of every such disposable PASS working copy is required. FAIL/UNKNOWN remain. This harness deletes nothing. Canonical source827a, all original states, old cases/FAILs, all old full/delta archives, images/loops and historical evidence remain protected.
++Prepare/adopt one **lifecycle-only:NONE** case first. It uses the same final PREPARED and exact NEW installations with no Node/Auth HTTP work. Only its actual complete PASS with all three host proof pins and unchanged strict shutdown evidence can qualify **control-stability:NEW**. An old ABBA or earlier-PREPARED lifecycle is rejected. Every start separately binds a fresh <=15-minute preflight, fresh <=15-minute nonce/TTL adoption, exact case/preflight/prepared/source/selection pins, counts and installations, with one-shot `STARTED.SAFE.json` consumption. Adoption schemas are `helmut-auth-stability-lifecycle-only-root-adoption/1` and `helmut-auth-stability-control-stability-root-adoption/1`; actions are `ROOT START NEW AUTH STABILITY LIFECYCLE ONLY` and `ROOT START NEW AUTH STABILITY 30 ROUNDS 243 RPC ONLY`. OLD is not a selectable arm.
+ 
+-The original V9 preparation/source bytes are preserved under baseline-v9 and bound as historical provenance. SOURCE_DELTA is the limited common/run/worker selection/setup/classification delta plus four exact body wrappers; SCOPE records unchanged source bytes. Root must independently review, integrate with only path rebinding, perform its own appropriate syntax/guard checks and decide each actual adoption. Native qualification remains NOT_RUN until real results exist.
++The original PostgreSQL must exit0, have full log EOF/drain/no error and an offline shut-down state. PostgREST retains the byte-identical helper5afe6bd7 and policyf4672c7c. Signed0/−15 are accepted under the existing strict receipt conditions;−2 is accepted only for the exact original12.2.3 binary/config/source-policy binding after explicit SIGTERM, live exact PID identity, successful reap, no timeout/kill/error and complete persisted EOF/drain/close proof. No other stopped-process exit is newly accepted. Native final emptiness, owned container closure, heap/HTTP isolate exit receipts and complete before/after source manifests are mandatory.
++
++Canonical source `/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL`, manifest827a9872, remains permanently protected;17 retained archives depend on it. It is mounted readonly and never restored/replaced/retired. Originals, historical cases, hulls, archives, images and loops remain protected. Fresh derived copies stay preclassified expendable but are always preserved by the harness. Any later deletion is a separate exact-target Root action after actual PASS, complete retained evidence, restoration/source/closure proofs and dependency/unknown-use review; FAIL/UNKNOWN remain.
++
++## Preparation status and required checks
++
++The preparer only copied/read/edited source and generated metadata. No harness import, AST/syntax qualification, test, SQL, native/Docker/resource start or model/network call was performed. Root must perform its own source review and focused syntax/guard checks of this new diagnostic. `GUARD_REVIEW.md` lists the exact count/deadline/cap/marker/adoption/counter gaps to exercise. The179/95 accepted product suites are not scheduled for repetition. Native qualification remains NOT_RUN until separately adopted actual fresh cases exist.
+--- accepted-baseline/SCOPE.SAFE.json
++++ auth-stability30/SCOPE.SAFE.json
+@@ -1,77 +1,360 @@
+ {
+-  "SQLOnlyTwoFunctionInstallationsPerArm": true,
+-  "caseRoot": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases",
+-  "changedPythonFiles": [
++  "NEWSQLWrapperBytesUnchanged": true,
++  "canonicalSource827aPermanentlyProtected": true,
++  "caseRoot": "/workspace/helmut-ram-fix-20261020/auth-stability-20261021/cases",
++  "changedExecutableFiles": [
+     "common.py",
+     "run.py",
+-    "worker.py"
++    "worker.py",
++    "control-driver.js"
+   ],
+-  "driver27RPCBytesUnchanged": true,
+-  "graphStatementsEach": 8,
+-  "hostOnlySourcePinsChangedToCurrentAcceptedBytes": true,
+-  "nativeOrDockerOrDBActions": false,
+-  "originalFullCatalogBeforeAndSelectedFullCatalogAfterEachInstallation": true,
+-  "ownership81SamplerIncluded": false,
+-  "parentPreparedPin": {
+-    "bytes": 37288,
+-    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+-    "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
++  "comparisonScope": "INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY",
++  "diagnosticOnlyBudgetChanges": {
++    "AuthOperation30SecondsEnforced": true,
++    "NodeCombinedCaptureBytes": {
++      "new": 1048576,
++      "old": 262144
++    },
++    "SQLCaptureAndDeadlineUnchanged": true,
++    "caseEvidenceCapBytes": {
++      "new": 8388608,
++      "old": 4194304
++    },
++    "reason": "30-round complete proof projection4.8-5.2MB exceeds old4MiB; dedicated Node receipt0.7-0.8MB exceeds256KiB",
++    "wholeNodeBatchSeconds": {
++      "new": 180,
++      "old": 30
++    }
+   },
+-  "rendererStatementsEach": 6,
+-  "schema": "helmut-combined-auth-scope/1",
+-  "sourcePGDATAPayloadRead": false,
++  "fixedWorkload": {
++    "authOperationMaxMilliseconds": 30000,
++    "authRPCCount": 243,
++    "boundaries": 60,
++    "clientWallSeconds": 180,
++    "controlReadCount": 180,
++    "controlsPerRound": 6,
++    "fetchMaxSeconds": 20,
++    "fullReadCount": 32,
++    "lockMaxSeconds": 1,
++    "mutations": 30,
++    "nodeCaptureLimitBytes": 1048576,
++    "restoreCount": 1,
++    "rounds": 30,
++    "sqlCaptureLimitBytes": 262144,
++    "sqlMaxSeconds": 30,
++    "totalEvidenceCapBytes": 8388608,
++    "writeCount": 31
++  },
++  "full500": false,
++  "markerAndACKAtomicRenameRange": "1..60 only; no0/61/leading-zero/nondigit names",
++  "mergeOrDeploy": false,
++  "nativeAndHeapAndDiskBudgetsUnchanged": true,
++  "noGeneralParameterKnobs": true,
++  "oldFrozenLaunchersUnchanged": true,
++  "optionalNativeCountersZeroIfPresent": [
++    "oom_group_kill"
++  ],
++  "productUAndPartsBytesUnchanged": true,
++  "production": false,
++  "requiredNativeCountersZero": [
++    "high",
++    "max",
++    "oom",
++    "oom_kill"
++  ],
++  "sameFinalPreparedLifecycleRequired": true,
++  "schema": "helmut-auth-stability30-scope/1",
+   "status": "PREPARED_NOT_RUN",
+-  "testsOrImportsOrASTExecuted": false,
+-  "unchangedDirectFiles": [
+-    {
+-      "bytes": 18175,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/control-driver.js",
+-      "sha256": "c612e2b7f5b047fb2630486c242fddf09d765add84d2fb4157d60d98b12d4b51"
+-    },
+-    {
+-      "bytes": 9220,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/postgrest_lifecycle.py",
+-      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+-    },
+-    {
+-      "bytes": 12286,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/catalog.sql",
+-      "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+-    },
+-    {
+-      "bytes": 869,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/small-auth.sql",
+-      "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+-    },
+-    {
+-      "bytes": 763,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/cycle-metrics.sql",
+-      "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+-    },
+-    {
+-      "bytes": 499,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/SHUTDOWN_POLICY.SAFE.json",
+-      "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+-    },
+-    {
+-      "bytes": 23685,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/OLD_U.PRIVATE.js",
+-      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+-    },
+-    {
+-      "bytes": 25446,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/NEW_U.js",
+-      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+-    },
+-    {
+-      "bytes": 22169,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/COMMON_PARTS.js",
+-      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+-    },
+-    {
+-      "bytes": 22149,
+-      "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/ORIGINAL_PARTS.PRIVATE.js",
+-      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
++  "strictShutdownHelperPolicyAndUpstreamBytesUnchanged": true,
++  "subjectImportsASTSyntaxTestsSQLNativeDockerNetworkModelCallsExecuted": false,
++  "unchangedFiles": [
++    {
++      "candidate": {
++        "bytes": 3859,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/BODY_SOURCE_PROVENANCE.SAFE.json",
++        "sha256": "a2d2fa66469ac562f6ca75530bdab0c3e4134f75b9e95c1e698b91705cb99acf"
++      },
++      "source": {
++        "bytes": 3859,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/BODY_SOURCE_PROVENANCE.SAFE.json",
++        "sha256": "a2d2fa66469ac562f6ca75530bdab0c3e4134f75b9e95c1e698b91705cb99acf"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 22169,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/COMMON_PARTS.js",
++        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
++      },
++      "source": {
++        "bytes": 22169,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/COMMON_PARTS.js",
++        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 13047,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/INSTALL_NEW_GRAPH.sql",
++        "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
++      },
++      "source": {
++        "bytes": 13047,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_GRAPH.sql",
++        "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 17398,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/INSTALL_NEW_RENDERER.sql",
++        "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
++      },
++      "source": {
++        "bytes": 17398,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_RENDERER.sql",
++        "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 12787,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/INSTALL_OLD_GRAPH.sql",
++        "sha256": "7bb6124122903387b721929f99310a8044291c5cc3e12b1f34b674c081eb72cd"
++      },
++      "source": {
++        "bytes": 12787,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_GRAPH.sql",
++        "sha256": "7bb6124122903387b721929f99310a8044291c5cc3e12b1f34b674c081eb72cd"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 13841,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/INSTALL_OLD_RENDERER.sql",
++        "sha256": "f973ad6b1a617d8b73f3b92df2997a8be7313665c6b26856b8a3c333eb6277e1"
++      },
++      "source": {
++        "bytes": 13841,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_RENDERER.sql",
++        "sha256": "f973ad6b1a617d8b73f3b92df2997a8be7313665c6b26856b8a3c333eb6277e1"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 25446,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/NEW_U.js",
++        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
++      },
++      "source": {
++        "bytes": 25446,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/NEW_U.js",
++        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 23685,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/OLD_U.PRIVATE.js",
++        "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
++      },
++      "source": {
++        "bytes": 23685,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/OLD_U.PRIVATE.js",
++        "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 18650,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/ORIGINAL_AUTH_READ_SOURCE.PRIVATE.sql",
++        "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
++      },
++      "source": {
++        "bytes": 18650,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_AUTH_READ_SOURCE.PRIVATE.sql",
++        "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 51381,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
++        "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
++      },
++      "source": {
++        "bytes": 51381,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
++        "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 22149,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/ORIGINAL_PARTS.PRIVATE.js",
++        "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
++      },
++      "source": {
++        "bytes": 22149,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_PARTS.PRIVATE.js",
++        "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 499,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/SHUTDOWN_POLICY.SAFE.json",
++        "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
++      },
++      "source": {
++        "bytes": 499,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/SHUTDOWN_POLICY.SAFE.json",
++        "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 12286,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/catalog.sql",
++        "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
++      },
++      "source": {
++        "bytes": 12286,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/catalog.sql",
++        "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 763,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/cycle-metrics.sql",
++        "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
++      },
++      "source": {
++        "bytes": 763,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/cycle-metrics.sql",
++        "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 9220,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/postgrest_lifecycle.py",
++        "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
++      },
++      "source": {
++        "bytes": 9220,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/postgrest_lifecycle.py",
++        "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 869,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/small-auth.sql",
++        "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
++      },
++      "source": {
++        "bytes": 869,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/small-auth.sql",
++        "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 4139,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/upstream/SOURCE_EVIDENCE.SAFE.json",
++        "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
++      },
++      "source": {
++        "bytes": 4139,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/SOURCE_EVIDENCE.SAFE.json",
++        "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 9858,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/upstream/ghc/libraries/base/GHC/TopHandler.hs",
++        "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
++      },
++      "source": {
++        "bytes": 9858,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/ghc/libraries/base/GHC/TopHandler.hs",
++        "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 19895,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/upstream/ghc/rts/RtsStartup.c",
++        "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
++      },
++      "source": {
++        "bytes": 19895,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/ghc/rts/RtsStartup.c",
++        "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 5248,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/upstream/postgrest/default.nix",
++        "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
++      },
++      "source": {
++        "bytes": 5248,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/default.nix",
++        "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 7424,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/upstream/postgrest/src/PostgREST/App.hs",
++        "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
++      },
++      "source": {
++        "bytes": 7424,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/App.hs",
++        "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 18693,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/upstream/postgrest/src/PostgREST/AppState.hs",
++        "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
++      },
++      "source": {
++        "bytes": 18693,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/AppState.hs",
++        "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 8002,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/upstream/postgrest/src/PostgREST/CLI.hs",
++        "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
++      },
++      "source": {
++        "bytes": 8002,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/CLI.hs",
++        "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
++      }
++    },
++    {
++      "candidate": {
++        "bytes": 1830,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher/upstream/postgrest/src/PostgREST/Unix.hs",
++        "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
++      },
++      "source": {
++        "bytes": 1830,
++        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/upstream/postgrest/src/PostgREST/Unix.hs",
++        "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
++      }
+     }
+   ]
+ }

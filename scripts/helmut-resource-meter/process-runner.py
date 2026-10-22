@@ -16,6 +16,7 @@ import time
 import re
 import socket
 import importlib.util
+import stat
 from pathlib import Path
 from network_meter import network,settled_network
 from http_receipts import HTTPReceiptValidationError,validate as validate_http_receipts
@@ -23,6 +24,125 @@ from http_receipts import HTTPReceiptValidationError,validate as validate_http_r
 REPO=Path('/workspace/helmut-cpu-epoch-20261015')
 NODE=Path('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node')
 DOCKER=['docker','--host=unix:///var/run/docker.sock']
+DATABASE_DIRECTORY=Path('/meter-database')
+BACKEND_RESULT='/meter-output/local-postgrest-backend/output/RESULT.SAFE.json'
+BACKEND_SCOPE='/meter-output/local-postgrest-backend/SCOPE.SAFE.json'
+
+def close_file(path,limit=65536,expected=None):
+    """Bounded stable regular input, including a nonblocking open after lstat."""
+    path=Path(path)
+    if not path.is_absolute() or path.resolve()!=path or path.is_symlink():raise RuntimeError('noncanonical close evidence')
+    before=path.lstat()
+    if not stat.S_ISREG(before.st_mode) or before.st_nlink!=1:raise RuntimeError('regular single-link close evidence required')
+    fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    try:
+        info=os.fstat(fd)
+        fields=('st_dev','st_ino','st_size','st_nlink','st_mtime_ns','st_ctime_ns')
+        if (not stat.S_ISREG(info.st_mode) or info.st_nlink!=1 or not 0<info.st_size<=limit
+                or any(getattr(info,k)!=getattr(before,k)for k in fields)):
+            raise RuntimeError('close evidence descriptor changed')
+        chunks=[];size=0
+        while size<=limit:
+            block=os.read(fd,min(65536,limit+1-size))
+            if not block:break
+            chunks.append(block);size+=len(block)
+        if size>limit or size!=info.st_size:raise RuntimeError('bounded complete close evidence required')
+        after,current=os.fstat(fd),path.lstat()
+        if (not stat.S_ISREG(after.st_mode) or not stat.S_ISREG(current.st_mode) or path.is_symlink() or path.resolve()!=path
+                or any(getattr(after,k)!=getattr(info,k)or getattr(current,k)!=getattr(info,k)for k in fields)):
+            raise RuntimeError('close evidence changed while reading')
+        raw=b''.join(chunks)
+        if expected is not None and (expected['bytes']!=size or expected['sha256']!=hashlib.sha256(raw).hexdigest()):
+            raise RuntimeError('close evidence pin drift')
+        return json.loads(raw)
+    finally:os.close(fd)
+
+def close_pin(pin,path=None):
+    if (not isinstance(pin,dict)or set(pin)!={'path','bytes','sha256'}or not isinstance(pin['path'],str)
+            or type(pin['bytes'])is not int or pin['bytes']<=0
+            or not isinstance(pin['sha256'],str)or re.fullmatch('[a-f0-9]{64}',pin['sha256'])is None
+            or not Path(pin['path']).is_absolute()or str(Path(pin['path']))!=pin['path']
+            or '..'in Path(pin['path']).parts or(path is not None and pin['path']!=path)):
+        raise RuntimeError('exact close evidence pin required')
+
+def optional_database_final(final,cfg,directory):
+    """PG exit alone cannot confirm the separately owned PostgREST lifecycle."""
+    backend=final.get('localPostgrestBackend')
+    fields={'enabled','pass','ownerExitCode','resultPin','scopePin','nonce','configPin','containerId','operationId','requestSHA256','failure','production'}
+    if (not isinstance(backend,dict)or set(backend)!=fields or backend['enabled']is not True or backend['pass']is not True
+            or type(backend['ownerExitCode'])is not int or backend['ownerExitCode']!=0
+            or backend['failure']is not None or backend['production']is not False
+            or type(final.get('serverExitCode'))is not int or final['serverExitCode']!=0):
+        raise RuntimeError('optional database owner closure not confirmed')
+    close_pin(backend['resultPin'],BACKEND_RESULT);close_pin(backend['scopePin'],BACKEND_SCOPE)
+    close_pin(backend['configPin'],'/tmp/helmut-resource-fixture.conf')
+    for key,pattern in [('nonce','[a-f0-9]{32}'),('containerId','[a-f0-9]{64}'),('requestSHA256','[a-f0-9]{64}'),
+                        ('operationId','synthetik500-resources[0-9]{2}-[a-f0-9]{12}')]:
+        if not isinstance(backend[key],str)or re.fullmatch(pattern,backend[key])is None:raise RuntimeError('owner closure identity malformed')
+    # These are the ONLY DB-to-app result/scope translations. Never open the
+    # path supplied in resultPin inside the application namespace.
+    receipt=close_file(directory/'local-postgrest-backend/output/RESULT.SAFE.json',expected=backend['resultPin'])
+    scope=close_file(directory/'local-postgrest-backend/SCOPE.SAFE.json',expected=backend['scopePin'])
+    if (receipt.get('schema')!='helmut-local-fullcase-postgrest-owner-result/1'or receipt.get('pass')is not True
+            or scope.get('schema')!='helmut-local-fullcase-postgrest-owner-scope/1'):
+        raise RuntimeError('actual owner result or scope invalid')
+    for key in ['scopePin','nonce','configPin','requestSHA256','containerId','operationId']:
+        if receipt.get(key)!=backend[key]:raise RuntimeError('actual owner result binding differs')
+    for key in ['nonce','configPin','requestSHA256','containerId','operationId']:
+        if scope.get(key)!=backend[key]:raise RuntimeError('actual owner scope binding differs')
+    for value in [receipt,scope]:
+        if value.get('production')is not False or value.get('automaticRetry')is not False:
+            raise RuntimeError('local owner result authority differs')
+    if (receipt.get('executionAuthority')is not False or receipt.get('full500Qualification')is not False
+            or receipt.get('reason')!='NORMAL_BOUND_STOP'):
+        raise RuntimeError('owner result is not a normal local close')
+    plan_pin=cfg['localPostgrestBackendPlanPin'];close_pin(plan_pin)
+    plan=close_file(plan_pin['path'],limit=1024*1024,expected=plan_pin)
+    host=close_file(directory/'LOCAL_POSTGREST_BACKEND_HOST_BINDING.SAFE.json')
+    if (plan.get('schema')!='helmut-local-supervised-postgrest-backend-plan/1'or plan.get('mode')!='supervised-owner-v1'
+            or plan.get('production')is not False or plan.get('automaticRetry')is not False
+            or plan.get('operationId')!=backend['operationId']or plan.get('targetDatabase')!=scope.get('targetDatabase')
+            or host.get('localPostgrestBackendPlanPin')!=plan_pin or host.get('containerId')!=backend['containerId']
+            or host.get('controllerInvocationId')!=scope.get('controllerInvocationId')):
+        raise RuntimeError('actual owner close differs from configured backend')
+    return backend
+
+def close_owned_database(recipe=None,reason='OWNED_APPLICATION_EXIT_INCLUDING_EARLY_AUTHORITY_FAILURE\n'):
+    directory=DATABASE_DIRECTORY
+    if not directory.exists():
+        if recipe is not None:raise RuntimeError('expected owned database mount missing')
+        return {'mounted':False}
+    if directory.resolve()!=directory or directory.is_symlink():raise RuntimeError('owned database mount invalid')
+    cfg=close_file(directory/'DATABASE_CONFIG.SAFE.json')
+    optional='localPostgrestBackendPlanPin'in cfg
+    stop_relative='control/STOP_DATABASE'if optional else'STOP_DATABASE'
+    if (cfg.get('scope')not in ['small-meter-validation','owner-approved-local500-resources']or
+            cfg.get('freshInitdbVolume')is not True or cfg.get('stopFile')!='/meter-output/'+stop_relative or
+            cfg.get('finalFile')!='/meter-output/DATABASE_FINAL.SAFE.json'):
+        raise RuntimeError('owned database shutdown identity invalid')
+    if optional:close_pin(cfg['localPostgrestBackendPlanPin'])
+    if recipe is not None:
+        if (recipe.get('databaseStopFile')!=str(directory/stop_relative)or recipe.get('databaseFinalFile')!=str(directory/'DATABASE_FINAL.SAFE.json')
+                or recipe.get('localPostgrestBackendPlanPin')!=cfg.get('localPostgrestBackendPlanPin')):
+            raise RuntimeError('recipe database close binding differs')
+    target=directory/stop_relative
+    if target.parent.resolve()!=target.parent or target.is_symlink():raise RuntimeError('owned database stop symlink rejected')
+    try:
+        fd=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW|os.O_NONBLOCK,0o600)
+    except FileExistsError:
+        info=target.lstat()
+        if not stat.S_ISREG(info.st_mode)or info.st_nlink!=1:raise RuntimeError('owned database stop file invalid')
+    else:
+        try:os.write(fd,reason.encode())
+        finally:os.close(fd)
+    until=time.monotonic()+(180 if optional else 45)
+    final=directory/'DATABASE_FINAL.SAFE.json'
+    while not final.exists()and time.monotonic()<until:time.sleep(.05)
+    if not final.exists():raise RuntimeError('owned database shutdown not confirmed')
+    result=close_file(final)
+    if result.get('serverExitCode')!=0:raise RuntimeError('owned database clean shutdown failed')
+    backend=optional_database_final(result,cfg,directory)if optional else None
+    return {'mounted':True,'cleanShutdownConfirmed':True,**({'localPostgrestBackend':backend}if optional else{})}
 
 def save_new(path,value):
     with Path(path).open('x') as f:f.write(json.dumps(value,indent=2)+'\n')
@@ -185,11 +305,8 @@ def run_workflow():
             save_new(out/'LAST_LIVE_DATABASE_SNAPSHOT.SAFE.json',row)
         except Exception as e:meter_errors.append(type(e).__name__)
     if recipe.get('databaseStopFile'):
-        Path(recipe['databaseStopFile']).write_text('NORMAL_MEASUREMENT_SHUTDOWN\n')
-        until=time.monotonic()+45
-        final=Path(recipe['databaseFinalFile'])
-        while not final.exists() and time.monotonic()<until:time.sleep(.05)
-        if not final.exists():record_failure('DATABASE_LAST_EXIT_NOT_CONFIRMED')
+        try:close_owned_database(recipe,'NORMAL_MEASUREMENT_SHUTDOWN\n')
+        except Exception:record_failure('DATABASE_LAST_EXIT_NOT_CONFIRMED')
     for pin in recipe.get('sourcePins',[]):pinned(pin)
     if recipe['scope']=='owner-approved-local500-resources':
         authority.verify_connection_files(authority.pin_json(recipe['fixtureConnectionPin']))
@@ -230,24 +347,7 @@ def run_workflow():
 
 def stop_owned_database():
     """Fixed owned mount, never a path or container name from invalid JSON."""
-    directory=Path('/meter-database')
-    if not directory.exists():return {'mounted':False}
-    if directory.resolve()!=directory or directory.is_symlink():raise RuntimeError('owned database mount invalid')
-    cfg=json.loads((directory/'DATABASE_CONFIG.SAFE.json').read_text())
-    if (cfg.get('scope')not in ['small-meter-validation','owner-approved-local500-resources']or
-        cfg.get('freshInitdbVolume')is not True or cfg.get('stopFile')!='/meter-output/STOP_DATABASE' or
-        cfg.get('finalFile')!='/meter-output/DATABASE_FINAL.SAFE.json'):
-        raise RuntimeError('owned database shutdown identity invalid')
-    target=directory/'STOP_DATABASE'
-    if target.is_symlink():raise RuntimeError('owned database stop symlink rejected')
-    if not target.exists():target.write_text('OWNED_APPLICATION_EXIT_INCLUDING_EARLY_AUTHORITY_FAILURE\n')
-    until=time.monotonic()+45
-    final=directory/'DATABASE_FINAL.SAFE.json'
-    while not final.exists()and time.monotonic()<until:time.sleep(.05)
-    if not final.exists():raise RuntimeError('owned database shutdown not confirmed')
-    result=json.loads(final.read_text())
-    if result.get('serverExitCode')!=0:raise RuntimeError('owned database clean shutdown failed')
-    return {'mounted':True,'cleanShutdownConfirmed':True}
+    return close_owned_database()
 
 def main():
     # Before even the error handler: never enumerate/signal host processes if

@@ -93,6 +93,8 @@ def accepted_metadata(acceptance_pin,connection_pin,recipe_template_pin,*,planni
             if r.get('model')!='deepseek-v4-pro' or r.get('route',{}).get('effort')!='high' or r.get('payload',{}).get('summary',{}).get('status')!='ok':raise RuntimeError('full connection independent review missing')
     owner=C.read_pin(recipe['freshOwnerGO']);day=C.read_pin(recipe['dayBindingAcceptance'])
     I.verify_fixture_owner_policy(owner)
+    if not planning and (owner.get('sourceCommit')!=acceptance.get('commit')or connection.get('sourceCommit')!=acceptance.get('commit')):
+        raise RuntimeError('current owner/evidence/connection source commit differs')
     I.A.validate_owner(owner,connection,planning=planning)
     descriptor=C.read_pin(connection['atomicUsageInput']) if connection.get('atomicUsageInput') else None
     local=Calendar.admit(day,C.read_pin,descriptor=descriptor,operation=connection['operationId'])

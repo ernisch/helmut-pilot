@@ -1,0 +1,127 @@
+{
+  "schema": "helmut-file-charge-reviewable-byte-copies/1",
+  "status": "PASS_BYTE_IDENTICAL_COPIES",
+  "copies": [
+    {
+      "source": {
+        "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/ROOT_RESUME_PROTECTION.SAFE.json",
+        "bytes": 2057,
+        "sha256": "c55bcce0b5281e738c317246eb8061d9e6b9988a13854ea10f866abfe214ddc0"
+      },
+      "reviewable": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/file-charge-20261021/ROOT_RESUME_PROTECTION.SAFE.json",
+        "bytes": 2057,
+        "sha256": "c55bcce0b5281e738c317246eb8061d9e6b9988a13854ea10f866abfe214ddc0"
+      }
+    },
+    {
+      "source": {
+        "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/capacity-review/FILE_CHARGE_FINDINGS.SAFE.json",
+        "bytes": 15946,
+        "sha256": "1a211aac7bd2777248eeae7420ca1be84e47787af1a8641f1ccd74937cbc5ba5"
+      },
+      "reviewable": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/file-charge-20261021/FILE_CHARGE_FINDINGS.SAFE.json",
+        "bytes": 15946,
+        "sha256": "1a211aac7bd2777248eeae7420ca1be84e47787af1a8641f1ccd74937cbc5ba5"
+      }
+    },
+    {
+      "source": {
+        "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/launcher-review/SOURCE_REVIEW.SAFE.json",
+        "bytes": 18746,
+        "sha256": "4a1894b31e14064dd91b7657ee2efb2633946dafc3fe1fb3ade7457605013b7d"
+      },
+      "reviewable": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/file-charge-20261021/SOURCE_REVIEW.SAFE.json",
+        "bytes": 18746,
+        "sha256": "4a1894b31e14064dd91b7657ee2efb2633946dafc3fe1fb3ade7457605013b7d"
+      }
+    },
+    {
+      "source": {
+        "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/METHOD_REVIEW.SAFE.json",
+        "bytes": 13897,
+        "sha256": "186c5b12e38a2cf443219b3f1be0d207d840271e1e824912189fff872f82e0f8"
+      },
+      "reviewable": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/file-charge-20261021/METHOD_REVIEW.SAFE.json",
+        "bytes": 13897,
+        "sha256": "186c5b12e38a2cf443219b3f1be0d207d840271e1e824912189fff872f82e0f8"
+      }
+    },
+    {
+      "source": {
+        "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/CORRECTION_ADDENDUM.SAFE.json",
+        "bytes": 4510,
+        "sha256": "a55aa10c174137921f57ac71f620a0c2d351edd144cad34de94fa9952697c366"
+      },
+      "reviewable": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/file-charge-20261021/CORRECTION_ADDENDUM.SAFE.json",
+        "bytes": 4510,
+        "sha256": "a55aa10c174137921f57ac71f620a0c2d351edd144cad34de94fa9952697c366"
+      }
+    },
+    {
+      "source": {
+        "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/launcher-review/CLI_ARCHIVE_FEASIBILITY.SAFE.json",
+        "bytes": 23622,
+        "sha256": "e0f30c08e622232229cc942ef2b4b70070b276f69475143d805a55ef208915da"
+      },
+      "reviewable": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/file-charge-20261021/CLI_ARCHIVE_FEASIBILITY.SAFE.json",
+        "bytes": 23622,
+        "sha256": "e0f30c08e622232229cc942ef2b4b70070b276f69475143d805a55ef208915da"
+      }
+    },
+    {
+      "source": {
+        "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/capacity-review/CLI_ARCHIVE_REQUIREMENTS.SAFE.json",
+        "bytes": 9057,
+        "sha256": "762636b05912bc5a4443aa4a7bd1788f002065a6079f960f4e667a503f0f89dd"
+      },
+      "reviewable": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/file-charge-20261021/CLI_ARCHIVE_REQUIREMENTS.SAFE.json",
+        "bytes": 9057,
+        "sha256": "762636b05912bc5a4443aa4a7bd1788f002065a6079f960f4e667a503f0f89dd"
+      }
+    },
+    {
+      "source": {
+        "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/CLI_ARCHIVE_INDEPENDENT_SCOPE.SAFE.json",
+        "bytes": 14978,
+        "sha256": "415e684b9657861834d7993b82ae10a56b95184e6e49fa582f17a8e150dc49dd"
+      },
+      "reviewable": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/file-charge-20261021/CLI_ARCHIVE_INDEPENDENT_SCOPE.SAFE.json",
+        "bytes": 14978,
+        "sha256": "415e684b9657861834d7993b82ae10a56b95184e6e49fa582f17a8e150dc49dd"
+      }
+    },
+    {
+      "source": {
+        "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/capacity-review/DELTA_ARCHIVE_FEASIBILITY.SAFE.json",
+        "bytes": 6597,
+        "sha256": "0cce9c08a213ddd796149ea3a083adf70eed22efa0bcc3e4cdecf062670c84e9"
+      },
+      "reviewable": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/docs/betrieb/belege/file-charge-20261021/DELTA_ARCHIVE_FEASIBILITY.SAFE.json",
+        "bytes": 6597,
+        "sha256": "0cce9c08a213ddd796149ea3a083adf70eed22efa0bcc3e4cdecf062670c84e9"
+      }
+    }
+  ],
+  "copyCount": 9,
+  "copiedBytes": 109410,
+  "historicalMethodReportPreservedWithExplicitCorrection": true,
+  "originalEvidencePreserved": true,
+  "databasePayloadsCopied": false,
+  "CLIExecutablePayloadsCopied": false,
+  "archiveOrDeletionAuthority": false,
+  "testsExecuted": 0,
+  "nativeStarts": 0,
+  "archives": 0,
+  "deletions": 0,
+  "productionActions": 0,
+  "full500": false
+}

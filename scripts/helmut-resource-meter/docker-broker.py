@@ -6,10 +6,33 @@ Only exec into the one owned DB and its fixed network inspect are allowed.
 Private stdin/stdout pass through bounded frames; command arguments/data are
 never retained in the safe audit. No shell interpretation in this transport.
 """
-import json,os,socket,struct,subprocess,sys,threading,time
+import hashlib,importlib.util,json,os,socket,struct,subprocess,sys,threading,time
 from pathlib import Path
 
 MAX=65536
+OWNER_START='helmut-local-postgrest-owner-start'
+OWNER_PYTHON='/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python'
+OWNER_SUPERVISOR='/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/database-supervisor.py'
+
+def owner_enabled(cfg):
+    return cfg.get('localPostgrestBackendPlanPin') is not None
+
+def optional_backend(cfg):
+    """Validate the explicit immutable producer before opening the broker."""
+    if not owner_enabled(cfg):return None
+    p=cfg['localPostgrestBackendPlanPin'];source=Path(p['path'])
+    if (set(p)!={'path','bytes','sha256'} or source.resolve()!=source or source.is_symlink()
+            or not source.is_file()):raise RuntimeError('exact optional backend plan pin required')
+    raw=source.read_bytes()
+    if len(raw)!=p['bytes'] or len(raw)>1024*1024 or hashlib.sha256(raw).hexdigest()!=p['sha256']:
+        raise RuntimeError('optional backend plan drift')
+    plan=json.loads(raw)
+    spec=importlib.util.spec_from_file_location('broker_postgrest_backend',Path(__file__).with_name('local-postgrest-owner.py'))
+    owner=importlib.util.module_from_spec(spec);spec.loader.exec_module(owner)
+    owner.read_backend_plan(p,case_directory=plan['caseDirectory'],target_database=plan['targetDatabase'],operation_id=plan['operationId'])
+    if cfg['containerName']!='helmut-meter-db-w20-'+Path(plan['caseDirectory']).name.removeprefix('attempt-'):
+        raise RuntimeError('backend broker case differs')
+    return plan
 def exact(s,n):
     b=bytearray()
     while len(b)<n:
@@ -21,12 +44,14 @@ def exact(s,n):
 def allowed(argv,cfg):
     a=list(argv)
     if a[:1]==['--host=unix:///var/run/docker.sock']:a=a[1:]
+    if a==[OWNER_START]:return owner_enabled(cfg)
     targets={cfg['containerName'],cfg['containerId']}
     if len(a)==4 and a[:2]==['inspect','--format']:
         return a[3] in targets and a[2] in ['{{json .NetworkSettings.Networks}}','{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}']
     if not a or a.pop(0)!='exec':return False
     while a and a[0].startswith('-'):
         flag=a.pop(0)
+        if flag=='-d' and owner_enabled(cfg):return False
         if flag in ['-i','-d']:continue
         if flag=='-u' and a and a.pop(0)=='postgres':continue
         return False
@@ -34,13 +59,22 @@ def allowed(argv,cfg):
     cmd=a.pop(0)
     if cmd in ['psql','pg_dump','pg_restore']:return True
     if cmd=='sha256sum':return a==[cfg['postgrestBinary']]
-    if cmd==cfg['postgrestBinary']:return a==[cfg['postgrestConfig']]
-    if cmd=='sh':return a==['-c','umask 077; test ! -e '+cfg['postgrestConfig']+' && cat > '+cfg['postgrestConfig']]
+    if cmd==cfg['postgrestBinary']:return not owner_enabled(cfg) and a==[cfg['postgrestConfig']]
+    if cmd=='sh':return not owner_enabled(cfg) and a==['-c','umask 077; test ! -e '+cfg['postgrestConfig']+' && cat > '+cfg['postgrestConfig']]
     return False
+
+def docker_arguments(argv,cfg):
+    if not allowed(argv,cfg):raise RuntimeError('unapproved broker command')
+    a=list(argv)
+    if a[:1]==['--host=unix:///var/run/docker.sock']:a=a[1:]
+    if a==[OWNER_START]:
+        return ['exec','-i',cfg['containerId'],OWNER_PYTHON,OWNER_SUPERVISOR,'--submit-local-postgrest-request']
+    return a
 
 def server(config):
     cfg=json.loads(Path(config).read_text());out=Path(cfg['output']);s=socket.socket(socket.AF_UNIX)
     if not cfg['containerName'].startswith('helmut-meter-db-'):raise RuntimeError('only owned isolated database')
+    optional_backend(cfg)
     s.bind(str(out/'socket'));os.chmod(out/'socket',0o600);s.listen(16);s.settimeout(.1)
     stats={'schema':'helmut-local-docker-command-broker/1','requests':0,'denied':0,'stdinBytes':0,'stdinWrittenBytes':0,'stdoutBytes':0,'stderrBytes':0,'errors':0,'argumentsAndPayloadsRetained':False,'bytesAreDockerIPCNotBillableNetwork':True}
     workers=[];lock=threading.Lock()
@@ -56,7 +90,7 @@ def server(config):
                 with lock:stats['denied']+=1
                 frame(b'X',b'64');return
             with lock:stats['requests']+=1
-            child=subprocess.Popen(['/usr/local/bin/docker','--host=unix:///var/run/docker.sock',*([*argv[1:]] if argv[:1]==['--host=unix:///var/run/docker.sock'] else argv)],
+            child=subprocess.Popen(['/usr/local/bin/docker','--host=unix:///var/run/docker.sock',*docker_arguments(argv,cfg)],
                 stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
                 env={'PATH':'/usr/local/bin:/usr/bin:/bin','LANG':'C.UTF-8'})
             def input_copy():

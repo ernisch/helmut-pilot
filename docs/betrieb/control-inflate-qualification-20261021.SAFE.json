@@ -1,0 +1,793 @@
+{
+  "actualQualifications": {
+    "changedDriverSyntax": 1,
+    "comparatorGuards": 36,
+    "existingCallerGroups": 19,
+    "existingCallerNegativeCases": 42,
+    "hostExitCodes": [
+      0,
+      1,
+      1,
+      1,
+      1
+    ],
+    "originalCodecVectors": 14,
+    "pythonASTs": 5,
+    "repositoryCodecResultExactlyEqualToOriginal": true,
+    "repositoryCodecVectors": 14
+  },
+  "candidateIntegrated": false,
+  "canonicalPartsUnchanged": true,
+  "canonicalUUnchanged": true,
+  "comparatorSourceReview": {
+    "atUTC": "2026-10-21T06:42:43.143558+00:00",
+    "blockingFindings": [],
+    "candidateSourceReviewPin": {
+      "bytes": 12103,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/SOURCE_REVIEW.SAFE.json",
+      "sha256": "80bbeab5769a6f8bf0140f66b356083af2636640a968f0cc3b784d03d4e2fbac"
+    },
+    "caseAndAdoptionReview": {
+      "exactOrderedCases": [
+        {
+          "authRPCs": 0,
+          "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-ecda0cd673313ed20dfd14c8",
+          "index": 0,
+          "measurementMode": "lifecycle-only",
+          "variant": "NONE"
+        },
+        {
+          "authRPCs": 27,
+          "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-4523976844cb460adc39e47a",
+          "index": 1,
+          "measurementMode": "control-inflate",
+          "variant": "BEFORE"
+        },
+        {
+          "authRPCs": 27,
+          "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-a5f471e46098179961dc0b55",
+          "index": 2,
+          "measurementMode": "control-inflate",
+          "variant": "AFTER"
+        },
+        {
+          "authRPCs": 27,
+          "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-7c633959579530d10211eb3d",
+          "index": 3,
+          "measurementMode": "control-inflate",
+          "variant": "AFTER"
+        },
+        {
+          "authRPCs": 27,
+          "case": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/cases/inflate-77ea98765d654521e3f426e2",
+          "index": 4,
+          "measurementMode": "control-inflate",
+          "variant": "BEFORE"
+        }
+      ],
+      "freshLifecycle": "Work requires actual PASS from exact first new host case with identical final PREP pin, 0Auth/noNode, source827a, matching worker/selection and strict persisted same-case stop receipt; only exact stored /bench basename translates to the exact same host case.",
+      "launcher": "Exact five-case allowlist, exact mode/variant per case, canonical nonsymlink paths, absent case for prepare, source closure and exact hashed intent/plan required. NONE only lifecycle; BEFORE/AFTER only work.",
+      "onceAndTTL": "Exclusive ROOT_ADOPTION and STARTED evidence; no STARTED at adoption, independent 24hex nonce per adoption; writer8min TTL, launcher checks adoption/preflight freshness <=15min and exact source/policy/selection. No automatic sequence/retry/start in writer.",
+      "rootWriterExternalGate": "Pinned Root trust-decision writer, outside metered closure, additionally requires this source PASS, candidate source PASS, exact codec/caller/qualification pins; each earlier ordered index ACTUAL PASS plus actual outer tool exit0 bound to actual pin; independent lifecycle PASS with exactly [fresh lifecycle actual pin] before index>0.",
+      "trustBoundary": "Independent lifecycle/order requirements are Root adoption writer gates, rather than an additional independent-review parser inside the metered worker. Root must execute exactly the reviewed writer and host under nonoptimized pinned Python."
+    },
+    "closurePinReadbackPin": {
+      "bytes": 18399,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/COMPARATOR_VERIFIED_CLOSURE_PINS.PRIVATE.json",
+      "sha256": "eb20389c10362317902406373e94bcf21e3f051cc762be8ee8f3441bca105b37"
+    },
+    "futureActualReviewContract": {
+      "finalRequiredFields": [
+        "schema",
+        "status",
+        "resultPins",
+        "preparedPin",
+        "hostPin",
+        "functionalEvidencePASS",
+        "sharedMemoryRuleMet",
+        "runtimeRuleMet",
+        "integrationGatePassed",
+        "integrationDecision"
+      ],
+      "finalResultPins": "Exactly ordered [LIFE, BEFORE1, AFTER1, AFTER2, BEFORE2] actual pins.",
+      "finalReviewPath": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/ACTUAL_REVIEW.SAFE.json",
+      "finalSchema": "helmut-control-inflate-independent-actual-review/1",
+      "finalStatus": "Literal PASS only after complete genuine five-case evidence acceptance; benefit/integration decided separately.",
+      "functionalAcceptance": "Recompute critical source/adoption/TTL/nonce/once/source-manifest/catalog/6000/CAS/ACK/hash/transport/capture/deadline/event-zero/EOF/process-exit/emptygroup evidence from closed cases and actual outer tool exit receipts. Do not rerun original PGDATA payload hashes or spent actors.",
+      "inferenceLimits": "Finite bounded comparison only, no guaranteed plateau/leak/native allocator attribution/full500/reserve proof; no new provider/500 authorization.",
+      "lifecyclePASSOnlyAfterCompleteFreshSameFreezeProofs": true,
+      "lifecycleResultPins": "Exactly [fresh first lifecycle ACTUAL_RESULT pin]; no value invented before actual.",
+      "lifecycleReviewPath": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+      "lifecycleSchema": "helmut-control-inflate-independent-lifecycle-actual-review/1",
+      "runtimeAcceptance": "All fixed deadlines pass and neither mean CPU nor mean wall regresses >10percent. No substitute endpoint pairs or posthoc extra cases.",
+      "sharedMemoryAcceptance": "All4 whole-group lifetime peaks mandatory. max(AFTER)<min(BEFORE), both adjacent paired differences, raw4 and arithmetic means; means or source copy elimination alone do not satisfy gate."
+    },
+    "guardEquivalencePin": {
+      "bytes": 10691,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/GUARD_EQUIVALENCE.SAFE.json",
+      "sha256": "93542313c4037563d8c8eebea375b9d9ae98b08bf151ab873a268b705d5be4ca"
+    },
+    "hostEntryReview": {
+      "authentication": "NOFOLLOW regular-file bounded single reads, stable metadata before/after, exact PREP SHA then exact common/run bytes from files; compile precisely those authenticated bytes.",
+      "flags": "Requires isolated/no_site/dont_write_bytecode; rejects optimization before assertions, metadata reads or source loads.",
+      "moduleLoading": "Registers newly created common module without sys.path/env mutation or SourceFileLoader/pycache selection; dynamically loaded native/JIT/shutdown sources authenticate bytes before compilation.",
+      "scope": "Resource operations occur only after explicit prepare/start CLI selection and applicable source/adoption guards."
+    },
+    "hostPin": {
+      "bytes": 2434,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate.py",
+      "sha256": "9e95ca77673d2c3b55bc917c0852c32c5d4c92a2c91b443b8410b5ff6e701c4d"
+    },
+    "independentReadback": {
+      "allListedCurrentBytesHashed": true,
+      "allUniquePreparedClosureAndHostOnlyPinCount": 74,
+      "bothNewSQLProsrcHashesIndependentlyRecomputed": true,
+      "changedFunctionBlocks": {
+        "common.py": [
+          "uuid4",
+          "selected_measurement",
+          "lifecycle_proof"
+        ],
+        "control-driver.js": [
+          "boundary",
+          "main"
+        ],
+        "run.py": [
+          "prepared",
+          "safe_case",
+          "prepare",
+          "start",
+          "main"
+        ],
+        "worker.py": [
+          "main"
+        ]
+      },
+      "completeRecordedSourceDeltaRecomputedEqual": true,
+      "hostEqualsTemplateWithOnlyReviewedPreparedSHAReplacement": true,
+      "hostOnlyInputs": 2,
+      "literalEqualFunctionBlocks": 44,
+      "localFiles": 29,
+      "metadataAndCodeInputs": 72,
+      "originalPGDATAPayloadReads": false,
+      "runtimeBinding553PayloadReplay": false,
+      "runtimePayloadActualQualificationRequiredInsideFreshGroup": true,
+      "unchangedParentBodyPairs": 24
+    },
+    "loadedSources": {
+      "AFTER": {
+        "bytes": 25646,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/AFTER_U.js",
+        "sha256": "40d7e584e7856ea893a491d0598ca55b071fc9a07d2dfeb72d55cd10b14b9d1a"
+      },
+      "BEFORE": {
+        "bytes": 25446,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/BEFORE_U.js",
+        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      },
+      "canonicalReadonlyOverlaysVerifiedByWorkerAndNode": true,
+      "commonPartsPin": {
+        "bytes": 22169,
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/COMMON_PARTS.js",
+        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      },
+      "hostOriginal939AndF300CheckedSeparatelyBeforeAndAfterStart": true,
+      "onlyProductDelta": "cachedControlText opts chunkSize=textBytes+1 only for validated private compressed textBytes<=8MiB; >8MiB legacy chunking. The separately reviewed candidate bytes are exact in AFTER.",
+      "sameCorrectedRendererAndGraphBothArms": {
+        "graph": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0",
+        "renderer": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32"
+      },
+      "sameSQLInstallationsBothArms": {
+        "graph": {
+          "bytes": 13047,
+          "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/INSTALL_NEW_GRAPH.sql",
+          "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+        },
+        "renderer": {
+          "bytes": 17398,
+          "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/INSTALL_NEW_RENDERER.sql",
+          "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+        }
+      },
+      "unselectedOLDArtifactsRetainedButSelectorCannotChooseThem": true
+    },
+    "parentPreparedPin": {
+      "bytes": 46155,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+      "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+    },
+    "preparedPin": {
+      "bytes": 47700,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/PREPARED.SAFE.json",
+      "sha256": "ba4358e30778ce0366446439f46016b44dadc5565302988289f8a55efcb69549"
+    },
+    "resourceAndClosureReview": {
+      "SQLSeconds": 30,
+      "admissionBytes": 822083584,
+      "capacity": "Only local admission and8GiB floor apply. Planning floors/free snapshots are not reservations, full500 admission, reserve proof or additional qualified reclaim.",
+      "combinedChildCaptureBytes": 262144,
+      "counterAcceptanceBoundary": "Inherited launcher guards directly reject oom/oom_kill and retain all event counters; independent actual review must explicitly verify required high/max/OOM counters are present and zero. This review does not infer zeros before actuals.",
+      "deadlineCoverage": "Same30s capture budget spans selector/read/observer SQL, pipe EOF, child wait, evidence status and return; actual fetch AbortSignal covers response body consumption. Whole-client30s is tighter than separate30s Auth cap. Driver wall receipts are measured per operation. Native work300/final360 cover same-group setup through closure; failure kill/reap never grants PASS.",
+      "end": "Final exact known CID exit0/Pid0/notRunning/notOOMKilled, setup helpers exited, final group empty through last owned exit and same PREP/source inputs rechecked. Working copy/hulls retained; no automatic cleanup.",
+      "fetchMaxSeconds": 20,
+      "hostFloorBytes": 8589934592,
+      "includingClosureSeconds": 360,
+      "lockSeconds": 1,
+      "mountAndRuntime": "Native policy installed before runtime/source/copy/JIT/PG. Exact read-only source and complete disk copy manifests; persistent disk PGDATA, original JIT/socket tmpfs only. Exact all bind destinations and runtime553, private cgroup namespace, network none, read-only rootfs, UID1000, no caps/new privileges/log driver; selected canonical U/Parts overlays are read-only and pinned.",
+      "native": {
+        "memory.high": 1399996416,
+        "memory.max": 1547997184,
+        "memory.swap.max": 0
+      },
+      "nodeBatchSeconds": 30,
+      "nodeOldMiB": 384,
+      "nodeSemiMiB": 16,
+      "persistentCopyLimitBytes": 805306368,
+      "shutdown": "Unchanged strict known direct PostgREST PID initially live, SIGTERM, bounded reap and raw signed status, EOF/drain/close/persist before PASS; -2 only exact original12.2.3 binary/config/version/upstream policy. Timeout/kill/any error fails. PG exit0/full bounded log EOF/no errors/drain ended plus offline shutdown.",
+      "totalCaseEvidenceBytes": 4194304,
+      "workSeconds": 300
+    },
+    "reviewerActions": {
+      "DockerActions": 0,
+      "SQLActions": 0,
+      "actualCasesAcceptedByThisSourceReport": 0,
+      "full500Authorized": false,
+      "nativeStarts": 0,
+      "ownReportWritesOnly": true,
+      "providerCalls": 0,
+      "sourceAndMetadataReads": true,
+      "sourceOrCaseEdits": 0,
+      "subjectImports": 0,
+      "subjectTests": 0
+    },
+    "rootAdoptionWriterPin": {
+      "bytes": 6324,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/root-adopt-comparison-v1.py",
+      "sha256": "d3bd06e1292bceaa0f5f689ee8af7819a09401b82f8cd3ca88639b2aa9a515cb"
+    },
+    "rootCallerActualPin": {
+      "bytes": 4426,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CONTROL_VIEW_ACTUAL.SAFE.json",
+      "sha256": "7728297953262887189766049a228669e6a7b61769469d055f515886c6f72085"
+    },
+    "rootCanonicalFreezePin": {
+      "bytes": 1136,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CANONICAL_FREEZE.SAFE.json",
+      "sha256": "07705afc35a1377b02ef4adf1cd05a8b1290269f262bcafae90249ccd95fda88"
+    },
+    "rootCodecActualPin": {
+      "bytes": 6695,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CODEC_ACTUAL.SAFE.json",
+      "sha256": "5c3d83b0767ff6de4ab0982ac533ff4a839ac4f10f674229013255dbfd8131ce"
+    },
+    "rootComparisonIntentPin": {
+      "bytes": 5192,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_COMPARISON_INTENT.SAFE.json",
+      "sha256": "e0d224b3620cc10de99c35c5e98780dc4762c718ea310fe08ea3438c4f3074aa"
+    },
+    "rootFiveCasePlanPin": {
+      "bytes": 1575,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_FIVE_CASE_PLAN.SAFE.json",
+      "sha256": "13b65a073b1c5b25ef850491dc94f6c84e4bea7a6ae6cd326c299f76f2d0d0c1"
+    },
+    "rootQualificationPin": {
+      "bytes": 5478,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_COMPARATOR_QUALIFICATION.SAFE.json",
+      "sha256": "00f34fec7eaad34f2431758abb9ad438b3d5790e70ebc15e10b22225305529b7"
+    },
+    "rootQualificationReadback": {
+      "allClosurePinsCheckedByRoot": true,
+      "changedDriverNodeSyntaxExit0": true,
+      "claimedByRootAndPinBoundNotRerunHere": true,
+      "codecVectors": 14,
+      "existingCallerGroups": 19,
+      "existingCallerNegatives": 42,
+      "hostCLIExitCodes": [
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      "nativeOrSQLQualificationActions": 0,
+      "pureGuardChecks": 36,
+      "pythonASTFiles": 5
+    },
+    "schema": "helmut-control-inflate-independent-comparator-source-review/1",
+    "scopePin": {
+      "bytes": 15509,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/SCOPE.SAFE.json",
+      "sha256": "73c5c242ef7ba876e0bfccab4510e773085702fdbc1ee0fd1810970d0a4a3ffe"
+    },
+    "sourceDeltaPin": {
+      "bytes": 59718,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-native-launcher/SOURCE_DELTA.PRIVATE.diff",
+      "sha256": "618a01af2525aa4678a3d197aa1f5fd8710cf14934660ad673039fbb2b148658"
+    },
+    "sourceReviewer": "/root/stability_evidence_review",
+    "status": "PASS_SOURCE_ONLY",
+    "verifierSourcePin": {
+      "bytes": 21983,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/review_comparator_source.py",
+      "sha256": "49ed965a8740a0c90600a1908e779eeffc70fdb51bd0673de529ddd8eb033f96"
+    },
+    "workloadAndObserverReview": {
+      "authRPCs": 27,
+      "boundaries": 6,
+      "boundary": "6 exact sequential marker/observation/ACK triplets, exact round/edge/captured child PID; atomic publish both sides. Only known marker rename disappearance1..6 may translate to bounded regular counterpart during evidence accounting.",
+      "confirmedCAS": 4,
+      "controls": 18,
+      "fullReads": 5,
+      "genuineTransport": "One serial selected-U call produces one passive native send and one complete framed response; exact route/POST/target; no retry. Every decoded object is delivered unchanged to U before acceptance and logical verification.",
+      "memoryLimits": "Group current/peak/stat/events/cpu/io are not added to per-process RSS. Own-known PID status unreadability stays unknown. PG counters/WAL/writes may lag and do not constitute RAM attribution. No forced GC, cache eviction, stats flush or peak reset.",
+      "mutations": 3,
+      "observer": "Parent installObserver/request/invoke/verifyLogical/memory/validateProof are literal equal. Stringify observer calls original once with unchanged this/args and returns original string, records only scalar size/count at exact canonical controlText frame. Same field/history hash work and natural GC observation both arms; no full Auth retained across controls.",
+      "proofs": "All27 native history proofs preserve exact6000 lineage;23 unique read nonces,18 graph nonce/binding receipts,9 full read/confirmedACK logical history hashes,4 fresh CAS revisions with no ledger additions and immutable prior snapshot/state checks.",
+      "restoration": "3 bounded local probes removed by confirmed restore ACK, then fresh final full read confirms original state/proof; independent small before/after SQL permits only exact fresh final revision UUID and its independently measured physical SHA; refs/root/ledger6000 and entire remaining catalog/ABI/ACL exact.",
+      "restoreCount": 1,
+      "rounds": 3
+    }
+  },
+  "full179Repeated": false,
+  "full500": false,
+  "inputPins": [
+    {
+      "bytes": 6695,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CODEC_ACTUAL.SAFE.json",
+      "sha256": "5c3d83b0767ff6de4ab0982ac533ff4a839ac4f10f674229013255dbfd8131ce"
+    },
+    {
+      "bytes": 4426,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CONTROL_VIEW_ACTUAL.SAFE.json",
+      "sha256": "7728297953262887189766049a228669e6a7b61769469d055f515886c6f72085"
+    },
+    {
+      "bytes": 5478,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_COMPARATOR_QUALIFICATION.SAFE.json",
+      "sha256": "00f34fec7eaad34f2431758abb9ad438b3d5790e70ebc15e10b22225305529b7"
+    },
+    {
+      "bytes": 413,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_QUALIFICATION_TOOL_COMPLETION.SAFE.json",
+      "sha256": "7b7ed2a88a2306b1a1193c182f8391e85f6ca9f2ec40bcd4573f4c74c8814081"
+    },
+    {
+      "bytes": 6716,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_REPOSITORY_CODEC_ACTUAL.SAFE.json",
+      "sha256": "f3005a57d4b47b1a2743acf2159720c0d8204975f8989d8476de7a898a471099"
+    },
+    {
+      "bytes": 12103,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/SOURCE_REVIEW.SAFE.json",
+      "sha256": "80bbeab5769a6f8bf0140f66b356083af2636640a968f0cc3b784d03d4e2fbac"
+    },
+    {
+      "bytes": 17860,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/COMPARATOR_SOURCE_REVIEW.SAFE.json",
+      "sha256": "4ecc05db4005f8231a47ca2f5859b42bf558967d17cd58a875ceda64d71609b5"
+    },
+    {
+      "bytes": 4230,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+      "sha256": "b8b38fcec3c85ad8a1bde29397fadb0bd0f069a182bf1ff3cf274bbcb6fd5960"
+    }
+  ],
+  "native95Repeated": false,
+  "originalSourceReview": {
+    "RootExecutedQualificationInputs": {
+      "allRecordedChildExits0": true,
+      "callerActualPin": {
+        "bytes": 4426,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CONTROL_VIEW_ACTUAL.SAFE.json",
+        "sha256": "7728297953262887189766049a228669e6a7b61769469d055f515886c6f72085"
+      },
+      "codecActualPin": {
+        "bytes": 6695,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CODEC_ACTUAL.SAFE.json",
+        "sha256": "5c3d83b0767ff6de4ab0982ac533ff4a839ac4f10f674229013255dbfd8131ce"
+      },
+      "codecVectors": 14,
+      "existingCallerGroups": 19,
+      "existingCallerNegativeCases": 42,
+      "reviewerReranAny": false,
+      "scope": "Pinned Root execution receipts inspected; no native database/performance acceptance follows.",
+      "syntaxSourceChecks": 2
+    },
+    "actualEmbeddedNodeSourcePin": {
+      "bytes": 32405,
+      "path": "/workspace/helmut-ram-fix-20261020/node-native-attribution-20261021/public-source/actual-node-v24.19.0-embedded-zlib.js",
+      "sha256": "399cb4e2b3f31269cc52278a1f1bb4ab7838e3c0ccdc5262e41a8824b1f438a5"
+    },
+    "actualNativeComparisonAccepted": false,
+    "atUTC": "2026-10-21T06:37:11.372345+00:00",
+    "baselinePin": {
+      "bytes": 25446,
+      "path": "/workspace/helmut-control-inflate-20261021/scripts/helmut-resource-meter/auth-physical8-native-launcher/NEW_U.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    "blockers": [],
+    "blockingFindings": [],
+    "candidatePin": {
+      "bytes": 25646,
+      "path": "/workspace/helmut-control-inflate-20261021/lib/helmut/llm-usage-atomic.js",
+      "sha256": "40d7e584e7856ea893a491d0598ca55b071fc9a07d2dfeb72d55cd10b14b9d1a"
+    },
+    "canonicalProductIntegrationApproved": false,
+    "comparisonIntentPin": {
+      "bytes": 5192,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_COMPARISON_INTENT.SAFE.json",
+      "sha256": "e0d224b3620cc10de99c35c5e98780dc4762c718ea310fe08ea3438c4f3074aa"
+    },
+    "comparisonMethodReview": {
+      "acceptance": "All five actual cases independently PASS; report all four whole-native-lifetime peaks, paired deltas and means. max(AFTER)<min(BEFORE) required; >10percent mean CPU or wall regression blocks automatic integration. Original per-call/client/native/capture/disk/closure limits hold.",
+      "arms": "BEFORE=integratedU93917a,AFTER=candidate40d7e5; both Partsf30089 and identical corrected NEW renderer/graph SQL. This is not original V11 OLD/NEW.",
+      "harnessReviewed": false,
+      "limits": "ABBA reduces order sensitivity but does not ensure cold caches or universal performance. Copy avoidance is not peak saving; overlap/failure remains inconclusive and causes no automatic additional case. No long-term plateau/full500/reserve or prior4/8 cause claim.",
+      "nativeActionsAccepted": false,
+      "sequence": "Fresh same-final-freeze zeroAuth lifecycle, then four new individually adopted BEFORE-AFTER-AFTER-BEFORE cases; each fixed3 rounds/27RPC/6 boundaries and full original6000-history restore.",
+      "status": "PREDECLARED_METHOD_ACCEPTABLE_HARNESS_SOURCE_AND_ACTUAL_STILL_PENDING"
+    },
+    "fiveCasePlanPin": {
+      "bytes": 1575,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_FIVE_CASE_PLAN.SAFE.json",
+      "sha256": "13b65a073b1c5b25ef850491dc94f6c84e4bea7a6ae6cd326c299f76f2d0d0c1"
+    },
+    "full500": false,
+    "inputPins": [
+      {
+        "bytes": 25646,
+        "path": "/workspace/helmut-control-inflate-20261021/lib/helmut/llm-usage-atomic.js",
+        "sha256": "40d7e584e7856ea893a491d0598ca55b071fc9a07d2dfeb72d55cd10b14b9d1a"
+      },
+      {
+        "bytes": 11556,
+        "path": "/workspace/helmut-control-inflate-20261021/scripts/auth-control-inflate-test.js",
+        "sha256": "fdf9b0a7a4193fb77c0cb0fdcfa9026b68549df65affee129ae1e80771a70168"
+      },
+      {
+        "bytes": 25446,
+        "path": "/workspace/helmut-control-inflate-20261021/scripts/helmut-resource-meter/auth-physical8-native-launcher/NEW_U.js",
+        "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      },
+      {
+        "bytes": 22169,
+        "path": "/workspace/helmut-control-inflate-20261021/lib/helmut/auth-state-parts.js",
+        "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      },
+      {
+        "bytes": 6718,
+        "path": "/workspace/helmut-ram-fix-20261020/node-native-attribution-20261021/candidate-preparation/PREPARED.SAFE.json",
+        "sha256": "8a285a7a920b3ab993cf50da7c14c5d87ad5f921ef46f1fd505e3cfab8d4c93e"
+      },
+      {
+        "bytes": 32405,
+        "path": "/workspace/helmut-ram-fix-20261020/node-native-attribution-20261021/public-source/actual-node-v24.19.0-embedded-zlib.js",
+        "sha256": "399cb4e2b3f31269cc52278a1f1bb4ab7838e3c0ccdc5262e41a8824b1f438a5"
+      },
+      {
+        "bytes": 5192,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_COMPARISON_INTENT.SAFE.json",
+        "sha256": "e0d224b3620cc10de99c35c5e98780dc4762c718ea310fe08ea3438c4f3074aa"
+      },
+      {
+        "bytes": 1575,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_FIVE_CASE_PLAN.SAFE.json",
+        "sha256": "13b65a073b1c5b25ef850491dc94f6c84e4bea7a6ae6cd326c299f76f2d0d0c1"
+      },
+      {
+        "bytes": 995,
+        "path": "/workspace/helmut-ram-fix-20261020/node-native-attribution-20261021/candidate-preparation/SOURCE_DELTA.diff",
+        "sha256": "278e3a1a2e10f32a0ce29f599036f049748450f0781f73016dd046f6dda557ea"
+      },
+      {
+        "bytes": 776,
+        "path": "/workspace/helmut-ram-fix-20261020/node-native-attribution-20261021/public-source/ACTUAL_EMBEDDED_SOURCE.SAFE.json",
+        "sha256": "f72dfd5e6adc429567fe92ea5b0376516116b82df7401076e84aaa36023967f9"
+      },
+      {
+        "bytes": 6695,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CODEC_ACTUAL.SAFE.json",
+        "sha256": "5c3d83b0767ff6de4ab0982ac533ff4a839ac4f10f674229013255dbfd8131ce"
+      },
+      {
+        "bytes": 4426,
+        "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CONTROL_VIEW_ACTUAL.SAFE.json",
+        "sha256": "7728297953262887189766049a228669e6a7b61769469d055f515886c6f72085"
+      },
+      {
+        "bytes": 12156,
+        "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/review_candidate_source.py",
+        "sha256": "20ecfd32a29ae26726932e260d4d35c523ddff1cdbff29abace9ed900b0584ff"
+      }
+    ],
+    "nativeAddonOrAllocatorTuningApproved": false,
+    "preparerPreparedPin": {
+      "bytes": 6718,
+      "path": "/workspace/helmut-ram-fix-20261020/node-native-attribution-20261021/candidate-preparation/PREPARED.SAFE.json",
+      "sha256": "8a285a7a920b3ab993cf50da7c14c5d87ad5f921ef46f1fd505e3cfab8d4c93e"
+    },
+    "priorRSSCauseEstablished": false,
+    "productGuardAndProtocolBytesOutsideOptionsUnchanged": true,
+    "production": false,
+    "reviewerActions": {
+      "ASTOrSyntaxChecks": 0,
+      "GitCommands": 0,
+      "SQL": 0,
+      "originalPayloadReads": 0,
+      "resourceActions": 0,
+      "sourceOrCaseWrites": 0,
+      "subjectImportsOrExecution": 0,
+      "tests": 0,
+      "traceAnalysisRepeated": 0
+    },
+    "schema": "helmut-control-inflate-independent-candidate-source-review/1",
+    "sharedRAMSavingEstablished": false,
+    "soleSourceDeltaVerified": true,
+    "sourceFindings": [
+      "Existing checks establish encodedBuffer1..2MiB and safe integer textBytes>2MiB and<=256MiB before options selection. textBytes+1 is therefore safe and<=8388609 only in the<=8MiB optimization band. Above8MiB chunkSize is absent and the exact legacy path remains;8MiB is not a new Auth rejection limit.",
+      "Pinned Node constructor allocates _outBuffer(chunkSize); processChunkSync checks nread>maxOutputLength before output-buffer rollover. Valid exact textBytes output with one spare byte fits a single slice without exhausted-buffer rollover or final whole-output Buffer.concat at line500. The maxOutputLength remains textBytes, not textBytes+1.",
+      "Exact output length, complete engine.bytesWritten input consumption, SHA256 and fatal UTF8 checks remain byte-identical. Trailing junk/short output/overshoot/wrong digest and invalid UTF8 still reject; malformed zlib error ordering may differ and is not an acceptance change.",
+      "Native handle is closed before sync return. info.engine retains its initial _outBuffer; in the candidate it shares backing storage with the one returned output slice. Both remain synchronous locals through hash/decode and do not enter controlCache or returned controlView. This does not guarantee immediate collection or allocator/RSS release.",
+      "A malformed guard-valid private witness near8MiB now eagerly allocates up to8388609B before rejection, versus an initial16KiB allocation before. This bounded working-allocation caveat is explicitly retained; compressed cache retention remains2MiB and original expanded bound256MiB. No uninitialized spare byte is included in returned slice/hash/UTF8 decoding.",
+      "No new flag, persistent cache field, encoder, Auth authority, history/CAS/nonce/proof/ACK route, reader or SQL body changes. Candidate acceptance is a narrow source/correctness judgment, not shared-RAM or prior rising-tail causal attribution."
+    ],
+    "status": "PASS_SOURCE_ONLY",
+    "testPin": {
+      "bytes": 11556,
+      "path": "/workspace/helmut-control-inflate-20261021/scripts/auth-control-inflate-test.js",
+      "sha256": "fdf9b0a7a4193fb77c0cb0fdcfa9026b68549df65affee129ae1e80771a70168"
+    },
+    "testReview": {
+      "bounds": "Test performs finite14 vectors; all codec invocations expect zero preguard inflate or exactly one inflate, with no retry. It is not the native memory/performance comparator.",
+      "coverageLimit": "The14 vectors do not separately inject malformed compressed bytes at declared8MiB ceiling. The eager allocation bound follows from exact source selection/Node ordering, and the largest valid8MiB allocation is exercised. No stronger exhaustive malformed-stream or allocation-failure coverage is claimed.",
+      "negativeEvidence": "Trailing junk, truncated deflate, matching-SHA invalid UTF8, short/long declared output, wrong digest, encoded cap/length mismatch, compressed logical lower and expanded upper bounds. Explicit Auth/UTF8 guards require exact code/class; native malformed/overshoot errors only require both fail closed.",
+      "observer": "Matches exact immediate processChunkSync node:zlib:500 frame for pinned v24.19.0. Reflect.apply invokes original Buffer.concat once with unchanged receiver/arguments and returns its exact value. Retains only scalar counts/byte totals; global Buffer.concat restored in finally. Encoded input/result/options object are not retained by observer.",
+      "positiveEvidence": "Both outputs exactly equal synthetic Unicode/mixed JSON and SHA; exact maxOutputLength/info/conditional chunkSize; baseline one node:zlib:500 concat, candidate zero in band and one above ceiling.",
+      "positiveSizes": [
+        2097153,
+        4856607,
+        8388608,
+        8388609
+      ],
+      "runtimeLimit": "The test checks process.version; its exact builtin frame proof must be used with the already pinned Node binary/embedded source, not an arbitrary different build carrying the same version label.",
+      "scope": "Four positive and ten negative synthetic private-codec vectors; real pinned baseline/candidate bodies in separate VM contexts, test-only nonenumerable private export.",
+      "stubs": "CAS revision/EU/Parts constants only, with actual Parts declaration checked. No full Auth/graph/database authorization claim from the codec VM. Existing caller test separately uses real Parts/U with mock protocol responses."
+    },
+    "unchangedPartsPin": {
+      "bytes": 22169,
+      "path": "/workspace/helmut-control-inflate-20261021/lib/helmut/auth-state-parts.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    "verifierSourcePin": {
+      "bytes": 12156,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-inflate-20261021/review_candidate_source.py",
+      "sha256": "20ecfd32a29ae26726932e260d4d35c523ddff1cdbff29abace9ed900b0584ff"
+    }
+  },
+  "production": false,
+  "repositoryCodecActual": {
+    "actualChildExitCode": 0,
+    "canonicalUUnchangedPin": {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    "databaseActions": 0,
+    "elapsedSeconds": 0.6140791539801285,
+    "full500": false,
+    "modelCalls": 0,
+    "nativeResourceActions": 0,
+    "originalActualReceiptPin": {
+      "bytes": 6695,
+      "path": "/workspace/helmut-ram-fix-20261020/control-inflate-20261021/ROOT_CODEC_ACTUAL.SAFE.json",
+      "sha256": "5c3d83b0767ff6de4ab0982ac533ff4a839ac4f10f674229013255dbfd8131ce"
+    },
+    "originalExecutedTestPin": {
+      "bytes": 11556,
+      "path": "/workspace/helmut-control-inflate-20261021/scripts/auth-control-inflate-test.js",
+      "sha256": "fdf9b0a7a4193fb77c0cb0fdcfa9026b68549df65affee129ae1e80771a70168"
+    },
+    "pass": true,
+    "result": {
+      "baselineSourceSHA256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b",
+      "candidateSourceSHA256": "40d7e584e7856ea893a491d0598ca55b071fc9a07d2dfeb72d55cd10b14b9d1a",
+      "cases": [
+        {
+          "baselineOutputConcat": 1,
+          "candidateOutputConcat": 0,
+          "case": "valid-2097153",
+          "explicitExtraOutputCopyAvoided": true,
+          "outputHashEqual": true,
+          "utf8Bytes": 2097153
+        },
+        {
+          "baselineOutputConcat": 1,
+          "candidateOutputConcat": 0,
+          "case": "valid-4856607",
+          "explicitExtraOutputCopyAvoided": true,
+          "outputHashEqual": true,
+          "utf8Bytes": 4856607
+        },
+        {
+          "baselineOutputConcat": 1,
+          "candidateOutputConcat": 0,
+          "case": "valid-8388608",
+          "explicitExtraOutputCopyAvoided": true,
+          "outputHashEqual": true,
+          "utf8Bytes": 8388608
+        },
+        {
+          "baselineOutputConcat": 1,
+          "candidateOutputConcat": 1,
+          "case": "valid-8388609",
+          "explicitExtraOutputCopyAvoided": false,
+          "outputHashEqual": true,
+          "utf8Bytes": 8388609
+        },
+        {
+          "baselineError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "beforeInflate": false,
+          "candidateError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "case": "trailing-junk",
+          "exactGuardErrorRequired": true,
+          "rejectedByBoth": true
+        },
+        {
+          "baselineError": {
+            "code": "Z_BUF_ERROR",
+            "name": "Error"
+          },
+          "beforeInflate": false,
+          "candidateError": {
+            "code": "Z_BUF_ERROR",
+            "name": "Error"
+          },
+          "case": "truncated-deflate",
+          "exactGuardErrorRequired": false,
+          "rejectedByBoth": true
+        },
+        {
+          "baselineError": {
+            "code": "ERR_ENCODING_INVALID_ENCODED_DATA",
+            "name": "TypeError"
+          },
+          "beforeInflate": false,
+          "candidateError": {
+            "code": "ERR_ENCODING_INVALID_ENCODED_DATA",
+            "name": "TypeError"
+          },
+          "case": "invalid-utf8-with-matching-sha",
+          "exactGuardErrorRequired": true,
+          "rejectedByBoth": true
+        },
+        {
+          "baselineError": {
+            "code": "ERR_BUFFER_TOO_LARGE",
+            "name": "RangeError"
+          },
+          "beforeInflate": false,
+          "candidateError": {
+            "code": "ERR_BUFFER_TOO_LARGE",
+            "name": "RangeError"
+          },
+          "case": "wrong-declared-length-short",
+          "exactGuardErrorRequired": false,
+          "rejectedByBoth": true
+        },
+        {
+          "baselineError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "beforeInflate": false,
+          "candidateError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "case": "wrong-declared-length-long",
+          "exactGuardErrorRequired": true,
+          "rejectedByBoth": true
+        },
+        {
+          "baselineError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "beforeInflate": false,
+          "candidateError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "case": "wrong-content-digest",
+          "exactGuardErrorRequired": true,
+          "rejectedByBoth": true
+        },
+        {
+          "baselineError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "beforeInflate": true,
+          "candidateError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "case": "encoded-cap-overflow",
+          "exactGuardErrorRequired": true,
+          "rejectedByBoth": true
+        },
+        {
+          "baselineError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "beforeInflate": true,
+          "candidateError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "case": "encoded-length-mismatch",
+          "exactGuardErrorRequired": true,
+          "rejectedByBoth": true
+        },
+        {
+          "baselineError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "beforeInflate": true,
+          "candidateError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "case": "compressed-logical-lower-bound",
+          "exactGuardErrorRequired": true,
+          "rejectedByBoth": true
+        },
+        {
+          "baselineError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "beforeInflate": true,
+          "candidateError": {
+            "code": "AUTH_CONTROL_CACHE_INVALID",
+            "name": "Error"
+          },
+          "case": "logical-upper-bound",
+          "exactGuardErrorRequired": true,
+          "rejectedByBoth": true
+        }
+      ],
+      "noDatabase": true,
+      "noRPC": true,
+      "nodeVersion": "v24.19.0",
+      "observer": "passive exact node:zlib:500 processChunkSync Buffer.concat; one unchanged original call",
+      "pass": true,
+      "proofScope": "Extra whole-output concat avoided only for the selected bounded band; no RSS/shared-RAM saving or leak-cause claim.",
+      "schema": "helmut-control-inflate-codec-differential/1",
+      "syntheticOnly": true
+    },
+    "resultExactlyEqualToOriginal14VectorReceipt": true,
+    "schema": "helmut-control-inflate-root-repository-codec-diagnostic/1",
+    "syntaxExitCode": 0,
+    "testSourcePin": {
+      "bytes": 11634,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-codec-check.js",
+      "sha256": "7420381ec0405bf1a59c3297c969515b8ceb7ad362a6c837802239d37312de6e"
+    }
+  },
+  "repositoryCodecSourcePin": {
+    "bytes": 11634,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-inflate-codec-check.js",
+    "sha256": "7420381ec0405bf1a59c3297c969515b8ceb7ad362a6c837802239d37312de6e"
+  },
+  "schema": "helmut-control-inflate-local-qualification-summary/1",
+  "status": "PASS_DIAGNOSTIC_ONLY_NOT_SHARED_MEMORY_BENEFIT"
+}

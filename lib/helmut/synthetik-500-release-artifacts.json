@@ -16,8 +16,8 @@
     },
     {
       "path": "lib/helmut/auth-state-parts.js",
-      "bytes": 22149,
-      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
     },
     {
       "path": "lib/helmut/auth-store-cas.js",
@@ -161,13 +161,18 @@
     },
     {
       "path": "lib/helmut/lage.js",
-      "bytes": 56239,
-      "sha256": "a1f9f307544e747af1287c84c3e805ca3297263a6eb3a03ba735d44e143574d5"
+      "bytes": 56857,
+      "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
     },
     {
       "path": "lib/helmut/llm-usage-atomic.js",
-      "bytes": 23685,
-      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "path": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
     },
     {
       "path": "lib/helmut/matching-begruendung.js",
@@ -251,8 +256,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 545779,
-      "sha256": "51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d"
+      "bytes": 546974,
+      "sha256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -261,8 +266,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-content-runner.js",
-      "bytes": 4615,
-      "sha256": "35c0317dfaede5c247fb5777c0515c4a3c7c9f949940bc8d4a33ad43d6d8b331"
+      "bytes": 4748,
+      "sha256": "f632f019c9dd277cd09863ef18566416189226631af6e7ffc6014e0a117eee47"
     },
     {
       "path": "lib/helmut/synthetik-500-content-worker.js",
@@ -277,7 +282,7 @@
     {
       "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
       "bytes": 12086,
-      "sha256": "b9bd8e96880343ebcbd36263e3b93321ba1c60a4b0fdb1290bed984590ae47e6"
+      "sha256": "5c807f5607b5b0e97e1fc3364053a00b995d0efe857d9768b73509ceae33ff28"
     },
     {
       "path": "lib/helmut/synthetik-500-date-binding.js",
@@ -351,8 +356,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-production-adapter.js",
-      "bytes": 28589,
-      "sha256": "1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4"
+      "bytes": 28675,
+      "sha256": "31fa8e05742ba8f2618f01bf8f4c24b29b9edc1fe36ab25e0fb49a6f39bc3804"
     },
     {
       "path": "lib/helmut/synthetik-500-production-command.js",
@@ -441,11 +446,11 @@
     },
     {
       "path": "vercel.json",
-      "bytes": 8149,
-      "sha256": "0d4f52725c0273420c10ff3506f6135bb2232a47992ef10c7811962780b9ef41"
+      "bytes": 5315,
+      "sha256": "32e72dfd6e3e2bc2788c991cab29471af4e04ea7a1a57f7bb3e58a9ea92693d2"
     }
   ],
-  "sourceMappingSHA256": "d2e784627807f848c83b242054f19f97f0ae8946d149c78331d8e9e828483609",
+  "sourceMappingSHA256": "3c0e64a68e82e211b1bc64430556fcb2f5caae00fe047720c1b2266c0b0b7cad",
   "currentCandidateFull500Qualification": false,
   "candidateQualificationScope": "LOCAL_DEFAULT_OFF_CONTROL_VIEW_AND_NATIVE_COMPONENT_SECURITY_ONLY; COMMON_RAM_OFFLINE90_UNIT60_AUTH30_FULL500_PRODUCTION_NOT_QUALIFIED",
   "priorManifestCommit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",

@@ -8,6 +8,24 @@ s=importlib.util.spec_from_file_location('connector',BIN/'connect-local500.py')
 C=importlib.util.module_from_spec(s);s.loader.exec_module(C)
 B=C.BASE;W=C.AREA
 
+def backend_inputs(staged,day,restored,capture):
+    """Read-only source/fixture closure, before the first staging write."""
+    if 'localPostgrestBackendPlanPin' not in staged:return None
+    p=staged['localPostgrestBackendPlanPin']
+    if p is None:raise RuntimeError('explicit backend plan cannot be null')
+    backend=C.read_postgrest_backend_plan(p,staged['caseDirectory'],staged['targetDatabase'],staged['operationId'])
+    config=restored['sourcePostgrestConfig']if restored else C.pin(B/'wave9/native-fixture/postgrest.PRIVATE.conf')
+    if (backend['ownerGoPin']!=staged['ownerGOPin'] or backend['day']!=day['day'] or day['day']!=C.A.DAY
+        or backend['resourceClaimPath']!=str(C.A.CLAIM) or backend['sourcePostgrestConfigPin']!=config
+        or backend['binaryPin']!=capture['postgrestBinary']):
+        raise RuntimeError('backend source/owner/day/claim binding differs')
+    # The optional owner gets no longer work window or storage lifetime.
+    from datetime import datetime
+    instant=lambda x:datetime.fromisoformat(x.replace('Z','+00:00'))
+    if not instant(day['startsAtUTC'])<instant(backend['workEndsAtUTC'])<instant(backend['closeByUTC'])<=instant(day['endsAtUTC']):
+        raise RuntimeError('backend lifetime exceeds accepted day window')
+    return backend
+
 def finish(staged_pin,*,restore_staging_inputs=None):
     staged=C.read_pin(staged_pin);case=Path(staged['caseDirectory']);n=case/'native-end-preparation'
     if restore_staging_inputs is None:restore_staging_inputs=staged.get('restoreStagingInputs')
@@ -20,6 +38,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     C.A.verify_preexisting_capture(capture_pin,actual=False)
     if owner['sourceCapturePin']!=capture_pin:raise RuntimeError('new input DATA binding differs')
     if capture['before']!=capture['after'] or capture['sourceWrites']!=0:raise RuntimeError('read-only source capture incomplete')
+    backend=backend_inputs(staged,day,restored,capture)
     original=C.read_pin(restored['runtimeRequestTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json').read_text())
     content=C.read_pin(restored['contentAcceptanceTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json').read_text())
     # Historical approvals remain dependencies, never reused as the new owner GO.
@@ -47,6 +66,8 @@ def finish(staged_pin,*,restore_staging_inputs=None):
         for p in descriptor['sourcePins']:
             if C.pin(p['path'])!=p:raise RuntimeError('atomic source pin drift')
             sources[p['path']]=p
+    if backend is not None:
+        for p in backend['sourcePins']:sources[p['path']]=p
     for folder in [n,n/'runtime-candidates',BIN]:
         for p in folder.iterdir():
             if p.is_file() and p.suffix in ['.js','.py','.json'] and (folder!=BIN or not p.name.endswith(('-test.js','-test.py'))):sources[str(p.resolve())]=C.pin(p)
@@ -63,6 +84,8 @@ def finish(staged_pin,*,restore_staging_inputs=None):
         request['restoreStagingInputs']=restore_staging_inputs
         request['totalRequestSourcePins']=len(sources)
     if atomic is not None:request['atomicUsageInput']=atomic
+    request.pop('localPostgrestBackendPlanPin',None)
+    if backend is not None:request['localPostgrestBackendPlanPin']=staged['localPostgrestBackendPlanPin']
     request_pin=C.save(case/'ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json',request)
     assets={}
     def add(p):
@@ -74,6 +97,9 @@ def finish(staged_pin,*,restore_staging_inputs=None):
         add(restore_staging_inputs)
         for key,p in restored.items():
             if key!='schema':add(p)
+    if backend is not None:
+        for p in [staged['localPostgrestBackendPlanPin'],backend['binaryPin'],backend['ownerGoPin'],
+                  backend['sourcePostgrestConfigPin'],backend['upstreamEvidencePin'],*backend['upstreamSourcePins']]:add(p)
     for p in primaries.values():add(p)
     for p in C.A.capture_data_pins(capture_pin):add(p)
     for p in [staged['dayRows'],staged['dayAcceptance'],day['independentReview'],capture_pin,capture['sourceDump'],capture['localRolesSQL'],capture['correctedFinancialWitnessPin'],capture['correctionReceiptPin'],
@@ -91,6 +117,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     for k in ['canonicalTemplates','package','independentSecurityReview','explicitThemenreinReview14of14','negativeTypeAndReasonEvidence','all500MappingEvidence']:add(templates[k])
     plan={'schema':'helmut-pinned-full500-connection/1','day':C.A.DAY,'production':False,
       'sourceInputDatabase':C.A.INPUT_DATABASE,'resourceClaimPath':str(C.A.CLAIM),
+      'sourceCommit':staged.get('sourceCommit'),
       'caseDirectory':str(case),'workflowDirectory':str(n),'sourceDatabase':staged['sourceDatabase'],
       'targetDatabase':staged['targetDatabase'],'containerName':staged['containerName'],'operationId':staged['operationId'],
       'freshOwnerGO':owner_pin,'runtimeRequest':request_pin,'sourceCapture':capture_pin,
@@ -106,6 +133,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
       'phases':['preparation','assembly','sequence'],'profiles':500,'controlsPerUnit':16,
       'originalUUnchangedAndRequired':True,'noProfiler':True,'noPaidProviderCalls':True,'preparedWithoutGO':staged.get('preparedWithoutGO',False)}
     if atomic is not None:plan['atomicUsageInput']=atomic
+    if backend is not None:plan['localPostgrestBackendPlanPin']=staged['localPostgrestBackendPlanPin']
     if restored:plan['restoreStagingInputs']=restore_staging_inputs
     for key in ['nativeMemoryBudget','nativeBudgetRuntimePin']:
         if key in staged:plan[key]=staged[key]
@@ -124,6 +152,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
        {'name':'sequence','argv':['taskset','-c','0','node',str(n/'run-reviewed-sequence.js'),str(n/'runtime-candidates/FINAL_CONFIG.PRIVATE.json'),'root-approved-local-only'],'timeoutSeconds':9*3600,'pins':[C.pin(n/'run-reviewed-sequence.js')]}]}
     for key in ['nativeMemoryBudget','nativeBudgetRuntimePin']:
         if key in staged:recipe[key]=staged[key]
+    if backend is not None:recipe['localPostgrestBackendPlanPin']=staged['localPostgrestBackendPlanPin']
     recipe_pin=C.save(case/'RECIPE_TEMPLATE.PRIVATE.json',recipe)
     return {'connection':connection,'recipeTemplate':recipe_pin,'applicationStaticFiles':len(assets),'sourcePins':len(sources),
        'full500RunStarted':False,'resourceGOConsumed':False}

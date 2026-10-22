@@ -1,0 +1,52 @@
+{
+  "schema": "helmut-current-new27-ownership-guards-actual/1",
+  "status": "TEN_PYTHON_GROUPS_AND_21_INERT_ACK_CASES_PASS",
+  "atUTC": "2026-10-20T20:01:17.511350+00:00",
+  "rootPreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/PREPARED.SAFE.json",
+    "bytes": 35991,
+    "sha256": "b8cf3abdb60c4acfe0582c34b8f6895d60958406a3c56902c1057cebc9929990"
+  },
+  "authorPreparedSHA256": "75d87960d97be89899855f1830120fd00c200a2270a8e909b8c64c559ab18176",
+  "copiedCodeIdenticalQualifiedBy": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/OWNERSHIP_ROOT_INTEGRATION_STATIC_REVIEW.SAFE.json",
+    "bytes": 10215,
+    "sha256": "6928dce24df0284a3db16e956a3d2a429aa4eb04c48d658b0a4f08d9f8cbf35f"
+  },
+  "testPreparationPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/control-cache-ownership-guard-tests-20261020/PREPARED.SAFE.json",
+    "bytes": 2612,
+    "sha256": "210dc46e9e4f671e766df7c2fd98bdd60b09f5b9146cc032e9b46f47cd9d3348"
+  },
+  "actualTests": [
+    {
+      "scope": "Python guard groups and subcases",
+      "groups": 10,
+      "seconds": 0.1,
+      "exitCode": 0,
+      "toolChunk": "ab5301",
+      "rawPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/ROOT_PYTHON_GUARDS_ACTUAL.PRIVATE.log",
+        "bytes": 1533,
+        "sha256": "96e27c0c79d4f1441d310c6442187d5951d41ad3e6724d0886479a23bd2686db"
+      }
+    },
+    {
+      "scope": "isolated JS ACK logic VM",
+      "cases": 21,
+      "exitCode": 0,
+      "toolChunk": "2d8369",
+      "rawPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/ROOT_NODE_ACK_GUARDS_ACTUAL.PRIVATE.log",
+        "bytes": 359,
+        "sha256": "d9a804b409aa206c57e71fe5df217560efa38264fed1f5eea1381015e08742e0"
+      }
+    }
+  ],
+  "nativeBudgetOrLastExitQualifiedByMocks": false,
+  "nativeRun": false,
+  "SQL": false,
+  "UInvoked": false,
+  "providerCalls": 0,
+  "full500": false
+}

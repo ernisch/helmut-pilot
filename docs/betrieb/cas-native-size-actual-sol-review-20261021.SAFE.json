@@ -1,0 +1,570 @@
+{
+  "AuthCASCalls": 0,
+  "DockerOrProcessInspection": 0,
+  "PGLogEOF": true,
+  "RAMSavingProven": false,
+  "RootStrictSuccessVerifierExecutedByReviewer": false,
+  "SQL": 0,
+  "actualOuterExitCode": 1,
+  "all32FieldsAndTypesIndependentlyVerified": true,
+  "allFailedSyntheticDataAndFourHullsDisposition": "KEEP",
+  "atUTC": "2026-10-21T08:20:03.064385+00:00",
+  "capacityIsSnapshotNotReservation": true,
+  "controllerPin": {
+    "bytes": 18568,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+    "sha256": "028a519a054849aa21bbfe7fd1ce2f35821d4b6cc5803d3ae6db37bc17b6e746"
+  },
+  "exactLayoutFieldCount": 32,
+  "failedShutdownCommandExitCode": 137,
+  "finalCaseEvidence": {
+    "allPins": [
+      {
+        "bytes": 1995,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ACTUAL_EXECUTION.SAFE.json",
+        "sha256": "0092dfb2bc11667abed9ee34019f9fc799393edaac0dd357e8df777cccb29694"
+      },
+      {
+        "bytes": 0,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/FAILED_COMMAND.stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 35,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/FAILED_COMMAND.stdout.txt",
+        "sha256": "fd1bbb34268436a18ce35ca0f5141c7c366ee2382ecd45fa75267b40f8a8af28"
+      },
+      {
+        "bytes": 104,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/INITDB.stderr.txt",
+        "sha256": "e2e4691f352804e583fa901cc12b652bf2102bdf991955cf195c7f127dc720fa"
+      },
+      {
+        "bytes": 809,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/INITDB.stdout.txt",
+        "sha256": "904d3234fbaff826d85adb66929bf76718e9bcd9be4cf96f4c5907661fc87244"
+      },
+      {
+        "bytes": 383425,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/INIT_CREATED.SAFE.json",
+        "sha256": "34f264d4b721bbdc7a2a210751e2a23407f3d61d24b1f0cdad314eead74b1b4c"
+      },
+      {
+        "bytes": 850,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/LAYOUT_ONCE_CLAIM.SAFE.json",
+        "sha256": "fd6af2a8ddd0e05ccc3dd668ecf9066be93b888bf7180a2d57868528b4d555cb"
+      },
+      {
+        "bytes": 1527,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/LAYOUT_SELECT.stdout.json",
+        "sha256": "d6317a14280790b8a1bfe79930ce37896470ebfb61015eb7a162d5392a71c244"
+      },
+      {
+        "bytes": 1184,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/POSTGRES.log.txt",
+        "sha256": "931afe1760413bba335ec583c1f525672e87bac37223faddd82d1f3342014d10"
+      },
+      {
+        "bytes": 229,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_ADOPTION_PIN.SAFE.json",
+        "sha256": "a4ce0daf3c8e22a41ae743c51192bd655d8133bb26086b8a085ec83ac3965dc3"
+      },
+      {
+        "bytes": 2448,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_FINAL_CONTAINER_READBACK.SAFE.json",
+        "sha256": "8762eb3a2632701974915de3999c416f9e78f59f702e2373458e1fa3bec01b74"
+      },
+      {
+        "bytes": 285,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_OBSERVED_TOOL_EXIT.SAFE.json",
+        "sha256": "657953e86f1cd005a11571ba13399ba5ab11fa481701c3e87d3fb491a569f429"
+      },
+      {
+        "bytes": 384101,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/SERVER_CREATED.SAFE.json",
+        "sha256": "7ece40907d7f191dba9cae1a94f4c224522e4077fe62b289a5583c5fed020ad9"
+      },
+      {
+        "bytes": 0,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/SQL_COMMAND.stderr.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 1527,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/SQL_COMMAND.stdout.txt",
+        "sha256": "d6317a14280790b8a1bfe79930ce37896470ebfb61015eb7a162d5392a71c244"
+      }
+    ],
+    "bytes": 778519,
+    "capBytes": 1048576,
+    "files": 15,
+    "includesCompactRootPostRunReceipts": true
+  },
+  "finalContainerStates": [
+    {
+      "creationPin": {
+        "bytes": 383425,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/INIT_CREATED.SAFE.json",
+        "sha256": "34f264d4b721bbdc7a2a210751e2a23407f3d61d24b1f0cdad314eead74b1b4c"
+      },
+      "exactMountsAndArgvUnchanged": true,
+      "fullInspectBytes": 465077,
+      "fullInspectSHA256": "18cbde3b75404a071f4914c05edfcf335cd42827b96f66c245c6de833469d106",
+      "id": "b746f2ac2aa9a6591591196bffc73d661da28f01d471953923050efd8d3c2b51",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "name": "/helmut-jsonb-layout-init-f41d3e2aaec42437a911e1f7",
+      "specialClientVariablesAbsent": true,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-21T08:14:46.155215505Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-21T08:14:45.335341854Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "creationPin": {
+        "bytes": 384101,
+        "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/SERVER_CREATED.SAFE.json",
+        "sha256": "7ece40907d7f191dba9cae1a94f4c224522e4077fe62b289a5583c5fed020ad9"
+      },
+      "exactMountsAndArgvUnchanged": true,
+      "fullInspectBytes": 466041,
+      "fullInspectSHA256": "6027330e944ef05d4508b548083503e1bafab2bb8dd762e9ab186792b55db8ee",
+      "id": "f2de3ed65f08764d1bdd8d20d70e5a1b083a6d149f1d7a6fa3cb2beb10e4ff41",
+      "image": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+      "name": "/helmut-jsonb-layout-server-f41d3e2aaec42437a911e1f7",
+      "specialClientVariablesAbsent": true,
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-21T08:14:46.728609582Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-21T08:14:46.321656987Z",
+        "Status": "exited"
+      }
+    }
+  ],
+  "finalStateObservationScope": "Independent verification of pinned Root metadata and creation identities; no new live Docker/process inspection by reviewer. Full final inspect stdout is represented by digest/bytecount, not retained for replay.",
+  "firstAttemptReviewPin": {
+    "bytes": 16026,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/FIRST_ATTEMPT_ACTUAL_REVIEW.SAFE.json",
+    "sha256": "58df056d411a8a3742dcc67b97286337164e409cbadbe3624c77a0ea6068e0e7"
+  },
+  "firstAttemptUnchanged": {
+    "allPriorTopLevelProofPinsRehashed": 10,
+    "initialEvidenceCapExcessNotRetroactivelyWaived": true,
+    "initialMissingStderrStillMissing": true,
+    "status": "FAIL_KEPT_NO_NATIVE_LAYOUT_RESULT"
+  },
+  "forcedStops": [],
+  "full500": false,
+  "inputPins": [
+    {
+      "bytes": 22169,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/auth-state-parts.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/lib/helmut/llm-usage-atomic.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 207733,
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/READONLY_RUNTIME_BINDINGS.SAFE.json",
+      "sha256": "71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475"
+    },
+    {
+      "bytes": 4433,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/capacity-review/PROTECTED_RESOURCE_READBACK.SAFE.json",
+      "sha256": "e35ed0db44bec4a8465aef2ccd693044c08141a2f497ba54259a6f32c3b191e2"
+    },
+    {
+      "bytes": 4085,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_END_READBACK.SAFE.json",
+      "sha256": "9145bd79fea986255cd1a266b6aad9fee499b38736ed54d9ecb18bc5b19d2884"
+    },
+    {
+      "bytes": 8438,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_LAYOUT_INTENT_V4.SAFE.json",
+      "sha256": "e882bcbcb53bc344f99980b74a1c7f89a62d513957f58a6f1469d2822e9a7697"
+    },
+    {
+      "bytes": 4750,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_NATIVE_LAYOUT_QUERY.sql",
+      "sha256": "0cc98e082c154b0e6511eafe7b532b9fa2fe39c0bf2bef0b55a8e8c16f673cd3"
+    },
+    {
+      "bytes": 5047,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_SECOND_ATTEMPT_READBACK.SAFE.json",
+      "sha256": "bfd67371733842b412dc6c12afae4a775f8005b32dd7d7bad1af54f340f25f33"
+    },
+    {
+      "bytes": 2154,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_SELECTED_QUALIFICATION_V3.SAFE.json",
+      "sha256": "c7941fee0958de7598199158080df1ed6656e05476657b51a18ea4450c3f1656"
+    },
+    {
+      "bytes": 1872,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/ACTUAL_EXECUTION.SAFE.json",
+      "sha256": "71e3013cca3dd47dbe8c41285bcb4ee8e73cbea37f3ff630dd5660d0daae9176"
+    },
+    {
+      "bytes": 104,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/INITDB.stderr.txt",
+      "sha256": "81424389dca8561245e8cf5f87dc4ee80eb1871836afa6fcbe6266380e88e3e1"
+    },
+    {
+      "bytes": 809,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/INITDB.stdout.txt",
+      "sha256": "904d3234fbaff826d85adb66929bf76718e9bcd9be4cf96f4c5907661fc87244"
+    },
+    {
+      "bytes": 383475,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/INIT_CREATED.SAFE.json",
+      "sha256": "c3494c2926445a557ec0aed323c030793a5edb5ad4d34d83ade832f6d2267218"
+    },
+    {
+      "bytes": 847,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/LAYOUT_ONCE_CLAIM.SAFE.json",
+      "sha256": "0f68bd260974ff34402385d67b9717a71f6b93d18f0287cddef84fdd02185f4b"
+    },
+    {
+      "bytes": 1114,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/POSTGRES.log.txt",
+      "sha256": "d09e4437b87ceca09336e1b658fdc5fe4c75956ec486f4f76a7a972681b26825"
+    },
+    {
+      "bytes": 226,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/ROOT_ADOPTION_PIN.SAFE.json",
+      "sha256": "cc850eded73a460275a2952790c3f603f561d825804dc10a7ca914e7a435e962"
+    },
+    {
+      "bytes": 437288,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/ROOT_FAILURE_FINAL_CONTAINER_READBACK.PRIVATE.json",
+      "sha256": "dc5a4aea0f93891cf67dfb24e20381bf53618081ea74d9ef1a6147cbddd20990"
+    },
+    {
+      "bytes": 523,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/ROOT_OBSERVED_TOOL_EXIT.SAFE.json",
+      "sha256": "29031c3900d0134248b1a3805d2718b19890c9117941c1df9f91c5964aa51e46"
+    },
+    {
+      "bytes": 384150,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/SERVER_CREATED.SAFE.json",
+      "sha256": "479ccac07a3d6db3ef9ca26b3afa7d2c90d2df840bbaea636fbe39f501bc8c3e"
+    },
+    {
+      "bytes": 1995,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ACTUAL_EXECUTION.SAFE.json",
+      "sha256": "0092dfb2bc11667abed9ee34019f9fc799393edaac0dd357e8df777cccb29694"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/FAILED_COMMAND.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 35,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/FAILED_COMMAND.stdout.txt",
+      "sha256": "fd1bbb34268436a18ce35ca0f5141c7c366ee2382ecd45fa75267b40f8a8af28"
+    },
+    {
+      "bytes": 104,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/INITDB.stderr.txt",
+      "sha256": "e2e4691f352804e583fa901cc12b652bf2102bdf991955cf195c7f127dc720fa"
+    },
+    {
+      "bytes": 809,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/INITDB.stdout.txt",
+      "sha256": "904d3234fbaff826d85adb66929bf76718e9bcd9be4cf96f4c5907661fc87244"
+    },
+    {
+      "bytes": 383425,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/INIT_CREATED.SAFE.json",
+      "sha256": "34f264d4b721bbdc7a2a210751e2a23407f3d61d24b1f0cdad314eead74b1b4c"
+    },
+    {
+      "bytes": 850,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/LAYOUT_ONCE_CLAIM.SAFE.json",
+      "sha256": "fd6af2a8ddd0e05ccc3dd668ecf9066be93b888bf7180a2d57868528b4d555cb"
+    },
+    {
+      "bytes": 1527,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/LAYOUT_SELECT.stdout.json",
+      "sha256": "d6317a14280790b8a1bfe79930ce37896470ebfb61015eb7a162d5392a71c244"
+    },
+    {
+      "bytes": 1184,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/POSTGRES.log.txt",
+      "sha256": "931afe1760413bba335ec583c1f525672e87bac37223faddd82d1f3342014d10"
+    },
+    {
+      "bytes": 229,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_ADOPTION_PIN.SAFE.json",
+      "sha256": "a4ce0daf3c8e22a41ae743c51192bd655d8133bb26086b8a085ec83ac3965dc3"
+    },
+    {
+      "bytes": 2448,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_FINAL_CONTAINER_READBACK.SAFE.json",
+      "sha256": "8762eb3a2632701974915de3999c416f9e78f59f702e2373458e1fa3bec01b74"
+    },
+    {
+      "bytes": 285,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_OBSERVED_TOOL_EXIT.SAFE.json",
+      "sha256": "657953e86f1cd005a11571ba13399ba5ab11fa481701c3e87d3fb491a569f429"
+    },
+    {
+      "bytes": 384101,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/SERVER_CREATED.SAFE.json",
+      "sha256": "7ece40907d7f191dba9cae1a94f4c224522e4077fe62b289a5583c5fed020ad9"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/SQL_COMMAND.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1527,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/SQL_COMMAND.stdout.txt",
+      "sha256": "d6317a14280790b8a1bfe79930ce37896470ebfb61015eb7a162d5392a71c244"
+    },
+    {
+      "bytes": 16026,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/FIRST_ATTEMPT_ACTUAL_REVIEW.SAFE.json",
+      "sha256": "58df056d411a8a3742dcc67b97286337164e409cbadbe3624c77a0ea6068e0e7"
+    },
+    {
+      "bytes": 12622,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/SOURCE_REVIEW_V2.SAFE.json",
+      "sha256": "425ecc9621a02a31d7aa28adae9c34ab53024eb1c3eadd246fe60ae2c03ab1c1"
+    },
+    {
+      "bytes": 8998,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/PLAN.SAFE.json",
+      "sha256": "c0a2002288c9fb123695675281ad70caa5bb2a1f5b59e2be98fe542d809f167f"
+    },
+    {
+      "bytes": 4351,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/PREPARED.SAFE.json",
+      "sha256": "ff22284d8c3282fdd91291766f230e968e88eae0a2686c23302d948d2bfb673f"
+    },
+    {
+      "bytes": 2562,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/ROOT_LAYOUT_ADOPTION.PRIVATE.json",
+      "sha256": "68b4def00730d69b6cb4c3471cf11a5f86b4f0dffca600ed374f2b5c9d5e0df9"
+    },
+    {
+      "bytes": 18568,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+      "sha256": "028a519a054849aa21bbfe7fd1ce2f35821d4b6cc5803d3ae6db37bc17b6e746"
+    },
+    {
+      "bytes": 3647,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/root-adopt-selected-layout-v3.py",
+      "sha256": "75925a84ad1deb34437c9510ee2c7dc67576e0eac82caf8b78406816e5139d57"
+    },
+    {
+      "bytes": 5080,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/root-end-readback.py",
+      "sha256": "908a1365196e14ded9810937f805ea4297757c15ca2854893eefb3c4db52e0d2"
+    },
+    {
+      "bytes": 2880,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/root-qualify-selected-layout-v3.py",
+      "sha256": "095506eede4b288749b9306d19ceb452dc98a0b57c5b569e325dd09f5f7989c1"
+    },
+    {
+      "bytes": 7045,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/root-record-second-failure-v2.js",
+      "sha256": "5c701810ad052b70c2b4f2db1fb16be2e2ad718205a6e49baf834fb5f661e44a"
+    }
+  ],
+  "intentPin": {
+    "bytes": 8438,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_LAYOUT_INTENT_V4.SAFE.json",
+    "sha256": "e882bcbcb53bc344f99980b74a1c7f89a62d513957f58a6f1469d2822e9a7697"
+  },
+  "maximumMethodAttempts": 2,
+  "methodAttempts": 2,
+  "nativeActions": 0,
+  "nativeCounterexampleObserved": true,
+  "nativeLayout": {
+    "allNativePredictionsMatch": true,
+    "arrayLeafNativeBytes": 1032,
+    "arrayLeafPairs": 64,
+    "contractLeafNativeBytes": 147,
+    "contractLeafPairs": 1,
+    "evenKeysFourBytes": true,
+    "fieldCount": 32,
+    "firstSortedKey": "k000",
+    "formulaNativeBytes": 2083,
+    "maximumOutputBytes": 4096,
+    "mergedNativeBytes": 2195,
+    "mergedPairs": 129,
+    "nativeFormulaDominates": false,
+    "oddKeysFourBytes": true,
+    "officialPGCommit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+    "pairCount": 64,
+    "predictedArrayLeafNativeBytes": 1032,
+    "predictedContractLeafNativeBytes": 147,
+    "predictedFormulaNativeBytes": 2083,
+    "predictedMergedNativeBytes": 2195,
+    "predictedStringLeafNativeBytes": 840,
+    "predictedUnderestimationBytes": 112,
+    "rootHasNoForbiddenFields": true,
+    "rootIsObject": true,
+    "rootLogicalValid": true,
+    "rootServiceContractHash": "78833d91aea2ad9c795cbb9790df031c230c98efd27d581faa79522c5da8175f",
+    "rootVersionText": "5",
+    "schema": "helmut-cas-native-size-counterexample-layout/1",
+    "secondSortedKey": "k001",
+    "stringLeafNativeBytes": 840,
+    "stringLeafPairs": 64,
+    "underestimationBytes": 112
+  },
+  "nativeOutputPin": {
+    "bytes": 1527,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/LAYOUT_SELECT.stdout.json",
+    "sha256": "d6317a14280790b8a1bfe79930ce37896470ebfb61015eb7a162d5392a71c244"
+  },
+  "nativeRuntime": {
+    "clientEncoding": "UTF8",
+    "database": "postgres",
+    "defaultReadOnly": "on",
+    "diagnosticScope": null,
+    "jit": "on",
+    "listenAddresses": "",
+    "lockTimeout": "1s",
+    "projection": null,
+    "publicRelations": 0,
+    "serverEncoding": "UTF8",
+    "serverVersion": "17.6 (Debian 17.6-2.pgdg12+1)",
+    "serverVersionNum": "170006",
+    "statementTimeout": "5s",
+    "transactionReadOnly": "on",
+    "user": "layout_probe"
+  },
+  "nativeScalarObservationVerified": true,
+  "observedInequality": "pg_column_size(A||B||C)=2195 >16+(1032+16)+(840+16)+(147+16)=2083; underestimation112B.",
+  "onceClaimPin": {
+    "bytes": 850,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/LAYOUT_ONCE_CLAIM.SAFE.json",
+    "sha256": "fd6af2a8ddd0e05ccc3dd668ecf9066be93b888bf7180a2d57868528b4d555cb"
+  },
+  "originalPGDATAPayloadReads": 0,
+  "outerCompletionChunk": "e2e580",
+  "overallCaseAccepted": false,
+  "priorReportsRewritten": false,
+  "productChanged": false,
+  "production": false,
+  "projectionEnabled": false,
+  "queryPin": {
+    "bytes": 4750,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_NATIVE_LAYOUT_QUERY.sql",
+    "sha256": "0cc98e082c154b0e6511eafe7b532b9fa2fe39c0bf2bef0b55a8e8c16f673cd3"
+  },
+  "resourceMutations": 0,
+  "resultInterpretation": "Native JSONB datum-size observation confirms the specific source-derived additive m-bound counterexample. Overall execution remains FAIL because the required pg_ctl command0 and outer0 contract failed.",
+  "resultPins": [
+    {
+      "bytes": 1872,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/ACTUAL_EXECUTION.SAFE.json",
+      "sha256": "71e3013cca3dd47dbe8c41285bcb4ee8e73cbea37f3ff630dd5660d0daae9176"
+    },
+    {
+      "bytes": 1995,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ACTUAL_EXECUTION.SAFE.json",
+      "sha256": "0092dfb2bc11667abed9ee34019f9fc799393edaac0dd357e8df777cccb29694"
+    }
+  ],
+  "reviewAvailableHostBytes": 14988926976,
+  "reviewFullAdmissionGapBytes": 190852744,
+  "reviewRecorderPin": {
+    "bytes": 18931,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/review_second_attempt.py",
+    "sha256": "eea5e2acaafe9d84fc787bbaf2cd51fd1f996698edabd3ff604942405e0f7050"
+  },
+  "rootAdoptionPin": {
+    "bytes": 2562,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/ROOT_LAYOUT_ADOPTION.PRIVATE.json",
+    "sha256": "68b4def00730d69b6cb4c3471cf11a5f86b4f0dffca600ed374f2b5c9d5e0df9"
+  },
+  "rootCompactClosurePin": {
+    "bytes": 2448,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_FINAL_CONTAINER_READBACK.SAFE.json",
+    "sha256": "8762eb3a2632701974915de3999c416f9e78f59f702e2373458e1fa3bec01b74"
+  },
+  "rootEndReadbackPin": {
+    "bytes": 4085,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_END_READBACK.SAFE.json",
+    "sha256": "9145bd79fea986255cd1a266b6aad9fee499b38736ed54d9ecb18bc5b19d2884"
+  },
+  "rootOuterExitReceiptPin": {
+    "bytes": 285,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7/ROOT_OBSERVED_TOOL_EXIT.SAFE.json",
+    "sha256": "657953e86f1cd005a11571ba13399ba5ab11fa481701c3e87d3fb491a569f429"
+  },
+  "rootQualificationPin": {
+    "bytes": 2154,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_SELECTED_QUALIFICATION_V3.SAFE.json",
+    "sha256": "c7941fee0958de7598199158080df1ed6656e05476657b51a18ea4450c3f1656"
+  },
+  "rootReadbackPin": {
+    "bytes": 5047,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_SECOND_ATTEMPT_READBACK.SAFE.json",
+    "sha256": "bfd67371733842b412dc6c12afae4a775f8005b32dd7d7bad1af54f340f25f33"
+  },
+  "rootReportedCapacitySnapshot": {
+    "fullAdmissionBytes": 15179779720,
+    "gapBytes": 190815880,
+    "hostAvailableBytes": 14988963840
+  },
+  "runtimeProtectionScope": {
+    "Root549ActualPostclosePayloadHashesReusedWithoutDuplicateReplay": true,
+    "RootEndSourceReviewedAsText": true,
+    "canonicalAndFiveProtectedIdentityReadbackReusedFromRoot": true,
+    "currentProductU939AndPartsf300IndependentlyRehashed": true,
+    "globalUnknownUserAbsenceClaimed": false,
+    "originalPGDATARewalkOrPayloadHashReplay": false,
+    "runtimeBindingMetadataIndependentlyRehashed": true
+  },
+  "schema": "helmut-cas-native-size-independent-actual-review/1",
+  "shutdownEvidence": {
+    "bothSavedFinalContainersExit0PID0NoOOM": true,
+    "exact137CauseProven": false,
+    "limitation": "The final two server/init states do not waive a nonzero shutdown-command result. Docker exec termination when PID1 exits is compatible with evidence, not directly established here.",
+    "logs": "Ready,fast shutdown,checkpoint,database system is shut down,EOF.",
+    "pgCtlExit": 137,
+    "pgCtlStderrBytes": 0,
+    "pgCtlStdout": "waiting for server to shut down...."
+  },
+  "sourceImports": 0,
+  "sourceReviewPin": {
+    "bytes": 12622,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/SOURCE_REVIEW_V2.SAFE.json",
+    "sha256": "425ecc9621a02a31d7aa28adae9c34ab53024eb1c3eadd246fe60ae2c03ab1c1"
+  },
+  "sourceVersusActualLimits": [
+    "The32-field numerical witness and PG17.6 settings are actual captured SELECT output. officialPGCommit is a reviewed SQL constant tied to official source, not a runtime build-commit query.",
+    "No generated graph, renderer rejection, CAS/projected acceptance or projection ON was executed; those behavioral implications remain source-derived.",
+    "pg_column_size datum bytes are not RSS, allocator usage, shared-memory peak or RAM saving. No general safety repair/product change/full500/reservation follows.",
+    "Root recorded an earlier metadata-readback assertion on unsorted mount arrays, then corrected comparison prospectively without native rerun; this does not change either actual FAIL."
+  ],
+  "status": "FAIL_KEEP_WITH_OBSERVED_NATIVE_LAYOUT_COUNTEREXAMPLE",
+  "strictLifecycleContractSatisfied": false,
+  "tests": 0,
+  "thirdAttemptAllowed": false
+}

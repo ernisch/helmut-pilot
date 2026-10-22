@@ -1,0 +1,330 @@
+{
+  "afterAllOwnedExit": {
+    "anonBytes": 0,
+    "fileBytes": 372420608,
+    "fileMappedBytes": 0,
+    "groupPopulated": 0,
+    "interpretation": "372420608B file charge remains with zero anon/shmem/mapped and groupempty. That supports persistent unmapped filecache accounting rather than a live process RSS sum; it does not identify the files or show a removable engine peak.",
+    "shmemBytes": 0
+  },
+  "alreadyEstablishedAttribution": [
+    {
+      "actualRegularAllocatedBytes": 178290688,
+      "basis": "Full original overlay/file verification, fresh dedicated tmpfs destination, actual allocated regular blocks, restoration performed after nativeadmission in the owned worker before PG or SQL. The178290688B allocation is supported by these independent topology/operation/counter observations, not by subtracting late counters.",
+      "counterDelta": {
+        "fileBytes": 178290688,
+        "shmemBytes": 178290688
+      },
+      "destination": "/ram/jit-root",
+      "destinationMount": {
+        "filesystem": "tmpfs",
+        "mountpoint": "/ram",
+        "options": [
+          "rw",
+          "nosuid",
+          "nodev",
+          "relatime"
+        ],
+        "superOptions": [
+          "rw",
+          "size=262144k",
+          "mode=700",
+          "uid=1000",
+          "gid=1000"
+        ]
+      },
+      "engineSavingClaim": false,
+      "harnessOnlyQualification": "Migrated diagnostic runtime accommodation; optimizing or excluding it cannot be credited as Motor/500 RAMsaving.",
+      "lateBoundary": "This establishes setup allocation and a source-supported retained JIT tree. There is no separate per-inode late residency/charge receipt; no exact late605MB per-file decomposition follows.",
+      "pool": "Original JIT regular files in diagnostic tmpfs",
+      "proofLevel": "ACTUAL_RESTORE_SETUP_ALLOCATION_AND_SAME_GROUP_COUNTER_CORROBORATION",
+      "regularLogicalBytes": 176281648,
+      "regularPageBytes": 178290688,
+      "sameGroupAfter": {
+        "fileBytes": 548601856,
+        "shmemBytes": 178290688
+      },
+      "sameGroupBefore": {
+        "fileBytes": 370311168,
+        "shmemBytes": 0
+      }
+    },
+    {
+      "differenceVersusJITRegularAllocatedBytes": 4096,
+      "interpretation": "Source creates a236B config on tmpfs; the one-page arithmetic match after PG teardown corroborates tiny harness metadata, but is not an independent file-specific charged-page read. Unix sockets themselves must not be equated with this large shmem category.",
+      "logicalBytes": 236,
+      "path": "/ram/postgrest.conf",
+      "pool": "PostgREST config on /ram",
+      "proofLevel": "FROZEN_SOURCE_PATH_AND_TINY_FILE_RECEIPT_WITH_TEARDOWN_CORROBORATION",
+      "retainedAfterPGShutdownShmemBytes": 178294784,
+      "sourceReference": "worker.py934\u2013940"
+    }
+  ],
+  "atUTC": "2026-10-21T10:26:04.019154+00:00",
+  "authorActions": {
+    "ASTOrSubjectImports": 0,
+    "GitActions": 0,
+    "liveProcDockerSQLNativeOrTests": 0,
+    "originalRuntimeOrDatabasePayloadReads": 0,
+    "sourceEdits": 0,
+    "writes": "Only new file-charge-20261021/capacity-review/FILE_CHARGE_FINDINGS.SAFE.json"
+  },
+  "decision": {
+    "new500MBSavingOrCauseEstablished": false,
+    "newCodeOrDeletionRecommended": false,
+    "newNativeCaseOrObserverApproved": false,
+    "nextDecision": "Keep documented partial setup attribution. Existing records do not establish a genuinely avoidable large engine pool, so no architectural change/native test or full500GO follows. A future proposal must specify one candidate page-charge ownership observation and an authentic lifetime contrast before its observer/method can be independently qualified.",
+    "resourceFreeReconstructionProvesAvoidableEnginePool": false,
+    "resourceFreeReconstructionSufficesForExactLateFilePoolOwnership": false,
+    "resourceFreeReconstructionSufficesForSetupTopologyAndJITAllocation": true
+  },
+  "existingSamplers": {
+    "currentCaseProcDiagnostic": {
+      "actualServingCASBackendPID": 54,
+      "backend54CapturedByThisSampler": false,
+      "fields": "VmRSS/RssAnon/RssFile/RssShmem/VmSwap/Threads and processio counters",
+      "gap": "No maps/smaps/inode/pagecachecharge; postmaster8 is not servingbackend54. Endpoint processRSS cannot reconstruct historical peak ownership.",
+      "recordedPIDs": {
+        "node": 55,
+        "postgresPostmaster": 8,
+        "postgrest": 37
+      },
+      "sourceReference": "worker.py275\u2013284 and988\u2013989"
+    },
+    "priorOwnershipSampler": {
+      "availableMethod": "Known-group census/provenance and bounded status/smaps_rollup/PSS/groupstat samples; complete timing and UNKNOWN semantics",
+      "notCollected": "Per-map/per-inode resident page identities and charged memcg. Source explicitly says no allocation attribution; README excludes maps.",
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/ownership.py",
+      "sha256": "66dd34c724d330148407e222b54b5dcb556586f8063a0eb6ddc8a71d69bed6a1",
+      "whyNotReusableAsOldProof": "Even complete old PSS observations miss unmapped cache and are from different cases/groups; no retrospective current-case ownership reconstruction is possible. No old sampler was executed or its actual result re-audited."
+    }
+  },
+  "freshTopology": {
+    "actualEvidenceBoundary": "PASS binds actual source/mount checks. Mount capacities/path identities do not tag every resident folio or its charged memcg.",
+    "derivedPGDATA": "persistent /disk/pgdata inside separatelyadmitted /disk bind, nottmpfs",
+    "devShm": "16MiB container sharedmemory tmpfs limit; limit is not resident bytes",
+    "postgresLibLinkMount": "fresh /usr/lib/postgresql/17/lib tmpfs1MiB with3 links into /ram/jit-root",
+    "ram": "fresh /ram tmpfs256MiB, JIT tree/socket/PostgRESTconfig; HOME/TMPDIR also /ram",
+    "sourcePGDATA": "readonly /source-pgdata bind of protectedcanonical827a",
+    "sourceReferences": [
+      "common.py19,32,39\u201344",
+      "run.py221\u2013278 exactbind/tmpfs checks",
+      "worker.py774\u2013780 mount checks",
+      "worker.py817\u2013825 JITrestore/links",
+      "worker.py934\u2013940 PostgRESTconfig"
+    ],
+    "swapMaxBytes": 0,
+    "workerRootfs": "readonly"
+  },
+  "inputPins": [
+    {
+      "bytes": 12128,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/ACTUAL_RESULT.SAFE.json",
+      "sha256": "8cf6cb28631d2a180ae0c56a7d7afbd4f313b3b6550a441988fd35b65f9d5617"
+    },
+    {
+      "bytes": 297990,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/NATIVE_TIMELINE.SAFE.json",
+      "sha256": "4609486d075a34d069f7453e6a3fbbd33fd5eb96c4cf6904222cd8d29070487e"
+    },
+    {
+      "bytes": 23303,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/PHASES.SAFE.json",
+      "sha256": "7698c927e17657fde8ba9524deffc76d452db0ecdb3f2ce9a48385a0df95dea9"
+    },
+    {
+      "bytes": 487279,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/RESTORED_ORIGINAL_JIT.SAFE.json",
+      "sha256": "134ee8e8f63a945444b3db6b192ef870678b9a2c5f750a469004368cffc9c831"
+    },
+    {
+      "bytes": 4569,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/CYCLE_1.OBSERVATION.SAFE.json",
+      "sha256": "3a151ff4a5dd45a68bb63daa31c5e2e9e50213d0b9eedcb0fcab2642edeb9d75"
+    },
+    {
+      "bytes": 4583,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/CYCLE_6.OBSERVATION.SAFE.json",
+      "sha256": "8d54d96c53da841665c10e2df32201613e046949d0849bf857443e5e6036bfa7"
+    },
+    {
+      "bytes": 33400,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/common.py",
+      "sha256": "9f242fd3f17e09ba23ab59c70a46c550bd4b7f477b593ac034476d0bb0d51542"
+    },
+    {
+      "bytes": 28237,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/run.py",
+      "sha256": "e6cffe4e91951ae943e50d8fedffb848d91b930b64fb8b09016886f34609b74b"
+    },
+    {
+      "bytes": 74377,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+      "sha256": "9dfd5164fc4c95c56c8c60f29a959965e2c333d7b407173b98445b011df9d1d0"
+    },
+    {
+      "bytes": 16103,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/ownership.py",
+      "sha256": "66dd34c724d330148407e222b54b5dcb556586f8063a0eb6ddc8a71d69bed6a1"
+    },
+    {
+      "bytes": 9319,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-ownership-native-launcher/README.md",
+      "sha256": "bd672a522908ae4a7574cdc073be3d39871d6be62d232b5dd4ade4922420e122"
+    },
+    {
+      "bytes": 636506,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-c35697a3832dc8dd58b21042.CHECKED_CASE.PRIVATE.json",
+      "sha256": "fa14656bf25f6270fbdd61fe3ca409ac09da157196ef630611f212ffa6bbedeb"
+    }
+  ],
+  "observedLateCounterReference": {
+    "arithmeticSubtractionIsOwnershipProof": false,
+    "context": "Retained late Node/cgroup frame endpoints; not a same-instant decomposition of historical whole-group memory.peak.",
+    "fileBytes": 605392896,
+    "shmemBytesIncludedInFile": 233881600
+  },
+  "phaseAssociatedButNotExactlyOwned": [
+    {
+      "afterCopyVerificationBeforeJITFileBytes": 370311168,
+      "beforeCopyFileBytes": 724992,
+      "interpretation": "Fresh target files are generated and re-read under the metered group before PG. This is a concrete way to populate pagecache during diagnostic staging. It does not prove exact late resident/charged bytes for those inodes or that pages later used by the engine are avoidable. Already cached readonly source/runtime pages can remain charged to older external groups.",
+      "pool": "Buffered fresh clone and verification staging cache",
+      "proofLevel": "SOURCE_SUPPORTED_CREATE_WRITE_SET_AND_PHASE_ASSOCIATION_NOT_LATE_PAGE_PROVENANCE",
+      "sourceFileLogicalBytes": 369399611,
+      "sourceReference": "worker.py256\u2013273 ordinary1MiB bufferedread/write loop; copied complete manifest verification before record original-JIT-restoration"
+    },
+    {
+      "afterAllOwnedExitShmemBytes": 0,
+      "afterPGClosureShmemBytes": 178294784,
+      "interpretation": "Additional sharedbacking appears after PG startup/work and disappears during owned PG/PostgREST teardown.128MiB shared_buffers is a setting, not a resident-byte measurement. Without per-object provenance, assign neither exact bytes to shared_buffers/POSIXshm/anonymoussharedmmap nor avoidability.",
+      "lateShmemBytes": 233881600,
+      "pool": "PG/owned-runtime lifetime shmem growth",
+      "prePGJITShmemBytes": 178290688,
+      "proofLevel": "LIFETIME_ASSOCIATION_ONLY"
+    }
+  ],
+  "phaseCounterEvidence": [
+    {
+      "atUnixSeconds": 1792575635.9981463,
+      "fileBytes": 397312,
+      "fileMappedBytesOverlapping": 0,
+      "memoryCurrentBytes": 16994304,
+      "phase": "source-before-hash",
+      "shmemBytesIncludedInFile": 0
+    },
+    {
+      "atUnixSeconds": 1792575637.0735383,
+      "fileBytes": 724992,
+      "fileMappedBytesOverlapping": 0,
+      "memoryCurrentBytes": 20279296,
+      "phase": "persistent-copy",
+      "shmemBytesIncludedInFile": 0
+    },
+    {
+      "atUnixSeconds": 1792575639.733647,
+      "fileBytes": 370311168,
+      "fileMappedBytesOverlapping": 0,
+      "memoryCurrentBytes": 405467136,
+      "phase": "original-JIT-restoration",
+      "shmemBytesIncludedInFile": 0
+    },
+    {
+      "atUnixSeconds": 1792575649.2219353,
+      "fileBytes": 549097472,
+      "fileMappedBytesOverlapping": 0,
+      "memoryCurrentBytes": 603283456,
+      "phase": "start-PG",
+      "shmemBytesIncludedInFile": 178290688
+    },
+    {
+      "atUnixSeconds": 1792575649.273844,
+      "fileBytes": 561393664,
+      "fileMappedBytesOverlapping": 11321344,
+      "memoryCurrentBytes": 621604864,
+      "phase": "original-catalog-qualification",
+      "shmemBytesIncludedInFile": 190730240
+    },
+    {
+      "atUnixSeconds": 1792575649.326931,
+      "fileBytes": 567537664,
+      "fileMappedBytesOverlapping": 11321344,
+      "memoryCurrentBytes": 627875840,
+      "phase": "install-selected-renderer",
+      "shmemBytesIncludedInFile": 196628480
+    },
+    {
+      "atUnixSeconds": 1792575649.571671,
+      "fileBytes": 568369152,
+      "fileMappedBytesOverlapping": 11321344,
+      "memoryCurrentBytes": 628572160,
+      "phase": "start-owned-PostgREST",
+      "shmemBytesIncludedInFile": 197054464
+    },
+    {
+      "atUnixSeconds": 1792575649.5906212,
+      "fileBytes": 568381440,
+      "fileMappedBytesOverlapping": 11710464,
+      "memoryCurrentBytes": 632258560,
+      "phase": "PostgREST-socket-ready-no-HTTP-probe",
+      "shmemBytesIncludedInFile": 197058560
+    },
+    {
+      "atUnixSeconds": 1792575660.9520779,
+      "fileBytes": 605753344,
+      "fileMappedBytesOverlapping": 54300672,
+      "memoryCurrentBytes": 736833536,
+      "phase": "measurement-complete",
+      "shmemBytesIncludedInFile": 233881600
+    },
+    {
+      "atUnixSeconds": 1792575666.4466786,
+      "fileBytes": 550658048,
+      "fileMappedBytesOverlapping": 0,
+      "memoryCurrentBytes": 605294592,
+      "phase": "close-PostgREST-then-PG-and-prove-source",
+      "shmemBytesIncludedInFile": 178294784
+    }
+  ],
+  "retainedInodeEvidence": {
+    "checkedCopyMetadataEntries": 1741,
+    "fields": [
+      "device",
+      "inode",
+      "relative",
+      "kind",
+      "bytes",
+      "allocatedBytes",
+      "sha256",
+      "mode",
+      "uid",
+      "gid",
+      "links",
+      "atime_ns",
+      "mtime_ns",
+      "ctime_ns"
+    ],
+    "meaning": "Known disposable PGDATA inode/disk-allocation inventory for exact retirement; no residentPageSet/chargedMemcg/folio identity fields. Disk allocatedBytes is not charged RAM. No original payload or live inode was read."
+  },
+  "rootHEADAsSupplied": "5504c8e6",
+  "rootStartPin": {
+    "bytes": 2057,
+    "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/ROOT_RESUME_PROTECTION.SAFE.json",
+    "sha256": "c55bcce0b5281e738c317246eb8061d9e6b9988a13854ea10f866abfe214ddc0"
+  },
+  "schema": "helmut-file-charge-retained-evidence-attribution/1",
+  "scope": "Existing accepted cas-heap memory/mount/copy/JIT topology and specifically located prior ownership sampler only. No context/SQL/W45/179/95 re-review.",
+  "smallestMissingObservable": {
+    "identity": "Candidate mountID/superblock+device/inode and nativecgroup identity bound to record time/group.current/never-resetpeak; page/folio charge ownership must account for shared mappings and unmapped cache.",
+    "insufficientAlternatives": [
+      "st_size/st_blocks or archive/file length",
+      "mincore alone: residency is not memcgcharge ownership",
+      "smaps/PSS alone: mapped processes omit unmapped cache and differ from charged ownership",
+      "io.stat or procIO: aggregate/device or process counters contain no inode-residency attribution",
+      "endpoint differences or matching magnitudes alone"
+    ],
+    "minimumScope": "One candidate set, preferably already identified diagnostic clone/JIT staging if investigating apparatus. No hostwide file scan or processRSS sum. Engineavoidability needs a separate authentic-engine lifetime/use contrast; apparatus savings are never Motor savings.",
+    "question": "Which charged-resident pages of one preciselyidentified candidate inode set are present in this exact nativegroup at the relevant predeclared work/peak bracket, and what required engine use keeps them there?"
+  },
+  "status": "PARTIAL_SETUP_ATTRIBUTION_PROVEN_LATE_PER_INODE_CHARGE_UNRESOLVED"
+}

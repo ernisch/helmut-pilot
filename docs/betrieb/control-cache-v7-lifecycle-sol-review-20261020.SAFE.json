@@ -1,0 +1,163 @@
+{
+  "schema": "helmut-v7-lifecycle-independent-actual-review/1",
+  "status": "ACCEPTED_ACTUAL_LOCAL_LIFECYCLE_ONLY",
+  "atUTC": "2026-10-20T18:35:03.210147+00:00",
+  "model": "gpt-6.1-sol",
+  "independent": true,
+  "case": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b",
+  "preparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/PREPARED.SAFE.json",
+    "bytes": 26924,
+    "sha256": "a09c91e4d70e1b6f7b656e7b51f932c0133ce51b1fd8c43535d456dd71a24666"
+  },
+  "actualResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/ACTUAL_RESULT.SAFE.json",
+    "bytes": 7082,
+    "sha256": "2865ad68e063ce7989525660518fcd530ad5cc194824dfd195087cd85382f48e"
+  },
+  "workerResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/WORKER_RESULT.SAFE.json",
+    "bytes": 5563,
+    "sha256": "6dcce78d690a316284f919dcd0a8b8e8c1c9b8132b1825a76f88cd17062c110c"
+  },
+  "rootAdoptionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/ROOT_ADOPTION.SAFE.json",
+    "bytes": 3226,
+    "sha256": "edf0a9b55bf1b68b27af792bda9cb71d90ee069c6150b2e680a565442dfadb2c"
+  },
+  "preflightPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/PREFLIGHT.SAFE.json",
+    "bytes": 256230,
+    "sha256": "24dc1f1ee373c4cda0c6236ba7d2362af5e8514996fe867d55e46556622adda2"
+  },
+  "verifiedHostLifecycleBundle": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/ACTUAL_RESULT.SAFE.json",
+      "bytes": 7082,
+      "sha256": "2865ad68e063ce7989525660518fcd530ad5cc194824dfd195087cd85382f48e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/WORKER_RESULT.SAFE.json",
+      "bytes": 5563,
+      "sha256": "6dcce78d690a316284f919dcd0a8b8e8c1c9b8132b1825a76f88cd17062c110c"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/POSTGREST_STOP.SAFE.json",
+      "bytes": 2320,
+      "sha256": "9d7a0273ff8698ea9d0eb5b1f389bf962e81885a9dde8d880538f2e564a139bc"
+    }
+  ],
+  "workerStoredStopPin": {
+    "path": "/bench/POSTGREST_STOP.SAFE.json",
+    "bytes": 2320,
+    "sha256": "9d7a0273ff8698ea9d0eb5b1f389bf962e81885a9dde8d880538f2e564a139bc"
+  },
+  "hostTranslation": "Only exact /bench/POSTGREST_STOP.SAFE.json -> exact same lifecycle case/POSTGREST_STOP.SAFE.json, unchanged bytes/SHA; all three actual host files canonical/nonsymlink and independently hashed. No subject function executed by reviewer.",
+  "signedReturnCode": -2,
+  "acceptedExpectedTranslation": true,
+  "returnCodeClassification": "expected-original-12.2.3-sigterm-userinterrupt-sigint",
+  "shutdownPolicy": {
+    "schema": "helmut-original-postgrest-12.2.3-sigterm-policy/1",
+    "postgrestVersion": "12.2.3",
+    "originalBinarySHA256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617",
+    "originalBinaryBytes": 17309560,
+    "configSHA256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60",
+    "configBytes": 236,
+    "upstreamEvidenceSHA256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884",
+    "requestedSignal": "SIGTERM",
+    "additionalSignedExitCode": -2
+  },
+  "shutdownPolicyPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/SHUTDOWN_POLICY.SAFE.json",
+    "bytes": 499,
+    "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+  },
+  "upstreamEvidencePin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/upstream/SOURCE_EVIDENCE.SAFE.json",
+    "bytes": 4139,
+    "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+  },
+  "exactOriginalBinaryMetadataBound": {
+    "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/source-capture/postgrest-pinned",
+    "bytes": 17309560,
+    "sha256": "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617"
+  },
+  "actualConfigEvidencePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/POSTGREST_CONFIG.PRIVATE.txt",
+    "bytes": 236,
+    "sha256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60"
+  },
+  "completePostgrestLogPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/POSTGREST_LOG.PRIVATE.txt",
+    "bytes": 409,
+    "sha256": "41441f6549bd35f82579f48e305d2065792e03a7f92c7349c8850a54d696d413"
+  },
+  "postgrestRawLogBytes": 409,
+  "liveSamePIDDirectSIGTERMSent": true,
+  "reapedNoTimeoutKillErrors": true,
+  "persistedStopEqualsReturnedReceipt": true,
+  "postgrestPipeEOFDrainEndedLogClosed": true,
+  "actualInternalRTSSignalPathTracedByThisReview": false,
+  "actualBinaryRehashedByReviewer": false,
+  "smallExecutedSourcePinsMatched": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/common.py",
+      "bytes": 15438,
+      "sha256": "fc931ec9292fabf5f8926c748b87c2b29073f562d84907a58e15b5b405511909"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/run.py",
+      "bytes": 23286,
+      "sha256": "5660a52349dbf75a09ccabeec8bde72c2f7dd52ca97fec155c99da0fcb006ecf"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/worker.py",
+      "bytes": 30752,
+      "sha256": "12b7b3bdbbc80771c211279101dd78f63c1eb6c7e5ca05f58683f14694bcda6d"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-native-v7-launcher/postgrest_lifecycle.py",
+      "bytes": 9220,
+      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+    }
+  ],
+  "postgresExitCode": 0,
+  "all8SetupCatalogOfflineCapturesExit0": true,
+  "postgresEOFAndOfflineShutdownVerified": true,
+  "completeOriginalCatalogReferenceAndOnlyReviewedBodyChangesVerified": true,
+  "postOperationFullCatalogAuthStoreUnchanged": true,
+  "sourceManifestPins": {
+    "SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    "SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json": {
+      "path": "/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases/control-691308195082cdee46ff279b/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    }
+  },
+  "sourceCompleteSavedManifestsEqual": true,
+  "sourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "sourceFileCount": 1709,
+  "sourceFileBytes": 369399611,
+  "originalPGDATABytesReadByReviewer": false,
+  "nativeKernelLastExitCovered": true,
+  "nativeGroupEmpty": true,
+  "allNativeMemoryEventsZero": true,
+  "setupHelpersExited": true,
+  "workerContainerStoppedPID0Exit0": true,
+  "nativeLifetimePeakDiagnosticBytes": 645615616,
+  "authRPCCount": 0,
+  "nodeStarted": false,
+  "historicalV6FailReclassified": false,
+  "findings": [],
+  "scope": "Actual lifecycle gate evidence only for exact integrated a09c V7 freeze. Control3 still needs its own fresh preflight/admission/Root adoption and real actual outcome review. This reviewer does not start or authorize any resource.",
+  "subjectExecutionTestsNativeActionsByReviewer": 0,
+  "actualControl3Accepted": false,
+  "ramSavingClaimed": false,
+  "threeRPCPlateauClaimed": false,
+  "full500Accepted": false,
+  "production": false
+}

@@ -1,0 +1,73 @@
+{
+  "schema": "helmut-fullpath-retention-root-source-integration/1",
+  "atUTC": "2026-10-21T10:52:17.712Z",
+  "head": "ea760a70215efdeb371586b9b03a740998d1517b",
+  "purpose": "Close actual entrypoint wiring gap, no new run or optimization claim",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/measured-preparation.js",
+      "bytes": 6949,
+      "sha256": "4e56a5ef361d7b72467529dbd9cbc9dbed0152cfcfebcb0bad5fb58774312977"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/atomic-usage-integration.js",
+      "bytes": 35244,
+      "sha256": "66bb12e07850e058a8004cf1372c8733ef42f7fa995444b716084bc8f50534b4"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/connect-local500.py",
+      "bytes": 30268,
+      "sha256": "bb93d8caf29015e935536cbb1446783291aee9be8fcf5f21d86e3660bf04ea07"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/bounded-read-integration.js",
+      "bytes": 8510,
+      "sha256": "5e4048e862f3c942ac2563638336964a10c96bf337566474568705a43e1830f0"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-integration.js",
+      "bytes": 10298,
+      "sha256": "1398fe43a42110195d938bde5685e921819a1b3a6be67c0b04d376570557893d"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_state_parts_local.sql",
+      "bytes": 54938,
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_read_bounded_local.sql",
+      "bytes": 18910,
+      "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5"
+    }
+  ],
+  "trace": [
+    {
+      "source": "scripts/helmut-resource-meter/measured-preparation.js",
+      "lines": "61-65",
+      "fact": "Measured preparation validates descriptor and calls installAfterActivation on plan.targetDatabase through bounded local targetSQL; output is exclusive bootstrap receipt."
+    },
+    {
+      "source": "scripts/helmut-resource-meter/atomic-usage-integration.js",
+      "lines": "90-128",
+      "fact": "Descriptor enforces control requiresmerkle/history, bounded requirescontrol; exact currently qualified cache U/Parts pins and cold graph delta acceptance enter runtime source manifest."
+    },
+    {
+      "source": "scripts/helmut-resource-meter/atomic-usage-integration.js",
+      "lines": "329-386",
+      "fact": "Only new ownedtarget SQL installation: relational usage, actual currentproposalstate SQL, full state bootstrap and native catalog checks, then bounded-read SQL/cold digest and full logical hash equality. All inside measurement."
+    },
+    {
+      "source": "scripts/helmut-resource-meter/connect-local500.py",
+      "lines": "165-257",
+      "fact": "Exact originaltemplate transformations embed descriptor/receipt validation, environment, native catalog/source witnesses and fullsource overlays into actual IO/application/assembly route."
+    }
+  ],
+  "conclusion": "Current renderer/cache/bounded-reader integration is source-wired conditionally on exact admitted descriptor. Fresh full-resource runtime activation/end-to-end proof remains NOT performed; requires newconditions/newGO. False historical newGlueAccepted/full500Accepted flags are not bythemselves a wiringbug.",
+  "sourceOnly": true,
+  "newNativeCases": 0,
+  "newTests": 0,
+  "newSQL": 0,
+  "providerModelCalls": 0,
+  "production": false,
+  "full500": false
+}

@@ -1,0 +1,316 @@
+{
+  "schema": "helmut-cold-digest-differential-request-contract/1",
+  "status": "PREPARED_NOT_RUN",
+  "nativeCases": 19,
+  "nonceInstruction": "Root replaces each ROOT_FRESH_PAIR_NONCE marker with a fresh UUIDv4, then freezes that exact request for BOTH old and new semantic calls; measurement cases each use their own fresh nonce. No automatic retry.",
+  "cases": [
+    {
+      "role": "service_role",
+      "expectedOutcome": "ok",
+      "request": {
+        "id": "main-auth"
+      },
+      "caseId": "legacy"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "ok",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__"
+      },
+      "caseId": "history-warm"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "ok",
+      "request": {
+        "id": "main-auth",
+        "knownProof": null,
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__"
+      },
+      "caseId": "history-cold"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "ok",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": null
+      },
+      "caseId": "graph-cold-history-warm"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "ok",
+      "request": {
+        "id": "main-auth",
+        "knownProof": null,
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": null
+      },
+      "caseId": "graph-cold-history-cold"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "ok",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": {
+          "state": {
+            "version": "merkle-auth-v1",
+            "generation": "6593701f-3f25-4e43-9e17-e9eda4306554",
+            "root": "24bea8f26ed99b234b4d0c557ce8f80cbba205bc093797daff329b398b851633",
+            "originalHash": "840b1c9cfbf91e7c90de3ee8b866e77c6829d9f67a049fd310c8351fa285ed85"
+          },
+          "nodeCount": 1848,
+          "nodeDigest": "2309f0d34ce2fc9ef025f3511d3f865ff5e059b7262d6c4640318360f0a36b3b"
+        }
+      },
+      "caseId": "graph-warm"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "ok",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6001,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": {
+          "state": {
+            "version": "merkle-auth-v1",
+            "generation": "6593701f-3f25-4e43-9e17-e9eda4306554",
+            "root": "24bea8f26ed99b234b4d0c557ce8f80cbba205bc093797daff329b398b851633",
+            "originalHash": "840b1c9cfbf91e7c90de3ee8b866e77c6829d9f67a049fd310c8351fa285ed85"
+          },
+          "nodeCount": 1848,
+          "nodeDigest": "2309f0d34ce2fc9ef025f3511d3f865ff5e059b7262d6c4640318360f0a36b3b"
+        }
+      },
+      "caseId": "graph-warm-history-stale"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "ok",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": {
+          "state": {
+            "version": "merkle-auth-v1",
+            "generation": "6593701f-3f25-4e43-9e17-e9eda4306554",
+            "root": "0000000000000000000000000000000000000000000000000000000000000000",
+            "originalHash": "840b1c9cfbf91e7c90de3ee8b866e77c6829d9f67a049fd310c8351fa285ed85"
+          },
+          "nodeCount": 1848,
+          "nodeDigest": "2309f0d34ce2fc9ef025f3511d3f865ff5e059b7262d6c4640318360f0a36b3b"
+        }
+      },
+      "caseId": "graph-changed"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "error",
+      "request": null,
+      "caseId": "null"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "error",
+      "request": {
+        "id": ""
+      },
+      "caseId": "id-empty"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "error",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "bad",
+        "knownGraph": null
+      },
+      "caseId": "nonce-bad"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "error",
+      "request": {
+        "id": "main-auth",
+        "knownProof": false,
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": null
+      },
+      "caseId": "proof-bad"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "error",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": false
+      },
+      "caseId": "graph-bad-type"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "error",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": {}
+      },
+      "caseId": "graph-bad-shape"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "error",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": {
+          "state": {
+            "version": "merkle-auth-v1",
+            "generation": "6593701f-3f25-4e43-9e17-e9eda4306554",
+            "root": "24bea8f26ed99b234b4d0c557ce8f80cbba205bc093797daff329b398b851633",
+            "originalHash": "840b1c9cfbf91e7c90de3ee8b866e77c6829d9f67a049fd310c8351fa285ed85"
+          },
+          "nodeCount": 1849,
+          "nodeDigest": "2309f0d34ce2fc9ef025f3511d3f865ff5e059b7262d6c4640318360f0a36b3b"
+        }
+      },
+      "caseId": "graph-count-mismatch"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "error",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": {
+          "state": {
+            "version": "merkle-auth-v1",
+            "generation": "6593701f-3f25-4e43-9e17-e9eda4306554",
+            "root": "24bea8f26ed99b234b4d0c557ce8f80cbba205bc093797daff329b398b851633",
+            "originalHash": "840b1c9cfbf91e7c90de3ee8b866e77c6829d9f67a049fd310c8351fa285ed85"
+          },
+          "nodeCount": 1848,
+          "nodeDigest": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "caseId": "graph-digest-mismatch"
+    },
+    {
+      "role": "service_role",
+      "expectedOutcome": "error",
+      "request": {
+        "id": "foreign-auth-diagnostic-only",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": null
+      },
+      "caseId": "foreign-id"
+    },
+    {
+      "role": "anon",
+      "expectedOutcome": "error",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": null
+      },
+      "caseId": "role-anon"
+    },
+    {
+      "role": "authenticated",
+      "expectedOutcome": "error",
+      "request": {
+        "id": "main-auth",
+        "knownProof": {
+          "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+          "count": 6000,
+          "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+          "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+        },
+        "readNonce": "__ROOT_FRESH_PAIR_NONCE__",
+        "knownGraph": null
+      },
+      "caseId": "role-authenticated"
+    }
+  ],
+  "comparison": "One native per-request transaction compares OLD JSONB IS NOT DISTINCT FROM NEW for the identical request/role, including all payloads/nonces. Error cases require identical SQLSTATE and complete <=512-byte message. Both outcomes must match expectedOutcome. No raw Auth payload is emitted.",
+  "pairNonceInstruction": "Root generates diff_pair_nonce UUIDv4 for EACH of all19 pairs, even legacy/error requests without a valid request nonce; replace only the exact __ROOT_FRESH_PAIR_NONCE__ marker. Deliberate bad nonce remains bad. Bind role,expectedOutcome,caseId,pairNonce,and complete concrete request in preflight/adoption."
+}

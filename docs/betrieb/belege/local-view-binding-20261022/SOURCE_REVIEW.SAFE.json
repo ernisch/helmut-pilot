@@ -1,0 +1,69 @@
+{
+  "schema": "helmut-local-view-binding-source-review/1",
+  "recordedUTC": "2026-10-22T09:49:55.336628+00:00",
+  "scope": "SOURCE_ONLY_FRESH_VIEWS_BINDING_HASH_HANDOFF",
+  "baselineCommit": "d2d1f7ad19b2269616324355a346e8fe1a9424bf",
+  "baselineAdapter": {
+    "file": "lib/helmut/synthetik-500-production-adapter.js",
+    "bytes": 28589,
+    "sha256": "1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4"
+  },
+  "candidateImplementationCommit": "066346154f03d3c915d8d5bc1b161ddef2fae88f",
+  "integrationImplementationCommit": "5f99d8e11db22396c2b5cae2998d982b26055bb5",
+  "sourcePins": [
+    {
+      "file": "lib/helmut/synthetik-500-production-adapter.js",
+      "bytes": 28675,
+      "sha256": "31fa8e05742ba8f2618f01bf8f4c24b29b9edc1fe36ab25e0fb49a6f39bc3804"
+    },
+    {
+      "file": "scripts/synthetik-500-production-adapter-fix1-test.js",
+      "bytes": 18198,
+      "sha256": "9fb6bc1f321d10fd70108cb85f85fba1381be95c0f8753161f0e0ea612ab91d7"
+    },
+    {
+      "file": "lib/helmut/briefing-lagebindung.js",
+      "bytes": 2933,
+      "sha256": "6cca21f32919cf3df2c6f6661886b1c8fc5a4aa99f5c0016953d3f043095a5a3"
+    },
+    {
+      "file": "lib/helmut/blocker2-d-historical-binding.js",
+      "bytes": 8893,
+      "sha256": "b9b6991e2f338e01db9d335f93f8fc0c2176fe69ccfc0563e5c2b5797b61065c"
+    }
+  ],
+  "sourceChange": "Only return the scalar eingabeHash from the existing currentInputs/guard chain and reuse the same fresh views guard result; remove the redundant pure local binding rebuild.",
+  "freshGuardInvocationsRetained": true,
+  "freshSourceProfileRuntimeControlAndFinancialChecksRetained": true,
+  "independentSourceReview": {
+    "model": "deepseek-v4-pro",
+    "effort": "high",
+    "mode": "read",
+    "completed": true,
+    "result": "No supported concrete regression within the supplied public-source scope",
+    "summaryCompacted": true,
+    "testsExecutedByReviewer": false
+  },
+  "rootActualFocusedVerification": {
+    "nodeVersion": "24.19.0",
+    "fix1ChecksPassed": 10,
+    "adapterChecksPassed": 16,
+    "sameOrderedFreshSourceProfileBindingControlChecks": 6,
+    "oldPureBindingCalls": 7,
+    "newPureBindingCalls": 6,
+    "negativeViewsCheckpointCases": 4,
+    "allNegativeCasesBlockBeforeMaterializationAndMorningInsert": true,
+    "unknownConsumedEnteredJournalRetained": true,
+    "sanitizedEnvironment": true,
+    "nativeOrProviderExecution": false
+  },
+  "historicalAcceptanceTransferred": false,
+  "requiresFreshIntegrationAcceptance": true,
+  "executionAuthority": false,
+  "newGlueAccepted": false,
+  "full500Accepted": false,
+  "RAMOrTimeGainAccepted": false,
+  "nativeUnit60Qualified": false,
+  "production": false,
+  "sourceWrites": 0
+}

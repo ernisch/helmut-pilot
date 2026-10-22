@@ -1,0 +1,83 @@
+{
+  "schema": "helmut-rootstat-actual-root-observation/1",
+  "status": "METADATA_OBSERVATION_PASS_ONLY",
+  "completedUTC": "2026-10-20T19:37:18.599767+00:00",
+  "cid": "0eaf2eb397e286e54603466c1008a8b7e3ff4f1aacd4c4c9281fbce15f91e17d",
+  "observed": {
+    "schema": "helmut-two-derived-pgdata-rootstat/1",
+    "helperVersion": 1,
+    "uid": 0,
+    "euid": 0,
+    "gid": 0,
+    "egid": 0,
+    "uidMap": "         0          0 4294967295\n",
+    "gidMap": "         0          0 4294967295\n",
+    "roots": [
+      {
+        "path": "/subject-late-v9",
+        "isDirectory": true,
+        "device": 27,
+        "inode": 2019320,
+        "uid": 999,
+        "gid": 1000,
+        "modePermissions": 448,
+        "links": 19,
+        "mtimeSeconds": 1792458418,
+        "mtimeNanoseconds": 433956365,
+        "ctimeSeconds": 1792458418,
+        "ctimeNanoseconds": 433956365,
+        "filesystemType": 2035054128,
+        "filesystemFlags": 4129,
+        "readOnly": true
+      },
+      {
+        "path": "/subject-post-v10",
+        "isDirectory": true,
+        "device": 27,
+        "inode": 2021297,
+        "uid": 999,
+        "gid": 1000,
+        "modePermissions": 448,
+        "links": 19,
+        "mtimeSeconds": 1792472715,
+        "mtimeNanoseconds": 133159722,
+        "ctimeSeconds": 1792472715,
+        "ctimeNanoseconds": 133159722,
+        "filesystemType": 2035054128,
+        "filesystemFlags": 4129,
+        "readOnly": true
+      }
+    ]
+  },
+  "targetRootsUnchanged": true,
+  "allMountsRO": true,
+  "networkNone": true,
+  "allCapsDropped": true,
+  "archiveCompareDeletionPerformed": false,
+  "payloadReads": false,
+  "nativeWorkload": false,
+  "performanceQualification": false,
+  "hullRetained": true,
+  "outputPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/ROOT_START_STDOUT.PRIVATE.txt",
+      "bytes": 817,
+      "sha256": "0926ec8159a045fd9214b28de90a7ea9d856e904ab031b433eb9d4aa55bae5fd"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/ROOT_START_STDERR.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/ROOT_STOPPED_INSPECT.PRIVATE.json",
+      "bytes": 10019,
+      "sha256": "2741cf51778567515b8781404e5edcf4d49fa803474567de2ad32963dbaa7dca"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/ROOT_DOCKER_LOGS.PRIVATE.txt",
+      "bytes": 817,
+      "sha256": "0926ec8159a045fd9214b28de90a7ea9d856e904ab031b433eb9d4aa55bae5fd"
+    }
+  ]
+}

@@ -1,24 +1,128 @@
 # CURRENT STATE — Helmut
 
-**Lokal 20.10.2026 UTC/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
+**Stand22.10.2026 Europe/Istanbul.** Letzter Production-Befund16.10.2026 13:07:32UTC,
+nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
+[Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 20.10.: Ursachenmessung vorbereitet; neue native Probe an Plattenreserve blockiert
+## 22.10.: Restore und geschützter CI-Originalkanal
 
-Aktiver Branch `codex/late-state-memory-diagnostics-20261020`, Basisf0d3b039
-(PR925 auf PR924); c8624f7c erhalten. Sechs parallele SOL-Helfer priorisieren
-anhand der Originalkurve zuerst DB-Wachstum, danach Node. Größte verbleibende
-vermeidbare Ursache noch nicht bewiesen; keine weitere Motoränderung auf Verdacht.
-Nächste enge Frage: vollständige Knotensortierung als Ursache des Temp-I/O
-(6212295B je Datei im Mittel); das ist kein RAM. Inerte SQL-Vorlagen, rein lesender
-Admissioninspektor und noch unverdrahteter Abschlusshelfer vorbereitet;
-12 reine Helfersimulationen PASS, native Qualifikation/Einbindung NOT RUN.
-Historischer PostgREST-Gesamtfehler bleibt FAIL mit unbekanntem Exitcode.
-Guardbeobachtung16:11:14UTC:8597049344B frei, nativeKomponente braucht8606711808B
-(9662464B fehlen); Volladmission15179779720B (6582730376B fehlen).
-8GiB Boden unverändert, keine Löschung/RAM-Ausweichlösung/Ressourcenstarts.
-Kein gemeinsamer neuer OLD/NEW-/Plateau-/500MB-Nachweis; kein neues Voll500-GO.
-Vollstartprüfer verlangt weiterhin DeepSeek-Pro-High; Konflikt mitSOL-only vor
-späterem Vollstart klären, Router/Prüfvertrag unverändert, keine Modellaufrufe.
+13.527Dateien hashverifiziert; physische DB-Kopien fehlen. Manifest+9Negativgruppen PASS.
+Contracttest-Storemutation: Fix4Fälle PASS, Store bytegenau restauriert;
+Zeitmetadaten erklärt geändert.88/88Bytepins PASS,84CI+3V12 auch Metadaten gleich.
+7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld ausgeschlossen.
+[Restore](betrieb/private-ci-original-provisioning-20261021.md).
+Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weiter inert.
+Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
+Runtimebindungen/native Verbraucher offen; alte GOs verbraucht, Quell-DB gestoppt.
+[Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
+[PR933](https://github.com/ernisch/helmut-pilot/pull/933) nach voller
+[CI39783955460](https://github.com/ernisch/helmut-pilot/actions/runs/39783955460) integriert.
+84Originale für eigene Änderungen automatisch nach Lauf-/PR-/Checkoutprüfung;
+Schlüssel weiter in `helmut-ci-originals`, keine persönliche Einzelfreigabe.
+Kernel-PSI/Reclaim opt-in:22Purefälle PASS, alter Snapshot gleich; kein Zeit-/Reservebeleg.
+[Historische CI-Belege](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
+Unit60/Voll500/Production/App403 offen.
+
+## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
+
+Einmaliger Mock500 auf `cd1c4372`, Fall `f3375a7d5548`: 499 ACK/HTTP200,
+Index499 HTTP409 `synthetik500-dispatch-EU-unit-deadline`. Erwartete1497 Positionen
+beendeter Einheiten, keine1500er Abnahme. Slot12/GO/Claim/Setup verbraucht und erhalten.
+[Originaler Endbeleg](betrieb/belege/next-local-full500-20261021/V12_ACTUAL_TERMINAL.SAFE.json),
+[Einordnung](betrieb/next-local-full500-20261021.md).
+Gemeinsamer Peak1.400.479.744B, high374/max0/OOM0, Gruppen bis letztem Exit leer.
+647.520.256B rechnerischer Abstand sind wegen FAIL/Speicherdruck kein Puffernachweis.
+Ziel≤1.548.000.000B mit500.000.000B Reserve unverändert. Appanon634.236.928B und
+DBfile382.468.096B stammen aus demselben Snapshot; getrennte Peaks nicht addieren.
+8Originalpins/SourceWrites0/Day21-42BücherPASS; kein neuer PostgREST-Abschlussfehler,
+jedoch keine eigene strenge Einzelquittung. 83.476Requests/4000Mutationen/24.492Events
+unabhängig geprüft. Motor ohne Anbieter früh12,412/spät24,543s Median, Spitze31,361s;
+38Graphreads/12CAS pro Einheit. Zwei Usage-Writes allein<1,826s sind keine Lösung.
+
+Authentische späte Arbeitskopie:1714Dateien/372.011.391B. P-PhasenprüfungPASS:
+4frischeReads/2nichtgesendeteCaptures/0CAS; warm Vollread520ms,Kontrollread259/264ms,
+Capture122/124ms. Zwei frühereHTTP-Diagnosen bleibenFAIL. F-FinanzprüfungPASS:
+6Kontrollreads, warme Mediane186ms Lesen/6,4ms financial/2ms kontrolliere.
+Die Finanzberechnung ist kein Hauptengpass; keine Retentionsaussage aus Endpunktdeltas.
+
+Budgetfix: `canSpendLlmForTenant` spart nur bei ohnehin inerter Tenantpolicy zwei
+Kostenreads; Globalcheck bleibt frisch, positive Budgets/Failclosed unverändert.
+67Assertions/1352Alt-Neu-FällePASS. [E-Vergleich](betrieb/belege/next-local-full500-20261021/V12_TENANT_BUDGET_COMPARISON.SAFE.json):
+OLD/NEW/NEW/OLD, Peakmittel594.139.136→538.824.704B (−55.314.432B/9,31%), beide Paare
+positiv. CPU17,785→12,981s, Gate737→331ms,18→6verifizierteReads/0CAS. Entscheidungen
+identisch gesperrt(Default50/Verbrauch1000), History6000 unverändert. Damalige179er
+Suite zuerst178/179; fehlenden Storage-Artefaktpin korrigiert, betroffene10ChecksPASS.
+
+Struktureller Sperrumbau: explizit lokaler `invocation-lease-v1` in Lage/Storage,
+zwei vollständige Auth-Read/CAS-Zyklen durch kleine SQL-Aufrufe ersetzt. Originale
+Funktionskörper20260719, privater Handle pro Aufruf statt Job-Tokenmap; strikteACKs,
+Ziel/Modus gebunden. Unbekanntes Release oder verlorener Besitz verhindert Erfolg;
+kein Retry/Fallback. DefaultAUS, globales Flag unverändert. NativeG-V2PASS:
+11LockRPC/2frischeFullreads/0AuthCAS, echte Konkurrenz/TTL/alterToken/Nachfolger,
+Root/History6000/vier historische abgelaufene Locks unverändert. G1 bleibtFAIL vorSQL
+wegen falscher Totalleer-Annahme. [Native Abnahme](betrieb/belege/local-lock-lease-20261021/ROOT_LOCAL_LOCK_LEASE_ACCEPTANCE.SAFE.json).
+[H-Vergleich](betrieb/belege/local-lock-lease-20261021/WARM_COMPONENT_COMPARISON.SAFE.json):
+vier Arme je6ZyklenPASS, Peakmittel611.895.296→536.227.840B (−75.667.456B/12,366%),
+beide Paare positiv. CPU25,089→13,456s; mit Abschluss26,270→15,613s;
+Zyklusmedian1659→22ms. OLD12interneReads/12CAS,NEW12LeaseRPC/0CAS; beide3Witnessreads.
+Datenhash ohne Revision/Root/History/Altlocks gleich; alle Exits0/EOF/Gruppen leer/Events0.
+WAL-Insertfenster222352→58732B vorShutdown; Graphrelation+45056→0B. SOURCE/ACTUAL
+unabhängigPASS. E/H: warmer geteilter Cache, direktesSQL, fortgeschriebene physische
+COPY; kein HTTP-/Langzeitplateau-/500MB-Beweis. Ersparnisse nicht addieren.
+
+Codecommitd6778b78 umfasst Binding6395887a und engen Senderguard: echte Receipts,
+50Runtimepins/26Vorlagen/3Umgebungen gebunden, alte Bloblocks vor Bootstrap frisch
+streng prüfen und erhalten. Bounded Sender-Control Pflicht; Katalogleerprüfung nur
+Start/Final. SOURCEPASS,28JS-/2Python-PurechecksPASS, RootgenuineDescriptorPASS;
+Client15GruppenPASS. Neue89Runtimepins/10ArtefaktchecksPASS nach Mappingkorrektur;
+erster Metadatenfehler bleibtFAIL. 180er Offline-Schlusslauf tatsächlich178/180
+in676s; nur Dokumentgröße/Env-InventarFAIL. Beide korrigiert, gezielt4/38ChecksPASS;
+kein umgedeuteter durchgehend grüner Lauf. Unbeabsichtigten --help-Start beendet.
+
+Unit60 UNQUALIFIZIERT: Index499 J.enter→409 exakt62,954656s inklusive Fehlercleanup.
+Komponenten-Zeitgewinne belegen keine gemessene Fullmotorreserve.
+Echter HTTP-Auth-Zyklus I:5Reads/2CAS/2Callbacks bestätigt, Datenhash ohne Revision/
+Root/History/4Altlocks wiederhergestellt; alle7HTTP200. GesamtFAIL wegen PostgREST
+TERM→−2 ohne passende Configqualifikation; kein Timeout/Kill/EOF-Fehler, Gruppeleer.
+675.733.504B Diagnosepeak/alleEvents0 kein Reservebeweis. Warme Reads6,67MB,
+Header201ms Median; CASHeader205/207ms, Callback0,065/0,029ms. Capture35/55ms,
+Build91/93ms; verschachtelte Zeiten nicht addieren. SOURCE/ACTUAL unabhängig geprüft.
+J-HTTP-Lockvergleich tatsächlichOLD/NEW/NEW/OLD je6ZyklenPASS: Peakmittel
+718.508.032→640.927.744B (−77.580.288B/10,797%); beidePaare80.384.000/74.776.576B
+positiv. CPU22,569→13,842s; Abschluss23,887→16,106s; Arm-Zyklusmediane1384→9,32ms.
+OLD15Fullreads/12CAS,NEW3Fullreads/12LeaseRPC/0CAS jeArm, 298Quellen gleich. Root/
+History6000/Altlocks/Datenhash ohneRevision gleich, Gruppenleer/EOF/alleEvents0.
+NeuePolicy VORStart: exakte frische304B-Config/Binary/8Upstreamdateien/Nonce,
+einmaliges privatesObjekt; rawPostgREST−2 nuralsbelegteTERM→UserInterrupt→SIGINT-
+Übersetzung gewertet. 28PuretestsPASS, Originalhelper/I-FAIL unverändert.
+Warmer geteilterCache/fortgeschriebeneCOPY/Instrumentierungsaufwand enthalten;
+keinPlateau/Fullmotor/Unit60/500MB-Pufferbeweis. Unabhängige SOURCE/ACTUAL-AbnahmePASS.
+
+Branch `codex/controlled-cleanup-and-late-probe-20261020`, DraftPR927 auf926/925/924;
+c8624f7c erhalten, U93917a57/Partsf30089e7 unverändert. Frühere Kombination
+1.170.790.400→1.015.904.256B/−13,23% kein500Beweis;95native/34Gates/22Integration
+nicht wiederholt. W45OFF/NEW30/NEW8/112B-Formel abgeschlossen.
+Originalimage/8Inputs nachHTTPfrischSHA-unverändert, Originalprozesseleben.
+Platte20:52UTC8.965.083.136B frei/8GiBFloor, volleAdmission15.179.779.720B;
+Fehlbetrag6.214.696.584B. Alle benötigten Originale/DBstände/Belege bleibenKEEP.
+Frühere66d3Hülle konkret freigegeben entfernt/netto911.409.152B; sonst Originale,
+Archive/DBstände/Git/FAIL/UNKNOWN KEEP. HistorischeCloud nicht direkt angebunden,
+authentifizierte lokale Quelle real. CI39671828506 aufd6778b78FAIL: Day21Importfix
+wirkt; private Originalharnessdatei fehlt(`regular pinned file required`). Browser/
+MobileSmokePASS, VercelPreviewFAIL separat. Keine Ersatzoriginale oder SkipsalsPASS.
+Router erlaubt/unverändert, aktuelle kritische Arbeit SOL, keine externen Modellaufrufe.
+Betreiberkosten unverändert. 500/1500/Offline90/Unit60/Auth30/16frischeKontrollen offen.
+Kein Production/Merge/Deploy/Reserveänderung/Voll500; alle altenGOs einschließlichV12verbraucht.
+Lokaler Umbau/HTTP-Komponentenbeleg abgeschlossen; Gesamtziel teilweiseoffen.
+[Nächster sicherer Schritt](betrieb/belege/local-lock-lease-20261021/NEXT_SAFE_STEP.SAFE.json).
+
+## 20.10.: Vorheriger Diagnostikstand vor der neuen Bereinigungsfreigabe
+
+Vorheriger Branch `codex/late-state-memory-diagnostics-20261020`, Basisf0d3b039
+(PR925 auf PR924); c8624f7c erhalten. Damals Sortier-/Temp-I/O-Ursache unklar,
+nativer Starter noch unqualifiziert und9.662.464B unter Komponentenadmission.
+Dieser historische Stand wurde durch die oben belegte Bereinigung, Einbindung
+und tatsächlichen Diagnosen abgelöst; alte PostgREST-FAILs bleiben FAIL.
 [Befund, Belege und konkrete nächste Messung](betrieb/late-state-memory-diagnostics-20261020.md).
 
 ## 20.10.: Vorheriger Renderer-Sprint; 500er Abnahme offen
@@ -166,19 +270,13 @@ Sicherheitsgrenzen: AfD-zugehörige Abgeordnete sind ausgeschlossen, Prüfung vo
 - **B2→D-Integration11.10.:** PR899/Runtime `1ad00cd4` auf READY `dpl_76HSdbWhPMaDRJzQqQ1GsrGx3wcE`; CI168+330 Suiten grün; lokal500/500 nichtleere Kontexte (468 normal/32 historisch); keine neue B2-Fachabnahme/Installation/Aktivierung/Productionänderung; Senderabnahme an Command-/Installations-/Aktivierungsgrenze offen. [Vertrag](betrieb/blocker2-d-integration-historische-uebergabe-20261011.md).
 - **Unaufgelöst:** lokaler Voll500-Nachweis, RAM/500MB/Unit60/Auth30/Storage, nach nächster Änderung frische Voll-Eingangsprüfung/32 Startgruppen, zusätzliche Plattenkapazität unter Belegerhalt, Production-Schutzobjekte/Node/Bundle/Schlüssel, vollständige Kosten-/Speicher-/Fenster-/Finanzbelege, separates finales500er-GO.
 
-## Abgeschlossene lokale Untersuchungen (historisch, keine aktuelle Abnahme)
+## Abgeschlossene lokale Untersuchungen
 
-- W49/W50-Kontrollsicht:13 reine Gruppen/29 Negativfälle,10 native,16 Adapter-/24 Routengruppen,1 Descriptor-Test PASS; Standardoffline176/178 in722s (historisch, nicht der aktuelle176/178-Lauf); native8 Paare Median170,477→125,670ms, Node-CPU370.387→185.029µs, Antworten18.076.456→8.896B; RAM/500MB/Unit60/Auth30/500er offen. [W49](betrieb/local-fresh-control-view-20261019.md), [W47](betrieb/bounded-working-set-decision-20261019.md), [W46](betrieb/local-single-write-capture-20261019.md).
-- W50-Plattenbereinigung: vierW46-Hüllen entfernt,3.647.164.416B netto frei; frisches Loop-Paar je38Operationen/52HTTP200/4CAS; gemeinsamerPeak845.004.800→753.172.480B(−91.832.320B), CPU29,381561→28,461674s; nur ein Paar, kein500er-Nachweis. [W50](betrieb/local-common-control-comparison-20261019.md).
-- W48-Textdecoder verworfen:1.004.314.624B Peak statt890.748.928B, aktive Änderung zurückgesetzt. W43–W46 ohneRAMgewinn beendet. [W47-Entwurf](betrieb/bounded-working-set-decision-20261019.md).
-- History-Read-Reuse18.10.: lokal Default AUS;42 Diagnoseaufrufe Peak957.796.352→921.849.856B, langsamster Aufruf499,616928→533,708852ms schlechter; kein500er-/Zeitnachweis. [Details](betrieb/local-history-read-reuse-20261018.md).
-- Lokaler Kalenderlauf18.10.:153/500 HTTP200, dannHTTP409; V7-GO verbraucht; Writerwiderspruch und verlorener Fehlerstack; Teilpeak1.784.586.240B, kein vollständiger Nachweis. [Handoff](wave39-local-calendar-independence/actual-run-handoff), [Drive-Zusammenfassung](https://drive.google.com/file/d/1qYuuKK_keCNRUfzgDdSt85HgE0H16NMm/view).
-- W15-Lokalabschluss16.10.:500/500 finaleCAS-ACKs,1500Positionen,8000 frische Kontrollen; Offline8,067519s/Unitmax58,950356s/Authmax1,263639s; W16-Rootmessung0,925676s/234057728B; historischer gleichzeitiger Gesamtpeak offen. [Productionplan](betrieb/500er-production-vorbereitung-20261016.md).
-- Weitere historische Einzelbefunde: [16.10-Archiv](archive/project_state/2026_10_16_CURRENT_STATE_before_night_ci_compaction.md), [Native-D/Pre500](betrieb/pre500-native-zugangswege-20261007.md), [Guard-Capture](betrieb/pre500-guard-capture-20261007.md), [U-Vorbereitung](betrieb/gebundene-u-vorbereitung-cron-ruhe-20261006.md), [Synthetik500](betrieb/synthetik-500-inaktiver-import-20261005.md), [inerte Runtime](archive/project_state/2026_10_06_CURRENT_STATE_inerte_runtime.md), [historische Transporte](archive/project_state/2026_10_05_CURRENT_STATE_historische_transporte.md), [Landesversorgung](betrieb/landesversorgung-berlin-20260928.md), [Testvertrag](betrieb/bundestag-landtage-testvertrag-20260927.md). Sie bleiben Belege, keine aktuelle500er-/Production-Abnahme.
+Historische abgeschlossene Befunde bleiben [wortgleich archiviert](archive/project_state/2026_10_21_abgeschlossene_lokale_untersuchungen_vor_lease.md); keine erneute Abnahme oder Wiederholung daraus ableiten.
 
 ## Starttor und Schutzgrenzen
 
-Lokale notwendige RAM-/Integrationsänderungen und gezielte Komponentenprüfungen bleiben erlaubt. **Genau der freigegebene nächste vollständige Mock500-VersuchV10 ist verbraucht und als FAIL beendet.** Claim/Setup bleiben erhalten; kein neuer Slot, kein Löschen/Reset verbrauchter Marken und kein automatischer Retry aus alten Betreiberzitaten. Auch V11 wurde inzwischen verbraucht und ist fehlgeschlagen; ein neuer Versuch braucht ein neues konkretes GO samt Fall-/Tages-/Code-/Original-/Zeit-/Loop-/Plattenbindung, unabhängiger Annahme und32frischen Startgruppen. Keine Ersatzoriginale.
+Betreibersteuerung22.10.: autonome Fehlerbehebung mit allen nötigen Freigaben; Voll500 erst nach Behebung aller Fehler. V10/V11/V12 bleiben verbraucht und fehlgeschlagen; kein Reset oder Retry aus alten Quittungen. Ein neuer Versuch braucht frische Fall-/Tages-/Code-/Original-/Zeit-/Loop-/Plattenbindungen, einmalige Autorität, unabhängige Annahme und32echte Startgruppen. Fehlende Quellruntime, ausgeschlossene Daten und Unit60 sind technische Blocker; keine Ersatzoriginale.
 
 Production, Merge, Deployment, Production-Migrationen und bezahlte HELMUT-Provideraufrufe sind daraus nicht freigegeben. Für regulären Betrieb bleiben ein gesondertes konkretes Aktivierungs-/Productiontest-GO, aktuelle Paketbindung, Ebenen-/Landesversorgung bis zur sichtbaren Ausgabe, Kosten-/Zeitplan, lebender Endwächter und Rückweg erforderlich. Nur synthetische500Profile für Bundestag/Berlin/Brandenburg, keine AfD-Kunden; originale fachliche/security Prüfungen für alle500,1500Ergebnispositionen und8000frische Kontrollen. Fehlend/leer/doppelt/unbrauchbar/technischfehlerhaft getrennt bilanzieren. Bei unbekanntem Schreibausgang Stop und lesende Klärung, kein Retry. Originale und bisherige Belege erhalten.
 
@@ -190,11 +288,7 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-Keinen weiteren vollständigen Versuch empfehlen oder starten, solange später Zustand,
-Laufzeiten, Ergebnisqualität und ausreichende Plattenreserve unqualifiziert sind.
-Die neue native/Node-Budgeteinbindung lokal abschließen, Quellen-/Messbelege
-und frische Gesamtannahme vorbereiten. Erst danach neue Fall-/Quellen-/Zeitbindung,
-32Startgruppen und ein ausdrücklich neues konkretes500er-GO. Keine Wiederverwendung
-verbrauchterV11-/Altfreigaben. Hier fortsetzen; empfohlene Denkstufe Sehr hoch wegen
-nativer Gesamtgrenzen, Worker-Isolation, einmaliger Autorität und unveränderter
-Sicherheits-/Zeitregeln. Production bleibt gesperrt.
+Cloud-Authrouting, geschützten84erCI-Kanal und echte Quellruntime über unterstützte
+Wege herstellen. Separaten HTTP-Ein-Unit-Vertrag ausarbeiten; vorhandene Voll500-
+Verträge lassen keine Index499-Wiederholung zu. Unit60/32Startgruppen offen.
+Hier fortsetzen, Sehr hoch wegen CAS/ACK/Originalschutz; kein Voll500 vor Klärung.

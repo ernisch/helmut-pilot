@@ -1,0 +1,107 @@
+{
+  "schema": "helmut-second-layout-readonly-docker-events/1",
+  "containerID": "f2de3ed65f08764d1bdd8d20d70e5a1b083a6d149f1d7a6fa3cb2beb10e4ff41",
+  "window": {
+    "since": "2026-10-21T08:14:44Z",
+    "until": "2026-10-21T08:14:50Z"
+  },
+  "rawBytes": 8608,
+  "rawSHA256": "dcce761123710c0e4dbd9e4037d9d453ea0d2599fd69af62128edbbe185a1d5c",
+  "rawEventValuesNotPersisted": true,
+  "events": [
+    {
+      "sequence": 0,
+      "type": "container",
+      "action": "create",
+      "time": 1792570486,
+      "timeNanoText": "1792570486257620258",
+      "exitCode": null,
+      "execID": null
+    },
+    {
+      "sequence": 1,
+      "type": "container",
+      "action": "attach",
+      "time": 1792570486,
+      "timeNanoText": "1792570486308742004",
+      "exitCode": null,
+      "execID": null
+    },
+    {
+      "sequence": 2,
+      "type": "container",
+      "action": "start",
+      "time": 1792570486,
+      "timeNanoText": "1792570486481746464",
+      "exitCode": null,
+      "execID": null
+    },
+    {
+      "sequence": 3,
+      "type": "container",
+      "action": "exec_create: /usr/lib/postgresql/17/bin/psql -X -qAt -w -h /layout/socket -p 5432 -U layout_probe -d postgres -v ON_ERROR_STOP=1 -f /probe/layout-select.sql",
+      "time": 1792570486,
+      "timeNanoText": "1792570486552213076",
+      "exitCode": null,
+      "execID": "ae5933a2b8c27fd72f368a030357133fe48eb068e8bd9bad82b13853e6f52719"
+    },
+    {
+      "sequence": 4,
+      "type": "container",
+      "action": "exec_start: /usr/lib/postgresql/17/bin/psql -X -qAt -w -h /layout/socket -p 5432 -U layout_probe -d postgres -v ON_ERROR_STOP=1 -f /probe/layout-select.sql",
+      "time": 1792570486,
+      "timeNanoText": "1792570486552636024",
+      "exitCode": null,
+      "execID": "ae5933a2b8c27fd72f368a030357133fe48eb068e8bd9bad82b13853e6f52719"
+    },
+    {
+      "sequence": 5,
+      "type": "container",
+      "action": "exec_die",
+      "time": 1792570486,
+      "timeNanoText": "1792570486638230604",
+      "exitCode": "0",
+      "execID": "ae5933a2b8c27fd72f368a030357133fe48eb068e8bd9bad82b13853e6f52719"
+    },
+    {
+      "sequence": 6,
+      "type": "container",
+      "action": "exec_create: /usr/lib/postgresql/17/bin/pg_ctl -D /layout/pgdata stop -m fast -w -t 15",
+      "time": 1792570486,
+      "timeNanoText": "1792570486661471770",
+      "exitCode": null,
+      "execID": "c2ffdb647628baf1729fd430b9d1b455d618ba52263319e51c54f9fbe66ac357"
+    },
+    {
+      "sequence": 7,
+      "type": "container",
+      "action": "exec_start: /usr/lib/postgresql/17/bin/pg_ctl -D /layout/pgdata stop -m fast -w -t 15",
+      "time": 1792570486,
+      "timeNanoText": "1792570486662139881",
+      "exitCode": null,
+      "execID": "c2ffdb647628baf1729fd430b9d1b455d618ba52263319e51c54f9fbe66ac357"
+    },
+    {
+      "sequence": 8,
+      "type": "container",
+      "action": "exec_die",
+      "time": 1792570486,
+      "timeNanoText": "1792570486725168237",
+      "exitCode": "137",
+      "execID": "c2ffdb647628baf1729fd430b9d1b455d618ba52263319e51c54f9fbe66ac357"
+    },
+    {
+      "sequence": 9,
+      "type": "container",
+      "action": "die",
+      "time": 1792570486,
+      "timeNanoText": "1792570486766062956",
+      "exitCode": "0",
+      "execID": null
+    }
+  ],
+  "readOnly": true,
+  "containerActions": 0,
+  "caseStatusRemains": "FAIL_KEEP",
+  "exactExecExitCauseProven": false
+}

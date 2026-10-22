@@ -1,0 +1,95 @@
+{
+  "acceptance": {
+    "independentActual": "PASS_EXACT_ONE_HULL_REMOVED",
+    "independentLiveReadback": "PASS_LIVE_PROTECTION_AND_DISK_ADMISSION_ONLY",
+    "independentSource": "PASS_SOURCE_ONLY"
+  },
+  "atUnix": 1792590154.2488775,
+  "capacity": {
+    "actorAvailableAfterBeforeFinalResultWriteBytes": 15858814976,
+    "actorAvailableBeforeBytes": 14947405824,
+    "filesystemDevice": 27,
+    "full32GateAssessmentExecuted": false,
+    "independentLaterAvailableBytes": 15858626560,
+    "independentLaterMarginBytes": 678846840,
+    "isolatedExactCausalHullReclaimClaimed": false,
+    "observedHostAvailableDeltaBytes": 911409152,
+    "snapshotNotReservation": true,
+    "unchangedFullAdmissionBytes": 15179779720
+  },
+  "command": {
+    "automaticRetry": false,
+    "exitCode": 0,
+    "force": false,
+    "removeVolumes": false,
+    "stderrEOF": true,
+    "stdoutEOF": true
+  },
+  "explicitUserReleaseForExactTarget": true,
+  "limits": {
+    "SOLStartPolicyImplemented": false,
+    "full500GO": false,
+    "full500Started": false,
+    "newMotorCodeChange": false,
+    "newRAMSavingClaim": false,
+    "production": false,
+    "reserve500MBProven": false,
+    "routerConfigurationChanged": false
+  },
+  "overallSprint": "PARTIAL_RAM_TARGET_REMAINS_OPEN",
+  "preservation": {
+    "acceptedArchiveOutputsAndSixInputsUnchanged": true,
+    "canonicalDirectoryMetadataUnchanged": true,
+    "canonicalPostmasterAbsent": true,
+    "imageIDsUnchanged": true,
+    "originalCIDCreatedRestorationPossible": false,
+    "originalDBAndMountPayloadsReadForVerification": false,
+    "otherFourOriginalIdentityStateAndFullMountBindingsUnchanged": true,
+    "sevenLoopBindingsUnchanged": true,
+    "sourceBankRunningPID": 5993,
+    "volumeIDsUnchanged": true
+  },
+  "privateRetirerSourceSHA256": "4fcac2bb17b6fd1e8fb1268d800d768b8b7f39366bb266fd753c5f36ed735d0a",
+  "proofPins": {
+    "acceptedArchive": {
+      "bytes": 3788096,
+      "file": "ACTUAL_ARCHIVE_VERIFICATION.SAFE.json",
+      "sha256": "2d667a3ab55f694ca9d4681f0b87734745e615b647fde8d14a3912fb1575a44f"
+    },
+    "acceptedArchiveReview": {
+      "bytes": 12732,
+      "file": "ARCHIVE_ACTUAL_REVIEW.SAFE.json",
+      "sha256": "285a32c307986a4e5dd68e7bd5a33b860627fe8f892fd49644e87867a71e52b2"
+    },
+    "admissionEquation": {
+      "bytes": 11362,
+      "file": "ADMISSION_SCOPE.SAFE.json",
+      "sha256": "39bb0c72cd68cbe6c708c70716124a30c2b4ffbac2771435dde1d77a4a1aa31d"
+    },
+    "independentActualReview": {
+      "bytes": 14490,
+      "file": "ACTUAL_REVIEW.SAFE.json",
+      "sha256": "cc64b52b046c2cc8d3e29319ac8a54e62a1f952c46df302ddc81b005a0c478ef"
+    },
+    "independentLiveCapacityAndProtection": {
+      "bytes": 10530,
+      "file": "ACTUAL_CAPACITY_AND_PROTECTION.SAFE.json",
+      "sha256": "f9ebccbc17a8194b7a9fd266f9286cf7666895d50a3d48fd925648198e67ca62"
+    },
+    "independentSourceReview": {
+      "bytes": 9302,
+      "file": "SOURCE_REVIEW.SAFE.json",
+      "sha256": "7262fcb4d2cae6c5f18925b4f0a7cfa2abd57fd80ffcc6b4516137dcd6e75f2b"
+    },
+    "retirementResult": {
+      "bytes": 2671,
+      "file": "RETIREMENT_RESULT.SAFE.json",
+      "sha256": "3206735f54b4d74e7c40c2dac906943f4e1c34f81a9aba21177aed7c3414a80b"
+    }
+  },
+  "removedCID": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+  "removedContainers": 1,
+  "repositoryHEADAtRetirement": "11b6716e450b2200c14f8d847fe12f022a1d7e99",
+  "schema": "helmut-v11-storage-hull-retirement-public-root-summary/1",
+  "status": "PASS_EXACT_RELEASED_HULL_REMOVAL_AND_OBSERVED_DISK_CAPACITY"
+}

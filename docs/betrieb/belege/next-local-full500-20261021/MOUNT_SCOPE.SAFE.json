@@ -1,0 +1,57 @@
+{
+  "schema": "helmut-public-day21-evidence-mount-scope/1",
+  "status": "PASS_PURE_SCOPE_GUARDS_NOT_FULL_RESOURCE",
+  "recordedAtUTC": "2026-10-21T14:57:51.042Z",
+  "initialPreflight": {
+    "passed": 28,
+    "total": 32,
+    "blocked": [
+      "acceptedMetadata",
+      "preSetupAuthority",
+      "mountInputs",
+      "completeIndependentCoverage"
+    ],
+    "resourceClaimCreated": false,
+    "mountFailureBeforeContainerCreate": true
+  },
+  "cause": "New bound Day21 evidence lives outside fixed old evidence root.",
+  "newPermission": {
+    "role": "application",
+    "schema": "helmut-pinned-full500-connection/1",
+    "production": false,
+    "day": "2026-10-21",
+    "slotVersion": 12,
+    "resourceScope": "owner-approved-local500-resources",
+    "exactCurrentResourceClaimPathRequired": true,
+    "root": "/workspace/helmut-ram-fix-20261020/next-full500-20261021",
+    "onlyIndividuallyPinnedManifestFiles": true,
+    "readOnly": true
+  },
+  "preservedChecks": [
+    "canonical regular file",
+    "no symlink",
+    "exact bytes/SHA256",
+    "exact original case",
+    "complete runtime manifest",
+    "original evidence root",
+    "exact separate native helper pin",
+    "database only exact PostgREST binary"
+  ],
+  "finalPureTests": 7,
+  "finalPureTestsPass": true,
+  "initialTestFixtureFailurePreserved": true,
+  "finalTestLog": {
+    "file": "EVIDENCE_MOUNT_SCOPE_FINAL.ACTUAL.log",
+    "bytes": 495,
+    "sha256": "ba1177f882ffa72a123e9b52095cac4c40a6f11c9218178b3471d5f1a9a44adb"
+  },
+  "source": {
+    "file": "isolation.py",
+    "bytes": 50659,
+    "sha256": "87c006d402f69c54cdbb94a9cde62d182926e61c5370575a634be6008decb625"
+  },
+  "nativeCallsInPureTests": 0,
+  "full500Started": false,
+  "requiresNewCaseAndFresh32": true,
+  "production": false
+}

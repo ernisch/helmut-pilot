@@ -1,0 +1,54 @@
+{
+  "atUnix": 1792568717.0220926,
+  "files": [
+    {
+      "bytes": 55666,
+      "gitBlobSHA1": "0274deecbb19adeae4b1719bb0a314c57fd0b48e",
+      "officialCommit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "officialPath": "src/backend/utils/adt/jsonb_util.c",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/jsonb_util.c",
+      "sha256": "2353ef5a015de9ef9864565efc276b83355e6cc183889c8f1667efb6a627018d",
+      "url": "https://github.com/postgres/postgres/blob/7885b94dd81b98bbab9ed878680d156df7bf857f/src/backend/utils/adt/jsonb_util.c"
+    },
+    {
+      "bytes": 16290,
+      "gitBlobSHA1": "d589ace5a21e200f0bb0685f3f1b9dc6ca5c9a44",
+      "officialCommit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "officialPath": "src/include/utils/jsonb.h",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/jsonb.h",
+      "sha256": "e3dd7cd11c2096de31a2de7874d6067b126e68666c3ce3da55f43404f308fbd1",
+      "url": "https://github.com/postgres/postgres/blob/7885b94dd81b98bbab9ed878680d156df7bf857f/src/include/utils/jsonb.h"
+    },
+    {
+      "bytes": 45867,
+      "gitBlobSHA1": "bc26c6aa7f10ca3164532ebd0ff732c29439f210",
+      "officialCommit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "officialPath": "src/include/c.h",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/c.h",
+      "sha256": "63485d15b91a706e20ebaf4cd8270c93a3d7b37b37ba619225c2a415e45bfe81",
+      "url": "https://github.com/postgres/postgres/blob/7885b94dd81b98bbab9ed878680d156df7bf857f/src/include/c.h"
+    },
+    {
+      "bytes": 14008,
+      "gitBlobSHA1": "f04435e9ef3402a215642b9b7f19a462cfaffc33",
+      "officialCommit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "officialPath": "src/include/varatt.h",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/varatt.h",
+      "sha256": "1e8161d01943e8ebebe86d2b41e68cbe3edbdf30b9b5d06ae2fe7ae4b0474c7a",
+      "url": "https://github.com/postgres/postgres/blob/7885b94dd81b98bbab9ed878680d156df7bf857f/src/include/varatt.h"
+    }
+  ],
+  "full500": false,
+  "nativeActions": 0,
+  "production": false,
+  "projectionEnabled": false,
+  "purpose": "Native JSONB layout proof only; not replacement historical W45 architecture or PGDATA original",
+  "repo": "postgres/postgres",
+  "schema": "helmut-pg17-native-size-official-source-binding/1",
+  "sourceExecutionOrCompilation": false,
+  "status": "FETCHED_GIT_BLOB_VERIFIED",
+  "tag": "REL_17_6",
+  "tagCommit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+  "tagResolutionObservedToolChunk": "89ba96",
+  "testsStarted": 0
+}

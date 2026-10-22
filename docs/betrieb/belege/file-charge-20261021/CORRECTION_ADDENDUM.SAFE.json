@@ -1,0 +1,93 @@
+{
+  "actions": {
+    "actualFilesRead": 2,
+    "originalMethodReportRewritten": false,
+    "originalPayloadReads": 0,
+    "sourceOrCaseChanges": 0,
+    "subjectImportsTestsSQLDockerNative": 0,
+    "writes": "Only new own correction source and addendum"
+  },
+  "actualInputPins": [
+    {
+      "bytes": 104265,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/AUTH_WRITE_PHASE.SAFE.json",
+      "sha256": "c1c44e5ce1711c72a75ce73120435c3cbe3ff8de0a5202a1df77fd43f16db2f7"
+    },
+    {
+      "bytes": 23303,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/PHASES.SAFE.json",
+      "sha256": "7698c927e17657fde8ba9524deffc76d452db0ecdb3f2ce9a48385a0df95dea9"
+    }
+  ],
+  "correctedFrameEvidence": {
+    "allFourteenFileRawDecimalStrings": "605392896",
+    "allFourteenShmemRawDecimalStrings": "233881600",
+    "derivedNonShmemFileBytes": 371511296,
+    "firstBegin": {
+      "monotonicMilliseconds": 10035.08989,
+      "utcISO": "2026-10-21T09:40:59.630Z"
+    },
+    "frameCount": 14,
+    "groupInode": 21988,
+    "jsonPath": "AUTH_WRITE_PHASE.SAFE.json.phaseProbe.frames[i].group.memoryStat",
+    "lastEnd": {
+      "monotonicMilliseconds": 11196.024285,
+      "utcISO": "2026-10-21T09:41:00.791Z"
+    },
+    "nodePID": 55,
+    "orderedLabels": [
+      "driver.restore.beforeU",
+      "U.beforeSnapshotCapture",
+      "U.afterSnapshotCapture",
+      "U.afterPartsBuild",
+      "driver.request.afterSerializationBeforeHTTP",
+      "driver.request.afterBodyObserverBeforeHTTP",
+      "driver.request.afterRPCJSONParsed",
+      "U.beforeAttach",
+      "U.afterAttach",
+      "U.beforeReturn",
+      "driver.afterU.beforeVerifyLogical",
+      "driver.afterVerifyLogical",
+      "driver.beforeFinalRead",
+      "driver.afterFinalRead"
+    ],
+    "qualification": "These are sequential Node restore/finalRead frame observations with their own brackets, not a measurement-complete snapshot or historical peak decomposition."
+  },
+  "correctedMeasurementCompleteEvidence": {
+    "actualJSONTypes": "integers",
+    "atUnixSeconds": 1792575660.9520779,
+    "derivedNonShmemFileBytes": 371871744,
+    "fileBytes": 605753344,
+    "fileDifferenceFromFourteenFramesBytes": 360448,
+    "jsonPath": "PHASES.SAFE.json[phase == measurement-complete]",
+    "parentInode": 21988,
+    "phase": "measurement-complete",
+    "qualification": "This later worker phase is a different observation. Do not substitute it for any of the14 frames.",
+    "shmemIncludedInFileBytes": 233881600
+  },
+  "correctsPin": {
+    "bytes": 13897,
+    "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/METHOD_REVIEW.SAFE.json",
+    "sha256": "186c5b12e38a2cf443219b3f1be0d207d840271e1e824912189fff872f82e0f8"
+  },
+  "error": "METHOD_REVIEW minimumEvidenceContract.smallestAlignedBoundaryForTheStatedLateNumbers incorrectly assigns file605392896/shmem233881600 to measurement-complete. This is a reviewer phase-label error; neither actual raw file nor numeric values are changed.",
+  "priorIndependentActualReviewPin": {
+    "bytes": 39335,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+    "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+  },
+  "replacementInterpretation": "All six marker/ACK gates precede finalRestore/finalRead. A census at any earlier gate cannot explain the14 later frames. A separately proposed census at measurement-complete can answer only its own later point; it cannot reconstruct frame ownership, the previous peak, or Motor avoidability. Any future observation must match its expressly predeclared target phase.",
+  "reviewerSourcePin": {
+    "bytes": 4808,
+    "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/write_correction_addendum.py",
+    "sha256": "e735a1279c59c3cb233fec82de891f9de5feca296a3b0bb40b7d0fbe9270f446"
+  },
+  "schema": "helmut-file-charge-independent-correction-addendum/1",
+  "status": "CORRECTION_VERIFIED_ORIGINAL_PRESERVED",
+  "unchangedConclusions": [
+    "file includes shmem; neither category may be added to the other.",
+    "The existing178290688B JIT setup allocation attribution remains valid.",
+    "No exact late per-inode charge/peak owner, Motor saving, new run or full500 is established or authorized.",
+    "Original METHOD_REVIEW186c5b12 and all actual/source/functional reports remain byte-for-byte preserved."
+  ]
+}

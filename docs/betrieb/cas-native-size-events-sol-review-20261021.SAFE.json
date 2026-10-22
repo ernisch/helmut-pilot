@@ -1,0 +1,59 @@
+{
+  "DockerOrProcessInspection": 0,
+  "OOMOrKernelCounterQualificationClaimed": false,
+  "RAMSavingClaimed": false,
+  "SQL": 0,
+  "caseAccepted": false,
+  "chronology": "psql exec_die0, then pg_ctl exec_die137, then server container die0.",
+  "containerDieTimeNanoText": "1792570486766062956",
+  "containerExit": 0,
+  "eventReceiptPin": {
+    "bytes": 3377,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/SECOND_ATTEMPT_DOCKER_EVENTS.SAFE.json",
+    "sha256": "0da34e0f2884d5ecfe3690dd3fcfa30536d110b008cc432632da865b1664746c"
+  },
+  "eventsVerified": 10,
+  "exact137KillSourceProven": false,
+  "exactContainerID": "f2de3ed65f08764d1bdd8d20d70e5a1b083a6d149f1d7a6fa3cb2beb10e4ff41",
+  "exactTimeNanoTextPreserved": true,
+  "exactWindow": {
+    "since": "2026-10-21T08:14:44Z",
+    "until": "2026-10-21T08:14:50Z"
+  },
+  "full500": false,
+  "limits": [
+    "This independently checks the pinned Root-selected event fields; raw8608B events are represented only by their hash and are not replayable here.",
+    "The top-level receipt records exact CID/time filtering; per-event raw actor IDs and other omitted fields are not separately available.",
+    "No oom event in this selected window does not prove global OOM absence or a cause for137.",
+    "Successful psql and server exit0 do not waive required pg_ctl0 or outer0. Overall case remains FAIL; all data/hulls KEEP; no third attempt."
+  ],
+  "nativeScalarObservationUnchanged": true,
+  "noOOMActionAmongTheseTenRecords": true,
+  "originalActualReviewPin": {
+    "bytes": 26965,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+    "sha256": "10817ae7b9a413e14f006374e9ab22db2cc7c9ad5d58d3cc1baa665abc61651b"
+  },
+  "overallStatusRemains": "FAIL_KEEP",
+  "pgCtlExecID": "c2ffdb647628baf1729fd430b9d1b455d618ba52263319e51c54f9fbe66ac357",
+  "pgCtlExit": 137,
+  "pgCtlExitTimeNanoText": "1792570486725168237",
+  "priorActualReportRewritten": false,
+  "projectionEnabled": false,
+  "psqlExecID": "ae5933a2b8c27fd72f368a030357133fe48eb068e8bd9bad82b13853e6f52719",
+  "psqlExit": 0,
+  "psqlExitTimeNanoText": "1792570486638230604",
+  "rawEventReceiptBytes": 8608,
+  "rawEventReceiptSHA256": "dcce761123710c0e4dbd9e4037d9d453ea0d2599fd69af62128edbbe185a1d5c",
+  "resourceActions": 0,
+  "reviewRecorderPin": {
+    "bytes": 4968,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/review_event_addendum.py",
+    "sha256": "528f29c1e04fc49bd4144bf895b5a5c9edd45356e01bf365c0f60d4e10df995f"
+  },
+  "schema": "helmut-cas-native-size-independent-events-addendum/1",
+  "status": "FAIL_KEEP_WITH_SEPARATELY_VERIFIED_PSQL0_PGCTL137_CONTAINER0_EVENTS",
+  "subjectImports": 0,
+  "tests": 0,
+  "thirdAttemptAllowed": false
+}
