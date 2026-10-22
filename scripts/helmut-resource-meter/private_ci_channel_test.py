@@ -36,6 +36,178 @@ def fixtures():
     return ctx, run, reviews, pr
 
 
+def owner_fixtures():
+    ctx, run, _, pr = fixtures()
+    repo = dict(full_name=C.REPO, id=C.REPO_ID, fork=False)
+    actor = dict(login=C.REVIEWER, id=C.REVIEWER_ID)
+    run.update(repository=copy.deepcopy(repo), head_repository=copy.deepcopy(repo),
+               actor=copy.deepcopy(actor), triggering_actor=copy.deepcopy(actor),
+               head_branch='feature/TEST_ONLY_owner')
+    pr.update(user=copy.deepcopy(actor), base=dict(repo=copy.deepcopy(repo)))
+    pr['head'].update(repo=copy.deepcopy(repo), ref=run['head_branch'])
+    return ctx, run, pr
+
+
+class OwnerAccessTests(unittest.TestCase):
+    def test_default_automatic_policy_and_explicit_manual_policy(self):
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(C.access_policy(), C.AUTOMATIC_POLICY)
+        with mock.patch.dict(os.environ, {'HELMUT_CI_ORIGINALS_ACCESS_POLICY': 'manual'}, clear=True):
+            self.assertEqual(C.access_policy(), 'manual')
+
+    def test_automatic_check_uses_actual_run_and_pr_api_without_review_api(self):
+        ctx, run, pr = owner_fixtures()
+        responses = {'/actions/runs/123': run, '/pulls/1': pr}
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.dict(os.environ, {}, clear=True), \
+                mock.patch.object(C, 'context', return_value=ctx), \
+                mock.patch.object(C, 'load_transport'), \
+                mock.patch.object(C, 'api', side_effect=lambda path: responses[path]) as api:
+            receipt = Path(directory) / 'TEST_ONLY_receipt.json'
+            result = C.check_approval(receipt)
+            self.assertEqual([call.args[0] for call in api.call_args_list], list(responses))
+            self.assertEqual(json.loads(receipt.read_text()), result)
+            self.assertEqual(receipt.stat().st_mode & 0o777, 0o600)
+            with self.assertRaises(FileExistsError): C.check_approval(receipt)
+        self.assertNotIn('reviewer', result)
+        self.assertNotIn('environmentID', result)
+        self.assertEqual(result['accessPolicy'], C.AUTOMATIC_POLICY)
+        self.assertIs(result['executionGO'], False)
+        self.assertIs(result['ciPassed'], False)
+
+    def test_explicit_manual_check_still_requires_actual_personal_review(self):
+        ctx, run, reviews, pr = fixtures()
+        responses = {'/actions/runs/123': run, '/actions/runs/123/approvals': [], '/pulls/1': pr}
+        with mock.patch.dict(os.environ, {'HELMUT_CI_ORIGINALS_ACCESS_POLICY': 'manual'}, clear=True), \
+                mock.patch.object(C, 'context', return_value=ctx), \
+                mock.patch.object(C, 'load_transport'), \
+                mock.patch.object(C, 'api', side_effect=lambda path: responses[path]), \
+                mock.patch.object(C, 'save') as save:
+            with self.assertRaises(RuntimeError): C.check_approval(Path('/TEST_ONLY_receipt'))
+            save.assert_not_called()
+            responses['/actions/runs/123/approvals'] = reviews
+            result = C.check_approval(Path('/TEST_ONLY_receipt'))
+            self.assertEqual(result['schema'], 'helmut-private-ci-reviewed-access/1')
+            self.assertEqual(result['reviewer'], C.REVIEWER)
+
+    def test_unknown_policy_rejects_before_any_api_or_provisioning(self):
+        for value in ['', ' ', 'automatic', 'OWNER-AUTOMATIC-V1', 'TEST_ONLY_PRIVATE_VALUE']:
+            with self.subTest(value=value), \
+                    mock.patch.dict(os.environ, {'HELMUT_CI_ORIGINALS_ACCESS_POLICY': value}, clear=True), \
+                    mock.patch.object(C, 'context') as context, \
+                    mock.patch.object(C, 'read_file') as read, \
+                    mock.patch.object(C, 'api') as api:
+                with self.assertRaises(RuntimeError): C.check_approval(Path('/TEST_ONLY_receipt'))
+                with self.assertRaises(RuntimeError): C.provision(Path('/TEST_ONLY_receipt'))
+                context.assert_not_called(); read.assert_not_called(); api.assert_not_called()
+
+    def test_other_actor_trigger_repository_run_and_branch_are_rejected(self):
+        mutations = [
+            lambda r: r['actor'].update(login='TEST_ONLY_other'),
+            lambda r: r['actor'].update(id=1),
+            lambda r: r['triggering_actor'].update(login='TEST_ONLY_other'),
+            lambda r: r['triggering_actor'].update(id=1),
+            lambda r: r['repository'].update(full_name='TEST_ONLY/fork'),
+            lambda r: r['repository'].update(id=1),
+            lambda r: r['head_repository'].update(full_name='TEST_ONLY/fork'),
+            lambda r: r['head_repository'].update(id=1),
+            lambda r: r.update(id=124), lambda r: r.update(run_attempt=2),
+            lambda r: r.update(head_sha='e' * 40), lambda r: r.update(event='push'),
+            lambda r: r.update(path='.github/workflows/other.yml'),
+            lambda r: r.update(head_branch='TEST_ONLY_other')]
+        for index, change in enumerate(mutations):
+            with self.subTest(case=index):
+                ctx, run, pr = owner_fixtures(); change(run)
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+
+    def test_fork_foreign_author_closed_or_advanced_pr_are_rejected(self):
+        mutations = [
+            lambda p: p['user'].update(login='TEST_ONLY_other'),
+            lambda p: p['user'].update(id=1),
+            lambda p: p['head']['repo'].update(full_name='TEST_ONLY/fork'),
+            lambda p: p['head']['repo'].update(id=1),
+            lambda p: p['head']['repo'].update(fork=True),
+            lambda p: p['head']['repo'].pop('fork'),
+            lambda p: p['base']['repo'].update(full_name='TEST_ONLY/fork'),
+            lambda p: p['base']['repo'].update(id=1),
+            lambda p: p.update(state='closed'), lambda p: p.update(number=2),
+            lambda p: p.update(number=True), lambda p: p['head'].update(sha='e' * 40),
+            lambda p: p.update(merge_commit_sha='e' * 40),
+            lambda p: p['head'].update(ref='TEST_ONLY_other'), lambda p: p['head'].update(ref='')]
+        for index, change in enumerate(mutations):
+            with self.subTest(case=index):
+                ctx, run, pr = owner_fixtures(); change(pr)
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+
+    def test_missing_or_malformed_owner_metadata_is_rejected(self):
+        for key in ['actor', 'triggering_actor', 'repository', 'head_repository',
+                    'head_branch', 'path', 'head_sha', 'event', 'run_attempt', 'id']:
+            with self.subTest(runKey=key):
+                ctx, run, pr = owner_fixtures(); run.pop(key)
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+        for key in ['user', 'head', 'base', 'number', 'merge_commit_sha']:
+            with self.subTest(prKey=key):
+                ctx, run, pr = owner_fixtures(); pr.pop(key)
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+        for key, value in [('repository', 'TEST_ONLY/fork'), ('ref', 'refs/pull/2/merge'),
+                           ('runAttempt', True), ('prNumber', True), ('workflowSHA', 'e' * 40),
+                           ('headSHA', 'g' * 40), ('event', 'pull_request_target')]:
+            with self.subTest(contextKey=key):
+                ctx, run, pr = owner_fixtures(); ctx[key] = value
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+
+    def test_only_main_push_and_dispatch_have_automatic_access(self):
+        for event in ['push', 'workflow_dispatch']:
+            ctx, run, _ = owner_fixtures()
+            ctx.update(event=event, prNumber=None, ref='refs/heads/main', headSHA=ctx['checkoutSHA'])
+            run.update(event=event, head_branch='main', head_sha=ctx['headSHA'])
+            self.assertEqual(C.validate_owner_access(ctx, run)['accessPolicy'], C.AUTOMATIC_POLICY)
+            for update in [{'ref': 'refs/heads/TEST_ONLY_other'}, {'headSHA': 'e' * 40}, {'prNumber': 1}]:
+                changed = {**ctx, **update}
+                observed = {**run, 'head_sha': changed['headSHA']}
+                with self.subTest(event=event, update=update), self.assertRaises(RuntimeError):
+                    C.validate_owner_access(changed, observed)
+            with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, {**run, 'head_branch': 'TEST_ONLY_other'})
+
+    def test_manual_and_automatic_receipts_are_not_interchangeable(self):
+        ctx, run, pr = owner_fixtures()
+        automatic = C.validate_owner_access(ctx, run, pr)
+        manual = C.validate_review(*fixtures())
+        self.assertEqual(C.validate_receipt(automatic, ctx, C.AUTOMATIC_POLICY), automatic)
+        self.assertEqual(C.validate_receipt(manual, ctx, 'manual'), manual)
+        for receipt, policy in [(automatic, 'manual'), (manual, C.AUTOMATIC_POLICY)]:
+            with self.assertRaises(RuntimeError): C.validate_receipt(receipt, ctx, policy)
+
+    def test_receipt_drift_rejected_before_transport_import_or_key_consumption(self):
+        ctx, run, pr = owner_fixtures(); approved = C.validate_owner_access(ctx, run, pr)
+        changes = [{'runID': 124}, {'runAttempt': 2}, {'runAttempt': True},
+                   {'headSHA': 'e' * 40}, {'checkoutSHA': 'e' * 40}, {'environment': 'TEST_ONLY_other'},
+                   {'authorizedActor': 'TEST_ONLY_other'}, {'authorizedActorID': 1},
+                   {'accessPolicy': 'manual'}, {'executionGO': True}, {'ciPassed': True},
+                   {'reviewer': C.REVIEWER}, {'schema': 'helmut-private-ci-reviewed-access/1'}]
+        for update in changes:
+            with self.subTest(update=update), \
+                    mock.patch.dict(os.environ, {'HELMUT_CI_ORIGINALS_KEY': 'TEST_ONLY_NOT_A_KEY'}, clear=True), \
+                    mock.patch.object(C, 'context', return_value=ctx), \
+                    mock.patch.object(C, 'read_file', return_value=json.dumps({**approved, **update}).encode()), \
+                    mock.patch.object(C, 'load_transport') as transport, \
+                    mock.patch.object(C.subprocess, 'run') as child:
+                with self.assertRaises(RuntimeError): C.provision(Path('/TEST_ONLY_receipt'))
+                transport.assert_not_called(); child.assert_not_called()
+                self.assertEqual(os.environ['HELMUT_CI_ORIGINALS_KEY'], 'TEST_ONLY_NOT_A_KEY')
+
+    def test_workflow_binds_same_policy_before_check_and_decryption(self):
+        text = (HERE.parents[1] / '.github/workflows/ci.yml').read_text()
+        offline = text.split('  offline-suite:', 1)[1].split('  browser-smoke:', 1)[0]
+        bound = [block for block in offline.split('      - name:')
+                 if 'HELMUT_CI_ORIGINALS_ACCESS_POLICY' in block]
+        self.assertEqual(len(bound), 2)
+        for block in bound:
+            self.assertIn("HELMUT_CI_ORIGINALS_ACCESS_POLICY: ${{ vars.HELMUT_CI_ORIGINALS_ACCESS_POLICY || 'owner-automatic-v1' }}", block)
+        self.assertIn('check-approval', bound[0])
+        self.assertIn('provision --receipt', bound[1])
+
+
 class ReviewTests(unittest.TestCase):
     def test_test_only_binding_has_no_execution_or_ci_verdict(self):
         result = C.validate_review(*fixtures())
