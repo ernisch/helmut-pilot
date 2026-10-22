@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand20:24UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand20:59UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -74,6 +74,32 @@ und natürliche Pipe-Enden; keine Datenbank, kein Motor.
 Ein neuer Einzelunit-Fall muss den aktuellen Code
 und einen eigenen einmaligen Vertrag binden; alte Rechte bleiben verbraucht.
 
+Zwei spätere frische Fälle blieben ebenfalls vor Seed und Motor FAIL:
+`1315a81d4a9b683cf950c6aaa29b351e` wegen einer falschen physischen
+Client-Dateiabbildung (Peak1.049.825.280B) und
+`c364b433dc0239e5dbd17b32ba11c4e4` wegen nicht les-/ausführbarer originaler
+ELF-Laufzeitdateien für den Root-Prozess ohne Capabilities (Peak1.040.523.264B).
+Beide Gruppen sind leer, PostgreSQL endete mit0; die fehlgeschlagenen
+Gesamtabschlüsse bleiben FAIL. Keine alten Rechte werden wiederverwendet.
+
+Die korrigierte Startumgebung bestand anschließend im isolierten Fall
+`6fea23fd932769d0b2f3de807aa1361d` auf `07707f0f`: sechs bytegleiche öffentliche
+ABI-Kopien mit zusammen5.583.888B wurden innerhalb der Messgruppe erstellt.
+Originale samt Dateirechten blieben unverändert. Tatsächlicher Original-Python
+und Original-Node24.19 mit384/16MiB starteten als UID0 ohne Capabilities und mit
+NoNewPrivileges. Beide endeten mit0 und natürlichen Pipe-Enden; Owner/Broker
+wurden nur inert importiert. Der normale UID1000-Prozess erhielt beim Zugriff
+auf die Root-Datei nachweislich EACCES. Peak51.445.760B, Ereignisse0, Gruppe leer;
+keine Datenbank, kein Seed, kein Motor und kein Anbieter.
+[Bereinigter Beleg](belege/v12-native-unit-integration-20261022/NATIVE_OWNER_RUNTIME_RX.SAFE.json).
+
+Die unabhängige Quellprüfung fand sechs Diagnose-Delegationen hinter nicht
+passenden Production-Readinessguards und einen weiteren V3-Eingangsriegel in
+`lage.js`. Diese konkreten Anbindungsfehler werden vor dem nächsten frischen
+Einzelunit-Fall korrigiert und unabhängig geprüft. Globale Production-Guards,
+Tenant-/Subject-/Inputbindungen und das Verbot unbekannter Schreibwiederholungen
+bleiben bestehen.
+
 ## Eingaben, Tests und Messgrenzen
 
 Die echten Originale und548Runtimebindungen sind vorhanden und geprüft. Der
@@ -88,7 +114,12 @@ Gezielte Offlineprüfungen sichern unter anderem Host73, Controller16 und
 Gate-/Entry-/Qualifier133Fälle. Der neue CI-Budgetfehler war eine veraltete
 Snapshot-Testerwartung: nur diese wurde an die bereits verbindliche finale
 Leerheits-/Inode-Prüfung angepasst. Genau der CI-Schritt besteht lokal mit74
-Prüfungen; die vollständige CI auf `7c9157c5` läuft noch. Der frühere Standardlauf
+Prüfungen. Die neue Integrationsstufe und der geschützte84Originale-Kanal auf
+`82823df1` bestanden in [CI39849065060](https://github.com/ernisch/helmut-pilot/actions/runs/39849065060).
+Der Ressourcenstart-Schritt lehnt den veränderten Storage-Code am historischen
+Quellreview-Pin korrekt ab. Ein ergänzender neuer unabhängiger Quellreview ist
+erforderlich; alte Belege und deren Ablehnung bleiben unverändert erhalten.
+Der frühere Standardlauf
 blieb177/180; drei gezielte Korrekturen sind separat bestanden, kein behaupteter
 durchgehend grüner Wiederholungslauf. Der geschützte84Originale-Kanal bleibt
 unverändert obligatorisch. Keine privaten Logs, PGDATA oder Secrets im Git.
@@ -101,7 +132,7 @@ für den vollständigen Ablauf. Ziel bleibt höchstens1.548.000.000B gemeinsam.
 
 Die gebundene Volladmission verlangt15.179.779.720B persistenten freien Platz.
 Nach kontrollierter lokaler Archivierung eigener geschlossener Diagnosekopien
-sind rund11,0GB verfügbar; rund4,2GB fehlen weiterhin. Originale, erforderliche
+sind rund10,80GB verfügbar; rund4,38GB fehlen weiterhin. Originale, erforderliche
 Belege, aktive/fremde Ressourcen und geheime lokale Archive bleiben erhalten.
 Die bekannten weiteren sicheren Kandidaten schließen diese Lücke nicht.
 `/tmp` ist RAM und darf diese Plattenanforderung nicht ersetzen.
