@@ -315,9 +315,13 @@ async function start() {
       const value = producerResult.phases?.[phase]; need(exact(value, ["requestBytes", "responseBytes", "latencyBytes", "responseStatus", "latencyMs"]), "producer-phase");
       derivedPins[phase] = Object.fromEntries(["request", "response", "latency"].map(kind => [kind, writeClient(c, phase + "_" + kind.toUpperCase() + ".PRIVATE.json", value[kind + "Bytes"])]));
     }
+    const sourceIntentIds = producerResult.proof?.sourceIntentIds;
+    need(exact(sourceIntentIds, ["D", "R"]) && Object.values(sourceIntentIds).every(hash), "producer-original-intent-metadata");
+    const producerTransport = { sourceIntentIds, phases: Object.fromEntries(["D", "R"].map(phase => [phase,
+      { responseStatus: producerResult.phases[phase].responseStatus, latencyMs: producerResult.phases[phase].latencyMs }])) };
     guard(); const ready = { schema: "helmut-local-unit-native-prepare-ready/1", nonce: c.nonce, runId: c.runId, database: c.database, process: self,
       configPin, derivedPins, sourceProofHash: P.hash(sourceBinding), producerProofHash: P.hash(producerResult.proof), selectionHash: sourceBinding.selectionSHA256,
-      ...selectedHashes, originalControlHash, actualNodeBudget, configuredReadRole: "postgres", originallyUnprivileged: false,
+      ...selectedHashes, originalControlHash, producerTransport, actualNodeBudget, configuredReadRole: "postgres", originallyUnprivileged: false,
       prepared: true, authorityInstalled: false, nativeBridgeQualified: false, unitExecutionQualified: false, full500Qualified: false };
     phase = "command-input-wait"; process.stdout.write(JSON.stringify(ready) + "\n");
     const input = await waitCommand(guard); guard();

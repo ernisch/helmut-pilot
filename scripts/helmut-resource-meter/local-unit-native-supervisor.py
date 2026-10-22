@@ -203,11 +203,14 @@ def main():
                          REPO / 'supabase/proposals/local_unit_original_bridge_local.sql',
                          REPO / 'supabase/proposals/auth_state_parts_local.sql',
                          REPO / 'supabase/proposals/auth_usage_atomic_local.sql',
-                         REPO / 'supabase/proposals/auth_read_bounded_local.sql']
+                         REPO / 'supabase/proposals/auth_read_bounded_local.sql',
+                         BIN / 'local-unit-native-original-trigger-qualification.py',
+                         REPO / 'supabase/proposals/synthetik500_stored_command_binding.sql']
         extra_pins = [pin(p) for p in extra_sources]
         config.update(qualifyNativeBindings=True, originalSourceDirectory=str(SOURCE), nodePin=pin(NODE / 'bin/node'),
                       codeCommit=code_commit, sourceCodePins=code_pins, bindingPreparationPin=extra_pins[0],
-                      readClosurePin=extra_pins[1], bridgeQualifierPin=extra_pins[2], bridgeProposalPin=extra_pins[3])
+                      readClosurePin=extra_pins[1], bridgeQualifierPin=extra_pins[2], bridgeProposalPin=extra_pins[3],
+                      originalTriggerQualifierPin=extra_pins[7])
         config['sources'] = [*sources, *extra_pins, *code_pins]
     save(case / 'STARTED.SAFE.json', {**config, 'availableBefore': available(),
                                       'purpose': ('Fresh source-local genuine source and native binding qualification only'

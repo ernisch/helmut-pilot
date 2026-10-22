@@ -70,7 +70,8 @@ function fixture(options = {}) {
   const sourceBinding = { schema: "VM-only-source-binding", selectionSHA256: sha("VM selection") }, sourceHandle = Object.freeze({});
   const derived = { sourceIndex: 499, diagnosticUnit: 0, phases: Object.fromEntries(["D", "R"].map(p => [p, {
     requestBytes: Buffer.from(JSON.stringify({ vmRequest: p })), responseBytes: Buffer.from(JSON.stringify({ vmResponse: p })),
-    latencyBytes: Buffer.from(JSON.stringify({ vmLatency: p })), responseStatus: 200, latencyMs: 19900 }])), proof: { schema: "VM-only-proof" } };
+    latencyBytes: Buffer.from(JSON.stringify({ vmLatency: p })), responseStatus: 200, latencyMs: 19900 }])),
+    proof: { schema: "VM-only-proof", sourceIntentIds: { D: sha("VM original D"), R: sha("VM original R") } } };
   const control = { synthetik500DispatchJournal: { vm: 1 }, synthetik500KostenAdmission: { vm: 2 }, testKostenAuftrag: { vm: 3 }, testKostenTage: { vm: 4 }, _authStoreRevision: "VM revision" };
   const moduleObjects = {
     source: { extractPinnedSource(args) { events.push("source"); assert.equal(processStub.env.HELMUT_PUBLICATION_ELIGIBILITY_JSON, policy.toString());
@@ -165,6 +166,8 @@ async function check(name, fn) { current = name; await fn(); count++; }
     assert.equal(s.writes.length, 7); assert(s.events.indexOf("producer") < s.events.indexOf("ready") && s.events.indexOf("ready") < s.events.indexOf("command"));
     const ready = JSON.parse(s.lines[0]); assert.equal(ready.prepared, true); assert.equal(ready.nativeBridgeQualified, false); assert.equal(ready.originallyUnprivileged, false);
     assert.equal(ready.selectedProfileHash, sha(canonical(s.selected.draft.profile))); assert.equal(ready.selectedSourcesHash, sha(canonical(s.selected.draft.sources)));
+    assert.deepEqual(ready.producerTransport.sourceIntentIds, { D: sha("VM original D"), R: sha("VM original R") });
+    assert.deepEqual(ready.producerTransport.phases, { D: { responseStatus: 200, latencyMs: 19900 }, R: { responseStatus: 200, latencyMs: 19900 } });
     for (const p of Object.values(ready.derivedPins).flatMap(x => Object.values(x))) assert(p.path.startsWith("/workspace/helmut-unit-diagnostic-native/") && !p.path.includes("/client/"));
     assert(!s.lines[0].includes("VM synthetic profile") && !s.lines[0].includes("VM document") && !s.lines[0].includes("testKostenAuftrag"));
     await assert.rejects(s.api.start()); assert.equal(s.spawns.length, 4);

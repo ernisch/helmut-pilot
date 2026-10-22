@@ -124,8 +124,9 @@ def prepare(worker, config, pg, catalog):
     group = {'path': '/owned-group', 'device': config['parentDevice'], 'inode': config['parentInode'], 'procMembership': '0::/\n'}
     worker.OUT.joinpath('client').mkdir(mode=0o700)
     run_id = 'nachlauf500-' + str(time.time_ns() // 1000)
-    issued = utc()
-    expires = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=180)).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+    issued_at = datetime.datetime.now(datetime.timezone.utc)
+    issued = issued_at.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+    expires = (issued_at + datetime.timedelta(seconds=180)).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
     preparation = {'schema': 'helmut-local-unit-native-prepare/1', 'nonce': nonce, 'runId': run_id,
                    'database': catalog['database'], 'issuedAtUTC': issued, 'expiresAtUTC': expires,
                    'selfPin': worker.pin(repo / 'scripts/helmut-resource-meter/local-unit-native-prepare.js'),
@@ -233,6 +234,12 @@ def qualify(worker, config, pg, catalog):
     source_pins = {relative: worker.pin(repo / relative) for relative in (
         'supabase/proposals/auth_state_parts_local.sql', 'supabase/proposals/auth_usage_atomic_local.sql',
         'supabase/proposals/auth_read_bounded_local.sql')}
+    trigger_helper = worker.load('native_original_trigger_qualification', config['originalTriggerQualifierPin'])
+    trigger_sources = {**source_pins,
+        'supabase/proposals/synthetik500_stored_command_binding.sql': worker.pin(repo / 'supabase/proposals/synthetik500_stored_command_binding.sql')}
+    triggers = trigger_helper.qualify_original_triggers(worker.query, database=catalog['database'],
+                                                       catalog=catalog, source_pins=trigger_sources)
+    worker.save('NATIVE_ORIGINAL_TRIGGERS.SAFE.json', triggers)
     prepared = value['prepared']
     read_result = read_helper.install_read_closure(worker.query, database=catalog['database'],
         operation_id=prepared['selection']['operationId'], command_canonical=value['canonical'],
