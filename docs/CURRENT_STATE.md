@@ -15,13 +15,12 @@ Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weit
 Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
 Runtimebindungen/native Verbraucher offen; alte GOs verbraucht, Quell-DB gestoppt.
 [Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
-PR930 und Integrationen929/931 grün: je84Originale,180Standard-/335Bereichssuiten,
-angeforderte DB-Checks PASS. Browser929 PASS,931 bewusst übersprungen; Logs verschlüsselt.
-PR931 als57a64670 in929 übernommen; Quellbaum gleich zum geprüften d2d1f7ad.
+Historische Abnahmen930/929/931 bleiben im CI-Beleg erhalten.
 [CI-Beleg](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
 Views-Hashwiederverwendung26gezielte Checks+Pro-Review PASS, frische Guards erhalten.
 CI39760002592: Originale/Runtime/Browser+erster DB-BlockPASS; Standard179/180.
-89Pins/10Fälle+BundlePASS; öffentlicheCodeprüfung vor Freigabe; frischeCIoffen.
+Nach Adapterpinkorrektur ist [CI39766942129](https://github.com/ernisch/helmut-pilot/actions/runs/39766942129)
+vollständig grün. [PR929](https://github.com/ernisch/helmut-pilot/pull/929) wurde in den CI-Entwicklungsbranch übernommen.
 Unit60/Voll500/Production/App403 offen.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
