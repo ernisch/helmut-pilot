@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand20:17UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand20:24UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -65,8 +65,13 @@ blieb FAIL vor PostgreSQL, Seed und Motor: die äußere Docker-Inventur ließ di
 feste Prozessleser-Handshake-Pipe zu lange unbedient. Kein Motorentry wurde
 angefordert,0Motoreinheiten; gemeinsamer Peak61.931.520B/Ereignisse0. Die Gruppe
 ist leer, der Hostabschluss bleibt ausdrücklich nicht sauber qualifiziert.
-Die Ablaufkorrektur muss innerhalb der unveränderten3s-Frist tatsächlich pumpen,
-nicht die Sicherheitsfrist verlängern. Ein neuer Fall muss den aktuellen Code
+Die enge Ablaufkorrektur pumpt ausschließlich den festen Beobachter innerhalb
+der unveränderten3s-Frist. Der native Transportfall
+`0781da7c039e4d708fd6fe975c718ff9` bestand mit `076fbe91`: tatsächlicher
+Beobachterabschluss vor der nächsten realen Docker-Inventur, beide Prozesse0
+und natürliche Pipe-Enden; keine Datenbank, kein Motor.
+[Bereinigter Beleg](belege/v12-native-unit-integration-20261022/NATIVE_OBSERVER_PUMP.SAFE.json).
+Ein neuer Einzelunit-Fall muss den aktuellen Code
 und einen eigenen einmaligen Vertrag binden; alte Rechte bleiben verbraucht.
 
 ## Eingaben, Tests und Messgrenzen
@@ -101,7 +106,7 @@ Belege, aktive/fremde Ressourcen und geheime lokale Archive bleiben erhalten.
 Die bekannten weiteren sicheren Kandidaten schließen diese Lücke nicht.
 `/tmp` ist RAM und darf diese Plattenanforderung nicht ersetzen.
 
-Nächster Schritt: Ablaufkorrektur unabhängig prüfen, dann frischen einzelnen
+Nächster Schritt: frischen einzelnen
 nativen Fall bis echter Ergebnis-/Zeit-/Speicher- und Abschlussabnahme führen.
 Danach verbleibende CI-/Kapazitäts- und sämtliche32Startbedingungen nachweisen.
 Ein vollständiger500er benötigt weiterhin ein neues ausdrückliches konkretes GO.
