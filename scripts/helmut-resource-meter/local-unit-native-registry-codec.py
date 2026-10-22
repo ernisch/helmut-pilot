@@ -26,7 +26,7 @@ RAM_OPTIONS = 'rw,nosuid,nodev,size=16777216,uid=1000,gid=1000,mode=0700'
 MODE = 'helmut-native-read-registry-codec/1'
 # Reviewed exact read-closure input, including qualified bool type fix.
 # This pin does not qualify a later target engine commit.
-READ_CLOSURE_SHA256 = 'b733ffbaf43f0508eabb299e582d0ebbf19f04a92746e4bb1b246a4fd93895fe'
+READ_CLOSURE_SHA256 = 'c52a98aea31bff80cd48c6dcda8693cd623f2f3f3601494a8670c71ff971a620'
 
 
 def need(ok, code):

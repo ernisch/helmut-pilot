@@ -202,7 +202,13 @@ class ReadClosureChecks(unittest.TestCase):
     def test_only_callback_executes_sql_and_native_denials_are_not_mock_flags(self):
         f = Fixture(); f.run()
         sql = f.calls[1][1]
-        self.assertTrue(sql.count('BEGIN;SET LOCAL') == 1 and sql.count('COMMIT;') == 1)
+        self.assertTrue(sql.count('BEGIN;SET LOCAL') == 1 and sql.count('COMMIT;') == 2)
+        self.assertTrue(sql.count('BEGIN READ ONLY;SET LOCAL') == 1)
+        committed_readback = sql.split('COMMIT;\n', 1)[1]
+        self.assertTrue(committed_readback.startswith('BEGIN READ ONLY;SET LOCAL standard_conforming_strings=on;SET LOCAL search_path=pg_catalog;'))
+        self.assertIn('read-closure-exact-read-closure', committed_readback)
+        self.assertIn('read-closure-original-auth-drift', committed_readback)
+        self.assertTrue(f.calls[2][1].startswith('BEGIN READ ONLY;SET LOCAL'))
         self.assertTrue(sql.index('COMMIT;') < sql.rindex("SELECT jsonb_build_object('schema'"))
         self.assertTrue(sql.count('CREATE POLICY local_unit_source_read') == 7 and sql.count('INSERT INTO helmut_unit_diagnostic.legacy_read_rpcs(') == 6)
         self.assertTrue(sql.count('GRANT EXECUTE ON FUNCTION public.helmut_auth_') == 6)

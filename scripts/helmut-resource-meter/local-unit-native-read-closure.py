@@ -442,10 +442,17 @@ def install_read_closure(query, *, database, operation_id, command_canonical, co
         end_guard = _guard(database, operation_id, command_canonical, command_sha256, installed=True, auth_hash=before['authHash'])
         # Install certificates contain only the actual re-read catalog. No stdout
         # ACK is accepted until the callback confirms complete psql exit/COMMIT.
-        installed = _call(query, database, install + acl + probes + end_guard + acl + 'COMMIT;\n' + catalog_sql, 'READ_CLOSURE_INSTALL')
+        # pg_get_expr deparses policy names according to search_path. COMMIT
+        # restores the session's default path; comparing that representation
+        # with a later pg_catalog-only read produces a false security drift.
+        # Recheck the committed install in its own explicitly read-only,
+        # identically configured transaction before accepting the callback.
+        readback_prefix = prefix.replace('BEGIN;', 'BEGIN READ ONLY;', 1)
+        installed = _call(query, database, install + acl + probes + end_guard + acl + 'COMMIT;\n'
+                          + readback_prefix + end_guard + acl + catalog_sql + 'COMMIT;\n', 'READ_CLOSURE_INSTALL')
         _validate_catalog(installed, database, operation_id, command_sha256)
         _need({k: v for k, v in installed.items() if k != 'securityHash'} == {k: v for k, v in before.items() if k != 'securityHash'}, 'install-catalog-or-auth-drift')
-        after = _call(query, database, prefix + end_guard + acl + catalog_sql + 'ROLLBACK;', 'READ_CLOSURE_FRESH_READBACK')
+        after = _call(query, database, readback_prefix + end_guard + acl + catalog_sql + 'ROLLBACK;', 'READ_CLOSURE_FRESH_READBACK')
         _validate_catalog(after, database, operation_id, command_sha256)
         _need(after == installed, 'fresh-readback-drift')
         # Controller also pins readonly mounts. Recheck these small reviewed
