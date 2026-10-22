@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand21:37UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand21:45UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -123,6 +123,25 @@ Die Seedquittung bleibt unbekannt und wird nicht durch Schlussfolgerungen geheil
 keine Wiederholung alter Schreibrechte. PGDATA und sämtliche Belege bleiben erhalten.
 [Bereinigter Befund](belege/v12-native-unit-integration-20261022/NATIVE_OWNER_SEED_ALIAS_FAILURE.SAFE.json).
 
+Der frische Fall `3e75aeb1cd927d52745a43994cd2c782` auf `1e5fdfba` bestätigt
+den Aliasfix nativ für den Seed: echter Original-CAS und eigener Seed atomar
+quittiert, Owner-PSQL Exit0/beide EOFs, genau ein bestätigter Schreibvorgang,
+6000historische Usageeinträge und deren Proof erhalten. Der Seed-Node erreichte
+ebenfalls Exit0/beide EOFs. Die übrigen drei Schreibarten sind damit noch nicht
+nativ geprüft. Der unabhängige zusätzliche Seedreadback wurde nicht erreicht:
+zuvor überschritt HOST_OBSERVE die feste3s-Antwortfrist. Der Host nimmt diese
+Anfrage bisher erst nach einer kompletten Beobachtung an und beantwortet sie
+nach einer weiteren. Der separat geprüfte Plan zieht ausschließlich deren
+Annahme vor die frische Beobachtung desselben Zyklus; keine Fristverlängerung,
+kein alter Snapshot als Ersatz. Der Gesamtfall bleibt FAIL, Motor0,
+Peak1.127.194.624B/Ereignisse0, Gruppe leer, PostgreSQL0; kein Zeit-/Reservebeleg.
+Die ursprünglichen finalen Workerflags meldeten Originalschutz nicht bestätigt.
+Der anschließend notwendige unabhängige FD-stabile Lesecheck bestätigte den
+OriginalRAW-Hash und alle432Sourcepins erneut. Die konkrete Ursache der falschen
+Defaultflags wurde nicht persistiert und wird nicht als bekannt ausgegeben.
+Positive Seedkopie und Belege bleiben erhalten, alte Rechte werden nicht erneut
+verwendet. [Bereinigter Befund](belege/v12-native-unit-integration-20261022/NATIVE_POSITIVE_SEED_HOST_OBSERVATION_FAILURE.SAFE.json).
+
 Die unabhängige Quellprüfung fand sechs Diagnose-Delegationen hinter nicht
 passenden Production-Readinessguards und einen weiteren V3-Eingangsriegel in
 `lage.js`. Diese konkreten Anbindungsfehler sind korrigiert und unabhängig
@@ -197,7 +216,10 @@ sind nach drei weiteren abgeschlossenen eigenen Codecheckouts rund10,77GB
 verfügbar; rund4,41GB fehlen weiterhin. Deren8537Dateien wurden vollständig gegen
 Git-Blobs und unabhängige Objektinhalte geprüft; Branches und Commitobjekte
 bleiben für den Rückweg erhalten. Tatsächlicher Nettogewinn320.372.736B,
-Startmarge für die Einzelunit30.302.208B vor weiteren Dateien. Originale, erforderliche
+Startmarge für die Einzelunit30.302.208B vor weiteren Dateien. Der folgende
+geschützte positive Seedfall belegt erneut etwa0,41GB; aktuell sind rund10,36GB
+frei, rund4,82GB fehlen zur Volladmission und eine weitere Einzelunit benötigt
+erneut kontrolliert qualifizierte Kapazität. Originale, erforderliche
 Belege, aktive/fremde Ressourcen und geheime lokale Archive bleiben erhalten.
 Die bekannten weiteren sicheren Kandidaten schließen diese Lücke nicht.
 [Bereinigter Cleanupbeleg](belege/v12-native-unit-integration-20261022/OWN_CLOSED_WORKTREE_CLEANUP.SAFE.json).
