@@ -33,6 +33,14 @@ Der Hash der vollständigen Expansion und der vollständige fachliche Befehl
 werden hier nicht erneut geprüft. Der Hash der tatsächlichen Paketbytes und des
 Dictionarys bindet die ausgewählte Struktur.
 
+`verifyPreparedDiagnostic(preparation, args)` prüft eine bereits erzeugte
+Vorbereitung erneut: Aus den tatsächlich übergebenen Paket-/Installationsbytes,
+Pins, Nonce und Zeit wird das kanonische Ergebnis neu berechnet und vollständig
+strukturell verglichen. Geänderte Hashes, Freigabefelder, Namensräume oder Sperren
+werden abgewiesen. Zurück kommt eine neue tiefgefrorene Vorbereitung. Die Methode
+ersetzt keine vertrauenswürdige Beschaffung dieser Eingaben und erteilt keine
+Ausführungsfreigabe; vollständige Expansion und Befehlsabnahme bleiben ungeprüft.
+
 ## Weiter offene Ausführungsvoraussetzungen
 
 Authentischer POSTRUN-Auth-/Journalzustand und separat gepinnte vorbereitete
@@ -51,7 +59,9 @@ gesperrt, bis die Fehler und Voraussetzungen tatsächlich geschlossen sind.
 ## Prüfung
 
 Der gezielte synthetische Test verwendet eigene temporäre Dateien und die
-öffentliche historische Endquittung:43/43 PASS,0FAIL,0Skip im netzlosen Container.
+öffentliche historische Endquittung: ursprünglich43/43 PASS im netzlosen Container.
+Mit erneuter Verifikation einschließlich Manipulations-/Neubindungsfällen lokal
+80/80 PASS,0FAIL; dafür noch kein eigener GitHub-Nachweis.
 Der Test läuft in CI vor dem unveränderten Gate für private Originale.
 Auch die echte schreibgeschützte Originalinspektion endet mit Exit0 und dem
 gesperrten Vorbereitungsstatus. Paket, Installationspins und Endquittung stimmen

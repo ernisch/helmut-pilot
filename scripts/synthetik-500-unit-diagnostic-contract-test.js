@@ -9,7 +9,7 @@ const os = require("node:os");
 const crypto = require("node:crypto");
 const zlib = require("node:zlib");
 const { spawnSync } = require("node:child_process");
-const { inspectPinnedPacket } = require("../lib/helmut/synthetik-500-unit-diagnostic-contract");
+const { inspectPinnedPacket, verifyPreparedDiagnostic } = require("../lib/helmut/synthetik-500-unit-diagnostic-contract");
 const terminalBytes = fs.readFileSync(path.resolve(__dirname, "../docs/betrieb/belege/next-local-full500-20261021/V12_ACTUAL_TERMINAL.SAFE.json"));
 const CLI = path.resolve(__dirname, "helmut-resource-meter/single-unit-diagnostic-inspect.js");
 const sha = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
@@ -119,6 +119,91 @@ check("repeat inspection has identical binding and leaves input bytes unchanged"
 check("original full-command validator rejects preparation", () => {
   const C = require("../lib/helmut/synthetik-500-production-command");
   assert.throws(() => C.validate(result), /command-shape/);
+});
+function preparationCopy() { return JSON.parse(JSON.stringify(result)); }
+check("json roundtrip preparation is verified against the pinned original bytes", () => {
+  const copy = preparationCopy();
+  assert.deepEqual(copy, result);
+  const verified = verifyPreparedDiagnostic(copy, input);
+  assert.equal(verified.status, "PREPARATION_ONLY_EXECUTION_BLOCKED");
+  assert.equal(verified.schema, "helmut-local-unit-diagnostic-preparation/1");
+  assert.equal(verified.sourceIndex, 499); assert.equal(verified.diagnosticUnit, 0);
+  assert.equal(verified.sourceSelectionBindingSHA256, result.sourceSelectionBindingSHA256);
+  assert.equal(verified.executionBlockedBy.length, 11);
+  assert.notEqual(verified, copy);
+  copy.executionAuthority = true; copy.proposedNamespaceKeys.journal = "mutated-by-caller";
+  assert.equal(verified.executionAuthority, false);
+  assert.equal(verified.proposedNamespaceKeys.journal, result.proposedNamespaceKeys.journal);
+  function frozen(x) { if (x && typeof x === "object") { assert(Object.isFrozen(x)); Object.values(x).forEach(frozen); } }
+  frozen(verified);
+  assert.throws(() => { verified.sourceIndex = 0; });
+  assert.throws(() => { verified.executionBlockedBy.push("fabricatedBlockerMissing"); });
+});
+for (const [name, mutate] of [
+  ["selection hash drift", p => { p.sourceSelectionBindingSHA256 = "0".repeat(64); }],
+  ["packet pin sha drift", p => { p.sourcePacketPin.sha256 = "1".repeat(64); }],
+  ["packet pin byte drift", p => { p.sourcePacketPin.bytes = p.sourcePacketPin.bytes + 1; }],
+  ["packet pin path drift", p => { p.sourcePacketPin.path = "/tmp/other-packet.json"; }],
+  ["install pin drift", p => { p.sourceInstallPin.sha256 = "2".repeat(64); }],
+  ["dictionary pin drift", p => { p.sourceDictionaryPin.sha256 = "3".repeat(64); }],
+  ["terminal pin drift", p => { p.terminalPin.bytes = 3337; }],
+  ["logical byte drift", p => { p.sourceLogicalBytes = p.sourceLogicalBytes + 1; }],
+  ["namespace field drift", p => { p.proposedNamespaceKeys.result = p.proposedNamespaceKeys.result + "x"; }],
+  ["extra namespace field", p => { p.proposedNamespaceKeys.admission = p.proposedNamespaceKeys.journal; }],
+  ["missing namespace field", p => { delete p.proposedNamespaceKeys.review; }],
+  ["missing blocker", p => { p.executionBlockedBy = p.executionBlockedBy.slice(0, 10); }],
+  ["extra blocker", p => { p.executionBlockedBy = [...p.executionBlockedBy, "fabricatedBlockerMissing"]; }],
+  ["reordered blocker", p => { p.executionBlockedBy = [...p.executionBlockedBy].reverse(); }],
+  ["execution authority flip", p => { p.executionAuthority = true; }],
+  ["production flip", p => { p.production = true; }],
+  ["full500 acceptance flip", p => { p.full500Accepted = true; }],
+  ["namespace installed flip", p => { p.namespaceInstalled = true; }],
+  ["diagnostic id reserved flip", p => { p.diagnosticIdReserved = true; }],
+  ["paid provider calls flip", p => { p.paidProviderCallsAllowed = true; }],
+  ["expanded hash claim flip", p => { p.expandedSHA256Verified = true; }],
+  ["full command claim flip", p => { p.fullCommandValidated = true; }],
+  ["source qualification upgrade", p => { p.sourceQualification = "FULLY_VERIFIED"; }],
+  ["status upgrade", p => { p.status = "PREPARED"; }],
+  ["extra top level field", p => { p.executionGO = true; }],
+  ["missing top level field", p => { delete p.sourceOperationId; }],
+  ["schema drift", p => { p.schema = "helmut-local-unit-diagnostic-preparation/2"; }],
+  ["diagnostic operation drift", p => { p.diagnosticOperationId = "localUnitDiagnostic-" + "0".repeat(32); }],
+  ["source day drift", p => { p.sourceDay = "2026-10-22"; }],
+  ["execution day drift", p => { p.executionDayUTC = "2026-10-23"; }]
+]) check("manipulated preparation rejected: " + name, () => {
+  const p = preparationCopy(); mutate(p);
+  rejected(() => verifyPreparedDiagnostic(p, input));
+});
+check("preparation verified against different packet bytes rejected", () => {
+  const x = logical(); x.admission.privateText = SENTINEL + "-other-bytes";
+  rejected(() => verifyPreparedDiagnostic(preparationCopy(), argsFor(envelope(graph(x)))));
+});
+check("preparation verified against different packet path rejected", () => {
+  rejected(() => verifyPreparedDiagnostic(preparationCopy(), argsFor(fixture, "/tmp/other-packet.json")));
+});
+check("preparation verified against different install pin rejected", () => {
+  rejected(() => verifyPreparedDiagnostic(preparationCopy(), { ...input, installPin: { ...input.installPin, path: "/tmp/other-install.json" } }));
+});
+check("preparation verified against different nonce rejected", () => {
+  rejected(() => verifyPreparedDiagnostic(preparationCopy(), { ...input, diagnosticNonce: "f".repeat(32) }));
+});
+check("preparation verified against different preparation time rejected", () => {
+  rejected(() => verifyPreparedDiagnostic(preparationCopy(), { ...input, preparedAtUTC: "2026-10-22T01:02:04.000Z" }));
+});
+check("verification failure is static and leaks no input values", () => {
+  const code = err => err instanceof Error && err.message === "unit-diagnostic-preparation-binding";
+  const p = preparationCopy(); p.executionAuthority = true;
+  assert.throws(() => verifyPreparedDiagnostic(p, input), code);
+  assert.throws(() => verifyPreparedDiagnostic(preparationCopy(), { ...input, diagnosticNonce: SENTINEL }), code);
+  assert.throws(() => verifyPreparedDiagnostic(preparationCopy(), { ...input, executionAuthority: true }), code);
+  assert.throws(() => verifyPreparedDiagnostic(null, input), code);
+  assert.throws(() => verifyPreparedDiagnostic(preparationCopy(), null), code);
+  const throwing = preparationCopy();
+  Object.defineProperty(throwing, "sourceIndex", { enumerable: true, get() { throw Error(SENTINEL); } });
+  assert.throws(() => verifyPreparedDiagnostic(throwing, input), code);
+  const verified = verifyPreparedDiagnostic(preparationCopy(), input);
+  assert.equal(verified.executionAuthority, false);
+  assert.equal(verified.expandedSHA256Verified, false); assert.equal(verified.fullCommandValidated, false);
 });
 check("unknown approval flag rejected", () => rejected(() => inspectPinnedPacket({ ...input, executionAuthority: true })));
 check("unsafe nonce rejected", () => rejected(() => inspectPinnedPacket({ ...input, diagnosticNonce: "../../unsafe" })));
