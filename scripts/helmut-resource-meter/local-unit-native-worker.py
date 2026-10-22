@@ -334,14 +334,20 @@ def main():
             fd = os.open(OUT / (row['label'] + '.PRIVATE.log'), os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
             with os.fdopen(fd, 'wb') as output:
                 output.write(row['data'])
-    assert pin(config['raw']['path']) == original_before
-    for item in config['sources']:
-        assert pin(item['path']) == item
+    original_preserved, sources_preserved = False, False
+    try:
+        assert pin(config['raw']['path']) == original_before
+        original_preserved = True
+        for item in config['sources']:
+            assert pin(item['path']) == item
+        sources_preserved = True
+    except BaseException as error:
+        failure = failure or 'final source verification failed: ' + type(error).__name__
     accepted = failure is None and result is not None and codes.get('postgres') == 0 and all(p.poll() is not None for p in CHILDREN)
     save('NATIVE_QUALIFICATION.SAFE.json', {**(result or {}), 'pass': accepted, 'failure': failure,
                                           'childExits': codes, 'allChildrenExited': all(p.poll() is not None for p in CHILDREN),
-                                          'originalPostrunPreserved': True, 'motorCalls': 0, 'full500': False,
-                                          'originalSourcePinsUnchanged': True})
+                                          'originalPostrunPreserved': original_preserved, 'motorCalls': 0, 'full500': False,
+                                          'originalSourcePinsUnchanged': sources_preserved})
     if not accepted:
         raise RuntimeError('native qualification failed; retained private logs')
 

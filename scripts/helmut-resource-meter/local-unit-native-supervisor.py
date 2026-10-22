@@ -203,6 +203,7 @@ def main():
         mounts = [(case, '/bench', False), (REPO, str(REPO), True), (PYTHON, str(PYTHON), True),
                   (NODE, str(NODE), True), (group, '/owned-group', True), (RAW, str(RAW), True),
                   (READER.parent, str(READER.parent), True), (COPY_MANIFEST, str(COPY_MANIFEST), True),
+                  (runtime_path, str(runtime_path), True),
                   (LEGACY, str(LEGACY), True), (JIT, str(JIT), True),
                   (Path(plan['archive']['path']), plan['archive']['path'], True),
                   (Path(plan['rootManifest']['path']), plan['rootManifest']['path'], True)]
