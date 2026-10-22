@@ -21,8 +21,11 @@ Storage-/Lage-Routen und Kostenlesung/failclosed korrigiert/quergeprüft; VM16/1
 Eigene2Fixturetickets ersetzen keinen500er-Globalzählernachweis; noch0Motoreinheiten.
 Kosten-Hook separat quergeprüft; CI-Vertragsprüfung14/14, Startinputs6/6, Artefakt10/10 lokal PASS.
 Frischer nativer Start vorSeed/Motor FAIL: Docker sortierte exakt gleicheEnv-Einträge anders; Vergleich korrigiert.
+Nächster Fall b09 bestand HTTP-Vorprüfung, scheiterte aber am Owner-SeedSQL: mehrdeutiges p.pronamespace.
+SQL-Aliase korrigiert/quergeprüft,29reine Compilerchecks PASS; noch keine native Abnahme des Fixes.
 [PR936/aktueller Umfang](betrieb/helmut-v12-native-unit-integration-20261022.md).
-Volladmission braucht15,18GB, verfügbar rund10,86GB; rund4,32GB fehlen. Alte GOs verbraucht.
+3abgeschlossene eigene Worktrees nach vollständigerGit-Blobsicherung entfernt: netto320.372.736B frei.
+Volladmission braucht15,18GB, verfügbar rund10,77GB; rund4,41GB fehlen. Alte GOs verbraucht.
 [Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
 [PR933](https://github.com/ernisch/helmut-pilot/pull/933) nach voller
 [CI39783955460](https://github.com/ernisch/helmut-pilot/actions/runs/39783955460) integriert.

@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand21:25UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand21:37UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -105,6 +105,24 @@ Peak1.055.625.216B/Ereignisse0, Gruppe leer, PostgreSQL0;0Motoreinheiten.
 Der fehlgeschlagene Fall bleibt FAIL und wird nicht wiederverwendet.
 [Bereinigter Befund](belege/v12-native-unit-integration-20261022/NATIVE_CLIENT_ENV_ORDER_DIAGNOSIS.SAFE.json).
 
+Der nächste frische Fall `b09fb4ec0d2fcfe7eb3d173bdd9a84dd` auf `03a28be5`
+bestand die echte HTTP-Vorprüfung einschließlich Exit0 und beider natürlicher
+Pipe-Enden. Der Owner-Seed scheiterte anschließend: PostgreSQL meldete eine
+mehrdeutige Spaltenreferenz auf den versionierten Ausdruck `p.pronamespace`.
+Der Root-DO-Block des Transaktionscompilers verwendete `p` sowohl als lokale
+Recordvariable als auch als Katalogalias. Der folgende Triggeralias `t` hatte
+dieselbe Kollision. Die enge, unabhängig geprüfte Korrektur benennt nur die
+beiden SQL-Aliase um; Quell-, Trigger-, Rechte-, Fristen- und Atomaritätsprüfungen
+bleiben bytegleich nach Rückbenennung.29reine Compilerprüfgruppen bestehen,
+einschließlich aller vier Schreibarten und Rückmutationen der alten Kollisionen.
+Der echte Reader vor dem Seed war erfolgreich; dessen Typprüfung wurde nicht
+verändert. Der spätere Hostfehler beim Lesen der inzwischen beendeten Source-PID
+war eine Folge des Seedabbruchs. Kein Hostschutz wird deshalb abgeschwächt.
+Der Fall bleibt FAIL:0Motoreinheiten, Peak1.124.519.936B/Ereignisse0, Gruppe leer.
+Die Seedquittung bleibt unbekannt und wird nicht durch Schlussfolgerungen geheilt;
+keine Wiederholung alter Schreibrechte. PGDATA und sämtliche Belege bleiben erhalten.
+[Bereinigter Befund](belege/v12-native-unit-integration-20261022/NATIVE_OWNER_SEED_ALIAS_FAILURE.SAFE.json).
+
 Die unabhängige Quellprüfung fand sechs Diagnose-Delegationen hinter nicht
 passenden Production-Readinessguards und einen weiteren V3-Eingangsriegel in
 `lage.js`. Diese konkreten Anbindungsfehler sind korrigiert und unabhängig
@@ -157,6 +175,9 @@ Overrides genau diese eine Restabweichung. Dieser enge Quellreview ist jetzt
 abgeschlossen und ausdrücklich gebunden; historischer Tarif-/Budgetkörper
 bleibt bytegleich. Die positive Vertragsprüfung samt Fälschungs-/Driftfällen
 besteht14/14; Startinput6/6 und Artefakt10/10 bestehen unverändert.
+CI39856940435 auf `03a28be5` besteht inzwischen auch den zuvor abgelehnten
+Ressourcenstart samt geschütztem84Originale-Kanal und Browserprüfung; der übrige
+Lauf ist noch nicht vollständig abgeschlossen. Diese CI ist keine Motorabnahme.
 [Kosten-Hook-Review](belege/local-unit-cost-caller-source-20261022/SOURCE_REVIEW.SAFE.json),
 [gezielte Vertragsprüfung](belege/v12-native-unit-integration-20261022/CURRENT_SOURCE_CALLER_FINAL_CHECKS.SAFE.json).
 Der frühere Standardlauf
@@ -172,9 +193,14 @@ für den vollständigen Ablauf. Ziel bleibt höchstens1.548.000.000B gemeinsam.
 
 Die gebundene Volladmission verlangt15.179.779.720B persistenten freien Platz.
 Nach kontrollierter lokaler Archivierung eigener geschlossener Diagnosekopien
-sind rund10,86GB verfügbar; rund4,32GB fehlen weiterhin. Originale, erforderliche
+sind nach drei weiteren abgeschlossenen eigenen Codecheckouts rund10,77GB
+verfügbar; rund4,41GB fehlen weiterhin. Deren8537Dateien wurden vollständig gegen
+Git-Blobs und unabhängige Objektinhalte geprüft; Branches und Commitobjekte
+bleiben für den Rückweg erhalten. Tatsächlicher Nettogewinn320.372.736B,
+Startmarge für die Einzelunit30.302.208B vor weiteren Dateien. Originale, erforderliche
 Belege, aktive/fremde Ressourcen und geheime lokale Archive bleiben erhalten.
 Die bekannten weiteren sicheren Kandidaten schließen diese Lücke nicht.
+[Bereinigter Cleanupbeleg](belege/v12-native-unit-integration-20261022/OWN_CLOSED_WORKTREE_CLEANUP.SAFE.json).
 `/tmp` ist RAM und darf diese Plattenanforderung nicht ersetzen.
 
 Nächster Schritt: frischen einzelnen
