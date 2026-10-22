@@ -133,6 +133,10 @@ class PureHost(unittest.TestCase):
                 'selection': self.selection, 'issuedAtUTC': now.isoformat(timespec='milliseconds').replace('+00:00', 'Z'),
                 'expiresAtUTC': (now + datetime.timedelta(seconds=2)).isoformat(timespec='milliseconds').replace('+00:00', 'Z'), 'body': body or {}}
 
+    def observation(self, source=None):
+        return {'observedAtUTC': M.utc(), 'source': source or {'synthetic': 'source'}, 'sourceService': None,
+                'sourceContainerId': self.host.source_id, 'knownContainerIds': [self.host.source_id], 'ownerObservation': None}
+
     def test_import_has_no_process_or_docker_action(self):
         with patch.object(M.subprocess, 'Popen', side_effect=AssertionError('no starts')), patch.object(M.subprocess, 'run', side_effect=AssertionError('no commands')):
             scope = {'__file__': str(FILE), '__name__': 'pure_import'}
@@ -195,12 +199,15 @@ class PureHost(unittest.TestCase):
             self.host._accept(self.request(), '1' * 64)
 
     def test_success_reply_binds_exact_request_scope_hash_and_nonce(self):
-        self.host.state = 'QUALIFIED'; r = self.request(); self.host._observe = lambda: {'metadata': 1}
-        self.host._accept(r, '1' * 64)
-        self.host.tick()
+        self.host.state = 'QUALIFIED'; r = self.request(); self.host._observe = self.observation
+        request_pin = M.write_once(self.case / 'HOST_REQUEST_01.PRIVATE.json', M.encode(r))
+        self.host._accept(r, request_pin['sha256'])
+        original_read = M.read_file
+        with patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})):
+            self.host.tick()
         raw, _ = M.read_file(self.case / 'HOST_REPLY_01.PRIVATE.json', uid=os.getuid()); reply = M.unique(raw)
         self.assertTrue(set(reply) == {'schema', 'seq', 'stage', 'nonce', 'selection', 'requestSHA256', 'issuedAtUTC', 'expiresAtUTC', 'result'})
-        self.assertTrue(reply['selection'] == self.selection and reply['nonce'] == r['nonce'] and reply['requestSHA256'] == '1' * 64)
+        self.assertTrue(reply['selection'] == self.selection and reply['nonce'] == r['nonce'] and reply['requestSHA256'] == request_pin['sha256'])
         M.window(reply); self.assertTrue(self.host.seq == 2 and self.host.pending is None)
 
     def test_queued_observation_is_admitted_then_freshly_measured_and_replied_in_one_tick(self):
@@ -233,7 +240,7 @@ class PureHost(unittest.TestCase):
                     self.assertIn(request['nonce'], self.host.seen)
                     phases.append(('fresh-observe', state))
                     clock['seconds'] += 1.8
-                    return {'observedAtUTC': M.utc(), 'freshSequence': index}
+                    return self.observation({'freshSequence': index})
                 self.host._observe = observe
                 with patch.object(self.host, '_accept', wraps=self.host._accept) as accept:
                     result = self.host.tick()
@@ -242,7 +249,7 @@ class PureHost(unittest.TestCase):
                 self.assertEqual(reply['requestSHA256'], request_pin['sha256'])
                 self.assertEqual(reply['nonce'], request['nonce'])
                 self.assertEqual(reply['selection'], request['selection'])
-                self.assertEqual(reply['result'], {'observedAtUTC': M.utc(), 'freshSequence': index})
+                self.assertEqual(reply['result'], self.observation({'freshSequence': index}))
                 M.window(reply)
                 self.assertTrue(result['pending'] is None and self.host.seq == index + 1 and self.host.failure is None)
                 self.assertLess(clock['seconds'] - began, 3)
@@ -264,11 +271,11 @@ class PureHost(unittest.TestCase):
             self.assertTrue(result['observation'] is None and result['pending'] == 'HOST_OBSERVE')
             self.assertTrue(self.host.last_observation is previous and self.host.failure is None)
             self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
-            self.host._observe = lambda: {'observedAtUTC': M.utc(), 'fresh': True}
+            self.host._observe = lambda: self.observation({'fresh': True})
             self.host.tick()
             self.assertEqual(accept.call_count, 1)
         reply = M.unique((self.case / 'HOST_REPLY_01.PRIVATE.json').read_bytes())
-        self.assertTrue(reply['result']['fresh'] and 'stale' not in reply['result'])
+        self.assertTrue(reply['result']['source']['fresh'] and 'stale' not in reply['result'])
 
     def test_early_observation_keeps_window_scope_sequence_nonce_body_and_replay_guards(self):
         original_read = M.read_file
@@ -326,6 +333,119 @@ class PureHost(unittest.TestCase):
         self.assertEqual(accept.call_count, 0)
         self.assertNotIn(next_request['nonce'], self.host.seen)
         self.assertEqual(self.host.pending['request']['stage'], 'ENTRY_RESULT')
+
+    def test_late_observation_uses_this_ticks_complete_sample_without_redating(self):
+        self.host.state = 'QUALIFIED'; phases = []; actual = {}
+        self.host.last_observation = self.observation({'stale': True})
+        original_read, original_publish, original_accept = M.read_file, M.publish_observation_reply, self.host._accept
+        monotonic = M.time.monotonic; offset = {'seconds': 0.0}
+        def observe():
+            self.assertIsNone(self.host.pending); phases.append('observe')
+            request = self.request(); actual['request'] = request
+            actual['requestPin'] = M.write_once(self.case / 'HOST_REQUEST_01.PRIVATE.json', M.encode(request))
+            actual['observation'] = self.observation({'currentSample': True})
+            return actual['observation']
+        def accept(*args):
+            phases.append('accept'); return original_accept(*args)
+        def publish(*args):
+            phases.append('publish'); actual['sample'] = args[-1].copy()
+            offset['seconds'] += .2  # Pure publication latency; no actual wait.
+            return original_publish(*args)
+        self.host._observe = observe
+        with (patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})),
+              patch.object(M.time, 'monotonic', lambda: monotonic() + offset['seconds']),
+              patch.object(self.host, '_accept', accept), patch.object(M, 'publish_observation_reply', publish)):
+            result = self.host.tick()
+            self.assertGreaterEqual(M.time.monotonic() - self.host.observed_at, .2)
+        reply = M.unique((self.case / 'HOST_REPLY_01.PRIVATE.json').read_bytes())
+        self.assertEqual(phases, ['observe', 'accept', 'publish'])
+        self.assertEqual(reply['requestSHA256'], actual['requestPin']['sha256'])
+        self.assertEqual(reply['result'], actual['observation'])
+        self.assertEqual(set(reply['result']), {'observedAtUTC', 'source', 'sourceService', 'sourceContainerId', 'knownContainerIds', 'ownerObservation'})
+        self.assertEqual(self.host.observed_at, actual['sample']['completedMonotonic'])
+        self.assertTrue(self.host.pending is None and self.host.seq == 2 and result['observation'] is actual['observation'])
+
+    def test_late_pending_sample_never_replies_or_uses_last_observation(self):
+        self.host.state = 'QUALIFIED'; previous = self.observation({'stale': True})
+        self.host.last_observation = previous
+        def pending():
+            M.write_once(self.case / 'HOST_REQUEST_01.PRIVATE.json', M.encode(self.request()))
+            raise M.ObservationPending()
+        self.host._observe = pending
+        result = self.host.tick()
+        self.assertTrue(result['observation'] is None and self.host.last_observation is previous and self.host.pending is None)
+        self.assertFalse(self.host.seen or (self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+
+    def test_observation_transport_core_denies_stale_future_pending_and_unbound_values(self):
+        start = M.observation_sample_start(); request = self.request()
+        pin = M.write_once(self.case / 'HOST_REQUEST_01.PRIVATE.json', M.encode(request))
+        observation = self.observation(); sample = M.observation_sample_complete(start); original_read = M.read_file
+        for label in ('stale', 'future-completion', 'nonfinite', 'before-request', 'pending', 'extra-result', 'sha', 'selection'):
+            value = copy.deepcopy(observation); marker = sample.copy(); selection = self.selection; request_sha = pin['sha256']
+            if label == 'stale': marker['startedMonotonic'] -= 3.01
+            elif label == 'future-completion': marker['completedMonotonic'] += 4
+            elif label == 'nonfinite': marker['startedMonotonic'] = float('nan')
+            elif label == 'before-request':
+                marker['startedMonotonic'] -= 2
+                marker['startedAtUTC'] = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=2)).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+                value['observedAtUTC'] = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1)).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+            elif label == 'pending': value = None
+            elif label == 'extra-result': value['inventedAuthority'] = True
+            elif label == 'sha': request_sha = '0' * 64
+            elif label == 'selection': selection = {**selection, 'commandHash': '0' * 64}
+            with (self.subTest(case=label), patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})),
+                  self.assertRaises(RuntimeError)):
+                M.publish_observation_reply(self.case, request, request_sha, selection, value, marker)
+            self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+
+    def test_observation_transport_publication_rechecks_original_deadlines_after_fsync(self):
+        original_read, original_write, mono, wall = M.read_file, M.write_once, M.time.monotonic, M.time.time
+        for kind in ('stale', 'expired'):
+            folder = self.case / ('channel-' + kind); folder.mkdir(mode=0o700)
+            start = M.observation_sample_start(); request = self.request()
+            pin = M.write_once(folder / 'HOST_REQUEST_01.PRIVATE.json', M.encode(request))
+            observation = self.observation(); sample = M.observation_sample_complete(start); delay = {'seconds': 0.0}
+            def write(path, raw, mode=0o600):
+                result = original_write(path, raw, mode)
+                if Path(path).name.startswith('.HOST_REPLY_'): delay['seconds'] = 3.01
+                return result
+            with (self.subTest(kind=kind), patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})),
+                  patch.object(M, 'write_once', write),
+                  patch.object(M.time, 'monotonic', lambda: mono() + (delay['seconds'] if kind == 'stale' else 0)),
+                  patch.object(M.time, 'time', lambda: wall() + (delay['seconds'] if kind == 'expired' else 0)),
+                  self.assertRaises(RuntimeError)):
+                M.publish_observation_reply(folder, request, pin['sha256'], self.selection, observation, sample)
+            self.assertFalse((folder / 'HOST_REPLY_01.PRIVATE.json').exists())
+
+    def test_observation_transport_rechecks_request_bytes_and_never_replaces_reply(self):
+        start = M.observation_sample_start(); request = self.request()
+        path = self.case / 'HOST_REQUEST_01.PRIVATE.json'; pin = M.write_once(path, M.encode(request))
+        observation = self.observation(); sample = M.observation_sample_complete(start); original_read = M.read_file
+        with patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})):
+            reply_pin = M.publish_observation_reply(self.case, request, pin['sha256'], self.selection, observation, sample)
+            before = Path(reply_pin['path']).read_bytes()
+            with self.assertRaises(OSError):
+                M.publish_observation_reply(self.case, request, pin['sha256'], self.selection, observation, sample)
+            self.assertEqual(Path(reply_pin['path']).read_bytes(), before)
+            path.write_bytes(M.encode({**request, 'nonce': 'a' * 64}))
+            with self.assertRaisesRegex(RuntimeError, 'observation-request-file-drift'):
+                M.publish_observation_reply(self.case, request, pin['sha256'], self.selection, observation, sample)
+
+    def test_observation_transport_deadline_is_checked_after_request_fd_read(self):
+        start = M.observation_sample_start(); request = self.request()
+        pin = M.write_once(self.case / 'HOST_REQUEST_01.PRIVATE.json', M.encode(request))
+        observation = self.observation(); sample = M.observation_sample_complete(start)
+        original_read, wall = M.read_file, M.time.time; clock = {'reads': 0, 'delay': 0.0}
+        def read(path, *args, **kwargs):
+            result = original_read(path, *args, **{**kwargs, 'uid': os.getuid()})
+            clock['reads'] += 1
+            if clock['reads'] == 2: clock['delay'] = 2.1
+            return result
+        with (patch.object(M, 'read_file', read), patch.object(M.time, 'time', lambda: wall() + clock['delay']),
+              self.assertRaisesRegex(RuntimeError, 'private-ipc-window')):
+            M.publish_observation_reply(self.case, request, pin['sha256'], self.selection, observation, sample)
+        self.assertEqual(clock['reads'], 2)
+        self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
 
     def test_host_observation_is_allowed_while_entry_live(self):
         self.host.state = 'ENTRY'; self.host._observe = lambda: {'metadata': 1}

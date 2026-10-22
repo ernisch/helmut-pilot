@@ -9,6 +9,7 @@ import ctypes
 import base64
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -321,6 +322,10 @@ def publish_once(path, raw):
     """No reader can observe a partial success reply or a two-link interval."""
     p = Path(path); stage = p.parent / ('.' + p.name + '.stage-' + secrets.token_hex(16))
     write_once(stage, raw)
+    _rename_once(stage, p)
+
+
+def _rename_once(stage, p):
     libc = ctypes.CDLL(None, use_errno=True); rename = libc.renameat2
     rename.argtypes = (ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint)
     rename.restype = ctypes.c_int
@@ -331,6 +336,71 @@ def publish_once(path, raw):
         os.fsync(directory)
     finally:
         os.close(directory)
+
+
+def observation_sample_start():
+    return {'startedMonotonic': time.monotonic(), 'startedAtUTC': utc()}
+
+
+def observation_sample_complete(start):
+    need(type(start) is dict and set(start) == {'startedMonotonic', 'startedAtUTC'}, 'observation-sample-start')
+    return {**start, 'completedMonotonic': time.monotonic(), 'completedAtUTC': utc()}
+
+
+def _observation_reply_check(case, request, request_sha256, selection, observation, sample):
+    # Timing/framing only: this does not authenticate a Source, qualify a unit,
+    # or open Host state. Production must already have consumed _accept.
+    need(type(request) is dict and set(request) == {'schema', 'seq', 'stage', 'nonce', 'selection', 'issuedAtUTC', 'expiresAtUTC', 'body'}
+         and request['schema'] == 'helmut-local-unit-native-host-request/1' and request['stage'] == 'HOST_OBSERVE'
+         and type(request['seq']) is int and 1 <= request['seq'] <= 128 and request['body'] == {}
+         and type(request['nonce']) is str and HASH.fullmatch(request['nonce']), 'observation-reply-request')
+    need(type(selection) is dict and set(selection) == {'operationId', 'commandHash'}
+         and type(selection['operationId']) is str and re.fullmatch('localUnitDiagnostic-[a-f0-9]{32}', selection['operationId'])
+         and type(selection['commandHash']) is str and HASH.fullmatch(selection['commandHash'])
+         and request['selection'] == selection and type(request_sha256) is str and HASH.fullmatch(request_sha256), 'observation-reply-binding')
+    need(type(observation) is dict and set(observation) == {'observedAtUTC', 'source', 'sourceService', 'sourceContainerId', 'knownContainerIds', 'ownerObservation'},
+         'observation-result-shape')
+    need(type(sample) is dict and set(sample) == {'startedMonotonic', 'startedAtUTC', 'completedMonotonic', 'completedAtUTC'}, 'observation-sample-shape')
+    case = canonical(case)
+    root_case = BASE / selection['operationId'].removeprefix('localUnitDiagnostic-')
+    need(case == root_case or case.parent == root_case and re.fullmatch('channel-(?:early|mid|stale|expired|replay)', case.name), 'observation-reply-case')
+    case_stat = case.lstat()
+    need(stat.S_ISDIR(case_stat.st_mode) and case_stat.st_uid == os.getuid() and stat.S_IMODE(case_stat.st_mode) == 0o700, 'observation-reply-private-case')
+    raw, actual = read_file(case / ('HOST_REQUEST_%02d.PRIVATE.json' % request['seq']))
+    need(actual['sha256'] == request_sha256 and unique(raw) == request, 'observation-request-file-drift')
+    # File verification may itself consume time; clocks are checked after IO.
+    a, b, current = sample['startedMonotonic'], sample['completedMonotonic'], time.monotonic()
+    need(all(type(x) in (int, float) and math.isfinite(x) for x in (a, b, current))
+         and 0 <= a <= b <= current and current - a < 3, 'observation-sample-age')
+    start, end, observed, current_utc = instant(sample['startedAtUTC']), instant(sample['completedAtUTC']), instant(observation['observedAtUTC']), instant(utc())
+    need(start <= observed <= end <= current_utc and current_utc - start < 3
+         and observed >= instant(request['issuedAtUTC']), 'observation-sample-utc')
+    window(request)
+
+
+def publish_observation_reply(case, request, request_sha256, selection, observation, sample):
+    """Non-authoritative transport core; no state, claim or native proof granted.
+
+    The caller supplies its completed current measurement. Fixed request bytes,
+    original clocks and no-replace publication are checked here; Source/CID/
+    process/Owner authenticity remains the production caller's responsibility.
+    """
+    host_user()
+    _observation_reply_check(case, request, request_sha256, selection, observation, sample)
+    now = datetime.datetime.now(datetime.timezone.utc)
+    value = {'schema': 'helmut-local-unit-native-host-reply/1', 'seq': request['seq'], 'stage': request['stage'],
+             'nonce': request['nonce'], 'selection': selection, 'requestSHA256': request_sha256,
+             'issuedAtUTC': now.isoformat(timespec='milliseconds').replace('+00:00', 'Z'),
+             'expiresAtUTC': (now + datetime.timedelta(seconds=3)).isoformat(timespec='milliseconds').replace('+00:00', 'Z'), 'result': observation}
+    raw = encode(value); p = Path(case) / ('HOST_REPLY_%02d.PRIVATE.json' % request['seq'])
+    stage = p.parent / ('.' + p.name + '.stage-' + secrets.token_hex(16))
+    write_once(stage, raw)
+    # Stage fsync may consume time. Check the SAME clocks/request again at the
+    # publication boundary; never refresh the observation or its sample age.
+    _observation_reply_check(case, request, request_sha256, selection, observation, sample)
+    window(value)
+    _rename_once(stage, p)
+    return {'path': str(p), 'bytes': len(raw), 'sha256': sha(raw)}
 
 
 def metadata_pin(pin, uid=None, mode=None):
@@ -1463,6 +1533,14 @@ class NativeExecutionHost:
         publish_once(self.case / ('HOST_REPLY_%02d.PRIVATE.json' % self.seq), encode(value))
         self.seq += 1; self.pending = None
 
+    def _reply_observation(self, observation, sample):
+        need(self.pending is not None and self.pending['request']['stage'] == 'HOST_OBSERVE'
+             and self.state in ('QUALIFIED', 'ENTRY', 'DONE'), 'observation-reply-state')
+        p = self.pending
+        publish_observation_reply(self.case, p['request'], p['sha256'], self.selection, observation, sample)
+        self.observed_at = sample['completedMonotonic']
+        self.seq += 1; self.pending = None
+
     def _release_clients(self):
         for cid, client in self.clients.items():
             if client.get('gateReleased') or not client.get('process') or cid in self.probes:
@@ -1612,8 +1690,12 @@ class NativeExecutionHost:
                     raw, pin = read_file(p); request = unique(raw)
                     if type(request) is dict and request.get('stage') == 'HOST_OBSERVE':
                         self._accept(request, pin['sha256'])
+            sample_start = observation_sample_start()
+            sample = None
             try:
                 observation = self._observe(); self.last_observation = observation
+                if observation is not None:
+                    sample = observation_sample_complete(sample_start)
             except ObservationPending:
                 observation = None
             self._release_clients(); self._quiesce_clients()
@@ -1625,7 +1707,7 @@ class NativeExecutionHost:
                 if stage == 'OWNER_START' and observation is not None:
                     self._advance_owner_start()
                 if stage == 'HOST_OBSERVE' and observation is not None:
-                    self.observed_at = time.monotonic(); self._reply(observation)
+                    self._reply_observation(observation, sample)
                 elif stage == 'OWNER_START' and self.owner_ready and self.heartbeat and observation is not None:
                     self.state = 'OWNER'; self._reply({'ready': self.owner_ready, 'observation': observation})
                 elif stage == 'ENTRY_START' and self.clients[self.active_client].get('gateReleased') and observation is not None:
@@ -1680,6 +1762,8 @@ class NativeExecutionHost:
                 p = self.case / ('HOST_REQUEST_%02d.PRIVATE.json' % self.seq)
                 if p.exists():
                     raw, pin = read_file(p); self._accept(unique(raw), pin['sha256'])
+                    if self.pending['request']['stage'] == 'HOST_OBSERVE':
+                        self._reply_observation(observation, sample)
             return {'state': self.state, 'pending': None if not self.pending else self.pending['request']['stage'], 'observation': observation}
         except BaseException as error:
             self.failure = 'sealed-native-host-failure'
