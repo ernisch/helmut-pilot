@@ -1,18 +1,27 @@
 # CURRENT STATE — Helmut
 
-**Lokal 21.10.2026 UTC; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
+**Stand22.10.2026 Europe/Istanbul.** Letzter Production-Befund16.10.2026 13:07:32UTC,
+nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
+[Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 21.10., 21:50UTC: Blocker bearbeitet, weiterhin kein Startgrün
+## 22.10.: Restore und geschützter CI-Originalkanal
 
-Optionaler PostgREST-Owner samt Quellen-/Recipe-/Abschlussbindung integriert;
-gezielte reine Integrationsprüfungen PASS, native Abnahme noch offen. CAS-Observer
-bestätigt nur erfolgreiche Mutationen. Vercel-Preview275c137f tatsächlich READY.
-Private CI-Originalbindung bleibt FAIL/HTTP403; sicherer Provisionierer vorbereitet.
-Nach geschützter Einzelbereinigung15.227.342.848B frei, Admission15.179.779.720B:
-Plattenlücke geschlossen; Originale/Belege/Arbeitsstände erhalten. Unit60 am
-späten V12 benötigt noch einen getrennten Ein-Unit-Prüfvertrag. Altes Fenster
-21:30UTC abgelaufen, alle GOs verbraucht; kein neuer Voll500, kein Production.
-[Reparaturen, Prüfgrenzen und nächster Schritt](betrieb/helmut-blocker-integration-20261021.md).
+13.527Dateien hashverifiziert; physische DB-Kopien fehlen. Manifest+9Negativgruppen PASS.
+Contracttest-Storemutation: Fix4Fälle PASS, Store bytegenau restauriert;
+Zeitmetadaten erklärt geändert.88/88Bytepins PASS,84CI+3V12 auch Metadaten gleich.
+7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld ausgeschlossen.
+[Restore](betrieb/private-ci-original-provisioning-20261021.md).
+Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weiter inert.
+Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
+Runtimebindungen/native Verbraucher offen; alte GOs verbraucht, Quell-DB gestoppt.
+[Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
+Historische Abnahmen930/929/931 bleiben im CI-Beleg erhalten.
+[CI-Beleg](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
+Views-Hashwiederverwendung26gezielte Checks+Pro-Review PASS, frische Guards erhalten.
+CI39760002592: Originale/Runtime/Browser+erster DB-BlockPASS; Standard179/180.
+Nach Adapterpinkorrektur ist [CI39766942129](https://github.com/ernisch/helmut-pilot/actions/runs/39766942129)
+vollständig grün. [PR929](https://github.com/ernisch/helmut-pilot/pull/929) wurde in den CI-Entwicklungsbranch übernommen.
+Unit60/Voll500/Production/App403 offen.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
@@ -267,7 +276,7 @@ Historische abgeschlossene Befunde bleiben [wortgleich archiviert](archive/proje
 
 ## Starttor und Schutzgrenzen
 
-Lokale notwendige RAM-/Integrationsänderungen und gezielte Komponentenprüfungen bleiben erlaubt. **Genau der freigegebene nächste vollständige Mock500-VersuchV10 ist verbraucht und als FAIL beendet.** Claim/Setup bleiben erhalten; kein neuer Slot, kein Löschen/Reset verbrauchter Marken und kein automatischer Retry aus alten Betreiberzitaten. Auch V11 und V12 sind verbraucht und fehlgeschlagen; ein neuer Versuch braucht ein neues konkretes GO samt Fall-/Tages-/Code-/Original-/Zeit-/Loop-/Plattenbindung, unabhängiger Annahme und32frischen Startgruppen. Keine Ersatzoriginale.
+Betreibersteuerung22.10.: autonome Fehlerbehebung mit allen nötigen Freigaben; Voll500 erst nach Behebung aller Fehler. V10/V11/V12 bleiben verbraucht und fehlgeschlagen; kein Reset oder Retry aus alten Quittungen. Ein neuer Versuch braucht frische Fall-/Tages-/Code-/Original-/Zeit-/Loop-/Plattenbindungen, einmalige Autorität, unabhängige Annahme und32echte Startgruppen. Fehlende Quellruntime, ausgeschlossene Daten und Unit60 sind technische Blocker; keine Ersatzoriginale.
 
 Production, Merge, Deployment, Production-Migrationen und bezahlte HELMUT-Provideraufrufe sind daraus nicht freigegeben. Für regulären Betrieb bleiben ein gesondertes konkretes Aktivierungs-/Productiontest-GO, aktuelle Paketbindung, Ebenen-/Landesversorgung bis zur sichtbaren Ausgabe, Kosten-/Zeitplan, lebender Endwächter und Rückweg erforderlich. Nur synthetische500Profile für Bundestag/Berlin/Brandenburg, keine AfD-Kunden; originale fachliche/security Prüfungen für alle500,1500Ergebnispositionen und8000frische Kontrollen. Fehlend/leer/doppelt/unbrauchbar/technischfehlerhaft getrennt bilanzieren. Bei unbekanntem Schreibausgang Stop und lesende Klärung, kein Retry. Originale und bisherige Belege erhalten.
 
@@ -279,9 +288,7 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-180erOffline-Schlussprüfung nachfinalerSperreinbindung abnehmen; danach kleinsten
-gebundenenGateway/PostgREST-Authmutationszyklus amspätenKlon qualifizieren,
-Read/Decode/Callback/CAS undMesswrapper ohneDoppelzählung trennen. Keine weitere
-Finanzprüfung oderallgemeineOptimierungsrunde. Voll500erstmitPlatte,32frischen
-Startgruppen,Fall-/Zeitbindung undneuemkonkretemGO. AllealtenGOsverbraucht.
-Hierfortsetzen,Sehrhoch wegenCAS/ACK/Originalschutz;kostentragendeProductionbleibtgesperrt.
+Cloud-Authrouting, geschützten84erCI-Kanal und echte Quellruntime über unterstützte
+Wege herstellen. Separaten HTTP-Ein-Unit-Vertrag ausarbeiten; vorhandene Voll500-
+Verträge lassen keine Index499-Wiederholung zu. Unit60/32Startgruppen offen.
+Hier fortsetzen, Sehr hoch wegen CAS/ACK/Originalschutz; kein Voll500 vor Klärung.

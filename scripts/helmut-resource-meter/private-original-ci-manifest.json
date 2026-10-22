@@ -1,8 +1,8 @@
 {
   "schema": "helmut-private-ci-originals/1",
   "canonicalWorkspace": "/workspace",
-  "fileCount": 83,
-  "totalBytes": 83490369,
+  "fileCount": 84,
+  "totalBytes": 83496520,
   "files": [
     {
       "path": "/workspace/helmut-parallel-20261015/wave15/assemble-after-activation.js",
@@ -418,6 +418,11 @@
       "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/day21-input-preparation-v2/completed-input/READ_ONLY_SOURCE_CAPTURE.SAFE.json",
       "bytes": 3807,
       "sha256": "0bb42c165555de2723c787ef054001723d5ef7832d4b2bb53fda2547924ab77e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/INDEPENDENT_COMBINED_SOURCE_REVIEW_ORIGINAL.SAFE.json",
+      "bytes": 6151,
+      "sha256": "e7efec6b916aa3f01fe755f3e89566e6c2801e928d5e3484fe9cb053e749c6a8"
     }
   ]
 }

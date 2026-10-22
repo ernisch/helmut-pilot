@@ -356,8 +356,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-production-adapter.js",
-      "bytes": 28589,
-      "sha256": "1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4"
+      "bytes": 28675,
+      "sha256": "31fa8e05742ba8f2618f01bf8f4c24b29b9edc1fe36ab25e0fb49a6f39bc3804"
     },
     {
       "path": "lib/helmut/synthetik-500-production-command.js",
@@ -450,7 +450,7 @@
       "sha256": "32e72dfd6e3e2bc2788c991cab29471af4e04ea7a1a57f7bb3e58a9ea92693d2"
     }
   ],
-  "sourceMappingSHA256": "d2c2b816028c3169795cb62a6d5482485b2526ae6c0e995ceb5cf941760b0aaa",
+  "sourceMappingSHA256": "3c0e64a68e82e211b1bc64430556fcb2f5caae00fe047720c1b2266c0b0b7cad",
   "currentCandidateFull500Qualification": false,
   "candidateQualificationScope": "LOCAL_DEFAULT_OFF_CONTROL_VIEW_AND_NATIVE_COMPONENT_SECURITY_ONLY; COMMON_RAM_OFFLINE90_UNIT60_AUTH30_FULL500_PRODUCTION_NOT_QUALIFIED",
   "priorManifestCommit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",

@@ -1,0 +1,229 @@
+{
+  "schema": "helmut-genuine-github-integration-acceptance/1",
+  "observedUTC": "2026-10-22 09:34:27 UTC",
+  "repository": "ernisch/helmut-pilot",
+  "runs": [
+    {
+      "pullRequest": 929,
+      "runURL": "https://github.com/ernisch/helmut-pilot/actions/runs/39750868037",
+      "headSHA": "c303790bc05fb07f2b534fb45465a88d59ab84de",
+      "mergeSHAReportedByGitHub": "c7161048ecf896637c273e82de914cfabd0ae86f",
+      "workflowConclusion": "success",
+      "publicPlanAnd28Guards": "success",
+      "runPrCheckoutAndActualEnvironmentReview": "success",
+      "decryptedAndProvisionedOriginalFiles": 84,
+      "standardSuitesPassed": 180,
+      "areaSuitesPassed": 335,
+      "requestedIsolatedDatabaseChecks": "success",
+      "browser": "executed_success",
+      "encryptedDiagnostics": {
+        "id": 12416305520,
+        "name": "private-ci-diagnostics-39750868037-1",
+        "bytes": 33189,
+        "digest": "sha256:1a99d1a82b35817f677c121f5490e4f1f757080aca3b7c2f4ef5a866ee50ac4b",
+        "expiresUTC": "2026-10-29T09:31:43Z"
+      },
+      "diagnosticsDownloaded": false
+    },
+    {
+      "pullRequest": 931,
+      "runURL": "https://github.com/ernisch/helmut-pilot/actions/runs/39751014111",
+      "headSHA": "d2d1f7ad19b2269616324355a346e8fe1a9424bf",
+      "mergeSHAReportedByGitHub": "27c3c4e02871e4e225c59a5f5c4f01ed58f11ac3",
+      "workflowConclusion": "success",
+      "publicPlanAnd28Guards": "success",
+      "runPrCheckoutAndActualEnvironmentReview": "success",
+      "decryptedAndProvisionedOriginalFiles": 84,
+      "standardSuitesPassed": 180,
+      "areaSuitesPassed": 335,
+      "requestedIsolatedDatabaseChecks": "success",
+      "browser": "job_success_browser_steps_intentionally_skipped",
+      "encryptedDiagnostics": {
+        "id": 12414903763,
+        "name": "private-ci-diagnostics-39751014111-1",
+        "bytes": 33416,
+        "digest": "sha256:bf8764242314b14e70bc4f7f48bcfc9e16747e8cc455770dc356b767e89b6b28",
+        "expiresUTC": "2026-10-29T09:30:27Z"
+      },
+      "diagnosticsDownloaded": false
+    }
+  ],
+  "pr931Merge": {
+    "sha": "57a6467064bdc0917543715cac896d37daedb446",
+    "targetBranch": "codex/local-unit-diagnostic-contract-20261022",
+    "treeSHA": "be54bbe5b7e7ccc459b6334c0e87e91086428e9d",
+    "treeEqualsTestedHead": true
+  },
+  "followupMotorFix": {
+    "commit": "5f99d8e11db22396c2b5cae2998d982b26055bb5",
+    "description": "Only reuse scalar briefing hash from the same fresh views guard; all fresh guard invocations retained.",
+    "localFocusedSuitesPassed": 26,
+    "negativeViewsCheckpointCases": 4,
+    "independentReview": {
+      "model": "deepseek-v4-pro",
+      "effort": "high",
+      "result": "No supported concrete regression within supplied scope",
+      "testsRunByReviewer": false
+    },
+    "actualNativeMotorLatencyMeasured": false,
+    "combinedHeadCI": "failed_39760002592_one_stale_release_manifest_adapter_pin",
+    "failedCombinedRun": {
+      "runURL": "https://github.com/ernisch/helmut-pilot/actions/runs/39756787129",
+      "headSHA": "e3eab26d99582233befbf76a2859d9610d59bf04",
+      "workflowConclusion": "failure",
+      "publicPlanAnd28Guards": "success",
+      "runPrCheckoutAndActualEnvironmentReview": "success",
+      "decryptedAndProvisionedOriginalFiles": 84,
+      "browser": "executed_success",
+      "failureStep": "Ressourcenstart und Originalbindungen (offline)",
+      "failureTest": "runtime-read-contract-test.py:test_control_descriptor_uses_shared_runtime_manifest_without_review_file_reads",
+      "cause": "Reviewed adapter hash still selected historical bytes after scalar hash handoff change",
+      "laterOfflineSteps": "skipped",
+      "encryptedDiagnosticArtifact": {
+        "id": 12416800927,
+        "bytes": 1806,
+        "digest": "sha256:5381e7b57ee63a7fb6aded617f290de72e95f13b22e0da8565dc2e3fb933fbec",
+        "digestVerified": true,
+        "decryptedLocally": true,
+        "plaintextPublished": false
+      }
+    },
+    "sourceBindingCorrection": {
+      "review": "docs/betrieb/belege/local-view-binding-20261022/SOURCE_REVIEW.SAFE.json",
+      "historicalAcceptancesPreserved": true,
+      "exactReviewedHashRequired": true,
+      "freshNativeIntegrationRequired": true,
+      "freshCombinedGitHubCI": "resource_start_passed_full_run_failed_separate_release_manifest_pin",
+      "rootTargetedVerification": {
+        "scope": "Exact previously failing resource-start workflow step",
+        "hostPython": "3.13",
+        "nodeVersion": "24.19.0",
+        "startPreflightTestsPassed": 19,
+        "resourceAuthorityTestsPassed": 31,
+        "preparationBindings": "pass_no_motor_database_or_provider",
+        "runtimeReadContractTestsPassed": 13,
+        "startInputCheckTestsPassed": 6,
+        "sanitizedEnvironment": true,
+        "nativeMotorRun": false,
+        "githubPython312Verification": "resource_start_passed_39760002592"
+      }
+    },
+    "subsequentCombinedRun": {
+      "runURL": "https://github.com/ernisch/helmut-pilot/actions/runs/39760002592",
+      "headSHA": "20b7425bb1d38b534e1c045cb56dcf4018f8c1c9",
+      "workflowConclusion": "failure",
+      "publicPlanAnd28Guards": "success",
+      "actualEnvironmentReview": "success",
+      "decryptedAndProvisionedOriginalFiles": 84,
+      "resourceStartAndRuntimeContract": "success",
+      "browser": "executed_success",
+      "firstIsolatedDatabaseBlock": "success",
+      "standardSuites": {
+        "passed": 179,
+        "total": 180,
+        "durationSeconds": 885,
+        "failedSuite": "synthetik-500-runtime-artifact-attestation-test.js",
+        "failedSuiteDurationMS": 62,
+        "failedSuiteExit": 1
+      },
+      "areaAndZ22": "skipped_after_standard_failure",
+      "cause": "Only adapter entry in current89-file release manifest retained historical bytes/hash; all other88 files match",
+      "encryptedDiagnosticArtifact": {
+        "id": 12419152400,
+        "bytes": 26904,
+        "digest": "sha256:1752775f0a13609f0af1295295ad1b9d01aa89c9daa135ecc59e99957f64318a",
+        "digestVerified": true,
+        "decryptedLocally": true,
+        "plaintextPublished": false
+      }
+    },
+    "releaseManifestCorrection": {
+      "currentFiles": 89,
+      "changedSourceRows": 1,
+      "changedSource": "lib/helmut/synthetik-500-production-adapter.js",
+      "candidateAdapterSHA256": "31fa8e05742ba8f2618f01bf8f4c24b29b9edc1fe36ab25e0fb49a6f39bc3804",
+      "sourceMappingSHA256": "3c0e64a68e82e211b1bc64430556fcb2f5caae00fe047720c1b2266c0b0b7cad",
+      "allOther88PinsUnchanged": true,
+      "full500QualificationRemainsFalse": true,
+      "historicalManifestAndQualificationsPreserved": true,
+      "rootActualVerification": {
+        "nodeVersion": "24.19.0",
+        "artifactAttestationCasesPassed": 10,
+        "officialVercelBuildUtils": "14.23.0",
+        "officialGlob": "8.0.3",
+        "bundleTestGroupsPassed": 3,
+        "all89ActualFilePins": "pass",
+        "credentialSignaturesDetected": 0,
+        "sanitizedEnvironment": true,
+        "matcherRunExternalNetwork": false,
+        "workerStarts": 0,
+        "databaseCalls": 0,
+        "modelCalls": 0,
+        "profileActivations": 0,
+        "executionAuthority": false
+      },
+      "nextCombinedGitHubCI": "pending_exact_new_head",
+      "publicPreflight": {
+        "beforePrivateEnvironmentApproval": true,
+        "existingArtifactAttestationTest": true,
+        "publicAdapterMetadataAndReviewPinsOnly": true,
+        "publicReviewedSourceFiles": 4,
+        "fullPrivateDescriptorExecuted": false,
+        "privateOriginalReviewRemainsBehindGate": true,
+        "syncReadAndOpenPathsRestrictedToCheckout": true,
+        "numericReadDescriptorsMustBeTracked": true,
+        "approvalRuleUnchanged": true,
+        "planFailureStillFailsMandatoryOfflineJob": true,
+        "rootWorkflowProtectionTestsPassed": 29,
+        "newRunBlockBashSyntax": "pass",
+        "actualCorrectedGitHubExecution": "pending",
+        "leafAndParentSymlinkControls": "pass_actual_public_command",
+        "initialFullDescriptorPublicScopeClaimWasInvalid": true,
+        "independentBoundaryReview": {
+          "model": "deepseek-v4-pro",
+          "effort": "high",
+          "mode": "read",
+          "completed": true,
+          "fullDescriptorNotExecutedPublicly": "confirmed",
+          "lexicalSymlinkFinding": "fixed_with_regular_file_realpath_validation_and_leaf_parent_negative_cases",
+          "publishedCipherHashFinding": "Not accepted as a private original read: operator explicitly authorized encrypted84 package publication; checksum only, no key or decryption",
+          "testsRunByReviewer": false
+        }
+      },
+      "initialPublicPreflightRun": {
+        "run": 39764697039,
+        "headSHA": "eb6ef9989bf07df2ff272d4d7c0b45cad4e673dd",
+        "publicArtifactCasesPassed": 10,
+        "publicControlFactory": "failed_on_absent_review_evidence",
+        "mandatoryOfflineJob": "failed_before_checkout_after_public_plan_failure",
+        "privateEnvironmentApprovalRequested": false,
+        "privateOriginalsProvided": false,
+        "cause": "Full descriptor requires both public canonical review and private original review; moved full descriptor back behind unchanged private gate",
+        "initialClaimOfPublicOnlyFullDescriptorReadSuperseded": true
+      }
+    }
+  },
+  "keyPlacement": {
+    "basis": "user-supplied complete GitHub settings screenshot",
+    "environmentSecretPresent": true,
+    "repositoryDuplicateAbsent": true,
+    "configurationChangedByAgent": false,
+    "secretValuesIncluded": false
+  },
+  "mainChanged": false,
+  "productionAction": false,
+  "sourceWrites": 0,
+  "full500Started": false,
+  "unit60Qualified": false,
+  "authenticPostrunStateRecovered": false,
+  "secretsIncluded": false,
+  "sourceReport": {
+    "basis": "operator-provided source inspection result",
+    "authenticPostrunPreservedAtSource": true,
+    "preIndex499StateProved": false,
+    "sourceDatabaseRunning": false,
+    "secretFreeRuntimeScopeQualified": false,
+    "targetRestoreComplete": false,
+    "executionAuthorizedByThisReport": false
+  }
+}
