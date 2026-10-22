@@ -15,12 +15,12 @@ Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weit
 Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
 Runtimebindungen/native Verbraucher offen; alte GOs verbraucht, Quell-DB gestoppt.
 [Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
-Historische Abnahmen930/929/931 bleiben im CI-Beleg erhalten.
-[CI-Beleg](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
-Views-Hashwiederverwendung26gezielte Checks+Pro-Review PASS, frische Guards erhalten.
-CI39760002592: Originale/Runtime/Browser+erster DB-BlockPASS; Standard179/180.
-Nach Adapterpinkorrektur ist [CI39766942129](https://github.com/ernisch/helmut-pilot/actions/runs/39766942129)
-vollständig grün. [PR929](https://github.com/ernisch/helmut-pilot/pull/929) wurde in den CI-Entwicklungsbranch übernommen.
+[PR933](https://github.com/ernisch/helmut-pilot/pull/933) nach voller
+[CI39783955460](https://github.com/ernisch/helmut-pilot/actions/runs/39783955460) integriert.
+84Originale für eigene Änderungen automatisch nach Lauf-/PR-/Checkoutprüfung;
+Schlüssel weiter in `helmut-ci-originals`, keine persönliche Einzelfreigabe.
+Kernel-PSI/Reclaim opt-in:22Purefälle PASS, alter Snapshot gleich; kein Zeit-/Reservebeleg.
+[Historische CI-Belege](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
 Unit60/Voll500/Production/App403 offen.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
