@@ -295,11 +295,11 @@ def _validate_catalog(c, database, digest, original, native, input_pins):
 def _security_sql(database):
     suffix = database[-32:]
     writer, runtime, auth = ('helmut_ud_' + p + '_' + suffix for p in ('bridge_writer', 'runtime', 'authenticator'))
-    # Exact effective columns, including grants inherited from PUBLIC. No old
+    # Exact effective user/system columns, including grants inherited from PUBLIC. No old
     # UPDATE/INSERT privilege is granted to runtime/authenticator by this module.
     allowed = {
-        'helmut_store': {'SELECT': ['id', 'data'], 'INSERT': ['id', 'data'], 'UPDATE': ['data']},
-        'briefings': {'SELECT': ['id', 'user_id', 'slot', 'generated_at', 'payload'], 'INSERT': ['id', 'user_id', 'slot', 'generated_at', 'payload']},
+        'helmut_store': {'SELECT': ['id', 'data', 'xmin'], 'INSERT': ['id', 'data'], 'UPDATE': ['data']},
+        'briefings': {'SELECT': ['id', 'user_id', 'slot', 'generated_at', 'payload', 'xmin'], 'INSERT': ['id', 'user_id', 'slot', 'generated_at', 'payload']},
         'helmut_auth_state_nodes_local': {'SELECT': '*', 'INSERT': ['store_id', 'generation', 'payload']},
         'llm_usage': {'SELECT': '*', 'INSERT': ['id', 'created_at', 'tenant_id', 'profile_id', 'run_id', 'pipeline_step', 'politician_id', 'user_id', 'model', 'call_type', 'prompt_tokens', 'completion_tokens', 'total_tokens', 'estimated_cost', 'duration_ms', 'success', 'error', 'usage_store_id', 'usage_generation', 'usage_ordinal', 'usage_record', 'usage_prev_hash']}}
     return """DO $bridge_acl$ DECLARE w text:=@WRITER@; r text:=@RUNTIME@; a text:=@AUTH@; t record; col record; priv text;
@@ -320,7 +320,7 @@ FOR t IN SELECT c.*,n.nspname FROM pg_class c JOIN pg_namespace n ON n.oid=c.rel
   OR has_table_privilege(r,t.oid,'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES,MAINTAIN') OR has_any_column_privilege(r,t.oid,'INSERT,UPDATE,REFERENCES')
   OR has_table_privilege(a,t.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES,MAINTAIN') OR has_any_column_privilege(a,t.oid,'SELECT,INSERT,UPDATE,REFERENCES')
  THEN RAISE EXCEPTION 'original-bridge-legacy-write-leak';END IF;
- FOR col IN SELECT attname,attnum FROM pg_attribute WHERE attrelid=t.oid AND attnum>0 AND NOT attisdropped LOOP
+ FOR col IN SELECT attname,attnum FROM pg_attribute WHERE attrelid=t.oid AND attnum<>0 AND NOT attisdropped LOOP
   FOREACH priv IN ARRAY ARRAY['SELECT','INSERT','UPDATE'] LOOP
    expected:=t.nspname='public' AND (allowed#>ARRAY[t.relname,priv] = '"*"'::jsonb OR coalesce(allowed#>ARRAY[t.relname,priv] ? col.attname,false));
    IF has_column_privilege(w,t.oid,col.attnum,priv) IS DISTINCT FROM coalesce(expected,false)
@@ -336,6 +336,30 @@ IF EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace CROS
  THEN RAISE EXCEPTION 'original-bridge-function-boundary';END IF;
 END;$bridge_acl$;
 """.replace('@WRITER@', _q(writer)).replace('@RUNTIME@', _q(runtime)).replace('@AUTH@', _q(auth)).replace('@ALLOWED@', _q(_json(allowed)))
+
+
+def _writer_read_probe_sql(database):
+    # Execute the real artifact reader's columns, including system-column xmin,
+    # under the actual NOLOGIN writer. LIMIT 0 emits/reads no auth/result rows.
+    # Its own read-only transaction leaves the write-denial probes below intact.
+    writer = 'helmut_ud_bridge_writer_' + database[-32:]
+    sql = "BEGIN READ ONLY;SET LOCAL standard_conforming_strings=on;SET LOCAL search_path=pg_catalog;SET LOCAL row_security=on;SET LOCAL statement_timeout='25s';SET LOCAL lock_timeout='500ms';\n"
+    sql += 'SET SESSION AUTHORIZATION ' + writer + ';\n'
+    sql += """DO $writer_read_probe$ BEGIN
+IF current_database() IS DISTINCT FROM @DB@ OR session_user IS DISTINCT FROM @WRITER@
+ OR current_user IS DISTINCT FROM session_user OR current_setting('transaction_read_only')<>'on'
+ OR current_setting('row_security')<>'on'
+ OR NOT EXISTS(SELECT FROM pg_roles WHERE rolname=session_user AND NOT(rolsuper OR rolbypassrls OR rolcanlogin OR rolinherit OR rolcreatedb OR rolcreaterole OR rolreplication))
+ OR (SELECT count(*) FROM pg_class WHERE oid IN('public.helmut_store'::regclass,'public.briefings'::regclass)
+  AND relkind='r' AND relrowsecurity AND relowner<>(SELECT oid FROM pg_roles WHERE rolname=session_user))<>2
+ THEN RAISE EXCEPTION 'original-bridge-writer-read-principal-or-rls';END IF;
+PERFORM id,data,xmin::text FROM public.helmut_store LIMIT 0;
+PERFORM id,user_id,slot,generated_at,payload,xmin::text FROM public.briefings LIMIT 0;
+""".replace('@DB@', _q(database)).replace('@WRITER@', _q(writer))
+    for relation, column in (('helmut_store', 'updated_at'), ('briefings', 'created_at'),
+                             ('helmut_store', 'xmax'), ('briefings', 'xmax')):
+        sql += 'BEGIN PERFORM ' + column + ' FROM public.' + relation + " LIMIT 0;RAISE EXCEPTION 'original-bridge-writer-read-denial-missing';EXCEPTION WHEN insufficient_privilege THEN NULL;END;\n"
+    return sql + 'END;$writer_read_probe$;RESET SESSION AUTHORIZATION;ROLLBACK;\n'
 
 
 def _probes_sql(database, digest):
@@ -399,7 +423,7 @@ def install_bridge(query, *, database, operation_id, command_canonical, command_
         setup += 'DO $bridge_settings$ BEGIN PERFORM set_config(\'helmut.local_unit_original_bridge_install_target\',' + _q(database) + ",false);PERFORM set_config('helmut.local_unit_original_bridge_install'," + _q(_json(install_q)) + ',false);END;$bridge_settings$;\n'
         # Install commit is only preparation. The independent qualification
         # below must still pass; unknown outcomes never lead to an install retry.
-        installed = _call(query, database, setup + proposal + '\n' + prefix + _guard(database, command_sha256, installed=True)
+        installed = _call(query, database, setup + proposal + '\n' + _writer_read_probe_sql(database) + prefix + _guard(database, command_sha256, installed=True)
                           + _security_sql(database) + _probes_sql(database, command_sha256)[0]
                           + _catalog_sql(database, command_sha256, installed=True) + 'ROLLBACK;', 'BRIDGE_INSTALL_AND_QUALIFY')
         orig_after, natives = _validate_catalog(installed, database, command_sha256, original, native, input_pins)
@@ -414,7 +438,7 @@ def install_bridge(query, *, database, operation_id, command_canonical, command_
               and contract['version'] == 'helmut-local-unit-diagnostic-native-store/1' and contract['database'] == database and contract['databaseOID'] == before['databaseOID']
               and contract['sourceQualified'] is False and contract['sources'] == expected_sources
               and type(contract['legacyReadRPCs']) is list and len(contract['legacyReadRPCs']) == 2, 'actual-runtime-contract')
-        readback = _call(query, database, prefix + _guard(database, command_sha256, installed=True) + _security_sql(database)
+        readback = _call(query, database, _writer_read_probe_sql(database) + prefix + _guard(database, command_sha256, installed=True) + _security_sql(database)
                          + _probes_sql(database, command_sha256)[0] + _catalog_sql(database, command_sha256, installed=True) + 'ROLLBACK;', 'BRIDGE_FRESH_READBACK')
         _need(readback == installed, 'fresh-readback-drift')
         for pin in files.values():

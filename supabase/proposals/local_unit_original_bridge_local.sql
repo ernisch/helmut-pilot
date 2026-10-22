@@ -597,7 +597,9 @@ declare q jsonb:=current_setting('helmut.local_unit_original_bridge_install')::j
   runtime_name text:='helmut_ud_runtime_'||suffix; r jsonb; p oid; seq oid; seq_count integer; scope text:=q->>'commandHash';
 begin
   execute format('grant usage on schema public,helmut_unit_diagnostic to %I',writer);
-  execute format('grant select(id,data),update(data) on public.helmut_store to %I',writer);
+  -- PostgreSQL column ACLs also cover xmin. Preserve the narrow user-column
+  -- grants: the artifact consumer needs xmin, not table-wide SELECT.
+  execute format('grant select(id,data,xmin),update(data) on public.helmut_store to %I',writer);
   execute format('grant select,insert(store_id,generation,payload) on public.helmut_auth_state_nodes_local to %I',writer);
   execute format('grant select,insert(id,created_at,tenant_id,profile_id,run_id,pipeline_step,politician_id,user_id,model,call_type,prompt_tokens,completion_tokens,total_tokens,estimated_cost,duration_ms,success,error,usage_store_id,usage_generation,usage_ordinal,usage_record,usage_prev_hash) on public.llm_usage to %I',writer);
   select count(*),min(s.oid::bigint)::oid into seq_count,seq from pg_class s join pg_depend d on d.objid=s.oid and d.deptype='i'
@@ -632,7 +634,7 @@ begin
   execute format('create policy original_bridge_state_read on helmut_unit_diagnostic.state for select to %I using(scope_hash=%L)',writer,scope);
   execute format('create policy original_bridge_state_lock on helmut_unit_diagnostic.state for update to %I using(scope_hash=%L) with check(false)',writer,scope);
   execute format('create policy original_bridge_artifacts_read on helmut_unit_diagnostic.artifacts for select to %I using(scope_hash=%L)',writer,scope);
-  execute format('grant select(id,user_id,slot,generated_at,payload),insert(id,user_id,slot,generated_at,payload) on public.briefings to %I',writer);
+  execute format('grant select(id,user_id,slot,generated_at,payload,xmin),insert(id,user_id,slot,generated_at,payload) on public.briefings to %I',writer);
   execute format('grant insert(id,data) on public.helmut_store to %I',writer);
   execute format('grant select(id,data) on public.helmut_store to %I',runtime_name);
   execute format('grant select(id,user_id,slot,generated_at,payload) on public.briefings to %I',runtime_name);

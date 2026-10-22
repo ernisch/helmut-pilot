@@ -168,8 +168,8 @@
     },
     {
       "path": "lib/helmut/publication-eligibility.js",
-      "bytes": 8672,
-      "sha256": "d1ea673bfecd27feddf64f9275ea0f3c3a153ee66bc2e07d60efaee09f24ac4c"
+      "bytes": 8991,
+      "sha256": "675f6a4a7c1e5f3a7619a6f52eba086b5aa34ce2104bc5f250bbc4924fa26fd6"
     },
     {
       "path": "lib/helmut/quellen-auszug.js",

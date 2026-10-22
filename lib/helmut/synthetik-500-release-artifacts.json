@@ -201,8 +201,8 @@
     },
     {
       "path": "lib/helmut/publication-eligibility.js",
-      "bytes": 8672,
-      "sha256": "d1ea673bfecd27feddf64f9275ea0f3c3a153ee66bc2e07d60efaee09f24ac4c"
+      "bytes": 8991,
+      "sha256": "675f6a4a7c1e5f3a7619a6f52eba086b5aa34ce2104bc5f250bbc4924fa26fd6"
     },
     {
       "path": "lib/helmut/quellen-auszug.js",
@@ -282,7 +282,7 @@
     {
       "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
       "bytes": 12086,
-      "sha256": "5c807f5607b5b0e97e1fc3364053a00b995d0efe857d9768b73509ceae33ff28"
+      "sha256": "3ce31fa3f7cfe96113f270fa807cd9717deb3713bb07b11f80d6428c8e984c0f"
     },
     {
       "path": "lib/helmut/synthetik-500-date-binding.js",
@@ -450,11 +450,11 @@
       "sha256": "32e72dfd6e3e2bc2788c991cab29471af4e04ea7a1a57f7bb3e58a9ea92693d2"
     }
   ],
-  "sourceMappingSHA256": "34b36e2c3cf85757bd3bafbaf4ce7ef41a656e39623f1677c0040226018a43ce",
+  "sourceMappingSHA256": "0d0f910934fd36c194d8c64b57faa60b9dcd05c07073ea001c5c498029356db2",
   "currentCandidateFull500Qualification": false,
   "candidateQualificationScope": "LOCAL_SOURCE_EXPECTATIONS_ONLY_NATIVE_INTEGRATION_UNQUALIFIED; HISTORICAL_EVIDENCE_DOES_NOT_QUALIFY_CURRENT_CODE; UNIT60_AUTH30_COMMON_RAM_FULL500_NOT_PROVEN",
-  "priorManifestCommit": "df4744662c87ac48a35afbd80b3974a0abd66e5b",
-  "priorManifestSHA256": "829b5525907b6020895149823ab00a5122fffb5060ed957f8e7a94525cdac044",
-  "priorSourceMappingSHA256": "3c0e64a68e82e211b1bc64430556fcb2f5caae00fe047720c1b2266c0b0b7cad",
+  "priorManifestCommit": "c7a92798010fd69c1f96b7a81c77d99dc9b2d2a2",
+  "priorManifestSHA256": "223610dc52d5f89eb3298a06597c0f104dc48cb35d3b18d020afc8b21143fb52",
+  "priorSourceMappingSHA256": "34b36e2c3cf85757bd3bafbaf4ce7ef41a656e39623f1677c0040226018a43ce",
   "contentQualificationEvidenceIsHistoricalOnly": true
 }

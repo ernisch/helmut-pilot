@@ -317,6 +317,7 @@ def main():
     for key, value in settings.items():
         pgargs += ['-c', key + '=' + value]
     failure, codes, result = None, {}, None
+    fresh_binding_result = None
     pg = None
     try:
         try:
@@ -386,7 +387,8 @@ COMMIT;"""
                       'motorCalls': 0, 'providerCalls': 0, 'full500': False, 'unit60Qualified': False}
             if config.get('qualifyNativeBindings') is True:
                 binding = load('local_unit_native_binding_preparation', config['bindingPreparationPin'])
-                result.update(binding.qualify(sys.modules[__name__], config, pg, catalog))
+                fresh_binding_result = binding.qualify(sys.modules[__name__], config, pg, catalog)
+                result.update(fresh_binding_result)
         except BaseException as error:
             failure = type(error).__name__ + ': ' + str(error)[:200]
         finally:
@@ -430,7 +432,7 @@ COMMIT;"""
         capture_final_original_failure(error, final_phase, source_index, checked_count)
     accepted = failure is None and result is not None and codes.get('postgres') == 0 and all(p.poll() is not None for p in CHILDREN)
     requested = bool(config.get('executeNativeSingleUnit') and (OUT / 'MOTOR_ENTRY_REQUESTED.SAFE.json').exists())
-    actual_motor_calls = (result or {}).get('motorCalls', None if requested else 0)
+    actual_motor_calls = (fresh_binding_result or {}).get('motorCalls', None if requested else 0)
     save('NATIVE_QUALIFICATION.SAFE.json', {**(result or {}), 'pass': accepted, 'failure': failure,
                                           'childExits': codes, 'allChildrenExited': all(p.poll() is not None for p in CHILDREN),
                                           'originalPostrunPreserved': original_preserved, 'motorCalls': actual_motor_calls,

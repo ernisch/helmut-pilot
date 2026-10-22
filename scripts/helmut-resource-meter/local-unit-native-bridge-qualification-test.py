@@ -8,6 +8,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import shutil
 import sys
 import tempfile
@@ -256,6 +257,91 @@ class BridgeChecks(unittest.TestCase):
             return c
         self.rejected(f, corrupt)
         self.assertEqual(len(f.calls), 1)
+
+    def test_writer_xmin_grants_are_columns_only_and_runtime_grants_unchanged(self):
+        f = Fixture()
+        proposal = (REPO / f.m.PROPOSAL).read_text()
+        grants = re.findall(r"execute format\('(grant [^']+ on public\.(?:helmut_store|briefings) to %I)',(writer|runtime_name)\);", proposal)
+        self.assertCountEqual(grants, [
+            ('grant select(id,data,xmin),update(data) on public.helmut_store to %I', 'writer'),
+            ('grant select(id,user_id,slot,generated_at,payload,xmin),insert(id,user_id,slot,generated_at,payload) on public.briefings to %I', 'writer'),
+            ('grant insert(id,data) on public.helmut_store to %I', 'writer'),
+            ('grant select(id,data) on public.helmut_store to %I', 'runtime_name'),
+            ('grant select(id,user_id,slot,generated_at,payload) on public.briefings to %I', 'runtime_name')])
+        self.assertIn('nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls', proposal)
+        self.assertIn("create policy original_bridge_auth_read on public.helmut_store for select to %I using(id=''main-auth'')", proposal)
+        self.assertIn('original-bridge-role-membership-forbidden', proposal)
+        # The compiler still requires actual row xmin and unchanged auth metadata.
+        compiler = (REPO / f.m.COMPILER).read_text()
+        self.assertIn('SELECT data,xmin::text INTO STRICT a,auth_xmin FROM public.helmut_store', compiler)
+        self.assertIn('original_xmin IS DISTINCT FROM mod(pg_current_xact_id()', compiler)
+        self.assertIn('after_meta IS DISTINCT FROM before_meta', compiler)
+
+    def test_acl_guard_checks_exact_system_and_user_columns_without_table_select(self):
+        f = Fixture()
+        sql = f.m._security_sql(f.database)
+        allowed_text = re.search(r"allowed jsonb:='([^']+)'::jsonb", sql).group(1)
+        allowed = json.loads(allowed_text)
+        self.assertEqual(allowed['helmut_store'], {'SELECT': ['id', 'data', 'xmin'], 'INSERT': ['id', 'data'], 'UPDATE': ['data']})
+        self.assertEqual(allowed['briefings'], {'SELECT': ['id', 'user_id', 'slot', 'generated_at', 'payload', 'xmin'],
+                                              'INSERT': ['id', 'user_id', 'slot', 'generated_at', 'payload']})
+        self.assertIn('attnum<>0 AND NOT attisdropped', sql)
+        self.assertNotIn('attnum>0', sql)
+        self.assertIn('has_column_privilege(w,t.oid,col.attnum,priv) IS DISTINCT FROM', sql)
+        self.assertIn("has_table_privilege(r,t.oid,'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES,MAINTAIN')", sql)
+        self.assertIn("has_function_privilege(r,'public.helmut_auth_state_cas_v1(jsonb)','EXECUTE')", sql)
+        self.assertIn('NOT admin_option AND NOT inherit_option AND set_option', sql)
+
+    def test_actual_writer_consumer_probe_is_readonly_empty_and_principal_bound(self):
+        f = Fixture()
+        sql = f.m._writer_read_probe_sql(f.database)
+        self.assertTrue(sql.startswith('BEGIN READ ONLY;'))
+        self.assertTrue(sql.endswith('RESET SESSION AUTHORIZATION;ROLLBACK;\n'))
+        self.assertIn('SET SESSION AUTHORIZATION helmut_ud_bridge_writer_' + 'a' * 32 + ';', sql)
+        self.assertIn('session_user IS DISTINCT FROM', sql)
+        self.assertIn('current_user IS DISTINCT FROM session_user', sql)
+        self.assertIn("current_setting('transaction_read_only')<>'on'", sql)
+        self.assertIn("current_setting('row_security')<>'on'", sql)
+        self.assertIn('rolsuper OR rolbypassrls OR rolcanlogin OR rolinherit', sql)
+        self.assertIn('AND relrowsecurity AND relowner<>', sql)
+        reads = re.findall(r'PERFORM ([^;]+) FROM public\.([a-z_]+) LIMIT 0;', sql)
+        self.assertCountEqual(reads, [('id,data,xmin::text', 'helmut_store'),
+                                     ('id,user_id,slot,generated_at,payload,xmin::text', 'briefings'),
+                                     ('updated_at', 'helmut_store'), ('created_at', 'briefings'),
+                                     ('xmax', 'helmut_store'), ('xmax', 'briefings')])
+        self.assertEqual(sql.count("EXCEPTION WHEN insufficient_privilege THEN NULL;END;"), 4)
+        self.assertNotRegex(sql, r'\b(INSERT|UPDATE|DELETE|CREATE|GRANT|COMMIT)\b')
+        self.assertNotIn('main-auth', sql)
+        self.assertNotIn('original_bridge_args', sql)
+
+    def test_writer_read_consumer_probe_runs_after_install_and_before_each_qualification(self):
+        f = Fixture(); f.run()
+        before, install, fresh = [call[1] for call in f.calls]
+        probe = f.m._writer_read_probe_sql(f.database)
+        self.assertNotIn(probe, before)
+        self.assertEqual(install.count(probe), 1)
+        self.assertEqual(fresh.count(probe), 1)
+        self.assertLess(install.index((REPO / f.m.PROPOSAL).read_text()), install.index(probe))
+        self.assertLess(install.index(probe), install.index('DO $bridge_acl$'))
+        self.assertTrue(fresh.startswith(probe))
+        for sql in (install, fresh):
+            self.assertLess(sql.index(probe), sql.index('DO $runtime_probe$'))
+            self.assertLess(sql.index(probe), sql.index("'helmut-local-unit-native-bridge-catalog/1'"))
+
+    def test_unconfirmed_actual_writer_read_never_returns_qualification_or_retries(self):
+        for failed_label in ('BRIDGE_INSTALL_AND_QUALIFY', 'BRIDGE_FRESH_READBACK'):
+            f = Fixture()
+            def permission_error(db, sql, label):
+                f.calls.append((db, sql, label))
+                if label == failed_label:
+                    self.assertIn(f.m._writer_read_probe_sql(db), sql)
+                    raise PermissionError('untrusted-native-error-detail')
+                return f.catalog(label != 'BRIDGE_SOURCE_CATALOG')
+            self.rejected(f, permission_error)
+            calls = len(f.calls)
+            self.rejected(f)
+            self.assertEqual(len(f.calls), calls)
+            self.assertEqual(calls, 2 if failed_label == 'BRIDGE_INSTALL_AND_QUALIFY' else 3)
 
 
 if __name__ == '__main__':

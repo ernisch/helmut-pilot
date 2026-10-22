@@ -4,31 +4,36 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.10.: Originale wiederhergestellt, native Einzelunit noch offen
+## 22.10.: Native Einzelunit erreicht; zwei konkrete Fehler korrigiert
 
 13.527Dateien hashverifiziert; geschützter84Originale-Kanal in PR933 nach voller
-CI39783955460 integriert. Source besitzt echten V12-POSTRUN,548Runtimebindungen;
+CI39783955460 integriert. Echter V12-POSTRUN/548Runtimebindungen erhalten,
 ursprüngliche DB gestoppt. [Restore/CI](betrieb/private-ci-original-provisioning-20261021.md).
-Source/Readonly/Bridge nativ PASS:35,700s/1.024.176.128B/Events0. Storage/Lage/
-Kostenlesung korrigiert/quergeprüft; VM16/13/32, Vertragsprüfung14/14, Startinput6,
-Artefakt10 PASS. Eigene2Fixturetickets beweisen keine500er-Globalzähleräquivalenz.
-Owner-SQL-Aliase korrigiert; echte atomare Seeds in3e75/93e1 PASS, History6000
-bewahrt. Beide Fälle vorMotor an HOST_OBSERVE3s FAIL; Early-Intakefix reicht nicht.
-Später Antwortkern aufab0 integriert,101reine Hostgruppen/QuellreviewPASS.
-Getrennte echte Transportprüfung149bPASS:2,406/2,133/2,335s unter3s; stale/
-expired/replay korrekt gesperrt,5Handles Exit0/2EOF, Peak37.130.240B/Events0.
-Keine PG-/Owner-/Unitfreigabe daraus. Noch0neueMotoreinheiten, Unit60/
-Auth30/Qualität/500MB-Reserve offen. RAW+432Quellen frisch unverändert geprüft.
-7abgeschlossene eigene Checkouts gesichert/entfernt; Branches/Gitobjekte bleiben.
-Zwei abgeschlossene COPYs vollständig archiviert/restauriert geprüft, nur deren
-entpackte Form entfernt;288Belegdateien/Archive/Originale/93 bleiben. Danach
-10,83GB frei;4,35GB zur15,18GB-Volladmission fehlen, Einzelunitadmission reicht.
-CI1e5 scheitert im Offlinelauf; dokumentierter Größenfehler hier korrigiert,
-komplette neue CI-Abnahme offen. App403 bleibt gesondert offen.
-[PR936, aktuelle Belege und Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
-[Historischer Vollstand vor Kürzung](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
-Keine alten GOs/Claims wiederverwenden; kein Voll500 ohne32frische Bedingungen
-und neues konkretesGO, kein Merge und keine Production-Aktion.
+Source/Readonly/Bridge nativPASS:35,700s/1.024.176.128B/Events0. Storage/Lage/
+Kostenlesung korrigiert; VM16/13/32, Vertrag14/14, Start6/Artefakt10PASS.
+Eigene2Tickets belegen keine500er-Globalzähleräquivalenz. Owner-SQL-Aliase/Seed
+korrigiert;3e75/93 vorMotor an HOST_OBSERVE3sFAIL. Später Antwortkern aufab0:
+101reine GruppenPASS. Echter separater Transport149bPASS:2,406/2,133/2,335s,
+5Handles0/2EOF, Peak37.130.240B/Events0; keine Motorabnahme daraus.
+Frischer Fallab17 aufc7a92798 erreicht nativeHTTP/Adapter/ersten Kontrollschritt,
+bleibtFAIL vor Lage/D/R: falscher Richtlinienalarm durch JSON-Schlüsselreihenfolge.
+Behoben auf1a24a9f1;14Testgruppen und beide echten unveränderten DTOsPASS,
+8Drifts abgelehnt. Separater Fehlerpfad braucht Writer-xmin: enges Spaltenrecht,
+reale Readonly-Vorprobe und21reine Tests/QuellreviewsPASS, nativeAbnahme offen.
+Abbruchzähler korrigiert/10reine TestsPASS: unbekannt bleibt null statt alter0.
+ab17Peak1.231.241.216B/Events0,PG0/Gruppeleer,Owner1/Entry137/Hostunsauber;
+äußerer CLI-Exit nach Cloud-Reconnect unbekannt. Unit60/Auth30/Qualität/500MB
+weiter offen. RAW+432Quellen vor folgenden Codekorrekturen frisch unverändert.
+7eigene Checkouts und2vollständig archivierte/restauriert geprüfte COPYs entfernt;
+Originale/Archive/Belege/93/ab17 erhalten. Jetzt10,40GB frei,331MB zur10GiB-
+Einzelunitadmission und4,78GB zur15,18GB-Volladmission fehlen. Weitere eigene
+Sicherung/Bereinigung wird geprüft. CI39863022179: Standard-OfflinesuitePASS,
+BereichsregressionFAIL; Gesamtabnahme und App403 bleiben offen.
+[PR936/Belege/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
+[Historischer Vollstand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
+Kein Voll500 ohne32frische Bedingungen/neues konkretesGO; alte Rechte verbraucht,
+kein Merge/Production. Nächster Schritt: sichere Kapazität, native xmin-Abnahme,
+frische einzelne vollständige Motorabnahme und gezielte CI-Fehlerklärung.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

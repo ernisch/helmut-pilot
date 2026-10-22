@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand22:25UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23:02UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -225,6 +225,62 @@ Originalkontrollsicht sowie das eigene Journal und eigene Finanzen. Eine
 Gleichsetzung mit sämtlichen Finanz-/Globalzählerprüfungen des vollständigen
 500er-Pfads ist damit nicht belegt und bleibt für dessen Admission offen.
 
+## Erster echter Einstieg und gezielte Korrekturen
+
+Der frische Fall `ab1710f35604f238202f253063e8b957` auf `c7a92798` erreichte
+am22.10. ab22:33UTC die native HTTP-Kette, Adapter und eigenen Claim. Die erste
+Kontrolle `unit-enter` scheiterte vor Lage und D/R-Erzeugung: gespeicherte
+Richtlinienwerte waren identisch, allein die Reihenfolge der drei JSON-Schlüssel
+unterschied sich. Keine nachgewiesene Tages-/TTL-Drift. Der Gesamtfall bleibtFAIL;
+die Zahl vollständiger Motoraufrufe ist unbekannt. Der bisherige Workerwert0
+stammte aus der Vorbereitung und war kein tatsächlicher Ausführungszähler.
+
+`1a24a9f1` vergleicht die exakt erlaubten drei skalaren Felder statt der
+JSON-Schlüsselreihenfolge. Sechs Reihenfolgen werden akzeptiert; fehlende,
+zusätzliche, geänderte und falsch typisierte Felder bleiben gesperrt.14gezielte
+Testgruppen und unabhängige QuellprüfungPASS. Der tatsächliche aktuelle
+Verbraucher akzeptiert außerdem beide unveränderten erhaltenen DTOs; acht
+inhaltliche Drifts werden abgelehnt. Keine Mutation oder native Motorabnahme
+wird daraus abgeleitet. CPU-/Releasepins wurden ausschließlich für diese geprüfte
+Quelle und das daraus folgende CPU-Mapping aktualisiert, historische Stände
+bytegleich gesichert. Die bestehende Runtimeartefaktprüfung besteht10/10.
+[Quellreview](belege/v12-native-unit-integration-20261022/PUBLICATION_RECORDED_ORDER_SOURCE_REVIEW.SAFE.json),
+[echte gespeicherte DTOs](belege/v12-native-unit-integration-20261022/PUBLICATION_REAL_STORED_DTO_CHECK.SAFE.json).
+
+Ein zweiter Fehler betraf den Fehlerbeleg: der tatsächliche Artifactcompiler
+braucht `xmin` zur Revisionsprüfung, der isolierte NOLOGIN-Writer hatte dieses
+Spaltenleserecht nicht. Das private PostgreSQL-Protokoll belegt eine verweigerte
+Tabellenlesung; die genaue einzelne SQL-Anweisung ist dort nicht erhalten.
+Die Korrektur ergänzt ausschließlich `SELECT(xmin)` auf den beiden benötigten
+COPY-Tabellen. Keine pauschale Tabellenlesung, keine Runtime-Rechteänderung und
+kein Wegfall der Revisionsprüfung. Eine neue echte Writer-Vorprobe läuft in einer
+Readonly-Transaktion mit RLS vor dem Motor; verbotene Zeit-/xmax-Spalten müssen
+explizit42501 liefern. Fehlende Spalten oder andere Fehler bleibenFAIL.21reine
+Tests und zwei unabhängige QuellreviewsPASS; die native Bestätigung steht aus.
+Der historische `executedNegativeChecks`-Zähler umfasst weiterhin die bisherigen
+Runtime-/Receiptproben und zählt die neuen Writer-Verweigerungen nicht hinzu.
+[Enger Writerreview](belege/v12-native-unit-integration-20261022/WRITER_XMIN_SOURCE_REVIEW.SAFE.json).
+
+Der Worker übernimmt Ausführungszähler jetzt nur aus einer tatsächlich
+zurückgekehrten frischen Bindingqualifikation. Bei angefordertem Einstieg und
+Abbruch bleibt der Wert unbekannt/null.10gezielte reine Tests und unabhängige
+QuellprüfungPASS; kein zusätzlicher Motorstart.
+[Zählerreview](belege/v12-native-unit-integration-20261022/WORKER_UNKNOWN_COUNT_SOURCE_REVIEW.SAFE.json).
+
+ab17 misst1.231.241.216B gemeinsamen Peak, alle Speicherereignisse0, PostgreSQL0
+und vollständige letzte Exitabdeckung; dies ist wegen FAIL kein Reservebeweis.
+Alle48Hosthandles haben beide natürlichen Pipe-Enden, aber Owner1 und Entry137;
+Hostabschluss ausdrücklich unsauber. Der äußere CLI-Status ging beim temporären
+Cloud-Reconnect verloren und bleibt unbekannt. Die Beobachtungsquittung fehlt,
+nachdem der Originalservice im Fehlerpfad endete; daraus ist kein weiterer
+Host-/Updaterfehler belegt. Keine Fristverlängerung oder automatische Wiederholung.
+Der neue Abschlussbeleg lokalisiert eine signalbedingte Unterbrechung der finalen
+RAW-Prüfung; alte Fälle werden dadurch nicht nachträglich erklärt. Anschließende
+unabhängige Prüfung vor weiteren Codeänderungen bestätigt RAW und alle432
+Quellpins unverändert sowie die weiterhin gestoppte Originaldatenbank. Historische
+Codepins ändern sich danach gezielt durch die oben dokumentierten Korrekturen.
+[Bereinigter Fallbefund](belege/v12-native-unit-integration-20261022/NATIVE_ENTRY_POLICY_AND_WRITER_FAILURE.SAFE.json).
+
 ## Eingaben, Tests und Messgrenzen
 
 Die echten Originale und548Runtimebindungen sind vorhanden und geprüft. Der
@@ -265,8 +321,11 @@ Ein lokal sicher reproduzierbarer Fehler ist die überschrittene Statusgröße:
 31.076Zeichen am CI-Commit statt maximal30.000. Der vollständige alte Status
 ist bytegleich archiviert; die kompakte aktuelle Fassung besteht4/4Größenchecks.
 Die vollständige CI-Freigabe bleibt bis zum neuen erfolgreichen Lauf offen.
-CI39863022179 auf `ab0da987` läuft noch; native Offline-Integration, geschützter
-84Originale-Kanal und Browserprüfung sind bereits erfolgreich.
+CI39863022179 auf `ab0da987` ist insgesamtFAIL: Standard-Offlinelauf, native
+Offline-Integration, geschützter84Originale-Kanal und BrowserprüfungPASS; die
+anschließende BereichsregressionFAIL. Deren private Diagnose liegt ausschließlich
+verschlüsselt vor; der genaue fehlgeschlagene Fachtest ist noch nicht belegt.
+Der abschließende Z22-Schritt wurde danach nicht ausgeführt.
 Der geschützte84Originale-Kanal bleibt
 unverändert obligatorisch. Keine privaten Logs, PGDATA oder Secrets im Git.
 
@@ -304,7 +363,14 @@ Die bekannten weiteren sicheren Kandidaten schließen diese Lücke nicht.
 [Bereinigter Cleanupbeleg](belege/v12-native-unit-integration-20261022/OWN_CLOSED_WORKTREE_CLEANUP.SAFE.json).
 `/tmp` ist RAM und darf diese Plattenanforderung nicht ersetzen.
 
-Nächster Schritt: frischen einzelnen
-nativen Fall bis echter Ergebnis-/Zeit-/Speicher- und Abschlussabnahme führen.
+Nach ab17 sind tatsächlich10.404.536.320B frei; zur10GiB-Einzelunitadmission
+fehlen332.881.920B, zur Volladmission4.775.243.400B. Der jüngste ab17-Zustand
+bleibt geschützt. Eine weitere abgeschlossene eigene COPY wird zunächst vollständig
+privat gesichert/restauriert geprüft; ein geschlossener eigener Checkout ist
+inventarisiert. Keine Löschung vor unabhängiger Schutz-/Rückwegprüfung.
+
+Nächster Schritt: enges Writerrecht nativ bestätigen und ausreichende sichere
+Kapazität herstellen, dann einen neuen einzelnen nativen Fall bis echter
+Ergebnis-/Zeit-/Speicher- und Abschlussabnahme führen.
 Danach verbleibende CI-/Kapazitäts- und sämtliche32Startbedingungen nachweisen.
 Ein vollständiger500er benötigt weiterhin ein neues ausdrückliches konkretes GO.

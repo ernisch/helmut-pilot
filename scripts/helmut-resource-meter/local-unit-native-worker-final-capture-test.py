@@ -19,6 +19,17 @@ START = next(i for i, n in enumerate(MAIN.body) if isinstance(n, ast.Assign)
 END = next(i for i, n in enumerate(MAIN.body) if isinstance(n, ast.Assign)
            and isinstance(n.targets[0], ast.Name) and n.targets[0].id == 'accepted')
 CODE = compile(ast.Module(body=[CAPTURE, *MAIN.body[START:END + 1]], type_ignores=[]), str(WORKER), 'exec')
+FRESH_INIT = next(n for n in MAIN.body if isinstance(n, ast.Assign)
+                  and isinstance(n.targets[0], ast.Name) and n.targets[0].id == 'fresh_binding_result')
+QUALIFY = next(n for n in ast.walk(MAIN) if isinstance(n, ast.If) and isinstance(n.test, ast.Compare)
+               and isinstance(n.test.left, ast.Call) and n.test.left.args
+               and isinstance(n.test.left.args[0], ast.Constant) and n.test.left.args[0].value == 'qualifyNativeBindings')
+QUALIFY_TRY = next(n for n in ast.walk(MAIN) if isinstance(n, ast.Try) and QUALIFY in n.body)
+MOTOR_END = next(i for i, n in enumerate(MAIN.body) if isinstance(n, ast.Assign)
+                 and isinstance(n.targets[0], ast.Name) and n.targets[0].id == 'actual_motor_calls')
+MOTOR_CODE = compile(ast.fix_missing_locations(ast.Module(body=[CAPTURE, FRESH_INIT,
+    ast.Try(body=[QUALIFY], handlers=QUALIFY_TRY.handlers, orelse=[], finalbody=[]),
+    *MAIN.body[START:MOTOR_END + 1]], type_ignores=[])), str(WORKER), 'exec')
 
 
 class NoMessageError(OSError):
@@ -32,6 +43,42 @@ class FailingStderr(io.StringIO):
 
 
 class FinalCaptureTests(unittest.TestCase):
+    def run_motor_result(self, *, requested, execution_error=False, late_original_failure=False):
+        raw = {'path': 'raw', 'bytes': 1, 'sha256': 'a' * 64}
+        binding_calls, saved = [], []
+
+        class Marker:
+            def __truediv__(self, name):
+                assert name == 'MOTOR_ENTRY_REQUESTED.SAFE.json'
+                return self
+            def exists(self):
+                return requested
+
+        def qualify(*args):
+            binding_calls.append('qualify')
+            if execution_error:
+                raise RuntimeError('simulated execution failure')
+            return {'motorCalls': 1}
+
+        def pin(name):
+            self.assertEqual(name, 'raw')
+            if late_original_failure:
+                raise PermissionError(13, 'simulated final original failure')
+            return copy.deepcopy(raw)
+
+        module_name = 'isolated_worker_final_count'
+        state = {'__name__': module_name, 'Path': Path, 'pin': pin,
+                 'save': lambda name, value: saved.append((name, value)), 'OUT': Marker(),
+                 'sys': types.SimpleNamespace(stderr=io.StringIO(), modules={module_name: object()}),
+                 'load': lambda *args: types.SimpleNamespace(qualify=qualify), 'pg': object(), 'catalog': {},
+                 'config': {'raw': raw, 'sources': [], 'qualifyNativeBindings': True,
+                            'bindingPreparationPin': {}, 'executeNativeSingleUnit': True},
+                 'original_before': copy.deepcopy(raw), 'failure': None, 'result': {'motorCalls': 0},
+                 'codes': {'postgres': 0}, 'CHILDREN': []}
+        exec(MOTOR_CODE, state)
+        self.assertEqual(binding_calls, ['qualify'])
+        return state
+
     def run_final(self, *, path=None, mismatch=False, primary=None, persistence_failure=False, stderr_failure=False, deep=False):
         raw = {'path': 'raw', 'bytes': 1, 'sha256': 'a' * 64}
         sources = [{'path': 'source-' + str(i), 'bytes': 1, 'sha256': 'b' * 64} for i in range(3)]
@@ -150,6 +197,32 @@ class FinalCaptureTests(unittest.TestCase):
                 self.assertFalse(state['sources_preserved'] or state['accepted'])
                 self.assertEqual(state['failure'], primary or 'final source verification failed: PermissionError')
                 self.assertEqual((saves, stderr), ([], ''))
+
+
+    def test_requested_execution_failure_does_not_reuse_preparation_zero(self):
+        state = self.run_motor_result(requested=True, execution_error=True)
+        self.assertTrue(state['requested'])
+        self.assertEqual(state['result']['motorCalls'], 0)
+        self.assertIsNone(state['fresh_binding_result'])
+        self.assertIsNone(state['actual_motor_calls'])
+        self.assertEqual(state['failure'], 'RuntimeError: simulated execution failure')
+        self.assertFalse(state['accepted'])
+
+    def test_execution_failure_without_entry_request_keeps_zero(self):
+        state = self.run_motor_result(requested=False, execution_error=True)
+        self.assertFalse(state['requested'])
+        self.assertEqual(state['actual_motor_calls'], 0)
+        self.assertEqual(state['failure'], 'RuntimeError: simulated execution failure')
+        self.assertFalse(state['accepted'])
+
+    def test_returned_one_survives_later_original_check_failure(self):
+        for late_failure in (False, True):
+            with self.subTest(late_failure=late_failure):
+                state = self.run_motor_result(requested=True, late_original_failure=late_failure)
+                self.assertEqual(state['actual_motor_calls'], 1)
+                self.assertEqual(state['fresh_binding_result'], {'motorCalls': 1})
+                self.assertEqual(state['accepted'], not late_failure)
+                self.assertEqual(state['failure'], 'final source verification failed: PermissionError' if late_failure else None)
 
 
 if __name__ == '__main__':
