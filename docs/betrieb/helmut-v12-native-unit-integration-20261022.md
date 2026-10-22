@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23:02UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23:16UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -363,11 +363,42 @@ Die bekannten weiteren sicheren Kandidaten schließen diese Lücke nicht.
 [Bereinigter Cleanupbeleg](belege/v12-native-unit-integration-20261022/OWN_CLOSED_WORKTREE_CLEANUP.SAFE.json).
 `/tmp` ist RAM und darf diese Plattenanforderung nicht ersetzen.
 
-Nach ab17 sind tatsächlich10.404.536.320B frei; zur10GiB-Einzelunitadmission
-fehlen332.881.920B, zur Volladmission4.775.243.400B. Der jüngste ab17-Zustand
-bleibt geschützt. Eine weitere abgeschlossene eigene COPY wird zunächst vollständig
-privat gesichert/restauriert geprüft; ein geschlossener eigener Checkout ist
-inventarisiert. Keine Löschung vor unabhängiger Schutz-/Rückwegprüfung.
+Der achte abgeschlossene eigene Checkout ist nach vollständigem frischem
+Git-Blob-/Hashvergleich aller2905Dateien kontrolliert entfernt. Der Branch und
+Commit394e75a7 sowie alle Gitobjekte bleiben erhalten; Rootzustand und sämtliche
+Branchrefs sind unverändert. Gemessene statvfs-Fensterfreigabe109.383.680B,
+einschließlich möglicher Verwaltungs-/gleichzeitiger Belegallokation. Es gibt
+keine beobachtete aktive Bindung; eingeschränkte fremde Proc-FD-Sicht wird
+weiterhin ausdrücklich nicht als vollständige Abwesenheit ausgegeben.
+[Checkoutbeleg](belege/v12-native-unit-integration-20261022/EIGHTH_CLOSED_WORKTREE_CLEANUP.SAFE.json).
+
+Auch der abgeschlossene93-Zustand ist nun vollständig privat lokal gesichert:
+1748Dateien/30Verzeichnisse/372.922.203B, Archiv123.369.815B. Alle1778Member
+wurden zurückgelesen und eine frische vollständige Wiederherstellung byte- und
+metadatengleich geprüft. Root verifizierte8Pins einschließlich des Archivs
+FD-stabil sowie sämtliche Manifest-/Restore-Berichtszeilen unabhängig. Der erste
+Schutzvergleich scheiterte an wechselnder Docker-Mountreihenfolge; dieser FAIL
+bleibt erhalten. Die separate Nachqualifikation vergleicht vollständige Einträge
+mit eindeutigen Destinationen und unverändertem Datenbankzustand, nicht nur Pfade.
+Erst danach wurden beide entpackten Formen in zwei getrennten Aufrufen mit
+frischen Schutz-/Rückwegbelegen und exakten Dirfd-/Inodeprüfungen entfernt.
+144Casebelege, Archiv, Wiederherstellungsnachweise, Originaldatenbank/RAW und der
+jüngsteab17-Zustand bleiben erhalten; leere0700Eltern bleiben. Das Archiv enthält
+lokale Testsecrets und darf nicht exportiert werden. Keine DB gestartet,
+keine alten Claims wiederverwendet. Tatsächlich frei10.758.008.832B:
+20.590.592B über der unveränderten10GiB-Einzelunitgrenze; zur Volladmission
+fehlen4.421.770.888B. Belegallokationen reduzieren diese knappe Margin geringfügig.
+[Archiv-/Entfernungsbeleg](belege/v12-native-unit-integration-20261022/THIRD_COPY_CLEANUP_FINAL.SAFE.json).
+
+Die bislang nicht sichtbaren Namen fehlgeschlagener CI-Fachtests werden künftig
+nur im Bereichsschritt als streng begrenzte öffentliche Metadaten ausgegeben:
+versionierter Testbasename und Exitcode. Rohzeilen, freie Fehlermeldungen,
+private Inhalte und Secrets bleiben verborgen; Testauswahl, Child-Exit und
+Verschlüsselung bleiben unverändert.14gezielte Checks und unabhängiger
+QuellreviewPASS, kein erneuter335er-Lokallauf. Der genaue Fachtest des alten
+CI-FAIL bleibt unbekannt. CI39868819326 aufa18 läuft noch; eine neue vollständige
+CI mit dem Metadatenpatch ist noch nicht belegt.
+[CI-Metadatenreview](belege/v12-native-unit-integration-20261022/PRIVATE_CI_SUITE_METADATA_SOURCE_REVIEW.SAFE.json).
 
 Nächster Schritt: enges Writerrecht nativ bestätigen und ausreichende sichere
 Kapazität herstellen, dann einen neuen einzelnen nativen Fall bis echter

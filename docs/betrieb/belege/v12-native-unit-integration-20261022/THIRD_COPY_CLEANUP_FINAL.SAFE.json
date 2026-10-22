@@ -1,0 +1,52 @@
+{
+  "schema": "helmut-third-copy-and-eighth-checkout-cleanup-final/1",
+  "atUTC": "2026-10-22T23:16:10.128726+00:00",
+  "ownClosedCase": "93e1bd82b2594baab389976d4867e124",
+  "regularFiles": 1748,
+  "directories": 30,
+  "contentBytes": 372922203,
+  "privateLocalArchivePin": {
+    "bytes": 123369815,
+    "path": "/workspace/helmut-native-integration-checks-20261022/copy-archive-93e1bd82b2594baab389976d4867e124/93e1bd82b2594baab389976d4867e124.PGDATA.PRIVATE.pax.tar.gz",
+    "sha256": "00f0fc4e86a0f6825d55ad984dedb6806d8d9cbe7ee17c6816c20e8858fc0899"
+  },
+  "archiveContainsLocalTestSecretsAndMustNotBeExported": true,
+  "archiveFullMemberReadbackAndFreshFullRestoreQualified": true,
+  "rootStableFDReviewedPins": 8,
+  "rootComparedAll1778ManifestAndRestoredReportMembers": true,
+  "bothExpandedFormsRemovedInTwoDistinctSuccessfulInvocations": true,
+  "caseEvidenceFilesRetained": 144,
+  "originalSourceDBRawNewestAb17AndRootGitPreserved": true,
+  "emptyRestore0700ParentPreserved": true,
+  "databaseStarts": 0,
+  "consumedClaimsReused": false,
+  "foreignCompleteFDAbsenceClaimed": false,
+  "rootArchiveReviewPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/copy-archive-93e1bd82b2594baab389976d4867e124/ROOT_INDEPENDENT_ARCHIVE_REVIEW.SAFE.json",
+    "bytes": 3439,
+    "sha256": "a79147dbc7f3e90eacaf6e2213937f928d0ec15202492ce478356ae0f26a05d7"
+  },
+  "removalResults": [
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/verified-93-expanded-removal-20261022/ORIGINAL_93/RESULT.SAFE.json",
+      "bytes": 5556,
+      "sha256": "d0f5302259d838cef8da622feb6d66ebdc119d0117b197dcbdc20a392882d44b"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/verified-93-expanded-removal-20261022/VERIFIED_RESTORE_93/RESULT.SAFE.json",
+      "bytes": 5612,
+      "sha256": "1c001b5d2fe869ca70c7d4b7245fe060bdbef535027672bbc4110ca13eb21494"
+    }
+  ],
+  "removalSummaryPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/verified-93-expanded-removal-20261022/ROOT_FINAL_SUMMARY.SAFE.json",
+    "bytes": 1416,
+    "sha256": "cf6426ae2716e232ae6bc4bbe78f41cf1631166c065abf72fe479bd1aae7e658"
+  },
+  "currentObservedFreeBytes": 10758008832,
+  "singleUnitAdmissionFloorBytes": 10737418240,
+  "currentObservedAdmissionMarginBytes": 20590592,
+  "full500AdmissionBytes": 15179779720,
+  "full500AdmissionDeficitBytes": 4421770888,
+  "full500OrUnit60OrReserveQualification": false
+}

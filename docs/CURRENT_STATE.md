@@ -24,11 +24,11 @@ Abbruchzähler korrigiert/10reine TestsPASS: unbekannt bleibt null statt alter0.
 ab17Peak1.231.241.216B/Events0,PG0/Gruppeleer,Owner1/Entry137/Hostunsauber;
 äußerer CLI-Exit nach Cloud-Reconnect unbekannt. Unit60/Auth30/Qualität/500MB
 weiter offen. RAW+432Quellen vor folgenden Codekorrekturen frisch unverändert.
-7eigene Checkouts und2vollständig archivierte/restauriert geprüfte COPYs entfernt;
-Originale/Archive/Belege/93/ab17 erhalten. Jetzt10,40GB frei,331MB zur10GiB-
-Einzelunitadmission und4,78GB zur15,18GB-Volladmission fehlen. Weitere eigene
-Sicherung/Bereinigung wird geprüft. CI39863022179: Standard-OfflinesuitePASS,
-BereichsregressionFAIL; Gesamtabnahme und App403 bleiben offen.
+8eigene Checkouts und3vollständig archivierte/restauriert geprüfte COPYs entfernt;
+Originale/Archive/Belege/ab17 erhalten,93ausArchivwiederherstellbar.10.758.008.832B
+frei:20.590.592B über10GiB-Einzelunitadmission,4.421.770.888B zur Volladmission
+fehlen. CI39863022179: StandardPASS/BereichFAIL; sichere Testnamen-Metadaten
+aufb354a10a ergänzt/14gezielte ChecksPASS. NeueCIa18 noch offen, App403 ebenfalls.
 [PR936/Belege/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
 [Historischer Vollstand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
 Kein Voll500 ohne32frische Bedingungen/neues konkretesGO; alte Rechte verbraucht,
