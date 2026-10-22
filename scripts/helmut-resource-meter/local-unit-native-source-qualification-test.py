@@ -21,7 +21,10 @@ class SourceObserverChecks(unittest.TestCase):
             p.write_bytes(data)
             p.chmod(0o600)
             pin = {'path': str(p), 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
-            identity, read = module.file_pin(pin, private=True, content=True)
+            # CI runners need not have the production source-owner UID1000.
+            # Byte/inode pinning is portable; private ownership is checked
+            # separately below and still enforced by the real observer.
+            identity, read = module.file_pin(pin, content=True)
             self.assertEqual(read, data)
             self.assertEqual(identity, module.identity(p.lstat()))
 
@@ -51,7 +54,16 @@ class SourceObserverChecks(unittest.TestCase):
 
             with mock.patch.object(module.os, 'fstat', side_effect=changed):
                 with self.assertRaisesRegex(module.SourceQualificationError, 'file-drift'):
-                    module.file_pin({'path': str(p), 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}, private=True)
+                    module.file_pin({'path': str(p), 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()})
+
+    def test_private_permissions_are_mandatory_on_every_uid(self):
+        with tempfile.TemporaryDirectory(prefix='helmut-source-permissions-') as directory:
+            p = Path(directory) / 'config'
+            p.write_bytes(b'private-config-pin-only')
+            p.chmod(0o644)
+            pin = {'path': str(p), 'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
+            with self.assertRaisesRegex(module.SourceQualificationError, 'file-metadata'):
+                module.file_pin(pin, private=True, content=True)
 
     def test_key_shapes_and_duplicate_json_do_not_establish_evidence(self):
         for raw in (b'{"pid":1,"pid":2}', b'"\xff"'):

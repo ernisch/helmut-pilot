@@ -305,7 +305,7 @@ def main():
             catalog_sql = """BEGIN READ ONLY;
 WITH original_rel AS (
   SELECT unnest(ARRAY['public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,
-    'public.llm_usage'::regclass]) AS oid
+    'public.llm_usage'::regclass,'public.briefings'::regclass]) AS oid
 ), original_proc AS (
   SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
     WHERE n.nspname='public' AND p.proname LIKE 'helmut_auth_%'
