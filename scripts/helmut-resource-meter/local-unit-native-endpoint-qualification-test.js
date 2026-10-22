@@ -20,11 +20,11 @@ function fixture(options = {}) {
   const nonce = "a".repeat(32), selection = { operationId: "localUnitDiagnostic-" + nonce, commandHash: sha("VM selected command") };
   const directory = "/workspace/helmut-unit-diagnostic-native/" + nonce, selectorPath = directory + "/SELECTION.SAFE.json";
   const configPath = directory + "/ENDPOINT_QUALIFICATION_CONFIG.PRIVATE.json", reportPath = directory + "/ENDPOINT_QUALIFICATION.SAFE.json";
-  const endpointPath = path.join(root, "lib/helmut/local-unit-diagnostic-endpoint.js");
+  const endpointPath = path.join(root, "lib/helmut/local-unit-diagnostic-endpoint.js"), gatePath = path.join(__dirname, "local-unit-native-observation-gate.js"), events = [];
   const add = (name, data, extra = {}) => files.set(name, { data: Buffer.from(data), kind: "file", uid: 1000, gid: 1000, mode: 0o600,
     dev: 1, ino: nextInode++, nlink: 1, mtimeNs: 1, ctimeNs: 1, ...extra });
   const pin = name => ({ path: name, bytes: files.get(name).data.length, sha256: sha(files.get(name).data) });
-  add(filename, before.bytes); add(endpointPath, "VM pinned endpoint module"); add("/synthetic/node", "VM Node executable", { mode: 0o755 });
+  add(filename, before.bytes); add(endpointPath, "VM pinned endpoint module"); add(gatePath, "VM pinned gate module"); add("/synthetic/node", "VM Node executable", { mode: 0o755 });
   add(selectorPath, JSON.stringify(selection, null, 2) + "\n");
   const database = "helmut_unit_diagnostic_" + nonce, now = new Date().toISOString();
   const publicSourceBinding = { schema: "helmut-local-unit-original-source-binding/1", ...selection, database, vmOnly: "public binding" };
@@ -35,11 +35,12 @@ function fixture(options = {}) {
   add(TRUST, JSON.stringify(anchor) + "\n", { uid: 0, mode: 0o444 }); add(TRUST_DIR + "/broker.sock", "", { kind: "socket", uid: 0, mode: 0o666 });
   const config = { schema: "helmut-local-unit-native-endpoint-qualification-config/1", selection, database, databaseOID: "12345",
     sqlSources: { "public.local_unit_diagnostic_contract_v1()": sha("VM contract body"), "helmut_unit_diagnostic.exact(jsonb, text[])": sha("VM helper body") },
-    publicSourceBinding, codePins: [pin(filename), pin(endpointPath)], nodePin: pin("/synthetic/node"), issuedAtUTC: now,
+    publicSourceBinding, codePins: [pin(filename), pin(gatePath), pin(endpointPath)], nodePin: pin("/synthetic/node"), issuedAtUTC: now,
     expiresAtUTC: new Date(Date.now() + 120000).toISOString(), measuredCgroup: { path: "/owned-group", device: 1, inode: 2, procMembership: "0::/\n" } };
   if (options.expired) config.expiresAtUTC = new Date(Date.now() - 1).toISOString();
   if (options.oldConfig) config.issuedAtUTC = new Date(Date.now() - 11000).toISOString();
   if (options.missingEndpointPin) config.codePins.pop();
+  if (options.missingGatePin) config.codePins.splice(1, 1);
   if (options.badCodePin) config.codePins[1].sha256 = sha("VM wrong code");
   if (options.wrongConfigBinding) config.publicSourceBinding = { ...publicSourceBinding, vmOnly: "different binding" };
   if (options.badOID) config.databaseOID = "0";
@@ -75,6 +76,7 @@ function fixture(options = {}) {
         + " - tmpfs tmpfs rw\n2 0 0:2 / /owned-group " + (options.writableGroup ? "rw" : "ro") + " - cgroup2 cgroup rw\n"; },
     readlinkSync(name) { if (name === "/proc/7/exe") return "/synthetic/node"; const n = name.split("/").at(-1); return n + ":[123]"; } };
   const Endpoint = { async request(selected, db, method, pathname, body) {
+    events.push("endpoint.request");
     calls.push({ selected, db, method, pathname, body }); assert.equal(db, database); assert.equal(method, "POST");
     assert.equal(pathname, "/rest/v1/rpc/local_unit_diagnostic_contract_v1"); assert.equal(body.toString(), "{}");
     if (selected.commandHash !== selection.commandHash) {
@@ -97,7 +99,14 @@ function fixture(options = {}) {
     return { status: options.badStatus ? 403 : 200, body: Buffer.from(options.badBody ? "malformed" : JSON.stringify(catalog)) };
   } };
   const ModuleStub = { _cache: { [filename]: {} }, isBuiltin: n => n.startsWith("node:"), _resolveFilename: n => n };
-  ModuleStub._load = name => { assert.equal(name, endpointPath);
+  const Gate = { async wait(args) {
+    events.push("gate.wait"); assert.equal(JSON.stringify(args), JSON.stringify({ selection, process: { pid: 7, startTicks: "345" }, kind: "endpoint" }));
+    if (options.gateFailure) throw Error("VM closed gate");
+  }, async quiesce() { events.push("gate.quiesce"); assert.equal(writes.length, 1); assert(files.has(reportPath));
+    if (options.exitGateFailure) throw Error("VM exit gate closed"); } };
+  ModuleStub._load = name => {
+    if (name === gatePath) { events.push("gate.import"); ModuleStub._cache[name] = { filename: name }; return Gate; }
+    events.push("endpoint.import"); assert.equal(name, endpointPath);
     if (options.unqualifiedImport) ModuleStub._load(path.join(root, "lib/helmut/unlisted.js"));
     ModuleStub._cache[name] = { filename: name }; return Endpoint; };
   const processStub = { pid: 7, version: options.nodeVersion || "v24.19.0", getuid: () => options.rootClient ? 0 : 1000, geteuid: () => 1000,
@@ -107,16 +116,17 @@ function fixture(options = {}) {
   const builtins = { "node:fs": fsStub, "node:path": path, "node:crypto": crypto, "node:v8": { getHeapStatistics: () => ({ heap_size_limit: options.heap || 400000000 }) },
     "node:module": ModuleStub, "node:util": require("node:util") };
   const localRequire = n => Object.hasOwn(builtins, n) ? builtins[n] : ModuleStub._load(n); localRequire.main = { filename };
-  const module = { exports: {} }, api = vm.runInNewContext(code + "\n({start,checkConfig,parseJSON,nodeBudget});", {
+  const module = { exports: {}, filename }, api = vm.runInNewContext(code + "\n({start,checkConfig,parseJSON,nodeBudget});", {
     require: localRequire, module, __filename: filename, __dirname, process: processStub, Buffer, URL, Date
   }, { filename });
-  return { api, files, config, calls, writes, lines, reportPath, get nativeRequests() { return nativeRequests; } };
+  return { api, files, config, calls, writes, lines, reportPath, events, asCLI() { localRequire.main = module; }, get nativeRequests() { return nativeRequests; } };
 }
 let count = 0, current = "initialization";
 async function check(name, fn) { current = name; await fn(); count++; }
 (async () => {
   await check("one genuine-module contract read and local foreign rejection publish one bounded report", async () => {
     const s = fixture(), report = await s.api.start(); assert.equal(s.nativeRequests, 1); assert.equal(s.calls.length, 2); assert.equal(s.writes.length, 1); assert.equal(s.lines.length, 1);
+    assert(!s.events.includes("gate.import"));
     assert.equal(report.signedReadonlyContractObserved, true); assert.equal(report.foreignScopeRejectedBeforeRequest, true);
     assert.equal(report.foreignScopeNativeRequestCount, null); assert.equal(report.foreignScopeNativeRequestCountMeasured, false);
     for (const k of ["liveRawMutatorNegativesPerformed", "liveOriginalControlReadPerformed", "nativeACLProofPerformed", "seedPerformed", "scopeClaimConsumed", "unitExecutionQualified", "full500Qualified"])
@@ -125,10 +135,28 @@ async function check(name, fn) { current = name; await fn(); count++; }
     assert.equal(summary.rootTrustSHA256, report.rootTrustSHA256); assert.equal(report.actualNodeBudget.oldSpaceMiB, 384);
     assert(!s.lines[0].includes("public binding") && !s.lines[0].includes("legacyReadRPCs")); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 2);
   });
+  await check("module import is inert before either public API or actual CLI", async () => {
+    const s = fixture(); assert.equal(s.events.length, 0); assert.equal(s.calls.length, 0); assert.equal(s.writes.length, 0);
+  });
+  await check("actual CLI waits before endpoint import and quiesces after its report", async () => {
+    const s = fixture(); s.asCLI(); await s.api.start(); assert.equal(s.nativeRequests, 1);
+    assert(s.events.indexOf("gate.wait") < s.events.indexOf("endpoint.import"));
+    assert(s.events.indexOf("endpoint.request") < s.events.indexOf("gate.quiesce"));
+    assert.equal(s.events.filter(x => x === "gate.wait").length, 1); assert.equal(s.events.filter(x => x === "gate.quiesce").length, 1);
+  });
+  await check("failed CLI gate cannot import endpoint or reopen", async () => {
+    const s = fixture({ gateFailure: true }); s.asCLI(); await assert.rejects(s.api.start());
+    assert.equal(s.nativeRequests, 0); assert(!s.events.includes("endpoint.import")); assert.equal(s.writes.length, 0); await assert.rejects(s.api.start());
+    assert.equal(s.events.filter(x => x === "gate.wait").length, 1);
+  });
+  await check("failed exit release prevents successful CLI output despite existing report", async () => {
+    const s = fixture({ exitGateFailure: true }); s.asCLI(); await assert.rejects(s.api.start()); assert.equal(s.writes.length, 1); assert.equal(s.lines.length, 0);
+    await assert.rejects(s.api.start()); assert.equal(s.events.filter(x => x === "gate.quiesce").length, 1);
+  });
   for (const [name, options] of [["FIFO", { fifo: true }], ["hardlink", { hardlink: true }], ["mode", { badMode: true }],
     ["oversize", { configOversize: true }], ["symlink", { symlink: true }], ["duplicate JSON", { duplicateConfig: true }],
     ["old configuration", { oldConfig: true }], ["expired", { expired: true }], ["OID shape", { badOID: true }],
-    ["missing code", { missingEndpointPin: true }], ["changed code", { badCodePin: true }], ["unqualified import", { unqualifiedImport: true }],
+    ["missing code", { missingEndpointPin: true }], ["missing observation gate", { missingGatePin: true }], ["changed code", { badCodePin: true }], ["unqualified import", { unqualifiedImport: true }],
     ["foreign selector path", { selectorPath: "/tmp/SELECTION.SAFE.json" }]])
     await check(name + " rejects before endpoint use", async () => { const s = fixture(options); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0); assert.equal(s.writes.length, 0); });
   for (const [name, options] of [["Node version", { nodeVersion: "v24.18.0" }], ["heap", { heap: 512 * 1024 * 1024 }], ["root client", { rootClient: true }],

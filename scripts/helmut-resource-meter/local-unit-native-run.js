@@ -22,6 +22,7 @@ const MOTOR_ENVIRONMENT = Object.freeze({
 // Exact source-defined reasons only. A plausible-looking prefix is never a
 // license to copy an application's free text into a payload-free receipt.
 const REASONS = new Set(Object.entries({
+  "local-unit-native-observation-gate": "arguments selection process self-process process-binding canonical-path symlink-component private-directory receipt-cap directory-drift receipt-file receipt-write receipt-drift frame-bytes frame-json frame-binding frame-window frame-canonical once-only stdin-state stdin-bytes frame-cap timeout stdin-error stdin-close-before-eof process-drift release-file release-drift release-bytes release-json release-binding release-window release-canonical exit-once-only exit-timeout",
   "local-unit-native-run": "canonical-path symlink-component private-directory case-directory-drift node-version-or-uid node-budget-startup local-storage-environment secret-environment-forbidden closed-environment private-origin closed-cli selector-path selector-private-file selector-read-drift selector-json selector-database-binding process-identity process-namespace prior-terminal-forbidden output-private-file output-short-write terminal-retry-forbidden actual-adapter-unavailable adapter-final-summary",
   "local-unit-diagnostic-motor": "closed-selector-required current-profile-drift evidence-readback-unknown final-ack-not-confirmed-in-unit-window fresh-draft-review-evidence-required fresh-lage-not-confirmed fresh-three-position-namespace-required morning-insert-unknown morning-readback native-consumers-missing native-enter-receipt-required own-state-consumers-missing scope-selector-drift three-native-positions-required",
   "local-unit-diagnostic": "D-before-R D-completion D-intent D-request R-completion R-intent R-request account-once account-receipt admission already-claimed-or-window calendar claim-window-or-deadline command command-cap finish-receipts fresh-slot gate-pins grant-consumed installed-record installed-state namespace-consumed one-unit operation owned-target owner-unit pin postrun-pin request-bytes request-pins reserve-limit reserve-once result-binding selector send-once sent-not-refundable slot source stop-owner stopped-or-unknown target-operation ticket-binding ticket-version utf8",
@@ -32,7 +33,7 @@ const REASONS = new Set(Object.entries({
   "publication-eligibility": "configuration-invalid policy-drift candidate-unchecked candidates-invalid source-reader-unavailable source-read-unavailable source-read-incomplete candidate-limit-invalid candidate-scan-limit candidate-read-unavailable candidate-window-drift stored-policy-stale capture-policy-mismatch matching-response-invalid matching-source-incomplete"
 }).flatMap(([prefix, suffixes]) => suffixes.split(" ").map(suffix => prefix + "-" + suffix)));
 const state = { caseDirectory: null, caseFD: null, caseIdentity: null, attemptCreated: false, attemptPin: null, terminalAttempted: false,
-  selection: null, identity: null, startedAtUTC: null, startedMS: performance.now(), adapterEnteredMS: null, adapterReturnedMS: null };
+  selection: null, identity: null, startedAtUTC: null, startedMS: performance.now(), adapterEnteredMS: null, adapterReturnedMS: null, observationGate: null };
 const sha = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
 const need = (ok, code) => { if (!ok) throw Error("local-unit-native-run-" + code); };
 const exact = (value, fields) => value && typeof value === "object" && !Array.isArray(value)
@@ -179,6 +180,9 @@ async function main() {
   const directory = path.join(state.caseDirectory, "NodeBudgetDirectory");
   fs.mkdirSync(directory, { mode: 0o700 }); privateDirectory(directory); fs.fsyncSync(state.caseFD);
   require("./http-meter").install(directory); // Installs native-node-budget before every application import.
+  const observationGate = require("./local-unit-native-observation-gate");
+  await observationGate.wait({ selection: state.selection, process: { pid: state.identity.pid, startTicks: state.identity.startTicks }, kind: "entry" });
+  state.observationGate = observationGate;
   const adapter = require("../../lib/helmut/local-unit-diagnostic-adapter");
   need(typeof adapter.execute === "function", "actual-adapter-unavailable");
   state.adapterEnteredMS = performance.now(); const result = await adapter.execute(state.selection); state.adapterReturnedMS = performance.now();
@@ -203,7 +207,10 @@ const execution = require.main === module ? main().catch(error => {
     try { terminal(null, error); } catch (failure) { receiptError = failure; } // Never retry or overwrite either receipt.
   }
   reportFailure(error, receiptError);
-}).finally(() => {
+}).finally(async () => {
+  if (state.observationGate !== null) {
+    try { await state.observationGate.quiesce(); } catch (error) { reportFailure(error); }
+  }
   if (state.caseFD !== null) {
     const fd = state.caseFD; state.caseFD = null;
     try { fs.closeSync(fd); } catch (error) { reportFailure(error); }

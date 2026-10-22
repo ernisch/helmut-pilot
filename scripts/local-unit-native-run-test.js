@@ -95,10 +95,23 @@ async function scenario(options = {}, shared = null) {
       events.push("meter.install"); assert.equal(output, directory + "/NodeBudgetDirectory");
       if (options.meterFailure) throw Error("LOCAL_NODE_HEAP_BUDGET_STARTUP_DRIFT");
     } };
+    if (name === "./local-unit-native-observation-gate") {
+      events.push("gate.import"); return {
+        async wait(args) { events.push("gate.wait"); assert.equal(JSON.stringify(args), JSON.stringify({ selection: selected,
+          process: { pid: 7, startTicks: "345" }, kind: "entry" }));
+          if (options.gateFailure) throw Error("local-unit-native-observation-gate-frame-binding"); },
+        async quiesce() { events.push("gate.quiesce");
+          assert(entries.has(directory + "/ATTEMPT_TERMINAL.SAFE.json"));
+          if (options.exitGateFailure) throw Error("local-unit-native-observation-gate-exit-timeout"); }
+      };
+    }
     if (name === "../../lib/helmut/local-unit-diagnostic-adapter") {
       events.push("adapter.import");
       return { execute: async selection => {
         calls++; events.push("adapter.execute"); assert.equal(JSON.stringify(selection), JSON.stringify(selected));
+        if (options.closedSummary) return { state: "closed", ...selected, sourceIndex: 499, diagnosticUnit: 0, units: 1,
+          completedUnits: 1, dispatchedUnits: 1, expectedPositions: 3, evidenceHash: "e".repeat(64), independentFinalAcceptance: false,
+          full500Accepted: false, production: false, paidProviderCallsAllowed: false, retryAllowed: false };
         if (options.invalidResult) return { state: "unknown", ignoredPayload: "FICTIONAL_NONCODE_TEXT" };
         const cause = Object.assign(Error(options.codeShapedText ? "local-unit-diagnostic-native-unrecognized-payload" : "FICTIONAL_NONCODE_TEXT"),
           { code: "P0001", cause: Error("synthetik500-dispatch-EU-unit-deadline") });
@@ -107,7 +120,7 @@ async function scenario(options = {}, shared = null) {
     }
     throw Error("unexpected application import");
   };
-  localRequire.main = module;
+  localRequire.main = options.importOnly ? {} : module;
   await vm.runInNewContext(source + "\nexecution;", { require: localRequire, module, exports: module.exports, process, Buffer, URL, Date }, { filename });
   return { entries, events, stderr: stderr.join(""), calls, process };
 }
@@ -117,6 +130,8 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
     const result = await scenario(); assert.equal(result.calls, 1); assert.equal(result.process.exitCode, 1);
     assert(result.events.indexOf("fsync:" + nonce) < result.events.indexOf("meter.install"));
     assert(result.events.indexOf("meter.install") < result.events.indexOf("adapter.import"));
+    assert(result.events.indexOf("meter.install") < result.events.indexOf("gate.import"));
+    assert(result.events.indexOf("gate.wait") < result.events.indexOf("adapter.import"));
     assert(result.events.indexOf("adapter.import") < result.events.indexOf("adapter.execute"));
     const start = JSON.parse(result.entries.get(directory + "/ATTEMPT_STARTED.SAFE.json").data);
     assert.equal(start.selectorPin.sha256, sha(selectionBytes)); assert.equal(start.process.startTicks, "345");
@@ -125,8 +140,31 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
     assert.equal(terminal.errors[1].code, "P0001"); assert.equal(terminal.errors[2].reason, "synthetik500-dispatch-EU-unit-deadline");
     assert.equal((terminalBytes.toString() + result.stderr).includes("FICTIONAL_NONCODE_TEXT"), false);
     assert.equal(terminal.memory.commonNativePeakOrReserveAccepted, false);
+    assert(result.events.indexOf("fsync:ATTEMPT_TERMINAL.SAFE.json") < result.events.indexOf("gate.quiesce"));
     const replay = await scenario({}, result.entries); assert.equal(replay.calls, 0); assert(!replay.events.includes("meter.install"));
     assert(replay.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data.equals(terminalBytes));
+  });
+  await check("module import is inert and consumes neither host gate nor first attempt", async () => {
+    const result = await scenario({ importOnly: true }); assert.equal(result.calls, 0); assert.equal(result.events.length, 0); assert.equal(result.process.exitCode, 0);
+  });
+  await check("failed observation gate consumes attempt and blocks adapter import and retry", async () => {
+    const result = await scenario({ gateFailure: true }); assert.equal(result.calls, 0); assert.equal(result.process.exitCode, 1);
+    assert(!result.events.includes("adapter.import")); assert(!result.events.includes("gate.quiesce"));
+    const receipt = result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data;
+    assert.equal(JSON.parse(receipt).errors[0].reason, "local-unit-native-observation-gate-frame-binding");
+    const replay = await scenario({}, result.entries); assert.equal(replay.calls, 0); assert(!replay.events.includes("gate.import"));
+  });
+  await check("exit release failure stays failed after the terminal is durable", async () => {
+    const result = await scenario({ closedSummary: true, exitGateFailure: true }); assert.equal(result.process.exitCode, 1);
+    assert.equal(result.events.filter(x => x === "gate.quiesce").length, 1);
+    assert(result.stderr.includes("local-unit-native-observation-gate-exit-timeout"));
+    assert.equal(JSON.parse(result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data).status, "closed");
+  });
+  await check("synthetic closed adapter still requires one gate and exit release with no independent acceptance claim", async () => {
+    const result = await scenario({ closedSummary: true }); assert.equal(result.process.exitCode, 0); assert.equal(result.calls, 1);
+    const terminal = JSON.parse(result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data);
+    assert.equal(terminal.status, "closed"); assert.equal(terminal.independentFinalAcceptance, false);
+    assert.equal(result.events.filter(x => x === "gate.wait").length, 1); assert.equal(result.events.filter(x => x === "gate.quiesce").length, 1);
   });
   for (const [name, options] of [
     ["unsupported Node", { version: "v24.18.0" }], ["wrong UID", { uid: 0 }],

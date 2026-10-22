@@ -5,6 +5,7 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), v8 = require("node:v8");
 const Module = require("node:module"), { isDeepStrictEqual } = require("node:util");
 const ROOT = path.resolve(__dirname, "../.."), ENDPOINT = path.join(ROOT, "lib/helmut/local-unit-diagnostic-endpoint.js");
+const OBSERVATION_GATE = path.join(__dirname, "local-unit-native-observation-gate.js");
 const TRUST_DIR = "/run/helmut-local-unit-diagnostic", TRUST = TRUST_DIR + "/trust.json", SOCKET = TRUST_DIR + "/broker.sock";
 const CONTRACT = "/rest/v1/rpc/local_unit_diagnostic_contract_v1", CAP = 1024 * 1024, CGROUP2 = 0x63677270;
 const ENV = new Set(["PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "TZ", "HELMUT_STORAGE_BACKEND", "SUPABASE_URL",
@@ -96,7 +97,7 @@ function checkConfig(c, selection) {
   need(Array.isArray(c.codePins) && c.codePins.length >= 2 && c.codePins.length <= 4096, "code-pins"); const names = new Set();
   for (const p of c.codePins) { pinShape(p, 16 * 1024 * 1024); need(p.path.startsWith(ROOT + path.sep) && /\.(?:js|json)$/.test(p.path)
     && !names.has(p.path), "code-path"); names.add(p.path); }
-  need(names.has(__filename) && names.has(ENDPOINT), "genuine-endpoint-code-required");
+  need(names.has(__filename) && names.has(ENDPOINT) && names.has(OBSERVATION_GATE), "genuine-endpoint-code-required");
 }
 function processIdentity() {
   const pid = process.pid, text = fs.readFileSync(`/proc/${pid}/stat`, "utf8"), a = text.slice(text.lastIndexOf(")") + 2).trim().split(/\s+/);
@@ -173,6 +174,11 @@ async function start() {
     need(Date.now() < Date.parse(c.expiresAtUTC) && process.hrtime.bigint() - began < 180000000000n, "expired");
     readFile(name, { pin: configFile.pin, privateFile: true, keep: false }); readFile(process.argv[3], { pin: selectionFile.pin, keep: false }); };
   try {
+    // Programmatic start() consumes no host gate. Only the actual CLI waits
+    // before any endpoint import or request and before its successful exit.
+    const observationGate = require.main === module ? require(OBSERVATION_GATE) : null;
+    if (observationGate) await observationGate.wait({ selection, process: { pid: self.pid, startTicks: self.startTicks }, kind: "endpoint" });
+    guard();
     const Endpoint = require(ENDPOINT); need(exact(Endpoint, ["request"]) && typeof Endpoint.request === "function", "genuine-endpoint"); guard();
     const before = trust(c, selection), response = await Endpoint.request(selection, c.database, "POST", CONTRACT, Buffer.from("{}")); guard();
     need(exact(response, ["status", "body"]) && response.status === 200 && Buffer.isBuffer(response.body) && response.body.length <= CAP, "signed-contract-response");
@@ -195,6 +201,7 @@ async function start() {
       liveRawMutatorNegativesPerformed: false, liveOriginalControlReadPerformed: false, nativeACLProofPerformed: false,
       seedPerformed: false, scopeClaimConsumed: false, unitExecutionQualified: false, full500Qualified: false };
     const reportPin = writeReport(directory, report); guard();
+    if (observationGate) await observationGate.quiesce();
     process.stdout.write(JSON.stringify({ schema: "helmut-local-unit-native-endpoint-qualification-result/1", reportPin,
       rootTrustSHA256: report.rootTrustSHA256, actualNodeBudget, process: self, signedReadonlyContractObserved: true,
       liveRawMutatorNegativesPerformed: false, seedPerformed: false, scopeClaimConsumed: false, unitExecutionQualified: false }) + "\n");
