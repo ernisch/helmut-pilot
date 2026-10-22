@@ -95,6 +95,26 @@ check("own one-unit remap retains every selected native input field", () => {
     units: [{ kind: "DR", subject: selected.unit.subject, intentIds: [d.id, r.id] }], slot: { plan: { intents: [d, r] } } };
   assert.equal(Source.verifyCommandSource(own, handle), Source.sourceBinding(handle));
 });
+check("historical low review remains original while the own request uses the fixed stricter rule", () => {
+  const historical = logical(), oldR = historical.command.slot.plan.intents.at(-1);
+  oldR.maxOutputTokens = 3000; oldR.reviewRule.reasoningEffort = "low";
+  const lowHandle = Source.extractPinnedSource(argsFor(Codec.encode(historical)));
+  const selected = Source.readSelection(lowHandle), before = P.hash(selected);
+  const intents = Source.diagnosticIntents(lowHandle, "nachlauf500-202610220001");
+  const command = { ...structuredClone(own), source: Source.commandSource(lowHandle),
+    drafts: [{ ...structuredClone(selected.draft), intentId: intents[0].id }],
+    units: [{ kind: "DR", subject: selected.unit.subject, intentIds: intents.map(i => i.id) }], slot: { plan: { intents } } };
+  Source.verifyCommandSource(command, lowHandle);
+  assert.equal(selected.intents[1].maxOutputTokens, 3000); assert.equal(selected.intents[1].reviewRule.reasoningEffort, "low");
+  assert.equal(intents[1].maxOutputTokens, 6000); assert.equal(intents[1].reviewRule.reasoningEffort, "medium");
+  assert.equal(P.hash(selected), before); assert.equal(Source.sourceBinding(lowHandle).reviewConfiguration.historicalRequestReplay, false);
+  for (const change of [c => { c.slot.plan.intents[1].maxOutputTokens = 3000; },
+    c => { c.slot.plan.intents[1].reviewRule.reasoningEffort = "low"; },
+    c => { c.slot.plan.intents[1].model = "unbound-model"; },
+    c => { c.slot.plan.intents[0].actualRequestHash = "a".repeat(64); }]) {
+    const altered = structuredClone(command); change(altered); assert.throws(() => Source.verifyCommandSource(altered, lowHandle));
+  }
+});
 for (const [name, change] of [
   ["historical intent replay", c => { c.units[0].intentIds[0] = Source.readSelection(handle).intents[0].id; }],
   ["source profile mutation", c => { c.drafts[0].profile.profileActive = false; }],
