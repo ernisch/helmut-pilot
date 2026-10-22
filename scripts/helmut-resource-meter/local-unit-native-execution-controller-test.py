@@ -331,6 +331,23 @@ class Tests(unittest.TestCase):
                 if change == 'foreignCID': bad['source']['membership'] = bad['sourceService']['membership'] = '0::/../'+c.c['parent']+'/'+'b'*64+'\n'
                 with self.assertRaises(m.ExecutionError): c.host_observation(bad)
 
+    def test_host_handoff_uses_own_host_case_paths_without_changing_source_or_original_pins(self):
+        m = module(); c = object.__new__(m._Controller)
+        c.c = {'nonce': 'a' * 32}; c.w = types.SimpleNamespace(OUT=Path('/bench'))
+        prefix = '/workspace/helmut-unit-diagnostic-native/' + c.c['nonce'] + '/'
+        for name in ('GATE_source.SAFE.json', 'CODE_MANIFEST.SAFE.json', 'D_REQUEST.PRIVATE.json'):
+            logical = pin(prefix + name); saved = dict(logical)
+            self.assertEqual(c.physical(logical), {**saved, 'path': '/bench/client/' + name})
+            self.assertEqual(c.host_physical(logical), {**saved, 'path': prefix + 'client/' + name})
+            self.assertEqual(logical, saved)
+        original = pin('/workspace/retained-original.PRIVATE.json')
+        self.assertEqual(c.host_physical(original), original)
+        for name in ('', '.', '..', '../outside', 'nested/file', 'PREPARED_COMMAND.PRIVATE.json'):
+            with self.assertRaises(m.ExecutionError): c.host_physical(pin(prefix + name))
+        c.w.OUT = Path('/foreign')
+        with self.assertRaisesRegex(m.ExecutionError, 'host-client-source-path'):
+            c.host_physical(pin(prefix + 'GATE_source.SAFE.json'))
+
     def test_initial_usage_checks_all_empty_namespace_counts(self):
         m = module(); usage = {'proof': {'generation': 'VM', 'count': 0, 'head': 'VM', 'originalHash': 'VM'}, 'revision': 'VM'}
         value = {'usage': usage, **{k: 0 for k in ('authority', 'state', 'artifacts', 'leases', 'observations', 'ownKeys')}}

@@ -290,6 +290,20 @@ class _Controller:
             return {**pin, 'path': str(self.w.OUT / 'client' / name)}
         return dict(pin)
 
+    def host_physical(self, pin):
+        """Translate only our client artifacts across the Source bind mount.
+
+        Source reads /bench/client; the Host independently opens the same files
+        at its newly owned case/client directory. Original file pins never move.
+        """
+        physical = self.physical(pin)
+        prefix = '/workspace/helmut-unit-diagnostic-native/' + self.c['nonce'] + '/'
+        if pin['path'].startswith(prefix):
+            name = pin['path'][len(prefix):]
+            need(physical['path'] == '/bench/client/' + name, 'host-client-source-path')
+            physical['path'] = prefix + 'client/' + name
+        return physical
+
     def files(self):
         reservation = self.built['initialState']['localUnitDiagnostic:' + self.c['nonce'] + ':reservation']
         code_pin = {'path': '/workspace/helmut-unit-diagnostic-native/' + self.c['nonce'] + '/CODE_MANIFEST.SAFE.json',
@@ -385,7 +399,7 @@ class _Controller:
         unique = {p['path']: p for p in pins}
         handoff = {'start': start, 'sourceQualification': q, 'hmacKeyHex': service_config['secretHex'],
                    'readQualifications': [{'path': row['pin']['path'], 'text': row['text']} for row in self.read['qualificationFiles']],
-                   'immutableClientPins': [{'logical': p, 'physical': self.physical(p)} for p in unique.values()],
+                   'immutableClientPins': [{'logical': p, 'physical': self.host_physical(p)} for p in unique.values()],
                    'publicationPolicy': (self.w.OUT / 'PUBLICATION_POLICY.PRIVATE.json').read_bytes().decode('utf8')}
         response = self.host.call('OWNER_START', {'handoff': handoff})
         need(set(response) == {'ready', 'observation'} and response['ready']['schema'] == 'helmut-local-unit-native-owner-ready/2'
