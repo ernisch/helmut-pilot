@@ -20,6 +20,7 @@ function sourceSnapshot() {
 }
 const snapshot = sourceSnapshot(), code = snapshot.bytes.toString("utf8");
 const CONFIG = "/bench/ORIGINAL_SERVICE_CONFIG.PRIVATE.json", SOCKET = "/ram/helmut-original-write-bridge.sock";
+const LEDGER = "/bench/ORIGINAL_SERVICE_CHILDREN.SAFE.jsonl", STOP = "/bench/ORIGINAL_SERVICE_STOP.SAFE.json";
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 function fakeClock() {
   const jobs = new Map(); let next = 0, now = 0;
@@ -43,6 +44,9 @@ function fixture(options = {}) {
   let nextFD = 10, nextInode = 100, configStats = 0, groupStats = 0, selfChanged = false;
   function add(name, bytes, props = {}) { files.set(name, { data: Buffer.from(bytes), kind: "file", uid: 1000, gid: 1000, mode: 0o600,
     dev: 1, ino: nextInode++, nlink: 1, mtimeNs: 1, ctimeNs: 1, ...props }); }
+  add("/bench", "", { kind: "directory", mode: 0o700 });
+  if (options.ledgerExists) add(LEDGER, "preexisting ledger");
+  if (options.stopExists) add(STOP, "preexisting stop");
   const transactionPath = path.join(path.dirname(filename), "local-unit-original-transaction.js");
   add(filename, snapshot.bytes); add(transactionPath, "synthetic transaction source");
   add("/usr/lib/postgresql/17/bin/psql", "synthetic executable bytes"); add("/usr/lib/postgresql/17/bin/postgres", "synthetic server bytes");
@@ -69,8 +73,15 @@ function fixture(options = {}) {
   }
   const fsStub = { constants: fs.constants,
     realpathSync: name => options.configSymlink && name === CONFIG ? "/unrelated" : name,
-    openSync: (name, flags) => {
-      assert(flags & fs.constants.O_NOFOLLOW); assert(flags & fs.constants.O_NONBLOCK); assert(files.has(name));
+    openSync: (name, flags, mode) => {
+      assert(flags & fs.constants.O_NOFOLLOW); assert(flags & fs.constants.O_NONBLOCK);
+      if (flags & fs.constants.O_CREAT) {
+        assert(flags & fs.constants.O_EXCL); assert.equal(mode, 0o600);
+        if (files.has(name)) throw Object.assign(Error("synthetic-existing-file"), { code: "EEXIST" });
+        if (options.ledgerOpenFailure && name === LEDGER) throw Error("synthetic-ledger-open-failure");
+        add(name, "");
+      }
+      assert(files.has(name));
       const fd = nextFD++; descriptors.set(fd, name); offsets.set(fd, 0); events.push("open:" + path.basename(name)); return fd;
     },
     fstatSync: (fd, opts) => {
@@ -89,16 +100,34 @@ function fixture(options = {}) {
       if (name === CONFIG) assert(length <= 1048577, "config allocation/read remains capped");
       value.data.copy(buffer, offset, start, start + count); offsets.set(fd, start + count); return count;
     },
+    writeSync: (fd, buffer, offset, length) => {
+      const name = descriptors.get(fd), value = files.get(name);
+      if (options.ledgerWriteFailure && name === LEDGER && value.data.length) throw Error("synthetic-ledger-write-failure");
+      if (options.stopWriteFailure && name === STOP) throw Error("synthetic-stop-write-failure");
+      if (options.shortWriteZero) return 0;
+      const count = options.partialWrites ? Math.min(length, 13) : length, start = offsets.get(fd), bytes = buffer.subarray(offset, offset + count);
+      value.data = Buffer.concat([value.data.subarray(0, start), bytes, value.data.subarray(start + count)]); offsets.set(fd, start + count);
+      value.mtimeNs++; value.ctimeNs++; events.push("write:" + path.basename(name)); return count;
+    },
+    fsyncSync: fd => { if (options.ledgerSyncFailure && descriptors.get(fd) === LEDGER) throw Error("synthetic-ledger-fsync-failure"); },
     closeSync: fd => { descriptors.delete(fd); offsets.delete(fd); },
     readFileSync: name => {
-      if (/^\/proc\/(?:self|42|7)\/cgroup$/.test(name)) return "0::/\n";
-      if (/^\/proc\/(?:42|7)\/stat$/.test(name)) {
+      if (/^\/proc\/(?:self|42|7|[1-9][0-9]{2,})\/cgroup$/.test(name)) return options.childWrongGroup && /^\/proc\/[1-9][0-9]{2,}\//.test(name) ? "0::/other\n" : "0::/\n";
+      if (/^\/proc\/(?:42|7|[1-9][0-9]{2,})\/stat$/.test(name)) {
         if (options.readyIdentityFailure && name === "/proc/7/stat") throw Error("synthetic-process-identity-failed");
-        return "42 (synthetic process) " + Array.from({ length: 20 }, (_, i) => i === 0 ? "S" : i === 19 ? selfChanged && name === "/proc/7/stat" ? "346" : "345" : "0").join(" ");
+        const pid = Number(name.split("/")[2]);
+        if (pid >= 100 && options.childProcMissing) throw Error("synthetic-child-proc-missing");
+        return pid + " (synthetic process) " + Array.from({ length: 20 }, (_, i) => i === 0 ? "S" : i === 1 ? pid >= 100 ? options.childWrongParent ? "9" : "7" : "1" : i === 19 ? selfChanged && name === "/proc/7/stat" ? "346" : "345" : "0").join(" ");
       }
+      if (/^\/proc\/[1-9][0-9]{2,}\/status$/.test(name)) return (options.childUIDMissing ? "" : "Uid:\t" + (options.childWrongUID ? "0\t0\t0\t0" : "1000\t1000\t1000\t1000") + "\n")
+        + (options.childGIDMissing ? "" : "Gid:\t1000\t1000\t1000\t1000\n")
+        + ["CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"].map(label => label + ":\t" + (options.childCaps && label === "CapEff" ? "1" : "0000") + "\n").join("")
+        + "NoNewPrivs:\t" + (options.childNoNNP ? "0" : "1") + "\n";
       throw Error("unexpected real-style read forbidden");
     },
-    readlinkSync: name => name === "/proc/42/exe" ? "/usr/lib/postgresql/17/bin/postgres" : "/synthetic/node",
+    readlinkSync: name => /\/ns\/pid$/.test(name) ? options.childWrongNamespace && /^\/proc\/[1-9][0-9]{2,}\//.test(name) ? "pid:[456]" : "pid:[123]"
+      : /^\/proc\/[1-9][0-9]{2,}\/exe$/.test(name) ? options.childWrongExe ? "/unrelated/exe" : "/usr/lib/postgresql/17/bin/psql"
+        : name === "/proc/42/exe" ? "/usr/lib/postgresql/17/bin/postgres" : "/synthetic/node",
     existsSync: name => files.has(name),
     mkdirSync: (name, opts) => { assert.equal(opts.mode, 0o700); add(name, "", { kind: "directory", mode: opts.mode }); },
     writeFileSync: (name, bytes, opts) => {
@@ -109,7 +138,8 @@ function fixture(options = {}) {
   };
   const children = [], spawns = [];
   function child() {
-    const value = new EventEmitter(); value.kills = []; value.streams = [];
+    const value = new EventEmitter(); value.pid = 100 + children.length; value.spawnfile = config.psqlPin.path;
+    value.exitCode = null; value.signalCode = null; value.kills = []; value.streams = [];
     for (const name of ["stdin", "stdout", "stderr"]) {
       const stream = new EventEmitter(); stream.destroyed = false; stream.destroy = () => { stream.destroyed = true; stream.emit("close"); };
       value[name] = stream; value.streams.push(stream);
@@ -125,7 +155,7 @@ function fixture(options = {}) {
     assert.equal(executable, config.psqlPin.path); assert.equal(argv[argv.indexOf("-U") + 1], "postgres");
     assert.equal(argv[argv.indexOf("-d") + 1], database); assert(argv.includes("-X") && argv.includes("-w"));
     assert.equal(opts.env.PGCONNECT_TIMEOUT, "3"); assert(!Object.keys(opts.env).some(name => /PASSWORD|TOKEN|SECRET|KEY/.test(name)));
-    spawns.push({ executable, argv, opts }); events.push("spawn"); return child();
+    spawns.push({ executable, argv, opts }); events.push("spawn"); if (options.spawnThrow) throw Error("synthetic-spawn-unconfirmed"); return child();
   } };
   const server = new EventEmitter(); server.listening = false; server.closeCalls = 0;
   server.listen = name => { assert.equal(name, SOCKET); events.push("server.listen"); Promise.resolve().then(() => { server.listening = true; server.emit("listening"); }); return server; };
@@ -152,7 +182,7 @@ function fixture(options = {}) {
     "node:v8": { getHeapStatistics: () => ({ heap_size_limit: options.heapLimit || 400000000 }) }, [transactionPath]: transaction };
   const module = { exports: {} }, localRequire = name => { assert(Object.hasOwn(modules, name), "only synthetic dependencies may load"); return modules[name]; };
   localRequire.main = {};
-  const api = vm.runInNewContext(code + "\n({parse,mac,privateConfig,file,checkConfig,psql,start,nodeBudget,BODY_CAP,FRAME_CAP});", {
+  const api = vm.runInNewContext(code + "\n({parse,mac,privateConfig,file,checkConfig,psql,start,nodeBudget,psqlIdentity,childLedger,LEDGER_CAP,BODY_CAP,FRAME_CAP});", {
     require: localRequire, module, __filename: filename, __dirname: path.dirname(filename), process: processStub, Buffer: buffer, Date,
     setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout, setInterval: clock.setInterval, clearInterval: clock.clearInterval
   }, { filename });
@@ -168,17 +198,22 @@ function fixture(options = {}) {
     value.send = bytes => Promise.all(value.listeners("data").map(listener => listener(bytes)));
     server.connect(value); return value;
   }
-  return { api, config, configBytes, key, frame, clock, files, reads, logs, events, children, spawns, server, process: processStub, transactionStats, result, socket,
+  const ledger = () => api.childLedger(config, api.privateConfig().pin, { pid: 7, startTicks: "345" }, () => { processStub.exitCode = 1; });
+  const runPsql = (sql, children = new Set()) => api.psql(config, sql, children, ledger(), "d".repeat(64));
+  const ledgerRows = () => files.get(LEDGER).data.toString().trim().split("\n").map(text => JSON.parse(text));
+  const stop = () => JSON.parse(files.get(STOP).data);
+  return { api, config, configBytes, key, frame, clock, files, reads, logs, events, children, spawns, server, process: processStub, transactionStats, result, socket, ledger, runPsql,
+    ledgerRows, stop,
     changeSelf: () => { selfChanged = true; } };
 }
 function complete(child, { code = 0, stdout = null, stderr = null, outEOF = true, errEOF = true, close = true } = {}) {
   if (stdout !== null) child.stdout.emit("data", Buffer.from(stdout)); if (stderr !== null) child.stderr.emit("data", Buffer.from(stderr));
   if (outEOF) child.stdout.emit("end"); if (errEOF) child.stderr.emit("end");
-  child.emit("exit", code, null); if (close) { child.closed = true; child.emit("close", code, null); }
+  child.exitCode = code; child.signalCode = null; child.emit("exit", code, null); if (close) { child.closed = true; child.emit("close", code, null); }
 }
 function observe(promise) { const status = { state: "pending" }; promise.then(value => { status.state = "resolved"; status.value = value; }, error => { status.state = "rejected"; status.error = error; }); return status; }
-let checks = 0;
-async function check(name, action) { await action(); checks++; process.stdout.write("PASS " + name + "\n"); }
+let checks = 0, currentCheck = "initial source capture";
+async function check(name, action) { currentCheck = name; await action(); checks++; process.stdout.write("PASS " + name + "\n"); }
 (async () => {
   await check("typed authenticated frame is consumed exactly once", async () => {
     const s = fixture(), observed = new Set(), frame = s.frame(); s.api.parse(frame, s.key, observed);
@@ -235,26 +270,26 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
     assert.throws(() => s.api.file({ path: name, bytes: 3, sha256: sha("abc") })); assert.equal(s.reads.get(name), 4);
   });
   await check("psql success requires close0 and both natural EOFs", async () => {
-    const s = fixture(), children = new Set(), state = observe(s.api.psql(s.config, "synthetic SQL", children)), child = s.children[0];
+    const s = fixture(), children = new Set(), state = observe(s.runPsql("synthetic SQL", children)), child = s.children[0];
     complete(child, { stdout: "synthetic output", close: false }); await flush(); assert.equal(state.state, "pending");
     child.emit("close", 0, null); await flush(); assert.equal(state.state, "resolved"); assert.equal(state.value.toString(), "synthetic output"); assert.equal(children.size, 0);
   });
   await check("ACK printed before a later nonzero psql close never succeeds", async () => {
-    const s = fixture(), state = observe(s.api.psql(s.config, "synthetic SQL", new Set()));
+    const s = fixture(), state = observe(s.runPsql("synthetic SQL"));
     complete(s.children[0], { code: 3, stdout: JSON.stringify(s.result) }); await flush(); assert.equal(state.state, "rejected");
   });
   for (const missing of ["outEOF", "errEOF"]) await check("missing " + missing + " rejects even close0", async () => {
-    const s = fixture(), state = observe(s.api.psql(s.config, "synthetic SQL", new Set()));
+    const s = fixture(), state = observe(s.runPsql("synthetic SQL"));
     complete(s.children[0], { stdout: JSON.stringify(s.result), [missing]: false }); await flush(); assert.equal(state.state, "rejected");
   });
   await check("hard close deadline rejects and retains an unobserved child without inventing EOF", async () => {
-    const s = fixture(), children = new Set(), state = observe(s.api.psql(s.config, "synthetic SQL", children)), child = s.children[0];
+    const s = fixture(), children = new Set(), state = observe(s.runPsql("synthetic SQL", children)), child = s.children[0];
     await s.clock.advance(34000); assert.equal(state.state, "rejected"); assert.equal(children.size, 1);
     assert(child.kills.includes("SIGTERM") && child.kills.includes("SIGKILL")); assert(child.streams.every(stream => stream.destroyed));
     child.emit("close", 0, null); await flush(); assert.equal(children.size, 0); assert.equal(state.state, "rejected");
   });
   await check("stderr retention contains only byte count and hash", async () => {
-    const s = fixture(), state = observe(s.api.psql(s.config, "synthetic SQL", new Set())), text = "UNCLASSIFIED_PRIVATE_DIAGNOSTIC_TEXT";
+    const s = fixture(), state = observe(s.runPsql("synthetic SQL")), text = "UNCLASSIFIED_PRIVATE_DIAGNOSTIC_TEXT";
     complete(s.children[0], { code: 1, stderr: text }); await flush(); assert.equal(state.state, "rejected"); assert.equal(s.logs.length, 1);
     const saved = JSON.parse(s.logs[0].bytes); assert.equal(saved.bytes, Buffer.byteLength(text)); assert.equal(saved.sha256, sha(text)); assert.equal(saved.contentsRetained, false);
     assert(!s.logs[0].bytes.toString().includes(text));
@@ -263,7 +298,7 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
     const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
     complete(s.children[0], { code: 3, stdout: JSON.stringify(s.result) }); await pending; await flush();
     assert.equal(s.transactionStats.accept, 0); assert.equal(JSON.parse(socket.replies[0]).status, 500);
-    const second = s.socket(); assert(second.destroyed); assert.equal(s.spawns.length, 1); await service.close();
+    const second = s.socket(); assert(second.destroyed); assert.equal(s.spawns.length, 1); await assert.rejects(service.close());
   });
   await check("successful synthetic response remains locked until finish and carries the exact response MAC", async () => {
     const s = fixture(), service = await s.api.start(), socket = s.socket(true), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
@@ -283,20 +318,21 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
       const response = JSON.parse(socket.replies[0]); assert.equal(response.status, artifactResult ? 200 : 500);
       if (artifactResult) assert.equal(Buffer.from(response.bodyBase64, "base64").toString(), JSON.stringify(s.result));
       else assert(s.socket().destroyed);
-      assert.equal(s.transactionStats.accept, 1); await service.close();
+      assert.equal(s.transactionStats.accept, 1); if (artifactResult) await service.close(); else await assert.rejects(service.close());
     }
   });
   await check("socket loss before response makes the owner terminal even if the child later closes0", async () => {
     const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
     socket.destroy(); complete(s.children[0], { stdout: JSON.stringify(s.result) }); await pending;
-    assert.equal(socket.replies.length, 0); assert(s.socket().destroyed); assert.equal(s.spawns.length, 1); await service.close();
+    assert.equal(socket.replies.length, 0); assert(s.socket().destroyed); assert.equal(s.spawns.length, 1); await assert.rejects(service.close());
+    assert.equal(s.stop().cleanShutdown, false); assert.equal(s.stop().terminal, true);
   });
   await check("post-listen startup failure closes the listener", async () => {
     const s = fixture({ chmodFailure: true }); await assert.rejects(s.api.start()); assert.equal(s.server.listening, false); assert.equal(s.server.closeCalls, 1);
   });
   await check("close begins server shutdown before TERM and is idempotent", async () => {
     const s = fixture({ closeOnKill: true }), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
-    const first = service.close(), second = service.close(); assert.equal(first, second); await first; await pending;
+    const first = service.close(), second = service.close(); assert.equal(first, second); await assert.rejects(first); await pending;
     assert(s.events.indexOf("server.close") < s.events.indexOf("kill:SIGTERM")); assert.equal(s.children[0].kills.length, 1);
   });
   await check("missing child close rejects shutdown after its bounded deadline", async () => {
@@ -306,13 +342,129 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
   });
   await check("runtime identity drift closes the service with a failure exit code", async () => {
     const s = fixture(), service = await s.api.start(); s.files.get(CONFIG).data[0] ^= 1;
-    await s.clock.advance(500); assert.equal(s.process.exitCode, 1); assert.equal(s.server.listening, false); await service.close();
+    await s.clock.advance(500); assert.equal(s.process.exitCode, 1); assert.equal(s.server.listening, false); await assert.rejects(service.close());
   });
   await check("the frozen service identity is rechecked independently of PostgreSQL", async () => {
     const s = fixture(), service = await s.api.start(); s.changeSelf(); await s.clock.advance(500);
-    assert.equal(s.process.exitCode, 1); assert.equal(s.server.listening, false); await service.close();
+    assert.equal(s.process.exitCode, 1); assert.equal(s.server.listening, false); await assert.rejects(service.close());
+  });
+  await check("a short-lived observed child closes from its bound handle after proc has disappeared", async () => {
+    const options = {}, s = fixture(options), service = await s.api.start(), socket = s.socket();
+    const pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    assert.equal(s.children[0].sql, "synthetic transaction text");
+    const rowsBeforeClose = s.ledgerRows(); assert.deepEqual(rowsBeforeClose.map(row => row.event), ["header", "spawn"]);
+    assert(s.events.indexOf("stdin.end") > s.events.lastIndexOf("write:ORIGINAL_SERVICE_CHILDREN.SAFE.jsonl"));
+    options.childProcMissing = true; complete(s.children[0], { stdout: JSON.stringify(s.result) }); await pending; await service.close();
+    const rows = s.ledgerRows(), spawned = rows[1], closed = rows[2], receipt = s.stop();
+    assert.deepEqual(spawned.process.uids, [1000, 1000, 1000, 1000]); assert.deepEqual(spawned.process.gids, [1000, 1000, 1000, 1000]);
+    assert.equal(spawned.process.pid, s.children[0].pid); assert.equal(spawned.process.parentPID, 7);
+    assert.equal(spawned.process.exe, s.config.psqlPin.path); assert.equal(spawned.process.pidNamespace, "pid:[123]");
+    assert.equal(spawned.process.membership, "0::/\n"); assert.equal(spawned.process.capabilitiesZero, true); assert.equal(spawned.process.noNewPrivileges, true);
+    assert.equal(closed.pid, spawned.process.pid); assert.equal(closed.startTicks, spawned.process.startTicks);
+    assert.equal(closed.requestNonceSHA256, spawned.requestNonceSHA256); assert.equal(closed.confirmed, true);
+    assert.equal(closed.exitObserved, true); assert.equal(closed.exitCode, 0); assert.equal(closed.exitSignal, null);
+    assert.equal(closed.stdoutEOF, true); assert.equal(closed.stderrEOF, true); assert.equal(closed.failure, null);
+    assert.equal(receipt.cleanShutdown, true); assert.equal(receipt.ledgerComplete, true); assert.equal(receipt.spawnCount, 1);
+    assert.equal(receipt.closeCount, 1); assert.equal(receipt.confirmedCount, 1); assert.equal(receipt.serverClosed, true); assert.equal(receipt.childrenEmpty, true);
+    assert.equal(receipt.serviceNodeExitObserved, false); assert.equal(receipt.serviceStdoutEOFObserved, false); assert.equal(receipt.serviceStderrEOFObserved, false);
+    assert.equal(receipt.ledgerPin.sha256, sha(s.files.get(LEDGER).data)); assert.equal(receipt.ledgerPin.bytes, s.files.get(LEDGER).data.length);
+    assert.equal(s.files.get(LEDGER).mode, 0o600); assert.equal(s.files.get(STOP).mode, 0o600);
+  });
+  for (const [name, fault] of [["missing proc", "childProcMissing"], ["missing UID", "childUIDMissing"], ["missing GID", "childGIDMissing"],
+    ["wrong UID", "childWrongUID"], ["capability", "childCaps"], ["no NNP", "childNoNNP"], ["wrong parent", "childWrongParent"],
+    ["wrong executable", "childWrongExe"], ["wrong PID namespace", "childWrongNamespace"], ["wrong cgroup", "childWrongGroup"]]) {
+    await check(name + " prevents SQL before terminal child observation failure", async () => {
+      const s = fixture({ [fault]: true, closeOnKill: true }), service = await s.api.start(), socket = s.socket();
+      await socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+      assert.equal(s.children[0].sql, undefined); assert.equal(s.transactionStats.accept, 0); assert.equal(s.process.exitCode, 1);
+      assert(s.socket().destroyed); await assert.rejects(service.close()); assert.equal(s.stop().cleanShutdown, false); assert.equal(s.stop().ledgerComplete, false);
+      assert(!s.ledgerRows().some(row => row.confirmed));
+    });
+  }
+  for (const [name, fault] of [["preexisting ledger", "ledgerExists"], ["ledger open", "ledgerOpenFailure"], ["ledger fsync", "ledgerSyncFailure"]]) {
+    await check(name + " prevents service publication and never replaces an existing artifact", async () => {
+      const s = fixture({ [fault]: true }); await assert.rejects(s.api.start()); assert.equal(s.server.listening, false); assert.equal(s.spawns.length, 0);
+      assert(!s.files.has(STOP)); if (fault === "ledgerExists") assert.equal(s.files.get(LEDGER).data.toString(), "preexisting ledger");
+    });
+  }
+  await check("a failed spawn ledger write sends no SQL and cannot produce a clean stop", async () => {
+    const s = fixture({ ledgerWriteFailure: true, closeOnKill: true }), service = await s.api.start(), socket = s.socket();
+    await socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    assert.equal(s.children[0].sql, undefined); assert.equal(s.process.exitCode, 1); assert(s.socket().destroyed);
+    await assert.rejects(service.close()); assert.equal(s.stop().cleanShutdown, false); assert.equal(s.stop().ledgerComplete, false);
+  });
+  await check("a synchronous failed spawn remains terminal without inventing a child", async () => {
+    const s = fixture({ spawnThrow: true }), service = await s.api.start(), socket = s.socket();
+    await socket.send(Buffer.concat([s.frame(), Buffer.from("\n")])); assert.equal(s.children.length, 0); assert.equal(s.transactionStats.accept, 0);
+    assert.equal(s.process.exitCode, 1); assert(s.socket().destroyed); await assert.rejects(service.close());
+    assert.equal(s.stop().cleanShutdown, false); assert.equal(s.stop().spawnCount, 0); assert.equal(s.stop().closeCount, 0);
+  });
+  await check("natural EOF cannot be replaced by destroyed stream close or a later synthetic end", async () => {
+    const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    s.children[0].stdout.destroy(); complete(s.children[0], { stdout: JSON.stringify(s.result) }); await pending;
+    const last = s.ledgerRows().at(-1); assert.equal(last.event, "close"); assert.equal(last.stdoutEOF, false); assert.equal(last.confirmed, false);
+    await assert.rejects(service.close()); assert.equal(s.stop().cleanShutdown, false);
+  });
+  await check("lost child close never publishes a stop receipt or invents a matching ledger close", async () => {
+    const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    complete(s.children[0], { stdout: JSON.stringify(s.result), close: false }); await s.clock.advance(34000); await pending;
+    const stopping = observe(service.close()); await s.clock.advance(6000); assert.equal(stopping.state, "rejected");
+    assert(!s.files.has(STOP)); assert.equal(s.ledgerRows().filter(row => row.event === "close").length, 0);
+  });
+  await check("registered child identity cannot be substituted at close", async () => {
+    const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    s.children[0].pid++; complete(s.children[0], { stdout: JSON.stringify(s.result) }); await pending;
+    assert.equal(s.transactionStats.accept, 0); await assert.rejects(service.close()); assert.equal(s.stop().cleanShutdown, false);
+  });
+  await check("child exit and close disagreement is recorded as unconfirmed", async () => {
+    const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    complete(s.children[0], { stdout: JSON.stringify(s.result), close: false }); s.children[0].emit("close", 1, null); await pending;
+    const row = s.ledgerRows().at(-1); assert.equal(row.exitObserved, true); assert.equal(row.exitCode, 1); assert.equal(row.confirmed, false);
+    await assert.rejects(service.close()); assert.equal(s.stop().cleanShutdown, false);
+  });
+  await check("bounded stdout overflow cannot become a ledger or stop success", async () => {
+    const s = fixture({ closeOnKill: true }), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    s.children[0].stdout.emit("data", Buffer.alloc(1024 * 1024 + 1)); await pending;
+    assert.equal(s.transactionStats.accept, 0); assert.equal(s.ledgerRows().at(-1).confirmed, false);
+    await assert.rejects(service.close()); assert.equal(s.stop().cleanShutdown, false);
+  });
+  await check("externally oversized ledger fails without appending past the fixed byte cap", async () => {
+    const s = fixture({ closeOnKill: true }), service = await s.api.start(); s.files.get(LEDGER).data = Buffer.alloc(s.api.LEDGER_CAP + 1);
+    const original = s.files.get(LEDGER).data, socket = s.socket(); await socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    assert.equal(s.children[0].sql, undefined); assert.equal(s.files.get(LEDGER).data, original); await assert.rejects(service.close());
+    assert.equal(s.stop().cleanShutdown, false);
+  });
+  await check("partial writes are completed once and stop publication failure stays terminal", async () => {
+    const s = fixture({ partialWrites: true }), service = await s.api.start(); await service.close();
+    assert.equal(s.stop().cleanShutdown, true); assert.equal(s.stop().spawnCount, 0); assert.equal(s.stop().ledgerPin.sha256, sha(s.files.get(LEDGER).data));
+    const broken = fixture({ stopWriteFailure: true }), failing = await broken.api.start(); await assert.rejects(failing.close());
+    assert.equal(broken.process.exitCode, 1); const bytes = broken.files.get(STOP).data; await assert.rejects(failing.close()); assert.equal(broken.files.get(STOP).data, bytes);
+  });
+  await check("a preexisting stop receipt is never replaced or accepted", async () => {
+    const s = fixture({ stopExists: true }), service = await s.api.start(); await assert.rejects(service.close());
+    assert.equal(s.files.get(STOP).data.toString(), "preexisting stop"); assert.equal(s.process.exitCode, 1);
+  });
+  await check("all 256 bounded request pairs fit and a 257th child stays unrecorded and terminal", async () => {
+    const s = fixture(), ledger = s.ledger(), children = new Set();
+    for (let i = 0; i < 256; i++) {
+      const child = { pid: 100 + i }, observed = { pid: child.pid, parentPID: 7, startTicks: "345", exe: s.config.psqlPin.path,
+        pidNamespace: "pid:[123]", membership: "0::/\n", uids: [1000, 1000, 1000, 1000], gids: [1000, 1000, 1000, 1000], capabilitiesZero: true, noNewPrivileges: true };
+      children.add(child); ledger.spawn(child, observed, sha("VM nonce " + i));
+      ledger.close(child, { exitObserved: true, exitCode: 0, exitSignal: null, stdoutEOF: true, stderrEOF: true, failure: null }, children); children.delete(child);
+    }
+    assert(s.files.get(LEDGER).data.length < s.api.LEDGER_CAP); assert.equal(s.ledgerRows().length, 513);
+    assert.throws(() => ledger.spawn({ pid: 999 }, { pid: 999 }, sha("VM 257th nonce")));
+    assert.equal(s.ledgerRows().length, 513); assert.equal(ledger.seal().ledgerComplete, false); assert.equal(s.process.exitCode, 1);
+  });
+  await check("ledger and stop contain only metadata with no SQL row body or authentication values", async () => {
+    const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    complete(s.children[0], { stdout: JSON.stringify(s.result) }); await pending; await service.close();
+    const text = s.files.get(LEDGER).data.toString() + s.files.get(STOP).data.toString();
+    for (const forbidden of [s.config.secretHex, s.frame().toString(), "synthetic transaction text", JSON.stringify(s.result), "Authorization", "bodyBase64", "password", "secretHex"])
+      assert(!text.includes(forbidden));
+    assert(s.ledgerRows().every(row => !Object.hasOwn(row, "sql") && !Object.hasOwn(row, "args") && !Object.hasOwn(row, "stderr")));
   });
   const after = sourceSnapshot(); assert.equal(after.sha256, snapshot.sha256, "reviewed source changed while testing");
   process.stdout.write("Original service VM checks PASS: " + checks + "; source bytes=" + snapshot.bytes.length + "; SHA256=" + snapshot.sha256 + "; stable before/after.\n");
   process.stdout.write("No real child, socket, owner config, original data, database or native qualification.\n");
-})().catch(() => { process.stderr.write("Original service VM tests FAIL; no native execution occurred.\n"); process.exitCode = 1; });
+})().catch(() => { process.stderr.write("Original service VM tests FAIL at " + currentCheck + "; no native execution occurred.\n"); process.exitCode = 1; });

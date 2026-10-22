@@ -7,6 +7,8 @@ const crypto = require("node:crypto"), childProcess = require("node:child_proces
 const v8 = require("node:v8");
 const CONFIG = "/bench/ORIGINAL_SERVICE_CONFIG.PRIVATE.json";
 const SOCKET = "/ram/helmut-original-write-bridge.sock";
+const LEDGER = "/bench/ORIGINAL_SERVICE_CHILDREN.SAFE.jsonl", STOP = "/bench/ORIGINAL_SERVICE_STOP.SAFE.json";
+const LEDGER_CAP = 256 * 1024, META = ["dev", "ino", "mode", "uid", "gid", "nlink", "size", "mtimeNs", "ctimeNs"];
 const BODY_CAP = 36 * 1024 * 1024, FRAME_CAP = 50 * 1024 * 1024;
 const exact = (x, keys) => x && typeof x === "object" && !Array.isArray(x)
   && Object.keys(x).sort().join("|") === [...keys].sort().join("|");
@@ -124,21 +126,121 @@ function saveError(label, bytes) {
   const row = { schema: "helmut-local-original-owner-stderr/1", bytes: bytes.length, sha256: sha(bytes), contentsRetained: false };
   fs.writeFileSync(path.join(directory, label + ".SAFE.json"), JSON.stringify(row) + "\n", { mode: 0o600, flag: "wx" });
 }
-async function psql(c, sql, children) {
+function psqlIdentity(c, child) {
+  const pid = child.pid;
+  need(Number.isSafeInteger(pid) && pid > 0 && child.spawnfile === c.psqlPin.path, "child-handle");
+  const root = `/proc/${pid}`, stat = fs.readFileSync(root + "/stat", "utf8"), fields = stat.slice(stat.lastIndexOf(")") + 2).trim().split(/\s+/);
+  need(Number(stat.slice(0, stat.indexOf(" "))) === pid && fields.length >= 20 && !["Z", "X"].includes(fields[0])
+    && Number(fields[1]) === process.pid && /^[1-9][0-9]{0,29}$/.test(fields[19]), "child-stat");
+  const status = fs.readFileSync(root + "/status", "utf8"), ids = label => {
+    const match = new RegExp("^" + label + ":[\\t ]+([0-9\\t ]+)$", "m").exec(status), values = match?.[1].trim().split(/\s+/).map(Number);
+    need(values?.length === 4 && values.every(value => value === 1000), "child-uid-gid"); return values;
+  };
+  const uids = ids("Uid"), gids = ids("Gid");
+  for (const label of ["CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"])
+    need(new RegExp("^" + label + ":\\s*0+\\s*$", "m").test(status), "child-capabilities");
+  need(/^NoNewPrivs:\s*1\s*$/m.test(status), "child-no-new-privileges");
+  const observed = { pid, parentPID: Number(fields[1]), startTicks: fields[19], exe: fs.readlinkSync(root + "/exe"),
+    pidNamespace: fs.readlinkSync(root + "/ns/pid"), membership: fs.readFileSync(root + "/cgroup", "utf8"),
+    uids, gids, capabilitiesZero: true, noNewPrivileges: true };
+  const after = fs.readFileSync(root + "/stat", "utf8"), tail = after.slice(after.lastIndexOf(")") + 2).trim().split(/\s+/);
+  need(child.pid === pid && observed.exe === c.psqlPin.path && observed.membership === c.measuredCgroup.procMembership
+    && /^pid:\[[1-9][0-9]{0,19}\]$/.test(observed.pidNamespace) && observed.pidNamespace === fs.readlinkSync("/proc/self/ns/pid")
+    && Number(after.slice(0, after.indexOf(" "))) === pid && !["Z", "X"].includes(tail[0])
+    && tail[1] === fields[1] && tail[19] === fields[19], "child-process-drift");
+  return Object.freeze({ ...observed, uids: Object.freeze(uids), gids: Object.freeze(gids) });
+}
+function privateOutput(fd, filename, size) {
+  const a = fs.fstatSync(fd, { bigint: true }), named = fs.lstatSync(filename, { bigint: true });
+  need(a.isFile() && a.uid === 1000n && a.gid === 1000n && a.nlink === 1n && a.size === BigInt(size)
+    && (a.mode & 0o7777n) === 0o600n && fs.realpathSync(filename) === filename
+    && META.every(k => a[k] === named[k]), "ledger-file-identity"); return a;
+}
+function childLedger(c, configPin, self, fail) {
+  need(fs.realpathSync("/bench") === "/bench", "ledger-parent"); const directory = fs.lstatSync("/bench", { bigint: true });
+  need(directory.isDirectory() && !directory.isSymbolicLink() && directory.uid === 1000n && (directory.mode & 0o7777n) === 0o700n, "ledger-private-parent");
+  const fd = fs.openSync(LEDGER, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK, 0o600);
+  let previous, bytes = 0, events = 0, spawns = 0, closes = 0, confirmed = 0, broken = false, publicationFailed = false, sealed = false, closedFD = false;
+  const digest = crypto.createHash("sha256"), records = new Map();
+  const mark = () => { broken = true; fail(); };
+  function append(value) {
+    try {
+      need(!sealed && !publicationFailed && !closedFD, "ledger-sealed-or-failed"); const before = privateOutput(fd, LEDGER, bytes);
+      need(!previous || META.every(k => previous[k] === before[k]), "ledger-drift");
+      const raw = Buffer.from(JSON.stringify(value) + "\n"); need(raw.length <= 4096 && bytes + raw.length <= LEDGER_CAP, "ledger-cap");
+      let offset = 0; while (offset < raw.length) { const n = fs.writeSync(fd, raw, offset, raw.length - offset, null); need(n > 0, "ledger-short-write"); offset += n; }
+      fs.fsyncSync(fd); const after = privateOutput(fd, LEDGER, bytes + raw.length);
+      need(["dev", "ino", "mode", "uid", "gid", "nlink"].every(k => before[k] === after[k]), "ledger-write-drift");
+      bytes += raw.length; events++; digest.update(raw); previous = after;
+    } catch (error) { publicationFailed = true; mark(); throw error; }
+  }
+  try {
+    append({ schema: "helmut-local-unit-original-service-children/1", event: "header", operationId: c.operationId,
+      commandHash: c.commandHash, configPin, servicePID: self.pid, serviceStartTicks: self.startTicks });
+  } catch (error) { fs.closeSync(fd); closedFD = true; throw error; }
+  return {
+    failed: () => broken,
+    fail: mark,
+    spawn(child, observed, nonce) {
+      try {
+        need(!broken && !records.has(child) && spawns < 256 && /^[a-f0-9]{64}$/.test(nonce), "ledger-child-cap-or-nonce");
+        const record = Object.freeze({ index: spawns, requestNonceSHA256: sha(nonce), process: observed });
+        append({ event: "spawn", ...record }); records.set(child, record); spawns++;
+      } catch (error) { mark(); throw error; }
+    },
+    close(child, outcome, children) {
+      try {
+        const record = records.get(child);
+        need(record && children.has(child) && child.pid === record.process.pid && !record.closed, "ledger-child-registration");
+        const success = outcome.exitObserved && outcome.exitCode === 0 && outcome.exitSignal === null
+          && outcome.stdoutEOF && outcome.stderrEOF && outcome.failure === null;
+        append({ event: "close", index: record.index, requestNonceSHA256: record.requestNonceSHA256,
+          pid: record.process.pid, startTicks: record.process.startTicks, ...outcome, confirmed: success });
+        records.delete(child); closes++; if (success) confirmed++;
+        if (!success) mark();
+      } catch (error) { mark(); throw error; }
+    },
+    seal() {
+      let pin = null;
+      try {
+        need(!sealed && records.size === 0 && !broken && spawns === closes && confirmed === closes, "ledger-incomplete");
+        const current = privateOutput(fd, LEDGER, bytes); need(META.every(k => previous[k] === current[k]), "ledger-final-drift"); fs.fsyncSync(fd);
+        pin = { path: LEDGER, bytes, sha256: digest.copy().digest("hex") }; file(pin, { privateFile: true }); sealed = true;
+      } catch { pin = null; mark(); }
+      finally { if (!closedFD) { fs.closeSync(fd); closedFD = true; } }
+      return { ledgerPin: pin, ledgerComplete: !broken && sealed, eventCount: events, spawnCount: spawns, closeCount: closes, confirmedCount: confirmed };
+    }
+  };
+}
+function stopReceipt(value) {
+  const raw = Buffer.from(JSON.stringify(value) + "\n"); need(raw.length <= 32768, "stop-cap");
+  const fd = fs.openSync(STOP, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK, 0o600);
+  try {
+    privateOutput(fd, STOP, 0); let n = 0;
+    while (n < raw.length) { const count = fs.writeSync(fd, raw, n, raw.length - n, null); need(count > 0, "stop-short-write"); n += count; }
+    fs.fsyncSync(fd); privateOutput(fd, STOP, raw.length);
+  } finally { fs.closeSync(fd); }
+  file({ path: STOP, bytes: raw.length, sha256: sha(raw) }, { privateFile: true });
+}
+async function psql(c, sql, children, ledger, nonce) {
   need(typeof sql === "string" && Buffer.byteLength(sql) <= BODY_CAP, "sql-size");
-  file(c.psqlPin);
-  const child = childProcess.spawn(c.psqlPin.path, ["-X", "-qAt", "-w", "-h", "/ram/socket", "-p", "5432", "-U", "postgres",
-    "-d", c.database, "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=terse", "-f", "-"], {
-    env: { PATH: "/usr/lib/postgresql/17/bin:/usr/bin:/bin", LANG: "C.UTF-8", LC_ALL: "C.UTF-8",
-      LD_LIBRARY_PATH: c.libraryPath, PGCONNECT_TIMEOUT: "3", HOME: "/ram", TMPDIR: "/ram" }, stdio: ["pipe", "pipe", "pipe"] });
+  let child;
+  try {
+    file(c.psqlPin);
+    child = childProcess.spawn(c.psqlPin.path, ["-X", "-qAt", "-w", "-h", "/ram/socket", "-p", "5432", "-U", "postgres",
+      "-d", c.database, "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=terse", "-f", "-"], {
+      env: { PATH: "/usr/lib/postgresql/17/bin:/usr/bin:/bin", LANG: "C.UTF-8", LC_ALL: "C.UTF-8",
+        LD_LIBRARY_PATH: c.libraryPath, PGCONNECT_TIMEOUT: "3", HOME: "/ram", TMPDIR: "/ram" }, stdio: ["pipe", "pipe", "pipe"] });
+  } catch { ledger.fail(); throw Error("original-owner-service-transaction-spawn-unconfirmed"); }
   children.add(child);
   return new Promise((resolve, reject) => {
     const out = [], err = []; let outBytes = 0, errBytes = 0, failure = null, exited = false, outEOF = false, errEOF = false;
+    let actualExitCode = null, actualExitSignal = null;
     let done = false;
     const timer = setTimeout(() => abort("transaction-deadline-unknown"), 28000);
     const terminalTimer = setTimeout(() => {
       if (done) return;
-      done = true; failure ||= "transaction-close-not-observed";
+      done = true; failure ||= "transaction-close-not-observed"; ledger.fail();
       child.kill("SIGKILL");
       for (const stream of [child.stdin, child.stdout, child.stderr]) stream.destroy();
       clearTimeout(timer); clearTimeout(killer);
@@ -149,16 +251,24 @@ async function psql(c, sql, children) {
     let killer;
     function abort(code) {
       if (done) return;
-      failure ||= code;
+      failure ||= code; ledger.fail();
       if (!exited) { child.kill("SIGTERM"); killer ||= setTimeout(() => child.kill("SIGKILL"), 3000); }
     }
     function finish(code, signal) {
-      clearTimeout(timer); clearTimeout(terminalTimer); clearTimeout(killer); children.delete(child);
-      if (done) return; done = true;
+      clearTimeout(timer); clearTimeout(terminalTimer); clearTimeout(killer);
+      if (!exited || actualExitCode !== code || actualExitSignal !== signal || child.exitCode !== code || child.signalCode !== signal)
+        failure ||= "transaction-exit-identity";
       if (errBytes) {
         try { saveError(crypto.randomBytes(12).toString("hex"), Buffer.concat(err)); }
         catch { failure ||= "private-error-retention-failed"; }
       }
+      try {
+        need((code === null || Number.isInteger(code) && code >= 0 && code <= 255)
+          && (signal === null || typeof signal === "string" && /^SIG[A-Z0-9]{1,16}$/.test(signal)), "child-close-values");
+        ledger.close(child, { exitObserved: exited, exitCode: code, exitSignal: signal,
+          stdoutEOF: outEOF, stderrEOF: errEOF, failure }, children);
+      } catch { ledger.fail(); failure ||= "transaction-ledger-unconfirmed"; }
+      children.delete(child); if (done) return; done = true;
       if (failure || code !== 0 || signal || !outEOF || !errEOF) {
         reject(Error("original-owner-service-" + (failure || "transaction-not-confirmed"))); return;
       }
@@ -171,10 +281,12 @@ async function psql(c, sql, children) {
       else { outBytes += b.length; out.push(b); } });
     child.stderr.on("data", b => { if (errBytes + b.length > 131072) abort("transaction-error-cap");
       else { errBytes += b.length; err.push(b); } });
-    child.stdout.once("end", () => { outEOF = true; }); child.stderr.once("end", () => { errEOF = true; });
+    child.stdout.once("end", () => { if (!child.stdout.destroyed) outEOF = true; }); child.stderr.once("end", () => { if (!child.stderr.destroyed) errEOF = true; });
     child.stdout.once("error", () => abort("transaction-stdout-error")); child.stderr.once("error", () => abort("transaction-stderr-error"));
     child.stdin.once("error", () => abort("transaction-stdin-error"));
-    child.once("exit", () => { exited = true; }); child.once("close", finish); child.stdin.end(sql);
+    child.once("exit", (code, signal) => { exited = true; actualExitCode = code; actualExitSignal = signal; }); child.once("close", finish);
+    try { ledger.spawn(child, psqlIdentity(c, child), nonce); child.stdin.end(sql); }
+    catch { abort("transaction-spawn-observation"); }
   });
 }
 async function start() {
@@ -185,7 +297,8 @@ async function start() {
   const self = Object.freeze(processIdentity(process.pid)), actualNodeBudget = nodeBudget();
   need(typeof transaction.prepare === "function" && typeof transaction.acceptResult === "function", "transaction-builder");
   const observed = new Set(), children = new Set(), sockets = new Set();
-  let stopping = false, writing = false, terminal = false, closing = null, observer = null, deadline = null;
+  let stopping = false, writing = false, terminal = false, lifecycleFailure = false, ledger = null, closing = null, observer = null, deadline = null;
+  const lifecycleFailed = () => { terminal = true; lifecycleFailure = true; process.exitCode = 1; };
   const groupIdentity = () => {
     const actual = processIdentity(process.pid);
     need(Object.keys(self).every(key => actual[key] === self[key]), "self-process-drift");
@@ -196,10 +309,12 @@ async function start() {
     const pg = processIdentity(c.postgres.pid);
     need(pg.startTicks === c.postgres.startTicks && pg.exe === c.postgres.exePin.path
       && pg.membership === c.measuredCgroup.procMembership, "postgres-drift");
+    need(!ledger?.failed(), "child-ledger-failed");
     need(Date.now() < Date.parse(c.expiresAtUTC) && process.hrtime.bigint() - begin < 180000000000n, "expired");
   };
   groupIdentity();
   need(!fs.existsSync(SOCKET), "new-owner-socket-required");
+  ledger = childLedger(c, configPin, self, lifecycleFailed);
   // This socket is inside the owner container only; its path is never mounted
   // into the application. The root broker additionally authenticates every frame.
   const server = net.createServer({ allowHalfOpen: true }, socket => {
@@ -229,7 +344,7 @@ async function start() {
         writing = true; ownsWrite = true;
         const prepared = transaction.prepare(message.request, c.qualification);
         need(prepared.database === c.database && prepared.sqlSHA256 === sha(Buffer.from(prepared.sql)), "prepared-transaction");
-        body = await psql(c, prepared.sql, children); groupIdentity();
+        body = await psql(c, prepared.sql, children, ledger, message.nonce); groupIdentity();
         const result = transaction.acceptResult(prepared, body.toString("utf8"));
         const artifact = message.request.mode === "artifact";
         need(exact(result, ["schema", artifact ? "originalRowAck" : "authAck", "ownAck"])
@@ -250,7 +365,7 @@ async function start() {
     closing = (async () => {
     clearInterval(observer); clearTimeout(deadline);
     for (const socket of sockets) socket.destroy();
-    const serverClosed = new Promise(resolve => server.close(resolve));
+    const serverClosed = new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
     await Promise.all([...children].map(child => new Promise((resolve, reject) => {
       const kill = setTimeout(() => child.kill("SIGKILL"), 3000);
       const limit = setTimeout(() => { clearTimeout(kill); reject(Error("original-owner-service-child-close-deadline")); }, 6000);
@@ -258,6 +373,13 @@ async function start() {
     })));
     await serverClosed;
     need(children.size === 0, "children-exit-open");
+    const final = ledger.seal(), cleanShutdown = !terminal && !lifecycleFailure && final.ledgerComplete;
+    try {
+      stopReceipt({ schema: "helmut-local-unit-original-service-stop/1", operationId: c.operationId, commandHash: c.commandHash,
+        servicePID: self.pid, serviceStartTicks: self.startTicks, serverClosed: true, childrenEmpty: true, terminal,
+        cleanShutdown, ...final, serviceNodeExitObserved: false, serviceStdoutEOFObserved: false, serviceStderrEOFObserved: false });
+    } catch (error) { lifecycleFailed(); throw error; }
+    need(cleanShutdown, "service-stop-unconfirmed");
     })();
     return closing;
   };
@@ -270,10 +392,10 @@ async function start() {
       server.once("error", failed); server.once("listening", listening); server.listen(SOCKET);
     });
     fs.chmodSync(SOCKET, 0o666); groupIdentity();
-  } catch (error) { await close(); throw error; }
-  server.on("error", () => { process.exitCode = 1; void close().catch(() => { process.exitCode = 1; }); });
-  observer = setInterval(() => { try { groupIdentity(); } catch { process.exitCode = 1; void close().catch(() => { process.exitCode = 1; }); } }, 500);
-  deadline = setTimeout(() => { process.exitCode = 1; void close().catch(() => { process.exitCode = 1; }); }, Math.max(1, Date.parse(c.expiresAtUTC) - Date.now() - 6000));
+  } catch (error) { lifecycleFailed(); await close(); throw error; }
+  server.on("error", () => { lifecycleFailed(); void close().catch(() => { process.exitCode = 1; }); });
+  observer = setInterval(() => { try { groupIdentity(); } catch { lifecycleFailed(); void close().catch(() => { process.exitCode = 1; }); } }, 500);
+  deadline = setTimeout(() => { lifecycleFailed(); void close().catch(() => { process.exitCode = 1; }); }, Math.max(1, Date.parse(c.expiresAtUTC) - Date.now() - 6000));
   return { close, ready: { schema: "helmut-local-unit-original-service-ready/1", ...readyProcess,
     database: c.database, commandHash: c.commandHash, configPin, actualNodeBudget, configuredInitialDatabaseRole: "postgres", databaseConnectionObserved: false,
     unitExecutionQualified: false, full500Qualified: false } };
