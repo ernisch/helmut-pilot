@@ -1,6 +1,7 @@
 """Pure host/pipe/DTO cases. No Docker, native child, database or engine starts."""
 import copy
 import base64
+import builtins
 import datetime
 import importlib.util
 import io
@@ -88,11 +89,12 @@ class PureHost(unittest.TestCase):
         self.config = {'nonce': self.nonce, 'repository': str(self.base / 'repo'), 'runtime': {'imageId': 'sha256:' + 'b' * 64},
                        'parent': 'helmut-meter-memorybudget-' + 'c' * 24, 'parentDevice': 1, 'parentInode': 2,
                        'nodePin': self.pin('/opt/original/bin/node'), 'actualSourceContainerId': 'd' * 64, 'sourceCodePins': [],
-                       'executionHost': {'clientRuntimePins': [], 'postgrestPin': self.pin('/opt/original/postgrest')}, 'runtimeBindings': []}
+                       'executionHost': {'clientRuntimePins': [], 'ownerRuntimeBindings': [], 'postgrestPin': self.pin('/opt/original/postgrest')}, 'runtimeBindings': []}
         self.aliases = {k: self.pin('/opt/' + v) for k, v in [('owner', 'local-unit-native-owner.js'),
                      ('broker', 'local-unit-diagnostic-broker.js'), ('postgrest', 'postgrest-pinned')]}
         self.plan = {'nonce': self.nonce, 'volumes': {'ram': 'ram-own', 'run': 'run-own'}, 'aliasPins': self.aliases,
                      'sourceAliasMounts': [(str(self.case / k), v['path'], True) for k, v in self.aliases.items()],
+                     'sourceOwnerRuntimeMounts': [], 'ownerRuntimeCopies': [],
                      'nodeMount': (self.config['nodePin']['path'], self.config['nodePin']['path'], True), 'clientRuntimeMounts': [], 'knownSetupContainerIds': [],
                      'clientPublicSourceMounts': [], 'pythonMount': ('/opt/python/bin/python3.12', '/opt/python/bin/python3.12', True)}
         self.plan['dockerConfigDirectory'] = M.docker_config(self.case)
@@ -354,8 +356,12 @@ class PureHost(unittest.TestCase):
         self.config['executionHost']['postgrestPin'] = pins[2]
         nss = [{'imagePath': target, 'source': pins[0], 'readonly': True}
                for target in ('/etc/group', '/etc/nsswitch.conf', '/etc/passwd')]
-        self.config['runtimeBindings'] = nss
-        self.config['executionHost']['clientRuntimePins'] = nss
+        runtime = [{'imagePath': target, 'source': pin, 'readonly': True, 'reuseExisting': True} for target, pin in (
+            ('/lib64/ld-linux-x86-64.so.2', pins[3]), ('/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2', pins[3]),
+            ('/usr/lib/x86_64-linux-gnu/libc.so.6', pins[2]))]
+        self.config['runtimeBindings'] = nss + runtime
+        self.config['executionHost']['clientRuntimePins'] = nss + runtime
+        self.config['executionHost']['ownerRuntimeBindings'] = runtime
         group = self.base / 'group'; group.mkdir(); g = group.stat()
         self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
         volumes = {}; commands = []
@@ -378,10 +384,16 @@ class PureHost(unittest.TestCase):
             installed.append((public, actual_group))
             for key, p, _, mode in public:
                 M.write_once(alias_dir / key, Path(p['path']).read_bytes(), mode)
+            for row in M.owner_runtime_copies(config, alias_dir):
+                M.write_once(row['copy']['path'], Path(row['originalSource']['path']).read_bytes(), row['mode'])
             return {'containerId': '9' * 64, 'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True}
         native = types.SimpleNamespace(docker=docker, parent_path=lambda _: group)
         self.remove_config()
-        with patch.object(M, '_install_aliases', install):
+        actual_metadata_pin = M.metadata_pin
+        def synthetic_actor_metadata(pin, uid=None, mode=None):
+            if uid is not None: self.assertTrue(uid == 1000)
+            return actual_metadata_pin(pin, uid=os.getuid() if uid is not None else None, mode=mode)
+        with (patch.object(M, '_install_aliases', install), patch.object(M, 'metadata_pin', synthetic_actor_metadata)):
             plan = M.prepare_execution(native, self.supervisor, self.config, self.case)
         self.assertTrue(len(volumes) == 2 and len(plan['sourceAliasMounts']) == 3 and plan['nodeMount'] == (pins[3]['path'], pins[3]['path'], True))
         self.assertTrue(any('size=268435456,uid=1000,gid=1000,mode=0711' in v['Options']['o'] for v in volumes.values()))
@@ -392,7 +404,13 @@ class PureHost(unittest.TestCase):
         self.assertTrue(all(c[:2] in (['volume', 'inspect'], ['volume', 'create']) for c in commands))
         self.assertTrue(len(installed) == 1 and installed[0][1] == group and plan['knownSetupContainerIds'] == ['9' * 64])
         self.assertTrue(len(plan['clientPublicSourceMounts']) == 6 and plan['pythonMount'] == (self.config['pythonExecutable'], self.config['pythonExecutable'], True))
-        self.assertEqual({target for _, target, _ in plan['clientRuntimeMounts']}, {r['imagePath'] for r in nss})
+        self.assertEqual({target for _, target, _ in plan['clientRuntimeMounts']}, {r['imagePath'] for r in nss + runtime})
+        self.assertTrue(plan['clientRuntimeMounts'] == [(r['source']['path'], r['imagePath'], True) for r in nss + runtime])
+        self.assertTrue(len(plan['ownerRuntimeCopies']) == 3 and [r['mode'] for r in plan['ownerRuntimeCopies']] == [0o555, 0o555, 0o444])
+        for row, original in zip(plan['ownerRuntimeCopies'], runtime):
+            self.assertTrue(row['originalSource'] == original['source'] and row['imagePath'] == original['imagePath']
+                            and row['installerContainerId'] == '9' * 64)
+            self.assertTrue((row['copy']['path'], row['imagePath'], True) in plan['sourceOwnerRuntimeMounts'])
 
     def test_runtime_nss_exception_does_not_allow_other_etc_inputs(self):
         group = self.base / 'group'; group.mkdir(); g = group.stat()
@@ -406,6 +424,59 @@ class PureHost(unittest.TestCase):
             with self.subTest(target=target), self.assertRaisesRegex(RuntimeError, 'public-runtime-target'):
                 M.prepare_execution(native, self.supervisor, self.config, self.case)
             (self.case / 'owner-public').rmdir()
+
+    def runtime_subset(self):
+        loader = self.pin('/original/runtime/loader', b'synthetic-loader')
+        libc = self.pin('/original/runtime/libc', b'synthetic-libc')
+        rows = [{'source': p, 'imagePath': target, 'readonly': True, 'reuseExisting': True} for p, target in (
+            (loader, '/lib64/ld-linux-x86-64.so.2'), (loader, '/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2'),
+            (libc, '/usr/lib/x86_64-linux-gnu/libc.so.6'))]
+        self.config['runtimeBindings'] = copy.deepcopy(rows)
+        self.config['executionHost']['ownerRuntimeBindings'] = copy.deepcopy(rows)
+        return rows
+
+    def test_owner_runtime_subset_keeps_pins_targets_and_loader_modes(self):
+        rows = self.runtime_subset(); original = copy.deepcopy(self.config)
+        copies = M.owner_runtime_copies(self.config, self.case / 'owner-public')
+        self.assertTrue(len(copies) == 3 and [r['mode'] for r in copies] == [0o555, 0o555, 0o444])
+        for index, row in enumerate(copies):
+            self.assertTrue(row['originalSource'] == rows[index]['source'] and row['imagePath'] == rows[index]['imagePath'])
+            self.assertTrue(row['copy'] == {**rows[index]['source'], 'path': str(self.case / 'owner-public' / ('runtime-%03d' % index))})
+        self.assertTrue(self.config == original)
+
+    def test_owner_runtime_rejects_pin_change_extra_private_target_and_duplicates(self):
+        rows = self.runtime_subset()
+        for change in ('pin', 'extra', 'private', 'duplicate', 'no-loader', 'writable', 'traversal'):
+            self.config['runtimeBindings'] = copy.deepcopy(rows)
+            selected = copy.deepcopy(rows); self.config['executionHost']['ownerRuntimeBindings'] = selected
+            if change == 'pin': selected[2]['source']['sha256'] = '0' * 64
+            elif change == 'extra': selected[2]['unexpected'] = True; self.config['runtimeBindings'] = copy.deepcopy(selected)
+            elif change == 'private': selected[2]['source']['path'] = '/original/PGDATA/data'; self.config['runtimeBindings'] = copy.deepcopy(selected)
+            elif change == 'duplicate': selected.append(copy.deepcopy(selected[0]))
+            elif change == 'no-loader': selected.pop(0)
+            elif change == 'writable': selected[2]['readonly'] = False; self.config['runtimeBindings'] = copy.deepcopy(selected)
+            elif change == 'traversal': selected[2]['imagePath'] = '/usr/lib/../secret'; self.config['runtimeBindings'] = copy.deepcopy(selected)
+            with self.subTest(change=change), self.assertRaises(RuntimeError):
+                M.owner_runtime_copies(self.config, self.case / 'owner-public')
+
+    def test_owner_runtime_installation_and_source_mounts_are_required_by_host(self):
+        self.runtime_subset()
+        copies = M.owner_runtime_copies(self.config, self.case / 'owner-public')
+        self.plan['ownerRuntimeCopies'] = [{**r, 'installerContainerId': '9' * 64} for r in copies]
+        self.plan['sourceOwnerRuntimeMounts'] = [(r['copy']['path'], r['imagePath'], True) for r in copies]
+        self.plan['knownSetupContainerIds'] = ['9' * 64]
+        self.plan['installerProcessClose'] = {'containerId': '9' * 64}
+        observed = []
+        with patch.object(M, 'metadata_pin', lambda pin, **options: observed.append((pin, options))):
+            with self.assertRaisesRegex(RuntimeError, 'source-public-mount-closure'):
+                M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {}, 'd' * 64, self.mounts, self.plan)
+            mounts = self.mounts + self.plan['sourceOwnerRuntimeMounts']
+            host = M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {}, 'd' * 64, mounts, self.plan)
+            self.assertTrue(host.source_mounts == mounts and all(o == {'uid': 1000, 'mode': r['mode']}
+                for (_, o), r in zip(observed[-3:], copies)))
+            self.plan['ownerRuntimeCopies'][0]['copy']['sha256'] = '0' * 64
+            with self.assertRaisesRegex(RuntimeError, 'source-owner-runtime-provenance'):
+                M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {}, 'd' * 64, mounts, self.plan)
 
     def test_only_six_public_external_sources_and_exact_python_pin_allowed(self):
         self.public_sources()
@@ -1155,6 +1226,78 @@ class PurePipes(unittest.TestCase):
         self.assertTrue(metadata['termSent'] and metadata['killSent'] and metadata['exitCode'] == -9
                         and metadata['stdoutNaturalEOF'] is False and metadata['stderrNaturalEOF'] is False
                         and metadata['remoteExitConfirmed'] is False)
+
+
+class PureInstaller(unittest.TestCase):
+    """Execute fixed copy code with synthetic proc/actor facts, never a child."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='helmut-installer-pure-'); self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name); self.output = self.root / 'output'; self.output.mkdir()
+        self.group = self.root / 'group'; self.group.mkdir(); g = self.group.stat()
+        self.request = {'files': [], 'group': {'device': g.st_dev, 'inode': g.st_ino}}
+        targets = [('owner', '/opt/local-unit-native-owner.js', b'synthetic-owner', 0o444),
+                   ('broker', '/opt/local-unit-diagnostic-broker.js', b'synthetic-broker', 0o444),
+                   ('postgrest', '/opt/postgrest-pinned', b'synthetic-rest', 0o555),
+                   ('runtime-000', '/lib64/ld-linux-x86-64.so.2', b'synthetic-loader', 0o555),
+                   ('runtime-001', '/usr/lib/x86_64-linux-gnu/libc.so.6', b'synthetic-libc', 0o444)]
+        self.originals = []
+        for index, (name, target, raw, mode) in enumerate(targets):
+            source = self.root / ('source-%d' % index); source.write_bytes(raw); source.chmod(0o600); self.originals.append(source)
+            self.request['files'].append({'source': {'path': str(source), 'bytes': len(raw), 'sha256': M.sha(raw)},
+                'target': '/output/' + name, 'imagePath': target, 'mode': mode})
+
+    def run_fixed(self):
+        real_open, real_fd_open, real_stat, real_lstat, real_fstat = builtins.open, M.os.open, M.os.stat, M.os.lstat, M.os.fstat
+        def mapped(path):
+            text = os.fsdecode(path)
+            return str(self.output) + text[len('/output'):] if text == '/output' or text.startswith('/output/') else path
+        def actor(info):
+            values = {k: getattr(info, k) for k in ('st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_gid', 'st_nlink', 'st_size', 'st_mtime_ns', 'st_ctime_ns')}
+            values.update(st_uid=1000, st_gid=1000); return types.SimpleNamespace(**values)
+        status = 'Uid: 1000 1000 1000 1000\nGid: 1000 1000 1000 1000\nNoNewPrivs: 1\n' + ''.join(
+            name + ': 0\n' for name in ('CapInh', 'CapPrm', 'CapEff', 'CapBnd', 'CapAmb'))
+        proc = {'/proc/self/status': status, '/proc/self/cgroup': '0::/\n',
+                '/proc/self/stat': '1 (synthetic-python) S ' + ' '.join(['0'] * 18 + ['123'])}
+        def opened(path, *args, **kwargs):
+            return io.StringIO(proc[str(path)]) if str(path) in proc else real_open(mapped(path), *args, **kwargs)
+        captured = io.StringIO(); payload = io.TextIOWrapper(io.BytesIO(M.encode(self.request)), encoding='utf8')
+        with (patch.object(builtins, 'open', opened), patch.object(M.os, 'getuid', lambda: 1000),
+              patch.object(M.os, 'getgid', lambda: 1000), patch.object(M.os, 'readlink', lambda p: 'pid:[42]'),
+              patch.object(M.os, 'stat', lambda p, *a, **k: real_stat(self.group if str(p) == '/owned-group' else mapped(p), *a, **k)),
+              patch.object(M.os, 'lstat', lambda p, *a, **k: actor(real_lstat(mapped(p), *a, **k))),
+              patch.object(M.os, 'fstat', lambda fd: actor(real_fstat(fd))),
+              patch.object(M.os, 'open', lambda p, *a, **k: real_fd_open(mapped(p), *a, **k)),
+              patch('sys.stdin', payload), patch('sys.stdout', captured)):
+            try:
+                exec(compile(M.INSTALLER, '<fixed-installer-synthetic-proc>', 'exec'), {})
+            finally:
+                self.captured = captured.getvalue()
+
+    def test_fixed_installer_copies_only_explicit_bytes_and_preserves_original_modes(self):
+        self.run_fixed()
+        records = [M.unique(line) for line in self.captured.splitlines()]
+        self.assertTrue(len(records) == 2 and records[1]['schema'] == 'helmut-local-unit-alias-installer-result/1')
+        for row in self.request['files']:
+            target = self.output / Path(row['target']).name
+            self.assertTrue(target.read_bytes() == Path(row['source']['path']).read_bytes()
+                            and target.stat().st_mode & 0o777 == row['mode'] and target.stat().st_nlink == 1)
+        self.assertTrue(all(p.stat().st_mode & 0o777 == 0o600 for p in self.originals))
+        with self.assertRaises(FileExistsError): self.run_fixed()
+        self.assertTrue(len(self.captured.splitlines()) == 1)
+
+    def test_fixed_installer_wrong_hash_never_emits_success(self):
+        self.request['files'][-1]['source']['sha256'] = '0' * 64
+        with self.assertRaises(AssertionError): self.run_fixed()
+        self.assertTrue(len(self.captured.splitlines()) == 1)
+
+    def test_fixed_installer_runtime_target_or_mode_cannot_be_freely_chosen(self):
+        for bad in ('target', 'mode'):
+            row = self.request['files'][-1]
+            if bad == 'target': row['target'] = '/output/../../private'
+            else: row.update(target='/output/runtime-001', mode=0o777)
+            for p in self.output.iterdir(): p.unlink()
+            with self.subTest(bad=bad), self.assertRaises(AssertionError): self.run_fixed()
+            self.assertTrue(len(self.captured.splitlines()) == 1)
 
 
 class PureObserverVM(unittest.TestCase):

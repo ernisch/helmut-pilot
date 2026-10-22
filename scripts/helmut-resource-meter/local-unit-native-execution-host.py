@@ -312,13 +312,14 @@ def publish_once(path, raw):
         os.close(directory)
 
 
-def metadata_pin(pin):
+def metadata_pin(pin, uid=None, mode=None):
     """The existing measured source registry owns bytes; do not warm them here."""
     pin_shape(pin); path = canonical(pin['path'])
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     try:
         s = os.fstat(fd)
         need(stat.S_ISREG(s.st_mode) and s.st_nlink == 1 and s.st_size == pin['bytes']
+             and (uid is None or s.st_uid == s.st_gid == uid) and (mode is None or stat.S_IMODE(s.st_mode) == mode)
              and identity(s) == identity(path.lstat()), 'public-source-metadata')
     finally:
         os.close(fd)
@@ -355,11 +356,43 @@ def public_source_mounts(supervisor, config):
     return [(name, name, True) for name in expected], (python, python, True)
 
 
+def owner_runtime_copies(config, alias_dir):
+    """Explicit public ELF closure only; original runtime bytes stay untouched."""
+    rows = config['executionHost']['ownerRuntimeBindings']
+    need(type(rows) is list and len(rows) <= 64, 'owner-runtime-count')
+    registry = {}
+    for row in config['runtimeBindings']:
+        target = row['imagePath']
+        need(target not in registry, 'runtime-target-duplicate')
+        registry[target] = row
+    targets = [r['imagePath'] for r in rows]
+    need(len(set(targets)) == len(targets), 'owner-runtime-target-duplicate')
+    loader = next((r for r in rows if r['imagePath'] == '/lib64/ld-linux-x86-64.so.2'), None)
+    need(not rows or loader is not None, 'owner-runtime-loader-required')
+    copies, total = [], 0
+    for index, row in enumerate(rows):
+        need(type(row) is dict and set(row) in ({'source', 'imagePath', 'readonly'}, {'source', 'imagePath', 'readonly', 'reuseExisting'})
+             and ('reuseExisting' not in row or row['reuseExisting'] is True) and row['readonly'] is True
+             and row == registry.get(row['imagePath']), 'owner-runtime-exact-source')
+        pin, target = row['source'], row['imagePath']; pin_shape(pin)
+        need(type(target) is str and target.startswith(('/usr/lib/', '/lib/', '/lib64/'))
+             and str(Path(target)) == target and '..' not in Path(target).parts
+             and not any(x in target for x in (',', '\0', '\r', '\n'))
+             and not any(x in pin['path'].lower() for x in ('.private.', '/pgdata/', '/.env', 'hmac')), 'owner-public-runtime-target')
+        total += pin['bytes']; need(total <= 32 * 1024**2, 'owner-runtime-byte-cap')
+        mode = 0o555 if (pin['bytes'], pin['sha256']) == (loader['source']['bytes'], loader['source']['sha256']) else 0o444
+        copies.append({'originalSource': pin, 'copy': {**pin, 'path': str(alias_dir / ('runtime-%03d' % index))},
+                       'imagePath': target, 'mode': mode})
+    return copies
+
+
 def prepare_execution(native, supervisor, config, case):
     """AFTER native.start, before Source: measured aliases and two owned volumes.
 
     Add sourceVolumeMounts/sourceAliasMounts/nodeMount to the Source create args;
     replace the former /ram tmpfs and whole Node-directory bind, never stack them.
+    sourceOwnerRuntimeMounts replace only their exact original runtime ABI binds;
+    ownerRuntimeCopies retains original/copy pins and the measured installer CID.
     The caller retains plan.volumes and setup identities for final accounting.
     """
     nonce, case = config['nonce'], canonical(case)
@@ -367,7 +400,7 @@ def prepare_execution(native, supervisor, config, case):
     need(re.fullmatch('[a-f0-9]{32}', nonce) and case == BASE / nonce, 'fresh-case')
     directory = docker_config(case)
     e = config['executionHost']
-    need(set(e) == {'postgrestPin', 'clientRuntimePins'}, 'preparation-config')
+    need(set(e) == {'postgrestPin', 'clientRuntimePins', 'ownerRuntimeBindings'}, 'preparation-config')
     group = native.parent_path(config['parent']); g = group.stat()
     need((g.st_dev, g.st_ino) == (config['parentDevice'], config['parentInode']), 'installation-common-parent')
     pins = {Path(p['path']).name: p for p in config['sourceCodePins']}
@@ -380,6 +413,7 @@ def prepare_execution(native, supervisor, config, case):
         pin_shape(p)
         aliases[key] = {**p, 'path': target}
         mounts.append((str(alias_dir / key), target, True))
+    owner_copies = owner_runtime_copies(config, alias_dir)
     node = config['nodePin']; pin_shape(node)
     allowed = {(r['source']['path'], r['imagePath']): r for r in config['runtimeBindings']}
     runtime_mounts = []
@@ -393,6 +427,8 @@ def prepare_execution(native, supervisor, config, case):
         runtime_mounts.append((r['source']['path'], target, True))
     public_mounts, python_mount = public_source_mounts(supervisor, config)
     setup = _install_aliases(native, supervisor, config, alias_dir, public, group, directory)
+    for row in owner_copies:
+        metadata_pin(row['copy'], uid=1000, mode=row['mode'])
     volumes = {'ram': 'helmut-unitdiag-ram-' + nonce, 'run': 'helmut-unitdiag-run-' + nonce}
     volume_rows = []
     for key, size, uid, mode in [('ram', 268435456, 1000, '0711'), ('run', 16777216, 0, '0755')]:
@@ -412,6 +448,8 @@ def prepare_execution(native, supervisor, config, case):
     return {'schema': 'helmut-local-unit-native-execution-plan/1', 'dockerConfigDirectory': directory, 'nonce': nonce, 'volumes': volumes, 'aliasPins': aliases,
             'sourceVolumeMounts': ['type=volume,src=' + volumes['ram'] + ',dst=/ram', 'type=volume,src=' + volumes['run'] + ',dst=/run'],
             'sourceAliasMounts': mounts, 'nodeMount': (node['path'], node['path'], True), 'clientRuntimeMounts': runtime_mounts,
+            'sourceOwnerRuntimeMounts': [(r['copy']['path'], r['imagePath'], True) for r in owner_copies],
+            'ownerRuntimeCopies': [{**r, 'installerContainerId': setup['containerId']} for r in owner_copies],
             'clientPublicSourceMounts': public_mounts, 'pythonMount': python_mount,
             'knownSetupContainerIds': [setup['containerId']], 'installerProcessClose': setup}
 
@@ -809,13 +847,25 @@ p=os.getpid();s=open('/proc/self/stat').read().rsplit(')',1)[1].split()
 assert s[0] not in ('Z','X') and open('/proc/self/cgroup').read()=='0::/\n'
 print(json.dumps({'schema':'helmut-local-unit-alias-installer-ready/1','pid':p,'startTicks':s[19],
  'pidNamespace':os.readlink('/proc/self/ns/pid')},separators=(',',':')),flush=True)
-v=json.loads(sys.stdin.buffer.read(16385));assert set(v)=={'files','group'} and len(v['files'])==3
+wire=sys.stdin.buffer.read(65537);assert len(wire)<=65536
+v=json.loads(wire);assert set(v)=={'files','group'} and 3<=len(v['files'])<=67
 g=os.stat('/owned-group');assert (g.st_dev,g.st_ino)==(v['group']['device'],v['group']['inode'])
 meta=lambda s:tuple(getattr(s,k) for k in ('st_dev','st_ino','st_mode','st_uid','st_gid','st_nlink','st_size','st_mtime_ns','st_ctime_ns'))
+runtime=v['files'][3:];loader=next((r for r in runtime if r['imagePath']=='/lib64/ld-linux-x86-64.so.2'),None)
+assert not runtime or loader is not None
+assert len({r['imagePath'] for r in runtime})==len(runtime) and sum(r['source']['bytes'] for r in runtime)<=32*1024**2
 out=[]
-for row in v['files']:
- src=row['source'];target=row['target'];assert target in ('/output/owner','/output/broker','/output/postgrest')
- assert row['mode']==(0o555 if target.endswith('/postgrest') else 0o444) and os.path.realpath(src['path'])==src['path']
+for index,row in enumerate(v['files']):
+ assert set(row)=={'source','target','mode','imagePath'}
+ src=row['source'];target=row['target'];assert set(src)=={'path','bytes','sha256'} and os.path.realpath(src['path'])==src['path']
+ if index<3:
+  assert target==('/output/owner','/output/broker','/output/postgrest')[index]
+  assert row['imagePath']==('/opt/local-unit-native-owner.js','/opt/local-unit-diagnostic-broker.js','/opt/postgrest-pinned')[index]
+  assert row['mode']==(0o555 if index==2 else 0o444)
+ else:
+  assert target=='/output/runtime-%03d'%(index-3) and row['imagePath'].startswith(('/usr/lib/','/lib/','/lib64/'))
+  assert '..' not in row['imagePath'].split('/') and not any(c in row['imagePath'] for c in (',','\0','\r','\n'))
+  assert row['mode']==(0o555 if (src['bytes'],src['sha256'])==(loader['source']['bytes'],loader['source']['sha256']) else 0o444)
  f=os.open(src['path'],os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
  d=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW|os.O_NONBLOCK,0o600)
  try:
@@ -847,6 +897,10 @@ print(json.dumps({'schema':'helmut-local-unit-alias-installer-result/1','files':
 
 def _install_aliases(native, supervisor, config, alias_dir, public, group, directory):
     """The host handles bounded metadata only; all new content/cache is owned."""
+    copies = owner_runtime_copies(config, alias_dir)
+    files = [{'source': pin, 'target': '/output/' + key, 'mode': mode, 'imagePath': target} for key, pin, target, mode in public]
+    files += [{'source': row['originalSource'], 'target': '/output/' + Path(row['copy']['path']).name,
+               'mode': row['mode'], 'imagePath': row['imagePath']} for row in copies]
     mounts = {str(target): (str(source), bool(ro)) for source, target, ro in
               [(alias_dir, '/output', False), (supervisor.PYTHON, supervisor.PYTHON, True), (group, '/owned-group', True),
                (config['nodePin']['path'], config['nodePin']['path'], True)]}
@@ -856,6 +910,9 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group, direc
         need(target not in mounts or mounts[target] == (source, True), 'installer-mount-collision'); mounts[target] = (source, True)
     for _, pin, _, _ in public:
         source = pin['path']; need(source not in mounts or mounts[source] == (source, True), 'installer-source-collision'); mounts[source] = (source, True)
+    for copy in copies:
+        source = copy['originalSource']['path']
+        need(source not in mounts or mounts[source] == (source, True), 'installer-runtime-source-collision'); mounts[source] = (source, True)
     argv = ['create', '--interactive', '--name', 'helmut-unitdiag-aliases-' + config['nonce'], '--network', 'none', '--read-only', '--cap-drop', 'ALL',
             '--security-opt', 'no-new-privileges', '--user', '1000:1000', '--cgroup-parent=/' + config['parent'], '--cgroupns', 'private',
             '--log-driver', 'none', '--env', 'HOSTNAME', '--entrypoint', str(supervisor.PYTHON / 'bin/python3.12')]
@@ -894,14 +951,15 @@ def _install_aliases(native, supervisor, config, alias_dir, public, group, direc
                 observed = sample['processes'][0]
                 need(ready['pid'] == observed['namespacePID'] and ready['startTicks'] == observed['startTicks']
                      and ready['pidNamespace'] == observed['namespaces']['pid'] and observed['exe'] == str(supervisor.PYTHON / 'bin/python3.12'), 'actual-installer-process')
-                child.supply(encode({'files': [{'source': p, 'target': '/output/' + key, 'mode': mode} for key, p, _, mode in public],
-                                     'group': {'device': config['parentDevice'], 'inode': config['parentInode']}})); supplied = True
+                payload = encode({'files': files,
+                                  'group': {'device': config['parentDevice'], 'inode': config['parentInode']}})
+                need(len(payload) <= 65536, 'installer-input-cap'); child.supply(payload); supplied = True
             if done:
                 close = child.close_metadata()
                 need(supplied and close['exitCode'] == 0 and row['State']['ExitCode'] == 0 and not row['State']['Running']
                      and len(lines) == 2 and bytes(child.output[0]).endswith(b'\n'), 'actual-installer-close')
                 result = unique(lines[1]); need(result == {'schema': 'helmut-local-unit-alias-installer-result/1',
-                    'files': [{'path': '/output/' + key, 'bytes': p['bytes'], 'sha256': p['sha256']} for key, p, _, _ in public]}, 'actual-installer-result')
+                    'files': [{'path': f['target'], 'bytes': f['source']['bytes'], 'sha256': f['source']['sha256']} for f in files]}, 'actual-installer-result')
                 return {'containerId': cid, 'process': observed, **close, 'observerProcessClose': sample['close']}
             time.sleep(.02)
     except BaseException as error:
@@ -1004,7 +1062,15 @@ class NativeExecutionHost:
         self.source_mounts, self.plan = source_mounts, plan
         need(self.case == BASE / config['nonce'] and plan['nonce'] == config['nonce'] and HASH.fullmatch(source_id)
              and config['actualSourceContainerId'] == source_id, 'host-case')
-        required_mounts = {tuple(x) for x in [*plan['sourceAliasMounts'], plan['nodeMount']]}
+        copies = owner_runtime_copies(config, self.case / 'owner-public')
+        expected_mounts = [(r['copy']['path'], r['imagePath'], True) for r in copies]
+        need([tuple(r) for r in plan['sourceOwnerRuntimeMounts']] == expected_mounts, 'source-owner-runtime-plan')
+        installer = plan.get('installerProcessClose', {}).get('containerId')
+        need(plan['ownerRuntimeCopies'] == [{**r, 'installerContainerId': installer} for r in copies], 'source-owner-runtime-provenance')
+        for row in copies:
+            need(installer in plan['knownSetupContainerIds'], 'source-owner-runtime-installer')
+            metadata_pin(row['copy'], uid=1000, mode=row['mode'])
+        required_mounts = {tuple(x) for x in [*plan['sourceAliasMounts'], *plan['sourceOwnerRuntimeMounts'], plan['nodeMount']]}
         need(required_mounts <= {tuple(map(str, x[:2])) + (x[2],) for x in source_mounts}, 'source-public-mount-closure')
         node = Path(config['nodePin']['path'])
         need(not any(str(t) != str(node) and node.is_relative_to(Path(t)) for _, t, _ in source_mounts), 'original-node-single-file-mount')
