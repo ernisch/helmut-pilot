@@ -43,8 +43,16 @@ Ausführungsfreigabe; vollständige Expansion und Befehlsabnahme bleiben ungepr�
 
 ## Weiter offene Ausführungsvoraussetzungen
 
-Authentischer POSTRUN-Auth-/Journalzustand und separat gepinnte vorbereitete
-Requests fehlen weiterhin. Ein neuer nativer Namensraum, frischer Quellruntime-
+Laut neuer Quellprüfung vom22.10. sind das unveränderte authentische POSTRUN-Abbild
+und alle vier angefragten Originalbindungen in der Quelle erhalten. Ein Zustand
+unmittelbar vor Index499 ist nicht belegt. Die veränderte Diagnosekopie und der
+Inputdump aus der Vorbereitung ersetzen das POSTRUN-Abbild nicht.
+Der vollständige Runtimeumfang ist wegen Auth-/Sitzungszustand nicht als secretfrei
+qualifiziert; die Bindungsliste und291von548Dateibindungen fehlen im Zieltransfer.
+Die spätere Diagnose muss daher in der Quelle mit einer getrennten Arbeitskopie
+und frisch gebundenem Zielcode vorbereitet werden. Die Quell-DB ist gestoppt.
+
+Ein neuer nativer Namensraum, frischer Quellruntime-
 und Ownernachweis, Kalenderverbraucher, Kostenfreigabe, exklusive Reservierung,
 Send-Claim sowie Review-/Ergebnisverbraucher und unabhängige Abnahme müssen erst
 als gesonderter Ausführungsvertrag umgesetzt und belegt werden. Alle diese

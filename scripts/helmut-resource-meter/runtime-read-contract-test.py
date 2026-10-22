@@ -58,6 +58,47 @@ class RuntimeReadContractTest(unittest.TestCase):
    self.assertTrue(any(Path(p).name==name for p in paths))
   for review in ['independentReview','transportClosure']:
    self.assertFalse(any(Path(p).name==descriptor['controlSourceAcceptance'][review]['name']for p in paths))
+  acceptance=descriptor['controlSourceAcceptance'];view=acceptance['localViewBindingCallerDelta']
+  self.assertEqual(view['file'],'lib/helmut/synthetik-500-production-adapter.js')
+  self.assertEqual(view['originalSHA256'],acceptance['localReadCallerDelta']['candidateSourceSHA256'][view['file']])
+  adapter=next(p for p in descriptor['sourcePins'] if p['path'].endswith('/'+view['file']))
+  self.assertEqual(view['sha256'],adapter['sha256']);self.assertNotEqual(view['sha256'],view['originalSHA256'])
+  self.assertTrue(view['requiresFreshIntegrationAcceptance'])
+  for key in ['newGlueAccepted','full500Accepted','RAMOrTimeGainAccepted']:self.assertIs(view[key],False)
+  review_pin=view['independentSourceReview']
+  review_path=BIN.parents[1]/'docs/betrieb/belege/local-view-binding-20261022'/review_pin['name']
+  review_bytes=review_path.read_bytes();self.assertEqual(len(review_bytes),review_pin['bytes'])
+  self.assertEqual(hashlib.sha256(review_bytes).hexdigest(),review_pin['sha256'])
+  reviewed=json.loads(review_bytes)
+  self.assertEqual(next(p for p in reviewed['sourcePins'] if p['file']==view['file'])['sha256'],view['sha256'])
+  self.assertEqual(reviewed['baselineAdapter']['sha256'],view['originalSHA256'])
+  self.assertIs(reviewed['historicalAcceptanceTransferred'],False)
+  self.assertIs(reviewed['executionAuthority'],False);self.assertIs(reviewed['nativeUnit60Qualified'],False)
+  self.assertNotIn(str(review_path),paths)
+  for kind in ['missing-review','forged-source-hash','forged-authority']:
+   bad=copy.deepcopy(descriptor)
+   if kind=='missing-review':del bad['controlSourceAcceptance']['localViewBindingCallerDelta']
+   elif kind=='forged-source-hash':bad['controlSourceAcceptance']['localViewBindingCallerDelta']['sha256']='0'*64
+   else:bad['controlSourceAcceptance']['localViewBindingCallerDelta']['full500Accepted']=True
+   altered=self.doc(kind+'-descriptor.json',bad)
+   reject="const assert=require('node:assert/strict'),AU=require(process.argv[1]);assert.throws(()=>AU.readDescriptor(JSON.parse(process.argv[2])),e=>e.code==='ERR_ASSERTION');"
+   with self.subTest(kind=kind):subprocess.run(['node','-e',reject,str(BIN/'atomic-usage-integration.js'),json.dumps(altered)],check=True,capture_output=True,text=True)
+  # A new exact reviewed hash still rejects changed actual adapter bytes and
+  # never masks disagreement with another separately supplied source delta.
+  conflicting=json.loads(Path(local_source_delta['path']).read_bytes())
+  conflicting['sourcePins'].append({'file':view['file'],'bytes':adapter['bytes'],'sha256':view['originalSHA256']})
+  conflicting_pin=self.doc('conflicting-reviewed-source-delta.SAFE.json',conflicting)
+  check=r"""
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const AU=require(process.argv[1]);
+const options={stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localSourceDeltaPin:JSON.parse(process.argv[3])};
+const d=AU.descriptor(options),view=d.controlSourceAcceptance.localViewBindingCallerDelta,read=fs.readFileSync;
+try{fs.readFileSync=function(file,...args){const b=read.call(this,file,...args);return String(file).endsWith('/'+view.file)?Buffer.concat([b,Buffer.from('\n')]):b;};
+ assert.throws(()=>AU.descriptor(options),/Reviewed control source drift/);
+}finally{fs.readFileSync=read;}
+assert.throws(()=>AU.descriptor({...options,localSourceDeltaPin:JSON.parse(process.argv[4])}),e=>e.code==='ERR_ASSERTION');
+"""
+  subprocess.run(['node','-e',check,str(BIN/'atomic-usage-integration.js'),'unused',json.dumps(local_source_delta),json.dumps(conflicting_pin)],check=True,capture_output=True,text=True)
   # Real visibility in the actual container remains a separate mandatory gate;
   # this file-list assertion does not fabricate its result.
   changed=self.doc('changed-descriptor.json',{**descriptor,'sourcePins':[{**descriptor['sourcePins'][0],'sha256':'0'*64}]})

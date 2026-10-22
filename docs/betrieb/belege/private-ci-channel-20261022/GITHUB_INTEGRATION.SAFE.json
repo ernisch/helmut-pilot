@@ -66,7 +66,48 @@
       "testsRunByReviewer": false
     },
     "actualNativeMotorLatencyMeasured": false,
-    "combinedHeadCI": "pending_separate_current_head_verification"
+    "combinedHeadCI": "failed_39756787129_exact_adapter_source_pin_drift",
+    "failedCombinedRun": {
+      "runURL": "https://github.com/ernisch/helmut-pilot/actions/runs/39756787129",
+      "headSHA": "e3eab26d99582233befbf76a2859d9610d59bf04",
+      "workflowConclusion": "failure",
+      "publicPlanAnd28Guards": "success",
+      "runPrCheckoutAndActualEnvironmentReview": "success",
+      "decryptedAndProvisionedOriginalFiles": 84,
+      "browser": "executed_success",
+      "failureStep": "Ressourcenstart und Originalbindungen (offline)",
+      "failureTest": "runtime-read-contract-test.py:test_control_descriptor_uses_shared_runtime_manifest_without_review_file_reads",
+      "cause": "Reviewed adapter hash still selected historical bytes after scalar hash handoff change",
+      "laterOfflineSteps": "skipped",
+      "encryptedDiagnosticArtifact": {
+        "id": 12416800927,
+        "bytes": 1806,
+        "digest": "sha256:5381e7b57ee63a7fb6aded617f290de72e95f13b22e0da8565dc2e3fb933fbec",
+        "digestVerified": true,
+        "decryptedLocally": true,
+        "plaintextPublished": false
+      }
+    },
+    "sourceBindingCorrection": {
+      "review": "docs/betrieb/belege/local-view-binding-20261022/SOURCE_REVIEW.SAFE.json",
+      "historicalAcceptancesPreserved": true,
+      "exactReviewedHashRequired": true,
+      "freshNativeIntegrationRequired": true,
+      "freshCombinedGitHubCI": "pending",
+      "rootTargetedVerification": {
+        "scope": "Exact previously failing resource-start workflow step",
+        "hostPython": "3.13",
+        "nodeVersion": "24.19.0",
+        "startPreflightTestsPassed": 19,
+        "resourceAuthorityTestsPassed": 31,
+        "preparationBindings": "pass_no_motor_database_or_provider",
+        "runtimeReadContractTestsPassed": 13,
+        "startInputCheckTestsPassed": 6,
+        "sanitizedEnvironment": true,
+        "nativeMotorRun": false,
+        "githubPython312Verification": "pending"
+      }
+    }
   },
   "keyPlacement": {
     "basis": "user-supplied complete GitHub settings screenshot",
@@ -81,5 +122,14 @@
   "full500Started": false,
   "unit60Qualified": false,
   "authenticPostrunStateRecovered": false,
-  "secretsIncluded": false
+  "secretsIncluded": false,
+  "sourceReport": {
+    "basis": "operator-provided source inspection result",
+    "authenticPostrunPreservedAtSource": true,
+    "preIndex499StateProved": false,
+    "sourceDatabaseRunning": false,
+    "secretFreeRuntimeScopeQualified": false,
+    "targetRestoreComplete": false,
+    "executionAuthorizedByThisReport": false
+  }
 }

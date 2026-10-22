@@ -1,6 +1,8 @@
 # CURRENT STATE — Helmut
 
-**Lokal 22.10.2026 Europe/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
+**Stand22.10.2026 Europe/Istanbul.** Letzter Production-Befund16.10.2026 13:07:32UTC,
+nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
+[Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
 ## 22.10.: Restore und geschützter CI-Originalkanal
 
@@ -10,14 +12,16 @@ Zeitmetadaten erklärt geändert.88/88Bytepins PASS,84CI+3V12 auch Metadaten gle
 7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld ausgeschlossen.
 [Restore](betrieb/private-ci-original-provisioning-20261021.md).
 Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weiter inert.
-POSTRUN-Auth/Journal, Requests/native Verbraucher offen; alte GOs verbraucht.
+Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
+Runtimebindungen/native Verbraucher offen; alte GOs verbraucht, Quell-DB gestoppt.
 [Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
 PR930 und Integrationen929/931 grün: je84Originale,180Standard-/335Bereichssuiten,
 angeforderte DB-Checks PASS. Browser929 PASS,931 bewusst übersprungen; Logs verschlüsselt.
 PR931 als57a64670 in929 übernommen; Quellbaum gleich zum geprüften d2d1f7ad.
 [CI-Beleg](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
 Views-Hashwiederverwendung26gezielte Checks+Pro-Review PASS, frische Guards erhalten.
-Neue gemeinsame CI offen; Unit60, Voll500/Productionnachweis und App403 separat offen.
+Gemeinsame CI39756787129 scheitert am Adapterpin; separater Reviewpin lokal korrigiert.
+Frische CI, Unit60, Voll500/Productionnachweis und App403 bleiben offen.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
