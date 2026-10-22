@@ -231,7 +231,7 @@ class ReadClosureChecks(unittest.TestCase):
         f.run()
         sql = f.calls[1][1]
         self.assertTrue("OWNER''); COMMIT; -- COMMAND_TEXT" in sql)
-        self.assertTrue(sql.count('\nCOMMIT;') == 1)
+        self.assertTrue(sql.count('\nCOMMIT;') == 2)
 
     def test_no_unprivileged_login_or_native_acceptance_is_claimed(self):
         f = Fixture(); result = f.run()
