@@ -467,7 +467,7 @@ as $f$
 declare a helmut_unit_diagnostic.authority%rowtype; c jsonb; ad jsonb; k text; j jsonb; co jsonb; sl jsonb; rr jsonb;
   phase text; intent jsonb; call jsonb; attempt jsonb; t jsonb; ticket_id text; total bigint:=0; reserved_total bigint:=0;
   phase_reserved bigint; phase_output bigint;
-  completion jsonb; artifact_hash text; n integer; v jsonb;
+  completion jsonb; artifact_hash text; n integer; v jsonb; result_value jsonb; verification jsonb;
 begin
   select * into strict a from helmut_unit_diagnostic.authority where scope_hash=s;
   c:=a.command_canonical::jsonb;ad:=a.admission_canonical::jsonb;k:='localUnitDiagnostic:'||right(a.operation_id,32)||':';
@@ -599,30 +599,30 @@ begin
       or v->>'ticketId' is distinct from j#>>array['attempts',phase,'ticketId']
       or v->>'requestHash' is distinct from j#>>array['attempts',phase,'requestHash'] then raise exception 'local-unit-store-send-claim-shape';end if;
   end loop;
-  v:=d->(k||'result');
-  if v->>'state'='pending' then
-    if v is distinct from '{"state":"pending","evidenceHash":null,"positions":[]}'::jsonb then raise exception 'local-unit-store-pending-result';end if;
-  elsif v->>'state'='retained-unreviewed' then
-    if not helmut_unit_diagnostic.exact(v,array['state','evidenceHash','positions']) or jsonb_array_length(v->'positions')<>3
-      or (select count(distinct value->>'bereich') from jsonb_array_elements(v->'positions'))<>3
-      or exists(select from jsonb_array_elements(v->'positions') p where p->>'bereich' not in ('lage','mandatsbriefing','morgenbriefing')
+  result_value:=d->(k||'result');
+  if result_value->>'state'='pending' then
+    if result_value is distinct from '{"state":"pending","evidenceHash":null,"positions":[]}'::jsonb then raise exception 'local-unit-store-pending-result';end if;
+  elsif result_value->>'state'='retained-unreviewed' then
+    if not helmut_unit_diagnostic.exact(result_value,array['state','evidenceHash','positions']) or jsonb_array_length(result_value->'positions')<>3
+      or (select count(distinct value->>'bereich') from jsonb_array_elements(result_value->'positions'))<>3
+      or exists(select from jsonb_array_elements(result_value->'positions') p where p->>'bereich' not in ('lage','mandatsbriefing','morgenbriefing')
         or p->>'owner' is distinct from c#>>'{units,0,subject}'
         or not exists(select from helmut_unit_diagnostic.artifacts x where x.scope_hash=s and x.kind=p->>'bereich' and x.body_hash=p->>'hash'))
-      or not exists(select from helmut_unit_diagnostic.artifacts x where x.scope_hash=s and x.kind='evidence' and x.body_hash=v->>'evidenceHash') then
+      or not exists(select from helmut_unit_diagnostic.artifacts x where x.scope_hash=s and x.kind='evidence' and x.body_hash=result_value->>'evidenceHash') then
       raise exception 'local-unit-store-result-artifacts';end if;
   else raise exception 'local-unit-store-result-state';end if;
   if j->>'state'='closed' then
     if exists(select from helmut_unit_diagnostic.artifacts where scope_hash=s and kind='evidence' and body?'failure') then raise exception 'local-unit-store-failed-evidence-no-close';end if;
-    v:=(select body->'verification' from helmut_unit_diagnostic.artifacts where scope_hash=s and kind='evidence');
-    perform helmut_unit_diagnostic.verify_controls(v,s,j->>'claimId');
+    verification:=(select body->'verification' from helmut_unit_diagnostic.artifacts where scope_hash=s and kind='evidence');
+    perform helmut_unit_diagnostic.verify_controls(verification,s,j->>'claimId');
     if not helmut_unit_diagnostic.exact(j->'verification',array['authorizationHash','controlsHash','controlCount'])
       or j#>>'{verification,controlCount}' is distinct from '16'
-      or j#>>'{verification,authorizationHash}' is distinct from helmut_unit_diagnostic.sha(helmut_unit_diagnostic.verification_canonical(v->'authorization'))
-      or j#>>'{verification,controlsHash}' is distinct from helmut_unit_diagnostic.sha(helmut_unit_diagnostic.verification_canonical(v->'controls')) then raise exception 'local-unit-store-final-verification';end if;
+      or j#>>'{verification,authorizationHash}' is distinct from helmut_unit_diagnostic.sha(helmut_unit_diagnostic.verification_canonical(verification->'authorization'))
+      or j#>>'{verification,controlsHash}' is distinct from helmut_unit_diagnostic.sha(helmut_unit_diagnostic.verification_canonical(verification->'controls')) then raise exception 'local-unit-store-final-verification';end if;
   end if;
   if j->>'state'='closed' and (j->>'index'<>'1' or j->'inFlight'<>'null'::jsonb or j->>'stopRequested'<>'false'
     or j#>>'{attempts,D,status}' is distinct from 'accounted' or j#>>'{attempts,R,status}' is distinct from 'accounted'
-    or v->>'state' is distinct from 'retained-unreviewed') then raise exception 'local-unit-store-close-receipts';end if;
+    or result_value->>'state' is distinct from 'retained-unreviewed') then raise exception 'local-unit-store-close-receipts';end if;
 end;$f$;
 
 create function helmut_unit_diagnostic.state_guard() returns trigger
