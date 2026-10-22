@@ -5,20 +5,19 @@
 ## 22.10.: Restore und geschützter CI-Originalkanal
 
 13.527Dateien hashverifiziert; physische DB-Kopien fehlen. Manifest+9Negativgruppen PASS.
-STANDARD180/180 auf87c439 PASS; danach Contracttest-Storemutation entdeckt.
-Testfix4Fälle PASS, Store bytegenau restauriert; Zeitmetadaten erklärt geändert.
-88/88Bytepins unabhängig PASS;84CI+3V12 auch metadatengetreu unverändert.
-7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld nicht übertragen.
-[Restore/Prüfungen](betrieb/private-ci-original-provisioning-20261021.md).
-Einzelunit-Vorbereitung499→0 lokal+GitHub43/43 PASS; weiterhin inert.
-POSTRUN-Auth/Journal, Requests und native Verbraucher offen; alte GOs verbraucht.
-[Diagnoseumfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
-PR930/3424469c: GHA39745628626 grün. Freigabe/Checkout,
-Entschlüsselung+84Originalpins,180Standard-/335Bereichssuiten,DB+Browser PASS;
-Diagnosen verschlüsselt bis29.10.; PR930 in929 gemergt:
-eb4bfd61: identischer Quellbaum; Integrations-CI offen.
-[GitHub-Abnahme](betrieb/belege/private-ci-channel-20261022/GITHUB_ACCEPTANCE_39745628626.SAFE.json).
-App403 separat offen; kein neuer Voll500/Productionnachweis.
+Contracttest-Storemutation: Fix4Fälle PASS, Store bytegenau restauriert;
+Zeitmetadaten erklärt geändert.88/88Bytepins PASS,84CI+3V12 auch Metadaten gleich.
+7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld ausgeschlossen.
+[Restore](betrieb/private-ci-original-provisioning-20261021.md).
+Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weiter inert.
+POSTRUN-Auth/Journal, Requests/native Verbraucher offen; alte GOs verbraucht.
+[Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
+PR930 und Integrationen929/931 grün: je84Originale,180Standard-/335Bereichssuiten,
+angeforderte DB-Checks PASS. Browser929 PASS,931 bewusst übersprungen; Logs verschlüsselt.
+PR931 als57a64670 in929 übernommen; Quellbaum gleich zum geprüften d2d1f7ad.
+[CI-Beleg](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
+Views-Hashwiederverwendung26gezielte Checks+Pro-Review PASS, frische Guards erhalten.
+Neue gemeinsame CI offen; Unit60, Voll500/Productionnachweis und App403 separat offen.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

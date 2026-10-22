@@ -60,13 +60,15 @@ gesperrt, bis die Fehler und Voraussetzungen tatsächlich geschlossen sind.
 
 Der gezielte synthetische Test verwendet eigene temporäre Dateien und die
 öffentliche historische Endquittung: ursprünglich43/43 PASS im netzlosen Container.
-Mit erneuter Verifikation einschließlich Manipulations-/Neubindungsfällen lokal
-80/80 PASS,0FAIL; dafür noch kein eigener GitHub-Nachweis.
+Mit erneuter Verifikation einschließlich Manipulations-/Neubindungsfällen
+80/80 lokal PASS; eigener GitHub-Lauf39751014111 auf d2d1f7ad vollständig grün,
+einschließlich des Einzelunit-Schritts und der84Originaldateien.
 Der Test läuft in CI vor dem unveränderten Gate für private Originale.
 Auch die echte schreibgeschützte Originalinspektion endet mit Exit0 und dem
 gesperrten Vorbereitungsstatus. Paket, Installationspins und Endquittung stimmen
 vorher/nachher in Bytes, Hash, dev/ino, Modus, nlink, mtime und ctime überein;
 atime gehört nicht zum gespeicherten Vergleich. Beide eigenen Container wurden
-nach Zustandsprüfung entfernt; OOM=false. Node24.19.0, kein behaupteter Node22-
-oder GitHub-CI-Nachweis. Die Speicherschranken sind keine500er Reserveabnahme.
+nach Zustandsprüfung entfernt; OOM=false. Diese echte Originalinspektion lief auf
+Node24.19.0 und bleibt vom synthetischen GitHub-Nachweis getrennt. Die
+Speicherschranken sind keine500er Reserveabnahme.
 [Bereinigter Prüfbeleg](belege/local-unit-diagnostic-20261022/PREPARATION_READONLY_ACCEPTANCE.SAFE.json).

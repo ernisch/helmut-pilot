@@ -1,0 +1,85 @@
+{
+  "schema": "helmut-genuine-github-integration-acceptance/1",
+  "observedUTC": "2026-10-22 09:34:27 UTC",
+  "repository": "ernisch/helmut-pilot",
+  "runs": [
+    {
+      "pullRequest": 929,
+      "runURL": "https://github.com/ernisch/helmut-pilot/actions/runs/39750868037",
+      "headSHA": "c303790bc05fb07f2b534fb45465a88d59ab84de",
+      "mergeSHAReportedByGitHub": "c7161048ecf896637c273e82de914cfabd0ae86f",
+      "workflowConclusion": "success",
+      "publicPlanAnd28Guards": "success",
+      "runPrCheckoutAndActualEnvironmentReview": "success",
+      "decryptedAndProvisionedOriginalFiles": 84,
+      "standardSuitesPassed": 180,
+      "areaSuitesPassed": 335,
+      "requestedIsolatedDatabaseChecks": "success",
+      "browser": "executed_success",
+      "encryptedDiagnostics": {
+        "id": 12416305520,
+        "name": "private-ci-diagnostics-39750868037-1",
+        "bytes": 33189,
+        "digest": "sha256:1a99d1a82b35817f677c121f5490e4f1f757080aca3b7c2f4ef5a866ee50ac4b",
+        "expiresUTC": "2026-10-29T09:31:43Z"
+      },
+      "diagnosticsDownloaded": false
+    },
+    {
+      "pullRequest": 931,
+      "runURL": "https://github.com/ernisch/helmut-pilot/actions/runs/39751014111",
+      "headSHA": "d2d1f7ad19b2269616324355a346e8fe1a9424bf",
+      "mergeSHAReportedByGitHub": "27c3c4e02871e4e225c59a5f5c4f01ed58f11ac3",
+      "workflowConclusion": "success",
+      "publicPlanAnd28Guards": "success",
+      "runPrCheckoutAndActualEnvironmentReview": "success",
+      "decryptedAndProvisionedOriginalFiles": 84,
+      "standardSuitesPassed": 180,
+      "areaSuitesPassed": 335,
+      "requestedIsolatedDatabaseChecks": "success",
+      "browser": "job_success_browser_steps_intentionally_skipped",
+      "encryptedDiagnostics": {
+        "id": 12414903763,
+        "name": "private-ci-diagnostics-39751014111-1",
+        "bytes": 33416,
+        "digest": "sha256:bf8764242314b14e70bc4f7f48bcfc9e16747e8cc455770dc356b767e89b6b28",
+        "expiresUTC": "2026-10-29T09:30:27Z"
+      },
+      "diagnosticsDownloaded": false
+    }
+  ],
+  "pr931Merge": {
+    "sha": "57a6467064bdc0917543715cac896d37daedb446",
+    "targetBranch": "codex/local-unit-diagnostic-contract-20261022",
+    "treeSHA": "be54bbe5b7e7ccc459b6334c0e87e91086428e9d",
+    "treeEqualsTestedHead": true
+  },
+  "followupMotorFix": {
+    "commit": "5f99d8e11db22396c2b5cae2998d982b26055bb5",
+    "description": "Only reuse scalar briefing hash from the same fresh views guard; all fresh guard invocations retained.",
+    "localFocusedSuitesPassed": 26,
+    "negativeViewsCheckpointCases": 4,
+    "independentReview": {
+      "model": "deepseek-v4-pro",
+      "effort": "high",
+      "result": "No supported concrete regression within supplied scope",
+      "testsRunByReviewer": false
+    },
+    "actualNativeMotorLatencyMeasured": false,
+    "combinedHeadCI": "pending_separate_current_head_verification"
+  },
+  "keyPlacement": {
+    "basis": "user-supplied complete GitHub settings screenshot",
+    "environmentSecretPresent": true,
+    "repositoryDuplicateAbsent": true,
+    "configurationChangedByAgent": false,
+    "secretValuesIncluded": false
+  },
+  "mainChanged": false,
+  "productionAction": false,
+  "sourceWrites": 0,
+  "full500Started": false,
+  "unit60Qualified": false,
+  "authenticPostrunStateRecovered": false,
+  "secretsIncluded": false
+}

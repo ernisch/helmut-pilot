@@ -1,9 +1,9 @@
 # Geschützter Originalkanal für die Pflicht-CI
 
-Die84 erforderlichen Originaldateien sind im Cloud-Arbeitsbereich vorhanden.
-Der GitHub-Runner besitzt bislang nur den Checkout; deshalb scheitert dort
-`connect-local500.py` mit `regular pinned file required`. Das ist eine fehlende
-Bereitstellung im Runner, kein fehlgeschlagener Restore dieser84 Dateien.
+Der GitHub-Runner besaß anfangs nur den Checkout; deshalb scheiterte dort
+`connect-local500.py` mit `regular pinned file required`. Der geschützte Kanal
+stellt jetzt alle84 Originaldateien bereit. Drei vollständige grüne GitHub-Läufe
+belegen die Lösung einschließlich der beiden Integrationsstände unten.
 
 ## Vorbereitet
 
@@ -64,6 +64,9 @@ Es ist kein neuer GitHub-PAT erforderlich.
    Das ist ein neu erzeugter Paketschlüssel, kein GitHub-Token und nicht der
    Schlüssel des vollständigen Originaltransfers. Nicht im Chat, in Git oder als
    unverschlüsseltes Workflowartefakt ablegen.
+   Der Name darf ausschließlich in dieser geschützten Environment liegen.
+   Falls zusätzlich ein gleichnamiges **Repository secret** existiert, nur diesen
+   zusätzlichen Eintrag entfernen; den Environment-Eintrag behalten.
 4. Den aktuellen PR-/CI-Lauf prüfen. Die Environment verweist auf den exakten
    Checkout-Commit. Unter **Review deployments** nur diesen geprüften Stand für
    **`helmut-ci-originals`** freigeben. Ein neuer PR-Commit braucht eine neue
@@ -85,4 +88,13 @@ und Browser/Mobile PASS. Die Diagnosen wurden ausschließlich verschlüsselt ges
 PR930 ist als eb4bfd61 im Entwicklungszweig übernommen; dessen Quellbaum stimmt
 exakt mit dem geprüften Stand überein. Neue Integrationsläufe brauchen ihre eigene
 Freigabe. [Bereinigter Echtbeleg](belege/private-ci-channel-20261022/GITHUB_ACCEPTANCE_39745628626.SAFE.json).
+Auch die Integrationsläufe39750868037/c303790b und39751014111/d2d1f7ad sind
+vollständig grün: je84Originale,180Standard- und335Bereichssuiten sowie alle
+angeforderten isolierten DB-Nachweise. Browser/Mobile lief auf929 erfolgreich;
+auf931 wurde es für die Fachänderung bewusst übersprungen. PR931 ist als57a64670
+im Entwicklungszweig übernommen; sein Quellbaum ist gleich zum geprüften d2d1f7ad.
+[Integrationsbeleg](belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
+Die zusätzliche Views-Hashwiederverwendung hat26gezielte lokale Checks und eine
+gesonderte Pro-High-Leseprüfung bestanden. Alle frischen Guards bleiben erhalten;
+der gemeinsame neue Kopf benötigt seine eigene CI-Freigabe und vollständige Prüfung.
 Kein500er Lauf, keine Unit60-Qualifikation und keine Production-Aktion daraus.
