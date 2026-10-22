@@ -15,7 +15,10 @@ Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weit
 Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
 548Runtimebindungen und echte Source-/DB-Bindungen nativ PASS (22.10.); Quell-DB gestoppt.
 Vorbereitung gemeinsam1.024.176.128B/Events0, noch0Motoreinheiten. Unit60/Reserve offen.
-Einmalige native Diagnose wird isoliert verdrahtet; alte GOs bleiben verbraucht.
+Native Diagnose verdrahtet; Host/Alias nativ PASS, noch kein Motorentry.
+Letzter Start vorPG/Seed/Motor FAIL wegen unbedienter Beobachterpipe; Fristen unverändert.
+[PR936/aktueller Umfang](betrieb/helmut-v12-native-unit-integration-20261022.md).
+Volladmission braucht15,18GB, verfügbar rund11,0GB; rund4,2GB fehlen. Alte GOs verbraucht.
 [Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
 [PR933](https://github.com/ernisch/helmut-pilot/pull/933) nach voller
 [CI39783955460](https://github.com/ernisch/helmut-pilot/actions/runs/39783955460) integriert.
