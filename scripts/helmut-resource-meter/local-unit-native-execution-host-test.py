@@ -67,6 +67,8 @@ class PureHost(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='helmut-host-pure-'); self.addCleanup(self.temp.cleanup)
         self.base = Path(self.temp.name)
+        self.real_host_user = M.host_user
+        patch.object(M, 'host_user', lambda: None).start()
         self.nonce = 'a' * 32; self.case = self.base / self.nonce; self.case.mkdir(mode=0o700)
         (self.case / 'client').mkdir(mode=0o700)
         self.addCleanup(patch.stopall); patch.object(M, 'BASE', self.base).start()
@@ -78,7 +80,8 @@ class PureHost(unittest.TestCase):
                      ('broker', 'local-unit-diagnostic-broker.js'), ('postgrest', 'postgrest-pinned')]}
         self.plan = {'nonce': self.nonce, 'volumes': {'ram': 'ram-own', 'run': 'run-own'}, 'aliasPins': self.aliases,
                      'sourceAliasMounts': [(str(self.case / k), v['path'], True) for k, v in self.aliases.items()],
-                     'nodeMount': (self.config['nodePin']['path'], self.config['nodePin']['path'], True), 'clientRuntimeMounts': [], 'knownSetupContainerIds': []}
+                     'nodeMount': (self.config['nodePin']['path'], self.config['nodePin']['path'], True), 'clientRuntimeMounts': [], 'knownSetupContainerIds': [],
+                     'clientPublicSourceMounts': [], 'pythonMount': ('/opt/python/bin/python3.12', '/opt/python/bin/python3.12', True)}
         self.mounts = [*self.plan['sourceAliasMounts'], self.plan['nodeMount']]
         self.native = types.SimpleNamespace(parent_path=lambda _: self.base / 'group')
         self.supervisor = types.SimpleNamespace(PYTHON=Path('/opt/python'))
@@ -88,6 +91,20 @@ class PureHost(unittest.TestCase):
 
     def pin(self, path, raw=b'public-bytes'):
         return {'path': path, 'bytes': len(raw), 'sha256': M.sha(raw)}
+
+    def public_sources(self):
+        root = self.base / 'external'; jit = root / 'jit'; arch = root / 'architecture'; python = root / 'python'
+        values = {'READER': root / 'readonly_ext4.py', 'LEGACY': root / 'worker-http-lock.py', 'JIT': jit,
+                  'COPY_MANIFEST': root / 'COPIED_PGDATA_FILE_MANIFEST.SAFE.json', 'ARCH': arch, 'PYTHON': python}
+        self.supervisor.__dict__.update(values)
+        targets = [('reader', values['READER']), ('legacyHelper', values['LEGACY']), ('jitHelper', jit / 'restore_original_jit.py'),
+                   ('copyManifest', values['COPY_MANIFEST']), ('originalBudgetRuntimePin', arch / 'native-budget-implementation-qualification-v2/runtime/RUNTIME.SAFE.json')]
+        self.config['sources'] = []
+        for key, p in [*targets, (None, jit / 'JIT_CLOSURE_PLAN.SAFE.json'), (None, python / 'bin/python3.12')]:
+            p.parent.mkdir(parents=True, exist_ok=True); p.write_bytes(('public-' + p.name).encode())
+            pin = self.pin(str(p), p.read_bytes()); self.config['sources'].append(pin)
+            if key: self.config[key] = pin
+        self.config['pythonExecutable'] = str(python / 'bin/python3.12')
 
     def request(self, stage='HOST_OBSERVE', body=None, seq=1):
         now = datetime.datetime.now(datetime.timezone.utc)
@@ -190,6 +207,35 @@ class PureHost(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'sealed-host'):
             self.host.tick()
 
+    def test_failure_cause_is_private_once_and_never_public_exception(self):
+        sentinel = os.urandom(32).hex()
+        def failed(): raise ValueError(sentinel)
+        self.host._observe = failed
+        with self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$'):
+            self.host.tick()
+        path = self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json'
+        raw, _ = M.read_file(path, uid=os.getuid()); value = M.unique(raw)
+        self.assertTrue(value['exception']['type'] == 'ValueError' and value['exception']['message'] == sentinel)
+        self.assertTrue(value['selection'] == self.selection and path.stat().st_nlink == 1 and path.stat().st_mode & 0o777 == 0o600)
+        before = raw
+        with self.assertRaises(RuntimeError): self.host.tick()
+        self.assertTrue(path.read_bytes() == before)
+
+    def test_source_exit_after_confirmed_owner_stop_is_not_live_failure(self):
+        self.host.state = 'STOPPED'; self.host.last_observation = {'observedAtUTC': '2026-10-22T00:00:00.000Z'}
+        self.host._observe = lambda: M.need(False, 'source-already-exited')
+        result = self.host.tick()
+        self.assertTrue(result['state'] == 'STOPPED' and result['observation'] is self.host.last_observation and self.host.failure is None)
+        self.host.state = 'DONE'
+        with self.assertRaisesRegex(RuntimeError, 'sealed-failure'):
+            self.host.tick()
+
+    def test_stopped_host_still_requires_actual_local_child_close(self):
+        self.host.state = 'STOPPED'; self.host.last_observation = {'observedAtUTC': '2026-10-22T00:00:00.000Z'}
+        self.host.children = [FakeChild()]
+        with self.assertRaisesRegex(RuntimeError, 'sealed-failure'):
+            self.host.tick()
+
     def test_root_private_input_is_stdin_never_argv(self):
         with patch.object(M, '_PipeChild', FakeChild):
             child = self.host._root(M.BOOTSTRAP, {'private': 'not-for-argv'})
@@ -211,12 +257,25 @@ class PureHost(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {}, 'd' * 64,
                                   [*self.mounts, ('/opt/original', '/opt/original', True)], self.plan)
-        with patch.object(M.os, 'getuid', lambda: 0):
+        with patch.object(M, 'host_user', self.real_host_user), patch.object(M.os, 'getuid', lambda: 0):
             with self.assertRaisesRegex(RuntimeError, 'actual-host-uid-gid-1000'):
                 M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {}, 'd' * 64, self.mounts, self.plan)
 
+    def test_production_actor_boundary_with_synthetic_status_not_ci_uid(self):
+        status = {'raw': 'Uid:\t1000\t1000\t1000\t1000\nGid:\t1000\t1000\t1000\t1000\n'}
+        with (patch.object(M.os, 'getuid', lambda: 1000), patch.object(M.os, 'geteuid', lambda: 1000),
+              patch.object(M.os, 'getgid', lambda: 1000), patch.object(M.os, 'getegid', lambda: 1000),
+              patch.object(M.Path, 'read_text', lambda *a, **k: status['raw'])):
+            self.real_host_user()
+            for raw in ('Uid:\t1001\t1001\t1001\t1001\nGid:\t1001\t1001\t1001\t1001\n',
+                        'Uid:\t1000\t1000\t1000\t1001\nGid:\t1000\t1000\t1000\t1000\n'):
+                status['raw'] = raw
+                with self.assertRaisesRegex(RuntimeError, 'actual-host-uid-gid-1000'):
+                    self.real_host_user()
+
     def test_preparation_allocates_only_two_exact_tmpfs_volumes_and_public_aliases(self):
         inputs = self.base / 'public'; inputs.mkdir()
+        self.config['repository'] = str(inputs); self.public_sources()
         pins = []
         for name in ('local-unit-native-owner.js', 'local-unit-diagnostic-broker.js', 'postgrest', 'node'):
             p = inputs / name; p.write_bytes(('bounded-public-' + name).encode()); p.chmod(0o600)
@@ -229,11 +288,16 @@ class PureHost(unittest.TestCase):
         def docker(argv, **opts):
             commands.append(argv)
             if argv[:2] == ['volume', 'create']:
+                recorded = M.unique((self.case / 'VOLUME_PREPARATION.SAFE.json').read_bytes())
+                self.assertTrue(set(recorded) == {'schema', 'nonce', 'volumes'} and len(recorded['volumes']) == 2
+                                and recorded['schema'] == 'helmut-local-unit-native-owned-volumes/1' and recorded['nonce'] == self.nonce)
+                self.assertTrue(len([x for x in commands if x[:2] == ['volume', 'inspect']]) >= 2)
                 options = [argv[i + 1] for i, x in enumerate(argv) if x == '--opt']
                 volumes[argv[-1]] = {'Name': argv[-1], 'Driver': 'local', 'Options': dict(x.split('=', 1) for x in options)}
                 return types.SimpleNamespace(stdout=argv[-1], returncode=0)
             name = argv[-1]
-            return types.SimpleNamespace(returncode=0 if name in volumes else 1, stdout=json.dumps([volumes[name]]) if name in volumes else '')
+            return types.SimpleNamespace(returncode=0 if name in volumes else 1, stdout=json.dumps([volumes[name]]) if name in volumes else '',
+                stderr='' if name in volumes else 'Error response from daemon: get ' + name + ': no such volume\n')
         installed = []
         def install(native, supervisor, config, alias_dir, public, actual_group):
             installed.append((public, actual_group))
@@ -242,7 +306,7 @@ class PureHost(unittest.TestCase):
             return {'containerId': '9' * 64, 'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True}
         native = types.SimpleNamespace(docker=docker, parent_path=lambda _: group)
         with patch.object(M, '_install_aliases', install):
-            plan = M.prepare_execution(native, types.SimpleNamespace(PYTHON=Path('/opt/python')), self.config, self.case)
+            plan = M.prepare_execution(native, self.supervisor, self.config, self.case)
         self.assertTrue(len(volumes) == 2 and len(plan['sourceAliasMounts']) == 3 and plan['nodeMount'] == (pins[3]['path'], pins[3]['path'], True))
         self.assertTrue(any('size=268435456,uid=1000,gid=1000,mode=0711' in v['Options']['o'] for v in volumes.values()))
         self.assertTrue(any('size=16777216,uid=0,gid=0,mode=0755' in v['Options']['o'] for v in volumes.values()))
@@ -251,6 +315,41 @@ class PureHost(unittest.TestCase):
                         and (self.case / 'owner-public/postgrest').stat().st_mode & 0o777 == 0o555)
         self.assertTrue(all(c[:2] in (['volume', 'inspect'], ['volume', 'create']) for c in commands))
         self.assertTrue(len(installed) == 1 and installed[0][1] == group and plan['knownSetupContainerIds'] == ['9' * 64])
+        self.assertTrue(len(plan['clientPublicSourceMounts']) == 6 and plan['pythonMount'] == (self.config['pythonExecutable'], self.config['pythonExecutable'], True))
+
+    def test_only_six_public_external_sources_and_exact_python_pin_allowed(self):
+        self.public_sources()
+        mounts, python = M.public_source_mounts(self.supervisor, self.config)
+        self.assertTrue(len(mounts) == 6 and all(a == b and ro for a, b, ro in mounts) and python[0] == self.config['pythonExecutable'])
+        original = copy.deepcopy(self.config)
+        self.config['sources'].append(self.pin(str(self.base / 'unexpected.PRIVATE.json')))
+        with self.assertRaisesRegex(RuntimeError, 'external-public-code-closure'):
+            M.public_source_mounts(self.supervisor, self.config)
+        self.config = copy.deepcopy(original); self.config['reader'] = {**self.config['reader'], 'sha256': '0' * 64}
+        with self.assertRaisesRegex(RuntimeError, 'explicit-public-source-pin'):
+            M.public_source_mounts(self.supervisor, self.config)
+        self.config = copy.deepcopy(original)
+        self.config['sources'] = [p for p in self.config['sources'] if p['path'] != self.config['pythonExecutable']]
+        with self.assertRaisesRegex(RuntimeError, 'python-original-source-pin'):
+            M.public_source_mounts(self.supervisor, self.config)
+        self.config = copy.deepcopy(original); self.config['sources'] = self.config['sources'][:-2] + self.config['sources'][-1:]
+        with self.assertRaisesRegex(RuntimeError, 'explicit-jit-plan-pin'):
+            M.public_source_mounts(self.supervisor, self.config)
+
+    def test_unknown_existing_or_unreadable_volume_is_never_recorded_owned(self):
+        group = self.base / 'group'; group.mkdir(); g = group.stat()
+        self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
+        self.config['sourceCodePins'] = [self.pin('/repo/local-unit-native-owner.js'), self.pin('/repo/local-unit-diagnostic-broker.js')]
+        calls = []
+        def docker(argv, **kwargs):
+            calls.append(argv)
+            return types.SimpleNamespace(returncode=1, stdout='', stderr='permission denied')
+        native = types.SimpleNamespace(parent_path=lambda _: group, docker=docker)
+        with (patch.object(M, 'public_source_mounts', lambda *a: ([], ('/python', '/python', True))),
+              patch.object(M, '_install_aliases', lambda *a: {'containerId': '9' * 64})):
+            with self.assertRaisesRegex(RuntimeError, 'volume-absence-not-established'):
+                M.prepare_execution(native, self.supervisor, self.config, self.case)
+        self.assertTrue(not (self.case / 'VOLUME_PREPARATION.SAFE.json').exists() and all(a[:2] != ['volume', 'create'] for a in calls))
 
     def test_owner_ready_then_genuine_fresh_root_heartbeat_required(self):
         budget = {'nodeVersion': 'v24.19.0', 'execArgv': M.FLAGS, 'oldSpaceMiB': 384, 'semiSpaceMiB': 16, 'heapSizeLimitBytes': 432 * 1024**2}
@@ -373,6 +472,7 @@ class PureHost(unittest.TestCase):
         self.assertTrue('container:' + self.host.source_id in q and 'volume-subpath=helmut-local-unit-diagnostic,readonly' in ' '.join(q))
         self.assertTrue(not any('docker.sock' in x or 'PGDATA' in x or 'HMAC' in x or 'dst=/bench' in x for x in q))
         self.assertTrue(all(flag in q and flag in e for flag in M.FLAGS))
+        self.assertTrue(any('dst=/opt/postgrest-pinned,readonly' in x for x in q) and any('dst=/opt/python/bin/python3.12,readonly' in x for x in q))
 
     def test_private_extra_file_in_client_folder_is_blocked(self):
         self.config['sourceCodePins'] = [self.pin(str(Path(self.config['repository']) / 'scripts/helmut-resource-meter/local-unit-native-run.js'))]

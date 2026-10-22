@@ -170,6 +170,49 @@ def publish_once(path, raw):
         os.close(directory)
 
 
+def metadata_pin(pin):
+    """The existing measured source registry owns bytes; do not warm them here."""
+    pin_shape(pin); path = canonical(pin['path'])
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        s = os.fstat(fd)
+        need(stat.S_ISREG(s.st_mode) and s.st_nlink == 1 and s.st_size == pin['bytes']
+             and identity(s) == identity(path.lstat()), 'public-source-metadata')
+    finally:
+        os.close(fd)
+
+
+def public_source_mounts(supervisor, config):
+    """Exactly six external public provenance files and the Python executable."""
+    registry = {}
+    for p in config['sources']:
+        pin_shape(p)
+        need(p['path'] not in registry or registry[p['path']] == p, 'source-registry-pin-conflict'); registry[p['path']] = p
+    fields = [('reader', str(supervisor.READER)), ('legacyHelper', str(supervisor.LEGACY)),
+              ('jitHelper', str(supervisor.JIT / 'restore_original_jit.py')), ('copyManifest', str(supervisor.COPY_MANIFEST)),
+              ('originalBudgetRuntimePin', str(supervisor.ARCH / 'native-budget-implementation-qualification-v2/runtime/RUNTIME.SAFE.json'))]
+    expected = {}
+    for key, name in fields:
+        p = config[key]
+        need(p['path'] == name and registry.get(name) == p, 'explicit-public-source-pin'); expected[name] = p
+    plan = str(supervisor.JIT / 'JIT_CLOSURE_PLAN.SAFE.json')
+    need(plan in registry and Path(config['jitHelper']['path']).parent / 'JIT_CLOSURE_PLAN.SAFE.json' == Path(plan), 'explicit-jit-plan-pin')
+    expected[plan] = registry[plan]
+    # Match the producer's complete CodeManifest path algorithm. New outside
+    # paths require an explicit review; PRIVATE inputs never become transitive.
+    repo = Path(config['repository'])
+    code = {p['path'] for p in config['sourceCodePins']}
+    code |= {p['path'] for p in config['sources'] if Path(p['path']).suffix in ('.py', '.js', '.json', '.sql', '.c')}
+    need({p for p in code if not Path(p).is_relative_to(repo)} == set(expected), 'external-public-code-closure')
+    for name, p in expected.items():
+        need(not any(token in name.lower() for token in ('.private.', '/pgdata/', '/run/', '/ram/', '/bench/', '/.env', 'hmac')), 'private-source-exclusion')
+        metadata_pin(p)
+    python = str(supervisor.PYTHON / 'bin/python3.12')
+    need(config['pythonExecutable'] == python and python in registry, 'python-original-source-pin')
+    metadata_pin(registry[python])
+    return [(name, name, True) for name in expected], (python, python, True)
+
+
 def prepare_execution(native, supervisor, config, case):
     """AFTER native.start, before Source: measured aliases and two owned volumes.
 
@@ -203,12 +246,20 @@ def prepare_execution(native, supervisor, config, case):
         target = r['imagePath']
         need(target.startswith(('/usr/', '/lib/', '/lib64/', '/bin/', '/sbin/')) and not any(x in target for x in (',', '\0', '..')), 'public-runtime-target')
         runtime_mounts.append((r['source']['path'], target, True))
+    public_mounts, python_mount = public_source_mounts(supervisor, config)
     setup = _install_aliases(native, supervisor, config, alias_dir, public, group)
     volumes = {'ram': 'helmut-unitdiag-ram-' + nonce, 'run': 'helmut-unitdiag-run-' + nonce}
+    volume_rows = []
     for key, size, uid, mode in [('ram', 268435456, 1000, '0711'), ('run', 16777216, 0, '0755')]:
         name = volumes[key]
-        need(native.docker(['volume', 'inspect', name], timeout=3, check=False).returncode != 0, 'volume-already-exists')
+        inspected = native.docker(['volume', 'inspect', name], timeout=3, check=False)
+        missing = (r'(?:Error response from daemon: get ' + re.escape(name) + r': no such volume|Error: No such volume: ' + re.escape(name) + r')\n?')
+        need(inspected.returncode == 1 and re.fullmatch(missing, getattr(inspected, 'stderr', '')), 'volume-absence-not-established')
         opts = 'rw,exec,nosuid,nodev,size=' + str(size) + ',uid=' + str(uid) + ',gid=' + str(uid) + ',mode=' + mode
+        volume_rows.append({'name': name, 'options': {'type': 'tmpfs', 'device': 'tmpfs', 'o': opts}})
+    publish_once(case / 'VOLUME_PREPARATION.SAFE.json', encode({'schema': 'helmut-local-unit-native-owned-volumes/1', 'nonce': nonce, 'volumes': volume_rows}))
+    for item in volume_rows:
+        name, opts = item['name'], item['options']['o']
         result = native.docker(['volume', 'create', '--driver', 'local', '--opt', 'type=tmpfs', '--opt', 'device=tmpfs', '--opt', 'o=' + opts, name], timeout=5)
         need(result.stdout.strip() == name, 'volume-create-outcome')
         row = json.loads(native.docker(['volume', 'inspect', name], timeout=3).stdout)[0]
@@ -216,6 +267,7 @@ def prepare_execution(native, supervisor, config, case):
     return {'schema': 'helmut-local-unit-native-execution-plan/1', 'nonce': nonce, 'volumes': volumes, 'aliasPins': aliases,
             'sourceVolumeMounts': ['type=volume,src=' + volumes['ram'] + ',dst=/ram', 'type=volume,src=' + volumes['run'] + ',dst=/run'],
             'sourceAliasMounts': mounts, 'nodeMount': (node['path'], node['path'], True), 'clientRuntimeMounts': runtime_mounts,
+            'clientPublicSourceMounts': public_mounts, 'pythonMount': python_mount,
             'knownSetupContainerIds': [setup['containerId']], 'installerProcessClose': setup}
 
 
@@ -464,7 +516,7 @@ class NativeExecutionHost:
         self.children = []; self.owner = None; self.owner_ready = None; self.heartbeat = None
         self.owner_lines = 0; self.last_heartbeat = 0; self.source_identity = None
         self.clients = {}; self.active_client = None; self.client_pins = []; self.handoff = None
-        self.observed_at = 0; self.started_at = time.monotonic()
+        self.observed_at = 0; self.started_at = time.monotonic(); self.last_observation = None
 
     def _docker(self, args, **options):
         return self.native.docker(args, timeout=options.pop('timeout', 3), **options)
@@ -709,7 +761,9 @@ class NativeExecutionHost:
         mounts = [(str(self.case / 'client'), str(BASE / self.config['nonce']), False),
                   (self.config['repository'], self.config['repository'], True), self.plan['nodeMount'],
                   (str(self.native.parent_path(self.config['parent'])), '/owned-group', True),
-                  *self.plan['clientRuntimeMounts'], *self.client_immutable_mounts, *extra]
+                  *self.plan['clientRuntimeMounts'], *self.plan['clientPublicSourceMounts'], self.plan['pythonMount'],
+                  next(x for x in self.plan['sourceAliasMounts'] if x[1] == '/opt/postgrest-pinned'),
+                  *self.client_immutable_mounts, *extra]
         need(len({t for _, t, _ in mounts}) == len(mounts), 'client-mount-duplicate')
         args = [*FLAGS, script, '--selector', str(BASE / self.config['nonce'] / 'SELECTION.SAFE.json')]
         argv = ['create', '--name', 'helmut-unitdiag-' + mode + '-' + self.config['nonce'], '--network', 'container:' + self.source_id,
@@ -793,10 +847,17 @@ class NativeExecutionHost:
     def tick(self):
         need(not self.closed and self.failure is None, 'sealed-host')
         try:
+            if self.state == 'STOPPED':
+                need(self.pending is None and self.last_observation is not None, 'stopped-host-outcome')
+                for child in self.children:
+                    need(child.tick() and child.close_metadata()['exitCode'] == 0, 'stopped-host-child-close')
+                # SOURCE now owns its final snapshot and service/PG closure.
+                # This cached observation is deliberately not redated/fresh.
+                return {'state': self.state, 'pending': None, 'observation': self.last_observation}
             need(time.monotonic() - self.started_at < 240, 'whole-lifetime')
             for c in self.children:
                 c.tick()
-            self._owner_messages(); observation = self._observe()
+            self._owner_messages(); observation = self._observe(); self.last_observation = observation
             if self.owner and self.state != 'STOPPED' and self.owner.child.poll() is not None and not (self.pending and self.pending['request']['stage'] == 'OWNER_STOP'):
                 need(False, 'unexpected-owner-exit')
             if self.pending:
@@ -853,8 +914,18 @@ class NativeExecutionHost:
                 if p.exists():
                     raw, pin = read_file(p); self._accept(unique(raw), pin['sha256'])
             return {'state': self.state, 'pending': None if not self.pending else self.pending['request']['stage'], 'observation': observation}
-        except BaseException:
+        except BaseException as error:
             self.failure = 'sealed-native-host-failure'
+            try:
+                # PRIVATE diagnostics preserve the cause, never enter a SAFE
+                # reply/receipt or reopen an unknown workload for another try.
+                publish_once(self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json', encode({
+                    'schema': 'helmut-local-unit-native-execution-host-failure/1', 'observedAtUTC': utc(),
+                    'selection': self.selection, 'state': self.state,
+                    'stage': None if self.pending is None else self.pending['request']['stage'],
+                    'exception': {'type': type(error).__name__[:128], 'message': str(error)[:4096]}}))
+            except BaseException:
+                self.failure = 'sealed-native-host-failure-without-private-diagnostic'
             raise RuntimeError('native-execution-host-sealed-failure') from None
 
     def close(self):
