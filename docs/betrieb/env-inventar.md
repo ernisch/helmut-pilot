@@ -326,6 +326,11 @@ Aussage.
 
 ## 8. Werkzeug-/Script-Variablen (nicht Laufzeit)
 
+`HELMUT_CI_ORIGINALS_KEY`: ausschließlich GitHub-Environment-Secret in
+`helmut-ci-originals` für den verschlüsselten CI-Originalkanal. Kein GitHub-PAT,
+kein Production-Zugang; nicht nach Vercel oder in Testkindprozesse übernehmen.
+[Einrichtung und Schutzgrenzen](private-ci-original-channel-20261022.md).
+
 Diese Variablen liest NICHT der Server, sondern Betriebs-Skripte bzw.
 GitHub-Actions-Workflows. Sie gehören nicht nach Vercel (Ausnahmen vermerkt),
 sondern in die Shell des Betreibers, `.env.local`, GitHub Secrets/Variables —
