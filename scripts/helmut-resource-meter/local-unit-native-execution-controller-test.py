@@ -75,7 +75,7 @@ class MemoryPath:
         return MemoryPath(self.name.rsplit('/', 1)[0])
 
     def exists(self):
-        if self.name.endswith('/ATTEMPT_TERMINAL.SAFE.json') and self.terminal_at is not None:
+        if self.name.endswith(('/ATTEMPT_TERMINAL.SAFE.json', '/ENTRY_OBSERVATION_EXIT_READY.SAFE.json.PUBLISHED')) and self.terminal_at is not None:
             return self.clock.now >= self.terminal_at
         return self.name in self.fs
 

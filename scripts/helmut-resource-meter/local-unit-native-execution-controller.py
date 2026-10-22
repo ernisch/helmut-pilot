@@ -591,14 +591,17 @@ class _Controller:
         self.host.call('ENTRY_START', {}, seconds=5)
         until = time.monotonic() + 70
         terminal_path = self.w.OUT / 'client/ATTEMPT_TERMINAL.SAFE.json'
-        while not terminal_path.exists():
+        exit_ready = self.w.OUT / 'client/ENTRY_OBSERVATION_EXIT_READY.SAFE.json.PUBLISHED'
+        # The CLI publishes this atomic directory only after its terminal has
+        # been durably written. File existence alone can expose a partial JSON.
+        while not exit_ready.exists():
             self.observer.check(); self.service.poll(); self.immutable_check()
             need(time.monotonic() < until and utc() < self.expires, 'entry-terminal-deadline')
             if time.monotonic() - last_sample >= 8:
                 last_sample = append()
             time.sleep(.025)
-        terminal, terminal_pin = self.private('client/ATTEMPT_TERMINAL.SAFE.json', cap=1024**2)
         entry = self.host.call('ENTRY_RESULT', {}, seconds=8)
+        terminal, terminal_pin = self.private('client/ATTEMPT_TERMINAL.SAFE.json', cap=1024**2)
         need(set(entry) == {'processClose', 'actualEntryProcessClose', 'terminalPin', 'terminal'} and entry['terminal'] == terminal
              and entry['terminalPin']['bytes'] == terminal_pin['bytes'] and entry['terminalPin']['sha256'] == terminal_pin['sha256'], 'actual-entry-result')
         self.stage('owner-trace-close'); owner = self.host.call('OWNER_STOP', {}, seconds=15)
