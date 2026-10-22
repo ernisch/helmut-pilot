@@ -284,6 +284,20 @@ jobs:
             sudo install -D -m 0644 "$review_source" "$review_target"
             cmp "$review_source" "$review_target"
           fi
+          # This supplemental current SOURCE review has distinct canonical
+          # paths. Preserve the historical review and never replace an alias.
+          current_review_directory="docs/betrieb/belege/local-unit-storage-source-20261022"
+          current_review_target_directory="/workspace/helmut-unit60-native-20261022/$current_review_directory"
+          for current_review_name in CURRENT_SOURCE_REVIEW_REPORT.SAFE.json INDEPENDENT_CURRENT_SOURCE_REVIEW.SAFE.json; do
+            current_review_source="$current_review_directory/$current_review_name"
+            current_review_target="$current_review_target_directory/$current_review_name"
+            if [ "$GITHUB_WORKSPACE/$current_review_source" != "$current_review_target" ]; then
+              test ! -e "$current_review_target"
+              test ! -L "$current_review_target"
+              sudo install -D -m 0644 "$current_review_source" "$current_review_target"
+              cmp "$current_review_source" "$current_review_target"
+            fi
+          done
           # All children/receipts are mocked or TEST_ONLY temporary fixtures.
           # Integration inherits the owner guards; do not run that base twice.
           # These run before the unchanged checks requiring genuine originals.

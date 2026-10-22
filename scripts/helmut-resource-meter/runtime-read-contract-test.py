@@ -44,7 +44,7 @@ class RuntimeReadContractTest(unittest.TestCase):
   self.assertFalse((self.root/'FUTURE_GO.json').exists())
 
  def test_control_descriptor_uses_shared_runtime_manifest_without_review_file_reads(self):
-  local_source_delta=I.A.pin(BIN.parents[1]/'docs/betrieb/belege/local-lock-lease-20261021/ROOT_LOCAL_SOURCE_DELTA.SAFE.json')
+  local_source_delta=I.A.pin(BIN.parents[1]/'docs/betrieb/belege/local-unit-storage-source-20261022/CURRENT_LOCAL_SOURCE_DELTA.SAFE.json')
   code="process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localSourceDeltaPin:JSON.parse(process.argv[2])})))"
   descriptor=json.loads(subprocess.check_output(['node','-e',code,str(BIN/'atomic-usage-integration.js'),json.dumps(local_source_delta)],text=True))
   candidate=self.doc('atomic-control-descriptor.json',descriptor)
@@ -105,6 +105,21 @@ assert.throws(()=>AU.descriptor({...options,localSourceDeltaPin:JSON.parse(proce
   bad_request=self.doc('bad-control-request.json',{'sourcePins':[],'primaries':{},'atomicUsageInput':changed})
   bad_connection=self.doc('bad-control-connection.json',{**connection,'atomicUsageInput':changed,'runtimeRequest':bad_request})
   with self.assertRaises(RuntimeError):I.runtime_read_manifest({**recipe,'fixtureConnectionPin':bad_connection})
+
+ def test_historical_source_delta_cannot_admit_current_storage(self):
+  historical=I.A.pin(BIN.parents[1]/'docs/betrieb/belege/local-lock-lease-20261021/ROOT_LOCAL_SOURCE_DELTA.SAFE.json')
+  # The supplemental source-only review is an explicit new input. Neither
+  # consumer may replace a caller's historical pin with the current review.
+  reject=r"""
+const assert=require('node:assert/strict'),AU=require(process.argv[1]),LEASE=require(process.argv[2]);
+const historical=JSON.parse(process.argv[3]);
+assert.throws(()=>LEASE.sourceDelta(historical),e=>e.code==='ERR_ASSERTION');
+assert.throws(()=>AU.descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',
+ controlRead:'verified-control-view-v1',localSourceDeltaPin:historical}),e=>e.code==='ERR_ASSERTION');
+"""
+  subprocess.run(['node','-e',reject,str(BIN/'atomic-usage-integration.js'),
+                 str(BIN/'pipeline-lock-lease-integration.js'),json.dumps(historical)],
+                check=True,capture_output=True,text=True)
 
  def test_missing_additional_completed_correction_provenance_fails_before_container(self):
   Path(self.correction_data[0]['path']).unlink()
