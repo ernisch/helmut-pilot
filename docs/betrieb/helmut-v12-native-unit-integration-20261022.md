@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand21:16UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand21:25UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -93,6 +93,18 @@ auf die Root-Datei nachweislich EACCES. Peak51.445.760B, Ereignisse0, Gruppe lee
 keine Datenbank, kein Seed, kein Motor und kein Anbieter.
 [Bereinigter Beleg](belege/v12-native-unit-integration-20261022/NATIVE_OWNER_RUNTIME_RX.SAFE.json).
 
+Der folgende frische Fall `0cc5cf133071f851e9bc0fd47f8f1d3c` auf `314b7eb5`
+erreichte die echte Owner-/PostgREST-Anbindung, blieb aber vor Seed/Motor FAIL:
+Docker gab die exakt gleichen geschlossenen Environment-Einträge in anderer
+Reihenfolge zurück. Die Liveprüfung verglich vorher die Arrayreihenfolge.
+Der korrigierte Vergleich akzeptiert ausschließlich dieselben eindeutigen Namen
+und exakten Werte samt HOSTNAME-Löschmarker; zusätzliche, doppelte oder geänderte
+Einträge bleiben gesperrt.90reine Hostprüfungen bestehen. Readonly-Inspect des
+fehlgeschlagenen echten Containers bestätigt die reine Reihenfolgeabweichung.
+Peak1.055.625.216B/Ereignisse0, Gruppe leer, PostgreSQL0;0Motoreinheiten.
+Der fehlgeschlagene Fall bleibt FAIL und wird nicht wiederverwendet.
+[Bereinigter Befund](belege/v12-native-unit-integration-20261022/NATIVE_CLIENT_ENV_ORDER_DIAGNOSIS.SAFE.json).
+
 Die unabhängige Quellprüfung fand sechs Diagnose-Delegationen hinter nicht
 passenden Production-Readinessguards und einen weiteren V3-Eingangsriegel in
 `lage.js`. Diese konkreten Anbindungsfehler sind korrigiert und unabhängig
@@ -138,10 +150,15 @@ Der Ressourcenstart-Schritt lehnt den veränderten Storage-Code am historischen
 Quellreview-Pin korrekt ab. Ein ergänzender neuer unabhängiger Quellreview ist
 erforderlich; alte Belege und deren Ablehnung bleiben unverändert erhalten.
 Der neue explizite Vier-Quellreview besteht; die gezielte Vertragsprüfung bleibt
-13/14, weil zusätzlich der bereits vorhandene Own2-Hook in `testkosten-budget.js`
-einen separaten unabhängigen Quellreview benötigt. Der vollständige Vergleich
-aller9Kontrollquellen fand nach den bestehenden Overrides genau diese eine
-Restabweichung. Startinput6/6 und Artefakt10/10 bestehen.
+zunächst13/14, weil zusätzlich der bereits vorhandene Own2-Hook in
+`testkosten-budget.js` einen separaten unabhängigen Quellreview benötigte.
+Der vollständige Vergleich aller9Kontrollquellen fand nach den bestehenden
+Overrides genau diese eine Restabweichung. Dieser enge Quellreview ist jetzt
+abgeschlossen und ausdrücklich gebunden; historischer Tarif-/Budgetkörper
+bleibt bytegleich. Die positive Vertragsprüfung samt Fälschungs-/Driftfällen
+besteht14/14; Startinput6/6 und Artefakt10/10 bestehen unverändert.
+[Kosten-Hook-Review](belege/local-unit-cost-caller-source-20261022/SOURCE_REVIEW.SAFE.json),
+[gezielte Vertragsprüfung](belege/v12-native-unit-integration-20261022/CURRENT_SOURCE_CALLER_FINAL_CHECKS.SAFE.json).
 Der frühere Standardlauf
 blieb177/180; drei gezielte Korrekturen sind separat bestanden, kein behaupteter
 durchgehend grüner Wiederholungslauf. Der geschützte84Originale-Kanal bleibt
@@ -155,7 +172,7 @@ für den vollständigen Ablauf. Ziel bleibt höchstens1.548.000.000B gemeinsam.
 
 Die gebundene Volladmission verlangt15.179.779.720B persistenten freien Platz.
 Nach kontrollierter lokaler Archivierung eigener geschlossener Diagnosekopien
-sind rund10,80GB verfügbar; rund4,38GB fehlen weiterhin. Originale, erforderliche
+sind rund10,86GB verfügbar; rund4,32GB fehlen weiterhin. Originale, erforderliche
 Belege, aktive/fremde Ressourcen und geheime lokale Archive bleiben erhalten.
 Die bekannten weiteren sicheren Kandidaten schließen diese Lücke nicht.
 `/tmp` ist RAM und darf diese Plattenanforderung nicht ersetzen.

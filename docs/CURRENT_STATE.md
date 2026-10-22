@@ -19,9 +19,10 @@ Native Diagnose verdrahtet; Host/Alias/Beobachter und Root-Runtime nativ PASS, n
 Zwei spätere Starts blieben vorSeed/Motor FAIL; Pfadabbildung und Root-ELF-Zugriff korrigiert.
 Storage-/Lage-Routen und Kostenlesung/failclosed korrigiert/quergeprüft; VM16/13/32Gruppen PASS.
 Eigene2Fixturetickets ersetzen keinen500er-Globalzählernachweis; noch0Motoreinheiten.
-CI-Vertragsprüfung13/14: weiterer separater Quellreview für bestehenden Kosten-Hook nötig; Sperre bleibt.
+Kosten-Hook separat quergeprüft; CI-Vertragsprüfung14/14, Startinputs6/6, Artefakt10/10 lokal PASS.
+Frischer nativer Start vorSeed/Motor FAIL: Docker sortierte exakt gleicheEnv-Einträge anders; Vergleich korrigiert.
 [PR936/aktueller Umfang](betrieb/helmut-v12-native-unit-integration-20261022.md).
-Volladmission braucht15,18GB, verfügbar rund10,80GB; rund4,38GB fehlen. Alte GOs verbraucht.
+Volladmission braucht15,18GB, verfügbar rund10,86GB; rund4,32GB fehlen. Alte GOs verbraucht.
 [Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
 [PR933](https://github.com/ernisch/helmut-pilot/pull/933) nach voller
 [CI39783955460](https://github.com/ernisch/helmut-pilot/actions/runs/39783955460) integriert.
