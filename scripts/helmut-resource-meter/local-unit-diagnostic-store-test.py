@@ -22,6 +22,8 @@ RPCS = {
     "state_cas": "p_scope_hash text,p_claim_hash text,p_old_hash text,p_old_revision bigint,p_next_canonical text,p_next_hash text,p_nonce text",
     "artifact_insert": "p_scope_hash text,p_claim_hash text,p_kind text,p_logical_id text,p_canonical text,p_sha256 text,p_parent_hash text,p_nonce text",
     "artifact_read": "p_scope_hash text,p_kind text,p_logical_id text,p_expected_sha256 text,p_nonce text",
+    "lease_acquire": "p_scope_hash text,p_claim_hash text,p_job text,p_ttl_ms integer,p_nonce text",
+    "lease_release": "p_scope_hash text,p_claim_hash text,p_job text,p_token uuid,p_nonce text",
 }
 
 
@@ -83,7 +85,7 @@ def audit(text):
     need(not re.search(r"\b(?:update|delete\s+from|insert\s+into|truncate)\s+public\.", code, re.I), "no legacy row writes")
     need(not re.search(r"(?:drop|create\s+or\s+replace)\s+(?:function|table|trigger|schema)", code, re.I), "no replacing old objects")
     tables = re.findall(r"create table\s+([\w.]+)\(", code, re.I)
-    need(set(tables) == {"helmut_unit_diagnostic." + x for x in ("authority", "runtime_observations", "state", "artifacts")}, "exact owned tables")
+    need(set(tables) == {"helmut_unit_diagnostic." + x for x in ("authority", "runtime_observations", "state", "artifacts", "leases", "legacy_read_rpcs")}, "exact owned tables")
     need("grant_id text not null unique" in code, "global grant single use")
     need("request_models jsonb not null" in code
          and "exact(new.request_models,array['D','R'])" in code
@@ -134,7 +136,10 @@ def audit(text):
     need("grant execute on function %s to %I" in code, "exact runtime role grant")
     need("runtime-observation-stale" in code and "interval '30 seconds'" in code, "fresh runtime witness")
     need("codeManifestHash" in code and "runtimeManifestHash" in code and "databaseOID" in code, "current runtime/code/database binding")
-    need(len(re.findall(r"enable always trigger", code, re.I)) == 8, "all eight native guards enabled")
+    need("local-unit-store-lease-successor-token" in code and "local-unit-store-lease-release-owner" in code, "native successor fencing")
+    need("local-unit-store-qualified-read-identity" in code and "legacy_read_rpcs q where q.function_oid=p.oid" in code, "qualified readonly OIDs only")
+    need("local-unit-store-auth30" in code and "local-unit-store-final-verification" in code and "local-unit-store-sixteen-controls" in code, "native Auth30/control receipt binding")
+    need(len(re.findall(r"enable always trigger", code, re.I)) == 12, "all twelve native guards enabled")
     found = re.findall(r"create function public\.local_unit_diagnostic_(\w+)_v1\(([^)]*)\)", code)
     need(dict(found) == RPCS, "exact closed RPC ABI; no runtime installer")
     insert = code.split("create function public.local_unit_diagnostic_artifact_insert_v1", 1)[1].split("create function public.", 1)[0]
@@ -152,6 +157,9 @@ class StaticStoreContract(unittest.TestCase):
 
     def test_negative_security_boundaries(self):
         mutations = [
+            ("local-unit-store-lease-successor-token", "unchecked-lease-successor"),
+            ("local-unit-store-qualified-read-identity", "unchecked-readonly-OID"),
+            ("local-unit-store-final-verification", "unchecked-final-verification"),
             ("grant_id text not null unique", "grant_id text not null"),
             ("request_models jsonb not null", "request_models jsonb"),
             ("new.body->>'model' is distinct from a.request_models->>phase", "false"),
@@ -279,7 +287,7 @@ const entry = { model: 'gpt-5-mini-eu', politicianId: 'synthetic-owner', runId: 
         result = subprocess.run(["node", "-e", script], cwd=root, capture_output=True, text=True, timeout=15)
         self.assertEqual(result.returncode, 0, "isolated actual-model consumer boundary failed")
 
-    def test_absent_root_owned_endpoint_proof_stays_prepared_unqualified(self):
+    def test_absent_root_owned_endpoint_still_blocks_every_request(self):
         root = Path(__file__).resolve().parents[2]
         script = r"""
 const assert = require('node:assert/strict'), http = require('node:http');
@@ -292,7 +300,7 @@ process.env.HELMUT_STORAGE_BACKEND = 'supabase'; process.env.SUPABASE_URL = 'htt
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'synthetic-negative-never-sent'; delete process.env.VERCEL;
 (async () => {
   await assert.rejects(S.readState({ operationId: 'localUnitDiagnostic-' + 'a'.repeat(32), commandHash: 'b'.repeat(64) }),
-    /PREPARED_UNQUALIFIED-native-endpoint-attestation-not-installed/);
+    /local-unit-diagnostic-endpoint-(unprivileged-client-required|readonly-trust-mount|root-directory)/);
   assert.equal(transportCalls, 0);
 })().catch(() => { process.exitCode = 1; });
 """

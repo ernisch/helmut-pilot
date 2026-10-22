@@ -153,7 +153,12 @@ begin
           'public.local_unit_diagnostic_state_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_state_cas_v1(text,text,text,bigint,text,text,text)'::regprocedure,
           'public.local_unit_diagnostic_artifact_insert_v1(text,text,text,text,text,text,text,text)'::regprocedure,
-          'public.local_unit_diagnostic_artifact_read_v1(text,text,text,text,text)'::regprocedure)
+          'public.local_unit_diagnostic_artifact_read_v1(text,text,text,text,text)'::regprocedure,
+          'public.local_unit_diagnostic_lease_acquire_v1(text,text,text,integer,text)'::regprocedure,
+          'public.local_unit_diagnostic_lease_release_v1(text,text,text,uuid,text)'::regprocedure)
+        and not exists(select from helmut_unit_diagnostic.legacy_read_rpcs q where q.function_oid=p.oid
+          and q.function_name=p.proname and q.identity_arguments=oidvectortypes(p.proargtypes)
+          and q.prosrc_sha256=helmut_unit_diagnostic.sha(p.prosrc) and not p.prosecdef and p.provolatile in ('i','s') and p.proconfig=array['search_path=pg_catalog']::text[])
         and has_function_privilege(principal,p.oid,'EXECUTE')) then
     raise exception using errcode='42501',message='local-unit-store-runtime-role';
   end if;
@@ -219,6 +224,48 @@ create table helmut_unit_diagnostic.artifacts(
   check(canonical_text::jsonb=body)
 );
 
+create table helmut_unit_diagnostic.legacy_read_rpcs(
+  function_name text primary key check(function_name ~ '^helmut_(auth|llm_usage)_[a-z0-9_]+_v1$'),
+  http_exposed boolean not null default false,
+  function_oid oid not null unique,
+  identity_arguments text not null,
+  prosrc_sha256 text not null check(prosrc_sha256 ~ '^[a-f0-9]{64}$'),
+  qualification_pin jsonb not null,
+  check(helmut_unit_diagnostic.exact(qualification_pin,array['path','bytes','sha256'])),
+  check(qualification_pin->>'sha256' ~ '^[a-f0-9]{64}$')
+);
+-- The SOURCE-LOCAL root verifier inserts only independently reviewed read-only
+-- function bodies, then grants the exact OIDs as the copy administrator in the
+-- same transaction. Name matching by itself never grants an old function.
+create function helmut_unit_diagnostic.qualified_read_insert() returns trigger
+language plpgsql security invoker set search_path=pg_catalog
+as $f$
+declare p pg_catalog.pg_proc%rowtype;
+begin
+  if current_user <> 'helmut_ud_owner_'||right(current_database(),32) then raise exception 'local-unit-store-read-qualifier-required';end if;
+  select * into strict p from pg_proc where oid=new.function_oid;
+  if p.pronamespace<>'public'::regnamespace or p.proname<>new.function_name or p.prosecdef or p.provolatile not in ('i','s') or p.proconfig is distinct from array['search_path=pg_catalog']::text[]
+    or (new.http_exposed and new.function_name !~ '^helmut_auth_(state_graph|usage|control)_read_v1$')
+    or oidvectortypes(p.proargtypes)<>new.identity_arguments or helmut_unit_diagnostic.sha(p.prosrc)<>new.prosrc_sha256
+    or p.prokind<>'f' or exists(select from pg_proc where pronamespace=p.pronamespace and proname=p.proname and oid<>p.oid) then
+    raise exception 'local-unit-store-qualified-read-identity';end if;
+  return new;
+end;$f$;
+create trigger qualified_read_source before insert on helmut_unit_diagnostic.legacy_read_rpcs
+  for each row execute function helmut_unit_diagnostic.qualified_read_insert();
+alter table helmut_unit_diagnostic.legacy_read_rpcs enable always trigger qualified_read_source;
+
+create table helmut_unit_diagnostic.leases(
+  scope_hash text primary key references helmut_unit_diagnostic.authority(scope_hash),
+  claim_hash text not null check(claim_hash ~ '^[a-f0-9]{64}$'),
+  owner_id text not null,
+  job_name text not null,
+  token uuid not null,
+  expires_at timestamptz not null,
+  released boolean not null default false,
+  revision bigint not null check(revision>=0)
+);
+
 create function helmut_unit_diagnostic.no_change() returns trigger
 language plpgsql security invoker set search_path=pg_catalog
 as $f$ begin raise exception 'local-unit-store-immutable'; end;$f$;
@@ -234,6 +281,13 @@ alter table helmut_unit_diagnostic.authority enable always trigger authority_imm
 alter table helmut_unit_diagnostic.runtime_observations enable always trigger observations_immutable;
 alter table helmut_unit_diagnostic.artifacts enable always trigger artifacts_immutable;
 alter table helmut_unit_diagnostic.state enable always trigger state_no_delete;
+create trigger qualified_read_immutable before update or delete or truncate on helmut_unit_diagnostic.legacy_read_rpcs
+  for each statement execute function helmut_unit_diagnostic.no_change();
+alter table helmut_unit_diagnostic.legacy_read_rpcs enable always trigger qualified_read_immutable;
+create trigger lease_no_delete before delete or truncate on helmut_unit_diagnostic.leases
+  for each statement execute function helmut_unit_diagnostic.no_change();
+alter table helmut_unit_diagnostic.leases enable always trigger lease_no_delete;
+
 
 create function helmut_unit_diagnostic.authority_insert() returns trigger
 language plpgsql security invoker set search_path=pg_catalog
@@ -264,6 +318,7 @@ begin
     or coalesce(c#>>'{units,0,subject}','') !~ '^test-kohorte-synthetik-(bt|be|bb)-[0-9]{3}$'
     or c#>>'{limits,units}' is distinct from '1' or c#>>'{limits,providerCalls}' is distinct from '2'
     or c#>>'{limits,unitMs}' is distinct from '60000'
+    or c#>>'{limits,authMs}' is distinct from '30000' or c#>>'{limits,controlsPerUnit}' is distinct from '16'
     or c#>'{limits,maxOutputTokens}' is distinct from '{"D":3000,"R":6000}'::jsonb
     or c#>'{limits,reservePerPhaseMicroUsd}' is distinct from '{"D":81400,"R":88000}'::jsonb
     or c#>'{limits,maxMockCostMicroUsd}' is distinct from '169400'::jsonb
@@ -339,6 +394,73 @@ begin
   return r;
 end;$f$;
 
+-- Canonical hashes below are restricted to this ASCII-keyed verification ABI.
+-- They never hash jsonb::text as a substitute for supplied canonical bodies.
+create function helmut_unit_diagnostic.verification_canonical(v jsonb, depth integer default 0) returns text
+language plpgsql immutable security invoker set search_path=pg_catalog
+as $f$
+declare answer text; item record;
+begin
+  if depth>8 or v is null then raise exception 'local-unit-store-verification-depth';end if;
+  case jsonb_typeof(v)
+  when 'object' then
+    answer:='';for item in select key,value from jsonb_each(v) order by key collate "C" loop
+      if item.key !~ '^[A-Za-z][A-Za-z0-9]*$' then raise exception 'local-unit-store-verification-key';end if;
+      answer:=answer||case when answer='' then '' else ',' end||to_jsonb(item.key)::text||':'||helmut_unit_diagnostic.verification_canonical(item.value,depth+1);
+    end loop;return '{'||answer||'}';
+  when 'array' then
+    answer:='';for item in select value from jsonb_array_elements(v) loop
+      answer:=answer||case when answer='' then '' else ',' end||helmut_unit_diagnostic.verification_canonical(item.value,depth+1);
+    end loop;return '['||answer||']';
+  when 'string' then
+    if (v#>>'{}') !~ '^[ -~]*$' then raise exception 'local-unit-store-verification-ascii';end if;return v::text;
+  when 'null' then return 'null';
+  when 'number' then
+    if v::text !~ '^(0|[1-9][0-9]?)$' then raise exception 'local-unit-store-verification-number';end if;return v::text;
+  else raise exception 'local-unit-store-verification-scalar';end case;
+end;$f$;
+
+create function helmut_unit_diagnostic.verify_controls(v jsonb, s text, cid text) returns void
+language plpgsql immutable security invoker set search_path=pg_catalog
+as $f$
+declare a jsonb; r jsonb; i integer:=0; last_ns numeric:=0; last_at timestamptz;
+  stages text[]:=array['unit-enter','before-D','reserve-D','send-D','D-accounted','before-R','D-retained','reserve-R','send-R','R-accounted','R-retained','before-lage-save','after-lage-save','before-briefing-materialize','before-morning-insert','before-evidence-retention'];
+  key text; begin_at timestamptz; end_at timestamptz;
+begin
+  if not helmut_unit_diagnostic.exact(v,array['version','authorization','controls'])
+    or v->>'version' is distinct from 'helmut-local-unit-diagnostic-verification/1'
+    or jsonb_typeof(v->'controls') is distinct from 'array' or jsonb_array_length(v->'controls')<>16 then raise exception 'local-unit-store-sixteen-controls';end if;
+  a:=v->'authorization';
+  if not helmut_unit_diagnostic.exact(a,array['startedAtUTC','confirmedAtUTC','elapsedNs','commandHash','claimId'])
+    or a->>'commandHash' is distinct from s or a->>'claimId' is distinct from cid
+    or jsonb_typeof(a->'elapsedNs') is distinct from 'string'
+    or coalesce(a->>'elapsedNs','') !~ '^(0|[1-9][0-9]{0,10})$' then raise exception 'local-unit-store-auth30-binding';end if;
+  begin_at:=helmut_unit_diagnostic.utc(a->'startedAtUTC');end_at:=helmut_unit_diagnostic.utc(a->'confirmedAtUTC');
+  if (a->>'elapsedNs')::numeric>=30000000000 or end_at<begin_at or end_at>=begin_at+interval '30 seconds' then raise exception 'local-unit-store-auth30';end if;
+  last_at:=end_at;last_ns:=(a->>'elapsedNs')::numeric;
+  for r in select value from jsonb_array_elements(v->'controls') loop
+    if not helmut_unit_diagnostic.exact(r,array['index','stage','startedAtUTC','completedAtUTC','startedElapsedNs','completedElapsedNs','commandHash','runtimeHash','inputsHash','profileHash','bindingHash','stateHash','costsHash','artifactHash'])
+      or r->>'index' is distinct from i::text or r->>'stage' is distinct from stages[i+1]
+      or r->>'commandHash' is distinct from s
+      or jsonb_typeof(r->'index') is distinct from 'number'
+      or jsonb_typeof(r->'startedElapsedNs') is distinct from 'string'
+      or jsonb_typeof(r->'completedElapsedNs') is distinct from 'string'
+      or coalesce(r->>'startedElapsedNs','') !~ '^(0|[1-9][0-9]{0,10})$'
+      or coalesce(r->>'completedElapsedNs','') !~ '^(0|[1-9][0-9]{0,10})$' then raise exception 'local-unit-store-control-binding';end if;
+    foreach key in array array['runtimeHash','inputsHash','profileHash','bindingHash','stateHash','costsHash'] loop
+      if coalesce(r->>key,'') !~ '^[a-f0-9]{64}$' then raise exception 'local-unit-store-control-hash';end if;
+    end loop;
+    if (r->>'artifactHash' is not null and r->>'artifactHash' !~ '^[a-f0-9]{64}$')
+      or (stages[i+1] in ('D-retained','R-retained') and coalesce(r->>'artifactHash','') !~ '^[a-f0-9]{64}$') then raise exception 'local-unit-store-control-artifact';end if;
+    if (r->>'startedElapsedNs')::numeric<last_ns or (r->>'completedElapsedNs')::numeric<(r->>'startedElapsedNs')::numeric
+      or (r->>'completedElapsedNs')::numeric>=60000000000 then raise exception 'local-unit-store-control-monotonic';end if;
+    if helmut_unit_diagnostic.utc(r->'startedAtUTC')<last_at
+      or helmut_unit_diagnostic.utc(r->'completedAtUTC')<helmut_unit_diagnostic.utc(r->'startedAtUTC')
+      or helmut_unit_diagnostic.utc(r->'completedAtUTC')>=begin_at+interval '60 seconds' then raise exception 'local-unit-store-control-time';end if;
+    last_ns:=(r->>'completedElapsedNs')::numeric;last_at:=helmut_unit_diagnostic.utc(r->'completedAtUTC');i:=i+1;
+  end loop;
+end;$f$;
+
 create function helmut_unit_diagnostic.validate_state(s text,d jsonb) returns void
 language plpgsql stable security invoker set search_path=pg_catalog
 as $f$
@@ -394,7 +516,8 @@ begin
     or d->(k||'review') is distinct from '{}'::jsonb then raise exception 'local-unit-store-state-binding'; end if;
   if not helmut_unit_diagnostic.exact(j,array['operationId','commandHash','state','claimId','index','inFlight','attempts','stopRequested','reason']
       ||case when j?'claimedAtUTC' then array['claimedAtUTC'] else array[]::text[] end
-      ||case when j?'closedAtUTC' then array['closedAtUTC'] else array[]::text[] end)
+      ||case when j?'closedAtUTC' then array['closedAtUTC'] else array[]::text[] end
+      ||case when j->>'state'='closed' then array['verification'] else array[]::text[] end)
     or not helmut_unit_diagnostic.exact(co,array['day','limit','spent','tariff','calls','slot'])
     or not helmut_unit_diagnostic.exact(sl,array['version','plan','planHash','consumed','draftCompletions','reviewBindings','reviewBindingsHash'])
     or helmut_unit_diagnostic.object_count(co->'calls')>2 or helmut_unit_diagnostic.object_count(j->'attempts')>2
@@ -488,6 +611,15 @@ begin
       or not exists(select from helmut_unit_diagnostic.artifacts x where x.scope_hash=s and x.kind='evidence' and x.body_hash=v->>'evidenceHash') then
       raise exception 'local-unit-store-result-artifacts';end if;
   else raise exception 'local-unit-store-result-state';end if;
+  if j->>'state'='closed' then
+    if exists(select from helmut_unit_diagnostic.artifacts where scope_hash=s and kind='evidence' and body?'failure') then raise exception 'local-unit-store-failed-evidence-no-close';end if;
+    v:=(select body->'verification' from helmut_unit_diagnostic.artifacts where scope_hash=s and kind='evidence');
+    perform helmut_unit_diagnostic.verify_controls(v,s,j->>'claimId');
+    if not helmut_unit_diagnostic.exact(j->'verification',array['authorizationHash','controlsHash','controlCount'])
+      or j#>>'{verification,controlCount}' is distinct from '16'
+      or j#>>'{verification,authorizationHash}' is distinct from helmut_unit_diagnostic.sha(helmut_unit_diagnostic.verification_canonical(v->'authorization'))
+      or j#>>'{verification,controlsHash}' is distinct from helmut_unit_diagnostic.sha(helmut_unit_diagnostic.verification_canonical(v->'controls')) then raise exception 'local-unit-store-final-verification';end if;
+  end if;
   if j->>'state'='closed' and (j->>'index'<>'1' or j->'inFlight'<>'null'::jsonb or j->>'stopRequested'<>'false'
     or j#>>'{attempts,D,status}' is distinct from 'accounted' or j#>>'{attempts,R,status}' is distinct from 'accounted'
     or v->>'state' is distinct from 'retained-unreviewed') then raise exception 'local-unit-store-close-receipts';end if;
@@ -656,6 +788,11 @@ begin
     select body_hash into strict expected_parent from helmut_unit_diagnostic.artifacts where scope_hash=new.scope_hash and kind='mandatsbriefing';
     if new.body->>'slot' is distinct from 'morgenlage' then raise exception 'local-unit-store-morning-stage';end if;
   elsif new.kind='evidence' then
+    if new.body->>'failure' is distinct from 'unit-not-confirmed' then
+      perform helmut_unit_diagnostic.verify_controls(new.body->'verification',new.scope_hash,j->>'claimId');
+      if new.body#>>'{verification,authorization,startedAtUTC}' is distinct from j#>>'{inFlight,enteredAtUTC}' then raise exception 'local-unit-store-verification-native-entry';end if;
+      if helmut_unit_diagnostic.utc(new.body#>'{verification,controls,15,completedAtUTC}')>clock_timestamp() then raise exception 'local-unit-store-verification-future';end if;
+    end if;
     if new.logical_id<>'diagnostic-result' or new.body->>'operationId' is distinct from a.operation_id
       or new.body->>'commandHash' is distinct from a.scope_hash or new.parent_hash is not null then raise exception 'local-unit-store-evidence-stage';end if;
   else raise exception 'local-unit-store-artifact-kind';end if;
@@ -675,6 +812,83 @@ create function helmut_unit_diagnostic.nonce(n text) returns void
 language plpgsql immutable security invoker set search_path=pg_catalog
 as $f$ begin if n is null or n !~ '^[a-f0-9]{64}$' then raise exception 'local-unit-store-fresh-nonce-required';end if;end;$f$;
 
+create function helmut_unit_diagnostic.lease_guard() returns trigger
+language plpgsql security invoker set search_path=pg_catalog
+as $f$
+declare a helmut_unit_diagnostic.authority%rowtype; s jsonb; j jsonb; until_at timestamptz;
+begin
+  perform helmut_unit_diagnostic.runtime_role();
+  select * into strict a from helmut_unit_diagnostic.authority where scope_hash=new.scope_hash;
+  select body into strict s from helmut_unit_diagnostic.state where scope_hash=new.scope_hash for update;
+  j:=s->('localUnitDiagnostic:'||right(a.operation_id,32)||':journal');
+  if new.claim_hash is distinct from helmut_unit_diagnostic.sha(j->>'claimId')
+    or new.owner_id is distinct from a.command_canonical::jsonb#>>'{units,0,subject}'
+    or new.job_name is distinct from 'lage-briefing-'||new.owner_id or not isfinite(new.expires_at) then raise exception 'local-unit-store-lease-owner';end if;
+  if tg_op='UPDATE' then
+    if new.scope_hash is distinct from old.scope_hash or new.claim_hash is distinct from old.claim_hash
+      or new.owner_id is distinct from old.owner_id or new.job_name is distinct from old.job_name
+      or new.revision<>old.revision+1 then raise exception 'local-unit-store-lease-binding';end if;
+    if new.released then
+      if old.released or old.expires_at<=clock_timestamp() or new.token<>old.token or new.expires_at<>old.expires_at then
+        raise exception 'local-unit-store-lease-release-owner';end if;
+      return new;
+    end if;
+    if not old.released and old.expires_at>clock_timestamp() then raise exception 'local-unit-store-lease-busy';end if;
+    if new.token=old.token then raise exception 'local-unit-store-lease-successor-token';end if;
+  elsif new.revision<>0 or new.released then raise exception 'local-unit-store-lease-initial';end if;
+  perform helmut_unit_diagnostic.fresh_runtime(new.scope_hash);
+  until_at:=helmut_unit_diagnostic.utc(j#>'{inFlight,deadlineAtUTC}');
+  if j->>'state'<>'running' or j->>'stopRequested'<>'false' or clock_timestamp()>=a.expires_at
+    or new.expires_at<=clock_timestamp() or new.expires_at>until_at or new.expires_at>a.expires_at
+    or new.expires_at>clock_timestamp()+interval '600 seconds' then raise exception 'local-unit-store-lease-window';end if;
+  return new;
+end;$f$;
+create trigger leases_validate before insert or update on helmut_unit_diagnostic.leases
+  for each row execute function helmut_unit_diagnostic.lease_guard();
+alter table helmut_unit_diagnostic.leases enable always trigger leases_validate;
+
+create function public.local_unit_diagnostic_lease_acquire_v1(p_scope_hash text,p_claim_hash text,p_job text,p_ttl_ms integer,p_nonce text) returns jsonb
+language plpgsql volatile security invoker set search_path=pg_catalog
+as $f$
+declare a helmut_unit_diagnostic.authority%rowtype; s jsonb; j jsonb; l helmut_unit_diagnostic.leases%rowtype; t uuid; expiry timestamptz;
+begin
+  perform helmut_unit_diagnostic.runtime_role();perform helmut_unit_diagnostic.nonce(p_nonce);
+  if p_ttl_ms is null or p_ttl_ms<1 or p_ttl_ms>600000 then raise exception 'local-unit-store-lease-ttl';end if;
+  select * into strict a from helmut_unit_diagnostic.authority where scope_hash=p_scope_hash;
+  select body into strict s from helmut_unit_diagnostic.state where scope_hash=p_scope_hash for update;
+  j:=s->('localUnitDiagnostic:'||right(a.operation_id,32)||':journal');
+  if p_claim_hash is null or p_claim_hash is distinct from helmut_unit_diagnostic.sha(j->>'claimId')
+    or p_job is distinct from 'lage-briefing-'||(a.command_canonical::jsonb#>>'{units,0,subject}') then raise exception 'local-unit-store-lease-claim';end if;
+  select * into l from helmut_unit_diagnostic.leases where scope_hash=p_scope_hash for update;
+  if found and not l.released and l.expires_at>clock_timestamp() then
+    return jsonb_build_object('version','helmut-local-unit-diagnostic-lease-ack/1','scopeHash',p_scope_hash,'claimHash',p_claim_hash,'job',p_job,'acquired',false,'token',null,'nonce',p_nonce);end if;
+  t:=gen_random_uuid();expiry:=least(clock_timestamp()+p_ttl_ms*interval '1 millisecond',helmut_unit_diagnostic.utc(j#>'{inFlight,deadlineAtUTC}'),a.expires_at);
+  if l.scope_hash is null then
+    insert into helmut_unit_diagnostic.leases values(p_scope_hash,p_claim_hash,a.command_canonical::jsonb#>>'{units,0,subject}',p_job,t,expiry,false,0) returning * into strict l;
+  else
+    update helmut_unit_diagnostic.leases set token=t,expires_at=expiry,released=false,revision=revision+1 where scope_hash=p_scope_hash returning * into strict l;
+  end if;
+  return jsonb_build_object('version','helmut-local-unit-diagnostic-lease-ack/1','scopeHash',p_scope_hash,'claimHash',p_claim_hash,'job',p_job,'acquired',true,'token',l.token::text,'revision',l.revision,
+    'expiresAtUTC',to_char(l.expires_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'nonce',p_nonce);
+end;$f$;
+
+create function public.local_unit_diagnostic_lease_release_v1(p_scope_hash text,p_claim_hash text,p_job text,p_token uuid,p_nonce text) returns jsonb
+language plpgsql volatile security invoker set search_path=pg_catalog
+as $f$
+declare a helmut_unit_diagnostic.authority%rowtype; s jsonb; j jsonb; l helmut_unit_diagnostic.leases%rowtype; success boolean:=false;
+begin
+  perform helmut_unit_diagnostic.runtime_role();perform helmut_unit_diagnostic.nonce(p_nonce);
+  select * into strict a from helmut_unit_diagnostic.authority where scope_hash=p_scope_hash;
+  select body into strict s from helmut_unit_diagnostic.state where scope_hash=p_scope_hash for update;
+  j:=s->('localUnitDiagnostic:'||right(a.operation_id,32)||':journal');
+  if p_claim_hash is null or p_claim_hash is distinct from helmut_unit_diagnostic.sha(j->>'claimId')
+    or p_job is distinct from 'lage-briefing-'||(a.command_canonical::jsonb#>>'{units,0,subject}') then raise exception 'local-unit-store-lease-claim';end if;
+  select * into l from helmut_unit_diagnostic.leases where scope_hash=p_scope_hash for update;
+  if found and l.token=p_token and l.claim_hash=p_claim_hash and l.job_name=p_job and not l.released and l.expires_at>clock_timestamp() then
+    update helmut_unit_diagnostic.leases set released=true,revision=revision+1 where scope_hash=p_scope_hash;success:=true;end if;
+  return jsonb_build_object('version','helmut-local-unit-diagnostic-lease-release/1','scopeHash',p_scope_hash,'claimHash',p_claim_hash,'job',p_job,'released',success,'nonce',p_nonce);
+end;$f$;
+
 create function public.local_unit_diagnostic_contract_v1() returns jsonb
 language plpgsql stable security invoker set search_path=pg_catalog
 as $f$
@@ -683,10 +897,12 @@ begin
   perform helmut_unit_diagnostic.runtime_role();
   select oid into strict owner_id from pg_roles where rolname='helmut_ud_owner_'||right(current_database(),32);
   if (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='helmut_unit_diagnostic'
-    and c.relname in ('authority','runtime_observations','state','artifacts') and c.relkind='r' and not c.relispartition and c.relowner=owner_id)<>4
+    and c.relname in ('authority','runtime_observations','state','artifacts','leases','legacy_read_rpcs') and c.relkind='r' and not c.relispartition and c.relowner=owner_id)<>6
     or exists(select from pg_inherits i join pg_class c on c.oid in (i.inhrelid,i.inhparent) join pg_namespace n on n.oid=c.relnamespace where n.nspname='helmut_unit_diagnostic')
     or (select count(*) from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace
-      where n.nspname='helmut_unit_diagnostic' and not t.tgisinternal and t.tgenabled='A')<>8
+      where n.nspname='helmut_unit_diagnostic' and not t.tgisinternal and t.tgenabled='A')<>12
+    or exists(select from helmut_unit_diagnostic.legacy_read_rpcs q left join pg_proc p on p.oid=q.function_oid where p.oid is null or p.prosecdef or p.provolatile not in ('i','s') or p.proconfig is distinct from array['search_path=pg_catalog']::text[] or p.proname<>q.function_name or oidvectortypes(p.proargtypes)<>q.identity_arguments or helmut_unit_diagnostic.sha(p.prosrc)<>q.prosrc_sha256)
+    or has_table_privilege(r,'helmut_unit_diagnostic.legacy_read_rpcs','INSERT,UPDATE,DELETE,TRUNCATE')
     or has_table_privilege(r,'helmut_unit_diagnostic.authority','INSERT,UPDATE,DELETE,TRUNCATE')
     or has_table_privilege(r,'helmut_unit_diagnostic.runtime_observations','INSERT,UPDATE,DELETE,TRUNCATE')
     or has_table_privilege(r,'helmut_unit_diagnostic.state','INSERT,DELETE,TRUNCATE')
@@ -699,10 +915,12 @@ begin
           'public.local_unit_diagnostic_state_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_state_cas_v1(text,text,text,bigint,text,text,text)'::regprocedure,
           'public.local_unit_diagnostic_artifact_insert_v1(text,text,text,text,text,text,text,text)'::regprocedure,
-          'public.local_unit_diagnostic_artifact_read_v1(text,text,text,text,text)'::regprocedure))
+          'public.local_unit_diagnostic_artifact_read_v1(text,text,text,text,text)'::regprocedure,
+          'public.local_unit_diagnostic_lease_acquire_v1(text,text,text,integer,text)'::regprocedure,
+          'public.local_unit_diagnostic_lease_release_v1(text,text,text,uuid,text)'::regprocedure))
       and p.proowner=owner_id and not p.prosecdef and p.proconfig=array['search_path=pg_catalog']::text[];
   return jsonb_build_object('version','helmut-local-unit-diagnostic-native-store/1','database',current_database(),
-    'databaseOID',(select oid::text from pg_database where datname=current_database()),'sources',sources,'sourceQualified',false);
+    'databaseOID',(select oid::text from pg_database where datname=current_database()),'sources',sources,'legacyReadRPCs',(select coalesce(jsonb_agg(jsonb_build_object('name',function_name,'oid',function_oid::text,'identityArguments',identity_arguments,'prosrcSHA256',prosrc_sha256,'qualificationPin',qualification_pin) order by function_name),'[]'::jsonb) from helmut_unit_diagnostic.legacy_read_rpcs where http_exposed),'sourceQualified',false);
 end;$f$;
 
 create function public.local_unit_diagnostic_authority_read_v1(p_scope_hash text,p_nonce text) returns jsonb
@@ -762,7 +980,8 @@ begin
   update helmut_unit_diagnostic.state set canonical_text=p_next_canonical,body_hash=p_next_hash,body=d,revision=revision+1
     where scope_hash=p_scope_hash and body_hash=p_old_hash and revision=p_old_revision returning * into strict s;
   return jsonb_build_object('version','helmut-local-unit-diagnostic-state-ack/1','scopeHash',p_scope_hash,
-    'hash',s.body_hash,'revision',s.revision,'claimHash',p_claim_hash,'nonce',p_nonce);
+    'hash',s.body_hash,'revision',s.revision,'claimHash',p_claim_hash,'nonce',p_nonce)
+    ||case when s.body#>>array[k||'journal','state']='closed' then s.body#>array[k||'journal','verification'] else '{}'::jsonb end;
 end;$f$;
 
 create function public.local_unit_diagnostic_artifact_insert_v1(p_scope_hash text,p_claim_hash text,p_kind text,p_logical_id text,p_canonical text,p_sha256 text,p_parent_hash text,p_nonce text) returns jsonb
@@ -813,6 +1032,9 @@ begin
   execute format('create policy runtime_insert on helmut_unit_diagnostic.artifacts for insert to %I with check (true)',runtime_name);
   execute format('grant update on helmut_unit_diagnostic.state to %I',runtime_name);
   execute format('grant insert on helmut_unit_diagnostic.artifacts to %I',runtime_name);
+  execute format('create policy runtime_insert on helmut_unit_diagnostic.leases for insert to %I with check (true)',runtime_name);
+  execute format('create policy runtime_update on helmut_unit_diagnostic.leases for update to %I using (true) with check (true)',runtime_name);
+  execute format('grant insert,update on helmut_unit_diagnostic.leases to %I',runtime_name);
   execute format('grant usage on schema helmut_unit_diagnostic to %I',runtime_name);
   for f in select p.oid::regprocedure as name from pg_proc p join pg_namespace n on n.oid=p.pronamespace
     where p.proowner=(select oid from pg_roles where rolname=current_user)
@@ -823,7 +1045,9 @@ begin
         'public.local_unit_diagnostic_state_read_v1(text,text)'::regprocedure,
         'public.local_unit_diagnostic_state_cas_v1(text,text,text,bigint,text,text,text)'::regprocedure,
         'public.local_unit_diagnostic_artifact_insert_v1(text,text,text,text,text,text,text,text)'::regprocedure,
-        'public.local_unit_diagnostic_artifact_read_v1(text,text,text,text,text)'::regprocedure)) loop
+        'public.local_unit_diagnostic_artifact_read_v1(text,text,text,text,text)'::regprocedure,
+          'public.local_unit_diagnostic_lease_acquire_v1(text,text,text,integer,text)'::regprocedure,
+          'public.local_unit_diagnostic_lease_release_v1(text,text,text,uuid,text)'::regprocedure)) loop
     execute format('revoke all on function %s from public',f.name);
     execute format('grant execute on function %s to %I',f.name,runtime_name);
   end loop;
