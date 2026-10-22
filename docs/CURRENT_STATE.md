@@ -2,24 +2,23 @@
 
 **Lokal 22.10.2026 Europe/Istanbul; letzter echter Production-Befund 16.10.2026 13:07:32 UTC, historische Basis 13.10.2026.** Production gilt nur zum Prüfzeitpunkt; keine aktuelle Production-Verifikation. Alte Cockpitfassung bleibt auf Git-Merge `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`. Vollständiger Stand vor dieser Verdichtung: [Archiv](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.10.: Restore und lokale CI-Prüfung
+## 22.10.: Restore und geschützter CI-Originalkanal
 
-13.527Dateien hashverifiziert; physische DB-Kopien fehlen.84erManifest+Provisionierung
-und9Negativgruppen PASS. CI84-Verbraucher19/31/13/6+Vorbereitung lokal PASS.
+13.527Dateien hashverifiziert; physische DB-Kopien fehlen. Manifest+9Negativgruppen PASS.
 STANDARD180/180 auf87c439 PASS; danach Contracttest-Storemutation entdeckt.
 Testfix4Fälle PASS, Store bytegenau restauriert; Zeitmetadaten erklärt geändert.
 88/88Bytepins unabhängig PASS;84CI+3V12 auch metadatengetreu unverändert.
 7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld nicht übertragen.
 [Restore/Prüfungen](betrieb/private-ci-original-provisioning-20261021.md).
-PR929/d8ca7465: Diagnosevorbereitung499→0 lokal+GitHub43/43 PASS, Browser grün;
-Offline39739166451 danach am Originalgate rot. Originalinspektion PASS, weiter inert.
+Einzelunit-Vorbereitung499→0 lokal+GitHub43/43 PASS; weiterhin inert.
 POSTRUN-Auth/Journal, Requests und native Verbraucher offen; alte GOs verbraucht.
 [Diagnoseumfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
-CI-Kanal PR930: Cipher84, Roundtrip84/84,28Schutztests lokal PASS.
-Environment laut Betreiber eingerichtet; echte Voll-CI noch offen.
-[Einrichtung](betrieb/private-ci-original-channel-20261022.md).
-GitHub403 im Codex-App-Kontext; genaue Übersteuerungsstelle offen.
-Kein GHA-Originalnachweis/Voll500/Merge.
+PR930/3424469c: GHA39745628626 grün. Freigabe/Checkout,
+Entschlüsselung+84Originalpins,180Standard-/335Bereichssuiten,DB+Browser PASS;
+Diagnosen verschlüsselt bis29.10.; PR930 in929 gemergt:
+eb4bfd61: identischer Quellbaum; Integrations-CI offen.
+[GitHub-Abnahme](betrieb/belege/private-ci-channel-20261022/GITHUB_ACCEPTANCE_39745628626.SAFE.json).
+App403 separat offen; kein neuer Voll500/Productionnachweis.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

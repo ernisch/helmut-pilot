@@ -76,8 +76,11 @@ Originalbedarf. Die Environment-Freigabe ist keine Freigabe eines500er Tests.
 
 Lokal28 Schutztests einschließlich Fehler-/Archiv-/Logfällen und echtem
 Log-GPG-Roundtrip PASS. Workflow-YAML, Python- und eingebettete Shellsyntax PASS.
-Die Environment ist laut Betreiber eingerichtet und eine Freigabe gemeldet.
-Der technische Echtbeleg für Zugangsprüfung, Entschlüsselung und vollständige
-Pflicht-CI ist noch offen. Ein
-grünes Ergebnis wird dafür nicht aus synthetischen Reviewfixtures abgeleitet.
-Kein500er Lauf, kein Merge und keine Production-Aktion durch diese Vorbereitung.
+Der echte [GitHub-Lauf39745628626](https://github.com/ernisch/helmut-pilot/actions/runs/39745628626)
+auf3424469c ist vollständig grün: Freigabe/Lauf/PR/Checkoutprüfung,84Originale,
+180Standardsuiten,335Bereichssuiten, alle angeforderten isolierten Datenbankchecks
+und Browser/Mobile PASS. Die Diagnosen wurden ausschließlich verschlüsselt gesichert.
+PR930 ist als eb4bfd61 im Entwicklungszweig übernommen; dessen Quellbaum stimmt
+exakt mit dem geprüften Stand überein. Neue Integrationsläufe brauchen ihre eigene
+Freigabe. [Bereinigter Echtbeleg](belege/private-ci-channel-20261022/GITHUB_ACCEPTANCE_39745628626.SAFE.json).
+Kein500er Lauf, keine Unit60-Qualifikation und keine Production-Aktion daraus.
