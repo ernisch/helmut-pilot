@@ -33,7 +33,8 @@ function fixture(nonce = "a".repeat(32), grant = sha("SYNTHETIC-GRANT")) {
     target: { database: "helmut_unit_diagnostic_" + nonce, postrunPin: pin("POSTRUN"), ownerEvidencePin: pin("OWNER"),
       runtimeEvidencePin: pin("RUNTIME"), sourceRuntimePin: pin("SOURCE-RUNTIME") },
     gatePins: Object.fromEntries(A.GATES.map(k => [k, pin(k)])), requestPins: { D: bytesPin(dBytes), R: bytesPin(rBytes) },
-    drafts: [{ profile: { id: owner }, intentId: d.id, briefingDatum: calendar.sourceViewAtUTC }],
+    drafts: [{ profile: { id: owner }, intentId: d.id, briefingDatum: calendar.sourceViewAtUTC,
+      sources: { documents: [], knowledgeObjects: [] }, briefingEingabe: { version: 1 } }],
     units: [{ kind: "DR", subject: owner, intentIds: [d.id, r.id] }],
     slot: { version: A.SLOT_VERSION, plan, planHash: hash(plan), consumed: {}, draftCompletions: {}, reviewBindings: {}, reviewBindingsHash: hash({}) },
     limits: copy(A.LIMITS) };
@@ -65,6 +66,14 @@ function review(f, c) {
   return { ...base, bindingHash: hash(base) };
 }
 const reserveD = f => A.reserve(f.auth, f.selection, claimId, "D", "SYNTHETIC-TICKET-D", f.d.actualRequestHash, at, null, dBytes);
+function verification(f) {
+  return { version: "helmut-local-unit-diagnostic-verification/1", authorization: { startedAtUTC: at, confirmedAtUTC: at,
+    elapsedNs: "0", commandHash: f.selection.commandHash, claimId }, controls: A.CONTROL_STAGES.map((stage, index) => ({
+    index, stage, startedAtUTC: at, completedAtUTC: at, startedElapsedNs: "0", completedElapsedNs: "0",
+    commandHash: f.selection.commandHash, runtimeHash: sha("SYNTHETIC-RUNTIME"), inputsHash: sha("SYNTHETIC-INPUTS"),
+    profileHash: sha("SYNTHETIC-PROFILE"), bindingHash: sha("SYNTHETIC-BINDING"), stateHash: sha("SYNTHETIC-STATE"),
+    costsHash: sha("SYNTHETIC-COSTS"), artifactHash: stage.endsWith("-retained") ? sha("SYNTHETIC-ARTIFACT") : null })) };
+}
 let checks = 0;
 const rejects = fn => { assert.throws(fn); checks++; };
 async function main() {
@@ -72,6 +81,7 @@ async function main() {
   assert.deepEqual(f.command.limits.maxOutputTokens, { D: 3000, R: 6000 });
   assert.deepEqual(f.command.limits.reservePerPhaseMicroUsd, { D: 81400, R: 88000 });
   assert.equal(f.command.limits.maxMockCostMicroUsd, 169400); checks++;
+  assert.equal(f.command.limits.authMs, 30000); assert.equal(f.command.limits.controlsPerUnit, 16); checks++;
   for (const mutate of [c => c.slot.plan.intents[0].maxOutputTokens = 6000,
     c => { c.slot.plan.intents[1].maxOutputTokens = 3000; c.slot.plan.intents[1].reviewRule.reasoningEffort = "low"; },
     c => c.slot.plan.intents[1].reviewRule.reasoningEffort = "low",
@@ -145,7 +155,15 @@ async function main() {
   const positions = ["mandatsbriefing", "morgenbriefing", "lage"].map(bereich => ({ bereich, owner: f.owner, hash: sha(bereich) }));
   rejects(() => A.finish(f.auth, f.selection, claimId, sha("SYNTHETIC-EVIDENCE"), positions, at));
   A.retain(f.auth, f.selection, claimId, sha("SYNTHETIC-EVIDENCE"), positions);
-  const result = A.finish(f.auth, f.selection, claimId, sha("SYNTHETIC-EVIDENCE"), positions, at);
+  rejects(() => A.finish(f.auth, f.selection, claimId, sha("SYNTHETIC-EVIDENCE"), positions, at));
+  for (const change of [v => v.controls.pop(), v => v.controls[1].stage = v.controls[0].stage,
+    v => v.controls[0].completedElapsedNs = "60000000000", v => v.authorization.elapsedNs = "30000000000",
+    v => v.controls[6].artifactHash = null]) {
+    const v = verification(f); change(v);
+    rejects(() => A.finish(f.auth, f.selection, claimId, sha("SYNTHETIC-EVIDENCE"), positions, at, v));
+  }
+  const result = A.finish(f.auth, f.selection, claimId, sha("SYNTHETIC-EVIDENCE"), positions, at, verification(f));
+  assert.equal(result.controlCount, 16); assert.equal(result.controlsHash, hash(verification(f).controls)); checks++;
   assert.equal(result.full500Accepted, false); assert.equal(result.independentFinalAcceptance, false); checks++;
   rejects(() => A.finish(f.auth, f.selection, claimId, sha("SYNTHETIC-EVIDENCE"), positions, at));
   rejects(() => A.stop(f.auth, f.selection, claimId, "late-stop"));
@@ -179,6 +197,10 @@ async function main() {
       consumeLocalUnitDiagnosticAuthority: () => ({ command: g.command, admission: g.admission, sourceHandle: Object.freeze({}) }),
       readLocalUnitDiagnosticRuntime: async () => Object.freeze({}),
       consumeLocalUnitDiagnosticRuntime: () => ({ ...g.selection, targetHash: hash(g.command.target), sourceHash: hash(g.command.source), observedAtUTC: new Date(clock).toISOString() }),
+      readSynthetik500CurrentInputs: async () => copy(g.command.drafts[0].sources),
+      getProfileFromDb: async () => copy(g.command.drafts[0].profile),
+      getLageEntwurfsbeleg: async () => { throw Error("unexpected synthetic artifact"); },
+      readLocalUnitDiagnosticArtifact: async () => { throw Error("unexpected synthetic artifact"); },
       readLocalUnitDiagnosticState: async () => {
         if (mode === "delayed-claim-readback" && mutations === 1) clock += 61000;
         if (mode === "delayed-final-readback" && A.current(state, g.selection).journal.state === "closed") clock += 61000;
@@ -203,6 +225,9 @@ async function main() {
       if (name === "./storage") return store;
       if (name === "./local-unit-diagnostic-authority") return A;
       if (name === "./synthetik-500-profile") return P;
+      if (name === "./synthetik-500-production-command") return require("../lib/helmut/synthetik-500-production-command");
+      if (name === "./synthetik-500-local-calendar") return { acceptsInput: () => true };
+      if (name === "./briefing-lagebindung") return { pruefe: () => ({ eingabeHash: sha("SYNTHETIC-BINDING") }) };
       if (name === "./local-unit-diagnostic-source") return { verifyCommandSource(c) { assert.equal(hash(c), g.selection.commandHash); } };
       if (name === "./local-unit-diagnostic-transport") return {
         prepareOriginals: async () => transport, verifyHandle(h, c) { assert.equal(h, transport); assert.equal(hash(c), g.selection.commandHash); }
@@ -244,16 +269,19 @@ async function main() {
   assert.equal(A.current(retry.state(), retry.g.selection).journal.inFlight.deadlineAtUTC, "2026-10-22T12:01:01.000Z"); checks++;
   for (const mode of ["delayed-final-ack", "delayed-final-readback"]) {
     const c = simulatedScope(mode);
-    await assert.rejects(c.run(s => s.confirmFinalACK(c.makeFinal(mode === "delayed-final-ack"))), /final-ack-readback-or-deadline/);
+    await assert.rejects(c.run(s => s.confirmFinalACK(c.makeFinal(mode === "delayed-final-ack"))));
     assert.equal(A.current(c.state(), c.g.selection).journal.state, "closed"); await assert.rejects(c.run()); checks++;
   }
-  const goodFinal = simulatedScope("confirmed"); await goodFinal.run(s => s.confirmFinalACK(goodFinal.makeFinal())); checks++;
+  const uncheckedFinal = simulatedScope("confirmed");
+  await assert.rejects(uncheckedFinal.run(s => s.confirmFinalACK(uncheckedFinal.makeFinal())), /sixteen-fresh-controls-required/); checks++;
   const reserved = simulatedScope("confirmed"); await reserved.run(async s => {
+    await s.checkControl("unit-enter"); await s.checkControl("before-D");
     const ticket = await s.reserveTicket("D", reserved.g.d.actualRequestHash, dBytes);
     assert.equal(s.assertTicket(ticket), ticket); assert.equal(s.confirmTicket, undefined);
     rejects(() => s.assertTicket(JSON.parse(JSON.stringify(ticket))));
   }); checks++;
   const unknownReserve = simulatedScope("unknown-reserve-ack"); await unknownReserve.run(async s => {
+    await s.checkControl("unit-enter"); await s.checkControl("before-D");
     await assert.rejects(s.reserveTicket("D", unknownReserve.g.d.actualRequestHash, dBytes), /UNKNOWN_RESERVE_ACK/);
     const state = await s.readState(), own = s.authority(state), plain = Object.values(own.costs.calls)[0].ticket;
     rejects(() => s.assertTicket(plain)); assert.equal(s.confirmTicket, undefined);
@@ -266,5 +294,5 @@ async function main() {
   console.log(JSON.stringify({ pass: true, scope: "SYNTHETIC_LOCAL_UNIT_AUTHORITY_ONLY", checks,
     nativeExecution: false, sourceOriginalQualification: false, unit60Qualified: false }));
 }
-module.exports = { fixture, start, completion, review, dBytes, rBytes, claimId, at };
+module.exports = { fixture, start, completion, review, verification, dBytes, rBytes, claimId, at };
 if (require.main === module) main().catch(e => { console.error(e.stack); process.exitCode = 1; });

@@ -173,6 +173,8 @@ async function motorBoundaries() {
     verifyRuntime: async () => events.push("fresh-runtime"),
     readState: async () => { events.push("own-state-read"); return {}; },
     mutateState: async () => { throw Error("unexpected state write"); }, costAdmission: () => ({}),
+    checkControl: async () => { throw Error("unexpected control execution"); },
+    verification: () => { throw Error("unexpected verification export"); },
     confirmFinalACK: async () => { throw Error("unexpected final ACK"); },
     assertTicket: ticket => { assert.equal(ticket, genuineTestTicket); },
     beforeSend: async () => { throw Error("unexpected send claim"); },
@@ -191,14 +193,15 @@ async function motorBoundaries() {
   await test("forged send tickets stop before native input or runtime reads", async () => {
     await assert.rejects(adapterFor(scope, storage).beforeSend({ ...genuineTestTicket })); assert.deepEqual(events, []);
   });
-  await test("changed native profile stops before the own send claim", async () => {
-    await assert.rejects(adapterFor(scope, { ...storage, getProfileFromDb: async () => ({ ...own.drafts[0].profile, changed: true }) })
+  await test("sender delegates to the closed measured control consumer", async () => {
+    await assert.rejects(adapterFor({ ...scope, beforeSend: async () => { events.push("measured-send"); throw Error("current-profile-drift"); } }, storage)
       .beforeSend(genuineTestTicket), /current-profile-drift/);
-    assert.deepEqual(events, ["fresh-runtime", "current-inputs"]); events.length = 0;
+    assert.deepEqual(events, ["measured-send"]); events.length = 0;
   });
   await test("expired own claim cannot fall through to the old500 sender", async () => {
-    await assert.rejects(adapterFor(scope, storage).beforeSend(genuineTestTicket), /own-claim-expired/);
-    assert.deepEqual(events, ["fresh-runtime", "current-inputs", "own-state-read"]); events.length = 0;
+    await assert.rejects(adapterFor({ ...scope, beforeSend: async () => { events.push("measured-send"); throw Error("own-claim-expired"); } }, storage)
+      .beforeSend(genuineTestTicket), /own-claim-expired/);
+    assert.deepEqual(events, ["measured-send"]); events.length = 0;
   });
 }
 motorBoundaries().then(() => {
