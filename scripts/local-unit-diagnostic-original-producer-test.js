@@ -118,6 +118,12 @@ if (args.length) {
       && proof.originalRequests.R.maxOutputTokens === 3000 && proof.originalRequests.R.reasoningEffort === "low"
       && proof.originalRequests.R.sha256 !== proof.diagnosticRequests.R.sha256
       && proof.diagnosticRequests.R.sha256 === sha(result.phases.R.requestBytes), "R-mismatch-disclosed");
+    const override = proof.diagnosticReviewOverride;
+    need(selected.intents[1].maxOutputTokens === 3000 && selected.intents[1].reviewRule.reasoningEffort === "low"
+      && override.sourceIntentSHA256 === P.hash(selected.intents[1]) && override.sourceIntentModified === false
+      && override.originalRule.maxOutputTokens === 3000 && override.originalRule.reviewRule.reasoningEffort === "low"
+      && override.diagnosticRule.maxOutputTokens === 6000 && override.diagnosticRule.reviewRule.reasoningEffort === "medium"
+      && override.diagnosticRequestSHA256 === sha(result.phases.R.requestBytes), "explicit-override-preserves-original-intent");
   });
   check("both Responses envelopes preserve original output and usage with19900ms configured delay", () => {
     const fixture = JSON.parse(original.fixtureBytes.toString("utf8"))[499];
@@ -146,7 +152,7 @@ if (args.length) {
   });
   check("current source profile, D intent, R budget and phase mapping cannot drift", () => {
     for (const mutate of [x => { x.draft.profile.id += "-fictional-drift"; }, x => { x.intents[0].actualRequestHash = "0".repeat(64); },
-      x => { x.intents[1].maxOutputTokens = 3000; }, x => { x.intents[1].reviewRule.reasoningEffort = "low"; },
+      x => { x.intents[1].maxOutputTokens = 6000; }, x => { x.intents[1].reviewRule.reasoningEffort = "medium"; },
       x => { x.unit.intentIds.reverse(); }]) {
       const changed = structuredClone(selected); mutate(changed);
       assert.throws(() => producerForSelection(changed, sourceHandle).derive(original), /producer-(source-draft-intents|source-review-rule)/);
