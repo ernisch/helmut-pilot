@@ -1,0 +1,83 @@
+{
+  "schema": "helmut-local-unit-cost-caller-source-review/1",
+  "recordedAtUTC": "2026-10-22T21:16:52.699014+00:00",
+  "scope": "SOURCE_ONLY_SEPARATE_OWN2_FIXTURE_COST_DISPATCH",
+  "baselineCommit": "d6778b7805adc7ebe0b466b1604947d4a86114d9",
+  "baselineSource": {
+    "file": "lib/helmut/testkosten-budget.js",
+    "bytes": 32969,
+    "sha256": "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e"
+  },
+  "candidateImplementationCommit": "c46d07ebddaf8914c747fbc84f8059888376d9c1",
+  "reviewedIntegrationCommit": "678fb118cf4632d45a31ead8516acf6343ee8587",
+  "sourcePins": [
+    {
+      "file": "lib/helmut/testkosten-budget.js",
+      "bytes": 33827,
+      "sha256": "dfbbfd1401fa2187549af73b203c4e8c360b9535b77c425c3c015a9751337ad4"
+    }
+  ],
+  "additionalReviewInputs": [
+    {
+      "file": "lib/helmut/local-unit-diagnostic-budget.js",
+      "bytes": 7668,
+      "sha256": "cd1725e1b4fbdd80d7c1b0a11d8a8ad0043fda496e7679d40e17b5c45d1a5a12"
+    },
+    {
+      "file": "lib/helmut/local-unit-diagnostic-scope.js",
+      "bytes": 17330,
+      "sha256": "a769f6d8b525fd1d045210e73c95c0f024eb79d1631c47cf994d2e3ac89ca378"
+    },
+    {
+      "file": "lib/helmut/local-unit-diagnostic-transport.js",
+      "bytes": 9290,
+      "sha256": "6cf24e6228d54ce20d210270bc101d94b17a596345c90ea3f8b9412507703660"
+    },
+    {
+      "file": "lib/helmut/ai.js",
+      "bytes": 103412,
+      "sha256": "474391af92e0193585494e2f145b21ee6812ee8e8853dd8e7ca506aafa6f7eda"
+    }
+  ],
+  "independentSourceReview": {
+    "agent": "/root/v12_postrun_provenance",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "xhigh",
+    "readOnly": true,
+    "completeDeltaAndCallersRead": true,
+    "beforeAfterPinsStable": true,
+    "historicalBodyReconstructedByteIdenticallyAfterRemovingOnlyFourExactDispatchChanges": true,
+    "supportedBlockingFindings": 0,
+    "testsExecuted": 0,
+    "nativeOrDatabaseExecution": 0
+  },
+  "reviewedChanges": [
+    "Only the optional requestBytes argument and three native reservation/settlement/not-sent dispatches differ from the historical body",
+    "Private open ALS scope is mandatory; a diagnostic-shaped version alone outside scope is denied and never falls back to legacy authority",
+    "Reservation binds the actual command, phase, subject, run, token maximum, route and complete request bytes/hash before a private confirmed-CAS ticket is branded",
+    "Settlement requires the private ticket and genuine persisted usage receipt and provider-completion capability",
+    "Unknown sends remain unknown and sent reservations are never refunded or automatically retried"
+  ],
+  "unchangedLegacyTariffsLimitsAndFinancialChecks": true,
+  "legacyGlobalCounterReservationUnchanged": true,
+  "fixtureAuthority": {
+    "calls": 2,
+    "DMaxMicroUsd": 81400,
+    "RMaxMicroUsd": 88000,
+    "maxMicroUsd": 169400,
+    "paidProviderCallsAllowed": false
+  },
+  "historicalGlobalCounterOrFinancialEquivalence": false,
+  "historicalAcceptanceTransferred": false,
+  "nativeLeaseAcceptanceTransferred": false,
+  "requiresFreshIntegrationAcceptance": true,
+  "executionAuthority": false,
+  "newGlueAccepted": false,
+  "full500Accepted": false,
+  "RAMOrTimeGainAccepted": false,
+  "nativeUnit60Qualified": false,
+  "production": false,
+  "sourceOnly": true,
+  "independent": true,
+  "pass": true
+}
