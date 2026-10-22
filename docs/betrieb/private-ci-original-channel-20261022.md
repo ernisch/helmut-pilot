@@ -23,7 +23,10 @@ Der Workflow ermittelt zuerst ohne private Zugänge seinen Prüfbedarf. Für den
 vollen Lauf verwendet er die Environment `helmut-ci-originals`. Nach deren
 Freigabe prüft ein Leser mit dem kurzlebigen, rein lesenden `GITHUB_TOKEN`:
 Lauf/Versuch, Workflow, Reviewer`ernisch`/ID273344519, PR-Ref, aktueller PR-Head
-und ausgecheckter Merge-Commit. Fremde Forks, abweichende PR-Stände und fehlende
+und ausgecheckter Merge-Commit. Ein öffentlicher Preflight bindet dessen echte
+zwei Git-Eltern an Event-Basis/Head, statt den eventuell veralteten Mergezeiger
+des Webhooks zu verwenden. Der aktuelle PR-API-Stand wird zusätzlich geprüft.
+Fremde Forks, abweichende PR-Stände und fehlende
 GitHub-Reviewhistorie werden abgewiesen. Ein fehlgeschlagener öffentlicher
 Prüfplan lässt den bestehenden Pflichtjob fehlschlagen, nicht überspringen.
 
@@ -71,9 +74,10 @@ Originalbedarf. Die Environment-Freigabe ist keine Freigabe eines500er Tests.
 
 ## Abnahmegrenzen
 
-Lokal24 Schutztests einschließlich Fehler-/Archiv-/Logfällen und echtem
+Lokal28 Schutztests einschließlich Fehler-/Archiv-/Logfällen und echtem
 Log-GPG-Roundtrip PASS. Workflow-YAML, Python- und eingebettete Shellsyntax PASS.
-Die echte Environment-Konfiguration, ein tatsächlicher GitHub-Review und die
-anschließende vollständige Pflicht-CI sind vor Einrichtung noch offen. Ein
+Die Environment ist laut Betreiber eingerichtet und eine Freigabe gemeldet.
+Der technische Echtbeleg für Zugangsprüfung, Entschlüsselung und vollständige
+Pflicht-CI ist noch offen. Ein
 grünes Ergebnis wird dafür nicht aus synthetischen Reviewfixtures abgeleitet.
 Kein500er Lauf, kein Merge und keine Production-Aktion durch diese Vorbereitung.

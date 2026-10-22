@@ -15,8 +15,8 @@ PR929/d8ca7465: Diagnosevorbereitung499→0 lokal+GitHub43/43 PASS, Browser grü
 Offline39739166451 danach am Originalgate rot. Originalinspektion PASS, weiter inert.
 POSTRUN-Auth/Journal, Requests und native Verbraucher offen; alte GOs verbraucht.
 [Diagnoseumfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
-CI-Originalkanal lokal vorbereitet: Cipher84, echter Roundtrip84/84,24Schutztests PASS.
-GitHub-Environment/Secret/echter Freigabelauf noch offen.
+CI-Kanal PR930: Cipher84, Roundtrip84/84,28Schutztests lokal PASS.
+Environment laut Betreiber eingerichtet; echte Voll-CI noch offen.
 [Einrichtung](betrieb/private-ci-original-channel-20261022.md).
 GitHub403 im Codex-App-Kontext; genaue Übersteuerungsstelle offen.
 Kein GHA-Originalnachweis/Voll500/Merge.

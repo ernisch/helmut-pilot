@@ -193,6 +193,43 @@ class FileTests(unittest.TestCase):
                     with self.assertRaises(RuntimeError): C.context()
                 api.assert_not_called()
 
+    def pr_context_fixture(self, event_merge, parents):
+        event = self.root / 'TEST_ONLY-pr-event.json'
+        event.write_text(json.dumps({'number': 7, 'pull_request': {
+            'head': {'sha': 'd'*40, 'repo': {'full_name': C.REPO}},
+            'base': {'sha': 'b'*40, 'repo': {'full_name': C.REPO}},
+            'merge_commit_sha': event_merge}}))
+        env = dict(GITHUB_ACTIONS='true', GITHUB_REPOSITORY=C.REPO,
+            GITHUB_API_URL='https://api.github.com', GITHUB_EVENT_NAME='pull_request',
+            GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='1', GITHUB_SHA='c'*40,
+            GITHUB_WORKFLOW_SHA='c'*40, GITHUB_REF='refs/pull/7/merge', GITHUB_EVENT_PATH=str(event),
+            GITHUB_WORKFLOW_REF=C.REPO+'/.github/workflows/ci.yml@refs/pull/7/merge')
+        def git_result(command, **kwargs):
+            if command == ['git', 'rev-parse', 'HEAD']:
+                return SimpleNamespace(stdout='c'*40+'\n')
+            self.assertEqual(command, ['git', 'rev-list', '--parents', '-n', '1', 'c'*40])
+            return SimpleNamespace(stdout=' '.join(parents)+'\n')
+        with mock.patch.dict(os.environ, env, clear=True), \
+             mock.patch.object(C.subprocess, 'run', side_effect=git_result), mock.patch.object(C, 'api') as api:
+            try:
+                return C.context()
+            finally:
+                api.assert_not_called()
+
+    def test_exact_merge_parents_bind_context_with_stale_or_null_webhook_merge(self):
+        for event_merge in ['e'*40, None]:
+            with self.subTest(event_merge=event_merge):
+                result = self.pr_context_fixture(event_merge, ['c'*40, 'b'*40, 'd'*40])
+                self.assertEqual(result['checkoutSHA'], 'c'*40)
+                self.assertEqual(result['headSHA'], 'd'*40)
+
+    def test_wrong_base_head_nonmerge_or_other_commit_rejects_before_api(self):
+        for parents in [['c'*40, 'e'*40, 'd'*40], ['c'*40, 'b'*40, 'e'*40],
+                        ['c'*40, 'd'*40], ['e'*40, 'b'*40, 'd'*40]]:
+            with self.subTest(parents=parents):
+                with self.assertRaises(RuntimeError):
+                    self.pr_context_fixture('c'*40, parents)
+
     def test_private_file_permissions_hardlink_and_symlink_rejected(self):
         file = self.root / 'input'; file.write_bytes(b'TEST_ONLY'); file.chmod(0o644)
         with self.assertRaises(RuntimeError): C.read_file(file, 10, private=True)

@@ -116,7 +116,14 @@ def context():
         p = event['pull_request']
         require(p['head']['repo']['full_name'] == REPO and p['base']['repo']['full_name'] == REPO)
         head = p['head']['sha']
-        require(COMMIT.fullmatch(head) and p['merge_commit_sha'] == checkout)
+        base = p['base']['sha']
+        require(COMMIT.fullmatch(head) and COMMIT.fullmatch(base))
+        # Webhook merge_commit_sha can still name the previous merge. Bind the
+        # checked-out merge itself to this event's exact base/head instead.
+        parents = subprocess.run(['git', 'rev-list', '--parents', '-n', '1', checkout],
+                                 check=True, capture_output=True, text=True,
+                                 env=child_env(), timeout=10).stdout.split()
+        require(parents == [checkout, base, head])
     elif event_name == 'push':
         require(ref == 'refs/heads/main' and event['after'] == checkout)
     else:
