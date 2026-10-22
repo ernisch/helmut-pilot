@@ -108,6 +108,13 @@ class ReviewTests(unittest.TestCase):
         private = offline.split('      - name: Ressourcenstart und Originalbindungen', 1)[1].split('      - name: Private Diagnoseausgaben', 1)[0]
         self.assertEqual(private.count('        shell:'), private.count('        run:'))
         self.assertEqual(private.count('        shell:'), 21)
+        shell_lines = [line for line in private.splitlines() if line.startswith('        shell:')]
+        self.assertEqual(len(shell_lines), 21)
+        for line in shell_lines:
+            self.assertIn('needs.plan.outputs.standard', line)
+            self.assertNotIn('steps.', line)
+        self.assertEqual(text.count("shell: ${{ needs.plan.outputs.standard"), 21)
+        self.assertNotIn("shell: ${{ steps.", text)
         self.assertIn('name: Syntax + Offline-Suiten', offline)
         self.assertIn('if: ${{ always() }}', offline)
         self.assertIn('run: test "$PLAN_RESULT" = success', offline)
