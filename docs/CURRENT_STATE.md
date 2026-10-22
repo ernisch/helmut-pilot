@@ -13,7 +13,9 @@ Zeitmetadaten erklärt geändert.88/88Bytepins PASS,84CI+3V12 auch Metadaten gle
 [Restore](betrieb/private-ci-original-provisioning-20261021.md).
 Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weiter inert.
 Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
-Runtimebindungen/native Verbraucher offen; alte GOs verbraucht, Quell-DB gestoppt.
+548Runtimebindungen und echte Source-/DB-Bindungen nativ PASS (22.10.); Quell-DB gestoppt.
+Vorbereitung gemeinsam1.024.176.128B/Events0, noch0Motoreinheiten. Unit60/Reserve offen.
+Einmalige native Diagnose wird isoliert verdrahtet; alte GOs bleiben verbraucht.
 [Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
 [PR933](https://github.com/ernisch/helmut-pilot/pull/933) nach voller
 [CI39783955460](https://github.com/ernisch/helmut-pilot/actions/runs/39783955460) integriert.

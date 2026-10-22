@@ -92,7 +92,7 @@ def code_files(worker, config):
     paths = {Path(p['path']) for p in config['sourceCodePins']}
     paths.update(Path(p['path']) for p in config['sources'] if Path(p['path']).suffix in ('.py', '.js', '.json', '.sql', '.c'))
     paths.update(BIN / name for name in (
-        'local-unit-native-execution-source.py', 'local-unit-native-execution-host.py',
+        'local-unit-native-execution-source.py', 'local-unit-native-execution-host.py', 'local-unit-native-execution-controller.py',
         'local-unit-native-source-qualification.py', 'local-unit-native-observation-updater.py',
         'local-unit-native-final-acceptance.py'))
     pins = [worker.pin(p) for p in sorted(paths)]

@@ -123,7 +123,10 @@ def main():
     modes.add_argument('--qualify-native-store', action='store_true')
     modes.add_argument('--qualify-native-bindings', action='store_true',
                        help='qualify genuine source inputs and native read/write bindings; no seed or motor')
+    modes.add_argument('--run-native-single-unit', action='store_true',
+                       help='fresh source-local COPY; qualify all native bindings before exactly one isolated fixture unit')
     args = parser.parse_args()
+    bindings_mode = args.qualify_native_bindings or args.run_native_single_unit
     if not (sys.flags.isolated and sys.flags.no_site and sys.flags.dont_write_bytecode):
         raise RuntimeError('use python -I -S -B')
     if available() < FLOOR + 2 * 1024**3:
@@ -186,7 +189,7 @@ def main():
               'helperSourcePathReboundOnly': True,
               'sources': sources, 'runtimeBindings': runtime_rows, 'full500': False,
               'motorCalls': 0, 'paidProviderCalls': 0, 'oldAuthorityReused': False}
-    if args.qualify_native_bindings:
+    if bindings_mode:
         status = subprocess.run(['git', 'status', '--porcelain', '--untracked-files=all'], cwd=REPO,
                                 capture_output=True, text=True, check=True)
         if status.stdout:
@@ -212,15 +215,36 @@ def main():
                       readClosurePin=extra_pins[1], bridgeQualifierPin=extra_pins[2], bridgeProposalPin=extra_pins[3],
                       originalTriggerQualifierPin=extra_pins[7])
         config['sources'] = [*sources, *extra_pins, *code_pins]
+    if args.run_native_single_unit:
+        execution_files = {
+            'executionSourcePin': BIN / 'local-unit-native-execution-source.py',
+            'executionControllerPin': BIN / 'local-unit-native-execution-controller.py',
+            'executionHostPin': BIN / 'local-unit-native-execution-host.py',
+            'sourceObserverPin': BIN / 'local-unit-native-source-qualification.py',
+            'observationUpdaterPin': BIN / 'local-unit-native-observation-updater.py',
+            'finalAcceptancePin': BIN / 'local-unit-native-final-acceptance.py'}
+        execution_pins = {name: pin(path) for name, path in execution_files.items()}
+        config.update(**execution_pins, executeNativeSingleUnit=True,
+                      database='helmut_unit_diagnostic_' + nonce,
+                      pythonExecutable=str(PYTHON / 'bin/python3.12'))
+        config['sources'].extend(execution_pins.values())
+        rest = SOURCE.parent / 'source-capture/postgrest-pinned'
+        rest_pin = pin(rest)
+        if rest_pin['bytes'] != 17309560 or rest_pin['sha256'] != '870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617':
+            raise RuntimeError('original pinned PostgREST executable missing')
+        config['executionHost'] = {'postgrestPin': rest_pin, 'clientRuntimePins': runtime_rows}
     save(case / 'STARTED.SAFE.json', {**config, 'availableBefore': available(),
-                                      'purpose': ('Fresh source-local genuine source and native binding qualification only'
-                                                  if args.qualify_native_bindings else
+                                      'purpose': ('Fresh source-local once-only genuine native fixture unit'
+                                                  if args.run_native_single_unit else
+                                                  'Fresh source-local genuine source and native binding qualification only'
+                                                  if bindings_mode else
                                                   'Fresh source-local readonly extraction and native DDL qualification only'),
                                       'authorization': 'Operator request 2026-10-22: qualify originals/runtime/native single-unit integration',
                                       'controlDeadlineSeconds': 300, 'privateTestSecretsRemainLocal': True,
                                       'originalResourcesModified': False, 'newFull500Authority': False,
                                       'atUTC': datetime.datetime.now(datetime.timezone.utc).isoformat()})
     budget, cid, failure, close_errors, mounts = None, None, None, [], []
+    execution_host, execution_plan, execution_module, result = None, None, None, None
     mounts_observed = False
     start = time.monotonic()
     sample_count = 0
@@ -228,30 +252,42 @@ def main():
         budget = native.start(case / 'native-memory-budget', parent, runtime)
         group = native.parent_path(parent)
         config.update(parentInode=group.stat().st_ino, parentDevice=group.stat().st_dev)
-        save(case / 'WORKER_CONFIG.SAFE.json', config)
+        if args.run_native_single_unit:
+            execution_module = load('native_execution_host', config['executionHostPin']['path'])
+            execution_plan = execution_module.prepare_execution(native, sys.modules[__name__], config, case)
+            config['executionHostPlan'] = execution_plan
         mounts = [(case, '/bench', False), (REPO, str(REPO), True), (PYTHON, str(PYTHON), True),
-                  (NODE, str(NODE), True), (group, '/owned-group', True), (RAW, str(RAW), True),
+                  ((NODE / 'bin/node') if args.run_native_single_unit else NODE,
+                   str(NODE / 'bin/node') if args.run_native_single_unit else str(NODE), True),
+                  (group, '/owned-group', True), (RAW, str(RAW), True),
                   (READER.parent, str(READER.parent), True), (COPY_MANIFEST, str(COPY_MANIFEST), True),
                   (runtime_path, str(runtime_path), True),
                   (LEGACY, str(LEGACY), True), (JIT, str(JIT), True),
                   (Path(plan['archive']['path']), plan['archive']['path'], True),
                   (Path(plan['rootManifest']['path']), plan['rootManifest']['path'], True)]
         mounts.extend((Path(row['source']['path']), row['imagePath'], True) for row in runtime_rows)
-        if args.qualify_native_bindings:
+        if bindings_mode:
             preparation = load('native_source_binding_preflight', config['bindingPreparationPin']['path'])
             required_originals = [SOURCE / row[0] for row in preparation.PRIVATE_SOURCES.values()]
             required_originals.append(SOURCE / preparation.ENV_SOURCE)
             mounts.extend((p, str(p), True) for p in required_originals)
+        if execution_plan is not None:
+            mounts.extend((Path(source), target, readonly) for source, target, readonly in execution_plan['sourceAliasMounts'])
         destinations = [str(target) for _, target, _ in mounts]
         if len(set(destinations)) != len(destinations):
             raise RuntimeError('duplicate mount target')
         argv = ['create', '--name', 'helmut-unitdiag-qualify-' + nonce, '--network', 'none', '--read-only',
                 '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--user', '1000:1000',
                 '--cgroup-parent=/' + parent, '--cgroupns', 'private', '--log-driver', 'none',
-                '--shm-size', str(16 * 1024**2), '--tmpfs', '/ram:rw,exec,nosuid,nodev,size=268435456,uid=1000,gid=1000,mode=0700',
+                '--shm-size', str(16 * 1024**2),
                 '--tmpfs', '/tmp/helmut-meter-filesystem-tools:rw,exec,nosuid,nodev,size=2097152,uid=1000,gid=1000,mode=0700',
                 '--tmpfs', '/usr/lib/postgresql/17/lib:rw,exec,nosuid,nodev,size=1048576,uid=1000,gid=1000,mode=0755',
                 '--entrypoint', '/bin/sh']
+        if execution_plan is None:
+            argv += ['--tmpfs', '/ram:rw,exec,nosuid,nodev,size=268435456,uid=1000,gid=1000,mode=0700']
+        else:
+            for volume_mount in execution_plan['sourceVolumeMounts']:
+                argv += ['--mount', volume_mount]
         for source, target, readonly in mounts:
             argv += ['--mount', 'type=bind,src=' + str(source) + ',dst=' + str(target) + (',readonly' if readonly else '')]
         worker = str(BIN / 'local-unit-native-worker.py')
@@ -260,12 +296,22 @@ def main():
         cid = native.docker(argv).stdout.strip()
         if not re.fullmatch('[a-f0-9]{64}', cid):
             raise RuntimeError('new container identity missing')
+        # Publish the source CID once, after create and before its first
+        # instruction. This SAFE configuration never includes local secrets.
+        if args.run_native_single_unit:
+            config['actualSourceContainerId'] = cid
+        save(case / 'WORKER_CONFIG.SAFE.json', config)
         identity(native.docker, cid, parent, runtime, mounts)
         mounts_observed = True
         save(case / 'CREATED.SAFE.json', {'id': cid, 'parent': parent, 'workloadStartsSealed': True})
         native.docker(['start', cid])
+        if execution_plan is not None:
+            execution_host = execution_module.NativeExecutionHost(native, sys.modules[__name__], config, case,
+                                                                  budget, cid, mounts, execution_plan)
         with (case / 'KERNEL_SAMPLES.SAFE.jsonl').open('x') as stream:
             while True:
+                if execution_host is not None:
+                    execution_host.tick()
                 row = identity(native.docker, cid, parent, runtime, mounts)
                 snapshot = kernel.kernel_snapshot(parent)
                 snapshot['elapsedSeconds'] = time.monotonic() - start
@@ -281,16 +327,29 @@ def main():
         if exit_code != 0 or row['State']['OOMKilled']:
             raise RuntimeError('native qualification child failed')
         result = json.loads((case / 'NATIVE_QUALIFICATION.SAFE.json').read_text())
-        if result.get('pass') is not True or result.get('motorCalls') != 0 or result.get('full500') is not False:
+        if result.get('pass') is not True or result.get('motorCalls') != (1 if args.run_native_single_unit else 0) or result.get('full500') is not False:
             raise RuntimeError('native qualification incomplete')
-        if args.qualify_native_bindings and (result.get('genuineSourceInputsQualified') is not True
+        if bindings_mode and (result.get('genuineSourceInputsQualified') is not True
                                              or result.get('readClosureQualified') is not True
                                              or result.get('originalBridgeQualified') is not True
-                                             or result.get('executionAuthorityInstalled') is not False):
+                                             or result.get('executionAuthorityInstalled') is not args.run_native_single_unit):
             raise RuntimeError('genuine native binding qualification incomplete')
+        if args.run_native_single_unit:
+            if any(result.get(key) is not True for key in ('unit60Qualified', 'auth30Qualified', 'independentFinalAcceptance')):
+                raise RuntimeError('independent single-unit acceptance incomplete')
+            if result.get('completedUnits') != 1 or result.get('expectedPositions') != 3 or result.get('controlCount') != 16:
+                raise RuntimeError('single-unit result and fresh controls incomplete')
     except BaseException as error:
         failure = type(error).__name__ + ': ' + str(error)[:240]
     finally:
+        if execution_host is not None:
+            try:
+                host_close = execution_host.close()
+                save(case / 'EXECUTION_HOST_CLOSE.SAFE.json', host_close)
+                if host_close.get('clean') is not True:
+                    close_errors.append('execution-host-not-clean')
+            except BaseException as error:
+                close_errors.append('execution-host-close-' + type(error).__name__)
         if cid:
             try:
                 row = identity(native.docker, cid, parent, runtime, mounts)
@@ -313,6 +372,10 @@ def main():
                 final = kernel.kernel_snapshot(parent, require_empty=True)
                 native.verify(parent, budget)
                 known = {entry['id'] for entry in budget['helpers'].values()} | ({cid} if cid else set())
+                if execution_plan is not None:
+                    known.update(execution_plan['knownSetupContainerIds'])
+                if execution_host is not None:
+                    known.update(execution_host.clients)
                 ids = native.docker(['ps', '--all', '--quiet']).stdout.split()
                 rows = json.loads(native.docker(['inspect', *ids]).stdout) if ids else []
                 observed = {r['Id'] for r in rows if r['HostConfig']['CgroupParent'] == '/' + parent
@@ -331,9 +394,24 @@ def main():
         if args.qualify_native_bindings:
             receipt.update(bindingQualificationRequested=True,
                            genuineNativeBindingsQualified=accepted, executionAuthorityInstalled=False)
+        if args.run_native_single_unit:
+            requested = (case / 'MOTOR_ENTRY_REQUESTED.SAFE.json').exists()
+            peak = final['memoryPeakBytes'] if final is not None else None
+            memory_events = final['memoryEvents'] if final is not None else {}
+            measured_within_target = (accepted and type(peak) is int and peak <= 1548000000
+                                      and all(memory_events.get(k) == 0 for k in ('max', 'oom', 'oom_kill', 'oom_group_kill')))
+            receipt.update(singleUnitRequested=True, motorEntryRequested=requested,
+                motorCalls=(result or {}).get('motorCalls', None if requested else 0),
+                unit60Qualified=accepted and result.get('unit60Qualified') is True,
+                auth30Qualified=accepted and result.get('auth30Qualified') is True,
+                independentFinalAcceptance=accepted and result.get('independentFinalAcceptance') is True,
+                measuredSingleUnitPeakMeetsTarget=measured_within_target,
+                measuredSingleUnitReserveBytes=(2048000000 - peak) if type(peak) is int else None,
+                full500ReserveQualified=False, full500Qualified=False,
+                whole500MemoryOrPlateauInferred=False, maximumUnitsAuthorized=1)
         save(case / 'RESULT.SAFE.json', receipt)
         print(json.dumps({'pass': accepted, 'case': str(case), 'failure': failure,
-                          'closureErrors': close_errors, 'full500': False, 'motorCalls': 0}))
+                          'closureErrors': close_errors, 'full500': False, 'motorCalls': receipt['motorCalls']}))
     return 0 if accepted else 1
 
 

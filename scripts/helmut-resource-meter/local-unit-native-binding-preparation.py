@@ -166,37 +166,42 @@ def prepare(worker, config, pg, catalog):
                      and ready['database'] == catalog['database'] and ready['process']['pid'] == child.pid
                      and ready['authorityInstalled'] is False and ready['unitExecutionQualified'] is False,
                      'actual-source-preparation-ready')
-                # These documents bind observed preparation facts. They do not
-                # pretend future owner/endpoint qualification has occurred.
-                facts = {'schema': 'helmut-local-unit-native-preparation-facts/1', 'database': catalog['database'],
-                         'databaseOID': catalog['databaseOID'], 'sourceIndex': 499, 'diagnosticUnit': 0,
-                         'sourceProofHash': ready['sourceProofHash'], 'originalPostrunSHA256': config['raw']['sha256'],
-                         'actualNodeBudget': ready['actualNodeBudget'], 'executionAuthority': False,
-                         'nativeEndpointQualified': False, 'unit60Qualified': False, 'full500Qualified': False}
-                facts_pin = logical_pin(worker, nonce, 'PREPARATION_FACTS.SAFE.json', facts)
-                gate_pins = {}
-                for gate in GATES:
-                    value = {**facts, 'gate': gate, 'purpose': 'native bindings preparation only'}
-                    if gate == 'source':
-                        value.update(schema='helmut-local-unit-native-source-gate/1', originalControlHash=ready['originalControlHash'])
-                    gate_pins[gate] = logical_pin(worker, nonce, 'GATE_' + gate + '.SAFE.json', value)
-                runtime = {'schema': 'helmut-local-unit-diagnostic-runtime-manifest/1', 'database': catalog['database'],
-                           'sqlSources': {}, 'files': [node], 'transport': {'preparationOnly': True}}
-                # This preparatory manifest is explicitly insufficient for an
-                # execution consumer. Actual final sources are recorded below.
-                runtime_pin = logical_pin(worker, nonce, 'RUNTIME_MANIFEST.SAFE.json', runtime)
-                logical_pin(worker, nonce, 'CODE_MANIFEST.SAFE.json', {'schema': 'helmut-local-unit-diagnostic-code-manifest/1', 'files': code})
-                auth_pin = logical_pin(worker, nonce, 'AUTHORIZATION.SAFE.json', {
-                    'schema': 'helmut-local-unit-native-preparation-authorization/1', 'nonce': nonce,
-                    'operatorInstruction': '2026-10-22 qualify preserved originals and native single-unit integration',
-                    'executionAuthority': False, 'oldGOsReused': False, 'full500': False})
-                now = utc()
-                compact_private(worker, 'COMMAND_INPUT.PRIVATE.json', {'schema': 'helmut-local-unit-native-command-input/1',
-                    'nowUTC': now, 'window': {'startsAtUTC': now, 'endsAtUTC': expires},
-                    'target': {'database': catalog['database'], 'postrunPin': config['raw'],
-                               'ownerEvidencePin': facts_pin, 'runtimeEvidencePin': facts_pin, 'sourceRuntimePin': facts_pin},
-                    'gatePins': gate_pins, 'codeCommit': config['codeCommit'], 'runtimeManifestPin': runtime_pin,
-                    'authPin': auth_pin, 'freshGrantId': os.urandom(32).hex()})
+                if config.get('executeNativeSingleUnit') is True:
+                    source_driver = worker.load('native_execution_source_inputs', config['executionSourcePin'])
+                    concrete_input = source_driver.command_input(worker, config, pg, catalog, ready, originals, expires)
+                    compact_private(worker, 'COMMAND_INPUT.PRIVATE.json', concrete_input)
+                else:
+                    # These documents bind observed preparation facts. They do not
+                    # pretend future owner/endpoint qualification has occurred.
+                    facts = {'schema': 'helmut-local-unit-native-preparation-facts/1', 'database': catalog['database'],
+                             'databaseOID': catalog['databaseOID'], 'sourceIndex': 499, 'diagnosticUnit': 0,
+                             'sourceProofHash': ready['sourceProofHash'], 'originalPostrunSHA256': config['raw']['sha256'],
+                             'actualNodeBudget': ready['actualNodeBudget'], 'executionAuthority': False,
+                             'nativeEndpointQualified': False, 'unit60Qualified': False, 'full500Qualified': False}
+                    facts_pin = logical_pin(worker, nonce, 'PREPARATION_FACTS.SAFE.json', facts)
+                    gate_pins = {}
+                    for gate in GATES:
+                        value = {**facts, 'gate': gate, 'purpose': 'native bindings preparation only'}
+                        if gate == 'source':
+                            value.update(schema='helmut-local-unit-native-source-gate/1', originalControlHash=ready['originalControlHash'])
+                        gate_pins[gate] = logical_pin(worker, nonce, 'GATE_' + gate + '.SAFE.json', value)
+                    runtime = {'schema': 'helmut-local-unit-diagnostic-runtime-manifest/1', 'database': catalog['database'],
+                               'sqlSources': {}, 'files': [node], 'transport': {'preparationOnly': True}}
+                    # This preparatory manifest is explicitly insufficient for an
+                    # execution consumer. Actual final sources are recorded below.
+                    runtime_pin = logical_pin(worker, nonce, 'RUNTIME_MANIFEST.SAFE.json', runtime)
+                    logical_pin(worker, nonce, 'CODE_MANIFEST.SAFE.json', {'schema': 'helmut-local-unit-diagnostic-code-manifest/1', 'files': code})
+                    auth_pin = logical_pin(worker, nonce, 'AUTHORIZATION.SAFE.json', {
+                        'schema': 'helmut-local-unit-native-preparation-authorization/1', 'nonce': nonce,
+                        'operatorInstruction': '2026-10-22 qualify preserved originals and native single-unit integration',
+                        'executionAuthority': False, 'oldGOsReused': False, 'full500': False})
+                    now = utc()
+                    compact_private(worker, 'COMMAND_INPUT.PRIVATE.json', {'schema': 'helmut-local-unit-native-command-input/1',
+                        'nowUTC': now, 'window': {'startsAtUTC': now, 'endsAtUTC': expires},
+                        'target': {'database': catalog['database'], 'postrunPin': config['raw'],
+                                   'ownerEvidencePin': facts_pin, 'runtimeEvidencePin': facts_pin, 'sourceRuntimePin': facts_pin},
+                        'gatePins': gate_pins, 'codeCommit': config['codeCommit'], 'runtimeManifestPin': runtime_pin,
+                        'authPin': auth_pin, 'freshGrantId': os.urandom(32).hex()})
                 supplied = True
         child.wait(timeout=max(.01, deadline - time.monotonic()))
         need(child.returncode == 0 and supplied and outputs[0].count(b'\n') == 1 and not outputs[1], 'real-child-exit-and-eof')
@@ -243,10 +248,11 @@ def qualify(worker, config, pg, catalog):
                                                        catalog=catalog, source_pins=trigger_sources)
     worker.save('NATIVE_ORIGINAL_TRIGGERS.SAFE.json', triggers)
     prepared = value['prepared']
+    authenticator_password = os.urandom(32).hex()
     read_result = read_helper.install_read_closure(worker.query, database=catalog['database'],
         operation_id=prepared['selection']['operationId'], command_canonical=value['canonical'],
         command_sha256=prepared['selection']['commandHash'], source_pins=source_pins,
-        authenticator_password_hex=os.urandom(32).hex())
+        authenticator_password_hex=authenticator_password)
     worker.save('NATIVE_READ_CLOSURE.SAFE.json', read_result)
     bridge = worker.load('native_original_bridge', config['bridgeQualifierPin'])
     bridge_result = bridge.install_bridge(worker.query, database=catalog['database'],
@@ -263,6 +269,14 @@ def qualify(worker, config, pg, catalog):
         'helperFunctionCount': len(q['helperSources']), 'nativeFunctionCount': len(q['nativeSources']),
         'relationCount': len(q['originalRelations']), 'executionAuthorityInstalled': False,
         'motorCalls': 0, 'full500': False})
+    if config.get('executeNativeSingleUnit') is True:
+        # The actual installed password survives only in source process memory
+        # and the private Root handoff. Never serialize it into SAFE config or
+        # evidence, and never replace it with a different successful-looking one.
+        config['executionAuthenticator'] = {'username': read_result['authenticatorUsername'],
+            'passwordHex': authenticator_password, 'jwtSecretHex': os.urandom(32).hex()}
+        controller = worker.load('native_single_unit_controller', config['executionControllerPin'])
+        return controller.run_single_unit(worker, config, pg, catalog, value, read_result, bridge_result)
     return {'schema': 'helmut-local-unit-native-binding-qualification/1', 'genuineSourceInputsQualified': True,
             'readClosureQualified': True, 'originalBridgeQualified': True, 'executionAuthorityInstalled': False,
             'motorCalls': 0, 'providerCalls': 0, 'full500': False, 'unit60Qualified': False,

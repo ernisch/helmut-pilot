@@ -273,6 +273,20 @@ def main():
                 # duplicating it in the server log exhausts its independent cap.
                 'log_min_error_statement': 'panic', 'log_error_verbosity': 'terse',
                 'helmut.local_usage_experiment': 'on', 'helmut.local_pipeline_lock_mode': 'invocation-lease-v1'}
+    if config.get('executeNativeSingleUnit') is True:
+        # New COPY-only HBA, not the preserved original. The UID1000 source
+        # owns the private Unix socket. TCP permits only this fresh diagnostic
+        # authenticator/database on the container's isolated local loopback.
+        database = 'helmut_unit_diagnostic_' + config['nonce']
+        authenticator = 'helmut_ud_authenticator_' + config['nonce']
+        hba = OUT / 'OWN_DIAGNOSTIC_HBA.PRIVATE.conf'
+        fd = os.open(hba, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, 'w') as stream:
+            stream.write('local all postgres trust\nlocal all all reject\n'
+                         + 'host ' + database + ' ' + authenticator + ' 127.0.0.1/32 scram-sha-256\n'
+                         + 'host all all 0.0.0.0/0 reject\nhost all all ::/0 reject\n')
+            stream.flush(); os.fsync(stream.fileno())
+        settings.update(listen_addresses='127.0.0.1', hba_file=str(hba))
     for key, value in settings.items():
         pgargs += ['-c', key + '=' + value]
     failure, codes, result = None, {}, None
@@ -379,9 +393,12 @@ COMMIT;"""
     except BaseException as error:
         failure = failure or 'final source verification failed: ' + type(error).__name__
     accepted = failure is None and result is not None and codes.get('postgres') == 0 and all(p.poll() is not None for p in CHILDREN)
+    requested = bool(config.get('executeNativeSingleUnit') and (OUT / 'MOTOR_ENTRY_REQUESTED.SAFE.json').exists())
+    actual_motor_calls = (result or {}).get('motorCalls', None if requested else 0)
     save('NATIVE_QUALIFICATION.SAFE.json', {**(result or {}), 'pass': accepted, 'failure': failure,
                                           'childExits': codes, 'allChildrenExited': all(p.poll() is not None for p in CHILDREN),
-                                          'originalPostrunPreserved': original_preserved, 'motorCalls': 0, 'full500': False,
+                                          'originalPostrunPreserved': original_preserved, 'motorCalls': actual_motor_calls,
+                                          'motorEntryRequested': requested, 'full500': False,
                                           'originalSourcePinsUnchanged': sources_preserved})
     if not accepted:
         raise RuntimeError('native qualification failed; retained private logs')
