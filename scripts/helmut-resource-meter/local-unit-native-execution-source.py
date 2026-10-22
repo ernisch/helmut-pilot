@@ -6,6 +6,7 @@ verifier must observe the real read-only Node verifier, service, host and native
 catalog before the separate genuine seed can be invoked.
 """
 import datetime
+import ctypes
 import hashlib
 import json
 import os
@@ -81,6 +82,48 @@ def private_json(worker, path, *, expected=None, cap=8 * 1024**2):
         os.close(fd)
 
 
+def publish_request(worker, name, request):
+    """Expose only a complete fsynced private frame; never replace a request."""
+    need(re.fullmatch(r'HOST_REQUEST_[0-9]{2}[.]PRIVATE[.]json', name), 'host-request-path')
+    directory = Path(worker.OUT)
+    before = directory.lstat()
+    need(directory.resolve() == directory and stat.S_ISDIR(before.st_mode) and before.st_uid == 1000
+         and stat.S_IMODE(before.st_mode) == 0o700, 'host-private-directory')
+    raw = json.dumps(request, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode('utf8')
+    need(0 < len(raw) <= 256 * 1024, 'host-request-cap')
+    stage, destination = directory / ('.' + name + '-' + os.urandom(16).hex()), directory / name
+    fd = os.open(stage, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600)
+    try:
+        a = os.fstat(fd)
+        need(stat.S_ISREG(a.st_mode) and a.st_uid == 1000 and a.st_nlink == 1 and a.st_size == 0
+             and stat.S_IMODE(a.st_mode) == 0o600, 'host-stage-file')
+        offset = 0
+        while offset < len(raw):
+            n = os.write(fd, raw[offset:offset + 65536]); need(n > 0, 'host-stage-short-write'); offset += n
+        os.fsync(fd)
+        b, named = os.fstat(fd), stage.lstat()
+        fields = ('st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_gid', 'st_nlink', 'st_size', 'st_mtime_ns', 'st_ctime_ns')
+        need(b.st_size == len(raw) and all(getattr(b, k) == getattr(named, k) for k in fields)
+             and all(getattr(a, k) == getattr(b, k) for k in fields[:6]), 'host-stage-drift')
+    finally:
+        os.close(fd)
+    libc = ctypes.CDLL(None, use_errno=True)
+    rename = libc.renameat2
+    rename.argtypes = (ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint)
+    rename.restype = ctypes.c_int
+    if rename(-100, os.fsencode(stage), -100, os.fsencode(destination), 1) != 0:
+        raise OSError(ctypes.get_errno(), 'host-request-no-replace-publication')
+    fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    after = directory.lstat()
+    need(all(getattr(before, k) == getattr(after, k) for k in ('st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_gid')),
+         'host-directory-drift')
+    need(worker.pin(destination) == {'path': str(destination), 'bytes': len(raw), 'sha256': sha(raw)}, 'host-request-final-pin')
+
+
 def logical_pin(worker, nonce, name, value):
     worker.save('client/' + name, value)
     return {**worker.pin(worker.OUT / 'client' / name),
@@ -100,6 +143,16 @@ def code_files(worker, config):
     return pins
 
 
+def native_source_expectations(catalog, future_helpers):
+    # `functions` is the original public helmut_* catalogue.  The diagnostic
+    # implementation has its own explicit nativeSources closure.
+    actual_base = {f['name'] + '(' + f['identityArguments'] + ')': f['prosrcSHA256']
+                   for f in catalog['nativeSources']}
+    need(len(catalog['nativeSources']) == len(actual_base) == 27 and len(future_helpers) == 9
+         and not set(actual_base) & set(future_helpers), 'native-source-expectations')
+    return {**actual_base, **future_helpers}
+
+
 def command_input(worker, config, pg, catalog, ready, originals, expires_at):
     """Build honest preconditions; none claim that future native steps passed."""
     need(config.get('executeNativeSingleUnit') is True and config.get('full500') is False
@@ -109,9 +162,8 @@ def command_input(worker, config, pg, catalog, ready, originals, expires_at):
     code_pin = logical_pin(worker, nonce, 'CODE_MANIFEST.SAFE.json',
                            {'schema': 'helmut-local-unit-diagnostic-code-manifest/1', 'files': code})
     bridge = worker.load('execution_bridge_source_expectations', config['bridgeQualifierPin'])
-    actual_base = {f['name'] + '(' + f['identityArguments'] + ')': f['prosrcSHA256'] for f in catalog['functions']}
     future_helpers = bridge.expected_bridge_sources(config['bridgeProposalPin'])
-    need(len(actual_base) == 27 and len(future_helpers) == 9 and not set(actual_base) & set(future_helpers), 'native-source-expectations')
+    sql_sources = native_source_expectations(catalog, future_helpers)
     runtime_pins = {}
     code_names = {p['path'] for p in code}
     for row in config['runtimeBindings']:
@@ -120,6 +172,9 @@ def command_input(worker, config, pg, catalog, ready, originals, expires_at):
         runtime_pins[p['path']] = p
     for p in (config['nodePin'], worker.pin(config['pythonExecutable'])):
         runtime_pins[p['path']] = p
+    postgrest = worker.pin('/opt/postgrest-pinned')
+    need(postgrest == config['executionHostPlan']['aliasPins']['postgrest'], 'actual-postgrest-runtime-alias')
+    runtime_pins[postgrest['path']] = postgrest
     # The JIT tree is public original runtime material, restored under the
     # measured parent. The client receives ONLY this /ram subpath read-only.
     jit = json.loads((worker.OUT / 'ORIGINAL_JIT_RESTORED.SAFE.json').read_bytes())
@@ -140,7 +195,7 @@ def command_input(worker, config, pg, catalog, ready, originals, expires_at):
                 'producerPin': producer, 'inputPins': list(transport_originals.values()), 'originalPinsHash': sha(canonical(transport_originals)),
                 'requestSHA256': pins['request']['sha256'], 'responseSHA256': pins['response']['sha256'], 'latencySHA256': pins['latency']['sha256']}}
     runtime = {'schema': 'helmut-local-unit-diagnostic-runtime-manifest/1', 'database': catalog['database'],
-               'sqlSources': {**actual_base, **future_helpers}, 'files': list(runtime_pins.values()),
+               'sqlSources': sql_sources, 'files': list(runtime_pins.values()),
                'transport': {'schema': 'helmut-local-unit-diagnostic-source-producer-transport/1',
                              'originalPins': transport_originals, 'phases': phases}}
     need(sum(p['bytes'] for p in code + runtime['files']) <= 1024**3, 'complete-closure-budget')
@@ -192,7 +247,7 @@ class HostChannel:
             'issuedAtUTC': now.isoformat(timespec='milliseconds').replace('+00:00', 'Z'),
             'expiresAtUTC': (now + datetime.timedelta(seconds=3)).isoformat(timespec='milliseconds').replace('+00:00', 'Z'), 'body': body}
         try:
-            self.worker.save(name, request)
+            publish_request(self.worker, name, request)
             request_pin = self.worker.pin(self.worker.OUT / name)
             path, end = self.worker.OUT / f'HOST_REPLY_{self.seq:02d}.PRIVATE.json', time.monotonic() + seconds
             while not path.exists():
@@ -225,66 +280,169 @@ def node_environment(database):
 
 class NodeChild:
     """Actual child identity and natural pipes, also for the long-lived service."""
+    TERM_SECONDS = 1.0
+    KILL_SECONDS = 2.0
+
     def __init__(self, worker, config, relative, flag, label):
         self.worker, self.config, self.label = worker, config, label
-        script = Path(config['repository']) / relative
-        self.script_pin = worker.pin(script)
-        need(self.script_pin in config['sourceCodePins'], 'node-code-closure')
-        self.child = subprocess.Popen([config['nodePin']['path'], '--max-old-space-size=384', '--max-semi-space-size=16', str(script), flag],
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=node_environment(config['database']))
-        worker.CHILDREN.append(self.child)
-        observer = worker.load('native_execution_process_observer', config['sourceObserverPin'])
-        self.process = observer.process_identity(self.child.pid)
-        parent = observer.process_identity(os.getpid())
-        need(self.process['parentPID'] == os.getpid() and self.process['exe'] == config['nodePin']['path']
-             and self.process['membership'] == parent['membership'] == '0::/\n'
-             and self.process['pidNamespace'] == parent['pidNamespace'], 'actual-node-child-process')
         self.selector, self.outputs, self.eof = selectors.DefaultSelector(), [bytearray(), bytearray()], [False, False]
+        self.child, self.process, self.registered_pid = None, None, None
+        self.began, self.saved, self.closed, self.failed, self.aborting = time.monotonic(), False, False, False, False
+        try:
+            script = Path(config['repository']) / relative
+            self.script_pin = worker.pin(script)
+            need(self.script_pin in config['sourceCodePins'], 'node-code-closure')
+            self.child = subprocess.Popen([config['nodePin']['path'], '--max-old-space-size=384', '--max-semi-space-size=16', str(script), flag],
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=node_environment(config['database']))
+            self.registered_pid = self.child.pid
+            worker.CHILDREN.append(self.child)
+            # Capture exists before any observer/identity check can fail. A
+            # constructor failure owns this cleanup; no caller has a handle yet.
+            self._register()
+            observer = worker.load('native_execution_process_observer', config['sourceObserverPin'])
+            self.process = observer.process_identity(self.child.pid)
+            parent = observer.process_identity(os.getpid())
+            need(self.process['parentPID'] == os.getpid() and self.process['exe'] == config['nodePin']['path']
+                 and self.process['membership'] == parent['membership'] == '0::/\n'
+                 and self.process['pidNamespace'] == parent['pidNamespace'], 'actual-node-child-process')
+        except BaseException:
+            self._cleanup_failure()
+            raise
+
+    def _register(self):
         for i, stream in enumerate((self.child.stdout, self.child.stderr)):
-            os.set_blocking(stream.fileno(), False); self.selector.register(stream, selectors.EVENT_READ, i)
-        self.began, self.saved = time.monotonic(), False
+            if not self.eof[i] and not stream.closed:
+                os.set_blocking(stream.fileno(), False)
+                try:
+                    self.selector.get_key(stream)
+                except KeyError:
+                    self.selector.register(stream, selectors.EVENT_READ, i)
+
+    def _drain(self, *, discard=False):
+        need(not self.closed, 'node-capture-closed')
+        for key, _ in self.selector.select(.025):
+            try:
+                raw = os.read(key.fd, 16384)
+            except BlockingIOError:
+                continue
+            if not raw:
+                self.eof[key.data] = True  # Only a natural read()==b'' is EOF.
+                self.selector.unregister(key.fileobj)
+                continue
+            cap = 131072 if key.data else 1048576
+            remaining = cap - len(self.outputs[key.data])
+            self.outputs[key.data].extend(raw[:remaining])
+            if len(raw) > remaining:
+                self.failed = True
+                need(discard, 'node-output-cap')
+
+    def _cleanup_failure(self):
+        self.failed = True
+        try:
+            self.abort()
+        except BaseException:
+            # The worker still owns the real Popen in CHILDREN. Unknown close
+            # must never be replaced by invented EOF or a successful result.
+            pass
 
     def poll(self):
-        self.worker.guard(self.config)
-        for key, _ in self.selector.select(.025):
-            raw = os.read(key.fd, 16384)
-            if not raw:
-                self.eof[key.data] = True; self.selector.unregister(key.fileobj); continue
-            need(len(self.outputs[key.data]) + len(raw) <= (131072 if key.data else 1048576), 'node-output-cap')
-            self.outputs[key.data].extend(raw)
+        try:
+            need(not self.failed and self.child.pid == self.registered_pid, 'node-terminal-or-identity')
+            self.worker.guard(self.config)
+            self._drain()
+        except BaseException:
+            self._cleanup_failure()
+            raise
 
     def first_line(self, seconds=15):
-        until = time.monotonic() + seconds
-        while b'\n' not in self.outputs[0]:
-            self.poll(); need(self.child.poll() is None and time.monotonic() < until, 'node-ready-deadline')
-        need(self.outputs[0].count(b'\n') == 1 and not self.outputs[1], 'node-ready-only')
-        return json.loads(bytes(self.outputs[0]).decode('utf8'))
+        try:
+            need(not self.failed and 0 < seconds <= 180, 'node-ready-window')
+            until = time.monotonic() + seconds
+            while b'\n' not in self.outputs[0]:
+                self.poll(); need(self.child.poll() is None and time.monotonic() < until, 'node-ready-deadline')
+            # This API is used only by the long-lived source service.
+            need(self.child.poll() is None and self.outputs[0].count(b'\n') == 1 and not self.outputs[1], 'node-ready-only')
+            return json.loads(bytes(self.outputs[0]).decode('utf8'))
+        except BaseException:
+            self._cleanup_failure()
+            raise
 
     def finish(self, seconds=35, *, signal_child=False):
-        if signal_child and self.child.poll() is None:
-            import signal
-            self.child.send_signal(signal.SIGTERM)
-        until = time.monotonic() + seconds
         try:
+            need(not self.failed and not self.saved and 0 < seconds <= 180, 'node-finish-terminal-or-window')
+            if signal_child and self.child.poll() is None:
+                self.child.terminate()
+            until = time.monotonic() + seconds
             while self.selector.get_map() or self.child.poll() is None:
                 self.poll(); need(time.monotonic() < until, 'node-exit-deadline')
-            need(self.child.wait(timeout=.1) == 0 and all(self.eof) and not self.outputs[1], 'node-actual-exit-eof')
+            need(self.child.wait(timeout=.1) == 0 and all(self.eof) and not self.outputs[1] and not self.failed, 'node-actual-exit-eof')
             need(self.worker.pin(self.script_pin['path']) == self.script_pin, 'node-final-code')
-            return bytes(self.outputs[0])
-        finally:
             self.save()
+            return bytes(self.outputs[0])
+        except BaseException:
+            self._cleanup_failure()
+            raise
+
+    def abort(self):
+        """Bounded cleanup without the possibly expired workload guard.
+
+        Drain/discard overflow while TERM handlers run; escalate to KILL, reap
+        the actual child and retain natural EOF flags. Cleanup is always FAIL,
+        even if a timed-out child subsequently exits zero and both EOFs arrive.
+        """
+        self.failed = True
+        if self.saved or self.aborting:
+            return
+        if self.child is None:
+            self.selector.close(); self.closed = True
+            return
+        self.aborting = True
+        try:
+            need(self.child.pid == self.registered_pid, 'node-abort-identity')
+            try:
+                self._register()
+            except BaseException:
+                self.failed = True
+            if self.child.poll() is None:
+                self.child.terminate()
+            for seconds, kill in ((self.TERM_SECONDS, False), (self.KILL_SECONDS, True)):
+                if kill and self.child.poll() is None:
+                    self.child.kill()
+                until = time.monotonic() + seconds
+                while time.monotonic() < until:
+                    try:
+                        self._drain(discard=True)
+                    except BaseException:
+                        # A broken capture cannot prevent bounded termination;
+                        # leave its EOF false and still reap the real child.
+                        self.failed = True
+                        time.sleep(.01)
+                    if self.child.poll() is not None and not self.selector.get_map():
+                        break
+                if self.child.poll() is not None and not self.selector.get_map():
+                    break
+            need(self.child.poll() is not None, 'node-abort-close-unknown')
+            self.child.wait(timeout=.1)
+            self.save()
+        finally:
+            self.aborting = False
 
     def save(self):
         if self.saved:
             return
+        need(self.child is not None and self.child.poll() is not None, 'node-save-live-child')
         self.saved = True
         self.selector.close()
-        for i, stream in enumerate((self.child.stdout, self.child.stderr)):
-            path = self.worker.OUT / (self.label + ('.STDOUT' if i == 0 else '.STDERR') + '.PRIVATE.log')
-            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-            with os.fdopen(fd, 'wb') as out:
-                out.write(self.outputs[i]); out.flush(); os.fsync(out.fileno())
-            stream.close()
+        self.closed = True
+        try:
+            for i in range(2):
+                path = self.worker.OUT / (self.label + ('.STDOUT' if i == 0 else '.STDERR') + '.PRIVATE.log')
+                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+                with os.fdopen(fd, 'wb') as out:
+                    out.write(self.outputs[i]); out.flush(); os.fsync(out.fileno())
+        finally:
+            for stream in (self.child.stdout, self.child.stderr):
+                stream.close()
 
 
 def postgres_identity(worker, pg):
