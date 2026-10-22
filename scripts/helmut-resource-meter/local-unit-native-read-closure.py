@@ -43,6 +43,13 @@ COLUMNS = tuple((t, c, ty) for t, cs in (
     ('helmut_store', (('id', 'text'), ('data', 'jsonb'))),
     ('helmut_auth_state_nodes_local', (('store_id', 'text'), ('generation', 'text'))),
     ('llm_usage', (('usage_store_id', 'text'), ('usage_generation', 'text')))) for c, ty in cs)
+REGISTRY_COLUMNS = (('function_name', 'text'), ('http_exposed', 'boolean'), ('function_oid', 'oid'),
+                    ('identity_arguments', 'text'), ('prosrc_sha256', 'text'), ('qualification_pin', 'jsonb'))
+# PostgreSQL JSON's generic OID codec is not an integer ABI. Explicit bigint
+# conversion also preserves the full unsigned OID range, unlike ::integer.
+REGISTRY_ROW_SQL = """jsonb_build_object('function_name',q.function_name,'http_exposed',q.http_exposed,
+ 'function_oid',q.function_oid::bigint,'identity_arguments',q.identity_arguments,
+ 'prosrc_sha256',q.prosrc_sha256,'qualification_pin',q.qualification_pin)"""
 
 
 def _need(ok, code):
@@ -165,6 +172,23 @@ def _expected():
     return [('helmut_auth_' + name + '_v1', args, sha, vol) for name, args, sha, vol, _ in FUNCTIONS]
 
 
+def registry_codec_probe_sql():
+    """Constant read-only mini-probe for Root's separately owned PG17 session.
+
+    No connection/start, existing Auth read, role, password or schema mutation.
+    It reports actual codecs; it must not be represented as executed by Python.
+    """
+    return """BEGIN READ ONLY;SET LOCAL search_path=pg_catalog;SET LOCAL statement_timeout='1s';
+SELECT jsonb_build_object('schema','helmut-native-registry-json-codec/1',
+ 'serverVersionNum',current_setting('server_version_num')::integer,
+ 'oidJSON',to_jsonb(1::oid),'oidJSONType',jsonb_typeof(to_jsonb(1::oid)),
+ 'bigintJSON',to_jsonb((1::oid)::bigint),'bigintJSONType',jsonb_typeof(to_jsonb((1::oid)::bigint)),
+ 'explicitProjectionMatches',jsonb_build_object('function_oid',(1::oid)::bigint)='{"function_oid":1}'::jsonb,
+ 'maxOIDPreserved',jsonb_build_object('function_oid',('4294967295'::oid)::bigint)='{"function_oid":4294967295}'::jsonb);
+COMMIT;
+"""
+
+
 def _guard(database, operation, text, digest, installed=False, auth_hash=None):
     suffix = operation[-32:]
     owner, runtime, auth = ('helmut_ud_' + k + '_' + suffix for k in ('owner', 'runtime', 'authenticator'))
@@ -209,6 +233,16 @@ IF encode(sha256(convert_to(p.prosrc,'UTF8')),'hex')<>QUALIFIER_SHA OR p.prosecd
  OR NOT EXISTS(SELECT FROM pg_class WHERE oid='helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND relkind='r' AND relrowsecurity AND relowner=p.proowner)
  OR NOT EXISTS(SELECT FROM pg_trigger WHERE tgrelid='helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND tgname='qualified_read_source' AND tgfoid=p.oid AND tgenabled='A' AND tgtype=7 AND tgnargs=0 AND tgqual IS NULL AND NOT tgisinternal)
  THEN RAISE EXCEPTION 'read-closure-native-source-insert-guard';END IF;
+IF (SELECT count(*) FROM pg_attribute WHERE attrelid='helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND attnum>0)<>6
+ OR EXISTS(SELECT FROM (VALUES REGISTRY_COLUMNS_EXPECTED) e(num,nam,typ)
+  LEFT JOIN pg_attribute a ON a.attrelid='helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND a.attnum=e.num
+  WHERE a.attname IS DISTINCT FROM e.nam OR a.atttypid IS DISTINCT FROM e.typ OR a.atttypmod IS DISTINCT FROM -1
+   OR a.attnotnull IS DISTINCT FROM true OR a.attisdropped IS DISTINCT FROM false
+   OR a.attidentity IS DISTINCT FROM '' OR a.attgenerated IS DISTINCT FROM '' OR a.attacl IS NOT NULL)
+ THEN RAISE EXCEPTION 'read-closure-exact-registry-columns';END IF;
+IF jsonb_build_object('function_oid',(1::oid)::bigint) IS DISTINCT FROM '{"function_oid":1}'::jsonb
+ OR jsonb_build_object('function_oid',('4294967295'::oid)::bigint) IS DISTINCT FROM '{"function_oid":4294967295}'::jsonb
+ THEN RAISE EXCEPTION 'read-closure-registry-oid-bigint-codec';END IF;
 IF (SELECT count(*) FROM public.helmut_store WHERE id='main-auth')<>1
  OR NOT EXISTS(SELECT FROM public.helmut_store WHERE id='main-auth' AND data#>>'{_authStateRef,version}'='merkle-auth-v1' AND data#>>'{_llmUsageRef,version}'='relational-atomic-v1')
  THEN RAISE EXCEPTION 'read-closure-original-auth-required';END IF;
@@ -219,7 +253,9 @@ END;$guard$;
     replacements = {'DB': _q(database), 'COMMAND_HASH': _q(digest), 'COMMAND_TEXT': _q(text), 'OPERATION': _q(operation),
                     'OWNER': _q(owner), 'RUNTIME': _q(runtime), 'QUALIFIER_SHA': _q(QUALIFIER_SHA),
                     'TABLE_NAMES': ','.join(_q('public.' + t) + '::regclass' for t in TABLES),
-                    'COLUMNS': _values(COLUMNS), 'EXPECTED': _values(_expected())}
+                    'COLUMNS': _values(COLUMNS), 'EXPECTED': _values(_expected()),
+                    'REGISTRY_COLUMNS_EXPECTED': ','.join('(' + str(i) + ',' + _q(name) + ',' + _q('pg_catalog.' + typ) + '::regtype)'
+                                                         for i, (name, typ) in enumerate(REGISTRY_COLUMNS, 1))}
     replacements['AUTH_HASH_GUARD'] = ("IF (SELECT encode(sha256(convert_to(data::text,'UTF8')),'hex') FROM public.helmut_store WHERE id='main-auth') IS DISTINCT FROM " + _q(auth_hash) + " THEN RAISE EXCEPTION 'read-closure-original-auth-drift';END IF;") if auth_hash else ''
     if not installed:
         replacements['INSTALL_STATE_GUARD'] = ("IF EXISTS(SELECT FROM pg_roles WHERE rolname=" + _q(auth) + ") OR EXISTS(SELECT FROM helmut_unit_diagnostic.legacy_read_rpcs) OR "
@@ -242,7 +278,7 @@ def _catalog(database, operation, digest):
  'tables',(SELECT jsonb_agg(jsonb_build_object('oid',c.oid,'owner',c.relowner,'acl',c.relacl,'rls',c.relrowsecurity,'force',c.relforcerowsecurity) ORDER BY c.oid) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN('r','p','v','m','f','S')),
  'columns',(SELECT jsonb_agg(jsonb_build_array(a.attrelid,a.attnum,a.attacl) ORDER BY a.attrelid,a.attnum) FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND a.attnum>0 AND a.attacl IS NOT NULL),
  'policies',(SELECT jsonb_agg(jsonb_build_object('relation',p.polrelid,'name',p.polname,'cmd',p.polcmd,'roles',p.polroles,'permissive',p.polpermissive,'qual',pg_get_expr(p.polqual,p.polrelid),'check',pg_get_expr(p.polwithcheck,p.polrelid)) ORDER BY p.polrelid,p.polname) FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public'),
- 'registry',(SELECT coalesce(jsonb_agg(to_jsonb(q) ORDER BY function_name),'[]'::jsonb) FROM helmut_unit_diagnostic.legacy_read_rpcs q),
+ 'registry',(SELECT coalesce(jsonb_agg(REGISTRY_ROW ORDER BY function_name),'[]'::jsonb) FROM helmut_unit_diagnostic.legacy_read_rpcs q),
  'functions',(SELECT jsonb_agg(jsonb_build_array(p.oid,p.proowner,p.proacl) ORDER BY p.oid) FROM pg_proc p WHERE p.pronamespace='public'::regnamespace),
  'roles',(SELECT jsonb_agg(jsonb_build_object('oid',r.oid,'name',r.rolname,'super',r.rolsuper,'bypass',r.rolbypassrls,'createDB',r.rolcreatedb,'createRole',r.rolcreaterole,'inherit',r.rolinherit,'login',r.rolcanlogin,'replication',r.rolreplication) ORDER BY r.oid) FROM pg_roles r WHERE r.rolname IN(ROLE_NAMES)),
  'memberships',(SELECT jsonb_agg(to_jsonb(m) ORDER BY m.roleid,m.member) FROM pg_auth_members m WHERE m.member IN(SELECT oid FROM pg_roles WHERE rolname IN(ROLE_NAMES))),
@@ -251,7 +287,7 @@ def _catalog(database, operation, digest):
  'prosrcSHA256',encode(sha256(convert_to(p.prosrc,'UTF8')),'hex'),'volatility',p.provolatile::text,'returnType',format_type(p.prorettype,null),
  'language',l.lanname,'config',p.proconfig,'securityDefiner',p.prosecdef) ORDER BY p.proname)
  FROM pg_proc p JOIN pg_language l ON l.oid=p.prolang WHERE p.pronamespace='public'::regnamespace AND p.proname IN(NAMES)));
-""".replace('OP,', _q(operation) + ',').replace('HASH,', _q(digest) + ',').replace('IN(NAMES)', 'IN(' + names + ')').replace('ROLE_NAMES', ','.join(_q('helmut_ud_' + role + '_' + operation[-32:]) for role in ('runtime', 'authenticator')))
+""".replace('OP,', _q(operation) + ',').replace('HASH,', _q(digest) + ',').replace('IN(NAMES)', 'IN(' + names + ')').replace('ROLE_NAMES', ','.join(_q('helmut_ud_' + role + '_' + operation[-32:]) for role in ('runtime', 'authenticator'))).replace('REGISTRY_ROW', REGISTRY_ROW_SQL)
 
 
 def _validate_catalog(c, database, operation, digest):
@@ -321,7 +357,7 @@ def _acl_guard(operation, functions, docs, predicates):
     sql += ("IF EXISTS(SELECT FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN('r','p','v','m','f') AND (has_table_privilege(" + _q(runtime) + ",c.oid,'SELECT') OR has_any_column_privilege(" + _q(runtime) + ",c.oid,'SELECT')) IS DISTINCT FROM (c.oid IN(" + names + ")))"
             + " OR EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname !~ '^local_unit_diagnostic_.*_v1$' AND has_function_privilege(" + _q(runtime) + ",p.oid,'EXECUTE') IS DISTINCT FROM (p.oid IN(" + allowed_oids + ")))"
             + " THEN RAISE EXCEPTION 'read-closure-exact-read-closure';END IF;\n")
-    sql += ("IF (SELECT coalesce(jsonb_agg(to_jsonb(q) ORDER BY function_name),'[]'::jsonb) FROM helmut_unit_diagnostic.legacy_read_rpcs q) IS DISTINCT FROM "
+    sql += ("IF (SELECT coalesce(jsonb_agg(" + REGISTRY_ROW_SQL + " ORDER BY function_name),'[]'::jsonb) FROM helmut_unit_diagnostic.legacy_read_rpcs q) IS DISTINCT FROM "
             + _q(_json(sorted(expected, key=lambda x: x['function_name']))) + "::jsonb THEN RAISE EXCEPTION 'read-closure-exact-registry';END IF;\n")
     for table in TABLES:
         sql += ("IF NOT EXISTS(SELECT FROM pg_class WHERE oid='public." + table + "'::regclass AND relrowsecurity)"

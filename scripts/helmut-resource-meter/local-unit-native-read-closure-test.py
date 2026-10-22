@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -231,6 +232,51 @@ class ReadClosureChecks(unittest.TestCase):
         self.assertTrue(result['probeSessionOrigin'] == 'initial-postgres-with-set-session-authorization')
         self.assertTrue(not any(k in result for k in ('qualified', 'authority', 'unit60', 'full500', 'nativeAccepted')))
         self.assertTrue(not hasattr(f.m, 'main'))
+
+    def test_registry_projection_and_exact_columns_match_actual_store_source(self):
+        f = Fixture(); f.run()
+        source = (HERE / 'local-unit-diagnostic-store.sql').read_text()
+        body = source.split('create table helmut_unit_diagnostic.legacy_read_rpcs(', 1)[1].split('\n);', 1)[0]
+        actual = tuple(re.findall(r'^  ([a-z_][a-z0-9_]*) (text|boolean|oid|jsonb)\b', body, re.M))
+        self.assertEqual(actual, f.m.REGISTRY_COLUMNS)
+        self.assertEqual(len(actual), 6)
+        self.assertEqual(set(re.findall(r"'([a-z_][a-z0-9_]*)',q\.", f.m.REGISTRY_ROW_SQL)), {name for name, _ in actual})
+        self.assertIn("'function_oid',q.function_oid::bigint", f.m.REGISTRY_ROW_SQL)
+        for _, sql, _ in f.calls:
+            self.assertNotIn('to_jsonb(q)', sql)
+            self.assertIn("'registry'", sql)
+            self.assertIn(f.m.REGISTRY_ROW_SQL, sql)
+            self.assertIn('read-closure-exact-registry-columns', sql)
+            self.assertIn("'helmut_unit_diagnostic.legacy_read_rpcs'::regclass AND attnum>0)<>6", sql)
+            self.assertIn("(3,'function_oid','pg_catalog.oid'::regtype)", sql)
+            for marker in ('a.attname IS DISTINCT FROM e.nam', 'a.atttypid IS DISTINCT FROM e.typ',
+                           'a.atttypmod IS DISTINCT FROM -1', 'a.attnotnull IS DISTINCT FROM true',
+                           'a.attisdropped IS DISTINCT FROM false', "a.attidentity IS DISTINCT FROM ''", "a.attgenerated IS DISTINCT FROM ''"):
+                self.assertIn(marker, sql)
+
+    def test_max_unsigned_oid_stays_numeric_in_closed_expected_registry(self):
+        f = Fixture(); f.catalog['functions'][0]['oid'] = '4294967295'; f.run()
+        sql = f.calls[1][1]
+        # This checks the emitted ABI, not PostgreSQL execution. Generic OID
+        # row JSON and the explicit bigint projection must not be confused.
+        self.assertIn('4294967295::oid', sql)
+        self.assertIn('"function_oid":4294967295', sql)
+        self.assertNotIn('"function_oid":"4294967295"', sql)
+        self.assertNotIn('q.function_oid::integer', sql)
+        self.assertIn('read-closure-registry-oid-bigint-codec', sql)
+
+    def test_codec_mini_probe_is_closed_readonly_and_never_runs_itself(self):
+        f = Fixture()
+        sql = f.m.registry_codec_probe_sql()
+        self.assertEqual(f.calls, [])
+        self.assertTrue(sql.startswith('BEGIN READ ONLY;') and sql.endswith('COMMIT;\n'))
+        for marker in ('to_jsonb(1::oid)', 'to_jsonb((1::oid)::bigint)', 'jsonb_typeof',
+                       'explicitProjectionMatches', 'maxOIDPreserved', "('4294967295'::oid)::bigint"):
+            self.assertIn(marker, sql)
+        self.assertNotRegex(sql, r'(?i)\b(?:CREATE|INSERT|UPDATE|DELETE|ALTER|GRANT|PASSWORD)\b')
+        self.assertNotIn('helmut_unit_diagnostic.', sql)
+        self.assertNotIn('public.', sql)
+        self.assertNotIn(f.password, sql)
 
 
 if __name__ == '__main__':
