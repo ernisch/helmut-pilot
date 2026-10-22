@@ -55,6 +55,9 @@ jobs:
             CHANGED="$(git diff --name-only "$BASE" "$GITHUB_SHA")"
           fi
           node scripts/ci-pruefplan.js --files "$CHANGED" --github-output "$GITHUB_OUTPUT"
+      - name: Checkout-Kontext ohne private Zugaenge pruefen
+        if: steps.plan.outputs.standard == 'true'
+        run: python3 -B scripts/helmut-resource-meter/private_ci_channel.py inspect-context
       - name: Originalkanal-Schutzregeln (rein synthetisch)
         if: steps.plan.outputs.standard == 'true'
         run: node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/private_ci_channel_test.py
@@ -64,7 +67,7 @@ jobs:
     # A failed prerequisite must fail the required job, never turn it into a skip.
     if: ${{ always() }}
     environment:
-      name: ${{ needs.plan.outputs.standard == 'true' && 'helmut-ci-originals' || 'helmut-ci-public' }}
+      name: ${{ needs.plan.result == 'success' && needs.plan.outputs.standard == 'true' && 'helmut-ci-originals' || 'helmut-ci-public' }}
       url: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
     permissions:
       contents: read

@@ -11,6 +11,7 @@ import re
 import stat
 import subprocess
 import tarfile
+import traceback
 import urllib.request
 
 BIN = Path(__file__).resolve().parent
@@ -304,18 +305,29 @@ def encrypt_logs():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['check-approval', 'provision', 'encrypt-logs'])
+    parser.add_argument('action', choices=['inspect-context', 'check-approval', 'provision', 'encrypt-logs'])
     parser.add_argument('--receipt', type=Path)
     args = parser.parse_args()
     try:
-        if args.action == 'encrypt-logs':
+        if args.action == 'inspect-context':
+            require(args.receipt is None)
+            result = context()
+            load_transport()
+        elif args.action == 'encrypt-logs':
             require(args.receipt is None)
             result = encrypt_logs()
         else:
             require(args.receipt is not None)
             result = check_approval(args.receipt) if args.action == 'check-approval' else provision(args.receipt)
-    except Exception:
-        print(json.dumps({'pass': False, 'code': 'PRIVATE_CI_CHANNEL_REJECTED', 'ciPassed': False}))
+    except Exception as error:
+        # Only public source coordinates; never exception messages, locals or inputs.
+        location = {'function': 'external', 'line': 0}
+        for frame in reversed(traceback.extract_tb(error.__traceback__)):
+            if frame.name != 'require' and Path(frame.filename).resolve() == Path(__file__).resolve():
+                location = {'function': frame.name, 'line': frame.lineno}
+                break
+        print(json.dumps({'pass': False, 'code': 'PRIVATE_CI_CHANNEL_REJECTED',
+                          'location': location, 'ciPassed': False}))
         return 1
     print(json.dumps({'pass': True, 'action': args.action, 'ciPassed': False,
                       'filesVerified': result.get('filesVerified', 0), 'executionGO': False}))

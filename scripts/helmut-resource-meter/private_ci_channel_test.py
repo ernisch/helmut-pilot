@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """TEST_ONLY fixtures: no GitHub requests, real review grants, private inputs or GO."""
 import copy
+from contextlib import redirect_stdout
 import hashlib
 import importlib.util
 import io
@@ -87,6 +88,40 @@ class ReviewTests(unittest.TestCase):
             with self.assertRaises(RuntimeError): C.check_approval(Path('/not-written.json'))
             api.assert_not_called()
 
+    def test_failure_diagnostic_exposes_only_public_source_coordinates(self):
+        out = io.StringIO()
+        with mock.patch.dict(os.environ, {}, clear=True), \
+             mock.patch.object(sys, 'argv', ['channel', 'check-approval', '--receipt', '/not-written.json']), \
+             mock.patch.object(C, 'api') as api, redirect_stdout(out):
+            self.assertEqual(C.main(), 1)
+        value = json.loads(out.getvalue())
+        self.assertEqual(value['location']['function'], 'context')
+        self.assertGreater(value['location']['line'], 0)
+        self.assertEqual(set(value['location']), {'function', 'line'})
+        self.assertIs(value['ciPassed'], False)
+        api.assert_not_called()
+        out = io.StringIO()
+        with mock.patch.object(sys, 'argv', ['channel', 'check-approval', '--receipt', '/not-written.json']), \
+             mock.patch.object(C, 'check_approval', side_effect=RuntimeError('TEST_ONLY_PRIVATE_MESSAGE')), \
+             redirect_stdout(out):
+            self.assertEqual(C.main(), 1)
+        self.assertNotIn('TEST_ONLY_PRIVATE_MESSAGE', out.getvalue())
+        self.assertEqual(json.loads(out.getvalue())['location']['function'], 'main')
+
+    def test_public_context_inspection_has_no_api_or_approval_receipt(self):
+        out = io.StringIO()
+        with mock.patch.object(sys, 'argv', ['channel', 'inspect-context']), \
+             mock.patch.object(C, 'context', return_value={'TEST_ONLY': True}), \
+             mock.patch.object(C, 'load_transport') as transport, mock.patch.object(C, 'api') as api, \
+             mock.patch.object(C, 'save') as save, redirect_stdout(out):
+            self.assertEqual(C.main(), 0)
+        transport.assert_called_once()
+        api.assert_not_called()
+        save.assert_not_called()
+        value = json.loads(out.getvalue())
+        self.assertIs(value['ciPassed'], False)
+        self.assertIs(value['executionGO'], False)
+
     def test_real_public_transport_pin(self):
         value = C.load_transport()
         self.assertEqual(value['files'], 84)
@@ -117,6 +152,8 @@ class ReviewTests(unittest.TestCase):
         self.assertIn('name: Syntax + Offline-Suiten', offline)
         self.assertIn('if: ${{ always() }}', offline)
         self.assertIn('run: test "$PLAN_RESULT" = success', offline)
+        self.assertIn("needs.plan.result == 'success' && needs.plan.outputs.standard", offline)
+        self.assertIn('private_ci_channel.py inspect-context', text.split('  offline-suite:')[0])
         self.assertEqual(text.count('secrets.HELMUT_CI_ORIGINALS_KEY'), 2)
         self.assertIn('path: ${{ runner.temp }}/helmut-ci-private-logs.tar.gz.gpg', offline)
         self.assertNotIn('.PRIVATE.txt', text)
