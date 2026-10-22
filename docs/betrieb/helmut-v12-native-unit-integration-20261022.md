@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23:16UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23:39UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -396,12 +396,54 @@ versionierter Testbasename und Exitcode. Rohzeilen, freie Fehlermeldungen,
 private Inhalte und Secrets bleiben verborgen; Testauswahl, Child-Exit und
 Verschlüsselung bleiben unverändert.14gezielte Checks und unabhängiger
 QuellreviewPASS, kein erneuter335er-Lokallauf. Der genaue Fachtest des alten
-CI-FAIL bleibt unbekannt. CI39868819326 aufa18 läuft noch; eine neue vollständige
-CI mit dem Metadatenpatch ist noch nicht belegt.
+CI-FAIL bleibt unbekannt. CI39868819326 aufa18 endet ebenfalls mit Bereichs-FAIL bei bestandenem
+Standardlauf; eine neue vollständige CI mit dem Metadatenpatch ist noch nicht belegt.
 [CI-Metadatenreview](belege/v12-native-unit-integration-20261022/PRIVATE_CI_SUITE_METADATA_SOURCE_REVIEW.SAFE.json).
 
-Nächster Schritt: enges Writerrecht nativ bestätigen und ausreichende sichere
-Kapazität herstellen, dann einen neuen einzelnen nativen Fall bis echter
-Ergebnis-/Zeit-/Speicher- und Abschlussabnahme führen.
-Danach verbleibende CI-/Kapazitäts- und sämtliche32Startbedingungen nachweisen.
-Ein vollständiger500er benötigt weiterhin ein neues ausdrückliches konkretes GO.
+## Frischer Einzelunit-Fall48: Writerrechte bestanden, Quellenlesen fehlgeschlagen
+
+Fall `48b9e0f35075611fb46ea1d7bf703d08` auf `739a22dc` hat die enge Writer-
+Vorprüfung nativ bestanden: zwei gleiche Katalogläufe mit tatsächlichem PSQL-
+Exit0/beiden EOFs, vier positive Writer-Spalten-/xmin-Leseproben und acht neue
+42501-Verweigerungen. Die bisherigen20Negativproben bleiben gesondert gezählt.
+Writer bleibt NOLOGIN/NOINHERIT ohne Mitgliedschaft, Table-SELECT oder BYPASSRLS;
+RLS bleibt aktiv. Dies belegt Lesevoraussetzungen, keine vollständige positive
+Artifact-Schreibtransaktion. Der frühere falsche Richtlinienalarm tritt nicht auf.
+
+Der echte HTTP-/Adapterpfad scheitert23:25:29.166UTC mit
+`publication-eligibility-source-read-unavailable`;11,307s Adapterdauer eines
+Fehlversuchs sind kein Unit60-Nachweis. Später fällt der Owner vor sauberem
+Abschluss aus. Alle47echten Observer beenden sich mit0/beiden natürlichen EOFs,
+Owner und Entry jeweils mit1/beiden EOFs. ENTRY_RESULT war angefordert; es gibt
+keinen erneuten HOST_OBSERVE-Timeout. Der Owner bewahrt das tatsächliche REST-
+Abbruchsignal und den ersten internen Fehler bisher nicht auf; diese Ursache
+bleibt offen. Unbegründete Lockerungen von Sperren, Fristen und Abschlussregeln
+folgen daraus nicht. Die vollständige Quellenidentitätslesung besitzt bereits
+einen nativen generischen GET-Pfad; eine fehlende Route ist bisher nicht belegt.
+
+Der äußere CLI-Exit1 und beide natürlichen EOFs sind diesmal dauerhaft erfasst,
+ohne äußeren Timeout oder Zwangssignal. Die Quellpins und der saubere gebundene
+Commit sind vor/nach identisch; ein positiver nativer Abschluss wird daraus nicht
+abgeleitet. RAW,432Quellen und Originalauth blieben im tatsächlichen Worker-
+Abschluss unverändert. Der frühere unbekannte CLI-Abschluss vonab17 bleibt offen.
+
+Gemeinsamer Peak1.248.223.232B, alle Speicherereignisse0, nach letztem Prozessende
+leere Gruppe/PostgreSQL0. Der fehlgeschlagene Fall beweist weder die500MB-Reserve
+noch Unit60/Auth30, Ergebnisqualität oder ein500er-Plateau. Unbekannter Motorumfang
+bleibt `null`; Vorprüfungen können den gemeinsamen Cache erwärmen.
+[Bereinigter Fehler-/CLI-Beleg](belege/v12-native-unit-integration-20261022/NATIVE_48_SINGLE_FAILURE.SAFE.json).
+
+Nach diesem Fall tatsächlich frei10.341.294.080B:396.124.160B unter der10GiB-
+Einzelunitadmission,4.838.485.640B unter der Volladmission.48undab17 bleiben
+unverändert erhalten. Redundante verschlüsselte Transferteile könnten bis zu
+712.458.240B liefern, aber nur nach frischer Hash-/Bindungs-/Rückwegprüfung;
+der vollständige Cipher samt Belegen bleibt geschützt. Diese mögliche Freigabe
+schließt die spätere Volladmissionslücke nicht.
+
+Nächster Schritt: den echten Quellenlesefehler und den Ownerabschluss gezielt
+klären, fehlende private Abbruchdiagnostik schließen und sichere Kapazität
+herstellen. Erst mit konkreter Korrektur bzw. begründeter kleinster Diagnose
+weiterarbeiten; keine unveränderte Wiederholung des ganzen Einzelunitfalls.
+Danach vollständige einzelne Motorabnahme und verbleibende CI-/Kapazitäts- sowie
+sämtliche32Startbedingungen nachweisen. Ein vollständiger500er benötigt weiterhin
+ein neues ausdrückliches konkretes GO.

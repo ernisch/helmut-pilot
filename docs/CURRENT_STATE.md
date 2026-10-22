@@ -4,7 +4,7 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.10.: Native Einzelunit erreicht; zwei konkrete Fehler korrigiert
+## 22.10.: Native Einzelunit erreicht; Quellenlesefehler noch offen
 
 13.527Dateien hashverifiziert; geschützter84Originale-Kanal in PR933 nach voller
 CI39783955460 integriert. Echter V12-POSTRUN/548Runtimebindungen erhalten,
@@ -12,28 +12,29 @@ ursprüngliche DB gestoppt. [Restore/CI](betrieb/private-ci-original-provisionin
 Source/Readonly/Bridge nativPASS:35,700s/1.024.176.128B/Events0. Storage/Lage/
 Kostenlesung korrigiert; VM16/13/32, Vertrag14/14, Start6/Artefakt10PASS.
 Eigene2Tickets belegen keine500er-Globalzähleräquivalenz. Owner-SQL-Aliase/Seed
-korrigiert;3e75/93 vorMotor an HOST_OBSERVE3sFAIL. Später Antwortkern aufab0:
-101reine GruppenPASS. Echter separater Transport149bPASS:2,406/2,133/2,335s,
-5Handles0/2EOF, Peak37.130.240B/Events0; keine Motorabnahme daraus.
-Frischer Fallab17 aufc7a92798 erreicht nativeHTTP/Adapter/ersten Kontrollschritt,
-bleibtFAIL vor Lage/D/R: falscher Richtlinienalarm durch JSON-Schlüsselreihenfolge.
-Behoben auf1a24a9f1;14Testgruppen und beide echten unveränderten DTOsPASS,
-8Drifts abgelehnt. Separater Fehlerpfad braucht Writer-xmin: enges Spaltenrecht,
-reale Readonly-Vorprobe und21reine Tests/QuellreviewsPASS, nativeAbnahme offen.
-Abbruchzähler korrigiert/10reine TestsPASS: unbekannt bleibt null statt alter0.
-ab17Peak1.231.241.216B/Events0,PG0/Gruppeleer,Owner1/Entry137/Hostunsauber;
-äußerer CLI-Exit nach Cloud-Reconnect unbekannt. Unit60/Auth30/Qualität/500MB
-weiter offen. RAW+432Quellen vor folgenden Codekorrekturen frisch unverändert.
-8eigene Checkouts und3vollständig archivierte/restauriert geprüfte COPYs entfernt;
-Originale/Archive/Belege/ab17 erhalten,93ausArchivwiederherstellbar.10.758.008.832B
-frei:20.590.592B über10GiB-Einzelunitadmission,4.421.770.888B zur Volladmission
-fehlen. CI39863022179: StandardPASS/BereichFAIL; sichere Testnamen-Metadaten
-aufb354a10a ergänzt/14gezielte ChecksPASS. NeueCIa18 noch offen, App403 ebenfalls.
+korrigiert. Antwortkern aufab0:101reine GruppenPASS; separater Transport149b
+nativPASS:2,406/2,133/2,335s,5Handles0/2EOF,37.130.240B/Events0; keine Motorabnahme.
+ab17 aufc7a92798FAIL: Richtlinienalarm durch JSON-Schlüsselreihenfolge auf1a24
+behoben;14Gruppen/beide echten DTOsPASS,8Drifts abgelehnt. Enges Writer-xmin-Recht,
+Vorprobe und21reine TestsPASS; im frischen Fall48 auf739a22dc nativ bestätigt:
+beide Katalogläufe/echten Writer-Reads und8neuen42501-NegativprobenPASS.
+48 erreicht HTTP/Adapter, bleibtFAIL mit publication-eligibility-source-read-unavailable.
+Adapter11,307s ist kein Unit60-PASS. CLI tatsächlich1/beide EOFs; Owner1/Entry1,
+47Observer0/beide EOFs, PG0/Gruppeleer. Gemeinsamer Peak1.248.223.232B/Events0,
+kein Zeit-/Qualitäts-/500MB-Nachweis. REST-Signal/ursprünglicher Ownerfehler noch
+nicht aufgezeichnet; wir schließen diese Diagnoselücke. Unbekannter Motorumfang
+bleibt null. RAW/Quellen/Originalauth unverändert;48/ab17-Zustände erhalten.
+8eigene Checkouts/3vollständig archivierte und restauriert geprüfte COPYs entfernt;
+Originale/Archive/Belege erhalten. Nach48 frei10.341.294.080B:396.124.160B unter
+10GiB-Einzelunitadmission,4.838.485.640B zur Volladmission fehlen. Weitere
+redundante Cipherteile nur nach frischem Schutz-/Rückwegnachweis bereinigen.
+CI39868819326 aufa18: StandardPASS/BereichFAIL, App403 offen. Sichere Testnamen-
+Metadaten aufb354a10a ergänzt/14gezielte ChecksPASS, noch nicht remote geprüft.
 [PR936/Belege/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
 [Historischer Vollstand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
 Kein Voll500 ohne32frische Bedingungen/neues konkretesGO; alte Rechte verbraucht,
-kein Merge/Production. Nächster Schritt: sichere Kapazität, native xmin-Abnahme,
-frische einzelne vollständige Motorabnahme und gezielte CI-Fehlerklärung.
+kein Merge/Production. Weiter: echten Quellenlesefehler/Ownerabschluss klären,
+sichere Kapazität und vollständige einzelne Motorabnahme; gezielte CI-Reparatur.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
