@@ -66,7 +66,7 @@
       "testsRunByReviewer": false
     },
     "actualNativeMotorLatencyMeasured": false,
-    "combinedHeadCI": "failed_39756787129_exact_adapter_source_pin_drift",
+    "combinedHeadCI": "failed_39760002592_one_stale_release_manifest_adapter_pin",
     "failedCombinedRun": {
       "runURL": "https://github.com/ernisch/helmut-pilot/actions/runs/39756787129",
       "headSHA": "e3eab26d99582233befbf76a2859d9610d59bf04",
@@ -93,7 +93,7 @@
       "historicalAcceptancesPreserved": true,
       "exactReviewedHashRequired": true,
       "freshNativeIntegrationRequired": true,
-      "freshCombinedGitHubCI": "pending",
+      "freshCombinedGitHubCI": "resource_start_passed_full_run_failed_separate_release_manifest_pin",
       "rootTargetedVerification": {
         "scope": "Exact previously failing resource-start workflow step",
         "hostPython": "3.13",
@@ -105,7 +105,76 @@
         "startInputCheckTestsPassed": 6,
         "sanitizedEnvironment": true,
         "nativeMotorRun": false,
-        "githubPython312Verification": "pending"
+        "githubPython312Verification": "resource_start_passed_39760002592"
+      }
+    },
+    "subsequentCombinedRun": {
+      "runURL": "https://github.com/ernisch/helmut-pilot/actions/runs/39760002592",
+      "headSHA": "20b7425bb1d38b534e1c045cb56dcf4018f8c1c9",
+      "workflowConclusion": "failure",
+      "publicPlanAnd28Guards": "success",
+      "actualEnvironmentReview": "success",
+      "decryptedAndProvisionedOriginalFiles": 84,
+      "resourceStartAndRuntimeContract": "success",
+      "browser": "executed_success",
+      "firstIsolatedDatabaseBlock": "success",
+      "standardSuites": {
+        "passed": 179,
+        "total": 180,
+        "durationSeconds": 885,
+        "failedSuite": "synthetik-500-runtime-artifact-attestation-test.js",
+        "failedSuiteDurationMS": 62,
+        "failedSuiteExit": 1
+      },
+      "areaAndZ22": "skipped_after_standard_failure",
+      "cause": "Only adapter entry in current89-file release manifest retained historical bytes/hash; all other88 files match",
+      "encryptedDiagnosticArtifact": {
+        "id": 12419152400,
+        "bytes": 26904,
+        "digest": "sha256:1752775f0a13609f0af1295295ad1b9d01aa89c9daa135ecc59e99957f64318a",
+        "digestVerified": true,
+        "decryptedLocally": true,
+        "plaintextPublished": false
+      }
+    },
+    "releaseManifestCorrection": {
+      "currentFiles": 89,
+      "changedSourceRows": 1,
+      "changedSource": "lib/helmut/synthetik-500-production-adapter.js",
+      "candidateAdapterSHA256": "31fa8e05742ba8f2618f01bf8f4c24b29b9edc1fe36ab25e0fb49a6f39bc3804",
+      "sourceMappingSHA256": "3c0e64a68e82e211b1bc64430556fcb2f5caae00fe047720c1b2266c0b0b7cad",
+      "allOther88PinsUnchanged": true,
+      "full500QualificationRemainsFalse": true,
+      "historicalManifestAndQualificationsPreserved": true,
+      "rootActualVerification": {
+        "nodeVersion": "24.19.0",
+        "artifactAttestationCasesPassed": 10,
+        "officialVercelBuildUtils": "14.23.0",
+        "officialGlob": "8.0.3",
+        "bundleTestGroupsPassed": 3,
+        "all89ActualFilePins": "pass",
+        "credentialSignaturesDetected": 0,
+        "sanitizedEnvironment": true,
+        "matcherRunExternalNetwork": false,
+        "workerStarts": 0,
+        "databaseCalls": 0,
+        "modelCalls": 0,
+        "profileActivations": 0,
+        "executionAuthority": false
+      },
+      "nextCombinedGitHubCI": "pending_exact_new_head",
+      "publicPreflight": {
+        "beforePrivateEnvironmentApproval": true,
+        "existingArtifactAttestationTest": true,
+        "existingControlDescriptorFactory": true,
+        "controlFactoryPublicCheckoutFilesRead": 31,
+        "controlDescriptorSourcePins": 32,
+        "outsideCheckoutReadsRejected": true,
+        "approvalRuleUnchanged": true,
+        "planFailureStillFailsMandatoryOfflineJob": true,
+        "rootWorkflowProtectionTestsPassed": 28,
+        "newRunBlockBashSyntax": "pass",
+        "actualGitHubExecution": "pending"
       }
     }
   },

@@ -155,6 +155,11 @@ class ReviewTests(unittest.TestCase):
         self.assertIn('run: test "$PLAN_RESULT" = success', offline)
         self.assertIn("needs.plan.result == 'success' && needs.plan.outputs.standard", offline)
         self.assertIn('private_ci_channel.py inspect-context', text.split('  offline-suite:')[0])
+        public = text.split('  offline-suite:')[0]
+        self.assertIn('Oeffentliche Codebindungen vor privater Freigabe pruefen', public)
+        self.assertIn('scripts/synthetik-500-runtime-artifact-attestation-test.js', public)
+        self.assertIn("require('./scripts/helmut-resource-meter/atomic-usage-integration.js').descriptor", public)
+        self.assertNotIn('secrets.HELMUT_CI_ORIGINALS_KEY', public)
         self.assertEqual(text.count('secrets.HELMUT_CI_ORIGINALS_KEY'), 2)
         self.assertIn('path: ${{ runner.temp }}/helmut-ci-private-logs.tar.gz.gpg', offline)
         self.assertNotIn('.PRIVATE.txt', text)

@@ -61,6 +61,22 @@ jobs:
       - name: Originalkanal-Schutzregeln (rein synthetisch)
         if: steps.plan.outputs.standard == 'true'
         run: node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/private_ci_channel_test.py
+      - name: Oeffentliche Codebindungen vor privater Freigabe pruefen
+        if: steps.plan.outputs.standard == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          node scripts/lokal.js -- node scripts/synthetik-500-runtime-artifact-attestation-test.js
+          node - <<'JS'
+          const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+          const root=process.cwd(),read=fs.readFileSync;
+          fs.readFileSync=function(file,...args){const p=path.resolve(String(file));assert(p.startsWith(root+path.sep),'public checkout files only');return read.call(this,file,...args);};
+          const file='docs/betrieb/belege/local-lock-lease-20261021/ROOT_LOCAL_SOURCE_DELTA.SAFE.json',bytes=fs.readFileSync(file);
+          const pin={path:path.resolve(file),bytes:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex')};
+          const d=require('./scripts/helmut-resource-meter/atomic-usage-integration.js').descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localSourceDeltaPin:pin});
+          assert.equal(d.controlSourceAcceptance.localViewBindingCallerDelta.full500Accepted,false);
+          console.log('PASS public reviewed control source bindings; no execution authority');
+          JS
   offline-suite:
     name: Syntax + Offline-Suiten
     needs: plan

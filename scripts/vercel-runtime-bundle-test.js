@@ -9,6 +9,8 @@ const { execFileSync } = require("node:child_process");
 const ROOT = path.resolve(__dirname, "..");
 const BASE = "ccd3cb1d0385eff61bbe613583b9d6ce7b98de42";
 const MANIFEST = "lib/helmut/synthetik-500-release-artifacts.json";
+const ADAPTER = "lib/helmut/synthetik-500-production-adapter.js";
+const SOURCE_REVIEW = "docs/betrieb/belege/local-view-binding-20261022/SOURCE_REVIEW.SAFE.json";
 const sha = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
 const read = p => fs.readFileSync(path.join(ROOT, p));
 const old = p => JSON.parse(execFileSync("git", ["show", `${BASE}:${p}`], { cwd: ROOT, encoding: "utf8" }));
@@ -97,17 +99,53 @@ async function main() {
   assert.equal(read("api/index.js").toString(), 'module.exports = require("../server");\n');
   const mapping = sha(JSON.stringify(manifest.files.map(x => ({ bytes: x.bytes, path: x.path, sha256: x.sha256 }))));
   assert.equal(mapping, manifest.sourceMappingSHA256);
+
+  // Narrowly reviewed delta: relative to the historical BASE manifest only the
+  // vercel.json pin, the single reviewed current adapter row and the aggregate
+  // mapping may differ. The adapter substitution is bound to an immutable
+  // source-review document and never widens to arbitrary changed pins.
+  const reviewBytes = read(SOURCE_REVIEW);
+  assert.equal(reviewBytes.length, 2697, `reviewed source-review document byte drift: ${SOURCE_REVIEW}`);
+  assert.equal(sha(reviewBytes), "98a48a3095f4d01c7c818dcd208a4c169a4d5f191b1a44c320cb7b659e5e3aaa",
+    `reviewed source-review document hash drift: ${SOURCE_REVIEW}`);
+  const review = JSON.parse(reviewBytes.toString("utf8"));
+  assert.equal(review.historicalAcceptanceTransferred, false, "review must transfer no historical acceptance");
+  assert.equal(review.executionAuthority, false, "review must grant no execution authority");
+  assert.equal(review.full500Accepted, false, "review must accept no full500 qualification");
+  assert.equal(review.nativeUnit60Qualified, false, "review must qualify no native unit60");
+  assert.equal(review.requiresFreshIntegrationAcceptance, true, "review must still require fresh integration acceptance");
+  assert(Array.isArray(review.sourcePins) && review.sourcePins.length > 0, "reviewed source pins must be a non-empty list");
+  for (const pin of review.sourcePins)
+    assert.deepEqual(Object.keys(pin).sort(), ["bytes", "file", "sha256"], `reviewed source pin shape: ${pin.file}`);
+  const baseIndex = before.files.findIndex(x => x.path === ADAPTER);
+  assert(baseIndex >= 0, `historical manifest must pin the adapter: ${ADAPTER}`);
+  const historicalAdapter = before.files[baseIndex];
+  assert.deepEqual(historicalAdapter, {
+    path: ADAPTER, bytes: 28589, sha256: "1aefdf54e0a68e734cf851d48d56f298dd391e0d54bed595068760a19f838aa4"
+  }, "historical adapter row must be the recorded pre-delta state");
+  assert.deepEqual(review.baselineAdapter, {
+    file: ADAPTER, bytes: historicalAdapter.bytes, sha256: historicalAdapter.sha256
+  }, "review baseline adapter must match the historical adapter row");
+  const reviewedAdapter = review.sourcePins.filter(x => x.file === ADAPTER);
+  assert.equal(reviewedAdapter.length, 1, "review must carry exactly one current adapter pin");
+  const currentIndex = manifest.files.findIndex(x => x.path === ADAPTER);
+  assert(currentIndex >= 0, `current manifest must pin the adapter: ${ADAPTER}`);
+  const currentAdapter = manifest.files[currentIndex];
+  assert.deepEqual({ file: currentAdapter.path, bytes: currentAdapter.bytes, sha256: currentAdapter.sha256 }, reviewedAdapter[0],
+    "current manifest adapter must equal the reviewed current adapter row");
   const vercelPin = manifest.files.find(x => x.path === "vercel.json");
+  before.files[baseIndex] = { path: ADAPTER, bytes: reviewedAdapter[0].bytes, sha256: reviewedAdapter[0].sha256 };
   before.files[before.files.findIndex(x => x.path === "vercel.json")] = vercelPin;
   before.sourceMappingSHA256 = mapping;
-  assert.deepEqual(manifest, before, "only vercel pin and mapping may change; no qualification or authority upgrade");
-  console.log("PASS all 89 artifact pins, entrypoint, canonical mapping and unchanged qualification limits");
+  assert.deepEqual(manifest, before, "only the vercel pin, the reviewed adapter row and the mapping may change; no qualification or authority upgrade");
+  console.log("PASS all 89 artifact pins, entrypoint, canonical mapping, reviewed adapter delta and unchanged qualification limits");
   const added = matches.filter(p => !previous.includes(p));
   console.log(JSON.stringify({ groups: 3, package: `${pkg.name}@${pkg.version}`, glob: pkg.devDependencies.glob,
     patternCharacters: pattern.length, previousIncluded: previous.length, included: matches.length,
     additionalFiles: added.length, additionalBytes: added.reduce((n, p) => n + read(p).length, 0),
     sortedInventorySHA256: sha(JSON.stringify(matches)), additionalInventorySHA256: sha(JSON.stringify(added)),
-    artifactPins: manifest.files.length, credentialSignaturesDetected: 0, externalNetwork: false,
+    artifactPins: manifest.files.length, reviewedAdapterDeltaRows: 1, sourceReviewDocument: SOURCE_REVIEW,
+    credentialSignaturesDetected: 0, externalNetwork: false,
     deploymentVerified: false, executionAuthority: false }));
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
