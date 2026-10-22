@@ -58,7 +58,7 @@ class PressureSnapshots(unittest.TestCase):
         self.assertNotIn('pass', result)
         self.assertTrue(result['notUnit60OrReserveEvidence'])
 
-    def test_legacy_snapshot_has_identical_fields_and_no_pressure_reads(self):
+    def test_default_snapshot_keeps_final_guards_and_has_no_pressure_reads(self):
         files = {'cgroup.events': 'populated 0\n', 'cgroup.procs': '', 'memory.peak': '900',
                  'memory.current': '0', 'memory.events': 'high 3\noom_kill 0\n',
                  'cpu.stat': 'usage_usec 15\n', 'io.stat': '8:0 rbytes=1 wbytes=2\n'}
@@ -71,6 +71,8 @@ class PressureSnapshots(unittest.TestCase):
             'memoryEvents': {'high': 3, 'oom_kill': 0}, 'cpu': {'usage_usec': 15},
             'events': {'populated': 0}, 'populatedSubgroups': [],
             'ioStatRawNumericOnly': '8:0 rbytes=1 wbytes=2', 'fullLastProcessExitCovered': True,
+            'finalEvents': {'populated': 0}, 'finalPopulatedSubgroups': [],
+            'groupIdentity': {'device': self.group.stat().st_dev, 'inode': self.group.stat().st_ino},
             'scope': 'All descendants charged to dedicated kernel group; no RSS polling substitution'})
 
     def test_complete_numeric_snapshot_has_measured_cost_bracket(self):
