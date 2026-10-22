@@ -131,7 +131,8 @@ function fixture(options = {}) {
   server.listen = name => { assert.equal(name, SOCKET); events.push("server.listen"); Promise.resolve().then(() => { server.listening = true; server.emit("listening"); }); return server; };
   server.close = callback => { events.push("server.close"); server.closeCalls++; server.listening = false; Promise.resolve().then(() => callback()); return server; };
   const netStub = { createServer: (opts, listener) => { assert.equal(opts.allowHalfOpen, true); server.connect = listener; return server; } };
-  const transactionStats = { prepare: 0, accept: 0 }, result = { schema: "helmut-local-unit-original-write-result/1", authAck: [{ synthetic: true }], ownAck: { synthetic: true } };
+  const transactionStats = { prepare: 0, accept: 0 }, result = { schema: "helmut-local-unit-original-write-result/1",
+    ...(options.artifactResult ? { originalRowAck: { synthetic: true } } : { authAck: [{ synthetic: true }] }), ownAck: { synthetic: true } };
   const transaction = { prepare: (request, qualification) => {
     transactionStats.prepare++; assert.equal(request.operationId, operationId); assert.equal(request.commandHash, commandHash);
     assert.equal(qualification.database, database); const sql = "synthetic transaction text"; return { database, sql, sqlSHA256: sha(sql) };
@@ -157,7 +158,7 @@ function fixture(options = {}) {
   }, { filename });
   function frame(changes = {}, rawBody = null) {
     const unsigned = { version: "helmut-local-original-owner-request/1", nonce: "b".repeat(64), atUTC: new Date().toISOString(),
-      bodyBase64: rawBody === null ? Buffer.from(JSON.stringify({ operationId, commandHash })).toString("base64") : rawBody, ...changes };
+      bodyBase64: rawBody === null ? Buffer.from(JSON.stringify({ operationId, commandHash, ...(options.artifactMode ? { mode: "artifact" } : {}) })).toString("base64") : rawBody, ...changes };
     return Buffer.from(JSON.stringify({ ...unsigned, hmacSHA256: crypto.createHmac("sha256", key).update(JSON.stringify(unsigned)).digest("hex") }));
   }
   function socket(holdFinish = false) {
@@ -273,6 +274,17 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
     assert.equal(service.ready.unitExecutionQualified, false); assert.equal(service.ready.full500Qualified, false); assert.equal(service.ready.databaseConnectionObserved, false);
     assert.equal(JSON.stringify(service.ready.actualNodeBudget), JSON.stringify({ nodeVersion: "v24.19.0",
       execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"], oldSpaceMiB: 384, semiSpaceMiB: 16, heapSizeLimitBytes: 400000000 }));
+  });
+  await check("artifact mode returns the actual accepted row ACK and rejects an Auth-ACK substitution", async () => {
+    for (const artifactResult of [true, false]) {
+      const s = fixture({ artifactMode: true, artifactResult }), service = await s.api.start(), socket = s.socket();
+      const pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+      complete(s.children[0], { stdout: JSON.stringify(s.result) }); await pending; await flush();
+      const response = JSON.parse(socket.replies[0]); assert.equal(response.status, artifactResult ? 200 : 500);
+      if (artifactResult) assert.equal(Buffer.from(response.bodyBase64, "base64").toString(), JSON.stringify(s.result));
+      else assert(s.socket().destroyed);
+      assert.equal(s.transactionStats.accept, 1); await service.close();
+    }
   });
   await check("socket loss before response makes the owner terminal even if the child later closes0", async () => {
     const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));

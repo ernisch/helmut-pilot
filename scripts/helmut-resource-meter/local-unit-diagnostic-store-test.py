@@ -116,8 +116,10 @@ def audit(text):
          "state mutation requires genuine original transaction receipt")
     need("helmut_unit_diagnostic.sha(j->>'claimId'),'usage',own_row.body_hash,own_row.revision" in code,
          "usage artifact requires genuine original transaction receipt")
-    need(code.count("perform helmut_unit_diagnostic.original_bridge_receipt_v1(") == 2,
-         "both original persistence hooks are present")
+    need("helmut_unit_diagnostic.sha(j->>'claimId'),'artifact',own_row.body_hash,own_row.revision" in code,
+         "every result artifact requires a genuine original row receipt")
+    need(code.count("perform helmut_unit_diagnostic.original_bridge_receipt_v1(") == 3,
+         "all original persistence hooks are present")
     need("local-unit-store-no-reopen-or-reclaim" in code and "local-unit-store-native-once-claim" in code, "claim lifecycle")
     need("local-unit-store-call-once" in code and "local-unit-store-native-deadline" in code, "phase lifecycle")
     need("local-unit-store-reserve-running-window" in code and "local-unit-store-send-running-window" in code, "no reserve/send after stop")
@@ -179,6 +181,7 @@ class StaticStoreContract(unittest.TestCase):
             ("or new.body is not distinct from old.body", "or false"),
             ("helmut_unit_diagnostic.sha(nj->>'claimId'),'state',old.body_hash,old.revision", "null,'state',null,null"),
             ("helmut_unit_diagnostic.sha(j->>'claimId'),'usage',own_row.body_hash,own_row.revision", "null,'usage',null,null"),
+            ("helmut_unit_diagnostic.sha(j->>'claimId'),'artifact',own_row.body_hash,own_row.revision", "null,'artifact',null,null"),
             ("perform helmut_unit_diagnostic.original_bridge_receipt_v1(", "perform helmut_unit_diagnostic.unchecked_receipt_v1("),
             ("local-unit-store-no-reopen-or-reclaim", "unchecked-reopen"),
             ("local-unit-store-native-deadline", "unchecked-time"),

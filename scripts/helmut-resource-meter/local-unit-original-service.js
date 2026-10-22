@@ -231,8 +231,11 @@ async function start() {
         need(prepared.database === c.database && prepared.sqlSHA256 === sha(Buffer.from(prepared.sql)), "prepared-transaction");
         body = await psql(c, prepared.sql, children); groupIdentity();
         const result = transaction.acceptResult(prepared, body.toString("utf8"));
-        need(exact(result, ["schema", "authAck", "ownAck"]) && result.schema === "helmut-local-unit-original-write-result/1" && Array.isArray(result.authAck)
-          && result.authAck.length === 1 && result.ownAck && typeof result.ownAck === "object", "confirmed-result");
+        const artifact = message.request.mode === "artifact";
+        need(exact(result, ["schema", artifact ? "originalRowAck" : "authAck", "ownAck"])
+          && result.schema === "helmut-local-unit-original-write-result/1" && result.ownAck && typeof result.ownAck === "object"
+          && (artifact ? result.originalRowAck && typeof result.originalRowAck === "object" && !Array.isArray(result.originalRowAck)
+            : Array.isArray(result.authAck) && result.authAck.length === 1), "confirmed-result");
         body = Buffer.from(JSON.stringify(result)); status = 200;
       } catch { if (ownsWrite) terminal = true; body = Buffer.from('{"error":"original-write-not-confirmed"}'); }
       if (!message || stopping || socket.destroyed) { if (ownsWrite) terminal = true; socket.destroy(); return; }

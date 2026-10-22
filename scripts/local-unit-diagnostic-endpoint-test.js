@@ -77,13 +77,22 @@ uid = 0;
 const config = { schema: "helmut-local-unit-diagnostic-broker-config/2", ...scope, database, originalService,
   upstream: { port: 38414, pid: 32, startTicks: "992", exePin: pin, configPin: pin, runtimeTokenPath: "/run/bootstrap/token" },
   measuredCgroup: { path: "/owned-group", device: 28, inode: 99, procMembership: { broker: "0::/owner\n", upstream: "0::/db\n" } },
-  ownerQualificationPin: pin, legacy: { tables: ["mandate_profiles"], rpcs: [{ name: "helmut_auth_state_graph_read_v1", oid: "40000", identityArguments: "text",
-    prosrcSHA256: "e".repeat(64), qualificationPin: pin, requestKeys: ["p_id"] }] } };
+  ownerQualificationPin: pin, legacy: { tables: ["mandate_profiles"], rpcs: [{ name: "helmut_auth_state_graph_read_v1", oid: "40000", identityArguments: "jsonb",
+    prosrcSHA256: "e".repeat(64), qualificationPin: pin, requestKeys: ["id"] }] } };
 broker.validateConfig(config); checks++;
 const msg = (method, pathname, value = null) => ({ ...scope, database, nonce: "e".repeat(64), method, path: pathname,
   bodyBase64: value === null ? "" : Buffer.from(JSON.stringify(value)).toString("base64") });
 assert.equal(broker.authorize(config, msg("GET", "/rest/v1/mandate_profiles?select=id%2Cprofil&limit=1")).length, 0); checks++;
-broker.authorize(config, msg("POST", "/rest/v1/rpc/helmut_auth_state_graph_read_v1", { p_id: "main-auth" })); checks++;
+broker.authorize(config, msg("POST", "/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "main-auth" })); checks++;
+rejects(() => broker.authorize(config, msg("POST", "/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "foreign" })));
+rejects(() => broker.authorize(config, { ...msg("POST", "/rest/v1/rpc/local_unit_diagnostic_contract_v1", {}), nonce: ["e".repeat(64)] }));
+const graphConfig = structuredClone(config); graphConfig.legacy.rpcs[0].requestKeys = ["id", "knownProof", "readNonce", "knownGraph"];
+for (const graph of [{ id: "main-auth", knownProof: null, readNonce: "offline" },
+  { id: "main-auth", knownProof: null, readNonce: "offline", knownGraph: null }]) {
+  broker.authorize(graphConfig, msg("POST", "/rest/v1/rpc/helmut_auth_state_graph_read_v1", graph)); checks++;
+  rejects(() => broker.authorize(graphConfig, msg("POST", "/rest/v1/rpc/helmut_auth_state_graph_read_v1", { ...graph, extra: true })));
+}
+rejects(() => broker.authorize(graphConfig, msg("POST", "/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "main-auth" })));
 broker.authorize(config, msg("POST", "/rest/v1/rpc/local_unit_diagnostic_contract_v1", {})); checks++;
 const originalBody = { schema: "helmut-local-unit-original-write/1", mode: "state", ...scope,
   claimId: "12345678-1234-4234-8234-123456789abc", originalCAS: { id: "main-auth", expectedRevision: "old", expectedProof: {},
@@ -92,6 +101,13 @@ const originalBody = { schema: "helmut-local-unit-original-write/1", mode: "stat
 broker.authorize(config, msg("POST", originalRequest.path, originalBody)); checks++;
 broker.authorize(config, msg("POST", originalRequest.path, { ...originalBody, mode: "usage",
   artifact: { kind: "usage-D", logicalId: "ticket", canonical: "{}", sha256: "b".repeat(64), parentHash: null } })); checks++;
+for (const kind of ["draft", "immutable-D", "review", "lage", "mandatsbriefing", "morgenbriefing", "evidence"]) {
+  const artifact = { kind, logicalId: "own-result", canonical: "{}", sha256: "b".repeat(64), parentHash: null };
+  broker.authorize(config, msg("POST", originalRequest.path, { ...originalBody, mode: "artifact", originalCAS: null, artifact })); checks++;
+  rejects(() => broker.authorize(config, msg("POST", originalRequest.path, { ...originalBody, mode: "artifact", artifact })));
+}
+rejects(() => broker.authorize(config, msg("POST", originalRequest.path, { ...originalBody, mode: "artifact", originalCAS: null,
+  artifact: { kind: "usage-D", logicalId: "own-result", canonical: "{}", sha256: "b".repeat(64), parentHash: null } })));
 for (const change of [x => { x.mode = "seed"; }, x => { x.mode = "result"; }, x => { x.sql = "forbidden"; },
   x => { x.commandHash = "0".repeat(64); }, x => { x.originalCAS.extra = true; }, x => { x.artifact = {}; },
   x => { x.mode = "usage"; x.artifact = { kind: "draft", logicalId: "x", canonical: "{}", sha256: "b".repeat(64), parentHash: null }; }]) {

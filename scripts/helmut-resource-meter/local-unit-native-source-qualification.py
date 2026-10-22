@@ -112,7 +112,7 @@ class SourceServiceObserver:
              and ready.get('databaseConnectionObserved') is False
              and ready.get('configuredInitialDatabaseRole') == 'postgres'
              and ready.get('unitExecutionQualified') is False and ready.get('full500Qualified') is False, 'actual-ready')
-        node_budget(ready.get('nodeBudget'))
+        node_budget(ready.get('actualNodeBudget'))
         self.pins = []
         config_stat, raw = file_pin(config_pin, private=True, content=True)
         config = unique_json(raw)
@@ -154,7 +154,7 @@ class SourceServiceObserver:
                         'containerId': container_id, 'pidNamespace': self.service['pidNamespace'],
                         'supervisor': {'uid': 1000, 'pid': self.supervisor['pid'], 'startTicks': self.supervisor['startTicks']},
                         'service': {'uid': 1000, 'pid': child.pid, 'startTicks': self.service['startTicks'],
-                                    'exePin': node_pin, 'codePin': config['servicePin'], 'configPin': config_pin, 'nodeBudget': ready['nodeBudget']},
+                                    'exePin': node_pin, 'codePin': config['servicePin'], 'configPin': config_pin, 'nodeBudget': ready['actualNodeBudget']},
                         'measuredCgroup': {key: group[key] for key in ('device', 'inode', 'procMembership')},
                         'hmacKeySHA256': hashlib.sha256(bytes.fromhex(config['secretHex'])).hexdigest()}
         self.expires_at = config['expiresAtUTC']

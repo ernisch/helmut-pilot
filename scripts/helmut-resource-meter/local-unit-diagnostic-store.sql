@@ -812,6 +812,9 @@ begin
     or helmut_unit_diagnostic.utc(new.body->'generated_at') < helmut_unit_diagnostic.utc(j#>'{inFlight,enteredAtUTC}')
     or helmut_unit_diagnostic.utc(new.body->'generated_at') >= helmut_unit_diagnostic.utc(j#>'{inFlight,deadlineAtUTC}')
     or to_char(helmut_unit_diagnostic.utc(new.body->'generated_at') at time zone 'UTC','YYYY-MM-DD') is distinct from co->>'day') then raise exception 'local-unit-store-output-owner-time';end if;
+  perform helmut_unit_diagnostic.original_bridge_receipt_v1(new.scope_hash,
+    helmut_unit_diagnostic.sha(j->>'claimId'),'artifact',own_row.body_hash,own_row.revision,
+    new.canonical_text,new.body_hash,new.kind,new.logical_id,new.parent_hash);
   return new;
 end;$f$;
 create trigger artifacts_validate before insert on helmut_unit_diagnostic.artifacts

@@ -124,7 +124,7 @@ function validateConfig(c) {
 function authorize(c, m) {
   need(exact(m, ["operationId", "commandHash", "database", "nonce", "method", "path", "bodyBase64"])
     && m.operationId === c.operationId && m.commandHash === c.commandHash && m.database === c.database
-    && /^[a-f0-9]{64}$/.test(m.nonce) && ["GET", "POST"].includes(m.method)
+    && typeof m.nonce === "string" && /^[a-f0-9]{64}$/.test(m.nonce) && ["GET", "POST"].includes(m.method)
     && typeof m.path === "string" && m.path.length <= 16384 && !/[\0\r\n#\\]/.test(m.path)
     && typeof m.bodyBase64 === "string", "request-scope");
   const body = Buffer.from(m.bodyBase64, "base64"); need(body.length <= CAP && body.toString("base64") === m.bodyBase64, "request-bytes");
@@ -136,14 +136,16 @@ function authorize(c, m) {
     let args; try { args = JSON.parse(body.toString("utf8")); } catch { need(false, "original-json"); }
     need(m.method === "POST" && Buffer.from(body.toString("utf8")).equals(body) && JSON.stringify(args) === body.toString("utf8")
       && exact(args, ["schema", "mode", "operationId", "commandHash", "claimId", "originalCAS", "ownBefore", "ownNext", "artifact"])
-      && args.schema === "helmut-local-unit-original-write/1" && ["state", "usage"].includes(args.mode)
+      && args.schema === "helmut-local-unit-original-write/1" && ["state", "usage", "artifact"].includes(args.mode)
       && args.operationId === c.operationId && args.commandHash === c.commandHash
       && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(args.claimId)
-      && exact(args.originalCAS, ["id", "expectedRevision", "expectedProof", "expectedState", "revision", "root", "nodes", "additions"])
-      && args.originalCAS.id === "main-auth" && exact(args.ownBefore, ["hash", "revision"])
+      && (args.mode === "artifact" ? args.originalCAS === null
+        : exact(args.originalCAS, ["id", "expectedRevision", "expectedProof", "expectedState", "revision", "root", "nodes", "additions"])
+          && args.originalCAS.id === "main-auth") && exact(args.ownBefore, ["hash", "revision"])
       && exact(args.ownNext, ["canonical", "hash"])
       && (args.mode === "state" ? args.artifact === null : exact(args.artifact, ["kind", "logicalId", "canonical", "sha256", "parentHash"])
-        && ["usage-D", "usage-R"].includes(args.artifact.kind)), "closed-original-write");
+        && (args.mode === "usage" ? ["usage-D", "usage-R"]
+          : ["draft", "immutable-D", "review", "lage", "mandatsbriefing", "morgenbriefing", "evidence"]).includes(args.artifact.kind)), "closed-original-write");
   } else if (native) {
     let args; try { args = JSON.parse(body.toString("utf8")); } catch { need(false, "native-json"); }
     need(m.method === "POST" && !["state_cas", "artifact_insert"].includes(native[1])
@@ -158,7 +160,13 @@ function authorize(c, m) {
   } else {
     const r = c.legacy.rpcs.find(r => m.path === "/rest/v1/rpc/" + r.name);
     let args; try { args = JSON.parse(body.toString("utf8")); } catch { need(false, "readonly-json"); }
-    need(r && exact(args, r.requestKeys), "qualified-readonly-rpc");
+    // The original graph protocol has two exact forms: U.read with verified
+    // history, and U.readControl/graph reuse with the additional knownGraph.
+    // No arbitrary optional keys or caller-selected RPCs are admitted.
+    const graphHistory = r?.name === "helmut_auth_state_graph_read_v1"
+      && [...r.requestKeys].sort().join("|") === ["id", "knownProof", "readNonce", "knownGraph"].sort().join("|")
+      && exact(args, ["id", "knownProof", "readNonce"]);
+    need(r && (exact(args, r.requestKeys) || graphHistory) && args.id === "main-auth", "qualified-readonly-rpc");
   }
   return body;
 }
