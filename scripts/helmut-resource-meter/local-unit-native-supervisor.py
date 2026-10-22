@@ -35,11 +35,11 @@ NODE = Path('/opt/codex/runtimes/codex-primary-runtime/dependencies/node')
 FLOOR = 8 * 1024**3
 
 
-def pin(path):
+def pin(path, *, single_link=True):
     path = Path(path)
     before = path.lstat()
-    if path.resolve() != path or not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
-        raise RuntimeError('canonical single-link regular file required')
+    if path.resolve() != path or not stat.S_ISREG(before.st_mode) or before.st_nlink < 1 or single_link and before.st_nlink != 1:
+        raise RuntimeError('canonical regular file with required link identity required')
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     try:
         opened = os.fstat(fd)
@@ -134,7 +134,10 @@ def main():
     kernel = load('local_unit_kernel', BIN / 'kernel-meter.py')
     runtime_path = ARCH / 'native-budget-implementation-qualification-v2/runtime/RUNTIME.SAFE.json'
     original_runtime = json.loads(runtime_path.read_text())
-    original_helper = pin(original_runtime['sourcePin']['path'])
+    # The preserved source code has a retained hardlink backup. It is read only
+    # for provenance, never executed/mounted here. Check the same link count,
+    # inode, times and bytes before/after instead of modifying either original.
+    original_helper = pin(original_runtime['sourcePin']['path'], single_link=False)
     current_helper = pin(BIN / 'native-memory-budget-helper.c')
     if original_helper != original_runtime['sourcePin'] or any(original_helper[k] != current_helper[k] for k in ['bytes', 'sha256']):
         raise RuntimeError('original native helper source differs from integration source')
