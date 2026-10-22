@@ -634,7 +634,7 @@ class _Controller:
                 'independentFinalAcceptance': True, 'independentProductAcceptance': False,
                 'motorCalls': 1, 'actualEntryCalls': 1, 'providerCalls': 0, 'completedUnits': 1,
                 'expectedPositions': 3, 'controlCount': 16, 'full500': False, 'production': False,
-                'copiedOriginalAuthRowUnchanged': False, 'originalRAWUnchanged': True,
+                'originalAuthRowUnchanged': False, 'copiedOriginalAuthRowUnchanged': False, 'originalRAWUnchanged': True,
                 'finalAcceptanceSHA256': sha(canonical(acceptance))}
 
 
