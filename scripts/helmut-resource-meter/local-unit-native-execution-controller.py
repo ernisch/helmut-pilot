@@ -338,10 +338,16 @@ class _Controller:
         if self.host_ready:
             need(heartbeat['owner']['pid'] == self.host_ready['ownerPID'] and heartbeat['owner']['startTicks'] == self.host_ready['ownerStartTicks']
                  and heartbeat['upstream']['pid'] == self.host_ready['upstreamPID'] and heartbeat['upstream']['startTicks'] == self.host_ready['upstreamStartTicks'], 'owner-heartbeat-identity')
+        # A process outside the host's private cgroup namespace is rendered by
+        # this kernel as /../<parent>/<CID>. The trusted Host independently
+        # binds the actual parent inode and cgroup.procs; retain its exact view
+        # and accept only this Source CID, never normalize arbitrary traversal.
+        source_groups = {'0::/' + prefix + self.c['parent'] + '/' + leaf + '\n'
+                         for prefix in ('', '../')
+                         for leaf in (self.c['actualSourceContainerId'], 'docker-' + self.c['actualSourceContainerId'] + '.scope')}
         need(value['source']['namespacePID'] == os.getpid() and value['source']['startTicks'] == self.observer.supervisor['startTicks']
              and value['source']['namespaces']['pid'] == self.observer.binding['pidNamespace']
-             and value['source']['membership'].startswith('0::/' + self.c['parent'] + '/')
-             and len(value['source']['membership'].splitlines()) == 1, 'host-source-pid-map')
+             and value['source']['membership'] in source_groups, 'host-source-pid-map')
         service = value['sourceService']
         need(service['namespacePID'] == self.observer.service['pid'] and service['startTicks'] == self.observer.service['startTicks']
              and service['exe'] == self.c['nodePin']['path'] and service['membership'] == value['source']['membership']
