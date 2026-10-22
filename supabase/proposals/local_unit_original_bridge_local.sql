@@ -1,0 +1,258 @@
+-- INERT COPY-ONLY PROPOSAL. Not a migration, seed, authority or unit approval.
+-- Root must review the actual unchanged legacy invoker/trigger closure first.
+-- Set helmut.local_unit_original_bridge_install_target to this exact NEW owned
+-- database and helmut.local_unit_original_bridge_install to the qualified JSON:
+-- {schema:"helmut-local-unit-original-bridge-install/1",database,operationId,
+--  commandHash,originalSources:[{oid,name,identityArguments,prosrcSHA256,
+--  volatility,returnType,language,config}]}. All grants resolve checked OIDs.
+-- The qualification is privileged Root input, not a self-authenticating flag.
+-- No original function, trigger, row, generation or history is replaced.
+begin;
+do $install$
+declare q jsonb; p record; r jsonb; db text:=current_database(); suffix text:=right(db,32);
+  writer text:='helmut_ud_bridge_writer_'||suffix; owner_name text:='helmut_ud_owner_'||suffix;
+  needed text[]:=array['helmut_auth_state_cas_v1','helmut_auth_state_payload_hash_local_v1',
+    'helmut_auth_state_leaf_info_local_v1','helmut_auth_state_children_local_v1',
+    'helmut_auth_state_nodes_guard_local_v1','helmut_auth_state_put_nodes_local_v1',
+    'helmut_auth_state_expand_local_v1','helmut_auth_state_assert_root_local_v1',
+    'helmut_auth_state_assert_data_local_v1','helmut_auth_state_assert_graph_local_v1',
+    'helmut_auth_state_auth_guard_local_v1','helmut_auth_state_graph_checked_local_v1',
+    'helmut_auth_usage_guard_local_v1','helmut_auth_usage_insert_local_v1',
+    'helmut_auth_usage_checked_proof_local_v1']; seen text[]:='{}';
+begin
+  if db !~ '^helmut_unit_diagnostic_[a-f0-9]{32}$'
+    or current_setting('helmut.local_unit_original_bridge_install_target',true) is distinct from db
+    or current_setting('helmut.local_usage_experiment',true) is distinct from 'on'
+    or current_setting('server_version_num')::integer not between 170000 and 179999
+    or current_setting('server_encoding')<>'UTF8' or current_setting('client_encoding')<>'UTF8'
+    or current_user<>session_user or not exists(select from pg_roles where rolname=current_user and rolsuper)
+    or not exists(select from pg_namespace where nspname='helmut_unit_diagnostic' and nspowner=(select oid from pg_roles where rolname=owner_name))
+    or (select count(*) from pg_class where oid in ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass) and relrowsecurity and relkind='r')<>3
+    or exists(select from pg_roles where rolname=writer)
+    or exists(select from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='helmut_unit_diagnostic' and p.proname like 'original_bridge_%') then
+    raise exception 'original-bridge-new-owned-copy-required';end if;
+  q:=nullif(current_setting('helmut.local_unit_original_bridge_install',true),'')::jsonb;
+  if not helmut_unit_diagnostic.exact(q,array['schema','database','operationId','commandHash','originalSources'])
+    or q->>'schema' is distinct from 'helmut-local-unit-original-bridge-install/1'
+    or q->>'database' is distinct from db or q->>'operationId' is distinct from 'localUnitDiagnostic-'||suffix
+    or coalesce(q->>'commandHash','') !~ '^[a-f0-9]{64}$'
+    or jsonb_typeof(q->'originalSources') is distinct from 'array' or jsonb_array_length(q->'originalSources') not between cardinality(needed) and 32 then
+    raise exception 'original-bridge-qualified-install-input';end if;
+  for r in select value from jsonb_array_elements(q->'originalSources') loop
+    if not helmut_unit_diagnostic.exact(r,array['oid','name','identityArguments','prosrcSHA256','volatility','returnType','language','config'])
+      or coalesce(r->>'oid','') !~ '^[1-9][0-9]{0,9}$' or coalesce(r->>'prosrcSHA256','') !~ '^[a-f0-9]{64}$' then
+      raise exception 'original-bridge-qualified-source-shape';end if;
+    select p0.*,n.nspname,l.lanname into strict p from pg_proc p0 join pg_namespace n on n.oid=p0.pronamespace
+      join pg_language l on l.oid=p0.prolang where p0.oid=(r->>'oid')::oid;
+    if p.nspname<>'public' or p.proname=any(seen)
+      or (p.proname<>all(needed) and not exists(select from pg_trigger t where not t.tgisinternal and t.tgfoid=p.oid
+        and t.tgrelid in ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass)))
+      or r->>'name' is distinct from 'public.'||p.proname or oidvectortypes(p.proargtypes) is distinct from r->>'identityArguments'
+      or encode(sha256(convert_to(p.prosrc,'UTF8')),'hex') is distinct from r->>'prosrcSHA256'
+      or p.prosecdef or to_jsonb(p.proconfig) is distinct from nullif(r->'config','null'::jsonb)
+      or (p.proname=any(needed) and p.proconfig is distinct from array['search_path=pg_catalog']::text[])
+      or (p.proconfig is not null and p.proconfig is distinct from array['search_path=pg_catalog']::text[])
+      or p.provolatile::text is distinct from r->>'volatility' or format_type(p.prorettype,null) is distinct from r->>'returnType'
+      or p.lanname is distinct from r->>'language' then raise exception 'original-bridge-qualified-source-mismatch';end if;
+    seen:=array_append(seen,p.proname);
+  end loop;
+  if not seen@>needed then raise exception 'original-bridge-qualified-closure-incomplete';end if;
+  if exists(select from pg_trigger t where not t.tgisinternal and t.tgrelid in
+    ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass)
+    and not exists(select from jsonb_array_elements(q->'originalSources') r0 where (r0->>'oid')::oid=t.tgfoid)) then
+    raise exception 'original-bridge-qualified-trigger-closure-incomplete';end if;
+  execute format('create role %I nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls',writer);
+  perform set_config('role',owner_name,true);
+end;$install$;
+
+-- Only object partition containers are flattened. Repeated containers are an
+-- error; ordinary value children may be shared. No last-wins key aggregation.
+create function helmut_unit_diagnostic.original_bridge_top_map_v1(s text,g text,h text) returns jsonb
+language plpgsql stable security invoker set search_path=pg_catalog as $f$
+declare stack text[]:=array[h]; seen text[]:='{}'; current_hash text; b jsonb; tag text; e jsonb; k text;
+  result jsonb:='{}'; n integer:=0; payload text;
+begin
+  if s is distinct from 'main-auth' or g is null or h is null or h!~'^[a-f0-9]{64}$' then raise exception 'original-bridge-top-input';end if;
+  perform public.helmut_auth_state_graph_checked_local_v1(s,g,h,true);
+  while cardinality(stack)>0 loop
+    current_hash:=stack[cardinality(stack)];stack:=trim_array(stack,1);n:=n+1;
+    if n>20000 or current_hash=any(seen) then raise exception 'original-bridge-container-repeated';end if;
+    seen:=array_append(seen,current_hash);
+    select t.body,t.payload into strict b,payload from public.helmut_auth_state_nodes_local t
+      where t.store_id=s and t.generation=g and t.node_hash=current_hash;
+    if encode(sha256(convert_to(payload,'UTF8')),'hex')<>current_hash then raise exception 'original-bridge-actual-node-hash';end if;
+    tag:=b->>0;
+    if tag='m' then
+      for e in select value from jsonb_array_elements(b->1) loop stack:=array_append(stack,e->>1);end loop;
+    elsif tag='o' or (tag='v' and jsonb_typeof(b->1)='object' and octet_length(payload)<=16384) then
+      for e in select value from jsonb_array_elements(case when tag='o' then b->1 else
+        (select coalesce(jsonb_agg(jsonb_build_array(key,current_hash)),'[]'::jsonb) from jsonb_each(b->1)) end) loop
+        k:=e->>0;
+        if result?k or k=any(array['llmUsage','_llmUsageRef','_authStateRef','_authStoreRevision']) then raise exception 'original-bridge-top-key';end if;
+        result:=result||jsonb_build_object(k,jsonb_build_object('nodeHash',case when tag='o' then e->>1 else current_hash end,'inline',tag='v'));
+        if octet_length(result::text)>4194304 then raise exception 'original-bridge-top-map-limit';end if;
+      end loop;
+    else raise exception 'original-bridge-top-object-required';end if;
+  end loop;
+  return result;
+end;$f$;
+
+-- Actual leaf values remain internal. Direct non-own references may only be
+-- compared with v leaves; no arbitrary legacy subtree expansion is permitted.
+-- Own references have a separate pre-expansion native/text/work bound.
+create function helmut_unit_diagnostic.original_bridge_value_v1(s text,g text,k text,ref jsonb,small boolean) returns jsonb
+language plpgsql stable security invoker set search_path=pg_catalog as $f$
+declare b jsonb; payload text; r record; reachable text[]; lookup jsonb; sizes bigint[]; native_sizes bigint[];
+  n integer; found_n integer; payload_bytes bigint; i integer:=0; j integer; child text; indexes integer[];
+  tag text; text_size bigint; native_size bigint; text_work bigint:=0; native_work bigint:=0; components integer;
+begin
+  if s is distinct from 'main-auth' or g is null or k is null or small is null
+    or not helmut_unit_diagnostic.exact(ref,array['nodeHash','inline'])
+    or coalesce(ref->>'nodeHash','')!~'^[a-f0-9]{64}$' or jsonb_typeof(ref->'inline') is distinct from 'boolean' then
+    raise exception 'original-bridge-value-input';end if;
+  select t.body,t.payload into strict b,payload from public.helmut_auth_state_nodes_local t
+    where t.store_id=s and t.generation=g and t.node_hash=ref->>'nodeHash';
+  if encode(sha256(convert_to(payload,'UTF8')),'hex') is distinct from ref->>'nodeHash' then raise exception 'original-bridge-actual-node-hash';end if;
+  if (ref->>'inline')::boolean then
+    if b->>0 is distinct from 'v' or jsonb_typeof(b->1) is distinct from 'object' or not(b->1?k) or octet_length(payload)>16384 then
+      raise exception 'original-bridge-inline-leaf';end if;
+    return b->1->k;
+  end if;
+  if not small then
+    if b->>0 is distinct from 'v' or octet_length(payload)>65536 then raise exception 'original-bridge-mixed-leaf-required';end if;
+    return b->1;
+  end if;
+  -- Pull bounded references before bodies. Preserve edge multiplicity in each
+  -- size calculation, including shared value children and flattened maps/lists.
+  with recursive reach(hash) as(select ref->>'nodeHash' union select unnest(t.children) from reach r0
+    join public.helmut_auth_state_nodes_local t on t.store_id=s and t.generation=g and t.node_hash=r0.hash),
+    bounded as materialized(select hash from reach limit 2001)
+    select array_agg(hash),count(*) into reachable,n from bounded;
+  if n<1 or n>2000 then raise exception 'original-bridge-own-node-limit';end if;
+  select count(*),sum(octet_length(t.payload)) into found_n,payload_bytes from public.helmut_auth_state_nodes_local t
+    where t.store_id=s and t.generation=g and t.node_hash=any(reachable);
+  if found_n<>n or payload_bytes>2097152 then raise exception 'original-bridge-own-payload-limit';end if;
+  select jsonb_object_agg(t.node_hash,x.ord) into lookup from
+    (select node_hash,row_number()over(order by node_seq) ord from public.helmut_auth_state_nodes_local
+      where store_id=s and generation=g and node_hash=any(reachable)) x join public.helmut_auth_state_nodes_local t
+      on t.store_id=s and t.generation=g and t.node_hash=x.node_hash;
+  sizes:=array_fill(0::bigint,array[n]);native_sizes:=array_fill(0::bigint,array[n]);
+  for r in select t.* from public.helmut_auth_state_nodes_local t where t.store_id=s and t.generation=g
+    and t.node_hash=any(reachable) order by t.node_seq loop
+    i:=i+1;b:=r.body;tag:=b->>0;indexes:='{}';
+    if encode(sha256(convert_to(r.payload,'UTF8')),'hex')<>r.node_hash then raise exception 'original-bridge-actual-node-hash';end if;
+    foreach child in array r.children loop
+      j:=(lookup->>child)::integer;if j is null or j>=i then raise exception 'original-bridge-own-postorder';end if;
+      indexes:=array_append(indexes,j);
+    end loop;
+    if tag='v' then text_size:=(r.leaf_info->>'textBytes')::bigint;native_size:=(r.leaf_info->>'nativeBytes')::bigint;
+    elsif tag in ('o','a') then
+      text_size:=2;native_size:=16;
+      if cardinality(indexes)>0 then for j in 1..cardinality(indexes) loop
+        text_size:=text_size+sizes[indexes[j]]+case when j>1 then 2 else 0 end;
+        native_size:=native_size+native_sizes[indexes[j]]+16;
+        if tag='o' then text_size:=text_size+octet_length((b->1->(j-1)->0)::text)+2;
+          native_size:=native_size+octet_length(b->1->(j-1)->>0);end if;
+      end loop;end if;
+    elsif tag in ('m','l') then
+      text_size:=2;native_size:=16;components:=0;
+      foreach j in array indexes loop text_size:=text_size+sizes[j]-2;native_size:=native_size+native_sizes[j]+16;
+        if sizes[j]>2 then components:=components+1;end if;end loop;
+      text_size:=text_size+greatest(0,components-1)*2;
+    else raise exception 'original-bridge-own-node-kind';end if;
+    if text_size is null or native_size is null or text_size>4194304 or native_size>8388608
+      or text_work+text_size>8388608 or native_work+native_size>16777216 then raise exception 'original-bridge-own-expansion-limit';end if;
+    sizes[i]:=text_size;native_sizes[i]:=native_size;text_work:=text_work+text_size;native_work:=native_work+native_size;
+  end loop;
+  return public.helmut_auth_state_expand_local_v1(s,g,ref->>'nodeHash',false,false);
+end;$f$;
+
+create function helmut_unit_diagnostic.original_bridge_own_projection_v1(s text,g text,h text,operation_id text) returns jsonb
+language plpgsql stable security invoker set search_path=pg_catalog as $f$
+declare m jsonb; result jsonb:='{}'; k text; prefix text; own_keys text[];
+begin
+  if operation_id is distinct from 'localUnitDiagnostic-'||right(current_database(),32) then raise exception 'original-bridge-own-operation';end if;
+  prefix:='localUnitDiagnostic:'||right(operation_id,32)||':';
+  own_keys:=array['localUnitDiagnosticConsumedGrantsV1',prefix||'journal',prefix||'costs',prefix||'reservation',prefix||'sendClaim',prefix||'review',prefix||'result'];
+  m:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,h);
+  foreach k in array own_keys loop
+    if not(m?k) then raise exception 'original-bridge-own-key-missing-seed-blocked';end if;
+    result:=result||jsonb_build_object(k,helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,m->k,true));
+    if octet_length(result::text)>4194304 then raise exception 'original-bridge-own-projection-limit';end if;
+  end loop;
+  return result;
+end;$f$;
+
+create function helmut_unit_diagnostic.original_bridge_compare_delta_v1(s text,g text,old_root text,new_root text,operation_id text,expected_own jsonb) returns void
+language plpgsql stable security invoker set search_path=pg_catalog as $f$
+declare old_map jsonb; new_map jsonb; actual_own jsonb:='{}'; k text; prefix text; own_keys text[]; a jsonb; b jsonb;
+begin
+  if operation_id is distinct from 'localUnitDiagnostic-'||right(current_database(),32) then raise exception 'original-bridge-delta-operation';end if;
+  prefix:='localUnitDiagnostic:'||right(operation_id,32)||':';
+  own_keys:=array['localUnitDiagnosticConsumedGrantsV1',prefix||'journal',prefix||'costs',prefix||'reservation',prefix||'sendClaim',prefix||'review',prefix||'result'];
+  if not helmut_unit_diagnostic.exact(expected_own,own_keys) or octet_length(expected_own::text)>4194304 then raise exception 'original-bridge-exact-own-seven';end if;
+  old_map:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,old_root);
+  new_map:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,new_root);
+  if (select array_agg(key collate "C" order by key collate "C") from jsonb_object_keys(old_map) key where not(key=any(own_keys)))
+    is distinct from (select array_agg(key collate "C" order by key collate "C") from jsonb_object_keys(new_map) key where not(key=any(own_keys))) then
+    raise exception 'original-bridge-outside-keyset-changed';end if;
+  for k in select key from jsonb_object_keys(old_map) key where not(key=any(own_keys)) loop
+    a:=old_map->k;b:=new_map->k;
+    if a=b then continue;end if;
+    if a->'inline'='false'::jsonb and b->'inline'='false'::jsonb then raise exception 'original-bridge-outside-child-hash-changed';end if;
+    if helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,a,false) is distinct from
+      helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,b,false) then raise exception 'original-bridge-outside-inline-value-changed';end if;
+  end loop;
+  foreach k in array own_keys loop
+    if not(old_map?k) or not(new_map?k) then raise exception 'original-bridge-own-key-missing-seed-blocked';end if;
+    actual_own:=actual_own||jsonb_build_object(k,helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,new_map->k,true));
+    if octet_length(actual_own::text)>4194304 then raise exception 'original-bridge-own-projection-limit';end if;
+  end loop;
+  if actual_own is distinct from expected_own then raise exception 'original-bridge-own-projection-mismatch';end if;
+end;$f$;
+
+revoke all on function helmut_unit_diagnostic.original_bridge_top_map_v1(text,text,text) from public;
+revoke all on function helmut_unit_diagnostic.original_bridge_value_v1(text,text,text,jsonb,boolean) from public;
+revoke all on function helmut_unit_diagnostic.original_bridge_own_projection_v1(text,text,text,text) from public;
+revoke all on function helmut_unit_diagnostic.original_bridge_compare_delta_v1(text,text,text,text,text,jsonb) from public;
+reset role;
+
+do $grants$
+declare q jsonb:=current_setting('helmut.local_unit_original_bridge_install')::jsonb;
+  suffix text:=right(current_database(),32); writer text:='helmut_ud_bridge_writer_'||suffix;
+  runtime_name text:='helmut_ud_runtime_'||suffix; r jsonb; p oid; seq oid; seq_count integer; scope text:=q->>'commandHash';
+begin
+  execute format('grant usage on schema public,helmut_unit_diagnostic to %I',writer);
+  execute format('grant select(id,data),update(data) on public.helmut_store to %I',writer);
+  execute format('grant select,insert(store_id,generation,payload) on public.helmut_auth_state_nodes_local to %I',writer);
+  execute format('grant select,insert(id,created_at,tenant_id,profile_id,run_id,pipeline_step,politician_id,user_id,model,call_type,prompt_tokens,completion_tokens,total_tokens,estimated_cost,duration_ms,success,error,usage_store_id,usage_generation,usage_ordinal,usage_record,usage_prev_hash) on public.llm_usage to %I',writer);
+  select count(*),min(s.oid::bigint)::oid into seq_count,seq from pg_class s join pg_depend d on d.objid=s.oid and d.deptype='i'
+    and d.classid='pg_class'::regclass and d.refclassid='pg_class'::regclass
+    join pg_attribute a on a.attrelid=d.refobjid and a.attnum=d.refobjsubid
+    where s.relkind='S' and a.attrelid='public.helmut_auth_state_nodes_local'::regclass and a.attname='node_seq';
+  if seq_count<>1 then raise exception 'original-bridge-exact-node-identity-sequence';end if;
+  execute format('grant usage on sequence %s to %I',seq::regclass,writer);
+  for r in select value from jsonb_array_elements(q->'originalSources') loop
+    p:=(r->>'oid')::oid;execute format('grant execute on function %s to %I',p::regprocedure,writer);
+  end loop;
+  for p in select f.oid from pg_proc f join pg_namespace n on n.oid=f.pronamespace
+    where n.nspname='helmut_unit_diagnostic' and f.proname in ('original_bridge_top_map_v1','original_bridge_value_v1',
+      'original_bridge_own_projection_v1','original_bridge_compare_delta_v1','exact') loop
+    execute format('grant execute on function %s to %I,%I',p::regprocedure,writer,runtime_name);
+  end loop;
+  execute format('grant select on helmut_unit_diagnostic.authority,helmut_unit_diagnostic.state to %I',writer);
+  execute format('grant update(scope_hash) on helmut_unit_diagnostic.state to %I',writer);
+  execute format('create policy original_bridge_auth_read on public.helmut_store for select to %I using(id=''main-auth'')',writer);
+  execute format('create policy original_bridge_auth_write on public.helmut_store for update to %I using(id=''main-auth'') with check(id=''main-auth'')',writer);
+  execute format('create policy original_bridge_nodes_read on public.helmut_auth_state_nodes_local for select to %I using(store_id=''main-auth'' and generation=(select data#>>''{_authStateRef,generation}'' from public.helmut_store where id=''main-auth''))',writer);
+  execute format('create policy original_bridge_nodes_insert on public.helmut_auth_state_nodes_local for insert to %I with check(store_id=''main-auth'' and generation=(select data#>>''{_authStateRef,generation}'' from public.helmut_store where id=''main-auth''))',writer);
+  execute format('create policy original_bridge_usage_read on public.llm_usage for select to %I using(usage_store_id=''main-auth'' and usage_generation=(select data#>>''{_llmUsageRef,generation}'' from public.helmut_store where id=''main-auth''))',writer);
+  execute format('create policy original_bridge_usage_insert on public.llm_usage for insert to %I with check(usage_store_id=''main-auth'' and usage_generation=(select data#>>''{_llmUsageRef,generation}'' from public.helmut_store where id=''main-auth'') and usage_record->>''scopeHash''=%L)',writer,scope);
+  execute format('create policy original_bridge_authority_read on helmut_unit_diagnostic.authority for select to %I using(scope_hash=%L)',writer,scope);
+  execute format('create policy original_bridge_state_read on helmut_unit_diagnostic.state for select to %I using(scope_hash=%L)',writer,scope);
+  execute format('create policy original_bridge_state_lock on helmut_unit_diagnostic.state for update to %I using(scope_hash=%L) with check(false)',writer,scope);
+  -- No role membership, BYPASSRLS, ownership or legacy mutation reaches runtime.
+  if exists(select from pg_auth_members where member=(select oid from pg_roles where rolname=runtime_name)
+    or roleid=(select oid from pg_roles where rolname=writer)) then raise exception 'original-bridge-role-membership-forbidden';end if;
+end;$grants$;
+commit;
