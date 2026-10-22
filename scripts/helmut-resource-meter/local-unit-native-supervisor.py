@@ -247,6 +247,9 @@ def main():
                       pythonExecutable=str(PYTHON / 'bin/python3.12'))
         config['sources'].extend(execution_pins.values())
         config['sources'].append(pin(config['pythonExecutable']))
+        # Host control plane only; never expose Docker/socket to SOURCE or the
+        # client. The closed subprocess environment deliberately has no host PATH.
+        config['hostDockerPin'] = pin('/usr/local/bin/docker')
         rest = SOURCE.parent / 'source-capture/postgrest-pinned'
         rest_pin = pin(rest)
         if rest_pin['bytes'] != 17309560 or rest_pin['sha256'] != '870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617':

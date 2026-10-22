@@ -237,6 +237,7 @@ class PureHost(unittest.TestCase):
             self.host.tick()
 
     def test_root_private_input_is_stdin_never_argv(self):
+        self.assertTrue(Path(M.DOCKER[0]).is_absolute())
         with patch.object(M, '_PipeChild', FakeChild):
             child = self.host._root(M.BOOTSTRAP, {'private': 'not-for-argv'})
         self.assertTrue(child.data == M.encode({'private': 'not-for-argv'}))

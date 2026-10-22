@@ -17,7 +17,7 @@ import stat
 import subprocess
 import time
 
-DOCKER = ['docker', '--host=unix:///var/run/docker.sock']
+DOCKER = ['/usr/local/bin/docker', '--host=unix:///var/run/docker.sock']
 ENV = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8', 'TZ': 'UTC'}
 FLAGS = ['--max-old-space-size=384', '--max-semi-space-size=16']
 TRACE = '/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl'
