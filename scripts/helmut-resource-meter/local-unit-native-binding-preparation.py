@@ -244,7 +244,16 @@ def qualify(worker, config, pg, catalog):
         operation_id=prepared['selection']['operationId'], command_canonical=value['canonical'],
         command_sha256=prepared['selection']['commandHash'], proposal_pin=config['bridgeProposalPin'],
         original_source_pins=catalog['originalSources'])
-    worker.save('NATIVE_ORIGINAL_BRIDGE.SAFE.json', bridge_result)
+    # Relation policies include selected synthetic/source identifiers. The full
+    # qualification stays private with the source; SAFE holds only hashes/counts.
+    worker.save('NATIVE_ORIGINAL_BRIDGE.PRIVATE.json', bridge_result)
+    q = bridge_result['qualification']
+    worker.save('NATIVE_ORIGINAL_BRIDGE.SAFE.json', {
+        'schema': 'helmut-local-unit-native-original-bridge-summary/1', 'database': catalog['database'],
+        'qualificationSHA256': sha(canonical(q)), 'originalFunctionCount': len(q['originalSources']),
+        'helperFunctionCount': len(q['helperSources']), 'nativeFunctionCount': len(q['nativeSources']),
+        'relationCount': len(q['originalRelations']), 'executionAuthorityInstalled': False,
+        'motorCalls': 0, 'full500': False})
     return {'schema': 'helmut-local-unit-native-binding-qualification/1', 'genuineSourceInputsQualified': True,
             'readClosureQualified': True, 'originalBridgeQualified': True, 'executionAuthorityInstalled': False,
             'motorCalls': 0, 'providerCalls': 0, 'full500': False, 'unit60Qualified': False,
