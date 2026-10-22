@@ -71,7 +71,9 @@ class Fixture:
             records.append(record)
         self.trace = {'schema': 'helmut-local-unit-native-control-read-trace/1',
             'header': {**self.selection, 'database': self.database, 'ownerPID': 10, 'ownerStartTicks': '123', 'pidNamespace': 'pid:[222]',
-                'timeNamespace': 'time:[333]', 'brokerCodeSHA256': digest('VM broker code'), 'trustSHA256': digest('VM trust'), 'sourceBindingSHA256': digest('VM source binding')},
+                'timeNamespace': 'time:[333]', 'clockDomain': {'schema': 'helmut-local-unit-monotonic-domain/1', 'kind': 'time-namespace',
+                    'namespace': 'time:[333]', 'bootId': '01234567-89ab-4cde-8fab-0123456789ab'},
+                'brokerCodeSHA256': digest('VM broker code'), 'trustSHA256': digest('VM trust'), 'sourceBindingSHA256': digest('VM source binding')},
             'records': records, 'footer': {'event': 'closed', 'recordCount': 19, 'controlCount': 16, 'finalAckCount': 1, 'closedReadbackCount': 2, 'complete': True}}
 
     @staticmethod
@@ -158,6 +160,54 @@ class AcceptanceChecks(unittest.TestCase):
     def test_absolute_owner_clock_span_cannot_hide_a_minute_behind_short_utc_times(self):
         f = Fixture(); f.trace['records'][-1]['timing']['finishNs'] = str(int(f.trace['records'][0]['timing']['sendNs']) + 60000000000)
         self.reject(f); self.assertEqual(f.calls, [])
+
+    def test_absent_kernel_time_namespace_has_exact_domain_and_same_acceptance_checks(self):
+        f = Fixture()
+        f.trace['header']['timeNamespace'] = None
+        f.trace['header']['clockDomain'].update(kind='kernel-without-time-namespaces', namespace=None)
+        result = f.run()
+        self.assertTrue(result['nativeSingleUnitAccepted'])
+        self.assertFalse(result['full500Accepted'])
+        self.assertEqual(len(f.calls), 1)
+        # Unsupported time namespaces do not extend any monotonic deadline.
+        for mutation in ('ownerSpan', 'unitSpan', 'missingEOF'):
+            f = Fixture()
+            f.trace['header']['timeNamespace'] = None
+            f.trace['header']['clockDomain'].update(kind='kernel-without-time-namespaces', namespace=None)
+            if mutation == 'ownerSpan':
+                f.trace['records'][-1]['timing']['finishNs'] = str(int(f.trace['records'][0]['timing']['sendNs']) + 60000000000)
+            elif mutation == 'unitSpan':
+                f.terminal['timing']['adapterElapsedMS'] = 60000
+            else:
+                f.close['stderrEOF'] = False
+            self.reject(f)
+            self.assertEqual(f.calls, [])
+
+    def test_clock_domain_wrong_modes_namespace_inconsistency_or_bad_boot_fail_before_sql(self):
+        changes = [lambda h: h.pop('clockDomain'), lambda h: h.update(clockDomain=None),
+                   lambda h: h['clockDomain'].update(extra=True),
+                   lambda h: h['clockDomain'].update(schema='unsupported-schema'),
+                   lambda h: h['clockDomain'].update(kind='kernel-global'),
+                   lambda h: h['clockDomain'].update(kind='time-namespace', namespace=None),
+                   lambda h: h['clockDomain'].update(kind='kernel-without-time-namespaces'),
+                   lambda h: h.update(timeNamespace=None),
+                   lambda h: h['clockDomain'].update(namespace='time:[999]'),
+                   lambda h: h['clockDomain'].update(namespace='time:[0]'),
+                   lambda h: h['clockDomain'].update(namespace='time:[333]\n'),
+                   lambda h: h['clockDomain'].update(namespace='pid:[333]')]
+        for boot in (None, True, '', 'invalid', '01234567-89AB-4cde-8fab-0123456789ab',
+                     '01234567-89ab-4cde-8fab-0123456789ab\n'):
+            changes.append(lambda h, boot=boot: h['clockDomain'].update(bootId=boot))
+        for change in changes:
+            f = Fixture(); change(f.trace['header']); self.reject(f)
+            self.assertEqual(f.calls, [])
+
+    def test_kernel_domain_cannot_be_combined_with_invented_namespace(self):
+        for namespace in ('time:[333]', 'pid:[333]', False, 0, {}, []):
+            f = Fixture()
+            f.trace['header']['clockDomain'].update(kind='kernel-without-time-namespaces', namespace=None)
+            f.trace['header']['timeNamespace'] = namespace
+            self.reject(f); self.assertEqual(f.calls, [])
 
     def test_snapshot_failure_or_incomplete_result_never_becomes_acceptance(self):
         for key, value in [('ownArtifactCount', 8), ('originalResultRowCount', 6), ('positionCount', 2), ('controlCount', 15),

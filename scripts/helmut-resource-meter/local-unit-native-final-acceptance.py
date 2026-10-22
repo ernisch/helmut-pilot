@@ -136,11 +136,22 @@ def _trace(trace, selection):
           and trace['schema'] == 'helmut-local-unit-native-control-read-trace/1', 'independent-control-trace')
     h = trace['header']
     _need(type(h) is dict and set(h) == {'operationId', 'commandHash', 'database', 'ownerPID', 'ownerStartTicks',
-        'pidNamespace', 'timeNamespace', 'brokerCodeSHA256', 'trustSHA256', 'sourceBindingSHA256'}
+        'pidNamespace', 'timeNamespace', 'clockDomain', 'brokerCodeSHA256', 'trustSHA256', 'sourceBindingSHA256'}
         and all(h[k] == selection[k] for k in selection) and h['database'] == 'helmut_unit_diagnostic_' + selection['operationId'][-32:]
         and type(h['ownerPID']) is int and h['ownerPID'] > 0 and _ns(h['ownerStartTicks']) and int(h['ownerStartTicks']) > 0
-        and re.fullmatch(r'pid:\[[1-9][0-9]*\]', h['pidNamespace']) and re.fullmatch(r'time:\[[1-9][0-9]*\]', h['timeNamespace'])
+        and re.fullmatch(r'pid:\[[1-9][0-9]*\]', h['pidNamespace'])
         and all(_hash(h[k]) for k in ('brokerCodeSHA256', 'trustSHA256', 'sourceBindingSHA256')), 'trace-header')
+    domain = h['clockDomain']
+    _need(type(domain) is dict and set(domain) == {'schema', 'kind', 'namespace', 'bootId'}
+          and domain['schema'] == 'helmut-local-unit-monotonic-domain/1'
+          and type(domain['bootId']) is str and UUID.fullmatch(domain['bootId'])
+          and ((domain['kind'] == 'time-namespace' and type(domain['namespace']) is str
+                and re.fullmatch(r'time:\[[1-9][0-9]*\]', domain['namespace']))
+               or (domain['kind'] == 'kernel-without-time-namespaces' and domain['namespace'] is None))
+          and h['timeNamespace'] == domain['namespace'], 'trace-clock-domain')
+    # A root-private Broker FD and independent actual Host/CID observation must
+    # establish this DTO's provenance and exact shared domain/boot. Missing
+    # kernel time namespaces never remove the UTC or monotonic limits below.
     _need(type(trace['records']) is list and len(trace['records']) == 19, 'nineteen-actual-trace-records')
     nonce_hashes, graph_nonces, previous_ns, previous_at = set(), set(), 0, None
     for index, r in enumerate(trace['records']):

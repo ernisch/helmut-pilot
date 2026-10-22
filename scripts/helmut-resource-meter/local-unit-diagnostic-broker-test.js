@@ -4,7 +4,27 @@ const fs = require("node:fs"), path = require("node:path"), vm = require("node:v
 const assert = require("node:assert/strict"), { EventEmitter } = require("node:events");
 const filename = path.join(__dirname, "local-unit-diagnostic-broker.js"), source = fs.readFileSync(filename, "utf8");
 const key = crypto.randomBytes(32), nonce = crypto.randomBytes(32).toString("hex"), bytes = Buffer.from('{"closed":"offline"}');
+const BOOT_ID = "01234567-89ab-4cde-8fab-0123456789ab";
 let checks = 0;
+function clockFixture({ namespace = "time:[42]", namespaceError = null, boot = BOOT_ID + "\n", bootError = null } = {}) {
+  const calls = [], mod = { exports: {} }, sandbox = { module: mod, __filename: filename, process: { env: {} }, require(name) {
+    if (name === "node:fs") return {
+      readlinkSync(name) {
+        calls.push(name); assert.equal(name, "/proc/self/ns/time");
+        if (namespaceError) throw Object.assign(Error("VM filesystem failure"), { code: namespaceError });
+        return namespace;
+      }, readFileSync(name, encoding) {
+        calls.push(name); assert.equal(name, "/proc/sys/kernel/random/boot_id"); assert.equal(encoding, "utf8");
+        if (bootError) throw Object.assign(Error("VM filesystem failure"), { code: bootError });
+        return boot;
+      }
+    };
+    if (name === "node:http" || name === "node:net") return {};
+    return require(name);
+  } };
+  vm.runInNewContext(source + "\nmodule.exports={monotonicClockDomain};", sandbox);
+  return { calls, run: (...args) => mod.exports.monotonicClockDomain(...args) };
+}
 function transport({ mode = "valid", finishDelay = 0, connectDelay = 0 } = {}) {
   const socket = new EventEmitter(), state = { connections: 0, writes: 0, destroyed: false, endCalled: false, closed: false };
   socket.destroy = () => { state.destroyed = true; };
@@ -126,8 +146,17 @@ function brokerLifecycle() {
           uid: n(name === original.socketPath ? 1000 : 0), gid: n(0), nlink: n(1), size: n(0), mtimeNs: n(1), ctimeNs: n(1), isSocket: () => true };
       }
       return { isDirectory: () => true, isSymbolicLink: () => false, uid: 0, mode: 0o40755 };
-    }, statfsSync: () => ({ type: 0x63677270 }), readdirSync: () => ["7"], readlinkSync: name => name === "/proc/self/ns/time" ? "time:[42]" : "socket:[9]",
-    readFileSync(name) { assert.equal(name, "/proc/net/tcp"); return "header\n0: 0100007F:0D80 00000000:0000 0A 0 0 0 0 0 9\n"; },
+    }, statfsSync: () => ({ type: 0x63677270 }), readdirSync: () => ["7"], readlinkSync(name) {
+      if (name === "/proc/self/ns/time") {
+        if (state.withoutTimeNamespace) throw Object.assign(Error("VM unsupported kernel"), { code: "ENOENT" });
+        return "time:[42]";
+      }
+      return "socket:[9]";
+    },
+    readFileSync(name) {
+      if (name === "/proc/sys/kernel/random/boot_id") return BOOT_ID + "\n";
+      assert.equal(name, "/proc/net/tcp"); return "header\n0: 0100007F:0D80 00000000:0000 0A 0 0 0 0 0 9\n";
+    },
     existsSync: name => files.has(name), mkdirSync: name => put(name, "VM dir"), chmodSync() {}, writeFileSync: (name, bytes) => { assert(!files.has(name)); put(name, bytes); },
     openSync(name, flags, mode) {
       assert.equal(name, tracePath); assert(flags & fs.constants.O_EXCL); assert(flags & fs.constants.O_NOFOLLOW); assert(flags & fs.constants.O_NONBLOCK); assert.equal(mode, 0o600);
@@ -194,6 +223,28 @@ function brokerLifecycle() {
   } };
 }
 (async () => {
+  for (const options of [{}, { boot: BOOT_ID }, { namespaceError: "ENOENT" }]) {
+    const f = clockFixture(options), domain = f.run(), absent = options.namespaceError === "ENOENT";
+    assert(Object.isFrozen(domain)); assert.deepEqual(JSON.parse(JSON.stringify(domain)), {
+      schema: "helmut-local-unit-monotonic-domain/1", kind: absent ? "kernel-without-time-namespaces" : "time-namespace",
+      namespace: absent ? null : "time:[42]", bootId: BOOT_ID });
+    assert.deepEqual(f.calls, ["/proc/self/ns/time", "/proc/sys/kernel/random/boot_id"]); checks++;
+  }
+  for (const namespaceError of ["EACCES", "EIO", "ENOTDIR", "EINVAL", "EPERM", "unknown"]) {
+    const f = clockFixture({ namespaceError }); assert.throws(f.run, /^Error: local-unit-broker-trace-time-namespace-read$/);
+    assert.deepEqual(f.calls, ["/proc/self/ns/time"]); checks++;
+  }
+  for (const namespace of [null, "", "time:[0]", "pid:[42]", "time:[42]\n", "time:[42]\r", " time:[42]"]) {
+    assert.throws(clockFixture({ namespace }).run, /^Error: local-unit-broker-trace-time-namespace$/); checks++;
+  }
+  for (const namespaceError of [null, "ENOENT"]) for (const boot of [null, "", "invalid", BOOT_ID.toUpperCase(), " " + BOOT_ID,
+    BOOT_ID + "\n\n", BOOT_ID + "\r\n", BOOT_ID + " extra"]) {
+    assert.throws(clockFixture({ namespaceError, boot }).run, /^Error: local-unit-broker-trace-boot-id$/); checks++;
+  }
+  for (const namespaceError of [null, "ENOENT"]) {
+    assert.throws(clockFixture({ namespaceError, bootError: "EACCES" }).run, /^Error: local-unit-broker-trace-boot-id-read$/); checks++;
+  }
+  assert.throws(() => clockFixture().run({ kind: "kernel-without-time-namespaces" }), /^Error: local-unit-broker-trace-clock-no-arguments$/); checks++;
   const good = transport({ finishDelay: 10 }); let accepted = false;
   const pending = good.run().then(r => { accepted = true; return r; });
   await new Promise(resolve => setTimeout(resolve, 1)); assert.ok(!accepted && !good.state.closed); checks++;
@@ -240,8 +291,9 @@ function brokerLifecycle() {
     const f = brokerLifecycle(); f.state.addressChanged = true; await assert.rejects(f.start());
     assert.equal(f.server.listening, false); assert.equal(f.state.closeCalls, 1); checks++;
   }
-  {
-    const f = brokerLifecycle(), running = await f.start(), requests = [];
+  for (const absent of [false, true]) {
+    const f = brokerLifecycle(); f.state.withoutTimeNamespace = absent;
+    const running = await f.start(), requests = [];
     assert.throws(() => running.controlReadTracePin());
     // Three-key ordinary U.read is deliberately excluded from the control trace.
     await f.request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "main-auth", knownProof: null, readNonce: f.readNonce(99) });
@@ -263,7 +315,9 @@ function brokerLifecycle() {
       canonical, hash: bodyHash, revision: 17, nonce: stateNonce };
     for (let i = 0; i < 2; i++) requests.push(await f.request("/rest/v1/rpc/local_unit_diagnostic_state_read_v1", { p_scope_hash: f.c.commandHash, p_nonce: stateNonce }));
     await running.close(); const rows = f.rows(), records = rows.slice(1, -1), footer = rows.at(-1), pin = running.controlReadTracePin();
-    assert.equal(rows[0].header.timeNamespace, "time:[42]"); assert.equal(rows[0].schema, "helmut-local-unit-native-control-read-trace/1");
+    assert.equal(rows[0].header.timeNamespace, absent ? null : "time:[42]"); assert.equal(rows[0].schema, "helmut-local-unit-native-control-read-trace/1");
+    assert.deepEqual(rows[0].header.clockDomain, { schema: "helmut-local-unit-monotonic-domain/1",
+      kind: absent ? "kernel-without-time-namespaces" : "time-namespace", namespace: absent ? null : "time:[42]", bootId: BOOT_ID });
     assert.equal(records.length, 19); assert.equal(footer.controlCount, 16); assert.equal(footer.finalAckCount, 1); assert.equal(footer.closedReadbackCount, 2); assert.equal(footer.complete, true);
     assert.equal(pin.bytes, f.files.get(pin.path).bytes.length); assert.equal(pin.sha256, h(f.files.get(pin.path).bytes)); assert(pin.bytes <= 65536 && f.descriptors.size === 0);
     for (let i = 0; i < records.length; i++) {

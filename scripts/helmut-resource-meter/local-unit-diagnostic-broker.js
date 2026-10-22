@@ -289,9 +289,30 @@ function canonical(value) {
   if (value && typeof value === "object") return "{" + Object.keys(value).sort().map(k => JSON.stringify(k) + ":" + canonical(value[k])).join(",") + "}";
   return JSON.stringify(value);
 }
+function monotonicClockDomain() {
+  need(arguments.length === 0, "trace-clock-no-arguments");
+  let namespace = null, kind = "time-namespace";
+  try {
+    namespace = fs.readlinkSync("/proc/self/ns/time");
+  } catch (error) {
+    // This kernel can lack CONFIG_TIME_NS entirely. Only actual ENOENT at the
+    // fixed proc path establishes that case; permission/I/O errors prove none.
+    need(error?.code === "ENOENT", "trace-time-namespace-read");
+    kind = "kernel-without-time-namespaces";
+  }
+  need(kind === "kernel-without-time-namespaces" ? namespace === null
+    : typeof namespace === "string" && namespace.endsWith("]") && /^time:\[[1-9][0-9]*\]$/.test(namespace), "trace-time-namespace");
+  let raw;
+  try { raw = fs.readFileSync("/proc/sys/kernel/random/boot_id", "utf8"); }
+  catch { need(false, "trace-boot-id-read"); }
+  need(typeof raw === "string", "trace-boot-id");
+  const bootId = raw.endsWith("\n") ? raw.slice(0, -1) : raw;
+  need(bootId.length === 36 && UUID.test(bootId) && (raw === bootId || raw === bootId + "\n"), "trace-boot-id");
+  return Object.freeze({ schema: "helmut-local-unit-monotonic-domain/1", kind, namespace, bootId });
+}
 function controlReadTrace(c, self, codePin, trustPin, unknown) {
   rootParents(TRACE);
-  const timeNamespace = fs.readlinkSync("/proc/self/ns/time"); need(/^time:\[[1-9][0-9]*\]$/.test(timeNamespace), "trace-time-namespace");
+  const clockDomain = monotonicClockDomain(), timeNamespace = clockDomain.namespace;
   const fd = fs.openSync(TRACE, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK, 0o600);
   let bytes = 0, records = 0, controls = 0, acks = 0, reads = 0, broken = false, publicationFailed = false, sealed = false, prior = null, finalPin = null;
   const pending = new Set(), digest = crypto.createHash("sha256");
@@ -311,7 +332,7 @@ function controlReadTrace(c, self, codePin, trustPin, unknown) {
     } catch (error) { publicationFailed = true; mark(); throw error; }
   }
   try { append({ schema: "helmut-local-unit-native-control-read-trace/1", header: { operationId: c.operationId, commandHash: c.commandHash,
-    database: c.database, ownerPID: self.pid, ownerStartTicks: self.startTicks, pidNamespace: self.pidNamespace, timeNamespace,
+    database: c.database, ownerPID: self.pid, ownerStartTicks: self.startTicks, pidNamespace: self.pidNamespace, timeNamespace, clockDomain,
     brokerCodeSHA256: codePin.sha256, trustSHA256: trustPin.sha256, sourceBindingSHA256: sha(canonical(c.originalService.publicSourceBinding)) } }); }
   catch (error) { fs.closeSync(fd); throw error; }
   function settle(t) {
