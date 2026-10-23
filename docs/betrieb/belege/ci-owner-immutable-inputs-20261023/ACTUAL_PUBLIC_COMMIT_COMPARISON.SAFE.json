@@ -1,0 +1,194 @@
+{
+  "schema": "helmut-ci-access-current-merge-vs-actual-checkout/1",
+  "observedAtUTC": "2026-10-23T18:13:35+00:00",
+  "scope": "PUBLIC_CODE_COORDINATES_AND_CURRENT_API_COMPARISONS_ONLY",
+  "run": {
+    "id": 40000572324,
+    "run_attempt": 1,
+    "head_sha": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "failure",
+    "failedJob": 120576333958,
+    "failedStep": 5,
+    "publicRejectAtUTC": "2026-10-23T18:09:04Z",
+    "publicCode": "PRIVATE_CI_CHANNEL_REJECTED",
+    "publicLocation": {
+      "function": "validate_owner_access",
+      "line": 219
+    }
+  },
+  "actualHistoricalPublicCheckoutLog": {
+    "jobId": 120576333958,
+    "step": "Run actions/checkout@v4",
+    "command": "git log -1 --format=%H",
+    "checkoutSHA": "6b46ea24c275392b508ce250d04aaafc14d84a59",
+    "mergeMessageHeadSHA": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+    "mergeMessageBaseSHA": "b1333219e16c767d0f9c062e1c874a8e6f50205b",
+    "note": "Merge-message coordinates do not independently substitute for cryptographic parent verification"
+  },
+  "currentPublicPR": {
+    "number": 936,
+    "state": "open",
+    "draft": true,
+    "merge_commit_sha": "9be0edf1c8738e1b86f466848e1a006fd6e3e8ca",
+    "head": {
+      "sha": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+      "ref": "codex/v12-unit60-native-integration-20261022",
+      "repo": {
+        "full_name": "ernisch/helmut-pilot",
+        "id": 1274160979,
+        "fork": false
+      }
+    },
+    "base": {
+      "sha": "b1333219e16c767d0f9c062e1c874a8e6f50205b",
+      "ref": "codex/ci-cloud-readiness-20261022",
+      "repo": {
+        "full_name": "ernisch/helmut-pilot",
+        "id": 1274160979,
+        "fork": false
+      }
+    },
+    "user": {
+      "login": "ernisch",
+      "id": 273344519
+    }
+  },
+  "currentComparisonsToHistoricalPublicCoordinates": [
+    {
+      "line": 219,
+      "condition": "head and base are dicts",
+      "currentResult": true
+    },
+    {
+      "line": 220,
+      "condition": "current_pr.state == open",
+      "currentResult": true,
+      "observed": "open"
+    },
+    {
+      "line": 221,
+      "condition": "current_pr.number has exact int type",
+      "currentResult": true,
+      "observed": 936
+    },
+    {
+      "line": 222,
+      "condition": "current_pr.number equals public run-associated PR number",
+      "currentResult": true,
+      "currentPRNumber": 936,
+      "publicRunAssociatedPRNumber": 936,
+      "historicalRawCtxPRNumber": "NOT_CAPTURED"
+    },
+    {
+      "line": 223,
+      "condition": "owned_actor(current_pr.user)",
+      "currentResult": true,
+      "login": "ernisch",
+      "id": 273344519
+    },
+    {
+      "line": 224,
+      "condition": "same_repository(head.repo) and head.repo.fork is false",
+      "currentResult": true,
+      "full_name": "ernisch/helmut-pilot",
+      "id": 1274160979,
+      "fork": false
+    },
+    {
+      "line": 225,
+      "condition": "same_repository(base.repo)",
+      "currentResult": true,
+      "full_name": "ernisch/helmut-pilot",
+      "id": 1274160979
+    },
+    {
+      "line": 226,
+      "condition": "current PR head SHA equals public run head SHA",
+      "currentResult": true,
+      "currentPRHeadSHA": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+      "runHeadSHA": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb"
+    },
+    {
+      "line": 227,
+      "condition": "current PR merge_commit_sha equals actual historical checkout SHA",
+      "currentResult": false,
+      "currentPRMergeSHA": "9be0edf1c8738e1b86f466848e1a006fd6e3e8ca",
+      "actualHistoricalCheckoutSHA": "6b46ea24c275392b508ce250d04aaafc14d84a59"
+    },
+    {
+      "line": 228,
+      "condition": "head.ref is a nonempty string",
+      "currentResult": true,
+      "observed": "codex/v12-unit60-native-integration-20261022"
+    },
+    {
+      "line": 229,
+      "condition": "run.head_branch equals current head.ref",
+      "currentResult": true,
+      "observed": "codex/v12-unit60-native-integration-20261022"
+    },
+    {
+      "lines": [
+        230,
+        231,
+        232
+      ],
+      "condition": "non-PR else branch",
+      "currentResult": "NOT_APPLICABLE",
+      "runEvent": "pull_request"
+    }
+  ],
+  "currentHeadEqualsCheckoutMergeMessageHead": true,
+  "currentBaseEqualsCheckoutMergeMessageBase": true,
+  "historicalFailureBoundary": "The public reject identifies the 219 require group only. The actual current_pr API response and raw ctx at 18:09:04Z were not retained publicly; present-time predicates do not establish every predicate value at failure time. A mutable current merge-SHA mismatch is demonstrated now, but sole historical causation remains unproven.",
+  "readEvidenceTools": [
+    "1c4827",
+    "09c9ac",
+    "cf97dd",
+    "ac5207",
+    "919ea7"
+  ],
+  "noPrivateOriginalsKeysLogsInputsLocals": true,
+  "noCodeRepoWorkflowTestsDBNativeActions": true,
+  "historicalFailuresUnchanged": true,
+  "priorComparisonPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/ci-access-merge-current-vs-checkout-c0a847d7-20261023/CAUSE_COMPARISON.SAFE.json",
+    "bytes": 4921,
+    "sha256": "cd0ffa7a24a1b2ceb1506ad98085995942e5d117fe970bd32aafee33394fc8ec"
+  },
+  "publicGitCommitMetadata": [
+    {
+      "sha": "6b46ea24c275392b508ce250d04aaafc14d84a59",
+      "tree_sha": "03234c6557112f1c82dfddb2cfc0f6ce89c9dfeb",
+      "parent_shas": [
+        "b1333219e16c767d0f9c062e1c874a8e6f50205b",
+        "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb"
+      ],
+      "source": "https://api.github.com/repos/ernisch/helmut-pilot/git/commits/6b46ea24c275392b508ce250d04aaafc14d84a59",
+      "readEvidenceTool": "7ea442"
+    },
+    {
+      "sha": "9be0edf1c8738e1b86f466848e1a006fd6e3e8ca",
+      "tree_sha": "03234c6557112f1c82dfddb2cfc0f6ce89c9dfeb",
+      "parent_shas": [
+        "b1333219e16c767d0f9c062e1c874a8e6f50205b",
+        "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb"
+      ],
+      "source": "https://api.github.com/repos/ernisch/helmut-pilot/git/commits/9be0edf1c8738e1b86f466848e1a006fd6e3e8ca",
+      "readEvidenceTool": "62684d"
+    }
+  ],
+  "commitComparison": {
+    "differentCommitSHAs": true,
+    "identicalOrderedParents": true,
+    "identicalTreeSHA": true,
+    "orderedParentsMatchExactPublicBaseAndHead": true,
+    "contentAndParentIdentityEstablished": true,
+    "commitFileContentsRead": false,
+    "historicalGuardAPIResponseStillUnknown": true,
+    "soleHistoricalRejectConditionStillNotProven": true
+  },
+  "conclusion": "The actual historical checkout and the currently reported PR merge commit have different commit SHAs but identical ordered base/head parents and the same complete Git tree. This establishes equal code-tree and parent identity despite mutable merge_commit_sha metadata. It does not reconstruct the current_pr API response at the historical rejection."
+}

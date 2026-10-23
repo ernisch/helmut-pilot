@@ -22,12 +22,15 @@ offen; Claim+DBKEEP/Autoritätverbraucht. Closure sauber/PG0/Shutdownpolicy/Grup
 77Samples6Events0/Peak1.240.449.024B, kein500MB-Beweis. Motoraf33 bleibtDeadlineFAIL;
 Unit60/Auth30/Plateau/500MB/Voll500 offen.
 
-CI97662 historischFAIL,14betroffene lokalPASS. CI39999111414/23ee:14/84/19PASS,
-Gesamtnoch offen; neuerCI fürFix erforderlich. Bereits33Archive/SQLoverlay/fünfPGscratch/
+CI97662 historischFAIL;23ee14/84/19PASS. Neuer c0-Run40000572324 stoppt Step5/
+Ownerzugang;84/Z22SKIPPED. Zwei MergeSHAs haben gleicheParents+Tree. Autozugang
+an validierteEventbase/Head gebunden, Manualschutz gleich;33ChecksPASS, fehlendes
+öffentlichesCipher aus echtemGitblob restauriert/gezieltPASS. NeuerCI nachPush offen.
+[Befund](betrieb/belege/ci-owner-immutable-inputs-20261023/ROOT_INTEGRATION_RESULT.SAFE.json). Bereits33Archive/SQLoverlay/fünfPGscratch/
 zwölfHüllen kontrolliertgesichert/bereinigt. Originale/QuellDBs/af33/Claimkopie/Außenbelege/
 Backups/Images/Volumes/fremdeArbeitKEEP; V11Basis für17Deltaarchive nötig. Kein weiterer
-sicherer413MB-Kandidat. Frei10,324GB;10GiB-Komponentenadmission fehlen413MB, Voll500-
-Admission15.179.779.720B fehlen4,86GB. NativeStartsblockiert; Original-RAW-Änderung auto-
+sicherer413MB-Kandidat. Frei rund10,294GB;10GiB-Komponentenadmission fehlen443MB, Voll500-
+Admission15.179.779.720B fehlen4,89GB. NativeStartsblockiert; Original-RAW-Änderung auto-
 matischabgelehnt. Danach frischeCode-/Root-/Einmalbindung; Voll500 erst32frischeBedingungen+
 konkretesneuesGO. KeineProduction/Merge.
 [Befund](betrieb/belege/native-claim-only-20261023/ROOT_ACTUAL_AND_FIX.SAFE.json),

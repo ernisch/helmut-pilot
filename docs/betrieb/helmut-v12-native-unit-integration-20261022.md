@@ -1624,3 +1624,29 @@ nativer Start/keine neue Einmalautorität vor tatsächlicher Kapazitätslösung.
 [Unabhängiger tatsächlicher FAILreview](belege/native-claim-only-20261023/INDEPENDENT_ACTUAL_REVIEW.SAFE.json),
 [unabhängiger enger Fixreview](belege/native-claim-only-20261023/INDEPENDENT_FIX_REVIEW.SAFE.json),
 [Rootbefund mit Pins und nächstem Schritt](belege/native-claim-only-20261023/ROOT_ACTUAL_AND_FIX.SAFE.json).
+
+
+## 23.10.: CI-Zugang an unveränderliche Eingabecommits gebunden
+
+Neuer CI40000572324 aufc0a847d7 scheitert vor Tests/Originalen an Ownerzugang Step5,
+validate_owner_access219;84/Z22 SKIPPED, Browser/Prüfplan/Vercel SUCCESS. Öffentlicher
+Checkout6b46ea24 und späterer API-Merge9be0edf1 haben nach tatsächlichen Gitmetadaten
+dieselben geordneten Eltern b1333219/c0a847d7 und denselben vollständigen Tree03234c6.
+Der genaue historische API-Antwortwert beim Reject ist nicht gespeichert; der alleinige
+damalige fehlgeschlagene Teilvergleich bleibt UNKNOWN.
+
+Autozugang bindet nun aktuelle Basis/Head exakt an die schon gegen die echten geordneten
+Git-Eltern validierten Eventcommits. WorkflowSHA/Checkout/HEAD/OwnerIDs/RepoIDs/Fork/
+Run/Attempt/Branch bleiben streng. Der instabile Live-Mergealias wird im Autozweig
+ersetzt; tatsächlicher vertrauenswürdiger Checkout bleibt zwingend. Receipt verlangt
+baseSHA typgleich aus frischem Kontext, vor Transport/Key/GPG. Manuelle Approvalfunktion,
+Reviewer-/Reject-/Environmentregeln und Provisionierung bytegleich.
+
+Root und unabhängiger SourceReview PASS. Gezielte34Checks:33PASS/einArtifact-ERROR,
+weil das echte öffentliche CI-Cipher im Sparsecheckout fehlte. Byteidentisch aus dem
+bestehenden HEAD-Gitblob restauriert, Transport-SHA geprüft; nur den fehlgeschlagenen
+Hashcheck erneut ausgeführt/PASS. Keine privaten Originale entschlüsselt/Secrets gelesen,
+kein abschließender durchgehend grüner34er Durchlauf behauptet. Neuer Remote-CI-PASS
+erforderlich. Nach Cipherrestore fehlen rund443MB zur Komponentenadmission/rund4,89GB
+zur Voll500-Admission; angefragte Original-RAW-Metadatenausnahme noch nicht erteilt.
+[Öffentliche Originalmetadaten und Review/Testbelege](belege/ci-owner-immutable-inputs-20261023/ROOT_INTEGRATION_RESULT.SAFE.json).

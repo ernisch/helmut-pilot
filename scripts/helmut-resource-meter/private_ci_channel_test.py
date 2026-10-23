@@ -29,7 +29,7 @@ shell_spec.loader.exec_module(S)
 def fixtures():
     ctx = dict(repository=C.REPO, event='pull_request', runID=123, runAttempt=1,
         ref='refs/pull/1/merge', headSHA='d' * 40, checkoutSHA='c' * 40,
-        workflowSHA='c' * 40, prNumber=1, manifestSHA256=C.MANIFEST_SHA,
+        workflowSHA='c' * 40, baseSHA='b' * 40, prNumber=1, manifestSHA256=C.MANIFEST_SHA,
         transportSHA256='TEST_ONLY_NOT_A_TRANSPORT_PIN')
     run = dict(id=123, head_sha='d' * 40, event='pull_request', run_attempt=1,
                path='.github/workflows/ci.yml')
@@ -47,7 +47,7 @@ def owner_fixtures():
     run.update(repository=copy.deepcopy(repo), head_repository=copy.deepcopy(repo),
                actor=copy.deepcopy(actor), triggering_actor=copy.deepcopy(actor),
                head_branch='feature/TEST_ONLY_owner')
-    pr.update(user=copy.deepcopy(actor), base=dict(repo=copy.deepcopy(repo)))
+    pr.update(user=copy.deepcopy(actor), base=dict(sha=ctx['baseSHA'], repo=copy.deepcopy(repo)))
     pr['head'].update(repo=copy.deepcopy(repo), ref=run['head_branch'])
     return ctx, run, pr
 
@@ -136,7 +136,7 @@ class OwnerAccessTests(unittest.TestCase):
             lambda p: p['base']['repo'].update(id=1),
             lambda p: p.update(state='closed'), lambda p: p.update(number=2),
             lambda p: p.update(number=True), lambda p: p['head'].update(sha='e' * 40),
-            lambda p: p.update(merge_commit_sha='e' * 40),
+            lambda p: p['base'].update(sha='e' * 40),
             lambda p: p['head'].update(ref='TEST_ONLY_other'), lambda p: p['head'].update(ref='')]
         for index, change in enumerate(mutations):
             with self.subTest(case=index):
@@ -149,7 +149,7 @@ class OwnerAccessTests(unittest.TestCase):
             with self.subTest(runKey=key):
                 ctx, run, pr = owner_fixtures(); run.pop(key)
                 with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
-        for key in ['user', 'head', 'base', 'number', 'merge_commit_sha']:
+        for key in ['user', 'head', 'base', 'number']:
             with self.subTest(prKey=key):
                 ctx, run, pr = owner_fixtures(); pr.pop(key)
                 with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
@@ -163,15 +163,53 @@ class OwnerAccessTests(unittest.TestCase):
     def test_only_main_push_and_dispatch_have_automatic_access(self):
         for event in ['push', 'workflow_dispatch']:
             ctx, run, _ = owner_fixtures()
-            ctx.update(event=event, prNumber=None, ref='refs/heads/main', headSHA=ctx['checkoutSHA'])
+            ctx.update(event=event, prNumber=None, baseSHA=None, ref='refs/heads/main', headSHA=ctx['checkoutSHA'])
             run.update(event=event, head_branch='main', head_sha=ctx['headSHA'])
             self.assertEqual(C.validate_owner_access(ctx, run)['accessPolicy'], C.AUTOMATIC_POLICY)
-            for update in [{'ref': 'refs/heads/TEST_ONLY_other'}, {'headSHA': 'e' * 40}, {'prNumber': 1}]:
+            for update in [{'ref': 'refs/heads/TEST_ONLY_other'}, {'headSHA': 'e' * 40},
+                           {'prNumber': 1}, {'baseSHA': 'b' * 40}, {'baseSHA': False}]:
                 changed = {**ctx, **update}
                 observed = {**run, 'head_sha': changed['headSHA']}
                 with self.subTest(event=event, update=update), self.assertRaises(RuntimeError):
                     C.validate_owner_access(changed, observed)
             with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, {**run, 'head_branch': 'TEST_ONLY_other'})
+            changed = dict(ctx); changed.pop('baseSHA')
+            with self.assertRaises(RuntimeError): C.validate_owner_access(changed, run)
+
+    def test_automatic_pr_uses_event_base_with_changed_null_or_absent_live_merge(self):
+        for alias in ['e' * 40, None, 'TEST_ONLY_absent']:
+            with self.subTest(alias=alias):
+                ctx, run, pr = owner_fixtures()
+                if alias == 'TEST_ONLY_absent': pr.pop('merge_commit_sha')
+                else: pr['merge_commit_sha'] = alias
+                receipt = C.validate_owner_access(ctx, run, pr)
+                self.assertEqual(receipt['baseSHA'], 'b' * 40)
+                self.assertEqual(C.validate_receipt(receipt, ctx, C.AUTOMATIC_POLICY), receipt)
+
+    def test_automatic_pr_requires_exact_strict_context_and_current_base(self):
+        invalid = [None, False, True, 1, [], {}, '', 'b' * 39, 'B' * 40,
+                   'g' * 40, ' ' + 'b' * 40, 'b' * 40 + '\n']
+        for value in invalid:
+            with self.subTest(contextBase=value):
+                ctx, run, pr = owner_fixtures()
+                ctx['baseSHA'] = value; pr['base']['sha'] = value
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+            with self.subTest(currentBase=value):
+                ctx, run, pr = owner_fixtures(); pr['base']['sha'] = value
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+        for target in ['context', 'current']:
+            with self.subTest(missingBase=target):
+                ctx, run, pr = owner_fixtures()
+                if target == 'context': ctx.pop('baseSHA')
+                else: pr['base'].pop('sha')
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+        for target in ['context', 'current']:
+            with self.subTest(wrongBase=target):
+                ctx, run, pr = owner_fixtures()
+                if target == 'context': ctx['baseSHA'] = 'e' * 40
+                else: pr['base']['sha'] = 'e' * 40
+                self.assertEqual(pr['merge_commit_sha'], ctx['checkoutSHA'])
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
 
     def test_manual_and_automatic_receipts_are_not_interchangeable(self):
         ctx, run, pr = owner_fixtures()
@@ -186,6 +224,7 @@ class OwnerAccessTests(unittest.TestCase):
         ctx, run, pr = owner_fixtures(); approved = C.validate_owner_access(ctx, run, pr)
         changes = [{'runID': 124}, {'runAttempt': 2}, {'runAttempt': True},
                    {'headSHA': 'e' * 40}, {'checkoutSHA': 'e' * 40}, {'environment': 'TEST_ONLY_other'},
+                   {'baseSHA': 'e' * 40}, {'baseSHA': None}, {'baseSHA': True}, {'baseSHA': 'B' * 40},
                    {'authorizedActor': 'TEST_ONLY_other'}, {'authorizedActorID': 1},
                    {'accessPolicy': 'manual'}, {'executionGO': True}, {'ciPassed': True},
                    {'reviewer': C.REVIEWER}, {'schema': 'helmut-private-ci-reviewed-access/1'}]
@@ -198,6 +237,25 @@ class OwnerAccessTests(unittest.TestCase):
                     mock.patch.object(C.subprocess, 'run') as child:
                 with self.assertRaises(RuntimeError): C.provision(Path('/TEST_ONLY_receipt'))
                 transport.assert_not_called(); child.assert_not_called()
+                self.assertEqual(os.environ['HELMUT_CI_ORIGINALS_KEY'], 'TEST_ONLY_NOT_A_KEY')
+
+    def test_missing_receipt_or_invalid_fresh_context_base_rejects_before_key_and_import(self):
+        ctx, run, pr = owner_fixtures(); approved = C.validate_owner_access(ctx, run, pr)
+        missing_receipt = dict(approved); missing_receipt.pop('baseSHA')
+        missing_context = dict(ctx); missing_context.pop('baseSHA')
+        cases = [(ctx, missing_receipt), (missing_context, approved)]
+        for value in [None, False, 1, 'B' * 40, 'b' * 39]:
+            cases.append(({**ctx, 'baseSHA': value}, {**approved, 'baseSHA': value}))
+        for index, (fresh, receipt) in enumerate(cases):
+            with self.subTest(case=index), \
+                    mock.patch.dict(os.environ, {'HELMUT_CI_ORIGINALS_KEY': 'TEST_ONLY_NOT_A_KEY'}, clear=True), \
+                    mock.patch.object(C, 'context', return_value=fresh), \
+                    mock.patch.object(C, 'read_file', return_value=json.dumps(receipt).encode()), \
+                    mock.patch.object(C, 'load_transport') as transport, \
+                    mock.patch.object(C.importlib.util, 'spec_from_file_location') as loader, \
+                    mock.patch.object(C.subprocess, 'run') as child:
+                with self.assertRaises(RuntimeError): C.provision(Path('/TEST_ONLY_receipt'))
+                transport.assert_not_called(); loader.assert_not_called(); child.assert_not_called()
                 self.assertEqual(os.environ['HELMUT_CI_ORIGINALS_KEY'], 'TEST_ONLY_NOT_A_KEY')
 
     def test_workflow_binds_same_policy_before_check_and_decryption(self):
@@ -401,25 +459,30 @@ class FileTests(unittest.TestCase):
             with self.subTest(ref=ref), mock.patch.dict(os.environ, env, clear=True), \
                  mock.patch.object(C.subprocess, 'run', return_value=SimpleNamespace(stdout='c'*40+'\n')), \
                  mock.patch.object(C, 'api') as api:
-                if ref == 'refs/heads/main': self.assertEqual(C.context()['ref'], ref)
+                if ref == 'refs/heads/main':
+                    result = C.context()
+                    self.assertEqual(result['ref'], ref)
+                    self.assertIsNone(result['baseSHA'])
                 else:
                     with self.assertRaises(RuntimeError): C.context()
                 api.assert_not_called()
 
-    def pr_context_fixture(self, event_merge, parents):
+    def pr_context_fixture(self, event_merge, parents, *, event_base='b'*40,
+                           actual_head='c'*40, env_updates=None):
         event = self.root / 'TEST_ONLY-pr-event.json'
         event.write_text(json.dumps({'number': 7, 'pull_request': {
             'head': {'sha': 'd'*40, 'repo': {'full_name': C.REPO}},
-            'base': {'sha': 'b'*40, 'repo': {'full_name': C.REPO}},
+            'base': {'sha': event_base, 'repo': {'full_name': C.REPO}},
             'merge_commit_sha': event_merge}}))
         env = dict(GITHUB_ACTIONS='true', GITHUB_REPOSITORY=C.REPO,
             GITHUB_API_URL='https://api.github.com', GITHUB_EVENT_NAME='pull_request',
             GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='1', GITHUB_SHA='c'*40,
             GITHUB_WORKFLOW_SHA='c'*40, GITHUB_REF='refs/pull/7/merge', GITHUB_EVENT_PATH=str(event),
             GITHUB_WORKFLOW_REF=C.REPO+'/.github/workflows/ci.yml@refs/pull/7/merge')
+        env.update(env_updates or {})
         def git_result(command, **kwargs):
             if command == ['git', 'rev-parse', 'HEAD']:
-                return SimpleNamespace(stdout='c'*40+'\n')
+                return SimpleNamespace(stdout=actual_head+'\n')
             self.assertEqual(command, ['git', 'rev-list', '--parents', '-n', '1', 'c'*40])
             return SimpleNamespace(stdout=' '.join(parents)+'\n')
         with mock.patch.dict(os.environ, env, clear=True), \
@@ -435,6 +498,32 @@ class FileTests(unittest.TestCase):
                 result = self.pr_context_fixture(event_merge, ['c'*40, 'b'*40, 'd'*40])
                 self.assertEqual(result['checkoutSHA'], 'c'*40)
                 self.assertEqual(result['headSHA'], 'd'*40)
+                self.assertEqual(result['baseSHA'], 'b'*40)
+
+    def test_context_rejects_wrong_event_base_actual_head_and_workflow_before_api(self):
+        parents = ['c'*40, 'b'*40, 'd'*40]
+        cases = [dict(event_base='e'*40), dict(actual_head='e'*40),
+                 dict(env_updates={'GITHUB_SHA': 'e'*40}),
+                 dict(env_updates={'GITHUB_WORKFLOW_SHA': 'e'*40}),
+                 dict(env_updates={'GITHUB_WORKFLOW_REF': C.REPO+'/.github/workflows/other.yml@refs/pull/7/merge'}),
+                 dict(env_updates={'GITHUB_REF': 'refs/pull/8/merge'})]
+        for index, update in enumerate(cases):
+            with self.subTest(case=index), self.assertRaises(RuntimeError):
+                self.pr_context_fixture('c'*40, parents, **update)
+
+    def test_main_push_context_has_no_event_base(self):
+        event = self.root / 'TEST_ONLY-push-event.json'
+        event.write_text(json.dumps({'after': 'c'*40}))
+        env = dict(GITHUB_ACTIONS='true', GITHUB_REPOSITORY=C.REPO,
+            GITHUB_API_URL='https://api.github.com', GITHUB_EVENT_NAME='push',
+            GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='1', GITHUB_SHA='c'*40,
+            GITHUB_WORKFLOW_SHA='c'*40, GITHUB_REF='refs/heads/main', GITHUB_EVENT_PATH=str(event),
+            GITHUB_WORKFLOW_REF=C.REPO+'/.github/workflows/ci.yml@refs/heads/main')
+        with mock.patch.dict(os.environ, env, clear=True), \
+             mock.patch.object(C.subprocess, 'run', return_value=SimpleNamespace(stdout='c'*40+'\n')), \
+             mock.patch.object(C, 'api') as api:
+            self.assertIsNone(C.context()['baseSHA'])
+            api.assert_not_called()
 
     def test_wrong_base_head_nonmerge_or_other_commit_rejects_before_api(self):
         for parents in [['c'*40, 'e'*40, 'd'*40], ['c'*40, 'b'*40, 'e'*40],
