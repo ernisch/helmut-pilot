@@ -1644,7 +1644,10 @@ class NativeExecutionHost:
         self.client_pins, self.client_immutable_mounts = rows, mounts
 
     def _client(self, mode):
-        code = 'local-unit-native-endpoint-qualification.js' if mode == 'qualifier' else 'local-unit-native-run.js'
+        diagnostic=self.config.get('nativeDiagnosticMode')
+        need(diagnostic in (None,'fresh-claim-only-v1'),'exact-native-diagnostic-mode')
+        code = ('local-unit-native-endpoint-qualification.js' if mode == 'qualifier' else
+                'local-unit-native-claim-only.js' if diagnostic=='fresh-claim-only-v1' else 'local-unit-native-run.js')
         script = str(Path(self.config['repository']) / 'scripts/helmut-resource-meter' / code)
         need(any(p['path'] == script for p in self.config['sourceCodePins']), 'client-entry-code-pin')
         environment = {**ENV, 'HOME': '/tmp', 'TMPDIR': '/tmp', 'HELMUT_STORAGE_BACKEND': 'supabase', 'SUPABASE_URL': 'http://127.0.0.1:3000',
@@ -1654,6 +1657,8 @@ class NativeExecutionHost:
                                HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1', HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1',
                                HELMUT_AUTH_GRAPH_READ_REUSE='off', HELMUT_AUTH_SINGLE_WRITE_CAPTURE='off', HELMUT_AUTH_CONTROL_READ='verified-control-view-v1',
                                HELMUT_LOCAL_PIPELINE_LOCK_MODE='invocation-lease-v1')
+        if mode=='entry' and diagnostic=='fresh-claim-only-v1':
+            environment['HELMUT_LOCAL_UNIT_NATIVE_DIAGNOSTIC']=diagnostic
         names = {Path(p['physical']['path']).name for p in self.client_pins if Path(p['physical']['path']).parent == self.case / 'client'}
         names |= {'ENDPOINT_QUALIFICATION_CONFIG.PRIVATE.json'}
         if mode == 'entry':
@@ -1792,10 +1797,12 @@ class NativeExecutionHost:
             need(self.state in ('QUALIFIED', 'ENTRY', 'DONE') and body == {}, 'observation-order')
             self.observed_at = 0
         elif stage == 'ENTRY_START':
-            need(self.state == 'QUALIFIED' and body == {} and time.monotonic() - self.observed_at < 3, 'entry-start-order-or-fresh-observation')
+            expected_body=({'diagnosticMode':'fresh-claim-only-v1'} if self.config.get('nativeDiagnosticMode')=='fresh-claim-only-v1' else {})
+            need(self.state == 'QUALIFIED' and body == expected_body and time.monotonic() - self.observed_at < 3, 'entry-start-order-or-fresh-observation')
             self._client('entry'); self.state = 'ENTRY'
         elif stage == 'ENTRY_RESULT':
-            need(self.state == 'ENTRY' and body == {}, 'entry-result-order')
+            expected_body=({'diagnosticMode':'fresh-claim-only-v1'} if self.config.get('nativeDiagnosticMode')=='fresh-claim-only-v1' else {})
+            need(self.state == 'ENTRY' and body == expected_body, 'entry-result-order')
         elif stage == 'OWNER_STOP':
             need(self.state == 'DONE' and body == {}, 'owner-stop-order')
             owner = self.heartbeat['owner']; self.signal = self._root(ROOT_SIGNAL, {k: owner[k] for k in ('pid', 'startTicks', 'exe', 'pidNamespace')})
@@ -1906,7 +1913,17 @@ class NativeExecutionHost:
                             self.state = 'QUALIFIED'; self._reply({'processClose': close, 'reportPin': report_pin, 'report': report})
                         else:
                             raw, p = read_file(self.case / 'client/ATTEMPT_TERMINAL.SAFE.json', 1024 * 1024)
-                            terminal = unique(raw); need(terminal['selection'] == self.selection and terminal['status'] == 'closed', 'actual-entry-terminal')
+                            terminal = unique(raw)
+                            claim_only=self.config.get('nativeDiagnosticMode')=='fresh-claim-only-v1'
+                            need(terminal['selection']==self.selection and terminal['status']==('diagnosed' if claim_only else 'closed'), 'actual-entry-terminal')
+                            if claim_only:
+                                r=terminal['result']
+                                need(terminal['schema']=='helmut-local-unit-native-claim-only-terminal/1'
+                                     and r['mode']=='fresh-claim-only-v1' and r['claimCallbackReached'] is True and type(r['callbackCalls']) is int and r['callbackCalls']==1
+                                     and r['claimStillRunning'] is True and r['authorityConsumed'] is True
+                                     and all(type(r[k]) is int and r[k]==0 for k in ('motorCalls','providerCalls','completedUnits','expectedPositions','controlCount'))
+                                     and all(r[k] is False for k in ('unit60Qualified','auth30Qualified','independentFinalAcceptance','full500Accepted','production','paidProviderCallsAllowed','retryAllowed')),
+                                     'claim-only-result-not-a-unit')
                             process = terminal['process']; actual = self.clients[self.active_client]['process']
                             need(process['pid'] == actual['namespacePID'] and process['startTicks'] == actual['startTicks']
                                  and process['pidNamespace'] == actual['namespaces']['pid'] and process['nspid'][-1] == actual['namespacePID'], 'entry-host-pid-mapping')

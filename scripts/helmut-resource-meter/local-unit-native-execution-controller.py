@@ -283,6 +283,80 @@ class _HostVerifier:
         need(time.monotonic_ns() - sample_started_ns <= 15_000_000_000, 'observation-host-return-budget')
 
 
+def _claim_only_snapshot(worker, database, selection, command, initialization, initial_usage, terminal, close):
+    need(terminal['schema']=='helmut-local-unit-native-claim-only-terminal/1' and terminal['status']=='diagnosed'
+         and terminal['selection']==selection and terminal['errors']==[]
+         and terminal['unit60OrAuth30Acceptance']=='CLAIM_ONLY_NOT_UNIT_OR_AUTH_ACCEPTANCE'
+         and all(terminal[k] is False for k in ('full500Accepted','independentFinalAcceptance','production','paidProviderCallsAllowed','retryAllowed')),
+         'claim-only-terminal')
+    r=terminal['result']
+    need(r['mode']=='fresh-claim-only-v1' and r['claimCallbackReached'] is True and type(r['callbackCalls']) is int and r['callbackCalls']==1
+         and r['claimStillRunning'] is True and r['authorityConsumed'] is True
+         and all(type(r[k]) is int and r[k]==0 for k in ('motorCalls','providerCalls','completedUnits','expectedPositions','controlCount'))
+         and all(r[k] is False for k in ('unit60Qualified','auth30Qualified','independentFinalAcceptance','full500Accepted','production','paidProviderCallsAllowed','retryAllowed'))
+         and all(r[k]==selection[k] for k in selection),'claim-only-summary')
+    need(close['selection']==selection and close['process']==terminal['process'] and type(close['exitCode']) is int and close['exitCode']==0
+         and close['signal'] is None and close['stdoutEOF'] is True and close['stderrEOF'] is True
+         and close['terminalCanonicalSHA256']==sha(canonical(terminal)),'claim-only-actual-close')
+    payload={'selection':selection,'commandCanonical':canonical(command),'initialState':initialization['initialState'],
+             'initialUsage':initial_usage,'terminal':terminal}
+    sql="""DO $claim_diagnostic$
+DECLARE arg jsonb:=@INPUT@;a helmut_unit_diagnostic.authority%rowtype;s helmut_unit_diagnostic.state%rowtype;
+ k text;j jsonb;old_j jsonb;expected_j jsonb;auth_row jsonb;proof jsonb;entered timestamptz;claimed timestamptz;deadline timestamptz;
+BEGIN
+ SELECT * INTO STRICT a FROM helmut_unit_diagnostic.authority WHERE scope_hash=arg#>>'{selection,commandHash}';
+ SELECT * INTO STRICT s FROM helmut_unit_diagnostic.state WHERE scope_hash=a.scope_hash;
+ IF a.operation_id IS DISTINCT FROM arg#>>'{selection,operationId}' OR a.command_canonical IS DISTINCT FROM arg->>'commandCanonical'
+  OR encode(sha256(convert_to(a.command_canonical,'UTF8')),'hex') IS DISTINCT FROM a.scope_hash
+  OR (SELECT count(*) FROM helmut_unit_diagnostic.authority)<>1 OR (SELECT count(*) FROM helmut_unit_diagnostic.state)<>1
+  OR s.revision<>1 OR s.body IS DISTINCT FROM s.canonical_text::jsonb
+  OR encode(sha256(convert_to(s.canonical_text,'UTF8')),'hex') IS DISTINCT FROM s.body_hash
+  OR EXISTS(SELECT FROM helmut_unit_diagnostic.artifacts) OR EXISTS(SELECT FROM helmut_unit_diagnostic.leases)
+  THEN RAISE EXCEPTION 'claim-diagnostic-fresh-one-claim-state';END IF;
+ k:='localUnitDiagnostic:'||right(a.operation_id,32)||':';j:=s.body->(k||'journal');old_j:=(arg->'initialState')->(k||'journal');
+ IF old_j->>'state' IS DISTINCT FROM 'installed' OR old_j->'claimId' IS DISTINCT FROM 'null'::jsonb
+  OR old_j->'inFlight' IS DISTINCT FROM 'null'::jsonb OR old_j->'index' IS DISTINCT FROM '0'::jsonb
+  OR j->>'state' IS DISTINCT FROM 'running' OR jsonb_typeof(j->'claimId') IS DISTINCT FROM 'string'
+  OR (j->>'claimId' ~ '^[a-f0-9-]{36}$') IS DISTINCT FROM true
+  OR j->'index' IS DISTINCT FROM '0'::jsonb OR j#>'{inFlight,index}' IS DISTINCT FROM '0'::jsonb
+  OR j->'attempts' IS DISTINCT FROM '{}'::jsonb OR j->'stopRequested' IS DISTINCT FROM 'false'::jsonb
+  OR j->'reason' IS DISTINCT FROM 'null'::jsonb THEN RAISE EXCEPTION 'claim-diagnostic-running-only';END IF;
+ expected_j:=old_j||jsonb_build_object('state','running','claimId',j->'claimId','claimedAtUTC',j->'claimedAtUTC','inFlight',j->'inFlight');
+ IF j IS DISTINCT FROM expected_j OR (s.body-(k||'journal')) IS DISTINCT FROM ((arg->'initialState')-(k||'journal'))
+  THEN RAISE EXCEPTION 'claim-diagnostic-outside-first-claim-drift';END IF;
+ entered:=helmut_unit_diagnostic.utc(j#>'{inFlight,enteredAtUTC}');claimed:=helmut_unit_diagnostic.utc(j->'claimedAtUTC');
+ deadline:=helmut_unit_diagnostic.utc(j#>'{inFlight,deadlineAtUTC}');
+ IF entered<helmut_unit_diagnostic.utc(arg#>'{terminal,startedAtUTC}') OR claimed<entered OR claimed>=entered+interval '30 seconds'
+  OR deadline IS DISTINCT FROM least(entered+interval '60 seconds',helmut_unit_diagnostic.utc(a.command_canonical::jsonb#>'{calendar,endsAtUTC}'))
+  OR helmut_unit_diagnostic.utc(arg#>'{terminal,finishedAtUTC}')<claimed
+  OR helmut_unit_diagnostic.utc(arg#>'{terminal,finishedAtUTC}')>=deadline
+  THEN RAISE EXCEPTION 'claim-diagnostic-time-binding';END IF;
+ PERFORM helmut_unit_diagnostic.validate_state(a.scope_hash,s.body);
+ SELECT data INTO STRICT auth_row FROM public.helmut_store WHERE id='main-auth';
+ PERFORM public.helmut_auth_state_assert_graph_local_v1('main-auth',auth_row#>>'{_authStateRef,generation}',auth_row#>>'{_authStateRef,root}');
+ IF helmut_unit_diagnostic.original_bridge_own_projection_v1('main-auth',auth_row#>>'{_authStateRef,generation}',auth_row#>>'{_authStateRef,root}',a.operation_id)
+  IS DISTINCT FROM s.body THEN RAISE EXCEPTION 'claim-diagnostic-original-own-mismatch';END IF;
+ proof:=public.helmut_auth_usage_checked_proof_local_v1('main-auth')->'proof';
+ IF proof IS DISTINCT FROM arg#>'{initialUsage,proof}' THEN RAISE EXCEPTION 'claim-diagnostic-usage-changed';END IF;
+ PERFORM set_config('helmut.claim_only_snapshot',jsonb_build_object('schema','helmut-native-claim-only-snapshot/1',
+  'operationId',a.operation_id,'commandHash',a.scope_hash,'ownRevision',s.revision,'ownHash',s.body_hash,
+  'claimIdSHA256',encode(sha256(convert_to(j->>'claimId','UTF8')),'hex'),'journalState',j->>'state',
+  'usageUnchanged',true,'artifacts',0,'claimStillRunning',true,'authorityConsumed',true,'unitAccepted',false)::text,true);
+END;$claim_diagnostic$;
+SELECT current_setting('helmut.claim_only_snapshot')::jsonb;""".replace('@INPUT@',_json_sql(payload))
+    statement=_readonly(database,sql).replace('BEGIN READ ONLY;','BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;',1)
+    value=_call(worker,database,statement,'CLAIM_ONLY_READONLY_SNAPSHOT')
+    need(type(value) is dict and set(value)=={'schema','operationId','commandHash','ownRevision','ownHash','claimIdSHA256',
+                                             'journalState','usageUnchanged','artifacts','claimStillRunning','authorityConsumed','unitAccepted'}
+         and value['schema']=='helmut-native-claim-only-snapshot/1'
+         and all(value[k]==selection[k] for k in selection) and type(value['ownRevision']) is int and value['ownRevision']==1
+         and all(type(value[k]) is str and re.fullmatch('[a-f0-9]{64}',value[k]) for k in ('ownHash','claimIdSHA256'))
+         and value['journalState']=='running' and value['usageUnchanged'] is True and type(value['artifacts']) is int and value['artifacts']==0
+         and value['claimStillRunning'] is True and value['authorityConsumed'] is True and value['unitAccepted'] is False,
+         'claim-only-readonly-snapshot')
+    return value
+
+
 class _Controller:
     def __init__(self, worker, config, pg, catalog, preparation, read_result, bridge_result):
         self.w, self.c, self.pg, self.catalog, self.preparation = worker, config, pg, catalog, preparation
@@ -296,6 +370,8 @@ class _Controller:
         need(worker.pin(__file__) == config['executionControllerPin'], 'controller-code-pin')
         self.built = preparation['prepared']; self.command = self.built['command']; self.selection = self.built['selection']
         self.database, self.expires = config['database'], self.command['calendar']['endsAtUTC']
+        need(config.get('nativeDiagnosticMode') in (None,'fresh-claim-only-v1'),'exact-native-diagnostic-mode')
+        self.claim_only=config.get('nativeDiagnosticMode')=='fresh-claim-only-v1'
         need(config.get('executeNativeSingleUnit') is True and config.get('full500') is False
              and str(worker.OUT) == '/bench' and os.getuid() == os.geteuid() == 1000
              and config.get('motorCalls') == config.get('paidProviderCalls') == 0
@@ -646,9 +722,11 @@ class _Controller:
         # requested only after terminal publication, while periodic samples run.
         last_sample = append()
         self.stage('entry-once'); self.host_observation(self.host.call('HOST_OBSERVE', {}, seconds=3))
-        _compact(self.w, 'MOTOR_ENTRY_REQUESTED.SAFE.json', {'schema': 'helmut-local-unit-native-motor-entry-request/1',
-                 'selection': self.selection, 'requestedAtUTC': utc()})
-        self.host.call('ENTRY_START', {}, seconds=5)
+        _compact(self.w, 'CLAIM_ONLY_ENTRY_REQUESTED.SAFE.json' if self.claim_only else 'MOTOR_ENTRY_REQUESTED.SAFE.json',
+                 {'schema':'helmut-local-unit-native-claim-only-entry-request/1' if self.claim_only else 'helmut-local-unit-native-motor-entry-request/1',
+                  'selection':self.selection,'requestedAtUTC':utc()})
+        entry_body={'diagnosticMode':'fresh-claim-only-v1'} if self.claim_only else {}
+        self.host.call('ENTRY_START', entry_body, seconds=5)
         until = time.monotonic() + 70
         terminal_path = self.w.OUT / 'client/ATTEMPT_TERMINAL.SAFE.json'
         exit_ready = self.w.OUT / 'client/ENTRY_OBSERVATION_EXIT_READY.SAFE.json.PUBLISHED'
@@ -660,7 +738,7 @@ class _Controller:
             if time.monotonic() - last_sample >= 8:
                 last_sample = append()
             time.sleep(.025)
-        entry = self.host.call('ENTRY_RESULT', {}, seconds=8)
+        entry = self.host.call('ENTRY_RESULT', entry_body, seconds=8)
         terminal, terminal_pin = self.private('client/ATTEMPT_TERMINAL.SAFE.json', cap=1024**2)
         need(set(entry) == {'processClose', 'actualEntryProcessClose', 'terminalPin', 'terminal'} and entry['terminal'] == terminal
              and entry['terminalPin']['bytes'] == terminal_pin['bytes'] and entry['terminalPin']['sha256'] == terminal_pin['sha256'], 'actual-entry-result')
@@ -682,7 +760,21 @@ class _Controller:
              and header['brokerCodeSHA256'] == self.host_ready['brokerCodePin']['sha256']
              and header['sourceBindingSHA256'] == sha(canonical(self.observer.binding))
              and header['trustSHA256'] == self.client_report['rootTrustSHA256'] and trace['value']['footer']['complete'] is True, 'actual-root-trace')
-        self.observer.check(); self.immutable_check(); self.stage('final-readonly-acceptance')
+        self.observer.check(); self.immutable_check()
+        if self.claim_only:
+            self.stage('claim-only-readonly-snapshot')
+            snapshot=_claim_only_snapshot(self.w,self.database,self.selection,self.command,initialization,self.initial_usage,terminal,entry['actualEntryProcessClose'])
+            self.stage('source-service-close');self.service_close();self.immutable_check()
+            self.w.save('CLAIM_ONLY_DIAGNOSTIC.PRIVATE.json',{'schema':'helmut-native-claim-only-diagnostic/1',
+                        'snapshot':snapshot,'entry':entry,'owner':owner,'reuseForbidden':True})
+            return {'schema':'helmut-local-unit-native-claim-only-result/1','diagnosticMode':'fresh-claim-only-v1','selection':self.selection,
+                    'genuineSourceInputsQualified':True,'readClosureQualified':True,'originalBridgeQualified':True,
+                    'executionAuthorityInstalled':True,'claimOnlyObserved':True,'claimStillRunning':True,'authorityConsumed':True,
+                    'unit60Qualified':False,'auth30Qualified':False,'independentFinalAcceptance':False,'independentProductAcceptance':False,
+                    'motorCalls':0,'actualEntryCalls':1,'providerCalls':0,'completedUnits':0,'expectedPositions':0,'controlCount':0,
+                    'full500':False,'production':False,'originalAuthRowUnchanged':False,'copiedOriginalAuthRowUnchanged':False,
+                    'originalRAWUnchanged':True,'reuseForbidden':True,'claimSnapshotSHA256':sha(canonical(snapshot))}
+        self.stage('final-readonly-acceptance')
         acceptance = self.final.final_acceptance(self.w.query, command=self.command, expectedInitialUsageProof=self.initial_usage,
                         actualEntryTerminal=terminal, actualEntryProcessClose=entry['actualEntryProcessClose'], controlReadTrace=trace['value'])
         self.stage('source-service-close'); self.service_close()

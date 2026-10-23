@@ -1,0 +1,83 @@
+{
+  "schema": "helmut-fresh-claim-only-root-integrated-pure/1",
+  "atUTC": "2026-10-23T16:29:03.570138+00:00",
+  "basisHEAD": "08e2dc173de76f605fac9c6a927b327694efe2ff",
+  "mode": "fresh-claim-only-v1",
+  "files": [
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-claim-only.js",
+      "bytes": 25337,
+      "sha256": "1a69e15bf97016758b479216c96877392355a47bbbf2be1a7f5d0196b414e134"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-execution-controller.py",
+      "bytes": 65265,
+      "sha256": "7253e7058c2e7ff8d2486df8626130311384f1812eb6e2206ce2313871e195da"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-execution-host.py",
+      "bytes": 137420,
+      "sha256": "7382b3e6a69fa7f8a124b7bb61cca92b108a82ab1c03c74dcd31731fa86829ff"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-supervisor.py",
+      "bytes": 35543,
+      "sha256": "959b6f70483eb669dbf920c0ea3d2b2d2c6b4a0fb3c0c588191e94d4752c5778"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/claim-only-client-pure-test.js",
+      "bytes": 13563,
+      "sha256": "21772d47def7275253c02e3505e15ced5535b22930b8695c34e067c3e29963e2"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/claim-only-dto-pure-test.py",
+      "bytes": 11289,
+      "sha256": "6f39426bd72a9f445323b2ee1ab611632fcda5c5168e944c66731892f6f29bff"
+    }
+  ],
+  "rootIntegrationReview": {
+    "bytes": 4038,
+    "sha256": "4dab84f9bb4118a1b3943d6de0ec411e567d21e10a493fbcb0d8c107b247b6ab"
+  },
+  "independentV1SourceReview": {
+    "bytes": 18308,
+    "sha256": "f6cac7723b0aa589e492e007a382d950130ab42b58310551b3d985fb1fc061e6"
+  },
+  "independentV2DeltaReview": {
+    "bytes": 5934,
+    "sha256": "648f8a260e7919906dc668dc332182fbeb90639337413b17dccfe232d4eb9a86"
+  },
+  "actualRootIntegratedPureTests": [
+    {
+      "test": "claim-only-client-pure-test.js",
+      "passed": 16,
+      "failed": 0,
+      "actualExitCode": 0,
+      "actualTool": "99db4e"
+    },
+    {
+      "test": "claim-only-dto-pure-test.py",
+      "passed": 48,
+      "failed": 0,
+      "actualExitCode": 0,
+      "actualTool": "1bbc4c",
+      "SQLExecuted": false
+    }
+  ],
+  "oldV1ResultsPreserved": {
+    "passed": 62,
+    "failed": 2
+  },
+  "twoV2Guards": "Strict returned callback count and actual integer exit0; no acceptance of bool False as0.",
+  "testLoaderOnlyDifference": "Repo-relative current sources replace private PREPARED/Freeze loader; all mocks/assertion/case bodies identical. Tests run once against integrated files.",
+  "diagnosticScope": "Fresh genuine copy and existing qualification/admission/seed, unchanged first real claim CAS/receipt/COMMIT/ACK/readback, callback without motor. Claim remains running; authority consumed and case never reusable.",
+  "normalUnitAcceptanceUnchanged": true,
+  "nativeActual": null,
+  "unit60Qualified": false,
+  "auth30Qualified": false,
+  "reserveQualified": false,
+  "full500Qualified": false,
+  "freshCaptureAndRootAdoptionRequired": true,
+  "providerCalls": 0,
+  "production": false
+}

@@ -1,7 +1,7 @@
 {
   "schema": "helmut-sprint-progress/1",
-  "recorded_at_utc": "2026-10-23T15:42:51.746190+00:00",
-  "code_head_before_documentation": "208e02ab9d80be79cc54cd132935b1347b411ddf",
+  "recorded_at_utc": "2026-10-23T16:29:46.684987+00:00",
+  "code_head_before_documentation": "08e2dc173de76f605fac9c6a927b327694efe2ff",
   "private_evidence_pins": [
     {
       "label": "cache_comparison",
@@ -596,5 +596,38 @@
     "last_component_end_available_bytes_historical": 10437079040,
     "unchanged_component_admission_bytes": 10737418240,
     "next_component_requires_redundant_copy_retirement": true
+  },
+  "claim_only_integration": {
+    "status": "INTEGRATED_PURE_PASS_NATIVE_NOT_RUN",
+    "public_evidence": {
+      "file": "docs/betrieb/belege/v12-native-unit-integration-20261022/FRESH_CLAIM_ONLY_INTEGRATED_PURE_20261023.SAFE.json",
+      "bytes": 3074,
+      "sha256": "237cdeb15f7635fdac401e14f0de85aa306ef4c7bd7e51dfaabfe656af2b573c"
+    },
+    "actual_client_checks": 16,
+    "actual_dto_checks": 48,
+    "unit60_qualified": false,
+    "reserve_qualified": false
+  },
+  "current_control_source_actual": {
+    "completed": 1,
+    "required": 5,
+    "first_mode": "lifecycle-only",
+    "first_case": "b6db529358bd08339aa59ebd",
+    "actual_status": "PASS",
+    "actual_root_exit_code": 0,
+    "actual_tool": "996c60",
+    "actual_result": {
+      "bytes": 7871,
+      "sha256": "a0255874bd140d278bf1b0cd9c87b976ebd00ffb0607a530119a4ceeb8baa99c"
+    },
+    "independent_actual_review": {
+      "bytes": 29568,
+      "sha256": "e209ef667e5c6e75344e6a944e6b254e6b6d01539f40a0169a9a928412776e0d"
+    },
+    "wall_seconds": 22.727456724998774,
+    "native_peak_bytes": 1023897600,
+    "five_case_qualification": false,
+    "unit60_or_reserve_proof": false
   }
 }

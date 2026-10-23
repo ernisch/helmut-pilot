@@ -4,42 +4,42 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Neuer Code nativ weiter FAIL; Quellqualifikation und500MB offen
+## 23.10.: Schreibdiagnose eingebaut; Unit60/500MB weiter offen
 
-13.527 Dateien geprüft,84 Originale/V12-POSTRUN erhalten. PR936: native CAS,
-Manifestcache/Connector; unbekannte Writes terminal. GraphReuse/Capture OFF,
-HistoryReuse/ControlRead ON. Frühere FAIL-Belege erhalten.
+13.527 Dateien/84 Originale/V12-POSTRUN erhalten. PR936: native CAS, Manifestcache/
+Connector; unbekannte Writes terminal. GraphReuse/Capture OFF, HistoryReuse/Control
+ON. Own-Write nur Einzelunit; Voll500-Write unverändert. Alte FAILs/GOs erhalten.
 
-Neuester Einzelfallaf33f16d aufcad305f9 bleibt FAIL: Controller-Entry-Deadline,
-Parent Exit1/zwei EOFs. Peak1.344.360.448B, sechs Events0, Gruppe leer; kein Unit60-/
-Auth30-/Reservebeweis.124 gültige Komponentenpaare, kein belastbares Plateau.
-Sechs State-CAS11,918s: darin6,370s Write-Endpoint und2,792s Reader-Promise.
-Disjunkte Restzeiten im Beleg; Endpoint umfasst Transport/DB/Antwort, keine CPU-Zuordnung.
-1530 Runtimepins gegen1a96 gleich. Kopienumbau ohne wesentlichen Zeit-/RAMgewinn.
-Vier native Readonly-EXPLAINs an eigener af33-Kopie jetzt PASS:146/169/111/42ms,
-gesamter Messprozess0,483s; PG0/zwei EOFs, Katalog/Quelle gleich, Gruppe leer.
-Peak703.197.184B gilt nur für diese Komponenten, kein Unit60-/Reservebeweis.
-Erster Versuch vorSQL am Cachedatei-Race FAIL; korrigierter Zweitversuch und16
-Race-/Negativregressionen PASS. Nächster Schritt: Schreibtransaktion/Commit/Ledger.
+Neuester Motorfallaf33/cad305f9 bleibt FAIL: Entry-Deadline, Parent1/zwei EOFs,
+Peak1.344.360.448B, sechs Events0/finale Gruppe leer; kein Unit60/Auth30/Reserve/
+Plateau. Sechs CAS11,918s enthalten6,370s Write-Endpoint und2,792s Reader-Promise;
+Endpoint ist keine reine SQLzeit. Vier echte Readonly-EXPLAINs an eigener af33-
+Kopie PASS:146/169/111/42ms, Messprozess0,483s, Komponentenpeak703.197.184B,
+Quelle/Katalog/Closure gleich. CAS/Receipt/COMMIT/WAL/Ledger damit nicht gemessen.
 
-Hostcache kalt ohne Gewinn, warm schneller; kein Motorzeit-/RAM-Beweis.
-CI39958713128 auf2cfd657f vollständig SUCCESS. Neue89er Pins:10 Checks PASS.
-Aktuell208e/CI39972723984: geschützter Zugang und84 Originale SUCCESS,
-Schritt19 FAIL; Browser abgebrochen, Z22 übersprungen, GitHub-Vercel SUCCESS.
-Sourcegate-Blocker bytegleich: neue U/Parts unqualifiziert; private aktuelle Assertion
-nicht gelesen. Keine alten Belege umpinnen. Zehn Pure-Suiten/Vollreview/drei Schutz-
-regressionen PASS. Own-Write nur Einzelunit; Control-Read geteilt, Voll500-Write unverändert.
+Dafür Claim-only-Diagnose integriert: frische Originalkopie/Qualifikation/Seed,
+erster echter CAS/COMMIT/ACK/Readback ohne Motor. Claim bleibt running/Autorität
+verbraucht, Fall nicht wiederverwendbar. Unabhängige V1-/V2-Reviews PASS, zwei DTO-
+Lücken behoben. Aktuelle Repo-Tests16+48PASS/Exit0; reine Mock-/AST-Prüfungen.
+Frischer Capture und einzelne Root-Startbindung noch nötig; keine Unitabnahme.
 
-Alle33 Archive verschlüsselt rückgeladen/hashgeprüft;2.792.718.336B Allokation entfernt.
-Deltabasis KEEP, kein externes Vollbackup. Eigene CI-Hülle/fertige Worktrees entfernt;
-DBvolume/Image/Logs/Gitrefs und fremder schmutziger Worktree KEEP.
-Erste SQL-Diagnosekopie nach Vierdatei-Sicherung entfernt:373.657.600B netto frei;
-danach10.820.157.440B, nach zweiter SQL-Kopie10.437.079.040B frei.
-Einzeladmission10GiB benötigt erneute sichere Kopienbereinigung; Voll500 offen.
-Original-RAW-Allokationsänderung automatisch abgelehnt; Einzelentscheidung offen.
-Sechs authentische Quell-DBs für Voll500 nötig; Tiny-Anbindung nur vorbereitet.
-Alle32 Bedingungen frisch, alte GOs verbraucht. Kein Voll500/Production.
-[Belege](betrieb/helmut-v12-native-unit-integration-20261022.md).
+84er Originalkanal repariert; letzte gelesene CI208e/39972723984 Schritt19 FAIL,
+Browser abgebrochen/Z22 übersprungen, GitHub-Vercel SUCCESS. Neue U/Parts brauchen
+fünf echte gepaarte Fälle. Erster Lifecycle b6db5293 tatsächlich PASS/RootExit0
+und unabhängig angenommen:22,727s, PG0/HTTP beendet/Gruppe leer/Events0,
+Quelle/Root/Revision/History6000 gleich. Vier OLD/NEW/NEW/OLD-Fälle und Gesamt-/
+Gateabnahme fehlen. Keine historischen Belege umpinnen oder Hash-only-Reparatur.
+
+Alle33 Archive verschlüsselt rückgeladen/hashgeprüft,2.792.718.336B Allokation
+entfernt. Originale/Deltabasis/Gitrefs/Volumes/fremde Arbeit KEEP. Beide SQL-Kopien
+mit gesicherten Endänderungen entfernt; V2-Overlay lokal vollständig komprimiert/
+rückgelesen,61.497.344B netto eingespart. Danach10.787.094.528B frei, mit Lifecycle-
+Scratch wieder unter10GiB. Nur unabhängig angenommener vorab klassifizierter
+Scratch nach kompletter Außenbelegsicherung/frischer Rootprüfung entbehrlich;
+noch nicht gelöscht. Voll500-Admission15.179.779.720B offen. Original-RAW-Änderung
+automatisch abgelehnt/Einzelentscheidung offen. Sechs authentische Quell-DBs nötig,
+Tiny-Anbindung nur vorbereitet. Alle32 Bedingungen frisch, kein Voll500/Production.
+[Belege/Haltepunkt](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

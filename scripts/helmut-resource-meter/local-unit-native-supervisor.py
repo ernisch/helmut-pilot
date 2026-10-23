@@ -217,8 +217,11 @@ def main():
                        help='qualify genuine source inputs and native read/write bindings; no seed or motor')
     modes.add_argument('--run-native-single-unit', action='store_true',
                        help='fresh source-local COPY; qualify all native bindings before exactly one isolated fixture unit')
+    modes.add_argument('--diagnose-native-claim-only',action='store_true',
+                       help='fresh genuine unseeded COPY+qualification+admission+seed; first real claim only, no motor or Unit acceptance')
     args = parser.parse_args()
-    bindings_mode = args.qualify_native_bindings or args.run_native_single_unit
+    execution_mode=args.run_native_single_unit or args.diagnose_native_claim_only
+    bindings_mode = args.qualify_native_bindings or execution_mode
     if not (sys.flags.isolated and sys.flags.no_site and sys.flags.dont_write_bytecode):
         raise RuntimeError('use python -I -S -B')
     if available() < FLOOR + 2 * 1024**3:
@@ -307,7 +310,7 @@ def main():
                       readClosurePin=extra_pins[1], bridgeQualifierPin=extra_pins[2], bridgeProposalPin=extra_pins[3],
                       originalTriggerQualifierPin=extra_pins[7])
         config['sources'] = [*sources, *extra_pins, *code_pins]
-    if args.run_native_single_unit:
+    if execution_mode:
         execution_files = {
             'executionSourcePin': BIN / 'local-unit-native-execution-source.py',
             'executionControllerPin': BIN / 'local-unit-native-execution-controller.py',
@@ -321,6 +324,10 @@ def main():
                       pythonExecutable=str(PYTHON / 'bin/python3.12'))
         config['sources'].extend(execution_pins.values())
         config['sources'].append(pin(config['pythonExecutable']))
+        if args.diagnose_native_claim_only:
+            config['nativeDiagnosticMode']='fresh-claim-only-v1'
+            if not (BIN/'local-unit-native-claim-only.js').is_file():
+                raise RuntimeError('reviewed claim-only client source missing')
         # Host control plane only; never expose Docker/socket to SOURCE or the
         # client. The closed subprocess environment deliberately has no host PATH.
         config['hostDockerPin'] = pin('/usr/local/bin/docker')
@@ -333,6 +340,8 @@ def main():
     save(case / 'STARTED.SAFE.json', {**config, 'availableBefore': available(),
                                       'purpose': ('Fresh source-local once-only genuine native fixture unit'
                                                   if args.run_native_single_unit else
+                                                  'Fresh genuine first-claim-only diagnostic; no motor/Unit acceptance'
+                                                  if args.diagnose_native_claim_only else
                                                   'Fresh source-local genuine source and native binding qualification only'
                                                   if bindings_mode else
                                                   'Fresh source-local readonly extraction and native DDL qualification only'),
@@ -349,13 +358,13 @@ def main():
         budget = native.start(case / 'native-memory-budget', parent, runtime)
         group = native.parent_path(parent)
         config.update(parentInode=group.stat().st_ino, parentDevice=group.stat().st_dev)
-        if args.run_native_single_unit:
+        if execution_mode:
             execution_module = load('native_execution_host', config['executionHostPin']['path'])
             execution_plan = execution_module.prepare_execution(native, sys.modules[__name__], config, case)
             config['executionHostPlan'] = execution_plan
         mounts = [(case, '/bench', False), (REPO, str(REPO), True), (PYTHON, str(PYTHON), True),
-                  ((NODE / 'bin/node') if args.run_native_single_unit else NODE,
-                   str(NODE / 'bin/node') if args.run_native_single_unit else str(NODE), True),
+                  ((NODE / 'bin/node') if execution_mode else NODE,
+                   str(NODE / 'bin/node') if execution_mode else str(NODE), True),
                   (group, '/owned-group', True), (RAW, str(RAW), True),
                   (READER.parent, str(READER.parent), True), (COPY_MANIFEST, str(COPY_MANIFEST), True),
                   (runtime_path, str(runtime_path), True),
@@ -400,7 +409,7 @@ def main():
             raise RuntimeError('new container identity missing')
         # Publish the source CID once, after create and before its first
         # instruction. This SAFE configuration never includes local secrets.
-        if args.run_native_single_unit:
+        if execution_mode:
             config['actualSourceContainerId'] = cid
         save(case / 'WORKER_CONFIG.SAFE.json', config)
         identity(native.docker, cid, parent, runtime, mounts)
@@ -411,7 +420,7 @@ def main():
             execution_host = execution_module.NativeExecutionHost(native, sys.modules[__name__], config, case,
                                                                   budget, cid, mounts, execution_plan)
         with (case / 'KERNEL_SAMPLES.SAFE.jsonl').open('x') as stream, \
-                memory_components_output(case, args.run_native_single_unit) as components_stream:
+                memory_components_output(case, execution_mode) as components_stream:
             while True:
                 if execution_host is not None:
                     execution_host.tick()
@@ -436,8 +445,15 @@ def main():
         if bindings_mode and (result.get('genuineSourceInputsQualified') is not True
                                              or result.get('readClosureQualified') is not True
                                              or result.get('originalBridgeQualified') is not True
-                                             or result.get('executionAuthorityInstalled') is not args.run_native_single_unit):
+                                             or result.get('executionAuthorityInstalled') is not execution_mode):
             raise RuntimeError('genuine native binding qualification incomplete')
+        if args.diagnose_native_claim_only:
+            if result.get('schema')!='helmut-local-unit-native-claim-only-result/1' or result.get('diagnosticMode')!='fresh-claim-only-v1':
+                raise RuntimeError('claim-only mode/result missing')
+            if any(result.get(k) is not True for k in ('claimOnlyObserved','claimStillRunning','authorityConsumed','reuseForbidden')):
+                raise RuntimeError('claim-only result not confirmed')
+            if any(result.get(k) is not False for k in ('unit60Qualified','auth30Qualified','independentFinalAcceptance','production')) or any(type(result.get(k)) is not int or result[k]!=0 for k in ('motorCalls','providerCalls','completedUnits','expectedPositions','controlCount')):
+                raise RuntimeError('claim-only must not claim Unit acceptance')
         if args.run_native_single_unit:
             if any(result.get(key) is not True for key in ('unit60Qualified', 'auth30Qualified', 'independentFinalAcceptance')):
                 raise RuntimeError('independent single-unit acceptance incomplete')
@@ -492,7 +508,8 @@ def main():
             except BaseException as error:
                 close_errors.append(type(error).__name__)
         accepted = failure is None and not close_errors and final is not None
-        receipt = {'schema': 'helmut-local-unit-native-qualification-result/1', 'pass': accepted,
+        receipt = {'schema': ('helmut-local-unit-native-claim-only-supervisor-result/1' if args.diagnose_native_claim_only
+                             else 'helmut-local-unit-native-qualification-result/1'), 'pass': accepted,
                    'failure': failure, 'closureErrors': close_errors, 'parent': parent, 'containerId': cid,
                    'kernelFinal': final, 'samples': sample_count, 'case': str(case), 'full500': False,
                    'motorCalls': 0, 'unit60Qualified': False, 'full500ReserveQualified': False,
@@ -516,6 +533,12 @@ def main():
                 measuredSingleUnitReserveBytes=(2048000000 - peak) if type(peak) is int else None,
                 full500ReserveQualified=False, full500Qualified=False,
                 whole500MemoryOrPlateauInferred=False, maximumUnitsAuthorized=1)
+        if args.diagnose_native_claim_only:
+            receipt.update(claimOnlyRequested=True,diagnosticMode='fresh-claim-only-v1',diagnosticOnly=True,
+                claimOnlyObserved=accepted and result.get('claimOnlyObserved') is True,
+                claimStillRunning=(result or {}).get('claimStillRunning'),authorityConsumed=(result or {}).get('authorityConsumed'),
+                reuseForbidden=True,completedUnits=0,expectedPositions=0,controlCount=0,
+                unit60Qualified=False,auth30Qualified=False,independentFinalAcceptance=False,full500Qualified=False)
         save(case / 'RESULT.SAFE.json', receipt)
         print(json.dumps({'pass': accepted, 'case': str(case), 'failure': failure,
                           'closureErrors': close_errors, 'full500': False, 'motorCalls': receipt['motorCalls']}))

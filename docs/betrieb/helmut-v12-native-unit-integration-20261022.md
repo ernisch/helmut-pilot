@@ -1495,3 +1495,37 @@ Browser während Installation abgebrochen, Z22 übersprungen. GitHub meldet Verc
 SUCCESS. Aktuelle gepaarte Sourcequalifikation ist separat vorbereitet und unabhängig
 statisch geprüft; noch keine ihrer fünf frischen nativen Fälle ausgeführt. Historische
 Belege bleiben unverändert; keine bloße Pinänderung als CI-Reparatur.
+
+
+## 23.10.: Frische Schreibdiagnose integriert, erster Quellenfall bestanden
+
+Die explizite CLI `--diagnose-native-claim-only` durchläuft unveränderte echte
+Originalkopie, Runtime-/Source-/Nativequalifikation, Admission/Seed und ersten
+`Scope.runClaimed`-CAS samt Receipt/COMMIT/ACK/Readback. Der Callback ruft keinen
+Motor/Provider auf. Getrennter Terminal `diagnosed`, anschließende echte Readonly-
+Snapshotprüfung und unveränderte gemeinsame Native-/PG-/Prozessabschlussprüfung.
+Claim bleibt running; Autorität und Kopie sind danach nicht wiederverwendbar.
+Normale Unit-Abnahme bleibt getrennt und unverändert.
+
+Unabhängiger voller V1- und enger V2-Deltareview PASS. Zwei Pure-Gegenbeispiele
+korrigiert: zurückgegebene Callbackzahl exakt1; Python-Exit echter int0, kein False.
+Alte62PASS/2FAIL erhalten. Nach repo-tauglichem Ladeheader einmal aktuelle Tests:
+Client16/16PASS, DTO48/48PASS, beide tatsächlicher Root-Exit0. Kein SQL/Native-Erfolg.
+[Quellen/Reviews/Pure-Ergebnisse](belege/v12-native-unit-integration-20261022/FRESH_CLAIM_ONLY_INTEGRATED_PURE_20261023.SAFE.json).
+Frischer einmaliger Capture und konkret gebundene Root-Startentscheidung fehlen.
+
+Control-V2: Cache-Racefix eng übertragen/unabhängig geprüft; Original-/Auth-/Restore-
+pfade unverändert. Lifecycle b6db529358bd08339aa59ebd PASS/RootExit0, vollständiger
+unabhängiger Actualreview PASS:22,727456725s, gemeinsamer Lifecyclepeak1.023.897.600B,
+sechs Events0, PG0/PostgREST12.2.3 tatsächlich-2 gemäß gepinnter SIGTERM-Policy,
+natürliche EOFs/alle Kinder/finale Gruppe leer. Root/Revision/History6000/Katalog/
+volle Quelle unverändert. Kein Node/Auth-RPC, keine Mutation oder Motor-/Unit-/
+500MB-Abnahme. Vier OLD/NEW/NEW/OLD-Fälle und Gesamt-/Publikationsabnahme offen.
+
+Nach zweiter SQL-Kopie Achtdatei-Endoverlay vollständig lokal archiviert und
+rückgelesen/hashgeprüft; nur eigene redundante Sparse-Dateien entfernt, Root-Exit0.
+Gesamtoperation61.497.344B netto frei, danach10.787.094.528B verfügbar. Originale/
+af33/Außenbelege KEEP, kein Export. Neue Quellenfälle vorab nur abgeleiteter Scratch;
+komplette geprüfte Außenbelegsicherung und frische Rootprüfung bleiben vor Entfernung
+Pflicht. FAIL/Unknown/fehlende Wiederherstellung KEEP. Alle fünf echten Ergebnisse
+bleiben unabhängig vom Scratchretirement für jede Sourcequalifikation erforderlich.
