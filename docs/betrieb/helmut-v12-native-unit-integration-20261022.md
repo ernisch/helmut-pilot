@@ -1539,3 +1539,57 @@ nicht. Nur explizites False für diese normale Unitfixture ergänzt; unveränder
 Controller-Suite21/21PASS, tatsächlicher Root-Exit0/710175, keine nativen Prozesse/
 DB/Provider. Produktkonstruktor und16Kontrollen/3Positionen unverändert. Remote-
 Gesamt-CI bleibt bis neuem tatsächlichem Nachweis offen.
+
+
+## 23.10.: Fünf aktuelle Quellenfälle und echte Publikation angenommen
+
+Lifecycle, OLD, NEW, NEW, OLD liefen jeweils auf eigener frischer abgeleiteter
+DBkopie tatsächlich mit Root-Exit0. Viermal27 echte RPC, darunter jeweils4CAS
+mit3Probes und echter Wiederherstellung, History6000, Sourcevollmanifest, Katalog,
+finale SQLrevision und alle Prozess-/EOF-/Kernelabschlussbelege unverändert streng
+geprüft. Jeder Fall unabhängig angenommen; global108 RequestUUIDs, fünf Rootnonces
+eindeutig und vier logische Ergebnisse gleich. Ein Aggregator-DTOfehler vor Ausgabe
+bleibt als Harness-FAIL erhalten; korrigierter echter Join Exit0, keine Fallwiederholung.
+
+Root führte den unveränderten gepinnten Offline-Gesamtverifier einmal aus: Exit0,
+373 tatsächliche Belegpins/9.618.120B verifiziert. Proof17625B/95c8878e und
+Audit120220B/692649f1 sowie unabhängige Actual-/Publicationreviews byteidentisch
+veröffentlicht; erst danach separaten SourceDelta als Komponentenquelle qualifiziert.
+Neuer integrierter Gate besteht99 Negativmutationen, tatsächlicher Root-Exit0.
+Die positiven Descriptorfixtures binden jetzt den expliziten unabhängig geprüften
+aktuellen Storage-SourceDelta; bare/historische/gefälschte Pins bleiben negativ.
+Fünf bereits separat vollständig geprüfte aktuelle CPU-Quellenpins samt abhängigem
+Releasemapping berichtigt, keine Produktquellen oder historischen Abnahmen geändert.
+Artefaktreader10 und Runtime-Read-Contract14 PASS. Descriptorlauf22 danach18PASS,
+3FAIL/1ERROR; nur die vier Restfixtures und ihr bestehender Assertionhelper korrigiert,
+anschließend diese vier gezielt PASS. Reale delegierte Umgebung und strikte Tages-
+bindung geprüft; historische Tagesabweichung bleibt negativ. Kein finaler vollständiger
+22er Durchlauf behauptet; bereits bestandene Prüfungen nicht pauschal wiederholt.
+
+CI39989672128 bleibt historisch FAIL. Runner-only-Diagnose39997839458 SUCCESS
+benennt die tatsächliche Runtime-Read-Contract-Assertion, deren14 Tests lokal PASS.
+Keine Rohlogs/Secrets exportiert; neuer vollständiger CI-Lauf nach Push erforderlich.
+
+Die vier gemeinsamen Komponentenspitzen OLD/NEW/NEW/OLD sind
+1.013.436.416/1.019.572.224/1.043.419.136/1.015.066.624B; Außenzeiten
+37,985/36,378/38,316/36,121s. Das belegt keine RAMersparnis und keinen Unit60-/
+500MB-/Plateau-/500er Erfolg. HTTPbytes je Fall57.089.403 identisch; originale
+Stringify-Aufrufe5/2/2/5. Der erste echte Schreib-CAS bleibt separat zu messen.
+
+Alle fünf vorab klassifizierten PGscratchkopien erst nach unabhängiger tatsächlicher
+Annahme und kompletter hashgeprüfter Außenbelegsicherung entfernt: zusammen
+1.849.159.680B Zielallokation. Scope-/Backup-/Root-/ONCE-/Abschlussbelege bleiben
+privat erhalten. Zwölf eigene gestoppte Hüllen aus Lifecycle/Fall1–3 nach gesicherter
+Inspect-/Log-/Diff-/Outsideprüfung, unabhängigem Review und frischem Einzelcheck
+mit plain container rm entfernt; tatsächliche df-Deltas18.137.088+6.049.792B.
+Keine Images, Volumes, Bindquellen, Originale, fremden oder aktiven Ressourcen
+angefasst. Alte CIDs nicht wiederherstellbar, gesicherte Konfiguration und erhaltenes
+Image erlauben nur neue eigene Hüllen; kein physischer Scratchendstand versprochen.
+
+[Generierter Nachweis](../../scripts/helmut-resource-meter/control-cache-native-qualification-20261023.SAFE.json),
+[Audit](belege/current-control-source-qualification-20261023/GENERATION_AUDIT.SAFE.json),
+[unabhängige tatsächliche Gesamtabnahme](belege/current-control-source-qualification-20261023/INDEPENDENT_ACTUAL_REVIEW.SAFE.json).
+[Zusammengeführtes tatsächliches Ergebnis](belege/current-control-source-qualification-20261023/ROOT_INTEGRATION_RESULT.SAFE.json).
+Nächster Pfad: Commit/Push, frische exakte HEAD-/Root-/Admission-/Einmalbindung und
+echte isolierte claim-only-Schreibdiagnose; kein weiterer Voll500. Rund4,44GB fehlen
+weiter zur vollständigen Plattenadmission; keine sichere Mehr-GB-Bereinigung belegt.

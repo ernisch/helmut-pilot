@@ -1,0 +1,323 @@
+{
+  "schema": "helmut-five-content-source-delta-independent-review/1",
+  "independent": true,
+  "status": "PASS",
+  "scope": "EXACT_FIVE_PUBLIC_SOURCE_DELTAS_ONLY",
+  "createdUTC": "2026-10-23T17:42:15.225909+00:00",
+  "reviewerAgent": "/root/typed_cleanup_guard",
+  "repository": "/workspace/helmut-unit60-native-20261022",
+  "observedHead": "97662d821c72f45bc3b9f02636ba308ba6b54066",
+  "rootWorktreeMayContainUnrelatedChanges": true,
+  "historicalCPUManifestPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/synthetik-500-cpu-source-pins.json",
+    "bytes": 12086,
+    "sha256": "3ce31fa3f7cfe96113f270fa807cd9717deb3713bb07b11f80d6428c8e984c0f"
+  },
+  "manifestWasModified": false,
+  "files": [
+    {
+      "path": "lib/helmut/lage-textqualitaet.js",
+      "baselineCommit": "9dba68cacb51d664a01a84d86a8548852d70d867",
+      "oldPin": {
+        "bytes": 24877,
+        "sha256": "2470bc52a18f4222b4efb76283ca47893b423f87d76acee206ca4f33352d13db"
+      },
+      "currentPin": {
+        "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/lage-textqualitaet.js",
+        "bytes": 25256,
+        "sha256": "99cecc57f7a5eb6a0e3e531eb2037d38a3f2064c3d642988458c7f0b7ae3ee68"
+      },
+      "implementationCommits": [
+        "a8d63cadc57fcd2c7fcd5ef8a077fab5c3ea46ae"
+      ],
+      "completePublicGitDeltaRead": true,
+      "deltaPin": {
+        "bytes": 2172,
+        "sha256": "9cb527fb2c8a6bb40416ea9e88b461aedb5ec7f9261e769cd535602c7a0e8698"
+      },
+      "currentEqualsObservedHeadBlob": true,
+      "unchangedSinceDocumentedSuccessfulCI": true,
+      "reviewedLineAnchors": [
+        160,
+        166
+      ],
+      "finding": "Validated optional source Date changes the review prompt date only. Real-Date brand, finite timestamp and detached Date prevent fake-Date/alias input. Default calendar and substantive quality rules remain unchanged.",
+      "blockingFindings": []
+    },
+    {
+      "path": "lib/helmut/lage.js",
+      "baselineCommit": "d6778b7805adc7ebe0b466b1604947d4a86114d9",
+      "oldPin": {
+        "bytes": 56857,
+        "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
+      },
+      "currentPin": {
+        "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/lage.js",
+        "bytes": 57463,
+        "sha256": "613ea950dcedc16cfbff14829b7437b3160b16bc49dc5afeec8d5be8c0f10649"
+      },
+      "implementationCommits": [
+        "53cb821c0e2df04f6bf92ff1e0fb262efb80b8b3",
+        "8a1d92bd9435666edaf09af89589b762657146d5"
+      ],
+      "completePublicGitDeltaRead": true,
+      "deltaPin": {
+        "bytes": 2280,
+        "sha256": "89afda7667aa92a6edbf7ddf8d50ce0332938da34b216b8b7c6e43ec8780a576"
+      },
+      "currentEqualsObservedHeadBlob": true,
+      "unchangedSinceDocumentedSuccessfulCI": true,
+      "reviewedLineAnchors": [
+        664,
+        668,
+        872
+      ],
+      "finding": "The private diagnostic scope additionally binds clock, tenant, exact command subject, missingOnly and genuine finite input. Legacy store readiness remains outside that scope. Diagnostic budget denial returns unavailable and releases its lease without creating a ticketless skip usage; legacy denial telemetry remains.",
+      "blockingFindings": []
+    },
+    {
+      "path": "lib/helmut/synthetik-500-local-calendar.js",
+      "baselineCommit": "9dba68cacb51d664a01a84d86a8548852d70d867",
+      "oldPin": {
+        "bytes": 5976,
+        "sha256": "1f56a674a0e2c7ff986dddb58c331e3db70850124bed66fdd081a6b38bcf8c98"
+      },
+      "currentPin": {
+        "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/synthetik-500-local-calendar.js",
+        "bytes": 8133,
+        "sha256": "621c5b828f6ccd8954c6e2d458fe8280715ba3ec9e377381b906eb755777cc70"
+      },
+      "implementationCommits": [
+        "c46d07ebddaf8914c747fbc84f8059888376d9c1"
+      ],
+      "completePublicGitDeltaRead": true,
+      "deltaPin": {
+        "bytes": 3949,
+        "sha256": "ec48e27eb5337cf366b3546a0b94e9ebe86cd8f44c872b99db5242feb359d2bf"
+      },
+      "currentEqualsObservedHeadBlob": true,
+      "unchangedSinceDocumentedSuccessfulCI": true,
+      "reviewedLineAnchors": [
+        98,
+        120,
+        127,
+        133,
+        141,
+        153,
+        161
+      ],
+      "finding": "The private one-unit scope separates fixed historical source semantics from the actual execution UTC day and plan window; command identity, exact source/selection/plan, one DR and nonproduction constraints remain mandatory. Legacy 500-unit policy and private local-target binding remain unchanged. A bare JSON tag does not create a live scope.",
+      "blockingFindings": []
+    },
+    {
+      "path": "lib/helmut/synthetik-500-review-receipt.js",
+      "baselineCommit": "8ca835cec22e738d2ffb2c7a6b55550cdf667a63",
+      "oldPin": {
+        "bytes": 10120,
+        "sha256": "5384250ee73b42cccf595b780a1e4cbc50910a1c4b1717f2fa55486f20b3cfc3"
+      },
+      "currentPin": {
+        "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/synthetik-500-review-receipt.js",
+        "bytes": 11234,
+        "sha256": "7a38e10f59efa65042e893a0deac2463515e28d69d677d66f06d233e589f1e11"
+      },
+      "implementationCommits": [
+        "c46d07ebddaf8914c747fbc84f8059888376d9c1"
+      ],
+      "completePublicGitDeltaRead": true,
+      "deltaPin": {
+        "bytes": 4730,
+        "sha256": "abd1077461cc4fe43bce243c96a50745333178e42699a7609c5eda6c4a40a73a"
+      },
+      "currentEqualsObservedHeadBlob": true,
+      "unchangedSinceDocumentedSuccessfulCI": true,
+      "reviewedLineAnchors": [
+        63,
+        70,
+        100,
+        117,
+        124,
+        134
+      ],
+      "finding": "The private path requires its exact immutable draft-store contract and accounted D with the real completion/usage binding. Opaque save/completion/receipt/ticket identity, owner/run/profile/source/request hashes, immutable readback and one-send transitions remain. Diagnostic tickets additionally require active private ticket identity; serialized versions grant no authority.",
+      "blockingFindings": []
+    },
+    {
+      "path": "lib/helmut/testkosten-budget.js",
+      "baselineCommit": "07c009b24f27c5ba422b44eb327f2bcb7f5c26df",
+      "oldPin": {
+        "bytes": 32969,
+        "sha256": "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e"
+      },
+      "currentPin": {
+        "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/testkosten-budget.js",
+        "bytes": 33827,
+        "sha256": "dfbbfd1401fa2187549af73b203c4e8c360b9535b77c425c3c015a9751337ad4"
+      },
+      "implementationCommits": [
+        "c46d07ebddaf8914c747fbc84f8059888376d9c1"
+      ],
+      "completePublicGitDeltaRead": true,
+      "deltaPin": {
+        "bytes": 2325,
+        "sha256": "ee9e7db99f6336dc52e0c3c750d7de3d2bd828004f85f8b0f0e60a735217581f"
+      },
+      "currentEqualsObservedHeadBlob": true,
+      "unchangedSinceDocumentedSuccessfulCI": true,
+      "reviewedLineAnchors": [
+        252,
+        253,
+        397,
+        468
+      ],
+      "finding": "The optional request-byte parameter and three private diagnostic dispatches leave legacy tariff/accounting bodies unchanged. The delegate requires an active clock-bound private scope, genuine ticket/provider/usage, exact full request bytes/hash and admission, token caps, cost calculation, persisted ACK/readback and no retry after unknown. A diagnostic tag outside the scope is rejected rather than accepted by legacy accounting.",
+      "blockingFindings": []
+    }
+  ],
+  "blockingFindings": [],
+  "preservedWithinTheseDeltas": {
+    "substantiveTextQualityRules": true,
+    "sixteenControlContractNotRelaxed": true,
+    "legacyFinancialJournalAndTariffs": true,
+    "legacyFull500CalendarAndAuthority": true,
+    "actualClockAndDeadlineRules": true,
+    "opaquePrivateIdentityAndNoUnknownRetry": true
+  },
+  "existingEvidencePins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-unit-cost-caller-source-20261022/SOURCE_REVIEW.SAFE.json",
+      "bytes": 3316,
+      "sha256": "cfc8b937af78f7d9d2da26ffb136713be51c2230b871a878266a1517a0d95777"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-unit-storage-source-20261022/CURRENT_SOURCE_REVIEW_REPORT.SAFE.json",
+      "bytes": 6420,
+      "sha256": "fec4b77855831d001bf8ed494a0272292b28eac12cb8a274b364cafa2d21b291"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-unit-storage-source-20261022/INDEPENDENT_CURRENT_SOURCE_REVIEW.SAFE.json",
+      "bytes": 1178,
+      "sha256": "54aac157dd89125feb46714878c0c34fb36d22c437ca0062a19c493e9408c66e"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/v12-native-unit-integration-20261022/CURRENT_SOURCE_CALLER_FINAL_CHECKS.SAFE.json",
+      "bytes": 764,
+      "sha256": "d4298bcfa1eb349322fd1a083e2b9fb1cc95bf554972c3306991847e15ad7b1e"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/v12-native-unit-integration-20261022/SOURCE_EXPECTATIONS_REFRESH.SAFE.json",
+      "bytes": 2845,
+      "sha256": "4c6be38068c12f6130a145a7f1451749490e182e901a798d4ed01c23cdec3a70"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/v12-native-unit-integration-20261022/ROUTING_SOURCE_EXPECTATIONS_REFRESH.SAFE.json",
+      "bytes": 1628,
+      "sha256": "141fb3d2c039edb21b80514f1ad6ebda9a236b349ebdb90a5aadb34e87f1ce23"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/v12-native-unit-integration-20261022/SPRINT_PROGRESS_20261023.SAFE.json",
+      "bytes": 25024,
+      "sha256": "d1e74b872b5e0b6a30c59c583ece3710400f5ddace6f913c38313e7721b3f75f"
+    }
+  ],
+  "existingTargetedTests": {
+    "executionByThisReview": false,
+    "pins": [
+      {
+        "path": "/workspace/helmut-unit60-native-20261022/scripts/local-unit-diagnostic-original-producer-test.js",
+        "bytes": 15636,
+        "sha256": "979a44be95911de30bb8aafd212a6dc42d9eb32700d1ca63e5b441aa11b993f4"
+      },
+      {
+        "path": "/workspace/helmut-unit60-native-20261022/scripts/local-unit-diagnostic-lage-routing-test.js",
+        "bytes": 15027,
+        "sha256": "2684ebc35b5e1bd3c5a53b5f22823fc3a45cb36a1ccba8eda0f7a1f44206c724"
+      },
+      {
+        "path": "/workspace/helmut-unit60-native-20261022/scripts/local-unit-diagnostic-motor-test.js",
+        "bytes": 18179,
+        "sha256": "d8219107920ef843b4334026d72c5fc3854d17b3e61e116757d08b2eabdeb92f"
+      },
+      {
+        "path": "/workspace/helmut-unit60-native-20261022/scripts/local-unit-diagnostic-budget-test.js",
+        "bytes": 14336,
+        "sha256": "da2317d9dde90f27a213dfc936dfb00f48cc729a19ec3582e280736e311705ac"
+      },
+      {
+        "path": "/workspace/helmut-unit60-native-20261022/scripts/synthetik-500-review-receipt-test.js",
+        "bytes": 33799,
+        "sha256": "3ae5067ab550b9ad318604ef73a2fcf08633335f1486847edc7c2f677cf6cf3c"
+      },
+      {
+        "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-calendar-test.js",
+        "bytes": 11829,
+        "sha256": "e357768a8f282cb4fa64d7034cf818b05a98c21fb7e4db20474a8b599acc1091"
+      }
+    ],
+    "allSixByteIdenticalToDocumentedSuccessfulCIHead": true,
+    "documentedCI": {
+      "head": "2cfd657fdf3b2877db4963334f8fd353898c3c08",
+      "run": 39958713128,
+      "result": "SUCCESS",
+      "basis": "Existing public SPRINT_PROGRESS record and integration document, not a new live CI query."
+    },
+    "registrationPins": [
+      {
+        "path": "/workspace/helmut-unit60-native-20261022/.github/workflows/ci.yml",
+        "bytes": 45184,
+        "sha256": "27437ce8382efc2af79b11ecd57a1d215abec0097a0980abaaab3ce45ef95eca"
+      },
+      {
+        "path": "/workspace/helmut-unit60-native-20261022/scripts/run-offline-tests.js",
+        "bytes": 40278,
+        "sha256": "c7992e408b6e49169adca09880d6b4f584141a5ad7bdf28c727a961d891a78ee"
+      }
+    ],
+    "registrationAnchors": {
+      "ciWorkflowDiagnosticGlob": 238,
+      "offlineReviewReceipt": 236
+    },
+    "coverage": "Existing pure/VM/storage/HTTPS fixtures exercise source-day validity, finite input and command identity, quality prompt binding, budget denial/release, forged receipt/ticket/completion, request/hash drift, usage/readback and legacy no-send/unknown paths. They are not Native, provider or Full500 acceptance.",
+    "historicalCountsOnly": {
+      "lageRoutingGroups": 13,
+      "budgetRoutingGroupsInEarlierSourceReview": 32,
+      "legacyBudgetAssertionsInEarlierSourceReview": 67,
+      "callerRuntimeReadContractInEarlierSourceReview": 14
+    },
+    "budgetRoutingCaveat": "The additional local-unit-diagnostic-budget-routing-test.js has later edits and is not included among the six unchanged tests. Earlier 32-group results and old dependency snapshots remain historical."
+  },
+  "manifestDecision": {
+    "currentFiveCodePinsMayBeExplicitlyReboundAfterImplementationReview": true,
+    "meaning": "Current source identity for these five reviewed files only. Preserve the old manifest, original drift evidence and historical reviews. A refreshed current-code manifest cannot copy an older CPU/runtime acceptance onto these bytes.",
+    "all68AndWorkerReauditedByThisReview": false,
+    "otherEntriesMustRemainIndependentlyBound": true,
+    "oldIndependentReviewDependencySnapshotsAreCurrentWholeClosureQualification": false,
+    "currentNativeFinancialEquivalenceEstablished": false
+  },
+  "minimalFurtherChecksForTheFutureManifestPatch": [
+    "Run only the existing affected pure source-binding/manifest-integrity cases against the actual new manifest and independent review binding.",
+    "Keep negative checks for stale source bytes, wrong pin or missing required source review; no prefix or hash-only acceptance bypass.",
+    "No repeat of unchanged product suites is required solely by this source-only review; preserve their documented fixture/CI limits."
+  ],
+  "executionCounts": {
+    "tests": 0,
+    "nativeRuns": 0,
+    "engineCalls": 0,
+    "databaseCalls": 0,
+    "dockerCalls": 0,
+    "modelCalls": 0,
+    "authorityOrJournalMutations": 0,
+    "repositoryWrites": 0
+  },
+  "acceptance": {
+    "sourceReviewOnly": true,
+    "historicalAcceptanceTransferred": false,
+    "currentCPUOrRuntimeQualification": false,
+    "unit60": false,
+    "full500": false,
+    "ram500MB": false,
+    "reserveOrPlateau": false,
+    "executionAuthority": false,
+    "GOOrClaimIssued": false
+  }
+}

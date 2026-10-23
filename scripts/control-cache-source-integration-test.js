@@ -1,114 +1,130 @@
 "use strict";
-// PREPARED ONLY. Requires Root's completed real qualification before running via lokal.js.
-// All negative fixtures are temporary copies of those real proof bytes, never repo proofs.
-const assert = require("node:assert/strict"), fs = require("node:fs"), os = require("node:os");
-const path = require("node:path"), { createHash } = require("node:crypto");
-const ROOT = path.resolve(__dirname, ".."), DIR = "scripts/helmut-resource-meter/";
-const FILES = [DIR + "control-cache-integration.js", DIR + "control-cache-source-delta.json",
-  DIR + "control-cache-native-qualification-20261020.SAFE.json",
-  "docs/betrieb/bounded-control-cache-code-sol-review-20261020.SAFE.json"];
+// PREPARED, NOT RUN. No invented originals, FS mocks, subprocesses or test overrides.
+// Requires the genuine five-case published SAFE bundle. Pending data fails; it never skips green.
+const assert = require("node:assert/strict"), fs = require("node:fs"), path = require("node:path"), os = require("node:os");
+const G = require("./helmut-resource-meter/control-cache-integration");
+const ROOT = path.resolve(__dirname, ".."), read = file => JSON.parse(fs.readFileSync(path.join(ROOT, file), "utf8"));
+const data = read(G.FILES[1]);
+assert.equal(data.currentQualification.qualified, true, "GENUINE_FIVE_CASE_BUNDLE_REQUIRED_NOT_A_SKIP");
+assert.equal(G.acceptance().currentQualification.qualified, true);
+const genuine = { data, native:read(G.FILES[2]), review:read(G.FILES[3]), publication:read(G.FILES[4]),
+  actualReview:read(G.FILES[5]), audit:read(G.FILES[6]), gatePin:data.currentQualification.integrationGateOriginalPin };
+G.validateQualification(genuine);
+assert.throws(() => G.acceptance({ sourceOnly:true }));
+assert.throws(() => G.acceptance(undefined));
+let rejected = 0;
+function reject(label, change) {
+  const value = structuredClone(genuine); change(value);
+  assert.throws(() => G.validateQualification(value), undefined, label); rejected++;
+}
+for (const schema of ["helmut-control-cache-native-source-qualification/1", "unknown"])
+  reject("old/unknown proof schema", x => { x.native.schema = schema; });
+reject("pending source data", x => { x.data.currentQualification.qualified = false; });
+for (const key of ["nativeProofPin", "generationAuditPin", "independentActualReviewPin", "independentPublicationReviewPin"])
+  reject("null actual publication pin", x => { x.data.currentQualification[key] = null; });
+reject("historical source acceptance transferred", x => { x.data.historicalAcceptanceTransferred = true; });
+reject("wrong candidate commit", x => { x.native.candidateCommit = "67b5c4ef8ccd482d726126f8bbc41a00ee4151a3"; });
+reject("old source freeze", x => { x.native.sourceFreezePin.sha256 = "5ce7e3658d7ef9e33631879992224d9cd78ac34b6ce09f01dd50580b330275b8"; });
+reject("wrong prepared root", x => { x.native.nativePreparedPin.path = x.native.nativePreparedPin.path.replace("prepared-v2", "prepared-v1"); });
+reject("missing comparison arm", x => { x.native.comparisonCases.pop(); });
+reject("duplicate lifecycle/comparison case", x => { x.native.comparisonCases[0] = structuredClone(x.native.comparisonCases[1]); });
+reject("ABBA order changed", x => { [x.native.comparisonCases[0], x.native.comparisonCases[1]] = [x.native.comparisonCases[1], x.native.comparisonCases[0]]; });
+reject("genuine OLD must retain OLD Parts too", x => { x.native.comparisonCases[0].sourcePins[1] = structuredClone(x.native.sourcePins[1]); });
+reject("NEW cannot reuse OLD U", x => { x.native.comparisonCases[1].sourcePins[0] = structuredClone(x.native.baselineArmSources[0]); });
+reject("lifecycle must not start Node", x => { x.native.lifecycle.nodeStarted = true; });
+reject("lifecycle must have zero RPC", x => { x.native.lifecycle.authRPCCount = 27; });
+for (const key of ["allOwnedProcessesExited", "nativeGroupEmpty", "fullLastProcessExitCovered", "sourceUnchanged",
+  "postgrestStopQualified", "catalogQualified", "originalStateRestored"])
+  for (const arm of [-1, 0, 1, 2, 3]) reject("each case independently closed", x => {
+    (arm === -1 ? x.native.lifecycle : x.native.comparisonCases[arm])[key] = false;
+  });
+for (const key of ["workerExitCode", "postgresExitCode", "oomCount", "oomKillCount"])
+  reject("failed process/kernel status", x => { x.native.comparisonCases[0][key] = 1; });
+reject("unsupported PostgREST exit", x => { x.native.comparisonCases[0].postgrestRawReturnCode = 9; });
+for (const key of ["authRPCCount", "rpcResponsesCompleted", "nativeHTTPSendCount", "fullReadCount", "writeCount", "controlReadCount"])
+  reject("exact workload counters", x => { x.native.comparisonCases[0][key]--; });
+for (const key of ["realWireAndSelectedUVerified", "requestResponseBindingsVerified", "freshNativeChecksAccepted",
+  "detachedControlViewsVerified", "mutationAndRestorationVerified", "authorizedRevisionDeltaQualified", "nodeHeapAndExitReceiptsPassed"])
+  reject("real control/history/restore checks required", x => { x.native.comparisonCases[0][key] = false; });
+reject("wrong lifecycle result join", x => { x.native.comparisonCases[1].lifecycleActualResultPin = structuredClone(x.native.comparisonCases[0].actualResultPin); });
+reject("foreign case file", x => { x.native.comparisonCases[0].stopReceiptPin.path += ".foreign"; });
+reject("unknown proof field", x => { x.native.sourceOnly = true; });
+reject("unknown case field", x => { x.native.comparisonCases[0].sourceOnly = true; });
+for (const key of ["generatorPreparedPin", "generatorSourcePin", "proofSchemaPin", "integrationSourceGatePin"])
+  reject("exact verifier/schema/gate join", x => { x.audit[key].sha256 = "0".repeat(64); });
+reject("audit proof bytes mismatch", x => { x.audit.generatedProofPin.bytes++; });
+reject("audit actual review mismatch", x => { x.audit.independentActualReviewPin.sha256 = "0".repeat(64); });
+reject("audit reordered actual results", x => { x.audit.independentlyReviewedActualResultPins.reverse(); });
+reject("old logical history", x => { x.audit.semanticComparison.nativeProof.count = 5999; });
+reject("wrong control text fixture", x => { x.audit.semanticComparison.controlTextBytes--; });
+reject("offline verifier must not read PGDATA", x => { x.audit.sourcePGDATARead = true; });
+reject("actual reviewer missing fifth result", x => { x.actualReview.actualResultPins.pop(); });
+reject("actual reviewer wrong plan", x => { x.actualReview.casePlanPin.sha256 = "0".repeat(64); });
+for (const field of ["actualReview", "publication"]) {
+  reject("independent review mandatory", x => { x[field].independent = false; });
+  reject("pending review not sufficient", x => { x[field].status = "PENDING_NOT_REVIEWED"; });
+  reject("review with blocker", x => { x[field].blockingFindings = ["BLOCKED"]; });
+}
+reject("publication gate bytes mismatch", x => { x.publication.integrationGatePin.bytes++; });
+reject("old source review cannot cover changed current pair", x => { x.review.sourcePinsVerifiedAgainstRootIntegration[0].sha256 = "0".repeat(64); });
+for (const key of ["production", "full500Accepted", "ramBenefitClaimed", "automaticRetry"])
+  reject("no scope expansion", x => { x.native[key] = true; });
+// Preserve the actual file-reader negative boundary using temporary byte-copies
+// of the genuine published SAFE files and public code; no original Auth/PGDATA.
 const U = "lib/helmut/llm-usage-atomic.js", PARTS = "lib/helmut/auth-state-parts.js";
-const sha = x => createHash("sha256").update(x).digest("hex");
-const realGate = require(path.join(ROOT, FILES[0]));
-// This must fail while preparation is PENDING; it is never replaced by a fabricated positive fixture.
-const accepted = realGate.acceptance();assert.equal(accepted.acceptedLocalCacheDelta, true);
-let count = 0;
 function temporary(change, shouldPass = false) {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-cache-gate-negative-"));
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-current-pair-gate-negative-"));
   try {
-    for (const file of [...FILES, U, PARTS]) {
-      const target = path.join(base, file);fs.mkdirSync(path.dirname(target), { recursive: true });
+    for (const file of [...G.FILES, U, PARTS]) {
+      const target = path.join(base, file); fs.mkdirSync(path.dirname(target), { recursive:true });
       fs.copyFileSync(path.join(ROOT, file), target);
     }
     const file = name => path.join(base, name);
-    const read = name => JSON.parse(fs.readFileSync(file(name), "utf8"));
-    const write = (name, value) => fs.writeFileSync(file(name), JSON.stringify(value) + "\n");
-    const repinNative = () => {
-      const d = read(FILES[1]), bytes = fs.readFileSync(file(FILES[2]));
-      d.currentQualification.nativeProofPin = { name: path.basename(FILES[2]), bytes: bytes.length, sha256: sha(bytes) };
-      write(FILES[1], d);
-    };
-    change({ base, file, read, write, repinNative });
-    const gate = require(file(FILES[0]));
+    change(file);
+    const gate = require(file(G.FILES[0]));
     if (shouldPass) assert.equal(gate.acceptance().acceptedLocalCacheDelta, true);
     else assert.throws(() => gate.acceptance());
-    count++;
-  } finally { fs.rmSync(base, { recursive: true, force: true }); }
+  } finally { fs.rmSync(base, { recursive:true, force:true }); }
 }
 temporary(() => {}, true);
-temporary(({ file }) => fs.unlinkSync(file(FILES[2])));
-temporary(({ file }) => fs.appendFileSync(file(FILES[2]), " "));
-temporary(({ base }) => fs.appendFileSync(path.join(base, U), "\n"));
-temporary(({ base }) => fs.appendFileSync(path.join(base, PARTS), "\n"));
-temporary(({ file }) => {
-  fs.renameSync(file(FILES[2]), file(DIR + "native-original.SAFE.json"));
-  fs.symlinkSync("native-original.SAFE.json", file(FILES[2]));
+for (const file of G.FILES.slice(2)) {
+  temporary(p => fs.unlinkSync(p(file)));
+  temporary(p => fs.appendFileSync(p(file), " "));
+}
+for (const file of [U, PARTS]) temporary(p => fs.appendFileSync(p(file), "\n"));
+temporary(p => {
+  fs.renameSync(p(G.FILES[2]), p("native-original.SAFE.json"));
+  fs.symlinkSync(p("native-original.SAFE.json"), p(G.FILES[2]));
 });
-temporary(({ file }) => fs.writeFileSync(file(FILES[2]), Buffer.alloc(256 * 1024 + 1, 32)));
-temporary(({ read, write }) => { const d = read(FILES[1]);d.currentQualification.qualified = false;write(FILES[1], d); });
-temporary(({ read, write }) => { const d = read(FILES[1]);d.currentQualification.nativeProofPin = null;write(FILES[1], d); });
-temporary(({ read, write }) => { const d = read(FILES[1]);delete d.currentQualification.nativeProofPin;write(FILES[1], d); });
-temporary(({ read, write }) => { const d = read(FILES[1]);d.currentQualification.nativeProofPin.sha256 = "0".repeat(64);write(FILES[1], d); });
-temporary(({ read, write }) => { const d = read(FILES[1]);d.integrationGateSourceSHA256 = "0".repeat(64);write(FILES[1], d); });
-temporary(({ read, write, repinNative }) => {
-  const n = read(FILES[2]);n.status = "failed";write(FILES[2], n);repinNative();
-});
-temporary(({ read, write, repinNative }) => {
-  const n = read(FILES[2]);n.baselineArmSources[1].sha256 =
-    "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9";
-  write(FILES[2], n);repinNative();
-});
-for (const mutate of [
-  n => { n.comparisonCases[0].variant = "NEW"; },
-  n => { n.comparisonCases[1].caseId = n.comparisonCases[0].caseId; },
-  n => { n.comparisonCases[1].nativePreparedPin.sha256 = "0".repeat(64); },
-  n => { n.comparisonCases[1].lifecycleActualResultPin.sha256 = "0".repeat(64); },
-  n => { n.comparisonCases[1].authRPCCount = 26; },
-  n => { n.comparisonCases[1].nodeExitCode = 1; },
-  n => { n.comparisonCases[1].postgrestStopQualified = false; },
-  n => { n.comparisonCases[1].fullLastProcessExitCovered = false; },
-  n => { n.comparisonCases[1].sourceUnchanged = false; },
-  n => { n.comparisonCases[1].authorizedRevisionDeltaQualified = false; },
-  n => { n.comparisonCases[1].oomKillCount = 1; },
-  n => { n.lifecycle.authRPCCount = 1; },
-  n => { n.ramBenefitClaimed = true; },
-  n => { n.full500Accepted = true; },
-  n => { n.privateActualPinsVerifiedByRoot = false; },
-  n => { n.independentCodeReviewPin.sha256 = "0".repeat(64); }
-]) temporary(({ read, write, repinNative }) => { const n = read(FILES[2]);mutate(n);write(FILES[2], n);repinNative(); });
-temporary(({ file, read, write }) => {
-  const proof = read(FILES[3]);proof.commit = "0".repeat(40);write(FILES[3], proof);
-  const d = read(FILES[1]), bytes = fs.readFileSync(file(FILES[3]));
-  d.currentQualification.independentCodeReviewPin.sha256 = sha(bytes);
-  d.currentQualification.independentCodeReviewPin.bytes = bytes.length;write(FILES[1], d);
-});
-assert.throws(() => realGate.acceptance({ sourceOnly: true }));count++;
-// Generic runtime closure consumes every descriptor.sourcePin; ensure the new files reach it.
-const atomic = require(path.join(ROOT, DIR, "atomic-usage-integration.js"));
-const normal = atomic.descriptor();assert(!Object.hasOwn(normal, "controlCacheSourceAcceptance"));
-assert(normal.sourcePins.every(p => !FILES.some(f => p.path === path.join(ROOT, f))));
-const noControlRoot = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-cache-no-control-"));
+temporary(p => fs.writeFileSync(p(G.FILES[2]), Buffer.alloc(256 * 1024 + 1, 32)));
+// Keep descriptor read-closure checks. This is the existing explicit current
+// storage source binding, not new cache qualification or execution authority.
+const atomic = require("./helmut-resource-meter/atomic-usage-integration");
+const normal = atomic.descriptor(); assert(!Object.hasOwn(normal, "controlCacheSourceAcceptance"));
+assert(normal.sourcePins.every(p => !G.FILES.some(f => p.path === path.join(ROOT, f))));
+const noControlRoot = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-current-pair-no-control-"));
 try {
   for (const p of normal.sourcePins) {
-    const relative = path.relative(ROOT, p.path);assert(!relative.startsWith("..") && !path.isAbsolute(relative));
+    const relative = path.relative(ROOT, p.path); assert(!relative.startsWith("..") && !path.isAbsolute(relative));
     const destination = path.join(noControlRoot, relative);
-    fs.mkdirSync(path.dirname(destination), { recursive: true });fs.copyFileSync(p.path, destination);
+    fs.mkdirSync(path.dirname(destination), { recursive:true }); fs.copyFileSync(p.path, destination);
   }
-  // No gate or new proof files exist here: nonControl must still import and construct its descriptor.
-  const isolatedAtomic = require(path.join(noControlRoot, DIR, "atomic-usage-integration.js"));
-  assert(!Object.hasOwn(isolatedAtomic.descriptor(), "controlCacheSourceAcceptance"));count++;
-} finally { fs.rmSync(noControlRoot, { recursive: true, force: true }); }
-const control = atomic.descriptor({ stateStorage: "merkle-auth-v1",
-  historyReadReuse: "verified-history-reuse-v1", controlRead: "verified-control-view-v1" });
+  const isolated = require(path.join(noControlRoot, "scripts/helmut-resource-meter/atomic-usage-integration.js"));
+  assert(!Object.hasOwn(isolated.descriptor(), "controlCacheSourceAcceptance"));
+} finally { fs.rmSync(noControlRoot, { recursive:true, force:true }); }
+const localSourceDeltaPin = atomic.pin(path.join(ROOT,
+  "docs/betrieb/belege/local-unit-storage-source-20261022/CURRENT_LOCAL_SOURCE_DELTA.SAFE.json"));
+const control = atomic.descriptor({ stateStorage:"merkle-auth-v1", historyReadReuse:"verified-history-reuse-v1",
+  controlRead:"verified-control-view-v1", localSourceDeltaPin });
 assert.equal(control.controlCacheSourceAcceptance.acceptedLocalCacheDelta, true);
-for (const f of FILES) assert(control.sourcePins.some(p => p.path === path.join(ROOT, f)));
-const d = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-cache-descriptor-"));
+for (const file of G.FILES) assert(control.sourcePins.some(p => p.path === path.join(ROOT, file)));
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-current-pair-descriptor-"));
 try {
-  const file = path.join(d, "descriptor.json");fs.writeFileSync(file, JSON.stringify(control));
+  const file = path.join(dir, "descriptor.json"); fs.writeFileSync(file, JSON.stringify(control));
   assert.deepEqual(atomic.readDescriptor(atomic.pin(file)), control);
   control.controlCacheSourceAcceptance.acceptedLocalCacheDelta = false;
   fs.writeFileSync(file, JSON.stringify(control));
-  assert.throws(() => atomic.readDescriptor(atomic.pin(file)));count++;
-} finally { fs.rmSync(d, { recursive: true, force: true }); }
-process.stdout.write(JSON.stringify({ schema: "helmut-control-cache-source-gate-test/1", passed: count,
-  nativeStarted: false, databaseCalls: 0, ramQualification: false, full500: false }) + "\n");
+  assert.throws(() => atomic.readDescriptor(atomic.pin(file)));
+} finally { fs.rmSync(dir, { recursive:true, force:true }); }
+console.log(JSON.stringify({ scope:"GENUINE_FIVE_CASE_SAFE_PROOF_SEMANTIC_MUTATIONS_ONLY", pass:true,
+  rejectedMutations:rejected, sourceOnlyOverrides:0, databaseStarts:0, providerCalls:0, originalAuthReads:0 }));

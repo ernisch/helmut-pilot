@@ -4,41 +4,42 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Schreibdiagnose eingebaut; Unit60/500MB weiter offen
+## 23.10.: Quellen integriert; echte Schreibdiagnose als nächster Schritt
 
 13.527 Dateien/84 Originale/V12-POSTRUN erhalten. PR936: native CAS, Manifestcache/
 Connector; unbekannte Writes terminal. GraphReuse/Capture OFF, HistoryReuse/Control
 ON. Own-Write nur Einzelunit; Voll500-Write unverändert. Alte FAILs/GOs erhalten.
 
-Neuester Motorfallaf33/cad305f9 bleibt FAIL: Entry-Deadline, Parent1/zwei EOFs,
-Peak1.344.360.448B, sechs Events0/finale Gruppe leer; kein Unit60/Auth30/Reserve/
-Plateau. Sechs CAS11,918s enthalten6,370s Write-Endpoint und2,792s Reader-Promise;
-Endpoint ist keine reine SQLzeit. Vier af33-Readonly-EXPLAINs PASS, Messprozess
-0,483s/Komponentenpeak703.197.184B, Quelle/Katalog/Closure gleich. Schreib-CAS/
-Receipt/COMMIT/WAL/Ledger damit nicht gemessen.
+Motorfallaf33 bleibt FAIL: Entry-Deadline, Peak1.344.360.448B. SechsCAS11,918s
+inklusive6,370s Write-Endpoint/2,792s Reader-Promise. Vier Readonly-SQLchecks PASS,
+0,483s/703.197.184B Komponentenpeak; kein Schreib-/Unit60-/500MB-Nachweis.
+Claim-only integriert, Pure16+48/Controller21PASS: erster echter CAS/COMMIT/ACK/
+Readback auf frischer Kopie, ohne Motor/Provider. Frischer Rootstart noch ausstehend;
+Claim danach verbraucht/DB erhalten.
 
-Dafür Claim-only-Diagnose integriert: frische Originalkopie/Qualifikation/Seed,
-erster echter CAS/COMMIT/ACK/Readback ohne Motor. Claim bleibt running/Autorität
-verbraucht, Fall nicht wiederverwendbar. Unabhängige V1-/V2-Reviews PASS, zwei DTO-
-Lücken behoben. Aktuelle Repo-Tests16+48PASS/Exit0; reine Mock-/AST-Prüfungen.
-Frischer Capture und einzelne Root-Startbindung noch nötig; keine Unitabnahme.
+Fünf echte Quellenfälle Lifecycle/OLD/NEW/NEW/OLD unabhängig PASS;108 UUIDs,
+Semantik/History6000/Restore/Katalog/Quelle/Prozessenden geprüft. Gepinnter Gesamt-
+verifier Exit0,373 Belegpins. Neuer Sourcegate99 Negativmutationen PASS. Fünf separat
+quellengeprüfte veraltete aktuelle CPU-Pins plus abhängiges Releasemapping korrigiert;
+Produktquellen/historische Qualifikation unverändert. Artefakt10/Runtimevertrag14PASS.
+Descriptorlauf22 zunächst18PASS/3FAIL/1ERROR; nur vier übrige Fixtures korrigiert,
+diese vier gezielt PASS. Kein finaler grüner22er Lauf behauptet.
 
-CI39987309979/dbdf: Browser/Prüfplan SUCCESS, Schritt14 FAIL, Original18/19 SKIP.
-Fixture umging Konstruktor ohne neues Modusfeld; Normalmodus ergänzt,21PASS.
-Letzte84er Originalabnahme208e/39972723984; neue U/Parts brauchen fünf echte Fälle. Erster Lifecycle b6db5293 tatsächlich PASS/RootExit0
-und unabhängig angenommen:22,727s, PG0/HTTP beendet/Gruppe leer/Events0,
-Quelle/Root/Revision/History6000 gleich. Vier OLD/NEW/NEW/OLD-Fälle und Gesamt-/
-Gateabnahme fehlen. Keine historischen Belege umpinnen oder Hash-only-Reparatur.
+CI97662/39989672128 bleibt FAIL,84 Originale SUCCESS. Tatsächlicher Fehler über
+Runner-only-Diagnose39997839458 sicher benannt: Runtime-Read-Contract-Assertion;
+betroffene14 lokal PASS. Diagnoselauf SUCCESS ist kein vollständiger CI-Nachweis.
+Neuer CI-Nachweis nach Push offen.
 
-Alle33 Archive verschlüsselt rückgeladen/hashgeprüft,2.792.718.336B Allokation
-entfernt. Originale/Deltabasis/Gitrefs/Volumes/fremde Arbeit KEEP. Beide SQL-Kopien
-mit gesicherten Endänderungen entfernt; V2-Overlay lokal vollständig komprimiert/
-rückgelesen,61.497.344B netto eingespart. Danach10.787.094.528B frei, mit Lifecycle-
-Scratch wieder unter10GiB. Nur unabhängig angenommener vorab klassifizierter
-Scratch nach kompletter Außenbelegsicherung/frischer Rootprüfung entbehrlich;
-noch nicht gelöscht. Voll500-Admission15.179.779.720B offen. Original-RAW-Änderung
-automatisch abgelehnt/Einzelentscheidung offen. Sechs authentische Quell-DBs nötig,
-Tiny-Anbindung nur vorbereitet. Alle32 Bedingungen frisch, kein Voll500/Production.
+33 Archive verschlüsselt rückgeladen/hashgeprüft,2.792.718.336B Allokation entfernt;
+SQL-Overlay gesichert/rückgelesen,61.497.344B netto frei. Fünf angenommene eigene
+PGscratchkopien nach kompletter Außenbelegsicherung/frischer Rootprüfung entfernt,
+1.849.159.680B Zielallokation; zwölf eigene gestoppte Hüllen24.186.880B gemessen frei.
+Originale, Quell-DBs, af33, Außenbelege/Backups, Images/Volumes/fremde Arbeit KEEP.
+Einzeladmission10GiB knapp; Voll50015.179.779.720B, rund4,44GB fehlen. Keine weitere
+sichere Mehr-GB-Bereinigung belegt. Original-RAW-Änderung automatisch abgelehnt.
+Unit60/Auth30/500MB/Plateau offen; alle32 Startbedingungen frisch und konkretes neues
+GO vor Voll500 nötig. Keine Production/Merge-/Voll500-Freigabe aus diesem Befund.
+[Ergebnis](betrieb/belege/current-control-source-qualification-20261023/ROOT_INTEGRATION_RESULT.SAFE.json),
 [Belege/Haltepunkt](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
