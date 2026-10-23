@@ -4,7 +4,7 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Quellenpfad nativ bestanden; enges Runtime-Leserecht fehlt
+## 23.10.: Quellenpfad bestanden; Runtime-/Abschlussfix nativ offen
 
 13.527Dateien hashverifiziert; geschützter84Originale-Kanal in PR933 nach voller
 CI39783955460 integriert. V12-POSTRUN/Runtimebindungen erhalten, ursprüngliche DB
@@ -20,12 +20,12 @@ Source belegt Runtime-Receipt liest xmin, das bisher nur Writer lesen darf;
 exakte SQL-Expression nicht geloggt. Fix/25Puretests/2QuellreviewsPASS, nativ offen.
 Entryfehler nach44,095s ist kein Unit60-PASS. Peak1.340.301.312B/Events0, PG0/
 Gruppeleer; CLI1/beide EOFs, Originalauth/RAW/Quellen unverändert. Motorzahl null.
-Owner/Host-Abschlussfehler folgen erst danach; tatsächliches REST-Signal SIGINT
-bleibt FAIL. Preflight kann Cache wärmen; keine500MB-/500er-Abnahme daraus.
+REST-SIGINT bleibt im FehlerfallFAIL. Neuer Abschluss bindet aktuelle Config,
+Binary/8Quellen/Einmalpolicy/Prozess:71/103/21Checks+2ReviewsPASS, nativ offen.
 8Checkouts/3privat archivierte/restauriert geprüfte COPYs sowie30redundante Cipher-
 parts entfernt. Vollcipher/beide Aliase/Belege/Originale und DB bleiben erhalten.
-Nachf519 frei10.635.939.840B:101.478.400B unter10GiB-Einzelunitgrenze;
-zur Volladmission fehlen4.543.839.880B. Ausführungstag23/Original-Quelltag21.
+48-COPY privat archiviert/1778Member restauriert geprüft, noch nichts entfernt:
+Docker-Pfadschutz stoppt an EACCES. Frei~10,136GB. Ausführungstag23/Quelltag21.
 CI39872884548 auf72: Standard/SQL/84Originale/BrowserPASS, BereichFAIL:
 profilhash-integration-test.js und testnachweis-synthetik-quellen-id-test.js,
 je Exit1. Fehlende VM-Dependency behoben:18/29GruppenPASS, Produkt unverändert.
@@ -34,8 +34,8 @@ jetzt17Purechecks/2ReviewsPASS. FrischeCI/App403/Unit60/Auth30/Reserve offen.
 [PR936/Belege/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
 [Historischer Vollstand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
 Kein Voll500 ohne32frische Bedingungen/neues konkretesGO; alte Rechte verbraucht,
-kein Merge/Production. Weiter: enges Runtime-Recht samt Vorprobe, beide CI-Tests,
-sichere Kapazität, dann frische Einzelunit und sämtliche32Startbedingungen.
+kein Merge/Production. Weiter: sichere Kapazität, frische Hostbindung/Einzelunit,
+Runtime-/Abschlussabnahme, grüneCI und sämtliche32Startbedingungen.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

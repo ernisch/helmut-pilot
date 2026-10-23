@@ -30,7 +30,7 @@ function load({ filesystem = fs, processStub = {}, childModule = null, brokerMod
     } };
   Object.defineProperty(sandbox.require, "main", { get: () => mainToggle?.enabled ? mod : null });
   const patch = hooks ? "\n({privateJSON,readFile,writePrivate,environmentCheck,processInfo,ownListener,actualGroup,unchanged}=__testHooks);" : "";
-  vm.runInNewContext(source + patch + "\nmodule.exports={start,validateConfig,restConfig,runtimeJWT,pinShape,mountRows,mountFor,readFile:(filename,cap,options)=>readFile(filename,cap,JSON.parse(JSON.stringify(options))),environmentCheck,bounded,safeError,nodeBudget,sourceQualification,processInfo};", sandbox);
+  vm.runInNewContext(source + patch + "\nmodule.exports={SHUTDOWN_SOURCES,REST_BINARY,start,validateConfig,restConfig,runtimeJWT,pinShape,mountRows,mountFor,readFile:(filename,cap,options)=>readFile(filename,cap,JSON.parse(JSON.stringify(options))),environmentCheck,bounded,safeError,nodeBudget,sourceQualification,processInfo};", sandbox);
   return { api: mod.exports, get spawns() { return spawns; } };
 }
 function configuration() {
@@ -49,7 +49,8 @@ function configuration() {
     issuedAtUTC: new Date(now).toISOString(), expiresAtUTC: new Date(now + 180000).toISOString(),
     measuredCgroup: { path: "/sys/fs/cgroup/owned", device: 29, inode: 12345, procMembership: "0::/\n" },
     pins: { owner: pin("/opt/local-unit-native-owner.js", "c"), broker: pin("/opt/local-unit-diagnostic-broker.js", "d"),
-      postgrest: pin("/opt/postgrest-pinned", "e"), node: pin("/opt/node-pinned", "f") },
+      postgrest: { path: "/opt/postgrest-pinned", bytes: 17309560, sha256: "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617" }, node: pin("/opt/node-pinned", "f") },
+    shutdownPolicySources: structuredClone(load().api.SHUTDOWN_SOURCES),
     originalService: { hmacKeyPath: "/run/bootstrap/ORIGINAL_HMAC.PRIVATE.bin",
       sourceQualificationPin: pin("/run/bootstrap/SOURCE_QUALIFICATION.PRIVATE.json", "8"), publicSourceBinding },
     authenticator: { username: "helmut_ud_authenticator_" + suffix,
@@ -106,6 +107,14 @@ check("fixed code aliases and bounded pins", () => {
     c => { c.pins.node.path = "/opt/../node"; }, c => { c.pins.broker.flag = true; }]) {
     const c = configuration(); mutate(c); rejected(() => api.validateConfig(c, now));
   }
+});
+check("close policy requires the exact binary and all eight ordered current source aliases", () => {
+  const original = configuration();
+  assert.ok(original.shutdownPolicySources.length === 8 && original.shutdownPolicySources.reduce((n, p) => n + p.bytes, 0) === 75089);
+  for (const change of [c => { c.shutdownPolicySources.pop(); }, c => { c.shutdownPolicySources.push(c.shutdownPolicySources[0]); },
+    c => { c.shutdownPolicySources.reverse(); }, c => { c.shutdownPolicySources[1].path = "/tmp/source"; },
+    c => { c.shutdownPolicySources[1].sha256 = "0".repeat(64); }, c => { c.pins.postgrest.sha256 = "0".repeat(64); },
+    c => { c.shutdownPolicySources[0].extra = true; }]) { const c = configuration(); change(c); rejected(() => api.validateConfig(c, now)); }
 });
 check("private local credentials cannot inject config or URI", () => {
   for (const mutate of [c => { c.authenticator.passwordHex = "0".repeat(64); },
@@ -236,7 +245,7 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
   let announceBroker; state.brokerStarting = new Promise(resolve => { announceBroker = resolve; });
   function end(code = 0, signal = null) { if (state.childEnded) return; state.childEnded = true; child.emit("exit", code, signal);
     if (!noEOF) { child.stdout.emit("end"); child.stderr.emit("end"); } child.emit("close"); }
-  child.kill = sig => { state.signals.push(sig); queueMicrotask(() => state.stopExitSignal ? end(null, state.stopExitSignal) : end(0)); return true; };
+  child.kill = sig => { state.signals.push(sig); queueMicrotask(() => state.stopExitSignal ? end(null, state.stopExitSignal) : end(0)); return !state.killReturnedFalse; };
   const record = (file, text = "offline") => ({ pin: { path: file, bytes: Buffer.byteLength(text), sha256: crypto.createHash("sha256").update(text).digest("hex") }, identity: ["stable"] });
   const proc = pid => ({ pid, parentPID: pid === 123 ? 1 : 123, startTicks: state.procDrift ? "999" : pid === 123 ? "11" : "22",
     exe: pid === 123 ? "/opt/node-pinned" : "/opt/postgrest-pinned", membership: "0::/\n", pidNamespace: "pid:[99]",
@@ -253,15 +262,15 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
   const sourceQ = { schema: "helmut-local-unit-source-supervisor-qualification/1", operationId: c.operationId, commandHash: c.commandHash,
     database: c.database, issuedAtUTC: c.issuedAtUTC, expiresAtUTC: c.expiresAtUTC, publicSourceBinding: c.originalService.publicSourceBinding };
   const hooks = { privateJSON: file => ({ ...record(file), value: file.endsWith("START.PRIVATE.json") ? c : sourceQ }),
-    readFile: (file, cap, options) => ({ ...record(file), pin: file.endsWith("ORIGINAL_HMAC.PRIVATE.bin")
-      ? { path: file, bytes: 32, sha256: c.originalService.publicSourceBinding.hmacKeySHA256 } : options.expected }),
+    readFile: (file, cap, options) => { if (state.readFailure && file === state.readFailure) throw Object.assign(Error("private-file-drift"), { ownerCode: "file-drift" }); return ({ ...record(file), pin: file.endsWith("ORIGINAL_HMAC.PRIVATE.bin")
+      ? { path: file, bytes: 32, sha256: c.originalService.publicSourceBinding.hmacKeySHA256 } : options.expected }); },
     writePrivate: (file, text) => { state.writes.push({ file, text }); return record(file, text); },
     environmentCheck: () => ({ self: proc(123), nodeBudget: c.originalService.publicSourceBinding.service.nodeBudget, noNewPrivilegesObserved: true }), processInfo: proc,
     ownListener: () => !state.childEnded && !state.listenerMissing, actualGroup() {}, unchanged() { if (state.checkError) throw state.checkError; } };
   const mainToggle = { enabled: false }; let intervalId = 0;
   const timers = { setInterval(fn, delay) { const id = ++intervalId; state.intervals.set(id, { fn, delay }); return id; },
     clearInterval(id) { state.intervals.delete(id); } };
-  const instance = load({ hooks, brokerModule, timers, mainToggle, processStub: { once: p.once.bind(p), removeListener: p.removeListener.bind(p),
+  const instance = load({ hooks, brokerModule, timers, mainToggle, processStub: { hrtime: { bigint: () => process.hrtime.bigint() + (state.clockOffsetNs || 0n) }, once: p.once.bind(p), removeListener: p.removeListener.bind(p),
     stdout: { write: bytes => { state.lines.push(bytes); return true; } }, stderr: logSink },
     childModule: { spawn(binary, args, options) {
       assert.ok(binary === "/opt/postgrest-pinned" && args.length === 1 && args[0] === "/run/bootstrap/POSTGREST.PRIVATE.conf");
@@ -292,7 +301,11 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
     assert.ok(f.state.brokerConfig.upstream.pid === 456 && f.state.brokerConfig.upstream.startTicks === "22");
     assert.ok(f.state.brokerConfig.schema === "helmut-local-unit-diagnostic-broker-config/2"
       && f.state.brokerConfig.originalService.sourceQualificationPin.path.endsWith("SOURCE_QUALIFICATION.PRIVATE.json"));
-    assert.ok(f.state.writes.length === 3 && f.state.spawns === 1);
+    assert.ok(f.state.writes.length === 4 && f.state.spawns === 1);
+    const policy = JSON.parse(f.state.writes.find(r => r.file === "/run/bootstrap/POSTGREST_CLOSE_POLICY.PRIVATE.json").text);
+    assert.ok(policy.operationId === f.c.operationId && policy.commandHash === f.c.commandHash && policy.sourcePins.length === 8
+      && policy.configPin.sha256 === crypto.createHash("sha256").update(f.instance.api.restConfig(f.c)).digest("hex")
+      && !JSON.stringify(policy).includes(f.c.authenticator.passwordHex) && /^[a-f0-9]{64}$/.test(policy.nonceSHA256));
     const result = await running.close(); assert.ok(result.cleanShutdown && !result.failed && result.childStdoutEOF && result.childStderrEOF);
     assert.ok(result.childExitSignal === null && result.diagnostics.firstFailure === null
       && result.diagnostics.closeIntent.kind === "programmatic" && result.diagnostics.childExit.code === 0);
@@ -372,6 +385,38 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
     const f = lifecycle(), running = await f.instance.api.start(); f.state.traceFailure = true;
     const stopped = await running.close(); assert.ok(stopped.failed && !stopped.cleanShutdown && running.controlReadTracePin().complete === false);
     assert.ok(stopped.childStdoutEOF && stopped.childStderrEOF && f.state.intervals.size === 0); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start();
+    f.child.stderr.emit("data", Buffer.from("PostgREST 12.2.")); f.child.stderr.emit("data", Buffer.from("3 started\n"));
+    f.state.stopExitSignal = "SIGINT"; const stopped = await running.close();
+    assert.ok(stopped.cleanShutdown && !stopped.failed && stopped.childExitSignal === "SIGINT"
+      && stopped.shutdownPolicy.policyContentsVerified && stopped.shutdownPolicy.policyConsumed
+      && stopped.shutdownPolicy.acceptedExpectedTranslation && stopped.shutdownPolicy.versionSeen
+      && stopped.shutdownPolicy.sourcePins.length === 8 && /^[a-f0-9]{64}$/.test(stopped.shutdownPolicy.nonceSHA256)
+      && stopped.diagnostics.stopSignals[0].signal === "SIGTERM" && f.state.spawns === 1);
+    assert.strictEqual(await running.close(), stopped); assert.ok(f.state.signals.length === 1); tests++;
+  }
+  for (const fault of ["no-version", "source-drift", "config-drift", "policy-drift", "binding-drift", "scope-drift", "stale-policy", "future-policy", "unsent-term", "prior-failure"]) {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.stopExitSignal = "SIGINT";
+    if (fault !== "no-version") f.child.stderr.emit("data", Buffer.from("PostgREST 12.2.3\n"));
+    if (fault === "source-drift") f.state.readFailure = "/opt/postgrest-close-source-00";
+    if (fault === "config-drift") f.state.readFailure = "/run/bootstrap/POSTGREST.PRIVATE.conf";
+    if (fault === "policy-drift") f.state.readFailure = "/run/bootstrap/POSTGREST_CLOSE_POLICY.PRIVATE.json";
+    if (fault === "binding-drift") f.state.procDrift = true;
+    if (fault === "scope-drift") f.c.commandHash = "0".repeat(64);
+    if (fault === "stale-policy") f.state.clockOffsetNs = 181000000000n;
+    if (fault === "future-policy") f.state.clockOffsetNs = -1000000000n;
+    if (fault === "unsent-term") f.state.killReturnedFalse = true;
+    if (fault === "prior-failure") f.child.stderr.emit("error", Error("private-failure"));
+    const stopped = await running.close(); assert.ok(!stopped.cleanShutdown && stopped.failed && !stopped.shutdownPolicy.acceptedExpectedTranslation);
+    assert.ok(stopped.shutdownPolicy.policyConsumed && f.state.spawns === 1); tests++;
+  }
+  {
+    const f = lifecycle({ noEOF: true }), running = await f.instance.api.start();
+    f.child.stderr.emit("data", Buffer.from("PostgREST 12.2.3\n")); f.state.stopExitSignal = "SIGINT";
+    const stopped = await running.close(); assert.ok(stopped.childExitSignal === "SIGINT" && stopped.failed
+      && !stopped.cleanShutdown && !stopped.shutdownPolicy.acceptedExpectedTranslation && !stopped.childStdoutEOF && !stopped.childStderrEOF); tests++;
   }
   for (const signal of ["SIGABRT", "SIGINT"]) {
     const f = lifecycle(), running = await f.instance.api.start(); f.end(null, signal); const stopped = await running.done;

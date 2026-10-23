@@ -11,14 +11,59 @@ const OWNER = "/opt/local-unit-native-owner.js", BROKER = "/opt/local-unit-diagn
 const POSTGREST = "/opt/postgrest-pinned", PUBLIC = "/run/helmut-local-unit-diagnostic";
 const PRIVATE = "/run/helmut-local-unit-diagnostic-owner";
 const TOKEN = BOOT + "/RUNTIME_TOKEN.PRIVATE", REST_CONFIG = BOOT + "/POSTGREST.PRIVATE.conf";
-const QUALIFICATION = BOOT + "/OWNER_QUALIFICATION.PRIVATE.json";
+const QUALIFICATION = BOOT + "/OWNER_QUALIFICATION.PRIVATE.json", CLOSE_POLICY = BOOT + "/POSTGREST_CLOSE_POLICY.PRIVATE.json";
 const SOURCE_QUALIFICATION = BOOT + "/SOURCE_QUALIFICATION.PRIVATE.json", HMAC_KEY = BOOT + "/ORIGINAL_HMAC.PRIVATE.bin";
 const MAX_LOG = 128 * 1024, MAX_LIFETIME = 180000, STARTUP_MS = 15000, STOP_MS = 4500;
 const DIAGNOSTIC_OWNER_CODES = new Set(["file-drift", "cgroup-canonical", "actual-cgroup", "pid", "live-process",
   "actual-process-root-uid-gid", "actual-process-capdrop", "actual-process-no-new-privileges", "actual-process-pid-namespace",
   "actual-process-read-drift", "loopback-listener", "listener-process-owner", "active-process-binding", "active-listener-binding", "owner-window-expired",
   "source-supervisor-qualification", "source-qualification-window", "utc", "actual-node-budget", "live-observation-required",
-  "actual-broker-observation-binding", "private-observation-cap", "stop-process-identity"]);
+  "actual-broker-observation-binding", "private-observation-cap", "stop-process-identity", "shutdown-policy-consumed", "shutdown-policy-not-fresh-or-bound", "shutdown-policy-process-binding"]);
+// Same reviewed PostgREST/GHC signal-source closure as the J HTTP policy.
+// These are fresh measured readonly aliases, never the old policy or config.
+const SHUTDOWN_SOURCES = Object.freeze([
+  {
+    "path": "/opt/postgrest-close-source-00",
+    "bytes": 4139,
+    "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+  },
+  {
+    "path": "/opt/postgrest-close-source-01",
+    "bytes": 1830,
+    "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+  },
+  {
+    "path": "/opt/postgrest-close-source-02",
+    "bytes": 7424,
+    "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+  },
+  {
+    "path": "/opt/postgrest-close-source-03",
+    "bytes": 8002,
+    "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+  },
+  {
+    "path": "/opt/postgrest-close-source-04",
+    "bytes": 18693,
+    "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+  },
+  {
+    "path": "/opt/postgrest-close-source-05",
+    "bytes": 5248,
+    "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+  },
+  {
+    "path": "/opt/postgrest-close-source-06",
+    "bytes": 9858,
+    "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+  },
+  {
+    "path": "/opt/postgrest-close-source-07",
+    "bytes": 19895,
+    "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+  }
+].map(Object.freeze));
+const REST_BINARY = Object.freeze({ bytes: 17309560, sha256: "870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617" });
 let startConsumed = false;
 const exact = (value, keys) => value !== null && typeof value === "object" && !Array.isArray(value)
   && Object.keys(value).sort().join("|") === [...keys].sort().join("|");
@@ -78,7 +123,7 @@ function sourceQualification(c, q, now = Date.now(), fresh = false) {
 }
 function validateConfig(value, now = Date.now()) {
   need(exact(value, ["schema", "mode", "operationId", "commandHash", "database", "issuedAtUTC", "expiresAtUTC",
-    "measuredCgroup", "pins", "authenticator", "postgrestPort", "legacy", "originalService"])
+    "measuredCgroup", "pins", "authenticator", "postgrestPort", "legacy", "originalService", "shutdownPolicySources"])
     && value.schema === "helmut-local-unit-native-owner-start/2" && value.mode === "owner-local-no500"
     && typeof value.operationId === "string" && /^localUnitDiagnostic-[a-f0-9]{32}$/.test(value.operationId)
     && typeof value.commandHash === "string" && /^[a-f0-9]{64}$/.test(value.commandHash)
@@ -89,6 +134,10 @@ function validateConfig(value, now = Date.now()) {
   need(exact(value.pins, ["owner", "broker", "postgrest", "node"]), "public-pins");
   pinShape(value.pins.owner, OWNER); pinShape(value.pins.broker, BROKER);
   pinShape(value.pins.postgrest, POSTGREST); pinShape(value.pins.node);
+  need(value.pins.postgrest.bytes === REST_BINARY.bytes && value.pins.postgrest.sha256 === REST_BINARY.sha256
+    && Array.isArray(value.shutdownPolicySources) && value.shutdownPolicySources.length === SHUTDOWN_SOURCES.length
+    && value.shutdownPolicySources.every((pin, index) => { const expected = SHUTDOWN_SOURCES[index]; pinShape(pin, expected.path);
+      return pin.bytes === expected.bytes && pin.sha256 === expected.sha256; }), "shutdown-policy-source-binding");
   need(exact(value.measuredCgroup, ["path", "device", "inode", "procMembership"])
     && canonical(value.measuredCgroup.path) && Number.isSafeInteger(value.measuredCgroup.device)
     && value.measuredCgroup.device >= 0 && Number.isSafeInteger(value.measuredCgroup.inode) && value.measuredCgroup.inode > 0
@@ -116,7 +165,7 @@ function validateConfig(value, now = Date.now()) {
       && r.requestKeys.every(x => typeof x === "string" && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(x))
       && new Set(r.requestKeys).size === r.requestKeys.length, "qualified-read-shape");
     pinShape(r.qualificationPin); need(path.dirname(r.qualificationPin.path) === BOOT
-      && ![START, TOKEN, REST_CONFIG, QUALIFICATION].includes(r.qualificationPin.path), "qualified-read-private-path");
+      && ![START, TOKEN, REST_CONFIG, QUALIFICATION, CLOSE_POLICY].includes(r.qualificationPin.path), "qualified-read-private-path");
     names.add(r.name);
   }
   sourceBinding(value); return value;
@@ -276,6 +325,7 @@ async function start(configPath = START) {
   const stamp = () => Object.freeze({ observedAtUTC: new Date().toISOString(), monotonicNs: process.hrtime.bigint().toString() });
   const started = Object.freeze({ observedAtUTC: new Date().toISOString(), monotonicNs: began.toString() });
   let firstFailure = null, childExit = null, closeStarted = null, closeIntent = null;
+  let closePolicy = null, policyConsumed = false, policyVerified = false, acceptedTranslation = false, versionSeen = false, versionTail = Buffer.alloc(0);
   const stopSignals = [];
   let logPending = 0, logQueuedBytes = 0, logWrittenBytes = 0, logForwardError = false;
   const logSink = process.stderr;
@@ -293,6 +343,8 @@ async function start(configPath = START) {
   const logError = () => { logForwardError = true; for (const stream of [child?.stdout, child?.stderr]) stream?.resume(); failed("private-log-stream"); };
   const logDrain = () => { for (const stream of [child?.stdout, child?.stderr]) stream?.resume(); };
   function forwardLog(bytes) {
+    const versionBytes = Buffer.concat([versionTail, bytes]);
+    versionSeen ||= versionBytes.includes(Buffer.from("12.2.3")); versionTail = Buffer.from(versionBytes.subarray(Math.max(0, versionBytes.length - 5)));
     logBytes += bytes.length;
     const data = bytes.subarray(0, Math.max(0, MAX_LOG - logQueuedBytes));
     if (data.length && !logForwardError) {
@@ -309,6 +361,19 @@ async function start(configPath = START) {
     if (logBytes > MAX_LOG) { logOverflow = true; failed("child-log-cap"); }
   }
   const records = [];
+  function consumePolicy() {
+    need(!policyConsumed, "shutdown-policy-consumed"); policyConsumed = true;
+    need(closePolicy && closePolicy.operationId === c.operationId && closePolicy.commandHash === c.commandHash
+      && process.hrtime.bigint() >= closePolicy.issuedNs && process.hrtime.bigint() - closePolicy.issuedNs <= BigInt(MAX_LIFETIME) * 1000000n
+      && Date.now() < utc(c.expiresAtUTC) && closePolicy.process && child && !childExited, "shutdown-policy-not-fresh-or-bound");
+    readFile(CLOSE_POLICY, 16384, { expected: closePolicy.bindingPin, privateFile: true });
+    for (const pin of [closePolicy.binaryPin, closePolicy.configPin, ...closePolicy.sourcePins])
+      readFile(pin.path, 20 * 1024 * 1024, { expected: pin, ...(pin.path === REST_CONFIG ? { privateFile: true } : { publicMode: pin.path === POSTGREST ? "rest" : "js" }) });
+    const actual = processInfo(child.pid);
+    need(isDeepStrictEqual(actual, closePolicy.process) && actual.pid === upstream.pid && actual.startTicks === upstream.startTicks
+      && actual.exe === POSTGREST && actual.membership === c.measuredCgroup.procMembership, "shutdown-policy-process-binding");
+    policyVerified = true;
+  }
   const onSignal = signal => { setCloseIntent("owner-signal", { signal }); void close(); };
   const onTerm = () => onSignal("SIGTERM"), onInt = () => onSignal("SIGINT");
   process.once("SIGTERM", onTerm); process.once("SIGINT", onInt);
@@ -316,13 +381,14 @@ async function start(configPath = START) {
     if (stopPromise) return stopPromise;
     setCloseIntent("programmatic"); closing = true; closeStarted = stamp(); resolveCancelled(); clearTimeout(timer); clearInterval(guard); clearInterval(heartbeat);
     stopPromise = (async () => {
+      if (child && !childClosed) { try { consumePolicy(); } catch (error) { rememberFailure("shutdown-policy", error); } }
       let brokerSettled = false;
       const brokerStop = (broker ? Promise.resolve().then(() => broker.close()).catch(() => { rememberFailure("broker-close"); }) : Promise.resolve())
         .finally(() => { brokerSettled = true; });
       function signal(sig) {
         if (child && !childExited) {
           const attempt = { signal: sig, pid: child.pid, ...stamp(), identityVerified: false, killReturned: null };
-          try { const observed = processInfo(child.pid); need(!upstream || observed.startTicks === upstream.startTicks, "stop-process-identity");
+          try { const observed = processInfo(child.pid); need(!upstream || isDeepStrictEqual(observed, upstream), "stop-process-identity");
             attempt.identityVerified = true; attempt.startTicks = observed.startTicks; attempt.killReturned = child.kill(sig); }
           catch (error) { rememberFailure("child-signal-or-identity", error); }
           finally { stopSignals.push(Object.freeze(attempt)); }
@@ -346,13 +412,25 @@ async function start(configPath = START) {
       if (!logComplete) rememberFailure("private-log-incomplete");
       if (child && (!childClosed || !childExited)) rememberFailure("child-close-deadline");
       if (child && (!stdoutEOF || !stderrEOF)) rememberFailure("child-pipe-eof");
-      if (child && !(exitCode === 0 && exitSignal === null || exitCode === null && exitSignal === "SIGTERM")) rememberFailure("child-exit-status");
+      acceptedTranslation = Boolean(policyVerified && !failure && !forced && versionSeen && childClosed && childExited && stdoutEOF && stderrEOF
+        && !streamError && !logOverflow && logComplete && stopSignals.length === 1 && stopSignals[0].signal === "SIGTERM"
+        && stopSignals[0].identityVerified && stopSignals[0].killReturned === true && exitCode === null && exitSignal === "SIGINT"
+        && process.hrtime.bigint() - BigInt(closeStarted.monotonicNs) <= BigInt(STOP_MS) * 1000000n);
+      if (child && !(exitCode === 0 && exitSignal === null || exitCode === null && exitSignal === "SIGTERM" || acceptedTranslation)) rememberFailure("child-exit-status");
+      if (process.hrtime.bigint() - BigInt(closeStarted.monotonicNs) > BigInt(STOP_MS) * 1000000n) rememberFailure("owner-close-deadline");
       const clean = !failure && !forced && childClosed && childExited && stdoutEOF && stderrEOF && !streamError && !logOverflow
-        && logComplete && (exitCode === 0 && exitSignal === null || exitCode === null && exitSignal === "SIGTERM");
+        && logComplete && (exitCode === 0 && exitSignal === null || exitCode === null && exitSignal === "SIGTERM" || acceptedTranslation);
       const report = Object.freeze({ schema: "helmut-local-unit-native-owner-stop/1", cleanShutdown: clean,
         childClosed, childExited, childStdoutEOF: stdoutEOF, childStderrEOF: stderrEOF, logBytes, logOverflow,
         streamError, forcedKill: forced, childExitCode: exitCode, childExitSignal: exitSignal, childTerminatedBySIGTERM: exitSignal === "SIGTERM",
         logForwardedBytes: logWrittenBytes, privateLogForwardingComplete: logComplete,
+        shutdownPolicy: Object.freeze({ schema: "helmut-local-unit-owner-postgrest-close-policy/1", policyIssued: Boolean(closePolicy),
+          policyConsumed, policyContentsVerified: policyVerified, acceptedExpectedTranslation: acceptedTranslation,
+          returnCodeClassification: acceptedTranslation ? "qualified-local-12.2.3-sigterm-userinterrupt-sigint" : "standard-or-unqualified",
+          versionSeen, operationId: c?.operationId || null, commandHash: c?.commandHash || null,
+          nonceSHA256: closePolicy?.nonceSHA256 || null, configPin: closePolicy?.configPin || null,
+          binaryPin: closePolicy?.binaryPin || null, sourcePins: closePolicy?.sourcePins || [],
+          bindingPin: closePolicy?.bindingPin || null, sourceReviewOnly: true, actualProcessSelfSignalTraced: false, reproducibleBuildVerified: false }),
         diagnostics: Object.freeze({ started, firstFailure, childExit, closeIntent, closeStarted,
           stopSignals: Object.freeze([...stopSignals]), closed: stamp() }),
         failed: Boolean(failure), unitExecuted: false, full500: false });
@@ -387,6 +465,18 @@ async function start(configPath = START) {
     }
     records.push(writePrivate(TOKEN, runtimeJWT(c) + "\n"));
     const configuration = writePrivate(REST_CONFIG, restConfig(c)); records.push(configuration);
+    for (const pin of SHUTDOWN_SOURCES) records.push(readFile(pin.path, 1024 * 1024, { expected: pin, publicMode: "js" }));
+    // Private same-instance policy: generated config bytes and upstream closure
+    // are pinned BEFORE spawn, then the actual observed process is bound once.
+    closePolicy = { operationId: c.operationId, commandHash: c.commandHash, issuedNs: process.hrtime.bigint(),
+      nonceSHA256: crypto.createHash("sha256").update(crypto.randomBytes(32)).digest("hex"),
+      binaryPin: { ...c.pins.postgrest }, configPin: { ...configuration.pin }, sourcePins: SHUTDOWN_SOURCES, process: null };
+    const policyRecord = writePrivate(CLOSE_POLICY, JSON.stringify({ schema: "helmut-local-unit-owner-postgrest-prelaunch-policy/1",
+      operationId: closePolicy.operationId, commandHash: closePolicy.commandHash, nonceSHA256: closePolicy.nonceSHA256,
+      issuedAtUTC: new Date().toISOString(), issuedMonotonicNs: closePolicy.issuedNs.toString(),
+      binaryPin: closePolicy.binaryPin, configPin: closePolicy.configPin, sourcePins: closePolicy.sourcePins,
+      sourceReviewOnly: true, actualProcessSelfSignalTraced: false, reproducibleBuildVerified: false }) + "\n");
+    closePolicy.bindingPin = policyRecord.pin; records.push(policyRecord);
     // No inherited credentials, Node preloads, proxy, database, PGRST or loader overrides.
     child = spawn(POSTGREST, [REST_CONFIG], { cwd: BOOT, env: { LANG: "C.UTF-8", LC_ALL: "C.UTF-8", TZ: "UTC", PATH: "/usr/bin:/bin" },
       stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
@@ -405,6 +495,7 @@ async function start(configPath = START) {
       Number(lifetimeEnd - process.hrtime.bigint()) / 1000000 - STOP_MS);
     while (!spawned) { need(!failure && !closing && startupLeft() > 0, "spawn-deadline-or-failure"); await pause(20); }
     upstream = processInfo(child.pid);
+    closePolicy.process = upstream;
     need(upstream.exe === POSTGREST && upstream.membership === c.measuredCgroup.procMembership
       && upstream.parentPID === observed.self.pid && upstream.pidNamespace === observed.self.pidNamespace, "actual-upstream-process");
     while (!ownListener(child.pid, c.postgrestPort)) {

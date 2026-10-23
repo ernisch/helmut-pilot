@@ -47,6 +47,28 @@ ORIGINALS = {
 }
 
 
+# Exact eight source/evidence pins from the independently reviewed J close policy.
+SHUTDOWN_UPSTREAM = Path('/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/upstream')
+SHUTDOWN_SOURCES = (
+    ('SOURCE_EVIDENCE.SAFE.json', 4139, '218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884'),
+    ('postgrest/src/PostgREST/Unix.hs', 1830, '70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9'),
+    ('postgrest/src/PostgREST/App.hs', 7424, 'd9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca'),
+    ('postgrest/src/PostgREST/CLI.hs', 8002, 'afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395'),
+    ('postgrest/src/PostgREST/AppState.hs', 18693, '484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0'),
+    ('postgrest/default.nix', 5248, '1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724'),
+    ('ghc/libraries/base/GHC/TopHandler.hs', 9858, 'b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6'),
+    ('ghc/rts/RtsStartup.c', 19895, '985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b'),
+)
+
+def shutdown_public_sources():
+    return [('close-source-%02d' % i, {'path': str(SHUTDOWN_UPSTREAM / name), 'bytes': size, 'sha256': digest},
+             '/opt/postgrest-close-source-%02d' % i, 0o444) for i, (name, size, digest) in enumerate(SHUTDOWN_SOURCES)]
+
+
+def shutdown_policy_pins():
+    return [{**pin, 'path': target} for _, pin, target, _ in shutdown_public_sources()]
+
+
 def need(ok, code):
     if not ok:
         raise RuntimeError('native-execution-host-' + code)
@@ -497,12 +519,12 @@ def prepare_execution(native, supervisor, config, case):
     pins = {Path(p['path']).name: p for p in config['sourceCodePins']}
     public = [('owner', pins['local-unit-native-owner.js'], '/opt/local-unit-native-owner.js', 0o444),
               ('broker', pins['local-unit-diagnostic-broker.js'], '/opt/local-unit-diagnostic-broker.js', 0o444),
-              ('postgrest', e['postgrestPin'], '/opt/postgrest-pinned', 0o555)]
+              ('postgrest', e['postgrestPin'], '/opt/postgrest-pinned', 0o555)] + shutdown_public_sources()
     alias_dir = case / 'owner-public'; alias_dir.mkdir(mode=0o700)
     aliases, mounts = {}, []
     for key, p, target, mode in public:
         pin_shape(p)
-        aliases[key] = {**p, 'path': target}
+        if key in ('owner', 'broker', 'postgrest'): aliases[key] = {**p, 'path': target}
         mounts.append((str(alias_dir / key), target, True))
     owner_copies = owner_runtime_copies(config, alias_dir)
     node = config['nodePin']; pin_shape(node)
@@ -537,6 +559,7 @@ def prepare_execution(native, supervisor, config, case):
         row = json.loads(owned_docker(native, directory, ['volume', 'inspect', name], timeout=3).stdout)[0]
         need(row['Name'] == name and row['Driver'] == 'local' and row['Options'] == {'type': 'tmpfs', 'device': 'tmpfs', 'o': opts}, 'volume-native-options')
     return {'schema': 'helmut-local-unit-native-execution-plan/1', 'dockerConfigDirectory': directory, 'nonce': nonce, 'volumes': volumes, 'aliasPins': aliases,
+            'shutdownPolicyPins': shutdown_policy_pins(),
             'sourceVolumeMounts': ['type=volume,src=' + volumes['ram'] + ',dst=/ram', 'type=volume,src=' + volumes['run'] + ',dst=/run'],
             'sourceAliasMounts': mounts, 'nodeMount': (node['path'], node['path'], True), 'clientRuntimeMounts': runtime_mounts,
             'sourceOwnerRuntimeMounts': [(r['copy']['path'], r['imagePath'], True) for r in owner_copies],
@@ -939,10 +962,10 @@ assert s[0] not in ('Z','X') and open('/proc/self/cgroup').read()=='0::/\n'
 print(json.dumps({'schema':'helmut-local-unit-alias-installer-ready/1','pid':p,'startTicks':s[19],
  'pidNamespace':os.readlink('/proc/self/ns/pid')},separators=(',',':')),flush=True)
 wire=sys.stdin.buffer.read(65537);assert len(wire)<=65536
-v=json.loads(wire);assert set(v)=={'files','group'} and 3<=len(v['files'])<=67
+v=json.loads(wire);assert set(v)=={'files','group'} and 11<=len(v['files'])<=75
 g=os.stat('/owned-group');assert (g.st_dev,g.st_ino)==(v['group']['device'],v['group']['inode'])
 meta=lambda s:tuple(getattr(s,k) for k in ('st_dev','st_ino','st_mode','st_uid','st_gid','st_nlink','st_size','st_mtime_ns','st_ctime_ns'))
-runtime=v['files'][3:];loader=next((r for r in runtime if r['imagePath']=='/lib64/ld-linux-x86-64.so.2'),None)
+runtime=v['files'][11:];loader=next((r for r in runtime if r['imagePath']=='/lib64/ld-linux-x86-64.so.2'),None)
 assert not runtime or loader is not None
 assert len({r['imagePath'] for r in runtime})==len(runtime) and sum(r['source']['bytes'] for r in runtime)<=32*1024**2
 out=[]
@@ -953,8 +976,11 @@ for index,row in enumerate(v['files']):
   assert target==('/output/owner','/output/broker','/output/postgrest')[index]
   assert row['imagePath']==('/opt/local-unit-native-owner.js','/opt/local-unit-diagnostic-broker.js','/opt/postgrest-pinned')[index]
   assert row['mode']==(0o555 if index==2 else 0o444)
+ elif index<11:
+  assert target=='/output/close-source-%02d'%(index-3) and row['imagePath']=='/opt/postgrest-close-source-%02d'%(index-3)
+  assert row['mode']==0o444
  else:
-  assert target=='/output/runtime-%03d'%(index-3) and row['imagePath'].startswith(('/usr/lib/','/lib/','/lib64/'))
+  assert target=='/output/runtime-%03d'%(index-11) and row['imagePath'].startswith(('/usr/lib/','/lib/','/lib64/'))
   assert '..' not in row['imagePath'].split('/') and not any(c in row['imagePath'] for c in (',','\0','\r','\n'))
   assert row['mode']==(0o555 if (src['bytes'],src['sha256'])==(loader['source']['bytes'],loader['source']['sha256']) else 0o444)
  f=os.open(src['path'],os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
@@ -1151,6 +1177,9 @@ class NativeExecutionHost:
         self.native, self.supervisor, self.config = native, supervisor, config
         self.case, self.budget, self.source_id = canonical(case), budget, source_id
         self.source_mounts, self.plan = source_mounts, plan
+        need(plan['shutdownPolicyPins'] == shutdown_policy_pins(), 'owner-shutdown-policy-pins')
+        shutdown_mounts = {(str(self.case / 'owner-public' / ('close-source-%02d' % i)), pin['path'], True) for i, pin in enumerate(shutdown_policy_pins())}
+        need(shutdown_mounts <= {tuple(row) for row in plan['sourceAliasMounts']}, 'owner-shutdown-source-mount-plan')
         need(self.case == BASE / config['nonce'] and plan['nonce'] == config['nonce'] and HASH.fullmatch(source_id)
              and config['actualSourceContainerId'] == source_id, 'host-case')
         copies = owner_runtime_copies(config, self.case / 'owner-public')
@@ -1409,6 +1438,7 @@ class NativeExecutionHost:
              and binding['pidNamespace'] == self.source_identity['namespaces']['pid'], 'actual-source-binding')
         need(type(h['hmacKeyHex']) is str and HASH.fullmatch(h['hmacKeyHex']) and sha(bytes.fromhex(h['hmacKeyHex'])) == binding['hmacKeySHA256'], 'hmac-binding')
         need(s['pins'] == {**self.plan['aliasPins'], 'node': self.config['nodePin']}
+             and s.get('shutdownPolicySources') == self.plan['shutdownPolicyPins']
              and s['measuredCgroup'] == {'path': '/owned-group', 'device': self.config['parentDevice'], 'inode': self.config['parentInode'], 'procMembership': '0::/\n'}, 'owner-native-pins')
         source_pin = s['originalService']['sourceQualificationPin']
         need(source_pin == {'path': '/run/bootstrap/SOURCE_QUALIFICATION.PRIVATE.json', 'bytes': len(encode(q)), 'sha256': sha(encode(q))}, 'qualification-byte-pin')

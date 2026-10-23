@@ -97,6 +97,8 @@ class PureHost(unittest.TestCase):
                      'sourceOwnerRuntimeMounts': [], 'ownerRuntimeCopies': [],
                      'nodeMount': (self.config['nodePin']['path'], self.config['nodePin']['path'], True), 'clientRuntimeMounts': [], 'knownSetupContainerIds': [],
                      'clientPublicSourceMounts': [], 'pythonMount': ('/opt/python/bin/python3.12', '/opt/python/bin/python3.12', True)}
+        self.plan['shutdownPolicyPins'] = M.shutdown_policy_pins()
+        self.plan['sourceAliasMounts'] += [(str(self.case / 'owner-public' / ('close-source-%02d' % i)), pin['path'], True) for i, pin in enumerate(self.plan['shutdownPolicyPins'])]
         self.plan['dockerConfigDirectory'] = M.docker_config(self.case)
         self.mounts = [*self.plan['sourceAliasMounts'], self.plan['nodeMount']]
         self.native = types.SimpleNamespace(parent_path=lambda _: self.base / 'group')
@@ -104,6 +106,25 @@ class PureHost(unittest.TestCase):
         self.host = M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {'helpers': {}}, 'd' * 64, self.mounts, self.plan)
         self.selection = {'operationId': 'localUnitDiagnostic-' + self.nonce, 'commandHash': 'e' * 64}
         self.host.selection = self.selection
+
+    def test_shutdown_plan_has_exact_eight_separate_public_sources(self):
+        pins = M.shutdown_policy_pins(); self.assertEqual(len(pins), 8)
+        self.assertEqual(sum(p['bytes'] for p in pins), 75089)
+        self.assertEqual([p['path'] for p in pins], ['/opt/postgrest-close-source-%02d' % i for i in range(8)])
+        for changed in (pins[:-1], pins + [pins[0]], list(reversed(pins))):
+            plan = copy.deepcopy(self.plan); plan['shutdownPolicyPins'] = changed
+            with self.assertRaisesRegex(RuntimeError, 'owner-shutdown-policy-pins'):
+                M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {}, 'd' * 64, self.mounts, plan)
+
+    def test_shutdown_sources_cannot_be_omitted_or_mounted_at_free_paths(self):
+        for mutation in ('missing', 'source', 'writable'):
+            plan = copy.deepcopy(self.plan); rows = plan['sourceAliasMounts']
+            if mutation == 'missing': rows.pop()
+            else:
+                source, target, readonly = rows[-1]
+                rows[-1] = ('/unbound/source' if mutation == 'source' else source, target, False if mutation == 'writable' else readonly)
+            with self.assertRaisesRegex(RuntimeError, 'owner-shutdown-source-mount-plan'):
+                M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {}, 'd' * 64, self.mounts, plan)
 
     def remove_config(self):
         directory = self.case / 'docker-empty-config'
@@ -637,9 +658,13 @@ class PureHost(unittest.TestCase):
         def synthetic_actor_metadata(pin, uid=None, mode=None):
             if uid is not None: self.assertTrue(uid == 1000)
             return actual_metadata_pin(pin, uid=os.getuid() if uid is not None else None, mode=mode)
-        with (patch.object(M, '_install_aliases', install), patch.object(M, 'metadata_pin', synthetic_actor_metadata)):
+        shutdown = []
+        for i in range(8):
+            source = inputs / ('close-input-%02d' % i); source.write_bytes(('synthetic-close-source-%02d' % i).encode()); source.chmod(0o600)
+            shutdown.append(('close-source-%02d' % i, self.pin(str(source), source.read_bytes()), '/opt/postgrest-close-source-%02d' % i, 0o444))
+        with (patch.object(M, 'shutdown_public_sources', lambda: shutdown), patch.object(M, '_install_aliases', install), patch.object(M, 'metadata_pin', synthetic_actor_metadata)):
             plan = M.prepare_execution(native, self.supervisor, self.config, self.case)
-        self.assertTrue(len(volumes) == 2 and len(plan['sourceAliasMounts']) == 3 and plan['nodeMount'] == (pins[3]['path'], pins[3]['path'], True))
+        self.assertTrue(len(volumes) == 2 and len(plan['sourceAliasMounts']) == 11 and plan['nodeMount'] == (pins[3]['path'], pins[3]['path'], True))
         self.assertTrue(any('size=268435456,uid=1000,gid=1000,mode=0711' in v['Options']['o'] for v in volumes.values()))
         self.assertTrue(any('size=16777216,uid=0,gid=0,mode=0755' in v['Options']['o'] for v in volumes.values()))
         self.assertTrue(all((inputs / n).stat().st_mode & 0o777 == 0o600 for n in ('local-unit-native-owner.js', 'local-unit-diagnostic-broker.js', 'postgrest', 'node')))
@@ -1109,7 +1134,7 @@ class PureHost(unittest.TestCase):
                 ('helmut_auth_state_graph_read_v1','helmut_auth_usage_read_v1'), files)]
         start = {**self.selection, 'database': q['database'], 'originalService': {'publicSourceBinding': binding,
                  'sourceQualificationPin': self.pin('/run/bootstrap/SOURCE_QUALIFICATION.PRIVATE.json', M.encode(q))},
-                 'pins': {**self.aliases, 'node': self.config['nodePin']},
+                 'pins': {**self.aliases, 'node': self.config['nodePin']}, 'shutdownPolicySources': self.plan['shutdownPolicyPins'],
                  'measuredCgroup': {'path':'/owned-group','device':1,'inode':2,'procMembership':'0::/\n'}, 'legacy':{'rpcs':rpcs}}
         handoff = {'start':start,'sourceQualification':q,'hmacKeyHex':'a'*64,'readQualifications':files,
                    'publicationPolicy':'p'*493,'immutableClientPins':[]}
@@ -1544,8 +1569,9 @@ class PureInstaller(unittest.TestCase):
         self.request = {'files': [], 'group': {'device': g.st_dev, 'inode': g.st_ino}}
         targets = [('owner', '/opt/local-unit-native-owner.js', b'synthetic-owner', 0o444),
                    ('broker', '/opt/local-unit-diagnostic-broker.js', b'synthetic-broker', 0o444),
-                   ('postgrest', '/opt/postgrest-pinned', b'synthetic-rest', 0o555),
-                   ('runtime-000', '/lib64/ld-linux-x86-64.so.2', b'synthetic-loader', 0o555),
+                   ('postgrest', '/opt/postgrest-pinned', b'synthetic-rest', 0o555)]
+        targets += [('close-source-%02d' % i, '/opt/postgrest-close-source-%02d' % i, ('synthetic-close-%02d' % i).encode(), 0o444) for i in range(8)]
+        targets += [('runtime-000', '/lib64/ld-linux-x86-64.so.2', b'synthetic-loader', 0o555),
                    ('runtime-001', '/usr/lib/x86_64-linux-gnu/libc.so.6', b'synthetic-libc', 0o444)]
         self.originals = []
         for index, (name, target, raw, mode) in enumerate(targets):

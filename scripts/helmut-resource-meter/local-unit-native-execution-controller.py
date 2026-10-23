@@ -147,6 +147,14 @@ def _node_closed(child):
     need(child.child.returncode == 0 and len(child.eof) == 2 and all(flag is True for flag in child.eof), 'actual-node-close-and-eof')
 
 
+def _shutdown_policy_sources(worker, plan):
+    expected = plan['shutdownPolicyPins']
+    need(type(expected) is list and len(expected) == 8, 'owner-shutdown-source-count')
+    actual = [worker.pin('/opt/postgrest-close-source-%02d' % i) for i in range(8)]
+    need(actual == expected, 'actual-owner-shutdown-source-pins')
+    return actual
+
+
 def _publication_probe(command, selection):
     need(type(command) is dict and sha(canonical(command)) == selection['commandHash'], 'publication-command-binding')
     rows = command['drafts'][0]['sources']['knowledgeObjects']
@@ -402,13 +410,14 @@ class _Controller:
         q = self.observer.qualification()
         aliases = {key: self.w.pin(name) for key, name in (('owner', '/opt/local-unit-native-owner.js'), ('broker', '/opt/local-unit-diagnostic-broker.js'), ('postgrest', '/opt/postgrest-pinned'))}
         need(aliases == self.c['executionHostPlan']['aliasPins'], 'actual-owner-alias-pins')
+        shutdown_sources = _shutdown_policy_sources(self.w, self.c['executionHostPlan'])
         authenticator = self.c['executionAuthenticator']
         need(set(authenticator) == {'username', 'passwordHex', 'jwtSecretHex'} and authenticator['username'] == self.read['authenticatorUsername'], 'actual-installed-authenticator')
         qraw = json.dumps(q, ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode()
         start = {'schema': 'helmut-local-unit-native-owner-start/2', 'mode': 'owner-local-no500', **self.selection,
                  'database': self.database, 'issuedAtUTC': utc(), 'expiresAtUTC': self.expires, 'measuredCgroup': self.source.source_group(self.c),
                  'pins': {**aliases, 'node': self.c['nodePin']}, 'authenticator': authenticator, 'postgrestPort': 3000,
-                 'legacy': self.read['legacy'], 'originalService': {'hmacKeyPath': '/run/bootstrap/ORIGINAL_HMAC.PRIVATE.bin',
+                 'shutdownPolicySources': shutdown_sources, 'legacy': self.read['legacy'], 'originalService': {'hmacKeyPath': '/run/bootstrap/ORIGINAL_HMAC.PRIVATE.bin',
                      'sourceQualificationPin': {'path': '/run/bootstrap/SOURCE_QUALIFICATION.PRIVATE.json', 'bytes': len(qraw), 'sha256': sha(qraw)},
                      'publicSourceBinding': q['publicSourceBinding']}}
         # Include only public/fixture immutables, never prepared initial state or

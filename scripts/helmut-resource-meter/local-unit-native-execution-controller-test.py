@@ -42,6 +42,19 @@ def pin(name):
     return {'path': str(name), 'bytes': 3, 'sha256': hashlib.sha256(str(name).encode()).hexdigest()}
 
 
+class ShutdownSourcePins(unittest.TestCase):
+    def test_exact_eight_actual_fixed_readonly_aliases_are_bound(self):
+        m = module(); expected = [pin('/opt/postgrest-close-source-%02d' % i) for i in range(8)]; seen = []
+        def actual(name): seen.append(name); return pin(name)
+        self.assertEqual(m._shutdown_policy_sources(types.SimpleNamespace(pin=actual), {'shutdownPolicyPins': expected}), expected)
+        self.assertEqual(seen, [p['path'] for p in expected])
+        for changed in (expected[:-1], expected + [expected[0]], list(reversed(expected))):
+            with self.assertRaises(RuntimeError): m._shutdown_policy_sources(types.SimpleNamespace(pin=actual), {'shutdownPolicyPins': changed})
+        broken = copy.deepcopy(expected); broken[3]['sha256'] = '0' * 64
+        with self.assertRaisesRegex(RuntimeError, 'actual-owner-shutdown-source-pins'):
+            m._shutdown_policy_sources(types.SimpleNamespace(pin=actual), {'shutdownPolicyPins': broken})
+
+
 class Clock:
     def __init__(self):
         self.now = 1.
@@ -558,7 +571,7 @@ if __name__ == '__main__':
     with (mock.patch.object(subprocess, 'Popen', side_effect=AssertionError('offline-no-process')),
           mock.patch.object(socket, 'socket', side_effect=AssertionError('offline-no-socket'))):
         result = unittest.TestResult()
-        unittest.defaultTestLoader.loadTestsFromTestCase(Tests).run(result)
+        unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(Tests), unittest.defaultTestLoader.loadTestsFromTestCase(ShutdownSourcePins)]).run(result)
     after, digest = snapshot()
     good = result.wasSuccessful() and digest == DIGEST and after == BEFORE
     if good:

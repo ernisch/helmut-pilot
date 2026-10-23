@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23.10.2026 00:22UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23.10.2026 00:56UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -622,3 +622,33 @@ Keine native Codec-/Engineausführung, keine Übertragung historischer Abnahme
 auf den neuen Gesamtcode. Frische CI und frisch gebundene Einzelunit bleiben
 erforderlich; die vorbereitete931-Capture bleibt unbenutzt erhalten.
 [Codec-Sourcevergleich und Tests](belege/v12-native-unit-integration-20261022/REGISTRY_CODEC_CURRENT_SOURCE_REVIEW.SAFE.json).
+
+Der aktuelle PostgREST-Abschluss ist jetzt eng integriert und unabhängig im
+Quellcode geprüft. Acht originale PostgREST-/GHC-Quellen werden frisch gehasht,
+als0444-Aliase innerhalb der Messgruppe installiert und durch Host, Controller
+und Owner gebunden. Vor Spawn bindet eine neue private Einmalpolicy die aktuelle
+generierte Config, feste Binary, Quellen und Scope; danach folgt die tatsächliche
+Prozessidentität. Vor eigenem TERM werden alle Bindungen erneut geprüft.
+Das rohe Exit-Signal bleibt erhalten. SIGINT gilt nur bei fehlerfreiem Verlauf,
+genau einem identitätsgeprüften eigenen TERM, tatsächlichem Exit/Close, beiden
+natürlichen EOFs, vollständigen begrenzten Logs und unverändert höchstens4500ms
+als erwartete Übersetzung dieser festen Binary. Vorfehler und alte Fälle bleiben
+FAIL.71Owner-VM-,103Host- und21Controller-Prüfungen endeten jeweils tatsächlich0;
+Root und unabhängiger SOL-Reviewer bestätigen die finalen sechs Dateipins.
+Die vollständige private Prelaunchpolicy bleibt flüchtig; dauerhaft sind deren
+Hash und Abschlussmetadaten erhalten. Keine Signaltrace-/Build-Reproduktions-
+behauptung. Echte native Normalclose-, Unit60- und Reservenabnahme noch offen.
+[Aktuelle Quellenbindung und Grenzen](belege/v12-native-unit-integration-20261022/POSTGREST_CURRENT_CLOSE_SOURCE_REVIEW.SAFE.json).
+
+Die eigene abgeschlossene48-PGDATA wurde vollständig privat archiviert und in
+eine neue Kopie restauriert:1748Dateien/30Verzeichnisse,373.061.467logische Bytes;
+Archiv123.467.342B, SHA256
+`1fd940a98c915ef7ca35285baa66bda4391037717dd7e6e96ed5ce29f5bd319f`.
+Alle1778Member wurden nach Inhalt und Metadaten verglichen. Beide expandierten
+Kopien bleiben vorerst erhalten: Der frische Schutzcheck stoppt an46 unlesbaren
+Docker-Mountreferenzen. Diese sind24tmpfs-Volumes, ein Kernelnamespace und das
+geschützte Original-DB-Volume. Dessen physische Pfadidentität muss noch rein
+lesend geklärt werden. Kein EACCES wird als sichere Nichtüberlappung gewertet;
+keine Löschung erfolgt. Das private Archiv enthält synthetische Secrets und
+bleibt ausschließlich lokal. Frei etwa10,136GB nach Archiv/Restore; neue
+Einzelunit erst nach tatsächlicher Kapazitätsadmission und frischer Hostbindung.
