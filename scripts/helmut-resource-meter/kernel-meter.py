@@ -172,6 +172,65 @@ def _pressure_parse(text, kind):
         return _pressure_source(kind, 'MALFORMED_COUNTERS')
 
 
+def memory_components_snapshot(parent, *, expected_identity):
+    """Opt-in private gauges; never decompose a historical peak or grant reserve.
+
+    The bounded read and parsing costs are inside the monotonic window. Reads
+    are sequential, not atomic; kernel subcategories must not be added again.
+    Existing kernel and pressure DTOs remain unchanged.
+    """
+    begin = time.monotonic_ns()
+    components = dict.fromkeys(('anon', 'file', 'kernel'))
+    identity, descriptor, reason = None, None, 'GROUP_UNAVAILABLE_OR_CHANGED'
+    try:
+        group = validated_parent(parent)
+        if (type(expected_identity) is not dict
+                or set(expected_identity) != {'device', 'inode'}
+                or any(type(v) is not int or v < 0 for v in expected_identity.values())
+                or group.resolve() != group):
+            raise ValueError('bound canonical group required')
+        descriptor = os.open(group, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        info = os.fstat(descriptor)
+        identity = {'device': info.st_dev, 'inode': info.st_ino}
+        if identity != expected_identity:
+            raise ValueError('group differs from kernel sample')
+        text, reason = _pressure_file(descriptor, 'memory.stat')
+        if reason is None:
+            try:
+                rows, values = text.splitlines(), {}
+                if not rows or len(rows) > 256:
+                    raise ValueError('bounded counter rows required')
+                for line in rows:
+                    match = re.fullmatch(r'([a-z][a-z0-9_]{0,63}) ([0-9]+)', line)
+                    if not match or match[1] in values:
+                        raise ValueError('unique numeric counter required')
+                    values[match[1]] = _pressure_uint(match[2])
+                components = {key: values.get(key) for key in components}
+                reason = 'MISSING_COUNTER' if any(v is None for v in components.values()) else None
+            except (ValueError, OverflowError):
+                reason = 'MALFORMED_COUNTERS'
+        after = group.stat(follow_symlinks=False)
+        if (after.st_dev, after.st_ino) != (info.st_dev, info.st_ino):
+            raise ValueError('group changed during read')
+    except (OSError, ValueError):
+        identity, reason = None, 'GROUP_UNAVAILABLE_OR_CHANGED'
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+    end = time.monotonic_ns()
+    if end < begin:
+        reason = 'CLOCK_REGRESSION'
+    if reason not in (None, 'MISSING_COUNTER'):
+        components = dict.fromkeys(components)
+    return {'schema': 'helmut-private-kernel-memory-components/1', 'parent': parent,
+            'groupIdentity': identity, 'monotonicBeginNS': begin, 'monotonicEndNS': end,
+            'observationElapsedNS': end - begin if end >= begin else None,
+            'status': 'OBSERVED' if reason is None else 'UNKNOWN', 'reason': reason,
+            'componentBytes': components, 'snapshotsAtomic': False,
+            'observationOverheadIncluded': True, 'reportSerializationIncluded': False,
+            'subcategoriesNotAdditive': True, 'notUnit60OrReserveEvidence': True}
+
+
 def pressure_snapshot(parent):
     """Opt-in numeric observation only; existing kernel_snapshot is unchanged.
 

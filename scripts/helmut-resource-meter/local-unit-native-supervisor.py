@@ -5,6 +5,7 @@ Every workload starts below one fresh kernel parent. Originals are read-only
 mounts. A preparation/DDL result is deliberately not an engine acceptance.
 """
 import argparse
+from contextlib import nullcontext
 import datetime
 import hashlib
 import json
@@ -84,6 +85,23 @@ def load(name, path):
 def available():
     v = os.statvfs('/workspace')
     return v.f_bavail * v.f_frsize
+
+
+def memory_components_output(case, enabled):
+    if not enabled:
+        return nullcontext()
+    fd = os.open(case / 'MEMORY_COMPONENTS.PRIVATE.jsonl',
+                 os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    return os.fdopen(fd, 'w', encoding='utf-8')
+
+
+def retain_memory_components(kernel, stream, parent, snapshot, sample_index):
+    if stream is None:
+        return
+    row = kernel.memory_components_snapshot(parent, expected_identity=snapshot['groupIdentity'])
+    row.update(sampleIndex=sample_index, kernelSampleElapsedSeconds=snapshot['elapsedSeconds'])
+    stream.write(json.dumps(row, allow_nan=False) + '\n')
+    stream.flush()
 
 
 def owner_runtime_bindings(rows):
@@ -383,7 +401,8 @@ def main():
         if execution_plan is not None:
             execution_host = execution_module.NativeExecutionHost(native, sys.modules[__name__], config, case,
                                                                   budget, cid, mounts, execution_plan)
-        with (case / 'KERNEL_SAMPLES.SAFE.jsonl').open('x') as stream:
+        with (case / 'KERNEL_SAMPLES.SAFE.jsonl').open('x') as stream, \
+                memory_components_output(case, args.run_native_single_unit) as components_stream:
             while True:
                 if execution_host is not None:
                     execution_host.tick()
@@ -393,6 +412,7 @@ def main():
                 stream.write(json.dumps(snapshot) + '\n')
                 stream.flush()
                 sample_count += 1
+                retain_memory_components(kernel, components_stream, parent, snapshot, sample_count)
                 if not row['State']['Running']:
                     break
                 if time.monotonic() - start >= 300 or available() < FLOOR:
