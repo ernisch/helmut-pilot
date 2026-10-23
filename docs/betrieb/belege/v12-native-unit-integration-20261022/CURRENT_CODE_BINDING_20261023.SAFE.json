@@ -51,6 +51,12 @@
       "bytes": 13208,
       "sha256": "d88e9d7f30841c125db2af4a191a3f9087679110a45e2b1aed3f1f7d0056d19d",
       "kind": "test"
+    },
+    {
+      "file": "backend-consumer-binding-test.py",
+      "bytes": 9346,
+      "sha256": "86893142bbaa3dc564da57b837b52b8db79527f5439111c6ed330adb5a964532",
+      "kind": "test"
     }
   ],
   "change": {
@@ -115,6 +121,34 @@
         "toolChunk": "ae438b"
       },
       "newWholeCIResultClaimed": false
+    },
+    "backendFixtureCompatibility": {
+      "failedCIRun": 39918181373,
+      "failure": "Old synthetic negative fixture omitted required restored provenance and stopped before its intended canonical backend rejection",
+      "fixtureFixCommit": "273e4e08",
+      "productGuardsChanged": false,
+      "syntheticChecks": 9,
+      "actualExitCode": 0,
+      "toolChunk": "f0f054",
+      "assertions": [
+        "canonical backend rejected exactly once with exact arguments",
+        "source binder not reached",
+        "no finish save reached"
+      ],
+      "intermediateUnchangedRun39918554198CancelledToAvoidKnownDuplicateFailure": true
+    },
+    "actualFullRendererTemplateReplay": {
+      "actualExitCode": 0,
+      "toolChunk": "760ccd",
+      "test": "RestoredStagingTest.test_all26_real_templates_replay_and_preserve_guards",
+      "actualOriginalTemplates": 26,
+      "actualRendererPlainAndRestoredVariants": true,
+      "localConfigAndSecretFiles": "synthetic fixture only; automatically removed",
+      "originalFilePinsAndExactReplacementCountsVerified": true,
+      "renderedJavaScriptCompiledWithoutExecutingIt": true,
+      "caseDirectoryNotCreated": true,
+      "noStageFinishClaimGOSetupDatabaseOrEngineExecution": true,
+      "completeOperationalAtomicBudgetOwnerCombinationQualified": false
     }
   },
   "unchanged": {

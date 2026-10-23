@@ -1146,3 +1146,21 @@ Startgruppen bleiben nötig. Historische Reviews gelten nicht für die neuen
 Quellbytes. Kein GO, Claim, Setup, DB-/Provideraufruf oder Ressourcenlauf erzeugt.
 Unit60/Auth30, gemeinsamer Speicher/500MB und Langzeitplateau bleiben offen.
 [Bereinigter Code-/Integrationsbeleg](belege/v12-native-unit-integration-20261022/CURRENT_CODE_BINDING_20261023.SAFE.json).
+
+## 23.10.,07:37UTC: CI-Fixture und tatsächlicher Renderer
+
+CI39918181373 bestand Browser/Public-Plan, scheiterte aber an einer alten reinen
+Backend-Negativfixture: ohne neue Herkunftsbindung stoppte Finish vor dem
+beabsichtigten Backendfehler. `273e4e08` ergänzt ausschließlich synthetische
+Provenienz und exakte Assertions; unveränderte echte Backend-Ablehnung muss vor
+Source-Binder und jedem Save erfolgen. Neun Checks bestanden mit echtem Exit0.
+Die Produktguards bleiben unverändert. Zwischenlauf39918554198 wurde vor dem
+identischen bekannten Fehler abgebrochen und zählt nicht als CI-Erfolg.
+
+Zusätzlich bestand der echte vorhandene Renderer-Replaytest gegen alle26
+Originalvorlagen: Plain-/Restorevarianten, vollständige Originalpins und exakte
+Ersetzungszahlen, anschließende JS-Kompilation ohne Ausführung. Nur die lokalen
+Materialdateien waren synthetische, danach entfernte Fixtures; kein Caseverzeichnis,
+Stage/Finish, Claim, GO, Setup, DB- oder Motorlauf entstand. Das qualifiziert nicht
+die vollständige operative Kombination aus atomarem Descriptor, Budget und Owner.
+Zeit-/RAM-Nachweis und alle übrigen oben genannten Startgrenzen bleiben offen.
