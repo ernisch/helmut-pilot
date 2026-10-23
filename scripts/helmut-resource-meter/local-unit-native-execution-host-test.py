@@ -76,6 +76,18 @@ class FakeChild:
         return False
 
 
+def inventory_fixture_output(argv, rows):
+    if argv[0] == 'ps':
+        raw = '\n'.join(row['Id'] for row in rows)
+    elif argv[:2] == ['inspect', '--format']:
+        if argv[2] != M.GLOBAL_CONTAINER_FORMAT:
+            raise AssertionError('unexpected synthetic global format')
+        raw = '\n'.join(json.dumps({'Id': row['Id'], 'CgroupParent': row['HostConfig']['CgroupParent']}) for row in rows)
+    else:
+        raw = json.dumps([row for row in rows if row['Id'] in argv[1:]])
+    return types.SimpleNamespace(stdout=raw)
+
+
 class PureHost(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='helmut-host-pure-'); self.addCleanup(self.temp.cleanup)
@@ -1258,7 +1270,7 @@ class PureHost(unittest.TestCase):
         self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
         self.native.parent_path = lambda *a: group
         row = {'Id':self.host.source_id,'HostConfig':{'CgroupParent':'/'+self.config['parent']},'State':{'Running':True,'Pid':91}}
-        self.host._docker = lambda args, **kw: types.SimpleNamespace(stdout=self.host.source_id if args[0]=='ps' else json.dumps([row]))
+        self.host._docker = lambda args, **kw: inventory_fixture_output(args, [row])
         self.host._container = self.host._mounts = lambda *a: None
         source, service = {'hostPID':91}, {'hostPID':92}; queued=[]
         self.host._service_host = lambda binding: service
@@ -1401,8 +1413,7 @@ class PureHost(unittest.TestCase):
         self.config.update(parentDevice=g.st_dev, parentInode=g.st_ino)
         self.native.parent_path = lambda _: group
         rows = [{'Id': x * 64, 'HostConfig': {'CgroupParent': '/' + self.config['parent']}} for x in ('d', '9')]
-        self.host._docker = lambda argv, **k: types.SimpleNamespace(stdout=('d' * 64 + '\n' + '9' * 64)
-            if argv[0] == 'ps' else json.dumps(rows))
+        self.host._docker = lambda argv, **k: inventory_fixture_output(argv, rows)
         with self.assertRaisesRegex(RuntimeError, 'unknown-or-missing-owned-container'):
             self.host._observe()
 
@@ -1462,8 +1473,7 @@ class PureHost(unittest.TestCase):
                   'State': {'Running': False, 'ExitCode': 0}, 'Config': {'Env': list(reversed(environment))},
                   'Path': self.config['nodePin']['path'], 'Args': args[:]}
         self.host.clients[cid] = {'mode': 'qualifier', 'mounts': [], 'environment': environment, 'args': args}
-        self.host._docker = lambda argv, **k: types.SimpleNamespace(stdout=('\n'.join([source['Id'], cid]))
-            if argv[0] == 'ps' else json.dumps([source, client]))
+        self.host._docker = lambda argv, **k: inventory_fixture_output(argv, [source, client])
         with (patch.object(self.host, '_container'), patch.object(self.host, '_mounts'),
               patch.object(self.host, '_probe'), patch.object(self.host, '_proc', return_value={'hostPID': 91}),
               patch.object(M, 'host_process', return_value={'hostPID': 91})):
@@ -1717,6 +1727,230 @@ class PureInstaller(unittest.TestCase):
             for p in self.output.iterdir(): p.unlink()
             with self.subTest(bad=bad), self.assertRaises(AssertionError): self.run_fixed()
             self.assertTrue(len(self.captured.splitlines()) == 1)
+
+
+class PureInventoryProjection(unittest.TestCase):
+    def setUp(self):
+        self.host = M.NativeExecutionHost.__new__(M.NativeExecutionHost)
+        self.host.config = {'parent': 'helmut-meter-memorybudget-' + 'c' * 24}
+        self.parent = '/' + self.host.config['parent']
+        self.rows = [self.row('a', self.parent), self.row('b', self.parent + '-foreign')]
+        self.ids = None; self.projection = None; self.details = None; self.calls = []
+        self.host._docker = self.docker
+        self.addCleanup(patch.stopall)
+        patch.object(M.subprocess, 'Popen', side_effect=AssertionError('no process starts')).start()
+        patch.object(M.subprocess, 'run', side_effect=AssertionError('no commands')).start()
+
+    def row(self, letter, parent):
+        return {'Id': letter * 64, 'HostConfig': {'CgroupParent': parent},
+                'Mounts': [{'Source': '/synthetic/' + 'x' * 128, 'Destination': '/fixture'}] * 20}
+
+    def docker(self, argv, **options):
+        self.calls.append(argv[:])
+        if argv[0] == 'ps':
+            return types.SimpleNamespace(stdout=self.ids if self.ids is not None else '\n'.join(r['Id'] for r in self.rows))
+        if argv[:2] == ['inspect', '--format']:
+            self.assertEqual(argv[2], M.GLOBAL_CONTAINER_FORMAT)
+            raw = self.projection if self.projection is not None else inventory_fixture_output(argv, self.rows).stdout
+            return types.SimpleNamespace(stdout=raw)
+        self.assertEqual(argv[0], 'inspect')
+        raw = json.dumps(self.details) if self.details is not None else inventory_fixture_output(argv, self.rows).stdout
+        return types.SimpleNamespace(stdout=raw)
+
+    def assert_no_detailed_inspect(self):
+        self.assertFalse(any(a[0] == 'inspect' and a[1:2] != ['--format'] for a in self.calls))
+
+    def test_global_projection_covers_foreign_ids_but_details_only_exact_owned(self):
+        self.rows += [self.row('c', self.parent + '/child')]
+        expected = {self.rows[0]['Id'], self.rows[2]['Id']}
+        actual = self.host._inventory(expected)
+        self.assertEqual(actual, {r['Id']: r for r in self.rows if r['Id'] in expected})
+        self.assertEqual(self.calls[0], ['ps', '--all', '--quiet', '--no-trunc'])
+        self.assertEqual(self.calls[1], ['inspect', '--format', M.GLOBAL_CONTAINER_FORMAT, *[r['Id'] for r in self.rows]])
+        self.assertEqual(self.calls[2], ['inspect', *sorted(expected)])
+        projection = inventory_fixture_output(self.calls[1], self.rows).stdout
+        self.assertTrue(all(set(json.loads(line)) == {'Id', 'CgroupParent'} for line in projection.splitlines()))
+        old_bytes = len(json.dumps(self.rows).encode())
+        new_bytes = len(projection.encode()) + len(json.dumps(list(actual.values())).encode())
+        self.assertLess(new_bytes, old_bytes)  # Synthetic pipe bytes, no native timing claim.
+
+    def test_unknown_owned_container_is_still_denied_before_details(self):
+        self.rows[1]['HostConfig']['CgroupParent'] = self.parent + '/unknown'
+        with self.assertRaisesRegex(RuntimeError, 'unknown-or-missing-owned-container'):
+            self.host._inventory({self.rows[0]['Id']})
+        self.assert_no_detailed_inspect()
+
+    def test_missing_known_container_is_denied_before_details(self):
+        with self.assertRaisesRegex(RuntimeError, 'unknown-or-missing-owned-container'):
+            self.host._inventory({self.rows[0]['Id'], 'f' * 64})
+        self.assert_no_detailed_inspect()
+
+    def test_global_id_duplicates_or_nonhex_never_reach_inspect(self):
+        for raw in ('a' * 64 + '\n' + 'a' * 64, 'G' * 64, 'a' * 63):
+            with self.subTest(rawLength=len(raw)):
+                self.calls.clear(); self.ids = raw
+                with self.assertRaisesRegex(RuntimeError, 'global-container-id-set'):
+                    self.host._inventory({'a' * 64})
+                self.assertEqual(len(self.calls), 1)
+
+    def test_global_projection_requires_exact_complete_unique_typed_rows(self):
+        a, b = ({'Id': r['Id'], 'CgroupParent': r['HostConfig']['CgroupParent']} for r in self.rows)
+        variants = [
+            [a], [a, a], [a, b, {'Id': 'f' * 64, 'CgroupParent': '/foreign'}],
+            [a, {**b, 'extra': False}], [a, {**b, 'CgroupParent': None}],
+            [a, {**b, 'CgroupParent': 0}], [a, {**b, 'Id': 'bad'}], [a, []],
+        ]
+        for index, rows in enumerate(variants):
+            with self.subTest(variant=index):
+                self.calls.clear(); self.projection = '\n'.join(json.dumps(r) for r in rows)
+                with self.assertRaises(RuntimeError): self.host._inventory({'a' * 64})
+                self.assert_no_detailed_inspect()
+        for raw in ('not-json', '{"Id":"a","Id":"b","CgroupParent":""}'):
+            self.projection = raw; self.calls.clear()
+            with self.assertRaises((RuntimeError, ValueError)): self.host._inventory({'a' * 64})
+            self.assert_no_detailed_inspect()
+
+    def test_details_parent_drift_even_inside_same_owned_subtree_is_denied(self):
+        self.details = [copy.deepcopy(self.rows[0])]
+        self.details[0]['HostConfig']['CgroupParent'] += '/changed'
+        with self.assertRaisesRegex(RuntimeError, 'owned-container-detail-binding'):
+            self.host._inventory({'a' * 64})
+
+    def test_details_need_same_unique_id_set_and_complete_hostconfig(self):
+        variants = [[], [self.rows[0], self.rows[0]], self.rows,
+                    [{'Id': 'a' * 64}], [{'Id': 'f' * 64, 'HostConfig': {'CgroupParent': self.parent}}], {}]
+        for index, rows in enumerate(variants):
+            with self.subTest(variant=index):
+                self.details = rows
+                with self.assertRaises(RuntimeError): self.host._inventory({'a' * 64})
+
+    def test_every_call_observes_complete_global_mapping_again_without_cache(self):
+        self.host._inventory({'a' * 64})
+        self.rows[1]['HostConfig']['CgroupParent'] = self.parent
+        with self.assertRaisesRegex(RuntimeError, 'unknown-or-missing-owned-container'):
+            self.host._inventory({'a' * 64})
+        self.assertEqual(sum(a[0] == 'ps' for a in self.calls), 2)
+        self.assertEqual(sum(a[:2] == ['inspect', '--format'] for a in self.calls), 2)
+
+
+class PureObservationSampleWindow(unittest.TestCase):
+    pin = PureHost.pin
+    request = PureHost.request
+    observation = PureHost.observation
+
+    def setUp(self):
+        PureHost.setUp(self)
+        real_datetime = datetime.datetime
+        self.epoch = real_datetime(2026, 10, 23, tzinfo=datetime.timezone.utc)
+        self.clock = {'seconds': 4.0}; owner = self
+        class ClockDatetime(real_datetime):
+            @classmethod
+            def now(cls, tz=None):
+                value = owner.epoch + datetime.timedelta(seconds=owner.clock['seconds'])
+                return value.astimezone(tz) if tz else value.replace(tzinfo=None)
+        patch.object(M.datetime, 'datetime', ClockDatetime).start()
+        patch.object(M.time, 'time', lambda: (self.epoch + datetime.timedelta(seconds=self.clock['seconds'])).timestamp()).start()
+        patch.object(M.time, 'monotonic', lambda: 1000 + self.clock['seconds']).start()
+        original_read = M.read_file
+        patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})).start()
+        self.host.state = 'QUALIFIED'; self.host.started_at = 1000
+
+    def iso(self, seconds):
+        return (self.epoch + datetime.timedelta(seconds=seconds)).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+
+    def accept_request(self, issued=3.8):
+        request = self.request(); request.update(issuedAtUTC=self.iso(issued), expiresAtUTC=self.iso(issued + 3))
+        path = self.case / 'HOST_REQUEST_01.PRIVATE.json'
+        request_pin = M.write_once(path, M.encode(request))
+        self.host._accept(request, request_pin['sha256'])
+        return request, path.read_bytes()
+
+    def sample(self, start, end, observed=None):
+        sample = {'startedMonotonic': 1000 + start, 'startedAtUTC': self.iso(start),
+                  'completedMonotonic': 1000 + end, 'completedAtUTC': self.iso(end)}
+        observation = self.observation({'fixture': 'fresh'}); observation['observedAtUTC'] = self.iso(end if observed is None else observed)
+        return observation, sample
+
+    def test_old_sample_keeps_original_pending_then_new_sample_publishes_once(self):
+        request, raw = self.accept_request(); pending = self.host.pending
+        before = copy.deepcopy(pending); observation, sample = self.sample(0, 3.9)
+        self.assertFalse(self.host._reply_observation(observation, sample))
+        self.assertIs(self.host.pending, pending); self.assertEqual(self.host.pending, before)
+        self.assertEqual(self.host.seq, 1); self.assertEqual(self.host.seen, {request['nonce']})
+        self.assertFalse(list(self.case.glob('*HOST_REPLY*')))
+        self.clock['seconds'] = 4.5; fresh, fresh_sample = self.sample(4.1, 4.3)
+        self.assertTrue(self.host._reply_observation(fresh, fresh_sample))
+        reply_path = self.case / 'HOST_REPLY_01.PRIVATE.json'; reply = M.unique(reply_path.read_bytes())
+        self.assertEqual(reply['result'], fresh); self.assertEqual(reply['requestSHA256'], M.sha(raw))
+        self.assertEqual(reply['nonce'], request['nonce']); self.assertEqual(self.host.observed_at, 1004.3)
+        self.assertIsNone(self.host.pending); self.assertEqual(self.host.seq, 2)
+        self.assertEqual((self.case / 'HOST_REQUEST_01.PRIVATE.json').read_bytes(), raw)
+
+    def test_sample_observed_before_request_does_not_publish_or_redate(self):
+        self.accept_request(); pending = self.host.pending
+        observation, sample = self.sample(3.4, 3.7)
+        before = copy.deepcopy((observation, sample, pending))
+        self.assertFalse(self.host._reply_observation(observation, sample))
+        self.assertEqual((observation, sample, self.host.pending), before)
+        self.assertIs(self.host.pending, pending); self.assertFalse(list(self.case.glob('*HOST_REPLY*')))
+
+    def test_both_clocks_must_be_fresh_without_refreshing_either(self):
+        self.accept_request()
+        for stale in ('monotonic', 'utc'):
+            observation, sample = self.sample(3.8, 3.9)
+            if stale == 'monotonic': sample['startedMonotonic'] = 1000
+            else: sample['startedAtUTC'] = self.iso(0)
+            with self.subTest(clock=stale):
+                self.assertFalse(self.host._reply_observation(observation, sample))
+                self.assertIsNotNone(self.host.pending); self.assertFalse(list(self.case.glob('*HOST_REPLY*')))
+
+    def test_expired_original_request_fails_instead_of_extending_pending_window(self):
+        request, raw = self.accept_request(); self.clock['seconds'] = 6.8
+        observation, sample = self.sample(6.5, 6.7)
+        with self.assertRaisesRegex(RuntimeError, 'private-ipc-window'):
+            self.host._reply_observation(observation, sample)
+        self.assertEqual(self.host.pending['request'], request)
+        self.assertEqual((self.case / 'HOST_REQUEST_01.PRIVATE.json').read_bytes(), raw)
+        self.assertFalse(list(self.case.glob('*HOST_REPLY*')))
+
+    def test_invalid_clock_order_or_nonfinite_is_terminal_not_deferred(self):
+        self.accept_request()
+        for field, value in [('startedMonotonic', float('nan')), ('startedMonotonic', True),
+                             ('completedMonotonic', 1005), ('startedAtUTC', self.iso(3.95))]:
+            observation, sample = self.sample(3.8, 3.9); sample[field] = value
+            with self.subTest(field=field), self.assertRaises(RuntimeError):
+                self.host._reply_observation(observation, sample)
+        self.assertFalse(list(self.case.glob('*HOST_REPLY*')))
+
+    def test_late_stale_tick_waits_for_real_next_tick_without_accept_replay(self):
+        self.clock['seconds'] = 0; self.host.last_observation = {'stale': 'never-publish'}
+        request = self.request(); request.update(issuedAtUTC=self.iso(3.7), expiresAtUTC=self.iso(6.7))
+        def late_observe():
+            self.clock['seconds'] = 3.8
+            M.write_once(self.case / 'HOST_REQUEST_01.PRIVATE.json', M.encode(request))
+            return self.observation({'tick': 1})
+        self.host._observe = late_observe
+        with patch.object(self.host, '_accept', wraps=self.host._accept) as accept:
+            first = self.host.tick(); pending = self.host.pending
+            self.assertEqual(first['pending'], 'HOST_OBSERVE'); self.assertIsNone(self.host.failure)
+            self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+            def next_observe():
+                self.assertIs(self.host.pending, pending); self.clock['seconds'] = 4.0
+                return self.observation({'tick': 2})
+            self.host._observe = next_observe
+            second = self.host.tick()
+            self.assertEqual(accept.call_count, 1); self.assertIsNone(second['pending'])
+        reply = M.unique((self.case / 'HOST_REPLY_01.PRIVATE.json').read_bytes())
+        self.assertEqual(reply['result']['source'], {'tick': 2}); self.assertEqual(reply['nonce'], request['nonce'])
+        self.assertEqual(self.host.seen, {request['nonce']}); self.assertEqual(self.host.observed_at, 1004.0)
+
+    def test_new_eligibility_never_overwrites_an_existing_reply(self):
+        self.accept_request(); path = self.case / 'HOST_REPLY_01.PRIVATE.json'
+        original = b'{"synthetic":"already-published"}'; M.write_once(path, original)
+        observation, sample = self.sample(3.8, 3.9)
+        with self.assertRaises(OSError): self.host._reply_observation(observation, sample)
+        self.assertEqual(path.read_bytes(), original); self.assertEqual(self.host.seq, 1)
+        self.assertIsNotNone(self.host.pending)
 
 
 class PureObserverVM(unittest.TestCase):

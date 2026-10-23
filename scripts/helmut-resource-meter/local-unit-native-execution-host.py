@@ -23,6 +23,7 @@ import traceback
 DOCKER = ['/usr/local/bin/docker', '--host=unix:///var/run/docker.sock']
 ENV = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8', 'TZ': 'UTC'}
 FLAGS = ['--max-old-space-size=384', '--max-semi-space-size=16']
+GLOBAL_CONTAINER_FORMAT = '{"Id":{{json .Id}},"CgroupParent":{{json .HostConfig.CgroupParent}}}'
 TRACE = '/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl'
 PUBLIC = '/run/helmut-local-unit-diagnostic'
 BASE = Path('/workspace/helmut-unit-diagnostic-native')
@@ -367,6 +368,19 @@ def observation_sample_start():
 def observation_sample_complete(start):
     need(type(start) is dict and set(start) == {'startedMonotonic', 'startedAtUTC'}, 'observation-sample-start')
     return {**start, 'completedMonotonic': time.monotonic(), 'completedAtUTC': utc()}
+
+
+def observation_sample_eligible(request, observation, sample):
+    """An unfinished read request may wait for a NEW sample, never a new window."""
+    window(request)
+    need(type(sample) is dict and set(sample) == {'startedMonotonic', 'startedAtUTC', 'completedMonotonic', 'completedAtUTC'},
+         'observation-sample-shape')
+    a, b, current = sample['startedMonotonic'], sample['completedMonotonic'], time.monotonic()
+    need(all(type(x) in (int, float) and math.isfinite(x) for x in (a, b, current))
+         and 0 <= a <= b <= current, 'observation-sample-age')
+    start, end, observed, current_utc = instant(sample['startedAtUTC']), instant(sample['completedAtUTC']), instant(observation['observedAtUTC']), instant(utc())
+    need(start <= observed <= end <= current_utc, 'observation-sample-utc')
+    return current - a < 3 and current_utc - start < 3 and observed >= instant(request['issuedAtUTC'])
 
 
 def _observation_reply_check(case, request, request_sha256, selection, observation, sample):
@@ -1304,15 +1318,39 @@ class NativeExecutionHost:
              and h['PidMode'] == '' and row.get('RestartCount', 0) == 0 and h['RestartPolicy']['Name'] == 'no'
              and not row['State']['OOMKilled'], 'actual-container-sandbox')
 
+    def _inventory(self, known):
+        # Every container still participates in unknown-owned detection. Foreign
+        # containers need only this exact projection, not their large mount DTOs.
+        ids = self._docker(['ps', '--all', '--quiet', '--no-trunc']).stdout.split()
+        need(len(ids) == len(set(ids)) and all(HASH.fullmatch(cid) for cid in ids), 'global-container-id-set')
+        raw = self._docker(['inspect', '--format', GLOBAL_CONTAINER_FORMAT, *ids]).stdout if ids else ''
+        parents = {}
+        for line in raw.splitlines():
+            value = unique(line)
+            need(type(value) is dict and set(value) == {'Id', 'CgroupParent'}
+                 and type(value['Id']) is str and HASH.fullmatch(value['Id'])
+                 and value['Id'] not in parents and type(value['CgroupParent']) is str, 'global-container-projection')
+            parents[value['Id']] = value['CgroupParent']
+        need(set(parents) == set(ids), 'global-container-projection-completeness')
+        parent = '/' + self.config['parent']
+        owned_ids = {cid for cid, actual in parents.items() if actual == parent or actual.startswith(parent + '/')}
+        need(owned_ids == known, 'unknown-or-missing-owned-container')
+        rows = unique(self._docker(['inspect', *sorted(owned_ids)]).stdout) if owned_ids else []
+        need(type(rows) is list, 'owned-container-details')
+        owned = {}
+        for row in rows:
+            need(type(row) is dict and type(row.get('Id')) is str and row['Id'] in owned_ids
+                 and row['Id'] not in owned and type(row.get('HostConfig')) is dict
+                 and row['HostConfig'].get('CgroupParent') == parents[row['Id']], 'owned-container-detail-binding')
+            owned[row['Id']] = row
+        need(set(owned) == owned_ids, 'owned-container-detail-completeness')
+        return owned
+
     def _observe(self):
         group = self.native.parent_path(self.config['parent']); g = group.lstat()
         need(stat.S_ISDIR(g.st_mode) and not group.is_symlink() and (g.st_dev, g.st_ino) == (self.config['parentDevice'], self.config['parentInode']), 'actual-parent-directory')
-        ids = self._docker(['ps', '--all', '--quiet', '--no-trunc']).stdout.split()
-        rows = json.loads(self._docker(['inspect', *ids]).stdout) if ids else []
-        owned = {r['Id']: r for r in rows if r['HostConfig']['CgroupParent'] == '/' + self.config['parent']
-                 or r['HostConfig']['CgroupParent'].startswith('/' + self.config['parent'] + '/')}
         known = {x['id'] for x in self.budget['helpers'].values()} | {self.source_id} | set(self.clients) | set(self.plan['knownSetupContainerIds'])
-        need(set(owned) == known, 'unknown-or-missing-owned-container')
+        owned = self._inventory(known)
         for helper in self.budget['helpers'].values():
             row = owned[helper['id']]; h = row['HostConfig']
             need(row['Name'] == '/' + helper['name'] and row['Image'] == self.config['runtime']['imageId']
@@ -1567,9 +1605,12 @@ class NativeExecutionHost:
         need(self.pending is not None and self.pending['request']['stage'] == 'HOST_OBSERVE'
              and self.state in ('QUALIFIED', 'ENTRY', 'DONE'), 'observation-reply-state')
         p = self.pending
+        if not observation_sample_eligible(p['request'], observation, sample):
+            return False
         publish_observation_reply(self.case, p['request'], p['sha256'], self.selection, observation, sample)
         self.observed_at = sample['completedMonotonic']
         self.seq += 1; self.pending = None
+        return True
 
     def _release_clients(self):
         for cid, client in self.clients.items():
