@@ -4,6 +4,7 @@
 // negative tests do not mint a root anchor, open sockets, use a DB or run a motor.
 const fs = require("node:fs"), path = require("node:path"), vm = require("node:vm"), crypto = require("node:crypto");
 const assert = require("node:assert/strict"), { isDeepStrictEqual } = require("node:util");
+const { EventEmitter } = require("node:events");
 const directory = "/run/helmut-local-unit-diagnostic", sha = b => crypto.createHash("sha256").update(b).digest("hex");
 const key = crypto.generateKeyPairSync("ed25519"), other = crypto.generateKeyPairSync("ed25519");
 const scope = { operationId: "localUnitDiagnostic-" + "a".repeat(32), commandHash: "b".repeat(64) };
@@ -31,12 +32,12 @@ function stat(filename) {
 }
 const fakeFS = { constants: fs.constants, lstatSync: stat, openSync: () => 5, fstatSync: () => stat(directory + "/trust.json"), closeSync() {},
   readFileSync: name => name === "/proc/self/mountinfo" ? `1 0 0:0 / ${directory} ${readonly ? "ro" : "rw"} - tmpfs tmpfs ro\n` : rawAnchor };
-function load(relative, replacements, access) {
+function load(relative, replacements, access, processOverrides = {}) {
   const filename = path.resolve(__dirname, "..", relative), module = { exports: {} };
   const source = fs.readFileSync(filename, "utf8") + "\nmodule.exports = {" + access.join(",") + "};";
   const context = vm.createContext({ require: name => Object.hasOwn(replacements, name) ? replacements[name] : require(name),
     module, exports: module.exports, __filename: filename, __dirname: path.dirname(filename), Buffer, URL, setTimeout, clearTimeout,
-    process: { getuid: () => uid, env: {}, hrtime: process.hrtime }, structuredClone, console });
+    process: { getuid: () => uid, env: {}, hrtime: process.hrtime, ...processOverrides }, structuredClone, console });
   vm.runInContext(source, context, { filename }); return module.exports;
 }
 const endpoint = load("lib/helmut/local-unit-diagnostic-endpoint.js", { "node:fs": fakeFS }, ["readTrust", "verifyEnvelope"]);
@@ -158,7 +159,72 @@ rejects(() => broker.originalResponse(macFrame(responseUnsigned, crypto.randomBy
 rejects(() => broker.originalResponse(macFrame({ ...responseUnsigned, nonce: "f".repeat(64) }), macKey, request.nonce));
 rejects(() => broker.originalResponse(macFrame({ ...responseUnsigned, status: 500 }), macKey, request.nonce));
 assert.equal(JSON.stringify(trust.anchor.broker), JSON.stringify(anchor.broker));
+function requestFixture({ logFault = null, badSignature = false } = {}) {
+  const logs = [], messages = [], sink = new EventEmitter(); let writes = 0;
+  sink.write = (row, callback) => {
+    writes++;
+    if (logFault === "throw") throw Error("VM hidden sink error");
+    logs.push(row);
+    if (logFault === "callback") queueMicrotask(() => callback(Error("VM hidden sink error"))); else callback(null);
+    return logFault !== "backpressure";
+  };
+  const fakeHTTP = { request(options, incoming) {
+    assert.equal(options.socketPath, directory + "/broker.sock"); assert.equal(options.path, "/v1/execute"); assert.equal(options.agent, false);
+    const req = new EventEmitter(); req.destroy = () => {};
+    req.end = payload => {
+      const m = JSON.parse(payload); messages.push(m);
+      queueMicrotask(() => {
+        const res = new EventEmitter(); res.statusCode = 200; res.destroy = () => {}; incoming(res);
+        const a = { ...attestation, nonce: m.nonce, method: m.method, path: m.path,
+          requestSHA256: sha(Buffer.from(m.bodyBase64, "base64")), observedAtUTC: new Date().toISOString() };
+        res.emit("data", envelope(a, badSignature ? other.privateKey : key.privateKey)); res.emit("end");
+      });
+    };
+    return req;
+  } };
+  const api = load("lib/helmut/local-unit-diagnostic-endpoint.js", { "node:fs": fakeFS, "node:http": fakeHTTP },
+    ["request", "beginPhaseTiming", "markPhaseTiming", "finishPhaseTiming"], { stderr: sink });
+  return { api, logs, messages, sink, writes: () => writes,
+    run: () => api.request(scope, database, "POST", request.path, Buffer.from('{"private":"VM request payload"}')) };
+}
 (async () => {
+  uid = 1000;
+  {
+    const f = requestFixture(), result = await f.run();
+    assert.deepEqual(Object.keys(result).sort(), ["body", "status"]); assert.equal(result.status, 200); assert(result.body.equals(body));
+    assert.equal(f.logs.length, 1); const row = JSON.parse(f.logs[0].slice("HELMUT_ENDPOINT_READ_PHASES_V1 ".length));
+    assert.deepEqual(row.slice(0, 3), [0, "settled", sha(f.messages[0].nonce)]); assert.equal(row[3].length, 6);
+    assert(row[3].every((n, i, a) => /^\d{1,20}$/.test(n) && (!i || BigInt(n) >= BigInt(a[i - 1]))));
+    assert(/^[\x20-\x7e]+\n$/.test(f.logs[0]) && Buffer.byteLength(f.logs[0]) <= 512);
+    for (const hidden of [f.messages[0].nonce, "VM request payload", "SYNTHETIC_ONLY", request.path, "bodyBase64", "publicKeyPEM", "Bearer"])
+      assert(!f.logs[0].includes(hidden)); checks++;
+  }
+  {
+    const f = requestFixture({ badSignature: true }); await assert.rejects(f.run(), /ed25519-signature/);
+    const row = JSON.parse(f.logs[0].slice("HELMUT_ENDPOINT_READ_PHASES_V1 ".length));
+    assert.equal(row[1], "failed"); assert.equal(row[3][4], null); assert.equal(f.messages.length, 1); checks++;
+  }
+  for (const logFault of ["throw", "callback", "backpressure", "event"]) {
+    const f = requestFixture({ logFault }); assert.equal((await f.run()).status, 200);
+    if (logFault === "event") f.sink.emit("error", Error("VM hidden sink error"));
+    const at = f.writes(); assert.equal((await f.run()).status, 200);
+    assert.equal(f.writes(), at); assert.equal(f.messages.length, 2); checks++;
+  }
+  {
+    const f = requestFixture();
+    for (let i = 0; i < 300; i++) {
+      const timing = f.api.beginPhaseTiming("a".repeat(64), process.hrtime.bigint());
+      f.api.markPhaseTiming(timing, 1); f.api.finishPhaseTiming(timing, "settled");
+    }
+    assert(f.logs.length > 0 && f.logs.length <= 256 && Buffer.byteLength(f.logs.join("")) <= 65536);
+    assert(f.logs.every(row => Buffer.byteLength(row) <= 512)); const at = f.writes();
+    assert.equal((await f.run()).status, 200); assert.equal(f.writes(), at); checks++;
+  }
+  {
+    const f = requestFixture(), timing = f.api.beginPhaseTiming("a".repeat(64), process.hrtime.bigint() + 100000000000n);
+    f.api.markPhaseTiming(timing, 1); f.api.finishPhaseTiming(timing, "settled");
+    assert.equal(f.logs.length, 0); assert.equal((await f.run()).status, 200); assert.equal(f.logs.length, 0); checks++;
+  }
   const gate = broker.serialGate(), release = await gate.acquire(), order = [];
   const a = gate.acquire().then(done => { order.push("a"); done(); });
   const b = gate.acquire().then(done => { order.push("b"); done(); });

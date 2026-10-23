@@ -19,6 +19,46 @@ const RPC = Object.freeze({ contract: [], authority_read: ["p_scope_hash", "p_no
   lease_acquire: ["p_scope_hash", "p_claim_hash", "p_job", "p_ttl_ms", "p_nonce"],
   lease_release: ["p_scope_hash", "p_claim_hash", "p_job", "p_token", "p_nonce"] });
 function need(ok, code) { if (!ok) throw Error("local-unit-broker-" + code); }
+// PRIVATE stderr diagnosis only; settled never means ACK or acceptance. Missing
+// rows/caps/stream failures leave this timing unqualified, without changing I/O.
+// Columns: handler begin, authorized, prechecked, optional contract await start/
+// resumed, upstream await start/resumed, postchecked, handler finally. The last
+// marker follows trace.finish/release and can follow the client's return.
+// Require a complete unique nonce join, not "settled", for a timing comparison.
+let phaseCount = 0, phaseBytes = 0, phaseDisabled = false, phaseSink = null;
+function disablePhaseTiming() { phaseDisabled = true; }
+function beginPhaseTiming(nonce, began) {
+  try {
+    if (phaseDisabled) return null;
+    if (phaseCount >= 256 || typeof began !== "bigint" || began < 0n || !HASH.test(nonce)) { disablePhaseTiming(); return null; }
+    if (!phaseSink) {
+      const sink = process.stderr;
+      if (!sink || typeof sink.write !== "function" || typeof sink.on !== "function") { disablePhaseTiming(); return null; }
+      sink.on("error", disablePhaseTiming); phaseSink = sink;
+    }
+    return { index: phaseCount++, nonceHash: sha(nonce), times: [String(began), ...Array(8).fill(null)] };
+  } catch { disablePhaseTiming(); return null; }
+}
+function markPhaseTiming(timing, index) {
+  try {
+    if (!timing || phaseDisabled) return;
+    const ns = process.hrtime.bigint(), prior = timing.times.filter(x => x !== null).at(-1);
+    if (!Number.isInteger(index) || index < 1 || index > 8 || timing.times[index] !== null
+      || typeof ns !== "bigint" || ns < BigInt(prior) || String(ns).length > 20) { disablePhaseTiming(); return; }
+    timing.times[index] = String(ns);
+  } catch { disablePhaseTiming(); }
+}
+function finishPhaseTiming(timing, kind, outcome) {
+  try {
+    if (!timing || phaseDisabled) return;
+    if (!["native", "legacy", "original"].includes(kind) || !["settled", "failed"].includes(outcome)) { disablePhaseTiming(); return; }
+    markPhaseTiming(timing, 8); if (phaseDisabled) return;
+    const row = "HELMUT_BROKER_READ_PHASES_V1 " + JSON.stringify([timing.index, kind, outcome, timing.nonceHash, timing.times]) + "\n";
+    if (row.length > 512 || phaseBytes + row.length > 65536 || !/^[\x20-\x7e]+\n$/.test(row)) { disablePhaseTiming(); return; }
+    phaseBytes += row.length;
+    if (phaseSink.write(row, error => { if (error) disablePhaseTiming(); }) === false) disablePhaseTiming();
+  } catch { disablePhaseTiming(); }
+}
 function statIdentity(s) { return [s.dev, s.ino, s.mode, s.uid, s.gid, s.nlink, s.size, s.mtimeNs, s.ctimeNs].map(String); }
 function rootParents(filename) {
   need(path.isAbsolute(filename) && path.normalize(filename) === filename && !filename.includes("\0"), "canonical-path");
@@ -502,7 +542,7 @@ async function start(configuration) {
   const used = new Set(), gate = serialGate(); let closed = false, trace = null, closePromise = null;
   const server = http.createServer(async (req, res) => {
     if (closed || req.method !== "POST" || req.url !== "/v1/execute") { res.writeHead(409).end(); return; }
-    let size = 0, done = false, release, traceAttempt = null; const blocks = [];
+    let size = 0, done = false, release, traceAttempt = null, phaseTiming = null, phaseKind = "native"; const blocks = [];
     const began = process.hrtime.bigint();
     const remaining = () => 28000 - Number(process.hrtime.bigint() - began) / 1000000;
     const timer = setTimeout(() => req.destroy(), 30000);
@@ -512,9 +552,14 @@ async function start(configuration) {
       const m = JSON.parse(Buffer.concat(blocks).toString("utf8")), traceMeta = {}, bytes = authorize(c, m, traceMeta);
       need(used.size < 4096 && !used.has(m.nonce), "nonce-reuse-or-cap"); used.add(m.nonce);
       need(trace, "private-trace-required"); traceAttempt = trace.begin(traceMeta, m, bytes, res, req);
+      phaseKind = m.path === ORIGINAL_WRITE ? "original" : /^\/rest\/v1\/rpc\/local_unit_diagnostic_/.test(m.path) ? "native" : "legacy";
+      phaseTiming = beginPhaseTiming(m.nonce, began); markPhaseTiming(phaseTiming, 1);
       check();
+      markPhaseTiming(phaseTiming, 2);
       if (!/^\/rest\/v1\/rpc\/local_unit_diagnostic_/.test(m.path)) {
+        markPhaseTiming(phaseTiming, 3);
         const contract = await upstream(c, { method: "POST", path: "/rest/v1/rpc/local_unit_diagnostic_contract_v1" }, Buffer.from("{}"), token, remaining());
+        markPhaseTiming(phaseTiming, 4);
         need(contract.status === 200, "actual-read-contract");
         const catalog = JSON.parse(contract.bytes.toString("utf8"));
         const expected = c.legacy.rpcs.map(r => ({ name: r.name, oid: r.oid, identityArguments: r.identityArguments,
@@ -524,10 +569,13 @@ async function start(configuration) {
       }
       const isOriginal = m.path === ORIGINAL_WRITE;
       trace.sent(traceAttempt);
+      markPhaseTiming(phaseTiming, 5);
       const answer = isOriginal ? await originalUpstream(m, bytes, originalKey.bytes, remaining())
         : await upstream(c, m, bytes, token, remaining());
+      markPhaseTiming(phaseTiming, 6);
       trace.ended(traceAttempt);
       check(); need(remaining() > 0, "total-deadline");
+      markPhaseTiming(phaseTiming, 7);
       const attestation = { schema: "helmut-local-unit-diagnostic-signed-response/2", operationId: c.operationId,
         commandHash: c.commandHash, database: c.database, nonce: m.nonce, method: m.method, path: m.path,
         requestSHA256: sha(bytes), bodySHA256: sha(answer.bytes), status: answer.status,
@@ -539,7 +587,7 @@ async function start(configuration) {
       res.writeHead(200, { "Content-Type": "application/json", "Content-Length": output.length }); res.end(output);
       await trace.finish(traceAttempt); done = true;
     } catch { trace?.abort(traceAttempt); if (!res.headersSent) res.writeHead(502); res.end(); }
-    finally { clearTimeout(timer); if (!done) { closed = true; gate.close(); } release?.(); }
+    finally { clearTimeout(timer); if (!done) { closed = true; gate.close(); } release?.(); finishPhaseTiming(phaseTiming, phaseKind, done ? "settled" : "failed"); }
   });
   server.requestTimeout = 30000; server.headersTimeout = 10000; server.maxHeadersCount = 16;
   await new Promise((resolve, reject) => { server.once("error", reject); server.listen(ROOT + "/broker.sock", resolve); });

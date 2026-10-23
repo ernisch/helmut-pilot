@@ -95,7 +95,15 @@ function rootProcessFixture(fault = null) {
 }
 function brokerLifecycle() {
   const state = { observations: 0, reads: [], handler: null, closeCalls: 0, listenerLost: false, addressChanged: false,
-    rootDrift: false, upstreamDrift: false, sourceDrift: false, signingKeyDrift: false, trustDrift: false, socketDrift: false };
+    rootDrift: false, upstreamDrift: false, sourceDrift: false, signingKeyDrift: false, trustDrift: false, socketDrift: false,
+    phaseLogs: [], phaseWrites: 0, upstreamSpans: [] };
+  const phaseSink = new EventEmitter(); phaseSink.write = (row, callback) => {
+    state.phaseWrites++;
+    if (state.phaseFault === "throw") throw Error("VM hidden timing error");
+    state.phaseLogs.push(row);
+    if (state.phaseFault === "callback") queueMicrotask(() => callback(Error("VM hidden timing error"))); else callback(null);
+    return state.phaseFault !== "backpressure";
+  };
   const files = new Map(), descriptors = new Map(), publicDir = "/run/helmut-local-unit-diagnostic", privateDir = publicDir + "-owner";
   const tracePath = "/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl"; let nextFD = 20;
   const pin = (name, data) => ({ path: name, bytes: Buffer.byteLength(data), sha256: crypto.createHash("sha256").update(data).digest("hex") });
@@ -176,9 +184,10 @@ function brokerLifecycle() {
   } };
   const mod = { exports: {} }, sandbox = { module: mod, __filename: filename, __hooks: hooks, Buffer, URL, structuredClone,
     setTimeout, clearTimeout, process: { env: {}, getuid: () => 0, pid: 123, version: "v24.19.0",
-      execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"], hrtime: process.hrtime, umask() {} }, require(name) {
+      execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"], hrtime: process.hrtime, stderr: phaseSink, umask() {} }, require(name) {
       if (name === "node:fs") return fsStub;
       if (name === "node:http") return { createServer(handler) { state.handler = handler; return server; }, request(options, onResponse) {
+        const span = { route: options.path, begin: process.hrtime.bigint() }; state.upstreamSpans.push(span);
         const req = new EventEmitter(); req.destroy = () => {}; req.end = body => {
           queueMicrotask(() => {
             req.emit("finish"); const res = new EventEmitter(); res.complete = !state.incompleteHTTP; res.destroy = () => {};
@@ -186,7 +195,7 @@ function brokerLifecycle() {
             const value = route === "/rpc/local_unit_diagnostic_contract_v1" ? { database, version: "helmut-local-unit-diagnostic-native-store/1",
               legacyReadRPCs: c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) => ({ name, oid, identityArguments, prosrcSHA256, qualificationPin })) }
               : route === "/rpc/local_unit_diagnostic_state_read_v1" ? state.stateWitness : { VM: "control response payload" };
-            res.emit("data", Buffer.from(JSON.stringify(value))); if (!state.noHTTPEnd) res.emit("end");
+            res.emit("data", Buffer.from(JSON.stringify(value))); if (!state.noHTTPEnd) { span.end = process.hrtime.bigint(); res.emit("end"); }
           });
         }; return req;
       } };
@@ -214,7 +223,7 @@ function brokerLifecycle() {
     await state.handler(req, res); return { m, res };
   }
   const readNonce = i => "00000000-0000-4000-8000-" + String(i).padStart(12, "0");
-  return { start: () => mod.exports.start(c), state, files, c, server, descriptors, request, readNonce,
+  return { start: () => mod.exports.start(c), state, files, c, server, descriptors, request, readNonce, phaseSink,
     graph: i => request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "main-auth", knownProof: null, readNonce: readNonce(i), knownGraph: null }),
     rows: () => files.get(tracePath).bytes.toString().trim().split("\n").map(JSON.parse), async unknown() {
     const req = { method: "POST", url: "/v1/execute", async *[Symbol.asyncIterator]() { yield Buffer.from("[]"); }, destroy() {} };
@@ -223,6 +232,47 @@ function brokerLifecycle() {
   } };
 }
 (async () => {
+  {
+    const f = brokerLifecycle(), running = await f.start(), reply = await f.graph(1);
+    assert.equal(reply.res.statusCode, 200); assert.equal(f.state.phaseLogs.length, 1);
+    const row = JSON.parse(f.state.phaseLogs[0].slice("HELMUT_BROKER_READ_PHASES_V1 ".length)), t = row[4];
+    assert.deepEqual(row.slice(0, 4), [0, "legacy", "settled", crypto.createHash("sha256").update(reply.m.nonce).digest("hex")]);
+    assert.equal(t.length, 9); assert(t.every((n, i) => /^\d{1,20}$/.test(n) && (!i || BigInt(n) >= BigInt(t[i - 1]))));
+    assert.equal(f.state.upstreamSpans.length, 2);
+    const [contract, graph] = f.state.upstreamSpans;
+    assert.equal(contract.route, "/rpc/local_unit_diagnostic_contract_v1"); assert.equal(graph.route, "/rpc/helmut_auth_state_graph_read_v1");
+    assert(BigInt(t[3]) <= contract.begin && contract.end <= BigInt(t[4]));
+    assert(BigInt(t[5]) <= graph.begin && graph.end <= BigInt(t[6]));
+    for (const hidden of [reply.m.nonce, f.readNonce(1), reply.m.path, "VM control response payload", "bodyBase64", "runtimeTokenPath", "Bearer"])
+      assert(!f.state.phaseLogs[0].includes(hidden));
+    assert(/^[\x20-\x7e]+\n$/.test(f.state.phaseLogs[0]) && Buffer.byteLength(f.state.phaseLogs[0]) <= 512);
+    await f.request("/rest/v1/rpc/local_unit_diagnostic_contract_v1", {});
+    const native = JSON.parse(f.state.phaseLogs[1].slice("HELMUT_BROKER_READ_PHASES_V1 ".length));
+    assert.equal(native[1], "native"); assert.equal(native[4][3], null); assert.equal(native[4][4], null);
+    await running.close(); checks++;
+  }
+  for (const phaseFault of ["throw", "callback", "backpressure", "event"]) {
+    const f = brokerLifecycle(), running = await f.start(); f.state.phaseFault = phaseFault;
+    assert.equal((await f.request("/rest/v1/rpc/local_unit_diagnostic_contract_v1", {})).res.statusCode, 200);
+    if (phaseFault === "event") f.phaseSink.emit("error", Error("VM hidden timing error"));
+    const at = f.state.phaseWrites;
+    assert.equal((await f.request("/rest/v1/rpc/local_unit_diagnostic_contract_v1", {})).res.statusCode, 200);
+    assert.equal(f.state.phaseWrites, at); assert(running.observe().listenerObserved); await running.close(); checks++;
+  }
+  {
+    const f = brokerLifecycle(), running = await f.start(); f.state.rootDrift = true;
+    assert.equal((await f.graph(1)).res.statusCode, 502);
+    const row = JSON.parse(f.state.phaseLogs[0].slice("HELMUT_BROKER_READ_PHASES_V1 ".length));
+    assert.equal(row[1], "legacy"); assert.equal(row[2], "failed"); assert.equal(row[4][2], null); assert(row[4][8] !== null);
+    assert.equal(f.state.upstreamSpans.length, 0); assert.throws(() => running.observe()); await assert.rejects(running.close()); checks++;
+  }
+  {
+    const f = brokerLifecycle(), running = await f.start();
+    for (let i = 0; i < 300; i++) assert.equal((await f.request("/rest/v1/rpc/local_unit_diagnostic_contract_v1", {})).res.statusCode, 200);
+    assert(f.state.phaseLogs.length > 0 && f.state.phaseLogs.length <= 256 && Buffer.byteLength(f.state.phaseLogs.join("")) <= 65536);
+    assert(f.state.phaseLogs.every(row => Buffer.byteLength(row) <= 512));
+    assert(running.observe().listenerObserved); await running.close(); checks++;
+  }
   for (const options of [{}, { boot: BOOT_ID }, { namespaceError: "ENOENT" }]) {
     const f = clockFixture(options), domain = f.run(), absent = options.namespaceError === "ENOENT";
     assert(Object.isFrozen(domain)); assert.deepEqual(JSON.parse(JSON.stringify(domain)), {
@@ -326,6 +376,7 @@ function brokerLifecycle() {
       assert.equal(row.attestationSHA256, h(JSON.stringify(result.attestation))); assert.equal(row.responseBodySHA256, h(Buffer.from(result.bodyBase64, "base64")));
       assert.equal(row.signatureSHA256, h(Buffer.from(result.signatureBase64, "base64"))); assert.equal(row.io.downstreamFinish, true);
       const t = row.timing; assert(BigInt(t.sendNs) <= BigInt(t.upstreamEndNs) && BigInt(t.upstreamEndNs) <= BigInt(t.signedNs) && BigInt(t.signedNs) <= BigInt(t.finishNs));
+      assert.deepEqual(Object.keys(t).sort(), ["finishNs", "finishUTC", "sendNs", "sendUTC", "signedNs", "signedUTC", "upstreamEndNs", "upstreamEndUTC"]);
       if (i) assert(BigInt(records[i - 1].timing.finishNs) < BigInt(t.sendNs));
     }
     assert.equal(records[16].ownAck.nonceSHA256, h(ownNonce)); assert.equal(records[16].ownAck.claimHash, h(claim));
