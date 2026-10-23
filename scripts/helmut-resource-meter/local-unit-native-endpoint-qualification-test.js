@@ -16,6 +16,13 @@ function snapshot(name = filename) {
 const before = snapshot(), code = before.bytes.toString("utf8"), TRUST_DIR = "/run/helmut-local-unit-diagnostic", TRUST = TRUST_DIR + "/trust.json";
 const storagePath = path.join(root, "lib/helmut/storage.js"), publicationPath = path.join(root, "lib/helmut/publication-eligibility.js");
 const consumerBefore = snapshot(storagePath), publicationBefore = snapshot(publicationPath);
+const usagePath = path.join(root, "lib/helmut/llm-usage-atomic.js"), partsPath = path.join(root, "lib/helmut/auth-state-parts.js");
+const usageBefore = snapshot(usagePath), partsBefore = snapshot(partsPath);
+const EU = require(path.join(root, "lib/helmut/synthetik-500-eu-service-contract.js"));
+const serverParts = require(partsPath);
+const readModes = { HELMUT_LLM_USAGE_STORAGE: "relational-atomic-v1", HELMUT_AUTH_STATE_STORAGE: "merkle-auth-v1",
+  HELMUT_AUTH_HISTORY_READ_REUSE: "verified-history-reuse-v1", HELMUT_AUTH_CONTROL_READ: "verified-control-view-v1",
+  HELMUT_AUTH_GRAPH_READ_REUSE: "off", HELMUT_AUTH_SINGLE_WRITE_CAPTURE: "off" };
 function fixture(options = {}) {
   const files = new Map(), fds = new Map(), offsets = new Map(), calls = [], writes = [], lines = [];
   let nextInode = 30, nextFD = 1, processDrift = false, nativeRequests = 0, publicationRequests = 0;
@@ -42,6 +49,13 @@ function fixture(options = {}) {
     publicationProbe: { schema: "helmut-local-unit-native-publication-read-probe/1", commandHash: selection.commandHash,
       knowledgeObjectIds: options.ids || ["synthetic-ko"] },
     expiresAtUTC: new Date(Date.now() + 120000).toISOString(), measuredCgroup: { path: "/owned-group", device: 1, inode: 2, procMembership: "0::/\n" } };
+  if (options.controlProbe) {
+    add(usagePath, usageBefore.bytes); add(partsPath, partsBefore.bytes);
+    config.codePins.push(pin(usagePath), pin(partsPath));
+    config.controlGraphProbe = { diagnosticMode: "readonly-http-pre-admission-v1", commandHash: selection.commandHash,
+      readerPin: pin(usagePath), partsPin: pin(partsPath) };
+    if (options.mutateControlProbe) options.mutateControlProbe(config.controlGraphProbe);
+  }
   if (options.expired) config.expiresAtUTC = new Date(Date.now() - 1).toISOString();
   if (options.oldConfig) config.issuedAtUTC = new Date(Date.now() - 11000).toISOString();
   if (options.mutateProbe) options.mutateProbe(config);
@@ -101,6 +115,29 @@ function fixture(options = {}) {
       return { status: options.publicationStatus || 200, body: Buffer.from(options.publicationBytes || JSON.stringify(rows)) };
     }
     assert.equal(method, "POST");
+    if (pathname === "/rest/v1/rpc/helmut_auth_state_graph_read_v1") {
+      assert.deepEqual(JSON.parse(JSON.stringify(selected)), selection); nativeRequests++;
+      const q = JSON.parse(body), generation = "00000000-0000-4000-8000-000000000001", revision = "00000000-0000-4000-8000-000000000002";
+      const auth = { synthetik500DispatchJournal: { VM: "private graph payload" }, synthetik500KostenAdmission: {},
+        testKostenAuftrag: { version: EU.ORDER_VERSION, serviceContractHash: EU.HASH }, testKostenTage: {} };
+      const graph = serverParts.build(auth), proof = { generation, count: 0, head: sha("VM history head"), originalHash: sha("VM original history") };
+      const state = { version: "merkle-auth-v1", generation, root: graph.root, originalHash: sha("VM original state") };
+      const reused = q.knownGraph !== null, history = q.knownProof !== null, nodeDigest = sha(graph.nodes.map(n => n.hash).join("|"));
+      const result = { data: { _authStoreRevision: revision, ...(history ? {} : { llmUsage: [] }) }, proof, state,
+        graph: reused ? null : { root: graph.root, nodes: graph.nodes },
+        historyReuse: { version: "verified-history-reuse-v1", nonce: q.readNonce, reused: history,
+          binding: sha(["verified-history-reuse-v1", q.readNonce, sha(q.id), revision, state.version, generation, graph.root, state.originalHash,
+            generation, 0, proof.head, proof.originalHash, history ? "1" : "0"].join("|")) },
+        graphReuse: { version: "verified-graph-reuse-v1", nonce: q.readNonce, reused, actualPayloadsChecked: reused,
+          nodeCount: graph.nodes.length, nodeDigest, binding: sha(["verified-graph-reuse-v1", q.readNonce, sha(q.id), revision,
+            state.version, generation, graph.root, state.originalHash, generation, 0, proof.head, proof.originalHash,
+            graph.nodes.length, nodeDigest, reused ? "1" : "0"].join("|")) } };
+      if (options.graphFault === "payload" && !reused) result.graph.nodes[0].payload += " ";
+      if (options.graphFault === "nonce") result.historyReuse.nonce = "foreign nonce";
+      if (options.graphFault === "warm-proof" && reused) result.graphReuse.binding = "0".repeat(64);
+      return { status: options.graphFault === "status" ? 403 : 200,
+        body: options.graphFault === "utf8" ? Buffer.from([255]) : Buffer.from(options.graphFault === "json" ? "{" : JSON.stringify(result)) };
+    }
     assert.equal(pathname, "/rest/v1/rpc/local_unit_diagnostic_contract_v1"); assert.equal(body.toString(), "{}");
     if (selected.commandHash !== selection.commandHash) {
       if (options.foreignAccepted) return { status: 200, body: Buffer.from("{}") };
@@ -128,6 +165,20 @@ function fixture(options = {}) {
   }, async quiesce() { events.push("gate.quiesce"); assert.equal(writes.length, 1); assert(files.has(reportPath));
     if (options.exitGateFailure) throw Error("VM exit gate closed"); } };
   ModuleStub._load = name => {
+    if (name === usagePath || name === partsPath) {
+      if (ModuleStub._cache[name]?.exports) return ModuleStub._cache[name].exports;
+      const loaded = { exports: {} }; ModuleStub._cache[name] = loaded;
+      vm.runInNewContext((name === usagePath ? usageBefore : partsBefore).bytes.toString(), {
+        module: loaded, exports: loaded.exports, process: processStub, Buffer, URL,
+        require(dep) {
+          if (dep === "node:process") return processStub;
+          if (dep === "./auth-state-parts") return ModuleStub._load(partsPath);
+          if (dep.startsWith("./")) return require(path.join(root, "lib/helmut", dep));
+          return require(dep);
+        }
+      }, { filename: name });
+      return loaded.exports;
+    }
     if (name === gatePath) { events.push("gate.import"); ModuleStub._cache[name] = { filename: name }; return Gate; }
     if (name === storagePath || name === publicationPath) {
       events.push(name === storagePath ? "storage.import" : "publication.import");
@@ -156,7 +207,8 @@ function fixture(options = {}) {
     if (options.unqualifiedImport) ModuleStub._load(path.join(root, "lib/helmut/unlisted.js"));
     ModuleStub._cache[name] = { filename: name }; return Endpoint; };
   const processStub = { pid: 7, version: options.nodeVersion || "v24.19.0", getuid: () => options.rootClient ? 0 : 1000, geteuid: () => 1000,
-    env: { HELMUT_NATIVE_NODE_OLD_SPACE_MIB: "384", ...options.env }, execPath: "/synthetic/node",
+    env: { HELMUT_NATIVE_NODE_OLD_SPACE_MIB: "384", ...(options.controlProbe ? { ...readModes,
+      SUPABASE_URL: "http://127.0.0.1:3000", HELMUT_STORAGE_BACKEND: "supabase", HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE: database } : {}), ...options.env }, execPath: "/synthetic/node",
     execArgv: options.flags || ["--max-old-space-size=384", "--max-semi-space-size=16"],
     argv: ["/synthetic/node", filename, "--selector", options.selectorPath || selectorPath], hrtime: { bigint: () => 0n }, stdout: { write: x => lines.push(x) } };
   const builtins = { "node:fs": fsStub, "node:path": path, "node:crypto": crypto, "node:v8": { getHeapStatistics: () => ({ heap_size_limit: options.heap || 400000000 }) },
@@ -171,6 +223,36 @@ function fixture(options = {}) {
 let count = 0, current = "initialization";
 async function check(name, fn) { current = name; await fn(); count++; }
 (async () => {
+  await check("readonly probe uses real U and Parts for two native graph reads without write authority", async () => {
+    const s = fixture({ controlProbe: true }), report = await s.api.start(), graph = report.controlGraphRead;
+    assert.equal(report.originalControlGraphReads, 2); assert.equal(report.liveOriginalControlReadPerformed, true);
+    assert.equal(graph.requestCount, 2); assert.equal(graph.readerSHA256, usageBefore.sha256); assert.equal(graph.partsSHA256, partsBefore.sha256);
+    assert.equal(s.nativeRequests, report.publicationRead.requestCount + 3);
+    const calls = s.calls.filter(c => c.pathname.endsWith("helmut_auth_state_graph_read_v1")); assert.equal(calls.length, 2);
+    assert.equal(JSON.parse(calls[0].body).knownGraph, null); assert(JSON.parse(calls[1].body).knownGraph);
+    assert.equal(graph.reads[0].graphReused, false); assert.equal(graph.reads[1].graphReused, true);
+    assert.notEqual(graph.reads[0].readNonceSHA256, graph.reads[1].readNonceSHA256);
+    assert.equal(graph.viewKeys.length, 5); assert(graph.reads.every(r => r.proofCount === 0 && r.nodeCount > 0 && /^\d+$/.test(r.elapsedNs)));
+    for (const hidden of ["private graph payload", "llmUsage", "knownGraph", "serviceContractHash", "bodyBase64"])
+      assert(!s.files.get(s.reportPath).data.toString().includes(hidden));
+  });
+  for (const graphFault of ["payload", "nonce", "warm-proof", "status", "utf8", "json"]) await check("real control reader rejects " + graphFault, async () => {
+    const s = fixture({ controlProbe: true, graphFault }); await assert.rejects(s.api.start()); assert.equal(s.writes.length, 0);
+    assert(s.calls.filter(c => c.pathname.endsWith("helmut_auth_state_graph_read_v1")).length <= 2);
+  });
+  for (const mutateControlProbe of [p => p.diagnosticMode = "fresh-claim-only-v1", p => p.commandHash = "0".repeat(64),
+    p => p.readerPin.sha256 = "0".repeat(64), p => p.partsPin.path = usagePath, p => p.reads = 3])
+    await check("unbound control probe never reaches endpoint", async () => {
+      const s = fixture({ controlProbe: true, mutateControlProbe }); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0);
+    });
+  for (const env of [{ HELMUT_AUTH_CONTROL_READ: "off" }, { HELMUT_AUTH_GRAPH_READ_REUSE: "verified-graph-reuse-v1" },
+    { HELMUT_AUTH_SINGLE_WRITE_CAPTURE: "single-write-capture-v1" }, { SUPABASE_SERVICE_ROLE_KEY: "VM forbidden dummy" }])
+    await check("readonly probe rejects mode or credential injection", async () => {
+      const s = fixture({ controlProbe: true, env }); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0);
+    });
+  await check("read modes without explicit readonly probe never reach endpoint", async () => {
+    const s = fixture({ env: readModes }); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0);
+  });
   await check("one genuine-module contract read and local foreign rejection publish one bounded report", async () => {
     const s = fixture(), report = await s.api.start(); assert.equal(s.nativeRequests, 3); assert.equal(s.calls.length, 4); assert.equal(s.writes.length, 1); assert.equal(s.lines.length, 1);
     assert(!s.events.includes("gate.import"));
@@ -278,7 +360,7 @@ async function check(name, fn) { current = name; await fn(); count++; }
       const calls = s.calls.length; await assert.rejects(s.api.start()); assert.equal(s.calls.length, calls);
     });
   await check("entry has no database process source producer engine or raw write path", async () => {
-    for (const text of ["child_process", "local-unit-native-prepare", "extractPinnedSource", "Producer.derive", "U.readControl", "state_cas_v1", "artifact_insert_v1", "original_write_v1"])
+    for (const text of ["child_process", "local-unit-native-prepare", "extractPinnedSource", "Producer.derive", "U.write", "readOwnForMutation", "Scope.runClaimed", "state_cas_v1", "artifact_insert_v1", "original_write_v1"])
       assert(!code.includes(text));
     const s = fixture(); assert.throws(() => s.api.parseJSON(Buffer.from('{"x":1,"x":2}')));
     assert.throws(() => s.api.parseJSON(Buffer.from('{"x":1,"x":2}\n'), true));

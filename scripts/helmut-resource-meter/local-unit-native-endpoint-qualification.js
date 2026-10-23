@@ -6,11 +6,16 @@ const fs = require("node:fs"), path = require("node:path"), crypto = require("no
 const Module = require("node:module"), { isDeepStrictEqual } = require("node:util");
 const ROOT = path.resolve(__dirname, "../.."), ENDPOINT = path.join(ROOT, "lib/helmut/local-unit-diagnostic-endpoint.js");
 const STORAGE = path.join(ROOT, "lib/helmut/storage.js"), PUBLICATION = path.join(ROOT, "lib/helmut/publication-eligibility.js");
+const USAGE = path.join(ROOT, "lib/helmut/llm-usage-atomic.js"), PARTS = path.join(ROOT, "lib/helmut/auth-state-parts.js");
+const READ_MODES = Object.freeze({ HELMUT_LLM_USAGE_STORAGE: "relational-atomic-v1", HELMUT_AUTH_STATE_STORAGE: "merkle-auth-v1",
+  HELMUT_AUTH_HISTORY_READ_REUSE: "verified-history-reuse-v1", HELMUT_AUTH_CONTROL_READ: "verified-control-view-v1",
+  HELMUT_AUTH_GRAPH_READ_REUSE: "off", HELMUT_AUTH_SINGLE_WRITE_CAPTURE: "off" });
+const CONTROL_KEYS = ["synthetik500DispatchJournal", "synthetik500KostenAdmission", "testKostenAuftrag", "testKostenTage", "_authStoreRevision"];
 const OBSERVATION_GATE = path.join(__dirname, "local-unit-native-observation-gate.js");
 const TRUST_DIR = "/run/helmut-local-unit-diagnostic", TRUST = TRUST_DIR + "/trust.json", SOCKET = TRUST_DIR + "/broker.sock";
 const CONTRACT = "/rest/v1/rpc/local_unit_diagnostic_contract_v1", CAP = 1024 * 1024, CGROUP2 = 0x63677270;
 const ENV = new Set(["PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "TZ", "HELMUT_STORAGE_BACKEND", "SUPABASE_URL",
-  "HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE", "HELMUT_NATIVE_NODE_OLD_SPACE_MIB"]);
+  "HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE", "HELMUT_NATIVE_NODE_OLD_SPACE_MIB", ...Object.keys(READ_MODES)]);
 const META = ["dev", "ino", "mode", "uid", "gid", "nlink", "size", "mtimeNs", "ctimeNs"];
 const exact = (x, keys) => x !== null && typeof x === "object" && !Array.isArray(x)
   && Reflect.ownKeys(x).length === keys.length && keys.every(k => Object.hasOwn(x, k));
@@ -75,7 +80,7 @@ function nodeBudget() {
 }
 function checkConfig(c, selection) {
   need(exact(c, ["schema", "selection", "database", "databaseOID", "sqlSources", "publicSourceBinding", "codePins", "nodePin",
-    "issuedAtUTC", "expiresAtUTC", "measuredCgroup", "publicationProbe"]) && c.schema === "helmut-local-unit-native-endpoint-qualification-config/1"
+    "issuedAtUTC", "expiresAtUTC", "measuredCgroup", "publicationProbe", ...(Object.hasOwn(c, "controlGraphProbe") ? ["controlGraphProbe"] : [])]) && c.schema === "helmut-local-unit-native-endpoint-qualification-config/1"
     && isDeepStrictEqual(selector(c.selection), selection) && c.database === "helmut_unit_diagnostic_" + selection.operationId.slice(-32)
     && typeof c.databaseOID === "string" && /^[1-9][0-9]{0,9}$/.test(c.databaseOID) && BigInt(c.databaseOID) <= 4294967295n, "configuration");
   const probe = c.publicationProbe;
@@ -106,6 +111,59 @@ function checkConfig(c, selection) {
     && !names.has(p.path), "code-path"); names.add(p.path); }
   need(names.has(__filename) && names.has(ENDPOINT) && names.has(OBSERVATION_GATE)
     && names.has(STORAGE) && names.has(PUBLICATION), "genuine-endpoint-code-required");
+  if (Object.hasOwn(c, "controlGraphProbe")) {
+    const p = c.controlGraphProbe;
+    need(exact(p, ["diagnosticMode", "commandHash", "readerPin", "partsPin"])
+      && p.diagnosticMode === "readonly-http-pre-admission-v1" && p.commandHash === selection.commandHash, "control-graph-probe");
+    for (const [key, name] of [["readerPin", USAGE], ["partsPin", PARTS]]) {
+      pinShape(p[key]); need(p[key].path === name && c.codePins.some(pin => isDeepStrictEqual(pin, p[key])), "control-graph-code-pin");
+    }
+  }
+  controlModes(c);
+}
+function controlModes(c) {
+  for (const [key, value] of Object.entries(READ_MODES))
+    need(Object.hasOwn(c, "controlGraphProbe") ? process.env[key] === value : !Object.hasOwn(process.env, key), "control-graph-read-modes");
+}
+async function readControlGraph(c, selection, Endpoint, guard) {
+  const U = require(USAGE), records = [];
+  const recheck = () => { guard(); controlModes(c); need(U.enabled() && U.controlReadEnabled(), "control-graph-reader-mode"); };
+  recheck();
+  // The same genuine consumer as native Prepare, with its unchanged body and
+  // proof checks. This transport grants no Scope, write snapshot or authority.
+  for (let index = 0; index < 2; index++) {
+    const started = process.hrtime.bigint(); let requests = 0, wire = null;
+    const view = await U.readControl({ rowId: "main-auth", target: new URL(process.env.SUPABASE_URL).origin + "|main-auth",
+      request: async (endpoint, options) => {
+        recheck(); need(++requests === 1 && endpoint === "/rest/v1/rpc/helmut_auth_state_graph_read_v1"
+          && exact(options, ["method", "body"]) && options.method === "POST" && typeof options.body === "string"
+          && Buffer.byteLength(options.body) <= 65536, "control-graph-request");
+        const body = Buffer.from(options.body), args = parseJSON(body);
+        need(exact(args, ["id", "knownProof", "readNonce", "knownGraph"]) && args.id === "main-auth", "control-graph-request-body");
+        const answer = await Endpoint.request(selection, c.database, "POST", endpoint, body); recheck();
+        need(exact(answer, ["status", "body"]) && answer.status === 200 && Buffer.isBuffer(answer.body)
+          && answer.body.length <= 36 * 1024 * 1024, "control-graph-response");
+        // Match the native Store legacy reader's UTF8/JSON boundary; avoid a
+        // second full graph serialization just for measurement or comparison.
+        const text = answer.body.toString("utf8"); need(Buffer.from(text).equals(answer.body), "control-graph-response-utf8");
+        let value; try { value = JSON.parse(text); } catch { need(false, "control-graph-response-json"); }
+        wire = { requestBodySHA256: sha(body), readNonceSHA256: sha(args.readNonce), responseBodySHA256: sha(answer.body),
+          proofCount: value.proof?.count, nodeCount: value.graphReuse?.nodeCount,
+          graphReused: value.graphReuse?.reused, historyReused: value.historyReuse?.reused };
+        return value;
+      } });
+    const completed = process.hrtime.bigint(); recheck();
+    need(requests === 1 && exact(view, CONTROL_KEYS) && Object.isFrozen(view) && !U.hasSnapshot(view) && !U.hasOwnRead(view)
+      && completed >= started && completed - started < 30000000000n
+      && Number.isSafeInteger(wire.proofCount) && wire.proofCount >= 0 && Number.isSafeInteger(wire.nodeCount) && wire.nodeCount > 0
+      && typeof wire.graphReused === "boolean" && typeof wire.historyReused === "boolean", "control-graph-read-confirmed");
+    records.push({ index, startedMonotonicNs: String(started), completedMonotonicNs: String(completed), elapsedNs: String(completed - started),
+      ...wire });
+  }
+  need(records[0].readNonceSHA256 !== records[1].readNonceSHA256, "control-graph-fresh-nonces");
+  return { diagnosticMode: c.controlGraphProbe.diagnosticMode, probeCanonicalSHA256: sha(canonical(c.controlGraphProbe)),
+    readerSHA256: c.controlGraphProbe.readerPin.sha256, partsSHA256: c.controlGraphProbe.partsPin.sha256,
+    requestCount: 2, viewKeys: CONTROL_KEYS, reads: records };
 }
 function processIdentity() {
   const pid = process.pid, text = fs.readFileSync(`/proc/${pid}/stat`, "utf8"), a = text.slice(text.lastIndexOf(")") + 2).trim().split(/\s+/);
@@ -213,6 +271,7 @@ async function start() {
     const publicationRead = { schema: "helmut-local-unit-native-publication-read/1", observed: true,
       probeCanonicalSHA256: sha(canonical(c.publicationProbe)), knowledgeObjectCount: c.publicationProbe.knowledgeObjectIds.length,
       documentIdentityCount: Object.values(identities).reduce((n, rows) => n + rows.length, 0), requestCount: publicationRequests };
+    const controlGraphRead = Object.hasOwn(c, "controlGraphProbe") ? await readControlGraph(c, selection, Endpoint, guard) : null;
     const foreign = { ...selection, commandHash: (selection.commandHash[0] === "0" ? "1" : "0") + selection.commandHash.slice(1) };
     let rejected = false;
     try { await Endpoint.request(foreign, c.database, "POST", CONTRACT, Buffer.from("{}")); }
@@ -229,7 +288,8 @@ async function start() {
       publicationRead, sourceReadPreflightMayWarmCache: true,
       signedReadonlyContractObserved: true, foreignScopeRejectedBeforeRequest: true,
       foreignScopeNativeRequestCount: null, foreignScopeNativeRequestCountMeasured: false,
-      liveRawMutatorNegativesPerformed: false, liveOriginalControlReadPerformed: false, nativeACLProofPerformed: false,
+      liveRawMutatorNegativesPerformed: false, liveOriginalControlReadPerformed: controlGraphRead !== null, nativeACLProofPerformed: false,
+      ...(controlGraphRead ? { originalControlGraphReads: 2, controlGraphRead } : {}),
       seedPerformed: false, scopeClaimConsumed: false, unitExecutionQualified: false, full500Qualified: false };
     const reportPin = writeReport(directory, report); guard();
     if (observationGate) await observationGate.quiesce();

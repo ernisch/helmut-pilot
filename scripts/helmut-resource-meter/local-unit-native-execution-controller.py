@@ -525,6 +525,12 @@ class _Controller:
                      'publicSourceBinding': self.observer.binding, 'codePins': self.c['sourceCodePins'], 'nodePin': self.c['nodePin'],
                      'issuedAtUTC': utc(), 'expiresAtUTC': self.expires, 'measuredCgroup': self.source.source_group(self.c),
                      'publicationProbe': _publication_probe(self.command, self.selection)}
+        if self.readonly_http:
+            pins = {p['path']: p for p in self.c['sourceCodePins']}
+            qualifier['controlGraphProbe'] = {'diagnosticMode': 'readonly-http-pre-admission-v1',
+                'commandHash': self.selection['commandHash'],
+                'readerPin': pins[str(Path(self.c['repository']) / 'lib/helmut/llm-usage-atomic.js')],
+                'partsPin': pins[str(Path(self.c['repository']) / 'lib/helmut/auth-state-parts.js')]}
         result = self.host.call('CLIENT_QUALIFY', {'configuration': qualifier}, seconds=40)
         need(set(result) == ({'processClose', 'reportPin', 'report', 'phaseCapture'} if self.readonly_http else
                              {'processClose', 'reportPin', 'report'}), 'client-qualification-result')
@@ -536,6 +542,15 @@ class _Controller:
              and report['publicSourceBindingCanonicalSHA256'] == sha(canonical(self.observer.binding))
              and report['seedPerformed'] is False and report['scopeClaimConsumed'] is False, 'actual-client-contract')
         _publication_read_report(self.command, self.selection, report.get('publicationRead'))
+        if self.readonly_http:
+            probe, graph = qualifier['controlGraphProbe'], report.get('controlGraphRead', {})
+            need(type(report.get('originalControlGraphReads')) is int and report['originalControlGraphReads'] == 2
+                 and type(graph) is dict and type(graph.get('requestCount')) is int and graph['requestCount'] == 2
+                 and type(graph.get('reads')) is list and len(graph['reads']) == 2
+                 and graph.get('diagnosticMode') == probe['diagnosticMode']
+                 and graph.get('probeCanonicalSHA256') == sha(canonical(probe))
+                 and graph.get('readerSHA256') == probe['readerPin']['sha256']
+                 and graph.get('partsSHA256') == probe['partsPin']['sha256'], 'actual-client-control-graph')
         if self.readonly_http:
             self.client_phase_capture = self.readonly_phase_capture(result['phaseCapture'], close, 'ENDPOINT', close['clientContainerId'])
         self.client_report = report
@@ -733,7 +748,19 @@ class _Controller:
              'readonly-http-no-original-writes')
         report = self.client_report
         need(report['signedReadonlyContractObserved'] is True and report['seedPerformed'] is False
-             and report['scopeClaimConsumed'] is False, 'readonly-http-client-contract')
+             and report['scopeClaimConsumed'] is False and type(report.get('originalControlGraphReads')) is int
+             and report['originalControlGraphReads'] == 2, 'readonly-http-client-contract')
+        trace = owner['controlReadTrace']['value']; footer, rows = trace['footer'], trace.get('records')
+        need(type(rows) is list and len(rows) == 2
+             and all(type(footer.get(k)) is int and footer[k] == n for k, n in (
+                 ('recordCount', 2), ('controlCount', 2), ('finalAckCount', 0), ('closedReadbackCount', 0))), 'readonly-http-two-control-records')
+        reads = report['controlGraphRead']['reads']
+        need(len(reads) == 2 and reads[0]['readNonceSHA256'] != reads[1]['readNonceSHA256'], 'readonly-http-fresh-control-reads')
+        for index, (row, read) in enumerate(zip(rows, reads), 1):
+            need(row['seq'] == index and row['kind'] == 'control-graph-4' and row['status'] == 200
+                 and row['control']['readNonceSHA256'] == read['readNonceSHA256']
+                 and row['requestBodySHA256'] == read['requestBodySHA256']
+                 and row['responseBodySHA256'] == read['responseBodySHA256'], 'readonly-http-control-trace-join')
         self.w.save('READONLY_HTTP_DIAGNOSTIC.PRIVATE.json', {
             'schema': 'helmut-native-readonly-http-diagnostic/1', 'selection': self.selection,
             'client': report, 'owner': owner, 'sourceServiceStopPin': stop_pin, 'phaseCaptures': captures,
@@ -742,6 +769,7 @@ class _Controller:
                 'diagnosticMode': 'readonly-http-pre-admission-v1', 'selection': self.selection,
                 'genuineSourceInputsQualified': True, 'readClosureQualified': True, 'originalBridgeQualified': True,
                 'readonlyHttpObserved': True, 'signedReadonlyContractObserved': True, 'publicationReadObserved': True,
+                'originalControlGraphReads': 2,
                 'phaseCaptures': captures,
                 'executionAuthorityInstalled': False, 'admissionPerformed': False, 'seedPerformed': False,
                 'scopeClaimConsumed': False, 'runtimeReadMeasured': False, 'ownStateReadMeasured': False,

@@ -1658,6 +1658,10 @@ class NativeExecutionHost:
                                HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1', HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1',
                                HELMUT_AUTH_GRAPH_READ_REUSE='off', HELMUT_AUTH_SINGLE_WRITE_CAPTURE='off', HELMUT_AUTH_CONTROL_READ='verified-control-view-v1',
                                HELMUT_LOCAL_PIPELINE_LOCK_MODE='invocation-lease-v1')
+        elif mode == 'qualifier' and diagnostic == 'readonly-http-pre-admission-v1':
+            environment.update(HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1', HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1',
+                               HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1', HELMUT_AUTH_GRAPH_READ_REUSE='off',
+                               HELMUT_AUTH_SINGLE_WRITE_CAPTURE='off', HELMUT_AUTH_CONTROL_READ='verified-control-view-v1')
         if mode=='entry' and diagnostic=='fresh-claim-only-v1':
             environment['HELMUT_LOCAL_UNIT_NATIVE_DIAGNOSTIC']=diagnostic
         names = {Path(p['physical']['path']).name for p in self.client_pins if Path(p['physical']['path']).parent == self.case / 'client'}
@@ -1793,6 +1797,7 @@ class NativeExecutionHost:
         elif stage == 'CLIENT_QUALIFY':
             need(self.state == 'OWNER' and set(body) == {'configuration'}, 'client-qualify-order')
             q = body['configuration']; need(q['selection'] == self.selection and q['publicSourceBinding'] == self.handoff['sourceQualification']['publicSourceBinding'], 'qualifier-config-scope')
+            need(('controlGraphProbe' in q) == (self.config.get('nativeDiagnosticMode') == 'readonly-http-pre-admission-v1'), 'qualifier-control-graph-mode')
             write_once(self.case / 'client/ENDPOINT_QUALIFICATION_CONFIG.PRIVATE.json', encode(q)); self._client('qualifier')
         elif stage == 'HOST_OBSERVE':
             need(self.state in ('QUALIFIED', 'ENTRY', 'DONE') and body == {}, 'observation-order')

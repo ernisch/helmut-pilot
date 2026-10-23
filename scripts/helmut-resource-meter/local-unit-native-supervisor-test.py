@@ -15,6 +15,7 @@ m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 class ReadonlyHTTPMode(unittest.TestCase):
     def result(self):
         return {'schema': 'helmut-local-unit-native-readonly-http-result/1', 'diagnosticMode': 'readonly-http-pre-admission-v1',
+            'originalControlGraphReads': 2,
             **dict.fromkeys(('readonlyHttpObserved', 'signedReadonlyContractObserved', 'publicationReadObserved'), True),
             **dict.fromkeys(('executionAuthorityInstalled', 'admissionPerformed', 'seedPerformed', 'scopeClaimConsumed',
                 'runtimeReadMeasured', 'ownStateReadMeasured', 'unit60Qualified', 'auth30Qualified', 'independentFinalAcceptance', 'production', 'full500'), False),
@@ -35,7 +36,7 @@ class ReadonlyHTTPMode(unittest.TestCase):
         m.readonly_http_result(self.result())
         for key in ('diagnosticMode', 'schema', 'readonlyHttpObserved', 'publicationReadObserved', 'executionAuthorityInstalled',
                     'admissionPerformed', 'seedPerformed', 'scopeClaimConsumed', 'runtimeReadMeasured', 'ownStateReadMeasured',
-                    'actualEntryCalls', 'motorCalls', 'providerCalls', 'unit60Qualified', 'full500', 'phaseCaptures'):
+                    'actualEntryCalls', 'motorCalls', 'providerCalls', 'unit60Qualified', 'full500', 'phaseCaptures', 'originalControlGraphReads'):
             result = self.result(); result[key] = not result[key] if type(result[key]) is bool else 'wrong'
             with self.subTest(key=key), self.assertRaises(RuntimeError): m.readonly_http_result(result)
         for fault in ('eof', 'cap', 'raw', 'extra-close'):

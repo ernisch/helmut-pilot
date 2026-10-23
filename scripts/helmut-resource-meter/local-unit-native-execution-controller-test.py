@@ -136,6 +136,9 @@ class Fixture:
         c.service = None
         c.host_ready = {'ownerPID': 2, 'ownerStartTicks': '5', 'brokerCodePin': pin('/broker')}
         c.client_report = {'rootTrustSHA256': 'd' * 64, 'signedReadonlyContractObserved': True,
+            'originalControlGraphReads': 2,
+            'controlGraphRead': {'reads': [{'readNonceSHA256': h * 64, 'requestBodySHA256': 'c' * 64,
+                'responseBodySHA256': 'e' * 64} for h in ('a', 'b')]},
             'seedPerformed': False, 'scopeClaimConsumed': False,
             'publicationRead': {'schema': 'helmut-local-unit-native-publication-read/1', 'observed': True,
                 'probeCanonicalSHA256': self.m.sha(self.m.canonical(self.m._publication_probe(c.command, c.selection))),
@@ -229,7 +232,11 @@ class Fixture:
                     'value': {'header': {**self.c.selection, 'ownerPID': 2, 'ownerStartTicks': '5', 'pidNamespace': 'pid:[4]', 'timeNamespace': self.c.last_host['source']['namespaces']['time'],
                         'clockDomain': copy.deepcopy(self.clock_domain),
                         'brokerCodeSHA256': pin('/broker')['sha256'], 'sourceBindingSHA256': self.m.sha(self.m.canonical(self.c.observer.binding)),
-                        'trustSHA256': 'd' * 64}, 'footer': {'complete': True}}}}
+                        'trustSHA256': 'd' * 64},
+                        **({'records': [{'seq': i, 'kind': 'control-graph-4', 'status': 200, 'control': {'readNonceSHA256': r['readNonceSHA256']},
+                            'requestBodySHA256': r['requestBodySHA256'], 'responseBodySHA256': r['responseBodySHA256']}
+                            for i, r in enumerate(self.c.client_report['controlGraphRead']['reads'], 1)]} if self.c.readonly_http else {}),
+                        'footer': {'complete': True, **({'recordCount': 2, 'controlCount': 2, 'finalAckCount': 0, 'closedReadbackCount': 0} if self.c.readonly_http else {})}}}}
         return {}
 
     def final_acceptance(self, query, **kwargs):
@@ -276,6 +283,7 @@ class Tests(unittest.TestCase):
         for key in ('actualEntryCalls', 'motorCalls', 'providerCalls', 'completedUnits', 'expectedPositions', 'controlCount'):
             self.assertEqual(result[key], 0)
         self.assertEqual(set(result['phaseCaptures']), {'endpoint', 'broker'})
+        self.assertEqual(result['originalControlGraphReads'], 2)
 
     def test_readonly_http_authority_and_seed_reject_even_direct_calls(self):
         f = Fixture(); c, m = f.c, f.m; c.readonly_http = True
@@ -291,7 +299,7 @@ class Tests(unittest.TestCase):
             with self.subTest(failure=failure), self.assertRaises(Exception): f.run()
             self.assertNotIn('READONLY_HTTP_DIAGNOSTIC.PRIVATE.json', f.saved)
             self.assertNotIn('ENTRY_START', f.calls)
-        for fault in ('exit', 'eof', 'footer', 'capture', 'service-write', 'seeded-client'):
+        for fault in ('exit', 'eof', 'footer', 'capture', 'service-write', 'seeded-client', 'graph-count', 'trace-count', 'trace-nonce'):
             f = Fixture(); f.c.readonly_http = True; original = f.c.host.call
             def changed(*args, **kwargs):
                 row = original(*args, **kwargs)
@@ -299,12 +307,15 @@ class Tests(unittest.TestCase):
                 if fault == 'eof': row['ownerProcessClose']['stderrNaturalEOF'] = False
                 if fault == 'footer': row['controlReadTrace']['value']['footer']['complete'] = False
                 if fault == 'capture': row.pop('phaseCapture')
+                if fault == 'trace-count': row['controlReadTrace']['value']['footer']['controlCount'] = 16
+                if fault == 'trace-nonce': row['controlReadTrace']['value']['records'][0]['control']['readNonceSHA256'] = '0' * 64
                 return row
             f.c.host.call = changed
             if fault == 'service-write':
                 original_private = f.c.private
                 f.c.private = lambda name, **kw: ({'spawnCount': 1, 'closeCount': 1, 'confirmedCount': 1}, pin('/stop')) if name == 'ORIGINAL_SERVICE_STOP.SAFE.json' else original_private(name, **kw)
             if fault == 'seeded-client': f.c.client_report['seedPerformed'] = True
+            if fault == 'graph-count': f.c.client_report['originalControlGraphReads'] = 3
             with self.subTest(fault=fault), self.assertRaises(Exception): f.run()
             self.assertNotIn('READONLY_HTTP_DIAGNOSTIC.PRIVATE.json', f.saved)
 
@@ -369,10 +380,11 @@ class Tests(unittest.TestCase):
     def test_actual_client_qualification_requires_read_report_and_process_close(self):
         faults = (None, 'missing', 'not-observed', 'input-hash', 'ko-count', 'doc-count', 'zero-request',
                   'bool-request', 'extra-field', 'nonzero-exit', 'missing-eof')
-        for readonly, mutation in [(mode, fault) for mode in (False, True) for fault in faults]:
+        graph_faults = ('graph-missing', 'graph-count', 'graph-pin', 'graph-mode', 'graph-probe-hash', 'graph-read-count')
+        for readonly, mutation in [(mode, fault) for mode in (False, True) for fault in faults + (graph_faults if mode else ())]:
             f = Fixture(); c, m = f.c, f.m
             c.readonly_http = readonly
-            c.c['sourceCodePins'] = [pin('/storage'), pin('/publication')]
+            c.c['sourceCodePins'] = [pin('/storage'), pin('/publication'), pin('/repo/lib/helmut/llm-usage-atomic.js'), pin('/repo/lib/helmut/auth-state-parts.js')]
             runtime = {'sqlSources': {'helmut_unit_diagnostic.synthetic()': 'c' * 64}}
             calls = []
             def host(stage, body, **kwargs):
@@ -387,6 +399,17 @@ class Tests(unittest.TestCase):
                     'sqlSourcesCanonicalSHA256': m.sha(m.canonical(runtime['sqlSources'])),
                     'publicSourceBindingCanonicalSHA256': m.sha(m.canonical(c.observer.binding)),
                     'seedPerformed': False, 'scopeClaimConsumed': False}
+                self.assertEqual('controlGraphProbe' in q, readonly)
+                if readonly:
+                    probe = q['controlGraphProbe']
+                    report['controlGraphRead'] = {'requestCount': 2, 'reads': [{}, {}], 'diagnosticMode': probe['diagnosticMode'],
+                        'probeCanonicalSHA256': m.sha(m.canonical(probe)), 'readerSHA256': probe['readerPin']['sha256'], 'partsSHA256': probe['partsPin']['sha256']}
+                    if mutation == 'graph-missing': report.pop('controlGraphRead')
+                    if mutation == 'graph-count': report['originalControlGraphReads'] = 3
+                    if mutation == 'graph-pin': report['controlGraphRead']['partsSHA256'] = '0' * 64
+                    if mutation == 'graph-mode': report['controlGraphRead']['diagnosticMode'] = 'fresh-claim-only-v1'
+                    if mutation == 'graph-probe-hash': report['controlGraphRead']['probeCanonicalSHA256'] = '0' * 64
+                    if mutation == 'graph-read-count': report['controlGraphRead']['reads'] = [{}]
                 p = report['publicationRead']
                 if mutation == 'missing': report.pop('publicationRead')
                 if mutation == 'not-observed': p['observed'] = False

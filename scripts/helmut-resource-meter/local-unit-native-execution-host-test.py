@@ -606,6 +606,16 @@ class PureHost(unittest.TestCase):
             with self.subTest(diagnostic=diagnostic, state=state), self.assertRaisesRegex(RuntimeError, 'owner-stop-order'):
                 self.host._accept(self.request('OWNER_STOP'), '1' * 64)
 
+    def test_control_graph_probe_is_exclusive_to_existing_readonly_mode(self):
+        self.host.handoff = {'sourceQualification': {'publicSourceBinding': {}}}
+        for mode, present in ((None, True), ('fresh-claim-only-v1', True), ('readonly-http-pre-admission-v1', False)):
+            self.config['nativeDiagnosticMode'] = mode; self.host.state = 'OWNER'; self.host.pending = None; self.host.seen.clear()
+            request = self.request('CLIENT_QUALIFY')
+            request['body'] = {'configuration': {'selection': self.selection, 'publicSourceBinding': {},
+                **({'controlGraphProbe': {}} if present else {})}}
+            with self.subTest(mode=mode), self.assertRaisesRegex(RuntimeError, 'qualifier-control-graph-mode'):
+                self.host._accept(request, '1' * 64)
+
     def closed_phase_child(self, raw=b'private-marker\n'):
         close = {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True, 'registeredHostPID': 123}
         return types.SimpleNamespace(close_metadata=lambda: copy.deepcopy(close), output=[bytearray(b'private-stdout'), bytearray(raw)],
@@ -1908,10 +1918,11 @@ class PureHost(unittest.TestCase):
         def docker(argv, **opts):
             if argv[:2] == ['image', 'inspect']:
                 return types.SimpleNamespace(stdout='[{"Config":{"Env":null}}]')
-            captured.append(argv); return types.SimpleNamespace(stdout=('7' if len(captured) == 1 else '8') * 64)
+            captured.append(argv); return types.SimpleNamespace(stdout=str(6 + len(captured)) * 64)
         self.host._docker = docker; self.host._child = lambda *a, **k: FakeChild(*a, **k)
         self.host._client('qualifier'); self.host._client('entry')
-        q, e = captured
+        self.config['nativeDiagnosticMode'] = 'readonly-http-pre-admission-v1'; self.host._client('qualifier')
+        q, e, readonly = captured
         self.assertTrue(not any('PUBLICATION' in x or 'AUTH_STATE' in x or 'CONTROL_READ' in x for x in q))
         self.assertTrue('HELMUT_AUTH_GRAPH_READ_REUSE=off' in e and 'HELMUT_AUTH_SINGLE_WRITE_CAPTURE=off' in e
                         and 'HELMUT_AUTH_CONTROL_READ=verified-control-view-v1' in e and 'HELMUT_LOCAL_PIPELINE_LOCK_MODE=invocation-lease-v1' in e)
@@ -1919,6 +1930,8 @@ class PureHost(unittest.TestCase):
         self.assertTrue(not any('docker.sock' in x or 'PGDATA' in x or 'HMAC' in x or 'dst=/bench' in x for x in q))
         self.assertTrue(all(flag in q and flag in e for flag in M.FLAGS))
         self.assertTrue(any('dst=/opt/postgrest-pinned,readonly' in x for x in q) and any('dst=/opt/python/bin/python3.12,readonly' in x for x in q))
+        self.assertTrue('HELMUT_AUTH_CONTROL_READ=verified-control-view-v1' in readonly and 'HELMUT_LLM_USAGE_STORAGE=relational-atomic-v1' in readonly)
+        self.assertTrue(not any('HELMUT_PUBLICATION_ELIGIBILITY_JSON=' in x or 'HELMUT_LOCAL_PIPELINE_LOCK_MODE=' in x or 'SERVICE_ROLE_KEY=' in x for x in readonly))
 
     def test_private_extra_file_in_client_folder_is_blocked(self):
         self.config['sourceCodePins'] = [self.pin(str(Path(self.config['repository']) / 'scripts/helmut-resource-meter/local-unit-native-run.js'))]

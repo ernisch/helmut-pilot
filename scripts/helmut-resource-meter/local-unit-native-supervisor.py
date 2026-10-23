@@ -228,6 +228,7 @@ def readonly_http_result(result):
     if (result.get('schema') != 'helmut-local-unit-native-readonly-http-result/1'
             or result.get('diagnosticMode') != 'readonly-http-pre-admission-v1'
             or any(result.get(k) is not True for k in ('readonlyHttpObserved', 'signedReadonlyContractObserved', 'publicationReadObserved'))
+            or type(result.get('originalControlGraphReads')) is not int or result['originalControlGraphReads'] != 2
             or any(result.get(k) is not False for k in ('executionAuthorityInstalled', 'admissionPerformed', 'seedPerformed',
                 'scopeClaimConsumed', 'runtimeReadMeasured', 'ownStateReadMeasured', 'unit60Qualified', 'auth30Qualified',
                 'independentFinalAcceptance', 'production', 'full500'))
@@ -581,6 +582,7 @@ def main():
                 unit60Qualified=False,auth30Qualified=False,independentFinalAcceptance=False,full500Qualified=False)
         if args.diagnose_native_readonly_http:
             receipt.update(readonlyHttpRequested=True, diagnosticMode='readonly-http-pre-admission-v1', diagnosticOnly=True,
+                originalControlGraphReads=result.get('originalControlGraphReads') if accepted else 0,
                 readonlyHttpObserved=accepted and result.get('readonlyHttpObserved') is True,
                 signedReadonlyContractObserved=accepted and result.get('signedReadonlyContractObserved') is True,
                 publicationReadObserved=accepted and result.get('publicationReadObserved') is True,
