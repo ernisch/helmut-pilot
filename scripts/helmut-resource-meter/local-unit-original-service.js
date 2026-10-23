@@ -10,6 +10,7 @@ const SOCKET = "/ram/helmut-original-write-bridge.sock";
 const LEDGER = "/bench/ORIGINAL_SERVICE_CHILDREN.SAFE.jsonl", STOP = "/bench/ORIGINAL_SERVICE_STOP.SAFE.json";
 const LEDGER_CAP = 256 * 1024, META = ["dev", "ino", "mode", "uid", "gid", "nlink", "size", "mtimeNs", "ctimeNs"];
 const BODY_CAP = 36 * 1024 * 1024, FRAME_CAP = 50 * 1024 * 1024;
+const PHASE_CAP = 2048;
 const exact = (x, keys) => x && typeof x === "object" && !Array.isArray(x)
   && Object.keys(x).sort().join("|") === [...keys].sort().join("|");
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");
@@ -222,7 +223,46 @@ function stopReceipt(value) {
   } finally { fs.closeSync(fd); }
   file({ path: STOP, bytes: raw.length, sha256: sha(raw) }, { privateFile: true });
 }
-async function psql(c, sql, children, ledger, nonce) {
+function transactionPhases(nonce, mode, begin, outcome, fail) {
+  const filename = "/bench/ORIGINAL_SERVICE_PHASES_" + sha(nonce) + ".PRIVATE.jsonl";
+  let fd = null, bytes = 0, rows = 0, previous = null, broken = false, phase = null, started = 0, last = 0;
+  const failed = () => {
+    broken = true; fail();
+    // Publication failure never makes an already observed COMMIT unsent.
+    try { process.stderr.write(outcome.commitProcessConfirmed
+      ? "original-owner-service-phase-publication-failed-commit-process-confirmed\n"
+      : "original-owner-service-phase-publication-failed-commit-not-confirmed\n"); } catch (_) {}
+  };
+  function append(event, details = {}) {
+    try {
+      need(!broken && fd !== null && rows < 8, "phase-output-state");
+      const now = Number(process.hrtime.bigint() - begin), before = privateOutput(fd, filename, bytes);
+      need(Number.isSafeInteger(now) && now >= last && (!previous || META.every(k => previous[k] === before[k])), "phase-clock-or-drift");
+      const raw = Buffer.from(JSON.stringify({ event, atNS: now, ...details,
+        psqlInvoked: outcome.invoked, commitProcessConfirmed: outcome.commitProcessConfirmed }) + "\n");
+      need(raw.length <= 512 && bytes + raw.length <= PHASE_CAP, "phase-output-cap");
+      let offset = 0;
+      while (offset < raw.length) { const n = fs.writeSync(fd, raw, offset, raw.length - offset, null); need(n > 0, "phase-short-write"); offset += n; }
+      fs.fsyncSync(fd); const after = privateOutput(fd, filename, bytes + raw.length);
+      need(["dev", "ino", "mode", "uid", "gid", "nlink"].every(k => before[k] === after[k]), "phase-write-drift");
+      bytes += raw.length; rows++; previous = after; last = now; return now;
+    } catch (error) { failed(); throw error; }
+  }
+  try {
+    fd = fs.openSync(filename, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK, 0o600);
+    append("header", { schema: "helmut-local-unit-original-service-phases/1", requestNonceSHA256: sha(nonce),
+      mode: ["seed", "state", "usage", "artifact"].includes(mode) ? mode : "invalid" });
+  } catch (error) { if (!broken) failed(); if (fd !== null) fs.closeSync(fd); throw error; }
+  return {
+    start(name) { need(phase === null && ["prepare", "psql", "accept"].includes(name), "phase-start"); phase = name; started = append(name + "-start"); },
+    end(name) { need(phase === name, "phase-end"); append(name + "-end", { durationNS: Number(process.hrtime.bigint() - begin) - started }); phase = null; },
+    finish(ackAccepted) {
+      try { append("terminal", { ackAccepted }); }
+      finally { if (fd !== null) { fs.closeSync(fd); fd = null; } }
+    }
+  };
+}
+async function psql(c, sql, children, ledger, nonce, phaseOutcome = null) {
   need(typeof sql === "string" && Buffer.byteLength(sql) <= BODY_CAP, "sql-size");
   let child;
   try {
@@ -258,6 +298,8 @@ async function psql(c, sql, children, ledger, nonce) {
       clearTimeout(timer); clearTimeout(terminalTimer); clearTimeout(killer);
       if (!exited || actualExitCode !== code || actualExitSignal !== signal || child.exitCode !== code || child.signalCode !== signal)
         failure ||= "transaction-exit-identity";
+      if (phaseOutcome && !failure && code === 0 && signal === null && outEOF && errEOF)
+        phaseOutcome.commitProcessConfirmed = true;
       if (errBytes) {
         try { saveError(crypto.randomBytes(12).toString("hex"), Buffer.concat(err)); }
         catch { failure ||= "private-error-retention-failed"; }
@@ -335,17 +377,24 @@ async function start() {
       blocks.push(block);
       if (!block.includes(10)) return;
       consumed = true;
-      let message, status = 500, body = Buffer.from('{"error":"original-write-not-confirmed"}');
+      let message, phases = null, status = 500, body = Buffer.from('{"error":"original-write-not-confirmed"}');
+      const phaseOutcome = { invoked: false, commitProcessConfirmed: false };
       try {
         const frame = Buffer.concat(blocks); blocks = [];
         need(frame.at(-1) === 10 && frame.indexOf(10) === frame.length - 1, "single-frame");
         message = parse(frame.subarray(0, -1), key, observed); groupIdentity();
         need(!terminal && !writing && message.request.operationId === c.operationId && message.request.commandHash === c.commandHash, "request-scope");
         writing = true; ownsWrite = true;
-        const prepared = transaction.prepare(message.request, c.qualification);
+        phases = transactionPhases(message.nonce, message.request.mode, begin, phaseOutcome, lifecycleFailed);
+        phases.start("prepare");
+        let prepared;
+        try { prepared = transaction.prepare(message.request, c.qualification); } finally { phases.end("prepare"); }
         need(prepared.database === c.database && prepared.sqlSHA256 === sha(Buffer.from(prepared.sql)), "prepared-transaction");
-        body = await psql(c, prepared.sql, children, ledger, message.nonce); groupIdentity();
-        const result = transaction.acceptResult(prepared, body.toString("utf8"));
+        phases.start("psql"); phaseOutcome.invoked = true;
+        try { body = await psql(c, prepared.sql, children, ledger, message.nonce, phaseOutcome); } finally { phases.end("psql"); }
+        groupIdentity(); phases.start("accept");
+        let result;
+        try { result = transaction.acceptResult(prepared, body.toString("utf8")); } finally { phases.end("accept"); }
         const artifact = message.request.mode === "artifact";
         need(exact(result, ["schema", artifact ? "originalRowAck" : "authAck", "ownAck"])
           && result.schema === "helmut-local-unit-original-write-result/1" && result.ownAck && typeof result.ownAck === "object"
@@ -353,6 +402,12 @@ async function start() {
             : Array.isArray(result.authAck) && result.authAck.length === 1), "confirmed-result");
         body = Buffer.from(JSON.stringify(result)); status = 200;
       } catch { if (ownsWrite) terminal = true; body = Buffer.from('{"error":"original-write-not-confirmed"}'); }
+      finally {
+        if (phases) {
+          try { phases.finish(status === 200); }
+          catch { lifecycleFailed(); status = 500; body = Buffer.from('{"error":"original-write-not-confirmed"}'); }
+        }
+      }
       if (!message || stopping || socket.destroyed) { if (ownsWrite) terminal = true; socket.destroy(); return; }
       const response = { schema: "helmut-local-original-owner-response/1", nonce: message.nonce, status, bodyBase64: body.toString("base64") };
       socket.end(JSON.stringify({ ...response, hmacSHA256: mac(key, response) }) + "\n");

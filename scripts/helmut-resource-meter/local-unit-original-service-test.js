@@ -21,11 +21,12 @@ function sourceSnapshot() {
 const snapshot = sourceSnapshot(), code = snapshot.bytes.toString("utf8");
 const CONFIG = "/bench/ORIGINAL_SERVICE_CONFIG.PRIVATE.json", SOCKET = "/ram/helmut-original-write-bridge.sock";
 const LEDGER = "/bench/ORIGINAL_SERVICE_CHILDREN.SAFE.jsonl", STOP = "/bench/ORIGINAL_SERVICE_STOP.SAFE.json";
+const PHASE_PREFIX = "/bench/ORIGINAL_SERVICE_PHASES_";
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 function fakeClock() {
   const jobs = new Map(); let next = 0, now = 0;
   const add = (fn, delay, interval) => { const id = ++next; jobs.set(id, { fn, delay, interval, at: now + delay }); return id; };
-  return { jobs, get now() { return now; }, setTimeout: (fn, delay) => add(fn, delay, false), clearTimeout: id => jobs.delete(id),
+  return { jobs, get now() { return now; }, spend: ms => { now += ms; }, setTimeout: (fn, delay) => add(fn, delay, false), clearTimeout: id => jobs.delete(id),
     setInterval: (fn, delay) => add(fn, delay, true), clearInterval: id => jobs.delete(id),
     advance: async ms => {
       const end = now + ms; let count = 0;
@@ -47,6 +48,7 @@ function fixture(options = {}) {
   add("/bench", "", { kind: "directory", mode: 0o700 });
   if (options.ledgerExists) add(LEDGER, "preexisting ledger");
   if (options.stopExists) add(STOP, "preexisting stop");
+  if (options.phaseExists) add(PHASE_PREFIX + sha("b".repeat(64)) + ".PRIVATE.jsonl", "preexisting phase output");
   const transactionPath = path.join(path.dirname(filename), "local-unit-original-transaction.js");
   add(filename, snapshot.bytes); add(transactionPath, "synthetic transaction source");
   add("/usr/lib/postgresql/17/bin/psql", "synthetic executable bytes"); add("/usr/lib/postgresql/17/bin/postgres", "synthetic server bytes");
@@ -79,6 +81,7 @@ function fixture(options = {}) {
         assert(flags & fs.constants.O_EXCL); assert.equal(mode, 0o600);
         if (files.has(name)) throw Object.assign(Error("synthetic-existing-file"), { code: "EEXIST" });
         if (options.ledgerOpenFailure && name === LEDGER) throw Error("synthetic-ledger-open-failure");
+        if (options.phaseOpenFailure && name.startsWith(PHASE_PREFIX)) throw Error("synthetic-phase-open-failure");
         add(name, "");
       }
       assert(files.has(name));
@@ -104,6 +107,11 @@ function fixture(options = {}) {
       const name = descriptors.get(fd), value = files.get(name);
       if (options.ledgerWriteFailure && name === LEDGER && value.data.length) throw Error("synthetic-ledger-write-failure");
       if (options.stopWriteFailure && name === STOP) throw Error("synthetic-stop-write-failure");
+      if (name.startsWith(PHASE_PREFIX)) {
+        if (options.phaseWriteFailureEvent && buffer.subarray(offset, offset + length).toString().includes('"event":"' + options.phaseWriteFailureEvent + '"'))
+          throw Error("synthetic-phase-write-failure");
+        if (options.phaseIOMS) clock.spend(options.phaseIOMS);
+      }
       if (options.shortWriteZero) return 0;
       const count = options.partialWrites ? Math.min(length, 13) : length, start = offsets.get(fd), bytes = buffer.subarray(offset, offset + count);
       value.data = Buffer.concat([value.data.subarray(0, start), bytes, value.data.subarray(start + count)]); offsets.set(fd, start + count);
@@ -165,14 +173,18 @@ function fixture(options = {}) {
     ...(options.artifactResult ? { originalRowAck: { synthetic: true } } : { authAck: [{ synthetic: true }] }), ownAck: { synthetic: true } };
   const transaction = { prepare: (request, qualification) => {
     transactionStats.prepare++; assert.equal(request.operationId, operationId); assert.equal(request.commandHash, commandHash);
+    if (options.prepareMS) clock.spend(options.prepareMS);
+    if (options.prepareFailure) throw Error("synthetic-prepare-failure");
     assert.equal(qualification.database, database); const sql = "synthetic transaction text"; return { database, sql, sqlSHA256: sha(sql) };
   }, acceptResult: (prepared, raw) => {
     transactionStats.accept++; assert.equal(prepared.database, database); assert.equal(raw, JSON.stringify(result));
+    if (options.acceptMS) clock.spend(options.acceptMS);
     if (options.rejectResult) throw Error("synthetic-result-unconfirmed"); return result;
   } };
   const processStub = { getuid: () => 1000, version: options.nodeVersion || "v24.19.0", env: options.env || {}, pid: 7, exitCode: 0,
     execArgv: options.execArgv || ["--max-old-space-size=384", "--max-semi-space-size=16"], umask: value => assert.equal(value, 0o077),
     hrtime: { bigint: () => BigInt(clock.now) * 1000000n } };
+  processStub.stderr = { write: text => { if (options.stderrFailure) throw Error("synthetic-stderr-failure"); logs.push({ name: "stderr", bytes: Buffer.from(text) }); } };
   const buffer = Object.create(Buffer);
   buffer.from = (value, encoding) => {
     if (options.virtualBodyCap && encoding === "base64" && value === "AA==") return { length: 36 * 1024 * 1024 + 1 };
@@ -182,7 +194,7 @@ function fixture(options = {}) {
     "node:v8": { getHeapStatistics: () => ({ heap_size_limit: options.heapLimit || 400000000 }) }, [transactionPath]: transaction };
   const module = { exports: {} }, localRequire = name => { assert(Object.hasOwn(modules, name), "only synthetic dependencies may load"); return modules[name]; };
   localRequire.main = {};
-  const api = vm.runInNewContext(code + "\n({parse,mac,privateConfig,file,checkConfig,psql,start,nodeBudget,psqlIdentity,childLedger,LEDGER_CAP,BODY_CAP,FRAME_CAP});", {
+  const api = vm.runInNewContext(code + "\n({parse,mac,privateConfig,file,checkConfig,psql,start,nodeBudget,psqlIdentity,childLedger,transactionPhases,PHASE_CAP,LEDGER_CAP,BODY_CAP,FRAME_CAP});", {
     require: localRequire, module, __filename: filename, __dirname: path.dirname(filename), process: processStub, Buffer: buffer, Date,
     setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout, setInterval: clock.setInterval, clearInterval: clock.clearInterval
   }, { filename });
@@ -202,8 +214,10 @@ function fixture(options = {}) {
   const runPsql = (sql, children = new Set()) => api.psql(config, sql, children, ledger(), "d".repeat(64));
   const ledgerRows = () => files.get(LEDGER).data.toString().trim().split("\n").map(text => JSON.parse(text));
   const stop = () => JSON.parse(files.get(STOP).data);
+  const phaseRows = () => [...files].filter(([name]) => name.startsWith(PHASE_PREFIX)).flatMap(([, value]) =>
+    value.data.toString().trim().split("\n").map(text => JSON.parse(text)));
   return { api, config, configBytes, key, frame, clock, files, reads, logs, events, children, spawns, server, process: processStub, transactionStats, result, socket, ledger, runPsql,
-    ledgerRows, stop,
+    ledgerRows, phaseRows, stop,
     changeSelf: () => { selfChanged = true; } };
 }
 function complete(child, { code = 0, stdout = null, stderr = null, outEOF = true, errEOF = true, close = true } = {}) {
@@ -213,7 +227,8 @@ function complete(child, { code = 0, stdout = null, stderr = null, outEOF = true
 }
 function observe(promise) { const status = { state: "pending" }; promise.then(value => { status.state = "resolved"; status.value = value; }, error => { status.state = "rejected"; status.error = error; }); return status; }
 let checks = 0, currentCheck = "initial source capture";
-async function check(name, action) { currentCheck = name; await action(); checks++; process.stdout.write("PASS " + name + "\n"); }
+const phaseOnly = process.argv.includes("--phase-timing-only");
+async function check(name, action) { if (phaseOnly && !name.startsWith("phase timing: ")) return; currentCheck = name; await action(); checks++; process.stdout.write("PASS " + name + "\n"); }
 (async () => {
   await check("typed authenticated frame is consumed exactly once", async () => {
     const s = fixture(), observed = new Set(), frame = s.frame(); s.api.parse(frame, s.key, observed);
@@ -463,6 +478,83 @@ async function check(name, action) { currentCheck = name; await action(); checks
     for (const forbidden of [s.config.secretHex, s.frame().toString(), "synthetic transaction text", JSON.stringify(s.result), "Authorization", "bodyBase64", "password", "secretHex"])
       assert(!text.includes(forbidden));
     assert(s.ledgerRows().every(row => !Object.hasOwn(row, "sql") && !Object.hasOwn(row, "args") && !Object.hasOwn(row, "stderr")));
+  });
+  for (const mode of ["seed", "state", "usage", "artifact"]) await check("phase timing: ordered durable boundaries for " + mode + " retain trace IO", async () => {
+    const s = fixture({ prepareMS: 3, acceptMS: 5, phaseIOMS: 2, artifactMode: mode === "artifact", artifactResult: mode === "artifact" });
+    const service = await s.api.start(), socket = s.socket();
+    const body = Buffer.from(JSON.stringify({ operationId: s.config.operationId, commandHash: s.config.commandHash, mode })).toString("base64");
+    const pending = socket.send(Buffer.concat([s.frame({}, body), Buffer.from("\n")]));
+    const waiting = s.phaseRows();
+    assert.deepEqual(waiting.map(row => row.event), ["header", "prepare-start", "prepare-end", "psql-start"]);
+    assert.equal(waiting[0].mode, mode); assert.equal(waiting[0].requestNonceSHA256, sha("b".repeat(64)));
+    assert(s.events.indexOf("spawn") > s.events.lastIndexOf("write:" + path.basename([...s.files.keys()].find(name => name.startsWith(PHASE_PREFIX)))));
+    await s.clock.advance(20); complete(s.children[0], { stdout: JSON.stringify(s.result) }); await pending; await service.close();
+    const rows = s.phaseRows();
+    assert.deepEqual(rows.map(row => row.event), ["header", "prepare-start", "prepare-end", "psql-start", "psql-end", "accept-start", "accept-end", "terminal"]);
+    assert(rows.every((row, index) => Number.isSafeInteger(row.atNS) && row.atNS >= (index ? rows[index - 1].atNS : 0)));
+    assert.equal(rows[2].durationNS, 5000000); assert.equal(rows[4].durationNS, 22000000); assert.equal(rows[6].durationNS, 7000000);
+    assert.equal(s.clock.now, 44); // All eight real-path trace writes remain charged; none is subtracted.
+    assert(rows.slice(0, 4).every(row => row.commitProcessConfirmed === false));
+    assert(rows.slice(4).every(row => row.commitProcessConfirmed === true && row.psqlInvoked === true));
+    assert.equal(rows.at(-1).ackAccepted, true); assert.equal(JSON.parse(socket.replies[0]).status, 200);
+    assert.deepEqual(s.ledgerRows().map(row => row.event), ["header", "spawn", "close"]);
+    assert.equal(s.stop().eventCount, 3); assert.equal(s.stop().confirmedCount, 1);
+    const output = [...s.files].find(([name]) => name.startsWith(PHASE_PREFIX));
+    assert.equal(output[1].mode, 0o600); assert(output[1].data.length <= s.api.PHASE_CAP);
+    for (const forbidden of [s.config.secretHex, s.frame().toString(), "synthetic transaction text", JSON.stringify(s.result), "bodyBase64", "Authorization"])
+      assert(!output[1].data.toString().includes(forbidden));
+  });
+  await check("phase timing: prepare exception remains uninvoked with durable progress", async () => {
+    const s = fixture({ prepareFailure: true }), service = await s.api.start(), socket = s.socket();
+    await socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    assert.equal(s.children.length, 0); assert.equal(s.transactionStats.accept, 0);
+    assert.deepEqual(s.phaseRows().map(row => row.event), ["header", "prepare-start", "prepare-end", "terminal"]);
+    assert(s.phaseRows().every(row => row.psqlInvoked === false && row.commitProcessConfirmed === false));
+    assert.equal(s.phaseRows().at(-1).ackAccepted, false); await assert.rejects(service.close());
+  });
+  await check("phase timing: nonzero or missing EOF never becomes a known commit", async () => {
+    for (const outcome of [{ code: 1 }, { outEOF: false }]) {
+      const s = fixture(), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+      complete(s.children[0], { stdout: JSON.stringify(s.result), ...outcome }); await pending;
+      assert.equal(s.transactionStats.accept, 0); assert(s.phaseRows().every(row => row.commitProcessConfirmed === false));
+      assert.equal(s.phaseRows().at(-1).ackAccepted, false); assert(!s.phaseRows().some(row => row.event === "accept-start"));
+      await assert.rejects(service.close());
+    }
+  });
+  await check("phase timing: ACK rejection preserves separately confirmed commit", async () => {
+    const s = fixture({ rejectResult: true }), service = await s.api.start(), socket = s.socket(), pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+    complete(s.children[0], { stdout: JSON.stringify(s.result) }); await pending;
+    assert.equal(s.ledgerRows().at(-1).confirmed, true); assert.equal(s.phaseRows().at(-1).commitProcessConfirmed, true);
+    assert.equal(s.phaseRows().at(-1).ackAccepted, false); assert.equal(JSON.parse(socket.replies[0]).status, 500);
+    assert(s.socket().destroyed); await assert.rejects(service.close());
+  });
+  await check("phase timing: postcommit trace failure cannot mark commit unsent or retry", async () => {
+    for (const stderrFailure of [false, true]) {
+      const s = fixture({ phaseWriteFailureEvent: "psql-end", stderrFailure }), service = await s.api.start(), socket = s.socket();
+      const pending = socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+      complete(s.children[0], { stdout: JSON.stringify(s.result) }); await pending;
+      assert.equal(s.ledgerRows().at(-1).confirmed, true); assert.equal(s.transactionStats.accept, 0);
+      assert.equal(JSON.parse(socket.replies[0]).status, 500); assert(s.socket().destroyed); assert.equal(s.children.length, 1);
+      if (!stderrFailure) assert(s.logs.some(row => row.name === "stderr" && row.bytes.toString() === "original-owner-service-phase-publication-failed-commit-process-confirmed\n"));
+      await assert.rejects(service.close()); assert.equal(s.stop().confirmedCount, 1); assert.equal(s.stop().cleanShutdown, false);
+    }
+  });
+  await check("phase timing: preexisting and failed private outputs block before prepare", async () => {
+    for (const options of [{ phaseExists: true }, { phaseOpenFailure: true }]) {
+      const s = fixture(options), service = await s.api.start(), socket = s.socket();
+      await socket.send(Buffer.concat([s.frame(), Buffer.from("\n")]));
+      assert.equal(s.transactionStats.prepare, 0); assert.equal(s.children.length, 0); assert(s.socket().destroyed);
+      if (options.phaseExists) assert.equal(s.files.get(PHASE_PREFIX + sha("b".repeat(64)) + ".PRIVATE.jsonl").data.toString(), "preexisting phase output");
+      await assert.rejects(service.close());
+    }
+  });
+  await check("phase timing: fixed fields exclude caller mode text and reject clock drift", async () => {
+    const s = fixture(), outcome = { invoked: false, commitProcessConfirmed: false };
+    const phases = s.api.transactionPhases("b".repeat(64), "PRIVATE_SENTINEL", 0n, outcome, () => { s.process.exitCode = 1; });
+    assert.equal(s.phaseRows()[0].mode, "invalid");
+    assert(!JSON.stringify(s.phaseRows()).includes("PRIVATE_SENTINEL"));
+    s.clock.spend(-1); assert.throws(() => phases.start("prepare"));
+    assert.throws(() => phases.finish(false)); assert.equal(s.process.exitCode, 1); assert.equal(s.phaseRows().length, 1);
   });
   const after = sourceSnapshot(); assert.equal(after.sha256, snapshot.sha256, "reviewed source changed while testing");
   process.stdout.write("Original service VM checks PASS: " + checks + "; source bytes=" + snapshot.bytes.length + "; SHA256=" + snapshot.sha256 + "; stable before/after.\n");
