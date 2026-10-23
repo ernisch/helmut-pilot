@@ -1,0 +1,245 @@
+name: Z22 8807 historical failure readback (diagnostic only)
+
+# One fixed failed run. This workflow changes no required check or test command.
+# Push only after Root review; the existing Environment remains the secret boundary.
+on:
+  push:
+    branches: [codex/ci-z22-8807-readback-20261023]
+    paths: [.github/workflows/ci-z22-8807-readback.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: z22-8807-historical-readback
+  cancel-in-progress: false
+
+jobs:
+  readback:
+    name: Read existing Z22 failure (no tests, no CI acceptance)
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.repository_id == '1274160979' &&
+      github.actor == 'ernisch' && github.actor_id == '273344519' &&
+      github.triggering_actor == 'ernisch'
+    environment: helmut-ci-originals
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify fixed failed run and download only its pinned ciphertext
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 -B - <<'PYTHON'
+          import base64, hashlib, io, json, os, pathlib, re, stat, urllib.error, urllib.parse, urllib.request, zipfile
+          SCHEMA = 'helmut-ci-z22-failure-readback/1'
+          REPO = 'ernisch/helmut-pilot'
+          HEAD = '8807fcb50c47dbe904a90d37fb67fd3760d0b69d'
+          SOURCE_SHA = '911c97af3640f18544adcde09df1cd32d783382d439120bc35f8a6d839b9a4ed'
+          def need(ok):
+              if not ok: raise ValueError('REJECTED')
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl): return None
+          opener = urllib.request.build_opener(NoRedirect)
+          def request(url, limit, auth=False):
+              headers = {'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+              if auth: headers['Authorization'] = 'Bearer ' + os.environ['GITHUB_TOKEN']
+              req = urllib.request.Request(url, headers=headers)
+              with opener.open(req, timeout=20) as response:
+                  need(response.status == 200)
+                  data = response.read(limit + 1)
+              need(len(data) <= limit)
+              return data
+          def api(path): return json.loads(request('https://api.github.com/repos/' + REPO + path, 2*1024**2, True))
+          def owned(actor): return actor.get('login') == 'ernisch' and actor.get('id') == 273344519
+          def save(path, data):
+              fd = os.open(path, os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW, 0o600)
+              with os.fdopen(fd,'wb') as stream: stream.write(data)
+          def validate_failed_run(failed):
+              need(failed.get('id') == 39937538074 and failed.get('run_attempt') == 1 and failed.get('head_sha') == HEAD)
+              need(failed.get('status') == 'completed' and failed.get('conclusion') == 'failure' and failed.get('path') == '.github/workflows/ci.yml')
+              need(failed.get('repository',{}).get('id') == 1274160979 and failed.get('head_repository',{}).get('id') == 1274160979)
+              need(owned(failed.get('actor',{})) and owned(failed.get('triggering_actor',{})))
+
+          def validate_artifact(artifact):
+              need(artifact.get('id') == 12495732532 and artifact.get('name') == 'private-ci-diagnostics-39937538074-1')
+              need(artifact.get('workflow_run',{}).get('id') == 39937538074 and artifact.get('expired') is False)
+              expected = '95ea81430fc2073552e7dc0ecb2747605949821f2bcfde28f099a55df75ceec5'
+              need(artifact.get('size_in_bytes') == 35641 and artifact.get('digest') == 'sha256:' + expected)
+
+          def validate_cipher(raw):
+              expected = '95ea81430fc2073552e7dc0ecb2747605949821f2bcfde28f099a55df75ceec5'
+              need(len(raw) == 35641 and hashlib.sha256(raw).hexdigest() == expected)
+              with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                  entries = archive.infolist()
+                  need(len(entries) == 1 and entries[0].filename == 'helmut-ci-private-logs.tar.gz.gpg' and not entries[0].is_dir())
+                  need(not stat.S_ISLNK(entries[0].external_attr >> 16) and 0 < entries[0].file_size <= 1024**2)
+                  cipher = archive.read(entries[0])
+              return cipher
+
+          def validate_source(source):
+              need(hashlib.sha256(source).hexdigest() == SOURCE_SHA)
+
+          try:
+              os.umask(0o077)
+              need(os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('GITHUB_REPOSITORY') == REPO)
+              need(os.environ.get('GITHUB_EVENT_NAME') == 'push' and os.environ.get('GITHUB_REF') == 'refs/heads/codex/ci-z22-8807-readback-20261023')
+              need(os.environ.get('GITHUB_WORKFLOW_SHA') == os.environ.get('GITHUB_SHA'))
+              current = api('/actions/runs/' + os.environ['GITHUB_RUN_ID'])
+              need(current.get('path') == '.github/workflows/ci-z22-8807-readback.yml' and current.get('event') == 'push')
+              need(current.get('head_sha') == os.environ['GITHUB_SHA'] and owned(current.get('actor',{})) and owned(current.get('triggering_actor',{})))
+              need(current.get('repository',{}).get('id') == 1274160979 and current.get('head_repository',{}).get('id') == 1274160979)
+              failed = api('/actions/runs/39937538074')
+              validate_failed_run(failed)
+              artifact = api('/actions/artifacts/12495732532')
+              validate_artifact(artifact)
+              url = 'https://api.github.com/repos/' + REPO + '/actions/artifacts/12495732532/zip'
+              try:
+                  request(url, 35641, True)
+                  raise ValueError('REDIRECT_REQUIRED')
+              except urllib.error.HTTPError as redirect:
+                  need(redirect.code == 302)
+                  location = redirect.headers.get('Location','')
+              parsed = urllib.parse.urlsplit(location)
+              need(parsed.scheme == 'https' and parsed.hostname is not None and parsed.hostname.endswith('.blob.core.windows.net'))
+              need(parsed.username is None and parsed.password is None and parsed.port in (None,443))
+              raw = request(location,35641) # No GitHub token follows the signed redirect.
+              cipher = validate_cipher(raw)
+              public = api('/contents/scripts/vorbedingung-mandatsfilter-datenbank-test.js?ref=' + HEAD)
+              need(public.get('type') == 'file' and public.get('encoding') == 'base64')
+              source = base64.b64decode(public['content'], validate=False)
+              validate_source(source)
+              temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+              need(temp.is_absolute() and temp.resolve() == temp and temp.is_dir())
+              work = temp / 'z22-39937538074-1'
+              work.mkdir(mode=0o700)
+              save(work/'cipher.gpg',cipher)
+              save(work/'source.js',source)
+              save(work/'cipher-pin.json',json.dumps({'bytes':len(cipher),'sha256':hashlib.sha256(cipher).hexdigest()}).encode())
+              print(json.dumps({'schema':SCHEMA,'code':'PINNED_CIPHERTEXT_READY','originalRun':39937538074,'originalCiPassed':False}))
+          except Exception:
+              print(json.dumps({'schema':SCHEMA,'code':'Z22_CIPHER_READBACK_REJECTED','originalCiPassed':False}))
+              raise SystemExit(1)
+          PYTHON
+
+      - name: Decrypt only in CI and emit the fixed Z22 whitelist
+        env:
+          HELMUT_CI_ORIGINALS_KEY: ${{ secrets.HELMUT_CI_ORIGINALS_KEY }}
+        run: |
+          python3 -B - <<'PYTHON'
+          import hashlib, json, os, pathlib, re, stat, subprocess, tarfile
+          SCHEMA = 'helmut-ci-z22-failure-readback/1'
+          SOURCE_SHA = '911c97af3640f18544adcde09df1cd32d783382d439120bc35f8a6d839b9a4ed'
+          CHECKS = {'1.1 Vorher gibt es die zweistellige Fassung': '1.1', '1.2 Die Korrektur stoppt, wenn Z22 noch nicht installiert ist': '1.2', '1.3 Der Abbruch ist atomar und laesst nur die zweistellige Fassung stehen': '1.3', '1.4 Nach Z22 gibt es die dreistellige Fassung': '1.4', '1.5 Der Z22-Rueckweg stellt die zweistellige Fassung wieder her': '1.5', '1.6 Z22 erneut vorwaerts: wieder dreistellig': '1.6', '1.7 Der Korrekturrueckweg behaelt die dreistellige Z22-Schnittstelle': '1.7', '1.8 Der Korrekturrueckweg stellt exakt die alte Zeilenregel wieder her': '1.8', '1.9 Die Vorwaertskorrektur behaelt die dreistellige Z22-Schnittstelle': '1.9', '1.10 Die Vorwaertskorrektur trimmt Parameter und Zeilenkennung ausdruecklich': '1.10', '1.11 Die Vorwaertskorrektur ist erneut anwendbar und bleibt dreistellig': '1.11', '2.1 Es existiert genau eine Fassung von helmut_jobs_offen': '2.1', '2.2 Der Aufruf mit zwei Argumenten ist eindeutig (kein „function is not unique")': '2.2', '3.1 Weder anon noch authenticated noch PUBLIC duerfen sie ausfuehren': '3.1', '3.2 Fester search_path ist gesetzt': '3.2', '3.3 Sie ist `stable` und `security invoker` (nur lesend, keine Rechteerhoehung)': '3.3', '4.1 Global: 5 offen (1 geteilt + 2 fremd + 2 eigen)': '4.1', '4.2 `p_mandat := null` ist dasselbe wie das Weglassen': '4.2', '5.1 Mandat B sieht 3 offen (1 geteilt + 2 eigen), nicht 5': '5.1', '5.2 Die fremde LAUFENDE Projektion von A zaehlt fuer B nicht': '5.2', '5.3 Mandat A sieht 3 offen (1 geteilt + 2 eigen), nicht 5': '5.3', '5.4 Die fremde laufende Projektion zaehlt fuer ihr EIGENES Mandat sehr wohl': '5.4', '5.5 Ein unbekanntes Mandat sieht nur die geteilte Arbeit (1)': '5.5', '6.1 Zwei Argumente liefern das globale Ergebnis (Vorgabewert null)': '6.1', '6.2 Auch der benannte Aufruf ohne `p_mandat` funktioniert (PostgREST-Weg)': '6.2', '7.1 Ein ENDGUELTIG gescheiterter eigener Auftrag zaehlt nicht als offen': '7.1', '7.2 Ein ERLEDIGTER eigener Auftrag zaehlt nicht als offen': '7.2', '7.3 `offen` ist weiterhin genau `wartend + laeuft`': '7.3', "8.1 `p_mandat := ''` zaehlt global und damit nie weniger Vorbedingungen": '8.1', '8.2 Eine nur aus Leerzeichen bestehende Kennung zaehlt ebenfalls global': '8.2', '8b.1 Ohne Mandat zaehlen alle sechs Zeilen (unveraendert global)': '8b.1', "8b.2 Mit Mandat B zaehlen null + '' + '   ' + Tabulator + eigen = 5, die fremde nicht": '8b.2', '8b.3 Der Mandatsfilter wirkt hier wirklich (6 global gegen 5 gefiltert)': '8b.3', '9.1 Der Zugriffsweg ist mit und ohne Mandatsfilter derselbe': '9.1', '9.2 Die Ausfuehrungszeit waechst durch den Filter nicht sprunghaft (Faktor < 4)': '9.2', '9.3 20 Zaehlungen auf 20 000+ Zeilen bleiben zuegig (< 400 ms je Aufruf)': '9.3', '10.1 Attrappe und Datenbank melden fuer Mandat B dieselbe Zahl offener Vorbedingungen': '10.1', '10.2 Beide melden, dass der Mandatsfilter aktiv war': '10.2', '8b.4 Attrappe und Datenbank melden fuer die leeren Kennungen DIESELBE Zahl': '8b.4', '8b.5 Und beide nennen genau die fuenf Zeilen des sicheren Vertrags': '8b.5', '8b.6 Auch ungefiltert sind beide gleich': '8b.6', '11.0 PostgREST-Binary vorhanden (HELMUT_REQUIRE_POSTGREST=1)': '11.0', '11.1 PostgREST ist erreichbar': '11.1', '11.2 Die alte Fassung lehnt den Aufruf MIT `p_mandat` ab': '11.2', '11.3 Sie tut es mit genau dem Code, auf den der Rueckfall hoert (PGRST202)': '11.3', '11.4 Der Aufruf OHNE `p_mandat` beantwortet die alte Fassung normal': '11.4', '11.5 Der Anwendungscode faellt auf die globale Zaehlung zurueck statt auszufallen': '11.5', '11.6 Er benennt den Rueckfall ausdruecklich (kein stilles Abschalten)': '11.6', '11.7 Die zurueckgefallene Zahl ist die ALTE, globale Zahl': '11.7'}
+          STAGES = ['1 · Z22 und die vorwaerts gerichtete Korrektur haben getrennte Rueckwege', '2 · Genau EINE Fassung — kein mehrdeutiger Aufruf', '3 · Sicherheit der neuen Fassung', '4 · Ohne `p_mandat` zaehlt sie exakt wie die Vorfassung', '5 · Mit `p_mandat`: global + eigen, niemals fremd', '6 · Altaufruf mit zwei Argumenten bleibt lauffaehig', '7 · Die Zaehlmenge selbst ist unveraendert', '8 · Leere Kennungen zaehlen global — auch direkt an der SQL-Grenze', '8b · GEGENPROBE — leere `tenant_id` auf der ZEILE zaehlt global', '9 · Kein neuer Index noetig — der Mandatsfilter aendert den Plan nicht', '10 · Attrappe und Datenbank liefern Zahl fuer Zahl dasselbe', '8b (Nachtrag) · Attrappe gegen Datenbank bei leeren Kennungen', '11 · Rueckfall ohne angewendete Migration — gegen echtes PostgREST']
+          def need(ok):
+              if not ok: raise ValueError('REJECTED')
+          def read(path, maximum):
+              info = path.lstat()
+              need(stat.S_ISREG(info.st_mode) and not path.is_symlink() and info.st_nlink == 1 and info.st_uid == os.getuid())
+              need(stat.S_IMODE(info.st_mode) == 0o600 and 0 < info.st_size <= maximum)
+              fd = os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+              with os.fdopen(fd,'rb') as stream: data = stream.read(maximum+1)
+              need(len(data) == info.st_size)
+              return data
+          def select_log(archive):
+              selected = None; count = 0; total = 0
+              with tarfile.open(archive,'r|gz') as bundle:
+                  for member in bundle:
+                      count += 1; total += member.size
+                      need(count <= 100 and total <= 90*1024**2 and member.isreg() and member.type in (tarfile.REGTYPE,tarfile.AREGTYPE) and member.mode == 0o600 and not member.pax_headers and not member.issparse())
+                      need(re.fullmatch(r'step-[a-f0-9]{24}\.log',member.name) is not None)
+                      if member.name == 'step-4ad3025f6c2fc389c7f40660.log':
+                          need(selected is None and member.size == 6697)
+                          selected = bundle.extractfile(member).read(6698)
+              need(selected is not None and len(selected) == 6697 and hashlib.sha256(selected).hexdigest() == '7091d57b7c70458cea0317c58a2b5f72287e31f79444d8b14c0a0bb72fbb720e')
+              return selected
+
+          def classify(selected, source_lines):
+              stages = {('== '+title+' =='):title for title in STAGES}
+              failures = []; runtime = []; prerequisites = []; frames = []; last_stage = 'PREPARATION'
+              frame_re = re.compile(r'^    at (?:[^()\n]{1,120} \()?/home/runner/work/helmut-pilot/helmut-pilot/scripts/vorbedingung-mandatsfilter-datenbank-test\.js:([1-9][0-9]{0,3}):([1-9][0-9]{0,3})\)?$')
+              for line in selected.decode('utf8').splitlines():
+                  if len(line) > 2048: continue # Never scan or emit a truncated tail.
+                  if line in stages: last_stage = stages[line]
+                  for name,identifier in CHECKS.items():
+                      prefix = '  FAIL  '+name
+                      if line == prefix or line.startswith(prefix+' — '):
+                          need(identifier not in failures); failures.append(identifier)
+                  if line == '  FEHLSCHLAG: kein HELMUT_TEST_PG_HOST gesetzt.': prerequisites.append('Z22_PG_HOST_MISSING')
+                  elif line.startswith('  FEHLSCHLAG: kein erreichbarer Server ('): prerequisites.append('Z22_PG_CONNECTION_UNAVAILABLE')
+                  elif line == '  FEHLSCHLAG: kein lokales PostgREST (HELMUT_Z3_POSTGREST).': prerequisites.append('Z22_POSTGREST_MISSING')
+                  if line.startswith('LAUFFEHLER (§10): '): runtime.append('Z22_RUNTIME_FAILURE_ASYNC')
+                  elif line.startswith('LAUFFEHLER: '): runtime.append('Z22_RUNTIME_FAILURE_MAIN')
+                  match = frame_re.fullmatch(line)
+                  if match:
+                      number,column = map(int,match.groups())
+                      if 1 <= number <= len(source_lines) and 1 <= column <= len(source_lines[number-1])+1:
+                          position = {'file':'scripts/vorbedingung-mandatsfilter-datenbank-test.js','line':number,'column':column}
+                          if position not in frames: frames.append(position)
+              need(len(failures) <= len(CHECKS) and len(runtime) <= 2 and len(prerequisites) <= 3 and len(frames) <= 20)
+              code = 'Z22_FAILURE_CLASSIFIED' if failures or runtime or prerequisites else 'Z22_LOG_UNCLASSIFIED'
+              output = {'schema':SCHEMA,'code':code,'originalRun':39937538074,'originalHead':'8807fcb50c47dbe904a90d37fb67fd3760d0b69d','originalStepExitCode':1,'lastKnownStaticStage':last_stage,'failedStaticCheckIDs':failures,'staticRuntimeCodes':runtime,'staticPrerequisiteCodes':prerequisites,'sourceCoordinates':frames,'originalCiPassed':False,'testReexecuted':False}
+              encoded = json.dumps(output,ensure_ascii=True,separators=(',',':'))
+              need(len(encoded) <= 8192)
+              return encoded
+
+          try:
+              os.umask(0o077)
+              temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+              need(temp.is_absolute() and temp.resolve() == temp)
+              work = temp/'z22-39937538074-1'
+              need(work.is_dir() and not work.is_symlink() and work.stat().st_uid == os.getuid() and stat.S_IMODE(work.stat().st_mode) == 0o700)
+              source = read(work/'source.js',100000)
+              need(hashlib.sha256(source).hexdigest() == SOURCE_SHA)
+              source_lines = source.decode('utf8').splitlines()
+              pinned = json.loads(read(work/'cipher-pin.json',1024))
+              cipher = read(work/'cipher.gpg',1024**2)
+              need(len(cipher) == pinned['bytes'] and hashlib.sha256(cipher).hexdigest() == pinned['sha256'])
+              secret = os.environ.pop('HELMUT_CI_ORIGINALS_KEY','').strip()
+              need(re.fullmatch('[a-f0-9]{64}',secret) is not None)
+              home = work/'gnupg'; home.mkdir(mode=0o700)
+              archive = work/'logs.tar.gz'
+              need(not archive.exists() and not archive.is_symlink())
+              child_env = {k:os.environ[k] for k in ('PATH','LANG','LC_ALL') if k in os.environ}
+              result = subprocess.run(['/usr/bin/gpg','--no-options','--batch','--homedir',str(home),'--pinentry-mode','loopback','--no-symkey-cache','--disable-dirmngr','--no-auto-key-retrieve','--passphrase-fd','0','--output',str(archive),'--decrypt',str(work/'cipher.gpg')],input=(secret+'\n').encode(),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env=child_env,timeout=60)
+              del secret
+              need(result.returncode == 0)
+              need(archive.stat().st_size <= 90*1024**2)
+              selected = select_log(archive)
+              print(classify(selected,source_lines)) # Only source-whitelisted JSON, never log text.
+          except Exception:
+              print(json.dumps({'schema':SCHEMA,'code':'Z22_PRIVATE_LOG_CLASSIFICATION_REJECTED','originalCiPassed':False}))
+              raise SystemExit(1)
+          PYTHON
+
+      - name: Always remove only the owned decrypted archive
+        if: always()
+        run: |
+          python3 -B - <<'PYTHON'
+          import json, os, pathlib, stat
+          SCHEMA = 'helmut-ci-z22-failure-readback/1'
+          def need(ok):
+              if not ok: raise ValueError('REJECTED')
+          def cleanup(temp):
+              need(temp.is_absolute() and temp.resolve() == temp and temp.is_dir())
+              work = temp/'z22-39937538074-1'
+              need(not work.is_symlink())
+              if not work.exists(): return False
+              info = work.lstat()
+              need(stat.S_ISDIR(info.st_mode) and info.st_uid == os.getuid() and stat.S_IMODE(info.st_mode) == 0o700)
+              archive = work/'logs.tar.gz'
+              need(not archive.is_symlink())
+              if not archive.exists(): return False
+              info = archive.lstat()
+              need(stat.S_ISREG(info.st_mode) and info.st_nlink == 1 and info.st_uid == os.getuid() and stat.S_IMODE(info.st_mode) == 0o600)
+              archive.unlink() # Exactly this owned plaintext file; no recursive deletion.
+              return True
+          try:
+              removed = cleanup(pathlib.Path(os.environ['RUNNER_TEMP']))
+              print(json.dumps({'schema':SCHEMA,'code':'OWN_PLAINTEXT_CLEANUP_COMPLETE','removed':removed,'originalCiPassed':False}))
+          except Exception:
+              print(json.dumps({'schema':SCHEMA,'code':'OWN_PLAINTEXT_CLEANUP_REJECTED','originalCiPassed':False}))
+              raise SystemExit(1)
+          PYTHON
