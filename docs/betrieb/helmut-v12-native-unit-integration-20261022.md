@@ -1028,3 +1028,58 @@ Langzeitplateau und500MB Reserve bleiben offen. Die CI auf1d7bc947 ist grün;
 Ein späterer500er benötigt weiterhin32 frische Startbedingungen, gültige Fall-
 und Zeitbindung sowie ein neues konkretes GO. Keine alten Rechte wiederverwenden;
 kein Merge, keine Production-Aktion und keine bezahlten Anbieteraufrufe.
+
+## 23.10.: Drei parallele Abschlussaufgaben, Schreibphasen integriert
+
+Der eng begrenzte Servicepatch `b006750c` zeichnet Prepare, den echten Psql-Pfad
+und lokale Ergebnisannahme privat und dauerhaft auf. Maximal acht Zeilen/2KiB
+pro authentifiziertem Request, insgesamt höchstens512KiB; feste Metadaten ohne
+SQL-/Authinhalte. Der vorhandene monotone Servicebeginn und sämtliche Fristen
+bleiben bestehen, Trace-I/O zählt zur Laufzeit. Ein Publikationsfehler bleibt
+terminal ohne Retry; bereits bestätigter Commitprozess wird nicht als ungesendet
+bezeichnet. Response-, CHILDREN- und STOP-Schemata bleiben unverändert.
+
+Root hat nach Integration die gesamte betroffene Service-VM-Suite tatsächlich
+ausgeführt:72PASS, Exit0, einschließlich zehn neuer Phasenchecks. Unabhängiges
+Source-Review des identischen Hashs ist PASS. Keine echte Datenbank oder Unit
+wurde dafür gestartet. `ackAccepted` ist nur lokale Ergebnisannahme vor dem
+Socketversand; Psql-Aufruf ist kein Spawnbeleg und Phasenende kein Erfolgsbeleg.
+Die bisher fehlende Zeitzuordnung ist damit vorbereitet, der Zeitfehler noch
+nicht behoben. [Bereinigter Integrationsbeleg](belege/v12-native-unit-integration-20261022/NATIVE_WRITE_PHASE_INTEGRATION.SAFE.json).
+
+Die parallele Kapazitätsprüfung qualifiziert keine weitere Löschung. Sieben
+untersuchte eigene gestoppte Tiny-Container haben jeweils0B Schreibschicht.
+Selbst die großzügige unqualifizierte Obergrenze alter Checkouts reicht nicht
+für die Lücke; private/unfertige Stände bleiben erhalten. Frisch9.775.599.616B
+verfügbar,961.818.624B fehlen zur Einzeladmission und5.404.180.104B zum Voll500.
+Kein unterstützter Cloud-Kapazitätsausbau ist in den verfügbaren Tools vorhanden.
+
+Alle32 Startgruppen sind statisch zugeordnet:11 benötigen frische Bindung,
+13 sind veraltet,4 verbraucht,4 blockiert; keine operative Gesamtannahme.
+Ein neuer Day23/V13-Namensraum wurde nur als GO-freier Dateikandidat beschrieben,
+nicht gestagt oder autorisiert. Die alten Slot-/GO-/Claim-/Setup-Belege bleiben
+unverändert verbraucht. Der bestehende Source-Consumer benötigt Live-Psql im
+fest gebundenen Original-CID22465; dieser ist tatsächlich exited255/PID0.
+Eine Diagnose-Readerkopie oder eine alte Restorequittung erfüllt diese native
+Originalgleichheit nicht automatisch. Originalquelle und Volume bleiben erhalten.
+
+Zusätzlich integriert: `e20edf5b` bindet ausschließlich die reine
+Tagestransfer-Vorbereitung an den aktuellen Worktree und lässt genau den23.10.
+zusätzlich zu. Unverändert bleiben Originalfenster, maximal neun Stunden,
+500 eindeutige Profile, Ablehnung alter Tageseingaben, unabhängige tatsächliche
+zeitliche Akzeptanz und die bestehenden modellgebundenen Reviewregeln. Kein
+Urteil oder GO wird durch diesen Patch erzeugt. Der enge synthetische Test
+bestand25 Checks, tatsächlicher Helper-Toolchunk `3d038e`, Exit0; keine echten
+Engineimporte/-aufrufe, Zeilentransfers, DB, Container oder Provider.
+Ein erster Testlauf hatte nur eine falsche Erwartung zum bestehenden
+Fehlertext und bleibt als fehlgeschlagener Testlauf erhalten.
+
+Produktpin `rebind-local-day.js`:8825B,
+`00e89eb7dbdcf9ccc44aa1167df2785a90c4c0d95e7ab41d68087c28afc88c8d`.
+Testpin:6796B,
+`9201f0711cde9fe1b0ca70fcf8afd8b4d7d361b1b60bbf2a0fc56acfb368492e`.
+Die Connector-/Finish-Templates bleiben unverändert:26 historische Consumer,
+drei eingebettete alte ROOT-Pfade und128 alte Codepins im festen RuntimeTemplate
+verlangen eine kohärente echte aktuelle Bindung. Ein einfacher Repo-Pfadtausch
+würde Pins still verwerfen oder weiterhin alten Appcode ausführen. Keine solche
+Umschreibung, neue Akzeptanz oder gestagte Voll500-Verbindung ist erfolgt.

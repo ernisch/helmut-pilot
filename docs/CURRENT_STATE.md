@@ -4,7 +4,7 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Auth-Komponenten eingegrenzt; direkter Unitlauf durch Platte blockiert
+## 23.10.: Schreibphasen integriert; echter Unitlauf durch Platte blockiert
 
 13.527 Dateien hashverifiziert,84 Originale geschützt; CI39900463531 auf1d7bc947
 grün. DB/V12-POSTRUN-/Runtimebindungen erhalten. Native00c9 bleibt FAIL:
@@ -25,14 +25,16 @@ Instrumentierte U.read kalt1523,869/warm408,019ms, NodeCPU1019,545/158,548ms;
 native Historyreuse false/true,6001 frozen/1923Nodes. Logisch vollständig gleich,
 nur History/Revision-Reihenfolge verschieden. Bytevergleich bleibt FAIL/Node1;
 PSQL beide0+2EOF, PG0/clean/Gruppe leer/Events0/Original9MD gleich.
-17 Profiler-/6 LauncherchecksPASS. CAS-Sourceaudit: Projektion ohne vollen
-Auth-JSONB-Aufbau, fünf Graphprüfpasses je Bridgecommit; Schreibzeit ungemessen.
-Keine weitere allgemeine Suche oder Komponentenserie, kein neuer Motorumbau.
+CAS: Projektion ohne vollen Auth-JSONB-Aufbau, fünf Graphprüfpasses je Commit.
+Private Prepare/Psql/Accept-Zeitmarken integriert;72 ServicechecksPASS, unabhängig
+geprüft. Tag23-/Worktree-Fix:25 ChecksPASS. Echte Schreibzeiten weiter unbekannt;
+keine neue maßgebliche Motoroptimierung.
 
 31/44 kontrolliert gesichert/entfernt; Originale/Git/Archive/Belege erhalten,
-Testsecrets lokal. Frisch9.777.184.768B frei:960.233.472B fehlen zur unveränderten
-10GiB-Einzeladmission,5.402.594.952B zu Full500. c898 bleibt ausdrücklich KEEP;
-keine sichere Löschquelle in benötigter Größe belegt. Nächster direkter Schritt
+Testsecrets lokal. Frisch9.775.599.616B frei:961.818.624B fehlen zur unveränderten
+10GiB-Einzeladmission,5.404.180.104B zu Full500. c898 bleibt ausdrücklich KEEP;
+keine sichere Löschquelle in nötiger Größe belegt. Originalquelle exited255/PID0;
+32 Gruppen:11 frisch zu binden,13 veraltet,4 verbraucht,4 blockiert. Weiter
 nach Kapazitätszulassung: frischer gebundener echter Einzelunitfall, nur dessen
 belegte Blocker reparieren. Unit60/Auth30/16 Kontrollen/Qualität/Plateau/500MB
 bleiben offen. App403 separat. Full500 braucht15.179.779.720B/32 frische Bedingungen
@@ -288,7 +290,7 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-Cloud-Authrouting, geschützten84erCI-Kanal und echte Quellruntime über unterstützte
-Wege herstellen. Separaten HTTP-Ein-Unit-Vertrag ausarbeiten; vorhandene Voll500-
-Verträge lassen keine Index499-Wiederholung zu. Unit60/32Startgruppen offen.
-Hier fortsetzen, Sehr hoch wegen CAS/ACK/Originalschutz; kein Voll500 vor Klärung.
+84erCI-Kanal repariert. Physische Kapazität und echte Live-Originalbindung klären;
+frischen Einzelunit-Vertrag an aktuellen Code binden. Alte Index499-/Voll500-
+Rechte bleiben verbraucht. Unit60/500MB/32Startgruppen offen; kein Voll500-GO.
+Hier fortsetzen, Sehr hoch wegen CAS/ACK/Originalschutz.
