@@ -300,7 +300,8 @@ def _claim_only_snapshot(worker, database, selection, command, initialization, i
          and close['terminalCanonicalSHA256']==sha(canonical(terminal)),'claim-only-actual-close')
     payload={'selection':selection,'commandCanonical':canonical(command),'initialState':initialization['initialState'],
              'initialUsage':initial_usage,'terminal':terminal}
-    sql="""DO $claim_diagnostic$
+    sql="""SET LOCAL helmut.local_diagnostic_scope='bounded-cas-qualification-v1';
+DO $claim_diagnostic$
 DECLARE arg jsonb:=@INPUT@;a helmut_unit_diagnostic.authority%rowtype;s helmut_unit_diagnostic.state%rowtype;
  k text;j jsonb;old_j jsonb;expected_j jsonb;auth_row jsonb;proof jsonb;entered timestamptz;claimed timestamptz;deadline timestamptz;
 BEGIN

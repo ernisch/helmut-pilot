@@ -39,6 +39,7 @@ passed=failed=0
 def check(name,action):
     global passed,failed
     if '--only-close-type' in sys.argv and name!='snapshot.closeExitCodeType':return
+    if '--only-projection-admission' in sys.argv and name!='snapshot.projectionAdmissionSQL':return
     try:action();passed+=1;print(json.dumps({'id':name,'status':'PASS'}))
     except Exception as error:
         failed+=1;print(json.dumps({'id':name,'status':'FAIL','error':type(error).__name__,'message':str(error)[:240]}))
@@ -139,16 +140,43 @@ for k,v in [('schema','helmut-local-unit-native-execution-result/1'),('diagnosti
 # _call is an explicit in-memory response, not a query/SQL interpreter/native proof.
 c_ns={'need':need,'json':json,'hashlib':hashlib,'re':re,'base64':base64}
 isolated([function(TREES['local-unit-native-execution-controller.py'],n) for n in ('canonical','sha','_q','_json_sql','_readonly','_claim_only_snapshot')],c_ns)
-queries=[]
+queries=[];sql_texts=[]
 def snapshot(t=None,c=None,d=None):
     value=copy.deepcopy(dto if d is None else d)
     def no_query(worker,database,sql,label):
         assert sql.startswith('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;')
         assert "statement_timeout='8s'" in sql and "lock_timeout='500ms'" in sql
-        assert label=='CLAIM_ONLY_READONLY_SNAPSHOT';queries.append(label);return value
+        assert label=='CLAIM_ONLY_READONLY_SNAPSHOT';queries.append(label);sql_texts.append(sql);return value
     c_ns['_call']=no_query
     return c_ns['_claim_only_snapshot'](None,'helmut_unit_diagnostic_'+'a'*32,copy.deepcopy(selection),{},
        {'initialState':{}},{'proof':{}},copy.deepcopy(terminal if t is None else t),copy.deepcopy(close if c is None else c))
+
+def projection_admission_sql():
+    before=len(queries);snapshot();assert len(queries)==before+1
+    sql=sql_texts[-1]
+    admit="SET LOCAL helmut.local_diagnostic_scope='bounded-cas-qualification-v1';"
+    def contract(statement):
+        assert statement.startswith('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;')
+        assert statement.count(admit)==1
+        assert statement.index('END;$boundary$;')<statement.index(admit)<statement.index('DO $claim_diagnostic$')
+        assert statement.index(admit)<statement.index('PERFORM public.helmut_auth_state_assert_graph_local_v1(')
+        assert "session_user<>'postgres' OR current_user<>session_user" in statement
+        assert "statement_timeout='8s'" in statement and "lock_timeout='500ms'" in statement
+        assert statement.endswith('\nROLLBACK;') and 'SET ROLE' not in statement
+    contract(sql)
+    for replacement in ('',"SET LOCAL helmut.local_diagnostic_scope='off';",
+                         "SET LOCAL helmut.local_diagnostic_scope='other';"):
+        try:contract(sql.replace(admit,replacement,1))
+        except AssertionError:pass
+        else:raise AssertionError('unadmitted projection SQL contract accepted')
+    ordinary=c_ns['_readonly']('helmut_unit_diagnostic_'+'a'*32,'SELECT 1;')
+    assert 'local_diagnostic_scope' not in ordinary
+    original=(SOURCE_ROOT/'supabase/proposals/auth_state_parts_local.sql').read_text()
+    guard=original.split('create function public.helmut_auth_state_assert_graph_local_v1(',1)[1].split('end;$f$;',1)[0]
+    assert "current_setting('helmut.local_diagnostic_scope',true) is distinct from 'bounded-cas-qualification-v1'" in guard
+    assert "raise exception 'auth-state-projection-not-admitted'" in guard
+check('snapshot.projectionAdmissionSQL',projection_admission_sql)
+
 check('snapshot.positiveDTOOnly',lambda:snapshot())
 for k,v in [('ownRevision',True),('ownRevision','1'),('ownRevision',0),('ownRevision',2),('ownHash','x'*64),('claimIdSHA256',None),
  ('artifacts',False),('artifacts',1),('usageUnchanged',1),('journalState','closed'),('claimStillRunning',False),('authorityConsumed',False),('unitAccepted',True),

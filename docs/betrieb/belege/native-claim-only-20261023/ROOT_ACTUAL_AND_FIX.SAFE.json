@@ -1,0 +1,96 @@
+{
+  "schema": "helmut-root-claim-only-actual-and-snapshot-fix/1",
+  "atUTC": "2026-10-23T18:05:23.060161+00:00",
+  "actualCase": "2f544859c95179a876f0809ae418c45d",
+  "actualCodeCommit": "23ee9c7a41f3bcef85e7311730fa577d3a376205",
+  "actualStatus": "FAIL",
+  "actualHelperAndCLIExit": 1,
+  "twoNaturalCLI_EOFAndWait": true,
+  "sourceBeforeAfterEqual": true,
+  "independentActualReviewPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/native-claim-only-20261023/INDEPENDENT_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 14995,
+    "sha256": "f46531f45502667a40be435a1acb93d1b932e9f5a8d0f7e17d13519b3aa33949"
+  },
+  "genuinePartialClaim": {
+    "callbackCalls": 1,
+    "entryActualExit": 0,
+    "entryNaturalEOF": [
+      true,
+      true
+    ],
+    "entryDurationSeconds": 8.222,
+    "genuineSourceServiceRequestsWithCommitAndAck": 2,
+    "terminalAuthorityConsumed": true,
+    "terminalClaimStillRunning": true,
+    "independentEndstateSnapshotConfirmed": false,
+    "acceptedAsClaimOnlyDiagnostic": false,
+    "motorCalls": 0,
+    "providerCalls": 0
+  },
+  "failure": {
+    "stage": 8,
+    "scope": "claim-only-readonly-snapshot",
+    "postgresError": "auth-state-projection-not-admitted",
+    "missingTransactionLocalScope": "bounded-cas-qualification-v1",
+    "productSourceGuardUnchanged": true
+  },
+  "closure": {
+    "closureErrors": [],
+    "hostDirectChildrenExit0AndTwoEOF": 45,
+    "trackedProcessObserversClosed": 40,
+    "postgresExit": 0,
+    "postgrestQualifiedByOriginalPinnedShutdownPolicy": true,
+    "finalKernelGroupEmpty": true,
+    "commonKernelPeakBytes": 1240449024,
+    "samples": 77,
+    "allSixMemoryEventsZero": true,
+    "unit60Auth30ReserveOrPlateauInferred": false
+  },
+  "fix": {
+    "independentReviewPin": {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/native-claim-only-20261023/INDEPENDENT_FIX_REVIEW.SAFE.json",
+      "bytes": 6931,
+      "sha256": "c3609923a5b2d3463f7262b19cadb43a567bc74ae2a937d76e6261f547d1f29f"
+    },
+    "scope": "Exactly one SET LOCAL in special RR/read-only snapshot after owned-DB/PG17/postgres boundary, before unchanged graph assertion. No role/global/SQL function/ACL/retry/acceptance changes.",
+    "controllerPin": {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-execution-controller.py",
+      "bytes": 65337,
+      "sha256": "cdcb012c15257df51e36392ed2e158e742bbce47361fa07440e8eff3534a949d"
+    },
+    "testPin": {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/claim-only-dto-pure-test.py",
+      "bytes": 13218,
+      "sha256": "013388076a7c39cde33c97a543a912c41ca71f883fcfc99d42db902b92b42f18"
+    },
+    "targetedPureContractActualExit": 0,
+    "targetedPureContractGroups": 1,
+    "actualToolChunk": "a29b16",
+    "sqlExecutedByPureCheck": false,
+    "fixedNativeExecution": "NOT_RUN"
+  },
+  "capacity": {
+    "availableBytes": 10324307968,
+    "componentRequiredFreeBytes": 10737418240,
+    "componentMissingBytes": 413110272,
+    "full500RequiredFreeBytes": 15179779720,
+    "full500MissingBytes": 4855471752,
+    "furtherSafe413MBRecoveryProven": false,
+    "canonicalBaseNecessaryFor17DeltaArchivesKeep": true,
+    "originalsNecessarySourcesAf33AndCurrentClaimCopyKeep": true,
+    "newNativeStartBlocked": true
+  },
+  "acceptance": {
+    "nativeClaimOnly": false,
+    "unit60": false,
+    "auth30": false,
+    "all16Controls": false,
+    "reserve500MB": false,
+    "plateau": false,
+    "full500": false,
+    "production": false,
+    "oldClaimOrGOReusable": false
+  },
+  "next": "Complete CI on committed fix; obtain adequate persistent capacity. Then fresh exact-code/source/Root/admission/one-use binding and isolated diagnosis. Full500 only after all32freshconditions and new concreteGO."
+}

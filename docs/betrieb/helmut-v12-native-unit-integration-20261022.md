@@ -1593,3 +1593,34 @@ Image erlauben nur neue eigene Hüllen; kein physischer Scratchendstand versproc
 Nächster Pfad: Commit/Push, frische exakte HEAD-/Root-/Admission-/Einmalbindung und
 echte isolierte claim-only-Schreibdiagnose; kein weiterer Voll500. Rund4,44GB fehlen
 weiter zur vollständigen Plattenadmission; keine sichere Mehr-GB-Bereinigung belegt.
+
+
+## 23.10.: Echte Claimdiagnose und gezielter Snapshotfix
+
+Gepushter sauberer Commit23ee9c7a, neuer Descriptor/Rootreview/Adoption, exklusive
+10GiB-Admission; genau ein frischer nativer Claim-only-Fall2f5448, tatsächliche
+Helper-/CLI-Exits1, beide natürlichen CLI-EOFs/Wait, keine Signale/Timeouts.
+Echter Claimcallback genau1, Entry0+2EOF in8,222s; zwei echte Source-PSQL-Prozesse
+mit COMMIT/ACK. Motor/Provider0. GesamtFAIL: separater Readonly-Endsnapshot Stage8
+scheitert mit auth-state-projection-not-admitted. Own7/Revision1/History/Usage/
+Katalog-Endjoin bleibt ungeprüft; Claim/Autorität verbraucht, eigene DBKEEP/NOREUSE.
+Host45Kinder/40Observer geschlossen, PG0, korrekte ursprüngliche PostgREST-Policy,
+finale Kernelgruppe leer,77Samples alle6Events0; gemeinsamer Peak1.240.449.024B.
+Das ist keine Unit60-/Auth30-/500MB-/Plateau-/Voll500-Abnahme.
+
+Ursache: Der unveränderte native Graphprojektor verlangt eine transaktionslokale
+Scopebindung. Der eigene spätere Snapshot eröffnet eine neue Readonly-Transaktion
+und erbte sie nicht vom früheren COMMIT. Genau eine feste SET LOCAL-Anweisung im
+speziellen Snapshot ergänzt, nach unverändertem Owned-DB/PG17/postgres-Boundary;
+Originalguard/SQL/ACL/Rollen/allgemeiner Reader/Fristen/CAS/Abnahme bleiben gleich.
+Root und unabhängiger Quellenreview PASS, neue gezielte Pure-SQLkonstruktionsgruppe
+PASS (a29b16), keine echte SQL-/Nativewirkung aus dem Purecheck abgeleitet.
+
+Nach erhaltenem Fall rund10,324GB frei: Zur unveränderten10GiB-Komponentenadmission
+fehlen413MB; zur Voll500-Admission rund4,86GB. Zusätzliche enge bestehende Backup-/
+Git-Audits belegen keinen sicheren413MB-Kandidaten. V11-Basis notwendig für17
+Deltaarchive; af33/neue Claimkopie/Originale/Quellen bleibenKEEP. Kein weiterer
+nativer Start/keine neue Einmalautorität vor tatsächlicher Kapazitätslösung.
+[Unabhängiger tatsächlicher FAILreview](belege/native-claim-only-20261023/INDEPENDENT_ACTUAL_REVIEW.SAFE.json),
+[unabhängiger enger Fixreview](belege/native-claim-only-20261023/INDEPENDENT_FIX_REVIEW.SAFE.json),
+[Rootbefund mit Pins und nächstem Schritt](belege/native-claim-only-20261023/ROOT_ACTUAL_AND_FIX.SAFE.json).
