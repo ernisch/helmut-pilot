@@ -153,6 +153,17 @@ function memory() {
   return { usageBytes: numeric(process.memoryUsage()), heap: numeric(v8.getHeapStatistics()), naturalObservationOnly: true,
     heapIsNotTotalRSS: true, commonNativePeakOrReserveAccepted: false };
 }
+function preserveFailurePhase(error) {
+  if (state.adapterEnteredMS === null) return;
+  try {
+    const diagnostic = require("../../lib/helmut/local-unit-diagnostic-scope").consumeFailureDiagnostics(error);
+    if (diagnostic === null) return;
+    need(diagnostic.selection.operationId === state.selection.operationId
+      && diagnostic.selection.commandHash === state.selection.commandHash, "failure-diagnostic-selection");
+    need(Buffer.byteLength(JSON.stringify(diagnostic)) <= 8192, "failure-diagnostic-cap");
+    writeOnce(path.join(state.caseDirectory, "FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json"), diagnostic);
+  } catch { /* A forensic output failure must not prevent the original failure terminal. */ }
+}
 function terminal(result, error) {
   need(!state.terminalAttempted, "terminal-retry-forbidden"); state.terminalAttempted = true;
   const finishedMS = performance.now();
@@ -204,6 +215,7 @@ const execution = require.main === module ? main().catch(error => {
   process.exitCode = 1;
   let receiptError = null;
   if (state.attemptCreated && !state.terminalAttempted) {
+    preserveFailurePhase(error);
     try { terminal(null, error); } catch (failure) { receiptError = failure; } // Never retry or overwrite either receipt.
   }
   reportFailure(error, receiptError);

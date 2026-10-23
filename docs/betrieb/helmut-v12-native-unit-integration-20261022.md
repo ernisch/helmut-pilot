@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23.10.2026 01:42UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23.10.2026 02:45UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -700,6 +700,79 @@ Archiv123.772.928B, SHA256
 `0ac87db59a88b3b8b761c91750aed258a5fc426ff2030ac81579d04627f48742`.
 Tatsächlicher Archivhelferexit0; vollständiger Member-/CRC-/EOF-Readback und
 frische Restaurierung aller1779Member/1749Dateien mit Inhalts-/Metadatenvergleich
-bestanden. Keine DB gestartet, keine Löschung; beide Expandedformen noch erhalten.
-Deren Entfernung benötigt eigene frische Schutzprüfung. Das Archiv enthält lokale
-Testsecrets und wird nicht exportiert. f519 bleibt ein fehlgeschlagener Motorfall.
+bestanden. Danach beide Expandedformen sowie beide eigenen Ab17-Expandedformen
+nach getrennten frischen Schutzprüfungen mit tatsächlichen Exit0 entfernt.
+373Container mit vollständig geprüften Mountobjekten, ursprünglicher Volumegegenstand,
+alle Originale und Belege geschützt; kein fremdes oder aktives Objekt entfernt.
+Das erste f519-V1-Removal scheiterte vor Löschung; Ursache bleibt unbekannt.
+Ein separat belegter procfs-nlink-Wechsel wurde in neuemV2 durch stabile
+Vorfahren-Corefelder bei unverändert vollständiger Namespace-/Kernel-/FD-Prüfung
+behandelt; keine nachträgliche Ursachenbehauptung fürV1. Alle vierV2-Entfernungen
+enden0. Archive mit lokalen Testsecrets werden nicht exportiert. Frei vor44:
+10.906.013.696B. f519/Ab17 bleiben fehlgeschlagene Motorfälle.
+
+## 23.10., 02:45UTC: Zeitfehler44 und gezielter Manifestumbau
+
+CI[39885153523](https://github.com/ernisch/helmut-pilot/actions/runs/39885153523)
+auf a58a741f vollständig grün, einschließlich geschützter84Originale; keine
+Abnahme des neuen Folgecodes daraus. Bedingter Schritt36 war nicht ausgeführt.
+
+Fall44 (`44e251ee0f05668cfa2e540ec004abbe`) auf a58: Startdialog gelöst,
+Adapter60.163,097461ms, Entrygesamt62.703,085012ms, FAIL. SQL meldet
+02:12:31.626UTC `local-unit-store-send-running-window`; Hostmapping folgt erst
+02:12:32.633UTC. Erhaltene Captures identifizieren weder send-D/send-R noch die
+Kontrollzahl. Konfigurierte Delays sind keine tatsächlich abgeschlossenen Phasen.
+Der Ownertrace lag auf tmpfs; nach beendetem Mount kein Remount/Docker-cp als
+vermeintliche Wiederherstellung. Gemeinsamer Peak1.342.197.760B, alle6Events und
+CPU-Drosselung0; kein konkreter Speicherdruckbeleg, jedoch keine Komponenten-
+Aufteilung/Plateau-/Reserveabnahme. Alle82Hosthandles2EOF,80Exit0/ein1/ein137;
+79Observer0/2EOF. PG0/einmergedEOF/Shutdownmarker, Kernelgruppe bis letztemExit
+leer. Host-/Service-Protokoll unclean.
+[Fehlerbefund](belege/v12-native-unit-integration-20261022/NATIVE_44_UNIT_WINDOW_FAILURE.SAFE.json).
+
+Native Originalnachprüfung unterbrochen: InterruptedError/raw-pin/checkedCount0,
+false-Flags unverändert. Separat frisch993Hostpins/2.476.732.862B inklusiveRAW
+und vier Anfrageoriginale mit vollständigemSHA/stabilen9MD/Endesweep PASS. Keine
+DB-Anfrage, interneReader-Neuprüfung oder JIT-Reextraktion. ÄußeresGit/6Sourcepins
+vorher/nachher identisch, CLI1/Wait/beideEOF/keinTimeout. Fehler in Root-
+Startaufzeichnung nach tatsächlichemPopen ist separat über beobachtete PID-/
+Parent-/Argv-/STARTED-Bindung dokumentiert; kein zweiterStart/Retry.
+[Begrenzte Originalprüfung](belege/v12-native-unit-integration-20261022/POST_FAILURE_HOST_ORIGINALS.SAFE.json).
+
+Der Store hashte jeKontrolle erneut1961Dateien/440.753.882B. Begrenzter Vergleich
+986Hostdateien/233.577.290B:16abwechselndePaare3,525780→0,711679s für vollständige
+SHA gegenüber einemFD9-Pass; alle16Wall-/CPU-Paare positiv. Initial228,003ms und
+Final238,493ms separat. Zwei PostgREST-Dateiprüfungen jePaar370,441→1,441ms über
+16Paare, ebenfalls alle positiv. Kein Live-/proc-Exe-/Container-/JIT-Nachweis;
+974JIT-Dateien fehlen im Hostvergleich. Kein erzwungenerGC/Cacheflush, kein
+ColdCache-/gemeinsamerRAM-Beweis. Getrennte Komponenten nicht addieren.
+[Exakter Prüfumfang](belege/v12-native-unit-integration-20261022/IMMUTABLE_FILE_CONSUMER_COMPARISON.SAFE.json).
+
+NeuerStore: initial vollständigerSHA-/FD9-Record pro privatemWitness, gebunden an
+Operation/Scope/DB/beideManifestpins. JedeKontrolle hasht kleineManifeste frisch,
+prüft Namespace/Mountinfo sowie kanonischeNamen/volleFD9 vor UND nach frischem
+Catalog. Initial alleDateien aufRO-Cover; normale Source-Siblingwrites werden
+über Inode/ctime/9MD erkannt. Kein Schutzversprechen gegen privilegierte
+Metadatenrollbacks oder neuer kryptographischerInhaltsbeweis proGruppe. Runtime,
+geladenesCode-Closure und alle16mutable Sicherheits-/Kostenkontrollen bleiben
+frisch. Drift sperrt denselbenWitness permanent, auch nach parallel gescheitertem
+Catalog. KeinRefresh/Fallback/Retry. Produkt macht zweiFD9-Pässe, Prototyp einen;
+dessen Zeiten sind kein Produktgesamtvergleich.
+
+Scope hält auf echtemFehler einen privaten einmaligenSnapshot bestätigter Auth-/
+Kontrollzeiten und aktiverEnumphase. Entry schreibt separatPRIVATE vor dem
+unverändertenFehlerterminal; Ausgabefehler verdecken nicht die ursprüngliche
+Ausnahme. Snapshot unvollständig/ungeprüft; vorClaim keiner. Capturezeit ist
+kein erfundenerDB-Fehlerzeitpunkt.17.Kontrolle/undefined stoppt vor weiterenReads.
+Gezielt tatsächlich0: Manifest17, Store9, Originalconsumer15, Guards27, Entry48,
+Authority121; Syntax/Root/unabhängigerSOL-SourcereviewPASS. BestehendeCI-Globs
+erfassen neueTests. Kein unnötiger179er-/95er-Rerun lokal.
+[Code-/Testpins](belege/v12-native-unit-integration-20261022/MANIFEST_CONTINUITY_SOURCE_REVIEW.SAFE.json).
+
+Offen: frischeCI des Folgecodes, sicherePlattenadmission, nativeRO/JIT-/normaler
+Ownerclose-/Zeit-/Qualitäts-/gemeinsameRAM-Abnahme derselben echtenEinzelunit.
+31/44-Archive erst vorbereitet, keine daraus abgeleiteteLöschung. Voll500 braucht
+15.179.779.720B/alle32frischenBedingungen/neueskonkretesGO. DiagnoseR6000/medium
+ist nicht automatisch VollvertragR3000/low; zwei eigeneTickets belegen keinen
+globalen500er-Zähler. Budget-/Invocationlease-Motorverbesserungen integriert;
+neuer Umbau senkt Prüfoverhead, noch kein weitererMotor-RAM-Beweis.

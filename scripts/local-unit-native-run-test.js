@@ -17,13 +17,14 @@ function files() {
     [selectionPath, node("file", 0o600, Buffer.from(selectionBytes))]]);
 }
 async function scenario(options = {}, shared = null) {
-  const entries = shared || files(), descriptors = new Map(), offsets = new Map(), events = [], stderr = []; let nextFD = 10, monotonic = 0, selectorStats = 0, calls = 0;
+  const entries = shared || files(), descriptors = new Map(), offsets = new Map(), events = [], stderr = [], diagnostics = new WeakMap(); let nextFD = 10, monotonic = 0, selectorStats = 0, calls = 0;
   if (options.file) Object.assign(entries.get(selectionPath), options.file);
   if (options.caseMode !== undefined) entries.get(directory).mode = options.caseMode;
   if (options.selectorJSON) entries.get(selectionPath).data = Buffer.from(options.selectorJSON);
   if (options.attemptExists) entries.set(directory + "/ATTEMPT_STARTED.SAFE.json", node("file", 0o600, Buffer.from("PRESERVED\n")));
   if (options.terminalExists) entries.set(directory + "/ATTEMPT_TERMINAL.SAFE.json", node("file", 0o600, Buffer.from("PRESERVED\n")));
   if (options.budgetExists) entries.set(directory + "/NodeBudgetDirectory", node("dir", 0o700));
+  if (options.diagnosticExists) entries.set(directory + "/FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json", node("file", 0o600, Buffer.from("PRESERVED\n")));
   const fail = code => { const e = Error(code); e.code = code; throw e; };
   function stat(name, big = false) {
     const value = entries.get(name); if (!value) fail("ENOENT");
@@ -38,6 +39,7 @@ async function scenario(options = {}, shared = null) {
     lstatSync: (name, opts) => stat(name, opts?.bigint),
     openSync: (name, flags, mode) => {
       events.push("open:" + path.basename(name));
+      if (options.diagnosticOpenFailure && path.basename(name) === "FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json") fail("EIO");
       assert(flags & fs.constants.O_NOFOLLOW, "every opened case path uses O_NOFOLLOW");
       if (flags & fs.constants.O_CREAT) {
         assert(flags & fs.constants.O_EXCL, "every output creation is exclusive");
@@ -66,12 +68,14 @@ async function scenario(options = {}, shared = null) {
     readlinkSync: name => { assert.equal(name, "/proc/self/ns/pid"); return "pid:[1234]"; },
     writeSync: (fd, bytes) => {
       const name = descriptors.get(fd); events.push("write:" + path.basename(name));
-      const count = options.shortStart && path.basename(name) === "ATTEMPT_STARTED.SAFE.json" ? bytes.length - 1 : bytes.length;
+      const count = (options.shortStart && path.basename(name) === "ATTEMPT_STARTED.SAFE.json"
+        || options.shortDiagnostic && path.basename(name) === "FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json") ? bytes.length - 1 : bytes.length;
       entries.get(name).data = Buffer.from(bytes.subarray(0, count)); return count;
     },
     fsyncSync: fd => {
       const name = path.basename(descriptors.get(fd)); events.push("fsync:" + name);
       if (options.startSyncFailure && name === "ATTEMPT_STARTED.SAFE.json") fail("EIO");
+      if (options.diagnosticSyncFailure && name === "FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json") fail("EIO");
     }, closeSync: fd => { descriptors.delete(fd); offsets.delete(fd); },
     mkdirSync: (name, opts) => { if (entries.has(name)) fail("EEXIST"); entries.set(name, node("dir", opts.mode)); events.push("mkdir:" + path.basename(name)); }
   };
@@ -105,6 +109,13 @@ async function scenario(options = {}, shared = null) {
           if (options.exitGateFailure) throw Error("local-unit-native-observation-gate-exit-timeout"); }
       };
     }
+    if (name === "../../lib/helmut/local-unit-diagnostic-scope") {
+      events.push("scope.import"); return { consumeFailureDiagnostics(error) {
+        events.push("scope.consume");
+        if (options.consumerFailure) throw Error("SYNTHETIC_PRIVATE_CONSUMER_FAILURE");
+        const diagnostic = diagnostics.get(error) || null; diagnostics.delete(error); return diagnostic;
+      } };
+    }
     if (name === "../../lib/helmut/local-unit-diagnostic-adapter") {
       events.push("adapter.import");
       return { execute: async selection => {
@@ -115,7 +126,9 @@ async function scenario(options = {}, shared = null) {
         if (options.invalidResult) return { state: "unknown", ignoredPayload: "FICTIONAL_NONCODE_TEXT" };
         const cause = Object.assign(Error(options.codeShapedText ? "local-unit-diagnostic-native-unrecognized-payload" : "FICTIONAL_NONCODE_TEXT"),
           { code: "P0001", cause: Error("synthetik500-dispatch-EU-unit-deadline") });
-        throw new Error("local-unit-diagnostic-stopped-or-unknown", { cause });
+        const error = new Error("local-unit-diagnostic-stopped-or-unknown", { cause });
+        if (options.failureDiagnostic) diagnostics.set(error, options.failureDiagnostic);
+        throw error;
       } };
     }
     throw Error("unexpected application import");
@@ -165,7 +178,50 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
     const terminal = JSON.parse(result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data);
     assert.equal(terminal.status, "closed"); assert.equal(terminal.independentFinalAcceptance, false);
     assert.equal(result.events.filter(x => x === "gate.wait").length, 1); assert.equal(result.events.filter(x => x === "gate.quiesce").length, 1);
+    assert.deepEqual(Object.keys(terminal).sort(), ["schema", "status", "selection", "attemptPin", "process", "startedAtUTC", "finishedAtUTC", "timing", "result", "errors", "memory",
+      "unit60OrAuth30Acceptance", "full500Accepted", "independentFinalAcceptance", "production", "paidProviderCallsAllowed", "retryAllowed"].sort());
+    assert(!result.events.includes("scope.consume")); assert(!result.entries.has(directory + "/FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json"));
   });
+  const phaseDiagnostic = { schema: "helmut-local-unit-failure-phase-diagnostic/1", selection: selected,
+    capturedAtUTC: "2026-10-22T12:00:02.000Z", capturedElapsedNs: "2000000000",
+    authorization: { startedAtUTC: "2026-10-22T12:00:00.000Z", confirmedAtUTC: "2026-10-22T12:00:01.000Z", elapsedNs: "1000000000" },
+    controls: [], activeControl: { index: 0, stage: "unit-enter", startedAtUTC: "2026-10-22T12:00:01.000Z", startedElapsedNs: "1000000000" },
+    incomplete: true, qualified: false, unit60Qualified: false, auth30Qualified: false,
+    independentFinalAcceptance: false, full500Accepted: false, retryAllowed: false };
+  await check("failure phase is private and durable before the unchanged failure terminal and exit gate", async () => {
+    const result = await scenario({ failureDiagnostic: phaseDiagnostic });
+    const saved = result.entries.get(directory + "/FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json");
+    assert.deepEqual(JSON.parse(saved.data), phaseDiagnostic); assert.equal(saved.mode, 0o600);
+    assert.equal(result.events.filter(x => x === "scope.consume").length, 1);
+    assert(result.events.indexOf("fsync:FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json") < result.events.indexOf("open:ATTEMPT_TERMINAL.SAFE.json"));
+    assert(result.events.indexOf("fsync:ATTEMPT_TERMINAL.SAFE.json") < result.events.indexOf("gate.quiesce"));
+    const terminal = JSON.parse(result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data);
+    assert.equal(terminal.status, "failed"); assert.equal(terminal.result, null); assert.equal(result.process.exitCode, 1);
+    assert(!Object.hasOwn(terminal, "failureDiagnostics")); assert(!result.stderr.includes("capturedElapsedNs"));
+    const replay = await scenario({}, result.entries); assert.equal(replay.calls, 0);
+    assert(replay.entries.get(directory + "/FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json").data.equals(saved.data));
+  });
+  for (const options of [{ diagnosticOpenFailure: true }, { shortDiagnostic: true }, { diagnosticSyncFailure: true },
+    { diagnosticExists: true }, { consumerFailure: true }]) {
+    await check("forensic output failure cannot mask or retry the original terminal " + Object.keys(options)[0], async () => {
+      const result = await scenario({ ...options, failureDiagnostic: phaseDiagnostic });
+      const terminal = JSON.parse(result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data);
+      assert.equal(terminal.status, "failed"); assert.equal(terminal.errors[1].code, "P0001"); assert.equal(result.process.exitCode, 1);
+      assert.equal(result.events.filter(x => x === "scope.consume").length, 1);
+      assert.equal(result.events.filter(x => x === "open:ATTEMPT_TERMINAL.SAFE.json").length, 1);
+      assert(result.events.filter(x => x === "open:FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json").length <= 1);
+      if (options.diagnosticExists) assert.equal(result.entries.get(directory + "/FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json").data.toString(), "PRESERVED\n");
+      assert(!result.stderr.includes("SYNTHETIC_PRIVATE_CONSUMER_FAILURE"));
+    });
+  }
+  for (const diagnostic of [{ ...phaseDiagnostic, selection: { ...selected, commandHash: "c".repeat(64) } },
+    { ...phaseDiagnostic, controls: Array(200).fill(phaseDiagnostic.activeControl) }]) {
+    await check("unbound or oversized forensic snapshot cannot be persisted", async () => {
+      const result = await scenario({ failureDiagnostic: diagnostic });
+      assert(!result.entries.has(directory + "/FAILURE_PHASE_DIAGNOSTIC.PRIVATE.json"));
+      assert.equal(JSON.parse(result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data).status, "failed");
+    });
+  }
   for (const [name, options] of [
     ["unsupported Node", { version: "v24.18.0" }], ["wrong UID", { uid: 0 }],
     ["missing heap flags", { execArgv: [] }], ["additional preload", { execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16", "--require=other"] }],

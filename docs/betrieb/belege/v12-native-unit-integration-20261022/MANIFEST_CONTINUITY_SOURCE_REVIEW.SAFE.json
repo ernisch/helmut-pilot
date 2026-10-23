@@ -1,0 +1,84 @@
+{
+  "auth30Qualified": false,
+  "changes": [
+    "One full SHA plus stable FD9 proof for immutable manifest files per private witness.",
+    "Every control hashes both small manifests; fresh namespace/mountinfo binding, fresh canonical/named/FD9 checks before and after fresh catalog.",
+    "Private failed-witness set permanently rejects drift, including overlapping catalog calls.",
+    "Fresh runtime, loaded code closure, all 16 mutable safety controls and original clocks unchanged.",
+    "Failed entry preserves bounded private authentic phase times independently of ephemeral Owner tmpfs."
+  ],
+  "commonMemoryImprovementQualified": false,
+  "fd9Meaning": "Metadata continuity to initial byte proof in bound unprivileged native sandbox; no new cryptographic file-content proof each control, no privileged metadata rollback claim.",
+  "full500": false,
+  "nativeOwnerNormalCloseRequalified": false,
+  "nativeReadonlyJitRequalified": false,
+  "reserveQualified": false,
+  "rootAndIndependentSolReviewed": true,
+  "schema": "helmut-native-manifest-continuity-source-review/1",
+  "sourcePins": [
+    {
+      "bytes": 42622,
+      "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/local-unit-diagnostic-store.js",
+      "sha256": "55fc58dd022c5d2ba607dcbb70e762dec0addcbcd9b58e4f8ea446b68e809a09"
+    },
+    {
+      "bytes": 19553,
+      "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/local-unit-diagnostic-scope.js",
+      "sha256": "baf8f1f7202d28c88b355324b041330aae86ddd060e1291254df72ca96589bfe"
+    },
+    {
+      "bytes": 23787,
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-run.js",
+      "sha256": "d46413bb6f7610618faacd5e02d97a6e646100269dee78f79307fe6dcc995a49"
+    },
+    {
+      "bytes": 9952,
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-diagnostic-manifest-test.js",
+      "sha256": "be0ac80f109b37fb65711904c1147f8cd5d8e12f2ecbb00b3d34cee03262c6a8"
+    },
+    {
+      "bytes": 20138,
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/local-unit-diagnostic-guards-test.js",
+      "sha256": "43fb0d189dca5773ff23d5742a657f999b87681f589b6c17a41664582767fc3a"
+    },
+    {
+      "bytes": 24436,
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/local-unit-native-run-test.js",
+      "sha256": "8ead9a7b69661ab05dfe32be30666a7b144fa2cb630309e9b724c11fe28f490d"
+    }
+  ],
+  "sourceReviewPass": true,
+  "targetedChecks": [
+    {
+      "actualExitCode": 0,
+      "passed": 17,
+      "suite": "manifest proof synthetic real-file/VM checks"
+    },
+    {
+      "actualExitCode": 0,
+      "passed": 9,
+      "suite": "store contract/negative checks"
+    },
+    {
+      "actualExitCode": 0,
+      "passed": 15,
+      "suite": "original store consumers"
+    },
+    {
+      "actualExitCode": 0,
+      "passed": 27,
+      "suite": "scope guard checks"
+    },
+    {
+      "actualExitCode": 0,
+      "passed": 48,
+      "suite": "entry VM checks"
+    },
+    {
+      "actualExitCode": 0,
+      "passed": 121,
+      "suite": "authority checks"
+    }
+  ],
+  "unit60Qualified": false
+}

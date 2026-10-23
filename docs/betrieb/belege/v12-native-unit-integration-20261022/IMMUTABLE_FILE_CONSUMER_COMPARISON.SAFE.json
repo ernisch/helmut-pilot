@@ -1,0 +1,126 @@
+{
+  "actualContainerReadonlyQualified": false,
+  "auth30Qualified": false,
+  "bothComponentsAll16WallAndCpuPairsPositive": true,
+  "closure": {
+    "actualChildExitCode": 0,
+    "captureTruncated": [
+      false,
+      false
+    ],
+    "forcedTermination": false,
+    "inputComplete": true,
+    "outerElapsedSeconds": 5.241922945002443,
+    "stderrNaturalEOF": true,
+    "stdoutNaturalEOF": true,
+    "timedOut": false,
+    "transportFailure": null
+  },
+  "commonMemoryImprovementQualified": false,
+  "components": [
+    {
+      "component": "public-files",
+      "contentBytesHashed": 3737236640,
+      "cpuSystemMicros": 759342,
+      "cpuUserMicros": 2834704,
+      "elapsedNs": "3525780377",
+      "fileChecks": 15776,
+      "method": "OLD-full-SHA",
+      "rounds": 16
+    },
+    {
+      "component": "public-files",
+      "contentBytesHashed": 0,
+      "cpuSystemMicros": 341831,
+      "cpuUserMicros": 411031,
+      "elapsedNs": "711679179",
+      "fileChecks": 15776,
+      "method": "NEW-FD9",
+      "rounds": 16
+    },
+    {
+      "component": "binary-two-checks",
+      "contentBytesHashed": 553905920,
+      "cpuSystemMicros": 35142,
+      "cpuUserMicros": 336821,
+      "elapsedNs": "370440997",
+      "fileChecks": 32,
+      "method": "OLD-full-SHA",
+      "rounds": 16
+    },
+    {
+      "component": "binary-two-checks",
+      "contentBytesHashed": 0,
+      "cpuSystemMicros": 249,
+      "cpuUserMicros": 1196,
+      "elapsedNs": "1440710",
+      "fileChecks": 32,
+      "method": "NEW-FD9",
+      "rounds": 16
+    }
+  ],
+  "evidencePins": [
+    {
+      "bytes": 6044,
+      "path": "/workspace/helmut-native-integration-checks-20261022/manifest-recheck-comparison-PREPARED-20261023/PLAN.PRIVATE.json",
+      "sha256": "d683a6e409e2b963d7b32ab53f31871bbd5d0d3208e07d9bf6010f26565c9046"
+    },
+    {
+      "bytes": 1245,
+      "path": "/workspace/helmut-native-integration-checks-20261022/manifest-recheck-comparison-PREPARED-20261023/FINAL.SAFE.json",
+      "sha256": "ecc3907d07898d24166fcd2ea2400be3b4c6bc644710322a4a99b182e2af2d5e"
+    },
+    {
+      "bytes": 23824,
+      "path": "/workspace/helmut-native-integration-checks-20261022/manifest-recheck-comparison-PREPARED-20261023/COMPARISON.SAFE.json",
+      "sha256": "879a9f886478cf0d33a3479547ef078bffc3d68e74aed301130a3d76f4299adb"
+    }
+  ],
+  "excludedJITFiles": 974,
+  "fileBytes": 233577290,
+  "finalVerification": {
+    "completedAtUTC": "2026-10-23T02:37:29.222Z",
+    "component": "public-files",
+    "contentBytesHashed": 233577290,
+    "cpuSystemMicros": 69626,
+    "cpuUserMicros": 169738,
+    "cumulativeMaxRSSKiB": 80208,
+    "elapsedNs": "238492794",
+    "fileChecks": 986,
+    "method": "final-original-readRegular-full-SHA",
+    "round": -1,
+    "rssAfterBytes": 48201728,
+    "rssBeforeBytes": 80297984,
+    "startedAtUTC": "2026-10-23T02:37:28.984Z"
+  },
+  "full500": false,
+  "fullCase44ManifestCompared": false,
+  "fullProductComparisonPerformed": false,
+  "newPrototypeFdPassesPerRound": 1,
+  "noGCOrCacheManipulation": true,
+  "pass": true,
+  "productFdPassesAroundFreshCatalog": 2,
+  "repeatedOrderAlternates": true,
+  "reserveQualified": false,
+  "schema": "helmut-host-file-check-cost-comparison/1",
+  "scope": "retained-host-public-files-only",
+  "securityEquivalenceQualified": false,
+  "setup": {
+    "completedAtUTC": "2026-10-23T02:37:24.370Z",
+    "component": "public-files",
+    "contentBytesHashed": 233577290,
+    "cpuSystemMicros": 90757,
+    "cpuUserMicros": 151279,
+    "cumulativeMaxRSSKiB": 63844,
+    "elapsedNs": "228003428",
+    "fileChecks": 986,
+    "method": "initial-original-readRegular-full-SHA",
+    "round": -1,
+    "rssAfterBytes": 43925504,
+    "rssBeforeBytes": 31830016,
+    "startedAtUTC": "2026-10-23T02:37:24.141Z"
+  },
+  "sharedWarmCacheNotColdCache": true,
+  "uniqueFiles": 986,
+  "unit60Qualified": false
+}

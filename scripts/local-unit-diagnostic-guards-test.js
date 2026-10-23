@@ -73,7 +73,7 @@ function harness(mode = "normal") {
     run: action => scope.runClaimed(f.selection, () => action(scope)),
     stamp: () => new Clock().toISOString() };
 }
-async function fullControls(h, finish = true) {
+async function fullControls(h, finish = true, afterControls = null) {
   const { f, artifacts } = h, positions = ["mandatsbriefing", "morgenbriefing", "lage"].map(bereich => ({ bereich, owner: f.owner, hash: sha(bereich) }));
   return h.run(async s => {
     await s.checkControl("unit-enter"); await s.checkControl("before-D");
@@ -91,6 +91,7 @@ async function fullControls(h, finish = true) {
     await s.mutateState(state => A.account(state, rt, "accounted", 1, sha("SYNTHETIC-R-USAGE")));
     if (h.mode !== "missing-review") artifacts.set(id("pruefung"), entry("pruefung"));
     for (const stage of A.CONTROL_STAGES.slice(9)) await s.checkControl(stage);
+    if (afterControls) return afterControls(s);
     const verification = s.verification();
     assert.equal(verification.controls.length, 16);
     assert(Object.isFrozen(verification) && Object.isFrozen(verification.controls[0]));
@@ -204,6 +205,78 @@ async function main() {
       v => v.authorization.commandHash = "0".repeat(64), v => v.controls[3].stage = "reserve-D"]) {
       const v = clone(valid); change(v); assert.throws(() => A.validateVerification(f.command, H.claimId, H.at, v, H.at));
     }
+  });
+  await test("genuine failure retains only frozen selection and actual phase times once", async () => {
+    const h = harness(), error = Object.freeze(Object.assign(Error("SYNTHETIC_PRIVATE_ERROR_TEXT"),
+      { authorization: "SYNTHETIC_PRIVATE_AUTH", inputs: "SYNTHETIC_PRIVATE_INPUT" }));
+    await assert.rejects(h.run(async s => { await s.checkControl("unit-enter"); throw error; }), value => value === error);
+    const wrapper = new Error("SYNTHETIC_WRAPPER", { cause: error });
+    const diagnostic = h.scope.consumeFailureDiagnostics(wrapper);
+    assert.deepEqual(clone(diagnostic.selection), h.f.selection);
+    assert.deepEqual(Object.keys(diagnostic.authorization).sort(), ["confirmedAtUTC", "elapsedNs", "startedAtUTC"]);
+    assert.equal(diagnostic.controls.length, 1); assert.equal(diagnostic.controls[0].stage, "unit-enter");
+    assert.deepEqual(Object.keys(diagnostic.controls[0]).sort(), ["completedAtUTC", "completedElapsedNs", "index", "stage", "startedAtUTC", "startedElapsedNs"]);
+    assert(BigInt(diagnostic.controls[0].completedElapsedNs) >= BigInt(diagnostic.controls[0].startedElapsedNs));
+    assert(BigInt(diagnostic.capturedElapsedNs) >= BigInt(diagnostic.controls[0].completedElapsedNs));
+    assert.equal(diagnostic.activeControl, null); assert.equal(diagnostic.incomplete, true);
+    for (const key of ["qualified", "unit60Qualified", "auth30Qualified", "independentFinalAcceptance", "full500Accepted", "retryAllowed"])
+      assert.equal(diagnostic[key], false);
+    assert(Object.isFrozen(diagnostic) && Object.isFrozen(diagnostic.controls) && Object.isFrozen(diagnostic.controls[0]));
+    const serialized = JSON.stringify(diagnostic);
+    assert(!/SYNTHETIC_PRIVATE|claimId|inputsHash|runtimeHash|costsHash|artifactHash|message|stack/.test(serialized));
+    assert(Buffer.byteLength(serialized) <= 8192);
+    assert.equal(h.scope.consumeFailureDiagnostics(wrapper), null);
+    assert.equal(h.scope.consumeFailureDiagnostics(error), null);
+  });
+  await test("a failed control retains its genuine enum and start but no completion", async () => {
+    const h = harness("original-control-drift"); let failure;
+    await assert.rejects(h.run(s => s.checkControl("unit-enter")), error => { failure = error; return true; });
+    const diagnostic = h.scope.consumeFailureDiagnostics(failure);
+    assert.equal(diagnostic.controls.length, 0);
+    assert.equal(diagnostic.activeControl.stage, "unit-enter"); assert.equal(diagnostic.activeControl.index, 0);
+    assert.equal(typeof diagnostic.activeControl.startedAtUTC, "string");
+    assert.equal(typeof diagnostic.activeControl.startedElapsedNs, "string");
+    assert(!Object.hasOwn(diagnostic.activeControl, "completedAtUTC"));
+    const invalid = harness(); let orderFailure;
+    await assert.rejects(invalid.run(s => s.checkControl("SYNTHETIC_PRIVATE_STAGE")), error => { orderFailure = error; return true; });
+    const orderDiagnostic = invalid.scope.consumeFailureDiagnostics(orderFailure);
+    assert.equal(orderDiagnostic.activeControl, null);
+    assert(!JSON.stringify(orderDiagnostic).includes("SYNTHETIC_PRIVATE_STAGE"));
+  });
+  await test("a seventeenth undefined control is terminal before any fresh reads", async () => {
+    const h = harness(); let failure;
+    await assert.rejects(fullControls(h, false, async s => {
+      const before = clone(h.calls);
+      await assert.rejects(s.checkControl(undefined), error => { failure = error; return /control-order-or-replay/.test(error.message); });
+      assert.deepEqual(h.calls, before);
+      assert.throws(() => s.verification(), /control-failed-terminal/);
+      throw failure;
+    }), error => error === failure);
+    const diagnostic = h.scope.consumeFailureDiagnostics(failure);
+    assert.equal(diagnostic.controls.length, 16); assert.equal(diagnostic.activeControl, null);
+  });
+  await test("forged fields, cycles, getters and excessive cause depth cannot forge or consume a snapshot", async () => {
+    const h = harness(), error = Error("SYNTHETIC_FAILURE");
+    await assert.rejects(h.run(() => { throw error; }), value => value === error);
+    assert.equal(h.scope.consumeFailureDiagnostics({ failureDiagnostics: { qualified: true } }), null);
+    assert.equal(h.scope.consumeFailureDiagnostics(Object.assign(Error("forged"), { failureDiagnostics: { qualified: true } })), null);
+    const cycle = Error("cycle"); cycle.cause = cycle;
+    assert.equal(h.scope.consumeFailureDiagnostics(cycle), null);
+    let getterCalls = 0; const getter = Error("getter");
+    Object.defineProperty(getter, "cause", { get() { getterCalls++; return error; } });
+    assert.equal(h.scope.consumeFailureDiagnostics(getter), null); assert.equal(getterCalls, 0);
+    let deep = error; for (let i = 0; i < 8; i++) deep = new Error("wrapper", { cause: deep });
+    assert.equal(h.scope.consumeFailureDiagnostics(deep), null);
+    assert(h.scope.consumeFailureDiagnostics(error));
+    assert.equal(h.scope.consumeFailureDiagnostics(error), null);
+  });
+  await test("preclaim failures and successful work produce no phase failure diagnostic", async () => {
+    const h = harness("auth-proof-unknown"); let failure;
+    await assert.rejects(h.run(() => {}), error => { failure = error; return true; });
+    assert.equal(h.scope.consumeFailureDiagnostics(failure), null);
+    const successful = harness(), error = Error("unused");
+    assert.equal(await successful.run(() => "SYNTHETIC_SUCCESS"), "SYNTHETIC_SUCCESS");
+    assert.equal(successful.scope.consumeFailureDiagnostics(error), null);
   });
   console.log(JSON.stringify({ pass: true, checks, scope: "SYNTHETIC_OFFLINE_GUARD_CONSUMERS_ONLY", nativeQualification: false,
     databaseCalls: 0, motorCalls: 0, providerCalls: 0, unit60Qualified: false }));

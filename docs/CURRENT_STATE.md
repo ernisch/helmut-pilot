@@ -4,36 +4,38 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: CI grün; Einzelunit-Startdialog korrigiert, native Abnahme offen
+## 23.10.: CI grün; Einzelunit44 FAIL, Manifestprüfpfad umgebaut
 
-13.527Dateien hashverifiziert;84Originale geschützt eingebunden, echte V12-
-POSTRUN/Runtimebindungen erhalten; ursprüngliche DB gestoppt/unverändert.
-CI39881015738 auf48c15b09 vollständig grün: Browser, öffentlicher Prüfplan,
-Offline/SQL/Bereich/Z22 erfolgreich. Neue Hoständerung braucht eigene frischeCI.
-Quellenpfad/Link-RLS/Publication-Consumer nativPASS. f519 bleibtFAIL: Runtime-
-Receipt brauchte briefings.xmin. Enger Grantfix/25Checks/2ReviewsPASS, nativ offen.
-Aktueller PostgREST-Abschluss bindet Config/Binary/8Quellen/Einmalpolicy/Prozess;
-71Owner/103Host/21Controller-Checks+2ReviewsPASS, normaler Nativeclose noch offen.
-Frischer Fall31 auf48: ENTRY_START ohne Antwort nach5s; kein Unitabschluss.
-Host-Mappingfehler folgt dem Source-Cleanup; kein vorgelagerter SQL-Fehler belegt.
-CLI1/2EOF, PG0/mergedEOF, Gruppenleer, alle6Memoryevents0; Peak1.079.160.832B
-wegen FAIL kein Reservebeweis. Motorzahl unbekannt, Originale unverändert.
-Host nimmt gebundenen ENTRY_START jetzt vor einer frischen Gesamtinventur an;
-Gate/Antwort erst nach vollständiger Beobachtung. Keine Frist erweitert.
-106Purechecks+finalerUhrfixturetest/2ReviewsPASS, echte neue Ausführung offen.
-Eigene48COPY privat archiviert/1778Member frisch restauriert verglichen;
-beide redundanten Expandedformen nach vollständigem Docker-/physischem
-Originalvolumenschutz entfernt, ebenso eigener beendeter Metadatenprobecontainer.
-Privatarchiv mit Testsecrets bleibt lokal. Freier Platz vor31:10.870.374.400B;
-31 verbraucht erneut Platz. f519-Archiv/1779Member frisch restauriert geprüft;
-beide Expandedformen noch erhalten, kein Platzgewinn.
-Ab17/48/f519/31 bleibenFAIL; Belege/Originale/RAW/Auth/Git erhalten.
-[Belege/PR936/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
-[Vollständiger Vorzustand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
-Weiter: sichere Kapazität, frische exakte Bindung/Einzelunit, Runtime-/Abschluss-
-und Zeit-/RAM-Abnahme; App403 und vollständige32Startbedingungen gesondert offen.
-Kein Voll500 ohne32frische Bedingungen/neues konkretesGO; alte Rechte verbraucht,
-kein Merge/Production. Einzelunit/warmerCache belegen keinen500er-Puffer.
+13.527Dateien hashverifiziert;84Originale geschützt eingebunden. CI39885153523
+auf a58a741f vollständig grün; Folgecode braucht frischeCI. Ursprüngliche DB
+bleibt gestoppt/unverändert; echte V12-POSTRUN-/Runtimebindungen erhalten.
+ENTRY_START funktioniert nativ44. Adapter60.163,097461ms überschreitetUnit60;
+SQL send-running-window, später Hostmappingfehler. D/R-Sendphase/Kontrollzahl
+ungeklärt, Owner-tmpfs nicht remountet. Peak1.342.197.760B/alle6Memoryevents0/
+CPU-Drosselung0; CLI1/beideEOF, Gruppeleer, Protokoll unclean: kein Puffer-PASS.
+Native Originalnachprüfung InterruptedError/raw-pin; false-Flags unverändert.
+Separat frische993Hostpins/2.476.732.862B inklusive2GiB-RAW+vierOriginaleingaben
+PASS. Keine JIT-/native Neuabnahme; äußeresGit/sourceBefore==After identisch.
+
+Prüfoverhead bisher1961Dateien/440.753.882B proKontrolle. Begrenzter Vergleich
+986Hostdateien/233.577.290B:16wechselndePaare3,526→0,712s, alle positiv; Setup/
+Final getrennt. EinFD9-Pass-Prototyp, kein Gesamtmotor-/RAMvergleich. NeuerStore
+hasht initial vollständig; bindet private Operation/Manifeste/Namespace/RO-Mounts,
+prüft volleFD9 vor/nach frischemCatalog. KleineManifeste/Runtime/alle16mutable
+Kontrollen bleiben frisch. Drift terminal, auch bei parallelemCatalog; keinRetry.
+PRIVATE Fehlerphasenquittung hält echte bestätigte Zeiten ohne Authpayloads;
+Erfolgsterminal unverändert. Manifest17/Store9/Original15/Guards27/Entry48/
+Authority121 gezieltPASS, unabhängiger SourcereviewPASS. Native Abnahme offen.
+
+Eigene48/f519/ab17Kopien privat archiviert/frisch restauriert geprüft; redundante
+Expandedformen kontrolliert entfernt. Originale/Archive/Belege bleiben erhalten,
+Testsecrets nur lokal. Frei vor44:10.906.013.696B; danach44+Worktreebedarf, frische
+10GiB-Einzeladmission fehlt. Weitere eigene Kopiensicherung erst vorbereitet.
+[PR936/Belege/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
+Weiter: Kapazität/frischeCI, echte Einzelunit mit normalemOwnerclose/Unit60/
+Auth30/3Positionen+ACK; App403 gesondert offen. Voll500 braucht15.179.779.720B,
+32frischeBedingungen und neueskonkretesGO; alteRechte verbraucht. KeinMerge/
+Production. Einzelunit/warmerCache beweisen keinen500er-Puffer.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

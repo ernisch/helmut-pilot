@@ -1,0 +1,40 @@
+{
+  "additionalOriginalPins": 4,
+  "auth30Acceptance": false,
+  "case": "/workspace/helmut-unit-diagnostic-native/44e251ee0f05668cfa2e540ec004abbe",
+  "codeCommit": "a58a741f826e5ff181c34b62b34d1a5be91c6dfd",
+  "databaseQueried": false,
+  "declaredHostSourceAndRuntimePinsMatched": true,
+  "declaredUniquePins": 989,
+  "finishedAtUTC": "2026-10-23T02:27:26.203273+00:00",
+  "full500": false,
+  "internalRestoredReaderLibrariesRechecked": false,
+  "jitArchiveMembersReextracted": false,
+  "manifestPin": {
+    "bytes": 709149,
+    "path": "/workspace/helmut-unit-diagnostic-native/44e251ee0f05668cfa2e540ec004abbe/STARTED.SAFE.json",
+    "sha256": "9f0946cb06476a9d10a5000d544bc9747bd3ad28efb8b912b6dde2e313913c9c"
+  },
+  "monotonicSeconds": 1.9536903379921569,
+  "motorCalls": 0,
+  "nativeReadonlyMountsRecreated": false,
+  "nativeRunRequalified": false,
+  "oldAuthorityReused": false,
+  "originalFourRequestInputsMatched": true,
+  "originalNativeFailureFlagsUnchanged": true,
+  "originalRawPinMatched": true,
+  "paidProviderCalls": 0,
+  "pass": true,
+  "recordsPin": {
+    "bytes": 511362,
+    "path": "/workspace/helmut-native-integration-checks-20261022/post-case44-original-verification-20261023/VERIFIED_PINS.PRIVATE.json",
+    "sha256": "8b292e070cdf80d8c2f255bd5b5d721cd3ae0de5f7cbbde704bd4d75b63e03ab"
+  },
+  "reserveAcceptance": false,
+  "schema": "helmut-independent-post-failure-original-verification/1",
+  "scope": "Fresh independent byte/metadata verification of preserved host pins; no native runtime, DB contents or run-success inference.",
+  "startedAtUTC": "2026-10-23T02:27:24.249604+00:00",
+  "unit60Acceptance": false,
+  "verifiedBytes": 2476732862,
+  "verifiedUniquePins": 993
+}
