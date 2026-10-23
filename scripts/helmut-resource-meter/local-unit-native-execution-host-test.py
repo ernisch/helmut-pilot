@@ -863,6 +863,47 @@ class PureHost(unittest.TestCase):
         self.assertFalse(close['clean']); self.assertNotIn('Base64', str(close)); self.assertNotIn('privateRootDiagnostic', str(close))
         self.assertIs(self.host.close(), close); self.assertEqual(events, ['trace-start', 'client-stop'])
 
+    def test_diagnostic_trace_input_exit_and_eofs_are_pumped_before_destructive_stop(self):
+        reader, read, write, events = self.trace_close_fixture()
+        self.host.failure = None  # The Controller can abort before a Host failure.
+        original_docker = self.host._docker; stop_observations = []
+        def docker(argv, **kwargs):
+            if argv[0] == 'stop':
+                stop_observations.append((reader.offset, reader.child.poll(), list(reader.eof), reader.finished))
+            return original_docker(argv, **kwargs)
+        self.host._docker = docker
+        with patch.object(M.os, 'read', read), patch.object(M.os, 'write', write):
+            close = self.host.close()
+        self.assertEqual(stop_observations, [(2, 0, [True, True], True)])
+        self.assertEqual(events, ['trace-start', 'client-stop']); self.assertFalse(close['clean'])
+        self.assertEqual(close['children'][-1]['exitCode'], 0)
+        value = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_001.PRIVATE.json').read_bytes())
+        self.assertEqual(value['inputWrittenBytes'], 2)
+        self.assertTrue(value['stdoutNaturalEOF'] and value['stderrNaturalEOF'])
+        self.assertEqual(base64.b64decode(value['stdoutBase64']), b'{"privateRootDiagnostic":true}\n')
+        self.assertFalse(value['remoteExitConfirmed'])
+        self.assertIs(self.host.close(), close); self.assertEqual(events, ['trace-start', 'client-stop'])
+
+    def test_diagnostic_trace_missing_eof_shares_close_budget_and_stays_unknown(self):
+        reader, read, write, events = self.trace_close_fixture(no_eof=True)
+        original_docker = self.host._docker; clock = [0.0]; stop_times = []
+        def monotonic():
+            clock[0] += .25; return clock[0]
+        def docker(argv, **kwargs):
+            if argv[0] == 'stop': stop_times.append(clock[0])
+            return original_docker(argv, **kwargs)
+        self.host._docker = docker
+        with patch.object(M.os, 'read', read), patch.object(M.os, 'write', write), \
+             patch.object(M.time, 'monotonic', monotonic), patch.object(M.time, 'sleep', lambda _: None):
+            close = self.host.close()
+        self.assertEqual(len(stop_times), 1); self.assertGreaterEqual(stop_times[0], 6)
+        self.assertLessEqual(clock[0] - stop_times[0], .5)  # No second six-second pump budget.
+        self.assertEqual(events, ['trace-start', 'client-stop']); self.assertFalse(close['clean'])
+        self.assertEqual(len(close['children']), 1)  # Reader exit0 alone cannot enter confirmed metadata.
+        value = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_001.PRIVATE.json').read_bytes())
+        self.assertEqual(value['localExitCode'], 0); self.assertEqual(value['inputWrittenBytes'], 2)
+        self.assertFalse(value['stdoutNaturalEOF'] or value['stderrNaturalEOF'] or value['remoteExitConfirmed'])
+
     def test_diagnostic_trace_nonzero_or_missing_eof_remains_failed_and_private(self):
         reader, read, write, events = self.trace_close_fixture(exit_code=1)
         with patch.object(M.os, 'read', read), patch.object(M.os, 'write', write):

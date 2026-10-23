@@ -1970,11 +1970,13 @@ class NativeExecutionHost:
         if self.closed:
             return self.close_result
         clean = self.failure is None and self.state == 'STOPPED'
+        until = None
         active = self.clients.get(self.active_client)
         if (not clean and active and active.get('mode') == 'entry' and active.get('child') is not None
                 and self.source_id == self.config.get('actualSourceContainerId') and HASH.fullmatch(self.source_id)
                 and not self.failure_trace_attempted):
             self.failure_trace_attempted = True
+            until = time.monotonic() + 6
             try:
                 # Failure bytes only: no footer, parsing, reply or acceptance.
                 # The registered child uses the unchanged cleanup/EOF bounds.
@@ -1987,6 +1989,16 @@ class NativeExecutionHost:
                         'exceptionType': type(error).__name__[:128], 'errno': getattr(error, 'errno', None)}))
                 except BaseException:
                     pass
+            # Feed/drain this registered reader before blocking client stops.
+            # Source can stop independently; share, never extend, the close budget.
+            while self.failure_trace_read is not None and time.monotonic() < until:
+                try:
+                    if self.failure_trace_read.tick():
+                        break
+                except BaseException as error:
+                    self.failure_trace_error = error
+                    break
+                time.sleep(.01)
         # No successful response/trace is manufactured by best-effort teardown.
         for cid, c in self.clients.items():
             try:
@@ -2004,7 +2016,8 @@ class NativeExecutionHost:
                     self._root(ROOT_SIGNAL, {k: p[k] for k in ('pid', 'startTicks', 'exe', 'pidNamespace')}, lifetime=5)
                 except BaseException:
                     pass
-        until = time.monotonic() + 6
+        if until is None:
+            until = time.monotonic() + 6
         while time.monotonic() < until:
             done = True
             for c in self.children:
