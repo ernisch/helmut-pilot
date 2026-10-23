@@ -99,7 +99,16 @@ def retain_memory_components(kernel, stream, parent, snapshot, sample_index):
     if stream is None:
         return
     row = kernel.memory_components_snapshot(parent, expected_identity=snapshot['groupIdentity'])
-    row.update(sampleIndex=sample_index, kernelSampleElapsedSeconds=snapshot['elapsedSeconds'])
+    anchor_begin = time.monotonic_ns()
+    anchor_utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    anchor_end = time.monotonic_ns()
+    row.update(sampleIndex=sample_index, kernelSampleElapsedSeconds=snapshot['elapsedSeconds'],
+               clockAnchor={'observedAtUTC': anchor_utc,
+                            'monotonicBeginNS': anchor_begin, 'monotonicEndNS': anchor_end,
+                            'observationElapsedNS': anchor_end - anchor_begin if anchor_end >= anchor_begin else None,
+                            'status': 'OBSERVED' if anchor_end >= anchor_begin else 'UNKNOWN',
+                            'reason': None if anchor_end >= anchor_begin else 'CLOCK_REGRESSION',
+                            'snapshotsAtomic': False})
     stream.write(json.dumps(row, allow_nan=False) + '\n')
     stream.flush()
 

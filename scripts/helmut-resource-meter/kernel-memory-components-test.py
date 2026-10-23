@@ -2,7 +2,9 @@
 """Temporary-file components and retention checks; no live cgroup or subprocess."""
 import ast
 import copy
+import datetime
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -209,6 +211,37 @@ class Components(unittest.TestCase):
                   and any(k.arg == 'require_empty' and isinstance(k.value, ast.Constant)
                           and k.value.value is True for k in n.keywords)]
         self.assertEqual(len(finals), 1)
+
+    def test_retained_utc_anchor_is_bracketed_and_regression_is_unknown(self):
+        stamp = datetime.datetime(2026, 10, 23, 12, 0, tzinfo=datetime.timezone.utc)
+        frame = {'groupIdentity': self.identity, 'elapsedSeconds': 1.5}
+        for end, status in ((145, 'OBSERVED'), (99, 'UNKNOWN')):
+            events = []
+            def mono():
+                events.append('mono')
+                return 100 if len(events) == 1 else end
+            def utc(zone):
+                self.assertIs(zone, datetime.timezone.utc)
+                events.append('utc')
+                return stamp
+            with self.subTest(end=end), io.StringIO() as stream, \
+                    patch.object(M, 'memory_components_snapshot', return_value={'status': 'OBSERVED'}) as gauges, \
+                    patch.object(S.time, 'monotonic_ns', side_effect=mono), \
+                    patch.object(S.datetime, 'datetime') as clock:
+                clock.now.side_effect = utc
+                S.retain_memory_components(M, stream, PARENT, frame, 3)
+                row = json.loads(stream.getvalue())
+                clock.now.assert_called_once_with(datetime.timezone.utc)
+                gauges.assert_called_once_with(PARENT, expected_identity=self.identity)
+            self.assertEqual(events, ['mono', 'utc', 'mono'])
+            anchor = row['clockAnchor']
+            self.assertEqual(anchor['observedAtUTC'], stamp.isoformat())
+            self.assertEqual((anchor['monotonicBeginNS'], anchor['monotonicEndNS']), (100, end))
+            self.assertEqual(anchor['status'], status)
+            self.assertEqual(anchor['observationElapsedNS'], 45 if status == 'OBSERVED' else None)
+            self.assertEqual(anchor['reason'], None if status == 'OBSERVED' else 'CLOCK_REGRESSION')
+            self.assertFalse(anchor['snapshotsAtomic'])
+            self.assertEqual(row['status'], 'OBSERVED')  # Gauge validity is separate from clock mapping.
 
 
 if __name__ == '__main__':
