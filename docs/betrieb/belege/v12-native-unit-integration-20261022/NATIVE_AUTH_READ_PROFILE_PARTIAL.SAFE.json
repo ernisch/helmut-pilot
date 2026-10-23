@@ -1,0 +1,80 @@
+{
+  "actualCLIExit": 1,
+  "actualNodeExit": 1,
+  "actualWorkerExit": 1,
+  "allChildrenExited": true,
+  "allMemoryEventsZero": true,
+  "allOwnCIDsStoppedPID0": true,
+  "auth30": false,
+  "controls16": false,
+  "emptyCgroup": true,
+  "engineCommit": "1d7bc947dbfc7d88dbf8e73d99a17e80ad40613e",
+  "failure": "AUTH_BYTE_DIFFERENCE_AFTER_BOTH_READS",
+  "full500": false,
+  "limitations": [
+    "instrumented existing native00c9 derived copy, not untouched original V12",
+    "same-root fresh Node cold and warm reads only",
+    "psql and native child CPU excluded from Node CPU",
+    "inclusive sample durations overlap; do not add",
+    "Profiler.start overhead and idle are included in profile duration",
+    "no uninstrumented old-new performance or RAM saving comparison",
+    "raw Auth artifact bytes differ; overall FAIL remains",
+    "no repeated profiler workload"
+  ],
+  "nodeActualExit1AndTwoNaturalEOF": true,
+  "peakForFailedInstrumentedComponentOnlyBytes": 402771968,
+  "plateau": false,
+  "postgresCleanExit0": true,
+  "profilerInternalSessionOnly": true,
+  "psqlBothActualExit0AndTwoNaturalEOF": true,
+  "rawProfileContentsPrivate": true,
+  "reads": [
+    {
+      "graphNodeCount": 1923,
+      "historyCount": 6001,
+      "historyFrozen": true,
+      "instrumentedReadWallMS": 1523.869427,
+      "nativeHistoryPayloadPresent": true,
+      "nativeHistoryReuseReused": false,
+      "nodeCPUSystemMicroseconds": 151718,
+      "nodeCPUUserMicroseconds": 867827,
+      "phase": "cold",
+      "profileDurationUS": 1555490,
+      "psqlWallMS": 499.796759,
+      "sampledDecoderInclusiveMicroseconds": 697509,
+      "sampledGCExclusiveMicroseconds": 171677,
+      "snapshotPresent": true
+    },
+    {
+      "graphNodeCount": 1923,
+      "historyCount": 6001,
+      "historyFrozen": true,
+      "instrumentedReadWallMS": 408.018681,
+      "nativeHistoryPayloadPresent": false,
+      "nativeHistoryReuseReused": true,
+      "nodeCPUSystemMicroseconds": 30605,
+      "nodeCPUUserMicroseconds": 127943,
+      "phase": "warm",
+      "profileDurationUS": 476392,
+      "psqlWallMS": 301.001453,
+      "sampledDecoderInclusiveMicroseconds": 86065,
+      "sampledGCExclusiveMicroseconds": 7551,
+      "snapshotPresent": true
+    }
+  ],
+  "reserve500MB": false,
+  "rootActualFailureReceipt": {
+    "bytes": 2652,
+    "sha256": "e300987cd655e4b4dd9975ce185bc1aef28d5bb82b2346c484775f0fec219ae4"
+  },
+  "rootSampleAnalysis": {
+    "bytes": 8119,
+    "sha256": "7a9d56d9ef9ef86e1d6f74c3cf0bda882573d5efa757c6186406e22e52cc9190"
+  },
+  "runtimeMemorySavings": false,
+  "samplingIntervalMicroseconds": 1000,
+  "schema": "helmut-auth-read-profile-public-partial/1",
+  "sourceOriginal9MDAfter": true,
+  "status": "FAIL_WITH_VALID_READ_PARTIAL_EVIDENCE",
+  "unit60": false
+}

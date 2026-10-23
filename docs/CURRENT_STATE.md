@@ -4,38 +4,39 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: 00c9-Fortschritt belegt, Unit60 weiter offen
+## 23.10.: Auth-Komponenten eingegrenzt; direkter Unitlauf durch Platte blockiert
 
-13.527 Dateien hashverifiziert;84 Originale geschützt, CI39891861503 auf0b1 grün.
-Ursprüngliche DB/V12-POSTRUN-/Runtimebindungen erhalten. Native00c9: Controller70s
-auf Entryabschluss, kein Terminal/FinalAcceptance. Peak1.366.712.320B, Events0,
-Gruppe bis letzten Exit leer, PG0/Originalschutzflags true; Hostclose unclean,
-zwei Kinder137. OuterCLI1/Helper1 gewartet,2EOF, keine äußeren Signale/Timeouts.
-Source/Git0b1 unverändert. FAIL, kein Zeit-/Qualitäts-/Puffer-PASS.
+13.527 Dateien hashverifiziert,84 Originale geschützt; CI39900463531 auf1d7bc947
+grün. DB/V12-POSTRUN-/Runtimebindungen erhalten. Native00c9 bleibt FAIL:
+kein Terminal,0 fertige Units, Peak1.366.712.320B, Events0, PG0/Gruppe leer;
+Hostabschluss unclean/zwei Kinder137. COPY-only-Forensik bestätigt D-accounted,
+R nur autorisiert nach53,501s;6,499s Rest reichen nicht für nominelle19,9s.
+Auth-/Kontrollzeit UNKNOWN. Socketloser Shim, keine Provider-HTTP-Zeitmessung.
 
-Neue COPY-only-Auslesung Exit0, PG0/clean/2EOF/Gruppe leer, Source9MD unverändert.
-Streng validiert: D-accounted, Draft/immutable-D/usage-D je1; R nur Sendautorisierung,
-keine usage-R,0 fertige Units. R-Freigabe nach53,501s lässt6,499s bis Unit60;
-nominelle19900ms-R-Verzögerung passt nicht. D/R verwenden socketlosen Requestshim,
-keine gemessenen Provider-HTTP-Zeiten; R-Timerstart/Response/ACK unbelegt.
-Auth-/Kontrollzeiten UNKNOWN, nicht0. Reader11/Validator135 synthetische ChecksPASS.
-Nativehost: FullauthGraphReuse/SingleWriteCapture OFF, HistoryReuse/ControlRead ON;
-der4-Feld-Kontrollleser nutzt unabhängig davon bereits eigenes warmes Graphreuse.
+Manifestcache/enge CLI-Codes integriert, frische FD9/Livecatalog/16 Kontrollen,
+Drift terminal, Run54PASS. GraphReuse/Capture OFF, HistoryReuse/ControlRead ON.
 
-Manifestumbau integriert: initialSHA/volleFD9 vor/nach frischem Catalog;
-Runtime/16 Kontrollen frisch, Drift terminal. Begrenzter Prototyp3,526→0,712s
-ist kein Motor-/RAM-Beweis; gezielte Prüfungen/ReviewPASS. Diagnose fehlt vor Scope,
-danach erst nach Adaptercleanup; innere Hängestelle offen. Fünf feste Manifestcodes
-im CLI ergänzt, Near-Matches gesperrt, Run54PASS; keine Auslösung belegt.
+PG-KomponentePASS: native Reads344,511/166,992/155,944ms, Peak189.198.336B.
+Vier echte Konstruktorfälle bytegleich: alt128–132ms/direkt102–119ms;
+rund20ms Differenz erklärt Unit60 nicht. Komponentenpeak435.965.952B,
+kein RAM-Ersparnisnachweis; PG0/alle Kinder beendet/Gruppe leer/Originalschutz.
 
-Eigene31/44 gesichert/restauriert geprüft, vier redundante Expandedformen entfernt;
-alle4 Exits0, Originale/Git/Archive/Belege erhalten, Testsecrets bleiben lokal.
-Frisch04:15UTC9.919.639.552B frei;817.778.688B fehlen zu10GiB-Einzeladmission,
-5.260.140.168B zu Full500. Neue Readerkopie373.870.592B; weitere große sichere
-Löschquelle unbelegt. Weiter: echter PG-Graph-/History-Lesekomponententest auf
-eigener Kopie; SQL/Node/Host/Schreibanteil noch ungetrennt. Kein blinder Motorlauf.
-App403 separat offen. Full500 braucht15.179.779.720B/32 frische Bedingungen/neues
-konkretes GO. Alte Rechte verbraucht, kein Merge/Production; kein500er-Pufferbeweis.
+Instrumentierte U.read kalt1523,869/warm408,019ms, NodeCPU1019,545/158,548ms;
+native Historyreuse false/true,6001 frozen/1923Nodes. Logisch vollständig gleich,
+nur History/Revision-Reihenfolge verschieden. Bytevergleich bleibt FAIL/Node1;
+PSQL beide0+2EOF, PG0/clean/Gruppe leer/Events0/Original9MD gleich.
+17 Profiler-/6 LauncherchecksPASS. CAS-Sourceaudit: Projektion ohne vollen
+Auth-JSONB-Aufbau, fünf Graphprüfpasses je Bridgecommit; Schreibzeit ungemessen.
+Keine weitere allgemeine Suche oder Komponentenserie, kein neuer Motorumbau.
+
+31/44 kontrolliert gesichert/entfernt; Originale/Git/Archive/Belege erhalten,
+Testsecrets lokal. Frisch9.777.184.768B frei:960.233.472B fehlen zur unveränderten
+10GiB-Einzeladmission,5.402.594.952B zu Full500. c898 bleibt ausdrücklich KEEP;
+keine sichere Löschquelle in benötigter Größe belegt. Nächster direkter Schritt
+nach Kapazitätszulassung: frischer gebundener echter Einzelunitfall, nur dessen
+belegte Blocker reparieren. Unit60/Auth30/16 Kontrollen/Qualität/Plateau/500MB
+bleiben offen. App403 separat. Full500 braucht15.179.779.720B/32 frische Bedingungen
+und neues konkretes GO; alte Rechte verbraucht, kein Merge/Production.
 [PR936, Belege und Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt

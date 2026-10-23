@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23.10.2026 04:20UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23.10.2026: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -907,3 +907,124 @@ Claims, keine Originaländerung, keine Production-Aktion und kein Merge.
 CI39896369875 ist inzwischen auch für den reinen Dokumentationsstand940ce102
 vollständig grün. Der anschließende Reasoncode-Fix besitzt den getrennten
 gezielten54er-Testbeleg; seine neue Push-CI bleibt bis zur tatsächlichen Endquittung offen.
+
+## Begrenzte echte Auth-Komponentenprüfungen, 23.10.2026
+
+Die folgenden Prüfungen verwenden ausschließlich die isolierte abgeleitete Kopie
+des erhaltenen fehlgeschlagenen nativen00c9-Zustands mit6001 Historyeinträgen.
+Sie sind kein neuer ursprünglicher V12-Lauf und kein vollständiger Motorlauf.
+
+Drei getrennte echte Readonly-Transaktionen bestanden. Der vorhandene native
+Graphleser benötigte344,511ms beim ersten und166,992/155,944ms bei den beiden
+Folgeaufrufen; einschließlich Guard/SQL412,808/205,811/196,739ms. Originalcode,
+volle6001 Historyeinträge,1923 Graphknoten und frische native Proofs wurden
+geprüft. PostgreSQL endete mit0, alle Kinder und Container endeten tatsächlich;
+die Gruppe war leer, alle Speicherereignisse0, Original9MD unverändert.
+Der gemeinsame PG-Komponentenpeak war189.198.336B. Node, Motor und Abschluss-
+phasen eines vollständigen Falls waren nicht enthalten. JIT war OFF gegenüber
+ON im ursprünglichen Lauf; keine Kaltcache-Gleichheit behaupten.
+
+Der anschließende Konstruktorvergleich bestand mit vier getrennten echten
+Node-Prozessen in Reihenfolge alt/direkt/direkt/alt. Alle vollständigen Artefakte
+mit jeweils16.567.116B sind bytegleich. Die bisherige Snapshotkonstruktion
+benötigte131,566/128,028ms, Parts.captureWrite118,676/102,100ms. Zwei Proben je
+Methode belegen keine statistische Aussage; die rund20ms mittlere Differenz
+erklärt die bekannte Zeitüberschreitung nicht. Der vollständige U.read-Leseweg
+benötigte1.415–1.544ms. Dessen Differenz zur Psqlzeit umfasst mehrere JavaScript-
+Schritte und ist noch keine isolierte Decoderzeit.
+
+Der gemeinsame Peak über alle vier Komponentenfälle beträgt435.965.952B;
+es gibt keinen getrennten gemeinsamen RAMvergleich der beiden Methoden.
+Natürliche Speicherbereinigung unterschied sich; Heap/RSS vor und nach der
+Konstruktion sind keine Spitzen und kein Einsparnachweis. Tatsächliche Node-,
+Comparator- und PostgreSQL-Abschlüsse mit0 und natürlichen Pipe-Enden,
+leere Gruppe und unveränderte Original9MD sind unabhängig bestätigt.
+Keine Motor-, CAS-, Claim- oder Provideraufrufe; keine Zustandsmutation.
+
+Die erste Konstruktorvorbereitung blieb FAIL, weil sie fälschlich500 Profile
+im Authspeicher voraussetzte. Profile liegen getrennt im Main-/Relationsspeicher;
+der korrigierte Guard prüft den echten vollständigen Authsnapshot und die
+6001 unveränderlichen Historyeinträge. Auch die zwei früher fehlgeschlagenen
+synthetischen Launcherprüfungen bleiben FAIL; ihre Fixturefehler wurden nicht
+nachträglich zu Erfolgen erklärt. Neue gezielte Deltaprüfungen und der echte
+Vergleich sind getrennte Belege.
+
+Die nachfolgend ausgewertete CPU-Diagnose trennt den kalten und warmen
+unveränderten U.read. Keine inkompatiblen Flags oder produktiven Cacheänderungen
+aus den Komponentenwerten ableiten.
+
+[Bereinigter PG-Beleg](belege/v12-native-unit-integration-20261022/NATIVE_PG_READ_COMPONENT.SAFE.json),
+[echter Konstruktorvergleich](belege/v12-native-unit-integration-20261022/NATIVE_AUTH_CAPTURE_COMPONENT.SAFE.json).
+
+
+## Instrumentierte Lesephasen und direkter nächster Schritt
+
+Im neuen einmaligen Fall `run-9f75e7a1a264f93d351238d89481e31d` wurden exakt zwei
+unveränderte U.read im selben frischen Node und Target ausgeführt. Der interne
+Inspector öffnete keinen Port;1ms-Sampling, keine erzwungene GC/Cachebereinigung,
+keine Enginepatches. Beide Profile und vollständigen Authartefakte entstanden
+erst nach beiden Reads und Profilerabschlüssen.
+
+| Instrumentierter Teil | Kalt | Warm |
+|---|---:|---:|
+| U.read Wall | 1523,869ms | 408,019ms |
+| Node CPU ohne Psql-Kind | 1019,545ms | 158,548ms |
+| Psql Wall bis Exit/EOF, vor JSONparse | 499,797ms | 301,001ms |
+| Voller Graph | 1923Nodes | 1923Nodes |
+| Native Historyreuse | false,6001Records übertragen | true,kein Historypayload |
+
+Beide Ergebnisse besitzen echte Snapshots und6001 eingefrorene Historyeinträge.
+Die Profilerintervalle sind mit1555,490/476,392ms länger als U.read: Startaufwand
+und Idle gehören zu den Rohprofilen. Inklusive Decodersamples697,509/86,065ms
+überschneiden sich mit aufgerufenen Funktionen und dürfen nicht addiert werden.
+Natürliche GC hatte171,677/7,551ms exklusive Samples. Das sind instrumentierte
+Teilbelege; keine uninstrumentierte Vergleichsmessung und kein Memorysaving.
+
+Der abschließende strenge Vollbytevergleich bleibt ausdrücklich FAIL
+`AUTH_BYTE_DIFFERENCE`: beide9.561.729B groß, unterschiedliche SHA.
+Ein vollständiger logischer Vergleich ergab0 Typ-, Skalar-, Membermengen- oder
+Arraylängenunterschiede in25.684Objekten/1.402Arrays/264.691Skalaren. Einzige
+Abweichung ist die Top-Level-Reihenfolge von `llmUsage` und `_authStoreRevision`.
+Quellursache: `verifyReuse` gibt kalte native Daten unverändert zurück, hängt
+warm History nach der Revision an; der accepted-Merge erhält diese Ordnung.
+Diese beiden Felder sind aus dem Merkle-Graphroot ausgeschlossen. Der logische
+Vergleich wurde nachträglich aus seiner tatsächlichen vollständigen Toolausgabe
+gesichert; es gibt dafür keine damals separat persistierte CLI-Exitquittung.
+Keine Wiederholung und keine Umdeklaration des fehlgeschlagenen Gesamtlaufs.
+
+Tatsächlich: beide Psql0/2EOF, Node1/2EOF ohne erzwungenen Abschluss, PG0/clean,
+alle Kinder beendet, drei eigene CIDs frisch stopped/PID0, Gruppe leer und alle
+sechs Speicherereignisse0. Original9MD und neun Enginequellen blieben gleich.
+Der Peak402.771.968B gilt nur für diese fehlgeschlagene instrumentierte Komponente.
+Die Profile bleiben privat; der öffentliche Beleg enthält nur geprüfte Zahlen
+und klar begrenzte Teilbefunde.
+[Bereinigter Teilbeleg](belege/v12-native-unit-integration-20261022/NATIVE_AUTH_READ_PROFILE_PARTIAL.SAFE.json).
+
+Der enge CAS-Sourceaudit gegen erhaltene native Funktionspins belegt bereits
+aktive Projektion: keine vollständige logische Auth-JSONB-Rekonstruktion im
+beabsichtigten Original-CAS. Der normale Diagnosebridge-Commit enthält dennoch
+vier zusätzliche Graphchecked-Pässe sowie einen Original-CAS-Graphpass.
+Das ist keine gemessene CPU-/RAMzuordnung und rechtfertigt kein Entfernen von
+Sicherheitsprüfungen. Ein zusätzlicher direkter CAS-Kerntest würde die Bridge-
+und Rollenanteile auslassen und wird nicht vorbereitet. Die bestehenden
+Motoränderungen bleiben erhalten; diese Runde liefert keinen neuen maßgeblichen
+Motorumbau oder bestandenen vollständigen Einzelunitfall.
+
+Der Betreiber verlangt nach dem langen Diagnoseaufwand den kürzesten direkten
+Weg zum500er. Weitere Snapshot-/Reader-/CAS-Kernexperimente sind gestoppt.
+Zunächst muss die unveränderte Ressourcenadmission erreichbar sein. Frischer
+statvfs-Befund:9.777.184.768B verfügbar; zur10GiB-Einzeladmission fehlen
+960.233.472B, zur Volladmission15.179.779.720B fehlen5.402.594.952B. Die Basiskopie
+bleibt geschützt. c898 besitzt ausdrücklichen Metadatenschutz und keinen
+qualifizierten Archiv-Rückweg; seine anfänglichen logischen Kopierbytes sind
+kein Allokations- oder Freigabenachweis. Keine sichere Deckung der Lücken ist
+belegt; keine weitere Bereinigungsserie oder Schutzlockerung wurde begonnen.
+
+Nach Kapazitätszulassung folgt ein frischer hashgebundener echter Einzelunitfall
+im vollständigen vorgesehenen Motorpfad; nur dessen belegte Blocker beheben.
+Unit60/Auth30, alle16 frischen Kontrollen, Qualitäts-/Abschlussnachweis,
+Langzeitplateau und500MB Reserve bleiben offen. Die CI auf1d7bc947 ist grün;
+[Run39900463531](https://github.com/ernisch/helmut-pilot/actions/runs/39900463531).
+Ein späterer500er benötigt weiterhin32 frische Startbedingungen, gültige Fall-
+und Zeitbindung sowie ein neues konkretes GO. Keine alten Rechte wiederverwenden;
+kein Merge, keine Production-Aktion und keine bezahlten Anbieteraufrufe.
