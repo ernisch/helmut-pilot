@@ -1,0 +1,115 @@
+{
+  "allOriginalsGitCurrentWorkActiveAndForeignResourcesRetained": true,
+  "archiveAndMemberHashesNotRepeatedByPublicReport": true,
+  "archivesContainSyntheticTestSecrets": true,
+  "archivesLocalOnlyExportForbidden": true,
+  "availableBytesImmediatelyAfter44Step2": 10834771968,
+  "cases": [
+    {
+      "actualArchiveAndFreshRestoreVerified": true,
+      "actualHelperExitCodesObservedByRoot": [
+        0,
+        0
+      ],
+      "archivePin": {
+        "bytes": 123372967,
+        "path": "/workspace/helmut-native-integration-checks-20261022/copy-archive-31efb75d492385175ce3107ac0f16e78-PREPARED-20261023/WORK.PRIVATE/31.PGDATA.PRIVATE.pax.tar.gz",
+        "sha256": "4f4ca46b9ed9b4e3b37fb7913b257a95622697eddb391dec4bf53e8ca9929228"
+      },
+      "archiveResultPin": {
+        "bytes": 1503,
+        "path": "/workspace/helmut-native-integration-checks-20261022/copy-archive-31efb75d492385175ce3107ac0f16e78-PREPARED-20261023/RESULT.SAFE.json",
+        "sha256": "501c966fc9a1e73b14d7418c4d4f25167805450feb8229321095a01584708d53"
+      },
+      "archiveRootReviewPin": {
+        "bytes": 2097,
+        "path": "/workspace/helmut-native-integration-checks-20261022/copy-archive-31efb75d492385175ce3107ac0f16e78-PREPARED-20261023/ROOT_ARCHIVE_REVIEW.SAFE.json",
+        "sha256": "671400c33508cb8309b02ac0ce88305bbb0e9b156c9be3329574cc90c0d9fe76"
+      },
+      "scope": "31",
+      "steps": [
+        {
+          "netBytesBeforeResult": 370171904,
+          "resultPin": {
+            "bytes": 3310,
+            "path": "/workspace/helmut-native-integration-checks-20261022/verified-31-expanded-removal-PREPARED-V2-20261023/STEP1/RESULT.SAFE.json",
+            "sha256": "937eec88f0739008efe989f3083825f858c71827a218700adaff1b016bd9fe64"
+          },
+          "sourceStateAndMountsUnchanged": true,
+          "step": 1,
+          "targetAbsent": true
+        },
+        {
+          "netBytesBeforeResult": 370925568,
+          "resultPin": {
+            "bytes": 3354,
+            "path": "/workspace/helmut-native-integration-checks-20261022/verified-31-expanded-removal-PREPARED-V2-20261023/STEP2/RESULT.SAFE.json",
+            "sha256": "45bb1c72190a8efe5ecb932f35b9bf0941e18a26bcf84b5c046c944293249458"
+          },
+          "sourceStateAndMountsUnchanged": true,
+          "step": 2,
+          "targetAbsent": true
+        }
+      ]
+    },
+    {
+      "actualArchiveAndFreshRestoreVerified": true,
+      "actualHelperExitCodesObservedByRoot": [
+        0,
+        0
+      ],
+      "archivePin": {
+        "bytes": 123898126,
+        "path": "/workspace/helmut-native-integration-checks-20261022/copy-archive-44e251ee0f05668cfa2e540ec004abbe-PREPARED-V2-20261023/WORK.PRIVATE/44.PGDATA.PRIVATE.pax.tar.gz",
+        "sha256": "093bbabb3830a68c04e6ae55a103ff5450c708b0396c7acaf55c9cff0615b6a5"
+      },
+      "archiveResultPin": {
+        "bytes": 1515,
+        "path": "/workspace/helmut-native-integration-checks-20261022/copy-archive-44e251ee0f05668cfa2e540ec004abbe-PREPARED-V2-20261023/RESULT.SAFE.json",
+        "sha256": "cb6436abbeedbe4571d95f31d1583073e802f7b387dbcde16d8fe3f9c8288c1a"
+      },
+      "archiveRootReviewPin": {
+        "bytes": 2414,
+        "path": "/workspace/helmut-native-integration-checks-20261022/copy-archive-44e251ee0f05668cfa2e540ec004abbe-PREPARED-V2-20261023/ROOT_ARCHIVE_REVIEW.SAFE.json",
+        "sha256": "6eb67ca572a3bfaeed76e8074eb3f129b32bd4dfb3208de5518b58b497545fbb"
+      },
+      "scope": "44",
+      "steps": [
+        {
+          "netBytesBeforeResult": 369885184,
+          "resultPin": {
+            "bytes": 3595,
+            "path": "/workspace/helmut-native-integration-checks-20261022/verified-44-expanded-removal-PREPARED-V2-20261023/STEP1/RESULT.SAFE.json",
+            "sha256": "891ed45eac143cbdd5b474d0b36311ee6455cbfb50ed4278d54748856edd6d25"
+          },
+          "sourceStateAndMountsUnchanged": true,
+          "step": 1,
+          "targetAbsent": true
+        },
+        {
+          "netBytesBeforeResult": 370647040,
+          "resultPin": {
+            "bytes": 3641,
+            "path": "/workspace/helmut-native-integration-checks-20261022/verified-44-expanded-removal-PREPARED-V2-20261023/STEP2/RESULT.SAFE.json",
+            "sha256": "e45c6e440c17455c73b5f6bfb797976a5d831a9720c6a789583ed4ea50d1953e"
+          },
+          "sourceStateAndMountsUnchanged": true,
+          "step": 2,
+          "targetAbsent": true
+        }
+      ]
+    }
+  ],
+  "freeBytesAfterFollowingNative": 10416967680,
+  "full500AdmissionBytes": 15179779720,
+  "full500GapImmediatelyAfter44Step2": 4345007752,
+  "full500Ready": false,
+  "newPaidResources": 0,
+  "observedAtUTC": "2026-10-23T03:36:00Z",
+  "oldClaimsReusable": false,
+  "privateArchivesAndAllEvidenceRetained": true,
+  "productionActions": 0,
+  "schema": "helmut-31-44-exact-own-copy-cleanup-public-evidence/1",
+  "scope": "Exactly two redundant expanded working-copy forms per completed own diagnostic case; four directories total.",
+  "singleUnitAdmissionFloorBytes": 10737418240
+}

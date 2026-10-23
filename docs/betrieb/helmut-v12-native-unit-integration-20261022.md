@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23.10.2026 02:45UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23.10.2026 03:36UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -776,3 +776,59 @@ Ownerclose-/Zeit-/Qualitäts-/gemeinsameRAM-Abnahme derselben echtenEinzelunit.
 ist nicht automatisch VollvertragR3000/low; zwei eigeneTickets belegen keinen
 globalen500er-Zähler. Budget-/Invocationlease-Motorverbesserungen integriert;
 neuer Umbau senkt Prüfoverhead, noch kein weitererMotor-RAM-Beweis.
+
+## 23.10., 03:36 UTC: CI bestätigt; native Endquittung fehlt
+
+[CI39891861503](https://github.com/ernisch/helmut-pilot/actions/runs/39891861503)
+ist für `0b1a233553b1ac0f2d0ce13fed86dbefb5f774f4` vollständig grün:
+öffentlicher Prüfplan, Browser/Mobile und Syntax/Offline samt geschütztem
+Originalkanal. Der folgende native Fall `00c9af1a352ed9689449e041091ae9f8`
+bleibt trotzdem **FAIL**. Kein erneuter vollständiger500er wurde gestartet.
+
+Der Entry begann03:27:42.942UTC. In Controllerstufe6 wurde die unveränderte
+70s-Wartefrist auf den dauerhaften Entryabschluss überschritten
+(`entry-terminal-deadline`). Entryterminal, Fehlerphasendatei und unabhängige
+Finalabnahme fehlen. Die tatsächliche Adapter-/Authdauer, D/R-Fortschritt und
+abgeschlossenen Kontrollgruppen sind daher unbekannt. Die feste Abschlussfrist
+ist kein gemessener Unit60-Wert. Der spätere fehlende Source-PID-Eintrag beweist
+keine primäre Motorursache. Weder der begrenzte Prototypvergleich noch grünes CI
+qualifizieren diesen fehlgeschlagenen nativen Umbau.
+
+Gemeinsamer Peak1.366.712.320B, alle sechs Speicherereignisse0, CPU-Drosselung0,
+vollständiger letzter Exit erfasst und beide Kernel-Leerprüfungen bestätigt.
+Owner und Entry wurden lokal mit137/beiden natürlichen EOFs geschlossen;
+86weitere lokale Kinder und85Beobachter mit0/beiden EOFs. PostgreSQL endete0,
+alle Workerchildren sind beendet. Zehn SQL-Kinder endeten bestätigt0/beideEOFs;
+eine Zuordnung zu D/R oder einzelnen Kontrollen fehlt. Service-Selbstreceipt
+meldet sauber, tatsächlicher Service-Nodeclose ist nicht belegt. Der äußere
+CLI-/Helperexit1 wurde jeweils tatsächlich gewartet, beide CLI-EOFs natürlich,
+keine äußeren Signale/Timeouts/Capturefehler. Git und sechs Quellpins sind vor/
+nach identisch. Die nativen Originalschutzflags sind diesmal beide **true**.
+Die rechnerische Reserve eines FAIL ist kein angenommener Puffer-Nachweis.
+[Bereinigter Befund](belege/v12-native-unit-integration-20261022/NATIVE_00C9_TERMINAL_DEADLINE.SAFE.json).
+
+31 und44 sind jetzt privat archiviert, vollständig zurückgelesen und durch
+frische Wiederherstellung aller Member geprüft. Genau ihre vier redundanten
+Expandedformen wurden nach separaten Rootreviews mit tatsächlichem Exit0
+entfernt. Vor jedem Schritt wurden Archiv, Originalschutz, Prozesse und alle
+Dockerbindungen frisch geprüft. Der unveränderte44-Altplan wird ausschließlich
+um1778 nachgewiesen entfernte31-Member und einen belegten Elternübergang
+abgeleitet; alle erhaltenen31-Dateien bleiben geschützt. Originale, Archive,
+Gitstände und sämtliche Belege bleiben erhalten. Die Archive enthalten lokale
+Testsecrets und dürfen nicht exportiert werden. Direkt danach waren
+10.834.771.968B frei; der folgende native Fall benötigt wieder eigenen Platz.
+Bei der anschließenden Berichtsaufnahme waren10.416.967.680B frei, noch
+320.450.560B unter der nächsten10GiB-Einzeladmission und4.762.812.040B unter der
+Volladmission. Keine weitere sichere große Löschquelle belegt.
+[Vier geprüfte Entfernungen](belege/v12-native-unit-integration-20261022/VERIFIED_31_44_COPY_CLEANUP.SAFE.json).
+
+Weiter ausschließlich gezielt: kleinsten vorhandenen COPY-Lesepfad für den
+erreichten eigenen00c9-Journalzustand qualifizieren, Ursache belegen und dann
+reparieren. Kein weiterer Motorlauf als Hypothesentest. Numerische Authzeit und
+die vollständigen16Kontrollzeitfenster werden im Erfolgsfall bisher nur im
+Evidence-Datenbankobjekt erhalten; der Endsnapshot exportiert Hashes/Zähler.
+Fehlendes Evidence beweist weder0Kontrollen noch eine fehlgeschlagene Autorisierung.
+Fünf neue Manifestfehlercodes fehlen zudem im bereinigten CLI-Fehlerkatalog;
+eine Auslösung im Fall00c9 ist nicht belegt. Kein Unit60-/500er-Puffer-/Plateau-
+oder tatsächlicher gemeinsamer RAM-Ersparnisnachweis. Alle alten Rechte bleiben
+verbraucht; Full500 braucht ausreichende Platte,32frische Bedingungen und neues GO.
