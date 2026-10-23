@@ -5,7 +5,7 @@ No original writes, tests, activation or claim. Export is preexisting fixture
 input capture, outside the subsequently measured installation/workflow lifetime.
 The NEW owned database restores this exact dump inside measured preparation.
 """
-import hashlib,json,os,subprocess,time
+import hashlib,importlib.util,json,os,subprocess,time
 from pathlib import Path
 
 BASE=Path('/workspace/helmut-parallel-20261015')
@@ -16,11 +16,26 @@ _binding_path=Path(__file__).resolve().with_name('local-source-runtime-binding.j
 if _binding_path.is_symlink() or not _binding_path.is_file():
     raise RuntimeError('regular restored source runtime binding required')
 _binding_bytes=_binding_path.read_bytes()
-if hashlib.sha256(_binding_bytes).hexdigest()!='f0740d9dd94ebff52ee273e3f20f7d24bba552f11f0dd8004f52957a672cffa9':
+# None is deliberately NOT an accepted pin. Root may adopt only the genuine
+# exact binding produced after a separately reviewed actual tiny-source restore.
+TINY_RUNTIME_BINDING_SHA256=None
+_binding_sha=hashlib.sha256(_binding_bytes).hexdigest()
+_tiny_runtime=None
+if _binding_sha!='f0740d9dd94ebff52ee273e3f20f7d24bba552f11f0dd8004f52957a672cffa9' and _binding_sha!=TINY_RUNTIME_BINDING_SHA256:
     raise RuntimeError('restored source runtime binding drift')
 RUNTIME_BINDING_PIN={'path':str(_binding_path),'bytes':len(_binding_bytes),'sha256':hashlib.sha256(_binding_bytes).hexdigest()}
 RUNTIME_BINDING=json.loads(_binding_bytes)
-if (RUNTIME_BINDING.get('schema')!='helmut-restored-local-source-runtime-binding/1'
+if _binding_sha==TINY_RUNTIME_BINDING_SHA256:
+    _helper_path=Path(__file__).resolve().with_name('local-tiny-source-runtime.py')
+    if _helper_path.is_symlink() or not _helper_path.is_file():raise RuntimeError('regular pinned tiny source verifier required')
+    _helper_bytes=_helper_path.read_bytes()
+    if {'path':str(_helper_path),'bytes':len(_helper_bytes),'sha256':hashlib.sha256(_helper_bytes).hexdigest()}!=RUNTIME_BINDING.get('runtimeAdapterPin'):
+        raise RuntimeError('tiny source verifier pin drift')
+    _spec=importlib.util.spec_from_loader('explicit_tiny_source_runtime',loader=None)
+    _tiny_module=importlib.util.module_from_spec(_spec);_tiny_module.__file__=str(_helper_path)
+    exec(compile(_helper_bytes,str(_helper_path),'exec'),_tiny_module.__dict__)
+    _tiny_runtime=_tiny_module.Binding(RUNTIME_BINDING_PIN,RUNTIME_BINDING)
+elif (RUNTIME_BINDING.get('schema')!='helmut-restored-local-source-runtime-binding/1'
   or RUNTIME_BINDING.get('scope')!='READ_ONLY_RESTORED_FROZEN_INPUT_PROVENANCE_ONLY'
   or RUNTIME_BINDING.get('sourceDatabase')!=SOURCE
   or RUNTIME_BINDING.get('imageId')!='sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e'):
@@ -34,6 +49,7 @@ BIN_SHA='870a77f49508479bc87c5504b6b0c3715c7220926932d916b0d73952b297c617'
 def pin(p):
     b=Path(p).read_bytes();return {'path':str(p),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}
 def verify_runtime_binding():
+    if _tiny_runtime is not None:return _tiny_runtime.verify(DOCKER)
     if pin(_binding_path)!=RUNTIME_BINDING_PIN:raise RuntimeError('restored source binding changed')
     r=subprocess.run(DOCKER+['inspect','--format','{{.Id}}|{{.Name}}|{{.Image}}|{{.HostConfig.NetworkMode}}',CONTAINER],
        capture_output=True,text=True,check=True,timeout=15)
@@ -49,6 +65,7 @@ def lit(x):return "'"+str(x).replace("'","''")+"'"
 def identity():
     return sql("select jsonb_build_object('profiles',(select count(*)from mandate_profiles),'active',(select count(*)from mandate_profiles where aktiv),'profileHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by user_id collate \"C\")::text,'UTF8')),'hex')from mandate_profiles p),'identityHash',(select encode(sha256(convert_to(jsonb_agg(to_jsonb(p)order by id collate \"C\")::text,'UTF8')),'hex')from profiles p),'uSHA',(select encode(sha256(convert_to(data::text,'UTF8')),'hex')from helmut_store where id='synthetik500-command-synthetik500-one-u-preparation-1791311693883')); ")
 def capture(out):
+    if _tiny_runtime is not None:raise RuntimeError('tiny source export is not admitted; retain authentic existing full dumps')
     out=Path(out).resolve()
     if out!=BASE/'wave20-resource-integration/source-capture':raise RuntimeError('exact new local capture destination required')
     out.mkdir(mode=0o700,exist_ok=False);began=time.monotonic();before=identity()
