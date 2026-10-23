@@ -1132,6 +1132,9 @@ im Speicher. Ein Importcheck lud die sieben echten Harnessmodule: sämtliche
 Selectoren zeigen auf den aktuellen Checkout. Ein Audit-Hook verbot dabei
 Subprozesse, Sockets, Dateischreiben und Umgebungsänderungen; kein solcher
 Seiteneffekt wurde versucht. Keine Authority- oder Motorfunktion wurde aufgerufen.
+Beide neuen reinen Suites sind zusätzlich vor den privaten Originalschritten in
+der unverändert vollständigen Pflicht-CI registriert. Drei gezielte bestehende
+Workflow-/Privatkanal-Wächter bestanden; das ist noch kein Gesamt-CI-Ergebnis.
 
 Das ist keine vollständige26-Consumer-Render-/Finish-/Mount-/Ownerabnahme.
 Ein neues Request wurde nicht erstellt oder vermessen. Die gelesenen Request-

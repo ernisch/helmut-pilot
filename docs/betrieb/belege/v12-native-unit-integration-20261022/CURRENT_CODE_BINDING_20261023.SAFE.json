@@ -99,6 +99,22 @@
       "auditHookBlockedSubprocessSocketFilesystemWriteAndEnvironmentMutation": true,
       "forbiddenSideEffectsAttempted": 0,
       "authorityOrEngineFunctionsInvoked": false
+    },
+    "ciRegistration": {
+      "workflow": ".github/workflows/ci.yml",
+      "step": "Native Speicher-/Workerbudgets (synthetisch/offline)",
+      "condition": "standard plan only, before private original provisioning",
+      "commands": [
+        "node scripts/lokal.js -- python3 -I -S -B scripts/helmut-resource-meter/current-repository-root-test.py",
+        "node scripts/lokal.js -- python3 -I -S -B scripts/helmut-resource-meter/connection-code-binding-test.py"
+      ],
+      "existingRequiredChecksOrPrivateChannelRulesRelaxed": false,
+      "targetedWorkflowGuardTests": {
+        "checks": 3,
+        "actualExitCode": 0,
+        "toolChunk": "ae438b"
+      },
+      "newWholeCIResultClaimed": false
     }
   },
   "unchanged": {

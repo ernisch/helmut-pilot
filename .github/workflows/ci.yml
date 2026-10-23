@@ -225,6 +225,9 @@ jobs:
           node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/native-memory-budget-test.py
           node scripts/lokal.js -- node scripts/helmut-resource-meter/native-node-budget-test.js
           node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/kernel-pressure-snapshot-test.py
+          # Pure current-checkout bindings; no authority or engine imports.
+          node scripts/lokal.js -- python3 -I -S -B scripts/helmut-resource-meter/current-repository-root-test.py
+          node scripts/lokal.js -- python3 -I -S -B scripts/helmut-resource-meter/connection-code-binding-test.py
       - name: Isolierte Einzelunit-Integration (synthetisch/offline)
         if: steps.plan.outputs.standard == 'true'
         run: |
