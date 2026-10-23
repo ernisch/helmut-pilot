@@ -1645,7 +1645,8 @@ class NativeExecutionHost:
 
     def _client(self, mode):
         diagnostic=self.config.get('nativeDiagnosticMode')
-        need(diagnostic in (None,'fresh-claim-only-v1'),'exact-native-diagnostic-mode')
+        need(diagnostic in (None,'fresh-claim-only-v1','readonly-http-pre-admission-v1'),'exact-native-diagnostic-mode')
+        need(not (diagnostic == 'readonly-http-pre-admission-v1' and mode != 'qualifier'), 'readonly-http-no-entry')
         code = ('local-unit-native-endpoint-qualification.js' if mode == 'qualifier' else
                 'local-unit-native-claim-only.js' if diagnostic=='fresh-claim-only-v1' else 'local-unit-native-run.js')
         script = str(Path(self.config['repository']) / 'scripts/helmut-resource-meter' / code)
@@ -1797,14 +1798,17 @@ class NativeExecutionHost:
             need(self.state in ('QUALIFIED', 'ENTRY', 'DONE') and body == {}, 'observation-order')
             self.observed_at = 0
         elif stage == 'ENTRY_START':
+            need(self.config.get('nativeDiagnosticMode') != 'readonly-http-pre-admission-v1', 'readonly-http-no-entry')
             expected_body=({'diagnosticMode':'fresh-claim-only-v1'} if self.config.get('nativeDiagnosticMode')=='fresh-claim-only-v1' else {})
             need(self.state == 'QUALIFIED' and body == expected_body and time.monotonic() - self.observed_at < 3, 'entry-start-order-or-fresh-observation')
             self._client('entry'); self.state = 'ENTRY'
         elif stage == 'ENTRY_RESULT':
+            need(self.config.get('nativeDiagnosticMode') != 'readonly-http-pre-admission-v1', 'readonly-http-no-entry')
             expected_body=({'diagnosticMode':'fresh-claim-only-v1'} if self.config.get('nativeDiagnosticMode')=='fresh-claim-only-v1' else {})
             need(self.state == 'ENTRY' and body == expected_body, 'entry-result-order')
         elif stage == 'OWNER_STOP':
-            need(self.state == 'DONE' and body == {}, 'owner-stop-order')
+            readonly_close = self.config.get('nativeDiagnosticMode') == 'readonly-http-pre-admission-v1' and self.state == 'QUALIFIED'
+            need((self.state == 'DONE' or readonly_close) and body == {}, 'owner-stop-order')
             owner = self.heartbeat['owner']; self.signal = self._root(ROOT_SIGNAL, {k: owner[k] for k in ('pid', 'startTicks', 'exe', 'pidNamespace')})
         else:
             need(False, 'unknown-stage')
@@ -1851,6 +1855,21 @@ class NativeExecutionHost:
                 captures.append({'childIndex': index, 'captureError': {'type': type(capture_error).__name__[:128],
                                                                      'errno': getattr(capture_error, 'errno', None)}})
         return captures
+
+    def _readonly_http_capture(self, name, child, close, container_id):
+        """Successful diagnostic stderr is PRIVATE and complete, never a timing claim."""
+        need(self.config.get('nativeDiagnosticMode') == 'readonly-http-pre-admission-v1'
+             and name in ('ENDPOINT', 'BROKER') and HASH.fullmatch(container_id), 'readonly-http-capture-scope')
+        actual = child.close_metadata()
+        need(actual['exitCode'] == 0 and actual['stdoutNaturalEOF'] is True and actual['stderrNaturalEOF'] is True
+             and all(close[k] == v for k, v in actual.items())
+             and child.transport_failure is None and child.capture_error is None
+             and not any(child.capture_truncated), 'readonly-http-capture-incomplete')
+        raw = bytes(child.output[1]); need(len(raw) <= 128 * 1024, 'readonly-http-capture-cap')
+        path = self.case / ('READONLY_HTTP_' + name + '_PHASES.PRIVATE.log')
+        publish_once(path, raw)
+        return {'pin': {'path': str(path), 'bytes': len(raw), 'sha256': sha(raw)},
+                'processClose': actual, 'containerId': container_id}
 
     def tick(self):
         need(not self.closed and self.failure is None, 'sealed-host')
@@ -1910,7 +1929,10 @@ class NativeExecutionHost:
                             need(report['selection'] == self.selection and report['signedReadonlyContractObserved'] is True
                                                       and report['seedPerformed'] is False and report['scopeClaimConsumed'] is False, 'actual-qualifier-report')
                             self.qualifier_report = report
-                            self.state = 'QUALIFIED'; self._reply({'processClose': close, 'reportPin': report_pin, 'report': report})
+                            result = {'processClose': close, 'reportPin': report_pin, 'report': report}
+                            if self.config.get('nativeDiagnosticMode') == 'readonly-http-pre-admission-v1':
+                                result['phaseCapture'] = self._readonly_http_capture('ENDPOINT', self.clients[self.active_client]['child'], close, self.active_client)
+                            self.state = 'QUALIFIED'; self._reply(result)
                         else:
                             raw, p = read_file(self.case / 'client/ATTEMPT_TERMINAL.SAFE.json', 1024 * 1024)
                             terminal = unique(raw)
@@ -1955,7 +1977,10 @@ class NativeExecutionHost:
                                 self.stop_observers = True
                                 if self.probes:
                                     return {'state': self.state, 'pending': stage, 'observation': observation}
-                                self.state = 'STOPPED'; self._reply({'ownerStop': self.owner_stop, 'ownerProcessClose': self.owner.close_metadata(), 'controlReadTrace': trace})
+                                result = {'ownerStop': self.owner_stop, 'ownerProcessClose': self.owner.close_metadata(), 'controlReadTrace': trace}
+                                if self.config.get('nativeDiagnosticMode') == 'readonly-http-pre-admission-v1':
+                                    result['phaseCapture'] = self._readonly_http_capture('BROKER', self.owner, result['ownerProcessClose'], self.source_id)
+                                self.state = 'STOPPED'; self._reply(result)
             if not self.pending and self.state != 'STOPPED' and observation is not None:
                 need(self.seq <= 128, 'request-count')
                 p = self.case / ('HOST_REQUEST_%02d.PRIVATE.json' % self.seq)

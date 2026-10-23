@@ -116,6 +116,7 @@ class Fixture:
         self.c = object.__new__(self.m._Controller)
         c = self.c
         c.claim_only = False
+        c.readonly_http = False
         c.selection = {'operationId': 'localUnitDiagnostic-' + 'a' * 32, 'commandHash': 'b' * 64}
         c.database, c.expires = 'helmut_unit_diagnostic_' + 'a' * 32, '2026-10-22T12:03:00.000Z'
         c.pg = None
@@ -134,7 +135,8 @@ class Fixture:
         c.immutable = []
         c.service = None
         c.host_ready = {'ownerPID': 2, 'ownerStartTicks': '5', 'brokerCodePin': pin('/broker')}
-        c.client_report = {'rootTrustSHA256': 'd' * 64,
+        c.client_report = {'rootTrustSHA256': 'd' * 64, 'signedReadonlyContractObserved': True,
+            'seedPerformed': False, 'scopeClaimConsumed': False,
             'publicationRead': {'schema': 'helmut-local-unit-native-publication-read/1', 'observed': True,
                 'probeCanonicalSHA256': self.m.sha(self.m.canonical(self.m._publication_probe(c.command, c.selection))),
                 'knowledgeObjectCount': 1, 'documentIdentityCount': 1, 'requestCount': 2}}
@@ -143,10 +145,10 @@ class Fixture:
         c.last_host = {'source': {'namespaces': {'time': 'time:[8]', 'clockDomain': self.clock_domain}}}
         self.saved, self.calls, self.append_calls = {}, [], []
         c.w = types.SimpleNamespace(OUT=MemoryPath('/bench'), PGBIN=MemoryPath('/pg'), LIBRARY_PATH='/lib',
-            pin=lambda path: pin(str(path)), save=self.save, query=lambda *a: self.fail('query-unexpected'), guard=lambda conf: None)
+            pin=self.worker_pin, save=self.save, query=lambda *a: self.fail('query-unexpected'), guard=lambda conf: None)
         c.source = types.SimpleNamespace(source_group=lambda conf: {}, postgres_identity=lambda *a: {})
         c.updater = types.SimpleNamespace(append_observation=self.append)
-        c.observer = types.SimpleNamespace(binding={'pidNamespace': 'pid:[4]'}, check=lambda: self.fail_at('observer'))
+        c.observer = types.SimpleNamespace(binding={'pidNamespace': 'pid:[4]', 'containerId': 'd' * 64}, check=lambda: self.fail_at('observer'))
         c.stage = lambda name: self.stage(name)
         c.private = self.private
         c.files = lambda: (c.code_pin, c.runtime_pin, {'files': [pin('/code-file')]}, {'files': [pin('/runtime-file')]}, [])
@@ -162,6 +164,18 @@ class Fixture:
         self.terminal = {'selection': c.selection, 'result': {'completedUnits': 1}}
         self.terminal_pin = pin('/bench/client/ATTEMPT_TERMINAL.SAFE.json')
         self.process_close = {'vmOnly': 'actual-exit-and-eof'}
+        c.client_phase_capture = self.phase_capture('ENDPOINT', 'e' * 64)
+
+    def phase_capture(self, name, cid):
+        return {'pin': pin('/workspace/helmut-unit-diagnostic-native/' + self.c.c['nonce'] + '/READONLY_HTTP_' + name + '_PHASES.PRIVATE.log'), 'containerId': cid,
+                'processClose': {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True, 'registeredHostPID': 123}}
+
+    def worker_pin(self, path):
+        path = str(path)
+        if path.startswith('/bench/READONLY_HTTP_'):
+            logical = '/workspace/helmut-unit-diagnostic-native/' + self.c.c['nonce'] + '/' + path.rsplit('/', 1)[-1]
+            return {**pin(logical), 'path': path}
+        return pin(path)
 
     def fail(self, name):
         raise RuntimeError('offline-failure-' + name)
@@ -181,6 +195,8 @@ class Fixture:
     def private(self, name, **kwargs):
         if name == 'client/ATTEMPT_TERMINAL.SAFE.json':
             return copy.deepcopy(self.terminal), self.terminal_pin
+        if name == 'ORIGINAL_SERVICE_STOP.SAFE.json':
+            return {'spawnCount': 0, 'closeCount': 0, 'confirmedCount': 0}, pin('/bench/' + name)
         return {'vmOnly': 'configuration'}, pin('/bench/' + name)
 
     def start_owner(self, *args):
@@ -206,7 +222,9 @@ class Fixture:
                     'terminalPin': self.terminal_pin, 'terminal': copy.deepcopy(self.terminal)}
         if stage == 'OWNER_STOP':
             identity = dict(zip(self.m.META, (1, 2, stat.S_IFREG | 0o600, 0, 0, 1, 3, 1, 1)))
-            return {'ownerStop': {'cleanShutdown': True, 'failed': False}, 'ownerProcessClose': {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True},
+            return {'ownerStop': {'cleanShutdown': True, 'failed': False},
+                'ownerProcessClose': {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True, 'registeredHostPID': 123},
+                **({'phaseCapture': self.phase_capture('BROKER', 'd' * 64)} if self.c.readonly_http else {}),
                 'controlReadTrace': {'pin': pin('/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl'), 'identity': identity,
                     'value': {'header': {**self.c.selection, 'ownerPID': 2, 'ownerStartTicks': '5', 'pidNamespace': 'pid:[4]', 'timeNamespace': self.c.last_host['source']['namespaces']['time'],
                         'clockDomain': copy.deepcopy(self.clock_domain),
@@ -242,6 +260,70 @@ class Fixture:
 
 
 class Tests(unittest.TestCase):
+    def test_readonly_http_closes_before_admission_seed_and_entry(self):
+        f = Fixture(); f.c.readonly_http = True; result = f.run()
+        self.assertEqual(f.calls, ['OWNER_STOP']); self.assertEqual(f.append_calls, [])
+        self.assertEqual(result['schema'], 'helmut-local-unit-native-readonly-http-result/1')
+        for event in ('verify', 'authority', 'seed', 'append', 'final'):
+            self.assertNotIn(event, f.events)
+        self.assertLess(f.events.index('OWNER_STOP'), f.events.index('service-close'))
+        self.assertIn('READONLY_HTTP_DIAGNOSTIC.PRIVATE.json', f.saved)
+        self.assertNotIn('MOTOR_ENTRY_REQUESTED.SAFE.json', f.saved)
+        self.assertNotIn('FINAL_ACCEPTANCE.PRIVATE.json', f.saved)
+        for key in ('admissionPerformed', 'seedPerformed', 'scopeClaimConsumed', 'executionAuthorityInstalled',
+                    'runtimeReadMeasured', 'ownStateReadMeasured', 'unit60Qualified', 'auth30Qualified', 'independentFinalAcceptance'):
+            self.assertIs(result[key], False)
+        for key in ('actualEntryCalls', 'motorCalls', 'providerCalls', 'completedUnits', 'expectedPositions', 'controlCount'):
+            self.assertEqual(result[key], 0)
+        self.assertEqual(set(result['phaseCaptures']), {'endpoint', 'broker'})
+
+    def test_readonly_http_authority_and_seed_reject_even_direct_calls(self):
+        f = Fixture(); c, m = f.c, f.m; c.readonly_http = True
+        with self.assertRaisesRegex(m.ExecutionError, 'readonly-http-no-admission'):
+            m._Controller.source_authority(c, None, None, None)
+        with self.assertRaisesRegex(m.ExecutionError, 'readonly-http-no-seed'):
+            m._Controller.seed(c, None, None)
+        self.assertEqual(f.calls, []); self.assertEqual(f.saved, {})
+
+    def test_readonly_http_cannot_succeed_after_failed_close_or_mutation(self):
+        for failure in ('OWNER_STOP', 'observer', 'immutable', 'service-close'):
+            f = Fixture(failure=failure); f.c.readonly_http = True
+            with self.subTest(failure=failure), self.assertRaises(Exception): f.run()
+            self.assertNotIn('READONLY_HTTP_DIAGNOSTIC.PRIVATE.json', f.saved)
+            self.assertNotIn('ENTRY_START', f.calls)
+        for fault in ('exit', 'eof', 'footer', 'capture', 'service-write', 'seeded-client'):
+            f = Fixture(); f.c.readonly_http = True; original = f.c.host.call
+            def changed(*args, **kwargs):
+                row = original(*args, **kwargs)
+                if fault == 'exit': row['ownerProcessClose']['exitCode'] = 1
+                if fault == 'eof': row['ownerProcessClose']['stderrNaturalEOF'] = False
+                if fault == 'footer': row['controlReadTrace']['value']['footer']['complete'] = False
+                if fault == 'capture': row.pop('phaseCapture')
+                return row
+            f.c.host.call = changed
+            if fault == 'service-write':
+                original_private = f.c.private
+                f.c.private = lambda name, **kw: ({'spawnCount': 1, 'closeCount': 1, 'confirmedCount': 1}, pin('/stop')) if name == 'ORIGINAL_SERVICE_STOP.SAFE.json' else original_private(name, **kw)
+            if fault == 'seeded-client': f.c.client_report['seedPerformed'] = True
+            with self.subTest(fault=fault), self.assertRaises(Exception): f.run()
+            self.assertNotIn('READONLY_HTTP_DIAGNOSTIC.PRIVATE.json', f.saved)
+
+    def test_readonly_phase_capture_binds_exact_file_and_actual_close(self):
+        for fault in (None, 'path', 'pin', 'cap', 'container', 'eof', 'raw'):
+            f = Fixture(); c = f.c; capture = f.phase_capture('ENDPOINT', 'e' * 64)
+            close = {**capture['processClose'], 'clientContainerId': 'e' * 64}
+            if fault == 'path': capture['pin']['path'] = '/outside/private.log'
+            if fault == 'pin': capture['pin']['sha256'] = '0' * 64
+            if fault == 'cap': capture['pin']['bytes'] = 128 * 1024 + 1
+            if fault == 'container': capture['containerId'] = 'f' * 64
+            if fault == 'eof': capture['processClose']['stderrNaturalEOF'] = False
+            if fault == 'raw': capture['stderrBase64'] = 'not-allowed'
+            if fault is None:
+                self.assertEqual(c.readonly_phase_capture(capture, close, 'ENDPOINT', 'e' * 64), capture)
+            else:
+                with self.subTest(fault=fault), self.assertRaises(f.m.ExecutionError):
+                    c.readonly_phase_capture(capture, close, 'ENDPOINT', 'e' * 64)
+
     def test_closed_once_sequence_and_no_acceptance_before_service_close(self):
         f = Fixture(); result = f.run()
         self.assertEqual(result['schema'], 'helmut-local-unit-native-execution-result/1')
@@ -285,9 +367,11 @@ class Tests(unittest.TestCase):
             with self.assertRaises(m.ExecutionError): m._publication_probe(command, selection)
 
     def test_actual_client_qualification_requires_read_report_and_process_close(self):
-        for mutation in (None, 'missing', 'not-observed', 'input-hash', 'ko-count', 'doc-count', 'zero-request',
-                         'bool-request', 'extra-field', 'nonzero-exit', 'missing-eof'):
+        faults = (None, 'missing', 'not-observed', 'input-hash', 'ko-count', 'doc-count', 'zero-request',
+                  'bool-request', 'extra-field', 'nonzero-exit', 'missing-eof')
+        for readonly, mutation in [(mode, fault) for mode in (False, True) for fault in faults]:
             f = Fixture(); c, m = f.c, f.m
+            c.readonly_http = readonly
             c.c['sourceCodePins'] = [pin('/storage'), pin('/publication')]
             runtime = {'sqlSources': {'helmut_unit_diagnostic.synthetic()': 'c' * 64}}
             calls = []
@@ -312,9 +396,13 @@ class Tests(unittest.TestCase):
                 if mutation == 'zero-request': p['requestCount'] = 0
                 if mutation == 'bool-request': p['requestCount'] = True
                 if mutation == 'extra-field': p['qualified'] = True
-                return {'processClose': {'exitCode': 1 if mutation == 'nonzero-exit' else 0,
+                result = {'processClose': {'exitCode': 1 if mutation == 'nonzero-exit' else 0,
                             'stdoutNaturalEOF': mutation != 'missing-eof', 'stderrNaturalEOF': True},
                         'reportPin': pin('/private-report'), 'report': report}
+                if readonly:
+                    result['processClose'].update(registeredHostPID=123, clientContainerId='e' * 64)
+                    result['phaseCapture'] = f.phase_capture('ENDPOINT', 'e' * 64)
+                return result
             c.host.call = host
             if mutation is None:
                 c.qualify_client(runtime)
