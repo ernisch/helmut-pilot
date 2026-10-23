@@ -1711,3 +1711,41 @@ kein abschließender durchgehend grüner34er Durchlauf behauptet. Neuer Remote-C
 erforderlich. Nach Cipherrestore fehlen rund443MB zur Komponentenadmission/rund4,89GB
 zur Voll500-Admission; angefragte Original-RAW-Metadatenausnahme noch nicht erteilt.
 [Öffentliche Originalmetadaten und Review/Testbelege](belege/ci-owner-immutable-inputs-20261023/ROOT_INTEGRATION_RESULT.SAFE.json).
+
+
+## 23.10. später: echte U/Parts-Leseanbindung und enger CI-Fixturefix
+
+Runtime562d880f: private korrelierte Zeitgrenzen und separater Readonly-HTTP-Modus.
+Frische Fälle9b3 (signierter Vertrag/Publikation) und44d4 (zusätzlich zwei echte
+U.readControl/Parts-Lesevorgänge) bestanden.44d4 verknüpft5/5Anfragen, drei
+Qualifikationsreads und zwei U-Reads mit Antwort/Trace/privatemFooter. Kalt1,346893s,
+warm0,261859s;6000Historyzeilen/1868Knoten. Gemeinsamer Peak1.137.496.064B,
+54Samples/Events0, alleKinderExit0/zweiEOFs, PGsauber/Gruppeleer. KeineUnit,
+keinUnit60/Auth30/500MB/Plateau-Nachweis. Keine alteAutorität wiederverwendet.
+
+Die zerlegte fehlgeschlagene7bace-Einzelunit bleibt71,709s imEntry: Auth6,395s,
+neunKontrollen9,663s, Scope-CAS8,428s, Draftkontexte1,091s, übrigeStateReads0,681s,
+D21,570s, R19,990s, Rest3,892s (gerundet/disjunkt). D enthältUsage, nichtaddieren.
+SiebenOwn-PSQL-Prozesse beanspruchen6,044s innerhalb6,724s Own-Write-HTTP.
+Die nächste fehlendeGrenze liegt innerhalb echter Schreibtransaktionen;
+keine unbelegteParts-/Graphoptimierung oder Wiederholung des vollenUnitfehlers.
+Zwei getrennte Diagnoseoverlays und ein strengerDecoder sind vorbereitet,
+noch nicht nativqualifiziert. Kleinster vorhandenerPfad: frischerClaim-only von
+erhaltenem authentischemspätemOriginal, genau eine echte State-CAS. Unverändertes
+7bace-POST-D kann wegen vorhandenerDiagnoserollen undConsumedGrants nicht neu
+geseedet werden; keinRebase/Claimreuse und keine Behauptung identischer7bace-Basis.
+
+CI40035705164 vollständigSUCCESS; neueCI40040458161/562d880f scheitert vor
+Originalentschlüsselung an einemTestfixture-Nutzer. Testfix3cbcfad0 bindet nur den
+Fixture-Reader an os.getuid(); unveränderterProduktreader lehnt falscheUID ab.
+GezielteQualifikation mit realer und synthetischabweichenderFixture-UID PASS.
+Keine151er/179er Gesamtsuite erneutlokal; neueRemote-CI bleibt erforderlich.
+
+Vier bestehende abgeschlossenePG-Archive wurden ausschließlich an den bestätigten
+Empfänger verschlüsselt, vollständig zurückgeladen und byte-/SHA-/indexgeprüft.
+Erst danach wurden die exakten Klararchive und redundanten Bulk-Cipherkopien
+entfernt; alleMetadaten/Indizes/Belege bleiben. ZweiweitereArchive werden ebenso
+übertragen. NeueVollbackups9b3/1a96 sind lokal mit vollständigemphysischemRestore
+geprüft; nur die entbehrlichenTEMP-Restores sind entfernt, Quell-PG/ArchiveKEEP.
+Original-RAW, benötigteOriginale und Gitrefs/Objekte bleiben erhalten. Die frischen
+Pins/Drive-Indizes stehen im [bereinigtenBefund](belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json).

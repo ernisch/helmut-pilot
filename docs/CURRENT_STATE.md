@@ -4,40 +4,42 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Claim nativ PASS; Einzelunit weiter Zeit-FAIL
+## 23.10.: Native Leseanbindung PASS; Einzelunit weiter Zeit-FAIL
 
-13.527Dateien/84Originale/V12-POSTRUN erhalten. GeprüfterCode444e496f,
-Branch `codex/v12-unit60-native-integration-20261022`, DraftPR936. CI40002522827
-vollständig grün: dreiJobs einschließlich84Originale/Z22. HistorischeFAILs bleiben.
-NativeCAS/Manifestcache/Connector/Snapshotfix eingebaut; unbekannteWrites terminal.
+13.527Dateien/84Originale/V12-POSTRUN erhalten. Branch
+`codex/v12-unit60-native-integration-20261022`, DraftPR936. Runtime562d880f
+enthält private Zeitgrenzen und echten U/Parts-Kontrollleser im Readonly-Diagnosemodus.
+NativeCAS/Manifestcache/Connector/Snapshotfix vorhanden; unbekannteWrites terminal.
 GraphReuse/CaptureOFF; Own-Write nurEinzelunit, Voll500-Write unverändert.
 
-FrischerClaim-only515c8b PASS: Callback1, Originalseed/Claim COMMIT+ACK, Entry0/zweiEOFs,
-Own7/Revision1/History6000 unverändert, scoped Endsnapshot angenommen. Motor0/Units0;
-Claim logischrunning, Autoritätverbraucht/NOREUSE. Peak1.269.202.944B/Events0 keinPufferbeweis.
-EchteEinzelunit7bace aufgleichemCode FAIL: ersterFehler `entry-terminal-deadline`;
-Hostmappingfehler erstnachAbbruch. Neun/16Kontrollen bis send-R, Adapter71,729s,
-keineEndquittung. ZehnSourcewrites Exit0/EOF/COMMIT/ACK. Peak1.342.267.392B,
-Events0/letzteExits erfasst; keinOOM und keinUnit60/Auth30/500MB-/500er-Nachweis.
+Claim-only515c PASS, Autoritätverbraucht. EchteEinzelunit7bace FAIL:
+`entry-terminal-deadline`, neun/16Kontrollen, Adapter71,729s, keineEndquittung.
+ZehnSourcewrites COMMIT/ACK/Exit0/zweiEOFs; Peak1.342.267.392B/Events0.
+V12 bleibt499/500; Unit60/Auth30/500MB/Plateau/Qualität nichtnachgewiesen.
+Readonly-SQL55d0 PASS:24EXPLAINs; kein echterCAS-Vergleich, nichtwiederholen.
 
-GezielteReadonly-SQL-Kopie55d0 PASS:24EXPLAINs/achtKomponenten/je3,23,919s,
-Peak792.047.616B/Events0; vierCaptures Exit0/zweiEOFs, PGsauber0/Gruppeleer.
-DreiQuellhashmanifeste/9MD und Katalog/RLS/Einstellungen PRE=POST. Komponenten
-überlappen; same-root Compare istkeinCAS-Vergleich. NeunKontrollen gesamt9,663s;
-hinreichenderGewinn durch atomarenLesekontext nochunbewiesen.
+FrischeReadonly-HTTP9b3 und zwei echteU/Parts-Lesevorgänge44d4 PASS:
+alleNonces/Traces/Antworten verbunden, KinderExit0/zweiEOFs, PGsauber/Gruppeleer.
+44d4: kalt1,346893s, warm0,261859s,6000History/1868Knoten;
+Peak1.137.496.064B/Events0. KeineUnit ausgeführt, keinReservebeweis.
+Clientvorprüfung klein; fehlendeZeitgrenzen liegen nun innerhalb realerPSQL-Writes.
+NächsterengerSchritt: einefrischeClaim-CAS-Transaktion mit privatenSQL-Phasen messen,
+danach ausschließlich den belegtenEngpass ändern. Alter7bace-Zustand unverändertKEEP;
+keinRebase/alteClaims. Diagnoseoverlays vorbereitet, noch nicht nativqualifiziert.
 
-EigenePG-Kopien af33/2f/515c nachVollarchiv/Restore, verschlüsseltemDrive-Upload und
-vollständigemByte-/SHA-Rückdownload kontrolliertausgelagert; Claims/Belege erhalten.
-Privatkeys nichtgelesen/exportiert. AlterWIP-Worktree nachBundle/exaktemRestore/Drive-
-Rückprüfung entfernt, Gitrefs/ObjekteKEEP.153öffentlicheDuplikate/20Fälle entfernt:
-442.519.552B Nettogewinn, kanonischeQuellenKEEP. Original-RAW-V3 scheiterte vorOpen/
-Punch; Originaleunverändert.10GiB-Komponentenadmission tatsächlichwiedererfüllt.
-[FrischeZahlen/Beweisgrenzen](betrieb/belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json).
+CI40002522827 und40035705164 vollständiggrün einschließlich84Originale/Z22.
+CI40040458161 auf562d880f scheitert amTestfixture-Nutzer imReadonly-Qualifier,
+vorOriginalentschlüsselung. EngerTestfix3cbcfad0 integriert; Einzelfall plusfalscheUID-
+Ablehnung lokalPASS, neueRemote-CI offen. Runtime-Schutzregeln unverändert.
 
-Offen: Zeit,16Kontrollen/Endquittung/Qualität,500MB/Plateau,Voll500-Platte,32frische
-Startbedingungen. NächsterengerSchritt: fehlendeBroker-/Contract-/Clientzeitgrenzen
-imprivatenTrace messen, dannbelegtenEngpass ändern. KeineallgemeineNeuanalyse.
-Voll500 nurmitneuemkonkretemGO; keineProduction/Merges. [Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
+VieraltePG-Archive nach verschlüsseltemDrive-Upload, vollständigemRückdownload und
+Indexprüfung kontrolliertausgelagert. Zweiweitere inBearbeitung. 9b3/1a96 vollständig
+archiviert und physischzurückgeprüft; nurentbehrlicheTEMP-Restores entfernt,
+Quell-PG/ArchiveKEEP. AlterfertigerCodeworktree nachGitHub-/Dateipinprüfung entfernt,
+Gitrefs/ObjekteKEEP. Original-RAW-V3 vorOpen/Punch gescheitert; Originaleunverändert.
+Voll500-Platte/32frischeStartbedingungen offen. Voll500 nurmitneuemkonkretemGO;
+keineProduction/Merges. [AktuelleZahlen und Beweisgrenzen](betrieb/belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json),
+[Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
@@ -288,6 +290,6 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-84er Originalkanal PASS, aktueller Sourcegate FAIL. Gepaarte U/Parts-Qualifikation
-und tatsächliche Schreibtransaktionszeit klären. Unit60/500MB/32Startgruppen und
+84er Originalkanal und gepaarte U/Parts-Lesequalifikation PASS. NeueCI nach
+engemFixturefix und tatsächliche Schreibtransaktionszeit klären. Unit60/500MB/32Startgruppen und
 Volladmission offen; alte GOs verbraucht, kein Voll500. Hier fortsetzen, Sehr hoch.
