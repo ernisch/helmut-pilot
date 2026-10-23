@@ -687,7 +687,9 @@ class PureHost(unittest.TestCase):
         h.pending = {'request': self.request('CLIENT_QUALIFY'), 'sha256': '1' * 64, 'began': M.time.monotonic()}
         h._poll_probes = h._owner_messages = h._release_clients = h._quiesce_clients = lambda: None
         h._observe = lambda: self.observation()
-        h.tick()
+        original_read = M.read_file
+        with patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})):
+            h.tick()
         self.assertEqual(h.state, 'QUALIFIED')
         reply = json.loads((self.case / 'HOST_REPLY_01.PRIVATE.json').read_bytes())['result']
         self.assertEqual(reply['phaseCapture']['processClose'], close)
