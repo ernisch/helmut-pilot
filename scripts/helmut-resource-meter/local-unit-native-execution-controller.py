@@ -371,8 +371,9 @@ class _Controller:
         need(worker.pin(__file__) == config['executionControllerPin'], 'controller-code-pin')
         self.built = preparation['prepared']; self.command = self.built['command']; self.selection = self.built['selection']
         self.database, self.expires = config['database'], self.command['calendar']['endsAtUTC']
-        need(config.get('nativeDiagnosticMode') in (None,'fresh-claim-only-v1'),'exact-native-diagnostic-mode')
+        need(config.get('nativeDiagnosticMode') in (None,'fresh-claim-only-v1','readonly-http-pre-admission-v1'),'exact-native-diagnostic-mode')
         self.claim_only=config.get('nativeDiagnosticMode')=='fresh-claim-only-v1'
+        self.readonly_http=config.get('nativeDiagnosticMode')=='readonly-http-pre-admission-v1'
         need(config.get('executeNativeSingleUnit') is True and config.get('full500') is False
              and str(worker.OUT) == '/bench' and os.getuid() == os.geteuid() == 1000
              and config.get('motorCalls') == config.get('paidProviderCalls') == 0
@@ -525,7 +526,8 @@ class _Controller:
                      'issuedAtUTC': utc(), 'expiresAtUTC': self.expires, 'measuredCgroup': self.source.source_group(self.c),
                      'publicationProbe': _publication_probe(self.command, self.selection)}
         result = self.host.call('CLIENT_QUALIFY', {'configuration': qualifier}, seconds=40)
-        need(set(result) == {'processClose', 'reportPin', 'report'}, 'client-qualification-result')
+        need(set(result) == ({'processClose', 'reportPin', 'report', 'phaseCapture'} if self.readonly_http else
+                             {'processClose', 'reportPin', 'report'}), 'client-qualification-result')
         close, report = result['processClose'], result['report']
         need(close['exitCode'] == 0 and close['stdoutNaturalEOF'] is True and close['stderrNaturalEOF'] is True
              and report['schema'] == 'helmut-local-unit-native-endpoint-qualification/1' and report['selection'] == self.selection
@@ -534,8 +536,22 @@ class _Controller:
              and report['publicSourceBindingCanonicalSHA256'] == sha(canonical(self.observer.binding))
              and report['seedPerformed'] is False and report['scopeClaimConsumed'] is False, 'actual-client-contract')
         _publication_read_report(self.command, self.selection, report.get('publicationRead'))
+        if self.readonly_http:
+            self.client_phase_capture = self.readonly_phase_capture(result['phaseCapture'], close, 'ENDPOINT', close['clientContainerId'])
         self.client_report = report
         self.w.save('CLIENT_QUALIFICATION.PRIVATE.json', result)
+
+    def readonly_phase_capture(self, capture, close, name, container_id):
+        filename = 'READONLY_HTTP_' + name + '_PHASES.PRIVATE.log'
+        path = '/workspace/helmut-unit-diagnostic-native/' + self.c['nonce'] + '/' + filename
+        need(set(capture) == {'pin', 'processClose', 'containerId'} and capture['containerId'] == container_id
+             and type(container_id) is str and re.fullmatch('[0-9a-f]{64}', container_id)
+             and capture['processClose'] == {k: close[k] for k in ('exitCode', 'stdoutNaturalEOF', 'stderrNaturalEOF', 'registeredHostPID')}
+             and close['exitCode'] == 0 and close['stdoutNaturalEOF'] is True and close['stderrNaturalEOF'] is True
+             and set(capture['pin']) == {'path', 'bytes', 'sha256'} and capture['pin']['path'] == path
+             and type(capture['pin']['bytes']) is int and 0 <= capture['pin']['bytes'] <= 128 * 1024
+             and {**self.w.pin(self.w.OUT / filename), 'path': path} == capture['pin'], 'readonly-http-phase-capture')
+        return capture
 
     def verify_source(self, prepared_pin):
         old, _ = self.private('PREPARE_CONFIG.PRIVATE.json')
@@ -568,6 +584,7 @@ class _Controller:
         return result
 
     def source_authority(self, verification, code, runtime):
+        need(not self.readonly_http, 'readonly-http-no-admission')
         self.host_observation(self.host.call('HOST_OBSERVE', {}, seconds=3)); self.observer.check(); self.immutable_check()
         _native_readback(self.w, self.database, runtime['sqlSources'], self.catalog['databaseOID'], self.bridge['qualification']['originalRelations'])
         self.native_catalog = _call(self.w, self.database, self.updater.observation_catalog_sql(), 'EXECUTION_PRIVATE_POST_BRIDGE_CATALOG')
@@ -631,6 +648,7 @@ class _Controller:
                 'observation': {'proofCanonical': canonical(proof), 'proofHash': sha(canonical(proof)), 'observedAtUTC': proof['observedAtUTC']}}
 
     def seed(self, initialization, service_pin):
+        need(not self.readonly_http, 'readonly-http-no-seed')
         init_pin = _compact(self.w, 'ORIGINAL_SEED_INITIALIZATION.PRIVATE.json', initialization)
         repo = Path(self.c['repository'])
         config = {'schema': 'helmut-local-unit-original-seed/1', **self.selection, 'database': self.database,
@@ -682,6 +700,55 @@ class _Controller:
         self.w.save('SERVICE_PROCESS_CLOSE.PRIVATE.json', {'process': self.service.process, 'exitCode': self.service.child.returncode,
                     'stdoutEOF': self.service.eof[0], 'stderrEOF': self.service.eof[1], 'ledgerPin': pin})
 
+    def stop_owner(self):
+        self.stage('owner-trace-close'); owner = self.host.call('OWNER_STOP', {}, seconds=15)
+        need(owner['ownerStop']['cleanShutdown'] is True and owner['ownerStop']['failed'] is False
+             and owner['ownerProcessClose']['exitCode'] == 0 and owner['ownerProcessClose']['stdoutNaturalEOF'] is True
+             and owner['ownerProcessClose']['stderrNaturalEOF'] is True, 'actual-owner-stop')
+        trace = owner['controlReadTrace']; header = trace['value']['header']
+        identity = trace['identity']
+        need(trace['pin']['path'] == '/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl' and set(identity) == set(META)
+             and identity['st_uid'] == identity['st_gid'] == 0 and identity['st_nlink'] == 1
+             and stat.S_ISREG(identity['st_mode']) and stat.S_IMODE(identity['st_mode']) == 0o600
+             and identity['st_size'] == trace['pin']['bytes']
+             and header['operationId'] == self.selection['operationId'] and header['commandHash'] == self.selection['commandHash']
+             and header['ownerPID'] == self.host_ready['ownerPID'] and header['ownerStartTicks'] == self.host_ready['ownerStartTicks']
+             and header['pidNamespace'] == self.observer.binding['pidNamespace']
+             and header['timeNamespace'] == self.last_host['source']['namespaces']['time']
+             and header['clockDomain'] == self.last_host['source']['namespaces']['clockDomain']
+             and header['brokerCodeSHA256'] == self.host_ready['brokerCodePin']['sha256']
+             and header['sourceBindingSHA256'] == sha(canonical(self.observer.binding))
+             and header['trustSHA256'] == self.client_report['rootTrustSHA256'] and trace['value']['footer']['complete'] is True, 'actual-root-trace')
+        return owner
+
+    def readonly_http_finish(self):
+        need(self.readonly_http and not self.claim_only, 'readonly-http-mode')
+        owner = self.stop_owner()
+        captures = {'endpoint': self.client_phase_capture,
+                    'broker': self.readonly_phase_capture(owner['phaseCapture'], owner['ownerProcessClose'], 'BROKER', self.observer.binding['containerId'])}
+        self.observer.check(); self.immutable_check()
+        self.stage('source-service-close'); self.service_close(); self.immutable_check()
+        stop, stop_pin = self.private('ORIGINAL_SERVICE_STOP.SAFE.json', cap=32768)
+        need(all(type(stop[k]) is int and stop[k] == 0 for k in ('spawnCount', 'closeCount', 'confirmedCount')),
+             'readonly-http-no-original-writes')
+        report = self.client_report
+        need(report['signedReadonlyContractObserved'] is True and report['seedPerformed'] is False
+             and report['scopeClaimConsumed'] is False, 'readonly-http-client-contract')
+        self.w.save('READONLY_HTTP_DIAGNOSTIC.PRIVATE.json', {
+            'schema': 'helmut-native-readonly-http-diagnostic/1', 'selection': self.selection,
+            'client': report, 'owner': owner, 'sourceServiceStopPin': stop_pin, 'phaseCaptures': captures,
+            'admissionPerformed': False, 'seedPerformed': False, 'scopeClaimConsumed': False})
+        return {'schema': 'helmut-local-unit-native-readonly-http-result/1',
+                'diagnosticMode': 'readonly-http-pre-admission-v1', 'selection': self.selection,
+                'genuineSourceInputsQualified': True, 'readClosureQualified': True, 'originalBridgeQualified': True,
+                'readonlyHttpObserved': True, 'signedReadonlyContractObserved': True, 'publicationReadObserved': True,
+                'phaseCaptures': captures,
+                'executionAuthorityInstalled': False, 'admissionPerformed': False, 'seedPerformed': False,
+                'scopeClaimConsumed': False, 'runtimeReadMeasured': False, 'ownStateReadMeasured': False,
+                'unit60Qualified': False, 'auth30Qualified': False, 'independentFinalAcceptance': False,
+                'motorCalls': 0, 'actualEntryCalls': 0, 'providerCalls': 0, 'completedUnits': 0,
+                'expectedPositions': 0, 'controlCount': 0, 'full500': False, 'production': False}
+
     def run(self):
         self.stage('source-private-command')
         prepared_pin = _move_prepared(self.w, self.preparation)
@@ -701,6 +768,8 @@ class _Controller:
         service_pin = _compact(self.w, 'ORIGINAL_SERVICE_CONFIG.PRIVATE.json', service_config)
         self.stage('owner-and-client-observation'); self.start_owner(service_config, service_pin, code, runtime, files)
         _publication_read_report(self.command, self.selection, self.client_report.get('publicationRead'))
+        if self.readonly_http:
+            return self.readonly_http_finish()
         self.stage('genuine-source-reconstruction'); verification = self.verify_source(prepared_pin)
         self.stage('fresh-source-admission'); initialization = self.source_authority(verification, code, runtime)
         self.stage('private-original-seed'); tip = self.seed(initialization, service_pin)
@@ -743,24 +812,8 @@ class _Controller:
         terminal, terminal_pin = self.private('client/ATTEMPT_TERMINAL.SAFE.json', cap=1024**2)
         need(set(entry) == {'processClose', 'actualEntryProcessClose', 'terminalPin', 'terminal'} and entry['terminal'] == terminal
              and entry['terminalPin']['bytes'] == terminal_pin['bytes'] and entry['terminalPin']['sha256'] == terminal_pin['sha256'], 'actual-entry-result')
-        self.stage('owner-trace-close'); owner = self.host.call('OWNER_STOP', {}, seconds=15)
-        need(owner['ownerStop']['cleanShutdown'] is True and owner['ownerStop']['failed'] is False
-             and owner['ownerProcessClose']['exitCode'] == 0 and owner['ownerProcessClose']['stdoutNaturalEOF'] is True
-             and owner['ownerProcessClose']['stderrNaturalEOF'] is True, 'actual-owner-stop')
-        trace = owner['controlReadTrace']; header = trace['value']['header']
-        identity = trace['identity']
-        need(trace['pin']['path'] == '/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl' and set(identity) == set(META)
-             and identity['st_uid'] == identity['st_gid'] == 0 and identity['st_nlink'] == 1
-             and stat.S_ISREG(identity['st_mode']) and stat.S_IMODE(identity['st_mode']) == 0o600
-             and identity['st_size'] == trace['pin']['bytes']
-             and header['operationId'] == self.selection['operationId'] and header['commandHash'] == self.selection['commandHash']
-             and header['ownerPID'] == self.host_ready['ownerPID'] and header['ownerStartTicks'] == self.host_ready['ownerStartTicks']
-             and header['pidNamespace'] == self.observer.binding['pidNamespace']
-             and header['timeNamespace'] == self.last_host['source']['namespaces']['time']
-             and header['clockDomain'] == self.last_host['source']['namespaces']['clockDomain']
-             and header['brokerCodeSHA256'] == self.host_ready['brokerCodePin']['sha256']
-             and header['sourceBindingSHA256'] == sha(canonical(self.observer.binding))
-             and header['trustSHA256'] == self.client_report['rootTrustSHA256'] and trace['value']['footer']['complete'] is True, 'actual-root-trace')
+        owner = self.stop_owner()
+        trace = owner['controlReadTrace']
         self.observer.check(); self.immutable_check()
         if self.claim_only:
             self.stage('claim-only-readonly-snapshot')

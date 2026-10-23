@@ -586,6 +586,104 @@ class PureHost(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 self.host._accept(self.request(stage), '1' * 64)
 
+    def test_readonly_http_owner_stop_only_after_qualified_and_no_entry(self):
+        self.config['nativeDiagnosticMode'] = 'readonly-http-pre-admission-v1'
+        owner = {'pid': 12, 'startTicks': '34', 'exe': '/node', 'pidNamespace': 'pid:[1]'}
+        self.host.heartbeat = {'owner': owner}; actions = []
+        self.host._root = lambda code, data: actions.append((code, data))
+        self.host.state = 'QUALIFIED'; self.host._accept(self.request('OWNER_STOP'), '1' * 64)
+        self.assertEqual(actions, [(M.ROOT_SIGNAL, owner)])
+        self.assertEqual(self.host.state, 'QUALIFIED')  # Actual close still required; never fake DONE.
+        for stage, state in (('ENTRY_START', 'QUALIFIED'), ('ENTRY_RESULT', 'ENTRY')):
+            self.host.pending = None; self.host.seen.clear(); self.host.state = state
+            self.host.observed_at = M.time.monotonic()
+            with self.subTest(stage=stage), self.assertRaisesRegex(RuntimeError, 'readonly-http-no-entry'):
+                self.host._accept(self.request(stage), '1' * 64)
+        with self.assertRaisesRegex(RuntimeError, 'readonly-http-no-entry'): self.host._client('entry')
+        for diagnostic, state in ((None, 'QUALIFIED'), ('fresh-claim-only-v1', 'QUALIFIED'),
+                                  ('readonly-http-pre-admission-v1', 'INIT'), ('readonly-http-pre-admission-v1', 'OWNER')):
+            self.config['nativeDiagnosticMode'] = diagnostic; self.host.pending = None; self.host.seen.clear(); self.host.state = state
+            with self.subTest(diagnostic=diagnostic, state=state), self.assertRaisesRegex(RuntimeError, 'owner-stop-order'):
+                self.host._accept(self.request('OWNER_STOP'), '1' * 64)
+
+    def closed_phase_child(self, raw=b'private-marker\n'):
+        close = {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True, 'registeredHostPID': 123}
+        return types.SimpleNamespace(close_metadata=lambda: copy.deepcopy(close), output=[bytearray(b'private-stdout'), bytearray(raw)],
+            transport_failure=None, capture_error=None, capture_truncated=[False, False],
+            tick=lambda: True, child=types.SimpleNamespace(poll=lambda: 0)), close
+
+    def test_readonly_http_private_stderr_published_once_without_stdout_or_base64(self):
+        self.config['nativeDiagnosticMode'] = 'readonly-http-pre-admission-v1'
+        child, close = self.closed_phase_child()
+        capture = self.host._readonly_http_capture('ENDPOINT', child, close, 'c' * 64)
+        path = Path(capture['pin']['path'])
+        self.assertEqual(path.read_bytes(), b'private-marker\n'); self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(capture['pin'], self.pin(str(path), path.read_bytes()))
+        self.assertEqual(set(capture), {'pin', 'processClose', 'containerId'}); self.assertEqual(capture['processClose'], close)
+        self.assertNotIn('private-marker', json.dumps(capture)); self.assertNotIn('private-stdout', json.dumps(capture))
+        with self.assertRaises(FileExistsError): self.host._readonly_http_capture('ENDPOINT', child, close, 'c' * 64)
+        self.assertEqual(path.read_bytes(), b'private-marker\n')
+
+    def test_readonly_http_capture_rejects_incomplete_close_truncation_cap_or_other_mode(self):
+        for fault in ('mode', 'exit', 'eof', 'transport', 'capture', 'truncated', 'cap', 'mismatch'):
+            self.config['nativeDiagnosticMode'] = 'readonly-http-pre-admission-v1'
+            child, close = self.closed_phase_child()
+            if fault == 'mode': self.config['nativeDiagnosticMode'] = 'fresh-claim-only-v1'
+            if fault == 'exit': close['exitCode'] = 1
+            if fault == 'eof': close['stderrNaturalEOF'] = False
+            if fault == 'transport': child.transport_failure = {'type': 'Error'}
+            if fault == 'capture': child.capture_error = {'type': 'Error'}
+            if fault == 'truncated': child.capture_truncated[1] = True
+            if fault == 'cap': child.output[1] = bytearray(128 * 1024 + 1)
+            if fault == 'mismatch': close = {**close, 'registeredHostPID': 999}
+            with self.subTest(fault=fault), self.assertRaises(RuntimeError):
+                self.host._readonly_http_capture('BROKER', child, close, self.host.source_id)
+            self.assertFalse((self.case / 'READONLY_HTTP_BROKER_PHASES.PRIVATE.log').exists())
+
+    def test_readonly_http_owner_pass_capture_requires_actual_closed_trace(self):
+        h = self.host; self.config['nativeDiagnosticMode'] = 'readonly-http-pre-admission-v1'
+        h.state = 'QUALIFIED'; h.owner, close = self.closed_phase_child(b'broker-marker\n')
+        h.heartbeat = {'owner': {'pid': 12, 'startTicks': '34', 'exe': '/node', 'pidNamespace': 'pid:[1]'}}
+        h.owner_ready = {'ownerPID': 12, 'ownerStartTicks': '34'}
+        h.source_identity = {'namespaces': {'pid': 'pid:[1]', 'time': 'time:[2]', 'clockDomain': {'test': 'clock'}}}
+        h.qualifier_report = {'rootTrustSHA256': 'a' * 64, 'publicSourceBindingCanonicalSHA256': 'b' * 64}
+        h.owner_stop = {'cleanShutdown': True, 'failed': False}
+        trace = {'value': {'header': {**self.selection, 'ownerPID': 12, 'ownerStartTicks': '34',
+            'pidNamespace': 'pid:[1]', 'timeNamespace': 'time:[2]', 'clockDomain': {'test': 'clock'},
+            'brokerCodeSHA256': self.aliases['broker']['sha256'], 'trustSHA256': 'a' * 64,
+            'sourceBindingSHA256': 'b' * 64, 'database': 'helmut_unit_diagnostic_' + self.nonce}, 'footer': {'complete': True}}}
+        h._root = lambda *args: types.SimpleNamespace(tick=lambda: True, close_metadata=lambda: close)
+        h.trace_read = types.SimpleNamespace(tick=lambda: True, close_metadata=lambda: close, output=[M.encode(trace)])
+        h._poll_probes = h._owner_messages = h._release_clients = h._quiesce_clients = lambda: None
+        h._observe = lambda: self.observation(); h._accept(self.request('OWNER_STOP'), '1' * 64)
+        h.tick()
+        self.assertEqual(h.state, 'STOPPED')
+        reply = json.loads((self.case / 'HOST_REPLY_01.PRIVATE.json').read_bytes())['result']
+        self.assertEqual(reply['ownerProcessClose'], close)
+        self.assertEqual(Path(reply['phaseCapture']['pin']['path']).read_bytes(), b'broker-marker\n')
+        self.assertEqual(reply['phaseCapture']['containerId'], h.source_id)
+
+    def test_readonly_http_qualifier_pass_persists_before_qualified_reply(self):
+        h = self.host; self.config['nativeDiagnosticMode'] = 'readonly-http-pre-admission-v1'
+        child, close = self.closed_phase_child(b'endpoint-marker\n')
+        h.state = 'OWNER'; h.active_client = 'c' * 64
+        h.clients[h.active_client] = {'mode': 'qualifier', 'child': child, 'exitReleased': True,
+            'process': {'hostPID': 456, 'startTicks': '7', 'namespacePID': 8},
+            'row': {'State': {'Running': False, 'ExitCode': 0, 'OOMKilled': False}}}
+        report = {'selection': self.selection, 'signedReadonlyContractObserved': True, 'seedPerformed': False,
+            'scopeClaimConsumed': False, 'actualNodeBudget': {'nodeVersion': 'v24.19.0', 'execArgv': M.FLAGS,
+                'oldSpaceMiB': 384, 'semiSpaceMiB': 16, 'heapSizeLimitBytes': 400 * 1024**2}}
+        M.write_once(self.case / 'client/ENDPOINT_QUALIFICATION.SAFE.json', M.encode(report))
+        h.pending = {'request': self.request('CLIENT_QUALIFY'), 'sha256': '1' * 64, 'began': M.time.monotonic()}
+        h._poll_probes = h._owner_messages = h._release_clients = h._quiesce_clients = lambda: None
+        h._observe = lambda: self.observation()
+        h.tick()
+        self.assertEqual(h.state, 'QUALIFIED')
+        reply = json.loads((self.case / 'HOST_REPLY_01.PRIVATE.json').read_bytes())['result']
+        self.assertEqual(reply['phaseCapture']['processClose'], close)
+        self.assertEqual(Path(reply['phaseCapture']['pin']['path']).read_bytes(), b'endpoint-marker\n')
+        self.assertEqual(reply['phaseCapture']['containerId'], h.active_client)
+
     def test_tick_failure_permanently_seals_no_retry(self):
         self.host._observe = lambda: M.need(False, 'simulated-drift')
         with self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$'):

@@ -1,6 +1,8 @@
 """Setup failure registry boundaries; no Docker, process or database execution."""
 import copy
+from contextlib import redirect_stderr
 import importlib.util
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -9,6 +11,40 @@ import unittest
 
 spec=importlib.util.spec_from_file_location('native_supervisor_offline',Path(__file__).with_name('local-unit-native-supervisor.py'))
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+
+class ReadonlyHTTPMode(unittest.TestCase):
+    def result(self):
+        return {'schema': 'helmut-local-unit-native-readonly-http-result/1', 'diagnosticMode': 'readonly-http-pre-admission-v1',
+            **dict.fromkeys(('readonlyHttpObserved', 'signedReadonlyContractObserved', 'publicationReadObserved'), True),
+            **dict.fromkeys(('executionAuthorityInstalled', 'admissionPerformed', 'seedPerformed', 'scopeClaimConsumed',
+                'runtimeReadMeasured', 'ownStateReadMeasured', 'unit60Qualified', 'auth30Qualified', 'independentFinalAcceptance', 'production', 'full500'), False),
+            **dict.fromkeys(('actualEntryCalls', 'motorCalls', 'providerCalls', 'completedUnits', 'expectedPositions', 'controlCount'), 0),
+            'phaseCaptures': {name: {'pin': {'path': '/case/READONLY_HTTP_' + name.upper() + '_PHASES.PRIVATE.log', 'bytes': 5, 'sha256': 'a' * 64},
+                'containerId': 'b' * 64, 'processClose': {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True, 'registeredHostPID': 123}}
+                for name in ('endpoint', 'broker')}}
+
+    def test_new_cli_is_explicit_and_mutually_exclusive_with_all_old_modes(self):
+        new = '--diagnose-native-readonly-http'
+        self.assertTrue(m.arguments([new]).diagnose_native_readonly_http)
+        for old in ('--qualify-native-store', '--qualify-native-bindings', '--run-native-single-unit', '--diagnose-native-claim-only'):
+            self.assertFalse(m.arguments([old]).diagnose_native_readonly_http)
+            with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit): m.arguments([old, new])
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit): m.arguments([])
+
+    def test_readonly_result_requires_no_execution_and_both_closed_private_captures(self):
+        m.readonly_http_result(self.result())
+        for key in ('diagnosticMode', 'schema', 'readonlyHttpObserved', 'publicationReadObserved', 'executionAuthorityInstalled',
+                    'admissionPerformed', 'seedPerformed', 'scopeClaimConsumed', 'runtimeReadMeasured', 'ownStateReadMeasured',
+                    'actualEntryCalls', 'motorCalls', 'providerCalls', 'unit60Qualified', 'full500', 'phaseCaptures'):
+            result = self.result(); result[key] = not result[key] if type(result[key]) is bool else 'wrong'
+            with self.subTest(key=key), self.assertRaises(RuntimeError): m.readonly_http_result(result)
+        for fault in ('eof', 'cap', 'raw', 'extra-close'):
+            result = self.result(); value = result['phaseCaptures']['endpoint']
+            if fault == 'eof': value['processClose']['stderrNaturalEOF'] = False
+            if fault == 'cap': value['pin']['bytes'] = 128 * 1024 + 1
+            if fault == 'raw': value['stderrBase64'] = 'forbidden'
+            if fault == 'extra-close': value['processClose']['stderrBase64'] = 'forbidden'
+            with self.subTest(fault=fault), self.assertRaises(RuntimeError): m.readonly_http_result(result)
 
 class SetupClosure(unittest.TestCase):
     def setUp(self):

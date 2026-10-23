@@ -209,7 +209,7 @@ def registered_setup_children(execution_module, native, case, parent, runtime):
     return {record['containerId']}
 
 
-def main():
+def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument('--qualify-native-store', action='store_true')
@@ -219,8 +219,43 @@ def main():
                        help='fresh source-local COPY; qualify all native bindings before exactly one isolated fixture unit')
     modes.add_argument('--diagnose-native-claim-only',action='store_true',
                        help='fresh genuine unseeded COPY+qualification+admission+seed; first real claim only, no motor or Unit acceptance')
-    args = parser.parse_args()
-    execution_mode=args.run_native_single_unit or args.diagnose_native_claim_only
+    modes.add_argument('--diagnose-native-readonly-http', action='store_true',
+                       help='fresh unseeded COPY+Owner+readonly endpoint qualification; stop before admission, seed or entry')
+    return parser.parse_args(argv)
+
+
+def readonly_http_result(result):
+    if (result.get('schema') != 'helmut-local-unit-native-readonly-http-result/1'
+            or result.get('diagnosticMode') != 'readonly-http-pre-admission-v1'
+            or any(result.get(k) is not True for k in ('readonlyHttpObserved', 'signedReadonlyContractObserved', 'publicationReadObserved'))
+            or any(result.get(k) is not False for k in ('executionAuthorityInstalled', 'admissionPerformed', 'seedPerformed',
+                'scopeClaimConsumed', 'runtimeReadMeasured', 'ownStateReadMeasured', 'unit60Qualified', 'auth30Qualified',
+                'independentFinalAcceptance', 'production', 'full500'))
+            or any(type(result.get(k)) is not int or result[k] != 0 for k in ('actualEntryCalls', 'motorCalls', 'providerCalls',
+                'completedUnits', 'expectedPositions', 'controlCount'))):
+        raise RuntimeError('readonly HTTP diagnostic incomplete or exceeded scope')
+    captures = result.get('phaseCaptures')
+    if type(captures) is not dict or set(captures) != {'endpoint', 'broker'}:
+        raise RuntimeError('readonly HTTP private phase captures missing')
+    for name, value in captures.items():
+        if (type(value) is not dict or set(value) != {'pin', 'processClose', 'containerId'}
+                or type(value['containerId']) is not str or not re.fullmatch('[0-9a-f]{64}', value['containerId'])
+                or set(value['pin']) != {'path', 'bytes', 'sha256'}
+                or not value['pin']['path'].endswith('/READONLY_HTTP_' + name.upper() + '_PHASES.PRIVATE.log')
+                or type(value['pin']['bytes']) is not int or not 0 <= value['pin']['bytes'] <= 128 * 1024
+                or not re.fullmatch('[0-9a-f]{64}', value['pin']['sha256'])
+                or set(value['processClose']) != {'exitCode', 'stdoutNaturalEOF', 'stderrNaturalEOF', 'registeredHostPID'}
+                or value['processClose']['exitCode'] != 0
+                or any(value['processClose'][k] is not True for k in ('stdoutNaturalEOF', 'stderrNaturalEOF'))
+                or type(value['processClose']['registeredHostPID']) is not int or value['processClose']['registeredHostPID'] <= 0):
+            raise RuntimeError('readonly HTTP private phase capture incomplete')
+
+
+def main():
+    args = arguments()
+    # This existing bootstrap also supplies the fresh Source/Host/Owner stack.
+    # The readonly branch never installs execution authority or starts Entry.
+    execution_mode=args.run_native_single_unit or args.diagnose_native_claim_only or args.diagnose_native_readonly_http
     bindings_mode = args.qualify_native_bindings or execution_mode
     if not (sys.flags.isolated and sys.flags.no_site and sys.flags.dont_write_bytecode):
         raise RuntimeError('use python -I -S -B')
@@ -328,6 +363,8 @@ def main():
             config['nativeDiagnosticMode']='fresh-claim-only-v1'
             if not (BIN/'local-unit-native-claim-only.js').is_file():
                 raise RuntimeError('reviewed claim-only client source missing')
+        elif args.diagnose_native_readonly_http:
+            config['nativeDiagnosticMode'] = 'readonly-http-pre-admission-v1'
         # Host control plane only; never expose Docker/socket to SOURCE or the
         # client. The closed subprocess environment deliberately has no host PATH.
         config['hostDockerPin'] = pin('/usr/local/bin/docker')
@@ -445,8 +482,10 @@ def main():
         if bindings_mode and (result.get('genuineSourceInputsQualified') is not True
                                              or result.get('readClosureQualified') is not True
                                              or result.get('originalBridgeQualified') is not True
-                                             or result.get('executionAuthorityInstalled') is not execution_mode):
+                                             or result.get('executionAuthorityInstalled') is not (execution_mode and not args.diagnose_native_readonly_http)):
             raise RuntimeError('genuine native binding qualification incomplete')
+        if args.diagnose_native_readonly_http:
+            readonly_http_result(result)
         if args.diagnose_native_claim_only:
             if result.get('schema')!='helmut-local-unit-native-claim-only-result/1' or result.get('diagnosticMode')!='fresh-claim-only-v1':
                 raise RuntimeError('claim-only mode/result missing')
@@ -508,7 +547,8 @@ def main():
             except BaseException as error:
                 close_errors.append(type(error).__name__)
         accepted = failure is None and not close_errors and final is not None
-        receipt = {'schema': ('helmut-local-unit-native-claim-only-supervisor-result/1' if args.diagnose_native_claim_only
+        receipt = {'schema': ('helmut-local-unit-native-readonly-http-supervisor-result/1' if args.diagnose_native_readonly_http else
+                             'helmut-local-unit-native-claim-only-supervisor-result/1' if args.diagnose_native_claim_only
                              else 'helmut-local-unit-native-qualification-result/1'), 'pass': accepted,
                    'failure': failure, 'closureErrors': close_errors, 'parent': parent, 'containerId': cid,
                    'kernelFinal': final, 'samples': sample_count, 'case': str(case), 'full500': False,
@@ -539,6 +579,16 @@ def main():
                 claimStillRunning=(result or {}).get('claimStillRunning'),authorityConsumed=(result or {}).get('authorityConsumed'),
                 reuseForbidden=True,completedUnits=0,expectedPositions=0,controlCount=0,
                 unit60Qualified=False,auth30Qualified=False,independentFinalAcceptance=False,full500Qualified=False)
+        if args.diagnose_native_readonly_http:
+            receipt.update(readonlyHttpRequested=True, diagnosticMode='readonly-http-pre-admission-v1', diagnosticOnly=True,
+                readonlyHttpObserved=accepted and result.get('readonlyHttpObserved') is True,
+                signedReadonlyContractObserved=accepted and result.get('signedReadonlyContractObserved') is True,
+                publicationReadObserved=accepted and result.get('publicationReadObserved') is True,
+                phaseCaptures=result.get('phaseCaptures') if accepted else None,
+                executionAuthorityInstalled=False, admissionPerformed=False, seedPerformed=False, scopeClaimConsumed=False,
+                actualEntryCalls=0, providerCalls=0, completedUnits=0, expectedPositions=0, controlCount=0,
+                runtimeReadMeasured=False, ownStateReadMeasured=False,
+                unit60Qualified=False, auth30Qualified=False, independentFinalAcceptance=False, full500Qualified=False)
         save(case / 'RESULT.SAFE.json', receipt)
         print(json.dumps({'pass': accepted, 'case': str(case), 'failure': failure,
                           'closureErrors': close_errors, 'full500': False, 'motorCalls': receipt['motorCalls']}))
