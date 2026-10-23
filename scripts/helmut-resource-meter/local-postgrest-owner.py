@@ -20,7 +20,7 @@ import sys
 import threading
 import time
 
-ROOT = Path('/workspace/helmut-cpu-epoch-20261015')
+ROOT = Path(__file__).resolve().parents[2]
 BACKEND_DIR = Path('/meter-output/local-postgrest-backend')
 DATABASE_CONFIG = Path('/meter-output/DATABASE_CONFIG.SAFE.json')
 HOST_BINDING = Path('/meter-output/LOCAL_POSTGREST_BACKEND_HOST_BINDING.SAFE.json')

@@ -12,7 +12,7 @@ from pathlib import Path
 MAX=65536
 OWNER_START='helmut-local-postgrest-owner-start'
 OWNER_PYTHON='/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python'
-OWNER_SUPERVISOR='/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/database-supervisor.py'
+OWNER_SUPERVISOR=str(Path(__file__).resolve().with_name('database-supervisor.py'))
 
 def owner_enabled(cfg):
     return cfg.get('localPostgrestBackendPlanPin') is not None

@@ -22,7 +22,7 @@ DOCKER = ['docker', '--host=unix:///var/run/docker.sock']
 IMAGE = 'sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e'
 NODE_ROOT = Path('/opt/codex/runtimes/codex-primary-runtime/dependencies/node')
 PYTHON_ROOT = Path('/opt/codex/runtimes/codex-primary-runtime/dependencies/python')
-REPOSITORY = Path('/workspace/helmut-cpu-epoch-20261015')
+REPOSITORY = Path(__file__).resolve().parents[2]
 CGROUP_ROOT = Path('/sys/fs/cgroup')
 
 
