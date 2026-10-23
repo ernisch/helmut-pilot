@@ -660,6 +660,13 @@ jobs:
           printf '%s\n' "$CHANGED"
           node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "$CHANGED" --nur-bereich
 
+      - name: Z22-Indexzugriff Gegenbeispiele (rein offline)
+        if: steps.plan.outputs.standard == 'true' || steps.plan.outputs.database == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
+        run: node scripts/lokal.js scripts/vorbedingung-mandatsfilter-plan-test.js
+
       - name: Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)
         if: steps.plan.outputs.database == 'true'
         # WARUM EIN EIGENER SCHRITT: Der Nachweis braucht eine echte PostgreSQL. In
