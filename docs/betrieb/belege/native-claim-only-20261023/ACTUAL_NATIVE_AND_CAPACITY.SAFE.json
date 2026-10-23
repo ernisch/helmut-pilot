@@ -1,0 +1,419 @@
+{
+  "asOfUTC": "2026-10-23T22:45:29.645371+00:00",
+  "branch": "codex/v12-unit60-native-integration-20261022",
+  "capacity": {
+    "availableBytesObserved": 11161763840,
+    "componentAdmissionPassedAtActualSQLStart": true,
+    "componentAdmissionSatisfiedNow": true,
+    "freshAll32StartConditionsQualified": false,
+    "full500AdmissionSatisfied": false,
+    "full500DeficitBytes": 4018015880,
+    "noPaidInfrastructureAdded": true,
+    "originalRawBytesAndBothOriginalReservationsUnchanged": true,
+    "unchangedComponentAdmissionBytes": 10737418240,
+    "unchangedFull500AdmissionBytes": 15179779720
+  },
+  "ci": {
+    "notAUnit60Or500Proof": true,
+    "protectedOriginalCount": 84,
+    "requiredJobsCompletedSuccess": true,
+    "run": "https://github.com/ernisch/helmut-pilot/actions/runs/40002522827",
+    "testedCodeCommit": "444e496fde2789211da77db1a5a9038ba9437360"
+  },
+  "claimOnly": {
+    "actualRootExit": "974da2/session6030/Exit0",
+    "authorityConsumed": true,
+    "callbackCalls": 1,
+    "case": "515c8bef45f0fa89eb9305f71a61d343",
+    "claimLogicalState": "running",
+    "commonPeakBytes": 1269202944,
+    "completedUnits": 0,
+    "entryExitCode": 0,
+    "historicalUsageRecords": 6000,
+    "independentProofPin": {
+      "bytes": 17856,
+      "path": "/workspace/helmut-native-integration-checks-20261022/completed-native-db-provenance-20261023/ACTUAL_CLAIM_ONLY_515c8bef.SAFE.json",
+      "sha256": "f3320aa7c82ee9fee2bc91ca8b433bb9f09d41104641426694b1610ba68262f1"
+    },
+    "motorCalls": 0,
+    "originalSeedAndClaimCommittedAndAcknowledged": true,
+    "ownKeys": 7,
+    "ownRevision": 1,
+    "pass": true,
+    "resultPin": {
+      "bytes": 2130,
+      "path": "/workspace/helmut-unit-diagnostic-native/515c8bef45f0fa89eb9305f71a61d343/RESULT.SAFE.json",
+      "sha256": "5632f12cc8753da5c491f48f15e98d671e108aa87f7f8c4d508246eee09a3280"
+    },
+    "reuseForbidden": true,
+    "twoNaturalEntryEOFs": true,
+    "unit60OrReserveOr500Proof": false
+  },
+  "cleanup": {
+    "allGitRefsAndObjectsKept": true,
+    "allPublicCanonicalSourcesAndCurrentNativeCopiesKept": true,
+    "claim515cIndexTransportPin": {
+      "bytes": 1097,
+      "path": "/workspace/helmut-native-integration-checks-20261022/claimonly-515c-full-backup-prepared-20261023/ENCRYPTED/INDEX_TRANSFER_COMPLETE.SAFE.json",
+      "sha256": "7d7661db5e3aff7c7d860fa0265a7e14a7b915b2aa1eb47826dfc3df35451037"
+    },
+    "claim515cOriginalPassAndConsumedClaimEvidenceKept": true,
+    "claim515cPGAndTEMPAndRedundantArchiveCipherFilesRetired": true,
+    "claim515cRecoveryIndexPlainSHA256": "0d34a4fcf7b8f24df593033a23e98220e46b96f9b30904b9be3fcc383e37e9ce",
+    "claim515cRetirementPin": {
+      "bytes": 1611,
+      "path": "/workspace/helmut-native-integration-checks-20261022/claimonly-515c-full-backup-prepared-20261023/ROOT_RETIREMENT_RESULT.SAFE.json",
+      "sha256": "60c25df672d08d7a7666bf3f282a49b0b4b24aaf62fe7723f8676f9496912c53"
+    },
+    "claim515cTransportPin": {
+      "bytes": 6030,
+      "path": "/workspace/helmut-native-integration-checks-20261022/claimonly-515c-full-backup-prepared-20261023/ENCRYPTED/TRANSPORT_COMPLETE.SAFE.json",
+      "sha256": "04f2ecc74ccec4c9fe9a02057a244f2b4321093e0175b05380cc58bd01849c61"
+    },
+    "completedWipWorktreeRetiredAfterBundleAndExactWipRestoreAndEncryptedRoundtrip": true,
+    "encryptedDriveFullBackdownloadHashAndByteVerificationCompleted": true,
+    "oldAf33And2fFullRecoveryIndexPlainSHA256": "74d8b19d52595389f0a50c994c0b86b203e7d6f70602855258cd8649c715e5f3",
+    "oldAf33And2fOwnPGCopiesAndClearArchivesNowOffsiteOnly": true,
+    "onlyConfirmedRecipientUsed": true,
+    "opaqueForeignFDDenialsNotAbsence": true,
+    "originalRawBytesUnchanged": true,
+    "originalRawReservationReleaseV3FailedBeforeAnyOriginalOpenOrPunch": true,
+    "ownTemporaryRestore30DirectoryAtimeDeltasExplicitNoTimesRestored": true,
+    "privateKeyReadOrExported": false,
+    "publicCopiesActualNetGainBytes": 442519552,
+    "publicCopyAllocatedBytes": 442789888,
+    "publicCopyCases": 20,
+    "publicCopyRetirementPin": {
+      "bytes": 757,
+      "path": "/workspace/helmut-native-integration-checks-20261022/closed-case-public-runtime-copies-20261023/ROOT_RESULT.SAFE.json",
+      "sha256": "4a3f69cf2a06706561143ef0320d375e9d2f9a256a58d3f9c327b4ef7cd6e35f"
+    },
+    "publicDuplicateCopiesRemoved": 153,
+    "readonlySQLCopyRetired": {
+      "actualCLIExit0": "5424ea/session94076",
+      "all1749EndFilesRecoverableFromKept1750FileSourceAnd8VerifiedGzipOverlays": true,
+      "case": "run-55d0dc1cf21fc72634b975c24897131c",
+      "changedFileSizeSumIsNotMeasuredWriteVolume": true,
+      "directoriesRemoved": 30,
+      "endFilesChangedSizeSumBytes": 83838918,
+      "endOverlayGzipBytes": 21010906,
+      "endOverlayManifestPin": {
+        "bytes": 11632,
+        "path": "/workspace/helmut-native-integration-checks-20261022/passed-readonly-sql-copy-retirement-review-20261023/OVERLAY_MANIFEST.PRIVATE.json",
+        "sha256": "fe997448d785c688cf50183c28a9db39890630b02bc3e62a46a8c656b92aad8b"
+      },
+      "filesRemoved": 1749,
+      "fullPreparationAllocatedBytes": 22855680,
+      "missingBaseFileIsOnly": "base/5/pg_internal.init",
+      "observedNetGainDuringRetirementBytes": 373878784,
+      "originalSQLPassAndAllExternalEvidenceKept": true,
+      "overlayIsLocalNoDriveTransferClaimed": true,
+      "retainedSourceManifestPin": {
+        "bytes": 868440,
+        "path": "/workspace/helmut-native-integration-checks-20261022/passed-readonly-sql-copy-retirement-review-20261023/SOURCE_KEEP_MANIFEST.PRIVATE.json",
+        "sha256": "3a403da5ec4bb4baae314524ddd3c49c4c11ee9df167fddbf5c4ee21940ba8e6"
+      },
+      "retirementComplete": true,
+      "retirementResultPin": {
+        "bytes": 499,
+        "path": "/workspace/helmut-native-integration-checks-20261022/passed-readonly-sql-copy-retirement-review-20261023/RETIRE_RESULT.SAFE.json",
+        "sha256": "cc043736f47c21ba8da2a078edaa6bf1f37bc238a6b4704dc926717db3578469"
+      },
+      "source7bacePhysicallyKeptRequiredForRecovery": true
+    },
+    "syntheticLocalTestCredentialsAuthorizedInEncryptedChannel": true,
+    "wipWorktreeRetirementPin": {
+      "bytes": 870,
+      "path": "/workspace/helmut-native-integration-checks-20261022/failure-evidence-wip-backup-20261023/ROOT_RETIREMENT_RESULT.SAFE.json",
+      "sha256": "f1ef69c0379a56bad534657fa4bc3d9805921f8ff72777adfbf407524c04b7d1"
+    }
+  },
+  "contracts": {
+    "all16FreshControlsUnchanged": true,
+    "authLimitMs": 30000,
+    "full500Positions": 1500,
+    "full500Profiles": 500,
+    "hardMemoryBytes": 2048000000,
+    "maxCombinedBytes": 1548000000,
+    "requiredReserveBytes": 500000000,
+    "unitLimitMs": 60000
+  },
+  "fullSingleUnit": {
+    "actualRootHelperExitCode": 1,
+    "adapterElapsedIsNotWholeCLIAndNoSuccessfulUnitTime": true,
+    "adapterElapsedMs": 71729.21738799999,
+    "all10RecordedWritesExit0TwoEOFCommitACK": true,
+    "authorityConsumedReuseForbidden": true,
+    "case": "7bacec0da36eb453c785be1da2dbf993",
+    "commonPeakBytes": 1342267392,
+    "completedControls": 9,
+    "confirmedSourceWrites": {
+      "artifact": 2,
+      "seed": 1,
+      "state": 6,
+      "usage": 1
+    },
+    "failedCaseIsNotReserveProof": true,
+    "finalMotorACKAbsent": true,
+    "firstSavedFailure": "entry-terminal-deadline",
+    "fullLastProcessExitCovered": true,
+    "hostMappingFailureWasSecondaryAfterSourceStop": true,
+    "independentTimingProofPin": {
+      "bytes": 73829,
+      "path": "/workspace/helmut-native-integration-checks-20261022/completed-native-db-provenance-20261023/ACTUAL_SINGLE_UNIT_7bacec_TIMING_FAILURE.SAFE.json",
+      "sha256": "ff996a6c2bf5dc4ed2b1f54e4d0b88be6041172986279efdc4eabd23d8448893"
+    },
+    "lastCompletedControl": "send-R",
+    "memoryEvents": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "pass": false,
+    "realMotorEntered": true,
+    "requiredControls": 16,
+    "resultPin": {
+      "bytes": 2160,
+      "path": "/workspace/helmut-unit-diagnostic-native/7bacec0da36eb453c785be1da2dbf993/RESULT.SAFE.json",
+      "sha256": "908815bc3e154c1fd28d7637f8c594b74d21cfe42e81843620b37e018ecbdd32"
+    }
+  },
+  "lateReadonlySQL": {
+    "all4CapturesExit0NaturalEOFs": true,
+    "allChildrenExited": true,
+    "capacityHashOverlapAddendum": {
+      "capacityHashPayloadEndUpperBoundUTC": "2026-10-23T22:32:32.680563+00:00",
+      "capacityHashesEndedBeforeTimedSQL": true,
+      "lowerBoundBasis": "PRE capture stdout final mtime; measurement starts only after PRE capture returns. This is not an exact measured MEASURE-start timestamp.",
+      "noGeneralHostIdleOrCPUExclusivityClaim": true,
+      "timedSQLStartLowerBoundUTC": "2026-10-23T22:32:51.861978615Z",
+      "upperBoundBasis": "Executing SOL agent confirmed PLAN.atUTC was assigned after all copy/canonical payload hashes and following metadata checks in the actually executed script. No monotonic hash-end marker exists."
+    },
+    "case": "run-55d0dc1cf21fc72634b975c24897131c",
+    "catalogRolesRLSSettingsAndLogicalAuthPREPOSTEqual": true,
+    "commonPeakBytes": 792047616,
+    "compareDeltaSameRootIsZeroDeltaOnly": true,
+    "componentCostsOverlapNotAdditive": true,
+    "elapsedSeconds": 23.919299892004346,
+    "explainCount": 24,
+    "freshCopiesNotThreeIndependentTrials": true,
+    "genuineOriginalCASWasNotCalled": true,
+    "independentProofPin": {
+      "bytes": 18671,
+      "path": "/workspace/helmut-native-integration-checks-20261022/completed-native-db-provenance-20261023/ACTUAL_READONLY_SQL_COMPONENTS_7bace_55d0_SOURCE_REVIEW.SAFE.json",
+      "sha256": "29ff36122245f16ef71b25fe076996f228346d65a99350cf71e9c475e2f34858"
+    },
+    "lastProcessExitCovered": true,
+    "measurementCaptureSeconds": 3.4754992320085876,
+    "memoryEvents": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "noUnit60ReservePlateauOrFull500Proof": true,
+    "pass": true,
+    "physicalReadonlyPostgreSQLBookkeepingMayChangeInNewCopy": true,
+    "postgresCleanExit0": true,
+    "repetitions": 3,
+    "resultPin": {
+      "bytes": 4657,
+      "path": "/workspace/helmut-native-integration-checks-20261022/late-native-sql-components-7bace-prepared-20261023/run-55d0dc1cf21fc72634b975c24897131c/RESULT.SAFE.json",
+      "sha256": "0d6ebe0891688ec37d657d73e57083dc25c00a62b19e41835cd8fade8075b6a8"
+    },
+    "rootActualExitPin": {
+      "bytes": 229,
+      "path": "/workspace/helmut-native-integration-checks-20261022/late-native-sql-components-7bace-prepared-20261023/ROOT_ACTUAL_EXIT.SAFE.json",
+      "sha256": "eaea485fc23278db1c0b8c874b453c169c1b66a931c7412b55ce9ebca9ad2f7b"
+    },
+    "sourceAll3FullHashManifestsAnd9MDUnchanged": true,
+    "timingsMs": [
+      {
+        "Execution Time": 120.895,
+        "Planning Time": 0.197,
+        "component": "graph_checked",
+        "repetition": 1
+      },
+      {
+        "Execution Time": 161.365,
+        "Planning Time": 0.102,
+        "component": "assert_graph",
+        "repetition": 1
+      },
+      {
+        "Execution Time": 91.912,
+        "Planning Time": 0.056,
+        "component": "top_map",
+        "repetition": 1
+      },
+      {
+        "Execution Time": 106.828,
+        "Planning Time": 0.06,
+        "component": "own_projection",
+        "repetition": 1
+      },
+      {
+        "Execution Time": 196.357,
+        "Planning Time": 0.098,
+        "component": "compare_delta_same_root",
+        "repetition": 1
+      },
+      {
+        "Execution Time": 37.68,
+        "Planning Time": 0.006,
+        "component": "usage_checked_proof",
+        "repetition": 1
+      },
+      {
+        "Execution Time": 304.509,
+        "Planning Time": 0.007,
+        "component": "control_cold",
+        "repetition": 1
+      },
+      {
+        "Execution Time": 121.89,
+        "Planning Time": 0.02,
+        "component": "control_warm",
+        "repetition": 1
+      },
+      {
+        "Execution Time": 81.383,
+        "Planning Time": 0.121,
+        "component": "graph_checked",
+        "repetition": 2
+      },
+      {
+        "Execution Time": 134.004,
+        "Planning Time": 0.15,
+        "component": "assert_graph",
+        "repetition": 2
+      },
+      {
+        "Execution Time": 84.626,
+        "Planning Time": 0.06,
+        "component": "top_map",
+        "repetition": 2
+      },
+      {
+        "Execution Time": 91.525,
+        "Planning Time": 0.101,
+        "component": "own_projection",
+        "repetition": 2
+      },
+      {
+        "Execution Time": 176.579,
+        "Planning Time": 0.151,
+        "component": "compare_delta_same_root",
+        "repetition": 2
+      },
+      {
+        "Execution Time": 34.725,
+        "Planning Time": 0.01,
+        "component": "usage_checked_proof",
+        "repetition": 2
+      },
+      {
+        "Execution Time": 302.547,
+        "Planning Time": 0.006,
+        "component": "control_cold",
+        "repetition": 2
+      },
+      {
+        "Execution Time": 118.809,
+        "Planning Time": 0.019,
+        "component": "control_warm",
+        "repetition": 2
+      },
+      {
+        "Execution Time": 84.431,
+        "Planning Time": 0.086,
+        "component": "graph_checked",
+        "repetition": 3
+      },
+      {
+        "Execution Time": 144.753,
+        "Planning Time": 0.109,
+        "component": "assert_graph",
+        "repetition": 3
+      },
+      {
+        "Execution Time": 83.28,
+        "Planning Time": 0.119,
+        "component": "top_map",
+        "repetition": 3
+      },
+      {
+        "Execution Time": 91.071,
+        "Planning Time": 0.119,
+        "component": "own_projection",
+        "repetition": 3
+      },
+      {
+        "Execution Time": 173.663,
+        "Planning Time": 0.165,
+        "component": "compare_delta_same_root",
+        "repetition": 3
+      },
+      {
+        "Execution Time": 36.536,
+        "Planning Time": 0.01,
+        "component": "usage_checked_proof",
+        "repetition": 3
+      },
+      {
+        "Execution Time": 292.905,
+        "Planning Time": 0.006,
+        "component": "control_cold",
+        "repetition": 3
+      },
+      {
+        "Execution Time": 119.378,
+        "Planning Time": 0.021,
+        "component": "control_warm",
+        "repetition": 3
+      }
+    ]
+  },
+  "newRepositoryRuntimeChangeInThisCheckpoint": false,
+  "next": "Use the saved timing evidence to isolate avoidable serial control/runtime overhead; no graph-only micro-fix or full500 hypothesis run. Keep real16 fresh controls, both deadlines, source bytes and consumed claims.",
+  "open": {
+    "all16ActualControlsAndFinalACK": false,
+    "all32FreshStartConditionsVerified": false,
+    "auth30EndToEndQualified": false,
+    "deployments": 0,
+    "full500ReserveQualified": false,
+    "full500RunStarted": false,
+    "merges": 0,
+    "native500PlateauQualified": false,
+    "newConcreteFull500GO": false,
+    "newPaidInfrastructure": 0,
+    "paidModelCalls": 0,
+    "productionActions": 0,
+    "unit60Qualified": false
+  },
+  "pr": "https://github.com/ernisch/helmut-pilot/pull/936",
+  "schema": "helmut-actual-native-claim-unit-sql-and-capacity/1",
+  "status": "PARTIALLY_COMPLETED_NOT_500_READY",
+  "testedCodeCommit": "444e496fde2789211da77db1a5a9038ba9437360",
+  "traceAttribution": {
+    "brokerRecordsHaveNoCompleteFinalEndJoin": true,
+    "brokerSendToUpstreamEndNs": 1566404682,
+    "controlsObserved": 9,
+    "graphOnlyChangeNotQualifiedAsUnit60Fix": true,
+    "missingInstrumentBoundary": "private bounded correlated timings: broker precheck, hidden contract RPC, client validation; no payloads",
+    "originalControlTotalNs": 4005367334,
+    "outerRemainderBeforeSendAndAfterFinishNs": 2122016921,
+    "outsideGraphUpstreamNs": 2438962652,
+    "outsideUpstreamIsNotEntirelyAvoidable": true,
+    "ownRuntimeContractInputProfilePhaseCoverageIncomplete": true,
+    "postgrestExecutableChecksAlreadyStreamedWith1MiBBufferNo17MiBMaterialization": true,
+    "signedToFinishNs": 85399405,
+    "upstreamEndToSignedNs": 231546326,
+    "upstreamIncludesPostgrestDatabaseAndTransportNotPureSQL": true
+  }
+}

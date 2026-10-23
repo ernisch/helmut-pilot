@@ -7,6 +7,67 @@ Branch `codex/v12-unit60-native-integration-20261022`,
 Alte GOs und Claims bleiben verbraucht. Keine Production-Aktion, kein Merge und
 kein vollständiger500er-Lauf sind aus dieser Arbeit freigegeben.
 
+## Aktueller Nachweis vom23.10.: Claim bestanden, Einzelunit weiter fehlgeschlagen
+
+Geprüfter Runtimecode `444e496fde2789211da77db1a5a9038ba9437360`; dessen
+[CI40002522827](https://github.com/ernisch/helmut-pilot/actions/runs/40002522827)
+ist vollständig grün, einschließlich84 geschützter Originale und Z22.
+[Aktuelle bereinigte Zahlen und Quellenpins](belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json)
+haben Vorrang vor den nachfolgenden historischen Arbeitsständen.
+
+Der frische Claim-only-Fall515c8b bestand den zuvor fehlerhaften scoped Endsnapshot:
+Callback genau einmal, Originalseed/Claim mit COMMIT und ACK, echter EntryExit0 und
+beide natürliche EOFs. Own7/Revision1/History6000 sind bestätigt. Er führte keinen
+Motor aus. Sein logisch laufender Claim bleibt verbraucht und darf nicht fortgesetzt
+werden. Peak1.269.202.944B und sechs Speicherereignisse0 sind kein Unit-/Reservenachweis.
+
+Der folgende echte Motorfall7bace scheiterte. Er erreichte neun der16 Kontrollen bis
+send-R und benötigte im Adapter71,729s. Der erste gespeicherte Fehler ist
+`entry-terminal-deadline`; der spätere Hostmappingfehler entstand erst nach dem
+Source-Stopp. Alle zehn aufgezeichneten Sourcewrites endeten mit Exit0, EOFs,
+COMMIT und ACK. Die finale Motorquittung fehlt. Gemeinsamer Peak1.342.267.392B,
+Speicherereignisse0 und vollständige letzte Prozessenden ändern diesen FAIL nicht.
+
+Die neue isolierte Readonly-SQL-Kopie55d0 bestand24 EXPLAINs: acht Komponenten,
+je drei Wiederholungen,23,919s einschließlich Aufbau und Abschluss. Gemeinsamer
+Peak792.047.616B, alle Speicherereignisse0; vier Captures tatsächlich Exit0/zwei EOFs,
+PostgreSQL sauber beendet und finale Gruppe leer. Drei vollständige Quellhashmanifeste
+und9MD blieben gleich, ebenso Katalog, Rollen, RLS, Einstellungen und logischer
+Authzustand PRE/POST. PostgreSQL darf dabei physische Hintbits/Statistik/WAL ändern.
+Geänderte Dateigrößen sind kein tatsächlich gemessenes Schreibvolumen.
+
+Die SQL-Mediane liegen bei84,431ms für Graphprüfung,91,525ms für Own-Projektion,
+176,579ms für Compare bei identischer Root und36,536ms für den Usagebeweis.
+Kontrolllesen benötigte kalt302,547ms, mit frischen passenden Hinweisen119,378ms.
+Diese verschachtelten Komponenten werden nicht addiert und nicht von früheren
+HTTP-/Writezeiten subtrahiert. Ein erfolgreicher echter CAS, Unit60, Langzeitplateau
+oder500MB Reserve ist dadurch nicht bewiesen. Es gab keinen neuen Voll500-Lauf.
+
+Der vorhandene Motortrace grenzt den nächsten Schritt ein: neun Kontrollen kosteten
+insgesamt9,663s. Bei deren Original-Control-Anteil4,005s liegen1,566s im gemessenen
+Graph-Upstream-Intervall; weitere2,439s umfassen Brokerprüfung, Contract-RPC,
+Transport und Clientvalidierung. Dieser Rest ist nicht vollständig vermeidbar.
+Für dessen genaue Aufteilung fehlen wenige Zeitmarker im bestehenden privaten
+Trace. Einen hinreichenden Gewinn durch einen atomaren Lesekontext behaupten wir
+deshalb noch nicht. Ein Graph-only-Umbau wäre kein belegter Abschluss des Zeitfehlers.
+
+Abgeschlossene eigene PG-Kopien af33/2f/515c wurden vollständig archiviert und
+probeweise restauriert, für den bestätigten Empfänger verschlüsselt, im privaten
+Drive gespeichert und vollständig zurückgeladen/byte- und SHA-geprüft. Erst danach
+wurden die redundanten lokalen Kopien entfernt. Effektive Wiederherstellungsindizes,
+Originale und Claim-/Prozessbelege bleiben erhalten; private GPG-Schlüssel wurden
+nicht gelesen oder exportiert. Bei515c waren nach dem ursprünglichen Restore-PASS
+nur30 TEMP-Verzeichnis-atimes verändert: offen dokumentiert, keine Zeitrestaurierung,
+frische vollständige Löschbindung. Quellmetadaten blieben davor exakt gleich.
+
+Zusätzlich wurden ein eigener abgeschlossener WIP-Worktree nach exaktem Bundle-/WIP-
+Restore und verschlüsselter Drive-Rückprüfung sowie153 öffentliche Laufzeitduplikate
+aus20 geschlossenen Fällen kontrolliert entfernt. Alle Gitrefs/Objekte, kanonischen
+öffentlichen Quellen und aktuellen7bace-Runtimekopien bleiben erhalten. Der Versuch
+zur RAW-ReservierungsfreigabeV3 scheiterte vor jedem RAW-Open/Punch; Originale wurden
+nicht geändert. Komponentenadmission10GiB ist wieder tatsächlich erfüllt; die volle
+Plattenadmission und32 frische Startbedingungen bleiben offen. KeineProduction/Merges.
+
 ## Native Belege
 
 Die echte Source-/Readonly-/Bridge-Vorbereitung mit `4f65115a` bestand im Fall

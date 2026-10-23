@@ -4,37 +4,40 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Snapshotfix geprüft; neue native Starts durch Platte blockiert
+## 23.10.: Claim nativ PASS; Einzelunit weiter Zeit-FAIL
 
-13.527 Dateien/84 Originale/V12-POSTRUN erhalten. PR936/23ee9c7a gepusht. NativeCAS/
-Manifestcache/Connector eingebaut; unbekannteWrites terminal. GraphReuse/Capture OFF,
-HistoryReuse/Control ON; Own-Write nurEinzelunit, Voll500-Write unverändert.
-Fünf echte aktuelleQuellenfälle unabhängigPASS,373Pins/Gate99NegativmutationenPASS.
-Fünf veralteteCPU-Pins+Releasemapping geprüft berichtigt, historischeAbnahme gleich.
-Artefakt10/Runtime14PASS; Descriptor18PASS plus vier korrigierteRestfixtures gezieltPASS,
-kein finaler grüner22er Lauf behauptet.
+13.527Dateien/84Originale/V12-POSTRUN erhalten. GeprüfterCode444e496f,
+Branch `codex/v12-unit60-native-integration-20261022`, DraftPR936. CI40002522827
+vollständig grün: dreiJobs einschließlich84Originale/Z22. HistorischeFAILs bleiben.
+NativeCAS/Manifestcache/Connector/Snapshotfix eingebaut; unbekannteWrites terminal.
+GraphReuse/CaptureOFF; Own-Write nurEinzelunit, Voll500-Write unverändert.
 
-FrischerClaim-only2f5448/23ee bleibtFAIL: Callback1/Entry0+2EOF/8,222s, COMMIT/ACK,
-Motor/Provider0; separaterReadonly-Endsnapshot Stage8 ohne erforderliche Scopebindung.
-EinzeiligerSnapshotfix unabhängiggeprüft/eingebaut, neuerPurevertragPASS; Originalguard/
-Rollen/Fristen/CAS gleich. EndjoinOwn7/Revision1/History/Usage/Katalog und nativeFixabnahme
-offen; Claim+DBKEEP/Autoritätverbraucht. Closure sauber/PG0/Shutdownpolicy/Gruppeleer,
-77Samples6Events0/Peak1.240.449.024B, kein500MB-Beweis. Motoraf33 bleibtDeadlineFAIL;
-Unit60/Auth30/Plateau/500MB/Voll500 offen.
+FrischerClaim-only515c8b PASS: Callback1, Originalseed/Claim COMMIT+ACK, Entry0/zweiEOFs,
+Own7/Revision1/History6000 unverändert, scoped Endsnapshot angenommen. Motor0/Units0;
+Claim logischrunning, Autoritätverbraucht/NOREUSE. Peak1.269.202.944B/Events0 keinPufferbeweis.
+EchteEinzelunit7bace aufgleichemCode FAIL: ersterFehler `entry-terminal-deadline`;
+Hostmappingfehler erstnachAbbruch. Neun/16Kontrollen bis send-R, Adapter71,729s,
+keineEndquittung. ZehnSourcewrites Exit0/EOF/COMMIT/ACK. Peak1.342.267.392B,
+Events0/letzteExits erfasst; keinOOM und keinUnit60/Auth30/500MB-/500er-Nachweis.
 
-CI97662 historischFAIL;23ee14/84/19PASS. Neuer c0-Run40000572324 stoppt Step5/
-Ownerzugang;84/Z22SKIPPED. Zwei MergeSHAs haben gleicheParents+Tree. Autozugang
-an validierteEventbase/Head gebunden, Manualschutz gleich;33ChecksPASS, fehlendes
-öffentlichesCipher aus echtemGitblob restauriert/gezieltPASS. NeuerCI nachPush offen.
-[Befund](betrieb/belege/ci-owner-immutable-inputs-20261023/ROOT_INTEGRATION_RESULT.SAFE.json). Bereits33Archive/SQLoverlay/fünfPGscratch/
-zwölfHüllen kontrolliertgesichert/bereinigt. Originale/QuellDBs/af33/Claimkopie/Außenbelege/
-Backups/Images/Volumes/fremdeArbeitKEEP; V11Basis für17Deltaarchive nötig. Kein weiterer
-sicherer413MB-Kandidat. Frei rund10,294GB;10GiB-Komponentenadmission fehlen443MB, Voll500-
-Admission15.179.779.720B fehlen4,89GB. NativeStartsblockiert; Original-RAW-Änderung auto-
-matischabgelehnt. Danach frischeCode-/Root-/Einmalbindung; Voll500 erst32frischeBedingungen+
-konkretesneuesGO. KeineProduction/Merge.
-[Befund](betrieb/belege/native-claim-only-20261023/ROOT_ACTUAL_AND_FIX.SAFE.json),
-[Haltepunkt/Belege](betrieb/helmut-v12-native-unit-integration-20261022.md).
+GezielteReadonly-SQL-Kopie55d0 PASS:24EXPLAINs/achtKomponenten/je3,23,919s,
+Peak792.047.616B/Events0; vierCaptures Exit0/zweiEOFs, PGsauber0/Gruppeleer.
+DreiQuellhashmanifeste/9MD und Katalog/RLS/Einstellungen PRE=POST. Komponenten
+überlappen; same-root Compare istkeinCAS-Vergleich. NeunKontrollen gesamt9,663s;
+hinreichenderGewinn durch atomarenLesekontext nochunbewiesen.
+
+EigenePG-Kopien af33/2f/515c nachVollarchiv/Restore, verschlüsseltemDrive-Upload und
+vollständigemByte-/SHA-Rückdownload kontrolliertausgelagert; Claims/Belege erhalten.
+Privatkeys nichtgelesen/exportiert. AlterWIP-Worktree nachBundle/exaktemRestore/Drive-
+Rückprüfung entfernt, Gitrefs/ObjekteKEEP.153öffentlicheDuplikate/20Fälle entfernt:
+442.519.552B Nettogewinn, kanonischeQuellenKEEP. Original-RAW-V3 scheiterte vorOpen/
+Punch; Originaleunverändert.10GiB-Komponentenadmission tatsächlichwiedererfüllt.
+[FrischeZahlen/Beweisgrenzen](betrieb/belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json).
+
+Offen: Zeit,16Kontrollen/Endquittung/Qualität,500MB/Plateau,Voll500-Platte,32frische
+Startbedingungen. NächsterengerSchritt: fehlendeBroker-/Contract-/Clientzeitgrenzen
+imprivatenTrace messen, dannbelegtenEngpass ändern. KeineallgemeineNeuanalyse.
+Voll500 nurmitneuemkonkretemGO; keineProduction/Merges. [Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
