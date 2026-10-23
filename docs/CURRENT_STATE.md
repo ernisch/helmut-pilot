@@ -4,32 +4,35 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Echter Einzelfall FAIL; Zeitfehler und 500MB-Reserve offen
+## 23.10.: CI vollständig grün; Einzelunit-Zeit und 500MB-Reserve offen
 
 13.527 Dateien hashverifiziert,84 Originale geschützt; V12-POSTRUN erhalten.
 PR936 bindet aktuellen Ausführer/Connector, native CAS und Manifestcache;
 unbekannte Schreibausgänge terminal ohne Retry. GraphReuse/Capture OFF,
 HistoryReuse/ControlRead ON. Originale und frühere FAIL-Belege erhalten.
 
-Einzelfall6073319e: Controller-Entry-Deadline, keine qualifizierte Endquittung.
-Peak1.340.100.608B, sechs Events0, letzter Prozess erfasst/Gruppe leer; kein
-Unit60-/Auth30-/Reservebeweis. 130 gültige anon/file/kernel-Proben, kein Plateau.
-Zehn bestätigte Schreibphasen/Psql ohne Seed7,217s; Kontrollwartezeiten unbekannt.
-Begrenzte private Await-Zeitmarken ergänzt, Fristen/CAS/16 Kontrollen unverändert;
-drei neue Timinggruppen/27 betroffene Guards PASS, unabhängig geprüft.
+Neuester Einzelfall2797ac2a bleibt FAIL: Controller-Entry-Deadline, Parent Exit1/
+zwei natürliche EOFs. Peak1.343.369.216B, sechs Events0, Gruppe leer; kein Unit60-/
+Auth30-/Reservebeweis.125 gültige anon/file/kernel-Proben, kein belastbares Plateau.
+Neue Zeitmarken: letzter CAS vor R endet55,822s nach Scopebeginn; R braucht nominal
+19,9s, weitere Abschlussarbeit folgt. Sechs State-CAS12,491s, neun Original-Control-
+Reads4,778s; verschachtelte Zeiten nicht addieren. Roottrace-Rettung jetzt belegt.
 
 Hostcache mit frischer Daemonbindung:415 gleiche IDs, bisher2,004s, neu kalt2,040s/
 warm0,581s; kein Motorzeit-/RAM-Beweis. Trace vor Cleanup pumpen; fehlend UNKNOWN.
-CI39937538074 bleibt FAIL Z22/9.1; Originalkanal PASS. Eigene PG17.6-Diagnose PASS.
-Neuer strenger Validator prüft jeden Indexplan gegen echten Katalog, verbietet
-SeqScan, ändert keine Zeitgrenze.16 Puregruppen/Review PASS; Live-Pflicht-CI offen.
-Historische CI-Ursache unvollständig; App403 separat.
+CI39958713128 auf2cfd657f vollständig SUCCESS:84 Originale, Offline, Browser sowie
+strenge Z22-Pure-/Liveprüfung. Zwei veraltete Diagnose-Testannahmen eng korrigiert;
+Produkt-/Sicherheitsregeln unverändert. Alte FAILs bleiben FAIL. App403 separat.
+Struktureller Own-Schreibpfad4c01430c/adbcbc70 integriert; Alias-/Uhrschutz korrigiert,
+unabhängiges Vollreview und drei neue Regressionen PASS. Neue Code-CI steht aus.
+Native-Schreibweg gilt nur Einzelunit;
+geteilter Control-Read verbessert auch Voll500, kein Full500-Schreibgewinn behauptet.
 
-Elf Archive und16 von22 weiteren Kandidaten verschlüsselt im bestätigten Drive-
-Kanal zurückgeladen/hashgeprüft, lokale Redundanzen entfernt. Deltabasis KEEP,
-sechs verbleiben. Nur eigene entbehrliche CI-Hülle entfernt; DBvolume/Image/Logs
-KEEP. Netto911.552.512B; danach11.542.228.992B frei, Einzeladmission10GiB erfüllt,
-Voll50015.179.779.720B nicht. Original-RAW-Allokationsänderung automatisch abgelehnt,
+Alle33 qualifizierten Archive verschlüsselt zurückgeladen/hashgeprüft;2.792.718.336B
+vorherige Archivalokation entfernt. Deltabasis KEEP, kein externes Vollbackup behauptet.
+Eigene CI-Hülle/3 fertige CI-Worktrees entfernt; DBvolume/Image/Logs/Gitrefs KEEP.
+Zuletzt11.486.609.408B frei: Einzeladmission10GiB erfüllt, Voll50015.179.779.720B
+nicht. Original-RAW-Allokationsänderung automatisch abgelehnt,
 unverändert; ausdrückliche Einzelentscheidung angefragt. Sechs authentische Quell-
 DBs für Voll500 nötig; Tiny-Anbindung nur vorbereitet. Alle32 Bedingungen frisch,
 alte GOs verbraucht. Kein Voll500/Production. [Belege](betrieb/helmut-v12-native-unit-integration-20261022.md).

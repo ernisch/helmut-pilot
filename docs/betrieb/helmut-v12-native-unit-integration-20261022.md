@@ -1295,3 +1295,57 @@ Alle32 frischen Startbedingungen, Tages-/Fall-/Finanzbindung und neues konkretes
 bleiben Pflicht. Kein Voll500-Start, Production, Merge oder Budget-/Reserveänderung.
 
 [Bereinigter aktueller Beleg](belege/v12-native-unit-integration-20261022/SPRINT_PROGRESS_20261023.SAFE.json).
+
+## 23.10., 13:41 UTC: Pflicht-CI grün, echte Zeitursache eingegrenzt
+
+[CI39958713128](https://github.com/ernisch/helmut-pilot/actions/runs/39958713128)
+auf `2cfd657fdf3b2877db4963334f8fd353898c3c08` ist tatsächlich vollständig
+SUCCESS. Alle drei Jobs bestanden, einschließlich84 geschützter Originale,
+Offline-/Bereichssuiten, Browser/Mobile sowie neuer Z22-Pure- und Liveprüfung
+§1–§11. Live endete13:40:22UTC, Gesamtstatus13:40:37UTC. Die früheren CI-FAILs
+bleiben erhalten. Zwei veraltete Diagnose-Testannahmen wurden eng korrigiert:
+Anzahl der Z22-Schritte und Rollenidentität des tatsächlich registrierten Entry-
+Childs statt pauschal CLOSE_000. Keine Produkt- oder Sicherheitsregel gelockert.
+Dieser CI-Erfolg ist kein nativer Zeit-/RAM- oder vollständiger500er Nachweis.
+
+Der inzwischen tatsächlich gemessene Einzelfall2797ac2a auf40a8ce7b bleibt FAIL.
+Parentwait Exit1, zwei natürliche EOFs,142,144s äußere Erfassung ohne äußeren
+Timeout/Signal. Controller-Entry-Terminaldeadline ist primär; spätere Stop-/Host-
+Fehler sind gesonderte Folgen. Quelle unverändert, letzte Prozesse erfasst,
+Gruppe leer. Peak1.343.369.216B und alle sechs Events0.125 gültige Komponenten-
+Proben; beim größten aktuellen Sample1.312.976.896B folgten anon619.130.880/
+file654.630.912/kernel37.638.144B. Keine atomare Peakzerlegung, kein belastbares
+Plateau und wegen fehlenden Erfolgs kein Nachweis des500MB-Puffers.
+
+Die neue Diagnose lieferte142 gültige Zeitmarken mit70 abgeschlossenen Paaren.
+Der letzte State-CAS vor R endete55,822250750s nach Scopebeginn. Für die nominell
+19,9s dauernde R-Antwort und anschließende Prüf-/Schreibarbeit reichen die übrigen
+4,178s nicht. Die sechs State-CAS-Awaits beanspruchten12,490566213s, neun Original-
+Control-Reads4,778378458s,14 Runtimeprüfungen3,939376280s und Authority3,453332846s.
+Das sind gemessene Wartefenster, keine CPU-Zuordnung. Verschachtelte Broker-/SQL-
+Zeiten werden nicht hinzuaddiert. Der vorgezogene Roottrace-Reader hatte nun
+tatsächlich stdin, Exit0/zwei EOFs und neun echte Control200, jedoch keine End-
+quittung; damit ist die Diagnose-Rettung belegt, nicht der Motorerfolg.
+
+Ein separater struktureller Umbau vermeidet vollständige logische Authkopien bei
+begrenzten Own7-Änderungen und unveränderten Usage-Writes; Originalgraph, CAS,
+Historie und bestätigte ACKs bleiben gebunden. Zehn gezielte reine Suiten bestanden.
+Vollständiges unabhängiges Review fand zwei enge Korrekturen: Aliasfreiheit der
+Control-Order-Metadaten und zusätzlich monotone30s-Lebensdauer privater Handles.
+Beide behoben, drei neue gezielte Regressiongruppen PASS, abschließendes Review PASS.
+Als4c01430c/adbcbc70 integriert; neue Code-CI und native Qualifikation stehen aus.
+Der neue direkte Schreibpfad gilt
+ausschließlich für die isolierte Native-Einzelunit; geteilter Control-Read ist auch
+im vollständigen500er Pfad erreichbar. Kein Full500-Schreibgewinn daraus abgeleitet.
+
+Alle33 qualifizierten Archive sind vollständig verschlüsselt zurückgeladen und
+hashgeprüft. Exakt gelistete lokale Redundanzen mit insgesamt2.792.718.336B vorheriger
+Allokation wurden entfernt. Die Deltabasis bleibt notwendig; kein selbständiges
+externes Vollbackup dieser Basis behauptet. Drei weitere abgeschlossene eigene
+CI-Worktrees wurden nach vollständiger Git-/Originalschutzprüfung regulär entfernt;
+alle Branches, Commitobjekte, aktiven Arbeitsstände und benötigten DBs bleiben.
+Dabei beobachtet239.321.088B netto zusätzlich frei. Zuletzt11.486.609.408B verfügbar:
+Einzeladmission10GiB erfüllt, vollständige Admission15.179.779.720B weiterhin offen.
+Original-RAWs unverändert; ausstehende ausdrückliche Allokationsfreigabe nicht ersetzt.
+Sechs authentische Quelldatenbanken,32 frische Startbedingungen und ein neues
+konkretes500er GO bleiben erforderlich. Kein vollständiger Lauf gestartet.
