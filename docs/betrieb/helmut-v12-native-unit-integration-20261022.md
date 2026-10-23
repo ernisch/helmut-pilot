@@ -1448,3 +1448,50 @@ unveränderte Einzeladmission10GiB erfüllt; Voll50015.179.779.720B nicht erfül
 CI39968408053 aufcad305f9 besteht öffentliche Bindung, Browser und84 Originale,
 scheitert weiter in Schritt19; weitere DB-/Z22-Schritte übersprungen. Fehlerdetails
 dieses Remote-Laufs nicht gelesen; voriger exakter Sourcegate-Befund separat erhalten.
+
+## 23.10., 15:36 UTC: Vier echte SQL-Komponenten bestanden
+
+Der erste Komponentenversuch endete vor jeder SQL-Messung mit FAIL: PostgreSQL
+entfernte beim Start eigene `pg_internal.init`-Caches zwischen Verzeichnislauf und
+Dateimetadatenlesung. Keine Motor-/Provideraufrufe oder vier EXPLAINs. Die neue
+Runnerfassung toleriert ausschließlich ENOENT dieser drei exakt gebundenen Cache-
+pfade in ihrer eigenen Kopie; unbekannte Dateien, Quellen und Symlinks bleiben
+Fehler. Zwölf erzwungene Racefälle und vier Negativfälle PASS. Bekannter Container-
+Exit1 wird separat als bekannt und weiterhin fehlgeschlagen behandelt. V1 bleibt FAIL.
+
+V2 `ddfad507b23b46b5b69242e5138f546f` auf unverändertem208e02ab bestand nach
+21,537s: vier echte read-only EXPLAIN ANALYZE, alle vier Prozesse Exit0/zwei EOFs,
+PG Exit0/sauber, alle Kinder beendet, finale Gruppe leer und letzte Exits erfasst.
+Alle sechs Speicherereignisse0; Katalog/Rollen/RLS/Einstellungen PRE=POST,
+drei vollständige Quellmanifeste identisch. Unabhängige Actualprüfung PASS.
+
+| Komponente | Tatsächliche SQL-Ausführungszeit |
+| --- | ---: |
+| Graphprüfung |145,909ms |
+| Graphvertrag |168,983ms |
+| Own-Projektion |111,166ms |
+| Usage-Historienbeweis |41,653ms |
+
+Der gesamte Messprozess einschließlich Start/Transport brauchte0,483144836s.
+Komponenten überlappen logisch; feste Reihenfolge wärmt Cache. Keine getrennten
+Spitzen/Summen als Motorverbrauch oder exklusive CPU-/Phasenanteile ausweisen.
+703.197.184B gemeinsamer Peak gilt ausschließlich für diesen Komponentenfall;
+kein Unit60-/Auth30-/Plateau-/500MB-/Voll500-Nachweis. Write-DDL, tatsächlicher
+CAS/Trigger/Receipt, COMMIT/WAL und Service-Ledger wurden hier nicht gemessen.
+Diese Arbeit im tatsächlichen Transaktionspfad ist der nächste gezielte Messschnitt.
+
+Die fehlgeschlagene eigene V1-Kopie wurde erst nach vollständigem Vergleich,
+byteverifiziertem Vierdatei-Endoverlay und gebundenem Rückweg kontrolliert entfernt:
+1747 Dateien/30 leere Verzeichnisse, alle Außenbelege und Quelle af33 KEEP,
+Rootprozess Exit0. Beobachteter Nettogewinn373.657.600B. Nach V2 verblieben
+10.437.079.040B; für weitere Komponenten ist zuerst erneute sichere Kopienbereinigung
+nötig. Zwei weitere saubere eigene Worktrees regulär entfernt, alle Gitrefs/Objekte
+erhalten; fremde vier uncommittete Dateien strikt KEEP.
+
+Aktuelle CI39972723984 für208e02ab: geschützter Zugang und84 Originale SUCCESS,
+Schritt19 Ressourcen-/Sourcegate FAIL. Öffentlich nur Exit1, aktuelle private
+Assertion nicht gelesen; bekannter unqualifizierter U/Parts-Gate bytegleich.
+Browser während Installation abgebrochen, Z22 übersprungen. GitHub meldet Vercel
+SUCCESS. Aktuelle gepaarte Sourcequalifikation ist separat vorbereitet und unabhängig
+statisch geprüft; noch keine ihrer fünf frischen nativen Fälle ausgeführt. Historische
+Belege bleiben unverändert; keine bloße Pinänderung als CI-Reparatur.

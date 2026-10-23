@@ -6,33 +6,36 @@ nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 
 ## 23.10.: Neuer Code nativ weiter FAIL; Quellqualifikation und500MB offen
 
-13.527 Dateien hashverifiziert,84 Originale/V12-POSTRUN erhalten. PR936 bindet
-Ausführer/Connector, native CAS/Manifestcache; unbekannte Writes terminal ohne Retry.
-GraphReuse/Capture OFF, HistoryReuse/ControlRead ON. Frühere FAIL-Belege erhalten.
+13.527 Dateien geprüft,84 Originale/V12-POSTRUN erhalten. PR936: native CAS,
+Manifestcache/Connector; unbekannte Writes terminal. GraphReuse/Capture OFF,
+HistoryReuse/ControlRead ON. Frühere FAIL-Belege erhalten.
 
 Neuester Einzelfallaf33f16d aufcad305f9 bleibt FAIL: Controller-Entry-Deadline,
 Parent Exit1/zwei EOFs. Peak1.344.360.448B, sechs Events0, Gruppe leer; kein Unit60-/
 Auth30-/Reservebeweis.124 gültige Komponentenpaare, kein belastbares Plateau.
-Sechs State-CAS11,918s: darin6,370s nativer Write-Endpoint,2,792s Reader-Promise,
-0,766s weiterer Ownread,0,222s weiterer Write,0,469s sonstiger Own-Writer und1,299s
-außerhalb. Disjunkt, keine CPU-Zuordnung. Endpoint umfasst Transport/DB/Antwort.
-1530 Runtimepins gegen1a96 gleich. Nächster Schritt: echte SQL-Zuordnung an eigener
-kalter Kopie. Kopienumbau bisher ohne wesentlichen Zeit-/RAMgewinn; keine weitere
-Optimierung auf Verdacht.
+Sechs State-CAS11,918s: darin6,370s Write-Endpoint und2,792s Reader-Promise.
+Disjunkte Restzeiten im Beleg; Endpoint umfasst Transport/DB/Antwort, keine CPU-Zuordnung.
+1530 Runtimepins gegen1a96 gleich. Kopienumbau ohne wesentlichen Zeit-/RAMgewinn.
+Vier native Readonly-EXPLAINs an eigener af33-Kopie jetzt PASS:146/169/111/42ms,
+gesamter Messprozess0,483s; PG0/zwei EOFs, Katalog/Quelle gleich, Gruppe leer.
+Peak703.197.184B gilt nur für diese Komponenten, kein Unit60-/Reservebeweis.
+Erster Versuch vorSQL am Cachedatei-Race FAIL; korrigierter Zweitversuch und16
+Race-/Negativregressionen PASS. Nächster Schritt: Schreibtransaktion/Commit/Ledger.
 
 Hostcache kalt ohne Gewinn, warm schneller; kein Motorzeit-/RAM-Beweis.
-CI39958713128 auf2cfd657f vollständig SUCCESS. Neue89er Artefaktpins7cf21c32:
-10 betroffene Checks PASS. CI39968408053 besteht Bindung/Browser/84Pins, Schritt19
-weiter FAIL. Bekannter Sourcegate-Blocker: neue U/Parts noch nicht
-nativ komponentenqualifiziert; alte Belege nicht umpinnen. Zehn gezielte Pure-Suiten,
-unabhängiges Vollreview/drei Schutzregressionen PASS. Neuer Own-Schreibpfad nur
-Native-Einzelunit; geteilter Control-Read auch Voll500. Dessen Write unverändert.
+CI39958713128 auf2cfd657f vollständig SUCCESS. Neue89er Pins:10 Checks PASS.
+Aktuell208e/CI39972723984: geschützter Zugang und84 Originale SUCCESS,
+Schritt19 FAIL; Browser abgebrochen, Z22 übersprungen, GitHub-Vercel SUCCESS.
+Sourcegate-Blocker bytegleich: neue U/Parts unqualifiziert; private aktuelle Assertion
+nicht gelesen. Keine alten Belege umpinnen. Zehn Pure-Suiten/Vollreview/drei Schutz-
+regressionen PASS. Own-Write nur Einzelunit; Control-Read geteilt, Voll500-Write unverändert.
 
-Alle33 qualifizierten Archive verschlüsselt zurückgeladen/hashgeprüft;2.792.718.336B
-vorherige Archivalokation entfernt. Deltabasis KEEP, kein externes Vollbackup behauptet.
-Eigene CI-Hülle/fertige öffentliche Worktrees entfernt; DBvolume/Image/Logs/Gitrefs KEEP.
-Nach jüngster Einzelunit und zwei WT-Bereinigungen10.803.478.528B frei:
-Einzeladmission10GiB wieder erfüllt; Voll50015.179.779.720B weiter offen.
+Alle33 Archive verschlüsselt rückgeladen/hashgeprüft;2.792.718.336B Allokation entfernt.
+Deltabasis KEEP, kein externes Vollbackup. Eigene CI-Hülle/fertige Worktrees entfernt;
+DBvolume/Image/Logs/Gitrefs und fremder schmutziger Worktree KEEP.
+Erste SQL-Diagnosekopie nach Vierdatei-Sicherung entfernt:373.657.600B netto frei;
+danach10.820.157.440B, nach zweiter SQL-Kopie10.437.079.040B frei.
+Einzeladmission10GiB benötigt erneute sichere Kopienbereinigung; Voll500 offen.
 Original-RAW-Allokationsänderung automatisch abgelehnt; Einzelentscheidung offen.
 Sechs authentische Quell-DBs für Voll500 nötig; Tiny-Anbindung nur vorbereitet.
 Alle32 Bedingungen frisch, alte GOs verbraucht. Kein Voll500/Production.
@@ -287,7 +290,6 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-84erCI-Kanal repariert. Physische Kapazität und echte Live-Originalbindung klären;
-frischen Einzelunit-Vertrag an aktuellen Code binden. Alte Index499-/Voll500-
-Rechte bleiben verbraucht. Unit60/500MB/32Startgruppen offen; kein Voll500-GO.
-Hier fortsetzen, Sehr hoch wegen CAS/ACK/Originalschutz.
+84er Originalkanal PASS, aktueller Sourcegate FAIL. Gepaarte U/Parts-Qualifikation
+und tatsächliche Schreibtransaktionszeit klären. Unit60/500MB/32Startgruppen und
+Volladmission offen; alte GOs verbraucht, kein Voll500. Hier fortsetzen, Sehr hoch.
