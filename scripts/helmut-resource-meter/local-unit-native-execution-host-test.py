@@ -761,6 +761,156 @@ class PureHost(unittest.TestCase):
         self.assertIn('pin', first[0]); self.assertEqual(again[0]['captureError']['type'], 'FileExistsError')
         self.assertEqual(path.read_bytes(), before); self.assertIsNotNone(self.host.failure)
 
+    def diagnostic_trace_fixture(self, raw, mutation=None, request=b'{}'):
+        names = ('st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_gid', 'st_nlink', 'st_size', 'st_mtime_ns', 'st_ctime_ns')
+        original = dict(zip(names, (2, 90, 0o100600, 0, 0, 1, len(raw), 123, 456)))
+        data, output, calls = io.BytesIO(raw), io.BytesIO(), []
+        def metadata(named=False):
+            row = dict(original)
+            changes = {'uid': ('st_uid', 1000), 'mode': ('st_mode', 0o100644), 'nlink': ('st_nlink', 2),
+                       'directory': ('st_mode', 0o040600)}
+            if mutation in changes:
+                key, value = changes[mutation]; row[key] = value
+            if data.tell() and mutation == ('named-drift' if named else 'fd-drift'):
+                row['st_ctime_ns'] += 1
+            return types.SimpleNamespace(**row)
+        def opened(path, flags):
+            calls.append((path, flags))
+            self.assertEqual(path, M.TRACE)
+            self.assertEqual(flags, M.os.O_RDONLY | M.os.O_NOFOLLOW | M.os.O_NONBLOCK)
+            if mutation in ('symlink', 'missing'):
+                raise OSError(40 if mutation == 'symlink' else 2, 'fixture-only')
+            return 17
+        fake_os = types.SimpleNamespace(open=opened, close=lambda fd: calls.append(('close', fd)),
+            read=lambda fd, size: data.read(size), fstat=lambda fd: metadata(), lstat=lambda path: metadata(True),
+            O_RDONLY=M.os.O_RDONLY, O_NOFOLLOW=M.os.O_NOFOLLOW, O_NONBLOCK=M.os.O_NONBLOCK,
+            getuid=lambda: 0, geteuid=lambda: 0, getgid=lambda: 0, getegid=lambda: 0,
+            path=types.SimpleNamespace(realpath=lambda path: '/not-canonical' if mutation == 'canonical' else path))
+        fake_sys = types.SimpleNamespace(stdin=types.SimpleNamespace(buffer=io.BytesIO(request)),
+                                        stdout=types.SimpleNamespace(buffer=output))
+        def imports(name, *args, **kwargs):
+            if name == 'os': return fake_os
+            if name == 'sys': return fake_sys
+            self.assertIn(name, ('json', 'stat', 'hashlib', 'base64'))
+            return builtins.__import__(name, *args, **kwargs)
+        scope = {'__name__': 'trace_fixture_only', '__builtins__': {**vars(builtins), '__import__': imports}}
+        return lambda: exec(compile(M.ROOT_DIAGNOSTIC_TRACE_READ, '<fixed-trace-fixture>', 'exec'), scope), output, calls
+
+    def test_diagnostic_trace_preserves_header_partial_and_cap_bytes_without_parsing(self):
+        for raw in (b'{"header":true}\n', b'{"header":true}\n{"unfinished', b'', b'x' * 65536):
+            with self.subTest(bytes=len(raw)):
+                run, output, calls = self.diagnostic_trace_fixture(raw); run()
+                value = M.unique(output.getvalue())
+                self.assertEqual(set(value), {'schema', 'pin', 'identity', 'contentsBase64'})
+                self.assertEqual(value['pin'], {'path': M.TRACE, 'bytes': len(raw), 'sha256': M.sha(raw)})
+                self.assertEqual(base64.b64decode(value['contentsBase64']), raw)
+                self.assertEqual(len(value['identity']), 9)
+                self.assertNotIn('complete', value); self.assertNotIn('footer', value)
+                self.assertEqual(calls[-1], ('close', 17)); self.assertLess(len(output.getvalue()), M.CAP)
+
+    def test_diagnostic_trace_rejects_cap_symlink_identity_and_free_path_without_retry(self):
+        for mutation in ('uid', 'mode', 'nlink', 'directory', 'named-drift', 'fd-drift', 'canonical', 'symlink', 'missing'):
+            with self.subTest(mutation=mutation):
+                run, output, calls = self.diagnostic_trace_fixture(b'partial', mutation)
+                with self.assertRaises((AssertionError, OSError)): run()
+                self.assertEqual(output.getvalue(), b'')
+                self.assertLessEqual(sum(path == M.TRACE for path, _ in calls), 1)
+        run, output, _ = self.diagnostic_trace_fixture(b'x' * 65537)
+        with self.assertRaises(AssertionError): run()
+        self.assertEqual(output.getvalue(), b'')
+        run, output, calls = self.diagnostic_trace_fixture(b'partial', request=b'{"path":"/other"}')
+        with self.assertRaises(AssertionError): run()
+        self.assertEqual(calls, []); self.assertEqual(output.getvalue(), b'')
+
+    def trace_close_fixture(self, exit_code=0, no_eof=False):
+        entry = self.entry_capture_fixture(exit_code=137); self.host.state = 'ENTRY'
+        self.host.failure = 'sealed-native-host-failure'; events = []
+        raw = b'{"privateRootDiagnostic":true}\n'
+        with patch.object(M.subprocess, 'Popen', FakePopen), patch.object(M.selectors, 'DefaultSelector', FakeSelector), \
+             patch.object(M.os, 'set_blocking', lambda *args: None):
+            reader = M._PipeChild(['fixed-diagnostic-read'], M.encode({}), lifetime=8)
+        reader.child.returncode = exit_code
+        chunks = {10: [raw, b''], 11: [b'']}
+        def read(fd, size):
+            if no_eof: raise BlockingIOError()
+            return chunks[fd].pop(0)
+        actual_write = M.os.write
+        def write(fd, raw):
+            return len(raw) if fd == 12 else actual_write(fd, raw)
+        def root(code, value):
+            self.assertEqual(code, M.ROOT_DIAGNOSTIC_TRACE_READ); self.assertEqual(value, {})
+            events.append('trace-start'); self.host.children.append(reader); return reader
+        def docker(argv, **kwargs):
+            if argv[0] == 'inspect': return types.SimpleNamespace(stdout=json.dumps([{'State': {'Running': True}}]))
+            self.assertEqual(argv, ['stop', '--time', '2', self.host.active_client])
+            events.append('client-stop'); return types.SimpleNamespace(stdout='')
+        self.host._root = root; self.host._docker = docker
+        return reader, read, write, events
+
+    def test_diagnostic_trace_starts_before_cleanup_and_captures_real_pipe_exit_eofs_once(self):
+        reader, read, write, events = self.trace_close_fixture()
+        self.host.failure = None  # External Controller abort, not a Host tick error.
+        with patch.object(M.os, 'read', read), patch.object(M.os, 'write', write):
+            close = self.host.close()
+        self.assertEqual(events, ['trace-start', 'client-stop'])
+        self.assertIs(self.host.failure_trace_read, reader); self.assertTrue(self.host.failure_trace_attempted)
+        self.assertEqual(close['children'][-1], {'exitCode': 0, 'stdoutNaturalEOF': True, 'stderrNaturalEOF': True, 'registeredHostPID': 75})
+        value = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_001.PRIVATE.json').read_bytes())
+        self.assertEqual(value['localExitCode'], 0); self.assertTrue(value['stdoutNaturalEOF'] and value['stderrNaturalEOF'])
+        self.assertEqual(base64.b64decode(value['stdoutBase64']), b'{"privateRootDiagnostic":true}\n')
+        self.assertFalse(value['remoteExitConfirmed']); self.assertEqual(value['inputWrittenBytes'], value['inputTotalBytes'])
+        self.assertFalse(close['clean']); self.assertNotIn('Base64', str(close)); self.assertNotIn('privateRootDiagnostic', str(close))
+        self.assertIs(self.host.close(), close); self.assertEqual(events, ['trace-start', 'client-stop'])
+
+    def test_diagnostic_trace_nonzero_or_missing_eof_remains_failed_and_private(self):
+        reader, read, write, events = self.trace_close_fixture(exit_code=1)
+        with patch.object(M.os, 'read', read), patch.object(M.os, 'write', write):
+            close = self.host.close()
+        self.assertFalse(close['clean']); self.assertEqual(close['children'][-1]['exitCode'], 1)
+        value = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_001.PRIVATE.json').read_bytes())
+        self.assertEqual(value['localExitCode'], 1); self.assertTrue(value['stdoutNaturalEOF'] and value['stderrNaturalEOF'])
+        # New independent fixture: a returned local exit cannot manufacture EOF.
+        for path in self.case.glob('EXECUTION_HOST_CHILD_FAILURE_CLOSE_*.PRIVATE.json'): path.unlink()
+        self.host.closed = False; self.host.failure_trace_attempted = False; self.host.failure_trace_read = None
+        reader, read, write, events = self.trace_close_fixture(no_eof=True)
+        clock = iter(range(1000))
+        with patch.object(M.os, 'read', read), patch.object(M.os, 'write', write), \
+             patch.object(M.time, 'monotonic', lambda: next(clock)), patch.object(M.time, 'sleep', lambda _: None):
+            close = self.host.close()
+        self.assertFalse(close['clean']); self.assertEqual(len(close['children']), 1)
+        value = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_001.PRIVATE.json').read_bytes())
+        self.assertEqual(value['localExitCode'], 0); self.assertFalse(value['stdoutNaturalEOF'] or value['stderrNaturalEOF'])
+        self.assertFalse(value['remoteExitConfirmed']); self.assertEqual(events, ['trace-start', 'client-stop'])
+
+    def test_diagnostic_trace_start_failure_is_private_once_and_never_prevents_cleanup(self):
+        entry = self.entry_capture_fixture(exit_code=137); self.host.state = 'ENTRY'; events = []
+        error = OSError(2, 'private-fixture-message')
+        error.nativePipePrivateCapture = {'localExitCode': None, 'stdoutNaturalEOF': False, 'stderrNaturalEOF': False}
+        def root(*args): events.append('trace-start'); raise error
+        self.host._root = root
+        self.host._docker = lambda *args, **kwargs: types.SimpleNamespace(stdout=json.dumps([{'State': {'Running': False}}]))
+        close = self.host.close()
+        self.assertFalse(close['clean']); self.assertEqual(events, ['trace-start'])
+        private = self.case / 'EXECUTION_HOST_TRACE_READ_UNAVAILABLE.PRIVATE.json'
+        value = M.unique(private.read_bytes()); self.assertEqual(value['errno'], 2)
+        self.assertEqual(set(value), {'schema', 'exceptionType', 'errno'})
+        self.assertNotIn('private-fixture-message', private.read_text()); self.assertEqual(private.stat().st_mode & 0o777, 0o600)
+        attached = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_000.PRIVATE.json').read_bytes())
+        self.assertIsNone(attached['localExitCode']); self.assertFalse(attached['stdoutNaturalEOF'] or attached['stderrNaturalEOF'])
+        self.assertIs(self.host.close(), close); self.assertEqual(events, ['trace-start'])
+
+    def test_diagnostic_trace_is_not_started_for_other_clients_clean_close_or_unknown_source(self):
+        self.host._root = lambda *args: self.fail('unexpected root diagnostic read')
+        self.host._docker = lambda *args, **kwargs: types.SimpleNamespace(stdout=json.dumps([{'State': {'Running': False}}]))
+        for mode, state, source in (('qualifier', 'ENTRY', 'd' * 64), ('entry', 'STOPPED', 'd' * 64),
+                                    ('entry', 'ENTRY', '9' * 64), ('entry', 'ENTRY', None), ('entry', 'ENTRY', 'malformed')):
+            with self.subTest(mode=mode, state=state):
+                self.host.closed = False; self.host.failure = None; self.host.state = state; self.host.source_id = source
+                self.entry_capture_fixture(exit_code=0); self.host.clients[self.host.active_client]['mode'] = mode
+                self.host.close(); self.assertFalse(self.host.failure_trace_attempted)
+        self.host.closed = False; self.host.state = 'ENTRY'; self.host.source_id = 'd' * 64; self.host.clients = {}
+        self.host.close(); self.assertFalse(self.host.failure_trace_attempted)
+
     def test_source_exit_after_confirmed_owner_stop_is_not_live_failure(self):
         self.host.state = 'STOPPED'; self.host.last_observation = {'observedAtUTC': '2026-10-22T00:00:00.000Z'}
         self.host._observe = lambda: M.need(False, 'source-already-exited')

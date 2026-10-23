@@ -1173,6 +1173,31 @@ try:
 finally:os.close(f)
 '''
 
+ROOT_DIAGNOSTIC_TRACE_READ = r'''
+import os,sys,json,stat,hashlib,base64
+assert sys.stdin.buffer.read(3)==b'{}'
+p='/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl'
+assert os.getuid()==os.geteuid()==os.getgid()==os.getegid()==0 and os.path.realpath(p)==p
+f=os.open(p,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+try:
+ a=os.fstat(f);assert stat.S_ISREG(a.st_mode) and a.st_uid==a.st_gid==0 and a.st_nlink==1
+ assert stat.S_IMODE(a.st_mode)==0o600 and 0<=a.st_size<=65536
+ names=('st_dev','st_ino','st_mode','st_uid','st_gid','st_nlink','st_size','st_mtime_ns','st_ctime_ns')
+ ident=lambda s:[getattr(s,k) for k in names]
+ assert ident(a)==ident(os.lstat(p))
+ b=b''
+ while True:
+  x=os.read(f,min(16384,65537-len(b)))
+  if not x:break
+  b+=x;assert len(b)<=65536
+ assert ident(a)==ident(os.fstat(f))==ident(os.lstat(p)) and len(b)==a.st_size and os.path.realpath(p)==p
+ out={'schema':'helmut-local-unit-native-root-trace-bytes-private/1',
+      'pin':{'path':p,'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()},
+      'identity':dict(zip(names,ident(a))),'contentsBase64':base64.b64encode(b).decode('ascii')}
+ sys.stdout.buffer.write(json.dumps(out,separators=(',',':')).encode()+b'\n')
+finally:os.close(f)
+'''
+
 ROOT_SIGNAL = r'''
 import os,sys,json,signal
 v=json.loads(sys.stdin.buffer.read(4097));p=v['pid'];s=open('/proc/'+str(p)+'/stat').read();f=s[s.rfind(')')+2:].split()
@@ -1213,6 +1238,7 @@ class NativeExecutionHost:
         self.children = []; self.owner = None; self.owner_ready = None; self.heartbeat = None
         self.owner_lines = 0; self.last_heartbeat = 0; self.source_identity = None
         self.clients = {}; self.active_client = None; self.client_pins = []; self.handoff = None; self.pending_handoff = None
+        self.failure_trace_read = None; self.failure_trace_attempted = False; self.failure_trace_error = None
         self.directory = plan['dockerConfigDirectory']
         need(self.directory == str(self.case / 'docker-empty-config'), 'case-docker-config-binding')
         docker_prefix(self.directory)
@@ -1722,7 +1748,7 @@ class NativeExecutionHost:
         entry_child = active.get('child') if active and active.get('mode') == 'entry' else None
         for index, child in enumerate(self.children):
             if (getattr(child, 'transport_failure', None) is not None or child is self.owner
-                    or child is entry_child) and hasattr(child, 'failure_snapshot'):
+                    or child is entry_child or child is self.failure_trace_read) and hasattr(child, 'failure_snapshot'):
                 candidates.append((index, child))
         for ordinal, (index, value) in enumerate(candidates):
             try:
@@ -1865,6 +1891,23 @@ class NativeExecutionHost:
         if self.closed:
             return self.close_result
         clean = self.failure is None and self.state == 'STOPPED'
+        active = self.clients.get(self.active_client)
+        if (not clean and active and active.get('mode') == 'entry' and active.get('child') is not None
+                and self.source_id == self.config.get('actualSourceContainerId') and HASH.fullmatch(self.source_id)
+                and not self.failure_trace_attempted):
+            self.failure_trace_attempted = True
+            try:
+                # Failure bytes only: no footer, parsing, reply or acceptance.
+                # The registered child uses the unchanged cleanup/EOF bounds.
+                self.failure_trace_read = self._root(ROOT_DIAGNOSTIC_TRACE_READ, {})
+            except BaseException as error:
+                self.failure_trace_error = error
+                try:
+                    publish_once(self.case / 'EXECUTION_HOST_TRACE_READ_UNAVAILABLE.PRIVATE.json', encode({
+                        'schema': 'helmut-local-unit-native-trace-read-unavailable-private/1',
+                        'exceptionType': type(error).__name__[:128], 'errno': getattr(error, 'errno', None)}))
+                except BaseException:
+                    pass
         # No successful response/trace is manufactured by best-effort teardown.
         for cid, c in self.clients.items():
             try:
@@ -1922,10 +1965,10 @@ class NativeExecutionHost:
                 for stream in (c.child.stdin, c.child.stdout, c.child.stderr):
                     if stream and not stream.closed:
                         stream.close()
-        if self.failure is not None:
+        if self.failure is not None or self.failure_trace_attempted:
             # Completion captures preserve later real exit/EOF observations;
             # they are never added to the SAFE close DTO below.
-            self._private_pipe_captures(after_close=True)
+            self._private_pipe_captures(self.failure_trace_error, after_close=True)
         self.closed = True; self.close_result = {'state': self.state, 'clean': clean, 'children': metadata,
                                                'knownClientContainerIds': sorted(self.clients), 'sourceStopRequested': False,
                                                'processObserverChildren': self.observer_closes,
