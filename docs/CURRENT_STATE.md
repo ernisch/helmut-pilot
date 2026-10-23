@@ -1,41 +1,41 @@
 # CURRENT STATE — Helmut
 
-**Stand22.10.2026 Europe/Istanbul.** Letzter Production-Befund16.10.2026 13:07:32UTC,
+**Stand23.10.2026 Europe/Istanbul.** Letzter Production-Befund16.10.2026 13:07:32UTC,
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.–23.10.: Quellenlesung vor Motorstart absichern
+## 23.10.: Quellenpfad nativ bestanden; enges Runtime-Leserecht fehlt
 
 13.527Dateien hashverifiziert; geschützter84Originale-Kanal in PR933 nach voller
 CI39783955460 integriert. V12-POSTRUN/Runtimebindungen erhalten, ursprüngliche DB
 gestoppt. [Restore/CI](betrieb/private-ci-original-provisioning-20261021.md).
 Source/Readonly/Bridge und separater Hosttransport nativPASS. Storage/Lage/Kosten-
 lesung korrigiert; VM16/13/32, Vertrag14/14, Start6/Artefakt10PASS. Eigene2Tickets
-belegen keine500er-Globalzähleräquivalenz. ab17-Richtlinienalarm durch JSON-
-Schlüsselreihenfolge auf1a24 behoben;14Gruppen/beide echten DTOsPASS.
-Frischer48 auf739a22dc bestätigt enge Writer-xmin-Reads/8neue42501-Proben nativ,
-bleibtFAIL bei Quellenlesen: gebundener Ownervertrag schließt ko_document_links aus.
-48Adapter11,307s ist kein Unit60-PASS. CLI1/beide EOFs; Owner1/Entry1,
-47Observer0/beide EOFs, PG0/Gruppeleer; Peak1.248.223.232B/Events0. Unbekannter
-Motorumfang bleibt null. RAW/Quellen/Originalauth unverändert,48/ab17 erhalten.
-Lokal ergänzt: Link2-Spalten/ausgewählte KOs, vollständige echte Linkdeckung,
-Original-PK/FK-/Runtimeproben;22Puretests/2QuellreviewsPASS, nativeAbnahme offen.
-Owner bewahrt jetzt Signal/erste feste Fehlerursache/private REST-Logs;58VMchecks/
-RootreviewPASS, kein gelockerter Abschluss. Echter Quellenconsumer wird vor Seed
-über signierte GETs verlangt; Controller20/Endpoint76Purechecks/2ReviewsPASS, nativ offen.
-Preflight kann Cache wärmen; kein Coldcache-, Unit60- oder500MB-Beweis daraus.
+belegen keine500er-Globalzähleräquivalenz. ab17/48 bleibenFAIL und erhalten;
+Richtlinienalarm behoben, Writer-xmin-Proben nativPASS, Quellenfehler eingegrenzt.
+Auf8dd83ba7 besteht der neue f519-Fall echte Link-RLS/40Negativ-/57Gesamtproben
+und den unveränderten Publication-Consumer über2signierte GETs/6KOs/7Dokumente.
+22/20/76Purechecks und2ReviewsPASS; Ownerdiagnostik58VMchecksPASS. Danach FAIL:
+siebter Original-Service-psql Exit3/beide EOFs; PG meldet briefings-Leserecht fehlt.
+Source belegt Runtime-Receipt liest xmin, das bisher nur Writer lesen darf;
+exakte SQL-Expression nicht geloggt. Fix/25Puretests/2QuellreviewsPASS, nativ offen.
+Entryfehler nach44,095s ist kein Unit60-PASS. Peak1.340.301.312B/Events0, PG0/
+Gruppeleer; CLI1/beide EOFs, Originalauth/RAW/Quellen unverändert. Motorzahl null.
+Owner/Host-Abschlussfehler folgen erst danach; tatsächliches REST-Signal SIGINT
+bleibt FAIL. Preflight kann Cache wärmen; keine500MB-/500er-Abnahme daraus.
 8Checkouts/3privat archivierte/restauriert geprüfte COPYs sowie30redundante Cipher-
 parts entfernt. Vollcipher/beide Aliase/Belege/Originale und DB bleiben erhalten.
-Letzte Freiprüfung11.053.436.928B:316.018.688B über10GiB-Einzelunitgrenze;
-zur Volladmission fehlen4.126.342.792B. Frische UTC-Tagesbindung ist ableitbar,
-Original-Quelltag21 bleibt erhalten. CIa18: StandardPASS/BereichFAIL;72mit sicherem
-Testnamen-Metadatenpatch läuft noch. App403 und GesamtCI-PASS bleiben offen,
-ebenso Unit60/Auth30/Qualität/Reserve.
+Nachf519 frei10.635.939.840B:101.478.400B unter10GiB-Einzelunitgrenze;
+zur Volladmission fehlen4.543.839.880B. Ausführungstag23/Original-Quelltag21.
+CI39872884548 auf72: Standard/SQL/84Originale/BrowserPASS, BereichFAIL:
+profilhash-integration-test.js und testnachweis-synthetik-quellen-id-test.js,
+je Exit1. Fehlende VM-Dependency behoben:18/29GruppenPASS, Produkt unverändert.
+Frische CI/App403 sowie Unit60/Auth30/Qualität/Reserve bleiben offen.
 [PR936/Belege/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
 [Historischer Vollstand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
 Kein Voll500 ohne32frische Bedingungen/neues konkretesGO; alte Rechte verbraucht,
-kein Merge/Production. Weiter: Review und frischer nativer Preflight/Einzelunit,
-dann gezielte CI-Reparatur, Kapazität und sämtliche32Startbedingungen nachweisen.
+kein Merge/Production. Weiter: enges Runtime-Recht samt Vorprobe, beide CI-Tests,
+sichere Kapazität, dann frische Einzelunit und sämtliche32Startbedingungen.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

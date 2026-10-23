@@ -70,7 +70,7 @@ class Fixture:
                 'originalRelations': [{'name': 'public.' + name, 'oid': str(6000 + i)} for i, name in enumerate(self.m.TABLES)] if installed else [],
                 'contract': {'version': 'helmut-local-unit-diagnostic-native-store/1', 'database': self.database,
                              'databaseOID': '8000', 'sources': sources, 'legacyReadRPCs': legacy[:2], 'sourceQualified': False} if installed else None,
-                'negativeChecks': 10 if installed else 0}
+                'negativeChecks': 11 if installed else 0}
 
     def query(self, database, sql, label):
         self.calls.append((database, sql, label))
@@ -99,7 +99,7 @@ class BridgeChecks(unittest.TestCase):
         self.assertEqual(len(f.calls), 3)
         self.assertNotIn('public.helmut_auth_state_read_v1', [s['name'] for s in q['originalSources']])
         self.assertNotIn('securityDefiner', q['originalSources'][0])
-        self.assertEqual(result['executedNegativeChecks'], 20)
+        self.assertEqual(result['executedNegativeChecks'], 22)
         self.assertFalse(result['executionAuthorityInstalled'] or result['nativeWriteTransactionQualified'] or result['unit60Qualified'] or result['full500ReserveQualified'])
         self.assertTrue(result['preparationOnly'])
         self.assertEqual(result['actualContractSources'], f.catalog(True)['contract']['sources'])
@@ -258,7 +258,7 @@ class BridgeChecks(unittest.TestCase):
         self.rejected(f, corrupt)
         self.assertEqual(len(f.calls), 1)
 
-    def test_writer_xmin_grants_are_columns_only_and_runtime_grants_unchanged(self):
+    def test_writer_and_runtime_xmin_grants_are_columns_only(self):
         f = Fixture()
         proposal = (REPO / f.m.PROPOSAL).read_text()
         grants = re.findall(r"execute format\('(grant [^']+ on public\.(?:helmut_store|briefings) to %I)',(writer|runtime_name)\);", proposal)
@@ -267,7 +267,7 @@ class BridgeChecks(unittest.TestCase):
             ('grant select(id,user_id,slot,generated_at,payload,xmin),insert(id,user_id,slot,generated_at,payload) on public.briefings to %I', 'writer'),
             ('grant insert(id,data) on public.helmut_store to %I', 'writer'),
             ('grant select(id,data) on public.helmut_store to %I', 'runtime_name'),
-            ('grant select(id,user_id,slot,generated_at,payload) on public.briefings to %I', 'runtime_name')])
+            ('grant select(id,user_id,slot,generated_at,payload,xmin) on public.briefings to %I', 'runtime_name')])
         self.assertIn('nologin nosuperuser nocreatedb nocreaterole noinherit noreplication nobypassrls', proposal)
         self.assertIn("create policy original_bridge_auth_read on public.helmut_store for select to %I using(id=''main-auth'')", proposal)
         self.assertIn('original-bridge-role-membership-forbidden', proposal)
@@ -286,7 +286,7 @@ class BridgeChecks(unittest.TestCase):
         self.assertEqual(allowed['briefings'], {'SELECT': ['id', 'user_id', 'slot', 'generated_at', 'payload', 'xmin'],
                                               'INSERT': ['id', 'user_id', 'slot', 'generated_at', 'payload']})
         self.assertIn('attnum<>0 AND NOT attisdropped', sql)
-        self.assertNotIn('attnum>0', sql)
+        self.assertIn('FOR col IN SELECT attname,attnum FROM pg_attribute WHERE attrelid=t.oid AND attnum<>0 AND NOT attisdropped', sql)
         self.assertIn('has_column_privilege(w,t.oid,col.attnum,priv) IS DISTINCT FROM', sql)
         self.assertIn("has_table_privilege(r,t.oid,'INSERT,UPDATE,DELETE,TRUNCATE,TRIGGER,REFERENCES,MAINTAIN')", sql)
         self.assertIn("has_function_privilege(r,'public.helmut_auth_state_cas_v1(jsonb)','EXECUTE')", sql)
@@ -342,6 +342,87 @@ class BridgeChecks(unittest.TestCase):
             self.rejected(f)
             self.assertEqual(len(f.calls), calls)
             self.assertEqual(calls, 2 if failed_label == 'BRIDGE_INSTALL_AND_QUALIFY' else 3)
+
+    def test_runtime_invoker_receipt_read_gets_xmin_but_no_extra_columns_or_writes(self):
+        f = Fixture()
+        proposal = (REPO / f.m.PROPOSAL).read_text()
+        receipt = f.m._definitions(proposal)['helmut_unit_diagnostic.original_bridge_receipt_v1']
+        self.assertEqual(receipt['prosrcSHA256'], f.helpers['helmut_unit_diagnostic.original_bridge_receipt_v1']['prosrcSHA256'])
+        self.assertRegex(proposal, r'original_bridge_receipt_v1\([^\n]+\) returns void\nlanguage plpgsql stable security invoker')
+        self.assertIn('into strict actual_body,actual_time,original_xmin from public.briefings t', proposal)
+        compiler = (REPO / f.m.COMPILER).read_text()
+        self.assertIn('SET SESSION AUTHORIZATION ${auth};\nSET LOCAL ROLE ${runtime};', compiler)
+        self.assertIn('ack:=public.local_unit_diagnostic_artifact_insert_v1(', compiler)
+        guards = (REPO / f.m.STORE).read_text()
+        self.assertIn("helmut_unit_diagnostic.sha(j->>'claimId'),'artifact',own_row.body_hash,own_row.revision", guards)
+        runtime_grants = re.findall(r"execute format\('(grant [^']+)',runtime_name\);", proposal)
+        self.assertCountEqual(runtime_grants, ['grant select(id,data) on public.helmut_store to %I',
+            'grant select(id,user_id,slot,generated_at,payload,xmin) on public.briefings to %I'])
+        self.assertFalse(any(re.search(r'\b(?:update|insert|delete|truncate|references|trigger)\b', g) for g in runtime_grants))
+        acl = f.m._security_sql(f.database)
+        self.assertIn("has_table_privilege(r,'public.briefings','SELECT')", acl)
+        self.assertIn('actual_runtime_column.attnum<>0 AND NOT actual_runtime_column.attisdropped', acl)
+        self.assertIn("actual_runtime_column.attname IN('id','user_id','slot','generated_at','payload')", acl)
+        self.assertIn("actual_runtime_column.attnum<0 AND actual_runtime_column.attname='xmin'", acl)
+        self.assertIn('original-bridge-runtime-receipt-columns', acl)
+
+    def test_runtime_read_probe_uses_real_authenticator_role_readonly_and_empty_read(self):
+        f = Fixture(); sql = f.m._runtime_read_probe_sql(f.database)
+        self.assertTrue(sql.startswith('BEGIN READ ONLY;SET LOCAL standard_conforming_strings=on;SET LOCAL search_path=pg_catalog;SET LOCAL row_security=on;'))
+        self.assertTrue(sql.endswith('RESET ROLE;RESET SESSION AUTHORIZATION;ROLLBACK;\n'))
+        self.assertIn("session_user<>'postgres' OR current_user<>session_user", sql)
+        self.assertIn('SET SESSION AUTHORIZATION helmut_ud_authenticator_' + 'a' * 32 + ';SET LOCAL ROLE helmut_ud_runtime_' + 'a' * 32 + ';', sql)
+        self.assertIn('PERFORM helmut_unit_diagnostic.runtime_role();', sql)
+        self.assertIn("session_user IS DISTINCT FROM 'helmut_ud_authenticator_", sql)
+        self.assertIn("current_user IS DISTINCT FROM 'helmut_ud_runtime_", sql)
+        self.assertIn("current_setting('transaction_read_only')<>'on'", sql)
+        self.assertIn("current_setting('row_security')<>'on'", sql)
+        self.assertIn('AND relrowsecurity AND relowner<>', sql)
+        reads = re.findall(r'PERFORM ([^;]+) FROM public\.([a-z_]+) LIMIT 0;', sql)
+        self.assertCountEqual(reads, [('id,data,xmin::text', 'helmut_store'),
+                                     ('id,user_id,slot,generated_at,payload,xmin::text', 'briefings'),
+                                     ('created_at', 'briefings'), ('xmax', 'briefings')])
+        self.assertIn("oid IN('public.briefings'::regclass,'public.helmut_store'::regclass)", sql)
+        self.assertIn('rolname=current_user))<>2', sql)
+        self.assertEqual(sql.count('EXCEPTION WHEN insufficient_privilege THEN NULL;END;'), 2)
+        self.assertNotRegex(sql, r'\b(?:INSERT|UPDATE|DELETE|CREATE|GRANT|COMMIT)\b')
+        self.assertNotIn('original_bridge_args', sql)
+        self.assertNotIn('original_bridge_receipt_v1(', sql)
+        self.assertNotRegex(sql, r'@[A-Z_]+@')
+
+    def test_runtime_read_is_after_install_before_both_catalogs_and_write_denial_is_counted(self):
+        f = Fixture(); result = f.run()
+        before, install, fresh = [call[1] for call in f.calls]
+        probe = f.m._runtime_read_probe_sql(f.database)
+        self.assertNotIn(probe, before)
+        self.assertLess(install.index((REPO / f.m.PROPOSAL).read_text()), install.index(probe))
+        for sql in (install, fresh):
+            self.assertEqual(sql.count(probe), 1)
+            self.assertLess(sql.index(f.m._writer_read_probe_sql(f.database)), sql.index(probe))
+            self.assertLess(sql.index(probe), sql.index('DO $bridge_acl$'))
+            self.assertLess(sql.index(probe), sql.index('DO $runtime_probe$'))
+            self.assertLess(sql.index(probe), sql.index("'helmut-local-unit-native-bridge-catalog/1'"))
+        negatives, count = f.m._probes_sql(f.database, f.digest())
+        self.assertEqual(count, 11)
+        self.assertEqual(negatives.count('EXCEPTION WHEN insufficient_privilege THEN checks:=checks+1;END;'), 10)
+        self.assertIn("EXECUTE 'UPDATE public.briefings SET payload=payload WHERE false'", negatives)
+        self.assertIn("SQLERRM<>'original-bridge-root-temp-relations-required'", negatives)
+        self.assertEqual(result['executedNegativeChecks'], 22)
+
+    def test_unknown_runtime_read_permission_or_role_outcome_never_returns_or_retries(self):
+        for failed_label in ('BRIDGE_INSTALL_AND_QUALIFY', 'BRIDGE_FRESH_READBACK'):
+            f = Fixture()
+            def denied(db, sql, label):
+                f.calls.append((db, sql, label))
+                if label == failed_label:
+                    self.assertIn(f.m._runtime_read_probe_sql(db), sql)
+                    raise PermissionError('private-runtime-receipt-read-error')
+                return f.catalog(label != 'BRIDGE_SOURCE_CATALOG')
+            self.rejected(f, denied)
+            count = len(f.calls)
+            self.rejected(f, denied)
+            self.assertEqual(len(f.calls), count)
+            self.assertEqual(count, 2 if failed_label == 'BRIDGE_INSTALL_AND_QUALIFY' else 3)
 
 
 if __name__ == '__main__':

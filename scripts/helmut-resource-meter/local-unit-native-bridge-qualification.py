@@ -328,6 +328,13 @@ FOR t IN SELECT c.*,n.nspname FROM pg_class c JOIN pg_namespace n ON n.oid=c.rel
   END LOOP;
  END LOOP;
 END LOOP;
+IF has_table_privilege(r,'public.briefings','SELECT')
+ OR EXISTS(SELECT FROM pg_attribute actual_runtime_column WHERE actual_runtime_column.attrelid='public.briefings'::regclass
+  AND actual_runtime_column.attnum<>0 AND NOT actual_runtime_column.attisdropped
+  AND has_column_privilege(r,actual_runtime_column.attrelid,actual_runtime_column.attnum,'SELECT')
+   IS DISTINCT FROM ((actual_runtime_column.attnum>0 AND actual_runtime_column.attname IN('id','user_id','slot','generated_at','payload'))
+    OR (actual_runtime_column.attnum<0 AND actual_runtime_column.attname='xmin')))
+ THEN RAISE EXCEPTION 'original-bridge-runtime-receipt-columns';END IF;
 IF EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace CROSS JOIN LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) x
  WHERE n.nspname='helmut_unit_diagnostic' AND p.proname LIKE 'original_bridge_%' AND x.grantee=0 AND x.privilege_type='EXECUTE')
  OR has_function_privilege(r,'public.helmut_auth_state_cas_v1(jsonb)','EXECUTE')
@@ -362,6 +369,34 @@ PERFORM id,user_id,slot,generated_at,payload,xmin::text FROM public.briefings LI
     return sql + 'END;$writer_read_probe$;RESET SESSION AUTHORIZATION;ROLLBACK;\n'
 
 
+def _runtime_read_probe_sql(database):
+    # The SECINV artifact receipt runs AFTER the session switches away from
+    # writer. Exercise both original-row reads as authenticator -> runtime.
+    suffix = database[-32:]
+    auth, runtime = 'helmut_ud_authenticator_' + suffix, 'helmut_ud_runtime_' + suffix
+    sql = "BEGIN READ ONLY;SET LOCAL standard_conforming_strings=on;SET LOCAL search_path=pg_catalog;SET LOCAL row_security=on;SET LOCAL statement_timeout='25s';SET LOCAL lock_timeout='500ms';\n"
+    sql += """DO $runtime_read_origin$ BEGIN
+IF current_database() IS DISTINCT FROM @DB@ OR session_user<>'postgres' OR current_user<>session_user
+ OR NOT EXISTS(SELECT FROM pg_roles WHERE rolname=session_user AND rolsuper)
+ OR current_setting('server_version_num')::integer NOT BETWEEN 170000 AND 179999
+ OR current_setting('server_encoding')<>'UTF8' OR current_setting('client_encoding')<>'UTF8'
+ THEN RAISE EXCEPTION 'original-bridge-runtime-read-origin';END IF;END;$runtime_read_origin$;
+SET SESSION AUTHORIZATION @AUTH_ROLE@;SET LOCAL ROLE @RUNTIME_ROLE@;
+DO $runtime_read_probe$ BEGIN
+PERFORM helmut_unit_diagnostic.runtime_role();
+IF session_user IS DISTINCT FROM @AUTH@ OR current_user IS DISTINCT FROM @RUNTIME@
+ OR current_setting('transaction_read_only')<>'on' OR current_setting('row_security')<>'on'
+ OR (SELECT count(*) FROM pg_class WHERE oid IN('public.briefings'::regclass,'public.helmut_store'::regclass) AND relkind='r'
+  AND relrowsecurity AND relowner<>(SELECT oid FROM pg_roles WHERE rolname=current_user))<>2
+ THEN RAISE EXCEPTION 'original-bridge-runtime-read-principal-or-rls';END IF;
+PERFORM id,data,xmin::text FROM public.helmut_store LIMIT 0;
+PERFORM id,user_id,slot,generated_at,payload,xmin::text FROM public.briefings LIMIT 0;
+""".replace('@DB@', _q(database)).replace('@AUTH_ROLE@', auth).replace('@RUNTIME_ROLE@', runtime).replace('@AUTH@', _q(auth)).replace('@RUNTIME@', _q(runtime))
+    for column in ('created_at', 'xmax'):
+        sql += 'BEGIN PERFORM ' + column + " FROM public.briefings LIMIT 0;RAISE EXCEPTION 'original-bridge-runtime-read-denial-missing';EXCEPTION WHEN insufficient_privilege THEN NULL;END;\n"
+    return sql + 'END;$runtime_read_probe$;RESET ROLE;RESET SESSION AUTHORIZATION;ROLLBACK;\n'
+
+
 def _probes_sql(database, digest):
     suffix = database[-32:]
     writer, runtime, auth, owner = ('helmut_ud_' + p + '_' + suffix for p in ('bridge_writer', 'runtime', 'authenticator', 'owner'))
@@ -370,6 +405,7 @@ def _probes_sql(database, digest):
               "EXECUTE 'DELETE FROM public.helmut_auth_state_nodes_local WHERE false'",
               "EXECUTE 'UPDATE public.llm_usage SET success=success WHERE false'",
               "EXECUTE 'INSERT INTO public.briefings(id) SELECT NULL WHERE false'",
+              "EXECUTE 'UPDATE public.briefings SET payload=payload WHERE false'",
               "EXECUTE 'CREATE TEMP TABLE bridge_runtime_forbidden(x integer)'",
               "EXECUTE 'CREATE TABLE public.bridge_runtime_forbidden(x integer)'",
               "EXECUTE 'SET ROLE " + writer + "'", "EXECUTE 'SET ROLE " + owner + "'"]
@@ -423,7 +459,7 @@ def install_bridge(query, *, database, operation_id, command_canonical, command_
         setup += 'DO $bridge_settings$ BEGIN PERFORM set_config(\'helmut.local_unit_original_bridge_install_target\',' + _q(database) + ",false);PERFORM set_config('helmut.local_unit_original_bridge_install'," + _q(_json(install_q)) + ',false);END;$bridge_settings$;\n'
         # Install commit is only preparation. The independent qualification
         # below must still pass; unknown outcomes never lead to an install retry.
-        installed = _call(query, database, setup + proposal + '\n' + _writer_read_probe_sql(database) + prefix + _guard(database, command_sha256, installed=True)
+        installed = _call(query, database, setup + proposal + '\n' + _writer_read_probe_sql(database) + _runtime_read_probe_sql(database) + prefix + _guard(database, command_sha256, installed=True)
                           + _security_sql(database) + _probes_sql(database, command_sha256)[0]
                           + _catalog_sql(database, command_sha256, installed=True) + 'ROLLBACK;', 'BRIDGE_INSTALL_AND_QUALIFY')
         orig_after, natives = _validate_catalog(installed, database, command_sha256, original, native, input_pins)
@@ -438,7 +474,7 @@ def install_bridge(query, *, database, operation_id, command_canonical, command_
               and contract['version'] == 'helmut-local-unit-diagnostic-native-store/1' and contract['database'] == database and contract['databaseOID'] == before['databaseOID']
               and contract['sourceQualified'] is False and contract['sources'] == expected_sources
               and type(contract['legacyReadRPCs']) is list and len(contract['legacyReadRPCs']) == 2, 'actual-runtime-contract')
-        readback = _call(query, database, _writer_read_probe_sql(database) + prefix + _guard(database, command_sha256, installed=True) + _security_sql(database)
+        readback = _call(query, database, _writer_read_probe_sql(database) + _runtime_read_probe_sql(database) + prefix + _guard(database, command_sha256, installed=True) + _security_sql(database)
                          + _probes_sql(database, command_sha256)[0] + _catalog_sql(database, command_sha256, installed=True) + 'ROLLBACK;', 'BRIDGE_FRESH_READBACK')
         _need(readback == installed, 'fresh-readback-drift')
         for pin in files.values():

@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23.10.2026 00:07UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23.10.2026 00:22UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -522,3 +522,84 @@ Der Wechsel auf23.10.UTC erzeugt im nativen Einzelunitpfad einen neuen aktuellen
 Ausführungstag und ein neues kurzes Fenster. Original-Quelltag21/Quelldaten werden
 nicht umgeschrieben. Das ersetzt weder den gesonderten Full500-Kalendervertrag
 noch ein neues konkretes GO/32frische Startbedingungen.
+
+## 23.10.: Quellenanbindung nativ bestätigt; nächster Schreibfehler eingegrenzt
+
+Der frische, einmalige Fall `f51940617fbf03e755af52ce41e60bab` bindet den sauberen
+Commit `8dd83ba762de381c193e31aa688a6faca90132ef`. Die neue ReadClosure besteht
+tatsächlich40Negativ- und57Gesamtproben. Der unveränderte Publication-Consumer
+liest vor Seed über2signierte echte GETs6KOs mit7Dokumentidentitäten erfolgreich.
+Dies schließt den vorherigen engen Quellenleseblocker; Cachewärme bleibt Teil
+der Diagnosebedingungen. Kein alter Fall oder verbrauchtes Laufrecht wurde wiederholt.
+
+Danach bleibt die Einzelunit FAIL. Der siebte Original-Service-psql endet mit
+Exit3 und beiden natürlichen EOFs; die ersten sechs enden bestätigt0. Das
+erhaltene PostgreSQL-Log enthält genau einen Fehler um00:10:37.199UTC:
+fehlendes Leserecht für `briefings`. Die Quellprüfung zeigt einen konkreten
+Rechtekonflikt: Der unveränderte atomare Artifact-Receipt liest als SECURITY
+INVOKER unter Runtime `briefings.xmin`; bisher erhält nur Writer dieses
+Spaltenrecht. Der alte LIMIT0-Vorabcheck prüft ausschließlich Writer. Die
+einzelne fehlgeschlagene SQL-Expression oder Rolle ist nicht direkt geloggt;
+der Quellkonflikt ist mit dem echten Tabellenfehler konsistent. Nur diesen
+engen Runtime-Leseumfang samt authenticator→Runtime-Vorprobe korrigieren;
+RLS, fremde Spalten, Schreibsperren und atomare Bestätigungen erhalten.
+
+Entry meldet um00:10:37.220UTC einen Fehler nach44,095s Adapterzeit. Service-
+STOP, Owner-Fehler und Host-Abbruch folgen danach. Der Owner protokolliert nun
+tatsächlich SIGTERM-Versuch und späteres REST-Exit-Signal SIGINT. Die privaten
+REST-Logs enthalten nur Start-/Verbindungsmeldungen. Ein spontaner primärer
+REST-Fehler ist daraus nicht belegt; der Abschluss bleibt FAIL. Ein individueller
+Service-Node-Exit0 mit beiden EOFs ist ebenfalls nicht nachgewiesen. Keine
+Lockerung der Abschlussregeln aus diesen Folgemeldungen ableiten.
+
+Die äußere CLI endet tatsächlich1 mit beiden natürlichen EOFs, ohne äußeren
+Timeout/Zwangssignale. Gemeinsamer Peak1.340.301.312B, alle Speicherereignisse0,
+PostgreSQL0 und Gruppe bis letztem Exit leer. Rechnerisch707.698.688B Abstand
+zur harten Grenze sind wegen des Fehlers kein500MB-Puffernachweis. Unit60,
+Auth30, vollständige Ergebnisse und500er-Plateau bleiben offen; Motorumfang null.
+RAW,432Quellen und Originalauth bestehen die vollständige Worker-Finalprüfung.
+Frisch sind432Source-/403Code-/553Runtimepfade und Größen sowie unveränderter
+SourceDB-State/Mounts bestätigt; keine unnötige zweite2GB-Inhaltsprüfung.
+[Bereinigter Fehlerbeleg](belege/v12-native-unit-integration-20261022/NATIVE_F519_SINGLE_FAILURE.SAFE.json).
+
+Frei10.635.939.840B:101.478.400B fehlen zur10GiB-Einzelunitadmission und
+4.543.839.880B zur Volladmission. f519/48/ab17-PGDATA und sämtliche Belege bleiben
+geschützt. Vor jeder weiteren Bereinigung sind Umfang, Schutz und belegter
+Rückweg erforderlich. Kein neuer unveränderter Einzelunitversuch.
+
+CI39872884548 auf72e4db67 ist tatsächlich abgeschlossen: Standard-Offlinesuiten,
+SQL-Nachweise, geschützter84Originale-Kanal und Browser erfolgreich; Bereichs-
+Regression fehlgeschlagen. Die neue geschlossene öffentliche Metadatenzeile
+benennt `profilhash-integration-test.js` und
+`testnachweis-synthetik-quellen-id-test.js`, jeweils Exit1. Jetzt nur diese
+realen Fehler untersuchen; kein erneuter breiter Offline-Lauf auf Verdacht.
+Z22 wurde nach dem Fehler übersprungen und bleibt ohne neuen Nachweis. App403
+bleibt separat offen. Kein vollständiger500er ohne neues konkretes GO.
+
+Die Runtime-Korrektur ist lokal umgesetzt und zweifach im Quellcode geprüft:
+einziges zusätzliches Recht `briefings.SELECT(xmin)`, weiterhin kein Tabellen-
+SELECT und keine Runtime-Schreibrechte. Der effektive unveränderte ReadClosure-
+Tabellengrant auf `helmut_store` deckt dessen xmin bereits ab; kein zusätzlicher
+Grant dort. Der neue tatsächliche authenticator→Runtime-Vorabcheck liest beide
+Receipt-Spaltensätze mit LIMIT0, prüft RLS/Nichtbesitz und weist verbotene
+Briefingsspalten mit42501 zurück. Die zusätzliche Update-Negativprobe läuft
+ausdrücklich in der schreibfähigen Probe-Transaktion, damit kein READONLY-Fehler
+einen fehlenden Rechtefehler kaschiert. Katalogzähler11jeBatch/22gesamt statt
+historisch20;4neue readonly42501- und8bestehende Writer42501-Proben separat.
+Alle neun Helper-Bodies, Compiler, StoreDDL und atomare Bestätigungen unverändert.
+25Puretests auf finalen Bytes mit geschlossenem Env und separat beobachtetem
+Exit0 bestätigt. Ein früher kombinierter Shellaufruf lieferte keinen separaten
+Unittest-Exit; genau diese Beleglücke begründete den finalen einzelnen Lauf.
+LIMIT0 ist kein tatsächlicher Row-/Receipt-/Commit-PASS. Die neue native
+Ausführung bleibt bis sicherer Kapazität und frischer vollständiger Bindung offen.
+[Enger Quellreview](belege/v12-native-unit-integration-20261022/RUNTIME_RECEIPT_XMIN_SOURCE_REVIEW.SAFE.json).
+
+Die zwei nun konkret bekannten CI-Fehler wurden ausschließlich in ihren
+Testkontexten korrigiert: Die extrahierten echten Storage-Consumer erhalten die
+fehlende echte Diagnose-Storefactory mit expliziter Inaktivitätsprüfung. Alle
+bisherigen Assertions und Produktdateien bleiben unverändert. Je einmal gezielt
+unter geschlossenem Env, lokalem Schutz und Offline-Preload geprüft: Profilhash
+18/18 und Quellen-ID29/29, jeweils tatsächlicher Exit0. Root-DiffreviewPASS;
+keine335Suiten-Wiederholung. Ein neuer grüner GitHub-Gesamtlauf auf dem Fixcommit
+ist noch erforderlich und wird nicht aus diesen lokalen Teilprüfungen abgeleitet.
+[CI-Fehler und Reparatur](belege/v12-native-unit-integration-20261022/CI_TWO_READER_CONTEXT_REPAIR.SAFE.json).

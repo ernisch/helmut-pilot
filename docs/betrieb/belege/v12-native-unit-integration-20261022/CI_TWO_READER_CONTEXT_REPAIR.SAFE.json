@@ -1,0 +1,84 @@
+{
+  "schema": "helmut-private-ci-targeted-repair-source-review/1",
+  "run": 39872884548,
+  "failedRunHead": "72e4db678e63394d14e169ab4858f738a278cd2b",
+  "actualRunConclusion": "failure",
+  "closedPublicFailureMetadata": {
+    "schema": "helmut-private-ci-suite-failures/1",
+    "failures": [
+      {
+        "suite": "profilhash-integration-test.js",
+        "exitCode": 1
+      },
+      {
+        "suite": "testnachweis-synthetik-quellen-id-test.js",
+        "exitCode": 1
+      }
+    ]
+  },
+  "publicMetadataRetrievedThrough": "gh run view --job --log; entire log held privately, only closed schema and tracked suite names emitted",
+  "runPassedComponents": [
+    "protected-84-original-channel",
+    "standard-offline-suites",
+    "native-sql-steps-23-through-35",
+    "browser-mobile-smoke"
+  ],
+  "z22AfterAreaFailure": "skipped-not-qualified",
+  "sourceCause": "Extracted real Storage VM/function consumers lacked the localUnitStore lexical dependency",
+  "repair": "Bind real inactive diagnostic store factory in both test contexts and assert active() is false; existing assertions and production code unchanged",
+  "targetedTestsObservedByAssignedSOL": {
+    "evidenceType": "actual-helper-tool-observations-no-repeated-test-run",
+    "runsPerSuiteAfterFix": 1,
+    "closedEnvironmentKeys": [
+      "PATH",
+      "TZ",
+      "NO_NETWORK_TESTS",
+      "HELMUT_OFFLINE_TEST"
+    ],
+    "localProtection": "scripts/lokal.js and scripts/run-offline-tests.js as preload only; no full suite runner",
+    "tests": [
+      {
+        "suite": "profilhash-integration-test.js",
+        "passedGroups": 18,
+        "failedGroups": 0,
+        "actualExitCode": 0
+      },
+      {
+        "suite": "testnachweis-synthetik-quellen-id-test.js",
+        "passedGroups": 29,
+        "failedGroups": 0,
+        "actualExitCode": 0
+      }
+    ]
+  },
+  "rootDiffReview": {
+    "pass": true,
+    "onlyTwoTestFilesChanged": true,
+    "noProductFileEdits": true,
+    "allExistingAssertionsPreserved": true,
+    "noPrivateCILogDecryptionOrOutput": true
+  },
+  "filePins": [
+    {
+      "path": "scripts/profilhash-integration-test.js",
+      "bytes": 13045,
+      "sha256": "4b38a91c55c96ce706f50ab185e2010802d2ec2a645e3756e1025fd094ef0df3"
+    },
+    {
+      "path": "scripts/testnachweis-synthetik-quellen-id-test.js",
+      "bytes": 8495,
+      "sha256": "e2978b7e1b04327430f474685dc4d262f262dadce0e5d31e0a1e8e60fb4b5c1d"
+    },
+    {
+      "path": "lib/helmut/storage.js",
+      "bytes": 556772,
+      "sha256": "dbb3d98f834731ff67ff209fe9499150ce9e92813af76786567a432cc63c776f"
+    }
+  ],
+  "newFullCIOnFixedCommit": "not-yet-run",
+  "overallCIQualified": false,
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "production": false,
+  "full500": false
+}

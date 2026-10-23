@@ -637,7 +637,9 @@ begin
   execute format('grant select(id,user_id,slot,generated_at,payload,xmin),insert(id,user_id,slot,generated_at,payload) on public.briefings to %I',writer);
   execute format('grant insert(id,data) on public.helmut_store to %I',writer);
   execute format('grant select(id,data) on public.helmut_store to %I',runtime_name);
-  execute format('grant select(id,user_id,slot,generated_at,payload) on public.briefings to %I',runtime_name);
+  -- The invoker receipt re-reads the original row after switching to runtime.
+  -- It needs the same xmin witness, with no table SELECT or write privilege.
+  execute format('grant select(id,user_id,slot,generated_at,payload,xmin) on public.briefings to %I',runtime_name);
   -- Fixed ID predicates depend on the genuine native authority, not a caller
   -- table or caller-selected original row. There is no UPDATE/DELETE grant.
   execute format($policy$create policy original_bridge_private_read on public.helmut_store for select to %I,%I using(exists(
