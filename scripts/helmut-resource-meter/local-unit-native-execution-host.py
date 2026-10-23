@@ -1710,15 +1710,16 @@ class NativeExecutionHost:
             for c in self.children:
                 c.tick()
             self._poll_probes(); self._owner_messages()
-            # Read-only observations need one fresh inventory after admission,
-            # not another outer supervisor cycle before their reply. Other
-            # stages retain their intake below, after Source identity exists.
+            # Admit a queued observation, or an entry with an already bound
+            # Source, before its fresh inventory. This avoids an extra whole
+            # inventory cycle without extending any request or stage deadline.
             if self.pending is None and self.state in ('QUALIFIED', 'ENTRY', 'DONE'):
                 need(self.seq <= 128, 'request-count')
                 p = self.case / ('HOST_REQUEST_%02d.PRIVATE.json' % self.seq)
                 if p.exists():
                     raw, pin = read_file(p); request = unique(raw)
-                    if type(request) is dict and request.get('stage') == 'HOST_OBSERVE':
+                    if type(request) is dict and (request.get('stage') == 'HOST_OBSERVE'
+                            or request.get('stage') == 'ENTRY_START' and self.state == 'QUALIFIED' and self.source_identity is not None):
                         self._accept(request, pin['sha256'])
             sample_start = observation_sample_start()
             sample = None
@@ -1728,7 +1729,9 @@ class NativeExecutionHost:
                     sample = observation_sample_complete(sample_start)
             except ObservationPending:
                 observation = None
-            self._release_clients(); self._quiesce_clients()
+            if observation is not None:
+                self._release_clients()
+            self._quiesce_clients()
             if self.owner and self.state != 'STOPPED' and self.owner.child.poll() is not None and not (self.pending and self.pending['request']['stage'] == 'OWNER_STOP'):
                 need(False, 'unexpected-owner-exit')
             if self.pending:

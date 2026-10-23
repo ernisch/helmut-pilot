@@ -4,38 +4,36 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Quellenpfad bestanden; Runtime-/Abschlussfix nativ offen
+## 23.10.: CI grün; Einzelunit-Startdialog korrigiert, native Abnahme offen
 
-13.527Dateien hashverifiziert; geschützter84Originale-Kanal in PR933 nach voller
-CI39783955460 integriert. V12-POSTRUN/Runtimebindungen erhalten, ursprüngliche DB
-gestoppt. [Restore/CI](betrieb/private-ci-original-provisioning-20261021.md).
-Source/Hosttransport nativPASS. Storage/Lage/Kosten korrigiert: VM16/13/32,
-Vertrag14/Start6/Artefakt10PASS. Eigene2Tickets belegen keine500er-Globalzähler.
-ab17/48 bleibenFAIL; Richtlinienalarm behoben, Writer-xmin-Proben nativPASS.
-Auf8dd83ba7 besteht der neue f519-Fall echte Link-RLS/40Negativ-/57Gesamtproben
-und den unveränderten Publication-Consumer über2signierte GETs/6KOs/7Dokumente.
-22/20/76Purechecks und2ReviewsPASS; Ownerdiagnostik58VMchecksPASS. Danach FAIL:
-siebter Original-Service-psql Exit3/beide EOFs; PG meldet briefings-Leserecht fehlt.
-Source belegt Runtime-Receipt liest xmin, das bisher nur Writer lesen darf;
-exakte SQL-Expression nicht geloggt. Fix/25Puretests/2QuellreviewsPASS, nativ offen.
-Entryfehler nach44,095s ist kein Unit60-PASS. Peak1.340.301.312B/Events0, PG0/
-Gruppeleer; CLI1/beide EOFs, Originalauth/RAW/Quellen unverändert. Motorzahl null.
-REST-SIGINT bleibt im FehlerfallFAIL. Neuer Abschluss bindet aktuelle Config,
-Binary/8Quellen/Einmalpolicy/Prozess:71/103/21Checks+2ReviewsPASS, nativ offen.
-8Checkouts/3privat archivierte/restauriert geprüfte COPYs sowie30redundante Cipher-
-parts entfernt. Vollcipher/beide Aliase/Belege/Originale und DB bleiben erhalten.
-48-COPY privat archiviert/1778Member restauriert geprüft, noch nichts entfernt:
-Docker-Pfadschutz stoppt an EACCES. Frei~10,136GB. Ausführungstag23/Quelltag21.
-CI39872884548 auf72: Standard/SQL/84Originale/BrowserPASS, BereichFAIL:
-profilhash-integration-test.js und testnachweis-synthetik-quellen-id-test.js,
-je Exit1. Fehlende VM-Dependency behoben:18/29GruppenPASS, Produkt unverändert.
-CI931 scheitert früh am alten Codec-Sourcepin; aktuelle Bindung+unveränderteSQL
-jetzt17Purechecks/2ReviewsPASS. FrischeCI/App403/Unit60/Auth30/Reserve offen.
-[PR936/Belege/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
-[Historischer Vollstand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
+13.527Dateien hashverifiziert;84Originale geschützt eingebunden, echte V12-
+POSTRUN/Runtimebindungen erhalten; ursprüngliche DB gestoppt/unverändert.
+CI39881015738 auf48c15b09 vollständig grün: Browser, öffentlicher Prüfplan,
+Offline/SQL/Bereich/Z22 erfolgreich. Neue Hoständerung braucht eigene frischeCI.
+Quellenpfad/Link-RLS/Publication-Consumer nativPASS. f519 bleibtFAIL: Runtime-
+Receipt brauchte briefings.xmin. Enger Grantfix/25Checks/2ReviewsPASS, nativ offen.
+Aktueller PostgREST-Abschluss bindet Config/Binary/8Quellen/Einmalpolicy/Prozess;
+71Owner/103Host/21Controller-Checks+2ReviewsPASS, normaler Nativeclose noch offen.
+Frischer Fall31 auf48: ENTRY_START ohne Antwort nach5s; kein Unitabschluss.
+Host-Mappingfehler folgt dem Source-Cleanup; kein vorgelagerter SQL-Fehler belegt.
+CLI1/2EOF, PG0/mergedEOF, Gruppenleer, alle6Memoryevents0; Peak1.079.160.832B
+wegen FAIL kein Reservebeweis. Motorzahl unbekannt, Originale unverändert.
+Host nimmt gebundenen ENTRY_START jetzt vor einer frischen Gesamtinventur an;
+Gate/Antwort erst nach vollständiger Beobachtung. Keine Frist erweitert.
+106Purechecks+finalerUhrfixturetest/2ReviewsPASS, echte neue Ausführung offen.
+Eigene48COPY privat archiviert/1778Member frisch restauriert verglichen;
+beide redundanten Expandedformen nach vollständigem Docker-/physischem
+Originalvolumenschutz entfernt, ebenso eigener beendeter Metadatenprobecontainer.
+Privatarchiv mit Testsecrets bleibt lokal. Freier Platz vor31:10.870.374.400B;
+31 verbraucht erneut Platz. f519-Archiv/1779Member frisch restauriert geprüft;
+beide Expandedformen noch erhalten, kein Platzgewinn.
+Ab17/48/f519/31 bleibenFAIL; Belege/Originale/RAW/Auth/Git erhalten.
+[Belege/PR936/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
+[Vollständiger Vorzustand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
+Weiter: sichere Kapazität, frische exakte Bindung/Einzelunit, Runtime-/Abschluss-
+und Zeit-/RAM-Abnahme; App403 und vollständige32Startbedingungen gesondert offen.
 Kein Voll500 ohne32frische Bedingungen/neues konkretesGO; alte Rechte verbraucht,
-kein Merge/Production. Weiter: sichere Kapazität, frische Hostbindung/Einzelunit,
-Runtime-/Abschlussabnahme, grüneCI und sämtliche32Startbedingungen.
+kein Merge/Production. Einzelunit/warmerCache belegen keinen500er-Puffer.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

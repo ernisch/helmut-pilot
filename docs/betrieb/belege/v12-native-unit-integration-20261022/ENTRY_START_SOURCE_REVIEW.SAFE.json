@@ -1,0 +1,62 @@
+{
+  "atUTC": "2026-10-23T01:37:13.212926+00:00",
+  "cause": "An already bound Source queued ENTRY_START after a full Docker inventory and needed another outer inventory before gate/reply",
+  "change": [
+    "Admit ENTRY_START before one fresh full inventory only in QUALIFIED with existing source_identity",
+    "Keep exact envelope, scope, sequence, nonce, empty body, replay and freshness guards",
+    "Release client gates only after complete successful fresh observation; Pending releases no gate and writes no reply",
+    "Reply requires actual released gate and complete fresh observation"
+  ],
+  "limits": [
+    "No actual new native timing acceptance yet",
+    "No Unit60/Auth30 or PostgREST normalclose acceptance inferred",
+    "No 500MB reserve or full500 proof",
+    "No memory event thresholds, safety conditions or source original pins relaxed"
+  ],
+  "reviews": {
+    "fixtureSingleUTCClockRaceClosed": true,
+    "independentSOLFinalExactPins": "PASS",
+    "rootFullDiff": "PASS"
+  },
+  "schema": "helmut-entry-start-source-review/1",
+  "sourcePins": [
+    {
+      "bytes": 124984,
+      "path": "scripts/helmut-resource-meter/local-unit-native-execution-host.py",
+      "sha256": "6105a8fc078eef3ace4da03f5a841b5990d8030db3a8e9fc04af218738a7e8b5"
+    },
+    {
+      "bytes": 126306,
+      "path": "scripts/helmut-resource-meter/local-unit-native-execution-host-test.py",
+      "sha256": "f7feada2b406613067235ec2237491dd16b89687d3efe12d8e63c1c0d61f20eb"
+    }
+  ],
+  "status": "SOURCE_AND_TARGETED_TESTS_PASS_NATIVE_OPEN",
+  "tests": {
+    "changedHostScopeActualExit": 0,
+    "changedHostScopeChecks": 106,
+    "checks": [
+      "One complete inventory instead of two, simulated2.7s vs5.1s only; no native timing claim",
+      "ObservationPending prevents gate and reply",
+      "Fresh observation and actual released gate both required",
+      "Eight expired/future/scope/sequence/nonce/body/replay/stale-observation negative cases"
+    ],
+    "finalClockFixtureOnlyTargetedChecks": 1,
+    "finalClockFixtureTargetedActualExit": 0,
+    "full106RepeatedAfterClockFixtureFix": false,
+    "nativeDBOrMotorExecutedByTests": false,
+    "preFixExpectedFailure": true,
+    "preFixNewContractActualExit": 1,
+    "scopeTestSourceBeforeClockOnlyFixtureFix": {
+      "bytes": 126209,
+      "sha256": "21d39e55307f9690ad2d34e06c263dc417f0f5952d053e5ff1f18621499fb503"
+    }
+  },
+  "unchangedDeadlines": {
+    "authMilliseconds": 30000,
+    "observationSeconds": 3,
+    "requestReplyFreshnessSeconds": 3,
+    "sourceHostReplySeconds": 5,
+    "unitMilliseconds": 60000
+  }
+}

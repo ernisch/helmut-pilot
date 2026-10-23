@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23.10.2026 00:56UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23.10.2026 01:42UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -652,3 +652,54 @@ lesend geklärt werden. Kein EACCES wird als sichere Nichtüberlappung gewertet;
 keine Löschung erfolgt. Das private Archiv enthält synthetische Secrets und
 bleibt ausschließlich lokal. Frei etwa10,136GB nach Archiv/Restore; neue
 Einzelunit erst nach tatsächlicher Kapazitätsadmission und frischer Hostbindung.
+
+
+23.10., aktueller Nachtrag: CI39881015738 auf48c15b09 ist vollständig grün,
+inklusive84Originale, SQL-/Backup-/Return-/pgcron-Kontrakte, Offline/Bereich und
+Z22. Der bedingte Schnellkernschritt36 wurde übersprungen; kein Laufnachweis
+für diesen Einzelschritt. Die folgende Hoständerung benötigt eigene frischeCI.
+
+Die48-Kopie ist nach tatsächlicher Archiv-/Member-/CRC-Prüfung und frischer
+vollständiger Restaurierung kontrolliert entfernt, ebenso deren redundante
+Restaurierung. Alle368Containerbindungen wurden geprüft; EACCES wurde nur für
+exakt physisch belegte lokale Mounttypen aufgelöst. Der Original-DB-Volume-
+Gegenstand wurde rein lesend mit dev27/inode1606697 identifiziert und gegen
+sämtliche Zielobjekte und Vorfahren geprüft. Docker-Mountlisten werden als
+vollständige kanonische Objekte verglichen, ohne Arrayreihenfolge anzunehmen.
+Eigener beendeter Metadatencontainer danach ohne Force/Volumes entfernt.
+Originale, Archiv, alle Fehlerbelege und fremde Ressourcen erhalten. Frei vor31:
+10.870.374.400B; Voll500 fehlten damals4.309.405.320B, danach neue Belegung.
+[Kontrollierte Bereinigung](belege/v12-native-unit-integration-20261022/CONTROLLED_48_COPY_REMOVAL.SAFE.json).
+
+Frische isolierte Einzelunit31 auf48 scheitert im ENTRY_START-Hostdialog:
+Request01:20:56.277UTC, nach5s keineReply08. Fehlerdatei-mtime01:21:01.282UTC
+ist kein interner Fehlerzeitstempel. Hostmappingfehler01:21:01.493 folgt bereits
+begonnenem Sourcecleanup. Kein vorgelagerter SQL-Fehler: Serviceledger1/1/1 mit
+psql0/beidenEOF, SQL-stderr leer; PG-FATAL gehört zum Fastshutdown. Eigene
+Service-Node-Abschlussquittung fehlt, deshalb kein Node0/EOF-PASS. OuterCLI1/
+2EOF; Host37Handles,36Exit0/ein137, alle2EOF;35Observer0/2EOF, keine unbekannten
+Handles.137 belegt kein PostgREST-Signal. PG0/ein gemergtesEOF+Shutdownmarker,
+Gruppe zweimalleer/letzterExit erfasst, Peak1.079.160.832B/alle6Events0. Wegen
+FAIL kein Unit60/Auth30-/Reservebeweis. Originale unverändert, Motorzahl unbekannt.
+[Unveränderter Fehlerbefund](belege/v12-native-unit-integration-20261022/NATIVE_31_ENTRY_START_FAILURE.SAFE.json).
+
+Belegte Ursache im Host: ENTRY_START lief nach einer vollständigen Inventur ein
+und wartete vor Gate/Reply auf eine zweite äußere Inventur. Jetzt nur bei bereits
+gebundener Source in QUALIFIED frühe Annahme vor einer vollständigen frischen
+Inventur. Alle Envelope-/Scope-/Sequenz-/Nonce-/Body-/Freshness-/Replayguards
+bleiben erhalten; Gate/Reply bei unvollständiger Beobachtung gesperrt. Source5s,
+Request/Beobachtung3s sowie Unit60/Auth30 unverändert.106gezielte Purechecks auf
+Testpin21d39e55 plus genau ein gezielter Test auf finalem Uhrfixturepin f7feada2
+enden tatsächlich0; kein vollständiger106er-Rerun nach der reinen Fixturezeile.
+Vor Fix scheiterte der neue Vertragstest tatsächlich. Root und unabhängiger SOL
+bestätigen beide finalen Sourcepins. Das ist noch keine neue native Zeitabnahme.
+[Änderung und Prüfumfang](belege/v12-native-unit-integration-20261022/ENTRY_START_SOURCE_REVIEW.SAFE.json).
+
+Die eigene f519-PGDATA ist nun ebenfalls ausschließlich lokal privat archiviert:
+Archiv123.772.928B, SHA256
+`0ac87db59a88b3b8b761c91750aed258a5fc426ff2030ac81579d04627f48742`.
+Tatsächlicher Archivhelferexit0; vollständiger Member-/CRC-/EOF-Readback und
+frische Restaurierung aller1779Member/1749Dateien mit Inhalts-/Metadatenvergleich
+bestanden. Keine DB gestartet, keine Löschung; beide Expandedformen noch erhalten.
+Deren Entfernung benötigt eigene frische Schutzprüfung. Das Archiv enthält lokale
+Testsecrets und wird nicht exportiert. f519 bleibt ein fehlgeschlagener Motorfall.

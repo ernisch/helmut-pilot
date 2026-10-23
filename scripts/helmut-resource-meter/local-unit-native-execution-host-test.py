@@ -298,6 +298,92 @@ class PureHost(unittest.TestCase):
         reply = M.unique((self.case / 'HOST_REPLY_01.PRIVATE.json').read_bytes())
         self.assertTrue(reply['result']['source']['fresh'] and 'stale' not in reply['result'])
 
+    def test_queued_entry_with_bound_source_needs_one_fresh_inventory_before_five_second_reply(self):
+        clock = {'seconds': 0.0}; phases = []; original_read = M.read_file
+        real_datetime = datetime.datetime; epoch = real_datetime.now(datetime.timezone.utc)
+        class ClockDatetime(real_datetime):
+            @classmethod
+            def now(cls, tz=None):
+                value = epoch + datetime.timedelta(seconds=clock['seconds'])
+                return value.astimezone(tz) if tz else value.replace(tzinfo=None)
+        self.host.state = 'QUALIFIED'; self.host.source_identity = {'synthetic': 'already-bound-source'}
+        self.host.started_at = self.host.observed_at = 1000
+        request = self.request('ENTRY_START')
+        request['issuedAtUTC'] = epoch.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        request['expiresAtUTC'] = (epoch + datetime.timedelta(seconds=3)).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+        request_pin = M.write_once(self.case / 'HOST_REQUEST_01.PRIVATE.json', M.encode(request))
+        def client(mode):
+            self.assertEqual(mode, 'entry'); phases.append('create-entry'); clock['seconds'] += .3
+            self.host.active_client = 'synthetic-entry'
+            self.host.clients['synthetic-entry'] = {'exitReleased': True}
+        def observe():
+            self.assertEqual(self.host.pending['request']['stage'], 'ENTRY_START')
+            self.assertEqual(phases, ['create-entry']); phases.append('fresh-inventory')
+            clock['seconds'] += 2.4
+            return self.observation({'fresh': True})
+        def release():
+            self.assertEqual(phases, ['create-entry', 'fresh-inventory']); phases.append('release-gate')
+            self.host.clients['synthetic-entry']['gateReleased'] = True
+        with (patch.object(M.datetime, 'datetime', ClockDatetime),
+              patch.object(M.time, 'time', lambda: (epoch + datetime.timedelta(seconds=clock['seconds'])).timestamp()),
+              patch.object(M.time, 'monotonic', lambda: 1000 + clock['seconds']),
+              patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})),
+              patch.object(self.host, '_client', client), patch.object(self.host, '_observe', observe),
+              patch.object(self.host, '_release_clients', release)):
+            result = self.host.tick()
+        reply = M.unique((self.case / 'HOST_REPLY_01.PRIVATE.json').read_bytes())
+        self.assertEqual(phases, ['create-entry', 'fresh-inventory', 'release-gate'])
+        self.assertEqual(reply['requestSHA256'], request_pin['sha256'])
+        self.assertEqual(reply['nonce'], request['nonce']); self.assertEqual(reply['selection'], self.selection)
+        self.assertTrue(result['pending'] is None and self.host.seq == 2 and self.host.failure is None)
+        self.assertLess(clock['seconds'], 5)
+        self.assertGreater(.3 + 2 * 2.4, 5)
+
+    def test_early_entry_still_requires_released_gate_and_complete_fresh_observation(self):
+        original_read = M.read_file; self.host.state = 'QUALIFIED'
+        self.host.source_identity = {'synthetic': 'already-bound-source'}; self.host.observed_at = M.time.monotonic()
+        M.write_once(self.case / 'HOST_REQUEST_01.PRIVATE.json', M.encode(self.request('ENTRY_START')))
+        def client(mode):
+            self.assertEqual(mode, 'entry'); self.host.active_client = 'synthetic-entry'
+            self.host.clients['synthetic-entry'] = {'exitReleased': True}
+        with (patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})),
+              patch.object(self.host, '_client', side_effect=client) as create,
+              patch.object(self.host, '_release_clients') as release):
+            self.host._observe = lambda: (_ for _ in ()).throw(M.ObservationPending())
+            self.host.tick()
+            release.assert_not_called()
+            self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+            self.host._observe = lambda: self.observation({'fresh': True})
+            self.host.tick()
+            self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+            self.host.clients['synthetic-entry']['gateReleased'] = True
+            self.host.tick()
+            self.assertEqual(create.call_count, 1)
+        self.assertTrue((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+
+    def test_early_entry_preserves_envelope_replay_body_and_prior_observation_guards(self):
+        original_read = M.read_file
+        for label in ('expired', 'future', 'scope', 'sequence', 'nonce', 'body', 'replay', 'stale-observation'):
+            host = M.NativeExecutionHost(self.native, self.supervisor, self.config, self.case, {'helpers': {}}, 'd' * 64, self.mounts, self.plan)
+            host.state = 'QUALIFIED'; host.selection = self.selection; host.source_identity = {'synthetic': 'bound'}
+            host.observed_at = M.time.monotonic(); request = copy.deepcopy(self.request('ENTRY_START'))
+            if label == 'expired': request.update(issuedAtUTC='2000-01-01T00:00:00.000Z', expiresAtUTC='2000-01-01T00:00:03.000Z')
+            elif label == 'future': request.update(issuedAtUTC='2100-01-01T00:00:00.000Z', expiresAtUTC='2100-01-01T00:00:03.000Z')
+            elif label == 'scope': request['selection']['commandHash'] = '0' * 64
+            elif label == 'sequence': request['seq'] = 2
+            elif label == 'nonce': request['nonce'] = 'invalid'
+            elif label == 'body': request['body'] = {'inventedAuthority': True}
+            elif label == 'replay': host.seen.add(request['nonce'])
+            elif label == 'stale-observation': host.observed_at -= 3.001
+            path = self.case / 'HOST_REQUEST_01.PRIVATE.json'; M.write_once(path, M.encode(request))
+            with (self.subTest(case=label), patch.object(M, 'read_file', lambda p, *a, **k: original_read(p, *a, **{**k, 'uid': os.getuid()})),
+                  patch.object(host, '_observe', side_effect=AssertionError('no observation before invalid admission')),
+                  patch.object(host, '_client', side_effect=AssertionError('no invalid entry start')),
+                  self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$')):
+                host.tick()
+            self.assertFalse((self.case / 'HOST_REPLY_01.PRIVATE.json').exists())
+            path.unlink(); (self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json').unlink()
+
     def test_early_observation_keeps_window_scope_sequence_nonce_body_and_replay_guards(self):
         original_read = M.read_file
         for label in ('expired', 'future', 'over-three-seconds', 'scope', 'sequence', 'nonce', 'body', 'replay'):
