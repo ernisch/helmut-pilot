@@ -318,9 +318,10 @@ class ReviewTests(unittest.TestCase):
         offline = text.split('  offline-suite:', 1)[1].split('  browser-smoke:', 1)[0]
         private = offline.split('      - name: Ressourcenstart und Originalbindungen', 1)[1].split('      - name: Private Diagnoseausgaben', 1)[0]
         self.assertEqual(private.count('        shell:'), private.count('        run:'))
-        self.assertEqual(private.count('        shell:'), 21)
+        # Der neue reine Z22-Plan-Gegenbeispielschritt nutzt denselben privaten Kanal.
+        self.assertEqual(private.count('        shell:'), 22)
         shell_lines = [line for line in private.splitlines() if line.startswith('        shell:')]
-        self.assertEqual(len(shell_lines), 21)
+        self.assertEqual(len(shell_lines), 22)
         for line in shell_lines:
             self.assertEqual(line.strip(), "shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'")
         self.assertNotIn('shell: ${{', text)
