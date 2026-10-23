@@ -7,8 +7,9 @@ const assert = require("node:assert/strict"), fs = require("node:fs"), path = re
 const crypto = require("node:crypto"), P = require("../lib/helmut/synthetik-500-profile");
 const Parts = require("../lib/helmut/auth-state-parts"), CAS = require("../lib/helmut/auth-store-cas");
 const EU = require("../lib/helmut/synthetik-500-eu-service-contract");
+const Authority = require("../lib/helmut/local-unit-diagnostic-authority");
 const root = path.resolve(__dirname, ".."), lib = path.join(root, "lib/helmut");
-const sources = Object.fromEntries(["storage", "local-unit-diagnostic-store", "llm-usage-atomic"].map(name =>
+const sources = Object.fromEntries(["storage", "local-unit-diagnostic-store", "llm-usage-atomic", "local-unit-diagnostic-scope"].map(name =>
   [name, fs.readFileSync(path.join(lib, name + ".js"), "utf8")]));
 const sha = value => crypto.createHash("sha256").update(value).digest("hex");
 const owner = "synthetic-own-subject", day = "2026-10-22", now = day + "T12:00:00.000Z";
@@ -29,15 +30,18 @@ function fixture(options = {}) {
     HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE: "helmut_unit_diagnostic_" + "a".repeat(32) };
   const profile = { id: owner, aiBudgetDailyCents: options.daily === undefined ? 1000 : options.daily,
     aiBudgetMonthlyCents: options.monthly === undefined ? 10000 : options.monthly };
-  const command = { mode: "D-R-1-local-fixture", units: [{ subject: owner }], drafts: [{ profile }], calendar: { executionDayUTC: day } };
+  const plan = { intents: [] }, slot = { version: Authority.SLOT_VERSION, plan, planHash: P.hash(plan) };
+  const command = { mode: "D-R-1-local-fixture", units: [{ subject: owner }], drafts: [{ profile }], slot,
+    calendar: { executionDayUTC: day, startsAtUTC: day + "T00:00:00.000Z", endsAtUTC: day + "T23:59:59.999Z" } };
   const selection = { operationId: "localUnitDiagnostic-" + "a".repeat(32), commandHash: P.hash(command) };
   current = { command, selection };
-  let reader;
+  let reader, realScope;
   const scope = {
     currentVerified() { if (closed) throw Error("synthetic-scope-closed"); return active ? current : null; },
     assertClock() { calls.clocks++; if (closed || clock < Date.parse(now) || clock >= Date.parse(now) + 60000) throw Error("synthetic-scope-clock"); },
-    guard(auth) { calls.guards++; assert.equal(reader.hasSnapshot(auth), true);
-      assert.equal(auth.syntheticOwnBinding, selection.commandHash); assert.equal(auth.originalField, "synthetic-retained");
+    guard(auth) { calls.guards++; assert.equal(reader.hasSnapshot(auth), false); assert.equal(reader.hasOwnRead(auth), false);
+      assert.equal(Object.hasOwn(auth, "originalField"), false);
+      realScope.guard(auth); // Actual Scope.guard -> Authority.bind/current, no fake field verdict.
       if (options.guardFailure) throw Error("synthetic-claim-guard"); }
   };
   const forbidden = () => { throw Error("offline-real-io-forbidden"); };
@@ -47,6 +51,7 @@ function fixture(options = {}) {
     const module = { exports: {} };
     const builtins = { fs: fsStub, "node:fs": fsStub, path, "node:path": path, crypto, "node:crypto": crypto,
       "node:zlib": require("node:zlib"), "node:util": require("node:util"), "node:async_hooks": require("node:async_hooks") };
+    builtins["node:process"] = { hrtime: process.hrtime, stderr: { on() {}, write() {} } };
     const sandbox = { module, exports: module.exports, Buffer, URL, URLSearchParams, TextDecoder, Date: Clock, structuredClone,
       __dirname: lib, __filename: path.join(lib, name + ".js"), process: { env },
       console: { warn() {}, error() {}, log: forbidden }, fetch: forbidden, ...extra,
@@ -57,6 +62,9 @@ function fixture(options = {}) {
   }
   reader = load("llm-usage-atomic", { "./auth-store-cas": CAS, "./synthetik-500-eu-service-contract": EU,
     "./auth-state-parts": { ...Parts, enabled: () => Parts.enabled(env) } });
+  realScope = load("local-unit-diagnostic-scope", { "./local-unit-diagnostic-authority": Authority, "./synthetik-500-profile": P },
+    {}, "\nmodule.exports={...module.exports,__enterSyntheticContext:value=>context.enterWith(value)};");
+  realScope.__enterSyntheticContext({ closed: false, selection, claimId: uuid });
   const admitted = { command, selection, admission: {}, target: { database: env.HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE, origin: env.SUPABASE_URL } };
   const endpoint = { async request(s, database, method, route, bytes) {
     calls.reads++; assert.equal(JSON.stringify(s), JSON.stringify(selection)); assert.equal(database, admitted.target.database);
@@ -64,7 +72,20 @@ function fixture(options = {}) {
     const request = JSON.parse(bytes); assert.equal(Object.keys(request).sort().join("|"), "id|knownProof|readNonce");
     assert.equal(request.id, "main-auth"); assert.equal(typeof request.readNonce, "string"); calls.nonces.push(request.readNonce);
     if (options.readFailure) throw Error("synthetic-native-read-unknown");
-    const graph = Parts.build({ originalField: "synthetic-retained", syntheticOwnBinding: selection.commandHash,
+    const key = Authority.keys(selection.operationId), entered = new Date(Date.parse(now) - 1000).toISOString();
+    const own = { [key.journal]: { operationId: selection.operationId, commandHash: selection.commandHash, state: "running", claimId: uuid,
+      stopRequested: false, inFlight: { index: 0, enteredAtUTC: entered, deadlineAtUTC: new Date(Date.parse(entered) + 60000).toISOString() } },
+      [key.costs]: { day, limit: Authority.LIMITS.maxMockCostMicroUsd, spent: 0, slot },
+      [key.reservation]: { version: Authority.EXECUTION_VERSION, operationId: selection.operationId, commandHash: selection.commandHash,
+        command: structuredClone(command), admission: { commandHash: selection.commandHash, grantId: "synthetic-grant" } },
+      [key.sendClaim]: {}, [key.review]: {}, [key.result]: {},
+      [Authority.GRANTS_KEY]: { "synthetic-grant": { commandHash: selection.commandHash, operationId: selection.operationId } } };
+    if (options.actualOwnDrift === "cost") own[key.costs].limit++;
+    if (options.actualOwnDrift === "day") own[key.costs].day = "2026-10-21";
+    if (options.actualOwnDrift === "claim") own[key.journal].claimId = "22222222-2222-4222-8222-222222222222";
+    if (options.actualOwnDrift === "command") own[key.reservation].command.injected = true;
+    if (options.actualOwnDrift === "grant") delete own[Authority.GRANTS_KEY]["synthetic-grant"];
+    const graph = Parts.build({ originalField: "synthetic-retained", ...own,
       testKostenAuftrag: { version: EU.ORDER_VERSION, serviceContractHash: EU.HASH } });
     const proof = { generation: uuid, count: history.length, head: sha(JSON.stringify(history)), originalHash: sha("synthetic-original") };
     const state = { version: Parts.VERSION, generation: uuid, root: graph.root, originalHash: sha("synthetic-original-state") };
@@ -190,6 +211,12 @@ async function check(name, work) { currentTest = name; await work(); checks++; }
     assert.equal(s.calls.reads, 0); assert.equal(s.calls.injected, 0);
     const history = await s.store.readBudgetUsage(); assert.equal(Array.isArray(history), true); assert.equal(Object.isFrozen(history), true);
     assert.equal(Object.hasOwn(history, "syntheticOwnBinding"), false); assert.equal(s.reader.hasSnapshot(history), false);
+  });
+  await check("real Scope.guard rejects fresh cryptographically valid own cost, day, claim, command or grant drift", async () => {
+    for (const actualOwnDrift of ["cost", "day", "claim", "command", "grant"]) {
+      const s = fixture({ actualOwnDrift }); await assert.rejects(s.store.readBudgetUsage());
+      assert.equal(s.calls.reads, 1); assert.equal(s.calls.guards, 1); assert.equal(s.calls.legacy, 0);
+    }
   });
   await check("a warmed history never permits a native read outside its branded scope", async () => {
     const s = fixture(); await s.store.readBudgetUsage(); s.deactivate();

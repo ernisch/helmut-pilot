@@ -75,29 +75,32 @@ function setup(options = {}) {
     expectedState: { version: "merkle-auth-v1", generation: revision, root: digest("old-root"), originalHash: digest("original-state") },
     revision: "44444444-4444-4444-8444-444444444444", root: digest("new-root"), nodes: [], additions: options.usage ? [copy(record)] : [] };
   let accepted = null, observedBody = null, observedAuthAck = null;
-  const U = { enabled: () => true, hasSnapshot: value => snapshots.has(value),
-    read: async args => {
+  const U = { enabled: () => true, hasSnapshot: () => false, hasOwnRead: value => value === auth, discardOwnRead() {},
+    readOwnForMutation: async args => {
       assert.equal(args.rowId, "main-auth"); assert.equal(args.target, "http://127.0.0.1:8000|main-auth");
       await args.request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { method: "POST", body: JSON.stringify({ id: "main-auth" }) });
       if (options.readHold) await options.readHold; return auth;
     },
-    write: async (value, args) => {
+    writeOwn: async (value, mutation, args) => {
       stats.writes++; events.push("original.write"); assert.equal(value, auth); assert.equal(value[snapshot], snapshotValue);
       assert.equal(value[casSnapshot], auth[casSnapshot]); assert.equal(value.unrelated, untouched);
       assert.equal(args.rowId, "main-auth"); assert.equal(args.target, "http://127.0.0.1:8000|main-auth");
+      assert.deepEqual(copy(mutation), options.usage ? { record } : { state: nextState });
       if (options.badHistory) value.llmUsage = value.llmUsage.map(item => ({ ...item }));
       const outgoing = copy(body); if (options.extraCAS) outgoing.extra = true;
       if (options.badAdditions) outgoing.additions = [copy(record), copy(record)];
       const ack = await args.request(options.badRPC ? "/rest/v1/rpc/unrelated_write" : "/rest/v1/rpc/helmut_auth_state_cas_v1", { method: "POST", body: JSON.stringify(outgoing) });
       observedAuthAck = ack;
       required(Array.isArray(ack) && ack.length === 1 && ack[0].id === "main-auth" && ack[0].revision === body.revision && !options.authUnknown, "original-ack-unconfirmed");
-      accepted = { llmUsage: [...value.llmUsage] }; snapshots.add(accepted); commits.set(value, { record }); return accepted;
+      accepted = { receipt: null };
+      if (options.usage) {
+        stats.receipts++; required(!options.receiptFailure, "receipt-unconfirmed");
+        accepted.receipt = { ...record, _ablage: { relationalAtomic: "synthetic-only" } }; brandedReceipts.add(accepted.receipt);
+      }
+      return accepted;
     },
-    receipt: (value, original) => {
-      stats.receipts++; required(!options.receiptFailure && commits.get(original)?.record === value, "receipt-unconfirmed");
-      const result = { ...value, _ablage: { relationalAtomic: "synthetic-only" } }; brandedReceipts.add(result); return result;
-    },
-    persisted: (value, receipt) => { stats.persisted++; return !options.persistedFalse && value === accepted && snapshots.has(value) && brandedReceipts.has(receipt); }
+    ownWriteConfirmed: value => value === accepted,
+    confirmed: receipt => { stats.persisted++; return !options.persistedFalse && brandedReceipts.has(receipt); }
   };
   const endpoint = { request: async (selected, db, method, endpointPath, bytes) => {
     stats.requests++; events.push("closed.request"); assert.equal(canonical(selected), canonical(selection)); assert.equal(db, database);
@@ -162,7 +165,7 @@ const fails = async action => assert.rejects(async () => action());
   });
   for (const phase of ["D", "R"]) await check("usage " + phase + " appends exactly one actual object and returns only a privately confirmed receipt", async () => {
     const s = setup({ usage: true, phase }), result = await s.writer.appendUsage(s.args());
-    assert.equal(s.auth.llmUsage[0], s.record); s.history.forEach((old, index) => assert.equal(s.auth.llmUsage[index + 1], old));
+    assert.equal(s.auth.llmUsage, s.history); s.history.forEach((old, index) => assert.equal(s.auth.llmUsage[index], old));
     assert.equal(result.ownAck.kind, "usage-" + phase); assert.equal(s.stats.receipts, 1); assert.equal(s.stats.persisted, 1);
     assert.equal(s.body.ownNext.canonical, s.before.canonical); assert.equal(s.body.artifact.parentHash, null);
     assert.equal(s.body.artifact.sha256, P.hash(s.record)); assert.equal(s.authAck[0].id, "main-auth");
