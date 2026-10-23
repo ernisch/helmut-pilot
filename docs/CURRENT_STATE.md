@@ -4,7 +4,7 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Schreibphasen integriert; echter Unitlauf durch Platte blockiert
+## 23.10.: Aktueller Code angebunden; echter Unitlauf durch Platte blockiert
 
 13.527 Dateien hashverifiziert,84 Originale geschützt; CI39911729550 auf f1f9f456
 grün. DB/V12-POSTRUN-/Runtimebindungen erhalten. Native00c9 bleibt FAIL:
@@ -16,19 +16,20 @@ Auth-/Kontrollzeit UNKNOWN. Socketloser Shim, keine Provider-HTTP-Zeitmessung.
 Manifestcache/enge CLI-Codes integriert, frische FD9/Livecatalog/16 Kontrollen,
 Drift terminal, Run54PASS. GraphReuse/Capture OFF, HistoryReuse/ControlRead ON.
 
-PG-KomponentePASS: native Reads344,511/166,992/155,944ms, Peak189.198.336B.
-Vier echte Konstruktorfälle bytegleich: alt128–132ms/direkt102–119ms;
-rund20ms Differenz erklärt Unit60 nicht. Komponentenpeak435.965.952B,
-kein RAM-Ersparnisnachweis; PG0/alle Kinder beendet/Gruppe leer/Originalschutz.
+PG-ReadsPASS155–345ms/Peak189.198.336B. Vier Konstruktorfälle bytegleich:
+alt128–132/direkt102–119ms;20ms erklären Unit60 nicht. Peak435.965.952B ist
+nur Komponente, kein Ersparnis-/Reservenachweis; PG0/Kinder zu/Originalschutz.
 
-Instrumentierte U.read kalt1523,869/warm408,019ms, NodeCPU1019,545/158,548ms;
+Instrumentierte U.read kalt1523,869/warm408,019ms;
 native Historyreuse false/true,6001 frozen/1923Nodes. Logisch vollständig gleich,
 nur History/Revision-Reihenfolge verschieden. Bytevergleich bleibt FAIL/Node1;
 PSQL beide0+2EOF, PG0/clean/Gruppe leer/Events0/Original9MD gleich.
 CAS: Projektion ohne vollen Auth-JSONB-Aufbau, fünf Graphprüfpasses je Commit.
 Private Prepare/Psql/Accept-Zeitmarken integriert;72 ServicechecksPASS, unabhängig
-geprüft. Tag23-/Worktree-Fix:25 ChecksPASS. Echte Schreibzeiten weiter unbekannt;
-keine neue maßgebliche Motoroptimierung.
+geprüft. Tag23-Fix25PASS. Aktuelle Ausführer-/Connectorpfade integriert:8+13
+ChecksPASS,128 echte Quellpaare/26 unveränderte Vorlagen und7 Modulimporte geprüft.
+Kein nativer Render-/Laufnachweis; frische Coverage/Meterreviews nötig.
+Schreibzeit unbekannt, keine neue maßgebliche Motoroptimierung.
 
 Bereinigung real222.097.408B:3 saubere Helper-WTs, redundante Plaintextkopie,
 2 ungenutzte musl-Pakete entfernt; Originale/Git/Archive/Belege erhalten.

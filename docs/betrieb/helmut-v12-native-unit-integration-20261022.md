@@ -1109,3 +1109,37 @@ Der unveränderte Runtimecode auf `f1f9f456` ist jetzt CI-grün:
 [Run39911729550](https://github.com/ernisch/helmut-pilot/actions/runs/39911729550).
 Das ersetzt keinen Unit60-/500MB-/Voll500-Nachweis. Keine Tests, DB-, native
 Unit-, Provider- oder Production-Aktionen wurden durch diese Bereinigung gestartet.
+
+## 23.10.,07:21UTC: Aktueller Code im vorgesehenen Full500-Pfad gebunden
+
+Die vorhandene Vorbereitung konnte trotz Aufruf aus dem neuen Worktree alte
+CPU-Module verwenden: Kernel-Mount, Isolation-BIN, Runner, optionaler Broker/
+Owner sowie drei ursprüngliche Vorlagenliterale zeigten auf den alten Checkout.
+`37f1e7af` leitet die vier Ausführerpfade aus der kanonischen tatsächlich
+geladenen Datei ab. `1ddcb1e1` ergänzt Connector/Finish: alle128 historischen
+Codepins des fest gepinnten Restoretemplates bleiben unverändert Herkunft;
+ihre128 aktuellen Gegenstücke werden vollständig neu gepinnt. Tatsächlicher
+Gitroot und HEAD müssen vor dem ersten Finish-Schreibzugriff zur Stagingbindung
+passen. Fehlende/aliasierte Dateien, widersprüchliche Pins und alte Code-Assets
+stoppen. Die neue `sourceCodeBinding` erteilt ausdrücklich keine Codeakzeptanz
+und kein GO. Vorlagen und frühere Freigaben werden nicht überschrieben.
+
+Acht neue reine Ausführerchecks und13 neue Connectorchecks bestanden mit echtem
+Exit0; beide Produktumfänge sind unabhängig lesend geprüft. Danach prüfte Root
+mit den integrierten tatsächlichen Funktionen alle128 echten Quellpaare und
+Gitroot/HEAD, alle26 Originaltemplatehashes/9MD sowie genau drei Rootersetzungen
+im Speicher. Ein Importcheck lud die sieben echten Harnessmodule: sämtliche
+Selectoren zeigen auf den aktuellen Checkout. Ein Audit-Hook verbot dabei
+Subprozesse, Sockets, Dateischreiben und Umgebungsänderungen; kein solcher
+Seiteneffekt wurde versucht. Keine Authority- oder Motorfunktion wurde aufgerufen.
+
+Das ist keine vollständige26-Consumer-Render-/Finish-/Mount-/Ownerabnahme.
+Ein neues Request wurde nicht erstellt oder vermessen. Die gelesenen Request-
+Verträge erlauben das neue Herkunftsfeld und prüfen tatsächliche Länge/SHA;
+keine entgegenstehende Request-Bytecap wurde gefunden. Die128 Paare sind fest
+begrenzt. Neue exakt gebundene Meter-/Backendreviews, vollständige aktuelle
+Coverage, Live-Originalabnahme, Tages-/Finanz-/Zeit-/Fallbindung und alle32
+Startgruppen bleiben nötig. Historische Reviews gelten nicht für die neuen
+Quellbytes. Kein GO, Claim, Setup, DB-/Provideraufruf oder Ressourcenlauf erzeugt.
+Unit60/Auth30, gemeinsamer Speicher/500MB und Langzeitplateau bleiben offen.
+[Bereinigter Code-/Integrationsbeleg](belege/v12-native-unit-integration-20261022/CURRENT_CODE_BINDING_20261023.SAFE.json).

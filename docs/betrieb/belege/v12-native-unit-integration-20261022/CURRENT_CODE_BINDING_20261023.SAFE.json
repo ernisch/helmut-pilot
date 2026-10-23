@@ -1,0 +1,133 @@
+{
+  "schema": "helmut-current-execution-code-binding-public/1",
+  "status": "INTEGRATED_PURE_AND_READONLY_CHECKS_PASS_NATIVE_ADMISSION_OPEN",
+  "codeCommit": "1ddcb1e156a0eca542381fe085224514eed36d88",
+  "previousExecutorFixCommit": "37f1e7afd0fd346be1c16b863ea4b4499d8e2cef",
+  "sourcePins": [
+    {
+      "file": "kernel-meter.py",
+      "bytes": 18793,
+      "sha256": "1d6699287725e04fd4cfa0ecb2c314338810195f03913f9f3b7b1b5f28620165",
+      "kind": "product"
+    },
+    {
+      "file": "process-runner.py",
+      "bytes": 23992,
+      "sha256": "79bb3eb125ca6f2a26881d56035ff986c7c358b338d2dcd4a1b472e9d5649d1a",
+      "kind": "product"
+    },
+    {
+      "file": "docker-broker.py",
+      "bytes": 8505,
+      "sha256": "6e53418142e7e8f3133f8d8ef988eaf45b8628b949f7961f57605d6b18d8579b",
+      "kind": "product"
+    },
+    {
+      "file": "local-postgrest-owner.py",
+      "bytes": 47334,
+      "sha256": "4a795346536782d1be193353973db48277ab1e5e630a478a09d7fec1e4c4d908",
+      "kind": "product"
+    },
+    {
+      "file": "connect-local500.py",
+      "bytes": 41076,
+      "sha256": "9b5b6679176e68a089f6750b819d60dd20346b64237fa20da9a979f3e7bbb358",
+      "kind": "product"
+    },
+    {
+      "file": "finish-connection.py",
+      "bytes": 13938,
+      "sha256": "9ac1965e6028b17ab39d527bdb5c5d4dc85f1c3041456fe6d0ad9a8e90c82845",
+      "kind": "product"
+    },
+    {
+      "file": "current-repository-root-test.py",
+      "bytes": 7113,
+      "sha256": "2a721abe49be21c1f78409577efb5583101dd2aebbc90f8bea25712ed0d9f090",
+      "kind": "test"
+    },
+    {
+      "file": "connection-code-binding-test.py",
+      "bytes": 13208,
+      "sha256": "d88e9d7f30841c125db2af4a191a3f9087679110a45e2b1aed3f1f7d0056d19d",
+      "kind": "test"
+    }
+  ],
+  "change": {
+    "repositorySelection": "Canonical checkout of the actually loaded script, without environment override",
+    "full500Executors": "Kernel readonly repository mount, isolation helper directory, runner instrumentation, optional database broker and owner",
+    "preservedHistoricalCodePins": 128,
+    "currentCodePins": "Actual current files; immutable historical source pins remain paired as provenance",
+    "fixedRestoredRuntimeTemplateRequired": true,
+    "gitRootAndHeadCheckedBeforeFirstFinishWrite": true,
+    "sourceCollisionsOldCodeAssetsMissingOrAliasedCounterpartsRejected": true,
+    "originalRootLiteralsChangedOnlyInNewRenderedOutputs": 3,
+    "newProvenanceDoesNotGrantCodeAcceptanceOrGO": true
+  },
+  "verification": {
+    "pureExecutorTests": {
+      "checks": 8,
+      "actualExitCode": 0,
+      "toolChunk": "f3fe78",
+      "nativeExecution": false
+    },
+    "pureConnectionBindingTests": {
+      "checks": 13,
+      "actualExitCode": 0,
+      "toolChunk": "e8b580",
+      "actualAuthorityOrEngineImports": false,
+      "gitProbeStubbedInFixtureTests": true
+    },
+    "independentSourceReviews": {
+      "executorScope": "PASS",
+      "connectionScope": "PASS"
+    },
+    "actualReadOnlyBindingCheck": {
+      "toolChunk": "9c70b6",
+      "actualExitCode": 0,
+      "realOriginalAndCurrentCodePairsVerified": 128,
+      "actualGitRootAndHeadChecked": true,
+      "originalTemplatesFreshSHA256AndNineMetadataFieldsVerified": 26,
+      "exactRootLiteralTransformationsInMemory": 3,
+      "fullRendererReplayExecuted": false
+    },
+    "actualModuleImportCheck": {
+      "toolChunk": "f5a39e",
+      "actualExitCode": 0,
+      "actualHarnessModulesImported": 7,
+      "allRepositorySelectorsEqual": true,
+      "auditHookBlockedSubprocessSocketFilesystemWriteAndEnvironmentMutation": true,
+      "forbiddenSideEffectsAttempted": 0,
+      "authorityOrEngineFunctionsInvoked": false
+    }
+  },
+  "unchanged": {
+    "originalTemplatesDataAndHashes": true,
+    "originalSourceDatabase": true,
+    "protectedImageAndBinaryPins": true,
+    "authoritySlotGOClaimsSetupAndSpentMarkers": true,
+    "rolesDeadlinesSafetyAndBudgetRules": true,
+    "hardMemoryBytes": 2048000000,
+    "requiredMemoryReserveBytes": 500000000,
+    "maximumCombinedMemoryBytes": 1548000000
+  },
+  "open": {
+    "freshScopedMeterAndBackendReviewsRequired": true,
+    "currentCompleteIndependentCoverageRequired": true,
+    "fullActualRenderFinishMountAndOwnerProof": true,
+    "liveOriginalSourceQualification": true,
+    "persistentDiskAdmission": true,
+    "nativeUnit60AndAuth30": true,
+    "commonMemoryReserveAndPlateau": true,
+    "all32FreshStartGroups": true,
+    "newConcreteFull500GO": true
+  },
+  "limits": {
+    "codeBindingProvenanceIsNotAcceptance": true,
+    "largerRuntimeRequestNotYetMaterializedOrMeasured": true,
+    "noOldReviewPinsReusedForChangedSources": true,
+    "noStageGOClaimSetupOrExecutionCreated": true,
+    "noDatabaseProviderOrProductionActions": true,
+    "full500ReadyOrStarted": false
+  }
+}
