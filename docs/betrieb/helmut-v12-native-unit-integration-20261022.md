@@ -1164,3 +1164,22 @@ Materialdateien waren synthetische, danach entfernte Fixtures; kein Caseverzeich
 Stage/Finish, Claim, GO, Setup, DB- oder Motorlauf entstand. Das qualifiziert nicht
 die vollständige operative Kombination aus atomarem Descriptor, Budget und Owner.
 Zeit-/RAM-Nachweis und alle übrigen oben genannten Startgrenzen bleiben offen.
+
+## 23.10.,07:47UTC: Zweite alte VM-Pfadannahme gezielt korrigiert
+
+CI39918968768 bestand die vorher korrigierte Backendfixture, scheiterte danach
+im privaten Ressourcenstart-Schritt. Dessen erste exakte Python-Sequenz wurde
+einmal lokal reproduziert:19Tests,18ohneFehler,ein Fehler beim reinen VM-Child
+`runtime-memory-staging-test.js`. Dessen Modultabelle erwartete weiterhin nur
+den alten CPU-Root. `7b051edc` ändert ausschließlich die eine Testkonstante auf
+den kanonischen aktuellen Dateipfad; sämtliche VM-Whitelists, Assertions und
+Produktguards bleiben erhalten. Danach bestand nur der betroffene eine Test
+mit echtem Exit0; die übrigen18 wurden nicht wiederholt. Der erste19er-Lauf
+bleibt FAIL. Childstderr war im Pythonlog nicht enthalten und wird nicht erfunden.
+
+Die634B verschlüsselte GitHub-Diagnose wurde tatsächlich über den geschützten
+Connector serverseitig geladen und lokal SHA-geprüft aufbewahrt. Der CI-Schlüssel
+ist in dieser Cloud nicht verfügbar; keine Entschlüsselung oder Einsicht in
+den privaten GitHub-Log wird behauptet. Es entstand keine DB-, Docker-, Motor-,
+Provider-, Authority- oder Production-Aktion. Gesamt-CI und operative Zeit-/
+Speicher-/Startabnahme bleiben bis zu ihren tatsächlichen Ergebnissen offen.

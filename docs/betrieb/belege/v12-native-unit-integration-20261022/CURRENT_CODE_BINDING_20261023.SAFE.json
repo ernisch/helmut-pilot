@@ -57,6 +57,12 @@
       "bytes": 9346,
       "sha256": "86893142bbaa3dc564da57b837b52b8db79527f5439111c6ed330adb5a964532",
       "kind": "test"
+    },
+    {
+      "file": "runtime-memory-staging-test.js",
+      "bytes": 7493,
+      "sha256": "50f2331e4c197012bdafbcd1588627e017a680369377ca59a44279605b61169e",
+      "kind": "test"
     }
   ],
   "change": {
@@ -149,6 +155,38 @@
       "caseDirectoryNotCreated": true,
       "noStageFinishClaimGOSetupDatabaseOrEngineExecution": true,
       "completeOperationalAtomicBudgetOwnerCombinationQualified": false
+    },
+    "runtimeMemoryFixtureCompatibility": {
+      "failedCIRun": 39918968768,
+      "fixtureFixCommit": "7b051edc00a8a7904bb1d74c54568224a49171b3",
+      "change": "Only test VM repository R constant follows canonical current __dirname",
+      "localExactPreflightCISequence": {
+        "actualExitCode": 1,
+        "toolChunk": "875906",
+        "testsRun": 19,
+        "testsWithoutErrors": 18,
+        "errorTest": "test_native_policy_pure_renderer_changes_only_heap_options_and_runtime_observation",
+        "exceptionClass": "subprocess.CalledProcessError",
+        "capturedChildStderrNotClaimed": true
+      },
+      "afterTargetedFix": {
+        "actualExitCode": 0,
+        "toolChunk": "1b4a22",
+        "testsRun": 1,
+        "unrelated18TestsNotRepeated": true
+      },
+      "allVMWhitelistsAssertionsAndProductGuardsPreserved": true,
+      "realOperationalAcceptanceGranted": false
+    },
+    "protectedCIDiagnosticRetained": {
+      "runID": 39918968768,
+      "artifactID": 12485853470,
+      "encryptedCipherBytes": 634,
+      "encryptedCipherSHA256": "63e57a97ef5cb392fa34cec87e9a8f11d6c323629d1541e501d966e3e5b2dc06",
+      "actualAuthenticatedServerSideDownload": true,
+      "decrypted": false,
+      "keyNotAvailableInCurrentCloud": true,
+      "noPrivateLogContentsPublished": true
     }
   },
   "unchanged": {
