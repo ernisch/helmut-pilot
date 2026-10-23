@@ -79,5 +79,25 @@
   "full500Qualified": false,
   "freshCaptureAndRootAdoptionRequired": true,
   "providerCalls": 0,
-  "production": false
+  "production": false,
+  "existingControllerFixtureCorrection": {
+    "atUTC": "2026-10-23T16:45:43.352361+00:00",
+    "ciRun": 39987309979,
+    "ciHead": "dbdf3d71cdc84a7bd9dba39f7ca2c01263afa561",
+    "ciStep14": "FAIL",
+    "ciOriginalSteps18And19": "SKIPPED_NO_NEW_ACCEPTANCE",
+    "cause": "Test fixture bypasses __init__ via object.__new__; new claim_only mode flag was not initialized. Genuine constructor already sets normal mode False.",
+    "change": "Only fixture c.claim_only=False; product and normal16-control/3-position acceptance unchanged.",
+    "testPin": {
+      "file": "scripts/helmut-resource-meter/local-unit-native-execution-controller-test.py",
+      "bytes": 38615,
+      "sha256": "6c9cbe358c8b49b1d7dbc3f743915cd409e88126a012fcdb8ca7ac69409dffc3"
+    },
+    "actualTool": "710175",
+    "actualExitCode": 0,
+    "passed": 21,
+    "nativeDatabaseProviderCalls": 0,
+    "sourceControllerSHA256": "7253e7058c2e7ff8d2486df8626130311384f1812eb6e2206ce2313871e195da",
+    "newRemoteCISuccess": false
+  }
 }

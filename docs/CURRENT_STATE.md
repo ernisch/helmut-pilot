@@ -13,9 +13,9 @@ ON. Own-Write nur Einzelunit; Voll500-Write unverändert. Alte FAILs/GOs erhalte
 Neuester Motorfallaf33/cad305f9 bleibt FAIL: Entry-Deadline, Parent1/zwei EOFs,
 Peak1.344.360.448B, sechs Events0/finale Gruppe leer; kein Unit60/Auth30/Reserve/
 Plateau. Sechs CAS11,918s enthalten6,370s Write-Endpoint und2,792s Reader-Promise;
-Endpoint ist keine reine SQLzeit. Vier echte Readonly-EXPLAINs an eigener af33-
-Kopie PASS:146/169/111/42ms, Messprozess0,483s, Komponentenpeak703.197.184B,
-Quelle/Katalog/Closure gleich. CAS/Receipt/COMMIT/WAL/Ledger damit nicht gemessen.
+Endpoint ist keine reine SQLzeit. Vier af33-Readonly-EXPLAINs PASS, Messprozess
+0,483s/Komponentenpeak703.197.184B, Quelle/Katalog/Closure gleich. Schreib-CAS/
+Receipt/COMMIT/WAL/Ledger damit nicht gemessen.
 
 Dafür Claim-only-Diagnose integriert: frische Originalkopie/Qualifikation/Seed,
 erster echter CAS/COMMIT/ACK/Readback ohne Motor. Claim bleibt running/Autorität
@@ -23,9 +23,9 @@ verbraucht, Fall nicht wiederverwendbar. Unabhängige V1-/V2-Reviews PASS, zwei 
 Lücken behoben. Aktuelle Repo-Tests16+48PASS/Exit0; reine Mock-/AST-Prüfungen.
 Frischer Capture und einzelne Root-Startbindung noch nötig; keine Unitabnahme.
 
-84er Originalkanal repariert; letzte gelesene CI208e/39972723984 Schritt19 FAIL,
-Browser abgebrochen/Z22 übersprungen, GitHub-Vercel SUCCESS. Neue U/Parts brauchen
-fünf echte gepaarte Fälle. Erster Lifecycle b6db5293 tatsächlich PASS/RootExit0
+CI39987309979/dbdf: Browser/Prüfplan SUCCESS, Schritt14 FAIL, Original18/19 SKIP.
+Fixture umging Konstruktor ohne neues Modusfeld; Normalmodus ergänzt,21PASS.
+Letzte84er Originalabnahme208e/39972723984; neue U/Parts brauchen fünf echte Fälle. Erster Lifecycle b6db5293 tatsächlich PASS/RootExit0
 und unabhängig angenommen:22,727s, PG0/HTTP beendet/Gruppe leer/Events0,
 Quelle/Root/Revision/History6000 gleich. Vier OLD/NEW/NEW/OLD-Fälle und Gesamt-/
 Gateabnahme fehlen. Keine historischen Belege umpinnen oder Hash-only-Reparatur.

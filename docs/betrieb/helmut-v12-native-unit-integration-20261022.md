@@ -1529,3 +1529,13 @@ af33/Außenbelege KEEP, kein Export. Neue Quellenfälle vorab nur abgeleiteter S
 komplette geprüfte Außenbelegsicherung und frische Rootprüfung bleiben vor Entfernung
 Pflicht. FAIL/Unknown/fehlende Wiederherstellung KEEP. Alle fünf echten Ergebnisse
 bleiben unabhängig vom Scratchretirement für jede Sourcequalifikation erforderlich.
+
+
+Neuer CI-Lauf39987309979 aufdbdf3d71: Browser und öffentlicher Prüfplan SUCCESS,
+Einzelunit-Integration Schritt14 FAIL;84er Originalschritte18/19 SKIPPED, keine neue
+Original-/Sourcegateabnahme. Die sechs genannten Fehler stammen aus der Controller-
+Testfixture: object.__new__ umgeht den echten Konstruktor und setzte claim_only
+nicht. Nur explizites False für diese normale Unitfixture ergänzt; unveränderte
+Controller-Suite21/21PASS, tatsächlicher Root-Exit0/710175, keine nativen Prozesse/
+DB/Provider. Produktkonstruktor und16Kontrollen/3Positionen unverändert. Remote-
+Gesamt-CI bleibt bis neuem tatsächlichem Nachweis offen.

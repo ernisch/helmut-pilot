@@ -115,6 +115,7 @@ class Fixture:
         self.failure, self.append_seconds, self.terminal_seconds = failure, append_seconds, terminal_seconds
         self.c = object.__new__(self.m._Controller)
         c = self.c
+        c.claim_only = False
         c.selection = {'operationId': 'localUnitDiagnostic-' + 'a' * 32, 'commandHash': 'b' * 64}
         c.database, c.expires = 'helmut_unit_diagnostic_' + 'a' * 32, '2026-10-22T12:03:00.000Z'
         c.pg = None
