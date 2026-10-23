@@ -1397,3 +1397,54 @@ drei neue Tracegruppen und43 betroffene Writerchecks Exit0. Keine Parts-Suite wi
 Das ist die kleinste fehlende Messung zur Wahl des nächsten belegten Umbaus, kein
 weiterer Optimierungsversuch oder nativer Erfolgsnachweis. Neue Einzelunit erst nach
 frischer sauberer Head-/Quell-/Platten-/Originalbindung; kein vollständiger500er.
+
+## 23.10.: Echte Writer-Zeitgrenzen grenzen den Engpass ein
+
+Einzelfallaf33f16d aufcad305f9 ist tatsächlich beendet: Parentwait Exit1/zwei EOFs
+nach144,753s, primär Controller-Entry-Terminaldeadline; kein äußerer Timeout,
+Signal oder Retry. PG Exit0, alle Kinder beendet, letzte Prozesse erfasst, Gruppe
+leer; Hostabschluss behält `execution-host-not-clean`. Originale unverändert.
+Peak1.344.360.448B, sechs Events0 und124 gültige Speicher-/Ankerpaare. Ein fehl-
+geschlagener Einzelfall belegt weder Unit60/Auth30/Qualität noch Plateau oder500MB.
+
+Alle70 neuen Writer-Zeilen sind vollständig: sieben Aufrufe mit je fünf Zeitpaaren,
+einschließlich separatem Usage-Aufruf1,586107234s. Sechs State-CAS11,918265219s
+zerfallen disjunkt in6,369642982s nativen Write-Endpoint,2,792191486s tatsächlichen
+Reader-Promise,0,765701844s übrigen Ownread,0,222252845s übrigen Write,
+0,469448844s sonstigen Own-Writer und1,299027218s außerhalb des Own-Writers.
+Endpointzeit enthält Bridge/Transaktion/Antwort/Transport, nicht ausschließlich SQL.
+Keine verschachtelten Zeiten addiert, keine CPU-Anteile aus Wandzeit abgeleitet.
+
+Die erste Claim-Lesung1,355655585s bleibt erforderlich. Eine optionale private
+Fortsetzung könnte höchstens die fünf folgenden State-Reads2,202237745s vor neuen
+Pruning-/Versiegelungskosten vermeiden; deshalb kein weiterer Umbau auf Verdacht.
+Die tatsächliche Schreibbestätigung dominiert diese sechs Änderungen. Nächste
+kleinste Diagnose: vier reine native SQL-Komponenten an einer unabhängig kopierten
+kalten af33-DB, echte Writerrolle/RLS und unverändertes JIT. Kein Motor/Provider,
+keine alten Claims, kein CAS. Noch kein passender Komponentenlauf gestartet;
+frischer konkreter Vertrag, Quell-/Runtimeprüfung und unveränderte Plattenadmission
+sind vorher erforderlich. Eine reine SELECT-Messung beweist keine Commit-/WAL- oder
+Service-Ledgerkosten und ersetzt keinen erfolgreichen Motorlauf.
+
+433 Codepins gegen1a96: ausschließlich Writer mit begrenzten Zeitmarken geändert;
+1530 Runtimepins und36 SQL-Quellbindungen gleich. Beide unabhängigen Auswertungen
+bleiben als vollständige private Belege erhalten; öffentliche Hash-/Größenbindungen
+stehen im aktualisierten Sprintnachweis. Kein weiterer vollständiger500er gestartet.
+
+Die abgegrenzten SQL-Komponenten sind unabhängig statisch geprüft. Die reine
+Kontrolldateiprüfung mit gepinntem PG17.6 meldet für af33 `shut down` und dieselbe
+Clusteridentität wie vor dem Lauf; Quelldatei inklusive Zeitstempeln unverändert.
+Frische Quieszenzprüfung vor der vollständigen unabhängigen Kopie bleibt Pflicht.
+Der neue Komponentenrunner wird separat vorbereitet; alte00c9-Metadatenverträge
+erteilen ihm keine Startrechte. Tatsächliche Writer-TX10s/500ms, native PGdefaults
+30s/1s und JIT bleiben; vier Lese-EXPLAINs, kein CAS/Claim/Schema-/Providerpfad.
+
+Zwei weitere abgeschlossene öffentliche Arbeitskopien (Source1940 und CI-entry9b8)
+nach vollständigem Gitblob-/SHA-/9MD-/Originalschutz-/Rückwegbeleg regulär entfernt,
+jeweils tatsächlicher Git Exit0. Alle Branchrefs/Commitobjekte und privaten Außen-
+belege bleiben erhalten. Beobachtete Nettogewinne79.888.384B und79.831.040B; keine
+exklusive globale Allokationskausalität behauptet. Danach10.803.478.528B verfügbar:
+unveränderte Einzeladmission10GiB erfüllt; Voll50015.179.779.720B nicht erfüllt.
+CI39968408053 aufcad305f9 besteht öffentliche Bindung, Browser und84 Originale,
+scheitert weiter in Schritt19; weitere DB-/Z22-Schritte übersprungen. Fehlerdetails
+dieses Remote-Laufs nicht gelesen; voriger exakter Sourcegate-Befund separat erhalten.

@@ -6,36 +6,37 @@ nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 
 ## 23.10.: Neuer Code nativ weiter FAIL; Quellqualifikation und500MB offen
 
-13.527 Dateien hashverifiziert,84 Originale geschützt; V12-POSTRUN erhalten.
-PR936 bindet aktuellen Ausführer/Connector, native CAS und Manifestcache;
-unbekannte Schreibausgänge terminal ohne Retry. GraphReuse/Capture OFF,
-HistoryReuse/ControlRead ON. Originale und frühere FAIL-Belege erhalten.
+13.527 Dateien hashverifiziert,84 Originale/V12-POSTRUN erhalten. PR936 bindet
+Ausführer/Connector, native CAS/Manifestcache; unbekannte Writes terminal ohne Retry.
+GraphReuse/Capture OFF, HistoryReuse/ControlRead ON. Frühere FAIL-Belege erhalten.
 
-Neuester Einzelfall1a964261 auf7cf21c32 bleibt FAIL: Controller-Entry-Deadline,
-Parent Exit1/zwei EOFs. Peak1.349.353.472B, sechs Events0, Gruppe leer; kein Unit60-/
-Auth30-/Reservebeweis.122 gültige Komponentenpaare, kein belastbares Plateau.
-Prä-R56,108s statt55,822s; sechs State-CAS12,224s statt12,491s. Kein wesentlicher
-Zeit-/gemeinsamer RAMgewinn. CAS-Unterphasen ReadRPC/Node/Write noch UNKNOWN;
-5,926s Servicefenster sind darin verschachtelt. Keine weitere Optimierung auf Verdacht.
+Neuester Einzelfallaf33f16d aufcad305f9 bleibt FAIL: Controller-Entry-Deadline,
+Parent Exit1/zwei EOFs. Peak1.344.360.448B, sechs Events0, Gruppe leer; kein Unit60-/
+Auth30-/Reservebeweis.124 gültige Komponentenpaare, kein belastbares Plateau.
+Sechs State-CAS11,918s: darin6,370s nativer Write-Endpoint,2,792s Reader-Promise,
+0,766s weiterer Ownread,0,222s weiterer Write,0,469s sonstiger Own-Writer und1,299s
+außerhalb. Disjunkt, keine CPU-Zuordnung. Endpoint umfasst Transport/DB/Antwort.
+1530 Runtimepins gegen1a96 gleich. Nächster Schritt: echte SQL-Zuordnung an eigener
+kalter Kopie. Kopienumbau bisher ohne wesentlichen Zeit-/RAMgewinn; keine weitere
+Optimierung auf Verdacht.
 
-Hostcache mit frischer Daemonbindung:415 gleiche IDs, bisher2,004s, neu kalt2,040s/
-warm0,581s; kein Motorzeit-/RAM-Beweis. Trace vor Cleanup pumpen; fehlend UNKNOWN.
+Hostcache kalt ohne Gewinn, warm schneller; kein Motorzeit-/RAM-Beweis.
 CI39958713128 auf2cfd657f vollständig SUCCESS. Neue89er Artefaktpins7cf21c32:
-10 betroffene Checks PASS. CI39964840723 besteht öffentliche Bindung/Browser/84Pins,
-blockiert aber korrekt am alten Controlcache-Sourcegate: neue U/Parts noch nicht
+10 betroffene Checks PASS. CI39968408053 besteht Bindung/Browser/84Pins, Schritt19
+weiter FAIL. Bekannter Sourcegate-Blocker: neue U/Parts noch nicht
 nativ komponentenqualifiziert; alte Belege nicht umpinnen. Zehn gezielte Pure-Suiten,
-unabhängiges Vollreview und drei Alias-/Uhrschutzregressionen PASS. Own-Schreibpfad
-4c01430c/adbcbc70 gilt nur Native-Einzelunit; geteilter Control-Read erreicht auch
-Voll500. Dessen öffentlicher Schreibpfad unverändert. App403 separat.
+unabhängiges Vollreview/drei Schutzregressionen PASS. Neuer Own-Schreibpfad nur
+Native-Einzelunit; geteilter Control-Read auch Voll500. Dessen Write unverändert.
 
 Alle33 qualifizierten Archive verschlüsselt zurückgeladen/hashgeprüft;2.792.718.336B
 vorherige Archivalokation entfernt. Deltabasis KEEP, kein externes Vollbackup behauptet.
-Eigene CI-Hülle/3 fertige CI-Worktrees entfernt; DBvolume/Image/Logs/Gitrefs KEEP.
-Zuletzt11.486.609.408B frei: Einzeladmission10GiB erfüllt, Voll50015.179.779.720B
-nicht. Original-RAW-Allokationsänderung automatisch abgelehnt,
-unverändert; ausdrückliche Einzelentscheidung angefragt. Sechs authentische Quell-
-DBs für Voll500 nötig; Tiny-Anbindung nur vorbereitet. Alle32 Bedingungen frisch,
-alte GOs verbraucht. Kein Voll500/Production. [Belege](betrieb/helmut-v12-native-unit-integration-20261022.md).
+Eigene CI-Hülle/fertige öffentliche Worktrees entfernt; DBvolume/Image/Logs/Gitrefs KEEP.
+Nach jüngster Einzelunit und zwei WT-Bereinigungen10.803.478.528B frei:
+Einzeladmission10GiB wieder erfüllt; Voll50015.179.779.720B weiter offen.
+Original-RAW-Allokationsänderung automatisch abgelehnt; Einzelentscheidung offen.
+Sechs authentische Quell-DBs für Voll500 nötig; Tiny-Anbindung nur vorbereitet.
+Alle32 Bedingungen frisch, alte GOs verbraucht. Kein Voll500/Production.
+[Belege](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

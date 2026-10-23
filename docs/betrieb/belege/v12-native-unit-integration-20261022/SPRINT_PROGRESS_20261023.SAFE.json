@@ -1,7 +1,7 @@
 {
   "schema": "helmut-sprint-progress/1",
-  "recorded_at_utc": "2026-10-23T14:11:18.902610+00:00",
-  "code_head_before_documentation": "ba75d837171bd000eff57f0f09658ce82d152a30",
+  "recorded_at_utc": "2026-10-23T14:47:09.730031+00:00",
+  "code_head_before_documentation": "cad305f96c367ff1a66237da9d05dde40017c69c",
   "private_evidence_pins": [
     {
       "label": "cache_comparison",
@@ -122,6 +122,60 @@
       "bytes": 555,
       "sha256": "01278345b3b921dbb6561878929b935021ad4872c121e9b359b1a0e14979214a",
       "private_source_retained": true
+    },
+    {
+      "label": "latest_native_own_write_phases",
+      "bytes": 27023,
+      "sha256": "2c4b5569cf319097414f70c58a2492f63af4376a0d2e6979d7a32f6e6fc95492",
+      "private_source_retained": true
+    },
+    {
+      "label": "latest_native_own_timing_memory_closure",
+      "bytes": 5457,
+      "sha256": "cd9708a79b8c856776716d9d6b129f873067b6a60ac6c23f3048aa77f9effaca",
+      "private_source_retained": true
+    },
+    {
+      "label": "completed_source1940_worktree_retirement",
+      "bytes": 567,
+      "sha256": "2dd82b421f576f894c159699992e790d418c983351a30362b4d93bd45d5e9c4e",
+      "private_source_retained": true
+    },
+    {
+      "label": "optional_content_continuation_plan_no_go",
+      "bytes": 4269,
+      "sha256": "ad2383aed8168e4efe5c7110e8a5944a3ce8a90f955b6c006219b66a9ebcf109",
+      "private_source_retained": true
+    },
+    {
+      "label": "current_head_ci_remote_metadata",
+      "bytes": 14742,
+      "sha256": "fb8832775d13211ea8aad699a48656779edbcbe7c59cd50c091329c6a96b7c06",
+      "private_source_retained": true
+    },
+    {
+      "label": "completed_own_ci_entry_worktree_retirement",
+      "bytes": 845,
+      "sha256": "a6e7d250421d8b030158709c0eaca51c8ebc0a47267b46642fce5cac6789bcf7",
+      "private_source_retained": true
+    },
+    {
+      "label": "prepared_late_sql_plan_static_review",
+      "bytes": 8251,
+      "sha256": "485f04c7f91df689885bce7a4cc2799fe3b11a4aa3ce97cccc594fabc48d071d",
+      "private_source_retained": true
+    },
+    {
+      "label": "prepared_late_sql_runtime_budget_historical_plan_version",
+      "bytes": 10902,
+      "sha256": "118df34e835d284589387c381dd70d4b6a1a5a40741aac4d0ee23e1dd791ecca",
+      "private_source_retained": true
+    },
+    {
+      "label": "prepared_late_sql_current_plan_after_cold_control_review",
+      "bytes": 17171,
+      "sha256": "842e38f491c16ae385a4bd7a942f18708864a9d414238e365f9641f3c0d912ad",
+      "private_source_retained": true
     }
   ],
   "cache_comparison": {
@@ -156,12 +210,8 @@
     "correction_commit": "d8259579",
     "new_semantic_plan_test_groups_passed": 16,
     "new_semantic_plan_independent_source_review": "PASS",
-    "new_live_verbose_catalog_integration": "SUCCESS",
     "historical_exact_physical_plan_cause": "UNKNOWN",
-    "all_three_jobs": "SUCCESS",
     "protected_originals": 84,
-    "new_z22_pure": "SUCCESS",
-    "completed_at_utc": "2026-10-23T13:40:37Z",
     "fixture_corrections": [
       "d1f15b4a670025102a9aa382e7d3594e9b034d24",
       "2cfd657fdf3b2877db4963334f8fd353898c3c08"
@@ -170,17 +220,26 @@
     "last_fully_successful_run": 39958713128,
     "last_fully_successful_head": "2cfd657fdf3b2877db4963334f8fd353898c3c08",
     "last_fully_successful_result": "SUCCESS",
-    "current_run": 39964840723,
-    "current_head": "7cf21c3248aeb147de04cd01a4e59439ce054059",
+    "current_run": 39968408053,
+    "current_head": "cad305f96c367ff1a66237da9d05dde40017c69c",
     "current_result": "FAIL",
     "current_public_code_bindings": "SUCCESS",
     "current_browser": "SUCCESS",
     "current_original84": "SUCCESS",
     "current_offline_step19": "FAIL",
     "current_z22_pure_and_live": "SKIPPED",
-    "cause": "current actual Atomic/Parts source bytes differ from historical qualified control-cache sources",
     "pin_only_or_mock_bypass_allowed": false,
-    "new_exact_source_and_native_component_qualification_required": true
+    "new_exact_source_and_native_component_qualification_required": true,
+    "previous_source_gate_failed_run": 39964840723,
+    "current_completed_at_utc": "2026-10-23T14:21:11Z",
+    "current_failure_step": 19,
+    "current_exact_remote_error_logs_read": false,
+    "last_fully_successful_all_three_jobs": "SUCCESS",
+    "last_fully_successful_live_verbose_catalog_integration": "SUCCESS",
+    "last_fully_successful_z22_pure": "SUCCESS",
+    "last_fully_successful_completed_at_utc": "2026-10-23T13:40:37Z",
+    "known_unresolved_source_gate_from_previous_exact_local_reproduction": "current actual Atomic/Parts source bytes differ from historical qualified control-cache sources",
+    "current_remote_exact_failure_cause": "UNKNOWN_REMOTE_LOGS_NOT_READ"
   },
   "capacity": {
     "own_closed_ci_hull_only_removed": true,
@@ -204,10 +263,15 @@
     "three_own_closed_ci_worktrees_removed": true,
     "all_removed_worktree_branches_and_git_objects_kept": true,
     "worktree_observed_net_free_gain_bytes": 239321088,
-    "latest_observed_available_bytes": 11065626624,
+    "latest_observed_available_bytes": 10803478528,
     "latest_observation_is_full500_admission": false,
     "additional_own_completed_step19_worktree_removed": true,
-    "additional_observed_net_gain_bytes": 79876096
+    "additional_observed_net_gain_bytes": 79876096,
+    "completed_own_source1940_worktree_removed": true,
+    "completed_own_source1940_observed_net_gain_bytes": 79888384,
+    "latest_single_unit_admission_met": true,
+    "completed_own_ci_entry_worktree_removed": true,
+    "completed_own_ci_entry_observed_net_gain_bytes": 79831040
   },
   "full500": {
     "ready": false,
@@ -294,57 +358,117 @@
         "actual_control_200_records": 9,
         "final_receipt_present": false
       }
+    },
+    {
+      "case": "1a964261cd73a0880b777f5e792ccc7a",
+      "code_commit": "7cf21c3248aeb147de04cd01a4e59439ce054059",
+      "result": "FAIL",
+      "actual_parent_exit": 1,
+      "actual_two_natural_eof": true,
+      "outer_timeout_or_signals": false,
+      "primary_failure": "controller-entry-terminal-deadline",
+      "historical_combined_peak_bytes": 1349353472,
+      "peak_delta_from_failed_2797_bytes": 5984256,
+      "valid_memory_component_samples": 122,
+      "all_six_memory_events_zero": true,
+      "last_process_exit_covered_and_group_empty": true,
+      "host_clean": false,
+      "original_source_unchanged": true,
+      "same_original_baseline_and_transport": true,
+      "code_manifest_changed_products": 4,
+      "code_manifest_additional_changed_release_manifest": true,
+      "all_1530_runtime_pins_unchanged": true,
+      "unit60_qualified": false,
+      "auth30_qualified": false,
+      "reserve_qualified": false,
+      "plateau_qualified": false,
+      "quality_qualified": false,
+      "scope_trace": {
+        "complete_pairs": 70,
+        "same_actual_comparison_keys_as_2797": true,
+        "last_cas_before_r_end_elapsed_ns": 56108009355,
+        "six_state_cas_complete_await_ns": 12224424945,
+        "service_windows_nested_in_cas_ns": 5926146428,
+        "psql_nested_in_service_windows_ns": 5737673136,
+        "pre_r_disjoint_complete_await_ns": 28798264600,
+        "pre_r_uninstrumented_gaps_ns": 27309744755,
+        "largest_gap_d_send_end_to_d_account_start_ns": 21847652986,
+        "configured_d_reply_delay_ms": 19900,
+        "actual_d_transport_and_timer_boundaries": "UNKNOWN",
+        "own_read_rpc_vs_node_vs_write_subphases": "UNKNOWN",
+        "nested_intervals_not_added": true
+      },
+      "critical_path_or_joint_ram_improvement_demonstrated": false,
+      "whole500_memory_or_plateau_inferred": false
     }
   ],
   "latest_native_unit": {
-    "case": "1a964261cd73a0880b777f5e792ccc7a",
-    "code_commit": "7cf21c3248aeb147de04cd01a4e59439ce054059",
+    "case": "af33f16d7b3f94e883880b2af88e0574",
+    "code_commit": "cad305f96c367ff1a66237da9d05dde40017c69c",
     "result": "FAIL",
     "actual_parent_exit": 1,
     "actual_two_natural_eof": true,
+    "actual_outer_wall_ns": 144752890034,
     "outer_timeout_or_signals": false,
     "primary_failure": "controller-entry-terminal-deadline",
-    "historical_combined_peak_bytes": 1349353472,
-    "peak_delta_from_failed_2797_bytes": 5984256,
-    "valid_memory_component_samples": 122,
+    "historical_combined_peak_bytes": 1344360448,
+    "valid_memory_component_samples": 124,
     "all_six_memory_events_zero": true,
     "last_process_exit_covered_and_group_empty": true,
+    "postgres_actual_exit": 0,
     "host_clean": false,
+    "host_closure_error": "execution-host-not-clean",
     "original_source_unchanged": true,
     "same_original_baseline_and_transport": true,
-    "code_manifest_changed_products": 4,
-    "code_manifest_additional_changed_release_manifest": true,
+    "only_original_writer_timing_pin_changed_vs_1a96": true,
     "all_1530_runtime_pins_unchanged": true,
+    "all_36_sql_source_bindings_unchanged": true,
     "unit60_qualified": false,
     "auth30_qualified": false,
     "reserve_qualified": false,
     "plateau_qualified": false,
     "quality_qualified": false,
-    "scope_trace": {
-      "complete_pairs": 70,
-      "same_actual_comparison_keys_as_2797": true,
-      "last_cas_before_r_end_elapsed_ns": 56108009355,
-      "six_state_cas_complete_await_ns": 12224424945,
-      "service_windows_nested_in_cas_ns": 5926146428,
-      "psql_nested_in_service_windows_ns": 5737673136,
-      "pre_r_disjoint_complete_await_ns": 28798264600,
-      "pre_r_uninstrumented_gaps_ns": 27309744755,
-      "largest_gap_d_send_end_to_d_account_start_ns": 21847652986,
-      "configured_d_reply_delay_ms": 19900,
-      "actual_d_transport_and_timer_boundaries": "UNKNOWN",
-      "own_read_rpc_vs_node_vs_write_subphases": "UNKNOWN",
-      "nested_intervals_not_added": true
+    "scope_trace_complete_pairs": 70,
+    "own_trace_rows": 70,
+    "own_trace_complete_calls": 7,
+    "own_trace_all_five_pairs_per_call": true,
+    "six_state_cas_total_ns": 11918265219,
+    "six_state_cas_disjoint_wall_ns": {
+      "native_write_endpoint": 6369642982,
+      "reader_promise": 2792191486,
+      "other_own_read": 765701844,
+      "other_own_write": 222252845,
+      "other_own_perform": 469448844,
+      "outside_own_perform": 1299027218
     },
-    "critical_path_or_joint_ram_improvement_demonstrated": false,
-    "whole500_memory_or_plateau_inferred": false
+    "usage_separate_total_ns": 1586107234,
+    "native_endpoint_includes_transport_bridge_transaction_response": true,
+    "pure_postgres_or_cpu_attribution_proven": false,
+    "first_claim_own_read_required_ns": 1355655585,
+    "five_following_state_own_reads_total_ns": 2202237745,
+    "continuation_would_have_additional_costs": true,
+    "r_dispatch_timer_start_and_response": "UNKNOWN",
+    "joint_memory_improvement_or_plateau_inferred": false,
+    "next_full_unit_on_hypothesis_planned": false
   },
   "upcoming_diagnostics": {
-    "type": "bounded private real writer phase timing only",
-    "root_commit": "ba75d837171bd000eff57f0f09658ce82d152a30",
-    "new_trace_pure_groups_passed": 3,
-    "affected_writer_checks_passed": 43,
-    "independent_review": "PASS",
-    "new_native_execution": "NOT_YET_STARTED",
-    "no_new_optimization_or_acceptance_claim": true
+    "type": "four genuine readonly native SQL components on independent cold copy of ended af33",
+    "execution": "NOT_STARTED",
+    "purpose": "attribute graph checks, graph contract checks, own projection and usage history proof",
+    "originals_and_af33_source_keep": true,
+    "motor_provider_cas_claim_or_schema_writes": false,
+    "fresh_exact_component_contract_and_runtime_review_required": true,
+    "existing_10gib_disk_admission_unchanged": true,
+    "jit_and_native_roles_rls_unchanged": true,
+    "sql_components_do_not_measure_commit_or_service_ledger_cost": true,
+    "new_optimization_or_acceptance_claim": false,
+    "independent_static_four_query_review": "PASS",
+    "source_pg_control_state": "shut down",
+    "source_pg_control_and_cluster_identity_matches_retained_receipt": true,
+    "matching_runner_contract": "IN_PREPARATION_NOT_STARTED",
+    "native_writer_transaction_statement_ms": 10000,
+    "native_writer_transaction_lock_ms": 500,
+    "postgres_defaults_unchanged": true,
+    "statement_timeout_delta_from_initial_prepared_template_explicit": true
   }
 }
