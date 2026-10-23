@@ -1083,3 +1083,29 @@ drei eingebettete alte ROOT-Pfade und128 alte Codepins im festen RuntimeTemplate
 verlangen eine kohärente echte aktuelle Bindung. Ein einfacher Repo-Pfadtausch
 würde Pins still verwerfen oder weiterhin alten Appcode ausführen. Keine solche
 Umschreibung, neue Akzeptanz oder gestagte Voll500-Verbindung ist erfolgt.
+
+## 23.10.,06:54UTC: Kontrollierte Bereinigung tatsächlich abgeschlossen
+
+Drei abgeschlossene saubere Helper-Worktrees wurden nach vollständigem Git-
+Bytevergleich entfernt; alle Branchrefs und erreichbaren Objekte bleiben erhalten.
+Die redundante entschlüsselte Transferdatei wurde erst entfernt, nachdem das
+erhaltene lokale Cipher tatsächlich erneut entschlüsselt und dessen Ausgabe
+streamend exakt nach Größe/SHA geprüft war. Schlüssel bleiben ausschließlich lokal.
+Zwei ungenutzte musl-Pakete wurden unter Erhalt von Locks und glibc-Werkzeugen
+entfernt. Alle sechs Einzellöschungen besitzen vorab gespeicherten Umfang,
+Schutzprüfung und konkreten Rückweg; private Einzelpfade bleiben außerhalb Git.
+
+Tatsächlicher Netto-Free-Zuwachs:222.097.408B. Verfügbar9.997.402.112B, zur
+Einzeladmission fehlen740.016.128B, zum Voll5005.182.377.608B. Die sichtbaren
+167.706.624B der musl-Pakete sind kein zusätzlicher Gewinn: im unteren Overlay-
+Layer verursachte deren Entfernung netto28.672B Metadatenmehrverbrauch.
+Aktuelle Originalpfadbindungen verhinderten die Entfernung dreier älterer WTs.
+Die vier Originalpins sind frisch SHA-/9MD-identisch, alle Gitrefs unverändert;
+Original-CID bleibt stopped/PID0/Exit255. Datenbanken, erforderliche Archive,
+Messbelege, Profile und fremde/aktive Ressourcen wurden nicht gelöscht.
+[Bereinigter Abschlussbeleg](belege/v12-native-unit-integration-20261022/CONTROLLED_CLEANUP_20261023.SAFE.json).
+
+Der unveränderte Runtimecode auf `f1f9f456` ist jetzt CI-grün:
+[Run39911729550](https://github.com/ernisch/helmut-pilot/actions/runs/39911729550).
+Das ersetzt keinen Unit60-/500MB-/Voll500-Nachweis. Keine Tests, DB-, native
+Unit-, Provider- oder Production-Aktionen wurden durch diese Bereinigung gestartet.

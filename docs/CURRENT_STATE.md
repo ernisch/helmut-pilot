@@ -6,7 +6,7 @@ nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 
 ## 23.10.: Schreibphasen integriert; echter Unitlauf durch Platte blockiert
 
-13.527 Dateien hashverifiziert,84 Originale geschützt; CI39900463531 auf1d7bc947
+13.527 Dateien hashverifiziert,84 Originale geschützt; CI39911729550 auf f1f9f456
 grün. DB/V12-POSTRUN-/Runtimebindungen erhalten. Native00c9 bleibt FAIL:
 kein Terminal,0 fertige Units, Peak1.366.712.320B, Events0, PG0/Gruppe leer;
 Hostabschluss unclean/zwei Kinder137. COPY-only-Forensik bestätigt D-accounted,
@@ -30,9 +30,10 @@ Private Prepare/Psql/Accept-Zeitmarken integriert;72 ServicechecksPASS, unabhän
 geprüft. Tag23-/Worktree-Fix:25 ChecksPASS. Echte Schreibzeiten weiter unbekannt;
 keine neue maßgebliche Motoroptimierung.
 
-31/44 kontrolliert gesichert/entfernt; Originale/Git/Archive/Belege erhalten,
-Testsecrets lokal. Frisch9.775.599.616B frei:961.818.624B fehlen zur unveränderten
-10GiB-Einzeladmission,5.404.180.104B zu Full500. c898 bleibt ausdrücklich KEEP;
+Bereinigung real222.097.408B:3 saubere Helper-WTs, redundante Plaintextkopie,
+2 ungenutzte musl-Pakete entfernt; Originale/Git/Archive/Belege erhalten.
+Frisch9.997.402.112B frei:740.016.128B fehlen zur unveränderten
+10GiB-Einzeladmission,5.182.377.608B zu Full500. c898 bleibt ausdrücklich KEEP;
 keine sichere Löschquelle in nötiger Größe belegt. Originalquelle exited255/PID0;
 32 Gruppen:11 frisch zu binden,13 veraltet,4 verbraucht,4 blockiert. Weiter
 nach Kapazitätszulassung: frischer gebundener echter Einzelunitfall, nur dessen
