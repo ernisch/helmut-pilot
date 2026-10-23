@@ -94,13 +94,21 @@ class BackendConsumers(unittest.TestCase):
 
     def test_rejected_backend_precedes_first_finish_write(self):
         capture_pin=sentinel('CAPTURE')
+        restored_pin=sentinel('RESTORED_INPUTS')
+        restored={'runtimeRequestTemplate':sentinel('RUNTIME_TEMPLATE'),'sourcePostgrestConfig':self.config}
+        staged={**self.staged,'restoreStagingInputs':restored_pin}
         owner={'correctedSourceCapturePath':capture_pin['path'],'sourceCapturePin':capture_pin}
         capture={'before':{},'after':{},'sourceWrites':0,'postgrestBinary':self.binary}
-        docs={**self.docs,self.connection['freshOwnerGO']['path']:owner,capture_pin['path']:capture,'STAGED_RAM_ONLY':self.staged}
+        docs={**self.docs,self.connection['freshOwnerGO']['path']:owner,capture_pin['path']:capture,'STAGED_RAM_ONLY':staged}
         with patch.object(F.C,'read_pin',side_effect=lambda p:docs[p['path']]),patch.object(F.C,'pin',return_value=capture_pin), \
+             patch.object(F.C,'read_restored_staging_inputs',return_value=restored)as restored_reader, \
+             patch.object(F.C,'bind_runtime_sources')as source_binding, \
              patch.object(F.C.A,'verify_preexisting_capture'),patch.object(F.C,'save')as save, \
-             patch.object(F.C,'read_postgrest_backend_plan',side_effect=ValueError('REJECTED_CANONICAL_BACKEND')):
+             patch.object(F.C,'read_postgrest_backend_plan',side_effect=ValueError('REJECTED_CANONICAL_BACKEND'))as canonical:
             with self.assertRaisesRegex(ValueError,'REJECTED_CANONICAL_BACKEND'):F.finish({'path':'STAGED_RAM_ONLY'})
+            restored_reader.assert_called_once_with(restored_pin,Path(self.connection['caseDirectory']))
+            canonical.assert_called_once_with(self.plan_pin,self.connection['caseDirectory'],self.connection['targetDatabase'],self.connection['operationId'])
+            source_binding.assert_not_called()
             save.assert_not_called()
         self.assertFalse(Path(self.connection['caseDirectory']).exists())
 
