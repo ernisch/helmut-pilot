@@ -13,7 +13,10 @@ A=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(A)
 _cal_spec=importlib.util.spec_from_file_location('resource_calendar_binding',Path(__file__).with_name('local-calendar-binding.py'))
 Calendar=importlib.util.module_from_spec(_cal_spec);_cal_spec.loader.exec_module(Calendar)
 
-REPO=Path('/workspace/helmut-cpu-epoch-20261015')
+REPO=Path(__file__).resolve().parents[2]
+LEGACY_REPO=Path('/workspace/helmut-cpu-epoch-20261015')
+LEGACY_ROOT_CONSUMERS={'native-end-preparation/contracts.js',
+ 'native-end-preparation/observe-app.js','assemble-after-activation.js'}
 BASE=Path('/workspace/helmut-parallel-20261015')
 AREA=BASE/'wave20-resource-integration'
 BIN=REPO/'scripts/helmut-resource-meter'
@@ -72,6 +75,58 @@ def read_pin(p):
     if pin(p['path'])!=p:raise RuntimeError('input pin drift')
     return json.loads(Path(p['path']).read_text())
 
+def bind_runtime_sources(template_pin,source_commit):
+    """Bind preserved template provenance to current bytes, never acceptance."""
+    name,size,digest=RESTORE_TEMPLATES['runtimeRequestTemplate']
+    expected={'path':str(BASE/'wave20-resource-integration/attempt-a2521b52a505'/name),
+      'bytes':size,'sha256':digest}
+    if template_pin!=expected:raise RuntimeError('fixed restored runtime template required')
+    original=read_pin(template_pin)
+    if not isinstance(source_commit,str)or not re.fullmatch('[a-f0-9]{40}',source_commit):
+        raise RuntimeError('exact current source commit required')
+    actual=subprocess.run(['git','-C',str(REPO),'rev-parse','--show-toplevel','HEAD'],
+      text=True,capture_output=True,timeout=10,
+      env={'PATH':'/usr/bin:/bin','GIT_OPTIONAL_LOCKS':'0',
+        'GIT_CONFIG_NOSYSTEM':'1','GIT_CONFIG_GLOBAL':'/dev/null'})
+    if actual.returncode or actual.stdout.splitlines()!=[str(REPO),source_commit]:
+        raise RuntimeError('staged source commit differs from actual current repository')
+    historical=original.get('sourcePins')
+    if not isinstance(historical,list):raise RuntimeError('historical source pins required')
+    seen=set();sources={};bindings=[]
+    for p in historical:
+        if (not isinstance(p,dict)or set(p)!={'path','bytes','sha256'}
+            or not isinstance(p['path'],str)or type(p['bytes'])is not int or p['bytes']<0
+            or not isinstance(p['sha256'],str)or not re.fullmatch('[a-f0-9]{64}',p['sha256'])):
+            raise RuntimeError('exact historical source pin required')
+        path=Path(p['path'])
+        if not path.is_absolute()or str(path)!=p['path']or '..'in path.parts or p['path']in seen:
+            raise RuntimeError('unique canonical historical source paths required')
+        seen.add(p['path'])
+        if not path.is_relative_to(LEGACY_REPO):continue
+        current=REPO/path.relative_to(LEGACY_REPO)
+        if current.resolve()!=current:raise RuntimeError('current source aliases forbidden')
+        current_pin=pin(current)
+        sources[current_pin['path']]=current_pin
+        bindings.append({'original':p,'current':current_pin})
+    if len(bindings)!=128 or len(sources)!=128:
+        raise RuntimeError('all 128 preserved code pins require current counterparts')
+    binding={'scope':'SOURCE_PROVENANCE_AND_CURRENT_BYTES_ONLY','codeAccepted':False,
+      'resourceGOGranted':False,'historicalRuntimeTemplate':template_pin,
+      'historicalRepository':str(LEGACY_REPO),'currentRepository':str(REPO),
+      'sourceCommit':source_commit,'historicalCodePinCount':128,'bindings':bindings}
+    return original,sources,binding
+
+def bind_template_repository(text,relative):
+    """Only these three exact original literals select the engine repository."""
+    old=str(LEGACY_REPO);count=text.count(old)
+    if count!=(1 if relative in LEGACY_ROOT_CONSUMERS else 0):
+        raise RuntimeError('exact original consumer repository literal required')
+    changes=[]
+    if count:
+        text=text.replace(old,str(REPO))
+        changes.append({'from':old,'to':str(REPO),'count':1})
+    return text,changes
+
 def read_atomic_descriptor(p):
     """Use the runtime's canonical validator before rendering ANY consumer."""
     candidate=read_pin(p)
@@ -128,7 +183,8 @@ def render_templates(case,*,target,container,operation,day_rows_pin,owner_go_pin
         Calendar.validate_policy(calendar)
         if calendar['operationId']!=operation:raise RuntimeError('local calendar operation differs')
     for template in templates:
-        original=Path(template['path']).read_text();text=original;changes=[]
+        original=Path(template['path']).read_text()
+        text,changes=bind_template_repository(original,template['relative'])
         if native_memory_budget is not None and template['relative']=='native-end-preparation/run-reviewed-sequence.js':
             old="'--max-old-space-size=1536'";new="'--max-old-space-size=384','--max-semi-space-size=16'"
             if text.count(old)!=1:raise RuntimeError('exact original local Node heap option required')

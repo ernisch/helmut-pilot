@@ -8,6 +8,27 @@ s=importlib.util.spec_from_file_location('connector',BIN/'connect-local500.py')
 C=importlib.util.module_from_spec(s);s.loader.exec_module(C)
 B=C.BASE;W=C.AREA
 
+def current_source(sources,p,root):
+    path=Path(p['path'])
+    if str(path)!=p['path']or not path.is_relative_to(root)or path.resolve()!=path:
+        raise RuntimeError('source must use its exact current repository or case path')
+    if C.pin(path)!=p:raise RuntimeError('current source pin drift')
+    if p['path']in sources and sources[p['path']]!=p:raise RuntimeError('conflicting current source pins')
+    sources[p['path']]=p
+
+def static_asset(assets,sources,p,case):
+    path=Path(p['path'])
+    if str(path)!=p['path']or not path.is_absolute()or path.resolve()!=path:
+        raise RuntimeError('canonical static fixture path required')
+    if path.is_relative_to(C.LEGACY_REPO):raise RuntimeError('historical code cannot become a mounted asset')
+    if path.is_relative_to(C.REPO):
+        if sources.get(p['path'])!=p or C.pin(path)!=p:
+            raise RuntimeError('current code asset must match the collected source pin')
+        return
+    if path.name=='OWNER_LOCAL_GO.PRIVATE.json':raise RuntimeError('historical GO must not enter mounted inputs')
+    if C.pin(path)!=p:raise RuntimeError('static fixture pin drift')
+    if not path.is_relative_to(case):assets[p['path']]=p
+
 def backend_inputs(staged,day,restored,capture):
     """Read-only source/fixture closure, before the first staging write."""
     if 'localPostgrestBackendPlanPin' not in staged:return None
@@ -31,6 +52,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     if restore_staging_inputs is None:restore_staging_inputs=staged.get('restoreStagingInputs')
     elif staged.get('restoreStagingInputs')!=restore_staging_inputs:raise RuntimeError('staged restored inputs differ')
     restored=C.read_restored_staging_inputs(restore_staging_inputs,case)
+    if restored is None:raise RuntimeError('fixed restored provenance required for current code binding')
     if (case/'FINAL_CONNECTION.SAFE.json').exists():raise RuntimeError('never overwrite/rebind a staged case')
     owner_pin=staged['ownerGOPin'];day=C.read_pin(staged['dayAcceptance'])
     owner=C.read_pin(owner_pin)
@@ -39,7 +61,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     if owner['sourceCapturePin']!=capture_pin:raise RuntimeError('new input DATA binding differs')
     if capture['before']!=capture['after'] or capture['sourceWrites']!=0:raise RuntimeError('read-only source capture incomplete')
     backend=backend_inputs(staged,day,restored,capture)
-    original=C.read_pin(restored['runtimeRequestTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json').read_text())
+    original,sources,source_binding=C.bind_runtime_sources(restored['runtimeRequestTemplate'],staged.get('sourceCommit'))
     content=C.read_pin(restored['contentAcceptanceTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json').read_text())
     # Historical approvals remain dependencies, never reused as the new owner GO.
     content.update(ownerGo=owner_pin,currentPolicyInput=staged['dayRows'],inputRows=staged['dayRows'],
@@ -47,36 +69,34 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     content.pop('inputBases',None)
     content['previouslyAttemptedOperationIds']=list(dict.fromkeys(content['previouslyAttemptedOperationIds']+[
        'synthetik500-localnative16-b27c20261016','synthetik500-authority16-41ca20261016']+([original['newOperation']]if restored else[])))
-    content_pin=C.save(case/'ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json',content)
     external=C.read_pin(restored['localExternalTemplate'])if restored else json.loads((B/'wave15/ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json').read_text())
-    external['inputAcceptanceSHA256']=content_pin['sha256']
     # No source publication/capture timestamp is changed. The selected source
     # window remains the preexisting13..16 window; current-day validity requires
     # its separately pinned accepted evidence, never a timestamp rewrite.
-    external_pin=C.save(case/'ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json',external)
-    repo=Path('/workspace/helmut-cpu-epoch-20261015')
-    # A NEW command needs actual current code pins; old content acceptance is
-    # input provenance, never acceptance of historical runtime file hashes.
-    sources={p['path']:C.pin(p['path']) for p in original['sourcePins'] if p['path'].startswith(str(repo)+'/')}
     atomic=staged.get('atomicUsageInput')
     if atomic is not None:
         descriptor=C.read_pin(atomic)
         if descriptor.get('schema')!='helmut-local-atomic-usage-resource-input/1' or descriptor.get('production')is not False:
             raise RuntimeError('local atomic candidate binding required')
         for p in descriptor['sourcePins']:
-            if C.pin(p['path'])!=p:raise RuntimeError('atomic source pin drift')
-            sources[p['path']]=p
+            current_source(sources,p,C.REPO)
     if backend is not None:
-        for p in backend['sourcePins']:sources[p['path']]=p
+        for p in backend['sourcePins']:current_source(sources,p,C.REPO)
     for folder in [n,n/'runtime-candidates',BIN]:
         for p in folder.iterdir():
-            if p.is_file() and p.suffix in ['.js','.py','.json'] and (folder!=BIN or not p.name.endswith(('-test.js','-test.py'))):sources[str(p.resolve())]=C.pin(p)
+            if p.is_file() and p.suffix in ['.js','.py','.json'] and (folder!=BIN or not p.name.endswith(('-test.js','-test.py'))):
+                current_source(sources,C.pin(p),C.REPO if folder==BIN else case)
     if 'nativeBudgetRuntimePin' in staged:
-        p=BIN/'native-memory-budget-helper.c';sources[str(p.resolve())]=C.pin(p)
-    sources[str(case/'assemble-after-activation.js')]=C.pin(case/'assemble-after-activation.js')
+        current_source(sources,C.pin(BIN/'native-memory-budget-helper.c'),C.REPO)
+    current_source(sources,C.pin(case/'assemble-after-activation.js'),case)
+    # No file is written before the complete historical-to-current code binding.
+    content_pin=C.save(case/'ROOT_NEW_CONTENT_CODE_ACCEPTANCE.PRIVATE.json',content)
+    external['inputAcceptanceSHA256']=content_pin['sha256']
+    external_pin=C.save(case/'ROOT_NEW_LOCAL_EXTERNAL_BINDING.PRIVATE.json',external)
     primaries={**original['primaries'],'all500IndependentVisibleReview':staged['dayAcceptance'],'ordinaryAAndFEquality':staged['dayAcceptance']}
     request={**original,'targetDatabase':staged['targetDatabase'],'expectedOwnerGoPin':owner_pin,
       'inputAcceptance':content_pin,'sourcePins':list(sources.values()),'primaries':primaries,
+      'sourceCodeBinding':source_binding,
       'localExternalBelege':external_pin,'newOperation':staged['operationId'],
       'rootFinalCodeAcceptance':staged['dayAcceptance'],'currentDayBinding':staged['dayAcceptance']}
     if restored:
@@ -89,10 +109,7 @@ def finish(staged_pin,*,restore_staging_inputs=None):
     request_pin=C.save(case/'ROOT_NEW_RUNTIME_REQUEST.PRIVATE.json',request)
     assets={}
     def add(p):
-        if p['path'].startswith(str(repo)+'/'):return
-        if Path(p['path']).name=='OWNER_LOCAL_GO.PRIVATE.json':raise RuntimeError('historical GO must not enter mounted inputs')
-        if C.pin(p['path'])!=p:raise RuntimeError('static fixture pin drift')
-        if not Path(p['path']).is_relative_to(case):assets[p['path']]=p
+        static_asset(assets,sources,p,case)
     if restored:
         add(restore_staging_inputs)
         for key,p in restored.items():
