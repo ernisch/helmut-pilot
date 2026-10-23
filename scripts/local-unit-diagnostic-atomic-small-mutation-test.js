@@ -104,13 +104,17 @@ function server(seed = fixture()) {
     stats: () => ({ reads, writes, last, root, rev, history })
   }; return api;
 }
-function subject(patches = [], atomicPatches = []) {
-  const probe = { builds: 0, fullRootSerializations: 0, ownSubtreeReuses: 0, reused: 0 }, parts = load("auth-state-parts", {}, probe, patches);
-  const atomic = load("llm-usage-atomic", { "./auth-state-parts": parts }, null, atomicPatches); return { U: atomic, C: parts, probe };
+function subject(patches = [], atomicPatches = [], clock = null) {
+  const imports = clock ? { "node:process": { hrtime: { bigint: () => clock.mono } } } : {};
+  const probe = { builds: 0, fullRootSerializations: 0, ownSubtreeReuses: 0, reused: 0 }, parts = load("auth-state-parts", imports, probe, patches);
+  const atomic = load("llm-usage-atomic", { ...imports, "./auth-state-parts": parts }, null, atomicPatches); return { U: atomic, C: parts, probe };
 }
 const opts = native => ({ request: native.request, rowId, target, operationId });
 let checks = 0;
-async function check(name, action) { await action(); checks++; console.log("PASS " + name); }
+async function check(name, action) {
+  if (process.argv.includes("--review-fixes-only") && !name.startsWith("reviewfix:")) return;
+  await action(); checks++; console.log("PASS " + name);
+}
 (async () => {
   Object.assign(process.env, environment); delete process.env.VERCEL;
   await check("state patch equals old full Auth writer across small, bucket, array and literal-key layouts", async () => {
@@ -283,6 +287,57 @@ async function check(name, action) { await action(); checks++; console.log("PASS
       await assert.rejects(U.readOwnForMutation(opts(native)), { code: kind === "own" ? "AUTH_STATE_OWN_LIMIT" : "AUTH_OWN_HISTORY_LIMIT" });
       await assert.rejects(U.writeOwn({}, { record: { id: "new" } }, opts(native)), { code: "AUTH_OWN_WITNESS_MISSING" });
       assert.equal(native.stats().writes, 0);
+    }
+  });
+  await check("reviewfix: object-valued control order metadata never aliases the private validated graph", async () => {
+    const { C, probe } = subject(), initial = fixture(x => { x.testKostenAuftrag = {
+      version: { nested: { value: "before" } }, serviceContractHash: [{ value: "before" }] }; });
+    const graph = C.build(initial), namespace = "review-alias|generation"; probe.fullRootSerializations = 0;
+    const first = C.projectControl(graph, graph.root, namespace);
+    const expected = copy(first);
+    first.order.version.nested.value = "after!"; first.order.serviceContractHash[0].value = "after!";
+    const fresh = C.projectControl(graph, graph.root, namespace);
+    assert.deepEqual(fresh, expected, "fresh actual payload validation cannot inherit caller metadata mutation");
+    assert.equal(probe.fullRootSerializations, 0, "both actual reads used known-root projection rather than a full-clone fallback");
+    assert.deepEqual(C.decode(graph, graph.root, namespace).data, initial, "public full read remains original");
+    assert.notEqual(first.order.version, fresh.order.version); assert.notEqual(first.order.serviceContractHash, fresh.order.serviceContractHash);
+  });
+  await check("reviewfix: Parts one-use witness enforces monotonic30 even after wallclock rollback", async () => {
+    for (const kind of ["elapsed", "rollback", "wall-forward", "inside"]) {
+      const clock = { mono: 0n }, { C } = subject([], [], clock), graph = C.build(fixture()), saved = Date.now;
+      let wall = saved(); Date.now = () => wall;
+      try {
+        const opened = C.openOwnMutation(graph, graph.root, "review-clock|generation", operationId);
+        clock.mono = kind === "inside" ? 29000000000n : kind === "wall-forward" ? 1000000000n : 31000000000n;
+        if (kind === "rollback" || kind === "inside") wall -= 120000;
+        if (kind === "wall-forward") wall += 31000;
+        if (kind === "inside") assert.equal(C.captureOwnMutation(opened.token, null).root, graph.root);
+        else assert.throws(() => C.captureOwnMutation(opened.token, null), { code: "AUTH_STATE_OWN_WITNESS_MISSING" });
+        assert.throws(() => C.captureOwnMutation(opened.token, null), { code: "AUTH_STATE_OWN_WITNESS_MISSING" }, "failed/accepted capture stays consumed");
+      } finally { Date.now = saved; }
+    }
+  });
+  await check("reviewfix: Atomic monotonic30 includes read await and wall rollback never reopens the consumed witness", async () => {
+    for (const kind of ["read-await", "after-read", "wall-forward", "inside"]) {
+      const native = server(), clock = { mono: 0n }, { U } = subject([], [], clock), saved = Date.now;
+      let wall = saved(), release, entered; const ready = new Promise(resolve => { entered = resolve; }), hold = new Promise(resolve => { release = resolve; });
+      Date.now = () => wall;
+      try {
+        const pending = U.readOwnForMutation({ ...opts(native), request: async (...args) => {
+          const reply = await native.request(...args); entered(); if (kind === "read-await") await hold; return reply;
+        } });
+        await ready;
+        if (kind === "read-await") { clock.mono = 31000000000n; wall -= 120000; release(); }
+        const view = await pending;
+        if (kind === "after-read") { clock.mono = 31000000000n; wall -= 120000; }
+        if (kind === "wall-forward") { clock.mono = 1000000000n; wall += 31000; }
+        if (kind === "inside") { clock.mono = 29000000000n; wall -= 120000; }
+        assert.equal(U.hasOwnRead(view), kind === "inside");
+        if (kind === "inside") assert.equal(U.confirmed((await U.writeOwn(view, { record: { id: "review-clock" } }, opts(native))).receipt), true);
+        else await assert.rejects(U.writeOwn(view, { record: { id: "review-clock" } }, opts(native)), { code: "AUTH_OWN_WITNESS_MISSING" });
+        await assert.rejects(U.writeOwn(view, { record: { id: "review-clock" } }, opts(native)), { code: "AUTH_OWN_WITNESS_MISSING" });
+        assert.equal(native.stats().writes, kind === "inside" ? 1 : 0);
+      } finally { Date.now = saved; }
     }
   });
   console.log(JSON.stringify({ schema: "helmut-original-small-mutation-pure/1", pass: true, checks, nativeCalls: 0,
