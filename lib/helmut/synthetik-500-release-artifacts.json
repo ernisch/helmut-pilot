@@ -16,8 +16,8 @@
     },
     {
       "path": "lib/helmut/auth-state-parts.js",
-      "bytes": 22169,
-      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      "bytes": 27356,
+      "sha256": "0ff039245d60ceb7f5855f62433feab0ae0eea989606d3ad8022510a8d1d80a3"
     },
     {
       "path": "lib/helmut/auth-store-cas.js",
@@ -166,8 +166,8 @@
     },
     {
       "path": "lib/helmut/llm-usage-atomic.js",
-      "bytes": 25446,
-      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      "bytes": 32050,
+      "sha256": "dc12a5c8abf7a7b4f4334ff0b886106b42381efa864ac13d4374285242886d0a"
     },
     {
       "path": "lib/helmut/local-pipeline-lock-lease.js",
@@ -450,7 +450,7 @@
       "sha256": "32e72dfd6e3e2bc2788c991cab29471af4e04ea7a1a57f7bb3e58a9ea92693d2"
     }
   ],
-  "sourceMappingSHA256": "0d0f910934fd36c194d8c64b57faa60b9dcd05c07073ea001c5c498029356db2",
+  "sourceMappingSHA256": "c5c6d3b15d184969f8b07ec0e1988cf4c7e0b5cfbb0b607dd9914721e4f618b6",
   "currentCandidateFull500Qualification": false,
   "candidateQualificationScope": "LOCAL_SOURCE_EXPECTATIONS_ONLY_NATIVE_INTEGRATION_UNQUALIFIED; HISTORICAL_EVIDENCE_DOES_NOT_QUALIFY_CURRENT_CODE; UNIT60_AUTH30_COMMON_RAM_FULL500_NOT_PROVEN",
   "priorManifestCommit": "c7a92798010fd69c1f96b7a81c77d99dc9b2d2a2",
