@@ -98,6 +98,7 @@ class PureHost(unittest.TestCase):
         (self.case / 'client').mkdir(mode=0o700)
         self.addCleanup(patch.stopall); patch.object(M, 'BASE', self.base).start()
         patch.object(M.subprocess, 'Popen', side_effect=AssertionError('pure-tests-no-process-start')).start()
+        patch.object(M, 'docker_daemon_peer', lambda: None).start()
         self.config = {'nonce': self.nonce, 'repository': str(self.base / 'repo'), 'runtime': {'imageId': 'sha256:' + 'b' * 64},
                        'parent': 'helmut-meter-memorybudget-' + 'c' * 24, 'parentDevice': 1, 'parentInode': 2,
                        'nodePin': self.pin('/opt/original/bin/node'), 'actualSourceContainerId': 'd' * 64, 'sourceCodePins': [],
@@ -1996,6 +1997,7 @@ class PureInventoryProjection(unittest.TestCase):
         self.addCleanup(patch.stopall)
         patch.object(M.subprocess, 'Popen', side_effect=AssertionError('no process starts')).start()
         patch.object(M.subprocess, 'run', side_effect=AssertionError('no commands')).start()
+        patch.object(M, 'docker_daemon_peer', lambda: None).start()
 
     def row(self, letter, parent):
         return {'Id': letter * 64, 'HostConfig': {'CgroupParent': parent},
@@ -2087,6 +2089,184 @@ class PureInventoryProjection(unittest.TestCase):
             self.host._inventory({'a' * 64})
         self.assertEqual(sum(a[0] == 'ps' for a in self.calls), 2)
         self.assertEqual(sum(a[:2] == ['inspect', '--format'] for a in self.calls), 2)
+
+
+class PureInventoryParentCache(unittest.TestCase):
+    """New cache cases only; no real daemon/socket/child is contacted."""
+    row = PureInventoryProjection.row
+    assert_no_detailed_inspect = PureInventoryProjection.assert_no_detailed_inspect
+
+    def setUp(self):
+        PureInventoryProjection.setUp(self)
+        self.peer = (27, 42, 0o140660, 65534, 65534, 1, 139, 65534, 65534, '617', 'dockerd')
+        self.version = {**M.DAEMON_PARENT_VERSION, 'Os': 'linux'}
+        self.version_error = None; self.after_details = None
+        patch.object(M, 'docker_daemon_peer', lambda: self.peer).start()
+
+    def docker(self, argv, **options):
+        if argv[0] == 'version':
+            self.calls.append(argv[:]); self.assertEqual(argv, ['version', '--format', M.DAEMON_VERSION_FORMAT])
+            if self.version_error is not None: raise self.version_error
+            return types.SimpleNamespace(stdout=json.dumps(self.version))
+        if argv[:2] == ['inspect', '--format']:
+            self.calls.append(argv[:]); self.assertEqual(argv[2], M.GLOBAL_CONTAINER_FORMAT)
+            raw = self.projection if self.projection is not None else '\n'.join(json.dumps({
+                'Id': r['Id'], 'CgroupParent': r['HostConfig']['CgroupParent']}) for r in self.rows if r['Id'] in argv[3:])
+            return types.SimpleNamespace(stdout=raw)
+        result = PureInventoryProjection.docker(self, argv, **options)
+        if argv[0] == 'inspect' and self.after_details is not None: self.after_details()
+        return result
+
+    def projections(self):
+        return [a[3:] for a in self.calls if a[:2] == ['inspect', '--format']]
+
+    def test_parent_cache_cold_warm_global_ids_and_own_details_are_always_fresh(self):
+        self.host._inventory({'a' * 64})
+        self.assertEqual(self.projections(), [['a' * 64, 'b' * 64]])
+        self.rows[0]['Mounts'] = [{'Source': '/fresh-own-mount', 'Destination': '/fixture'}]
+        actual = self.host._inventory({'a' * 64})
+        self.assertEqual(self.projections(), [['a' * 64, 'b' * 64]])
+        self.assertEqual(actual['a' * 64]['Mounts'], self.rows[0]['Mounts'])
+        self.assertEqual(sum(a[0] == 'ps' for a in self.calls), 2)
+        self.assertEqual([a for a in self.calls if a[0] == 'inspect' and a[1:2] != ['--format']],
+                         [['inspect', 'a' * 64], ['inspect', 'a' * 64]])
+        self.assertEqual(sum(a[0] == 'version' for a in self.calls), 4)
+
+    def test_parent_cache_new_ids_removal_and_recreated_name_use_new_full_cid(self):
+        self.rows[1]['Name'] = '/same-foreign-name'
+        self.host._inventory({'a' * 64})
+        self.rows.append({**self.row('c', '/foreign'), 'Name': '/another'})
+        self.host._inventory({'a' * 64}); self.assertEqual(self.projections()[-1], ['c' * 64])
+        self.rows = [r for r in self.rows if r['Id'] != 'b' * 64]
+        self.host._inventory({'a' * 64}); self.assertNotIn('b' * 64, self.host._inventory_parent_cache)
+        self.rows.append({**self.row('d', '/foreign-recreated'), 'Name': '/same-foreign-name'})
+        self.host._inventory({'a' * 64}); self.assertEqual(self.projections()[-1], ['d' * 64])
+        self.assertEqual(set(self.host._inventory_parent_cache), {'a' * 64, 'c' * 64, 'd' * 64})
+
+    def test_parent_cache_new_unknown_owned_or_missing_known_clears_all_cached_entries(self):
+        self.host._inventory({'a' * 64}); self.calls.clear()
+        self.rows.append(self.row('c', self.parent + '/unknown'))
+        with self.assertRaisesRegex(RuntimeError, 'unknown-or-missing-owned-container'):
+            self.host._inventory({'a' * 64})
+        self.assertEqual(self.projections(), [['c' * 64]]); self.assert_no_detailed_inspect()
+        self.assertEqual(self.host._inventory_parent_cache, {}); self.assertIsNone(self.host._inventory_daemon_cache_key)
+        self.rows = self.rows[:2]; self.host._inventory({'a' * 64}); self.calls.clear()
+        self.rows = self.rows[1:]
+        with self.assertRaisesRegex(RuntimeError, 'unknown-or-missing-owned-container'):
+            self.host._inventory({'a' * 64})
+        self.assert_no_detailed_inspect(); self.assertEqual(self.host._inventory_parent_cache, {})
+
+    def test_parent_cache_new_projection_must_be_complete_unique_typed_and_exact(self):
+        original = copy.deepcopy(self.rows)
+        new = {'Id': 'c' * 64, 'CgroupParent': '/foreign'}
+        variants = [[], [new, new], [{**new, 'Id': 'bad'}], [{**new, 'CgroupParent': None}],
+                    [{**new, 'extra': 1}], [new, {'Id': 'f' * 64, 'CgroupParent': '/foreign'}]]
+        for rows in variants:
+            with self.subTest(rows=len(rows)):
+                self.rows = copy.deepcopy(original); self.projection = None; self.host._inventory({'a' * 64})
+                self.rows.append(self.row('c', '/foreign')); self.projection = '\n'.join(json.dumps(r) for r in rows)
+                self.calls.clear()
+                with self.assertRaises(RuntimeError): self.host._inventory({'a' * 64})
+                self.assert_no_detailed_inspect(); self.assertEqual(self.host._inventory_parent_cache, {})
+
+    def test_parent_cache_duplicate_or_malformed_global_ids_never_use_cached_success(self):
+        self.host._inventory({'a' * 64})
+        for raw in ('a' * 64 + '\n' + 'a' * 64, 'G' * 64, 'a' * 63):
+            with self.subTest(length=len(raw)):
+                self.ids = raw; self.calls.clear()
+                with self.assertRaisesRegex(RuntimeError, 'global-container-id-set'):
+                    self.host._inventory({'a' * 64})
+                self.assertEqual(self.projections(), []); self.assert_no_detailed_inspect()
+                self.assertEqual(self.host._inventory_parent_cache, {})
+
+    def test_parent_cache_own_parent_drift_is_detected_by_fresh_full_details(self):
+        self.host._inventory({'a' * 64}); self.calls.clear()
+        self.details = [copy.deepcopy(self.rows[0])]; self.details[0]['HostConfig']['CgroupParent'] += '/changed'
+        with self.assertRaisesRegex(RuntimeError, 'owned-container-detail-binding'):
+            self.host._inventory({'a' * 64})
+        self.assertEqual(self.projections(), []); self.assertEqual(self.host._inventory_parent_cache, {})
+
+    def test_parent_cache_daemon_restart_forces_complete_reclassification(self):
+        self.host._inventory({'a' * 64}); self.calls.clear()
+        self.peer = (*self.peer[:-2], '900', 'dockerd')
+        self.rows[1]['HostConfig']['CgroupParent'] = '/different-after-daemon-reload'
+        self.host._inventory({'a' * 64})
+        self.assertEqual(self.projections(), [['a' * 64, 'b' * 64]])
+        self.assertEqual(self.host._inventory_parent_cache['b' * 64], '/different-after-daemon-reload')
+
+    def test_parent_cache_daemon_change_during_inventory_never_publishes_cache_or_rows(self):
+        self.host._inventory({'a' * 64})
+        self.after_details = lambda: setattr(self, 'peer', (*self.peer[:-2], str(int(self.peer[-2]) + 1), 'dockerd'))
+        with self.assertRaisesRegex(RuntimeError, 'inventory-daemon-binding-drift'):
+            self.host._inventory({'a' * 64})
+        self.assertEqual(self.host._inventory_parent_cache, {}); self.assertIsNone(self.host._inventory_daemon_cache_key)
+
+    def test_parent_cache_unknown_peer_or_version_loses_cache_and_uses_existing_full_scan(self):
+        for change in ('peer', 'Version', 'ApiVersion', 'MinAPIVersion', 'GitCommit', 'version-error'):
+            with self.subTest(change=change):
+                self.peer = (27, 42, 0o140660, 65534, 65534, 1, 139, 65534, 65534, '617', 'dockerd')
+                self.version = dict(M.DAEMON_PARENT_VERSION); self.version_error = None
+                self.host._inventory({'a' * 64}); self.calls.clear()
+                if change == 'peer': self.peer = None
+                elif change == 'version-error': self.version_error = PermissionError(13, 'synthetic-version-deny')
+                else: self.version[change] = 'unsupported'
+                self.host._inventory({'a' * 64}); self.host._inventory({'a' * 64})
+                self.assertEqual(self.projections(), [['a' * 64, 'b' * 64], ['a' * 64, 'b' * 64]])
+                self.assertEqual(self.host._inventory_parent_cache, {}); self.assertIsNone(self.host._inventory_daemon_cache_key)
+
+
+class PureDockerDaemonPeer(unittest.TestCase):
+    def probe(self, mutation=None):
+        calls = []; credentials = M.struct.pack('3i', 0 if mutation == 'pid-zero' else 139, 65534, 65534)
+        fields = [b'Z' if mutation == 'zombie' else b'S', *([b'0'] * 18), b'617', *([b'0'] * 6)]
+        command = b'proxy' if mutation == 'proxy' else b'dockerd'
+        raw = b'139 (' + command + b') ' + b' '.join(fields) + b'\n'
+        def entry(inode, mode, uid=65534):
+            return types.SimpleNamespace(st_dev=27, st_ino=inode, st_mode=mode, st_uid=uid, st_gid=65534,
+                                         st_nlink=1, st_size=0, st_mtime_ns=0, st_ctime_ns=0)
+        socket_md = entry(42, 0o100660 if mutation == 'not-socket' else 0o140660)
+        def metadata(path, **kwargs):
+            calls.append(('stat', path))
+            if path == '/var/run/docker.sock':
+                if mutation == 'socket-change' and sum(x == ('stat', path) for x in calls) > 1:
+                    return entry(43, 0o140660)
+                return socket_md
+            return entry(91 if path.endswith('/stat') else 92, 0o100444, 1000 if mutation == 'proc-owner' else 65534)
+        def opened(path, flags):
+            calls.append(('open', path)); self.assertEqual(flags, M.os.O_RDONLY | M.os.O_NOFOLLOW | M.os.O_NONBLOCK)
+            if mutation == 'eacces': raise PermissionError(13, 'synthetic-proc-deny')
+            self.assertIn(path, ('/proc/139/stat', '/proc/139/comm')); return 91 if path.endswith('/stat') else 92
+        class Peer:
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+            def settimeout(self, timeout): calls.append(('timeout', timeout))
+            def connect(self, path): calls.append(('connect', path))
+            def getsockopt(self, *args):
+                calls.append(('credentials', None))
+                if mutation == 'credential-change' and sum(k == 'credentials' for k, _ in calls) > 1:
+                    return M.struct.pack('3i', 140, 65534, 65534)
+                return credentials
+        with patch.object(M.socket, 'socket', lambda *args: Peer()), patch.object(M.os, 'stat', metadata), \
+             patch.object(M.os, 'open', opened), patch.object(M.os, 'close', lambda fd: calls.append(('close', fd))), \
+             patch.object(M.os, 'fstat', lambda fd: entry(fd, 0o100444, 1000 if mutation == 'proc-owner' else 65534)), \
+             patch.object(M.os, 'read', lambda fd, size: raw if fd == 91 else command + b'\n'):
+            return M.docker_daemon_peer(), calls
+
+    def test_daemon_peer_records_real_shape_metadata_only_and_closes_fds(self):
+        value, calls = self.probe()
+        self.assertEqual(value, (27, 42, 0o140660, 65534, 65534, 1, 139, 65534, 65534, '617', 'dockerd'))
+        self.assertEqual([x for x in calls if x[0] == 'connect'], [('connect', '/var/run/docker.sock')])
+        self.assertEqual([x for x in calls if x[0] == 'close'], [('close', 91), ('close', 92)])
+        self.assertEqual(sum(k == 'credentials' for k, _ in calls), 2)
+
+    def test_daemon_peer_unknown_proxy_permission_or_identity_change_never_qualifies_cache(self):
+        for mutation in ('pid-zero', 'proxy', 'zombie', 'eacces', 'socket-change', 'credential-change', 'proc-owner', 'not-socket'):
+            with self.subTest(mutation=mutation):
+                value, calls = self.probe(mutation); self.assertIsNone(value)
+                self.assertLessEqual(sum(k == 'connect' for k, _ in calls), 1)
+        with patch.object(M, 'DOCKER', ['/other/docker', '--host=unix:///other.sock']), \
+             patch.object(M.socket, 'socket', side_effect=AssertionError('changed-endpoint-must-not-connect')):
+            self.assertIsNone(M.docker_daemon_peer())
 
 
 class PureObservationSampleWindow(unittest.TestCase):

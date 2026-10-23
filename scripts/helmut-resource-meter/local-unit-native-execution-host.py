@@ -15,7 +15,9 @@ from pathlib import Path
 import re
 import selectors
 import secrets
+import socket
 import stat
+import struct
 import subprocess
 import time
 import traceback
@@ -24,6 +26,8 @@ DOCKER = ['/usr/local/bin/docker', '--host=unix:///var/run/docker.sock']
 ENV = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8', 'TZ': 'UTC'}
 FLAGS = ['--max-old-space-size=384', '--max-semi-space-size=16']
 GLOBAL_CONTAINER_FORMAT = '{"Id":{{json .Id}},"CgroupParent":{{json .HostConfig.CgroupParent}}}'
+DAEMON_VERSION_FORMAT = '{{json .Server}}'
+DAEMON_PARENT_VERSION = {'Version': '28.4.0', 'ApiVersion': '1.51', 'MinAPIVersion': '1.24', 'GitCommit': '249d679'}
 TRACE = '/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl'
 PUBLIC = '/run/helmut-local-unit-diagnostic'
 BASE = Path('/workspace/helmut-unit-diagnostic-native')
@@ -225,6 +229,46 @@ def owned_docker(native, directory, args, **options):
                               capture_output=True, text=True, timeout=options.pop('timeout', 8),
                               check=options.pop('check', True), **options)
     return native.docker([*docker_prefix(directory), *args], **options)
+
+
+def docker_daemon_peer():
+    """Local peer metadata only; no HTTP or other bytes sent to the socket."""
+    try:
+        if DOCKER != ['/usr/local/bin/docker', '--host=unix:///var/run/docker.sock']:
+            return None
+        path = '/var/run/docker.sock'; before = os.stat(path, follow_symlinks=False)
+        need(stat.S_ISSOCK(before.st_mode), 'daemon-peer-socket-type')
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as peer:
+            peer.settimeout(.2); peer.connect(path)
+            credentials = peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, struct.calcsize('3i'))
+            pid, uid, gid = struct.unpack('3i', credentials)
+            need(pid > 0 and uid >= 0 and gid >= 0, 'daemon-peer-credentials')
+            root = '/proc/' + str(pid); descriptors = []
+            try:
+                for leaf, cap in (('stat', 16384), ('comm', 64)):
+                    fd = os.open(root + '/' + leaf, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK); descriptors.append(fd)
+                    entry = os.fstat(fd)
+                    need(stat.S_ISREG(entry.st_mode) and (entry.st_uid, entry.st_gid) == (uid, gid), 'daemon-peer-proc-owner')
+                    raw = os.read(fd, cap + 1)
+                    need(0 < len(raw) <= cap and raw.endswith(b'\n')
+                         and identity(entry)[:6] == identity(os.fstat(fd))[:6] == identity(os.stat(root + '/' + leaf, follow_symlinks=False))[:6],
+                         'daemon-peer-proc-identity')
+                    if leaf == 'stat':
+                        prefix, tail = raw.rsplit(b')', 1); fields = tail.split()
+                        need(prefix == str(pid).encode() + b' (dockerd' and len(fields) > 19
+                             and fields[0] not in (b'Z', b'X') and fields[19].isdigit() and int(fields[19]) > 0, 'daemon-peer-live-dockerd')
+                        started = fields[19].decode('ascii')
+                    else:
+                        need(raw == b'dockerd\n', 'daemon-peer-comm')
+                need(peer.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, len(credentials)) == credentials,
+                     'daemon-peer-credential-drift')
+                after = os.stat(path, follow_symlinks=False)
+                need(identity(before)[:6] == identity(after)[:6], 'daemon-peer-socket-drift')
+                return (*identity(before)[:6], pid, uid, gid, started, 'dockerd')
+            finally:
+                for fd in descriptors: os.close(fd)
+    except (OSError, RuntimeError, ValueError, struct.error):
+        return None
 
 
 def host_clock_domain():
@@ -1239,6 +1283,7 @@ class NativeExecutionHost:
         self.owner_lines = 0; self.last_heartbeat = 0; self.source_identity = None
         self.clients = {}; self.active_client = None; self.client_pins = []; self.handoff = None; self.pending_handoff = None
         self.failure_trace_read = None; self.failure_trace_attempted = False; self.failure_trace_error = None
+        self._inventory_parent_cache = {}; self._inventory_daemon_cache_key = None
         self.directory = plan['dockerConfigDirectory']
         need(self.directory == str(self.case / 'docker-empty-config'), 'case-docker-config-binding')
         docker_prefix(self.directory)
@@ -1344,19 +1389,50 @@ class NativeExecutionHost:
              and h['PidMode'] == '' and row.get('RestartCount', 0) == 0 and h['RestartPolicy']['Name'] == 'no'
              and not row['State']['OOMKilled'], 'actual-container-sandbox')
 
+    def _inventory_daemon_binding(self):
+        peer = docker_daemon_peer()
+        if peer is None:
+            return None
+        try:
+            raw = self._docker(['version', '--format', DAEMON_VERSION_FORMAT]).stdout
+            need(len(raw.encode('utf8')) <= CAP, 'daemon-version-cap')
+            version = unique(raw)
+            if (type(version) is not dict or any(type(version.get(k)) is not str or version[k] != v for k, v in DAEMON_PARENT_VERSION.items())
+                    or docker_daemon_peer() != peer):
+                return None
+            return (peer, tuple(version[k] for k in DAEMON_PARENT_VERSION))
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError):
+            return None
+
     def _inventory(self, known):
+        try:
+            return self._inventory_current(known)
+        except BaseException:
+            self._inventory_parent_cache = {}; self._inventory_daemon_cache_key = None
+            raise
+
+    def _inventory_current(self, known):
         # Every container still participates in unknown-owned detection. Foreign
-        # containers need only this exact projection, not their large mount DTOs.
+        # Parent is immutable under the qualified Moby API, not mutable state:
+        # moby/moby@249d679 container/container_unix.go UpdateContainer, 248-326.
+        # Restart/unknown peer/version loses that proof and forces the full scan.
+        binding = self._inventory_daemon_binding()
+        cached = getattr(self, '_inventory_parent_cache', {}) if binding is not None and binding == getattr(self, '_inventory_daemon_cache_key', None) else {}
+        self._inventory_parent_cache = {}; self._inventory_daemon_cache_key = None
         ids = self._docker(['ps', '--all', '--quiet', '--no-trunc']).stdout.split()
         need(len(ids) == len(set(ids)) and all(HASH.fullmatch(cid) for cid in ids), 'global-container-id-set')
-        raw = self._docker(['inspect', '--format', GLOBAL_CONTAINER_FORMAT, *ids]).stdout if ids else ''
-        parents = {}
+        parents = {cid: cached[cid] for cid in ids if cid in cached}
+        missing = [cid for cid in ids if cid not in parents]
+        raw = self._docker(['inspect', '--format', GLOBAL_CONTAINER_FORMAT, *missing]).stdout if missing else ''
+        fresh = {}
         for line in raw.splitlines():
             value = unique(line)
             need(type(value) is dict and set(value) == {'Id', 'CgroupParent'}
                  and type(value['Id']) is str and HASH.fullmatch(value['Id'])
-                 and value['Id'] not in parents and type(value['CgroupParent']) is str, 'global-container-projection')
-            parents[value['Id']] = value['CgroupParent']
+                 and value['Id'] not in fresh and type(value['CgroupParent']) is str, 'global-container-projection')
+            fresh[value['Id']] = value['CgroupParent']
+        need(set(fresh) == set(missing), 'global-container-projection-completeness')
+        parents.update(fresh)
         need(set(parents) == set(ids), 'global-container-projection-completeness')
         parent = '/' + self.config['parent']
         owned_ids = {cid for cid, actual in parents.items() if actual == parent or actual.startswith(parent + '/')}
@@ -1370,6 +1446,9 @@ class NativeExecutionHost:
                  and row['HostConfig'].get('CgroupParent') == parents[row['Id']], 'owned-container-detail-binding')
             owned[row['Id']] = row
         need(set(owned) == owned_ids, 'owned-container-detail-completeness')
+        if binding is not None:
+            need(self._inventory_daemon_binding() == binding, 'inventory-daemon-binding-drift')
+            self._inventory_parent_cache = parents; self._inventory_daemon_cache_key = binding
         return owned
 
     def _observe(self):
