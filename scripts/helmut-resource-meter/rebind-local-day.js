@@ -2,7 +2,7 @@
 // Pure local evidence transfer. Proposal issues NO positive judgment or GO.
 // Adoption needs a separately reviewed Root+independent exact proposal pin.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
-const ROOT='/workspace/helmut-cpu-epoch-20261015',A=require(ROOT+'/lib/helmut/briefing-aussagenbindung'),
+const ROOT=path.resolve(__dirname,'../..'),A=require(ROOT+'/lib/helmut/briefing-aussagenbindung'),
  F=require(ROOT+'/lib/helmut/briefing-fachurteil'),B=require(ROOT+'/lib/helmut/briefing-speicher'),
  L=require(ROOT+'/lib/helmut/briefing-lagebindung'),T=require(ROOT+'/lib/helmut/briefing-bereichsvertrag');
 const sha=x=>crypto.createHash('sha256').update(x).digest('hex');
@@ -20,7 +20,7 @@ function currentDisplay(briefing,instant,windowStartUTC){
 }
 const relativePath=/^\/currentHelmutState\/(?:primaryItem|items\/\d+)\/(?:zeitLabel|frischeKlasse|frischeLabel)$/;
 function propose(rows,{oldDay,day,startsAtUTC,endsAtUTC,windowStartUTC}){
- assert.equal(oldDay,'2026-10-16');assert(['2026-10-17','2026-10-18','2026-10-19','2026-10-20','2026-10-21'].includes(day),'Only explicitly prepared local days17/18/19/20/21 are supported');
+ assert.equal(oldDay,'2026-10-16');assert(['2026-10-17','2026-10-18','2026-10-19','2026-10-20','2026-10-21','2026-10-23'].includes(day),'Only explicitly prepared local days17/18/19/20/21/23 are supported');
  assert.equal(windowStartUTC,'2026-10-13T00:00:00.000Z','Existing explicit source window must not change');
  for(const t of [startsAtUTC,endsAtUTC])assert.equal(new Date(t).toISOString(),t);
  assert(startsAtUTC<endsAtUTC&&Date.parse(endsAtUTC)-Date.parse(startsAtUTC)<=9*3600000);
@@ -81,7 +81,7 @@ function adopt({oldRowsPin,proposalPin,rootAcceptancePin}){
  const oldRows=read(oldRowsPin),proposal=read(proposalPin),acceptance=read(rootAcceptancePin);
  assert.equal(acceptance.status,'ROOT_AND_INDEPENDENT_ACCEPTED_EXACT_CURRENT_DAY_TRANSFER');
  equal(acceptance.oldRowsPin,oldRowsPin);equal(acceptance.proposalPin,proposalPin);
- assert(['2026-10-17','2026-10-18','2026-10-19','2026-10-20','2026-10-21'].includes(acceptance.day));equal(acceptance.day,proposal.review.day);
+ assert(['2026-10-17','2026-10-18','2026-10-19','2026-10-20','2026-10-21','2026-10-23'].includes(acceptance.day));equal(acceptance.day,proposal.review.day);
  assert.equal(acceptance.profiles,500);assert.equal(acceptance.allPositionsReviewed,true);
  assert.equal(acceptance.currentTemporalJudgmentAccepted,true);assert.equal(acceptance.production,false);
  const independent=read(acceptance.independentReview);
