@@ -1718,8 +1718,11 @@ class NativeExecutionHost:
         attached = getattr(error, 'nativePipePrivateCapture', None)
         if attached is not None:
             candidates.append((None, attached))
+        active = self.clients.get(self.active_client)
+        entry_child = active.get('child') if active and active.get('mode') == 'entry' else None
         for index, child in enumerate(self.children):
-            if (getattr(child, 'transport_failure', None) is not None or child is self.owner) and hasattr(child, 'failure_snapshot'):
+            if (getattr(child, 'transport_failure', None) is not None or child is self.owner
+                    or child is entry_child) and hasattr(child, 'failure_snapshot'):
                 candidates.append((index, child))
         for ordinal, (index, value) in enumerate(candidates):
             try:

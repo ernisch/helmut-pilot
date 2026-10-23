@@ -655,6 +655,112 @@ class PureHost(unittest.TestCase):
         huge = OSError(); huge.nativePipePrivateCapture = {'stderrBase64': 'a' * (600 * 1024)}
         self.assertTrue(self.host._private_pipe_captures(huge)[0]['captureError']['type'] == 'RuntimeError')
 
+    def entry_capture_fixture(self, exit_code=None):
+        child = types.SimpleNamespace(transport_failure=None, selector=FakeSelector(), eof=[False, False])
+        child.child = FakePopen(['fixed-entry'], stdin=M.subprocess.PIPE)
+        child.child.returncode = exit_code
+        child.eof = [exit_code is not None, exit_code is not None]
+        child.tick = lambda: child.child.poll() is not None and all(child.eof)
+        child.close_metadata = lambda: {'exitCode': child.child.poll(), 'stdoutNaturalEOF': child.eof[0],
+            'stderrNaturalEOF': child.eof[1], 'registeredHostPID': 75}
+        child.failure_snapshot = lambda drain=True: {'schema': 'helmut-local-unit-native-pipe-failure-private/1',
+            'registeredHostPID': 75, 'localExitCode': child.child.poll(), 'stdoutNaturalEOF': child.eof[0],
+            'stderrNaturalEOF': child.eof[1], 'stdoutBase64': '', 'stderrBase64': '', 'remoteExitConfirmed': False}
+        self.host.children = [child]; self.host.active_client = 'f' * 64
+        self.host.clients = {self.host.active_client: {'mode': 'entry', 'child': child}}
+        return child
+
+    def test_active_entry_capture_precedes_cleanup_stop_and_remains_private(self):
+        child = self.entry_capture_fixture(); events = []; sentinel = os.urandom(24)
+        original_snapshot = child.failure_snapshot
+        def snapshot(drain=True):
+            events.append(('snapshot', drain))
+            return {**original_snapshot(drain), 'stderrBase64': base64.b64encode(sentinel).decode()}
+        child.failure_snapshot = snapshot
+        self.host.state = 'ENTRY'
+        self.host._observe = lambda: M.need(False, 'entry-observation-failure')
+        with self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$'):
+            self.host.tick()
+        path = self.case / 'EXECUTION_HOST_CHILD_FAILURE_000.PRIVATE.json'
+        before, pin = M.read_file(path, 600 * 1024, uid=os.getuid()); value = M.unique(before)
+        self.assertIsNone(value['localExitCode']); self.assertFalse(value['stdoutNaturalEOF'])
+        self.assertEqual(base64.b64decode(value['stderrBase64']), sentinel)
+        self.assertEqual(path.stat().st_mode & 0o777, 0o600); self.assertEqual(path.stat().st_nlink, 1)
+        report = M.unique((self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json').read_bytes())
+        self.assertEqual(report['privateChildCaptures'], [{'childIndex': 0, 'pin': pin}])
+        def docker(argv, **kwargs):
+            if argv[0] == 'inspect':
+                return types.SimpleNamespace(stdout=json.dumps([{'State': {'Running': True}}]))
+            self.assertEqual(argv, ['stop', '--time', '2', self.host.active_client])
+            self.assertTrue(path.is_file()); events.append(('stop', None))
+            child.child.returncode = 137; child.eof = [True, True]
+            return types.SimpleNamespace(stdout='')
+        self.host._docker = docker
+        close = self.host.close()
+        self.assertEqual(events, [('snapshot', True), ('stop', None), ('snapshot', False)])
+        self.assertFalse(close['clean']); self.assertEqual(close['children'][0]['exitCode'], 137)
+        self.assertNotIn('Base64', str(close)); self.assertNotIn(sentinel, M.encode(close))
+        self.assertEqual(path.read_bytes(), before)
+        final = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_000.PRIVATE.json').read_bytes())
+        self.assertEqual(final['localExitCode'], 137); self.assertTrue(final['stdoutNaturalEOF'] and final['stderrNaturalEOF'])
+        with self.assertRaisesRegex(RuntimeError, 'sealed-host'): self.host.tick()
+
+    def test_active_entry_real_pipe_capture_keeps_existing_stream_caps(self):
+        with patch.object(M.subprocess, 'Popen', FakePopen), patch.object(M.selectors, 'DefaultSelector', FakeSelector), \
+             patch.object(M.os, 'set_blocking', lambda *args: None):
+            child = M._PipeChild(['fixed-entry'])
+        child.output = [bytearray(b'a' * (M.CAP - 4)), bytearray(b'b' * (128 * 1024 - 4))]
+        reads = {10: [b'overflow', b''], 11: [b'overflow', b'']}
+        self.host.children = [child]; self.host.active_client = 'f' * 64
+        self.host.clients = {self.host.active_client: {'mode': 'entry', 'child': child}}
+        with patch.object(M.os, 'read', lambda fd, size: reads[fd].pop(0)), \
+             patch.object(M.os, 'set_blocking', lambda *args: None):
+            captures = self.host._private_pipe_captures()
+        path = self.case / 'EXECUTION_HOST_CHILD_FAILURE_000.PRIVATE.json'
+        raw = path.read_bytes(); value = M.unique(raw)
+        self.assertEqual(len(captures), 1); self.assertLessEqual(len(raw), 600 * 1024)
+        self.assertEqual(value['stdoutBytes'], M.CAP); self.assertEqual(value['stderrBytes'], 128 * 1024)
+        self.assertTrue(value['stdoutTruncated'] and value['stderrTruncated'])
+        self.assertTrue(value['stdoutNaturalEOF'] and value['stderrNaturalEOF'])
+        self.assertIsNone(value['localExitCode']); self.assertFalse(value['remoteExitConfirmed'])
+
+    def test_missing_or_nonactive_or_qualifier_entry_is_not_extra_capture(self):
+        child = self.entry_capture_fixture()
+        variants = [{}, {self.host.active_client: {'mode': 'qualifier', 'child': child}},
+                    {'9' * 64: {'mode': 'entry', 'child': child}}, {self.host.active_client: {'mode': 'entry'}}]
+        for clients in variants:
+            with self.subTest(kind=list(clients)):
+                self.host.clients = clients
+                self.assertEqual(self.host._private_pipe_captures(), [])
+        self.assertFalse(list(self.case.glob('EXECUTION_HOST_CHILD_FAILURE*')))
+
+    def test_closed_entry_capture_keeps_observed_exit_and_eof_without_redrain(self):
+        child = self.entry_capture_fixture(exit_code=1); calls = []
+        original_snapshot = child.failure_snapshot
+        child.failure_snapshot = lambda drain=True: calls.append(drain) or original_snapshot(drain)
+        child.selector.close(); child.child.stdin.close(); child.child.stdout.close(); child.child.stderr.close()
+        captures = self.host._private_pipe_captures(after_close=True)
+        value = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_000.PRIVATE.json').read_bytes())
+        self.assertEqual(calls, [False]); self.assertEqual(len(captures), 1)
+        self.assertEqual(value['localExitCode'], 1); self.assertTrue(value['stdoutNaturalEOF'] and value['stderrNaturalEOF'])
+        self.assertFalse(value['remoteExitConfirmed'])
+
+    def test_entry_oversized_or_existing_capture_never_heals_failure(self):
+        child = self.entry_capture_fixture(); original_snapshot = child.failure_snapshot
+        child.failure_snapshot = lambda drain=True: {'stderrBase64': 'a' * (600 * 1024)}
+        self.host._observe = lambda: M.need(False, 'entry-observation-failure')
+        with self.assertRaisesRegex(RuntimeError, '^native-execution-host-sealed-failure$'):
+            self.host.tick()
+        report = M.unique((self.case / 'EXECUTION_HOST_FAILURE.PRIVATE.json').read_bytes())
+        self.assertEqual(report['privateChildCaptures'][0]['captureError']['type'], 'RuntimeError')
+        self.assertIsNotNone(self.host.failure)
+        child.failure_snapshot = original_snapshot
+        first = self.host._private_pipe_captures()
+        path = self.case / 'EXECUTION_HOST_CHILD_FAILURE_000.PRIVATE.json'; before = path.read_bytes()
+        again = self.host._private_pipe_captures()
+        self.assertIn('pin', first[0]); self.assertEqual(again[0]['captureError']['type'], 'FileExistsError')
+        self.assertEqual(path.read_bytes(), before); self.assertIsNotNone(self.host.failure)
+
     def test_source_exit_after_confirmed_owner_stop_is_not_live_failure(self):
         self.host.state = 'STOPPED'; self.host.last_observation = {'observedAtUTC': '2026-10-22T00:00:00.000Z'}
         self.host._observe = lambda: M.need(False, 'source-already-exited')
