@@ -5,18 +5,20 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), vm = require("node:vm"), assert = require("node:assert/strict");
 const filename = path.join(__dirname, "local-unit-native-endpoint-qualification.js"), root = path.resolve(__dirname, "../..");
 const sha = b => crypto.createHash("sha256").update(b).digest("hex");
-function snapshot() {
-  const fd = fs.openSync(filename, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
-  try { const a = fs.fstatSync(fd, { bigint: true }); assert(a.isFile() && a.nlink === 1n && a.size < 262144n);
-    const bytes = fs.readFileSync(fd), b = fs.fstatSync(fd, { bigint: true }), n = fs.lstatSync(filename, { bigint: true });
+function snapshot(name = filename) {
+  const fd = fs.openSync(name, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+  try { const a = fs.fstatSync(fd, { bigint: true }); assert(a.isFile() && a.nlink === 1n && a.size < (name === filename ? 262144n : 16777216n));
+    const bytes = fs.readFileSync(fd), b = fs.fstatSync(fd, { bigint: true }), n = fs.lstatSync(name, { bigint: true });
     for (const k of ["dev", "ino", "mode", "uid", "gid", "nlink", "size", "mtimeNs", "ctimeNs"]) assert(a[k] === b[k] && b[k] === n[k]);
     assert.equal(BigInt(bytes.length), a.size); return { bytes, sha256: sha(bytes) };
   } finally { fs.closeSync(fd); }
 }
 const before = snapshot(), code = before.bytes.toString("utf8"), TRUST_DIR = "/run/helmut-local-unit-diagnostic", TRUST = TRUST_DIR + "/trust.json";
+const storagePath = path.join(root, "lib/helmut/storage.js"), publicationPath = path.join(root, "lib/helmut/publication-eligibility.js");
+const consumerBefore = snapshot(storagePath), publicationBefore = snapshot(publicationPath);
 function fixture(options = {}) {
   const files = new Map(), fds = new Map(), offsets = new Map(), calls = [], writes = [], lines = [];
-  let nextInode = 30, nextFD = 1, processDrift = false, nativeRequests = 0;
+  let nextInode = 30, nextFD = 1, processDrift = false, nativeRequests = 0, publicationRequests = 0;
   const nonce = "a".repeat(32), selection = { operationId: "localUnitDiagnostic-" + nonce, commandHash: sha("VM selected command") };
   const directory = "/workspace/helmut-unit-diagnostic-native/" + nonce, selectorPath = directory + "/SELECTION.SAFE.json";
   const configPath = directory + "/ENDPOINT_QUALIFICATION_CONFIG.PRIVATE.json", reportPath = directory + "/ENDPOINT_QUALIFICATION.SAFE.json";
@@ -25,6 +27,7 @@ function fixture(options = {}) {
     dev: 1, ino: nextInode++, nlink: 1, mtimeNs: 1, ctimeNs: 1, ...extra });
   const pin = name => ({ path: name, bytes: files.get(name).data.length, sha256: sha(files.get(name).data) });
   add(filename, before.bytes); add(endpointPath, "VM pinned endpoint module"); add(gatePath, "VM pinned gate module"); add("/synthetic/node", "VM Node executable", { mode: 0o755 });
+  add(storagePath, consumerBefore.bytes); add(publicationPath, publicationBefore.bytes);
   add(selectorPath, JSON.stringify(selection, null, 2) + "\n");
   const database = "helmut_unit_diagnostic_" + nonce, now = new Date().toISOString();
   const publicSourceBinding = { schema: "helmut-local-unit-original-source-binding/1", ...selection, database, vmOnly: "public binding" };
@@ -35,11 +38,16 @@ function fixture(options = {}) {
   add(TRUST, JSON.stringify(anchor) + "\n", { uid: 0, mode: 0o444 }); add(TRUST_DIR + "/broker.sock", "", { kind: "socket", uid: 0, mode: 0o666 });
   const config = { schema: "helmut-local-unit-native-endpoint-qualification-config/1", selection, database, databaseOID: "12345",
     sqlSources: { "public.local_unit_diagnostic_contract_v1()": sha("VM contract body"), "helmut_unit_diagnostic.exact(jsonb, text[])": sha("VM helper body") },
-    publicSourceBinding, codePins: [pin(filename), pin(gatePath), pin(endpointPath)], nodePin: pin("/synthetic/node"), issuedAtUTC: now,
+    publicSourceBinding, codePins: [pin(filename), pin(gatePath), pin(endpointPath), pin(storagePath), pin(publicationPath)], nodePin: pin("/synthetic/node"), issuedAtUTC: now,
+    publicationProbe: { schema: "helmut-local-unit-native-publication-read-probe/1", commandHash: selection.commandHash,
+      knowledgeObjectIds: options.ids || ["synthetic-ko"] },
     expiresAtUTC: new Date(Date.now() + 120000).toISOString(), measuredCgroup: { path: "/owned-group", device: 1, inode: 2, procMembership: "0::/\n" } };
   if (options.expired) config.expiresAtUTC = new Date(Date.now() - 1).toISOString();
   if (options.oldConfig) config.issuedAtUTC = new Date(Date.now() - 11000).toISOString();
-  if (options.missingEndpointPin) config.codePins.pop();
+  if (options.mutateProbe) options.mutateProbe(config);
+  if (options.missingEndpointPin) config.codePins = config.codePins.filter(p => p.path !== endpointPath);
+  if (options.missingStoragePin) config.codePins = config.codePins.filter(p => p.path !== storagePath);
+  if (options.missingPublicationPin) config.codePins = config.codePins.filter(p => p.path !== publicationPath);
   if (options.missingGatePin) config.codePins.splice(1, 1);
   if (options.badCodePin) config.codePins[1].sha256 = sha("VM wrong code");
   if (options.wrongConfigBinding) config.publicSourceBinding = { ...publicSourceBinding, vmOnly: "different binding" };
@@ -77,7 +85,22 @@ function fixture(options = {}) {
     readlinkSync(name) { if (name === "/proc/7/exe") return "/synthetic/node"; const n = name.split("/").at(-1); return n + ":[123]"; } };
   const Endpoint = { async request(selected, db, method, pathname, body) {
     events.push("endpoint.request");
-    calls.push({ selected, db, method, pathname, body }); assert.equal(db, database); assert.equal(method, "POST");
+    calls.push({ selected, db, method, pathname, body }); assert.equal(db, database);
+    if (method === "GET") {
+      assert.equal(JSON.stringify(selected), JSON.stringify(selection)); assert.equal(body.length, 0);
+      const url = new URL(pathname, "http://127.0.0.1"); assert.equal(url.pathname, "/rest/v1/ko_document_links");
+      assert.equal(url.searchParams.get("select"), "knowledge_object_id,raw_document_id,raw_documents(id,url,canonical_url)");
+      assert.equal(url.searchParams.get("order"), "knowledge_object_id.asc,raw_document_id.asc"); assert.equal(url.searchParams.get("limit"), "1000");
+      nativeRequests++; publicationRequests++;
+      if (options.publicationUnknown) throw Error("VM source outcome unknown private sentinel");
+      let rows = publicationRequests === 1 ? config.publicationProbe.knowledgeObjectIds.map((id, i) => ({ knowledge_object_id: id,
+        raw_document_id: "synthetic-document-" + i, raw_documents: { id: "synthetic-document-" + i,
+          url: options.nullURLs ? null : "https://example.invalid/synthetic-source", canonical_url: null } })) : [];
+      if (options.pages) rows = options.pages(publicationRequests, Number(url.searchParams.get("offset")), config.publicationProbe.knowledgeObjectIds);
+      if (options.publicationRows) rows = options.publicationRows(rows, publicationRequests);
+      return { status: options.publicationStatus || 200, body: Buffer.from(options.publicationBytes || JSON.stringify(rows)) };
+    }
+    assert.equal(method, "POST");
     assert.equal(pathname, "/rest/v1/rpc/local_unit_diagnostic_contract_v1"); assert.equal(body.toString(), "{}");
     if (selected.commandHash !== selection.commandHash) {
       if (options.foreignAccepted) return { status: 200, body: Buffer.from("{}") };
@@ -106,6 +129,29 @@ function fixture(options = {}) {
     if (options.exitGateFailure) throw Error("VM exit gate closed"); } };
   ModuleStub._load = name => {
     if (name === gatePath) { events.push("gate.import"); ModuleStub._cache[name] = { filename: name }; return Gate; }
+    if (name === storagePath || name === publicationPath) {
+      events.push(name === storagePath ? "storage.import" : "publication.import");
+      const loaded = { exports: {} }; ModuleStub._cache[name] = loaded;
+      if (name === storagePath && options.missingConsumer) return loaded.exports;
+      const inert = { "./sources": { v1Sources: [] }, "./pending-terminal": {}, "./mandatsklasse": {}, "./llm-usage-relational": {},
+        "./tenant-context": {}, "./speicherpfad-vorflug": {}, "./auth-store-cas": {}, "./llm-usage-atomic": {},
+        "./briefing-speicher-lesediagnose": {}, "./blob-relational": {}, "./knowledge-object-version": { SELECT: "id" }, "./llm-budget": {}, "./cost-model": {} };
+      const forbidden = () => { throw Error("VM unrequested source I/O forbidden"); };
+      vm.runInNewContext((name === storagePath ? consumerBefore : publicationBefore).bytes.toString("utf8"), {
+        module: loaded, exports: loaded.exports, __filename: name, __dirname: path.dirname(name), process: processStub,
+        Buffer, URL, Date, console: { error: forbidden, warn: forbidden, log: forbidden }, fetch: forbidden,
+        require(request) {
+          if (request === "crypto" || request === "node:crypto") return crypto;
+          if (request === "path" || request === "node:path") return path;
+          if (request === "fs" || request === "node:fs") return new Proxy({}, { get: () => forbidden });
+          if (request === "node:async_hooks") return require("node:async_hooks");
+          if (request === "./publication-eligibility") return ModuleStub._load(publicationPath);
+          if (Object.hasOwn(inert, request)) return inert[request];
+          throw Error("VM unexpected consumer dependency");
+        }
+      }, { filename: name });
+      return loaded.exports;
+    }
     events.push("endpoint.import"); assert.equal(name, endpointPath);
     if (options.unqualifiedImport) ModuleStub._load(path.join(root, "lib/helmut/unlisted.js"));
     ModuleStub._cache[name] = { filename: name }; return Endpoint; };
@@ -119,27 +165,33 @@ function fixture(options = {}) {
   const module = { exports: {}, filename }, api = vm.runInNewContext(code + "\n({start,checkConfig,parseJSON,nodeBudget});", {
     require: localRequire, module, __filename: filename, __dirname, process: processStub, Buffer, URL, Date
   }, { filename });
-  return { api, files, config, calls, writes, lines, reportPath, events, asCLI() { localRequire.main = module; }, get nativeRequests() { return nativeRequests; } };
+  return { api, files, config, calls, writes, lines, reportPath, events, asCLI() { localRequire.main = module; },
+    get nativeRequests() { return nativeRequests; }, get publicationRequests() { return publicationRequests; } };
 }
 let count = 0, current = "initialization";
 async function check(name, fn) { current = name; await fn(); count++; }
 (async () => {
   await check("one genuine-module contract read and local foreign rejection publish one bounded report", async () => {
-    const s = fixture(), report = await s.api.start(); assert.equal(s.nativeRequests, 1); assert.equal(s.calls.length, 2); assert.equal(s.writes.length, 1); assert.equal(s.lines.length, 1);
+    const s = fixture(), report = await s.api.start(); assert.equal(s.nativeRequests, 3); assert.equal(s.calls.length, 4); assert.equal(s.writes.length, 1); assert.equal(s.lines.length, 1);
     assert(!s.events.includes("gate.import"));
     assert.equal(report.signedReadonlyContractObserved, true); assert.equal(report.foreignScopeRejectedBeforeRequest, true);
+    assert.equal(report.publicationRead.observed, true); assert.equal(report.publicationRead.requestCount, 2);
+    assert.equal(report.publicationRead.knowledgeObjectCount, 1); assert.equal(report.publicationRead.documentIdentityCount, 1);
+    assert.equal(report.sourceReadPreflightMayWarmCache, true);
     assert.equal(report.foreignScopeNativeRequestCount, null); assert.equal(report.foreignScopeNativeRequestCountMeasured, false);
     for (const k of ["liveRawMutatorNegativesPerformed", "liveOriginalControlReadPerformed", "nativeACLProofPerformed", "seedPerformed", "scopeClaimConsumed", "unitExecutionQualified", "full500Qualified"])
       assert.equal(report[k], false);
     const summary = JSON.parse(s.lines[0]); assert.equal(summary.reportPin.sha256, sha(s.files.get(s.reportPath).data));
     assert.equal(summary.rootTrustSHA256, report.rootTrustSHA256); assert.equal(report.actualNodeBudget.oldSpaceMiB, 384);
-    assert(!s.lines[0].includes("public binding") && !s.lines[0].includes("legacyReadRPCs")); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 2);
+    assert(!s.lines[0].includes("public binding") && !s.lines[0].includes("legacyReadRPCs")); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 4);
+    const rawReport = s.files.get(s.reportPath).data.toString();
+    assert(!rawReport.includes("synthetic-ko") && !rawReport.includes("synthetic-document") && !rawReport.includes("https://example.invalid"));
   });
   await check("module import is inert before either public API or actual CLI", async () => {
     const s = fixture(); assert.equal(s.events.length, 0); assert.equal(s.calls.length, 0); assert.equal(s.writes.length, 0);
   });
   await check("actual CLI waits before endpoint import and quiesces after its report", async () => {
-    const s = fixture(); s.asCLI(); await s.api.start(); assert.equal(s.nativeRequests, 1);
+    const s = fixture(); s.asCLI(); await s.api.start(); assert.equal(s.nativeRequests, 3);
     assert(s.events.indexOf("gate.wait") < s.events.indexOf("endpoint.import"));
     assert(s.events.indexOf("endpoint.request") < s.events.indexOf("gate.quiesce"));
     assert.equal(s.events.filter(x => x === "gate.wait").length, 1); assert.equal(s.events.filter(x => x === "gate.quiesce").length, 1);
@@ -156,7 +208,8 @@ async function check(name, fn) { current = name; await fn(); count++; }
   for (const [name, options] of [["FIFO", { fifo: true }], ["hardlink", { hardlink: true }], ["mode", { badMode: true }],
     ["oversize", { configOversize: true }], ["symlink", { symlink: true }], ["duplicate JSON", { duplicateConfig: true }],
     ["old configuration", { oldConfig: true }], ["expired", { expired: true }], ["OID shape", { badOID: true }],
-    ["missing code", { missingEndpointPin: true }], ["missing observation gate", { missingGatePin: true }], ["changed code", { badCodePin: true }], ["unqualified import", { unqualifiedImport: true }],
+    ["missing code", { missingEndpointPin: true }], ["missing storage", { missingStoragePin: true }], ["missing publication", { missingPublicationPin: true }],
+    ["missing observation gate", { missingGatePin: true }], ["changed code", { badCodePin: true }], ["unqualified import", { unqualifiedImport: true }],
     ["foreign selector path", { selectorPath: "/tmp/SELECTION.SAFE.json" }]])
     await check(name + " rejects before endpoint use", async () => { const s = fixture(options); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0); assert.equal(s.writes.length, 0); });
   for (const [name, options] of [["Node version", { nodeVersion: "v24.18.0" }], ["heap", { heap: 512 * 1024 * 1024 }], ["root client", { rootClient: true }],
@@ -171,13 +224,59 @@ async function check(name, fn) { current = name; await fn(); count++; }
     ["foreign scope accepted", { foreignAccepted: true }], ["foreign failure at wrong stage", { foreignWrongError: true }],
     ["trust replacement", { trustDrift: true }], ["process drift", { pidDrift: true }], ["code drift", { codeDrift: true }]])
     await check(name + " stays terminal without report or retries", async () => {
-      const s = fixture(options); await assert.rejects(s.api.start()); assert.equal(s.nativeRequests, 1); assert.equal(s.writes.length, 0); assert.equal(s.lines.length, 0);
+      const s = fixture(options); await assert.rejects(s.api.start());
+      assert.equal(s.nativeRequests, ["foreign scope accepted", "foreign failure at wrong stage", "trust replacement", "code drift"].includes(name) ? 3 : 1);
+      assert.equal(s.writes.length, 0); assert.equal(s.lines.length, 0);
       const old = s.calls.length; await assert.rejects(s.api.start()); assert.equal(s.calls.length, old);
     });
   await check("preexisting qualification is never overwritten", async () => {
     const s = fixture({ reportExists: true }), initial = Buffer.from(s.files.get(s.reportPath).data); await assert.rejects(s.api.start());
     assert(s.files.get(s.reportPath).data.equals(initial)); assert.equal(s.writes.length, 0); assert.equal(s.lines.length, 0);
   });
+  for (const [name, change] of [["missing", c => delete c.publicationProbe], ["foreign command", c => c.publicationProbe.commandHash = "0".repeat(64)],
+    ["extra qualification flag", c => c.publicationProbe.qualified = true], ["empty", c => c.publicationProbe.knowledgeObjectIds = []],
+    ["too many", c => c.publicationProbe.knowledgeObjectIds = Array.from({ length: 501 }, (_, i) => "ko-" + i)],
+    ["duplicate", c => c.publicationProbe.knowledgeObjectIds = ["same", "same"]], ["nonstring", c => c.publicationProbe.knowledgeObjectIds = [123]],
+    ["path", c => c.publicationProbe.knowledgeObjectIds = ["../foreign"]], ["overlong", c => c.publicationProbe.knowledgeObjectIds = ["x".repeat(251)]]])
+    await check("publication input " + name + " is denied before any endpoint request", async () => {
+      const s = fixture({ mutateProbe: change }); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0); assert.equal(s.writes.length, 0);
+    });
+  await check("actual consumer continues short server pages until an empty page", async () => {
+    const offsets = [], s = fixture({ ids: ["synthetic_Ä_四_Ⅶ"], pages(n, offset, ids) {
+      offsets.push(offset); return n < 3 ? [{ knowledge_object_id: ids[0], raw_document_id: "source-" + n,
+        raw_documents: { id: "source-" + n, url: null, canonical_url: null } }] : [];
+    } });
+    const report = await s.api.start(); assert.equal(offsets.join(","), "0,1,2");
+    assert.equal(report.publicationRead.documentIdentityCount, 2); assert.equal(report.publicationRead.requestCount, 3);
+    const p = s.config.publicationProbe;
+    assert.equal(report.publicationRead.probeCanonicalSHA256, sha(JSON.stringify({ commandHash: p.commandHash, knowledgeObjectIds: p.knowledgeObjectIds, schema: p.schema })));
+    assert(s.events.includes("storage.import") && s.events.includes("publication.import"));
+  });
+  await check("actual empty native link response is distinct from a dummy input", async () => {
+    const s = fixture({ pages: () => [] }), report = await s.api.start();
+    assert.equal(report.publicationRead.observed, true); assert.equal(report.publicationRead.knowledgeObjectCount, 1);
+    assert.equal(report.publicationRead.documentIdentityCount, 0); assert.equal(report.publicationRead.requestCount, 1);
+  });
+  await check("publication response uses endpoint bound rather than small contract cap", async () => {
+    const s = fixture({ pages(n, offset, ids) { return n > 1 ? [] : Array.from({ length: 1000 }, (_, i) => ({ knowledge_object_id: ids[0],
+      raw_document_id: "source-" + i, raw_documents: { id: "source-" + i, url: "https://example.invalid/" + "x".repeat(1400), canonical_url: null } })); } });
+    const report = await s.api.start(); assert.equal(report.publicationRead.documentIdentityCount, 1000);
+    assert.equal(report.publicationRead.requestCount, 2);
+  });
+  for (const [name, options] of [["HTTP rejection", { publicationStatus: 403 }], ["transport unknown", { publicationUnknown: true }],
+    ["invalid UTF8", { publicationBytes: Buffer.from([255]) }], ["duplicate JSON", { publicationBytes: '[{"x":1,"x":2}]' }],
+    ["malformed JSON", { publicationBytes: '{' }], ["not array", { publicationBytes: '{}' }],
+    ["foreign KO", { publicationRows: (rows, n) => n === 1 ? [{ ...rows[0], knowledge_object_id: "foreign-ko" }] : [] }],
+    ["hidden embedded document", { publicationRows: (rows, n) => n === 1 ? [{ ...rows[0], raw_documents: null }] : [] }],
+    ["wrong embedded id", { publicationRows: (rows, n) => n === 1 ? [{ ...rows[0], raw_documents: { ...rows[0].raw_documents, id: "foreign-source" } }] : [] }],
+    ["duplicate link", { publicationRows: (rows, n) => n === 1 ? [rows[0], rows[0]] : [] }],
+    ["malformed URLs", { publicationRows: (rows, n) => n === 1 ? [{ ...rows[0], raw_documents: { id: rows[0].raw_document_id } }] : [] }],
+    ["consumer absent", { missingConsumer: true }]])
+    await check("real publication consumer " + name + " never reports or retries", async () => {
+      const s = fixture(options); await assert.rejects(s.api.start()); assert.equal(s.publicationRequests, options.missingConsumer ? 0 : 1);
+      assert.equal(s.writes.length, 0); assert.equal(s.lines.length, 0);
+      const calls = s.calls.length; await assert.rejects(s.api.start()); assert.equal(s.calls.length, calls);
+    });
   await check("entry has no database process source producer engine or raw write path", async () => {
     for (const text of ["child_process", "local-unit-native-prepare", "extractPinnedSource", "Producer.derive", "U.readControl", "state_cas_v1", "artifact_insert_v1", "original_write_v1"])
       assert(!code.includes(text));
@@ -185,5 +284,6 @@ async function check(name, fn) { current = name; await fn(); count++; }
     assert.throws(() => s.api.parseJSON(Buffer.from('{"x":1,"x":2}\n'), true));
   });
   assert.equal(snapshot().sha256, before.sha256);
+  assert.equal(snapshot(storagePath).sha256, consumerBefore.sha256); assert.equal(snapshot(publicationPath).sha256, publicationBefore.sha256);
   process.stdout.write("Endpoint qualification VM checks PASS: " + count + "; source SHA256=" + before.sha256 + "; stable before/after; native requests/DB/containers/providers=0.\n");
 })().catch(() => { process.stderr.write("Endpoint qualification VM tests FAIL at " + current + "; no native request occurred.\n"); process.exitCode = 1; });

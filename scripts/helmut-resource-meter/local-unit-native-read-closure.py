@@ -35,11 +35,14 @@ FUNCTIONS = (
 QUALIFIER_SHA = 'c52be16a8c292dda33954dd2be29f34021c94b86a638f4dfe872d0d91bc50aa5'
 TABLES = ('profiles', 'mandate_profiles', 'raw_documents', 'knowledge_objects',
           'helmut_store', 'helmut_auth_state_nodes_local', 'llm_usage')
+# Publication needs only two link columns; preserve the seven existing grants.
+PUBLICATION_TABLE = 'ko_document_links'
+PUBLICATION_COLUMNS = ('knowledge_object_id', 'raw_document_id')
 OWN_TABLES = ('authority', 'runtime_observations', 'state', 'artifacts', 'leases')
 _attempted = set()
 COLUMNS = tuple((t, c, ty) for t, cs in (
     ('profiles', (('id', 'text'),)), ('mandate_profiles', (('user_id', 'text'),)),
-    ('raw_documents', (('id', 'text'),)), ('knowledge_objects', (('id', 'text'),)),
+    ('raw_documents', (('id', 'text'), ('url', 'text'), ('canonical_url', 'text'))), ('knowledge_objects', (('id', 'text'),)),
     ('helmut_store', (('id', 'text'), ('data', 'jsonb'))),
     ('helmut_auth_state_nodes_local', (('store_id', 'text'), ('generation', 'text'))),
     ('llm_usage', (('usage_store_id', 'text'), ('usage_generation', 'text')))) for c, ty in cs)
@@ -133,7 +136,7 @@ def _inputs(database, operation, text, digest, pins, password):
     _need(type(sources) is dict and set(sources) == {'documents', 'knowledgeObjects'}, 'source-selection')
     ids = {}
     for key in ('documents', 'knowledgeObjects'):
-        _need(type(sources[key]) is list and len(sources[key]) <= 4000, 'source-selection')
+        _need(type(sources[key]) is list and 1 <= len(sources[key]) <= 4000, 'source-selection')
         values = [row['id'] for row in sources[key]]
         _need(all(type(v) is str and 0 < len(v.encode('utf8')) <= 200 and '\0' not in v for v in values)
               and len(set(values)) == len(values), 'source-identifiers')
@@ -188,6 +191,68 @@ SELECT jsonb_build_object('schema','helmut-native-registry-json-codec/1',
  'qualifiedBooleanTypeMatches','pg_catalog.bool'::regtype='boolean'::regtype);
 COMMIT;
 """
+
+
+def _selected(column, values):
+    return column + '=ANY(ARRAY[' + ','.join(_q(v) for v in values) + ']::text[])'
+
+
+def _publication_guard(operation, ids):
+    """Privileged, uncensored coverage; never infer completeness from RLS rows."""
+    runtime = 'helmut_ud_runtime_' + operation[-32:]
+    sql = """DO $publication$ BEGIN
+IF NOT EXISTS(SELECT FROM pg_class WHERE oid='public.ko_document_links'::regclass
+ AND relkind='r' AND NOT relispartition AND relowner<>(SELECT oid FROM pg_roles WHERE rolname=RUNTIME))
+ OR EXISTS(SELECT FROM pg_inherits WHERE inhrelid='public.ko_document_links'::regclass OR inhparent='public.ko_document_links'::regclass)
+ OR (SELECT count(*) FROM pg_attribute WHERE attrelid='public.ko_document_links'::regclass
+  AND attname IN('knowledge_object_id','raw_document_id') AND attnum>0 AND NOT attisdropped
+  AND atttypid='text'::regtype AND atttypmod=-1 AND attnotnull AND attgenerated='' AND attidentity='')<>2
+ THEN RAISE EXCEPTION 'read-closure-publication-real-link-columns';END IF;
+""".replace('RUNTIME', _q(runtime))
+    for table, columns in ((PUBLICATION_TABLE, PUBLICATION_COLUMNS), ('raw_documents', ('id',)), ('knowledge_objects', ('id',))):
+        relation = _q('public.' + table) + '::regclass'
+        keys = 'ARRAY[' + ','.join('(SELECT attnum FROM pg_attribute WHERE attrelid=' + relation
+                                  + ' AND attname=' + _q(column) + ' AND attnum>0 AND NOT attisdropped)' for column in columns) + ']::smallint[]'
+        sql += ("IF (SELECT count(*) FROM pg_constraint WHERE conrelid=" + relation + " AND contype='p')<>1"
+                + ' OR NOT EXISTS(SELECT FROM pg_constraint actual_pk JOIN pg_index actual_index ON actual_index.indexrelid=actual_pk.conindid'
+                + ' WHERE actual_pk.conrelid=' + relation + " AND actual_pk.contype='p' AND actual_pk.conkey=" + keys
+                + ' AND actual_pk.convalidated AND NOT actual_pk.condeferrable AND NOT actual_pk.condeferred'
+                + ' AND actual_pk.conislocal AND actual_pk.coninhcount=0 AND actual_pk.conparentid=0'
+                + ' AND actual_index.indrelid=' + relation + ' AND actual_index.indisprimary AND actual_index.indisunique AND actual_index.indisvalid AND actual_index.indisready)'
+                + " THEN RAISE EXCEPTION 'read-closure-publication-original-primary-key';END IF;\n")
+    sql += "IF (SELECT count(*) FROM pg_constraint WHERE conrelid='public.ko_document_links'::regclass AND contype='f')<>2 THEN RAISE EXCEPTION 'read-closure-publication-original-foreign-keys';END IF;\n"
+    for column, target in (('knowledge_object_id', 'knowledge_objects'), ('raw_document_id', 'raw_documents')):
+        sql += ("IF (SELECT count(*) FROM pg_constraint actual_fk WHERE actual_fk.conrelid='public.ko_document_links'::regclass"
+                + " AND actual_fk.contype='f' AND actual_fk.confrelid=" + _q('public.' + target) + '::regclass'
+                + " AND actual_fk.conkey=ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid='public.ko_document_links'::regclass AND attname=" + _q(column) + ")]::smallint[]"
+                + ' AND actual_fk.confkey=ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid=' + _q('public.' + target) + "::regclass AND attname='id')]::smallint[]"
+                + " AND actual_fk.confupdtype='a' AND actual_fk.confdeltype='c' AND actual_fk.confmatchtype='s'"
+                + ' AND actual_fk.convalidated AND NOT actual_fk.condeferrable AND NOT actual_fk.condeferred'
+                + ' AND actual_fk.conislocal AND actual_fk.coninhcount=0 AND actual_fk.conparentid=0)<>1'
+                + " THEN RAISE EXCEPTION 'read-closure-publication-original-foreign-keys';END IF;\n")
+    # A computed relationship could override PostgREST's genuine FK embed.
+    sql += """IF EXISTS(SELECT FROM pg_proc actual_relationship WHERE actual_relationship.pronamespace='public'::regnamespace
+ AND actual_relationship.proname='raw_documents' AND actual_relationship.pronargs>0
+ AND actual_relationship.proargtypes[0]='public.ko_document_links'::regtype)
+ THEN RAISE EXCEPTION 'read-closure-publication-computed-relationship';END IF;
+"""
+    for table, key in (('knowledge_objects', 'knowledgeObjects'), ('raw_documents', 'documents')):
+        sql += ('IF (SELECT count(*) FROM public.' + table + ' WHERE ' + _selected('id', ids[key]) + ')<>' + str(len(ids[key]))
+                + " THEN RAISE EXCEPTION 'read-closure-publication-selected-source-missing';END IF;\n")
+    sql += ('IF EXISTS(SELECT FROM public.ko_document_links actual_link WHERE ' + _selected('actual_link.knowledge_object_id', ids['knowledgeObjects'])
+            + ' AND (' + _selected('actual_link.raw_document_id', ids['documents']) + ") IS NOT TRUE) THEN RAISE EXCEPTION 'read-closure-publication-document-coverage';END IF;\n")
+    sql += ('IF (SELECT count(*) FROM public.ko_document_links actual_link WHERE ' + _selected('actual_link.knowledge_object_id', ids['knowledgeObjects'])
+            + ")>=20000 THEN RAISE EXCEPTION 'read-closure-publication-consumer-row-limit';END IF;\n")
+    return sql + 'END;$publication$;\n'
+
+
+def _publication_rows_hash(ids):
+    # All actual links, without the consumer's pagination or first-40 limit.
+    # URLs stay inside PostgreSQL; only a digest enters this session's probe.
+    return ("(SELECT encode(sha256(convert_to(coalesce(jsonb_agg(jsonb_build_array(actual_link.knowledge_object_id,actual_link.raw_document_id,actual_document.id,actual_document.url,actual_document.canonical_url)"
+            + " ORDER BY actual_link.knowledge_object_id COLLATE \"C\",actual_link.raw_document_id COLLATE \"C\"),'[]'::jsonb)::text,'UTF8')),'hex')"
+            + ' FROM public.ko_document_links actual_link JOIN public.raw_documents actual_document ON actual_document.id=actual_link.raw_document_id WHERE '
+            + _selected('actual_link.knowledge_object_id', ids['knowledgeObjects']) + ')')
 
 
 def _guard(database, operation, text, digest, installed=False, auth_hash=None):
@@ -267,7 +332,9 @@ END;$guard$;
                                              + " THEN RAISE EXCEPTION 'read-closure-preauthority-store-changed';END IF;")
     # Substitute template TOKENS only once: caller JSON must never be reparsed as
     # a template, even if a document/title contains one of these token words.
-    return re.sub(r'\b(' + '|'.join(sorted(replacements, key=len, reverse=True)) + r')\b', lambda m: replacements[m[0]], sql)
+    sources = _parse(text)['drafts'][0]['sources']
+    ids = {key: sorted(row['id'] for row in sources[key]) for key in ('documents', 'knowledgeObjects')}
+    return re.sub(r'\b(' + '|'.join(sorted(replacements, key=len, reverse=True)) + r')\b', lambda m: replacements[m[0]], sql) + _publication_guard(operation, ids)
 
 
 def _catalog(database, operation, digest):
@@ -278,6 +345,7 @@ def _catalog(database, operation, digest):
 'securityHash',encode(sha256(convert_to(jsonb_build_object(
  'tables',(SELECT jsonb_agg(jsonb_build_object('oid',c.oid,'owner',c.relowner,'acl',c.relacl,'rls',c.relrowsecurity,'force',c.relforcerowsecurity) ORDER BY c.oid) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN('r','p','v','m','f','S')),
  'columns',(SELECT jsonb_agg(jsonb_build_array(a.attrelid,a.attnum,a.attacl) ORDER BY a.attrelid,a.attnum) FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND a.attnum>0 AND a.attacl IS NOT NULL),
+ 'publicationConstraints',(SELECT jsonb_agg(jsonb_build_array(actual_constraint.oid,actual_constraint.conrelid,actual_constraint.contype,actual_constraint.conkey,actual_constraint.confrelid,actual_constraint.confkey,actual_constraint.confupdtype,actual_constraint.confdeltype,actual_constraint.confmatchtype,actual_constraint.convalidated,actual_constraint.condeferrable,actual_constraint.condeferred,actual_constraint.conindid) ORDER BY actual_constraint.oid) FROM pg_constraint actual_constraint WHERE actual_constraint.conrelid IN('public.ko_document_links'::regclass,'public.raw_documents'::regclass,'public.knowledge_objects'::regclass) AND actual_constraint.contype IN('p','f')),
  'policies',(SELECT jsonb_agg(jsonb_build_object('relation',p.polrelid,'name',p.polname,'cmd',p.polcmd,'roles',p.polroles,'permissive',p.polpermissive,'qual',pg_get_expr(p.polqual,p.polrelid),'check',pg_get_expr(p.polwithcheck,p.polrelid)) ORDER BY p.polrelid,p.polname) FROM pg_policy p JOIN pg_class c ON c.oid=p.polrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public'),
  'registry',(SELECT coalesce(jsonb_agg(REGISTRY_ROW ORDER BY function_name),'[]'::jsonb) FROM helmut_unit_diagnostic.legacy_read_rpcs q),
  'functions',(SELECT jsonb_agg(jsonb_build_array(p.oid,p.proowner,p.proacl) ORDER BY p.oid) FROM pg_proc p WHERE p.pronamespace='public'::regnamespace),
@@ -324,10 +392,9 @@ def _documents(catalog):
 
 
 def _predicates(subject, ids):
-    def chosen(column, values):
-        return column + '=ANY(ARRAY[' + ','.join(_q(v) for v in values) + ']::text[])'
     return {'profiles': 'id=' + _q(subject), 'mandate_profiles': 'user_id=' + _q(subject),
-            'raw_documents': chosen('id', ids['documents']), 'knowledge_objects': chosen('id', ids['knowledgeObjects']),
+            'raw_documents': _selected('id', ids['documents']), 'knowledge_objects': _selected('id', ids['knowledgeObjects']),
+            PUBLICATION_TABLE: _selected('knowledge_object_id', ids['knowledgeObjects']),
             'helmut_store': "id='main-auth'",
             'helmut_auth_state_nodes_local': "store_id='main-auth' AND generation=(SELECT data#>>'{_authStateRef,generation}' FROM public.helmut_store WHERE id='main-auth')",
             'llm_usage': "usage_store_id='main-auth' AND usage_generation=(SELECT data#>>'{_llmUsageRef,generation}' FROM public.helmut_store WHERE id='main-auth')"}
@@ -337,7 +404,7 @@ def _acl_guard(operation, functions, docs, predicates):
     suffix = operation[-32:]
     runtime, auth = 'helmut_ud_runtime_' + suffix, 'helmut_ud_authenticator_' + suffix
     allowed_oids = ','.join(f['oid'] + '::oid' for f in functions)
-    names = ','.join(_q('public.' + t) + '::regclass' for t in TABLES)
+    names = ','.join(_q('public.' + t) + '::regclass' for t in TABLES + (PUBLICATION_TABLE,))
     expected = []
     for f, doc in zip(functions, docs):
         expected.append({'function_name': f['name'], 'http_exposed': f['name'] in ('helmut_auth_state_graph_read_v1', 'helmut_auth_usage_read_v1'),
@@ -358,9 +425,13 @@ def _acl_guard(operation, functions, docs, predicates):
     sql += ("IF EXISTS(SELECT FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN('r','p','v','m','f') AND (has_table_privilege(" + _q(runtime) + ",c.oid,'SELECT') OR has_any_column_privilege(" + _q(runtime) + ",c.oid,'SELECT')) IS DISTINCT FROM (c.oid IN(" + names + ")))"
             + " OR EXISTS(SELECT FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname !~ '^local_unit_diagnostic_.*_v1$' AND has_function_privilege(" + _q(runtime) + ",p.oid,'EXECUTE') IS DISTINCT FROM (p.oid IN(" + allowed_oids + ")))"
             + " THEN RAISE EXCEPTION 'read-closure-exact-read-closure';END IF;\n")
+    sql += ("IF has_table_privilege(" + _q(runtime) + ",'public.ko_document_links','SELECT')"
+            + " OR EXISTS(SELECT FROM pg_attribute actual_column WHERE actual_column.attrelid='public.ko_document_links'::regclass AND NOT actual_column.attisdropped AND actual_column.attnum<>0"
+            + ' AND has_column_privilege(' + _q(runtime) + ",actual_column.attrelid,actual_column.attnum,'SELECT') IS DISTINCT FROM (actual_column.attnum>0 AND actual_column.attname IN('knowledge_object_id','raw_document_id')))"
+            + " THEN RAISE EXCEPTION 'read-closure-publication-exact-column-select';END IF;\n")
     sql += ("IF (SELECT coalesce(jsonb_agg(" + REGISTRY_ROW_SQL + " ORDER BY function_name),'[]'::jsonb) FROM helmut_unit_diagnostic.legacy_read_rpcs q) IS DISTINCT FROM "
             + _q(_json(sorted(expected, key=lambda x: x['function_name']))) + "::jsonb THEN RAISE EXCEPTION 'read-closure-exact-registry';END IF;\n")
-    for table in TABLES:
+    for table in TABLES + (PUBLICATION_TABLE,):
         sql += ("IF NOT EXISTS(SELECT FROM pg_class WHERE oid='public." + table + "'::regclass AND relrowsecurity)"
                 + " OR (SELECT count(*) FROM pg_policy WHERE polrelid='public." + table + "'::regclass AND (polroles@>ARRAY[(SELECT oid FROM pg_roles WHERE rolname=" + _q(runtime) + ")] OR polroles@>ARRAY[0::oid]))<>1"
                 + " OR NOT EXISTS(SELECT FROM pg_policy WHERE polrelid='public." + table + "'::regclass AND polname='local_unit_source_read' AND polcmd='r' AND polpermissive AND polroles=ARRAY[(SELECT oid FROM pg_roles WHERE rolname=" + _q(runtime) + ")] AND polqual IS NOT NULL AND polwithcheck IS NULL)"
@@ -381,20 +452,31 @@ def _probes(operation, subject, ids, predicates):
     cases += ["PERFORM public.helmut_auth_state_cas_v1('{}'::jsonb)", "PERFORM public.helmut_auth_usage_cas_v1('{}'::jsonb)",
               'CREATE TEMP TABLE local_unit_read_forbidden(id integer)', 'CREATE TABLE public.local_unit_read_forbidden(id integer)',
               "EXECUTE 'SET LOCAL ROLE " + owner + "'", 'CREATE ROLE local_unit_read_forbidden']
-    sql = 'SAVEPOINT read_closure_probes;\nSET SESSION AUTHORIZATION ' + auth + ';\nSET LOCAL ROLE ' + runtime + ';\n'
+    cases += ['UPDATE public.ko_document_links SET raw_document_id=raw_document_id WHERE false',
+              'DELETE FROM public.ko_document_links WHERE false',
+              'INSERT INTO public.ko_document_links(knowledge_object_id,raw_document_id) SELECT NULL::text,NULL::text WHERE false',
+              'TRUNCATE public.ko_document_links',
+              'PERFORM actual_link.created_at FROM public.ko_document_links actual_link LIMIT 0',
+              'PERFORM actual_link.xmin::text FROM public.ko_document_links actual_link LIMIT 0']
+    # Actual initial-postgres read before switching principals in this same SQL
+    # session. The transaction-local baseline is rolled back with the savepoint;
+    # no caller row/hash/qualified flag can replace it.
+    sql = ('SAVEPOINT read_closure_probes;\nDO $publication_baseline$ BEGIN PERFORM set_config(\'helmut.local_unit_publication_probe\','
+           + _publication_rows_hash(ids) + ',true);END;$publication_baseline$;\nSET SESSION AUTHORIZATION ' + auth + ';\nSET LOCAL ROLE ' + runtime + ';\n')
     sql += 'DO $probe$ DECLARE caught boolean; checks integer:=0; n bigint; BEGIN\nPERFORM helmut_unit_diagnostic.runtime_role();\n'
     for statement in cases:
         sql += ("caught:=false;BEGIN " + statement + ";EXCEPTION WHEN insufficient_privilege THEN caught:=true;END;"
                 + "IF NOT caught THEN RAISE EXCEPTION 'read-closure-negative-probe-not-denied';END IF;checks:=checks+1;\n")
-    for table in TABLES:
+    for table in TABLES + (PUBLICATION_TABLE,):
         sql += ('IF EXISTS(SELECT FROM public.' + table + ' WHERE (' + predicates[table] + ") IS NOT TRUE) THEN RAISE EXCEPTION 'read-closure-rls-outside-selection';END IF;checks:=checks+1;\n")
     for table, count in (('profiles', 1), ('mandate_profiles', 1), ('raw_documents', len(ids['documents'])), ('knowledge_objects', len(ids['knowledgeObjects'])), ('helmut_store', 1)):
         sql += ('IF (SELECT count(*) FROM public.' + table + ')<>' + str(count) + " THEN RAISE EXCEPTION 'read-closure-actual-selected-rows';END IF;checks:=checks+1;\n")
+    sql += ('IF ' + _publication_rows_hash(ids) + " IS DISTINCT FROM current_setting('helmut.local_unit_publication_probe') THEN RAISE EXCEPTION 'read-closure-publication-complete-native-join';END IF;checks:=checks+1;\n")
     sql += "PERFORM public.helmut_auth_state_graph_read_v1(jsonb_build_object('id','main-auth','knownProof',null,'readNonce',gen_random_uuid()::text,'knownGraph',null));checks:=checks+1;\n"
     sql += "PERFORM public.helmut_auth_usage_read_v1(jsonb_build_object('id','main-auth'));checks:=checks+1;\n"
     # The actual receipt path also needs the original small-subtree expander.
     sql += "PERFORM public.helmut_auth_state_expand_local_v1('main-auth',(SELECT data#>>'{_authStateRef,generation}' FROM public.helmut_store WHERE id='main-auth'),(SELECT data#>>'{_authStateRef,root}' FROM public.helmut_store WHERE id='main-auth'),true,true);checks:=checks+1;\n"
-    count = len(cases) + 7 + 5 + 3
+    count = len(cases) + len(TABLES) + 1 + 5 + 1 + 3
     sql += 'IF checks<>' + str(count) + " THEN RAISE EXCEPTION 'read-closure-probe-count';END IF;END;$probe$;\n"
     sql += 'RESET ROLE;RESET SESSION AUTHORIZATION;\nROLLBACK TO SAVEPOINT read_closure_probes;RELEASE SAVEPOINT read_closure_probes;\n'
     return sql, count
@@ -430,6 +512,8 @@ def install_read_closure(query, *, database, operation_id, command_canonical, co
         for table in TABLES:
             install += 'GRANT SELECT ON public.' + table + ' TO ' + runtime + ';ALTER TABLE public.' + table + ' ENABLE ROW LEVEL SECURITY;\n'
             install += 'CREATE POLICY local_unit_source_read ON public.' + table + ' FOR SELECT TO ' + runtime + ' USING(' + predicates[table] + ');\n'
+        install += 'GRANT SELECT(knowledge_object_id,raw_document_id) ON public.ko_document_links TO ' + runtime + ';ALTER TABLE public.ko_document_links ENABLE ROW LEVEL SECURITY;\n'
+        install += 'CREATE POLICY local_unit_source_read ON public.ko_document_links FOR SELECT TO ' + runtime + ' USING(' + predicates[PUBLICATION_TABLE] + ');\n'
         install += 'SET LOCAL ROLE ' + owner + ';\n'
         for f, document in zip(functions, documents):
             install += ('INSERT INTO helmut_unit_diagnostic.legacy_read_rpcs(function_name,http_exposed,function_oid,identity_arguments,prosrc_sha256,qualification_pin) VALUES('
@@ -467,8 +551,8 @@ def install_read_closure(query, *, database, operation_id, command_canonical, co
         return {'schema': 'helmut-local-unit-native-read-closure/1', 'database': database, 'databaseOID': after['databaseOID'],
                 'operationId': operation_id, 'commandHash': command_sha256, 'functions': functions,
                 'sourcePins': _parse(_json(source_pins)), 'qualificationFiles': documents, 'authenticatorUsername': auth,
-                'legacy': {'tables': list(TABLES[:4]), 'rpcs': public_rpcs},
-                'nativeReadbackSHA256': _sha(_json(after)), 'negativeChecks': len(TABLES) * 4 + 6, 'nativeProbeChecks': count,
+                'legacy': {'tables': list(TABLES[:4]) + [PUBLICATION_TABLE], 'rpcs': public_rpcs},
+                'nativeReadbackSHA256': _sha(_json(after)), 'negativeChecks': len(TABLES) * 4 + 6 + 6, 'nativeProbeChecks': count,
                 'probeSQLSHA256': _sha(probes), 'probeSessionOrigin': 'initial-postgres-with-set-session-authorization'}
     except Exception:
         raise ReadClosureError('native-read-closure-install-or-qualification-failed') from None

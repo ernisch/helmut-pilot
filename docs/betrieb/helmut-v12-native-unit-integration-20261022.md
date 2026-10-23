@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23:39UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23.10.2026 00:07UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -447,3 +447,78 @@ weiterarbeiten; keine unveränderte Wiederholung des ganzen Einzelunitfalls.
 Danach vollständige einzelne Motorabnahme und verbleibende CI-/Kapazitäts- sowie
 sämtliche32Startbedingungen nachweisen. Ein vollständiger500er benötigt weiterhin
 ein neues ausdrückliches konkretes GO.
+
+
+## Enger Quellenlesevertrag und Vorprüfung vor Seed
+
+Der erhaltene48-OWNER_START-Handoff enthält exakt dieselbe vierteilige
+Tabellenliste wie die native ReadClosure; `ko_document_links` fehlt. Der echte
+Publication-Consumer fordert genau diese Tabelle mit `raw_documents`-Einbettung
+an. Der Broker verweigert sie vor seinem Trace/Upstream mit
+`qualified-table-read`. Damit ist der Vertragskonflikt durch gebundenen Frame
+und Quellpfad belegt; eine separat aufgezeichnete zurückgewiesene HTTP-Antwort
+liegt im alten Fall nicht vor. Der spätere REST-Abbruch bleibt separat offen.
+
+Die lokale Korrektur gewährt nur SELECT auf `knowledge_object_id` und
+`raw_document_id` für die ausgewählten KOs. Die bisherigen sieben Grants und
+die Raw-Dokumentauswahl bleiben unverändert. Privilegierte Guards müssen vor/
+nach Installation und frisch danach sämtliche echten Verknüpfungen innerhalb
+der ausgewählten Originaldokumente sowie ursprüngliche PK/FKs/Typen beweisen.
+Fehlende Abdeckung stoppt vor dem Motor; kein Link wird still ausgeblendet.
+Die tatsächliche Runtime muss den vollständigen Join gegen eine privilegiert
+ermittelte Baseline erfüllen. Neue erwartete native Zählung:40Negativproben,
+57Gesamtproben.22Puretests und zwei QuellreviewsPASS; SQL/Abdeckung sind damit
+noch nicht nativ bestanden. Die Transaktion bleibt READ COMMITTED; kein
+zeitübergreifender RepeatableRead-Snapshot wird behauptet.
+[Quellreview](belege/v12-native-unit-integration-20261022/PUBLICATION_LINK_READ_CLOSURE_SOURCE_REVIEW.SAFE.json).
+[Vorher nativ bestätigte Writer-Lesevoraussetzungen](belege/v12-native-unit-integration-20261022/NATIVE_48_WRITER_READ_PREREQUISITE.SAFE.json).
+
+Im bestehenden CLIENT_QUALIFY-Schritt wird zusätzlich der unveränderte echte
+Storage-Consumer über signierte GETs verlangt. Die privaten KO-IDs stammen aus
+dem gesamten hashgebundenen Command; der Consumer führt seine vollständige
+Pagination und Datenprüfung selbst durch. Erst tatsächlicher CLI0-Abschluss mit
+beiden natürlichen EOFs und gebundener Readquittung erlaubt Source-Authority
+und Seed. Probehash und Counts belegen die Eingangsbindung und den Lesepfad,
+keine Ergebnis-/Produktabnahme. Controller20Purechecks und Endpoint76VMchecks
+mit echtem Storage-/Publication-Code sowie zwei QuellreviewsPASS. Die tatsächliche
+SQL-/HTTP-Wirkung bleibt vor einem frischen Fall offen. Diese Vorprüfung kann
+Cache wärmen; sie ist kein Coldcache- oder Zeitoptimierungsbeweis.
+Die neue Pythonabhängigkeit `unicodedata` wurde am unveränderten Original-
+Interpreter tatsächlich als Builtin festgestellt, ohne sie zu importieren;
+eine zusätzliche SO-Datei wird dafür nicht benötigt.
+[Consumer-/Einbindungsreview](belege/v12-native-unit-integration-20261022/PRESEED_PUBLICATION_CONSUMER_SOURCE_REVIEW.SAFE.json).
+
+Der Owner bewahrt nun das tatsächliche REST-Exit-Signal, die erste feste
+Fehlerursache samt UTC/monotonem Zeitpunkt, Abschlussabsicht und geprüfte
+Signalversuche. Rohlogs gelangen ausschließlich in den bereits begrenzten
+privaten Host-Capture.128KiB-Grenze, Fristen, erlaubte Exits und natürliche EOF-
+Pflichten bleiben erhalten; unbekanntes oder unvollständiges Forwarding ist FAIL.
+58VM-Prüfgruppen und unabhängiger RootreviewPASS, keine native Erfolgsabnahme.
+[Ownerreview](belege/v12-native-unit-integration-20261022/OWNER_PRIVATE_FAILURE_DIAGNOSTICS_SOURCE_REVIEW.SAFE.json).
+
+## Tatsächliche weitere Freigabe von Plattenplatz
+
+Nach vollständiger frischer SHA-/Inode-/Bindungsprüfung wurden exakt30eigene
+redundante Cipherparts entfernt:15Originalsplit-Kopien und15zurückgeladene
+Verifikationskopien. Beide vollständigen Reassemblies entsprechen dem erhaltenen
+Gesamtcipher; dessen beide Hardlinknamen sowie sämtliche Belege bleiben erhalten.
+Der Rückweg liest die exakten ursprünglichen24MiB-Segmentbereiche und prüft die
+jeweiligen Hashes; Schlüssel oder Entschlüsselung sind dafür nicht erforderlich.
+Keine Originale, PGDATA, Gitdateien oder übrigen Attachmentinhalte entfernt.
+Die Schutzprüfung bewahrt frühere FAILs; vorhandene GPG-Sockets und die leere
+0555Git-Sandboxgrenze sind ausdrücklich erfasst. Fremde FD-Sicht bleibt begrenzt.
+
+Root las den vollständigen once-only-Helper, prüfte alle Belegpins und gab allein
+diese30Dateien frei. Ein paralleler Schreiber pausierte für den unveränderten
+Git-Vor-/Nachvergleich. Tatsächlicher Helperexit0,30Pfade unabhängig abwesend,
+alle16Eltern erhalten, Gesamtcipher nach Löschung frisch gehasht. SourceDB-State
+und sämtliche Mounts sind vor/nach exakt gleich: gestoppt255/PID0.
+Gemessener Nettofreigabezeitraum712.437.760B; bei Root-Rückprüfung11.053.436.928B
+frei:316.018.688B über Einzelunitadmission,4.126.342.792B fehlen zur Volladmission.
+Weitere Belege verbrauchen geringe Kapazität; die Volladmission bleibt blockiert.
+[Bereinigter Cleanupbeleg](belege/v12-native-unit-integration-20261022/REDUNDANT_CIPHER_PARTS_CLEANUP.SAFE.json).
+
+Der Wechsel auf23.10.UTC erzeugt im nativen Einzelunitpfad einen neuen aktuellen
+Ausführungstag und ein neues kurzes Fenster. Original-Quelltag21/Quelldaten werden
+nicht umgeschrieben. Das ersetzt weder den gesonderten Full500-Kalendervertrag
+noch ein neues konkretes GO/32frische Startbedingungen.

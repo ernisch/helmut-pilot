@@ -15,6 +15,7 @@ import re
 import stat
 import time
 import traceback
+import unicodedata
 
 BIN = Path(__file__).resolve().parent
 GATES = ('source', 'runtime', 'owner', 'calendar', 'costs', 'reservation', 'sender',
@@ -144,6 +145,30 @@ def _call(worker, database, sql, label):
 
 def _node_closed(child):
     need(child.child.returncode == 0 and len(child.eof) == 2 and all(flag is True for flag in child.eof), 'actual-node-close-and-eof')
+
+
+def _publication_probe(command, selection):
+    need(type(command) is dict and sha(canonical(command)) == selection['commandHash'], 'publication-command-binding')
+    rows = command['drafts'][0]['sources']['knowledgeObjects']
+    need(type(rows) is list and 1 <= len(rows) <= 500, 'publication-selected-knowledge-objects')
+    ids = [row['id'] for row in rows]
+    need(all(type(value) is str and 1 <= len(value) <= 250
+             and all(ch in '_-' or unicodedata.category(ch)[0] in 'LN' for ch in value) for value in ids)
+         and len(set(ids)) == len(ids), 'publication-consumer-identifiers')
+    return {'schema': 'helmut-local-unit-native-publication-read-probe/1',
+            'commandHash': selection['commandHash'], 'knowledgeObjectIds': ids}
+
+
+def _publication_read_report(command, selection, report):
+    probe = _publication_probe(command, selection)
+    need(type(report) is dict and set(report) == {'schema', 'observed', 'probeCanonicalSHA256', 'knowledgeObjectCount', 'documentIdentityCount', 'requestCount'}
+         and report['schema'] == 'helmut-local-unit-native-publication-read/1' and report['observed'] is True
+         and report['probeCanonicalSHA256'] == sha(canonical(probe))
+         and type(report['knowledgeObjectCount']) is int and report['knowledgeObjectCount'] == len(probe['knowledgeObjectIds'])
+         and type(report['documentIdentityCount']) is int and 0 <= report['documentIdentityCount'] < 20000
+         and type(report['requestCount']) is int and 0 < report['requestCount'] <= 9007199254740991,
+         'genuine-publication-read-report')
+    return probe
 
 
 def _native_readback(worker, database, sources, oid, original_relations):
@@ -405,10 +430,14 @@ class _Controller:
         need(set(response) == {'ready', 'observation'} and response['ready']['schema'] == 'helmut-local-unit-native-owner-ready/2'
              and response['ready']['originalService'] == self.observer.binding, 'actual-owner-ready')
         self.host_ready = response['ready']; self.host_observation(response['observation'])
+        self.qualify_client(runtime)
+
+    def qualify_client(self, runtime):
         qualifier = {'schema': 'helmut-local-unit-native-endpoint-qualification-config/1', 'selection': self.selection,
                      'database': self.database, 'databaseOID': self.catalog['databaseOID'], 'sqlSources': runtime['sqlSources'],
                      'publicSourceBinding': self.observer.binding, 'codePins': self.c['sourceCodePins'], 'nodePin': self.c['nodePin'],
-                     'issuedAtUTC': utc(), 'expiresAtUTC': self.expires, 'measuredCgroup': self.source.source_group(self.c)}
+                     'issuedAtUTC': utc(), 'expiresAtUTC': self.expires, 'measuredCgroup': self.source.source_group(self.c),
+                     'publicationProbe': _publication_probe(self.command, self.selection)}
         result = self.host.call('CLIENT_QUALIFY', {'configuration': qualifier}, seconds=40)
         need(set(result) == {'processClose', 'reportPin', 'report'}, 'client-qualification-result')
         close, report = result['processClose'], result['report']
@@ -418,6 +447,7 @@ class _Controller:
              and report['sqlSourcesCanonicalSHA256'] == sha(canonical(runtime['sqlSources']))
              and report['publicSourceBindingCanonicalSHA256'] == sha(canonical(self.observer.binding))
              and report['seedPerformed'] is False and report['scopeClaimConsumed'] is False, 'actual-client-contract')
+        _publication_read_report(self.command, self.selection, report.get('publicationRead'))
         self.client_report = report
         self.w.save('CLIENT_QUALIFICATION.PRIVATE.json', result)
 
@@ -584,6 +614,7 @@ class _Controller:
                           'qualification': self.bridge['qualification'], 'libraryPath': self.w.LIBRARY_PATH}
         service_pin = _compact(self.w, 'ORIGINAL_SERVICE_CONFIG.PRIVATE.json', service_config)
         self.stage('owner-and-client-observation'); self.start_owner(service_config, service_pin, code, runtime, files)
+        _publication_read_report(self.command, self.selection, self.client_report.get('publicationRead'))
         self.stage('genuine-source-reconstruction'); verification = self.verify_source(prepared_pin)
         self.stage('fresh-source-admission'); initialization = self.source_authority(verification, code, runtime)
         self.stage('private-original-seed'); tip = self.seed(initialization, service_pin)

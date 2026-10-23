@@ -112,14 +112,18 @@ class Fixture:
         c.catalog = {'databaseOID': '123'}
         c.preparation = {'originalPins': {'packet': pin('/original/packet')}, 'prepared': {}}
         c.built = {'initialState': {}}
-        c.command = {'vmOnly': True}
+        c.command = {'vmOnly': True, 'drafts': [{'sources': {'knowledgeObjects': [{'id': 'synthetic-ko'}]}}]}
+        c.selection['commandHash'] = self.m.sha(self.m.canonical(c.command))
         c.query_pin, c.code_pin, c.runtime_pin = pin('/worker'), pin('/code'), pin('/runtime')
         c.initial_usage = {'proof': {'generation': 'VM', 'head': 'VM'}, 'revision': 'VM'}
         c.native_catalog = {'vmOnly': True}
         c.immutable = []
         c.service = None
         c.host_ready = {'ownerPID': 2, 'ownerStartTicks': '5', 'brokerCodePin': pin('/broker')}
-        c.client_report = {'rootTrustSHA256': 'd' * 64}
+        c.client_report = {'rootTrustSHA256': 'd' * 64,
+            'publicationRead': {'schema': 'helmut-local-unit-native-publication-read/1', 'observed': True,
+                'probeCanonicalSHA256': self.m.sha(self.m.canonical(self.m._publication_probe(c.command, c.selection))),
+                'knowledgeObjectCount': 1, 'documentIdentityCount': 1, 'requestCount': 2}}
         self.clock_domain = {'schema': 'helmut-local-unit-monotonic-domain/1', 'kind': 'time-namespace',
                              'namespace': 'time:[8]', 'bootId': '00000000-0000-0000-0000-000000000001'}
         c.last_host = {'source': {'namespaces': {'time': 'time:[8]', 'clockDomain': self.clock_domain}}}
@@ -250,6 +254,72 @@ class Tests(unittest.TestCase):
         for failure in ('owner', 'verify', 'authority', 'seed', 'append'):
             f = Fixture(failure=failure)
             with self.assertRaises(Exception): f.run()
+            self.assertNotIn('MOTOR_ENTRY_REQUESTED.SAFE.json', f.saved); self.assertNotIn('ENTRY_START', f.calls)
+
+    def test_publication_probe_is_derived_from_whole_command_and_consumer_ids(self):
+        m = module()
+        command = {'drafts': [{'sources': {'knowledgeObjects': [{'id': 'synthetic_Ä_四_Ⅶ'}, {'id': 'ko-two'}]}}]}
+        selection = {'commandHash': m.sha(m.canonical(command))}
+        result = m._publication_probe(command, selection)
+        self.assertEqual(result, {'schema': 'helmut-local-unit-native-publication-read-probe/1',
+            'commandHash': selection['commandHash'], 'knowledgeObjectIds': ['synthetic_Ä_四_Ⅶ', 'ko-two']})
+        command['drafts'][0]['sources']['knowledgeObjects'][0]['id'] = 'different'
+        with self.assertRaises(m.ExecutionError): m._publication_probe(command, selection)
+        for ids in ([], ['same', 'same'], [123], ['../foreign'], ['x' * 251], ['ko-' + str(i) for i in range(501)]):
+            command['drafts'][0]['sources']['knowledgeObjects'] = [{'id': value} for value in ids]
+            selection['commandHash'] = m.sha(m.canonical(command))
+            with self.assertRaises(m.ExecutionError): m._publication_probe(command, selection)
+
+    def test_actual_client_qualification_requires_read_report_and_process_close(self):
+        for mutation in (None, 'missing', 'not-observed', 'input-hash', 'ko-count', 'doc-count', 'zero-request',
+                         'bool-request', 'extra-field', 'nonzero-exit', 'missing-eof'):
+            f = Fixture(); c, m = f.c, f.m
+            c.c['sourceCodePins'] = [pin('/storage'), pin('/publication')]
+            runtime = {'sqlSources': {'helmut_unit_diagnostic.synthetic()': 'c' * 64}}
+            calls = []
+            def host(stage, body, **kwargs):
+                self.assertEqual(stage, 'CLIENT_QUALIFY'); self.assertEqual(kwargs, {'seconds': 40})
+                self.assertEqual(set(body), {'configuration'}); calls.append(copy.deepcopy(body))
+                q = body['configuration']
+                self.assertEqual(q['publicationProbe'], m._publication_probe(c.command, c.selection))
+                self.assertEqual(q['selection'], c.selection); self.assertEqual(q['database'], c.database)
+                self.assertNotIn('qualified', q['publicationProbe'])
+                report = {**copy.deepcopy(c.client_report), 'schema': 'helmut-local-unit-native-endpoint-qualification/1',
+                    'selection': c.selection, 'databaseOID': c.catalog['databaseOID'], 'signedReadonlyContractObserved': True,
+                    'sqlSourcesCanonicalSHA256': m.sha(m.canonical(runtime['sqlSources'])),
+                    'publicSourceBindingCanonicalSHA256': m.sha(m.canonical(c.observer.binding)),
+                    'seedPerformed': False, 'scopeClaimConsumed': False}
+                p = report['publicationRead']
+                if mutation == 'missing': report.pop('publicationRead')
+                if mutation == 'not-observed': p['observed'] = False
+                if mutation == 'input-hash': p['probeCanonicalSHA256'] = '0' * 64
+                if mutation == 'ko-count': p['knowledgeObjectCount'] = 2
+                if mutation == 'doc-count': p['documentIdentityCount'] = -1
+                if mutation == 'zero-request': p['requestCount'] = 0
+                if mutation == 'bool-request': p['requestCount'] = True
+                if mutation == 'extra-field': p['qualified'] = True
+                return {'processClose': {'exitCode': 1 if mutation == 'nonzero-exit' else 0,
+                            'stdoutNaturalEOF': mutation != 'missing-eof', 'stderrNaturalEOF': True},
+                        'reportPin': pin('/private-report'), 'report': report}
+            c.host.call = host
+            if mutation is None:
+                c.qualify_client(runtime)
+                self.assertIn('CLIENT_QUALIFICATION.PRIVATE.json', f.saved)
+            else:
+                with self.assertRaises(m.ExecutionError): c.qualify_client(runtime)
+                self.assertNotIn('CLIENT_QUALIFICATION.PRIVATE.json', f.saved)
+            self.assertEqual(len(calls), 1)
+            self.assertNotIn('MOTOR_ENTRY_REQUESTED.SAFE.json', f.saved)
+
+    def test_missing_or_false_publication_read_blocks_before_source_authority_and_seed(self):
+        for mutation in ('missing', 'false', 'hash', 'requests'):
+            f = Fixture()
+            if mutation == 'missing': f.c.client_report.pop('publicationRead')
+            if mutation == 'false': f.c.client_report['publicationRead']['observed'] = False
+            if mutation == 'hash': f.c.client_report['publicationRead']['probeCanonicalSHA256'] = '0' * 64
+            if mutation == 'requests': f.c.client_report['publicationRead']['requestCount'] = 0
+            with self.assertRaises(f.m.ExecutionError): f.run()
+            self.assertNotIn('verify', f.events); self.assertNotIn('authority', f.events); self.assertNotIn('seed', f.events)
             self.assertNotIn('MOTOR_ENTRY_REQUESTED.SAFE.json', f.saved); self.assertNotIn('ENTRY_START', f.calls)
 
     def test_unknown_start_exit_trace_and_final_failure_never_yield_success(self):

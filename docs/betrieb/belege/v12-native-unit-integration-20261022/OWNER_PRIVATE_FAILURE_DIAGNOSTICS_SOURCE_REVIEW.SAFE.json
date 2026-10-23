@@ -1,0 +1,38 @@
+{
+  "schema": "helmut-native-owner-private-diagnostics-source-review/1",
+  "reviewedAtUTC": "2026-10-22T23:49:16.945729+00:00",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-owner.js",
+      "bytes": 37839,
+      "sha256": "fa1e79ca2787a8315a640ac7c87eb2029a2cd97fd13d110a00d7e7e7b695b2d1"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-owner-test.js",
+      "bytes": 37866,
+      "sha256": "b0fc56eb6561240692459af4a6e5ab0fbb7ab783f706e66f8e0746e71564b3a0"
+    }
+  ],
+  "rootIndependentSourceReviewPassed": true,
+  "authorReportedTargetedVMChecks": 58,
+  "targetedCommand": "node scripts/lokal.js scripts/helmut-resource-meter/local-unit-native-owner-test.js",
+  "rootRepeatedAlreadyPassingTests": false,
+  "nativeQualified": false,
+  "sourceReviewScope": [
+    "Actual child exit signal and frozen UTC/monotonic first failure metadata",
+    "Closed diagnostic error-code allowlist; no arbitrary messages or property getters in metadata",
+    "Actual close intent and identity-checked signal attempt; killReturned is not delivery proof",
+    "REST raw bytes only to existing Host PRIVATE stderr capture; combined128KiB cap unchanged",
+    "Backpressure and write callbacks observed; overflow, pipe failures and unknown drain stay FAIL",
+    "Existing broker-close500ms allowance shared with log drain; child stop and EOF deadlines unchanged",
+    "Existing accepted child exit status and natural EOF predicates unchanged",
+    "Listener/process guard logically unchanged; separately named failures only"
+  ],
+  "rawLogsInSafeMetadata": false,
+  "newSuccessInferredFromMetadata": false,
+  "hostPrivateCapBytes": 131072,
+  "knownLimitation": "An exact128KiB REST log plus the existing fixed CLI startup error can exceed the unchanged Host cap; that remains transport/truncation FAIL",
+  "originalsModified": false,
+  "full500": false,
+  "production": false
+}

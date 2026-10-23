@@ -4,37 +4,38 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.10.: Native Einzelunit erreicht; Quellenlesefehler noch offen
+## 22.–23.10.: Quellenlesung vor Motorstart absichern
 
 13.527Dateien hashverifiziert; geschützter84Originale-Kanal in PR933 nach voller
-CI39783955460 integriert. Echter V12-POSTRUN/548Runtimebindungen erhalten,
-ursprüngliche DB gestoppt. [Restore/CI](betrieb/private-ci-original-provisioning-20261021.md).
-Source/Readonly/Bridge nativPASS:35,700s/1.024.176.128B/Events0. Storage/Lage/
-Kostenlesung korrigiert; VM16/13/32, Vertrag14/14, Start6/Artefakt10PASS.
-Eigene2Tickets belegen keine500er-Globalzähleräquivalenz. Owner-SQL-Aliase/Seed
-korrigiert. Antwortkern aufab0:101reine GruppenPASS; separater Transport149b
-nativPASS:2,406/2,133/2,335s,5Handles0/2EOF,37.130.240B/Events0; keine Motorabnahme.
-ab17 aufc7a92798FAIL: Richtlinienalarm durch JSON-Schlüsselreihenfolge auf1a24
-behoben;14Gruppen/beide echten DTOsPASS,8Drifts abgelehnt. Enges Writer-xmin-Recht,
-Vorprobe und21reine TestsPASS; im frischen Fall48 auf739a22dc nativ bestätigt:
-beide Katalogläufe/echten Writer-Reads und8neuen42501-NegativprobenPASS.
-48 erreicht HTTP/Adapter, bleibtFAIL mit publication-eligibility-source-read-unavailable.
-Adapter11,307s ist kein Unit60-PASS. CLI tatsächlich1/beide EOFs; Owner1/Entry1,
-47Observer0/beide EOFs, PG0/Gruppeleer. Gemeinsamer Peak1.248.223.232B/Events0,
-kein Zeit-/Qualitäts-/500MB-Nachweis. REST-Signal/ursprünglicher Ownerfehler noch
-nicht aufgezeichnet; wir schließen diese Diagnoselücke. Unbekannter Motorumfang
-bleibt null. RAW/Quellen/Originalauth unverändert;48/ab17-Zustände erhalten.
-8eigene Checkouts/3vollständig archivierte und restauriert geprüfte COPYs entfernt;
-Originale/Archive/Belege erhalten. Nach48 frei10.341.294.080B:396.124.160B unter
-10GiB-Einzelunitadmission,4.838.485.640B zur Volladmission fehlen. Weitere
-redundante Cipherteile nur nach frischem Schutz-/Rückwegnachweis bereinigen.
-CI39868819326 aufa18: StandardPASS/BereichFAIL, App403 offen. Sichere Testnamen-
-Metadaten aufb354a10a ergänzt/14gezielte ChecksPASS, noch nicht remote geprüft.
+CI39783955460 integriert. V12-POSTRUN/Runtimebindungen erhalten, ursprüngliche DB
+gestoppt. [Restore/CI](betrieb/private-ci-original-provisioning-20261021.md).
+Source/Readonly/Bridge und separater Hosttransport nativPASS. Storage/Lage/Kosten-
+lesung korrigiert; VM16/13/32, Vertrag14/14, Start6/Artefakt10PASS. Eigene2Tickets
+belegen keine500er-Globalzähleräquivalenz. ab17-Richtlinienalarm durch JSON-
+Schlüsselreihenfolge auf1a24 behoben;14Gruppen/beide echten DTOsPASS.
+Frischer48 auf739a22dc bestätigt enge Writer-xmin-Reads/8neue42501-Proben nativ,
+bleibtFAIL bei Quellenlesen: gebundener Ownervertrag schließt ko_document_links aus.
+48Adapter11,307s ist kein Unit60-PASS. CLI1/beide EOFs; Owner1/Entry1,
+47Observer0/beide EOFs, PG0/Gruppeleer; Peak1.248.223.232B/Events0. Unbekannter
+Motorumfang bleibt null. RAW/Quellen/Originalauth unverändert,48/ab17 erhalten.
+Lokal ergänzt: Link2-Spalten/ausgewählte KOs, vollständige echte Linkdeckung,
+Original-PK/FK-/Runtimeproben;22Puretests/2QuellreviewsPASS, nativeAbnahme offen.
+Owner bewahrt jetzt Signal/erste feste Fehlerursache/private REST-Logs;58VMchecks/
+RootreviewPASS, kein gelockerter Abschluss. Echter Quellenconsumer wird vor Seed
+über signierte GETs verlangt; Controller20/Endpoint76Purechecks/2ReviewsPASS, nativ offen.
+Preflight kann Cache wärmen; kein Coldcache-, Unit60- oder500MB-Beweis daraus.
+8Checkouts/3privat archivierte/restauriert geprüfte COPYs sowie30redundante Cipher-
+parts entfernt. Vollcipher/beide Aliase/Belege/Originale und DB bleiben erhalten.
+Letzte Freiprüfung11.053.436.928B:316.018.688B über10GiB-Einzelunitgrenze;
+zur Volladmission fehlen4.126.342.792B. Frische UTC-Tagesbindung ist ableitbar,
+Original-Quelltag21 bleibt erhalten. CIa18: StandardPASS/BereichFAIL;72mit sicherem
+Testnamen-Metadatenpatch läuft noch. App403 und GesamtCI-PASS bleiben offen,
+ebenso Unit60/Auth30/Qualität/Reserve.
 [PR936/Belege/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
 [Historischer Vollstand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
 Kein Voll500 ohne32frische Bedingungen/neues konkretesGO; alte Rechte verbraucht,
-kein Merge/Production. Weiter: echten Quellenlesefehler/Ownerabschluss klären,
-sichere Kapazität und vollständige einzelne Motorabnahme; gezielte CI-Reparatur.
+kein Merge/Production. Weiter: Review und frischer nativer Preflight/Einzelunit,
+dann gezielte CI-Reparatur, Kapazität und sämtliche32Startbedingungen nachweisen.
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

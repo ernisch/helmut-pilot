@@ -14,6 +14,11 @@ const TOKEN = BOOT + "/RUNTIME_TOKEN.PRIVATE", REST_CONFIG = BOOT + "/POSTGREST.
 const QUALIFICATION = BOOT + "/OWNER_QUALIFICATION.PRIVATE.json";
 const SOURCE_QUALIFICATION = BOOT + "/SOURCE_QUALIFICATION.PRIVATE.json", HMAC_KEY = BOOT + "/ORIGINAL_HMAC.PRIVATE.bin";
 const MAX_LOG = 128 * 1024, MAX_LIFETIME = 180000, STARTUP_MS = 15000, STOP_MS = 4500;
+const DIAGNOSTIC_OWNER_CODES = new Set(["file-drift", "cgroup-canonical", "actual-cgroup", "pid", "live-process",
+  "actual-process-root-uid-gid", "actual-process-capdrop", "actual-process-no-new-privileges", "actual-process-pid-namespace",
+  "actual-process-read-drift", "loopback-listener", "listener-process-owner", "active-process-binding", "active-listener-binding", "owner-window-expired",
+  "source-supervisor-qualification", "source-qualification-window", "utc", "actual-node-budget", "live-observation-required",
+  "actual-broker-observation-binding", "private-observation-cap", "stop-process-identity"]);
 let startConsumed = false;
 const exact = (value, keys) => value !== null && typeof value === "object" && !Array.isArray(value)
   && Object.keys(value).sort().join("|") === [...keys].sort().join("|");
@@ -268,40 +273,90 @@ async function start(configPath = START) {
   let child = null, broker = null, upstream = null, c = null, timer = null, guard = null, heartbeat = null, closing = false, stopPromise = null;
   let failure = null, forced = false, childClosed = false, childExited = false, exitCode = null, exitSignal = null;
   let stdoutEOF = false, stderrEOF = false, logBytes = 0, logOverflow = false, streamError = false;
+  const stamp = () => Object.freeze({ observedAtUTC: new Date().toISOString(), monotonicNs: process.hrtime.bigint().toString() });
+  const started = Object.freeze({ observedAtUTC: new Date().toISOString(), monotonicNs: began.toString() });
+  let firstFailure = null, childExit = null, closeStarted = null, closeIntent = null;
+  const stopSignals = [];
+  let logPending = 0, logQueuedBytes = 0, logWrittenBytes = 0, logForwardError = false;
+  const logSink = process.stderr;
+  function rememberFailure(code, error = null) {
+    if (failure) return;
+    let detail = null;
+    try { const value = Object.getOwnPropertyDescriptor(error || {}, "ownerCode")?.value;
+      if (DIAGNOSTIC_OWNER_CODES.has(value)) detail = value; } catch { /* No getters or arbitrary error text in SAFE metadata. */ }
+    failure = code; firstFailure = Object.freeze({ code, ownerCode: detail, ...stamp() });
+  }
   let resolveDone; const done = new Promise(resolve => { resolveDone = resolve; });
   let resolveCancelled; const cancelled = new Promise(resolve => { resolveCancelled = resolve; });
-  const failed = code => { if (!failure) failure = code; if (!closing) void close(); };
+  const setCloseIntent = (kind, detail = {}) => { closeIntent ||= Object.freeze({ kind, ...detail, ...stamp() }); };
+  const failed = (code, error = null) => { rememberFailure(code, error); setCloseIntent("failure", { code }); if (!closing) void close(); };
+  const logError = () => { logForwardError = true; for (const stream of [child?.stdout, child?.stderr]) stream?.resume(); failed("private-log-stream"); };
+  const logDrain = () => { for (const stream of [child?.stdout, child?.stderr]) stream?.resume(); };
+  function forwardLog(bytes) {
+    logBytes += bytes.length;
+    const data = bytes.subarray(0, Math.max(0, MAX_LOG - logQueuedBytes));
+    if (data.length && !logForwardError) {
+      logPending++; logQueuedBytes += data.length;
+      let callbackCalled = false;
+      const completed = error => { if (callbackCalled) return; callbackCalled = true; logPending--;
+        if (error) logError(); else logWrittenBytes += data.length; };
+      try {
+        // Only this PRIVATE pipe receives raw REST bytes. The global byte cap
+        // also bounds queued writes when the Host temporarily applies pressure.
+        if (!logSink.write(data, completed)) for (const stream of [child.stdout, child.stderr]) stream.pause();
+      } catch { completed(true); }
+    }
+    if (logBytes > MAX_LOG) { logOverflow = true; failed("child-log-cap"); }
+  }
   const records = [];
-  const onSignal = () => { void close(); };
-  process.once("SIGTERM", onSignal); process.once("SIGINT", onSignal);
+  const onSignal = signal => { setCloseIntent("owner-signal", { signal }); void close(); };
+  const onTerm = () => onSignal("SIGTERM"), onInt = () => onSignal("SIGINT");
+  process.once("SIGTERM", onTerm); process.once("SIGINT", onInt);
   async function close() {
     if (stopPromise) return stopPromise;
-    closing = true; resolveCancelled(); clearTimeout(timer); clearInterval(guard); clearInterval(heartbeat);
+    setCloseIntent("programmatic"); closing = true; closeStarted = stamp(); resolveCancelled(); clearTimeout(timer); clearInterval(guard); clearInterval(heartbeat);
     stopPromise = (async () => {
-      const brokerStop = broker ? Promise.resolve().then(() => broker.close()).catch(() => { failure ||= "broker-close"; }) : Promise.resolve();
+      let brokerSettled = false;
+      const brokerStop = (broker ? Promise.resolve().then(() => broker.close()).catch(() => { rememberFailure("broker-close"); }) : Promise.resolve())
+        .finally(() => { brokerSettled = true; });
       function signal(sig) {
         if (child && !childExited) {
-          try { const observed = processInfo(child.pid); need(!upstream || observed.startTicks === upstream.startTicks, "stop-process-identity"); child.kill(sig); }
-          catch { failure ||= "child-signal-or-identity"; }
+          const attempt = { signal: sig, pid: child.pid, ...stamp(), identityVerified: false, killReturned: null };
+          try { const observed = processInfo(child.pid); need(!upstream || observed.startTicks === upstream.startTicks, "stop-process-identity");
+            attempt.identityVerified = true; attempt.startTicks = observed.startTicks; attempt.killReturned = child.kill(sig); }
+          catch (error) { rememberFailure("child-signal-or-identity", error); }
+          finally { stopSignals.push(Object.freeze(attempt)); }
         }
       }
       if (child && !childClosed) {
         signal("SIGTERM"); const until = process.hrtime.bigint() + 2500000000n;
         while (!childClosed && process.hrtime.bigint() < until) await pause(20);
-        if (!childClosed) { forced = true; failure ||= "forced-child-stop"; signal("SIGKILL"); }
+        if (!childClosed) { forced = true; rememberFailure("forced-child-stop"); signal("SIGKILL"); }
         const final = process.hrtime.bigint() + 1000000000n; while (!childClosed && process.hrtime.bigint() < final) await pause(20);
       }
-      if (!(await bounded(brokerStop, 500)).done) failure ||= "broker-close-deadline";
-      if (child && (!childClosed || !childExited)) failure ||= "child-close-deadline";
-      if (child && (!stdoutEOF || !stderrEOF)) failure ||= "child-pipe-eof";
-      if (child && !(exitCode === 0 && exitSignal === null || exitCode === null && exitSignal === "SIGTERM")) failure ||= "child-exit-status";
+      // Share the existing 500ms broker-close allowance; do not extend STOP_MS.
+      const drain = (async () => { const until = process.hrtime.bigint() + 500000000n;
+        while (logPending && process.hrtime.bigint() < until) await pause(10); })();
+      await bounded(Promise.all([brokerStop, drain]), 500);
+      if (!brokerSettled) rememberFailure("broker-close-deadline");
+      if (logPending) { rememberFailure("private-log-drain-deadline"); logForwardError = true; logSink?.destroy?.(); }
+      logSink?.removeListener?.("drain", logDrain);
+      if (!logForwardError) logSink?.removeListener?.("error", logError);
+      const logComplete = !logForwardError && logPending === 0 && logWrittenBytes === logBytes;
+      if (!logComplete) rememberFailure("private-log-incomplete");
+      if (child && (!childClosed || !childExited)) rememberFailure("child-close-deadline");
+      if (child && (!stdoutEOF || !stderrEOF)) rememberFailure("child-pipe-eof");
+      if (child && !(exitCode === 0 && exitSignal === null || exitCode === null && exitSignal === "SIGTERM")) rememberFailure("child-exit-status");
       const clean = !failure && !forced && childClosed && childExited && stdoutEOF && stderrEOF && !streamError && !logOverflow
-        && (exitCode === 0 && exitSignal === null || exitCode === null && exitSignal === "SIGTERM");
+        && logComplete && (exitCode === 0 && exitSignal === null || exitCode === null && exitSignal === "SIGTERM");
       const report = Object.freeze({ schema: "helmut-local-unit-native-owner-stop/1", cleanShutdown: clean,
         childClosed, childExited, childStdoutEOF: stdoutEOF, childStderrEOF: stderrEOF, logBytes, logOverflow,
-        streamError, forcedKill: forced, childExitCode: exitCode, childTerminatedBySIGTERM: exitSignal === "SIGTERM",
+        streamError, forcedKill: forced, childExitCode: exitCode, childExitSignal: exitSignal, childTerminatedBySIGTERM: exitSignal === "SIGTERM",
+        logForwardedBytes: logWrittenBytes, privateLogForwardingComplete: logComplete,
+        diagnostics: Object.freeze({ started, firstFailure, childExit, closeIntent, closeStarted,
+          stopSignals: Object.freeze([...stopSignals]), closed: stamp() }),
         failed: Boolean(failure), unitExecuted: false, full500: false });
-      process.removeListener("SIGTERM", onSignal); process.removeListener("SIGINT", onSignal);
+      process.removeListener("SIGTERM", onTerm); process.removeListener("SIGINT", onInt);
       resolveDone(report); return report;
     })();
     return stopPromise;
@@ -309,6 +364,8 @@ async function start(configPath = START) {
   try {
     need(configPath === START, "fixed-start-path"); process.umask(0o077);
     const startRecord = privateJSON(START); c = validateConfig(startRecord.value); records.push(startRecord);
+    need(logSink && typeof logSink.write === "function" && typeof logSink.on === "function", "private-log-pipe-required");
+    logSink.on("error", logError); logSink.on("drain", logDrain);
     const sourceRecord = privateJSON(c.originalService.sourceQualificationPin.path, c.originalService.sourceQualificationPin);
     const sourceExpires = sourceQualification(c, sourceRecord.value, Date.now(), true); records.push(sourceRecord);
     const keyRecord = readFile(c.originalService.hmacKeyPath, 32, { privateFile: true });
@@ -335,11 +392,12 @@ async function start(configPath = START) {
       stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
     let spawned = false;
     child.once("spawn", () => { spawned = true; });
-    child.once("error", () => { failure ||= "child-spawn"; });
-    child.once("exit", (code, signal) => { childExited = true; exitCode = code; exitSignal = signal; if (!closing) failed("unexpected-child-exit"); });
+    child.once("error", () => { rememberFailure("child-spawn"); });
+    child.once("exit", (code, signal) => { childExited = true; exitCode = code; exitSignal = signal;
+      childExit = Object.freeze({ code, signal, ...stamp() }); if (!closing) failed("unexpected-child-exit"); });
     child.once("close", () => { childClosed = true; });
     for (const [stream, which] of [[child.stdout, "stdout"], [child.stderr, "stderr"]]) {
-      stream.on("data", bytes => { logBytes += bytes.length; if (logBytes > MAX_LOG) { logOverflow = true; failed("child-log-cap"); } });
+      stream.on("data", forwardLog);
       stream.once("end", () => { if (which === "stdout") stdoutEOF = true; else stderrEOF = true; });
       stream.once("error", () => { streamError = true; failed("child-stream"); });
     }
@@ -373,8 +431,8 @@ async function start(configPath = START) {
     function check() {
       for (const r of records) unchanged(r);
       actualGroup(c.measuredCgroup); const self = processInfo(process.pid), p = processInfo(child.pid);
-      need(isDeepStrictEqual(self, observed.self) && isDeepStrictEqual(p, upstream)
-        && ownListener(child.pid, c.postgrestPort), "active-process-binding");
+      need(isDeepStrictEqual(self, observed.self) && isDeepStrictEqual(p, upstream), "active-process-binding");
+      need(ownListener(child.pid, c.postgrestPort), "active-listener-binding");
       need(Date.now() < utc(c.expiresAtUTC) && process.hrtime.bigint() < lifetimeEnd, "owner-window-expired");
       sourceQualification(c, sourceRecord.value);
       return { owner: self, upstream: p };
@@ -394,10 +452,10 @@ async function start(configPath = START) {
             upstreamExe: c.pins.postgrest.sha256, upstreamConfig: configuration.pin.sha256 }),
           brokerListenerObserved: true, unitExecutionQualified: false, full500Qualified: false });
         need(Buffer.byteLength(JSON.stringify(value)) <= 2048, "private-observation-cap"); return value;
-      } catch (error) { if (!closing) failed("live-observation-failed"); throw safeError(error); }
+      } catch (error) { if (!closing) failed("live-observation-failed", error); throw safeError(error); }
     }
-    observe(); guard = setInterval(() => { try { check(); } catch { failed("active-runtime-binding"); } }, 250);
-    timer = setTimeout(() => { void close(); }, Math.max(0, Number(lifetimeEnd - process.hrtime.bigint()) / 1000000 - STOP_MS));
+    observe(); guard = setInterval(() => { try { check(); } catch (error) { failed("active-runtime-binding", error); } }, 250);
+    timer = setTimeout(() => { setCloseIntent("lifetime"); void close(); }, Math.max(0, Number(lifetimeEnd - process.hrtime.bigint()) / 1000000 - STOP_MS));
     const ready = Object.freeze({ schema: "helmut-local-unit-native-owner-ready/2", ownerPID: process.pid,
       ownerStartTicks: observed.self.startTicks, upstreamPID: upstream.pid, upstreamStartTicks: upstream.startTicks,
       measuredCgroup: group, ownerCodePin: c.pins.owner, brokerCodePin: c.pins.broker, upstreamExePin: c.pins.postgrest,
@@ -406,14 +464,14 @@ async function start(configPath = START) {
       noNewPrivilegesObserved: observed.noNewPrivilegesObserved, databaseAuthorityQualified: false,
       databaseConnectionConfirmed: false, unitExecutionAuthorized: false, full500: false });
     if (require.main === module) heartbeat = setInterval(() => {
-      try { process.stdout.write(JSON.stringify(observe()) + "\n"); } catch { failed("heartbeat-observation-failed"); }
+      try { process.stdout.write(JSON.stringify(observe()) + "\n"); } catch (error) { failed("heartbeat-observation-failed", error); }
     }, 5000);
     function controlReadTracePin() {
       need(arguments.length === 0 && closing && typeof broker.controlReadTracePin === "function", "private-trace-not-closed");
       return broker.controlReadTracePin();
     }
     return Object.freeze({ ready, close, done, observe, controlReadTracePin });
-  } catch (error) { failure ||= "startup-failed"; await close(); throw safeError(error); }
+  } catch (error) { rememberFailure("startup-failed", error); setCloseIntent("failure", { code: "startup-failed" }); await close(); throw safeError(error); }
 }
 module.exports = Object.freeze({ start });
 if (require.main === module) {

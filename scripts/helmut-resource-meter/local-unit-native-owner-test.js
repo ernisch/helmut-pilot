@@ -11,9 +11,11 @@ function check(name, work) { work(); tests++; }
 function rejected(work) { let caught = false; try { work(); } catch (e) { caught = /^local-unit-native-owner-[a-z0-9-]+$/.test(e.message); } assert.ok(caught, "expected bounded symbolic rejection"); }
 function load({ filesystem = fs, processStub = {}, childModule = null, brokerModule = null, hooks = null, timers = null, mainToggle = null } = {}) {
   let spawns = 0;
+  const quietStderr = new EventEmitter(); quietStderr.write = (_bytes, callback) => { callback?.(); return true; };
+  quietStderr.destroy = () => {};
   const fakeProcess = { execPath: "/opt/node-pinned", pid: 123, env: {}, hrtime: process.hrtime, version: "v24.19.0",
     execArgv: ["--max-old-space-size=384", "--max-semi-space-size=16"],
-    umask() {}, once() {}, removeListener() {}, ...processStub };
+    umask() {}, once() {}, removeListener() {}, stderr: quietStderr, ...processStub };
   const mod = { exports: {} };
   const sandbox = { Buffer, URL, setTimeout: timers?.setTimeout || setTimeout, clearTimeout: timers?.clearTimeout || clearTimeout,
     setInterval: timers?.setInterval || setInterval, clearInterval: timers?.clearInterval || clearInterval, console: { log() {}, error() {} },
@@ -219,11 +221,22 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
   const c = configuration(), realNow = Date.now();
   c.issuedAtUTC = new Date(realNow).toISOString(); c.expiresAtUTC = new Date(realNow + 180000).toISOString();
   const state = { spawns: 0, signals: [], writes: [], brokerClosed: 0, brokerConfig: null, childEnded: false, releaseBroker: null, brokerStarting: null,
-    observations: 0, brokerUnknown: false, procDrift: false, lines: [], intervals: new Map() };
+    observations: 0, brokerUnknown: false, procDrift: false, lines: [], intervals: new Map(), privateLogs: [], logCallbacks: [],
+    pauses: 0, resumes: 0, backpressure: false, deferLogs: false, logSinkDestroyed: false };
+  for (const stream of [child.stdout, child.stderr]) { stream.pause = () => { state.pauses++; }; stream.resume = () => { state.resumes++; }; }
+  const logSink = new EventEmitter();
+  logSink.write = (bytes, callback) => {
+    if (state.throwLogWrite) throw Error("private-sink-error-must-not-reach-SAFE");
+    state.privateLogs.push(Buffer.from(bytes));
+    if (state.deferLogs) state.logCallbacks.push(callback); else callback();
+    return !state.backpressure;
+  };
+  logSink.destroy = () => { state.logSinkDestroyed = true; };
+  state.completeLogs = error => { for (const callback of state.logCallbacks.splice(0)) callback(error); };
   let announceBroker; state.brokerStarting = new Promise(resolve => { announceBroker = resolve; });
-  function end(code = 0) { if (state.childEnded) return; state.childEnded = true; child.emit("exit", code, null);
+  function end(code = 0, signal = null) { if (state.childEnded) return; state.childEnded = true; child.emit("exit", code, signal);
     if (!noEOF) { child.stdout.emit("end"); child.stderr.emit("end"); } child.emit("close"); }
-  child.kill = sig => { state.signals.push(sig); queueMicrotask(() => end(0)); return true; };
+  child.kill = sig => { state.signals.push(sig); queueMicrotask(() => state.stopExitSignal ? end(null, state.stopExitSignal) : end(0)); return true; };
   const record = (file, text = "offline") => ({ pin: { path: file, bytes: Buffer.byteLength(text), sha256: crypto.createHash("sha256").update(text).digest("hex") }, identity: ["stable"] });
   const proc = pid => ({ pid, parentPID: pid === 123 ? 1 : 123, startTicks: state.procDrift ? "999" : pid === 123 ? "11" : "22",
     exe: pid === 123 ? "/opt/node-pinned" : "/opt/postgrest-pinned", membership: "0::/\n", pidNamespace: "pid:[99]",
@@ -244,19 +257,19 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
       ? { path: file, bytes: 32, sha256: c.originalService.publicSourceBinding.hmacKeySHA256 } : options.expected }),
     writePrivate: (file, text) => { state.writes.push({ file, text }); return record(file, text); },
     environmentCheck: () => ({ self: proc(123), nodeBudget: c.originalService.publicSourceBinding.service.nodeBudget, noNewPrivilegesObserved: true }), processInfo: proc,
-    ownListener: () => !state.childEnded, actualGroup() {}, unchanged() {} };
+    ownListener: () => !state.childEnded && !state.listenerMissing, actualGroup() {}, unchanged() { if (state.checkError) throw state.checkError; } };
   const mainToggle = { enabled: false }; let intervalId = 0;
   const timers = { setInterval(fn, delay) { const id = ++intervalId; state.intervals.set(id, { fn, delay }); return id; },
     clearInterval(id) { state.intervals.delete(id); } };
   const instance = load({ hooks, brokerModule, timers, mainToggle, processStub: { once: p.once.bind(p), removeListener: p.removeListener.bind(p),
-    stdout: { write: bytes => { state.lines.push(bytes); return true; } } },
+    stdout: { write: bytes => { state.lines.push(bytes); return true; } }, stderr: logSink },
     childModule: { spawn(binary, args, options) {
       assert.ok(binary === "/opt/postgrest-pinned" && args.length === 1 && args[0] === "/run/bootstrap/POSTGREST.PRIVATE.conf");
       assert.ok(Object.keys(options.env).sort().join("|") === ["LANG", "LC_ALL", "TZ", "PATH"].sort().join("|"));
       assert.ok(options.stdio.join("|") === "ignore|pipe|pipe"); state.spawns++; queueMicrotask(() => child.emit("spawn")); return child;
     } } });
   mainToggle.enabled = cliHeartbeat;
-  return { instance, c, state, child, p, end };
+  return { instance, c, state, child, p, end, logSink };
 }
 (async () => {
   const instance = load();
@@ -281,6 +294,15 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
       && f.state.brokerConfig.originalService.sourceQualificationPin.path.endsWith("SOURCE_QUALIFICATION.PRIVATE.json"));
     assert.ok(f.state.writes.length === 3 && f.state.spawns === 1);
     const result = await running.close(); assert.ok(result.cleanShutdown && !result.failed && result.childStdoutEOF && result.childStderrEOF);
+    assert.ok(result.childExitSignal === null && result.diagnostics.firstFailure === null
+      && result.diagnostics.closeIntent.kind === "programmatic" && result.diagnostics.childExit.code === 0);
+    const attempt = result.diagnostics.stopSignals[0];
+    assert.ok(attempt.signal === "SIGTERM" && attempt.pid === 456 && attempt.identityVerified && attempt.killReturned === true
+      && attempt.startTicks === "22" && result.privateLogForwardingComplete && result.logForwardedBytes === 0);
+    for (const record of [result.diagnostics.started, result.diagnostics.closeStarted, result.diagnostics.childExit, result.diagnostics.closed])
+      assert.ok(/^\d+$/.test(record.monotonicNs) && new Date(record.observedAtUTC).toISOString() === record.observedAtUTC);
+    assert.ok(BigInt(result.diagnostics.started.monotonicNs) <= BigInt(result.diagnostics.closeStarted.monotonicNs)
+      && BigInt(result.diagnostics.closeStarted.monotonicNs) <= BigInt(result.diagnostics.closed.monotonicNs));
     assert.ok(f.state.signals.join("|") === "SIGTERM" && f.state.brokerClosed === 1 && f.p.listenerCount("SIGTERM") === 0); tests++;
   }
   {
@@ -293,7 +315,9 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
   }
   {
     const f = lifecycle(), running = await f.instance.api.start(); f.child.stderr.emit("data", Buffer.alloc(128 * 1024 + 1));
-    const result = await running.done; assert.ok(result.logOverflow && result.failed && !result.cleanShutdown && f.state.spawns === 1); tests++;
+    const result = await running.done; assert.ok(result.logOverflow && result.failed && !result.cleanShutdown && f.state.spawns === 1);
+    assert.ok(result.diagnostics.firstFailure.code === "child-log-cap" && !result.privateLogForwardingComplete
+      && result.logForwardedBytes === 128 * 1024 && Buffer.concat(f.state.privateLogs).length === 128 * 1024); tests++;
   }
   {
     const f = lifecycle({ heldBroker: true }), starting = f.instance.api.start();
@@ -348,6 +372,92 @@ function lifecycle({ noEOF = false, heldBroker = false, cliHeartbeat = false } =
     const f = lifecycle(), running = await f.instance.api.start(); f.state.traceFailure = true;
     const stopped = await running.close(); assert.ok(stopped.failed && !stopped.cleanShutdown && running.controlReadTracePin().complete === false);
     assert.ok(stopped.childStdoutEOF && stopped.childStderrEOF && f.state.intervals.size === 0); tests++;
+  }
+  for (const signal of ["SIGABRT", "SIGINT"]) {
+    const f = lifecycle(), running = await f.instance.api.start(); f.end(null, signal); const stopped = await running.done;
+    assert.ok(stopped.childExitCode === null && stopped.childExitSignal === signal && !stopped.childTerminatedBySIGTERM
+      && stopped.diagnostics.childExit.signal === signal && stopped.diagnostics.firstFailure.code === "unexpected-child-exit"
+      && stopped.diagnostics.closeIntent.kind === "failure" && !stopped.cleanShutdown && stopped.failed
+      && stopped.diagnostics.stopSignals.length === 0 && f.state.spawns === 1); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.stopExitSignal = "SIGTERM";
+    f.p.emit("SIGINT"); const stopped = await running.done;
+    assert.ok(stopped.cleanShutdown && !stopped.failed && stopped.childExitSignal === "SIGTERM"
+      && stopped.diagnostics.closeIntent.kind === "owner-signal" && stopped.diagnostics.closeIntent.signal === "SIGINT"
+      && stopped.diagnostics.stopSignals[0].signal === "SIGTERM" && f.state.intervals.size === 0); tests++;
+  }
+  for (const ownerCode of ["file-drift", "active-process-binding", "loopback-listener", "owner-window-expired", "source-qualification-window"]) {
+    const f = lifecycle(), running = await f.instance.api.start();
+    f.state.checkError = Object.assign(Error("PRIVATE-only-first-cause-sentinel"), { ownerCode });
+    const guard = [...f.state.intervals.values()].find(job => job.delay === 250); guard.fn();
+    f.child.stderr.emit("error", Error("PRIVATE-only-later-error-sentinel"));
+    const stopped = await running.done, cause = stopped.diagnostics.firstFailure;
+    assert.ok(cause.code === "active-runtime-binding" && cause.ownerCode === ownerCode && Object.isFrozen(cause)
+      && !JSON.stringify(stopped).includes("PRIVATE-only") && !stopped.cleanShutdown
+      && BigInt(cause.monotonicNs) <= BigInt(stopped.diagnostics.closeStarted.monotonicNs)); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.listenerMissing = true;
+    [...f.state.intervals.values()].find(job => job.delay === 250).fn(); const stopped = await running.done;
+    assert.ok(stopped.failed && !stopped.cleanShutdown && stopped.diagnostics.firstFailure.ownerCode === "active-listener-binding"
+      && stopped.diagnostics.firstFailure.code === "active-runtime-binding" && f.state.spawns === 1); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); let getters = 0;
+    f.state.checkError = Object.defineProperty(Error("untrusted-message-never-SAFE"), "ownerCode", { get() { getters++; return "file-drift"; } });
+    [...f.state.intervals.values()].find(job => job.delay === 250).fn();
+    const stopped = await running.done;
+    assert.ok(getters === 0 && stopped.diagnostics.firstFailure.ownerCode === null && !JSON.stringify(stopped).includes("untrusted-message")); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start();
+    const rawA = Buffer.from("RAW-PRIVATE-REST-stdout\n"), rawB = Buffer.from("RAW-PRIVATE-REST-stderr\0\xff", "latin1");
+    f.child.stdout.emit("data", rawA); f.child.stderr.emit("data", rawB);
+    const stopped = await running.close();
+    assert.ok(Buffer.concat(f.state.privateLogs).equals(Buffer.concat([rawA, rawB])) && f.state.lines.length === 0
+      && stopped.logBytes === rawA.length + rawB.length && stopped.logForwardedBytes === stopped.logBytes
+      && stopped.privateLogForwardingComplete && stopped.cleanShutdown && !JSON.stringify(stopped).includes("RAW-PRIVATE")); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.backpressure = true; f.state.deferLogs = true;
+    f.child.stdout.emit("data", Buffer.from("private-pressure"));
+    assert.ok(f.state.pauses === 2 && f.state.logCallbacks.length === 1);
+    let settled = false; const closing = running.close().then(value => { settled = true; return value; });
+    await new Promise(resolve => setTimeout(resolve, 0)); assert.ok(!settled);
+    f.state.completeLogs(); f.logSink.emit("drain"); const stopped = await closing;
+    assert.ok(stopped.cleanShutdown && stopped.privateLogForwardingComplete && f.state.resumes === 2
+      && f.logSink.listenerCount("drain") === 0 && f.logSink.listenerCount("error") === 0 && f.state.intervals.size === 0); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.deferLogs = true;
+    f.child.stderr.emit("data", Buffer.from("private-error")); f.state.completeLogs(Error("private-write-error"));
+    f.logSink.emit("error", Error("private-write-error")); const stopped = await running.done;
+    assert.ok(stopped.failed && !stopped.cleanShutdown && !stopped.privateLogForwardingComplete
+      && stopped.diagnostics.firstFailure.code === "private-log-stream" && !JSON.stringify(stopped).includes("private-write-error")); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.throwLogWrite = true;
+    f.child.stdout.emit("data", Buffer.from("private-throw")); const stopped = await running.done;
+    assert.ok(stopped.failed && !stopped.cleanShutdown && !stopped.privateLogForwardingComplete
+      && stopped.diagnostics.firstFailure.code === "private-log-stream" && !JSON.stringify(stopped).includes("private-sink-error")); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start(); f.state.deferLogs = true;
+    f.child.stderr.emit("data", Buffer.from("private-undrained")); const stopped = await running.close();
+    assert.ok(stopped.failed && !stopped.cleanShutdown && !stopped.privateLogForwardingComplete && f.state.logSinkDestroyed
+      && stopped.diagnostics.firstFailure.code === "private-log-drain-deadline" && f.state.intervals.size === 0);
+    f.state.completeLogs(); tests++;
+  }
+  {
+    const f = lifecycle(), running = await f.instance.api.start();
+    f.child.stdout.emit("data", Buffer.alloc(64 * 1024)); f.child.stderr.emit("data", Buffer.alloc(64 * 1024));
+    const stopped = await running.close();
+    assert.ok(stopped.cleanShutdown && stopped.privateLogForwardingComplete && stopped.logBytes === 128 * 1024
+      && stopped.logForwardedBytes === 128 * 1024 && f.state.lines.length === 0);
+    // The existing fixed CLI startup-error line can exceed Host's unchanged
+    // private 128KiB pipe cap after a saturated log. That outcome remains FAIL.
+    assert.ok(Buffer.concat(f.state.privateLogs).length + Buffer.byteLength("local-unit-native-owner-start-or-runtime-failed\n") > 128 * 1024); tests++;
   }
   assert.ok(!source.includes("process.exit("), "CLI drains natural EOF after timer cleanup"); tests++;
   assert.ok(fs.readFileSync(filename, "utf8") === source, "reviewed owner code stayed stable");

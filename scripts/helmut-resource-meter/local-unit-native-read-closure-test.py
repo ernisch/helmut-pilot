@@ -74,8 +74,9 @@ class ReadClosureChecks(unittest.TestCase):
         f = Fixture()
         result = f.run()
         self.assertTrue(len(f.calls) == 3 and len(result['functions']) == len(result['qualificationFiles']) == 6)
-        self.assertTrue(len(result['legacy']['tables']) == 4 and len(result['legacy']['rpcs']) == 2)
-        self.assertTrue(result['negativeChecks'] == 34 and result['nativeProbeChecks'] == 49)
+        self.assertEqual(result['legacy']['tables'], list(f.m.TABLES[:4]) + ['ko_document_links'])
+        self.assertEqual(len(result['legacy']['rpcs']), 2)
+        self.assertTrue(result['negativeChecks'] == 40 and result['nativeProbeChecks'] == 57)
         self.assertTrue([r['requestKeys'] for r in result['legacy']['rpcs']] == [['id', 'knownProof', 'readNonce', 'knownGraph'], ['id']])
         self.assertTrue(f.password not in json.dumps(result))
         self.assertTrue('offline-subject' not in json.dumps(result) and 'offline-document' not in json.dumps(result))
@@ -210,13 +211,13 @@ class ReadClosureChecks(unittest.TestCase):
         self.assertIn('read-closure-original-auth-drift', committed_readback)
         self.assertTrue(f.calls[2][1].startswith('BEGIN READ ONLY;SET LOCAL'))
         self.assertTrue(sql.index('COMMIT;') < sql.rindex("SELECT jsonb_build_object('schema'"))
-        self.assertTrue(sql.count('CREATE POLICY local_unit_source_read') == 7 and sql.count('INSERT INTO helmut_unit_diagnostic.legacy_read_rpcs(') == 6)
+        self.assertTrue(sql.count('CREATE POLICY local_unit_source_read') == 8 and sql.count('INSERT INTO helmut_unit_diagnostic.legacy_read_rpcs(') == 6)
         self.assertTrue(sql.count('GRANT EXECUTE ON FUNCTION public.helmut_auth_') == 6)
         for marker in ('REVOKE SELECT ON ALL TABLES IN SCHEMA public', 'WITH ADMIN FALSE, INHERIT FALSE, SET TRUE',
                        'SAVEPOINT read_closure_probes', 'ROLLBACK TO SAVEPOINT read_closure_probes',
                        'EXCEPTION WHEN insufficient_privilege', 'PERFORM helmut_unit_diagnostic.runtime_role()',
                        'read-closure-actual-selected-rows', 'oidvectortypes(p.proargtypes)', 'pg_catalog.',
-                       'read-closure-original-column-type', 'read-closure-native-source-insert-guard', 'checks<>49'):
+                       'read-closure-original-column-type', 'read-closure-native-source-insert-guard', 'checks<>57'):
             self.assertTrue(marker in sql)
         self.assertTrue(sql.count('SELECT NULL::text WHERE false') == 7 and 'create or replace function' not in sql.lower())
         self.assertTrue('SET LOCAL ROLE helmut_ud_owner_' in sql and 'SET SESSION AUTHORIZATION helmut_ud_authenticator_' in sql)
@@ -290,6 +291,115 @@ class ReadClosureChecks(unittest.TestCase):
         self.assertNotIn('helmut_unit_diagnostic.', sql)
         self.assertNotIn('public.', sql)
         self.assertNotIn(f.password, sql)
+
+    def test_publication_grants_only_two_columns_and_keeps_document_scope(self):
+        f = Fixture(); result = f.run()
+        sql = f.calls[1][1]
+        runtime = 'helmut_ud_runtime_' + 'a' * 32
+        self.assertEqual(len(f.m.TABLES), 7)
+        self.assertNotIn('ko_document_links', f.m.TABLES)
+        self.assertEqual(sql.count('GRANT SELECT ON public.'), 7)
+        self.assertIn('GRANT SELECT(knowledge_object_id,raw_document_id) ON public.ko_document_links TO ' + runtime + ';', sql)
+        self.assertNotIn('GRANT SELECT ON public.ko_document_links', sql)
+        self.assertNotRegex(sql, r'GRANT [^;]+ TO PUBLIC\b')
+        self.assertIn("CREATE POLICY local_unit_source_read ON public.raw_documents FOR SELECT TO " + runtime + " USING(id=ANY(ARRAY['offline-document']::text[]));", sql)
+        self.assertIn("CREATE POLICY local_unit_source_read ON public.ko_document_links FOR SELECT TO " + runtime + " USING(knowledge_object_id=ANY(ARRAY['offline-ko']::text[]));", sql)
+        self.assertIn("actual_column.attnum<>0", sql)
+        self.assertIn("actual_column.attname IN('knowledge_object_id','raw_document_id')", sql)
+        self.assertIn("has_table_privilege('" + runtime + "','public.ko_document_links','SELECT')", sql)
+        self.assertNotIn('ALTER TABLE public.raw_documents DISABLE', sql)
+        self.assertNotIn('qualified', result)
+
+    def test_publication_privileged_coverage_is_not_censored_by_raw_rls(self):
+        f = Fixture(); f.run()
+        for _, sql, _ in f.calls:
+            block = sql.split('DO $publication$ BEGIN', 1)[1].split('END;$publication$;', 1)[0]
+            self.assertIn("SELECT count(*) FROM public.knowledge_objects WHERE id=ANY(ARRAY['offline-ko']::text[]))<>1", block)
+            self.assertIn("SELECT count(*) FROM public.raw_documents WHERE id=ANY(ARRAY['offline-document']::text[]))<>1", block)
+            coverage = block.split("IF EXISTS(SELECT FROM public.ko_document_links actual_link WHERE ", 1)[1].split('END IF;', 1)[0]
+            self.assertIn("actual_link.knowledge_object_id=ANY(ARRAY['offline-ko']::text[])", coverage)
+            self.assertIn("AND (actual_link.raw_document_id=ANY(ARRAY['offline-document']::text[])) IS NOT TRUE", coverage)
+            self.assertNotIn('JOIN', coverage)
+            self.assertNotIn('LIMIT', coverage)
+            self.assertIn('read-closure-publication-document-coverage', coverage)
+            self.assertIn(")>=20000 THEN RAISE EXCEPTION 'read-closure-publication-consumer-row-limit'", block)
+            self.assertLess(sql.index('DO $publication$'), sql.index("SELECT jsonb_build_object('schema'"))
+        install = f.calls[1][1]
+        self.assertLess(install.index('DO $publication$'), install.index('CREATE ROLE '))
+        self.assertGreaterEqual(install.count('DO $publication$'), 3)
+        for key in ('documents', 'knowledgeObjects'):
+            f = Fixture(); f.command['drafts'][0]['sources'][key] = []
+            self.rejected(f)
+            self.assertEqual(f.calls, [])
+
+    def test_publication_relationship_guards_match_original_schema(self):
+        f = Fixture(); f.run()
+        schema = (REPO / 'supabase/schema.sql').read_text()
+        table = schema.split('create table if not exists public.ko_document_links (', 1)[1].split('\n);', 1)[0]
+        expected = (('knowledge_object_id', 'knowledge_objects'), ('raw_document_id', 'raw_documents'))
+        for column, target in expected:
+            self.assertRegex(table, column + r' text not null references public\.' + target + r'\(id\) on delete cascade')
+        self.assertIn('primary key (knowledge_object_id, raw_document_id)', table)
+        block = f.calls[0][1].split('DO $publication$ BEGIN', 1)[1].split('END;$publication$;', 1)[0]
+        for column, target in expected:
+            self.assertIn("actual_fk.confrelid='public." + target + "'::regclass", block)
+            self.assertIn("attname='" + column + "')]::smallint[]", block)
+        for marker in ("AND contype='f')<>2", "actual_fk.confupdtype='a'", "actual_fk.confdeltype='c'", "actual_fk.confmatchtype='s'",
+                       'actual_fk.convalidated AND NOT actual_fk.condeferrable AND NOT actual_fk.condeferred',
+                       'actual_fk.conislocal AND actual_fk.coninhcount=0 AND actual_fk.conparentid=0',
+                       'actual_index.indisprimary AND actual_index.indisunique AND actual_index.indisvalid AND actual_index.indisready',
+                       "actual_relationship.proname='raw_documents'", "actual_relationship.proargtypes[0]='public.ko_document_links'::regtype"):
+            self.assertIn(marker, block)
+        self.assertEqual(block.count("THEN RAISE EXCEPTION 'read-closure-publication-original-primary-key'"), 3)
+        for sql_call in f.calls:
+            self.assertIn("'publicationConstraints'", sql_call[1])
+            self.assertIn('actual_constraint.convalidated', sql_call[1])
+            self.assertIn('actual_constraint.confkey', sql_call[1])
+            for column in ('url', 'canonical_url'):
+                self.assertIn("('raw_documents','" + column + "','text')", sql_call[1])
+
+    def test_publication_real_runtime_join_is_compared_to_privileged_native_read(self):
+        f = Fixture(); f.run()
+        sql = f.calls[1][1]
+        probes = sql.split('SAVEPOINT read_closure_probes;\n', 1)[1].split('RESET ROLE;RESET SESSION AUTHORIZATION;', 1)[0]
+        baseline, runtime = probes.split('SET SESSION AUTHORIZATION ', 1)
+        ids = {'documents': ['offline-document'], 'knowledgeObjects': ['offline-ko']}
+        expression = f.m._publication_rows_hash(ids)
+        self.assertIn(expression, baseline)
+        self.assertIn(expression, runtime)
+        self.assertIn("IS DISTINCT FROM current_setting('helmut.local_unit_publication_probe')", runtime)
+        self.assertNotIn('set_config', runtime)
+        self.assertIn('JOIN public.raw_documents actual_document ON actual_document.id=actual_link.raw_document_id', expression)
+        self.assertNotIn('LIMIT', expression)
+        self.assertIn("coalesce(jsonb_agg", expression)
+        self.assertIn("'[]'::jsonb", expression)
+        self.assertEqual(probes.count('EXCEPTION WHEN insufficient_privilege'), 40)
+        self.assertEqual(probes.count('checks:=checks+1;'), 57)
+        for statement in ('UPDATE public.ko_document_links SET raw_document_id=raw_document_id WHERE false',
+                          'DELETE FROM public.ko_document_links WHERE false',
+                          'INSERT INTO public.ko_document_links(knowledge_object_id,raw_document_id) SELECT NULL::text,NULL::text WHERE false',
+                          'TRUNCATE public.ko_document_links',
+                          'PERFORM actual_link.created_at FROM public.ko_document_links actual_link LIMIT 0',
+                          'PERFORM actual_link.xmin::text FROM public.ko_document_links actual_link LIMIT 0'):
+            self.assertIn(statement, runtime)
+        self.assertIn('ROLLBACK TO SAVEPOINT read_closure_probes;RELEASE SAVEPOINT read_closure_probes;', sql)
+        # New anonymous blocks declare no record that could shadow SQL aliases.
+        self.assertNotIn('DECLARE', baseline)
+        guard = sql.split('DO $publication$ BEGIN', 1)[1].split('END;$publication$;', 1)[0]
+        self.assertNotIn('DECLARE', guard)
+
+    def test_publication_native_guard_failure_is_terminal_without_retry(self):
+        for failed_label in ('READ_CLOSURE_SOURCE_CATALOG', 'READ_CLOSURE_INSTALL', 'READ_CLOSURE_FRESH_READBACK'):
+            f = Fixture()
+            def callback(db, sql, label):
+                if label == failed_label:
+                    f.calls.append((db, sql, label))
+                    raise RuntimeError('native-publication-coverage-or-acl-failed-private')
+                return f.query(db, sql, label)
+            self.rejected(f, callback)
+            count = len(f.calls)
+            self.rejected(f, callback)
+            self.assertEqual(len(f.calls), count)
 
 
 if __name__ == '__main__':

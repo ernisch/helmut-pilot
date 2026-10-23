@@ -1,0 +1,46 @@
+{
+  "schema": "helmut-native-publication-link-read-closure-source-review/1",
+  "reviewedAtUTC": "2026-10-22T23:54:34.887743+00:00",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-read-closure.py",
+      "bytes": 47091,
+      "sha256": "12a8c501e0ac5370045e91be1f6839d92cf5521744b3da068d74c0e2efa52fbd"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-read-closure-test.py",
+      "bytes": 25624,
+      "sha256": "5d3e6982038eea40a34744f4cb7cf2b517e27f92de25a763f04f56574928164a"
+    }
+  ],
+  "rootIndependentSourceReviewPassed": true,
+  "secondIndependentSOLSourceReviewPassed": true,
+  "authorReportedTargetedPureTests": 22,
+  "rootRepeatedPassingTests": false,
+  "nativeQualified": false,
+  "additionalRelation": "ko_document_links",
+  "additionalSelectColumns": [
+    "knowledge_object_id",
+    "raw_document_id"
+  ],
+  "tableSelectGranted": false,
+  "existingSevenRelationGrantsUnchanged": true,
+  "existingRawDocumentRLSUnchanged": true,
+  "rlsScope": "Only knowledge objects selected by the genuine single-unit command",
+  "coverageGuard": "Actual privileged uncensored link rows for every selected KO must reference the unchanged selected genuine document set; otherwise fail before entry",
+  "schemaGuard": [
+    "Actual nonpartitioned link relation with two NOT NULL text columns",
+    "Exact original composite link PK, target PKs and two validated nondeferrable FKs with original actions",
+    "No computed public relationship overriding the raw_documents embed"
+  ],
+  "runtimeProbe": "Same SQL session privileged complete C-sorted join digest compared under actual authenticator/runtime RLS, without LIMIT; local GUC/savepoint rolled back",
+  "expectedNativePermissionNegatives": 40,
+  "expectedNativeProbeChecks": 57,
+  "isolation": "READ COMMITTED; no multi-statement RepeatableRead snapshot or future completeness claim",
+  "genuineHTTPEmbedQualified": false,
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "unknownWriteRetryAllowed": false,
+  "production": false,
+  "full500": false
+}

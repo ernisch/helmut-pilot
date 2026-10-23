@@ -5,6 +5,7 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), v8 = require("node:v8");
 const Module = require("node:module"), { isDeepStrictEqual } = require("node:util");
 const ROOT = path.resolve(__dirname, "../.."), ENDPOINT = path.join(ROOT, "lib/helmut/local-unit-diagnostic-endpoint.js");
+const STORAGE = path.join(ROOT, "lib/helmut/storage.js"), PUBLICATION = path.join(ROOT, "lib/helmut/publication-eligibility.js");
 const OBSERVATION_GATE = path.join(__dirname, "local-unit-native-observation-gate.js");
 const TRUST_DIR = "/run/helmut-local-unit-diagnostic", TRUST = TRUST_DIR + "/trust.json", SOCKET = TRUST_DIR + "/broker.sock";
 const CONTRACT = "/rest/v1/rpc/local_unit_diagnostic_contract_v1", CAP = 1024 * 1024, CGROUP2 = 0x63677270;
@@ -74,9 +75,15 @@ function nodeBudget() {
 }
 function checkConfig(c, selection) {
   need(exact(c, ["schema", "selection", "database", "databaseOID", "sqlSources", "publicSourceBinding", "codePins", "nodePin",
-    "issuedAtUTC", "expiresAtUTC", "measuredCgroup"]) && c.schema === "helmut-local-unit-native-endpoint-qualification-config/1"
+    "issuedAtUTC", "expiresAtUTC", "measuredCgroup", "publicationProbe"]) && c.schema === "helmut-local-unit-native-endpoint-qualification-config/1"
     && isDeepStrictEqual(selector(c.selection), selection) && c.database === "helmut_unit_diagnostic_" + selection.operationId.slice(-32)
     && typeof c.databaseOID === "string" && /^[1-9][0-9]{0,9}$/.test(c.databaseOID) && BigInt(c.databaseOID) <= 4294967295n, "configuration");
+  const probe = c.publicationProbe;
+  need(exact(probe, ["schema", "commandHash", "knowledgeObjectIds"])
+    && probe.schema === "helmut-local-unit-native-publication-read-probe/1" && probe.commandHash === selection.commandHash
+    && Array.isArray(probe.knowledgeObjectIds) && probe.knowledgeObjectIds.length >= 1 && probe.knowledgeObjectIds.length <= 500
+    && probe.knowledgeObjectIds.every(id => typeof id === "string" && /^[\p{L}\p{N}_-]{1,250}$/u.test(id))
+    && new Set(probe.knowledgeObjectIds).size === probe.knowledgeObjectIds.length, "publication-probe");
   need(utc(c.issuedAtUTC) && utc(c.expiresAtUTC) && Date.parse(c.issuedAtUTC) <= Date.now() && Date.now() - Date.parse(c.issuedAtUTC) <= 10000
     && Date.parse(c.expiresAtUTC) > Date.now() && Date.parse(c.expiresAtUTC) - Date.parse(c.issuedAtUTC) <= 180000, "configuration-window");
   need(c.sqlSources && typeof c.sqlSources === "object" && !Array.isArray(c.sqlSources) && Object.keys(c.sqlSources).length > 0
@@ -97,7 +104,8 @@ function checkConfig(c, selection) {
   need(Array.isArray(c.codePins) && c.codePins.length >= 2 && c.codePins.length <= 4096, "code-pins"); const names = new Set();
   for (const p of c.codePins) { pinShape(p, 16 * 1024 * 1024); need(p.path.startsWith(ROOT + path.sep) && /\.(?:js|json)$/.test(p.path)
     && !names.has(p.path), "code-path"); names.add(p.path); }
-  need(names.has(__filename) && names.has(ENDPOINT) && names.has(OBSERVATION_GATE), "genuine-endpoint-code-required");
+  need(names.has(__filename) && names.has(ENDPOINT) && names.has(OBSERVATION_GATE)
+    && names.has(STORAGE) && names.has(PUBLICATION), "genuine-endpoint-code-required");
 }
 function processIdentity() {
   const pid = process.pid, text = fs.readFileSync(`/proc/${pid}/stat`, "utf8"), a = text.slice(text.lastIndexOf(")") + 2).trim().split(/\s+/);
@@ -183,6 +191,28 @@ async function start() {
     const before = trust(c, selection), response = await Endpoint.request(selection, c.database, "POST", CONTRACT, Buffer.from("{}")); guard();
     need(exact(response, ["status", "body"]) && response.status === 200 && Buffer.isBuffer(response.body) && response.body.length <= CAP, "signed-contract-response");
     const catalog = parseJSON(response.body, true); contract(catalog, c, before.anchor);
+    const Storage = require(STORAGE); need(typeof Storage.getPublicationSourceIdentities === "function", "genuine-publication-consumer"); guard();
+    let publicationRequests = 0;
+    // The actual consumer owns grouping, complete pagination and data validation.
+    // This adapter fixes selection/database/method/body and adds no retry,
+    // local-store activation, transport injection or replacement source rows.
+    const identities = await Storage.getPublicationSourceIdentities(c.publicationProbe.knowledgeObjectIds.map(id => ({ id })), {
+      request: async pathname => {
+        need(typeof pathname === "string" && pathname.startsWith("/rest/v1/ko_document_links?"), "publication-read-path"); guard();
+        publicationRequests++;
+        const answer = await Endpoint.request(selection, c.database, "GET", pathname, Buffer.alloc(0)); guard();
+        // Keep the signed endpoint's existing 36 MiB body bound. CAP above is
+        // for the small contract/config/report and is not a source-row limit.
+        need(exact(answer, ["status", "body"]) && answer.status === 200 && Buffer.isBuffer(answer.body)
+          && answer.body.length <= 36 * 1024 * 1024, "signed-publication-response");
+        return parseJSON(answer.body, true);
+      }
+    }); guard();
+    need(publicationRequests > 0 && exact(identities, c.publicationProbe.knowledgeObjectIds)
+      && Object.values(identities).every(Array.isArray), "publication-consumer-read-completed");
+    const publicationRead = { schema: "helmut-local-unit-native-publication-read/1", observed: true,
+      probeCanonicalSHA256: sha(canonical(c.publicationProbe)), knowledgeObjectCount: c.publicationProbe.knowledgeObjectIds.length,
+      documentIdentityCount: Object.values(identities).reduce((n, rows) => n + rows.length, 0), requestCount: publicationRequests };
     const foreign = { ...selection, commandHash: (selection.commandHash[0] === "0" ? "1" : "0") + selection.commandHash.slice(1) };
     let rejected = false;
     try { await Endpoint.request(foreign, c.database, "POST", CONTRACT, Buffer.from("{}")); }
@@ -196,6 +226,7 @@ async function start() {
       publicSourceBindingCanonicalSHA256: sha(canonical(before.anchor.originalService)), contractBodySHA256: sha(response.body),
       sqlSourcesCanonicalSHA256: sha(canonical(catalog.sources)), sqlSourceCount: Object.keys(catalog.sources).length,
       actualNodeBudget, process: self, measuredCgroup: c.measuredCgroup, codePinCount: c.codePins.length,
+      publicationRead, sourceReadPreflightMayWarmCache: true,
       signedReadonlyContractObserved: true, foreignScopeRejectedBeforeRequest: true,
       foreignScopeNativeRequestCount: null, foreignScopeNativeRequestCountMeasured: false,
       liveRawMutatorNegativesPerformed: false, liveOriginalControlReadPerformed: false, nativeACLProofPerformed: false,

@@ -1,0 +1,58 @@
+{
+  "schema": "helmut-native-preseed-publication-consumer-source-review/1",
+  "reviewedAtUTC": "2026-10-23T00:06:58.998563+00:00",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-execution-controller.py",
+      "bytes": 55708,
+      "sha256": "4573bc3ee96e95a133f26d00f737bb22d3b55048b3a9aa885fe56a37bbd1a3dc"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-execution-controller-test.py",
+      "bytes": 37507,
+      "sha256": "2756ce993f4383e416bbbabc6b42558ea6795015a7ed33640b5a0216ac920c59"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-endpoint-qualification.js",
+      "bytes": 22749,
+      "sha256": "259e6b7cd558b9dfeb6340fc39acf677bb5e9070cecea6649282493660620191"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-endpoint-qualification-test.js",
+      "bytes": 28520,
+      "sha256": "3ae93e71f64b0f1d8ad6fc8ac1e929e43e2a9f8f0406d7db558f208028c2f1d0"
+    }
+  ],
+  "rootIndependentSourceReviewPassed": true,
+  "secondIndependentSOLSourceReviewPassed": true,
+  "authorReportedControllerPureChecks": 20,
+  "authorReportedEndpointVMChecks": 76,
+  "rootRepeatedPassingTests": false,
+  "newDependencyCapability": {
+    "interpreterPath": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+    "expectedInterpreterSHA256": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7",
+    "actualRootSysBuiltinCheckExitCode": 0,
+    "isolatedNoSiteNoBytecode": true,
+    "unicodedataBuiltin": true,
+    "unicodedataImportedByCapabilityProbe": false,
+    "additionalSORequired": false
+  },
+  "scope": [
+    "Root derives unique selected KO IDs from whole hash-bound original single-unit command",
+    "Private exact schema and commandHash, selection/database and mandatory Storage/Publication code pins",
+    "Actual unchanged Storage.getPublicationSourceIdentities consumer through fixed signed GET/empty body adapter",
+    "Original grouping, complete pagination until empty page, data checks and36MiB endpoint cap retained",
+    "Observed report requires actual GET; only input-probe SHA and counts, no source URLs or IDs",
+    "Controller requires bound report and actual CLI0/two natural EOFs before source authority and seed",
+    "Host35s/caller40s/config180s and terminal no-retry semantics retained"
+  ],
+  "sourceReadPreflightMayWarmCache": true,
+  "inputProbeDigestIsSourceResultAuthentication": false,
+  "nativeSQLCoverageQualified": false,
+  "actualHTTPEmbedQualified": false,
+  "nativeQualified": false,
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "full500": false,
+  "production": false
+}
