@@ -702,7 +702,23 @@ class PureHost(unittest.TestCase):
         self.assertFalse(close['clean']); self.assertEqual(close['children'][0]['exitCode'], 137)
         self.assertNotIn('Base64', str(close)); self.assertNotIn(sentinel, M.encode(close))
         self.assertEqual(path.read_bytes(), before)
-        final = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_000.PRIVATE.json').read_bytes())
+        # Popen is forbidden in this fixture. The trace-reader constructor failure
+        # is retained first; its capture ordinal is not the Entry child's index.
+        unavailable = M.unique((self.case / 'EXECUTION_HOST_TRACE_READ_UNAVAILABLE.PRIVATE.json').read_bytes())
+        self.assertEqual(unavailable['exceptionType'], 'AssertionError')
+        self.assertTrue(self.host.failure_trace_attempted); self.assertIsNone(self.host.failure_trace_read)
+        self.assertIsInstance(self.host.failure_trace_error, AssertionError)
+        self.assertEqual(self.host.children, [child])  # Entry remains registered childIndex0; reader has none.
+        self.assertEqual(self.host.clients[self.host.active_client]['mode'], 'entry')
+        self.assertIs(self.host.clients[self.host.active_client]['child'], child)
+        constructor = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_000.PRIVATE.json').read_bytes())
+        self.assertEqual(constructor, self.host.failure_trace_error.nativePipePrivateCapture)
+        self.assertIsNone(constructor['registeredHostPID']); self.assertIsNone(constructor['localExitCode'])
+        self.assertFalse(constructor['stdoutNaturalEOF'] or constructor['stderrNaturalEOF'])
+        self.assertFalse(constructor['remoteExitConfirmed'])
+        final = M.unique((self.case / 'EXECUTION_HOST_CHILD_FAILURE_CLOSE_001.PRIVATE.json').read_bytes())
+        self.assertEqual(final['registeredHostPID'], value['registeredHostPID'])
+        self.assertEqual(final['registeredHostPID'], close['children'][0]['registeredHostPID'])
         self.assertEqual(final['localExitCode'], 137); self.assertTrue(final['stdoutNaturalEOF'] and final['stderrNaturalEOF'])
         with self.assertRaisesRegex(RuntimeError, 'sealed-host'): self.host.tick()
 
