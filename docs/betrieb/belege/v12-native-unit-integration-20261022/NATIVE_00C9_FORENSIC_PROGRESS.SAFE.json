@@ -1,0 +1,125 @@
+{
+  "schema": "helmut-v12-00c9-forensic-progress/1",
+  "recordedAtUTC": "2026-10-23T04:19:40.440531+00:00",
+  "caseId": "00c9af1a352ed9689449e041091ae9f8",
+  "nativeCodeCommit": "0b1a233553b1ac0f2d0ce13fed86dbefb5f774f4",
+  "sourceFixedNativeHostModes": {
+    "graphReadReuse": "off",
+    "singleWriteCapture": "off",
+    "historyReadReuse": "verified-history-reuse-v1",
+    "controlRead": "verified-control-view-v1"
+  },
+  "fourFieldControlGraphReuseIndependentOfFullauthGraphMode": true,
+  "copyReaderRootHEAD": "940ce10251f0b612355751ebdd7b708d361400dd",
+  "readConfirmed": true,
+  "actualReaderExit": 0,
+  "actualValidatorExit": 0,
+  "sourceGlobal9MDAfterConfirmed": true,
+  "original00c9MountedOrStarted": false,
+  "newCopyConfigurationIsolated": true,
+  "postgresExit": 0,
+  "cleanShutdown": true,
+  "queryNaturalEOFs": 2,
+  "kernelLastExitCoveredAndEmpty": true,
+  "terminalSignals": [],
+  "boundedQueries": 1,
+  "diagnosticMotorCalls": 0,
+  "completedUnits": 0,
+  "journalState": "running",
+  "resultState": "pending",
+  "scopeEnteredAtUTC": "2026-10-23T03:27:45.356Z",
+  "scopeDeadlineAtUTC": "2026-10-23T03:28:45.356Z",
+  "claimAtUTC": "2026-10-23T03:27:49.613Z",
+  "phases": [
+    {
+      "accountedCount": 1,
+      "attemptStatus": "accounted",
+      "phase": "D",
+      "reservedAtUTC": "2026-10-23T03:27:58.734Z",
+      "sendClaimPresent": true,
+      "sendClaimedAtUTC": "2026-10-23T03:28:02.363Z"
+    },
+    {
+      "accountedCount": 0,
+      "attemptStatus": "sent",
+      "phase": "R",
+      "reservedAtUTC": "2026-10-23T03:28:35.701Z",
+      "sendClaimPresent": true,
+      "sendClaimedAtUTC": "2026-10-23T03:28:38.857Z"
+    }
+  ],
+  "artifactKindCounts": {
+    "draft": 1,
+    "immutable-D": 1,
+    "usage-D": 1
+  },
+  "newUsageCount": 1,
+  "verificationPresent": false,
+  "authorizationElapsed": "UNKNOWN",
+  "completedControls": "UNKNOWN",
+  "rSendAuthorizationElapsedMs": 53501,
+  "remainingUnitWindowAtRSendAuthorizationMs": 6499,
+  "configuredResponseDelayPerPhaseMs": 19900,
+  "rNominalDelayExceedsRemainingMs": 13401,
+  "delayAndTransportQualification": {
+    "configuredDelayIsMeasuredElapsedTime": false,
+    "actualRTimerStartKnown": false,
+    "actualRResponseKnown": false,
+    "sendClaimProvesTransportOrACK": false,
+    "providerFixtureUsesSocketlessRequestShim": true,
+    "actualProviderHTTPClaimed": false,
+    "remainingOutsideNominalDDelayMs": 33601,
+    "remainingIsSQLOrAvoidableOverheadMeasurement": false
+  },
+  "acceptedMotorMemoryReserve": false,
+  "nativeAccepted": false,
+  "auth30Qualified": false,
+  "unit60Qualified": false,
+  "full500Qualified": false,
+  "oldClaimsReusable": false,
+  "pureReaderChecks": 11,
+  "syntheticValidatorChecks": 135,
+  "next": "Separately bound COPY-only original graph/history read component; no motor rerun. Repair early failure retention without weakening deadlines.",
+  "evidencePins": {
+    "rootActualExit": {
+      "bytes": 1381,
+      "sha256": "e8338c5a4779db061aa1db26d93f268f0a71d8e013d8af74d292d8244e0daa2a"
+    },
+    "readerResult": {
+      "bytes": 1283,
+      "sha256": "7977bc84fe5adaf55d9538642287cd606101b1ec5d0af11334f5432f69c99cdc"
+    },
+    "workerResult": {
+      "bytes": 413,
+      "sha256": "ccf952cdb0538683d1c70f88426753df44b9c4188e557d22aab668cfb661f631"
+    },
+    "metadata": {
+      "bytes": 1201,
+      "sha256": "b5de80f58499c09c2820a6a0578e94ee3f181c525872c37883684f7edd8cdd97"
+    },
+    "validatorResult": {
+      "bytes": 1677,
+      "sha256": "6290fc92f00dcb56d9ade3b8cc1fb1d995cec3183c852a7e1bdf3e9f8714bb07"
+    },
+    "readerHelper": {
+      "bytes": 28371,
+      "sha256": "7e05d510df063c9a3871642634a675a77ca62c3a99b9b1953f3e1491ba808446"
+    },
+    "readerRootReview": {
+      "bytes": 1029,
+      "sha256": "3c26c03ffcdf6fbc7ca7dc1efde9b05cc7ed9cbb5da07cbc57d12cfeccbf61cb"
+    },
+    "readerPureTests": {
+      "bytes": 2394,
+      "sha256": "e70f8e89c654a7faa29a1d431eda78e98859a2a4feef7596ccc950ca4a35c826"
+    },
+    "validator": {
+      "bytes": 13233,
+      "sha256": "4decc30e80e102d250b28f789d20d7f281539bc1772a1ae3f6c3a74e4698c5d3"
+    },
+    "validatorSyntheticTests": {
+      "bytes": 8563,
+      "sha256": "5be52df7ab78826e4d56c49fbffd5faa00f30c644659db7599807ce7cf7f159b"
+    }
+  }
+}

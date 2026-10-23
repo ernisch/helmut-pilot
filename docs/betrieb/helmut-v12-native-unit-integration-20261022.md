@@ -1,6 +1,6 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23.10.2026 03:36UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand23.10.2026 04:20UTC: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
@@ -832,3 +832,78 @@ Fünf neue Manifestfehlercodes fehlen zudem im bereinigten CLI-Fehlerkatalog;
 eine Auslösung im Fall00c9 ist nicht belegt. Kein Unit60-/500er-Puffer-/Plateau-
 oder tatsächlicher gemeinsamer RAM-Ersparnisnachweis. Alle alten Rechte bleiben
 verbraucht; Full500 braucht ausreichende Platte,32frische Bedingungen und neues GO.
+
+## 23.10., 04:20 UTC: COPY-only-Fortschritt bestätigt; R zu spät freigegeben
+
+Der neu qualifizierte, einmalige Forensikleser hat ausschließlich eine neue
+Kopie des abgeschlossenen eigenen00c9-Zustands geöffnet. Alle1750 Dateien wurden
+beim Kopieren vollständig gehasht und zurückgelesen. Source00c9 und RAW wurden
+nicht an den Leser gemountet oder gestartet. Auf der neuen Kopie wurde ihre
+unverändert separat aufgehobene `postgresql.auto.conf` durch eine leere Datei
+ersetzt und eine eigene, begrenzte PG-Konfiguration verwendet. Diese veränderte
+Kopie wird danach ausdrücklich nicht mehr als byteidentisch bezeichnet.
+
+Nach unabhängiger Source-/Deltaabnahme und11 gezielten Puretests: tatsächlicher
+Leserexit0, genau eine Metadatenabfrage mit tatsächlichem psql0/2 natürlichen EOF,
+PG0/clean, keine Closefehler/Signale, vollständige leere Kernelgruppe und
+Source9MD danach unverändert. Der separate feste Metadatenvalidator bestand
+135 synthetische Prüfungen und unabhängigen Review; seine tatsächliche Anwendung
+auf die hashgebundene Ausgabe endete ebenfalls0. Root verknüpfte beide Belege.
+
+| Erhaltener Schritt | Seit Scopeentry |
+|---|---:|
+| Claim-CAS | 4,257s |
+| D reserviert | 13,378s |
+| D-Sendautorisierung | 17,007s |
+| D-accounted, Draft/immutable-D/usage-D jeweils1 | Zeitpunkt nicht gespeichert |
+| R reserviert | 50,345s |
+| R-Sendautorisierung | 53,501s |
+
+Der Journalzustand bleibt `running`, Resultat `pending`, abgeschlossene Units0.
+Für R fehlen Abrechnung und Usageartefakt. Seine dauerhafte Sendautorisierung
+beweist weder Timerstart noch Transportabschluss oder Client-ACK. Die16Kontrollen
+und Authdauer sind ohne gespeichertes Verificationobjekt weiterhin UNKNOWN.
+
+Der aktive D/R-Fixturetransport verwendet einen socketlosen Requestshim und
+startet erst bei `req.end()` den konfigurierten19900ms-Timer. Es handelt sich um
+konfigurierte lokale Verzögerungen, keine gemessenen Provider-HTTP-Antwortzeiten.
+Bei R-Freigabe verblieben6,499s; nominelle19,9s würden die Unitfrist bereits
+um13,401s überschreiten, selbst ohne weitere Arbeit. Der Rest53,501−19,900=33,601s
+ist kein gemessener SQL-, Node- oder vermeidbarer Anteil. Die zehn bestätigten
+Service-PSQL-Kinder gehören zum Schreibcompiler; das Ledger enthält keine
+einzelnen Operationsnamen oder Abschlussdauern.
+
+Zusätzlich belegt der aktuelle Nativehost feste Modi: HistoryReuse/ControlRead
+ON, separater FullauthGraphReuse/SingleWriteCapture OFF. Der4-Feld-Kontrollleser
+nutzt bereits unabhängig davon eigene warme Graphwiederverwendung. Die neue PG-Lesekomponente soll zunächst den
+tatsächlichen Graph-/History-Anteil auf derselben eigenen Kopie eingrenzen;
+ihre Aussage bleibt getrennt von Node-Decode, Schreibpfad, Broker und Unit60.
+Die tatsächliche Graphfunktionsidentität wird aus dem nativen Katalog geprüft:
+die ersetzende8231B-Definition im Bounded-Proposal stimmt zum tatsächlichen4e2b9015…-
+Body. Er validiert warme History ohne volle Aggregation; cold/changed History wird
+voll geladen. Die frühere Basisdefinition im Parts-Proposal wäre die falsche Quelle.
+`controlReadEnabled` schließt die beiden separaten Modi derzeit ausdrücklich aus;
+ein Flagwechsel allein wäre ungültig. Bisherige native Capturechecks verwenden
+ProjektionOFF/keine `mandate_profiles`, der OriginalService ProjektionON. Vor einer
+Kombination bleiben Vollsnapshot-/Controlview-Trennung, CAS/ACK/History und
+Cacheinvalidierung im tatsächlichen Kontext gezielt nachzuweisen.
+
+Die Fehlerdiagnose hat zwei belegte Lücken: Vor Scope-Erzeugung fehlt der
+Phasencatch; danach entsteht er erst nach awaited Adaptercleanup. Ein noch
+laufender Await kann den äußeren70s-Controller erreichen, bevor Run persistiert.
+Keiner dieser inneren Pfade ist als00c9-Primärursache bewiesen. Separat repariert
+`fc2d6d04` fünf fehlende feste Manifestreasoncodes;54 gezielte Run-Checks bestanden,
+unbekannte Near-Matches bleiben unterdrückt. Das lockert keine Schutzregel.
+
+Frisch04:15:52UTC waren9.919.639.552B frei,817.778.688B unter10GiB-Einzeladmission
+und5.260.140.168B unter Full500. Die neue Readerkopie belegt373.870.592B und bleibt
+erhalten; selbst ihre vollständige Rückgewinnung würde die Einzeladmission nicht
+herstellen. Keine weitere Löschung in dieser Auslesung. Der Leserpeak36.200.448B
+misst ausschließlich den Metadatenleser und ist kein Motor-/500MB-Nachweis.
+
+[Hashgebundener Fortschrittsbeleg](belege/v12-native-unit-integration-20261022/NATIVE_00C9_FORENSIC_PROGRESS.SAFE.json).
+Native00c9 bleibt FAIL. Kein neuer Motor-/Full500-Lauf, keine wiederverwendeten
+Claims, keine Originaländerung, keine Production-Aktion und kein Merge.
+CI39896369875 ist inzwischen auch für den reinen Dokumentationsstand940ce102
+vollständig grün. Der anschließende Reasoncode-Fix besitzt den getrennten
+gezielten54er-Testbeleg; seine neue Push-CI bleibt bis zur tatsächlichen Endquittung offen.
