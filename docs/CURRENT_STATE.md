@@ -4,44 +4,35 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: Aktueller Code angebunden; echter Unitlauf durch Platte blockiert
+## 23.10.: Echter Einzelfall FAIL; Zeitfehler und 500MB-Reserve offen
 
-13.527 Dateien hashverifiziert,84 Originale geschützt; CI39911729550 auf f1f9f456
-grün. DB/V12-POSTRUN-/Runtimebindungen erhalten. Native00c9 bleibt FAIL:
-kein Terminal,0 fertige Units, Peak1.366.712.320B, Events0, PG0/Gruppe leer;
-Hostabschluss unclean/zwei Kinder137. COPY-only-Forensik bestätigt D-accounted,
-R nur autorisiert nach53,501s;6,499s Rest reichen nicht für nominelle19,9s.
-Auth-/Kontrollzeit UNKNOWN. Socketloser Shim, keine Provider-HTTP-Zeitmessung.
+13.527 Dateien hashverifiziert,84 Originale geschützt; V12-POSTRUN erhalten.
+PR936 bindet aktuellen Ausführer/Connector, native CAS und Manifestcache;
+unbekannte Schreibausgänge terminal ohne Retry. GraphReuse/Capture OFF,
+HistoryReuse/ControlRead ON. Originale und frühere FAIL-Belege erhalten.
 
-Manifestcache/enge CLI-Codes integriert, frische FD9/Livecatalog/16 Kontrollen,
-Drift terminal, Run54PASS. GraphReuse/Capture OFF, HistoryReuse/ControlRead ON.
+Einzelfall6073319e: Controller-Entry-Deadline, keine qualifizierte Endquittung.
+Peak1.340.100.608B, sechs Events0, letzter Prozess erfasst/Gruppe leer; kein
+Unit60-/Auth30-/Reservebeweis. 130 gültige anon/file/kernel-Proben, kein Plateau.
+Zehn bestätigte Schreibphasen/Psql ohne Seed7,217s; Kontrollwartezeiten unbekannt.
+Begrenzte private Await-Zeitmarken ergänzt, Fristen/CAS/16 Kontrollen unverändert;
+drei neue Timinggruppen/27 betroffene Guards PASS, unabhängig geprüft.
 
-PG-ReadsPASS155–345ms/Peak189.198.336B. Vier Konstruktorfälle bytegleich:
-alt128–132/direkt102–119ms;20ms erklären Unit60 nicht. Peak435.965.952B ist
-nur Komponente, kein Ersparnis-/Reservenachweis; PG0/Kinder zu/Originalschutz.
+Hostcache mit frischer Daemonbindung:415 gleiche IDs, bisher2,004s, neu kalt2,040s/
+warm0,581s; kein Motorzeit-/RAM-Beweis. Trace vor Cleanup pumpen; fehlend UNKNOWN.
+CI39937538074 bleibt FAIL Z22/9.1; Originalkanal PASS. Eigene PG17.6-Diagnose PASS.
+Neuer strenger Validator prüft jeden Indexplan gegen echten Katalog, verbietet
+SeqScan, ändert keine Zeitgrenze.16 Puregruppen/Review PASS; Live-Pflicht-CI offen.
+Historische CI-Ursache unvollständig; App403 separat.
 
-Instrumentierte U.read kalt1523,869/warm408,019ms;
-native Historyreuse false/true,6001 frozen/1923Nodes. Logisch vollständig gleich,
-nur History/Revision-Reihenfolge verschieden. Bytevergleich bleibt FAIL/Node1;
-PSQL beide0+2EOF, PG0/clean/Gruppe leer/Events0/Original9MD gleich.
-CAS: Projektion ohne vollen Auth-JSONB-Aufbau, fünf Graphprüfpasses je Commit.
-Private Prepare/Psql/Accept-Zeitmarken integriert;72 ServicechecksPASS, unabhängig
-geprüft. Tag23-Fix25PASS. Aktuelle Ausführer-/Connectorpfade integriert:8+13
-ChecksPASS,128 echte Quellpaare/26 unveränderte Vorlagen und7 Modulimporte geprüft.
-Kein nativer Render-/Laufnachweis; frische Coverage/Meterreviews nötig.
-Schreibzeit unbekannt, keine neue maßgebliche Motoroptimierung.
-
-Bereinigung real222.097.408B:3 saubere Helper-WTs, redundante Plaintextkopie,
-2 ungenutzte musl-Pakete entfernt; Originale/Git/Archive/Belege erhalten.
-Frisch9.997.402.112B frei:740.016.128B fehlen zur unveränderten
-10GiB-Einzeladmission,5.182.377.608B zu Full500. c898 bleibt ausdrücklich KEEP;
-keine sichere Löschquelle in nötiger Größe belegt. Originalquelle exited255/PID0;
-32 Gruppen:11 frisch zu binden,13 veraltet,4 verbraucht,4 blockiert. Weiter
-nach Kapazitätszulassung: frischer gebundener echter Einzelunitfall, nur dessen
-belegte Blocker reparieren. Unit60/Auth30/16 Kontrollen/Qualität/Plateau/500MB
-bleiben offen. App403 separat. Full500 braucht15.179.779.720B/32 frische Bedingungen
-und neues konkretes GO; alte Rechte verbraucht, kein Merge/Production.
-[PR936, Belege und Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
+Elf Archive und16 von22 weiteren Kandidaten verschlüsselt im bestätigten Drive-
+Kanal zurückgeladen/hashgeprüft, lokale Redundanzen entfernt. Deltabasis KEEP,
+sechs verbleiben. Nur eigene entbehrliche CI-Hülle entfernt; DBvolume/Image/Logs
+KEEP. Netto911.552.512B; danach11.542.228.992B frei, Einzeladmission10GiB erfüllt,
+Voll50015.179.779.720B nicht. Original-RAW-Allokationsänderung automatisch abgelehnt,
+unverändert; ausdrückliche Einzelentscheidung angefragt. Sechs authentische Quell-
+DBs für Voll500 nötig; Tiny-Anbindung nur vorbereitet. Alle32 Bedingungen frisch,
+alte GOs verbraucht. Kein Voll500/Production. [Belege](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 

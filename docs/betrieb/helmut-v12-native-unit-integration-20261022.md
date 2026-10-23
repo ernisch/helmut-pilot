@@ -1183,3 +1183,115 @@ ist in dieser Cloud nicht verfügbar; keine Entschlüsselung oder Einsicht in
 den privaten GitHub-Log wird behauptet. Es entstand keine DB-, Docker-, Motor-,
 Provider-, Authority- oder Production-Aktion. Gesamt-CI und operative Zeit-/
 Speicher-/Startabnahme bleiben bis zu ihren tatsächlichen Ergebnissen offen.
+
+## 23.10., aktueller Arbeitsstand: Cachevergleich, echter FAIL, fehlende Wartezeiten
+
+Die Hostinventarisierung materialisiert globale Dockerobjekte nicht mehr vollständig.
+`1abb2555` verwendet die unveränderliche Elternbindung vollständiger Container-IDs
+nur unter frisch geprüfter Unixsocket-/Peer-/Prozess-/exakter Moby28.4.0-Identität.
+Neue IDs werden abgefragt, entfernte verworfen, eigene Details bleiben vollständig
+und frisch. Fehler verwerfen den Cache; keine ungeprüfte Wiederverwendung.
+Elf neue reine Wächter bestanden; unabhängiges Source-/Testreview PASS.
+
+Ein tatsächlicher einmaliger Vergleich prüfte415 identische globale IDs, gleiche
+Elternzuordnung und sechs vollständige eigene Objekte. Alle CLI-Aufrufe Exit0 und
+zwei natürliche EOFs. Bisheriger Handle2,004040348s; neuer kalter Handle2,040040728s;
+warmer Handle0,580515699s. CLI-CPU2,266580/2,375482/0,519314s. Kalt bezeichnet nur
+den leeren Handlecache; feste Reihenfolge und Betriebssystem-/Daemoncache können
+beitragen. Python-Tracemalloc ist kein gemeinsamer RAM-Nachweis; Daemon-Wirebytes
+wurden nicht gemessen. Kein Motor-, Unit60- oder Reservegewinn daraus abgeleitet.
+
+Der danach tatsächlich gestartete neue native Einzelfall6073319e29c220907278e1c4bb8497be
+endete mit echtem Parentwait Exit1, zwei natürlichen EOFs, ohne äußeren Timeout/Kill.
+Primärfehler: Controller-Entry-Terminaldeadline. Die spätere Host-Abschlussabweichung
+ist ein getrennter Cleanupbefund. Quelle vor/nach unverändert, PostgreSQL beendet,
+alle letzten Prozesse erfasst/Gruppe leer. Ergebnis bleibt FAIL; motorCalls UNKNOWN,
+Unit60/Auth30/16 Kontrollen/Qualität und Reserve nicht qualifiziert.
+
+Gemeinsamer Peak1.340.100.608B, alle sechs Speicherevents in allen Proben0.
+130/130 zusätzliche anon/file/kernel-Proben sind mit Index, Cgroupidentität sowie
+monotoner UTC-Klammer gültig. Beim größten aktuellen Sample1.336.352.768B folgten
+anon645.324.800/file652.791.808/kernel36.564.992B. Diese nacheinander gelesenen Werte
+sind keine atomare Zerlegung des historischen Peaks; file enthält auch tmpfs/shmem.
+Kein Plateau, keine Zuordnung zu einzelnen Prozessen und kein kausaler Schreib-
+oder Speicherdruckbefund. Zehn Schreibphasen sind bestätigt; Psql ohne Seed insgesamt
+7,217492139s. Auth-/Kontrollreads und echter R-Transportbeginn blieben unbelegt.
+Nominelle zweimal19,9s Antworten und Rechnung mit dem70s-Controller sind keine
+gemessene Ursache der fehlenden Zeit. Kein echter Provider-HTTP-Nachweis.
+
+Der Roottrace-Leser war registriert, bekam aber vor dem blockierenden Clientstop
+noch kein stdin; die Source endete davor. Das erklärt den leeren Reader, nicht
+fehlende Ursprungsdateien. `4482b78a` pumpt ihn vor destruktivem Cleanup. Vor-/Nachpump
+teilen dasselbe6s-Budget. Zwei neue reine Checks PASS; tatsächliche native Wirkung
+noch offen. Teiltraces bleiben ausdrücklich UNKNOWN und erzeugen keine Akzeptanz.
+
+`63affb05` ergänzt deshalb nur die kleinste fehlende Diagnose: begrenzte private
+Zeitmarken um die realen Await-Schritte im bestehenden Entry-stderr. Feste ASCII-
+Enums, maximal256 Ereignisse/24KiB, keine Payloads/Hashes/Fehlerwerte. Ein Ende
+belegt nur abgeschlossenes Await, niemals ACK/Commit/Dispatch/Erfolg. Fehler oder
+fehlender Sink deaktivieren das Logging; kein Retry. Uhrursprung, Unit60/Auth30,
+Rückgabe-/Fehleridentitäten, CAS und16 Kontrollen bleiben erhalten. Drei neue
+Timinggruppen PASS, anschließend27 betroffene bestehende Guardchecks PASS mit
+echtem Exit0; unabhängige vollständige Source-/Testprüfung PASS. Das repariert
+noch nicht den Motorzeitfehler. Nächster Schritt ist genau eine frisch gebundene
+isolierte Einzelunit zur bisher fehlenden realen Zeitzuordnung.
+
+## 23.10.: Strenge CI-Planabnahme korrigiert; neue Pflicht-CI steht aus
+
+CI39937538074 auf8807 bleibt FAIL ausschließlich Z22/9.1, der84er Originalkanal
+bestand. Der separate geschützte historische Readback39944954841 bestand nur
+seinen Diagnoseauftrag; er macht den alten CI-Lauf nicht grün. Historischer exakter
+Abfrageplan nicht vollständig vorhanden, daher keine behauptete alte physische
+Fehlerursache. Keine Originale oder Prüfungen ersetzt/übersprungen.
+
+Eine eigene isolierte PostgreSQL17.6-Fortsetzung prüfte das echte private Kernel-
+limit402.653.184B/Swap0 vor/nach SQL, startete mit leerem Katalog und führte die
+vier kanonischen Migrationen/20.013 Fixturezeilen aus. Zwei echte Abfragepläne:
+Aggregate→BitmapHeapScan→BitmapIndexScan auf dem vorgesehenen Index; beide PASS,
+Ausführung1,073/1,177ms. Keine Plannerzwänge, VACUUM- oder Cachemanipulation.
+Alle Prozesse0/natürliche EOFs, eigene DB sauber gestoppt, Originalquelle unverändert.
+Dies ist kein erneuter historischer CI-Lauf oder Zeit-/RAM-Abnahmetest.
+
+`d8259579` korrigiert den belegten logischen Fehler des bisherigen Validators:
+identische Scanarten sind kein Integritätsbeweis und konnten sogar zwei SeqScans
+akzeptieren. Der neue eng begrenzte Validator prüft beide VERBOSE-JSON-Pläne einzeln
+gegen den echten Katalog, exakte Indexdefinitionen, Schema/Relation, Window-Indexcond,
+tatsächliche Loops und zulässige vollständige Index-/Bitmapbäume. SeqScan, unbekannte
+oder fehlende Knoten und ungeeignete IndexOnly-Abdeckung werden abgelehnt. tenant_id
+fehlt im abdeckenden Index; deshalb kann ein Filter eine andere gültige Scanart
+erzwingen. Fixture/SQL-Abfragekörper, Reihenfolge und alle übrigen Z22-Zeit-/Qualitäts-
+grenzen bleiben gleich. 16 neue reine Gegenbeispielgruppen PASS; vollständiges
+unabhängiges Review PASS. Die neue Live-VERBOSE-/Katalogintegration muss die reguläre
+Pflicht-CI beweisen; bisher kein Gesamt-CI-PASS des neuen Codes. App403 bleibt separat.
+
+## 23.10.: Verifizierte Auslagerung und eigene entbehrliche Containerhülle
+
+Elf abgeschlossene Archive und16 von22 weiteren qualifizierten Archiven sind im
+bestätigten privaten Empfängerkanal verschlüsselt gesichert. Sämtliche Cipherteile,
+verschlüsselten Metadaten und kumulativen Wiederherstellungsindizes wurden vollständig
+zurückgeladen und per Bytes/SHA geprüft, bevor exakt gelistete lokale Redundanzen
+entfernt wurden. Private Drive-Verweise bleiben im privaten Wiederherstellungsindex.
+Sechs Fälle verbleiben, die Pipeline pausiert während der nativen Messung. Die
+authentische V11-Deltabasis ist weiterhin notwendige lokale KEEP-Abhängigkeit;
+kein eigenständiges externes Vollbackup dieser Basis behauptet.
+
+Die abgeschlossene eigene CI-Containerhülle hatte nur geänderte Laufzeitverzeichnisse
+/run und /run/postgresql. Vorab wurden vollständige Konfiguration, Logs, Diff, Image-
+und Volumebindung/Hashes gesichert. Nach frischer Schutzprüfung wurde ausschließlich
+dieser gestoppte eigene CID regulär entfernt: ohne force, ohne -v, ohne Image-/
+Volumelöschung. Persistente eigene PGDATA, Image, Originalquelle und alle Belege
+bleiben erhalten. Tatsächlich verfügbar10.630.676.480→11.542.228.992B, netto
+911.552.512B; kleine parallele Codewrites verhindern exklusive Allokationskausalität.
+Keine DB-Schreibaktion und kein Test bei dieser Bereinigung.
+
+Die10GiB-Einzeladmission ist damit erfüllt, die Voll500-Admission15.179.779.720B
+weiterhin nicht. Das Freigeben nur unbeschriebener Reservierungen zweier Original-
+RAW-Dateien wurde von der automatischen Prüfung abgelehnt: Änderung von Allokation/
+Metadaten trotz bytegleicher Inhalte ist nicht eindeutig vom Originalschutz gedeckt.
+Keine solche Mutation erfolgt; ausdrückliche Einzelentscheidung wurde angefragt.
+Der spätere Voll500-Pfad braucht außerdem sechs authentische Quell-DBs, nicht nur
+V12-POSTRUN; eine kleinere persistente Source-Anbindung ist lediglich vorbereitet.
+Alle32 frischen Startbedingungen, Tages-/Fall-/Finanzbindung und neues konkretes GO
+bleiben Pflicht. Kein Voll500-Start, Production, Merge oder Budget-/Reserveänderung.
+
+[Bereinigter aktueller Beleg](belege/v12-native-unit-integration-20261022/SPRINT_PROGRESS_20261023.SAFE.json).

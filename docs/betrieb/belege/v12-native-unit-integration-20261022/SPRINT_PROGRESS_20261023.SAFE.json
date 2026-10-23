@@ -1,0 +1,119 @@
+{
+  "schema": "helmut-sprint-progress/1",
+  "recorded_at_utc": "2026-10-23T12:46:41.040125+00:00",
+  "code_head_before_documentation": "63affb052d1ade5702991819fa6b881ce284709b",
+  "private_evidence_pins": [
+    {
+      "label": "cache_comparison",
+      "bytes": 1944,
+      "sha256": "1f36fd4cc399a1ff419ece9a59a552d181877c68f070bf9d5644a8b40a379104",
+      "private_source_retained": true
+    },
+    {
+      "label": "memory_review",
+      "bytes": 16821,
+      "sha256": "461ae629c2a0eda5c7d354cfd16aa8912f934b5992d195e5f878e614d2a418d2",
+      "private_source_retained": true
+    },
+    {
+      "label": "timing_review",
+      "bytes": 19124,
+      "sha256": "88a3a5f0ffff04ebeb6b2f9feddb7be117cc709a0fdfcba9ad3d8695414a3fd8",
+      "private_source_retained": true
+    },
+    {
+      "label": "own_hull_retirement",
+      "bytes": 750,
+      "sha256": "b31a9fc9a92374f30b0c88d94f65663c90e854e372f8840fa979c5dbea36c536",
+      "private_source_retained": true
+    },
+    {
+      "label": "scope_timing_source",
+      "bytes": 4031,
+      "sha256": "00eaa3b8ed8b759ecde28bececd0855215e683ea475226f8044df92fa9a537b7",
+      "private_source_retained": true
+    },
+    {
+      "label": "early_trace_pump_source",
+      "bytes": 2548,
+      "sha256": "647808cb6a357b5a1d7afb0aec1e6aa297be9ab96719ed91fd3ba76dc044e2f9",
+      "private_source_retained": true
+    }
+  ],
+  "cache_comparison": {
+    "same_ids": 415,
+    "same_own_complete_objects": 6,
+    "old_wall_ns": 2004040348,
+    "new_empty_handle_wall_ns": 2040040728,
+    "new_warm_handle_wall_ns": 580515699,
+    "all_cli_actual_exit_0_and_two_natural_eof": true,
+    "fixed_order_os_daemon_cache_effects_possible": true,
+    "motor_time_or_native_ram_improvement_proven": false
+  },
+  "latest_native_unit": {
+    "case": "6073319e29c220907278e1c4bb8497be",
+    "result": "FAIL",
+    "actual_parent_exit": 1,
+    "primary_failure": "controller-entry-terminal-deadline",
+    "historical_combined_peak_bytes": 1340100608,
+    "valid_memory_component_samples": 130,
+    "all_six_memory_events_zero": true,
+    "last_process_exit_covered_and_group_empty": true,
+    "unit60_qualified": false,
+    "auth30_qualified": false,
+    "reserve_qualified": false,
+    "plateau_qualified": false,
+    "actual_provider_http_qualified": false,
+    "control_read_wait_durations": "UNKNOWN"
+  },
+  "implemented_next_diagnostics": {
+    "private_scope_timing_max_events": 256,
+    "private_scope_timing_max_ascii_bytes": 24576,
+    "scope_timing_new_pure_groups_passed": 3,
+    "affected_existing_scope_guard_checks_passed": 27,
+    "affected_scope_guard_actual_tool_chunk": "3932e5",
+    "affected_scope_guard_actual_exit": 0,
+    "early_trace_pump_new_checks_passed": 2,
+    "independent_source_and_test_review": "PASS",
+    "native_effect_still_unqualified": true,
+    "clock_deadline_safety_and_ack_contracts_unchanged": true
+  },
+  "ci": {
+    "previous_run": 39937538074,
+    "previous_run_result": "FAIL",
+    "previous_failure": "Z22-9.1",
+    "protected_original_channel_result": "PASS",
+    "correction_commit": "d8259579",
+    "new_semantic_plan_test_groups_passed": 16,
+    "new_semantic_plan_independent_source_review": "PASS",
+    "new_live_verbose_catalog_integration": "PENDING",
+    "historical_exact_physical_plan_cause": "UNKNOWN"
+  },
+  "capacity": {
+    "own_closed_ci_hull_only_removed": true,
+    "own_pgdata_volume_image_configuration_and_logs_kept": true,
+    "observed_free_bytes_before": 10630676480,
+    "observed_free_bytes_after": 11542228992,
+    "observed_net_free_gain_bytes": 911552512,
+    "exclusive_allocation_causality_claimed": false,
+    "single_unit_admission_bytes": 10737418240,
+    "full500_admission_bytes": 15179779720,
+    "additional_qualified_archives_total": 22,
+    "additional_archive_offloads_completed": 16,
+    "additional_archive_offloads_remaining": 6,
+    "prior_eleven_archive_offloads_completed": true,
+    "all_completed_offloads_full_cipher_backdownload_and_hash_verified": true,
+    "delta_base_keep": true,
+    "original_raw_unwritten_allocation_mutation": "NOT_EXECUTED_AUTOMATIC_REVIEW_REJECTED_EXPLICIT_APPROVAL_PENDING"
+  },
+  "full500": {
+    "ready": false,
+    "all_32_fresh_start_conditions_required": true,
+    "old_go_and_claims_spent": true,
+    "authentic_six_source_databases_needed": true,
+    "tiny_source_adoption": "UNQUALIFIED",
+    "new_run_started": false,
+    "production_or_merge": false,
+    "limits_or_reserve_changed": false
+  }
+}
