@@ -1,5 +1,6 @@
 """Pure codec-runner checks only. No subprocess, Docker, PG or native query."""
 import contextlib
+import hashlib
 import importlib.util
 import io
 import json
@@ -182,13 +183,35 @@ class CodecChecks(unittest.TestCase):
         self.assertNotIn('prepare_runtime(', source); self.assertNotIn('restore_readonly_libraries(', source)
         self.assertNotIn('os.chown(', source); self.assertNotIn('write_text(', source)
 
-    def test_reviewed_codec_input_is_exact_aa900_bytes(self):
-        _, pin = self.m.source_bytes(HERE / 'local-unit-native-read-closure.py')
+    def test_current_reviewed_source_and_unchanged_scalar_sql_are_exactly_bound(self):
+        pin = self.m.reviewed_read_closure_pin()
         self.assertEqual(pin['sha256'], self.m.READ_CLOSURE_SHA256)
+        self.assertEqual(self.m.HISTORICAL_READ_CLOSURE_SHA256, 'c52a98aea31bff80cd48c6dcda8693cd623f2f3f3601494a8670c71ff971a620')
+        self.assertNotEqual(self.m.READ_CLOSURE_SHA256, self.m.HISTORICAL_READ_CLOSURE_SHA256)
         helper, _ = self.m.module(HERE / 'local-unit-native-read-closure.py', pin)
-        sql = helper.registry_codec_probe_sql()
+        sql = self.m.codec_query(helper)
+        self.assertEqual(hashlib.sha256(sql.encode()).hexdigest(), self.m.REGISTRY_CODEC_SQL_SHA256)
+        self.assertEqual(len(sql.encode()), 716)
         self.assertTrue(sql.startswith('BEGIN READ ONLY;'))
         self.assertIn("'maxOIDPreserved'", sql)
+
+    def test_historical_and_other_source_hashes_are_not_accepted_as_fallback(self):
+        _, actual = self.m.source_bytes(HERE / 'local-unit-native-read-closure.py')
+        for digest in (self.m.HISTORICAL_READ_CLOSURE_SHA256, '0' * 64):
+            pin = {**actual, 'sha256': digest}
+            with mock.patch.object(self.m, 'source_bytes', return_value=(b'', pin)):
+                with self.assertRaisesRegex(RuntimeError, '^native-registry-codec-reviewed-current-read-codec-source$'):
+                    self.m.reviewed_read_closure_pin()
+
+    def test_changed_or_nontext_scalar_query_is_rejected_before_native_query(self):
+        pin = self.m.reviewed_read_closure_pin()
+        helper, _ = self.m.module(HERE / 'local-unit-native-read-closure.py', pin)
+        sql = self.m.codec_query(helper)
+        for changed in (sql + ' ', sql.replace('BEGIN READ ONLY;', 'BEGIN;', 1), b'not-text', None):
+            fake = types.SimpleNamespace(registry_codec_probe_sql=mock.Mock(return_value=changed))
+            with self.assertRaisesRegex(RuntimeError, '^native-registry-codec-reviewed-scalar-codec-query$'):
+                self.m.codec_query(fake)
+            fake.registry_codec_probe_sql.assert_called_once_with()
 
     def test_failure_output_never_contains_exception_detail(self):
         flags = types.SimpleNamespace(isolated=True, no_site=True, dont_write_bytecode=True)

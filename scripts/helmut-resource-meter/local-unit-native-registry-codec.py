@@ -24,9 +24,13 @@ DATA = Path('/bench/PGDATA_CODEC_NOT_ORIGINAL')
 RAM = Path('/ram')
 RAM_OPTIONS = 'rw,nosuid,nodev,size=16777216,uid=1000,gid=1000,mode=0700'
 MODE = 'helmut-native-read-registry-codec/1'
-# Reviewed exact read-closure input, including qualified bool type fix.
-# This pin does not qualify a later target engine commit.
-READ_CLOSURE_SHA256 = 'c52a98aea31bff80cd48c6dcda8693cd623f2f3f3601494a8670c71ff971a620'
+# Historical input remains evidence only, not an accepted alternative source.
+HISTORICAL_READ_CLOSURE_SHA256 = 'c52a98aea31bff80cd48c6dcda8693cd623f2f3f3601494a8670c71ff971a620'
+# The reviewed current source adds publication-read guards outside the scalar
+# consumer. Its exact probe function/AST/716 SQL bytes are unchanged from72e4.
+# Neither this source binding nor historical codec evidence qualifies an engine.
+READ_CLOSURE_SHA256 = '12a8c501e0ac5370045e91be1f6839d92cf5521744b3da068d74c0e2efa52fbd'
+REGISTRY_CODEC_SQL_SHA256 = '2c626f30a1b950e5ef1c816d26fcfb7aa68fdd0ff709a897e6b4130fc0a58e6c'
 
 
 def need(ok, code):
@@ -67,6 +71,19 @@ def module(path, expected=None):
     loaded.__file__ = str(path)
     exec(compile(raw, str(path), 'exec'), loaded.__dict__)
     return loaded, pin
+
+
+def reviewed_read_closure_pin():
+    _, pin = source_bytes(BIN / 'local-unit-native-read-closure.py')
+    need(pin['sha256'] == READ_CLOSURE_SHA256, 'reviewed-current-read-codec-source')
+    return pin
+
+
+def codec_query(reader):
+    sql = reader.registry_codec_probe_sql()
+    need(type(sql) is str and hashlib.sha256(sql.encode('utf8')).hexdigest() == REGISTRY_CODEC_SQL_SHA256,
+         'reviewed-scalar-codec-query')
+    return sql
 
 
 def unique_json(raw):
@@ -172,6 +189,7 @@ def worker_main(config_hash):
     for pin in config['sourcePins']:
         source_bytes(pin['path'], pin)
     worker, _ = module(config['workerHelperPin']['path'], config['workerHelperPin'])
+    need(config['readClosurePin'] == reviewed_read_closure_pin(), 'worker-reviewed-read-codec-source')
     reader, _ = module(config['readClosurePin']['path'], config['readClosurePin'])
     signal.signal(signal.SIGTERM, worker.stop)
     signal.signal(signal.SIGINT, worker.stop)
@@ -204,7 +222,7 @@ def worker_main(config_hash):
             need(pg.poll() is None and time.monotonic() < deadline, 'pg-ready-deadline')
             time.sleep(.05)
         worker.guard(config)
-        sql = reader.registry_codec_probe_sql()
+        sql = codec_query(reader)
         result = validate_probe(unique_json(worker.query('postgres', sql, 'READ_REGISTRY_CODEC').encode('utf8')))
         need(pg.poll() is None and len(worker.CHILDREN) == 3 and all(c.poll() == 0 for c in worker.CHILDREN if c is not pg), 'query-exit-and-capture')
         for pin in config['sourcePins']:
@@ -293,8 +311,7 @@ def host_main():
     pins = [supervisor_pin, native_pin, kernel_pin, runtime_pin, current_source, *metadata_pins]
     for p in (Path(__file__), BIN / 'local-unit-native-worker.py', BIN / 'local-unit-native-read-closure.py'):
         pins.append(source_bytes(p)[1])
-    read_closure_pin = source_bytes(BIN / 'local-unit-native-read-closure.py')[1]
-    need(read_closure_pin['sha256'] == READ_CLOSURE_SHA256, 'reviewed-aa900-read-codec-source')
+    read_closure_pin = reviewed_read_closure_pin()
     config = {'schema': MODE, 'nonce': nonce, 'case': str(case), 'parent': 'helmut-meter-memorybudget-' + os.urandom(12).hex(),
               'runtime': runtime, 'originalRuntimePin': runtime_pin, 'helperSourcePathReboundOnly': True,
               'sourcePins': pins, 'workerHelperPin': source_bytes(BIN / 'local-unit-native-worker.py')[1],

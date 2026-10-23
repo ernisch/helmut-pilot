@@ -603,3 +603,22 @@ unter geschlossenem Env, lokalem Schutz und Offline-Preload geprüft: Profilhash
 keine335Suiten-Wiederholung. Ein neuer grüner GitHub-Gesamtlauf auf dem Fixcommit
 ist noch erforderlich und wird nicht aus diesen lokalen Teilprüfungen abgeleitet.
 [CI-Fehler und Reparatur](belege/v12-native-unit-integration-20261022/CI_TWO_READER_CONTEXT_REPAIR.SAFE.json).
+
+CI39877703129 auf931477bd endete bereits im öffentlichen synthetischen Schritt14
+mit AssertionError im Registry-Codec-Test: Der explizite vollständige Reader-
+Sourcepin erwartete nochc52a98, vor der geprüften KO-Link-Erweiterung auf12a8c5.
+Zwei unabhängige Quellreviews gegen72e4 bestätigen identische Funktionsbytes/AST
+und exakt716Scalar-SQL-Bytes; die Funktion enthält keine globalen Abhängigkeiten
+oder Helperaufrufe. Importe sind gleich, neue Modulinitialisierung führt keine
+I/O aus. Nur diese aktuelle gesamte Source wird nun hart akzeptiert; zusätzlich
+bindet der Treiber die unveränderte SQL-Prüfsumme und prüft im Worker den festen
+Sourcepin erneut. Der historische Pin bleibt gesonderter Beleg ohne Fallback.
+
+17gezielte Puretests mit geschlossenem Env/Python-I-S-B und tatsächlichem
+separatem Exit0 bestanden. Zwei fehlerhafte private Test-Belegadapter bleiben
+als Fehler erhalten; aus deren fehlender Exitquittung wird kein Autor-PASS
+behauptet. Der einfache einzelne Root-Aufruf schließt genau diese Beleglücke.
+Keine native Codec-/Engineausführung, keine Übertragung historischer Abnahme
+auf den neuen Gesamtcode. Frische CI und frisch gebundene Einzelunit bleiben
+erforderlich; die vorbereitete931-Capture bleibt unbenutzt erhalten.
+[Codec-Sourcevergleich und Tests](belege/v12-native-unit-integration-20261022/REGISTRY_CODEC_CURRENT_SOURCE_REVIEW.SAFE.json).

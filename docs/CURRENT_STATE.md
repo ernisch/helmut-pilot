@@ -9,10 +9,9 @@ nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 13.527Dateien hashverifiziert; geschützter84Originale-Kanal in PR933 nach voller
 CI39783955460 integriert. V12-POSTRUN/Runtimebindungen erhalten, ursprüngliche DB
 gestoppt. [Restore/CI](betrieb/private-ci-original-provisioning-20261021.md).
-Source/Readonly/Bridge und separater Hosttransport nativPASS. Storage/Lage/Kosten-
-lesung korrigiert; VM16/13/32, Vertrag14/14, Start6/Artefakt10PASS. Eigene2Tickets
-belegen keine500er-Globalzähleräquivalenz. ab17/48 bleibenFAIL und erhalten;
-Richtlinienalarm behoben, Writer-xmin-Proben nativPASS, Quellenfehler eingegrenzt.
+Source/Hosttransport nativPASS. Storage/Lage/Kosten korrigiert: VM16/13/32,
+Vertrag14/Start6/Artefakt10PASS. Eigene2Tickets belegen keine500er-Globalzähler.
+ab17/48 bleibenFAIL; Richtlinienalarm behoben, Writer-xmin-Proben nativPASS.
 Auf8dd83ba7 besteht der neue f519-Fall echte Link-RLS/40Negativ-/57Gesamtproben
 und den unveränderten Publication-Consumer über2signierte GETs/6KOs/7Dokumente.
 22/20/76Purechecks und2ReviewsPASS; Ownerdiagnostik58VMchecksPASS. Danach FAIL:
@@ -30,7 +29,8 @@ zur Volladmission fehlen4.543.839.880B. Ausführungstag23/Original-Quelltag21.
 CI39872884548 auf72: Standard/SQL/84Originale/BrowserPASS, BereichFAIL:
 profilhash-integration-test.js und testnachweis-synthetik-quellen-id-test.js,
 je Exit1. Fehlende VM-Dependency behoben:18/29GruppenPASS, Produkt unverändert.
-Frische CI/App403 sowie Unit60/Auth30/Qualität/Reserve bleiben offen.
+CI931 scheitert früh am alten Codec-Sourcepin; aktuelle Bindung+unveränderteSQL
+jetzt17Purechecks/2ReviewsPASS. FrischeCI/App403/Unit60/Auth30/Reserve offen.
 [PR936/Belege/Grenzen](betrieb/helmut-v12-native-unit-integration-20261022.md).
 [Historischer Vollstand](archive/project_state/2026_10_22_CURRENT_STATE_before_host_transport_compaction.md).
 Kein Voll500 ohne32frische Bedingungen/neues konkretesGO; alte Rechte verbraucht,
