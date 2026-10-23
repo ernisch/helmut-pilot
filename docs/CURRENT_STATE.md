@@ -4,29 +4,29 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 23.10.: CI vollständig grün; Einzelunit-Zeit und 500MB-Reserve offen
+## 23.10.: Neuer Code nativ weiter FAIL; Quellqualifikation und500MB offen
 
 13.527 Dateien hashverifiziert,84 Originale geschützt; V12-POSTRUN erhalten.
 PR936 bindet aktuellen Ausführer/Connector, native CAS und Manifestcache;
 unbekannte Schreibausgänge terminal ohne Retry. GraphReuse/Capture OFF,
 HistoryReuse/ControlRead ON. Originale und frühere FAIL-Belege erhalten.
 
-Neuester Einzelfall2797ac2a bleibt FAIL: Controller-Entry-Deadline, Parent Exit1/
-zwei natürliche EOFs. Peak1.343.369.216B, sechs Events0, Gruppe leer; kein Unit60-/
-Auth30-/Reservebeweis.125 gültige anon/file/kernel-Proben, kein belastbares Plateau.
-Neue Zeitmarken: letzter CAS vor R endet55,822s nach Scopebeginn; R braucht nominal
-19,9s, weitere Abschlussarbeit folgt. Sechs State-CAS12,491s, neun Original-Control-
-Reads4,778s; verschachtelte Zeiten nicht addieren. Roottrace-Rettung jetzt belegt.
+Neuester Einzelfall1a964261 auf7cf21c32 bleibt FAIL: Controller-Entry-Deadline,
+Parent Exit1/zwei EOFs. Peak1.349.353.472B, sechs Events0, Gruppe leer; kein Unit60-/
+Auth30-/Reservebeweis.122 gültige Komponentenpaare, kein belastbares Plateau.
+Prä-R56,108s statt55,822s; sechs State-CAS12,224s statt12,491s. Kein wesentlicher
+Zeit-/gemeinsamer RAMgewinn. CAS-Unterphasen ReadRPC/Node/Write noch UNKNOWN;
+5,926s Servicefenster sind darin verschachtelt. Keine weitere Optimierung auf Verdacht.
 
 Hostcache mit frischer Daemonbindung:415 gleiche IDs, bisher2,004s, neu kalt2,040s/
 warm0,581s; kein Motorzeit-/RAM-Beweis. Trace vor Cleanup pumpen; fehlend UNKNOWN.
-CI39958713128 auf2cfd657f vollständig SUCCESS:84 Originale, Offline, Browser sowie
-strenge Z22-Pure-/Liveprüfung. Zwei veraltete Diagnose-Testannahmen eng korrigiert;
-Produkt-/Sicherheitsregeln unverändert. Alte FAILs bleiben FAIL. App403 separat.
-Struktureller Own-Schreibpfad4c01430c/adbcbc70 integriert; Alias-/Uhrschutz korrigiert,
-unabhängiges Vollreview und drei neue Regressionen PASS. Neue Code-CI steht aus.
-Native-Schreibweg gilt nur Einzelunit;
-geteilter Control-Read verbessert auch Voll500, kein Full500-Schreibgewinn behauptet.
+CI39958713128 auf2cfd657f vollständig SUCCESS. Neue89er Artefaktpins7cf21c32:
+10 betroffene Checks PASS. CI39964840723 besteht öffentliche Bindung/Browser/84Pins,
+blockiert aber korrekt am alten Controlcache-Sourcegate: neue U/Parts noch nicht
+nativ komponentenqualifiziert; alte Belege nicht umpinnen. Zehn gezielte Pure-Suiten,
+unabhängiges Vollreview und drei Alias-/Uhrschutzregressionen PASS. Own-Schreibpfad
+4c01430c/adbcbc70 gilt nur Native-Einzelunit; geteilter Control-Read erreicht auch
+Voll500. Dessen öffentlicher Schreibpfad unverändert. App403 separat.
 
 Alle33 qualifizierten Archive verschlüsselt zurückgeladen/hashgeprüft;2.792.718.336B
 vorherige Archivalokation entfernt. Deltabasis KEEP, kein externes Vollbackup behauptet.

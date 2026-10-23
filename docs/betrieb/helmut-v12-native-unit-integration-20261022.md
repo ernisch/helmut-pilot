@@ -1349,3 +1349,51 @@ Einzeladmission10GiB erfüllt, vollständige Admission15.179.779.720B weiterhin 
 Original-RAWs unverändert; ausstehende ausdrückliche Allokationsfreigabe nicht ersetzt.
 Sechs authentische Quelldatenbanken,32 frische Startbedingungen und ein neues
 konkretes500er GO bleiben erforderlich. Kein vollständiger Lauf gestartet.
+
+## 23.10.: Vergleich des eingebundenen Umbaus bleibt negativ
+
+Der frische native Einzelfall1a964261 auf7cf21c32 endete tatsächlich mit Parentwait
+Exit1/zwei natürlichen EOFs nach145,099s; kein äußerer Timeout, Signal oder Retry.
+Primär wieder Controller-Entry-Terminaldeadline, sekundär unsauberer Hostabschluss.
+Originale unverändert, PG Exit0, letzte Prozesse erfasst und Cgroup leer. Gemeinsamer
+Peak1.349.353.472B, sechs Events0;122 gültige Komponenten-/Ankerpaare. Gegenüber2797
+liegt der Peak5.984.256B höher. Keine gemeinsame Speicherersparnis, kein Plateau,
+Unit60/Auth30/Qualität/500MB-Reserve weiterhin nicht qualifiziert.
+
+Alle70 gepaarten Zeitmarken haben dieselben Vergleichsschlüssel. Prä-D19,035s statt
+18,034s; prä-R56,108009355s statt55,822250750s. Sechs State-CAS zusammen12,224424945s
+statt12,490566213s: keine wesentliche Verkürzung. Darin seriell zugeordnete Service-
+Fenster5,926146428s, darin PSQL5,737673136s; nicht addieren. Original-ReadRPC,
+Node-Verarbeitung und Rückweg lassen sich mit den vorhandenen Grenzen nicht trennen.
+Bis prä-R28,798264600s disjunkte Awaitpaare plus27,309744755s nicht instrumentierte
+Zwischenräume. Der größte Zwischenraum21,847652986s enthält die D-Verarbeitung;
+19,9s bleiben nur Fixturekonfiguration, kein tatsächlich erhaltener Timerbeleg.
+Keine weitere Cache- oder Deltaoptimierung allein aus dieser Restzeit abgeleitet.
+
+Der Vergleich ist positiv quellgebunden:433 Codepins, ausschließlich vier Produkte
+plus Release-Manifest geändert,1530 Runtimepins identisch, gleiche echte Eingaben
+und restaurierte Ausgangs-DB. Frische eigene DB/Claims, keine alten Laufrechte.
+Der Umbau vermeidet nach Source-/Purebelegen Kopien, beseitigt im gemessenen Ablauf
+jedoch keinen maßgeblichen Zeit-/gemeinsamen Speicherengpass.
+
+CI39964220284 auf47eeaeb4 scheiterte korrekt an zwei noch alten Release-Pins.7cf21c32
+aktualisiert ausschließlich diese und den abgeleiteten Mappinghash:89 Mitglieder,
+historische Belege und Full500Qualification=false erhalten; zehn betroffene Checks
+PASS. CI39964840723 besteht öffentliche Bindung, Browser und84 Originale, scheitert
+aber im Ressourcenstartvertrag am berechtigten Controlcache-Sourcegate. Lokale
+Skripte1–3 bestanden; Skript4 verwirft neue Atomic32050B gegen historisch25446B und
+anschließend neue Parts27356B gegen historisch22169B. Skript5 wurde nicht wiederholt.
+Historische Nativequalifikation darf nicht auf diese Bytes umgepinnt werden. Für
+Full500 fehlen neue exakte Source-/Komponentenqualifikation und geprüfte Adoption;
+die isolierte Native-Single-Unit nutzt ihre eigenen frischen Manifest-/Quellgates.
+
+`ba75d837` ergänzt ausschließlich die noch fehlenden privaten Writer-Zeitgrenzen:
+gesamter Aufruf, Ownread, dessen tatsächlicher Reader-Promise, Write/Capture und
+native HTTP-Schreibantwort. Feste ASCII-Enums, Index/Systemzeiten, global maximal
+128 Ereignisse/16KiB, keine Nutzdaten, Hashes oder Fehlerwerte. Fehler/Backpressure
+deaktivieren nur Logging. Kein neuer Await, gleiche Reader-Promise-/Rückgabe-/Fehler-
+identität; Endmarke heißt abgeschlossen, kein ACK. Source-/Testreview unabhängig PASS,
+drei neue Tracegruppen und43 betroffene Writerchecks Exit0. Keine Parts-Suite wiederholt.
+Das ist die kleinste fehlende Messung zur Wahl des nächsten belegten Umbaus, kein
+weiterer Optimierungsversuch oder nativer Erfolgsnachweis. Neue Einzelunit erst nach
+frischer sauberer Head-/Quell-/Platten-/Originalbindung; kein vollständiger500er.
