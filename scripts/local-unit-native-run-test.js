@@ -124,7 +124,7 @@ async function scenario(options = {}, shared = null) {
           completedUnits: 1, dispatchedUnits: 1, expectedPositions: 3, evidenceHash: "e".repeat(64), independentFinalAcceptance: false,
           full500Accepted: false, production: false, paidProviderCallsAllowed: false, retryAllowed: false };
         if (options.invalidResult) return { state: "unknown", ignoredPayload: "FICTIONAL_NONCODE_TEXT" };
-        const cause = Object.assign(Error(options.codeShapedText ? "local-unit-diagnostic-native-unrecognized-payload" : "FICTIONAL_NONCODE_TEXT"),
+        const cause = Object.assign(Error(options.nativeReason ?? (options.codeShapedText ? "local-unit-diagnostic-native-unrecognized-payload" : "FICTIONAL_NONCODE_TEXT")),
           { code: "P0001", cause: Error("synthetik500-dispatch-EU-unit-deadline") });
         const error = new Error("local-unit-diagnostic-stopped-or-unknown", { cause });
         if (options.failureDiagnostic) diagnostics.set(error, options.failureDiagnostic);
@@ -278,6 +278,24 @@ async function check(name, action) { await action(); checks++; process.stdout.wr
     const receipt = result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data.toString();
     assert.equal((receipt + result.stderr).includes("unrecognized-payload"), false);
     assert.equal(JSON.parse(receipt).errors[1].code, "P0001");
+  });
+  for (const suffix of ["manifest-file-proof-binding", "manifest-file-drift", "manifest-mount-context",
+    "manifest-readonly-mount", "manifest-proof-terminal"]) {
+    await check("the exact native " + suffix + " reason survives a failing adapter", async () => {
+      const reason = "local-unit-diagnostic-native-" + suffix, result = await scenario({ nativeReason: reason });
+      const terminal = JSON.parse(result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data);
+      assert.equal(terminal.errors[1].reason, reason); assert.equal(terminal.errors[1].code, "P0001");
+      assert.equal(result.calls, 1); assert.equal(result.process.exitCode, 1);
+    });
+  }
+  await check("a near-match native manifest reason remains omitted", async () => {
+    const reason = "local-unit-diagnostic-native-manifest-file-drift-unrecognized-payload";
+    const result = await scenario({ nativeReason: reason });
+    const receipt = result.entries.get(directory + "/ATTEMPT_TERMINAL.SAFE.json").data.toString();
+    assert.equal(JSON.parse(receipt).errors[1].reason, null);
+    assert.equal((receipt + result.stderr).includes(reason), false);
+    assert.equal(JSON.parse(receipt).errors[1].code, "P0001");
+    assert.equal(result.calls, 1); assert.equal(result.process.exitCode, 1);
   });
   await check("a failed native meter cannot reach application code", async () => {
     const result = await scenario({ meterFailure: true }); assert.equal(result.calls, 0); assert(!result.events.includes("adapter.import"));
