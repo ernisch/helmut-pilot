@@ -1,0 +1,112 @@
+{
+  "atUTC": "2026-10-23T01:37:13.212926+00:00",
+  "auth30Qualified": false,
+  "case": "31efb75d492385175ce3107ac0f16e78",
+  "clientTerminalReceiptPresent": false,
+  "closure": {
+    "actualExit0Handles": 36,
+    "actualExit137Handles": 1,
+    "actualOwnerSignalQualified": false,
+    "allObserverExit0AndBothEOF": true,
+    "fullLastProcessExitCovered": true,
+    "groupsTwiceEmpty": true,
+    "hostAllHandlesBothEOF": true,
+    "hostClean": false,
+    "hostHandles": 37,
+    "nativePostgresExit": 0,
+    "outerActualCLIExit": 1,
+    "outerWaitAndBothEOF": true,
+    "postgresMergedNaturalEOFAndShutdownMarker": true,
+    "postgresTwoEOFClaimed": false,
+    "processObservers": 35,
+    "timeoutOrSignalOrTruncation": false,
+    "unknownHandles": 0
+  },
+  "evidence": [
+    {
+      "bytes": 2156,
+      "path": "/workspace/helmut-unit-diagnostic-native/31efb75d492385175ce3107ac0f16e78/RESULT.SAFE.json",
+      "sha256": "4d5025509218319d242a8a6867f650eb7d59122ea69946c406ab45fcbc269cd6"
+    },
+    {
+      "bytes": 1207,
+      "path": "/workspace/helmut-unit-diagnostic-native/31efb75d492385175ce3107ac0f16e78/EXECUTION_FAILURE.PRIVATE.json",
+      "sha256": "01777393c1b0c15e75207b38301cc1b0bb8e9ecf2a35c7c4e01cb6923c91f628"
+    },
+    {
+      "bytes": 729,
+      "path": "/workspace/helmut-unit-diagnostic-native/31efb75d492385175ce3107ac0f16e78/EXECUTION_HOST_FAILURE.PRIVATE.json",
+      "sha256": "89c150e9023c192a1544011bc309a9f1bd8f66e6f710530f781f6b5eff450f06"
+    },
+    {
+      "bytes": 58205,
+      "path": "/workspace/helmut-unit-diagnostic-native/31efb75d492385175ce3107ac0f16e78/EXECUTION_HOST_CLOSE.SAFE.json",
+      "sha256": "12e1f09c5706272691b7d02116a7dccbf791c1a156c16d947373bc57283b95b7"
+    },
+    {
+      "bytes": 760,
+      "path": "/workspace/helmut-unit-diagnostic-native/31efb75d492385175ce3107ac0f16e78/NATIVE_QUALIFICATION.SAFE.json",
+      "sha256": "1fd315443fa02cd5340e63dddff0107edee93ac2e857de0d11b7d312fa6e6686"
+    },
+    {
+      "bytes": 671,
+      "path": "/workspace/helmut-unit-diagnostic-native/31efb75d492385175ce3107ac0f16e78/ORIGINAL_SERVICE_STOP.SAFE.json",
+      "sha256": "a807ed992d99f9b84c0cae56f53e4c458c188758c97a1ec1a993297736f6dd41"
+    },
+    {
+      "bytes": 6080,
+      "path": "/workspace/helmut-native-integration-checks-20261022/postgrest-close-policy-20261023/capture-3c23b97d266061a294d9586e5a628480/FINAL.SAFE.json",
+      "sha256": "a0d2c36c2cfba1e9b4f6b0bb5e4076372a194ff01798f32bbc4378e010021b75"
+    }
+  ],
+  "full500Qualified": false,
+  "head": "48c15b09de3ebdcf072d7be697c1fc46f0f8a2d6",
+  "memory": {
+    "allSixMemoryEventsZero": true,
+    "commonPeakBytes": 1079160832,
+    "failedCaseIsNotReserveProof": true
+  },
+  "motorCalls": null,
+  "motorEntryRequested": true,
+  "oldClaimsReusable": false,
+  "originals": {
+    "authenticPostrunPreserved": true,
+    "rawPreserved": true,
+    "sourcePinsUnchanged": true
+  },
+  "pass": false,
+  "primary": {
+    "failureTimeIsFileMtimeNotAnInternalStageTimestamp": true,
+    "kind": "native-execution-source-host-reply-deadline",
+    "noHOST_REPLY08": true,
+    "requestIssuedAtUTC": "2026-10-23T01:20:56.277Z",
+    "sourceFailureFileMtimeUTC": "2026-10-23T01:21:01.282Z",
+    "sourceReplySeconds": 5,
+    "stage": "ENTRY_START"
+  },
+  "productionActions": false,
+  "reserve500MBProven": false,
+  "schema": "helmut-native-single-unit-failure-public-evidence/1",
+  "secondary": {
+    "afterSourceCleanupBegan": true,
+    "atUTC": "2026-10-23T01:21:01.493Z",
+    "kind": "native-execution-host-source-service-host-mapping"
+  },
+  "sourceService": {
+    "PGAdministratorTerminationDuringFastShutdownIsNotPrimarySQLFailure": true,
+    "SQLStderrCapturesEmpty": true,
+    "actualPSQLBothEOF": true,
+    "actualPSQLExit": 0,
+    "actualServiceNodeExitAndBothEOFQualified": false,
+    "cleanShutdown": true,
+    "ledgerComplete": true,
+    "serviceProcessCloseReceiptPresent": false,
+    "spawnCloseConfirmed": [
+      1,
+      1,
+      1
+    ],
+    "terminal": false
+  },
+  "unit60Qualified": false
+}

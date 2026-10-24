@@ -1,0 +1,47 @@
+{
+  "schema": "helmut-private-ci-status-metadata/1",
+  "observedAtUTC": "2026-10-22T22:59:34.580663+00:00",
+  "runId": 39863022179,
+  "headSHA": "ab0da98720331618cf314df538e9e471ae2a775e",
+  "status": "completed",
+  "conclusion": "failure",
+  "jobs": [
+    {
+      "name": "Oeffentlicher Pruefplan",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": []
+    },
+    {
+      "name": "Browser-/Mobile-Smoke (Chromium)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": []
+    },
+    {
+      "name": "Syntax + Offline-Suiten",
+      "status": "completed",
+      "conclusion": "failure",
+      "steps": [
+        {
+          "number": 37,
+          "name": "Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)",
+          "conclusion": "success"
+        },
+        {
+          "number": 38,
+          "name": "Bereichs-Regression (nur geänderte Fachbereiche)",
+          "conclusion": "failure"
+        },
+        {
+          "number": 39,
+          "name": "Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)",
+          "conclusion": "skipped"
+        }
+      ]
+    }
+  ],
+  "individualAreaSuiteFailureNotYetKnown": true,
+  "privateLogsOrSecretsExported": false,
+  "noFull500OrMotorProof": true
+}

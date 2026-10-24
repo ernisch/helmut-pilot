@@ -1,0 +1,45 @@
+{
+  "schema": "helmut-v12-current-source-caller-checks/1",
+  "implementationCommit": "678fb118cf4632d45a31ead8516acf6343ee8587",
+  "checks": [
+    {
+      "suite": "artifact-current-review",
+      "status": "PASS",
+      "passed": 10,
+      "total": 10,
+      "privateLogPin": {
+        "path": "/workspace/helmut-native-integration-checks-20261022/artifact-current-review.PRIVATE.log",
+        "bytes": 1526,
+        "sha256": "4a50a81a918f41109d85193ed2021e3ef6b7cae85fafaf036d683269a6963609"
+      }
+    },
+    {
+      "suite": "start-inputs-current-review",
+      "status": "PASS",
+      "passed": 6,
+      "total": 6,
+      "privateLogPin": {
+        "path": "/workspace/helmut-native-integration-checks-20261022/start-inputs-current-review.PRIVATE.log",
+        "bytes": 1215,
+        "sha256": "867fd6107f0241227193289c65a25a149a8186f612677afabb207418beb71daa"
+      }
+    },
+    {
+      "suite": "runtime-contract-current-review",
+      "status": "FAIL",
+      "passed": 13,
+      "total": 14,
+      "privateLogPin": {
+        "path": "/workspace/helmut-native-integration-checks-20261022/runtime-contract-current-review.PRIVATE.log",
+        "bytes": 3731,
+        "sha256": "73bcde4fc6a6fe1d934ccd207e79e5cb9d33d4bafff52630aa7d1b8de07d770b"
+      }
+    }
+  ],
+  "remainingFailure": "Explicit control-source pin rejects the separately unreviewed existing testkosten-budget.js diagnostic delta; no guard weakened",
+  "nativeExecution": false,
+  "databaseCalls": 0,
+  "modelCalls": 0,
+  "executionAuthority": false,
+  "full500Accepted": false
+}

@@ -1,27 +1,43 @@
 # CURRENT STATE — Helmut
 
-**Stand22.10.2026 Europe/Istanbul.** Letzter Production-Befund16.10.2026 13:07:32UTC,
+**Stand24.10.2026 UTC.** Letzter Production-Befund16.10.2026 13:07:32UTC,
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 22.10.: Restore und geschützter CI-Originalkanal
+## 24.10.: CI grün; volle Einzelunit76af weiter FAIL
 
-13.527Dateien hashverifiziert; physische DB-Kopien fehlen. Manifest+9Negativgruppen PASS.
-Contracttest-Storemutation: Fix4Fälle PASS, Store bytegenau restauriert;
-Zeitmetadaten erklärt geändert.88/88Bytepins PASS,84CI+3V12 auch Metadaten gleich.
-7Ressourcenpakete PASS; Observerkatalog wegen Credentialfeld ausgeschlossen.
-[Restore](betrieb/private-ci-original-provisioning-20261021.md).
-Einzelunit-Vorbereitung499→0 mit Eingabeverifikation80/80 lokal+GHA PASS, weiter inert.
-Quelle meldet originales POSTRUN erhalten; kein Vor499-Zustand. Diagnose bleibt dort.
-Runtimebindungen/native Verbraucher offen; alte GOs verbraucht, Quell-DB gestoppt.
-[Umfang](betrieb/local-unit-diagnostic-preparation-20261022.md).
-Historische Abnahmen930/929/931 bleiben im CI-Beleg erhalten.
-[CI-Beleg](betrieb/belege/private-ci-channel-20261022/GITHUB_INTEGRATION.SAFE.json).
-Views-Hashwiederverwendung26gezielte Checks+Pro-Review PASS, frische Guards erhalten.
-CI39760002592: Originale/Runtime/Browser+erster DB-BlockPASS; Standard179/180.
-Nach Adapterpinkorrektur ist [CI39766942129](https://github.com/ernisch/helmut-pilot/actions/runs/39766942129)
-vollständig grün. [PR929](https://github.com/ernisch/helmut-pilot/pull/929) wurde in den CI-Entwicklungsbranch übernommen.
-Unit60/Voll500/Production/App403 offen.
+Code5516f3e2: CI40066809993 vollständig SUCCESS am24.10.,06:07:19UTC.
+CurrentDelta-Reparatur mit neuer unabhängiger SOURCE-only-Kette72e68334;
+alte Belege unverändert. Verbraucher14/22/99 und Copyguards6 PASS.
+Branch `codex/v12-unit60-native-integration-20261022`, Draft PR936; keinMerge/Prod.
+
+Native76af aufBundle5f54179e: CLIExit1/zweiEOFs/138,046509s, Stage6
+Interrupted/noRetry. Neun/16 Kontrollen,18 verbundene Bundle-HTTP-Aufrufe;
+Adapter65,839926211s/Entry66,8565s. Genuine9er-Tracepräfix erhalten,
+kein vollständiger19er-Abschluss oder gültige Endquittung.
+Gemeinsamer Peak1.349.423.104B,107Samples, alle sechsEvents0, Gruppen leer;
+Originalflags/logischerQuellzustand unverändert. Wegen FAIL kein Unit60-/Auth30-/
+Plateau-/500MB-/Full500-Nachweis. Native Uhr bewusst abfirstAuthority(6,202s);
+kein Gleichsetzen mit kanonischemFull500-Unitanker, keine Ankeränderung.
+Beide19.900ms-Waits unverändert. Perform8,820701708s enthält Read3,424111s
+und Write4,797508s; verschachtelte Zeiten nicht addieren.
+
+Zwei statt sieben Kontroll-HTTPs, frische Runtime/Katalog/Original/Own-Prüfung
+und initialer Binary-SHA mit readonly FD/9MD-Kontinuität integriert;
+keine Guard-/Zeitlockerung. c336/d79 bleiben Setup-FAILs. Alte7b2-FAIL-Belege,
+SameRootUsage4150 sowie e755/b237-Negative erhalten. Claimpaar6994→0ea8:
+State-PSQL−39,37%, Peak1.218.666.496→1.252.741.120B: keine RAM-Ersparnis.
+
+0ea8-Klararchiv nach vorhandenem Vollrückwegc967+frischenMetadaten kontrolliert
+entfernt: netto+123.183.104B. Danach dokumentiert10.806.087.680B frei,
+Komponentenabstand68.669.440B; Volladmission15.179.779.720B,
+Restlücke4.373.692.040B. Keine neue Remote-SHA-/Decrypt-Behauptung/Keyexport.
+RAW/POSTRUN/Originale und notwendige Außenbelege KEEP; frühereBootstrap-PGs
+netto+741.519.360B und0ea8-PG+371.298.304B bleiben historische Einzelphasen.
+NächsterFunctions4TX-Track ausschließlich PREP, noch kein Start. Alle alten
+GOs/Claims verbraucht;32 frische Bedingungen und konkretes neues500erGO Pflicht.
+[Bereinigter Checkpoint](betrieb/belege/native-claim-only-20261023/NATIVE_76AF_CI_CAPACITY_CHECKPOINT_20261024.SAFE.json),
+[Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
@@ -125,33 +141,17 @@ Dieser historische Stand wurde durch die oben belegte Bereinigung, Einbindung
 und tatsächlichen Diagnosen abgelöst; alte PostgREST-FAILs bleiben FAIL.
 [Befund, Belege und konkrete nächste Messung](betrieb/late-state-memory-diagnostics-20261020.md).
 
-## 20.10.: Vorheriger Renderer-Sprint; 500er Abnahme offen
+## 20.10.: Renderer-Sprint; 500er Abnahme offen
 
-Eigener Branch `codex/auth-state-working-set-20261020`, Basis `bdb2c2c3`,
-`c8624f7c` erhalten. PostgreSQLs materialisierte Vorkommens-/Sortier-/Tokenmengen
-im abschließenden Merkle-Renderer durch Tiefenstapel und UTF8-Fragmente ersetzt;
-Schutzprüfungen, ABI, CAS, ACK, History und Kontrollleser unverändert.
-Neue Quellenbindung separat von historischen Abnahmen, frische Integration
-weiter Pflicht. Kein Router-/DeepSeekaufruf in diesem SOL-Sprint.
-
-Echter OLD/NEW/NEW/OLD-Vergleich am unveränderten späten V11-Authzustand:
-alle nativen Ausgaben exakt gleich. Rund125MB weniger anonymer Speicher je
-Backend; zweites Paar621ms alt/294ms neu. Neue Authkomponente:11 bestätigte
-Mutationen,192 frische Kontrollen, CAS-Konflikt, verloreneBestätigung ohneRetry,
-zwei echte kostenfreie Ledgeranhänge mit vollständigem6000er Historysuffix PASS.
-Separat39 Fälle/95 native Differentialvergleiche,22 Integrationstests und6
-Startprüfungen PASS. KonservativeSQL-Regression179/179 in698s, Prozessende0;
-endgültigeDescriptorbindung separat gezielt und am echten Katalog geprüft.
-
-Vergleichssteuerung bleibt FAIL wegen PostgREST-Abschluss vor der dort geplanten
-Differentialphase; keine Umwertung. Gesamte eigene Lebenszeitgruppe bis letztem
-Exit1094455296B/OOM0, enthält OLD+NEW/Setup/RAM-PGDATA/JIT und ist kein exklusiver
-NEW- oder Voll500-Nachweis.64KiB ist nur logischer Fragmentpuffer, nicht GesamtRAM.
-Zwölf Runden mit GC-Wellen belegen kein langfristiges Plateau. Größter Gesamt-
-verursacher und vollständige500MB-/Zeit-/Ergebnisannahme bleiben offen.
-Plattenreserve weiterhin rund6,58GB zu klein,8GiB Boden unverändert.
-Kein neues vollständigesGO, keine Production/Migration/Merge/Deployment.
-[Änderung, tatsächliche Belege, Grenzen und genauer Haltepunkt](betrieb/local-streamed-renderer-20261020.md).
+PR925/f0d3b039 baut auf PR924/bdb2c2c3 auf; c8624f7c erhalten. Tiefenstapel und
+UTF8-Fragmente ersetzen materialisierte Renderer-Vorkommen/Sortier-/Tokenmengen.
+Am echten späten V11-Zustand OLD/NEW/NEW/OLD bytegleiche Ausgaben; rund125MB
+weniger Backend-anon, zweites Paar621→294ms.39Fälle/95native Differentiale,
+11bestätigteMutationen/192Kontrollen und179SQL-Suiten PASS; CAS/ACK/History
+unverändert. Vergleichssteuerung bleibt wegen PostgREST-Abschluss FAIL;
+1.094.455.296B gemeinsamer OLD+NEW-Lebenszeitpeak ist kein NEW-/500er-Beweis.
+Kein Langzeitplateau, keine Voll500-Reserve-/Zeit-/Ergebnisabnahme belegt.
+[Bericht und vollständige Grenzen](betrieb/local-streamed-renderer-20261020.md).
 
 ## 20.10.: V11 fehlgeschlagen; gemeinsame RAM- und Nodebudgets lokal eingebunden
 
@@ -288,7 +288,7 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-Cloud-Authrouting, geschützten84erCI-Kanal und echte Quellruntime über unterstützte
-Wege herstellen. Separaten HTTP-Ein-Unit-Vertrag ausarbeiten; vorhandene Voll500-
-Verträge lassen keine Index499-Wiederholung zu. Unit60/32Startgruppen offen.
-Hier fortsetzen, Sehr hoch wegen CAS/ACK/Originalschutz; kein Voll500 vor Klärung.
+Native State/SameRootUsage undbeideNegativrollbacks PASS; ersterAlt-Neu-Vergleich
+zeigt kürzereSQL-Zeit, keineRAM-Ersparnis. LetztevolleEinzelunit7b2 FAIL/70,524s.
+BelegteLese-/Prüfdoppelarbeit reduzieren undgezieltqualifizieren; Unit60/500MB/
+32Startgruppen/Volladmission offen. KeinVoll500. Sehr hoch.

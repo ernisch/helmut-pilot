@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """TEST_ONLY fixtures: no GitHub requests, real review grants, private inputs or GO."""
 import copy
-from contextlib import redirect_stdout
+from contextlib import nullcontext, redirect_stdout
 import hashlib
 import importlib.util
 import io
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import tarfile
@@ -20,12 +21,15 @@ HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location('private_ci_channel', HERE / 'private_ci_channel.py')
 C = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(C)
+shell_spec = importlib.util.spec_from_file_location('private_ci_shell', HERE / 'private_ci_shell.py')
+S = importlib.util.module_from_spec(shell_spec)
+shell_spec.loader.exec_module(S)
 
 
 def fixtures():
     ctx = dict(repository=C.REPO, event='pull_request', runID=123, runAttempt=1,
         ref='refs/pull/1/merge', headSHA='d' * 40, checkoutSHA='c' * 40,
-        workflowSHA='c' * 40, prNumber=1, manifestSHA256=C.MANIFEST_SHA,
+        workflowSHA='c' * 40, baseSHA='b' * 40, prNumber=1, manifestSHA256=C.MANIFEST_SHA,
         transportSHA256='TEST_ONLY_NOT_A_TRANSPORT_PIN')
     run = dict(id=123, head_sha='d' * 40, event='pull_request', run_attempt=1,
                path='.github/workflows/ci.yml')
@@ -43,7 +47,7 @@ def owner_fixtures():
     run.update(repository=copy.deepcopy(repo), head_repository=copy.deepcopy(repo),
                actor=copy.deepcopy(actor), triggering_actor=copy.deepcopy(actor),
                head_branch='feature/TEST_ONLY_owner')
-    pr.update(user=copy.deepcopy(actor), base=dict(repo=copy.deepcopy(repo)))
+    pr.update(user=copy.deepcopy(actor), base=dict(sha=ctx['baseSHA'], repo=copy.deepcopy(repo)))
     pr['head'].update(repo=copy.deepcopy(repo), ref=run['head_branch'])
     return ctx, run, pr
 
@@ -132,7 +136,7 @@ class OwnerAccessTests(unittest.TestCase):
             lambda p: p['base']['repo'].update(id=1),
             lambda p: p.update(state='closed'), lambda p: p.update(number=2),
             lambda p: p.update(number=True), lambda p: p['head'].update(sha='e' * 40),
-            lambda p: p.update(merge_commit_sha='e' * 40),
+            lambda p: p['base'].update(sha='e' * 40),
             lambda p: p['head'].update(ref='TEST_ONLY_other'), lambda p: p['head'].update(ref='')]
         for index, change in enumerate(mutations):
             with self.subTest(case=index):
@@ -145,7 +149,7 @@ class OwnerAccessTests(unittest.TestCase):
             with self.subTest(runKey=key):
                 ctx, run, pr = owner_fixtures(); run.pop(key)
                 with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
-        for key in ['user', 'head', 'base', 'number', 'merge_commit_sha']:
+        for key in ['user', 'head', 'base', 'number']:
             with self.subTest(prKey=key):
                 ctx, run, pr = owner_fixtures(); pr.pop(key)
                 with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
@@ -159,15 +163,53 @@ class OwnerAccessTests(unittest.TestCase):
     def test_only_main_push_and_dispatch_have_automatic_access(self):
         for event in ['push', 'workflow_dispatch']:
             ctx, run, _ = owner_fixtures()
-            ctx.update(event=event, prNumber=None, ref='refs/heads/main', headSHA=ctx['checkoutSHA'])
+            ctx.update(event=event, prNumber=None, baseSHA=None, ref='refs/heads/main', headSHA=ctx['checkoutSHA'])
             run.update(event=event, head_branch='main', head_sha=ctx['headSHA'])
             self.assertEqual(C.validate_owner_access(ctx, run)['accessPolicy'], C.AUTOMATIC_POLICY)
-            for update in [{'ref': 'refs/heads/TEST_ONLY_other'}, {'headSHA': 'e' * 40}, {'prNumber': 1}]:
+            for update in [{'ref': 'refs/heads/TEST_ONLY_other'}, {'headSHA': 'e' * 40},
+                           {'prNumber': 1}, {'baseSHA': 'b' * 40}, {'baseSHA': False}]:
                 changed = {**ctx, **update}
                 observed = {**run, 'head_sha': changed['headSHA']}
                 with self.subTest(event=event, update=update), self.assertRaises(RuntimeError):
                     C.validate_owner_access(changed, observed)
             with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, {**run, 'head_branch': 'TEST_ONLY_other'})
+            changed = dict(ctx); changed.pop('baseSHA')
+            with self.assertRaises(RuntimeError): C.validate_owner_access(changed, run)
+
+    def test_automatic_pr_uses_event_base_with_changed_null_or_absent_live_merge(self):
+        for alias in ['e' * 40, None, 'TEST_ONLY_absent']:
+            with self.subTest(alias=alias):
+                ctx, run, pr = owner_fixtures()
+                if alias == 'TEST_ONLY_absent': pr.pop('merge_commit_sha')
+                else: pr['merge_commit_sha'] = alias
+                receipt = C.validate_owner_access(ctx, run, pr)
+                self.assertEqual(receipt['baseSHA'], 'b' * 40)
+                self.assertEqual(C.validate_receipt(receipt, ctx, C.AUTOMATIC_POLICY), receipt)
+
+    def test_automatic_pr_requires_exact_strict_context_and_current_base(self):
+        invalid = [None, False, True, 1, [], {}, '', 'b' * 39, 'B' * 40,
+                   'g' * 40, ' ' + 'b' * 40, 'b' * 40 + '\n']
+        for value in invalid:
+            with self.subTest(contextBase=value):
+                ctx, run, pr = owner_fixtures()
+                ctx['baseSHA'] = value; pr['base']['sha'] = value
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+            with self.subTest(currentBase=value):
+                ctx, run, pr = owner_fixtures(); pr['base']['sha'] = value
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+        for target in ['context', 'current']:
+            with self.subTest(missingBase=target):
+                ctx, run, pr = owner_fixtures()
+                if target == 'context': ctx.pop('baseSHA')
+                else: pr['base'].pop('sha')
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
+        for target in ['context', 'current']:
+            with self.subTest(wrongBase=target):
+                ctx, run, pr = owner_fixtures()
+                if target == 'context': ctx['baseSHA'] = 'e' * 40
+                else: pr['base']['sha'] = 'e' * 40
+                self.assertEqual(pr['merge_commit_sha'], ctx['checkoutSHA'])
+                with self.assertRaises(RuntimeError): C.validate_owner_access(ctx, run, pr)
 
     def test_manual_and_automatic_receipts_are_not_interchangeable(self):
         ctx, run, pr = owner_fixtures()
@@ -182,6 +224,7 @@ class OwnerAccessTests(unittest.TestCase):
         ctx, run, pr = owner_fixtures(); approved = C.validate_owner_access(ctx, run, pr)
         changes = [{'runID': 124}, {'runAttempt': 2}, {'runAttempt': True},
                    {'headSHA': 'e' * 40}, {'checkoutSHA': 'e' * 40}, {'environment': 'TEST_ONLY_other'},
+                   {'baseSHA': 'e' * 40}, {'baseSHA': None}, {'baseSHA': True}, {'baseSHA': 'B' * 40},
                    {'authorizedActor': 'TEST_ONLY_other'}, {'authorizedActorID': 1},
                    {'accessPolicy': 'manual'}, {'executionGO': True}, {'ciPassed': True},
                    {'reviewer': C.REVIEWER}, {'schema': 'helmut-private-ci-reviewed-access/1'}]
@@ -194,6 +237,25 @@ class OwnerAccessTests(unittest.TestCase):
                     mock.patch.object(C.subprocess, 'run') as child:
                 with self.assertRaises(RuntimeError): C.provision(Path('/TEST_ONLY_receipt'))
                 transport.assert_not_called(); child.assert_not_called()
+                self.assertEqual(os.environ['HELMUT_CI_ORIGINALS_KEY'], 'TEST_ONLY_NOT_A_KEY')
+
+    def test_missing_receipt_or_invalid_fresh_context_base_rejects_before_key_and_import(self):
+        ctx, run, pr = owner_fixtures(); approved = C.validate_owner_access(ctx, run, pr)
+        missing_receipt = dict(approved); missing_receipt.pop('baseSHA')
+        missing_context = dict(ctx); missing_context.pop('baseSHA')
+        cases = [(ctx, missing_receipt), (missing_context, approved)]
+        for value in [None, False, 1, 'B' * 40, 'b' * 39]:
+            cases.append(({**ctx, 'baseSHA': value}, {**approved, 'baseSHA': value}))
+        for index, (fresh, receipt) in enumerate(cases):
+            with self.subTest(case=index), \
+                    mock.patch.dict(os.environ, {'HELMUT_CI_ORIGINALS_KEY': 'TEST_ONLY_NOT_A_KEY'}, clear=True), \
+                    mock.patch.object(C, 'context', return_value=fresh), \
+                    mock.patch.object(C, 'read_file', return_value=json.dumps(receipt).encode()), \
+                    mock.patch.object(C, 'load_transport') as transport, \
+                    mock.patch.object(C.importlib.util, 'spec_from_file_location') as loader, \
+                    mock.patch.object(C.subprocess, 'run') as child:
+                with self.assertRaises(RuntimeError): C.provision(Path('/TEST_ONLY_receipt'))
+                transport.assert_not_called(); loader.assert_not_called(); child.assert_not_called()
                 self.assertEqual(os.environ['HELMUT_CI_ORIGINALS_KEY'], 'TEST_ONLY_NOT_A_KEY')
 
     def test_workflow_binds_same_policy_before_check_and_decryption(self):
@@ -314,9 +376,10 @@ class ReviewTests(unittest.TestCase):
         offline = text.split('  offline-suite:', 1)[1].split('  browser-smoke:', 1)[0]
         private = offline.split('      - name: Ressourcenstart und Originalbindungen', 1)[1].split('      - name: Private Diagnoseausgaben', 1)[0]
         self.assertEqual(private.count('        shell:'), private.count('        run:'))
-        self.assertEqual(private.count('        shell:'), 21)
+        # Der neue reine Z22-Plan-Gegenbeispielschritt nutzt denselben privaten Kanal.
+        self.assertEqual(private.count('        shell:'), 22)
         shell_lines = [line for line in private.splitlines() if line.startswith('        shell:')]
-        self.assertEqual(len(shell_lines), 21)
+        self.assertEqual(len(shell_lines), 22)
         for line in shell_lines:
             self.assertEqual(line.strip(), "shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'")
         self.assertNotIn('shell: ${{', text)
@@ -396,25 +459,30 @@ class FileTests(unittest.TestCase):
             with self.subTest(ref=ref), mock.patch.dict(os.environ, env, clear=True), \
                  mock.patch.object(C.subprocess, 'run', return_value=SimpleNamespace(stdout='c'*40+'\n')), \
                  mock.patch.object(C, 'api') as api:
-                if ref == 'refs/heads/main': self.assertEqual(C.context()['ref'], ref)
+                if ref == 'refs/heads/main':
+                    result = C.context()
+                    self.assertEqual(result['ref'], ref)
+                    self.assertIsNone(result['baseSHA'])
                 else:
                     with self.assertRaises(RuntimeError): C.context()
                 api.assert_not_called()
 
-    def pr_context_fixture(self, event_merge, parents):
+    def pr_context_fixture(self, event_merge, parents, *, event_base='b'*40,
+                           actual_head='c'*40, env_updates=None):
         event = self.root / 'TEST_ONLY-pr-event.json'
         event.write_text(json.dumps({'number': 7, 'pull_request': {
             'head': {'sha': 'd'*40, 'repo': {'full_name': C.REPO}},
-            'base': {'sha': 'b'*40, 'repo': {'full_name': C.REPO}},
+            'base': {'sha': event_base, 'repo': {'full_name': C.REPO}},
             'merge_commit_sha': event_merge}}))
         env = dict(GITHUB_ACTIONS='true', GITHUB_REPOSITORY=C.REPO,
             GITHUB_API_URL='https://api.github.com', GITHUB_EVENT_NAME='pull_request',
             GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='1', GITHUB_SHA='c'*40,
             GITHUB_WORKFLOW_SHA='c'*40, GITHUB_REF='refs/pull/7/merge', GITHUB_EVENT_PATH=str(event),
             GITHUB_WORKFLOW_REF=C.REPO+'/.github/workflows/ci.yml@refs/pull/7/merge')
+        env.update(env_updates or {})
         def git_result(command, **kwargs):
             if command == ['git', 'rev-parse', 'HEAD']:
-                return SimpleNamespace(stdout='c'*40+'\n')
+                return SimpleNamespace(stdout=actual_head+'\n')
             self.assertEqual(command, ['git', 'rev-list', '--parents', '-n', '1', 'c'*40])
             return SimpleNamespace(stdout=' '.join(parents)+'\n')
         with mock.patch.dict(os.environ, env, clear=True), \
@@ -430,6 +498,32 @@ class FileTests(unittest.TestCase):
                 result = self.pr_context_fixture(event_merge, ['c'*40, 'b'*40, 'd'*40])
                 self.assertEqual(result['checkoutSHA'], 'c'*40)
                 self.assertEqual(result['headSHA'], 'd'*40)
+                self.assertEqual(result['baseSHA'], 'b'*40)
+
+    def test_context_rejects_wrong_event_base_actual_head_and_workflow_before_api(self):
+        parents = ['c'*40, 'b'*40, 'd'*40]
+        cases = [dict(event_base='e'*40), dict(actual_head='e'*40),
+                 dict(env_updates={'GITHUB_SHA': 'e'*40}),
+                 dict(env_updates={'GITHUB_WORKFLOW_SHA': 'e'*40}),
+                 dict(env_updates={'GITHUB_WORKFLOW_REF': C.REPO+'/.github/workflows/other.yml@refs/pull/7/merge'}),
+                 dict(env_updates={'GITHUB_REF': 'refs/pull/8/merge'})]
+        for index, update in enumerate(cases):
+            with self.subTest(case=index), self.assertRaises(RuntimeError):
+                self.pr_context_fixture('c'*40, parents, **update)
+
+    def test_main_push_context_has_no_event_base(self):
+        event = self.root / 'TEST_ONLY-push-event.json'
+        event.write_text(json.dumps({'after': 'c'*40}))
+        env = dict(GITHUB_ACTIONS='true', GITHUB_REPOSITORY=C.REPO,
+            GITHUB_API_URL='https://api.github.com', GITHUB_EVENT_NAME='push',
+            GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='1', GITHUB_SHA='c'*40,
+            GITHUB_WORKFLOW_SHA='c'*40, GITHUB_REF='refs/heads/main', GITHUB_EVENT_PATH=str(event),
+            GITHUB_WORKFLOW_REF=C.REPO+'/.github/workflows/ci.yml@refs/heads/main')
+        with mock.patch.dict(os.environ, env, clear=True), \
+             mock.patch.object(C.subprocess, 'run', return_value=SimpleNamespace(stdout='c'*40+'\n')), \
+             mock.patch.object(C, 'api') as api:
+            self.assertIsNone(C.context()['baseSHA'])
+            api.assert_not_called()
 
     def test_wrong_base_head_nonmerge_or_other_commit_rejects_before_api(self):
         for parents in [['c'*40, 'e'*40, 'd'*40], ['c'*40, 'b'*40, 'e'*40],
@@ -560,6 +654,156 @@ class FileTests(unittest.TestCase):
         archive = self.archive([('synthetic/fixture', b'test', tarfile.REGTYPE)])
         dest = self.root / 'bundle'; dest.mkdir()
         with self.assertRaises(FileExistsError): C.extract_archive(archive, dest, self.rows())
+
+
+class SuiteMetadataShellTests(unittest.TestCase):
+    SUITE = 'offline-suite-auswahl-test.js'
+    OTHER = 'bereichsauswahl-test.js'
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+
+    def line(self, suite=None, code='7'):
+        return 'FAIL  ' + (suite or self.SUITE) + ' (12ms, exit=' + code + ')\n'
+
+    def parse(self, payload, **limits):
+        path = self.root / 'TEST_ONLY.log'
+        path.write_bytes(payload.encode('utf8')); path.chmod(0o600)
+        with mock.patch.object(S, 'tracked_test_basenames', return_value={self.SUITE, self.OTHER}), \
+                (mock.patch.multiple(S, **limits) if limits else nullcontext()):
+            output = S.suite_failure_metadata(path)
+        rows = output.splitlines()
+        return json.loads(rows[0]), rows[1:]
+
+    def run_shell(self, payload, opt_in=S.SUITE_METADATA_MODE, code=7):
+        script = self.root / 'TEST_ONLY.sh'
+        blocked = [S.SUITE_METADATA_ENV, 'HELMUT_CI_ORIGINALS_KEY', 'GITHUB_TOKEN',
+                   'GH_TOKEN', 'GITHUB_STEP_SUMMARY', 'GITHUB_OUTPUT', 'ACTIONS_RUNTIME_TOKEN']
+        checks = ''.join('test -z "${' + name + ':-}"\n' for name in blocked)
+        script.write_text(checks + "printf '%s' " + shlex.quote(payload) + '\nexit ' + str(code) + '\n')
+        env = {'PATH': '/usr/bin:/bin', 'RUNNER_TEMP': str(self.root),
+               'HELMUT_CI_PRIVATE_LOGS': 'true', 'HELMUT_CI_ORIGINALS_KEY': 'TEST_ONLY_NO_KEY',
+               'GITHUB_TOKEN': 'TEST_ONLY_NO_TOKEN', 'GH_TOKEN': 'TEST_ONLY_NO_TOKEN',
+               'GITHUB_STEP_SUMMARY': 'TEST_ONLY', 'GITHUB_OUTPUT': 'TEST_ONLY',
+               'ACTIONS_RUNTIME_TOKEN': 'TEST_ONLY'}
+        if opt_in is not None:
+            env[S.SUITE_METADATA_ENV] = opt_in
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'private_ci_shell.py'), str(script)],
+                                env=env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, code)
+        self.assertEqual(result.stderr, '')
+        rows = result.stdout.splitlines()
+        metadata = json.loads(rows[0])
+        self.assertEqual(metadata['scope'], 'PRIVATE_CI_LOG_METADATA_ONLY')
+        self.assertEqual(metadata['exitCode'], code)
+        log = self.root / 'helmut-ci-private-logs' / metadata['log']
+        self.assertEqual(log.read_bytes(), payload.encode('utf8'))
+        self.assertEqual(metadata['sha256'], hashlib.sha256(log.read_bytes()).hexdigest())
+        self.assertEqual(log.stat().st_mode & 0o777, 0o600)
+        return result, rows[1:]
+
+    def test_opt_in_real_shell_emits_only_closed_metadata_and_strips_own_flag_and_secrets(self):
+        payload = 'TEST_ONLY_PRIVATE_SENTINEL\n::warning::TEST_ONLY_PRIVATE_COMMAND\n' + self.line()
+        result, rows = self.run_shell(payload)
+        self.assertNotIn('TEST_ONLY_PRIVATE', result.stdout)
+        self.assertEqual(json.loads(rows[0]), {'schema': S.SUITE_METADATA_SCHEMA,
+                                             'failures': [{'suite': self.SUITE, 'exitCode': 7}]})
+        self.assertEqual(rows[1:], ['::error title=Offline suite failed::' + self.SUITE + '; exit=7'])
+
+    def test_default_shell_output_remains_metadata_only_without_opt_in(self):
+        result, rows = self.run_shell('TEST_ONLY_PRIVATE_SENTINEL\n' + self.line(), opt_in=None)
+        self.assertEqual(rows, [])
+        self.assertNotIn(self.SUITE, result.stdout)
+
+    def test_unknown_opt_in_is_rejected_before_child(self):
+        script = self.root / 'TEST_ONLY.sh'
+        script.write_text('printf TEST_ONLY_CHILD_MUST_NOT_RUN\n')
+        env = {'PATH': '/usr/bin:/bin', 'RUNNER_TEMP': str(self.root), S.SUITE_METADATA_ENV: 'true'}
+        result = subprocess.run([sys.executable, '-B', str(HERE / 'private_ci_shell.py'), str(script)],
+                                env=env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(json.loads(result.stdout), {'code': 'PRIVATE_CI_LOG_REJECTED'})
+        self.assertFalse((self.root / 'helmut-ci-private-logs').exists())
+
+    def test_known_head_tests_only_and_git_child_has_closed_environment(self):
+        actual_run = subprocess.run
+        with mock.patch.object(S.subprocess, 'run', wraps=actual_run) as run:
+            names = S.tracked_test_basenames()
+        self.assertIn(self.SUITE, names)
+        self.assertNotIn('TEST_ONLY_UNTRACKED-test.js', names)
+        self.assertEqual(run.call_args.args[0][-5:], ['ls-tree', '-rz', 'HEAD', '--', 'scripts'])
+        self.assertEqual(set(run.call_args.kwargs['env']), {'PATH', 'LANG', 'LC_ALL'})
+        self.assertEqual(run.call_args.kwargs['timeout'], 5)
+
+    def test_only_complete_unindented_runner_records_are_public(self):
+        invalid = [
+            'TEST_ONLY_PRIVATE_SENTINEL\n', '      ' + self.line(), '\t' + self.line(),
+            self.line().rstrip('\n') + ' TEST_ONLY_PRIVATE\n',
+            'prefix ' + self.line(), self.line('TEST_ONLY_UNTRACKED-test.js'),
+            self.line('../' + self.SUITE), self.line('scripts/' + self.SUITE),
+            self.line().replace('\n', '\r\n'), self.line().replace('FAIL  ', 'FAIL  \r'),
+            self.line().replace('FAIL  ', 'FAIL  \x00'), self.line().rstrip('\n'),
+            '::error title=Offline suite failed::TEST_ONLY_PRIVATE\n']
+        for value in invalid:
+            with self.subTest(case=invalid.index(value)):
+                data, annotations = self.parse(value)
+                self.assertEqual(data, {'schema': S.SUITE_METADATA_SCHEMA, 'failures': []})
+                self.assertEqual(annotations, [])
+
+    def test_exit_code_is_exact_canonical_integer_or_null_not_free_text(self):
+        for code in ('true', 'false', '"7"', '7.0', '-1', '0', '256', '01', 'NaN', '7;TEST_ONLY_PRIVATE'):
+            with self.subTest(code=code):
+                self.assertEqual(self.parse(self.line(code=code))[0]['failures'], [])
+        for code, expected in [('1', 1), ('255', 255), ('null', None)]:
+            with self.subTest(code=code):
+                self.assertEqual(self.parse(self.line(code=code))[0]['failures'], [{'suite': self.SUITE, 'exitCode': expected}])
+
+    def test_oversized_physical_line_tail_never_becomes_runner_record(self):
+        payload = 'TEST_ONLY_PRIVATE' * 40 + self.line() + self.line(self.OTHER)
+        data, annotations = self.parse(payload)
+        self.assertEqual(data['failures'], [{'suite': self.OTHER, 'exitCode': 7}])
+        self.assertEqual(len(annotations), 1)
+
+    def test_duplicate_count_byte_and_scan_bounds_reject_without_partial_metadata(self):
+        for payload, limits in [(self.line() * 2, {}),
+                                (self.line() + self.line(self.OTHER), {'MAX_SUITE_METADATA': 1}),
+                                (self.line(), {'MAX_PUBLIC_BYTES': 8}),
+                                (self.line(), {'MAX_SCAN_BYTES': 8})]:
+            with self.subTest(limits=limits):
+                with self.assertRaisesRegex(RuntimeError, '^PRIVATE_CI_SUITE_METADATA_REJECTED$'):
+                    self.parse(payload, **limits)
+
+    def test_metadata_read_or_public_write_failure_never_masks_child_exit(self):
+        class FailMetadataOutput(io.StringIO):
+            def write(self, value):
+                if value.startswith('{"schema":'):
+                    raise BrokenPipeError('TEST_ONLY_PRIVATE_ERROR')
+                return super().write(value)
+        for write_failure in (False, True):
+            with self.subTest(write_failure=write_failure):
+                script = self.root / 'TEST_ONLY.sh'; script.write_text('exit 7\n')
+                output = FailMetadataOutput() if write_failure else io.StringIO()
+                child = mock.Mock(); child.wait.return_value = child.poll.return_value = 7
+                env = {'RUNNER_TEMP': str(self.root), S.SUITE_METADATA_ENV: S.SUITE_METADATA_MODE}
+                metadata = {'return_value': '{"schema":"' + S.SUITE_METADATA_SCHEMA + '","failures":[]}\n'} if write_failure else {'side_effect': RuntimeError('TEST_ONLY_PRIVATE_ERROR')}
+                with mock.patch.dict(os.environ, env, clear=True), \
+                        mock.patch.object(S.sys, 'argv', ['shell', str(script)]), \
+                        mock.patch.object(S.subprocess, 'Popen', return_value=child), \
+                        mock.patch.object(S.signal, 'signal'), \
+                        mock.patch.object(S, 'suite_failure_metadata', **metadata), redirect_stdout(output):
+                    self.assertEqual(S.main(), 7)
+                self.assertNotIn('TEST_ONLY_PRIVATE_ERROR', output.getvalue())
+                self.assertEqual(json.loads(output.getvalue())['exitCode'], 7)
+
+    def test_workflow_opt_in_is_exclusive_to_area_step_without_command_changes(self):
+        text = (HERE.parents[1] / '.github/workflows/ci.yml').read_text()
+        area = text.split('      - name: Bereichs-Regression (nur geänderte Fachbereiche)', 1)[1].split('      - name:', 1)[0]
+        self.assertEqual(text.count(S.SUITE_METADATA_ENV + ':'), 1)
+        self.assertIn(S.SUITE_METADATA_ENV + ': "' + S.SUITE_METADATA_MODE + '"', area)
+        self.assertIn('node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "$CHANGED" --nur-bereich', area)
+        self.assertIn("shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'", area)
 
 
 if __name__ == '__main__':

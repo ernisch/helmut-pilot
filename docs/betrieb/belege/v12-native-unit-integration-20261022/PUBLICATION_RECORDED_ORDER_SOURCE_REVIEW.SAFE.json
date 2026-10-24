@@ -1,0 +1,27 @@
+{
+  "atUTC": "2026-10-22T22:53:06.753960+00:00",
+  "unit60Qualified": false,
+  "reserveQualified": false,
+  "full500Qualified": false,
+  "historicalOrConsumedAuthorityReused": false,
+  "schema": "helmut-publication-recorded-order-source-review/1",
+  "baselineCommit": "c7a92798010fd69c1f96b7a81c77d99dc9b2d2a2",
+  "integratedCommit": "1a24a9f132ff2b89f81c3a8f75e01c59cb4f8fec",
+  "source": {
+    "file": "lib/helmut/publication-eligibility.js",
+    "bytes": 8991,
+    "sha256": "675f6a4a7c1e5f3a7619a6f52eba086b5aa34ce2104bc5f250bbc4924fa26fd6"
+  },
+  "independentRootReviewPassed": true,
+  "authorPureGroupsPassed": 14,
+  "topLevelFieldOrdersAccepted": 6,
+  "exactScalarKeys": [
+    "version",
+    "hash",
+    "heldPublications"
+  ],
+  "changedMissingExtraTypeNestedAndToJSONRejected": true,
+  "policyHashAndClockComputationUnchanged": true,
+  "noDataMutation": true,
+  "nativeQualificationPending": true
+}

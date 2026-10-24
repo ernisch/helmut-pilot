@@ -1,0 +1,67 @@
+{
+  "schema": "helmut-current-public-storage-source-facts/1",
+  "recordedAtUTC": "2026-10-24T05:26:05Z",
+  "scope": "SOURCE_ONLY_CURRENT_CONTROL_BUNDLE_NO_NATIVE_ADMISSION",
+  "sourceCommit": "336ad5a2d94ef926148f9487a5abdf400d255403",
+  "storageImplementationCommits": [
+    "5b31b407c95777df09e41fd4a1834afecdfa9bb8",
+    "474d1b4eeda4b45a17d8d0e7e6e296fcb056be8c"
+  ],
+  "sourcePins": [
+    {
+      "file": "lib/helmut/local-pipeline-lock-lease.js",
+      "bytes": 3721,
+      "sha256": "68c320eb6540dd08d0a28657f5e50eeb4308162a9b8e15c973ddaa90ccefe77c"
+    },
+    {
+      "file": "lib/helmut/storage.js",
+      "bytes": 558109,
+      "sha256": "5a0fe6c4f74e979e8e5d413065373e80190f9e24bbcb94c0204b2a1750b1e97d"
+    },
+    {
+      "file": "lib/helmut/lage.js",
+      "bytes": 57463,
+      "sha256": "613ea950dcedc16cfbff14829b7437b3160b16bc49dc5afeec8d5be8c0f10649"
+    },
+    {
+      "file": "scripts/local-pipeline-lock-lease-test.js",
+      "bytes": 12354,
+      "sha256": "6307d98d794c2d6cb61fb409cef3448d36a598b6e9ff34a606869b924fdfef3a"
+    }
+  ],
+  "unchangedHistoricalEvidencePins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-unit-storage-source-20261022/CURRENT_SOURCE_REVIEW_REPORT.SAFE.json",
+      "bytes": 6420,
+      "sha256": "fec4b77855831d001bf8ed494a0272292b28eac12cb8a274b364cafa2d21b291"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-unit-storage-source-20261022/INDEPENDENT_CURRENT_SOURCE_REVIEW.SAFE.json",
+      "bytes": 1178,
+      "sha256": "54aac157dd89125feb46714878c0c34fb36d22c437ca0062a19c493e9408c66e"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/local-unit-storage-source-20261022/CURRENT_LOCAL_SOURCE_DELTA.SAFE.json",
+      "bytes": 1302,
+      "sha256": "a33303115e41099ae24ff4ed60d74a5a8ccdc077d961322fbf298461509ccf5b"
+    }
+  ],
+  "historicalStorageSHA256": "51811f20d9886af212a5abbcfbc515aac56c2a5bac29450a127ba7c373d73e8d",
+  "changes": [
+    "Extract common profile and current-source validation for separate and bundled reads.",
+    "Expose explicit local control runtime/snapshot reads bound to the selected command, tenant, claim, index, stage and fresh runtime witness.",
+    "Retain actual immutable RPC tuple validation before bundled Original reads."
+  ],
+  "reportRole": "Public immutable source facts; independent companion review is required separately. This report does not assert an independent PASS.",
+  "sourceOnly": true,
+  "requiresFreshIntegrationAcceptance": true,
+  "production": false,
+  "full500Accepted": false,
+  "executionAuthority": false,
+  "historicalAcceptanceTransferred": false,
+  "nativeLeaseAcceptanceTransferred": false,
+  "nativeUnit60Qualified": false,
+  "full500ReserveQualified": false,
+  "ramBenefitClaimed": false,
+  "testsAreNativeAdmissionEvidence": false
+}

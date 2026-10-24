@@ -1,0 +1,14 @@
+{
+  "schema": "helmut-root-genuine-public-cipher-restore/1",
+  "atUTC": "2026-10-23T18:19:34.635344+00:00",
+  "source": "Actual existing c0 HEAD Git blob, not a replacement or newly encrypted fixture",
+  "sourceFile": ".github/ci-originals/CI84_ORIGINALS.tar.gz.gpg",
+  "bytes": 30165381,
+  "sha256": "0e2c02bee106af05d1d7a272e364dd2f2865d67756c512f1304177480996f8a4",
+  "transportManifestSHA256": "fd9eac76ded846b2474c1ec85eaa72d5e7b023ff7cf7204e9cb62fb0401664fe",
+  "gitSkipWorktreeWasTrue": true,
+  "exactCipherBytesRestored": true,
+  "privateOriginalsDecrypted": false,
+  "keysOrSecretsRead": false,
+  "gitTrackingOrIndexChanged": false
+}

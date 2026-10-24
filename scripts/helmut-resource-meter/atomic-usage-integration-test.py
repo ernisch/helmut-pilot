@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Pure staged-code/descriptor tests. No resources, GO, activation or DB."""
-import hashlib,importlib.util,json,subprocess,tempfile,unittest
+import datetime,hashlib,importlib.util,json,subprocess,tempfile,unittest
 from pathlib import Path
 
 BIN=Path(__file__).resolve().parent
@@ -8,9 +8,50 @@ spec=importlib.util.spec_from_file_location('atomic_staging_connector',BIN/'conn
 C=importlib.util.module_from_spec(spec);spec.loader.exec_module(C)
 
 class AtomicIntegrationTest(unittest.TestCase):
+    def local_source_delta_pin(self):
+        # This explicit SOURCE-only input grants no execution/full500 authority.
+        return C.pin(BIN.parents[1]/'docs/betrieb/belege/local-unit-control-bundle-source-20261024/CURRENT_LOCAL_SOURCE_DELTA.SAFE.json')
+
+    def assert_rendered_environment(self, files, candidate, calendar=None):
+        # Execute only the actual emitted delegation lines, with the real
+        # validator and genuine descriptor; no consumer/SQL/native worker starts.
+        calls=[]
+        for relative,target in [('native-end-preparation/root-io-bridge.js','env'),
+          ('native-end-preparation/runtime-candidates/prepare-materials.candidate.js','env'),
+          ('assemble-after-activation.js','process.env')]:
+            lines=[line for line in files[relative].splitlines() if '.environment('+target+',' in line]
+            self.assertEqual(len(lines),1,relative)
+            calls.append({'relative':relative,'line':lines[0]})
+        code=r"""
+const assert=require('node:assert/strict'),fs=require('node:fs'),AU=require(process.argv[1]);
+const input=JSON.parse(fs.readFileSync(0,'utf8')),p=input.candidate,d=AU.readDescriptor(p);
+assert.deepEqual(d.localCalendar??null,input.calendar);
+for(const call of input.calls){
+ const env={TEST_ONLY_CALLER_SENTINEL:'preserved'};let observed=0;
+ const load=file=>{assert.equal(file,process.argv[1]);return {environment(actualEnv,actualPin){
+  observed++;assert.equal(actualEnv,env);assert.deepEqual(actualPin,p);return AU.environment(actualEnv,actualPin);
+ }};};
+ new Function('require','assert','env','process','config','localBudgets',call.line)(
+  load,assert,env,{env},{atomicUsageInput:p},{TEST_ONLY_LOCAL_BUDGET:'preserved'});
+ assert.equal(observed,1,call.relative);assert.equal(env.TEST_ONLY_CALLER_SENTINEL,'preserved');
+ assert.equal(env.HELMUT_LLM_USAGE_STORAGE,'relational-atomic-v1');
+ for(const [key,field] of [['HELMUT_AUTH_STATE_STORAGE','stateStorage'],
+  ['HELMUT_AUTH_HISTORY_READ_REUSE','historyReadReuse'],['HELMUT_AUTH_CONTROL_READ','controlRead']]){
+  assert.equal(Object.hasOwn(env,key),Object.hasOwn(d,field));assert.equal(env[key],d[field]);
+ }
+ if(input.calendar===null)assert.equal(env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON,undefined);
+ else assert.deepEqual(JSON.parse(env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON),input.calendar);
+ if(call.relative.endsWith('/prepare-materials.candidate.js'))assert.equal(env.TEST_ONLY_LOCAL_BUDGET,'preserved');
+}
+"""
+        subprocess.run(['node','-e',code,str(BIN/'atomic-usage-integration.js')],
+          input=json.dumps({'candidate':candidate,'calendar':calendar,'calls':calls}),cwd=C.REPO,
+          check=True,capture_output=True,text=True)
+
     def test_sender_claim_explicit_binding_all26_replay_and_transport(self):
         options={'stateStorage':'merkle-auth-v1','historyReadReuse':'verified-history-reuse-v1',
-          'controlRead':'verified-control-view-v1','boundedRead':'bounded-native-read-v1'}
+          'controlRead':'verified-control-view-v1','boundedRead':'bounded-native-read-v1',
+          'localSourceDeltaPin':self.local_source_delta_pin()}
         def render(opts):
             code="process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor(JSON.parse(process.argv[2]))))"
             self.descriptor.write_text(subprocess.check_output(['node','-e',code,str(BIN/'atomic-usage-integration.js'),json.dumps(opts)],text=True))
@@ -52,7 +93,7 @@ class AtomicIntegrationTest(unittest.TestCase):
     def test_sender_claim_mode_default_off_prerequisites_and_source_closure(self):
         code=r"""
 const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),assert=require('node:assert/strict');
-const o={stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',boundedRead:'bounded-native-read-v1'};
+const o={stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',boundedRead:'bounded-native-read-v1',localSourceDeltaPin:JSON.parse(process.argv[1])};
 const off=AU.descriptor(o),on=AU.descriptor({...o,senderClaimRead:'verified-control-claim-v1'});
 assert.equal(off.senderClaimRead,undefined);assert(!off.sourcePins.some(p=>p.path.endsWith('/sender-control-claim.js')));
 assert.equal(on.sourcePins.filter(p=>p.path.endsWith('/sender-control-claim.js')).length,1);
@@ -60,7 +101,7 @@ for(const delta of [{senderClaimRead:'off'},{senderClaimRead:''},{senderClaimRea
  {stateStorage:null},{historyReadReuse:null},{controlRead:null},{boundedRead:null}])
  assert.throws(()=>AU.descriptor({...o,senderClaimRead:'verified-control-claim-v1',...delta}));
 """
-        subprocess.run(['node','-e',code],cwd=C.REPO,text=True,capture_output=True,check=True)
+        subprocess.run(['node','-e',code,json.dumps(self.local_source_delta_pin())],cwd=C.REPO,text=True,capture_output=True,check=True)
 
     def test_control_view_without_descriptor_opt_in_is_fenced_and_source_bound(self):
         code=r"""
@@ -110,14 +151,19 @@ assert.equal(process.env[key],'caller-graph-sentinel');delete process.env[key];a
           operation='synthetik500-resources20-0123456789ab',day_rows_pin={'path':str(C.BASE/'wave13/NORMALIZED500_CURRENT_POLICY.PRIVATE.json')},
           owner_go_pin={'path':str(self.root/'NEVER_CREATED_OWNER_GO_V8')})
     def test_exact_current_case_binding_rejects_old_day_and_cross_suffix(self):
-        current={k:self.args[k]for k in ['target','container','operation']}
-        C.exact_case_binding(self.case,**current)
-        for delta in [{'target':'helmut_resource_fixture_20261018_0123456789ab'},
-          {'operation':'synthetik500-resources18-0123456789ab'},
-          {'target':'helmut_resource_fixture_20261020_ffffffffffff'},
-          {'container':'helmut-meter-db-w20-ffffffffffff'},
-          {'operation':'synthetik500-resources20-ffffffffffff'}]:
-            with self.subTest(delta=delta),self.assertRaises(RuntimeError):C.exact_case_binding(self.case,**{**current,**delta})
+        # Structural slot matching only; no GO/case creation or slot reuse.
+        suffix=C.A.CASE_SUFFIX;case=C.AREA/('attempt-'+suffix)
+        current={'target':'helmut_resource_fixture_'+C.A.DATE_TAG+'_'+suffix,
+          'container':'helmut-meter-db-w20-'+suffix,
+          'operation':'synthetik500-resources'+C.A.DAY[-2:]+'-'+suffix}
+        C.exact_case_binding(case,**current)
+        foreign='ffffffffffff' if suffix!='ffffffffffff' else '000000000000'
+        for delta in [{'target':'helmut_resource_fixture_20261018_'+suffix},
+          {'operation':'synthetik500-resources18-'+suffix},
+          {'target':'helmut_resource_fixture_'+C.A.DATE_TAG+'_'+foreign},
+          {'container':'helmut-meter-db-w20-'+foreign},
+          {'operation':'synthetik500-resources'+C.A.DAY[-2:]+'-'+foreign}]:
+            with self.subTest(delta=delta),self.assertRaises(RuntimeError):C.exact_case_binding(case,**{**current,**delta})
     def test_all26_consumers_replay_and_parse_without_running(self):
         plain=C.render_templates(self.case,**self.args)
         changed=C.render_templates(self.case,**self.args,atomic_usage_pin=self.p)
@@ -137,7 +183,7 @@ assert.equal(process.env[key],'caller-graph-sentinel');delete process.env[key];a
         self.assertFalse(self.case.exists());self.assertFalse(Path(self.args['owner_go_pin']['path']).exists())
 
     def control_descriptor(self):
-        value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1'})))",str(BIN/'atomic-usage-integration.js')],text=True)
+        value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localSourceDeltaPin:JSON.parse(process.argv[2])})))",str(BIN/'atomic-usage-integration.js'),json.dumps(self.local_source_delta_pin())],text=True)
         self.descriptor.write_text(value)
         return C.pin(self.descriptor)
 
@@ -146,7 +192,15 @@ assert.equal(process.env[key],'caller-graph-sentinel');delete process.env[key];a
         code=r"""
 const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),assert=require('node:assert/strict');
 const fs=require('node:fs'),crypto=require('node:crypto'),p=JSON.parse(process.argv[1]),d=AU.readDescriptor(p);
-const options={stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1'};
+const options={stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localSourceDeltaPin:d.localSourceDeltaPin};
+assert.deepEqual(d.localSourceDeltaPin,JSON.parse(process.argv[2]));
+for(const key of ['production','full500Accepted','executionAuthority','historicalAcceptanceTransferred'])assert.equal(d.localSourceDeltaAcceptance[key],false);
+assert.equal(d.localSourceDeltaAcceptance.requiresFreshIntegrationAcceptance,true);
+const {localSourceDeltaPin:currentDelta,...bareControl}=options;
+for(const unadmitted of [bareControl,{...options,localSourceDeltaPin:null}])
+ assert.throws(()=>AU.descriptor(unadmitted),/Reviewed control source drift: lib\/helmut\/storage\.js/);
+assert.throws(()=>AU.descriptor({...options,localSourceDeltaPin:JSON.parse(process.argv[3])}),e=>e.code==='ERR_ASSERTION');
+assert.throws(()=>AU.descriptor({...options,localSourceDeltaPin:{...currentDelta,sha256:'0'.repeat(64)}}),/Lease proof\/source drift/);
 assert.equal(AU.descriptor().controlRead,undefined);assert.equal(d.controlRead,options.controlRead);
 assert.equal(d.controlSourceAcceptance.independentReview.sha256,'c2b66bc4abbcbe3b4220e72e88f8d715760f3ec9c1a2aeb7bc99b0376b68c5ac');
 assert.equal(d.controlSourceAcceptance.transportClosure.sha256,'8c70f8756cb56eae8b3b704025d0d27974792e5883ce620da3954907628d1531');
@@ -167,16 +221,19 @@ for(const delta of [{controlRead:'unknown'},{historyReadReuse:undefined},{contro
  fs.writeFileSync(p.path,JSON.stringify({...d,...delta}));assert.throws(()=>AU.readDescriptor(pin()));
 }
 fs.writeFileSync(p.path,JSON.stringify(d));
-// Even freshly repinning changed reader bytes cannot reuse W50 acceptance.
+// Neither W50 nor the explicit current source delta accepts changed bytes.
 const read=fs.readFileSync;
 for(const suffix of ['/llm-usage-atomic.js','/storage.js','/synthetik-500-production-adapter.js','/auth-state-parts.js',
  '/auth-store-cas.js','/synthetik-500-dispatch-journal.js','/testkosten-budget.js','/auth_state_parts_local.sql','/auth_usage_atomic_local.sql']){
- try{fs.readFileSync=function(file,...args){const b=read.call(this,file,...args);return String(file).endsWith(suffix)?Buffer.concat([b,Buffer.from('\n')]):b;};
-  assert.throws(()=>AU.descriptor(options),/Reviewed control source drift/);
+ try{fs.readFileSync=function(file,...args){const b=read.call(this,file,...args);if(!String(file).endsWith(suffix))return b;
+  const changed=Buffer.from(b);changed[0]^=1;return changed;};
+  // The explicit storage delta checks its own hash before the shared source map.
+  assert.throws(()=>AU.descriptor(options),suffix==='/storage.js'?/Lease proof\/source drift/:/Reviewed control source drift/);
  }finally{fs.readFileSync=read;}
 }
 """
-        subprocess.run(['node','-e',code,json.dumps(candidate)],cwd=C.REPO,check=True,capture_output=True,text=True)
+        historical=C.pin(BIN.parents[1]/'docs/betrieb/belege/local-lock-lease-20261021/ROOT_LOCAL_SOURCE_DELTA.SAFE.json')
+        subprocess.run(['node','-e',code,json.dumps(candidate),json.dumps(self.local_source_delta_pin()),json.dumps(historical)],cwd=C.REPO,check=True,capture_output=True,text=True)
 
     def test_control_source_binding_matches_execution_and_restores_all_caller_flags(self):
         candidate=self.control_descriptor()
@@ -216,13 +273,10 @@ assert.deepEqual(keys.map(k=>process.env[k]),before);
                 self.assertEqual(text.count(delta['from']),delta['count']);text=text.replace(delta['from'],delta['to'])
             self.assertEqual(text,row['text']);self.assertEqual(C.pin(row['original']['path']),row['original'])
         files={Path(r['destination']).relative_to(self.case).as_posix():r['text']for r in rows}
-        for relative in ['native-end-preparation/root-io-bridge.js','native-end-preparation/runtime-candidates/prepare-materials.candidate.js']:
-            self.assertIn("env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';",files[relative])
-            self.assertIn('.environment(env,',files[relative])
+        self.assert_rendered_environment(files,candidate)
         self.assertIn("'HELMUT_AUTH_CONTROL_READ'",files['native-end-preparation/runtime-candidates/root-authority-stage.candidate.js'])
         assembly=files['assemble-after-activation.js']
-        self.assertLess(assembly.index('.environment(process.env,'),assembly.index("process.env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1';"))
-        self.assertLess(assembly.index("process.env.HELMUT_AUTH_CONTROL_READ='verified-control-view-v1';"),assembly.index('const initialSourceBinding='))
+        self.assertLess(assembly.index('.environment(process.env,'),assembly.index('const initialSourceBinding='))
         subprocess.run(['node','-e',"const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"],
             input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,check=True,capture_output=True)
         descriptor=json.loads(self.descriptor.read_text())
@@ -235,8 +289,8 @@ assert.deepEqual(keys.map(k=>process.env[k]),before);
         d=json.loads(self.descriptor.read_text());d['sourcePins'][0]['sha256']='0'*64;self.descriptor.write_text(json.dumps(d))
         with self.assertRaisesRegex(RuntimeError,'source drift'):C.render_templates(self.case,**self.args,atomic_usage_pin=C.pin(self.descriptor))
     def test_bounded_native_reader_requires_exact_optin_sources_and_reaches_catalog_and_observer(self):
-        code="process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',boundedRead:'bounded-native-read-v1'})))"
-        d=json.loads(subprocess.check_output(['node','-e',code,str(BIN/'atomic-usage-integration.js')],text=True))
+        code="process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',boundedRead:'bounded-native-read-v1',localSourceDeltaPin:JSON.parse(process.argv[2])})))"
+        d=json.loads(subprocess.check_output(['node','-e',code,str(BIN/'atomic-usage-integration.js'),json.dumps(self.local_source_delta_pin())],text=True))
         self.descriptor.write_text(json.dumps(d));candidate=C.pin(self.descriptor)
         rows=C.render_templates(self.case,**self.args,atomic_usage_pin=candidate)
         files={Path(r['destination']).relative_to(self.case).as_posix():r['text']for r in rows}
@@ -263,10 +317,15 @@ assert.deepEqual(keys.map(k=>process.env[k]),before);
           input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,capture_output=True,check=True)
         self.assertFalse(self.case.exists())
     def test_opt_in_fixture_calendar_reaches_all_real_consumers_without_changing_clocks(self):
-        policy={'version':C.Calendar.VERSION,'operationId':self.args['operation'],'sourceDay':'2026-10-20',
-            'sourceViewAtUTC':'2026-10-20T08:00:00.000Z','sourceInputsHash':'a'*64,'executionDayUTC':'2026-10-20',
-            'startsAtUTC':'2026-10-20T20:00:00.000Z','endsAtUTC':'2026-10-20T23:59:59.999Z'}
-        value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localCalendar:JSON.parse(process.argv[2])})))",str(BIN/'atomic-usage-integration.js'),json.dumps(policy)],text=True)
+        # The existing policy requires source/view/execution/window dates to agree.
+        day=C.A.DAY;next_day=(datetime.date.fromisoformat(day)+datetime.timedelta(days=1)).isoformat()
+        policy={'version':C.Calendar.VERSION,'operationId':self.args['operation'],'sourceDay':day,
+            'sourceViewAtUTC':day+'T08:00:00.000Z','sourceInputsHash':'a'*64,'executionDayUTC':day,
+            'startsAtUTC':day+'T20:00:00.000Z','endsAtUTC':day+'T23:59:59.999Z'}
+        old_source_day=(datetime.date.fromisoformat(day)-datetime.timedelta(days=1)).isoformat()
+        with self.assertRaises(RuntimeError):
+            C.Calendar.validate_policy({**policy,'sourceDay':old_source_day,'sourceViewAtUTC':old_source_day+'T08:00:00.000Z'})
+        value=subprocess.check_output(['node','-e',"process.stdout.write(JSON.stringify(require(process.argv[1]).descriptor({stateStorage:'merkle-auth-v1',historyReadReuse:'verified-history-reuse-v1',controlRead:'verified-control-view-v1',localCalendar:JSON.parse(process.argv[2]),localSourceDeltaPin:JSON.parse(process.argv[3])})))",str(BIN/'atomic-usage-integration.js'),json.dumps(policy),json.dumps(self.local_source_delta_pin())],text=True)
         self.descriptor.write_text(value);candidate=C.pin(self.descriptor)
         rows=C.render_templates(self.case,**self.args,atomic_usage_pin=candidate)
         self.assertEqual(len(rows),26)
@@ -276,10 +335,10 @@ assert.deepEqual(keys.map(k=>process.env[k]),before);
             for d in r['replacements']:
                 self.assertEqual(original.count(d['from']),d['count']);original=original.replace(d['from'],d['to'])
             self.assertEqual(original,r['text'])
-        for name in ['root-io-bridge.js','runtime-candidates/prepare-materials.candidate.js','runtime-candidates/root-authority-stage.candidate.js']:
-            self.assertIn('HELMUT_LOCAL_RESOURCE_CALENDAR_JSON',files['native-end-preparation/'+name])
+        self.assert_rendered_environment(files,candidate,calendar=policy)
+        self.assertIn("'HELMUT_LOCAL_RESOURCE_CALENDAR_JSON'",files['native-end-preparation/runtime-candidates/root-authority-stage.candidate.js'])
         assembly=files['assemble-after-activation.js']
-        self.assertIn('briefingDatum:"2026-10-20T08:00:00.000Z"',assembly)
+        self.assertIn('briefingDatum:'+json.dumps(policy['sourceViewAtUTC']),assembly)
         self.assertNotIn('briefingDatum:runtime.start',assembly)
         provider=files['native-end-preparation/local-provider.js']
         self.assertIn('localCalendar.registerLocalMockTransport(https.request);',provider)
@@ -291,8 +350,8 @@ assert.deepEqual(keys.map(k=>process.env[k]),before);
         self.assertNotIn("assert.equal(berlin(times[1]),berlin(times[2])",contract)
         self.assertIn('Exact accepted local UTC fixture window',contract)
         # Execute ONLY the actual pure window consumer. No gates/owner/DB calls.
-        code="""const vm=require('vm'),assert=require('assert/strict'),fs=require('fs'),s=JSON.parse(fs.readFileSync(0,'utf8'));const context={require,module:{exports:{}},__dirname:'/TEST_ONLY_NO_DIRECTORY'};vm.runInNewContext(s,context);const C=context.module.exports;const now=new Date('2026-10-20T22:30:00.000Z');const w={startsAtUTC:'2026-10-20T21:00:00.000Z',endsAtUTC:'2026-10-20T23:59:59.999Z'};C.checkWindow(w,'2026-10-20T21:00:00.000Z',now);for(const bad of [{...w,endsAtUTC:'2026-10-21T00:00:00.000Z'},{...w,startsAtUTC:'2026-10-20T19:59:59.999Z'},{...w,endsAtUTC:'2026-10-20T22:29:59.999Z'}])assert.throws(()=>C.checkWindow(bad,'2026-10-20T19:00:00.000Z',now));"""
-        subprocess.run(['node','-e',code],input=json.dumps(contract),text=True,capture_output=True,check=True)
+        code="""const vm=require('vm'),assert=require('assert/strict'),fs=require('fs'),s=JSON.parse(fs.readFileSync(0,'utf8')),day=process.argv[1],nextDay=process.argv[2];const context={require,module:{exports:{}},__dirname:'/TEST_ONLY_NO_DIRECTORY'};vm.runInNewContext(s,context);const C=context.module.exports;const now=new Date(day+'T22:30:00.000Z');const w={startsAtUTC:day+'T21:00:00.000Z',endsAtUTC:day+'T23:59:59.999Z'};C.checkWindow(w,day+'T21:00:00.000Z',now);for(const bad of [{...w,endsAtUTC:nextDay+'T00:00:00.000Z'},{...w,startsAtUTC:day+'T19:59:59.999Z'},{...w,endsAtUTC:day+'T22:29:59.999Z'}])assert.throws(()=>C.checkWindow(bad,day+'T19:00:00.000Z',now));"""
+        subprocess.run(['node','-e',code,day,next_day],input=json.dumps(contract),text=True,capture_output=True,check=True)
         self.assertTrue(all('Date.now=' not in r['text'] and 'global.Date=' not in r['text'] for r in rows))
         subprocess.run(['node','-e',"const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"],input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,check=True,capture_output=True)
         code="""const assert=require('assert/strict'),P=require('./scripts/helmut-resource-meter/start-input-checks'),C=require('./lib/helmut/synthetik-500-content-runner');
@@ -312,7 +371,7 @@ assert.equal(process.env.HELMUT_LOCAL_RESOURCE_CALENDAR_JSON,'UNADMITTED_AMBIENT
         bridge=files['native-end-preparation/root-io-bridge.js']
         self.assertIn('projectQuery(query)',bridge);self.assertIn('physicalWitnessExpression()',bridge)
         self.assertIn('assertCatalog(catalog)',bridge);self.assertIn('config.atomicUsageReceipt',bridge)
-        self.assertIn("env.HELMUT_LLM_USAGE_STORAGE='relational-atomic-v1'",bridge)
+        self.assert_rendered_environment(files,self.p)
         self.assertIn("'HELMUT_LLM_USAGE_STORAGE'",files['native-end-preparation/runtime-candidates/root-authority-stage.candidate.js'])
         self.assertIn('atomicUsageReceipt:r.atomicUsageReceipt',files['native-end-preparation/runtime-candidates/assemble-config.candidate.js'])
     def test_runtime_source_binding_changes_with_mode_and_actual_atomic_code(self):
@@ -365,9 +424,10 @@ for(const env of [{VERCEL:'1'},{HELMUT_LLM_USAGE_STORAGE:'other'},{HELMUT_SYNTHE
         self.assertIn('projectQuery(query,{stateStorage:"merkle-auth-v1"})',bridge)
         self.assertIn('physicalWitnessExpression({stateStorage:"merkle-auth-v1"})',bridge)
         self.assertIn('receipt.stateReceipt?.originalLogicalStatePreserved',bridge)
-        self.assertIn("env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1'",bridge)
+        self.assert_rendered_environment(files,state_pin)
         self.assertIn("'HELMUT_AUTH_STATE_STORAGE'",files['native-end-preparation/runtime-candidates/root-authority-stage.candidate.js'])
-        self.assertIn("process.env.HELMUT_AUTH_STATE_STORAGE='merkle-auth-v1'",files['assemble-after-activation.js'])
+        assembly=files['assemble-after-activation.js']
+        self.assertLess(assembly.index('.environment(process.env,'),assembly.index('const initialSourceBinding='))
         sources=[r['text']for r in rows if r['destination'].endswith('.js')]
         subprocess.run(['node','-e',"const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"],input=json.dumps(sources),text=True,check=True,capture_output=True)
         code=r"""
@@ -455,11 +515,10 @@ assert.equal(process.env.HELMUT_LLM_USAGE_STORAGE,'caller-sentinel');assert.equa
                 self.assertEqual(text.count(delta['from']),delta['count']);text=text.replace(delta['from'],delta['to'])
             self.assertEqual(text,row['text']);self.assertEqual(C.pin(row['original']['path']),row['original'])
         files={Path(r['destination']).relative_to(self.case).as_posix():r['text']for r in rows}
-        for relative in ['native-end-preparation/root-io-bridge.js','native-end-preparation/runtime-candidates/prepare-materials.candidate.js']:
-            self.assertIn("env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';",files[relative])
+        self.assert_rendered_environment(files,history_pin)
         self.assertIn("'HELMUT_AUTH_HISTORY_READ_REUSE'",files['native-end-preparation/runtime-candidates/root-authority-stage.candidate.js'])
         assembly=files['assemble-after-activation.js']
-        self.assertLess(assembly.index("process.env.HELMUT_AUTH_HISTORY_READ_REUSE='verified-history-reuse-v1';"),assembly.index('const initialSourceBinding='))
+        self.assertLess(assembly.index('.environment(process.env,'),assembly.index('const initialSourceBinding='))
         subprocess.run(['node','-e',"const vm=require('vm'),fs=require('fs');for(const s of JSON.parse(fs.readFileSync(0,'utf8')))new vm.Script(s);"],input=json.dumps([r['text']for r in rows if r['destination'].endswith('.js')]),text=True,check=True,capture_output=True)
         code=r"""
 const AU=require('./scripts/helmut-resource-meter/atomic-usage-integration'),S=require('./scripts/helmut-resource-meter/start-input-checks');

@@ -1,0 +1,37 @@
+{
+  "schema": "helmut-controlled-closed-worktree-cleanup/1",
+  "scope": "Only three finished own code checkouts; branches and Git objects preserved. No force.",
+  "resultReceipts": [
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/cleanup-closed-worktrees-2139/01-helmut-unit60-endpoint-sol-20261022/RESULT.SAFE.json",
+      "bytes": 4203,
+      "sha256": "86b977397b1abeb83c5836aaf12195b1f7f1febc3d3a78e0653e4476333fd30f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/cleanup-closed-worktrees-2139/02-helmut-unit60-endpoint-qual-20261022/RESULT.SAFE.json",
+      "bytes": 4039,
+      "sha256": "9423bb5226224d021c5759a1fdf523460244926e60d63579f28a8e8de38ddf45"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/cleanup-closed-worktrees-2139/03-helmut-unit60-service-ledger-20261022/RESULT.SAFE.json",
+      "bytes": 3864,
+      "sha256": "b6e7cc8564475720dd36bf174f70d8c756bea5c6abf4ab20fad5f31669710047"
+    }
+  ],
+  "independentContentVerification": {
+    "files": 8537,
+    "bytes": 302790217,
+    "gitBlobAndCatFileSHA256Verified": true
+  },
+  "netAvailableBytesIncreaseIncludingReceipts": 320372736,
+  "availableBytesAfterCleanup": 10767720448,
+  "singleUnitStartRequiredBytes": 10737418240,
+  "singleUnitStartMarginBytes": 30302208,
+  "full500AdmissionRequiredBytes": 15179779720,
+  "full500AdmissionMissingBytes": 4412059272,
+  "protectedOriginalsEvidenceArchivesAndActiveWorktreesPreserved": true,
+  "unknownSeedCaseB09Preserved": true,
+  "procFDNamespaceLinksNotFullyReadable": "Coverage limitation documented in private local predelete receipts; no complete FD absence claim.",
+  "rollback": "Create a new own checkout from each retained exact commit; preserve branches, do not reopen any old execution claim.",
+  "full500Ready": false
+}

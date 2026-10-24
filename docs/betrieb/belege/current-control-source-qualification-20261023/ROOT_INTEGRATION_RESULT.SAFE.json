@@ -1,0 +1,116 @@
+{
+  "schema": "helmut-root-current-control-source-integration/1",
+  "atUTC": "2026-10-23T17:52:10.122073+00:00",
+  "status": "LOCAL_COMPONENT_SOURCE_AND_BINDING_ACCEPTED_NATIVE_CLAIM_PENDING",
+  "nativeFiveCaseProofPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/control-cache-native-qualification-20261023.SAFE.json",
+    "bytes": 17625,
+    "sha256": "95c8878e677e425a367d3fd95591229bb630c35adc4f610a1fd74f596315443b"
+  },
+  "auditPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/current-control-source-qualification-20261023/GENERATION_AUDIT.SAFE.json",
+    "bytes": 120220,
+    "sha256": "692649f1e31736ca8400e373feecb7cba48f2ac09b59dc1a141887ac31c2e6fe"
+  },
+  "actualReviewPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/current-control-source-qualification-20261023/INDEPENDENT_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 15368,
+    "sha256": "9a453eaca57fd9577769a5017017a39071907078f217432afbc2a5239ff3b3b8"
+  },
+  "publicationReviewPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/current-control-source-qualification-20261023/INDEPENDENT_PUBLICATION_REVIEW.SAFE.json",
+    "bytes": 7451,
+    "sha256": "0b0793c4349ab5a46bf0795c98bbf83821ed9d6ec84160931d042d3cb8d1b6a5"
+  },
+  "fiveContentSourceReviewPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/current-control-source-qualification-20261023/FIVE_CONTENT_SOURCE_REVIEW.SAFE.json",
+    "bytes": 14583,
+    "sha256": "f1f3d40471a220843337bcf6c82d92bf8169bfae87f0eafcc16209b74a25490b"
+  },
+  "cpuManifestPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/synthetik-500-cpu-source-pins.json",
+    "bytes": 12086,
+    "sha256": "c3c098037b04fb08ef73d0d3d9b1606e6d6790e8208f61b09ed4a28484762449"
+  },
+  "currentReleaseManifestPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/lib/helmut/synthetik-500-release-artifacts.json",
+    "bytes": 16089,
+    "sha256": "aed384d73fb864cbbfd5de08be26426dd88bf1124f8259588c82a5a99bb99e01"
+  },
+  "tests": [
+    {
+      "name": "current-control-genuine-five-case-integration",
+      "actualExit": 0,
+      "negativeMutations": 99,
+      "tool": "3b8a9e"
+    },
+    {
+      "name": "actual-runtime-artifact-reader",
+      "actualExit": 0,
+      "tests": 10,
+      "tool": "06bad4"
+    },
+    {
+      "name": "runtime-read-contract-including-actual-CI-failure",
+      "actualExit": 0,
+      "tests": 14,
+      "tool": "e50b36"
+    },
+    {
+      "name": "atomic-descriptor-suite-after-legitimate-CPU-manifest-refresh",
+      "actualExit": 1,
+      "tests": 22,
+      "passed": 18,
+      "failures": 3,
+      "errors": 1,
+      "tool": "3b7329"
+    },
+    {
+      "name": "four-corrected-remaining-fixtures-on-final-test-source",
+      "actualExit": 0,
+      "tests": 4,
+      "tool": "79d072"
+    }
+  ],
+  "finalFixtureSourcePin": {
+    "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/atomic-usage-integration-test.py",
+    "bytes": 51682,
+    "sha256": "e3d18cbb847d732d021ad0da08b21a3e538233d5f0e76535ef7b0d61de884258"
+  },
+  "testScope": "Pure local standard-lokal execution; no Native/DB/provider/GO. Eighteen prior successes were not rerun after only four failing fixture methods and shared assertion helper were corrected; final four cases include real delegated environment for all relevant modes and strict calendar mismatch negatives. No final whole22 replay claimed.",
+  "historicalFailuresPreserved": true,
+  "cpuSourceChange": "Exactly five independently reviewed current public byte/SHA pairs and one dependent current release pin/mapping; no product source, historical proofs or qualification fields rewritten.",
+  "ci": {
+    "originalRun": 39989672128,
+    "originalStatus": "FAIL",
+    "diagnosticRun": 39997839458,
+    "diagnosticCommit": "4a295467a9266e1ec7641607c9149a2d00db74ab",
+    "diagnosticOnly": true,
+    "actualFailure": "RuntimeReadContractTest.test_control_descriptor_uses_shared_runtime_manifest_without_review_file_reads",
+    "localAffected14Passed": true,
+    "newWholeCIPending": true,
+    "rawLogsOrSecretsExported": false
+  },
+  "cleanup": {
+    "derivedPGScratchCopies": 5,
+    "derivedPGScratchAllocationRemovedBytes": 1849159680,
+    "completeOutsideEvidenceBackupsVerified": true,
+    "ownStoppedHulls": 12,
+    "measuredHullDfChangeBytes": 24186880,
+    "imagesVolumesBindsOriginalsForeignActiveKeep": true,
+    "full500RequiredFreeBytes": 15179779720,
+    "full500CapacityStillNotMet": true,
+    "remainingSafeMultiGBRecoveryProven": false
+  },
+  "acceptance": {
+    "currentControlComponentOnly": true,
+    "unit60": false,
+    "auth30": false,
+    "reserve500MB": false,
+    "plateau": false,
+    "full500": false,
+    "production": false,
+    "newExecutionAuthority": false
+  },
+  "next": "Commit/push proved current sources; fresh exact-HEAD one-use claim-only capture, then actual bounded writing diagnosis. Full500 requires fresh32conditions, enough persistent capacity and concrete newGO."
+}

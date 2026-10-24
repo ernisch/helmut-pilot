@@ -1,0 +1,83 @@
+{
+  "auth30Qualified": false,
+  "ciSourceBindingFix": {
+    "atomicChecks": 22,
+    "cacheNegativeCases": 99,
+    "cause": "current source delta still expected storage before control bundling",
+    "copyGuardGroups": 6,
+    "currentHeadFullCISuccessClaimed": false,
+    "diagnosticStatus": "success",
+    "failingTest": "RuntimeReadContractTest.test_control_descriptor_uses_shared_runtime_manifest_without_review_file_reads",
+    "metadataOnlyDiagnosticRun": 40065733751,
+    "originalReviewsPreserved": true,
+    "originalRun": 40065052810,
+    "originalRunStatus": "failure",
+    "runtimeContractChecks": 14,
+    "storageBytes": 558109,
+    "storageSHA256": "5a0fe6c4f74e979e8e5d413065373e80190f9e24bbcb94c0204b2a1750b1e97d",
+    "threeSourcePinsUnchanged": true,
+    "versionedReviewSourceCommit": "953c9da281b7f5768ca6a90c1c891c77503d5cf8"
+  },
+  "cleanup": {
+    "bootstrapCopiesRetired": [
+      "c336811c8f31ecf559c34bcf56ad0381",
+      "d79e072ac00535dca8f215df0197adde"
+    ],
+    "bootstrapNetAvailableByteChange": 741519360,
+    "byteIdenticalBootstrapPGRecoveryClaimed": false,
+    "originalRAWAndPOSTRUNMasterAndOutsideEvidenceKEEP": true,
+    "preservedClaim0ea8NetAvailableByteChange": 371298304,
+    "unneededBootstrapPhysicalDetailsAccepted": true
+  },
+  "controllerFix": {
+    "SQLSources": 38,
+    "codeRows": 438,
+    "offlineControllerChecks": 30,
+    "oneMetadataFormRegressionCapture": "bf2d3f",
+    "originalOrCommandPayloadsUsed": false,
+    "ownerOrDatabaseExecuted": false,
+    "preOwnerGuardVisits": 1971,
+    "productionChange": "36 to 38 only",
+    "runtimeRows": 1530,
+    "suiteCapture": "a87e60",
+    "usesNewSyntheticIdentities": true
+  },
+  "dateUTC": "2026-10-24",
+  "evidencePins": [
+    {
+      "bytes": 22962,
+      "path": "/workspace/helmut-native-integration-checks-20261022/bootstrap-only-c336-d79-retirement-prepared-20261024/QUALIFICATION.SAFE.json",
+      "sha256": "9c5d1f866ecb3beb5b2dbe4fe901cb86f36ac7ca72c59e3adf92d1ae2ce35ebe"
+    },
+    {
+      "bytes": 1567,
+      "path": "/workspace/helmut-native-integration-checks-20261022/bootstrap-only-c336-d79-retirement-prepared-20261024/ATTEMPT.PRIVATE/RESULT.SAFE.json",
+      "sha256": "f135e904cfea7cbecdf31c48dce563d85efac18a2a36822d97c53ef0b5f59ae6"
+    },
+    {
+      "bytes": 1893,
+      "path": "/workspace/helmut-native-integration-checks-20261022/only-preserved-claim-pg-retirement-20261024/ATTEMPT.PRIVATE/RESULT.SAFE.json",
+      "sha256": "9932115aa2caa6b6fe0181b5be23a9079ff1c428e300de56310dbd454d325fd0"
+    },
+    {
+      "bytes": 2968,
+      "path": "/workspace/helmut-native-integration-checks-20261022/actual-ci-metadata-40065052810-20261024/ACTUAL.SAFE.json",
+      "sha256": "5df2ddf357ae29a6ed2bc82f3b4107f6904f433923f31d52d75979998a3c3162"
+    }
+  ],
+  "full500Authorized": false,
+  "full500ReserveQualified": false,
+  "integratedCodeCommit": "72e683344b3216768c9e8dc493c7e7a44f293ab9",
+  "lastActualNativeCase": "d79e072ac00535dca8f215df0197adde",
+  "lastNativeMotorCalls": 0,
+  "lastNativeStatus": "FAIL_BEFORE_OWNER_OR_MOTOR",
+  "nativeFirstCause": "controller files expected 36 SQL sources; actual current source family has 38",
+  "nativeTargetCommit": "5f54179e952d0ecddb70124a4a440a316bf1ded8",
+  "oldRightsReusable": false,
+  "requiredNextEvidence": "Fresh isolated full single unit with all16 controls/three final positions/actual complete clocks and common native memory/closure",
+  "schema": "helmut-native-abi-ci-current-source-checkpoint/1",
+  "source29PlusBridge9Equals38": true,
+  "sourceInventoryAudit": "No further blocking old count in affected source/runtime/RPC consumers; read RPC set 11",
+  "unit60Qualified": false,
+  "whole500MemoryOrPlateauInferred": false
+}

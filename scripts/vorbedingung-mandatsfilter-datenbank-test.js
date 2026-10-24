@@ -361,12 +361,16 @@ function main() {
   // waehlt (das haengt an Datenverteilung und Statistik und ist ein bekannter, aelterer
   // Befund: `skalierung-25-50-100.md` §0.2 — „nicht der Index fehlt, sondern die Form der
   // Abfrage sperrt einen vorhandenen Index aus"). Geprueft wird die Frage, die zu DIESER
-  // Aenderung gehoert: kostet der Mandatsfilter etwas? Verglichen wird deshalb Plan gegen
-  // Plan — mit und ohne Filter, auf denselben Daten.
+  // Aenderung gehoert: bleibt der vorhandene Fenster-Indexzugriff erhalten? Beide Plaene
+  // werden einzeln an den DDL-Katalog gebunden. IndexOnly braucht alle Filterspalten;
+  // tenant_id fehlt im Covering-Index. Visibility-Map und Kosten duerfen die Scanart
+  // veraendern (PostgreSQL17.6: indxpath.c/check_index_only, costsize.c/allvisfrac).
+  // Physische Plangleichheit war keine gueltige Invariante und liess sogar zwei gleiche
+  // SeqScans bestehen. Zeitmessungen und ihre Schranken bleiben davon unabhaengig.
   //
   // Die Fuellzeilen liegen bewusst in JULI-Fenstern: sie duerfen die Zaehlungen der
   // Abschnitte 4-8 und 10 (Augustfenster) nicht beruehren.
-  abschnitt("9 · Kein neuer Index noetig — der Mandatsfilter aendert den Plan nicht");
+  abschnitt("9 · Kein neuer Index noetig — beide Plaene nutzen vorhandene Fensterindizes");
   psql(`insert into public.helmut_jobs (job_type, idempotency_key, freshness_window, tenant_id, status, priority, max_attempts, payload)
         select 'source_fetch', 'last-'||g, '2026-07-'||lpad((1 + g % 28)::text, 2, '0')||'T00Z',
                case when g % 3 = 0 then null else 'synth-mandat-'||(g % 100) end,
@@ -383,20 +387,21 @@ function main() {
   const mandatsKlausel = (m) => `and (nullif(btrim('${m}', ${WR}), '') is null
            or nullif(btrim(j.tenant_id, ${WR}), '') is null
            or btrim(j.tenant_id, ${WR}) = btrim('${m}', ${WR}))`;
-  const planVon = (mitFilter) => psql(`explain (analyze, format text)
+  const { INDEX_KATALOG_SQL, pruefeIndexplan } = require("./vorbedingung-mandatsfilter-plan.js");
+  const indexKatalog = psql(INDEX_KATALOG_SQL).out;
+  const planVon = (mitFilter) => psql(`explain (analyze, verbose, format json)
       select count(*) filter (where j.status in ('wartend','laeuft'))
         from public.helmut_jobs j
        where j.freshness_window = any(array['${LASTFENSTER}'])
          and j.job_type = any(array['source_fetch'])
          ${mitFilter ? mandatsKlausel(MANDAT_B) : ""}`).out;
-  const knoten = (plan) => (plan.match(/(Seq Scan|Index Scan|Index Only Scan|Bitmap Index Scan) (on|using) [a-z_]+/g) || []).join(" | ");
-  const dauer = (plan) => Number((plan.match(/Execution Time: ([\d.]+) ms/) || [])[1] || NaN);
-  const ohne = planVon(false);
-  const mit = planVon(true);
-  check("9.1 Der Zugriffsweg ist mit und ohne Mandatsfilter derselbe",
-    knoten(ohne) === knoten(mit) && knoten(mit) !== "", `${knoten(mit) || "kein Scanknoten erkannt"}`);
+  const ohne = pruefeIndexplan(planVon(false), indexKatalog, { mitMandatsfilter: false });
+  const mit = pruefeIndexplan(planVon(true), indexKatalog, { mitMandatsfilter: true });
+  const dauer = (plan) => plan.dauerMs;
+  check("9.1 Beide Plaene nutzen vorhandene Fensterindizes, ohne SeqScan",
+    ohne.ok && mit.ok, `ohne [${ohne.code}] ${ohne.signatur} · mit [${mit.code}] ${mit.signatur}`);
   // ZEITSCHRANKEN SIND GROSSZUEGIG — MIT ABSICHT. Die tragende Aussage von §9 ist 9.1
-  // (gleicher Zugriffsweg). 9.2 und 9.3 sind nur Grobsicherungen gegen einen echten
+  // (echter vorhandener Indexzugriff). 9.2 und 9.3 sind nur Grobsicherungen gegen einen echten
   // Einbruch (etwa einen Seq Scan statt Indexzugriff). Seit dieser Nachweis im
   // Pflicht-Job laeuft, teilt er sich CPU und Netzweg mit einem Dienstcontainer; enge
   // Schwellen (frueher +50 % bzw. < 50 ms) waeren dort ein Merge-Blocker aus reinem

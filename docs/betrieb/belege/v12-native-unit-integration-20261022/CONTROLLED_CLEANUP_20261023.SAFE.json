@@ -1,0 +1,57 @@
+{
+  "schema": "helmut-controlled-cleanup-public-result/1",
+  "status": "QUALIFIED_CLEANUP_COMPLETED_CAPACITY_STILL_BLOCKED",
+  "actualObservationAtUTC": "2026-10-23T06:54:00.946824+00:00",
+  "codeCommitUnchangedByCleanup": "f1f9f4568d56854b5e6d73544029a3d5b9e9f41c",
+  "method": "Fresh statvfs available bytes before qualification and after actual removal; no sum of du estimates",
+  "removed": {
+    "completedCleanHelperWorktrees": 3,
+    "redundantDecryptedMigrationArchive": 1,
+    "unusedMuslPlatformPackages": 2
+  },
+  "actualCapacity": {
+    "initialAvailableBytes": 9775304704,
+    "availableBytesAtFinalMeasurement": 9997402112,
+    "netAvailableByteIncrease": 222097408,
+    "singleUnitRequiredBytes": 10737418240,
+    "singleUnitMissingBytes": 740016128,
+    "full500RequiredBytes": 15179779720,
+    "full500MissingBytes": 5182377608,
+    "admissionAndReserveThresholdsUnchanged": true,
+    "freshAdmissionMeasurementStillRequiredBeforeExecution": true
+  },
+  "overlayAccounting": {
+    "unusedMuslLogicalAllocationBytes": 167706624,
+    "actualMuslNetAvailableByteChange": -28672,
+    "limitation": "Removing two unused platform packages from the lower overlay layer did not return their visible du bytes. This is not additional reclaimed capacity. Remaining useful tool installations retained."
+  },
+  "recoveryVerifiedBeforeDeletion": {
+    "cleanHelperContentsVerifiedAgainstRetainedGitBlobs": true,
+    "allGitBranchesAndReachableObjectsRetained": true,
+    "plainGitWorktreeRemoveOnlyNoForce": true,
+    "helperWorktreeRecovery": "git worktree add from each retained branch; exact commands remain in the private deletion ledger",
+    "redundantPlaintextArchive": "Retained local ciphertext was actually decrypted to a streaming hash with exit0; bytes and SHA256 exactly matched the plaintext before only that redundant plaintext file was removed",
+    "encryptedArchiveRecipientKeyAndPassphraseRetainedLocally": true,
+    "unusedPlatformPackageRecovery": "Retained exact npm package/lock files and public package integrity bindings; working glibc variants and shims preserved",
+    "privateRecoveryPathsAndArchivePayloadsPublished": false
+  },
+  "protectionVerification": {
+    "fourPinnedOriginalFilesSHA256AndNineMetadataFieldsUnchanged": true,
+    "allGitBranchRefsUnchanged": true,
+    "requiredHistoricalWorktreeOriginalBindingsRetained": true,
+    "allNeededDatabaseStatesDumpsMeasurementArchivesLogsProfilesAndEvidenceRetained": true,
+    "originalSourceContainerStillStoppedPID0Exit255NetworkNone": true,
+    "noDockerImagesVolumesOrContainersDeleted": true,
+    "noActiveOrForeignResourcesDeleted": true,
+    "keysSecretsAndPrivateOriginalsNotExported": true
+  },
+  "limits": {
+    "anyFurtherLargeDeletionQualified": false,
+    "applicationTestsOrDatabaseActionsDuringCleanup": false,
+    "nativeUnit60Passed": false,
+    "memoryReserve500MBProven": false,
+    "full500ReadyOrStarted": false,
+    "oldExecutionRightsReused": false,
+    "productionAction": false
+  }
+}

@@ -21,7 +21,7 @@ from pathlib import Path
 from network_meter import network,settled_network
 from http_receipts import HTTPReceiptValidationError,validate as validate_http_receipts
 
-REPO=Path('/workspace/helmut-cpu-epoch-20261015')
+REPO=Path(__file__).resolve().parents[2]
 NODE=Path('/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node')
 DOCKER=['docker','--host=unix:///var/run/docker.sock']
 DATABASE_DIRECTORY=Path('/meter-database')

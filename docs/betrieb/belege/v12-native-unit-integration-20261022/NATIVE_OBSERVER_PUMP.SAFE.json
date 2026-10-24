@@ -1,0 +1,64 @@
+{
+  "schema": "helmut-local-unit-native-observer-pump-evidence/1",
+  "candidateCommit": "076fbe919fdc8501dace5857d05b4e8a30c1a916",
+  "case": "/workspace/helmut-unit-diagnostic-native/0781da7c039e4d708fd6fe975c718ff9",
+  "scope": "Host._probe fixed-observer transport only; no Source/PG/seed/engine/provider/Unit authority",
+  "resultFile": {
+    "path": "/workspace/helmut-unit-diagnostic-native/0781da7c039e4d708fd6fe975c718ff9/RESULT.SAFE.json",
+    "bytes": 3909,
+    "sha256": "5f60513893908b240e91dd58865a9c919a48320f3278f46d441a2eccfec1b3c3"
+  },
+  "pass": true,
+  "observerProcessClose": {
+    "exitCode": 0,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true,
+    "observerCodeSHA256": "d628ba48bb4b085ed8f787442fd388217d96bef1643aac5ebd962276f1f351e9",
+    "nodePin": {
+      "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+      "bytes": 125989464,
+      "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+    }
+  },
+  "mainProcessClose": {
+    "exitCode": 0,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true
+  },
+  "timing": {
+    "probeStartNs": "46994602434157",
+    "probeFinishedNs": "46994767628136",
+    "probeElapsedNs": "165193979",
+    "cacheProbeStartedMonotonicSeconds": 46994.602444653,
+    "cacheAgeBeforeInventoryMs": 165.50497699790867
+  },
+  "inventory": {
+    "kind": "actual-container-ids-and-cgroup-parents-only",
+    "containerCount": 305,
+    "stdoutBytes": 35816,
+    "startedNs": "46994767952284",
+    "finishedNs": "46996119959651",
+    "elapsedNs": "1352007367",
+    "afterObserverClosedAndCached": true,
+    "cacheAgeAfterInventoryMs": 1517.515468003694,
+    "cacheFreshAfterInventory": true,
+    "expiredCacheRejected": false
+  },
+  "commonMemoryPeakBytes": 18812928,
+  "memoryEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "parentEmptyAfterActualProcessEnds": true,
+  "maximumUnitsAuthorized": 0,
+  "sourceDatabaseStarted": false,
+  "motorCalls": 0,
+  "providerCalls": 0,
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "full500Qualified": false
+}

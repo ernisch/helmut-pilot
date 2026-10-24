@@ -1,0 +1,33 @@
+{
+  "schema": "helmut-host-observe-same-tick-source-review/1",
+  "sourceCommit": "a9b622ed102ca95b8e370bcc6c224e948c987adf",
+  "rootIntegrationCommit": "ca0ba2ec",
+  "hostPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-execution-host.py",
+    "bytes": 116860,
+    "sha256": "56e963bf0bc38e3219e5d4910fd3d59730d921008c96ff08ad54594786ed3a68"
+  },
+  "testPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-execution-host-test.py",
+    "bytes": 108376,
+    "sha256": "76e8548e2d77ed6cce00e0580ec5ffd006ca13e3c5767a0340734a5c70e04c11"
+  },
+  "change": "Only HOST_OBSERVE with no pending request in QUALIFIED/ENTRY/DONE is accepted before a complete fresh inventory in the same tick.",
+  "existingRequestValidationUnchanged": true,
+  "allOtherStageIntakeOrderingUnchanged": true,
+  "sourceReplyWaitSeconds": 3,
+  "requestTTLSeconds": 3,
+  "replyTTLSeconds": 3,
+  "cachedOrRedatedObservationUsed": false,
+  "allIdentityMountCgroupAndCodeGuardsPreserved": true,
+  "pureHostChecks": 95,
+  "pureHostChecksPass": true,
+  "independentReviewer": "v12_native_minimum",
+  "independentSourceReviewPass": true,
+  "nativeAcceptanceTransferred": false,
+  "limitation": "Tests establish requests waiting before tick. Requests arriving after early intake may still need a following cycle. Native three-second response remains unqualified.",
+  "oldCaseReplayed": false,
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "full500Qualified": false
+}

@@ -1,0 +1,73 @@
+{
+  "schema": "helmut-native-read-registry-codec/1",
+  "codecPass": true,
+  "case": "/workspace/helmut-unit-diagnostic-native/registry-codec/617d5aee7a4fcf22700f735fcee1ab7e",
+  "failureType": null,
+  "closureErrors": [],
+  "codec": {
+    "schema": "helmut-native-registry-json-codec/1",
+    "oidJSON": "1",
+    "bigintJSON": 1,
+    "oidJSONType": "string",
+    "bigintJSONType": "number",
+    "maxOIDPreserved": true,
+    "serverVersionNum": 170006,
+    "explicitProjectionMatches": true
+  },
+  "kernelFinal": {
+    "parent": "helmut-meter-memorybudget-6103d2af98c7b18094cccde6",
+    "memoryPeakBytes": 93515776,
+    "memoryCurrentBytes": 46387200,
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "cpu": {
+      "usage_usec": 765552,
+      "user_usec": 504125,
+      "system_usec": 261427,
+      "nice_usec": 0,
+      "nr_periods": 0,
+      "nr_throttled": 0,
+      "throttled_usec": 0,
+      "nr_bursts": 0,
+      "burst_usec": 0
+    },
+    "events": {
+      "populated": 0,
+      "frozen": 0
+    },
+    "populatedSubgroups": [],
+    "ioStatRawNumericOnly": "254:0 rbytes=0 wbytes=43651072 rios=0 wios=2704 dbytes=0 dios=0",
+    "fullLastProcessExitCovered": true,
+    "scope": "All descendants charged to dedicated kernel group; no RSS polling substitution",
+    "finalEvents": {
+      "populated": 0,
+      "frozen": 0
+    },
+    "finalPopulatedSubgroups": [],
+    "groupIdentity": {
+      "device": 24,
+      "inode": 1318
+    }
+  },
+  "samples": 5,
+  "containerId": "551a4ad49be897b728837c2d95c4175b93ced4050628c3547fead98a1a7e10db",
+  "parent": "helmut-meter-memorybudget-6103d2af98c7b18094cccde6",
+  "persistentPGDATA": "/workspace/helmut-unit-diagnostic-native/registry-codec/617d5aee7a4fcf22700f735fcee1ab7e/PGDATA_CODEC_NOT_ORIGINAL",
+  "originalAuthMounted": false,
+  "originalPostrunRead": false,
+  "originalResourcesWritten": false,
+  "sourcePrepareCalls": 0,
+  "readClosureInstallCalls": 0,
+  "motorCalls": 0,
+  "providerCalls": 0,
+  "unit60Qualified": false,
+  "full500": false,
+  "full500ReserveQualified": false,
+  "ramPerformanceQualified": false
+}

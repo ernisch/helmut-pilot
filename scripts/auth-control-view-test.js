@@ -152,9 +152,10 @@ function server(_clientParts, initial = fixture()) {
 
 async function run() {
   const sources = { parts: fs.readFileSync(PARTS_FILE, "utf8"), atomic: fs.readFileSync(ATOMIC_FILE, "utf8") };
-  const originalParts = sources.parts.replace("VERSION, MARKER, MAX_EXPANDED_BYTES, build", "VERSION, MARKER, build");
-  assert.equal(sha(originalParts), "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9",
-    "Parts decoder is unchanged apart from exporting its existing logical bound");
+  const validator = sources.parts.split('function decodeInternal(graph, expectedRoot, namespace, projectionOnly = false) {')[1]
+    .split('  // Detach aliases and all internal node objects')[0];
+  assert.equal(sha(validator), "42880174694d0e5bb1e705e57949a434343d2a6f66e7ebbca0d451b433fee08b",
+    "The complete original actual-payload/shape/bounds/reachability validator remains byte-identical to d1f15b4a");
   const envKeys = [...Object.keys(ENV), "HELMUT_AUTH_GRAPH_READ_REUSE", "HELMUT_AUTH_SINGLE_WRITE_CAPTURE", "HELMUT_AUTH_DECODE_RETENTION", "VERCEL"];
   const saved = envKeys.map(k => [k, process.env[k]]);
   for (const k of envKeys) delete process.env[k]; Object.assign(process.env, ENV);
@@ -162,6 +163,7 @@ async function run() {
   function fresh(zlib) {
     const parts = compile(sources.parts, PARTS_FILE), count = { decode: 0 };
     const decode = parts.decode; parts.decode = (...args) => { count.decode++; return decode(...args); };
+    const project = parts.projectControl; parts.projectControl = (...args) => { count.decode++; return project(...args); };
     assert.equal(parts.MAX_EXPANDED_BYTES, 256 * 1024 * 1024);
     const u = compile(sources.atomic + PROBE, ATOMIC_FILE, parts, zlib);
     assert.equal(typeof u.readControl, "function"); return { parts, u, count };
@@ -330,7 +332,7 @@ async function run() {
       const s = server(parts, initial), o = opts(s), original = JSON.stringify; let serializations = 0;
       JSON.stringify = function (...args) {
         const result = original.apply(this, args);
-        if (new Error().stack.includes("at controlText ")) serializations++;
+        if (args[0] && typeof args[0] === "object" && Object.keys(args[0]).sort().join("|") === [...KEYS].sort().join("|")) serializations++;
         return result;
       };
       try {
@@ -420,4 +422,4 @@ async function run() {
 }
 if (require.main === module) run().then(r => process.stdout.write(JSON.stringify(r, null, 2) + "\n"))
   .catch(e => { process.stderr.write((e.stack || String(e)) + "\n"); process.exitCode = 1; });
-module.exports = { run };
+module.exports = { run, fixture, server, compile, ENV };

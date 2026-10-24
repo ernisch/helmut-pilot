@@ -27,6 +27,11 @@ let inactiveEpochReads = 0, optimizerHashCalls = 0, artifactMetadataReads = 0;
 // fallback. They do not admit the opt-in epoch's FS/runtime graph into this VM.
 const inactiveEpoch = Object.freeze({ isActive() { inactiveEpochReads++; return false; } });
 const inactiveFacts = Object.freeze({ hash() { optimizerHashCalls++; throw Error("inactive-optimizer-hash-forbidden"); } });
+// This configuration-only VM never opens a native diagnostic scope. Native
+// transport/source acceptance is covered separately with its genuine consumer;
+// every attempt to use that transport here is still a forbidden effect.
+const inactiveDiagnosticTransport = Object.freeze({ active: () => false,
+  model: forbiddenEffect, route: forbiddenEffect, request: forbiddenEffect });
 function check(name, fn) { fn(); passed += 1; console.log("PASS " + name); }
 function forbiddenEffect() { blockedEffectAttempts += 1; throw new Error("offline-effect-forbidden"); }
 
@@ -34,7 +39,7 @@ function forbiddenEffect() { blockedEffectAttempts += 1; throw new Error("offlin
 // Nur die Verifier-Bindung im Testkontext wird durch synthetische Werte ersetzt.
 // Der Production-Handler erhaelt KEINEN Auth-Override und kennt den Testbearer nicht.
 const dependencies = {
-  "ai.js": ["https", "./verstehen-restzeit", "./azure-endpunkt", "./provider-runtime-attestation", "./anbieter-steuerung"],
+  "ai.js": ["https", "./verstehen-restzeit", "./azure-endpunkt", "./provider-runtime-attestation", "./anbieter-steuerung", "./local-unit-diagnostic-transport"],
   "provider-runtime-attestation.js": ["./azure-endpunkt", "./testkosten-budget", "node:crypto", "./flags", "./synthetik-500-eu-service-contract"],
   "flags.js": ["fs", "path", "../../helmut-flags.json"],
   "azure-endpunkt.js": ["crypto"], "testkosten-budget.js": ["node:crypto", "./synthetik-500-eu-service-contract"],
@@ -75,6 +80,7 @@ function loadPureModule(name) {
     if (name === "streaming-canonical-hash.js" && specifier === "./synthetik-500-cpu-epoch") return inactiveEpoch;
     assert(dependencies[name].includes(specifier), "unexpected dependency in " + name);
     imported.push(name + ":" + specifier);
+    if (name === "ai.js" && specifier === "./local-unit-diagnostic-transport") return inactiveDiagnosticTransport;
     if (["crypto", "node:crypto"].includes(specifier)) return testCrypto;
     if (specifier === "path") return path;
     if (specifier === "fs") return { readFileSync(file, ...args) { assert.equal(path.resolve(file), path.resolve(__dirname, "../helmut-flags.json")); return fs.readFileSync(file, ...args); } };

@@ -1,0 +1,37 @@
+{
+  "schema": "helmut-worker-final-original-check-capture-source-review/1",
+  "atUTC": "2026-10-22T22:33:10.779618+00:00",
+  "pins": [
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-worker.py",
+      "bytes": 24103,
+      "sha256": "0e7b30f403f11b3b7144b28a12acff699848eee4d131ddfe4b70cd071eb34f16"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-worker-final-capture-test.py",
+      "bytes": 8203,
+      "sha256": "f29c260e5414de72d9c9f1cd4c30afa936d64946153bab8d4d4bd2a9ef34172f"
+    }
+  ],
+  "independentReadOnlyReviewPassed": true,
+  "pureASTTestsPassed": 7,
+  "reviewerRepeatedTests": false,
+  "originalPinChecksOrderAcceptancePrimaryFailureAndPGCleanupUnchanged": true,
+  "privateFailureMetadata": [
+    "phase",
+    "sourceIndex",
+    "checkedCount",
+    "exceptionType",
+    "errno",
+    "boundedStackBasenameFunctionLine"
+  ],
+  "noExceptionMessagesLocalsOrPayload": true,
+  "fixedPrivatePath": "FINAL_ORIGINAL_CHECK_FAILURE.PRIVATE.json",
+  "privateMode": "0600 O_EXCL",
+  "captureAndStderrFailureCannotMaskPrimaryOrTurnFailureIntoSuccess": true,
+  "earlierFinalRAWFailureCauseKnown": false,
+  "workerChangeNativelyQualified": false,
+  "unit60Qualified": false,
+  "reserveQualified": false,
+  "full500Qualified": false
+}

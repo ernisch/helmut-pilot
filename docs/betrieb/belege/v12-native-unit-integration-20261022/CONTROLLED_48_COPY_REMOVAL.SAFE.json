@@ -1,0 +1,99 @@
+{
+  "actualExecution": {
+    "currentFreeNotClaimed": true,
+    "freeBeforeNextNativeCaseBytes": 10870374400,
+    "full500GapAtThatMomentBytes": 4309405320,
+    "full500RequiredBytes": 15179779720,
+    "marginAtThatMomentBytes": 132956160,
+    "metadataProbeActualStatExit0AndBothEOF": true,
+    "metadataProbePlainRemoveWithoutForceOrVolumesExit0": true,
+    "nativeFailedCaseStillFailed": true,
+    "oldClaimsReusable": false,
+    "postchecksPass": true,
+    "singleUnitFloorBytes": 10737418240,
+    "twoExactFDRelativeRemovalsExit0": true
+  },
+  "archive": {
+    "bytes": 123467342,
+    "privateLocalOnlyContainsSyntheticSecrets": true,
+    "sha256": "1fd940a98c915ef7ca35285baa66bda4391037717dd7e6e96ed5ce29f5bd319f",
+    "uploaded": false
+  },
+  "atUTC": "2026-10-23T01:37:13.212926+00:00",
+  "evidence": [
+    {
+      "bytes": 1504,
+      "path": "/workspace/helmut-native-integration-checks-20261022/copy-archive-48b9e0f35075611fb46ea1d7bf703d08-PREPARED-20261023/RESULT.SAFE.json",
+      "sha256": "3782bf557f0ab1c5f365156bfa4306aafcc7dae9dd7e668cdb149e609d44c6e6"
+    },
+    {
+      "bytes": 1163,
+      "path": "/workspace/helmut-native-integration-checks-20261022/default-volume-readonly-metadata-probe-evidence-fix-20261023/RESULT.SAFE.json",
+      "sha256": "ff8e3b5ad4b73b3a278d2e9c255b42456893e83dc96ddd197a857edee10261bf"
+    },
+    {
+      "bytes": 61709,
+      "path": "/workspace/helmut-native-integration-checks-20261022/verified-48-expanded-removal-V6-20261023/HELPER.PRIVATE.py",
+      "sha256": "9007c1cb2392b4af52ef402417ad3bae8f819905cdbdb7468abff12c236d2048"
+    },
+    {
+      "bytes": 705,
+      "path": "/workspace/helmut-native-integration-checks-20261022/verified-48-expanded-removal-V6-20261023/ROOT_STEP1_REMOVAL_REVIEW.SAFE.json",
+      "sha256": "d901f22fc8ba70567f8388634b15baa34681c8dd5c96c162bb208129e95b76b2"
+    },
+    {
+      "bytes": 3281,
+      "path": "/workspace/helmut-native-integration-checks-20261022/verified-48-expanded-removal-V6-20261023/STEP1/RESULT.SAFE.json",
+      "sha256": "2d40c12f5076d23661d88677f0acbd8aed836a453501ac84718c0f0535f55000"
+    },
+    {
+      "bytes": 962,
+      "path": "/workspace/helmut-native-integration-checks-20261022/verified-48-expanded-removal-V6-20261023/ROOT_STEP2_REMOVAL_REVIEW.SAFE.json",
+      "sha256": "cb0cc2f8178767cc643c04f5416c1d26601b606967a7782f2dbc2cc2f38e12d0"
+    },
+    {
+      "bytes": 3324,
+      "path": "/workspace/helmut-native-integration-checks-20261022/verified-48-expanded-removal-V6-20261023/STEP2/RESULT.SAFE.json",
+      "sha256": "9c51a90f90f6d7933f9331673a910a9dd05966a5ca69b9d7601ff9752b57187b"
+    },
+    {
+      "bytes": 1138,
+      "path": "/workspace/helmut-native-integration-checks-20261022/default-volume-readonly-metadata-probe-evidence-fix-20261023/OWN_PROBE_REMOVAL_RESULT.SAFE.json",
+      "sha256": "5f05ecf490334ee04d37685f34d940bc717d450306f19c6c14251cc7c6bd3e26"
+    }
+  ],
+  "limits": [
+    "No source or DB startup, no original deletion, no full500 permission",
+    "Private archive retained locally; contains excluded synthetic secrets",
+    "Available bytes are a checkpoint before new31 native case, not current admission"
+  ],
+  "protection": {
+    "EACCESIsNotAbsence": true,
+    "allDockerCanonicalFullMountObjectsChecked": true,
+    "allRetainedCaseEvidenceAndOriginalsPreserved": true,
+    "foreignFDAbsenceClaimed": false,
+    "originalSourceCID": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+    "originalStopped255PID0Preserved": true,
+    "originalVolume": "helmut-target-pgdata-01a15550c862",
+    "physicalOriginalObject": {
+      "device": 27,
+      "gid": 999,
+      "inode": 1606697,
+      "mode": "0700",
+      "uid": 999
+    },
+    "privateProcessFDVisibilityLimited": true,
+    "unknownOrForeignOverlaps": 0
+  },
+  "recovery": {
+    "actualReadbackAndFreshRealRestore": true,
+    "contentBytes": 373061467,
+    "directories": 30,
+    "logicalSQLStartupQualificationClaimed": false,
+    "memberSHA256UidGidModeMtimeNSAndGzipCRCAndNaturalEOFVerified": true,
+    "members": 1778,
+    "regularFiles": 1748
+  },
+  "schema": "helmut-controlled-copy-removal-public-evidence/1",
+  "scope": "Only own completed48 PGDATA copy and newly verified restore wrapper; later own stopped metadata-probe container without volumes"
+}

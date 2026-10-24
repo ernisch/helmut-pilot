@@ -1,0 +1,351 @@
+{
+  "schema": "helmut-native-claim-only-independent-actual-review/1",
+  "independent": true,
+  "status": "FAIL",
+  "case": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d",
+  "codeCommit": "23ee9c7a41f3bcef85e7311730fa577d3a376205",
+  "scope": "OFFLINE_EXISTING_ACTUAL_EVIDENCE_ONLY",
+  "blockingFindings": [
+    "CLAIM_ONLY_READONLY_SNAPSHOT_POSTGRES_NONZERO",
+    "FINAL_OWN7_REVISION1_HISTORY_USAGE_CATALOG_BINDING_NOT_ACCEPTED"
+  ],
+  "failure": {
+    "stageNumber": 8,
+    "stage": "claim-only-readonly-snapshot",
+    "exceptionClass": "RuntimeError",
+    "postgresFixedCode": "auth-state-projection-not-admitted",
+    "fixedCodeActuallyPresentInPinnedStderr": true,
+    "snapshotStdoutBytes": 0,
+    "snapshotStderrBytes": 379,
+    "exactSnapshotChildExitCode": "NONZERO_NOT_PERSISTED",
+    "point": "Worker bounded capture raised on the completed query child nonzero before a snapshot DTO or CLAIM_ONLY_DIAGNOSTIC was saved.",
+    "rootSourceAttribution": "Root separately identified the missing bounded-cas-qualification-v1 diagnostic-scope GUC in this snapshot transaction. This review performs no new source fix or execution.",
+    "overallFailurePreserved": true
+  },
+  "partialGenuineClaimEvidence": {
+    "entryTerminalDiagnosed": true,
+    "callbackCalls": 1,
+    "authorityConsumedByEntry": true,
+    "journalStillRunningReportedByEntry": true,
+    "terminalSelectionProcessAndCanonicalSHA256MatchActualClose": true,
+    "actualEntryExitCode": 0,
+    "actualEntryNaturalEOF": [
+      true,
+      true
+    ],
+    "sourceServiceRequests": 2,
+    "sourceServiceConfirmedExit0AndTwoEOF": 2,
+    "phaseCommitAndACKFacts": [
+      {
+        "index": 0,
+        "phasePin": {
+          "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/ORIGINAL_SERVICE_PHASES_abafdaff9fb39c1bd587cb144abef0017b007ee70d0de1159159a12c520408d2.PRIVATE.jsonl",
+          "bytes": 975,
+          "sha256": "e2deea7ee892cc06987bdb36f60ecfe8d74c8ab18719a40e9917d42ead55063e"
+        },
+        "records": 8,
+        "psqlInvoked": true,
+        "commitProcessConfirmed": true,
+        "ackAccepted": true
+      },
+      {
+        "index": 1,
+        "phasePin": {
+          "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/ORIGINAL_SERVICE_PHASES_404ff64b506516af93b466e9060f29fe26dd68d451a474831559b4f2e02f0ce8.PRIVATE.jsonl",
+          "bytes": 976,
+          "sha256": "343f908814be3e4e9af76e64f0e67d247f3a72e6c5fad617f050ca3a5d8ef91b"
+        },
+        "records": 8,
+        "psqlInvoked": true,
+        "commitProcessConfirmed": true,
+        "ackAccepted": true
+      }
+    ],
+    "independentEndstateSnapshotConfirmed": false,
+    "claimOnlyAccepted": false,
+    "ownRevision1AfterClaim": "UNKNOWN",
+    "own7OutsideJournalEqualityAfterClaim": "UNKNOWN",
+    "finalHistoryAndUsageProofEquality": "UNKNOWN",
+    "finalCatalogEquality": "UNKNOWN",
+    "reuseForbidden": true,
+    "claimAndCopyKEEP": true
+  },
+  "noMotorOrProvider": {
+    "entryMotorCalls": 0,
+    "entryProviderCalls": 0,
+    "supervisorMotorCalls": 0,
+    "nativeQualificationProviderCalls": 0,
+    "motorEntryRequested": false,
+    "completedUnits": 0,
+    "expectedPositions": 0,
+    "controlCount": 0,
+    "meaning": "Claim-only evidence and actual service/entry receipts; preparation endpoint fixtures are not a motor run."
+  },
+  "closure": {
+    "outerHelperToolChunk": "df64d3",
+    "outerHelperActualExit": 1,
+    "outerCLIActualExit": 1,
+    "outerWaitConfirmed": true,
+    "outerNaturalEOF": [
+      true,
+      true
+    ],
+    "outerSignals": [],
+    "outerTimeout": false,
+    "outerTransportAndCaptureErrors": false,
+    "outerTruncation": [
+      false,
+      false
+    ],
+    "entryNodeActualExit": 0,
+    "entryNodeActualNaturalEOF": [
+      true,
+      true
+    ],
+    "ownerActualExit": 0,
+    "ownerNaturalEOF": [
+      true,
+      true
+    ],
+    "postgrestPolicyCleanShutdown": true,
+    "postgrestChildExitCode": null,
+    "postgrestChildExitSignal": "SIGINT",
+    "postgrestChildNaturalEOF": [
+      true,
+      true
+    ],
+    "postgresExitCode": 0,
+    "hostState": "STOPPED",
+    "hostClean": true,
+    "trackedHostChildrenZeroAndNaturalEOFCount": 45,
+    "processObserverChildrenZeroAndNaturalEOFCount": 40,
+    "unknownProcessObservers": 0,
+    "originalServiceChildSpawns": 2,
+    "originalServiceChildCloses": 2,
+    "serviceStopRecordAloneObservesServiceNodeExit": false,
+    "allChildrenExitedInWorker": true,
+    "closureErrors": [],
+    "finalKernelPopulated": 0,
+    "finalPopulatedSubgroups": [],
+    "fullLastProcessExitCovered": true
+  },
+  "integrity": {
+    "outerSourceBeforeExactlyEqualsAfter": true,
+    "cleanHeadBeforeAndAfter": "23ee9c7a41f3bcef85e7311730fa577d3a376205",
+    "eightRecordedRuntimePinsExactlyMatchFreshRootStartReview": true,
+    "descriptorAndAdoptionRootReviewPinsMatch": true,
+    "nativeStartedAndWorkerConfigCodeCommitMatch": true,
+    "recordedOriginalRAWPostrunSHA256MatchesStartedPin": true,
+    "workerOriginalPostrunPreserved": true,
+    "workerOriginalSourcePinsUnchanged": true,
+    "sourceLogicalBeforeAndAfterBytesAndAuthHashEqual": true,
+    "originalMountedReadonly": true,
+    "originalPayloadsRehashedByReviewer": false,
+    "originalPGDATAReadByReviewer": false,
+    "fullSourceManifestAndCatalogEvidenceRetained": true,
+    "postClaimOwnHistoryUsageCatalogAcceptance": "UNKNOWN_BECAUSE_SNAPSHOT_QUERY_FAILED"
+  },
+  "memory": {
+    "sampleCount": 77,
+    "allSamplesBoundToSameParentAndDeviceInode": true,
+    "elapsedOrderMonotonic": true,
+    "commonKernelPeakBytes": 1240449024,
+    "finalKernelCurrentBytes": 423329792,
+    "allSixEventsZeroInAll77Samples": true,
+    "rssPeaksAdded": false,
+    "unit60OrReserveOrPlateauInferred": false
+  },
+  "pins": {
+    "actualResultPin": {
+      "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/RESULT.SAFE.json",
+      "bytes": 2177,
+      "sha256": "b543babea63230bcd69a1787641ef5c4ef010b8d7e62985877f342719d3ee13c"
+    },
+    "nativeQualificationPin": {
+      "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/NATIVE_QUALIFICATION.SAFE.json",
+      "bytes": 758,
+      "sha256": "2fa4514a8da2521a006bf08e948c0a0e7a25b3b46de1a48a52fa8a720df8bbae"
+    },
+    "outerFinalPin": {
+      "path": "/workspace/helmut-native-integration-checks-20261022/native-claim-only-once-20261023/capture-b850e623d1affe2c8a4492f199d6542d/FINAL.SAFE.json",
+      "bytes": 6917,
+      "sha256": "f2924ec37a78e5e028de335839acb48bf681ceaffd60bc5e353970aa52315f42"
+    },
+    "rootHelperExitPin": {
+      "path": "/workspace/helmut-native-integration-checks-20261022/native-claim-only-once-20261023/capture-b850e623d1affe2c8a4492f199d6542d/ROOT_HELPER_EXIT.SAFE.json",
+      "bytes": 815,
+      "sha256": "30d0082b6aa96ab1daf5cf667f88f8f60f8c007bda95c2e75abd9d9d2ea69b43"
+    },
+    "allMetadataEvidencePinsRead": [
+      {
+        "path": "/workspace/helmut-native-integration-checks-20261022/native-claim-only-once-20261023/capture-b850e623d1affe2c8a4492f199d6542d/FINAL.SAFE.json",
+        "bytes": 6917,
+        "sha256": "f2924ec37a78e5e028de335839acb48bf681ceaffd60bc5e353970aa52315f42"
+      },
+      {
+        "path": "/workspace/helmut-native-integration-checks-20261022/native-claim-only-once-20261023/capture-b850e623d1affe2c8a4492f199d6542d/ROOT_HELPER_EXIT.SAFE.json",
+        "bytes": 815,
+        "sha256": "30d0082b6aa96ab1daf5cf667f88f8f60f8c007bda95c2e75abd9d9d2ea69b43"
+      },
+      {
+        "path": "/workspace/helmut-native-integration-checks-20261022/native-claim-only-once-20261023/ROOT_START_REVIEW_23ee9c7a.SAFE.json",
+        "bytes": 4345,
+        "sha256": "0f63944e537050eeab450e77a125be816eec7aa25aa54e45927f89966be570ac"
+      },
+      {
+        "path": "/workspace/helmut-native-integration-checks-20261022/native-claim-only-once-20261023/ROOT_ADOPTION_23ee9c7a.SAFE.json",
+        "bytes": 1297,
+        "sha256": "a237f8494545007f675b93107d2a83e835b256ce47bcfd9fb8002d37d953e26a"
+      },
+      {
+        "path": "/workspace/helmut-native-integration-checks-20261022/native-claim-only-once-20261023/RUN_DESCRIPTOR.SAFE.json",
+        "bytes": 446,
+        "sha256": "4fb8af954216eb8906d6d9d554aa6b7fbdda18d2502ce39a8ca71fc28e33d316"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/RESULT.SAFE.json",
+        "bytes": 2177,
+        "sha256": "b543babea63230bcd69a1787641ef5c4ef010b8d7e62985877f342719d3ee13c"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/NATIVE_QUALIFICATION.SAFE.json",
+        "bytes": 758,
+        "sha256": "2fa4514a8da2521a006bf08e948c0a0e7a25b3b46de1a48a52fa8a720df8bbae"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/EXECUTION_FAILURE.PRIVATE.json",
+        "bytes": 2199,
+        "sha256": "b1e4fb95614f7a702f51b842db7621c46a6232e87b4ed733be6a7d928e0bdd17"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/EXECUTION_STAGE_08.SAFE.json",
+        "bytes": 334,
+        "sha256": "1b282221467acc76360c520bb329a9da0480cf2f88a5043d9974f56475d10c24"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/STARTED.SAFE.json",
+        "bytes": 711107,
+        "sha256": "9c2de0faece874b266bf7a133a735699e5a18ce629caf0bf64940e58ae8a84dc"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/WORKER_CONFIG.SAFE.json",
+        "bytes": 874154,
+        "sha256": "778d10ab2689d57665ff62cba6c2b2af328ac68e17895de6c3a9ed4d675aa63c"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/client/ATTEMPT_TERMINAL.SAFE.json",
+        "bytes": 2179,
+        "sha256": "4cfd9df215a2920966229d366072171a91a20f25cbfc927d9f4938e8ca97dd97"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/client/ATTEMPT_STARTED.SAFE.json",
+        "bytes": 722,
+        "sha256": "761590ec4ba29c91eef749075ef5daa7f4b7171053cb3a54e91ef7b09c295b68"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/HOST_REPLY_11.PRIVATE.json",
+        "bytes": 4362,
+        "sha256": "72a95f8540c9ca65b68b4d8242db86ab61a274604944db870184ebc7ef8af97d"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/HOST_REPLY_12.PRIVATE.json",
+        "bytes": 5204,
+        "sha256": "f5620681eebdfc5e55a52a87aaf82e5e21ac3b8201d03c8f2583b086efe89627"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/EXECUTION_HOST_CLOSE.SAFE.json",
+        "bytes": 66867,
+        "sha256": "deb7630a7b6f8f7191c4682c8a025718a96ae4f4f96b055b92e523f053132949"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/ORIGINAL_SERVICE_STOP.SAFE.json",
+        "bytes": 672,
+        "sha256": "8c4027ce1d6cb2df6277522888c58b77b0540c2d22cfa523de08664ec2f45b2f"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/ORIGINAL_SERVICE_CHILDREN.SAFE.jsonl",
+        "bytes": 1723,
+        "sha256": "05e408159e312f751e3311bcb0894572c904218d802a838f23e5a2ad9d9891d5"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/ORIGINAL_SERVICE_PHASES_abafdaff9fb39c1bd587cb144abef0017b007ee70d0de1159159a12c520408d2.PRIVATE.jsonl",
+        "bytes": 975,
+        "sha256": "e2deea7ee892cc06987bdb36f60ecfe8d74c8ab18719a40e9917d42ead55063e"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/ORIGINAL_SERVICE_PHASES_404ff64b506516af93b466e9060f29fe26dd68d451a474831559b4f2e02f0ce8.PRIVATE.jsonl",
+        "bytes": 976,
+        "sha256": "343f908814be3e4e9af76e64f0e67d247f3a72e6c5fad617f050ca3a5d8ef91b"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/SOURCE_LOGICAL_BEFORE.STDOUT.PRIVATE.log",
+        "bytes": 104,
+        "sha256": "e9e36388ed60ade9d8b15392fe0752af74aba60141d7d46c48b980a3ba2a6af4"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/SOURCE_LOGICAL_AFTER.STDOUT.PRIVATE.log",
+        "bytes": 104,
+        "sha256": "e9e36388ed60ade9d8b15392fe0752af74aba60141d7d46c48b980a3ba2a6af4"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/KERNEL_SAMPLES.SAFE.jsonl",
+        "bytes": 79601,
+        "sha256": "f9eed273fa5c675ab58a917cba1633ea80e0ba8b99fc4d7f54455a1746063977"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/CLAIM_ONLY_READONLY_SNAPSHOT.STDOUT.PRIVATE.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/CLAIM_ONLY_READONLY_SNAPSHOT.STDERR.PRIVATE.log",
+        "bytes": 379,
+        "sha256": "faca9afa19299f1bd94f2d422548fd1611f6c62a06a6ab3f2adbf6ac4506bf57"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/NATIVE_CATALOG.SAFE.json",
+        "bytes": 35873,
+        "sha256": "258fd52d0837c23395a6864b4302eb7038afeb00adb5cacb710b9ed5df2a0774"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/NATIVE_READ_CLOSURE.SAFE.json",
+        "bytes": 9037,
+        "sha256": "aca21b59bc2b174a65747cc31c0e2011976cd7202c78814da0cbe6d416fb2184"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/NATIVE_ORIGINAL_BRIDGE.SAFE.json",
+        "bytes": 424,
+        "sha256": "a553135d2cae763036b0965b36bd0a85e8432846c69bbf3508bfeabacbb12019"
+      },
+      {
+        "path": "/workspace/helmut-unit-diagnostic-native/2f544859c95179a876f0809ae418c45d/FRESH_COPY.SAFE.json",
+        "bytes": 383,
+        "sha256": "2db0e47403125bab1628564c236fb4633e930f446698231cba0cb69496a74c3c"
+      }
+    ]
+  },
+  "reviewExecution": {
+    "fileEvidenceAuditOnly": true,
+    "tests": 0,
+    "nativeRuns": 0,
+    "databaseCalls": 0,
+    "dockerCalls": 0,
+    "sourceOrRuntimeImports": 0,
+    "repositoryWrites": 0,
+    "originalReads": 0,
+    "retryOrClaimReuse": 0
+  },
+  "acceptance": {
+    "claimOnlyDiagnostic": false,
+    "auth30": false,
+    "unit60": false,
+    "sixteenControls": false,
+    "ram500MB": false,
+    "full500Reserve": false,
+    "full500": false,
+    "production": false,
+    "newAuthority": false,
+    "GOIssued": false,
+    "deletionAuthorized": false
+  }
+}

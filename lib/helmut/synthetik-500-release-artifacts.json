@@ -16,8 +16,8 @@
     },
     {
       "path": "lib/helmut/auth-state-parts.js",
-      "bytes": 22169,
-      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+      "bytes": 27356,
+      "sha256": "0ff039245d60ceb7f5855f62433feab0ae0eea989606d3ad8022510a8d1d80a3"
     },
     {
       "path": "lib/helmut/auth-store-cas.js",
@@ -156,18 +156,18 @@
     },
     {
       "path": "lib/helmut/lage-textqualitaet.js",
-      "bytes": 24877,
-      "sha256": "2470bc52a18f4222b4efb76283ca47893b423f87d76acee206ca4f33352d13db"
+      "bytes": 25256,
+      "sha256": "99cecc57f7a5eb6a0e3e531eb2037d38a3f2064c3d642988458c7f0b7ae3ee68"
     },
     {
       "path": "lib/helmut/lage.js",
-      "bytes": 56857,
-      "sha256": "61f4a2071d5c22dac276776ef37d7c29180b025f56c9ded5898c80b367abe554"
+      "bytes": 57463,
+      "sha256": "613ea950dcedc16cfbff14829b7437b3160b16bc49dc5afeec8d5be8c0f10649"
     },
     {
       "path": "lib/helmut/llm-usage-atomic.js",
-      "bytes": 25446,
-      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+      "bytes": 32050,
+      "sha256": "dc12a5c8abf7a7b4f4334ff0b886106b42381efa864ac13d4374285242886d0a"
     },
     {
       "path": "lib/helmut/local-pipeline-lock-lease.js",
@@ -201,8 +201,8 @@
     },
     {
       "path": "lib/helmut/publication-eligibility.js",
-      "bytes": 8672,
-      "sha256": "d1ea673bfecd27feddf64f9275ea0f3c3a153ee66bc2e07d60efaee09f24ac4c"
+      "bytes": 8991,
+      "sha256": "675f6a4a7c1e5f3a7619a6f52eba086b5aa34ce2104bc5f250bbc4924fa26fd6"
     },
     {
       "path": "lib/helmut/quellen-auszug.js",
@@ -256,8 +256,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 546974,
-      "sha256": "f5cc228b744fcdd9fb398b277465c72cd9d4aa3ee746618bfd4f1c3ce53a363f"
+      "bytes": 558109,
+      "sha256": "5a0fe6c4f74e979e8e5d413065373e80190f9e24bbcb94c0204b2a1750b1e97d"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -282,7 +282,7 @@
     {
       "path": "lib/helmut/synthetik-500-cpu-source-pins.json",
       "bytes": 12086,
-      "sha256": "5c807f5607b5b0e97e1fc3364053a00b995d0efe857d9768b73509ceae33ff28"
+      "sha256": "c3c098037b04fb08ef73d0d3d9b1606e6d6790e8208f61b09ed4a28484762449"
     },
     {
       "path": "lib/helmut/synthetik-500-date-binding.js",
@@ -296,8 +296,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-direct-d-store.js",
-      "bytes": 4521,
-      "sha256": "d3c5064366bc2fd9a686034300d91ddf0165f5d733139f2072dd7275c5cac683"
+      "bytes": 4989,
+      "sha256": "345d93664ea1e7741950def005ce3dcfda8927bf72cb5db44439ed1356fdd8e5"
     },
     {
       "path": "lib/helmut/synthetik-500-direct-entry.js",
@@ -346,8 +346,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-local-calendar.js",
-      "bytes": 5976,
-      "sha256": "1f56a674a0e2c7ff986dddb58c331e3db70850124bed66fdd081a6b38bcf8c98"
+      "bytes": 8133,
+      "sha256": "621c5b828f6ccd8954c6e2d458fe8280715ba3ec9e377381b906eb755777cc70"
     },
     {
       "path": "lib/helmut/synthetik-500-nachweis.js",
@@ -371,8 +371,8 @@
     },
     {
       "path": "lib/helmut/synthetik-500-review-receipt.js",
-      "bytes": 10120,
-      "sha256": "5384250ee73b42cccf595b780a1e4cbc50910a1c4b1717f2fa55486f20b3cfc3"
+      "bytes": 11234,
+      "sha256": "7a38e10f59efa65042e893a0deac2463515e28d69d677d66f06d233e589f1e11"
     },
     {
       "path": "lib/helmut/synthetik-500-runtime-artifact-attestation.js",
@@ -411,8 +411,8 @@
     },
     {
       "path": "lib/helmut/testkosten-budget.js",
-      "bytes": 32969,
-      "sha256": "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e"
+      "bytes": 33827,
+      "sha256": "dfbbfd1401fa2187549af73b203c4e8c360b9535b77c425c3c015a9751337ad4"
     },
     {
       "path": "lib/helmut/understanding-schema.js",
@@ -450,11 +450,11 @@
       "sha256": "32e72dfd6e3e2bc2788c991cab29471af4e04ea7a1a57f7bb3e58a9ea92693d2"
     }
   ],
-  "sourceMappingSHA256": "3c0e64a68e82e211b1bc64430556fcb2f5caae00fe047720c1b2266c0b0b7cad",
+  "sourceMappingSHA256": "9664e4fe58fc043c2583d3dc4f3e93586c4c7f8c1479579979a44b0831492208",
   "currentCandidateFull500Qualification": false,
-  "candidateQualificationScope": "LOCAL_DEFAULT_OFF_CONTROL_VIEW_AND_NATIVE_COMPONENT_SECURITY_ONLY; COMMON_RAM_OFFLINE90_UNIT60_AUTH30_FULL500_PRODUCTION_NOT_QUALIFIED",
-  "priorManifestCommit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",
-  "priorManifestSHA256": "96683e0756f83840dfd2b281c770e8c5eace104bbd5d5be2e22c07d5d3264f6a",
-  "priorSourceMappingSHA256": "cb08a6becfbaff206f4d3418f5b960216e9ce260ccc1424629ebdb150f1e5781",
+  "candidateQualificationScope": "LOCAL_SOURCE_EXPECTATIONS_ONLY_NATIVE_INTEGRATION_UNQUALIFIED; HISTORICAL_EVIDENCE_DOES_NOT_QUALIFY_CURRENT_CODE; UNIT60_AUTH30_COMMON_RAM_FULL500_NOT_PROVEN",
+  "priorManifestCommit": "c7a92798010fd69c1f96b7a81c77d99dc9b2d2a2",
+  "priorManifestSHA256": "223610dc52d5f89eb3298a06597c0f104dc48cb35d3b18d020afc8b21143fb52",
+  "priorSourceMappingSHA256": "34b36e2c3cf85757bd3bafbaf4ce7ef41a656e39623f1677c0040226018a43ce",
   "contentQualificationEvidenceIsHistoricalOnly": true
 }

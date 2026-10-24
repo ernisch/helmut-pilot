@@ -224,6 +224,29 @@ jobs:
           # local Node children. They precede checks requiring private originals.
           node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/native-memory-budget-test.py
           node scripts/lokal.js -- node scripts/helmut-resource-meter/native-node-budget-test.js
+          node scripts/lokal.js -- python3 -B scripts/helmut-resource-meter/kernel-pressure-snapshot-test.py
+          # Pure current-checkout bindings; no authority or engine imports.
+          node scripts/lokal.js -- python3 -I -S -B scripts/helmut-resource-meter/current-repository-root-test.py
+          node scripts/lokal.js -- python3 -I -S -B scripts/helmut-resource-meter/connection-code-binding-test.py
+      - name: Isolierte Einzelunit-Integration (synthetisch/offline)
+        if: steps.plan.outputs.standard == 'true'
+        run: |
+          # Pure/mocked boundaries and short isolated Python lifecycle children.
+          # These suites never start Docker,
+          # PostgreSQL, the engine, a provider, or consume an execution grant.
+          for suite in \
+            scripts/local-unit-diagnostic-*-test.js \
+            scripts/local-unit-native-*-test.js \
+            scripts/helmut-resource-meter/local-unit-original-*-test.js \
+            scripts/helmut-resource-meter/local-unit-native-*-test.js \
+            scripts/helmut-resource-meter/local-unit-diagnostic-*-test.js; do
+            node scripts/lokal.js -- node "$suite"
+          done
+          for suite in \
+            scripts/helmut-resource-meter/local-unit-native-*-test.py \
+            scripts/helmut-resource-meter/local-unit-diagnostic-store-test.py; do
+            node scripts/lokal.js -- python3 -I -S -B "$suite"
+          done
       - name: Node-Version der bestehenden Offline-Suiten wiederherstellen
         if: steps.plan.outputs.standard == 'true'
         uses: actions/setup-node@v4
@@ -264,6 +287,23 @@ jobs:
             sudo install -D -m 0644 "$review_source" "$review_target"
             cmp "$review_source" "$review_target"
           fi
+          # This supplemental current SOURCE review has distinct canonical
+          # paths. Preserve the historical review and never replace an alias.
+          for current_review_directory in \
+            "docs/betrieb/belege/local-unit-storage-source-20261022" \
+            "docs/betrieb/belege/local-unit-control-bundle-source-20261024"; do
+            current_review_target_directory="/workspace/helmut-unit60-native-20261022/$current_review_directory"
+            for current_review_name in CURRENT_SOURCE_REVIEW_REPORT.SAFE.json INDEPENDENT_CURRENT_SOURCE_REVIEW.SAFE.json; do
+              current_review_source="$current_review_directory/$current_review_name"
+              current_review_target="$current_review_target_directory/$current_review_name"
+              if [ "$GITHUB_WORKSPACE/$current_review_source" != "$current_review_target" ]; then
+                test ! -e "$current_review_target"
+                test ! -L "$current_review_target"
+                sudo install -D -m 0644 "$current_review_source" "$current_review_target"
+                cmp "$current_review_source" "$current_review_target"
+              fi
+            done
+          done
           # All children/receipts are mocked or TEST_ONLY temporary fixtures.
           # Integration inherits the owner guards; do not run that base twice.
           # These run before the unchanged checks requiring genuine originals.
@@ -609,6 +649,7 @@ jobs:
         # wird sichtbar gemeldet. Dieselbe kanonische Zuordnung benutzt auch der Runner.
         env:
           HELMUT_SOURCE_MODE: "off"
+          HELMUT_CI_PUBLIC_SUITE_METADATA: "offline-runner-v1"
         shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
         run: |
           set -e
@@ -621,6 +662,13 @@ jobs:
           CHANGED="$(git diff --name-only "$BASE" "${{ github.sha }}")"
           printf '%s\n' "$CHANGED"
           node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "$CHANGED" --nur-bereich
+
+      - name: Z22-Indexzugriff Gegenbeispiele (rein offline)
+        if: steps.plan.outputs.standard == 'true' || steps.plan.outputs.database == 'true'
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        shell: 'python3 scripts/helmut-resource-meter/private_ci_shell.py {0}'
+        run: node scripts/lokal.js scripts/vorbedingung-mandatsfilter-plan-test.js
 
       - name: Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)
         if: steps.plan.outputs.database == 'true'

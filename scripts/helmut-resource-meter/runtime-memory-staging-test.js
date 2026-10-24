@@ -3,7 +3,7 @@
 // This checks lexical hooks, schema and failure propagation, not engine/500 acceptance.
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const input=JSON.parse(fs.readFileSync(0,'utf8'));
-const R='/workspace/helmut-cpu-epoch-20261015',deadline='2099-01-01T00:00:00.000Z';
+const R=fs.realpathSync(path.resolve(__dirname,'../..')),deadline='2099-01-01T00:00:00.000Z';
 class FixedDate extends Date{constructor(...args){super(...(args.length?args:['2026-10-21T00:00:00.000Z']));}}
 function fixture(source,{closeError=false,saveError=false,beforeError=false}={}){
   const observations=[],saved=[],stderr=[],exportsDone=[],returned={original:true};

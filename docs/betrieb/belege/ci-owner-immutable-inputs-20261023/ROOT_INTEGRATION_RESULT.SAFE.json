@@ -1,0 +1,80 @@
+{
+  "schema": "helmut-root-ci-owner-immutable-input-integration/1",
+  "atUTC": "2026-10-23T18:20:33.849046+00:00",
+  "status": "LOCAL_SOURCE_AND_TARGETED_CHECKS_ACCEPTED_NEW_CI_PENDING",
+  "baselineCommit": "c0a847d700607d0bded3a8eb3b746d1c48e2bcbb",
+  "actualPublicComparisonPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/ci-owner-immutable-inputs-20261023/ACTUAL_PUBLIC_COMMIT_COMPARISON.SAFE.json",
+    "bytes": 6831,
+    "sha256": "15dfac13877b496ccff60a2d74741e283fb32dcfb684d5c12a1e3ee20cb2fa02"
+  },
+  "oldCIStatusPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/ci-owner-immutable-inputs-20261023/FAILED_CI_STATUS.SAFE.json",
+    "bytes": 22079,
+    "sha256": "ffccf685e94495670b658b10781aad379387b857b90ec904a938f3519663ce99"
+  },
+  "independentSourceReviewPin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/ci-owner-immutable-inputs-20261023/INDEPENDENT_SOURCE_REVIEW.SAFE.json",
+    "bytes": 7101,
+    "sha256": "dc27808cc2d04a42c373acb7f241bad830ca347122dbdd497fef9fe248f1f137"
+  },
+  "genuineCipherRestorePin": {
+    "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/ci-owner-immutable-inputs-20261023/GENUINE_PUBLIC_CIPHER_RESTORE.SAFE.json",
+    "bytes": 643,
+    "sha256": "4a47ecb86b4dc952b0e8286c58d3e165257227405a99b2d7fae7b1efef0bf843"
+  },
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/private_ci_channel.py",
+      "bytes": 22151,
+      "sha256": "35eb31f4a4c711fe5fc86e34b821c82ae54be45da0ef4d01f62f8d383259a2d4"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/private_ci_channel_test.py",
+      "bytes": 49382,
+      "sha256": "dd67dd486f5f3b61fa2f682bfd6b4a2dca4ede5996c037b8c5652d7c1ad4a636"
+    }
+  ],
+  "behavior": "Auto access binds current base/head to trusted event inputs already verified against actual GitHub checkout/workflow/ordered Git parents; removes only equality with a regenerable live merge alias. Mandatory typed base binding in fresh receipt. All remaining identities, encryption/transport/original84 checks and Manual approval remain.",
+  "manualValidateReviewAndProvisionByteUnchanged": true,
+  "historicalRejectingSubpredicate": "UNKNOWN",
+  "actualMetadataDemonstratesDifferentMergeSHAsWithIdenticalTreeAndParents": true,
+  "tests": [
+    {
+      "tool": "92e786",
+      "groups": "OwnerAccessTests + ReviewTests + five context-specific FileTests",
+      "tests": 34,
+      "passed": 33,
+      "errors": 1,
+      "failure": "Genuine public cipher absent in intentionally sparse local checkout; no access-guard regression identified"
+    },
+    {
+      "tool": "51299e",
+      "groups": "Only failed genuine public cipher hash check after exact HEAD-blob restoration",
+      "tests": 1,
+      "passed": 1,
+      "errors": 0
+    }
+  ],
+  "finalWhole34ReplayClaimed": false,
+  "keyOrPrivateOriginalValuesReadOrExported": false,
+  "testsWerePureAndNoPrivateOriginalDecryption": true,
+  "latestRemoteFullCI": "PENDING_AFTER_PUSH",
+  "nativeClaimSnapshotFixAccepted": false,
+  "unit60": false,
+  "reserve500MB": false,
+  "full500": false,
+  "production": false,
+  "capacity": {
+    "availableBytes": 10293628928,
+    "componentRequiredBytes": 10737418240,
+    "full500RequiredBytes": 15179779720,
+    "componentMissingBytes": 443789312,
+    "full500MissingBytes": 4886150792,
+    "safeAdditionalCandidate413MBProven": false,
+    "originalRAWReservationExceptionAwaitingExplicitUserDecision": true,
+    "historicalPossibleReservationReleaseBytes": 3420176384,
+    "exceptionAloneMeetsFull500Admission": false
+  },
+  "next": "Push reviewed fix, verify actual fresh complete CI. Native execution remains blocked until real capacity admission and fresh exact-code/one-use adoption. No old claim/GO reused."
+}

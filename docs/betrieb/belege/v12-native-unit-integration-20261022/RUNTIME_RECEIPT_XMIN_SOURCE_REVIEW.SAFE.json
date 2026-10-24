@@ -1,0 +1,74 @@
+{
+  "schema": "helmut-native-runtime-receipt-read-source-review/1",
+  "basedOnCase": "f51940617fbf03e755af52ce41e60bab",
+  "originalCodeCommit": "8dd83ba762de381c193e31aa688a6faca90132ef",
+  "codePins": [
+    {
+      "path": "supabase/proposals/local_unit_original_bridge_local.sql",
+      "bytes": 63581,
+      "sha256": "58679eabc93a78b2c01b79dd11783abf6d28f0dfac78a93a87da43e84de45fbd"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-bridge-qualification.py",
+      "bytes": 37737,
+      "sha256": "ab2b17ab13ec37beba9cc0dc8c217e8046a21a409c7aad71624546e7a930163a"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-bridge-qualification-test.py",
+      "bytes": 25973,
+      "sha256": "2f9a779f7a1c4fed52cd5291477163fb627041e674a2ffd5bc773a9221a2ce51"
+    }
+  ],
+  "rootIntegrationReviewPass": true,
+  "independentSOLSourceReviewPass": true,
+  "nativeAcceptance": false,
+  "oneGrantDelta": "SELECT(xmin) ON public.briefings TO own diagnostic runtime role",
+  "originalHelpersCompilerAndStoreDDLUnchanged": true,
+  "originalRLSAndAtomicCASAndReceiptBodiesUnchanged": true,
+  "existingEffectiveHelmutStoreRuntimeTableSelectIndependentlyConfirmed": true,
+  "noExtraHelmutStoreGrant": true,
+  "nativeReadPrerequisiteAdded": {
+    "actualOrigin": "initial postgres -> SET SESSION AUTHORIZATION authenticator -> SET LOCAL ROLE runtime",
+    "transaction": "READ ONLY, row_security=on, rollback",
+    "bothTablesRLSAndNonOwnerRequired": true,
+    "positiveReads": [
+      "helmut_store: id,data,xmin LIMIT 0",
+      "briefings: id,user_id,slot,generated_at,payload,xmin LIMIT 0"
+    ],
+    "tableSelectOnBriefingsRejected": true,
+    "effectiveBriefingsUserAndSystemColumnsExactlyChecked": true,
+    "forbiddenBriefingsReadsRequire42501": [
+      "created_at",
+      "xmax"
+    ],
+    "updateBriefingsRequires42501InWriteCapableProbe": true,
+    "catalogNegativeChecksPerBatch": 11,
+    "catalogNegativeChecksBothBatches": 22,
+    "historicalCatalogNegativeChecksBothBatches": 20,
+    "additionalRuntimeReadonly42501BothBatches": 4,
+    "existingWriterReadonly42501BothBatches": 8,
+    "bothInstallAndFreshReadbackConsumePrerequisite": true,
+    "noNativeRetry": true
+  },
+  "targetedPureTests": {
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 LC_ALL=C.UTF-8 TZ=UTC python3 -B scripts/helmut-resource-meter/local-unit-native-bridge-qualification-test.py",
+    "passed": 25,
+    "failed": 0,
+    "actualStandaloneExitCode": 0,
+    "secondsReportedByUnittest": 0.845,
+    "source": "root tool observation after final freeze",
+    "repeatJustification": "Author final combined shell also ran a hash reader; root standalone run resolved the missing separate final unittest exit",
+    "nativeSQLExecuted": false
+  },
+  "limits": [
+    "LIMIT 0 does not prove row visibility, receipt, commit, complete artifact write or unit timing",
+    "F519 exact failing expression is source-inferred; SQL CONTEXT/STATEMENT not retained",
+    "New native case, capacity, actual clean closure and complete successful result still required"
+  ],
+  "unit60Qualified": false,
+  "auth30Qualified": false,
+  "full500ReserveQualified": false,
+  "oldClaimsReused": false,
+  "production": false,
+  "full500": false
+}

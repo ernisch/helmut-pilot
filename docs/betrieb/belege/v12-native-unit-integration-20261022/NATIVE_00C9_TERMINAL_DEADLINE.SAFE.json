@@ -1,0 +1,101 @@
+{
+  "auth30Qualified": false,
+  "case": "00c9af1a352ed9689449e041091ae9f8",
+  "ci": {
+    "conclusion": "success",
+    "head": "0b1a233553b1ac0f2d0ce13fed86dbefb5f774f4",
+    "run": 39891861503
+  },
+  "closure": {
+    "actualCLIExitCode": 1,
+    "actualHelperExitCode": 1,
+    "allLocalChildrenBothNaturalEOF": true,
+    "allWorkerChildrenExited": true,
+    "bothOuterWaitsConfirmed": true,
+    "hostClean": false,
+    "hostState": "ENTRY",
+    "localChildren0": 86,
+    "localChildren137": 2,
+    "outerBothNaturalEOF": true,
+    "outerSignalsTimeoutOrTruncation": false,
+    "postgresExitCode": 0,
+    "serviceActualNodeCloseProven": false
+  },
+  "codeCommit": "0b1a233553b1ac0f2d0ce13fed86dbefb5f774f4",
+  "commonMemoryImprovementProven": false,
+  "entryStartedAtUTC": "2026-10-23T03:27:42.942Z",
+  "freeBytesAfterNative": 10416967680,
+  "full500AdmissionBytes": 15179779720,
+  "full500Authorized": false,
+  "full500GapBytes": 4762812040,
+  "full500ReserveQualified": false,
+  "hostClosePin": {
+    "bytes": 140632,
+    "path": "/workspace/helmut-unit-diagnostic-native/00c9af1a352ed9689449e041091ae9f8/EXECUTION_HOST_CLOSE.SAFE.json",
+    "sha256": "2d0570aa0ed4d172ca85c0db25d7e118a1a3ff5871f4f6a147549647cc43fb70"
+  },
+  "kernel": {
+    "cpuUsageUsec": 124376764,
+    "finalPopulated": 0,
+    "finalPopulatedSubgroups": [],
+    "fullLastProcessExitCovered": true,
+    "ioStatRawNumericOnly": "254:0 rbytes=0 wbytes=424427520 rios=0 wios=8167 dbytes=0 dios=0",
+    "memoryEvents": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "memoryPeakBytes": 1366712320,
+    "populated": 0,
+    "populatedSubgroups": [],
+    "throttledUsec": 0
+  },
+  "nativeAccepted": false,
+  "nativeQualificationPin": {
+    "bytes": 760,
+    "path": "/workspace/helmut-unit-diagnostic-native/00c9af1a352ed9689449e041091ae9f8/NATIVE_QUALIFICATION.SAFE.json",
+    "sha256": "a59e36e89ae86158840fd5a2dc9519e6988d78523033eb717c8eb41f64358a9f"
+  },
+  "nextStep": "Read only journal progress from a new isolated copy of the stopped own diagnostic database; no further motor execution before the cause is evidenced.",
+  "observedAtUTC": "2026-10-23T03:36:00Z",
+  "observedFailure": {
+    "actualDRPhaseOrCompletedControls": null,
+    "code": "native-execution-controller-entry-terminal-deadline",
+    "controllerStage": 6,
+    "entryTerminalPresent": false,
+    "failurePhaseFilePresent": false,
+    "finalAcceptancePresent": false,
+    "hostSourcePIDMissingIsNotProvenPrimaryCause": true,
+    "unitOrAuthorizationDurationMS": null
+  },
+  "oldClaimsReusable": false,
+  "originals": {
+    "originalPostrunPreserved": true,
+    "originalSourcePinsUnchanged": true,
+    "outerSourceBeforeEqualsAfter": true,
+    "rawOrInputHashesRepeatedByPublicReport": false
+  },
+  "outerFinalPin": {
+    "bytes": 6172,
+    "path": "/workspace/helmut-native-integration-checks-20261022/manifest-continuity-native-PREPARED-20261023/capture-bfd923f54dd699806b2b61cc1f3ac633/FINAL.SAFE.json",
+    "sha256": "4d7d964734e95b9755a8dca4cef2a07096c2a2edb24fc024f70af04d4ca5b08b"
+  },
+  "resultPin": {
+    "bytes": 2159,
+    "path": "/workspace/helmut-unit-diagnostic-native/00c9af1a352ed9689449e041091ae9f8/RESULT.SAFE.json",
+    "sha256": "d980d3d974049ffcf3a2b9c1a03ca1ae2fc0c580282f7e48e69c738614214352"
+  },
+  "rootObservedHelperExitPin": {
+    "bytes": 280,
+    "path": "/workspace/helmut-native-integration-checks-20261022/manifest-continuity-native-PREPARED-20261023/ACTUAL_HELPER_EXIT.SAFE.json",
+    "sha256": "c48a9ebd6312b83286ab9aea233b4678b36a6a8e05ba91bf96048d6747ae8982"
+  },
+  "schema": "helmut-native-00c9-terminal-deadline-public-evidence/1",
+  "singleUnitAdmissionFloorBytes": 10737418240,
+  "sourcePreflightMayWarmSharedCache": true,
+  "status": "FAIL",
+  "unit60Qualified": false
+}

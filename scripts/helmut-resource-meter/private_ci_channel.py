@@ -111,7 +111,7 @@ def context():
                             text=True, env=child_env(), timeout=10).stdout.strip()
     require(actual == checkout)
     event = json.loads(read_file(Path(os.environ['GITHUB_EVENT_PATH']), 2 * 1024 ** 2))
-    pr, head = None, checkout
+    pr, head, base = None, checkout, None
     if event_name == 'pull_request':
         pr = event.get('number')
         require(type(pr) is int and pr > 0 and ref == f'refs/pull/{pr}/merge')
@@ -131,7 +131,7 @@ def context():
     else:
         require(ref == 'refs/heads/main')
     return dict(repository=REPO, event=event_name, runID=int(run_id), runAttempt=int(attempt),
-                ref=ref, headSHA=head, checkoutSHA=checkout, workflowSHA=checkout, prNumber=pr,
+                ref=ref, headSHA=head, baseSHA=base, checkoutSHA=checkout, workflowSHA=checkout, prNumber=pr,
                 manifestSHA256=MANIFEST_SHA, transportSHA256=TRANSPORT_SHA)
 
 
@@ -196,6 +196,7 @@ def same_repository(value):
 
 def validate_owner_access(ctx, run, current_pr=None):
     require(isinstance(ctx, dict) and isinstance(run, dict)
+            and 'baseSHA' in ctx
             and ctx.get('repository') == REPO
             and ctx.get('event') in ['pull_request', 'push', 'workflow_dispatch']
             and type(ctx.get('runID')) is int and ctx['runID'] > 0
@@ -224,11 +225,12 @@ def validate_owner_access(ctx, run, current_pr=None):
                 and same_repository(head.get('repo')) and head['repo'].get('fork') is False
                 and same_repository(base.get('repo'))
                 and head.get('sha') == ctx['headSHA']
-                and current_pr.get('merge_commit_sha') == ctx['checkoutSHA']
+                and type(ctx.get('baseSHA')) is str and COMMIT.fullmatch(ctx['baseSHA'])
+                and base.get('sha') == ctx['baseSHA']
                 and isinstance(head.get('ref'), str) and bool(head['ref'])
                 and run.get('head_branch') == head['ref'])
     else:
-        require(ctx.get('prNumber') is None and current_pr is None
+        require(ctx.get('prNumber') is None and current_pr is None and ctx['baseSHA'] is None
                 and ctx.get('ref') == 'refs/heads/main' and run.get('head_branch') == 'main'
                 and ctx['headSHA'] == ctx['checkoutSHA'])
     return {**ctx, 'schema': 'helmut-private-ci-owner-access/1',
@@ -238,7 +240,11 @@ def validate_owner_access(ctx, run, current_pr=None):
 
 
 def validate_receipt(approved, ctx, policy):
-    require(isinstance(approved, dict) and policy in ['manual', AUTOMATIC_POLICY]
+    require(isinstance(ctx, dict) and 'baseSHA' in ctx
+            and ((ctx.get('event') == 'pull_request' and type(ctx['baseSHA']) is str
+                  and COMMIT.fullmatch(ctx['baseSHA']))
+                 or (ctx.get('event') in ['push', 'workflow_dispatch'] and ctx['baseSHA'] is None)))
+    require(isinstance(approved, dict) and 'baseSHA' in approved and policy in ['manual', AUTOMATIC_POLICY]
             and all(type(approved.get(k)) is type(v) and approved.get(k) == v
                     for k, v in ctx.items())
             and approved.get('environment') == ENVIRONMENT

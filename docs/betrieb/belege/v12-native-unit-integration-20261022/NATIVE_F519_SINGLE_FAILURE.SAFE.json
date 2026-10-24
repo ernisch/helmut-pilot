@@ -1,0 +1,141 @@
+{
+  "schema": "helmut-native-single-unit-failure-summary/1",
+  "case": "f51940617fbf03e755af52ce41e60bab",
+  "codeCommit": "8dd83ba762de381c193e31aa688a6faca90132ef",
+  "pass": false,
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/f51940617fbf03e755af52ce41e60bab/RESULT.SAFE.json",
+      "bytes": 2157,
+      "sha256": "bd4ed20f7bec4651ab8f3fadd305edc949530658780383e004a7bff3178e30fb"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/f51940617fbf03e755af52ce41e60bab/NATIVE_QUALIFICATION.SAFE.json",
+      "bytes": 760,
+      "sha256": "c2dd183336c2619be0f80fd40bc1278d00348247de9453d0ec9cd9b5d8e9d201"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/f51940617fbf03e755af52ce41e60bab/client/ATTEMPT_TERMINAL.SAFE.json",
+      "bytes": 1743,
+      "sha256": "a38c2aed2c83065b6dc6f77aff9fd4fe7f169ab4e2f216efa7f573746f13a0bc"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/f51940617fbf03e755af52ce41e60bab/NATIVE_READ_CLOSURE.SAFE.json",
+      "bytes": 9037,
+      "sha256": "2e4f1ca66860f1aadbaaa45d1f265911e12970ed830f7b155a749e7d397d89e0"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/f51940617fbf03e755af52ce41e60bab/client/ENDPOINT_QUALIFICATION.SAFE.json",
+      "bytes": 2417,
+      "sha256": "58265e80ba3ab9b769bb5bc0db38cc13ce6cee5678fcd22fc7daa92faad0d508"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/f51940617fbf03e755af52ce41e60bab/ORIGINAL_SERVICE_CHILDREN.SAFE.jsonl",
+      "bytes": 4939,
+      "sha256": "f5f291d0ca4a430f8506128887ea2591d7676707341b96ae6e358ddce0818021"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/f51940617fbf03e755af52ce41e60bab/ORIGINAL_SERVICE_STOP.SAFE.json",
+      "bytes": 534,
+      "sha256": "e828ef490ebd329b34fdf210454e488098d22bcd27bc2f8641778f3201d3eba4"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/f51940617fbf03e755af52ce41e60bab/POSTGRES.PRIVATE.log",
+      "bytes": 1385,
+      "sha256": "1fa0ffd873f4141819907a30ca9f1d78c37e44b0def8d21131c954bed5ffb5fe"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/durable-single-unit-cli-capture-readclosure-fix-20261022/capture-a5a58d033a7513e790e61e43f2cc6931/FINAL.SAFE.json",
+      "bytes": 6256,
+      "sha256": "d154a1fc226a7c9ab1662a66cb4088498cb22521b65552f3494b35cc11bee8c8"
+    }
+  ],
+  "passedPreconditions": {
+    "readClosureNegativeChecks": 40,
+    "nativeReadProbeChecks": 57,
+    "realPublicationHTTPConsumer": true,
+    "selectedKnowledgeObjects": 6,
+    "selectedDocumentIdentities": 7,
+    "publicationHTTPRequestCount": 2,
+    "beforeSeedClientExitZeroAndBothEOFRequired": true,
+    "completeArtifactWriteQualified": false
+  },
+  "entry": {
+    "requested": true,
+    "completedUnitCount": null,
+    "terminalStatus": "failed",
+    "finishedAtUTC": "2026-10-23T00:10:37.220Z",
+    "adapterElapsedMS": 44094.953525,
+    "totalMonotonicMS": 46645.594838,
+    "elapsedFailureIsNotUnit60Pass": true
+  },
+  "firstFailure": {
+    "process": "seventh-original-service-psql",
+    "ledgerIndex": 6,
+    "actualExitCode": 3,
+    "bothNaturalEOF": true,
+    "precedingConfirmedPSQLCalls": 6,
+    "postgresErrorAtUTC": "2026-10-23T00:10:37.199Z",
+    "postgresErrorCount": 1,
+    "postgresFixedClassification": "permission-denied-for-table-briefings",
+    "postgresSQLStatementOrContextRetained": false,
+    "exactFailingSQLExpressionDirectlyLogged": false,
+    "sourceProvenConflict": "SECURITY INVOKER artifact receipt reads briefings.xmin under runtime; only writer has SELECT(xmin)",
+    "sourceConflictConsistentWithObservedError": true,
+    "noUnknownOutcomeRetry": true
+  },
+  "commonMeasurement": {
+    "peakBytes": 1340301312,
+    "arithmeticReserveBytes": 707698688,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "groupEmpty": true,
+    "fullLastProcessExitCovered": true,
+    "sourcePreflightMayWarmSharedCache": true,
+    "noCacheOrGCManipulation": true,
+    "unit60Qualified": false,
+    "auth30Qualified": false,
+    "full500ReserveQualified": false,
+    "whole500MemoryOrPlateauInferred": false
+  },
+  "outerCLI": {
+    "actualExitCode": 1,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true,
+    "outerTimeout": false,
+    "forcedSignals": false,
+    "sourceBeforeEqualsAfter": true,
+    "captureHelperExitObserved": false,
+    "nativeAcceptanceInferred": false
+  },
+  "originals": {
+    "postrunPreserved": true,
+    "authRowUnchanged": true,
+    "sourcePinsUnchanged": true
+  },
+  "closure": {
+    "postgresExitCode": 0,
+    "hostClean": false,
+    "ownerExitCode": 1,
+    "entryHostObservedExitCode": 137,
+    "serviceSpawnCount": 7,
+    "serviceCloseCount": 7,
+    "serviceConfirmedCount": 6,
+    "serviceNodeIndividualExitZeroAndEOFProven": false,
+    "actualRESTExitSignal": "SIGINT",
+    "RESTExitAfterOwnerStopAttempt": true,
+    "RESTSpontaneousPrimaryFailureProven": false,
+    "secondaryFailuresDoNotOverrideFirstSQLFailure": true
+  },
+  "nextStep": "Narrow runtime xmin read permission and actual runtime read prerequisite; preserve all RLS, atomic receipts and denial probes; no unchanged case retry",
+  "oldClaimsReused": false,
+  "retryAllowed": false,
+  "full500": false,
+  "production": false
+}

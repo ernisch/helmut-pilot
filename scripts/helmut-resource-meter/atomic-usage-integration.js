@@ -54,6 +54,22 @@ const CONTROL_SOURCE_ACCEPTANCE = Object.freeze({
     requiresFreshIntegrationAcceptance: true, newGlueAccepted: false,
     full500Accepted: false, RAMOrTimeGainAccepted: false
   }),
+  // Separately reviewed SOURCE-only hooks for the isolated Own2 fixture. They
+  // do not transfer W50/native lease acceptance or prove global-budget parity.
+  localCostCallerDelta: Object.freeze({
+    baselineCommit: "d6778b7805adc7ebe0b466b1604947d4a86114d9",
+    file: "lib/helmut/testkosten-budget.js",
+    originalSHA256: "9f36d5379ae9c94140cae9e2cf97c12dd91ae6efe9431ca4f16746b9efa5da2e",
+    sha256: "dfbbfd1401fa2187549af73b203c4e8c360b9535b77c425c3c015a9751337ad4",
+    independentSourceReview: Object.freeze({ name: "SOURCE_REVIEW.SAFE.json", bytes: 3316,
+      sha256: "cfc8b937af78f7d9d2da26ffb136713be51c2230b871a878266a1517a0d95777" }),
+    scope: "requestBytes and three closed Own2 fixture dispatch hooks; legacy budget bodies unchanged",
+    sourceOnly: true, requiresFreshIntegrationAcceptance: true,
+    historicalAcceptanceTransferred: false, nativeLeaseAcceptanceTransferred: false,
+    historicalGlobalCounterOrFinancialEquivalence: false, executionAuthority: false,
+    nativeUnit60Qualified: false, production: false, newGlueAccepted: false,
+    full500Accepted: false, RAMOrTimeGainAccepted: false
+  }),
   // This separately qualified local renderer is outside the historical W50
   // acceptance. No prior full-run authority or whole-run resource proof carries.
   localRendererDelta: Object.freeze({
@@ -145,18 +161,21 @@ function descriptor({ stateStorage = null, historyReadReuse = null, graphReadReu
     if (existing) assert.deepEqual(existing, p);else sourcePins.push(p);
   }
   if (controlRead) {
-    // Historical W50 hashes stay historical; only this separately qualified delta selects current U/Parts.
-    const callerDelta = CONTROL_SOURCE_ACCEPTANCE.localViewBindingCallerDelta;
-    assert.equal(CONTROL_SOURCE_HASHES[callerDelta.file], callerDelta.originalSHA256,
-      "Reviewed view-binding caller baseline drift");
-    for (const source of [...(sourceDelta?.acceptance.sourcePins || []), ...(lease?.acceptance.sourcePins || [])])
-      if (source.file === callerDelta.file) assert.equal(source.sha256, callerDelta.sha256,
-        "Conflicting reviewed view-binding caller source");
+    // Keep W50 historical; apply only the separately pinned cache/caller deltas.
+    const callerDeltas = [CONTROL_SOURCE_ACCEPTANCE.localViewBindingCallerDelta, CONTROL_SOURCE_ACCEPTANCE.localCostCallerDelta];
+    for (const callerDelta of callerDeltas) {
+      assert.equal(CONTROL_SOURCE_HASHES[callerDelta.file], callerDelta.originalSHA256,
+        "Reviewed caller baseline drift: " + callerDelta.file);
+      for (const source of [...controlCacheSourceAcceptance.currentSources,
+        ...(sourceDelta?.acceptance.sourcePins || []), ...(lease?.acceptance.sourcePins || [])])
+        if (source.file === callerDelta.file) assert.equal(source.sha256, callerDelta.sha256,
+          "Conflicting reviewed caller source: " + callerDelta.file);
+    }
     const expected = { ...CONTROL_SOURCE_HASHES, ...Object.fromEntries(
       controlCacheSourceAcceptance.currentSources.map(p => [p.file, p.sha256])),
       ...(sourceDelta ? Object.fromEntries(sourceDelta.acceptance.sourcePins
         .filter(p => Object.hasOwn(CONTROL_SOURCE_HASHES, p.file)).map(p => [p.file, p.sha256])) : {}),
-      [callerDelta.file]: callerDelta.sha256 };
+      ...Object.fromEntries(callerDeltas.map(p => [p.file, p.sha256])) };
     for (const [file, hash] of Object.entries(expected))
       assert.equal(sourcePins.find(p => p.path === path.join(ROOT, file)).sha256, hash, "Reviewed control source drift: " + file);
   }
