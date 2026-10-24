@@ -339,6 +339,7 @@ async function start() {
       const encoded=Buffer.from(options.body).toString("base64"), writer="helmut_ud_bridge_writer_"+c.operationId.slice(-32);
       const sql=`BEGIN; SET LOCAL search_path=pg_catalog; SET LOCAL statement_timeout='10s'; SET LOCAL lock_timeout='500ms';
 SET LOCAL helmut.local_usage_experiment='on'; SET LOCAL helmut.local_auth_state_cas_projection='on';
+SET LOCAL helmut.local_diagnostic_scope='bounded-cas-qualification-v1';
 SET SESSION AUTHORIZATION ${writer}; SELECT public.helmut_auth_state_cas_v1(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb);
 RESET SESSION AUTHORIZATION; COMMIT;`;
       return JSON.parse((await psql(sql,"MIRROR_FIXTURE")).stdout.toString("utf8"));
