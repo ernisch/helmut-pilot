@@ -256,8 +256,8 @@
     },
     {
       "path": "lib/helmut/storage.js",
-      "bytes": 556772,
-      "sha256": "dbb3d98f834731ff67ff209fe9499150ce9e92813af76786567a432cc63c776f"
+      "bytes": 558109,
+      "sha256": "5a0fe6c4f74e979e8e5d413065373e80190f9e24bbcb94c0204b2a1750b1e97d"
     },
     {
       "path": "lib/helmut/streaming-canonical-hash.js",
@@ -450,7 +450,7 @@
       "sha256": "32e72dfd6e3e2bc2788c991cab29471af4e04ea7a1a57f7bb3e58a9ea92693d2"
     }
   ],
-  "sourceMappingSHA256": "50e7fd49355c849c4f91b7557eaa81ea19f27498750f507917cc54a9e7ee9ec6",
+  "sourceMappingSHA256": "9664e4fe58fc043c2583d3dc4f3e93586c4c7f8c1479579979a44b0831492208",
   "currentCandidateFull500Qualification": false,
   "candidateQualificationScope": "LOCAL_SOURCE_EXPECTATIONS_ONLY_NATIVE_INTEGRATION_UNQUALIFIED; HISTORICAL_EVIDENCE_DOES_NOT_QUALIFY_CURRENT_CODE; UNIT60_AUTH30_COMMON_RAM_FULL500_NOT_PROVEN",
   "priorManifestCommit": "c7a92798010fd69c1f96b7a81c77d99dc9b2d2a2",
