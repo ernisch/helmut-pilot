@@ -436,7 +436,7 @@ class _Controller:
              and set(runtime) == {'schema', 'database', 'sqlSources', 'files', 'transport'}
              and runtime['schema'] == 'helmut-local-unit-diagnostic-runtime-manifest/1' and runtime['database'] == self.database
              and runtime_pin['sha256'] == self.command['slot']['plan']['runtimeManifestHash']
-             and len(runtime['sqlSources']) == 36 and runtime['sqlSources'] == self.bridge['actualContractSources']
+             and len(runtime['sqlSources']) == 38 and runtime['sqlSources'] == self.bridge['actualContractSources']
              and self.c['executionControllerPin'] in code['files'] and self.query_pin in code['files'], 'actual-execution-manifests')
         need(reservation['command'] == self.command and reservation['admission'] == self.built['admission'], 'installed-command-admission')
         rows = {}

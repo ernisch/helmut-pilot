@@ -1,6 +1,7 @@
 """RAM-only coordinator protocol tests: no child/socket/database is started."""
 import copy
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -267,7 +268,123 @@ class Fixture:
             return self.c.run()
 
 
+class OwnerBoundaryReached(RuntimeError):
+    """Offline sentinel before any owner, database, authority or model call."""
+
+
+def current_sql_sources():
+    here = FILE.parent
+    spec = importlib.util.spec_from_file_location('controller_inventory_offline', here / 'local-unit-native-bridge-qualification.py')
+    bridge = importlib.util.module_from_spec(spec); spec.loader.exec_module(bridge)
+    native = bridge._definitions((here / 'local-unit-diagnostic-store.sql').read_text(encoding='utf8'))
+    helpers = bridge._definitions((here.parents[1] / 'supabase/proposals/local_unit_original_bridge_local.sql').read_text(encoding='utf8'))
+    assert len(native) == 29 and len(helpers) == 9 and not set(native) & set(helpers)
+    return {r['name'] + '(' + r['identityArguments'] + ')': r['prosrcSHA256'] for r in [*native.values(), *helpers.values()]}
+
+
+class ManifestFixture(Fixture):
+    """Real pre-owner file guards; RAM I/O and new synthetic identities only.
+
+    Optional existing manifests supply structure/size metadata only. Every path,
+    hash, database and command identity is replaced; no retained permission or
+    Original payload is opened. Controller/worker code and SQL definitions bind
+    the current target sources. The inherited broad coordinator fixture used to
+    replace files() entirely, and could not detect a stale SQL-source count.
+    """
+    def __init__(self, code_shape=None, runtime_shape=None):
+        super().__init__(); c = self.c; sources = current_sql_sources()
+        if code_shape is None:
+            code_shape = {'schema': 'helmut-local-unit-diagnostic-code-manifest/1', 'files': [
+                pin('/form/' + name) for name in ['local-unit-native-execution-controller.py', 'local-unit-native-worker.py']
+                + ['code-%04d' % i for i in range(436)]]}
+        if runtime_shape is None:
+            runtime_shape = {'schema': 'helmut-local-unit-diagnostic-runtime-manifest/1', 'database': 'offline',
+                'sqlSources': sources, 'files': [pin('/form/runtime-%04d' % i) for i in range(1530)],
+                'transport': {'schema': 'helmut-local-unit-diagnostic-source-producer-transport/1', 'originalPins': {}, 'phases': {'D': {}, 'R': {}}}}
+        assert runtime_shape['sqlSources'] == sources, 'retained metadata must match current DDL, never repair a foreign map'
+        def sanitized(value):
+            if isinstance(value, dict): return {k: v if k == 'schema' else sanitized(v) for k, v in value.items()}
+            if isinstance(value, list): return [sanitized(v) for v in value]
+            return 'offline-metadata-only' if isinstance(value, str) else False if isinstance(value, bool) else value
+        self.code = {'schema': code_shape['schema'], 'files': []}; self.runtime = sanitized(runtime_shape)
+        for i, row in enumerate(code_shape['files']):
+            assert set(row) == {'path', 'bytes', 'sha256'}
+            name = row['path'].rsplit('/', 1)[-1]; item = {**pin('/offline-code/%04d' % i), 'bytes': row['bytes']}
+            if name in ('local-unit-native-execution-controller.py', 'local-unit-native-worker.py'):
+                raw = (FILE.parent / name).read_bytes(); item.update(bytes=len(raw), sha256=hashlib.sha256(raw).hexdigest())
+                if name == FILE.name: c.c['executionControllerPin'] = item
+                else: c.query_pin = item
+            self.code['files'].append(item)
+        self.runtime.update(database=c.database, sqlSources=sources, files=[
+            {**pin('/offline-runtime/%04d' % i), 'bytes': row['bytes']} for i, row in enumerate(runtime_shape['files'])])
+        c.bridge['actualContractSources'] = copy.deepcopy(sources)
+        c.command['gatePins'] = {k: pin('/offline-gate/' + k) for k in (
+            'source', 'runtime', 'owner', 'calendar', 'costs', 'reservation', 'sender', 'review', 'result', 'independentAcceptance')}
+        c.command['slot'] = {'plan': {'runtimeManifestHash': 'pending-offline-metadata'}}
+        c.built['admission'] = {'offlineOnly': True}
+        c.built['initialState']['localUnitDiagnostic:' + c.c['nonce'] + ':reservation'] = {'command': c.command, 'admission': c.built['admission']}
+        self.ram_pins = {r['path']: copy.deepcopy(r) for r in self.code['files'] + self.runtime['files'] + list(c.command['gatePins'].values())}
+        self.ram_pins[c.c['raw']['path']] = c.c['raw']
+        self.ram_pins.update({r['path']: r for r in c.preparation['originalPins'].values()})
+        for name in ('/bench/PREPARED_COMMAND.PRIVATE.json', '/pg/psql', str(self.m.BIN / 'local-unit-original-service.js'), str(self.m.BIN / 'local-unit-original-transaction.js')):
+            self.ram_pins[name] = pin(name)
+        self.refresh_manifests()
+        c.source.private_json = self.private_json
+        c.w.pin = lambda name: copy.deepcopy(self.ram_pins[str(name)])
+        c.files = types.MethodType(self.m._Controller.files, c)
+        c.start_owner = self.owner_boundary
+
+    def refresh_manifests(self):
+        self.documents = {'/bench/client/CODE_MANIFEST.SAFE.json': self.code, '/bench/client/RUNTIME_MANIFEST.SAFE.json': self.runtime}
+        for name, value in self.documents.items():
+            raw = self.m.canonical(value).encode(); self.ram_pins[name] = {'path': name, 'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+        self.c.command['slot']['plan']['runtimeManifestHash'] = self.ram_pins['/bench/client/RUNTIME_MANIFEST.SAFE.json']['sha256']
+
+    def private_json(self, worker, name, *, expected):
+        assert expected == self.ram_pins[str(name)]
+        return copy.deepcopy(self.documents[str(name)]), copy.deepcopy(expected)
+
+    def owner_boundary(self, *args):
+        self.events.append('offline-pre-owner-file-guards-confirmed')
+        raise OwnerBoundaryReached('offline-stop-before-owner')
+
+
 class Tests(unittest.TestCase):
+    def test_current_ddl_and_manifest_file_guards_reach_only_the_pre_owner_boundary(self):
+        f = ManifestFixture()
+        with self.assertRaises(OwnerBoundaryReached): f.run()
+        self.assertEqual(len(f.runtime['sqlSources']), 38)
+        self.assertEqual(len(f.c.immutable), 1971)
+        self.assertEqual(f.events, ['stage:source-private-command', 'stage:owner-and-client-observation', 'offline-pre-owner-file-guards-confirmed'])
+        self.assertEqual(f.calls, [])
+        self.assertFalse(f.c.service)
+
+    def test_real_manifest_guards_reject_stale_count_map_hash_and_missing_code(self):
+        for mutation in ('count', 'map', 'runtime-hash', 'controller', 'worker'):
+            f = ManifestFixture()
+            if mutation == 'count': f.runtime['sqlSources'].pop(next(iter(f.runtime['sqlSources'])))
+            elif mutation == 'map': f.runtime['sqlSources'][next(iter(f.runtime['sqlSources']))] = '0' * 64
+            elif mutation in ('controller', 'worker'):
+                target = f.c.c['executionControllerPin'] if mutation == 'controller' else f.c.query_pin
+                f.code['files'].remove(target)
+            f.refresh_manifests()
+            if mutation == 'runtime-hash': f.c.command['slot']['plan']['runtimeManifestHash'] = '0' * 64
+            with self.assertRaisesRegex(RuntimeError, 'actual-execution-manifests'): f.run()
+            self.assertNotIn('offline-pre-owner-file-guards-confirmed', f.events)
+
+    def test_real_closure_and_pre_owner_file_guards_reject_pin_and_admission_drift(self):
+        for mutation, code in [('conflict', 'conflicting-closure'), ('pin', 'manifest-file-pin'),
+                               ('admission', 'installed-command-admission'), ('pre-owner', 'fresh-input-runtime-pin')]:
+            f = ManifestFixture()
+            if mutation == 'conflict':
+                f.code['files'].append({**f.code['files'][2], 'sha256': '0' * 64}); f.refresh_manifests()
+            elif mutation == 'pin': f.ram_pins[f.code['files'][2]['path']]['sha256'] = '0' * 64
+            elif mutation == 'admission':
+                f.c.built['initialState']['localUnitDiagnostic:' + f.c.c['nonce'] + ':reservation']['admission'] = {'different': True}
+            else: f.ram_pins[f.c.c['raw']['path']] = {**f.c.c['raw'], 'sha256': '0' * 64}
+            with self.assertRaisesRegex(RuntimeError, code): f.run()
+            self.assertNotIn('offline-pre-owner-file-guards-confirmed', f.events)
+
     def test_transaction_guard_runs_only_after_verified_fresh_seed_and_observation(self):
         f=Fixture();f.c.transaction_guard=True;seen=[]
         def probe(initialization,verification):
