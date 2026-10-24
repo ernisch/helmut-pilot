@@ -151,7 +151,7 @@ begin
           'public.local_unit_diagnostic_authority_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_runtime_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_control_runtime_read_v1(text,text)'::regprocedure,
-          'public.local_unit_diagnostic_control_snapshot_read_v1(text,text,integer,text,jsonb,text)'::regprocedure,
+          'public.local_unit_diagnostic_control_snapshot_read_v1(text,text,integer,text,jsonb,jsonb,text)'::regprocedure,
           'public.local_unit_diagnostic_state_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_state_cas_v1(text,text,text,bigint,text,text,text)'::regprocedure,
           'public.local_unit_diagnostic_artifact_insert_v1(text,text,text,text,text,text,text,text)'::regprocedure,
@@ -928,7 +928,7 @@ begin
           'public.local_unit_diagnostic_authority_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_runtime_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_control_runtime_read_v1(text,text)'::regprocedure,
-          'public.local_unit_diagnostic_control_snapshot_read_v1(text,text,integer,text,jsonb,text)'::regprocedure,
+          'public.local_unit_diagnostic_control_snapshot_read_v1(text,text,integer,text,jsonb,jsonb,text)'::regprocedure,
           'public.local_unit_diagnostic_state_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_state_cas_v1(text,text,text,bigint,text,text,text)'::regprocedure,
           'public.local_unit_diagnostic_artifact_insert_v1(text,text,text,text,text,text,text,text)'::regprocedure,
@@ -995,7 +995,7 @@ begin
     'nonce',p_nonce,'catalog',catalog,'runtime',runtime);
 end;$f$;
 
-create function public.local_unit_diagnostic_control_snapshot_read_v1(p_scope_hash text,p_claim_hash text,p_control_index integer,p_stage text,p_graph_request jsonb,p_nonce text) returns jsonb
+create function public.local_unit_diagnostic_control_snapshot_read_v1(p_scope_hash text,p_claim_hash text,p_control_index integer,p_stage text,p_graph_request jsonb,p_expected_legacy_reads jsonb,p_nonce text) returns jsonb
 language plpgsql stable security invoker set search_path=pg_catalog
 as $f$
 declare a helmut_unit_diagnostic.authority%rowtype; command jsonb; original jsonb; documents jsonb; knowledge jsonb;
@@ -1018,6 +1018,9 @@ begin
   -- The actual unchanged Original graph/history protocol executes first. Its
   -- complete response goes to U.readControl; Own7 is never an Original proof.
   catalog:=public.local_unit_diagnostic_contract_v1();
+  if jsonb_typeof(p_expected_legacy_reads) is distinct from 'array'
+    or catalog->'legacyReadRPCs' is distinct from p_expected_legacy_reads
+    then raise exception 'local-unit-store-control-read-catalog';end if;
   original:=public.helmut_auth_state_graph_read_v1(p_graph_request);
   select coalesce(jsonb_agg(jsonb_build_object('id',d.id,'title',d.title,'summary',d.summary,'canonical_url',d.canonical_url,'url',d.url,'content_hash',d.content_hash,'source_id',d.source_id,'source_name',d.source_name,'source_type',d.source_type,'document_type',d.document_type,'link_type',d.link_type,'confidence',d.confidence,'published_at',d.published_at,'retrieved_at',d.retrieved_at,'created_at',d.created_at,'quellenauszug_beleg',d.raw->'helmutQuellenkontext','dip_quellfelder',d.raw->'helmutDipQuellfelder','bundestag_artikelstand',d.raw->'helmutBundestagArtikelstand','berlin_artikelstand',d.raw->'helmutBerlinArtikelstand','brandenburg_artikelstand',d.raw->'helmutBrandenburgLandtagPresseArtikelstand','bundestag_abgerufen_at',d.retrieved_at,'berlin_abgerufen_at',d.retrieved_at,'brandenburg_abgerufen_at',d.retrieved_at) order by d.id),'[]'::jsonb) into documents
     from public.raw_documents d where d.id=any(ids_d);
@@ -1115,7 +1118,7 @@ begin
         'public.local_unit_diagnostic_authority_read_v1(text,text)'::regprocedure,
         'public.local_unit_diagnostic_runtime_read_v1(text,text)'::regprocedure,
         'public.local_unit_diagnostic_control_runtime_read_v1(text,text)'::regprocedure,
-        'public.local_unit_diagnostic_control_snapshot_read_v1(text,text,integer,text,jsonb,text)'::regprocedure,
+        'public.local_unit_diagnostic_control_snapshot_read_v1(text,text,integer,text,jsonb,jsonb,text)'::regprocedure,
         'public.local_unit_diagnostic_state_read_v1(text,text)'::regprocedure,
         'public.local_unit_diagnostic_state_cas_v1(text,text,text,bigint,text,text,text)'::regprocedure,
         'public.local_unit_diagnostic_artifact_insert_v1(text,text,text,text,text,text,text,text)'::regprocedure,

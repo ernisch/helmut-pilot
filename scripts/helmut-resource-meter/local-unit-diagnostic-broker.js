@@ -14,7 +14,7 @@ const HASH = /^[a-f0-9]{64}$/, UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f
 const exact = (x, keys) => x && typeof x === "object" && !Array.isArray(x) && Object.keys(x).sort().join("|") === [...keys].sort().join("|");
 const RPC = Object.freeze({ contract: [], authority_read: ["p_scope_hash", "p_nonce"], runtime_read: ["p_scope_hash", "p_nonce"],
   control_runtime_read: ["p_scope_hash", "p_nonce"],
-  control_snapshot_read: ["p_scope_hash", "p_claim_hash", "p_control_index", "p_stage", "p_graph_request", "p_nonce"],
+  control_snapshot_read: ["p_scope_hash", "p_claim_hash", "p_control_index", "p_stage", "p_graph_request", "p_expected_legacy_reads", "p_nonce"],
   state_read: ["p_scope_hash", "p_nonce"], state_cas: ["p_scope_hash", "p_claim_hash", "p_old_hash", "p_old_revision", "p_next_canonical", "p_next_hash", "p_nonce"],
   artifact_insert: ["p_scope_hash", "p_claim_hash", "p_kind", "p_logical_id", "p_canonical", "p_sha256", "p_parent_hash", "p_nonce"],
   artifact_read: ["p_scope_hash", "p_kind", "p_logical_id", "p_expected_sha256", "p_nonce"],
@@ -22,6 +22,10 @@ const RPC = Object.freeze({ contract: [], authority_read: ["p_scope_hash", "p_no
   lease_release: ["p_scope_hash", "p_claim_hash", "p_job", "p_token", "p_nonce"] });
 const CONTROL_STAGES = Object.freeze(["unit-enter", "before-D", "reserve-D", "send-D", "D-accounted", "before-R", "D-retained", "reserve-R", "send-R", "R-accounted", "R-retained", "before-lage-save", "after-lage-save", "before-briefing-materialize", "before-morning-insert", "before-evidence-retention"]);
 function need(ok, code) { if (!ok) throw Error("local-unit-broker-" + code); }
+function legacyReadTuples(c) {
+  return c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) =>
+    ({ name, oid, identityArguments, prosrcSHA256, qualificationPin })).sort((a, b) => a.name.localeCompare(b.name));
+}
 // PRIVATE stderr diagnosis only; settled never means ACK or acceptance. Missing
 // rows/caps/stream failures leave this timing unqualified, without changing I/O.
 // Columns: handler begin, authorized, prechecked, optional contract await start/
@@ -275,7 +279,10 @@ function authorize(c, m, traceMeta = null) {
       need(HASH.test(args.p_claim_hash || "") && Number.isInteger(args.p_control_index) && args.p_control_index >= 0
         && args.p_control_index < CONTROL_STAGES.length && args.p_stage === CONTROL_STAGES[args.p_control_index]
         && exact(graph, ["id", "knownProof", "readNonce", "knownGraph"]) && graph.id === "main-auth"
-        && UUID.test(graph.readNonce || ""), "control-bundle-request");
+        && UUID.test(graph.readNonce || "") && c.legacy.rpcs.some(r => r.name === "helmut_auth_state_graph_read_v1"
+          && [...r.requestKeys].sort().join("|") === ["id", "knownProof", "readNonce", "knownGraph"].sort().join("|")), "control-bundle-request");
+      // Root-bound immutable tuple check MUST precede every upstream request.
+      need(isDeepStrictEqual(args.p_expected_legacy_reads, legacyReadTuples(c)), "actual-qualified-read-catalog");
       if (traceMeta) {
         traceMeta.candidate = "control-bundle-4"; traceMeta.readNonceSHA256 = sha(graph.readNonce);
         traceMeta.control = { readNonceSHA256: sha(graph.readNonce), index: args.p_control_index, stage: args.p_stage,
@@ -491,7 +498,7 @@ function controlReadTrace(c, self, codePin, trustPin, unknown) {
           && value.state?.version === "helmut-local-unit-diagnostic-state-witness/1" && value.state.scopeHash === c.commandHash
           && value.state.nonce === value.nonce && HASH.test(value.state.hash || "")
           && Number.isSafeInteger(value.state.revision) && value.state.revision >= 0, "trace-control-bundle-response");
-        const expected = c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) => ({ name, oid, identityArguments, prosrcSHA256, qualificationPin }));
+        const expected = legacyReadTuples(c);
         need(value.catalog?.version === "helmut-local-unit-diagnostic-native-store/1" && value.catalog.database === c.database
           && isDeepStrictEqual(value.catalog.legacyReadRPCs, expected), "actual-qualified-read-catalog");
         t.control = { ...control, ownHash: value.state.hash, ownRevision: value.state.revision };
@@ -654,8 +661,7 @@ async function start(configuration) {
         markPhaseTiming(phaseTiming, 4);
         need(contract.status === 200, "actual-read-contract");
         const catalog = JSON.parse(contract.bytes.toString("utf8"));
-        const expected = c.legacy.rpcs.map(r => ({ name: r.name, oid: r.oid, identityArguments: r.identityArguments,
-          prosrcSHA256: r.prosrcSHA256, qualificationPin: r.qualificationPin })).sort((a, b) => a.name.localeCompare(b.name));
+        const expected = legacyReadTuples(c);
         need(catalog.database === c.database && catalog.version === "helmut-local-unit-diagnostic-native-store/1"
           && isDeepStrictEqual(catalog.legacyReadRPCs, expected), "actual-qualified-read-catalog");
       }

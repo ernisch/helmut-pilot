@@ -19,7 +19,7 @@ RPCS = {
     "authority_read": "p_scope_hash text,p_nonce text",
     "runtime_read": "p_scope_hash text,p_nonce text",
     "control_runtime_read": "p_scope_hash text,p_nonce text",
-    "control_snapshot_read": "p_scope_hash text,p_claim_hash text,p_control_index integer,p_stage text,p_graph_request jsonb,p_nonce text",
+    "control_snapshot_read": "p_scope_hash text,p_claim_hash text,p_control_index integer,p_stage text,p_graph_request jsonb,p_expected_legacy_reads jsonb,p_nonce text",
     "state_read": "p_scope_hash text,p_nonce text",
     "state_cas": "p_scope_hash text,p_claim_hash text,p_old_hash text,p_old_revision bigint,p_next_canonical text,p_next_hash text,p_nonce text",
     "artifact_insert": "p_scope_hash text,p_claim_hash text,p_kind text,p_logical_id text,p_canonical text,p_sha256 text,p_parent_hash text,p_nonce text",
@@ -165,6 +165,10 @@ class StaticStoreContract(unittest.TestCase):
         self.assertIn("stable security invoker set search_path=pg_catalog", body)
         self.assertIn("catalog:=public.local_unit_diagnostic_contract_v1()", body)
         self.assertLess(body.index("catalog:="), body.index("original:=public.helmut_auth_state_graph_read_v1"))
+        comparison = "catalog->'legacyReadRPCs' is distinct from p_expected_legacy_reads"
+        self.assertIn(comparison, body)
+        self.assertLess(body.index(comparison), body.index("original:=public.helmut_auth_state_graph_read_v1"))
+        self.assertIn("then raise exception 'local-unit-store-control-read-catalog'", body)
         for table in ("raw_documents", "knowledge_objects", "profiles", "mandate_profiles"):
             self.assertIn("from public." + table, body)
         self.assertIn("original:=public.helmut_auth_state_graph_read_v1(p_graph_request)", body)
