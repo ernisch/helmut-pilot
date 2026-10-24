@@ -1,0 +1,61 @@
+{
+  "sourceOnly": true,
+  "nativeExecution": false,
+  "consumer": "actual _sources(proposal_pin)",
+  "inputPins": {
+    "supabase/proposals/local_unit_original_bridge_local.sql": {
+      "path": "/workspace/helmut-auth-critical-path-20261025/supabase/proposals/local_unit_original_bridge_local.sql",
+      "bytes": 65146,
+      "sha256": "c6a92c9a3758f46243d1398bfc70be9a101eb477d30219bee3877a6ede549dd8"
+    },
+    "scripts/helmut-resource-meter/local-unit-original-transaction.js": {
+      "path": "/workspace/helmut-auth-critical-path-20261025/scripts/helmut-resource-meter/local-unit-original-transaction.js",
+      "bytes": 54841,
+      "sha256": "61bdc24f6787640204cef0cfd4621d0c4f363cc46922926d2716b217a6dba099"
+    },
+    "scripts/helmut-resource-meter/local-unit-diagnostic-store.sql": {
+      "path": "/workspace/helmut-auth-critical-path-20261025/scripts/helmut-resource-meter/local-unit-diagnostic-store.sql",
+      "bytes": 92637,
+      "sha256": "e3ddc7ec4af310d456f74f5b85ca41a6ad9126f2c0ee15e854eb7a38faecb224"
+    },
+    "supabase/proposals/auth_state_parts_local.sql": {
+      "path": "/workspace/helmut-auth-critical-path-20261025/supabase/proposals/auth_state_parts_local.sql",
+      "bytes": 54938,
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    "supabase/proposals/auth_usage_atomic_local.sql": {
+      "path": "/workspace/helmut-auth-critical-path-20261025/supabase/proposals/auth_usage_atomic_local.sql",
+      "bytes": 17538,
+      "sha256": "5fdd3c81cf86c4f03208974bb9fd1f26d355dfaf53520f08de64292581a39e05"
+    },
+    "supabase/proposals/auth_read_bounded_local.sql": {
+      "path": "/workspace/helmut-auth-critical-path-20261025/supabase/proposals/auth_read_bounded_local.sql",
+      "bytes": 18910,
+      "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5"
+    },
+    "supabase/schema.sql": {
+      "path": "/workspace/helmut-auth-critical-path-20261025/supabase/schema.sql",
+      "bytes": 26136,
+      "sha256": "82a5239d30b55a016e4b02fadf75848e707ef212b7dbeb74445577ea67031592"
+    },
+    "supabase/proposals/synthetik500_stored_command_binding.sql": {
+      "path": "/workspace/helmut-auth-critical-path-20261025/supabase/proposals/synthetik500_stored_command_binding.sql",
+      "bytes": 7850,
+      "sha256": "29c1ef679f3d887a7888a508d466b1e696733e352262a8f8278add1aa2184a3c"
+    }
+  },
+  "originalDefinitionCount": 20,
+  "nativeDefinitionCount": 38,
+  "helperDefinitionCount": 9,
+  "helperSourceMap": {
+    "helmut_unit_diagnostic.original_bridge_top_map_v1(text, text, text)": "cbab4ee2943f898ce18d0673406bcf67c8c65c57f5545e4bb1262338106918bb",
+    "helmut_unit_diagnostic.original_bridge_value_v1(text, text, text, jsonb, boolean)": "7de36453e5e664d1040649d73d537be7b9ab0fd00429ad31e7ea19ca1bf4ac50",
+    "helmut_unit_diagnostic.original_bridge_own_projection_v1(text, text, text, text)": "8074531ee40f7fa2858dc7b82f4e7e455dd34254e3489d1c53c0c8347e874622",
+    "helmut_unit_diagnostic.original_bridge_compare_delta_v1(text, text, text, text, text, jsonb, jsonb)": "1313273b41be966c4a86cb34fb933079f4312527bfe3f47b267276bba464aa71",
+    "helmut_unit_diagnostic.original_bridge_compare_seed_v1(text, text, text, text, text, jsonb)": "3a7142913b89e4255fcc622dda5a2ea28412befcdaa9cdca20186e2fdae14b62",
+    "helmut_unit_diagnostic.original_bridge_relations_v1()": "91505921dd30cbadb259fc439fede86c1f47b062ebcd690238dbd83d9f53797a",
+    "helmut_unit_diagnostic.original_bridge_row_v1(text, text, text, jsonb)": "290c60f33dc595e7ca7d4e893ed980fdc2a722b1513af00df51230c51b131480",
+    "helmut_unit_diagnostic.original_bridge_result_v1(text, jsonb)": "28ab1470b561bae4fa339efc678fe1ae07ff2a13d0ed58723bea9613a4d953cb",
+    "helmut_unit_diagnostic.original_bridge_receipt_v1(text, text, text, text, bigint, text, text, text, text, text)": "b7773ec200fe1b93bad33ac663175e7f3621303fb8f953d90fa772ed8412e214"
+  }
+}

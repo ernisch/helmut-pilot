@@ -361,6 +361,17 @@ SELECT current_setting('helmut.claim_only_snapshot')::jsonb;""".replace('@INPUT@
     return value
 
 
+def transaction_guard_entry(config):
+    """Closed component entry selection; profiling cannot select an Entry/Unit."""
+    profile = config.get('transactionGuardFunctionProfile', False)
+    need(type(profile) is bool, 'function-profile-mode-type')
+    if profile:
+        need(config.get('nativeDiagnosticMode') == 'native-transaction-guard-v1'
+             and config.get('transactionGuardCase') == 'same-root-usage', 'function-profile-case-only')
+        return 'local-unit-native-function-profile.js'
+    return 'local-unit-native-transaction-guard.js'
+
+
 class _Controller:
     def __init__(self, worker, config, pg, catalog, preparation, read_result, bridge_result):
         self.w, self.c, self.pg, self.catalog, self.preparation = worker, config, pg, catalog, preparation
@@ -378,9 +389,10 @@ class _Controller:
         self.claim_only=config.get('nativeDiagnosticMode')=='fresh-claim-only-v1'
         self.readonly_http=config.get('nativeDiagnosticMode')=='readonly-http-pre-admission-v1'
         self.transaction_guard=config.get('nativeDiagnosticMode')=='native-transaction-guard-v1'
+        self.guard_entry = transaction_guard_entry(config)
         if self.transaction_guard:
             need(config.get('transactionGuardCase') in ('state','same-root-usage','late-old-mirror','late-outside')
-                 and config.get('transactionGuardProbePin') == worker.pin(BIN / 'local-unit-native-transaction-guard.js')
+                 and config.get('transactionGuardProbePin') == worker.pin(BIN / self.guard_entry)
                  and config['transactionGuardProbePin'] in config['sourceCodePins'], 'transaction-guard-code-case')
         need(config.get('executeNativeSingleUnit') is True and config.get('full500') is False
              and str(worker.OUT) == '/bench' and os.getuid() == os.geteuid() == 1000
@@ -806,7 +818,7 @@ class _Controller:
                   'measuredCgroup':self.source.source_group(self.c), 'postgres':self.source.postgres_identity(self.w,self.pg)}
         config_pin = _compact(self.w,'TRANSACTION_GUARD_CONFIG.PRIVATE.json',config)
         self.stage('native-transaction-guard-once')
-        child = self.source.NodeChild(self.w,self.c,'scripts/helmut-resource-meter/local-unit-native-transaction-guard.js',
+        child = self.source.NodeChild(self.w,self.c,'scripts/helmut-resource-meter/' + self.guard_entry,
                                      '--probe-native-transaction-guard','TRANSACTION_GUARD',
                                      failure_context=(self.selection, self.stage_number))
         result = parse(child.finish(seconds=35)); _node_closed(child)
@@ -819,6 +831,27 @@ class _Controller:
              and report['configPin']==config_pin and report['scopeExecutionQualified'] is False
              and report['originalCompilerSQLUnchanged'] is True and report['retryAllowed'] is False,
              'transaction-guard-private-result')
+        function_profile_pin = None
+        if self.c.get('transactionGuardFunctionProfile') is True:
+            need(type(report.get('functionProfilePin')) is dict
+                 and set(report['functionProfilePin']) == {'path', 'bytes', 'sha256'},
+                 'function-profile-publication-pin')
+            function_profile, function_profile_pin = self.private('TRANSACTION_GUARD_FUNCTION_PROFILE.SAFE.json',
+                expected=report.get('functionProfilePin'), cap=1024**2)
+            need(function_profile.get('schema') == 'helmut-write-function-profile/1'
+                 and function_profile.get('instrumentedDiagnosticOnly') is True
+                 and all(function_profile.get(k) is False for k in
+                         ('optimizationABQualified', 'unit60Qualified', 'auth30Qualified', 'full500Qualified'))
+                 and function_profile.get('fourWriteLabels') ==
+                     ['CLAIM_STATE', 'RESERVE_D', 'SEND_D', 'SAME_ROOT_USAGE']
+                 and type(function_profile.get('rows')) is list
+                 and 0 < len(function_profile['rows']) <= 256, 'function-profile-private-result')
+            cas_rows = [r for r in function_profile['rows'] if type(r) is dict
+                        and r.get('label') == 'public.helmut_auth_state_cas_v1(jsonb)']
+            need(len(cas_rows) == 1 and cas_rows[0].get('status') == 'OBSERVED'
+                 and type(cas_rows[0].get('calls')) is int and cas_rows[0]['calls'] == 4,
+                 'function-profile-genuine-cas-count')
+            self.w.save('NATIVE_FUNCTION_PROFILE.SAFE.json', function_profile)
         self.observer.check(); self.immutable_check()
         _native_readback(self.w,self.database,self.bridge['actualContractSources'],self.catalog['databaseOID'],
                          self.bridge['qualification']['originalRelations'],label='EXECUTION_FINAL_NATIVE_CONTRACT')
@@ -830,7 +863,9 @@ class _Controller:
         self.w.save('TRANSACTION_GUARD_DIAGNOSTIC.PRIVATE.json',{'schema':'helmut-native-transaction-guard-diagnostic/1',
                     'selection':self.selection,'case':case,'reportPin':report_pin,'owner':owner,'serviceStopPin':stop_pin,
                     'reuseForbidden':True,'scopeExecutionQualified':False})
-        return {'schema':'helmut-local-unit-native-transaction-guard-result/1','diagnosticMode':'native-transaction-guard-v1',
+        return {**({'functionProfileObserved': True, 'functionProfilePin': function_profile_pin}
+                   if function_profile_pin is not None else {}),
+                'schema':'helmut-local-unit-native-transaction-guard-result/1','diagnosticMode':'native-transaction-guard-v1',
                 'selection':self.selection,'transactionGuardCase':case,'transactionGuardObserved':True,
                 'genuineSourceInputsQualified':True,'readClosureQualified':True,'originalBridgeQualified':True,
                 'executionAuthorityInstalled':True,'reuseForbidden':True,'scopeExecutionQualified':False,
