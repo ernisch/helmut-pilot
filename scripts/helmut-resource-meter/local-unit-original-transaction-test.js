@@ -16,7 +16,7 @@ const originalNames = ["state_cas_v1", "state_payload_hash_local_v1", "state_lea
   "usage_guard_local_v1", "usage_insert_local_v1", "usage_checked_proof_local_v1"].map(x => "public.helmut_auth_" + x);
 const nativeNames = ["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"];
 const helperArgs = { original_bridge_top_map_v1: "text, text, text", original_bridge_value_v1: "text, text, text, jsonb, boolean",
-  original_bridge_own_projection_v1: "text, text, text, text", original_bridge_compare_delta_v1: "text, text, text, text, text, jsonb",
+  original_bridge_own_projection_v1: "text, text, text, text", original_bridge_compare_delta_v1: "text, text, text, text, text, jsonb, jsonb",
   original_bridge_compare_seed_v1: "text, text, text, text, text, jsonb",
   original_bridge_relations_v1: "", original_bridge_row_v1: "text, text, text, jsonb", original_bridge_result_v1: "text, jsonb",
   original_bridge_receipt_v1: "text, text, text, text, bigint, text, text, text, text, text" };
@@ -398,32 +398,33 @@ check("state and usage keep genuine old/new comparisons inside the mandatory nat
     const original = sql.slice(sql.indexOf("DO $original$"), sql.indexOf("END;$original$;"));
     assert.ok(!original.includes("original_bridge_own_projection_v1(") && !original.includes("original_bridge_compare_delta_v1("));
     assert.ok(original.includes("ack:=public.helmut_auth_state_cas_v1(c)"));
-    assert.ok(sql.includes("IF NOT has_function_privilege('helmut_ud_runtime_" + suffix + "','helmut_unit_diagnostic.original_bridge_compare_delta_v1(text,text,text,text,text,jsonb)','EXECUTE')"));
+    assert.ok(sql.includes("IF NOT has_function_privilege('helmut_ud_runtime_" + suffix + "','helmut_unit_diagnostic.original_bridge_compare_delta_v1(text,text,text,text,text,jsonb,jsonb)','EXECUTE')"));
   }
   const call = receipt.indexOf("actual_own:=helmut_unit_diagnostic.original_bridge_compare_delta_v1");
   assert.ok(call > receipt.indexOf("original-bridge-receipt-real-own-before")
     && call > receipt.indexOf("original-bridge-receipt-real-original-ack")
     && call > receipt.indexOf("original-bridge-receipt-native-relations-changed"));
-  assert.ok(receipt.slice(call).includes("c#>>'{expectedState,root}',auth_state->>'root',r->>'operationId',next_own)"));
+  assert.ok(receipt.slice(call).includes("c#>>'{expectedState,root}',auth_state->>'root',r->>'operationId',next_own,own_row.body)"));
   assert.ok(!receipt.slice(call).includes("original_bridge_own_projection_v1("));
-  for (const required of ["original-bridge-delta-runtime-principal", "receipt_pid<>pg_backend_pid()", "receipt_tx is distinct from backend_tx",
-    "encode(sha256(convert_to(request_text,'UTF8')),'hex') is distinct from request_hash", "n!~'^[a-f0-9]{64}$'",
-    "r->>'operationId' is distinct from operation_id", "c#>>'{expectedState,generation}' is distinct from g",
-    "c#>>'{expectedState,root}' is distinct from old_root", "c->>'root' is distinct from new_root",
-    "where scope_hash=r->>'commandHash'", "own_row.body_hash is distinct from r#>>'{ownBefore,hash}'",
-    "own_row.revision::text is distinct from r#>>'{ownBefore,revision}'", "own_row.body is distinct from own_row.canonical_text::jsonb",
+  for (const required of ["original-bridge-delta-runtime-principal", "original-bridge-delta-operation",
+    "helmut_unit_diagnostic.exact(expected_own,own_keys)", "octet_length(expected_own::text)>4194304",
+    "helmut_unit_diagnostic.exact(verified_old_own,own_keys)", "octet_length(verified_old_own::text)>4194304",
     "original_bridge_value_v1(s,g,k,old_map->k,true)", "octet_length(old_own::text)>4194304",
-    "old_own is distinct from own_row.body", "original-bridge-old-full-auth-mirror",
+    "old_own is distinct from verified_old_own", "original-bridge-old-full-auth-mirror",
     "original-bridge-outside-keyset-changed", "original-bridge-outside-child-hash-changed", "original-bridge-outside-inline-value-changed",
     "original_bridge_value_v1(s,g,k,new_map->k,true)", "octet_length(actual_own::text)>4194304",
     "actual_own is distinct from expected_own", "return actual_own;"]) assert.ok(delta.includes(required), "required delta proof missing: " + required);
   assert.equal((delta.match(/original_bridge_top_map_v1\(/g) || []).length, 2);
   assert.ok(delta.includes("if old_root=new_root then new_map:=old_map;\n  else new_map:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,new_root);end if;"));
   assert.ok(delta.includes("if old_root=new_root then actual_own:=old_own;"));
-  assert.ok(!/insert\s+into|update\s+helmut|set_config|current_setting|exception\s+when/i.test(delta));
+  assert.ok(!/insert\s+into|update\s+helmut|set_config|current_setting|exception\s+when|request_text|pg_temp|own_row|from\s+helmut_unit_diagnostic\.state/i.test(delta));
+  assert.ok(proposal.includes("original_bridge_compare_delta_v1(text,text,text,text,text,jsonb,jsonb) from public"));
+  assert.ok(!proposal.includes("original_bridge_compare_delta_v1(text,text,text,text,text,jsonb)"));
   assert.ok(!transaction.prepare(artifactRequest(), qualification()).sql.includes("original-bridge-runtime-delta-execute-required"));
   const q = qualification(); q.helperSources.find(s => s.name.endsWith(".original_bridge_compare_delta_v1")).returnType = "void";
   rejects(() => transaction.prepare(request(), q));
+  const oldABI = qualification(); oldABI.helperSources.find(s => s.name.endsWith(".original_bridge_compare_delta_v1")).identityArguments = "text, text, text, text, text, jsonb";
+  rejects(() => transaction.prepare(request(), oldABI));
 });
 check("structured argument quoting prevents caller SQL interpolation", () => {
   const r = request(), text = '["v",{"x":"\' ; COMMIT; SELECT pg_sleep(10); -- \\\\"}]';

@@ -22,12 +22,12 @@ const HELPERS = Object.freeze({
   original_bridge_top_map_v1: Object.freeze({ args: "text, text, text", sha: "cbab4ee2943f898ce18d0673406bcf67c8c65c57f5545e4bb1262338106918bb", result: "jsonb" }),
   original_bridge_value_v1: Object.freeze({ args: "text, text, text, jsonb, boolean", sha: "7de36453e5e664d1040649d73d537be7b9ab0fd00429ad31e7ea19ca1bf4ac50", result: "jsonb" }),
   original_bridge_own_projection_v1: Object.freeze({ args: "text, text, text, text", sha: "8074531ee40f7fa2858dc7b82f4e7e455dd34254e3489d1c53c0c8347e874622", result: "jsonb" }),
-  original_bridge_compare_delta_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "a3580f39124b4ae9bb3310207cd7542f7efb42ee1b34ee3bea01d51b8f6fc9ef", result: "jsonb" }),
+  original_bridge_compare_delta_v1: Object.freeze({ args: "text, text, text, text, text, jsonb, jsonb", sha: "1313273b41be966c4a86cb34fb933079f4312527bfe3f47b267276bba464aa71", result: "jsonb" }),
   original_bridge_compare_seed_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "3a7142913b89e4255fcc622dda5a2ea28412befcdaa9cdca20186e2fdae14b62", result: "void" }),
   original_bridge_relations_v1: Object.freeze({ args: "", sha: "91505921dd30cbadb259fc439fede86c1f47b062ebcd690238dbd83d9f53797a", result: "jsonb" }),
   original_bridge_row_v1: Object.freeze({ args: "text, text, text, jsonb", sha: "290c60f33dc595e7ca7d4e893ed980fdc2a722b1513af00df51230c51b131480", result: "jsonb" }),
   original_bridge_result_v1: Object.freeze({ args: "text, jsonb", sha: "28ab1470b561bae4fa339efc678fe1ae07ff2a13d0ed58723bea9613a4d953cb", result: "void" }),
-  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "217b27d92efea4d072f1b6ba435fc71efefe9cc400484d355c7df992dd20a0e6", result: "void" }),
+  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "058e191329a6ed64753fd3660a7219b6cb192c2f8481ad1a94aa6719b60edbdd", result: "void" }),
 });
 const NATIVE = Object.freeze(["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"]);
 function need(ok, code) { if (!ok) throw Error("local-unit-original-transaction-" + code); }
@@ -353,7 +353,7 @@ BEGIN
     OR EXISTS(SELECT FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=${literal(writer)}))
     OR EXISTS(SELECT FROM pg_auth_members WHERE roleid=(SELECT oid FROM pg_roles WHERE rolname=${literal(writer)}))
     OR pg_has_role(${literal(auth)},${literal(writer)},'MEMBER') THEN RAISE EXCEPTION 'original-bridge-no-privileged-role-bridge';END IF;
-${seed || artifact ? "" : `  IF NOT has_function_privilege(${literal(runtime)},'helmut_unit_diagnostic.original_bridge_compare_delta_v1(text,text,text,text,text,jsonb)','EXECUTE') THEN
+${seed || artifact ? "" : `  IF NOT has_function_privilege(${literal(runtime)},'helmut_unit_diagnostic.original_bridge_compare_delta_v1(text,text,text,text,text,jsonb,jsonb)','EXECUTE') THEN
     RAISE EXCEPTION 'original-bridge-runtime-delta-execute-required';END IF;
 `}  ${seed ? `IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname=${literal(owner)}
       AND NOT(rolsuper OR rolbypassrls OR rolcreatedb OR rolcreaterole OR rolinherit OR rolcanlogin OR rolreplication))
