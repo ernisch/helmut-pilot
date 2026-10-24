@@ -1283,6 +1283,7 @@ class NativeExecutionHost:
         self.owner_lines = 0; self.last_heartbeat = 0; self.source_identity = None
         self.clients = {}; self.active_client = None; self.client_pins = []; self.handoff = None; self.pending_handoff = None
         self.failure_trace_read = None; self.failure_trace_attempted = False; self.failure_trace_error = None
+        self.source_failure = None
         self._inventory_parent_cache = {}; self._inventory_daemon_cache_key = None
         self.directory = plan['dockerConfigDirectory']
         need(self.directory == str(self.case / 'docker-empty-config'), 'case-docker-config-binding')
@@ -1879,9 +1880,39 @@ class NativeExecutionHost:
         return {'pin': {'path': str(path), 'bytes': len(raw), 'sha256': sha(raw)},
                 'processClose': actual, 'containerId': container_id}
 
+    def _source_failure_close(self):
+        """A bound SOURCE failure ends observation, never grants acceptance."""
+        path = self.case / 'EXECUTION_FAILURE.PRIVATE.json'
+        if not path.exists():
+            return False
+        raw, pin = read_file(path, cap=64 * 1024)
+        value = unique(raw)
+        selection = value.get('selection') if type(value) is dict else None
+        need(type(value) is dict and set(value) == {'schema', 'selection', 'stageNumber', 'exceptionType', 'privateTraceback', 'retryAllowed'}
+             and value['schema'] == 'helmut-local-unit-native-execution-failure/1'
+             and type(selection) is dict and set(selection) == {'operationId', 'commandHash'}
+             and selection['operationId'] == 'localUnitDiagnostic-' + self.config['nonce']
+             and type(selection['commandHash']) is str and HASH.fullmatch(selection['commandHash'])
+             and (self.selection is None or selection == self.selection)
+             and type(value['stageNumber']) is int and 0 <= value['stageNumber'] <= 128
+             and type(value['exceptionType']) is str and 0 < len(value['exceptionType']) <= 128
+             and type(value['privateTraceback']) is str and len(value['privateTraceback']) <= 32768
+             and value['retryAllowed'] is False, 'source-failure-binding')
+        self.source_failure = {'pin': pin, 'stageNumber': value['stageNumber'], 'exceptionType': value['exceptionType']}
+        self.failure = 'source-execution-failed-no-retry'
+        self.state = 'SOURCE_FAILED'
+        # Source's atomic failure precedes service teardown. Stop only this
+        # Host's clients/Owner now; do not interrupt Source's PG/pin finalizer.
+        self.close()
+        return True
+
     def tick(self):
+        if self.state == 'SOURCE_FAILED':
+            return {'state': self.state, 'pending': None, 'observation': self.last_observation}
         need(not self.closed and self.failure is None, 'sealed-host')
         try:
+            if self._source_failure_close():
+                return {'state': self.state, 'pending': None, 'observation': self.last_observation}
             if self.state == 'STOPPED':
                 need(self.pending is None and self.last_observation is not None, 'stopped-host-outcome')
                 for child in self.children:
@@ -1998,6 +2029,14 @@ class NativeExecutionHost:
                         self._reply_observation(observation, sample)
             return {'state': self.state, 'pending': None if not self.pending else self.pending['request']['stage'], 'observation': observation}
         except BaseException as error:
+            # SOURCE can publish while a live service lookup is in flight.
+            # Preserve that earlier cause rather than a teardown PID absence.
+            if self.source_failure is None and type(error) is RuntimeError and error.args == ('native-execution-host-source-service-host-mapping',):
+                try:
+                    if self._source_failure_close():
+                        return {'state': self.state, 'pending': None, 'observation': self.last_observation}
+                except BaseException:
+                    pass
             self.failure = 'sealed-native-host-failure'
             try:
                 # PRIVATE diagnostics preserve the cause, never enter a SAFE
@@ -2118,4 +2157,6 @@ class NativeExecutionHost:
                                                    {'containerId': cid, 'observerProcess': getattr(p, 'remote_process', None),
                                                     'registeredHostPID': p.child.registeredPID, 'remoteExitConfirmed': False}
                                                    for cid, p in self.probes.items()]}
+        if self.source_failure is not None:
+            self.close_result['sourceFailure'] = self.source_failure
         return self.close_result
