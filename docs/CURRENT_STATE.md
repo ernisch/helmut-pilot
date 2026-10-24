@@ -4,6 +4,23 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
+## 25.10. (Istanbul): Einzeltest FAIL; begrenzte Erstfehlerdiagnose vorbereitet
+
+Genau ein nativer Einzeltest auf PR940/0f643b50: Adapter65,166703510s,
+Phasen-Fehlercapture65,148351325s,9/16bis send-R,keinFinalACK/19er-Ende.
+Peak1373904896B/OOM0 und439/439Originalschutz sind kein erfolgreicher Zeit-/Puffernachweis.
+Client-Ursache bleibtUNKNOWN; Host-/Workerfehler sind spaetere Abbruchfolgen.
+Send-CAS fuerR endet44,683128s; ein danach beginnender19,9s-Transport waere
+fruehestens64,583128s fertig. Kein nachtraeglicher Actual-Wait2-Beleg.
+Neuer Branch `codex/client-first-failure-diagnostic-20261025` ergaenzt nur private,
+begrenzte Erstfehlerbeobachtung vor verdeckenden Catch-/Cleanupfolgen.
+107gezielte synthetische Checks/Syntax/Diff und unabhaengiges QuellenreviewPASS.
+Keine Motorbeschleunigung behauptet; neue Quellen/Runtime noch nicht zur echten
+Ausfuehrung qualifiziert. Keine Loeschung/Retry/Production/Merge/Deployment.
+Naechster Schritt: Diagnosebindungen und Plattenadmission vorbereiten; kein
+weiterer echter Versuch ohne neues konkretesGO. Alle altenGOs verbraucht.
+[Befund, faire Zeitvergleichspunkte und genaue Diagnosegrenzen](betrieb/unit60-client-first-failure-20261025.md).
+
 ## 24.10.: U/Parts-Rücknahme; bestehende Quellenqualifikation wieder gültig
 
 Branch `codex/unit60-restore-qualified-pair-20261024` startet auf PR939/e3623324.

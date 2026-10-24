@@ -83,8 +83,120 @@ function privateTimer(stderr, clock = () => 100n) {
   vm.runInNewContext(source + "\nmodule.exports = timingTrace;\n", box, { filename });
   return box.module.exports(0n);
 }
+function forensicScope() {
+  let ns = 64000000000n;
+  const box = { module: { exports: {} }, Date, require(name) {
+    if (name === "node:process") return { hrtime: { bigint: () => ns } };
+    if (name === "./local-unit-diagnostic-authority") return A;
+    if (name === "./synthetik-500-profile") return P;
+    return require(name);
+  } };
+  // Only this synthetic VM exposes lexical context; no native scope is opened.
+  vm.runInNewContext(source + "\nmodule.exports = { observeFailure, rememberFailure, consumeFailureDiagnostics, timingTrace, run: (c, work) => context.run(c, work) };\n", box, { filename });
+  const c = { selection: { operationId: "synthetic", commandHash: "b".repeat(64) }, timing: { startedMonotonic: 0n },
+    authorization: { startedAtUTC: "2026-10-24T00:00:00.000Z", confirmedAtUTC: "2026-10-24T00:00:01.000Z", elapsedNs: "1000000000" },
+    controls: [], activeControl: null };
+  return { scope: box.module.exports, c, clock: value => { ns = value; } };
+}
+function earlyWriter(observer) {
+  const file = path.join(__dirname, "../lib/helmut/local-unit-diagnostic-original-writer.js");
+  const box = { module: { exports: {} }, process: { stderr: null }, require(name) {
+    if (name.startsWith("node:")) return require(name);
+    if (name === "./local-unit-diagnostic-scope") return { observeFailure: observer };
+    return {}; // Invalid closed API fails before any real dependency or I/O.
+  } };
+  vm.runInNewContext(fs.readFileSync(file, "utf8"), box, { filename: file });
+  return box.module.exports;
+}
 async function test(name, work) { await work(); checks++; console.log("PASS " + name); }
 (async () => {
+  await test("first observed writer error survives a swallowed usage error and later cleanup", async () => {
+    const h = forensicScope(), primary = Error("local-unit-diagnostic-unit-monotonic-or-utc-deadline");
+    Object.defineProperty(primary, "stack", { value: "Error: " + secret + "\n    at elapsed (/workspace/synthetic/lib/helmut/local-unit-diagnostic-scope.js:36:5)", configurable: true });
+    const later = Error(secret);
+    h.scope.run(h.c, () => {
+      h.scope.observeFailure(primary, "original-writer-usage");
+      h.clock(65000000000n); h.scope.observeFailure(later, "original-writer-state");
+      h.scope.rememberFailure(h.c, later);
+    });
+    const d = h.scope.consumeFailureDiagnostics(later), first = d.firstObservedFailure;
+    assert.equal(first.elapsedNs, "64000000000"); assert.equal(d.capturedElapsedNs, "65000000000");
+    assert.equal(first.point, "original-writer-usage");
+    assert.equal(first.errors[0].reason, primary.message);
+    assert.equal(first.errors[0].frames[0].file, "local-unit-diagnostic-scope.js");
+    assert.equal(first.errors[0].frames[0].line, 36);
+    assert(Object.isFrozen(first)); assert(Object.isFrozen(first.errors));
+    assert(!JSON.stringify(d).includes(secret)); assert(!JSON.stringify(d).includes("/workspace/"));
+    assert.equal(h.scope.consumeFailureDiagnostics(later), null);
+  });
+  await test("unknown text and code prefixes, arbitrary stack paths and accessors cannot leak", async () => {
+    const h = forensicScope(), failure = Error(secret); let getters = 0;
+    Object.defineProperties(failure, { message: { get() { getters++; throw Error(secret); } },
+      code: { get() { getters++; throw Error(secret); } }, cause: { get() { getters++; throw Error(secret); } },
+      stack: { get() { getters++; throw Error(secret); } } });
+    h.scope.run(h.c, () => h.scope.observeFailure(failure, "original-writer-usage"));
+    assert.equal(getters, 0); assert.equal(h.c.firstObservedFailure.errors[0].reason, null);
+    assert.equal(h.c.firstObservedFailure.errors[0].code, null);
+    assert.equal(h.c.firstObservedFailure.errors[0].frames.length, 0);
+    assert(!JSON.stringify(h.c.firstObservedFailure).includes(secret));
+    const other = forensicScope(), prefixed = Error("local-unit-diagnostic-" + secret); prefixed.code = "AUTH_" + secret;
+    other.scope.run(other.c, () => other.scope.observeFailure(prefixed, "scope-await"));
+    assert.equal(other.c.firstObservedFailure.errors[0].reason, null); assert.equal(other.c.firstObservedFailure.errors[0].code, null);
+  });
+  await test("capture requires a native error, active context and fixed observation point", async () => {
+    const h = forensicScope(), failure = Error("LLM_USAGE_NOT_CONFIRMED");
+    h.scope.observeFailure(failure, "scope-await"); assert.equal(h.c.firstObservedFailure, undefined);
+    h.scope.run(h.c, () => {
+      h.scope.observeFailure(failure, secret); h.scope.observeFailure({ message: secret }, "scope-await");
+      h.scope.observeFailure(new Proxy(failure, { get() { throw Error(secret); } }), "scope-await");
+    });
+    assert.equal(h.c.firstObservedFailure, undefined);
+  });
+  await test("cause cycles and stack volume remain bounded without a raw fallback", async () => {
+    const h = forensicScope(), first = Error(secret); let value = first;
+    for (let i = 0; i < 7; i++) { value.cause = Error(secret); value.stack = secret.repeat(2000); value = value.cause; }
+    value.cause = first;
+    h.scope.run(h.c, () => h.scope.observeFailure(first, "scope-await"));
+    const bytes = JSON.stringify(h.c.firstObservedFailure);
+    assert.equal(h.c.firstObservedFailure.errors.length, 4); assert(bytes.length <= 2048);
+    assert(!bytes.includes(secret)); assert(/^[\x00-\x7f]*$/.test(bytes));
+  });
+  await test("unknown fingerprints use bounded own UTF-8 text and maximum detail preserves the first observation", async () => {
+    const h = forensicScope(), first = Error(secret + "ä"); let value = first;
+    const stack = "Error: " + secret + "\n" + Array(3).fill("    at f (/workspace/synthetic/lib/helmut/local-unit-diagnostic-original-writer.js:999999:999999)").join("\n");
+    for (let i = 0; i < 4; i++) {
+      value.code = "AUTH_STORE_CONFLICT"; Object.defineProperty(value, "stack", { value: stack, configurable: true });
+      if (i < 3) { value.cause = Error(secret + i); value = value.cause; }
+    }
+    h.c.controls = Array.from({ length: 16 }, (_, index) => ({ index, stage: A.CONTROL_STAGES[index],
+      startedAtUTC: h.c.authorization.startedAtUTC, completedAtUTC: h.c.authorization.confirmedAtUTC,
+      startedElapsedNs: "10000000000000000000", completedElapsedNs: "10000000000000000001" }));
+    h.scope.run(h.c, () => { h.scope.observeFailure(first, "original-writer-usage"); h.scope.rememberFailure(h.c, first); });
+    const d = h.scope.consumeFailureDiagnostics(first), captured = d.firstObservedFailure;
+    assert.equal(captured.point, "original-writer-usage"); assert.equal(captured.errors.length, 4);
+    assert.equal(captured.errors[0].code, "AUTH_STORE_CONFLICT");
+    assert.equal(captured.errors[0].messageSHA256, require("node:crypto").createHash("sha256").update(secret + "ä", "utf8").digest("hex"));
+    assert(JSON.stringify(captured).length <= 2048); assert(Buffer.byteLength(JSON.stringify(d)) <= 8192);
+    assert(!JSON.stringify(d).includes(secret));
+    const oversized = forensicScope();
+    oversized.scope.run(oversized.c, () => oversized.scope.observeFailure(Error(secret.repeat(1000)), "scope-await"));
+    assert.equal(oversized.c.firstObservedFailure.errors[0].messageSHA256, undefined);
+  });
+  await test("scope awaits rethrow the identical error and never repeat work", async () => {
+    const h = forensicScope(), failure = Error("LLM_USAGE_NOT_CONFIRMED"); let calls = 0;
+    await h.scope.run(h.c, () => assert.rejects(h.scope.timingTrace(0n).wait("state", () => { calls++; throw failure; }), error => error === failure));
+    assert.equal(calls, 1); assert.equal(h.c.firstObservedFailure.point, "scope-await");
+  });
+  await test("both writer modes observe before rethrow and failed diagnostics cannot replace errors", async () => {
+    for (const [method, point] of [["mutateState", "original-writer-state"], ["appendUsage", "original-writer-usage"]]) {
+      let observed, calls = 0;
+      const writer = earlyWriter((error, where) => { calls++; observed = error; assert.equal(where, point); });
+      await assert.rejects(writer[method]({}), error => error === observed && /closed-api/.test(error.message));
+      assert.equal(calls, 1);
+      const broken = earlyWriter(() => { throw Error(secret); });
+      await assert.rejects(broken[method]({}), error => /local-unit-original-writer-closed-api/.test(error.message) && !error.message.includes(secret));
+    }
+  });
   await test("one operation per await, identical return, fixed private phases and unchanged clock guards", async () => {
     const output = sink(), observed = harness(output), inert = harness(undefined), ack = Object.freeze({ private: secret });
     const work = async s => { await s.checkControl("unit-enter"); return s.mutateState(() => ack); };
