@@ -4,18 +4,17 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 24.10.: gemeinsame Integration; Quellenqualifikation blockiert
+## 24.10.: U/Parts-Rücknahme; bestehende Quellenqualifikation wieder gültig
 
-Branch `codex/unit60-qualified-integration-20261024` verbindet aktuelles main
-`1eb3cbff`, #934/#933/#936, #937 und #938. Main-Regeln/Routerkorrekturen erhalten.
-Guard-Diagnose ausdd40 ohne Profilierungsparent2374; Worker-JSON korrigiert.
-Gezielt Worker18/Guard52/gemeinsamerFehlerpfad2/Router30 PASS. Keine neue
-Native-/Productionausführung, keine Originalübertragung, keinMerge/Deployment.
-
-Unabhängige SOL-Quellenprüfung: U/Parts32034/28525B neu; vorhandener Vertrag
-verlangt echte neue Fünffallbelege, SOURCE-only ausdrücklich ausgeschlossen.
-Qualifikation und grüne gemeinsame Pflicht-CI deshalb offen; keine Pins/Gates
-umgeschrieben. [Integrationsstand, Prüfgrenzen und Rückweg](betrieb/unit60-common-integration-20261024.md).
+Branch `codex/unit60-restore-qualified-pair-20261024` startet auf PR939/e3623324.
+Nur unqualifizierte PR938-Optimierung zurückgenommen: Parts27356B/0ff03924,
+U32050B/dc12a5c8 exakt936. PR937 und Guard-/Workerkorrekturen bytegleich939.
+Manifest/nativeBelege/Gates unverändert. Cache-Annahme und99Negative,Artefakt10,
+Atomic22 PASS; gemeinsame finale Pflicht-CI am neuen PR zu prüfen.
+Keine Bereinigung/Originalübertragung/nativeAusführung/Merge/Deployment.
+[Exakte Pins, Prüfgrenzen und Rückweg](betrieb/unit60-qualified-pair-restore-20261024.md).
+Der frühere [939-Blocker](betrieb/unit60-common-integration-20261024.md) betrifft
+weiterhin dessen erhaltene938-Variante, nicht das wiederhergestellte Quellenpaar.
 
 Letzter Quellstand936/5516f3e2: CI40066809993 SUCCESS, kein neuer Gesamtbeleg.
 Native76af weiter FAIL:65,839926211s,9/16Kontrollen,kein19er-Abschluss;
@@ -274,7 +273,7 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-Neue native U/Parts-Fünffallqualifikation im Quellkontext, unabhängig annehmen;
-danach versionierte Quellenbindungen und Pflicht-CI. Bis dahin BLOCKIERT.
-Keine neue Ausnahme/Originalübertragung, kein nativer Einzelunit-/Voll500-Lauf.
-[Gemeinsamer Integrationsbranch und Rückweg](betrieb/unit60-common-integration-20261024.md). Sehr hoch.
+Pflicht-CI auf dem endgültigen Rücknahmekopf prüfen. Danach frische Laufbindung
+und Admission im Quellkontext für genau einen nativen60s-Einzeltest vorbereiten.
+Kein erneuter U/Parts-Vergleich für geänderte Bytes in diesem Branch; echte60s-/
+Speicher-/500er-Abnahme bleibt offen. KeinMerge/Deployment. Sehr hoch.

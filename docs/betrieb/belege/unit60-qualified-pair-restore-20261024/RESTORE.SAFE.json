@@ -1,0 +1,100 @@
+{
+  "schema": "helmut-exact-qualified-pair-restoration/1",
+  "dateUTC": "2026-10-24",
+  "parentPR": 939,
+  "parentCommit": "e36233249fd1f22f4666430684cd634aee41b251",
+  "restoredFromPR": 936,
+  "restoredFromCommit": "2fc821fd7bbdef1cf9846001e041a847a9f58f8f",
+  "discardedOptimizationPR": 938,
+  "restoredSources": [
+    {
+      "file": "lib/helmut/auth-state-parts.js",
+      "bytes": 27356,
+      "sha256": "0ff039245d60ceb7f5855f62433feab0ae0eea989606d3ad8022510a8d1d80a3"
+    },
+    {
+      "file": "lib/helmut/llm-usage-atomic.js",
+      "bytes": 32050,
+      "sha256": "dc12a5c8abf7a7b4f4334ff0b886106b42381efa864ac13d4374285242886d0a"
+    }
+  ],
+  "unchangedQualificationFiles": [
+    {
+      "file": "lib/helmut/synthetik-500-release-artifacts.json",
+      "bytes": 16089,
+      "sha256": "2afb829858c7a9278d7c716fe18ea96e807d9a6109ceffceb784625882b1dc59"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/control-cache-integration.js",
+      "bytes": 17713,
+      "sha256": "414372267970265f15b586d80d50636c578cfd311d6b3b2eed4ee681758215f3"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/control-cache-source-delta.json",
+      "bytes": 3610,
+      "sha256": "99165a335dd4c951dcfd5277c53118ec6f3eb6ca3ab50a30cbdd2bf850e05bcf"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/control-cache-native-qualification-20261023.SAFE.json",
+      "bytes": 17625,
+      "sha256": "95c8878e677e425a367d3fd95591229bb630c35adc4f610a1fd74f596315443b"
+    },
+    {
+      "file": "docs/betrieb/belege/current-control-source-qualification-20261023/ROOT_SOURCE_REVIEW_FINAL.SAFE.json",
+      "bytes": 3718,
+      "sha256": "94e97fafedcdb47c383ab73d308596615df4ff60e4c90cdd306b5c64f05d1d10"
+    },
+    {
+      "file": "docs/betrieb/belege/current-control-source-qualification-20261023/INDEPENDENT_PUBLICATION_REVIEW.SAFE.json",
+      "bytes": 7451,
+      "sha256": "0b0793c4349ab5a46bf0795c98bbf83821ed9d6ec84160931d042d3cb8d1b6a5"
+    },
+    {
+      "file": "docs/betrieb/belege/current-control-source-qualification-20261023/INDEPENDENT_ACTUAL_REVIEW.SAFE.json",
+      "bytes": 15368,
+      "sha256": "9a453eaca57fd9577769a5017017a39071907078f217432afbc2a5239ff3b3b8"
+    },
+    {
+      "file": "docs/betrieb/belege/current-control-source-qualification-20261023/GENERATION_AUDIT.SAFE.json",
+      "bytes": 120220,
+      "sha256": "692649f1e31736ca8400e373feecb7cba48f2ac09b59dc1a141887ac31c2e6fe"
+    }
+  ],
+  "pr939CorrectionPinsUnchanged": [
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-transaction-guard.js",
+      "bytes": 36719,
+      "sha256": "494e74fe0326601bc567a07daf6100929acebacafaf47cf473babd01cca95f63"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-worker.py",
+      "bytes": 27474,
+      "sha256": "f159e55a1520426fd9da020ff5b23d2544bca8832f557cfb3547d15cbe29f158"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-transaction-guard-test.js",
+      "bytes": 5493,
+      "sha256": "980dadfa56d69f2446b6ecf02572b75976f604fbc5c76f7f049508cea0bb7749"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-worker-final-capture-test.py",
+      "bytes": 19056,
+      "sha256": "e8f8a81f2236d5e5e8c8e2998587048e85719bd12ae4ee3b42a57b2295224788"
+    },
+    {
+      "file": "scripts/helmut-resource-meter/local-unit-native-diagnostic-integration-test.py",
+      "bytes": 9354,
+      "sha256": "4a08f12d763401f5448013e336c324ee1b726599c55893abe68ef83a8322d0f1"
+    }
+  ],
+  "existingExactByteQualificationReused": true,
+  "newNativeRuns": 0,
+  "sourceOnlyOverride": false,
+  "privateOriginalsRead": false,
+  "privateOriginalsTransferred": false,
+  "production": false,
+  "executionAuthority": false,
+  "nativeUnit60Proven": false,
+  "full500Accepted": false,
+  "automaticRetry": false
+}

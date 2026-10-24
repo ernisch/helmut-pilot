@@ -132,7 +132,7 @@ async function check(name, action) {
       await assert.rejects(small.U.writeOwn(view, { state: next }, opts(b)), { code: "AUTH_OWN_WITNESS_MISSING" });
     }
   });
-  await check("own writes reuse private payload checks and return only new nodes after a complete fresh read", async () => {
+  await check("restored own writes capture the full graph and send the exact CAS delta after a complete fresh read", async () => {
     const seed = fixture(x => {
       x.original.rows = Array.from({ length: 100 }, (_, i) => ({ i, text: "s".repeat(700) }));
       for (let i = 0; i < 40; i++) x["outside-" + i] = { i, text: "t".repeat(700) };
@@ -157,17 +157,15 @@ async function check(name, action) {
     const oldHashes = new Set(before.nodes.map(n => n.hash)), next = own(view);
     next[prefix + "journal"].count++; hashed.clear();
     await U.writeOwn(view, { state: next }, opts(native));
-    // Rebuilt virtual buckets can encode the same bytes again. Actual retained
-    // closures avoid a second SHA; do not call every old hash a retained node.
+    // Restored #936 semantics: Parts captures the complete graph; Atomic
+    // filters only the transport list. No work-saving assertion for discarded #938.
     const rehashed = before.nodes.filter(n => hashed.has(n.payload)).length;
-    assert.ok(rehashed < before.nodes.length, "unchanged private closures avoid duplicate SHA work");
-    assert.ok(captured.nodes.length > 0 && captured.nodes.length < before.nodes.length);
-    assert.ok(captured.nodes.every(n => !oldHashes.has(n.hash)), "no wrappers for preexisting transport nodes");
-    assert.deepEqual(captured.nodes, native.stats().last.nodes);
     const expected = load("auth-state-parts").build({ ...seed, ...next });
     assert.equal(captured.root, expected.root); assert.deepEqual(captured.hashes, expected.hashes);
-    assert.deepEqual(captured.nodes, expected.nodes.filter(n => !oldHashes.has(n.hash)), "exact full-build CAS delta and postorder");
-    for (const node of captured.nodes) assert.ok(hashed.get(node.payload) >= 1, "new payloads are actually hashed");
+    assert.deepEqual(captured.nodes, expected.nodes, "exact full-build capture and postorder");
+    const delta = expected.nodes.filter(n => !oldHashes.has(n.hash));
+    assert.deepEqual(native.stats().last.nodes, delta, "exact full-build CAS delta and postorder");
+    for (const node of delta) assert.ok(hashed.get(node.payload) >= 1, "new payloads are actually hashed");
     structuralEvidence = { freshPayloadChecks: before.nodes.length, previousGraphPayloadRehashes: rehashed,
       previousGraphPayloadBytes: before.nodes.reduce((sum, n) => sum + Buffer.byteLength(n.payload), 0),
       previousGraphRehashedBytes: before.nodes.filter(n => hashed.has(n.payload)).reduce((sum, n) => sum + Buffer.byteLength(n.payload), 0),
