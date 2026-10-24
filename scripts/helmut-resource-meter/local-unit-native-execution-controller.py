@@ -371,9 +371,14 @@ class _Controller:
         need(worker.pin(__file__) == config['executionControllerPin'], 'controller-code-pin')
         self.built = preparation['prepared']; self.command = self.built['command']; self.selection = self.built['selection']
         self.database, self.expires = config['database'], self.command['calendar']['endsAtUTC']
-        need(config.get('nativeDiagnosticMode') in (None,'fresh-claim-only-v1','readonly-http-pre-admission-v1'),'exact-native-diagnostic-mode')
+        need(config.get('nativeDiagnosticMode') in (None,'fresh-claim-only-v1','readonly-http-pre-admission-v1','native-transaction-guard-v1'),'exact-native-diagnostic-mode')
         self.claim_only=config.get('nativeDiagnosticMode')=='fresh-claim-only-v1'
         self.readonly_http=config.get('nativeDiagnosticMode')=='readonly-http-pre-admission-v1'
+        self.transaction_guard=config.get('nativeDiagnosticMode')=='native-transaction-guard-v1'
+        if self.transaction_guard:
+            need(config.get('transactionGuardCase') in ('state','same-root-usage','late-old-mirror','late-outside')
+                 and config.get('transactionGuardProbePin') == worker.pin(BIN / 'local-unit-native-transaction-guard.js')
+                 and config['transactionGuardProbePin'] in config['sourceCodePins'], 'transaction-guard-code-case')
         need(config.get('executeNativeSingleUnit') is True and config.get('full500') is False
              and str(worker.OUT) == '/bench' and os.getuid() == os.geteuid() == 1000
              and config.get('motorCalls') == config.get('paidProviderCalls') == 0
@@ -777,6 +782,54 @@ class _Controller:
                 'motorCalls': 0, 'actualEntryCalls': 0, 'providerCalls': 0, 'completedUnits': 0,
                 'expectedPositions': 0, 'controlCount': 0, 'full500': False, 'production': False}
 
+    def transaction_guard_finish(self, initialization, verification):
+        """Compiler SQL safety only; no client Entry and no scope execution claim."""
+        case = self.c['transactionGuardCase']
+        repo = Path(self.c['repository'])
+        config = {'schema':'helmut-native-transaction-guard/1', **self.selection, 'database':self.database,
+                  'case':case, 'selfPin':self.c['transactionGuardProbePin'], 'nodePin':self.c['nodePin'],
+                  'seedInitializationPin':self.w.pin(self.w.OUT / 'ORIGINAL_SEED_INITIALIZATION.PRIVATE.json'),
+                  'codePins':{key:self.w.pin(repo / 'lib/helmut' / (name+'.js')) for key,name in self.source.SEED_CODE.items()},
+                  'authorityPin':self.w.pin(repo / 'lib/helmut/local-unit-diagnostic-authority.js'),
+                  'transactionPin':self.w.pin(BIN / 'local-unit-original-transaction.js'),
+                  'qualification':self.bridge['qualification'], 'readRPCPins':self.prepare_config['readRPCPins'],
+                  'requestPin':self.physical(verification['derivedPins']['D']['request']),
+                  'psqlPin':self.w.pin(self.w.PGBIN / 'psql'), 'libraryPath':self.w.LIBRARY_PATH,
+                  'measuredCgroup':self.source.source_group(self.c), 'postgres':self.source.postgres_identity(self.w,self.pg)}
+        config_pin = _compact(self.w,'TRANSACTION_GUARD_CONFIG.PRIVATE.json',config)
+        self.stage('native-transaction-guard-once')
+        child = self.source.NodeChild(self.w,self.c,'scripts/helmut-resource-meter/local-unit-native-transaction-guard.js',
+                                     '--probe-native-transaction-guard','TRANSACTION_GUARD')
+        result = parse(child.finish(seconds=35)); _node_closed(child)
+        need(set(result)=={'schema','pass','case','selection','configPin','reportPin'}
+             and result['schema']=='helmut-native-transaction-guard-published/1' and result['pass'] is True
+             and result['case']==case and result['selection']==self.selection and result['configPin']==config_pin,
+             'transaction-guard-result')
+        report,report_pin = self.private('TRANSACTION_GUARD_REPORT.PRIVATE.json',expected=result['reportPin'])
+        need(report['pass'] is True and report['case']==case and report['selection']==self.selection
+             and report['configPin']==config_pin and report['scopeExecutionQualified'] is False
+             and report['originalCompilerSQLUnchanged'] is True and report['retryAllowed'] is False,
+             'transaction-guard-private-result')
+        self.observer.check(); self.immutable_check()
+        _native_readback(self.w,self.database,self.bridge['actualContractSources'],self.catalog['databaseOID'],
+                         self.bridge['qualification']['originalRelations'])
+        owner = self.stop_owner()
+        self.stage('source-service-close'); self.service_close(); self.immutable_check()
+        stop,stop_pin = self.private('ORIGINAL_SERVICE_STOP.SAFE.json',cap=32768)
+        need(all(type(stop[k]) is int and stop[k]==1 for k in ('spawnCount','closeCount','confirmedCount')),
+             'transaction-guard-service-seed-only')
+        self.w.save('TRANSACTION_GUARD_DIAGNOSTIC.PRIVATE.json',{'schema':'helmut-native-transaction-guard-diagnostic/1',
+                    'selection':self.selection,'case':case,'reportPin':report_pin,'owner':owner,'serviceStopPin':stop_pin,
+                    'reuseForbidden':True,'scopeExecutionQualified':False})
+        return {'schema':'helmut-local-unit-native-transaction-guard-result/1','diagnosticMode':'native-transaction-guard-v1',
+                'selection':self.selection,'transactionGuardCase':case,'transactionGuardObserved':True,
+                'genuineSourceInputsQualified':True,'readClosureQualified':True,'originalBridgeQualified':True,
+                'executionAuthorityInstalled':True,'reuseForbidden':True,'scopeExecutionQualified':False,
+                'originalRAWUnchanged':True,'originalAuthRowUnchanged':False,'copiedOriginalAuthRowUnchanged':False,
+                'unit60Qualified':False,'auth30Qualified':False,'independentFinalAcceptance':False,
+                'motorCalls':0,'actualEntryCalls':0,'providerCalls':0,'completedUnits':0,'expectedPositions':0,'controlCount':0,
+                'full500':False,'production':False}
+
     def run(self):
         self.stage('source-private-command')
         prepared_pin = _move_prepared(self.w, self.preparation)
@@ -819,6 +872,8 @@ class _Controller:
         # No background callback races the serial HostChannel. ENTRY_RESULT is
         # requested only after terminal publication, while periodic samples run.
         last_sample = append()
+        if self.transaction_guard:
+            return self.transaction_guard_finish(initialization, verification)
         self.stage('entry-once'); self.host_observation(self.host.call('HOST_OBSERVE', {}, seconds=3))
         _compact(self.w, 'CLAIM_ONLY_ENTRY_REQUESTED.SAFE.json' if self.claim_only else 'MOTOR_ENTRY_REQUESTED.SAFE.json',
                  {'schema':'helmut-local-unit-native-claim-only-entry-request/1' if self.claim_only else 'helmut-local-unit-native-motor-entry-request/1',

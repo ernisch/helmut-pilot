@@ -47,6 +47,29 @@ class ReadonlyHTTPMode(unittest.TestCase):
             if fault == 'extra-close': value['processClose']['stderrBase64'] = 'forbidden'
             with self.subTest(fault=fault), self.assertRaises(RuntimeError): m.readonly_http_result(result)
 
+
+class TransactionGuardMode(unittest.TestCase):
+    def result(self, case='state'):
+        return {'schema':'helmut-local-unit-native-transaction-guard-result/1','diagnosticMode':'native-transaction-guard-v1',
+            'transactionGuardCase':case, **dict.fromkeys(('transactionGuardObserved','executionAuthorityInstalled','reuseForbidden'),True),
+            **dict.fromkeys(('scopeExecutionQualified','unit60Qualified','auth30Qualified','independentFinalAcceptance','production','full500'),False),
+            **dict.fromkeys(('actualEntryCalls','motorCalls','providerCalls','completedUnits','expectedPositions','controlCount'),0)}
+
+    def test_one_case_and_own_explicit_mode_are_required(self):
+        flag='--diagnose-native-transaction-guard'
+        for case in ('state','same-root-usage','late-old-mirror','late-outside'):
+            args=m.arguments([flag,'--transaction-guard-case',case])
+            self.assertTrue(args.diagnose_native_transaction_guard); self.assertEqual(args.transaction_guard_case,case)
+        for args in ([flag],['--transaction-guard-case','state'],[flag,'--transaction-guard-case','other'],
+                     ['--diagnose-native-claim-only','--transaction-guard-case','state'],[flag,'--run-native-single-unit']):
+            with self.subTest(args=args),redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):m.arguments(args)
+
+    def test_result_cannot_grant_scope_or_unit_or_hide_calls(self):
+        m.transaction_guard_result(self.result(),'state')
+        for key in self.result():
+            value=self.result();value[key]=not value[key] if type(value[key]) is bool else 'wrong'
+            with self.subTest(key=key),self.assertRaises(RuntimeError):m.transaction_guard_result(value,'state')
+
 class SetupClosure(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(prefix='helmut-supervisor-registry-');self.addCleanup(self.temp.cleanup)

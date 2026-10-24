@@ -1645,8 +1645,9 @@ class NativeExecutionHost:
 
     def _client(self, mode):
         diagnostic=self.config.get('nativeDiagnosticMode')
-        need(diagnostic in (None,'fresh-claim-only-v1','readonly-http-pre-admission-v1'),'exact-native-diagnostic-mode')
+        need(diagnostic in (None,'fresh-claim-only-v1','readonly-http-pre-admission-v1','native-transaction-guard-v1'),'exact-native-diagnostic-mode')
         need(not (diagnostic == 'readonly-http-pre-admission-v1' and mode != 'qualifier'), 'readonly-http-no-entry')
+        need(not (diagnostic == 'native-transaction-guard-v1' and mode != 'qualifier'), 'transaction-guard-no-entry')
         code = ('local-unit-native-endpoint-qualification.js' if mode == 'qualifier' else
                 'local-unit-native-claim-only.js' if diagnostic=='fresh-claim-only-v1' else 'local-unit-native-run.js')
         script = str(Path(self.config['repository']) / 'scripts/helmut-resource-meter' / code)
@@ -1804,15 +1805,17 @@ class NativeExecutionHost:
             self.observed_at = 0
         elif stage == 'ENTRY_START':
             need(self.config.get('nativeDiagnosticMode') != 'readonly-http-pre-admission-v1', 'readonly-http-no-entry')
+            need(self.config.get('nativeDiagnosticMode') != 'native-transaction-guard-v1', 'transaction-guard-no-entry')
             expected_body=({'diagnosticMode':'fresh-claim-only-v1'} if self.config.get('nativeDiagnosticMode')=='fresh-claim-only-v1' else {})
             need(self.state == 'QUALIFIED' and body == expected_body and time.monotonic() - self.observed_at < 3, 'entry-start-order-or-fresh-observation')
             self._client('entry'); self.state = 'ENTRY'
         elif stage == 'ENTRY_RESULT':
             need(self.config.get('nativeDiagnosticMode') != 'readonly-http-pre-admission-v1', 'readonly-http-no-entry')
+            need(self.config.get('nativeDiagnosticMode') != 'native-transaction-guard-v1', 'transaction-guard-no-entry')
             expected_body=({'diagnosticMode':'fresh-claim-only-v1'} if self.config.get('nativeDiagnosticMode')=='fresh-claim-only-v1' else {})
             need(self.state == 'ENTRY' and body == expected_body, 'entry-result-order')
         elif stage == 'OWNER_STOP':
-            readonly_close = self.config.get('nativeDiagnosticMode') == 'readonly-http-pre-admission-v1' and self.state == 'QUALIFIED'
+            readonly_close = self.config.get('nativeDiagnosticMode') in ('readonly-http-pre-admission-v1','native-transaction-guard-v1') and self.state == 'QUALIFIED'
             need((self.state == 'DONE' or readonly_close) and body == {}, 'owner-stop-order')
             owner = self.heartbeat['owner']; self.signal = self._root(ROOT_SIGNAL, {k: owner[k] for k in ('pid', 'startTicks', 'exe', 'pidNamespace')})
         else:
