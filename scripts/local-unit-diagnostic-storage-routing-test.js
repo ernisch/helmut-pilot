@@ -19,7 +19,7 @@ const draft = (subject = owner) => ({ id: `bf-${subject}-lage-pruefentwurf-${day
 const rendered = (subject = owner) => ({ id: `bf-${subject}-lage-${day}`, user_id: subject, slot: "lage", generated_at: day + "T12:00:00.000Z", payload: {} });
 function fixture(options = {}) {
   let active = options.active !== false, closed = false, profileRows = [{ id: owner, name: "Synthetic owner", mandate_profiles: [{ user_id: owner, aktiv: true }] }];
-  const calls = { nativeReads: [], artifacts: [], legacy: [], batch: 0, logs: [], injected: 0 }, artifacts = new Map();
+  const calls = { nativeReads: [], artifacts: [], legacy: [], batch: 0, logs: [], injected: 0, runtimeWitness: null }, artifacts = new Map();
   const command = { mode: "D-R-1-local-fixture", units: [{ subject: owner }], calendar: { executionDayUTC: day },
     slot: { plan: { runId, intents: [{ id: "synthetic-D-intent" }] } }, drafts: [{ sources: inputs, profile: { id: owner } }] };
   const scope = { currentVerified() { if (closed) throw Error("local-unit-diagnostic-scope-closed"); return active ? { command, selection } : null; } };
@@ -50,7 +50,7 @@ function fixture(options = {}) {
   vm.runInNewContext(storeSource + "\nadmissionFor=()=>({});readArtifact=async(_s,k,id)=>__routing.read(k,id);"
     + "insertArtifact=async(_s,k,id,b,p=null)=>__routing.insert(k,id,b,p);", storeSandbox, { filename: storePath });
   const nativeStore = { ...storeModule.exports,
-    async readControlSnapshot() { calls.nativeReads.push("synthetic-bundle"); return Object.freeze({}); },
+    async readControlSnapshot(_s, _c, _i, _stage, runtimeWitness) { calls.runtimeWitness = runtimeWitness; calls.nativeReads.push("synthetic-bundle"); return Object.freeze({}); },
     consumeControlSnapshot() { return { original: { synthetic: "genuine Original proof is tested separately" }, state: { synthetic: "Own proof" },
       documents: options.missingInput ? [] : options.changedInput ? [{ ...doc, title: "changed" }] : inputs.documents,
       knowledgeObjects: [], profiles: profileRows }; }
@@ -109,7 +109,8 @@ async function check(name, fn) { current = name; await fn(); count++; }
     const s = fixture({ readFailure: true }); await assert.rejects(s.api.getProfileFromDb(owner), /synthetic-native-read-unknown/); assert.equal(s.calls.logs.length, 0);
   });
   await check("bundled rows reuse actual source/profile normalization with one frame and no GET fallback", async () => {
-    const s = fixture(), frame = await s.api.readLocalUnitDiagnosticControlSnapshot(selection, "synthetic-claim", 0, "unit-enter");
+    const s = fixture(), witness = Object.freeze({}), frame = await s.api.readLocalUnitDiagnosticControlSnapshot(selection, "synthetic-claim", 0, "unit-enter", witness);
+    assert.equal(s.calls.runtimeWitness, witness);
     assert.equal(JSON.stringify(frame.inputs), JSON.stringify(inputs)); assert.equal(frame.profile.id, owner);
     assert.equal(frame.profile.fullName, "Synthetic owner"); assert.deepEqual(s.calls.nativeReads, ["synthetic-bundle"]);
     assert.equal(s.calls.legacy.length, 0); assert.equal(s.calls.batch, 0);

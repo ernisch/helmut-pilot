@@ -280,10 +280,11 @@ function brokerLifecycle() {
   }
   const readNonce = i => "00000000-0000-4000-8000-" + String(i).padStart(12, "0");
   return { start: () => mod.exports.start(c), state, files, c, server, descriptors, request, readNonce, phaseSink,
-    bundle: (i, claimHash) => request("/rest/v1/rpc/local_unit_diagnostic_control_snapshot_read_v1", { p_scope_hash: commandHash,
+    bundle: (i, claimHash, expected = c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) =>
+      ({ name, oid, identityArguments, prosrcSHA256, qualificationPin })).sort((a, b) => a.name.localeCompare(b.name))) => request("/rest/v1/rpc/local_unit_diagnostic_control_snapshot_read_v1", { p_scope_hash: commandHash,
       p_claim_hash: claimHash, p_control_index: i - 1, p_stage: CONTROL_STAGES[i - 1],
       p_graph_request: { id: "main-auth", knownProof: null, readNonce: readNonce(i), knownGraph: null },
-      p_nonce: crypto.createHash("sha256").update("VM bundle " + i).digest("hex") }),
+      p_expected_legacy_reads: expected, p_nonce: crypto.createHash("sha256").update("VM bundle " + i).digest("hex") }),
     graph: i => request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "main-auth", knownProof: null, readNonce: readNonce(i), knownGraph: null }),
     rows: () => files.get(tracePath).bytes.toString().trim().split("\n").map(JSON.parse), async unknown() {
     const req = { method: "POST", url: "/v1/execute", async *[Symbol.asyncIterator]() { yield Buffer.from("[]"); }, destroy() {} };
@@ -557,6 +558,17 @@ function brokerLifecycle() {
     const text = f.files.get(pin.path).bytes.toString();
     for (const hidden of [claim, ownNonce, stateNonce, f.readNonce(1), requests[0].m.nonce, "VM control response payload", "unexported old auth ACK", '"canonical"', '"bodyBase64"'])
       assert(!text.includes(hidden)); checks++;
+  }
+  for (const field of ["name", "oid", "identityArguments", "prosrcSHA256", "qualificationPin"]) {
+    const f = brokerLifecycle(), running = await f.start();
+    // Coherent fake Stage1 list + changed live registry/function response still
+    // cannot reach the upstream: c.legacy is the immutable Root anchor.
+    const expected = f.c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) =>
+      ({ name, oid, identityArguments, prosrcSHA256, qualificationPin }));
+    expected[0][field] = field === "qualificationPin" ? { ...expected[0][field], sha256: "0".repeat(64) } : "changed";
+    f.state.bundleMutation = v => { v.catalog.legacyReadRPCs = expected; };
+    assert.equal((await f.bundle(1, "d".repeat(64), expected)).res.statusCode, 502);
+    assert.equal(f.state.upstreamSpans.length, 0); assert.throws(() => running.observe()); await assert.rejects(running.close()); checks++;
   }
   for (const mutation of [v => delete v.original, v => delete v.documents, v => delete v.state, v => v.index++,
     v => v.claimHash = "0".repeat(64), v => v.nonce = "0".repeat(64), v => v.state.nonce = "0".repeat(64),

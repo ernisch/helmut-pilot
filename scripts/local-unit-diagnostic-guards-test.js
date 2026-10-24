@@ -12,6 +12,7 @@ const source = fs.readFileSync(path.resolve(__dirname, "../lib/helmut/local-unit
 let checks = 0;
 function harness(mode = "normal") {
   const f = H.fixture(); let state = clone(f.auth), wall = Date.parse(H.at), monotonic = 0n, changes = 0;
+  let lastRuntimeWitness; const runtimeConsumed = new WeakSet();
   const calls = { authority: 0, runtime: 0, controlRuntime: 0, bundles: 0, originalControls: 0, inputs: 0, profiles: 0, states: 0, artifacts: 0 }, artifacts = new Map();
   const advance = (wallMs = 1, monoMs = wallMs) => { wall += wallMs; monotonic += BigInt(monoMs) * 1000000n; };
   class Clock extends Date { constructor(value) { super(arguments.length ? value : wall); } static now() { return wall; } }
@@ -25,7 +26,7 @@ function harness(mode = "normal") {
     },
     consumeLocalUnitDiagnosticAuthority() { return { command: f.command, admission: f.admission, sourceHandle: Object.freeze({}) }; },
     async readLocalUnitDiagnosticRuntime() { calls.runtime++; advance(); return Object.freeze({}); },
-    consumeLocalUnitDiagnosticRuntime() { return { ...f.selection, sourceHash: P.hash(f.command.source), targetHash: P.hash(f.command.target), observedAtUTC: new Clock().toISOString() }; },
+    consumeLocalUnitDiagnosticRuntime() { return lastRuntimeWitness = { ...f.selection, sourceHash: P.hash(f.command.source), targetHash: P.hash(f.command.target), observedAtUTC: new Clock().toISOString() }; },
     async readLocalUnitDiagnosticOriginalControl() {
       calls.originalControls++; advance(); if (mode === "original-control-drift") throw Error("SYNTHETIC_ORIGINAL_CONTROL_DRIFT");
       return { synthetik500DispatchJournal: {}, synthetik500KostenAdmission: {}, testKostenAuftrag: {}, testKostenTage: {},
@@ -53,7 +54,8 @@ function harness(mode = "normal") {
     async readLocalUnitDiagnosticArtifact(_selection, _kind, id) { calls.artifacts++; advance(); return clone(artifacts.get(id) || null); }
   };
   store.readLocalUnitDiagnosticControlRuntime = (...args) => { calls.controlRuntime++; return store.readLocalUnitDiagnosticRuntime(...args); };
-  store.readLocalUnitDiagnosticControlSnapshot = async (selection, claimId, index, stage) => {
+  store.readLocalUnitDiagnosticControlSnapshot = async (selection, claimId, index, stage, runtimeWitness) => {
+    assert.equal(runtimeWitness, lastRuntimeWitness); assert(!runtimeConsumed.has(runtimeWitness)); runtimeConsumed.add(runtimeWitness);
     calls.bundles++; assert.equal(index, calls.bundles - 1); assert.equal(stage, A.CONTROL_STAGES[index]);
     assert.equal(claimId, A.current(state, f.selection).journal.claimId); return ({
     original: await store.readLocalUnitDiagnosticOriginalControl(selection),

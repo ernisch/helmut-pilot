@@ -22,7 +22,7 @@ function setup(mutate = () => {}) {
   const sandbox = { module, Buffer, URL, structuredClone, Date: Clock, __dirname: path.dirname(file), process: { env: {
     HELMUT_STORAGE_BACKEND: "supabase", HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE: target.database, SUPABASE_URL: target.origin } },
     __test: { admitted: { selection, command, target, witness: { runtimeManifestPin: { syntheticRuntime: true }, gateHashes: { source: sourcePin.sha256 } } }, gate, runtime: { sqlSources: catalog.sources },
-      current: { selection, command } }, require(name) {
+      current: { selection, command }, runtimeList: [{ name: "synthetic-read", oid: "123", identityArguments: "jsonb", prosrcSHA256: sha("synthetic read source"), qualificationPin: sourcePin }] }, require(name) {
       if (name === "node:fs") return { existsSync: () => true };
       if (["node:path", "node:crypto", "node:util"].includes(name)) return require(name);
       if (name === "./synthetik-500-profile") return P;
@@ -32,7 +32,7 @@ function setup(mutate = () => {}) {
       if (name === "./local-unit-diagnostic-endpoint") return { async request(identity, database, method, endpoint, body) {
         assert.equal(JSON.stringify(identity), JSON.stringify(selection)); assert.equal(database, target.database); assert.equal(method, "POST");
         assert.equal(endpoint, "/rest/v1/rpc/local_unit_diagnostic_control_snapshot_read_v1");
-        const args = JSON.parse(body); calls.push(args);
+        const args = JSON.parse(body); calls.push(args); assert.equal(JSON.stringify(args.p_expected_legacy_reads), JSON.stringify(sandbox.__test.runtimeList));
         const canonical = P.kanonisch(state);
         last = { version: "helmut-local-unit-control-snapshot/1", scopeHash: selection.commandHash, operationId,
           claimHash: sha(claimId), index: args.p_control_index, stage: args.p_stage, nonce: args.p_nonce,
@@ -45,10 +45,15 @@ function setup(mutate = () => {}) {
     } };
   vm.runInNewContext(fs.readFileSync(file, "utf8") + `
     __test.admitted.target=JSON.parse(JSON.stringify(__test.admitted.target));
-    admitted.set(__test.admitted.selection.commandHash,__test.admitted);jsonPin=pin=>JSON.parse(JSON.stringify(pin.syntheticRuntime?__test.runtime:__test.gate));
+    admitted.set(__test.admitted.selection.commandHash,__test.admitted);
+    __test.issueRuntime=(control=true)=>{const token=Object.freeze({});runtimeProofs.set(token,{selection:structuredClone(__test.admitted.selection),
+      r:{observedAtUTC:new Date(Date.now()).toISOString()},readAt:Date.now(),expectedLegacyReads:control?structuredClone(__test.runtimeList):null});return token;};
+    jsonPin=pin=>JSON.parse(JSON.stringify(pin.syntheticRuntime?__test.runtime:__test.gate));
   `, sandbox, { filename: file });
   return { api: module.exports, selection, calls, state, server, last: () => last, advance: ms => { clock += ms; },
-    read: (index = 0) => module.exports.readControlSnapshot(selection, claimId, index, A.CONTROL_STAGES[index]),
+    runtime: (control = true) => module.exports.consumeRuntime(sandbox.__test.issueRuntime(control), selection, command),
+    read: (index = 0, witness = module.exports.consumeRuntime(sandbox.__test.issueRuntime(), selection, command)) =>
+      module.exports.readControlSnapshot(selection, claimId, index, A.CONTROL_STAGES[index], witness),
     consume: (token, index = 0, claim = claimId) => module.exports.consumeControlSnapshot(token, selection, claim, index, A.CONTROL_STAGES[index]) };
 }
 let count = 0;
@@ -69,6 +74,18 @@ async function check(work) { await work(); count++; }
       assert.notEqual(f.calls[0].p_graph_request.readNonce, f.calls[1].p_graph_request.readNonce);
       assert(f.calls[1].p_graph_request.knownGraph); // genuine U verified first graph, then fresh native reuse proof.
     });
+    for (const mode of ["missing", "ordinary", "cloned", "expired", "backwards"]) await check(async () => {
+      const f = setup(), witness = mode === "missing" ? undefined : f.runtime(mode !== "ordinary");
+      if (mode === "expired") f.advance(30001); if (mode === "backwards") f.advance(-1);
+      await assert.rejects(f.api.readControlSnapshot(f.selection, claimId, 0, A.CONTROL_STAGES[0], mode === "cloned" ? copy(witness) : witness), /private-control-read-proof/);
+      assert.equal(f.calls.length, 0); await assert.rejects(f.read(), /control-frame-retry/); assert.equal(f.calls.length, 0);
+    });
+    await check(async () => { const foreign = setup().runtime(), f = setup();
+      await assert.rejects(f.read(0, foreign), /private-control-read-proof/); assert.equal(f.calls.length, 0); });
+    await check(async () => { const f = setup(), witness = f.runtime(); f.consume(await f.read(0, witness));
+      await assert.rejects(f.read(1, witness), /private-control-read-proof/); assert.equal(f.calls.length, 1); });
+    await check(async () => { const f = setup(r => { delete r.original; }), witness = f.runtime(); await assert.rejects(f.read(0, witness));
+      await assert.rejects(f.read(1, witness), /private-control-read-proof/); assert.equal(f.calls.length, 1); });
     await check(async () => {
       const sql = fs.readFileSync(path.join(__dirname, "local-unit-diagnostic-store.sql"), "utf8");
       const stageText = /stages text\[\]:=array\[([^;]+)\];/.exec(sql)[1];
