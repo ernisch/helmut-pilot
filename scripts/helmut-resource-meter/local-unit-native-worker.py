@@ -248,6 +248,37 @@ def query(database, text, label):
                    label, data=text.encode()).decode().strip()
 
 
+def initial_session_logging_baseline(database, catalog, before, after):
+    if before != after:
+        raise RuntimeError('initial-session-original-source-changed')
+    expected = {'log_transaction_sample_rate': '0', 'log_duration': 'off', 'log_line_prefix': '%m [%p] ',
+                'log_statement': 'none', 'log_min_duration_statement': '-1', 'log_min_duration_sample': '-1'}
+    sql = """BEGIN READ ONLY;
+SELECT jsonb_build_object('database',current_database(),
+  'databaseOID',(SELECT oid::text FROM pg_database WHERE datname=current_database()),
+  'sessionUser',session_user,'currentUser',current_user,
+  'settings',(SELECT jsonb_object_agg(name,jsonb_build_object('value',current_setting(name),'source',source))
+    FROM pg_settings WHERE name IN ('log_transaction_sample_rate','log_duration','log_line_prefix',
+      'log_statement','log_min_duration_statement','log_min_duration_sample')));
+COMMIT;"""
+    value = json.loads(query(database, sql, 'INITIAL_SESSION_LOGGING_BASELINE'))
+    if (type(value) is not dict or set(value) != {'database', 'databaseOID', 'sessionUser', 'currentUser', 'settings'}
+            or value['database'] != database or value['databaseOID'] != catalog['databaseOID']
+            or value['sessionUser'] != 'postgres' or value['currentUser'] != 'postgres'
+            or type(value['settings']) is not dict or set(value['settings']) != set(expected)):
+        raise RuntimeError('initial-session-logging-context')
+    sources = {'default', 'dynamic default', 'environment variable', 'configuration file', 'command line',
+               'global', 'database', 'user', 'database user', 'client', 'override', 'interactive', 'test'}
+    for name, wanted in expected.items():
+        row = value['settings'][name]
+        if (type(row) is not dict or set(row) != {'value', 'source'} or row['value'] != wanted
+                or type(row['source']) is not str or row['source'] not in sources):
+            raise RuntimeError('initial-session-logging-' + name)
+    save('INITIAL_SESSION_LOGGING_BASELINE.SAFE.json', {
+        'schema': 'helmut-native-initial-session-logging-baseline/1', 'pass': True,
+        'originalSourceBeforeAfterIdentical': True, **value})
+
+
 def main():
     global LIBRARY_PATH
     os.umask(0o077)
@@ -295,6 +326,7 @@ def main():
                 'temp_file_limit': '128MB', 'max_parallel_workers_per_gather': '0', 'jit': 'on',
                 'autovacuum': 'off', 'statement_timeout': '30s', 'lock_timeout': '1s',
                 'logging_collector': 'off', 'log_statement': 'none', 'log_min_duration_statement': '-1',
+                'log_line_prefix': '%m [%p] ', 'log_transaction_sample_rate': '0', 'log_duration': 'off',
                 # Keep genuine psql failures in bounded private captures. A
                 # failed statement can contain a complete private command;
                 # duplicating it in the server log exhausts its independent cap.
@@ -386,6 +418,7 @@ COMMIT;"""
                       'nativeRoleAndStateCASQualified': False, 'nativeEndpointQualified': False,
                       'motorCalls': 0, 'providerCalls': 0, 'full500': False, 'unit60Qualified': False}
             if config.get('qualifyNativeBindings') is True:
+                initial_session_logging_baseline(database, catalog, before, after)
                 binding = load('local_unit_native_binding_preparation', config['bindingPreparationPin'])
                 fresh_binding_result = binding.qualify(sys.modules[__name__], config, pg, catalog)
                 result.update(fresh_binding_result)

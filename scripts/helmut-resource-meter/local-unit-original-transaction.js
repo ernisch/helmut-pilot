@@ -318,6 +318,51 @@ BEGIN
 END;$originalrow$;
 `;
 }
+function diagnosticWriteSQL(sql, r) {
+  if (r.mode !== "state") return sql; // Seed and every non-state request retain exact original SQL.
+  const journal = JSON.parse(r.ownNext.canonical)["localUnitDiagnostic:" + r.operationId.slice(-32) + ":journal"];
+  need(r.ownBefore.revision === 0 && journal?.state === "running" && journal.index === 0
+    && journal.claimId === r.claimId, "write-phase-fresh-claim-only");
+  const requestSHA256 = SHA(canonical(r));
+  const anchors = [
+    ["  m:=public.helmut_auth_state_assert_root_local_v1(a);u:=public.helmut_auth_usage_checked_proof_local_v1('main-auth');\n", "original_before_begin"],
+    ["  IF r->>'mode' IN('state','seed') THEN\n", "original_before_end"],
+    ["  ack:=public.helmut_auth_state_cas_v1(c);\n", "native_cas_begin"],
+    ["  IF jsonb_typeof(ack) IS DISTINCT FROM 'array' OR jsonb_array_length(ack)<>1\n", "native_cas_end"],
+    ["  IF r->>'mode'='usage' THEN\n", "post_readback_end"],
+    ["  INSERT INTO pg_temp.original_bridge_results VALUES('authAck',ack);\n", "auth_ack_publish_begin"],
+    ["    ack:=public.local_unit_diagnostic_state_cas_v1(r->>'commandHash',claim_hash,r#>>'{ownBefore,hash}',\n", "own_cas_receipt_begin"],
+    ["    SELECT body,body_hash,revision INTO STRICT current_body,current_hash,current_revision FROM helmut_unit_diagnostic.state WHERE scope_hash=r->>'commandHash';\n", "own_cas_receipt_end"],
+    ["END;$own$;\n", "own_ack_end"]
+  ];
+  need(!sql.includes("HELMUT_NATIVE_WRITE_PHASE_V1") && anchors.length === 9, "write-phase-overlay-source");
+  const insertions = [];
+  for (let i = 0; i < anchors.length; i++) {
+    const [anchor, label] = anchors[i], at = sql.indexOf(anchor);
+    need(at >= 0 && at === sql.lastIndexOf(anchor), "write-phase-overlay-anchor");
+    const marker = "  /* HELMUT_WRITE_PHASE_INSERT_V1 */ RAISE NOTICE 'HELMUT_NATIVE_WRITE_PHASE_V1 "
+      + requestSHA256 + " " + i + " " + label
+      + " % %', pg_backend_pid(), floor(extract(epoch from clock_timestamp())*1000000)::bigint; /* HELMUT_WRITE_PHASE_END_V1 */\n";
+    insertions.push({ at, marker });
+  }
+  // Insert only: remove the exact inserted bytes and the compiler's output is
+  // byte-for-byte recovered, including every guard, role switch and COMMIT.
+  const originalSQL = sql;
+  for (const { at, marker } of [...insertions].sort((a,b) => b.at-a.at)) sql = sql.slice(0,at) + marker + sql.slice(at);
+  let recovered = sql;
+  for (const { marker } of insertions) recovered = recovered.replace(marker, "");
+  need(recovered === originalSQL, "write-phase-overlay-byte-recovery");
+  // Session-local logging only. No SQL/parameter text; client NOTICE stays on
+  // stderr. SET is outside the unchanged original transaction. In particular,
+  // log_duration must survive COMMIT, so SET LOCAL would be insufficient.
+  const diagnosticPrefix = "SET log_statement='none';\nSET log_min_duration_statement=-1;\n"
+    + "SET log_min_duration_sample=-1;\nSET log_statement_sample_rate=0;\n"
+    + "SET log_min_error_statement='panic';\nSET log_parameter_max_length=0;\n"
+    + "SET log_parameter_max_length_on_error=0;\nSET log_error_verbosity='terse';\n"
+    + "SET log_min_messages='log';\nSET client_min_messages='notice';\nSET log_duration='on';\n";
+  return diagnosticPrefix + sql;
+}
+
 function compile(r, q, nonce) {
   const suffix = r.operationId.slice(-32), writer = "helmut_ud_bridge_writer_" + suffix;
   const auth = "helmut_ud_authenticator_" + suffix, runtime = "helmut_ud_runtime_" + suffix;
@@ -550,7 +595,7 @@ SELECT jsonb_build_object('schema','helmut-local-unit-original-write-result/1',
 function prepare(request, inputQualification) {
   validate(request, inputQualification);
   const requestCopy = JSON.parse(canonical(request)), q = JSON.parse(canonical(inputQualification)), nonce = crypto.randomBytes(32).toString("hex");
-  const sql = compile(requestCopy, q, nonce), packet = Object.freeze({ schema: "helmut-local-unit-original-transaction-plan/1",
+  const sql = diagnosticWriteSQL(compile(requestCopy, q, nonce), requestCopy), packet = Object.freeze({ schema: "helmut-local-unit-original-transaction-plan/1",
     database: q.database, sql, sqlSHA256: SHA(sql), requestSHA256: SHA(canonical(requestCopy)), qualificationSHA256: SHA(canonical(q)),
     requiredInitialRole: "postgres", requiredInitialSuperuser: true, originallyUnprivileged: false,
     preparedOnly: true, privateOwnerInitialization: requestCopy.mode === "seed", publicSeedBlocked: true,
