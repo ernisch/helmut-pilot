@@ -44,6 +44,12 @@ function harness(stderr, casError = null) {
     async getLageEntwurfsbeleg() { throw Error("forbidden synthetic artifact read"); },
     async readLocalUnitDiagnosticArtifact() { throw Error("forbidden synthetic artifact read"); }
   };
+  store.readLocalUnitDiagnosticControlRuntime = (...args) => store.readLocalUnitDiagnosticRuntime(...args);
+  store.readLocalUnitDiagnosticControlSnapshot = async selection => ({
+    original: await store.readLocalUnitDiagnosticOriginalControl(selection),
+    inputs: await store.readSynthetik500CurrentInputs(), profile: await store.getProfileFromDb(),
+    state: await store.readLocalUnitDiagnosticState(selection)
+  });
   const transport = Object.freeze({});
   const box = { module: { exports: {} }, structuredClone, Date: Clock, require(name) {
     if (name === "node:process") return { hrtime: { bigint: () => ns }, stderr };
@@ -86,7 +92,7 @@ async function test(name, work) { await work(); checks++; console.log("PASS " + 
     assert.deepEqual(observed.calls, inert.calls);
     assert.deepEqual(observed.calls, ["authority", "source", "transport", "runtime", "cas", "state", "runtime", "original-control", "inputs", "profile", "state", "cas"]);
     const logged = rows(output), group = logged.filter(row => row[2] === 0 && row[3] === "unit-enter");
-    assert.deepEqual(group.map(row => row.slice(0, 2)), ["runtime", "original-control", "inputs", "profile", "state"].flatMap(name => [[name, 0], [name, 1]]));
+    assert.deepEqual(group.map(row => row.slice(0, 2)), ["runtime", "control-bundle"].flatMap(name => [[name, 0], [name, 1]]));
     assert(logged.every(row => row.length === 6 && /^[0-9]+$/.test(row[4]) && new Date(row[5]).toISOString() === row[5]));
     assert.equal(logged[0][0], "entry"); assert.equal(logged.at(-1)[0], "scope");
     assert(!output.rows.join("").includes(secret));

@@ -29,10 +29,15 @@ function fixture() {
   };
   function req(name) {
     if (name === "node:fs") return io;
-    if (name === "./local-unit-diagnostic-endpoint") return { request: async () => {
+    if (name === "./local-unit-diagnostic-endpoint") return { request: async (_selection, _database, _method, endpoint, body) => {
       f.catalogCalls++;
       const status = f.catalogResponse ? await f.catalogResponse() : f.status;
-      return { status, body: Buffer.from(JSON.stringify({ version: "helmut-local-unit-diagnostic-native-store/1", database, databaseOID: "42", sources: f.catalogSources })) };
+      const catalog = { version: "helmut-local-unit-diagnostic-native-store/1", database, databaseOID: "42", sources: f.catalogSources };
+      const args = JSON.parse(body), value = endpoint.includes("control_runtime_read")
+        ? { version: "helmut-local-unit-control-runtime/1", scopeHash: args.p_scope_hash, nonce: args.p_nonce, catalog,
+          runtime: { nonce: args.p_nonce, scopeHash: args.p_scope_hash } } : catalog;
+      if (f.bundleMutation) f.bundleMutation(value);
+      return { status, body: Buffer.from(JSON.stringify(value)) };
     } };
     return nativeRequire(name);
   }
@@ -42,6 +47,7 @@ function fixture() {
   vm.runInNewContext("(function(require,module,exports,__filename,__dirname){" + source
     + "\nmodule.exports = {checkManifests};\n})", { Buffer, structuredClone, URL, process: fakeProcess })(req, module, module.exports, store, lib);
   f.check = () => module.exports.checkManifests(witness);
+  f.control = () => module.exports.checkManifests(witness, true);
   f.cache = req.cache;
   f.put = put;
   f.dispose = () => fs.rmSync(root, { recursive: true, force: false });
@@ -132,6 +138,20 @@ async function rejectedAndPoisoned(f, pattern) {
     pending[0](500); await assert.rejects(first, /native-http-not-confirmed/);
     pending[1](200); await assert.rejects(second, /manifest-proof-terminal/);
     await assert.rejects(f.check(), /manifest-proof-terminal/); assert.equal(f.catalogCalls, 2);
+  });
+  await check("control runtime has one actual catalog await with unchanged manifest bookends", async f => {
+    const first = await f.control(); assert(first.runtimeWitness); assert.equal(f.catalogCalls, 1);
+    f.payloadReads = 0; await f.control(); assert.equal(f.catalogCalls, 2); assert.equal(f.payloadReads, 0);
+  });
+  await check("missing bundled runtime cannot leave a reusable manifest proof", async f => {
+    f.bundleMutation = value => { delete value.runtime; };
+    await assert.rejects(f.control(), /control-runtime-envelope/);
+    f.bundleMutation = null; await assert.rejects(f.control(), /manifest-proof-terminal/); assert.equal(f.catalogCalls, 1);
+  });
+  await check("file mutation during bundled catalog still poisons", async f => {
+    f.bundleMutation = () => { fs.chmodSync(f.executable, 0o400); };
+    await assert.rejects(f.control(), /manifest-file-drift/);
+    await assert.rejects(f.control(), /manifest-proof-terminal/);
   });
   process.stdout.write(JSON.stringify({ schema: "helmut-local-unit-manifest-proof-offline-checks/1", passed,
     syntheticFixturesOnly: true, nativeExecution: false, databaseStarted: false, motorCalls: 0, unit60: false, reserve: false, full500: false }) + "\n");

@@ -13,11 +13,14 @@ const TRACE = "/run/bootstrap/CONTROL_READ_TRACE.SAFE.jsonl", TRACE_CAP = 65536;
 const HASH = /^[a-f0-9]{64}$/, UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const exact = (x, keys) => x && typeof x === "object" && !Array.isArray(x) && Object.keys(x).sort().join("|") === [...keys].sort().join("|");
 const RPC = Object.freeze({ contract: [], authority_read: ["p_scope_hash", "p_nonce"], runtime_read: ["p_scope_hash", "p_nonce"],
+  control_runtime_read: ["p_scope_hash", "p_nonce"],
+  control_snapshot_read: ["p_scope_hash", "p_claim_hash", "p_control_index", "p_stage", "p_graph_request", "p_nonce"],
   state_read: ["p_scope_hash", "p_nonce"], state_cas: ["p_scope_hash", "p_claim_hash", "p_old_hash", "p_old_revision", "p_next_canonical", "p_next_hash", "p_nonce"],
   artifact_insert: ["p_scope_hash", "p_claim_hash", "p_kind", "p_logical_id", "p_canonical", "p_sha256", "p_parent_hash", "p_nonce"],
   artifact_read: ["p_scope_hash", "p_kind", "p_logical_id", "p_expected_sha256", "p_nonce"],
   lease_acquire: ["p_scope_hash", "p_claim_hash", "p_job", "p_ttl_ms", "p_nonce"],
   lease_release: ["p_scope_hash", "p_claim_hash", "p_job", "p_token", "p_nonce"] });
+const CONTROL_STAGES = Object.freeze(["unit-enter", "before-D", "reserve-D", "send-D", "D-accounted", "before-R", "D-retained", "reserve-R", "send-R", "R-accounted", "R-retained", "before-lage-save", "after-lage-save", "before-briefing-materialize", "before-morning-insert", "before-evidence-retention"]);
 function need(ok, code) { if (!ok) throw Error("local-unit-broker-" + code); }
 // PRIVATE stderr diagnosis only; settled never means ACK or acceptance. Missing
 // rows/caps/stream failures leave this timing unqualified, without changing I/O.
@@ -267,6 +270,19 @@ function authorize(c, m, traceMeta = null) {
       && (!RPC[native[1]].includes("p_scope_hash") || args.p_scope_hash === c.commandHash)
       && (!RPC[native[1]].includes("p_nonce") || /^[a-f0-9]{64}$/.test(args.p_nonce)), "native-abi");
     if (traceMeta && native[1] === "state_read") traceMeta.candidate = "state-read";
+    if (native[1] === "control_snapshot_read") {
+      const graph = args.p_graph_request;
+      need(HASH.test(args.p_claim_hash || "") && Number.isInteger(args.p_control_index) && args.p_control_index >= 0
+        && args.p_control_index < CONTROL_STAGES.length && args.p_stage === CONTROL_STAGES[args.p_control_index]
+        && exact(graph, ["id", "knownProof", "readNonce", "knownGraph"]) && graph.id === "main-auth"
+        && UUID.test(graph.readNonce || ""), "control-bundle-request");
+      if (traceMeta) {
+        traceMeta.candidate = "control-bundle-4"; traceMeta.readNonceSHA256 = sha(graph.readNonce);
+        traceMeta.control = { readNonceSHA256: sha(graph.readNonce), index: args.p_control_index, stage: args.p_stage,
+          claimHash: args.p_claim_hash, bundleNonceSHA256: sha(args.p_nonce), graphComponent: "original" };
+      }
+    }
+
   } else if (m.method === "GET") {
     need(body.length === 0 && /^\/rest\/v1\/[a-z][a-z0-9_]*(?:\?|$)/.test(m.path)
       && c.legacy.tables.includes(parsed.pathname.slice("/rest/v1/".length)), "qualified-table-read");
@@ -441,7 +457,7 @@ function controlReadTrace(c, self, codePin, trustPin, unknown) {
         need(records < 32 && t.finishedAt, "trace-record-cap-or-finish"); const at = t.finishedAt;
         append({ seq: records + 1, ...t.record, timing: { ...t.record.timing, finishUTC: at.utc, finishNs: at.ns },
           io: { ...t.record.io, downstreamFinish: true } }); records++;
-        if (t.record.kind === "control-graph-4") controls++; else if (t.record.kind === "final-own-ack") acks++; else reads++;
+        if (["control-graph-4", "control-bundle-4"].includes(t.record.kind)) controls++; else if (t.record.kind === "final-own-ack") acks++; else reads++;
       }
       t.resolve();
     } catch (error) { mark(); t.reject(error); }
@@ -450,7 +466,7 @@ function controlReadTrace(c, self, codePin, trustPin, unknown) {
     begin(meta, m, body, res, req) {
       if (!meta.candidate) return null;
       need(!broken && !sealed && pending.size < 32 && req.complete === true, "trace-request-complete");
-      const t = { candidate: meta.candidate, control: meta.readNonceSHA256 ? { readNonceSHA256: meta.readNonceSHA256 } : null,
+      const t = { candidate: meta.candidate, control: meta.control || (meta.readNonceSHA256 ? { readNonceSHA256: meta.readNonceSHA256 } : null),
         requestNonceSHA256: sha(m.nonce), requestBodySHA256: sha(body), handlerDone: false, finished: false, closed: false, failed: false, record: null };
       t.promise = new Promise((resolve, reject) => { t.resolve = resolve; t.reject = reject; }); t.promise.catch(() => {}); pending.add(t);
       res.once("finish", () => { t.finishedAt = stamp(); t.finished = res.writableFinished === true; if (!t.finished) { t.failed = true; mark(); } settle(t); });
@@ -461,7 +477,25 @@ function controlReadTrace(c, self, codePin, trustPin, unknown) {
     signed(t, answer, attestation, envelope, output) {
       if (!t) return; need(answer.status === 200 && t.sent && t.ended && answer.traceIO, "trace-upstream-success");
       let kind = t.candidate, ownAck = null, readback = null;
-      if (kind !== "control-graph-4") {
+      if (kind === "control-bundle-4") {
+        // This is ONE actual HTTP body/envelope, not invented subrequest IO.
+        const value = JSON.parse(answer.bytes.toString("utf8")), control = t.control;
+        need(exact(value, ["version", "scopeHash", "operationId", "claimHash", "index", "stage", "nonce", "catalog", "original", "documents", "knowledgeObjects", "profiles", "state"])
+          && value.version === "helmut-local-unit-control-snapshot/1" && value.scopeHash === c.commandHash
+          && value.operationId === c.operationId && value.claimHash === control.claimHash
+          && value.index === control.index && value.stage === control.stage && sha(value.nonce) === control.bundleNonceSHA256
+          && value.original?.historyReuse?.nonce === value.original?.graphReuse?.nonce
+          && UUID.test(value.original?.graphReuse?.nonce || "")
+          && sha(value.original.graphReuse.nonce) === control.readNonceSHA256
+          && Array.isArray(value.documents) && Array.isArray(value.knowledgeObjects) && Array.isArray(value.profiles)
+          && value.state?.version === "helmut-local-unit-diagnostic-state-witness/1" && value.state.scopeHash === c.commandHash
+          && value.state.nonce === value.nonce && HASH.test(value.state.hash || "")
+          && Number.isSafeInteger(value.state.revision) && value.state.revision >= 0, "trace-control-bundle-response");
+        const expected = c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) => ({ name, oid, identityArguments, prosrcSHA256, qualificationPin }));
+        need(value.catalog?.version === "helmut-local-unit-diagnostic-native-store/1" && value.catalog.database === c.database
+          && isDeepStrictEqual(value.catalog.legacyReadRPCs, expected), "actual-qualified-read-catalog");
+        t.control = { ...control, ownHash: value.state.hash, ownRevision: value.state.revision };
+      } else if (kind !== "control-graph-4") {
         need(answer.bytes.length <= 9 * 1024 * 1024, "trace-response-cap"); const value = JSON.parse(answer.bytes.toString("utf8"));
         if (kind === "state-write") {
           const w = value?.ownAck;

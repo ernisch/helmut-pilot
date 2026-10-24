@@ -27,9 +27,9 @@ const HELPERS = Object.freeze({
   original_bridge_relations_v1: Object.freeze({ args: "", sha: "91505921dd30cbadb259fc439fede86c1f47b062ebcd690238dbd83d9f53797a", result: "jsonb" }),
   original_bridge_row_v1: Object.freeze({ args: "text, text, text, jsonb", sha: "290c60f33dc595e7ca7d4e893ed980fdc2a722b1513af00df51230c51b131480", result: "jsonb" }),
   original_bridge_result_v1: Object.freeze({ args: "text, jsonb", sha: "28ab1470b561bae4fa339efc678fe1ae07ff2a13d0ed58723bea9613a4d953cb", result: "void" }),
-  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "058e191329a6ed64753fd3660a7219b6cb192c2f8481ad1a94aa6719b60edbdd", result: "void" }),
+  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "b7773ec200fe1b93bad33ac663175e7f3621303fb8f953d90fa772ed8412e214", result: "void" }),
 });
-const NATIVE = Object.freeze(["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"]);
+const NATIVE = Object.freeze(["contract", "authority_read", "runtime_read", "control_runtime_read", "control_snapshot_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"]);
 function need(ok, code) { if (!ok) throw Error("local-unit-original-transaction-" + code); }
 const exact = (v, names) => v !== null && typeof v === "object" && !Array.isArray(v)
   && Object.keys(v).sort().join("|") === [...names].sort().join("|");

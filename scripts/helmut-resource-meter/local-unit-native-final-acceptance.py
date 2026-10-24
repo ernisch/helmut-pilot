@@ -155,7 +155,7 @@ def _trace(trace, selection):
     _need(type(trace['records']) is list and len(trace['records']) == 19, 'nineteen-actual-trace-records')
     nonce_hashes, graph_nonces, previous_ns, previous_at = set(), set(), 0, None
     for index, r in enumerate(trace['records']):
-        kind = 'control-graph-4' if index < 16 else 'final-own-ack' if index == 16 else 'closed-state-readback'
+        kind = 'control-bundle-4' if index < 16 else 'final-own-ack' if index == 16 else 'closed-state-readback'
         _need(type(r) is dict and set(r) == {'seq', 'kind', 'requestNonceSHA256', 'requestBodySHA256', 'responseBodySHA256',
             'attestationSHA256', 'envelopeSHA256', 'signatureSHA256', 'status', 'timing', 'io', 'control', 'ownAck', 'readback'}
             and type(r['seq']) is int and r['seq'] == index + 1 and r['kind'] == kind and type(r['status']) is int and r['status'] == 200
@@ -179,10 +179,15 @@ def _trace(trace, selection):
         else:
             _need(all(io[k] is True for k in ('upstreamRequestFinish', 'upstreamResponseEnd', 'upstreamMessageComplete'))
                   and io['ownerSocketEnd'] is None and io['ownerSocketClose'] is None, 'trace-http-eof')
-        if kind == 'control-graph-4':
-            _need(type(r['control']) is dict and set(r['control']) == {'readNonceSHA256'} and _hash(r['control']['readNonceSHA256'])
-                  and r['control']['readNonceSHA256'] not in graph_nonces and r['ownAck'] is None and r['readback'] is None, 'trace-fresh-graph-read')
-            graph_nonces.add(r['control']['readNonceSHA256'])
+        if kind == 'control-bundle-4':
+            control = r['control']
+            _need(type(control) is dict and set(control) == {'readNonceSHA256','index','stage','claimHash','bundleNonceSHA256','graphComponent','ownHash','ownRevision'}
+                  and all(_hash(control[k]) for k in ('readNonceSHA256','claimHash','bundleNonceSHA256','ownHash'))
+                  and type(control['index']) is int and control['index'] == index
+                  and control['stage'] == STAGES[index] and control['graphComponent'] == 'original'
+                  and type(control['ownRevision']) is int and control['ownRevision'] >= 0
+                  and control['readNonceSHA256'] not in graph_nonces and r['ownAck'] is None and r['readback'] is None, 'trace-fresh-graph-read')
+            graph_nonces.add(control['readNonceSHA256'])
         elif kind == 'final-own-ack':
             ack = r['ownAck']
             _need(r['control'] is None and r['readback'] is None and type(ack) is dict
@@ -201,6 +206,8 @@ def _trace(trace, selection):
                   and type(back['revision']) is int and back['revision'] > 0 and type(back['controlCount']) is int and back['controlCount'] == 16
                   and all(_hash(back[k]) for k in ('hash', 'nonceSHA256', 'claimIdSHA256', 'evidenceHash', 'authorizationHash', 'controlsHash')), 'actual-closed-state-readback')
     ack = trace['records'][16]['ownAck']
+    _need(all(r['control']['claimHash'] == ack['claimHash'] for r in trace['records'][:16])
+          and len({r['control']['bundleNonceSHA256'] for r in trace['records'][:16]}) == 16, 'trace-bundle-claim-nonces')
     _need(int(trace['records'][-1]['timing']['finishNs']) - int(trace['records'][0]['timing']['sendNs']) < 60000000000, 'trace-unit-monotonic-span')
     _need(all(int(r['timing']['sendNs']) > int(trace['records'][i - 1]['timing']['finishNs']) for i, r in enumerate(trace['records']) if i >= 17), 'readback-after-ack')
     for r in trace['records'][17:]:

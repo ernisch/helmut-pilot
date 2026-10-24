@@ -18,6 +18,8 @@ RPCS = {
     "contract": "",
     "authority_read": "p_scope_hash text,p_nonce text",
     "runtime_read": "p_scope_hash text,p_nonce text",
+    "control_runtime_read": "p_scope_hash text,p_nonce text",
+    "control_snapshot_read": "p_scope_hash text,p_claim_hash text,p_control_index integer,p_stage text,p_graph_request jsonb,p_nonce text",
     "state_read": "p_scope_hash text,p_nonce text",
     "state_cas": "p_scope_hash text,p_claim_hash text,p_old_hash text,p_old_revision bigint,p_next_canonical text,p_next_hash text,p_nonce text",
     "artifact_insert": "p_scope_hash text,p_claim_hash text,p_kind text,p_logical_id text,p_canonical text,p_sha256 text,p_parent_hash text,p_nonce text",
@@ -157,6 +159,22 @@ def audit(text):
 
 
 class StaticStoreContract(unittest.TestCase):
+    def test_control_bundle_has_real_invoker_reads_and_no_mutation_or_lock(self):
+        text = SQL.read_text(encoding="utf-8")
+        body = text.split("create function public.local_unit_diagnostic_control_snapshot_read_v1", 1)[1].split("end;$f$;", 1)[0]
+        self.assertIn("stable security invoker set search_path=pg_catalog", body)
+        self.assertIn("catalog:=public.local_unit_diagnostic_contract_v1()", body)
+        self.assertLess(body.index("catalog:="), body.index("original:=public.helmut_auth_state_graph_read_v1"))
+        for table in ("raw_documents", "knowledge_objects", "profiles", "mandate_profiles"):
+            self.assertIn("from public." + table, body)
+        self.assertIn("original:=public.helmut_auth_state_graph_read_v1(p_graph_request)", body)
+        self.assertIn("own_state:=public.local_unit_diagnostic_state_read_v1(p_scope_hash,p_nonce)", body)
+        self.assertIn("a.command_canonical", body)
+        self.assertIn("p_stage is distinct from stages[p_control_index+1]", body)
+        self.assertIn("is distinct from p_claim_hash", body)
+        self.assertNotRegex(re.sub(r"'(?:[^']|'')*'", "''", strip_comments(body)), r"(?i)\b(insert|update|delete|truncate|execute)\b|for\s+(update|share)")
+        self.assertNotIn("security definer", body.lower())
+
     @classmethod
     def setUpClass(cls):
         cls.source = SQL.read_text(encoding="utf-8")

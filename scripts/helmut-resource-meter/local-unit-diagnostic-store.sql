@@ -150,6 +150,8 @@ begin
           'public.local_unit_diagnostic_contract_v1()'::regprocedure,
           'public.local_unit_diagnostic_authority_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_runtime_read_v1(text,text)'::regprocedure,
+          'public.local_unit_diagnostic_control_runtime_read_v1(text,text)'::regprocedure,
+          'public.local_unit_diagnostic_control_snapshot_read_v1(text,text,integer,text,jsonb,text)'::regprocedure,
           'public.local_unit_diagnostic_state_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_state_cas_v1(text,text,text,bigint,text,text,text)'::regprocedure,
           'public.local_unit_diagnostic_artifact_insert_v1(text,text,text,text,text,text,text,text)'::regprocedure,
@@ -925,6 +927,8 @@ begin
       or p.oid in ('public.local_unit_diagnostic_contract_v1()'::regprocedure,
           'public.local_unit_diagnostic_authority_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_runtime_read_v1(text,text)'::regprocedure,
+          'public.local_unit_diagnostic_control_runtime_read_v1(text,text)'::regprocedure,
+          'public.local_unit_diagnostic_control_snapshot_read_v1(text,text,integer,text,jsonb,text)'::regprocedure,
           'public.local_unit_diagnostic_state_read_v1(text,text)'::regprocedure,
           'public.local_unit_diagnostic_state_cas_v1(text,text,text,bigint,text,text,text)'::regprocedure,
           'public.local_unit_diagnostic_artifact_insert_v1(text,text,text,text,text,text,text,text)'::regprocedure,
@@ -976,6 +980,61 @@ begin
   perform helmut_unit_diagnostic.validate_state(p_scope_hash,s.body);
   return jsonb_build_object('version','helmut-local-unit-diagnostic-state-witness/1','scopeHash',p_scope_hash,
     'canonical',s.canonical_text,'hash',s.body_hash,'revision',s.revision,'nonce',p_nonce);
+end;$f$;
+
+-- Fixed two-step control transport. These readers mint no claim, lease or ACK.
+create function public.local_unit_diagnostic_control_runtime_read_v1(p_scope_hash text,p_nonce text) returns jsonb
+language plpgsql stable security invoker set search_path=pg_catalog
+as $f$
+declare catalog jsonb; runtime jsonb;
+begin
+  -- Reuse the unchanged catalog/role and runtime checks, in this fresh request.
+  catalog:=public.local_unit_diagnostic_contract_v1();
+  runtime:=public.local_unit_diagnostic_runtime_read_v1(p_scope_hash,p_nonce);
+  return jsonb_build_object('version','helmut-local-unit-control-runtime/1','scopeHash',p_scope_hash,
+    'nonce',p_nonce,'catalog',catalog,'runtime',runtime);
+end;$f$;
+
+create function public.local_unit_diagnostic_control_snapshot_read_v1(p_scope_hash text,p_claim_hash text,p_control_index integer,p_stage text,p_graph_request jsonb,p_nonce text) returns jsonb
+language plpgsql stable security invoker set search_path=pg_catalog
+as $f$
+declare a helmut_unit_diagnostic.authority%rowtype; command jsonb; original jsonb; documents jsonb; knowledge jsonb;
+  profiles jsonb; catalog jsonb; own_state jsonb; own_body jsonb; subject text; ids_d text[]; ids_k text[];
+  stages text[]:=array['unit-enter','before-D','reserve-D','send-D','D-accounted','before-R','D-retained','reserve-R','send-R',
+    'R-accounted','R-retained','before-lage-save','after-lage-save','before-briefing-materialize','before-morning-insert','before-evidence-retention'];
+begin
+  perform helmut_unit_diagnostic.runtime_role();perform helmut_unit_diagnostic.nonce(p_nonce);
+  if p_claim_hash is null or p_claim_hash !~ '^[a-f0-9]{64}$' or p_control_index not between 0 and 15
+    or p_control_index is null or p_stage is distinct from stages[p_control_index+1]
+    or not helmut_unit_diagnostic.exact(p_graph_request,array['id','knownProof','readNonce','knownGraph'])
+    or p_graph_request->>'id' is distinct from 'main-auth' then raise exception 'local-unit-store-control-request';end if;
+  select * into strict a from helmut_unit_diagnostic.authority where scope_hash=p_scope_hash;
+  if clock_timestamp()>=a.expires_at then raise exception 'local-unit-store-authority-expired';end if;
+  command:=helmut_unit_diagnostic.parse(a.command_canonical,a.scope_hash,16777216);
+  subject:=command#>>'{units,0,subject}';
+  select coalesce(array_agg(x->>'id' order by x->>'id'),'{}'::text[]) into ids_d from jsonb_array_elements(command#>'{drafts,0,sources,documents}') x;
+  select coalesce(array_agg(x->>'id' order by x->>'id'),'{}'::text[]) into ids_k from jsonb_array_elements(command#>'{drafts,0,sources,knowledgeObjects}') x;
+  if cardinality(ids_d)>4000 or cardinality(ids_k)>4000 then raise exception 'local-unit-store-control-input-cap';end if;
+  -- The actual unchanged Original graph/history protocol executes first. Its
+  -- complete response goes to U.readControl; Own7 is never an Original proof.
+  catalog:=public.local_unit_diagnostic_contract_v1();
+  original:=public.helmut_auth_state_graph_read_v1(p_graph_request);
+  select coalesce(jsonb_agg(jsonb_build_object('id',d.id,'title',d.title,'summary',d.summary,'canonical_url',d.canonical_url,'url',d.url,'content_hash',d.content_hash,'source_id',d.source_id,'source_name',d.source_name,'source_type',d.source_type,'document_type',d.document_type,'link_type',d.link_type,'confidence',d.confidence,'published_at',d.published_at,'retrieved_at',d.retrieved_at,'created_at',d.created_at,'quellenauszug_beleg',d.raw->'helmutQuellenkontext','dip_quellfelder',d.raw->'helmutDipQuellfelder','bundestag_artikelstand',d.raw->'helmutBundestagArtikelstand','berlin_artikelstand',d.raw->'helmutBerlinArtikelstand','brandenburg_artikelstand',d.raw->'helmutBrandenburgLandtagPresseArtikelstand','bundestag_abgerufen_at',d.retrieved_at,'berlin_abgerufen_at',d.retrieved_at,'brandenburg_abgerufen_at',d.retrieved_at) order by d.id),'[]'::jsonb) into documents
+    from public.raw_documents d where d.id=any(ids_d);
+  select coalesce(jsonb_agg(jsonb_build_object('id',k.id,'vorgang_id',k.vorgang_id,'ko_version',k.ko_version,'headline',k.headline,'was_ist_passiert',k.was_ist_passiert,'warum_wichtig',k.warum_wichtig,'wer_ist_betroffen',k.wer_ist_betroffen,'parteien',k.parteien,'ausschuesse',k.ausschuesse,'ministerien',k.ministerien,'risiken',k.risiken,'chancen',k.chancen,'zeitdruck',k.zeitdruck,'handlungsempfehlung',k.handlungsempfehlung,'confidence_score',k.confidence_score,'source_document_count',k.source_document_count,'status',k.status,'understanding_status',k.understanding_status,'mentioned_people',k.mentioned_people,'mentioned_mps',k.mentioned_mps,'mentioned_parties',k.mentioned_parties,'mentioned_committees',k.mentioned_committees,'mentioned_ministries',k.mentioned_ministries,'mentioned_locations',k.mentioned_locations,'mentioned_organizations',k.mentioned_organizations,'policy_field',k.policy_field,'political_level',k.political_level,'instrument',k.instrument,'stage',k.stage,'tags',k.tags,'deadline',k.deadline,'best_source_url',k.best_source_url,'best_link_type',k.best_link_type,'source_trust',k.source_trust,'understanding_model',k.understanding_model,'understanding_tokens',k.understanding_tokens,'created_at',k.created_at,'updated_at',k.updated_at,'display_title',k.display_title,'display_summary',k.display_summary) || jsonb_build_object('why_relevant',k.why_relevant,'recommendation',k.recommendation,'display_category',k.display_category,'risk_of_no_action',k.risk_of_no_action,'opportunity_summary',k.opportunity_summary,'recommended_communication',k.recommended_communication,'action_items',k.action_items,'risk_level',k.risk_level,'opportunity_level',k.opportunity_level,'recommended_communication_struct',k.recommended_communication_struct,'action_items_struct',k.action_items_struct,'decision_level',k.decision_level,'related_levels',k.related_levels,'event_type',k.event_type,'affected_geographies',k.affected_geographies,'mentioned_geographies',k.mentioned_geographies,'decision_entities',k.decision_entities,'related_entities',k.related_entities,'classification_confidence',k.classification_confidence,'verstehen_fencing',k.verstehen_fencing) order by k.id),'[]'::jsonb) into knowledge
+    from public.knowledge_objects k where k.id=any(ids_k);
+  select coalesce(jsonb_agg(to_jsonb(p)||jsonb_build_object('mandate_profiles',
+    (select coalesce(jsonb_agg(to_jsonb(m)),'[]'::jsonb) from public.mandate_profiles m where m.user_id=p.id))),'[]'::jsonb)
+    into profiles from public.profiles p where p.id=subject;
+  -- Same native reader/validation and actual persisted canonical body as the
+  -- old final control read. No lock, authority or mutation is added here.
+  own_state:=public.local_unit_diagnostic_state_read_v1(p_scope_hash,p_nonce);
+  own_body:=helmut_unit_diagnostic.parse(own_state->>'canonical',own_state->>'hash',33554432);
+  if helmut_unit_diagnostic.sha(own_body#>>array['localUnitDiagnostic:'||right(a.operation_id,32)||':journal','claimId'])
+    is distinct from p_claim_hash then raise exception 'local-unit-store-control-claim';end if;
+  return jsonb_build_object('version','helmut-local-unit-control-snapshot/1','scopeHash',p_scope_hash,'operationId',a.operation_id,
+    'claimHash',p_claim_hash,'index',p_control_index,'stage',p_stage,'nonce',p_nonce,
+    'catalog',catalog,'original',original,'documents',documents,'knowledgeObjects',knowledge,'profiles',profiles,'state',own_state);
 end;$f$;
 
 create function public.local_unit_diagnostic_state_cas_v1(p_scope_hash text,p_claim_hash text,p_old_hash text,p_old_revision bigint,p_next_canonical text,p_next_hash text,p_nonce text) returns jsonb
@@ -1055,6 +1114,8 @@ begin
         'public.local_unit_diagnostic_contract_v1()'::regprocedure,
         'public.local_unit_diagnostic_authority_read_v1(text,text)'::regprocedure,
         'public.local_unit_diagnostic_runtime_read_v1(text,text)'::regprocedure,
+        'public.local_unit_diagnostic_control_runtime_read_v1(text,text)'::regprocedure,
+        'public.local_unit_diagnostic_control_snapshot_read_v1(text,text,integer,text,jsonb,text)'::regprocedure,
         'public.local_unit_diagnostic_state_read_v1(text,text)'::regprocedure,
         'public.local_unit_diagnostic_state_cas_v1(text,text,text,bigint,text,text,text)'::regprocedure,
         'public.local_unit_diagnostic_artifact_insert_v1(text,text,text,text,text,text,text,text)'::regprocedure,

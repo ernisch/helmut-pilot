@@ -4,6 +4,7 @@ const fs = require("node:fs"), path = require("node:path"), vm = require("node:v
 const assert = require("node:assert/strict"), { EventEmitter } = require("node:events");
 const filename = path.join(__dirname, "local-unit-diagnostic-broker.js"), source = fs.readFileSync(filename, "utf8");
 const key = crypto.randomBytes(32), nonce = crypto.randomBytes(32).toString("hex"), bytes = Buffer.from('{"closed":"offline"}');
+const CONTROL_STAGES = require("../../lib/helmut/local-unit-diagnostic-authority").CONTROL_STAGES;
 const BOOT_ID = "01234567-89ab-4cde-8fab-0123456789ab";
 let checks = 0, executableOwnerObserved = null;
 function clockFixture({ namespace = "time:[42]", namespaceError = null, boot = BOOT_ID + "\n", bootError = null } = {}) {
@@ -238,9 +239,17 @@ function brokerLifecycle() {
           queueMicrotask(() => {
             req.emit("finish"); const res = new EventEmitter(); res.complete = !state.incompleteHTTP; res.destroy = () => {};
             res.statusCode = 200; onResponse(res); const route = options.path;
-            const value = route === "/rpc/local_unit_diagnostic_contract_v1" ? { database, version: "helmut-local-unit-diagnostic-native-store/1",
+            const args = JSON.parse(body), catalog = { database, version: "helmut-local-unit-diagnostic-native-store/1",
+              legacyReadRPCs: c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) => ({ name, oid, identityArguments, prosrcSHA256, qualificationPin })) };
+            let value = route === "/rpc/local_unit_diagnostic_control_snapshot_read_v1" ? { version: "helmut-local-unit-control-snapshot/1",
+              scopeHash: commandHash, operationId: op, claimHash: args.p_claim_hash, index: args.p_control_index, stage: args.p_stage, nonce: args.p_nonce, catalog,
+              original: { historyReuse: { nonce: args.p_graph_request.readNonce }, graphReuse: { nonce: args.p_graph_request.readNonce } },
+              documents: [], knowledgeObjects: [], profiles: [], state: { version: "helmut-local-unit-diagnostic-state-witness/1",
+                scopeHash: commandHash, nonce: args.p_nonce, hash: "e".repeat(64), revision: args.p_control_index } }
+              : route === "/rpc/local_unit_diagnostic_contract_v1" ? { database, version: "helmut-local-unit-diagnostic-native-store/1",
               legacyReadRPCs: c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) => ({ name, oid, identityArguments, prosrcSHA256, qualificationPin })) }
               : route === "/rpc/local_unit_diagnostic_state_read_v1" ? state.stateWitness : { VM: "control response payload" };
+            if (route === "/rpc/local_unit_diagnostic_control_snapshot_read_v1" && state.bundleMutation) state.bundleMutation(value);
             res.emit("data", Buffer.from(JSON.stringify(value))); if (state.executableDriftAfterUpstream) state.executableDrift = true;
             if (!state.noHTTPEnd) { span.end = process.hrtime.bigint(); res.emit("end"); }
           });
@@ -271,6 +280,10 @@ function brokerLifecycle() {
   }
   const readNonce = i => "00000000-0000-4000-8000-" + String(i).padStart(12, "0");
   return { start: () => mod.exports.start(c), state, files, c, server, descriptors, request, readNonce, phaseSink,
+    bundle: (i, claimHash) => request("/rest/v1/rpc/local_unit_diagnostic_control_snapshot_read_v1", { p_scope_hash: commandHash,
+      p_claim_hash: claimHash, p_control_index: i - 1, p_stage: CONTROL_STAGES[i - 1],
+      p_graph_request: { id: "main-auth", knownProof: null, readNonce: readNonce(i), knownGraph: null },
+      p_nonce: crypto.createHash("sha256").update("VM bundle " + i).digest("hex") }),
     graph: i => request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "main-auth", knownProof: null, readNonce: readNonce(i), knownGraph: null }),
     rows: () => files.get(tracePath).bytes.toString().trim().split("\n").map(JSON.parse), async unknown() {
     const req = { method: "POST", url: "/v1/execute", async *[Symbol.asyncIterator]() { yield Buffer.from("[]"); }, destroy() {} };
@@ -488,13 +501,16 @@ function brokerLifecycle() {
     const f = brokerLifecycle(); f.state.addressChanged = true; await assert.rejects(f.start());
     assert.equal(f.server.listening, false); assert.equal(f.state.closeCalls, 1); checks++;
   }
-  for (const absent of [false, true]) {
+  for (const bundled of [false, true]) for (const absent of [false, true]) {
     const f = brokerLifecycle(); f.state.withoutTimeNamespace = absent;
     const running = await f.start(), requests = [];
     assert.throws(() => running.controlReadTracePin());
     // Three-key ordinary U.read is deliberately excluded from the control trace.
     await f.request("/rest/v1/rpc/helmut_auth_state_graph_read_v1", { id: "main-auth", knownProof: null, readNonce: f.readNonce(99) });
-    for (let i = 1; i <= 16; i++) requests.push(await f.graph(i));
+    const claimHash = crypto.createHash("sha256").update("00000000-0000-4000-8000-000000000100").digest("hex");
+    const before = f.state.upstreamSpans.length;
+    for (let i = 1; i <= 16; i++) requests.push(await (bundled ? f.bundle(i, claimHash) : f.graph(i)));
+    assert.equal(f.state.upstreamSpans.length - before, bundled ? 16 : 32); // actual simulated HTTP spans, never subrequest fiction.
     const claim = "00000000-0000-4000-8000-000000000100", h = x => crypto.createHash("sha256").update(x).digest("hex");
     const verification = { authorizationHash: h("VM authorization"), controlsHash: h("VM controls"), controlCount: 16 };
     const prefix = "localUnitDiagnostic:" + f.c.operationId.slice(-32) + ":", state = { [prefix + "journal"]: {
@@ -515,7 +531,16 @@ function brokerLifecycle() {
     assert.equal(rows[0].header.timeNamespace, absent ? null : "time:[42]"); assert.equal(rows[0].schema, "helmut-local-unit-native-control-read-trace/1");
     assert.deepEqual(rows[0].header.clockDomain, { schema: "helmut-local-unit-monotonic-domain/1",
       kind: absent ? "kernel-without-time-namespaces" : "time-namespace", namespace: absent ? null : "time:[42]", bootId: BOOT_ID });
-    assert.equal(records.length, 19); assert.equal(footer.controlCount, 16); assert.equal(footer.finalAckCount, 1); assert.equal(footer.closedReadbackCount, 2); assert.equal(footer.complete, true);
+    assert.equal(records.length, 19);
+    for (let i = 0; i < 16; i++) {
+      assert.equal(records[i].kind, bundled ? "control-bundle-4" : "control-graph-4");
+      if (bundled) {
+        assert.equal(records[i].control.index, i); assert.equal(records[i].control.stage, CONTROL_STAGES[i]);
+        assert.equal(records[i].control.claimHash, claimHash); assert.equal(records[i].control.graphComponent, "original");
+        assert.equal(records[i].control.ownRevision, i); assert.equal(records[i].control.ownHash, "e".repeat(64));
+      }
+    }
+    assert.equal(footer.controlCount, 16); assert.equal(footer.finalAckCount, 1); assert.equal(footer.closedReadbackCount, 2); assert.equal(footer.complete, true);
     assert.equal(pin.bytes, f.files.get(pin.path).bytes.length); assert.equal(pin.sha256, h(f.files.get(pin.path).bytes)); assert(pin.bytes <= 65536 && f.descriptors.size === 0);
     for (let i = 0; i < records.length; i++) {
       const row = records[i]; assert.equal(row.seq, i + 1); assert.equal(row.requestNonceSHA256, h(requests[i].m.nonce));
@@ -532,6 +557,13 @@ function brokerLifecycle() {
     const text = f.files.get(pin.path).bytes.toString();
     for (const hidden of [claim, ownNonce, stateNonce, f.readNonce(1), requests[0].m.nonce, "VM control response payload", "unexported old auth ACK", '"canonical"', '"bodyBase64"'])
       assert(!text.includes(hidden)); checks++;
+  }
+  for (const mutation of [v => delete v.original, v => delete v.documents, v => delete v.state, v => v.index++,
+    v => v.claimHash = "0".repeat(64), v => v.nonce = "0".repeat(64), v => v.state.nonce = "0".repeat(64),
+    v => v.original.graphReuse.nonce = "00000000-0000-4000-8000-000000000000", v => v.catalog.legacyReadRPCs = []]) {
+    const f = brokerLifecycle(), running = await f.start(); f.state.bundleMutation = mutation;
+    const result = await f.bundle(1, "d".repeat(64)); assert.equal(result.res.statusCode, 502);
+    assert.throws(() => running.observe()); await assert.rejects(running.close()); assert.equal(f.rows().at(-1).complete, false); checks++;
   }
   for (const fault of ["incompleteHTTP", "lostDownstream", "traceWriteFailure", "traceSyncFailure", "traceReplaced"]) {
     const f = brokerLifecycle(), running = await f.start(); f.state[fault] = true; await f.graph(1);

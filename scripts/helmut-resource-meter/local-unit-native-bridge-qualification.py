@@ -39,7 +39,7 @@ ORIGINAL = (
     'helmut_auth_usage_checked_proof_local_v1')
 HELPERS = ('top_map', 'value', 'own_projection', 'compare_delta', 'compare_seed',
            'relations', 'row', 'result', 'receipt')
-RPCS = ('contract', 'authority_read', 'runtime_read', 'state_read', 'state_cas',
+RPCS = ('contract', 'authority_read', 'runtime_read', 'control_runtime_read', 'control_snapshot_read', 'state_read', 'state_cas',
         'artifact_insert', 'artifact_read', 'lease_acquire', 'lease_release')
 READERS = ('helmut_auth_state_graph_read_v1', 'helmut_auth_usage_read_v1',
            'helmut_auth_state_assert_root_local_v1', 'helmut_auth_usage_checked_proof_local_v1',

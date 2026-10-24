@@ -14,7 +14,7 @@ const originalNames = ["state_cas_v1", "state_payload_hash_local_v1", "state_lea
   "state_nodes_guard_local_v1", "state_put_nodes_local_v1", "state_expand_local_v1", "state_assert_root_local_v1",
   "state_assert_data_local_v1", "state_assert_graph_local_v1", "state_auth_guard_local_v1", "state_graph_checked_local_v1",
   "usage_guard_local_v1", "usage_insert_local_v1", "usage_checked_proof_local_v1"].map(x => "public.helmut_auth_" + x);
-const nativeNames = ["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"];
+const nativeNames = ["contract", "authority_read", "runtime_read", "control_runtime_read", "control_snapshot_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"];
 const helperArgs = { original_bridge_top_map_v1: "text, text, text", original_bridge_value_v1: "text, text, text, jsonb, boolean",
   original_bridge_own_projection_v1: "text, text, text, text", original_bridge_compare_delta_v1: "text, text, text, text, text, jsonb, jsonb",
   original_bridge_compare_seed_v1: "text, text, text, text, text, jsonb",
