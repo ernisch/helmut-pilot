@@ -163,6 +163,7 @@ FROM helmut_unit_diagnostic.state WHERE scope_hash='${c.commandHash}'; COMMIT;`;
 function snapshotSQL(c) {
   // Complete logical row multisets, not page hashes or a substitute for a CAS.
   // Per-row SHA plus sorted concatenation/count retains duplicate multiplicity.
+  // MATERIALIZED is a projection fence: only 64-hex h enters a spool/sort.
   // No password/auth field is selected from system catalogs.
   return readPrefix(c) + `DO $snapshot$
 DECLARE t record; count_rows bigint; digest text; tables jsonb:='{}'::jsonb; source_catalog jsonb; own_row record;
@@ -170,8 +171,16 @@ BEGIN
  FOR t IN SELECT n.nspname,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
    WHERE c.relkind='r' AND ((n.nspname='public' AND c.relname IN('helmut_store','helmut_auth_state_nodes_local','llm_usage','briefings','profiles'))
      OR n.nspname='helmut_unit_diagnostic') ORDER BY n.nspname,c.relname LOOP
-   EXECUTE format($row_digest$SELECT count(*),encode(sha256(convert_to(coalesce(string_agg(h,'' ORDER BY h),''),'UTF8')),'hex')
-     FROM (SELECT encode(sha256(convert_to(to_jsonb(r)::text,'UTF8')),'hex') h FROM %I.%I r) hashed_rows$row_digest$,t.nspname,t.relname)
+   IF NOT (t.nspname||'.'||t.relname=ANY(ARRAY[
+     'helmut_unit_diagnostic.artifacts','helmut_unit_diagnostic.authority','helmut_unit_diagnostic.leases',
+     'helmut_unit_diagnostic.legacy_read_rpcs','helmut_unit_diagnostic.runtime_observations','helmut_unit_diagnostic.state',
+     'public.briefings','public.helmut_auth_state_nodes_local','public.helmut_store','public.llm_usage','public.profiles']))
+     THEN RAISE EXCEPTION 'transaction-guard-unexpected-snapshot-relation';END IF;
+   -- PRIVATE psql stderr only; one fixed enum before each of exactly eleven hashes.
+   RAISE NOTICE 'HELMUT_TRANSACTION_GUARD_SNAPSHOT_TABLE_V1 %',t.nspname||'.'||t.relname;
+   EXECUTE format($row_digest$WITH row_hashes AS MATERIALIZED (
+     SELECT encode(sha256(convert_to(to_jsonb(r)::text,'UTF8')),'hex') AS h FROM %I.%I r
+   ) SELECT count(*),encode(sha256(convert_to(coalesce(string_agg(h,'' ORDER BY h),''),'UTF8')),'hex') FROM row_hashes$row_digest$,t.nspname,t.relname)
      INTO count_rows,digest;
    tables:=tables||jsonb_build_object(t.nspname||'.'||t.relname,jsonb_build_object('count',count_rows,'sha256',digest));
  END LOOP;

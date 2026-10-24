@@ -26,6 +26,25 @@ test(()=>assert.match(sql,/to_jsonb\(r\)::text/));
 test(()=>assert.match(sql,/string_agg\(h,'' ORDER BY h\)/));
 test(()=>assert.doesNotMatch(sql,/rolpassword|pg_authid|DISABLE|session_replication_role|CREATE FUNCTION/i));
 test(()=>assert.match(sql,/<>11 THEN/));
+const rowHashSQL=/\$row_digest\$([\s\S]*?)\$row_digest\$/.exec(sql)[1];
+// An ordinary inline subquery allows the planner to carry whole rows into a
+// presort. The materialized producer must expose ONLY the fixed-size digest.
+const producer=/^WITH row_hashes AS MATERIALIZED \(\s*([\s\S]*?)\n   \) ([\s\S]*)$/.exec(rowHashSQL);
+test(()=>assert.ok(producer,"explicit materialization fence before aggregate"));
+test(()=>assert.match(producer[1],/^SELECT encode\(sha256\(convert_to\(to_jsonb\(r\)::text,'UTF8'\)\),'hex'\) AS h FROM %I\.%I r\s*$/));
+test(()=>assert.doesNotMatch(producer[1],/ORDER BY|SELECT \*|r\.\*/i));
+test(()=>assert.match(producer[2],/string_agg\(h,'' ORDER BY h\).* FROM row_hashes$/));
+test(()=>assert.doesNotMatch(producer[2],/to_jsonb|r\.|%I|hashed_rows/));
+test(()=>assert.doesNotMatch(sql,/SET\s+(?:LOCAL\s+)?(?:work_mem|temp_file_limit|enable_presorted_aggregate)/i));
+const enumGuard=sql.indexOf("IF NOT (t.nspname||'.'||t.relname=ANY(ARRAY[");
+const marker=sql.indexOf("RAISE NOTICE 'HELMUT_TRANSACTION_GUARD_SNAPSHOT_TABLE_V1 %',t.nspname||'.'||t.relname;");
+const hash=sql.indexOf("EXECUTE format($row_digest$");
+test(()=>assert.ok(enumGuard>=0 && marker>enumGuard && hash>marker));
+const names=[...sql.slice(enumGuard,marker).matchAll(/'((?:helmut_unit_diagnostic|public)\.[a-z_]+)'/g)].map(row=>row[1]);
+test(()=>assert.deepEqual(names,["helmut_unit_diagnostic.artifacts","helmut_unit_diagnostic.authority","helmut_unit_diagnostic.leases",
+  "helmut_unit_diagnostic.legacy_read_rpcs","helmut_unit_diagnostic.runtime_observations","helmut_unit_diagnostic.state",
+  "public.briefings","public.helmut_auth_state_nodes_local","public.helmut_store","public.llm_usage","public.profiles"]));
+test(()=>assert.equal((sql.match(/RAISE NOTICE/g)||[]).length,1));
 const before={schema:"s",database:"d",databaseOID:"1",catalogSHA256:"c",tables:{own:{count:1,sha256:"a"},nodes:{count:3,sha256:"b"}}};
 test(()=>probe.assertDelta(before,structuredClone(before),[]));
 test(()=>probe.assertDelta(before,{...before,tables:{...before.tables,own:{count:1,sha256:"different"}}},["own"]));
