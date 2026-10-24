@@ -6,7 +6,9 @@ Zeit-/RAM-Nachweis offen. Basis `2fc821fd7bbdef1cf9846001e041a847a9f58f8f`,
 Branch `codex/unit60-js-state-work-20261024`. Kein Merge oder Productioneingriff.
 Codecommit `740022b66200423598ff7c99305c8c9d53305586`, gepusht als
 [Entwurfs-PR 938](https://github.com/ernisch/helmut-pilot/pull/938).
-GitHub-CI beim Veröffentlichen noch ausstehend; lokaler Qualifikationsfehler unten.
+GitHub-CI [40079073065](https://github.com/ernisch/helmut-pilot/actions/runs/40079073065)
+auf Dokumentationskopf `d74e9e45`: öffentliches Codebindungstor FAIL,
+Browsercheck PASS; keine grüne Gesamt-CI. Laufzeitcode weiterhin `740022b6`.
 
 ## Ursache und Änderung
 
@@ -67,6 +69,7 @@ HTTP-, Datenbank-, Ressourcen- oder Anbieterläufe.
 | `local-unit-diagnostic-own-write-timing-test.js` | 3 Gruppen PASS |
 | `local-unit-diagnostic-budget-routing-test.js` | 33 Checks PASS |
 | `control-cache-source-integration-test.js` | FAIL: historische Quellbindung |
+| `synthetik-500-runtime-artifact-attestation-test.js` | FAIL: `sourceBytesMatchExpected=false` |
 
 Der neue kleine Strukturfall prüft beim frischen Lesen alle 31 Payloads. Beim
 eigenen Schreiben werden noch 15 vorherige Payloads erneut gehasht, insbesondere
@@ -92,6 +95,8 @@ Die veröffentlichte native Qualifikation in
 `scripts/helmut-resource-meter/control-cache-integration.js` bindet U/Parts
 auf die vorherigen exakten Quellbytes. Der entsprechende Integrationstest lehnt
 die geänderten Bytes korrekt ab (`32034 != 32050` beim U-Längenpin).
+Auch der bestehende Runtime-Artefaktbelegtest lehnt die neuen Quellbytes ab;
+GitHub scheitert bereits bei öffentlichen Codebindungen vor privater Freigabe.
 Historische Originale, Sourcepins, Annahmen und Prüftore wurden nicht umgeschrieben.
 Der Entwurf ist damit **noch nicht als neue Laufzeitvariante qualifiziert**;
 eine grüne Gesamt-CI wird nicht behauptet. Er benötigt eine eigene gültige
