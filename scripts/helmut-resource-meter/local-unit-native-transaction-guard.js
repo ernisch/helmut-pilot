@@ -185,6 +185,7 @@ BEGIN
    tables:=tables||jsonb_build_object(t.nspname||'.'||t.relname,jsonb_build_object('count',count_rows,'sha256',digest));
  END LOOP;
  IF (SELECT count(*) FROM jsonb_object_keys(tables))<>11 THEN RAISE EXCEPTION 'transaction-guard-complete-table-set';END IF;
+ RAISE NOTICE 'HELMUT_TRANSACTION_GUARD_SNAPSHOT_CATALOG_V1';
  SELECT jsonb_build_object(
    'functions',(SELECT jsonb_agg(to_jsonb(p) ORDER BY p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
      WHERE n.nspname='helmut_unit_diagnostic' OR (n.nspname='public' AND (p.proname LIKE 'helmut_auth_%' OR p.proname LIKE 'local_unit_diagnostic_%'))),

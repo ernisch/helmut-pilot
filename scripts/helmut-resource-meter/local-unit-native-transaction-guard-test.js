@@ -44,7 +44,11 @@ const names=[...sql.slice(enumGuard,marker).matchAll(/'((?:helmut_unit_diagnosti
 test(()=>assert.deepEqual(names,["helmut_unit_diagnostic.artifacts","helmut_unit_diagnostic.authority","helmut_unit_diagnostic.leases",
   "helmut_unit_diagnostic.legacy_read_rpcs","helmut_unit_diagnostic.runtime_observations","helmut_unit_diagnostic.state",
   "public.briefings","public.helmut_auth_state_nodes_local","public.helmut_store","public.llm_usage","public.profiles"]));
-test(()=>assert.equal((sql.match(/RAISE NOTICE/g)||[]).length,1));
+test(()=>assert.equal((sql.match(/RAISE NOTICE 'HELMUT_TRANSACTION_GUARD_SNAPSHOT_TABLE_V1 %'/g)||[]).length,1));
+const catalogMarker=sql.indexOf("RAISE NOTICE 'HELMUT_TRANSACTION_GUARD_SNAPSHOT_CATALOG_V1';");
+test(()=>assert.ok(sql.indexOf("transaction-guard-complete-table-set';END IF;")<catalogMarker
+  && catalogMarker<sql.indexOf("SELECT jsonb_build_object(\n   'functions'")));
+test(()=>assert.equal((sql.match(/RAISE NOTICE 'HELMUT_TRANSACTION_GUARD_SNAPSHOT_CATALOG_V1';/g)||[]).length,1));
 const before={schema:"s",database:"d",databaseOID:"1",catalogSHA256:"c",tables:{own:{count:1,sha256:"a"},nodes:{count:3,sha256:"b"}}};
 test(()=>probe.assertDelta(before,structuredClone(before),[]));
 test(()=>probe.assertDelta(before,{...before,tables:{...before.tables,own:{count:1,sha256:"different"}}},["own"]));
