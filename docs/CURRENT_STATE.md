@@ -26,18 +26,18 @@ Kernelpeak1.218.666.496B/75Samples/Events0; Originale/History erhalten, Claimver
 PSQL905,737ms, COMMIT1,935ms; 26Dauern/neunMarker striktverbunden.
 22679d99: vierBridge-Graphprüfungen auf zwei frischeMaps im Pflichtreceipt reduziert;
 SameRoot nutzt eineMap. Frischgeprüfter Own-DBbody als siebtesArgument; Guards bleiben.
-30Compiler-/25Qualifier-Checks PASS, unabhängigesQuellenreview PASS. NativeRollback-/
-Wirkungsprüfung offen; keinFull500-Fix/Unit60-/Puffernachweis.
+30Compiler-/25Qualifier-Checks PASS. Guardprobe: echterState-CAS ACKbestätigt,
+Gesamtprobe nachAbschluss-DateikollisionFAIL; Fixf988991b vorbereitet. NativeRollback/
+Usage/Vergleich offen; keinFull500-Fix/Unit60-/Puffernachweis.
 
 CI40002522827 und40035705164 vollständiggrün einschließlich84Originale/Z22.
 Fixturefix3cbcfad0: CI40042703899/54c61de1 vollständigSUCCESS einschließlich84Originale.
-Neuer22679d99-Umbau braucht eigeneCI.
-Runtime-Schutzregeln unverändert, keine lokaleGesamtsuite wiederholt.
+NeueGuardanbindung braucht eigeneCI.
 
 SechsaltePG-Archive nach verschlüsselterDrive-/Vollrückdownload-/Indexprüfung
 kontrolliertausgelagert. 9b3/1a96 Vollarchive mitphysischemRestore geprüft;
 TEMP-Restores entfernt. 1a96 nachVollrückprüfung kontrolliertausgelagert: +744.140.800B.
-9b3 ebenfallsvollständigoffsitezurückgeprüft, Quell-PG/Archiv bisRetirementKEEP. OriginaleKEEP.
+9b3 ebensoausgelagert: +739.753.984B beobachtet; alleOriginale/MetadatenKEEP.
 Original-RAW-V3 vorOpen/Punch gescheitert. NeueDiagnosekopie verbraucht wiederPlatz;
 Voll500-Platte/32frischeStartbedingungen offen. Voll500 nurmitneuemkonkretemGO;
 keineProduction/Merges. [AktuelleZahlen und Beweisgrenzen](betrieb/belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json),

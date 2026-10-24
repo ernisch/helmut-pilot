@@ -1811,3 +1811,32 @@ tatsächlicherDateityp korrigiert, alleBytes neu authentischzurückgeladen, dana
 unveränderterVerifier PASS. Sechs alte redundanteCipherdownloads separat gegen
 neueReturns vollverglichen und entfernt: +123.924.480B beobachtet. Quell-PG/Archiv
 bis separatemRetirementKEEP.
+
+
+## 24.10.: echte State-CAS bestätigt; Guard-Gesamtabnahme offen
+
+Guardbranchf988991b, im Arbeitsbranch1845bc64 integriert: vier explizite SQL-
+Sicherheitsfälle, neueCopy/Authority jeFall, Entry/Motor/Provider gesperrt. Echte
+U.write→T.prepare-SQL→T.acceptResult-Verbraucher; elf vollständige logische
+Tabellenhashes einschließlichNodes/Usage/Own/Katalog.
+
+6e9f75c9/bb42 bleibtFAIL vorClaim: Snapshot überschritt128MiB-temp_file_limit.
+Fixbfd42002 materialisiert ausschließlich64Hex-Zeilenhashes; 6f760dc3 ergänzt
+festePRIVATE-Tabellen-/Katalogmarker. Keine Speichergrenze erhöht.
+
+Frischerb0f2c82e/6f760dc3: State-CAS mitOriginal-/Own-ACK undNachvergleich PASS;
+alle8Probe-PSQLs Exit0/zweiEOF, Probe8,774411633s einschließlichdreiSnapshots,
+keineUnitzeit. GesamtlaufFAIL danach: finalerVertragsreadback kollidierte mit
+demInitialreadback-O_EXCL-Capturename. Fixf988991b: zwei festeNamen, identischesSQL
+undPrüfungen; zwei gezieltePuretests PASS. NativeClosure/SameRootUsage/Negativrollback/
+Vergleich offen. B0f2-Final-Originalcheck beimAbbruch unterbrochen; anschließende
+frische84-/RAW-/436-/553-Schutzprüfung für00c9-Backup PASS. AlteFälle nicht wiederbenutzen.
+
+9b3 nachActual-Drive-Vollrückprüfung kontrolliertausgelagert: +739.753.984B beobachtet;
+Originale/Indizes/MetadatenKEEP. 00c9 vollständig lokal archiviert und physisch
+wiederhergestellt; Originalquelle/Archiv/TEMP bisgesondertemRetirementKEEP.
+
+22679d99-Receipt ist ausschließlich im privatenEinzelunit-Schreiber wirksam.
+Full500: production-adapter→storage.mutateAuthStore→U.write→helmut_auth_state_cas_v1,
+ohne dieseReceipt. KeinFull500-Gewinn daraus hergeleitet. GemeinsamerControlreader/
+Budget-/Leasepfad vorhanden; Unit60/Auth30/16Kontrollen/500MB/32Startbedingungen offen.

@@ -50,15 +50,15 @@
       "sha256": "7fe25ec39a34bcafd051cf6d183f4e925e31e4bcc2d1359bb838b3766568d75d"
     }
   },
-  "asOfUTC": "2026-10-24T00:36:11.997217+00:00",
+  "asOfUTC": "2026-10-24T00:58:14.134060+00:00",
   "branch": "codex/v12-unit60-native-integration-20261022",
   "capacity": {
-    "availableBytesObserved": 10504622080,
+    "availableBytesObserved": 9832652800,
     "componentAdmissionPassedAtActualSQLStart": true,
     "componentAdmissionSatisfiedNow": false,
     "freshAll32StartConditionsQualified": false,
     "full500AdmissionSatisfied": false,
-    "full500DeficitBytes": 4675157640,
+    "full500DeficitBytes": 5347126920,
     "noPaidInfrastructureAdded": true,
     "originalRawBytesAndBothOriginalReservationsUnchanged": true,
     "unchangedComponentAdmissionBytes": 10737418240,
@@ -67,6 +67,7 @@
   "ci": {
     "failure": null,
     "freshRemoteCIRequired": true,
+    "newRuntimeCodeNeedsFreshCI": true,
     "notAUnit60Or500Proof": true,
     "previousCompleteSuccessRuns": [
       40002522827,
@@ -149,14 +150,22 @@
         "sha256": "c201c8344eeb4c91acd497729107a5abaf43c35abed3a5aecddcfc4d553168a5"
       }
     },
-    "fullBackup9b3OffsiteVerifiedSourcesStillKEEP": {
+    "fullBackup9b3OffsiteVerifiedAndLocalCopyRetired": {
+      "actualRetirementExitCode": 0,
+      "allMetadataIndicesAndOriginalsKEEP": true,
       "encryptedRecoveryIndexURL": "https://drive.google.com/file/d/1E8hYjdI4CInXzY-msOZmaC3bgOZIxM7P/view?usp=drivesdk",
+      "observedRetirementNetGainBytes": 739753984,
       "obsoleteDownloadsRetirementPin": {
         "bytes": 222,
         "path": "/workspace/helmut-native-integration-checks-20261022/two-full-backup-offsite-prepared-20261023/9b3781ed166f80d85b66b00689318ce7/OBSOLETE_DOWNLOADS_RETIRED.SAFE.json",
         "sha256": "8d780610b2b49b375a76c30891ba47657fd7902665a7dda029a1472c32f9322d"
       },
-      "sourcePGAndClearArchiveKEEP": true,
+      "retirementPin": {
+        "bytes": 3030,
+        "path": "/workspace/helmut-native-integration-checks-20261022/nineb-full-backup-retirement-prepared-20261024/ATTEMPT.PRIVATE/RESULT.SAFE.json",
+        "sha256": "bdcc15e8cf4d05c0705bf67ff889388ffa92009a5febf3f75538a6def861c9f8"
+      },
+      "sourcePGAndClearArchiveKEEP": false,
       "transportPin": {
         "bytes": 9240,
         "path": "/workspace/helmut-native-integration-checks-20261022/two-full-backup-offsite-prepared-20261023/9b3781ed166f80d85b66b00689318ce7/TRANSPORT_COMPLETE.SAFE.json",
@@ -164,16 +173,7 @@
       },
       "unmodifiedVerifierAfterActualMimeCorrectionAndFreshReturn": true
     },
-    "newFullLocalBackupsSourcesAndArchivesKEEP": [
-      {
-        "case": "9b3781ed166f80d85b66b00689318ce7",
-        "tempRetirementPin": {
-          "bytes": 1227,
-          "path": "/workspace/helmut-native-integration-checks-20261022/readonly-http-9b3-full-backup-prepared-20261023/TEMP_RESTORE_RETIRED.SAFE.json",
-          "sha256": "9ffc5e21838344214cc35aa51f572c6ba2e9b712265ffd07656600a4ae649766"
-        }
-      }
-    ],
+    "newFullLocalBackupsSourcesAndArchivesKEEP": [],
     "oldAf33And2fFullRecoveryIndexPlainSHA256": "74d8b19d52595389f0a50c994c0b86b203e7d6f70602855258cd8649c715e5f3",
     "oldAf33And2fOwnPGCopiesAndClearArchivesNowOffsiteOnly": true,
     "onlyConfirmedRecipientUsed": true,
@@ -567,8 +567,32 @@
       }
     ]
   },
+  "nativeTransactionGuard": {
+    "firstCase": "6e9f75c9734529cc6b383e435c9c6462",
+    "firstCaseSnapshotTempLimitFailurePreserved": true,
+    "freshOriginalsRecheckedByFollowingBackupPreflight": true,
+    "integratedCodeCommit": "1845bc64",
+    "minimalFixPreparedAndPureChecked": true,
+    "overallNativePass": false,
+    "preparedCodeCommit": "f988991b601c1bb99281801c278bbfe30c5960c2",
+    "probeIncludesThreeSnapshotsNotUnitTime": true,
+    "secondCase": "b0f2c82e736fa4ac08907aad3fae4186",
+    "secondCaseEvidencePin": {
+      "bytes": 1650,
+      "path": "/workspace/helmut-native-integration-checks-20261022/native-transaction-guard-V2-prepared-20261024/state/ROOT_ACTUAL_PARTIAL_RESULT.SAFE.json",
+      "sha256": "ebba9a7dd1c1031b135a657c12f9bbad7fc63935e6025bc9683b7f89d9c4f54f"
+    },
+    "secondCaseFailure": "Final readback O_EXCL filename collision after SQL success",
+    "secondCaseOverallNativeFail": true,
+    "secondCasePSQLCapturesAllExit0AndTwoEOF": 8,
+    "secondCaseProbeElapsedNs": "8774411633",
+    "secondCaseRealStateSQLPass": true,
+    "secondCaseSourceFinalOriginalCheckInterrupted": true,
+    "snapshotLimitsNotRaised": true,
+    "unit60Auth30ReserveOrFull500Acceptance": false
+  },
   "newRepositoryRuntimeChangeInThisCheckpoint": true,
-  "next": "Qualify genuine native State/SameRoot and negative rollback, then fresh paired claim resource comparison; full unit and full500 integration/admission remain open.",
+  "next": "Retire verified temporary restore; encrypted offsite/return old own copies for capacity, then fresh SameRootUsage/negative rollback with unique final readback labels. Private bridge timing is not a full500 writer gain.",
   "open": {
     "all16ActualControlsAndFinalACK": false,
     "all32FreshStartConditionsVerified": false,
@@ -596,7 +620,9 @@
     "independentSourceReviewsPassed": 2,
     "nativeRollbackSafetyQualified": false,
     "parentImplementationCommit": "88a5b8181881223d15839f3e09aa5ff559768802",
+    "privateBridgeNotSharedWithFull500Writer": true,
     "pureCompilerChecksPassed": 30,
+    "realStateCASPassButOverallDiagnosticFailed": true,
     "receiptBodySHA256": "058e191329a6ed64753fd3660a7219b6cb192c2f8481ad1a94aa6719b60edbdd",
     "sameRootGraphChecksAfter": 1,
     "scope": "Private native single-unit bridge only",
