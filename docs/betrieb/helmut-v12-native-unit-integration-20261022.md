@@ -7,6 +7,31 @@ Branch `codex/v12-unit60-native-integration-20261022`,
 Alte GOs und Claims bleiben verbraucht. Keine Production-Aktion, kein Merge und
 kein vollständiger500er-Lauf sind aus dieser Arbeit freigegeben.
 
+## 24.10.: vollständiger ABI-Abgleich und aktuelle CI-Sourcebindung
+
+Source5f54179e ist als4c838b2a integriert: ausschließlich Controller36→38;
+29 native Funktionen plus9 Bridgehelper. Betroffene Inventarverbraucher gezielt
+vollständig abgeglichen; keine weitere blockierende alte Familienanzahl gefunden.
+30 Controllerchecks und eine d79-Metadaten-Formregression durch1971 echte
+preOwner-Dateiguards PASS. Synthetische Identitäten/keine Originalcommands,
+Owner/DB nicht gestartet. d79 bleibt echter Setup-FAIL auf6c02, Motor0.
+
+CI336ad5a2 hatte zusätzlich eine veraltete CurrentDelta-Storagebindung. Die
+isolierte Metadatendiagnose40065733751 las genau den verschlüsselten gepinnten
+Log und gab nur öffentliche Whitelistmetadaten aus. Kein CI-/Native-Test dadurch.
+Neue versionierte SOURCE-only-Kette72e68334 erhält alte Reviewbelege, alle
+historischen Hashes und Native-/Authority-False-Grenzen. Aktuelle Verbraucher
+14/22/99 und sechs tatsächliche CI-Copyguardgruppen PASS; keine Guardlockerung.
+
+OriginalRAW, authentischerPOSTRUN-Master, Außenbelege und7b2 erhalten. Zwei
+entbehrliche Bootstrap-PGs c336/d79 nach eigenem dokumentiertem Vertrag entfernt,
+netto+741.519.360B. Nur relevante Bootstrap-Rekonstruktion aus Originalen belegt;
+fallbezogene physische WAL-/OID-/Nonce-Details als nicht benötigt abgegrenzt.
+Kein zusätzlicherVollbackup als angebliche Byteidentitätsgarantie. Zusätzlich
+0ea8 nach physischemRestore/verifiziertemDrivebackup netto+371.298.304B ausgelagert.
+[Aktueller Befund](belege/native-claim-only-20261023/NATIVE_ABI_CI_SOURCE_CURRENT_20261024.SAFE.json).
+Eine frische volle native Einzelunit sowie aktuelle komplette CI bleiben offen.
+
 ## 24.10.: Kontrolllesepfad integriert, Startinventar korrigiert
 
 94fba5bb (im Arbeitsbranch13ea9657) ergänzt den privaten nativen Diagnosepfad:

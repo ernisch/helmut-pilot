@@ -20,22 +20,25 @@ keine Finalposition/Endquittung; zehn Sourcewrites COMMIT/ACK. Erster Fehler
 `entry-terminal-deadline`; Hostmappingfehler folgte. Peak1.348.653.056B/Events0
 ist wegen FAIL **kein Reservenachweis**. Unit60/Auth30/Plateau offen.
 
-Neuer privater Kontrolllesepfad: zwei statt sieben normale HTTP-Aufrufe,
-frische Runtime-/Katalogprüfung und Original-Graph-/Own-Lesen; immutable RPC-
-Solltupleprüfung vor Originalaufruf erhalten. Broker bindet initialen Binary-SHA
-an frische readonly FD-/Metadatenkontrollen. Guard-/Zeit-/Latenzregeln unverändert.
-76d87/c336 endete vor Motor (0Calls): veralteter exakter Sourcecount27 statt29.
-Originale/Quellpins/logischer Quellzustand erhalten, Kernel/EOFs vollständig;
-Setup-Peak1.051.852.800B ist kein Zeit-/RAM-Erfolg. Enger Fix94fba5bb/integriert
-13ea9657: exakt29+9 getrennte Helper,21 Sourcechecks/Review PASS.
-Frische Laufbindung und tatsächliche volle Einzelunit erforderlich.
-[Neuer Befund](betrieb/belege/native-claim-only-20261023/NATIVE_CONTROL_BUNDLE_SOURCE_FIX_20261024.SAFE.json).
+Privater Kontrolllesepfad integriert: zwei statt sieben normale HTTP-Aufrufe,
+frische Runtime-/Katalog-/Original-Graph-/Own-Prüfung; immutable RPC-Solltuples
+vor Originalaufruf erhalten. Initialer Broker-Binary-SHA mit readonly FD-/9MD-
+Kontinuität; keine Guard-/Zeit-/Latenzlockerung. c336/76d87 und d79/6c02 sind
+Setup-FAILs vor Owner/Motor, keine Zeit-/RAM-Wirkungsmessung. Originale/Quellpins
+und logischer Quellzustand erhalten; vollständige Kernelenden/EOFs.
+Sourcecount29+Bridge9=38: Fix5f54179e/integriert4c838b2a schließt übersehene
+Controller36-Prüfung.30 Checks und1971 preOwner-Metadatenguards PASS; keinOwnerlauf.
 
-CI5e2fd90e grün einschließlich geschützter Originale; neuer Code brauchtCI.
-Abgeschlossene eigene PG-Kopien nach Restore und verschlüsseltem Drive-
-Rückdownload/Hashvergleich ausgelagert; Originale/Metadaten/benötigteDBs KEEP.
-Kapazität frisch prüfen; Volladmission15.179.779.720B offen. Alte GOs/Claims
-verbraucht;32 frische Bedingungen/neues konkretes500erGO Pflicht. Kein Merge/Prod.
+CI336ad5a2 scheiterte an alterStoragebindung in CurrentDelta. Neue unabhängige
+SOURCE-only-Reviewkette72e68334; alteBelege unverändert. DreiVerbraucher14/22/99,
+Copyguards6 PASS. NeueCI und volle Einzelunit noch erforderlich.
+Entbehrliche Bootstrap-PGs c336/d79 kontrolliert entfernt: netto+741.519.360B;
+OriginalRAW/POSTRUNMaster/Außenbelege/7b2 KEEP. PhysischeWal-/OID-/Nonce-Details
+als nicht benötigt qualifiziert; keine byteidentischePG-Recoverybehauptung.
+0ea8-PG nach Restore/Drive-Rückprüfung ausgelagert: zusätzlichnetto371.298.304B.
+Volladmission15.179.779.720B offen. AlteGOs/Claims verbraucht;32frischeBedingungen
+und neues konkretes500erGO Pflicht. KeinMerge/Prod.
+[Aktueller ABI-/CI-/Kapazitätsbefund](betrieb/belege/native-claim-only-20261023/NATIVE_ABI_CI_SOURCE_CURRENT_20261024.SAFE.json),
 [Vorwerte](betrieb/belege/native-claim-only-20261023/NATIVE_SAFETY_PAIR_UNIT60_20261024.SAFE.json),
 [Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
