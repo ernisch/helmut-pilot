@@ -110,7 +110,7 @@ function subject(patches = [], atomicPatches = [], clock = null) {
   const atomic = load("llm-usage-atomic", { ...imports, "./auth-state-parts": parts }, null, atomicPatches); return { U: atomic, C: parts, probe };
 }
 const opts = native => ({ request: native.request, rowId, target, operationId });
-let checks = 0;
+let checks = 0, structuralEvidence = null;
 async function check(name, action) {
   if (process.argv.includes("--review-fixes-only") && !name.startsWith("reviewfix:")) return;
   await action(); checks++; console.log("PASS " + name);
@@ -131,6 +131,66 @@ async function check(name, action) {
       assert.deepEqual(a.data(), b.data()); assert.equal(small.U.hasOwnRead(view), false);
       await assert.rejects(small.U.writeOwn(view, { state: next }, opts(b)), { code: "AUTH_OWN_WITNESS_MISSING" });
     }
+  });
+  await check("own writes reuse private payload checks and return only new nodes after a complete fresh read", async () => {
+    const seed = fixture(x => {
+      x.original.rows = Array.from({ length: 100 }, (_, i) => ({ i, text: "s".repeat(700) }));
+      for (let i = 0; i < 40; i++) x["outside-" + i] = { i, text: "t".repeat(700) };
+    });
+    const native = server(seed), hashed = new Map();
+    const observedCrypto = { ...crypto, createHash(...args) {
+      const hash = crypto.createHash(...args), update = hash.update;
+      hash.update = function(value, ...rest) {
+        if (typeof value === "string") hashed.set(value, (hashed.get(value) || 0) + 1);
+        return update.call(this, value, ...rest);
+      };
+      return hash;
+    } };
+    const C = load("auth-state-parts", { "node:crypto": observedCrypto }); let captured;
+    const U = load("llm-usage-atomic", { "./auth-state-parts": { ...C, captureOwnMutation(...args) {
+      captured = C.captureOwnMutation(...args); return captured;
+    } } });
+    await U.readBudgetView(opts(native)); // Establish normal form; no write witness.
+    hashed.clear();
+    const before = native.graph(), view = await U.readOwnForMutation(opts(native));
+    for (const node of before.nodes) assert.equal(hashed.get(node.payload), 1, "fresh actual-payload SHA on warm read");
+    const oldHashes = new Set(before.nodes.map(n => n.hash)), next = own(view);
+    next[prefix + "journal"].count++; hashed.clear();
+    await U.writeOwn(view, { state: next }, opts(native));
+    // Rebuilt virtual buckets can encode the same bytes again. Actual retained
+    // closures avoid a second SHA; do not call every old hash a retained node.
+    const rehashed = before.nodes.filter(n => hashed.has(n.payload)).length;
+    assert.ok(rehashed < before.nodes.length, "unchanged private closures avoid duplicate SHA work");
+    assert.ok(captured.nodes.length > 0 && captured.nodes.length < before.nodes.length);
+    assert.ok(captured.nodes.every(n => !oldHashes.has(n.hash)), "no wrappers for preexisting transport nodes");
+    assert.deepEqual(captured.nodes, native.stats().last.nodes);
+    const expected = load("auth-state-parts").build({ ...seed, ...next });
+    assert.equal(captured.root, expected.root); assert.deepEqual(captured.hashes, expected.hashes);
+    assert.deepEqual(captured.nodes, expected.nodes.filter(n => !oldHashes.has(n.hash)), "exact full-build CAS delta and postorder");
+    for (const node of captured.nodes) assert.ok(hashed.get(node.payload) >= 1, "new payloads are actually hashed");
+    structuralEvidence = { freshPayloadChecks: before.nodes.length, previousGraphPayloadRehashes: rehashed,
+      previousGraphPayloadBytes: before.nodes.reduce((sum, n) => sum + Buffer.byteLength(n.payload), 0),
+      previousGraphRehashedBytes: before.nodes.filter(n => hashed.has(n.payload)).reduce((sum, n) => sum + Buffer.byteLength(n.payload), 0),
+      fullGraphNodes: expected.nodes.length, ownCaptureNodes: captured.nodes.length };
+  });
+  await check("projection paths still reject noncanonical alternate DAG layouts on cold and warm roots", async () => {
+    const seed = fixture(x => { for (let i = 0; i < 40; i++) x["outside-" + i] = { i, text: "x".repeat(700) }; });
+    const graph = load("auth-state-parts").build(seed), rootBody = JSON.parse(graph.nodes.at(-1).payload);
+    assert.equal(rootBody[0], "m"); rootBody[1].reverse();
+    const payload = JSON.stringify(rootBody), alternative = { hash: sha(payload), payload };
+    const bad = { root: alternative.hash, nodes: [...graph.nodes.slice(0, -1), alternative] };
+    for (const method of ["projectOwn", "openOwnMutation", "projectControl"]) for (const warm of [false, true]) {
+      const C = load("auth-state-parts"); if (warm) C[method](graph, graph.root, "projection|generation", operationId);
+      assert.throws(() => C[method](bad, bad.root, "projection|generation", operationId), { code: "AUTH_STATE_CONTENT_MISMATCH" });
+    }
+  });
+  await check("later reads can replace the content cache but cannot refresh an older own write's CAS basis", async () => {
+    const native = server(), { U } = subject(), view = await U.readOwnForMutation(opts(native)), next = own(view);
+    next[prefix + "journal"].count++;
+    native.externalRoot(); await U.readBudgetView(opts(native));
+    await assert.rejects(U.writeOwn(view, { state: next }, opts(native)), { code: "AUTH_STORE_CONFLICT" });
+    await assert.rejects(U.writeOwn(view, { state: next }, opts(native)), { code: "AUTH_OWN_WITNESS_MISSING" });
+    assert.equal(native.stats().writes, 1); assert.equal(native.data().original.external, true);
   });
   await check("known-root mutation and budget view avoid full-root serialization; defaults retain it", async () => {
     const native = server(fixture(x => { x[prefix + "reservation"] = { ownRetainedSentinel: true, body: "o".repeat(20000) }; })), { U, probe } = subject();
@@ -341,5 +401,5 @@ async function check(name, action) {
     }
   });
   console.log(JSON.stringify({ schema: "helmut-original-small-mutation-pure/1", pass: true, checks, nativeCalls: 0,
-    providerCalls: 0, performanceAcceptance: false, full500: false }));
+    providerCalls: 0, structuralEvidence, performanceAcceptance: false, full500: false }));
 })().catch(error => { console.error(error.stack); process.exitCode = 1; });
