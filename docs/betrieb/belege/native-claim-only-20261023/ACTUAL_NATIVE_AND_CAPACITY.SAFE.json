@@ -123,6 +123,23 @@
         "sourceRetired": true,
         "sourceRetirementSHA256": "4e565e336377fe373a4a98f0c238d7326be0dda67ce19073e71bc54c800fdb9d",
         "transportSHA256": "68a6fae605f76357ad3db469e7d9b26235e6026c55587ed7790c0e9b7fd7d741"
+      },
+      "6073": {
+        "index": "https://drive.google.com/file/d/1RlAQedy8vEXJ5_SHwBwFZHLD6mJKM3Oy/view?usp=drivesdk",
+        "lastRetirementTransientDeltaNotWholePipelineSaving": true,
+        "observedWholePipelineAvailableDeltaBytes": 280289280,
+        "parallelWorktreeAndEvidenceWritesIncluded": true,
+        "sourceRetired": true,
+        "sourceRetirementPin": {
+          "bytes": 3041,
+          "path": "/workspace/helmut-native-integration-checks-20261022/five-pg-source-retirement-prepared-20261024/6073319e29c220907278e1c4bb8497be/ATTEMPT.PRIVATE/RESULT.SAFE.json",
+          "sha256": "b3992533932364d078776e4ae56c53ca35f299bb802d946ecfbad5983ef05617"
+        },
+        "transportPin": {
+          "bytes": 9363,
+          "path": "/workspace/helmut-native-integration-checks-20261022/five-full-backup-offsite-V2-prepared-20261024/6073319e29c220907278e1c4bb8497be/TRANSPORT_COMPLETE.SAFE.json",
+          "sha256": "d7b3403558290034fbb7d2b0259ad0053a63bf552fbad121afa1545649473ca7"
+        }
       }
     },
     "allGitRefsAndObjectsKept": true,
@@ -389,6 +406,7 @@
       "sha256": "908815bc3e154c1fd28d7637f8c594b74d21cfe42e81843620b37e018ecbdd32"
     }
   },
+  "integratedFixtureCodeCommit": "ed97c6c1cf04887838eda9b2af9713b3e7232a4b",
   "lateReadonlySQL": {
     "all4CapturesExit0NaturalEOFs": true,
     "allChildrenExited": true,
