@@ -7,32 +7,40 @@ Branch `codex/v12-unit60-native-integration-20261022`,
 Alte GOs und Claims bleiben verbraucht. Keine Production-Aktion, kein Merge und
 kein vollständiger500er-Lauf sind aus dieser Arbeit freigegeben.
 
-## 24.10.: Zustands-/Usageprobe vollständig bestanden; Rollback und Motorzeit offen
+## 24.10.: Rollbacks PASS; Vergleich und letzte Einzelunit ausgewertet
 
-Fall4150cfaf3a13a2e4175a985eba9ee34d auf f988991b bestand tatsächlich drei
-Zustandsänderungen und einen SameRootUsage-CAS. Alle24PSQL-Aufrufe endeten mit
-Exit0/zwei natürlichenEOFs; Ownrevision3 und ursprüngliche6000Verbrauchsrecords
-bleiben erhalten, genau einRecord ergänzt. 43Hostkinder/39Beobachter geschlossen,
-finale Kernelgruppe leer, alle sechs Speicherereignisse0. GemeinsamerPeak
-1.154.248.704B; 41unabhängige BelegprüfungenPASS. Die17,496980409s schließen
-Snapshots ein und sind keineUnit60-/Auth30-Abnahme. KeinMotor/Provider ausgeführt.
+SameRootUsage4150 bestand drei State-CAS/einen Usage-CAS mit vollständigem Abschluss.
+Die korrigierten Negativfälle e755/b237 bestanden: Beide erwarteten späten
+Receiptfehler rollen Original-CAS und Own-Zustand vollständig logisch zurück;
+elf Tabellen und Katalog identisch, kein Commit/externes ACK. 44/63 unabhängige
+Belegchecks PASS. Der frühere eb508-Fixturefehler bleibt FAIL; sein enger Scopefix
+lockert keinen Originalguard.
 
-Der folgende eb508-Negativfall scheiterte bereits beim Aufbau der Mirrorfixture:
-`auth-state-projection-not-admitted`. Der vorgeschriebene lokale Diagnosescope
-fehlte ausschließlich in diesemFixture-SQL; der echte Compiler setzt ihn bereits.
-Einzeilenfix93b32e9f/ed97c6c1 ergänzt denselbenScope bei unverändertemOriginalguard;
-50gezieltePurechecksPASS. KeinNegativ-CAS/Probebericht, Hostcleanfalse,
-Original-Endprüfung interrupted/raw-pin/checkedCount0: derFall bleibtFAIL.
-Kernelgruppe undletzteProzessenden sind geschlossen; Peak1.126.871.040B/Events0.
-Frischer Rollbacktest beiderModi, fairerMessvergleich undvolleEinzelunit offen.
+Gleiche Input-/DB-/Settingsbindung im ersten Claimpaar6994/0ea8:
+State-PSQL905,736911→549,184351ms (−39,366%); gemeinsamer Kernelpeak
+1.218.666.496→1.252.741.120B (+34.074.624B). Kein RAM-Gewinn, kein Plateau und
+kein reproduzierbarer Laufzeitgewinn aus je einem Fall bei ungeklärter Cachewärme.
+Die Bridge ist ein privater Diagnosewriter; der geteilte Voll500-Writer ist unverändert.
 
-CI[40047585788](https://github.com/ernisch/helmut-pilot/actions/runs/40047585788)
-auf483a8253 vollständigSUCCESS, inklusive84Originale/Z22. Folgecode braucht
-neueCI. Die Bridgeoptimierung betrifft weiterhin nur den privaten Einzelunitwriter;
-sie belegt keine Einsparung des gemeinsamen500er-Schreibpfads. Keine neue500er-Abnahme.
-WeitereeigenePG-Kopien00c9/2797 sind physisch probeweise restauriert, verschlüsselt
-aufDrive vollständigzurückgeprüft undlokalkontrolliertentfernt. 6073 ebenso abgeschlossen,9c61 folgt
-innerhalb derselbenSchutzregeln; keine Originale, alteClaims oderBelege entfernen.
+Letzte volle Einzelunit7b2 auf603642aa scheiterte nach70,524240716s Adapterzeit
+an `entry-terminal-deadline`: neun/16 Kontrollen bis send-R, keine Finalposition
+oder Endquittung. Alle zehn Sourcewrites COMMIT/ACK/Exits0/zwei EOFs;
+Hostmappingfehler/137-Enden folgten beim Abbruch und werden getrennt berichtet.
+Peak1.348.653.056B,109 Samples/Events0/vollständige letzte Exits sind kein
+bestandener Unit60-/Auth30-/500MB-Nachweis. Kein Neustart vor wirksamer Änderung.
+
+137 vollständig verbundene HTTP-Spuren: Original9 Aufrufe5,929s, davonPSQL5,073s;
+Broker-Prüfblöcke gesamt4,371s, darin Binary-SHA-Anteil nicht separat gemessen.
+Keinen Parts-/Kopierengpass aus unmarkierten Restzeiten ableiten. Nächster Schritt:
+frische Lese-/Prüfarbeit ohne Guard-/Zeit-/Latenzlockerung strukturell reduzieren.
+CI40051723434 auf603642aa vollständig SUCCESS inklusive84 Originale/Z22.
+
+Drei eigene abgeschlossene PG-Kopien7bace/6994/4150 nach vollständigem physischem
+Restore und verschlüsseltem Drive-Rückdownload/Hashvergleich ausgelagert;
+Originale, Metadaten und notwendige Quellen erhalten. Dreierphase netto+1.064.271.872B;
+Kapazität und Volladmission15.179.779.720B weiter frisch prüfen.
+[Aktuelle Messwerte und Primärpins](belege/native-claim-only-20261023/NATIVE_SAFETY_PAIR_UNIT60_20261024.SAFE.json)
+haben Vorrang vor historischen Abschnitten und dem älteren Checkpoint-JSON.
 
 ## Historischer Nachweis vom23.10.: Claim bestanden, Einzelunit weiter fehlgeschlagen
 
