@@ -295,6 +295,7 @@ def main():
                 'temp_file_limit': '128MB', 'max_parallel_workers_per_gather': '0', 'jit': 'on',
                 'autovacuum': 'off', 'statement_timeout': '30s', 'lock_timeout': '1s',
                 'logging_collector': 'off', 'log_statement': 'none', 'log_min_duration_statement': '-1',
+                'log_line_prefix': '%m [%p] ', 'log_transaction_sample_rate': '0', 'log_duration': 'off',
                 # Keep genuine psql failures in bounded private captures. A
                 # failed statement can contain a complete private command;
                 # duplicating it in the server log exhausts its independent cap.

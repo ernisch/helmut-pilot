@@ -127,6 +127,25 @@ function saveError(label, bytes) {
   const row = { schema: "helmut-local-original-owner-stderr/1", bytes: bytes.length, sha256: sha(bytes), contentsRetained: false };
   fs.writeFileSync(path.join(directory, label + ".SAFE.json"), JSON.stringify(row) + "\n", { mode: 0o600, flag: "wx" });
 }
+function saveWritePhaseNotices(nonce, raw) {
+  const labels = ["source_graph_begin", "source_graph_end", "native_cas_begin", "native_cas_end",
+    "post_readback_end", "compare_delta_end", "own_cas_begin", "own_cas_end", "own_ack_end"];
+  const text = raw.toString("utf8"), lines = text.trimEnd().split("\n");
+  need(Buffer.from(text).equals(raw) && raw.length <= 4096 && lines.length === 9, "write-phase-notice-cap");
+  const pattern = /^(?:psql:<stdin>:[0-9]+: )?NOTICE:\s+(HELMUT_NATIVE_WRITE_PHASE_V1 ([a-f0-9]{64}) ([0-8]) ([a-z_]+) ([1-9][0-9]{0,9}) ([0-9]{1,20}))$/;
+  const matches = lines.map(line => pattern.exec(line));
+  need(matches.every((m,i) => m && Number(m[3]) === i && m[4] === labels[i])
+    && new Set(matches.map(m => m[2])).size === 1 && new Set(matches.map(m => m[5])).size === 1, "write-phase-notice-shape");
+  const bytes = Buffer.from(matches.map(m => "NOTICE: " + m[1] + "\n").join(""));
+  need(bytes.length <= 2048, "write-phase-notice-file-cap");
+  const filename = "/bench/NATIVE_WRITE_PHASES_" + sha(nonce) + ".PRIVATE.log";
+  const fd = fs.openSync(filename, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK, 0o600);
+  try {
+    privateOutput(fd, filename, 0); let offset = 0;
+    while (offset < bytes.length) { const n = fs.writeSync(fd, bytes, offset, bytes.length-offset, null); need(n > 0, "write-phase-notice-short-write"); offset += n; }
+    fs.fsyncSync(fd); privateOutput(fd, filename, bytes.length);
+  } finally { fs.closeSync(fd); }
+}
 function psqlIdentity(c, child) {
   const pid = child.pid;
   need(Number.isSafeInteger(pid) && pid > 0 && child.spawnfile === c.psqlPin.path, "child-handle");
@@ -235,6 +254,11 @@ function transactionPhases(nonce, mode, begin, outcome, fail) {
   };
   function append(event, details = {}) {
     try {
+      if (event === "psql-start" || event === "psql-end") {
+        const beforeNS = process.hrtime.bigint(), unixMS = Date.now(), afterNS = process.hrtime.bigint();
+        need(afterNS >= beforeNS && Number.isSafeInteger(unixMS) && unixMS > 0, "phase-clock-anchor");
+        details = { ...details, wallAnchor: { beforeNS: String(beforeNS), unixMS, afterNS: String(afterNS) } };
+      }
       need(!broken && fd !== null && rows < 8, "phase-output-state");
       const now = Number(process.hrtime.bigint() - begin), before = privateOutput(fd, filename, bytes);
       need(Number.isSafeInteger(now) && now >= last && (!previous || META.every(k => previous[k] === before[k])), "phase-clock-or-drift");
@@ -264,6 +288,7 @@ function transactionPhases(nonce, mode, begin, outcome, fail) {
 }
 async function psql(c, sql, children, ledger, nonce, phaseOutcome = null) {
   need(typeof sql === "string" && Buffer.byteLength(sql) <= BODY_CAP, "sql-size");
+  const diagnosticWrite = sql.startsWith("SET log_statement='none';\nSET log_min_duration_statement=-1;\n");
   let child;
   try {
     file(c.psqlPin);
@@ -300,6 +325,10 @@ async function psql(c, sql, children, ledger, nonce, phaseOutcome = null) {
         failure ||= "transaction-exit-identity";
       if (phaseOutcome && !failure && code === 0 && signal === null && outEOF && errEOF)
         phaseOutcome.commitProcessConfirmed = true;
+      if (diagnosticWrite && !failure && code === 0 && signal === null && outEOF && errEOF) {
+        try { saveWritePhaseNotices(nonce, Buffer.concat(err)); }
+        catch { failure ||= "write-phase-measurement-unconfirmed"; }
+      }
       if (errBytes) {
         try { saveError(crypto.randomBytes(12).toString("hex"), Buffer.concat(err)); }
         catch { failure ||= "private-error-retention-failed"; }
