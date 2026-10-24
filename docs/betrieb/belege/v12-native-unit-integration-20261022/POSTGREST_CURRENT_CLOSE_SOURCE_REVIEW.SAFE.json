@@ -1,0 +1,127 @@
+{
+  "schema": "helmut-current-owner-postgrest-close-source-review/1",
+  "reviewedAtUTC": "2026-10-23T00:56:00Z",
+  "rootSourceReviewPass": true,
+  "independentSOLSourceReviewPass": true,
+  "codePins": [
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-owner.js",
+      "bytes": 44605,
+      "sha256": "f78231976eb4834c00a793dc98000ae2fa8d8710306bb604b62b3f8278939c31"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-owner-test.js",
+      "bytes": 42262,
+      "sha256": "993f5285f7e8f1f7f2b6668aaf1bc897b8b04c93bcbd878df7338ecab4bf25ba"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-execution-host.py",
+      "bytes": 124791,
+      "sha256": "f1b8f9c885180e59ac3eb56ed4a4a41a51e5de5e22064e2c70793635a7270bb2"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-execution-host-test.py",
+      "bytes": 119805,
+      "sha256": "81f0e38938b70a58926b582585246aafc715fd55d4ebcce12e97631a246f0817"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-execution-controller.py",
+      "bytes": 56183,
+      "sha256": "6bbfaabd0d49cb76f39da55f5b0fd34d2efe47e3fd51dccede955f1bf9a448e2"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-execution-controller-test.py",
+      "bytes": 38586,
+      "sha256": "825d17c582521f900229daa8bf6c29e1a0b1edc83b1453078c9f28308fe5e84a"
+    }
+  ],
+  "upstreamSourcePins": [
+    {
+      "path": "SOURCE_EVIDENCE.SAFE.json",
+      "bytes": 4139,
+      "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+    },
+    {
+      "path": "postgrest/src/PostgREST/Unix.hs",
+      "bytes": 1830,
+      "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+    },
+    {
+      "path": "postgrest/src/PostgREST/App.hs",
+      "bytes": 7424,
+      "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+    },
+    {
+      "path": "postgrest/src/PostgREST/CLI.hs",
+      "bytes": 8002,
+      "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+    },
+    {
+      "path": "postgrest/src/PostgREST/AppState.hs",
+      "bytes": 18693,
+      "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+    },
+    {
+      "path": "postgrest/default.nix",
+      "bytes": 5248,
+      "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+    },
+    {
+      "path": "ghc/libraries/base/GHC/TopHandler.hs",
+      "bytes": 9858,
+      "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+    },
+    {
+      "path": "ghc/rts/RtsStartup.c",
+      "bytes": 19895,
+      "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+    }
+  ],
+  "upstreamSourceContentFreshlyVerified": true,
+  "scope": {
+    "currentGeneratedConfigPrelaunchBound": true,
+    "fixedBinaryBound": true,
+    "freshPrivateNonceAndPolicyBound": true,
+    "actualProcessBoundAfterSpawn": true,
+    "policyConsumedOnceBeforeOwnTERM": true,
+    "configBinarySourcesPolicyAndProcessRecheckedBeforeTERM": true,
+    "eightReadonlyAliasesInstalledInMeasuredGroup": true,
+    "existingThreeAliasPinsUnchanged": true
+  },
+  "rawSIGINTAcceptanceRequires": [
+    "noPriorFailure",
+    "sameActualProcessAndFreshPolicy",
+    "exactlyOneIdentityVerifiedOwnTERMWithKillReturnedTrue",
+    "actualExitAndClose",
+    "bothNaturalPipeEOFs",
+    "completeBoundedPrivateLogForwarding",
+    "pinnedVersionObserved",
+    "noForcedKillOrStreamError",
+    "unchanged4500msCloseDeadline"
+  ],
+  "actualSignalPreserved": true,
+  "priorFailedCasesRemainFailed": true,
+  "tests": {
+    "source": "author_direct_targeted_commands_actual_exit_observed",
+    "ownerVMChecks": 71,
+    "ownerExitCode": 0,
+    "hostPureChecks": 103,
+    "hostExitCode": 0,
+    "controllerPureChecks": 21,
+    "controllerExitCode": 0,
+    "rootDidNotRepeatAlreadySuccessfulTests": true
+  },
+  "evidenceLimits": {
+    "completePrivatePolicyFileDurablyExported": false,
+    "durableEvidence": "bindingPin_nonceHash_configBinarySourcePins_and_stop_diagnostics",
+    "actualProcessSelfSignalTraced": false,
+    "reproducibleBuildVerified": false,
+    "historicalInstanceAcceptanceTransferred": false,
+    "newNativeExecutionPerformed": false,
+    "nativeNormalCloseQualified": false,
+    "unit60Qualified": false,
+    "reserveQualified": false,
+    "full500Qualified": false
+  },
+  "next": "fresh_clean_commit_and_capture_binding_then_actual_isolated_single_unit_after_capacity_admission"
+}

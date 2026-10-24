@@ -1,0 +1,150 @@
+{
+  "schema": "helmut-three-control-cache-delta-retirement-actual/1",
+  "status": "EXACT_THREE_COPIES_LOSSLESS_DELTA_ARCHIVED_AND_RETIRED",
+  "atUTC": "2026-10-20T18:48:14.663854+00:00",
+  "cases": [
+    {
+      "case": "control-45a29158f86a93d8e76f090d",
+      "targetAbsent": true,
+      "deltaArchivePin": {
+        "bytes": 6776782,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-45a29158f86a93d8e76f090d/PGDATA_DELTA.PRIVATE.tar.gz",
+        "sha256": "b6e6379f964b969d763bf5256eea027c71dd9a355536be230c166d0cc1d135ab"
+      },
+      "removedRegularFiles": 1711,
+      "smallProofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-45a29158f86a93d8e76f090d/ARCHIVE_READY.PRIVATE.json",
+          "bytes": 1380,
+          "sha256": "ca963dee85edba6c7afe3f2bcad597488f7a21169b8bda51d74f2692745beb4a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-45a29158f86a93d8e76f090d/COMPARISON_1.PRIVATE.json",
+          "bytes": 1118,
+          "sha256": "779be5852acba9109c169c28f9ffe8393a7f20ded522560055e0ccc1d89f37ee"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-45a29158f86a93d8e76f090d/COMPARISON_2.PRIVATE.json",
+          "bytes": 1359,
+          "sha256": "caccc19303f9c17c04e3391596a0aa813cce2112749060dd2ffe3ee7eef9f4f8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-45a29158f86a93d8e76f090d/RETIRED.PRIVATE.json",
+          "bytes": 1797,
+          "sha256": "f5f69d080dff9672200510076795bf246d31244e41b82e619b08d83f23561082"
+        }
+      ],
+      "rootAdoptionPin": {
+        "bytes": 4519,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-45a29158f86a93d8e76f090d.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "b5510bdd978d4eff5253fecd83c2de8cf3b42fe7a41d0eea959f60beab1b690d"
+      }
+    },
+    {
+      "case": "control-691308195082cdee46ff279b",
+      "targetAbsent": true,
+      "deltaArchivePin": {
+        "bytes": 6776830,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-691308195082cdee46ff279b/PGDATA_DELTA.PRIVATE.tar.gz",
+        "sha256": "c82e5ba469fb94f87628937478ccb290df29cca6bec9cfc3a13ff9608029a8c2"
+      },
+      "removedRegularFiles": 1711,
+      "smallProofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-691308195082cdee46ff279b/ARCHIVE_READY.PRIVATE.json",
+          "bytes": 1380,
+          "sha256": "dc2a322dccfeca8a36ad6e514b06f1344864bd2a7cdaf168cc40eff909120b54"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-691308195082cdee46ff279b/COMPARISON_1.PRIVATE.json",
+          "bytes": 1118,
+          "sha256": "cbf53688a72fea6d330494050d165bfe4c045a9328c4fd14fb25971a663e1792"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-691308195082cdee46ff279b/COMPARISON_2.PRIVATE.json",
+          "bytes": 1359,
+          "sha256": "213780c416551c30d4c02c12bff98598b1222c6d12287ac4a9ad89792461baf3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-691308195082cdee46ff279b/RETIRED.PRIVATE.json",
+          "bytes": 1797,
+          "sha256": "02500d7fdb472b7133d2d1dacb044be6f3d0c86098077635c745feb6264e80e6"
+        }
+      ],
+      "rootAdoptionPin": {
+        "bytes": 4520,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-691308195082cdee46ff279b.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "54f0092aa3dc25c63649d8cf7dae5c18fa1b46eebf603e18de7720b06a099e30"
+      }
+    },
+    {
+      "case": "control-81c274b505a2ee40e25ab03e",
+      "targetAbsent": true,
+      "deltaArchivePin": {
+        "bytes": 21489220,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-81c274b505a2ee40e25ab03e/PGDATA_DELTA.PRIVATE.tar.gz",
+        "sha256": "94d05efebdbe9ccdb38657370c18af88d83f2b33224220f81c6277e59a0fe3b9"
+      },
+      "removedRegularFiles": 1711,
+      "smallProofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-81c274b505a2ee40e25ab03e/ARCHIVE_READY.PRIVATE.json",
+          "bytes": 1381,
+          "sha256": "9f3a3129ddc66f2d1900021cf2c7d5507044dc4da65c5c9341d0f38712d72160"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-81c274b505a2ee40e25ab03e/COMPARISON_1.PRIVATE.json",
+          "bytes": 1119,
+          "sha256": "2be225e93e08669703839d026f4c6de83fcd98b13f2f9c28bb8ec303bc5840d3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-81c274b505a2ee40e25ab03e/COMPARISON_2.PRIVATE.json",
+          "bytes": 1360,
+          "sha256": "93acc9d83d2dec3e7e9bb177194e6f1d4ea60aedf757560744db6c316e99ade2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-81c274b505a2ee40e25ab03e/RETIRED.PRIVATE.json",
+          "bytes": 1798,
+          "sha256": "92f6ba8f7d48e4d6ff19ce1db0c5748cfd70ac82ae10c34e1b19358427cca20e"
+        }
+      ],
+      "rootAdoptionPin": {
+        "bytes": 4521,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/control-81c274b505a2ee40e25ab03e.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+        "sha256": "c6bc92b874bb117bd0b1cf34196af96e4d043579f527079b093d6d8de74e04e9"
+      }
+    }
+  ],
+  "removedRegularFiles": 5133,
+  "deltaArchivesTotalBytes": 35042832,
+  "availableBytes": 15301251072,
+  "unchangedFullAdmissionThresholdBytes": 15179779720,
+  "marginAboveFullAdmissionBytes": 121471352,
+  "canonicalManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "canonicalBaseIsPermanentRequiredReconstructionDependency": true,
+  "previousFiveDeltaArchivesAndAllOriginalsEvidenceHullsImagesVolumesLoopsRetained": true,
+  "postRetirementSourceOrArchiveFullRehashClaimed": false,
+  "exclusiveWindowClosedPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/ROOT_EXCLUSIVE_WINDOW_CLOSED.SAFE.json",
+    "bytes": 239,
+    "sha256": "e1a14583d56a28cc59221d42becff1d05dfddfbef98a5c522e759128ba6fc607"
+  },
+  "rootActionCompletionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/ROOT_COMPLETION_LOG.PRIVATE.json",
+    "bytes": 4869,
+    "sha256": "1d5c1456fbbe2c3d7be8885a83c392637589f9689ab64289e8d0674b237d4732"
+  },
+  "sourceRetentionCommitmentPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/control-cache-three-copy-retirement-preparation/ROOT_CANONICAL_BASE_RETENTION_COMMITMENT.SAFE.json",
+    "bytes": 682,
+    "sha256": "54d25f3bf4a734b34bd074b3624f9b6b190f01b89bbc82b9cc2aa35aa757c3e5"
+  },
+  "independentStaticReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/THREE_CONTROL_CACHE_RETIRER_SCOPE_REVIEW.SAFE.json",
+    "bytes": 9999,
+    "sha256": "3a011e7f5d7050aaca1fca1491d929f77ec610b7bac1990768414460b3da6c1c"
+  },
+  "V6FailureRemainsFAIL": true,
+  "full500": false,
+  "production": false
+}

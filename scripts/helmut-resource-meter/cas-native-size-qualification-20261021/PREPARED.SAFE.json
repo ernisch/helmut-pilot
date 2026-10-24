@@ -1,0 +1,86 @@
+{
+  "schema": "helmut-synthetic-pg17-layout-native-prepared/2",
+  "status": "SOURCE_ONLY_CUSTODY_RELEASED_NO_START",
+  "sourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+    "bytes": 18568,
+    "sha256": "028a519a054849aa21bbfe7fd1ce2f35821d4b6cc5803d3ae6db37bc17b6e746"
+  },
+  "planPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/PLAN.SAFE.json",
+    "bytes": 8998,
+    "sha256": "c0a2002288c9fb123695675281ad70caa5bb2a1f5b59e2be98fe542d809f167f"
+  },
+  "sourceDeltaPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/SOURCE_DELTA.diff",
+    "bytes": 3896,
+    "sha256": "dfcfffc19109204f82624f23e54fb56257a21fbf67125d1cbac0dadbe2a4788f"
+  },
+  "sourceCausePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/SOURCE_CAUSE.SAFE.json",
+    "bytes": 4420,
+    "sha256": "23befd83ad73f551b72d1a5f1d85c7050ee38e80b88ad745d1ea6a8b36fcff2f"
+  },
+  "parentSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation/run_layout_select.py",
+    "bytes": 17710,
+    "sha256": "740f04ec01a51f83f3a3edc8c2e8d3b1f1ff755362657042105d11a2b1a7f8b9"
+  },
+  "parentPreparedPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation/PREPARED.SAFE.json",
+    "bytes": 3656,
+    "sha256": "5f1f752302dcff6b475334eae760f6903a0c4f1e9b0f9aa3aa0ab44e755c09f7"
+  },
+  "officialLibpqSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/libpq-source/fe-connect.c",
+    "bytes": 200893,
+    "sha256": "3d6d86498961f84be36b06061565c8ad21d9945d3b4bc2badfab4f4b439e8452"
+  },
+  "helperImageEnvAbsencePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/HELPER_IMAGE_V2_ENV_ABSENCE.SAFE.json",
+    "bytes": 468,
+    "sha256": "b160d2ba5c2179a00d0730fc81be94bc6b15479c9bc692697c78ad52b1a7a87f"
+  },
+  "runtimeBindingsPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/READONLY_RUNTIME_BINDINGS.SAFE.json",
+    "bytes": 207733,
+    "sha256": "71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475"
+  },
+  "shellPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-component-shell/original-sh",
+    "bytes": 125640,
+    "sha256": "f5adb8bf0100ed0f8c7782ca5f92814e9229525a4b4e0d401cf3bea09ac960a6"
+  },
+  "realRootSQLPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_NATIVE_LAYOUT_QUERY.sql",
+    "bytes": 4750,
+    "sha256": "0cc98e082c154b0e6511eafe7b532b9fa2fe39c0bf2bef0b55a8e8c16f673cd3"
+  },
+  "finalDelta": "Only both approved env-pair removals, fresh HOME check, capped nonzero-command evidence, and raw successful sole-psql evidence saved before stderr/JSON acceptance. No query/math/policy/cap changes.",
+  "cli": [
+    "<qualified-existing-host-python>",
+    "-I",
+    "-S",
+    "-B",
+    "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+    "--root-adoption",
+    "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/ROOT_LAYOUT_ADOPTION.PRIVATE.json"
+  ],
+  "rootIntentV3Pending": true,
+  "freshCasePending": true,
+  "independentSourceReviewPending": true,
+  "rootCLIQualificationPending": true,
+  "freshRootAdoptionPending": true,
+  "noPlaceholdersInActor": true,
+  "noRunnableAdoptionSupplied": true,
+  "attemptBoundary": "Only one new second/final attempt maximum2 total, after fresh Root intent/IR/CLI/adoption; no first-case replay. The first FAIL case and all old source/adoption/once evidence remain immutable.",
+  "custody": "All five files in this private V2 directory handed back read-only now; no further edits/variants by preparer. Root owns qualification and any actual action.",
+  "noActualLayoutClaim": true,
+  "subjectImportsASTTestsCLIOrNativeInvocations": false,
+  "DockerProcessSQLGitOrResourceActions": false,
+  "PGDATAOrOriginalPayloadReads": false,
+  "oldCaseOrFrozenSourcesChanged": false,
+  "imagesCreatedOrInstalled": false,
+  "allExistingHullsAndSourcesKept": true,
+  "newRootAdoptionOrActualEvidenceCreated": false
+}

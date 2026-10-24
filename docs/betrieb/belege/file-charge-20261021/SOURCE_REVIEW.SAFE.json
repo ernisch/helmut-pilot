@@ -1,0 +1,275 @@
+{
+  "schema": "helmut-file-charge-launcher-source-review/1",
+  "status": "SOURCE_ONLY_PARTIAL_DISCRIMINATOR_EXACT_CHARGE_UNPROVEN",
+  "scope": "Exactly one bounded observation design at existing six cycle-marker/ACK boundaries; no actor, starter, codefreeze or next-run approval.",
+  "sourcePins": [
+    {
+      "label": "worker.py",
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+      "bytes": 74377,
+      "sha256": "9dfd5164fc4c95c56c8c60f29a959965e2c333d7b407173b98445b011df9d1d0"
+    },
+    {
+      "label": "run.py",
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/run.py",
+      "bytes": 28237,
+      "sha256": "e6cffe4e91951ae943e50d8fedffb848d91b930b64fb8b09016886f34609b74b"
+    },
+    {
+      "label": "common.py",
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/common.py",
+      "bytes": 33400,
+      "sha256": "9f242fd3f17e09ba23ab59c70a46c550bd4b7f477b593ac034476d0bb0d51542"
+    },
+    {
+      "label": "kernel-meter.py",
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/kernel-meter.py",
+      "bytes": 6447,
+      "sha256": "e1f05e4a38d7cbe508a43d8532c4eb06adc2d4581de4c68ec43bc4011776bc44"
+    },
+    {
+      "label": "native-memory-budget.py",
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget.py",
+      "bytes": 19434,
+      "sha256": "66b4c432f687445763074a6b2432533c9305cadc09a17a94bf45507d419fd4af"
+    },
+    {
+      "label": "JIT restorer",
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/jit-closure-v2/restore_original_jit.py",
+      "bytes": 25801,
+      "sha256": "d4b6e421ceae15481c5b544c4ed959b16d9ad1992ea96ce1770d0a82da5eff2c"
+    },
+    {
+      "label": "Linux cgroup v2 text",
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/official-docs/linux-cgroup-v2.txt",
+      "bytes": 131100,
+      "sha256": "9a969f3483d9db4dd917ba3dcb97a90ba14b944dc55bef77bde164eaf581a6e3"
+    },
+    {
+      "label": "PG17 resource text",
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/official-docs/postgres17-resource.txt",
+      "bytes": 40533,
+      "sha256": "d45d641b65082d5d5d5d42146030b738dc05439ce4d799a938d5c8495f1fa4a0"
+    },
+    {
+      "label": "Official Linux v6.12 pagemap semantics",
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/official-source/pagemap.rst",
+      "bytes": 11764,
+      "sha256": "e291e5e5ce6334681f6e9a82221ec2dff6735e2765ad06b10f2df9e914e6d44c"
+    },
+    {
+      "label": "Peer official source binding",
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/official-source/SOURCE_BINDING.SAFE.json",
+      "bytes": 1562,
+      "sha256": "43176b178df1a7df5fcda42139d4018667d0672c75974491da76f4a4b5e2b5ce"
+    }
+  ],
+  "acceptedCurrentFreeze": {
+    "preparedPin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/PREPARED.SAFE.json",
+      "bytes": 67996,
+      "sha256": "a30bc1a726a5002e7f5b3f5e6e4d9c24dab26630bd3806d027d0c5e46ece63e8"
+    },
+    "hostPin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap.py",
+      "bytes": 2420,
+      "sha256": "d1e4aec3c4327e20fafff7934ff52186c7ec54cec67dbdbbdb657d89958c19b3"
+    },
+    "resumeProtectionPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/ROOT_RESUME_PROTECTION.SAFE.json",
+      "bytes": 2057,
+      "sha256": "c55bcce0b5281e738c317246eb8061d9e6b9988a13854ea10f866abfe214ddc0"
+    },
+    "current27RPCResultRetained": true,
+    "frozenSourcesChanged": false
+  },
+  "conclusion": [
+    "Existing unprivileged interfaces can separate cgroup aggregate file/shmem categories and identify private tmpfs allocation plus known-process shared-mapping residence. They cannot prove an exact per-inode memcg-charge split or identify the owner of an earlier native peak.",
+    "Recommend only the bounded census below if endpoint allocation/residence evidence is a useful separately declared objective. If exact clone/JIT/PG charge ownership remains mandatory, this source design does not satisfy it and alone does not justify another native run.",
+    "No product fix, resource reserve, plateau, W45/projection activation, allocator cause or additional saving follows from these sources."
+  ],
+  "currentObservation": {
+    "sourceLocations": [
+      {
+        "file": "worker.py",
+        "lines": "33-39",
+        "finding": "mount() reads /proc/self/mountinfo in worker namespace; currently returns fs/options, discarding mountID and dev/root identity."
+      },
+      {
+        "file": "worker.py",
+        "lines": "65-72",
+        "finding": "snapshot reads entire parent memory.stat/current/peak/events and cpu. No inode/charge correlation."
+      },
+      {
+        "file": "worker.py",
+        "lines": "275-285",
+        "finding": "proc_diagnostic only attempts known child status+io; OSError becomes readable:false/errorType, not zero. It does not read smaps/maps/PFN and its success is not mandatory for overall PASS."
+      },
+      {
+        "file": "worker.py",
+        "lines": "769-780",
+        "finding": "Mandatory UID1000, exact adopted parent inode, private 0::/ cgroup view, readonly original, persistent clone disk, /ram tmpfs256MiB and JITlib tmpfs."
+      },
+      {
+        "file": "worker.py",
+        "lines": "812-827",
+        "finding": "JIT restored under /ram/jit-root, then three confined lib symlinks created in separate PGlib tmpfs."
+      },
+      {
+        "file": "worker.py",
+        "lines": "835-854",
+        "finding": "Known pg.pid is directly owned Popen postmaster; shared_buffers128MB/work_mem4MB remain explicit. shared_memory_type/dynamic_shared_memory_type/huge_pages_status are not forced here."
+      },
+      {
+        "file": "worker.py",
+        "lines": "972-1003",
+        "finding": "Exactly six existing marker gates. Native snapshot, known Node/postmaster/PostgREST status+io, existing small metrics SQL, observation persistence, then ACK. Same unchanged30s Node wall includes observer work."
+      },
+      {
+        "file": "run.py",
+        "lines": "221-278",
+        "finding": "Fresh own disk bind; readonly runtime/source/tools; private cgroupns/default private PID; UID1000/cap-dropALL/no-new-privileges/networknone. Three private tmpfs mounts: /ram256MiB, PGLib1MiB, /dev/shm16MiB. Complete bind/tmpfs policy checked."
+      },
+      {
+        "file": "run.py",
+        "lines": "280-286",
+        "finding": "Root-side native timeline samples cgroup counters and trims after220 entries. It supplies no file identity/charge ownership and is not a complete uniform curve."
+      },
+      {
+        "file": "kernel-meter.py",
+        "lines": "54-72",
+        "finding": "Parent current/peak/event/cpu/io with final empty-group coverage; no pagecache/inode classification."
+      }
+    ]
+  },
+  "readabilityMatrix": [
+    {
+      "interface": "/owned-group memory.current/peak/stat/events; worker /proc/self/cgroup and mountinfo; /ram statvfs",
+      "nativeWorker": "Already used in qualified source paths; previous functional PASS entails mandatory group/mount checks succeeded. Namespace-local reads, not opaque host PID traversal.",
+      "rootExternalProc": "No external /proc access is needed. Root can read the retained observation later.",
+      "meaning": "Group aggregate and mount/superblock metadata only."
+    },
+    {
+      "interface": "/proc/<known pg.pid>/status and io",
+      "nativeWorker": "Already attempted opportunistically; source records unknown on failure. Overall PASS alone does not prove every prior optional proc read succeeded.",
+      "rootExternalProc": "Root opaque external proc cannot substitute a same-namespace observation.",
+      "meaning": "Per-process residence and IO, not memcg charge; no summation across PG processes."
+    },
+    {
+      "interface": "/proc/self/ns/{mnt,pid,cgroup}; /proc/<known pg.pid>/{stat,cgroup,ns/mnt,ns/pid,ns/cgroup,smaps}",
+      "nativeWorker": "Same-UID private-namespace candidate interfaces; these exact new reads have not been runtime-qualified. Ptrace/dumpability/LSM/proc permissions may still deny access; require real success or UNKNOWN, never infer from UID alone.",
+      "rootExternalProc": "No fallback to Root host PIDs or broader proc scan.",
+      "meaning": "Identity and mapping residence, not physical-page ownership; use only direct Popen postmaster, not inferred PIDs or backend enumeration."
+    },
+    {
+      "interface": "stat/statvfs on /ram,/usr/lib/postgresql/17/lib,/dev/shm; /disk/pgdata root identity",
+      "nativeWorker": "Owned mount metadata is the minimal VFS addition. Do not walk or open PGDATA payload. statvfs(/disk) would describe the shared backing filesystem, not clone cache.",
+      "rootExternalProc": "Host view of tmpfs mount is not an equivalent namespace identity.",
+      "meaning": "Private filesystem allocation/superblock identity. Allocated blocks are not per-cgroup resident charged pages."
+    },
+    {
+      "interface": "pagemap/PFN+kpagecgroup, BPF/perf or privileged kernel ownership instrumentation",
+      "nativeWorker": "No qualified capability/interface exists in current cap-dropALL runtime. Official Linux v6.12 pagemap.rst29-32 says PFNs require CAP_SYS_ADMIN and are zeroed without it;83-85 documents kpagecgroup PFN->memcg inode when CONFIG_MEMCG. This is source semantics, not current host-version/config/access proof. No PFN read or new capability is proposed.",
+      "rootExternalProc": "No fabricated opaque-process/PFN clearance.",
+      "meaning": "The documented page->PFN->memcg-inode path needs qualified permissions/config and mapped-page coverage. It does not by itself enumerate unmapped clone pagecache. Exact owner evidence remains outside current bounded interfaces."
+    }
+  ],
+  "accountingRules": [
+    {
+      "source": "Linux cgroup-v2 text1665-1695,1729-1733",
+      "rule": "file already includes tmpfs/shared memory; shmem is a subset. Never add file+shmem."
+    },
+    {
+      "source": "Linux cgroup-v2 text1742-1758,1785-1788",
+      "rule": "file_mapped/dirty/writeback and LRU fields are overlapping detail/state counters, not additive disjoint owners."
+    },
+    {
+      "source": "Linux cgroup-v2 text2184-2198",
+      "rule": "Charge belongs to the instantiating cgroup and can differ from current users; migration does not transfer existing charge. Shared readers do not each own a copy of the charge. No fadvise/cache eviction may be used to manufacture ownership."
+    },
+    {
+      "source": "JIT restorer72-74,397-443,459-489; worker812-827",
+      "rule": "974 original JIT regular files/176281648 logicalB/178290688 planned pageB restored freshly inside metered group; actualRegularAllocatedBytes saved. These are allocation/provenance facts, not additional memory to add to cgroup.shmem. Three PGlib symlinks target the same /ram data; do not count a second JIT copy."
+    },
+    {
+      "source": "PG17 resource text566-584; worker835-854; catalog.sql40-44",
+      "rule": "Main PG shared buffers may use anonymous shared mmap or SysV; dynamic shared memory may use POSIX/SysV/disk-backed mmap. Existing selected catalog omits actual shared_memory_type/dynamic_shared_memory_type/huge_pages_status. Do not force a method or label all PGshmem as /dev/shm, all anonymous shared VMAs as exact shared_buffers, or configured128MB as actual resident bytes."
+    },
+    {
+      "source": "Observation semantics",
+      "rule": "smaps/RSS/PSS observes mapped residence and proportions. It omits unmapped buffered pagecache, does not expose memcg owner, and may alias physical pages. Never sum PGpostmaster/backend RSS or per-VMA RSS into group charge; even within one process alias mappings need no-add qualification."
+    },
+    {
+      "source": "Observation semantics",
+      "rule": "statvfs used blocks and st_blocks count allocation at filesystem/inode scope. They are not a precise resident/charge partition. No fs allocation or mapping value is subtracted to assert an exact PGshared residual."
+    }
+  ],
+  "illustrativeAccountingOnly": {
+    "source": "Peer's retained scalar question, not newly measured or rehashed payload",
+    "fileBytes": 605392896,
+    "shmemBytes": 233881600,
+    "aggregateNonShmemFileBytes": 371511296,
+    "deduction": "605392896-233881600=371511296 describes aggregate non-shmem filecache at that snapshot. It does not prove those bytes all belong to clone PGDATA.",
+    "otherPossibleNonShmemSources": "Readonly runtime/JIT input archive/original source reads, executable/library files, evidence writes and other buffered files, subject to first-charge provenance.",
+    "noExactPGSharedResidualFromJITAllocation": true,
+    "noNewMeasurement": true
+  },
+  "oneMinimalCandidateContract": {
+    "name": "SIX_EXISTING_BOUNDARY_IDENTITY_ALLOCATION_RESIDENCE_CENSUS",
+    "implementationStatus": "DESIGN_ONLY_NO_ACTOR_OR_FREEZE",
+    "placement": "Inside existing observe_cycle, after exact marker validation and before existing cycle-metrics SQL/ACK; one attached object in existing CYCLE_n.OBSERVATION, n1..6, no extra Auth/SQL/RPC/marker/Node operation.",
+    "oneRecordContains": [
+      "Sequence/round/edge; UTC+monotonic before/after; parent inode; current/peak/file/shmem/anon/kernel and swap.current before/after. Sequential, non-atomic, observer-included.",
+      "Known Popen postmaster PID, UID, starttime ticks before/after; worker/postmaster mount/PID/cgroup namespace identity and private relative cgroup membership. Reject identity drift; no host PID or all-proc walk.",
+      "Four fixed root identities: clonePGDATA and three tmpfs roots. For tmpfs only: mountID, major/minor/st_dev/rootinode, f_frsize/f_blocks/f_bfree/f_bavail, derived allocatedFilesystemBytes. Dedupe filesystem identity; preserve exact expected256/1/16MiB mount limits. No directory traversal or payload opens.",
+      "Existing in-memory JIT report scalar pin/regularFiles/logicalBytes/plannedPageBytes/actualRegularAllocatedBytes only. /ram FS total is not added to JIT metadata; PGlib symlinks are aliases.",
+      "Streaming only known postmaster smaps, retaining at most8 shared-VMA candidate summaries: namespace+dev/inode/offset/range identity, shared permission, bounded origin class, size/Rss/Pss/Shared/Private/Swap/hugetlb scalars. Preserve each mapping separately; do not sum into a charge. Anonymous/SysV/unknown forms remain candidates, not proven main-PGshared ownership."
+    ],
+    "fixedCaps": {
+      "frames": 6,
+      "maximumSerializedBytesPerFrame": 12288,
+      "maximumAddedSerializedBytesAcrossSixFrames": 73728,
+      "maximumMountinfoInputBytes": 1048576,
+      "maximumPostmasterSmapsInputBytes": 262144,
+      "maximumScannedVMAsPerFrame": 1024,
+      "maximumRetainedSharedVMAsPerFrame": 8,
+      "maximumKnownProcTargets": 1
+    },
+    "capQualification": "Design ceilings, not yet executable or runtime-qualified. Stream bounded inputs, do not retain raw smaps/mountinfo/full paths. Optional capture denial/oversize/extra map=>bounded UNKNOWN code and incomplete diagnostic; never silently truncate into COMPLETE or invent zero. Safety identity drift rejects diagnostic acceptance.",
+    "nonAtomicity": "Read memory.peak first and last of record, preserve observation times. Memory.stat counters can lag/update while read. Any intra-record peak rise includes observer allocations/page-table walks/output; no causality. Saving the record after its end also has overhead.",
+    "outputPersistence": "Attach only to existing worker observation; no new standalone files, stdout duplication or Node payload. Still enforce unchanged total4MiB evidence/256KiB capture and same Node30s deadline. No broad budget raise.",
+    "classification": {
+      "completeCensus": "All selected metadata reads/caps and identities qualified; proves only bounded namespace/allocation/mapping observation completeness.",
+      "exactChargeOwner": "UNPROVEN by construction, even with complete census",
+      "clonePGDataCacheCharge": "UNKNOWN: no per-inode charged pagecache counter",
+      "jitTmpfsCharge": "UNKNOWN exact; filesystem allocation plus in-group fresh materialization provenance observed",
+      "postgresSharedCharge": "UNKNOWN exact; known-postmaster shared-mapping residence only. The serving backend54 observed in the completed case is not sampled, nor are all PG/backends/dynamic mappings. No backend PID may be guessed or substituted in a future case.",
+      "nativePeakOwner": "UNPROVEN: six cycle boundaries do not observe all times and finalrestore occurs after the sixth cycle marker",
+      "unknownDoesNotMeanZero": true
+    },
+    "prohibited": "No new SQL/RPC, PG setting/type/size/JIT changes, runtime flags, capabilities, namespace bypass, file mmap/mincore/cachestat/pagemap/map_files probes, all-PID/FD scans, directory walks, payload copies, cache clear/fadvise, forcedGC, peak reset or source-original access.",
+    "futurePrerequisites": "Only if Root explicitly chooses this weaker but concrete endpoint discriminator: new intent/cases/source freeze/independent source review/targeted guards and fresh per-case adoption. Do not reuse completed cas-heap GO/adoptions or prior lifecycle receipts. Existing shutdown/native/6000history/ACK/CAS/restore contracts unchanged. Source-only analysis grants no start."
+  },
+  "reviewExecution": {
+    "tests": false,
+    "AST": false,
+    "subjectImports": false,
+    "CLI": false,
+    "native": false,
+    "Docker": false,
+    "SQL": false,
+    "procReads": false,
+    "GitActions": false,
+    "networkFetches": false,
+    "externalModelsOrRouter": false,
+    "childAgents": false,
+    "PGDATAPayloadReadsOrHashes": false,
+    "productOrFrozenSourceWrites": false,
+    "reportOnlyOwnWrites": true
+  },
+  "preservation": "All originals, protected canonical827a/17archives,616helperGit, hulls/images/volumes/loops, retained evidence and FAILUNKNOWN remain untouched.",
+  "nextAction": "The one concrete candidate tests only whether private tmpfs allocation changes materially across the six post-setup cycle boundaries and which shared mappings are resident in the directly owned postmaster. It cannot decide whole late shmem, avoidability, exact PGDATA charge, whole peak ownership or Motor saving. Root/E must choose that narrow objective explicitly before any future preparation; absent that, stop source-only.",
+  "full500": false,
+  "production": false,
+  "fullAdmissionOrReserveClaim": false
+}

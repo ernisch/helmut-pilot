@@ -1,0 +1,100 @@
+{
+  "schema": "helmut-v12-native-source-and-bindings-acceptance/1",
+  "case": "/workspace/helmut-unit-diagnostic-native/8b21ca3f3ac6464c3dd706795403dd62",
+  "codeCommit": "4f65115ac12ed12628e02dde5b1f0d726f7907ca",
+  "pass": true,
+  "originalPostrunSHA256": "54df2ecc0e4fdc22adf75f2ce3491d3c921e38296510543dcdadd48db3f37693",
+  "originalPostrunPreserved": true,
+  "originalAuthRowUnchanged": true,
+  "originalSourcePinsUnchanged": true,
+  "sourceInputsGenuinelyRead": true,
+  "nativeReadProbeChecks": 49,
+  "nativeReadNegativeChecks": 34,
+  "bridge": {
+    "qualificationSHA256": "cd7ab2cb5f867d7240d6ac68a276c146d0a0c312273b49906d06db59d8026364",
+    "originalFunctionCount": 17,
+    "helperFunctionCount": 9,
+    "nativeFunctionCount": 36,
+    "relationCount": 5
+  },
+  "kernelFinal": {
+    "parent": "helmut-meter-memorybudget-cfe0c24ece1cd3549274b307",
+    "memoryPeakBytes": 1024176128,
+    "memoryCurrentBytes": 391802880,
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "cpu": {
+      "usage_usec": 32271769,
+      "user_usec": 30583358,
+      "system_usec": 1688410,
+      "nice_usec": 0,
+      "nr_periods": 0,
+      "nr_throttled": 0,
+      "throttled_usec": 0,
+      "nr_bursts": 0,
+      "burst_usec": 0
+    },
+    "events": {
+      "populated": 0,
+      "frozen": 0
+    },
+    "populatedSubgroups": [],
+    "ioStatRawNumericOnly": "254:0 rbytes=0 wbytes=391954432 rios=0 wios=7200 dbytes=0 dios=0",
+    "fullLastProcessExitCovered": true,
+    "scope": "All descendants charged to dedicated kernel group; no RSS polling substitution",
+    "finalEvents": {
+      "populated": 0,
+      "frozen": 0
+    },
+    "finalPopulatedSubgroups": [],
+    "groupIdentity": {
+      "device": 24,
+      "inode": 2878
+    }
+  },
+  "allChildrenExited": true,
+  "childExits": {
+    "postgres": 0
+  },
+  "actualSourceNodeExit0AndBothEOF": true,
+  "sourcePreparationEvidencePin": {
+    "path": "/workspace/helmut-unit-diagnostic-native/8b21ca3f3ac6464c3dd706795403dd62/GENUINE_SOURCE_PREPARATION.SAFE.json",
+    "bytes": 4044,
+    "sha256": "056fb035ac41fdaedeaee9fc426f36e246b9a0d215ef2c527bfe589191e82d96"
+  },
+  "nativeEvidencePins": [
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/8b21ca3f3ac6464c3dd706795403dd62/RESULT.SAFE.json",
+      "bytes": 1867,
+      "sha256": "652b49a43973daebea12c9779957f2e34aca8a9916986c3c7fdfe95ddabad15d"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/8b21ca3f3ac6464c3dd706795403dd62/NATIVE_QUALIFICATION.SAFE.json",
+      "bytes": 847,
+      "sha256": "4ceeb6bbb95d01edfda66fe58c60e410fa72b05985f22f945d32715e9a4f1c9f"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/8b21ca3f3ac6464c3dd706795403dd62/NATIVE_READ_CLOSURE.SAFE.json",
+      "bytes": 9010,
+      "sha256": "042f8f9e613b1f8004b85f511eca276b65cb3a7b7b7bdc0c1edda1d386c7f7b9"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/8b21ca3f3ac6464c3dd706795403dd62/NATIVE_ORIGINAL_BRIDGE.SAFE.json",
+      "bytes": 424,
+      "sha256": "dcf3a6ed8b7a59070085482e20fc5a3d334f36201ad656b6dd033093f4f0d42b"
+    }
+  ],
+  "executionAuthorityInstalled": false,
+  "genuineSeedOrPositiveMotorWriteQualified": false,
+  "motorCalls": 0,
+  "unit60Qualified": false,
+  "singleUnitReserveQualified": false,
+  "full500Qualified": false,
+  "full500ReserveQualified": false
+}

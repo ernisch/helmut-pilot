@@ -1,0 +1,174 @@
+{
+  "admissionMarginBytes": 268435456,
+  "authRPCs": 0,
+  "automaticRetry": false,
+  "capDrop": "ALL",
+  "case": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-f41d3e2aaec42437a911e1f7",
+  "caseName": "layout-f41d3e2aaec42437a911e1f7",
+  "cpuLimit": null,
+  "database": "postgres",
+  "evidenceLimitBytes": 1048576,
+  "executorAdoptionPath": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/ROOT_LAYOUT_ADOPTION.PRIVATE.json",
+  "expected": {
+    "arrayLeafNativeBytes": 1032,
+    "contractLeafNativeBytes": 147,
+    "formulaNativeBytes": 2083,
+    "mergedNativeBytes": 2195,
+    "mergedPairs": 129,
+    "nativeFormulaDominates": false,
+    "pairCount": 64,
+    "stringLeafNativeBytes": 840,
+    "underestimationBytes": 112
+  },
+  "freshSyntheticDataDisposition": "KEEP unless separately exact reviewed disposable cleanup; all proof and hulls KEEP",
+  "freshSyntheticPGDATAOnly": true,
+  "full500": false,
+  "fullLifecycleCommonMemoryComparison": false,
+  "independentSourceReviewBeforeAdoptionRequired": true,
+  "initContainerName": "helmut-jsonb-layout-init-f41d3e2aaec42437a911e1f7",
+  "inputReportPin": {
+    "bytes": 12549,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/layout-proof/SOURCE_REVIEW.SAFE.json",
+    "sha256": "fd0ea027e30cc2acfd7079c3268ce7374bd378ffa45e2ea9f8c07b39cb3771dd"
+  },
+  "installedAuthSchema": false,
+  "maximumEachCommandOutputBytes": 524288,
+  "maximumPGLogBytes": 65536,
+  "maximumSQLQueries": 1,
+  "maximumSQLResultBytes": 4096,
+  "memoryMaxBytes": 1547997184,
+  "memoryQualificationBoundary": "Per-container1,547,997,184B cap/zero-swap and normal stops only; no shared high/max counters/lifecycle RAM comparison proof",
+  "memorySwapTotalBytes": 1547997184,
+  "minimumHostFloorBytes": 8589934592,
+  "network": "none",
+  "originalInputs": 0,
+  "originalQueryPin": {
+    "bytes": 3738,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/layout-proof/COUNTEREXAMPLE_LAYOUT.sql",
+    "sha256": "fda0b2d55ed212cfcb8d15434dec4670e543e7fbd2f7bc6a278bcfb0a3ad3e07"
+  },
+  "pgContainerName": "helmut-jsonb-layout-server-f41d3e2aaec42437a911e1f7",
+  "pidsLimit": 64,
+  "postgresJITSetting": "Observe actual default in receipt; no latency/RAM/JIT saving claim",
+  "production": false,
+  "projectionEnabled": false,
+  "providerCalls": 0,
+  "psqlWholeSeconds": 30,
+  "queryPin": {
+    "bytes": 4750,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_NATIVE_LAYOUT_QUERY.sql",
+    "sha256": "0cc98e082c154b0e6511eafe7b532b9fa2fe39c0bf2bef0b55a8e8c16f673cd3"
+  },
+  "ramSavingProof": false,
+  "readonlyRootfs": true,
+  "role": "layout_probe",
+  "rootAdoptionBeforeResourcesRequired": true,
+  "runtimeBindingsReadonlyOnly": true,
+  "schema": "helmut-cas-native-size-predeclared-intent/4",
+  "scope": "ONE_SYNTHETIC_READONLY_JSONB_LAYOUT_SELECT_ONLY",
+  "selectedControllerPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+    "bytes": 18568,
+    "sha256": "028a519a054849aa21bbfe7fd1ce2f35821d4b6cc5803d3ae6db37bc17b6e746"
+  },
+  "selectedPlanPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/PLAN.SAFE.json",
+    "bytes": 8998,
+    "sha256": "c0a2002288c9fb123695675281ad70caa5bb2a1f5b59e2be98fe542d809f167f"
+  },
+  "selectedPreparationPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/PREPARED.SAFE.json",
+    "bytes": 4351,
+    "sha256": "ff22284d8c3282fdd91291766f230e968e88eae0a2686c23302d948d2bfb673f"
+  },
+  "shutdownAdditionalSeconds": 30,
+  "sourceOrBankPGDATABindings": false,
+  "sqlLockTimeoutMilliseconds": 1000,
+  "sqlStatementTimeoutMilliseconds": 5000,
+  "status": "PREPARED_SECOND_AND_FINAL_ATTEMPT_NOT_STARTED",
+  "unusedControllerDisposition": {
+    "controllerPin": {
+      "bytes": 17001,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/root-native-layout.py",
+      "sha256": "02600eecdf2736b048113bf1f161d0202a75ddb91a7ebf96b04cd0d836dc0ac7"
+    },
+    "preparedPin": {
+      "bytes": 253243,
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_NATIVE_PREPARED.SAFE.json",
+      "sha256": "5986668766c051036def798c59bd33d016d3fb9a96d2ea97eddf7ebd0cb7f8c8"
+    },
+    "reason": "Separate source-only preparations overlapped; select only L released740f actor for its bounded streaming capture and all-created-container failure cleanup. Preserve both unused sources/proofs.",
+    "resourceStarts": 0,
+    "status": "SUPERSEDED_BEFORE_START",
+    "testExecutions": 0
+  },
+  "upstreamSourceBindingPin": {
+    "bytes": 2657,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/upstream/SOURCE_BINDING.SAFE.json",
+    "sha256": "f24902ad8122f52184e870100f5d822dd7c6ebfd4f80b86583d950561c6a0531"
+  },
+  "user": "1000:1000",
+  "wholeCaseSeconds": 120,
+  "priorFailedAttempt": {
+    "case": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555",
+    "status": "FAIL_KEEP_UNCHANGED",
+    "intentPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_LAYOUT_INTENT_V2.SAFE.json",
+      "bytes": 5193,
+      "sha256": "470af33178b4ddde1edddd87ed0cad968e76e119f44bbe23c29e93b6e68c1a4c"
+    },
+    "actualExecutionPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555/ACTUAL_EXECUTION.SAFE.json",
+      "bytes": 1872,
+      "sha256": "71e3013cca3dd47dbe8c41285bcb4ee8e73cbea37f3ff630dd5660d0daae9176"
+    },
+    "independentActualReviewPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/independent-review/FIRST_ATTEMPT_ACTUAL_REVIEW.SAFE.json",
+      "bytes": 16026,
+      "sha256": "58df056d411a8a3742dcc67b97286337164e409cbadbe3624c77a0ea6068e0e7"
+    },
+    "originalClientStderrAvailable": false,
+    "retrospectiveExactClientDiagnosticClaimed": false,
+    "priorMetadataLimitExceeded": true,
+    "resourcesAndEvidenceDisposition": "KEEP"
+  },
+  "methodAttemptOrdinal": 2,
+  "maximumMethodAttempts": 2,
+  "furtherSameMethodRetryAllowed": false,
+  "reasonForSingleCorrectedAttempt": "Official libpq source proves empty PGSERVICE is not absent and nonregular PGPASSFILE emits a warning. Omit both assignments after fixed image Env=NULL readback and fresh HOME guard. Preserve capped command stdout/stderr, including successful-command warnings, without changing SQL or acceptance policy.",
+  "clientEnvironmentReadbackPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/HELPER_IMAGE_V2_ENV_ABSENCE.SAFE.json",
+    "bytes": 468,
+    "sha256": "b160d2ba5c2179a00d0730fc81be94bc6b15479c9bc692697c78ad52b1a7a87f"
+  },
+  "clientCauseReportPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/SOURCE_CAUSE.SAFE.json",
+    "bytes": 4420,
+    "sha256": "23befd83ad73f551b72d1a5f1d85c7050ee38e80b88ad745d1ea6a8b36fcff2f"
+  },
+  "sourceDeltaPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/SOURCE_DELTA.diff",
+    "bytes": 3896,
+    "sha256": "dfcfffc19109204f82624f23e54fb56257a21fbf67125d1cbac0dadbe2a4788f"
+  },
+  "caseEvidenceLimitIncludesRootPostRunCaseReceipts": true,
+  "finalContainerReadbackPolicy": "Compact exact IDs/states and creation-inspect pins; no duplicate full mount inspection in case. All case metadata remains capped at1MiB.",
+  "commandCaptureLimits": {
+    "ordinaryBytes": 65536,
+    "inspectBytes": 524288,
+    "solePsqlCombinedBytes": 4096
+  },
+  "prestartMetadataCorrection": {
+    "supersededIntentPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_LAYOUT_INTENT_V3.SAFE.json",
+      "bytes": 7577,
+      "sha256": "6e63c0b634b22fcafabada1bb779dfc449374bf5b48125d60f876c7febf9b7d7"
+    },
+    "supersededIntentNativeStarts": 0,
+    "supersededIntentAdoptions": 0,
+    "reason": "Inherited global131072B description contradicted the already-existing512KiB inspect capture needed for549 bindings. Declare exact unchanged actor limits before the only second attempt. Prior case remains FAIL; this correction creates no third native attempt.",
+    "actualActorCapsChanged": false,
+    "caseEvidenceCapChanged": false,
+    "queryChanged": false
+  }
+}

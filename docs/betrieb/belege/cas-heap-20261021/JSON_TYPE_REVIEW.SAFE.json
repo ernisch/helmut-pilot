@@ -1,0 +1,92 @@
+{
+  "AST": 0,
+  "OIDValidation": "Keep original JSON strings. Canonical positive decimal1..10digits<=4294967295; only PUBLIC ACL grantee additionally allows exact string0. Reject numeric/bool/float/signed/leadingzero/nondecimal/overflow aliases. No receipt normalization.",
+  "SQL": 0,
+  "actualAccepted": false,
+  "canonicalOIDStringFields": [
+    "binding.databaseOID",
+    "role.oid",
+    "memberships[].oid",
+    "memberships[].roleid",
+    "memberships[].member",
+    "memberships[].grantor",
+    "objects.view.oid",
+    "objects.view.schemaOID",
+    "objects.view.schemaOwnerOID",
+    "objects.view.ownerOID",
+    "objects.view.columns[].typeOID",
+    "objects.function.oid",
+    "objects.function.schemaOID",
+    "objects.function.schemaOwnerOID",
+    "objects.function.ownerOID",
+    "objects.function.languageOID",
+    "objects.function.returnType",
+    "objects.*.aclExpanded[].grantor",
+    "objects.*.aclExpanded[].grantee"
+  ],
+  "catalogTypeSourcePin": {
+    "bytes": 39283,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/pg_type.dat",
+    "sha256": "1129eecb660ba4b84b8ecd44dd94b1668be22e349bd81fb07c2c771cd0314606"
+  },
+  "consumerIntegrationFinding": "Worker V1 demanded integers for genuine uncasted OID strings; source correction required before any native start. Common V1 also demanded missing LOG key exactSuccessfulCAS whereas released C uses successfulCASCount=4. C SQL/contract bytes remain immutable.",
+  "derivation": [
+    "pg_type.dat87..91 defines builtin oid OID26 and oidout.",
+    "jsonfuncs.c5985..6000 numeric category is an explicit int2/int4/int8/float4/float8/numeric switch, excluding oid26 regardless of typcategory N.",
+    "jsonfuncs.c6027..6071 assigns other builtin scalar types JSONTYPE_OTHER and their output function.",
+    "jsonb.c1125..1165 passes original value argument type to add_jsonb,1016..1037 calls json_categorize_type; datum_to_jsonb_internal default813..819 emits jbvString using oidout.",
+    "Therefore C unchanged jsonb_build_object uncasted OID arguments produce canonical decimal JSON strings, not numbers. This is source-derived, not an executed query result."
+  ],
+  "explicitTextFields": "Function argumentTypes/allArgumentTypes/argumentModes/argumentNames/config, rawACL and role.config/validUntil are explicitly ::text and retain exact strings or genuine NULL. Source hashes and definitions remain unchanged.",
+  "fixedOIDStringValues": {
+    "binding.databaseOID": "18405",
+    "objects.*.schemaOID": "11",
+    "objects.function.oid": "2282",
+    "objects.function.returnType": "2249",
+    "objects.view.columns[].typeOID": [
+      "25",
+      "25",
+      "25",
+      "23",
+      "20",
+      "20",
+      "20",
+      "20",
+      "20"
+    ]
+  },
+  "nativeActions": 0,
+  "nativeJSONIntegerFields": [
+    "objects.view.columns[].number",
+    "objects.view.columns[].typeModifier",
+    "objects.function.argumentCount",
+    "role.connectionLimit",
+    "objects.*.aclExpanded[].ordinal",
+    "readbackBackendPID",
+    "namespace.backendPID",
+    "namespace.qualified",
+    "CAS.backendPID",
+    "heap.contextCount",
+    "heap.totalBytes",
+    "heap.usedBytes",
+    "heap.freeBytes",
+    "heap.outputTextBytes(after)",
+    "heap.outputValueBytes(after)"
+  ],
+  "officialCommit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+  "reviewRecorderPin": {
+    "bytes": 5004,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/record_json_type_review.py",
+    "sha256": "d8fb4a494628900a4d69d1e7c5019602cc5a58d98760775842b9e51d611b4132"
+  },
+  "schema": "helmut-cas-heap-independent-pg17-json-type-review/1",
+  "sourceBindingPin": {
+    "bytes": 1094,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/JSON_SOURCE_BINDING.SAFE.json",
+    "sha256": "dc72276991585ea1fefe0d110bc18f3b34a1edbb0c4a82f20f51f0b5dc18082b"
+  },
+  "sourceExecution": false,
+  "status": "OFFICIAL_SOURCE_TYPES_VERIFIED_RUNTIME_PENDING",
+  "subjectImports": 0,
+  "tests": 0
+}

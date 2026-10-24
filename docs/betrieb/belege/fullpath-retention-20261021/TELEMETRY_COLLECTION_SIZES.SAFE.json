@@ -1,0 +1,182 @@
+{
+  "atUTC": "2026-10-21T10:53:07.374354+00:00",
+  "authorActions": {
+    "newHTTPDBProfilesOrOriginalPayloadReads": 0,
+    "sourceProductChanges": 0,
+    "testsNativeSQLDockerProcAST": 0,
+    "writes": "Only new capacity-review/TELEMETRY_COLLECTION_SIZES.SAFE.json"
+  },
+  "canonicalRootLogicalJSONBytes": 19214980,
+  "definitions": {
+    "counts": "Parsed persisted JSON containers/scalars/object fields; object identity only inside the parsed audit document",
+    "encoding": "Compact Python json.dumps ensure_ascii=False,separators=comma/colon, UTF8 byte length; numeric spelling can differ from original Node JSON",
+    "not": "Not original wire-file substring bytes, V8 heap bytes, backing-store bytes, RSS, cgroup peak or attribution",
+    "retentionHypothesis": "UNPROVEN; current storage diagnostics returns structuredClone(metrics), structuredClone(checkpoints), no implicit closure inference",
+    "transientBackingStores": "Not observable from JSON; ArrayBuffer may serialize to {}, typed arrays to numeric-key objects, Buffer to type/data JSON"
+  },
+  "exactCollectionSizes": [
+    {
+      "compactLogicalJSONBytes": 13408116,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 83483,
+      "jsonPointer": "/requests",
+      "matchesExistingEndAuditLogicalBytes": true
+    },
+    {
+      "compactLogicalJSONBytes": 3183910,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 24495,
+      "jsonPointer": "/events",
+      "matchesExistingEndAuditLogicalBytes": true
+    },
+    {
+      "compactLogicalJSONBytes": 1339149,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 4000,
+      "jsonPointer": "/mutations",
+      "matchesExistingEndAuditLogicalBytes": true
+    },
+    {
+      "compactLogicalJSONBytes": 589151,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 500,
+      "jsonPointer": "/scopes"
+    },
+    {
+      "compactLogicalJSONBytes": 189894,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 500,
+      "jsonPointer": "/responses",
+      "matchesExistingEndAuditLogicalBytes": true
+    },
+    {
+      "compactLogicalJSONBytes": 371762,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 1000,
+      "jsonPointer": "/providerPhases",
+      "matchesExistingEndAuditLogicalBytes": true
+    },
+    {
+      "compactLogicalJSONBytes": 398,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 3,
+      "jsonPointer": "/validations"
+    },
+    {
+      "compactLogicalJSONBytes": 319,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 2,
+      "jsonPointer": "/predecessors"
+    },
+    {
+      "compactLogicalJSONBytes": 98091,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 500,
+      "jsonPointer": "/units"
+    },
+    {
+      "compactLogicalJSONBytes": 393,
+      "elementTypes": [
+        "dict"
+      ],
+      "entries": 1,
+      "jsonPointer": "/errors"
+    },
+    {
+      "aggregation": "JSONarray of the500 selected nested values; includes array brackets/commas",
+      "compactLogicalJSONBytes": 509829,
+      "jsonPointerPattern": "/scopes/*/diagnostics",
+      "matchesExistingEndAuditLogicalBytes": true,
+      "overlap": "Nested diagnostics includes metrics/checkpoints; all three are inside /scopes. Do not add to /scopes or to eachother as disjoint memory.",
+      "values": 500
+    },
+    {
+      "aggregation": "JSONarray of the500 selected nested values; includes array brackets/commas",
+      "compactLogicalJSONBytes": 42329,
+      "jsonPointerPattern": "/scopes/*/diagnostics/metrics",
+      "matchesExistingEndAuditLogicalBytes": true,
+      "overlap": "Nested diagnostics includes metrics/checkpoints; all three are inside /scopes. Do not add to /scopes or to eachother as disjoint memory.",
+      "values": 500
+    },
+    {
+      "aggregation": "JSONarray of the500 selected nested values; includes array brackets/commas",
+      "compactLogicalJSONBytes": 454501,
+      "jsonPointerPattern": "/scopes/*/diagnostics/checkpoints",
+      "matchesExistingEndAuditLogicalBytes": true,
+      "overlap": "Nested diagnostics includes metrics/checkpoints; all three are inside /scopes. Do not add to /scopes or to eachother as disjoint memory.",
+      "values": 500
+    }
+  ],
+  "existingEndAuditPin": {
+    "bytes": 10149,
+    "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/full500-v11-independent-end-audit/LOGICAL_SIZE_SUMMARY.SAFE.json",
+    "sha256": "e172a731a1f91dc4407ff44b1d4ff859375a12cb7524f0d5482e09140967cf9b"
+  },
+  "existingMemoryMeasurementBoundary": {
+    "basis": "The existing LOGICAL_SIZE_SUMMARY explicitly reports logicalJSONstructure only, notV8/RSS; bounded audit-directory filenames reveal no collectorheapmeasurement. Existing CURVE and processRSS records are fullpath observations, not a literalcollector retain/spool comparator. No existing memoryexperiment was repeated.",
+    "endAuditMemoryProbeFound": false,
+    "rootIOAuxiliarySamples": 4,
+    "rootIOSamplesAreNotRESTRequestCount": true,
+    "rootIOScalarExtractPin": {
+      "bytes": 4802,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/capacity-review/V11_RUNTIME_SCALAR_EXTRACT.SAFE.json",
+      "sha256": "934a4846e0399ef7729da2fa7abca82d2fd184bf0e024f9a8a42db6ab1c3032c"
+    }
+  },
+  "rawPersistedPrettyRuntimeFileBytes": 27245555,
+  "replayMethodBoundary": {
+    "hypothesisOnly": "Long-lived observe-app request/event/mutation/scope arrays are a source-supported growingretentioncandidate absentfromshortAuthcomponent. They are not an acceptedcauseof+264MBapplicationanon or a500MBsaving.",
+    "mustNotDo": [
+      "Append reparsedfinalrows into an inventedlookalikecollector and call it engineevidence.",
+      "Load onefullparsed27MBsource tree in botharms thenpushreferences/copies in onlyonearm withoutincludingthatdistinct baseline.",
+      "Infer RAM fromcompactJSON bytes or claim17MBserialized data guarantees materialRSSreduction.",
+      "UsecurrentFIFOspool while changing actualmutable-row finalization or finalmidloopconsumer semantics."
+    ],
+    "potentialNarrowQuestion": "AfterL/E qualify the literalreal retainingcollector producer/consumer lifecycle, one separatelyauthorized noHTTP/DB/profile replay may compare unchangedmetadata preservation and completecommon-nativeRAM with a losslessincrementalspool. No suchsourcepreparation, experiment, start orgo isperformed/authorized bythisextract.",
+    "retainedArtifactDoesNotContain": "OriginalV8heap/GC/retaineridentities and complete exactproducerobjectcreate/update/alias/consumerinterleaving schedule. begin/header/bodydone/end timestamps are usefulpartialfacts, not bythemselves a faithful lifetimereplay."
+  },
+  "runtimeSourcePin": {
+    "bytes": 27245555,
+    "path": "/workspace/helmut-parallel-20261015/wave20-resource-integration/attempt-3b3bf56650bc/native-end-preparation/run-combined500-synthetik500-resources20-3b3bf56650bc/RUNTIME_FAILURE.SAFE.json",
+    "sha256": "df8f2a7ccea12d346d72f6b76472e697fb406f93b3ecb7b8bb8526f1f115698f"
+  },
+  "schema": "helmut-fullpath-retained-telemetry-logical-size-extract/1",
+  "scopeDiagnosticsDuplication": {
+    "aggregateDiagnosticsBytesIncludingArray": 509829,
+    "canonicalMultiplicitySummary": {
+      "distinctValues": 500,
+      "duplicateValueClasses": 0,
+      "maximumMultiplicity": 1,
+      "singletonValues": 500
+    },
+    "diagnosticEntries": 500,
+    "diagnosticsFractionOfCompactWholeRoot": 0.026532892566112482,
+    "diagnosticsFractionOfRawPrettyFile": 0.01871237344954067,
+    "dominates27MBFailureArtifact": false,
+    "exactCanonicalValueDistinctCount": 500,
+    "parsedAuditValueIdentityNotOriginalRuntimeObjectIdentity": true,
+    "scopeEntries": 500,
+    "scopesFractionOfCompactWholeRoot": 0.030661025928728523,
+    "warning": "Equal parsed canonical values do not prove originalV8 internedstrings/sharedreferences, retainedclosure size or actualmemoryavoidableby deduplication. The logicaldiagnosticcopies are small relative to requests/events; no V8saving is derived.",
+    "wholeScopesBytes": 589151
+  },
+  "status": "ACTUAL_RETAINED_METADATA_QUANTIFIED_NOT_RAM_OR_PEAK_ATTRIBUTION"
+}

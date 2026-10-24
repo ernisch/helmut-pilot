@@ -1,0 +1,1069 @@
+{
+  "actualInspectMountNormalization": false,
+  "allDockerRequestsGETOnly": true,
+  "allNamespacesXattrCompletenessClaimed": false,
+  "allSmallProofPinsFreshlyVerified": [
+    {
+      "bytes": 77656,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/old-two-backup-actual-review-20261020/OLD_TWO_BACKUPS_INDEPENDENT_ACTUAL_REVIEW.SAFE.json",
+      "sha256": "051ac8e6cb913d03ebf8752b65e9a7cea27bba51ff1f2d00594cf6a4cb268cef"
+    },
+    {
+      "bytes": 50558,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/retire_old_two.py",
+      "sha256": "430a610aff0b4559450836cee615413de6a1234670910acfb9741befd3794c9e"
+    },
+    {
+      "bytes": 12712,
+      "path": "/tmp/helmut-old-two-root-run-once-v2.py",
+      "sha256": "41e5697fda098b122029721b0b05e498bd61a7665385fbeeb1279912c609090b"
+    },
+    {
+      "bytes": 6876,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/PLAN.SAFE.json",
+      "sha256": "4ac3ccfde65e66b8d37ce29f99e83fc307f2898d0d927b0a06082c0bc352bd92"
+    },
+    {
+      "bytes": 5373,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/RUNTIME_BINDINGS.SAFE.json",
+      "sha256": "bc6f5e15d090395584e86621b315b5e489497a80831f7ae6d4a682d3a9919728"
+    },
+    {
+      "bytes": 8208,
+      "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/old-two-retirer-v3-independent-review-20261020/OLD_TWO_RETIRER_V3_LITERAL_MOUNT_DELTA_SOURCE_REVIEW.SAFE.json",
+      "sha256": "491681ff503c48287d7ad640cb32afacd596ef67b54db33ae9f0bf07f0198372"
+    },
+    {
+      "bytes": 2592,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ACTUAL_RETIRE.SAFE.json",
+      "sha256": "18b84069c000518dd61acb60f7a6f78f37875f7048bad4d4d571446e5ffde4d6"
+    },
+    {
+      "bytes": 127211,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/CREATED_INSPECT.PRIVATE.json",
+      "sha256": "e3d3f166e82ed948e4979c020b58751db9921f8de55876abb876770243b20a12"
+    },
+    {
+      "bytes": 127229,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/STOPPED_INSPECT.PRIVATE.json",
+      "sha256": "e4d4fbc46e6142ea13ec204099032dc11a8e5f387967db1b848aa4c08aa4d164"
+    },
+    {
+      "bytes": 2877,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ACTUAL_CHECK.SAFE.json",
+      "sha256": "d2527c3511994f47acd0376ff40107db15df76be68385855c4bee623957d0ff0"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ACTUAL_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 635173,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ACTUAL_STDOUT.PRIVATE.bin",
+      "sha256": "6f3312b84cfa8d41e0d59eb29bd2f94dcd6f17f807daf7a2792077f3fa5c2e46"
+    },
+    {
+      "bytes": 173664,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/CONTEXT.PRIVATE.json",
+      "sha256": "bb6838dd33b1a651cbec700498c31fe7a09944127e824c47e7e5d8f1a9a05d2c"
+    },
+    {
+      "bytes": 2458,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ROOT_FRESH_ADOPTION.SAFE.json",
+      "sha256": "7ec346d282fc4fff43da43c5ac574440082f470aac323f8a0b1e0134795a18f8"
+    },
+    {
+      "bytes": 762,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ROOT_START_ONCE.PRIVATE.json",
+      "sha256": "98c31661f50829c8a634106edbc1f8202d897ccc8d29eb4324e683beba5d0775"
+    },
+    {
+      "bytes": 33444,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/foundation/RUNTIME_QUALIFICATION_FOR_RETIRER_V3_BYTE_EXACT_BINDING.SAFE.json",
+      "sha256": "dff9e1807e683727c2acad22b29dd46b2a2661e9f3c7f1aba7f3bfeea54fc122"
+    },
+    {
+      "bytes": 8208,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/foundation/RETIRER_V3_INDEPENDENT_SOURCE_REVIEW_BYTE_EXACT.SAFE.json",
+      "sha256": "491681ff503c48287d7ad640cb32afacd596ef67b54db33ae9f0bf07f0198372"
+    },
+    {
+      "bytes": 6473,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ROOT_FRESH_CLOSURE.SAFE.json",
+      "sha256": "efa2a627272f9b2984db3155e52c273ffa3697afcce238ffbb0b9bed838adfa0"
+    },
+    {
+      "bytes": 25467,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/HOST_USE_INSPECTION.PRIVATE.json",
+      "sha256": "6f1cbb496d771f905dd735c89c3bfe113b045d387e458de98ffb758ac4b196d4"
+    },
+    {
+      "bytes": 3510769,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ALL_DOCKER_INSPECT.PRIVATE.json",
+      "sha256": "d7450fcff0ca30bded38acf792866863e1904526c1a53581c19e1ad679023e8f"
+    },
+    {
+      "bytes": 120377,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/CREATED_INSPECT.PRIVATE.json",
+      "sha256": "671600a3e01477c4b8628c58a2ee4ce50b54b3da6913135db8a8fde0dd801823"
+    },
+    {
+      "bytes": 120395,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/STOPPED_INSPECT.PRIVATE.json",
+      "sha256": "74260e2b596b611856597ff2e127210105bbbe428a0d1133fc2fae5c69f4dcf1"
+    },
+    {
+      "bytes": 4486,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/ROOT_ADOPT_RUN_0.SAFE.json",
+      "sha256": "198d359040125566d2754079016de1ec147e34201e92c3dc5abbcddf24f79a52"
+    },
+    {
+      "bytes": 4425,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/ROOT_ADOPT_RUN_1.SAFE.json",
+      "sha256": "cf1fdca5e02476290286f38157b363767ffdf76b285f765635a6d5ca6968278b"
+    },
+    {
+      "bytes": 45331,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/ROOT_ADOPT_RUN_2.SAFE.json",
+      "sha256": "47758e7d5497c1a040c1067bff54fca140c3983fc0c5168d47936ed356088080"
+    },
+    {
+      "bytes": 4507,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/ROOT_ADOPT_RUN_3.SAFE.json",
+      "sha256": "2e6ea4dce67aaeb4cf12e91461bc52f458e1b519cd2bccf0063b72b1aad9319a"
+    },
+    {
+      "bytes": 4446,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/ROOT_ADOPT_RUN_4.SAFE.json",
+      "sha256": "ecd5f27e3a47f114e2d075138bcb54a2e15ce4aaf2aa4bdd281a7ee9232eacae"
+    },
+    {
+      "bytes": 45352,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/ROOT_ADOPT_RUN_5.SAFE.json",
+      "sha256": "6f36532c2365c83f5de64335cd9812a916c2adfdc0fe02d1c836f8037723cd4f"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-0-bd6b6fe532e5fb7047b72448/COMPARE_STDOUT.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-0-bd6b6fe532e5fb7047b72448/CONSUMER_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 13288,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-0-bd6b6fe532e5fb7047b72448/CONTEXT.SAFE.json",
+      "sha256": "4446b06a993b69b11eb772cc9a1e6e4c207d1bf3a5ab1b8067eefcf2846f6913"
+    },
+    {
+      "bytes": 1030,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-0-bd6b6fe532e5fb7047b72448/CREATED.SAFE.json",
+      "sha256": "c0104e74a35e940e9670c1693965ff6fdc0a37d16db89681d45284bc3f802cfe"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-0-bd6b6fe532e5fb7047b72448/PRODUCER_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 3814,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-0-bd6b6fe532e5fb7047b72448/RESULT.SAFE.json",
+      "sha256": "f9085cf2d032e8b2c80c5e24d48477b7b3dc3dcfef76c0cf617cefbe534e75f8"
+    },
+    {
+      "bytes": 1224,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-0-bd6b6fe532e5fb7047b72448/SOURCE_AFTER_BINDING.SAFE.json",
+      "sha256": "119f74de0b4d904ada0b261bc696050a4c02fbf7c39290301baa265db15315d9"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-1-07ef138b9aa656d06f0e39bd/COMPARE_STDOUT.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-1-07ef138b9aa656d06f0e39bd/CONSUMER_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 13816,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-1-07ef138b9aa656d06f0e39bd/CONTEXT.SAFE.json",
+      "sha256": "cdb5fdee068dbf7b90efb4b171d75121c320a83a0953a3dc39721beaefc43e22"
+    },
+    {
+      "bytes": 1030,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-1-07ef138b9aa656d06f0e39bd/CREATED.SAFE.json",
+      "sha256": "e2c3fc3c9590180ad3e55d1d09e1d6be58db3691a0013fdf2e4825a1b3704f12"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-1-07ef138b9aa656d06f0e39bd/PRODUCER_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 3294,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-1-07ef138b9aa656d06f0e39bd/RESULT.SAFE.json",
+      "sha256": "3652e5a2a03e53b632d5456aa6e2d517c164b2e38bfe71fca3302d304642ebd1"
+    },
+    {
+      "bytes": 1224,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-1-07ef138b9aa656d06f0e39bd/SOURCE_AFTER_BINDING.SAFE.json",
+      "sha256": "a511cf36a1827c539ee29bb8c96f5baf1983d0e7bd03d338ce212fe5456c505c"
+    },
+    {
+      "bytes": 54876,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-2-9635641e9cb502f30c34d9a9/CONTEXT.SAFE.json",
+      "sha256": "a762c42a63f1344eb7a863af23fefa784c16fa53bb2f672a731f80ce6543bff6"
+    },
+    {
+      "bytes": 1032,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-2-9635641e9cb502f30c34d9a9/CREATED.SAFE.json",
+      "sha256": "2a1aa8ff32288911acd295e838a8a5701742adc5483836ecffc74153fdc49418"
+    },
+    {
+      "bytes": 141864,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-2-9635641e9cb502f30c34d9a9/GNU_SHA256.stdout.PRIVATE.bin",
+      "sha256": "8328e5bb92d918f7751277cd6f00917ba91cfdcc2234d5bd1630004312eacbe1"
+    },
+    {
+      "bytes": 1930,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-2-9635641e9cb502f30c34d9a9/RESULT.SAFE.json",
+      "sha256": "e00a4a264de620b596a30fff0ad49833e707af7480ae4cb7add0354fe10a35c4"
+    },
+    {
+      "bytes": 1224,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-2-9635641e9cb502f30c34d9a9/SOURCE_AFTER_BINDING.SAFE.json",
+      "sha256": "9e16ad458f36f9d16aff2c2596786bca59b1482905e56b2d6cd66bf727426437"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-3-d6d49f8a6861236f420dee0a/COMPARE_STDOUT.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-3-d6d49f8a6861236f420dee0a/CONSUMER_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 13356,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-3-d6d49f8a6861236f420dee0a/CONTEXT.SAFE.json",
+      "sha256": "23b57dc19fee4a941f7a4d485175c28de5a6d8748c72cfed6f9d25fc23368abf"
+    },
+    {
+      "bytes": 1030,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-3-d6d49f8a6861236f420dee0a/CREATED.SAFE.json",
+      "sha256": "6baff7e7fd23dae1aa639d7a765dfe8f33b8744d03f4b11a196abfa84408704b"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-3-d6d49f8a6861236f420dee0a/PRODUCER_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 3817,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-3-d6d49f8a6861236f420dee0a/RESULT.SAFE.json",
+      "sha256": "d9f8f274c4566e691f82f4975eecef5e889fbd1a335cab1166ab0012d47bee75"
+    },
+    {
+      "bytes": 1224,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-3-d6d49f8a6861236f420dee0a/SOURCE_AFTER_BINDING.SAFE.json",
+      "sha256": "3e5cbdea5fb3d1f7026fdca8d22d244e7693ef73ea54cd5d8bd8015e90b14cb7"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-4-816ed4fb6c0b902d2d2e318b/COMPARE_STDOUT.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-4-816ed4fb6c0b902d2d2e318b/CONSUMER_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 13885,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-4-816ed4fb6c0b902d2d2e318b/CONTEXT.SAFE.json",
+      "sha256": "1b38218d2edef2477c7a2921840fbc6ed80a4a690be9014d8ab6af5c1e4f9162"
+    },
+    {
+      "bytes": 1030,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-4-816ed4fb6c0b902d2d2e318b/CREATED.SAFE.json",
+      "sha256": "efa11238f7d6d6e57fd1301ca6afc8a55b9e8170ac2fd99a7848cc10907653f4"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-4-816ed4fb6c0b902d2d2e318b/PRODUCER_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 3295,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-4-816ed4fb6c0b902d2d2e318b/RESULT.SAFE.json",
+      "sha256": "11d494ffb6178e6c482f7015e02430e7c321257268927d71f25c818d6cf61e03"
+    },
+    {
+      "bytes": 1224,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-4-816ed4fb6c0b902d2d2e318b/SOURCE_AFTER_BINDING.SAFE.json",
+      "sha256": "73edef63a54c58e4530e6f83edffeac252ce7bd769b6d360383656bc1b393d9b"
+    },
+    {
+      "bytes": 54945,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-5-418f87dcfe69adedf7d0d738/CONTEXT.SAFE.json",
+      "sha256": "111fc41495eb687259d303d73b9034a297b3a2c14c7b0b752e30c141c930cc6e"
+    },
+    {
+      "bytes": 1032,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-5-418f87dcfe69adedf7d0d738/CREATED.SAFE.json",
+      "sha256": "e23c5d6b9a5f63c4f47e7dc99039f31b08d116eeb9c2efdfc543ff7f8b377cc6"
+    },
+    {
+      "bytes": 141864,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-5-418f87dcfe69adedf7d0d738/GNU_SHA256.stdout.PRIVATE.bin",
+      "sha256": "0b0e9028aa83d23234a0ebab4f22eb5a5da2bccbe1b4fdb0bdefb3e8ab8e866e"
+    },
+    {
+      "bytes": 1931,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-5-418f87dcfe69adedf7d0d738/RESULT.SAFE.json",
+      "sha256": "4d95ad3f0900ca2c71084361aab38b5c2408ae89479ed9b83ef8c5ddf6e92125"
+    },
+    {
+      "bytes": 1224,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/action-5-418f87dcfe69adedf7d0d738/SOURCE_AFTER_BINDING.SAFE.json",
+      "sha256": "54db3255717b11fc0af257be01eacee3ceeea742f80f469ed45d5785bcd86736"
+    },
+    {
+      "bytes": 4892,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/source-after-metadata/ROOT_ACTUAL_METADATA.SAFE.json",
+      "sha256": "99edb82912a78384b4b2566a5cf49c0185ef192fd78557e977722b890170a199"
+    },
+    {
+      "bytes": 1848394,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/source-after-metadata/START.stdout.PRIVATE.bin",
+      "sha256": "59797d2183ea9b4aced6cd781133afc0646973a16ce7ee48888139c2dafa20f5"
+    },
+    {
+      "bytes": 3202,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-privileged-xattr-read-preparation/ROOT_ACTUAL_METADATA.SAFE.json",
+      "sha256": "56996233a3956b891c53bcaf553d715c6ee537cf8c2a56fac720ac4aea611eeb"
+    },
+    {
+      "bytes": 1866337,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-privileged-xattr-read-preparation/ROOT_START_STDOUT.PRIVATE.json",
+      "sha256": "98de12ee40d4860d51b6633b8e4f3fda2fda723f348732b43e4f528ad7761c22"
+    },
+    {
+      "bytes": 1848394,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-pgdata-rootstat-helper-preparation/stage2-metadata-inventory-preparation/ROOT_START_STDOUT.PRIVATE.json",
+      "sha256": "859bd77478d6165fdc8db91f0695b87cd2e676f38c2152d58ba4270d8e385c26"
+    },
+    {
+      "bytes": 30358,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/ACTUAL_RUNTIME.SAFE.json",
+      "sha256": "ace481ac1bc2e5a3d512663d9662fc26cddec64d87896144d189b36fb76270f8"
+    },
+    {
+      "bytes": 8516,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/CREATE.SAFE.json",
+      "sha256": "80168ba24934e5877e38a8b68b487af1b9156f934c86001e0146cfbd6ba40e28"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/CREATE.stderr.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 65,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/CREATE.stdout.PRIVATE.bin",
+      "sha256": "3606e550e69cce9613bb290cfa2585d57a54d7fd2e891d2381b4d3042c39e9d8"
+    },
+    {
+      "bytes": 8800,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/CREATED.SAFE.json",
+      "sha256": "6ed48933025459b96b8b092a59ecdcf4c0cbd4d0d7df1c17464596cd06fe6428"
+    },
+    {
+      "bytes": 1018,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/CREATED_INSPECT.SAFE.json",
+      "sha256": "7d2d70ec92ec17b6eda5dd277f20869096736ee42cab888013b38aebadb50091"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/CREATED_INSPECT.stderr.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 27485,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/CREATED_INSPECT.stdout.PRIVATE.bin",
+      "sha256": "e68fadcd3a6c1d30bcf8c561a8a996f112cd6e38c96aedfe99d0f0cd7b2af004"
+    },
+    {
+      "bytes": 8270,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/CREATE_ONCE.SAFE.json",
+      "sha256": "6e410abd67482ad378f8566e99d7a021b29e88fe2342c1db899bc6aea6ed82ba"
+    },
+    {
+      "bytes": 1246,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/EXPECTED.SAFE.json",
+      "sha256": "3cbddae77875230438e964b4035d3f769f678ac394595eb4a906f8fe67d5b131"
+    },
+    {
+      "bytes": 1032,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/FRESH_PRESTART_INSPECT.SAFE.json",
+      "sha256": "ce726d8b02fc9c3b2d5a69ab23a098a455f0bf9479f8f4288da8d2ce7397b676"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/FRESH_PRESTART_INSPECT.stderr.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 27485,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/FRESH_PRESTART_INSPECT.stdout.PRIVATE.bin",
+      "sha256": "928a6abe7e2066f5d3b557d5d370b4453a25be8f85daca91009fb81b9565abc2"
+    },
+    {
+      "bytes": 45863,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/HOST_BYTE_BINDINGS.SAFE.json",
+      "sha256": "ce7aa3f4811ae9b50d24402f10013277265ba705f338f85e12a1874534b26b4e"
+    },
+    {
+      "bytes": 1097,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/IMAGE_ENV.SAFE.json",
+      "sha256": "afd9393eb3d031012c9d0ce0fff2e4ad8fea292971a0037fce58fac230cef7d0"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/IMAGE_ENV.stderr.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 92,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/IMAGE_ENV.stdout.PRIVATE.bin",
+      "sha256": "49ce243ad1e82865b01bc28e3914c6db1cd9d1393f3abfca4e17567ea2540339"
+    },
+    {
+      "bytes": 1012,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/PROBE.SAFE.json",
+      "sha256": "80eb771f45c131821138447ff4ad7fa92b9c27d8a1eabde86691a99b0f93c7ce"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/PROBE.stderr.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 65551,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/PROBE.stdout.PRIVATE.bin",
+      "sha256": "1cc246379601bdbc230b4e53f8c490b2ff57498fb8c2a43cf295bb017a064914"
+    },
+    {
+      "bytes": 17770,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/ROOT_RUNTIME_RUNNER.PRIVATE.py",
+      "sha256": "f34d17ff3b970224788cdd112db05b807a2c8c4bbcce60e278f257489fc8f533"
+    },
+    {
+      "bytes": 1052,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/ROOT_START_ADOPTION.SAFE.json",
+      "sha256": "7dd8710c68b6dca77982e6fe289bf425e1f867fcf91937cb11898ca8ee833166"
+    },
+    {
+      "bytes": 5373,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/RUNTIME_BINDINGS.SAFE.json",
+      "sha256": "bc6f5e15d090395584e86621b315b5e489497a80831f7ae6d4a682d3a9919728"
+    },
+    {
+      "bytes": 29174,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/RUNTIME_CANDIDATE.SAFE.json",
+      "sha256": "a40b8626c808aca40186c3b97b2ca9d48fd5c7b5c7b5fa83cf9e56f2f4a45e86"
+    },
+    {
+      "bytes": 52299,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/STDLIB_LOADED_MANIFEST.SAFE.json",
+      "sha256": "b06fd1536ffe6840cf59e4db204191bb3f7abbb3bd5110eb3dff7ef61e09a2f6"
+    },
+    {
+      "bytes": 1018,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/STOPPED_INSPECT.SAFE.json",
+      "sha256": "d824e958da2c7850ac907394bc640d7da9693f8c6591b88ee55ae0ee560a4868"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/STOPPED_INSPECT.stderr.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 27867,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-python-runtime-qualification-v2-20261020/STOPPED_INSPECT.stdout.PRIVATE.bin",
+      "sha256": "76277929c9e15eb616e35a95d7eab9017d1c25c4d7ce950201b11dd6e519f636"
+    },
+    {
+      "bytes": 2989,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/foundation/PARENT_IDENTITY_BEFORE_FIRST_RETIREMENT.SAFE.json",
+      "sha256": "43a09d143e4b6b808a9af8023e3ec2dadbf43bc4b523d92beb0f2be76218096f"
+    },
+    {
+      "bytes": 792,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/foundation/ROOT_CURRENT_PARENT_VIEW_AND_MAPS.SAFE.json",
+      "sha256": "01d0f22e9174949e278f37da2d9a05e0208dc642fcbe54df48881d48bf8b30f2"
+    },
+    {
+      "bytes": 32475,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/foundation/RUNTIME_QUALIFICATION_FOR_RETIRER_V2_BYTE_EXACT_BINDING.SAFE.json",
+      "sha256": "52dff63b2264beeede174ba81298bb7ff91a270279190f26b7bfc356d72ba9a1"
+    },
+    {
+      "bytes": 30944,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/foundation/RUNTIME_QUALIFICATION_WITH_ALLOWED_PROOF_PATHS.SAFE.json",
+      "sha256": "26123f080342a1e5a4decd938115b2c59601dda9d43a6e901846f8cb40a5ae29"
+    },
+    {
+      "bytes": 13100,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/foundation/RUNTIME_SOURCE_REVIEW_BYTE_EXACT.SAFE.json",
+      "sha256": "2e1e1784117ed51471803813ed5a83e0f8d231cab6021772dbf06fdaf556aa4b"
+    },
+    {
+      "bytes": 5373,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v2/RUNTIME_BINDINGS.SAFE.json",
+      "sha256": "bc6f5e15d090395584e86621b315b5e489497a80831f7ae6d4a682d3a9919728"
+    },
+    {
+      "bytes": 5373,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation/RUNTIME_BINDINGS.SAFE.json",
+      "sha256": "bc6f5e15d090395584e86621b315b5e489497a80831f7ae6d4a682d3a9919728"
+    },
+    {
+      "bytes": 3551,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation/parentstat-probe-preparation/ROOT_ACTUAL_METADATA.SAFE.json",
+      "sha256": "2e56e0a47baa0614d53b6f50fef177ae1e49a224a659c4759b210a2ced56d0b1"
+    },
+    {
+      "bytes": 815,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation/parentstat-probe-preparation/ROOT_DOCKER_LOGS.PRIVATE.txt",
+      "sha256": "ca72aca9d2308f45859446337d3a296ab9d9dc32fd1ff8da6b4ad8218ca6fe86"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation/parentstat-probe-preparation/ROOT_START_STDERR.PRIVATE.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 815,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation/parentstat-probe-preparation/ROOT_START_STDOUT.PRIVATE.txt",
+      "sha256": "ca72aca9d2308f45859446337d3a296ab9d9dc32fd1ff8da6b4ad8218ca6fe86"
+    },
+    {
+      "bytes": 10072,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation/parentstat-probe-preparation/ROOT_STOPPED_INSPECT.PRIVATE.json",
+      "sha256": "1ed54313c05a44d243fb1a63cdcf3bf21c41434ead920513beb60d09b35f6a66"
+    },
+    {
+      "bytes": 4335,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation/parentstat-probe-preparation/parentstat-only.c",
+      "sha256": "e64b1ba22a7dd56910d16e033deba2e6f123860f3a4d5fda7616ea0c2de16f8a"
+    },
+    {
+      "bytes": 759032,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation/parentstat-probe-preparation/parentstat-only.static",
+      "sha256": "02bbec3502f3529d23b3d92084e38f9f77864c54d624fe9b28c384642c2240f0"
+    },
+    {
+      "bytes": 9013,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/OLD_TWO_STAGE3_PRIVILEGED_XATTR_ACTUAL_REVIEW.SAFE.json",
+      "sha256": "9dd219bef3b26749d09de3e725a83e5bf3fbd95b73adb703d9d13de26502f390"
+    },
+    {
+      "bytes": 50432,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/old-two-dependency-followup-v2-check-late-v9-20261020/DEPENDENCY_AFTER_V2_LATE_V9_CHECK.SAFE.json",
+      "sha256": "b57bb4aafe6d959e4540a40b78c249cfc8e16146413beebc056b2ee36b1bd174"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ACTUAL_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 2471,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ACTUAL_STDOUT.PRIVATE.bin",
+      "sha256": "32062c9c2756a76eed8ff368e58f1fad4d79b5b2374e2bb08eb5c361089812d9"
+    },
+    {
+      "bytes": 184062,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/CONTEXT.PRIVATE.json",
+      "sha256": "277b11ec2608f1e21ff53f3259b2df9854694e7a049dad0d3287fcab61eda891"
+    },
+    {
+      "bytes": 3042,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ROOT_FRESH_ADOPTION.SAFE.json",
+      "sha256": "1faa558fb9282af71dc0c34c6009e83ffe63af9941a97a3b1391ea46cd4e881c"
+    },
+    {
+      "bytes": 763,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ROOT_START_ONCE.PRIVATE.json",
+      "sha256": "7fe94c35af2356791fdfe4ec9336caa4f135f404d9856bba7d1c2fdade2464d0"
+    },
+    {
+      "bytes": 6541,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ROOT_FRESH_CLOSURE.SAFE.json",
+      "sha256": "da43c84e8b61eb014b0ae4af941a4b4821a360b4e4c5e7cced2a821c84f15326"
+    },
+    {
+      "bytes": 25557,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/HOST_USE_INSPECTION.PRIVATE.json",
+      "sha256": "6c2b7fcd70b9be0001bcade926549b739be3eec848bc6d63c59827d8540ef02f"
+    },
+    {
+      "bytes": 3530482,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ALL_DOCKER_INSPECT.PRIVATE.json",
+      "sha256": "7d86fa29a99567caa49b685b9d5fd1d6e7b47f7707dd1c433f88073ffec5c400"
+    },
+    {
+      "bytes": 57013,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/old-two-dependency-followup-v3-check-late-v9-20261020/DEPENDENCY_AFTER_V3_LATE_V9_CHECK.SAFE.json",
+      "sha256": "d2b87ca8e80e9feeb65041acbbaaae38a725ddeab00b55468223e1ea93e0b133"
+    },
+    {
+      "bytes": 2879,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ACTUAL_CHECK.SAFE.json",
+      "sha256": "f93d1c92e75bc4dc3a020e243e02f3a9afa622f28563352c8148a1ea3cee30ec"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ACTUAL_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 635173,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ACTUAL_STDOUT.PRIVATE.bin",
+      "sha256": "09590022f61352cd7096a5fd86883fc4b3c352468a88961abfd2b2237926059a"
+    },
+    {
+      "bytes": 173888,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/CONTEXT.PRIVATE.json",
+      "sha256": "6dff44b9d32d68b93ea47d8665c3572d128c9b91c6cc35347553290295c7e9fa"
+    },
+    {
+      "bytes": 2461,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ROOT_FRESH_ADOPTION.SAFE.json",
+      "sha256": "dc49485f8b21195e4581a78828ff625291f8f9e3ba4b9b3a5992bac95a028e8a"
+    },
+    {
+      "bytes": 763,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ROOT_START_ONCE.PRIVATE.json",
+      "sha256": "7ab81820f31f0d5329f1ba0ad9e4be982960618150362518c3a68b7955427b87"
+    },
+    {
+      "bytes": 6684,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ROOT_FRESH_CLOSURE.SAFE.json",
+      "sha256": "c31ebb5a2242e20ea09583cff5efdc74f06a4a02590c3be2dd9fb39726ff507d"
+    },
+    {
+      "bytes": 25737,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/HOST_USE_INSPECTION.PRIVATE.json",
+      "sha256": "e1b7a49ac037023500183c76ee39c31e401ff4ce7c309bda89ae69d099ad5820"
+    },
+    {
+      "bytes": 3549600,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ALL_DOCKER_INSPECT.PRIVATE.json",
+      "sha256": "eb17410a7a1c09914cd94ee31c157545be2d31ad1edc3ae6b67efe19ed6d3c0d"
+    },
+    {
+      "bytes": 120528,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/CREATED_INSPECT.PRIVATE.json",
+      "sha256": "d5d9dfdcdb91d4e3b628b33b47282434cb3498ac7ca970ae432ca8dc28abec94"
+    },
+    {
+      "bytes": 120545,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/STOPPED_INSPECT.PRIVATE.json",
+      "sha256": "84a6181c5fd7d978979660b8d86d01949a6febda00493064c2d95c771b2ec04a"
+    },
+    {
+      "bytes": 4350,
+      "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/parentstat-after-first-retirement-v2-preparation-20261020/ROOT_ACTUAL_METADATA.SAFE.json",
+      "sha256": "0eefa869610f90e4185ee0cd8f33f4af920931428a2cc5e27d901a7d5708b2bc"
+    },
+    {
+      "bytes": 815,
+      "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/parentstat-after-first-retirement-v2-preparation-20261020/ROOT_DOCKER_LOGS.PRIVATE.txt",
+      "sha256": "047f90f7843f521062a4d430928e75e252c81f73fe34bda8b46e64f1db2012cb"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/parentstat-after-first-retirement-v2-preparation-20261020/ROOT_START_STDERR.PRIVATE.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 815,
+      "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/parentstat-after-first-retirement-v2-preparation-20261020/ROOT_START_STDOUT.PRIVATE.txt",
+      "sha256": "047f90f7843f521062a4d430928e75e252c81f73fe34bda8b46e64f1db2012cb"
+    },
+    {
+      "bytes": 10080,
+      "path": "/workspace/helmut-ram-fix-20261020/capacity-independent-review-20261020/parentstat-after-first-retirement-v2-preparation-20261020/ROOT_STOPPED_INSPECT.PRIVATE.json",
+      "sha256": "e6b7fb2190ec18749685a4ee263f7fc770086442125ee6fa4d6ac1ce3c09432d"
+    },
+    {
+      "bytes": 3019,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/foundation/PARENT_IDENTITY_AFTER_FIRST_RETIREMENT.SAFE.json",
+      "sha256": "d10457fb42fb9ca7028f504ba279db8316f9e80a58bc0ee99b9689b3d369fb8f"
+    },
+    {
+      "bytes": 792,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/foundation/ROOT_PARENT_VIEW_AND_MAPS_AFTER_FIRST_RETIREMENT.SAFE.json",
+      "sha256": "dce42a9e6747c06371c64397f30334cf56ad24ad9b77611c600b3cdf282b28f9"
+    },
+    {
+      "bytes": 64874,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/old-two-dependency-followup-after-first-retire-20261020/DEPENDENCY_AFTER_RETIRE1_AND_PARENTSTAT.SAFE.json",
+      "sha256": "82266082638b4862bc98dac1e709d1537f6ab7b4e3e6b75feb213a9759cf001f"
+    },
+    {
+      "bytes": 2591,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ACTUAL_RETIRE.SAFE.json",
+      "sha256": "cafc3d275c8288e27f8ce75195652735a2a12d5d919d607893d0974cb1d64c05"
+    },
+    {
+      "bytes": 0,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ACTUAL_STDERR.PRIVATE.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 2515,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ACTUAL_STDOUT.PRIVATE.bin",
+      "sha256": "b60f223d437ec992dffd834afdce443c1268020687291f06a980165dae4a04c4"
+    },
+    {
+      "bytes": 184250,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/CONTEXT.PRIVATE.json",
+      "sha256": "87ef58141cdd853e13528744d24f9e7e523a8bc6f323b7b53ef4c55c6b14c458"
+    },
+    {
+      "bytes": 3045,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ROOT_FRESH_ADOPTION.SAFE.json",
+      "sha256": "de8960beec75410096b34de7c71127e83f35b638e87ed6185607615e8b8401db"
+    },
+    {
+      "bytes": 763,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ROOT_START_ONCE.PRIVATE.json",
+      "sha256": "583449cb04463b8bf72bc4f282a11d08d7abb3ef636a803dd2f6cef33c1e1748"
+    },
+    {
+      "bytes": 6746,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ROOT_FRESH_CLOSURE.SAFE.json",
+      "sha256": "12e2d396e2d1e2e15574b26316611969c72e1625acaffe3c29185a1b0fa59292"
+    },
+    {
+      "bytes": 25827,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/HOST_USE_INSPECTION.PRIVATE.json",
+      "sha256": "5ebde4a1991bec20b0c006d6b22598927ca5799905808c67a5bd46e05c2eb9d3"
+    },
+    {
+      "bytes": 3569344,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ALL_DOCKER_INSPECT.PRIVATE.json",
+      "sha256": "c992e40b0dcbfe380984ffa1ab90b18c2c308d6595bab13309ddf60c8d0c3e63"
+    },
+    {
+      "bytes": 127338,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/CREATED_INSPECT.PRIVATE.json",
+      "sha256": "58b07a599ea6978bbd7a20f6b889c0f5a7a41ae685ac33faa5e27717f995db07"
+    },
+    {
+      "bytes": 127356,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/STOPPED_INSPECT.PRIVATE.json",
+      "sha256": "f985bf41a33de793e02f3bd3c40424e2e617d60e2f65e916049286ce86b3f2f2"
+    },
+    {
+      "bytes": 70924,
+      "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/old-two-dependency-followup-v3-check-post-v10-20261020/DEPENDENCY_AFTER_V3_POST_V10_CHECK.SAFE.json",
+      "sha256": "32b557108c261b3c2a93f4b243761cc62a89ed7c94793b534c748b9ff24b06f9"
+    }
+  ],
+  "archiveFullPayloadHashRepeat": false,
+  "archiveIndependentActualReviewPin": {
+    "bytes": 77656,
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/old-two-backup-actual-review-20261020/OLD_TWO_BACKUPS_INDEPENDENT_ACTUAL_REVIEW.SAFE.json",
+    "sha256": "051ac8e6cb913d03ebf8752b65e9a7cea27bba51ff1f2d00594cf6a4cb268cef"
+  },
+  "archiveMetadata": {
+    "late-v9": {
+      "metadata": {
+        "allocatedBytes": 135294976,
+        "bytes": 135292875,
+        "ctime_ns": 1792531972931691600,
+        "device": 27,
+        "gid": 1000,
+        "inode": 262607,
+        "links": 1,
+        "mode": 384,
+        "mtime_ns": 1792531972931691600,
+        "uid": 1000
+      },
+      "payloadRehashedByThisVerifier": false,
+      "pin": {
+        "bytes": 135292875,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/archives/late-v9.PRIVATE.tar.gz",
+        "sha256": "340d9a945d6be92ed37f2b23d493816f2c10240eb50b3f82b7a1fdf00ed89832"
+      }
+    },
+    "post-v10": {
+      "metadata": {
+        "allocatedBytes": 134955008,
+        "bytes": 134951882,
+        "ctime_ns": 1792532107206741676,
+        "device": 27,
+        "gid": 1000,
+        "inode": 262712,
+        "links": 1,
+        "mode": 384,
+        "mtime_ns": 1792532107206741676,
+        "uid": 1000
+      },
+      "payloadRehashedByThisVerifier": false,
+      "pin": {
+        "bytes": 134951882,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-gnu-tar-execution-20261020/archives/post-v10.PRIVATE.tar.gz",
+        "sha256": "1df14cb4f026a1de412c86093c237f3b1aee607d35391b4152df900450fe659e"
+      }
+    }
+  },
+  "atUTC": "2026-10-20T23:01:28.124590+00:00",
+  "canonicalSource827aRootMetadata": {
+    "allocatedBytes": 4096,
+    "bytes": 4096,
+    "ctime_ns": 1792487833623423814,
+    "device": 27,
+    "gid": 1000,
+    "inode": 169,
+    "links": 19,
+    "mode": 448,
+    "mtime_ns": 1792487833623423814,
+    "uid": 1000
+  },
+  "copies": {
+    "late-v9": {
+      "checkActualPin": {
+        "bytes": 2877,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a75766d9710629bd136feda8/ACTUAL_CHECK.SAFE.json",
+        "sha256": "d2527c3511994f47acd0376ff40107db15df76be68385855c4bee623957d0ff0"
+      },
+      "liveCheckHelper": {
+        "bytes": 94705,
+        "cid": "22edb0fc7980d85565c0bb40582698df08ac1b8622cc3ebe60d10e6b878a498c",
+        "endpoint": "/containers/22edb0fc7980d85565c0bb40582698df08ac1b8622cc3ebe60d10e6b878a498c/json",
+        "method": "GET",
+        "sha256": "bd65ea65bc0ebaa8274738b1ac6dd61814f2760b110cf4c6ba87cfc91a5e9d77",
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-20T22:54:12.556557503Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-20T22:54:11.512620965Z",
+          "Status": "exited"
+        }
+      },
+      "liveRetireHelper": {
+        "bytes": 100226,
+        "cid": "145d18daf0105c8a04e5964794cc2facafcb3bbd23fbe158b5873795894119ab",
+        "endpoint": "/containers/145d18daf0105c8a04e5964794cc2facafcb3bbd23fbe158b5873795894119ab/json",
+        "method": "GET",
+        "parentAfterMetadata": {
+          "allocatedBytes": 4096,
+          "bytes": 4096,
+          "ctime_ns": 1792536919532010168,
+          "device": 27,
+          "gid": 1000,
+          "inode": 2019319,
+          "links": 2,
+          "mode": 448,
+          "mtime_ns": 1792536919532010168,
+          "uid": 1000
+        },
+        "parentClaimBytesIndependentlyRead": false,
+        "parentClaimMetadata": {
+          "allocatedBytes": 4096,
+          "bytes": 873,
+          "ctime_ns": 1792536919118429451,
+          "device": 27,
+          "gid": 65534,
+          "inode": 1966189,
+          "links": 1,
+          "mode": 384,
+          "mtime_ns": 1792536919118429451,
+          "uid": 65534
+        },
+        "sha256": "f3a247d7322cd819cd1f5d092d0b7345d62cee1f7336cf330f7a84cae98aa600",
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-20T22:55:19.732580397Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-20T22:55:18.134095958Z",
+          "Status": "exited"
+        }
+      },
+      "retireActualPin": {
+        "bytes": 2592,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ACTUAL_RETIRE.SAFE.json",
+        "sha256": "18b84069c000518dd61acb60f7a6f78f37875f7048bad4d4d571446e5ffde4d6"
+      }
+    },
+    "post-v10": {
+      "checkActualPin": {
+        "bytes": 2879,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/8f8c01134bb12694ca8111a0/ACTUAL_CHECK.SAFE.json",
+        "sha256": "f93d1c92e75bc4dc3a020e243e02f3a9afa622f28563352c8148a1ea3cee30ec"
+      },
+      "liveCheckHelper": {
+        "bytes": 94855,
+        "cid": "adda9c1763e4b08af810c060cf5670d74d2d06f0255bcbb7b4d7d6faf6b7752a",
+        "endpoint": "/containers/adda9c1763e4b08af810c060cf5670d74d2d06f0255bcbb7b4d7d6faf6b7752a/json",
+        "method": "GET",
+        "sha256": "737d8284746b3e6224b8d31aa88d1f627b4f1b5b9591b71291192716fa7994a8",
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-20T22:57:33.28665698Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-20T22:57:32.299656178Z",
+          "Status": "exited"
+        }
+      },
+      "liveRetireHelper": {
+        "bytes": 100353,
+        "cid": "ed23eae8ec8b3ecc06adfa30c3fe8d2c2909d90d78f94297d2de5547c4c67314",
+        "endpoint": "/containers/ed23eae8ec8b3ecc06adfa30c3fe8d2c2909d90d78f94297d2de5547c4c67314/json",
+        "method": "GET",
+        "parentAfterMetadata": {
+          "allocatedBytes": 4096,
+          "bytes": 4096,
+          "ctime_ns": 1792537282875495635,
+          "device": 27,
+          "gid": 1000,
+          "inode": 2021296,
+          "links": 2,
+          "mode": 448,
+          "mtime_ns": 1792537282875495635,
+          "uid": 1000
+        },
+        "parentClaimBytesIndependentlyRead": false,
+        "parentClaimMetadata": {
+          "allocatedBytes": 4096,
+          "bytes": 895,
+          "ctime_ns": 1792537282514259223,
+          "device": 27,
+          "gid": 65534,
+          "inode": 1966190,
+          "links": 1,
+          "mode": 384,
+          "mtime_ns": 1792537282514259223,
+          "uid": 65534
+        },
+        "sha256": "1ec66f8d5ad57a8c2b1c3409fcce10fc25e18e449b811a893141bef4d35828dc",
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-20T23:01:23.088226098Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-20T23:01:21.643695856Z",
+          "Status": "exited"
+        }
+      },
+      "retireActualPin": {
+        "bytes": 2591,
+        "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/a2c1aaf9249c63ef1aad46d5/ACTUAL_RETIRE.SAFE.json",
+        "sha256": "cafc3d275c8288e27f8ce75195652735a2a12d5d919d607893d0974cb1d64c05"
+      }
+    }
+  },
+  "currentGETToStoppedComparisonStrict": true,
+  "fourActualNonces": {
+    "late-v9": {
+      "check": "a75766d9710629bd136feda8",
+      "retire": "265af1f1c1dc6692373840c1"
+    },
+    "post-v10": {
+      "check": "8f8c01134bb12694ca8111a0",
+      "retire": "a2c1aaf9249c63ef1aad46d5"
+    }
+  },
+  "full500": false,
+  "genuineRetire1MetadataObservationPins": [
+    {
+      "bytes": 2592,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/ACTUAL_RETIRE.SAFE.json",
+      "sha256": "18b84069c000518dd61acb60f7a6f78f37875f7048bad4d4d571446e5ffde4d6"
+    },
+    {
+      "bytes": 127211,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/CREATED_INSPECT.PRIVATE.json",
+      "sha256": "e3d3f166e82ed948e4979c020b58751db9921f8de55876abb876770243b20a12"
+    },
+    {
+      "bytes": 127229,
+      "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/265af1f1c1dc6692373840c1/STOPPED_INSPECT.PRIVATE.json",
+      "sha256": "e4d4fbc46e6142ea13ec204099032dc11a8e5f387967db1b848aa4c08aa4d164"
+    }
+  ],
+  "globalUnobservableFDAbsenceClaimed": false,
+  "independentOfRootExecution": true,
+  "legacyGOReadOrReusedByVerifier": false,
+  "observedCLIExitScope": "actual Docker start--attach CLI exit0, two pipe EOF, child reap; outer Root tool observation remains separate",
+  "outerRootToolExitClaimedFromUnrecordedField": false,
+  "production": false,
+  "removedDirectoriesIncludingRoots": 60,
+  "removedRegularFiles": 3424,
+  "resourceActionOrDeletionByVerifier": false,
+  "retainedPerTargetClaimsAndFourNewStartClaims": true,
+  "retirementPlanPin": {
+    "bytes": 6876,
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/PLAN.SAFE.json",
+    "sha256": "4ac3ccfde65e66b8d37ce29f99e83fc307f2898d0d927b0a06082c0bc352bd92"
+  },
+  "retirerSourceIndependentlyReviewedElsewhere": true,
+  "rootRunnerPin": {
+    "bytes": 12712,
+    "path": "/tmp/helmut-old-two-root-run-once-v2.py",
+    "sha256": "41e5697fda098b122029721b0b05e498bd61a7665385fbeeb1279912c609090b"
+  },
+  "runtimeBindingsPin": {
+    "bytes": 5373,
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/RUNTIME_BINDINGS.SAFE.json",
+    "sha256": "bc6f5e15d090395584e86621b315b5e489497a80831f7ae6d4a682d3a9919728"
+  },
+  "savedClosedActorOomKillDisableFalseToNullRuleOnly": true,
+  "schema": "helmut-old-two-independent-actual-end-verifier/3",
+  "scriptPin": {
+    "bytes": 50558,
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-preparation-v3/retire_old_two.py",
+    "sha256": "430a610aff0b4559450836cee615413de6a1234670910acfb9741befd3794c9e"
+  },
+  "sourceIndependentReviewPin": {
+    "bytes": 8208,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/old-two-retirer-v3-independent-review-20261020/OLD_TWO_RETIRER_V3_LITERAL_MOUNT_DELTA_SOURCE_REVIEW.SAFE.json",
+    "sha256": "491681ff503c48287d7ad640cb32afacd596ef67b54db33ae9f0bf07f0198372"
+  },
+  "status": "PASS_BOTH_EXACT_RETIRED_COPIES_READ_ONLY_VERIFIED",
+  "verifierAuthorAlsoRetirerSourceAuthor": true,
+  "verifierModel": "gpt-6.1-sol"
+}

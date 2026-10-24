@@ -1,0 +1,45 @@
+{
+  "schema": "helmut-local-lease-offline-qualification/1",
+  "fullStandardRun": {
+    "suites": 180,
+    "passed": 178,
+    "failed": 2,
+    "durationSeconds": 676,
+    "failedSuites": [
+      "current-state-groesse-test.js",
+      "env-inventar-test.js"
+    ],
+    "pass": false,
+    "pin": {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/FINAL_OFFLINE_STANDARD.ACTUAL.log",
+      "bytes": 10490,
+      "sha256": "579e210d8ca550953595d35d8796e15a9b1e2eda6970951fa1412c284e72f3ed"
+    }
+  },
+  "targetedCorrections": [
+    {
+      "suite": "current-state-groesse-test.js",
+      "assertionsPassed": 4,
+      "pin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/CURRENT_STATE_FINAL_SIZE.ACTUAL.log",
+        "bytes": 736,
+        "sha256": "18cc1c374aa9153cab08c5847e0ee583ce653b93085f55c1b1c765d5e191376a"
+      }
+    },
+    {
+      "suite": "env-inventar-test.js",
+      "assertionsPassed": 38,
+      "pin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-local-lock-lease-integration/FINAL_ENV_INVENTORY_CORRECTED.ACTUAL.log",
+        "bytes": 2721,
+        "sha256": "b94547462fac6380216d3549fd84342312bc0f62d7188cb692a1295e453e9267"
+      }
+    }
+  ],
+  "allOtherSuitesPassedInSameRun": true,
+  "newLeaseIncludedInStandard": true,
+  "continuous180Of180Claimed": false,
+  "executionAuthority": false,
+  "full500": false,
+  "production": false
+}

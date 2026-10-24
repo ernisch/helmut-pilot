@@ -1,0 +1,53 @@
+{
+  "schema": "helmut-native-writer-read-prerequisite-summary/1",
+  "case": "48b9e0f35075611fb46ea1d7bf703d08",
+  "codeCommit": "739a22dc9169e3a05f7862ba456073ba60dce6e3",
+  "nativePrerequisitePassed": true,
+  "overallCasePassed": false,
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-bridge-qualification.py",
+      "bytes": 34678,
+      "sha256": "953aec5d14b4e1c6f45abbf3ded69cdf658d99a9edddd65184db9ccba5cc3188"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/supabase/proposals/local_unit_original_bridge_local.sql",
+      "bytes": 63419,
+      "sha256": "07b495a1efd7c6fb1300207a6e2f1440efee6c33054c0fe19947774865c0c762"
+    }
+  ],
+  "privateBatchEvidencePins": [
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/48b9e0f35075611fb46ea1d7bf703d08/BRIDGE_INSTALL_AND_QUALIFY.STDOUT.PRIVATE.log",
+      "bytes": 59520,
+      "sha256": "d8eeaf437d5e3ffe45280df0dc161b95c9228366233d5c4f240dc588026e501c"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/48b9e0f35075611fb46ea1d7bf703d08/BRIDGE_FRESH_READBACK.STDOUT.PRIVATE.log",
+      "bytes": 59520,
+      "sha256": "d8eeaf437d5e3ffe45280df0dc161b95c9228366233d5c4f240dc588026e501c"
+    }
+  ],
+  "rawBatchLogsPublished": false,
+  "actualBatchExitAndEOFRequired": true,
+  "executionEvidenceScope": "Actual complete pinned psql batches with ON_ERROR_STOP and checked exit0/two EOFs; no separate per-statement receipts",
+  "qualificationCalls": 2,
+  "actualWriterColumnAndXminLimitZeroQueriesAcrossCalls": 4,
+  "newWriterInsufficientPrivilegeDenialsAcrossCalls": 8,
+  "existingNegativeProbeCountUnchanged": 20,
+  "writerPrincipal": {
+    "login": false,
+    "inherit": false,
+    "superuser": false,
+    "bypassRLS": false,
+    "memberships": 0,
+    "tableSelectGranted": false,
+    "RLSOnBothTables": true
+  },
+  "systemColumnGrant": "SELECT(xmin) on helmut_store and briefings only",
+  "dataRowsReadByNewProbes": 0,
+  "completePositiveArtifactWriteQualified": false,
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "production": false
+}

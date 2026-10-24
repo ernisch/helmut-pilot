@@ -1,0 +1,178 @@
+{
+  "schema": "helmut-new-local-http-postgrest-close-qualification/1",
+  "scope": "FOUR_NEW_LOCAL_HTTP_COMPONENTS_ONLY",
+  "sourceReviewer": "/root/v12_ram_close_audit",
+  "actualReviewer": "/root/v12_deadline_actual_audit",
+  "sourceReview": "PASS",
+  "actualReview": "PASS",
+  "candidatePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/postgrest_lifecycle_candidate.py",
+    "bytes": 16945,
+    "sha256": "8b6f4f32b2287bac331df6281fc95b1528e55a28036704cd7ae2d4dbb8755d51"
+  },
+  "testSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/postgrest_close_policy_test.py",
+    "bytes": 14667,
+    "sha256": "cfbf8983fd1e79867aa274395f5f38ee13b843904ee3f9e7866e3bade8cbf470"
+  },
+  "pureTestsAndConsolePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/CLOSE_SOURCE_PROPOSAL.SAFE.json",
+    "bytes": 15434,
+    "sha256": "9e4aa63ecaf9ae9db9e48515e6ef593cd10e9174131195cf193e437dad7769e9"
+  },
+  "pureTestsPassed": 28,
+  "originalHelperPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/preparation/postgrest_lifecycle.py",
+    "bytes": 9220,
+    "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+  },
+  "originalIFailurePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-auth-mutation/native-http-auth/COMPONENT_RESULT.SAFE.json",
+    "bytes": 16743,
+    "sha256": "e02af81fa7631997f6d75db3bf6b010d40d1eee8ad4fa0f3fc9e583cfebe1204"
+  },
+  "oldResultsReclassified": false,
+  "reproducibleBuildVerified": false,
+  "actualProcessSelfSignalTraced": false,
+  "production": false,
+  "full500": false,
+  "executionAuthority": false,
+  "cases": [
+    {
+      "label": "01-old",
+      "prelaunchPolicyPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/01-old/POSTGREST_PRELAUNCH_CLOSE_POLICY.SAFE.json",
+        "bytes": 3739,
+        "sha256": "8e455666e137883431ea58dfa3ab179ea34277cfb55a5eb74366ada00dd3e2f3"
+      },
+      "actualCloseReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/01-old/POSTGREST_STOP.PRIVATE.json",
+        "bytes": 5934,
+        "sha256": "f84108d5118196c1968a73043f188748914d51c68559c13d712d0afd5cd121ea"
+      },
+      "configPin": {
+        "path": "/ram/postgrest.conf",
+        "bytes": 304,
+        "sha256": "03f1f47a647ac5b0a0999387d6d756605b7452234c0a911b6d37a9cab5cc45a8"
+      },
+      "rawSignedExitCode": -2,
+      "classification": "qualified-local-12.2.3-sigterm-userinterrupt-sigint",
+      "signalRequested": "SIGTERM",
+      "signalSent": true,
+      "eofProof": {
+        "eofObserved": true,
+        "drainEnded": true,
+        "overflow": false,
+        "errors": [],
+        "versionSeen": true
+      },
+      "policyContentsVerified": true,
+      "pinContentsVerified": true,
+      "killRequested": false,
+      "timedOut": false,
+      "pass": true
+    },
+    {
+      "label": "02-new",
+      "prelaunchPolicyPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/02-new/POSTGREST_PRELAUNCH_CLOSE_POLICY.SAFE.json",
+        "bytes": 3738,
+        "sha256": "e0ca1abd4f27ec09cc7a1e972f1e823d342b5503a9a47095d6a3c23c8e60bf63"
+      },
+      "actualCloseReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/02-new/POSTGREST_STOP.PRIVATE.json",
+        "bytes": 5932,
+        "sha256": "81219e1b69f14bf555ca6b6d792758aa65916fee232ecc5224402effa879e6e2"
+      },
+      "configPin": {
+        "path": "/ram/postgrest.conf",
+        "bytes": 304,
+        "sha256": "a3175dd6126006945aa4bf6ebe9cdaa0599dadb18ad7a94e98f6441047e26ab4"
+      },
+      "rawSignedExitCode": -2,
+      "classification": "qualified-local-12.2.3-sigterm-userinterrupt-sigint",
+      "signalRequested": "SIGTERM",
+      "signalSent": true,
+      "eofProof": {
+        "eofObserved": true,
+        "drainEnded": true,
+        "overflow": false,
+        "errors": [],
+        "versionSeen": true
+      },
+      "policyContentsVerified": true,
+      "pinContentsVerified": true,
+      "killRequested": false,
+      "timedOut": false,
+      "pass": true
+    },
+    {
+      "label": "03-new",
+      "prelaunchPolicyPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/03-new/POSTGREST_PRELAUNCH_CLOSE_POLICY.SAFE.json",
+        "bytes": 3738,
+        "sha256": "443dcba17628d5d85e39f957e427bff975aa3cf2ae92d0043af28736945dcdb4"
+      },
+      "actualCloseReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/03-new/POSTGREST_STOP.PRIVATE.json",
+        "bytes": 5933,
+        "sha256": "5de9c8e71178d6e428e9cc0cda9b92e822f4ca7533a82476256bc59d8bc68e42"
+      },
+      "configPin": {
+        "path": "/ram/postgrest.conf",
+        "bytes": 304,
+        "sha256": "4cc4e21b7a1d0700ee6d15ff6f3c342dd366533bb613c9a1052dbd4487bc0f37"
+      },
+      "rawSignedExitCode": -2,
+      "classification": "qualified-local-12.2.3-sigterm-userinterrupt-sigint",
+      "signalRequested": "SIGTERM",
+      "signalSent": true,
+      "eofProof": {
+        "eofObserved": true,
+        "drainEnded": true,
+        "overflow": false,
+        "errors": [],
+        "versionSeen": true
+      },
+      "policyContentsVerified": true,
+      "pinContentsVerified": true,
+      "killRequested": false,
+      "timedOut": false,
+      "pass": true
+    },
+    {
+      "label": "04-old",
+      "prelaunchPolicyPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/04-old/POSTGREST_PRELAUNCH_CLOSE_POLICY.SAFE.json",
+        "bytes": 3739,
+        "sha256": "bbe3ba952b18d4a9b9016ecadca9bd26e6b9160d0aa20e7c930301e6663107b0"
+      },
+      "actualCloseReceiptPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-http-lock-comparison/04-old/POSTGREST_STOP.PRIVATE.json",
+        "bytes": 5934,
+        "sha256": "b14e7244309feba4437eca24f6856e0c4d3e4796f8d2aa36affb9e23d7253f57"
+      },
+      "configPin": {
+        "path": "/ram/postgrest.conf",
+        "bytes": 304,
+        "sha256": "75771bf33f273653e610ec3131b9b2467672d3394f1ea9215ec3953645d2186d"
+      },
+      "rawSignedExitCode": -2,
+      "classification": "qualified-local-12.2.3-sigterm-userinterrupt-sigint",
+      "signalRequested": "SIGTERM",
+      "signalSent": true,
+      "eofProof": {
+        "eofObserved": true,
+        "drainEnded": true,
+        "overflow": false,
+        "errors": [],
+        "versionSeen": true
+      },
+      "policyContentsVerified": true,
+      "pinContentsVerified": true,
+      "killRequested": false,
+      "timedOut": false,
+      "pass": true
+    }
+  ]
+}

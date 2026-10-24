@@ -1,0 +1,102 @@
+{
+  "schema": "helmut-genuine-host-observe-transport-qualification/1",
+  "atUTC": "2026-10-22T22:25:38.894347+00:00",
+  "caseNonce": "149b4a9222a8ffd79f64467c4e902a8a",
+  "codeCommit": "ab0da98720331618cf314df538e9e471ae2a775e",
+  "driverSHA256": "7d87330108ee035927f6db97b5df519c4caecca12dfae83e1f8ba2ff13c1ffa7",
+  "inputSHA256": "1421fee8ab0b0212ae66574a3b35ef269024ec4450f08d911c3385af20afbc1b",
+  "originalResultSHA256": "e2de7d87afa0035bf30d5b360d8e7afd04fd2e7d2f2bd53b5d55cfb7ccda161b",
+  "transportQualified": true,
+  "scope": "Actual Worker.guard, Source.HostChannel, full production host._observe inventory, genuine ProcessObserver and shared immutable frame/sample/reply core; no production stage admission.",
+  "roundTripsAndNegatives": [
+    {
+      "phase": "early",
+      "confirmed": true,
+      "sealed": false,
+      "roundTripNs": "2405678235",
+      "coreRejected": false,
+      "replayOverwriteRejected": false
+    },
+    {
+      "phase": "mid",
+      "confirmed": true,
+      "sealed": false,
+      "roundTripNs": "2132864936",
+      "coreRejected": false,
+      "replayOverwriteRejected": false
+    },
+    {
+      "phase": "stale",
+      "confirmed": false,
+      "sealed": true,
+      "roundTripNs": "3026739729",
+      "coreRejected": true,
+      "replayOverwriteRejected": false
+    },
+    {
+      "phase": "expired",
+      "confirmed": false,
+      "sealed": true,
+      "roundTripNs": "3002177486",
+      "coreRejected": true,
+      "replayOverwriteRejected": false
+    },
+    {
+      "phase": "replay",
+      "confirmed": true,
+      "sealed": false,
+      "roundTripNs": "2334708287",
+      "coreRejected": false,
+      "replayOverwriteRejected": true
+    }
+  ],
+  "commonMemoryPeakBytes": 37130240,
+  "memoryEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "fullLastProcessExitCovered": true,
+  "sourceExitZeroTwoNaturalEOF": true,
+  "actualObserverCount": 4,
+  "allObserversExitZeroTwoNaturalEOF": true,
+  "localHandleCount": 5,
+  "allLocalHandlesReapedZeroTwoNaturalEOF": true,
+  "sourceContainerExitedZeroWithoutStop": true,
+  "independentOriginalCaseReviewPending": false,
+  "maximumUnitsAuthorized": 0,
+  "unit60Qualified": false,
+  "reserveQualified": false,
+  "full500Qualified": false,
+  "stageAdmissionQualified": false,
+  "ownerQualified": false,
+  "sourceServiceQualified": false,
+  "pgStarted": false,
+  "seedPerformed": false,
+  "claimsConsumed": 0,
+  "motorCalls": 0,
+  "providerCalls": 0,
+  "originalInputsMounted": false,
+  "noRetryAfterUnknown": true,
+  "pythonRuntimePins": 748,
+  "pythonRuntimeBytes": 79791795,
+  "otherPublicRuntimeBindings": 553,
+  "midSampleScope": "Actual sample-start marker, Source request, full production inventory/probe, sample-complete; not Popen-midstream arrival",
+  "preflightFailureRetained": "Earlier dab70ff input rejected unchanged reuseExisting=false before any workload; strict Boolean validation corrected, no original binding edited.",
+  "independentOriginalCaseReviewPassed": true,
+  "independentReadOnlyChecks": {
+    "originalResultBytes": 9498,
+    "originalResultSHA256": "e2de7d87afa0035bf30d5b360d8e7afd04fd2e7d2f2bd53b5d55cfb7ccda161b",
+    "localClosureBytes": 2019,
+    "localClosureSHA256": "32ba3b3a84dc5c37f609e330946a5fb2a3f38329b50d5cf5e474adf7e3e25180",
+    "samplesBytes": 5078,
+    "samplesSHA256": "5afb1acb55450dff9b76dbae7b289b8db0301ad54cb20eda36e716659d351e8e",
+    "all7CodePinsMatchedAtReview": true,
+    "freshKnownStoppedContainers": 3,
+    "freshParentEmptyAndAllMemoryEventsZero": true,
+    "noTestsOrStartsByReviewer": true
+  }
+}

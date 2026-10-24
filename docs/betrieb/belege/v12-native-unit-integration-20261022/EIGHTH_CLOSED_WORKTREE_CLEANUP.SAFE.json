@@ -1,0 +1,37 @@
+{
+  "schema": "helmut-eighth-own-closed-worktree-cleanup/1",
+  "observedAtUTC": "2026-10-22T23:06:33.355858+00:00",
+  "target": "/workspace/helmut-unit60-execution-host-20261022",
+  "retainedCommit": "394e75a77f47dc888faf7f4d6b33f3f335cf49de",
+  "retainedBranch": "codex/v12-publication-recorded-order-20261022",
+  "trackedFilesFreshlyVerified": 2905,
+  "candidateLogicalBytes": 102080229,
+  "candidateAllocatedBytesBefore": 108998656,
+  "measuredStatvfsWindowIncreaseBytes": 109383680,
+  "measuredWindowMayIncludeMetadataOrConcurrentAllocation": true,
+  "actualRemoveExitCode": 0,
+  "allBranchRefsUnchanged": true,
+  "rootStateUnchanged": true,
+  "pathAndWorktreeRegistryAbsent": true,
+  "forceOrFallbackUsed": false,
+  "originalOrDatabaseDataDeleted": false,
+  "ownAuthorTestsIOAndHandlesClosed": true,
+  "foreignProcCompleteAbsenceProven": false,
+  "knownProcBoundaryPreservedAndMountBoundaryExactlyPinned": true,
+  "sourceRuntimeCIBindingsChecked": [
+    432,
+    553,
+    84
+  ],
+  "privatePlanPin": {
+    "bytes": 1560743,
+    "sha256": "3b274426d7dd088a548a65f9422164bac923732a3d3416a34b9614853fa9a01f"
+  },
+  "privateResultPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/cleanup-host-worktree-394e75a7-20261022/RESULT.SAFE.json",
+    "bytes": 669,
+    "sha256": "26ba0e51f2380cdd71d9ba15ab2e4f6e4ff659cbd3bf91ec2e508f96f4228fd3"
+  },
+  "rollback": "git -C /workspace/helmut-pilot worktree add --detach /workspace/helmut-unit60-execution-host-RESTORED-20261022 394e75a77f47dc888faf7f4d6b33f3f335cf49de",
+  "full500OrNativeQualification": false
+}

@@ -1,0 +1,99 @@
+{
+  "AST": 0,
+  "boundary": "These constants are genuine pinned PostgreSQL17.6 initial catalog definitions. They do not assert a live clone result; final readiness must still compare actual object identity/ABI and full view definition under observed pg_catalog search_path.",
+  "function": {
+    "OID": 2282,
+    "argumentCount": 0,
+    "inputArgumentTypes": "",
+    "name": "pg_get_backend_memory_contexts",
+    "nativeAllArgumentTypesText": "{25,25,25,23,20,20,20,20,20}",
+    "nativeArgumentModesText": "{o,o,o,o,o,o,o,o,o}",
+    "nativeArgumentNamesText": "{name,ident,parent,level,total_bytes,total_nblocks,free_bytes,free_chunks,used_bytes}",
+    "outputModes": [
+      "o",
+      "o",
+      "o",
+      "o",
+      "o",
+      "o",
+      "o",
+      "o",
+      "o"
+    ],
+    "outputNames": [
+      "name",
+      "ident",
+      "parent",
+      "level",
+      "total_bytes",
+      "total_nblocks",
+      "free_bytes",
+      "free_chunks",
+      "used_bytes"
+    ],
+    "outputTypeOIDs": [
+      25,
+      25,
+      25,
+      23,
+      20,
+      20,
+      20,
+      20,
+      20
+    ],
+    "parallel": "r",
+    "returnType": "record",
+    "returnTypeOID": 2249,
+    "setReturning": true,
+    "source": "pg_proc.dat8277-8285",
+    "sourceSymbol": "pg_get_backend_memory_contexts",
+    "volatility": "v"
+  },
+  "namespace": {
+    "OID": 11,
+    "name": "pg_catalog",
+    "source": "pg_namespace.dat15-17"
+  },
+  "nativeActions": 0,
+  "officialCommit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+  "officialSourcePins": [
+    {
+      "bytes": 918,
+      "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "gitBlobSHA1": "816ec7ec8d143affcd6a6f2e14d603d45f55d013",
+      "officialPath": "src/include/catalog/pg_namespace.dat",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/pg_namespace.dat",
+      "sha256": "7c4335640ef3d6a27bfe983bf1dce9f88cfa76e3f90f788db585ca1f95c4f93a"
+    },
+    {
+      "bytes": 634185,
+      "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "gitBlobSHA1": "6a5476d3c4c2142656f10ffb9d95c0f69ebe01f4",
+      "officialPath": "src/include/catalog/pg_proc.dat",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/pg_proc.dat",
+      "sha256": "e22a6a9d26eb6accb1c3a75398dbc6ec1e90c30fc010e729c943fe7af83615dc"
+    },
+    {
+      "bytes": 39283,
+      "commit": "7885b94dd81b98bbab9ed878680d156df7bf857f",
+      "gitBlobSHA1": "ceff66ccde1aa9eab39e3c1a960aeb7af8f5892d",
+      "officialPath": "src/include/catalog/pg_type.dat",
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/official-source/pg_type.dat",
+      "sha256": "1129eecb660ba4b84b8ecd44dd94b1668be22e349bd81fb07c2c771cd0314606",
+      "sourceExecuted": false
+    }
+  ],
+  "queries": 0,
+  "recorderPin": {
+    "bytes": 3322,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/record_catalog_abi.py",
+    "sha256": "c1150399a13cfa2d04cabba6bc9a40bde7e11a84b7f2221505a5078bfaf0138a"
+  },
+  "scalarTypeOIDSource": "pg_type.dat int8=20,int4=23,text=25,record=2249; all Git blobs independently verified.",
+  "schema": "helmut-cas-heap-independent-official-catalog-abi-review/1",
+  "sourceExecution": false,
+  "status": "OFFICIAL_SOURCE_ABI_VERIFIED_RUNTIME_PENDING",
+  "subjectImports": 0,
+  "tests": 0
+}

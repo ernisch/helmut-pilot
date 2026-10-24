@@ -1,0 +1,133 @@
+{
+  "schema": "helmut-v12-control-financial-public-evidence/1",
+  "atUTC": "2026-10-21T19:38:46.445624+00:00",
+  "status": "ACTUAL_PASS_READONLY_PHASES_ONLY",
+  "pins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-control-financial-phases/control-financial-phases/COMPONENT_RESULT.SAFE.json",
+      "bytes": 8028,
+      "sha256": "2be561330775051e054e16798796c6fedc743f530ff07ed367d17b2246d1e171"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-control-financial-phases/control-financial-phases/WORKER_RESULT.SAFE.json",
+      "bytes": 496,
+      "sha256": "cbeacebf9d5679f89d5f518f04d24ada246c22df6e54534b1299513d64bb8249"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-control-financial-phases/control-financial-phases/ACTUAL_PHASES.SAFE.json",
+      "bytes": 10846,
+      "sha256": "2fa59296e4eaf2c80d069c37fb5d9fe58cf28a46c47102d587fc5927bb2f5288"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-control-financial-phases/control-financial-phases/READONLY_NATIVE_BEFORE.SAFE.json",
+      "bytes": 821,
+      "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-control-financial-phases/control-financial-phases/READONLY_NATIVE_AFTER.SAFE.json",
+      "bytes": 821,
+      "sha256": "1abef029d4f6432df823db4439c619cbf01fe015239243c8134fe3678138fdd2"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/v12-control-financial-phases/control-financial-phases/READONLY_LOCK_CATALOG.SAFE.json",
+      "bytes": 91,
+      "sha256": "f9215380a0872b658ced1d408f605748b2590c31670230563c37d15a43ec81e3"
+    }
+  ],
+  "verifiedFreshControlReads": 6,
+  "logicalAuthAndHistory6000Unchanged": true,
+  "all6ControlViewsEqual": true,
+  "financialOriginalUnchangedBody": true,
+  "phasesWallMS": {
+    "fresh-control": [
+      1057.3472370000002,
+      178.60563500000012,
+      202.8003859999999,
+      186.09534499999995,
+      183.47060799999986,
+      186.55329600000005
+    ],
+    "financial": [
+      9.434612000000016,
+      5.832000999999991,
+      6.403913999999986,
+      5.113567999999987,
+      7.33600800000022,
+      8.565671999999722
+    ],
+    "kontrolliere": [
+      2.3590059999999085,
+      1.7327519999998913,
+      2.019233000000213,
+      1.4964860000000044,
+      1.9702099999999518,
+      2.128237000000354
+    ]
+  },
+  "medianWarmControlMS": 186.09534499999995,
+  "medianWarmFinancialMS": 6.403913999999986,
+  "medianWarmKontrolliereMS": 1.9702099999999518,
+  "nativeThroughLastExit": {
+    "settings": {
+      "memory.max": "1547997184",
+      "memory.high": "1399996416",
+      "memory.swap.max": "0"
+    },
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "memoryPeakBytes": 518668288,
+    "actualParentInode": 25043,
+    "setupHelpersExited": true,
+    "peakNeverReset": true
+  },
+  "cpuThroughLastExit": {
+    "usage_usec": 12533383,
+    "user_usec": 11916329,
+    "system_usec": 617054,
+    "nice_usec": 0,
+    "nr_periods": 0,
+    "nr_throttled": 0,
+    "throttled_usec": 0,
+    "nr_bursts": 0,
+    "burst_usec": 0
+  },
+  "elapsedThroughClosureSeconds": 14.741490218002582,
+  "postgresExit": 0,
+  "containerExit": 0,
+  "ownedWholeGroupEmpty": true,
+  "ownedLogEOF": true,
+  "existingLockTable": true,
+  "existingAcquireFunction": false,
+  "existingReleaseFunction": false,
+  "conclusion": "Financial revalidation is not the next major avoidable source at this authenticated late state. Native lock alternative requires an explicitly qualified local installation and invocation-bound ownership; no flag-only activation.",
+  "nativeCASCalls": 0,
+  "providerCalls": 0,
+  "fullGuardReplayed": false,
+  "forcedGC": false,
+  "cacheClear": false,
+  "full500": false,
+  "production": false,
+  "HTTPTimeEquivalent": false,
+  "reserve500MBProven": false,
+  "independentActualReview": "Independent SOL ACTUAL PASS;278 source pins/equality/native counters and full closure confirmed",
+  "originalImageAnd8InputsFreshlyRehashed": true,
+  "originalRecheckPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/ROOT_AFTER_READONLY_COMPONENTS_ORIGINAL_IMAGE.SAFE.json",
+      "bytes": 392,
+      "sha256": "7c9eceee84af0cd86c57bf818d96c1310a71cc73befc2368c0123ce71f1515bc"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/next-full500-20261021/ROOT_AFTER_READONLY_COMPONENTS_ORIGINAL_INPUTS.SAFE.json",
+      "bytes": 2089,
+      "sha256": "4c455f0547ec8c9a87b28cf25dd7700f03ad4c2fa9f8613e08a92a0061995e30"
+    }
+  ],
+  "lockCatalogScope": "Required acquire(text,bigint)/release(text,text) signatures absent; no claim about all possible overloads."
+}

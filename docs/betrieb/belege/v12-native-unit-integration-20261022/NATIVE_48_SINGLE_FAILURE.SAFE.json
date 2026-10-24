@@ -1,0 +1,92 @@
+{
+  "schema": "helmut-native-single-unit-failure-summary/1",
+  "case": "48b9e0f35075611fb46ea1d7bf703d08",
+  "codeCommit": "739a22dc9169e3a05f7862ba456073ba60dce6e3",
+  "pass": false,
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/48b9e0f35075611fb46ea1d7bf703d08/RESULT.SAFE.json",
+      "bytes": 2155,
+      "sha256": "50c4ee53b6a363058f371c79d2fc00072e2cbf1df75565657fff69a5877fdf49"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/48b9e0f35075611fb46ea1d7bf703d08/NATIVE_QUALIFICATION.SAFE.json",
+      "bytes": 760,
+      "sha256": "84880065ea93f9f560539031b0f5740e9d281b2548a45a5934317ed7301f0905"
+    },
+    {
+      "path": "/workspace/helmut-unit-diagnostic-native/48b9e0f35075611fb46ea1d7bf703d08/client/ATTEMPT_TERMINAL.SAFE.json",
+      "bytes": 1854,
+      "sha256": "d4f88dbe59eb25b07d5d406d18b71c1b3580bcf9b1c76f027683a0758dde8536"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/durable-single-unit-cli-capture-a18beaf7-20261022/capture-e087fd1ac216420ed0c60cc7eac53f3a/FINAL.SAFE.json",
+      "bytes": 6207,
+      "sha256": "d217cdf7ba09c9f3ebcc73bba04aabf50044259f103b66635e974c914523ed69"
+    }
+  ],
+  "entry": {
+    "requested": true,
+    "completedUnitCount": null,
+    "terminalStatus": "failed",
+    "firstSpecificReason": "publication-eligibility-source-read-unavailable",
+    "adapterElapsedMS": 11306.970205,
+    "elapsedFailureIsNotUnit60Pass": true
+  },
+  "nativePreconditions": {
+    "contractCatalogACLNegativeChecksPassed": true,
+    "completeArtifactWriteQualified": false
+  },
+  "commonMeasurement": {
+    "peakBytes": 1248223232,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "groupEmpty": true,
+    "fullLastProcessExitCovered": true,
+    "sourcePreflightMayWarmSharedCache": true,
+    "noCacheOrGCManipulation": true,
+    "full500ReserveQualified": false,
+    "unit60Qualified": false,
+    "independentFinalAcceptance": false,
+    "whole500MemoryOrPlateauInferred": false
+  },
+  "outerCLI": {
+    "actualExitCode": 1,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true,
+    "outerTimeout": false,
+    "forcedSignals": false,
+    "sourceBeforeEqualsAfter": true,
+    "captureHelperExitObserved": false,
+    "nativeAcceptanceInferred": false
+  },
+  "originals": {
+    "postrunPreserved": true,
+    "authRowUnchanged": true,
+    "sourcePinsUnchanged": true
+  },
+  "closure": {
+    "postgresExitCode": 0,
+    "hostClean": false,
+    "ownerExitCode": 1,
+    "entryExitCode": 1,
+    "actualRESTExitSignalRetained": false,
+    "actualRESTFailureCauseKnown": false
+  },
+  "remainingWork": [
+    "Identify real publication source-read failure and preserve bounded private REST failure diagnostics",
+    "Restore disk admission safely",
+    "Qualify fresh complete single-unit result, Unit60/Auth30, safety and common reserve",
+    "Resolve area CI failure; no inference from previously repaired protected original channel"
+  ],
+  "oldClaimsReused": false,
+  "retryAllowed": false,
+  "full500": false,
+  "production": false
+}

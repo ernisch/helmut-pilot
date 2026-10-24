@@ -1,0 +1,110 @@
+{
+  "schema": "helmut-public-shared-current-authority-hardening/1",
+  "recordedAtUTC": "2026-10-21T15:33:20.528Z",
+  "status": "PASS_TARGETED_NOT_CURRENT_FULL_ADOPTION",
+  "fixedSlot": {
+    "schema": "helmut-local-resource-authority-slot/2",
+    "day": "2026-10-21",
+    "version": 12,
+    "caseSuffix": "f3375a7d5548"
+  },
+  "sameSingleGlobalResourceAttempt": true,
+  "resourceClaimsCreated": 0,
+  "operatorEvidenceSchema": "helmut-current-operator-local-full500-binding/2",
+  "operatorEvidenceActuallyReadPinnedAndValidated": true,
+  "exactlyBound": [
+    "caseSuffix",
+    "day",
+    "slotVersion",
+    "commit",
+    "operation",
+    "target",
+    "caseDirectory",
+    "sourceCapture",
+    "calendar",
+    "500profiles",
+    "1500positions",
+    "16controls",
+    "32freshconditions",
+    "2048000000hard",
+    "1548000000target",
+    "500000000reserve",
+    "noPaidProvider",
+    "localOnly",
+    "noDispose",
+    "noRetry"
+  ],
+  "sharedRequiredRemainingMilliseconds": 11285884.867,
+  "currentDeclarationChecksPass": 31,
+  "mountScopeCasesPass": 7,
+  "operatorAndWindowCasesPass": 9,
+  "sharedJSAndFirstSQLSentinelPass": true,
+  "nativeActionsInTheseTests": 0,
+  "logs": [
+    {
+      "file": "FIXED_CASE_AUTHORITY.ACTUAL.log",
+      "bytes": 521,
+      "sha256": "9d732ad22afa431e727e4e5530b0f968158359bfbfd35883abd281e7c9ed4156"
+    },
+    {
+      "file": "FIXED_CASE_MOUNT_SCOPE.ACTUAL.log",
+      "bytes": 495,
+      "sha256": "4137b3803e898c99950848443def7f31afe118f0985db730e0a5621589d3f763"
+    },
+    {
+      "file": "SHARED_AUTHORITY_GUARDS.ACTUAL.log",
+      "bytes": 497,
+      "sha256": "d506516f22debcaea9c3d7b9e86fc5e2e929d96805c020f10da737492f19e3ed"
+    },
+    {
+      "file": "FIXED_CASE_SHARED_JS.ACTUAL.log",
+      "bytes": 568,
+      "sha256": "9beb9f4fc17603700691c6f75f86794a71b11b5d52cf87ac5e6b2f9f753280c3"
+    }
+  ],
+  "sourceFiles": [
+    {
+      "file": "next-resource-authority.py",
+      "bytes": 46031,
+      "sha256": "d7f323493f53c76eb03081560e89bc20fd403db13faab97bcceae2df8f972c73"
+    },
+    {
+      "file": "isolation.py",
+      "bytes": 51188,
+      "sha256": "e10722255063cd7be220b6a4fa5e073423e9812a65b4825c118d431933faa8b9"
+    },
+    {
+      "file": "local-resource-authority-slot.json",
+      "bytes": 129,
+      "sha256": "dbc99f3e66bac32df5f845ac5444d6650499b348c542e4f27427251d71222588"
+    },
+    {
+      "file": "connect-local500.py",
+      "bytes": 33710,
+      "sha256": "8d7a54a35746038c071df054607ce27f947fde189367732895ef53dce3750350"
+    },
+    {
+      "file": "finish-connection.py",
+      "bytes": 11127,
+      "sha256": "5835db00e57ab0ac27b1efdae6a5be747236a1e18c8ed10d2b0378b2951e5775"
+    },
+    {
+      "file": "measured-preparation.js",
+      "bytes": 7085,
+      "sha256": "4fdf87b4e443a6ad34917f43f4ac6efc11e0cf637286a5b295be32d25095b407"
+    },
+    {
+      "file": "atomic-usage-integration.js",
+      "bytes": 35569,
+      "sha256": "a2420d04125720c9c514ad32ea90b2be2b1305c1b518b0299b5ca5ea39ee63af"
+    },
+    {
+      "file": "full500-controller.py",
+      "bytes": 21179,
+      "sha256": "beaed1c24d86e42deaff73dab081a38904b06d408d10ed5023e26507f0e65012"
+    }
+  ],
+  "requiresNewIndependentSourceAdoptionAndFresh32": true,
+  "full500Started": false,
+  "production": false
+}

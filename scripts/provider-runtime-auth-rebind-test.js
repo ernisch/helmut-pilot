@@ -54,6 +54,11 @@ const INVENTORY = {
 const loadedPure = new Map();
 const readSources = [];
 let blockedEffectAttempts = 0;
+let inactiveEpochReads = 0, optimizerHashCalls = 0;
+// Only the optional optimization namespace is inactive in this pure VM.
+// Actual EU/profile/streaming fallback sources and real crypto remain in use.
+const inactiveEpoch = Object.freeze({ isActive() { inactiveEpochReads++; return false; } });
+const inactiveFacts = Object.freeze({ hash() { optimizerHashCalls++; throw Error("inactive-optimizer-hash-forbidden"); } });
 const forbidden = () => { blockedEffectAttempts += 1; throw new Error("unexpected external effect"); };
 const sandboxGlobals = filename => ({
   Buffer, URL, Date, __dirname: path.dirname(filename), process: { env: {} },
@@ -67,6 +72,10 @@ function readPureSource(name) {
   assert.ok(!name.includes("/") && !name.includes("\\"), "inventory name must be a flat lib/helmut file");
   const filename = path.join(LIB, name);
   const text = fs.readFileSync(filename, "utf8");
+  if (name === CANONICAL_HASH) {
+    assert(text.includes('require("./canonical-content-facts")'));
+    assert(text.includes('require("./synthetik-500-cpu-epoch")'));
+  }
   readSources.push(path.resolve(filename));
   return text;
 }
@@ -76,6 +85,10 @@ function loadPureModule(name) {
   const text = readPureSource(name);
   const module = { exports: {} };
   const requirePure = specifier => {
+    if (name === ATTESTATION && specifier === "./synthetik-500-runtime-artifact-attestation")
+      return { read: () => ({ version: "helmut-s500-runtime-artifacts/1", scope: "EXPLICIT_TEST_STUB_NO_ARTIFACT_ACCEPTANCE", executionAuthority: false }) };
+    if (name === CANONICAL_HASH && specifier === "./canonical-content-facts") return inactiveFacts;
+    if (name === CANONICAL_HASH && specifier === "./synthetik-500-cpu-epoch") return inactiveEpoch;
     assert.ok(INVENTORY[name].includes(specifier), "unexpected dependency in " + name);
     if (specifier === "node:crypto") return crypto;
     return loadPureModule(specifier.slice(2) + ".js");
@@ -94,6 +107,8 @@ function loadAttestation(injectSyntheticVerifier) {
   }
   const module = { exports: {} };
   const requirePure = specifier => {
+    if (specifier === "./synthetik-500-runtime-artifact-attestation")
+      return { read: () => ({ version: "helmut-s500-runtime-artifacts/1", scope: "EXPLICIT_TEST_STUB_NO_ARTIFACT_ACCEPTANCE", executionAuthority: false }) };
     assert.ok(INVENTORY[ATTESTATION].includes(specifier), "unexpected dependency");
     if (specifier === "node:crypto") return crypto;
     if (specifier === "./azure-endpunkt" || specifier === "./testkosten-budget") return {};
@@ -126,6 +141,7 @@ function call(runtime, nonce, observedAt) {
   return out;
 }
 
+if (process.argv[2] !== "--eu-only") {
 const synthetic = loadAttestation(true);
 const accepted = call(synthetic, NONCE, AT);
 assert.equal(accepted.status, 200);
@@ -144,9 +160,11 @@ assert.ok(Object.getOwnPropertyNames(euContract).length > 0,
 assert.ok(readSources.includes(path.resolve(path.join(LIB, EU_CONTRACT))),
   "EU contract must be read from the real lib/helmut source");
 assert.ok(readSources.every(file => path.dirname(file) === path.resolve(LIB)), "source reads stay inside lib/helmut");
-
-
-
+const fallbackGateBefore = inactiveEpochReads;
+assert.equal(loadPureModule(CANONICAL_HASH).hash({ a: 1 }, loadPureModule(PROFILE).kanonisch),
+  crypto.createHash("sha256").update('{"a":1}').digest("hex"));
+assert.equal(inactiveEpochReads, fallbackGateBefore + 1, "real fallback reads the explicitly inactive gate");
+assert.equal(optimizerHashCalls, 0, "optional optimizer hash is never used in this pure VM");
 const oldOperation = call(synthetic, OLD_NONCE, AT);
 assert.equal(oldOperation.status, 403);
 assert.equal(oldOperation.reads, 0);
@@ -159,6 +177,7 @@ assert.equal(productionVerifier.status, 403);
 assert.equal(productionVerifier.reads, 0);
 assert.equal(blockedEffectAttempts, 0, "no forbidden fetch/timer/console effect inside the VM loader");
 console.log("Provider runtime auth rebind: 3 PASS; current fixed nonce, exact expiry boundary, synthetic verifier only; real EU/profile/canonical-hash pure inventory.");
+}
 
 // Beide EU-Lesewege muessen dieselbe erneuerte Authority wirklich verwenden.
 // Nur deren Hash wird im VM-Quelltext synthetisch ersetzt; kein Auth-Override.
@@ -183,6 +202,7 @@ async function checkEuReadRenewal() {
   assert.notEqual(injected, source);
   const module = { exports: {} };
   const pure = { "node:crypto": crypto, "./azure-endpunkt": {}, "./testkosten-budget": K,
+    "./synthetik-500-runtime-artifact-attestation": { read: () => ({ version: "helmut-s500-runtime-artifacts/1", scope: "EXPLICIT_TEST_STUB_NO_ARTIFACT_ACCEPTANCE", executionAuthority: false }) },
     "./synthetik-500-eu-service-contract": EU };
   vm.runInNewContext("(function(require,module,exports){\n" + injected + "\n})",
     sandboxGlobals(path.join(LIB, ATTESTATION)))(name => {
@@ -273,6 +293,7 @@ async function checkEuReadRenewal() {
     "x-helmut-root-deadline-at": new Date(Date.parse(later) + 20 * 60000).toISOString() } });
   assert.equal(reused.code, 200); assert.equal(reused.reads, 1);
   assert.equal(blockedEffectAttempts, 0);
+  assert.equal(optimizerHashCalls, 0, "renewed handlers also keep the optimizer inactive");
   console.log("EU runtime read renewal: 2 genuine handlers and later fresh window PASS; 20 negative bindings rejected before reads; zero writes/network/models.");
 }
 checkEuReadRenewal().catch(() => { console.error("EU runtime read renewal: FAIL"); process.exitCode = 1; });

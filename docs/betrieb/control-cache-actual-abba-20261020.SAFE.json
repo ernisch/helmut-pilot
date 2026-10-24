@@ -1,0 +1,1132 @@
+{
+  "schema": "helmut-bounded-control-cache-actual-abba-comparison/1",
+  "status": "ACTUAL_ABBA_COMPLETE_NO_ROBUST_COMMON_RAM_GAIN_PROVEN",
+  "atUTC": "2026-10-20T19:22:20.931668+00:00",
+  "casePlanPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/ROOT_CASE_PLAN_V9.SAFE.json",
+    "bytes": 1801,
+    "sha256": "e6674a7d2259b2788d49f4355590bd89eb46149022333c4b271922300e13fc3f"
+  },
+  "nativePreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/control-cache-comparison-native-v9-launcher/PREPARED.SAFE.json",
+    "bytes": 37288,
+    "sha256": "dfdea5bf21af7343c37331e74685461bc331e500507cc7218774a66d367b0993"
+  },
+  "independentActualReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/V9_ALL_FIVE_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 143261,
+    "sha256": "e662372a752ec6a1d2e41db7068471fd4cf08f26ea18ebd14c830814e57a7924"
+  },
+  "order": [
+    "OLD",
+    "NEW",
+    "NEW",
+    "OLD"
+  ],
+  "cases": [
+    {
+      "caseId": "control-34fed1a1ec4fbdd8315cdfdd",
+      "variant": "OLD",
+      "actualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-34fed1a1ec4fbdd8315cdfdd/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8267,
+        "sha256": "0333c240f1dae33be1ed73f14589fd39296232b2765e385356e97259d9ee60c9"
+      },
+      "controlObservationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-34fed1a1ec4fbdd8315cdfdd/CONTROL_CACHE.SAFE.json",
+        "bytes": 89921,
+        "sha256": "c6a699d9e6c0d34284add5cbb7ee6e7c7b5a31dffbf319d05a216ad655aaa5a7"
+      },
+      "wholeLifetimeCommonPeakBytes": 1019572224,
+      "wholeLifetimeCPUSeconds": 37.826821,
+      "wholeLifetimeWallSeconds": 36.76105900500261,
+      "nodeClientWallMilliseconds": 14691.897125,
+      "nodeMaxRSSKiBDiagnosticOnly": 281020,
+      "httpResponseBodyBytes": 157016193,
+      "actualControlTextUTF8Bytes": 4856607,
+      "controlStringifyCalls": 41,
+      "warmControls": 0,
+      "threeCycleBoundarySamples": [
+        {
+          "sequence": 1,
+          "round": 0,
+          "edge": "start",
+          "commonCurrentBytes": 658432000,
+          "lifetimePeakBytes": 658432000,
+          "anonBytes": 65519616,
+          "fileBytes": 569745408,
+          "kernelBytes": 22405120,
+          "shmemBytesSubsetOfFile": 197910528,
+          "postgresCounters": {
+            "at": "2026-10-20T19:09:28.090293+00:00",
+            "wal": {
+              "wal_fpi": 24079,
+              "wal_sync": 16860,
+              "wal_bytes": 415180519,
+              "wal_write": 18112,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528569,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DE4BC0",
+            "database": {
+              "blocksHit": 584335756,
+              "tempBytes": 62187886257,
+              "tempFiles": 13197,
+              "blocksRead": 17967,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8912,
+              "tuplesInserted": 177421
+            },
+            "walInsertLSN": "0/19DE4C00"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 2,
+          "round": 0,
+          "edge": "end",
+          "commonCurrentBytes": 938721280,
+          "lifetimePeakBytes": 993427456,
+          "anonBytes": 305991680,
+          "fileBytes": 605184000,
+          "kernelBytes": 26607616,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:09:33.068288+00:00",
+            "wal": {
+              "wal_fpi": 24087,
+              "wal_sync": 16864,
+              "wal_bytes": 415230497,
+              "wal_write": 18116,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528588,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF0FD0",
+            "database": {
+              "blocksHit": 584598234,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8913,
+              "tuplesInserted": 177426
+            },
+            "walInsertLSN": "0/19DF0FD0"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 3,
+          "round": 1,
+          "edge": "start",
+          "commonCurrentBytes": 938881024,
+          "lifetimePeakBytes": 993427456,
+          "anonBytes": 305991680,
+          "fileBytes": 605212672,
+          "kernelBytes": 26624000,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:09:33.14355+00:00",
+            "wal": {
+              "wal_fpi": 24087,
+              "wal_sync": 16864,
+              "wal_bytes": 415230497,
+              "wal_write": 18116,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528588,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF0FD0",
+            "database": {
+              "blocksHit": 584598569,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8913,
+              "tuplesInserted": 177426
+            },
+            "walInsertLSN": "0/19DF0FD0"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 4,
+          "round": 1,
+          "edge": "end",
+          "commonCurrentBytes": 940826624,
+          "lifetimePeakBytes": 1005813760,
+          "anonBytes": 308060160,
+          "fileBytes": 605237248,
+          "kernelBytes": 26853376,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:09:37.205145+00:00",
+            "wal": {
+              "wal_fpi": 24090,
+              "wal_sync": 16867,
+              "wal_bytes": 415253844,
+              "wal_write": 18119,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528605,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF6B70",
+            "database": {
+              "blocksHit": 584855971,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8914,
+              "tuplesInserted": 177431
+            },
+            "walInsertLSN": "0/19DF6B70"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 5,
+          "round": 2,
+          "edge": "start",
+          "commonCurrentBytes": 941101056,
+          "lifetimePeakBytes": 1005813760,
+          "anonBytes": 308060160,
+          "fileBytes": 605261824,
+          "kernelBytes": 26886144,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:09:37.274687+00:00",
+            "wal": {
+              "wal_fpi": 24090,
+              "wal_sync": 16867,
+              "wal_bytes": 415253844,
+              "wal_write": 18119,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528605,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF6B70",
+            "database": {
+              "blocksHit": 584856306,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8914,
+              "tuplesInserted": 177431
+            },
+            "walInsertLSN": "0/19DF6B70"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 6,
+          "round": 2,
+          "edge": "end",
+          "commonCurrentBytes": 944132096,
+          "lifetimePeakBytes": 1015795712,
+          "anonBytes": 311349248,
+          "fileBytes": 605339648,
+          "kernelBytes": 26898432,
+          "shmemBytesSubsetOfFile": 233758720,
+          "postgresCounters": {
+            "at": "2026-10-20T19:09:41.150464+00:00",
+            "wal": {
+              "wal_fpi": 24093,
+              "wal_sync": 16869,
+              "wal_bytes": 415278861,
+              "wal_write": 18121,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528621,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DFCD98",
+            "database": {
+              "blocksHit": 585153167,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22465,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8915,
+              "tuplesInserted": 177436
+            },
+            "walInsertLSN": "0/19DFCD98"
+          },
+          "postgresStatsMayLag": true
+        }
+      ],
+      "firstToThirdCycleEndCurrentGrowthBytes": 5410816,
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "allOwnedProcessesClosed": true
+    },
+    {
+      "caseId": "control-f4fc95f8410c9093233f7213",
+      "variant": "NEW",
+      "actualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-f4fc95f8410c9093233f7213/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8268,
+        "sha256": "9d130ee6d77b9225970ed644215da29fb8758e5db9cfc55154e587030b864279"
+      },
+      "controlObservationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-f4fc95f8410c9093233f7213/CONTROL_CACHE.SAFE.json",
+        "bytes": 84003,
+        "sha256": "eeff1a67f9d2eccff00d03dc72741b39df48b14aa58299a6e0750cf35fa087ee"
+      },
+      "wholeLifetimeCommonPeakBytes": 1002266624,
+      "wholeLifetimeCPUSeconds": 34.694362,
+      "wholeLifetimeWallSeconds": 34.404733125993516,
+      "nodeClientWallMilliseconds": 12646.699288,
+      "nodeMaxRSSKiBDiagnosticOnly": 300464,
+      "httpResponseBodyBytes": 57089403,
+      "actualControlTextUTF8Bytes": 4856607,
+      "controlStringifyCalls": 5,
+      "warmControls": 15,
+      "threeCycleBoundarySamples": [
+        {
+          "sequence": 1,
+          "round": 0,
+          "edge": "start",
+          "commonCurrentBytes": 653508608,
+          "lifetimePeakBytes": 653508608,
+          "anonBytes": 64798720,
+          "fileBytes": 567554048,
+          "kernelBytes": 20381696,
+          "shmemBytesSubsetOfFile": 197910528,
+          "postgresCounters": {
+            "at": "2026-10-20T19:10:38.776196+00:00",
+            "wal": {
+              "wal_fpi": 24079,
+              "wal_sync": 16860,
+              "wal_bytes": 415180519,
+              "wal_write": 18112,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528569,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DE4BC0",
+            "database": {
+              "blocksHit": 584335800,
+              "tempBytes": 62187886257,
+              "tempFiles": 13197,
+              "blocksRead": 17967,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8912,
+              "tuplesInserted": 177421
+            },
+            "walInsertLSN": "0/19DE4C00"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 2,
+          "round": 0,
+          "edge": "end",
+          "commonCurrentBytes": 936042496,
+          "lifetimePeakBytes": 979394560,
+          "anonBytes": 318312448,
+          "fileBytes": 592498688,
+          "kernelBytes": 24309760,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:10:43.605901+00:00",
+            "wal": {
+              "wal_fpi": 24087,
+              "wal_sync": 16864,
+              "wal_bytes": 415230497,
+              "wal_write": 18116,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528588,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF0FD0",
+            "database": {
+              "blocksHit": 584637644,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8913,
+              "tuplesInserted": 177426
+            },
+            "walInsertLSN": "0/19DF0FD0"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 3,
+          "round": 1,
+          "edge": "start",
+          "commonCurrentBytes": 935940096,
+          "lifetimePeakBytes": 979394560,
+          "anonBytes": 318312448,
+          "fileBytes": 592527360,
+          "kernelBytes": 24322048,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:10:43.676547+00:00",
+            "wal": {
+              "wal_fpi": 24087,
+              "wal_sync": 16864,
+              "wal_bytes": 415230497,
+              "wal_write": 18116,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528588,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF0FD0",
+            "database": {
+              "blocksHit": 584637979,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8913,
+              "tuplesInserted": 177426
+            },
+            "walInsertLSN": "0/19DF0FD0"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 4,
+          "round": 1,
+          "edge": "end",
+          "commonCurrentBytes": 930435072,
+          "lifetimePeakBytes": 996392960,
+          "anonBytes": 314638336,
+          "fileBytes": 590635008,
+          "kernelBytes": 24367104,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:10:46.734514+00:00",
+            "wal": {
+              "wal_fpi": 24090,
+              "wal_sync": 16867,
+              "wal_bytes": 415253843,
+              "wal_write": 18119,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528605,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF6B70",
+            "database": {
+              "blocksHit": 584816599,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8914,
+              "tuplesInserted": 177431
+            },
+            "walInsertLSN": "0/19DF6B70"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 5,
+          "round": 2,
+          "edge": "start",
+          "commonCurrentBytes": 930242560,
+          "lifetimePeakBytes": 996392960,
+          "anonBytes": 314638336,
+          "fileBytes": 590659584,
+          "kernelBytes": 24375296,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:10:46.803723+00:00",
+            "wal": {
+              "wal_fpi": 24090,
+              "wal_sync": 16867,
+              "wal_bytes": 415253843,
+              "wal_write": 18119,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528605,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF6B70",
+            "database": {
+              "blocksHit": 584816934,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8914,
+              "tuplesInserted": 177431
+            },
+            "walInsertLSN": "0/19DF6B70"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 6,
+          "round": 2,
+          "edge": "end",
+          "commonCurrentBytes": 927809536,
+          "lifetimePeakBytes": 1002266624,
+          "anonBytes": 313016320,
+          "fileBytes": 589344768,
+          "kernelBytes": 24547328,
+          "shmemBytesSubsetOfFile": 233758720,
+          "postgresCounters": {
+            "at": "2026-10-20T19:10:49.763679+00:00",
+            "wal": {
+              "wal_fpi": 24093,
+              "wal_sync": 16869,
+              "wal_bytes": 415278860,
+              "wal_write": 18121,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528621,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DFCD98",
+            "database": {
+              "blocksHit": 585192577,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22465,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8915,
+              "tuplesInserted": 177436
+            },
+            "walInsertLSN": "0/19DFCD98"
+          },
+          "postgresStatsMayLag": true
+        }
+      ],
+      "firstToThirdCycleEndCurrentGrowthBytes": -8232960,
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "allOwnedProcessesClosed": true
+    },
+    {
+      "caseId": "control-2aa650ba79de93befbf07c2f",
+      "variant": "NEW",
+      "actualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-2aa650ba79de93befbf07c2f/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8275,
+        "sha256": "b34537e3b3b4e880017f03f0dc517de37abe0847d4247a8e89be8e0338f3ae96"
+      },
+      "controlObservationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-2aa650ba79de93befbf07c2f/CONTROL_CACHE.SAFE.json",
+        "bytes": 83974,
+        "sha256": "90c381095560b7a0211aa83a9108d01b1df23e939f8a9cd8035694e8389c341c"
+      },
+      "wholeLifetimeCommonPeakBytes": 1016721408,
+      "wholeLifetimeCPUSeconds": 31.420272,
+      "wholeLifetimeWallSeconds": 31.15555644700362,
+      "nodeClientWallMilliseconds": 11539.885745,
+      "nodeMaxRSSKiBDiagnosticOnly": 299684,
+      "httpResponseBodyBytes": 57089403,
+      "actualControlTextUTF8Bytes": 4856607,
+      "controlStringifyCalls": 5,
+      "warmControls": 15,
+      "threeCycleBoundarySamples": [
+        {
+          "sequence": 1,
+          "round": 0,
+          "edge": "start",
+          "commonCurrentBytes": 657960960,
+          "lifetimePeakBytes": 657960960,
+          "anonBytes": 65519616,
+          "fileBytes": 569143296,
+          "kernelBytes": 22626304,
+          "shmemBytesSubsetOfFile": 197910528,
+          "postgresCounters": {
+            "at": "2026-10-20T19:11:56.842034+00:00",
+            "wal": {
+              "wal_fpi": 24079,
+              "wal_sync": 16860,
+              "wal_bytes": 415180519,
+              "wal_write": 18112,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528569,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DE4BC0",
+            "database": {
+              "blocksHit": 584335780,
+              "tempBytes": 62187886257,
+              "tempFiles": 13197,
+              "blocksRead": 17967,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8912,
+              "tuplesInserted": 177421
+            },
+            "walInsertLSN": "0/19DE4C00"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 2,
+          "round": 0,
+          "edge": "end",
+          "commonCurrentBytes": 933371904,
+          "lifetimePeakBytes": 989429760,
+          "anonBytes": 307154944,
+          "fileBytes": 598593536,
+          "kernelBytes": 26599424,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:12:00.721393+00:00",
+            "wal": {
+              "wal_fpi": 24087,
+              "wal_sync": 16864,
+              "wal_bytes": 415230497,
+              "wal_write": 18116,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528588,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF0FD0",
+            "database": {
+              "blocksHit": 584637628,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8913,
+              "tuplesInserted": 177426
+            },
+            "walInsertLSN": "0/19DF0FD0"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 3,
+          "round": 1,
+          "edge": "start",
+          "commonCurrentBytes": 932716544,
+          "lifetimePeakBytes": 989429760,
+          "anonBytes": 306622464,
+          "fileBytes": 598622208,
+          "kernelBytes": 26591232,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:12:00.799331+00:00",
+            "wal": {
+              "wal_fpi": 24087,
+              "wal_sync": 16864,
+              "wal_bytes": 415230497,
+              "wal_write": 18116,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528588,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF0FD0",
+            "database": {
+              "blocksHit": 584637963,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8913,
+              "tuplesInserted": 177426
+            },
+            "walInsertLSN": "0/19DF0FD0"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 4,
+          "round": 1,
+          "edge": "end",
+          "commonCurrentBytes": 940277760,
+          "lifetimePeakBytes": 997568512,
+          "anonBytes": 314294272,
+          "fileBytes": 598499328,
+          "kernelBytes": 26697728,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:12:03.843865+00:00",
+            "wal": {
+              "wal_fpi": 24090,
+              "wal_sync": 16867,
+              "wal_bytes": 415253844,
+              "wal_write": 18119,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528605,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF6B70",
+            "database": {
+              "blocksHit": 584816583,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8914,
+              "tuplesInserted": 177431
+            },
+            "walInsertLSN": "0/19DF6B70"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 5,
+          "round": 2,
+          "edge": "start",
+          "commonCurrentBytes": 940552192,
+          "lifetimePeakBytes": 997568512,
+          "anonBytes": 314294272,
+          "fileBytes": 598523904,
+          "kernelBytes": 26734592,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:12:03.913233+00:00",
+            "wal": {
+              "wal_fpi": 24090,
+              "wal_sync": 16867,
+              "wal_bytes": 415253844,
+              "wal_write": 18119,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528605,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF6B70",
+            "database": {
+              "blocksHit": 584816918,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8914,
+              "tuplesInserted": 177431
+            },
+            "walInsertLSN": "0/19DF6B70"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 6,
+          "round": 2,
+          "edge": "end",
+          "commonCurrentBytes": 942211072,
+          "lifetimePeakBytes": 1016721408,
+          "anonBytes": 316624896,
+          "fileBytes": 598327296,
+          "kernelBytes": 26636288,
+          "shmemBytesSubsetOfFile": 233758720,
+          "postgresCounters": {
+            "at": "2026-10-20T19:12:06.784205+00:00",
+            "wal": {
+              "wal_fpi": 24093,
+              "wal_sync": 16869,
+              "wal_bytes": 415278861,
+              "wal_write": 18121,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528621,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DFCD98",
+            "database": {
+              "blocksHit": 585192577,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22465,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8915,
+              "tuplesInserted": 177436
+            },
+            "walInsertLSN": "0/19DFCD98"
+          },
+          "postgresStatsMayLag": true
+        }
+      ],
+      "firstToThirdCycleEndCurrentGrowthBytes": 8839168,
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "allOwnedProcessesClosed": true
+    },
+    {
+      "caseId": "control-a11e080562d1d0fc384e0475",
+      "variant": "OLD",
+      "actualResultPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-a11e080562d1d0fc384e0475/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8300,
+        "sha256": "467d2e6e6fa5b421c844b26c33dbb80b8ab934ad69f27098c43a7fbf99098bc3"
+      },
+      "controlObservationPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases/control-a11e080562d1d0fc384e0475/CONTROL_CACHE.SAFE.json",
+        "bytes": 89922,
+        "sha256": "cd526b6d345730244489c26e5a2cea177ce490f6fe710d1e053bc4aeac36c070"
+      },
+      "wholeLifetimeCommonPeakBytes": 1014566912,
+      "wholeLifetimeCPUSeconds": 34.983958,
+      "wholeLifetimeWallSeconds": 33.96238146199903,
+      "nodeClientWallMilliseconds": 13626.663212,
+      "nodeMaxRSSKiBDiagnosticOnly": 299600,
+      "httpResponseBodyBytes": 157016193,
+      "actualControlTextUTF8Bytes": 4856607,
+      "controlStringifyCalls": 41,
+      "warmControls": 0,
+      "threeCycleBoundarySamples": [
+        {
+          "sequence": 1,
+          "round": 0,
+          "edge": "start",
+          "commonCurrentBytes": 658505728,
+          "lifetimePeakBytes": 658505728,
+          "anonBytes": 65949696,
+          "fileBytes": 569139200,
+          "kernelBytes": 22384640,
+          "shmemBytesSubsetOfFile": 197910528,
+          "postgresCounters": {
+            "at": "2026-10-20T19:13:45.583714+00:00",
+            "wal": {
+              "wal_fpi": 24079,
+              "wal_sync": 16860,
+              "wal_bytes": 415180519,
+              "wal_write": 18112,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528569,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DE4BC0",
+            "database": {
+              "blocksHit": 584335800,
+              "tempBytes": 62187886257,
+              "tempFiles": 13197,
+              "blocksRead": 17967,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8912,
+              "tuplesInserted": 177421
+            },
+            "walInsertLSN": "0/19DE4C00"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 2,
+          "round": 0,
+          "edge": "end",
+          "commonCurrentBytes": 945639424,
+          "lifetimePeakBytes": 1008508928,
+          "anonBytes": 326221824,
+          "fileBytes": 600485888,
+          "kernelBytes": 26976256,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:13:50.130721+00:00",
+            "wal": {
+              "wal_fpi": 24087,
+              "wal_sync": 16864,
+              "wal_bytes": 415230497,
+              "wal_write": 18116,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528588,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF0FD0",
+            "database": {
+              "blocksHit": 584598246,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8913,
+              "tuplesInserted": 177426
+            },
+            "walInsertLSN": "0/19DF0FD0"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 3,
+          "round": 1,
+          "edge": "start",
+          "commonCurrentBytes": 945623040,
+          "lifetimePeakBytes": 1008508928,
+          "anonBytes": 326221824,
+          "fileBytes": 600485888,
+          "kernelBytes": 26976256,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:13:50.197296+00:00",
+            "wal": {
+              "wal_fpi": 24087,
+              "wal_sync": 16864,
+              "wal_bytes": 415230497,
+              "wal_write": 18116,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528588,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF0FD0",
+            "database": {
+              "blocksHit": 584598581,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8913,
+              "tuplesInserted": 177426
+            },
+            "walInsertLSN": "0/19DF0FD0"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 4,
+          "round": 1,
+          "edge": "end",
+          "commonCurrentBytes": 956145664,
+          "lifetimePeakBytes": 1011470336,
+          "anonBytes": 327467008,
+          "fileBytes": 600539136,
+          "kernelBytes": 27004928,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:13:54.073704+00:00",
+            "wal": {
+              "wal_fpi": 24090,
+              "wal_sync": 16867,
+              "wal_bytes": 415253844,
+              "wal_write": 18119,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528605,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF6B70",
+            "database": {
+              "blocksHit": 584934765,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8914,
+              "tuplesInserted": 177431
+            },
+            "walInsertLSN": "0/19DF6B70"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 5,
+          "round": 2,
+          "edge": "start",
+          "commonCurrentBytes": 956194816,
+          "lifetimePeakBytes": 1011470336,
+          "anonBytes": 327467008,
+          "fileBytes": 600563712,
+          "kernelBytes": 27029504,
+          "shmemBytesSubsetOfFile": 233725952,
+          "postgresCounters": {
+            "at": "2026-10-20T19:13:54.146159+00:00",
+            "wal": {
+              "wal_fpi": 24090,
+              "wal_sync": 16867,
+              "wal_bytes": 415253844,
+              "wal_write": 18119,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528605,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DF6B70",
+            "database": {
+              "blocksHit": 584935100,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22463,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8914,
+              "tuplesInserted": 177431
+            },
+            "walInsertLSN": "0/19DF6B70"
+          },
+          "postgresStatsMayLag": true
+        },
+        {
+          "sequence": 6,
+          "round": 2,
+          "edge": "end",
+          "commonCurrentBytes": 955850752,
+          "lifetimePeakBytes": 1014566912,
+          "anonBytes": 327671808,
+          "fileBytes": 600604672,
+          "kernelBytes": 27021312,
+          "shmemBytesSubsetOfFile": 233758720,
+          "postgresCounters": {
+            "at": "2026-10-20T19:13:57.637138+00:00",
+            "wal": {
+              "wal_fpi": 24093,
+              "wal_sync": 16869,
+              "wal_bytes": 415278861,
+              "wal_write": 18121,
+              "stats_reset": "2026-10-20T06:26:23.241297+00:00",
+              "wal_records": 528621,
+              "wal_sync_time": 0,
+              "wal_write_time": 0,
+              "wal_buffers_full": 484
+            },
+            "walLSN": "0/19DFCD98",
+            "database": {
+              "blocksHit": 585231973,
+              "tempBytes": 62191933105,
+              "tempFiles": 13198,
+              "blocksRead": 22465,
+              "statsReset": null,
+              "tuplesDeleted": 3600,
+              "tuplesUpdated": 8915,
+              "tuplesInserted": 177436
+            },
+            "walInsertLSN": "0/19DFCD98"
+          },
+          "postgresStatsMayLag": true
+        }
+      ],
+      "firstToThirdCycleEndCurrentGrowthBytes": 10211328,
+      "memoryEvents": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "allOwnedProcessesClosed": true
+    }
+  ],
+  "arithmeticMeansDescriptiveOnly": {
+    "OLD": {
+      "wholeLifetimeCommonPeakBytes": 1017069568,
+      "wholeLifetimeCPUSeconds": 36.4053895,
+      "wholeLifetimeWallSeconds": 35.36172023350082,
+      "nodeClientWallMilliseconds": 14159.2801685
+    },
+    "NEW": {
+      "wholeLifetimeCommonPeakBytes": 1009494016,
+      "wholeLifetimeCPUSeconds": 33.057317,
+      "wholeLifetimeWallSeconds": 32.78014478649857,
+      "nodeClientWallMilliseconds": 12093.2925165
+    }
+  },
+  "pairedNewMinusOldPeakBytes": [
+    -17305600,
+    2154496
+  ],
+  "commonPeakRangesOverlap": true,
+  "reproducedWorkReduction": {
+    "httpBodyBytesPerCase": {
+      "OLD": 157016193,
+      "NEW": 57089403
+    },
+    "controlStringifyCallsPerCase": {
+      "OLD": 41,
+      "NEW": 5
+    },
+    "nativeWarmControlsPerCase": {
+      "OLD": 0,
+      "NEW": 15
+    }
+  },
+  "integrity": "Both variants retain same logical control/history hashes, native6000 lineage and restored original root; only independently confirmed fresh physical CAS revision differs.",
+  "limits": "Shared whole lifetime budget unchanged, no forced GC, no manual cache eviction or peak reset. Symmetric observer work included; no cold cache assertion.",
+  "interpretation": "Opposite signs in paired peak differences and overlapping ranges do not establish a reproducible causal common-RAM reduction. Three mutation rounds do not prove a plateau.",
+  "measurementCaveats": [
+    "Boundary anon/file/kernel are simultaneous samples, not a decomposition of the exact historical maximum.",
+    "Node RSS and Postgres RSS must not be added to the common cgroup measurement.",
+    "HTTP body bytes and PostgreSQL cumulative counters are not resident memory.",
+    "Postgres private backend memory was not separately captured at the exact common peak.",
+    "A single Node client with3mutations does not prove500simultaneously active profiles or1500results."
+  ],
+  "nativeSecuritySourceQualificationOnly": true,
+  "commonRamSavingQualified": false,
+  "stablePlateauQualified": false,
+  "reserve500MBProven": false,
+  "full500Accepted": false,
+  "newCompleteMotorPathExecutedByThisComparison": false,
+  "production": false,
+  "providerCalls": 0,
+  "nextDecision": "Do not start full500; target the measured full-read/write lifetime before another structural RAM change. Separate freshGO+32conditions remain mandatory."
+}

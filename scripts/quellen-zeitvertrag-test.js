@@ -107,4 +107,58 @@ test("Geaenderte Zeitmetadaten aendern den Quellenhash, gespeicherte Altvertraeg
   assert.equal(L.cacheGueltig(payload, "k", L.hashEingabe(a), a), false);
 });
 
+const Z = require("../lib/helmut/quellen-zeitvertrag");
+const H = require("../lib/helmut/bundestag-dokumenthintergrund");
+const pdf = () => ({ id:H.DOCUMENT_ID, content_hash:H.PDF_SHA256, title:H.TITLE, summary:H.EXCERPT,
+  url:H.URL, canonical_url:H.URL, source_id:"bundestag", document_type:"Antwort der Bundesregierung",
+  published_at:null, quellenauszug_beleg:structuredClone(require("./fixtures/bundestag-dokumenthintergrund-beleg.json")) });
+const pdfRule = "Ein ausdruecklich gebundener Dokumenthintergrund";
+
+test("Ordinary Understanding behaelt seine Regeln ohne fremden PDF Zusatz", () => {
+  assert.equal(Z.promptRegeln([]).length, 13);
+  assert.equal(Z.promptRegeln([doc]).length, 13);
+  assert(!U.buildUnderstandingPrompt(cluster).includes(pdfRule));
+  // The full static set remains available to the other typed-context consumers.
+  assert.equal(Z.PROMPT_REGELN.length, 14);
+  assert(Z.PROMPT_REGELN[4].startsWith(pdfRule));
+});
+
+test("Gepruefter Original PDF Prompt bleibt byteidentisch zum abgenommenen Stand", () => {
+  const source = pdf(), before = structuredClone(source);
+  const prompt = U.buildUnderstandingPrompt({ documents:[source] });
+  assert.equal(require("node:crypto").createHash("sha256").update(prompt).digest("hex"),
+    "43e4b630abda235f92d99bcc1d1bccba3951610ab82e511e1230206fc19a63fc");
+  assert.deepEqual(Z.promptRegeln([source]), Z.PROMPT_REGELN);
+  assert.equal(rows(prompt)[0].veroeffentlichtAm, null);
+  assert.equal(rows(prompt)[0].zeitbezug.zeitbasis, "dokumentdatum");
+  assert.deepEqual(source, before);
+});
+
+test("Jeder ausgewaehlte PDF Beleg wird geprueft auch nach einem gueltigen Beleg", () => {
+  for (const change of [d => delete d.quellenauszug_beleg, d => d.summary += " fremd",
+    d => d.quellenauszug_beleg.dokumentdatum = "2026-10-16", d => d.published_at = "2026-10-08"]) {
+    const bad = pdf(); change(bad);
+    for (const selected of [[bad], [pdf(), bad], [bad, pdf()]]) {
+      assert.throws(() => Z.promptRegeln(selected), /^Error: bundestag-dokumenthintergrund-/);
+      assert.throws(() => U.buildUnderstandingPrompt({ documents:selected }), /^Error: bundestag-dokumenthintergrund-/);
+    }
+  }
+});
+
+test("Regelauswahl betrachtet ausschliesslich die tatsaechlich ausgewaehlten Quellen", () => {
+  const unselected = pdf(), selected = [doc], before = structuredClone(selected);
+  assert(H.lese(unselected));
+  const rules = Z.promptRegeln(selected);
+  assert(!rules.some(r => r.startsWith(pdfRule)));
+  rules.push("only-this-returned-copy");
+  assert.equal(Z.PROMPT_REGELN.length, 14);
+  assert.equal(Z.promptRegeln(selected).length, 13);
+  assert.deepEqual(selected, before);
+});
+
+test("Briefing Erzeugung und Quellenreview behalten die vollstaendige PDF Schutzregel", () => {
+  for (const prompt of [AI.buildLageBriefingPrompt([], {}, { briefingDatum:"2026-10-16" }), R.prompt([], [], {})])
+    assert(prompt.includes(Z.PROMPT_REGELN[4]));
+});
+
 console.log(`PASS ${bestanden} Gruppen zum Quellenzeitvertrag`);

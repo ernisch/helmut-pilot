@@ -1,0 +1,275 @@
+{
+  "schema": "helmut-native-owner-runtime-rx-evidence/1",
+  "candidateCommit": "07707f0fe39fcafad68db530cd6474e2f54517b3",
+  "case": "/workspace/helmut-unit-diagnostic-native/6fea23fd932769d0b2f3de807aa1361d",
+  "scope": "Six measured public runtime copies and root Python/Node/inert Owner+Broker import RX only",
+  "resultFile": {
+    "path": "/workspace/helmut-unit-diagnostic-native/6fea23fd932769d0b2f3de807aa1361d/RESULT.SAFE.json",
+    "bytes": 10356,
+    "sha256": "23ffe90d9d5341e0ca0956d0e359d79ddbca8ad8b25c523e82e79b44eeea1a90"
+  },
+  "driverPin": {
+    "path": "/tmp/helmut-owner-runtime-rx-qualifier-20261022.py",
+    "bytes": 20035,
+    "sha256": "91191bcbfed070c8dc25cf40394cc95f12480b0f1e1ecd93f6c8dfa025166898"
+  },
+  "pass": true,
+  "ownerRuntimeCopies": [
+    {
+      "originalSource": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-native-position-export/runtime-root/lib64/ld-linux-x86-64.so.2",
+        "bytes": 215000,
+        "sha256": "593bb1d5355658e645f36e6b1f49832691b24e177209765914e4cce51499dbb4"
+      },
+      "copy": {
+        "path": "/workspace/helmut-unit-diagnostic-native/6fea23fd932769d0b2f3de807aa1361d/owner-public/runtime-000",
+        "bytes": 215000,
+        "sha256": "593bb1d5355658e645f36e6b1f49832691b24e177209765914e4cce51499dbb4"
+      },
+      "imagePath": "/lib64/ld-linux-x86-64.so.2",
+      "mode": 365,
+      "installerContainerId": "4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0"
+    },
+    {
+      "originalSource": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-native-position-export/runtime-root/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+        "bytes": 215000,
+        "sha256": "593bb1d5355658e645f36e6b1f49832691b24e177209765914e4cce51499dbb4"
+      },
+      "copy": {
+        "path": "/workspace/helmut-unit-diagnostic-native/6fea23fd932769d0b2f3de807aa1361d/owner-public/runtime-001",
+        "bytes": 215000,
+        "sha256": "593bb1d5355658e645f36e6b1f49832691b24e177209765914e4cce51499dbb4"
+      },
+      "imagePath": "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+      "mode": 365,
+      "installerContainerId": "4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0"
+    },
+    {
+      "originalSource": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-native-position-export/runtime-root/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "bytes": 1926232,
+        "sha256": "bff8750fe719e6000791b88b11747dce8772c37118d0b2348044b70819d13835"
+      },
+      "copy": {
+        "path": "/workspace/helmut-unit-diagnostic-native/6fea23fd932769d0b2f3de807aa1361d/owner-public/runtime-002",
+        "bytes": 1926232,
+        "sha256": "bff8750fe719e6000791b88b11747dce8772c37118d0b2348044b70819d13835"
+      },
+      "imagePath": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+      "mode": 292,
+      "installerContainerId": "4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0"
+    },
+    {
+      "originalSource": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-native-position-export/runtime-root/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+        "bytes": 125312,
+        "sha256": "2bd1552c47799ef67e701e81d4383061fd76059868e446e63560f0dd0d5ec14e"
+      },
+      "copy": {
+        "path": "/workspace/helmut-unit-diagnostic-native/6fea23fd932769d0b2f3de807aa1361d/owner-public/runtime-003",
+        "bytes": 125312,
+        "sha256": "2bd1552c47799ef67e701e81d4383061fd76059868e446e63560f0dd0d5ec14e"
+      },
+      "imagePath": "/usr/lib/x86_64-linux-gnu/libgcc_s.so.1",
+      "mode": 292,
+      "installerContainerId": "4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0"
+    },
+    {
+      "originalSource": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-native-position-export/runtime-root/usr/lib/x86_64-linux-gnu/libm.so.6",
+        "bytes": 911904,
+        "sha256": "7f2ca87f652f56b094462474b076749e90e689d0ecb9cb63c7679820b271b4e7"
+      },
+      "copy": {
+        "path": "/workspace/helmut-unit-diagnostic-native/6fea23fd932769d0b2f3de807aa1361d/owner-public/runtime-004",
+        "bytes": 911904,
+        "sha256": "7f2ca87f652f56b094462474b076749e90e689d0ecb9cb63c7679820b271b4e7"
+      },
+      "imagePath": "/usr/lib/x86_64-linux-gnu/libm.so.6",
+      "mode": 292,
+      "installerContainerId": "4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0"
+    },
+    {
+      "originalSource": {
+        "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-native-position-export/runtime-root/usr/lib/x86_64-linux-gnu/libstdc++.so.6",
+        "bytes": 2190440,
+        "sha256": "e7848e32af4932840ba775169041759a2a8dd5a008af360e5c55bce506eebcf4"
+      },
+      "copy": {
+        "path": "/workspace/helmut-unit-diagnostic-native/6fea23fd932769d0b2f3de807aa1361d/owner-public/runtime-005",
+        "bytes": 2190440,
+        "sha256": "e7848e32af4932840ba775169041759a2a8dd5a008af360e5c55bce506eebcf4"
+      },
+      "imagePath": "/usr/lib/x86_64-linux-gnu/libstdc++.so.6",
+      "mode": 292,
+      "installerContainerId": "4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0"
+    }
+  ],
+  "runtimeCopyBytes": 5583888,
+  "installerProcessClose": {
+    "containerId": "4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0",
+    "process": {
+      "hostPID": 83645,
+      "namespacePID": 1,
+      "startTicks": "4884762",
+      "exe": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+      "namespaces": {
+        "pid": "pid:[4026532417]",
+        "net": "net:[4026532419]",
+        "mnt": "mnt:[4026532414]",
+        "cgroup": "cgroup:[4026532418]",
+        "time": null,
+        "clockDomain": {
+          "schema": "helmut-local-unit-monotonic-domain/1",
+          "kind": "kernel-without-time-namespaces",
+          "namespace": null,
+          "bootId": "d5bb4284-112a-4a96-8b9b-c08e0707ba82"
+        }
+      },
+      "membership": "0::/../helmut-meter-memorybudget-23929ba43fd3a0e209f20ee2/4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0\n"
+    },
+    "exitCode": 0,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true,
+    "registeredHostPID": 83583,
+    "observerProcessClose": {
+      "exitCode": 0,
+      "stdoutNaturalEOF": true,
+      "stderrNaturalEOF": true,
+      "registeredHostPID": 83668,
+      "containerId": "4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0",
+      "observerProcess": {
+        "hostPID": 83701,
+        "namespacePID": 7,
+        "startTicks": "4884786",
+        "exe": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "namespaces": {
+          "pid": "pid:[4026532417]",
+          "net": "net:[4026532419]",
+          "mnt": "mnt:[4026532414]",
+          "cgroup": "cgroup:[4026532418]",
+          "time": null,
+          "clockDomain": {
+            "schema": "helmut-local-unit-monotonic-domain/1",
+            "kind": "kernel-without-time-namespaces",
+            "namespace": null,
+            "bootId": "d5bb4284-112a-4a96-8b9b-c08e0707ba82"
+          }
+        },
+        "membership": "0::/../helmut-meter-memorybudget-23929ba43fd3a0e209f20ee2/4949fa98db3ed18e9ddc1f9e586b15658bd59fa3abec7e35260fafe4db0e5ae0\n"
+      },
+      "observerCodeSHA256": "d628ba48bb4b085ed8f787442fd388217d96bef1643aac5ebd962276f1f351e9",
+      "nodePin": {
+        "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+      },
+      "requestNonceSHA256": "52c60bf72e9ee4aca1b361d5ad82965e076d056168d8241f4ef18d5111887304",
+      "observedAtUTC": "2026-10-22T20:54:13.548Z"
+    }
+  },
+  "rootPython": {
+    "schema": "helmut-owner-runtime-python-rx/1",
+    "pid": 7,
+    "startTicks": "4884869",
+    "uid": 0,
+    "gid": 0,
+    "capsZero": true,
+    "noNewPrivileges": true,
+    "exePin": {
+      "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+      "bytes": 30894944,
+      "sha256": "fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7"
+    },
+    "clockDomain": {
+      "schema": "helmut-local-unit-monotonic-domain/1",
+      "kind": "kernel-without-time-namespaces",
+      "namespace": null,
+      "bootId": "d5bb4284-112a-4a96-8b9b-c08e0707ba82"
+    },
+    "node": {
+      "schema": "helmut-owner-runtime-node-rx/1",
+      "pid": 13,
+      "startTicks": "4884877",
+      "uid": 0,
+      "gid": 0,
+      "capsZero": true,
+      "noNewPrivileges": true,
+      "nodeVersion": "v24.19.0",
+      "execArgv": [
+        "--max-old-space-size=384",
+        "--max-semi-space-size=16"
+      ],
+      "heapSizeLimitBytes": 452984832,
+      "exePin": {
+        "path": "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "bytes": 125989464,
+        "sha256": "bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12"
+      },
+      "imports": 2,
+      "ownerBrokerStarted": false,
+      "rootPrivateProbeRead": true,
+      "pidNamespace": "pid:[4026532417]",
+      "membership": "0::/\n",
+      "clockDomain": {
+        "schema": "helmut-local-unit-monotonic-domain/1",
+        "kind": "kernel-without-time-namespaces",
+        "namespace": null,
+        "bootId": "d5bb4284-112a-4a96-8b9b-c08e0707ba82"
+      }
+    },
+    "pidNamespace": "pid:[4026532417]",
+    "membership": "0::/\n",
+    "nodeProcessClose": {
+      "pid": 13,
+      "exitCode": 0,
+      "stdoutNaturalEOF": true,
+      "stderrNaturalEOF": true
+    }
+  },
+  "rootPythonProcessClose": {
+    "exitCode": 0,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true,
+    "registeredHostPID": 83960
+  },
+  "sourcePrivateReadNegative": {
+    "schema": "helmut-runtime-rx-source-denial/1",
+    "uid": 1000,
+    "errno": 13,
+    "denied": true
+  },
+  "sourcePrivateReadProcessClose": {
+    "exitCode": 0,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true,
+    "registeredHostPID": 83996
+  },
+  "sourceProcessClose": {
+    "exitCode": 0,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true,
+    "registeredHostPID": 83895
+  },
+  "commonMemoryPeakBytes": 51445760,
+  "memoryEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "parentEmptyAfterActualProcessEnds": true,
+  "allOriginalBytesAndModesPreserved": true,
+  "copiesCreatedWithinMeasuredParent": true,
+  "sourceDatabaseStarted": false,
+  "originalInputsMounted": false,
+  "maximumUnitsAuthorized": 0,
+  "motorCalls": 0,
+  "providerCalls": 0,
+  "unit60Qualified": false,
+  "full500ReserveQualified": false,
+  "full500Qualified": false
+}

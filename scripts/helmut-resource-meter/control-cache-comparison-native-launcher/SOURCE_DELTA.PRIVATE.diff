@@ -1,0 +1,816 @@
+--- V7/common.py
++++ V8/common.py
+@@ -1,4 +1,4 @@
+-"""V7: separately adopted PostgREST lifecycle and exact three-RPC control read."""
++"""V8: same-freeze lifecycle and separately adopted OLD/NEW 27-RPC comparison."""
+ import hashlib
+ import json
+ import os
+@@ -10,7 +10,7 @@
+ from pathlib import Path
+ 
+ HERE = Path(__file__).resolve().parent
+-CASES = Path('/workspace/helmut-ram-fix-20261020/control-cache-native-20261020/cases')
++CASES = Path('/workspace/helmut-ram-fix-20261020/control-cache-comparison-20261020/cases')
+ REPO = Path('/workspace/helmut-cpu-epoch-20261015')
+ BIN = REPO/'scripts/helmut-resource-meter'
+ D = Path('/workspace/helmut-ram-fix-20261020/auth-working-set-20261020')
+@@ -51,7 +51,10 @@
+     return type(value) is str and re.fullmatch(
+         '[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}',value)
+ 
+-def selected_measurement(closure, mode):
++CANONICAL_U = REPO/'lib/helmut/llm-usage-atomic.js'
++CANONICAL_PARTS = REPO/'lib/helmut/auth-state-parts.js'
++
++def selected_measurement(closure, mode, variant=None):
+     require(mode in ('lifecycle-only','control-cache'),'exactly two separately adopted modes')
+     require(closure['graphBodySHA256']==NEW_GRAPH and
+             closure['rendererBodySHA256']==NEW_RENDERER,'current reviewed engine/renderer only')
+@@ -67,11 +70,28 @@
+             read(closure['postgrestShutdownPolicyPin'])==closure['postgrestShutdownPolicy'] and
+             closure['upstreamEvidencePin']['sha256']==closure['postgrestShutdownPolicy']['upstreamEvidenceSHA256'],
+             'exact local shutdown policy/upstream evidence pins')
+-    return {'mode':mode,'adoptionSchema':'helmut-control-cache-'+mode+'-root-adoption/1',
++    variant = 'NONE' if mode=='lifecycle-only' and variant is None else variant
++    require((mode=='lifecycle-only' and variant=='NONE') or
++            (mode=='control-cache' and variant in ('OLD','NEW')),'exact separately adopted variant')
++    require(not any(x['path'] in (str(CANONICAL_U),str(CANONICAL_PARTS))
++                    for x in closure['metadataAndCodeInputs']),
++            'variable canonical overlay paths cannot carry historical worker-byte expectations')
++    require(len(closure['hostOnlyInputPins'])==2 and
++            {x['path'] for x in closure['hostOnlyInputPins']}=={str(CANONICAL_U),str(CANONICAL_PARTS)},
++            'authenticate original live Root sources separately on host')
++    overlay=closure['variantSources']['OLD' if variant=='NONE' else variant]
++    parts=closure['commonPartsPin']
++    require(overlay in closure['metadataAndCodeInputs'] and parts in closure['metadataAndCodeInputs'],
++            'selected readonly overlays outside common closure')
++    require(closure['variantSources']['OLD']['sha256']=='31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0'
++            and closure['variantSources']['NEW']['sha256']=='93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b'
++            and parts['sha256']=='f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63',
++            'exact reviewed original/candidate/common constants-export sources')
++    return {'mode':mode,'variant':variant,'uOverlayPin':overlay,'partsOverlayPin':parts,'adoptionSchema' :'helmut-control-cache-'+mode+'-root-adoption/1',
+         'action':('ROOT START POSTGREST LIFECYCLE ONLY' if mode=='lifecycle-only' else
+-                  'ROOT START CONTROL CACHE THREE RPCS ONLY'),
++                  'ROOT START CONTROL CACHE 27 RPC COMPARISON ONLY'),
+         'installSQLPin':closure['installSQLPin'],'expectedBodySHA256':NEW_GRAPH,
+-        'authRPCCount':0 if mode=='lifecycle-only' else 3,
++        'authRPCCount':0 if mode=='lifecycle-only' else 27,
+         'nodeLaunchCount':0 if mode=='lifecycle-only' else 1,
+         'postgrestConfigSHA256':closure['postgrestConfigSHA256'],
+         'postgrestShutdownPolicy':closure['postgrestShutdownPolicy'],
+--- V7/run.py
++++ V8/run.py
+@@ -24,7 +24,7 @@
+     value = json.loads(p.read_text())
+     C.require(value['schema']=='helmut-control-cache-prepared/1'
+               and value['nativeQualification']=='NOT_RUN','prepared source closure')
+-    for item in value['files']+value['metadataAndCodeInputs']:
++    for item in value['files']+value['metadataAndCodeInputs']+value['hostOnlyInputPins']:
+         C.checked(item)
+     return C.pin(p),value
+ 
+@@ -47,9 +47,9 @@
+             C.require(not (p==C.SOURCE or C.SOURCE.is_relative_to(p) or p.is_relative_to(C.SOURCE)),
+                       'original source has a live container binding')
+ 
+-def prepare(case, mode, lifecycle_path):
++def prepare(case, mode, lifecycle_path, variant):
+     frozen,value = prepared()
+-    selected=C.selected_measurement(value,mode)
++    selected=C.selected_measurement(value,mode,variant)
+     C.floor(C.HERE,C.ADMISSION)
+     C.CASES.mkdir(mode=0o700,parents=True,exist_ok=True)
+     case = safe_case(case,absent=True)
+@@ -74,7 +74,7 @@
+         'source':str(C.SOURCE),'sourceManifestSHA256':C.SOURCE_SHA,
+         'sourceFileCount':1709,'sourceFileBytes':369399611,
+         'runtimeActualFilesVerifiedInsideNewGroup':False,
+-        'measurementMode':mode,'selection':selected,'lifecycleResultPin':lifecycle,'setupRendererInstallationRequired':True,
++        'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,'setupRendererInstallationRequired':True,
+         'ramComparisonPerformed':False,'threeRPCPlateauClaimed':False,
+         'postgrestStarted':False,'nodeStarted':False,'full500':False,'production':False,
+         'providerCalls':0,'containersStarted':0,'sqlExecuted':0,'automaticRetry':False}
+@@ -92,7 +92,7 @@
+     adoption_pin = C.pin(adoption_path)
+     adoption = C.read(adoption_pin)
+     mode=adoption['measurementMode']
+-    selected=C.selected_measurement(prepared_value,mode)
++    selected=C.selected_measurement(prepared_value,mode,adoption['variant'])
+     lifecycle=adoption['lifecycleResultPin']
+     C.validate_run_inputs(prepared_value,selected,lifecycle,frozen)
+     now = datetime.datetime.now(datetime.timezone.utc)
+@@ -135,7 +135,7 @@
+     C.save(case,'STARTED.SAFE.json',{'atUTC':now.isoformat(),'parent':parent,
+         'rootAdoptionPin':adoption_pin,'preflightPin':adoption['preflightPin'],
+         'preparedPin':frozen,'nonce':adoption['nonce'],'automaticRetry':False,
+-        'measurementMode':mode,'selection':selected,'lifecycleResultPin':lifecycle,
++        'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+         'workSeconds':C.WORK_SECONDS,'totalSecondsIncludingClosure':C.TOTAL_SECONDS,
+         'full500':False,'production':False,'providerCalls':0})
+     original_docker,original_save = N.docker,N.save
+@@ -187,7 +187,7 @@
+         config = {'parent':parent,'parentInode':budget['parentInode'],
+             'rootAdoptionPin':adoption_pin,'workDeadlineMonotonic':deadline,
+             'finalDeadlineMonotonic':final_deadline,'preparedPin':frozen,
+-            'measurementMode':mode,'selection':selected,'lifecycleResultPin':lifecycle,
++            'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+             'runtimeBindings':pf['bindings'],'preparation':prepared_value}
+         C.save(case,'WORKER_CONFIG.SAFE.json',config)
+         jit_plan = json.loads((C.D/'jit-closure-v2/JIT_CLOSURE_PLAN.SAFE.json').read_text())
+@@ -198,6 +198,11 @@
+         if lifecycle is not None:
+             for proof_pin in C.lifecycle_file_pins(lifecycle,frozen):
+                 mounts.append((Path(proof_pin['path']),proof_pin['path'],True))
++        # Canonical require paths load selected frozen bytes. These destinations
++        # are intentionally absent from metadataAndCodeInputs; old host bytes
++        # are authenticated separately by hostOnlyInputPins before/after start.
++        mounts += [(Path(selected['uOverlayPin']['path']),str(C.CANONICAL_U),True),
++                   (Path(selected['partsOverlayPin']['path']),str(C.CANONICAL_PARTS),True)]
+         # Native worker accesses these same immutable absolute code/metadata paths.
+         for item in prepared_value['metadataAndCodeInputs']:
+             p = Path(item['path'])
+@@ -343,7 +348,7 @@
+             'actualContainerClosure':closure,'workerResultPin':C.pin(wp) if wp.exists() else None,
+             'minimumSampledHostAvailableBytes':minimum_free,'continuousHostFloorProven':False,
+             'wallSeconds':time.monotonic()-started,
+-            'measurementMode':mode,'selection':selected,'lifecycleResultPin':lifecycle,
++            'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+             'sourceManifestSHA256':C.SOURCE_SHA,'authRPCCount':worker.get('authRPCCount') if worker else None,
+             'ramComparisonPerformed':False,'threeRPCPlateauClaimed':False,
+             'postgrestStarted':worker.get('postgrestStarted') if worker else None,
+@@ -371,7 +376,7 @@
+         C.save(case,'RETIREMENT_CANDIDATES.SAFE.json',{
+             'schema':'helmut-control-cache-retirement-candidates/1','case':str(case),
+             'parent':parent,'containers':candidates,'freshDerivedPGDATAPath':str(case/'disk/pgdata'),
+-            'measurementMode':mode,'selection':selected,'lifecycleResultPin':lifecycle,
++            'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+             'sourceProofExitLogAndPlanPins':proofs,'resultPin':result_pin,
+             'resourcesStopped':bool(closure and closure['allOwnedWorkloadExited'] and final_budget
+                                     and final_budget['setupHelpersExited']),
+@@ -394,10 +399,11 @@
+     pre.add_argument('--case',type=Path,required=True)
+     pre.add_argument('--measurement',choices=('lifecycle-only','control-cache'),required=True)
+     pre.add_argument('--lifecycle-result',type=Path)
++    pre.add_argument('--variant',choices=('NONE','OLD','NEW'),required=True)
+     sub.add_parser('start').add_argument('--root-adoption',type=Path,required=True)
+     args=p.parse_args()
+     if args.action=='prepare':
+-        prepare(args.case,args.measurement,args.lifecycle_result)
++        prepare(args.case,args.measurement,args.lifecycle_result,args.variant)
+         return 0
+     return start(args.root_adoption)
+ 
+--- V7/worker.py
++++ V8/worker.py
+@@ -1,4 +1,4 @@
+-"""V7 native worker: lifecycle-only OR exactly three real direct U read RPCs."""
++"""V8 worker: lifecycle-only OR selected U with exactly 27 genuine local RPCs."""
+ import copy
+ import hashlib
+ import json
+@@ -77,7 +77,7 @@
+         result['LD_LIBRARY_PATH']=LIBRARY_PATH
+     return result
+ 
+-def capture(argv,label,timeout=30,extra_env=None):
++def capture(argv,label,timeout=30,extra_env=None,observer=None):
+     child=None
+     sel=None
+     buffers=[bytearray(),bytearray()]
+@@ -100,6 +100,8 @@
+             if time.monotonic()>=deadline:
+                 failed='CLIENT_30S_DEADLINE'
+                 raise TimeoutError(failed)
++            if observer is not None:
++                observer(child,deadline)
+             for key,_ in sel.select(.05):
+                 block=os.read(key.fileobj.fileno(),8192)
+                 if not block:
+@@ -111,6 +113,8 @@
+                     failed='COMBINED_256KIB_OUTPUT_CAP'
+                     raise RuntimeError(failed)
+                 buffers[key.data].extend(block)
++        if observer is not None:
++            observer(child,deadline)
+         remaining=deadline-time.monotonic()
+         if remaining<=0:
+             failed='CLIENT_30S_DEADLINE'
+@@ -173,12 +177,12 @@
+     C.require(time.monotonic()<deadline,'CLIENT_30S_DEADLINE_AT_RETURN: '+label)
+     return text
+ 
+-def psql(file,label,variables=None):
++def psql(file,label,variables=None,timeout=30):
+     args=[str(PGBIN/'psql'),'-X','-qAt','-w','-h',str(SOCKET),
+         '-U','postgres','-d',C.DATABASE,'-v','ON_ERROR_STOP=1']
+     for key,value in (variables or {}).items():
+         args+=['-v',key+'='+value]
+-    return capture(args+['-f',str(file)],label)
++    return capture(args+['-f',str(file)],label,timeout=timeout)
+ 
+ def rest_logger(child, stream):
+     state={'eof':threading.Event(),'overflow':threading.Event(),'errors':[],
+@@ -236,6 +240,27 @@
+                     out.write(block)
+             target.chmod(row['mode'])
+     PGDATA.chmod(before['records'][0]['mode'])
++
++def proc_diagnostic(pid):
++    # Explicit known child PID only. Unreadable is unknown, never zero.
++    try:
++        status={k:v.strip() for k,sep,v in (r.partition(':') for r in
++            Path('/proc',str(pid),'status').read_text().splitlines()) if sep}
++        return {'pid':pid,'readable':True,'status':{k:status.get(k) for k in
++            ('VmRSS','RssAnon','RssFile','RssShmem','VmSwap','Threads')},
++            'ioRaw':Path('/proc',str(pid),'io').read_text()}
++    except OSError as error:
++        return {'pid':pid,'readable':False,'errorType':type(error).__name__}
++
++def physical_auth(value):
++    C.require(value['rows']==1 and value['physicalBytes']==606 and
++              value['ledgerRows']==6000 and value['referencedLedgerRows']==6000,
++              'small physical root and unchanged 6000 native ledger rows')
++    data=value['data']
++    C.require(type(data) is dict and set(data)=={'_authStoreRevision','_llmUsageRef','_authStateRef'}
++              and C.uuid4(data['_authStoreRevision'])
++              and data['_llmUsageRef']['count']==6000,'exact physical three-field root/revision')
++    return data
+ 
+ def main():
+     global CONFIG,CLOSING,PHASE,LIBRARY_PATH,REST_STATE
+@@ -275,6 +300,10 @@
+     node_pid=None
+     auth_rpc_count=0
+     selected=None
++    small_before=None
++    small_after=None
++    small_qualified=False
++    cycle_records=[]
+     failed=None
+     failure_reason=None
+     started=time.monotonic()
+@@ -303,7 +332,7 @@
+         except BaseException as error:
+             log_errors.append({'type':type(error).__name__,'message':str(error)[:240]})
+     try:
+-        selected=C.selected_measurement(CONFIG['preparation'],mode)
++        selected=C.selected_measurement(CONFIG['preparation'],mode,CONFIG['selection']['variant'])
+         C.validate_run_inputs(CONFIG['preparation'],selected,lifecycle,CONFIG['preparedPin'])
+         C.require(CONFIG['selection']==selected,'worker exact mode/install/lifecycle binding')
+         C.require(os.getuid()==1000 and GROUP.stat().st_ino==CONFIG['parentInode'],
+@@ -323,6 +352,12 @@
+                       'prepared worker/SQL closure drift')
+         for item in CONFIG['preparation']['metadataAndCodeInputs']:
+             C.checked(item)
++        for canonical,item in ((C.CANONICAL_U,selected['uOverlayPin']),
++                               (C.CANONICAL_PARTS,selected['partsOverlayPin'])):
++            C.require('ro' in mount(canonical)['options'],'canonical selected module overlay readonly')
++            actual=C.pin(canonical)
++            C.require((actual['bytes'],actual['sha256'])==(item['bytes'],item['sha256']),
++                      'actual canonical selected module bytes differ')
+         for b in CONFIG['runtimeBindings']:
+             actual=C.pin(b['imagePath'])
+             C.require((actual['bytes'],actual['sha256'])==(b['source']['bytes'],b['source']['sha256']),
+@@ -400,6 +435,10 @@
+                   catalog_before['identity']['hbaFile']==str(PGDATA/'pg_hba.conf') and
+                   catalog_before['identity']['identFile']==str(PGDATA/'pg_ident.conf'),
+                   'actual PG configuration must target only the new clone')
++        small_before=json.loads(psql(Path('/tools/small-auth.sql'),'SMALL_AUTH_BEFORE'))
++        physical_auth(small_before)
++        C.require({k:small_before[k] for k in ('rows','physicalBytes','sha')}==catalog_before['store'],
++                  'independent small original physical root equals full catalog SHA')
+         original_qualified=True
+         record('install-only-reviewed-renderer')
+         psql(Path('/tools/install-reviewed-renderer.sql'),'RENDERER_SETUP')
+@@ -419,6 +458,7 @@
+             'rendererInstalled':catalog_renderer,'fullOriginalCatalogQualified':True,
+             'onlyReviewedRendererAndSelectedGraphBodyChanged':True,'selection':selected,
+             'setupSQLSessions':5,'setupSQLStatements':29,
++            'additionalV8ObservationSQL':'two small physical roots; six cycle metrics in comparison only; final catalog separately',
+             'setupStatementCountScope':'three catalog files x5, renderer install6, current NEW graph install8'})
+         C.require(not log_overflow.is_set(),'PG log cap')
+         record('start-owned-PostgREST')
+@@ -458,6 +498,40 @@
+         if mode=='control-cache':
+             (OUT/'node-observations').mkdir(mode=0o700)
+             node_started=True
++            C.save(OUT,'CLIENT_CONFIG.SAFE.json',{'variant':selected['variant'],
++                'uOverlayPin':selected['uOverlayPin'],'partsOverlayPin':selected['partsOverlayPin']})
++            def observe_cycle(child,outer_deadline):
++                # Handshake metadata is tiny, exact, same order/overhead in both
++                # variants. All SQL/EOF/wait work consumes the SAME Node 30s.
++                index=len(cycle_records)+1
++                marker=OUT/('CYCLE_'+str(index)+'.MARKER.SAFE.json')
++                if not marker.exists():
++                    return
++                C.require(index<=6 and not marker.is_symlink() and marker.stat().st_size<=512,
++                          'bounded exact cycle marker')
++                item=json.loads(marker.read_text())
++                expected={'schema':'helmut-control-cache-cycle-marker/1','sequence':index,
++                    'round':(index-1)//2,'edge':'start' if index%2 else 'end','nodePID':child.pid}
++                C.require(item==expected,'exact cycle order/round/known Node PID')
++                native=snapshot()
++                native['phase']='cycle-'+str(item['round'])+'-'+item['edge']
++                native['ioStatRaw']=(GROUP/'io.stat').read_text()
++                proc={'node':proc_diagnostic(child.pid),'postgres':proc_diagnostic(pg.pid),
++                      'postgrest':proc_diagnostic(rest.pid)}
++                remaining=outer_deadline-time.monotonic()
++                C.require(remaining>0,'cycle observer within same client deadline')
++                sql=json.loads(psql(Path('/tools/cycle-metrics.sql'),'CYCLE_'+str(index)+'_SQL',
++                                    timeout=min(30,remaining)))
++                C.require(time.monotonic()<outer_deadline,'same Node wall after metrics SQL EOF/wait')
++                row={'marker':item,'native':native,'processes':proc,'sql':sql,
++                     'overheadIncluded':True,'noSummedMemoryPeaks':True,
++                     'postgresStatsMayLag':True,'forcedStatsFlush':False}
++                C.save(OUT,'CYCLE_'+str(index)+'.OBSERVATION.SAFE.json',row)
++                ack='CYCLE_'+str(index)+'.ACK.SAFE.json'
++                C.require(not(OUT/ack).exists(),'cycle ACK must be new')
++                C.save(OUT,ack+'.tmp',item)
++                (OUT/(ack+'.tmp')).rename(OUT/ack) # Publish complete ACK atomically.
++                cycle_records.append(row)
+             node_text=capture([str(C.NODE_ROOT/'bin/node'),'--max-old-space-size=384',
+                 '--max-semi-space-size=16','--require='+str(C.BIN/'http-meter.js'),
+                 '/tools/control-driver.js'],'NODE_CONTROL',extra_env={
+@@ -470,21 +544,45 @@
+                     'HELMUT_AUTH_STATE_STORAGE':'merkle-auth-v1',
+                     'HELMUT_AUTH_HISTORY_READ_REUSE':'verified-history-reuse-v1',
+                     'HELMUT_AUTH_CONTROL_READ':'verified-control-view-v1',
+-                    'HELMUT_AUTH_GRAPH_READ_REUSE':'off','HELMUT_AUTH_SINGLE_WRITE_CAPTURE':'off'})
++                    'HELMUT_AUTH_GRAPH_READ_REUSE':'off','HELMUT_AUTH_SINGLE_WRITE_CAPTURE':'off'},observer=observe_cycle)
+             node_exit=0
+             observed=json.loads(node_text)
+-            C.require(observed['schema']=='helmut-control-cache-three-rpc/1' and observed['pass'] is True
+-                      and observed['authRPCCount']==3 and observed['uCalls']==['read','readControl','readControl']
+-                      and observed['nodeVersion']=='v24.19.0' and observed['noExtraAuthSerialization'] is True
+-                      and observed['freshNativeChecksAcceptedByOriginalU'] is True,
+-                      'actual three-RPC original U acceptance')
++            C.require(observed['schema']=='helmut-control-cache-comparison-27-rpc/1' and observed['variant']==selected['variant'] and observed['pass'] is True
++                      and observed['authRPCCount']==27 and observed['fullReadCount']==5 and observed['writeCount']==4
++                      and observed['controlReadCount']==18 and observed['mutations']==3 and observed['restoreCount']==1
++                      and observed['uCalls']==(['read','write']+['readControl']*6)*3+['read','write','read']
++                      and observed['rpcResponsesCompleted']==27 and observed['nativeHTTPSendCount']==27
++                      and len(cycle_records)==6
++                      and observed['nodeVersion']=='v24.19.0' and observed['noExtraFullAuthSerialization'] is True
++                      and observed['freshNativeChecksAcceptedBySelectedU'] is True,
++                      'actual deterministic 27-RPC selected U acceptance')
+             C.require(json.loads((OUT/'CONTROL_CACHE.SAFE.json').read_text())==observed,
+                       'Node stdout/persisted receipt identity')
+-            auth_rpc_count=3
++            auth_rpc_count=27
++        small_after=json.loads(psql(Path('/tools/small-auth.sql'),'SMALL_AUTH_AFTER'))
++        before_data=physical_auth(small_before)
++        after_data=physical_auth(small_after)
++        target_after=copy.deepcopy(small_before)
++        if mode=='control-cache':
++            C.require(C.uuid4(after_data['_authStoreRevision']) and
++                      after_data['_authStoreRevision']!=before_data['_authStoreRevision'] and
++                      after_data['_authStoreRevision']==observed['finalRevision'],
++                      'only exact fresh confirmed final revision may change')
++            target_after['data']['_authStoreRevision']=after_data['_authStoreRevision']
++            # This SHA is obtained INDEPENDENTLY from small readonly native SQL,
++            # not accepted from the client/candidate. No other field exception.
++            target_after['sha']=small_after['sha']
++        C.require(small_after==target_after,'all physical fields/refs/root/ledger unchanged except exact revision')
++        small_qualified=True
+         catalog_final=json.loads(psql(Path('/tools/catalog.sql'),'CATALOG_AFTER_OPERATION'))
+-        C.require(catalog_final==catalog_after,'complete installed catalog/store/ACL/Auth unchanged after operation')
+-        C.save(OUT,'CATALOG_OPERATION_UNCHANGED.SAFE.json',{'unchanged':True,
+-            'actual':catalog_final,'authRPCCount':auth_rpc_count})
++        expected_final=copy.deepcopy(catalog_after)
++        if mode=='control-cache':
++            expected_final['store']={k:small_after[k] for k in ('rows','physicalBytes','sha')}
++        C.require(catalog_final==expected_final,'complete catalog/ABI/ACL/Auth exact except independently measured revision SHA')
++        C.save(OUT,'CATALOG_OPERATION_UNCHANGED.SAFE.json',{'unchangedExceptAuthorizedRevision':True,
++            'actual':catalog_final,'authRPCCount':auth_rpc_count,
++            'smallBefore':small_before,'smallAfter':small_after,
++            'revisionChanged':mode=='control-cache','allOtherPhysicalFieldsExact':True})
+         catalog_unchanged=True
+         operations_done=True
+         record('measurement-complete')
+@@ -573,7 +671,7 @@
+         C.save(OUT,'PHASES.SAFE.json',phases)
+         result={'schema':'helmut-control-cache-worker-result/1',
+             'pass':bool(not failed and copied_verified and source_unchanged and clean_pg
+-                        and operations_done and jit_report and graph_qualified and catalog_unchanged
++                        and operations_done and jit_report and graph_qualified and catalog_unchanged and small_qualified
+                         and stop_receipt and stop_receipt['pass'] and stop_receipt_pin
+                         and REST_STATE and REST_STATE['versionSeen']),
+             'errorType':failed,'failureReason':failure_reason,'postgresExitCode':pg.returncode if pg else None,
+@@ -586,8 +684,12 @@
+             'rendererBodyQualified':renderer_qualified,'selectedGraphBodyQualified':graph_qualified,
+             'onlyReviewedRendererAndSelectedGraphBodyChanged':graph_qualified,
+             'setupSQLSessions':5 if graph_qualified else None,'setupSQLStatements':29 if graph_qualified else None,
+-            'catalogUnchangedAfterOperation':catalog_unchanged,'postOperationCatalogSessions':1 if catalog_unchanged else 0,
+-            'measurementMode':mode,'selection':selected,'lifecycleResultPin':lifecycle,
++            'catalogUnchangedAfterOperation':catalog_unchanged,
++            'catalogMeaning':'exact except sole independently observed authorized revision SHA in comparison mode',
++            'smallPhysicalSQLSessions':2 if small_qualified else None,
++            'cycleMetricSQLSessions':len(cycle_records),
++            'smallPhysicalAuthQualified':small_qualified,'cycleObservationCount':len(cycle_records),'postOperationCatalogSessions':1 if catalog_unchanged else 0,
++            'measurementMode':mode,'variant':selected['variant'] if selected else None,'selection':selected,'lifecycleResultPin':lifecycle,
+             'authRPCCount':auth_rpc_count,'postgrestStarted':rest is not None,
+             'postgrestSocketReady':socket_ready,'postgrestVersionQualified':bool(REST_STATE and REST_STATE['versionSeen']),
+             'postgrestStopQualified':bool(stop_receipt and stop_receipt['pass'] and stop_receipt_pin),
+--- V7/control-driver.js
++++ V8/control-driver.js
+@@ -1,146 +1,256 @@
+ 'use strict';
+-// Prepared diagnostic only. Exactly one read and two readControl calls.
+-// Observe the ORIGINAL returned controlText string; never stringify Auth again.
+-const fs=require('node:fs'),v8=require('node:v8');
+-const dc=require('node:diagnostics_channel');
+-const root='/workspace/helmut-cpu-epoch-20261015';
+-const modulePath=root+'/lib/helmut/llm-usage-atomic.js';
+-const U=require(modulePath);
++// V8 prepared only. Real U: 5 reads, 4 confirmed CAS writes, 18 controls.
++// Readonly canonical overlays select U; identical PartsNEW in BOTH variants.
++const fs=require('node:fs'),crypto=require('node:crypto'),v8=require('node:v8');
++const {PerformanceObserver}=require('node:perf_hooks'),dc=require('node:diagnostics_channel');
++const root='/workspace/helmut-cpu-epoch-20261015',modulePath=root+'/lib/helmut/llm-usage-atomic.js';
++const partsPath=root+'/lib/helmut/auth-state-parts.js';
++const cfg=JSON.parse(fs.readFileSync('/bench/CLIENT_CONFIG.SAFE.json','utf8'));
++const physical=JSON.parse(fs.readFileSync('/bench/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt','utf8'));
++const U=require(modulePath),P=require(root+'/lib/helmut/synthetik-500-profile.js');
+ const meter=require(root+'/scripts/helmut-resource-meter/http-meter.js').current();
+ const keys=['synthetik500DispatchJournal','synthetik500KostenAdmission','testKostenAuftrag','testKostenTage'];
+-const phases=['read','readControl1','readControl2'];
+-const original=JSON.stringify;
+-const calls=[],requests=[],steps=[],nativeHTTPRequests=[];
+-let phase='initial',observing=false;
+-const result={schema:'helmut-control-cache-three-rpc/1',pass:false,nodeVersion:process.version,
+-  uCalls:[],authRPCCount:0,rpcResponsesCompleted:0,nativeHTTPSendCount:0,steps,requests,nativeHTTPRequests,controlTextStringifyObservations:calls,
+-  controlCacheLimitBytes:2*1024*1024,noExtraAuthSerialization:true,
+-  observerPreservesOriginalArgumentsAndReturn:true,observerRetainsControlText:false,
+-  freshNativeChecksAcceptedByOriginalU:false,forcedGC:false,ramSavingClaimed:false,
+-  threeRPCPlateauClaimed:false,providerCalls:0,mutations:0,full500:false};
++const revision='_authStoreRevision',probe='localWorkingSetProbe';
++const original=JSON.stringify,steps=[],requests=[],calls=[],sends=[],cycles=[];
++const started=performance.now(),deadline=started+30000;
++const gc={count:0,durationMilliseconds:0,kinds:{}};
++const gcObserver=new PerformanceObserver(list=>{for(const e of list.getEntries()){
++  gc.count++;gc.durationMilliseconds+=e.duration;const k=String(e.detail?.kind??'unknown');gc.kinds[k]=(gc.kinds[k]||0)+1;
++}});
++let phase='initial',observing=false,expectedMethod=null,baselineFields=null,baselineHistorySHA=null;
++let baselineProof=null,baselineState=null,expectedRevision=physical.data[revision],lastState=null,sequence=0;
++const seenRevisions=new Set([expectedRevision]);
++const result={schema:'helmut-control-cache-comparison-27-rpc/1',pass:false,variant:cfg.variant,
++  nodeVersion:process.version,uCalls:[],authRPCCount:0,rpcResponsesCompleted:0,nativeHTTPSendCount:0,
++  steps,requests,nativeHTTPRequests:sends,controlTextStringifyObservations:calls,cycles,
++  fullReadCount:0,writeCount:0,controlReadCount:0,mutations:0,restoreCount:0,
++  controlCacheLimitBytes:2097152,forcedGC:false,providerCalls:0,full500:false,
++  ramSavingClaimed:false,plateauClaimed:false,automaticRetry:false,
++  noExtraFullAuthSerialization:true,observerPreservesOriginalArgumentsAndReturn:true,
++  observerRetainsControlText:false,fieldHashObserverWorkIncluded:true,
++  historyHashScope:'Each full read and confirmed ACK; every control additionally accepts fresh native identical 6000 proof.',
++  codecOutputBytesObserved:false,freshNativeChecksAcceptedBySelectedU:false};
+ function requireThat(ok,reason){if(!ok)throw Error(reason);}
++function uuid(x){return typeof x==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(x);}
++function hash(x){return crypto.createHash('sha256').update(x).digest('hex');}
++function smallStable(value){
++  // Equality for tiny proof/state/probe/ACK/hash metadata only, never Auth or
++  // control contents. Native canonical decoders may order the probe keys.
++  if(Array.isArray(value))return '['+value.map(smallStable).join(',')+']';
++  if(value&&typeof value==='object')return '{'+Object.keys(value).sort()
++    .map(k=>original(k)+':'+smallStable(value[k])).join(',')+'}';
++  return original(value);
++}
++function same(a,b){return smallStable(a)===smallStable(b);}
++function proofOf(p){return Object.fromEntries(['generation','count','head','originalHash'].map(k=>[k,p[k]]));}
++function stateOf(s){return Object.fromEntries(['version','generation','root','originalHash'].map(k=>[k,s[k]]));}
+ function memory(){return {process:process.memoryUsage(),heapSizeLimitBytes:v8.getHeapStatistics().heap_size_limit,
+-  processLifetimeMaxRSSKiB:process.resourceUsage().maxRSS,notWholeNativeGroup:true};}
++  processLifetimeMaxRSSKiB:process.resourceUsage().maxRSS,notWholeNativeGroup:true,
++  naturalGC:{count:gc.count,durationMilliseconds:gc.durationMilliseconds,kinds:{...gc.kinds}}};}
+ const wireFields=['responseBodyReceivedBytes','responseTCPDeliveredBytes','responseHeaderBytes',
+   'responseFramingBytes','responses','parseErrors','unparsedResponseBytes','incompleteResponses',
+   'unfinishedActiveHTTPParsers','protocolErrors'];
+-function wire(){const value=meter.snapshot();return Object.fromEntries(wireFields.map(k=>[k,value[k]]));}
+-function delta(before,after){return Object.fromEntries(wireFields.map(k=>[k,after[k]-before[k]]));}
++function wire(){const w=meter.snapshot();return Object.fromEntries(wireFields.map(k=>[k,w[k]]));}
++function delta(a,b){return Object.fromEntries(wireFields.map(k=>[k,b[k]-a[k]]));}
+ const sent=dc.channel('undici:client:sendHeaders');
+ function sentHeaders({request}){
+-  // Metadata only, immediately before the real client sends request headers.
+-  // Keep the counter even for an unexpected fourth send; never retain bodies.
+-  const row={method:request.method,path:request.path,origin:String(request.origin)};
+   result.nativeHTTPSendCount++;
+-  if(nativeHTTPRequests.length<4)nativeHTTPRequests.push(row);
++  requireThat(sends.length<28,'bounded real native sends');
++  sends.push({phase,method:request.method,path:request.path,origin:String(request.origin)});
+ }
+ function installObserver(){
+   JSON.stringify=function(...args){
+-    const text=Reflect.apply(original,this,args); // Exactly ONE original invocation.
+-    if(observing && typeof text==='string' && text.startsWith('{"synthetik500DispatchJournal":')){
++    const text=Reflect.apply(original,this,args); // ONE unchanged original invocation/return.
++    if(observing&&typeof text==='string'&&text.startsWith('{"synthetik500DispatchJournal":')){
+       const value=args[0];
+-      if(value && typeof value==='object' && !Array.isArray(value)
+-          && Object.keys(value).join('|')===keys.join('|')){
+-        const stack=new Error().stack || '';
+-        if(stack.includes('at controlText ('+modulePath+':153:')){
+-          requireThat(args.length===1 && calls.length<16,'bounded exact original controlText invocation');
+-          calls.push({phase,utf8Bytes:Buffer.byteLength(text,'utf8'),ownKeys:[...keys],
+-            origin:'original controlText at pinned llm-usage-atomic.js:153',
+-            originalInvocations:1,returnedOriginalString:true});
++      if(value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).join('|')===keys.join('|')){
++        const frames=(new Error().stack||'').split('\n');
++        const prefix='at controlText ('+modulePath+':';
++        if(frames.some(f=>f.trim().startsWith(prefix)&&/^\d+:\d+\)$/.test(f.trim().slice(prefix.length)))){
++          requireThat(args.length===1&&calls.length<64,'bounded exact controlText invocation');
++          calls.push({phase,utf8Bytes:Buffer.byteLength(text,'utf8'),originalInvocations:1,
++            returnedOriginalString:true,origin:'controlText at authenticated canonical module frame'});
+         }
+       }
+     }
+     return text;
+   };
+ }
++async function boundary(round,edge){
++  requireThat(performance.now()<deadline,'unchanged whole-client 30s budget');
++  const item={schema:'helmut-control-cache-cycle-marker/1',sequence:++sequence,round,edge,nodePID:process.pid};
++  const name='/bench/CYCLE_'+sequence+'.MARKER.SAFE.json';
++  fs.writeFileSync(name+'.tmp',original(item)+'\n',{flag:'wx',mode:0o600});
++  fs.renameSync(name+'.tmp',name); // Publish one complete bounded marker atomically.
++  const ack='/bench/CYCLE_'+sequence+'.ACK.SAFE.json';
++  while(!fs.existsSync(ack)){
++    requireThat(performance.now()<deadline,'30s cycle observation deadline');
++    await new Promise(resolve=>setTimeout(resolve,5));
++  }
++  requireThat(same(JSON.parse(fs.readFileSync(ack,'utf8')),item),'exact round/edge/PID metric ACK');
++  return {marker:item,memory:memory(),wire:wire(),atMilliseconds:performance.now()-started};
++}
++function validateProof(p,s){
++  const q=proofOf(p),t=stateOf(s);
++  requireThat(q.count===6000,'exact native 6000 ledger proof');
++  if(baselineProof===null){
++    baselineProof=proofOf(physical.data._llmUsageRef);baselineState=stateOf(physical.data._authStateRef);
++  }
++  requireThat(same(q,baselineProof)&&t.version===baselineState.version&&t.generation===baselineState.generation
++    &&t.originalHash===baselineState.originalHash,'fresh proof/state immutable lineage');
++  lastState=t;return q;
++}
+ async function request(path,options){
+-  requireThat(requests.length<3 && path==='/rest/v1/rpc/helmut_auth_state_graph_read_v1'
+-    && options && options.method==='POST' && typeof options.body==='string','exact RPC route/method/count');
+-  const input=JSON.parse(options.body),index=requests.length;
+-  requireThat(Object.keys(input).join('|')===(index===0?'id|knownProof|readNonce':'id|knownProof|readNonce|knownGraph')
+-    && input.id==='main-auth' && /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(input.readNonce)
+-    && !requests.some(x=>x.readNonce===input.readNonce),'original request shape and fresh UUIDv4');
+-  const row={phase,method:'POST',route:'/rpc/helmut_auth_state_graph_read_v1',
+-    requestKeys:Object.keys(input),requestUTF8Bytes:Buffer.byteLength(options.body,'utf8'),
+-    readNonce:input.readNonce,knownProofPresent:input.knownProof!==null,
+-    knownGraph:index===0?'absent':input.knownGraph===null?'null':'object',
+-    responseReceived:false,originalUAccepted:false};
++  requireThat(requests.length<27&&expectedMethod&&options?.method==='POST'&&typeof options.body==='string',
++    'one bounded direct selected U invocation');
++  const write=expectedMethod==='write',control=expectedMethod==='readControl';
++  const route=write?'helmut_auth_state_cas_v1':'helmut_auth_state_graph_read_v1';
++  requireThat(path==='/rest/v1/rpc/'+route,'exact selected U route');
++  let input=JSON.parse(options.body);
++  requireThat(input.id==='main-auth','exact local main-auth target');
++  const row={phase,uMethod:expectedMethod,route:'/rpc/'+route,method:'POST',
++    requestUTF8Bytes:Buffer.byteLength(options.body,'utf8'),responseReceived:false,selectedUAccepted:false};
++  if(write){
++    requireThat(Object.keys(input).sort().join('|')==='additions|expectedProof|expectedRevision|expectedState|id|nodes|revision|root'
++      &&uuid(input.revision)&&input.expectedRevision===expectedRevision&&!seenRevisions.has(input.revision)
++      &&Array.isArray(input.additions)&&input.additions.length===0&&Array.isArray(input.nodes)
++      &&same(proofOf(input.expectedProof),baselineProof)&&same(stateOf(input.expectedState),lastState),
++      'real fresh no-ledger-append CAS from full private snapshot only');
++    row.expectedRevision=input.expectedRevision;row.revision=input.revision;row.additions=0;row.newNodeCount=input.nodes.length;
++  }else{
++    requireThat(Object.keys(input).join('|')===(control?'id|knownProof|readNonce|knownGraph':'id|knownProof|readNonce')
++      &&uuid(input.readNonce)&&!requests.some(r=>r.readNonce===input.readNonce),'exact fresh native read nonce/request');
++    row.readNonce=input.readNonce;row.knownProofPresent=input.knownProof!==null;
++    row.knownGraph=control?(input.knownGraph===null?'null':'object'):'absent';
++  }
++  // Keep only tiny expected scalars across the real HTTP await. The symmetric
++  // parsing observer must not additionally retain a complete CAS nodes tree.
++  const expected={revision:input.revision,root:input.root,readNonce:input.readNonce};
++  input=null;
+   requests.push(row);result.authRPCCount=requests.length;
+-  const response=await fetch('http://127.0.0.1:38419/rpc/helmut_auth_state_graph_read_v1',{
+-    method:'POST',headers:{'content-type':'application/json'},
+-    body:options.body,redirect:'error',signal:AbortSignal.timeout(20000)});
+-  requireThat(response.status===200,'actual RPC HTTP200 required');
+-  const value=await response.json(); // Original real JSON decode, no body clone/text/extra stringify.
++  const remaining=deadline-performance.now();requireThat(remaining>0,'whole-client deadline before fetch');
++  const response=await fetch('http://127.0.0.1:38419/rpc/'+route,{method:'POST',headers:{'content-type':'application/json'},
++    body:options.body,redirect:'error',signal:AbortSignal.timeout(Math.max(1,Math.floor(Math.min(20000,remaining))))});
++  requireThat(response.status===200,'real local HTTP200');
++  const value=await response.json(); // Same actual decoded object delivered unchanged to U.
+   row.responseReceived=true;result.rpcResponsesCompleted++;
+-  requireThat(value && value.proof?.count===6000 && value.historyReuse?.nonce===input.readNonce,
+-    'actual 6000 proof and nonce echo');
+-  row.historyReuse={nonce:value.historyReuse.nonce,reused:value.historyReuse.reused,binding:value.historyReuse.binding};
+-  row.graphPresent=value.graph!==null && value.graph!==undefined;
+-  if(index>0){
+-    requireThat(value.graphReuse?.nonce===input.readNonce,'fresh control graph nonce echo');
+-    row.graphReuse={nonce:value.graphReuse.nonce,reused:value.graphReuse.reused,
+-      actualPayloadsChecked:value.graphReuse.actualPayloadsChecked,
+-      nodeCount:value.graphReuse.nodeCount,nodeDigest:value.graphReuse.nodeDigest,binding:value.graphReuse.binding};
+-  }
+-  // The original U code receives this SAME object and validates its real
+-  // history, complete graph or private token, state, revision and bindings.
++  const accepted=write?(Array.isArray(value)&&value.length===1?value[0]:null):value;
++  requireThat(accepted&&accepted.proof&&accepted.state,'actual graph/CAS proof and state');
++  row.proof=validateProof(accepted.proof,accepted.state);row.state=stateOf(accepted.state);
++  if(write){
++    requireThat(accepted.id==='main-auth'&&accepted.revision===expected.revision&&accepted.state.root===expected.root,
++      'exact actual CAS ACK, no retry');
++    expectedRevision=expected.revision;seenRevisions.add(expectedRevision);
++  }else{
++    requireThat(value.data?.[revision]===expectedRevision&&value.historyReuse?.nonce===expected.readNonce,
++      'fresh actual revision/history nonce');
++    row.historyReuse={nonce:value.historyReuse.nonce,reused:value.historyReuse.reused,binding:value.historyReuse.binding};
++    row.graphPresent=value.graph!==null&&value.graph!==undefined;
++    if(control){
++      requireThat(value.graphReuse?.nonce===expected.readNonce,'fresh graph nonce');
++      row.graphReuse={nonce:value.graphReuse.nonce,reused:value.graphReuse.reused,
++        actualPayloadsChecked:value.graphReuse.actualPayloadsChecked,nodeCount:value.graphReuse.nodeCount,
++        nodeDigest:value.graphReuse.nodeDigest,binding:value.graphReuse.binding};
++    }
++  }
++  return value;
++}
++function verifyLogical(value,full){
++  requireThat(value&&keys.every(k=>Object.hasOwn(value,k))&&value[revision]===expectedRevision,
++    'four real controls and exact fresh revision');
++  const fields=Object.fromEntries(keys.map(k=>[k,P.hash(value[k])]));
++  if(baselineFields===null)baselineFields=fields;
++  requireThat(same(fields,baselineFields),'four control-field logical hashes unchanged');
++  let historySHA=null;
++  if(full){
++    requireThat(U.hasSnapshot(value)&&Array.isArray(value.llmUsage)&&value.llmUsage.length===6000,
++      'full original private snapshot and logical history6000');
++    historySHA=P.hash(value.llmUsage);if(baselineHistorySHA===null)baselineHistorySHA=historySHA;
++    requireThat(historySHA===baselineHistorySHA,'full logical history SHA unchanged');
++  }else requireThat(!U.hasSnapshot(value)&&Object.isFrozen(value)&&Object.getOwnPropertySymbols(value).length===0
++    &&Object.keys(value).sort().join('|')===[...keys,revision].sort().join('|'),
++    'exact detached read-only control view; no CAS/private snapshot');
++  return {controlFieldSHA256:fields,historySHA256:historySHA,historyCount:6000,
++    freshNativeHistoryProofUnchanged:true,fullLogicalHistoryHashed:full};
++}
++async function invoke(method,label,input=null){
++  requireThat(expectedMethod===null&&performance.now()<deadline,'serial direct U call only');
++  phase=label;expectedMethod=method;
++  const n=requests.length,c=calls.length,t=performance.now(),beforeWire=wire(),beforeMemory=memory();
++  let value=method==='write'?await U.write(input,{request,rowId:'main-auth',target:'http://127.0.0.1:38419|main-auth'}):
++    await U[method]({request,rowId:'main-auth',target:'http://127.0.0.1:38419|main-auth'});
++  requireThat(requests.length===n+1,'exactly one RPC, no automatic retries');
++  requests[n].selectedUAccepted=true;expectedMethod=null;
++  const logical=verifyLogical(value,method!=='readControl');
++  const afterWire=wire(),change=delta(beforeWire,afterWire);
++  requireThat(result.nativeHTTPSendCount===n+1&&sends[n]?.method==='POST'
++    &&sends[n]?.path===requests[n].route&&sends[n]?.origin==='http://127.0.0.1:38419'
++    &&change.responses===1&&afterWire.parseErrors===0&&afterWire.unparsedResponseBytes===0
++    &&afterWire.incompleteResponses===0&&afterWire.unfinishedActiveHTTPParsers===0&&afterWire.protocolErrors===0,
++    'one genuine send and complete passive framed response per U call');
++  steps.push({phase,uMethod:method,wallMilliseconds:performance.now()-t,memoryBefore:beforeMemory,memoryAfter:memory(),
++    wireDelta:change,controlTextStringifyCount:calls.length-c,selectedUAcceptance:true,...logical});
++  result.uCalls.push(method);result[method==='read'?'fullReadCount':method==='write'?'writeCount':'controlReadCount']++;
+   return value;
+ }
+ async function main(){
+   try{
+-    requireThat(process.version==='v24.19.0' && meter && U.enabled() && U.controlReadEnabled(),
+-      'original runtime and exact verified control/history flags');
+-    requireThat(process.env.HELMUT_AUTH_GRAPH_READ_REUSE==='off'
+-      && process.env.HELMUT_AUTH_SINGLE_WRITE_CAPTURE==='off' && !process.env.NODE_OPTIONS,
+-      'graph and single capture off; explicit heap argv');
++    requireThat(['OLD','NEW'].includes(cfg.variant)&&process.version==='v24.19.0'&&meter&&U.enabled()&&U.controlReadEnabled(),
++      'selected real runtime/control flags');
++    for(const [p,item] of [[modulePath,cfg.uOverlayPin],[partsPath,cfg.partsOverlayPin]]){
++      const raw=fs.readFileSync(p);requireThat(raw.length===item.bytes&&hash(raw)===item.sha256,'actual canonical loaded bytes');
++    }
++    requireThat(process.env.HELMUT_AUTH_GRAPH_READ_REUSE==='off'&&process.env.HELMUT_AUTH_SINGLE_WRITE_CAPTURE==='off'
++      &&!process.env.NODE_OPTIONS,'unchanged explicit heap/graph/capture flags');
++    requireThat(physical.rows===1&&physical.physicalBytes===606&&physical.sha===
++      '9b62ab352733025f1b752e637f6360d7813b10ea86f134168698e8f4f0d11bc9'
++      &&uuid(expectedRevision)&&physical.data._llmUsageRef.count===6000,'independent original physical Auth606 proof');
++    gcObserver.observe({entryTypes:['gc']});installObserver();observing=true;sent.subscribe(sentHeaders);
+     result.baseline={memory:memory(),wire:wire()};
+-    installObserver();observing=true;sent.subscribe(sentHeaders);
+-    for(let index=0;index<3;index++){
+-      phase=phases[index];
+-      const start=performance.now(),beforeWire=wire(),beforeMemory=memory(),count=calls.length;
+-      let value=await U[index===0?'read':'readControl']({request,rowId:'main-auth',
+-        target:'http://127.0.0.1:38419|main-auth'});
+-      requireThat(requests.length===index+1,'one actual RPC per direct U invocation');
+-      requireThat(keys.every(k=>Object.hasOwn(value,k)),'all four actual control keys present');
+-      if(index===0)requireThat(U.hasSnapshot(value),'original full read snapshot');
+-      else requireThat(!U.hasSnapshot(value) && Object.isFrozen(value)
+-        && Object.keys(value).sort().join('|')===[...keys,'_authStoreRevision'].sort().join('|'),
+-        'exact detached read-only four-field control view plus revision');
+-      requests[index].originalUAccepted=true;
+-      const afterWire=wire(),change=delta(beforeWire,afterWire);
+-      requireThat(result.nativeHTTPSendCount===index+1 && nativeHTTPRequests.every(r=>r.method==='POST'
+-        && r.path==='/rpc/helmut_auth_state_graph_read_v1' && r.origin==='http://127.0.0.1:38419')
+-        && change.responses===1 && afterWire.parseErrors===0 && afterWire.unparsedResponseBytes===0
+-        && afterWire.incompleteResponses===0 && afterWire.unfinishedActiveHTTPParsers===0
+-        && afterWire.protocolErrors===0,'one complete passively framed native response');
+-      steps.push({phase,uMethod:index===0?'read':'readControl',wallMilliseconds:performance.now()-start,
+-        memoryBefore:beforeMemory,memoryAfter:memory(),wireBefore:beforeWire,wireAfter:afterWire,wireDelta:change,
+-        controlTextStringifyCount:calls.length-count,originalUAcceptance:true,
+-        returnedFullAuthSnapshot:index===0,returnedControlView:index>0});
+-      result.uCalls.push(index===0?'read':'readControl');
+-      value=null; // No driver retention of the prior full Auth/control result.
+-    }
+-    requireThat(calls.length>=1 && calls.every(x=>Number.isSafeInteger(x.utf8Bytes) && x.utf8Bytes>0)
+-      && calls.every(x=>x.utf8Bytes===calls[0].utf8Bytes),'actual identical four-control text byte observations');
++    for(let round=0;round<3;round++){
++      const start=await boundary(round,'start');
++      let auth=await invoke('read','round'+round+'.fullRead');
++      requireThat(round===0?!Object.hasOwn(auth,probe):same(auth[probe],{scope:'LOCAL_CONTROL_CACHE_COMPARISON',round:round-1}),
++        'fresh full read contains only expected prior local probe');
++      if(round===0)requireThat(same(lastState,baselineState),'initial selected native root exactly original');
++      auth[probe]={scope:'LOCAL_CONTROL_CACHE_COMPARISON',round};
++      let accepted=await invoke('write','round'+round+'.mutation',auth);
++      requireThat(same(accepted[probe],{scope:'LOCAL_CONTROL_CACHE_COMPARISON',round}),'real U accepted exact probe');
++      result.mutations++;auth=null;accepted=null; // No driver full Auth across controls.
++      for(let index=0;index<6;index++){
++        let control=await invoke('readControl','round'+round+'.control'+index);control=null;
++        if(index===0)requireThat(requests.at(-1).graphPresent&&requests.at(-1).graphReuse.reused===false,
++          'first native control after each mutation must be cold');
++      }
++      const end=await boundary(round,'end');cycles.push({round,start,end});
++    }
++    let auth=await invoke('read','restore.fullRead');
++    requireThat(same(auth[probe],{scope:'LOCAL_CONTROL_CACHE_COMPARISON',round:2}),'last probe confirmed by fresh full U');
++    delete auth[probe];let accepted=await invoke('write','restore.write',auth);
++    requireThat(!Object.hasOwn(accepted,probe)&&same(lastState,baselineState),'ACK restores original immutable root/proof');
++    result.restoreCount++;auth=null;accepted=null;
++    let final=await invoke('read','restore.finalRead');
++    requireThat(!Object.hasOwn(final,probe)&&same(lastState,baselineState),'fresh final full read confirms original root restored');
++    final=null;
++    requireThat(result.authRPCCount===27&&result.fullReadCount===5&&result.writeCount===4&&result.controlReadCount===18
++      &&result.mutations===3&&result.restoreCount===1&&cycles.length===3&&sequence===6
++      &&requests.every(r=>r.responseReceived&&r.selectedUAccepted)&&result.nativeHTTPSendCount===27,
++      'exact deterministic 27 genuine accepted RPC workload');
++    requireThat(calls.length>0&&calls.every(c=>c.utf8Bytes===calls[0].utf8Bytes),'same actual control text byte size');
+     result.actualControlTextUTF8Bytes=calls[0].utf8Bytes;
+-    result.exceedsControlCacheLimit=calls[0].utf8Bytes>result.controlCacheLimitBytes;
+-    // Conditional expectations derive from the pinned existing implementation.
+-    // Both branches still require fresh real RPCs accepted by original U.
+-    const expected=result.exceedsControlCacheLimit?[1,2,2]:[1,0,0];
+-    requireThat(steps.every((s,i)=>s.controlTextStringifyCount===expected[i]),'original cache-path stringify counts');
+-    requireThat(requests.slice(1).every(r=>r.knownGraph===(result.exceedsControlCacheLimit?'null':'object')
+-      && r.graphReuse.reused===!result.exceedsControlCacheLimit
+-      && r.graphPresent===result.exceedsControlCacheLimit),'actual native knownGraph/cache outcome');
+-    requireThat(requests.length===3 && requests.every(x=>x.responseReceived && x.originalUAccepted),
+-      'exact three fresh native checks accepted');
+-    result.freshNativeChecksAcceptedByOriginalU=true;result.pass=true;
++    result.initialControlFieldSHA256=baselineFields;result.unchangedLogicalHistorySHA256=baselineHistorySHA;
++    result.originalStateRestored=baselineState;result.unchangedNativeProof=baselineProof;
++    result.finalRevision=expectedRevision;result.freshNativeChecksAcceptedBySelectedU=true;result.pass=true;
+   }catch(error){result.errorType=error.name;result.errorCode=error.code||null;result.errorMessage=String(error.message).slice(0,200);}
+   finally{
+     observing=false;JSON.stringify=original;sent.unsubscribe(sentHeaders);
+-    result.final={memory:memory(),wire:meter?wire():null};
++    // Deliver pending natural GC observer entries without forcing a collection.
++    for(const e of gcObserver.takeRecords()){
++      gc.count++;gc.durationMilliseconds+=e.duration;const k=String(e.detail?.kind??'unknown');gc.kinds[k]=(gc.kinds[k]||0)+1;
++    }
++    gcObserver.disconnect();result.final={memory:memory(),wire:meter?wire():null,wallMilliseconds:performance.now()-started};
+     fs.writeFileSync('/bench/CONTROL_CACHE.SAFE.json',original(result)+'\n',{flag:'wx',mode:0o600});
+-    process.stdout.write(original(result)+'\n');
+-    if(!result.pass)process.exitCode=1;
++    process.stdout.write(original(result)+'\n');if(!result.pass)process.exitCode=1;
+   }
+ }
+ main().catch(error=>{process.stderr.write(error.name+'\n');process.exitCode=1;});
+--- V7/small-auth.sql
++++ V8/small-auth.sql
+@@ -0,0 +1,14 @@
++\set ON_ERROR_STOP on
++BEGIN READ ONLY;
++SET LOCAL statement_timeout='30s';
++SET LOCAL lock_timeout='1s';
++-- Physical root is 606B, not expanded Auth/history. Never export a full graph.
++SELECT jsonb_build_object(
++ 'rows',(SELECT count(*) FROM public.helmut_store WHERE id='main-auth'),
++ 'physicalBytes',(SELECT octet_length(data::text) FROM public.helmut_store WHERE id='main-auth'),
++ 'sha',(SELECT encode(sha256(convert_to(data::text,'UTF8')),'hex') FROM public.helmut_store WHERE id='main-auth'),
++ 'data',(SELECT data FROM public.helmut_store WHERE id='main-auth'),
++ 'ledgerRows',(SELECT count(*) FROM public.llm_usage WHERE usage_store_id='main-auth'),
++ 'referencedLedgerRows',(SELECT count(*) FROM public.llm_usage u JOIN public.helmut_store s
++   ON s.id=u.usage_store_id AND u.usage_generation=s.data#>>'{_llmUsageRef,generation}' WHERE s.id='main-auth'));
++ROLLBACK;
+--- V7/cycle-metrics.sql
++++ V8/cycle-metrics.sql
+@@ -0,0 +1,14 @@
++\set ON_ERROR_STOP on
++BEGIN READ ONLY;
++SET LOCAL statement_timeout='30s';
++SET LOCAL lock_timeout='1s';
++-- No forced stats flush/reset. Counters are sampled observations, not exclusive
++-- attribution; asynchronous PostgreSQL statistics may lag a cycle boundary.
++SELECT jsonb_build_object('at',clock_timestamp(),'walLSN',pg_current_wal_lsn()::text,
++ 'walInsertLSN',pg_current_wal_insert_lsn()::text,
++ 'wal',(SELECT to_jsonb(w) FROM pg_stat_wal w),
++ 'database',(SELECT jsonb_build_object('tempFiles',temp_files,'tempBytes',temp_bytes,
++  'blocksRead',blks_read,'blocksHit',blks_hit,'tuplesInserted',tup_inserted,
++  'tuplesUpdated',tup_updated,'tuplesDeleted',tup_deleted,'statsReset',stats_reset)
++  FROM pg_stat_database WHERE datname=current_database()));
++ROLLBACK;

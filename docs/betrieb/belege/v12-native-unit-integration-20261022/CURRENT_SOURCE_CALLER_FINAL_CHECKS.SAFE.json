@@ -1,0 +1,24 @@
+{
+  "schema": "helmut-v12-current-source-caller-final-checks/1",
+  "implementationCommit": "d9d312caa2d741b7b8792cf88eca6db94360f3f0",
+  "runtimeReadContract": {
+    "passed": 14,
+    "total": 14,
+    "privateLogPin": {
+      "path": "/workspace/helmut-native-integration-checks-20261022/runtime-contract-cost-source-review.PRIVATE.log",
+      "bytes": 627,
+      "sha256": "be505dbcec6c1ba0b4f7f712b4825822178bf85f92b5f06158ac7e99ae0f74ad"
+    }
+  },
+  "unchangedEarlierChecks": {
+    "startInputChecksPassed": 6,
+    "artifactChecksPassed": 10
+  },
+  "allNineControlSourcesBound": true,
+  "historicalSourcePinsRemainRejected": true,
+  "nativeExecution": false,
+  "databaseCalls": 0,
+  "modelCalls": 0,
+  "executionAuthority": false,
+  "full500Accepted": false
+}

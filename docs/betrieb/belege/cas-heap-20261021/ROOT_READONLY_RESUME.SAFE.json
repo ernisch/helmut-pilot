@@ -1,0 +1,53 @@
+{
+  "schema": "helmut-cas-heap-readonly-resume/1",
+  "atUnix": 1792572612.351,
+  "head": "433cb2c9c1209dc4f5ee3aeade52002c2526f6a8",
+  "rootWorkingTreeClean": true,
+  "cloudEnvironment": "ccarenv_b64_Y2NhcmVudl8yOTU4NWEyOWM5NjA4MTkxYjhjNTkwOTY0ZGZkYjllOQ",
+  "observationsCurrent": true,
+  "cloudSpecRevision": "140",
+  "originalCloudDirectAccess": false,
+  "remoteMainObserved": "1eb3cbff848f686d86a5236180b3dce8ac3129c3",
+  "pr927DraftAndHeadMatch": true,
+  "protected": [
+    {
+      "cid": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+      "pid": 5993,
+      "status": "running",
+      "protectedIdentityAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "c6f393f20781cad88518d5543126d642c4302141f3072393a10d5f0f9bf6a231",
+      "pid": 0,
+      "status": "exited",
+      "protectedIdentityAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "f375e6f73bff6c4f5238033c0db1de96c0fa9853c49e53056f86fc4f9a7dbaed",
+      "pid": 0,
+      "status": "exited",
+      "protectedIdentityAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "039f995f2454b4b87edf7b9fe9693d6861d92b15a126205277a51b86adbc80bf",
+      "pid": 0,
+      "status": "exited",
+      "protectedIdentityAndMountSourcesUnchanged": true
+    },
+    {
+      "cid": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+      "pid": 0,
+      "status": "exited",
+      "protectedIdentityAndMountSourcesUnchanged": true
+    }
+  ],
+  "canonicalRootMetadataUnchanged": true,
+  "canonicalPostmasterPIDAbsent": true,
+  "hostAvailableBytes": 14988247040,
+  "testsAtResume": 0,
+  "nativeStartsAtResume": 0,
+  "routerOrExternalModelsInvoked": false,
+  "full500": false,
+  "production": false,
+  "sourceDBPayloadRead": false
+}

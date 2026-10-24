@@ -5,6 +5,8 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/auth-state-parts-20261018": false,
+      "codex/auth-cas-temp-spill-20261017": false,
       "codex/runtime-read-binding-diagnostic-20261015": false,
       "codex/runtime-read-binding-fix-20261015": false,
       "codex/helmut-read-renewal-20261015": false,
@@ -68,13 +70,16 @@
       "codex/vorgang-beweispaar-20260920": false,
       "codex/ereignisketten-20260920": false,
       "codex/dip-quellfelder-20260920": false,
-      "codex/verstehen-169-actions-20260923": false
+      "codex/verstehen-169-actions-20260923": false,
+      "codex/immutable-command-proof-20261015": false,
+      "codex/resource-meter-20261016": false,
+      "codex/complete-start-preflight-20261017": false
     }
   },
   "functions": {
     "api/index.js": {
       "maxDuration": 300,
-      "includeFiles": ".github/workflows/{briefing-watchdog,health-watch}.yml"
+      "includeFiles": "{.github/workflows/{briefing-watchdog,health-watch}.yml,lib/helmut/{[a-z]*.js,synthetik-500-{cpu-source-pins,release-artifacts,stored-command-native-pins}.json,quellenarchitektur/seeds/[a-z]*.js},vercel.json,package{,-lock}.json}"
     }
   },
   "routes": [

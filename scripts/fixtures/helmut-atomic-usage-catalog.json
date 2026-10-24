@@ -1,0 +1,146 @@
+{
+  "schema": "helmut-observed-local-pg17-atomic-catalog/1",
+  "originEvidenceSHA256": "fa8bb4579a088f5de7ef22501f42b1ae68a8032b0b7029ee693d2305dd6152ec",
+  "catalog": {
+    "triggers": {
+      "helmut_usage_auth_bound_local": {
+        "type": 31,
+        "state": "A",
+        "table": "public.helmut_store",
+        "function": "public.helmut_auth_usage_guard_local_v1",
+        "arguments": 0,
+        "condition": null
+      },
+      "helmut_usage_no_truncate_local": {
+        "type": 34,
+        "state": "A",
+        "table": "public.llm_usage",
+        "function": "public.helmut_auth_usage_guard_local_v1",
+        "arguments": 0,
+        "condition": null
+      },
+      "helmut_usage_auth_no_truncate_local": {
+        "type": 34,
+        "state": "A",
+        "table": "public.helmut_store",
+        "function": "public.helmut_auth_usage_guard_local_v1",
+        "arguments": 0,
+        "condition": null
+      },
+      "helmut_usage_record_immutable_local": {
+        "type": 31,
+        "state": "A",
+        "table": "public.llm_usage",
+        "function": "public.helmut_auth_usage_guard_local_v1",
+        "arguments": 0,
+        "condition": null
+      }
+    },
+    "functions": {
+      "helmut_auth_usage_cas_v1": {
+        "hash": "793b29dd03c3fa8d4d078bb1e2ca48cb8260e0203e7f282b22d1c015b7593afb",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "result": "jsonb",
+        "definer": false,
+        "arguments": "jsonb",
+        "volatility": "v",
+        "anonExecute": false,
+        "publicExecute": false,
+        "serviceExecute": true,
+        "customerExecute": false
+      },
+      "helmut_auth_usage_read_v1": {
+        "hash": "c7395fad4c68780261e00f05aaabe4e78128148f1cbbbbe745eec96309d27a94",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "result": "jsonb",
+        "definer": false,
+        "arguments": "jsonb",
+        "volatility": "s",
+        "anonExecute": false,
+        "publicExecute": false,
+        "serviceExecute": true,
+        "customerExecute": false
+      },
+      "helmut_auth_usage_restore_v1": {
+        "hash": "0133cb99975e397aeb5556d7575a8c9913e1ab4a47b7da4df54fd08b3bd12412",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "result": "jsonb",
+        "definer": false,
+        "arguments": "jsonb",
+        "volatility": "v",
+        "anonExecute": false,
+        "publicExecute": false,
+        "serviceExecute": true,
+        "customerExecute": false
+      },
+      "helmut_auth_usage_bootstrap_v1": {
+        "hash": "85a0c025017e8929c5034c2e55401516166e7795818749e24dc3f307b85b8e0a",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "result": "jsonb",
+        "definer": false,
+        "arguments": "jsonb",
+        "volatility": "v",
+        "anonExecute": false,
+        "publicExecute": false,
+        "serviceExecute": true,
+        "customerExecute": false
+      },
+      "helmut_auth_usage_guard_local_v1": {
+        "hash": "07456f2ec9b043d220a18c035a5c0430eda9c5b1f1f82ca30bd3794b4359676d",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "result": "trigger",
+        "definer": false,
+        "arguments": "",
+        "volatility": "v",
+        "anonExecute": false,
+        "publicExecute": false,
+        "serviceExecute": false,
+        "customerExecute": false
+      },
+      "helmut_auth_usage_insert_local_v1": {
+        "hash": "2b17b64b896b753d6e4ccde7f0b1082b63f2c5fac5dd093de9c7bf3148430f5f",
+        "owner": "postgres",
+        "config": [
+          "search_path=pg_catalog"
+        ],
+        "result": "text",
+        "definer": false,
+        "arguments": "text, text, bigint, text, jsonb",
+        "volatility": "v",
+        "anonExecute": false,
+        "publicExecute": false,
+        "serviceExecute": true,
+        "customerExecute": false
+      }
+    },
+    "generated": {
+      "usage_chain_hash": {
+        "kind": "s",
+        "expression": "encode(sha256(((usage_prev_hash || encode(sha256(SUBSTRING(jsonb_send(usage_record) FROM 2)), 'hex'::text)))::bytea), 'hex'::text)"
+      },
+      "usage_record_hash": {
+        "kind": "s",
+        "expression": "encode(sha256(SUBSTRING(jsonb_send(usage_record) FROM 2)), 'hex'::text)"
+      }
+    },
+    "localGate": "on",
+    "serverVersion": "17.6 (Debian 17.6-2.pgdg12+1)",
+    "clientEncoding": "UTF8",
+    "serverEncoding": "UTF8"
+  }
+}

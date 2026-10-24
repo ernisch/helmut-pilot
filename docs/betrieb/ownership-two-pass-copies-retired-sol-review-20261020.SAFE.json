@@ -1,0 +1,192 @@
+{
+  "schema": "helmut-independent-two-ownership-pass-retirement-actual-review/1",
+  "status": "ACTUAL_TWO_EXACT_WORKING_COPIES_RETIRED_REVIEWED",
+  "findingsStatus": "NO_BLOCKING_FINDINGS",
+  "blockingFindings": [],
+  "reviewerModel": "gpt-6.1-sol",
+  "sourceReviewPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/ownership-pass-retirer-independent-review-20261020/TWO_OWNERSHIP_PASS_COPY_RETIRER_REVIEW.SAFE.json",
+    "bytes": 13685,
+    "sha256": "b0847c9a33930b293685ad25fa2bcaa33cbabec672642ad27e983628f9ca02f3"
+  },
+  "scriptPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/retire_two_ownership_pass_copies.py",
+    "bytes": 36622,
+    "sha256": "0cf12721f0803b0b764dd354387403121354d2df998b6932f9636efc807b0b91"
+  },
+  "rootContextPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/ROOT_PASS_CASES_CONTEXT.PRIVATE.json",
+    "bytes": 639935,
+    "sha256": "afec75c0553a1e2a7d1e36eba0acd69c5bc94d962e1ada05fcb27e0dda875459"
+  },
+  "cases": [
+    {
+      "case": "control-41fd40deb27ebb9fecd60384",
+      "receiptPins": {
+        "CHECKED_CASE": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/control-41fd40deb27ebb9fecd60384.CHECKED_CASE.PRIVATE.json",
+          "bytes": 696397,
+          "sha256": "e7eaf64c50f3d464131097b6bd0cb29ee61f12e99b36352743ed6245cbdc1aa6"
+        },
+        "ROOT_RETIREMENT_ADOPTION": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/control-41fd40deb27ebb9fecd60384.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+          "bytes": 1828,
+          "sha256": "066356aa81c25084841a46f0aaf7d4299bf4be017f28b1be84b99734f5d7be9e"
+        },
+        "RETIRE_ONCE_CLAIM": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/control-41fd40deb27ebb9fecd60384.RETIRE_ONCE_CLAIM.PRIVATE.json",
+          "bytes": 206678,
+          "sha256": "e55686601d250f939aebd0de2bdada93728ee8bf3cd8b69fb848ced4214c45d5"
+        },
+        "RETIRED": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/control-41fd40deb27ebb9fecd60384.RETIRED.PRIVATE.json",
+          "bytes": 1602,
+          "sha256": "d37ab2dee1326de5e960b3291972b1ee46452fc4703c59e073cb3d545af7c78d"
+        }
+      },
+      "target": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-41fd40deb27ebb9fecd60384/disk/pgdata",
+      "targetLstat": "ENOENT",
+      "caseAndDiskHullsStillDirectories": true,
+      "removedRegularFiles": 1711,
+      "checkedDirectoryEntries": 30,
+      "checkedAllocatedBytes": 369811456,
+      "checkedLogicalRegularBytes": 369595443,
+      "rootAdoptionAgeAtOnceSeconds": 11.994413137435913,
+      "checkAgeAtOnceSeconds": 27.62740421295166,
+      "bothRecordedClosureAgesAtOnceSeconds": {
+        "control-41fd40deb27ebb9fecd60384": 2.9583003520965576,
+        "control-4a1b3f4904b58b1d9cb049e8": 0.007578849792480469
+      },
+      "retainedCaseProofsByteExact": 56,
+      "recordedThreeHullIDs": [
+        "37d78ba212a4069a8fcfe6d1c0d635cdc7795d11d7a7232070688c19fa11000c",
+        "39664939ccaaa0fa9790e30015393a112b8b1e7123e540dbde39794245844a91",
+        "449b6ff4d68135629f9d89d266a6693035638f0bf7e996117379af25a4e84c74"
+      ],
+      "beforeAvailableSnapshot": 13896847360,
+      "afterAvailableSnapshot": 14266658816,
+      "snapshotDifference": 369811456
+    },
+    {
+      "case": "control-4a1b3f4904b58b1d9cb049e8",
+      "receiptPins": {
+        "CHECKED_CASE": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/control-4a1b3f4904b58b1d9cb049e8.CHECKED_CASE.PRIVATE.json",
+          "bytes": 696424,
+          "sha256": "66dc4dcc209b1ef83691fc51aca36ea192c6021787c98492b65cd785216192ac"
+        },
+        "ROOT_RETIREMENT_ADOPTION": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/control-4a1b3f4904b58b1d9cb049e8.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+          "bytes": 1830,
+          "sha256": "43e37b357081a7c3215227c44150b2865033055481d440bcf5db2cf32a51eced"
+        },
+        "RETIRE_ONCE_CLAIM": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/control-4a1b3f4904b58b1d9cb049e8.RETIRE_ONCE_CLAIM.PRIVATE.json",
+          "bytes": 206678,
+          "sha256": "9e5a5959a54905fbc7545cb9228355a712ceb23afe8812ee1555127360eac996"
+        },
+        "RETIRED": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/new-ownership-pass-copy-retirement-preparation/control-4a1b3f4904b58b1d9cb049e8.RETIRED.PRIVATE.json",
+          "bytes": 1602,
+          "sha256": "5176ef47a345ecb074552026056022505044123742c56d0cf02360cd217318c6"
+        }
+      },
+      "target": "/workspace/helmut-ram-fix-20261020/control-cache-ownership-20261020/cases/control-4a1b3f4904b58b1d9cb049e8/disk/pgdata",
+      "targetLstat": "ENOENT",
+      "caseAndDiskHullsStillDirectories": true,
+      "removedRegularFiles": 1711,
+      "checkedDirectoryEntries": 30,
+      "checkedAllocatedBytes": 369831936,
+      "checkedLogicalRegularBytes": 369620019,
+      "rootAdoptionAgeAtOnceSeconds": 12.33458161354065,
+      "checkAgeAtOnceSeconds": 36.52431559562683,
+      "bothRecordedClosureAgesAtOnceSeconds": {
+        "control-41fd40deb27ebb9fecd60384": 2.9014933109283447,
+        "control-4a1b3f4904b58b1d9cb049e8": 0.007119894027709961
+      },
+      "retainedCaseProofsByteExact": 265,
+      "recordedThreeHullIDs": [
+        "41fea5bc96fe3809bd2068b0bc83805a0b8d670256737f7b33b9c982c63e63ed",
+        "593409b5c0a9ded191bd1bb585a98205f677815c8e5b816cc8bd9927b23efa84",
+        "f817ba05d43a3b8eed5031b2144a979e03929322cb512798e9e58f4a5031335d"
+      ],
+      "beforeAvailableSnapshot": 14265741312,
+      "afterAvailableSnapshot": 14635573248,
+      "snapshotDifference": 369831936
+    }
+  ],
+  "totalRemovedRegularFiles": 3422,
+  "totalCheckedAllocatedBytes": 739643392,
+  "retainedCaseProofPinsCheckedAfterRetirement": 321,
+  "retainedCaseProofBytesRead": 5882936,
+  "retainedProofsMatchPreRetirementContextExactly": true,
+  "permanentSource": {
+    "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL",
+    "manifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "currentRootIdentity": {
+      "device": 27,
+      "inode": 169,
+      "mode": 448,
+      "uid": 1000,
+      "gid": 1000,
+      "links": 19,
+      "bytes": 4096,
+      "allocatedBytes": 4096,
+      "atime_ns": 1792487926568063929,
+      "mtime_ns": 1792487833623423814,
+      "ctime_ns": 1792487833623423814
+    },
+    "identityFieldsChecked": [
+      "device",
+      "inode",
+      "mode",
+      "uid",
+      "gid",
+      "links",
+      "bytes",
+      "mtime_ns",
+      "ctime_ns"
+    ],
+    "rootIdentityMatchesHistoricalContext": true,
+    "canonicalDirectoryPresent": true,
+    "postmasterPidAbsent": true,
+    "sourcePayloadReadOrRehashed": false,
+    "noFreshSourceContentManifestClaimed": true
+  },
+  "hullPreservationEvidence": "Exact six hull IDs are in both fresh pre-unlink closure receipts, each<=10s old at once claim. Retirer source only unlinks two exact PGDATA roots, not Docker hulls; RETIRED flags retain hulls. No independent post-retirement live Docker inspection was performed by this reviewer. Case/disk filesystem hull directories are independently still present.",
+  "rootScriptExitCodes": {
+    "reportedByRoot": [
+      0,
+      0
+    ],
+    "independentlyObservedProcessExitCode": false,
+    "supportingEvidence": "Both final RETIRED receipts present with exact adopted/check/context chain; both targets independently ENOENT."
+  },
+  "capacitySnapshot": {
+    "atUTC": "2026-10-20T20:25:20.840853+00:00",
+    "reviewerAvailableBytes": 14635425792,
+    "rootEarlierAvailableBytes": 14635569152,
+    "reportedFullAdmissionThresholdBytes": 15179779720,
+    "reviewerSnapshotGapBytes": 544353928,
+    "rootEarlierGapBytes": 544210568,
+    "fullAdmissionProved": false,
+    "measurementMeaning": "statvfs/receipt snapshots, affected by proof/other filesystem writes; no robust capacity forecast, native/RAM/model/500 claim"
+  },
+  "limits": [
+    "No target/WAL or canonical source payload body was read; no PGDATA walk, Subject import, AST/test, Docker or SQL/native action occurred.",
+    "Retained321 exact pinned files were rehashed directly by known paths. No new exhaustive case-directory inventory or live all-process/all-namespace absence claim.",
+    "No full physical WAL archive or byte-for-byte reconstruction of removed ephemeral WAL is claimed. Complete retained restoration/measurement/closure proofs remain the basis of the approved disposable class."
+  ],
+  "actionsByReviewer": {
+    "onlyOwnSAFEReviewWritten": true,
+    "retainedSmallProofFilesRead": true,
+    "targetMetadataOnly": true,
+    "originalDataRead": false,
+    "DockerActions": 0,
+    "testsExecuted": 0,
+    "nativeOrSQLActions": 0,
+    "deletions": 0
+  },
+  "production": false,
+  "full500": false
+}

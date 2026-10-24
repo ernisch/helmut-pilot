@@ -1,0 +1,128 @@
+{
+  "atUTC": "2026-10-21T10:32:39.122400+00:00",
+  "authorActions": {
+    "binaryPayloadReadsOrHashes": 0,
+    "compressionOrArchiveRestoreComparisonExperiments": 0,
+    "deletions": 0,
+    "nativeSQLDockerProcTestsAST": 0,
+    "sourceOrConfigEdits": 0,
+    "writes": "Only new F/capacity-review/CLI_ARCHIVE_REQUIREMENTS.SAFE.json"
+  },
+  "budgetMath": {
+    "conditionalExampleOnly": {
+      "actualBackingReleasedEqualsObservedBlocks": null,
+      "allAdditionalRetainedProofMappingDirectorySourceCapBytes": 2097152,
+      "archiveAllocatedCapBytes": 57671680,
+      "compressionMeetsThisCap": null,
+      "conditionalFinalFreeBytes": 15181840384,
+      "conditionalFullMarginBytes": 2060664,
+      "conditionalNetIfGrossBackingReleasedEqualsObservedBlocksBytes": 222343168,
+      "creditNowBytes": 0,
+      "exactTargetSet": "Two candidates above only; no automatic thirdfileaddition/retry."
+    },
+    "fullAdmissionBytes": 15179779720,
+    "ifLowerLayerReclaimIsZero": "Net benefit is negative archive/proof cost; this plan cannot close the gap and rawretirement is not justified as capacitywork.",
+    "maximumArchiveBytesAfterProofCapAnd1MiBFullMargin": 58683768,
+    "maximumArchivePlusAllRetainedProofBytesForStrict220300000Net": 61811999,
+    "minimumDeclaredNetBenefitBytes": 221331080,
+    "netFormula": "actualBackingAllocationReleasedBytes - additionalArchiveAllocatedBytes - allAdditionalRetainedMappingProofSourceDirectoryAllocatedBytes",
+    "oneBinaryInsufficientEvenWithZeroArchiveCost": true,
+    "proofAndMappingCapBytes": 2097152,
+    "rootFreeSnapshotBytes": 14959497216,
+    "snapshotGapBytes": 220282504,
+    "snapshotNotReservation": true,
+    "temporarySpace": {
+      "archivePlusProofExtraCapBytes": 59768832,
+      "existingConservativeComponentFloorBytes": 9412018176,
+      "ifFullRestoreRehearsalRequired": "Predeclare a separate bounded scratch path and allocationcap plus cleanup/use proofs; never silently add scratch or duplicate source copies. No such scratch creation is approved here.",
+      "snapshotFreeAfterThatCapBeforeAnyRetirementBytes": 14899728384,
+      "snapshotHeadroomAboveThatFloorBytes": 5487710208,
+      "streamedIndependentComparison": "Two full independent archive-expanded byte comparisons against pinned rawfiles can avoid a materialized restoredscratch copy. Both must fullyconsume/checkarchive EOF/CRC and independentlyvalidate metadata."
+    },
+    "twoCandidateObservedAllocatedGrossBoundBytes": 282112000,
+    "units": "Bytes; strict net target is greater than220300000B and at least1MiB above unchangedfulladmission. All storagecaps must include allocated filesystem costs, not merely gziplogical length."
+  },
+  "candidateMetadataAsSuppliedByL": {
+    "files": [
+      {
+        "inodeDecimalString": "9223372036855932623",
+        "logicalBytes": 169938112,
+        "mtimeUTCNanoseconds": "2026-10-01T08:37:30.104204819Z",
+        "observedAllocatedBytes": 169938944,
+        "path": "/workspace/.helmut-cloud-tools/node_modules/@vercel/vc-native-linux-x64/bin/vercel",
+        "version": "62.1.0"
+      },
+      {
+        "inodeDecimalString": "9223372036855920612",
+        "logicalBytes": 112170464,
+        "mtimeUTCNanoseconds": "2026-10-01T08:37:29.582622671Z",
+        "observedAllocatedBytes": 112173056,
+        "path": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64/bin/supabase",
+        "version": "2.119.0"
+      }
+    ],
+    "fullByteSHA256ACLXattrOriginAndCurrentUseStillUnqualified": true,
+    "sharedMetadata": {
+      "device": 27,
+      "filesystem": "overlayfs",
+      "filesystemID": "434ab459f78337c5",
+      "filesystemMagic": "0x794c7630",
+      "gid": 1000,
+      "links": 1,
+      "modeOctal": "0700",
+      "uid": 1000
+    },
+    "source": "L direct textual metadata handoff; final L report pin pending and no source-adoption closure is created here. C did not open/re-hash any binary."
+  },
+  "decision": {
+    "archiveActionApproved": false,
+    "fullAdmissionResolved": false,
+    "next": "Root/E must resolve actualreclaim and exactuse/sourceclearance first. If unresolved, stop with0qualifiedbytes; do not generatearchivepayloads as a speculativecapacityexperiment.",
+    "qualifiedRecoverableBytes": 0,
+    "rawRetirementApproved": false
+  },
+  "futureCLIAvailability": {
+    "keptUnchanged": [
+      "package.json/package-lock and wrappers",
+      "/workspace/.helmut-tools Node22",
+      "frozen engine runtime andsource/proofs/canonical827a",
+      "router/externalmodel/config/provider permissions"
+    ],
+    "noNewAuthority": true,
+    "supabase": "Wrapper resolvesglibcpackage first then spawnsitsbinary; removing onlypayload breaksnormal invocation, no existencefallback wasproved. Explicit offline restoration beforefutureuse is mandatory.",
+    "vercel": "Nativepayload is opt-in; missingpayload may silently fallbackJS. Such fallback is not an equivalent restoredCLI and must not be reliedon; restorebeforefutureuse."
+  },
+  "principalBlockers": [
+    {
+      "detail": "Overlayfs and high-bit inode numbers are observed. They do not prove exact upper/lower origin. A lower-layer unlink may only create whiteouts and free zero backing storage. Therefore observedst_blocks282112000B is at most a conditional gross bound, never qualifiedhostfreegain. No deletion/copyup experiment is proposed.",
+      "id": "ALLOCATED_BLOCKS_NOT_HOST_RECLAIM"
+    },
+    {
+      "detail": "L saw one unreadable process in the saved Root census and FD/maps visibility is incomplete. No name-only dormant inference/globalabsence/oldopaque-use waiver is accepted. Frozen source/runtime/router/tool dependencies and foreign active use must be explicitly excluded before rawunlink.",
+      "id": "CURRENT_USE_AND_DEPENDENCY_CLEARANCE_ABSENT"
+    },
+    {
+      "detail": "Full binary hashes, exact metadata/ACL/xattrs, actual compression size and two independent full archive comparisons do not yet exist. No speculative compression ratio or recovery amount is credited.",
+      "id": "ARCHIVE_AND_RESTORE_UNPROVEN"
+    }
+  ],
+  "requiredLosslessRetentionProtocol": [
+    "First independently establish actualupper/lower/backingreclaim semantics without a destructiveunlink/copyup experiment; unknown means0Bcredit and no capacity-based rawretirement.",
+    "Fresh exacttwoleaf allowlist, lstat/no-symlink/single-link/UID/GID/mode/device/inode/size/mtime_ns/ctime_ns pins and fullSHA256; do not traverse/remove parentpackage trees, symlinkwrappers, lockfiles, configs or alternateNode22 runtime.",
+    "Prove sourceclosure/dependency/current-use status with explicitly bounded real visibility. PIDreuse/disappearance/opaqueFDmaps/namespace/mount gaps remainUNKNOWN and stoprawretirement; no previouscompactoractor/check/adoption reuse.",
+    "Create exclusive local compressedarchive retaining exactrawbytes and canonical relative membernames. Preserve mode/UID/GID/exact nanosecondmtime and any actualACL/xattrs in PAX or separatelydurable authenticated metadata; no strip/rebuild/reinstall/versionupgrade. Gzipsecondresolution headers alone are insufficient for nsmtime.",
+    "Perform two actual independent fullcomparisons using independentlyimplemented archive readers/comparers (e.g. reviewedPython andGNUtar/gzip/cmp/stat). Each verifies full expandedbytes/length/SHA, completeCRC/EOF, exactmember set, no links/pathescape/trailingunknownmembers, and exactmode/mtime/requiredmetadata against stableoriginals. No spotchecks or two invocations of thesamecomparer.",
+    "Durably fsync archive, complete raw-to-archive mapping and bothacceptedcomparisons plusparentdirectories before any rawunlink. Mapping keeps originalinode/ctime as provenance; restoredinode/ctime need not and generally cannot be equal, never claimotherwise.",
+    "Independent source/method/actual review plusfreshRootexacttarget adoption/nonceTTL/once. Recheckunchanged sourcepins/currentuse and cap/finaladmission immediatelybeforeexactrawunlink; unknown/interruptedoutcome stopsKEEP withoutautomaticretry.",
+    "Retain archive+metadata+proofs permanently until explicit laterretention decision. A separate checkedlocal restore must restoreoriginalpathbytes/mode/mtime before any futureCLI invocation; no networkredownload or npmreinstall is needed/credited.",
+    "Freshactualdiskstat after allproof/archive costs must confirm positivefullmargin. Do not claim282MBgross or compressionestimates as recovery. Existing500/resource/provider/Productionpermissions remainunchanged."
+  ],
+  "rootResumePin": {
+    "bytes": 2057,
+    "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/ROOT_RESUME_PROTECTION.SAFE.json",
+    "sha256": "c55bcce0b5281e738c317246eb8061d9e6b9988a13854ea10f866abfe214ddc0"
+  },
+  "schema": "helmut-cli-binary-lossless-archive-requirements/1",
+  "scope": "Only two largest public CLI binary leaf candidates identified by L; archival/proof/restore requirements and conditional math only. L owns origin/lock/motor dependency and current-use qualification.",
+  "status": "BLOCKED_NO_RECLAIM_OR_USE_CLEARANCE_CONDITIONAL_BUDGET_ONLY"
+}

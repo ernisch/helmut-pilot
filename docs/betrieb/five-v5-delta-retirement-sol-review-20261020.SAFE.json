@@ -1,0 +1,145 @@
+{
+  "schema": "helmut-five-v5-delta-retirement-actual-independent-sol-review/1",
+  "status": "ACCEPTED_ACTUAL_METADATA_AND_SMALL_PROOF_CLOSURE",
+  "independent": true,
+  "reviewer": "sprint_pg_transport; not retire tool author or execution owner",
+  "model": "gpt-6.1-sol",
+  "effort": "xhigh",
+  "atUTC": "2026-10-20T18:20:06.521273+00:00",
+  "scope": "Lightweight independent post-retirement metadata, small receipt bytes/pin closure, exact target absence, retained evidence/container hulls and protected source root/offline state; not a repeat of full archive/base byte comparisons",
+  "aggregatePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/ACTUAL_FIVE_DELTA_RETIREMENT_COMPLETE.SAFE.json",
+    "bytes": 13019,
+    "sha256": "0eee61f88c03e8897b249030a284309746642e58d8ccfb26db8a732c238c2c36"
+  },
+  "windowClosedPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/ROOT_EXCLUSIVE_WINDOW_CLOSED.SAFE.json",
+    "bytes": 414,
+    "sha256": "daf633e799dc285fbf0d1bd6349cf8fac1c1989fc64d759b9dad990433f7b6c7"
+  },
+  "retentionCommitmentPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/ROOT_CANONICAL_BASE_RETENTION_COMMITMENT.SAFE.json",
+    "bytes": 852,
+    "sha256": "6934a3b36301c3328118582eb3ea99661f6e7efc7e4a5d1f17915bef9c21b4a9"
+  },
+  "previousStaticReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/V5_DELTA_RETIRER_STATIC_REVIEW.SAFE.json",
+    "bytes": 8928,
+    "sha256": "8bbcc1cb7f21becc70b46096f1fcc7a03582df146f3fc4ab41e519043351ab5e"
+  },
+  "conditionalThreeCasePlanPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/ROOT_CONDITIONAL_THREE_CASE_COMPLETION.SAFE.json",
+    "bytes": 828,
+    "sha256": "6123622d5257b762918196dbf661ce2e992c3558a72fa78e8d776b876979ffd8"
+  },
+  "blockingFindings": [],
+  "actualChecks": {
+    "exactCaseCount": 5,
+    "aggregateSmallProofPinsByteHashed": 20,
+    "comparisonReceiptsPASS": 10,
+    "retiredReceiptsVerified": 5,
+    "rootAdoptionPinsByteVerified": 5,
+    "adoptionAndRetireOnceClaimsConsistent": true,
+    "sourceRetentionCommitmentVerified": true,
+    "archiveAndLargeManifestPinsSizeExistenceOnly": 15,
+    "retainedCaseEvidencePathsAndSizesChecked": 75,
+    "retainedCaseEvidenceSmallBytePinsVerified": 49,
+    "retainedCaseEvidenceLargePinsMetadataOnly": 26,
+    "actualTargetPathsAbsent": 5,
+    "caseAndDiskDirectoryHullsRetained": 5,
+    "exactDockerContainerHullsInspectedReadOnly": 15,
+    "containerIdentityNameImageParentMatchPrepared": true,
+    "allFifteenExitedExit0Pid0NoOOMNoRestart": true,
+    "protectedSourceRootCanonicalDirectoryPresent": true,
+    "protectedSourceRootDeviceInodeModeOwnerMatchPreparation": true,
+    "protectedSourcePostmasterPidAbsent": true,
+    "sourceContentReadOrRehashed": false,
+    "archiveContentReadOrRehashed": false
+  },
+  "cases": [
+    {
+      "case": "digest-c3e412f438593433fd1f6c2a",
+      "targetAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "originalEvidenceFilesRetained": 15,
+      "twoComparisonReceiptsPASS": true,
+      "rootAdoptionAndOnceClaimConsistent": true,
+      "removedRegularFilesRecorded": 1711,
+      "deltaArchiveBytesMetadataChecked": 21471666
+    },
+    {
+      "case": "digest-ed63e083f528a38a1acf58aa",
+      "targetAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "originalEvidenceFilesRetained": 15,
+      "twoComparisonReceiptsPASS": true,
+      "rootAdoptionAndOnceClaimConsistent": true,
+      "removedRegularFilesRecorded": 1711,
+      "deltaArchiveBytesMetadataChecked": 21488459
+    },
+    {
+      "case": "digest-4682602730b5cb53f0ce7b86",
+      "targetAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "originalEvidenceFilesRetained": 15,
+      "twoComparisonReceiptsPASS": true,
+      "rootAdoptionAndOnceClaimConsistent": true,
+      "removedRegularFilesRecorded": 1711,
+      "deltaArchiveBytesMetadataChecked": 21489232
+    },
+    {
+      "case": "digest-739a92b8b769a80efd820f14",
+      "targetAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "originalEvidenceFilesRetained": 15,
+      "twoComparisonReceiptsPASS": true,
+      "rootAdoptionAndOnceClaimConsistent": true,
+      "removedRegularFilesRecorded": 1711,
+      "deltaArchiveBytesMetadataChecked": 21489292
+    },
+    {
+      "case": "digest-6517e47c8e1299322ad72247",
+      "targetAbsent": true,
+      "caseAndDiskHullsRetained": true,
+      "originalEvidenceFilesRetained": 15,
+      "twoComparisonReceiptsPASS": true,
+      "rootAdoptionAndOnceClaimConsistent": true,
+      "removedRegularFilesRecorded": 1711,
+      "deltaArchiveBytesMetadataChecked": 21488442
+    }
+  ],
+  "totals": {
+    "removedRegularFilesRecordedAndSummed": 8555,
+    "deltaArchiveBytesSummedAndSizesChecked": 107427091,
+    "aggregateAvailableBytesAtRootCompletion": 15439728640,
+    "aggregateUnchangedFullAdmissionThresholdBytes": 15179779720,
+    "aggregateMarginBytesAtRootCompletion": 259948920,
+    "availableBytesNotRemeasuredDuringConcurrentNextWork": true
+  },
+  "protectedCanonicalBase": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL",
+  "canonicalManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "canonicalBaseIsPermanentNecessaryReconstructionDependency": true,
+  "standaloneRedundantFullBackupClaimed": false,
+  "limits": [
+    "Full source/archive/manifests were not rehashed in this lightweight review. Actual byte equality relies on the two pinned Root-executed comparison receipts and reviewed fail-closed retire path; this reviewer verified their small receipt bytes and binding closure.",
+    "Recorded removal total comes from five consistent RETIRED receipts and actual target absence; no deleted contents can be re-inspected.",
+    "Action shell Exit0 is Root-reported; this review independently verifies completed output receipts and live postconditions, not a separate complete action-shell log.",
+    "Historical R595b-to-e753 integration is accepted provenance, not treated as live old-source drift. These sources are not dereferenced by the retirement closure."
+  ],
+  "reviewerActions": [
+    "read stored metadata and small receipts",
+    "stat exact targets/case hulls/archive/manifests/source root",
+    "one read-only docker inspect for the exact fifteen historical CIDs",
+    "write only this private SAFE review receipt"
+  ],
+  "subjectActionsExecuted": [],
+  "subjectCodeImportedOrExecuted": false,
+  "testsExecuted": false,
+  "resourcesStartedStoppedOrMutated": false,
+  "originalDataWrites": false,
+  "repositoryWrites": false,
+  "providerCalls": 0,
+  "full500": false,
+  "production": false,
+  "memorySavingClaimed": false
+}

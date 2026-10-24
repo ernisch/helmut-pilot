@@ -71,7 +71,7 @@ function setup() {
 async function main() {
   await test("20USD order installs an inert U-prestage with real financial validation; invalid pairing consumes nothing", async () => {
     const storagePath = require.resolve("../lib/helmut/storage"), oldCache = require.cache[storagePath];
-    const oldLoad = C.loadPacket, oldActive = K.aktiv, oldCommit = process.env.HELMUT_PRODUCTION_COMMIT, oldDate = global.Date;
+    const oldLoad = C.loadPacket, oldReadPin = C.readPin, oldActive = K.aktiv, oldCommit = process.env.HELMUT_PRODUCTION_COMMIT, oldDate = global.Date;
     try {
       // This fictional install uses the real same-UTC-day admission validator.
       // A fixed noon clock avoids wall-clock midnight and expiry races after awaits.
@@ -95,6 +95,7 @@ async function main() {
           admittedAtUTC: start, expiresAtUTC: end, controlHash: C.controlHash(f.auth), booksHash: C.booksHash(f.auth) });
         let auth = clone(f.auth), staged = 0;
         C.loadPacket = () => ({ command: f.command, admission: f.record });
+        C.readPin = () => Buffer.from(JSON.stringify(f.record)); // Same explicit fictional FS boundary.
         require.cache[storagePath] = { id: storagePath, filename: storagePath, loaded: true, exports: {
           synthetik500ProductionBackend() {}, leseLlmTageszaehler: async () => ({ ok: true, used: 0 }),
           stageSynthetik500ProductionCommand: async () => { staged++; },
@@ -115,7 +116,7 @@ async function main() {
     } finally {
       if (oldCache) require.cache[storagePath] = oldCache; else delete require.cache[storagePath];
       global.Date = oldDate;
-      C.loadPacket = oldLoad; K.aktiv = oldActive;
+      C.loadPacket = oldLoad; C.readPin = oldReadPin; K.aktiv = oldActive;
       if (oldCommit === undefined) delete process.env.HELMUT_PRODUCTION_COMMIT; else process.env.HELMUT_PRODUCTION_COMMIT = oldCommit;
     }
   });
@@ -373,7 +374,13 @@ async function main() {
       assert.equal(J.current(auth).index, 2); assert.equal(J.current(auth).claimId, permanentClaim);
       // Unknown evidence INSERT blocks the entered unit forever, with no retry.
       const afterSecond = clone(auth); rejectEvidence = true;
-      await assert.rejects(Adapter.productionNext(selector), /stopped-or-unknown/);
+      await assert.rejects(Adapter.productionNext(selector), error => {
+        assert.equal(error.message, "synthetik500-production-stopped-or-unknown");
+        assert.equal(error.cause?.message, "fake-unknown-insert");
+        assert.equal(Object.getOwnPropertyDescriptor(error, "cause").enumerable, false);
+        assert.equal(JSON.stringify(error), "{}", "internal cause must not become a public JSON field");
+        return true;
+      });
       assert.equal(J.current(auth).state, "unknown"); const callsAfterUnknown = lageCalls;
       await assert.rejects(Adapter.productionNext(selector), /claim-or-window/);
       assert.equal(lageCalls, callsAfterUnknown); assert.equal(J.current(auth).claimId, permanentClaim);

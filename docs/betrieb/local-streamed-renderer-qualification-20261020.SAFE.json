@@ -1,0 +1,263 @@
+{
+  "schema": "helmut-local-streamed-renderer-qualification/1",
+  "atUTC": "2026-10-20T14:55:19.188446+00:00",
+  "baselineCommit": "bdb2c2c3a369ebf175f02734c696b13f00733988",
+  "historicalV11Commit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",
+  "preservedAncestor": "c8624f7c875a4f6f849d83951898c5e205833a6e",
+  "nativeFunctionBodySHA256": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+  "baselineNativeBodySHA256": "b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a",
+  "rendererComparison": {
+    "order": "OLD NEW NEW OLD; fresh backend each",
+    "sameUnmutatedSource": true,
+    "outputJSONTextBytes": 6129538,
+    "outputNativeBytes": 6397892,
+    "outputSHA256": "6b33d86301a88b227c4a24a9facd7132397021335cc15dc20f10703cfb435750",
+    "ticksPerSecond": 100,
+    "backendCpuIncludesBackendSetup": true,
+    "rows": [
+      {
+        "label": "OLD_1",
+        "wallMS": 1200.659151,
+        "backendHwmBytes": 314785792,
+        "backendAnonymousBytes": 191348736,
+        "backendUserCpuTicks": 50,
+        "backendSystemCpuTicks": 67,
+        "tempBytes": 19120551,
+        "tempFiles": 3
+      },
+      {
+        "label": "NEW_1",
+        "wallMS": 356.600645,
+        "backendHwmBytes": 129560576,
+        "backendAnonymousBytes": 66371584,
+        "backendUserCpuTicks": 24,
+        "backendSystemCpuTicks": 10,
+        "tempBytes": 6397902,
+        "tempFiles": 1
+      },
+      {
+        "label": "NEW_2",
+        "wallMS": 293.8945410000001,
+        "backendHwmBytes": 129363968,
+        "backendAnonymousBytes": 66371584,
+        "backendUserCpuTicks": 22,
+        "backendSystemCpuTicks": 5,
+        "tempBytes": 6397902,
+        "tempFiles": 1
+      },
+      {
+        "label": "OLD_2",
+        "wallMS": 621.4252250000004,
+        "backendHwmBytes": 315465728,
+        "backendAnonymousBytes": 191123456,
+        "backendUserCpuTicks": 49,
+        "backendSystemCpuTicks": 10,
+        "tempBytes": 19120551,
+        "tempFiles": 3
+      }
+    ]
+  },
+  "realLateV11Component": {
+    "functionalClientPass": true,
+    "overallHarnessStatus": "FAIL",
+    "overallFailure": "owned PostgREST did not close cleanly before differential phase; exact stop return code not captured",
+    "nativeDifferentialExecutedInThisCase": false,
+    "completeGraphHistoryChainCatalogQualified": false,
+    "confirmedOrdinaryWrites": 11,
+    "freshControlReads": 192,
+    "staleCASRejected": true,
+    "lostAckRealCommit": true,
+    "automaticRetries": 0,
+    "actualCostFreeLedgerAppends": 2,
+    "originalHistoryRows": 6000,
+    "finalHistoryRows": 6002,
+    "originalHistorySuffixPreserved": true,
+    "logicalStateRestoredBeforeAppends": true,
+    "allMeasuredConfirmedWritesWithinAuth30": true,
+    "rounds": 12,
+    "heapLimitBytes": 452984832,
+    "heapUsedRangeBytes": [
+      104922568,
+      146563272
+    ],
+    "rssRangeBytes": [
+      277602304,
+      312070144
+    ],
+    "plateauOver500Proven": false,
+    "kernelAllPhasesPeakBytes": 1094455296,
+    "kernelAllPhasesCpuUsec": 122490388,
+    "kernelEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "lastOwnedExitCovered": true,
+    "allOwnedWorkloadExited": true,
+    "source1709FilesUnchanged": true,
+    "sourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+    "ramBackedPGDATA": true,
+    "jitAvailableAndOn": true,
+    "historicalV11JitExecutionKnown": false,
+    "exclusiveNewKernelPeakClaimed": false,
+    "existingOriginalCacheMayRemainOutsideNewGroup": true,
+    "fullOriginalNativeCatalogQualified": true,
+    "onlyReviewedRendererBodyChangedInNativeCatalog": true
+  },
+  "separateNativeSemanticUnit": {
+    "pass": true,
+    "cases": 39,
+    "comparisons": 95,
+    "newSyntheticEmptyPG17Only": true,
+    "jit": "off for both oracle and candidate",
+    "memoryLimitBytes": 1073741824,
+    "swapBytes": 0,
+    "writesRolledBack": true,
+    "allOwnedWorkloadExited": true,
+    "resourceProof": false,
+    "V11PGDATAMounted": false
+  },
+  "limits": {
+    "hardMemoryBytes": 2048000000,
+    "desiredReserveBytes": 500000000,
+    "targetPeakBytes": 1548000000,
+    "nativePageRoundedMaxBytes": 1547997184,
+    "nativeHighBytes": 1399996416,
+    "swapBytes": 0,
+    "hostDiskFloorBytes": 8589934592,
+    "fullRunDiskAdmissionBytes": 15179779720,
+    "full500Proven": false,
+    "wholeRun500MBReserveProven": false,
+    "originalHarnessFailureOverwritten": false,
+    "testsRetriedAutomatically": false,
+    "costContractChanged": false,
+    "routerChanged": false,
+    "deepseekOrRouterCallsThisSprint": 0,
+    "helmutProviderCalls": 0,
+    "productionActions": 0,
+    "mergeOrDeploy": false,
+    "hostAvailableBytesAtFinalLocalVerification": 8597430272,
+    "fullRunDiskShortfallBytesAtFinalLocalVerification": 6582349448
+  },
+  "privateEvidencePins": [
+    {
+      "name": "candidate-abba-02/ACTUAL_RESULT.SAFE.json",
+      "bytes": 5151,
+      "sha256": "8182b781e628cb21596e58861f3b48d1c25e3eeb47fe503a64462a6fd478d1f4"
+    },
+    {
+      "name": "candidate-abba-02/WORKER_RESULT.SAFE.json",
+      "bytes": 7682,
+      "sha256": "c4e99ee5c1e8452c38cbb50c0d6aaf4e0bbd25ad762d4a3a2abef9367e8385d1"
+    },
+    {
+      "name": "candidate-abba-02/CLIENT_RESULT.SAFE.json",
+      "bytes": 10595,
+      "sha256": "c9d2a6bd7b818bdf46e5162887ef133f31278a88c8ca21f4bafb639d6b0fe0c1"
+    },
+    {
+      "name": "candidate-abba-02/RENDERER_ABBA.SAFE.json",
+      "bytes": 5778,
+      "sha256": "50c5a6ca53bf1b7c5f51ee40134f69b76ed27c0f007afd04444912371acac91a"
+    },
+    {
+      "name": "native-renderer-unit-01/ACTUAL_RESULT.SAFE.json",
+      "bytes": 688,
+      "sha256": "617320c994f6e404771c962894c631dec9ec832cf0f9964e028fd08f638a226e"
+    },
+    {
+      "name": "native-renderer-unit-01/DIFFERENTIAL_RESULT.SAFE.json",
+      "bytes": 38509,
+      "sha256": "846cb9ee89897acd9667320aac559f716ff0e7e6753e974a5132880f42be17ea"
+    },
+    {
+      "name": "streaming-renderer/CANDIDATE.sql",
+      "bytes": 13964,
+      "sha256": "aaa4ac4db8ccbef0d57c7e328b3184b76b93f62c7b2ed21cc87980ddbb795367"
+    },
+    {
+      "name": "renderer-differential-v2/PREPARED.SAFE.json",
+      "bytes": 2773,
+      "sha256": "9b9ac8dfc3f04cd084f15acd13d01ddc682ba18de57b9645f423ad82cde79304"
+    },
+    {
+      "name": "PRECOMPARISON_ORIGINAL_ARCHIVE_VERIFIED.SAFE.json",
+      "bytes": 857,
+      "sha256": "48a4ca885a4dafa0c4006a6998eb3efd81972a952d622194697b4c3f410abfcb"
+    },
+    {
+      "name": "candidate-abba-02/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 35837,
+      "sha256": "d3e4dde9d2873f892e3ae5a8140fed3966eadca80d85fb2ac629e4a4833e7345"
+    },
+    {
+      "name": "final-integration-checks/integration-initial-failure.log",
+      "bytes": 21611,
+      "sha256": "04db2468ddcd89d9fb16de86c4cc0ae4b20eae3a145f5ae019a68a37d109d2a8"
+    },
+    {
+      "name": "final-integration-checks/integration-final.log",
+      "bytes": 621,
+      "sha256": "a0a88c29f58f3372d036821585efe6256f179b59b0f90aefd39cf93ba2456d5f"
+    },
+    {
+      "name": "final-integration-checks/start-input.log",
+      "bytes": 1088,
+      "sha256": "79c59005548d6dc851c03d7c9d87bf7b4edb09a060fcaae96e2a8dde081c01db"
+    },
+    {
+      "name": "final-integration-checks/offline179-standard.log",
+      "bytes": 8621,
+      "sha256": "ff4d9fac7e899319780509468652e904e92ecd7d936a9ada8c5174c96d8d955a"
+    }
+  ],
+  "integratedSourcePins": [
+    {
+      "name": "supabase/proposals/auth_state_parts_local.sql",
+      "bytes": 54938,
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    {
+      "name": "scripts/helmut-resource-meter/atomic-usage-integration.js",
+      "bytes": 34732,
+      "sha256": "edb6dbf56f9ac4c5acf2fcce0046e194c0cc412b75f22340fa98369f1d24fff8"
+    },
+    {
+      "name": "scripts/helmut-resource-meter/atomic-usage-integration-test.py",
+      "bytes": 47288,
+      "sha256": "0311dc2f9e8eaafc8a43f275311ebb48eb49ec4cb89b93a50f27780a219fbe6c"
+    }
+  ],
+  "sourceReview": {
+    "reviewer": "separate GPT 6.1 SOL subagent",
+    "effort": "xhigh",
+    "scope": "final integrated SQL and source-binding delta",
+    "result": "no concrete blocker found",
+    "criticalProductionEndAcceptance": false
+  },
+  "integrationChecks": {
+    "targetedTests": 22,
+    "targetedPass": 22,
+    "targetedSkipped": 0,
+    "startInputTests": 6,
+    "startInputPass": 6,
+    "syntaxPass": true,
+    "sourcePinAndActualNativeBodyMatch": true,
+    "initialFailClosedSourcePinFailureRetained": true,
+    "conservativeSQLRegression": {
+      "pass": true,
+      "suites": 179,
+      "seconds": 698,
+      "exitCode": 0,
+      "scope": "SQL change in separate source-code worktree; later descriptor delta covered by targeted integration",
+      "testWorktree": "/tmp/helmut-auth-offline-20261020",
+      "sqlSHA256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    "full500Run": false,
+    "capturedActualNativeUsageAndStateCatalogAcceptedByFinalIntegratedCode": true,
+    "capturedCatalogRevalidationMadeNewDatabaseQueries": false
+  }
+}

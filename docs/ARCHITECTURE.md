@@ -24,6 +24,19 @@ Roadmap-Punkt 23; Migrationsstand nach Production-Anwendung von
 
 ---
 
+## Lokaler500er Kandidat19.10.2026: frische schreibunfähige Kontrollsicht
+
+Standard AUS, keine Productionfreigabe: `llm-usage-atomic.readControl` nutzt das
+vorhandene native Graphprotokoll für frisch geprüfte kleine Antworten und hält
+höchstens2MiB bereits vollständig originalgeprüfte Journal-/Admission-/Kosten-
+inhalte. `storage.readSynthetik500ControlStore` wird ausschließlich von
+`synthetik-500-production-adapter.controlGuard` im neuen lokalen Modus verwendet.
+Alle Guards laufen frisch; View und Spreadkopie besitzen keinen Schreibsnapshot.
+Geänderte/kalte Inhalte werden vollständig gelesen und geprüft; Writers, Offline-
+prüfung und U bleiben auf dem bisherigen Pfad. Kein neuer SQL-/Cache-Dienst.
+Der500er Descriptor weist den unqualifizierten Schalter ab. Gemeinsamer RAM- und
+500er Nachweis bleiben offen. [Vertrag, Tests und Messgrenzen](betrieb/local-fresh-control-view-20261019.md).
+
 ## 1 · Zentrale Komponenten
 
 | Komponente | Datei | Größe | Rolle |

@@ -1,0 +1,318 @@
+{
+  "schema": "helmut-five-combined-auth-disposable-copies-independent-actual-retirement-review/1",
+  "status": "ACTUAL_FIVE_RETIREMENTS_INDEPENDENTLY_REVIEWED",
+  "findingsStatus": "NO_BLOCKING_FINDINGS",
+  "blockingFindings": [],
+  "atUTC": "2026-10-20T21:11:18.072636+00:00",
+  "reviewerModel": "gpt-6.1-sol",
+  "independentOfRetirerAuthorAndActualExecutor": true,
+  "scope": "Saved20receipt chains/all460 declared case proof bytes/immutable launcher closure/exact targetENOENT plus protected-source root lstat/offline marker; no Docker/Original payload/target traversal.",
+  "rootSummaryPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/ROOT_ALL_FIVE_RETIRED_ACTUAL_SUMMARY.SAFE.json",
+    "bytes": 1977,
+    "sha256": "1cd0140c7e8f2826ec70ab903aeb599f91f8289fdc72e4ebb76355ad27826918"
+  },
+  "scriptPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/retire_five_combined_auth_pass_copies.py",
+    "bytes": 45872,
+    "sha256": "522616b2d411e987e7d3e3838533acb06f84a58b31bd7658466c8f10d3eb706d"
+  },
+  "rootContextPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/ROOT_PASS_CASES_CONTEXT.PRIVATE.json",
+    "bytes": 1528405,
+    "sha256": "02d8bae461082b261fa83d4a3da147c0efbd04e00d3201320581739ac271bea2"
+  },
+  "acceptedV4SourceReviewPin": {
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/combined-auth-retirer-independent-review-20261020/FIVE_COMBINED_AUTH_PASS_RETIRER_V4_OVERLAP_DELTA_REVIEW.SAFE.json",
+    "bytes": 7104,
+    "sha256": "92ab0fdd60dfc261440b077f4dc4059b059e015f575372cd8600c8ac1b7bc3ac"
+  },
+  "rootPreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+    "bytes": 46155,
+    "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+  },
+  "cases": [
+    {
+      "case": "control-3aace0bea3e2bf3b6ac80cf9",
+      "preservedProofFiles": 101,
+      "preservedProofBytes": 2655464,
+      "actualResultPin": {
+        "bytes": 8829,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/ACTUAL_RESULT.SAFE.json",
+        "sha256": "48e838ba4d974c7578f42ffe9895ad4cef693804f5fcfa815bdc45218144c9f5"
+      },
+      "rootReceiptPins": {
+        "adopt": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-3aace0bea3e2bf3b6ac80cf9.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+          "bytes": 1893,
+          "sha256": "7ed42644bfe173e9399b23be6d019ea17a9fe7568c4b546402061c5097cd893b"
+        },
+        "check": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-3aace0bea3e2bf3b6ac80cf9.CHECKED_CASE.PRIVATE.json",
+          "bytes": 630933,
+          "sha256": "fe1b7594ec66a76f4c5e4875ecf4ff30881f886336e444181f1bf8ed67668c7f"
+        },
+        "once": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-3aace0bea3e2bf3b6ac80cf9.RETIRE_ONCE_CLAIM.PRIVATE.json",
+          "bytes": 56561,
+          "sha256": "1c9fd5b5cdc831d7bf83d03276332e1e2e09465888b4428116244ca2f7dc5953"
+        },
+        "retired": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-3aace0bea3e2bf3b6ac80cf9.RETIRED.PRIVATE.json",
+          "bytes": 1641,
+          "sha256": "12ba47464539b73c99296d770b8472b242c288091b99142a9f13c1742bcf7099"
+        }
+      },
+      "targetENOENT": true,
+      "caseAndDiskHullDirectoriesRemain": true,
+      "removedFiles": 1711,
+      "allocatedBytes": 369836032,
+      "closureScanSeconds": 1.6562848091125488,
+      "closureAgeAtClaimSeconds": 1.6658658981323242,
+      "adoptionAgeAtClaimSeconds": 5.284905672073364,
+      "checkAgeAtClaimSeconds": 35.178080320358276,
+      "all15CIDsFiveGroupsRecordedClosedInClaim": true
+    },
+    {
+      "case": "control-4dec46ee7df2915710417443",
+      "preservedProofFiles": 101,
+      "preservedProofBytes": 2689445,
+      "actualResultPin": {
+        "bytes": 8842,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/ACTUAL_RESULT.SAFE.json",
+        "sha256": "9a1bf01ed317b5f00a9e20fc2469a89ca4eb61f1ba6e7fd9fef9fc9941e837e3"
+      },
+      "rootReceiptPins": {
+        "adopt": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-4dec46ee7df2915710417443.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+          "bytes": 1893,
+          "sha256": "3dc908ba0982360392aca762cb6cb47ac0318c440a7cfabe889160fff9f0a5f3"
+        },
+        "check": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-4dec46ee7df2915710417443.CHECKED_CASE.PRIVATE.json",
+          "bytes": 630932,
+          "sha256": "96a4dabb25710ea3ab9c10e5a5b0d6940566089bed0dfb7d4d4bf44bda693d94"
+        },
+        "once": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-4dec46ee7df2915710417443.RETIRE_ONCE_CLAIM.PRIVATE.json",
+          "bytes": 56562,
+          "sha256": "07f2ae484d191988449973d027f40af3112e650fab6d8e214ce7053064f5767f"
+        },
+        "retired": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-4dec46ee7df2915710417443.RETIRED.PRIVATE.json",
+          "bytes": 1641,
+          "sha256": "14f169202b9ef7d6f98ddfc713993a1acc85ae8a324a1b0c96e39ef703549632"
+        }
+      },
+      "targetENOENT": true,
+      "caseAndDiskHullDirectoriesRemain": true,
+      "removedFiles": 1711,
+      "allocatedBytes": 369831936,
+      "closureScanSeconds": 1.5721189975738525,
+      "closureAgeAtClaimSeconds": 1.5838375091552734,
+      "adoptionAgeAtClaimSeconds": 4.222002029418945,
+      "checkAgeAtClaimSeconds": 11.509883880615234,
+      "all15CIDsFiveGroupsRecordedClosedInClaim": true
+    },
+    {
+      "case": "control-bd23264526494f6fcfab1715",
+      "preservedProofFiles": 56,
+      "preservedProofBytes": 2320962,
+      "actualResultPin": {
+        "bytes": 8328,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-bd23264526494f6fcfab1715/ACTUAL_RESULT.SAFE.json",
+        "sha256": "4bc43a6e1b5e5e9ac7d169028545c5baa56492d5e3cc7746696a8dc67c28794d"
+      },
+      "rootReceiptPins": {
+        "adopt": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-bd23264526494f6fcfab1715.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+          "bytes": 1893,
+          "sha256": "5af9c3f34d31c6e4e9eea083551c66dcfbb697cb08809e2a1595abf1f5b22f6c"
+        },
+        "check": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-bd23264526494f6fcfab1715.CHECKED_CASE.PRIVATE.json",
+          "bytes": 630933,
+          "sha256": "38dd3087287eda278cf59b1c20a1a305c7cba53ac9afe7110bc1e8fcb8575a03"
+        },
+        "once": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-bd23264526494f6fcfab1715.RETIRE_ONCE_CLAIM.PRIVATE.json",
+          "bytes": 56562,
+          "sha256": "924a3599cea564a586e3b0b34d137a3162afd232c18124c0d53a410004adf487"
+        },
+        "retired": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-bd23264526494f6fcfab1715.RETIRED.PRIVATE.json",
+          "bytes": 1641,
+          "sha256": "a4b41ab7387243cb0135a99364e1ca2e51a4c89510884a6b6f51c11e30918b19"
+        }
+      },
+      "targetENOENT": true,
+      "caseAndDiskHullDirectoriesRemain": true,
+      "removedFiles": 1711,
+      "allocatedBytes": 369807360,
+      "closureScanSeconds": 1.5369665622711182,
+      "closureAgeAtClaimSeconds": 1.5479507446289062,
+      "adoptionAgeAtClaimSeconds": 4.250961542129517,
+      "checkAgeAtClaimSeconds": 26.809059619903564,
+      "all15CIDsFiveGroupsRecordedClosedInClaim": true
+    },
+    {
+      "case": "control-d32ff97bfb13d804483efbd2",
+      "preservedProofFiles": 101,
+      "preservedProofBytes": 2694871,
+      "actualResultPin": {
+        "bytes": 8843,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/ACTUAL_RESULT.SAFE.json",
+        "sha256": "faadabbebebefd52159244eeeb77334814ed07f779dc5e9f184fe8af72a53744"
+      },
+      "rootReceiptPins": {
+        "adopt": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-d32ff97bfb13d804483efbd2.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+          "bytes": 1893,
+          "sha256": "b604b297256a3b4d5f17b92af03243d32d55e62fd34961c90d4f8f749a9440bc"
+        },
+        "check": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-d32ff97bfb13d804483efbd2.CHECKED_CASE.PRIVATE.json",
+          "bytes": 630933,
+          "sha256": "b5935f9640e8e70623c62a3290f1fb6213ec0c98b240699e02eaf7ad4ab92df6"
+        },
+        "once": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-d32ff97bfb13d804483efbd2.RETIRE_ONCE_CLAIM.PRIVATE.json",
+          "bytes": 56562,
+          "sha256": "e4283ce7746fb817a22b0802f99061ccb4b371827826bb0bbc8a75c2881bff7a"
+        },
+        "retired": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-d32ff97bfb13d804483efbd2.RETIRED.PRIVATE.json",
+          "bytes": 1641,
+          "sha256": "5c8a622c58bd8c06e5c2708a705be57466548f5b1ee7a3cf5bd54d27a845670c"
+        }
+      },
+      "targetENOENT": true,
+      "caseAndDiskHullDirectoriesRemain": true,
+      "removedFiles": 1711,
+      "allocatedBytes": 369831936,
+      "closureScanSeconds": 1.6591267585754395,
+      "closureAgeAtClaimSeconds": 1.6694540977478027,
+      "adoptionAgeAtClaimSeconds": 4.437913417816162,
+      "checkAgeAtClaimSeconds": 74.26090407371521,
+      "all15CIDsFiveGroupsRecordedClosedInClaim": true
+    },
+    {
+      "case": "control-f3ebacf9615086ac8da26ce2",
+      "preservedProofFiles": 101,
+      "preservedProofBytes": 2652839,
+      "actualResultPin": {
+        "bytes": 8822,
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/ACTUAL_RESULT.SAFE.json",
+        "sha256": "93cc3a247ff458275b815075592be30573ed91383ec3905cacb1938894b7999c"
+      },
+      "rootReceiptPins": {
+        "adopt": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-f3ebacf9615086ac8da26ce2.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+          "bytes": 1893,
+          "sha256": "44a0bdd08dcfb0c0249bda2421c38a714f7353dd1a5466550fae50d57cd7b5cd"
+        },
+        "check": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-f3ebacf9615086ac8da26ce2.CHECKED_CASE.PRIVATE.json",
+          "bytes": 630932,
+          "sha256": "04a1f5ee53f2730483f8f6c13675a442ee6c1a659a9d03f90c1cc16e78c8f49a"
+        },
+        "once": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-f3ebacf9615086ac8da26ce2.RETIRE_ONCE_CLAIM.PRIVATE.json",
+          "bytes": 56562,
+          "sha256": "612d026799ea12a367d5b65dbb6ebae4bf3588d9925592a04842b4f8093ea1f9"
+        },
+        "retired": {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/combined-auth-five-pass-copy-retirement-preparation-v4/control-f3ebacf9615086ac8da26ce2.RETIRED.PRIVATE.json",
+          "bytes": 1641,
+          "sha256": "f3310d5ab1d4fd63fc1d05f304f204dda051baf359c93f598de240c7d4d9e4bc"
+        }
+      },
+      "targetENOENT": true,
+      "caseAndDiskHullDirectoriesRemain": true,
+      "removedFiles": 1711,
+      "allocatedBytes": 369840128,
+      "closureScanSeconds": 1.7739827632904053,
+      "closureAgeAtClaimSeconds": 1.7843260765075684,
+      "adoptionAgeAtClaimSeconds": 4.502151250839233,
+      "checkAgeAtClaimSeconds": 15.284794092178345,
+      "all15CIDsFiveGroupsRecordedClosedInClaim": true
+    }
+  ],
+  "aggregate": {
+    "preservedCaseProofFiles": 460,
+    "preservedCaseProofBytes": 13013581,
+    "allProofPinListSHA256": "a529dc7e3405ed78d64aae703215c532294272eb9285e92188185804ccb515b9",
+    "immutableLauncherClosurePinsChecked": 31,
+    "distinctRetainedCaseCIDsBoundToEachClaim": 15,
+    "distinctCaseGroupsBoundToEachClaim": 5,
+    "targetsIndependentlyENOENT": 5,
+    "removedRegularFiles": 8555,
+    "sumInventoriedAllocatedBytes": 1849147392,
+    "perReceiptFreeDifferenceEqualsInventoriedAllocatedBytes": true,
+    "savedSourceManifestRecordDigestVerifiedEveryCase": true,
+    "savedPhysicalAuth606AndHistory6000ReferencesRestored": true
+  },
+  "sourcePreservation": {
+    "permanentSource": {
+      "fileBytes": 369399611,
+      "fileCount": 1709,
+      "manifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+      "path": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL",
+      "permanentProtectedReconstructionDependency": true,
+      "rootIdentity": {
+        "allocatedBytes": 4096,
+        "atime_ns": 1792487926568063929,
+        "bytes": 4096,
+        "ctime_ns": 1792487833623423814,
+        "device": 27,
+        "gid": 1000,
+        "inode": 169,
+        "links": 19,
+        "mode": 448,
+        "mtime_ns": 1792487833623423814,
+        "uid": 1000
+      }
+    },
+    "currentRootMetadata": {
+      "device": 27,
+      "inode": 169,
+      "mode": 448,
+      "uid": 1000,
+      "gid": 1000,
+      "links": 19,
+      "bytes": 4096,
+      "allocatedBytes": 4096,
+      "mtime_ns": 1792487833623423814,
+      "atime_ns": 1792487926568063929,
+      "ctime_ns": 1792487833623423814
+    },
+    "identityEqualExceptPermittedAtime": true,
+    "postmasterMarkerENOENT": true,
+    "sourcePayloadRehashed": false,
+    "otherOriginalBankVolumesLoopsOrSourcesAccessed": false
+  },
+  "closureEvidenceLimit": "All15CID identities/fullmounts and5emptygroups were recorded in every fresh Root claim, bound to exact context and reviewed live guards. No fresh Docker/cgroup/process scan by reviewer. Program only removes selected derivedPGDATA subtree; all case/disk hulls and460 necessary proof files remain.",
+  "executionExitEvidence": "Root reported all5 invocations exit0. Reviewer did not independently observe those tool sessions or a persisted per-command exit log;20receipt pins,exactENOENT and all460 preserved proofs independently verified.",
+  "capacitySnapshots": {
+    "rootAvailableBytes": 14566215680,
+    "rootFullAdmissionBytes": 15179779720,
+    "rootShortfallBytes": 613564040,
+    "reviewerAvailableBytes": 14563622912,
+    "reviewerShortfallBytes": 616156808,
+    "snapshotOnly": true,
+    "fullAdmissionQualified": false,
+    "futureReclaimOrRAMBenefitClaimed": false
+  },
+  "reviewerActions": {
+    "ownSAFEOnlyWritten": true,
+    "sourceRootLstatAndOfflineMarkerOnly": true,
+    "exactTargetLstatOnlyNoWalkBodies": true,
+    "smallDeclaredProofAndSourceTextHashingOnly": true,
+    "subjectImportsASTTestsBuildNativeDockerSQLNamespaceDeletion": false,
+    "originalRuntimeBinaryOrPGDATAPayloadReads": false
+  },
+  "newDeletionOrNativeOrFull500Authority": false,
+  "full500": false,
+  "production": false
+}

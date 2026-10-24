@@ -1,0 +1,29 @@
+[lokal] 6 Zugangsdaten NICHT an den Kindprozess weitergereicht (SUPABASE_SERVICE_ROLE_KEY, HELMUT_AZURE_TENANT_ID, HELMUT_AZURE_CLIENT_ID, HELMUT_AZURE_CLIENT_SECRET, SUPABASE_ACCESS_TOKEN, VERCEL_TOKEN) — Werte bleiben in dieser Sitzung unveraendert.
+[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (HELMUT_STORAGE_BACKEND) — Werte bleiben in dieser Sitzung unveraendert.
+PASS real384MiB old-space plus16MiB semi-space yields bounded start and exit receipts
+PASS larger1536MiB explicit old-space option fails before receipt
+PASS an overriding old-space option fails even when the last option would be384
+PASS missing explicit old-space option is not accepted from defaults
+PASS unknown spelling of the old-space policy is not an admitted option
+PASS missing or wrong semi-space policy fails before receipt
+PASS NODE_OPTIONS cannot introduce hidden runtime flags
+PASS missing or different local budget environment fails closed
+PASS production marker rejects local budget installation
+PASS effective V8 limit is checked independently of correct CLI flags
+PASS duplicate install rejects while preserving the first valid lifetime receipt
+PASS ordinary nonzero exit still writes the runtime exit proof
+PASS abrupt signal has no fabricated exit receipt
+PASS HTTP integration retains the strict original counter schema
+PASS HTTP mode without the explicit heap opt-in remains unchanged
+PASS an ordinary Worker has distinct thread startup and exit receipts
+PASS a Worker with scrubbed env and execArgv is measured externally before its real exit
+PASS verified parent observation covers a regular Worker terminate exitCode1
+PASS failed live Worker heap measurement remains a failed qualification without retry
+PASS a Worker heap measurement above the budget cannot qualify
+PASS runtime observations use real main-isolate scalars at exactly45 fixed boundaries
+PASS missing export and rejected counts/index never become a completed export
+PASS preexisting runtime receipt is kept byte-identical instead of overwritten
+PASS short runtime write is attempted once and closes its actual file descriptor
+PASS runtime output cap stops beforewrite100plus and cleanup retains incomplete evidence
+PASS runtime GC codec accepts all five actual Node kinds including weak callbacks
+{"scope":"LOCAL_NODE_HEAP_GUARD_ONLY","cases":26,"realShortNodeChildren":31,"failed":0,"pass":true,"DockerCalls":0,"databaseCalls":0,"full500Runs":0,"providerCalls":0}

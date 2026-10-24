@@ -1,0 +1,80 @@
+{
+  "schema": "helmut-bounded-read-cold-digest-delta/1",
+  "mode": "bounded-native-read-v1",
+  "production": false,
+  "full500Accepted": false,
+  "baselineCommit": "0372500c2d25d35e5c3d0816b80a55d92e8ca420",
+  "file": "supabase/proposals/auth_read_bounded_local.sql",
+  "originalSHA256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561",
+  "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5",
+  "function": "helmut_auth_state_graph_read_v1",
+  "originalFunctionBodySHA256": "1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0",
+  "functionBodySHA256": "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0",
+  "scope": "Cold graph digest hash projection only; ABI, roles, fresh guards, payloads, nonces, costs and all limits unchanged",
+  "requiresFreshIntegrationAcceptance": true,
+  "comparativeRAMGainClaimed": false,
+  "proofContract": {
+    "scope": "LOCAL_SOURCE_ONLY",
+    "nativeFile": "scripts/helmut-resource-meter/cold-digest-native-qualification-20261020.SAFE.json",
+    "nativeSchema": "helmut-cold-digest-native-qualification/1",
+    "reviewFile": "scripts/helmut-resource-meter/cold-digest-sol-review-20261020.SAFE.json",
+    "reviewSchema": "helmut-cold-digest-sol-review/1",
+    "requirements": "Actual regular non-symlink repo files, exact bytes/SHA, current SQL/actual prosrc/adapter plus original source/body binding; native 19-case equality/errors/negatives/catalog/original/exit flags; independent accepted SOL review binds exact native proofPin. No delta metadata self-hash. Adapter hash binds source target, not native execution of the adapter."
+  },
+  "currentQualification": {
+    "qualified": true,
+    "scope": "LOCAL_SOURCE_ONLY",
+    "nativeDifferential": {
+      "status": "passed",
+      "exactWholeResponsesEqual": true,
+      "identicalErrors": true,
+      "originalStateUnchanged": true,
+      "requestedNegativesPassed": true,
+      "proofPin": {
+        "name": "cold-digest-native-qualification-20261020.SAFE.json",
+        "bytes": 14721,
+        "sha256": "6c8988e6ca763376554591d1244d574edb8bbf01586113402c452b1470937a15"
+      }
+    },
+    "independentSafetyReview": {
+      "status": "accepted",
+      "model": "gpt-6.1-sol",
+      "proofPin": {
+        "name": "cold-digest-sol-review-20261020.SAFE.json",
+        "bytes": 17466,
+        "sha256": "b488ae4bec1a60bce3c4ce3f98facf487a6c4414d201d0d20af4b35007754609"
+      }
+    }
+  },
+  "normalDescriptorIntegration": {
+    "status": "passed",
+    "sourcePins": 28,
+    "tests": 22,
+    "gateNegativeAndPositiveTests": 18,
+    "proofPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/ACTUAL_DESCRIPTOR_AND_GATE_TESTS.SAFE.json",
+      "bytes": 2364,
+      "sha256": "082fe5c59ba97b5484ca1a25d2c13cca99510f2e3bbc58be50b8a0b8c50585b9"
+    },
+    "scope": "Local source/descriptor/template and offline gate checks only; no full-run or native Node/PostgREST acceptance"
+  },
+  "commonMemoryComparison": {
+    "status": "NO_RELIABLE_COMMON_RAM_SAVING",
+    "noTempFiles": true,
+    "commonLifetimeRAMDeltaBytes": null,
+    "newMinusOldFirstPairBytes": 884736,
+    "newMinusOldCounterPairBytes": 294912,
+    "proofPin": {
+      "name": "ACTUAL_ABBA_COMPARISON.SAFE.json",
+      "bytes": 8600,
+      "sha256": "7f6ad9cfe5f6e3da98a95761e07636280da91f1c4deebce35d676c01216002e2",
+      "path": "/workspace/helmut-ram-fix-20261020/cold-digest-comparison-20261020/ACTUAL_ABBA_COMPARISON.SAFE.json"
+    }
+  },
+  "historicalAcceptanceScope": "Original595b2530 SQL bytes only; no historical nativeProof or model review applies to this delta",
+  "qualificationSequence": "Explicit localSourceOnly derivation and real native differential/requested negatives, then independent SOL safety review; qualify local source only after actual proofs. Normal descriptor/adapter integration and critical179 regression remain separately pending and run afterwards. No temporary true; all full-start gates remain.",
+  "criticalIntegrationTests": {
+    "status": "NOT_RUN",
+    "proofPin": null
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "schema": "helmut-two-cas-heap-retirer-plan/1",
+  "status": "PREPARED_SOURCE_ONLY_ACTUAL_ACCEPTED_ROOT_COPY_DECISION_BOUND_EXECUTION_NOT_AUTHORIZED",
+  "sourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py",
+    "bytes": 78105,
+    "sha256": "7afd64da0a87d104819de7f3115dfe44907b964c08e9a01c6b8c3d0ad306d9cb"
+  },
+  "parentSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/retire_two_auth_write_phase_pass_copies.py",
+    "bytes": 59338,
+    "sha256": "273c05398d2bbdd38b95beff4301152141b3eccd74dcac69d270012a011ef6d7"
+  },
+  "finalLauncherPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/PREPARED.SAFE.json",
+    "bytes": 67996,
+    "sha256": "a30bc1a726a5002e7f5b3f5e6e4d9c24dab26630bd3806d027d0c5e46ece63e8"
+  },
+  "hostPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap.py",
+    "bytes": 2420,
+    "sha256": "d1e4aec3c4327e20fafff7934ff52186c7ec54cec67dbdbbdb657d89958c19b3"
+  },
+  "measurementIntentPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_MEASUREMENT_INTENT.SAFE.json",
+    "bytes": 8774,
+    "sha256": "34f71d2eaad42706bfabc713ab34b8be6f011ecc7a24d5e0ce7da6c1d4579aa0"
+  },
+  "twoCasePlanPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_TWO_CASE_PLAN.SAFE.json",
+    "bytes": 820,
+    "sha256": "b4dfe25b96c3ff8160539da1993753ff228598692f66b191068e6fc82f58a833"
+  },
+  "lifecycleIndependentActualReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/LIFECYCLE_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 26117,
+    "sha256": "563028c75c2c48eefc23669479e35bdcc6b4f653c0a19864a68c58602592a969"
+  },
+  "independentActualReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/ACTUAL_REVIEW.SAFE.json",
+    "bytes": 39335,
+    "sha256": "f7ef4bf4e31cb71c5696e31f58ab45abda8ddc1dbb9b8f4041086e46f3d1b9d8"
+  },
+  "rootActualVerificationPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_ACTUAL_REVIEW.SAFE.json",
+    "bytes": 5842,
+    "sha256": "0e0d47998242e787316eb504ba8136b468aaca39dd89404e37cb836057625d32"
+  },
+  "rootPassCopyRetentionDecisionPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_PASS_COPY_RETENTION_DECISION.SAFE.json",
+    "bytes": 1981,
+    "sha256": "7a94af355507dea80ce32e1896695f692b0381d3799225a075cad18214d76e46"
+  },
+  "resultPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9/ACTUAL_RESULT.SAFE.json",
+      "bytes": 11372,
+      "sha256": "40bd0d0074915f7404ad6d1d2137361d9703e39c83c66ca114160076ead69ff9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/ACTUAL_RESULT.SAFE.json",
+      "bytes": 12128,
+      "sha256": "8cf6cb28631d2a180ae0c56a7d7afbd4f313b3b6550a441988fd35b65f9d5617"
+    }
+  ],
+  "cases": [
+    {
+      "index": 0,
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9",
+      "measurementMode": "lifecycle-only",
+      "variant": "NONE",
+      "authRPCs": 0,
+      "onlyDisposableTarget": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9/disk/pgdata"
+    },
+    {
+      "index": 1,
+      "case": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042",
+      "measurementMode": "cas-heap",
+      "variant": "CURRENT",
+      "authRPCs": 27,
+      "onlyDisposableTarget": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/disk/pgdata"
+    }
+  ],
+  "scope": "Only these two new exact expendable PASS disk/pgdata roots. All case/disk parents, all retained evidence and all hulls remain.",
+  "fixedRootContext": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/ROOT_PASS_CASES_CONTEXT.PRIVATE.json",
+    "schema": "helmut-cas-heap-disposable-pass-context/1",
+    "ownerUID": 1000,
+    "mode": "0600",
+    "requiredTopLevel": [
+      "schema",
+      "scriptPin",
+      "cases",
+      "allTwoMeasurementsCompleted",
+      "allNecessaryEvidenceRetained",
+      "bothCasesIndependentlyAccepted",
+      "twoCasePlanPin",
+      "measurementIntentPin",
+      "hostEntryPin",
+      "independentActualReviewPin",
+      "lifecycleIndependentActualReviewPin",
+      "rootActualVerificationPin",
+      "rootPassCopyRetentionDecisionPin",
+      "source"
+    ],
+    "requiredCaseFields": [
+      "cid",
+      "parent",
+      "containers",
+      "proofs",
+      "historicalLauncherClosurePins",
+      "independentActualReviewPin",
+      "actualPASSReviewed",
+      "completeEvidenceReviewed",
+      "fullAuthHistory6000CatalogRestorationReviewed",
+      "dependenciesReviewed",
+      "unknownUseReviewed",
+      "noNecessaryStateOrSoleEvidenceLost",
+      "neverFutureBaselineOrInput"
+    ],
+    "allReviewBooleans": true,
+    "containers": "Three exact closed identities/mount dictionaries per case: control-cache-probe-worker, holder, setter. Six distinct CIDs; both exact groups empty. Root captures, never invents.",
+    "proofs": "Complete exact relative-path pin inventory of all case files except disk/pgdata. Readonly five lifecycle mounts must match life ACTUAL_RESULT/WORKER_RESULT/POSTGREST_STOP/SERVER_HEAP/OBSERVER_ACL_PROOF.",
+    "historicalLauncherClosurePins": "Deduplicated sorted launcher-local final PREP/files/metadataAndCodeInputs pins only; no mutable Root U/Parts historical dependency.",
+    "source": "Inherited permanent protected canonical827a metadata-only root identity and 1709files/369399611B/fullmanifestSHA. All17archive dependencies remain protected.",
+    "copyDecision": "Exact retained Root decision7a94af is required. It records both copies no longer needed after actual acceptance; it is not deletion adoption."
+  },
+  "requirements": {
+    "actual": "Fixed new actual result digests40bd0d/8cf6cb, final PREPa30bc1/hostd1e4ae, E-Life563028/E-Bothf7ef4b/Root0e0d47 PASS and separate retention7a94af all required.",
+    "lifecycle": "ZeroAuth/noNode/zeroCASbinder/zeroheap; exact observerACL restore; strict original PostgREST and PG Popen/external-SIGINT/wait/EOF/exit0 closure.",
+    "work": "Exactly27 genuinely sent/completed/selected-U-accepted RPCs,5read/4CAS/18controls,3round+restore,6marker/ACK frames,14 complete Node frames,6000history SHA and independent native restored refs/root/catalog/physical revision exception.",
+    "serverHeap": "Reparse complete closed PG log with the existing bounded scalar parser. Exactly4 ordered CAS session/beforeOutputText/afterOutputValue triplets correlated to accepted driver writes/PID/XID/revisions/rawGUC/log settings;8frames/12records,2048B each/24576B combined, parsed proof<=32768B.",
+    "observerACL": "Both host and worker pins plus exact new proof flags; persisted before/prepare/selected/restore receipts and namespace/PID readbacks, known missing-owner-granted two-object exception only, full raw ACL/null/order/grantor/options/effective/role/membership state restored byte-value-exact.",
+    "sourceAndNative": "Full saved source-before/after manifest identity; exact original public ABI/ACL/catalog except pinned diagnostic bodies and authorized revision; all child/drain/logEOF/strictPostgREST closure; native1547997184/high1399996416/swap0 and required high/max/oom/oom_kill0 (oom_group_kill0 if present).",
+    "outer": "Each exact ROOT_OBSERVED_TOOL_EXIT receipt actualToolExitCode0 and noRetrytrue binds corresponding fixed ACTUAL_RESULT. Internal PASS alone is insufficient.",
+    "use": "Inherited single full Docker inventory plus metadata-only host sweep, all6closedCIDs/twoemptygroups, exact known stopped-bind policy. Unknown unreadable metadata is not absence-of-use and still needs unchanged Root review.",
+    "claim": "Functional integrity governs disposal. No context/RSS/peak-owner/causality/RAM-saving/full500/reserve claim or additional native case is required or enabled."
+  },
+  "perTargetRootProcedure": [
+    "Independent source review plus Root syntax/CLI/pure guard qualification; preparer executes none.",
+    "Root writes one new exact source-bound context from complete retained evidence and actual container metadata; no old context/adoption/claim copied or invoked.",
+    "Root runs separate check for selected case, captures CHECKED_CASE and random checkNonce without deleting.",
+    "Root separately writes selected-case Root adoption bound to exact script/context/check/checkNonce/target with fresh distinct24hex nonce and<=300s TTL. All dependency/unknown-use/no-needed-state/necessary-evidence flags and exclusive window true.",
+    "Actor requalifies BOTH actual cases and all-use guards; compares current selected full inventory/content hashes; refreshes both-case closure/guards after hashing. Final closure age<=10s; source/context/adoptionTTL/floor unchanged.",
+    "Exclusive RETIRE_ONCE_CLAIM creation precedes only exact inherited FD-relative regular-file unlink and inventoried directory rmdir. No retry, wildcard, generic recursive delete or fallback.",
+    "Root verifies exact target absence, all proofs/hulls/source/other cases intact and END before independently checking/adopting second target."
+  ],
+  "adoption": {
+    "filename": "<case>.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+    "schema": "helmut-cas-heap-pass-copy-root-retirement-adoption/1",
+    "action": "RETIRE EXACT PRECLASSIFIED CAS HEAP PASS COPY",
+    "checkFilename": "<case>.CHECKED_CASE.PRIVATE.json",
+    "checkSchema": "helmut-cas-heap-pass-copy-checked/1",
+    "onceFilename": "<case>.RETIRE_ONCE_CLAIM.PRIVATE.json",
+    "onceSchema": "helmut-cas-heap-pass-copy-retire-once/1",
+    "retiredFilename": "<case>.RETIRED.PRIVATE.json",
+    "retiredSchema": "helmut-cas-heap-disposable-pass-copy-retired/1",
+    "requiredTrue": [
+      "exclusiveRetirementWindow",
+      "noConcurrentResourceChanges",
+      "actualPASSAndRestorationReviewed",
+      "allNecessaryArtifactsPreserved",
+      "dependenciesAndUnknownUseReviewed",
+      "noNecessaryStateOrSoleEvidenceLost",
+      "protectedSourceEvidenceHullsAndOriginalsRetained"
+    ],
+    "maxSeconds": 300,
+    "closureAgeMaxSeconds": 10,
+    "distinctNoncePerTarget": true,
+    "sourceContextAndCheckPinBound": true
+  },
+  "keep": [
+    "All originals and canonical827a with17archive dependencies.",
+    "Every proof/config/log/source manifest/frozen source; allFAILUNKNOWN PGDATA including both failed layout cases.",
+    "All hulls/images/volumes/loops/namespaces;616helper files and all Git worktrees/objects/refs.",
+    "All parent actors/old contexts/adoptions/once/receipts; never reused.",
+    "Both case/disk parents and other test data."
+  ],
+  "unchangedLimits": {
+    "hostFreeFloorBytes": 8589934592,
+    "perSelectedCopyAllocatedBytes": 805306368,
+    "nativeMaxBytes": 1547997184,
+    "nativeHighBytes": 1399996416,
+    "swapMaxBytes": 0,
+    "adoptionMaxSeconds": 300,
+    "closureAgeMaxSeconds": 10
+  },
+  "contextCheckAdoptionOnceOrDeletionCreated": false,
+  "preparerImportsASTTestsNativeDockerSQLGitProcessScans": false,
+  "originalOrCopyPGDATAPayloadRead": false,
+  "noAdditionalNativeOrPerformanceGate": true,
+  "noFullAdmissionOrMemoryReserveClaim": true,
+  "full500": false,
+  "production": false
+}

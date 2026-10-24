@@ -1,0 +1,199 @@
+{
+  "schema": "helmut-cas-heap-sql-contract/1",
+  "status": "SOURCE_ONLY_CUSTODY_RELEASED_NOT_RUN",
+  "atUTC": "2026-10-21T09:05:57.653385+00:00",
+  "scriptPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/INSTALL_CAS_HEAP_DIAGNOSTIC.sql",
+    "bytes": 30524,
+    "sha256": "4df66d34e79749867a582273702d8ecfe6cfd7fa4fefd96008178e9b825a1e2f"
+  },
+  "logContractPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/LOG_CONTRACT.SAFE.json",
+    "bytes": 3941,
+    "sha256": "da0aa0eb2763dd519a8287c5364a3369f3089154d7b9f41c247395b5ad35c346"
+  },
+  "catalogTargets": [
+    {
+      "function": "helmut_auth_state_expand_local_v1",
+      "identityArguments": "s text, g text, h text, as_graph boolean, omit_payloads boolean",
+      "beforeProsrcSHA256": "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+      "afterProsrcBytes": 19784,
+      "afterProsrcSHA256": "4012154c41cc8b34a38d806e5f4c0741332467192363ec1c1df7b2692dc84252",
+      "volatility": "s",
+      "securityDefiner": false,
+      "proconfig": [
+        "search_path=pg_catalog"
+      ],
+      "returnType": "jsonb",
+      "ownerACLAndABIRetained": true
+    },
+    {
+      "function": "helmut_auth_state_cas_v1",
+      "identityArguments": "jsonb",
+      "beforeProsrcSHA256": "8a13952bee9f305074d6ad9f2c2ee27e129a7e20ce3babb1d8f3a971719fcf6c",
+      "afterProsrcBytes": 5976,
+      "afterProsrcSHA256": "f6f64a5039643798d67c5d25b43d8528a9c8acb6b2d92beb76620d9b917f5af8",
+      "volatility": "v",
+      "securityDefiner": false,
+      "proconfig": [
+        "search_path=pg_catalog"
+      ],
+      "returnType": "jsonb",
+      "ownerACLAndABIRetained": true
+    }
+  ],
+  "SQLPins": {
+    "overlay": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/INSTALL_CAS_HEAP_DIAGNOSTIC.sql",
+      "bytes": 30524,
+      "sha256": "4df66d34e79749867a582273702d8ecfe6cfd7fa4fefd96008178e9b825a1e2f"
+    },
+    "aclPrepare": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_PREPARE.sql",
+      "bytes": 15269,
+      "sha256": "2dc6eb8de5194e9b6a13af341f9e08938a70b0f674cefa4a17080b53236d9874"
+    },
+    "aclSelected": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_SELECTED.sql",
+      "bytes": 6539,
+      "sha256": "1df6e2561436225bfbfb6bcb2692dabe247549c73d7f5c9c585cbdd770b892bd"
+    },
+    "aclRestore": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/ACL_RESTORE.sql",
+      "bytes": 15100,
+      "sha256": "a7d32b7a1b2ce118f9e2749da07e416e64c2c5957247c4dad02749a654a8e91d"
+    }
+  },
+  "functionDeltaPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/sql-preparation/FUNCTION_DELTA.PRIVATE.diff",
+    "bytes": 12784,
+    "sha256": "29b11c021bd6ea8b03dfd60f7b65b3345c825081a323e7b1cba33d81b37aaf2a"
+  },
+  "inputPins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "bytes": 17398,
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "bytes": 51381,
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/ROOT_READONLY_RESUME.SAFE.json",
+      "bytes": 1731,
+      "sha256": "37f445c5165a3a309d5900769509fd93110254da8d356d86783aa4bff95e5bbf"
+    }
+  ],
+  "methodReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/METHOD_REVIEW.SAFE.json",
+    "bytes": 19011,
+    "sha256": "ed1b079d3191cb54a557dc56cd0b45e891eb7e352fca85202d8ab844edc93ad5"
+  },
+  "methodReviewStatus": "PASS_METHOD_ONLY_SOURCE_AND_ACTUAL_PENDING",
+  "exactWorkload": "Unchanged27RPC/3round/4successfulCAS/6boundaries;U3b88/driverbd044 unchanged;ProductU939/Partsf300 unchanged. One same-freeze zeroAuth lifecycle remains required by parent harness.",
+  "psqlVariables": {
+    "root_clone_receipt_sha256": "Required for all4scripts; exact fresh Root clone-receipt SHA64 provided as psql -v; no environment fallback.",
+    "observer_before_json": "Required for ACL_PREPARE and ACL_RESTORE; exact state member of preceding ACL_SELECTED readback, from persisted full pin-bound same-case receipt. Use psql literal quoting via structured argv; not a shell/string concatenation."
+  },
+  "hookSequence": [
+    {
+      "step": 1,
+      "file": "ACL_SELECTED.sql",
+      "owner": "L readiness",
+      "when": "After original catalog and fixed clone startup; before any temporary grants/overlay. Persist full output pin.",
+      "receiptSchema": "helmut-cas-heap-observer-acl-readback/1",
+      "receiptKeys": [
+        "schema",
+        "readbackBackendPID",
+        "state"
+      ]
+    },
+    {
+      "step": 2,
+      "file": "ACL_PREPARE.sql",
+      "when": "Before overlay; requires exact before state; native GRANTs are only the explicit Root-selected clone observer exception.",
+      "receiptSchema": "helmut-cas-heap-observer-acl-prepare/1",
+      "receiptKeys": [
+        "schema",
+        "before",
+        "selected",
+        "addedViewSELECT",
+        "addedFunctionEXECUTE"
+      ]
+    },
+    {
+      "step": 3,
+      "file": "INSTALL_CAS_HEAP_DIAGNOSTIC.sql",
+      "when": "After NEW renderer and NEW graph are installed and ACL readiness qualified; before CATALOG_SELECTED and PostgREST/work.",
+      "receipt": "Inherited exact bound-original-state clone/catalog guard JSON; only2 public function bodies changed."
+    },
+    {
+      "step": 4,
+      "file": "ACL_SELECTED.sql",
+      "when": "After overlay and before PostgREST/work; persist selected readback and require state exactly equals PREPARE.selected; no whole ACL equality claim."
+    },
+    {
+      "step": 5,
+      "file": "ACL_RESTORE.sql",
+      "when": "Exactly one finally attempt on success OR failure, before final public/observer catalog and PostgREST→PostgreSQL strict stop. Requires persisted before state. If no before state exists and prepare was never attempted, record no ACL mutation; otherwise unknown restore is FAIL/KEEP, no automatic retry.",
+      "receiptSchema": "helmut-cas-heap-observer-acl-restore/1",
+      "receiptKeys": [
+        "schema",
+        "restoredExactly",
+        "restored",
+        "removedViewSELECT",
+        "removedFunctionEXECUTE"
+      ]
+    }
+  ],
+  "aclStateSchema": "helmut-cas-heap-observer-acl-state/1",
+  "aclComparableStateKeys": [
+    "schema",
+    "binding",
+    "role",
+    "memberships",
+    "objects"
+  ],
+  "aclStateLimits": {
+    "maximumUTF8Bytes": 32768,
+    "maximumMembershipRows": 128,
+    "maximumRawACLBytesPerObject": 8192,
+    "maximumExpandedACLRowsPerObject": 128,
+    "prepareReceiptMaximumBytes": 66048,
+    "otherReceiptMaximumBytes": 33280
+  },
+  "aclStateBinding": "No connection PID/XID/timestamp inside comparable state. Binding includes Root clone SHA, exact database name/OID18405/datadir/databasePG170006/encoding guard/postgres current+session identity and actual terse+fatal. Role snapshot excludes password and includes full service_role attributes/config. Full bounded pg_auth_members rows include OID/member/roleid/grantor/admin/inherit/set options.",
+  "observerObjects": {
+    "view": "pg_catalog.pg_backend_memory_contexts: exact OID/schemaOID/schema owner/relkind/view owner/raw viewdef+SHA/9-column ABI",
+    "function": "pg_catalog.pg_get_backend_memory_contexts(): exact OID/schemaOID/schema owner/function owner/internal languageOID/name/prosrc+SHA/arg0/record/retset/invoker/config/argument ABI",
+    "rawACL": "Original NULL vs nonNULL and exact aclitem array literal/order preserved; expanded ordinal/grantor/grantee/privilege/grant-option rows additionally retained. Exact effective SELECT+EXECUTE retained."
+  },
+  "minimalPermissionPolicy": "Only missing effective SELECT(view) and EXECUTE(function) to existing service_role, by existing owning postgres role; no grant option. Missing+rawACLNULL aborts before either grant. Already-effective privileges skip grants and keep even NULL exactly. No membership, SecurityDefiner, owner/public auth ACL or product privilege changes.",
+  "selectedValidation": "All nonobjects metadata exactly before; all per-object identity fields exactly before. Each object either exactly before or differs only by exact added missing owner-granted ACE semantics with no grant option and effective right true. L additionally binds raw selected readback exactly to captured PREPARE.selected. Selected period intentionally has two observerACL deltas, never general ACL equivalence.",
+  "restoration": "Before REVOKE, require same complete metadata and either untouched prestate (e.g. transaction rollback) or exact minimal selected ACE semantics. REVOKE only missing-before newly added owner bits that are currently present. Afterward complete comparable state including raw NULL/order/grantor/options, effective flags, roles and memberships must equal before. No catalog UPDATE/NULL reconstruction. Unknown/interrupted restore leaves FAIL/KEEP and requires Root investigation.",
+  "statementCounts": {
+    "overlay": 7,
+    "aclSelected": 8,
+    "aclPrepareMinimum": 13,
+    "aclPrepareMaximum": 15,
+    "aclRestoreMinimum": 13,
+    "aclRestoreMaximum": 15
+  },
+  "additionalPersistentDiagnosticObjects": [],
+  "loggingStartupOnly": {
+    "log_error_verbosity": "terse",
+    "log_min_error_statement": "fatal"
+  },
+  "actualRightsAndACLRestoreNotProven": true,
+  "independentFinalSQLSourceReviewPending": true,
+  "noSQLOrNativeExecutionByPreparer": true,
+  "noTestsImportsOfSubjectsASTOrProductWrites": true,
+  "capsSourceLogicACKsReturnFormsOldPathsPreserved": "Only diagnostic tags/guards/logs and explicit clone observer ACL period. No cutoff/timeout/Node/PG/native disk/capture budget changes; actual-size guard and old mutation/ACK/return statements preserved.",
+  "measurementBoundary": "No cache eviction/peak reset/sampling or existing measurement exclusions; setup/helpers/observer through last process exit remain included.",
+  "noRAMBenefitClaim": true,
+  "projectionNeverEnabledOrForcedOFF": true,
+  "full500": false,
+  "production": false
+}

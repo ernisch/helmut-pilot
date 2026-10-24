@@ -1,0 +1,138 @@
+{
+  "schema": "helmut-synthetic-pg17-layout-native-v2-plan/1",
+  "status": "SOURCE_ONLY_CUSTODY_RELEASED_PENDING_INDEPENDENT_REVIEW_AND_FRESH_ROOT_AUTHORIZATION",
+  "sourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+    "bytes": 18568,
+    "sha256": "028a519a054849aa21bbfe7fd1ce2f35821d4b6cc5803d3ae6db37bc17b6e746"
+  },
+  "parentSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation/run_layout_select.py",
+    "bytes": 17710,
+    "sha256": "740f04ec01a51f83f3a3edc8c2e8d3b1f1ff755362657042105d11a2b1a7f8b9"
+  },
+  "parentPlanPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation/PLAN.SAFE.json",
+    "bytes": 11176,
+    "sha256": "ddc18fdd59c7eb9fee5742cdd2adc515abee2b6e34f740b0dd1603e026429cbc"
+  },
+  "parentPreparedPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation/PREPARED.SAFE.json",
+    "bytes": 3656,
+    "sha256": "5f1f752302dcff6b475334eae760f6903a0c4f1e9b0f9aa3aa0ab44e755c09f7"
+  },
+  "deltaPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/SOURCE_DELTA.diff",
+    "bytes": 3896,
+    "sha256": "dfcfffc19109204f82624f23e54fb56257a21fbf67125d1cbac0dadbe2a4788f"
+  },
+  "causePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/SOURCE_CAUSE.SAFE.json",
+    "bytes": 4420,
+    "sha256": "23befd83ad73f551b72d1a5f1d85c7050ee38e80b88ad745d1ea6a8b36fcff2f"
+  },
+  "sourceChangesOnly": [
+    "Remove the PGSERVICE= and PGPASSFILE=/dev/null Docker env pairs. Preserve PGSERVICEFILE=/dev/null, explicit Unix socket/port/user/database, PGHOSTADDR= and every other source option.",
+    "Before the sole psql invocation require fresh /layout disk entries to be exactly pgdata and socket, with no .pgpass.",
+    "For nonzero captured command exits carry already-capped stdout/stderr in CapturedCommandFailure; outer exception saves FAILED_COMMAND.stdout.txt and FAILED_COMMAND.stderr.txt and records exit/capture bytes before the final FAIL receipt.",
+    "Immediately after successful sole psql capture save SQL_COMMAND.stdout.txt and SQL_COMMAND.stderr.txt before existing stderr/JSON acceptance. LAYOUT_SELECT.stdout.json remains validation-only."
+  ],
+  "unchangedContract": "All remaining actor bytes equal parent740f. Parent plan applies to unchanged runtime/native/SQL/closure/retention rules; this V2 plan overrides the parent's first-case/first-intent/old-adoption/actor-selection references only. No query, arithmetic, security, budget, timeout, native-policy or acceptance relaxation.",
+  "runtime": {
+    "imageId": "sha256:34e72f77a5fa0728d44b75766cdfdb1851aea196b3ba6c4fb9242f5d339a678b",
+    "bindingsPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-auth-input-preparation/READONLY_RUNTIME_BINDINGS.SAFE.json",
+      "bytes": 207733,
+      "sha256": "71e661eeaa3a71c74a7dc9aa7d5cf6568e12f728365f2a3b97fa08c1e8076475"
+    },
+    "shellPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-component-shell/original-sh",
+      "bytes": 125640,
+      "sha256": "f5adb8bf0100ed0f8c7782ca5f92814e9229525a4b4e0d401cf3bea09ac960a6"
+    },
+    "readonlyRuntimeBindings": 549,
+    "imageEnvAbsencePin": {
+      "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/HELPER_IMAGE_V2_ENV_ABSENCE.SAFE.json",
+      "bytes": 468,
+      "sha256": "b160d2ba5c2179a00d0730fc81be94bc6b15479c9bc692697c78ad52b1a7a87f"
+    },
+    "rootPrecondition": "Before action Root must freshly verify the exact pinned helper image has no PGSERVICE or PGPASSFILE in Image.Config.Env (recorded readback: Config.Env is null). Docker does not forward ambient host PG credentials automatically; actor passes only its fixed explicit container env. This precondition is Root readiness/source-review responsibility, not an added actor image-env guard.",
+    "freshHome": "HOME=/layout. Only fresh synthetic pgdata and socket may exist immediately before sole psql. Default missing /layout/.pgpass is silent; no foreign home or credential mounted.",
+    "noBuildPullInstall": true
+  },
+  "realRootSQLPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/ROOT_NATIVE_LAYOUT_QUERY.sql",
+    "bytes": 4750,
+    "sha256": "0cc98e082c154b0e6511eafe7b532b9fa2fe39c0bf2bef0b55a8e8c16f673cd3"
+  },
+  "sqlContract": "Root/C-reviewed single constant read-only SELECT, including version/settings/layout scalars. No Auth/CAS, projection enable, user table, protected database or original data. C mathematical/source proof and the SQL bytes remain unchanged. Preparer has not rederived arithmetic or accepted a native layout result.",
+  "caps": {
+    "statementSeconds": 5,
+    "sessionSeconds": 30,
+    "wholeNativeSeconds": 120,
+    "solePsqlCombinedCaptureBytes": 4096,
+    "receiptBytes": 4096,
+    "caseEvidenceBytes": 1048576,
+    "hostFloorBytes": 8589934592,
+    "freshDiskAdmissionBytes": 268435456,
+    "nativeMemoryBytes": 1547997184,
+    "nativeMemorySwapBytes": 1547997184,
+    "pids": 64,
+    "shmBytes": 16777216
+  },
+  "captureEvidence": "Successful psql raw files total at most4096B; accepted stdout may also appear in LAYOUT_SELECT.stdout.json (at most4096B). Nonzero command buffers retain their preexisting per-command cap and are saved once as FAILED_COMMAND files. No broad cap increase. Timeout/capture-overflow exceptions are not reclassified as successful or as complete command captures.",
+  "requiredAdoption": {
+    "fixedPath": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/ROOT_LAYOUT_ADOPTION.PRIVATE.json",
+    "schema": "helmut-synthetic-pg17-layout-root-adoption/1",
+    "action": "ROOT RUN ONE SYNTHETIC PG17 LAYOUT SELECT",
+    "mode": "0600",
+    "ownerUID": 1000,
+    "fields": [
+      "scriptPin",
+      "runtimeBindingsPin",
+      "shellPin",
+      "sqlPin",
+      "case",
+      "nonce",
+      "atUnix",
+      "expiresAtUnix",
+      "independentSourceReviewAccepted",
+      "singleConstantReadOnlySelectReviewed",
+      "full500",
+      "production"
+    ],
+    "values": "Exact V2 script/runtime/shell/SQL pins; source-review and single-SELECT-reviewed booleans true; full500 and production false. Fresh 24-hex nonce, exact absent cases/layout-<nonce>, age0..300s and expiresAtUnix between current time and atUnix+300s.",
+    "freshRootIntent": "A new Root V3 intent/case/authorization is mandatory after release. No such intent/case/adoption is created or represented as existing by this preparation.",
+    "independentSourceReview": "Mandatory before Root action; this preparer report is not independent review.",
+    "noAdoptionProvided": true
+  },
+  "cli": [
+    "<qualified-existing-host-python>",
+    "-I",
+    "-S",
+    "-B",
+    "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/run_layout_select.py",
+    "--root-adoption",
+    "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/native-preparation-v2/ROOT_LAYOUT_ADOPTION.PRIVATE.json"
+  ],
+  "attemptBoundary": {
+    "firstClosedCase": "/workspace/helmut-ram-fix-20261020/cas-native-size-20261021/cases/layout-07ec1b14c4606a5647ee3555",
+    "firstResult": "FAIL/no layout row; preserved without reclassification.",
+    "newAttempt": "At most ONE fresh second/final native attempt, only after new Root intent, independent IR, CLI qualification and adoption. No autoretry, old case reuse or old once/adoption reuse.",
+    "oneActorOnly": "Root selects exactly one final actor; unused preparation remains before-start evidence."
+  },
+  "closureAndRetention": "Unchanged two new native direct-entrypoint containers, networknone, read-only runtime, disk-only fresh synthetic PGDATA, one read-only psql, pg_ctl fast stop, PG log EOF and exact closed native PID/exit state. Only actor-created exact verified CIDs may be stopped in failure closure. No remove/delete; both new hulls, synthetic PGDATA and all diagnostics KEEP until separately authorized exact cleanup. All protected originals/bank/old hulls/proofs remain untouched.",
+  "claimBoundary": "Runner success means NATIVE_SELECT_COMPLETED_NOT_LAYOUT_ACCEPTED with layoutCorrectnessAcceptedByRunner=false. Root/independent reviewer must accept actual row separately. No RAM-saving, general CAS-safety, projection-ON, motor-replacement or full500 claim.",
+  "sourceCustody": "V2 source, delta, cause, plan and prepared manifest released immutable now. No subsequent edits without a separately authorized sibling preparation.",
+  "preparerActivity": {
+    "subjectImports": false,
+    "AST": false,
+    "tests": false,
+    "CLI": false,
+    "nativeInvocations": false,
+    "DockerProcessDBOrGitActions": false,
+    "PGDATAOrOriginalPayloadReads": false,
+    "firstCaseOrFrozenFileChanges": false,
+    "newRootIntentOrAdoption": false
+  }
+}

@@ -1,0 +1,951 @@
+--- accepted-stability30/common.py
++++ physical8/common.py
+@@ -1,4 +1,4 @@
+-"""Fixed NEW-only 30-round Auth stability diagnostic; fresh same-freeze lifecycle."""
++"""Fixed NEW-only physical8 Auth diagnostic; fresh same-freeze lifecycle."""
+ import hashlib
+ import json
+ import os
+@@ -10,7 +10,7 @@
+ from pathlib import Path
+ 
+ HERE = Path(__file__).resolve().parent
+-CASES = Path('/workspace/helmut-ram-fix-20261020/auth-stability-20261021/cases')
++CASES = Path('/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/cases')
+ REPO = Path('/workspace/helmut-cpu-epoch-20261015')
+ BIN = REPO/'scripts/helmut-resource-meter'
+ D = Path('/workspace/helmut-ram-fix-20261020/auth-working-set-20261020')
+@@ -37,12 +37,13 @@
+ OUTPUT_LIMIT = 8*MIB
+ NODE_CAPTURE_LIMIT = MIB
+ NODE_CLIENT_SECONDS = 180
+-STABILITY_CONTRACT = {
+-    'rounds':30,'controlsPerRound':6,'authRPCCount':243,'fullReadCount':32,
+-    'writeCount':31,'controlReadCount':180,'mutations':30,'restoreCount':1,
+-    'boundaries':60,'clientWallSeconds':180,'nodeCaptureLimitBytes':1048576,
++PHYSICAL8_CONTRACT = {
++    'rounds':8,'controlsPerRound':6,'authRPCCount':67,'fullReadCount':10,
++    'writeCount':9,'controlReadCount':48,'mutations':8,'restoreCount':1,
++    'boundaries':16,'clientWallSeconds':180,'nodeCaptureLimitBytes':1048576,
+     'sqlCaptureLimitBytes':262144,'totalEvidenceCapBytes':8388608,
+-    'fetchMaxSeconds':20,'sqlMaxSeconds':30,'lockMaxSeconds':1,'authOperationMaxMilliseconds':30000
++    'fetchMaxSeconds':20,'sqlMaxSeconds':30,'lockMaxSeconds':1,'authOperationMaxMilliseconds':30000,
++    'extraMetadataMaxBytes':65536,'gcRingMaxEvents':16,'spaceCountMax':32,'gcAgeToleranceMilliseconds':250
+ }
+ QUERY_LIMIT = 256*1024
+ DISK_LIMIT = 768*MIB
+@@ -71,14 +72,14 @@
+ CANONICAL_PARTS = REPO/'lib/helmut/auth-state-parts.js'
+ 
+ def selected_measurement(closure, mode, variant=None):
+-    require(mode in ('lifecycle-only','control-stability'),'exactly two separately adopted modes')
+-    require(closure['comparisonScope']=='INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY' and
++    require(mode in ('lifecycle-only','control-physical'),'exactly two separately adopted modes')
++    require(closure['comparisonScope']=='INTEGRATED_NEW_AUTH_PHYSICAL8_DIAGNOSTIC_ONLY' and
+             closure['originalCommit']=='5fae25be5068a278a88daca9a7508c7b9e4001a3' and
+             closure['lifecycleBodyVariant']=='NEW','exact combined baseline and NEW-body lifecycle')
+-    contract = closure['stabilityContract']
+-    require(type(contract) is dict and set(contract)==set(STABILITY_CONTRACT)
++    contract = closure['physical8Contract']
++    require(type(contract) is dict and set(contract)==set(PHYSICAL8_CONTRACT)
+             and all(type(value) is int for value in contract.values())
+-            and contract==STABILITY_CONTRACT,
++            and contract==PHYSICAL8_CONTRACT,
+             'fixed diagnostic contract requires exact integer counts and limits')
+     require(closure['variantBodies']=={'NEW':{'renderer':NEW_RENDERER,'graph':NEW_GRAPH}},
+             'fixed exact NEW SQL pair and diagnostic workload/caps/deadlines')
+@@ -96,7 +97,7 @@
+             'exact local shutdown policy/upstream evidence pins')
+     variant = 'NONE' if mode=='lifecycle-only' and variant is None else variant
+     require((mode=='lifecycle-only' and variant=='NONE') or
+-            (mode=='control-stability' and variant=='NEW'),'exact separately adopted variant')
++            (mode=='control-physical' and variant=='NEW'),'exact separately adopted variant')
+     require(not any(x['path'] in (str(CANONICAL_U),str(CANONICAL_PARTS))
+                     for x in closure['metadataAndCodeInputs']),
+             'variable canonical overlay paths cannot carry historical worker-byte expectations')
+@@ -124,16 +125,16 @@
+     arm='NEW' if variant=='NONE' else variant
+     installs=closure['variantInstallations'][arm]
+     return {'mode':mode,'variant':variant,'bodyVariant':arm,
+-        'comparisonScope':'INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY',
++        'comparisonScope':'INTEGRATED_NEW_AUTH_PHYSICAL8_DIAGNOSTIC_ONLY',
+         'uOverlayPin':closure['variantSources'][arm],'partsOverlayPin':closure['variantParts'][arm],
+-        'adoptionSchema':'helmut-auth-stability-'+mode+'-root-adoption/1',
+-        'action':('ROOT START NEW AUTH STABILITY LIFECYCLE ONLY' if mode=='lifecycle-only' else
+-                  'ROOT START NEW AUTH STABILITY 30 ROUNDS 243 RPC ONLY'),
+-        'workload':dict(STABILITY_CONTRACT),
++        'adoptionSchema':'helmut-auth-physical8-'+mode+'-root-adoption/1',
++        'action':('ROOT START NEW AUTH PHYSICAL8 LIFECYCLE ONLY' if mode=='lifecycle-only' else
++                  'ROOT START NEW AUTH PHYSICAL8 8 ROUNDS 67 RPC ONLY'),
++        'workload':dict(PHYSICAL8_CONTRACT),
+         'rendererInstallSQLPin':installs['renderer'],'installSQLPin':installs['graph'],
+         'expectedRendererBodySHA256':closure['variantBodies'][arm]['renderer'],
+         'expectedBodySHA256':closure['variantBodies'][arm]['graph'],
+-        'authRPCCount':0 if mode=='lifecycle-only' else 243,
++        'authRPCCount':0 if mode=='lifecycle-only' else 67,
+         'nodeLaunchCount':0 if mode=='lifecycle-only' else 1,
+         'postgrestConfigSHA256':closure['postgrestConfigSHA256'],
+         'postgrestShutdownPolicy':closure['postgrestShutdownPolicy'],
+@@ -146,10 +147,10 @@
+     actual=Path(item['path'])
+     case=actual.parent
+     require(actual.is_absolute() and actual.resolve()==actual and actual.name=='ACTUAL_RESULT.SAFE.json'
+-            and case.parent==CASES and re.fullmatch('stability-[a-f0-9]{24}',case.name),
++            and case.parent==CASES and re.fullmatch('physical8-[a-f0-9]{24}',case.name),
+             'lifecycle result must be inside the exact adopted host case')
+     value=read(item)
+-    require(value['schema']=='helmut-auth-stability-result/1' and value['status']=='PASS'
++    require(value['schema']=='helmut-auth-physical8-result/1' and value['status']=='PASS'
+             and value['preparedPin']==frozen and value['measurementMode']=='lifecycle-only'
+             and value['authRPCCount']==0 and value['nodeStarted'] is False
+             and value['sourceManifestSHA256']==SOURCE_SHA,
+@@ -285,11 +286,11 @@
+             try:
+                 size = (Path(current)/name).stat().st_size
+             except FileNotFoundError:
+-                # Only the pinned Node markers and worker ACKs 1..60 may be
++                # Only the pinned Node markers and worker ACKs 1..16 may be
+                 # atomically renamed. Count published bytes conservatively;
+                 # never ignore an unknown missing file or relax the output cap.
+                 require(Path(current)==Path(root) and
+-                        re.fullmatch(r'CYCLE_(?:[1-9]|[1-5][0-9]|60)\.(?:MARKER|ACK)\.SAFE\.json\.tmp',name),
++                        re.fullmatch(r'CYCLE_(?:[1-9]|1[0-6])\.(?:MARKER|ACK)\.SAFE\.json\.tmp',name),
+                         'unknown file disappeared during evidence accounting')
+                 published = Path(current)/name[:-4]
+                 info = published.lstat()
+--- accepted-stability30/run.py
++++ physical8/run.py
+@@ -22,9 +22,9 @@
+ def prepared():
+     p = C.HERE/'PREPARED.SAFE.json'
+     value = json.loads(p.read_text())
+-    C.require(value['schema']=='helmut-combined-auth-new-stability-prepared/1'
++    C.require(value['schema']=='helmut-auth-physical8-prepared/1'
+               and value['nativeQualification']=='NOT_RUN'
+-              and C.HERE==C.REPO/'scripts/helmut-resource-meter/auth-stability30-native-launcher',
++              and C.HERE==C.REPO/'scripts/helmut-resource-meter/auth-physical8-native-launcher',
+               'source closure must be frozen at the integrated Root launcher path')
+     for item in value['files']+value['metadataAndCodeInputs']+value['hostOnlyInputPins']:
+         C.checked(item)
+@@ -33,7 +33,7 @@
+ def safe_case(path, absent=False):
+     path = Path(path)
+     C.require(path.is_absolute() and path.resolve()==path and
+-              path.parent==C.CASES and re.fullmatch(r'stability-[a-f0-9]{24}',path.name),
++              path.parent==C.CASES and re.fullmatch(r'physical8-[a-f0-9]{24}',path.name),
+               'new dedicated case path required')
+     if absent:
+         C.require(not path.exists(),'case must be new; never reuse')
+@@ -68,7 +68,7 @@
+               'known local storage driver')
+     bindings = C.runtime_bindings()
+     case.mkdir(mode=0o700)
+-    result = {'schema':'helmut-auth-stability-preflight/1','status':'READY_FOR_ROOT_ADOPTION_ONLY',
++    result = {'schema':'helmut-auth-physical8-preflight/1','status':'READY_FOR_ROOT_ADOPTION_ONLY',
+         'atUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'case':str(case),
+         'preparedPin':frozen,'runtimePin':C.pin(C.RUNTIME),'bindings':bindings,
+         'nativePolicy':N.policy(),'hostAvailableBytes':C.available(case),
+@@ -113,7 +113,7 @@
+     pf = C.read(adoption['preflightPin'])
+     case = safe_case(pf['case'])
+     C.require(adoption['preflightPin']['path']==str(case/'PREFLIGHT.SAFE.json') and
+-              pf['schema']=='helmut-auth-stability-preflight/1' and
++              pf['schema']=='helmut-auth-physical8-preflight/1' and
+               pf['preparedPin']==frozen and pf['source']==str(C.SOURCE) and
+               pf['measurementMode']==mode and pf['selection']==selected and
+               pf['lifecycleResultPin']==lifecycle and
+@@ -130,7 +130,7 @@
+               'runtime/native policy closure drift')
+     source_not_live(N)
+     parent = 'helmut-meter-memorybudget-'+secrets.token_hex(12)
+-    name = 'helmut-auth-stability-'+secrets.token_hex(12)
++    name = 'helmut-auth-physical8-'+secrets.token_hex(12)
+     started = time.monotonic()
+     deadline = started+C.WORK_SECONDS
+     final_deadline = started+C.TOTAL_SECONDS
+@@ -316,7 +316,7 @@
+         wp=case/'WORKER_RESULT.SAFE.json'
+         if wp.exists():
+             worker=json.loads(wp.read_text())
+-        if mode=='control-stability' and worker and worker.get('nodeStarted'):
++        if mode=='control-physical' and worker and worker.get('nodeStarted'):
+             try:
+                 node_receipts=N.node_receipts(case/'node-observations')
+                 C.require(node_receipts['httpMeteredIsolates']==1 and node_receipts['privateWorkers']==0,
+@@ -335,14 +335,14 @@
+             and worker.get('authRPCCount')==selected['authRPCCount']
+             and worker.get('postgrestStopQualified') is True and worker.get('catalogUnchangedAfterOperation') is True
+             and ((mode=='lifecycle-only' and worker.get('nodeStarted') is False)
+-                 or (mode=='control-stability' and node_receipts and node_receipts['pass_']
++                 or (mode=='control-physical' and node_receipts and node_receipts['pass_']
+                      and worker.get('nodeStarted') is True and worker.get('nodeExitCode')==0))
+             and final_kernel and final_kernel['fullLastProcessExitCovered'] and final_budget
+             and C.memory_events_clear(final_kernel['memoryEvents'])
+             and minimum_free>=C.FLOOR and time.monotonic()<=final_deadline
+             and prepared()[0]==frozen)
+         C.save(case,'NATIVE_TIMELINE.SAFE.json',samples)
+-        result={'schema':'helmut-auth-stability-result/1','status':'PASS' if passed else 'FAIL',
++        result={'schema':'helmut-auth-physical8-result/1','status':'PASS' if passed else 'FAIL',
+             'forcedStop':forced,'errorType':failure,'parent':parent,'rootAdoptionPin':adoption_pin,
+             'preflightPin':adoption['preflightPin'],'preparedPin':frozen,
+             'kernelThroughLastOwnedExit':final_kernel,'nativeBudgetAfterLastExit':final_budget,
+@@ -351,7 +351,7 @@
+             'wallSeconds':time.monotonic()-started,
+             'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+             'sourceManifestSHA256':C.SOURCE_SHA,'authRPCCount':worker.get('authRPCCount') if worker else None,
+-            'comparisonScope':'INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY',
++            'comparisonScope':'INTEGRATED_NEW_AUTH_PHYSICAL8_DIAGNOSTIC_ONLY',
+             'ramComparisonPerformed':False,'plateauClaimed':False,
+             'postgrestStarted':worker.get('postgrestStarted') if worker else None,
+             'nodeStarted':worker.get('nodeStarted') if worker else None,'nodeHeapAndExitReceipts':node_receipts,
+@@ -370,13 +370,13 @@
+         proofs={}
+         for label in ('SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json','SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json',
+                       'WORKER_RESULT.SAFE.json','PG_LOG.SAFE.json','OFFLINE_AFTER.CAPTURE.SAFE.json',
+-                      'PG_LOG.PRIVATE.txt','NATIVE_TIMELINE.SAFE.json','AUTH_STABILITY.SAFE.json',
++                      'PG_LOG.PRIVATE.txt','NATIVE_TIMELINE.SAFE.json','AUTH_PHYSICAL8.SAFE.json',
+                       'POSTGREST_STOP.SAFE.json','POSTGREST_LOG.PRIVATE.txt','NODE_CONTROL.CAPTURE.SAFE.json'):
+             p=case/label
+             if p.exists():
+                 proofs[label]=C.pin(p)
+         C.save(case,'RETIREMENT_CANDIDATES.SAFE.json',{
+-            'schema':'helmut-auth-stability-retirement-candidates/1','case':str(case),
++            'schema':'helmut-auth-physical8-retirement-candidates/1','case':str(case),
+             'parent':parent,'containers':candidates,'freshDerivedPGDATAPath':str(case/'disk/pgdata'),
+             'measurementMode':mode,'variant':selected['variant'],'selection':selected,'lifecycleResultPin':lifecycle,
+             'sourceProofExitLogAndPlanPins':proofs,'resultPin':result_pin,
+@@ -403,7 +403,7 @@
+     sub=p.add_subparsers(dest='action',required=True)
+     pre=sub.add_parser('prepare')
+     pre.add_argument('--case',type=Path,required=True)
+-    pre.add_argument('--measurement',choices=('lifecycle-only','control-stability'),required=True)
++    pre.add_argument('--measurement',choices=('lifecycle-only','control-physical'),required=True)
+     pre.add_argument('--lifecycle-result',type=Path)
+     pre.add_argument('--variant',choices=('NONE','NEW'),required=True)
+     sub.add_parser('start').add_argument('--root-adoption',type=Path,required=True)
+--- accepted-stability30/worker.py
++++ physical8/worker.py
+@@ -1,7 +1,8 @@
+-"""Fixed NEW Auth stability worker: zero-Auth lifecycle or 30 rounds/243 RPCs."""
++"""Fixed physical8 Auth worker: zero-Auth lifecycle or8 rounds/67 RPCs."""
+ import copy
+ import hashlib
+ import json
++import math
+ import os
+ import re
+ import selectors
+@@ -264,6 +265,67 @@
+               and C.uuid4(data['_authStoreRevision'])
+               and data['_llmUsageRef']['count']==6000,'exact physical three-field root/revision')
+     return data
++
++def validate_physical8(observed):
++    def number(value):
++        return type(value) in (int,float) and math.isfinite(value) and value>=0
++    def event(value):
++        return (type(value) is dict and set(value)=={'kind','flags','startTime','duration','deliveredAt'}
++                and all(value[k] is None or (type(value[k]) is int and 0<=value[k]<=9007199254740991) for k in ('kind','flags'))
++                and all(number(value[k]) for k in ('startTime','duration','deliveredAt')))
++    diagnostic=observed['physical8Diagnostics']
++    C.require(diagnostic['schema']=='helmut-auth-physical8-observations/1'
++              and diagnostic['attributionStatus']=='INCONCLUSIVE'
++              and diagnostic['endpointRounds']==list(range(1,9)) and diagnostic['fixedPair']==[4,8]
++              and diagnostic['terminalTakeRecordsReconciled'] is True
++              and diagnostic['undeliveredEventsUnknown'] is True and diagnostic['snapshotsAtomic'] is False
++              and diagnostic['noSubstitutePair'] is True and diagnostic['noRSSMinusPhysicalExactAttribution'] is True
++              and diagnostic['noAdditiveMemoryClaim'] is True
++              and type(diagnostic['operationalStageCompatible']) is bool
++              and len(diagnostic['last16NaturalGC'])<=16 and all(event(e) for e in diagnostic['last16NaturalGC']),
++              'bounded physical8 diagnostic scope, fixed4/8 and natural GC ring')
++    clock=diagnostic['clock']
++    C.require(all(number(clock[k]) for k in ('timeOrigin','startedAt','uptimeAtStart'))
++              and clock['snapshotsAtomic'] is False,'same-process physical8 clock metadata')
++    frames=[]
++    heap_keys={'physical','total','used','available','limit','executable','malloced','peakMalloced',
++               'nativeContexts','detachedContexts','handlesTotal','handlesUsed','external'}
++    time_keys=['processBeforeStart','processBeforeEnd','heapStart','heapEnd','spacesStart','spacesEnd',
++               'processAfterStart','processAfterEnd']
++    for index,cycle in enumerate(observed['cycles']):
++        for edge in ('start','end'):
++            frame=cycle[edge]['physical8'];frames.append(frame)
++            C.require(set(frame)=={'round','edge','sampleBefore','sampleAfter','uptime','times','gc','processBefore','processAfter','heap','spaces'}
++                      and type(frame['round']) is int and frame['round']==index+1 and frame['edge']==edge
++                      and all(number(frame[k]) for k in ('sampleBefore','sampleAfter','uptime'))
++                      and frame['sampleBefore']<=frame['sampleAfter']
++                      and set(frame['times'])==set(time_keys)
++                      and all(number(frame['times'][k]) for k in time_keys), 'exact physical8 frame identity/clock shape')
++            sequence=[frame['sampleBefore']]+[frame['times'][k] for k in time_keys]+[frame['sampleAfter']]
++            C.require(sequence==sorted(sequence),'V8/process snapshots must retain sequential brackets')
++            C.require(set(frame['heap'])==heap_keys
++                      and all(type(v) is int and 0<=v<=9007199254740991 for v in frame['heap'].values())
++                      and all(set(frame[k])=={'rss','heapTotal','heapUsed','external','arrayBuffers'} for k in ('processBefore','processAfter'))
++                      and all(type(v) is int and 0<=v<=9007199254740991 for k in ('processBefore','processAfter') for v in frame[k].values()),
++                      'safe nonnegative integer heap/process scalars')
++            spaces=frame['spaces']
++            C.require(0<len(spaces)<=32 and len({v['name'] for v in spaces})==len(spaces)
++                      and all(set(v)=={'name','size','used','available','physical'}
++                          and re.fullmatch('[a-z_]{1,64}',v['name'])
++                          and all(type(v[k]) is int and 0<=v[k]<=9007199254740991 for k in ('size','used','available','physical')) for v in spaces),
++                      'bounded exact V8 space schema')
++            state=frame['gc']
++            C.require(set(state)=={'countAtSample','latestBefore','overlapCount','overlaps'}
++                      and type(state['countAtSample']) is int and state['countAtSample']>=0
++                      and type(state['overlapCount']) is int and state['overlapCount']>=len(state['overlaps'])
++                      and len(state['overlaps'])<=4 and all(event(e) for e in state['overlaps'])
++                      and (state['latestBefore'] is None or event(state['latestBefore'])),
++                      'bounded reconciled GC bracket evidence')
++    C.require(len(frames)==16 and type(diagnostic['extraMetadataBytes']) is int
++              and 0<diagnostic['extraMetadataBytes']<=65536
++              and len(json.dumps({'frames':frames,'summary':diagnostic},separators=(',',':')).encode())<=65536,
++              'all sixteen physical8 frames within64KiB extra metadata')
++
+ 
+ def main():
+     global CONFIG,CLOSING,PHASE,LIBRARY_PATH,REST_STATE
+@@ -460,9 +522,9 @@
+         graph_qualified=True
+         C.save(OUT,'ACTUAL_NATIVE_CATALOG.SAFE.json',{'before':catalog_before,'installed':catalog_after,
+             'rendererInstalled':catalog_renderer,'fullOriginalCatalogQualified':True,
+-            'onlyReviewedRendererAndSelectedGraphBodyChanged':True,'selection':selected,'comparisonScope':'INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY',
++            'onlyReviewedRendererAndSelectedGraphBodyChanged':True,'selection':selected,'comparisonScope':'INTEGRATED_NEW_AUTH_PHYSICAL8_DIAGNOSTIC_ONLY',
+             'setupSQLSessions':5,'setupSQLStatements':29,
+-            'additionalStabilityObservationSQL':'two small physical roots; sixty cycle metrics in stability only; final catalog separately',
++            'additionalStabilityObservationSQL':'two small physical roots; sixteen cycle metrics in stability only; final catalog separately',
+             'setupStatementCountScope':'three catalog files x5, NEW renderer install6, NEW graph install8; unchanged setup guards'})
+         C.require(not log_overflow.is_set(),'PG log cap')
+         record('start-owned-PostgREST')
+@@ -499,7 +561,7 @@
+                 time.sleep(.05)
+         C.require(REST_STATE['versionSeen'],'actual pinned PostgREST 12.2.3 startup banner')
+         record('PostgREST-socket-ready-no-HTTP-probe')
+-        if mode=='control-stability':
++        if mode=='control-physical':
+             (OUT/'node-observations').mkdir(mode=0o700)
+             node_started=True
+             C.save(OUT,'CLIENT_CONFIG.SAFE.json',{'variant':selected['variant'],
+@@ -512,10 +574,10 @@
+                 marker=OUT/('CYCLE_'+str(index)+'.MARKER.SAFE.json')
+                 if not marker.exists():
+                     return
+-                C.require(index<=60 and not marker.is_symlink() and marker.stat().st_size<=512,
++                C.require(index<=16 and not marker.is_symlink() and marker.stat().st_size<=512,
+                           'bounded exact cycle marker')
+                 item=json.loads(marker.read_text())
+-                expected={'schema':'helmut-auth-stability-cycle-marker/1','sequence':index,
++                expected={'schema':'helmut-auth-physical8-cycle-marker/1','sequence':index,
+                     'round':(index-1)//2,'edge':'start' if index%2 else 'end','nodePID':child.pid}
+                 C.require(item==expected,'exact cycle order/round/known Node PID')
+                 native=snapshot()
+@@ -553,29 +615,30 @@
+                     'HELMUT_AUTH_GRAPH_READ_REUSE':'off','HELMUT_AUTH_SINGLE_WRITE_CAPTURE':'off'},observer=observe_cycle)
+             node_exit=0
+             observed=json.loads(node_text)
+-            C.require(observed['schema']=='helmut-auth-stability-243-rpc/1' and observed['variant']==selected['variant'] and observed['pass'] is True
+-                      and observed['authRPCCount']==243 and observed['fullReadCount']==32 and observed['writeCount']==31
+-                      and observed['controlReadCount']==180 and observed['mutations']==30 and observed['restoreCount']==1
+-                      and observed['uCalls']==(['read','write']+['readControl']*6)*30+['read','write','read']
+-                      and observed['rpcResponsesCompleted']==243 and observed['nativeHTTPSendCount']==243
++            C.require(observed['schema']=='helmut-auth-physical8-67-rpc/1' and observed['variant']==selected['variant'] and observed['pass'] is True
++                      and observed['authRPCCount']==67 and observed['fullReadCount']==10 and observed['writeCount']==9
++                      and observed['controlReadCount']==48 and observed['mutations']==8 and observed['restoreCount']==1
++                      and observed['uCalls']==(['read','write']+['readControl']*6)*8+['read','write','read']
++                      and observed['rpcResponsesCompleted']==67 and observed['nativeHTTPSendCount']==67
+                       and observed['workload']==selected['workload']
+-                      and len(observed['steps'])==243 and all(0<=r['wallMilliseconds']<=30000
++                      and len(observed['steps'])==67 and all(0<=r['wallMilliseconds']<=30000
+                           and r['selectedUAcceptance'] is True for r in observed['steps'])
+                       and all(r['authOperation30SecondsMet'] is True and
+                           0<=r['authOperationWallMilliseconds']<=30000 for r in observed['requests'])
+-                      and len(observed['cycles'])==30 and len(observed['controlTextStringifyObservations'])==32
+-                      and len(cycle_records)==60
++                      and len(observed['cycles'])==8 and len(observed['controlTextStringifyObservations'])==10
++                      and len(cycle_records)==16
+                       and observed['nodeVersion']=='v24.19.0' and observed['noExtraFullAuthSerialization'] is True
+                       and observed['freshNativeChecksAcceptedBySelectedU'] is True,
+-                      'actual deterministic NEW-only 30-round 243-RPC selected U acceptance')
+-            C.require(json.loads((OUT/'AUTH_STABILITY.SAFE.json').read_text())==observed,
++                      'actual deterministic NEW-only 8-round 67-RPC selected U acceptance')
++            validate_physical8(observed)
++            C.require(json.loads((OUT/'AUTH_PHYSICAL8.SAFE.json').read_text())==observed,
+                       'Node stdout/persisted receipt identity')
+-            auth_rpc_count=243
++            auth_rpc_count=67
+         small_after=json.loads(psql(Path('/tools/small-auth.sql'),'SMALL_AUTH_AFTER'))
+         before_data=physical_auth(small_before)
+         after_data=physical_auth(small_after)
+         target_after=copy.deepcopy(small_before)
+-        if mode=='control-stability':
++        if mode=='control-physical':
+             C.require(C.uuid4(after_data['_authStoreRevision']) and
+                       after_data['_authStoreRevision']!=before_data['_authStoreRevision'] and
+                       after_data['_authStoreRevision']==observed['finalRevision'],
+@@ -588,13 +651,13 @@
+         small_qualified=True
+         catalog_final=json.loads(psql(Path('/tools/catalog.sql'),'CATALOG_AFTER_OPERATION'))
+         expected_final=copy.deepcopy(catalog_after)
+-        if mode=='control-stability':
++        if mode=='control-physical':
+             expected_final['store']={k:small_after[k] for k in ('rows','physicalBytes','sha')}
+         C.require(catalog_final==expected_final,'complete catalog/ABI/ACL/Auth exact except independently measured revision SHA')
+         C.save(OUT,'CATALOG_OPERATION_UNCHANGED.SAFE.json',{'unchangedExceptAuthorizedRevision':True,
+             'actual':catalog_final,'authRPCCount':auth_rpc_count,
+             'smallBefore':small_before,'smallAfter':small_after,
+-            'revisionChanged':mode=='control-stability','allOtherPhysicalFieldsExact':True})
++            'revisionChanged':mode=='control-physical','allOtherPhysicalFieldsExact':True})
+         catalog_unchanged=True
+         operations_done=True
+         record('measurement-complete')
+@@ -634,7 +697,7 @@
+                 node_status=json.loads((OUT/'NODE_CONTROL.CAPTURE.SAFE.json').read_text())
+                 node_exit=node_status['exitCode']
+                 node_pid=node_status['childPID']
+-                node_observed=json.loads((OUT/'AUTH_STABILITY.SAFE.json').read_text())
++                node_observed=json.loads((OUT/'AUTH_PHYSICAL8.SAFE.json').read_text())
+                 auth_rpc_count=node_observed['authRPCCount']
+             except BaseException as error:
+                 failed=failed or type(error).__name__
+@@ -681,7 +744,7 @@
+         except BaseException as error:
+             failed=failed or type(error).__name__
+         C.save(OUT,'PHASES.SAFE.json',phases)
+-        result={'schema':'helmut-auth-stability-worker-result/1',
++        result={'schema':'helmut-auth-physical8-worker-result/1',
+             'pass':bool(not failed and copied_verified and source_unchanged and clean_pg
+                         and operations_done and jit_report and graph_qualified and catalog_unchanged and small_qualified
+                         and stop_receipt and stop_receipt['pass'] and stop_receipt_pin
+--- accepted-stability30/control-driver.js
++++ physical8/control-driver.js
+@@ -1,8 +1,8 @@
+ 'use strict';
+-// Prepared diagnostic only. Real integrated NEW U: 32 reads,31 confirmed CAS,180 controls.
+-// Product U/Parts are unchanged readonly canonical overlays; fixed30rounds.
++// Prepared diagnostic only. Real integrated NEW U: 10 reads,9 confirmed CAS,48 controls.
++// Product U/Parts are unchanged readonly canonical overlays; fixed8rounds.
+ const fs=require('node:fs'),crypto=require('node:crypto'),v8=require('node:v8');
+-const {PerformanceObserver}=require('node:perf_hooks'),dc=require('node:diagnostics_channel');
++const {PerformanceObserver,constants:perfConstants}=require('node:perf_hooks'),dc=require('node:diagnostics_channel');
+ const root='/workspace/helmut-cpu-epoch-20261015',modulePath=root+'/lib/helmut/llm-usage-atomic.js';
+ const partsPath=root+'/lib/helmut/auth-state-parts.js';
+ const cfg=JSON.parse(fs.readFileSync('/bench/CLIENT_CONFIG.SAFE.json','utf8'));
+@@ -12,19 +12,38 @@
+ const keys=['synthetik500DispatchJournal','synthetik500KostenAdmission','testKostenAuftrag','testKostenTage'];
+ const revision='_authStoreRevision',probe='localWorkingSetProbe';
+ const original=JSON.stringify,steps=[],requests=[],calls=[],sends=[],cycles=[];
+-const workload={rounds:30,controlsPerRound:6,authRPCCount:243,fullReadCount:32,writeCount:31,
+-  controlReadCount:180,mutations:30,restoreCount:1,boundaries:60,clientWallSeconds:180,
++const workload={rounds:8,controlsPerRound:6,authRPCCount:67,fullReadCount:10,writeCount:9,
++  controlReadCount:48,mutations:8,restoreCount:1,boundaries:16,clientWallSeconds:180,
+   nodeCaptureLimitBytes:1048576,sqlCaptureLimitBytes:262144,totalEvidenceCapBytes:8388608,
+-  fetchMaxSeconds:20,sqlMaxSeconds:30,lockMaxSeconds:1,authOperationMaxMilliseconds:30000};
++  fetchMaxSeconds:20,sqlMaxSeconds:30,lockMaxSeconds:1,authOperationMaxMilliseconds:30000,
++  extraMetadataMaxBytes:65536,gcRingMaxEvents:16,spaceCountMax:32,gcAgeToleranceMilliseconds:250};
+ const started=performance.now(),deadline=started+180000;
+-const gc={count:0,durationMilliseconds:0,kinds:{}};
+-const gcObserver=new PerformanceObserver(list=>{for(const e of list.getEntries()){
+-  gc.count++;gc.durationMilliseconds+=e.duration;const k=String(e.detail?.kind??'unknown');gc.kinds[k]=(gc.kinds[k]||0)+1;
+-}});
++const brackets=[],gc={count:0,durationMilliseconds:0,kinds:{},last16:[]};
++const physicalClock={timeOrigin:performance.timeOrigin,startedAt:started,uptimeAtStart:process.uptime(),
++  clock:'same-process performance.now milliseconds',snapshotsAtomic:false};
++function reconcileGC(frame,event){
++  const end=event.startTime+event.duration;
++  if(end<=frame.sampleBefore&&(!frame.gc.latestBefore||end>=frame.gc.latestBefore.startTime+frame.gc.latestBefore.duration))
++    frame.gc.latestBefore={...event};
++  if(typeof frame.sampleAfter==='number'&&event.startTime<=frame.sampleAfter&&end>=frame.sampleBefore){
++    frame.gc.overlapCount++;if(frame.gc.overlaps.length<4)frame.gc.overlaps.push({...event});
++  }
++}
++function recordGC(e){
++  const event={kind:Number.isInteger(e.detail?.kind)?e.detail.kind:null,
++    flags:Number.isInteger(e.detail?.flags)?e.detail.flags:null,
++    startTime:e.startTime,duration:e.duration,deliveredAt:performance.now()};
++  requireThat([event.startTime,event.duration,event.deliveredAt].every(n=>Number.isFinite(n)&&n>=0),'bounded natural GC times');
++  gc.count++;gc.durationMilliseconds+=event.duration;
++  const key=String(event.kind??'unknown');gc.kinds[key]=(gc.kinds[key]||0)+1;
++  gc.last16.push(event);if(gc.last16.length>16)gc.last16.shift();
++  for(const frame of brackets)reconcileGC(frame,event);
++}
++const gcObserver=new PerformanceObserver(list=>{for(const e of list.getEntries())recordGC(e);});
+ let phase='initial',observing=false,expectedMethod=null,baselineFields=null,baselineHistorySHA=null;
+ let baselineProof=null,baselineState=null,expectedRevision=physical.data[revision],lastState=null,sequence=0;
+ const seenRevisions=new Set([expectedRevision]);
+-const result={schema:'helmut-auth-stability-243-rpc/1',pass:false,variant:cfg.variant,
++const result={schema:'helmut-auth-physical8-67-rpc/1',pass:false,variant:cfg.variant,
+   workload,nodeVersion:process.version,uCalls:[],authRPCCount:0,rpcResponsesCompleted:0,nativeHTTPSendCount:0,
+   steps,requests,nativeHTTPRequests:sends,controlTextStringifyObservations:calls,cycles,
+   fullReadCount:0,writeCount:0,controlReadCount:0,mutations:0,restoreCount:0,
+@@ -51,6 +70,46 @@
+ function memory(){return {process:process.memoryUsage(),heapSizeLimitBytes:v8.getHeapStatistics().heap_size_limit,
+   processLifetimeMaxRSSKiB:process.resourceUsage().maxRSS,notWholeNativeGroup:true,
+   naturalGC:{count:gc.count,durationMilliseconds:gc.durationMilliseconds,kinds:{...gc.kinds}}};}
++function physicalSnapshot(round,edge){
++  requireThat(brackets.length<16,'exactly sixteen bounded physical sample brackets');
++  const frame={round:round+1,edge,sampleBefore:performance.now(),sampleAfter:null,
++    uptime:process.uptime(),times:{},gc:{countAtSample:gc.count,latestBefore:null,overlapCount:0,overlaps:[]}};
++  frame.times.processBeforeStart=performance.now();frame.processBefore=process.memoryUsage();frame.times.processBeforeEnd=performance.now();
++  frame.times.heapStart=performance.now();const h=v8.getHeapStatistics();frame.times.heapEnd=performance.now();
++  const fields={physical:'total_physical_size',total:'total_heap_size',used:'used_heap_size',available:'total_available_size',
++    limit:'heap_size_limit',executable:'total_heap_size_executable',malloced:'malloced_memory',peakMalloced:'peak_malloced_memory',
++    nativeContexts:'number_of_native_contexts',detachedContexts:'number_of_detached_contexts',
++    handlesTotal:'total_global_handles_size',handlesUsed:'used_global_handles_size',external:'external_memory'};
++  frame.heap=Object.fromEntries(Object.entries(fields).map(([key,name])=>[key,h[name]]));
++  frame.times.spacesStart=performance.now();const spaces=v8.getHeapSpaceStatistics();frame.times.spacesEnd=performance.now();
++  requireThat(spaces.length>0&&spaces.length<=32,'bounded V8 space count');
++  frame.spaces=spaces.map(s=>({name:s.space_name,size:s.space_size,used:s.space_used_size,available:s.space_available_size,physical:s.physical_space_size}));
++  requireThat(new Set(frame.spaces.map(s=>s.name)).size===spaces.length&&frame.spaces.every(s=>typeof s.name==='string'&&/^[a-z_]{1,64}$/.test(s.name)),
++    'bounded unique V8 space names');
++  frame.times.processAfterStart=performance.now();frame.processAfter=process.memoryUsage();frame.times.processAfterEnd=performance.now();
++  frame.sampleAfter=performance.now();
++  const values=[...Object.values(frame.heap),...Object.values(frame.processBefore),...Object.values(frame.processAfter),
++    ...frame.spaces.flatMap(({name,...s})=>Object.values(s))];
++  requireThat(values.every(n=>Number.isSafeInteger(n)&&n>=0),'finite safe nonnegative physical/process scalars');
++  requireThat(Object.values(frame.times).every(n=>Number.isFinite(n)&&n>=frame.sampleBefore&&n<=frame.sampleAfter),'same-clock sequential physical brackets');
++  for(const event of gc.last16)reconcileGC(frame,event);
++  brackets.push(frame);return frame;
++}
++function physicalDiagnostics(){
++  const ends=brackets.filter(f=>f.edge==='end'),a=ends[3],b=ends[7];
++  function stage(f){
++    const event=f?.gc.latestBefore;if(!event||event.kind!==perfConstants.NODE_PERFORMANCE_GC_MAJOR||event.flags===null||f.gc.overlapCount)return null;
++    return {kind:event.kind,flags:event.flags,age:f.sampleBefore-event.startTime-event.duration};
++  }
++  const x=stage(a),y=stage(b),compatible=!!(x&&y&&x.kind===y.kind&&x.flags===y.flags&&Math.abs(x.age-y.age)<=250);
++  return {schema:'helmut-auth-physical8-observations/1',clock:physicalClock,last16NaturalGC:gc.last16,
++    gcEventsObserved:gc.count,gcKinds:gc.kinds,terminalTakeRecordsReconciled:true,
++    undeliveredEventsUnknown:true,snapshotsAtomic:false,endpointRounds:ends.map(f=>f.round),fixedPair:[4,8],
++    operationalStageCompatible:compatible,stage4:x,stage8:y,
++    attributionStatus:'INCONCLUSIVE',
++    attributionReason:compatible?'observed operational stage screen matches; undelivered GC/live-object-stage equivalence remains unknown':'fixed4/8 GC stage missing,incompatible or overlapping',
++    noSubstitutePair:true,noRSSMinusPhysicalExactAttribution:true,noAdditiveMemoryClaim:true,extraMetadataBytes:0};
++}
+ const wireFields=['responseBodyReceivedBytes','responseTCPDeliveredBytes','responseHeaderBytes',
+   'responseFramingBytes','responses','parseErrors','unparsedResponseBytes','incompleteResponses',
+   'unfinishedActiveHTTPParsers','protocolErrors'];
+@@ -59,7 +118,7 @@
+ const sent=dc.channel('undici:client:sendHeaders');
+ function sentHeaders({request}){
+   result.nativeHTTPSendCount++;
+-  requireThat(sends.length<243,'bounded real native sends');
++  requireThat(sends.length<67,'bounded real native sends');
+   sends.push({phase,method:request.method,path:request.path,origin:String(request.origin)});
+ }
+ function installObserver(){
+@@ -82,7 +141,7 @@
+ }
+ async function boundary(round,edge){
+   requireThat(performance.now()<deadline,'fixed diagnostic whole-Node 180s batch budget');
+-  const item={schema:'helmut-auth-stability-cycle-marker/1',sequence:++sequence,round,edge,nodePID:process.pid};
++  const item={schema:'helmut-auth-physical8-cycle-marker/1',sequence:++sequence,round,edge,nodePID:process.pid};
+   const name='/bench/CYCLE_'+sequence+'.MARKER.SAFE.json';
+   fs.writeFileSync(name+'.tmp',original(item)+'\n',{flag:'wx',mode:0o600});
+   fs.renameSync(name+'.tmp',name); // Publish one complete bounded marker atomically.
+@@ -92,7 +151,8 @@
+     await new Promise(resolve=>setTimeout(resolve,5));
+   }
+   requireThat(same(JSON.parse(fs.readFileSync(ack,'utf8')),item),'exact round/edge/PID metric ACK');
+-  return {marker:item,memory:memory(),wire:wire(),atMilliseconds:performance.now()-started};
++  const oldMemory=memory(),physical8=physicalSnapshot(round,edge);
++  return {marker:item,memory:oldMemory,physical8,wire:wire(),atMilliseconds:performance.now()-started};
+ }
+ function validateProof(p,s){
+   const q=proofOf(p),t=stateOf(s);
+@@ -105,7 +165,7 @@
+   lastState=t;return q;
+ }
+ async function request(path,options){
+-  requireThat(requests.length<243&&expectedMethod&&options?.method==='POST'&&typeof options.body==='string',
++  requireThat(requests.length<67&&expectedMethod&&options?.method==='POST'&&typeof options.body==='string',
+     'one bounded direct selected U invocation');
+   const write=expectedMethod==='write',control=expectedMethod==='readControl';
+   const route=write?'helmut_auth_state_cas_v1':'helmut_auth_state_graph_read_v1';
+@@ -215,7 +275,7 @@
+       &&uuid(expectedRevision)&&physical.data._llmUsageRef.count===6000,'independent original physical Auth606 proof');
+     gcObserver.observe({entryTypes:['gc']});installObserver();observing=true;sent.subscribe(sentHeaders);
+     result.baseline={memory:memory(),wire:wire()};
+-    for(let round=0;round<30;round++){
++    for(let round=0;round<8;round++){
+       const start=await boundary(round,'start');
+       let auth=await invoke('read','round'+round+'.fullRead');
+       requireThat(round===0?!Object.hasOwn(auth,probe):same(auth[probe],{scope:'LOCAL_CONTROL_CACHE_COMPARISON',round:round-1}),
+@@ -233,18 +293,18 @@
+       const end=await boundary(round,'end');cycles.push({round,start,end});
+     }
+     let auth=await invoke('read','restore.fullRead');
+-    requireThat(same(auth[probe],{scope:'LOCAL_CONTROL_CACHE_COMPARISON',round:29}),'last probe confirmed by fresh full U');
++    requireThat(same(auth[probe],{scope:'LOCAL_CONTROL_CACHE_COMPARISON',round:7}),'last probe confirmed by fresh full U');
+     delete auth[probe];let accepted=await invoke('write','restore.write',auth);
+     requireThat(!Object.hasOwn(accepted,probe)&&same(lastState,baselineState),'ACK restores original immutable root/proof');
+     result.restoreCount++;auth=null;accepted=null;
+     let final=await invoke('read','restore.finalRead');
+     requireThat(!Object.hasOwn(final,probe)&&same(lastState,baselineState),'fresh final full read confirms original root restored');
+     final=null;
+-    requireThat(result.authRPCCount===243&&result.fullReadCount===32&&result.writeCount===31&&result.controlReadCount===180
+-      &&result.mutations===30&&result.restoreCount===1&&cycles.length===30&&sequence===60
+-      &&requests.every(r=>r.responseReceived&&r.selectedUAccepted)&&result.nativeHTTPSendCount===243,
+-      'exact deterministic NEW-only 30-round 243 genuine accepted RPC workload');
+-    requireThat(calls.length===32&&calls.every(c=>c.utf8Bytes===calls[0].utf8Bytes),'same actual control text byte size');
++    requireThat(result.authRPCCount===67&&result.fullReadCount===10&&result.writeCount===9&&result.controlReadCount===48
++      &&result.mutations===8&&result.restoreCount===1&&cycles.length===8&&sequence===16
++      &&requests.every(r=>r.responseReceived&&r.selectedUAccepted)&&result.nativeHTTPSendCount===67,
++      'exact deterministic NEW-only 8-round 67 genuine accepted RPC workload');
++    requireThat(calls.length===10&&calls.every(c=>c.utf8Bytes===calls[0].utf8Bytes),'same actual control text byte size');
+     result.actualControlTextUTF8Bytes=calls[0].utf8Bytes;
+     result.initialControlFieldSHA256=baselineFields;result.unchangedLogicalHistorySHA256=baselineHistorySHA;
+     result.originalStateRestored=baselineState;result.unchangedNativeProof=baselineProof;
+@@ -253,11 +313,17 @@
+   finally{
+     observing=false;JSON.stringify=original;sent.unsubscribe(sentHeaders);
+     // Deliver pending natural GC observer entries without forcing a collection.
+-    for(const e of gcObserver.takeRecords()){
+-      gc.count++;gc.durationMilliseconds+=e.duration;const k=String(e.detail?.kind??'unknown');gc.kinds[k]=(gc.kinds[k]||0)+1;
+-    }
+-    gcObserver.disconnect();result.final={memory:memory(),wire:meter?wire():null,wallMilliseconds:performance.now()-started};
+-    fs.writeFileSync('/bench/AUTH_STABILITY.SAFE.json',original(result)+'\n',{flag:'wx',mode:0o600});
++    for(const e of gcObserver.takeRecords())recordGC(e);
++    gcObserver.disconnect();
++    result.physical8Diagnostics=physicalDiagnostics();
++    for(let i=0;i<3;i++)result.physical8Diagnostics.extraMetadataBytes=Buffer.byteLength(original({frames:brackets,summary:result.physical8Diagnostics}),'utf8');
++    if(result.physical8Diagnostics.extraMetadataBytes>65536){
++      result.pass=false;result.errorMessage='additional physical8 metadata exceeds64KiB; no retry';
++      for(const cycle of cycles){delete cycle.start.physical8;delete cycle.end.physical8;}
++      result.physical8Diagnostics={schema:'helmut-auth-physical8-observations/1',attributionStatus:'INCONCLUSIVE',metadataCapExceeded:true,extraMetadataBytes:0};
++    }
++    result.final={memory:memory(),wire:meter?wire():null,wallMilliseconds:performance.now()-started};
++    fs.writeFileSync('/bench/AUTH_PHYSICAL8.SAFE.json',original(result)+'\n',{flag:'wx',mode:0o600});
+     process.stdout.write(original(result)+'\n');if(!result.pass)process.exitCode=1;
+   }
+ }
+--- accepted-stability30/README.md
++++ physical8/README.md
+@@ -1,45 +1,21 @@
+-# Integrated NEW Auth: fixed 30-round stability diagnostic — PREPARED, NOT RUN
++# Physical V8 versus Node RSS:8-round Auth diagnostic — PREPARED, NOT RUN
+ 
+-This is a new frozen diagnostic derived from the accepted combined-Auth launcher. It runs only the integrated NEW product bytes. It does not alter `lib/helmut/llm-usage-atomic.js`, `lib/helmut/auth-state-parts.js`, SQL function bodies, production configuration or the old frozen launchers. The four old comparison arms remain historical evidence of their original 27-RPC workload; they cannot stand in for this new workload. No plateau, full-motor reserve, full500, production, merge or deployment qualification is claimed.
++This frozen sibling derives from accepted auth-stability30 PREPAREDfd846c43. It adds bounded V8 physical/space/malloc/context/handle observations to the actual integrated Auth workload. It is not another uninstrumented30-round run. Product U93917a/Partsf300, the selected NEW SQL wrappers/functions, strict shutdown policy/helper, original runtime and24 copied body files remain byte-identical. Old preparations, actual cases, adoptions and protected canonical source827a remain immutable.
+ 
+-## Fixed workload and exact acceptance counts
++There are8 serial rounds of full U.read, confirmed probe-only U.write and6 real U.readControl calls, then fresh full read, confirmed restore and final full read. Counts are exactly67RPC=10full reads+9CAS+48controls,8mutations+1restore,16 start/end boundaries,58fresh read/history nonces,48graph bindings,19full logical6000-history hashes and10controlText serializations. No provider/ledger append/retry. Full logical/native field/history/state/CAS/ACK checks and independent physical606-byte root/catalog restoration remain.
+ 
+-There are exactly 30 serial rounds. Each has one real `U.read`, one real `U.write` changing only `localWorkingSetProbe`, and six real `U.readControl` calls. The final three calls are a fresh full read, one confirmed restoration write and a fresh final full read. The probe's existing local scope string remains `LOCAL_CONTROL_CACHE_COMPARISON` so its shape and mutation semantics do not change.
++Each of the16 existing boundary frames adds sequential observations: process.memoryUsage before, selected v8.getHeapStatistics, v8.getHeapSpaceStatistics and process.memoryUsage after. Same-process performance.now brackets every call; performance.timeOrigin, start time and process.uptime anchor the clock. These reads are not atomic. Heap aliases map directly:physical=total_physical_size,total=total_heap_size,used=used_heap_size,available=total_available_size,limit=heap_size_limit,executable=total_heap_size_executable,malloced=malloced_memory,peakMalloced=peak_malloced_memory,nativeContexts=number_of_native_contexts,detachedContexts=number_of_detached_contexts,handlesTotal=total_global_handles_size,handlesUsed=used_global_handles_size,external=external_memory. Spaces record bounded name,size,used,available,physical;32spaces maximum and safe nonnegative integer scalars. V8 physical figures are heap capacities, not an exact resident subset of process RSS. They are not added to RSS; RSS-minus-physical is not an exact native allocation attribution. Shmem/file and arrayBuffers/external inclusion rules remain unchanged.
+ 
+-The required totals are 243 accepted Auth RPCs, 32 full reads, 31 confirmed CAS writes (30 mutations and one restoration), 180 controls and 60 ordered start/end handshakes. The exact U-call sequence is `([read, write] + 6 controls) * 30 + [read, write, read]`. Every callback has one genuine native HTTP send and one complete passively metered response; no retries. There are 212 unique fresh read/history nonces, 180 fresh control graph bindings, 31 unique confirmed CAS revisions and 63 full logical history hashes (32 reads plus 31 accepted ACKs). Each full logical history contains all 6000 original records. All 243 native proofs retain the original 6000-row lineage. The authenticated NEW code is expected to perform exactly 32 observed `controlText` serializations, each of the same authentic 4,856,607-byte projection.
++Natural GC uses one shared recordGC for normal observer delivery and the existing terminal finally.takeRecords path. Only plain scalar {kind,flags,startTime,duration,deliveredAt} copies are retained; the global ring holds the last16. At most16 internal sample brackets point to the exported boundary frames. Every delivered event reconciles ALL existing brackets by event interval time, including events delivered after synchronous V8 reads:latest preceding GC is selected by end<=sampleBefore, and inclusive interval overlap increments a count with at most4 raw overlap entries per frame. There is no boundary observer drain, forced GC, event-loop staging, sampling profiler, heap snapshot or allocator/runtime flag change. Terminal reconciliation cannot prove that every runtime event has already been queued; undelivered events remain explicitly unknown.
+ 
+-The request observer still detaches the parsed CAS tree before awaiting HTTP; the driver retains no full Auth object across controls. The actual U/Parts decoder, CAS and ACK paths, fresh nonce/state/proof checks, detached control view guards, full field/history hashes and final restore remain the real integrated code. No provider or paid model call is allowed.
++Predeclared analysis retains ALL8 end frames and only compares fixed1-based rounds4 and8 (cycle indices3/7) for the operational GC-stage screen. Latest preceding observed GC must be major (runtime constant), have matching kind/flags, and ages must differ<=250ms; any known overlap, missing major/flags, or mismatch fails that screen. No substitute pair or longer run is authorized. This is an operational comparison rule, not proof of identical live-object/GC stage. Functional PASS remains separate. Attribution stays INCONCLUSIVE while undelivered-event/live-object-stage equivalence is unknown; a screen match is separately recorded, never a causal or plateau claim. Descriptive physical/RSS directions can still be reported for all8 endpoints. PREDECLARED_DIAGNOSTIC.SAFE.json pins these rules.
+ 
+-## Exact product and database setup
++The complete extra serialized frames+clock+GC summary are hard-capped at65,536B. Frames remain embedded in the existing Node result/stdout, with no new runtime files. At most131,072B logical duplication arises across those two complete captures. Existing1MiB combined Node capture and8MiB total case caps stay unchanged. Exceeding the extra metadata cap makes the diagnostic FAIL, removes instrumentation from the bounded failure receipt and permits no retry. No authentic source bytes are normalized.
+ 
+-NEW U SHA256 is `93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b`; Parts is `f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63`. Both host canonical files and both readonly canonical overlays remain independently authenticated. The NEW renderer prosrc is `d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32`; graph_read is `4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0`. The four product/SQL artifacts and the shutdown helper/policy are byte-identical to the original combined launcher.
++All budgets remain:Node384MiB old/16MiB semi, native max1,547,997,184/high1,399,996,416/swap0 and required high/max/OOM counters0; each observed Auth operation<=30s, each fetch<=20s, SQL<=30s/lock1s, whole diagnostic Node180s, native work300s/closure360s; persistent clone768MiB+16MiB conservative admission, original256MiB JIT/socket tmpfs,8GiB host floor. Unit60/Offline90/full500 reserve are not established. There is no cache eviction or peak reset.
+ 
+-Each new derived persistent clone installs only NEW renderer and graph_read, using the unchanged guarded wrappers. Setup stays five sessions/29 statements (three full catalog captures x5, renderer6, graph8). The complete original catalog, database18405/PG17.6, role/ACL/ABI, settings and physical606-byte root are checked before installation. Only the exact two selected prosrc fields may differ afterward. Sixty separate bounded metrics SQL sessions supply the cycle observations; the two small physical reads and final full catalog are retained.
++Root must integrate at canonical `scripts/helmut-resource-meter/auth-physical8-native-launcher`, run the metadata-only FREEZE_SOURCE.py there, and independently review/check that final freeze. Runtime prepare refuses another directory. The builder binds previous immutable metadata instead of copying old large inventories/baselines. It does not import the subject, read source PGDATA, invoke Git, test or start resources. Root copies auth-physical8.py.TEMPLATE outside the launcher as its host entry, fills only the final PREPARED_SHA after freeze, pins/reviews the resulting host source, and invokes python -I -S -B. The adapter explicitly refuses optimization and missing isolation/site/bytecode flags; it authenticates exact final PREPARED plus common.py/run.py bytes before compilation without sys.path/environment changes.
+ 
+-The after-state must restore the exact original Auth state/root/reference/history and all four control-field hashes. The sole physical exception is the fresh UUIDv4 `_authStoreRevision` matching the accepted final real U read; its physical SHA is measured independently by the small native SQL reader. All 6000 actual and referenced ledger rows remain unchanged; no ledger append or broad store exception is allowed.
++Only fresh cases under `/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/cases`, `physical8-`+24lowercasehex, are allowed. A fresh separately adopted lifecycle-only:NONE actual PASS on the SAME FINAL PREPARED must qualify one control-physical:NEW case. The lifecycle has exact NEW installation with0Auth/Node/GC frames. No old/spent lifecycle/adoption can qualify. Selection schemas/actions/source/case/nonce/TTL/one-shot guards are fresh; no generated sequence/loop/retry. Same source-before/after manifests, exact catalog/ABI/ACL, restore and PG0/PostgREST5afe/f467/last-owned-exit policies remain mandatory. The harness preserves all derived copies and evidence; originals, canonical827a and17 dependent archives are protected.
+ 
+-## Diagnostic bounds
+-
+-This longer batch has an explicit whole-Node ceiling of **180 seconds**, including all 60 observer SQL handshakes, pipe EOF and the captured Node process wait. This is a diagnostic batch ceiling. Each HTTP fetch remains at most20s; each SQL child/statement remains at most30s and lock wait1s. Each complete `invoke` also records and enforces the unchanged Auth30 ceiling (<=30,000ms, including logical field/history observation work); the worker independently checks all243 operation receipts. An observed overrun fails before operation acceptance and never retries. This is measured acceptance, not synchronous CPU preemption. These are Auth operations only: full Unit60/Offline90 and the full motor time contract remain open.
+-
+-Only the known `NODE_CONTROL` capture has a dedicated1MiB combined stdout/stderr cap. Every SQL/default capture stays256KiB and<=30s; any other label or larger capture/deadline is rejected. The evidence cap for this new diagnostic is8MiB. Retained NEW three-round receipts measured83,987/83,999 bytes for each complete Node JSON and2,655,464/2,652,839 non-disk case bytes. Retaining both full Node copies, all60 boundary groups and the unchanged maximum220 timeline samples projects about4.8–5.2MB, so the old4MiB case cap cannot hold the required complete proofs. `CAPACITY_ESTIMATE.SAFE.json` preserves the scalar calculation and input pins. No truncation or emergency budget increase is allowed if a cap is reached; the case fails and retains available evidence.
+-
+-All memory and storage bounds stay unchanged: Node384MiB old space/16MiB semi, one isolate/no private workers; native max1,547,997,184B/high1,399,996,416B/swap0; work300s/total360s including closure;768MiB persistent copy plus16MiB conservative admission overhead;256MiB JIT/socket tmpfs;8GiB host free floor. Required native `high`, `max`, `oom`, `oom_kill` counters must exist and remain0 at worker guards and final empty-group acceptance; `oom_group_kill` must be0 when present. Missing required counters fail closed.
+-
+-Natural GC is observed without forcing a collection. There is no cache eviction, peak reset or addition of separate process peaks. The shared group starts before source verification/copy/JIT/SQL setup and is read through last owned process exit. The60 complete boundary frames are the primary repeated-round trend evidence. The existing host timeline retains its cap220 and removes interior samples after the cap; it must not be described as a complete uniformly spaced curve. Process RSS/anon/file/shmem are diagnostics and are not summed into a shared peak; shmem already belongs to file. A functional/safety PASS does not automatically assert a memory plateau or the full500 reserve.
+-
+-## Fresh freeze, lifecycle, cases and adoption
+-
+-Root first copies this prepared source to `scripts/helmut-resource-meter/auth-stability30-native-launcher` in the canonical repository, runs the metadata-only `FREEZE_SOURCE.py` there, and independently reviews that final closure. The launcher refuses even preparation at any other directory. The builder uses only standard-library file reads/hashes/JSON/diffs and never imports the harness, reads source PGDATA payloads or starts a resource. Its own source is pinned by the generated PREPARED. Old launchers and their PREPARED files are never overwritten.
+-
+-The only fresh case root is `/workspace/helmut-ram-fix-20261020/auth-stability-20261021/cases`; every explicit case name is `stability-` plus24 lowercase hex digits and must be absent before preparation. No generated case sequence, automatic retry or prepared adoption is supplied.
+-
+-Prepare/adopt one **lifecycle-only:NONE** case first. It uses the same final PREPARED and exact NEW installations with no Node/Auth HTTP work. Only its actual complete PASS with all three host proof pins and unchanged strict shutdown evidence can qualify **control-stability:NEW**. An old ABBA or earlier-PREPARED lifecycle is rejected. Every start separately binds a fresh <=15-minute preflight, fresh <=15-minute nonce/TTL adoption, exact case/preflight/prepared/source/selection pins, counts and installations, with one-shot `STARTED.SAFE.json` consumption. Adoption schemas are `helmut-auth-stability-lifecycle-only-root-adoption/1` and `helmut-auth-stability-control-stability-root-adoption/1`; actions are `ROOT START NEW AUTH STABILITY LIFECYCLE ONLY` and `ROOT START NEW AUTH STABILITY 30 ROUNDS 243 RPC ONLY`. OLD is not a selectable arm.
+-
+-The original PostgreSQL must exit0, have full log EOF/drain/no error and an offline shut-down state. PostgREST retains the byte-identical helper5afe6bd7 and policyf4672c7c. Signed0/−15 are accepted under the existing strict receipt conditions;−2 is accepted only for the exact original12.2.3 binary/config/source-policy binding after explicit SIGTERM, live exact PID identity, successful reap, no timeout/kill/error and complete persisted EOF/drain/close proof. No other stopped-process exit is newly accepted. Native final emptiness, owned container closure, heap/HTTP isolate exit receipts and complete before/after source manifests are mandatory.
+-
+-Canonical source `/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL`, manifest827a9872, remains permanently protected;17 retained archives depend on it. It is mounted readonly and never restored/replaced/retired. Originals, historical cases, hulls, archives, images and loops remain protected. Fresh derived copies stay preclassified expendable but are always preserved by the harness. Any later deletion is a separate exact-target Root action after actual PASS, complete retained evidence, restoration/source/closure proofs and dependency/unknown-use review; FAIL/UNKNOWN remain.
+-
+-## Preparation status and required checks
+-
+-The preparer only copied/read/edited source and generated metadata. No harness import, AST/syntax qualification, test, SQL, native/Docker/resource start or model/network call was performed. Root must perform its own source review and focused syntax/guard checks of this new diagnostic. `GUARD_REVIEW.md` lists the exact count/deadline/cap/marker/adoption/counter gaps to exercise. The179/95 accepted product suites are not scheduled for repetition. Native qualification remains NOT_RUN until separately adopted actual fresh cases exist.
++Preparation performed only source copy/edit/read/hash and metadata generation. No imports/AST/syntax/tests/Git/resource/network/model/source-PGDATA reads were performed by the preparer. Root owns source review, focused guards, full disk admission, actual starts and independent actual acceptance. All actual qualification remains NOT_RUN.
+--- accepted-stability30/GUARD_REVIEW.md
++++ physical8/GUARD_REVIEW.md
+@@ -1,13 +1,11 @@
+-# Focused Root review before fresh adoption
++# Root's focused checks — NOT RUN by preparer
+ 
+-No checks listed here have been executed by the preparer. They cover the changed harness guards, not the already accepted product suites.
+-
+-- Selection: only lifecycle-only:NONE and control-stability:NEW; rejectOLD, old mode/schema/action, old case root and any changed fixed workload/count/deadline/cap value. Reject private preparation as a runtime launcher; final canonical integrated path is required.
+-- Counts:243 RPC=32read+31write+180control,30mutations/1restore,60boundaries;32 controlText observations. Exact U-call ordering,243 sends/completed replies,212 unique fresh nonce/history receipts,180 graph bindings and31 fresh CAS revisions. Full logical6000 history for63 full read/ACKs. Final probe29, exact restore and independently measured final revision only.
+-- Capture policy: only NODE_CONTROL may use exactly180s/1MiB; its stdout+stderr, observer SQL, EOF, process wait and status-save must share that ceiling. SQL/default captures keep<=30s/256KiB. Reject larger/mismatched label/timeout/cap combinations. Every U operation must record<=30,000ms and satisfy the independently checked Auth30 receipt; an observed overrun fails without retry, with no synchronous CPU preemption claim. Fetch<=20s, SQL30/lock1, native300/360 unchanged. Caps remain hard failures.
+-- Atomic accounting: allow only root CYCLE_1..CYCLE_60.MARKER.SAFE.json.tmp or .ACK.SAFE.json.tmp disappearing by rename, with a regular published counterpart of1..512bytes. Reject0,00,01,61,negative,nondigit,extra suffix,symlink,different parent,missing/oversized/special published file. The ACK race is included because Root may scan while worker publishes an ACK.
+-- Native counters: requiredhigh/max/oom/oom_kill all present as integer0; optionaloom_group_kill absent or integer0. Reject missing keys,negative/nonzero/bool/string counters. Enforce at worker guard, lifecycle adoption, host observations and final empty group. Preserve failing raw evidence.
+-- Adoption: same exact final PREPARED for lifecycle and work; only new same-root case proof pins; reject consumed START,stale/future timestamp,expired/>15minTTL,wrongnonce,wrongcount,wrongselection,unreviewed source/native policy/drift. Fresh cases and no automatic retry.
+-- Preserve actual product pins/readonly overlays, original two NEW SQL wrappers/full catalog ABI/ACL, PG0 and exact unchanged PostgREST5afe/f467 policy, final root/history restore and source manifests, one isolate/no workers, last-owned-exit coverage. OLD/NEW launchers and canonical source827a remain untouched.
+-
+-All60 boundary observations are retained. Host timeline trimming at220 remains as before and does not produce a complete uniformly sampled curve. After actual PASS, assess the complete30 endpoint series with anon/file/shmem/kernel/Node and naturalGC; any plateau claim requires its own stated quantitative basis. Full500/time/reserve acceptance remains separate.
++- Exact integer physical8Contract; only lifecycle-only:NONE/control-physical:NEW;67/10/9/48/8/1;16boundaries;old mode/action/schema/prepared/case/consumed receipt rejected.
++- New canonical runtime path and pinned isolated -I -S -B host entry; optimization refused; Root fills/pins final SHA outside immutable launcher. No subject import before byte authentication.
++- Exact marker/ACK rename cases1..16; reject0/00/01/17/negative/nondigit/suffix/foreign parent/symlink/missing or oversized published counterpart.
++- All16 sample frames:1-based rounds1..8/start-end order; exact process and heap/space schemas; finite safe nonnegative integers; sequential same-clock call brackets,timeOrigin/uptime. Preserve original Node/process counters.
++- Last16 plain natural GC events only; inclusive overlap annotation across all existing brackets on callback and terminal takeRecords; at most4 raw overlap entries with total count; latest preceding event by event-end time rather than delivery order. No boundary drains or PerformanceEntry retention.
++- Fixed round4/8 screen only; missing/incompatible/overlapping or unknown delivery => attribution INCONCLUSIVE; functional PASS distinct; no substitute pair/causal/plateau/RSS-minus-physical claim.
++- Extra metadata<=64KiB including all frames+summary; unchanged1MiB Node/8MiB case caps. Capture failure is FAIL with bounded receipt and no retry. No new runtime evidence file count.
++- Fresh same-final-freeze lifecycle proof; native counters present and0; original24 body hashes/readonly overlays, full6000history/fresh nonces/CAS/ACK/root/physical/catalog restore and strict closure unchanged.
++- Appropriate new source syntax/guard checks only. No repetition of accepted product suites, no blind30-round repeat/full500, no resource action by the preparer.
+--- accepted-stability30/FREEZE_SOURCE.py
++++ physical8/FREEZE_SOURCE.py
+@@ -1,152 +1,107 @@
+ #!/usr/bin/env python3
+-"""Metadata-only source freeze; never import the harness or start a resource."""
++"""Metadata-only physical8 freeze; no subject imports, tests, Git or resources."""
+ import difflib
+ import hashlib
+ import json
+ from pathlib import Path
+-
++if not __debug__:
++    raise RuntimeError('Source freeze requires optimization disabled')
+ HERE=Path(__file__).resolve().parent
+-BASE=Path('/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher')
+-CANONICAL=BASE.parent/'auth-stability30-native-launcher'
+-BASE_SHA='7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266'
+-CONTRACT={'rounds':30,'controlsPerRound':6,'authRPCCount':243,'fullReadCount':32,
+-    'writeCount':31,'controlReadCount':180,'mutations':30,'restoreCount':1,
+-    'boundaries':60,'clientWallSeconds':180,'nodeCaptureLimitBytes':1048576,
+-    'sqlCaptureLimitBytes':262144,'totalEvidenceCapBytes':8388608,
+-    'fetchMaxSeconds':20,'sqlMaxSeconds':30,'lockMaxSeconds':1,'authOperationMaxMilliseconds':30000}
++PARENT=Path('/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-stability30-native-launcher')
++CANONICAL=PARENT.parent/'auth-physical8-native-launcher'
++PARENT_SHA='fd846c435352b0280c8607995f3d55a690f72094a0bfde17949cdef04c7375ad'
++CONTRACT={'rounds':8,'controlsPerRound':6,'authRPCCount':67,'fullReadCount':10,'writeCount':9,
++    'controlReadCount':48,'mutations':8,'restoreCount':1,'boundaries':16,'clientWallSeconds':180,
++    'nodeCaptureLimitBytes':1048576,'sqlCaptureLimitBytes':262144,'totalEvidenceCapBytes':8388608,
++    'fetchMaxSeconds':20,'sqlMaxSeconds':30,'lockMaxSeconds':1,'authOperationMaxMilliseconds':30000,
++    'extraMetadataMaxBytes':65536,'gcRingMaxEvents':16,'spaceCountMax':32,'gcAgeToleranceMilliseconds':250}
+ CORE=('common.py','run.py','worker.py','control-driver.js')
+-EXTRAS=('BASELINE_PREPARED.SAFE.json','FREEZE_SOURCE.py','GUARD_REVIEW.md',
+-        'CAPACITY_ESTIMATE.SAFE.json','SOURCE_DELTA.PRIVATE.diff')
+-
+-def pin(path):
+-    path=Path(path)
+-    assert path.is_absolute() and path.resolve()==path and path.is_file() and not path.is_symlink()
+-    raw=path.read_bytes()
+-    return {'path':str(path),'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
+-
+-def save(name,value):
+-    path=HERE/name
+-    assert path.parent==HERE and not path.is_symlink()
+-    path.write_text(json.dumps(value,indent=2,sort_keys=True)+'\n')
+-    path.chmod(0o600)
+-
+-def rebind(value):
+-    if isinstance(value,dict):
+-        if set(value)=={'path','bytes','sha256'}:
+-            path=Path(value['path'])
+-            if path.is_relative_to(BASE):
+-                return pin(HERE/path.relative_to(BASE))
+-        return {k:rebind(v) for k,v in value.items()}
+-    if isinstance(value,list):return [rebind(v) for v in value]
+-    return value
+-
+-baseline=HERE/'BASELINE_PREPARED.SAFE.json'
+-assert pin(baseline)['sha256']==BASE_SHA,'preserved baseline PREPARED drift'
+-original=json.loads(baseline.read_text())
+-assert original['schema']=='helmut-combined-auth-baseline-prepared/1'
+-assert pin(BASE/'PREPARED.SAFE.json')['sha256']==BASE_SHA,'original frozen launcher drift'
+-# Product, guarded SQL, shutdown and all remaining copied bodies must be exact.
+-changed=set(CORE)|{'README.md','SCOPE.SAFE.json','PREPARED.SAFE.json'}
++EXTRAS=('FREEZE_SOURCE.py','GUARD_REVIEW.md','PREDECLARED_DIAGNOSTIC.SAFE.json','auth-physical8.py.TEMPLATE','SOURCE_DELTA.PRIVATE.diff')
++def pin(p):
++    p=Path(p);assert p.is_absolute() and p.resolve()==p and p.is_file() and not p.is_symlink()
++    b=p.read_bytes();return {'path':str(p),'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}
++def save(n,v):
++    p=HERE/n;assert p.parent==HERE and not p.is_symlink()
++    p.write_text(json.dumps(v,indent=2,sort_keys=True)+'\n');p.chmod(0o600)
++def rebind(v):
++    if isinstance(v,dict):
++        if set(v)=={'path','bytes','sha256'}:
++            p=Path(v['path'])
++            if p.is_relative_to(PARENT) and (HERE/p.relative_to(PARENT)).is_file():return pin(HERE/p.relative_to(PARENT))
++        return {k:rebind(x) for k,x in v.items()}
++    if isinstance(v,list):return [rebind(x) for x in v]
++    return v
++parent_pin=pin(PARENT/'PREPARED.SAFE.json');assert parent_pin['sha256']==PARENT_SHA
++original=json.loads((PARENT/'PREPARED.SAFE.json').read_text())
++assert original['schema']=='helmut-combined-auth-new-stability-prepared/1'
+ unchanged=[]
+-for source in sorted(BASE.rglob('*')):
+-    if not source.is_file() or source.relative_to(BASE).as_posix() in changed:continue
+-    target=HERE/source.relative_to(BASE)
+-    old,new=pin(source),pin(target)
+-    assert (old['bytes'],old['sha256'])==(new['bytes'],new['sha256']),'unexpected copied-body change'
+-    unchanged.append({'source':old,'candidate':new})
+-save('SCOPE.SAFE.json',{
+-    'schema':'helmut-auth-stability30-scope/1','status':'PREPARED_NOT_RUN',
+-    'comparisonScope':'INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY',
+-    'caseRoot':'/workspace/helmut-ram-fix-20261020/auth-stability-20261021/cases',
+-    'changedExecutableFiles':list(CORE),'fixedWorkload':CONTRACT,
+-    'productUAndPartsBytesUnchanged':True,'NEWSQLWrapperBytesUnchanged':True,
+-    'strictShutdownHelperPolicyAndUpstreamBytesUnchanged':True,
+-    'oldFrozenLaunchersUnchanged':True,'canonicalSource827aPermanentlyProtected':True,
+-    'noGeneralParameterKnobs':True,'sameFinalPreparedLifecycleRequired':True,
+-    'nativeAndHeapAndDiskBudgetsUnchanged':True,
+-    'diagnosticOnlyBudgetChanges':{
+-        'wholeNodeBatchSeconds':{'old':30,'new':180},
+-        'NodeCombinedCaptureBytes':{'old':262144,'new':1048576},
+-        'caseEvidenceCapBytes':{'old':4194304,'new':8388608},
+-        'SQLCaptureAndDeadlineUnchanged':True,'AuthOperation30SecondsEnforced':True,
+-        'reason':'30-round complete proof projection4.8-5.2MB exceeds old4MiB; dedicated Node receipt0.7-0.8MB exceeds256KiB'},
+-    'requiredNativeCountersZero':['high','max','oom','oom_kill'],
+-    'optionalNativeCountersZeroIfPresent':['oom_group_kill'],
+-    'markerAndACKAtomicRenameRange':'1..60 only; no0/61/leading-zero/nondigit names',
+-    'unchangedFiles':unchanged,
+-    'subjectImportsASTSyntaxTestsSQLNativeDockerNetworkModelCallsExecuted':False,
+-    'full500':False,'production':False,'mergeOrDeploy':False})
+-# A human-reviewable source diff includes only changed executable and prose/scope bodies.
++for row in json.loads((PARENT/'SCOPE.SAFE.json').read_text())['unchangedFiles']:
++    p=Path(row['candidate']['path']);q=HERE/p.relative_to(PARENT);a,b=pin(p),pin(q)
++    assert (a['bytes'],a['sha256'])==(b['bytes'],b['sha256']),'unchanged body drift'
++    unchanged.append({'parent':a,'candidate':b})
++assert len(unchanged)==24
++save('SCOPE.SAFE.json',{'schema':'helmut-auth-physical8-scope/1','status':'PREPARED_NOT_RUN',
++    'parentPreparedPin':parent_pin,'comparisonScope':'INTEGRATED_NEW_AUTH_PHYSICAL8_DIAGNOSTIC_ONLY',
++    'caseRoot':'/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/cases',
++    'fixedPhysical8Contract':CONTRACT,'changedExecutableFiles':list(CORE),
++    'unchangedBodyCount':24,'unchangedFiles':unchanged,'productSQLShutdownRuntimeBudgetsUnchanged':True,
++    'oldPreparedActualsAdoptionsAndSource827aImmutable':True,'sameFinalPreparedFreshLifecycleRequired':True,
++    'GC':'natural callbacks plus existing terminal takeRecords only; each reconciles all16 sample brackets; globalring16; overlaps4 per frame',
++    'fixedComparison':'all8 endpoints retained; only1-based4vs8 operational GC-stage screen; no substitute pair',
++    'attribution':'INCONCLUSIVE while GC delivery/live-object-stage equivalence unknown; never exact RSS-minus-V8 or additive capacity claim',
++    'extraSerializedMetadataCapBytes':65536,'newRuntimeEvidenceFiles':0,'hostEntryTemplateNeedsFinalPreparedSHA':True,
++    'subjectImportsASTSyntaxTestsGitResourcesOrSourcePGDATAPayloadReads':False,'full500':False,'production':False})
+ chunks=[]
+-for name in (*CORE,'README.md','SCOPE.SAFE.json'):
+-    chunks.extend(difflib.unified_diff((BASE/name).read_text().splitlines(True),
+-        (HERE/name).read_text().splitlines(True),fromfile='accepted-baseline/'+name,
+-        tofile='auth-stability30/'+name))
+-(HERE/'SOURCE_DELTA.PRIVATE.diff').write_text(''.join(chunks))
+-(HERE/'SOURCE_DELTA.PRIVATE.diff').chmod(0o600)
++for name in (*CORE,'README.md','GUARD_REVIEW.md','FREEZE_SOURCE.py'):
++    chunks.extend(difflib.unified_diff((PARENT/name).read_text().splitlines(True),(HERE/name).read_text().splitlines(True),
++        fromfile='accepted-stability30/'+name,tofile='physical8/'+name))
++(HERE/'SOURCE_DELTA.PRIVATE.diff').write_text(''.join(chunks));(HERE/'SOURCE_DELTA.PRIVATE.diff').chmod(0o600)
+ value=rebind(original)
+-value['schema']='helmut-combined-auth-new-stability-prepared/1'
+-value['revision']='INTEGRATED_NEW_AUTH_FIXED30_STABILITY_SOURCE_ONLY'
+-value['comparisonScope']='INTEGRATED_NEW_AUTH_30_ROUND_STABILITY_ONLY'
+-value['caseRoot']='/workspace/helmut-ram-fix-20261020/auth-stability-20261021/cases'
+-value['stabilityContract']=CONTRACT
+-value['expectedRootOrder']=['lifecycle-only:NONE','control-stability:NEW']
+-value['explicitModes']=['lifecycle-only','control-stability']
+-value['explicitVariants']=['NONE','NEW']
+-for key in ('variantBodies','variantInstallations','variantParts','variantSources'):
+-    value[key]={'NEW':value[key]['NEW']}
+-value['controlContract'].update({'authRPCCount':243,'controlReadCount':180,'cycles':30,
+-    'fullReadCount':32,'probeMutations':30,'writeCount':31,
+-    'realHTTP':'exact243 selected-U accepted callbacks;243 passive real sends;243 complete passive responses',
+-    'freshNonceHistoryReceipts':212,'freshControlGraphBindings':180,'freshConfirmedCASRevisions':31,
+-    'fullLogicalHistoryHashCount':63,'controlTextStringifyObservations':32,
+-    'authOperationMaxMilliseconds':30000})
+-value['cycleObservation'].update({'markers':60,'combinedClientCaptureBytes':1048576,
+-    'sqlInsideDiagnosticNode180Seconds':True,'diagnosticWholeNodeWallSeconds':180,
+-    'hostTimelineMaximumSamples':220,'hostTimelineTrimmedAfterCap':True,
+-    'hostTimelineIsCompleteUniformCurve':False,'completeBoundaryFramesArePrimaryTrend':True})
+-value['cycleObservation'].pop('sqlInsideUnchangedClient30Seconds',None)
+-value['totalEvidenceCapBytes']=8388608
+-value['nodeCombinedOutputCapBytes']=1048576
+-value['queryCombinedOutputCapBytes']=262144
+-value['diagnosticWholeNodeBatchSeconds']=180
+-value['diagnosticWholeNodeBatchIsNotIndividualAuthLimit']=True
+-value['authOperationMaxMilliseconds']=30000
+-value['nativeMemoryEventsRequiredZero']=['high','max','oom','oom_kill']
+-value['nativeMemoryEventsOptionalZero']=['oom_group_kill']
+-value['nativeMissingRequiredCounterFails']=True
+-value['setup'].update({'additionalCycleMetricSessionsControlMode':60,
+-    'installations':'NEW renderer6/graph8 only, byte-identical guarded wrappers',
+-    'setupSQLBytesUnchanged':True})
+-value['sourceOverlays']='readonly integrated NEW U93917a+Partsf300; canonical host pins separately authenticate identical bytes'
+-value['postgrestClosure']['helperSourcePin']=pin(HERE/'postgrest_lifecycle.py')
+-value['sourceDeltaPin']=pin(HERE/'SOURCE_DELTA.PRIVATE.diff')
+-value['scopePin']=pin(HERE/'SCOPE.SAFE.json')
+-value['baselinePreparedPin']=pin(BASE/'PREPARED.SAFE.json')
+-value['capacityEstimatePin']=pin(HERE/'CAPACITY_ESTIMATE.SAFE.json')
+-value['rootIntegration']={'installedAtCanonicalRoot':HERE==CANONICAL,
+-    'canonicalLauncherPath':str(CANONICAL),'candidateSourceDirectory':str(HERE),
+-    'independentReviewPending':True,'nativeExecuted':False,
+-    'sourceBaselinePreparedPin':pin(BASE/'PREPARED.SAFE.json'),
+-    'unchangedCopiedBodies':len(unchanged),'changedExecutableBodies':list(CORE),
+-    'changes':'fixed NEW-only 30-round diagnostic selection/count/deadline/capture/marker/native-counter guards; product and SQL/shutdown bodies unchanged'}
+-value['preparationVerification']='Source-only copy/edit/read/hash/metadata generation; no harness import/AST/syntax/test/SQL/native/Docker/resource/network/model execution'
+-value['retainedNativeGuards'] += ['individual Auth invocation measured<=30000ms with overrun FAIL/no retry',
+-    'required high/max/oom/oom_kill counters present and zero; optional oom_group_kill zero',
+-    'only final canonical integrated launcher path may prepare/run']
+-value['acceptanceScope']={'functionalSafetyPASSIsNotPlateau':True,'full500':False,
+-    'Unit60Offline90OrWholeMotorTimeVerified':False,'fullMotorReserveVerified':False,
+-    'comparisonToOld27RPCIsFairRAMComparison':False}
+-for name in EXTRAS:
+-    item=pin(HERE/name)
+-    value['files'].append(item)
+-    value['metadataAndCodeInputs'].append(item)
+-# Repeated file pins must agree. No external/binary/source-PGDATA rehash is done here.
++# No duplicate old baseline/capacity artifact: copied operational files only.
++value['files']=[p for p in value['files'] if Path(p['path']).parent==HERE]
++value['metadataAndCodeInputs']=[p for p in value['metadataAndCodeInputs']
++    if not Path(p['path']).is_relative_to(PARENT) or Path(p['path']).name=='PREPARED.SAFE.json']
++# Rebound copied files/upstream still belong to the new HERE and remain in this list.
++value['schema']='helmut-auth-physical8-prepared/1'
++value['revision']='INTEGRATED_NEW_AUTH_FIXED8_PHYSICAL_V8_RSS_SOURCE_ONLY'
++value['comparisonScope']='INTEGRATED_NEW_AUTH_PHYSICAL8_DIAGNOSTIC_ONLY'
++value['caseRoot']='/workspace/helmut-ram-fix-20261020/auth-physical8-20261021/cases'
++value.pop('stabilityContract',None);value['physical8Contract']=CONTRACT
++value['expectedRootOrder']=['lifecycle-only:NONE','control-physical:NEW']
++value['explicitModes']=['lifecycle-only','control-physical'];value['explicitVariants']=['NONE','NEW']
++value['controlContract'].update({'authRPCCount':67,'controlReadCount':48,'cycles':8,'fullReadCount':10,
++    'probeMutations':8,'writeCount':9,'realHTTP':'exact67 selected-U accepted callbacks;67 real sends and complete responses',
++    'freshNonceHistoryReceipts':58,'freshControlGraphBindings':48,'freshConfirmedCASRevisions':9,
++    'fullLogicalHistoryHashCount':19,'controlTextStringifyObservations':10})
++value['cycleObservation'].update({'markers':16,'completeBoundaryFramesArePrimaryTrend':True,
++    'physicalV8SequentialBracketFrames':16,'snapshotsAtomic':False,'newMetadataMaxBytes':65536,
++    'allGCEventsReconcileAllExistingBrackets':True,'globalNaturalGCEventRing':16,'rawOverlapEventsPerBracketMax':4})
++value['setup']['additionalCycleMetricSessionsControlMode']=16
++value['sourceDeltaPin']=pin(HERE/'SOURCE_DELTA.PRIVATE.diff');value['scopePin']=pin(HERE/'SCOPE.SAFE.json')
++value.pop('capacityEstimatePin',None);value['parentPreparedPin']=parent_pin
++value['predeclaredDiagnosticPin']=pin(HERE/'PREDECLARED_DIAGNOSTIC.SAFE.json')
++value['hostEntryTemplatePin']=pin(HERE/'auth-physical8.py.TEMPLATE')
++value['rootIntegration']={'installedAtCanonicalRoot':HERE==CANONICAL,'canonicalLauncherPath':str(CANONICAL),
++    'candidateSourceDirectory':str(HERE),'independentReviewPending':True,'nativeExecuted':False,
++    'parentPreparedPin':parent_pin,'unchangedCopiedBodies':24,'changedExecutableBodies':list(CORE),
++    'changes':'fixed8-round67RPC with bounded sequential physicalV8/process snapshots and reconciled naturalGC metadata only'}
++value['acceptanceScope']={'functionalSafetyPASSIsNotAttributionOrPlateau':True,'all8EndpointsDescriptive':True,
++    'fixedOperationalPair':[4,8],'noSubstitutePair':True,'undeliveredGCUnknown':True,'exactRSSMinusPhysicalAttribution':False,
++    'full500':False,'Unit60Offline90OrWholeMotorTimeVerified':False,'fullMotorReserveVerified':False}
++value['preparationVerification']='Source-only copy/edit/read/hash/metadata generation; no subject import/AST/syntax/tests/Git/resources/network/models/source PGDATA payload reads'
++for n in EXTRAS:
++    item=pin(HERE/n)
++    if item not in value['files']:value['files'].append(item)
++    if item not in value['metadataAndCodeInputs']:value['metadataAndCodeInputs'].append(item)
++# Scope/prose are local operational inputs, same as the accepted closure.
++for item in value['files']:
++    if item not in value['metadataAndCodeInputs']:value['metadataAndCodeInputs'].append(item)
++if parent_pin not in value['metadataAndCodeInputs']:value['metadataAndCodeInputs'].append(parent_pin)
+ seen={}
+ for item in value['files']+value['metadataAndCodeInputs']+value['hostOnlyInputPins']:
+-    old=seen.setdefault(item['path'],item)
+-    assert old==item,'contradictory repeated source pin'
++    assert seen.setdefault(item['path'],item)==item,'contradictory source pin'
+ save('PREPARED.SAFE.json',value)
+ print(json.dumps({'status':'PREPARED_NOT_RUN','preparedPin':pin(HERE/'PREPARED.SAFE.json'),
+-    'canonicalIntegration':HERE==CANONICAL,'changedExecutableBodies':list(CORE),
+-    'unchangedCopiedBodies':len(unchanged),'subjectImportsASTSyntaxTestsResourcesExecuted':False}))
++    'unchangedCopiedBodies':24,'canonicalIntegration':HERE==CANONICAL,
++    'preparationLogicalBytes':sum(p.stat().st_size for p in HERE.rglob('*') if p.is_file()),
++    'importsTestsGitResourcesExecuted':False}))

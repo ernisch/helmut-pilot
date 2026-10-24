@@ -1,0 +1,247 @@
+{
+  "schema": "helmut-five-completed-v5-delta-retirement/1",
+  "status": "FIVE_EXACT_TEMP_COPIES_LOSSLESS_DELTA_ARCHIVED_AND_RETIRED",
+  "recordedAtUTC": "2026-10-20T18:18:06.683860+00:00",
+  "cases": [
+    {
+      "case": "digest-c3e412f438593433fd1f6c2a",
+      "deltaArchiveBytes": 21471666,
+      "referencedFiles": 1694,
+      "removedRegularFiles": 1711,
+      "proofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-c3e412f438593433fd1f6c2a/ARCHIVE_READY.PRIVATE.json",
+          "bytes": 1331,
+          "sha256": "6ad5142055695777383a457281483934d68151d910c939b8b364032a3db17230"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-c3e412f438593433fd1f6c2a/COMPARISON_1.PRIVATE.json",
+          "bytes": 1068,
+          "sha256": "9814c14048cf2b18a9639f6f3f2899de27376aa7d7ed70112d7b11dbc23aaa82"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-c3e412f438593433fd1f6c2a/COMPARISON_2.PRIVATE.json",
+          "bytes": 1309,
+          "sha256": "66213a2bb2d2d22646ae91987bd15eaf1f1739126748bcd77574e6d5a2d39b67"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-c3e412f438593433fd1f6c2a/RETIRED.PRIVATE.json",
+          "bytes": 1718,
+          "sha256": "9760ddf5a1011cf487df9a7a086d87d404a9a6b2c2e7447bd78a4bb7a2b70f74"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-c3e412f438593433fd1f6c2a/FILE_MANIFEST.PRIVATE.json",
+          "bytes": 887080,
+          "sha256": "e466c0d5d5da43c9e92d1ea71379bdeb68bead280ddcd8f4a9a31286f89e6dd9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-c3e412f438593433fd1f6c2a/SOURCE_REFERENCE_MANIFEST.PRIVATE.json",
+          "bytes": 761915,
+          "sha256": "cbbcf79a782bdc532ff2b908f98a6c2801feb1eb0da479a26de7235971197c07"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-c3e412f438593433fd1f6c2a/PGDATA_DELTA.PRIVATE.tar.gz",
+          "bytes": 21471666,
+          "sha256": "9fe8b83a84652e4722fb5826bc4aff71eea791932aa9deaf27ac0486532d9a65"
+        }
+      ]
+    },
+    {
+      "case": "digest-ed63e083f528a38a1acf58aa",
+      "deltaArchiveBytes": 21488459,
+      "referencedFiles": 1694,
+      "removedRegularFiles": 1711,
+      "proofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-ed63e083f528a38a1acf58aa/ARCHIVE_READY.PRIVATE.json",
+          "bytes": 1331,
+          "sha256": "de7cda8c51fbd32d3f9c352b63ffbc73c121f1817e5b6970711fa54a984067a0"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-ed63e083f528a38a1acf58aa/COMPARISON_1.PRIVATE.json",
+          "bytes": 1068,
+          "sha256": "e7275a9dbe87c019317a794d1ead78151ead02d4d0c4abb2291fa88b90e12a81"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-ed63e083f528a38a1acf58aa/COMPARISON_2.PRIVATE.json",
+          "bytes": 1309,
+          "sha256": "b17e7522a9a8b67b108817700b3a8dea99b6fc473350058d8711575bf751fee2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-ed63e083f528a38a1acf58aa/RETIRED.PRIVATE.json",
+          "bytes": 1718,
+          "sha256": "0a276f7617123cd33e0fe19520fc7c5ebd8ad066aab76284bc17302e0958251f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-ed63e083f528a38a1acf58aa/FILE_MANIFEST.PRIVATE.json",
+          "bytes": 887080,
+          "sha256": "4fa66435aebbf2ab04add4d4004a892a1657e1910138980358b98df4a53dd96e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-ed63e083f528a38a1acf58aa/SOURCE_REFERENCE_MANIFEST.PRIVATE.json",
+          "bytes": 761915,
+          "sha256": "cbbcf79a782bdc532ff2b908f98a6c2801feb1eb0da479a26de7235971197c07"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-ed63e083f528a38a1acf58aa/PGDATA_DELTA.PRIVATE.tar.gz",
+          "bytes": 21488459,
+          "sha256": "5df937c2b8d51e961d770e83e3373d6adc92a1e25c6fac58a5be0abfc166a62f"
+        }
+      ]
+    },
+    {
+      "case": "digest-4682602730b5cb53f0ce7b86",
+      "deltaArchiveBytes": 21489232,
+      "referencedFiles": 1694,
+      "removedRegularFiles": 1711,
+      "proofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-4682602730b5cb53f0ce7b86/ARCHIVE_READY.PRIVATE.json",
+          "bytes": 1331,
+          "sha256": "bd815fa924b90d11476f8e8e01aa89b599e0087d620dea1025516441ff625bc5"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-4682602730b5cb53f0ce7b86/COMPARISON_1.PRIVATE.json",
+          "bytes": 1068,
+          "sha256": "2b74fb590012af9cad9c0160c881f59041b6c20a37ab09f2a9366b75f8b5e511"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-4682602730b5cb53f0ce7b86/COMPARISON_2.PRIVATE.json",
+          "bytes": 1309,
+          "sha256": "866e5c9e887f17b8c10befe0b788d34439a29b1ee0e64da1f196e6a2467ca613"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-4682602730b5cb53f0ce7b86/RETIRED.PRIVATE.json",
+          "bytes": 1718,
+          "sha256": "a9ba2ae59103948abed71720df8e717a6d1354f858a96af71f22e27ebe74d516"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-4682602730b5cb53f0ce7b86/FILE_MANIFEST.PRIVATE.json",
+          "bytes": 887080,
+          "sha256": "05ed3acce1a7eb6aab5b0f42dc29aacb24bbf9971027dfbbfa0aab99b2a851bc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-4682602730b5cb53f0ce7b86/SOURCE_REFERENCE_MANIFEST.PRIVATE.json",
+          "bytes": 761915,
+          "sha256": "cbbcf79a782bdc532ff2b908f98a6c2801feb1eb0da479a26de7235971197c07"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-4682602730b5cb53f0ce7b86/PGDATA_DELTA.PRIVATE.tar.gz",
+          "bytes": 21489232,
+          "sha256": "6305e41de4e5963ea760acb8fcf10a12d2033aa4c6103a0ff8ab863e3f814e7d"
+        }
+      ]
+    },
+    {
+      "case": "digest-739a92b8b769a80efd820f14",
+      "deltaArchiveBytes": 21489292,
+      "referencedFiles": 1694,
+      "removedRegularFiles": 1711,
+      "proofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-739a92b8b769a80efd820f14/ARCHIVE_READY.PRIVATE.json",
+          "bytes": 1331,
+          "sha256": "fd77fe9fc472e69ff31752425349a3d6ef1266e8edd6a4c3d3d999fa2b87b491"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-739a92b8b769a80efd820f14/COMPARISON_1.PRIVATE.json",
+          "bytes": 1068,
+          "sha256": "c8d8d57e59c58dfdd589716dfd3986357ab3ba65e54b589ebbdddd4f3192f923"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-739a92b8b769a80efd820f14/COMPARISON_2.PRIVATE.json",
+          "bytes": 1309,
+          "sha256": "58362656281b1cff67ace721d270f527dd586b166897339d61df0f0f0f3eed75"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-739a92b8b769a80efd820f14/RETIRED.PRIVATE.json",
+          "bytes": 1718,
+          "sha256": "a839dc730e3d71829fae7c4d9a467717607d1397639de42e3bc3f9b86f5574ae"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-739a92b8b769a80efd820f14/FILE_MANIFEST.PRIVATE.json",
+          "bytes": 887080,
+          "sha256": "28eb9d006c78b2f427ef4ec008ac6b3be71c6ae9a418bafd68c77e60f1440149"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-739a92b8b769a80efd820f14/SOURCE_REFERENCE_MANIFEST.PRIVATE.json",
+          "bytes": 761915,
+          "sha256": "cbbcf79a782bdc532ff2b908f98a6c2801feb1eb0da479a26de7235971197c07"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-739a92b8b769a80efd820f14/PGDATA_DELTA.PRIVATE.tar.gz",
+          "bytes": 21489292,
+          "sha256": "3ea0a8bb3a929e639cc8c5ba3db9a758de2abdea32a2d813da90c0bf41807de1"
+        }
+      ]
+    },
+    {
+      "case": "digest-6517e47c8e1299322ad72247",
+      "deltaArchiveBytes": 21488442,
+      "referencedFiles": 1694,
+      "removedRegularFiles": 1711,
+      "proofPins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-6517e47c8e1299322ad72247/ARCHIVE_READY.PRIVATE.json",
+          "bytes": 1331,
+          "sha256": "81d86cb5faf14cac21330c7c065ba473cca097d94a65f8c6637fcec27485db2f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-6517e47c8e1299322ad72247/COMPARISON_1.PRIVATE.json",
+          "bytes": 1068,
+          "sha256": "021a31c13c408645d72fc8d733095da4c619c8d29ea00f37969731e8ea168817"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-6517e47c8e1299322ad72247/COMPARISON_2.PRIVATE.json",
+          "bytes": 1309,
+          "sha256": "1a79de339b4b83c30a79b774305b0e60ca02b1b09303973ff53ecd3ddc089509"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-6517e47c8e1299322ad72247/RETIRED.PRIVATE.json",
+          "bytes": 1718,
+          "sha256": "e461fbc323265fd3f352293804ec0ff653fb1762f38e573822180251a8677a52"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-6517e47c8e1299322ad72247/FILE_MANIFEST.PRIVATE.json",
+          "bytes": 887080,
+          "sha256": "893235e0cb3fe9b571b2cff22ce3c8868fa0ae59b6028e52b987fd8819ce29fe"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-6517e47c8e1299322ad72247/SOURCE_REFERENCE_MANIFEST.PRIVATE.json",
+          "bytes": 761915,
+          "sha256": "cbbcf79a782bdc532ff2b908f98a6c2801feb1eb0da479a26de7235971197c07"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/digest-6517e47c8e1299322ad72247/PGDATA_DELTA.PRIVATE.tar.gz",
+          "bytes": 21488442,
+          "sha256": "218056133ddae226aa116ba8c2bb8cace3c7eaca8ed92e35f0322df5353bd8fd"
+        }
+      ]
+    }
+  ],
+  "deltaArchivesTotalBytes": 107427091,
+  "removedRegularFiles": 8555,
+  "availableBytes": 15439728640,
+  "unchangedFullAdmissionThresholdBytes": 15179779720,
+  "marginAboveFullAdmissionBytes": 259948920,
+  "protectedCanonicalBase": "/workspace/helmut-ram-fix-20261020/next-single-go-20261020/postrun-canonical-readback/PGDATA_COPY_NOT_AN_ORIGINAL",
+  "canonicalManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "canonicalIsPermanentRequiredReconstructionDependency": true,
+  "canonicalRootStillPresentAndOffline": true,
+  "baseByteHashesVerifiedByBothComparisonsAndImmediatelyBeforeEachRetirement": true,
+  "freshPostRetirementFullBaseRehashClaimed": false,
+  "allCaseEvidenceAndHullsOriginalsImagesVolumesLoopsRetained": true,
+  "independentStaticReviewPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/V5_DELTA_RETIRER_STATIC_REVIEW.SAFE.json",
+    "bytes": 8928,
+    "sha256": "8bbcc1cb7f21becc70b46096f1fcc7a03582df146f3fc4ab41e519043351ab5e"
+  },
+  "retentionCommitmentPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/v5-delta-retirement-preparation/ROOT_CANONICAL_BASE_RETENTION_COMMITMENT.SAFE.json",
+    "bytes": 852,
+    "sha256": "6934a3b36301c3328118582eb3ea99661f6e7efc7e4a5d1f17915bef9c21b4a9"
+  },
+  "full500": false,
+  "production": false,
+  "memorySavingClaimed": false
+}

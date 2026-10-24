@@ -1,0 +1,93 @@
+{
+  "candidateCommit": "208e02ab9d80be79cc54cd132935b1347b411ddf",
+  "currentQualification": {
+    "casePlanPin": {
+      "bytes": 2366,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/ROOT_CASE_PLAN_V2.SAFE.json",
+      "sha256": "f886eed8693b9820778357d4fb8435842843ab807e16cb4b7f4f2c62c9ee8eff"
+    },
+    "generationAuditPin": {
+      "bytes": 120220,
+      "name": "GENERATION_AUDIT.SAFE.json",
+      "sha256": "692649f1e31736ca8400e373feecb7cba48f2ac09b59dc1a141887ac31c2e6fe"
+    },
+    "independentActualReviewPin": {
+      "bytes": 15368,
+      "name": "INDEPENDENT_ACTUAL_REVIEW.SAFE.json",
+      "sha256": "9a453eaca57fd9577769a5017017a39071907078f217432afbc2a5239ff3b3b8"
+    },
+    "independentCodeReviewPin": {
+      "bytes": 3718,
+      "name": "ROOT_SOURCE_REVIEW_FINAL.SAFE.json",
+      "sha256": "94e97fafedcdb47c383ab73d308596615df4ff60e4c90cdd306b5c64f05d1d10"
+    },
+    "independentPublicationReviewPin": {
+      "bytes": 7451,
+      "name": "INDEPENDENT_PUBLICATION_REVIEW.SAFE.json",
+      "sha256": "0b0793c4349ab5a46bf0795c98bbf83821ed9d6ec84160931d042d3cb8d1b6a5"
+    },
+    "integrationGateOriginalPin": {
+      "bytes": 17713,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-cache-gate-prepared-20261023/candidate/scripts/helmut-resource-meter/control-cache-integration.js",
+      "sha256": "414372267970265f15b586d80d50636c578cfd311d6b3b2eed4ee681758215f3"
+    },
+    "nativePreparedPin": {
+      "bytes": 35924,
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/PREPARED.SAFE.json",
+      "sha256": "f6e4d3e20e903b7f193da419e074973a56767baab1554232e089f48e705313b7"
+    },
+    "nativeProofPin": {
+      "bytes": 17625,
+      "name": "control-cache-native-qualification-20261023.SAFE.json",
+      "sha256": "95c8878e677e425a367d3fd95591229bb630c35adc4f610a1fd74f596315443b"
+    },
+    "qualified": true,
+    "status": "QUALIFIED_NATIVE_COMPONENT_SOURCE_DELTA"
+  },
+  "currentSources": [
+    {
+      "bytes": 32050,
+      "file": "lib/helmut/llm-usage-atomic.js",
+      "sha256": "dc12a5c8abf7a7b4f4334ff0b886106b42381efa864ac13d4374285242886d0a"
+    },
+    {
+      "bytes": 27356,
+      "file": "lib/helmut/auth-state-parts.js",
+      "sha256": "0ff039245d60ceb7f5855f62433feab0ae0eea989606d3ad8022510a8d1d80a3"
+    }
+  ],
+  "full500Accepted": false,
+  "historicalAcceptanceTransferred": false,
+  "historicalSources": [
+    {
+      "bytes": 25446,
+      "file": "lib/helmut/llm-usage-atomic.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 22169,
+      "file": "lib/helmut/auth-state-parts.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    }
+  ],
+  "integrationGateSourceSHA256": "414372267970265f15b586d80d50636c578cfd311d6b3b2eed4ee681758215f3",
+  "maxDecodedTextBytes": 268435456,
+  "mode": "verified-control-view-v1",
+  "nativeBaselineArmSources": [
+    {
+      "bytes": 25446,
+      "file": "lib/helmut/llm-usage-atomic.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 22169,
+      "file": "lib/helmut/auth-state-parts.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    }
+  ],
+  "production": false,
+  "ramBenefitClaimed": false,
+  "requiresFreshIntegrationAcceptance": true,
+  "retainedControlPayloadCapBytes": 2097152,
+  "schema": "helmut-control-cache-source-delta/2"
+}

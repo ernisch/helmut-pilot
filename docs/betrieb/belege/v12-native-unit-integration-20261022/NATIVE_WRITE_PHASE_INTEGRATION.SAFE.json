@@ -1,0 +1,87 @@
+{
+  "schema": "helmut-native-write-phase-integration/1",
+  "status": "INTEGRATED_VM_VERIFIED_NATIVE_EXECUTION_BLOCKED",
+  "recordedOnUTC": "2026-10-23",
+  "integratedCodeCommit": "b006750c46194eaa6200d1f5c02107e94597dd7b",
+  "source": {
+    "path": "scripts/helmut-resource-meter/local-unit-original-service.js",
+    "bytes": 32590,
+    "sha256": "33bc37a2ad6dbc47b457828aee948c15a5017c35b6e8cc719eba27ed7630d839"
+  },
+  "test": {
+    "path": "scripts/helmut-resource-meter/local-unit-original-service-test.js",
+    "bytes": 50566,
+    "sha256": "8fda37ca19b586a97b579ec3d89bd19999ee7fec94a2323a1a25120f94f3cc7f"
+  },
+  "rootVerification": {
+    "method": "Actual complete affected service VM suite through scripts/lokal.js in a closed environment; Node24.19.0, old-space384MiB, semi-space16MiB",
+    "actualToolChunk": "d977e7",
+    "actualExitCode": 0,
+    "passedChecks": 72,
+    "newPhaseChecksIncluded": 10,
+    "sourceStableBeforeAfter": true,
+    "diffCheckPassed": true,
+    "realChildrenSocketsDatabasesProviders": false
+  },
+  "independentSourceReview": {
+    "role": "readonly_volume_probe_review",
+    "status": "PASS",
+    "scope": "Exact source hash above; authentication, limits, private output lifecycle, commit ambiguity, response and child-ledger invariants",
+    "nativeQualification": false
+  },
+  "behavior": {
+    "phases": ["prepare", "psql", "accept"],
+    "clock": "Existing process.hrtime.bigint service-start origin; relative integer nanoseconds",
+    "privateTraceBytesPerRequestMaximum": 2048,
+    "traceRowsPerRequestMaximum": 8,
+    "authenticatedRequestMaximumUnchanged": 256,
+    "maximumCombinedTraceBytes": 524288,
+    "privateFileMode": "0600",
+    "exclusiveNoFollowFiles": true,
+    "durableBeforeNextPhase": true,
+    "traceIOChargedToElapsedTime": true,
+    "traceFailureTerminalWithoutRetry": true,
+    "knownCommitProcessConfirmationSurvivesLaterPublicationFailure": true,
+    "responseChildLedgerStopSchemasUnchanged": true,
+    "deadlinesRolesSQLAndExecutionAuthorityUnchanged": true
+  },
+  "fieldLimitations": [
+    "A phase-end marks settlement and may follow an exception; it does not independently mean success.",
+    "psqlInvoked identifies the function invocation; the child ledger remains the process-spawn proof.",
+    "commitProcessConfirmed requires actual matching exit0, no signal and both natural EOFs; it does not replace accepted result validation.",
+    "ackAccepted means local result acceptance before socket.end; it does not prove transport receipt.",
+    "No measured write-phase timings exist yet for this integrated code. Instrumentation is not a performance fix."
+  ],
+  "capacityObservation": {
+    "method": "Actual statvfs available bytes; tool chunk6feb82",
+    "availableBytes": 9775599616,
+    "singleUnitRequiredBytes": 10737418240,
+    "singleUnitMissingBytes": 961818624,
+    "full500RequiredBytes": 15179779720,
+    "full500MissingBytes": 5404180104,
+    "newlyDeletionQualifiedBytes": 0,
+    "existingReservesUnchanged": true
+  },
+  "admissionState": {
+    "originalSourceContainer": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+    "actualSourceStatus": "exited255/PID0",
+    "liveOriginalSQLAvailableThroughExistingBinding": false,
+    "startGroupsReviewed": 32,
+    "freshBindingsRequired": 11,
+    "staleBindings": 13,
+    "consumedBindings": 4,
+    "blockedBindings": 4,
+    "operativeStartGatePass": false,
+    "goFreeDay23NamespaceIsNotStagedOrAuthorized": true
+  },
+  "claims": {
+    "newMajorMotorOptimization": false,
+    "nativeUnit60Passed": false,
+    "memoryReserve500MBProven": false,
+    "full500Ready": false,
+    "full500Started": false,
+    "oldRightsReused": false,
+    "sourceOriginalsChanged": false,
+    "productionAction": false
+  }
+}

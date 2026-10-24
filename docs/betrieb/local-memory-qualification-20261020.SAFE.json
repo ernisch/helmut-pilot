@@ -1,0 +1,316 @@
+{
+  "schema": "helmut-local-memory-partial-qualification/1",
+  "atUTC": "2026-10-20T11:55:31.254629+00:00",
+  "status": "PARTIAL_LOCAL_ARCHITECTURE_QUALIFICATION",
+  "baselineCommit": "2dba431716b5d1693b7039db9233b97f9db5db75",
+  "originalV11TestedCommit": "5fae25be5068a278a88daca9a7508c7b9e4001a3",
+  "originalV11CommonPeakBytes": 2151936000,
+  "hardLimitBytes": 2048000000,
+  "requiredBufferBytes": 500000000,
+  "targetCeilingBytes": 1548000000,
+  "nativeMaxBytes": 1547997184,
+  "nativeHighBytes": 1399996416,
+  "swapMaxBytes": 0,
+  "nodeOldSpaceMiB": 384,
+  "nodeSemiSpaceMiB": 16,
+  "nodeHeapLimitIsNotTotalRSS": true,
+  "componentsAreNotAdditive": true,
+  "componentsHaveTheirOwnPinnedRevisionsAndScopes": true,
+  "finalControllerHasNotRunAFull500": true,
+  "componentMeasurements": [
+    {
+      "scope": "INITIAL_AUTH_PG_REST_WITHOUT_NEW_NODE_FLAGS",
+      "commonPeakBytes": 468185088,
+      "elapsedSeconds": 20.057354707998456,
+      "oom": 0,
+      "oomKill": 0,
+      "genuineLastOwnedExitCovered": true,
+      "full500MemoryBufferProven": false
+    },
+    {
+      "scope": "ALL_500_ORIGINAL_INPUTS_NO_PROFILE_EXECUTION",
+      "commonPeakBytes": 83079168,
+      "elapsedSeconds": 6.1814383050004835,
+      "oom": 0,
+      "oomKill": 0,
+      "genuineLastOwnedExitCovered": true,
+      "full500MemoryBufferProven": false,
+      "actualNodeHeapBudget": {
+        "pass_": true,
+        "isolates": 1,
+        "httpMeteredIsolates": 1,
+        "privateWorkers": 0,
+        "oldSpaceMiB": 384,
+        "semiSpaceMiB": 16,
+        "maximumObservedHeapSizeLimitBytes": 452984832,
+        "heapLimitIsNotTotalRSS": true,
+        "totalNativePeakStillRequired": true
+      }
+    },
+    {
+      "scope": "ALL_500_ORIGINAL_ORDINARY_V1_CONTENTS_NO_PROFILE_EXECUTION",
+      "commonPeakBytes": 349401088,
+      "elapsedSeconds": 8.69905690199812,
+      "oom": 0,
+      "oomKill": 0,
+      "genuineLastOwnedExitCovered": true,
+      "full500MemoryBufferProven": false,
+      "actualNodeHeapBudget": {
+        "pass_": true,
+        "isolates": 2,
+        "httpMeteredIsolates": 1,
+        "privateWorkers": 1,
+        "oldSpaceMiB": 384,
+        "semiSpaceMiB": 16,
+        "maximumObservedHeapSizeLimitBytes": 452984832,
+        "heapLimitIsNotTotalRSS": true,
+        "totalNativePeakStillRequired": true
+      }
+    }
+  ],
+  "regression": {
+    "finalStandardSuitesPassed": 179,
+    "finalStandardSuitesFailed": 0,
+    "nativeBudgetCasesPassed": 26,
+    "startPreflightCasesPassed": 19,
+    "nativeNodeGroupsPassed": 20,
+    "meterGuardCasesPassed": 27,
+    "targetedResultsObservedSeparately": true
+  },
+  "diskAdmission": {
+    "pass": false,
+    "availableBytes": 8621735936,
+    "requiredBytes": 15179779720,
+    "shortageBytes": 6558043784,
+    "hostFreeFloorBytes": 8589934592,
+    "storageCapacityBytes": 2147483648,
+    "newContainerCount": 6,
+    "nativeBudgetHelperHullBytes": 137395232,
+    "newContainerHullBudgetBytes": 3905490568,
+    "retainedOutputBudgetBytes": 536870912,
+    "continuousHostReserveNotClaimed": true,
+    "scope": "READ_ONLY_CAPACITY_ESTIMATE_NO_GO_NO_RESERVATION",
+    "full500Started": false,
+    "originalsCleanupAuthorized": false
+  },
+  "unresolved": [
+    "REPRESENTATIVE_LATE_AUTH_AND_LONGER_WORKSET_STABILITY",
+    "ALL_PHASE_TIME_INTEGRITY_AND_1500_USABLE_RESULT_ACCEPTANCE",
+    "FULL_COMMON_500_MB_BUFFER_PROOF",
+    "PRESERVED_ORIGINALS_DISK_CAPACITY",
+    "FRESH_INDEPENDENT_COMPLETE_SOURCE_ACCEPTANCE_AND_32_START_GROUPS",
+    "FRESH_CASE_TIME_BINDING_AND_EXPLICIT_NEW_FULL500_GO"
+  ],
+  "newFull500Runs": 0,
+  "productionActions": 0,
+  "merges": 0,
+  "full500MemoryBufferProven": false,
+  "newFull500Recommended": false,
+  "noOldResourceCleanup": true,
+  "oldGOsRemainSpent": true,
+  "actualHelperCountForThisTask": 6,
+  "pendingHelperCount": 0,
+  "independentCompleteAcceptance": "OPEN",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget-helper.c",
+      "bytes": 2998,
+      "sha256": "4ed3d5a0f5cf7be074445a14884565b6e43453981a2d3bfc666ecb54a02c037a"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget.py",
+      "bytes": 19434,
+      "sha256": "66b4c432f687445763074a6b2432533c9305cadc09a17a94bf45507d419fd4af"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget.js",
+      "bytes": 3537,
+      "sha256": "09a00f44d94c512fca22bb6a7447adf8a139e8967c618acb72166a29132ff329"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/http-meter.js",
+      "bytes": 7988,
+      "sha256": "21674e42939824e7886a41b62d906bb5b6ecb8cd46e3cd544241615cf6302652"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/full500-controller.py",
+      "bytes": 20955,
+      "sha256": "d8fdd498c0943d3839590d2ce0319e8aa5ee94b40fbaa80a83321dfbcb45f6ba"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/isolation.py",
+      "bytes": 49855,
+      "sha256": "5e285e9ef670e692dc864dded0c0b2417bca8970cf90b5f4aef0cd0e881b7518"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/process-runner.py",
+      "bytes": 16866,
+      "sha256": "2ca194177b596f86a37c8beb182c3041f6104e7be9d0f030cedda5b1a60d4e7e"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/connect-local500.py",
+      "bytes": 30268,
+      "sha256": "bb93d8caf29015e935536cbb1446783291aee9be8fcf5f21d86e3660bf04ea07"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/finish-connection.py",
+      "bytes": 11078,
+      "sha256": "465a3f4d79c8ab6523e49335767245c76920cc03da57419cc371b5d5e4ea0b79"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/start-preflight.py",
+      "bytes": 37289,
+      "sha256": "8f99c74de4e9df817d27247605c82ae7f8bc5008d8533a14ae95f767428e11ee"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-memory-budget-test.py",
+      "bytes": 26266,
+      "sha256": "783e9f00cde82dafa13e7ca8f05c2361d0aec657c5fbf06e9663f0203a29662f"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget-test.js",
+      "bytes": 15114,
+      "sha256": "92ea0202816a30ffab3032bdae8ef981a8e0acbed56c14419f4d34518bea6067"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/start-preflight-test.py",
+      "bytes": 21474,
+      "sha256": "d160e76a05d61eb0dedbe82fae6b1da74179529cd09778d15d1b549d15c1f831"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/START_PREFLIGHT_COVERAGE.md",
+      "bytes": 28551,
+      "sha256": "49f560c38db1601476b852897d8325957d780ca35edc1c7be0bda862771899ce"
+    }
+  ],
+  "evidencePins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/v11-curve-evidence/CURVE_SUMMARY.SAFE.json",
+      "bytes": 51590,
+      "sha256": "f57014bf614a56e1efc10887683012f242d10fb3475a8eefd240a629c159bcb9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/native-budget-implementation-qualification-v2/ACTUAL_RESULT.SAFE.json",
+      "bytes": 2536,
+      "sha256": "1a4a5ed8c96b2f63c4f746c71b8974178976978cbcb49aabf570396cc9a86b87"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/cache-pressure-component/ACTUAL_COMPARISON.SAFE.json",
+      "bytes": 5548,
+      "sha256": "5fa49590ffe0805845e7cb09511cce4203f1448537aa32af3fee31bd37d9a468"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/auth-native-component-v2/ACTUAL_RESULT.SAFE.json",
+      "bytes": 1839,
+      "sha256": "c8412d045075946afad9008ac0d8ffe6bb79511d609f824e7b175ddcd03b544d"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/bounded-input-heap-probe/ACTUAL_RESULT.SAFE.json",
+      "bytes": 2476,
+      "sha256": "3d5c199b1f95b2a75556dba3662e495c921e519ad6ee1ea035ff35d34dde731f"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/closed-content-worker-heap-probe/ACTUAL_RESULT.SAFE.json",
+      "bytes": 2634,
+      "sha256": "1a51d031fca6d062138ede17f29fce1ede82158190794ba6787931b2944c1976"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/closed-content-worker-heap-probe/WORKER_EXIT_CLARIFICATION.SAFE.json",
+      "bytes": 749,
+      "sha256": "53119ab8aab92d9a5ff265438c3cbe03799dc55441f96a325b73251c170d0819"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/meter-guard-regression/GUARD_ACCEPTANCE.SAFE.json",
+      "bytes": 142,
+      "sha256": "52f831d0c1a5a2a6062795284d8f8520b25cec6db62a606ec47fbe8ab71fc229"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/CURRENT_DISK_ADMISSION.SAFE.json",
+      "bytes": 518,
+      "sha256": "882b53b826320e207de37d1105e16a9c43f3f6fd157b0e7ba9c9f9b3cb502474"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/FINAL_ORIGINALS_PRESERVED.SAFE.json",
+      "bytes": 8291,
+      "sha256": "fefaacf2ef7e9fbb1bd2fbb2cf1827bb260c2f4e1111db60b5a6e12df9b61e1b"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/ACTUAL_DEVELOPMENT_MODEL_USAGE_ARCHITECTURE.SAFE.json",
+      "bytes": 5678,
+      "sha256": "4079907151ea460a760722df9fa190f0b844084ec21e817a70e203ce0893a355"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/OFFLINE_FINAL_STANDARD.PRIVATE.log",
+      "bytes": 8623,
+      "sha256": "5391d111bff8a4bb27581f2d8b873883bf0d305a0bddc95127d411ebc92ed6ff"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/ci-import-qualification/QUALIFICATION.SAFE.json",
+      "bytes": 6898,
+      "sha256": "3d0a6bbb1a3a3997bdf0c3c5508bc017eaffdc6164beaedfb51b46ed3b7b499b"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/FIRST_PR_CHECKS.SAFE.json",
+      "bytes": 1122,
+      "sha256": "07d446ab00afbb1aeec243858f9fef635511d02eab6f3fd3b20c3efa33251d07"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/OFFLINE_FINAL_EXIT.SAFE.json",
+      "bytes": 563,
+      "sha256": "f2582c97c9a85b85e602ff7aed3adcc133f8dc477aac6ae65d3708482cc16ab6"
+    }
+  ],
+  "explicitDeploymentActions": 0,
+  "pullRequest": "https://github.com/ernisch/helmut-pilot/pull/924",
+  "implementationCommit": "604aa5eddbea1bf90a58501dfcde8e2aa34e61f9",
+  "firstPublicCIRun": {
+    "url": "https://github.com/ernisch/helmut-pilot/actions/runs/39418567135",
+    "offlineResult": "FAIL_REAL_SOURCE_IMPORT_CLOSURE_INCOMPLETE",
+    "browserMobileSmoke": "PASS",
+    "privateOriginalInputsAvailableOnGitHub": false,
+    "originalAssertionsPreserved": true,
+    "localTestsAreNotClaimedAsGitHubCIPass": true
+  },
+  "automaticPreview": {
+    "state": "ERROR_BEFORE_BUILD",
+    "error": "functions.api/index.js.includeFiles exceeds schema maximum256 characters",
+    "actualCharacters": 3063,
+    "sameVercelJsonGitBlobAtBaselineAndImplementation": "e5567a2b8fa9eb9a0eea9cd4e526ab7064196eaa",
+    "manualDeploymentOrConfigurationChange": false
+  },
+  "lastDocumentationUpdateUTC": "2026-10-20T12:05:18.253928+00:00",
+  "ciIntegration": {
+    "workflowPin": {
+      "path": "/workspace/helmut-cpu-epoch-20261015/.github/workflows/ci.yml",
+      "bytes": 31385,
+      "sha256": "9fef51ceffa8e65c841420282203ddbe94ab77eb212e65de8d0fbbe694d39c8e"
+    },
+    "isolatedQualificationPin": {
+      "path": "/workspace/helmut-ram-fix-20261020/architecture-correction-20261020/ci-import-qualification/QUALIFICATION.SAFE.json",
+      "bytes": 6898,
+      "sha256": "3d0a6bbb1a3a3997bdf0c3c5508bc017eaffdc6164beaedfb51b46ed3b7b499b"
+    },
+    "scope": "ISOLATED_REPRODUCTION_WITHOUT_PRIVATE_ORIGINALS",
+    "nativeBudgetCasesPassed": 26,
+    "nodeGroupsPassed": 20,
+    "importClosureFiles": 7,
+    "importOmissionNegativesPassed": 7,
+    "existingPathNegativesPassed": 9,
+    "absentPathPositivesPassed": 3,
+    "startPreflight": {
+      "passed": 18,
+      "errorsMissingPrivateOriginals": 1,
+      "total": 19
+    },
+    "authority": {
+      "passed": 15,
+      "errorsMissingPrivateOriginals": 10,
+      "total": 25
+    },
+    "runtimeReadContractPassed": 13,
+    "skips": 0,
+    "resultsMocked": false,
+    "newOriginalsCreated": 0,
+    "overallPublicCIPass": false
+  }
+}

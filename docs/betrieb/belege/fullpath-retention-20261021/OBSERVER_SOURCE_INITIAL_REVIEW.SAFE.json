@@ -1,0 +1,106 @@
+{
+  "schema": "helmut-native-runtime-observer-independent-source-review/1",
+  "status": "BLOCKED_SOURCE_ONLY",
+  "createdAtUTC": "2026-10-21T11:06:06.778Z",
+  "reviewScope": {
+    "repository": "/workspace/helmut-cpu-epoch-20261015",
+    "baseCommit": "ea760a70215efdeb371586b9b03a740998d1517b",
+    "changedFilesOnly": [
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget.js",
+        "bytes": 7793,
+        "sha256": "bcf8b5c6c2e8358e3c91569014297ad0781693e53a08cc2ea57521b96e1683e9"
+      },
+      {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/connect-local500.py",
+        "bytes": 32827,
+        "sha256": "00acfd261039d55e9ebde156882430dcc3d1266573451fbace96d7ce0f4c90ee"
+      }
+    ],
+    "inspection": "Read actual two-file diff and source-only unchanged caller/closure evidence. No imports/AST/tests/Node/SQL/process/native/Docker starts or source edits.",
+    "writes": "This independent report only."
+  },
+  "blockingFindings": [
+    {
+      "id": "ORIGINAL_FAILURE_MASKED_BY_OBSERVER_EXPORT_FAILURE",
+      "severity": "MEDIUM",
+      "references": [
+        "connect-local500.py146–147 injects runtimeMemory.beforeExport into the start of metadata().",
+        "Original measure-runtime.js28 calls obs.metadata() in object spread before evaluating failure:obs.failure(error).",
+        "native-node-budget.js97–106 can throw from GC validation/output bound/fs.writeSync; short writes explicitly throw.",
+        "connect-local500.py156–158 only catches close() failure in finally and emits fixed CLOSE_FAILED; it does not retain the incoming workload error."
+      ],
+      "exactPath": "Workload rejects with original error E → measure-runtime catch begins constructing result → obs.metadata invokes beforeExport → diagnostic error D (for example the explicitly implemented SHORT_WRITE) throws before failure(E) is evaluated → catch itself rejects with D; existing bounded failure/stderr for E is never emitted. finally attempts close and may emit only CLOSE_FAILED. Native/stage exit remains a failure, but original failure evidence is lost.",
+      "requestedBoundedCorrection": "Preserve the original bounded error before the new potentially failing observation in the failure path; report any diagnostic error separately and terminally. Do not continue to PASS, loosen acceptance, swallow a failed observer, or replace the original cause with it. Root owns the exact minimal implementation and qualification.",
+      "sourceOnlyReproduction": "Logical control-flow proof from unchanged catch evaluation order plus the newly throwing call. No execution performed."
+    }
+  ],
+  "nonBlockingFindings": [
+    {
+      "id": "PRE_EXPORT_IS_PRE_ASSESSMENT",
+      "references": [
+        "measure-runtime.js24",
+        "connect-local500.py146–147",
+        "native-node-budget.js122"
+      ],
+      "observation": "before-final-export is taken while evaluating obs.metadata(), before assess-runtime constructs unitReports, slices/checks arrays and other result fields. The interval to after-final-export includes assessment, JSON stringify/Buffer/write, promise completion and possible lifetime changes.",
+      "claimLimit": "It cannot be labeled a measurement of JSON serialization cost alone. No direct per-allocation or common-peak ownership is established."
+    },
+    {
+      "id": "SEQUENTIAL_MAIN_ISOLATE_SNAPSHOTS",
+      "references": [
+        "native-node-budget.js98–102"
+      ],
+      "observation": "process.memoryUsage/getHeapStatistics/getHeapSpaceStatistics are sequential builtin calls with one timestamp after them. RSS includes all threads; heap/external/space counters represent the sampled main isolate. The sources do not make the frame an atomic cgroup/process/V8 snapshot.",
+      "claimLimit": "Use descriptive trends and explicit flags; never add space physical to heap physical/RSS or subtract these as exact native ownership."
+    },
+    {
+      "id": "GC_DELIVERY_BOUNDARY",
+      "references": [
+        "native-node-budget.js84–101,111–115"
+      ],
+      "observation": "Natural GC entries are counted since this observer was installed; takeRecords consumes queued entries without forcing GC. Counts/durations are cumulative per allowed kind with no retained per-GC history. gcCallbacksMayLag is explicit; final disconnect does not prove all GC occurring during the final sample was delivered.",
+      "claimLimit": "No exact post-GC stage equality, full-process-since-start GC coverage, plateau, peak owner or saving follows."
+    },
+    {
+      "id": "OBSERVED_COLLECTION_SCOPE",
+      "references": [
+        "native-node-budget.js71,95–96",
+        "connect-local500.py140–143"
+      ],
+      "observation": "Cardinalities cover requests/mutations/scopes/validations/predecessors/units/events/errors only. Fixtures, responses, providerPhases and the one retained command are not separately counted.",
+      "claimLimit": "These are eight named observed collections, not a complete object census."
+    }
+  ],
+  "positiveSourceChecks": {
+    "originalInstall": "The diff changes the original installation only by saving installedDirectory; original Node24.19/budget/Worker discovery/live limit/exit checks remain.",
+    "sameModuleAndMounts": [
+      "Unchanged http-meter.js19–22 requires ./native-node-budget and installs before application setup.",
+      "The staged require uses the exact same canonical BIN/native-node-budget.js path, already in the full source closure.",
+      "Unchanged native-memory-budget.py96–107 requires the actual observer source pin in accepted.sourcePins.",
+      "Unchanged finish-connection.py51–53 includes BIN source files in new source binding; existing full run needs fresh qualification after this source hash change.",
+      "Output uses the already installed HTTP meter directory; isolation.py creates /meter-output/http and mounts the owned output tree. No new mount or capability requested.",
+      "Only /proc/self/stat/status and own pid namespace link are read; failures become null and hostPIDMapping stays NOT_ESTABLISHED. No other PID scan or fabricated host mapping."
+    ],
+    "identity": "pid/threadId0/Node version are recorded; process startTicks extraction uses stat field22 and NSpid regex is a genuine whitespace/digit regex (source bytes checked, not an escaped-literal bug). Self PID namespace identity is optional, honestly null on inaccessible data.",
+    "lexicalStaging": "The exact lexical event producer is hooked after its original append/log operations; no exported-method monkeypatch that misses internal event calls. Exact literal substitutions require count1. Only RUNTIME stage calls observeRuntime.",
+    "boundaryCount": "Selected indices are exactly0,24,49,...474,499 (21). A clean successful500 path emits initial +42 selected J_enter/HTTPcomplete +before/after export=45 frames. Failed paths may contain fewer or an extra pre-export after a success-result assertion fails; allocation guards remain≤100 frames/1MiB and≤16KiB per frame.",
+    "boundedRetention": "Sampler retains fixed identity/count key/index sets and four-kind cumulative GC counters. Frame count objects are fresh scalars; no profile, input body, result, graph, response object or original arrays are retained by this observer.",
+    "sourceSchema": "helmut-local-runtime-memory/1 includes sequence/phase/index/UTC/monotonic/identity, eight-count object, builtin memory/heap/spaces, naturalGC aggregates and explicit interpretation flags. API-produced fields are pinned by actual Node24.19; no workload payload is serialized.",
+    "failureAndClose": "Ordinary observer exceptions are terminal to the current stage. Full/short/error writes have no retries. close attempts final frame+fsync and always disconnects/closes in finally. The staged outer finally makes close failure exit1 rather than leaving a false successful process exit.",
+    "originalGuards": "No original request, Auth/Unit/provider deadline, ACK/CAS/restore/current-input control, source payload, stage order, workload count, budget, GC forcing, allocator/JIT or PG behavior is altered in the two-file diff.",
+    "finalOutputAccounting": "New JSONL remains in the existing common-group output path and is included by unchanged isolation.py584–598 log discovery. Source does not move output or its pagecache outside the charged interval."
+  },
+  "requiredRootQualification": {
+    "remainingSourceCorrection": "Resolve the one original-failure retention blocker and bind final revised source pins.",
+    "tests": "Root owns the targeted real short-child observer checks and literal staging tests; this source reviewer ran none.",
+    "intendedErrorChecks": [
+      "Incoming workload error remains bounded and available when beforeExport fails.",
+      "Observer initial/write/output-limit/close failure makes process FAIL.",
+      "Normal success45frames and failure completeness/count bounds.",
+      "Actual lexical event hooks, success/catch post-save mark and finally close appear in rendered source without changing original guards."
+    ],
+    "noNativePermission": "Source acceptance, even after correction, authorizes no Unit/native/full500 start, no reuse of old source acceptance/adoptions/GO, and no performance/memory saving claim."
+  },
+  "handoff": "This V1 review is frozen read-only; Root edits sources. A correction can receive a narrow delta review in a new report artifact without rewriting this finding."
+}

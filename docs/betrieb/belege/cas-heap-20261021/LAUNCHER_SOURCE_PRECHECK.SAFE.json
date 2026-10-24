@@ -1,0 +1,396 @@
+{
+  "AST": 0,
+  "C_SQLCopiesByteExact": true,
+  "DockerOrProcessInspection": 0,
+  "SQL": 0,
+  "actualAccepted": false,
+  "blockingFindings": [],
+  "byteEqualClosureSpans": [
+    {
+      "bytes": 1407,
+      "role": "PostgREST strict close",
+      "sha256": "44d45b31c868685b2204ebe2cbb283e5f10d376dba12c25541884fe00cd19a8a"
+    },
+    {
+      "bytes": 745,
+      "role": "external PG SIGINT/wait/EOF",
+      "sha256": "f35e2494594c18f56adc2d73c50691509a51d63c9ead7cd52154c0ca5a1be17c"
+    }
+  ],
+  "byteEqualParentFunctionBlocks": [
+    {
+      "bytes": 76,
+      "file": "common.py",
+      "function": "require",
+      "sha256": "171487dfcbb6fb954c3e8c3d38eee883bf7a9fca2ca46e25100daf21a4ed1822"
+    },
+    {
+      "bytes": 633,
+      "file": "common.py",
+      "function": "phase_peak_status",
+      "sha256": "0d6d54f97b9b8d69cb61711613ffd8582f2b8362581bbe87c33ce5285a2b6be1"
+    },
+    {
+      "bytes": 80,
+      "file": "common.py",
+      "function": "lifecycle_file_pins",
+      "sha256": "a2ac3226880e71aacc3c9da67cfd586d338e3ee0408f6379a75964d26181ced3"
+    },
+    {
+      "bytes": 323,
+      "file": "common.py",
+      "function": "validate_run_inputs",
+      "sha256": "ca76c0dbb940a36e8cf6fc6dfe7e54cafb0a387ea8d4c98df0742d4e0fa77b11"
+    },
+    {
+      "bytes": 1578,
+      "file": "common.py",
+      "function": "load",
+      "sha256": "3e57df5f1674e0d4a00e5fe82dfa058524ca11a55e3a72a3b5fae878cd8252fa"
+    },
+    {
+      "bytes": 394,
+      "file": "common.py",
+      "function": "pin",
+      "sha256": "740f3a45d34d0f6bd2b642ec49628b9cc24cbed399ef594c94830b743b890179"
+    },
+    {
+      "bytes": 109,
+      "file": "common.py",
+      "function": "checked",
+      "sha256": "98a2ca03b3cb68b0f7c4d5739a10ccac82f97705aedf40a20d0647c74d2f15bb"
+    },
+    {
+      "bytes": 66,
+      "file": "common.py",
+      "function": "read",
+      "sha256": "ce5f67732e23532b3204ae5758977f4022aec327d5280d1cc08fdb798d5c8521"
+    },
+    {
+      "bytes": 80,
+      "file": "common.py",
+      "function": "available",
+      "sha256": "6783aeaff2959af8041489bf99778e0d11a1944ebff7d194e6388d34bebcd471"
+    },
+    {
+      "bytes": 131,
+      "file": "common.py",
+      "function": "floor",
+      "sha256": "f091f0aba8265c3df71a3ca13e5e2b8117bb3ea635ff65fdd327e992f4c81de0"
+    },
+    {
+      "bytes": 1222,
+      "file": "common.py",
+      "function": "output_bytes",
+      "sha256": "7f50861b7f30c19b69314cf94e3f112ad53a23f9844ee015aa3665e0062e559c"
+    },
+    {
+      "bytes": 380,
+      "file": "common.py",
+      "function": "save_bytes",
+      "sha256": "9c294a0cdda55c8f16f4d3ca9b1461331a5571579aa746074b509ff105323bd1"
+    },
+    {
+      "bytes": 134,
+      "file": "common.py",
+      "function": "save",
+      "sha256": "501d31d8a96f839bec05690555a07ac6881d3f750572d26f226b9b4bbe9b36ba"
+    },
+    {
+      "bytes": 1327,
+      "file": "common.py",
+      "function": "runtime_bindings",
+      "sha256": "94dc11cd16940abe1ac4321019037b86fe9f038e157de250a0531f0c1b7cdda1"
+    },
+    {
+      "bytes": 1287,
+      "file": "common.py",
+      "function": "manifest",
+      "sha256": "193eb92337aa04e29f27efc973155b00eec6c11cc6d7278a3bb9cbb0685ef54e"
+    },
+    {
+      "bytes": 438,
+      "file": "run.py",
+      "function": "modules",
+      "sha256": "d1fc66b1f869df034f2afafb753c9f30ce70b65e9ed79082343fdfa9e5d27bd9"
+    },
+    {
+      "bytes": 511,
+      "file": "run.py",
+      "function": "source_not_live",
+      "sha256": "d77a60aab68a180961dfcfc930c458dc0f0b3110d30ffc427ed8ca7cd9a44752"
+    },
+    {
+      "bytes": 311,
+      "file": "worker.py",
+      "function": "mount",
+      "sha256": "1c5dff033cfc0a9434213ba39b15064c03743245d29912b1c9a2b179e878c0e2"
+    },
+    {
+      "bytes": 1145,
+      "file": "worker.py",
+      "function": "guard",
+      "sha256": "f09f33446f62fbb1224a5d847bc566c43b6dc758b767fc8798c1e1a3941f15e9"
+    },
+    {
+      "bytes": 536,
+      "file": "worker.py",
+      "function": "snapshot",
+      "sha256": "5585360fcf4b715cc5f2ec16ac0918fe7e8d2d9a7a9a2dbed9e9bc6a0027c522"
+    },
+    {
+      "bytes": 288,
+      "file": "worker.py",
+      "function": "env",
+      "sha256": "4c66b13230cc8ddcd99058d22365f11e6dffdc9ffc2716a25390e1a1157f5ced"
+    },
+    {
+      "bytes": 4415,
+      "file": "worker.py",
+      "function": "capture",
+      "sha256": "311dc6b72d46c5366b9516f5f05d93a1227189b589dcfb5e887d4c54609af381"
+    },
+    {
+      "bytes": 1228,
+      "file": "worker.py",
+      "function": "rest_logger",
+      "sha256": "09931b87ebd354c124c0541c427dd1ea3c3dd0b5d92872296bf2e24f603ad42a"
+    },
+    {
+      "bytes": 317,
+      "file": "worker.py",
+      "function": "rest_eof",
+      "sha256": "a134f28325443fc29a29c6baa6d7256af4b551bd29d27ea7d77333ca9be52db4"
+    },
+    {
+      "bytes": 677,
+      "file": "worker.py",
+      "function": "copy_complete",
+      "sha256": "bdd819146bae35eae321c06f5b93b1a92d7e1c6156193225b4580ca8bea7b5a5"
+    },
+    {
+      "bytes": 574,
+      "file": "worker.py",
+      "function": "proc_diagnostic",
+      "sha256": "ba1842af55ae19c16077fd06ad1a4a8d70b57a5263c9c8fbc4dbd7f6e53b5d6e"
+    },
+    {
+      "bytes": 543,
+      "file": "worker.py",
+      "function": "physical_auth",
+      "sha256": "89bd1df957133648869dfc7ac8db2014863fa8d057d2938e07cce778b9ba6b27"
+    }
+  ],
+  "catalogDeltaOnlyTwoLoggingReadbacks": true,
+  "changedFunctionBlocks": {
+    "common.py": {
+      "added": [],
+      "changed": [
+        "uuid4",
+        "selected_measurement",
+        "lifecycle_proof"
+      ],
+      "removed": []
+    },
+    "run.py": {
+      "added": [
+        "diagnostic_proofs"
+      ],
+      "changed": [
+        "prepared",
+        "safe_case",
+        "prepare",
+        "utc",
+        "start",
+        "main"
+      ],
+      "removed": []
+    },
+    "worker.py": {
+      "added": [
+        "acl_psql",
+        "validate_metadata_namespace",
+        "validate_observer_readback",
+        "validate_observer_restored",
+        "validate_observer_selected",
+        "validate_observer_state",
+        "validate_observer_view_definition",
+        "validate_server_heap"
+      ],
+      "changed": [
+        "psql",
+        "validate_phase_probe",
+        "main"
+      ],
+      "removed": []
+    }
+  },
+  "full500": false,
+  "methodLimits": [
+    "Exclusive context accounting is not resident memory,group peak or causal owner proof.",
+    "Net interval includes live chunks at first point,chunk release,text uniqueness/size checks,JSONB cast and both aggregate/SRF/LOG observers.",
+    "Context-count4096 is output guard,not hard SRF allocation bound; existing statement/native caps remain actual bounds.",
+    "Observer interval explicitly differs by exactly two catalog ACLs and two startup logging GUCs; no production permission-equivalence claim."
+  ],
+  "nativeActions": 0,
+  "originalPGDATAPayloadReads": 0,
+  "productWrites": 0,
+  "projectionEnabled": false,
+  "releasedFileCount": 37,
+  "releasedLogicalBytes": 606272,
+  "reviewRecorderPin": {
+    "bytes": 9259,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/independent-review/review_launcher_source.py",
+    "sha256": "d289e10f0c5d2d9cb84fd187d740b48225191e0f4d930dfcad35f0041c1069a2"
+  },
+  "reviewedIntegration": {
+    "ACL": "Only missing SELECT/EXECUTE on two fixed pg_catalog objects to existing service_role, no options/member/owner/SD/publicAuth deltas. Needed right plus raw NULL fails before GRANT; effective NULL is no-op. Selected exact minimal state; full literal/null/order/grantor/options/effective/membership restoration.",
+    "beforeGrant": "Capture persists complete baseline stdout before parser qualification; full view/ABI/clone/logging/ACL state qualified before acl_prepare_entered and PREPARE. SQL requires unchanged exact baseline before GRANT.",
+    "builtinIdentity": "Observed pg_catalog namespaceOID11/functionOID2282/internal symbol/full official nine output type,mode,name arrays; full definition/source hashes verified.",
+    "closure": "Native controller and strict PostgREST helper retained, parent guard/capture and external PG signal/wait/EOF spans byte-identical; source manifest,emptygroups,all exits,zeroevents,caps/deadlines remain mandatory.",
+    "finally": "Restore at most once following attempted PREPARE, on success or error, while owned PG is available and before final catalog/normal strict PostgREST then PG close. Unknown restoration sets FAIL and KEEP; no blind retry.",
+    "freeze": "Metadata writer only: reviewed text/hash rebind preserves closure paths,generated source delta/guard metadata,exact C/Root/ABI inputs,hostOnly currentU/Parts separation and same-freeze lifecycle proof mounts. Final actual PREP/host pins still pending.",
+    "fullViewGrammar": "Entire bounded lexer input consumed; exact nine official projections and one own-backend builtin SRF only; quoted identifiers case-sensitive; no extra clauses/comments/literals/casts/statements.",
+    "hostVsNativePython": "Host template explicitly requires -I -S -B/optimize0 and authenticates actual common/run source before compile. Native Docker entry remains original Python /tools/worker.py with /tools common import, explicit PYTHONDONTWRITEBYTECODE/LANG/LC_ALL and readonly closure mounts; no claim all Python runs isolated.",
+    "logs": "Completed EOF PG log only; exactly four ordered CAS/beforeText/afterValue triplets; strict13/19 scalar keys,2048B each/24576B combined,PID/XID/accepted driver revisions/roles/rawGUCs/terse+fatal correlated. No missing-to-zero fallback.",
+    "sameSessionNamespace": "Only ACL_SELECTED/ACL_PREPARE/ACL_RESTORE metadata psql sessions prepend SET search_path TO pg_catalog and actual setting/backendPID SELECT before unchanged pinned -f SQL. No reconnect commands. Readback PID equals header PID for ACL_SELECTED.",
+    "workload": "Same exact parent Node U/driver/Parts; fixed27RPC,3round,4writes,5reads,18controls,6cycle handshakes,14bounded parent frames,6000history and source/restoration contracts."
+  },
+  "schema": "helmut-cas-heap-independent-launcher-source-precheck/1",
+  "sourceOnly": true,
+  "sourceReleasePin": {
+    "bytes": 16196,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/launcher-preparation/handoff/SOURCE_RELEASE.SAFE.json",
+    "sha256": "8ceee51674e3be8ac818ac29e34810f28d0781399bbe9d1f20f4349c222e8273"
+  },
+  "status": "SOURCE_CHECK_COMPLETE_CANONICAL_FREEZE_AND_ROOT_QUALIFICATION_PENDING",
+  "subjectImports": 0,
+  "tests": 0,
+  "unchangedParentFiles": [
+    {
+      "bytes": 3859,
+      "relativePath": "BODY_SOURCE_PROVENANCE.SAFE.json",
+      "sha256": "a2d2fa66469ac562f6ca75530bdab0c3e4134f75b9e95c1e698b91705cb99acf"
+    },
+    {
+      "bytes": 22169,
+      "relativePath": "COMMON_PARTS.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "bytes": 13047,
+      "relativePath": "INSTALL_NEW_GRAPH.sql",
+      "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+    },
+    {
+      "bytes": 17398,
+      "relativePath": "INSTALL_NEW_RENDERER.sql",
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    {
+      "bytes": 12787,
+      "relativePath": "INSTALL_OLD_GRAPH.sql",
+      "sha256": "7bb6124122903387b721929f99310a8044291c5cc3e12b1f34b674c081eb72cd"
+    },
+    {
+      "bytes": 13841,
+      "relativePath": "INSTALL_OLD_RENDERER.sql",
+      "sha256": "f973ad6b1a617d8b73f3b92df2997a8be7313665c6b26856b8a3c333eb6277e1"
+    },
+    {
+      "bytes": 25446,
+      "relativePath": "NEW_U.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 23685,
+      "relativePath": "OLD_U.PRIVATE.js",
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "bytes": 18650,
+      "relativePath": "ORIGINAL_AUTH_READ_SOURCE.PRIVATE.sql",
+      "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
+    },
+    {
+      "bytes": 51381,
+      "relativePath": "ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    {
+      "bytes": 22149,
+      "relativePath": "ORIGINAL_PARTS.PRIVATE.js",
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+    },
+    {
+      "bytes": 499,
+      "relativePath": "SHUTDOWN_POLICY.SAFE.json",
+      "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+    },
+    {
+      "bytes": 763,
+      "relativePath": "cycle-metrics.sql",
+      "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+    },
+    {
+      "bytes": 9220,
+      "relativePath": "postgrest_lifecycle.py",
+      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+    },
+    {
+      "bytes": 869,
+      "relativePath": "small-auth.sql",
+      "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+    },
+    {
+      "bytes": 4139,
+      "relativePath": "upstream/SOURCE_EVIDENCE.SAFE.json",
+      "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+    },
+    {
+      "bytes": 9858,
+      "relativePath": "upstream/ghc/libraries/base/GHC/TopHandler.hs",
+      "sha256": "b458bc86dd371c52ae9ffb8ca9ce5f8a813736beaec3cecb80bf2d91d6a35ca6"
+    },
+    {
+      "bytes": 19895,
+      "relativePath": "upstream/ghc/rts/RtsStartup.c",
+      "sha256": "985e68679b14b288b63ae9284066f7baf7297159e0a6a0bd80ba27582b22698b"
+    },
+    {
+      "bytes": 5248,
+      "relativePath": "upstream/postgrest/default.nix",
+      "sha256": "1df5837a36b5f54cc5984b30f85001eb304a54b1f694ba7fd01aedd21bdf9724"
+    },
+    {
+      "bytes": 7424,
+      "relativePath": "upstream/postgrest/src/PostgREST/App.hs",
+      "sha256": "d9f3a56d83c55a3cfc84f048a294fe33d10d6cd97dd83ec02344272819a57fca"
+    },
+    {
+      "bytes": 18693,
+      "relativePath": "upstream/postgrest/src/PostgREST/AppState.hs",
+      "sha256": "484fd7a20655cc371f7a21f49339b3725785a1f8b7fadd3e745928b6677f85b0"
+    },
+    {
+      "bytes": 8002,
+      "relativePath": "upstream/postgrest/src/PostgREST/CLI.hs",
+      "sha256": "afc1aa37fc5677b7a72bab4ad6063a2cde611106c04927abef8aec8cfef97395"
+    },
+    {
+      "bytes": 1830,
+      "relativePath": "upstream/postgrest/src/PostgREST/Unix.hs",
+      "sha256": "70dd19fc5a59d54d0285ec12d06a698be7df58d0f9d43cba2d4f793d2f7c50c9"
+    },
+    {
+      "bytes": 25987,
+      "relativePath": "CURRENT_U.js",
+      "sha256": "3b88a424d33e4630dd35411ee6e1660811cc753184fb99822e9ad47ab1332c66"
+    },
+    {
+      "bytes": 27664,
+      "relativePath": "control-driver.js",
+      "sha256": "bd044e5aa35efb0a69df8200b01337c8c9ad64b205af099690f20b98095c4c8f"
+    }
+  ]
+}

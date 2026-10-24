@@ -1,0 +1,87 @@
+{
+  "acceptance": {
+    "auth30": false,
+    "commonRAMSaving": false,
+    "full500": false,
+    "reserve500MB": false,
+    "sixteenSafetyControls": false,
+    "stablePlateau": false,
+    "unit60": false
+  },
+  "actualComparatorWait0AndTwoNaturalEOF": true,
+  "allActualNodeWait0AndTwoNaturalEOF": true,
+  "allMemoryEventsZero": true,
+  "allOwnContainersStoppedPID0": true,
+  "captures": [
+    {
+      "constructionCPUSystemMicroseconds": 11223,
+      "constructionCPUUserMicroseconds": 122822,
+      "constructionMS": 131.566486,
+      "method": "legacy",
+      "ordinal": 1,
+      "psqlMS": 562.163339,
+      "readMS": 1544.1246
+    },
+    {
+      "constructionCPUSystemMicroseconds": 20783,
+      "constructionCPUUserMicroseconds": 92018,
+      "constructionMS": 118.675703,
+      "method": "direct",
+      "ordinal": 2,
+      "psqlMS": 461.557236,
+      "readMS": 1459.069303
+    },
+    {
+      "constructionCPUSystemMicroseconds": 8326,
+      "constructionCPUUserMicroseconds": 95598,
+      "constructionMS": 102.100296,
+      "method": "direct",
+      "ordinal": 3,
+      "psqlMS": 495.922076,
+      "readMS": 1526.497112
+    },
+    {
+      "constructionCPUSystemMicroseconds": 14663,
+      "constructionCPUUserMicroseconds": 113926,
+      "constructionMS": 128.028332,
+      "method": "legacy",
+      "ordinal": 4,
+      "psqlMS": 469.801408,
+      "readMS": 1415.464243
+    }
+  ],
+  "casCalls": 0,
+  "commonWholeComponentPeakBytes": 435965952,
+  "emptyCgroup": true,
+  "engineCommit": "1d7bc947dbfc7d88dbf8e73d99a17e80ad40613e",
+  "freshNodeProcesses": 4,
+  "fullArtifactsEachBytes": 16567116,
+  "fullByteEquality": true,
+  "historyRecords": 6001,
+  "limitations": [
+    "only two samples each",
+    "same PG process and existing host cache; no cold-cache equivalence",
+    "JIT OFF vs original ON",
+    "read-minus-psql includes parsing and multiple JS steps; not isolated decoder time",
+    "before/after memory is not peak or savings",
+    "one common peak across all4 methods; no per-method common RAM saving proof",
+    "no state mutation/CAS/control16/Unit60/full500 acceptance"
+  ],
+  "logicalStateWrites": 0,
+  "motorCalls": 0,
+  "order": [
+    "legacy",
+    "direct",
+    "direct",
+    "legacy"
+  ],
+  "originalSource9MDUnchanged": true,
+  "postgresCleanExit0": true,
+  "recordedAtUTC": "2026-10-23T05:26:25.768737+00:00",
+  "rootReceiptBytes": 8938,
+  "rootReceiptSHA256": "91759aa02bd301deeb3bfee71f1fe058ad106bdec42c2795100aa3511b17800a",
+  "sameRetainedNative00C9StateAcrossMethods": true,
+  "schema": "helmut-native-auth-capture-component-public/1",
+  "sourceScope": "isolated derived copy of retained failed native00c9 postrun, with its 6001-record history; not an untouched original V12 rerun",
+  "status": "PASS_COMPONENT_ONLY"
+}

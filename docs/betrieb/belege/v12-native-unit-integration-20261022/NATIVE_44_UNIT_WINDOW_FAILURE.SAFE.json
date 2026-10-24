@@ -1,0 +1,93 @@
+{
+  "actualFailedSendPhase": null,
+  "adapterElapsedMS": 60163.097461000005,
+  "bothConfiguredDelaysCompleted": null,
+  "case": "44e251ee0f05668cfa2e540ec004abbe",
+  "claims": {
+    "auth30Qualified": false,
+    "full500": false,
+    "memoryReserveQualified": false,
+    "paidProviderCalls": 0,
+    "retryAllowed": false,
+    "sixteenFreshControlsQualified": false,
+    "threePositionsAndAckQualified": false,
+    "unit60Qualified": false
+  },
+  "codeCommit": "a58a741f826e5ff181c34b62b34d1a5be91c6dfd",
+  "commonMemoryPeakBytes": 1342197760,
+  "completedControlGroups": null,
+  "componentMemoryBreakdownAvailable": false,
+  "cpuThrottledUsec": 0,
+  "entryStartHandshakeRepaired": true,
+  "entryTotalMonotonicMS": 62703.085012,
+  "evidencePins": [
+    {
+      "bytes": 2159,
+      "path": "/workspace/helmut-unit-diagnostic-native/44e251ee0f05668cfa2e540ec004abbe/RESULT.SAFE.json",
+      "sha256": "293f12f6d5d32fbdb0fb421d922be78f3743229ce7d874efaf0e97ebf734be35"
+    },
+    {
+      "bytes": 1755,
+      "path": "/workspace/helmut-unit-diagnostic-native/44e251ee0f05668cfa2e540ec004abbe/client/ATTEMPT_TERMINAL.SAFE.json",
+      "sha256": "e39e68f1c6cecb92abb3f1c3b4461fcbb34b15ad2867014f57700e099b0f4641"
+    },
+    {
+      "bytes": 59906,
+      "path": "/workspace/helmut-unit-diagnostic-native/44e251ee0f05668cfa2e540ec004abbe/KERNEL_SAMPLES.SAFE.jsonl",
+      "sha256": "c13801cffdde27f047446dab2e711a67d7de1c29c3ebe92dedec26c3621417d2"
+    },
+    {
+      "bytes": 537,
+      "path": "/workspace/helmut-unit-diagnostic-native/44e251ee0f05668cfa2e540ec004abbe/FINAL_ORIGINAL_CHECK_FAILURE.PRIVATE.json",
+      "sha256": "9f6b2f598170972ac5b6d4669e160beff52144282dfe20259a54e7c1d604dd17"
+    },
+    {
+      "bytes": 6067,
+      "path": "/workspace/helmut-native-integration-checks-20261022/entry-start-fastpath-20261023/capture-1ee43c95730cf8fdd65f31c548d9e916/FINAL.SAFE.json",
+      "sha256": "b62f5690a411195f30e5ba3e6dc04805b143add405f889dd3621bae287130d11"
+    },
+    {
+      "bytes": 1700,
+      "path": "/workspace/helmut-native-integration-checks-20261022/post-case44-original-verification-20261023/RESULT.SAFE.json",
+      "sha256": "275903b6f7bbe9dbc9e57291cd58cc23c21436cb91b9c78cc8d3d6ce5956fd24"
+    }
+  ],
+  "executionHostClean": false,
+  "finalGroupPopulated": 0,
+  "finalPopulatedSubgroups": [],
+  "kernelFullLastProcessExitCovered": true,
+  "knownSqlFailureCode": "local-unit-store-send-running-window",
+  "laterHostFailureAtUTC": "2026-10-23T02:12:32.633Z",
+  "memoryEvents": {
+    "high": 0,
+    "low": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_group_kill": 0,
+    "oom_kill": 0
+  },
+  "nativeMemoryPressureEvidenceFound": false,
+  "originalNativeFinalHashCheck": "InterruptedError at raw-pin, zero source pins checked; native false flags unchanged.",
+  "originalServiceClean": false,
+  "outer": {
+    "actualCLIExitCode": 1,
+    "outerTimeout": false,
+    "stderrNaturalEOF": true,
+    "stdoutNaturalEOF": true,
+    "waitConfirmed": true
+  },
+  "phaseEvidenceLimit": "Existing captures do not identify D versus R or completed control count. Ephemeral Owner trace is not accessible after shutdown; no remount performed.",
+  "plateauProven": false,
+  "schema": "helmut-native-case44-failure-preservation/1",
+  "separateFreshIndependentHostPinVerification": {
+    "pass": true,
+    "rawAndFourRequestInputsMatched": true,
+    "runRequalified": false,
+    "uniquePins": 993,
+    "verifiedBytes": 2476732862
+  },
+  "sourceBeforeEqualsAfter": true,
+  "sqlFailureAtUTC": "2026-10-23T02:12:31.626Z",
+  "status": "FAILED",
+  "unit60LimitMS": 60000
+}

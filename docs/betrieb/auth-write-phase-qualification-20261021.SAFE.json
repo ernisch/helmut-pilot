@@ -1,0 +1,156 @@
+{
+  "allClosurePinsChecked": true,
+  "changedNodeSyntaxFiles": 2,
+  "checks": [
+    "accept-selection:lifecycle-only",
+    "accept-selection:write-phase",
+    "reject-selection:('full500', 'CURRENT')",
+    "reject-selection:('control-inflate', 'AFTER')",
+    "reject-selection:('write-phase', None)",
+    "reject-selection:('write-phase', 'BEFORE')",
+    "reject-selection:('write-phase', 'NONE')",
+    "reject-selection:('lifecycle-only', 'CURRENT')",
+    "reject-selection:wrong-intent-pin",
+    "reject-selection:wrong-plan-pin",
+    "accept-synthetic-complete14-receipt",
+    "reject-receipt:missing-frame",
+    "reject-receipt:extra-frame",
+    "reject-receipt:wrong-label",
+    "reject-receipt:reordered-frame",
+    "reject-receipt:PID-bool",
+    "reject-receipt:wrong-PID",
+    "reject-receipt:wrong-inode",
+    "reject-receipt:unknown-frame-key",
+    "reject-receipt:missing-process-counter",
+    "reject-receipt:process-bool",
+    "reject-receipt:process-negative",
+    "reject-receipt:process-float",
+    "reject-receipt:process-unsafe",
+    "reject-receipt:u64-overflow",
+    "reject-receipt:u64-leading-zero",
+    "reject-receipt:u64-numeric-not-string",
+    "reject-receipt:missing-stat",
+    "reject-receipt:peak-regression",
+    "reject-receipt:peak-reversed",
+    "reject-receipt:current-exceeds-peak",
+    "reject-receipt:NaN-clock",
+    "reject-receipt:infinite-clock",
+    "reject-receipt:reversed-bracket",
+    "reject-receipt:clock-overlap",
+    "reject-receipt:UTC-required",
+    "reject-receipt:wrong-heap-limit",
+    "reject-receipt:IO-devices-cap",
+    "reject-receipt:duplicate-IO-device",
+    "reject-receipt:false-exact-peak-claim",
+    "reject-receipt:false-atomic-claim",
+    "reject-receipt:false-complete",
+    "reject-receipt:false-byte-receipt",
+    "reject-receipt:wrong-source-hash",
+    "reject-receipt:wrong-canonical-source-path",
+    "reject-receipt:boolean-frame-limit",
+    "reject-receipt:float-frame-limit",
+    "reject-receipt:changed-metadata-cap",
+    "accept-covered-final-peak",
+    "accept-unlocalized-higher-final-peak",
+    "reject-final-peak:True",
+    "reject-final-peak:0",
+    "reject-final-peak:-1",
+    "reject-final-peak:1.5",
+    "reject-final-peak:18446744073709551616"
+  ],
+  "fixturesSyntheticOnlyNotActualOriginals": true,
+  "full500": false,
+  "guardChecks": 55,
+  "hostCases": [
+    {
+      "actualExitCode": 0,
+      "flags": [
+        "-I",
+        "-S",
+        "-B"
+      ],
+      "stderrSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "actualExitCode": 1,
+      "flags": [
+        "-S",
+        "-B"
+      ],
+      "stderrSHA256": "962d87763bf961305e5d279a745973020faac72f61cc1627b4784331320c486d"
+    },
+    {
+      "actualExitCode": 1,
+      "flags": [
+        "-I",
+        "-B"
+      ],
+      "stderrSHA256": "962d87763bf961305e5d279a745973020faac72f61cc1627b4784331320c486d"
+    },
+    {
+      "actualExitCode": 1,
+      "flags": [
+        "-I",
+        "-S"
+      ],
+      "stderrSHA256": "962d87763bf961305e5d279a745973020faac72f61cc1627b4784331320c486d"
+    },
+    {
+      "actualExitCode": 1,
+      "flags": [
+        "-I",
+        "-S",
+        "-B",
+        "-O"
+      ],
+      "stderrSHA256": "bc3cc33f7e67d35afd22d28a93d88eddb2361def9e9ca2fa83e7a0d2bfd1ea75"
+    }
+  ],
+  "hostPin": {
+    "bytes": 2436,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase.py",
+    "sha256": "7d6d654eddcdd9a84e9da07e9106db59b64005bcf03e16a7af5238752a6a09d5"
+  },
+  "nativeActions": 0,
+  "pass": true,
+  "preparedPin": {
+    "bytes": 49491,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/PREPARED.SAFE.json",
+    "sha256": "1868119f68f6d27a67c26281b8a71db7c9cb5b6e7d878405bb16f8492f6f30b3"
+  },
+  "providerCalls": 0,
+  "pythonASTPins": [
+    {
+      "bytes": 25215,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/common.py",
+      "sha256": "864ec9f3612a61d7f83f18512ab7de0986e419555c32f419dde66d6ce2655701"
+    },
+    {
+      "bytes": 25439,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/run.py",
+      "sha256": "c6384992040d262557a94ec20c7bb5b9a5a33d1cd7bb7cf87cb062e94910c1f3"
+    },
+    {
+      "bytes": 47908,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/worker.py",
+      "sha256": "311e4298075e5f46234d2d328e9fc3fc4478c2127ada3d4480e1c3b0b946590a"
+    },
+    {
+      "bytes": 13996,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/FREEZE_SOURCE.py",
+      "sha256": "70878d513dd9e5a3cec0d5c13cfe2d3f635d96aea592ffb342e4f209cbfd728d"
+    },
+    {
+      "bytes": 2436,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase.py",
+      "sha256": "7d6d654eddcdd9a84e9da07e9106db59b64005bcf03e16a7af5238752a6a09d5"
+    }
+  ],
+  "schema": "helmut-auth-write-phase-root-qualification/1",
+  "sqlActions": 0,
+  "testSourcePin": {
+    "bytes": 10501,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/root-qualify-write-phase-v1.py",
+    "sha256": "79b9160340b3eb091dada1384be77f954606fd3c8c05253de725acff9620f7f4"
+  }
+}

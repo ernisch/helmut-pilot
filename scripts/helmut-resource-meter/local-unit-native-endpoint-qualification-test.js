@@ -1,0 +1,371 @@
+"use strict";
+
+// Public entry bytes only. Every endpoint, trust mount, process, clock and
+// output in these tests is a RAM-only VM fixture, never native qualification.
+const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), vm = require("node:vm"), assert = require("node:assert/strict");
+const filename = path.join(__dirname, "local-unit-native-endpoint-qualification.js"), root = path.resolve(__dirname, "../..");
+const sha = b => crypto.createHash("sha256").update(b).digest("hex");
+function snapshot(name = filename) {
+  const fd = fs.openSync(name, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+  try { const a = fs.fstatSync(fd, { bigint: true }); assert(a.isFile() && a.nlink === 1n && a.size < (name === filename ? 262144n : 16777216n));
+    const bytes = fs.readFileSync(fd), b = fs.fstatSync(fd, { bigint: true }), n = fs.lstatSync(name, { bigint: true });
+    for (const k of ["dev", "ino", "mode", "uid", "gid", "nlink", "size", "mtimeNs", "ctimeNs"]) assert(a[k] === b[k] && b[k] === n[k]);
+    assert.equal(BigInt(bytes.length), a.size); return { bytes, sha256: sha(bytes) };
+  } finally { fs.closeSync(fd); }
+}
+const before = snapshot(), code = before.bytes.toString("utf8"), TRUST_DIR = "/run/helmut-local-unit-diagnostic", TRUST = TRUST_DIR + "/trust.json";
+const storagePath = path.join(root, "lib/helmut/storage.js"), publicationPath = path.join(root, "lib/helmut/publication-eligibility.js");
+const consumerBefore = snapshot(storagePath), publicationBefore = snapshot(publicationPath);
+const usagePath = path.join(root, "lib/helmut/llm-usage-atomic.js"), partsPath = path.join(root, "lib/helmut/auth-state-parts.js");
+const usageBefore = snapshot(usagePath), partsBefore = snapshot(partsPath);
+const EU = require(path.join(root, "lib/helmut/synthetik-500-eu-service-contract.js"));
+const serverParts = require(partsPath);
+const readModes = { HELMUT_LLM_USAGE_STORAGE: "relational-atomic-v1", HELMUT_AUTH_STATE_STORAGE: "merkle-auth-v1",
+  HELMUT_AUTH_HISTORY_READ_REUSE: "verified-history-reuse-v1", HELMUT_AUTH_CONTROL_READ: "verified-control-view-v1",
+  HELMUT_AUTH_GRAPH_READ_REUSE: "off", HELMUT_AUTH_SINGLE_WRITE_CAPTURE: "off" };
+function fixture(options = {}) {
+  const files = new Map(), fds = new Map(), offsets = new Map(), calls = [], writes = [], lines = [];
+  let nextInode = 30, nextFD = 1, processDrift = false, nativeRequests = 0, publicationRequests = 0;
+  const nonce = "a".repeat(32), selection = { operationId: "localUnitDiagnostic-" + nonce, commandHash: sha("VM selected command") };
+  const directory = "/workspace/helmut-unit-diagnostic-native/" + nonce, selectorPath = directory + "/SELECTION.SAFE.json";
+  const configPath = directory + "/ENDPOINT_QUALIFICATION_CONFIG.PRIVATE.json", reportPath = directory + "/ENDPOINT_QUALIFICATION.SAFE.json";
+  const endpointPath = path.join(root, "lib/helmut/local-unit-diagnostic-endpoint.js"), gatePath = path.join(__dirname, "local-unit-native-observation-gate.js"), events = [];
+  const add = (name, data, extra = {}) => files.set(name, { data: Buffer.from(data), kind: "file", uid: 1000, gid: 1000, mode: 0o600,
+    dev: 1, ino: nextInode++, nlink: 1, mtimeNs: 1, ctimeNs: 1, ...extra });
+  const pin = name => ({ path: name, bytes: files.get(name).data.length, sha256: sha(files.get(name).data) });
+  add(filename, before.bytes); add(endpointPath, "VM pinned endpoint module"); add(gatePath, "VM pinned gate module"); add("/synthetic/node", "VM Node executable", { mode: 0o755 });
+  add(storagePath, consumerBefore.bytes); add(publicationPath, publicationBefore.bytes);
+  add(selectorPath, JSON.stringify(selection, null, 2) + "\n");
+  const database = "helmut_unit_diagnostic_" + nonce, now = new Date().toISOString();
+  const publicSourceBinding = { schema: "helmut-local-unit-original-source-binding/1", ...selection, database, vmOnly: "public binding" };
+  const legacy = { rpcs: ["helmut_auth_state_graph_read_v1", "helmut_auth_usage_read_v1"].map((name, i) => ({ name, oid: String(100 + i),
+    identityArguments: "jsonb", prosrcSHA256: sha("VM readonly body " + i), qualificationPin: { path: "/VM/read.SAFE.json", bytes: 2, sha256: sha("VM qualification") } })) };
+  if (options.duplicateReadName) legacy.rpcs[1] = { ...legacy.rpcs[0] };
+  const anchor = { schema: "helmut-local-unit-diagnostic-root-anchor/2", ...selection, database, originalService: publicSourceBinding, legacy };
+  add(TRUST, JSON.stringify(anchor) + "\n", { uid: 0, mode: 0o444 }); add(TRUST_DIR + "/broker.sock", "", { kind: "socket", uid: 0, mode: 0o666 });
+  const config = { schema: "helmut-local-unit-native-endpoint-qualification-config/1", selection, database, databaseOID: "12345",
+    sqlSources: { "public.local_unit_diagnostic_contract_v1()": sha("VM contract body"), "helmut_unit_diagnostic.exact(jsonb, text[])": sha("VM helper body") },
+    publicSourceBinding, codePins: [pin(filename), pin(gatePath), pin(endpointPath), pin(storagePath), pin(publicationPath)], nodePin: pin("/synthetic/node"), issuedAtUTC: now,
+    publicationProbe: { schema: "helmut-local-unit-native-publication-read-probe/1", commandHash: selection.commandHash,
+      knowledgeObjectIds: options.ids || ["synthetic-ko"] },
+    expiresAtUTC: new Date(Date.now() + 120000).toISOString(), measuredCgroup: { path: "/owned-group", device: 1, inode: 2, procMembership: "0::/\n" } };
+  if (options.controlProbe) {
+    add(usagePath, usageBefore.bytes); add(partsPath, partsBefore.bytes);
+    config.codePins.push(pin(usagePath), pin(partsPath));
+    config.controlGraphProbe = { diagnosticMode: "readonly-http-pre-admission-v1", commandHash: selection.commandHash,
+      readerPin: pin(usagePath), partsPin: pin(partsPath) };
+    if (options.mutateControlProbe) options.mutateControlProbe(config.controlGraphProbe);
+  }
+  if (options.expired) config.expiresAtUTC = new Date(Date.now() - 1).toISOString();
+  if (options.oldConfig) config.issuedAtUTC = new Date(Date.now() - 11000).toISOString();
+  if (options.mutateProbe) options.mutateProbe(config);
+  if (options.missingEndpointPin) config.codePins = config.codePins.filter(p => p.path !== endpointPath);
+  if (options.missingStoragePin) config.codePins = config.codePins.filter(p => p.path !== storagePath);
+  if (options.missingPublicationPin) config.codePins = config.codePins.filter(p => p.path !== publicationPath);
+  if (options.missingGatePin) config.codePins.splice(1, 1);
+  if (options.badCodePin) config.codePins[1].sha256 = sha("VM wrong code");
+  if (options.wrongConfigBinding) config.publicSourceBinding = { ...publicSourceBinding, vmOnly: "different binding" };
+  if (options.badOID) config.databaseOID = "0";
+  let configText = JSON.stringify(config); if (options.duplicateConfig) configText = configText.replace('"schema":', '"schema":"duplicate","schema":');
+  add(configPath, configText, { ...(options.fifo ? { kind: "fifo" } : {}), ...(options.hardlink ? { nlink: 2 } : {}),
+    ...(options.badMode ? { mode: 0o640 } : {}), ...(options.configOversize ? { size: 1048577 } : {}) });
+  if (options.reportExists) add(reportPath, "VM preexisting report");
+  if (options.nonrootTrust) files.get(TRUST).uid = 1000;
+  if (options.badTrustMode) files.get(TRUST).mode = 0o644;
+  if (options.badSocket) files.get(TRUST_DIR + "/broker.sock").uid = 1000;
+  function stat(name, big = false) {
+    const x = files.get(name) || { data: Buffer.alloc(0), kind: "directory", uid: name.startsWith(directory) ? 1000 : 0, gid: 0,
+      mode: name.startsWith(directory) ? 0o700 : 0o755, dev: 1, ino: 2, nlink: 1, mtimeNs: 1, ctimeNs: 1 };
+    const number = n => big ? BigInt(n) : n;
+    return { ...Object.fromEntries(["dev", "ino", "uid", "gid", "nlink", "mtimeNs", "ctimeNs"].map(k => [k, number(x[k])])), size: number(x.size ?? x.data.length),
+      mode: number(x.mode | (x.kind === "directory" ? 0o040000 : x.kind === "socket" ? 0o140000 : x.kind === "fifo" ? 0o010000 : 0o100000)),
+      isFile: () => x.kind === "file", isDirectory: () => x.kind === "directory", isSocket: () => x.kind === "socket", isSymbolicLink: () => Boolean(options.symlink && name === configPath) };
+  }
+  const fsStub = { constants: fs.constants, realpathSync: n => n, lstatSync: (n, opts) => stat(n, opts?.bigint),
+    statSync: n => { assert.equal(n, "/owned-group"); return { ...stat(n), ino: options.wrongGroup ? 3 : 2 }; },
+    statfsSync: () => ({ type: options.notCgroup ? 0x01021994 : 0x63677270 }),
+    openSync(name, flags, mode) { assert(flags & fs.constants.O_NOFOLLOW); assert(flags & fs.constants.O_NONBLOCK);
+      if (flags & fs.constants.O_CREAT) { assert.equal(name, reportPath); assert(flags & fs.constants.O_EXCL); assert.equal(mode, 0o600);
+        if (files.has(name)) { const e = Error("VM exists"); e.code = "EEXIST"; throw e; } add(name, ""); writes.push(name); }
+      assert(files.has(name)); const fd = nextFD++; fds.set(fd, name); offsets.set(fd, 0); return fd; },
+    fstatSync: (fd, opts) => stat(fds.get(fd), opts?.bigint), closeSync(fd) { fds.delete(fd); offsets.delete(fd); }, fsyncSync: () => {},
+    readSync(fd, b, off, len) { const x = files.get(fds.get(fd)), from = offsets.get(fd), n = Math.min(len, x.data.length - from);
+      x.data.copy(b, off, from, from + n); offsets.set(fd, from + n); return n; },
+    writeSync(fd, b, off, len) { const x = files.get(fds.get(fd)); x.data = Buffer.concat([x.data, b.subarray(off, off + len)]); return len; },
+    readFileSync(name) { if (name === "/proc/7/cgroup") return "0::/\n";
+      if (name === "/proc/7/stat") return "7 (VM client) " + Array.from({ length: 20 }, (_, i) => i === 0 ? "S" : i === 19 ? processDrift ? "346" : "345" : "0").join(" ");
+      assert.equal(name, "/proc/self/mountinfo"); return "1 0 0:1 / " + TRUST_DIR + " " + (options.writableTrust ? "rw" : "ro")
+        + " - tmpfs tmpfs rw\n2 0 0:2 / /owned-group " + (options.writableGroup ? "rw" : "ro") + " - cgroup2 cgroup rw\n"; },
+    readlinkSync(name) { if (name === "/proc/7/exe") return "/synthetic/node"; const n = name.split("/").at(-1); return n + ":[123]"; } };
+  const Endpoint = { async request(selected, db, method, pathname, body) {
+    events.push("endpoint.request");
+    calls.push({ selected, db, method, pathname, body }); assert.equal(db, database);
+    if (method === "GET") {
+      assert.equal(JSON.stringify(selected), JSON.stringify(selection)); assert.equal(body.length, 0);
+      const url = new URL(pathname, "http://127.0.0.1"); assert.equal(url.pathname, "/rest/v1/ko_document_links");
+      assert.equal(url.searchParams.get("select"), "knowledge_object_id,raw_document_id,raw_documents(id,url,canonical_url)");
+      assert.equal(url.searchParams.get("order"), "knowledge_object_id.asc,raw_document_id.asc"); assert.equal(url.searchParams.get("limit"), "1000");
+      nativeRequests++; publicationRequests++;
+      if (options.publicationUnknown) throw Error("VM source outcome unknown private sentinel");
+      let rows = publicationRequests === 1 ? config.publicationProbe.knowledgeObjectIds.map((id, i) => ({ knowledge_object_id: id,
+        raw_document_id: "synthetic-document-" + i, raw_documents: { id: "synthetic-document-" + i,
+          url: options.nullURLs ? null : "https://example.invalid/synthetic-source", canonical_url: null } })) : [];
+      if (options.pages) rows = options.pages(publicationRequests, Number(url.searchParams.get("offset")), config.publicationProbe.knowledgeObjectIds);
+      if (options.publicationRows) rows = options.publicationRows(rows, publicationRequests);
+      return { status: options.publicationStatus || 200, body: Buffer.from(options.publicationBytes || JSON.stringify(rows)) };
+    }
+    assert.equal(method, "POST");
+    if (pathname === "/rest/v1/rpc/helmut_auth_state_graph_read_v1") {
+      assert.deepEqual(JSON.parse(JSON.stringify(selected)), selection); nativeRequests++;
+      const q = JSON.parse(body), generation = "00000000-0000-4000-8000-000000000001", revision = "00000000-0000-4000-8000-000000000002";
+      const auth = { synthetik500DispatchJournal: { VM: "private graph payload" }, synthetik500KostenAdmission: {},
+        testKostenAuftrag: { version: EU.ORDER_VERSION, serviceContractHash: EU.HASH }, testKostenTage: {} };
+      const graph = serverParts.build(auth), proof = { generation, count: 0, head: sha("VM history head"), originalHash: sha("VM original history") };
+      const state = { version: "merkle-auth-v1", generation, root: graph.root, originalHash: sha("VM original state") };
+      const reused = q.knownGraph !== null, history = q.knownProof !== null, nodeDigest = sha(graph.nodes.map(n => n.hash).join("|"));
+      const result = { data: { _authStoreRevision: revision, ...(history ? {} : { llmUsage: [] }) }, proof, state,
+        graph: reused ? null : { root: graph.root, nodes: graph.nodes },
+        historyReuse: { version: "verified-history-reuse-v1", nonce: q.readNonce, reused: history,
+          binding: sha(["verified-history-reuse-v1", q.readNonce, sha(q.id), revision, state.version, generation, graph.root, state.originalHash,
+            generation, 0, proof.head, proof.originalHash, history ? "1" : "0"].join("|")) },
+        graphReuse: { version: "verified-graph-reuse-v1", nonce: q.readNonce, reused, actualPayloadsChecked: reused,
+          nodeCount: graph.nodes.length, nodeDigest, binding: sha(["verified-graph-reuse-v1", q.readNonce, sha(q.id), revision,
+            state.version, generation, graph.root, state.originalHash, generation, 0, proof.head, proof.originalHash,
+            graph.nodes.length, nodeDigest, reused ? "1" : "0"].join("|")) } };
+      if (options.graphFault === "payload" && !reused) result.graph.nodes[0].payload += " ";
+      if (options.graphFault === "nonce") result.historyReuse.nonce = "foreign nonce";
+      if (options.graphFault === "warm-proof" && reused) result.graphReuse.binding = "0".repeat(64);
+      return { status: options.graphFault === "status" ? 403 : 200,
+        body: options.graphFault === "utf8" ? Buffer.from([255]) : Buffer.from(options.graphFault === "json" ? "{" : JSON.stringify(result)) };
+    }
+    assert.equal(pathname, "/rest/v1/rpc/local_unit_diagnostic_contract_v1"); assert.equal(body.toString(), "{}");
+    if (selected.commandHash !== selection.commandHash) {
+      if (options.foreignAccepted) return { status: 200, body: Buffer.from("{}") };
+      throw Error(options.foreignWrongError ? "local-unit-diagnostic-endpoint-request-outcome-unknown" : "local-unit-diagnostic-endpoint-root-anchor-binding");
+    }
+    nativeRequests++;
+    if (options.endpointFailure) throw Error("VM endpoint rejected");
+    const catalog = { version: "helmut-local-unit-diagnostic-native-store/1", database, databaseOID: config.databaseOID,
+      sources: config.sqlSources, legacyReadRPCs: legacy.rpcs, sourceQualified: false };
+    if (options.badVersion) catalog.version = "wrong";
+    if (options.contractWrongOID) catalog.databaseOID = "98765";
+    if (options.badSources) catalog.sources = {};
+    if (options.badLegacy) catalog.legacyReadRPCs = [];
+    if (options.sourceQualified) catalog.sourceQualified = true;
+    if (options.extraContract) catalog.extra = true;
+    if (options.trustDrift) files.get(TRUST).data = Buffer.from(JSON.stringify({ ...anchor, changed: true }) + "\n");
+    if (options.pidDrift) processDrift = true;
+    if (options.codeDrift) files.get(endpointPath).data = Buffer.from("VM changed endpoint");
+    return { status: options.badStatus ? 403 : 200, body: Buffer.from(options.badBody ? "malformed" : JSON.stringify(catalog)) };
+  } };
+  const ModuleStub = { _cache: { [filename]: {} }, isBuiltin: n => n.startsWith("node:"), _resolveFilename: n => n };
+  const Gate = { async wait(args) {
+    events.push("gate.wait"); assert.equal(JSON.stringify(args), JSON.stringify({ selection, process: { pid: 7, startTicks: "345" }, kind: "endpoint" }));
+    if (options.gateFailure) throw Error("VM closed gate");
+  }, async quiesce() { events.push("gate.quiesce"); assert.equal(writes.length, 1); assert(files.has(reportPath));
+    if (options.exitGateFailure) throw Error("VM exit gate closed"); } };
+  ModuleStub._load = name => {
+    if (name === usagePath || name === partsPath) {
+      if (ModuleStub._cache[name]?.exports) return ModuleStub._cache[name].exports;
+      const loaded = { exports: {} }; ModuleStub._cache[name] = loaded;
+      vm.runInNewContext((name === usagePath ? usageBefore : partsBefore).bytes.toString(), {
+        module: loaded, exports: loaded.exports, process: processStub, Buffer, URL,
+        require(dep) {
+          if (dep === "node:process") return processStub;
+          if (dep === "./auth-state-parts") return ModuleStub._load(partsPath);
+          if (dep.startsWith("./")) return require(path.join(root, "lib/helmut", dep));
+          return require(dep);
+        }
+      }, { filename: name });
+      return loaded.exports;
+    }
+    if (name === gatePath) { events.push("gate.import"); ModuleStub._cache[name] = { filename: name }; return Gate; }
+    if (name === storagePath || name === publicationPath) {
+      events.push(name === storagePath ? "storage.import" : "publication.import");
+      const loaded = { exports: {} }; ModuleStub._cache[name] = loaded;
+      if (name === storagePath && options.missingConsumer) return loaded.exports;
+      const inert = { "./sources": { v1Sources: [] }, "./pending-terminal": {}, "./mandatsklasse": {}, "./llm-usage-relational": {},
+        "./tenant-context": {}, "./speicherpfad-vorflug": {}, "./auth-store-cas": {}, "./llm-usage-atomic": {},
+        "./briefing-speicher-lesediagnose": {}, "./blob-relational": {}, "./knowledge-object-version": { SELECT: "id" }, "./llm-budget": {}, "./cost-model": {} };
+      const forbidden = () => { throw Error("VM unrequested source I/O forbidden"); };
+      vm.runInNewContext((name === storagePath ? consumerBefore : publicationBefore).bytes.toString("utf8"), {
+        module: loaded, exports: loaded.exports, __filename: name, __dirname: path.dirname(name), process: processStub,
+        Buffer, URL, Date, console: { error: forbidden, warn: forbidden, log: forbidden }, fetch: forbidden,
+        require(request) {
+          if (request === "crypto" || request === "node:crypto") return crypto;
+          if (request === "path" || request === "node:path") return path;
+          if (request === "fs" || request === "node:fs") return new Proxy({}, { get: () => forbidden });
+          if (request === "node:async_hooks") return require("node:async_hooks");
+          if (request === "./publication-eligibility") return ModuleStub._load(publicationPath);
+          if (Object.hasOwn(inert, request)) return inert[request];
+          throw Error("VM unexpected consumer dependency");
+        }
+      }, { filename: name });
+      return loaded.exports;
+    }
+    events.push("endpoint.import"); assert.equal(name, endpointPath);
+    if (options.unqualifiedImport) ModuleStub._load(path.join(root, "lib/helmut/unlisted.js"));
+    ModuleStub._cache[name] = { filename: name }; return Endpoint; };
+  const processStub = { pid: 7, version: options.nodeVersion || "v24.19.0", getuid: () => options.rootClient ? 0 : 1000, geteuid: () => 1000,
+    env: { HELMUT_NATIVE_NODE_OLD_SPACE_MIB: "384", ...(options.controlProbe ? { ...readModes,
+      SUPABASE_URL: "http://127.0.0.1:3000", HELMUT_STORAGE_BACKEND: "supabase", HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE: database } : {}), ...options.env }, execPath: "/synthetic/node",
+    execArgv: options.flags || ["--max-old-space-size=384", "--max-semi-space-size=16"],
+    argv: ["/synthetic/node", filename, "--selector", options.selectorPath || selectorPath], hrtime: { bigint: () => 0n }, stdout: { write: x => lines.push(x) } };
+  const builtins = { "node:fs": fsStub, "node:path": path, "node:crypto": crypto, "node:v8": { getHeapStatistics: () => ({ heap_size_limit: options.heap || 400000000 }) },
+    "node:module": ModuleStub, "node:util": require("node:util") };
+  const localRequire = n => Object.hasOwn(builtins, n) ? builtins[n] : ModuleStub._load(n); localRequire.main = { filename };
+  const module = { exports: {}, filename }, api = vm.runInNewContext(code + "\n({start,checkConfig,parseJSON,nodeBudget});", {
+    require: localRequire, module, __filename: filename, __dirname, process: processStub, Buffer, URL, Date
+  }, { filename });
+  return { api, files, config, calls, writes, lines, reportPath, events, asCLI() { localRequire.main = module; },
+    get nativeRequests() { return nativeRequests; }, get publicationRequests() { return publicationRequests; } };
+}
+let count = 0, current = "initialization";
+async function check(name, fn) { current = name; await fn(); count++; }
+(async () => {
+  await check("readonly probe uses real U and Parts for two native graph reads without write authority", async () => {
+    const s = fixture({ controlProbe: true }), report = await s.api.start(), graph = report.controlGraphRead;
+    assert.equal(report.originalControlGraphReads, 2); assert.equal(report.liveOriginalControlReadPerformed, true);
+    assert.equal(graph.requestCount, 2); assert.equal(graph.readerSHA256, usageBefore.sha256); assert.equal(graph.partsSHA256, partsBefore.sha256);
+    assert.equal(s.nativeRequests, report.publicationRead.requestCount + 3);
+    const calls = s.calls.filter(c => c.pathname.endsWith("helmut_auth_state_graph_read_v1")); assert.equal(calls.length, 2);
+    assert.equal(JSON.parse(calls[0].body).knownGraph, null); assert(JSON.parse(calls[1].body).knownGraph);
+    assert.equal(graph.reads[0].graphReused, false); assert.equal(graph.reads[1].graphReused, true);
+    assert.notEqual(graph.reads[0].readNonceSHA256, graph.reads[1].readNonceSHA256);
+    assert.equal(graph.viewKeys.length, 5); assert(graph.reads.every(r => r.proofCount === 0 && r.nodeCount > 0 && /^\d+$/.test(r.elapsedNs)));
+    for (const hidden of ["private graph payload", "llmUsage", "knownGraph", "serviceContractHash", "bodyBase64"])
+      assert(!s.files.get(s.reportPath).data.toString().includes(hidden));
+  });
+  for (const graphFault of ["payload", "nonce", "warm-proof", "status", "utf8", "json"]) await check("real control reader rejects " + graphFault, async () => {
+    const s = fixture({ controlProbe: true, graphFault }); await assert.rejects(s.api.start()); assert.equal(s.writes.length, 0);
+    assert(s.calls.filter(c => c.pathname.endsWith("helmut_auth_state_graph_read_v1")).length <= 2);
+  });
+  for (const mutateControlProbe of [p => p.diagnosticMode = "fresh-claim-only-v1", p => p.commandHash = "0".repeat(64),
+    p => p.readerPin.sha256 = "0".repeat(64), p => p.partsPin.path = usagePath, p => p.reads = 3])
+    await check("unbound control probe never reaches endpoint", async () => {
+      const s = fixture({ controlProbe: true, mutateControlProbe }); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0);
+    });
+  for (const env of [{ HELMUT_AUTH_CONTROL_READ: "off" }, { HELMUT_AUTH_GRAPH_READ_REUSE: "verified-graph-reuse-v1" },
+    { HELMUT_AUTH_SINGLE_WRITE_CAPTURE: "single-write-capture-v1" }, { SUPABASE_SERVICE_ROLE_KEY: "VM forbidden dummy" }])
+    await check("readonly probe rejects mode or credential injection", async () => {
+      const s = fixture({ controlProbe: true, env }); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0);
+    });
+  await check("read modes without explicit readonly probe never reach endpoint", async () => {
+    const s = fixture({ env: readModes }); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0);
+  });
+  await check("one genuine-module contract read and local foreign rejection publish one bounded report", async () => {
+    const s = fixture(), report = await s.api.start(); assert.equal(s.nativeRequests, 3); assert.equal(s.calls.length, 4); assert.equal(s.writes.length, 1); assert.equal(s.lines.length, 1);
+    assert(!s.events.includes("gate.import"));
+    assert.equal(report.signedReadonlyContractObserved, true); assert.equal(report.foreignScopeRejectedBeforeRequest, true);
+    assert.equal(report.publicationRead.observed, true); assert.equal(report.publicationRead.requestCount, 2);
+    assert.equal(report.publicationRead.knowledgeObjectCount, 1); assert.equal(report.publicationRead.documentIdentityCount, 1);
+    assert.equal(report.sourceReadPreflightMayWarmCache, true);
+    assert.equal(report.foreignScopeNativeRequestCount, null); assert.equal(report.foreignScopeNativeRequestCountMeasured, false);
+    for (const k of ["liveRawMutatorNegativesPerformed", "liveOriginalControlReadPerformed", "nativeACLProofPerformed", "seedPerformed", "scopeClaimConsumed", "unitExecutionQualified", "full500Qualified"])
+      assert.equal(report[k], false);
+    const summary = JSON.parse(s.lines[0]); assert.equal(summary.reportPin.sha256, sha(s.files.get(s.reportPath).data));
+    assert.equal(summary.rootTrustSHA256, report.rootTrustSHA256); assert.equal(report.actualNodeBudget.oldSpaceMiB, 384);
+    assert(!s.lines[0].includes("public binding") && !s.lines[0].includes("legacyReadRPCs")); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 4);
+    const rawReport = s.files.get(s.reportPath).data.toString();
+    assert(!rawReport.includes("synthetic-ko") && !rawReport.includes("synthetic-document") && !rawReport.includes("https://example.invalid"));
+  });
+  await check("module import is inert before either public API or actual CLI", async () => {
+    const s = fixture(); assert.equal(s.events.length, 0); assert.equal(s.calls.length, 0); assert.equal(s.writes.length, 0);
+  });
+  await check("actual CLI waits before endpoint import and quiesces after its report", async () => {
+    const s = fixture(); s.asCLI(); await s.api.start(); assert.equal(s.nativeRequests, 3);
+    assert(s.events.indexOf("gate.wait") < s.events.indexOf("endpoint.import"));
+    assert(s.events.indexOf("endpoint.request") < s.events.indexOf("gate.quiesce"));
+    assert.equal(s.events.filter(x => x === "gate.wait").length, 1); assert.equal(s.events.filter(x => x === "gate.quiesce").length, 1);
+  });
+  await check("failed CLI gate cannot import endpoint or reopen", async () => {
+    const s = fixture({ gateFailure: true }); s.asCLI(); await assert.rejects(s.api.start());
+    assert.equal(s.nativeRequests, 0); assert(!s.events.includes("endpoint.import")); assert.equal(s.writes.length, 0); await assert.rejects(s.api.start());
+    assert.equal(s.events.filter(x => x === "gate.wait").length, 1);
+  });
+  await check("failed exit release prevents successful CLI output despite existing report", async () => {
+    const s = fixture({ exitGateFailure: true }); s.asCLI(); await assert.rejects(s.api.start()); assert.equal(s.writes.length, 1); assert.equal(s.lines.length, 0);
+    await assert.rejects(s.api.start()); assert.equal(s.events.filter(x => x === "gate.quiesce").length, 1);
+  });
+  for (const [name, options] of [["FIFO", { fifo: true }], ["hardlink", { hardlink: true }], ["mode", { badMode: true }],
+    ["oversize", { configOversize: true }], ["symlink", { symlink: true }], ["duplicate JSON", { duplicateConfig: true }],
+    ["old configuration", { oldConfig: true }], ["expired", { expired: true }], ["OID shape", { badOID: true }],
+    ["missing code", { missingEndpointPin: true }], ["missing storage", { missingStoragePin: true }], ["missing publication", { missingPublicationPin: true }],
+    ["missing observation gate", { missingGatePin: true }], ["changed code", { badCodePin: true }], ["unqualified import", { unqualifiedImport: true }],
+    ["foreign selector path", { selectorPath: "/tmp/SELECTION.SAFE.json" }]])
+    await check(name + " rejects before endpoint use", async () => { const s = fixture(options); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0); assert.equal(s.writes.length, 0); });
+  for (const [name, options] of [["Node version", { nodeVersion: "v24.18.0" }], ["heap", { heap: 512 * 1024 * 1024 }], ["root client", { rootClient: true }],
+    ["flags", { flags: ["--max-old-space-size=384", "--max-semi-space-size=16", "--inspect"] }], ["NODE_OPTIONS", { env: { NODE_OPTIONS: "" } }],
+    ["unknown environment", { env: { UNEXPECTED_PRIVATE_OPTION: "closed" } }], ["wrong group identity", { wrongGroup: true }], ["wrong filesystem", { notCgroup: true }],
+    ["writable group", { writableGroup: true }], ["nonroot trust", { nonrootTrust: true }], ["trust mode", { badTrustMode: true }],
+    ["writable trust mount", { writableTrust: true }], ["nonroot socket", { badSocket: true }], ["public binding mismatch", { wrongConfigBinding: true }]])
+    await check(name + " cannot make a live request or report", async () => { const s = fixture(options); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0); assert.equal(s.writes.length, 0); });
+  for (const [name, options] of [["endpoint unknown", { endpointFailure: true }], ["wrong status", { badStatus: true }], ["malformed body", { badBody: true }],
+    ["wrong version", { badVersion: true }], ["wrong database OID", { contractWrongOID: true }], ["wrong sources", { badSources: true }],
+    ["wrong read catalog", { badLegacy: true }], ["duplicated read entry", { duplicateReadName: true }], ["invented source authority", { sourceQualified: true }], ["extra contract field", { extraContract: true }],
+    ["foreign scope accepted", { foreignAccepted: true }], ["foreign failure at wrong stage", { foreignWrongError: true }],
+    ["trust replacement", { trustDrift: true }], ["process drift", { pidDrift: true }], ["code drift", { codeDrift: true }]])
+    await check(name + " stays terminal without report or retries", async () => {
+      const s = fixture(options); await assert.rejects(s.api.start());
+      assert.equal(s.nativeRequests, ["foreign scope accepted", "foreign failure at wrong stage", "trust replacement", "code drift"].includes(name) ? 3 : 1);
+      assert.equal(s.writes.length, 0); assert.equal(s.lines.length, 0);
+      const old = s.calls.length; await assert.rejects(s.api.start()); assert.equal(s.calls.length, old);
+    });
+  await check("preexisting qualification is never overwritten", async () => {
+    const s = fixture({ reportExists: true }), initial = Buffer.from(s.files.get(s.reportPath).data); await assert.rejects(s.api.start());
+    assert(s.files.get(s.reportPath).data.equals(initial)); assert.equal(s.writes.length, 0); assert.equal(s.lines.length, 0);
+  });
+  for (const [name, change] of [["missing", c => delete c.publicationProbe], ["foreign command", c => c.publicationProbe.commandHash = "0".repeat(64)],
+    ["extra qualification flag", c => c.publicationProbe.qualified = true], ["empty", c => c.publicationProbe.knowledgeObjectIds = []],
+    ["too many", c => c.publicationProbe.knowledgeObjectIds = Array.from({ length: 501 }, (_, i) => "ko-" + i)],
+    ["duplicate", c => c.publicationProbe.knowledgeObjectIds = ["same", "same"]], ["nonstring", c => c.publicationProbe.knowledgeObjectIds = [123]],
+    ["path", c => c.publicationProbe.knowledgeObjectIds = ["../foreign"]], ["overlong", c => c.publicationProbe.knowledgeObjectIds = ["x".repeat(251)]]])
+    await check("publication input " + name + " is denied before any endpoint request", async () => {
+      const s = fixture({ mutateProbe: change }); await assert.rejects(s.api.start()); assert.equal(s.calls.length, 0); assert.equal(s.writes.length, 0);
+    });
+  await check("actual consumer continues short server pages until an empty page", async () => {
+    const offsets = [], s = fixture({ ids: ["synthetic_Ä_四_Ⅶ"], pages(n, offset, ids) {
+      offsets.push(offset); return n < 3 ? [{ knowledge_object_id: ids[0], raw_document_id: "source-" + n,
+        raw_documents: { id: "source-" + n, url: null, canonical_url: null } }] : [];
+    } });
+    const report = await s.api.start(); assert.equal(offsets.join(","), "0,1,2");
+    assert.equal(report.publicationRead.documentIdentityCount, 2); assert.equal(report.publicationRead.requestCount, 3);
+    const p = s.config.publicationProbe;
+    assert.equal(report.publicationRead.probeCanonicalSHA256, sha(JSON.stringify({ commandHash: p.commandHash, knowledgeObjectIds: p.knowledgeObjectIds, schema: p.schema })));
+    assert(s.events.includes("storage.import") && s.events.includes("publication.import"));
+  });
+  await check("actual empty native link response is distinct from a dummy input", async () => {
+    const s = fixture({ pages: () => [] }), report = await s.api.start();
+    assert.equal(report.publicationRead.observed, true); assert.equal(report.publicationRead.knowledgeObjectCount, 1);
+    assert.equal(report.publicationRead.documentIdentityCount, 0); assert.equal(report.publicationRead.requestCount, 1);
+  });
+  await check("publication response uses endpoint bound rather than small contract cap", async () => {
+    const s = fixture({ pages(n, offset, ids) { return n > 1 ? [] : Array.from({ length: 1000 }, (_, i) => ({ knowledge_object_id: ids[0],
+      raw_document_id: "source-" + i, raw_documents: { id: "source-" + i, url: "https://example.invalid/" + "x".repeat(1400), canonical_url: null } })); } });
+    const report = await s.api.start(); assert.equal(report.publicationRead.documentIdentityCount, 1000);
+    assert.equal(report.publicationRead.requestCount, 2);
+  });
+  for (const [name, options] of [["HTTP rejection", { publicationStatus: 403 }], ["transport unknown", { publicationUnknown: true }],
+    ["invalid UTF8", { publicationBytes: Buffer.from([255]) }], ["duplicate JSON", { publicationBytes: '[{"x":1,"x":2}]' }],
+    ["malformed JSON", { publicationBytes: '{' }], ["not array", { publicationBytes: '{}' }],
+    ["foreign KO", { publicationRows: (rows, n) => n === 1 ? [{ ...rows[0], knowledge_object_id: "foreign-ko" }] : [] }],
+    ["hidden embedded document", { publicationRows: (rows, n) => n === 1 ? [{ ...rows[0], raw_documents: null }] : [] }],
+    ["wrong embedded id", { publicationRows: (rows, n) => n === 1 ? [{ ...rows[0], raw_documents: { ...rows[0].raw_documents, id: "foreign-source" } }] : [] }],
+    ["duplicate link", { publicationRows: (rows, n) => n === 1 ? [rows[0], rows[0]] : [] }],
+    ["malformed URLs", { publicationRows: (rows, n) => n === 1 ? [{ ...rows[0], raw_documents: { id: rows[0].raw_document_id } }] : [] }],
+    ["consumer absent", { missingConsumer: true }]])
+    await check("real publication consumer " + name + " never reports or retries", async () => {
+      const s = fixture(options); await assert.rejects(s.api.start()); assert.equal(s.publicationRequests, options.missingConsumer ? 0 : 1);
+      assert.equal(s.writes.length, 0); assert.equal(s.lines.length, 0);
+      const calls = s.calls.length; await assert.rejects(s.api.start()); assert.equal(s.calls.length, calls);
+    });
+  await check("entry has no database process source producer engine or raw write path", async () => {
+    for (const text of ["child_process", "local-unit-native-prepare", "extractPinnedSource", "Producer.derive", "U.write", "readOwnForMutation", "Scope.runClaimed", "state_cas_v1", "artifact_insert_v1", "original_write_v1"])
+      assert(!code.includes(text));
+    const s = fixture(); assert.throws(() => s.api.parseJSON(Buffer.from('{"x":1,"x":2}')));
+    assert.throws(() => s.api.parseJSON(Buffer.from('{"x":1,"x":2}\n'), true));
+  });
+  assert.equal(snapshot().sha256, before.sha256);
+  assert.equal(snapshot(storagePath).sha256, consumerBefore.sha256); assert.equal(snapshot(publicationPath).sha256, publicationBefore.sha256);
+  process.stdout.write("Endpoint qualification VM checks PASS: " + count + "; source SHA256=" + before.sha256 + "; stable before/after; native requests/DB/containers/providers=0.\n");
+})().catch(() => { process.stderr.write("Endpoint qualification VM tests FAIL at " + current + "; no native request occurred.\n"); process.exitCode = 1; });

@@ -1,0 +1,14 @@
+{
+  "schema": "helmut-cas-heap-root-observed-tool-exit/1",
+  "actualToolExitCode": 0,
+  "actualResultPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-68bb54a5d546f714223e7bc9/ACTUAL_RESULT.SAFE.json",
+    "bytes": 11372,
+    "sha256": "40bd0d0074915f7404ad6d1d2137361d9703e39c83c66ca114160076ead69ff9"
+  },
+  "initialChunk": "1728ab",
+  "completionChunk": "781eb4",
+  "session": 40461,
+  "atUTC": "2026-10-21T09:36:53.770Z",
+  "noRetry": true
+}

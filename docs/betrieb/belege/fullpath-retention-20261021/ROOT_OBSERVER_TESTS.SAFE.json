@@ -1,0 +1,104 @@
+{
+  "schema": "helmut-runtime-observation-root-targeted-tests/1",
+  "atUTC": "2026-10-21T11:10:12.266Z",
+  "baseCommit": "ea760a70215efdeb371586b9b03a740998d1517b",
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget.js",
+      "bytes": 8079,
+      "sha256": "45fbf5d567e0b27c7088d2ac47b806b6bc72ebbfdd467c29e75064b9ddd3a752"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/connect-local500.py",
+      "bytes": 33488,
+      "sha256": "fe5582c7e63d0c0e67810868771458f086d3da19e2668b88f4f5af948443f84b"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget-test.js",
+      "bytes": 21621,
+      "sha256": "7f26900b3bf8782b8bc87b0a211f802e14eed6a15ad40abedf7f988c4dc03559"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/start-preflight-test.py",
+      "bytes": 22150,
+      "sha256": "0c64b4aa81e4acff433d8f0ab2e1103ffb4ebbcba5bfc7ce96fcd041d380d0b5"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/runtime-memory-staging-test.js",
+      "bytes": 7201,
+      "sha256": "aa365343b734ba1eaf95e6cf282d8c8adadd6b4881cad4e2f28ef4c7f09eb037"
+    }
+  ],
+  "runs": [
+    {
+      "pin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/NODE_GUARDS.log",
+        "bytes": 2362,
+        "sha256": "bd794a8c5b4e1ea8114966426d576b5dcbfa22aef73540d38606bceb164dfa3a"
+      },
+      "actualOuterExit": 0,
+      "meaning": "25 cases/30 short children before GC-kind correction"
+    },
+    {
+      "pin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/STAGING_GUARDS.log",
+        "bytes": 1270,
+        "sha256": "e4a3cc104ef7b4ae157e8dc014fccc511efeb95a741dd594f102814227ec4f9b"
+      },
+      "actualOuterExit": 1,
+      "meaning": "19 cases:18 passed,1 NameError missing subprocess import"
+    },
+    {
+      "pin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/STAGING_ONE_AFTER_IMPORT_FIX.log",
+        "bytes": 488,
+        "sha256": "4f820f7ba0dc6c12f2ec85f65b43852fef776906893caae4e6297b575e2c6802"
+      },
+      "actualOuterExit": 0,
+      "meaning": "only previously failing staging case, literal observer+runtime fixtures"
+    },
+    {
+      "pin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/NODE_GUARDS_AFTER_GC_KIND_FIX.log",
+        "bytes": 2444,
+        "sha256": "1abbd6399cd818d7ff8948f241ccb711c4ea23a7f844a5497b150fabc7ba26fe"
+      },
+      "actualOuterExit": 0,
+      "meaning": "26 cases/31 short children after symbolic five-kind correction"
+    },
+    {
+      "pin": {
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/BOUNDED_COMPOSITION.log",
+        "bytes": 806,
+        "sha256": "135b132b6aa5852e1757d5d699bc6cf413f33fafd4e9e514e2ec68752d87fde6"
+      },
+      "actualOuterExit": 0,
+      "meaning": "26 original templates/24 JS syntax/2 Python AST; bounded sender descriptor+native observation"
+    }
+  ],
+  "status": "TARGETED_LOCAL_OBSERVATION_GUARDS_PASS_NOT_RESOURCE_ACCEPTANCE",
+  "interpretation": [
+    "Native Node checks use short real local children and real V8/process scalars; no native cgroup/DB/engine measurement.",
+    "GC-kind codec uses synthetic delivered PerformanceObserver entries; no forced GC or proof of actual GC cadence.",
+    "Literal staged VM uses inert business/transport/observer dependencies and fixed time. Its 500 hook iterations are not engine profile execution.",
+    "18 unchanged staging cases passed before import-only fix; only failing case rerun. No single fresh19-case PASS run claimed.",
+    "100-frame guard actually exercised; separate1MiB and16KiB guards reviewed in source, not independently reached.",
+    "Old25-case source snapshot retained; original failed test log retained.",
+    "No 179 offline suites/95 native comparisons repeated."
+  ],
+  "resources": {
+    "DockerCalls": 0,
+    "SQL": 0,
+    "engineCalls": 0,
+    "profileActivations": 0,
+    "full500Runs": 0,
+    "forcedGC": 0,
+    "cacheClears": 0,
+    "peakResets": 0,
+    "paidModelCalls": 0,
+    "productionActions": 0
+  },
+  "noMeasuredMotorSaving": true,
+  "no500MBReserveProof": true,
+  "noFull500GO": true
+}

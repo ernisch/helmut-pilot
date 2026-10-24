@@ -1,0 +1,218 @@
+{
+  "actualExitProvenance": "Root supplied tool-observed outer exits and immutable logs. Reviewer rehashed/read those retained records and assertions, not a new child/process observation.",
+  "actualResults": {
+    "allOldAndNewRunsMustNotBeSummedAsIndependentUniqueCases": true,
+    "boundedComposition": {
+      "exactChangedStagedTemplates": [
+        "native-end-preparation/measure-runtime.js",
+        "native-end-preparation/observe-app.js",
+        "native-end-preparation/run-reviewed-sequence.js"
+      ],
+      "javascriptSyntax": 24,
+      "originalTemplates": 26,
+      "outerExit": 0,
+      "pythonAST": 2
+    },
+    "finalNodeAfterGCkindFix": {
+      "cases": 26,
+      "failed": 0,
+      "outerExit": 0,
+      "shortRealNodeChildren": 31
+    },
+    "initialNode": {
+      "beforeGCkindCorrection": true,
+      "cases": 25,
+      "outerExit": 0,
+      "shortRealNodeChildren": 30
+    },
+    "initialStaging": {
+      "casesRun": 19,
+      "error": "NameError missing subprocess import",
+      "errors": 1,
+      "keptAsFailure": true,
+      "outerExit": 1,
+      "passed": 18
+    },
+    "targetedStagingAfterImportFix": {
+      "casesRun": 1,
+      "fullNineteenCaseFreshPASSClaim": false,
+      "outerExit": 0,
+      "passed": 1
+    }
+  },
+  "actualTestRunPinsAndRootObservedExits": [
+    {
+      "actualOuterExit": 0,
+      "meaning": "25 cases/30 short children before GC-kind correction",
+      "pin": {
+        "bytes": 2362,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/NODE_GUARDS.log",
+        "sha256": "bd794a8c5b4e1ea8114966426d576b5dcbfa22aef73540d38606bceb164dfa3a"
+      }
+    },
+    {
+      "actualOuterExit": 1,
+      "meaning": "19 cases:18 passed,1 NameError missing subprocess import",
+      "pin": {
+        "bytes": 1270,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/STAGING_GUARDS.log",
+        "sha256": "e4a3cc104ef7b4ae157e8dc014fccc511efeb95a741dd594f102814227ec4f9b"
+      }
+    },
+    {
+      "actualOuterExit": 0,
+      "meaning": "only previously failing staging case, literal observer+runtime fixtures",
+      "pin": {
+        "bytes": 488,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/STAGING_ONE_AFTER_IMPORT_FIX.log",
+        "sha256": "4f820f7ba0dc6c12f2ec85f65b43852fef776906893caae4e6297b575e2c6802"
+      }
+    },
+    {
+      "actualOuterExit": 0,
+      "meaning": "26 cases/31 short children after symbolic five-kind correction",
+      "pin": {
+        "bytes": 2444,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/NODE_GUARDS_AFTER_GC_KIND_FIX.log",
+        "sha256": "1abbd6399cd818d7ff8948f241ccb711c4ea23a7f844a5497b150fabc7ba26fe"
+      }
+    },
+    {
+      "actualOuterExit": 0,
+      "meaning": "26 original templates/24 JS syntax/2 Python AST; bounded sender descriptor+native observation",
+      "pin": {
+        "bytes": 806,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/BOUNDED_COMPOSITION.log",
+        "sha256": "135b132b6aa5852e1757d5d699bc6cf413f33fafd4e9e514e2ec68752d87fde6"
+      }
+    }
+  ],
+  "baseCommit": "ea760a70215efdeb371586b9b03a740998d1517b",
+  "blockingFindings": [],
+  "boundedUnexercisedCases": {
+    "examples": [
+      "Separate1MiB/16KiB overflow branches",
+      "Optional proc errors/malformed raw identity across namespaces",
+      "Real asynchronous GC callback cadence and observer-induced allocation",
+      "Nonempty real fetch/mutation/scope lifecycles under application work",
+      "Instrumented long-runtime performance and native common-memory impact"
+    ],
+    "notBlockersForThisPreparationOnly": "They constrain claims and future actual interpretation; no additional independent test is requested or run here."
+  },
+  "contractReviewPin": {
+    "bytes": 11020,
+    "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/evidence-review/RUNTIME_OBSERVER_CONTRACT_REVIEW.SAFE.json",
+    "sha256": "624c481d789de198094f33797fe1176d1013e0b313d129878d37207de24448ff"
+  },
+  "decision": {
+    "actualEngineOrNativeAcceptance": false,
+    "forcedGCOrCacheChanges": false,
+    "full500Authorized": false,
+    "independentFinalSourceAcceptanceReplaced": false,
+    "measuredMotorSavingOrRAMTimingClaim": false,
+    "newRuntimeStartAuthorized": false,
+    "next": "Keep failed and superseded receipts. Root may document the bounded preparation after separate final source review; a genuine future runtime still needs all existing admission/source/case/time/GO gates.",
+    "targetedTestEvidenceAcceptedWithStatedLimits": true
+  },
+  "finalSourcePins": [
+    {
+      "bytes": 8079,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget.js",
+      "sha256": "45fbf5d567e0b27c7088d2ac47b806b6bc72ebbfdd467c29e75064b9ddd3a752"
+    },
+    {
+      "bytes": 33488,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/connect-local500.py",
+      "sha256": "fe5582c7e63d0c0e67810868771458f086d3da19e2668b88f4f5af948443f84b"
+    },
+    {
+      "bytes": 21621,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget-test.js",
+      "sha256": "7f26900b3bf8782b8bc87b0a211f802e14eed6a15ad40abedf7f988c4dc03559"
+    },
+    {
+      "bytes": 22150,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/start-preflight-test.py",
+      "sha256": "0c64b4aa81e4acff433d8f0ab2e1103ffb4ebbcba5bfc7ce96fcd041d380d0b5"
+    },
+    {
+      "bytes": 7201,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/runtime-memory-staging-test.js",
+      "sha256": "aa365343b734ba1eaf95e6cf282d8c8adadd6b4881cad4e2f28ef4c7f09eb037"
+    }
+  ],
+  "meaningfulCoverage": [
+    "Short real Node children execute the heap guard with actual V8/process scalars and384+16 startup options. Existing wrong/missing/override/env/production/worker/exit cases remain represented in the final26-case run.",
+    "Real helper fixture emits exactly45 lines at the explicit21 selected unit indices for both event names plus initial/before/after export; file0600 and at most1MiB; main-thread0, hostPID NOT_ESTABLISHED, real memory/physical/space scalars and main-isolate/process-RSS limitations are asserted.",
+    "Invalid non-scalar counts/index and incomplete export cannot manufacture a completed observation; an existing output is preserved byte-for-byte. A simulated short write in a real child is attempted once and its actual descriptor is closed.",
+    "100-frame guard is actually exercised through real writes, then stops before101 and closes incomplete evidence. The1MiB and16KiB line checks are source guards, not separately reached byte-overflow experiments.",
+    "GC codec fixture reads the actual Node constants[1,2,4,8,16], supplies five synthetic delivered PerformanceObserver entries and checks cumulative count/duration/weakcb16 and disconnect. This closes the unsupported-weakcb gap without requesting GC.",
+    "Literal VM executes the actually rendered observer/runtime text with inert dependencies, invokes the lexical J.enter route and external completion route500 times each and compares metadata against the literal unobserved source under a fixed clock.",
+    "VM success, original failure, close failure, save failure and observer-before-export failure paths exercise export ordering/cleanup. Export completion follows only successful save; last close is attempted. Source composition validates exact staged changes, with no template/engine execution."
+  ],
+  "reviewerActions": {
+    "RorOriginalWrites": 0,
+    "originalPayloadReads": 0,
+    "subjectImportsTestsASTSQLDockerProcNativeGit": 0,
+    "writes": "Only new G/evidence-review/RUNTIME_OBSERVER_QUALIFICATION_REVIEW.SAFE.json; stdlib metadata/text/hash verification via stdin."
+  },
+  "rootActualQualificationPin": {
+    "bytes": 4445,
+    "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/ROOT_OBSERVER_TESTS.SAFE.json",
+    "sha256": "9ad13979389611d434354f17ed38a9ab858b36d176f2c91746472113efdbe1f2"
+  },
+  "schema": "helmut-runtime-observer-independent-qualification-review/1",
+  "scope": "Actual targeted Root test evidence and what those tests establish. No independent test/AST/subject execution, R edit, engine/native/SQL run or resource acceptance.",
+  "sourceReviewIsSeparate": true,
+  "sourceVersionPreservation": {
+    "boundary": "V1 pins are post-import-fix/pre-GC-correction. The initial NameError source differs by the missing subprocess import, as the mapping explicitly states. Initial failed log is retained, never renamed PASS.",
+    "mappingPin": {
+      "bytes": 1398,
+      "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/executed-v1/PINS.SAFE.json",
+      "sha256": "c6a1afafdcdc29d54f4957ef0f86818a23dbb0fcd4af200b0cf3dfb7eaeae4fc"
+    },
+    "preservedPins": [
+      {
+        "bytes": 7935,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/executed-v1/native-node-budget.js",
+        "sha256": "4f064912b701ed34836bbd1b78312d545e03896dc034983f075a32030bfc513c"
+      },
+      {
+        "bytes": 33488,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/executed-v1/connect-local500.py",
+        "sha256": "fe5582c7e63d0c0e67810868771458f086d3da19e2668b88f4f5af948443f84b"
+      },
+      {
+        "bytes": 20167,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/executed-v1/native-node-budget-test.js",
+        "sha256": "8439a9dd86a7f3e29a37f89d92d1d5ea3c2eb4a51fe3f2a03406bb87697525a0"
+      },
+      {
+        "bytes": 22150,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/executed-v1/start-preflight-test.py",
+        "sha256": "0c64b4aa81e4acff433d8f0ab2e1103ffb4ebbcba5bfc7ce96fcd041d380d0b5"
+      },
+      {
+        "bytes": 7201,
+        "path": "/workspace/helmut-ram-fix-20261020/fullpath-retention-20261021/root-tests/executed-v1/runtime-memory-staging-test.js",
+        "sha256": "aa365343b734ba1eaf95e6cf282d8c8adadd6b4881cad4e2f28ef4c7f09eb037"
+      }
+    ],
+    "sameBytesInCurrentAndPreservedPostImportV1": [
+      "connect-local500.py",
+      "start-preflight-test.py",
+      "runtime-memory-staging-test.js"
+    ]
+  },
+  "status": "PASS_TARGETED_LOCAL_OBSERVER_QUALIFICATION_ONLY",
+  "testInterpretationLimits": [
+    "500 VM hook iterations are loop fixtures with mocked storage/transport/observer/assessment and fixed time. They are not500 profiles,1500 outputs, original business/security/SQL acceptance, real runtime timing, GC cadence or a RAM-saving measurement.",
+    "VM metadata equality is substantive for populated unit/event arrays here; request/mutation/scope lifecycles are largely empty/inert. It does not verify live HTTP body/ACK/scope behavior or the exact cost of instrumentation during the full engine.",
+    "Final31 short children establish local guard/observer behavior, not a native common-cgroup peak, all-worker heap total, long-term plateau,500MB reserve or Auth30/Unit60/full500 success.",
+    "GC-kind codec input is simulated; real-memory fixture permits a naturalGC count of0. No actual complete natural-GC schedule or post-major-GC comparison is established.",
+    "The byte-size guards and optional self-proc denial/malformed parsing are not exhaustively fault-tested. Main identity fields remain namespace-local/raw observations, never authoritative host-PID mapping.",
+    "before-final-export is before assess(obs.metadata(),...), so the interval includes metadata/source hashing, assessment/unit-report construction, JSON.stringify, Buffer construction/file write and final close. It is not an isolated JSON allocation measurement.",
+    "On an observer-before-export failure the original primary code is first preserved in bounded stderr and exit1; the rejected promise may carry the observer error and no failure JSON exists. This is not an identical-primary-rethrow or guaranteed result-file claim.",
+    "No single fresh19-case staging PASS run is claimed.18 unchanged cases passed in the failed initial attempt and the sole failed case passed after the import-only correction; final composition and final Node guards are separately observed."
+  ]
+}

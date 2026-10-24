@@ -1,0 +1,95 @@
+{
+  "schema": "helmut-native-positive-seed-and-host-observation-failure/1",
+  "candidateCommit": "1e5fdfba4a86156ba7fba7859ac5a19818f3d0e9",
+  "case": "/workspace/helmut-unit-diagnostic-native/3e75aeb1cd927d52745a43994cd2c782",
+  "resultFile": {
+    "path": "/workspace/helmut-unit-diagnostic-native/3e75aeb1cd927d52745a43994cd2c782/RESULT.SAFE.json",
+    "bytes": 2153,
+    "sha256": "d50baa7dc6bac169240f5f0260c74afa5bd26544300984ed1af4eb11df32e05a"
+  },
+  "failedAttemptRemainsFailed": true,
+  "nativeSeedResultPin": {
+    "path": "/workspace/helmut-unit-diagnostic-native/3e75aeb1cd927d52745a43994cd2c782/ORIGINAL_SEED.STDOUT.PRIVATE.log",
+    "bytes": 1104,
+    "sha256": "1b0928d848234e879664f458d50da07fae264b2d34636c613f86f85313a07098"
+  },
+  "actualSeed": {
+    "schema": "helmut-local-unit-original-seed-result/1",
+    "nativeSeed": true,
+    "originalWrites": 1,
+    "oldHistoryPreserved": true,
+    "claimConsumed": false,
+    "unitExecutionQualified": false,
+    "full500Qualified": false
+  },
+  "seedNodeActualZeroAndBothNaturalEOF": "Proven by actual controller reaching line535 after NodeChild.finish528 and _node_closed529; no separate persisted seed process close receipt.",
+  "ownerSQLChild": {
+    "spawnCount": 1,
+    "closeCount": 1,
+    "exitCode": 0,
+    "stdoutNaturalEOF": true,
+    "stderrNaturalEOF": true,
+    "confirmed": true,
+    "ledgerPin": {
+      "path": "/workspace/helmut-unit-diagnostic-native/3e75aeb1cd927d52745a43994cd2c782/ORIGINAL_SERVICE_CHILDREN.SAFE.jsonl",
+      "bytes": 1074,
+      "sha256": "f1ab914bc57c67e58b2ab9c388c24ad7d2e4aa0ff31f9aa58e5076a49eaf6294"
+    }
+  },
+  "nativeAliasFixQualifiedModes": [
+    "seed"
+  ],
+  "otherThreeModesNativeQualified": false,
+  "oldUsageBaselineCount": 6000,
+  "seedUsageAdditions": 0,
+  "independentPostSeedSnapshotReached": false,
+  "failureCode": "native-execution-source-host-reply-deadline",
+  "failureStage": "post-seed-HOST_OBSERVE",
+  "sourceEndToEndWaitSeconds": 3,
+  "request04IssuedAtUTC": "2026-10-22T21:38:38.662Z",
+  "request04ExpiresAtUTC": "2026-10-22T21:38:41.662Z",
+  "reply04Published": false,
+  "secondaryHostFailure": "source-service-host-mapping at 21:38:41.820Z after source reply deadline; does not invalidate the preceding positive seed or prove a primary mapping bug.",
+  "codeSchedulingFinding": "Host accepts HOST_OBSERVE after one full observation and only replies after a later full observation; source permits three seconds end to end.",
+  "fixPlan": "Accept only HOST_OBSERVE before a full fresh observation in the same tick; retain all other stage ordering, guards and deadlines. Not yet implemented or qualified.",
+  "recordedOriginalPreservationFlags": {
+    "originalPostrunPreserved": false,
+    "originalSourcePinsUnchanged": false
+  },
+  "freshIndependentIntegrityReadAfterFailure": {
+    "agent": "v12_original_pin_scope",
+    "rawBytes": 2147483648,
+    "rawSHA256": "54df2ecc0e4fdc22adf75f2ce3491d3c921e38296510543dcdadd48db3f37693",
+    "actualRawMatchesCasePin": true,
+    "sourcePinCount": 432,
+    "sourceBytes": 39546254,
+    "sourcePinsAllMatch": true,
+    "stableFileDescriptors": true,
+    "recordedFalseFlagsCauseNotPersistedAndNotClaimedKnown": true
+  },
+  "commonMemoryPeakBytes": 1127194624,
+  "memoryEvents": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0
+  },
+  "parentEmptyAfterAllActualProcessEnds": true,
+  "allChildrenExited": true,
+  "databaseExitCode": 0,
+  "hostCleanClosure": false,
+  "fullProcessEOFQualification": false,
+  "motorEntryRequested": false,
+  "motorCalls": 0,
+  "unit60Qualified": false,
+  "auth30Qualified": false,
+  "independentFinalAcceptance": false,
+  "memoryReserveQualification": false,
+  "full500ReserveQualified": false,
+  "caseOrAuthorityReplayed": false,
+  "positiveSeedWorkingCopyPreserved": true,
+  "privateContentsPublished": false,
+  "full500Qualified": false
+}

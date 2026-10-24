@@ -1,0 +1,207 @@
+{
+  "schema": "helmut-bounded-control-cache-independent-static-sol-review/1",
+  "status": "SAFE_INDEPENDENT_CODE_REVIEW_NO_CRITICAL_BLOCKERS_FOUND",
+  "persistedAtUTC": "2026-10-20T18:48:27.470432+00:00",
+  "reviewer": "independent GPT-6.1 SOL /root/sprint_shutdown; not candidate author",
+  "commit": "67b5c4ef8ccd482d726126f8bbc41a00ee4151a3",
+  "preparedPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/PREPARED.SAFE.json",
+    "bytes": 4265,
+    "sha256": "5ce7e3658d7ef9e33631879992224d9cd78ac34b6ce09f01dd50580b330275b8"
+  },
+  "sourcePins": [
+    {
+      "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/llm-usage-atomic.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/auth-state-parts.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "path": "/workspace/helmut-control-cache-sol-20261020/scripts/auth-control-view-test.js",
+      "bytes": 30758,
+      "sha256": "402a76dccb004664b32055ea5f4f2da8c1d295da5bae0e483289f411e7641e52"
+    }
+  ],
+  "fullDiffPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/FULL_DIFF.PRIVATE.diff",
+    "bytes": 18678,
+    "sha256": "f692af605de5fdac1baa89bc2902a15af9562615762d933b7038f8c6805e2c9e"
+  },
+  "checkedPins": [
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/PREPARED.SAFE.json",
+      "bytes": 4265,
+      "sha256": "5ce7e3658d7ef9e33631879992224d9cd78ac34b6ce09f01dd50580b330275b8"
+    },
+    {
+      "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/llm-usage-atomic.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "path": "/workspace/helmut-control-cache-sol-20261020/lib/helmut/auth-state-parts.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "path": "/workspace/helmut-control-cache-sol-20261020/scripts/auth-control-view-test.js",
+      "bytes": 30758,
+      "sha256": "402a76dccb004664b32055ea5f4f2da8c1d295da5bae0e483289f411e7641e52"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/ORIGINAL_U.PRIVATE.js",
+      "bytes": 23685,
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/ORIGINAL_PARTS.PRIVATE.js",
+      "bytes": 22149,
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/CANDIDATE_U.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/COMMON_PARTS.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/FULL_DIFF.PRIVATE.diff",
+      "bytes": 18678,
+      "sha256": "f692af605de5fdac1baa89bc2902a15af9562615762d933b7038f8c6805e2c9e"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/TEST_RESULTS.SAFE.json",
+      "bytes": 1683,
+      "sha256": "f8abc222fe63b9dc8c6eaf30cf6c46f6696be09a7eda56b01128405369710075"
+    }
+  ],
+  "pinVerification": {
+    "count": 10,
+    "allMatchedAtCompletedPriorReview": true,
+    "newSubjectRehashPerformedForThisPersistence": false,
+    "statement": "This receipt persists the already completed source-bound RO review and its actual prior ten hash/length checks. No subject source bytes were reread or rehashed for this persistence; no intervening change was reported. It does not claim a fresh drift check."
+  },
+  "scope": "Complete candidate U source, Parts export-only delta, relevant test/source delta and frozen preparation/test-summary metadata; static independent review only.",
+  "findings": [
+    {
+      "location": "lib/helmut/llm-usage-atomic.js:164-175",
+      "finding": "Encoded retained payload remains <=2097152 bytes. Buffer.from(encoded) owns the private retained bytes; cache retains neither original full text nor Auth objects. Cold encoding/capacity failure drops cache and returns the already verified text without an automatic RPC retry."
+    },
+    {
+      "location": "lib/helmut/llm-usage-atomic.js:183-192",
+      "finding": "Warm materialization requires exact safe original UTF8 byte count within unchanged Parts.MAX_EXPANDED_BYTES=268435456, bounded inflate maxOutputLength, exact decoded length, all compressed input consumed, original SHA256 and fatal UTF8 before parsing/freezing."
+    },
+    {
+      "location": "lib/helmut/llm-usage-atomic.js:287-307",
+      "finding": "Original target/row/history/nonce/state/root/count/digest/binding checks still precede cached materialization. Each read obtains fresh native evidence; cross-revision views receive the fresh revision."
+    },
+    {
+      "location": "lib/helmut/llm-usage-atomic.js:194-197,321-324",
+      "finding": "Each returned view is newly parsed and recursively frozen; it does not acquire Atomic/CAS write snapshot authority. Captured-cache invalidation retains identity checks so late errors do not clear an unrelated newer concurrent cache."
+    },
+    {
+      "location": "lib/helmut/llm-usage-atomic.js:336-416",
+      "finding": "Write/ACK/receipt paths, including no branding of unknown outcomes and no automatic retry, remain byte-exactly unchanged."
+    },
+    {
+      "location": "lib/helmut/auth-state-parts.js:386",
+      "finding": "Only MAX_EXPANDED_BYTES export is added. Removing that export from actual candidate bytes reproduces the frozen original Parts SHA2566b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9; decoder and its existing logical bound are unchanged."
+    }
+  ],
+  "sourceByteComparison": {
+    "unchangedUFunctionCount": 25,
+    "unchangedUFunctions": [
+      "fail",
+      "enabled",
+      "controlReadEnabled",
+      "freeze",
+      "validProof",
+      "validState",
+      "reuseEnabled",
+      "proofKey",
+      "graphReuseEnabled",
+      "sameState",
+      "graphDigest",
+      "verifyGraphReuse",
+      "rememberGraph",
+      "rememberHistory",
+      "controlText",
+      "controlView",
+      "verifyReuse",
+      "attach",
+      "read",
+      "hasSnapshot",
+      "prefix",
+      "write",
+      "receipt",
+      "persisted",
+      "confirmed"
+    ],
+    "changedUFunctions": [
+      "rememberControl",
+      "readControl"
+    ],
+    "newUFunctions": [
+      "cachedControlText"
+    ],
+    "partsOnlyExistingBoundExportAdded": true,
+    "comparisonMethod": "Read-only source text/bytes; no Subject module imports or execution."
+  },
+  "testEvidence": {
+    "origin": "INHERITED_AUTHOR_SUMMARY_ONLY",
+    "pin": {
+      "path": "/workspace/helmut-ram-fix-20261020/bounded-control-cache-20261020/TEST_RESULTS.SAFE.json",
+      "bytes": 1683,
+      "sha256": "f8abc222fe63b9dc8c6eaf30cf6c46f6696be09a7eda56b01128405369710075"
+    },
+    "reportedCommands": [
+      {
+        "argv": [
+          "node",
+          "scripts/lokal.js",
+          "--",
+          "node",
+          "scripts/auth-control-view-test.js"
+        ],
+        "exitCode": 0,
+        "groupsPassed": 19,
+        "negativeCasesPassed": 42
+      },
+      {
+        "argv": [
+          "node",
+          "scripts/lokal.js",
+          "--",
+          "node",
+          "scripts/auth-state-parts-codec-test.js"
+        ],
+        "exitCode": 0,
+        "groupsPassed": 14
+      }
+    ],
+    "rawStdoutRetainedByAuthor": false,
+    "reviewerExecutedOrIndependentlyReproducedTests": false,
+    "meaning": "Transparent inherited author unit summary, not raw captured output or native qualification."
+  },
+  "reviewerSubjectImports": 0,
+  "reviewerTestsExecuted": false,
+  "reviewerSQLExecuted": false,
+  "reviewerNativeStarts": false,
+  "reviewerSourceCodeChanged": false,
+  "originalPGDATARead": false,
+  "nativeQualification": "NOT_QUALIFIED_BY_THIS_REVIEW",
+  "ramBenefitOrPlateauClaimed": false,
+  "integrationOrSourceDescriptorAcceptanceTransferred": false,
+  "full500": false,
+  "production": false,
+  "providerCalls": 0,
+  "nextNecessaryQualification": "Separate Root-reviewed/fresh-adopted native V8 comparison with actual whole-lifetime closure and measurements."
+}

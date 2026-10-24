@@ -1,0 +1,111 @@
+{
+  "schema": "helmut-final-protected-resource-readback/1",
+  "status": "PASS_FIVE_PROTECTED_CIDS_AND_CANONICAL_ROOT_METADATA_RETAINED",
+  "atUnix": 1792538059.0739481,
+  "sourcePin": {
+    "path": "/tmp/helmut-final-protected-resource-readback.py",
+    "bytes": 3389,
+    "sha256": "ddce621fc15986c49a70569f7e86c0132c870998fc15233b6865aeb4a855ad68"
+  },
+  "baselineLosslessMapPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cleanup-20261020/old-two-qualified-copy-retirement-execution/6e6faf55f767d2014e5a7fad/CLOSED_INVENTORY_COMPACTION.SAFE.json",
+    "bytes": 2048,
+    "sha256": "0b3617ad247d0a3b26618a5e8ad3d1081d438aefccaef898a9c4f7c72b420414"
+  },
+  "protectedResources": [
+    {
+      "label": "original-bank",
+      "cid": "22465c2cc2bfac3a33d01bf3460dd9a5f0b082a1c19825b60bb735dfe287ddbe",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "status": "running",
+      "running": true,
+      "pid": 5993,
+      "mountSourceCount": 5,
+      "sortedAllMountSourcesSHA256": "410001d6317196dba8f608dc5254beb8ed3cf09613c7562fcfaaa145ed27eea6",
+      "allMountSourcesAndRunningPIDEqualPreservedBaseline": true,
+      "GETOnly": true,
+      "observedFullInspectBytes": 6432,
+      "observedFullInspectSHA256": "aee86f2de31a4fb30de7c999f35486a526211ebe327eaf986722f3b304d12dc5",
+      "fullInspectRawPersisted": false
+    },
+    {
+      "label": "v11-app",
+      "cid": "c6f393f20781cad88518d5543126d642c4302141f3072393a10d5f0f9bf6a231",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "status": "exited",
+      "running": false,
+      "pid": 0,
+      "mountSourceCount": 128,
+      "sortedAllMountSourcesSHA256": "e9503a01e431daf8e81b3680bead662bebcf1ddb4784153737952761e64ede3d",
+      "allMountSourcesAndRunningPIDEqualPreservedBaseline": true,
+      "GETOnly": true,
+      "observedFullInspectBytes": 81341,
+      "observedFullInspectSHA256": "0ea3a7e259bdcdfe408fed6b640f0f713877781a2db635b5bc17bef5af64786d",
+      "fullInspectRawPersisted": false
+    },
+    {
+      "label": "v11-broker",
+      "cid": "f375e6f73bff6c4f5238033c0db1de96c0fa9853c49e53056f86fc4f9a7dbaed",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "status": "exited",
+      "running": false,
+      "pid": 0,
+      "mountSourceCount": 7,
+      "sortedAllMountSourcesSHA256": "4bfa4518e76bf49c54c1715d97ffe1a9179ac8b7fea84e0eeb639fc938e51e7e",
+      "allMountSourcesAndRunningPIDEqualPreservedBaseline": true,
+      "GETOnly": true,
+      "observedFullInspectBytes": 6959,
+      "observedFullInspectSHA256": "5657d6496b8e937a5ad01cca1ef059a02065e1a40f1b289331796a5039fe1c26",
+      "fullInspectRawPersisted": false
+    },
+    {
+      "label": "v11-db",
+      "cid": "039f995f2454b4b87edf7b9fe9693d6861d92b15a126205277a51b86adbc80bf",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "status": "exited",
+      "running": false,
+      "pid": 0,
+      "mountSourceCount": 7,
+      "sortedAllMountSourcesSHA256": "85e793c823afc9a43faa7da2505efa8a413a2be13f7a6537c1c199a63895a234",
+      "allMountSourcesAndRunningPIDEqualPreservedBaseline": true,
+      "GETOnly": true,
+      "observedFullInspectBytes": 7628,
+      "observedFullInspectSHA256": "1720c0064b5dd7cbef33b2c3b069b6e5b8eb611add1750bc25cf6fbd47102722",
+      "fullInspectRawPersisted": false
+    },
+    {
+      "label": "v11-storage",
+      "cid": "66d3bb789888a4c87cc3cdcdd49d6938d0c211189f13f4d8fbc096fbd5447b02",
+      "image": "sha256:567d5d704a3e5a4864393b623a0d50eb1b5a4ad134cdac7cf19555cb2d8ffe9e",
+      "status": "exited",
+      "running": false,
+      "pid": 0,
+      "mountSourceCount": 5,
+      "sortedAllMountSourcesSHA256": "27d6dd1b96a998054c0ed61531ab3cf9f7db2240348a28f678b8dda9a2d4fe4f",
+      "allMountSourcesAndRunningPIDEqualPreservedBaseline": true,
+      "GETOnly": true,
+      "observedFullInspectBytes": 6352,
+      "observedFullInspectSHA256": "90d00c14462d543c84c36bfe544d76fccd75d6dd7723d2abdc71af8005a4b5c6",
+      "fullInspectRawPersisted": false
+    }
+  ],
+  "canonical827aRootMetadataTuple": [
+    27,
+    169,
+    448,
+    1000,
+    1000,
+    19,
+    4096,
+    1792487833623423814,
+    1792487833623423814
+  ],
+  "canonical827aRootMetadataEqual": true,
+  "canonicalPostmasterPidAbsent": true,
+  "originalOrCanonicalPayloadHashRepeat": false,
+  "fullHostConfigUnchangedClaimed": false,
+  "onlyManagedLocalDockerGETs": true,
+  "noResourceActions": true,
+  "full500": false,
+  "production": false
+}

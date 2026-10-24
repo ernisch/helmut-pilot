@@ -1,0 +1,2006 @@
+{
+  "schema": "helmut-control-cache-native-source-proof-generation/1",
+  "status": "ROOT_OFFLINE_ACTUAL_EVIDENCE_VERIFIED",
+  "atUTC": "2026-10-23T17:25:11.567582+00:00",
+  "casePlanPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/ROOT_CASE_PLAN_V2.SAFE.json",
+    "bytes": 2366,
+    "sha256": "f886eed8693b9820778357d4fb8435842843ab807e16cb4b7f4f2c62c9ee8eff"
+  },
+  "generatorPreparedPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/PREPARED.SAFE.json",
+    "bytes": 2372,
+    "sha256": "68f10ad62a4be64e01adc895aa541a678b14a39fb96091f84ac939f5521d9295"
+  },
+  "generatorSourcePin": {
+    "bytes": 56601,
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/generate_native_source_proof.py",
+    "sha256": "4395ec3cf446a78ee81d63c165a6f8758b7631ef1ae2f3c8a88a7193a2240898"
+  },
+  "nativePreparedPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/PREPARED.SAFE.json",
+    "bytes": 35924,
+    "sha256": "f6e4d3e20e903b7f193da419e074973a56767baab1554232e089f48e705313b7"
+  },
+  "integrationSourceGatePin": {
+    "bytes": 17713,
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-cache-gate-prepared-20261023/candidate/scripts/helmut-resource-meter/control-cache-integration.js",
+    "sha256": "414372267970265f15b586d80d50636c578cfd311d6b3b2eed4ee681758215f3"
+  },
+  "proofSchemaPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/NATIVE_PROOF_SCHEMA.json",
+    "bytes": 11866,
+    "sha256": "ce32a6005f7856bacf0864c80a83c4eabe590a1405b7cbe9fe675d359b9ecb9a"
+  },
+  "independentActualReviewPin": {
+    "bytes": 15368,
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-five-case-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+    "sha256": "9a453eaca57fd9577769a5017017a39071907078f217432afbc2a5239ff3b3b8"
+  },
+  "independentlyReviewedActualResultPins": [
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/ACTUAL_RESULT.SAFE.json",
+      "bytes": 7871,
+      "sha256": "a0255874bd140d278bf1b0cd9c87b976ebd00ffb0607a530119a4ceeb8baa99c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8441,
+      "sha256": "2aeec3d1a85633373adcd414a20252ab942d410d75611b850d3b0f0d1549d364"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8397,
+      "sha256": "926b6e881883b2e33ebfb1e1a532bbf31bc0fd34d535674cbf50b8d44580b14e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8396,
+      "sha256": "16dd69e7a4103f491e42642686bda9bb08201b284de5b90e9ab547c934738502"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8420,
+      "sha256": "7419d7a2d9fd0ffacb66d6a9958753b38fc6b4daec6909f90c64fe4c7c3c87c8"
+    }
+  ],
+  "generatedProofPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/actual-1bab6f2e316b47cdfbf5f8c1/control-cache-native-qualification-20261023.SAFE.json",
+    "bytes": 17625,
+    "sha256": "95c8878e677e425a367d3fd95591229bb630c35adc4f610a1fd74f596315443b"
+  },
+  "actualReadPins": [
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/NATIVE_PROOF_SCHEMA.json",
+      "bytes": 11866,
+      "sha256": "ce32a6005f7856bacf0864c80a83c4eabe590a1405b7cbe9fe675d359b9ecb9a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/PREPARED.SAFE.json",
+      "bytes": 2372,
+      "sha256": "68f10ad62a4be64e01adc895aa541a678b14a39fb96091f84ac939f5521d9295"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/generate_native_source_proof.py",
+      "bytes": 56601,
+      "sha256": "4395ec3cf446a78ee81d63c165a6f8758b7631ef1ae2f3c8a88a7193a2240898"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/docs/betrieb/belege/fullpath-retention-20261021/OBSERVER_SOURCE_ADDENDUM.SAFE.json",
+      "bytes": 10958,
+      "sha256": "5af858f47ee6f773a3a4349ab0191f0907fc7391f69ca9c07ec93e1e23ae9659"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/native-node-budget.js",
+      "bytes": 8079,
+      "sha256": "45fbf5d567e0b27c7088d2ac47b806b6bc72ebbfdd467c29e75064b9ddd3a752"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/original-small-mutation-source-20261023/ROOT_SOURCE_REVIEW_FINAL.SAFE.json",
+      "bytes": 3718,
+      "sha256": "94e97fafedcdb47c383ab73d308596615df4ff60e4c90cdd306b5c64f05d1d10"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/PREPARED.SAFE.json",
+      "bytes": 35924,
+      "sha256": "f6e4d3e20e903b7f193da419e074973a56767baab1554232e089f48e705313b7"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/ROOT_CASE_PLAN_V2.SAFE.json",
+      "bytes": 2366,
+      "sha256": "f886eed8693b9820778357d4fb8435842843ab807e16cb4b7f4f2c62c9ee8eff"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/ACTUAL_RESULT.SAFE.json",
+      "bytes": 7871,
+      "sha256": "a0255874bd140d278bf1b0cd9c87b976ebd00ffb0607a530119a4ceeb8baa99c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8441,
+      "sha256": "2aeec3d1a85633373adcd414a20252ab942d410d75611b850d3b0f0d1549d364"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8397,
+      "sha256": "926b6e881883b2e33ebfb1e1a532bbf31bc0fd34d535674cbf50b8d44580b14e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8396,
+      "sha256": "16dd69e7a4103f491e42642686bda9bb08201b284de5b90e9ab547c934738502"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/ACTUAL_RESULT.SAFE.json",
+      "bytes": 8420,
+      "sha256": "7419d7a2d9fd0ffacb66d6a9958753b38fc6b4daec6909f90c64fe4c7c3c87c8"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/verifier/PUBLICATION_BINDINGS.SAFE.json",
+      "bytes": 4035,
+      "sha256": "844e055676ae958ce353f388bba9f6364c813e2d27a99800ee8e0421cdc8bcc4"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-cache-gate-prepared-20261023/candidate/scripts/helmut-resource-meter/control-cache-integration.js",
+      "bytes": 17713,
+      "sha256": "414372267970265f15b586d80d50636c578cfd311d6b3b2eed4ee681758215f3"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-publication-independent-review-20261023/INDEPENDENT_PUBLICATION_REVIEW.SAFE.json",
+      "bytes": 7451,
+      "sha256": "0b0793c4349ab5a46bf0795c98bbf83821ed9d6ec84160931d042d3cb8d1b6a5"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-five-case-v2-actual-independent-review-20261023/REVIEW.SAFE.json",
+      "bytes": 15368,
+      "sha256": "9a453eaca57fd9577769a5017017a39071907078f217432afbc2a5239ff3b3b8"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/CURRENT_SOURCE_FREEZE.SAFE.json",
+      "bytes": 5599,
+      "sha256": "552820cc8ad57cae5e3e5c745af7ae148090bc9f72c88f6922b74d5652a92f07"
+    },
+    {
+      "path": "/workspace/helmut-cpu-epoch-20261015/supabase/proposals/auth_read_bounded_local.sql",
+      "bytes": 18910,
+      "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/common.py",
+      "bytes": 22851,
+      "sha256": "6ddbec8fedf219a452c9b61c7fc198791b981ed590bf76c4a7b81392c0c8ccdd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/control-driver.js",
+      "bytes": 18175,
+      "sha256": "c612e2b7f5b047fb2630486c242fddf09d765add84d2fb4157d60d98b12d4b51"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/worker.py",
+      "bytes": 40338,
+      "sha256": "1cffb633ecb3e6eef8f65c4f0551cf03417efc96eae3e1e6ab9582ba22f3f908"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/run.py",
+      "bytes": 25066,
+      "sha256": "e1155b96a8df2bb74f1f44a0e5fe4fe8957beb37b4cbcdc0dec2e4a74da83d00"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/postgrest_lifecycle.py",
+      "bytes": 9220,
+      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/catalog.sql",
+      "bytes": 12286,
+      "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/small-auth.sql",
+      "bytes": 869,
+      "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/INSTALL_NEW_ONLY.sql",
+      "bytes": 13400,
+      "sha256": "c740b463ce3b026eeb442a8c79a65f1fa95ebac2d08d7382ee31fb9d6b655f4d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/install-reviewed-renderer.sql",
+      "bytes": 14547,
+      "sha256": "0b99e5870d67c9b0d616283bd2eefb0df361620067c8bf610d57c65861ba29e5"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/SHUTDOWN_POLICY.SAFE.json",
+      "bytes": 499,
+      "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/OLD_U.PRIVATE.js",
+      "bytes": 25446,
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/OLD_PARTS.PRIVATE.js",
+      "bytes": 22169,
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/NEW_U.js",
+      "bytes": 32050,
+      "sha256": "dc12a5c8abf7a7b4f4334ff0b886106b42381efa864ac13d4374285242886d0a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/NEW_PARTS.js",
+      "bytes": 27356,
+      "sha256": "0ff039245d60ceb7f5855f62433feab0ae0eea989606d3ad8022510a8d1d80a3"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/launcher/upstream/SOURCE_EVIDENCE.SAFE.json",
+      "bytes": 4139,
+      "sha256": "218646bd1d3e415348dedefd8b7920bd7e09bf293c94f407bf83ddbef7fd9884"
+    },
+    {
+      "path": "/workspace/helmut-ram-fix-20261020/auth-working-set-20261020/candidate-abba-02/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 35837,
+      "sha256": "d3e4dde9d2873f892e3ae5a8140fed3966eadca80d85fb2ac629e4a4833e7345"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/WORKER_RESULT.SAFE.json",
+      "bytes": 6663,
+      "sha256": "eca1609e6d05a11d2aa5ebad7c9e5be1d8fa8daa14322a4076c7ab22d69d2ddc"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/ROOT_ADOPTION.SAFE.json",
+      "bytes": 5220,
+      "sha256": "490764c8179ed87096219d4e5883f19ab971c210a654b55ad82b0ba372e3b51d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/PREFLIGHT.SAFE.json",
+      "bytes": 257485,
+      "sha256": "730062b8f96cd3b532912f004221eaa2f7521e371d8a29520e0ff649e8cd6588"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/WORKER_CONFIG.SAFE.json",
+      "bytes": 293180,
+      "sha256": "b65b59ecdb530de00789c33e9737272dcbc41ffd99e428d95b5c005026de5d10"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-v2-independent-review-20261023/REVIEW.SAFE.json",
+      "bytes": 13302,
+      "sha256": "2a7682d962b507ff81e6968773ad8b8ac25a9acd851219272cd4a89a462b45f5"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/ROOT_REVIEW.SAFE.json",
+      "bytes": 2225,
+      "sha256": "f6aa7c631687ac492bf0ef5b3dabcd206fd22dcbfb0c34746b9f230848e993b4"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/DISK_ALLOCATION_OBSERVATIONS.PRIVATE.json",
+      "bytes": 441,
+      "sha256": "cc8b80c556dc07e0ab597ce04b1e24775fa726e21cd4d75c8ef69a0c0bf3d1b2"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/RETIREMENT_CANDIDATES.SAFE.json",
+      "bytes": 8197,
+      "sha256": "1cdd26d6318d7fdd4bc647a32b4be8b31897e78ff70404e9d5e7eed942d0473e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/COPIED_MANIFEST_VERIFIED.SAFE.json",
+      "bytes": 192,
+      "sha256": "73c31131babaaa03713986672e191bfbe79d04e045d78cbefa219cb57ff416dc"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/OFFLINE_AFTER.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "4cd105a5b3abf211eecd1c8a1c05417c3837a7f4733c109262ef7cb6e75f97a9"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/OFFLINE_AFTER.stdout.PRIVATE.txt",
+      "bytes": 2272,
+      "sha256": "c142c1ba46c2580645f4364457fa8b9faed68d9702e86f289d5fcaf6abe80a88"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/OFFLINE_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/PG_LOG.SAFE.json",
+      "bytes": 348,
+      "sha256": "75c85e7283a182b10df0504fa84f2d73024c91a1aa94eb7b2c8116d06cc74331"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/PG_LOG.PRIVATE.txt",
+      "bytes": 1191,
+      "sha256": "5e4b26b38370e085bf8a008dab235795c05d0726792047594de8124f8f6b7884"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/POSTGREST_STOP.SAFE.json",
+      "bytes": 2545,
+      "sha256": "e900dfcdaa13d91fe634dc403470393cfffd89b8763268d8aa93c133de0592a1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/POSTGREST_LOG.PRIVATE.txt",
+      "bytes": 632,
+      "sha256": "8dc96ec652dd97f5281007233608a93ab112067c9b0af228a3c7f1f737476a26"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "14f0348f59d84762b8c2e656f404310d1b06330d0dff2cbd52077e1eae5b92c4"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_AFTER.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "b8658a419710aa3cbdbebfb7935529e7807d965f17fca52a80249171c70c5391"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_AFTER.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "2c3567ca0887434f6cb48e88f8c1529e004dac8bccaea2d31bbfd3b5613daa73"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_SELECTED.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "88965546260e3efd114def6c8cf1ed7ea52b107d3276fbed12fc8fb4a497907f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_SELECTED.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_SELECTED.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "10a1491d0e1bf46be9321ba7db7563e98e66712c3eeac3167f1066b7363ff87b"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "3c5ec2d085705a5f0b787e445027b43c1dddc3a2790bf611fa9ee7b053a878f6"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "9d9c1365ecac83f1bb3d680a284c30c46c996fb18ed684e020f21698cdfe1298"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+      "bytes": 59470,
+      "sha256": "422710d74bb4f00460b8aa827f249722200f16cc716dc4f8fea26b97bd769bd7"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-b6db529358bd08339aa59ebd/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 174977,
+      "sha256": "685ab47a11c07ce491212679ff6956064bc654c61e646d3a80098ddf8114a982"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/WORKER_RESULT.SAFE.json",
+      "bytes": 6950,
+      "sha256": "10ce7fe8f1b897686304f4969db6efb68efae18927d0ab8fa566a5225aece879"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/ROOT_ADOPTION.SAFE.json",
+      "bytes": 5826,
+      "sha256": "22a4f4a3cb754c125ec9ca74317c595ede8a862dc7608e42812b9585825920e1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/PREFLIGHT.SAFE.json",
+      "bytes": 257776,
+      "sha256": "11119aba1cc2e5345f5d826a6c3dd530bc444e01bbe941aa78eefd7f2be17f7a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/WORKER_CONFIG.SAFE.json",
+      "bytes": 293469,
+      "sha256": "4d5a5117ee2fa0561b0d8b2e6a2708e542e3ae1f4425d62a7b490f623c85417e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CLIENT_CONFIG.SAFE.json",
+      "bytes": 571,
+      "sha256": "ff443daca7219724f196bb1485b149327b22b21be1b7a796b236f94e59b1c500"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/DISK_ALLOCATION_OBSERVATIONS.PRIVATE.json",
+      "bytes": 441,
+      "sha256": "8270357f515241b3d0b64d95e27163af52067f8031f5fb2d8196787ae4709789"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/RETIREMENT_CANDIDATES.SAFE.json",
+      "bytes": 9158,
+      "sha256": "b0177ca43c003209b8135f27c6454841540ffed673793a2c65179651e4449d12"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/COPIED_MANIFEST_VERIFIED.SAFE.json",
+      "bytes": 192,
+      "sha256": "73c31131babaaa03713986672e191bfbe79d04e045d78cbefa219cb57ff416dc"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/OFFLINE_AFTER.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "d9e484c27fe9603d37adce414d718d1cd0044c8a156a0740e548e2400802e761"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/OFFLINE_AFTER.stdout.PRIVATE.txt",
+      "bytes": 2272,
+      "sha256": "6ee66d5fd6d50620e3441668c4313521660b9d4e37032c1e1268e9eb87e74a6a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/OFFLINE_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/PG_LOG.SAFE.json",
+      "bytes": 348,
+      "sha256": "1a938bdfb93fede06f1f3beecdb9acb3be6a5bc4e021a810d2356affc4680435"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/PG_LOG.PRIVATE.txt",
+      "bytes": 1193,
+      "sha256": "f2af60ba0e6f986f603108f4f4edb28847804283b0d46ced769aecd39c2940f6"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/POSTGREST_STOP.SAFE.json",
+      "bytes": 2545,
+      "sha256": "f823c2630c8965e7e37e084c6c850314e3d8be2c894d0829743e1a97df52a8d0"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/POSTGREST_LOG.PRIVATE.txt",
+      "bytes": 632,
+      "sha256": "51438e07d4c749eb8102bfbcc4978c51309669152d674a80620f67a51ec0866a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "d61a9dd023c2057ebfb24e30ae8d5d196ad0e9571d58161497b5f3f9d528799b"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_AFTER.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "f77256c79b59857b678d84af27e209588ca923c76aadd69f9d9714a99c110e69"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_AFTER.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "2c3567ca0887434f6cb48e88f8c1529e004dac8bccaea2d31bbfd3b5613daa73"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_SELECTED.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "79e2e64c4c06c0eeca3fcb32be93f35f26cf4aafe7756767c74f5a34dbbabf12"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_SELECTED.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_SELECTED.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "97d6bee8500b1066d757a862d35be09062cb95e0c3a29f3a34758358994480e0"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "da73644dd97d6f7d9c6fa3aa76069f181e9ba8d5b1aa7a0d744107902414eb75"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "cd20c7322ef1c0d17e7683092f43c90fc3775012c4331811fde16a2fa26f5990"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "d8e699f1478595aabd3529fcc4bcca095d91162d8005356313ceefa0734185f1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "b22135553771f1a8bff703a08207680ab3b3028ddec4092e1470f546b6211ee3"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+      "bytes": 59470,
+      "sha256": "514a7c487400982aa156091103f8e2cf76e269d031437c51f73b0720df1b279c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 174987,
+      "sha256": "be01942add9e17527a0df3415327ca195b2156976017e1e6e5a3dda5fdf00c9b"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CONTROL_CACHE.SAFE.json",
+      "bytes": 83994,
+      "sha256": "923d7ff6c0ddabb55d91712a1d5f25eb47462cc5f16fd99431316ef1ae0c9f82"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/NODE_CONTROL.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "41d9142205c7d14b3614c5fc23f6503151ca2e3ddfb2b67cd245b5e00eaddc1a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/NODE_CONTROL.stdout.PRIVATE.txt",
+      "bytes": 83994,
+      "sha256": "923d7ff6c0ddabb55d91712a1d5f25eb47462cc5f16fd99431316ef1ae0c9f82"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/NODE_CONTROL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_1.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "adeb3cfc608cfbbfcd55cf1faea275c486b915370b5c337751e0a38cd30dbaa2"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_1.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "ddb2535533bc37199cf152181138f9aeef767127838702b7a39e406b02beb8be"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_1_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "d96da977d18a56c6a2538b67040a9af2337509beba1ba93090cc14923c34e809"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_1_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "796d47e002bb5a2adadcf441707811d34ffbbaff5a1ad87f02e6360744a99c93"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_1_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_2.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "afddc4e9c02ff61134028c4a07d70181036ef09d3effb2dc6037fb118dc602f2"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_2.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "6d2cf89427804e7ffb872dcbc50ee50b4892e49eba4b7bba257d7b627218c1dc"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_2_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "0f86a8346aa4ef05697b57c29e94addc39fba2b0ff2cd1811b3333e12b7bfe76"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_2_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "f0aad0cc5b32e6f1583a537504547d730f4859481bb16b935881c79b3948cbf6"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_2_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_3.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "7697380030d35fbb69f4e6136eb5c3d2dcd1f89a5459d44384e694af68a42916"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_3.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "a2639036fc64f6d4aee28491de5f4fef9f9420d30788b768afda4516ddc74bca"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_3_SQL.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "667dfadde77b4664550c159f318a558b812faaa4256db154e16471a2b0c8b30e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_3_SQL.stdout.PRIVATE.txt",
+      "bytes": 523,
+      "sha256": "998d91f4aa9d9fc1c717a5aef044024783087b004ae6496c4a967959ec0afa1d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_3_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_4.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "dacffbce586d42da0c33db0857bd14673e51e5e8656ad0a19d7e7d6585b246b9"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_4.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "2a42e2fcf2b14ca1efb10c165f75b1bfdded1e303689a71a1ef182cf23d56105"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_4_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "cbac0554e27f5feab0dad034d9bde0497707883536b37d06db2c92d04b3cefd1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_4_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "5be43bc736564dfa3a38c545901d5789517cf365c883d87b67144ba0e2df0787"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_4_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_5.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "61284cd026754de5d9cbeb4e34f53252efeaeb257219a14bcf67b752113c6f47"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_5.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "5cf41f8e8ab33d251bc4fb2b6db20bb105226015ad794e840e5b0c7e36f95091"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_5_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "296191277c8cf470a970b8a6024245f088e3a40c1645975982063700fc82eb63"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_5_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "4745b583743d8430ba209a0fd6bc9fbda9aba3f02f303c3959e79202229a7dd1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_5_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_6.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "6c773b8d51c811b92308dd099b6f2361275f0a63ef1d7d42e34d55bba6318c94"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_6.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "062c52984b28832d9c6052fc059d35c76f3eece80cdd05f67318e8b69b7cb67e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_6_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "68e633917af084366941ed484a07bcf40960b16bdcf8549178ad239afc2afc63"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_6_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "b1857976f85ead817589e1a73cec4df0f292655b776edfd8aa89b71463cc5de1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/CYCLE_6_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/node-observations/NODE_HEAP_44_0.STARTED.SAFE.json",
+      "bytes": 249,
+      "sha256": "c22f041d8c53d41ea10de0e763f0fb62e96ef1b87624492b4a35c25375693fc3"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/node-observations/NODE_HEAP_44_0.EXITED.SAFE.json",
+      "bytes": 248,
+      "sha256": "16e4a8d5d9fbc250a28172f5919fe8b48d194744b3e1265cb3b61d1f52b0015f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/node-observations/HTTP_44_0.STARTED.SAFE.json",
+      "bytes": 67,
+      "sha256": "e11882b4e6d7807839d494b56bf6a582c040f9c32f2b65a731f8b6ee1fd68acd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-a328304ad15075772565c67d/node-observations/HTTP_44_0.SAFE.json",
+      "bytes": 1285,
+      "sha256": "2efb4dce97fd23e2b6a5eaadb9c1b91d2d1c4707a84b0109e8acaa34329df350"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/WORKER_RESULT.SAFE.json",
+      "bytes": 6935,
+      "sha256": "b0575d63bd2ec1afb7625e46242840f85d06e329a659a9ab6e0daf8267625d47"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/ROOT_ADOPTION.SAFE.json",
+      "bytes": 5811,
+      "sha256": "af979877ae1c41039a6b72ae5c24eda70518f97697b489822c36f02713ae5e48"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/PREFLIGHT.SAFE.json",
+      "bytes": 257760,
+      "sha256": "66b07ab3cf36ecb741fd419078b74d581d18ea34841c5174dbe59954b3a3e5ce"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/WORKER_CONFIG.SAFE.json",
+      "bytes": 293455,
+      "sha256": "f8f73e0f57a19c1c7ea444f0f89bc9c98de131d7ac5a9181911b04dd05137aa6"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CLIENT_CONFIG.SAFE.json",
+      "bytes": 555,
+      "sha256": "aeecdddb14f22060efe440276c31c870f585298fec3c498bdaaa5e71128fa0fa"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/DISK_ALLOCATION_OBSERVATIONS.PRIVATE.json",
+      "bytes": 441,
+      "sha256": "8270357f515241b3d0b64d95e27163af52067f8031f5fb2d8196787ae4709789"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/RETIREMENT_CANDIDATES.SAFE.json",
+      "bytes": 9142,
+      "sha256": "55df4cd1eadee4825ba4ef3d2b010d50a8f2ccd883ed05f7915c2a6c79653678"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/COPIED_MANIFEST_VERIFIED.SAFE.json",
+      "bytes": 192,
+      "sha256": "73c31131babaaa03713986672e191bfbe79d04e045d78cbefa219cb57ff416dc"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/OFFLINE_AFTER.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "40def9b7dd073701935576da7fe8b58494f39caa17ccbafafda89aec65c9642b"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/OFFLINE_AFTER.stdout.PRIVATE.txt",
+      "bytes": 2272,
+      "sha256": "10b81ec1e6f392a847db162a31e66ff7b45e3201dc24a25a275c5582b215873f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/OFFLINE_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/PG_LOG.SAFE.json",
+      "bytes": 348,
+      "sha256": "9aec17e55ce1a7a47663b5e1d83a63e36a76c6e441f314196537e48425f57c36"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/PG_LOG.PRIVATE.txt",
+      "bytes": 1193,
+      "sha256": "464c03e09dfa739a910d6b58357bd80fe930779e2e1a237ac26482fa3e9bf591"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/POSTGREST_STOP.SAFE.json",
+      "bytes": 2545,
+      "sha256": "120a038244aa7e78a03b307d96c475ac16e259a9303b1be887ce073929b2db64"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/POSTGREST_LOG.PRIVATE.txt",
+      "bytes": 632,
+      "sha256": "8aef295a0423e912cd3444dae81cd470a9248ac1c31462f0c0937f973fa67de8"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "2a3866107b6b7274f7a27041d3ae7f18aa1fdd9a32be30301c0d07e2d59a2988"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_AFTER.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "13c8299cb9b074dc2a1c73589f54f8231dda262be54cca53b368bb89656110fe"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_AFTER.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "2c3567ca0887434f6cb48e88f8c1529e004dac8bccaea2d31bbfd3b5613daa73"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_SELECTED.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "44725773f33d0cd8c354a19cb206f07b44def9882c8cf2562f8b1c27494dbf6d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_SELECTED.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_SELECTED.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "f106a6b2748802959cd1404e0eb3eada5530261e2704bfa2cffad072ed22371d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "b7879116f140d3647ba0a2b549417599283e1735953b9f22992ff641898cb133"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "e5c9cbb43053efd0c3c4bffa4a42a3f04bb15451f5ef6b0ca13ebd0ad7bc1ade"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "874d37c4ff5f0eccf919a6402b04f1852296fedde228963cc5422c33fadb347e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "019fc94ca9b18c1fad78aa00dfc67ac028ee76181b1bce98048482737ecc6feb"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+      "bytes": 59470,
+      "sha256": "6ff5fdf108ff657d197a08d347542f25210775933ee760beb77282dc815ea9fa"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 174971,
+      "sha256": "4888be461e082e4de677d8abd235bebd0fa19ba35847d5293265ca2db0965617"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CONTROL_CACHE.SAFE.json",
+      "bytes": 83466,
+      "sha256": "7d580d0663ef06bebf143fdbb02e899b8e0c86cb42af5e72a537d4e74c14646c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/NODE_CONTROL.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "5917900ab7e88447a7df979ec9d6a6663e5e55777a60c71dab43daa76c94e726"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/NODE_CONTROL.stdout.PRIVATE.txt",
+      "bytes": 83466,
+      "sha256": "7d580d0663ef06bebf143fdbb02e899b8e0c86cb42af5e72a537d4e74c14646c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/NODE_CONTROL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_1.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "a7e01774515140e54dbd2b8fad5d50e628a7438f6377f5cabd60865ee49d2b6c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_1.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "4c692dcb8ed1fc302fc45fcef99f383b0e363c04b2e7f3aa86b98409b089fcbd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_1_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "76d7678959863e0faf35c26006c9378e3d36d8e448bd3637e357a71cc57e2a37"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_1_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "0cfc6dc76c9d30f79c63c31d9ee776e72ab73db9ac576adee9bf3824263b55aa"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_1_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_2.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "66f94e6d65dc57a88dc554edcd9a7f431d6da06e9569b0ff83e52baa137c7463"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_2.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "e04f8fb7a44a2cff75877d84a643db7a2c1dba0d8198ca28111af031bd31b5dd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_2_SQL.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "822fcf00e7ca46240e1063467940b2dbd3e80e2bab9243398cbb8ecd95c5926d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_2_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "a0936f24cc0a1c3bd77fc03d5b237c33e2b015a8550aa722ccc23e7fbf5fcdf3"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_2_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_3.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "d3476855f3af1daf89deec41f659891f11b2430d8f3e3396ade1791034025449"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_3.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "de573b5041b007d8ed0d01e921f2bbf538ea4e42e5c00f44f566e8260fa641c8"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_3_SQL.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "d9743b4f87b0d18d65bacab5bfe6e575d053ca10cf281b81dc4c1ca5ebc410b0"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_3_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "68dad7a48078e8e9a26327cb7569dda5949a929e844abe6c797ef250515fec75"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_3_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_4.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "6cc593ad397c87e6fd4d28f754c8674702a67b1df90ebfa37ea9ea82ad260aec"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_4.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "2654c026f25acdadef62e79c180ccbcd9b237f846d45a25a7d93a2e167700fe1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_4_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "27ee7d19ff2baa1863d34f414d70dbfd8605ec664e9fb3b3698121e13351012c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_4_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "96d2a337c440dd78c46ff5a67c301fe0aba3cfeefdfc0e2c70ef0351ee6933a7"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_4_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_5.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "c55ee65f042a6e1752079982528599f73d67762318d5d0d3f837bfc31aafbd60"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_5.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "8d664d63f382d90fc7e396ef1496aa008ad0798953cf92b835b25d7ec608f2d1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_5_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "dfd0dd450e192bcec56f50193655fab6ad33927b39470fbe41b54c46261b8a78"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_5_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "e31bc97daf125ce2384569d0e7742a915510889f820432301164670ef3a1656f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_5_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_6.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "755147320123afb3f9e7f2b27569dbb29372267337d730ad75441dad92d97617"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_6.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "b94976cab5917f88002bab3812feb6d0a29c6d9bac298ce095e5eecd916d70e9"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_6_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "e24c35e2a5043b0a26f45306310b3ca0212e4060639ab3856df8b383ca5e7d09"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_6_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "ef9a34474888269a0994d8408d8d69dc517a3f6cc6f4fb3f50f3f4deb5490abd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/CYCLE_6_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/node-observations/NODE_HEAP_45_0.STARTED.SAFE.json",
+      "bytes": 249,
+      "sha256": "7acf0f84593519de31f8e120e6c064852210e67e8f16565b988d3bd0cc657923"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/node-observations/NODE_HEAP_45_0.EXITED.SAFE.json",
+      "bytes": 248,
+      "sha256": "389917a9a1e6fd30327d2c1ef04d48035a2200c3bd391c7952fd5a3270cc676e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/node-observations/HTTP_45_0.STARTED.SAFE.json",
+      "bytes": 67,
+      "sha256": "ae0fcc98acc7721f31040d394d93db4660cfd12001ee013f6a90f374d32c4a0d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-4b73156dccc5b14770c724f1/node-observations/HTTP_45_0.SAFE.json",
+      "bytes": 1285,
+      "sha256": "3481918e4fcb013c0a818cc3b0290f20765564dd94684091c37d0f26dd056655"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/WORKER_RESULT.SAFE.json",
+      "bytes": 6935,
+      "sha256": "db5aafc07a717f1fc7dabf37b40e321f514307287847608d3259248ac03df5db"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/ROOT_ADOPTION.SAFE.json",
+      "bytes": 5805,
+      "sha256": "cea11137de3c1b74653798a27ac59ca52d317ba814c3edeb9e4c5490f14129f7"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/PREFLIGHT.SAFE.json",
+      "bytes": 257760,
+      "sha256": "8d958a565c6bb7e91b44bcaf7b219c19e1143ecfd01afd01e15f49c9b7dbb456"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/WORKER_CONFIG.SAFE.json",
+      "bytes": 293455,
+      "sha256": "17796d93529a3dcefc94568899fa4c6de015ea072f77f37eeb4e9eb7ed45187e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CLIENT_CONFIG.SAFE.json",
+      "bytes": 555,
+      "sha256": "aeecdddb14f22060efe440276c31c870f585298fec3c498bdaaa5e71128fa0fa"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/DISK_ALLOCATION_OBSERVATIONS.PRIVATE.json",
+      "bytes": 441,
+      "sha256": "8270357f515241b3d0b64d95e27163af52067f8031f5fb2d8196787ae4709789"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/RETIREMENT_CANDIDATES.SAFE.json",
+      "bytes": 9142,
+      "sha256": "da74f8d3aae6b11fc33c40e13395eca09849ff415d9710545b8e0295766998c5"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/COPIED_MANIFEST_VERIFIED.SAFE.json",
+      "bytes": 192,
+      "sha256": "73c31131babaaa03713986672e191bfbe79d04e045d78cbefa219cb57ff416dc"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/OFFLINE_AFTER.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "47e4ad619141ecc963f65c819f18e1a42af1084f1b86b36363450149ecc700f0"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/OFFLINE_AFTER.stdout.PRIVATE.txt",
+      "bytes": 2272,
+      "sha256": "b479483575a54dd61f95814cab20672cd833b8d9c73b38140c3fba49ba8aa1fb"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/OFFLINE_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/PG_LOG.SAFE.json",
+      "bytes": 348,
+      "sha256": "6c78443d16754ec5e59ef8e5339da335b34cfc3aeb23477d5f805dd385b90dd4"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/PG_LOG.PRIVATE.txt",
+      "bytes": 1193,
+      "sha256": "2cff5b8c8fb6d4eaa84d22b561b15ddfd57b4c25d223ad586017d22f27b77ff0"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/POSTGREST_STOP.SAFE.json",
+      "bytes": 2545,
+      "sha256": "10e3086476762775bc283a333adeca8634773809b581afc5654fbf27e46556bb"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/POSTGREST_LOG.PRIVATE.txt",
+      "bytes": 632,
+      "sha256": "8fc6a7bbea3453e1d84fa18af4f3965eff86cddf444613870e5936bd54b1cfc9"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "34ee5daa23ff9f0fbdd7533628f85caee34fd92df43e6aea7c742d7bebe9a173"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_AFTER.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "78b1d1dc9551436207543202f71c6775fd9c272e2301df6f08a8704daa8fb939"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_AFTER.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "2c3567ca0887434f6cb48e88f8c1529e004dac8bccaea2d31bbfd3b5613daa73"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_SELECTED.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "d674e8d723d7c57356962279a3bd2ef76707f189a43ad6e009c3fce1355ea8f0"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_SELECTED.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_SELECTED.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "6cb6ecd9d1c9f6cbdc2c3a9972e9ae98666eea317055ecbab2f2146c3bba19d5"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "dc8792c2dc7a61f359b1fb4b1a2015ce8410b17949de266a2d5d9327409094df"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "42bb6070d79fc4ac84e7e82b5857dce73e6e493776dc021c0fc907f53851fd3e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "ef9166219c1edf824c5c6438bfcdeac983af402d57e0fb39e3f71450b667bbd5"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "1ca29d909d2e06102a0cc382c9f198ce5e2569e520b04c3911819e34e9a2d0fe"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+      "bytes": 59470,
+      "sha256": "8acf15a912e9d0ca53965992d59e1054080e7cdf3b8f1933aa859b7af990b640"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 174971,
+      "sha256": "4888be461e082e4de677d8abd235bebd0fa19ba35847d5293265ca2db0965617"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CONTROL_CACHE.SAFE.json",
+      "bytes": 83446,
+      "sha256": "ee7265b6394eb85bc76d36d6352b559dc231887a029231b7f5bf137e99630e8d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/NODE_CONTROL.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "7d19cbec83c74e4bae71303ea8536e56d342e474259a6044d7179dd9afa0a5cf"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/NODE_CONTROL.stdout.PRIVATE.txt",
+      "bytes": 83446,
+      "sha256": "ee7265b6394eb85bc76d36d6352b559dc231887a029231b7f5bf137e99630e8d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/NODE_CONTROL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_1.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "a7e01774515140e54dbd2b8fad5d50e628a7438f6377f5cabd60865ee49d2b6c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_1.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "4c692dcb8ed1fc302fc45fcef99f383b0e363c04b2e7f3aa86b98409b089fcbd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_1_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "dc6fff46c99f31730897486d041b29b160a02cacc76072b1ba11c1285dfe7474"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_1_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "26c8436fccc8e7d7c59674b6e675241d7d63d8f2d80a131dd54d3181de5b018c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_1_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_2.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "66f94e6d65dc57a88dc554edcd9a7f431d6da06e9569b0ff83e52baa137c7463"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_2.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "e04f8fb7a44a2cff75877d84a643db7a2c1dba0d8198ca28111af031bd31b5dd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_2_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "d8b615287cc8d8e7a72869590824d953376de54ff554b42c6152cce93bf0f1a8"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_2_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "dd530b2a531e67754b1c5bb50a7da1979af3c6095f5843459bbc9399b91aa4af"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_2_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_3.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "d3476855f3af1daf89deec41f659891f11b2430d8f3e3396ade1791034025449"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_3.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "de573b5041b007d8ed0d01e921f2bbf538ea4e42e5c00f44f566e8260fa641c8"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_3_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "587a57d7b6fdd7667e44de1dc11f10b2912eafefe34da68c8621aa5ecda443da"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_3_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "0e185a719ade36b4ceb0edbfdfa85c0627ac8f389f7c061e1ba8624fcb4d1e19"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_3_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_4.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "6cc593ad397c87e6fd4d28f754c8674702a67b1df90ebfa37ea9ea82ad260aec"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_4.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "2654c026f25acdadef62e79c180ccbcd9b237f846d45a25a7d93a2e167700fe1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_4_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "d76cd700d64b39abd0f613c85cd58d3313795ed1d493d0a096845089b5771661"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_4_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "80daa71b927281f8d1ae0676fb19601bd4d40a08a69a399726580cb68aac7dd0"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_4_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_5.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "c55ee65f042a6e1752079982528599f73d67762318d5d0d3f837bfc31aafbd60"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_5.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "8d664d63f382d90fc7e396ef1496aa008ad0798953cf92b835b25d7ec608f2d1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_5_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "9c16ca193d01143a577f00397c4ba6d66450f1b9190175e856fa564537c63380"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_5_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "5a589d0a074d4b2be987b5e3c78276087dab889be0b7704a9827f7636b2d0b54"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_5_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_6.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "755147320123afb3f9e7f2b27569dbb29372267337d730ad75441dad92d97617"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_6.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "b94976cab5917f88002bab3812feb6d0a29c6d9bac298ce095e5eecd916d70e9"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_6_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "7e299765f147914f3a73814c5098923e0f8192a95350910a2ece45ef071746b6"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_6_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "519f95a185daafa1d1b4dbc443be9ea29ac66de8b3fa20a913787b3c2679891e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/CYCLE_6_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/node-observations/NODE_HEAP_45_0.STARTED.SAFE.json",
+      "bytes": 249,
+      "sha256": "7acf0f84593519de31f8e120e6c064852210e67e8f16565b988d3bd0cc657923"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/node-observations/NODE_HEAP_45_0.EXITED.SAFE.json",
+      "bytes": 248,
+      "sha256": "389917a9a1e6fd30327d2c1ef04d48035a2200c3bd391c7952fd5a3270cc676e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/node-observations/HTTP_45_0.STARTED.SAFE.json",
+      "bytes": 67,
+      "sha256": "ae0fcc98acc7721f31040d394d93db4660cfd12001ee013f6a90f374d32c4a0d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-c7f24abbac28d9b7aaafcec3/node-observations/HTTP_45_0.SAFE.json",
+      "bytes": 1285,
+      "sha256": "e983fbbbd64d4092c544999637cf0688119b9c7acb1152223ac71c20fc62e25e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/WORKER_RESULT.SAFE.json",
+      "bytes": 6951,
+      "sha256": "7c04063b82bebeea679f835ac2798732918431d8558206267aef5a6a1f6c7437"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/ROOT_ADOPTION.SAFE.json",
+      "bytes": 5821,
+      "sha256": "f68956c31fce8cc3e63ed7cf86e769187f50c263d5df181ddc2be735039ef022"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/PREFLIGHT.SAFE.json",
+      "bytes": 257776,
+      "sha256": "88c772b8be168fb0223131bbe7ec69ff902596707ce44fea7245315da1ad2c04"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/WORKER_CONFIG.SAFE.json",
+      "bytes": 293471,
+      "sha256": "ec3c457a46d05aadbc442e621239d42c8bc439b717f18ec8d34e67c979b672e5"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CLIENT_CONFIG.SAFE.json",
+      "bytes": 571,
+      "sha256": "ff443daca7219724f196bb1485b149327b22b21be1b7a796b236f94e59b1c500"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/DISK_ALLOCATION_OBSERVATIONS.PRIVATE.json",
+      "bytes": 441,
+      "sha256": "91437a6acb99dd49c4213980b22bbe4ab8aa89944730ebaf00dc7a72c6f4140a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/RETIREMENT_CANDIDATES.SAFE.json",
+      "bytes": 9158,
+      "sha256": "b9897563da4075df8aecb97765350e212ef2cfb5b1f8c7de2b70537cdb913d4f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+      "bytes": 327232,
+      "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/COPIED_MANIFEST_VERIFIED.SAFE.json",
+      "bytes": 192,
+      "sha256": "73c31131babaaa03713986672e191bfbe79d04e045d78cbefa219cb57ff416dc"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/OFFLINE_AFTER.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "dbb17517bf23d89901f50ee24c71c9a2db3db42ca2328c0f0316f997ba42e1a1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/OFFLINE_AFTER.stdout.PRIVATE.txt",
+      "bytes": 2272,
+      "sha256": "1f36c916795153e982f12e84ec716ae3cd0f04b08eff67872e7bf6793c51dffe"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/OFFLINE_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/PG_LOG.SAFE.json",
+      "bytes": 348,
+      "sha256": "8b70ae8bc663bb6aa48593cc655e8026f52becd6f55e0e2bedf152c944ffcc82"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/PG_LOG.PRIVATE.txt",
+      "bytes": 1193,
+      "sha256": "292543a09a3b4a4633776afa37e4593c3ee8e83aa1afac717554978c74104143"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/POSTGREST_STOP.SAFE.json",
+      "bytes": 2545,
+      "sha256": "12dd2a140b5c041caa993531700e08df3024e99d109dd0f4543679c9115e9c4e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/POSTGREST_LOG.PRIVATE.txt",
+      "bytes": 632,
+      "sha256": "e4ca53226681f78242955febe0db2af534cf0393fa95fcdce4fddb2c7643fe76"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "206c447cb26e9ea9c60833797333423aca1526253d55d73db167807f3831faa8"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_AFTER.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "a30d91ce0afb2f5402afa03023f8e89f4b9bd080ff57af3efa07cf6894653cf9"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_AFTER.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "2c3567ca0887434f6cb48e88f8c1529e004dac8bccaea2d31bbfd3b5613daa73"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_SELECTED.CAPTURE.SAFE.json",
+      "bytes": 297,
+      "sha256": "6a6ae940a9ef6ac7d62f0132b28d773166e505e8fda52ef93c6114e1628dd0e6"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_SELECTED.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_SELECTED.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+      "bytes": 298,
+      "sha256": "a00612020ebae4b324ca971a1d8d10a396996f6a720c9fd8532153c0516e5e73"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+      "bytes": 36994,
+      "sha256": "969341ae653abad54dc0201ca91dc02a0b77498119df59d8403dc1bf02327582"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "3df1730b3cdf886e062095d7b7be8c9414974f8c0def5d6ca539aeb7baab5b00"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+      "bytes": 291,
+      "sha256": "58cf553e0f9b06c34f92178609e0fe31a004a2a647fc893dcd66002791e651e3"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+      "bytes": 775,
+      "sha256": "9f75b2ed47b3f6078cfabc5ed06a9e2e35a94b5721ec99695a9dd309ce3c4b7c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+      "bytes": 59470,
+      "sha256": "06d8a220cb5b00f3217fbbfb89b3b6573e92325315f63ed7adfad7f695b124fb"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/ACTUAL_NATIVE_CATALOG.SAFE.json",
+      "bytes": 174987,
+      "sha256": "be01942add9e17527a0df3415327ca195b2156976017e1e6e5a3dda5fdf00c9b"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CONTROL_CACHE.SAFE.json",
+      "bytes": 84002,
+      "sha256": "1bf22cfad2869e268499c1f4826e8425d834603ed248a18204a549d76982d66d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/NODE_CONTROL.CAPTURE.SAFE.json",
+      "bytes": 296,
+      "sha256": "6c5dd11745dbfc3e311cf1383b0027f33a4271d0271cb8e48acb6cb238d40224"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/NODE_CONTROL.stdout.PRIVATE.txt",
+      "bytes": 84002,
+      "sha256": "1bf22cfad2869e268499c1f4826e8425d834603ed248a18204a549d76982d66d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/NODE_CONTROL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_1.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "a7e01774515140e54dbd2b8fad5d50e628a7438f6377f5cabd60865ee49d2b6c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_1.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "4c692dcb8ed1fc302fc45fcef99f383b0e363c04b2e7f3aa86b98409b089fcbd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_1_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "a14636dfec856b4d13ca36823de001927b97d5c4402a087fa906d1c613d015a2"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_1_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "e7f07e743cdbc7311c597cf82e6f873e1d5ba5f411dc9c8aba08188e397bbeb4"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_1_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_2.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "66f94e6d65dc57a88dc554edcd9a7f431d6da06e9569b0ff83e52baa137c7463"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_2.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "e04f8fb7a44a2cff75877d84a643db7a2c1dba0d8198ca28111af031bd31b5dd"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_2_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "870d7ab9cb2b229b0a8a2e75a12b3f9017b397d63866e803be27f5ba3c27097d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_2_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "68dfb65a1167cc0c5325f50441f99819f50548ef830b7f0f8c4a7933175c96fa"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_2_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_3.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "d3476855f3af1daf89deec41f659891f11b2430d8f3e3396ade1791034025449"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_3.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "de573b5041b007d8ed0d01e921f2bbf538ea4e42e5c00f44f566e8260fa641c8"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_3_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "1bb44d100aa8433c3b8b3b5096355520079a0227ec0e1d3e4b557884f3f89148"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_3_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "16f749847fd154249932e3121b8ae8ca5e20c0a1c9c4295b393d1a705f734ac4"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_3_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_4.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "6cc593ad397c87e6fd4d28f754c8674702a67b1df90ebfa37ea9ea82ad260aec"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_4.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "2654c026f25acdadef62e79c180ccbcd9b237f846d45a25a7d93a2e167700fe1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_4_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "c73925436ebf7972080f95519eb60ffe13eee25ea05a7295761fd687805b686c"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_4_SQL.stdout.PRIVATE.txt",
+      "bytes": 523,
+      "sha256": "c0d0fc9044ada3d14aec89cf43f3abfaf962c982b2e87f617e6f3c23a02adbac"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_4_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_5.MARKER.SAFE.json",
+      "bytes": 100,
+      "sha256": "c55ee65f042a6e1752079982528599f73d67762318d5d0d3f837bfc31aafbd60"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_5.ACK.SAFE.json",
+      "bytes": 121,
+      "sha256": "8d664d63f382d90fc7e396ef1496aa008ad0798953cf92b835b25d7ec608f2d1"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_5_SQL.CAPTURE.SAFE.json",
+      "bytes": 293,
+      "sha256": "fb404bb1e4be09b6bd3be6a59451f5b7fae8abc06f58da1c6447ed35210a3c8e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_5_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "321f1e008bb9964f38206a8743919a5a885a7dcef8affce710c02da9adb14569"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_5_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_6.MARKER.SAFE.json",
+      "bytes": 98,
+      "sha256": "755147320123afb3f9e7f2b27569dbb29372267337d730ad75441dad92d97617"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_6.ACK.SAFE.json",
+      "bytes": 119,
+      "sha256": "b94976cab5917f88002bab3812feb6d0a29c6d9bac298ce095e5eecd916d70e9"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_6_SQL.CAPTURE.SAFE.json",
+      "bytes": 294,
+      "sha256": "023138b8a9741da91bfb2281070d68d19423c1083628ad90357d5ce8d03c7338"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_6_SQL.stdout.PRIVATE.txt",
+      "bytes": 524,
+      "sha256": "50b3d7844a4deb74411b0084cfeeaf00a2188c2509be4baf86666cfdda89ff04"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/CYCLE_6_SQL.stderr.PRIVATE.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/node-observations/NODE_HEAP_45_0.STARTED.SAFE.json",
+      "bytes": 249,
+      "sha256": "7acf0f84593519de31f8e120e6c064852210e67e8f16565b988d3bd0cc657923"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/node-observations/NODE_HEAP_45_0.EXITED.SAFE.json",
+      "bytes": 248,
+      "sha256": "389917a9a1e6fd30327d2c1ef04d48035a2200c3bd391c7952fd5a3270cc676e"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/node-observations/HTTP_45_0.STARTED.SAFE.json",
+      "bytes": 67,
+      "sha256": "ae0fcc98acc7721f31040d394d93db4660cfd12001ee013f6a90f374d32c4a0d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/current-control-source-native-prepared-v2-20261023/cases/control-fa72a5935f634511d7b60f98/node-observations/HTTP_45_0.SAFE.json",
+      "bytes": 1285,
+      "sha256": "aae5a237c510b6af5dbec11758ebf444edecfe9513828067bc9b2b674b683207"
+    }
+  ],
+  "actualReadBytes": 9618120,
+  "semanticComparison": {
+    "controlFields": {
+      "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+      "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+      "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+      "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+    },
+    "history": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68",
+    "restoredState": {
+      "root": "24bea8f26ed99b234b4d0c557ce8f80cbba205bc093797daff329b398b851633",
+      "version": "merkle-auth-v1",
+      "generation": "6593701f-3f25-4e43-9e17-e9eda4306554",
+      "originalHash": "840b1c9cfbf91e7c90de3ee8b866e77c6829d9f67a049fd310c8351fa285ed85"
+    },
+    "nativeProof": {
+      "generation": "e46b536a-9768-420e-a468-85a20805e2fa",
+      "count": 6000,
+      "head": "6221c7e746c196e01d36fdb13d86bec88cce3709e150ed86c687971afd9795fa",
+      "originalHash": "77a65c6ffe5d36777e3dd41c178e10cdc669fa03f931297b45b2eb5063a23aae"
+    },
+    "controlTextBytes": 4856607
+  },
+  "diagnosticMeasurements": [
+    {
+      "caseId": "control-a328304ad15075772565c67d",
+      "variant": "OLD",
+      "receivedHTTPBodyBytes": 57089403,
+      "originalStringifyCalls": 5,
+      "nativeGroupPeakBytes": 1013436416,
+      "scope": "DIAGNOSTIC_MEASUREMENTS_NOT_A_RAM_BENEFIT_QUALIFICATION"
+    },
+    {
+      "caseId": "control-4b73156dccc5b14770c724f1",
+      "variant": "NEW",
+      "receivedHTTPBodyBytes": 57089403,
+      "originalStringifyCalls": 2,
+      "nativeGroupPeakBytes": 1019572224,
+      "scope": "DIAGNOSTIC_MEASUREMENTS_NOT_A_RAM_BENEFIT_QUALIFICATION"
+    },
+    {
+      "caseId": "control-c7f24abbac28d9b7aaafcec3",
+      "variant": "NEW",
+      "receivedHTTPBodyBytes": 57089403,
+      "originalStringifyCalls": 2,
+      "nativeGroupPeakBytes": 1043419136,
+      "scope": "DIAGNOSTIC_MEASUREMENTS_NOT_A_RAM_BENEFIT_QUALIFICATION"
+    },
+    {
+      "caseId": "control-fa72a5935f634511d7b60f98",
+      "variant": "OLD",
+      "receivedHTTPBodyBytes": 57089403,
+      "originalStringifyCalls": 5,
+      "nativeGroupPeakBytes": 1015066624,
+      "scope": "DIAGNOSTIC_MEASUREMENTS_NOT_A_RAM_BENEFIT_QUALIFICATION"
+    }
+  ],
+  "sourcePGDATARead": false,
+  "subjectImports": 0,
+  "testsExecuted": 0,
+  "containersStarted": 0,
+  "sqlExecuted": 0,
+  "newCompleteMotorPathExecuted": false,
+  "ramBenefitClaimed": false,
+  "full500Accepted": false,
+  "production": false,
+  "privateActualPinsMeaning": "Root executed this pinned offline verifier over actual canonical regular evidence bytes; runtime gate reads the generated SAFE proof, not these private raw files."
+}

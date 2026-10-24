@@ -1,0 +1,44 @@
+{
+  "schema": "helmut-verified-redundant-cipher-copy-cleanup/1",
+  "rootFinalPin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/cipher-parts-qualified-cleanup-20261022/ROOT_FINAL.SAFE.json",
+    "bytes": 1937,
+    "sha256": "f44d2db1f917552756e8cc404b7b18bfce785b58fe9a1ce39548def69b646f73"
+  },
+  "planPin": {
+    "bytes": 49282,
+    "path": "/workspace/helmut-native-integration-checks-20261022/cipher-parts-qualified-cleanup-20261022/PLAN.PRIVATE.json",
+    "sha256": "64abd90ba8128c59819a002d8aa787d5592cb27eca1563858704e28e02fb0970"
+  },
+  "reviewPin": {
+    "bytes": 1644,
+    "path": "/workspace/helmut-native-integration-checks-20261022/cipher-parts-qualified-cleanup-20261022/ROOT_REVIEW.SAFE.json",
+    "sha256": "155761e1d50714087414d045b907858e9f2cc42855a9a98e7439565955d0df61"
+  },
+  "resultPin": {
+    "bytes": 7237,
+    "path": "/workspace/helmut-native-integration-checks-20261022/cipher-parts-qualified-cleanup-20261022/RESULT.SAFE.json",
+    "sha256": "618cdd1a240fdb588baf096d971fe76c0b5db56f83a7e0d7ea91194aa6d1170b"
+  },
+  "removedExactFiles": 30,
+  "removedDirectories": 0,
+  "wholeEncryptedArchiveAndBothHardlinkAliasesRetained": true,
+  "allTransferProofsAndOtherAttachmentsRetained": true,
+  "recovery": "Exact original byte ranges and SHA256 from retained complete ciphertext; no private key or decryption required to recreate removed cipher parts",
+  "allPartsAndBothOrderedReassembliesFreshlyVerifiedBeforeRemoval": true,
+  "fullCipherFreshlyHashVerifiedAfterRemovalByReviewedHelper": true,
+  "sourceDatabaseStateAndAllMountsBeforeEqualAfter": true,
+  "sourceDatabaseStillStoppedExit255PID0": true,
+  "originalsRawPGDATAOrGitFilesRemoved": false,
+  "privateKeysOrSecretsExported": false,
+  "foreignFDVisibilityComplete": false,
+  "noUnobservedForeignUseAbsenceClaimed": true,
+  "reportedRemovalWindowNetFreeIncreaseBytes": 712437760,
+  "actualAvailableBytesAtRootReadback": 11053436928,
+  "singleUnitAdmissionMarginBytes": 316018688,
+  "full500AdmissionShortfallBytes": 4126342792,
+  "full500AdmissionPassed": false,
+  "nativeRunStartedByCleanup": false,
+  "full500": false,
+  "production": false
+}

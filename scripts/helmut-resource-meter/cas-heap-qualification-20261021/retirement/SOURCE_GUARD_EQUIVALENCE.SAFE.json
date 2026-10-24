@@ -1,0 +1,166 @@
+{
+  "schema": "helmut-cas-heap-retirer-guard-equivalence/1",
+  "status": "STATIC_SOURCE_TEXT_ONLY_NOT_IMPORTED_TESTED_OR_RUN",
+  "sourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/retire_two_cas_heap_pass_copies.py",
+    "bytes": 78105,
+    "sha256": "7afd64da0a87d104819de7f3115dfe44907b964c08e9a01c6b8c3d0ad306d9cb"
+  },
+  "parentSourcePin": {
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/retirement-preparation/retire_two_auth_write_phase_pass_copies.py",
+    "bytes": 59338,
+    "sha256": "273c05398d2bbdd38b95beff4301152141b3eccd74dcac69d270012a011ef6d7"
+  },
+  "method": "Raw top-level def line boundaries, string equality with accepted parent; no Python parsing, import, AST, tests or subject execution. Unchanged SHA values inherited only after exact block equality.",
+  "byteIdenticalGuardFunctionBlocks": [
+    {
+      "function": "canonical",
+      "byteIdenticalToParent": true,
+      "sha256": "fd0c3d5f7bd6a8faef428a7f82a2429aca55ef642abcfed25bdee1e9926cbbaf"
+    },
+    {
+      "function": "digest_stream",
+      "byteIdenticalToParent": true,
+      "sha256": "1d279293809a7544fdcdedcd70ad63124e7559ecfa6d168c04ca45d282b1ea90"
+    },
+    {
+      "function": "pin",
+      "byteIdenticalToParent": true,
+      "sha256": "41fcdb288b8b68d8bc353731dfeb1d35c56172836f6c76d9303310b362e6f9b3"
+    },
+    {
+      "function": "read_pin",
+      "byteIdenticalToParent": true,
+      "sha256": "087878e021d0d4b3cc79030d97acad93cfda36c01b724aecca6521fe6db9f154"
+    },
+    {
+      "function": "free",
+      "byteIdenticalToParent": true,
+      "sha256": "2afd677b69afa7790aa40ae74723f917c8cef0266e7d672cf71ca1e773f70f9a"
+    },
+    {
+      "function": "save_new",
+      "byteIdenticalToParent": true,
+      "sha256": "96341573c30a08d8f6a59dac730f4d9b8b28689e86c73639dbfb40aeaead8fa3"
+    },
+    {
+      "function": "docker",
+      "byteIdenticalToParent": true,
+      "sha256": "8d2ff8657dc9f8448735f6430cd897cb1fbe8ca328e460f1dbd56c22ae515661"
+    },
+    {
+      "function": "overlaps",
+      "byteIdenticalToParent": true,
+      "sha256": "efe71a403340d72c52cb7a9cc20e1ceaa3bc3663602e678606a20e1bf2bba8ed"
+    },
+    {
+      "function": "canonical_mounts",
+      "byteIdenticalToParent": true,
+      "sha256": "08ca5969a25968375e3bdbf285d4d27311f202640eee8d759966b36cf35cc104"
+    },
+    {
+      "function": "metadata",
+      "byteIdenticalToParent": true,
+      "sha256": "3f1be865701b71d76bb8f9472132b3a81a9c573d0606fe17de8a2e53524e2e04"
+    },
+    {
+      "function": "identity_equal",
+      "byteIdenticalToParent": true,
+      "sha256": "c05d851643c56edd7ce5dd20cef67c8e455b6e5f9857bb2c29bfb44514d01eaa"
+    },
+    {
+      "function": "snapshot",
+      "byteIdenticalToParent": true,
+      "sha256": "44b806fed1dfdfb94c57d13db1c2f0d615f5c5b5c40c03883fb4cadc2b82509d"
+    },
+    {
+      "function": "same_snapshot",
+      "byteIdenticalToParent": true,
+      "sha256": "17f9c3724eff9df7561d462671bee1b572c8d5981b4a537145e7afe365a7e3f4"
+    },
+    {
+      "function": "qualified_stage3_nsfs",
+      "byteIdenticalToParent": true,
+      "sha256": "cf65d2f8bbb0eb8264221d6f750583378fd6c599e95f3ed5d429bc2eb0e60ebe"
+    },
+    {
+      "function": "unlink_exact",
+      "byteIdenticalToParent": true,
+      "sha256": "e02ae2e051c72440fa07bd5af1b1b296bfb5543877c84532996092548c0d82b1"
+    },
+    {
+      "function": "spec_for",
+      "byteIdenticalToParent": true,
+      "sha256": "01288ff9309aae2ff6dc99b2ca5afba9181c8a8e4382dc6e184b3171555c68f8"
+    },
+    {
+      "function": "contains_pin",
+      "byteIdenticalToParent": true,
+      "sha256": "fe6ca93b442e807935202dcfdcb7a1281d1a4133b531439476b4fbb015b1e7d0"
+    },
+    {
+      "function": "evidence_files",
+      "byteIdenticalToParent": true,
+      "sha256": "44efbaf0a1ab0c40f3f33005d222327dde528cd34c0eede04564ff42bc1c2b5e"
+    },
+    {
+      "function": "proof_by_name",
+      "byteIdenticalToParent": true,
+      "sha256": "2197903ab5738e38f315a0c643d5b78d060d19b1782beda7f3bff3ddc6983cb9"
+    },
+    {
+      "function": "source_identity",
+      "byteIdenticalToParent": true,
+      "sha256": "0327d28ee08f1cb2a74a6a4e6ff31261416ee1cce2706300cb82059f647ede1a"
+    },
+    {
+      "function": "physical_auth",
+      "byteIdenticalToParent": true,
+      "sha256": "08070db0a871806037a81be4ee33266d7a8dfc5dff2d3480d8f544c100af10e8"
+    }
+  ],
+  "additionalByteIdenticalFunctionBlocks": [
+    {
+      "function": "host_users_many",
+      "byteIdenticalToParent": true,
+      "sha256": "2b74263ad52274df2f0844739830ee283302622af0fee8a748c3ef7749049a01"
+    },
+    {
+      "function": "quiescent_all",
+      "byteIdenticalToParent": true,
+      "sha256": "825c8d9122b91bef9fd838a0874d4202792055e734c5137828cc28c16a4ad17b"
+    },
+    {
+      "function": "verified_cases",
+      "byteIdenticalToParent": true,
+      "sha256": "121e11752cc896dab254adfac6b0a44ee44da9f8f0f497af006f0c8a646b3b3b"
+    },
+    {
+      "function": "main",
+      "byteIdenticalToParent": true,
+      "sha256": "6d7b98b7c3e24da08b880a0adcd194418a58730ff31f67558b7713ea5b7df0cd"
+    }
+  ],
+  "onlyChangedFunctionBlocks": [
+    "load_context",
+    "prove_restoration",
+    "proof_context",
+    "checked",
+    "retire"
+  ],
+  "newFunctionBlocks": [
+    "validate_server_heap",
+    "prove_heap_and_acl"
+  ],
+  "proveRestorationDelta": "Only the work mode literal changes from write-phase to cas-heap; all 27RPC/6000history/14Nodeframe/physical/catalog restoration code remains text-identical after that literal substitution.",
+  "checkedRetireDelta": "Only schema/action literals changed. 300s nonce-bound check/adoption/TTL, final <=10s closure/source/context/floor refresh, exclusive once claim and FD-exact inventory unlink remain unchanged.",
+  "serverValidatorOrigin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/cas-heap-native-launcher/worker.py",
+    "bytes": 74377,
+    "sha256": "9dfd5164fc4c95c56c8c60f29a959965e2c333d7b407173b98445b011df9d1d0"
+  },
+  "serverValidatorAdaptation": "Copied existing validate_server_heap text; C.require -> local require; C.QUERY_LIMIT -> unchanged262144; C.uuid4 -> nested canonical UUIDv4 regex. It reparses only retained closed PG log and compares complete scalar proof.",
+  "knownStage3NamespaceObject": "Exact inherited pin-bound single stopped daemon-host NSFS object exception. No added mount exception, opaque-process disposition, privilege, namespace or permission bypass.",
+  "sourcePayloadRead": false,
+  "actionsExecuted": false
+}

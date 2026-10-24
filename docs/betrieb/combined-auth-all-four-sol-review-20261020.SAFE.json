@@ -1,0 +1,2501 @@
+{
+  "schema": "helmut-combined-auth-four-arm-independent-actual-review/1",
+  "status": "PASS_LOCAL_ACTUAL_27RPC_INTEGRITY_AND_CLOSURE_ONLY",
+  "independent": true,
+  "blockingFindings": [],
+  "reviewerModel": "gpt-6.1-sol",
+  "atUTC": "2026-10-20T20:47:46.279378+00:00",
+  "rootPreparedPin": {
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+    "bytes": 46155,
+    "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+  },
+  "earlierThreeClosedCheckPin": {
+    "path": "/workspace/helmut-ram-fix-20261020/pg-independent-review-20261020/COMBINED_AUTH_FIRST_THREE_CLOSED_CHECKS.PRIVATE.json",
+    "bytes": 103233,
+    "sha256": "e3b70e3f3d1b755c8755def46b5e4a00395cdb7cf41b722b5f559a5d26683065"
+  },
+  "cases": [
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443",
+      "variant": "OLD",
+      "checksPassed": true,
+      "fourSelectedHashes": [
+        "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0",
+        "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9",
+        "b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a",
+        "1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0"
+      ],
+      "rootPreparedPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+        "bytes": 46155,
+        "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+      },
+      "actualPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8842,
+        "sha256": "9a1bf01ed317b5f00a9e20fc2469a89ca4eb61f1ba6e7fd9fef9fc9941e837e3"
+      },
+      "fieldHashes": {
+        "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+        "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+        "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+        "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+      },
+      "historySHA256": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68",
+      "freshNonces": [
+        "720d7a3a-f8a2-4d4b-b8a4-482fc1da3c30",
+        "09da6a57-6f8e-4862-a22d-0b1b31b08265",
+        "29c3d20c-07db-4d0d-8932-a78e595d51ea",
+        "37408b03-77dd-497b-940b-b04224510b0b",
+        "83bdb8bd-dae8-4d45-847b-a4d6281bf81b",
+        "383eee50-22da-4597-8431-ec60964df7dd",
+        "9ecb071c-52dd-4bd4-a357-2ee727b88476",
+        "f20daf7c-a695-49de-91b9-1310515eb954",
+        "6bd33796-7561-4aff-8bc6-0ff56cb78d74",
+        "04d68218-9ee2-4085-b05a-5dc19f3059f4",
+        "c979ecd2-9fd4-4dd3-b050-e02c00de37cd",
+        "662b2f4e-8cfc-4c64-a8a1-22e6fdb2f20e",
+        "3c0b7848-6515-4724-924a-9e53b9413906",
+        "07b8e63b-006b-4e5a-acfa-48f3e275a44e",
+        "e34e4beb-7acb-4626-8153-cdaf38aca90d",
+        "16b785db-1593-4d24-8efc-b1ec9d295627",
+        "41072823-6353-4741-bfe4-642d0fe94133",
+        "5a1d972c-4f43-4967-86dd-aeb3f4c502dd",
+        "1cb307f7-b97d-4d77-926d-7ec8b74c58d2",
+        "2b04a8ad-ab0f-4677-8ace-9b07045124cf",
+        "082e9f7e-7bfc-44da-9990-fd5ebf3ea300",
+        "81574083-aa89-4b7e-945c-29f204f670db",
+        "1975410b-ce1d-4248-9c3c-ef24ea6cfc35"
+      ],
+      "confirmedRevisions": [
+        "a0576da4-8940-4860-a725-5041432dbe85",
+        "18a0f2d6-e462-4126-ad6e-0c25a85ff28a",
+        "47305c83-8e4b-480f-b7b1-fa5702bc1fe0",
+        "e9147f2d-23a7-4d82-8dcf-cb9f8a10c500"
+      ],
+      "historyBindingsRecomputed": 23,
+      "graphBindingsRecomputed": 18,
+      "coldControls": 18,
+      "warmControls": 0,
+      "wireBodyBytes": 157016193,
+      "stringifyCalls": 41,
+      "captures": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_AFTER.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "7b1cb8c90670b80cf3e077cc59950800ebc8da45ed614a8e21d4a3027abe9771"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "5bde0272387a88cf4879f6838cf1e50598cb0f1e839c19a12f7ebaf26ab4c302"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "6f91b9a090ea6592f7f1ae348495a5721198d9c8f58212eb1d2fd5c4475a283e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "329ace54e4beae726c307f79d50995967d749c3867c42c753e009963c595eb2b"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_1_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "d587801cf7855ff73ce08914313d719a04ba63ef6e845ded9b5cfb64f9a94699"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_2_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "00acca4c270268a3d038776aa89f75402f800204b9e53c9ba6127597ecdfdb34"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_3_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "c4cade6c2b09e8f7afef98ed598e4fde9481637ff64a1b5c6e986c3375aadaad"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_4_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "195eb2aa7bef5f8543ec5960ab5e878ac313c4c178b4119a2bcdd21eb06741cd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_5_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "cb40523979d52c56c0e2f7d814379c877622f742ef716a5d938cdff558840e7f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_6_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "17c63de70315cc181f733a0aa763b4bff5c3a2b35ee17b5bb5ccf1185c31907f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/GRAPH_SETUP_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "d5fc914125f59653d794cfddb5bb4805840921751edffafcf5a1171ec8d94098"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/NODE_CONTROL.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "cbf824a39f5d722cda6692522c2d80deb1474f2b39364fa4566d065cb92ff19c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/OFFLINE_AFTER.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "8c06a32e92739a09b923c4e261a6e08455f1c372f506013231c6b940d43296e4"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/OFFLINE_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 295,
+          "sha256": "247ece6fecdcb2df032ddb3b88002ced62e2d56450e2b249b60bd0aa3200ea39"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/RENDERER_SETUP.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "a405f2676044478706516a5b528a1e02c0ffb45b564a43a868f2d73177303521"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "b018d8785ccd9824c1f5c06fcf128ba0603f39941e688dfcd346c3ba3104b05c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "d6dcf73bb37f51554dbf8575bee3d19dfd97db6f100824e71011ee0d8bf38c1a"
+        }
+      ],
+      "evidencePins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/ACTUAL_RESULT.SAFE.json",
+          "bytes": 8842,
+          "sha256": "9a1bf01ed317b5f00a9e20fc2469a89ca4eb61f1ba6e7fd9fef9fc9941e837e3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/WORKER_RESULT.SAFE.json",
+          "bytes": 7397,
+          "sha256": "f12bf27ed381c39ef89090a68a45329d88b659021ae890f0b2e1f6f94e823693"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CONTROL_CACHE.SAFE.json",
+          "bytes": 89943,
+          "sha256": "72385d746261216301a67170d19790ff64181e9ee745ebbdd750a8c88e72bd33"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/ROOT_ADOPTION.SAFE.json",
+          "bytes": 4768,
+          "sha256": "c3386a6b9162d0e07aeecd21905a3a616a1a80997d9123ec5b5803aa9765f086"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/PREFLIGHT.SAFE.json",
+          "bytes": 257674,
+          "sha256": "4ccfa2bf5d1362ce626a1a7e94a743f056f35c39e63c693d8f9ed3414e26ab5f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/STARTED.SAFE.json",
+          "bytes": 4137,
+          "sha256": "7e6b87ca81ee147941f94b6522e9ba36eebe54c6075709c0294c4db7cafac42d"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/WORKER_CONFIG.SAFE.json",
+          "bytes": 304527,
+          "sha256": "1c89b5101985e060d97bf776e4cda2b32c4b6555b19d2cb9c27998b77a7b5baa"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CLIENT_CONFIG.SAFE.json",
+          "bytes": 562,
+          "sha256": "1207db932f55658f19806c9e75b6fdf52fb96e125f1e70ede8ca46aca09bd96d"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 775,
+          "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+          "bytes": 775,
+          "sha256": "afe386d38a1e3cffaced0f459e6fed3d47882a58f2fac3fb76777f422e272009"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/ACTUAL_NATIVE_CATALOG.SAFE.json",
+          "bytes": 175561,
+          "sha256": "8ada8f7a8c527de7062d985d6f816369f2bf758e0b93234c13ccf4ef0e12befa"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+          "bytes": 59470,
+          "sha256": "59a1471b616d056c4cb08b5f6677a04c5eec9c694f73c4426447b85a946150ca"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_AFTER.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_SELECTED.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "1a890701df5e1739e4a63510e171086984ac686fcf56249af6221d6e0ef8cb42"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+          "bytes": 327232,
+          "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+          "bytes": 327232,
+          "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_AFTER.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "7b1cb8c90670b80cf3e077cc59950800ebc8da45ed614a8e21d4a3027abe9771"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "5bde0272387a88cf4879f6838cf1e50598cb0f1e839c19a12f7ebaf26ab4c302"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "6f91b9a090ea6592f7f1ae348495a5721198d9c8f58212eb1d2fd5c4475a283e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "329ace54e4beae726c307f79d50995967d749c3867c42c753e009963c595eb2b"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CATALOG_SELECTED.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_1_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "d587801cf7855ff73ce08914313d719a04ba63ef6e845ded9b5cfb64f9a94699"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_1_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "d148513467d7fe931e4a7d02e63f1e907fae31a1beb59dc4cd1c4a59182242a5"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_1_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_2_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "00acca4c270268a3d038776aa89f75402f800204b9e53c9ba6127597ecdfdb34"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_2_SQL.stdout.PRIVATE.txt",
+          "bytes": 523,
+          "sha256": "93ce7ca84cb7f38fd9d448b70a6ebe120bbdaecdb31b0ca22bb975ef90f354b3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_2_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_3_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "c4cade6c2b09e8f7afef98ed598e4fde9481637ff64a1b5c6e986c3375aadaad"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_3_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "921aa3ba5b557b09dc0bb7f530015fdfd8af8df3b79ff58676aeb2c7b4f4958d"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_3_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_4_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "195eb2aa7bef5f8543ec5960ab5e878ac313c4c178b4119a2bcdd21eb06741cd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_4_SQL.stdout.PRIVATE.txt",
+          "bytes": 523,
+          "sha256": "d3c401e89d47191ee26094e55256e9e62d14fd7a839af1c0edb9d1299bb7615b"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_4_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_5_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "cb40523979d52c56c0e2f7d814379c877622f742ef716a5d938cdff558840e7f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_5_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "25bcc4b4eee9b61f17a22b0784a2927419ba2b504e094bb4b4b4f74ba978de52"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_5_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_6_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "17c63de70315cc181f733a0aa763b4bff5c3a2b35ee17b5bb5ccf1185c31907f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_6_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "83e2fa16f7ba20787b3d8055cfb6cccb68c7f25804287a34fbd91bfd4140072d"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_6_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/GRAPH_SETUP_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "d5fc914125f59653d794cfddb5bb4805840921751edffafcf5a1171ec8d94098"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/GRAPH_SETUP_SELECTED.stdout.PRIVATE.txt",
+          "bytes": 490,
+          "sha256": "764bebf810bf2cf999279c0ac2e9a0fc14dd37364b44519d596d0da172c2a9ab"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/GRAPH_SETUP_SELECTED.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/NODE_CONTROL.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "cbf824a39f5d722cda6692522c2d80deb1474f2b39364fa4566d065cb92ff19c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/NODE_CONTROL.stdout.PRIVATE.txt",
+          "bytes": 89943,
+          "sha256": "72385d746261216301a67170d19790ff64181e9ee745ebbdd750a8c88e72bd33"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/NODE_CONTROL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/OFFLINE_AFTER.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "8c06a32e92739a09b923c4e261a6e08455f1c372f506013231c6b940d43296e4"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/OFFLINE_AFTER.stdout.PRIVATE.txt",
+          "bytes": 2272,
+          "sha256": "fa0c8ccf9db990250c36b8c454d0b3784bf018cecfccad17609821ae5b359d89"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/OFFLINE_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/OFFLINE_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 295,
+          "sha256": "247ece6fecdcb2df032ddb3b88002ced62e2d56450e2b249b60bd0aa3200ea39"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/OFFLINE_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 2272,
+          "sha256": "5f55f06d598a16cf87c740ffef56c5ac1b12f020d5f672c5a18cb6ca395a95d6"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/OFFLINE_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/RENDERER_SETUP.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "a405f2676044478706516a5b528a1e02c0ffb45b564a43a868f2d73177303521"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/RENDERER_SETUP.stdout.PRIVATE.txt",
+          "bytes": 240,
+          "sha256": "530806d7bbf1f541ffa460e5b9060f466ce558efff2026fe0b3072c2da91a5ce"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/RENDERER_SETUP.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "b018d8785ccd9824c1f5c06fcf128ba0603f39941e688dfcd346c3ba3104b05c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "d6dcf73bb37f51554dbf8575bee3d19dfd97db6f100824e71011ee0d8bf38c1a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/POSTGREST_STOP.SAFE.json",
+          "bytes": 2545,
+          "sha256": "d79bc810b3cce908670dc0a202bc99eec571abc2c6c9f298d5848f371af0e9ce"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/POSTGREST_CONFIG.PRIVATE.txt",
+          "bytes": 236,
+          "sha256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/POSTGREST_LOG.PRIVATE.txt",
+          "bytes": 632,
+          "sha256": "ab262d47e61cdaec8621b4878f1b241363eb4f48d7a9033d5edce10780cd761c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/PG_LOG.SAFE.json",
+          "bytes": 348,
+          "sha256": "280754cc8d4c7f62386b67996914a80b31547f52aec353d1f6b3ce6dc0a09d19"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/PG_LOG.PRIVATE.txt",
+          "bytes": 1193,
+          "sha256": "7e7672ce0ec19c5a7b2eeb92ba132a2f6718fde9f0326c8f8a055ce7cedf7503"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_1.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "a89a8959451af6637d2ba8a04fcfc4296f633e3150dd2895ea5886ffa9ed9551"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_1.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "f53cc876e7d39074c2440b1a7b5588cba5f1335516afd2598d5ec39b7808d06a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_1.OBSERVATION.SAFE.json",
+          "bytes": 4557,
+          "sha256": "ffd7c89e1e4290c93bdc8e0c16dd334371f57b6f001045e20952290366aa1042"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_2.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "26504d6fe0834750af9ffc99ac76dbc58503a5fb5f06519bf2bde03a090e323c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_2.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "0934f54842edaddba8a7df062ed5e81a4317f7afa3013929e504b125c0a0333e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_2.OBSERVATION.SAFE.json",
+          "bytes": 4572,
+          "sha256": "fe0db1c97b016d8adba6dd1732a51bb8b09be3bde2a103aa592bd345d1ba0996"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_3.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "bb2ab0992ed550934988410c5e71ea3f32798d0b9a2bd23aa80ba56960430dc1"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_3.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "ea1c875787dadef6ee1c2cc198cc4a565d51b3c7a85173eb2ca92d3bb7372352"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_3.OBSERVATION.SAFE.json",
+          "bytes": 4577,
+          "sha256": "d4d426795078edebd9c332dfd71155955af0ca832e958f9944791c19e058bf75"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_4.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "662e697ee141c1762d53777dafa02ac83cde63d9c95570f24f3998b91b13c657"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_4.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "a70b181b34a17884c66deb828ad8dc3002f2b948de0721e149a87a737870148c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_4.OBSERVATION.SAFE.json",
+          "bytes": 4572,
+          "sha256": "fce32a5fdb069b5f06427c75c8baa8c32035ff43bd798fbc8e3293df4dadc281"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_5.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "9c53416d767323525259b5cf493773e0863865e68c35745e8cc27433a9687003"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_5.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "778c16153ec4e70e9daad32d0e6bb366365a7e47e84a01136b83ebe33217ea59"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_5.OBSERVATION.SAFE.json",
+          "bytes": 4577,
+          "sha256": "4a9d255901be0ee14c02ab008e0a4cfcb2d32e5573fce615984c28fd20875d39"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_6.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "4010c328cbe36034e5f1c6d47ed478b935c6c02bfc3c4045c23f6c6b01f06129"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_6.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "dbf4b0731f2a4359dfb54b95beda84409a25aa26cfa5ed8522ab1665c888e488"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-4dec46ee7df2915710417443/CYCLE_6.OBSERVATION.SAFE.json",
+          "bytes": 4576,
+          "sha256": "92a1b6825275dd399cdc017d5b31a6a58559e088b3861ca2a29fb1ddb13cb718"
+        }
+      ],
+      "noPeakCausalityClaim": true
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2",
+      "variant": "NEW",
+      "checksPassed": true,
+      "fourSelectedHashes": [
+        "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b",
+        "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63",
+        "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+        "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0"
+      ],
+      "rootPreparedPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+        "bytes": 46155,
+        "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+      },
+      "actualPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8822,
+        "sha256": "93cc3a247ff458275b815075592be30573ed91383ec3905cacb1938894b7999c"
+      },
+      "fieldHashes": {
+        "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+        "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+        "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+        "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+      },
+      "historySHA256": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68",
+      "freshNonces": [
+        "69926155-9cdc-4b4c-b6ce-fee67c03098e",
+        "25dadc12-ddfd-4e36-9a64-7c5d7e391f99",
+        "368c97a7-df3d-44d1-a6e0-283e9f8d81c3",
+        "226d07c9-ae86-4fc9-9c57-3ebe041e819d",
+        "50a48713-5eb3-4dca-861c-15511fbdb02c",
+        "c3013519-3e92-4f15-8e1f-66069ca47e79",
+        "86c1f043-40a3-4e3d-80ac-af5c8161e495",
+        "d94bc9d7-dbe0-47df-a266-c0296b7036c0",
+        "84620405-52a4-4746-8082-5f17b8a2af61",
+        "35a1f4eb-26fb-4e4f-ac13-86b8ac24fcb2",
+        "739ec036-0a99-4442-add6-54b412e394c9",
+        "91b2e074-2928-4a31-9d9b-85867bb41cc2",
+        "81aa5925-7297-44a9-8549-4855cec34397",
+        "5fe73624-1e55-4800-a1f0-57f710715c43",
+        "03637613-2113-4590-b7de-89103ec0f319",
+        "9f0ca7ea-c1ff-44a3-a167-e9c40b55c6b4",
+        "1e327c87-41d5-445f-b87b-abad862f6cc6",
+        "53b8a553-43cb-4c65-9ee4-9d191a30099e",
+        "f1b8a2bd-1383-462e-8f7d-5230f5702b9b",
+        "3588bdba-561a-4307-9265-25d62c367430",
+        "5b0bb377-9bee-4454-ad9e-f673840b81ca",
+        "c7b36fa5-0aee-44fa-af35-0e90a8c79fbb",
+        "a58f720d-51fc-43a3-8039-dcca55ea92e5"
+      ],
+      "confirmedRevisions": [
+        "446f823a-3088-41cc-a7cf-f8b63c9acb60",
+        "6fc2cabd-7fda-484c-8bbe-e430882c684c",
+        "12a5a825-ff5b-4f52-807c-167eb704b4d0",
+        "8af08469-f783-4ec1-80ad-baa0f6ce1b1d"
+      ],
+      "historyBindingsRecomputed": 23,
+      "graphBindingsRecomputed": 18,
+      "coldControls": 3,
+      "warmControls": 15,
+      "wireBodyBytes": 57089403,
+      "stringifyCalls": 5,
+      "captures": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_AFTER.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "6d75ce3b6322eb6e1e02be3dd95e72f0fecf2be2a7ce82f802aec19760ee309e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "3b313680c0bd48b9dd532724ce862673918389d2b1600e956be1754d1ad94f8a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "782f994cb83a086eda9ee1b374eb082c51d2c725832558621f85d78fa2697106"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "b4dd31c5aaabfec6f4999c2793dea67c2d27860878371658602e925308b73b4c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_1_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "971faf691d358d02dfed85f7ea4d0b4329f4cdd1f61758eccf4fc4c41ec87c53"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_2_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "f5dec2156ebbde7465ac8f086e990ec930facb25688935ec32fb48abb22f3017"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_3_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "44d355367e831203d961e98f3bdaec50c5872f44767d94e67aa7b0d7651ab72c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_4_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "20be4b41baa28de0794c1f835267bcae07afe86137e62bc2cd4ccd112354e255"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_5_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "95f1281b7bb90c960d219a3cd2a588634cf1281b6643d375f11aa8557ac60453"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_6_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "c9b8ef0670cff829c917f9e7fefe8a008b0dcc91f7d4fabb12cc85c35ab789ec"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/GRAPH_SETUP_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "28a35a6ff8a0fc62521e5e58d36fea4522211791623e658a38ec0c30e54905dc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/NODE_CONTROL.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "d3bdce128351e50009f37d05bc168f96b1669a4587e67209c637b5d7dd0e26ad"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/OFFLINE_AFTER.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "044dcd1e1058a57fd407191b11bbb60a16c390892afdaf200405390a20e63d45"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/OFFLINE_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 295,
+          "sha256": "d9eccbba3481026be56a39f1df31c2ce5ff0cd82b770359730cf4f5eccfff244"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/RENDERER_SETUP.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "3653d746812ed2760aed73c416d23202998f0b738287fa4193aa0d9811c30f76"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "8f97a23c4efb0011b66a2c093defb254f376db67aea463f8f50164ab4530fdd4"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "accabcb4b5b93d186fb638229b78f08a550915f407d361d459f4d2aad159c8e0"
+        }
+      ],
+      "evidencePins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/ACTUAL_RESULT.SAFE.json",
+          "bytes": 8822,
+          "sha256": "93cc3a247ff458275b815075592be30573ed91383ec3905cacb1938894b7999c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/WORKER_RESULT.SAFE.json",
+          "bytes": 7377,
+          "sha256": "ce13b2016cea15e18c1ea0fcd118d9922e5f67781d1efb306df2e7059f3a8038"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CONTROL_CACHE.SAFE.json",
+          "bytes": 83999,
+          "sha256": "e08fe5c0117a3de8524287edfeaacbd99c2ece1354f00db19388828cd9a54bbc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/ROOT_ADOPTION.SAFE.json",
+          "bytes": 4750,
+          "sha256": "41b385ce246165a54bba67b44bbbee74af4e4a0c4821b5e6d0fb9f66b47eb2d9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/PREFLIGHT.SAFE.json",
+          "bytes": 257656,
+          "sha256": "e5f25e9c08493e5cbd4b2db29fcdbe3699c8b14254d7df470ae2c9cc895f124c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/STARTED.SAFE.json",
+          "bytes": 4119,
+          "sha256": "3f99031f6606147caec91b8224e0003d1c4af3e2a30d65c37c010f3c7cada3d7"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/WORKER_CONFIG.SAFE.json",
+          "bytes": 304509,
+          "sha256": "19f16cc63f083d387a7907af907f0db490a8971ec058a43e443cffc7c3a2731c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CLIENT_CONFIG.SAFE.json",
+          "bytes": 544,
+          "sha256": "d914104f5ecb51cead056ea5850d06e8080f8e94e8b1dbd14dc0d43c5ec58f13"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 775,
+          "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+          "bytes": 775,
+          "sha256": "fda6d504b24845f1788d7d3fd138db96d58299584edf999c7b5bda6446e18d40"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/ACTUAL_NATIVE_CATALOG.SAFE.json",
+          "bytes": 175543,
+          "sha256": "ea609fb399a893897326fd411fccdca94a7a0d16718e2ffd651c0e6776080de3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+          "bytes": 59470,
+          "sha256": "5f8a80f4fc37ce0b9364a19cefaea9069a8de6ae1204a4d82e81141f72a0d15f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_AFTER.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "2c3567ca0887434f6cb48e88f8c1529e004dac8bccaea2d31bbfd3b5613daa73"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_SELECTED.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "2d3498154b4ce71258831de4b1179fedb8f72f03363098ae2db11ecc2e26e4e9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+          "bytes": 327232,
+          "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+          "bytes": 327232,
+          "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_AFTER.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "6d75ce3b6322eb6e1e02be3dd95e72f0fecf2be2a7ce82f802aec19760ee309e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "3b313680c0bd48b9dd532724ce862673918389d2b1600e956be1754d1ad94f8a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "782f994cb83a086eda9ee1b374eb082c51d2c725832558621f85d78fa2697106"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "b4dd31c5aaabfec6f4999c2793dea67c2d27860878371658602e925308b73b4c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CATALOG_SELECTED.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_1_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "971faf691d358d02dfed85f7ea4d0b4329f4cdd1f61758eccf4fc4c41ec87c53"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_1_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "2f0830d4317118f434769e7fae0abadf56e91bdf5bc6c1c75b9781fd26a35b41"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_1_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_2_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "f5dec2156ebbde7465ac8f086e990ec930facb25688935ec32fb48abb22f3017"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_2_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "1a14779a6aad7eaa6a3d93a3d009f8d4b1f8f67293a74a5dac73d4fd77b3d2aa"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_2_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_3_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "44d355367e831203d961e98f3bdaec50c5872f44767d94e67aa7b0d7651ab72c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_3_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "84477c00ffa72b18d8730c7efd4e39daa18ef87f8a635157845a43083c7a3ed8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_3_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_4_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "20be4b41baa28de0794c1f835267bcae07afe86137e62bc2cd4ccd112354e255"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_4_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "54df9346561c91ce810b610bae14712ad80fe619edfdcca1caf77e74f2d69a4a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_4_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_5_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "95f1281b7bb90c960d219a3cd2a588634cf1281b6643d375f11aa8557ac60453"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_5_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "b25efa18947527c8cccf3a4b893f1939807ef826df42fd8617a752f7497269d1"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_5_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_6_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "c9b8ef0670cff829c917f9e7fefe8a008b0dcc91f7d4fabb12cc85c35ab789ec"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_6_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "702ae787645df6ce86289aa6018c035f5c90ac380c96fde1d930ab034cde873e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_6_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/GRAPH_SETUP_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "28a35a6ff8a0fc62521e5e58d36fea4522211791623e658a38ec0c30e54905dc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/GRAPH_SETUP_SELECTED.stdout.PRIVATE.txt",
+          "bytes": 490,
+          "sha256": "ad651d6ebb1e596f397837bbd4e7b688aef6ab13dea3af17acb524a712a73caf"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/GRAPH_SETUP_SELECTED.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/NODE_CONTROL.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "d3bdce128351e50009f37d05bc168f96b1669a4587e67209c637b5d7dd0e26ad"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/NODE_CONTROL.stdout.PRIVATE.txt",
+          "bytes": 83999,
+          "sha256": "e08fe5c0117a3de8524287edfeaacbd99c2ece1354f00db19388828cd9a54bbc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/NODE_CONTROL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/OFFLINE_AFTER.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "044dcd1e1058a57fd407191b11bbb60a16c390892afdaf200405390a20e63d45"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/OFFLINE_AFTER.stdout.PRIVATE.txt",
+          "bytes": 2272,
+          "sha256": "954189acb843b5375583497d0a0ed657ae3de99c677957eca817f41c5b088615"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/OFFLINE_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/OFFLINE_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 295,
+          "sha256": "d9eccbba3481026be56a39f1df31c2ce5ff0cd82b770359730cf4f5eccfff244"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/OFFLINE_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 2272,
+          "sha256": "5f55f06d598a16cf87c740ffef56c5ac1b12f020d5f672c5a18cb6ca395a95d6"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/OFFLINE_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/RENDERER_SETUP.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "3653d746812ed2760aed73c416d23202998f0b738287fa4193aa0d9811c30f76"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/RENDERER_SETUP.stdout.PRIVATE.txt",
+          "bytes": 240,
+          "sha256": "5c9f4a5ac1131ffcb57fc453a94cb4e613f66b1a3f8992c81b9f742ff50a0fc5"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/RENDERER_SETUP.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "8f97a23c4efb0011b66a2c093defb254f376db67aea463f8f50164ab4530fdd4"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "accabcb4b5b93d186fb638229b78f08a550915f407d361d459f4d2aad159c8e0"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/POSTGREST_STOP.SAFE.json",
+          "bytes": 2544,
+          "sha256": "91c503be858ffe010079ba28981070df8786cc90cbef4be62ab9d3b2e422f642"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/POSTGREST_CONFIG.PRIVATE.txt",
+          "bytes": 236,
+          "sha256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/POSTGREST_LOG.PRIVATE.txt",
+          "bytes": 632,
+          "sha256": "0f05b4508b062803b38f4c4078c56252f1a8893cd90ac498905e0aed7a011980"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/PG_LOG.SAFE.json",
+          "bytes": 348,
+          "sha256": "1ac9de55f4dca284be2bc29a4353f599e92ce91a6b623f7e6a7adac6dd11e407"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/PG_LOG.PRIVATE.txt",
+          "bytes": 1193,
+          "sha256": "b472f7d94fc9ef31d68045150d87a3ddd7d302603ca76a8f7baf5ca296778df0"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_1.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "a7e01774515140e54dbd2b8fad5d50e628a7438f6377f5cabd60865ee49d2b6c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_1.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "4c692dcb8ed1fc302fc45fcef99f383b0e363c04b2e7f3aa86b98409b089fcbd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_1.OBSERVATION.SAFE.json",
+          "bytes": 4559,
+          "sha256": "ad0a346e0c68175bf731a35471be1c1150ac22b9ff8215d8e6137399c2faa0c4"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_2.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "66f94e6d65dc57a88dc554edcd9a7f431d6da06e9569b0ff83e52baa137c7463"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_2.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "e04f8fb7a44a2cff75877d84a643db7a2c1dba0d8198ca28111af031bd31b5dd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_2.OBSERVATION.SAFE.json",
+          "bytes": 4577,
+          "sha256": "8a186420e6ae9255862bbd0b7a788192f90e8e73f1e35469318ad50f109448a8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_3.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "d3476855f3af1daf89deec41f659891f11b2430d8f3e3396ade1791034025449"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_3.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "de573b5041b007d8ed0d01e921f2bbf538ea4e42e5c00f44f566e8260fa641c8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_3.OBSERVATION.SAFE.json",
+          "bytes": 4581,
+          "sha256": "f8da1136fce6994340a2da043bbd1d760ab5c5ac9228e9fd9151fd2f5272e1ee"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_4.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "6cc593ad397c87e6fd4d28f754c8674702a67b1df90ebfa37ea9ea82ad260aec"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_4.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "2654c026f25acdadef62e79c180ccbcd9b237f846d45a25a7d93a2e167700fe1"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_4.OBSERVATION.SAFE.json",
+          "bytes": 4579,
+          "sha256": "3bf83728c41f35b0631efb6a512b05645715fb0d357079bfd4df0d71cc4802c6"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_5.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "c55ee65f042a6e1752079982528599f73d67762318d5d0d3f837bfc31aafbd60"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_5.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "8d664d63f382d90fc7e396ef1496aa008ad0798953cf92b835b25d7ec608f2d1"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_5.OBSERVATION.SAFE.json",
+          "bytes": 4583,
+          "sha256": "11e2e210db28bdcc27512f6753ab5785f613351105e2c0f4e9feeab9676bc389"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_6.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "755147320123afb3f9e7f2b27569dbb29372267337d730ad75441dad92d97617"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_6.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "b94976cab5917f88002bab3812feb6d0a29c6d9bac298ce095e5eecd916d70e9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-f3ebacf9615086ac8da26ce2/CYCLE_6.OBSERVATION.SAFE.json",
+          "bytes": 4579,
+          "sha256": "e4299b0a82e452e31e3e7bc7ec68086a9c59e37d6a3d51c428bbbf8139533570"
+        }
+      ],
+      "noPeakCausalityClaim": true
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9",
+      "variant": "NEW",
+      "checksPassed": true,
+      "fourSelectedHashes": [
+        "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b",
+        "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63",
+        "d02ac4844aaa10dd41c601a1e568398adf375f18810c6301bdab6040d11a1e32",
+        "4e2b9015790312d0b05e781ba6ef9a62cb13462167c47b6c9a998f27cdfb9ae0"
+      ],
+      "rootPreparedPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+        "bytes": 46155,
+        "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+      },
+      "actualPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8829,
+        "sha256": "48e838ba4d974c7578f42ffe9895ad4cef693804f5fcfa815bdc45218144c9f5"
+      },
+      "fieldHashes": {
+        "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+        "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+        "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+        "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+      },
+      "historySHA256": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68",
+      "freshNonces": [
+        "7f7ab9d7-0d2c-4712-b56d-1ea74e9e66c3",
+        "ff4a0eb0-1f74-4a54-8603-d730e5356d80",
+        "84042c1d-4d93-434c-83cf-91e27876e5ca",
+        "c3a84fc2-bfde-49c0-aa89-9c5ff62f798c",
+        "5685da63-c673-4381-ba99-f0292452de41",
+        "8a4cecab-5309-45e7-8396-076436569955",
+        "74326de2-1dc5-4d25-a776-b85a679f7535",
+        "d49863df-73d8-4ed8-918a-6c0c53309f9d",
+        "2f1a7a48-63d3-4e8f-9c0b-5e5709a856f0",
+        "6ac8a3c8-2268-4071-bb65-0904721da945",
+        "4803277e-c6f4-4384-9bcc-b4b081ced8cc",
+        "85a34efc-ac9d-4f32-8765-654c0578102e",
+        "c0fb9e04-7b09-4e91-9140-06f3093b785e",
+        "60e690bc-6d8d-41f2-9514-abc1e98c69c3",
+        "62055628-fe51-4190-94f2-107ee12543b7",
+        "89096bc9-2149-4a2d-ae1e-375ffb86e4c0",
+        "dcafabd9-adbc-4c5f-91bd-89b4bb29d6a0",
+        "08756ab7-f475-481d-8cee-a8e1dffe1636",
+        "c6fb0274-5c7d-4afa-b287-34793c2b791f",
+        "9e5c6457-af61-413b-b867-f05bfc5c2828",
+        "5f6491a5-1570-4179-a6c9-39684846fbc1",
+        "05d58457-32e0-4f3a-8140-fc4b119b2d30",
+        "56316d28-d4eb-41d4-bb3d-43fb768afa52"
+      ],
+      "confirmedRevisions": [
+        "3f60b0dd-c81c-4a5b-b8f5-92fc58d9c0da",
+        "dbf88901-70ac-47af-9a3a-657e92408485",
+        "7b413ced-0a08-4e7e-9d6b-dc68f31ad0fa",
+        "0ef69c18-ab78-4639-8e45-8d7ff8cd75bc"
+      ],
+      "historyBindingsRecomputed": 23,
+      "graphBindingsRecomputed": 18,
+      "coldControls": 3,
+      "warmControls": 15,
+      "wireBodyBytes": 57089403,
+      "stringifyCalls": 5,
+      "captures": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_AFTER.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "c0029d9df66a5f4bb274913e97bc00c44681b7da8eb0b09b1c75135bb07c5c9e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "67177f6754f404964716e497e09bc7a2fef6152148f480a84f044a1350bc6d07"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "d3f278f0901d945ece25c00f93877cc3bad4f3b30b88a1522fec005b96094cab"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "0a252acda993c330876a5f20918005dd4f0f99e752f81e1d6729ded841a55bbd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_1_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "511ba4b57d7570531ec32924bcfcaf491f8163b358bee35b37fe43df052d8db9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_2_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "2bcd76a3035e1e1598f9d3b9458f06cb0ed02e1ded393fd8dbebdd9c894f2146"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_3_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "cd1742ba30f2c0f41b93f68cc1cd41471ae803fd48864840315d235207305d22"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_4_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "4ce6d160e2fc530e261e0dd7020c526dea84da20bd256a5cd67eb539b33b6820"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_5_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "a96db67313ec07dbeb1a519e8874be384076173d9589e716bc122a14f1f025b3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_6_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "95c2c613d63df3ffe05305980b069ff22b5ce018a91829a7a04062aac8e16072"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/GRAPH_SETUP_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 290,
+          "sha256": "2aebea34da2e6f636a02c93ea1c26f80be4b3634e2475f383b083ac0aeabbbbb"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/NODE_CONTROL.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "a72779c2f1790d59d70790f3a29ad9ce2604b298c62dc4f716a3c255acb6bf0e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/OFFLINE_AFTER.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "d6f4f6076ad0d508cfedcd4245e15e2f5c807f0b51e8b9f2d07bf4eed906d6db"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/OFFLINE_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 295,
+          "sha256": "e1c0760a454673d950f490457662fc2c99c0b4b4cb451d957d31f218dbef959f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/RENDERER_SETUP.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "c97d4205c707d6ed0a7214b2eeacfe22206d7a7396b10ecf67ddc303b2053f4e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "29b5e75a1311c52c0a0185832ce0714a11abbc51020ef958101a78c06eb4fadd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "22a92c535201140bc74db1ad0ed3891b3df36e2417353ef4b8fe3df3cf17b3a5"
+        }
+      ],
+      "evidencePins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/ACTUAL_RESULT.SAFE.json",
+          "bytes": 8829,
+          "sha256": "48e838ba4d974c7578f42ffe9895ad4cef693804f5fcfa815bdc45218144c9f5"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/WORKER_RESULT.SAFE.json",
+          "bytes": 7377,
+          "sha256": "5e425bc51bb499b55541a90a203c6992e40f0c1eef7219f1b2dd7115499cdaef"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CONTROL_CACHE.SAFE.json",
+          "bytes": 83987,
+          "sha256": "c6d518da20b5ee0152312564f21b79d65231e8a0c6d82e46a79cab4da74f7eba"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/ROOT_ADOPTION.SAFE.json",
+          "bytes": 4750,
+          "sha256": "59d8bd9527b0bc14fbd819de3163f6fc94bc18a0dfc8463f35b039461ec51f18"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/PREFLIGHT.SAFE.json",
+          "bytes": 257656,
+          "sha256": "780c2fd4ff4d3214bf267f9c5ed9f6090f6e55499f6de2bfdd410efa63e35ad4"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/STARTED.SAFE.json",
+          "bytes": 4119,
+          "sha256": "adcd4bc9357b656130187f7dcff12faa5a7532bd9c587ea363fe1f46f5abe033"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/WORKER_CONFIG.SAFE.json",
+          "bytes": 304509,
+          "sha256": "d854d7492895703ab6221af5c6bb2c3c3b108bf602e19d12e7b8c9be6529cedd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CLIENT_CONFIG.SAFE.json",
+          "bytes": 544,
+          "sha256": "d914104f5ecb51cead056ea5850d06e8080f8e94e8b1dbd14dc0d43c5ec58f13"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 775,
+          "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+          "bytes": 775,
+          "sha256": "e34dc15d2b82f64543b20dd5c750b7564eafcdb7d9af89e77e2545961a1f1a8c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/ACTUAL_NATIVE_CATALOG.SAFE.json",
+          "bytes": 175543,
+          "sha256": "ea609fb399a893897326fd411fccdca94a7a0d16718e2ffd651c0e6776080de3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+          "bytes": 59470,
+          "sha256": "42e9b0aa1f994bd07c15cf3ef8b0bddda477e35ab95635fade9de9a311e65ba6"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_AFTER.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "2c3567ca0887434f6cb48e88f8c1529e004dac8bccaea2d31bbfd3b5613daa73"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_SELECTED.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "036fd70d19af8a78bb6982c2db60a2cbe85d9dcec8d8e92463f26e9a44c1c83f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "10ed7308d4778ac236e4f399113aabf7ca4947a696e21c47b2e0777b9e8334a3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+          "bytes": 327232,
+          "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+          "bytes": 327232,
+          "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_AFTER.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "c0029d9df66a5f4bb274913e97bc00c44681b7da8eb0b09b1c75135bb07c5c9e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+          "bytes": 297,
+          "sha256": "67177f6754f404964716e497e09bc7a2fef6152148f480a84f044a1350bc6d07"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "d3f278f0901d945ece25c00f93877cc3bad4f3b30b88a1522fec005b96094cab"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "0a252acda993c330876a5f20918005dd4f0f99e752f81e1d6729ded841a55bbd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CATALOG_SELECTED.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_1_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "511ba4b57d7570531ec32924bcfcaf491f8163b358bee35b37fe43df052d8db9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_1_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "9b5d2ce7205c741438dfad377b3157c3d4b3d7b9b1842aa8cbaecf701d8bf4d4"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_1_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_2_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "2bcd76a3035e1e1598f9d3b9458f06cb0ed02e1ded393fd8dbebdd9c894f2146"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_2_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "0db72aec6fd69a275efe06c80b33e2ea1ae95cad20290867bb252ad6af474212"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_2_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_3_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "cd1742ba30f2c0f41b93f68cc1cd41471ae803fd48864840315d235207305d22"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_3_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "373a832749b5273269cca0d70bd34d26a7e6af60091dac4036377751cd95bf4b"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_3_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_4_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "4ce6d160e2fc530e261e0dd7020c526dea84da20bd256a5cd67eb539b33b6820"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_4_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "be5fe3d83de7264ada3cc754415539d3bdff678bf1e5520a0a47ab4c495af56f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_4_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_5_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "a96db67313ec07dbeb1a519e8874be384076173d9589e716bc122a14f1f025b3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_5_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "ee6d4ad373943d70725875aee847653ac11dfeda8fc8544353f16e3fec20707c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_5_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_6_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "95c2c613d63df3ffe05305980b069ff22b5ce018a91829a7a04062aac8e16072"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_6_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "97b44aee6cd4b6c64d2dc5fbc07ae4b08144b9a9da08bdf1d73e40a3da0c6cfc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_6_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/GRAPH_SETUP_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 290,
+          "sha256": "2aebea34da2e6f636a02c93ea1c26f80be4b3634e2475f383b083ac0aeabbbbb"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/GRAPH_SETUP_SELECTED.stdout.PRIVATE.txt",
+          "bytes": 490,
+          "sha256": "9d44dfcf625187878e3189816ae412395f41c37b42bc22d1ac0396f91aaa51e6"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/GRAPH_SETUP_SELECTED.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/NODE_CONTROL.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "a72779c2f1790d59d70790f3a29ad9ce2604b298c62dc4f716a3c255acb6bf0e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/NODE_CONTROL.stdout.PRIVATE.txt",
+          "bytes": 83987,
+          "sha256": "c6d518da20b5ee0152312564f21b79d65231e8a0c6d82e46a79cab4da74f7eba"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/NODE_CONTROL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/OFFLINE_AFTER.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "d6f4f6076ad0d508cfedcd4245e15e2f5c807f0b51e8b9f2d07bf4eed906d6db"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/OFFLINE_AFTER.stdout.PRIVATE.txt",
+          "bytes": 2272,
+          "sha256": "2fa330d7a15a2b10115df759c7b22f4fad7cfa71248b825b7973c676974dc58f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/OFFLINE_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/OFFLINE_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 295,
+          "sha256": "e1c0760a454673d950f490457662fc2c99c0b4b4cb451d957d31f218dbef959f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/OFFLINE_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 2272,
+          "sha256": "5f55f06d598a16cf87c740ffef56c5ac1b12f020d5f672c5a18cb6ca395a95d6"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/OFFLINE_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/RENDERER_SETUP.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "c97d4205c707d6ed0a7214b2eeacfe22206d7a7396b10ecf67ddc303b2053f4e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/RENDERER_SETUP.stdout.PRIVATE.txt",
+          "bytes": 240,
+          "sha256": "29927974bf630c5aaff2132b7b9e2b798bdd260d4765a66d2ca49edd4e517933"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/RENDERER_SETUP.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "29b5e75a1311c52c0a0185832ce0714a11abbc51020ef958101a78c06eb4fadd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "22a92c535201140bc74db1ad0ed3891b3df36e2417353ef4b8fe3df3cf17b3a5"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/POSTGREST_STOP.SAFE.json",
+          "bytes": 2544,
+          "sha256": "8c136a511105a4ff1355fcfc1ff315225d1475eb0a485ab4bb63b83da421e0ad"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/POSTGREST_CONFIG.PRIVATE.txt",
+          "bytes": 236,
+          "sha256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/POSTGREST_LOG.PRIVATE.txt",
+          "bytes": 632,
+          "sha256": "96afd90bdc29220da845c4495f3e152ef3571e4370bdc9b2748ec626fc5996ce"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/PG_LOG.SAFE.json",
+          "bytes": 348,
+          "sha256": "fcf93104643b1ac972895df936a99b6af8ce9e8daaddf9e579a9bf59bff719ee"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/PG_LOG.PRIVATE.txt",
+          "bytes": 1193,
+          "sha256": "0c32f4d76988264cfc21b7ac716217d462760cc4f1cea1697a8b8934293b25da"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_1.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "a7e01774515140e54dbd2b8fad5d50e628a7438f6377f5cabd60865ee49d2b6c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_1.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "4c692dcb8ed1fc302fc45fcef99f383b0e363c04b2e7f3aa86b98409b089fcbd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_1.OBSERVATION.SAFE.json",
+          "bytes": 4564,
+          "sha256": "ec03b79050240f2a7f57ef969ad8ec93ae10fefe88392aec27304bb22f12fcab"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_2.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "66f94e6d65dc57a88dc554edcd9a7f431d6da06e9569b0ff83e52baa137c7463"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_2.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "e04f8fb7a44a2cff75877d84a643db7a2c1dba0d8198ca28111af031bd31b5dd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_2.OBSERVATION.SAFE.json",
+          "bytes": 4577,
+          "sha256": "e8cc36e5c9b0a0cf45aa1ca1c6bbd96a77f20e22c7a0c5f45a5678019ad31adc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_3.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "d3476855f3af1daf89deec41f659891f11b2430d8f3e3396ade1791034025449"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_3.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "de573b5041b007d8ed0d01e921f2bbf538ea4e42e5c00f44f566e8260fa641c8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_3.OBSERVATION.SAFE.json",
+          "bytes": 4581,
+          "sha256": "7fe4b9e1e95b1e39107f04f5ea0bde0b029264415e5ea0e3846dff564ece0ba0"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_4.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "6cc593ad397c87e6fd4d28f754c8674702a67b1df90ebfa37ea9ea82ad260aec"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_4.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "2654c026f25acdadef62e79c180ccbcd9b237f846d45a25a7d93a2e167700fe1"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_4.OBSERVATION.SAFE.json",
+          "bytes": 4578,
+          "sha256": "4c86515169e086a3ab04674ec2d7566c0bca4ddaee8b7735cdccadade5c5b3fb"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_5.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "c55ee65f042a6e1752079982528599f73d67762318d5d0d3f837bfc31aafbd60"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_5.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "8d664d63f382d90fc7e396ef1496aa008ad0798953cf92b835b25d7ec608f2d1"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_5.OBSERVATION.SAFE.json",
+          "bytes": 4584,
+          "sha256": "ff3ef358a7742300dcab38174990483f685fe8a1ae8afb96fd1af614131e24d3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_6.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "755147320123afb3f9e7f2b27569dbb29372267337d730ad75441dad92d97617"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_6.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "b94976cab5917f88002bab3812feb6d0a29c6d9bac298ce095e5eecd916d70e9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-3aace0bea3e2bf3b6ac80cf9/CYCLE_6.OBSERVATION.SAFE.json",
+          "bytes": 4581,
+          "sha256": "0573270848420258afd8506aa7bf41ec2c874a22eeb37671e27f32961662322e"
+        }
+      ],
+      "noPeakCausalityClaim": true
+    },
+    {
+      "case": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2",
+      "variant": "OLD",
+      "checksPassed": true,
+      "fourSelectedHashes": [
+        "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0",
+        "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9",
+        "b3157fffe12d3bc8f5b2c1d2443b97e44830082a3c6aca73124f60b260345a6a",
+        "1644ff690fb4ae70ab2511b3ccf41353e622595bc9fed2d61005c4f655171af0"
+      ],
+      "rootPreparedPin": {
+        "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/PREPARED.SAFE.json",
+        "bytes": 46155,
+        "sha256": "7c32a0ced6e4cd0e50e9d5b716ea4a5d601dfb21204113b40cb832429a637266"
+      },
+      "actualPin": {
+        "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/ACTUAL_RESULT.SAFE.json",
+        "bytes": 8843,
+        "sha256": "faadabbebebefd52159244eeeb77334814ed07f779dc5e9f184fe8af72a53744"
+      },
+      "fieldHashes": {
+        "synthetik500DispatchJournal": "91820d588991c7a303a43d95b24606f6192832fd503bab7e94a498eb3dae3ca5",
+        "synthetik500KostenAdmission": "c83aaaff8d2098e9f0ca05a0e7684a316b65daaf3fab3d2c2dfb2a62ca2321ec",
+        "testKostenAuftrag": "9a5382ceb0cee3583619ff6ced3f73544a33e31f752839d6c9cc777c852005f1",
+        "testKostenTage": "7ec32c2a81a6b3494348315e5dbff1540a7e3363440cdda3dcaa0febb9de296d"
+      },
+      "historySHA256": "85af0c1168108966125f4ac4df5602a6a00fe04d03de16c0056bb22b3272fd68",
+      "freshNonces": [
+        "7a02a342-6531-4c46-a119-d375cf7e3a2a",
+        "43739a4e-4355-4d64-81be-2362659e4e1e",
+        "cc745359-ba16-41dc-aa1c-2e507af635ad",
+        "545988c2-041f-445f-9ca4-82c3673cd7d6",
+        "9e014eb1-fe19-4d18-9dd1-0d796e738d31",
+        "74db288d-a892-4087-96c4-13c2f9292f61",
+        "deb0fcee-43e6-4360-8a8f-b30533828f4a",
+        "9d2d2ad0-704a-4f61-ac7b-f2d81a7e2365",
+        "ec102e11-b45c-4f66-89aa-d0dc2ab01e52",
+        "d5315cc1-03aa-4056-9150-67fd3b5eeeb0",
+        "d04820b9-c5e5-408f-a2e4-77d7b4ed7d61",
+        "0d1ca25a-96fe-4330-b309-c7f262bfc63f",
+        "816e02d4-d6ad-4c21-bb06-f563344314db",
+        "4ae621f4-7727-40c6-a933-2cca12282666",
+        "48e0c555-18fd-4605-9e43-5cdce7502e98",
+        "25a22619-3d1d-4840-942d-04572b5574dc",
+        "5a5c7d4e-c93f-44ac-84b6-39c4cecb8321",
+        "93d3c08d-9212-45c4-9164-2d5ec330476c",
+        "efcc51ef-d23d-4569-9fb5-b2a8e7893ce5",
+        "289617f3-ae6e-4187-8ab5-43d9fc089faa",
+        "5eb5bd1a-b289-4b03-bd5d-f15f238ab79d",
+        "702abb27-90d2-48df-bae8-f457dd3e9115",
+        "951d2f85-f723-4409-9255-35f8ffb26444"
+      ],
+      "confirmedRevisions": [
+        "885de945-6af4-41a1-bc79-5f3d29384727",
+        "9b7360e9-8b21-4a43-9413-8f20e304de5f",
+        "7f368911-1017-43d3-803b-1488353c346a",
+        "9959afbd-ddbd-43d0-bc6f-5d1fac88a633"
+      ],
+      "historyBindingsRecomputed": 23,
+      "graphBindingsRecomputed": 18,
+      "coldControls": 18,
+      "warmControls": 0,
+      "wireBodyBytes": 157016193,
+      "stringifyCalls": 41,
+      "captures": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_AFTER.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "09ea3311f0f441c582bd822b85abeacac3f1db6dcd3b79e5b07b305355f454c2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "1ee40d9630727d9fd878c1bb009ff77cb6d22a6cfd64dc13addc51441070a10e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "b25b29a1c2b5497f638f8e0871f2be9539f9157485ab7a13f20e77716b518b74"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "db4107a4ec1a4ab16e2d5a847313449490e3915a7a4bbc3df4c89b0cd4106ecd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_1_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "0efc9964c3507868da3df308ccf6449f6cf7a6e094f3708afdcea8141ffc60af"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_2_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "adbeae89b5c63e1ab8127ec4ca323067f682b9db6b865d775d851cbb9fe5a5bc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_3_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "1c7084ea8c4a47b1fcb84b454ee28ee42dcd7399b129ee6c5deb2a97685c507e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_4_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "0cbbe25f6149520496bb964779f1257d4088ed5bc71469ba6c8ffe1c029625cd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_5_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "e67ac6ca39b7d5a1c2bea8bdbdbb226b348ddac99c9d43bc3a197209b9794962"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_6_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "2425b3d4718541bc4840c8d46e432a3d4ae9a4fb74f3db71533ae2c15c5f1f1e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/GRAPH_SETUP_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "cc463be0b3a0fe570394bb80f8d9863d358c2e4ce5392d3916bae165c89cb353"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/NODE_CONTROL.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "f15a1e89bc344353d36b3a68592fc598764c0c0f378f5c6d07b7b3e8331d5d74"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/OFFLINE_AFTER.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "ca0190dcacf31838fee29e1885ec6d87328d954dbb816c939136184af93bf12e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/OFFLINE_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 295,
+          "sha256": "1f641c4c1e6ca915412f0b37d57b72902296216c214d69e12cfb65e5a6ef8f9e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/RENDERER_SETUP.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "d7781eb58e3abbd8ebcb8e0a88d6c3393bbd16bf46a18514eed5928709dd8261"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "86e6f4da24dcf6d53526c6a468e5f95840abb4a267aaf8e345f2bd56308be214"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "d1fe4ba4d2e1826105962477c1734fe63edfb7080af586f23eb61040491f5dc5"
+        }
+      ],
+      "evidencePins": [
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/ACTUAL_RESULT.SAFE.json",
+          "bytes": 8843,
+          "sha256": "faadabbebebefd52159244eeeb77334814ed07f779dc5e9f184fe8af72a53744"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/WORKER_RESULT.SAFE.json",
+          "bytes": 7396,
+          "sha256": "a0fb2c3f2d1eed472abe8910ef216340403a9b79c706130e02e72cd6bf6b1b84"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CONTROL_CACHE.SAFE.json",
+          "bytes": 89943,
+          "sha256": "67894d2c51ab51fd218f6a31e5344bf7c12e41b9149226ebaae7b4ba720ea450"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/ROOT_ADOPTION.SAFE.json",
+          "bytes": 4768,
+          "sha256": "a2e899c1859a171bf72a0ab9f65c64df1de7aaad245b0a890aa846d6e66970e5"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/PREFLIGHT.SAFE.json",
+          "bytes": 257674,
+          "sha256": "8997d33ff9b530e3b2aaf3f8d5d85080e50c7b097b38fb2c2318dfe67931b37c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/STARTED.SAFE.json",
+          "bytes": 4137,
+          "sha256": "763d38dc77ac6e9bab5c20b573d394fa12fa724040ddf236bddb1e74c0a4ae36"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/WORKER_CONFIG.SAFE.json",
+          "bytes": 304527,
+          "sha256": "ac68f0507f8de79ad07ed2326e3bf2a97265afe123f56f7c402d3468dce8ed4b"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CLIENT_CONFIG.SAFE.json",
+          "bytes": 562,
+          "sha256": "1207db932f55658f19806c9e75b6fdf52fb96e125f1e70ede8ca46aca09bd96d"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SMALL_AUTH_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 775,
+          "sha256": "138e954a08417eb3ccdaee26740f9a87544a320d3f25e62f48c3080cc541f8af"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SMALL_AUTH_AFTER.stdout.PRIVATE.txt",
+          "bytes": 775,
+          "sha256": "b8deef5bce79b6ef4a7722fa4c5e3fced65ab8c4c8a2592a3c84d8c16fda5532"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/ACTUAL_NATIVE_CATALOG.SAFE.json",
+          "bytes": 175561,
+          "sha256": "8ada8f7a8c527de7062d985d6f816369f2bf758e0b93234c13ccf4ef0e12befa"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_OPERATION_UNCHANGED.SAFE.json",
+          "bytes": 59470,
+          "sha256": "ce2547f8aa30c8380f4445c992b2acafb1985c71664e1ad13896e17792fcd5a4"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_AFTER.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_SELECTED.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "90ea69dc17d8f822bb0bcc1da61360dd5a11a04ac57b8929212202c5e4412433"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_AFTER_OPERATION.stdout.PRIVATE.txt",
+          "bytes": 36994,
+          "sha256": "fe8b31e40d9db89b9d134fca8476b6a4e0f9668b29ffbf0daa8900dbc9592d8a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SOURCE_BEFORE_FULL_MANIFEST.PRIVATE.json",
+          "bytes": 327232,
+          "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SOURCE_AFTER_FULL_MANIFEST.PRIVATE.json",
+          "bytes": 327232,
+          "sha256": "05e1040b503c7572b02bf7c9920201f5d796914c9501dab9a03b4a15e6a4540a"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_AFTER.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "09ea3311f0f441c582bd822b85abeacac3f1db6dcd3b79e5b07b305355f454c2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_AFTER_OPERATION.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "1ee40d9630727d9fd878c1bb009ff77cb6d22a6cfd64dc13addc51441070a10e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_AFTER_OPERATION.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "b25b29a1c2b5497f638f8e0871f2be9539f9157485ab7a13f20e77716b518b74"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 298,
+          "sha256": "db4107a4ec1a4ab16e2d5a847313449490e3915a7a4bbc3df4c89b0cd4106ecd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CATALOG_SELECTED.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_1_SQL.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "0efc9964c3507868da3df308ccf6449f6cf7a6e094f3708afdcea8141ffc60af"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_1_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "9fe126cdca749ec67dc0727c9838c100bb6f58a44c0cde87fd8f0757fb37d371"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_1_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_2_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "adbeae89b5c63e1ab8127ec4ca323067f682b9db6b865d775d851cbb9fe5a5bc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_2_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "d689bf5d5a5f5a3d1f8ab894755d66b88dbdece75b6c221298386f7271c7b45f"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_2_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_3_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "1c7084ea8c4a47b1fcb84b454ee28ee42dcd7399b129ee6c5deb2a97685c507e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_3_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "cf71a4adf9e22b089404966dcf657ea761402f98475f71fdc55f944605b591c2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_3_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_4_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "0cbbe25f6149520496bb964779f1257d4088ed5bc71469ba6c8ffe1c029625cd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_4_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "05219ea5e6fe7cd0395efc48c9c1b9577080ebc10fb33ff9fdb93d869cd62688"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_4_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_5_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "e67ac6ca39b7d5a1c2bea8bdbdbb226b348ddac99c9d43bc3a197209b9794962"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_5_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "af8109c60a0516f2ac62a30f6c031e4f7a067ea49749d57b629197cbf894df62"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_5_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_6_SQL.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "2425b3d4718541bc4840c8d46e432a3d4ae9a4fb74f3db71533ae2c15c5f1f1e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_6_SQL.stdout.PRIVATE.txt",
+          "bytes": 524,
+          "sha256": "fb631744e71dd563c56b35ef528427649ef8cf52e37ce9274ce5164bd53c36a3"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_6_SQL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/GRAPH_SETUP_SELECTED.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "cc463be0b3a0fe570394bb80f8d9863d358c2e4ce5392d3916bae165c89cb353"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/GRAPH_SETUP_SELECTED.stdout.PRIVATE.txt",
+          "bytes": 490,
+          "sha256": "8c69a43e5ff8c86c4e3744ff35904447aa59921497372cc26b1cbd4d0c73c166"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/GRAPH_SETUP_SELECTED.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/NODE_CONTROL.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "f15a1e89bc344353d36b3a68592fc598764c0c0f378f5c6d07b7b3e8331d5d74"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/NODE_CONTROL.stdout.PRIVATE.txt",
+          "bytes": 89943,
+          "sha256": "67894d2c51ab51fd218f6a31e5344bf7c12e41b9149226ebaae7b4ba720ea450"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/NODE_CONTROL.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/OFFLINE_AFTER.CAPTURE.SAFE.json",
+          "bytes": 296,
+          "sha256": "ca0190dcacf31838fee29e1885ec6d87328d954dbb816c939136184af93bf12e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/OFFLINE_AFTER.stdout.PRIVATE.txt",
+          "bytes": 2272,
+          "sha256": "7ac4ff63aca99d2e648af9521a5afd4cb82527c31a7ffe358099b9914b599eee"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/OFFLINE_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/OFFLINE_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 295,
+          "sha256": "1f641c4c1e6ca915412f0b37d57b72902296216c214d69e12cfb65e5a6ef8f9e"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/OFFLINE_BEFORE.stdout.PRIVATE.txt",
+          "bytes": 2272,
+          "sha256": "5f55f06d598a16cf87c740ffef56c5ac1b12f020d5f672c5a18cb6ca395a95d6"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/OFFLINE_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/RENDERER_SETUP.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "d7781eb58e3abbd8ebcb8e0a88d6c3393bbd16bf46a18514eed5928709dd8261"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/RENDERER_SETUP.stdout.PRIVATE.txt",
+          "bytes": 240,
+          "sha256": "88b36c821c4160901a684e6f4b51b7881d19dba9641d4c06d9cf2ff56c851ffc"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/RENDERER_SETUP.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SMALL_AUTH_AFTER.CAPTURE.SAFE.json",
+          "bytes": 293,
+          "sha256": "86e6f4da24dcf6d53526c6a468e5f95840abb4a267aaf8e345f2bd56308be214"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SMALL_AUTH_AFTER.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SMALL_AUTH_BEFORE.CAPTURE.SAFE.json",
+          "bytes": 294,
+          "sha256": "d1fe4ba4d2e1826105962477c1734fe63edfb7080af586f23eb61040491f5dc5"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/SMALL_AUTH_BEFORE.stderr.PRIVATE.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/POSTGREST_STOP.SAFE.json",
+          "bytes": 2544,
+          "sha256": "db0376f4b5b65c0fe0418a42990bff23fbf7eb0d1a2c5be78113190cfe8dc4c7"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/POSTGREST_CONFIG.PRIVATE.txt",
+          "bytes": 236,
+          "sha256": "47a9c99a305e9975a479bc1da8f30cdd6664dddf8fb279df1c15bc5b17c63f60"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/POSTGREST_LOG.PRIVATE.txt",
+          "bytes": 632,
+          "sha256": "4cc0852329ee92430b6ac5e9243ecc4a6a845ff801eb712153c77fe2be8b6390"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/PG_LOG.SAFE.json",
+          "bytes": 348,
+          "sha256": "e1b44fe6c205fef32080253d18f913ba2c952619dc9dba0b9c94c453061371b5"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/PG_LOG.PRIVATE.txt",
+          "bytes": 1193,
+          "sha256": "1404595b7272d9dcad3fc35ee0311686d11450e7c9a8af8c7514a397c5a2d2e2"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_1.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "a7e01774515140e54dbd2b8fad5d50e628a7438f6377f5cabd60865ee49d2b6c"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_1.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "4c692dcb8ed1fc302fc45fcef99f383b0e363c04b2e7f3aa86b98409b089fcbd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_1.OBSERVATION.SAFE.json",
+          "bytes": 4569,
+          "sha256": "9775fa82daba9ad7a565ff1c15bfae515e25675dad251b6b9f56f3d0f315a816"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_2.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "66f94e6d65dc57a88dc554edcd9a7f431d6da06e9569b0ff83e52baa137c7463"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_2.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "e04f8fb7a44a2cff75877d84a643db7a2c1dba0d8198ca28111af031bd31b5dd"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_2.OBSERVATION.SAFE.json",
+          "bytes": 4580,
+          "sha256": "3e1c08b00bdca3e5b6755679942048d02738ebe9a68f0bfc8960ad6b28200344"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_3.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "d3476855f3af1daf89deec41f659891f11b2430d8f3e3396ade1791034025449"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_3.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "de573b5041b007d8ed0d01e921f2bbf538ea4e42e5c00f44f566e8260fa641c8"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_3.OBSERVATION.SAFE.json",
+          "bytes": 4584,
+          "sha256": "be431dc3946c1295bb28c38a8cfc2777e0a16701702999ba0bc83eeb593d237b"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_4.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "6cc593ad397c87e6fd4d28f754c8674702a67b1df90ebfa37ea9ea82ad260aec"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_4.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "2654c026f25acdadef62e79c180ccbcd9b237f846d45a25a7d93a2e167700fe1"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_4.OBSERVATION.SAFE.json",
+          "bytes": 4581,
+          "sha256": "481d43a21523bc5d919cd9b7de20b2f4402cce209aa83d3f5885bc67aa4eb608"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_5.MARKER.SAFE.json",
+          "bytes": 100,
+          "sha256": "c55ee65f042a6e1752079982528599f73d67762318d5d0d3f837bfc31aafbd60"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_5.ACK.SAFE.json",
+          "bytes": 121,
+          "sha256": "8d664d63f382d90fc7e396ef1496aa008ad0798953cf92b835b25d7ec608f2d1"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_5.OBSERVATION.SAFE.json",
+          "bytes": 4585,
+          "sha256": "f32ea87e32575fbba2b5eff01e16eb70048e40d5a5a32dab9ede8caacd5994bb"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_6.MARKER.SAFE.json",
+          "bytes": 98,
+          "sha256": "755147320123afb3f9e7f2b27569dbb29372267337d730ad75441dad92d97617"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_6.ACK.SAFE.json",
+          "bytes": 119,
+          "sha256": "b94976cab5917f88002bab3812feb6d0a29c6d9bac298ce095e5eecd916d70e9"
+        },
+        {
+          "path": "/workspace/helmut-ram-fix-20261020/combined-auth-baseline-comparison-20261020/cases/control-d32ff97bfb13d804483efbd2/CYCLE_6.OBSERVATION.SAFE.json",
+          "bytes": 4584,
+          "sha256": "a226cad6cd5725af3faaa4f3532cc050722048481c42ac84edde0beeb97cdb0b"
+        }
+      ],
+      "noPeakCausalityClaim": true
+    }
+  ],
+  "checkedOperativeSourcePins": [
+    {
+      "bytes": 3859,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/BODY_SOURCE_PROVENANCE.SAFE.json",
+      "sha256": "a2d2fa66469ac562f6ca75530bdab0c3e4134f75b9e95c1e698b91705cb99acf"
+    },
+    {
+      "bytes": 22169,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/COMMON_PARTS.js",
+      "sha256": "f30089e790f2ac8bee306385a92f39440d5001ff84d22874b9e808540f469d63"
+    },
+    {
+      "bytes": 13047,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_GRAPH.sql",
+      "sha256": "d10d920e4a4d07098f29e62a595021d22e65e0db96a7676ef1b280a7cc9629fa"
+    },
+    {
+      "bytes": 17398,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_NEW_RENDERER.sql",
+      "sha256": "81e665a5c524bab6e5b19f6322f3192bb07a3cba6c875b1da9da3f6118cc8a72"
+    },
+    {
+      "bytes": 12787,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_GRAPH.sql",
+      "sha256": "7bb6124122903387b721929f99310a8044291c5cc3e12b1f34b674c081eb72cd"
+    },
+    {
+      "bytes": 13841,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/INSTALL_OLD_RENDERER.sql",
+      "sha256": "f973ad6b1a617d8b73f3b92df2997a8be7313665c6b26856b8a3c333eb6277e1"
+    },
+    {
+      "bytes": 25446,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/NEW_U.js",
+      "sha256": "93917a57bf8714baea2a21a7ed06fbc6aeb2cd8081f54093b70b7134d0a31c3b"
+    },
+    {
+      "bytes": 23685,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/OLD_U.PRIVATE.js",
+      "sha256": "31a0b8d323e7db43751af2ad2cf5c2c9c95fc2d65fcc765e65ec0ac436e5f8a0"
+    },
+    {
+      "bytes": 18650,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_AUTH_READ_SOURCE.PRIVATE.sql",
+      "sha256": "595b2530b66193c387f111b00b9b22e9f54847bfa24dd1def80a7b2bb4fee561"
+    },
+    {
+      "bytes": 51381,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_AUTH_STATE_PARTS_SOURCE.PRIVATE.sql",
+      "sha256": "719320ffb34529fd2145b4fa47c290b186a0127e304e52c01ef57cb0d7745f61"
+    },
+    {
+      "bytes": 22149,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/ORIGINAL_PARTS.PRIVATE.js",
+      "sha256": "6b1236aec6858a03dc099e272bdcdd9f79df3efa8c8744d42c5e193e5d57b3d9"
+    },
+    {
+      "bytes": 9170,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/README.md",
+      "sha256": "2cf4d0960a0da2a00b12cb78dded83c206ce6ec77b1e062baaebf13c98de99c2"
+    },
+    {
+      "bytes": 3426,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/SCOPE.SAFE.json",
+      "sha256": "45545d04ffa56baf1c0d7b778c9676699eaa48d8f850b69912f97f5b35f30cb7"
+    },
+    {
+      "bytes": 499,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/SHUTDOWN_POLICY.SAFE.json",
+      "sha256": "f4672c7ce1b9f2c0722fd9fd05588487f4ce9a8c1c0de50bbf1cf8533029e0da"
+    },
+    {
+      "bytes": 12286,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/catalog.sql",
+      "sha256": "d8395daeb4ea63aee250a6a50f28f0736af1af2119f724f45f6649cc1dd5b1a8"
+    },
+    {
+      "bytes": 19607,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/common.py",
+      "sha256": "79029bfcf02e4f6029a9730d6f855cc93206592632ee245c4e72a73e6c6e1a26"
+    },
+    {
+      "bytes": 18175,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/control-driver.js",
+      "sha256": "c612e2b7f5b047fb2630486c242fddf09d765add84d2fb4157d60d98b12d4b51"
+    },
+    {
+      "bytes": 763,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/cycle-metrics.sql",
+      "sha256": "1af0fa2acdb69783dc8ac1fb2613e027628ff122e85e2496835f91f00f93dc68"
+    },
+    {
+      "bytes": 9220,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/postgrest_lifecycle.py",
+      "sha256": "5afe6bd739a242ca1ce24a4127682fae3dc7d301541445b3ba7dcebfc059eb63"
+    },
+    {
+      "bytes": 24627,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/run.py",
+      "sha256": "aaaf5a5843a29b2413273bd202044716db176e8fedea72e93d7584affda3eaba"
+    },
+    {
+      "bytes": 869,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/small-auth.sql",
+      "sha256": "0ad9c5498320e6765ac8e0b8ac12ff1895e5ffbba67d93af81763b32ccb55651"
+    },
+    {
+      "bytes": 38023,
+      "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/combined-auth-baseline-native-launcher/worker.py",
+      "sha256": "6e899a9ea1f7f685777797ed65b0c32e189469e6e2e6673f77ef28dbb48c6996"
+    }
+  ],
+  "scope": [
+    "Four separate genuine Root-adopted fresh cases OLD/NEW/NEW/OLD on exactly same final source freeze and same qualified NEW zero-auth lifecycle",
+    "Selected U/Parts readonly canonical hashes checked inside frozen Worker before source use and again by Node; reviewer hashes frozen overlay sources only, no process recreation",
+    "Actual SQL catalogs prove renderer/graph selected body hashes; OLD install no-op, NEW only two prosrc hash deltas; complete ABI/ACL/roles/relations/settings remain exact",
+    "Every arm27 callbacks/sends/complete responses,5fullreads4confirmedCAS18controls,6000history,fourcontrolfields unchanged,three probe mutations+restore",
+    "92fresh read nonces and92historyBindings plus72graphBindings independently SHA-recomputed with revision/state/proof/row bindings;16distinct confirmed revision UUIDs",
+    "606B physical object and all refs restored except expected final confirmed revision; physical SHA independently recomputed from PostgreSQL JSONB text key order",
+    "17actual small raw command captures per arm exit0/reaped/<30s/262144B,6cycle marker/ACK/SQL observations per arm",
+    "Source before/after saved full manifests byte/object equal827a,1709files369399611B; no source-tree reads or payload hash by reviewer",
+    "Strict original PGRST\u22122 SIGTERM policy/version/config with EOF/reap, PGexit0/shut-down, Nodeexit0, full kernel-last-owned-exit coverage, zero events and group/container empty"
+  ],
+  "limits": {
+    "actualCaseQualified": true,
+    "engineAcceptanceChangedByThisReview": false,
+    "full500Go": false,
+    "budgetOrReserveChanged": false,
+    "currentHostAvailableOrContinuousFloorClaimed": false,
+    "ramBenefitOrPeakCausalityClaimed": false,
+    "parentOwnsRAMCPUWireAggregation": true,
+    "liveCaseRead": false,
+    "originalPGDATAPayloadOrBinaryRead": false,
+    "subjectImportTestsNativeDockerDBActions": false,
+    "caseOrSourceMutation": false,
+    "archiveOrDeletionAuthority": false
+  },
+  "actualSourceScope": "COMBINED_AUTH_BASELINE_CORRECTIONS_ONLY",
+  "full500": false,
+  "production": false,
+  "providerCalls": 0
+}

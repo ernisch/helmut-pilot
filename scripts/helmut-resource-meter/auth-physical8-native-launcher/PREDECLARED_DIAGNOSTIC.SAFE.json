@@ -1,0 +1,102 @@
+{
+  "CAS": 9,
+  "NodeCombinedCaptureBytesUnchanged": 1048576,
+  "additionalMetadataBytesMax": 65536,
+  "authRPCs": 67,
+  "boundaries": 16,
+  "caseEvidenceCapBytesUnchanged": 8388608,
+  "clock": "same-process performance.now milliseconds; performance.timeOrigin and process.uptime also recorded",
+  "controlTextStringifyObservations": 10,
+  "controls": 48,
+  "fixedComparison": {
+    "ageToleranceMilliseconds": 250,
+    "allEndpointRounds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "attribution": "INCONCLUSIVE while undelivered GC/live-object-stage equivalence unknown; no false cause or plateau",
+    "cycleIndices": [
+      3,
+      7
+    ],
+    "functionalPassSeparate": true,
+    "onlyOperationalPair": [
+      4,
+      8
+    ],
+    "rule": "Latest preceding observed GC is major for both, kind/flags match, absolute age difference<=250ms and no saved overlapping GC; otherwise screen fails",
+    "screenMatchIsNotScientificProofOfEqualGCOrLiveObjectStage": true,
+    "substitutePairsOrLongerRun": false
+  },
+  "freshGraphBindings": 48,
+  "freshReadHistoryNonces": 58,
+  "full500": false,
+  "fullHistoryHashes": 19,
+  "fullReads": 10,
+  "heapAliases": {
+    "available": "total_available_size",
+    "detachedContexts": "number_of_detached_contexts",
+    "executable": "total_heap_size_executable",
+    "external": "external_memory",
+    "handlesTotal": "total_global_handles_size",
+    "handlesUsed": "used_global_handles_size",
+    "limit": "heap_size_limit",
+    "malloced": "malloced_memory",
+    "nativeContexts": "number_of_native_contexts",
+    "peakMalloced": "peak_malloced_memory",
+    "physical": "total_physical_size",
+    "total": "total_heap_size",
+    "used": "used_heap_size"
+  },
+  "historyRows": 6000,
+  "maxSpaces": 32,
+  "memoryInterpretation": [
+    "V8 physical values are heap capacity measurements, not an exact resident subset of RSS",
+    "RSS-minus-physical is not exact native attribution",
+    "Do not sum V8 capacities with RSS",
+    "Shmem is included in file;arrayBuffers included in external"
+  ],
+  "mutations": 8,
+  "naturalGC": {
+    "PerformanceEntryObjectsRetained": false,
+    "boundaryDrain": false,
+    "fields": [
+      "kind",
+      "flags",
+      "startTime",
+      "duration",
+      "deliveredAt"
+    ],
+    "latestBeforeRule": "maximum event end<=sampleBefore by interval time, not callback order",
+    "overlapRule": "event.startTime<=sampleAfter AND event.startTime+duration>=sampleBefore; inclusive",
+    "rawOverlapsMaxPerBracket": 4,
+    "reconcileAllExistingBracketsOnEveryDeliveredEvent": true,
+    "ringMax": 16,
+    "terminalTakeRecords": "existing finally path only, same recordGC reconciliation",
+    "totalOverlapCountRetained": true,
+    "undeliveredEventsUnknown": true
+  },
+  "newRuntimeEvidenceFiles": 0,
+  "noForcedGCOrAllocatorRuntimeFlagChanges": true,
+  "production": false,
+  "restore": 1,
+  "rounds": 8,
+  "sameFinalFreezeFreshZeroAuthLifecycleRequired": true,
+  "samples": "process.memoryUsage before, v8.getHeapStatistics selected scalars, v8.getHeapSpaceStatistics, process.memoryUsage after; sequential timestamp brackets, not atomic",
+  "samplingProfilerOrHeapSnapshot": false,
+  "schema": "helmut-auth-physical8-predeclared-diagnostic/1",
+  "spaceFields": [
+    "name",
+    "size",
+    "used",
+    "available",
+    "physical"
+  ],
+  "status": "PREDECLARED_NOT_RUN"
+}

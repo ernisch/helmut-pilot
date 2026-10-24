@@ -3,10 +3,15 @@
 const A = require("node:assert/strict"), fs = require("node:fs");
 const C = require("../lib/helmut/synthetik-500-production-command");
 const KO = require("../lib/helmut/knowledge-object-version"), W = require("../lib/helmut/synthetik-500-w-inventar");
+const inactiveStoreDependency = () => {
+  const store = require("../lib/helmut/local-unit-diagnostic-store");
+  A.equal(store.active(), false, "This reader fixture requires the real diagnostic store to be inactive");
+  return store;
+};
 const code = fs.readFileSync(require.resolve("../lib/helmut/storage"), "utf8");
 const begin = code.indexOf("const synthetik500SourceId"), end = code.indexOf("const synthetik500NativeIo", begin);
 A.ok(begin >= 0 && end > begin);
-const factory = new Function("require", "synthetik500ProductionBackend", "supabaseRequest", "V3_KO_VERSION_SELECT_60",
+const factory = new Function("require", "synthetik500ProductionBackend", "supabaseRequest", "V3_KO_VERSION_SELECT_60", "localUnitStore",
   code.slice(begin, end) + "\nreturn {read:readSynthetik500CurrentInputs,post:getSynthetik500UnderstandingPostimage};");
 global.fetch = () => { throw Error("offline-network-forbidden"); };
 let passed = 0;
@@ -26,7 +31,8 @@ function fixture(id = "ko-fiktive-präsidentin-ÄÖÜäöüß") {
     A.equal(u.pathname, "/rest/v1/ko_document_links");
     A.equal(u.searchParams.get("knowledge_object_id"), `eq.${id}`); return structuredClone(links);
   };
-  const backend = () => {}, load = req => factory(p => require("../lib/helmut/" + p.replace(/^\.\//, "")), backend, req, KO.VERSION_FIELDS.join(","));
+  const backend = () => {}, load = req => factory(p => require("../lib/helmut/" + p.replace(/^\.\//, "")), backend, req,
+    KO.VERSION_FIELDS.join(","), inactiveStoreDependency);
   return { expected, doc, ko, calls, links, api: load(request), load, request };
 }
 async function main() {

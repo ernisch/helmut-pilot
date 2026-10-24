@@ -1,0 +1,322 @@
+{
+  "actualResultPins": [
+    {
+      "bytes": 8332,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-e1ef7b555c720e139e34cbf5/ACTUAL_RESULT.SAFE.json",
+      "sha256": "4ce63e58a76b6b6cbc4c0c161707fc5560a71072bdc9ce0a7d52df31f6cb5e83"
+    },
+    {
+      "bytes": 9112,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/ACTUAL_RESULT.SAFE.json",
+      "sha256": "d0b096b2dbc6c81221382e1bc0014a3bcba2cc321b249379551fd633c439ad99"
+    }
+  ],
+  "cases": [
+    {
+      "allNativeEventsZero": true,
+      "allOwnedProcessesClosed": true,
+      "case": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-e1ef7b555c720e139e34cbf5",
+      "commonLifetimePeakBytes": 653615104,
+      "index": 0,
+      "resultPin": {
+        "bytes": 8332,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-e1ef7b555c720e139e34cbf5/ACTUAL_RESULT.SAFE.json",
+        "sha256": "4ce63e58a76b6b6cbc4c0c161707fc5560a71072bdc9ce0a7d52df31f6cb5e83"
+      },
+      "wholeLifetimeCPUUsec": 16113019,
+      "wholeLifetimeWallSeconds": 18.586201266007265
+    },
+    {
+      "allNativeEventsZero": true,
+      "allOwnedProcessesClosed": true,
+      "case": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3",
+      "commonLifetimePeakBytes": 1039151104,
+      "index": 1,
+      "resultPin": {
+        "bytes": 9112,
+        "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/ACTUAL_RESULT.SAFE.json",
+        "sha256": "d0b096b2dbc6c81221382e1bc0014a3bcba2cc321b249379551fd633c439ad99"
+      },
+      "wholeLifetimeCPUUsec": 32250197,
+      "wholeLifetimeWallSeconds": 32.92893633199856
+    }
+  ],
+  "exactFrameCount": 14,
+  "exactLabelsValidated": true,
+  "full500": false,
+  "hostPin": {
+    "bytes": 2436,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase.py",
+    "sha256": "7d6d654eddcdd9a84e9da07e9106db59b64005bcf03e16a7af5238752a6a09d5"
+  },
+  "independentActualReviewPin": {
+    "bytes": 37016,
+    "path": "/workspace/helmut-auth-measure-sol-20261020/diagnostics/write-phase-20261021/ACTUAL_REVIEW.SAFE.json",
+    "sha256": "a05fc6b458153e648d90dad4e7f96ae5b4e91c9b51ed28455df310cf9b22cec1"
+  },
+  "originalSourcesClaimScope": "Actual per-case complete saved before/after manifests and copied original827a, unchanged declared code/runtime pins. No global user-absence claim.",
+  "originalSourcesUnchanged": true,
+  "phaseObservation": {
+    "allWithinFramePeakIncreasesBytes": 0,
+    "finalLifetimePeakBytes": 1039151104,
+    "frames": [
+      {
+        "anonBytes": 383541248,
+        "betweenFramePeakIncreaseBytes": null,
+        "cpuUsageUsec": 25829297,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 0,
+        "kernelBytes": 27983872,
+        "label": "driver.restore.beforeU",
+        "memoryCurrentBytes": 1017720832,
+        "nodeExternalBytes": 34429052,
+        "nodeHeapUsedBytes": 111468680,
+        "nodeRSSBytes": 308097024,
+        "peakAfterBytes": 1027653632,
+        "peakBeforeBytes": 1027653632,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 383541248,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 25830592,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 1,
+        "kernelBytes": 27983872,
+        "label": "U.beforeSnapshotCapture",
+        "memoryCurrentBytes": 1017720832,
+        "nodeExternalBytes": 34453634,
+        "nodeHeapUsedBytes": 111595192,
+        "nodeRSSBytes": 308097024,
+        "peakAfterBytes": 1027653632,
+        "peakBeforeBytes": 1027653632,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 334536704,
+        "betweenFramePeakIncreaseBytes": 3436544,
+        "cpuUsageUsec": 25931068,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 2,
+        "kernelBytes": 28012544,
+        "label": "U.afterSnapshotCapture",
+        "memoryCurrentBytes": 968876032,
+        "nodeExternalBytes": 5353970,
+        "nodeHeapUsedBytes": 73903824,
+        "nodeRSSBytes": 259121152,
+        "peakAfterBytes": 1031090176,
+        "peakBeforeBytes": 1031090176,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 344674304,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 26021694,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 3,
+        "kernelBytes": 27901952,
+        "label": "U.afterPartsBuild",
+        "memoryCurrentBytes": 978604032,
+        "nodeExternalBytes": 5353970,
+        "nodeHeapUsedBytes": 84678648,
+        "nodeRSSBytes": 269144064,
+        "peakAfterBytes": 1031090176,
+        "peakBeforeBytes": 1031090176,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 344674304,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 26022413,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 4,
+        "kernelBytes": 27901952,
+        "label": "driver.request.afterSerializationBeforeHTTP",
+        "memoryCurrentBytes": 978604032,
+        "nodeExternalBytes": 5378552,
+        "nodeHeapUsedBytes": 84752976,
+        "nodeRSSBytes": 269144064,
+        "peakAfterBytes": 1031090176,
+        "peakBeforeBytes": 1031090176,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 344674304,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 26023685,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 5,
+        "kernelBytes": 27901952,
+        "label": "driver.request.afterBodyObserverBeforeHTTP",
+        "memoryCurrentBytes": 978604032,
+        "nodeExternalBytes": 5403134,
+        "nodeHeapUsedBytes": 84843104,
+        "nodeRSSBytes": 269144064,
+        "peakAfterBytes": 1031090176,
+        "peakBeforeBytes": 1031090176,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 363290624,
+        "betweenFramePeakIncreaseBytes": 8060928,
+        "cpuUsageUsec": 26243236,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 6,
+        "kernelBytes": 27975680,
+        "label": "driver.request.afterRPCJSONParsed",
+        "memoryCurrentBytes": 997367808,
+        "nodeExternalBytes": 5431500,
+        "nodeHeapUsedBytes": 85197096,
+        "nodeRSSBytes": 269144064,
+        "peakAfterBytes": 1039151104,
+        "peakBeforeBytes": 1039151104,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 363290624,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 26244056,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 7,
+        "kernelBytes": 27975680,
+        "label": "U.beforeAttach",
+        "memoryCurrentBytes": 997367808,
+        "nodeExternalBytes": 5456082,
+        "nodeHeapUsedBytes": 85272968,
+        "nodeRSSBytes": 269144064,
+        "peakAfterBytes": 1039151104,
+        "peakBeforeBytes": 1039151104,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 363290624,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 26244523,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 8,
+        "kernelBytes": 27975680,
+        "label": "U.afterAttach",
+        "memoryCurrentBytes": 997367808,
+        "nodeExternalBytes": 5480664,
+        "nodeHeapUsedBytes": 85434840,
+        "nodeRSSBytes": 269144064,
+        "peakAfterBytes": 1039151104,
+        "peakBeforeBytes": 1039151104,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 363290624,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 26256557,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 9,
+        "kernelBytes": 27975680,
+        "label": "U.beforeReturn",
+        "memoryCurrentBytes": 997101568,
+        "nodeExternalBytes": 5505246,
+        "nodeHeapUsedBytes": 89481688,
+        "nodeRSSBytes": 269144064,
+        "peakAfterBytes": 1039151104,
+        "peakBeforeBytes": 1039151104,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 363290624,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 26256879,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 10,
+        "kernelBytes": 27975680,
+        "label": "driver.afterU.beforeVerifyLogical",
+        "memoryCurrentBytes": 997101568,
+        "nodeExternalBytes": 5529828,
+        "nodeHeapUsedBytes": 89549848,
+        "nodeRSSBytes": 269144064,
+        "peakAfterBytes": 1039151104,
+        "peakBeforeBytes": 1039151104,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 362741760,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 26488099,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 11,
+        "kernelBytes": 27926528,
+        "label": "driver.afterVerifyLogical",
+        "memoryCurrentBytes": 996802560,
+        "nodeExternalBytes": 5354729,
+        "nodeHeapUsedBytes": 97875720,
+        "nodeRSSBytes": 268951552,
+        "peakAfterBytes": 1039151104,
+        "peakBeforeBytes": 1039151104,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 362741760,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 26488721,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 12,
+        "kernelBytes": 27926528,
+        "label": "driver.beforeFinalRead",
+        "memoryCurrentBytes": 996802560,
+        "nodeExternalBytes": 5379311,
+        "nodeHeapUsedBytes": 97967472,
+        "nodeRSSBytes": 268951552,
+        "peakAfterBytes": 1039151104,
+        "peakBeforeBytes": 1039151104,
+        "withinFramePeakIncreaseBytes": 0
+      },
+      {
+        "anonBytes": 355762176,
+        "betweenFramePeakIncreaseBytes": 0,
+        "cpuUsageUsec": 27146547,
+        "fileBytesIncludingShmem": 605020160,
+        "index": 13,
+        "kernelBytes": 27922432,
+        "label": "driver.afterFinalRead",
+        "memoryCurrentBytes": 990027776,
+        "nodeExternalBytes": 6479104,
+        "nodeHeapUsedBytes": 112418648,
+        "nodeRSSBytes": 280477696,
+        "peakAfterBytes": 1039151104,
+        "peakBeforeBytes": 1039151104,
+        "withinFramePeakIncreaseBytes": 0
+      }
+    ],
+    "increaseAfterFirstFrameBytes": 11497472,
+    "limits": [
+      "Both within-frame and between-frame intervals include observer allocations. Counters are asynchronous.",
+      "Later current/anon/file/Node values cannot decompose a previous common peak; no exact owner, allocator or live retention is proved.",
+      "afterFinalRead includes the complete diagnostic invoke and verification. The original request-body observer is unchanged.",
+      "This diagnostic is not an OLD/NEW comparison, a stable plateau or a full500 reserve proof."
+    ],
+    "rawPhaseFilePin": {
+      "bytes": 104245,
+      "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/cases/writephase-cb6f5b59288add4d64037fb3/AUTH_WRITE_PHASE.SAFE.json",
+      "sha256": "a47f6147465350180e6a5d897113ff62c0ac3d310a97f48835c60b19c0da688b"
+    },
+    "restoreAdditions": 0,
+    "restoreNewNodes": 2,
+    "restoreRequestUTF8Bytes": 2458,
+    "status": "BOUNDED_FRAME_INCREMENTS_ONLY"
+  },
+  "plateauProven": false,
+  "preparedPin": {
+    "bytes": 49491,
+    "path": "/workspace/helmut-cpu-epoch-20261015/scripts/helmut-resource-meter/auth-write-phase-native-launcher/PREPARED.SAFE.json",
+    "sha256": "1868119f68f6d27a67c26281b8a71db7c9cb5b6e7d878405bb16f8492f6f30b3"
+  },
+  "productChanged": false,
+  "production": false,
+  "reserveAt500Proven": false,
+  "savingProvenByThisDiagnostic": false,
+  "schema": "helmut-auth-write-phase-root-actual-verification/1",
+  "status": "PASS_BOTH_ACTUAL",
+  "verificationSourcePin": {
+    "bytes": 10470,
+    "path": "/workspace/helmut-ram-fix-20261020/auth-write-phase-20261021/root-verify-both-actuals-v1.py",
+    "sha256": "14f0ba7f82453feca29a74083a63e62196432b49d1f3480a55bcfc187263f344"
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "schema": "helmut-claim-only-projection-admission-independent-delta-review/1",
+  "verdict": "PASS_SOURCE_ONLY",
+  "blockingFindings": [],
+  "reviewer": "/root/full500_source_path_readonly",
+  "independentOfPreparedDeltaAuthor": true,
+  "reviewScope": "Only new projection-admission and targeted SQL-construction fixture delta; does not requalify prior whole implementation.",
+  "preparedFreezePin": {
+    "path": "/workspace/helmut-native-integration-checks-20261022/claim-only-projection-admission-fix-prepared-20261023/FROZEN_PINS.SAFE.json",
+    "bytes": 1280,
+    "sha256": "76521e2f8c5681e0d85ca3e326645d7231863c052e4c3af9de9196f5d65312e9"
+  },
+  "reviewedPins": [
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/claim-only-projection-admission-fix-prepared-20261023/local-unit-native-execution-controller.py.PREPARED",
+      "bytes": 65337,
+      "sha256": "cdcb012c15257df51e36392ed2e158e742bbce47361fa07440e8eff3534a949d"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/claim-only-projection-admission-fix-prepared-20261023/claim-only-dto-pure-test.py.PREPARED",
+      "bytes": 13218,
+      "sha256": "013388076a7c39cde33c97a543a912c41ca71f883fcfc99d42db902b92b42f18"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/claim-only-projection-admission-fix-prepared-20261023/REVIEW.PRIVATE.patch",
+      "bytes": 4781,
+      "sha256": "cb5fdc60d50db6e8691069d5937ac68c10770abed38a4d68aaadfc9b5c9e2944"
+    },
+    {
+      "path": "/workspace/helmut-native-integration-checks-20261022/claim-only-projection-admission-fix-prepared-20261023/PREPARATION.SAFE.json",
+      "bytes": 6276,
+      "sha256": "d6667d0e34866c582d4b0ee7bc601eeb4c3f350fcb6bed52c778a9f4b0586907"
+    }
+  ],
+  "actualOriginalInputPins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-native-execution-controller.py",
+      "bytes": 65265,
+      "sha256": "7253e7058c2e7ff8d2486df8626130311384f1812eb6e2206ce2313871e195da"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/claim-only-dto-pure-test.py",
+      "bytes": 11289,
+      "sha256": "6f39426bd72a9f445323b2ee1ab611632fcda5c5168e944c66731892f6f29bff"
+    }
+  ],
+  "unchangedGuardAndExistingCallerPins": [
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/supabase/proposals/auth_state_parts_local.sql",
+      "bytes": 54938,
+      "sha256": "fd038ceb1a49f249e11b8ac548969fd5bba7c4436a2c20a49b9363f3b393448d"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/supabase/proposals/auth_read_bounded_local.sql",
+      "bytes": 18910,
+      "sha256": "e7530ffd737179fb261d8a680ade77262d88e4685b3d8d90f2a92ecb5fad83c5"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/supabase/proposals/local_unit_original_bridge_local.sql",
+      "bytes": 63581,
+      "sha256": "58679eabc93a78b2c01b79dd11783abf6d28f0dfac78a93a87da43e84de45fbd"
+    },
+    {
+      "path": "/workspace/helmut-unit60-native-20261022/scripts/helmut-resource-meter/local-unit-original-transaction.js",
+      "bytes": 54785,
+      "sha256": "44493e3f2b62e1860437bd293337547f7c566ef58e8bbfbec3cd2ed45a6d9a04"
+    }
+  ],
+  "checks": [
+    "Exact two-file patch independently reconstructed byte-for-byte; all four frozen pins and supporting SQL/transaction source pins verified against actual files.",
+    "Removing exactly one fixed SET LOCAL line restores the entire original65265-byte Controller with SHA7253e7058c2e7ff8d2486df8626130311384f1812eb6e2206ce2313871e195da. All code outside the special claim-only snapshot is byteunchanged.",
+    "Original auth_state_parts_local.sql438/444 graph assertion is stable SECURITY INVOKER with search_path=pg_catalog and requires exactly bounded-cas-qualification-v1; guard itself unchanged.",
+    "After admission the same graph assertion still performs helmut_auth_state_expand_local_v1(...,true,true), validating actual payload SHA/postorder/types/depth/expansion/cumulative work before key-set and logical-root checks. No cache or substitute graph accepted.",
+    "Actual wrapper composition places BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY and unchanged owned-database regex/actual database/PG17/session_user=current_user=postgres/transaction_read_only boundary BEFORE this fixed SET LOCAL and claim DO.",
+    "search_path=pg_catalog,timezone UTC,statement8s,lock500ms and final ROLLBACK are unchanged. SET LOCAL is transaction-local and grants no ACL/role/writer authority; ordinary _readonly remains unadmitted.",
+    "Existing OriginalTransaction already uses the same fixed local diagnostic scope in its own admitted transaction. Its committed local GUC cannot authorize this separate later readonly snapshot.",
+    "No SET ROLE,local_auth_state_cas_projection flag,SQL function/ACL/default/global setting change. Genuine 8-field CAS,Original SQL transaction,receipt/COMMIT/OwnACK/readback,deadline/unknownACK/noRetry paths untouched.",
+    "All actual snapshot predicates remain exact: rev1/running-only journal delta,other Own7 unchanged,original graph/projection and usage proof checks,selection/terminal/Exit0+2EOF bindings. Ordinary Unit final acceptance and all false qualification fields unchanged.",
+    "New single fixture group captures actual builder SQL through an explicit in-memory _call stub, verifies exact one admission after boundary/before DO and graph assert, rejects missing/off/wrong text, and confirms general _readonly and original SQL guard unchanged.",
+    "Fixture uses AST-isolated functions,never calls worker.query,does not interpret/execute SQL and explicitly reports SQLExecuted=false/nativeEvidence=false. Its text negatives do not establish PostgreSQL or native acceptance."
+  ],
+  "sourceRefs": {
+    "guard": "supabase/proposals/auth_state_parts_local.sql:438",
+    "guardAdmission": "supabase/proposals/auth_state_parts_local.sql:444",
+    "preexistingLocalCaller": "scripts/helmut-resource-meter/local-unit-original-transaction.js:336",
+    "ownedReadonlyBoundary": "scripts/helmut-resource-meter/local-unit-native-execution-controller.py:130",
+    "newSnapshotAdmission": "preparedController:303"
+  },
+  "limits": {
+    "reviewerTests": 0,
+    "subjectImports": 0,
+    "SQLExecuted": 0,
+    "DBDockerNativeStarts": 0,
+    "originalPayloadReads": 0,
+    "RootRepoWrites": 0,
+    "priorActualCaseReinterpreted": false
+  },
+  "remaining": "Root integrates only these reviewed exact files and runs the one newly required pure construction group. Any new actual diagnostic requires separately fresh committed capture/source/10GiB/quiescence/Root adoption; previous case2f544859c95179a876f0809ae418c45d remains failed/consumed and cannot replay.",
+  "nativeClaimOrSnapshotAccepted": false,
+  "unit60": false,
+  "auth30": false,
+  "reserve": false,
+  "full500": false,
+  "executionAuthorization": false
+}

@@ -1,0 +1,633 @@
+{
+  "schema": "helmut-sprint-progress/1",
+  "recorded_at_utc": "2026-10-23T16:29:46.684987+00:00",
+  "code_head_before_documentation": "08e2dc173de76f605fac9c6a927b327694efe2ff",
+  "private_evidence_pins": [
+    {
+      "label": "cache_comparison",
+      "bytes": 1944,
+      "sha256": "1f36fd4cc399a1ff419ece9a59a552d181877c68f070bf9d5644a8b40a379104",
+      "private_source_retained": true
+    },
+    {
+      "label": "memory_review",
+      "bytes": 16821,
+      "sha256": "461ae629c2a0eda5c7d354cfd16aa8912f934b5992d195e5f878e614d2a418d2",
+      "private_source_retained": true
+    },
+    {
+      "label": "timing_review",
+      "bytes": 19124,
+      "sha256": "88a3a5f0ffff04ebeb6b2f9feddb7be117cc709a0fdfcba9ad3d8695414a3fd8",
+      "private_source_retained": true
+    },
+    {
+      "label": "own_hull_retirement",
+      "bytes": 750,
+      "sha256": "b31a9fc9a92374f30b0c88d94f65663c90e854e372f8840fa979c5dbea36c536",
+      "private_source_retained": true
+    },
+    {
+      "label": "scope_timing_source",
+      "bytes": 4031,
+      "sha256": "00eaa3b8ed8b759ecde28bececd0855215e683ea475226f8044df92fa9a537b7",
+      "private_source_retained": true
+    },
+    {
+      "label": "early_trace_pump_source",
+      "bytes": 2548,
+      "sha256": "647808cb6a357b5a1d7afb0aec1e6aa297be9ab96719ed91fd3ba76dc044e2f9",
+      "private_source_retained": true
+    },
+    {
+      "label": "latest_native_scope_await_review",
+      "bytes": 48574,
+      "sha256": "09312510016541d341b39f3c53d729b2f684810f16923edd1ba3467098a376ae",
+      "private_source_retained": true
+    },
+    {
+      "label": "latest_native_memory_review",
+      "bytes": 11290,
+      "sha256": "3b004d021fa202dc91ea3e93fb0e031c072d0c7028539fbe0c2b1c0012894fe2",
+      "private_source_retained": true
+    },
+    {
+      "label": "remaining_22_archive_retirements",
+      "bytes": 16466,
+      "sha256": "89aa42264f9b0bf022d39e83f81c05df0c7bd9596c931414dc38a4873f9ae460",
+      "private_source_retained": true
+    },
+    {
+      "label": "three_own_ci_worktree_retirements",
+      "bytes": 1465,
+      "sha256": "d9c710b2defafa1448d27ed60ec932a8eabb86129b91511ea5586f9a97df1bcd",
+      "private_source_retained": true
+    },
+    {
+      "label": "current_ci_remote_metadata",
+      "bytes": 9521,
+      "sha256": "ceeaeb4fd9d65b5e2c49073c307abc0134b034c46954a2a63760400676653fbb",
+      "private_source_retained": true
+    },
+    {
+      "label": "structural_change_root_source_review",
+      "bytes": 3718,
+      "sha256": "94e97fafedcdb47c383ab73d308596615df4ff60e4c90cdd306b5c64f05d1d10",
+      "private_source_retained": true
+    },
+    {
+      "label": "structural_change_frozen_review",
+      "bytes": 5414,
+      "sha256": "e35bf1fa5bf60cff74ac1cbb5a8f50a678df5a2fcdea14513c744665582d73bb",
+      "private_source_retained": true
+    },
+    {
+      "label": "latest_structural_native_timing",
+      "bytes": 44932,
+      "sha256": "31dd3d2a5731ae586bc171e741e75edb778e31896ff9063b35255e5bd547b1c0",
+      "private_source_retained": true
+    },
+    {
+      "label": "latest_structural_cas_boundaries",
+      "bytes": 5919,
+      "sha256": "cf0a0e5bdd57a7d6b37d05665fbd2ed9099cab19898e49a33813430450cb6576",
+      "private_source_retained": true
+    },
+    {
+      "label": "latest_structural_native_memory",
+      "bytes": 16751,
+      "sha256": "996680d07420274c89b8ac9c7f0702783427a3bcac2ece50640a06233533f6b5",
+      "private_source_retained": true
+    },
+    {
+      "label": "actual_ci_step19_source_gate_blocker",
+      "bytes": 2643,
+      "sha256": "f3dde43b489db11eb5a561a3c0ddc8d37d933ce934b0c1592c6748bbd2a0380f",
+      "private_source_retained": true
+    },
+    {
+      "label": "own_write_timing_frozen_review",
+      "bytes": 2616,
+      "sha256": "4ceb16390b5aceaffc772c37cc5d75deeb6a9b822b222ddfb40a877dd0f17417",
+      "private_source_retained": true
+    },
+    {
+      "label": "own_write_timing_root_review",
+      "bytes": 2393,
+      "sha256": "f79dd8f044471752e3e137cb93fb55387bb166703316a416b3b04932fe716070",
+      "private_source_retained": true
+    },
+    {
+      "label": "closed_step19_worktree_retirement",
+      "bytes": 555,
+      "sha256": "01278345b3b921dbb6561878929b935021ad4872c121e9b359b1a0e14979214a",
+      "private_source_retained": true
+    },
+    {
+      "label": "latest_native_own_write_phases",
+      "bytes": 27023,
+      "sha256": "2c4b5569cf319097414f70c58a2492f63af4376a0d2e6979d7a32f6e6fc95492",
+      "private_source_retained": true
+    },
+    {
+      "label": "latest_native_own_timing_memory_closure",
+      "bytes": 5457,
+      "sha256": "cd9708a79b8c856776716d9d6b129f873067b6a60ac6c23f3048aa77f9effaca",
+      "private_source_retained": true
+    },
+    {
+      "label": "completed_source1940_worktree_retirement",
+      "bytes": 567,
+      "sha256": "2dd82b421f576f894c159699992e790d418c983351a30362b4d93bd45d5e9c4e",
+      "private_source_retained": true
+    },
+    {
+      "label": "optional_content_continuation_plan_no_go",
+      "bytes": 4269,
+      "sha256": "ad2383aed8168e4efe5c7110e8a5944a3ce8a90f955b6c006219b66a9ebcf109",
+      "private_source_retained": true
+    },
+    {
+      "label": "current_head_ci_remote_metadata",
+      "bytes": 14742,
+      "sha256": "fb8832775d13211ea8aad699a48656779edbcbe7c59cd50c091329c6a96b7c06",
+      "private_source_retained": true
+    },
+    {
+      "label": "completed_own_ci_entry_worktree_retirement",
+      "bytes": 845,
+      "sha256": "a6e7d250421d8b030158709c0eaca51c8ebc0a47267b46642fce5cac6789bcf7",
+      "private_source_retained": true
+    },
+    {
+      "label": "prepared_late_sql_plan_static_review",
+      "bytes": 8251,
+      "sha256": "485f04c7f91df689885bce7a4cc2799fe3b11a4aa3ce97cccc594fabc48d071d",
+      "private_source_retained": true
+    },
+    {
+      "label": "prepared_late_sql_runtime_budget_historical_plan_version",
+      "bytes": 10902,
+      "sha256": "118df34e835d284589387c381dd70d4b6a1a5a40741aac4d0ee23e1dd791ecca",
+      "private_source_retained": true
+    },
+    {
+      "label": "prepared_late_sql_current_plan_after_cold_control_review",
+      "bytes": 17171,
+      "sha256": "842e38f491c16ae385a4bd7a942f18708864a9d414238e365f9641f3c0d912ad",
+      "private_source_retained": true
+    },
+    {
+      "label": "late_sql_v1_actual_failure",
+      "bytes": 3237,
+      "sha256": "e291a4660e99b4473e8a62685aa2cd13dbc856655ab14b484a5d63285234abe0",
+      "private_source_retained": true
+    },
+    {
+      "label": "late_sql_v2_race_regressions",
+      "bytes": 2042,
+      "sha256": "3d51d09b0250bedd8d1c951bd212db4585b4808b376f0af3c99b9a89f65a953f",
+      "private_source_retained": true
+    },
+    {
+      "label": "late_sql_v2_independent_delta_review",
+      "bytes": 8996,
+      "sha256": "6140eef0049826439fbb1eeb91736707ad2171a3706b01d73fd578b69a6e1247",
+      "private_source_retained": true
+    },
+    {
+      "label": "late_sql_v2_actual_result",
+      "bytes": 4569,
+      "sha256": "13c109248b77b18237edb056830e1e5ed98bb783712d88a3a579892b8e4d40ce",
+      "private_source_retained": true
+    },
+    {
+      "label": "late_sql_v2_component_timings",
+      "bytes": 3135,
+      "sha256": "17d75d6ea0b62ecf6989122c419280b497b505a15e1af5d0063f192705066b6a",
+      "private_source_retained": true
+    },
+    {
+      "label": "late_sql_v2_independent_actual_review",
+      "bytes": 18499,
+      "sha256": "7c1d6b398e6709a06eaf74d80625f3a41f41b63c6293fab352ce9b08bf7d2205",
+      "private_source_retained": true
+    },
+    {
+      "label": "late_sql_v1_exact_copy_retirement",
+      "bytes": 327,
+      "sha256": "0ee9eb3576d0caf1f816dad5de9c2f887ad0da10bd86d10c735131c895e57baf",
+      "private_source_retained": true
+    },
+    {
+      "label": "late_sql_v1_exact_copy_retirement_outer",
+      "bytes": 538,
+      "sha256": "ae0aa31c05e57f52aa31616662ee94704743dbfb0be1e519460692957fb32f39",
+      "private_source_retained": true
+    },
+    {
+      "label": "entry_retention_public_worktree_retirement",
+      "bytes": 1110,
+      "sha256": "6f159bd13f1f1e93d4d37e701b0500bd2946462c347ce9c7c6ea776d9736dbe0",
+      "private_source_retained": true
+    },
+    {
+      "label": "memory_components_public_worktree_retirement",
+      "bytes": 1098,
+      "sha256": "86bc6e48afd20b03134c9863933be345bfc9d11fc1265e8c51bd5ca7f9f2f297",
+      "private_source_retained": true
+    },
+    {
+      "label": "head208e_actual_ci_status",
+      "bytes": 10128,
+      "sha256": "c90ea9eec969d786fb009716ac24c843d7699038b1062e7f7587fe1261ce7b8d",
+      "private_source_retained": true
+    },
+    {
+      "label": "current_control_native_preparation",
+      "bytes": 12134,
+      "sha256": "e06b900e3f39358a76d125bfa4e4b2e89994363dc3096d15427bc946faee898f",
+      "private_source_retained": true
+    },
+    {
+      "label": "current_control_verifier_v2_preparation",
+      "bytes": 3234,
+      "sha256": "0372f48f8d734e8115e5a5751cbf1bdb723db19827f1d6f285729ffbed718391",
+      "private_source_retained": true
+    },
+    {
+      "label": "current_control_independent_prepared_review",
+      "bytes": 9179,
+      "sha256": "0232579847371ffcac8e1ba705948e86676c6de6d9786ebbc97bf89d167abf6a",
+      "private_source_retained": true
+    }
+  ],
+  "cache_comparison": {
+    "same_ids": 415,
+    "same_own_complete_objects": 6,
+    "old_wall_ns": 2004040348,
+    "new_empty_handle_wall_ns": 2040040728,
+    "new_warm_handle_wall_ns": 580515699,
+    "all_cli_actual_exit_0_and_two_natural_eof": true,
+    "fixed_order_os_daemon_cache_effects_possible": true,
+    "motor_time_or_native_ram_improvement_proven": false
+  },
+  "implemented_next_diagnostics": {
+    "private_scope_timing_max_events": 256,
+    "private_scope_timing_max_ascii_bytes": 24576,
+    "scope_timing_new_pure_groups_passed": 3,
+    "affected_existing_scope_guard_checks_passed": 27,
+    "affected_scope_guard_actual_tool_chunk": "3932e5",
+    "affected_scope_guard_actual_exit": 0,
+    "early_trace_pump_new_checks_passed": 2,
+    "independent_source_and_test_review": "PASS",
+    "native_effect_still_unqualified": true,
+    "clock_deadline_safety_and_ack_contracts_unchanged": true,
+    "native_early_trace_pump_effect": "PROVEN_PARTIAL_TRACE_RETAINED_NO_ACCEPTANCE",
+    "native_scope_timing_effect": "PROVEN_REAL_AWAIT_INTERVALS_NO_ACCEPTANCE"
+  },
+  "ci": {
+    "previous_run": 39937538074,
+    "previous_run_result": "FAIL",
+    "previous_failure": "Z22-9.1",
+    "protected_original_channel_result": "SUCCESS",
+    "correction_commit": "d8259579",
+    "new_semantic_plan_test_groups_passed": 16,
+    "new_semantic_plan_independent_source_review": "PASS",
+    "historical_exact_physical_plan_cause": "UNKNOWN",
+    "protected_originals": 84,
+    "fixture_corrections": [
+      "d1f15b4a670025102a9aa382e7d3594e9b034d24",
+      "2cfd657fdf3b2877db4963334f8fd353898c3c08"
+    ],
+    "native_unit60_or_ram_acceptance": false,
+    "last_fully_successful_run": 39958713128,
+    "last_fully_successful_head": "2cfd657fdf3b2877db4963334f8fd353898c3c08",
+    "last_fully_successful_result": "SUCCESS",
+    "current_run": 39968408053,
+    "current_head": "cad305f96c367ff1a66237da9d05dde40017c69c",
+    "current_result": "FAIL",
+    "current_public_code_bindings": "SUCCESS",
+    "current_browser": "SUCCESS",
+    "current_original84": "SUCCESS",
+    "current_offline_step19": "FAIL",
+    "current_z22_pure_and_live": "SKIPPED",
+    "pin_only_or_mock_bypass_allowed": false,
+    "new_exact_source_and_native_component_qualification_required": true,
+    "previous_source_gate_failed_run": 39964840723,
+    "current_completed_at_utc": "2026-10-23T14:21:11Z",
+    "current_failure_step": 19,
+    "current_exact_remote_error_logs_read": false,
+    "last_fully_successful_all_three_jobs": "SUCCESS",
+    "last_fully_successful_live_verbose_catalog_integration": "SUCCESS",
+    "last_fully_successful_z22_pure": "SUCCESS",
+    "last_fully_successful_completed_at_utc": "2026-10-23T13:40:37Z",
+    "known_unresolved_source_gate_from_previous_exact_local_reproduction": "current actual Atomic/Parts source bytes differ from historical qualified control-cache sources",
+    "current_remote_exact_failure_cause": "UNKNOWN_REMOTE_LOGS_NOT_READ",
+    "latest_checked_run": 39972723984,
+    "latest_checked_head": "208e02ab9d80be79cc54cd132935b1347b411ddf",
+    "latest_checked_result": "FAIL",
+    "latest_protected_channel_and_original_84_result": "SUCCESS",
+    "latest_failed_step": 19,
+    "latest_public_failure_detail": "Process completed with exit code 1.",
+    "latest_private_assertion_read": false,
+    "known_current_control_source_gate_unchanged": true,
+    "latest_z22_result": "SKIPPED",
+    "latest_browser_result": "CANCELLED_DURING_INSTALL",
+    "github_reported_vercel_status": "SUCCESS",
+    "current_source_paired_native_qualification": "PREPARED_AND_INDEPENDENTLY_STATIC_REVIEWED_NO_CASES_EXECUTED"
+  },
+  "capacity": {
+    "own_closed_ci_hull_only_removed": true,
+    "own_pgdata_volume_image_configuration_and_logs_kept": true,
+    "observed_free_bytes_before": 10630676480,
+    "observed_free_bytes_after": 11542228992,
+    "observed_net_free_gain_bytes": 911552512,
+    "exclusive_allocation_causality_claimed": false,
+    "single_unit_admission_bytes": 10737418240,
+    "full500_admission_bytes": 15179779720,
+    "additional_qualified_archives_total": 22,
+    "additional_archive_offloads_completed": 22,
+    "additional_archive_offloads_remaining": 0,
+    "prior_eleven_archive_offloads_completed": true,
+    "all_completed_offloads_full_cipher_backdownload_and_hash_verified": true,
+    "delta_base_keep": true,
+    "original_raw_unwritten_allocation_mutation": "NOT_EXECUTED_AUTOMATIC_REVIEW_REJECTED_EXPLICIT_APPROVAL_PENDING",
+    "all_archive_offloads_completed": 33,
+    "retired_archive_preexisting_allocation_bytes": 2792718336,
+    "delta_base_independent_external_full_backup_proven": false,
+    "three_own_closed_ci_worktrees_removed": true,
+    "all_removed_worktree_branches_and_git_objects_kept": true,
+    "worktree_observed_net_free_gain_bytes": 239321088,
+    "latest_observed_available_bytes": 10803478528,
+    "latest_observation_is_full500_admission": false,
+    "additional_own_completed_step19_worktree_removed": true,
+    "additional_observed_net_gain_bytes": 79876096,
+    "completed_own_source1940_worktree_removed": true,
+    "completed_own_source1940_observed_net_gain_bytes": 79888384,
+    "latest_single_unit_admission_met": true,
+    "completed_own_ci_entry_worktree_removed": true,
+    "completed_own_ci_entry_observed_net_gain_bytes": 79831040
+  },
+  "full500": {
+    "ready": false,
+    "all_32_fresh_start_conditions_required": true,
+    "old_go_and_claims_spent": true,
+    "authentic_six_source_databases_needed": true,
+    "tiny_source_adoption": "UNQUALIFIED",
+    "new_run_started": false,
+    "production_or_merge": false,
+    "limits_or_reserve_changed": false
+  },
+  "structural_change": {
+    "author_commit": "e8506e58b3b576625ddd72917413ca82da2ef5a2",
+    "integrated": true,
+    "ten_targeted_pure_suites_passed": true,
+    "independent_full_source_and_test_review": "PASS",
+    "pending_fixes": [],
+    "native_only": [
+      "direct_own7_state_and_usage_write",
+      "bounded_budget_projection"
+    ],
+    "shared_full500_path": [
+      "verified_control_projection"
+    ],
+    "full500_direct_write_improvement_claimed": false,
+    "native_time_and_joint_memory_effect": "NO_MATERIAL_IMPROVEMENT_DEMONSTRATED_IN_ONE_COMPARABLE_FAILED_UNIT",
+    "author_fix_commit": "e797b644ccf83a86b8b54625787b1f6cda5d88c6",
+    "root_integrated_head": "adbcbc70263c5f1861934a0ca7a09bd2d38f2be2",
+    "review_fix_groups_passed": 3,
+    "new_code_ci": "FAIL_LEGITIMATE_UNQUALIFIED_CONTROL_SOURCE_GATE",
+    "current_release_manifest_corrected_commit": "7cf21c3248aeb147de04cd01a4e59439ce054059",
+    "runtime_artifact_attestation_checks_passed": 10
+  },
+  "earlier_native_units": [
+    {
+      "case": "6073319e29c220907278e1c4bb8497be",
+      "result": "FAIL",
+      "actual_parent_exit": 1,
+      "primary_failure": "controller-entry-terminal-deadline",
+      "historical_combined_peak_bytes": 1340100608,
+      "valid_memory_component_samples": 130,
+      "all_six_memory_events_zero": true,
+      "last_process_exit_covered_and_group_empty": true,
+      "unit60_qualified": false,
+      "auth30_qualified": false,
+      "reserve_qualified": false,
+      "plateau_qualified": false,
+      "actual_provider_http_qualified": false,
+      "control_read_wait_durations": "UNKNOWN"
+    },
+    {
+      "case": "2797ac2a6bb0fe98b3fdf0d90538a7ee",
+      "code_commit": "40a8ce7b1d57ad6f74f8884976cfe30c7f62e251",
+      "result": "FAIL",
+      "actual_parent_exit": 1,
+      "actual_two_natural_eof": true,
+      "outer_timeout_or_signals": false,
+      "primary_failure": "controller-entry-terminal-deadline",
+      "historical_combined_peak_bytes": 1343369216,
+      "valid_memory_component_samples": 125,
+      "all_six_memory_events_zero": true,
+      "last_process_exit_covered_and_group_empty": true,
+      "unit60_qualified": false,
+      "auth30_qualified": false,
+      "reserve_qualified": false,
+      "plateau_qualified": false,
+      "all_16_controls_and_quality_qualified": false,
+      "scope_trace": {
+        "valid_events": 142,
+        "complete_pairs": 70,
+        "last_cas_before_r_end_elapsed_ns": 55822250750,
+        "six_state_cas_complete_await_ns": 12490566213,
+        "nine_original_control_complete_await_ns": 4778378458,
+        "fourteen_runtime_complete_await_ns": 3939376280,
+        "authority_complete_await_ns": 3453332846,
+        "r_configured_reply_delay_ns": 19900000000,
+        "additional_post_r_work_required": true,
+        "nested_broker_and_sql_intervals_not_added": true,
+        "wall_waits_not_cpu_attribution": true
+      },
+      "roottrace_reader": {
+        "actual_exit": 0,
+        "two_natural_eof": true,
+        "actual_control_200_records": 9,
+        "final_receipt_present": false
+      }
+    },
+    {
+      "case": "1a964261cd73a0880b777f5e792ccc7a",
+      "code_commit": "7cf21c3248aeb147de04cd01a4e59439ce054059",
+      "result": "FAIL",
+      "actual_parent_exit": 1,
+      "actual_two_natural_eof": true,
+      "outer_timeout_or_signals": false,
+      "primary_failure": "controller-entry-terminal-deadline",
+      "historical_combined_peak_bytes": 1349353472,
+      "peak_delta_from_failed_2797_bytes": 5984256,
+      "valid_memory_component_samples": 122,
+      "all_six_memory_events_zero": true,
+      "last_process_exit_covered_and_group_empty": true,
+      "host_clean": false,
+      "original_source_unchanged": true,
+      "same_original_baseline_and_transport": true,
+      "code_manifest_changed_products": 4,
+      "code_manifest_additional_changed_release_manifest": true,
+      "all_1530_runtime_pins_unchanged": true,
+      "unit60_qualified": false,
+      "auth30_qualified": false,
+      "reserve_qualified": false,
+      "plateau_qualified": false,
+      "quality_qualified": false,
+      "scope_trace": {
+        "complete_pairs": 70,
+        "same_actual_comparison_keys_as_2797": true,
+        "last_cas_before_r_end_elapsed_ns": 56108009355,
+        "six_state_cas_complete_await_ns": 12224424945,
+        "service_windows_nested_in_cas_ns": 5926146428,
+        "psql_nested_in_service_windows_ns": 5737673136,
+        "pre_r_disjoint_complete_await_ns": 28798264600,
+        "pre_r_uninstrumented_gaps_ns": 27309744755,
+        "largest_gap_d_send_end_to_d_account_start_ns": 21847652986,
+        "configured_d_reply_delay_ms": 19900,
+        "actual_d_transport_and_timer_boundaries": "UNKNOWN",
+        "own_read_rpc_vs_node_vs_write_subphases": "UNKNOWN",
+        "nested_intervals_not_added": true
+      },
+      "critical_path_or_joint_ram_improvement_demonstrated": false,
+      "whole500_memory_or_plateau_inferred": false
+    }
+  ],
+  "latest_native_unit": {
+    "case": "af33f16d7b3f94e883880b2af88e0574",
+    "code_commit": "cad305f96c367ff1a66237da9d05dde40017c69c",
+    "result": "FAIL",
+    "actual_parent_exit": 1,
+    "actual_two_natural_eof": true,
+    "actual_outer_wall_ns": 144752890034,
+    "outer_timeout_or_signals": false,
+    "primary_failure": "controller-entry-terminal-deadline",
+    "historical_combined_peak_bytes": 1344360448,
+    "valid_memory_component_samples": 124,
+    "all_six_memory_events_zero": true,
+    "last_process_exit_covered_and_group_empty": true,
+    "postgres_actual_exit": 0,
+    "host_clean": false,
+    "host_closure_error": "execution-host-not-clean",
+    "original_source_unchanged": true,
+    "same_original_baseline_and_transport": true,
+    "only_original_writer_timing_pin_changed_vs_1a96": true,
+    "all_1530_runtime_pins_unchanged": true,
+    "all_36_sql_source_bindings_unchanged": true,
+    "unit60_qualified": false,
+    "auth30_qualified": false,
+    "reserve_qualified": false,
+    "plateau_qualified": false,
+    "quality_qualified": false,
+    "scope_trace_complete_pairs": 70,
+    "own_trace_rows": 70,
+    "own_trace_complete_calls": 7,
+    "own_trace_all_five_pairs_per_call": true,
+    "six_state_cas_total_ns": 11918265219,
+    "six_state_cas_disjoint_wall_ns": {
+      "native_write_endpoint": 6369642982,
+      "reader_promise": 2792191486,
+      "other_own_read": 765701844,
+      "other_own_write": 222252845,
+      "other_own_perform": 469448844,
+      "outside_own_perform": 1299027218
+    },
+    "usage_separate_total_ns": 1586107234,
+    "native_endpoint_includes_transport_bridge_transaction_response": true,
+    "pure_postgres_or_cpu_attribution_proven": false,
+    "first_claim_own_read_required_ns": 1355655585,
+    "five_following_state_own_reads_total_ns": 2202237745,
+    "continuation_would_have_additional_costs": true,
+    "r_dispatch_timer_start_and_response": "UNKNOWN",
+    "joint_memory_improvement_or_plateau_inferred": false,
+    "next_full_unit_on_hypothesis_planned": false
+  },
+  "upcoming_diagnostics": {
+    "type": "four genuine readonly native SQL components on independently copied quiescent af33 source",
+    "execution": "PASS_ONE_CORRECTED_ACTUAL_V2_CASE",
+    "case": "ddfad507b23b46b5b69242e5138f546f",
+    "actual_outer_exit": 0,
+    "actual_tool_chunk": "35378e",
+    "elapsed_seconds": 21.536748384998646,
+    "measurement_capture_seconds": 0.48314483600552194,
+    "four_component_execution_ms": [
+      145.909,
+      168.983,
+      111.166,
+      41.653
+    ],
+    "independent_actual_review": "PASS",
+    "all_four_captures_exit0_and_two_natural_eof": true,
+    "postgres_exit0_clean_all_children_exited": true,
+    "source_catalog_roles_rls_settings_unchanged": true,
+    "source_full_content_manifests_identical": true,
+    "all_six_memory_events_zero": true,
+    "last_process_exit_covered_group_empty": true,
+    "combined_component_peak_bytes": 703197184,
+    "component_evidence_not_native_unit60_or_reserve": true,
+    "read_components_overlap_fixed_sequence_warms_cache": true,
+    "write_commit_service_ledger_cost_not_measured": true,
+    "first_v1_attempt_before_sql": "FAIL_OWN_COPY_CACHE_ENOENT",
+    "first_v1_sql_queries": 0,
+    "v2_forced_race_and_negative_cases_passed": 16,
+    "first_v1_failure_preserved": true,
+    "originals_and_af33_source_keep": true,
+    "motor_provider_calls": 0,
+    "unchanged_native_memory_and_disk_policy": true
+  },
+  "latest_controlled_cleanup": {
+    "two_public_worktree_net_available_gain_bytes": [
+      36937728,
+      11968512
+    ],
+    "foreign_dirty_worktree_kept": true,
+    "v1_derived_copy_retirement_actual_exit": 0,
+    "v1_derived_copy_retirement_files": 1747,
+    "v1_derived_copy_retirement_directories": 30,
+    "v1_end_overlay_logical_bytes": 16936206,
+    "v1_observed_net_available_gain_bytes": 373657600,
+    "v1_remains_failed": true,
+    "original_source_and_all_external_evidence_kept": true,
+    "last_component_end_available_bytes_historical": 10437079040,
+    "unchanged_component_admission_bytes": 10737418240,
+    "next_component_requires_redundant_copy_retirement": true
+  },
+  "claim_only_integration": {
+    "status": "INTEGRATED_PURE_PASS_NATIVE_NOT_RUN",
+    "public_evidence": {
+      "file": "docs/betrieb/belege/v12-native-unit-integration-20261022/FRESH_CLAIM_ONLY_INTEGRATED_PURE_20261023.SAFE.json",
+      "bytes": 3074,
+      "sha256": "237cdeb15f7635fdac401e14f0de85aa306ef4c7bd7e51dfaabfe656af2b573c"
+    },
+    "actual_client_checks": 16,
+    "actual_dto_checks": 48,
+    "unit60_qualified": false,
+    "reserve_qualified": false
+  },
+  "current_control_source_actual": {
+    "completed": 1,
+    "required": 5,
+    "first_mode": "lifecycle-only",
+    "first_case": "b6db529358bd08339aa59ebd",
+    "actual_status": "PASS",
+    "actual_root_exit_code": 0,
+    "actual_tool": "996c60",
+    "actual_result": {
+      "bytes": 7871,
+      "sha256": "a0255874bd140d278bf1b0cd9c87b976ebd00ffb0607a530119a4ceeb8baa99c"
+    },
+    "independent_actual_review": {
+      "bytes": 29568,
+      "sha256": "e209ef667e5c6e75344e6a944e6b254e6b6d01539f40a0169a9a928412776e0d"
+    },
+    "wall_seconds": 22.727456724998774,
+    "native_peak_bytes": 1023897600,
+    "five_case_qualification": false,
+    "unit60_or_reserve_proof": false
+  }
+}

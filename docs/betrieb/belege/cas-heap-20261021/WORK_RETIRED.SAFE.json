@@ -1,0 +1,30 @@
+{
+  "allNecessaryEvidenceAndHullsRetained": true,
+  "archiveOrBackupQualificationClaimed": false,
+  "case": "heap-c35697a3832dc8dd58b21042",
+  "checkedPin": {
+    "bytes": 636506,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-c35697a3832dc8dd58b21042.CHECKED_CASE.PRIVATE.json",
+    "sha256": "fa14656bf25f6270fbdd61fe3ca409ac09da157196ef630611f212ffa6bbedeb"
+  },
+  "exactRemovedRoot": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/cases/heap-c35697a3832dc8dd58b21042/disk/pgdata",
+  "full500": false,
+  "hostAvailableAfterRetirement": 14960951296,
+  "hostAvailableBeforeRetirement": 14591098880,
+  "preclassifiedDisposablePASSOnly": true,
+  "production": false,
+  "removedRegularFiles": 1711,
+  "rootAdoptionPin": {
+    "bytes": 2303,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/heap-c35697a3832dc8dd58b21042.ROOT_RETIREMENT_ADOPTION.PRIVATE.json",
+    "sha256": "325f35ceae8f23562d7c1204f3221aeb914a9b654e6dacca2c69997632ca2347"
+  },
+  "rootContextPin": {
+    "bytes": 649440,
+    "path": "/workspace/helmut-ram-fix-20261020/cas-heap-20261021/pass-copy-retirement-preparation/ROOT_PASS_CASES_CONTEXT.PRIVATE.json",
+    "sha256": "59f0a8c974112e50dc7c10e336e618753ba00f292f556d1e4b1f16b6d4ddc9f8"
+  },
+  "schema": "helmut-cas-heap-disposable-pass-copy-retired/1",
+  "sourceManifestSHA256": "827a9872003182a73dff6329f16e0f68aa429fbe680606b58c138668a8d23396",
+  "sourceOriginalsImagesVolumesLoopsTouched": false
+}

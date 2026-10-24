@@ -1,0 +1,272 @@
+{
+  "actions": {
+    "CLIExecutions": 0,
+    "GitActions": 0,
+    "archivesOrExtractions": 0,
+    "binaryPayloadReads": 0,
+    "metadataAndTextReadsOnly": true,
+    "originalSourcePayloadReads": 0,
+    "procOrDockerOrSQLOrNativeActions": 0,
+    "retirements": 0,
+    "roundtripComparisons": 0,
+    "testsOrSubjectImports": 0,
+    "writes": "Own F/evidence-review only"
+  },
+  "availabilityChange": {
+    "Supabase": "The retained shim resolves glibc package.json first, constructs its bin/supabase path, then spawns without checking that file exists. Removing this file would disable normal invocation until exact rehydration; the installed musl package is not an automatic missing-file fallback.",
+    "Vercel": "The retained shim resolves an existing native binary and may continue the JavaScript path when none exists. Silent fallback is a behavior change, not equivalent tooling availability.",
+    "requiredRule": "Retain shims/manifests/locks and exact offline restore map; declare these CLI binaries archived/offline and restore both to their verified original paths before any future Supabase/Vercel CLI use. No npm reinstall, network/package-manager execution or configuration change is part of this scope."
+  },
+  "blockingFindings": [
+    {
+      "finding": "Root reports /workspace overlay, while file-specific upper/lower origin remains unknown. Very large inode numbers and old timestamps are only a lower-origin hint. On a lower overlay layer, unlink can create only a whiteout and reclaim no underlying bytes; a new archive would consume capacity. st_blocks is not a host-free-space promise.",
+      "id": "RECLAIM_SEMANTICS_UNPROVEN",
+      "resolution": "Root closes this candidate without an archival/deletion experiment. Any future proposal would require retained read-only origin evidence justifying actual reclaim semantics for these exact inodes; no unlink experiment, forced copy-up or accounting from directory totals."
+    },
+    {
+      "finding": "No complete archive or two complete reconstruction comparisons exists in this reviewed scope; installed ELF bytes have not been pinned here.",
+      "id": "ACTUAL_LOSSLESS_ARCHIVE_ABSENT",
+      "resolution": "Before retirement, Root must produce the actual bounded offline archive and preserve input byte/metadata pins, then independently validate two complete archive-to-original byte-stream comparisons plus metadata, exact member allowlist, length, checksum, EOF and no extra members. Recheck unchanged raw identities after both; partial/hash-only/header-only claims do not substitute."
+    },
+    {
+      "finding": "The two candidate files have282112000B gross allocated blocks. At the Root snapshot220282504B gap, archive+proofs+restore map must consume less than61829496B even before required positive headroom. Actual compression and reclaim are not measured; credited recovery is0B.",
+      "id": "NET_CAPACITY_UNPROVEN",
+      "resolution": "Use actual allocated archive/proof bytes and actual justified raw reclamation, with a fresh postproof capacity snapshot, declared positive headroom and unchanged host floor. If insufficient, stop and KEEP raw files; no automatic third target or old-compactor waiver."
+    },
+    {
+      "finding": "The two file paths are plausibly user-owned dormant npm CLI payloads, but no immutable source-qualified archive/retire actor, exact protected-source/native-dependency clearance bundle or fresh adoption exists in this scope.",
+      "id": "FINAL_IDENTITY_AND_DEPENDENCY_CLEARANCE_NOT_ADOPTED",
+      "resolution": "Pin exact targets and all ancestry/identity/type/nlink/owner/mode/current-use/dependency exclusions. Any protected original/runtime dependency, positive active-use match or source/identity drift is KEEP/BLOCKED. Scope cannot expand to the toolroot or other package/native binaries."
+    }
+  ],
+  "budget": {
+    "ceilingForArchiveProofsAndMapBeforeHeadroomBytes": 61829496,
+    "currentCreditedActualFreedBytes": 0,
+    "full500Authorized": false,
+    "fullAdmissionBytes": 15179779720,
+    "grossCandidateAllocatedBytes": 282112000,
+    "rootSnapshotAvailableBytes": 14959497216,
+    "rootSnapshotGapBytes": 220282504,
+    "snapshotNotReservation": true
+  },
+  "currentUseEvidence": {
+    "FDAndMapsGloballyReadable": false,
+    "additionalRootAndLauncherReportedChecks": "Root PATH/NODE_PATH exclude this toolroot; R lib/scripts/docs/AGENTS/CLAUDE exact toolroot text references0; launcher reports no CLI path in selected native PREP/runtime bindings. Those exclusions require their exact retained search/binding evidence before an actor adoption; this report does not repeat a broad source scan.",
+    "decision": "No positive active-use path is identified in the finite visible classification. UNKNOWN is retained. An open descriptor remaining valid after unlink is not a substitute for future-path/current-use clearance and does not authorize a process shutdown.",
+    "globalNoUseClaim": false,
+    "source": "Root persisted process observation, not a new reviewer process/FD/maps probe.",
+    "unreadableCmdlines": [
+      {
+        "candidateCLIProcess": "UNKNOWN",
+        "cmdlineReadable": false,
+        "comm": "ps",
+        "pid": 1378106,
+        "ppid": 1378105
+      }
+    ],
+    "visibleCandidateCLIProcesses": 0,
+    "visibleProcesses": 328
+  },
+  "decision": {
+    "archiveActorApproved": false,
+    "automaticExtraTargetApproved": false,
+    "globalNoUseClaim": false,
+    "newResourcesOrTestsApproved": false,
+    "nextAction": "KEEP both raw binaries. Close this candidate with0B credited recovery and no archive/deletion experiment, as Root decided. A future explicit proposal would need file-specific origin/reclaim evidence, actual lossless proofs and a sufficient net budget; none is selected or authorized here.",
+    "rawRetirementApproved": false,
+    "scopeExpansionApproved": false
+  },
+  "exactConditionalCandidateAllowlist": [
+    {
+      "binaryPayloadRead": false,
+      "binarySHA256": null,
+      "metadata": {
+        "allocatedBytes": 169938944,
+        "atimeNS": 1790843850104204819,
+        "ctimeNS": 1790843850104204819,
+        "device": 27,
+        "gid": 1000,
+        "inode": 9223372036855932623,
+        "links": 1,
+        "logicalBytes": 169938112,
+        "mode": 448,
+        "mtimeNS": 1790843850104204819,
+        "path": "/workspace/.helmut-cloud-tools/node_modules/@vercel/vc-native-linux-x64/bin/vercel",
+        "regular": true,
+        "resolvedPath": "/workspace/.helmut-cloud-tools/node_modules/@vercel/vc-native-linux-x64/bin/vercel",
+        "symlink": false,
+        "uid": 1000
+      },
+      "package": {
+        "cpu": [
+          "x64"
+        ],
+        "libc": null,
+        "name": "@vercel/vc-native-linux-x64",
+        "os": [
+          "linux"
+        ],
+        "version": "62.1.0"
+      },
+      "packagePin": {
+        "bytes": 454,
+        "path": "/workspace/.helmut-cloud-tools/node_modules/@vercel/vc-native-linux-x64/package.json",
+        "sha256": "6252fc177fb2bd0a32f9b3b236f1f04d52d1cc411e24e60ccd4d5247d425096a"
+      }
+    },
+    {
+      "binaryPayloadRead": false,
+      "binarySHA256": null,
+      "metadata": {
+        "allocatedBytes": 112173056,
+        "atimeNS": 1790843849582622671,
+        "ctimeNS": 1790843849582622671,
+        "device": 27,
+        "gid": 1000,
+        "inode": 9223372036855920612,
+        "links": 1,
+        "logicalBytes": 112170464,
+        "mode": 448,
+        "mtimeNS": 1790843849582622671,
+        "path": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64/bin/supabase",
+        "regular": true,
+        "resolvedPath": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64/bin/supabase",
+        "symlink": false,
+        "uid": 1000
+      },
+      "package": {
+        "cpu": [
+          "x64"
+        ],
+        "libc": [
+          "glibc"
+        ],
+        "name": "@supabase/cli-linux-x64",
+        "os": [
+          "linux"
+        ],
+        "version": "2.119.0"
+      },
+      "packagePin": {
+        "bytes": 659,
+        "path": "/workspace/.helmut-cloud-tools/node_modules/@supabase/cli-linux-x64/package.json",
+        "sha256": "ae0c90b90bec307a920660bf8ea58e8f477088b55ad2d2ace97221544e10fd1c"
+      }
+    }
+  ],
+  "inputPins": [
+    {
+      "bytes": 48943,
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/ROOT_PROCESS_OBSERVATION.SAFE.json",
+      "sha256": "f5d7dfee76e3404ed664466925652664b69a8a09b830d25e142e079378c8989a"
+    },
+    {
+      "bytes": 2057,
+      "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/ROOT_RESUME_PROTECTION.SAFE.json",
+      "sha256": "c55bcce0b5281e738c317246eb8061d9e6b9988a13854ea10f866abfe214ddc0"
+    },
+    {
+      "bytes": 80,
+      "path": "/workspace/.helmut-cloud-tools/package.json",
+      "sha256": "3db4a499499da5fb8be8b466961a76229f018aa647241fa162bec41fd95c7bb7"
+    },
+    {
+      "bytes": 181994,
+      "path": "/workspace/.helmut-cloud-tools/package-lock.json",
+      "sha256": "9f729779a8419e0b44670d467efeece3bc0d8d594602d1a320da23c0075fdd47"
+    },
+    {
+      "bytes": 134952,
+      "path": "/workspace/.helmut-cloud-tools/node_modules/.package-lock.json",
+      "sha256": "7f5005f36ac299678e156b76b9a5115b8c5f7debf8a166dc33a9125d7854cd79"
+    },
+    {
+      "bytes": 3839,
+      "path": "/workspace/.helmut-cloud-tools/node_modules/supabase/package.json",
+      "sha256": "7f3bd906d2b20511f04a569e140c6dab2ac3cd9749d4f9c0254a4309a52f8162"
+    },
+    {
+      "bytes": 2069,
+      "path": "/workspace/.helmut-cloud-tools/node_modules/supabase/dist/supabase.js",
+      "sha256": "21d25b4bfb1870db0aaf0963c028b10d0b0b431485f119abd704c1396c7991e6"
+    },
+    {
+      "bytes": 7945,
+      "path": "/workspace/.helmut-cloud-tools/node_modules/vercel/package.json",
+      "sha256": "e096fdc5e1a8db8f30a99d77ab94e6ef931c1ec4ca44553a4cc07ec9cac0c763"
+    },
+    {
+      "bytes": 7924,
+      "path": "/workspace/.helmut-cloud-tools/node_modules/vercel/dist/vc.js",
+      "sha256": "a0459896d4698233bab881d308ade711a772cde6bcc845728731a38ef0348090"
+    }
+  ],
+  "losslessContract": [
+    "Only the two explicit files may ever be selected by a separately reviewed actor. Preserve their actual original bytes, all restorable metadata and parent/lock/shim provenance. Keep the package tree, configs, credentials, certificates, router/model configuration and restore map.",
+    "Require actual archive membership and complete roundtrip validation before raw retirement; archive and mapping must remain recoverable without these CLIs, npm, network, production accounts or unretained dependencies. Check both original files after comparisons to reject races.",
+    "Preserve original dev/inode/ctime/birthtime when available as provenance. Offline rehydration can restore data, mode, UID/GID, precise mtime/atime and supported xattrs/ACLs/capabilities; it cannot recreate original inode number or ctime after unlink. Do not claim every stat field is identical.",
+    "Read and preserve all relevant metadata rather than silently dropping unsupported xattrs/ACLs or rounding nanoseconds. Unsupported required metadata, changed source/ancestry or incomplete verification is FAILKEEP; no fallback/retry/reinstall.",
+    "If scratch extraction is used, predeclare and admit its full allocated peak plus archive/proofs; streaming full reconstruction comparisons may avoid scratch. Capped/compression-failed or incomplete archives cannot justify retirement.",
+    "Any future exact raw retirement requires separate source-qualified action scope, fresh TTL/nonce/once identity readback and Root adoption. No process stop, native/cache/JIT changes, CLI execution or unrelated cleanup belongs to it."
+  ],
+  "npmProvenance": {
+    "boundary": "Package metadata, lock SRI and installed paths establish npm CLI provenance, not cryptographic authentication of installed ELF contents. Preserve actual bytes; do not execute the binaries for qualification.",
+    "installedBinaryAuthenticatedAgainstRegistryTarball": false,
+    "matchingPublicLockRecords": [
+      {
+        "integrity": "sha512-FuW5MhOfkOxPhyL+tQbAFmx+M4FpmTvqGSDsD2rP9FWYJt7GG2JKIsIbHOfYR5t/fqQqZrVQC3O2ODhwInEGVA==",
+        "path": "node_modules/vercel",
+        "resolved": "https://registry.npmjs.org/vercel/-/vercel-62.1.0.tgz",
+        "sameInBothLocks": true,
+        "version": "62.1.0"
+      },
+      {
+        "integrity": "sha512-0VYIdQBjAJj6+xlNso2JDI//KibEYM8USvimHJauPpuFZdOsj+dutM84ofLtAHlF2UFGzriT1C4qH2hHj9EJxw==",
+        "path": "node_modules/supabase",
+        "resolved": "https://registry.npmjs.org/supabase/-/supabase-2.119.0.tgz",
+        "sameInBothLocks": true,
+        "version": "2.119.0"
+      },
+      {
+        "integrity": "sha512-k5KaYnaey+AAMhOWVpAOTA6kEvk6AgagKGK0aP5Hm9W0cmpIDHhBr9PMpDNzNDU4BWH70ue9d1HFbxGteHuYXQ==",
+        "path": "node_modules/@vercel/vc-native-linux-x64",
+        "resolved": "https://registry.npmjs.org/@vercel/vc-native-linux-x64/-/vc-native-linux-x64-62.1.0.tgz",
+        "sameInBothLocks": true,
+        "version": "62.1.0"
+      },
+      {
+        "integrity": "sha512-JEcYXk8DFgjVcVOf4zfYpSYUjhjxz87nApqdECtRA8pf6kmmImSYzkE9f8ajhm9srELP4kPkz+C/Jdd2Tqb8Lw==",
+        "path": "node_modules/@supabase/cli-linux-x64",
+        "resolved": "https://registry.npmjs.org/@supabase/cli-linux-x64/-/cli-linux-x64-2.119.0.tgz",
+        "sameInBothLocks": true,
+        "version": "2.119.0"
+      }
+    ],
+    "rootContainsOnlyTwoDeclaredDependencies": {
+      "supabase": "^2.119.0",
+      "vercel": "^62.1.0"
+    }
+  },
+  "protectedExclusions": [
+    "Existing Node22 /workspace/.helmut-tools",
+    "Node24/Python/PG/PostgREST runtime closures",
+    "Canonical827a source root and all17 dependent archives",
+    "Bank5993 and all five protected original container identities",
+    "All original/native source/evidence/FAILUNKNOWN files, cases, manifests, locks and CLI shims",
+    "All production/model/router credentials and configuration"
+  ],
+  "reviewerSourcePin": {
+    "bytes": 12379,
+    "path": "/workspace/helmut-ram-fix-20261020/file-charge-20261021/evidence-review/write_cli_scope_review.py",
+    "sha256": "bcd6c1efd64220ebc140ff4a5bb48029941c9f98402051d6a81dc0d2a7270572"
+  },
+  "rootDecisionAtReviewClose": {
+    "archiveOrDeletionExperiment": false,
+    "filesystemObservation": "Root reports findmnt confirms /workspace overlay; no file-specific upper/lower origin or reclaim evidence is available. Reviewer did not execute findmnt/proc or a deletion experiment.",
+    "oneUnreadablePSRowLaterAbsent": "Root observed; no global no-use inference.",
+    "sixMarkerNativeCensus": false
+  },
+  "schema": "helmut-cli-archive-independent-scope-review/1",
+  "scopeJudgment": "Lossless offline archival of these two local user-owned public npm CLI payload paths can be compatible with the authorized reversible workspace-cleanup goal. The current evidence does not authorize raw retirement or establish useful reclaimed capacity.",
+  "status": "BLOCKED_RETIREMENT"
+}
