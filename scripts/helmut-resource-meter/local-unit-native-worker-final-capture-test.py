@@ -254,6 +254,18 @@ class FinalCaptureTests(unittest.TestCase):
         self.assertEqual(saves[0][1]['exceptionType'], 'PermissionError')
         self.assertEqual(saves[0][1]['message'], '[Errno 13] synthetic-first-source-failure')
 
+    def test_first_failure_persistence_error_has_valid_closed_json_fallback(self):
+        state, _, _, _ = self.run_final()
+        output = io.StringIO()
+        state['sys'].stderr = output
+        state['json'] = json
+        state['save'] = mock.Mock(side_effect=OSError(28, 'private sentinel'))
+        state['capture_first_failure'](RuntimeError('private primary sentinel'))
+        self.assertEqual(json.loads(output.getvalue()), {
+            'schema': 'helmut-local-unit-native-first-failure-capture/1',
+            'code': 'private-capture-not-persisted'})
+        self.assertNotIn('sentinel', output.getvalue())
+
     def test_persistence_failure_never_heals_or_claims_capture(self):
         for primary in (None, 'ExecutionError: prior-failure'):
             with self.subTest(primary=primary):

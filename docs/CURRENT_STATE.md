@@ -4,40 +4,26 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 24.10.: CI grün; volle Einzelunit76af weiter FAIL
+## 24.10.: gemeinsame Integration; Quellenqualifikation blockiert
 
-Code5516f3e2: CI40066809993 vollständig SUCCESS am24.10.,06:07:19UTC.
-CurrentDelta-Reparatur mit neuer unabhängiger SOURCE-only-Kette72e68334;
-alte Belege unverändert. Verbraucher14/22/99 und Copyguards6 PASS.
-Branch `codex/v12-unit60-native-integration-20261022`, Draft PR936; keinMerge/Prod.
+Branch `codex/unit60-qualified-integration-20261024` verbindet aktuelles main
+`1eb3cbff`, #934/#933/#936, #937 und #938. Main-Regeln/Routerkorrekturen erhalten.
+Guard-Diagnose ausdd40 ohne Profilierungsparent2374; Worker-JSON korrigiert.
+Gezielt Worker18/Guard52/gemeinsamerFehlerpfad2/Router30 PASS. Keine neue
+Native-/Productionausführung, keine Originalübertragung, keinMerge/Deployment.
 
-Native76af aufBundle5f54179e: CLIExit1/zweiEOFs/138,046509s, Stage6
-Interrupted/noRetry. Neun/16 Kontrollen,18 verbundene Bundle-HTTP-Aufrufe;
-Adapter65,839926211s/Entry66,8565s. Genuine9er-Tracepräfix erhalten,
-kein vollständiger19er-Abschluss oder gültige Endquittung.
-Gemeinsamer Peak1.349.423.104B,107Samples, alle sechsEvents0, Gruppen leer;
-Originalflags/logischerQuellzustand unverändert. Wegen FAIL kein Unit60-/Auth30-/
-Plateau-/500MB-/Full500-Nachweis. Native Uhr bewusst abfirstAuthority(6,202s);
-kein Gleichsetzen mit kanonischemFull500-Unitanker, keine Ankeränderung.
-Beide19.900ms-Waits unverändert. Perform8,820701708s enthält Read3,424111s
-und Write4,797508s; verschachtelte Zeiten nicht addieren.
+Unabhängige SOL-Quellenprüfung: U/Parts32034/28525B neu; vorhandener Vertrag
+verlangt echte neue Fünffallbelege, SOURCE-only ausdrücklich ausgeschlossen.
+Qualifikation und grüne gemeinsame Pflicht-CI deshalb offen; keine Pins/Gates
+umgeschrieben. [Integrationsstand, Prüfgrenzen und Rückweg](betrieb/unit60-common-integration-20261024.md).
 
-Zwei statt sieben Kontroll-HTTPs, frische Runtime/Katalog/Original/Own-Prüfung
-und initialer Binary-SHA mit readonly FD/9MD-Kontinuität integriert;
-keine Guard-/Zeitlockerung. c336/d79 bleiben Setup-FAILs. Alte7b2-FAIL-Belege,
-SameRootUsage4150 sowie e755/b237-Negative erhalten. Claimpaar6994→0ea8:
-State-PSQL−39,37%, Peak1.218.666.496→1.252.741.120B: keine RAM-Ersparnis.
-
-0ea8-Klararchiv nach vorhandenem Vollrückwegc967+frischenMetadaten kontrolliert
-entfernt: netto+123.183.104B. Danach dokumentiert10.806.087.680B frei,
-Komponentenabstand68.669.440B; Volladmission15.179.779.720B,
-Restlücke4.373.692.040B. Keine neue Remote-SHA-/Decrypt-Behauptung/Keyexport.
-RAW/POSTRUN/Originale und notwendige Außenbelege KEEP; frühereBootstrap-PGs
-netto+741.519.360B und0ea8-PG+371.298.304B bleiben historische Einzelphasen.
-NächsterFunctions4TX-Track ausschließlich PREP, noch kein Start. Alle alten
-GOs/Claims verbraucht;32 frische Bedingungen und konkretes neues500erGO Pflicht.
-[Bereinigter Checkpoint](betrieb/belege/native-claim-only-20261023/NATIVE_76AF_CI_CAPACITY_CHECKPOINT_20261024.SAFE.json),
-[Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
+Letzter Quellstand936/5516f3e2: CI40066809993 SUCCESS, kein neuer Gesamtbeleg.
+Native76af weiter FAIL:65,839926211s,9/16Kontrollen,kein19er-Abschluss;
+Peak1349423104B ist keinUnit60-/Reservebeweis. Originale/RAW/POSTRUN KEEP.
+Damals10806087680B frei, Volladmission15179779720B; Lücke4373692040B,
+keine frische Admission. Alle altenGOs/Claims verbraucht.
+[Erhaltener vollständiger Checkpoint](betrieb/belege/native-claim-only-20261023/NATIVE_76AF_CI_CAPACITY_CHECKPOINT_20261024.SAFE.json),
+[Native Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
 
@@ -288,8 +274,7 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-24.10.: JS-Einmalpfad spart Knotenrekonstruktion/Hashsatz; synthetisch155Gruppen/
-ChecksPASS. CI/NativeQuellbindung lehnen neueBytes ab; neueQualifikation und eine
-vollständigeEinzelunitmessung imQuellthread offen. KeinUnit60-/500MB-Beweis.
-Branch `codex/unit60-js-state-work-20261024`, DraftPR938, keinMerge/Prod. Sehr hoch.
-[Änderung, Tests und Messauftrag](betrieb/unit60-js-immutable-node-reuse-20261024.md).
+Neue native U/Parts-Fünffallqualifikation im Quellkontext, unabhängig annehmen;
+danach versionierte Quellenbindungen und Pflicht-CI. Bis dahin BLOCKIERT.
+Keine neue Ausnahme/Originalübertragung, kein nativer Einzelunit-/Voll500-Lauf.
+[Gemeinsamer Integrationsbranch und Rückweg](betrieb/unit60-common-integration-20261024.md). Sehr hoch.

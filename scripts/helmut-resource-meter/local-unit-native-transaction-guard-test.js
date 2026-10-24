@@ -56,6 +56,8 @@ for(const after of [{...before,catalogSHA256:"different"},{...before,databaseOID
   {...before,tables:{...before.tables,nodes:{count:4,sha256:"b"}}},{...before,tables:{own:before.tables.own}}])
   test(()=>assert.throws(()=>probe.assertDelta(before,after,["own"])));
 const source=fs.readFileSync(path.join(__dirname,"local-unit-native-transaction-guard.js"),"utf8");
+test(()=>assert.doesNotMatch(source,/function-profile-fixed-case|track_functions|FUNCTION_PROFILE|functionStats/));
+test(()=>assert.doesNotMatch(source,/need\(c\.case\s*===\s*"same-root-usage"/));
 test(()=>assert.match(source,/await psql\(packet\.sql,label,negative\)/));
 test(()=>assert.match(source,/T\.acceptResult\(packet,result\.stdout\)/));
 test(()=>assert.doesNotMatch(source,/packet\.sql\.(?:replace|slice)|authAck\s*:\s*\[/));

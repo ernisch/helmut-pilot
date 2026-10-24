@@ -232,8 +232,8 @@ def capture_first_failure(error):
             'stack': frames, 'stackTruncated': frame is not None, 'retryAllowed': False})
     except BaseException:
         try:
-            sys.stderr.write('{"schema":"helmut-local-unit-native-first-failure-capture/1",'
-                             'code":"private-capture-not-persisted"}\n')
+            sys.stderr.write(json.dumps({'schema': 'helmut-local-unit-native-first-failure-capture/1',
+                                         'code': 'private-capture-not-persisted'}) + '\n')
         except BaseException:
             pass
 

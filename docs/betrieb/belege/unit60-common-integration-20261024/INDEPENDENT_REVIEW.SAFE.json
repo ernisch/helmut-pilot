@@ -1,0 +1,99 @@
+{
+  "schema": "helmut-unit60-common-integration-independent-review/1",
+  "dateUTC": "2026-10-24",
+  "reviewer": {
+    "task": "qualify_runtime_delta",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "xhigh",
+    "independentOfImplementation": true
+  },
+  "baseIntegrationCommit": "eaf7c40cd8a42371bde83bf708d42ef49cefc48a",
+  "integrationCorrectionReview": {
+    "status": "NO_ACTIONABLE_FINDINGS",
+    "sourcePins": [
+      {
+        "file": "scripts/helmut-resource-meter/local-unit-native-transaction-guard.js",
+        "bytes": 36719,
+        "sha256": "494e74fe0326601bc567a07daf6100929acebacafaf47cf473babd01cca95f63"
+      },
+      {
+        "file": "scripts/helmut-resource-meter/local-unit-native-worker.py",
+        "bytes": 27474,
+        "sha256": "f159e55a1520426fd9da020ff5b23d2544bca8832f557cfb3547d15cbe29f158"
+      },
+      {
+        "file": "scripts/helmut-resource-meter/local-unit-native-transaction-guard-test.js",
+        "bytes": 5493,
+        "sha256": "980dadfa56d69f2446b6ecf02572b75976f604fbc5c76f7f049508cea0bb7749"
+      },
+      {
+        "file": "scripts/helmut-resource-meter/local-unit-native-worker-final-capture-test.py",
+        "bytes": 19056,
+        "sha256": "e8f8a81f2236d5e5e8c8e2998587048e85719bd12ae4ee3b42a57b2295224788"
+      },
+      {
+        "file": "scripts/helmut-resource-meter/local-unit-native-diagnostic-integration-test.py",
+        "bytes": 9354,
+        "sha256": "4a08f12d763401f5448013e336c324ee1b726599c55893abe68ef83a8322d0f1"
+      }
+    ],
+    "scope": "STATIC_REVIEW_OF_GUARD_WORKER_AND_CONNECTED_SYNTHETIC_TESTS",
+    "checks": [
+      "fixed-WeakMap-labels-only-no-foreign-message-code-stack-access",
+      "all-four-guard-cases-preserved-without-profiling",
+      "actual-NodeChild-controller-host-failure-consumers-connected",
+      "actual-worker-AST-finalization-connected",
+      "nonzero-missing-EOF-incomplete-original-check-remain-FAIL",
+      "unknown-write-no-retry"
+    ]
+  },
+  "runtimeQualification": {
+    "status": "BLOCKED_MISSING_NEW_NATIVE_FIVE_CASE_BUNDLE",
+    "sourcePins": [
+      {
+        "file": "lib/helmut/auth-state-parts.js",
+        "bytes": 28525,
+        "sha256": "b2e7c46761999160a3815d38d64649628e067181ce957da86e4480a7c90e79fa"
+      },
+      {
+        "file": "lib/helmut/llm-usage-atomic.js",
+        "bytes": 32034,
+        "sha256": "b55cad5d7cc8528121140bd175e3b48d56ccbc11f6c415780a666406601d3477"
+      }
+    ],
+    "staticSourceReview": "NO_NEW_CONCRETE_CODE_BLOCKER_IN_REVIEWED_DELTA",
+    "unchangedDecoder": {
+      "bytes": 8409,
+      "sha256": "e8a96a7e701c6b2cee63240298fd79e7f1213a1071d166a0e9c674eae16228f0"
+    },
+    "sourceOnlyQualificationAllowed": false,
+    "explicitPolicy": "docs/betrieb/belege/current-control-source-qualification-20261023/INDEPENDENT_PUBLICATION_REVIEW.SAFE.json",
+    "requiredCases": [
+      "NONE",
+      "OLD",
+      "NEW",
+      "NEW",
+      "OLD"
+    ],
+    "requiredEvidence": [
+      "new-exact-source-freeze",
+      "new-PREPARED-and-case-plan",
+      "actual-five-case-results",
+      "independent-actual-review",
+      "independent-publication-review",
+      "generation-audit"
+    ],
+    "historicalControlDriverUses": "U.write-not-writeOwn",
+    "ownPathNativeAcceptanceStillRequired": true
+  },
+  "reviewerTestsRun": 0,
+  "reviewerNativeRuns": 0,
+  "privateOriginalsRead": false,
+  "privateOriginalsTransferred": false,
+  "historicalAcceptanceTransferred": false,
+  "nativeSingleUnitAccepted": false,
+  "full500Accepted": false,
+  "production": false,
+  "executionAuthority": false,
+  "automaticRetry": false
+}
