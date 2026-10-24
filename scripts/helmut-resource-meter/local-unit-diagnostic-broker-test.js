@@ -5,7 +5,7 @@ const assert = require("node:assert/strict"), { EventEmitter } = require("node:e
 const filename = path.join(__dirname, "local-unit-diagnostic-broker.js"), source = fs.readFileSync(filename, "utf8");
 const key = crypto.randomBytes(32), nonce = crypto.randomBytes(32).toString("hex"), bytes = Buffer.from('{"closed":"offline"}');
 const BOOT_ID = "01234567-89ab-4cde-8fab-0123456789ab";
-let checks = 0;
+let checks = 0, executableOwnerObserved = null;
 function clockFixture({ namespace = "time:[42]", namespaceError = null, boot = BOOT_ID + "\n", bootError = null } = {}) {
   const calls = [], mod = { exports: {} }, sandbox = { module: mod, __filename: filename, process: { env: {} }, require(name) {
     if (name === "node:fs") return {
@@ -98,19 +98,22 @@ function executableFixture() {
   const executable = path.join(root, "synthetic-postgrest"), bytes = Buffer.from("synthetic immutable executable payload");
   fs.writeFileSync(executable, bytes, { mode: 0o600 });
   const descriptors = new Map(), proc = "/proc/456/exe", f = { executable, livePath: executable, reportedPath: executable,
-    namespace: "mnt:[42]", mountText: "1 0 0:1 / / ro - overlay overlay rw\n", uid: 0n, payloadReads: 0, opens: 0 };
-  const mapped = name => name === proc ? f.livePath : name, owner = s => { s.uid = f.uid; return s; };
+    namespace: "mnt:[42]", mountText: "1 0 0:1 / / ro - overlay overlay rw\n", statDrift: null, payloadReads: 0, opens: 0 };
+  const mapped = name => name === proc ? f.livePath : name;
+  // Positive fixtures preserve actual filesystem ownership. Only the explicit
+  // UID/GID negative cases model an observed metadata change without chown.
+  const observed = s => { if (f.statDrift) s[f.statDrift] += 1n; return s; };
   const io = { ...fs,
     readlinkSync(name) { if (name === "/proc/self/ns/mnt") return f.namespace; assert.equal(name, proc); return f.reportedPath; },
     readFileSync(name) { assert.equal(name, "/proc/self/mountinfo"); return Buffer.from(f.mountText); },
-    lstatSync(name, options) { return owner(fs.lstatSync(name, options)); },
-    statSync(name, options) { return owner(fs.statSync(mapped(name), options)); },
+    lstatSync(name, options) { return observed(fs.lstatSync(name, options)); },
+    statSync(name, options) { return observed(fs.statSync(mapped(name), options)); },
     openSync(name, flags) {
       if (f.openHook) f.openHook(name);
       assert(flags & fs.constants.O_NONBLOCK); assert.equal(Boolean(flags & fs.constants.O_NOFOLLOW), name !== proc);
       const fd = fs.openSync(mapped(name), flags); descriptors.set(fd, name); f.opens++; return fd;
     },
-    fstatSync(fd, options) { const s = owner(fs.fstatSync(fd, options)); if (f.statHook) f.statHook(descriptors.get(fd)); return s; },
+    fstatSync(fd, options) { const s = observed(fs.fstatSync(fd, options)); if (f.statHook) f.statHook(descriptors.get(fd)); return s; },
     readSync(fd, ...args) {
       assert.equal(descriptors.get(fd), proc); f.payloadReads++;
       const n = fs.readSync(fd, ...args); if (f.readHook) f.readHook(); return n;
@@ -277,6 +280,14 @@ function brokerLifecycle() {
 }
 (async () => {
   executableCheck(f => {
+    fs.chmodSync(f.executable, 0o555);
+    const actual = fs.lstatSync(f.executable, { bigint: true });
+    assert.equal(actual.uid, BigInt(process.getuid())); assert.equal(actual.gid, BigInt(process.getgid()));
+    assert.equal(actual.mode & 0o777n, 0o555n); assert.equal(f.statDrift, null);
+    executableOwnerObserved = { uid: Number(actual.uid), gid: Number(actual.gid), mode: "0555" };
+    const check = f.admit(); f.payloadReads = 0; check(); assert.equal(f.payloadReads, 0);
+  });
+  executableCheck(f => {
     const check = f.admit(); assert(f.payloadReads > 0); assert.equal(f.descriptors.size, 0); f.payloadReads = 0;
     for (let i = 0; i < 16; i++) check();
     assert.equal(f.payloadReads, 0); assert.equal(f.descriptors.size, 0);
@@ -298,8 +309,8 @@ function brokerLifecycle() {
     const check = f.admit(), before = fs.statSync(f.executable); fs.utimesSync(f.executable, before.atime, new Date(before.mtimeMs + 1000));
     executablePoisoned(f, check, () => fs.utimesSync(f.executable, before.atime, before.mtime));
   });
-  executableCheck(f => {
-    const check = f.admit(); f.uid = 1000n; executablePoisoned(f, check, () => { f.uid = 0n; });
+  for (const field of ["uid", "gid"]) executableCheck(f => {
+    const check = f.admit(); f.statDrift = field; executablePoisoned(f, check, () => { f.statDrift = null; });
   });
   executableCheck(f => {
     const check = f.admit(), alias = f.executable + ".alias"; fs.linkSync(f.executable, alias);
@@ -539,6 +550,7 @@ function brokerLifecycle() {
     assert.equal(f.server.listening, false); checks++;
   }
   assert.equal(fs.readFileSync(filename, "utf8"), source, "reviewed broker source stayed stable");
-  console.log("local-unit-diagnostic-broker offline: " + checks + " checks passed; native sockets=0; database=0");
+  console.log("local-unit-diagnostic-broker offline: " + checks + " checks passed; native sockets=0; database=0; actual synthetic file owner="
+    + JSON.stringify(executableOwnerObserved) + "; UID/GID drift negatives=simulated");
 })().catch(error => { const code = /^local-unit-broker-[a-z0-9-]+$/.test(error?.message || "") ? error.message : "bounded-test-failure";
   console.error("local-unit-diagnostic-broker offline transport failed after " + checks + " checks: " + code); process.exitCode = 1; });
