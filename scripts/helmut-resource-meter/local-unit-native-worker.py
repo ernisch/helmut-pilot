@@ -30,6 +30,8 @@ LIMITS = {'memory.max': '1547997184', 'memory.high': '1399996416', 'memory.swap.
 LIBRARY_PATH = ''
 CHILDREN = []
 LOGS = []
+FINALIZING = False
+FINALIZATION_SIGNALS = {}
 
 
 def save(name, value):
@@ -202,7 +204,81 @@ def start_log(argv, label):
 
 
 def stop(signum, frame):
+    if FINALIZING:
+        # Only the terminal cleanup/readback phase defers another interrupt.
+        # The Supervisor's existing stop/KILL deadline still bounds this work.
+        # Every deferred signal makes acceptance impossible, even if pins match.
+        key = str(signum)
+        FINALIZATION_SIGNALS[key] = min(FINALIZATION_SIGNALS.get(key, 0) + 1, 2**31 - 1)
+        return
     raise InterruptedError('owned native qualification interrupted')
+
+
+def capture_first_failure(error):
+    """Best-effort private cause before any cleanup can itself fail."""
+    try:
+        primary = getattr(error, 'native_first_failure', error)
+        if isinstance(primary, BaseException):
+            error = primary
+        frames, frame = [], error.__traceback__
+        while frame is not None and len(frames) < 12:
+            code = frame.tb_frame.f_code
+            frames.append({'file': Path(code.co_filename).name[:160],
+                           'function': code.co_name[:96], 'line': frame.tb_lineno})
+            frame = frame.tb_next
+        save('NATIVE_FIRST_FAILURE.PRIVATE.json', {
+            'schema': 'helmut-local-unit-native-first-failure/1',
+            'exceptionType': type(error).__name__[:96], 'message': failure_text(error, cap=4096),
+            'stack': frames, 'stackTruncated': frame is not None, 'retryAllowed': False})
+    except BaseException:
+        try:
+            sys.stderr.write('{"schema":"helmut-local-unit-native-first-failure-capture/1",'
+                             'code":"private-capture-not-persisted"}\n')
+        except BaseException:
+            pass
+
+
+def failure_text(error, cap=200):
+    try:
+        return str(error)[:cap]
+    except BaseException:
+        return 'exception-message-unavailable'
+
+
+def close_native_children(pg):
+    """Keep cleanup errors separate and always reach the original readbacks."""
+    codes, errors = {}, []
+    if pg is not None:
+        try:
+            if pg.poll() is None:
+                pg.send_signal(signal.SIGINT)
+                codes['postgres'] = pg.wait(timeout=35)
+            else:
+                codes['postgres'] = pg.returncode
+        except BaseException as error:
+            errors.append('postgres-close-' + type(error).__name__)
+            try:
+                if pg.poll() is None:
+                    pg.kill()
+                codes['postgres'] = pg.wait(timeout=5)
+            except BaseException as final_error:
+                errors.append('postgres-emergency-close-' + type(final_error).__name__)
+    for row in LOGS:
+        try:
+            row['thread'].join(timeout=5)
+            if not row['eof'] or row['overflow'] or row['error']:
+                errors.append('native-child-output-EOF-budget-failed')
+            if row['label'] == 'POSTGRES' and b'database system is shut down' not in row['data']:
+                errors.append('native-postgres-clean-shutdown-marker-absent')
+        except BaseException as error:
+            errors.append('native-child-log-close-' + type(error).__name__)
+        try:
+            fd = os.open(OUT / (row['label'] + '.PRIVATE.log'), os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, 'wb') as output:
+                output.write(row['data']); output.flush(); os.fsync(output.fileno())
+        except BaseException as error:
+            errors.append('native-child-log-save-' + type(error).__name__)
+    return codes, errors
 
 
 def restore_readonly_libraries(config, jit):
@@ -249,7 +325,7 @@ def query(database, text, label):
 
 
 def main():
-    global LIBRARY_PATH
+    global LIBRARY_PATH, FINALIZING
     os.umask(0o077)
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
@@ -320,35 +396,34 @@ def main():
     fresh_binding_result = None
     pg = None
     try:
-        try:
-            pg, pg_log = start_log(pgargs, 'POSTGRES')
-            deadline = time.monotonic() + 25
-            while not (RAM / 'socket/.s.PGSQL.5432').exists():
-                guard(config)
-                assert pg.poll() is None and time.monotonic() < deadline
-                time.sleep(.05)
-            # The socket may appear just before the server accepts sessions.
-            # Wait for its actual ready log without issuing any repeated write.
-            while True:
-                guard(config)
-                if b'database system is ready to accept connections' in pg_log['data']:
-                    break
-                assert pg.poll() is None and time.monotonic() < deadline
-                time.sleep(.05)
-            source_sql = "BEGIN READ ONLY; select jsonb_build_object('version',current_setting('server_version_num'),'authSHA256',encode(sha256(convert_to(data::text,'UTF8')),'hex')) from public.helmut_store where id='main-auth';COMMIT;"
-            before = json.loads(query(SOURCE_DATABASE, source_sql, 'SOURCE_LOGICAL_BEFORE'))
-            assert before['version'] == '170006'
-            database = 'helmut_unit_diagnostic_' + config['nonce']
-            query('postgres', 'ALTER DATABASE ' + SOURCE_DATABASE + ' RENAME TO ' + database + ';', 'OWN_DATABASE_RENAME')
-            ddl = Path(config['repository']) / 'scripts/helmut-resource-meter/local-unit-diagnostic-store.sql'
-            query(database, "SELECT set_config('helmut.local_unit_diagnostic_install_target',current_database(),false);\n" + ddl.read_text(), 'NATIVE_DDL_INSTALL')
-            after = json.loads(query(database, source_sql, 'SOURCE_LOGICAL_AFTER'))
-            assert before == after
-            qualifier = load('local_unit_native_role_qualification', config['roleQualifier'])
-            role_result = qualifier.qualify(query, database, config['nonce'])
-            assert role_result['executedChecksPassed'] is True
-            save('NATIVE_ROLE_QUALIFICATION.SAFE.json', role_result)
-            catalog_sql = """BEGIN READ ONLY;
+        pg, pg_log = start_log(pgargs, 'POSTGRES')
+        deadline = time.monotonic() + 25
+        while not (RAM / 'socket/.s.PGSQL.5432').exists():
+            guard(config)
+            assert pg.poll() is None and time.monotonic() < deadline
+            time.sleep(.05)
+        # The socket may appear just before the server accepts sessions.
+        # Wait for its actual ready log without issuing any repeated write.
+        while True:
+            guard(config)
+            if b'database system is ready to accept connections' in pg_log['data']:
+                break
+            assert pg.poll() is None and time.monotonic() < deadline
+            time.sleep(.05)
+        source_sql = "BEGIN READ ONLY; select jsonb_build_object('version',current_setting('server_version_num'),'authSHA256',encode(sha256(convert_to(data::text,'UTF8')),'hex')) from public.helmut_store where id='main-auth';COMMIT;"
+        before = json.loads(query(SOURCE_DATABASE, source_sql, 'SOURCE_LOGICAL_BEFORE'))
+        assert before['version'] == '170006'
+        database = 'helmut_unit_diagnostic_' + config['nonce']
+        query('postgres', 'ALTER DATABASE ' + SOURCE_DATABASE + ' RENAME TO ' + database + ';', 'OWN_DATABASE_RENAME')
+        ddl = Path(config['repository']) / 'scripts/helmut-resource-meter/local-unit-diagnostic-store.sql'
+        query(database, "SELECT set_config('helmut.local_unit_diagnostic_install_target',current_database(),false);\n" + ddl.read_text(), 'NATIVE_DDL_INSTALL')
+        after = json.loads(query(database, source_sql, 'SOURCE_LOGICAL_AFTER'))
+        assert before == after
+        qualifier = load('local_unit_native_role_qualification', config['roleQualifier'])
+        role_result = qualifier.qualify(query, database, config['nonce'])
+        assert role_result['executedChecksPassed'] is True
+        save('NATIVE_ROLE_QUALIFICATION.SAFE.json', role_result)
+        catalog_sql = """BEGIN READ ONLY;
 WITH original_rel AS (
   SELECT unnest(ARRAY['public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,
     'public.llm_usage'::regclass,'public.briefings'::regclass]) AS oid
@@ -377,41 +452,27 @@ SELECT jsonb_build_object('database',current_database(),
   'ownTables',(SELECT jsonb_agg(c.relname ORDER BY c.relname) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     WHERE n.nspname='helmut_unit_diagnostic' AND c.relkind='r'));
 COMMIT;"""
-            catalog = json.loads(query(database, catalog_sql, 'NATIVE_CATALOG'))
-            save('NATIVE_CATALOG.SAFE.json', catalog)
-            result = {'pass': True, 'schema': 'helmut-local-unit-native-DDL-qualification/1', 'database': database,
-                      'freshCopyFiles': 1714, 'originalPostrunPreserved': True, 'originalAuthRowUnchanged': True,
-                      'originalJITRestoredFiles': len(restored.get('files', [])), 'DDLExecuted': True,
-                      'nativeContractCatalogACLNegativeChecksPassed': True,
-                      'nativeRoleAndStateCASQualified': False, 'nativeEndpointQualified': False,
-                      'motorCalls': 0, 'providerCalls': 0, 'full500': False, 'unit60Qualified': False}
-            if config.get('qualifyNativeBindings') is True:
-                binding = load('local_unit_native_binding_preparation', config['bindingPreparationPin'])
-                fresh_binding_result = binding.qualify(sys.modules[__name__], config, pg, catalog)
-                result.update(fresh_binding_result)
-        except BaseException as error:
-            failure = type(error).__name__ + ': ' + str(error)[:200]
-        finally:
-            if pg and pg.poll() is None:
-                pg.send_signal(signal.SIGINT)
-                try:
-                    codes['postgres'] = pg.wait(timeout=35)
-                except subprocess.TimeoutExpired:
-                    pg.kill()
-                    codes['postgres'] = pg.wait(timeout=5)
-                    failure = failure or 'postgres required emergency kill'
-            elif pg:
-                codes['postgres'] = pg.returncode
+        catalog = json.loads(query(database, catalog_sql, 'NATIVE_CATALOG'))
+        save('NATIVE_CATALOG.SAFE.json', catalog)
+        result = {'pass': True, 'schema': 'helmut-local-unit-native-DDL-qualification/1', 'database': database,
+                  'freshCopyFiles': 1714, 'originalPostrunPreserved': True, 'originalAuthRowUnchanged': True,
+                  'originalJITRestoredFiles': len(restored.get('files', [])), 'DDLExecuted': True,
+                  'nativeContractCatalogACLNegativeChecksPassed': True,
+                  'nativeRoleAndStateCASQualified': False, 'nativeEndpointQualified': False,
+                  'motorCalls': 0, 'providerCalls': 0, 'full500': False, 'unit60Qualified': False}
+        if config.get('qualifyNativeBindings') is True:
+            binding = load('local_unit_native_binding_preparation', config['bindingPreparationPin'])
+            fresh_binding_result = binding.qualify(sys.modules[__name__], config, pg, catalog)
+            result.update(fresh_binding_result)
+    except BaseException as error:
+        FINALIZING = True
+        failure = type(error).__name__ + ': ' + failure_text(error)
+        capture_first_failure(error)
     finally:
-        for row in LOGS:
-            row['thread'].join(timeout=5)
-            if not row['eof'] or row['overflow'] or row['error']:
-                failure = failure or 'native child output EOF/budget failed'
-            if row['label'] == 'POSTGRES' and b'database system is shut down' not in row['data']:
-                failure = failure or 'native postgres clean shutdown marker absent'
-            fd = os.open(OUT / (row['label'] + '.PRIVATE.log'), os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-            with os.fdopen(fd, 'wb') as output:
-                output.write(row['data'])
+        FINALIZING = True
+        codes, closure_errors = close_native_children(pg)
+    if closure_errors:
+        failure = failure or closure_errors[0]
     original_preserved, sources_preserved = False, False
     final_phase, source_index, checked_count = 'raw-pin', None, 0
     try:
@@ -430,14 +491,25 @@ COMMIT;"""
     except BaseException as error:
         failure = failure or 'final source verification failed: ' + type(error).__name__
         capture_final_original_failure(error, final_phase, source_index, checked_count)
-    accepted = failure is None and result is not None and codes.get('postgres') == 0 and all(p.poll() is not None for p in CHILDREN)
+    # Return to the normal aborting signal handler before deciding/publishing
+    # acceptance. A later interrupt cannot be deferred past that decision.
+    FINALIZING = False
+    if FINALIZATION_SIGNALS:
+        failure = failure or 'native finalization interrupted'
+    accepted = (failure is None and result is not None and codes.get('postgres') == 0
+                and original_preserved and sources_preserved and not closure_errors and not FINALIZATION_SIGNALS
+                and all(p.poll() is not None for p in CHILDREN))
     requested = bool(config.get('executeNativeSingleUnit') and (OUT / 'MOTOR_ENTRY_REQUESTED.SAFE.json').exists())
     actual_motor_calls = (fresh_binding_result or {}).get('motorCalls', None if requested else 0)
     save('NATIVE_QUALIFICATION.SAFE.json', {**(result or {}), 'pass': accepted, 'failure': failure,
                                           'childExits': codes, 'allChildrenExited': all(p.poll() is not None for p in CHILDREN),
                                           'originalPostrunPreserved': original_preserved, 'motorCalls': actual_motor_calls,
+                                          'originalRAWUnchanged': original_preserved,
                                           'motorEntryRequested': requested, 'full500': False,
-                                          'originalSourcePinsUnchanged': sources_preserved})
+                                          'originalSourcePinsUnchanged': sources_preserved,
+                                          'closureErrors': closure_errors, 'finalizationSignals': dict(FINALIZATION_SIGNALS),
+                                          'finalOriginalChecks': {'complete': original_preserved and sources_preserved,
+                                              'sourcePinsChecked': checked_count, 'sourcePinsExpected': len(config['sources'])}})
     if not accepted:
         raise RuntimeError('native qualification failed; retained private logs')
 

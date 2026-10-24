@@ -7,18 +7,26 @@ import json
 from pathlib import Path
 import types
 import unittest
+from unittest import mock
 
 
 WORKER = Path(__file__).with_name('local-unit-native-worker.py')
 TREE = ast.parse(WORKER.read_text(), filename=str(WORKER))
 CAPTURE = next(n for n in TREE.body if isinstance(n, ast.FunctionDef) and n.name == 'capture_final_original_failure')
+HELPERS = [n for n in TREE.body if isinstance(n, ast.FunctionDef)
+           and n.name in ('stop', 'failure_text', 'capture_first_failure', 'close_native_children')]
 MAIN = next(n for n in TREE.body if isinstance(n, ast.FunctionDef) and n.name == 'main')
 START = next(i for i, n in enumerate(MAIN.body) if isinstance(n, ast.Assign)
              and isinstance(n.targets[0], ast.Tuple)
              and [v.id for v in n.targets[0].elts] == ['original_preserved', 'sources_preserved'])
+START -= 1  # Include propagation of terminal cleanup errors.
 END = next(i for i, n in enumerate(MAIN.body) if isinstance(n, ast.Assign)
            and isinstance(n.targets[0], ast.Name) and n.targets[0].id == 'accepted')
-CODE = compile(ast.Module(body=[CAPTURE, *MAIN.body[START:END + 1]], type_ignores=[]), str(WORKER), 'exec')
+CODE = compile(ast.Module(body=[CAPTURE, *HELPERS, *MAIN.body[START:END + 1]], type_ignores=[]), str(WORKER), 'exec')
+REPORT_END = next(i for i, n in enumerate(MAIN.body) if isinstance(n, ast.Expr)
+                  and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Name)
+                  and n.value.func.id == 'save' and n.value.args[0].value == 'NATIVE_QUALIFICATION.SAFE.json')
+REPORT_CODE = compile(ast.Module(body=[CAPTURE, *HELPERS, *MAIN.body[START:REPORT_END + 1]], type_ignores=[]), str(WORKER), 'exec')
 FRESH_INIT = next(n for n in MAIN.body if isinstance(n, ast.Assign)
                   and isinstance(n.targets[0], ast.Name) and n.targets[0].id == 'fresh_binding_result')
 QUALIFY = next(n for n in ast.walk(MAIN) if isinstance(n, ast.If) and isinstance(n.test, ast.Compare)
@@ -27,7 +35,7 @@ QUALIFY = next(n for n in ast.walk(MAIN) if isinstance(n, ast.If) and isinstance
 QUALIFY_TRY = next(n for n in ast.walk(MAIN) if isinstance(n, ast.Try) and QUALIFY in n.body)
 MOTOR_END = next(i for i, n in enumerate(MAIN.body) if isinstance(n, ast.Assign)
                  and isinstance(n.targets[0], ast.Name) and n.targets[0].id == 'actual_motor_calls')
-MOTOR_CODE = compile(ast.fix_missing_locations(ast.Module(body=[CAPTURE, FRESH_INIT,
+MOTOR_CODE = compile(ast.fix_missing_locations(ast.Module(body=[CAPTURE, *HELPERS, FRESH_INIT,
     ast.Try(body=[QUALIFY], handlers=QUALIFY_TRY.handlers, orelse=[], finalbody=[]),
     *MAIN.body[START:MOTOR_END + 1]], type_ignores=[])), str(WORKER), 'exec')
 
@@ -74,12 +82,13 @@ class FinalCaptureTests(unittest.TestCase):
                  'config': {'raw': raw, 'sources': [], 'qualifyNativeBindings': True,
                             'bindingPreparationPin': {}, 'executeNativeSingleUnit': True},
                  'original_before': copy.deepcopy(raw), 'failure': None, 'result': {'motorCalls': 0},
-                 'codes': {'postgres': 0}, 'CHILDREN': []}
+                 'codes': {'postgres': 0}, 'CHILDREN': [], 'closure_errors': [], 'FINALIZATION_SIGNALS': {}}
         exec(MOTOR_CODE, state)
         self.assertEqual(binding_calls, ['qualify'])
         return state
 
-    def run_final(self, *, path=None, mismatch=False, primary=None, persistence_failure=False, stderr_failure=False, deep=False):
+    def run_final(self, *, path=None, mismatch=False, primary=None, persistence_failure=False, stderr_failure=False,
+                  deep=False, interrupt_at=None, closure_errors=None, report=False):
         raw = {'path': 'raw', 'bytes': 1, 'sha256': 'a' * 64}
         sources = [{'path': 'source-' + str(i), 'bytes': 1, 'sha256': 'b' * 64} for i in range(3)]
         pins = {p['path']: p for p in [raw, *sources]}
@@ -93,6 +102,9 @@ class FinalCaptureTests(unittest.TestCase):
 
         def pin(name):
             calls.append(name)
+            if name == interrupt_at:
+                state['stop'](15, None)
+                state['stop'](15, None)
             if name == path:
                 if mismatch:
                     return {**pins[name], 'bytes': 2}
@@ -108,8 +120,10 @@ class FinalCaptureTests(unittest.TestCase):
 
         state = {'pin': pin, 'save': save, 'Path': Path, 'sys': types.SimpleNamespace(stderr=stderr),
                  'config': {'raw': raw, 'sources': sources}, 'original_before': copy.deepcopy(raw),
-                 'failure': primary, 'result': {}, 'codes': {'postgres': 0}, 'CHILDREN': []}
-        exec(CODE, state)
+                 'failure': primary, 'result': {'originalRAWUnchanged': True}, 'codes': {'postgres': 0}, 'CHILDREN': [],
+                 'closure_errors': closure_errors or [], 'FINALIZING': True, 'FINALIZATION_SIGNALS': {},
+                 'fresh_binding_result': None}
+        exec(REPORT_CODE if report else CODE, state)
         return state, calls, saves, stderr.getvalue()
 
     def check_capture(self, saves, phase, index, count, kind, errno):
@@ -165,6 +179,80 @@ class FinalCaptureTests(unittest.TestCase):
                 state, _, _, _ = self.run_final(path=path, primary=primary)
                 self.assertEqual(state['failure'], primary)
                 self.assertFalse(state['accepted'])
+
+    def test_followup_interrupt_finishes_all_pins_but_never_accepts(self):
+        for primary in (None, 'ExecutionError: first-cause'):
+            for interrupt_at in ('raw', 'source-1'):
+                with self.subTest(primary=primary, interrupt_at=interrupt_at):
+                    state, calls, saves, _ = self.run_final(primary=primary, interrupt_at=interrupt_at)
+                    self.assertEqual(calls, ['raw', 'source-0', 'source-1', 'source-2'])
+                    self.assertTrue(state['original_preserved'] and state['sources_preserved'])
+                    self.assertFalse(state['accepted'] or state['FINALIZING'])
+                    self.assertEqual(state['FINALIZATION_SIGNALS'], {'15': 2})
+                    self.assertEqual(state['failure'], primary or 'native finalization interrupted')
+                    self.assertEqual(saves, [])
+                    with self.assertRaises(InterruptedError): state['stop'](15, None)
+
+    def test_cleanup_failure_does_not_skip_readbacks_or_mask_first_error(self):
+        for primary in (None, 'ExecutionError: first-cause'):
+            state, calls, _, _ = self.run_final(primary=primary, closure_errors=['postgres-close-PermissionError', 'log-save-FileExistsError'])
+            self.assertEqual(calls, ['raw', 'source-0', 'source-1', 'source-2'])
+            self.assertFalse(state['accepted'])
+            self.assertEqual(state['failure'], primary or 'postgres-close-PermissionError')
+
+    def test_report_distinguishes_verified_originals_from_failed_execution(self):
+        state, _, saves, _ = self.run_final(interrupt_at='raw', report=True)
+        report = saves[-1][1]
+        self.assertEqual(saves[-1][0], 'NATIVE_QUALIFICATION.SAFE.json')
+        self.assertFalse(report['pass'])
+        self.assertTrue(report['originalPostrunPreserved'] and report['originalSourcePinsUnchanged'])
+        self.assertEqual(report['finalizationSignals'], {'15': 2})
+        self.assertEqual(report['finalOriginalChecks'], {'complete': True, 'sourcePinsChecked': 3, 'sourcePinsExpected': 3})
+        self.assertFalse(state['FINALIZING'])
+
+    def test_report_never_claims_mutation_or_completed_checks_from_raw_read_error(self):
+        _, _, saves, _ = self.run_final(path='raw', primary='ExecutionError: first-cause', report=True)
+        report = saves[-1][1]
+        self.assertFalse(report['pass'] or report['originalPostrunPreserved'] or report['originalSourcePinsUnchanged'] or report['originalRAWUnchanged'])
+        self.assertEqual(report['failure'], 'ExecutionError: first-cause')
+        self.assertEqual(report['finalOriginalChecks'], {'complete': False, 'sourcePinsChecked': 0, 'sourcePinsExpected': 3})
+
+    def test_pg_and_log_cleanup_errors_remain_separate_and_real(self):
+        state, _, _, _ = self.run_final()
+        events = []
+        pg = types.SimpleNamespace(returncode=None)
+        pg.poll = lambda: pg.returncode
+        pg.send_signal = mock.Mock(side_effect=PermissionError(13, 'synthetic-deny'))
+        def kill():
+            events.append('kill'); pg.returncode = -9
+        pg.kill = kill
+        pg.wait = lambda **kw: pg.returncode
+        row = {'thread': mock.Mock(), 'eof': False, 'overflow': False, 'error': None,
+               'label': 'POSTGRES', 'data': b''}
+        row['thread'].join.side_effect = RuntimeError('synthetic-join-failure')
+        state.update({'LOGS': [row], 'OUT': Path('/synthetic-only'),
+                      'signal': types.SimpleNamespace(SIGINT=2),
+                      'os': types.SimpleNamespace(O_WRONLY=1, O_CREAT=2, O_EXCL=4, O_NOFOLLOW=8,
+                          open=mock.Mock(side_effect=FileExistsError(17, 'synthetic-existing-log')))})
+        codes, errors = state['close_native_children'](pg)
+        self.assertEqual(codes, {'postgres': -9})
+        self.assertEqual(events, ['kill'])
+        self.assertEqual(errors, ['postgres-close-PermissionError', 'native-child-log-close-RuntimeError',
+                                  'native-child-log-save-FileExistsError'])
+
+    def test_first_failure_capture_cannot_replace_bad_message_with_cleanup_error(self):
+        state, _, saves, _ = self.run_final()
+        state['capture_first_failure'](NoMessageError(5, 'private'))
+        self.assertEqual(saves[0][0], 'NATIVE_FIRST_FAILURE.PRIVATE.json')
+        self.assertEqual(saves[0][1]['message'], 'exception-message-unavailable')
+
+    def test_generic_controller_wrapper_retains_private_original_cause(self):
+        state, _, saves, _ = self.run_final()
+        error = RuntimeError('generic-public-failure-no-retry')
+        error.native_first_failure = PermissionError(13, 'synthetic-first-source-failure')
+        state['capture_first_failure'](error)
+        self.assertEqual(saves[0][1]['exceptionType'], 'PermissionError')
+        self.assertEqual(saves[0][1]['message'], '[Errno 13] synthetic-first-source-failure')
 
     def test_persistence_failure_never_heals_or_claims_capture(self):
         for primary in (None, 'ExecutionError: prior-failure'):
