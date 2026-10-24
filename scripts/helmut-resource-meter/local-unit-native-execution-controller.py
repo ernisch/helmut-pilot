@@ -179,7 +179,9 @@ def _publication_read_report(command, selection, report):
     return probe
 
 
-def _native_readback(worker, database, sources, oid, original_relations):
+def _native_readback(worker, database, sources, oid, original_relations, *, label='EXECUTION_FRESH_NATIVE_CONTRACT'):
+    need(type(label) is str and label in ('EXECUTION_FRESH_NATIVE_CONTRACT','EXECUTION_FINAL_NATIVE_CONTRACT'),
+         'closed-native-contract-label')
     expected = _json_sql(sources)
     sql = """DO $native_sources$ BEGIN
 IF (SELECT jsonb_object_agg(n.nspname||'.'||p.proname||'('||oidvectortypes(p.proargtypes)||')',
@@ -192,7 +194,7 @@ DO $contract$ BEGIN PERFORM set_config('helmut.execution_contract',public.local_
 RESET ROLE;RESET SESSION AUTHORIZATION;
 SELECT jsonb_build_object('contract',current_setting('helmut.execution_contract')::jsonb,
 'originalRelations',helmut_unit_diagnostic.original_bridge_relations_v1());""".replace('@SOURCES@', expected).replace('@SUFFIX@', database[-32:])
-    value = _call(worker, database, _readonly(database, sql), 'EXECUTION_FRESH_NATIVE_CONTRACT')
+    value = _call(worker, database, _readonly(database, sql), label)
     need(type(value) is dict and set(value) == {'contract', 'originalRelations'} and value['originalRelations'] == original_relations, 'fresh-original-relations')
     contract = value['contract']
     need(type(contract) is dict and set(contract) == {'version', 'database', 'databaseOID', 'sources', 'legacyReadRPCs', 'sourceQualified'}
@@ -812,7 +814,7 @@ class _Controller:
              'transaction-guard-private-result')
         self.observer.check(); self.immutable_check()
         _native_readback(self.w,self.database,self.bridge['actualContractSources'],self.catalog['databaseOID'],
-                         self.bridge['qualification']['originalRelations'])
+                         self.bridge['qualification']['originalRelations'],label='EXECUTION_FINAL_NATIVE_CONTRACT')
         owner = self.stop_owner()
         self.stage('source-service-close'); self.service_close(); self.immutable_check()
         stop,stop_pin = self.private('ORIGINAL_SERVICE_STOP.SAFE.json',cap=32768)

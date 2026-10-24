@@ -688,6 +688,29 @@ class Tests(unittest.TestCase):
         self.assertNotRegex(calls[0],r'\b(?:INSERT|UPDATE|DELETE|ALTER|COPY|CREATE)\b')
         with self.assertRaises(m.ExecutionError):m._native_readback(worker,contract['database'],sources,'123',[])
 
+    def test_pre_and_post_native_contract_keep_distinct_once_outputs_and_same_guards(self):
+        m=module();sources={'helmut_unit_diagnostic.vm_only()':'a'*64};relations=[{'vmOnly':'actual-source-ddl'}]
+        contract={'version':'helmut-local-unit-diagnostic-native-store/1','database':'helmut_unit_diagnostic_'+'a'*32,
+                  'databaseOID':'123','sources':sources,'legacyReadRPCs':[{},{}],'sourceQualified':False}
+        outputs=set();calls=[]
+        def query(database,sql,label):
+            for suffix in ('.STDOUT.PRIVATE.log','.STDERR.PRIVATE.log'):
+                name=label+suffix
+                if name in outputs:raise FileExistsError('offline-exclusive-output')
+                outputs.add(name)
+            calls.append((database,sql,label));return json.dumps({'contract':contract,'originalRelations':relations})
+        worker=types.SimpleNamespace(query=query)
+        self.assertEqual(m._native_readback(worker,contract['database'],sources,'123',relations),contract)
+        self.assertEqual(m._native_readback(worker,contract['database'],sources,'123',relations,
+                         label='EXECUTION_FINAL_NATIVE_CONTRACT'),contract)
+        self.assertEqual([row[2] for row in calls],['EXECUTION_FRESH_NATIVE_CONTRACT','EXECUTION_FINAL_NATIVE_CONTRACT'])
+        self.assertEqual(calls[0][:2],calls[1][:2]);self.assertEqual(len(outputs),4)
+        for label in ('other','EXECUTION_FINAL_NATIVE_CONTRACT/overwrite',None,True):
+            with self.subTest(label=label),self.assertRaises(m.ExecutionError):
+                m._native_readback(worker,contract['database'],sources,'123',relations,label=label)
+        self.assertEqual(len(calls),2)
+        with self.assertRaises(FileExistsError):m._native_readback(worker,contract['database'],sources,'123',relations)
+
 
 if __name__ == '__main__':
     # A mistaken new transport path must fail before any native operation.
