@@ -50,16 +50,17 @@
       "sha256": "7fe25ec39a34bcafd051cf6d183f4e925e31e4bcc2d1359bb838b3766568d75d"
     }
   },
-  "asOfUTC": "2026-10-24T00:58:14.134060+00:00",
+  "asOfUTC": "2026-10-24T01:50:48.503939+00:00",
   "branch": "codex/v12-unit60-native-integration-20261022",
   "capacity": {
-    "availableBytesObserved": 9832652800,
+    "availableBytesObserved": 10620329984,
     "componentAdmissionPassedAtActualSQLStart": true,
     "componentAdmissionSatisfiedNow": false,
     "freshAll32StartConditionsQualified": false,
     "full500AdmissionSatisfied": false,
-    "full500DeficitBytes": 5347126920,
+    "full500DeficitBytes": 4559449736,
     "noPaidInfrastructureAdded": true,
+    "observationDuringArchiveOffload": true,
     "originalRawBytesAndBothOriginalReservationsUnchanged": true,
     "unchangedComponentAdmissionBytes": 10737418240,
     "unchangedFull500AdmissionBytes": 15179779720
@@ -75,11 +76,11 @@
     ],
     "protectedOriginalCount": 84,
     "requiredJobsCompletedSuccess": true,
-    "run": "https://github.com/ernisch/helmut-pilot/actions/runs/40042703899",
+    "run": "https://github.com/ernisch/helmut-pilot/actions/runs/40047585788",
     "runStillInProgress": false,
     "targetedFixtureFixCommit": "3cbcfad00dcb44fdb3647ef47a1c53b234f0fc9b",
     "targetedLocalFixtureAndWrongUIDRejectionPassed": true,
-    "testedCodeCommit": "54c61de1f3a28ae84da8340652cfa77aa7e860c1"
+    "testedCodeCommit": "483a82538f0f0e050bbaa859fec1ed7e593db30a"
   },
   "claimOnly": {
     "actualRootExit": "974da2/session6030/Exit0",
@@ -111,6 +112,19 @@
     "unit60OrReserveOr500Proof": false
   },
   "cleanup": {
+    "additionalVerifiedPGOffsite": {
+      "00c9": {
+        "index": "https://drive.google.com/file/d/1xDErbbJ5yxFkfsloZU3k-OSRxcpQuKpo/view?usp=drivesdk",
+        "sourceRetired": true,
+        "transportSHA256": "79d901e00c8a8d8b95acf8dede10cbcb2909f65332eb0bdc68392fa24d2d90bb"
+      },
+      "2797": {
+        "index": "https://drive.google.com/file/d/1-tT0h561rVWfYc_LwFNPUuzRGaPhV1dI/view?usp=drivesdk",
+        "sourceRetired": true,
+        "sourceRetirementSHA256": "4e565e336377fe373a4a98f0c238d7326be0dda67ce19073e71bc54c800fdb9d",
+        "transportSHA256": "68a6fae605f76357ad3db469e7d9b26235e6026c55587ed7790c0e9b7fd7d741"
+      }
+    },
     "allGitRefsAndObjectsKept": true,
     "allPublicCanonicalSourcesAndCurrentNativeCopiesKept": true,
     "claim515cIndexTransportPin": {
@@ -182,6 +196,12 @@
     "originalRawReservationReleaseV3FailedBeforeAnyOriginalOpenOrPunch": true,
     "ownTemporaryRestore30DirectoryAtimeDeltasExplicitNoTimesRestored": true,
     "privateKeyReadOrExported": false,
+    "publicAliasCheckpoint": {
+      "allPrivateOriginalsPGAndEvidenceKept": true,
+      "allocatedBytesBefore": 68956160,
+      "removedCopies": 26,
+      "retainedCanonicalFiles": 9
+    },
     "publicCopiesActualNetGainBytes": 442519552,
     "publicCopyAllocatedBytes": 442789888,
     "publicCopyCases": 20,
@@ -568,14 +588,128 @@
     ]
   },
   "nativeTransactionGuard": {
+    "bothNegativeRollbacksQualified": false,
     "firstCase": "6e9f75c9734529cc6b383e435c9c6462",
     "firstCaseSnapshotTempLimitFailurePreserved": true,
+    "fixtureFixIntegratedCommit": "ed97c6c1cf04887838eda9b2af9713b3e7232a4b",
     "freshOriginalsRecheckedByFollowingBackupPreflight": true,
     "integratedCodeCommit": "1845bc64",
+    "lateMirrorFixtureActual": {
+      "actualHelperExit": 1,
+      "actualPSQLErrorCode": "auth-state-projection-not-admitted",
+      "allMemoryEventsZero": true,
+      "atUnix": 1792806393.4609141,
+      "auth30Qualified": false,
+      "case": "eb508352b5bc574c346314742940b5b7",
+      "cause": "Mirror fixture omitted the existing mandatory local_diagnostic_scope used by the genuine transaction compiler.",
+      "commonPeakBytes": 1126871040,
+      "executedCodeCommit": "f988991b601c1bb99281801c278bbfe30c5960c2",
+      "existingTargetedPureChecksPassed": 50,
+      "fixCommit": "93b32e9fed6d7fd59c7ac9abb13c5e551bac0f82",
+      "fixPushedAndRemoteRefVerified": true,
+      "fixSourcePin": {
+        "bytes": 34864,
+        "path": "/workspace/helmut-native-guard-fixture-admission-20261024/scripts/helmut-resource-meter/local-unit-native-transaction-guard.js",
+        "sha256": "6aa76ae24ab01922139751c64a7c101c066ef76f9b006245ec3f12c3f1af1c37"
+      },
+      "fixtureStderrPin": {
+        "bytes": 59,
+        "path": "/workspace/helmut-unit-diagnostic-native/eb508352b5bc574c346314742940b5b7/TRANSACTION_GUARD_03_MIRROR_FIXTURE_STDERR.PRIVATE.log",
+        "sha256": "e580a79cd76d6ed2f820530371e1f790923db66dab7a7d950353a033e10d1106"
+      },
+      "full500": false,
+      "full500ReserveQualified": false,
+      "independentSourceReviewConfirmed": true,
+      "intendedNegativeCASReached": false,
+      "minimalCodeFix": "SET LOCAL helmut.local_diagnostic_scope=bounded-cas-qualification-v1 before SET SESSION AUTHORIZATION; Original SQL guard unchanged.",
+      "mode": "late-old-mirror",
+      "nativeHostClean": false,
+      "nativeOriginalFinalCheckCompleted": false,
+      "nativeOriginalFinalCheckFailurePin": {
+        "bytes": 537,
+        "path": "/workspace/helmut-unit-diagnostic-native/eb508352b5bc574c346314742940b5b7/FINAL_ORIGINAL_CHECK_FAILURE.PRIVATE.json",
+        "sha256": "9f6b2f598170972ac5b6d4669e160beff52144282dfe20259a54e7c1d604dd17"
+      },
+      "oldRightsReusable": false,
+      "originalFinalCheckFailure": {
+        "checkedCount": 0,
+        "errno": null,
+        "exceptionType": "InterruptedError",
+        "phase": "raw-pin",
+        "sourceIndex": null
+      },
+      "originalsAndPGKEEP": true,
+      "outerFinalPin": {
+        "bytes": 10471,
+        "path": "/workspace/helmut-native-integration-checks-20261022/native-transaction-guard-V3-prepared-20261024/late-old-mirror/capture-c950c71911107148226b2b9066cbf5e7/FINAL.SAFE.json",
+        "sha256": "a5a6df98e62be2ade8e93eff005ab21bc372ae4eb99539da1520c9b6d261ce63"
+      },
+      "outerNaturalEOFs": true,
+      "outerTimeout": false,
+      "pass": false,
+      "probeReportProduced": false,
+      "production": false,
+      "resultPin": {
+        "bytes": 2355,
+        "path": "/workspace/helmut-unit-diagnostic-native/eb508352b5bc574c346314742940b5b7/RESULT.SAFE.json",
+        "sha256": "7b7037ce73a2d4c155abbe101fd07188d46bca4f6da8a4a8b5e34e4981193291"
+      },
+      "schema": "helmut-actual-native-guard-fixture-failure-and-minimal-source-fix/1",
+      "stage": "MIRROR_FIXTURE",
+      "terminalKernelClosed": true,
+      "unit60Qualified": false
+    },
     "minimalFixPreparedAndPureChecked": true,
     "overallNativePass": false,
     "preparedCodeCommit": "f988991b601c1bb99281801c278bbfe30c5960c2",
     "probeIncludesThreeSnapshotsNotUnitTime": true,
+    "sameRootUsageActual": {
+      "actualRootHelperExitCode": 0,
+      "allPSQL24Exit0TwoEOF": true,
+      "allSixMemoryEventsZero": true,
+      "auth30Qualified": false,
+      "case": "4150cfaf3a13a2e4175a985eba9ee34d",
+      "commonPeakBytes": 1154248704,
+      "entryMotorProviderCalls": 0,
+      "executedCodeCommit": "f988991b601c1bb99281801c278bbfe30c5960c2",
+      "full500Qualified": false,
+      "full500ReserveQualified": false,
+      "genuineSameRootUsageWrites": 1,
+      "genuineStateWrites": 3,
+      "historicalUsageAfter": 6001,
+      "historicalUsageBefore": 6000,
+      "hostChildrenClosed": 43,
+      "independentChecksPassed": 41,
+      "independentReviewPin": {
+        "bytes": 26836,
+        "path": "/workspace/helmut-native-integration-checks-20261022/native-transaction-guard-independent-review-20261024/SAME_ROOT_USAGE_REVIEW.PRIVATE.json",
+        "sha256": "5cec6e785c92acad627f4876c09f32aa09c95297ae01e3fb21a8d32241d12e47"
+      },
+      "kernelSampleCount": 81,
+      "negativeRollbackQualified": false,
+      "observersClosed": 39,
+      "ownRevisionAfter": 3,
+      "pass": true,
+      "probeElapsedNs": "17496980409",
+      "probeReportPin": {
+        "bytes": 28215,
+        "path": "/workspace/helmut-unit-diagnostic-native/4150cfaf3a13a2e4175a985eba9ee34d/TRANSACTION_GUARD_REPORT.PRIVATE.json",
+        "sha256": "b7b701217a41a2f759bbb6419bf35c868df2af0bcb2e5298225ed22441d79907"
+      },
+      "rawSamplesAloneDoNotAssertFinalExit": true,
+      "resultPin": {
+        "bytes": 2268,
+        "path": "/workspace/helmut-unit-diagnostic-native/4150cfaf3a13a2e4175a985eba9ee34d/RESULT.SAFE.json",
+        "sha256": "e0b74972e957677f43561fb2ba0471599b918f403311e1f3bab2d6a94ee886f3"
+      },
+      "reuseForbidden": true,
+      "schema": "helmut-actual-native-same-root-safety-success/1",
+      "scope": "genuine State and SameRootUsage SQL commits/ACKs plus complete native shutdown only",
+      "sourceServiceOnlyConfirmedSeed": 1,
+      "terminalKernelAllProcessExitsCovered": true,
+      "unit60Qualified": false,
+      "usageOwnRevisionAndRootUnchanged": true
+    },
     "secondCase": "b0f2c82e736fa4ac08907aad3fae4186",
     "secondCaseEvidencePin": {
       "bytes": 1650,
@@ -592,7 +726,7 @@
     "unit60Auth30ReserveOrFull500Acceptance": false
   },
   "newRepositoryRuntimeChangeInThisCheckpoint": true,
-  "next": "Retire verified temporary restore; encrypted offsite/return old own copies for capacity, then fresh SameRootUsage/negative rollback with unique final readback labels. Private bridge timing is not a full500 writer gain.",
+  "next": "Finish existing6073/9c61 capacity offloads; fresh corrected negative rollback cases, matched claim timing and full native single unit. No full500 until complete conditions and fresh concrete GO.",
   "open": {
     "all16ActualControlsAndFinalACK": false,
     "all32FreshStartConditionsVerified": false,
@@ -622,6 +756,7 @@
     "parentImplementationCommit": "88a5b8181881223d15839f3e09aa5ff559768802",
     "privateBridgeNotSharedWithFull500Writer": true,
     "pureCompilerChecksPassed": 30,
+    "realStateAndUsageConfirmedWithFullNativeClose": true,
     "realStateCASPassButOverallDiagnosticFailed": true,
     "receiptBodySHA256": "058e191329a6ed64753fd3660a7219b6cb192c2f8481ad1a94aa6719b60edbdd",
     "sameRootGraphChecksAfter": 1,

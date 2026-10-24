@@ -1,13 +1,40 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
-Stand23.10.2026: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
+Stand24.10.2026: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
 oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
 Alte GOs und Claims bleiben verbraucht. Keine Production-Aktion, kein Merge und
 kein vollständiger500er-Lauf sind aus dieser Arbeit freigegeben.
 
-## Aktueller Nachweis vom23.10.: Claim bestanden, Einzelunit weiter fehlgeschlagen
+## 24.10.: Zustands-/Usageprobe vollständig bestanden; Rollback und Motorzeit offen
+
+Fall4150cfaf3a13a2e4175a985eba9ee34d auf f988991b bestand tatsächlich drei
+Zustandsänderungen und einen SameRootUsage-CAS. Alle24PSQL-Aufrufe endeten mit
+Exit0/zwei natürlichenEOFs; Ownrevision3 und ursprüngliche6000Verbrauchsrecords
+bleiben erhalten, genau einRecord ergänzt. 43Hostkinder/39Beobachter geschlossen,
+finale Kernelgruppe leer, alle sechs Speicherereignisse0. GemeinsamerPeak
+1.154.248.704B; 41unabhängige BelegprüfungenPASS. Die17,496980409s schließen
+Snapshots ein und sind keineUnit60-/Auth30-Abnahme. KeinMotor/Provider ausgeführt.
+
+Der folgende eb508-Negativfall scheiterte bereits beim Aufbau der Mirrorfixture:
+`auth-state-projection-not-admitted`. Der vorgeschriebene lokale Diagnosescope
+fehlte ausschließlich in diesemFixture-SQL; der echte Compiler setzt ihn bereits.
+Einzeilenfix93b32e9f/ed97c6c1 ergänzt denselbenScope bei unverändertemOriginalguard;
+50gezieltePurechecksPASS. KeinNegativ-CAS/Probebericht, Hostcleanfalse,
+Original-Endprüfung interrupted/raw-pin/checkedCount0: derFall bleibtFAIL.
+Kernelgruppe undletzteProzessenden sind geschlossen; Peak1.126.871.040B/Events0.
+Frischer Rollbacktest beiderModi, fairerMessvergleich undvolleEinzelunit offen.
+
+CI[40047585788](https://github.com/ernisch/helmut-pilot/actions/runs/40047585788)
+auf483a8253 vollständigSUCCESS, inklusive84Originale/Z22. Folgecode braucht
+neueCI. Die Bridgeoptimierung betrifft weiterhin nur den privaten Einzelunitwriter;
+sie belegt keine Einsparung des gemeinsamen500er-Schreibpfads. Keine neue500er-Abnahme.
+WeitereeigenePG-Kopien00c9/2797 sind physisch probeweise restauriert, verschlüsselt
+aufDrive vollständigzurückgeprüft undlokalkontrolliertentfernt. 6073 ebenso abgeschlossen,9c61 folgt
+innerhalb derselbenSchutzregeln; keine Originale, alteClaims oderBelege entfernen.
+
+## Historischer Nachweis vom23.10.: Claim bestanden, Einzelunit weiter fehlgeschlagen
 
 Geprüfter Runtimecode `444e496fde2789211da77db1a5a9038ba9437360`; dessen
 [CI40002522827](https://github.com/ernisch/helmut-pilot/actions/runs/40002522827)

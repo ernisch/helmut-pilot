@@ -4,43 +4,38 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 24.10.: Bridge-Umbau lokal; native Wirkung offen
+## 24.10.: native Zustands-/Usagebestätigung; Zeit/RAM weiter offen
 
 13.527Dateien/84Originale/V12-POSTRUN erhalten. Branch
-`codex/v12-unit60-native-integration-20261022`, DraftPR936. Runtime562d880f
-enthält private Zeitgrenzen und echten U/Parts-Kontrollleser im Readonly-Diagnosemodus.
-UnbekannteWrites terminal.
-GraphReuse/CaptureOFF; Own-Write nurEinzelunit, Voll500-Write unverändert.
+`codex/v12-unit60-native-integration-20261022`, DraftPR936. NativeBridge22679d99
+reduziert doppelte Graphprüfungen ausschließlich im privaten Einzelunitwriter;
+der gemeinsame Voll500-Writer bleibt unverändert. Kontrollleser/Budgetfix bestehen.
 
-Claim-only515c PASS, Autoritätverbraucht. EchteEinzelunit7bace FAIL:
-`entry-terminal-deadline`, neun/16Kontrollen, Adapter71,729s, keineEndquittung.
-ZehnSourcewrites COMMIT/ACK/Exit0/zweiEOFs; Peak1.342.267.392B/Events0.
-V12 bleibt499/500; Unit60/Auth30/500MB/Plateau/Qualität nichtnachgewiesen.
-Readonly-SQL55d0 PASS:24EXPLAINs; kein echterCAS-Vergleich, nichtwiederholen.
+V12 bleibt499/500. EchteEinzelunit7bace FAIL: neun/16Kontrollen,
+Adapter71,729s, keineEndquittung. Unit60/Auth30/500MB/Plateau/Qualität offen.
+Abgeschlossene Readonly-/U/Parts-Prüfungen undClaim6994 nicht wiederholen.
+6994/78a4c1a9: Seed+State COMMIT/ACK; Kernelpeak1.218.666.496B/Events0,
+PSQL905,737ms, History6000, Claim verbraucht; keinMotor ausgeführt.
 
-Readonly-HTTP9b3 und U/Parts44d4 PASS: kalt1,346893s/warm0,261859s,
-6000History/1868Knoten, Peak1.137.496.064B/Events0; keineUnit/Reserveabnahme.
-24.10.: frischerClaim6994 mitSQL-Messcode78a4c1a9 PASS, Seed1+State1, COMMIT/ACK,
-alleKinderExit0/zweiEOFs, PGsauber/Gruppeleer, 50unabhängigeBelegprüfungen.
-Kernelpeak1.218.666.496B/75Samples/Events0; Originale/History erhalten, Claimverbraucht.
-PSQL905,737ms, COMMIT1,935ms; 26Dauern/neunMarker striktverbunden.
-22679d99: vierBridge-Graphprüfungen auf zwei frischeMaps im Pflichtreceipt reduziert;
-SameRoot nutzt eineMap. Frischgeprüfter Own-DBbody als siebtesArgument; Guards bleiben.
-30Compiler-/25Qualifier-Checks PASS. Guardprobe: echterState-CAS ACKbestätigt,
-Gesamtprobe nachAbschluss-DateikollisionFAIL; Fixf988991b vorbereitet. NativeRollback/
-Usage/Vergleich offen; keinFull500-Fix/Unit60-/Puffernachweis.
+Neuer4150/f988991b tatsächlich PASS: dreiState-CAS undeinSameRootUsage-CAS,
+History6000→6001, Ownrevision3 erhalten, alle24PSQL Exit0/zweiEOFs.
+43Hostkinder/39Beobachter geschlossen, Kernel leer; Peak1.154.248.704B/Events0.
+41unabhängige BelegprüfungenPASS. Probe17,497s enthältSnapshots, keineUnitzeit.
+Die beiden Negativrollbacks undvergleichbare Einsparungsmessung bleiben offen.
+Frischer eb508 bliebFAIL vorNegativ-CAS: Mirrorfixture fehlte vorgeschriebener
+Diagnosescope. Einzeilenfix93b32e9f alsed97c6c1 integriert,50gezieltePurechecksPASS;
+Original-SQL-Guard unverändert. NativeOriginal-Endprüfung dort unterbrochen,
+keine nachträgliche Abnahme. Frischer korrigierterTest noch auszuführen.
 
-CI40002522827 und40035705164 vollständiggrün einschließlich84Originale/Z22.
-Fixturefix3cbcfad0: CI40042703899/54c61de1 vollständigSUCCESS einschließlich84Originale.
-NeueGuardanbindung braucht eigeneCI.
-
-SechsaltePG-Archive nach verschlüsselterDrive-/Vollrückdownload-/Indexprüfung
-kontrolliertausgelagert. 9b3/1a96 Vollarchive mitphysischemRestore geprüft;
-TEMP-Restores entfernt. 1a96 nachVollrückprüfung kontrolliertausgelagert: +744.140.800B.
-9b3 ebensoausgelagert: +739.753.984B beobachtet; alleOriginale/MetadatenKEEP.
-Original-RAW-V3 vorOpen/Punch gescheitert. NeueDiagnosekopie verbraucht wiederPlatz;
-Voll500-Platte/32frischeStartbedingungen offen. Voll500 nurmitneuemkonkretemGO;
-keineProduction/Merges. [AktuelleZahlen und Beweisgrenzen](betrieb/belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json),
+CI40047585788 auf483a8253 vollständiggrün einschließlich84Originale/Z22;
+Folgecode braucht neueCI. Alle bisherigen GOs/Claims bleiben verbraucht.
+Abgeschlossene eigenePGs nach vollständigemRestore undverschlüsselterDrive-
+Vollrückprüfung ausgelagert: zuletzt00c9 und2797; Originale/MetadatenKEEP.
+6073 ebenfalls abgeschlossen;9c61-Auslagerung läuft; großeAltarchive bereitsentfernt,
+geprüftealteDocker-RW-Schichten bieten keinenKapazitätsgewinn.
+OriginalRAW/V11-Basis bleibenunverändert. NeueTests verbrauchen erneutPlatz.
+Volladmission/32frischeStartbedingungen undkonkretesneues500erGO offen;
+keineProduction/Merges. [Zahlen undBeweisgrenzen](betrieb/belege/native-claim-only-20261023/ACTUAL_NATIVE_AND_CAPACITY.SAFE.json),
 [Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
@@ -292,6 +287,6 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-Originalkanal/U/Parts und echteSchreibphasenmessung PASS. NativeBridge-Doppelarbeit
-reduzieren, Rollback/Integrität/pairedRessourcenvergleich undneueCI qualifizieren. Unit60/500MB/32Startgruppen und
-Volladmission offen; alte GOs verbraucht, kein Voll500. Hier fortsetzen, Sehr hoch.
+Native State/SameRootUsage mitvollständigemProzessabschluss PASS. Korrigierte
+Negativrollbacks, fairenAlt-Neu-Vergleich undvolleEinzelunit qualifizieren.
+Unit60/500MB/32Startgruppen/Volladmission offen; kein Voll500. Sehr hoch.
