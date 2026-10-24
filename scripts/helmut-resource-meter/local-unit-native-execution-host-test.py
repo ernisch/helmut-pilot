@@ -606,6 +606,23 @@ class PureHost(unittest.TestCase):
             with self.subTest(diagnostic=diagnostic, state=state), self.assertRaisesRegex(RuntimeError, 'owner-stop-order'):
                 self.host._accept(self.request('OWNER_STOP'), '1' * 64)
 
+    def test_transaction_guard_stops_qualified_owner_but_never_starts_entry(self):
+        self.config['nativeDiagnosticMode']='native-transaction-guard-v1'
+        owner={'pid':12,'startTicks':'34','exe':'/node','pidNamespace':'pid:[1]'}
+        self.host.heartbeat={'owner':owner};actions=[]
+        self.host._root=lambda code,data:actions.append((code,data))
+        self.host.state='QUALIFIED';self.host._accept(self.request('OWNER_STOP'),'1'*64)
+        self.assertEqual(actions,[(M.ROOT_SIGNAL,owner)]);self.assertEqual(self.host.state,'QUALIFIED')
+        for stage,state in (('ENTRY_START','QUALIFIED'),('ENTRY_RESULT','ENTRY')):
+            self.host.pending=None;self.host.seen.clear();self.host.state=state;self.host.observed_at=M.time.monotonic()
+            with self.subTest(stage=stage),self.assertRaisesRegex(RuntimeError,'transaction-guard-no-entry'):
+                self.host._accept(self.request(stage),'1'*64)
+        with self.assertRaisesRegex(RuntimeError,'transaction-guard-no-entry'):self.host._client('entry')
+        for state in ('INIT','OWNER','ENTRY'):
+            self.host.pending=None;self.host.seen.clear();self.host.state=state
+            with self.subTest(state=state),self.assertRaisesRegex(RuntimeError,'owner-stop-order'):
+                self.host._accept(self.request('OWNER_STOP'),'1'*64)
+
     def test_control_graph_probe_is_exclusive_to_existing_readonly_mode(self):
         self.host.handoff = {'sourceQualification': {'publicSourceBinding': {}}}
         for mode, present in ((None, True), ('fresh-claim-only-v1', True), ('readonly-http-pre-admission-v1', False)):

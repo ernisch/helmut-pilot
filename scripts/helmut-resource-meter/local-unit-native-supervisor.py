@@ -221,7 +221,24 @@ def arguments(argv=None):
                        help='fresh genuine unseeded COPY+qualification+admission+seed; first real claim only, no motor or Unit acceptance')
     modes.add_argument('--diagnose-native-readonly-http', action='store_true',
                        help='fresh unseeded COPY+Owner+readonly endpoint qualification; stop before admission, seed or entry')
-    return parser.parse_args(argv)
+    modes.add_argument('--diagnose-native-transaction-guard', action='store_true',
+                       help='fresh COPY+authority+seed; one genuine compiler SQL safety case, never Entry/Unit')
+    parser.add_argument('--transaction-guard-case', choices=('state', 'same-root-usage', 'late-old-mirror', 'late-outside'))
+    args = parser.parse_args(argv)
+    if args.diagnose_native_transaction_guard != (args.transaction_guard_case is not None):
+        parser.error('transaction guard mode requires exactly one explicit transaction-guard-case')
+    return args
+
+
+def transaction_guard_result(result, case):
+    if (result.get('schema') != 'helmut-local-unit-native-transaction-guard-result/1'
+            or result.get('diagnosticMode') != 'native-transaction-guard-v1' or result.get('transactionGuardCase') != case
+            or any(result.get(k) is not True for k in ('transactionGuardObserved', 'executionAuthorityInstalled', 'reuseForbidden'))
+            or any(result.get(k) is not False for k in ('scopeExecutionQualified', 'unit60Qualified', 'auth30Qualified',
+                'independentFinalAcceptance', 'production', 'full500'))
+            or any(type(result.get(k)) is not int or result[k] != 0 for k in ('actualEntryCalls', 'motorCalls', 'providerCalls',
+                'completedUnits', 'expectedPositions', 'controlCount'))):
+        raise RuntimeError('native transaction guard incomplete or exceeded scope')
 
 
 def readonly_http_result(result):
@@ -256,7 +273,7 @@ def main():
     args = arguments()
     # This existing bootstrap also supplies the fresh Source/Host/Owner stack.
     # The readonly branch never installs execution authority or starts Entry.
-    execution_mode=args.run_native_single_unit or args.diagnose_native_claim_only or args.diagnose_native_readonly_http
+    execution_mode=args.run_native_single_unit or args.diagnose_native_claim_only or args.diagnose_native_readonly_http or args.diagnose_native_transaction_guard
     bindings_mode = args.qualify_native_bindings or execution_mode
     if not (sys.flags.isolated and sys.flags.no_site and sys.flags.dont_write_bytecode):
         raise RuntimeError('use python -I -S -B')
@@ -366,6 +383,12 @@ def main():
                 raise RuntimeError('reviewed claim-only client source missing')
         elif args.diagnose_native_readonly_http:
             config['nativeDiagnosticMode'] = 'readonly-http-pre-admission-v1'
+        elif args.diagnose_native_transaction_guard:
+            config['nativeDiagnosticMode'] = 'native-transaction-guard-v1'
+            config['transactionGuardCase'] = args.transaction_guard_case
+            config['transactionGuardProbePin'] = pin(BIN / 'local-unit-native-transaction-guard.js')
+            if config['transactionGuardProbePin'] not in config['sourceCodePins']:
+                raise RuntimeError('transaction guard probe outside genuine code closure')
         # Host control plane only; never expose Docker/socket to SOURCE or the
         # client. The closed subprocess environment deliberately has no host PATH.
         config['hostDockerPin'] = pin('/usr/local/bin/docker')
@@ -380,6 +403,8 @@ def main():
                                                   if args.run_native_single_unit else
                                                   'Fresh genuine first-claim-only diagnostic; no motor/Unit acceptance'
                                                   if args.diagnose_native_claim_only else
+                                                  'Fresh genuine compiler transaction safety diagnostic; no Entry/Unit acceptance'
+                                                  if args.diagnose_native_transaction_guard else
                                                   'Fresh source-local genuine source and native binding qualification only'
                                                   if bindings_mode else
                                                   'Fresh source-local readonly extraction and native DDL qualification only'),
@@ -487,6 +512,8 @@ def main():
             raise RuntimeError('genuine native binding qualification incomplete')
         if args.diagnose_native_readonly_http:
             readonly_http_result(result)
+        if args.diagnose_native_transaction_guard:
+            transaction_guard_result(result, args.transaction_guard_case)
         if args.diagnose_native_claim_only:
             if result.get('schema')!='helmut-local-unit-native-claim-only-result/1' or result.get('diagnosticMode')!='fresh-claim-only-v1':
                 raise RuntimeError('claim-only mode/result missing')
@@ -548,7 +575,8 @@ def main():
             except BaseException as error:
                 close_errors.append(type(error).__name__)
         accepted = failure is None and not close_errors and final is not None
-        receipt = {'schema': ('helmut-local-unit-native-readonly-http-supervisor-result/1' if args.diagnose_native_readonly_http else
+        receipt = {'schema': ('helmut-local-unit-native-transaction-guard-supervisor-result/1' if args.diagnose_native_transaction_guard else
+                             'helmut-local-unit-native-readonly-http-supervisor-result/1' if args.diagnose_native_readonly_http else
                              'helmut-local-unit-native-claim-only-supervisor-result/1' if args.diagnose_native_claim_only
                              else 'helmut-local-unit-native-qualification-result/1'), 'pass': accepted,
                    'failure': failure, 'closureErrors': close_errors, 'parent': parent, 'containerId': cid,
@@ -580,6 +608,14 @@ def main():
                 claimStillRunning=(result or {}).get('claimStillRunning'),authorityConsumed=(result or {}).get('authorityConsumed'),
                 reuseForbidden=True,completedUnits=0,expectedPositions=0,controlCount=0,
                 unit60Qualified=False,auth30Qualified=False,independentFinalAcceptance=False,full500Qualified=False)
+        if args.diagnose_native_transaction_guard:
+            receipt.update(transactionGuardRequested=True, diagnosticMode='native-transaction-guard-v1', diagnosticOnly=True,
+                transactionGuardCase=args.transaction_guard_case,
+                transactionGuardObserved=accepted and result.get('transactionGuardObserved') is True,
+                executionAuthorityInstalled=(result or {}).get('executionAuthorityInstalled'), reuseForbidden=True,
+                actualEntryCalls=0, providerCalls=0, completedUnits=0, expectedPositions=0, controlCount=0,
+                scopeExecutionQualified=False, unit60Qualified=False, auth30Qualified=False,
+                independentFinalAcceptance=False, full500Qualified=False)
         if args.diagnose_native_readonly_http:
             receipt.update(readonlyHttpRequested=True, diagnosticMode='readonly-http-pre-admission-v1', diagnosticOnly=True,
                 originalControlGraphReads=result.get('originalControlGraphReads') if accepted else 0,

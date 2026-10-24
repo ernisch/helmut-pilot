@@ -117,6 +117,7 @@ class Fixture:
         c = self.c
         c.claim_only = False
         c.readonly_http = False
+        c.transaction_guard = False
         c.selection = {'operationId': 'localUnitDiagnostic-' + 'a' * 32, 'commandHash': 'b' * 64}
         c.database, c.expires = 'helmut_unit_diagnostic_' + 'a' * 32, '2026-10-22T12:03:00.000Z'
         c.pg = None
@@ -267,6 +268,16 @@ class Fixture:
 
 
 class Tests(unittest.TestCase):
+    def test_transaction_guard_runs_only_after_verified_fresh_seed_and_observation(self):
+        f=Fixture();f.c.transaction_guard=True;seen=[]
+        def probe(initialization,verification):
+            seen.append((initialization,verification));f.events.append('transaction-probe');return {'sqlOnly':True}
+        f.c.transaction_guard_finish=probe
+        self.assertEqual(f.run(),{'sqlOnly':True});self.assertEqual(len(seen),1)
+        for event in ('verify','authority','seed','append'):
+            self.assertLess(f.events.index(event),f.events.index('transaction-probe'))
+        self.assertNotIn('ENTRY_START',f.calls);self.assertNotIn('ENTRY_RESULT',f.calls);self.assertNotIn('final',f.events)
+
     def test_readonly_http_closes_before_admission_seed_and_entry(self):
         f = Fixture(); f.c.readonly_http = True; result = f.run()
         self.assertEqual(f.calls, ['OWNER_STOP']); self.assertEqual(f.append_calls, [])
