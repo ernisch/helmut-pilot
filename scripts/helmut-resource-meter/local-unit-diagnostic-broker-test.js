@@ -93,10 +93,50 @@ function rootProcessFixture(fault = null) {
   } };
   vm.runInNewContext(source + "\nmodule.exports={processInfo};", sandbox); return mod.exports;
 }
+function executableFixture() {
+  const root = fs.mkdtempSync(path.join(require("node:os").tmpdir(), "helmut-broker-executable-"));
+  const executable = path.join(root, "synthetic-postgrest"), bytes = Buffer.from("synthetic immutable executable payload");
+  fs.writeFileSync(executable, bytes, { mode: 0o600 });
+  const descriptors = new Map(), proc = "/proc/456/exe", f = { executable, livePath: executable, reportedPath: executable,
+    namespace: "mnt:[42]", mountText: "1 0 0:1 / / ro - overlay overlay rw\n", uid: 0n, payloadReads: 0, opens: 0 };
+  const mapped = name => name === proc ? f.livePath : name, owner = s => { s.uid = f.uid; return s; };
+  const io = { ...fs,
+    readlinkSync(name) { if (name === "/proc/self/ns/mnt") return f.namespace; assert.equal(name, proc); return f.reportedPath; },
+    readFileSync(name) { assert.equal(name, "/proc/self/mountinfo"); return Buffer.from(f.mountText); },
+    lstatSync(name, options) { return owner(fs.lstatSync(name, options)); },
+    statSync(name, options) { return owner(fs.statSync(mapped(name), options)); },
+    openSync(name, flags) {
+      if (f.openHook) f.openHook(name);
+      assert(flags & fs.constants.O_NONBLOCK); assert.equal(Boolean(flags & fs.constants.O_NOFOLLOW), name !== proc);
+      const fd = fs.openSync(mapped(name), flags); descriptors.set(fd, name); f.opens++; return fd;
+    },
+    fstatSync(fd, options) { const s = owner(fs.fstatSync(fd, options)); if (f.statHook) f.statHook(descriptors.get(fd)); return s; },
+    readSync(fd, ...args) {
+      assert.equal(descriptors.get(fd), proc); f.payloadReads++;
+      const n = fs.readSync(fd, ...args); if (f.readHook) f.readHook(); return n;
+    },
+    closeSync(fd) { assert(descriptors.delete(fd)); return fs.closeSync(fd); }
+  };
+  const mod = { exports: {} }, sandbox = { module: mod, __filename: filename, Buffer, process: { env: {} }, require(name) {
+    if (name === "node:fs") return io; if (name === "node:http" || name === "node:net") return {}; return require(name);
+  } };
+  vm.runInNewContext(source + "\nmodule.exports={executableContinuity};", sandbox);
+  f.pin = { path: executable, bytes: bytes.length, sha256: crypto.createHash("sha256").update(bytes).digest("hex") };
+  f.admit = () => mod.exports.executableContinuity(456, f.pin);
+  f.descriptors = descriptors; f.bytes = bytes; f.dispose = () => fs.rmSync(root, { recursive: true }); return f;
+}
+function executableCheck(work) {
+  const f = executableFixture(); try { work(f); checks++; } finally { assert.equal(f.descriptors.size, 0); f.dispose(); }
+}
+function executablePoisoned(f, check, restore = () => {}) {
+  assert.throws(check); assert.equal(f.descriptors.size, 0); restore();
+  const reads = f.payloadReads, opens = f.opens;
+  assert.throws(check, /executable-proof-terminal/); assert.equal(f.payloadReads, reads); assert.equal(f.opens, opens);
+}
 function brokerLifecycle() {
   const state = { observations: 0, reads: [], handler: null, closeCalls: 0, listenerLost: false, addressChanged: false,
     rootDrift: false, upstreamDrift: false, sourceDrift: false, signingKeyDrift: false, trustDrift: false, socketDrift: false,
-    phaseLogs: [], phaseWrites: 0, upstreamSpans: [] };
+    phaseLogs: [], phaseWrites: 0, upstreamSpans: [], executableAdmissions: 0, executableChecks: 0 };
   const phaseSink = new EventEmitter(); phaseSink.write = (row, callback) => {
     state.phaseWrites++;
     if (state.phaseFault === "throw") throw Error("VM hidden timing error");
@@ -175,7 +215,10 @@ function brokerLifecycle() {
       const row = files.get(tracePath); row.bytes = Buffer.concat([row.bytes, buffer.subarray(offset, offset + length)]); row.pin = pin(tracePath, row.bytes); row.revision++; return length;
     }, fsyncSync() { if (state.traceSyncFailure) throw Error("VM trace sync failure"); }, closeSync(fd) { assert(descriptors.delete(fd)); }
   };
-  const hooks = { processInfo(pid) { state.observations++; return proc(pid); }, readRegular(name, cap, options = {}) {
+  const hooks = { executableContinuity(pid, expected) {
+    assert.equal(pid, 456); assert.equal(expected.path, exe.pin.path); state.executableAdmissions++; let failed = false;
+    return () => { state.executableChecks++; if (state.executableDrift || failed) { failed = true; throw Error("local-unit-broker-executable-file-drift"); } };
+  }, processInfo(pid) { state.observations++; return proc(pid); }, readRegular(name, cap, options = {}) {
     state.reads.push(name); const record = name === "/proc/456/exe" ? exe : files.get(name); assert(record, "VM closed file list");
     if (state.sourceDrift && name === sourceQ.pin.path || state.signingKeyDrift && name.endsWith("signing-key.pem") || state.trustDrift && name.endsWith("trust.json"))
       throw Error("local-unit-broker-VM-pin-drift");
@@ -195,7 +238,8 @@ function brokerLifecycle() {
             const value = route === "/rpc/local_unit_diagnostic_contract_v1" ? { database, version: "helmut-local-unit-diagnostic-native-store/1",
               legacyReadRPCs: c.legacy.rpcs.map(({ name, oid, identityArguments, prosrcSHA256, qualificationPin }) => ({ name, oid, identityArguments, prosrcSHA256, qualificationPin })) }
               : route === "/rpc/local_unit_diagnostic_state_read_v1" ? state.stateWitness : { VM: "control response payload" };
-            res.emit("data", Buffer.from(JSON.stringify(value))); if (!state.noHTTPEnd) { span.end = process.hrtime.bigint(); res.emit("end"); }
+            res.emit("data", Buffer.from(JSON.stringify(value))); if (state.executableDriftAfterUpstream) state.executableDrift = true;
+            if (!state.noHTTPEnd) { span.end = process.hrtime.bigint(); res.emit("end"); }
           });
         }; return req;
       } };
@@ -210,7 +254,7 @@ function brokerLifecycle() {
       if (name === "node:v8") return { getHeapStatistics: () => ({ heap_size_limit: 432 * 1048576 }) };
       return require(name);
     } };
-  vm.runInNewContext(source + "\nstructuredClone=value=>JSON.parse(JSON.stringify(value));({readRegular,processInfo}=__hooks);", sandbox);
+  vm.runInNewContext(source + "\nstructuredClone=value=>JSON.parse(JSON.stringify(value));({readRegular,processInfo,executableContinuity}=__hooks);", sandbox);
   let requestIndex = 0;
   async function request(pathname, body) {
     const m = { operationId: op, commandHash, database, nonce: crypto.createHash("sha256").update("VM request " + requestIndex++).digest("hex"),
@@ -232,8 +276,92 @@ function brokerLifecycle() {
   } };
 }
 (async () => {
+  executableCheck(f => {
+    const check = f.admit(); assert(f.payloadReads > 0); assert.equal(f.descriptors.size, 0); f.payloadReads = 0;
+    for (let i = 0; i < 16; i++) check();
+    assert.equal(f.payloadReads, 0); assert.equal(f.descriptors.size, 0);
+  });
+  executableCheck(f => {
+    const check = f.admit(), before = fs.statSync(f.executable);
+    fs.writeFileSync(f.executable, Buffer.alloc(f.bytes.length, 120)); fs.utimesSync(f.executable, before.atime, before.mtime);
+    executablePoisoned(f, check, () => fs.writeFileSync(f.executable, f.bytes));
+  });
+  executableCheck(f => {
+    const check = f.admit(), old = f.executable + ".old"; fs.renameSync(f.executable, old); fs.writeFileSync(f.executable, f.bytes, { mode: 0o555 });
+    executablePoisoned(f, check, () => { fs.unlinkSync(f.executable); fs.renameSync(old, f.executable); });
+  });
+  executableCheck(f => {
+    const check = f.admit(), old = f.executable + ".old"; fs.renameSync(f.executable, old); fs.symlinkSync(old, f.executable);
+    const opens = f.opens; executablePoisoned(f, check, () => { fs.unlinkSync(f.executable); fs.renameSync(old, f.executable); }); assert.equal(f.opens, opens);
+  });
+  executableCheck(f => {
+    const check = f.admit(), before = fs.statSync(f.executable); fs.utimesSync(f.executable, before.atime, new Date(before.mtimeMs + 1000));
+    executablePoisoned(f, check, () => fs.utimesSync(f.executable, before.atime, before.mtime));
+  });
+  executableCheck(f => {
+    const check = f.admit(); f.uid = 1000n; executablePoisoned(f, check, () => { f.uid = 0n; });
+  });
+  executableCheck(f => {
+    const check = f.admit(), alias = f.executable + ".alias"; fs.linkSync(f.executable, alias);
+    executablePoisoned(f, check, () => fs.unlinkSync(alias));
+  });
+  for (const field of ["namespace", "mountText", "reportedPath"]) executableCheck(f => {
+    const check = f.admit(), original = f[field]; f[field] += "changed"; executablePoisoned(f, check, () => { f[field] = original; });
+  });
+  executableCheck(f => {
+    const check = f.admit(), other = f.executable + ".other"; fs.writeFileSync(other, f.bytes, { mode: 0o555 }); f.livePath = other;
+    executablePoisoned(f, check, () => { f.livePath = f.executable; });
+  });
+  for (const initial of [false, true]) executableCheck(f => {
+    const check = initial ? null : f.admit(), old = f.executable + ".old"; let changed = false;
+    f.openHook = name => { if (name === "/proc/456/exe" && !changed) { changed = true; fs.renameSync(f.executable, old); fs.writeFileSync(f.executable, f.bytes, { mode: 0o555 }); } };
+    if (initial) assert.throws(f.admit); else executablePoisoned(f, check, () => { fs.unlinkSync(f.executable); fs.renameSync(old, f.executable); });
+    assert(changed);
+  });
+  executableCheck(f => {
+    const check = f.admit(); let changed = false;
+    f.statHook = name => { if (name === f.executable && !changed) { changed = true; fs.chmodSync(f.executable, 0o400); } };
+    executablePoisoned(f, check); assert(changed);
+  });
+  executableCheck(f => {
+    let changed = false; f.readHook = () => { if (!changed) { changed = true; fs.chmodSync(f.executable, 0o400); } };
+    assert.throws(f.admit, /executable-file-drift/); assert(changed);
+  });
+  executableCheck(f => {
+    f.readHook = () => { f.mountText += "2 1 0:2 / /new ro - tmpfs tmpfs rw\n"; };
+    assert.throws(f.admit, /executable-mount-drift/);
+  });
+  executableCheck(f => {
+    const check = f.admit(); let changed = false;
+    f.statHook = () => { if (!changed) { changed = true; f.namespace = "mnt:[43]"; } };
+    executablePoisoned(f, check, () => { f.namespace = "mnt:[42]"; }); assert(changed);
+  });
+  for (const failingName of ["named", "proc"]) executableCheck(f => {
+    f.openHook = name => { if (name === (failingName === "named" ? f.executable : "/proc/456/exe")) throw Error("VM open failure"); };
+    assert.throws(f.admit, /VM open failure/); assert.equal(f.payloadReads, 0);
+  });
+  executableCheck(f => {
+    const check = f.admit(); f.openHook = () => { throw Error("VM recheck open failure"); };
+    executablePoisoned(f, check, () => { f.openHook = null; });
+  });
+  executableCheck(f => {
+    f.readHook = () => { throw Error("VM hash read failure"); }; assert.throws(f.admit, /VM hash read failure/);
+  });
+  executableCheck(f => {
+    f.pin.sha256 = "0".repeat(64); assert.throws(f.admit, /executable-file-pin/); assert(f.payloadReads > 0);
+  });
+  for (const mountText of ["1 0 0:1 / / rw - overlay overlay rw\n",
+    "1 0 0:1 / / ro - overlay overlay rw\n2 1 0:2 / / rw - tmpfs tmpfs rw\n"]) executableCheck(f => {
+    f.mountText = mountText; assert.throws(f.admit, /executable-readonly-mount/); assert.equal(f.payloadReads, 0); assert.equal(f.opens, 0);
+  });
+  executableCheck(f => {
+    f.mountText = "1 0 0:1 / / rw - overlay overlay rw\n2 1 0:2 / " + f.executable + " ro - tmpfs tmpfs rw\n";
+    const check = f.admit(); check();
+  });
   {
     const f = brokerLifecycle(), running = await f.start(), reply = await f.graph(1);
+    assert.equal(f.state.executableAdmissions, 1); assert.equal(f.state.executableChecks, 4);
+    assert(!f.state.reads.includes("/proc/456/exe"));
     assert.equal(reply.res.statusCode, 200); assert.equal(f.state.phaseLogs.length, 1);
     const row = JSON.parse(f.state.phaseLogs[0].slice("HELMUT_BROKER_READ_PHASES_V1 ".length)), t = row[4];
     assert.deepEqual(row.slice(0, 4), [0, "legacy", "settled", crypto.createHash("sha256").update(reply.m.nonce).digest("hex")]);
@@ -328,10 +456,18 @@ function brokerLifecycle() {
       assert(!text.includes(hidden));
     await running.close(); assert.throws(() => running.observe()); checks++;
   }
-  for (const fault of ["rootDrift", "upstreamDrift", "sourceDrift", "signingKeyDrift", "trustDrift", "socketDrift", "addressChanged", "listenerLost"]) {
+  for (const fault of ["rootDrift", "upstreamDrift", "sourceDrift", "signingKeyDrift", "trustDrift", "socketDrift", "addressChanged", "listenerLost", "executableDrift"]) {
     const f = brokerLifecycle(), running = await f.start(); f.state[fault] = true; if (fault === "listenerLost") f.server.listening = false;
     assert.throws(() => running.observe()); f.state[fault] = false; assert.throws(() => running.observe(), "lost observation stays terminal");
     await assert.rejects(running.close()); checks++;
+  }
+  {
+    const f = brokerLifecycle(), running = await f.start(); f.state.executableDriftAfterUpstream = true;
+    const reply = await f.request("/rest/v1/rpc/local_unit_diagnostic_contract_v1", {});
+    assert.equal(reply.res.statusCode, 502); assert.equal(reply.res.output, undefined); assert.equal(f.state.executableAdmissions, 1);
+    f.state.executableDrift = false; assert.throws(() => running.observe());
+    assert.equal((await f.request("/rest/v1/rpc/local_unit_diagnostic_contract_v1", {})).res.statusCode, 409);
+    await assert.rejects(running.close()); assert.equal(f.descriptors.size, 0); checks++;
   }
   {
     const f = brokerLifecycle(), running = await f.start(); await f.unknown(); const before = f.state.observations;

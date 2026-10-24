@@ -90,6 +90,63 @@ function readRegular(filename, cap, { rootPrivate = false, expected = null, proc
 }
 function pinShape(p) { need(exact(p, ["path", "bytes", "sha256"]) && path.isAbsolute(p.path) && path.normalize(p.path) === p.path
   && Number.isSafeInteger(p.bytes) && p.bytes > 0 && p.bytes <= 256 * 1024 * 1024 && /^[a-f0-9]{64}$/.test(p.sha256), "pin-shape"); }
+function executableMounts() {
+  const namespace = fs.readlinkSync("/proc/self/ns/mnt"), raw = fs.readFileSync("/proc/self/mountinfo");
+  need(/^mnt:\[[1-9][0-9]*\]$/.test(namespace) && raw.length > 0 && raw.length <= 2 * 1024 * 1024, "executable-mount-context");
+  return { namespace, hash: sha(raw), text: raw.toString("utf8") };
+}
+function executableContinuity(pid, expected) {
+  pinShape(expected); need(Number.isSafeInteger(pid) && pid > 0, "pid");
+  const pin = Object.freeze({ ...expected }), proc = `/proc/${pid}/exe`, mounts = executableMounts();
+  const decode = x => x.replace(/\\(040|011|012|134)/g, (_, n) => String.fromCharCode(parseInt(n, 8)));
+  const covering = mounts.text.trim().split("\n").map(line => {
+    const f = line.split(" "), sep = f.indexOf("-");
+    need(sep >= 6 && f.length > sep + 3 && f[4].startsWith("/"), "executable-mount-context");
+    return { point: decode(f[4]), options: f[5].split(",") };
+  }).filter(r => pin.path === r.point || pin.path.startsWith(r.point === "/" ? "/" : r.point + "/"));
+  const longest = covering.reduce((n, r) => Math.max(n, r.point.length), 0);
+  need(longest > 0 && covering.filter(r => r.point.length === longest)
+    .every(r => r.options.includes("ro") && !r.options.includes("rw")), "executable-readonly-mount");
+  let identity = null, terminal = false;
+  function inspect(initial) {
+    need(!terminal, "executable-proof-terminal");
+    try {
+      const sameMounts = () => { const now = executableMounts(); need(now.namespace === mounts.namespace && now.hash === mounts.hash, "executable-mount-drift"); };
+      const sameNames = () => need(fs.realpathSync(pin.path) === pin.path && fs.readlinkSync(proc) === pin.path, "executable-path-drift");
+      sameMounts(); sameNames();
+      const named = fs.lstatSync(pin.path, { bigint: true }), metadata = identity || statIdentity(named);
+      const same = s => s.isFile() && s.uid === 0n && s.nlink === 1n && s.size === BigInt(pin.bytes)
+        && isDeepStrictEqual(statIdentity(s), metadata);
+      need(same(named), "executable-file-drift");
+      let namedFD = null, procFD = null;
+      try {
+        namedFD = fs.openSync(pin.path, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+        procFD = fs.openSync(proc, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK);
+        const bound = () => {
+          sameNames();
+          need(same(fs.fstatSync(namedFD, { bigint: true })) && same(fs.fstatSync(procFD, { bigint: true }))
+            && same(fs.lstatSync(pin.path, { bigint: true })) && same(fs.statSync(proc, { bigint: true })), "executable-file-drift");
+          sameNames();
+        };
+        bound();
+        if (initial) {
+          // Hash the live executable once while its canonical named FD is also
+          // held and bound. Later checks prove 9MD + unchanged RO mount context,
+          // not a fresh content SHA or a mutable caller-supplied cache entry.
+          const hash = crypto.createHash("sha256"), buffer = Buffer.alloc(Math.min(pin.bytes, 1048576)); let size = 0, n;
+          while ((n = fs.readSync(procFD, buffer, 0, buffer.length, null)) > 0) { size += n; need(size <= pin.bytes, "executable-file-cap"); hash.update(buffer.subarray(0, n)); }
+          need(size === pin.bytes && hash.digest("hex") === pin.sha256, "executable-file-pin");
+        }
+        bound(); sameMounts(); bound();
+        if (!identity) identity = Object.freeze(metadata);
+      } finally {
+        try { if (procFD !== null) fs.closeSync(procFD); } finally { if (namedFD !== null) fs.closeSync(namedFD); }
+      }
+    } catch (error) { terminal = true; throw error; }
+  }
+  inspect(true);
+  return Object.freeze(() => inspect(false));
+}
 function processInfo(pid) {
   need(Number.isSafeInteger(pid) && pid > 0, "pid");
   const text = fs.readFileSync(`/proc/${pid}/stat`, "utf8"), fields = text.slice(text.lastIndexOf(")") + 2).trim().split(/\s+/);
@@ -488,6 +545,7 @@ async function start(configuration) {
   need(claim.role === "helmut_ud_runtime_" + c.operationId.slice(-32), "runtime-token-role");
   const initialUpstream = processInfo(c.upstream.pid); let signingKeyRecord = null;
   need(initialUpstream.parentPID === self.pid && initialUpstream.pidNamespace === self.pidNamespace, "actual-root-upstream-parent-namespace");
+  const checkExecutable = executableContinuity(c.upstream.pid, c.upstream.exePin);
   const check = () => {
     const a = processInfo(process.pid), p = processInfo(c.upstream.pid);
     need(isDeepStrictEqual(a, self) && isDeepStrictEqual(p, initialUpstream) && a.membership === c.measuredCgroup.procMembership.broker
@@ -503,7 +561,7 @@ async function start(configuration) {
     const group = fs.lstatSync(c.measuredCgroup.path);
     need(group.isDirectory() && !group.isSymbolicLink() && group.dev === c.measuredCgroup.device && group.ino === c.measuredCgroup.inode
       && fs.statfsSync(c.measuredCgroup.path).type === 0x63677270, "actual-cgroup-binding");
-    readRegular(`/proc/${p.pid}/exe`, 256 * 1024 * 1024, { expected: c.upstream.exePin, procExe: true, contents: false });
+    checkExecutable();
     readRegular(c.upstream.configPin.path, 1024 * 1024, { expected: c.upstream.configPin });
     need(isDeepStrictEqual(readRegular(__filename, 1024 * 1024).identity, code.identity), "broker-code-drift");
     need(isDeepStrictEqual(readRegular(c.upstream.runtimeTokenPath, 65536, { rootPrivate: true }).identity, tokenRead.identity), "runtime-token-drift");
