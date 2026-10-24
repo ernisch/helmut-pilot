@@ -24,7 +24,7 @@ def catalog():
 def probes():
     return {"schema": "helmut-local-unit-native-role-probes/1",
             "runtimeContractConfirmed": True, "contractSourceCount": 32,
-            "contractResponsePin": "d" * 64, "executedNegativeCases": 31,
+            "contractResponsePin": "d" * 64, "executedNegativeCases": 33,
             "emptyArtifactReadConfirmed": True, "nativeSHAConfirmed": True,
             "separateQualificationRole": True, "unrelatedSentinelUnchanged": True,
             "ownAuthorityRows": 0, "ownStateRows": 0, "ownLeaseRows": 0}
@@ -55,7 +55,7 @@ class QualificationTests(unittest.TestCase):
         callback = Callback()
         result = MODULE.qualify(callback, DATABASE, NONCE)
         self.assertTrue(result["executedChecksPassed"])
-        self.assertEqual(result["negativeChecks"], 31)
+        self.assertEqual(result["negativeChecks"], 33)
         self.assertEqual(result["actualAuthorityRowsConsumed"], 0)
         for key in ("successfulCASMeasured", "CASRevisionConflictMeasured", "lostACKNoReplayMeasured",
                     "leaseAcquisitionMeasured", "leaseTTLFencingMeasured", "concurrentInstanceFencingMeasured",
@@ -120,7 +120,7 @@ class QualificationTests(unittest.TestCase):
                 self.assertEqual(len(callback.calls), 2)
 
     def test_probe_counts_are_not_truthiness_or_substring_passes(self):
-        for key, values in (("executedNegativeCases", [30, 32, True, "31"]),
+        for key, values in (("executedNegativeCases", [32, 34, True, "33"]),
                             ("contractSourceCount", [8, 257, True, "32"]),
                             ("ownAuthorityRows", [1, False, "0"]),
                             ("ownStateRows", [1, False, "0"]),
@@ -158,7 +158,7 @@ class QualificationTests(unittest.TestCase):
             self.assertTrue(str(caught.exception).startswith("native-role-qualification-"))
             self.assertEqual(len(callback.calls), 1)
 
-    def test_generated_sql_calls_real_contract_and_all_nine_rpc_signatures(self):
+    def test_generated_sql_calls_real_contract_and_all_eleven_rpc_signatures(self):
         callback = Callback()
         MODULE.qualify(callback, DATABASE, NONCE)
         native = callback.calls[1][1]
@@ -177,10 +177,10 @@ class QualificationTests(unittest.TestCase):
 
     def test_generated_probes_have_exact_native_denials_and_no_escape_path(self):
         sql, count = MODULE._probe_sql(DATABASE, NONCE, "a" * 32)
-        self.assertEqual(count, 31)
+        self.assertEqual(count, 33)
         self.assertTrue(sql.startswith("BEGIN;"))
         self.assertTrue(sql.endswith("ROLLBACK;"))
-        self.assertEqual(sql.count("EXCEPTION WHEN SQLSTATE"), 31)
+        self.assertEqual(sql.count("EXCEPTION WHEN SQLSTATE"), 33)
         self.assertNotIn("WHEN OTHERS", sql.upper())
         self.assertNotIn("COMMIT", sql.upper())
         self.assertNotIn("SET SESSION_REPLICATION_ROLE", sql.upper())

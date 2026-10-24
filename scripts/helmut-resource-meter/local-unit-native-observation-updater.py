@@ -62,7 +62,7 @@ PROOF_KEYS = {'operationId', 'commandHash', 'sourceHash', 'targetHash', 'postrun
               'gateHashes', 'codeManifestHash', 'runtimeManifestHash', 'databaseOID', 'observedAtUTC'}
 CATALOG_KEYS = {'database', 'databaseOID', 'functions', 'relations', 'roles',
                 'memberships', 'schemas', 'databaseACL', 'readRegistry'}
-RPCS = ('contract', 'authority_read', 'runtime_read', 'state_read', 'state_cas',
+RPCS = ('contract', 'authority_read', 'runtime_read', 'control_runtime_read', 'control_snapshot_read', 'state_read', 'state_cas',
         'artifact_insert', 'artifact_read', 'lease_acquire', 'lease_release')
 MAX_NS = 15_000_000_000
 _active = set()

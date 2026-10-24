@@ -422,4 +422,4 @@ async function run() {
 }
 if (require.main === module) run().then(r => process.stdout.write(JSON.stringify(r, null, 2) + "\n"))
   .catch(e => { process.stderr.write((e.stack || String(e)) + "\n"); process.exitCode = 1; });
-module.exports = { run };
+module.exports = { run, fixture, server, compile, ENV };

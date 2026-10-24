@@ -220,6 +220,11 @@ async function main() {
         return mode === "wrong-ack" ? { ...result, claimId: "WRONG_SYNTHETIC_CLAIM" } : result;
       }
     };
+    store.readLocalUnitDiagnosticControlRuntime = (...args) => store.readLocalUnitDiagnosticRuntime(...args);
+    store.readLocalUnitDiagnosticControlSnapshot = async selection => ({
+      original: await store.readLocalUnitDiagnosticOriginalControl(selection), inputs: await store.readSynthetik500CurrentInputs(),
+      profile: await store.getProfileFromDb(), state: await store.readLocalUnitDiagnosticState(selection)
+    });
     class SyntheticDate extends Date { constructor(value) { super(arguments.length ? value : clock); } static now() { return clock; } }
     const transport = Object.freeze({});
     const box = { module: { exports: {} }, structuredClone, Date: SyntheticDate, require(name) {

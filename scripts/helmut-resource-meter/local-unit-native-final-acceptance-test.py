@@ -56,13 +56,15 @@ class Fixture:
             'resultState': 'retained-unreviewed', 'evidenceHash': self.terminal['result']['evidenceHash']}
         records = []
         for i in range(19):
-            kind = 'control-graph-4' if i < 16 else 'final-own-ack' if i == 16 else 'closed-state-readback'
+            kind = 'control-bundle-4' if i < 16 else 'final-own-ack' if i == 16 else 'closed-state-readback'
             record = {'seq': i + 1, 'kind': kind, **{key: digest('VM ' + key + ' ' + str(i)) for key in
                 ('requestNonceSHA256', 'requestBodySHA256', 'responseBodySHA256', 'attestationSHA256', 'envelopeSHA256', 'signatureSHA256')},
                 'status': 200, 'timing': {}, 'io': {'upstreamRequestFinish': None if i == 16 else True,
                     'upstreamResponseEnd': None if i == 16 else True, 'upstreamMessageComplete': None if i == 16 else True,
                     'ownerSocketEnd': True if i == 16 else None, 'ownerSocketClose': True if i == 16 else None, 'downstreamFinish': True},
-                'control': {'readNonceSHA256': digest('VM graph read ' + str(i))} if i < 16 else None,
+                'control': {'readNonceSHA256': digest('VM graph read ' + str(i)), 'index': i, 'stage': self.m.STAGES[i],
+                    'claimHash': ack['claimHash'], 'bundleNonceSHA256': digest('VM bundle nonce ' + str(i)),
+                    'graphComponent': 'original', 'ownHash': digest('VM own control state ' + str(i)), 'ownRevision': i} if i < 16 else None,
                 'ownAck': ack if i == 16 else None, 'readback': dict(readback, nonceSHA256=digest('VM closed read ' + str(i))) if i > 16 else None}
             for j, key in enumerate(('send', 'upstreamEnd', 'signed', 'finish')):
                 ms = (i + 1) * 1000 + j * 10
@@ -150,6 +152,14 @@ class AcceptanceChecks(unittest.TestCase):
             elif mutation == 'ownerEnd': f.trace['records'][16]['io']['ownerSocketEnd'] = False
             else: f.trace['footer']['complete'] = False
             self.reject(f); self.assertEqual(f.calls, [])
+
+    def test_bundle_component_identity_and_freshness_fail_before_sql(self):
+        for key, value in [('index', 1), ('stage', 'before-D'), ('graphComponent', 'state'),
+                           ('claimHash', digest('other claim')), ('ownHash', 'invalid'), ('ownRevision', -1)]:
+            f = Fixture(); f.trace['records'][0]['control'][key] = value
+            self.reject(f); self.assertEqual(f.calls, [])
+        f = Fixture(); f.trace['records'][0]['kind'] = 'control-graph-4'; self.reject(f)
+        f = Fixture(); f.trace['records'][1]['control']['bundleNonceSHA256'] = f.trace['records'][0]['control']['bundleNonceSHA256']; self.reject(f)
 
     def test_real_final_ack_and_both_readbacks_must_match_state_claim_and_verification(self):
         for key, value in [('hash', digest('other state')), ('revision', 13), ('claimIdSHA256', digest('other claim')),

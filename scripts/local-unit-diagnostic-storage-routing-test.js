@@ -21,7 +21,7 @@ function fixture(options = {}) {
   let active = options.active !== false, closed = false, profileRows = [{ id: owner, name: "Synthetic owner", mandate_profiles: [{ user_id: owner, aktiv: true }] }];
   const calls = { nativeReads: [], artifacts: [], legacy: [], batch: 0, logs: [], injected: 0 }, artifacts = new Map();
   const command = { mode: "D-R-1-local-fixture", units: [{ subject: owner }], calendar: { executionDayUTC: day },
-    slot: { plan: { runId, intents: [{ id: "synthetic-D-intent" }] } }, drafts: [{ sources: inputs }] };
+    slot: { plan: { runId, intents: [{ id: "synthetic-D-intent" }] } }, drafts: [{ sources: inputs, profile: { id: owner } }] };
   const scope = { currentVerified() { if (closed) throw Error("local-unit-diagnostic-scope-closed"); return active ? { command, selection } : null; } };
   const env = { HELMUT_STORAGE_BACKEND: "supabase", SUPABASE_URL: "http://127.0.0.1:3000",
     HELMUT_LOCAL_UNIT_DIAGNOSTIC_DATABASE: "helmut_unit_diagnostic_" + selection.operationId.slice(-32) };
@@ -49,7 +49,12 @@ function fixture(options = {}) {
     } };
   vm.runInNewContext(storeSource + "\nadmissionFor=()=>({});readArtifact=async(_s,k,id)=>__routing.read(k,id);"
     + "insertArtifact=async(_s,k,id,b,p=null)=>__routing.insert(k,id,b,p);", storeSandbox, { filename: storePath });
-  const nativeStore = storeModule.exports;
+  const nativeStore = { ...storeModule.exports,
+    async readControlSnapshot() { calls.nativeReads.push("synthetic-bundle"); return Object.freeze({}); },
+    consumeControlSnapshot() { return { original: { synthetic: "genuine Original proof is tested separately" }, state: { synthetic: "Own proof" },
+      documents: options.missingInput ? [] : options.changedInput ? [{ ...doc, title: "changed" }] : inputs.documents,
+      knowledgeObjects: [], profiles: profileRows }; }
+  };
   // Parents required by real renderedInsert; these are plain synthetic RAM rows.
   artifacts.set("review:" + draft().id.replace(/entwurf$/, "pruefung"), { synthetic: "parent review" });
   artifacts.set("lage:" + rendered().id, rendered());
@@ -102,6 +107,20 @@ async function check(name, fn) { current = name; await fn(); count++; }
     });
   await check("native read failure propagates without legacy profile fallback", async () => {
     const s = fixture({ readFailure: true }); await assert.rejects(s.api.getProfileFromDb(owner), /synthetic-native-read-unknown/); assert.equal(s.calls.logs.length, 0);
+  });
+  await check("bundled rows reuse actual source/profile normalization with one frame and no GET fallback", async () => {
+    const s = fixture(), frame = await s.api.readLocalUnitDiagnosticControlSnapshot(selection, "synthetic-claim", 0, "unit-enter");
+    assert.equal(JSON.stringify(frame.inputs), JSON.stringify(inputs)); assert.equal(frame.profile.id, owner);
+    assert.equal(frame.profile.fullName, "Synthetic owner"); assert.deepEqual(s.calls.nativeReads, ["synthetic-bundle"]);
+    assert.equal(s.calls.legacy.length, 0); assert.equal(s.calls.batch, 0);
+  });
+  for (const option of ["missingInput", "changedInput"]) await check("bundle " + option + " fails unchanged source freshness checks", async () => {
+    const s = fixture({ [option]: true }); await assert.rejects(s.api.readLocalUnitDiagnosticControlSnapshot(selection, "synthetic-claim", 0, "unit-enter"));
+    assert.deepEqual(s.calls.nativeReads, ["synthetic-bundle"]); assert.equal(s.calls.legacy.length, 0);
+  });
+  await check("bundle does not accept a missing RLS profile or fall back", async () => {
+    const s = fixture(); s.rows([]); await assert.rejects(s.api.readLocalUnitDiagnosticControlSnapshot(selection, "synthetic-claim", 0, "unit-enter"), /profile-readback$/);
+    assert.deepEqual(s.calls.nativeReads, ["synthetic-bundle"]); assert.equal(s.calls.logs.length, 0);
   });
   await check("native draft insert/read retain tenant payload and own-scope checks before any fallback", async () => {
     const s = fixture(), entry = draft(); assert.equal((await s.api.insertLageEntwurfsbeleg(entry, { request: s.injected, bereit: false })).saved, true);

@@ -506,7 +506,7 @@ begin
   select array_agg((value->>'oid')::oid order by (value->>'oid')::oid) into expected_oids from jsonb_array_elements(q->'nativeSources');
   select array_agg(p.oid order by p.oid) into native_oids from pg_proc p join pg_namespace ns on ns.oid=p.pronamespace where ns.nspname='helmut_unit_diagnostic'
     or (ns.nspname='public' and p.proname=any(array['local_unit_diagnostic_contract_v1','local_unit_diagnostic_authority_read_v1',
-      'local_unit_diagnostic_runtime_read_v1','local_unit_diagnostic_state_read_v1','local_unit_diagnostic_state_cas_v1',
+      'local_unit_diagnostic_runtime_read_v1','local_unit_diagnostic_control_runtime_read_v1','local_unit_diagnostic_control_snapshot_read_v1','local_unit_diagnostic_state_read_v1','local_unit_diagnostic_state_cas_v1',
       'local_unit_diagnostic_artifact_insert_v1','local_unit_diagnostic_artifact_read_v1','local_unit_diagnostic_lease_acquire_v1','local_unit_diagnostic_lease_release_v1']));
   if native_oids is distinct from expected_oids or exists(select from pg_trigger t where not t.tgisinternal and t.tgrelid in
     ('public.helmut_store'::regclass,'public.helmut_auth_state_nodes_local'::regclass,'public.llm_usage'::regclass,'public.briefings'::regclass)

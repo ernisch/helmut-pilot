@@ -12,7 +12,7 @@ const source = fs.readFileSync(path.resolve(__dirname, "../lib/helmut/local-unit
 let checks = 0;
 function harness(mode = "normal") {
   const f = H.fixture(); let state = clone(f.auth), wall = Date.parse(H.at), monotonic = 0n, changes = 0;
-  const calls = { authority: 0, runtime: 0, originalControls: 0, inputs: 0, profiles: 0, states: 0, artifacts: 0 }, artifacts = new Map();
+  const calls = { authority: 0, runtime: 0, controlRuntime: 0, bundles: 0, originalControls: 0, inputs: 0, profiles: 0, states: 0, artifacts: 0 }, artifacts = new Map();
   const advance = (wallMs = 1, monoMs = wallMs) => { wall += wallMs; monotonic += BigInt(monoMs) * 1000000n; };
   class Clock extends Date { constructor(value) { super(arguments.length ? value : wall); } static now() { return wall; } }
   const store = {
@@ -52,6 +52,14 @@ function harness(mode = "normal") {
     async getLageEntwurfsbeleg(_owner, id) { calls.artifacts++; advance(); return clone(artifacts.get(id) || null); },
     async readLocalUnitDiagnosticArtifact(_selection, _kind, id) { calls.artifacts++; advance(); return clone(artifacts.get(id) || null); }
   };
+  store.readLocalUnitDiagnosticControlRuntime = (...args) => { calls.controlRuntime++; return store.readLocalUnitDiagnosticRuntime(...args); };
+  store.readLocalUnitDiagnosticControlSnapshot = async (selection, claimId, index, stage) => {
+    calls.bundles++; assert.equal(index, calls.bundles - 1); assert.equal(stage, A.CONTROL_STAGES[index]);
+    assert.equal(claimId, A.current(state, f.selection).journal.claimId); return ({
+    original: await store.readLocalUnitDiagnosticOriginalControl(selection),
+    inputs: await store.readSynthetik500CurrentInputs(), profile: await store.getProfileFromDb(),
+    state: await store.readLocalUnitDiagnosticState(selection)
+  }); };
   const transport = Object.freeze({}), box = { module: { exports: {} }, structuredClone, Date: Clock, require(name) {
     if (name === "node:process") return { hrtime: { bigint: () => monotonic } };
     if (name === "./storage") return store;
@@ -133,7 +141,7 @@ async function main() {
     const h = harness(), { ack, verification } = await fullControls(h);
     assert.equal(ack.controlCount, 16); assert.equal(ack.full500Accepted, false);
     assert.equal(h.calls.inputs, 16); assert.equal(h.calls.profiles, 16); assert.equal(h.calls.runtime, 17);
-    assert.equal(h.calls.originalControls, 16);
+    assert.equal(h.calls.originalControls, 16); assert.equal(h.calls.controlRuntime, 16); assert.equal(h.calls.bundles, 16);
     assert.equal(h.calls.artifacts, 3);
     assert.deepEqual(Array.from(verification.controls, x => x.stage), [...A.CONTROL_STAGES]);
     assert.deepEqual(A.current(h.state(), h.f.selection).journal.verification,
