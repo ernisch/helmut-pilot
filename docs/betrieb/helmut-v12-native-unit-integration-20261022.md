@@ -1,13 +1,48 @@
 # V12: native Einzelunit-Anbindung, 22.10.2026
 
 Stand24.10.2026: teilweise abgeschlossen. Kein erfolgreicher Motorlauf, Unit60-
-oder500er-Reservenachweis. Basis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
+oder500er-Reservenachweis. Ausgangsbasis `c46d07ebddaf8914c747fbc84f8059888376d9c1`;
 Branch `codex/v12-unit60-native-integration-20261022`,
 [Entwurfs-PR936](https://github.com/ernisch/helmut-pilot/pull/936).
 Alte GOs und Claims bleiben verbraucht. Keine Production-Aktion, kein Merge und
 kein vollständiger500er-Lauf sind aus dieser Arbeit freigegeben.
 
-## 24.10.: vollständiger ABI-Abgleich und aktuelle CI-Sourcebindung
+## 24.10., aktueller Checkpoint: CI grün, volle Einzelunit weiter FAIL
+
+[CI40066809993](https://github.com/ernisch/helmut-pilot/actions/runs/40066809993)
+auf5516f3e23033f3a6179d4581d41c8317eacce128 ist vollständig SUCCESS,
+abgeschlossen06:07:19UTC. Die CurrentDelta-/Reviewreparatur ist damit tatsächlich
+in der Pflicht-CI bestätigt; daraus folgt keine native Motorabnahme.
+
+Der folgende Fall76af7337b7d60522c6d16e37a428a352 aufBundle5f54179e scheiterte:
+CLIExit1, zwei natürliche EOFs,138,046509s; Stage6 Interrupted/noRetry.
+Neun/16 Kontrollen und18 dazu verbundene Bundle-HTTP-Aufrufe sind belegt,
+Adapter65,839926211s und Entry66,8565s. Das echte9er-Tracepräfix bleibt im
+privaten Capture25815B/SHA25698ebfbf399e79bcf4d414cd9aeb59f6b5ea8396a1377af73c9a1070254f92c9d
+erhalten; vollständiger19er-Abschluss und finale Motorquittung fehlen.
+Native60s beginnt bewusst bei firstAuthority; der zugehörige6,202s-Befund darf
+nicht in einen anderen kanonischen Full500-Unitanker umgerechnet werden.
+Der Zeitanker und beide19.900ms-Waits wurden nicht geändert. Perform8,820701708s
+enthält Read3,424111s und Write4,797508s; diese Intervalle nicht addieren.
+
+Die vollständige gemeinsame Kernelgruppe ist nach letztem Exit leer:
+107Samples, Peak1.349.423.104B, alle sechs Speicherereignisse0. Originalflags und
+logischer Quellzustand unverändert. Der Gesamtbefund bleibt FAIL; weder Unit60,
+Auth30, Langzeitplateau,500MB-Puffer noch Full500 sind angenommen.
+
+Das redundante0ea8-Klararchiv wurde nach vorhandenem Vollrückwegc967 plus
+frischen Metadaten kontrolliert entfernt: netto+123.183.104B. Der Beleg misst
+10.806.091.776B nach Unlink, vor seiner eigenen Dateiallokation; der anschließende
+Root-Checkpoint hält10.806.087.680B frei fest. Dazu gehören68.669.440B Abstand
+zur Komponentenadmission10GiB und4.373.692.040B Rest zur Volladmission
+15.179.779.720B. Das ist ein damaliger Kapazitätssnapshot, kein frisches Starttor.
+[Recovery-Index](https://drive.google.com/file/d/1GVTjW-zDU9cz9JPsgNOu2d81MGEH7hW9/view):
+vorhandener geprüfter Vollrückdownload, keine neue Remote-SHA-/Decrypt-Behauptung
+und kein privaterKeyexport. Originale/RAW/POSTRUN und notwendige Belege bleibenKEEP.
+Nächster Functions4TX-Track nur PREP; noch kein Start oder Erfolgsbeleg.
+[Bereinigte Daten und Primärpins](belege/native-claim-only-20261023/NATIVE_76AF_CI_CAPACITY_CHECKPOINT_20261024.SAFE.json).
+
+## 24.10., vor76af: ABI-Abgleich und CI-Sourcebindung
 
 Source5f54179e ist als4c838b2a integriert: ausschließlich Controller36→38;
 29 native Funktionen plus9 Bridgehelper. Betroffene Inventarverbraucher gezielt
@@ -30,7 +65,8 @@ fallbezogene physische WAL-/OID-/Nonce-Details als nicht benötigt abgegrenzt.
 Kein zusätzlicherVollbackup als angebliche Byteidentitätsgarantie. Zusätzlich
 0ea8 nach physischemRestore/verifiziertemDrivebackup netto+371.298.304B ausgelagert.
 [Aktueller Befund](belege/native-claim-only-20261023/NATIVE_ABI_CI_SOURCE_CURRENT_20261024.SAFE.json).
-Eine frische volle native Einzelunit sowie aktuelle komplette CI bleiben offen.
+Zum damaligen ABI-Befund standen volle Einzelunit und komplette CI noch aus;
+der aktuelle Checkpoint oben dokumentiert deren spätere tatsächliche Ergebnisse.
 
 ## 24.10.: Kontrolllesepfad integriert, Startinventar korrigiert
 
@@ -51,9 +87,9 @@ Sourcechecks PASS (Output4275cc, tatsächlicher Exit0 desselben Laufs742144;
 Commitbody enthält einen Capture-Tippfehler). Unabhängiger Quellreview PASS.
 Kein Runtime-/Unit60-/Auth30-/Reservenachweis daraus ableiten.
 [Primärbefund/Fix](belege/native-claim-only-20261023/NATIVE_CONTROL_BUNDLE_SOURCE_FIX_20261024.SAFE.json).
-Nächster Schritt: frisch gebundene volle Einzelunit auf korrigiertem Code.
+Damals nächster Schritt: frisch gebundene volle Einzelunit auf korrigiertem Code.
 
-## 24.10.: Rollbacks PASS; Vergleich und letzte Einzelunit ausgewertet
+## 24.10., vor76af: Rollbacks PASS; Vergleich und vorherige Einzelunit
 
 SameRootUsage4150 bestand drei State-CAS/einen Usage-CAS mit vollständigem Abschluss.
 Die korrigierten Negativfälle e755/b237 bestanden: Beide erwarteten späten
@@ -68,7 +104,7 @@ State-PSQL905,736911→549,184351ms (−39,366%); gemeinsamer Kernelpeak
 kein reproduzierbarer Laufzeitgewinn aus je einem Fall bei ungeklärter Cachewärme.
 Die Bridge ist ein privater Diagnosewriter; der geteilte Voll500-Writer ist unverändert.
 
-Letzte volle Einzelunit7b2 auf603642aa scheiterte nach70,524240716s Adapterzeit
+Vorherige volle Einzelunit7b2 auf603642aa scheiterte nach70,524240716s Adapterzeit
 an `entry-terminal-deadline`: neun/16 Kontrollen bis send-R, keine Finalposition
 oder Endquittung. Alle zehn Sourcewrites COMMIT/ACK/Exits0/zwei EOFs;
 Hostmappingfehler/137-Enden folgten beim Abbruch und werden getrennt berichtet.

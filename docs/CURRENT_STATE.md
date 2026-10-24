@@ -4,42 +4,39 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 24.10.: Lesepfad integriert; frische Einzelunit noch offen
+## 24.10.: CI grün; volle Einzelunit76af weiter FAIL
 
-13.527 Dateien,84 Originale,V12-POSTRUN erhalten. Branch
-`codex/v12-unit60-native-integration-20261022`, Draft PR936. Bridge22679d99
-spart Graphdoppelarbeit im privaten Einzelunitwriter; Voll500-Writer unverändert.
-SameRootUsage4150 PASS: drei State-/ein Usage-CAS,History6000→6001,Ownrev3.
-Späte Mirror-/Outside-Negativfälle e755/b237 PASS: elf Tabellen/Katalog identisch,
-kein Commit/externes ACK,44/63 unabhängige Checks; früheres eb508 bleibt FAIL.
+Code5516f3e2: CI40066809993 vollständig SUCCESS am24.10.,06:07:19UTC.
+CurrentDelta-Reparatur mit neuer unabhängiger SOURCE-only-Kette72e68334;
+alte Belege unverändert. Verbraucher14/22/99 und Copyguards6 PASS.
+Branch `codex/v12-unit60-native-integration-20261022`, Draft PR936; keinMerge/Prod.
 
-Claimpaar6994→0ea8: State-PSQL905,737→549,184ms (−39,37%);
-gemeinsamer Peak1.218.666.496→1.252.741.120B: **keine RAM-Ersparnis**.
-Letzte volle Motor-Einzelunit7b2 auf603642aa FAIL/70,524s: neun/16 Kontrollen,
-keine Finalposition/Endquittung; zehn Sourcewrites COMMIT/ACK. Erster Fehler
-`entry-terminal-deadline`; Hostmappingfehler folgte. Peak1.348.653.056B/Events0
-ist wegen FAIL **kein Reservenachweis**. Unit60/Auth30/Plateau offen.
+Native76af aufBundle5f54179e: CLIExit1/zweiEOFs/138,046509s, Stage6
+Interrupted/noRetry. Neun/16 Kontrollen,18 verbundene Bundle-HTTP-Aufrufe;
+Adapter65,839926211s/Entry66,8565s. Genuine9er-Tracepräfix erhalten,
+kein vollständiger19er-Abschluss oder gültige Endquittung.
+Gemeinsamer Peak1.349.423.104B,107Samples, alle sechsEvents0, Gruppen leer;
+Originalflags/logischerQuellzustand unverändert. Wegen FAIL kein Unit60-/Auth30-/
+Plateau-/500MB-/Full500-Nachweis. Native Uhr bewusst abfirstAuthority(6,202s);
+kein Gleichsetzen mit kanonischemFull500-Unitanker, keine Ankeränderung.
+Beide19.900ms-Waits unverändert. Perform8,820701708s enthält Read3,424111s
+und Write4,797508s; verschachtelte Zeiten nicht addieren.
 
-Privater Kontrolllesepfad integriert: zwei statt sieben normale HTTP-Aufrufe,
-frische Runtime-/Katalog-/Original-Graph-/Own-Prüfung; immutable RPC-Solltuples
-vor Originalaufruf erhalten. Initialer Broker-Binary-SHA mit readonly FD-/9MD-
-Kontinuität; keine Guard-/Zeit-/Latenzlockerung. c336/76d87 und d79/6c02 sind
-Setup-FAILs vor Owner/Motor, keine Zeit-/RAM-Wirkungsmessung. Originale/Quellpins
-und logischer Quellzustand erhalten; vollständige Kernelenden/EOFs.
-Sourcecount29+Bridge9=38: Fix5f54179e/integriert4c838b2a schließt übersehene
-Controller36-Prüfung.30 Checks und1971 preOwner-Metadatenguards PASS; keinOwnerlauf.
+Zwei statt sieben Kontroll-HTTPs, frische Runtime/Katalog/Original/Own-Prüfung
+und initialer Binary-SHA mit readonly FD/9MD-Kontinuität integriert;
+keine Guard-/Zeitlockerung. c336/d79 bleiben Setup-FAILs. Alte7b2-FAIL-Belege,
+SameRootUsage4150 sowie e755/b237-Negative erhalten. Claimpaar6994→0ea8:
+State-PSQL−39,37%, Peak1.218.666.496→1.252.741.120B: keine RAM-Ersparnis.
 
-CI336ad5a2 scheiterte an alterStoragebindung in CurrentDelta. Neue unabhängige
-SOURCE-only-Reviewkette72e68334; alteBelege unverändert. DreiVerbraucher14/22/99,
-Copyguards6 PASS. NeueCI und volle Einzelunit noch erforderlich.
-Entbehrliche Bootstrap-PGs c336/d79 kontrolliert entfernt: netto+741.519.360B;
-OriginalRAW/POSTRUNMaster/Außenbelege/7b2 KEEP. PhysischeWal-/OID-/Nonce-Details
-als nicht benötigt qualifiziert; keine byteidentischePG-Recoverybehauptung.
-0ea8-PG nach Restore/Drive-Rückprüfung ausgelagert: zusätzlichnetto371.298.304B.
-Volladmission15.179.779.720B offen. AlteGOs/Claims verbraucht;32frischeBedingungen
-und neues konkretes500erGO Pflicht. KeinMerge/Prod.
-[Aktueller ABI-/CI-/Kapazitätsbefund](betrieb/belege/native-claim-only-20261023/NATIVE_ABI_CI_SOURCE_CURRENT_20261024.SAFE.json),
-[Vorwerte](betrieb/belege/native-claim-only-20261023/NATIVE_SAFETY_PAIR_UNIT60_20261024.SAFE.json),
+0ea8-Klararchiv nach vorhandenem Vollrückwegc967+frischenMetadaten kontrolliert
+entfernt: netto+123.183.104B. Danach dokumentiert10.806.087.680B frei,
+Komponentenabstand68.669.440B; Volladmission15.179.779.720B,
+Restlücke4.373.692.040B. Keine neue Remote-SHA-/Decrypt-Behauptung/Keyexport.
+RAW/POSTRUN/Originale und notwendige Außenbelege KEEP; frühereBootstrap-PGs
+netto+741.519.360B und0ea8-PG+371.298.304B bleiben historische Einzelphasen.
+NächsterFunctions4TX-Track ausschließlich PREP, noch kein Start. Alle alten
+GOs/Claims verbraucht;32 frische Bedingungen und konkretes neues500erGO Pflicht.
+[Bereinigter Checkpoint](betrieb/belege/native-claim-only-20261023/NATIVE_76AF_CI_CAPACITY_CHECKPOINT_20261024.SAFE.json),
 [Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
