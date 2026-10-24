@@ -291,5 +291,5 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 24.10.: JS-Einmalpfad spart Knotenrekonstruktion/Hashsatz; synthetisch155Gruppen/
 ChecksPASS. NativeQuellbindung lehnt neueBytes ab; neueQualifikation und eine
 vollständigeEinzelunitmessung imQuellthread offen. KeinUnit60-/500MB-Beweis.
-Branch `codex/unit60-js-state-work-20261024`, keinMerge/Prod. Sehr hoch.
+Branch `codex/unit60-js-state-work-20261024`, DraftPR938, keinMerge/Prod. Sehr hoch.
 [Änderung, Tests und Messauftrag](betrieb/unit60-js-immutable-node-reuse-20261024.md).

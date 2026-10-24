@@ -4,6 +4,9 @@ Stand 24.10.2026. **Teilweise abgeschlossen:** Code und gezielte synthetische
 Prüfungen vorhanden; neue native Qualifikation, unabhängige Endannahme und echter
 Zeit-/RAM-Nachweis offen. Basis `2fc821fd7bbdef1cf9846001e041a847a9f58f8f`,
 Branch `codex/unit60-js-state-work-20261024`. Kein Merge oder Productioneingriff.
+Codecommit `740022b66200423598ff7c99305c8c9d53305586`, gepusht als
+[Entwurfs-PR 938](https://github.com/ernisch/helmut-pilot/pull/938).
+GitHub-CI beim Veröffentlichen noch ausstehend; lokaler Qualifikationsfehler unten.
 
 ## Ursache und Änderung
 
