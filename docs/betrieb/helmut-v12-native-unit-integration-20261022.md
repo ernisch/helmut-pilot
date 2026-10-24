@@ -7,6 +7,27 @@ Branch `codex/v12-unit60-native-integration-20261022`,
 Alte GOs und Claims bleiben verbraucht. Keine Production-Aktion, kein Merge und
 kein vollständiger500er-Lauf sind aus dieser Arbeit freigegeben.
 
+## 24.10.: Kontrolllesepfad integriert, Startinventar korrigiert
+
+94fba5bb (im Arbeitsbranch13ea9657) ergänzt den privaten nativen Diagnosepfad:
+Normalkontrollen nutzen zwei statt sieben HTTP-Aufrufe. Runtime/Katalog bleiben
+frisch; der zweite Aufruf nutzt Original-Graphleser/Own-Zustand. Der Broker prüft
+immutable Original-RPC-Solltuples vor Upstream, SQL vor OriginalGraph. Keine
+Control-/Scope-/Zeit-/Latenzlockerung. Der Broker ersetzt wiederholte Binary-SHAs
+durch initialen FD-SHA mit readonly Mount-/Namespace-/FD-/9MD-Kontinuität.
+
+Der erste tatsächliche Fall76d87/c336 scheiterte vor Motor und Claim an einer
+veralteten exakten Sourceanzahl27 statt29. Motor/Provider0, Source/Originale
+unverändert; Exit1/zwei natürliche EOFs, Kernel bis letztem Exit leer/Events0.
+Setup-Peak1.051.852.800B belegt keine Wirkung des neuen Lesepfads.
+94fba5bb korrigiert exakt29+9 disjunkte Helper; neue Tests binden aktuelle DDL,
+beide Bundle-Signaturen und Missing/Duplicate/Overlap-Negativfälle.21 gezielte
+Sourcechecks PASS (Output4275cc, tatsächlicher Exit0 desselben Laufs742144;
+Commitbody enthält einen Capture-Tippfehler). Unabhängiger Quellreview PASS.
+Kein Runtime-/Unit60-/Auth30-/Reservenachweis daraus ableiten.
+[Primärbefund/Fix](belege/native-claim-only-20261023/NATIVE_CONTROL_BUNDLE_SOURCE_FIX_20261024.SAFE.json).
+Nächster Schritt: frisch gebundene volle Einzelunit auf korrigiertem Code.
+
 ## 24.10.: Rollbacks PASS; Vergleich und letzte Einzelunit ausgewertet
 
 SameRootUsage4150 bestand drei State-CAS/einen Usage-CAS mit vollständigem Abschluss.

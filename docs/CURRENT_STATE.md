@@ -4,38 +4,39 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
-## 24.10.: Rollbacks bestanden; letzte Einzelunit weiterhin zu langsam
+## 24.10.: Lesepfad integriert; frische Einzelunit noch offen
 
-13.527 Dateien, 84 Originale und V12-POSTRUN erhalten. Branch
+13.527 Dateien,84 Originale,V12-POSTRUN erhalten. Branch
 `codex/v12-unit60-native-integration-20261022`, Draft PR936. Bridge22679d99
-reduziert Graphdoppelarbeit nur im privaten Einzelunitwriter; der gemeinsame
-Voll500-Writer bleibt unverändert. Kontrollleser und Budgetfix bestehen.
+spart Graphdoppelarbeit im privaten Einzelunitwriter; Voll500-Writer unverändert.
+SameRootUsage4150 PASS: drei State-/ein Usage-CAS,History6000→6001,Ownrev3.
+Späte Mirror-/Outside-Negativfälle e755/b237 PASS: elf Tabellen/Katalog identisch,
+kein Commit/externes ACK,44/63 unabhängige Checks; früheres eb508 bleibt FAIL.
 
-SameRootUsage4150 PASS: drei State-CAS/ein Usage-CAS, History6000→6001,
-Ownrevision3 und vollständige Exits. Die korrigierten Negativfälle e755/b237
-bestanden: späte Mirror-/Outside-Fehler rollen Original-CAS und Own-Zustand
-zurück; elf Tabellen/Katalog logisch identisch, kein Commit/externes ACK.
-44/63 unabhängige Belegchecks PASS. Früheres eb508 bleibt FAIL.
+Claimpaar6994→0ea8: State-PSQL905,737→549,184ms (−39,37%);
+gemeinsamer Peak1.218.666.496→1.252.741.120B: **keine RAM-Ersparnis**.
+Letzte volle Motor-Einzelunit7b2 auf603642aa FAIL/70,524s: neun/16 Kontrollen,
+keine Finalposition/Endquittung; zehn Sourcewrites COMMIT/ACK. Erster Fehler
+`entry-terminal-deadline`; Hostmappingfehler folgte. Peak1.348.653.056B/Events0
+ist wegen FAIL **kein Reservenachweis**. Unit60/Auth30/Plateau offen.
 
-Erstes Claimpaar6994→0ea8, gleiche Eingaben/Settings: State-PSQL
-905,737→549,184ms (−39,37%); gemeinsamer Peak1.218.666.496→1.252.741.120B.
-**Keine RAM-Ersparnis** und kein reproduzierbarer Zeitgewinn aus nur einem Paar.
-Letzte volle Einzelunit7b2 auf603642aa FAIL: Adapter70,524s, neun/16 Kontrollen
-bis send-R, keine Finalposition/Endquittung. Alle zehn Sourcewrites COMMIT/ACK;
-erster Fehler `entry-terminal-deadline`, späterer Hostmappingfehler getrennt.
-Peak1.348.653.056B/Events0 und vollständige letzte Exits sind wegen FAIL
-**kein 500MB-Reservenachweis**. Unit60/Auth30/Plateau bleiben offen.
-Nächster Umbau: belegte wiederholte Lese-/Prüfarbeit vorR reduzieren, ohne
-Frist-/Latenz-/Guardlockerung. Abgeschlossene Readonly-/U/Parts-Prüfungen übernehmen.
+Neuer privater Kontrolllesepfad: zwei statt sieben normale HTTP-Aufrufe,
+frische Runtime-/Katalogprüfung und Original-Graph-/Own-Lesen; immutable RPC-
+Solltupleprüfung vor Originalaufruf erhalten. Broker bindet initialen Binary-SHA
+an frische readonly FD-/Metadatenkontrollen. Guard-/Zeit-/Latenzregeln unverändert.
+76d87/c336 endete vor Motor (0Calls): veralteter exakter Sourcecount27 statt29.
+Originale/Quellpins/logischer Quellzustand erhalten, Kernel/EOFs vollständig;
+Setup-Peak1.051.852.800B ist kein Zeit-/RAM-Erfolg. Enger Fix94fba5bb/integriert
+13ea9657: exakt29+9 getrennte Helper,21 Sourcechecks/Review PASS.
+Frische Laufbindung und tatsächliche volle Einzelunit erforderlich.
+[Neuer Befund](betrieb/belege/native-claim-only-20261023/NATIVE_CONTROL_BUNDLE_SOURCE_FIX_20261024.SAFE.json).
 
-CI[40051723434](https://github.com/ernisch/helmut-pilot/actions/runs/40051723434)
-auf603642aa vollständig SUCCESS einschließlich84 Originale/Z22; Folgecode brauchtCI.
-Eigene abgeschlossene PG-Kopien nach physischem Restore, verschlüsseltem
-Driveupload und vollständigem Rückdownload/Hashvergleich ausgelagert; Originale,
-Metadaten und benötigte Datenbanken KEEP. Letzte Dreierphase netto+1.064.271.872B.
-Kapazität frisch prüfen; Volladmission15.179.779.720B bleibt offen.
-Alte GOs/Claims verbraucht;32 frische Startbedingungen und neues konkretes500erGO
-weiter Pflicht. Keine Production/Merges. [Aktuelle Zahlen/Primärpins](betrieb/belege/native-claim-only-20261023/NATIVE_SAFETY_PAIR_UNIT60_20261024.SAFE.json),
+CI5e2fd90e grün einschließlich geschützter Originale; neuer Code brauchtCI.
+Abgeschlossene eigene PG-Kopien nach Restore und verschlüsseltem Drive-
+Rückdownload/Hashvergleich ausgelagert; Originale/Metadaten/benötigteDBs KEEP.
+Kapazität frisch prüfen; Volladmission15.179.779.720B offen. Alte GOs/Claims
+verbraucht;32 frische Bedingungen/neues konkretes500erGO Pflicht. Kein Merge/Prod.
+[Vorwerte](betrieb/belege/native-claim-only-20261023/NATIVE_SAFETY_PAIR_UNIT60_20261024.SAFE.json),
 [Details](betrieb/helmut-v12-native-unit-integration-20261022.md).
 
 ## 21.10.: V12 fehlgeschlagen; zwei Motoränderungen lokal belegt
