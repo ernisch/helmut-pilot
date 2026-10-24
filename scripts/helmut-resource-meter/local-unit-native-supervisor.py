@@ -224,9 +224,14 @@ def arguments(argv=None):
     modes.add_argument('--diagnose-native-transaction-guard', action='store_true',
                        help='fresh COPY+authority+seed; one genuine compiler SQL safety case, never Entry/Unit')
     parser.add_argument('--transaction-guard-case', choices=('state', 'same-root-usage', 'late-old-mirror', 'late-outside'))
+    parser.add_argument('--profile-functions', action='store_true',
+                        help='instrument only the explicit same-root-usage component; never an Entry/Unit run')
     args = parser.parse_args(argv)
     if args.diagnose_native_transaction_guard != (args.transaction_guard_case is not None):
         parser.error('transaction guard mode requires exactly one explicit transaction-guard-case')
+    if args.profile_functions and not (args.diagnose_native_transaction_guard
+                                      and args.transaction_guard_case == 'same-root-usage'):
+        parser.error('function profiling requires the explicit same-root-usage component')
     return args
 
 
@@ -386,7 +391,11 @@ def main():
         elif args.diagnose_native_transaction_guard:
             config['nativeDiagnosticMode'] = 'native-transaction-guard-v1'
             config['transactionGuardCase'] = args.transaction_guard_case
-            config['transactionGuardProbePin'] = pin(BIN / 'local-unit-native-transaction-guard.js')
+            probe = 'local-unit-native-transaction-guard.js'
+            if args.profile_functions:
+                config['transactionGuardFunctionProfile'] = True
+                probe = 'local-unit-native-function-profile.js'
+            config['transactionGuardProbePin'] = pin(BIN / probe)
             if config['transactionGuardProbePin'] not in config['sourceCodePins']:
                 raise RuntimeError('transaction guard probe outside genuine code closure')
         # Host control plane only; never expose Docker/socket to SOURCE or the
@@ -514,6 +523,8 @@ def main():
             readonly_http_result(result)
         if args.diagnose_native_transaction_guard:
             transaction_guard_result(result, args.transaction_guard_case)
+            if args.profile_functions and result.get('functionProfileObserved') is not True:
+                raise RuntimeError('function profile result not independently observed')
         if args.diagnose_native_claim_only:
             if result.get('schema')!='helmut-local-unit-native-claim-only-result/1' or result.get('diagnosticMode')!='fresh-claim-only-v1':
                 raise RuntimeError('claim-only mode/result missing')

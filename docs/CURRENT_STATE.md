@@ -4,19 +4,32 @@
 nur damals gültig. Cockpitstand `8ca835cec22e738d2ffb2c7a6b55550cdf667a63`.
 [Vollständiger Vorzustand](archive/project_state/2026_10_20_CURRENT_STATE_before_local_ram_fix_compaction.md).
 
+## 25.10. Istanbul: native Funktionsmessung vorbereitet, Zeitfix offen
+
+Branch `codex/native-auth-critical-path-20261025` auf PR940/0f643b50:
+separater, expliziter Vier-TX-Profiler; normaler Guard exakt494e74fe erhalten.
+143 gezielte synthetische Prüfungen und unabhängiger SOL-Quellenreview PASS;
+echter Quellenconsumer8/8,20Original-/38nativeDefinitionen,9Helper geprüft.
+Keine native Ausführung, keine gemessene Zeitersparnis und kein500MB-Nachweis.
+3ac bleibt FAIL65,15s/9Kontrollen. Schnittstellenverlagerung verworfen;
+native Fusion zeitlich UNKNOWN; JIT aktiviert, Auslösung/Dauer UNKNOWN.
+Komponenten-GO und frische Admission fehlen; keinBereinigen/Unit60/500erStart.
+PR941/421558bb samt roterCI bleibt separat unverändert.
+[Vorbereitung, Grenzen und nächste Freigabe](betrieb/native-auth-kernel-profile-20261025.md).
+
 ## 24.10.: U/Parts-Rücknahme; bestehende Quellenqualifikation wieder gültig
 
 Branch `codex/unit60-restore-qualified-pair-20261024` startet auf PR939/e3623324.
 Nur unqualifizierte PR938-Optimierung zurückgenommen: Parts27356B/0ff03924,
 U32050B/dc12a5c8 exakt936. PR937 und Guard-/Workerkorrekturen bytegleich939.
 Manifest/nativeBelege/Gates unverändert. Cache-Annahme und99Negative,Artefakt10,
-Atomic22 PASS; gemeinsame finale Pflicht-CI am neuen PR zu prüfen.
+Atomic22 PASS; PR940 Pflicht-CI40126400110 SUCCESS, kein neuer Gesamtbeleg.
 Keine Bereinigung/Originalübertragung/nativeAusführung/Merge/Deployment.
 [Exakte Pins, Prüfgrenzen und Rückweg](betrieb/unit60-qualified-pair-restore-20261024.md).
 Der frühere [939-Blocker](betrieb/unit60-common-integration-20261024.md) betrifft
 weiterhin dessen erhaltene938-Variante, nicht das wiederhergestellte Quellenpaar.
 
-Letzter Quellstand936/5516f3e2: CI40066809993 SUCCESS, kein neuer Gesamtbeleg.
+Historischer Quellstand936/5516f3e2: CI40066809993 SUCCESS, kein neuer Gesamtbeleg.
 Native76af weiter FAIL:65,839926211s,9/16Kontrollen,kein19er-Abschluss;
 Peak1349423104B ist keinUnit60-/Reservebeweis. Originale/RAW/POSTRUN KEEP.
 Damals10806087680B frei, Volladmission15179779720B; Lücke4373692040B,
@@ -273,7 +286,8 @@ Codex Cloud ist der Arbeitsweg. Modell und Denkstufe wählt der Betreiber; kein 
 
 ## Nächster notwendiger Schritt
 
-Pflicht-CI auf dem endgültigen Rücknahmekopf prüfen. Danach frische Laufbindung
-und Admission im Quellkontext für genau einen nativen60s-Einzeltest vorbereiten.
-Kein erneuter U/Parts-Vergleich für geänderte Bytes in diesem Branch; echte60s-/
-Speicher-/500er-Abnahme bleibt offen. KeinMerge/Deployment. Sehr hoch.
+Zunächst begrenzte native Vier-TX-Funktionsmessung nach separater konkreterGO
+und frischer10GiB-Admission; fehlende Kapazität nicht durch diesen Auftrag bereinigen.
+Erst anhand echter Funktionszeiten einen ausreichend wirksamen Kernumbau wählen;
+kein weiterer verworfener Schnittstellen-/U/Parts-Vergleich. Unit60/500MB/500er offen.
+KeinMerge/Deployment. Sehr hoch.

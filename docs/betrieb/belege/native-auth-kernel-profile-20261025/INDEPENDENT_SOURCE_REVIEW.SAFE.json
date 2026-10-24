@@ -1,0 +1,53 @@
+{
+  "schema": "helmut-independent-native-profile-source-review/1",
+  "verdict": "PASS_SOURCE_ONLY",
+  "reviewer": {
+    "agent": "/root/night_profile_safety_review",
+    "model": "gpt-6.1-sol",
+    "reasoning": "xhigh",
+    "verdict": "PASS_SOURCE_ONLY_NO_REMAINING_P0_P1",
+    "nativeExecution": false,
+    "fixedBeforeExecution": "Closed publication prefix retained; consistent filename and actual-publisher in-memory regression tests."
+  },
+  "sourcePins": [
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-function-profile.js",
+      "bytes": 45106,
+      "sha256": "8c7912de51311753a2ebf21fb4b707d581c1deb324777625dde7cb13b04d11b5"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-function-profile-test.js",
+      "bytes": 6997,
+      "sha256": "137d8432cfd573f1cd0fe5d2be4a9e0f18dfd1fde689a31834972e9b1a8c9242"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-function-profile-routing-test.py",
+      "bytes": 4343,
+      "sha256": "408bcb10a83c1847609b099734c4473f4201861024ac077858e409da4c0f5279"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-supervisor.py",
+      "bytes": 43814,
+      "sha256": "f34864e92e734c4213a95047b62c19cfceb2208ea809d70ae22bc1949043c5f3"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-execution-controller.py",
+      "bytes": 81430,
+      "sha256": "ed758f642e10f8b3bc43ad9fb408dd7d8ec239dc2ab16f10ca9fd9308f3b9f70"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-transaction-guard.js",
+      "bytes": 36719,
+      "sha256": "494e74fe0326601bc567a07daf6100929acebacafaf47cf473babd01cca95f63"
+    }
+  ],
+  "sourceOnly": true,
+  "nativeRuntimeQualification": false,
+  "open": [
+    "authentic runtime/OID/source read capability",
+    "fresh Original/POSTRUN/authority/kernel/mount/process/time/once bindings",
+    "sufficient disk admission",
+    "separate concrete native-component GO"
+  ],
+  "testsExecutedByReviewer": false
+}

@@ -1,0 +1,233 @@
+{
+  "schema": "helmut-night-native-function-profile-preparation/1",
+  "status": "SOURCE_PREPARED_NOT_EXECUTION_READY",
+  "request": {
+    "source": "User overnight development task",
+    "fullNativeUnitOr500Authorized": false,
+    "productionAuthorized": false,
+    "deletionsAuthorized": false,
+    "externalModelScope": "Explicit development router tasks; no private originals or secrets"
+  },
+  "environment": {
+    "environmentId": "ccarenv_b64_Y2NhcmVudl8yOTU4NWEyOWM5NjA4MTkxYjhjNTkwOTY0ZGZkYjllOQ",
+    "sameExistingCloud": true,
+    "initialConnectivity": "connected",
+    "initialDesiredPhase": "running",
+    "initialObservedPhase": "running",
+    "initialSpecRevision": 487
+  },
+  "base": {
+    "pr": 940,
+    "commit": "0f643b50084c3b3b11fb0279ab0acef6c09bdcaa",
+    "worktree": "/workspace/helmut-auth-critical-path-20261025",
+    "branch": "codex/native-auth-critical-path-20261025"
+  },
+  "decisions": {
+    "rejectedCoLocationWrapperNotReopened": true,
+    "receiptLocalFusion": {
+      "safety": "POTENTIALLY_SAFE_WITH_SAME_PRINCIPAL_AND_SNAPSHOT",
+      "performance": "UNKNOWN",
+      "notImplemented": true,
+      "limits": "Writer and runtime RLS views cannot reuse each other's proof solely because backend TX matches"
+    },
+    "jit": {
+      "enabledInWorker": true,
+      "triggeredInSlowQueries": "UNKNOWN",
+      "duration": "UNKNOWN",
+      "workerSettingUnchanged": "on",
+      "noSpeculativeToggle": true
+    },
+    "whyThisMeasurement": "Disjoint outer timings do not identify which repeated native validation/materialization actually dominates. Function-level actual time is needed before selecting a sufficient kernel change.",
+    "notAnOptimizationOrTimeSavingClaim": true
+  },
+  "pastEvidence": {
+    "sourcePhaseExtraction": {
+      "path": "/workspace/helmut-client-first-failure-evidence-20261025/AUTH_SOURCE_PHASE_EXTRACTION.SAFE.json",
+      "sha256": "8335cfabfd4c94dbc17b2766c8757c4cd2f10f500e25843a9b818b6ab4d879cd"
+    },
+    "nativeWritePhases3acNS": {
+      "prepare": 139646232,
+      "psql": 3983141142,
+      "accept": 7939297
+    },
+    "requiredPreRSavingNSStrictlyOverPlusUnknownTail": 4583128000,
+    "unknownCompletionTail": null,
+    "existingOldProfileGuard": {
+      "sha256": "22fb3cb729161dc446babf0d8cc34eae8ada5c734d28ec728249f400dc6b5114",
+      "notCopiedWholesale": true,
+      "reason": "Older version would remove current closed first-failure diagnostics"
+    }
+  },
+  "futureScope": {
+    "cli": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12",
+      "-I",
+      "-S",
+      "-B",
+      "/workspace/helmut-auth-critical-path-20261025/scripts/helmut-resource-meter/local-unit-native-supervisor.py",
+      "--diagnose-native-transaction-guard",
+      "--transaction-guard-case",
+      "same-root-usage",
+      "--profile-functions"
+    ],
+    "freshMeasuredSetups": 1,
+    "freshNativeComponentCases": 1,
+    "writes": [
+      "CLAIM_STATE",
+      "RESERVE_D",
+      "SEND_D",
+      "SAME_ROOT_USAGE"
+    ],
+    "exactCoreCASObservedDelta": 4,
+    "extraReadOnlyStatsSnapshots": 2,
+    "trackFunctions": "all in exactly four write sessions, unchanged default none elsewhere",
+    "noCounterResets": true,
+    "pgStatClearSnapshotMeaning": "Statistics-read snapshot only, never a database/file-cache purge or actual counter reset",
+    "originalCompilerSQL": "byte-identical stdin; tracking SET precedes and force-next-stats-flush DO follows it in same actual psql child",
+    "missingStats": "OPEN/null; never fabricate measured zero",
+    "timeInterpretation": "Instrumented component only, nested total times must not be added; self and total times reported separately; no inferred Unit60 saving",
+    "jitInterpretation": "No claim that function stats alone prove JIT was triggered or identify JIT generation time",
+    "originals": "Existing authentic V12 POSTRUN and all originals stay unchanged; exactly one fresh isolated diagnostic working copy",
+    "freshAuthority": "New case/time/source/runtime/kernel/mount/process/one-time bindings required; all historical GOs/claims consumed",
+    "disk": {
+      "requiredBeforeStartBytes": 10737418240,
+      "minimumDuringBytes": 8589934592,
+      "capacityFreshlyCheckedBeforeAnyNativeExecution": true,
+      "noCleanupFromThisTask": true
+    },
+    "resources": "Unchanged existing native budget and CPU/heap/kernel contracts; all lifecycle and actual close/EOF checks required",
+    "onFailure": "Stop on FAIL/UNKNOWN/missing data, preserve all first-error evidence and working data, no automatic replay/retry",
+    "forbidden": [
+      "NativeUnit entry",
+      "Helmut motor",
+      "provider or paid Production models",
+      "full500",
+      "Production changes",
+      "deletions",
+      "merges",
+      "deployments",
+      "keys/original transfers"
+    ],
+    "success": "Only a fully closed independently reviewed diagnostic profile with all original safeguards intact; no Auth30/Unit60/500MB/500er acceptance",
+    "publishedProfile": "TRANSACTION_GUARD_FUNCTION_PROFILE.SAFE.json",
+    "nativeOIDBinding": "Actual new database OIDs and all qualified source bodies must be established by genuine qualifiers during the separately authorized measured setup, before the four writes; no invented or historical OIDs.",
+    "commitBinding": "Exactly the final committed clean HEAD named in the concrete GO; all reviewed source pins must match."
+  },
+  "codexGoals": {
+    "persistentGoalToolAvailable": false,
+    "noScheduledOrAutomaticFutureRunCreated": true
+  },
+  "routerCallsSoFar": [
+    {
+      "model": "deepseek-flash",
+      "effort": "high",
+      "mode": "read",
+      "status": "completed",
+      "inputTokens": 65512,
+      "outputTokens": 8127,
+      "appliedFiles": 0
+    },
+    {
+      "model": "deepseek-v4-pro",
+      "effort": "high",
+      "mode": "read",
+      "status": "blocked_on_missing_runtime_JIT_fact",
+      "inputTokens": 50194,
+      "outputTokens": 10332,
+      "appliedFiles": 0
+    },
+    {
+      "model": "deepseek-flash",
+      "effort": "high",
+      "mode": "write",
+      "status": "blocked_missing_public_qualification_definition",
+      "inputTokens": 21125,
+      "outputTokens": 4521,
+      "appliedFiles": 0
+    },
+    {
+      "model": "deepseek-flash",
+      "effort": "high",
+      "mode": "write",
+      "status": "incomplete_max_output_tokens_no_edits",
+      "inputTokens": 38072,
+      "outputTokens": 32768,
+      "appliedFiles": 0
+    }
+  ],
+  "developmentRouterFees": "UNKNOWN, not zero; distinct from unchanged operator Production cost contract",
+  "PR941": {
+    "unchanged": true,
+    "unmerged": true,
+    "ciFailureSeparateOpen": true,
+    "noKeyOrOtherThreadSearch": true,
+    "noRerun": true
+  },
+  "nativeExecutionAuthorized": false,
+  "observedAtUTC": "2026-10-24T23:09:51.515822+00:00",
+  "sourcePins": [
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-function-profile.js",
+      "bytes": 45106,
+      "sha256": "8c7912de51311753a2ebf21fb4b707d581c1deb324777625dde7cb13b04d11b5"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-function-profile-test.js",
+      "bytes": 6997,
+      "sha256": "137d8432cfd573f1cd0fe5d2be4a9e0f18dfd1fde689a31834972e9b1a8c9242"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-function-profile-routing-test.py",
+      "bytes": 4343,
+      "sha256": "408bcb10a83c1847609b099734c4473f4201861024ac077858e409da4c0f5279"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-supervisor.py",
+      "bytes": 43814,
+      "sha256": "f34864e92e734c4213a95047b62c19cfceb2208ea809d70ae22bc1949043c5f3"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-execution-controller.py",
+      "bytes": 81430,
+      "sha256": "ed758f642e10f8b3bc43ad9fb408dd7d8ec239dc2ab16f10ca9fd9308f3b9f70"
+    },
+    {
+      "path": "scripts/helmut-resource-meter/local-unit-native-transaction-guard.js",
+      "bytes": 36719,
+      "sha256": "494e74fe0326601bc567a07daf6100929acebacafaf47cf473babd01cca95f63"
+    }
+  ],
+  "codeGlobsFreshCount": 412,
+  "tests": {
+    "profilePure": 50,
+    "routingMethods": 8,
+    "originalGuardBoundaries": 52,
+    "controllerPure": 33,
+    "totalReported": 143,
+    "nativeExecutions": 0
+  },
+  "sourceConsumer": {
+    "sourceOnly": true,
+    "inputs": 8,
+    "originalDefinitions": 20,
+    "nativeDefinitions": 38,
+    "helpers": 9,
+    "sha256": "a48bcd666bf0633cb2d51c0406205eb19667da99ea071ba69b53712ec6cb3d4a",
+    "newNativeRuntimeQualified": false
+  },
+  "independentSourceReview": {
+    "agent": "/root/night_profile_safety_review",
+    "model": "gpt-6.1-sol",
+    "reasoning": "xhigh",
+    "verdict": "PASS_SOURCE_ONLY_NO_REMAINING_P0_P1",
+    "nativeExecution": false,
+    "fixedBeforeExecution": "Closed publication prefix retained; consistent filename and actual-publisher in-memory regression tests."
+  },
+  "capacityAtPreparation": {
+    "freeBytes": 10490601472,
+    "startRequiredBytes": 10737418240,
+    "freshAdmissionPassed": false,
+    "deficitBytes": 246816768
+  },
+  "approvalTemplate": "Authorize exactly one measured local setup and exactly one same-root-usage four-write function profile with --profile-functions, bound to this plan and the final clean commit named in GO, only after all fresh start gates. No Entry/Unit/motor/provider/full500, deletion or retry."
+}
