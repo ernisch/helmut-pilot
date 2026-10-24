@@ -10,7 +10,7 @@ C=importlib.util.module_from_spec(spec);spec.loader.exec_module(C)
 class AtomicIntegrationTest(unittest.TestCase):
     def local_source_delta_pin(self):
         # This explicit SOURCE-only input grants no execution/full500 authority.
-        return C.pin(BIN.parents[1]/'docs/betrieb/belege/local-unit-storage-source-20261022/CURRENT_LOCAL_SOURCE_DELTA.SAFE.json')
+        return C.pin(BIN.parents[1]/'docs/betrieb/belege/local-unit-control-bundle-source-20261024/CURRENT_LOCAL_SOURCE_DELTA.SAFE.json')
 
     def assert_rendered_environment(self, files, candidate, calendar=None):
         # Execute only the actual emitted delegation lines, with the real
