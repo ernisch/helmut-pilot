@@ -218,6 +218,8 @@ async function start() {
   need(!attempted && process.argv.length === 3 && process.argv[2] === "--probe-native-transaction-guard", "explicit-once-cli"); attempted = true;
   const actualNodeBudget = nodeBudget(), { value: c, pin: configPin } = jsonFile(CONFIG, { privateFile: true });
   const target = checkConfig(c), self = processIdentity(process.pid);
+  need(c.case === "same-root-usage", "function-profile-fixed-case");
+  let functionStatsBefore = null, functionStatsAfter = null;
   let lastUTC = beganUTC, serial = 0, children = new Set(), captures = [], transactions = [], claimConfirmed = false;
   need(self.exe === c.nodePin.path && self.membership === c.measuredCgroup.procMembership, "self-binding");
   for (const pin of [c.selfPin,c.nodePin,c.authorityPin,c.transactionPin,c.psqlPin,c.postgres.exePin,...Object.values(c.codePins)])
@@ -246,12 +248,18 @@ async function start() {
   async function psql(sql, label, negative = null) {
     guard(); need(/^[A-Z_]{1,40}$/.test(label) && Buffer.byteLength(sql)<=CAP && children.size===0 && serial<32, "bounded-serial-psql");
     readFile(c.psqlPin.path,{pin:c.psqlPin,cap:256*1024*1024,keep:false});
+    const profiledWrite = ["CLAIM_STATE","RESERVE_D","SEND_D","SAME_ROOT_USAGE"].includes(label);
     const index = serial++, child = childProcess.spawn(c.psqlPin.path,["-X","-qAt","-w","-h","/ram/socket","-p","5432","-U","postgres","-d",c.database,
-      "-v","ON_ERROR_STOP=1","-v","VERBOSITY=terse","-f","-"], {env:{PATH:"/usr/lib/postgresql/17/bin:/usr/bin:/bin",LANG:"C.UTF-8",LC_ALL:"C.UTF-8",
+      "-v","ON_ERROR_STOP=1","-v","VERBOSITY=terse",
+      ...(profiledWrite ? ["-c","SET track_functions = 'all'"] : []),
+      "-f","-",
+      ...(profiledWrite ? ["-c","DO $function_profile_flush$ BEGIN PERFORM pg_catalog.pg_stat_force_next_flush(); END $function_profile_flush$;"] : [])], {env:{PATH:"/usr/lib/postgresql/17/bin:/usr/bin:/bin",LANG:"C.UTF-8",LC_ALL:"C.UTF-8",
       PGCLIENTENCODING:"UTF8",PGCONNECT_TIMEOUT:"3",LD_LIBRARY_PATH:c.libraryPath,HOME:"/ram",TMPDIR:"/ram"},stdio:["pipe","pipe","pipe"]});
     children.add(child);
     return new Promise((resolve,reject) => {
       const out=[],err=[], row={index,label,pid:child.pid,sqlSHA256:sha(sql),exitObserved:false,exitCode:null,exitSignal:null,stdoutEOF:false,stderrEOF:false,failure:null};
+      row.functionProfile = { enabled:profiledWrite, compilerSQLOnUnchangedStdin:true,
+        forceNextFlushCommandAfterCompiler:profiledWrite, noExtraResultRowsAllowed:true };
       let outBytes=0,errBytes=0,done=false,killer, identity;
       const abort = () => { row.failure ||= "capture-unknown"; if (!done && child.exitCode===null && child.signalCode===null) {
         child.kill("SIGTERM"); killer ||= setTimeout(()=>child.kill("SIGKILL"),1000); } };
@@ -293,6 +301,55 @@ async function start() {
   }
   const authRead=()=>U.read({rowId:"main-auth",target,request:async(endpoint,options)=>jsonQuery(readonlySQL(c,endpoint,options),"AUTH_READ")});
   const snapshot=()=>jsonQuery(snapshotSQL(c),"SNAPSHOT");
+  // Only the four write sessions enable tracking. This reader and all integrity
+  // reads retain the unchanged server default. No reset, warmup or cache purge.
+  async function functionStats(label) {
+    const sources = [...c.qualification.originalSources,...c.qualification.nativeSources];
+    const byOID = new Map();
+    for (const source of sources) {
+      need(typeof source.oid === "string" && /^[1-9][0-9]{0,9}$/.test(source.oid), "function-profile-oid");
+      if (byOID.has(source.oid)) need(JSON.stringify(byOID.get(source.oid)) === JSON.stringify(source), "function-profile-source-overlap");
+      byOID.set(source.oid,source);
+    }
+    const inventory = [...byOID.values()].sort((a,b)=>a.name.localeCompare(b.name));
+    need(inventory.length > 0 && inventory.length <= 256, "function-profile-source-cap");
+    const encoded = Buffer.from(JSON.stringify(inventory)).toString("base64");
+    const sql = `BEGIN READ ONLY;
+SET LOCAL search_path=pg_catalog; SET LOCAL statement_timeout='10s'; SET LOCAL lock_timeout='500ms';
+DO $profile_context$ BEGIN
+ IF current_database()<>'${c.database}' OR session_user<>'postgres' OR current_user<>session_user
+    OR current_setting('track_functions')<>'none'
+    OR (SELECT reset_val FROM pg_settings WHERE name='track_functions')<>'none' THEN
+  RAISE EXCEPTION 'function-profile-reader-default-or-target'; END IF;
+ PERFORM pg_stat_clear_snapshot();
+ IF EXISTS(SELECT FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid()
+   AND backend_type='client backend' AND (application_name='psql' OR state IS DISTINCT FROM 'idle')) THEN
+  RAISE EXCEPTION 'function-profile-other-backend-not-closed-or-idle'; END IF;
+END;$profile_context$;
+WITH expected AS (SELECT * FROM jsonb_to_recordset(convert_from(decode('${encoded}','base64'),'UTF8')::jsonb)
+ AS e(oid text,name text,"identityArguments" text,"prosrcSHA256" text)),
+observed AS (SELECT e.oid,e.name,e."identityArguments",s.calls,s.total_time,s.self_time,
+ p.oid IS NOT NULL AND n.nspname||'.'||p.proname=e.name
+ AND oidvectortypes(p.proargtypes)=e."identityArguments"
+ AND encode(sha256(convert_to(p.prosrc,'UTF8')),'hex')=e."prosrcSHA256" AS source_equal
+ FROM expected e LEFT JOIN pg_proc p ON p.oid=e.oid::oid LEFT JOIN pg_namespace n ON n.oid=p.pronamespace
+ LEFT JOIN pg_stat_user_functions s ON s.funcid=p.oid)
+SELECT jsonb_build_object('schema','helmut-write-function-stats-snapshot/1',
+ 'databaseOID',(SELECT oid::text FROM pg_database WHERE datname=current_database()),
+ 'statsReset',(SELECT stats_reset::text FROM pg_stat_database WHERE datname=current_database()),
+ 'rows',(SELECT jsonb_agg(jsonb_build_object('label',name||'('||"identityArguments"||')',
+   'sourceEqual',source_equal,'calls',calls,'totalMs',total_time,'selfMs',self_time) ORDER BY name,"identityArguments") FROM observed));
+COMMIT;`;
+    const result = await jsonQuery(sql,label);
+    need(exact(result,["schema","databaseOID","statsReset","rows"])
+      && result.schema === "helmut-write-function-stats-snapshot/1" && Array.isArray(result.rows)
+      && result.rows.length === inventory.length && result.rows.every(row=>row.sourceEqual === true), "function-profile-fresh-source-join");
+    for (const row of result.rows) need(exact(row,["label","sourceEqual","calls","totalMs","selfMs"])
+      && typeof row.label === "string" && ((row.calls === null && row.totalMs === null && row.selfMs === null)
+        || Number.isSafeInteger(row.calls) && row.calls >= 0 && Number.isFinite(row.totalMs)
+          && Number.isFinite(row.selfMs) && row.totalMs >= 0 && row.selfMs >= 0), "function-profile-stats-shape");
+    return result;
+  }
   const seen=new Set(), rejected=new Set();
   async function write(label,next,record=null,negative=null) {
     need(!seen.has(label),"write-retry-forbidden");seen.add(label);guard();
@@ -314,6 +371,12 @@ async function start() {
         const packet=T.prepare(request,c.qualification);
         // Execute EXACT compiler bytes: no replacement, injected SQL, marker or synthetic response.
         const result=await psql(packet.sql,label,negative);
+        // The fourth backend has exited with both EOFs and its flush command.
+        // Sample BEFORE this write's ownRead and later integrity snapshots.
+        if (label === "SAME_ROOT_USAGE") {
+          need(functionStatsBefore !== null && functionStatsAfter === null, "function-profile-sample-order");
+          functionStatsAfter = await functionStats("FUNCTION_STATS_AFTER");
+        }
         const proof={label,mode:request.mode,sqlSHA256:packet.sqlSHA256,requestSHA256:packet.requestSHA256,
           qualificationSHA256:packet.qualificationSHA256,captureIndex:result.row.index,originalCASReturnedByQualifiedSQLOrder:negative!==null};
         transactions.push(proof);
@@ -351,6 +414,7 @@ RESET SESSION AUTHORIZATION; COMMIT;`;
   const before=await snapshot(), next=structuredClone(own.body), claimId=crypto.randomUUID(), enteredAtUTC=new Date().toISOString();
   const claim=A.claim(next,selection,claimId,enteredAtUTC);
   const negative=c.case==="late-old-mirror"?"original-bridge-old-full-auth-mirror":c.case==="late-outside"?"original-bridge-outside-keyset-changed":null;
+  functionStatsBefore = await functionStats("FUNCTION_STATS_BASELINE");
   await write("CLAIM_STATE",next,null,negative);
   let usageBefore=null,usageAfter=null;
   if(!negative){claimConfirmed=claim;guard();}
@@ -381,7 +445,26 @@ RESET SESSION AUTHORIZATION; COMMIT;`;
     if(c.case==="state")need(JSON.stringify(before.usage)===JSON.stringify(after.usage),"state-old-history-preserved");
   }
   guard();need(children.size===0,"all-psql-children-closed");
-  const report={schema:"helmut-native-transaction-guard-report/1",pass:true,case:c.case,selection,configPin,initializationPin:c.seedInitializationPin,
+  need(functionStatsBefore && functionStatsAfter && functionStatsBefore.databaseOID === functionStatsAfter.databaseOID
+    && functionStatsBefore.statsReset === functionStatsAfter.statsReset, "function-profile-no-reset-or-replacement");
+  const beforeStats = new Map(functionStatsBefore.rows.map(row=>[row.label,row]));
+  const functionRows = functionStatsAfter.rows.map(row=>{
+    const old = beforeStats.get(row.label); need(old, "function-profile-stats-label");
+    if (row.calls === null) {
+      need(old.calls === null, "function-profile-counter-disappeared");
+      return {label:row.label,calls:null,totalMs:null,selfMs:null,status:"OPEN_NOT_TRACKED_OR_INLINED"};
+    }
+    const calls=row.calls-(old.calls ?? 0),totalMs=row.totalMs-(old.totalMs ?? 0),selfMs=row.selfMs-(old.selfMs ?? 0);
+    need(calls >= 0 && totalMs >= 0 && selfMs >= 0, "function-profile-counter-regression");
+    return calls === 0 ? {label:row.label,calls:null,totalMs:null,selfMs:null,status:"OPEN_NO_OBSERVED_CALL"}
+      : {label:row.label,calls,totalMs,selfMs,status:"OBSERVED"};
+  });
+  need(functionRows.some(row=>row.status === "OBSERVED" && row.calls === 4 && row.label.startsWith("public.helmut_auth_state_cas_v1(")),
+    "function-profile-original-cas-not-observed");
+  const profilePin=publish("FUNCTION_PROFILE.SAFE.json",Buffer.from(JSON.stringify({schema:"helmut-write-function-profile/1",
+    instrumentedDiagnosticOnly:true,optimizationABQualified:false,unit60Qualified:false,auth30Qualified:false,full500Qualified:false,
+    fourWriteLabels:["CLAIM_STATE","RESERVE_D","SEND_D","SAME_ROOT_USAGE"],rows:functionRows})));
+  const report={schema:"helmut-native-transaction-guard-report/1",functionProfilePin:profilePin,pass:true,case:c.case,selection,configPin,initializationPin:c.seedInitializationPin,
     actualNodeBudget,process:self,fixture,before,after,usageBefore,usageAfter,captures,transactions,
     originalCompilerSQLUnchanged:true,realCompilerResultConsumer:negative===null,noAcknowledgementAccepted:negative!==null,
     negativeCompleteLogicalRollback:negative!==null,
