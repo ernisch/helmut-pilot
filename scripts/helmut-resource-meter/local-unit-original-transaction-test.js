@@ -28,7 +28,7 @@ function source(name, oid) { return { name, oid: String(oid), identityArguments:
   volatility: "v", returnType: "jsonb", language: "plpgsql", config: ["search_path=pg_catalog"] }; }
 function qualification() {
   const helperSources = helperBodies.map((m, i) => ({ ...source("helmut_unit_diagnostic." + m[1], 2000 + i),
-    identityArguments: helperArgs[m[1]], prosrcSHA256: hash(m[2]), volatility: "s", returnType: /compare_delta|compare_seed|receipt|result_v1/.test(m[1]) ? "void" : "jsonb" }));
+    identityArguments: helperArgs[m[1]], prosrcSHA256: hash(m[2]), volatility: "s", returnType: /compare_seed|receipt|result_v1/.test(m[1]) ? "void" : "jsonb" }));
   return { schema: "helmut-local-unit-original-bridge-qualification/1", database: "helmut_unit_diagnostic_" + suffix,
     operationId: op, commandHash: "c".repeat(64),
     originalRelations: ["briefings", "helmut_auth_state_nodes_local", "helmut_store", "llm_usage", "profiles"].map((n,i)=>({name:"public."+n,oid:String(4000+i)})), originalSources: originalNames.map((n, i) => source(n, 1000 + i)), helperSources,
@@ -316,7 +316,7 @@ check("compiler has narrowly compared native stop delta without replacing native
 });
 check("receipt permits native final result validation without either obsolete shared result barrier", () => {
   const body = helperBodies.find(x => x[1] === "original_bridge_receipt_v1")[2];
-  const projection = body.slice(body.indexOf("actual_own:=helmut_unit_diagnostic.original_bridge_own_projection_v1", body.indexOf("if p_mode='artifact'")), body.indexOf("if p_mode='state' then"));
+  const projection = body.slice(body.indexOf("actual_own:=helmut_unit_diagnostic.original_bridge_compare_delta_v1", body.indexOf("if p_mode='artifact'")), body.indexOf("if p_mode='state' then"));
   assert.ok(projection.includes("actual_own is distinct from next_own") && projection.includes("'claimId'"));
   assert.ok(!projection.includes("'state']='closed'") && !projection.includes("prefix||'result'"), "closed and retained results must reach the native state proof");
   const state = body.slice(body.indexOf("if p_mode='state' then"), body.indexOf("-- Usage still cannot"));
@@ -385,10 +385,45 @@ check("one transaction actual unchanged original call session roles lock order a
   assert.ok(sql.indexOf("SET SESSION AUTHORIZATION helmut_ud_bridge_writer_") < sql.indexOf("ack:=public.helmut_auth_state_cas_v1(c)"));
   assert.ok(sql.indexOf("ack:=public.helmut_auth_state_cas_v1(c)") < sql.indexOf("SET SESSION AUTHORIZATION helmut_ud_authenticator_"));
   assert.ok(sql.indexOf("COMMIT;") < sql.indexOf("SELECT jsonb_build_object('schema','helmut-local-unit-original-write-result/1'"));
-  for (const required of ["original_bridge_compare_delta_v1", "helmut_auth_usage_checked_proof_local_v1", "original-bridge-original-ack-unconfirmed",
-    "original-bridge-exact-original-usage-row", "original-bridge-old-full-auth-mirror", "d IS NOT DISTINCT FROM own_row.body", "pg_my_temp_schema()",
+  for (const required of ["original-bridge-runtime-delta-execute-required", "helmut_auth_usage_checked_proof_local_v1", "original-bridge-original-ack-unconfirmed",
+    "original-bridge-exact-original-usage-row", "d IS NOT DISTINCT FROM own_row.body", "pg_my_temp_schema()",
     "p.prosecdef", "original-bridge-complete-native-source-set", "original-bridge-complete-original-trigger-set"]) assert.ok(sql.includes(required));
   assert.ok(!sql.includes("WHEN OTHERS") && !sql.includes("SECURITY DEFINER") && !sql.includes("DISABLE TRIGGER"));
+});
+check("state and usage keep genuine old/new comparisons inside the mandatory native receipt", () => {
+  const receipt = helperBodies.find(x => x[1] === "original_bridge_receipt_v1")[2];
+  const delta = helperBodies.find(x => x[1] === "original_bridge_compare_delta_v1")[2];
+  for (const mode of ["state", "usage"]) {
+    const sql = transaction.prepare(request(mode), qualification()).sql;
+    const original = sql.slice(sql.indexOf("DO $original$"), sql.indexOf("END;$original$;"));
+    assert.ok(!original.includes("original_bridge_own_projection_v1(") && !original.includes("original_bridge_compare_delta_v1("));
+    assert.ok(original.includes("ack:=public.helmut_auth_state_cas_v1(c)"));
+    assert.ok(sql.includes("IF NOT has_function_privilege('helmut_ud_runtime_" + suffix + "','helmut_unit_diagnostic.original_bridge_compare_delta_v1(text,text,text,text,text,jsonb)','EXECUTE')"));
+  }
+  const call = receipt.indexOf("actual_own:=helmut_unit_diagnostic.original_bridge_compare_delta_v1");
+  assert.ok(call > receipt.indexOf("original-bridge-receipt-real-own-before")
+    && call > receipt.indexOf("original-bridge-receipt-real-original-ack")
+    && call > receipt.indexOf("original-bridge-receipt-native-relations-changed"));
+  assert.ok(receipt.slice(call).includes("c#>>'{expectedState,root}',auth_state->>'root',r->>'operationId',next_own)"));
+  assert.ok(!receipt.slice(call).includes("original_bridge_own_projection_v1("));
+  for (const required of ["original-bridge-delta-runtime-principal", "receipt_pid<>pg_backend_pid()", "receipt_tx is distinct from backend_tx",
+    "encode(sha256(convert_to(request_text,'UTF8')),'hex') is distinct from request_hash", "n!~'^[a-f0-9]{64}$'",
+    "r->>'operationId' is distinct from operation_id", "c#>>'{expectedState,generation}' is distinct from g",
+    "c#>>'{expectedState,root}' is distinct from old_root", "c->>'root' is distinct from new_root",
+    "where scope_hash=r->>'commandHash'", "own_row.body_hash is distinct from r#>>'{ownBefore,hash}'",
+    "own_row.revision::text is distinct from r#>>'{ownBefore,revision}'", "own_row.body is distinct from own_row.canonical_text::jsonb",
+    "original_bridge_value_v1(s,g,k,old_map->k,true)", "octet_length(old_own::text)>4194304",
+    "old_own is distinct from own_row.body", "original-bridge-old-full-auth-mirror",
+    "original-bridge-outside-keyset-changed", "original-bridge-outside-child-hash-changed", "original-bridge-outside-inline-value-changed",
+    "original_bridge_value_v1(s,g,k,new_map->k,true)", "octet_length(actual_own::text)>4194304",
+    "actual_own is distinct from expected_own", "return actual_own;"]) assert.ok(delta.includes(required), "required delta proof missing: " + required);
+  assert.equal((delta.match(/original_bridge_top_map_v1\(/g) || []).length, 2);
+  assert.ok(delta.includes("if old_root=new_root then new_map:=old_map;\n  else new_map:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,new_root);end if;"));
+  assert.ok(delta.includes("if old_root=new_root then actual_own:=old_own;"));
+  assert.ok(!/insert\s+into|update\s+helmut|set_config|current_setting|exception\s+when/i.test(delta));
+  assert.ok(!transaction.prepare(artifactRequest(), qualification()).sql.includes("original-bridge-runtime-delta-execute-required"));
+  const q = qualification(); q.helperSources.find(s => s.name.endsWith(".original_bridge_compare_delta_v1")).returnType = "void";
+  rejects(() => transaction.prepare(request(), q));
 });
 check("structured argument quoting prevents caller SQL interpolation", () => {
   const r = request(), text = '["v",{"x":"\' ; COMMIT; SELECT pg_sleep(10); -- \\\\"}]';

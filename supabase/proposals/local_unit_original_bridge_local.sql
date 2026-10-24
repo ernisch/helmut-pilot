@@ -188,16 +188,49 @@ begin
   return result;
 end;$f$;
 
-create function helmut_unit_diagnostic.original_bridge_compare_delta_v1(s text,g text,old_root text,new_root text,operation_id text,expected_own jsonb) returns void
+-- Called by the native receipt after its complete Root/temp/source/ACK checks.
+-- Both maps remain genuine database reads in that receipt's stable snapshot.
+-- The locked own row is still OLD inside the native BEFORE UPDATE trigger.
+create function helmut_unit_diagnostic.original_bridge_compare_delta_v1(s text,g text,old_root text,new_root text,operation_id text,expected_own jsonb) returns jsonb
 language plpgsql stable security invoker set search_path=pg_catalog as $f$
-declare old_map jsonb; new_map jsonb; actual_own jsonb:='{}'; k text; prefix text; own_keys text[]; a jsonb; b jsonb;
+declare old_map jsonb; new_map jsonb; old_own jsonb:='{}'; actual_own jsonb:='{}'; k text; prefix text; own_keys text[]; a jsonb; b jsonb;
+  request_text text; request_hash text; r jsonb; c jsonb; n text; receipt_pid integer; receipt_tx xid8; backend_tx xid8;
+  own_row helmut_unit_diagnostic.state%rowtype;
 begin
   if operation_id is distinct from 'localUnitDiagnostic-'||right(current_database(),32) then raise exception 'original-bridge-delta-operation';end if;
+  if session_user is distinct from 'helmut_ud_authenticator_'||right(current_database(),32)
+    or current_user is distinct from 'helmut_ud_runtime_'||right(current_database(),32) then
+    raise exception 'original-bridge-delta-runtime-principal';end if;
+  select a0.request_text,a0.request_hash,a0.nonce,a0.backend_pid,a0.transaction_id
+    into strict request_text,request_hash,n,receipt_pid,receipt_tx from pg_temp.original_bridge_args a0;
+  backend_tx:=pg_current_xact_id_if_assigned();
+  if receipt_pid<>pg_backend_pid() or backend_tx is null or receipt_tx is distinct from backend_tx
+    or octet_length(request_text)>37748736 or encode(sha256(convert_to(request_text,'UTF8')),'hex') is distinct from request_hash
+    or n is null or n!~'^[a-f0-9]{64}$' then raise exception 'original-bridge-delta-backend-transaction-or-bytes';end if;
+  r:=request_text::jsonb;c:=r->'originalCAS';
+  if r->>'schema' is distinct from 'helmut-local-unit-original-write/1' or r->>'operationId' is distinct from operation_id
+    or coalesce(r->>'mode','') not in ('state','usage') or coalesce(r->>'commandHash','')!~'^[a-f0-9]{64}$'
+    or s is distinct from 'main-auth' or c->>'id' is distinct from s or c#>>'{expectedState,generation}' is distinct from g
+    or c#>>'{expectedState,root}' is distinct from old_root or c->>'root' is distinct from new_root
+    or encode(sha256(convert_to(r#>>'{ownNext,canonical}','UTF8')),'hex') is distinct from r#>>'{ownNext,hash}'
+    or (r#>>'{ownNext,canonical}')::jsonb is distinct from expected_own then raise exception 'original-bridge-delta-request-scope';end if;
+  select * into strict own_row from helmut_unit_diagnostic.state where scope_hash=r->>'commandHash';
+  if own_row.body_hash is distinct from r#>>'{ownBefore,hash}' or own_row.revision::text is distinct from r#>>'{ownBefore,revision}'
+    or own_row.body is distinct from own_row.canonical_text::jsonb
+    or encode(sha256(convert_to(own_row.canonical_text,'UTF8')),'hex') is distinct from own_row.body_hash then
+    raise exception 'original-bridge-delta-real-own-before';end if;
   prefix:='localUnitDiagnostic:'||right(operation_id,32)||':';
   own_keys:=array['localUnitDiagnosticConsumedGrantsV1',prefix||'journal',prefix||'costs',prefix||'reservation',prefix||'sendClaim',prefix||'review',prefix||'result'];
   if not helmut_unit_diagnostic.exact(expected_own,own_keys) or octet_length(expected_own::text)>4194304 then raise exception 'original-bridge-exact-own-seven';end if;
   old_map:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,old_root);
-  new_map:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,new_root);
+  if old_root=new_root then new_map:=old_map;
+  else new_map:=helmut_unit_diagnostic.original_bridge_top_map_v1(s,g,new_root);end if;
+  foreach k in array own_keys loop
+    if not(old_map?k) or not(new_map?k) then raise exception 'original-bridge-own-key-missing-seed-blocked';end if;
+    old_own:=old_own||jsonb_build_object(k,helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,old_map->k,true));
+    if octet_length(old_own::text)>4194304 then raise exception 'original-bridge-own-projection-limit';end if;
+  end loop;
+  if old_own is distinct from own_row.body then raise exception 'original-bridge-old-full-auth-mirror';end if;
   if (select array_agg(key collate "C" order by key collate "C") from jsonb_object_keys(old_map) key where not(key=any(own_keys)))
     is distinct from (select array_agg(key collate "C" order by key collate "C") from jsonb_object_keys(new_map) key where not(key=any(own_keys))) then
     raise exception 'original-bridge-outside-keyset-changed';end if;
@@ -208,12 +241,15 @@ begin
     if helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,a,false) is distinct from
       helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,b,false) then raise exception 'original-bridge-outside-inline-value-changed';end if;
   end loop;
-  foreach k in array own_keys loop
-    if not(old_map?k) or not(new_map?k) then raise exception 'original-bridge-own-key-missing-seed-blocked';end if;
-    actual_own:=actual_own||jsonb_build_object(k,helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,new_map->k,true));
-    if octet_length(actual_own::text)>4194304 then raise exception 'original-bridge-own-projection-limit';end if;
-  end loop;
+  if old_root=new_root then actual_own:=old_own;
+  else
+    foreach k in array own_keys loop
+      actual_own:=actual_own||jsonb_build_object(k,helmut_unit_diagnostic.original_bridge_value_v1(s,g,k,new_map->k,true));
+      if octet_length(actual_own::text)>4194304 then raise exception 'original-bridge-own-projection-limit';end if;
+    end loop;
+  end if;
   if actual_own is distinct from expected_own then raise exception 'original-bridge-own-projection-mismatch';end if;
+  return actual_own;
 end;$f$;
 
 -- Seed is private Owner initialization only: all seven names must be absent
@@ -548,7 +584,8 @@ begin
   if own_row.body_hash is distinct from p_old_hash or own_row.revision is distinct from p_old_revision
     or own_row.body is distinct from own_row.canonical_text::jsonb
     or encode(sha256(convert_to(own_row.canonical_text,'UTF8')),'hex') is distinct from own_row.body_hash then raise exception 'original-bridge-receipt-real-own-before';end if;
-  actual_own:=helmut_unit_diagnostic.original_bridge_own_projection_v1('main-auth',auth_state->>'generation',auth_state->>'root',r->>'operationId');
+  actual_own:=helmut_unit_diagnostic.original_bridge_compare_delta_v1('main-auth',auth_state->>'generation',
+    c#>>'{expectedState,root}',auth_state->>'root',r->>'operationId',next_own);
   if actual_own is distinct from next_own or next_own#>>array[prefix||'journal','claimId'] is distinct from r->>'claimId' then
     raise exception 'original-bridge-receipt-real-own-projection';end if;
   if p_mode='state' then

@@ -22,12 +22,12 @@ const HELPERS = Object.freeze({
   original_bridge_top_map_v1: Object.freeze({ args: "text, text, text", sha: "cbab4ee2943f898ce18d0673406bcf67c8c65c57f5545e4bb1262338106918bb", result: "jsonb" }),
   original_bridge_value_v1: Object.freeze({ args: "text, text, text, jsonb, boolean", sha: "7de36453e5e664d1040649d73d537be7b9ab0fd00429ad31e7ea19ca1bf4ac50", result: "jsonb" }),
   original_bridge_own_projection_v1: Object.freeze({ args: "text, text, text, text", sha: "8074531ee40f7fa2858dc7b82f4e7e455dd34254e3489d1c53c0c8347e874622", result: "jsonb" }),
-  original_bridge_compare_delta_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "563ca8e1000bfc253e8ef9deee1805d23481f681781db4715fccf2159f52820b", result: "void" }),
+  original_bridge_compare_delta_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "a3580f39124b4ae9bb3310207cd7542f7efb42ee1b34ee3bea01d51b8f6fc9ef", result: "jsonb" }),
   original_bridge_compare_seed_v1: Object.freeze({ args: "text, text, text, text, text, jsonb", sha: "3a7142913b89e4255fcc622dda5a2ea28412befcdaa9cdca20186e2fdae14b62", result: "void" }),
   original_bridge_relations_v1: Object.freeze({ args: "", sha: "91505921dd30cbadb259fc439fede86c1f47b062ebcd690238dbd83d9f53797a", result: "jsonb" }),
   original_bridge_row_v1: Object.freeze({ args: "text, text, text, jsonb", sha: "290c60f33dc595e7ca7d4e893ed980fdc2a722b1513af00df51230c51b131480", result: "jsonb" }),
   original_bridge_result_v1: Object.freeze({ args: "text, jsonb", sha: "28ab1470b561bae4fa339efc678fe1ae07ff2a13d0ed58723bea9613a4d953cb", result: "void" }),
-  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "05a9f5675fb1d82511f0c37832cd455d70effd280b055912d04acd2faa040026", result: "void" }),
+  original_bridge_receipt_v1: Object.freeze({ args: "text, text, text, text, bigint, text, text, text, text, text", sha: "217b27d92efea4d072f1b6ba435fc71efefe9cc400484d355c7df992dd20a0e6", result: "void" }),
 });
 const NATIVE = Object.freeze(["contract", "authority_read", "runtime_read", "state_read", "state_cas", "artifact_insert", "artifact_read", "lease_acquire", "lease_release"]);
 function need(ok, code) { if (!ok) throw Error("local-unit-original-transaction-" + code); }
@@ -353,7 +353,9 @@ BEGIN
     OR EXISTS(SELECT FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname=${literal(writer)}))
     OR EXISTS(SELECT FROM pg_auth_members WHERE roleid=(SELECT oid FROM pg_roles WHERE rolname=${literal(writer)}))
     OR pg_has_role(${literal(auth)},${literal(writer)},'MEMBER') THEN RAISE EXCEPTION 'original-bridge-no-privileged-role-bridge';END IF;
-  ${seed ? `IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname=${literal(owner)}
+${seed || artifact ? "" : `  IF NOT has_function_privilege(${literal(runtime)},'helmut_unit_diagnostic.original_bridge_compare_delta_v1(text,text,text,text,text,jsonb)','EXECUTE') THEN
+    RAISE EXCEPTION 'original-bridge-runtime-delta-execute-required';END IF;
+`}  ${seed ? `IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname=${literal(owner)}
       AND NOT(rolsuper OR rolbypassrls OR rolcreatedb OR rolcreaterole OR rolinherit OR rolcanlogin OR rolreplication))
     OR NOT EXISTS(SELECT FROM pg_namespace WHERE nspname='helmut_unit_diagnostic' AND nspowner=(SELECT oid FROM pg_roles WHERE rolname=${literal(owner)}))
     OR EXISTS(SELECT FROM pg_class cl JOIN pg_namespace ns ON ns.oid=cl.relnamespace WHERE ns.nspname='helmut_unit_diagnostic'
@@ -447,9 +449,7 @@ BEGIN
   ${seed ? `top_map:=helmut_unit_diagnostic.original_bridge_top_map_v1('main-auth',m->>'generation',m->>'root');
   FOREACH k IN ARRAY ARRAY['localUnitDiagnosticConsumedGrantsV1',prefix||'journal',prefix||'costs',prefix||'reservation',prefix||'sendClaim',prefix||'review',prefix||'result'] LOOP
     IF top_map?k THEN RAISE EXCEPTION 'original-bridge-seed-old-own-key-present';END IF;
-  END LOOP;` : `old_own:=helmut_unit_diagnostic.original_bridge_own_projection_v1('main-auth',m->>'generation',m->>'root',r->>'operationId');
-  IF old_own IS DISTINCT FROM own_row.body THEN RAISE EXCEPTION 'original-bridge-old-full-auth-mirror';END IF;
-  `}
+  END LOOP;` : ""}
   IF r->>'mode' IN('state','seed') THEN
     IF c->'additions'<>'[]'::jsonb ${seed ? "" : "OR d IS NOT DISTINCT FROM own_row.body"} THEN RAISE EXCEPTION 'original-bridge-no-state-noop-or-usage';END IF;
     ${seed ? "" : "PERFORM helmut_unit_diagnostic.original_bridge_result_v1(r->>'commandHash',d);"}
@@ -487,7 +487,7 @@ BEGIN
     OR after_usage->>'revision' IS DISTINCT FROM c->>'revision' OR a->>'_authStoreRevision' IS DISTINCT FROM c->>'revision'
     OR coalesce(current_setting('helmut.atomic_state_seal',true),'')<>'' OR coalesce(current_setting('helmut.atomic_usage_seal',true),'')<>'' THEN
     RAISE EXCEPTION 'original-bridge-original-readback-unconfirmed';END IF;
-  PERFORM helmut_unit_diagnostic.${seed ? "original_bridge_compare_seed_v1" : "original_bridge_compare_delta_v1"}('main-auth',m->>'generation',m->>'root',after_root->>'root',r->>'operationId',d);
+  ${seed ? "PERFORM helmut_unit_diagnostic.original_bridge_compare_seed_v1('main-auth',m->>'generation',m->>'root',after_root->>'root',r->>'operationId',d);" : ""}
   IF r->>'mode'='usage' THEN
     SELECT * INTO STRICT usage_row FROM public.llm_usage WHERE usage_store_id='main-auth' AND usage_generation=u#>>'{proof,generation}'
       AND usage_ordinal=(u#>>'{proof,count}')::bigint+1;
