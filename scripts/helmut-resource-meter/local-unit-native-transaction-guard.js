@@ -16,7 +16,44 @@ const ENV = new Set(["PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "TZ", "SUPABASE
   "HELMUT_NATIVE_NODE_OLD_SPACE_MIB", "HELMUT_LLM_USAGE_STORAGE", "HELMUT_AUTH_STATE_STORAGE", "HELMUT_AUTH_HISTORY_READ_REUSE",
   "HELMUT_AUTH_GRAPH_READ_REUSE", "HELMUT_AUTH_SINGLE_WRITE_CAPTURE", "HELMUT_AUTH_CONTROL_READ"]);
 let attempted = false;
-const need = (ok, code) => { if (!ok) throw Error("local-unit-transaction-guard-" + code); };
+// Only locally created assertion errors carry a closed diagnostic label. Never
+// classify foreign errors by message/code/stack: those may contain SQL or data.
+const guardFailureCodes = new WeakMap();
+const FAILURE_CODES = new Set([
+  "actual-heap-limit", "actual-own-after-ack", "actual-own-canonical",
+  "actual-psql-process", "all-psql-children-closed", "bounded-serial-psql",
+  "canonical-file", "cgroup-pin", "child-exit-identity",
+  "closed-environment", "closed-error-enum", "closed-read-rpc",
+  "code-closure", "configuration", "diagnostic-clock",
+  "explicit-once-cli", "file-drift", "file-grew",
+  "file-metadata", "file-pin", "fixed-code",
+  "fixed-files", "fixed-read-row", "fixture-original-cas-only",
+  "fixture-own-and-usage-unchanged", "fresh-outside-fixture-key", "fresh-seeded-copy-only",
+  "function-profile-counter-disappeared", "function-profile-counter-regression", "function-profile-fixed-case",
+  "function-profile-fresh-source-join", "function-profile-no-reset-or-replacement", "function-profile-oid",
+  "function-profile-original-cas-not-observed", "function-profile-sample-order", "function-profile-source-cap",
+  "function-profile-source-overlap", "function-profile-stats-label", "function-profile-stats-shape",
+  "genuine-D-request", "genuine-accepted-write", "genuine-auth-snapshot",
+  "genuine-seed-and-parts", "genuine-single-cas", "json-invalid",
+  "json-unique", "json-utf8", "library-path",
+  "missing-read-pin", "native-claim-deadline", "native-owner-drift",
+  "negative-complete-logical-rollback", "negative-write-once", "node-budget",
+  "output-name", "output-short-write", "positive-state-committed",
+  "postgres-pin", "process-id", "process-live",
+  "psql-outcome-not-confirmed", "read-json", "read-pins",
+  "read-source-pin", "request-path", "same-root-usage-actual-delta",
+  "seed-initialization", "self-binding", "self-drift",
+  "snapshot-catalog-binding", "state-old-history-preserved", "stdout-utf8",
+  "symlink-component", "target-origin", "unchanged-read-capture-modes",
+  "unexpected-table-delta", "write-retry-forbidden"
+]);
+const need = (ok, code) => {
+  if (!ok) {
+    const label = FAILURE_CODES.has(code) ? code : "unclassified";
+    const error = Error("local-unit-transaction-guard-" + label);
+    guardFailureCodes.set(error, label); throw error;
+  }
+};
 const exact = (value, keys) => value && typeof value === "object" && !Array.isArray(value)
   && Reflect.ownKeys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 const sha = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
@@ -461,7 +498,7 @@ RESET SESSION AUTHORIZATION; COMMIT;`;
   });
   need(functionRows.some(row=>row.status === "OBSERVED" && row.calls === 4 && row.label.startsWith("public.helmut_auth_state_cas_v1(")),
     "function-profile-original-cas-not-observed");
-  const profilePin=publish("FUNCTION_PROFILE.SAFE.json",Buffer.from(JSON.stringify({schema:"helmut-write-function-profile/1",
+  const profilePin=publish("TRANSACTION_GUARD_FUNCTION_PROFILE.SAFE.json",Buffer.from(JSON.stringify({schema:"helmut-write-function-profile/1",
     instrumentedDiagnosticOnly:true,optimizationABQualified:false,unit60Qualified:false,auth30Qualified:false,full500Qualified:false,
     fourWriteLabels:["CLAIM_STATE","RESERVE_D","SEND_D","SAME_ROOT_USAGE"],rows:functionRows})));
   const report={schema:"helmut-native-transaction-guard-report/1",functionProfilePin:profilePin,pass:true,case:c.case,selection,configPin,initializationPin:c.seedInitializationPin,
@@ -475,6 +512,7 @@ RESET SESSION AUTHORIZATION; COMMIT;`;
   return {schema:"helmut-native-transaction-guard-published/1",pass:true,case:c.case,selection,configPin,reportPin};
 }
 module.exports=Object.freeze({start,CASES,errorMatches,confirmedClose,snapshotSQL,assertDelta});
-if(require.main===module)start().then(result=>process.stdout.write(JSON.stringify(result)+"\n")).catch(()=>{
-  process.exitCode=1;process.stderr.write('{"schema":"helmut-native-transaction-guard-failure/1","retryAllowed":false}\n');
+if(require.main===module)start().then(result=>process.stdout.write(JSON.stringify(result)+"\n")).catch(error=>{
+  process.exitCode=1;process.stderr.write(JSON.stringify({schema:"helmut-native-transaction-guard-failure/1",
+    code:guardFailureCodes.get(error)||"unclassified",retryAllowed:false})+"\n");
 });
